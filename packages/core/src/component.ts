@@ -53,7 +53,9 @@ export class ComponentStore<S extends Schema = Schema> {
   }
   markChanged(index: number): void { const w = index >>> 5; this.dirty[w] = this.dirty[w]! | (1 << (index & 31)); }
   isChanged(index: number): boolean { return (this.dirty[index >>> 5]! & (1 << (index & 31))) !== 0; }
-  clearChanged(): void { this.dirty.fill(0); }
+  /** Entity ids (with generation at removal time) that lost this component this tick; insertion-ordered, deduped. */
+  readonly removedThisTick = new Set<number>();
+  clearChanged(): void { this.dirty.fill(0); this.removedThisTick.clear(); }
   /** Entity indices whose bit is set and still have this component, ascending. */
   *changedIndices(): IterableIterator<number> {
     const d = this.dirty;
@@ -76,6 +78,7 @@ export class ComponentStore<S extends Schema = Schema> {
   }
   remove(index: number): void {
     const s = this.sparse[index]!; if (s < 0) return;
+    this.removedThisTick.add(this.dense[s]!);
     const last = --this.size;
     if (s !== last) {
       const moved = this.dense[last]!;

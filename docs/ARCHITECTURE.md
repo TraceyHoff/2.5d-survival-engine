@@ -71,6 +71,7 @@ Cross-team changes to `core` public API go through an ADR.
 - **Built-ins**: `NetId {id:u32}`, `Owner {clientId:u16}` (networked); `Transform {x,y,z,facing:f32}` in float tile units (networked); `PrevTransform` (local) copied from Transform at the **start** of each tick for interpolation.
 - **Queries**: `world.query(all, none?)` iterates from the smallest store; iteration runs backwards so destroying the current entity is safe. Hot systems may read `store.data` arrays directly.
 - **Change tracking**: each store has a per-entity dirty bitset set by `add`, `set`, `setField`, `store.write` and explicit `store.markChanged(i)` (required after raw typed-array writes). `world.changed(def)` iterates; cleared at end of `step()`.
+- **Removal tracking**: each store records entities (with generation at removal) that lost the component this tick via `remove`/`destroy`; `world.removed(def)`. Same-tick re-add shows in both `removed` and `changed`. Cleared with dirty bits; untouched by `simulate()`.
 - **Hooks**: `onSpawn`, `onDespawn` (despawn fires before components are removed).
 - **Resources**: typed global singletons (`TimeOfDay`, `Weather`, ...) via `defineResource<T>(name)` + `world.setResource/resource`.
 - **Events**: `EventBus` queued per tick (`emit` → delivered at `flush` at end of tick, deterministic order) plus `emitNow`.
@@ -125,7 +126,7 @@ sequenceDiagram
 1. Entity limit per world (default 65,536; max 2^20) and memory per store (`sparse` is `Int32Array[maxEntities]` per component) — move to paged sparse arrays if component count grows?
 2. Floating-point determinism across browsers/Node: rely on reconciliation, or move sim to fixed-point for lockstep features?
 3. Change tracking granularity: per-entity bits now; does net need per-field bits?
-4. Removed-component tracking (component removed but entity alive) for delta replication.
+4. ~~Removed-component tracking for delta replication~~ — resolved by ADR-023 (`world.removed(def)`). Remaining: does net need removal history beyond one tick (it must accumulate per-client between acks itself)?
 5. Chunk streaming/persistence format and server-side save games (reuse snapshot format?).
 6. Renderer in a Worker with OffscreenCanvas?
 7. WebTransport timing and unreliable channel semantics.

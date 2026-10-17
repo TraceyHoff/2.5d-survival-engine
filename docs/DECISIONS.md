@@ -67,3 +67,6 @@ u16 tile ids + u8 height per chunk with dirty/version; `worldToScreen/screenToWo
 
 ## ADR-022: Queued event bus delivered at end of tick
 Deterministic delivery order; `emitNow` for immediate cases.
+
+## ADR-023: Per-tick component removal tracking
+Each store keeps an insertion-ordered, deduped set of entity ids (with the generation at removal time) that lost the component this tick via `world.remove` or `destroy`. `world.removed(def): IterableIterator<Entity>`. Cleared with dirty bits in `clearChanges()` / end of `step()`; `simulate()` leaves it untouched. A same-tick re-add appears in both `removed()` and `changed()`, so consumers process removals first, then changes. Resolves ARCHITECTURE open question on removed-component tracking for delta replication.

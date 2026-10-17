@@ -115,6 +115,12 @@ export class World {
     const st = this.store(def);
     for (const i of st.changedIndices()) yield st.dense[st.slot(i)]!;
   }
+  /**
+   * Entities (with the generation they had at removal) that lost `def` this tick via remove() or destroy().
+   * A re-add in the same tick still appears here (and in changed()). Cleared by clearChanges()/end of step().
+   */
+  removed(def: ComponentDef): IterableIterator<Entity> { return this.store(def).removedThisTick.values(); }
+  /** Clears dirty bits and removal records for all stores. */
   clearChanges(): void { for (const s of this.stores) s.clearChanged(); }
 
   /** Iterates entities having all `all` and none of `none`. Drives from the smallest store. Safe to destroy the current entity. */
