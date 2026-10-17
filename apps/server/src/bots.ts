@@ -52,14 +52,14 @@ export async function startBot(o: BotOptions): Promise<Bot> {
 }
 
 export interface BotSwarm { bots: Bot[]; stop(): void }
-export async function startBots(url: string, count: number, tokensFile?: string, log: (s: string) => void = () => {}): Promise<BotSwarm> {
+export async function startBots(url: string, count: number, tokensFile?: string, log: (s: string) => void = () => {}, rng?: (index: number) => () => number): Promise<BotSwarm> {
   const tokens: Record<string, string> = tokensFile && existsSync(tokensFile) ? JSON.parse(readFileSync(tokensFile, "utf8")) as Record<string, string> : {};
   const save = (): void => { if (!tokensFile) return; mkdirSync(dirname(tokensFile), { recursive: true }); writeFileSync(tokensFile, JSON.stringify(tokens, null, 1)); };
   const bots: Bot[] = [];
   for (let i = 0; i < count; i++) {
     const tok = tokens[String(i)];
     try {
-      bots.push(await startBot({ url, index: i, ...(tok ? { token: tok } : {}), onAccount: (idx, t) => { if (tokens[String(idx)] !== t) { tokens[String(idx)] = t; save(); } } }));
+      bots.push(await startBot({ url, index: i, ...(tok ? { token: tok } : {}), ...(rng ? { rng: rng(i) } : {}), onAccount: (idx, t) => { if (tokens[String(idx)] !== t) { tokens[String(idx)] = t; save(); } } }));
     } catch (e) { log(`bot ${i}: connect failed: ${String(e)}`); }
   }
   return { bots, stop: () => { for (const b of bots) b.stop(); } };

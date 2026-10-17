@@ -3,30 +3,47 @@ import { Transform } from "@engine/core";
 import { WsServerTransport } from "@engine/net/node";
 import { MemoryWorldStore } from "@engine/persist";
 import { createGameServer } from "../src/main.js";
-import { startBot, startBots } from "../src/bots.js";
+import { startBot, startBots, type Bot } from "../src/bots.js";
+
+/** Polls `f` until true; throws (with `what`) after `ms`. Generous by default: the suite runs in parallel with everything else. */
+async function until(what: string, f: () => boolean, ms = 15_000): Promise<void> {
+  const t0 = Date.now();
+  while (!f()) {
+    if (Date.now() - t0 > ms) throw new Error(`timed out after ${ms} ms waiting for: ${what}`);
+    await new Promise((r) => setTimeout(r, 20));
+  }
+}
 
 describe("headless bots over WebSocket", () => {
   it("bots connect over ws, get accounts, move, and reconnect as the same player", async () => {
-    const transport = new WsServerTransport(); const port = await transport.listen(0, "127.0.0.1");
+    const transport = new WsServerTransport();
+    const port = await transport.listen(0, "127.0.0.1"); // OS-assigned port, read back
+    expect(port).toBeGreaterThan(0);
+    const url = `ws://127.0.0.1:${port}`;
     const gs = createGameServer({ transport, store: new MemoryWorldStore(), seed: 5 });
     let last = performance.now();
     const timer = setInterval(() => { const n = performance.now(); gs.loop.advance(n - last); last = n; }, 10);
-    const until = async (f: () => boolean, ms = 4000): Promise<void> => { const t0 = Date.now(); while (!f() && Date.now() - t0 < ms) await new Promise((r) => setTimeout(r, 25)); };
+    const bots: Bot[] = [];
     try {
-      const swarm = await startBots(`ws://127.0.0.1:${port}`, 3);
-      await until(() => gs.players.size === 3 && swarm.bots.every((b) => b.account));
-      expect(gs.players.size).toBe(3);
-      const start = [...gs.players.values()].map((p) => ({ ...gs.world.get(p.entity, Transform)! }));
-      await new Promise((r) => setTimeout(r, 1500));
-      const moved = [...gs.players.values()].filter((p, i) => JSON.stringify(gs.world.get(p.entity, Transform)) !== JSON.stringify(start[i])).length;
-      expect(moved).toBeGreaterThan(0);
+      // rng 0.5 -> every bot always walks right (no gather/idle picks), so "moved" is a condition, not luck.
+      const swarm = await startBots(url, 3, undefined, () => {}, () => () => 0.5);
+      bots.push(...swarm.bots);
+      expect(swarm.bots.length).toBe(3);
+      await until("3 players with accounts", () => gs.players.size === 3 && swarm.bots.every((b) => b.account));
+      const start = new Map([...gs.players.values()].map((p) => [p.entity, gs.world.get(p.entity, Transform)!.x]));
+      await until("every bot moved", () => [...gs.players.values()].every((p) => gs.world.get(p.entity, Transform)!.x > start.get(p.entity)! + 0.5));
       const account = swarm.bots[0]!.account!;
-      swarm.stop(); await until(() => gs.players.size === 0);
-      expect(gs.players.size).toBe(0);
-      const b = await startBot({ url: `ws://127.0.0.1:${port}`, index: 0, token: account });
-      await until(() => b.restored);
-      expect(b.restored).toBe(true); expect(b.account).toBe(account);
-      b.stop();
-    } finally { clearInterval(timer); await transport.close(); }
-  }, 15000);
+      swarm.stop();
+      await until("all players left", () => gs.players.size === 0);
+      const b = await startBot({ url, index: 0, token: account, rng: () => 0.5 });
+      bots.push(b);
+      await until("account restored", () => b.restored);
+      expect(b.account).toBe(account);
+      expect(gs.players.size).toBe(1);
+    } finally {
+      for (const b of bots) b.stop();
+      clearInterval(timer);
+      await transport.close();
+    }
+  }, 60_000);
 });
