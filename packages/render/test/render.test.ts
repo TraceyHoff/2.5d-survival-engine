@@ -18,7 +18,7 @@ describe("render", () => {
     expect(s.rain).toBeGreaterThan(0.99); expect(s.fog).toBeGreaterThan(0.3);
   });
   it("render components register on a core World", () => {
-    const w = new World(); w.env(TimeOfDay).t = 0.5;
+    const w = new World(); w.env(TimeOfDay).dayLengthTicks = 100;
     for (const c of RENDER_COMPONENTS) w.register(c);
     const e = w.create(); w.add(e, Sprite, { frameId: 3, scale: 1 });
     expect(w.get(e, Sprite)?.frameId).toBe(3);

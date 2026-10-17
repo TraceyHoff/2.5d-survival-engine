@@ -8,3 +8,5 @@ export const lerpAngle = (a: number, b: number, t: number): number => {
   return a + d * t;
 };
 export const dist2 = (a: Vec2, b: Vec2): number => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
+/** Wraps an angle to [-π, π] (Transform.facing wire range). */
+export const normalizeAngle = (a: number): number => { const t = Math.PI * 2; let r = ((a + Math.PI) % t + t) % t - Math.PI; if (r === -Math.PI && a > 0) r = Math.PI; return r; };

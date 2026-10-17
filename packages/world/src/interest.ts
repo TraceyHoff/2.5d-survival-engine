@@ -15,7 +15,8 @@ export interface ClientInterest {
   readonly enteredChunks: readonly ChunkKey[]; readonly leftChunks: readonly ChunkKey[];
   readonly entered: readonly Entity[]; readonly left: readonly Entity[];
 }
-interface State { x: number; y: number; radius: number; chunks: Set<ChunkKey>; entities: Set<Entity>; enteredChunks: ChunkKey[]; leftChunks: ChunkKey[]; entered: Entity[]; left: Entity[]; always: Set<Entity> }
+export interface Viewpoint { x: number; y: number; /** chunk radius (default grid radius) */ r?: number }
+interface State { views: { x: number; y: number; r: number }[]; chunks: Set<ChunkKey>; entities: Set<Entity>; enteredChunks: ChunkKey[]; leftChunks: ChunkKey[]; entered: Entity[]; left: Entity[]; always: Set<Entity> }
 
 /**
  * Per-client relevancy from chunk membership. Cost per update: O(clients x chunks-in-radius + nearby entities);
@@ -27,12 +28,17 @@ export class InterestGrid {
   constructor(private membership: ChunkMembership, opts: InterestOptions = {}) {
     this.radius = opts.radius ?? 2; this.hysteresis = opts.hysteresis ?? 1;
   }
-  /** Add/move a client's viewpoint (tile units). Optional per-client radius override. */
+  /** Single-viewpoint shorthand for setClientViewpoints(id, [{x, y, r: radius}]). */
   setClient(id: number, x: number, y: number, radius?: number): void {
-    let s = this.clients.get(id);
-    if (!s) { s = { x, y, radius: radius ?? this.radius, chunks: new Set(), entities: new Set(), enteredChunks: [], leftChunks: [], entered: [], left: [], always: new Set() }; this.clients.set(id, s); }
-    s.x = x; s.y = y; if (radius !== undefined) s.radius = radius;
+    this.setClientViewpoints(id, [radius === undefined ? { x, y } : { x, y, r: radius }]);
   }
+  /** Set all viewpoints of a client (player, camera, remote-controlled units...). Relevant set = union. Empty list = nothing relevant except always-relevant entities. */
+  setClientViewpoints(id: number, views: readonly Viewpoint[]): void {
+    let s = this.clients.get(id);
+    if (!s) { s = { views: [], chunks: new Set(), entities: new Set(), enteredChunks: [], leftChunks: [], entered: [], left: [], always: new Set() }; this.clients.set(id, s); }
+    s.views = views.map((v) => ({ x: v.x, y: v.y, r: v.r ?? this.radius }));
+  }
+  viewpoints(id: number): readonly Viewpoint[] { return this.clients.get(id)?.views ?? []; }
   removeClient(id: number): void { this.clients.delete(id); }
   /** Entities always relevant to a client regardless of position (own player, environment singleton, party). */
   setAlwaysRelevant(id: number, entities: Iterable<Entity>): void { const s = this.clients.get(id); if (s) s.always = new Set(entities); }
@@ -42,14 +48,14 @@ export class InterestGrid {
 
   update(): void {
     for (const s of this.clients.values()) {
-      const cx = tileToChunk(s.x), cy = tileToChunk(s.y), r = s.radius, R = r + this.hysteresis;
+      const vs = s.views.map((v) => ({ cx: tileToChunk(v.x), cy: tileToChunk(v.y), r: v.r }));
       const chunks = new Set<ChunkKey>(); s.enteredChunks = []; s.leftChunks = [];
       for (const k of s.chunks) {
         const i = k.indexOf(","); const kx = Number(k.slice(0, i)), ky = Number(k.slice(i + 1));
-        if (Math.abs(kx - cx) <= R && Math.abs(ky - cy) <= R) chunks.add(k); else s.leftChunks.push(k);
+        if (vs.some((v) => Math.abs(kx - v.cx) <= v.r + this.hysteresis && Math.abs(ky - v.cy) <= v.r + this.hysteresis)) chunks.add(k); else s.leftChunks.push(k);
       }
-      for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
-        const k = chunkKey(cx + dx, cy + dy); if (!chunks.has(k)) { chunks.add(k); s.enteredChunks.push(k); }
+      for (const v of vs) for (let dy = -v.r; dy <= v.r; dy++) for (let dx = -v.r; dx <= v.r; dx++) {
+        const k = chunkKey(v.cx + dx, v.cy + dy); if (!chunks.has(k)) { chunks.add(k); s.enteredChunks.push(k); }
       }
       const ents = new Set<Entity>(s.always); s.entered = []; s.left = [];
       for (const k of chunks) for (const e of this.membership.entitiesIn(k)) ents.add(e);

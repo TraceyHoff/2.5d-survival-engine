@@ -76,9 +76,9 @@ describe("environment singleton", () => {
     const w = new World(); const env = w.environment;
     expect(w.getField(env, NetId, "id")).toBe(ENV_NET_ID); expect(TimeOfDay.networked && Weather.networked).toBe(true);
     w.step(0.05);
-    w.env(Weather).kind = 3; w.env(TimeOfDay).t = 0.5;
+    w.env(Weather).kind = 3; w.env(TimeOfDay).dayLengthTicks = 100;
     expect(w.get(env, Weather)!.kind).toBe(3); expect([...w.changed(Weather)]).toEqual([env]);
-    expect(w.resource(TimeOfDay).t).toBe(0.5); // deprecated alias
+    expect(w.resource(TimeOfDay).dayLengthTicks).toBe(100); // deprecated alias
   });
 });
 

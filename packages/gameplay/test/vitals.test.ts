@@ -73,7 +73,7 @@ describe("vitals", () => {
   it("cold drops body temperature into hypothermia damage", () => {
     const w = makeWorld();
     const p = spawnPlayer(w, { x: 0, y: 0 });
-    w.env(Weather).kind = WeatherKind.Snow; w.env(Weather).intensity = 1; w.env(Weather).ticksRemaining = 1e9;
+    w.env(Weather).kind = WeatherKind.Snow; w.env(Weather).intensity = 1; w.env(Weather).endsAtTick = 0xffffffff;
     w.set(p, Survival, { bodyTemp: vt.hypothermiaBelow + 0.05 });
     steps(w, 5 * SEC);
     expect(w.get(p, Survival)!.bodyTemp).toBeLessThan(vt.hypothermiaBelow);

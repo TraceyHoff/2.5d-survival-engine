@@ -1,5 +1,5 @@
 /** Debug overlay (plain DOM). */
-import { TimeOfDay, Weather, type World } from "@engine/core";
+import { setTimeOfDay, timeOfDay, Weather, type World } from "@engine/core";
 import type { IsoRenderer } from "../src/index.js";
 
 export const WEATHER_NAMES = ["clear", "rain", "storm", "snow", "fog"] as const;
@@ -24,10 +24,10 @@ export class DebugUI {
       const s = document.createElement("span"); s.textContent = label; s.style.minWidth = "64px"; d.append(s, el); r.appendChild(d);
     };
     // time of day
-    const tod = world.env(TimeOfDay);
+    const tod = timeOfDay(world);
     const ts = (this.timeSlider = document.createElement("input")); ts.type = "range"; ts.min = "0"; ts.max = "24"; ts.step = "0.05";
-    ts.value = String(tod.t * 24); ts.style.width = "130px";
-    ts.oninput = () => { world.env(TimeOfDay).t = Number(ts.value) / 24; };
+    ts.value = String(tod.hours); ts.style.width = "130px";
+    ts.oninput = () => { setTimeOfDay(world, Number(ts.value)); };
     this.timeLabel = document.createElement("span");
     const tw = document.createElement("span"); tw.style.cssText = "display:flex;gap:6px;align-items:center"; tw.append(ts, this.timeLabel);
     row("time", tw);
@@ -60,7 +60,7 @@ export class DebugUI {
 
   update(text: string): void {
     this.statsEl.textContent = text;
-    const h = this.world.env(TimeOfDay).t * 24;
+    const h = timeOfDay(this.world).hours;
     if (document.activeElement !== this.timeSlider) this.timeSlider.value = String(h);
     this.timeLabel.textContent = `${String(Math.floor(h)).padStart(2, "0")}:${String(Math.floor((h % 1) * 60)).padStart(2, "0")}`;
     void this.renderer;

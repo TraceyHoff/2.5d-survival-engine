@@ -12,3 +12,4 @@ export * from "./assets.js";
 export * from "./input.js";
 export * from "./testing.js";
 export * from "./ids.js";
+export * from "./time.js";

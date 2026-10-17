@@ -3,7 +3,7 @@
  * URL params: time=0..24  weather=clear|rain|storm|snow|fog  intensity=0..1  density=1  survivors=300
  *             size=128  seed=7  zoom=1  freeze=1  ui=0  lights=0  shadows=0  bench=SECONDS  interp=0
  */
-import { World, InputState, Action, createGameLoop, TimeOfDay, Weather, Transform, entityIndex, PrevTransform } from "@engine/core";
+import { World, InputState, Action, createGameLoop, setTimeOfDay, TimeOfDay, Weather, Transform, entityIndex, PrevTransform } from "@engine/core";
 import { IsoRenderer } from "../src/index.js";
 import { generateWorld, DEMO_COMPONENTS } from "./worldgen.js";
 import { installDemoSystems } from "./systems.js";
@@ -19,11 +19,11 @@ for (const c of DEMO_COMPONENTS) world.register(c);
 
 const timeParam = q.get("time");
 const tod = world.env(TimeOfDay);
-tod.t = (timeParam !== null ? num("time", 10) : 9.5) / 24; tod.dayLengthTicks = 20 * 60 * 4; tod.day = 0;
+tod.dayLengthTicks = 20 * 60 * 4; setTimeOfDay(world, timeParam !== null ? num("time", 10) : 9.5, 0);
 const wName = (q.get("weather") ?? "clear").toLowerCase();
 const wKind = Math.max(0, WEATHER_NAMES.indexOf(wName as (typeof WEATHER_NAMES)[number]));
 const weather = world.env(Weather);
-weather.kind = wKind; weather.intensity = num("intensity", wKind ? 1 : 0); weather.ticksRemaining = 0;
+weather.kind = wKind; weather.intensity = num("intensity", wKind ? 1 : 0); weather.endsAtTick = 0;
 
 const gen = generateWorld(world, { size: num("size", 128), seed: num("seed", 7), density: num("density", 1), survivors: num("survivors", 300) });
 const renderer = new IsoRenderer(canvas, { tilemap: gen.map, preserveDrawingBuffer: q.has("bench") || q.has("shot") });

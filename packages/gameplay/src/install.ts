@@ -1,5 +1,5 @@
 import { WeatherKind } from "./defs.js";
-import { DEFAULT_TICK_HZ, entityIndex, Owner, TimeOfDay, Transform, Weather, type Entity, type World } from "@engine/core";
+import { DEFAULT_TICK_HZ, entityIndex, Owner, setTimeOfDay, TimeOfDay, Transform, Weather, type Entity, type World } from "@engine/core";
 import {
   CraftingStation, Crafter, Equipment, Exposure, GAMEPLAY_COMPONENTS, Gatherer, Health, HeatSource, IntentAction,
   Inventory, NO_SLOT, PlayerIntent, ResourceNode, Survival, VitalsModifiers, VitalsState,
@@ -51,7 +51,7 @@ export function installGameplay(world: World, options: GameplayOptions | number 
   world.setResource(GameplayConfig, { defs, role: opts.role ?? "standalone" });
   const dayLengthTicks = opts.dayLengthTicks ?? Math.round(env.dayLengthSeconds * (opts.tickHz ?? DEFAULT_TICK_HZ));
   // Environment singleton is created by core; initialise TimeOfDay once (dayLengthTicks 0 = uninitialised).
-  if (world.env(TimeOfDay).dayLengthTicks === 0) world.set(world.environment, TimeOfDay, { t: env.startTimeOfDay, dayLengthTicks, day: 0 });
+  if (world.env(TimeOfDay).dayLengthTicks === 0) { world.env(TimeOfDay).dayLengthTicks = dayLengthTicks; setTimeOfDay(world, env.startTimeOfDay * 24, 0); }
   world.set(world.environment, Weather, { kind: WeatherKind.Clear });
 
   if (opts.driveClock !== false) world.addSystem("simulation", "gameplay.clock", clockSystem);

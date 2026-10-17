@@ -70,12 +70,12 @@ Cross-team changes to `core` public API go through an ADR.
 - **Components** = plain numeric data declared with a schema: `defineComponent(name, { x: "f32", hp: { type: "u16", quant: {bits, min, max} } }, { networked: true })`. No strings, objects or references; ids are numeric (tile ids, item ids, enum values).
 - **Storage**: one sparse-set per component: `sparse: Int32Array[maxEntities]` → dense slot; SoA typed arrays per field (`store.data.x[slot]`); swap-remove. No archetypes → O(1) add/remove, no table migration.
 - **Component ids** = registration order on the `World`. Built-ins register first: `NetId=0, Owner=1, Transform=2, PrevTransform=3`; gameplay registers next via one shared module on client and server. `world.getSchemaHash()` (FNV-1a over id, name, networked flag, field signature incl. quant hints) is checked at handshake and in snapshots.
-- **Built-ins**: `NetId {id:u32}`, `Owner {clientId:u16}` (networked); `Transform {x,y,z,facing:f32}` in float tile units (networked); `PrevTransform` (local) copied from Transform at the **start** of each tick for interpolation.
+- **Built-ins**: `NetId {id:u32}`, `Owner {clientId:u16}` (networked); `Transform {x,y,z,facing:f32}` in float tile units (networked, persistent; wire quantization z q10 [0,64], facing q8 [-π,π] — keep facing normalized); `PrevTransform` (local) copied from Transform at the **start** of each tick for interpolation.
 - **Queries**: `world.query(all, none?)` iterates from the smallest store; iteration runs backwards so destroying the current entity is safe. Hot systems may read `store.data` arrays directly.
 - **Change tracking**: each store has a per-entity dirty bitset set by `add`, `set`, `setField`, `store.write` and explicit `store.markChanged(i)` (required after raw typed-array writes). `world.changed(def)` iterates; cleared at end of `step()`.
 - **Removal tracking**: each store records entities (with generation at removal) that lost the component this tick via `remove`/`destroy`; `world.removed(def)`. Same-tick re-add shows in both `removed` and `changed`. Cleared with dirty bits; untouched by `simulate()`.
 - **Array fields & defaults**: `{type, length}` (stride-n SoA, `getArray/getElement/setElement`) and `{type, default}` (applied on add). Both are in the schema hash.
-- **Environment**: `world.environment` singleton (NetId=ENV_NET_ID=1) with networked `TimeOfDay`, `Weather` (kind = gameplay u8 id); access via `world.env(def)`.
+- **Environment**: `world.environment` singleton (NetId=ENV_NET_ID=1) with networked `TimeOfDay {dayLengthTicks, epochTick}` and `Weather {kind, intensity, endsAtTick}` (kind = gameplay u8 id). Neither changes per tick: read time with `timeOfDay(world)` (hours 0-24, day, derived from `world.tick`), jump with `setTimeOfDay`/`setDayLength`; weather lasts while `tick < endsAtTick`.
 - **RNG streams**: `world.rngFor(key, netIdOrEntity?)` deterministic per (seed, tick, key, entity) for predictable outcomes; `world.rng` stays for authority-only rolls.
 - **Input**: `defineActions` bit masks + schema commands (`defineCommand`, `CommandRegistry`, `encodeInputFrame`).
 - **Spatial index**: `installSpatialIndex(world)` (world pkg) → postSim system `spatialIndex`, resource `SpatialIndexRes`.
@@ -160,7 +160,7 @@ flowchart LR
 
 ## 11. Interest Management
 
-- `InterestGrid(membership, {radius, hysteresis})`; `setClient(id, x, y, radius?)`, `setAlwaysRelevant(id, entities)`, `update()`, `get(id)` → `{chunks, entities, enteredChunks, leftChunks, entered, left}`.
+- `InterestGrid(membership, {radius, hysteresis})`; `setClientViewpoints(id, [{x, y, r?}])` (relevant set = union of viewpoints) or the shorthand `setClient(id, x, y, radius?)`, `setAlwaysRelevant(id, entities)`, `update()`, `get(id)` → `{chunks, entities, enteredChunks, leftChunks, entered, left}`.
 - Cost per tick: O(clients × (2r+1)²) chunk checks + O(nearby entities); membership updates are O(moved entities).
 - Benchmark (in `packages/world/test/interest.test.ts`, box CPU): 200 players, 50k entities over 64×64 chunks, r=2: initial membership 50k ≈ 20 ms, first interest update ≈ 14 ms, steady tick (2.5k moved entities + interest for 200 players) ≈ 8 ms, ~300 relevant entities/player.
 - Netcode consumes enter/leave for spawn/despawn replication and budget prioritisation.

@@ -22,9 +22,8 @@ function faceSprite(world: World, e: Entity, dx: number, dy: number, front: numb
 
 export function installDemoSystems(world: World, o: DemoSimOptions): void {
   world.addSystem("simulation", "timeOfDay", (w) => {
-    if (o.freezeTime()) return;
-    const tod = w.env(TimeOfDay); tod.t += 1 / tod.dayLengthTicks;
-    if (tod.t >= 1) { tod.t -= 1; tod.day++; }
+    // time is derived from world.tick (core ADR-042); freezing shifts the epoch along with the tick
+    if (o.freezeTime()) w.env(TimeOfDay).epochTick += 1;
   });
 
   world.addSystem("simulation", "playerMove", (w, dt) => {

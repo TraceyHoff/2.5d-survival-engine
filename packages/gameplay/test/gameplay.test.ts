@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { World, TimeOfDay, encodeSnapshot } from "@engine/core";
+import { World, TimeOfDay, encodeSnapshot, setTimeOfDay, timeOfDay } from "@engine/core";
 import { GAMEPLAY_SYSTEM_ORDER, IntentAction, installGameplay, setIntent, spawnPlayer, spawnResourceNode } from "../src/index.js";
 import { DT } from "./helpers.js";
 
@@ -7,7 +7,7 @@ describe("gameplay install", () => {
   it("advances time of day and wraps days (stub compatibility: numeric dayLengthTicks)", () => {
     const w = new World(); installGameplay(w, 10);
     for (let i = 0; i < 10; i++) w.step(0.05);
-    expect(w.env(TimeOfDay).day).toBe(1);
+    expect(timeOfDay(w).day).toBe(1);
   });
 
   it("registers systems in the documented order", () => {

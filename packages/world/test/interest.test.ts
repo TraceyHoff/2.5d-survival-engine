@@ -35,3 +35,17 @@ describe("InterestGrid", () => {
     expect(total / N).toBeLessThan(100);
   });
 });
+
+describe("InterestGrid multiple viewpoints", () => {
+  it("relevant set is the union of viewpoints; setClient replaces with one", () => {
+    const w = new World(); const m = new ChunkMembership(w); const g = new InterestGrid(m, { radius: 0, hysteresis: 0 });
+    const a = w.create(); w.add(a, Transform, { x: 5, y: 5 }); const b = w.create(); w.add(b, Transform, { x: 32 * 10 + 5, y: 5 });
+    const c = w.create(); w.add(c, Transform, { x: 32 * 20 + 5, y: 5 }); m.update();
+    g.setClientViewpoints(1, [{ x: 5, y: 5 }, { x: 32 * 10 + 5, y: 5, r: 1 }]); g.update();
+    expect(new Set(g.get(1)!.entities)).toEqual(new Set([a, b])); expect(g.get(1)!.chunks.size).toBe(1 + 9);
+    expect(g.viewpoints(1)).toEqual([{ x: 5, y: 5, r: 0 }, { x: 325, y: 5, r: 1 }]);
+    g.setClient(1, 32 * 20 + 5, 5); g.update();
+    expect(g.get(1)!.entered).toEqual([c]); expect(new Set(g.get(1)!.left)).toEqual(new Set([a, b]));
+    g.setClientViewpoints(1, []); g.update(); expect(g.get(1)!.entities.size).toBe(0);
+  });
+});

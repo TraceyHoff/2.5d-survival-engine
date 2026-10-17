@@ -11,7 +11,7 @@
  *   3. composite   -> canvas: scene * lightmap (emissive bypass), fog/haze, grading, vignette
  *   4. weather     -> canvas: instanced rain streaks, splashes, snow
  */
-import { TimeOfDay, Weather, type World } from "@engine/core";
+import { TimeOfDay, Weather, timeOfDay, type World } from "@engine/core";
 import { DEFAULT_ISO, type IsoConfig, type TileMap } from "@engine/world";
 import { IsoCamera, type Rect } from "./camera.js";
 import { buildProceduralAtlas, GpuAtlas, type Atlas } from "./atlas.js";
@@ -129,7 +129,7 @@ export class IsoRenderer implements Renderer {
     // --- 0. prep ---------------------------------------------------------------------------
     // Environment singletons (core ADR-028). Missing env (registerBuiltins:false) falls back to noon/clear.
     const hasEnv = world.isAlive(world.environment);
-    const tod = hasEnv && world.has(world.environment, TimeOfDay) ? world.env(TimeOfDay) : undefined;
+    const tod = hasEnv && world.has(world.environment, TimeOfDay) && world.env(TimeOfDay).dayLengthTicks > 0 ? timeOfDay(world) : undefined;
     const wr = hasEnv && world.has(world.environment, Weather) ? world.env(Weather) : undefined;
     const day = (this.lighting = computeDayLighting(tod ? tod.t : 0.5));
     const target = weatherTargets(wr ? wr.kind : 0, wr ? wr.intensity : 0);
