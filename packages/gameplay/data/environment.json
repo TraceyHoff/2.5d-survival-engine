@@ -1,0 +1,19 @@
+{
+  "$comment": "Day/night + weather tuning. timeOfDay 0 = midnight, 0.5 = noon. kind must match core WeatherKind: clear|rain|storm|snow|fog.",
+  "dayLengthSeconds": 1200,
+  "startTimeOfDay": 0.25,
+  "baseTemp": 14,
+  "dayNightAmplitude": 8,
+  "nightThreatMul": 2.0,
+  "wetChill": 6,
+  "dryPerSec": 0.02,
+  "heatDryMul": 3,
+  "shelterTempBonus": 4,
+  "weather": [
+    { "kind": "clear", "weight": 50, "durationSeconds": [180, 420], "intensity": [0, 0],     "tempOffset": 2,   "wetnessPerSec": 0,     "thirstMul": 1.1, "staminaRegenMul": 1.0 },
+    { "kind": "fog",   "weight": 15, "durationSeconds": [90, 240],  "intensity": [0.4, 1],   "tempOffset": -2,  "wetnessPerSec": 0.002, "thirstMul": 1.0, "staminaRegenMul": 1.0 },
+    { "kind": "rain",  "weight": 22, "durationSeconds": [120, 300], "intensity": [0.3, 1],   "tempOffset": -4,  "wetnessPerSec": 0.02,  "thirstMul": 0.8, "staminaRegenMul": 0.9 },
+    { "kind": "storm", "weight": 8,  "durationSeconds": [60, 180],  "intensity": [0.7, 1],   "tempOffset": -7,  "wetnessPerSec": 0.05,  "thirstMul": 0.8, "staminaRegenMul": 0.7 },
+    { "kind": "snow",  "weight": 5,  "durationSeconds": [120, 360], "intensity": [0.3, 1],   "tempOffset": -14, "wetnessPerSec": 0.006, "thirstMul": 0.9, "staminaRegenMul": 0.8 }
+  ]
+}

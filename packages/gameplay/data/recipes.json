@@ -1,0 +1,26 @@
+{
+  "$comment": "Numeric ids are stable. station: none | campfire | workbench. seconds converted to ticks at runtime from dt.",
+  "recipes": [
+    { "id": 1, "key": "stone_axe",     "station": "none",      "seconds": 2,
+      "ingredients": [{ "item": "wood", "count": 3 }, { "item": "stone", "count": 2 }, { "item": "fiber", "count": 2 }],
+      "output": { "item": "stone_axe", "count": 1 } },
+    { "id": 2, "key": "stone_pickaxe", "station": "none",      "seconds": 2,
+      "ingredients": [{ "item": "wood", "count": 3 }, { "item": "stone", "count": 3 }, { "item": "fiber", "count": 2 }],
+      "output": { "item": "stone_pickaxe", "count": 1 } },
+    { "id": 3, "key": "campfire_kit",  "station": "none",      "seconds": 3,
+      "ingredients": [{ "item": "wood", "count": 5 }, { "item": "stone", "count": 4 }],
+      "output": { "item": "campfire_kit", "count": 1 } },
+    { "id": 4, "key": "workbench_kit", "station": "none",      "seconds": 5,
+      "ingredients": [{ "item": "wood", "count": 10 }, { "item": "stone", "count": 4 }],
+      "output": { "item": "workbench_kit", "count": 1 } },
+    { "id": 5, "key": "iron_ingot",    "station": "campfire",  "seconds": 4,
+      "ingredients": [{ "item": "iron_ore", "count": 2 }, { "item": "wood", "count": 1 }],
+      "output": { "item": "iron_ingot", "count": 1 } },
+    { "id": 6, "key": "iron_axe",      "station": "workbench", "seconds": 4,
+      "ingredients": [{ "item": "wood", "count": 2 }, { "item": "iron_ingot", "count": 3 }],
+      "output": { "item": "iron_axe", "count": 1 } },
+    { "id": 7, "key": "iron_pickaxe",  "station": "workbench", "seconds": 4,
+      "ingredients": [{ "item": "wood", "count": 2 }, { "item": "iron_ingot", "count": 3 }],
+      "output": { "item": "iron_pickaxe", "count": 1 } }
+  ]
+}

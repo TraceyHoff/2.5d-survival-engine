@@ -1,0 +1,25 @@
+{
+  "$comment": "Numeric ids are stable wire/save ids: never renumber, only append. id 0 = empty slot. weight in kg.",
+  "items": [
+    { "id": 1,  "key": "wood",          "name": "Wood",          "category": "resource",  "maxStack": 50, "weight": 0.5 },
+    { "id": 2,  "key": "stone",         "name": "Stone",         "category": "resource",  "maxStack": 50, "weight": 1.0 },
+    { "id": 3,  "key": "fiber",         "name": "Plant Fiber",   "category": "resource",  "maxStack": 99, "weight": 0.1 },
+    { "id": 4,  "key": "flint",         "name": "Flint",         "category": "resource",  "maxStack": 50, "weight": 0.3 },
+    { "id": 5,  "key": "iron_ore",      "name": "Iron Ore",      "category": "resource",  "maxStack": 30, "weight": 2.0 },
+    { "id": 6,  "key": "iron_ingot",    "name": "Iron Ingot",    "category": "resource",  "maxStack": 30, "weight": 1.5 },
+    { "id": 7,  "key": "berries",       "name": "Berries",       "category": "food",      "maxStack": 20, "weight": 0.1,
+      "food": { "hunger": 12, "thirst": 4, "health": 0 } },
+    { "id": 8,  "key": "water_flask",   "name": "Water Flask",   "category": "food",      "maxStack": 5,  "weight": 1.0,
+      "food": { "hunger": 0, "thirst": 35, "health": 0 } },
+    { "id": 9,  "key": "stone_axe",     "name": "Stone Axe",     "category": "tool",      "maxStack": 1,  "weight": 2.0,
+      "tool": { "kind": "axe", "tier": 1 } },
+    { "id": 10, "key": "stone_pickaxe", "name": "Stone Pickaxe", "category": "tool",      "maxStack": 1,  "weight": 2.5,
+      "tool": { "kind": "pickaxe", "tier": 1 } },
+    { "id": 11, "key": "iron_axe",      "name": "Iron Axe",      "category": "tool",      "maxStack": 1,  "weight": 3.0,
+      "tool": { "kind": "axe", "tier": 2 } },
+    { "id": 12, "key": "iron_pickaxe",  "name": "Iron Pickaxe",  "category": "tool",      "maxStack": 1,  "weight": 3.5,
+      "tool": { "kind": "pickaxe", "tier": 2 } },
+    { "id": 13, "key": "campfire_kit",  "name": "Campfire Kit",  "category": "placeable", "maxStack": 5,  "weight": 4.0 },
+    { "id": 14, "key": "workbench_kit", "name": "Workbench Kit", "category": "placeable", "maxStack": 1,  "weight": 10.0 }
+  ]
+}
