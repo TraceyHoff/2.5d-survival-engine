@@ -4,6 +4,8 @@ import { WorldPersistence, type WorldPersistenceOptions, type WorldStore } from 
 
 /** A persistent test component (gameplay has none yet besides core Transform). */
 export const Crate = defineComponent("Crate", { loot: "u16", hp: "f32" }, { persistent: true });
+/** Persistent component with array fields (core ADR-024) to prove arrays round-trip in chunks and player records. */
+export const Stash = defineComponent("Stash", { items: { type: "u16", length: 8 }, counts: { type: "u8", length: 8 }, mods: { type: "f32", length: 3 } }, { persistent: true });
 export const PIECES = loadBuildPieces([
   { key: "foundation", layer: 0, hp: 500, footprint: { w: 1, h: 1 } },
   { key: "wall", layer: 1, hp: 250 },
@@ -13,7 +15,7 @@ export const PIECES = loadBuildPieces([
 export interface TestWorld { world: World; buildings: BuildingGrid; chunks: ChunkManager; persist: WorldPersistence }
 export function makeWorld(store: WorldStore, opts: Partial<WorldPersistenceOptions> & { seed?: number; loadRadius?: number; cacheSize?: number } = {}): TestWorld {
   const world = new World({ seed: opts.seed ?? 42, maxEntities: 1 << 17 });
-  world.register(Crate);
+  world.register(Crate); world.register(Stash);
   const buildings = new BuildingGrid(PIECES);
   const persist = new WorldPersistence({ world, store, buildings, generator: new ProceduralGenerator({ seed: opts.seed ?? 42 }), autosaveSeconds: 0, playerSaveSeconds: 0, ...opts });
   const chunks = new ChunkManager({ provider: persist.provider, loadRadius: opts.loadRadius ?? 0, unloadMargin: 0, cacheSize: opts.cacheSize ?? 0 });

@@ -8,7 +8,7 @@ import { installGameplay, spawnPlayer, Health, Survival, PlayerIntent } from "@e
 import { World } from "@engine/core";
 import { SqliteWorldStore } from "../src/node.js";
 import { WorldPersistence, MemoryWorldStore, encodePlayer, decodePlayerInto, IndexedDbWorldStore, tokenToWords, wordsToToken, nameToWords, wordsToName, tokenToHex } from "../src/index.js";
-import { Crate, PIECES, buildBase, makeWorld, spawnCrate, step } from "./helpers.js";
+import { Crate, Stash, PIECES, buildBase, makeWorld, spawnCrate, step } from "./helpers.js";
 
 const WorldPersistenceCoords = (k: string): { cx: number; cy: number } => WorldPersistence.coords(k);
 const dirs: string[] = [];
@@ -95,6 +95,32 @@ describe("chunk round trip", () => {
     const b = makeWorld(store, { loadRadius: 1 }); b.chunks.setSource({ id: 1, x: 16, y: 16 }); step(b.world);
     const all = [...b.world.query([Crate])]; expect(all).toHaveLength(1);
     expect(b.world.get(all[0]!, Transform)).toMatchObject({ x: dest.cx * 32 + 8, y: dest.cy * 32 + 8 });
+  });
+});
+
+describe("array fields", () => {
+  it("round-trips persistent array-field components in chunks and player records", async () => {
+    const store = await SqliteWorldStore.open(tmp());
+    const a = makeWorld(store); a.chunks.setSource({ id: 1, x: 16, y: 16 }); step(a.world);
+    const e = spawnCrate(a.world, 5, 5, 1);
+    a.world.add(e, Stash, { items: [1, 2, 3, 4, 5, 6, 7, 65535], counts: [9, 8, 7, 6, 5, 4, 3, 255], mods: [0.5, -1.25, 3] });
+    step(a.world); await a.persist.saveAll();
+    // player record with the same array component
+    const pl = a.world.create(); a.world.add(pl, Transform, { x: 1, y: 2 }).add(pl, Stash, { items: [10, 20, 30, 40, 50, 60, 70, 80], mods: [1, 2, 3] });
+    await a.persist.savePlayer("ab".repeat(16), pl, "arr");
+    await store.close();
+    const s2 = await SqliteWorldStore.open(store.path);
+    const b = makeWorld(s2); b.chunks.setSource({ id: 1, x: 16, y: 16 }); step(b.world);
+    const [got] = [...b.world.query([Stash])];
+    expect([...b.world.getArray(got!, Stash, "items")!]).toEqual([1, 2, 3, 4, 5, 6, 7, 65535]);
+    expect([...b.world.getArray(got!, Stash, "counts")!]).toEqual([9, 8, 7, 6, 5, 4, 3, 255]);
+    expect([...b.world.getArray(got!, Stash, "mods")!]).toEqual([0.5, -1.25, 3]);
+    const q = b.world.create(); b.world.add(q, Transform, { x: 0, y: 0 });
+    const r = b.persist.restorePlayer("ab".repeat(16), q)!;
+    expect(r.name).toBe("arr"); expect(r.restored).toContain("Stash");
+    expect([...b.world.getArray(q, Stash, "items")!]).toEqual([10, 20, 30, 40, 50, 60, 70, 80]);
+    expect(b.world.get(q, Transform)).toMatchObject({ x: 1, y: 2 });
+    await s2.close();
   });
 });
 

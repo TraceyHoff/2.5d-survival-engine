@@ -53,16 +53,19 @@ function run(sc: Scenario) {
   return r;
 }
 
+/** Strict timing ceilings only with PERF=1 (`pnpm bench`); otherwise a loose sanity bound so parallel CI stays green. */
+const PERF = process.env["PERF"] === "1";
+
 describe("replication benchmark (server only)", () => {
   it("100 clients x 10k entities spread over a large world", () => {
     const r = run({ name: "100c x 10k spread (2048x2048 tiles)", clients: 100, entities: 10_000, worldTiles: 2048, movingFraction: 0.1 });
-    expect(r.msPerTick).toBeLessThan(250);
+    expect(r.msPerTick).toBeLessThan(PERF ? 30 : 500); // ~13 ms on the dev box
     expect(r.bytesPerClientTick).toBeLessThan(4000);
   }, 60_000);
   it("100 clients clustered in one area with 10k entities (worst case, budgeted)", () => {
     const r = run({ name: "100c clustered x 10k (512x512, 4 KiB budget)", clients: 100, entities: 10_000, worldTiles: 512, clusterTiles: 64, movingFraction: 0.1, budget: 4096 });
     expect(r.bytesPerClientTick).toBeLessThanOrEqual(4096 + 64);
-    expect(r.msPerTick).toBeLessThan(100); // ~25 ms locally; generous for noisy CI
+    expect(r.msPerTick).toBeLessThan(PERF ? 60 : 500); // ~25 ms on the dev box
     expect(r.sharedPerTick).toBeGreaterThan(r.encodesPerTick * 5); // per-(state,baseline) encodings are reused across clients
   }, 120_000);
 });
