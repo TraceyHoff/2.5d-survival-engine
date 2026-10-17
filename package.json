@@ -8,7 +8,10 @@
     "typecheck": "pnpm -r typecheck",
     "build": "pnpm -r build",
     "check": "pnpm -r typecheck && vitest run",
-    "bench": "PERF=1 vitest run --no-file-parallelism packages/net/test/bench.test.ts packages/persist/test/bench.test.ts"
+    "bench": "PERF=1 vitest run --no-file-parallelism packages/net/test/bench.test.ts packages/persist/test/bench.test.ts",
+    "demo": "node scripts/demo.mjs",
+    "demo:bots": "node scripts/demo.mjs --headless",
+    "test:net": "vitest run packages/net packages/testkit apps/server apps/client"
   },
   "devDependencies": {
     "typescript": "^5.6.0",

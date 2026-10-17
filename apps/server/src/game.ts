@@ -51,13 +51,14 @@ export function createGameServer(o: GameServerOptions): GameServer {
     autosaveSeconds: o.autosaveSeconds ?? 30, playerSaveSeconds: o.playerSaveSeconds ?? 60,
     player: { exclude: [PlayerIntent] },
   }) : undefined;
-  const chunks = new ChunkManager({ provider: persist?.provider ?? generator, loadRadius: o.loadRadius ?? 2, unloadMargin: 1, cacheSize: 64, maxLoadsPerUpdate: 16 });
+  const chunks = new ChunkManager({ provider: persist?.provider ?? generator, loadRadius: o.loadRadius ?? 2, unloadMargin: 1, cacheSize: 64, maxLoadsPerUpdate: 4 });
   const defs = gameplayDefs(world);
   const resIds = new Map<number, number>();
   for (const [kind, key] of Object.entries(NODE_RESOURCES)) { try { resIds.set(Number(kind), defs.resourceId(key)); } catch { /* resource renamed: skip */ } }
   chunks.onLoad((_c, nodes) => { for (const n of nodes) { const id = resIds.get(n.kind); if (id !== undefined) spawnResourceNode(world, id, n.tx + 0.5, n.ty + 0.5); } });
 
   const players = new Map<number, Player>();
+  let closing = false; // after shutdown() the save is final: disconnects no longer write
   const removeEntity = (e: Entity): void => { if (world.isAlive(e)) world.destroy(e); };
 
   const net: NetServer = new NetServer({
@@ -83,7 +84,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
   function leave(clientId: number, why: string): void {
     const p = players.get(clientId); if (!p) return;
     players.delete(clientId); chunks.removeSource(clientId);
-    if (persist) { void persist.savePlayer(p.account, p.entity, p.name).catch((e) => log(`persist: save failed ${String(e)}`)); persist.untrackPlayer(p.account); }
+    if (persist && !closing) { void persist.savePlayer(p.account, p.entity, p.name).catch((e) => log(`persist: save failed ${String(e)}`)); persist.untrackPlayer(p.account); }
     removeEntity(p.entity);
     // Forget the net session: identity across reconnects/restarts is the persistent account (ClaimAccount).
     net.removeSession(clientId);
@@ -134,7 +135,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
   });
   persist?.attach(chunks);
   chunks.setSource({ id: 0, x: SPAWN.x, y: SPAWN.y, radius: 1 }); // keep spawn warm
-  chunks.update();
+  do chunks.update(); while (chunks.pendingLoads > 0); // load the spawn area before the first tick
 
   const tickTimes: number[] = [];
   const step = (dt: number): void => { const t0 = performance.now(); world.step(dt); tickTimes.push(performance.now() - t0); if (tickTimes.length > 4096) tickTimes.splice(0, 2048); };
@@ -142,8 +143,8 @@ export function createGameServer(o: GameServerOptions): GameServer {
   return {
     world, net, chunks, persist, loop, players, step, tickTimes,
     async shutdown() {
-      if (!persist) return { chunks: 0, players: 0 };
-      const r = await persist.saveAll(); await persist.store.close(); return r;
+      if (!persist || closing) return { chunks: 0, players: 0 };
+      const r = await persist.saveAll(); closing = true; await persist.store.close(); return r;
     },
   };
 }

@@ -16,6 +16,7 @@ export function parseServerArgs(argv: readonly string[], env: Record<string, str
   const a: ServerArgs = { port: Number(env["PORT"] ?? 7777), host: env["HOST"] ?? "0.0.0.0", save: env["SAVE_PATH"] ?? "saves/demo.db", fresh: false, seed: 1234, statsSec: 5 };
   for (let i = 0; i < argv.length; i++) {
     const k = argv[i]!, v = (): string => { const x = argv[++i]; if (x === undefined) throw new Error(`${k} needs a value`); return x; };
+    if (k === "--") continue;
     if (k === "--port") a.port = Number(v()); else if (k === "--host") a.host = v(); else if (k === "--save") a.save = v();
     else if (k === "--no-save") a.save = undefined; else if (k === "--fresh") a.fresh = true; else if (k === "--seed") a.seed = Number(v());
     else if (k === "--stats") a.statsSec = Number(v()); else throw new Error(`unknown argument ${k}`);

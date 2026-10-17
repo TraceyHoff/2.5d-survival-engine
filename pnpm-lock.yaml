@@ -35,12 +35,25 @@ importers:
       '@engine/net':
         specifier: workspace:*
         version: link:../../packages/net
+      '@engine/persist':
+        specifier: workspace:*
+        version: link:../../packages/persist
       '@engine/render':
         specifier: workspace:*
         version: link:../../packages/render
+      '@engine/server':
+        specifier: workspace:*
+        version: link:../server
       '@engine/world':
         specifier: workspace:*
         version: link:../../packages/world
+    devDependencies:
+      '@types/ws':
+        specifier: ^8.18.2
+        version: 8.18.2
+      ws:
+        specifier: ^8.22.0
+        version: 8.22.0
 
   apps/server:
     dependencies:

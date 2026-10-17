@@ -85,9 +85,9 @@ export class SqliteWorldStore implements WorldStore {
       if (m.type === "done" || m.type === "error") this.settle(m.id!, m.type === "error" ? new Error(`sqlite write failed: ${m.message}`) : undefined, m);
     });
     w.on("error", (e) => { for (const id of [...this.pending.keys()]) this.settle(id, e); });
-    w.unref();
+    // Keep the process alive only while batches are in flight (ref'd here until ready; see openBatch/settle).
     return new Promise((resolve, reject) => {
-      const onMsg = (m: { type: string }) => { if (m.type === "ready") { w.off("message", onMsg); resolve(); } };
+      const onMsg = (m: { type: string }) => { if (m.type === "ready") { w.off("message", onMsg); if (!this.pending.size) w.unref(); resolve(); } };
       w.on("message", onMsg); w.once("error", reject);
     });
   }
@@ -97,7 +97,7 @@ export class SqliteWorldStore implements WorldStore {
     // Drop overlay rows that this batch made durable (unless a newer, still pending write replaced them).
     for (const c of p.chunks) if (this.overlayChunks.get(c.key) === c) this.overlayChunks.delete(c.key);
     for (const pl of p.players) if (this.overlayPlayers.get(pl.token) === pl) this.overlayPlayers.delete(pl.token);
-    if (!this.pending.size) this.overlayMeta = undefined;
+    if (!this.pending.size) { this.overlayMeta = undefined; this.worker?.unref(); }
     if (err) { p.reject(err); return; }
     this.s.committedBatches++; this.s.committedChunks += m?.chunks ?? 0; this.s.committedPlayers += m?.players ?? 0;
     this.s.bytesWritten += m?.bytes ?? 0; this.s.lastCommitMs = m?.ms ?? 0;
@@ -125,7 +125,7 @@ export class SqliteWorldStore implements WorldStore {
     const id = this.nextId++; const rec = { resolve: () => {}, reject: () => {}, chunks: [], players: [], committed: false } as unknown as Pending;
     const done = new Promise<void>((res, rej) => { rec.resolve = res; rec.reject = rej; });
     done.catch(() => undefined); // surfaced through commit()'s promise
-    rec.done = done; this.pending.set(id, rec);
+    rec.done = done; this.pending.set(id, rec); this.worker?.ref();
     return {
       append: (part) => {
         if (rec.committed) throw new Error("batch already committed");
@@ -145,7 +145,7 @@ export class SqliteWorldStore implements WorldStore {
       },
     };
   }
-  write(batch: SaveBatch): Promise<void> { const b = this.openBatch(); b.append(batch); return b.commit(); }
+  write(batch: SaveBatch): Promise<void> { if (this.closed) return Promise.reject(new Error("store closed")); const b = this.openBatch(); b.append(batch); return b.commit(); }
 
   private inlineTx?: (parts: SaveBatch[]) => { bytes: number; chunks: number; players: number };
   private commitInline(id: number): void {
