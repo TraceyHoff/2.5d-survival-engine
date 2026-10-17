@@ -2,7 +2,7 @@
 import { DEFAULT_TICK_HZ, FixedLoop, Transform, World, type Entity } from "@engine/core";
 import { ChunkManager, ProceduralGenerator, chunkKeyOf, type BuildingGrid } from "@engine/world";
 import { installGameplay, spawnPlayer, spawnResourceNode, gameplayDefs, setIntent, IntentAction, ResourceNode, PlayerIntent } from "@engine/gameplay";
-import { NetServer, type ClientSession, type ServerTransport } from "@engine/net";
+import { NetServer, TileSync, type ClientSession, type ServerTransport } from "@engine/net";
 import { AccountAssigned, ClaimAccount, SetName, WorldPersistence, tokenToHex, tokenToWords, wordsToName, wordsToToken, type WorldStore } from "@engine/persist";
 import { Act, applyMoveInput, DEMO_COMMANDS, DEMO_EVENTS, Ping, Pong } from "./protocol.js";
 
@@ -80,6 +80,8 @@ export function createGameServer(o: GameServerOptions): GameServer {
     },
     onClientLeave: (s) => leave(s.clientId, "disconnect"),
   });
+
+  new TileSync(net, { tiles: chunks }); // tile replication: full chunks on AOI entry + per-tick deltas (sole tileChanges() drainer)
 
   function leave(clientId: number, why: string): void {
     const p = players.get(clientId); if (!p) return;
