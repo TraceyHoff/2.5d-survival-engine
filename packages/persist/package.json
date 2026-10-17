@@ -16,9 +16,11 @@
   "dependencies": {
     "@engine/core": "workspace:*",
     "@engine/world": "workspace:*",
-    "better-sqlite3": "12.9.0"
+    "better-sqlite3": "12.9.0",
+    "@engine/net": "workspace:*"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^9.6.0"
+    "@types/better-sqlite3": "^9.6.0",
+    "@engine/gameplay": "workspace:*"
   }
 }
