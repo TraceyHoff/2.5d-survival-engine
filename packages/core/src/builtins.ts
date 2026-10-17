@@ -23,8 +23,14 @@ export const PrevTransform = defineComponent("PrevTransform", { x: "f32", y: "f3
  * Read it with timeOfDay(world); change it with setTimeOfDay / setDayLength.
  */
 export const TimeOfDay = defineComponent("TimeOfDay", { dayLengthTicks: "u32", epochTick: "i32" }, { networked: true });
-/** Weather kind is a plain u8 id (gameplay defines kinds); the current weather lasts until endsAtTick. */
-export const Weather = defineComponent("Weather", { kind: "u8", intensity: "f32", endsAtTick: "u32" }, { networked: true });
+/** Weather kind is a plain u8 id (gameplay defines kinds); the current weather lasts until endsAtTick. Wind is part of weather. */
+export const Weather = defineComponent("Weather", {
+  kind: "u8", intensity: "f32", endsAtTick: "u32",
+  /** Direction the wind blows toward (radians, tile axes), q8 on the wire. */
+  windDir: { type: "f32", quant: { bits: 8, min: -Math.PI, max: Math.PI } },
+  /** Tiles per second, q8 over [0, 32] on the wire. */
+  windSpeed: { type: "f32", quant: { bits: 8, min: 0, max: 32 } },
+}, { networked: true });
 /** Reserved NetId of the environment singleton entity. Server NetId allocation must start above it. */
 export const ENV_NET_ID = 1;
 export const BUILTIN_COMPONENTS = [NetId, Owner, Transform, PrevTransform, TimeOfDay, Weather] as const;

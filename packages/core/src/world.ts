@@ -10,6 +10,9 @@ export type BuiltinPhase = "input" | "simulation" | "postSim" | "network" | "ren
 export type Phase = BuiltinPhase | (string & {});
 export const PHASES: readonly BuiltinPhase[] = ["input", "simulation", "postSim", "network", "renderPrep"];
 export type System = (world: World, dt: number) => void;
+/** Scheduling for slow systems: run every `every` ticks (dt passed is dt * every); `offset` staggers (default: hash of name % every). */
+export interface SystemOptions { every?: number; offset?: number }
+interface SystemEntry { name: string; fn: System; every: number; offset: number }
 export type EntityHook = (entity: Entity, world: World) => void;
 
 export interface WorldOptions { maxEntities?: number; seed?: number; registerBuiltins?: boolean }
@@ -33,7 +36,7 @@ export class World {
   private stores: ComponentStore[] = [];
   private byDef = new Map<ComponentDef, ComponentStore>();
   private phaseOrder: Phase[] = [...PHASES];
-  private systems = new Map<Phase, { name: string; fn: System }[]>(PHASES.map((p) => [p, []]));
+  private systems = new Map<Phase, SystemEntry[]>(PHASES.map((p) => [p, []]));
   private resources = new Map<object, unknown>();
   private spawnHooks: EntityHook[] = [];
   private despawnHooks: EntityHook[] = [];
@@ -226,10 +229,15 @@ export class World {
     if (at <= 0 && opts.after !== undefined) throw new Error(`unknown phase ${opts.after}`);
     this.phaseOrder.splice(at, 0, name); this.systems.set(name, []); return this;
   }
-  addSystem(phase: Phase, name: string, fn: System): this {
+  addSystem(phase: Phase, name: string, fn: System, opts: SystemOptions = {}): this {
     const l = this.systems.get(phase); if (!l) throw new Error(`unknown phase ${phase}`);
-    l.push({ name, fn }); return this;
+    const every = opts.every ?? 1; if (!(Number.isInteger(every) && every >= 1)) throw new Error(`addSystem ${name}: every must be a positive integer`);
+    const offset = opts.offset ?? (every > 1 ? fnv1a(name) % every : 0);
+    l.push({ name, fn, every, offset: ((offset % every) + every) % every }); return this;
   }
+  /** True if a system with this schedule runs at `tick`. */
+  static scheduled(every: number, offset: number, tick: number): boolean { return every <= 1 || (tick + every - offset) % every === 0; }
+  private runEntry(s: SystemEntry, dt: number): void { if (World.scheduled(s.every, s.offset, this.tick)) s.fn(this, dt * s.every); }
   /**
    * One fixed tick: snapshot PrevTransform, run every phase except renderPrep in order,
    * flush queued events, clear change bits, tick++.
@@ -242,13 +250,13 @@ export class World {
     this.tick++;
   }
   /** Flattened execution order. */
-  systemOrder(): { phase: Phase; name: string }[] {
-    const out: { phase: Phase; name: string }[] = [];
-    for (const p of this.phaseOrder) for (const s of this.systems.get(p)!) out.push({ phase: p, name: s.name });
+  systemOrder(): { phase: Phase; name: string; every?: number; offset?: number }[] {
+    const out: { phase: Phase; name: string; every?: number; offset?: number }[] = [];
+    for (const p of this.phaseOrder) for (const s of this.systems.get(p)!) out.push(s.every > 1 ? { phase: p, name: s.name, every: s.every, offset: s.offset } : { phase: p, name: s.name });
     return out;
   }
   /** Run a single phase's systems once. */
-  runPhase(phase: Phase, dt: number): void { for (const s of this.systems.get(phase) ?? []) s.fn(this, dt); }
+  runPhase(phase: Phase, dt: number): void { for (const s of this.systems.get(phase) ?? []) this.runEntry(s, dt); }
   /**
    * Re-simulation for prediction reconciliation: runs ONLY the simulation phase (optionally only named systems)
    * `ticks` times. For replay i, world.tick = startTick + i; world.tick is restored afterwards.
@@ -267,7 +275,7 @@ export class World {
       for (let i = 0; i < ticks; i++) {
         this.tick = start + i;
         o.beforeTick?.(i);
-        for (const s of list) s.fn(this, dt);
+        for (const s of list) this.runEntry(s, dt);
       }
     } finally {
       this.tick = saved; this.isReplaying = wasReplaying;

@@ -65,6 +65,7 @@ export class BuildPieceRegistry {
   get hash(): number { return this.ids?.hash ?? 0; }
 }
 
+export interface EnclosureResult { enclosed: boolean; roofed: boolean; size: number }
 export interface PieceInstance { id: number; piece: number; tx: number; ty: number; z: number; rot: number; hp: number }
 export interface PlaceCheck { ok: boolean; blockers: number[]; outOfRange?: boolean }
 /** Per-chunk structure layer: sparse occupancy (level, layer, local tile) -> instance id, plus anchored instances. */
@@ -84,6 +85,14 @@ export class BuildingGrid {
   onRemove?: (inst: PieceInstance) => void;
   /** Stability hook owned by gameplay: return false to mark an instance unsupported (e.g. to collapse). */
   stabilityRule?: (grid: BuildingGrid, inst: PieceInstance) => boolean;
+  /** Bumped on every place/remove; invalidates shelter caches. */
+  version = 0;
+  /** Layers that count as roof/floor above a tile for isCovered (default [0]). */
+  roofLayers: readonly number[] = [0];
+  /** Layers whose solid pieces bound rooms in enclosure() (default [1]). */
+  wallLayers: readonly number[] = [1];
+  private enclosureCache = new Map<string, EnclosureResult>();
+  private cacheVersion = -1;
   constructor(readonly pieces: BuildPieceRegistry) {}
   get count(): number { return this.instances.size; }
   get(id: number): PieceInstance | undefined { return this.instances.get(id); }
@@ -118,12 +127,12 @@ export class BuildingGrid {
     const d = this.pieces.get(pieceId); const id = this.nextId++;
     const inst: PieceInstance = { id, piece: pieceId, tx, ty, z, rot: rot & 3, hp: hp ?? d.hp };
     this.instances.set(id, inst); this.layerFor(tx, ty).anchored.add(id);
-    this.writeCells(inst, id); this.onPlace?.(inst); return id;
+    this.writeCells(inst, id); this.version++; this.onPlace?.(inst); return id;
   }
   remove(id: number): boolean {
     const inst = this.instances.get(id); if (!inst) return false;
     this.writeCells(inst, 0); this.layerFor(inst.tx, inst.ty).anchored.delete(id); this.instances.delete(id);
-    this.onRemove?.(inst); return true;
+    this.version++; this.onRemove?.(inst); return true;
   }
   private writeCells(inst: PieceInstance, v: number): void {
     const d = this.pieces.get(inst.piece);
@@ -201,6 +210,56 @@ export class BuildingGrid {
       }
     }
     return best;
+  }
+  // ---------- shelter / exposure queries (data only; rules live in gameplay) ----------
+  /** True if any roof-layer piece exists at this tile on a level above z. */
+  isCovered(tx: number, ty: number, z: number): boolean {
+    for (let lv = Math.floor(z) + 1; lv < MAX_LEVELS; lv++) for (const la of this.roofLayers) if (this.at(tx, ty, lv, la)) return true;
+    return false;
+  }
+  private isWall(tx: number, ty: number, z: number): boolean {
+    for (const la of this.wallLayers) { const id = this.at(tx, ty, z, la); if (id && this.pieces.get(this.instances.get(id)!.piece).solid) return true; }
+    return false;
+  }
+  /**
+   * Bounded 4-neighbour flood fill over non-wall tiles at level z starting at (tx,ty). Enclosed when the fill
+   * terminates within maxCells; `roofed` when every filled tile is covered. Results are cached per tile and
+   * invalidated whenever a piece is placed or removed.
+   */
+  enclosure(tx: number, ty: number, z: number, maxCells = 256): EnclosureResult {
+    if (this.cacheVersion !== this.version) { this.enclosureCache.clear(); this.cacheVersion = this.version; }
+    const lv = Math.floor(z); const key = `${tx},${ty},${lv},${maxCells}`; const hit = this.enclosureCache.get(key); if (hit) return hit;
+    if (this.isWall(tx, ty, lv)) { const r = { enclosed: false, roofed: false, size: 0 }; this.enclosureCache.set(key, r); return r; }
+    const seen = new Set<string>([`${tx},${ty}`]); const stack: [number, number][] = [[tx, ty]]; let roofed = true; let open = false;
+    while (stack.length) {
+      const [x, y] = stack.pop()!; if (roofed && !this.isCovered(x, y, lv)) roofed = false;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+        const nx = x + dx, ny = y + dy, k = `${nx},${ny}`; if (seen.has(k) || this.isWall(nx, ny, lv)) continue;
+        seen.add(k); if (seen.size > maxCells) { open = true; break; } stack.push([nx, ny]);
+      }
+      if (open) break;
+    }
+    const r: EnclosureResult = open ? { enclosed: false, roofed: false, size: seen.size } : { enclosed: true, roofed, size: seen.size };
+    if (!open) for (const k of seen) this.enclosureCache.set(`${k},${lv},${maxCells}`, r); else this.enclosureCache.set(key, r);
+    return r;
+  }
+  /**
+   * Weather exposure in [0,1] at a world position: 0 inside an enclosed roofed room; otherwise roof cover halves it and
+   * each solid wall tile within 3 tiles upwind (opposite windDir, the direction the wind blows toward) cuts 25%.
+   * A heuristic for gameplay to scale wetness/wind chill; gameplay may ignore it and compose its own.
+   */
+  exposure(x: number, y: number, z: number, windDir?: number): number {
+    const tx = Math.floor(x), ty = Math.floor(y), lv = Math.floor(z);
+    const enc = this.enclosure(tx, ty, lv);
+    if (enc.enclosed && enc.roofed) return 0;
+    let e = this.isCovered(tx, ty, lv) ? 0.5 : 1;
+    if (enc.enclosed) e *= 0.5;
+    if (windDir !== undefined) {
+      const ux = -Math.cos(windDir), uy = -Math.sin(windDir); let blocked = 0;
+      for (let k = 1; k <= 3; k++) if (this.isWall(Math.floor(x + ux * k), Math.floor(y + uy * k), lv)) blocked++;
+      e *= Math.max(0, 1 - 0.25 * blocked);
+    }
+    return e;
   }
   /** Instances anchored in a chunk (for persistence). */
   anchoredIn(k: ChunkKey): PieceInstance[] { return [...(this.layers.get(k)?.anchored ?? [])].map((id) => this.instances.get(id)!); }

@@ -33,3 +33,19 @@ export function setDayLength(world: World, dayLengthTicks: number): void {
   tod.dayLengthTicks = dayLengthTicks;
   tod.epochTick = world.tick - (cur.day * dayLengthTicks + Math.round(cur.t * dayLengthTicks));
 }
+
+/**
+ * Lazy time-based value: compute decay from a stored start tick instead of updating every tick.
+ * Store createdTick (or lastUpdateTick + value at that tick) on the item/slot; evaluate on read.
+ *  - linear: initial - rate * elapsed (clamped at 0)
+ *  - exp:    initial * (1 - rate) ^ elapsed   (rate = fraction lost per tick)
+ */
+export function decayAt(createdTick: number, rate: number, tick: number, opts: { initial?: number; mode?: "linear" | "exp" } = {}): number {
+  const initial = opts.initial ?? 1; const elapsed = Math.max(0, tick - createdTick);
+  if (opts.mode === "exp") return initial * Math.pow(Math.max(0, 1 - rate), elapsed);
+  return Math.max(0, initial - rate * elapsed);
+}
+/** Tick at which a linear decay reaches `threshold` (for scheduling spoil events instead of polling). */
+export function decayReachesAt(createdTick: number, rate: number, threshold = 0, initial = 1): number {
+  return rate <= 0 ? Infinity : createdTick + Math.ceil((initial - threshold) / rate);
+}

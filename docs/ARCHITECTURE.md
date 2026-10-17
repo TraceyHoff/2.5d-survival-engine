@@ -219,3 +219,24 @@ Tint sets, palette swaps and variant sets (player/zombie variants by tint, palet
 - Multi-client: `@engine/testkit` `createHarness({clients, makeWorld, applyInput, onClientJoin, link})` → in-process server + N clients over loopback; `h.tick(n)` advances clock, network, server and clients deterministically.
 - Benchmarks live as tests that log `[bench]` lines and assert generous ceilings.
 - `pnpm check` (typecheck + tests) must pass after every change; CI: `.github/workflows/ci.yml`.
+
+## 15. Environment & Survival Support
+
+Engine packages provide mechanisms; Survival Systems (gameplay) owns all rules, numbers and stat/kind ids.
+
+| Need | Mechanism | Where |
+|---|---|---|
+| Heat sources, light-as-warmth, smell/noise fields | `Emitter` component + `installEmitterIndex(world, {occlusion})` → `sampleField(kind, x, y, z?)`, `nearestEmitters(kind, x, y, n)`; `buildingOcclusion(grid)` lets walls block | world |
+| Shelter, rooms, rain/wind exposure | `BuildingGrid.isCovered`, `.enclosure` (cached flood fill), `.exposure(x, y, z, windDir)` | world |
+| Wind | `Weather.windDir` (q8), `Weather.windSpeed` (q8) on `world.environment` | core |
+| Temperature/humidity/altitude | `installClimate(world, generator, model?)`, `climateAt(world, x, y)`; gameplay registers a `ClimateModel` (curves for time of day and weather) | world |
+| Slow systems (decay, environment) | `addSystem(phase, name, fn, {every, offset})`; dt passed is `dt × every`; staggered by name hash | core |
+| Food decay in inventories | `decayAt(createdTick, rate, tick)` / `decayReachesAt` — store `createdTick` (or `lastUpdateTick` + value) per slot; never tick per item | core |
+| Buffs/debuffs (wet, cold, well-fed) | `defineModifierStack(name, cap)`, `addModifier`, `evaluate(world, e, def, stat, base)`, `pruneModifiers` | core |
+
+Guidance:
+- Run environment/exposure at 4–5 Hz (`every: 4`) and decay pruning at ≤1 Hz; integrate with the passed dt.
+- Prefer absolute ticks (`expiresAtTick`, `endsAtTick`, `createdTick`) over countdown fields: they replicate once and replay correctly.
+- Register `Emitter` and modifier stacks in the shared registration module so component ids match on all peers.
+- Benchmark (`packages/world/test/environment.test.ts`, box CPU): 2k emitters index build ≈ 17 ms; `sampleField` for 200 players ≈ 0.44 ms per tick (≈ 2 µs per sample).
+

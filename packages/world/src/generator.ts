@@ -1,5 +1,6 @@
 import { fnv1a, Rng } from "@engine/core";
 import { Chunk, CHUNK_SIZE, type ChunkKey } from "./chunk.js";
+import type { BaseClimate, BaseClimateSource } from "./climate.js";
 
 /** A resource node to spawn in a freshly generated chunk (gameplay maps kind -> ResourceNode etc). */
 export interface NodePlacement { tx: number; ty: number; kind: number }
@@ -29,25 +30,44 @@ export function valueNoise(seed: number, x: number, y: number, scale: number): n
 export interface ProceduralOptions {
   seed: number;
   /** Tile ids by biome band (low -> high noise). Default: water, sand, grass, forest, rock. */
-  bands?: { max: number; tile: number; nodeKinds?: number[]; nodeChance?: number }[];
+  bands?: { max: number; tile: number; nodeKinds?: number[]; nodeChance?: number; /** °C baseline */ temp?: number; /** 0..1 */ humidity?: number }[];
+  /** Large-scale temperature variation amplitude in °C (default 8) over `climateScale` tiles (default 512). */
+  climateAmplitude?: number; climateScale?: number;
 }
 export const DEFAULT_BANDS = [
-  { max: 0.3, tile: 1 },                                   // water
-  { max: 0.36, tile: 2, nodeKinds: [4], nodeChance: 0.01 }, // sand: loose rocks
-  { max: 0.62, tile: 3, nodeKinds: [1, 2, 3], nodeChance: 0.03 }, // grass: branches, grass, bush
-  { max: 0.8, tile: 4, nodeKinds: [5, 1], nodeChance: 0.08 },  // forest: trees
-  { max: 1.01, tile: 5, nodeKinds: [6, 7], nodeChance: 0.04 }, // rock: boulder, iron
+  { max: 0.3, tile: 1, temp: 16, humidity: 0.9 },                                   // water
+  { max: 0.36, tile: 2, nodeKinds: [4], nodeChance: 0.01, temp: 22, humidity: 0.5 }, // sand: loose rocks
+  { max: 0.62, tile: 3, nodeKinds: [1, 2, 3], nodeChance: 0.03, temp: 18, humidity: 0.55 }, // grass: branches, grass, bush
+  { max: 0.8, tile: 4, nodeKinds: [5, 1], nodeChance: 0.08, temp: 15, humidity: 0.7 },  // forest: trees
+  { max: 1.01, tile: 5, nodeKinds: [6, 7], nodeChance: 0.04, temp: 8, humidity: 0.35 }, // rock: boulder, iron
 ];
 /** Seeded procedural generator stub: biome noise + resource node placement. Pure function of (seed, cx, cy). */
-export class ProceduralGenerator implements ChunkProvider {
+export class ProceduralGenerator implements ChunkProvider, BaseClimateSource {
   private bands: NonNullable<ProceduralOptions["bands"]>;
   constructor(readonly opts: ProceduralOptions) { this.bands = opts.bands ?? DEFAULT_BANDS; }
+  private noiseAt(tx: number, ty: number): number {
+    const seed = this.opts.seed >>> 0;
+    return 0.65 * valueNoise(seed, tx, ty, 48) + 0.35 * valueNoise(seed ^ 0xabc, tx, ty, 12);
+  }
+  /** Deterministic base climate for a tile (no chunk needs to be loaded). Altitude matches generated tile height. */
+  baseClimate(tx: number, ty: number): BaseClimate {
+    const n = this.noiseAt(tx, ty); const band = this.bands.find((b) => n < b.max) ?? this.bands[this.bands.length - 1]!;
+    const amp = this.opts.climateAmplitude ?? 8, scale = this.opts.climateScale ?? 512;
+    const large = (valueNoise((this.opts.seed ^ 0x5151) >>> 0, tx, ty, scale) - 0.5) * 2 * amp;
+    return { temperature: (band.temp ?? 15) + large, humidity: band.humidity ?? 0.5, altitude: Math.floor(n * 4) };
+  }
+  /** Mean base climate of a chunk (sampled on a 4x4 grid). */
+  chunkClimate(cx: number, cy: number): BaseClimate {
+    let t = 0, h = 0, a = 0; const S = CHUNK_SIZE / 4;
+    for (let j = 0; j < 4; j++) for (let i = 0; i < 4; i++) { const b = this.baseClimate(cx * CHUNK_SIZE + i * S + S / 2, cy * CHUNK_SIZE + j * S + S / 2); t += b.temperature; h += b.humidity; a += b.altitude; }
+    return { temperature: t / 16, humidity: h / 16, altitude: a / 16 };
+  }
   load(cx: number, cy: number): GeneratedChunk {
     const c = new Chunk(cx, cy); const nodes: NodePlacement[] = []; const seed = this.opts.seed >>> 0;
     const rng = new Rng(fnv1a(`${cx},${cy}`, seed));
     for (let ly = 0; ly < CHUNK_SIZE; ly++) for (let lx = 0; lx < CHUNK_SIZE; lx++) {
       const tx = cx * CHUNK_SIZE + lx, ty = cy * CHUNK_SIZE + ly;
-      const n = 0.65 * valueNoise(seed, tx, ty, 48) + 0.35 * valueNoise(seed ^ 0xabc, tx, ty, 12);
+      const n = this.noiseAt(tx, ty);
       const band = this.bands.find((b) => n < b.max) ?? this.bands[this.bands.length - 1]!;
       const i = ly * CHUNK_SIZE + lx; c.tiles[i] = band.tile; c.height[i] = Math.floor(n * 4);
       if (band.nodeKinds?.length && rng.next() < (band.nodeChance ?? 0)) nodes.push({ tx, ty, kind: rng.pick(band.nodeKinds) });

@@ -9,3 +9,5 @@ export * from "./chunkCodec.js";
 export * from "./interest.js";
 export * from "./hierarchical.js";
 export * from "./building.js";
+export * from "./emitters.js";
+export * from "./climate.js";
