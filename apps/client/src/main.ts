@@ -2,8 +2,10 @@
  * Client bootstrap: fixed-step loop + Canvas2D debug draw (until the WebGL2 renderer is wired in) + network session.
  * URL params: ?server=ws://host:7777 (default: same host, port 7777), ?player=N (separate saved account per N).
  */
-import { createGameLoop, World, Transform, PrevTransform, lerp, entityIndex, type FixedLoop } from "@engine/core";
-import { TileMap, worldToScreen, DEFAULT_ISO } from "@engine/world";
+import { createGameLoop, World, Transform, PrevTransform, lerp, entityIndex, InputState, type FixedLoop } from "@engine/core";
+import { TileMap, worldToScreen, screenToWorld, DEFAULT_ISO } from "@engine/world";
+import { InputSystem, AimResolver, DEFAULT_ACTIONS, DEFAULT_CONTEXTS, DEFAULT_PROFILES, DEFAULT_TOUCH_LAYOUTS, type FrameMapping } from "@engine/input";
+import { attachBrowserInput } from "@engine/input/browser";
 import { Act, installDemoWorld } from "@engine/server/protocol";
 import { ClientSession } from "./session.js";
 import { mountConnectOverlay } from "./connect.js";
@@ -12,14 +14,24 @@ const canvas = document.getElementById("game") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d")!;
 const params = new URLSearchParams(location.search);
 
-// Input: buttons bitfield sampled by NetClient each tick.
-let buttons = 0;
-const keys: Record<string, number> = { KeyW: Act.MoveUp, KeyS: Act.MoveDown, KeyA: Act.MoveLeft, KeyD: Act.MoveRight, ShiftLeft: Act.Sprint, KeyE: Act.Gather };
-addEventListener("keydown", (e) => { const a = keys[e.code]; if (a !== undefined && !(e.target instanceof HTMLInputElement)) buttons |= a; });
-addEventListener("keyup", (e) => { const a = keys[e.code]; if (a !== undefined) buttons &= ~a; });
-addEventListener("blur", () => { buttons = 0; });
+// Input (@engine/input, see packages/input/README.md): keyboard/mouse, gamepad and touch -> one InputFrame per tick.
+const input = new InputSystem(performance, { actions: DEFAULT_ACTIONS, contexts: DEFAULT_CONTEXTS, profiles: DEFAULT_PROFILES });
+input.push("Gameplay");
+attachBrowserInput(canvas, input, { ...(matchMedia("(pointer: coarse)").matches ? { virtualLayout: DEFAULT_TOUCH_LAYOUTS.gameplay } : {}) });
+let cam = { sx: 0, sy: 0 }; // camera offset from render(), for mouse aim
+const aim = new AimResolver(input, { screenToWorld: (x, y) => screenToWorld(x - innerWidth / 2 + cam.sx, y - innerHeight / 2 + cam.sy) });
+/** Input actions -> the demo's action bits (server protocol `Act`); analog move/aim/edges ride along as InputFrame v2 fields. */
+const FRAME_MAPPING: FrameMapping = { holdBits: { Sprint: Act.Sprint, Interact: Act.Gather, Primary: Act.Gather }, move: { action: "Move", up: Act.MoveUp, down: Act.MoveDown, left: Act.MoveLeft, right: Act.MoveRight } };
+const inputState = new InputState();
+function sampleInput(): { buttons: number; aimX: number; aimY: number } {
+  const p = session.player; const pt = p !== undefined ? world.get(p, Transform) : undefined;
+  input.update(); input.writeFrame(inputState, FRAME_MAPPING, p !== undefined && pt ? aim.resolve(world, p, pt) : undefined);
+  const { tick: _t, commands: _c, actions, ...rest } = inputState.sample(world.tick);
+  // Every frame field goes to NetClient (spread into its InputCmd); net encodes the v2 fields once its InputCmd carries them.
+  const cmd = { buttons: actions, ...rest }; return cmd;
+}
 
-const session = new ClientSession({ storage: localStorage, slot: params.get("player") ?? "1", sampleButtons: () => buttons });
+const session = new ClientSession({ storage: localStorage, slot: params.get("player") ?? "1", sampleInput });
 let world = new World({ seed: 1234 }); installDemoWorld(world, "client");
 // Tiles are not replicated yet (Netcode/world: chunk tile streaming); draw a placeholder ground.
 const map = new TileMap();
@@ -30,7 +42,7 @@ function render(w: World, alpha: number): void {
   const dpr = devicePixelRatio || 1;
   if (canvas.width !== innerWidth * dpr) { canvas.width = innerWidth * dpr; canvas.height = innerHeight * dpr; }
   const p = session.player; const pt = p !== undefined ? w.get(p, Transform) : undefined;
-  const cam = worldToScreen(pt?.x ?? 16, pt?.y ?? 16);
+  cam = worldToScreen(pt?.x ?? 16, pt?.y ?? 16);
   ctx.setTransform(dpr, 0, 0, dpr, (innerWidth / 2 - cam.sx) * dpr, (innerHeight / 2 - cam.sy) * dpr);
   ctx.clearRect(-1e5, -1e5, 2e5, 2e5);
   const { tileW: tw, tileH: th } = DEFAULT_ISO;

@@ -32,6 +32,9 @@ importers:
       '@engine/gameplay':
         specifier: workspace:*
         version: link:../../packages/gameplay
+      '@engine/input':
+        specifier: workspace:*
+        version: link:../../packages/input
       '@engine/net':
         specifier: workspace:*
         version: link:../../packages/net

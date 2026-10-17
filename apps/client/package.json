@@ -18,7 +18,8 @@
     "@engine/net": "workspace:*",
     "@engine/gameplay": "workspace:*",
     "@engine/persist": "workspace:*",
-    "@engine/server": "workspace:*"
+    "@engine/server": "workspace:*",
+    "@engine/input": "workspace:*"
   },
   "devDependencies": {
     "ws": "^8.22.0",

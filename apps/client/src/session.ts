@@ -12,7 +12,10 @@ export interface SessionOptions {
   storage: KeyValue;
   /** Storage namespace so two tabs/players on one origin keep separate accounts (e.g. ?player=2). */
   slot: string;
-  sampleButtons: () => number;
+  /** Per-tick input for NetClient (e.g. an @engine/input InputFrame mapped to buttons + v2 fields). */
+  sampleInput?: () => { buttons: number; aimX: number; aimY: number };
+  /** Buttons-only shortcut (tests, bots); used when sampleInput is absent. */
+  sampleButtons?: () => number;
   now?: () => number;
   wsCtor?: WebSocketCtor;
 }
@@ -43,7 +46,7 @@ export class ClientSession {
     const transport = new WebSocketClientTransport(url, this.o.wsCtor);
     const client = new NetClient({
       world, transport, commands: DEMO_COMMANDS, events: DEMO_EVENTS,
-      sampleInput: () => ({ buttons: this.o.sampleButtons(), aimX: 0, aimY: 0 }),
+      sampleInput: () => this.o.sampleInput?.() ?? { buttons: this.o.sampleButtons?.() ?? 0, aimX: 0, aimY: 0 },
       applyInput: (w, e, cmd) => applyMoveInput(w, e, cmd),
     });
     this.world = world; this.client = client; this.status = "connecting"; this.detail = url; this.rttMs = undefined; this.restored = false;
