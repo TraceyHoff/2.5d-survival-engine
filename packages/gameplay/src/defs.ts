@@ -3,7 +3,8 @@
  * explicit, stable numeric ids. loadDefs() validates them and resolves every cross-reference to a
  * numeric id, so components only ever store numbers (ADR-007).
  */
-import { WeatherKind } from "@engine/core";
+/** Weather kind ids (u8 in core Weather.kind). Owned by gameplay; append-only. */
+export const enum WeatherKind { Clear = 0, Rain = 1, Storm = 2, Snow = 3, Fog = 4 }
 
 export const enum ItemCategory { Resource = 0, Food = 1, Tool = 2, Placeable = 3 }
 export const enum ToolKind { None = 0, Axe = 1, Pickaxe = 2 }

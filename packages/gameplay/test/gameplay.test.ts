@@ -7,7 +7,7 @@ describe("gameplay install", () => {
   it("advances time of day and wraps days (stub compatibility: numeric dayLengthTicks)", () => {
     const w = new World(); installGameplay(w, 10);
     for (let i = 0; i < 10; i++) w.step(0.05);
-    expect(w.resource(TimeOfDay).day).toBe(1);
+    expect(w.env(TimeOfDay).day).toBe(1);
   });
 
   it("registers systems in the documented order", () => {

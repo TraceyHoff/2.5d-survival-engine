@@ -4,7 +4,8 @@
  * not replicated: the server uses them for logs/achievements/net-side effects, the client gets its
  * own from the predicted sim or derives them from snapshot changes (see DESIGN.md).
  */
-import { defineEvent, type Entity, type WeatherKind } from "@engine/core";
+import { defineEvent, type Entity } from "@engine/core";
+import type { WeatherKind } from "./defs.js";
 import type { DamageCause } from "./components.js";
 
 export const enum GatherFail { Cooldown = 1, InvalidTarget = 2, Depleted = 3, OutOfRange = 4, WrongTool = 5, Exhausted = 6 }

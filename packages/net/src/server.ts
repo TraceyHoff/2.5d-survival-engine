@@ -1,4 +1,4 @@
-import { NetId, Owner, entityIndex, type Entity, type World } from "@engine/core";
+import { ENV_NET_ID, NetId, Owner, entityIndex, type Entity, type World } from "@engine/core";
 import { BitReader, BitWriter } from "./bits.js";
 import {
   MsgType, NONE_U32, PROTOCOL_VERSION, RejectReason, TOKEN_BYTES, decodeHello, decodeInput, encodeReject,
@@ -9,7 +9,7 @@ import type { ConnId, ServerTransport } from "./transport/types.js";
 
 /** Server-side netId <-> local entity mapping. NetIds are monotonic u32 and never reused. */
 export class NetIdRegistry {
-  private next = 1;
+  private next = ENV_NET_ID + 1; // ENV_NET_ID reserved for core environment singleton
   private toEntity = new Map<number, Entity>();
   private toNet = new Map<number, number>(); // entity index -> netId
   constructor(private readonly world: World) {

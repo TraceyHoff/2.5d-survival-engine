@@ -1,4 +1,4 @@
-import { NetId, entityIndex, Owner, Transform, type ComponentDef, type ComponentStore, type Entity, type World } from "@engine/core";
+import { ENV_NET_ID, NetId, entityIndex, Owner, Transform, type ComponentDef, type ComponentStore, type Entity, type World } from "@engine/core";
 import { BitReader } from "./bits.js";
 import { InterpolationBuffer } from "./interpolation.js";
 import {
@@ -141,6 +141,8 @@ export class NetClient {
     if (prev) for (const netId of prev.keys()) if (!cur.has(netId)) this.despawn(w, netId);
     for (const [netId, es] of cur) {
       const old = prev?.get(netId);
+      // core-owned environment singleton: write into world.environment instead of spawning (ADR-028)
+      if (netId === ENV_NET_ID && w.has(w.environment, NetId)) { if (old !== es) this.writeComps(w, w.environment, es, old, false); continue; }
       let e = this.entities.get(netId);
       if (e === undefined || !w.isAlive(e)) {
         e = w.create(); w.add(e, NetId, { id: netId }); this.entities.set(netId, e);

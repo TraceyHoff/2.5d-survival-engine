@@ -2,9 +2,17 @@
 export type FieldType = "f32" | "f64" | "i8" | "i16" | "i32" | "u8" | "u16" | "u32";
 /** Network quantization hint: value clamped to [min,max] and packed into `bits` bits on the wire. Sim keeps full precision. */
 export interface QuantHint { bits: number; min: number; max: number }
-export type FieldSpec = FieldType | { type: FieldType; quant?: QuantHint };
+/** Scalar type name, or object form with optional quant hint, fixed array length and default value. */
+export type FieldSpec = FieldType | { type: FieldType; quant?: QuantHint; length?: number; default?: number };
 export type Schema = Record<string, FieldSpec>;
-export type SchemaValues<S extends Schema> = { [K in keyof S]: number };
+/** Array fields (`{type, length}`) are number[] in value objects; scalars are number. */
+export type FieldValue<F> = F extends { length: number; type: FieldType } ? number[] : number;
+export type SchemaValues<S extends Schema> = { [K in keyof S]: FieldValue<S[K]> };
+/** Init / partial write values: arrays accept any ArrayLike. */
+export type SchemaInit<S extends Schema> = { [K in keyof S]?: S[K] extends { length: number; type: FieldType } ? ArrayLike<number> : number };
+/** Field names whose spec is scalar / array. */
+export type ScalarField<S extends Schema> = { [K in keyof S]: S[K] extends { length: number; type: FieldType } ? never : K }[keyof S] & string;
+export type ArrayField<S extends Schema> = { [K in keyof S]: S[K] extends { length: number; type: FieldType } ? K : never }[keyof S] & string;
 
 export const ArrayCtor = {
   f32: Float32Array, f64: Float64Array, i8: Int8Array, i16: Int16Array,
@@ -15,19 +23,24 @@ export type TypedArray = InstanceType<(typeof ArrayCtor)[FieldType]>;
 
 export const fieldType = (f: FieldSpec): FieldType => (typeof f === "string" ? f : f.type);
 export const fieldQuant = (f: FieldSpec): QuantHint | undefined => (typeof f === "string" ? undefined : f.quant);
+/** Element count: 1 for scalars, `length` for array fields. */
+export const fieldLength = (f: FieldSpec): number => (typeof f === "string" ? 1 : f.length ?? 1);
+export const isArrayField = (f: FieldSpec): boolean => typeof f !== "string" && f.length !== undefined;
+export const fieldDefault = (f: FieldSpec): number => (typeof f === "string" ? 0 : f.default ?? 0);
 
 /** Stable field order: sorted keys, so encoding never depends on object literal order. */
 export function schemaFields<S extends Schema>(s: S): (keyof S & string)[] {
   return (Object.keys(s) as (keyof S & string)[]).sort();
 }
 export function schemaByteSize(s: Schema): number {
-  return schemaFields(s).reduce((n, k) => n + FieldSize[fieldType(s[k]!)], 0);
+  return schemaFields(s).reduce((n, k) => n + FieldSize[fieldType(s[k]!)] * fieldLength(s[k]!), 0);
 }
 /** Canonical string of a schema (field order, types, quant hints) used for hashing. */
 export function schemaSignature(s: Schema): string {
   return schemaFields(s).map((k) => {
     const f = s[k]!; const q = fieldQuant(f);
-    return `${k}:${fieldType(f)}${q ? `[${q.bits},${q.min},${q.max}]` : ""}`;
+    const len = isArrayField(f) ? `x${fieldLength(f)}` : ""; const d = fieldDefault(f);
+    return `${k}:${fieldType(f)}${len}${q ? `[${q.bits},${q.min},${q.max}]` : ""}${d ? `=${d}` : ""}`;
   }).join(";");
 }
 export function fnv1a(str: string, h = 0x811c9dc5): number {

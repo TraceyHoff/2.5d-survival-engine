@@ -1,4 +1,4 @@
-import { FieldSize, fieldQuant, fieldType, fnv1a, schemaFields, schemaSignature, type FieldType, type QuantHint, type Schema, type SchemaValues } from "./schema.js";
+import { FieldSize, fieldLength, fieldQuant, fieldType, isArrayField, fnv1a, schemaFields, schemaSignature, type FieldType, type QuantHint, type Schema, type SchemaValues } from "./schema.js";
 import type { ComponentStore } from "./component.js";
 import type { World } from "./world.js";
 import { entityIndex } from "./entity.js";
@@ -61,25 +61,36 @@ export function dequantize(i: number, q: QuantHint): number {
 }
 /** Full-precision per-field encode of store field at dense `slot`. */
 export function encodeField(store: ComponentStore, field: string, slot: number, w: FieldWriter): void {
-  w.write(fieldType(store.def.schema[field]!), store.data[field]![slot]!);
+  const t = fieldType(store.def.schema[field]!); const n = store.lengths[field]!; const a = store.data[field]!;
+  for (let i = 0; i < n; i++) w.write(t, a[slot * n + i]!);
 }
 /** Full-precision per-field decode into store field at dense `slot`. */
 export function decodeField(store: ComponentStore, field: string, slot: number, r: FieldReader): void {
-  store.data[field]![slot] = r.read(fieldType(store.def.schema[field]!));
+  const t = fieldType(store.def.schema[field]!); const n = store.lengths[field]!; const a = store.data[field]!;
+  for (let i = 0; i < n; i++) a[slot * n + i] = r.read(t);
 }
 /**
  * Value as it should go on the wire: if the field has a quant hint, returns the quantized
  * integer (caller writes it with `hint.bits` bits); otherwise the raw value. Never mutates sim state.
  */
-export function wireValue(store: ComponentStore, field: string, slot: number): { value: number; quant?: QuantHint; type: FieldType } {
-  const spec = store.def.schema[field]!; const q = fieldQuant(spec); const v = store.data[field]![slot]!;
+export function wireValue(store: ComponentStore, field: string, slot: number, element = 0): { value: number; quant?: QuantHint; type: FieldType } {
+  const spec = store.def.schema[field]!; const q = fieldQuant(spec); const v = store.data[field]![slot * fieldLength(spec) + element]!;
   return q ? { value: quantize(v, q), quant: q, type: fieldType(spec) } : { value: v, type: fieldType(spec) };
 }
 export function writeRecord<S extends Schema>(w: FieldWriter, s: S, v: SchemaValues<S>): void {
-  for (const k of schemaFields(s)) w.write(fieldType(s[k]!), v[k]);
+  for (const k of schemaFields(s)) {
+    const f = s[k]!; const t = fieldType(f); const val = v[k] as number | ArrayLike<number>;
+    if (isArrayField(f)) { const n = fieldLength(f); for (let i = 0; i < n; i++) w.write(t, (val as ArrayLike<number>)[i] ?? 0); }
+    else w.write(t, val as number);
+  }
 }
 export function readRecord<S extends Schema>(r: FieldReader, s: S): SchemaValues<S> {
-  const o = {} as Record<string, number>; for (const k of schemaFields(s)) o[k] = r.read(fieldType(s[k]!)); return o as SchemaValues<S>;
+  const o = {} as Record<string, number | number[]>;
+  for (const k of schemaFields(s)) {
+    const f = s[k]!; const t = fieldType(f);
+    if (isArrayField(f)) { const arr: number[] = []; for (let i = 0; i < fieldLength(f); i++) arr.push(r.read(t)); o[k] = arr; } else o[k] = r.read(t);
+  }
+  return o as SchemaValues<S>;
 }
 
 export const SNAPSHOT_MAGIC = 0x534e4150; // "SNAP"
@@ -105,7 +116,7 @@ export function encodeSnapshot(world: World, opts: { all?: boolean } = {}): Uint
   }
   return w.finish();
 }
-export interface DecodedSnapshot { version: number; tick: number; components: Map<number, { entity: number; values: Record<string, number> }[]> }
+export interface DecodedSnapshot { version: number; tick: number; components: Map<number, { entity: number; values: Record<string, number | number[]> }[]> }
 export function decodeSnapshot(world: World, bytes: Uint8Array): DecodedSnapshot {
   const r = new BinaryReader(bytes);
   if (r.read("u32") !== SNAPSHOT_MAGIC) throw new Error("bad snapshot magic");
@@ -119,8 +130,8 @@ export function decodeSnapshot(world: World, bytes: Uint8Array): DecodedSnapshot
     const id = r.read("u16"); const hash = r.read("u32"); const count = r.read("u32");
     const st = world.storeById(id);
     if (!st || schemaHash(st.def.schema) !== hash) throw new Error(`schema mismatch for component id ${id}`);
-    const list: { entity: number; values: Record<string, number> }[] = [];
-    for (let i = 0; i < count; i++) list.push({ entity: r.read("u32"), values: readRecord(r, st.def.schema) });
+    const list: { entity: number; values: Record<string, number | number[]> }[] = [];
+    for (let i = 0; i < count; i++) list.push({ entity: r.read("u32"), values: readRecord(r, st.def.schema) as Record<string, number | number[]> });
     components.set(id, list);
   }
   return { version, tick, components };
@@ -129,7 +140,7 @@ export function decodeSnapshot(world: World, bytes: Uint8Array): DecodedSnapshot
 export function applySnapshot(world: World, snap: DecodedSnapshot): void {
   for (const [id, list] of snap.components) {
     const st = world.storeById(id)!;
-    for (const { entity, values } of list) st.add(entity, entityIndex(entity), values);
+    for (const { entity, values } of list) st.add(entity, entityIndex(entity), values as never);
   }
   world.tick = snap.tick;
 }

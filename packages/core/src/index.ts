@@ -3,7 +3,6 @@ export * from "./entity.js";
 export * from "./component.js";
 export * from "./builtins.js";
 export * from "./world.js";
-export * from "./resources.js";
 export * from "./rng.js";
 export * from "./events.js";
 export * from "./loop.js";

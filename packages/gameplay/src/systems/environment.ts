@@ -4,7 +4,8 @@
  *
  * Order (simulation phase): env.clock -> env.weather -> env.exposure (before vitals).
  */
-import { entityIndex, TimeOfDay, Transform, Weather, WeatherKind, type World } from "@engine/core";
+import { entityIndex, TimeOfDay, Transform, Weather, type World } from "@engine/core";
+import { WeatherKind } from "../defs.js";
 import { Exposure, HeatSource, VitalsModifiers } from "../components.js";
 import { gameplayDefs, isAuthority } from "../config.js";
 import { secondsToTicks, type EnvironmentTuning, type WeatherDef } from "../defs.js";
@@ -19,7 +20,7 @@ export function dayPhase(t: number): DayPhase {
 
 /** Advances TimeOfDay by exactly one tick using integer tick math (no float drift). */
 export function clockSystem(world: World): void {
-  const tod = world.resource(TimeOfDay);
+  const tod = world.env(TimeOfDay);
   const before = dayPhase(tod.t);
   let ticks = Math.round(tod.t * tod.dayLengthTicks) + 1;
   if (ticks >= tod.dayLengthTicks) { ticks -= tod.dayLengthTicks; tod.day++; }
@@ -36,7 +37,7 @@ export function weatherDef(env: EnvironmentTuning, kind: WeatherKind): WeatherDe
 /** Authoritative weather state machine on core's Weather resource. Uses world.rng (server only). */
 export function weatherSystem(world: World, dt: number): void {
   if (!isAuthority(world)) return; // clients receive Weather by replication (open question N3)
-  const w = world.resource(Weather);
+  const w = world.env(Weather);
   if (w.ticksRemaining > 0) { w.ticksRemaining--; return; }
   const env = gameplayDefs(world).environment;
   const pick = weightedIndex(world, env.weather.map((d) => d.weight));
@@ -58,20 +59,20 @@ function weightedIndex(world: World, weights: readonly number[]): number {
 /** Ambient air temperature (deg C): sinusoidal day/night curve + weather offset scaled by intensity. */
 export function ambientTemperature(world: World): number {
   const env = gameplayDefs(world).environment;
-  const tod = world.resource(TimeOfDay); const w = world.resource(Weather);
+  const tod = world.env(TimeOfDay); const w = world.env(Weather);
   const curve = -Math.cos(2 * Math.PI * tod.t); // -1 at midnight, +1 at noon
   return env.baseTemp + env.dayNightAmplitude * curve + weatherDef(env, w.kind).tempOffset * w.intensity;
 }
 
 /** Spawn-pressure multiplier for a future hostile spawner (design only). */
 export function threatLevel(world: World): number {
-  return dayPhase(world.resource(TimeOfDay).t) === DayPhase.Night ? gameplayDefs(world).environment.nightThreatMul : 1;
+  return dayPhase(world.env(TimeOfDay).t) === DayPhase.Night ? gameplayDefs(world).environment.nightThreatMul : 1;
 }
 
 /** Per entity: wetness, felt temperature, and VitalsModifiers. Runs on both sides (deterministic). */
 export function exposureSystem(world: World, dt: number): void {
   const defs = gameplayDefs(world); const env = defs.environment; const vt = defs.vitals;
-  const w = world.resource(Weather); const wdef = weatherDef(env, w.kind);
+  const w = world.env(Weather); const wdef = weatherDef(env, w.kind);
   const ambient = ambientTemperature(world);
   const tf = world.store(Transform); const ex = world.store(Exposure); const mods = world.store(VitalsModifiers);
   const heaters = [...world.query([HeatSource, Transform])];

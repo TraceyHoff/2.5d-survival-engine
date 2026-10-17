@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { Weather, WeatherKind } from "@engine/core";
+import { Weather } from "@engine/core";
+import { WeatherKind } from "../src/defs.js";
 import {
   addItem, countItem, DamageCause, Dead, defaultDefs, Died, Exposure, Health, IntentAction, setIntent,
   spawnPlayer, Survival, Vital, VitalDepleted, ItemConsumed,
@@ -72,7 +73,7 @@ describe("vitals", () => {
   it("cold drops body temperature into hypothermia damage", () => {
     const w = makeWorld();
     const p = spawnPlayer(w, { x: 0, y: 0 });
-    w.resource(Weather).kind = WeatherKind.Snow; w.resource(Weather).intensity = 1; w.resource(Weather).ticksRemaining = 1e9;
+    w.env(Weather).kind = WeatherKind.Snow; w.env(Weather).intensity = 1; w.env(Weather).ticksRemaining = 1e9;
     w.set(p, Survival, { bodyTemp: vt.hypothermiaBelow + 0.05 });
     steps(w, 5 * SEC);
     expect(w.get(p, Survival)!.bodyTemp).toBeLessThan(vt.hypothermiaBelow);

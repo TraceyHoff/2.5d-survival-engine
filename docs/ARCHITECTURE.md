@@ -72,6 +72,11 @@ Cross-team changes to `core` public API go through an ADR.
 - **Queries**: `world.query(all, none?)` iterates from the smallest store; iteration runs backwards so destroying the current entity is safe. Hot systems may read `store.data` arrays directly.
 - **Change tracking**: each store has a per-entity dirty bitset set by `add`, `set`, `setField`, `store.write` and explicit `store.markChanged(i)` (required after raw typed-array writes). `world.changed(def)` iterates; cleared at end of `step()`.
 - **Removal tracking**: each store records entities (with generation at removal) that lost the component this tick via `remove`/`destroy`; `world.removed(def)`. Same-tick re-add shows in both `removed` and `changed`. Cleared with dirty bits; untouched by `simulate()`.
+- **Array fields & defaults**: `{type, length}` (stride-n SoA, `getArray/getElement/setElement`) and `{type, default}` (applied on add). Both are in the schema hash.
+- **Environment**: `world.environment` singleton (NetId=ENV_NET_ID=1) with networked `TimeOfDay`, `Weather` (kind = gameplay u8 id); access via `world.env(def)`.
+- **RNG streams**: `world.rngFor(key, netIdOrEntity?)` deterministic per (seed, tick, key, entity) for predictable outcomes; `world.rng` stays for authority-only rolls.
+- **Input**: `defineActions` bit masks + schema commands (`defineCommand`, `CommandRegistry`, `encodeInputFrame`).
+- **Spatial index**: `installSpatialIndex(world)` (world pkg) → postSim system `spatialIndex`, resource `SpatialIndexRes`.
 - **Hooks**: `onSpawn`, `onDespawn` (despawn fires before components are removed).
 - **Resources**: typed global singletons (`TimeOfDay`, `Weather`, ...) via `defineResource<T>(name)` + `world.setResource/resource`.
 - **Events**: `EventBus` queued per tick (`emit` → delivered at `flush` at end of tick, deterministic order) plus `emitNow`.
@@ -94,7 +99,7 @@ sequenceDiagram
 - Default **20 Hz** (`DEFAULT_TICK_HZ`), configurable. Accumulator with spiral-of-death clamp (`maxStepsPerFrame`, backlog dropped).
 - Time is **injected**: only apps read `performance.now()`. Sim uses `world.tick`, `dt`, and `world.rng` (mulberry32, single u32 state → snapshot-able). No `Date.now`/`Math.random` in sim packages.
 - Phases: `input, simulation, postSim, network, renderPrep`; custom phases via `addPhase(name, {after})`. `renderPrep` runs only on client per frame.
-- `world.simulate(n, dt, beforeTick?)` runs only the simulation phase n times — used by prediction reconciliation.
+- `world.simulate(n, dt, {systems, beforeTick, startTick, keepEvents})` replays only the simulation phase (optionally named systems) with `world.tick` set per replayed tick and `isReplaying` true; events discarded by default; `world.predicted` marks predicted entities. `world.systemOrder()` lists order.
 
 ## 6. Data & serialization rules (networking)
 
@@ -125,7 +130,7 @@ sequenceDiagram
 
 1. Entity limit per world (default 65,536; max 2^20) and memory per store (`sparse` is `Int32Array[maxEntities]` per component) — move to paged sparse arrays if component count grows?
 2. Floating-point determinism across browsers/Node: rely on reconciliation, or move sim to fixed-point for lockstep features?
-3. Change tracking granularity: per-entity bits now; does net need per-field bits?
+3. Change tracking granularity: per-component bits (arrays included); per-field/element bits requested by gameplay E1/net N8 — still open.
 4. ~~Removed-component tracking for delta replication~~ — resolved by ADR-023 (`world.removed(def)`). Remaining: does net need removal history beyond one tick (it must accumulate per-client between acks itself)?
 5. Chunk streaming/persistence format and server-side save games (reuse snapshot format?).
 6. Renderer in a Worker with OffscreenCanvas?

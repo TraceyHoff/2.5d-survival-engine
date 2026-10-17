@@ -1,5 +1,5 @@
 /** Client bootstrap: boots fixed-step loop + canvas. Uses Canvas2D debug draw until the WebGL2 renderer lands. */
-import { createGameLoop, World, Transform, PrevTransform, lerp, InputState, Action, entityIndex } from "@engine/core";
+import { createGameLoop, World, Transform, PrevTransform, lerp, InputState, defineActions, entityIndex } from "@engine/core";
 import { TileMap, worldToScreen, DEFAULT_ISO } from "@engine/world";
 import { installGameplay } from "@engine/gameplay";
 
@@ -11,7 +11,8 @@ const map = new TileMap();
 for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) map.setTile(x, y, 1 + world.rng.int(0, 3));
 const input = new InputState();
 const player = world.create(); world.add(player, Transform, { x: 16, y: 16 });
-const keys: Record<string, Action> = { KeyW: Action.MoveUp, KeyS: Action.MoveDown, KeyA: Action.MoveLeft, KeyD: Action.MoveRight };
+const Action = defineActions(["MoveUp", "MoveDown", "MoveLeft", "MoveRight"]);
+const keys: Record<string, number> = { KeyW: Action.MoveUp, KeyS: Action.MoveDown, KeyA: Action.MoveLeft, KeyD: Action.MoveRight };
 addEventListener("keydown", (e) => { const a = keys[e.code]; if (a !== undefined) input.press(a); });
 addEventListener("keyup", (e) => { const a = keys[e.code]; if (a !== undefined) input.release(a); });
 

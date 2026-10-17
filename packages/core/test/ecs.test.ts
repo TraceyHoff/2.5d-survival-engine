@@ -11,12 +11,12 @@ describe("ECS", () => {
     w.destroy(a); expect(w.isAlive(a)).toBe(false);
     const b = w.create();
     expect(entityIndex(b)).toBe(entityIndex(a)); expect(entityGen(b)).toBe(entityGen(a) + 1);
-    expect(w.isAlive(a)).toBe(false); expect(w.entityCount).toBe(1);
+    expect(w.isAlive(a)).toBe(false); expect(w.entityCount).toBe(2); // + environment singleton
   });
   it("builtins registered first with stable ids", () => {
     const w = new World();
     expect([NetId, Owner, Transform, PrevTransform].map((c) => w.componentId(c))).toEqual([0, 1, 2, 3]);
-    expect(w.register(Vel)).toBe(4); expect(w.register(Vel)).toBe(4);
+    expect(w.register(Vel)).toBe(6); expect(w.register(Vel)).toBe(6);
     expect(NetId.networked && Owner.networked && Transform.networked).toBe(true);
     expect(PrevTransform.networked).toBe(false);
   });

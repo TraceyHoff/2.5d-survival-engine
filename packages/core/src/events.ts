@@ -11,5 +11,9 @@ export class EventBus {
   }
   emit<T>(type: EventType<T>, payload: T): void { this.queue.push([type, payload]); }
   emitNow<T>(type: EventType<T>, payload: T): void { for (const h of [...(this.handlers.get(type) ?? [])]) (h as (p: T) => void)(payload); }
+  /** Number of queued (undelivered) events. */
+  get queued(): number { return this.queue.length; }
+  /** Drop queued events beyond the first `n` (used to discard events emitted during replay). */
+  truncate(n: number): void { if (n < this.queue.length) this.queue.length = n; }
   flush(): void { const q = this.queue; this.queue = []; for (const [t, p] of q) this.emitNow(t, p); }
 }

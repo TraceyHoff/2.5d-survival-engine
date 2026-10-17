@@ -1,7 +1,7 @@
 import { ComponentStore, type ComponentDef } from "./component.js";
 import { entityGen, entityIndex, makeEntity, MAX_ENTITIES, GEN_MASK, type Entity } from "./entity.js";
-import { fnv1a, schemaSignature, type Schema, type SchemaValues } from "./schema.js";
-import { BUILTIN_COMPONENTS, PrevTransform, Transform } from "./builtins.js";
+import { fnv1a, schemaSignature, type ArrayField, type ScalarField, type Schema, type SchemaInit, type SchemaValues, type TypedArray } from "./schema.js";
+import { BUILTIN_COMPONENTS, ENV_NET_ID, NetId, PrevTransform, TimeOfDay, Transform, Weather } from "./builtins.js";
 import { Rng } from "./rng.js";
 import { EventBus } from "./events.js";
 
@@ -13,6 +13,16 @@ export type System = (world: World, dt: number) => void;
 export type EntityHook = (entity: Entity, world: World) => void;
 
 export interface WorldOptions { maxEntities?: number; seed?: number; registerBuiltins?: boolean }
+export interface SimulateOptions {
+  /** Called before each replayed tick with the replay index i (0..ticks-1); world.tick is already set. */
+  beforeTick?: (i: number) => void;
+  /** Only run these named simulation-phase systems (default: all). */
+  systems?: readonly string[];
+  /** world.tick seen by the first replayed tick (default: world.tick - ticks, i.e. the last `ticks` completed ticks). */
+  startTick?: number;
+  /** Keep events queued during replay (default false: discarded). */
+  keepEvents?: boolean;
+}
 
 export class World {
   readonly maxEntities: number;
@@ -28,6 +38,14 @@ export class World {
   private spawnHooks: EntityHook[] = [];
   private despawnHooks: EntityHook[] = [];
   readonly rng: Rng;
+  readonly seed: number;
+  /** Singleton entity holding TimeOfDay, Weather and NetId=ENV_NET_ID (when builtins are registered). */
+  readonly environment: Entity;
+  /** True while simulate() is replaying ticks. */
+  isReplaying = false;
+  /** Entities the client predicts; populated by netcode, checked by systems during replay. */
+  readonly predicted = new Set<Entity>();
+  private envViews = new Map<ComponentDef, unknown>();
   readonly events = new EventBus();
   tick = 0;
   entityCount = 0;
@@ -36,8 +54,36 @@ export class World {
     this.maxEntities = Math.min(opts.maxEntities ?? 65536, MAX_ENTITIES);
     this.gens = new Uint16Array(this.maxEntities);
     this.alive = new Uint8Array(this.maxEntities);
-    this.rng = new Rng(opts.seed ?? 1);
-    if (opts.registerBuiltins !== false) for (const c of BUILTIN_COMPONENTS) this.register(c);
+    this.seed = (opts.seed ?? 1) >>> 0;
+    this.rng = new Rng(this.seed);
+    if (opts.registerBuiltins !== false) {
+      for (const c of BUILTIN_COMPONENTS) this.register(c);
+      this.environment = this.create();
+      this.add(this.environment, NetId, { id: ENV_NET_ID }).add(this.environment, TimeOfDay).add(this.environment, Weather);
+    } else this.environment = -1 >>> 0;
+  }
+
+  /** Deterministic RNG stream from (world seed, tick, key[, entity]). Pass a NetId (not a local entity id) for cross-peer agreement. */
+  rngFor(key: string | number, entity?: Entity): Rng {
+    let h = fnv1a(typeof key === "number" ? `#${key}` : key, Math.imul(this.seed ^ 0x9e3779b9, 0x85ebca6b) >>> 0);
+    h = Math.imul(h ^ this.tick, 0x01000193) >>> 0;
+    if (entity !== undefined) h = Math.imul(h ^ entity, 0xc2b2ae35) >>> 0;
+    return new Rng(h ^ (h >>> 16));
+  }
+
+  /** Live read/write view of an environment singleton component (writes mark changed). */
+  env<S extends Schema>(def: ComponentDef<S>): SchemaValues<S> {
+    let v = this.envViews.get(def as ComponentDef) as SchemaValues<S> | undefined;
+    if (v) return v;
+    const st = this.store(def); const idx = entityIndex(this.environment);
+    if (!st.has(idx)) throw new Error(`environment lacks ${def.name}`);
+    const o = {} as Record<string, unknown>;
+    for (const f of st.fields) Object.defineProperty(o, f, {
+      enumerable: true,
+      get: () => st.read(idx, f),
+      set: (x: number) => { st.write(idx, f, x); },
+    });
+    v = o as SchemaValues<S>; this.envViews.set(def as ComponentDef, v); return v;
   }
 
   // ---- components ----
@@ -88,7 +134,7 @@ export class World {
     this.alive[i] = 0; this.gens[i] = (this.gens[i]! + 1) & GEN_MASK;
     this.freeList.push(i); this.entityCount--;
   }
-  add<S extends Schema>(e: Entity, def: ComponentDef<S>, init?: Partial<SchemaValues<S>>): this {
+  add<S extends Schema>(e: Entity, def: ComponentDef<S>, init?: SchemaInit<S>): this {
     if (!this.isAlive(e)) throw new Error("add on dead entity");
     this.store(def).add(e, entityIndex(e), init); return this;
   }
@@ -99,16 +145,28 @@ export class World {
     return this.isAlive(e) ? this.store(def).get(entityIndex(e)) : undefined;
   }
   /** Writes several fields; marks changed. Throws if missing. */
-  set<S extends Schema>(e: Entity, def: ComponentDef<S>, values: Partial<SchemaValues<S>>): void {
+  set<S extends Schema>(e: Entity, def: ComponentDef<S>, values: SchemaInit<S>): void {
     const st = this.store(def); const i = entityIndex(e);
     if (!this.isAlive(e) || !st.has(i)) throw new Error(`set: missing ${def.name}`);
-    for (const f of st.fields) { const v = values[f]; if (v !== undefined) st.write(i, f, v); }
+    const s = st.slot(i);
+    for (const f of st.fields) { const v = values[f]; if (v !== undefined) st.writeSlot(s, f, v as number | ArrayLike<number>); }
+    st.markChanged(i);
   }
-  getField<S extends Schema>(e: Entity, def: ComponentDef<S>, field: keyof S & string): number | undefined {
+  getField<S extends Schema>(e: Entity, def: ComponentDef<S>, field: ScalarField<S>): number | undefined {
     return this.isAlive(e) ? this.store(def).read(entityIndex(e), field) : undefined;
   }
-  setField<S extends Schema>(e: Entity, def: ComponentDef<S>, field: keyof S & string, value: number): boolean {
+  setField<S extends Schema>(e: Entity, def: ComponentDef<S>, field: ScalarField<S>, value: number): boolean {
     return this.isAlive(e) && this.store(def).write(entityIndex(e), field, value);
+  }
+  /** Live subarray of an array field; call store(def).markChanged(entityIndex(e)) after mutating, or use setElement. */
+  getArray<S extends Schema>(e: Entity, def: ComponentDef<S>, field: ArrayField<S>): TypedArray | undefined {
+    return this.isAlive(e) ? this.store(def).array(entityIndex(e), field) : undefined;
+  }
+  getElement<S extends Schema>(e: Entity, def: ComponentDef<S>, field: ArrayField<S>, i: number): number | undefined {
+    return this.isAlive(e) ? this.store(def).readElement(entityIndex(e), field, i) : undefined;
+  }
+  setElement<S extends Schema>(e: Entity, def: ComponentDef<S>, field: ArrayField<S>, i: number, value: number): boolean {
+    return this.isAlive(e) && this.store(def).writeElement(entityIndex(e), field, i, value);
   }
   /** Entities whose component `def` changed this tick (added or written). Cleared at end of step(). */
   *changed(def: ComponentDef): IterableIterator<Entity> {
@@ -136,10 +194,20 @@ export class World {
 
   // ---- resources (global singletons, e.g. TimeOfDay, Weather) ----
   setResource<T>(key: ResourceKey<T>, value: T): void { this.resources.set(key, value); }
-  getResource<T>(key: ResourceKey<T>): T | undefined { return this.resources.get(key) as T | undefined; }
-  resource<T>(key: ResourceKey<T>): T {
+  /** @deprecated for environment components use env(def); passing a ComponentDef returns env(def) if present. */
+  getResource<S extends Schema>(key: ComponentDef<S>): SchemaValues<S> | undefined;
+  getResource<T>(key: ResourceKey<T>): T | undefined;
+  getResource(key: ResourceKey<unknown> | ComponentDef): unknown {
+    if ("schema" in key) return this.isAlive(this.environment) && this.has(this.environment, key) ? this.env(key) : undefined;
+    return this.resources.get(key);
+  }
+  /** Passing a ComponentDef is a deprecated alias of env(def). */
+  resource<S extends Schema>(key: ComponentDef<S>): SchemaValues<S>;
+  resource<T>(key: ResourceKey<T>): T;
+  resource(key: ResourceKey<unknown> | ComponentDef): unknown {
+    if ("schema" in key) return this.env(key);
     if (!this.resources.has(key)) throw new Error(`Missing resource ${key.name}`);
-    return this.resources.get(key) as T;
+    return this.resources.get(key);
   }
 
   // ---- phases & systems ----
@@ -166,15 +234,38 @@ export class World {
     this.clearChanges();
     this.tick++;
   }
+  /** Flattened execution order. */
+  systemOrder(): { phase: Phase; name: string }[] {
+    const out: { phase: Phase; name: string }[] = [];
+    for (const p of this.phaseOrder) for (const s of this.systems.get(p)!) out.push({ phase: p, name: s.name });
+    return out;
+  }
   /** Run a single phase's systems once. */
   runPhase(phase: Phase, dt: number): void { for (const s of this.systems.get(phase) ?? []) s.fn(this, dt); }
   /**
-   * Re-simulation for prediction reconciliation: runs ONLY the simulation phase `ticks` times.
-   * `beforeTick(i)` lets the caller apply buffered input for each replayed tick.
-   * Does not touch world.tick, events, change bits, or PrevTransform.
+   * Re-simulation for prediction reconciliation: runs ONLY the simulation phase (optionally only named systems)
+   * `ticks` times. For replay i, world.tick = startTick + i; world.tick is restored afterwards.
+   * isReplaying is true throughout. Events queued during replay are discarded unless keepEvents.
+   * Does not touch change bits, removal records or PrevTransform.
+   * The legacy form simulate(ticks, dt, beforeTick) is still accepted.
    */
-  simulate(ticks: number, dt: number, beforeTick?: (i: number) => void): void {
-    for (let i = 0; i < ticks; i++) { beforeTick?.(i); this.runPhase("simulation", dt); }
+  simulate(ticks: number, dt: number, opts?: SimulateOptions | ((i: number) => void)): void {
+    const o: SimulateOptions = typeof opts === "function" ? { beforeTick: opts } : opts ?? {};
+    const saved = this.tick; const q = this.events.queued; const wasReplaying = this.isReplaying;
+    const only = o.systems ? new Set(o.systems) : undefined;
+    const list = (this.systems.get("simulation") ?? []).filter((s) => !only || only.has(s.name));
+    const start = o.startTick ?? Math.max(0, saved - ticks);
+    this.isReplaying = true;
+    try {
+      for (let i = 0; i < ticks; i++) {
+        this.tick = start + i;
+        o.beforeTick?.(i);
+        for (const s of list) s.fn(this, dt);
+      }
+    } finally {
+      this.tick = saved; this.isReplaying = wasReplaying;
+      if (!o.keepEvents) this.events.truncate(q);
+    }
   }
 }
 

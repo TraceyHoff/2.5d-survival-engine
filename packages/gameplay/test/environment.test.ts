@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { TimeOfDay, Weather, WeatherKind, World } from "@engine/core";
+import { TimeOfDay, Weather, World } from "@engine/core";
+import { WeatherKind } from "../src/defs.js";
 import {
   ambientTemperature, DayPhase, DayPhaseChanged, dayPhase, defaultDefs, Exposure, installGameplay, spawnPlayer,
   spawnStation, StationKind, threatLevel, VitalsModifiers, WeatherChanged,
@@ -12,19 +13,19 @@ const vt = defaultDefs().vitals;
 describe("day/night", () => {
   it("advances TimeOfDay by exact ticks and emits phase changes", () => {
     const w = makeWorld({ dayLengthTicks: 100 });
-    w.resource(TimeOfDay).t = 0;
+    w.env(TimeOfDay).t = 0;
     const phases = collect(w, DayPhaseChanged);
     steps(w, 100);
-    expect(w.resource(TimeOfDay).t).toBe(0);
-    expect(w.resource(TimeOfDay).day).toBe(1);
+    expect(w.env(TimeOfDay).t).toBe(0);
+    expect(w.env(TimeOfDay).day).toBe(1);
     expect(phases.map((p) => p.phase)).toEqual([DayPhase.Dawn, DayPhase.Day, DayPhase.Dusk, DayPhase.Night]);
   });
 
   it("nights are colder than days and raise threat", () => {
     const w = makeWorld();
-    w.resource(TimeOfDay).t = 0.5; const noon = ambientTemperature(w);
+    w.env(TimeOfDay).t = 0.5; const noon = ambientTemperature(w);
     expect(threatLevel(w)).toBe(1);
-    w.resource(TimeOfDay).t = 0; const midnight = ambientTemperature(w);
+    w.env(TimeOfDay).t = 0; const midnight = ambientTemperature(w);
     expect(noon - midnight).toBeCloseTo(2 * env.dayNightAmplitude, 4);
     expect(threatLevel(w)).toBe(env.nightThreatMul);
     expect(dayPhase(0.9)).toBe(DayPhase.Night);
@@ -48,16 +49,16 @@ describe("weather", () => {
   it("does not run on the client (replicated instead)", () => {
     const w = new World(); installGameplay(w, { role: "client" });
     steps(w, 10);
-    expect(w.resource(Weather).ticksRemaining).toBe(0);
-    expect(w.resource(Weather).kind).toBe(WeatherKind.Clear);
+    expect(w.env(Weather).ticksRemaining).toBe(0);
+    expect(w.env(Weather).kind).toBe(WeatherKind.Clear);
   });
 });
 
 describe("exposure", () => {
   function rainy() {
     const w = makeWorld();
-    Object.assign(w.resource(Weather), { kind: WeatherKind.Rain, intensity: 1, ticksRemaining: 1e9 });
-    w.resource(TimeOfDay).t = 0.5;
+    Object.assign(w.env(Weather), { kind: WeatherKind.Rain, intensity: 1, ticksRemaining: 1e9 });
+    w.env(TimeOfDay).t = 0.5;
     return w;
   }
 
@@ -73,7 +74,7 @@ describe("exposure", () => {
   });
 
   it("campfires warm nearby players and speed drying", () => {
-    const w = rainy(); w.resource(TimeOfDay).t = 0;
+    const w = rainy(); w.env(TimeOfDay).t = 0;
     const p = spawnPlayer(w, { x: 0, y: 0 }); const far = spawnPlayer(w, { x: 30, y: 0 });
     w.setField(p, Exposure, "sheltered", 1); w.setField(far, Exposure, "sheltered", 1);
     w.setField(p, Exposure, "wetness", 0.5); w.setField(far, Exposure, "wetness", 0.5);
@@ -85,7 +86,7 @@ describe("exposure", () => {
   });
 
   it("cold raises hunger multiplier; weather sets thirst/stamina multipliers", () => {
-    const w = rainy(); w.resource(TimeOfDay).t = 0;
+    const w = rainy(); w.env(TimeOfDay).t = 0;
     const p = spawnPlayer(w, { x: 0, y: 0 });
     w.step(1 / 20);
     const m = w.get(p, VitalsModifiers)!;
