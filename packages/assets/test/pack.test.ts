@@ -36,6 +36,18 @@ describe("art pack", () => {
       for (let r = 0; r < 4; r++) for (let st = 0; st < 4; st++) expect(registry.buildingFrame(id, r, st).w).toBe(128);
     }
   });
+  it("schema9: critter category, door states, ambience loop points", () => {
+    expect(registry.byCategory("critter").map((s) => s.key)).toContain("critter_bunny");
+    const door = registry.byKey("door");
+    expect(door.building!.stateNames).toEqual(["closed", "open"]);
+    expect(registry.buildingFrame(door.id, 1, 0, registry.stateIndex(door.id, "open")).frame).not.toBe(registry.buildingFrame(door.id, 1, 0).frame);
+    expect(pack.sprites.some((s: { key: string }) => s.key === "door_open")).toBe(false);
+    expect((lock as { sprites: Record<string, number> }).sprites["door_open"]).toBe(lockFile.sprites["door_open"]); // retired key keeps its id reserved
+    for (const k of ["amb_campfire", "amb_rain", "amb_forest"]) {
+      const snd = [...registry.sounds.values()].find((s) => s.key === k)!;
+      expect(snd.loop).toBe(true); expect(snd.loopPoints!.end).toBeGreaterThan(snd.loopPoints!.start);
+    }
+  });
   it("characters and zombies have 8 baked directions", () => {
     for (const k of ["player", "player_b", "player_c", "zombie_walker", "zombie_brute", "zombie_runner"]) {
       const s = registry.byKey(k);

@@ -101,7 +101,10 @@
    ],
    "volume": 0.55,
    "pitchJitter": 0,
-   "loop": true,
+   "loop": {
+    "start": 0.0,
+    "end": 6.0
+   },
    "category": "ambience"
   },
   {
@@ -111,7 +114,10 @@
    ],
    "volume": 0.5,
    "pitchJitter": 0,
-   "loop": true,
+   "loop": {
+    "start": 0.0,
+    "end": 8.0
+   },
    "category": "ambience"
   },
   {
@@ -121,7 +127,10 @@
    ],
    "volume": 0.45,
    "pitchJitter": 0,
-   "loop": true,
+   "loop": {
+    "start": 0.0,
+    "end": 12.0
+   },
    "category": "ambience"
   }
  ]

@@ -511,7 +511,7 @@
   },
   {
    "key": "critter_bunny",
-   "category": "character",
+   "category": "critter",
    "atlas": "critters",
    "anchor": {
     "x": 0.5,
@@ -1958,6 +1958,12 @@
       48
      ],
      "fps": 1
+    },
+    "open": {
+     "frames": [
+      64
+     ],
+     "fps": 1
     }
    },
    "building": {
@@ -1992,59 +1998,61 @@
       62,
       63
      ]
-    ]
-   },
-   "rotationArt": "unique4"
-  },
-  {
-   "key": "door_open",
-   "category": "building",
-   "atlas": "buildings",
-   "anchor": {
-    "x": 0.5,
-    "y": 0.75
-   },
-   "animations": {
-    "idle": {
-     "frames": [
-      64
+    ],
+    "states": {
+     "closed": [
+      [
+       48,
+       49,
+       50,
+       51
+      ],
+      [
+       52,
+       53,
+       54,
+       55
+      ],
+      [
+       56,
+       57,
+       58,
+       59
+      ],
+      [
+       60,
+       61,
+       62,
+       63
+      ]
      ],
-     "fps": 1
-    }
-   },
-   "building": {
-    "piece": "door",
-    "footprint": {
-     "w": 2,
-     "h": 1
-    },
-    "layer": 1,
-    "frames": [
-     [
-      64,
-      65,
-      66,
-      67
-     ],
-     [
-      68,
-      69,
-      70,
-      71
-     ],
-     [
-      72,
-      73,
-      74,
-      75
-     ],
-     [
-      76,
-      77,
-      78,
-      79
+     "open": [
+      [
+       64,
+       65,
+       66,
+       67
+      ],
+      [
+       68,
+       69,
+       70,
+       71
+      ],
+      [
+       72,
+       73,
+       74,
+       75
+      ],
+      [
+       76,
+       77,
+       78,
+       79
+      ]
      ]
-    ]
+    }
    },
    "rotationArt": "unique4"
   },
@@ -2968,7 +2976,10 @@
    ],
    "volume": 0.55,
    "pitchJitter": 0,
-   "loop": true,
+   "loop": {
+    "start": 0.0,
+    "end": 6.0
+   },
    "category": "ambience"
   },
   {
@@ -2978,7 +2989,10 @@
    ],
    "volume": 0.5,
    "pitchJitter": 0,
-   "loop": true,
+   "loop": {
+    "start": 0.0,
+    "end": 8.0
+   },
    "category": "ambience"
   },
   {
@@ -2988,7 +3002,10 @@
    ],
    "volume": 0.45,
    "pitchJitter": 0,
-   "loop": true,
+   "loop": {
+    "start": 0.0,
+    "end": 12.0
+   },
    "category": "ambience"
   }
  ],
