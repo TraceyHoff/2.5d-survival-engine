@@ -11,6 +11,7 @@ import { NO_ENTITY } from "./server.js";
 import type { Schema } from "@engine/core";
 import { NetSchema, decodeDelta, fromWire, storeFieldLength, type CompValues, type EntityState, type WorldState } from "./state.js";
 import type { ClientTransport } from "./transport/types.js";
+import { StaticClient, encodeStaticCtl } from "./static.js";
 
 export class NetRejectedError extends Error {
   constructor(readonly reason: RejectReason, readonly detail = "") { super(`server rejected connection (reason ${reason}${detail ? `: ${detail}` : ""})`); }
@@ -41,6 +42,10 @@ export interface NetClientOptions {
   hashes?: NamedHashes;
   /** Names of simulation systems to run during reconciliation replay (core simulate {systems}); default all. */
   predictedSystems?: readonly string[];
+  /** Time constant (seconds) of the predicted-entity correction offset decay (default 0.1). 0 disables smoothing. */
+  correctionSmoothingSec?: number;
+  /** Static-class chunks kept after leaving them, for instant re-entry (LRU, default 64). */
+  staticCacheChunks?: number;
 }
 
 /** A server event as received: payload entity fields are resolved to local entities (NO_ENTITY if unknown). */
@@ -79,6 +84,10 @@ export class NetClient {
   private eventQueue: { tick: number; def: MessageDefBase; payload: Record<string, number> }[] = [];
   private eventHandlers = new Map<MessageDefBase, ((p: Record<string, number>, tick: number) => void)[]>();
   private netOf = new Map<Entity, number>();
+  /** Static replication channel (building pieces etc.). */
+  readonly statics: StaticClient;
+  private corrections = new Map<Entity, number[]>(); // visual offset per predicted entity (interp comp fields)
+  private staticInbox: Uint8Array[] = [];
 
   constructor(opts: NetClientOptions) {
     this.opts = opts; this.world = opts.world;
@@ -89,6 +98,11 @@ export class NetClient {
     this.interpIndex = this.schema.indexOf(idef, this.world);
     this.interpStore = this.world.store(idef) as unknown as ComponentStore;
     this.interp = new InterpolationBuffer(32, 1, this.interpStore.fields.map((f) => f === "facing"));
+    this.statics = new StaticClient(this.schema, {
+      upsert: (id, es, old) => this.staticUpsert(id, es, old),
+      remove: (id) => this.despawn(this.world, id),
+      sendCtl: (kind, key) => { if (this.active) this.opts.transport.send(encodeStaticCtl(kind, key), "reliable"); },
+    }, opts.staticCacheChunks ?? 64);
     opts.transport.onMessage((b) => this.onMessage(b));
     opts.transport.onClose(() => { this.active = false; this.welcome?.reject(new Error("connection closed")); this.welcome = undefined; });
     this.world.addSystem("input", "net.client.input", (w) => this.inputSystem(w));
@@ -170,8 +184,10 @@ export class NetClient {
       const w = decodeWelcome(r);
       this.clientId = w.clientId; this.token = w.token; this.active = true;
       this.serverTickEstimate = w.serverTick; this.latestTick = -1; this.history.clear();
+      this.staticInbox = []; this.statics.reset();
       this.welcome?.resolve(w); this.welcome = undefined;
     } else if (h.type === MsgType.Snapshot) this.inbox.push(bytes);
+    else if (h.type === MsgType.Static) this.staticInbox.push(bytes);
     else if (h.type === MsgType.Events) {
       const tick = r.readBits(32); const n = r.readVarUint();
       for (let i = 0; i < n; i++) {
@@ -198,6 +214,8 @@ export class NetClient {
 
   private networkSystem(w: World, dt: number): void {
     this.serverTickEstimate += 1;
+    const sin = this.staticInbox; this.staticInbox = [];
+    for (const bytes of sin) { const r = new BitReader(bytes); readHeader(r); this.statics.handle(r, bytes.length); } // reliable, in order
     const inbox = this.inbox; this.inbox = [];
     let reconcileSeq: number | undefined;
     for (const bytes of inbox) {
@@ -215,13 +233,22 @@ export class NetClient {
       if (processed !== NONE_U32) reconcileSeq = processed; else reconcileSeq ??= -1;
     }
     if (this.latestTick >= 0 && (this.serverTickEstimate < this.latestTick || this.serverTickEstimate - this.latestTick > 4)) this.serverTickEstimate = this.latestTick;
+    const tau = this.opts.correctionSmoothingSec ?? 0.1;
+    if (tau > 0) {
+      const k = Math.exp(-dt / tau);
+      for (const [e, off] of this.corrections) {
+        if (!w.isAlive(e) || !w.predicted.has(e)) { this.corrections.delete(e); continue; }
+        let m = 0; for (let i = 0; i < off.length; i++) { off[i]! *= k; m = Math.max(m, Math.abs(off[i]!)); }
+        if (m < 1e-3) this.corrections.delete(e); // sub-pixel
+      }
+    }
     if (reconcileSeq !== undefined) this.reconcile(w, dt, reconcileSeq);
     this.interpolate(w);
   }
 
   /** Bring the local world in line with `cur` (diffed against the previously applied state, which may be an older tick). */
   private applyState(w: World, tick: number, prev: WorldState | undefined, cur: WorldState): void {
-    if (prev) for (const netId of prev.keys()) if (!cur.has(netId)) this.despawn(w, netId);
+    if (prev) for (const netId of prev.keys()) if (!cur.has(netId) && !this.statics.has(netId)) this.despawn(w, netId);
     for (const [netId, es] of cur) {
       const old = prev?.get(netId);
       let e = this.entities.get(netId);
@@ -246,6 +273,19 @@ export class NetClient {
         if (v) this.interp.push(netId, tick, this.decode(this.interpIndex, v));
       }
     }
+  }
+
+  private staticUpsert(netId: number, es: EntityState, old: EntityState | undefined): void {
+    const w = this.world; let e = this.entities.get(netId);
+    if (e === undefined || !w.isAlive(e)) {
+      e = w.create(); w.add(e, NetId, { id: netId });
+      this.entities.set(netId, e); this.netOf.set(e, netId);
+      this.writeComps(w, e, es, undefined, true);
+      this.opts.onSpawn?.(e, netId, false, w);
+      return;
+    }
+    for (const ci of old?.keys() ?? []) if (!es.has(ci)) w.remove(e, this.schema.stores[ci]!.def);
+    this.writeComps(w, e, es, old, true);
   }
 
   private setOwned(w: World, netId: number, e: Entity, owned: boolean, notify: boolean): void {
@@ -308,6 +348,14 @@ export class NetClient {
       const after = this.interpStore.get(entityIndex(e)); if (!before || !after) continue;
       corr = Math.max(corr, Math.hypot(...this.interpStore.fields.filter((f) => f !== "facing").map((f, i) => after[f]! - before[i]!)));
     }
+    if ((this.opts.correctionSmoothingSec ?? 0.1) > 0) for (const [e, before] of owned) {
+      const after = this.interpStore.get(entityIndex(e)); if (!before || !after) continue;
+      const d = this.interpStore.fields.map((f, i) => { const x = before[i]! - after[f]!; return f === "facing" ? Math.atan2(Math.sin(x), Math.cos(x)) : x; });
+      if (Math.max(...d.map(Math.abs)) < 1e-4) continue; // no visible correction
+      const off = this.corrections.get(e) ?? d.map(() => 0);
+      d.forEach((x, i) => { off[i]! += x; });
+      this.corrections.set(e, off);
+    }
     this.stats.lastCorrection = corr; this.stats.maxCorrection = Math.max(this.stats.maxCorrection, corr);
   }
 
@@ -320,6 +368,16 @@ export class NetClient {
       const vals: Record<string, number> = {}; this.interpStore.fields.forEach((f, i) => { vals[f] = v[i]!; });
       w.set(e, this.interpStore.def, vals);
     }
+  }
+
+  /**
+   * Visual correction offset for a predicted entity, per field of the interpolated component (default Transform:
+   * {x, y, z, facing}). Render at sim value + offset: a reconciliation snap becomes a ~correctionSmoothingSec decay.
+   * Sim state is never modified. Returns undefined when there is no pending correction.
+   */
+  correctionOffset(e: Entity): Record<string, number> | undefined {
+    const off = this.corrections.get(e); if (!off) return undefined;
+    const r: Record<string, number> = {}; this.interpStore.fields.forEach((f, i) => { r[f] = off[i]!; }); return r;
   }
 
   close(): void { this.opts.transport.close(); }

@@ -11,3 +11,4 @@ export * from "./transport/ws-client.js";
 export * from "./messages.js";
 export * from "./lagcomp.js";
 export * from "./interest.js";
+export * from "./static.js";

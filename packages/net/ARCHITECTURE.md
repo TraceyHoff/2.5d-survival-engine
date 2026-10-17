@@ -23,6 +23,8 @@ Header on every packet (frozen layout): `u16 protocolVersion, u8 msgType`. Bodie
 | Snapshot | unrel | serverTick, baselineTick (NONE = full), lastProcessedInputSeq, records… End |
 | Command | rel | varuint commandId, payload |
 | Events | rel or unrel | serverTick, varuint n, (eventId, payload)… |
+| Static (8) | rel | serverTick, sections `(more:1, kind:2, chunk cx,cy zigzag)`: Part(records…End, final:1 [version]) · Hit(version) · Delta(from, to, records…End) · Leave |
+| StaticCtl (9, c→s) | rel | kind:2 (Evict / Nack), chunk |
 
 **Handshake hashes**: `schema` = `world.getSchemaHash()` (component ids/schemas plus core *salts*, so `installAssetHash` / `world.addSchemaSalt` are covered), `netdefs` = command+event registry, plus any `NetServerOptions.hashes` / `NetClientOptions.hashes` (e.g. a separate `assets` entry if wanted). Any missing/different name → `Reject(SchemaMismatch | HashMismatch, name)`. Adding a hash = adding a key on both sides.
 
@@ -57,6 +59,8 @@ Client: `client.pollEvents(upToTick = client.renderTick)` returns events with re
 ## 8. Prediction / reconciliation
 Client sends seq-numbered inputs. Server queues them (bounded 8), applies one per tick per owned entity (`applyInput`), and echoes `lastProcessedSeq`. On a snapshot the client writes authoritative state to owned entities and replays pending inputs with `world.simulate(n, dt, {beforeTick, systems: predictedSystems})`. Core sets `world.tick` per replayed tick, `world.isReplaying`, and discards replay events. Net keeps `world.predicted` = owned entities. Gameplay should skip side effects when `world.isReplaying`.
 
+**Correction smoothing.** After a replay, the snap (before minus after, per field of the interpolated component, facing wrapped) is added to a per-entity visual offset that decays as `exp(-dt/τ)`. τ = `correctionSmoothingSec`, default 0.1 s; 0 disables it. The offset is dropped below 1e-3 tiles. Render at `sim + client.correctionOffset(e)`. Sim state is never touched.
+
 ## 9. Lag compensation helpers
 `server.positions: PositionHistory` records Transform changes sparsely (static entities cost nothing), window 1 s by default. `getPositionAt(entity, tick)` interpolates fractional ticks and returns undefined outside the window. `session.lastViewTick` = the client's render tick from its last input. `rangeCheckWithSlack(actor, target, range, {slack = 0.25, maxSpeed, leadTicks, dt})` checks against static targets.
 
@@ -64,24 +68,51 @@ Client sends seq-numbered inputs. Server queues them (bounded 8), applies one pe
 Per tick: capture O(N) cheap scan + O(changed) rebuild. Per client: O(relevant) view build (reference compares), O(changed relevant) encoding. Not O(clients × N).
 `test/bench.test.ts` (headless, fake sessions, ack 3 ticks late, 10% of entities moving per tick, players moving), on the dev box:
 
-| Scenario | ms/tick (server total) | capture ms | bytes/client/tick |
-|---|---|---|---|
-| 100 clients × 10k entities spread over 2048² tiles | ~11 | ~4.8 | ~175 (≈28 kbit/s) |
-| 100 clients clustered in 64² tiles, 10k entities in 512², 4 KiB budget | ~63 | ~8 | ~2100 (budget-capped) |
+| Scenario | ms/tick (server total) | capture ms | bytes/client/tick | encodes / reuses per tick |
+|---|---|---|---|---|
+| 100 clients × 10k entities spread over 2048² tiles | ~12 (was ~11) | ~4.8 | 173 (≈28 kbit/s) | 1214 / 566 |
+| 100 clients clustered in 64² tiles, 10k entities in 512², 4 KiB budget | **~25** (was ~63) | ~7.6 | 2092 (budget-capped) | 475 / 23 912 |
 
-The spread case fits easily in the 50 ms tick. The clustered worst case is over budget (each client sees ~1–2k entities). Next steps: share encoded entity records between clients with the same baseline (most clients' records for a moving entity are identical), skip unchanged clients, and move to the static class below.
+Measured after core batch 4 (Transform z q10, facing q8). Machine is shared and noisy (±2 ms). Milestone-3 changes:
+- **Shared record cache**: each tick, an entity's record is encoded once per (current state object, baseline state
+  object) and the bits are appended (`BitWriter.appendBits`) for every client with that baseline. States are immutable and
+  shared, so object identity is equality. Spawns use the `undefined` baseline, so a spawn blob is cached per entity per tick.
+- Byte-chunked `writeBits`/`readBits`.
+- Per-client view built from per-tick per-chunk netId lists, plus a netId-indexed state array and stamp array (no `view.has`). The
+  stored view is written once (no `new Map(view)` copy, no deferral rewrite pass).
+- Prioritization: netId-indexed positions per tick, `Int32Array` last-sent, and a typed-array threshold sort, so only the ~budget-sized head is fully sorted.
+- Capture: unchanged components are structurally shared with the previous state.
 
-## 11. Static / building replication class (*design only*)
-For rarely-changing entities (building pieces: 100–400 per base, 1–3k large, cap ~5000 per zone; also trees and rocks).
-- **Class**: `server.setReplicationClass(def, "static")` on the defining component (e.g. `BuildPiece {type u16, rot u8, variant u8, tier u8, hp u16, damageStage u8, paint u8}` ≈ 9 bytes). Entities with a static component and no dynamic replicated components are excluded from per-tick snapshot diffing.
-- **Per-chunk static set**: server keeps, per chunk, the static entities and `version: u32`, bumped on any static add, remove or change in that chunk (the world `Chunk.version` idea, applied to static entities).
-- **Chunk entry**: when `InterestGrid.get(id).enteredChunks` contains k, the server sends `StaticChunk(k, version, records[])` on the **reliable** channel (spawn records, NetIds + components), unless the client reported (in Hello or a `ChunkCache` message) that it holds k at the same version. Then it sends nothing. Clients cache chunk static sets by `(k, version)` across leave/re-enter and reconnects.
-- **Changes**: `StaticDelta(k, fromVersion, toVersion, records)` on the reliable channel to clients subscribed to k (spawn, despawn, field changes reusing the snapshot record codec). Clients apply in order. A version gap triggers a full `StaticChunk` resend.
-- **Chunk leave**: the client drops (or keeps cached) the static entities. No per-entity despawns are needed on the unreliable channel.
-- **Dynamic parts stay separate**: `DoorState`, `Fuel/Burning` are normal dynamic components on the same entity, so that entity goes through the snapshot path for those components only. Static components are not re-diffed per tick.
-- **Containers**: contents component with a viewers scope (open-container predicate) and owner. Sent only while open.
-- **Stability**: scope `none`.
-- Cost: a 5000-piece zone at ~12 bytes per piece ≈ 60 KB once per chunk entry, spread by chunk; then O(changes).
+## 11. Static / building replication class (implemented, milestone 3)
+**API.** `server.setReplicationClass(BuildPiece, "static")` (and `getReplicationClass`). An entity that has any
+static-class component and a Transform replicates **all** of its replicated components over the static channel and never in
+snapshots. Scopes do not apply to static entities. Set the class before clients join. Server option `staticBudgetBytes`
+(default 8 KiB per client per tick) applies to entry streaming only; change batches are unbudgeted. Client option
+`staticCacheChunks` (default 64). Stats: `server.staticStats(clientId)` and `client.statics.stats`.
+
+**Server.** `StaticServer` keeps `chunk → {version, netId → EntityState}` from the captured state each tick. The version bumps
+once per tick in which anything in the chunk was added, changed, moved in or out, or removed. Per changed chunk there is one Delta blob
+per tick (from → to), encoded once and shared by every subscribed client. Per session it keeps:
+- `subs` (chunk → version the client holds; 0 = never-populated chunk, subscribed silently).
+- `streams` (pending netIds).
+- `cache`, a mirror of the client's LRU, maintained by Leave and Evict.
+
+**Entry.** If the cache mirror holds the current version, the server sends Hit (no data). Otherwise it streams the chunk as
+Parts, closest chunks first (distance to the client's viewpoints), within the budget. Spawn records are cached per state.
+Changes during a stream re-queue the affected netIds: already-sent ones are re-sent or despawned, unsent ones go out at their
+current state. This is how place/destroy in the entry tick is handled. The final Part carries the version.
+
+**Client.** `StaticClient` keeps the active chunks plus an LRU cache. Each netId has an owning chunk, so a move across chunks
+never destroys the entity. On Leave it moves the chunk to the cache and evicts the oldest chunk past the limit (sending Evict). If a
+Hit or Delta doesn't match what the client holds, it drops the chunk and sends Nack, and the server answers Leave + a fresh stream.
+
+**Measured** (`test/static.test.ts`, 3000 pieces over 3×3 chunks, 10% loss on the unreliable channel, 30±10 ms):
+- Initial stream: 10 ticks (500 ms), 67.9 KB (22.6 B/piece).
+- Steady state: 0 B over 40 ticks.
+- 180 changes (repair 100, destroy 50, place 30): 1.7 KB.
+- Re-entry after 1 chunk changed: 8 hits + 1 restream, 8.2 KB.
+
+Loopback's reliable channel never drops, so reliability itself rests on the transport (WS/TCP).
 
 ## 12. Quantization review (gameplay DESIGN.md N6)
 Bits/tick numbers below assume a change every tick.
@@ -125,5 +156,5 @@ packages/net/src/
 ## 14. Deferred / open
 - Static class + per-chunk versions (§11), shared per-entity record encoding across clients, snapshot fragmentation for datagrams, WebTransport.
 - Interest uses one viewpoint per client (`InterestGrid.setClient` takes a single position). Multi-viewpoint (party, camera) would need a world API.
-- Correction smoothing, adaptive interpolation delay / clock sync.
+- Adaptive interpolation delay / clock sync.
 - Server-side rewind for combat (helpers exist; the policy belongs to gameplay).

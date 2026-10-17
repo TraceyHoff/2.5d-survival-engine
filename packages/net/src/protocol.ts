@@ -5,7 +5,7 @@ import { BitReader, BitWriter } from "./bits.js";
  * across versions: u16 protocolVersion, u8 msgType (byte aligned). Body is bit-packed.
  */
 export const PROTOCOL_VERSION = 2;
-export const MsgType = { Hello: 1, Welcome: 2, Reject: 3, Input: 4, Snapshot: 5, Command: 6, Events: 7 } as const;
+export const MsgType = { Hello: 1, Welcome: 2, Reject: 3, Input: 4, Snapshot: 5, Command: 6, Events: 7, Static: 8, StaticCtl: 9 } as const;
 export type MsgType = (typeof MsgType)[keyof typeof MsgType];
 export const RejectReason = { ProtocolMismatch: 1, SchemaMismatch: 2, BadToken: 3, ServerFull: 4, Malformed: 5, HashMismatch: 6 } as const;
 export type RejectReason = (typeof RejectReason)[keyof typeof RejectReason];

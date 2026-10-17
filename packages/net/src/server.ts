@@ -1,6 +1,7 @@
 import * as core from "@engine/core";
 import { ENV_NET_ID, NetId, Owner, Transform, entityIndex, type ComponentDef, type Entity, type World } from "@engine/core";
 import { BitReader, BitWriter } from "./bits.js";
+import { StaticServer, StaticSession, readChunkKey, type ReplicationClass } from "./static.js";
 import { NetInterest, type InterestOptions, type Viewpoint } from "./interest.js";
 import { PositionHistory } from "./lagcomp.js";
 import { DEFAULT_COMMAND_RATE, MessageRegistry, TokenBucket, readPayload, writePayload, type MessageDef, type MessageDefBase, type Payload } from "./messages.js";
@@ -73,6 +74,7 @@ export interface ClientSession {
   stats: { commands: number; droppedCommands: number; rateLimited: number; deferred: number; bytesSent: number };
 }
 interface SessionState extends ClientSession {
+  static: StaticSession;
   views: Map<number, WorldState>;
   /** Per netId: tick+1 it was last sent at (0 = never). Grown on demand. */
   lastSent: Int32Array;
@@ -105,6 +107,8 @@ export interface NetServerOptions {
   interest?: InterestOptions | false;
   /** Soft per-client snapshot budget in bytes (default 16 KiB). Owned/global entities and despawns always go. */
   budgetBytes?: number;
+  /** Per-client bytes per tick for streaming static chunks on entry (default 8 KiB); static change batches are not budgeted. */
+  staticBudgetBytes?: number;
   /** Lag-compensation window in ticks (default tickHz = 1 s). */
   positionHistoryTicks?: number;
 }
@@ -139,9 +143,11 @@ export class NetServer {
   private pubCache = new WeakMap<EntityState, EntityState>();
   private globals = new Set<Entity>();
   private extraViews = new Map<number, readonly Viewpoint[]>();
+  private staticCis = new Set<number>();
+  private statics: StaticServer | undefined;
   private handlers = new Map<MessageDefBase, CommandHandler[]>();
   private ownerCi: number | undefined;
-  readonly tickHz: number; readonly historySize: number; readonly budgetBytes: number;
+  readonly tickHz: number; readonly historySize: number; readonly budgetBytes: number; readonly staticBudgetBytes: number;
   /** Timings of the last network phase, for benchmarks. */
   private posX = new Float64Array(0);
   private curArr: (EntityState | undefined)[] = [];
@@ -153,7 +159,7 @@ export class NetServer {
 
   constructor(opts: NetServerOptions) {
     this.opts = opts; this.world = opts.world;
-    this.tickHz = opts.tickHz ?? 20; this.historySize = opts.historySize ?? 32; this.budgetBytes = opts.budgetBytes ?? 16 * 1024;
+    this.tickHz = opts.tickHz ?? 20; this.historySize = opts.historySize ?? 32; this.budgetBytes = opts.budgetBytes ?? 16 * 1024; this.staticBudgetBytes = opts.staticBudgetBytes ?? 8 * 1024;
     this.schema = new NetSchema(this.world);
     this.ownerCi = this.schema.indexOf(Owner, this.world);
     this.netIds = new NetIdRegistry(this.world);
@@ -188,6 +194,28 @@ export class NetServer {
     return this;
   }
   getScope(def: ComponentDef): ReplicationScope { const ci = this.schema.indexOf(def, this.world); return (ci !== undefined && this.scopes.get(ci)) || "all"; }
+  /**
+   * Replication class of a networked component. "static": entities having any static-class component (and a
+   * Transform) replicate ALL their replicated components over the static channel (per-chunk streaming on entry,
+   * versioned chunk cache, reliable per-tick change batches) instead of snapshots. Scopes do not apply to them.
+   * Set before clients join; default "dynamic".
+   */
+  setReplicationClass(def: ComponentDef, cls: ReplicationClass): this {
+    const ci = this.schema.indexOf(def, this.world);
+    if (ci === undefined) throw new Error(`${def.name} is not a replicated component`);
+    if (def === Transform || def === Owner) throw new Error(`${def.name} cannot define a replication class`);
+    if (cls === "static") this.staticCis.add(ci); else this.staticCis.delete(ci);
+    this.statics = this.staticCis.size ? new StaticServer(this.schema, this.staticCis, this.schema.indexOf(Transform, this.world)) : undefined;
+    for (const s of this.sessions.values() as IterableIterator<SessionState>) s.static = new StaticSession();
+    return this;
+  }
+  getReplicationClass(def: ComponentDef): ReplicationClass { const ci = this.schema.indexOf(def, this.world); return ci !== undefined && this.staticCis.has(ci) ? "static" : "dynamic"; }
+  /** Static-channel state, for stats/tests. */
+  get staticReplication(): StaticServer | undefined { return this.statics; }
+  staticStats(clientId: number): { bytes: number; streamedChunks: number; hits: number; streaming: number } | undefined {
+    const s = this.sessions.get(clientId) as SessionState | undefined; if (!s) return undefined;
+    return { bytes: s.static.bytes, streamedChunks: s.static.streamedChunks, hits: s.static.hits, streaming: s.static.streams.size };
+  }
   /**
    * Extra AOI viewpoints for a client (e.g. a spectator camera, a remote-viewed turret), unioned with its owned
    * entities' positions. Pass [] to clear. `r` = chunk radius (default the grid radius).
@@ -230,6 +258,7 @@ export class NetServer {
       if (h.type === MsgType.Hello) this.onHello(conn, r);
       else if (h.type === MsgType.Input) this.onInput(conn, r);
       else if (h.type === MsgType.Command) this.onCommandMsg(conn, r);
+      else if (h.type === MsgType.StaticCtl) { const s = this.byConn.get(conn); const kind = r.readBits(2); const key = readChunkKey(r); if (s && this.statics) this.statics.onCtl(s.static, kind, key); }
     } catch { this.reject(conn, RejectReason.Malformed); }
   }
 
@@ -243,7 +272,7 @@ export class NetServer {
       s = this.byToken.get(tokenKey(hello.token));
       if (!s) { this.reject(conn, RejectReason.BadToken); return; }
       if (s.conn !== undefined) this.byConn.delete(s.conn);
-      s.conn = conn; s.lastAckTick = -1; s.views.clear();
+      s.conn = conn; s.lastAckTick = -1; s.views.clear(); s.static = new StaticSession();
     } else {
       if (this.opts.maxClients !== undefined && this.sessions.size >= this.opts.maxClients) { this.reject(conn, RejectReason.ServerFull); return; }
       const token = (this.opts.randomToken ?? defaultToken)();
@@ -251,7 +280,7 @@ export class NetServer {
         clientId: this.nextClientId++, token, conn, lastAckTick: -1, lastReceivedSeq: -1, lastProcessedSeq: -1, lastViewTick: -1,
         inputQueue: [], lastSnapshotBytes: 0, fullSnapshots: 0,
         stats: { commands: 0, droppedCommands: 0, rateLimited: 0, deferred: 0, bytesSent: 0 },
-        views: new Map(), lastSent: new Int32Array(256), buckets: new Map(), commands: [], events: [],
+        views: new Map(), lastSent: new Int32Array(256), static: new StaticSession(), buckets: new Map(), commands: [], events: [],
       };
       this.sessions.set(s.clientId, s); this.byToken.set(tokenKey(token), s);
       this.opts.onClientJoin?.(s, this.world);
@@ -371,12 +400,15 @@ export class NetServer {
     const globals: number[] = [];
     for (let k = 0; k < ns.size; k++) { const e = ns.dense[k]!; if (!tf.has(entityIndex(e)) || this.globals.has(e)) globals.push(ns.data.id[k]!); }
     const grid = this.interest;
+    const viewsOf = new Map<number, readonly Viewpoint[]>();
+    if (this.statics) this.statics.update(cur);
     if (grid) {
       grid.sync();
       for (const s of this.byConn.values()) {
         const pos = (owned.get(s.clientId) ?? []).filter((e) => tf.has(entityIndex(e))).map((e) => ({ x: w.getField(e, Transform, "x")!, y: w.getField(e, Transform, "y")! }));
         const extra = this.extraViews.get(s.clientId);
-        grid.setViewer(s.clientId, extra ? [...pos, ...extra] : pos);
+        const vp = extra ? [...pos, ...extra] : pos; viewsOf.set(s.clientId, vp);
+        grid.setViewer(s.clientId, vp);
       }
       grid.update();
     }
@@ -414,6 +446,7 @@ export class NetServer {
     if (this.curArr.length <= maxId) { this.curArr = new Array(maxId * 2 + 1); this.stamp = new Int32Array(maxId * 2 + 1); }
     const curArr = this.curArr; curArr.fill(undefined);
     for (const [id, es] of cur) curArr[id] = es;
+    if (this.statics) for (const id of this.statics.ids) curArr[id] = undefined; // static channel, not snapshots
     const stamp = this.stamp;
     for (const s of this.byConn.values()) {
       const seq = ++this.stampSeq;
@@ -479,6 +512,11 @@ export class NetServer {
       const bytes = bw.finish(); s.lastSnapshotBytes = bytes.length; s.stats.bytesSent += bytes.length;
       this.opts.transport.send(s.conn!, bytes, "unreliable");
       this.flushEvents(s, tick);
+      if (this.statics) {
+        const rel = grid ? (grid.grid.get(s.clientId)?.chunks ?? NO_CHUNKS) : undefined;
+        const msg = this.statics.build(s.static, tick, rel, viewsOf.get(s.clientId) ?? [], this.staticBudgetBytes);
+        if (msg) { s.stats.bytesSent += msg.length; this.opts.transport.send(s.conn!, msg, "reliable"); }
+      }
     }
     this.perf.sendMs = now() - t1;
   }
@@ -524,4 +562,5 @@ export class NetServer {
 
 interface EncodedRecord { bytes: Uint8Array; bits: number; id: number }
 const NO_BASE = Symbol("full");
+const NO_CHUNKS: ReadonlySet<string> = new Set();
 const now = (): number => (globalThis as { performance?: { now(): number } }).performance?.now() ?? 0;

@@ -45,9 +45,18 @@ describe("integration: server + 2 clients over a lossy, jittery loopback", () =>
     const midOnA = pos(A.world, bOnA).y;
     expect(midOnA).toBeGreaterThan(5); // A sees B moving (interpolated, in the past)
     expect(midOnA).toBeLessThan(pos(B.world, bSelf).y);
-    frame(20);
+    // correction smoothing: reconciliation snaps sim state, the visual offset absorbs it and decays (~100 ms)
+    let maxOff = 0; let visualJump = 0; let lastVisual = pos(A.world, aSelf).x;
+    for (let i = 0; i < 20; i++) {
+      frame(1);
+      const o = A.client.correctionOffset(aSelf)?.x ?? 0; maxOff = Math.max(maxOff, Math.abs(o));
+      const visual = pos(A.world, aSelf).x + o; visualJump = Math.max(visualJump, Math.abs(visual - lastVisual)); lastVisual = visual;
+    }
     A.input.buttons = 0; B.input.buttons = 0;
     frame(20);
+    expect(maxOff).toBeGreaterThan(0.1);
+    expect(visualJump).toBeLessThan(A.client.stats.maxCorrection); // rendered position never snaps by the full correction
+    expect(A.client.correctionOffset(aSelf)).toBeUndefined(); // fully decayed; sim untouched (asserted below)
 
     // prediction overshot the wall, reconciliation pulled it back to the authoritative position
     expect(A.client.stats.maxCorrection).toBeGreaterThan(0.5);
