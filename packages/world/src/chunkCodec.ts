@@ -16,16 +16,30 @@ export const CHUNK_VERSION = 1;
  * Transform x/y are stored chunk-relative (precision: see WorldOrigin guidance) and rebased on decode.
  * No storage backend: callers persist the bytes (ChunkProvider.save / their own store).
  */
+let scratch = new ArrayBuffer(1 << 16); let scratchView = new DataView(scratch);
+function ensureScratch(n: number): void { if (scratch.byteLength >= n) return; let c = scratch.byteLength; while (c < n) c *= 2; scratch = new ArrayBuffer(c); scratchView = new DataView(scratch); }
+/** Header + tiles + height + buildings written straight into a reused DataView (no per-piece/per-run allocation). */
+function encodeStatic(chunk: Chunk, buildings: BuildingGrid | undefined): number {
+  const anchored = buildings?.layer(chunk.key)?.anchored;
+  const nb = anchored?.size ?? 0; if (nb > 0xffff) throw new Error("too many pieces in chunk");
+  ensureScratch(14 + 2 + CHUNK_AREA * 4 + CHUNK_AREA + 2 + nb * 10);
+  const d = scratchView; let o = 0; const t = chunk.tiles;
+  d.setUint32(o, CHUNK_MAGIC, true); d.setUint16(o + 4, CHUNK_VERSION, true); d.setInt32(o + 6, chunk.cx, true); d.setInt32(o + 10, chunk.cy, true); o = 14;
+  const runsAt = o; o += 2; let runs = 0;
+  for (let i = 0; i < CHUNK_AREA;) { const v = t[i]!; let n = 1; while (i + n < CHUNK_AREA && t[i + n] === v && n < 0xffff) n++; d.setUint16(o, n, true); d.setUint16(o + 2, v, true); o += 4; runs++; i += n; }
+  d.setUint16(runsAt, runs, true);
+  new Uint8Array(scratch, o, CHUNK_AREA).set(chunk.height); o += CHUNK_AREA;
+  d.setUint16(o, nb, true); o += 2;
+  if (anchored && nb) {
+    const ox = chunk.cx * CHUNK_SIZE, oy = chunk.cy * CHUNK_SIZE;
+    for (const id of anchored) { const b = buildings!.get(id)!; d.setUint16(o, b.piece, true); d.setUint8(o + 2, b.tx - ox); d.setUint8(o + 3, b.ty - oy); d.setUint8(o + 4, b.z); d.setUint8(o + 5, b.rot); d.setFloat32(o + 6, b.hp, true); o += 10; }
+  }
+  return o;
+}
 export function encodeChunk(chunk: Chunk, opts: { world?: World; entities?: Iterable<Entity>; buildings?: BuildingGrid } = {}): Uint8Array {
-  const w = new BinaryWriter(4096);
-  w.write("u32", CHUNK_MAGIC); w.write("u16", CHUNK_VERSION); w.write("i32", chunk.cx); w.write("i32", chunk.cy);
-  const runs: [number, number][] = [];
-  for (let i = 0; i < CHUNK_AREA; i++) { const t = chunk.tiles[i]!; const last = runs[runs.length - 1]; if (last && last[1] === t && last[0] < 0xffff) last[0]++; else runs.push([1, t]); }
-  w.write("u16", runs.length); for (const [n, t] of runs) { w.write("u16", n); w.write("u16", t); }
-  for (let i = 0; i < CHUNK_AREA; i++) w.write("u8", chunk.height[i]!);
-  const insts = opts.buildings?.anchoredIn(chunk.key) ?? [];
-  w.write("u16", insts.length);
-  for (const b of insts) { w.write("u16", b.piece); w.write("u8", b.tx - chunk.cx * CHUNK_SIZE); w.write("u8", b.ty - chunk.cy * CHUNK_SIZE); w.write("u8", b.z); w.write("u8", b.rot); w.write("f32", b.hp); }
+  const head = encodeStatic(chunk, opts.buildings);
+  if (!opts.world) { const out = new Uint8Array(head + 5); out.set(new Uint8Array(scratch, 0, head)); return out; } // u8 0 comps + u32 0 ents
+  const w = new BinaryWriter(256);
   const world = opts.world;
   const stores = world ? world.componentStores.filter((s) => s.def.persistent) : [];
   const ents = world ? [...(opts.entities ?? [])].filter((e) => world.isAlive(e) && stores.some((s) => s.has(entityIndex(e)))) : [];
@@ -44,7 +58,8 @@ export function encodeChunk(chunk: Chunk, opts: { world?: World; entities?: Iter
       } else for (const f of s.fields) encodeField(s, f, slot, w);
     }
   }
-  return w.finish();
+  const tail = w.finish(); const out = new Uint8Array(head + tail.length);
+  out.set(new Uint8Array(scratch, 0, head)); out.set(tail, head); return out;
 }
 
 export interface DecodedChunk { chunk: Chunk; buildings: { piece: number; tx: number; ty: number; z: number; rot: number; hp: number }[]; entities: Entity[] }

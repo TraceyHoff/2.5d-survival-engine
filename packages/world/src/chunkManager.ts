@@ -1,9 +1,10 @@
 import { Chunk, chunkKey, parseChunkKey, TileMap, tileToChunk, tileToLocal, type ChunkKey } from "./chunk.js";
-import type { ChunkProvider, NodePlacement } from "./generator.js";
+import type { AsyncChunkProvider, ChunkProvider, GeneratedChunk, NodePlacement } from "./generator.js";
 
 export interface InterestSource { id: number; x: number; y: number; /** load radius in chunks (default manager radius) */ radius?: number }
 export interface ChunkManagerOptions {
-  provider: ChunkProvider;
+  /** Sync or async provider. Async loads are tracked as in-flight: never requested twice, dropped if no longer wanted on arrival. */
+  provider: ChunkProvider | AsyncChunkProvider;
   /** Chunks within this Chebyshev radius of any source are kept active. */
   loadRadius?: number;
   /** Extra radius before an active chunk is released (hysteresis). */
@@ -29,7 +30,10 @@ export class ChunkManager extends TileMap {
   private lru = new Map<ChunkKey, true>();
   private loadHooks: ChunkLoadHook[] = []; private unloadHooks: ChunkUnloadHook[] = [];
   private pending: ChunkKey[] = [];
-  stats = { loads: 0, unloads: 0, cacheHits: 0 };
+  private inflight = new Map<ChunkKey, number>(); // key -> request token
+  private token = 0;
+  private keepSet = new Set<ChunkKey>();
+  stats = { loads: 0, unloads: 0, cacheHits: 0, asyncDropped: 0, loadErrors: 0 };
   constructor(private opts: ChunkManagerOptions) {
     super();
     this.loadRadius = opts.loadRadius ?? 2; this.unloadMargin = opts.unloadMargin ?? 1;
@@ -41,7 +45,18 @@ export class ChunkManager extends TileMap {
   removeSource(id: number): void { this.sources.delete(id); }
   isActive(k: ChunkKey): boolean { return this.active.has(k); }
   get activeKeys(): ReadonlySet<ChunkKey> { return this.active; }
-  get pendingLoads(): number { return this.pending.length; }
+  /** Queued (not yet requested) + in-flight async loads. */
+  get pendingLoads(): number { return this.pending.length + this.inflight.size; }
+  get inflightLoads(): number { return this.inflight.size; }
+  isPending(k: ChunkKey): boolean { return this.inflight.has(k) || this.pending.includes(k); }
+  /** Resolves when no async loads are in flight (tests/tools). */
+  async settle(): Promise<void> { while (this.inflight.size) await Promise.all([...this.inflightPromises.values()]); }
+  private inflightPromises = new Map<ChunkKey, Promise<void>>();
+  private install(k: ChunkKey, cx: number, cy: number, g: GeneratedChunk | undefined): void {
+    const chunk = g?.chunk ?? new Chunk(cx, cy);
+    this.chunks.set(k, chunk); this.adopt(chunk); this.active.add(k); this.stats.loads++;
+    for (const h of this.loadHooks) h(chunk, g?.nodes ?? []);
+  }
 
   /** Recompute active set, queue/perform loads (budgeted), move released chunks to LRU, evict overflow. */
   update(): void {
@@ -53,26 +68,37 @@ export class ChunkManager extends TileMap {
         if (Math.abs(dx) <= r && Math.abs(dy) <= r) want.add(k);
       }
     }
+    this.keepSet = keep;
+    for (const k of [...this.inflight.keys()]) if (!keep.has(k)) { this.inflight.delete(k); this.inflightPromises.delete(k); this.stats.asyncDropped++; } // late result will be ignored
     for (const k of [...this.active]) if (!keep.has(k)) { this.active.delete(k); this.lru.delete(k); this.lru.set(k, true); }
     const queued = new Set(this.pending);
     for (const k of want) if (!this.active.has(k)) {
       if (this.chunks.has(k)) { this.active.add(k); this.lru.delete(k); this.stats.cacheHits++; }
-      else if (!queued.has(k)) { this.pending.push(k); queued.add(k); }
+      else if (!queued.has(k) && !this.inflight.has(k)) { this.pending.push(k); queued.add(k); }
     }
     let n = 0;
     while (this.pending.length && n < this.maxLoads) {
-      const k = this.pending.shift()!; if (!want.has(k) || this.chunks.has(k)) continue;
-      const { cx, cy } = parseChunkKey(k); const g = this.opts.provider.load(cx, cy);
-      const chunk = g?.chunk ?? new Chunk(cx, cy);
-      this.chunks.set(k, chunk); this.active.add(k); this.stats.loads++; n++;
-      for (const h of this.loadHooks) h(chunk, g?.nodes ?? []);
+      const k = this.pending.shift()!; if (!want.has(k) || this.chunks.has(k) || this.inflight.has(k)) continue;
+      const { cx, cy } = parseChunkKey(k); const g = this.opts.provider.load(cx, cy); n++;
+      if (g instanceof Promise) {
+        const tok = ++this.token; this.inflight.set(k, tok);
+        const p = g.then((res) => {
+          if (this.inflight.get(k) !== tok) { return; } // unloaded/superseded while loading
+          this.inflight.delete(k); this.inflightPromises.delete(k);
+          if (this.chunks.has(k) || !this.keepSet.has(k)) { this.stats.asyncDropped++; return; }
+          this.install(k, cx, cy, res);
+        }, () => { if (this.inflight.get(k) === tok) { this.inflight.delete(k); this.inflightPromises.delete(k); } this.stats.loadErrors++; });
+        this.inflightPromises.set(k, p);
+      } else this.install(k, cx, cy, g);
     }
     while (this.lru.size > this.cacheSize) this.evict(this.lru.keys().next().value!);
   }
   /** Force-unload a chunk (fires onUnload). */
   evict(k: ChunkKey): void {
+    if (this.inflight.delete(k)) { this.inflightPromises.delete(k); this.stats.asyncDropped++; }
     const c = this.chunks.get(k); this.lru.delete(k); this.active.delete(k); if (!c) return;
     for (const h of this.unloadHooks) h(c);
+    c.changeSink = undefined; this.changed.delete(c);
     this.chunks.delete(k); this.stats.unloads++;
   }
   /** Writes to unloaded chunks are ignored (returns false) — the world only mutates resident chunks. */

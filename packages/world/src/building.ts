@@ -66,6 +66,8 @@ export class BuildPieceRegistry {
 }
 
 export interface EnclosureResult { enclosed: boolean; roofed: boolean; size: number }
+export const enum BuildingChangeKind { Placed = 0, Removed = 1, Hp = 2 }
+export interface BuildingChange { kind: BuildingChangeKind; id: number; piece: number; tx: number; ty: number; z: number; rot: number; hp: number; key: ChunkKey }
 export interface PieceInstance { id: number; piece: number; tx: number; ty: number; z: number; rot: number; hp: number }
 export interface PlaceCheck { ok: boolean; blockers: number[]; outOfRange?: boolean }
 /** Per-chunk structure layer: sparse occupancy (level, layer, local tile) -> instance id, plus anchored instances. */
@@ -93,7 +95,22 @@ export class BuildingGrid {
   wallLayers: readonly number[] = [1];
   private enclosureCache = new Map<string, EnclosureResult>();
   private cacheVersion = -1;
+  private changes: BuildingChange[] = [];
+  /** Set false to stop recording (e.g. while bulk-loading chunks from disk). */
+  recordChanges = true;
   constructor(readonly pieces: BuildPieceRegistry) {}
+  private rec(kind: BuildingChangeKind, i: PieceInstance): void {
+    if (this.recordChanges) this.changes.push({ kind, id: i.id, piece: i.piece, tx: i.tx, ty: i.ty, z: i.z, rot: i.rot, hp: i.hp, key: chunkKey(tileToChunk(i.tx), tileToChunk(i.ty)) });
+  }
+  /** Drain building change records (placed / removed / hp) since the last drain, in mutation order. */
+  buildingChanges(): BuildingChange[] { return this.changes.splice(0); }
+  /** Set hp (clamped >= 0); records an Hp change when it differs. Returns false for unknown ids. */
+  setHp(id: number, hp: number): boolean {
+    const i = this.instances.get(id); if (!i) return false; const v = Math.max(0, hp); if (v === i.hp) return true;
+    i.hp = v; this.rec(BuildingChangeKind.Hp, i); return true;
+  }
+  /** Subtract damage; returns remaining hp (-1 if unknown). Removal at 0 hp is gameplay's call. */
+  damage(id: number, amount: number): number { const i = this.instances.get(id); if (!i) return -1; this.setHp(id, i.hp - amount); return i.hp; }
   get count(): number { return this.instances.size; }
   get(id: number): PieceInstance | undefined { return this.instances.get(id); }
   layer(k: ChunkKey): StructureLayer | undefined { return this.layers.get(k); }
@@ -127,12 +144,12 @@ export class BuildingGrid {
     const d = this.pieces.get(pieceId); const id = this.nextId++;
     const inst: PieceInstance = { id, piece: pieceId, tx, ty, z, rot: rot & 3, hp: hp ?? d.hp };
     this.instances.set(id, inst); this.layerFor(tx, ty).anchored.add(id);
-    this.writeCells(inst, id); this.version++; this.onPlace?.(inst); return id;
+    this.writeCells(inst, id); this.version++; this.rec(BuildingChangeKind.Placed, inst); this.onPlace?.(inst); return id;
   }
   remove(id: number): boolean {
     const inst = this.instances.get(id); if (!inst) return false;
     this.writeCells(inst, 0); this.layerFor(inst.tx, inst.ty).anchored.delete(id); this.instances.delete(id);
-    this.version++; this.onRemove?.(inst); return true;
+    this.version++; this.rec(BuildingChangeKind.Removed, inst); this.onRemove?.(inst); return true;
   }
   private writeCells(inst: PieceInstance, v: number): void {
     const d = this.pieces.get(inst.piece);

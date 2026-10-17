@@ -269,3 +269,23 @@ flowchart TD
 | Chat | `ChannelRegistry`, `TokenBucket`, `MuteList`, `encodeChatMessage`, `writeString` | net (transport) |
 | Commands | `installCommandHandlers`, `CommandRejected` | gameplay handlers, net delivery |
 
+## 17. Persistence, Change Records & Testing/Demo
+
+**Persistence** is owned by Netcode: see [`packages/persist/README.md`](../packages/persist/README.md) (WorldStore backends, autosave, player save/restore). Engine-side contracts it builds on: `encodeChunk`/`decodeChunk` (format v1), `persistent` component flag, `ChunkManager.onLoad/onUnload`, sync `ChunkProvider` (async variant: `AsyncChunkProvider`, ADR-061).
+
+| Package | Owner | Role |
+|---|---|---|
+| packages/persist | Netcode | storage backends, autosave, sessions |
+
+**Change records for net** (drain once per tick in the network phase):
+- `chunkManager.tileChanges()` → `{key, version, changes: (index, old, new)…}`; wire via `encodeTileDelta` / `applyTileDelta`.
+- `buildingGrid.buildingChanges()` → `Placed | Removed | Hp` records; mutate hp only via `setHp`/`damage`.
+- ECS: `world.changed(def)` / `world.removed(def)`; `setField`/`setElement`/`set` always mark dirty.
+
+**Testing & Demo** (root scripts):
+- `pnpm check` — typecheck + all tests (CI gate).
+- `pnpm bench` — benchmarks with strict timing asserts (`PERF=1`).
+- `pnpm test:net` — multiplayer/network test suite.
+- `pnpm demo` — persistent server + Vite client (open the printed URL; reload = same player).
+- `pnpm demo:bots` — demo server with headless WebSocket bots.
+

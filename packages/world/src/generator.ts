@@ -7,6 +7,11 @@ export interface NodePlacement { tx: number; ty: number; kind: number }
 export interface GeneratedChunk { chunk: Chunk; nodes: NodePlacement[] }
 
 /** Pluggable chunk source. Return undefined if the provider has nothing (e.g. storage miss). */
+/** Provider whose load may resolve later (remote/IndexedDB). ChunkManager accepts either kind. */
+export interface AsyncChunkProvider {
+  load(cx: number, cy: number): GeneratedChunk | undefined | Promise<GeneratedChunk | undefined>;
+  save?(key: ChunkKey, bytes: Uint8Array): void;
+}
 export interface ChunkProvider {
   load(cx: number, cy: number): GeneratedChunk | undefined;
   /** Optional persistence of an unloaded chunk (encoded with encodeChunk). */

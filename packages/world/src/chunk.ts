@@ -12,12 +12,17 @@ export class Chunk {
   readonly height = new Uint8Array(CHUNK_AREA);
   /** Set when tiles change; cleared by whoever persists/streams the chunk. */
   dirty = false; version = 0;
+  /** Tile edits since the last drain: flat triples (index, old, new). Only recorded when old !== new. */
+  readonly tileChanges: number[] = [];
+  /** Set by the owning TileMap so edits register the chunk for draining. */
+  changeSink: Set<Chunk> | undefined;
   readonly key: ChunkKey;
   constructor(readonly cx: number, readonly cy: number) { this.key = chunkKey(cx, cy); }
   get(lx: number, ly: number): number { return this.tiles[ly * CHUNK_SIZE + lx]!; }
   set(lx: number, ly: number, id: number): void {
     const i = ly * CHUNK_SIZE + lx; if (this.tiles[i] === id) return;
-    this.tiles[i] = id; this.dirty = true; this.version++;
+    const old = this.tiles[i]!; this.tiles[i] = id; this.dirty = true; this.version++;
+    this.tileChanges.push(i, old, id); this.changeSink?.add(this);
   }
   getHeight(lx: number, ly: number): number { return this.height[ly * CHUNK_SIZE + lx]!; }
   setHeight(lx: number, ly: number, h: number): void { this.height[ly * CHUNK_SIZE + lx] = h; this.dirty = true; this.version++; }
@@ -34,16 +39,25 @@ export const chunkOf = (pos: { x: number; y: number }): { cx: number; cy: number
 export const chunkKeyOf = (x: number, y: number): ChunkKey => chunkKey(Math.floor(x / CHUNK_SIZE), Math.floor(y / CHUNK_SIZE));
 
 /** Plain chunk container (no streaming). ChunkManager builds on it. */
+export interface TileChangeSet { key: ChunkKey; chunk: Chunk; version: number; /** flat (index, old, new) triples in edit order */ changes: number[] }
 export class TileMap {
   protected chunks = new Map<ChunkKey, Chunk>();
+  protected changed = new Set<Chunk>();
+  protected adopt(c: Chunk): void { c.changeSink = this.changed; if (c.tileChanges.length) this.changed.add(c); }
+  /** Drain per-chunk tile edits recorded since the last drain (call once per tick, e.g. in net's network phase). */
+  tileChanges(): TileChangeSet[] {
+    const out: TileChangeSet[] = [];
+    for (const c of this.changed) { if (!c.tileChanges.length || this.chunks.get(c.key) !== c) { c.tileChanges.length = 0; continue; } out.push({ key: c.key, chunk: c, version: c.version, changes: c.tileChanges.splice(0) }); }
+    this.changed.clear(); return out.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+  }
   getChunk(cx: number, cy: number): Chunk | undefined { return this.chunks.get(chunkKey(cx, cy)); }
   getChunkByKey(k: ChunkKey): Chunk | undefined { return this.chunks.get(k); }
   ensureChunk(cx: number, cy: number): Chunk {
     const k = chunkKey(cx, cy); let c = this.chunks.get(k);
-    if (!c) { c = new Chunk(cx, cy); this.chunks.set(k, c); } return c;
+    if (!c) { c = new Chunk(cx, cy); this.chunks.set(k, c); this.adopt(c); } return c;
   }
-  insertChunk(c: Chunk): void { this.chunks.set(c.key, c); }
-  unloadChunk(cx: number, cy: number): boolean { return this.chunks.delete(chunkKey(cx, cy)); }
+  insertChunk(c: Chunk): void { this.chunks.set(c.key, c); this.adopt(c); }
+  unloadChunk(cx: number, cy: number): boolean { const c = this.chunks.get(chunkKey(cx, cy)); if (c) { c.changeSink = undefined; this.changed.delete(c); } return this.chunks.delete(chunkKey(cx, cy)); }
   getTile(tx: number, ty: number): number {
     return this.getChunk(tileToChunk(tx), tileToChunk(ty))?.get(tileToLocal(tx), tileToLocal(ty)) ?? 0;
   }
@@ -72,4 +86,26 @@ export class WorldOrigin {
     const nx = Math.floor(x / CHUNK_SIZE) * CHUNK_SIZE, ny = Math.floor(y / CHUNK_SIZE) * CHUNK_SIZE;
     const d = { dx: nx - this.ox, dy: ny - this.oy }; this.ox = nx; this.oy = ny; return d;
   }
+}
+
+/**
+ * Compact per-chunk tile delta (net replication of edits). Collapses repeated edits of a tile to the final value.
+ * Wire: u32 version (after edits), u16 n, n x (u16 index, u16 tile).
+ */
+export function encodeTileDelta(set: { version: number; changes: readonly number[] }): Uint8Array {
+  const last = new Map<number, number>(); for (let k = 0; k < set.changes.length; k += 3) { const i = set.changes[k]!; last.delete(i); last.set(i, set.changes[k + 2]!); }
+  const out = new Uint8Array(6 + last.size * 4); const d = new DataView(out.buffer);
+  d.setUint32(0, set.version >>> 0, true); d.setUint16(4, last.size, true); let o = 6;
+  for (const [i, t] of last) { d.setUint16(o, i, true); d.setUint16(o + 2, t, true); o += 4; }
+  return out;
+}
+export function decodeTileDelta(bytes: Uint8Array): { version: number; tiles: [index: number, tile: number][] } {
+  const d = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength); const n = d.getUint16(4, true);
+  if (bytes.byteLength < 6 + n * 4) throw new RangeError("tile delta truncated");
+  const tiles: [number, number][] = []; for (let k = 0; k < n; k++) { const i = d.getUint16(6 + k * 4, true); if (i >= CHUNK_AREA) throw new RangeError("tile index out of range"); tiles.push([i, d.getUint16(8 + k * 4, true)]); }
+  return { version: d.getUint32(0, true), tiles };
+}
+/** Applies a delta to a client chunk (records as local edits too) and adopts the server version. */
+export function applyTileDelta(chunk: Chunk, bytes: Uint8Array): void {
+  const { version, tiles } = decodeTileDelta(bytes); for (const [i, t] of tiles) chunk.set(i % CHUNK_SIZE, (i / CHUNK_SIZE) | 0, t); chunk.version = version;
 }

@@ -146,3 +146,7 @@ describe("command handlers", () => {
     w.simulate(1, 0.05); expect(H.queued).toBe(0);
   });
 });
+
+describe("removeSystem", () => {
+  it("removes by name", () => { const w = new World(); let n = 0; w.addSystem("simulation", "a", () => n++); stepN(w, 1); expect(w.removeSystem("a")).toBe(true); expect(w.removeSystem("a")).toBe(false); stepN(w, 1); expect(n).toBe(1); });
+});

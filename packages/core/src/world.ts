@@ -235,6 +235,11 @@ export class World {
     const offset = opts.offset ?? (every > 1 ? fnv1a(name) % every : 0);
     l.push({ name, fn, every, offset: ((offset % every) + every) % every }); return this;
   }
+  /** Removes a system by name from every phase; returns true if one was removed. */
+  removeSystem(name: string): boolean {
+    let hit = false; for (const l of this.systems.values()) for (let i = l.length - 1; i >= 0; i--) if (l[i]!.name === name) { l.splice(i, 1); hit = true; }
+    return hit;
+  }
   /** True if a system with this schedule runs at `tick`. */
   static scheduled(every: number, offset: number, tick: number): boolean { return every <= 1 || (tick + every - offset) % every === 0; }
   private runEntry(s: SystemEntry, dt: number): void { if (World.scheduled(s.every, s.offset, this.tick)) s.fn(this, dt * s.every); }
