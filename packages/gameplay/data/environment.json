@@ -1,5 +1,5 @@
 {
-  "$comment": "Day/night + weather tuning. timeOfDay 0 = midnight, 0.5 = noon. kind must match core WeatherKind: clear|rain|storm|snow|fog.",
+  "$comment": "Day/night + weather tuning. timeOfDay 0 = midnight, 0.5 = noon. kind must match core WeatherKind: clear|rain|storm|snow|fog. Temperature uses world climate (bands temp + gameplay ClimateModel) when installed, else baseTemp. surface = per-chunk surface wetness rates. spoilage scales food decay by temperature and container.",
   "dayLengthSeconds": 1200,
   "startTimeOfDay": 0.25,
   "baseTemp": 14,
@@ -10,10 +10,126 @@
   "heatDryMul": 3,
   "shelterTempBonus": 4,
   "weather": [
-    { "kind": "clear", "weight": 50, "durationSeconds": [180, 420], "intensity": [0, 0],     "tempOffset": 2,   "wetnessPerSec": 0,     "thirstMul": 1.1, "staminaRegenMul": 1.0 },
-    { "kind": "fog",   "weight": 15, "durationSeconds": [90, 240],  "intensity": [0.4, 1],   "tempOffset": -2,  "wetnessPerSec": 0.002, "thirstMul": 1.0, "staminaRegenMul": 1.0 },
-    { "kind": "rain",  "weight": 22, "durationSeconds": [120, 300], "intensity": [0.3, 1],   "tempOffset": -4,  "wetnessPerSec": 0.02,  "thirstMul": 0.8, "staminaRegenMul": 0.9 },
-    { "kind": "storm", "weight": 8,  "durationSeconds": [60, 180],  "intensity": [0.7, 1],   "tempOffset": -7,  "wetnessPerSec": 0.05,  "thirstMul": 0.8, "staminaRegenMul": 0.7 },
-    { "kind": "snow",  "weight": 5,  "durationSeconds": [120, 360], "intensity": [0.3, 1],   "tempOffset": -14, "wetnessPerSec": 0.006, "thirstMul": 0.9, "staminaRegenMul": 0.8 }
-  ]
+    {
+      "kind": "clear",
+      "weight": 50,
+      "durationSeconds": [
+        180,
+        420
+      ],
+      "intensity": [
+        0,
+        0
+      ],
+      "tempOffset": 2,
+      "wetnessPerSec": 0,
+      "thirstMul": 1.1,
+      "staminaRegenMul": 1.0,
+      "windSpeed": [
+        1,
+        4
+      ]
+    },
+    {
+      "kind": "fog",
+      "weight": 15,
+      "durationSeconds": [
+        90,
+        240
+      ],
+      "intensity": [
+        0.4,
+        1
+      ],
+      "tempOffset": -2,
+      "wetnessPerSec": 0.002,
+      "thirstMul": 1.0,
+      "staminaRegenMul": 1.0,
+      "windSpeed": [
+        0,
+        1.5
+      ]
+    },
+    {
+      "kind": "rain",
+      "weight": 22,
+      "durationSeconds": [
+        120,
+        300
+      ],
+      "intensity": [
+        0.3,
+        1
+      ],
+      "tempOffset": -4,
+      "wetnessPerSec": 0.02,
+      "thirstMul": 0.8,
+      "staminaRegenMul": 0.9,
+      "windSpeed": [
+        3,
+        7
+      ]
+    },
+    {
+      "kind": "storm",
+      "weight": 8,
+      "durationSeconds": [
+        60,
+        180
+      ],
+      "intensity": [
+        0.7,
+        1
+      ],
+      "tempOffset": -7,
+      "wetnessPerSec": 0.05,
+      "thirstMul": 0.8,
+      "staminaRegenMul": 0.7,
+      "windSpeed": [
+        8,
+        16
+      ]
+    },
+    {
+      "kind": "snow",
+      "weight": 5,
+      "durationSeconds": [
+        120,
+        360
+      ],
+      "intensity": [
+        0.3,
+        1
+      ],
+      "tempOffset": -14,
+      "wetnessPerSec": 0.006,
+      "thirstMul": 0.9,
+      "staminaRegenMul": 0.8,
+      "windSpeed": [
+        2,
+        8
+      ]
+    }
+  ],
+  "altitudeLapse": 0.6,
+  "humidityPerIntensity": 0.4,
+  "windChillPerSpeed": 1.5,
+  "surface": {
+    "rainPerSec": 0.01,
+    "dryPerSec": 0.002,
+    "windDryMul": 0.5,
+    "sunDryMul": 2.0
+  },
+  "wetBuffThreshold": 0.3,
+  "coldBuffBelow": 10,
+  "spoilage": {
+    "tempRefC": 20,
+    "mulPerDegree": 0.05,
+    "minMul": 0.1,
+    "maxMul": 3,
+    "rebaseThreshold": 0.1,
+    "sickSeconds": 60,
+    "spoiledItem": "rot",
+    "staleFreshness": 0.5
+  }
 }

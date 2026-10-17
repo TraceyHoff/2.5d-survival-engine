@@ -1,0 +1,671 @@
+{
+  "$comment": "Build pieces. Engine fields (key, footprint, levels, layer 0 deck/1 structure/2 furniture/3 decor, solid, cost, sockets in 1/4 tiles, hp) are validated by @engine/world loadBuildPieces; ids from ids.lock.json. Gameplay fields: placement cell|edge|opening|free, tiered (cost/hp from tiers.json x costScale; hp = base hp at wood tier), z rules, support flags, station/heat/fuel/container/privilege. Socket kinds: 1 edge, 2 door, 3 window, 4 hatch. Art: manifest key = sprite or key; Art & Assets owns all visuals.",
+  "pieces": [
+    {
+      "key": "foundation",
+      "placement": "cell",
+      "layer": 0,
+      "tiered": true,
+      "costScale": 1.5,
+      "hp": 400,
+      "groundOnly": true,
+      "sockets": [
+        {
+          "x": 2,
+          "y": 0,
+          "kind": 1
+        },
+        {
+          "x": 4,
+          "y": 2,
+          "kind": 1
+        },
+        {
+          "x": 2,
+          "y": 4,
+          "kind": 1
+        },
+        {
+          "x": 0,
+          "y": 2,
+          "kind": 1
+        }
+      ],
+      "solid": false
+    },
+    {
+      "key": "floor",
+      "placement": "cell",
+      "layer": 0,
+      "tiered": true,
+      "costScale": 1.0,
+      "hp": 250,
+      "minLevel": 1,
+      "sockets": [
+        {
+          "x": 2,
+          "y": 0,
+          "kind": 1
+        },
+        {
+          "x": 4,
+          "y": 2,
+          "kind": 1
+        },
+        {
+          "x": 2,
+          "y": 4,
+          "kind": 1
+        },
+        {
+          "x": 0,
+          "y": 2,
+          "kind": 1
+        }
+      ],
+      "solid": false
+    },
+    {
+      "key": "floor_hatch_frame",
+      "placement": "cell",
+      "layer": 0,
+      "tiered": true,
+      "costScale": 0.9,
+      "hp": 220,
+      "minLevel": 1,
+      "opening": "hatch",
+      "sockets": [
+        {
+          "x": 2,
+          "y": 0,
+          "kind": 1
+        },
+        {
+          "x": 4,
+          "y": 2,
+          "kind": 1
+        },
+        {
+          "x": 2,
+          "y": 4,
+          "kind": 1
+        },
+        {
+          "x": 0,
+          "y": 2,
+          "kind": 1
+        },
+        {
+          "x": 2,
+          "y": 2,
+          "kind": 4
+        }
+      ],
+      "solid": false
+    },
+    {
+      "key": "roof_flat",
+      "placement": "cell",
+      "layer": 0,
+      "tiered": true,
+      "costScale": 1.0,
+      "hp": 250,
+      "minLevel": 1,
+      "roof": true,
+      "solid": false
+    },
+    {
+      "key": "roof_slope",
+      "placement": "cell",
+      "layer": 0,
+      "tiered": true,
+      "costScale": 1.2,
+      "hp": 250,
+      "minLevel": 1,
+      "roof": true,
+      "solid": false
+    },
+    {
+      "key": "stairs",
+      "placement": "cell",
+      "layer": 1,
+      "tiered": true,
+      "costScale": 1.5,
+      "hp": 250,
+      "needsDeck": true,
+      "solid": false
+    },
+    {
+      "key": "pillar",
+      "placement": "cell",
+      "layer": 1,
+      "tiered": true,
+      "costScale": 0.5,
+      "hp": 300,
+      "needsDeck": true,
+      "supportsAbove": true,
+      "solid": true
+    },
+    {
+      "key": "wall",
+      "placement": "edge",
+      "layer": 1,
+      "tiered": true,
+      "costScale": 1.0,
+      "hp": 250,
+      "blocksPath": true
+    },
+    {
+      "key": "wall_low",
+      "placement": "edge",
+      "layer": 1,
+      "tiered": true,
+      "costScale": 0.5,
+      "hp": 150,
+      "blocksPath": true
+    },
+    {
+      "key": "wall_window",
+      "placement": "edge",
+      "layer": 1,
+      "tiered": true,
+      "costScale": 0.8,
+      "hp": 220,
+      "blocksPath": true,
+      "opening": "window",
+      "sockets": [
+        {
+          "x": 0,
+          "y": 0,
+          "kind": 3
+        }
+      ]
+    },
+    {
+      "key": "wall_doorway",
+      "placement": "edge",
+      "layer": 1,
+      "tiered": true,
+      "costScale": 0.8,
+      "hp": 220,
+      "blocksPath": false,
+      "opening": "door",
+      "sockets": [
+        {
+          "x": 0,
+          "y": 0,
+          "kind": 2
+        }
+      ]
+    },
+    {
+      "key": "door_wood",
+      "placement": "opening",
+      "fits": "door",
+      "tier": 1,
+      "hp": 200,
+      "door": true,
+      "blocksPath": true,
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 8
+        },
+        {
+          "resource": "rope",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "key": "door_metal",
+      "placement": "opening",
+      "fits": "door",
+      "tier": 3,
+      "hp": 900,
+      "door": true,
+      "blocksPath": true,
+      "cost": [
+        {
+          "resource": "iron_plate",
+          "amount": 4
+        },
+        {
+          "resource": "nails",
+          "amount": 6
+        }
+      ]
+    },
+    {
+      "key": "hatch_wood",
+      "placement": "opening",
+      "fits": "hatch",
+      "tier": 1,
+      "hp": 180,
+      "door": true,
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 6
+        },
+        {
+          "resource": "rope",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "key": "window_shutters",
+      "placement": "opening",
+      "fits": "window",
+      "tier": 1,
+      "hp": 120,
+      "door": true,
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 4
+        }
+      ]
+    },
+    {
+      "key": "window_glass",
+      "placement": "opening",
+      "fits": "window",
+      "tier": 2,
+      "hp": 80,
+      "cost": [
+        {
+          "resource": "glass",
+          "amount": 2
+        },
+        {
+          "resource": "planks",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "key": "window_bars",
+      "placement": "opening",
+      "fits": "window",
+      "tier": 3,
+      "hp": 600,
+      "cost": [
+        {
+          "resource": "iron_plate",
+          "amount": 2
+        },
+        {
+          "resource": "nails",
+          "amount": 2
+        }
+      ]
+    },
+    {
+      "key": "campfire",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 150,
+      "ground": true,
+      "station": "campfire",
+      "fired": true,
+      "heat": 18,
+      "heatRadius": 4,
+      "light": true,
+      "container": 4,
+      "cost": [
+        {
+          "resource": "wood",
+          "amount": 5
+        },
+        {
+          "resource": "stone",
+          "amount": 4
+        }
+      ]
+    },
+    {
+      "key": "workbench",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 300,
+      "ground": true,
+      "station": "workbench",
+      "footprint": {
+        "w": 2,
+        "h": 1
+      },
+      "cost": [
+        {
+          "resource": "wood",
+          "amount": 10
+        },
+        {
+          "resource": "stone",
+          "amount": 4
+        }
+      ]
+    },
+    {
+      "key": "furnace",
+      "placement": "free",
+      "layer": 2,
+      "tier": 2,
+      "hp": 600,
+      "ground": true,
+      "station": "furnace",
+      "fired": true,
+      "heat": 12,
+      "heatRadius": 3,
+      "light": true,
+      "container": 6,
+      "cost": [
+        {
+          "resource": "stone_brick",
+          "amount": 12
+        },
+        {
+          "resource": "clay",
+          "amount": 6
+        }
+      ]
+    },
+    {
+      "key": "anvil",
+      "placement": "free",
+      "layer": 2,
+      "tier": 3,
+      "hp": 800,
+      "ground": true,
+      "station": "anvil",
+      "cost": [
+        {
+          "resource": "iron_ingot",
+          "amount": 6
+        },
+        {
+          "resource": "hardwood",
+          "amount": 2
+        }
+      ]
+    },
+    {
+      "key": "storage_box",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 200,
+      "ground": true,
+      "container": 12,
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 8
+        }
+      ],
+      "spoilMul": 1.0
+    },
+    {
+      "key": "large_chest",
+      "placement": "free",
+      "layer": 2,
+      "tier": 2,
+      "hp": 400,
+      "container": 24,
+      "footprint": {
+        "w": 2,
+        "h": 1
+      },
+      "cost": [
+        {
+          "resource": "hardwood_planks",
+          "amount": 12
+        },
+        {
+          "resource": "nails",
+          "amount": 4
+        }
+      ],
+      "spoilMul": 1.0
+    },
+    {
+      "key": "bed",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 150,
+      "footprint": {
+        "w": 1,
+        "h": 2
+      },
+      "solid": false,
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 6
+        },
+        {
+          "resource": "cloth",
+          "amount": 4
+        }
+      ]
+    },
+    {
+      "key": "chair",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 80,
+      "solid": false,
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 3
+        }
+      ]
+    },
+    {
+      "key": "table",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 120,
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 5
+        }
+      ]
+    },
+    {
+      "key": "torch_stand",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 60,
+      "ground": true,
+      "fired": true,
+      "light": true,
+      "heat": 4,
+      "heatRadius": 1.5,
+      "container": 1,
+      "solid": false,
+      "cost": [
+        {
+          "resource": "sticks",
+          "amount": 3
+        },
+        {
+          "resource": "fiber",
+          "amount": 2
+        }
+      ]
+    },
+    {
+      "key": "claim_totem",
+      "placement": "free",
+      "layer": 2,
+      "tier": 2,
+      "hp": 1000,
+      "ground": true,
+      "privilegeRadius": 12,
+      "cost": [
+        {
+          "resource": "hardwood",
+          "amount": 10
+        },
+        {
+          "resource": "stone",
+          "amount": 10
+        },
+        {
+          "resource": "dye",
+          "amount": 2
+        }
+      ]
+    },
+    {
+      "key": "rug",
+      "placement": "free",
+      "layer": 3,
+      "tier": 1,
+      "hp": 40,
+      "solid": false,
+      "paintable": true,
+      "variants": 4,
+      "cost": [
+        {
+          "resource": "cloth",
+          "amount": 3
+        }
+      ]
+    },
+    {
+      "key": "potted_plant",
+      "placement": "free",
+      "layer": 3,
+      "tier": 1,
+      "hp": 30,
+      "solid": false,
+      "variants": 3,
+      "cost": [
+        {
+          "resource": "clay",
+          "amount": 2
+        },
+        {
+          "resource": "fiber",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "key": "banner",
+      "placement": "free",
+      "layer": 3,
+      "tier": 1,
+      "hp": 40,
+      "solid": false,
+      "paintable": true,
+      "variants": 3,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "cloth",
+          "amount": 2
+        },
+        {
+          "resource": "sticks",
+          "amount": 2
+        },
+        {
+          "resource": "dye",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "key": "lantern",
+      "placement": "free",
+      "layer": 3,
+      "tier": 2,
+      "hp": 40,
+      "solid": false,
+      "light": true,
+      "cost": [
+        {
+          "resource": "glass",
+          "amount": 1
+        },
+        {
+          "resource": "copper_ingot",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "key": "flower_box",
+      "placement": "free",
+      "layer": 3,
+      "tier": 1,
+      "hp": 40,
+      "solid": false,
+      "variants": 4,
+      "paintable": true,
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 2
+        },
+        {
+          "resource": "fiber",
+          "amount": 2
+        }
+      ]
+    },
+    {
+      "key": "painting",
+      "placement": "free",
+      "layer": 3,
+      "tier": 1,
+      "hp": 30,
+      "solid": false,
+      "variants": 6,
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 1
+        },
+        {
+          "resource": "cloth",
+          "amount": 1
+        },
+        {
+          "resource": "dye",
+          "amount": 2
+        }
+      ]
+    },
+    {
+      "key": "trophy_skull",
+      "placement": "free",
+      "layer": 3,
+      "tier": 1,
+      "hp": 30,
+      "solid": false,
+      "cost": [
+        {
+          "resource": "hide",
+          "amount": 1
+        },
+        {
+          "resource": "planks",
+          "amount": 1
+        }
+      ]
+    }
+  ]
+}

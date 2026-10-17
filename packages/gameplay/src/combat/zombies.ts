@@ -1,0 +1,190 @@
+/**
+ * Zombies (authority only; clients see Transform/Zombie/AnimState/Health by replication).
+ *
+ * Spawner (slow system, every spawning.checkSeconds): per living player, rate by day phase (ratePerMinute) x
+ * (1 + noiseRateMul x noise/10), capped by cap[phase] zombies within capRadius; spawn ring minDistance..maxDistance
+ * on walkable, unbuilt tiles; kind by phase weights. world.rng (server).
+ *
+ * AI (every tick, thinking every ai.thinkTicks staggered by entity): Wander -> Investigate (heard noise) ->
+ * Chase (sighted player) -> AttackPlayer (in range) / AttackStructure (path blocked by a wall/door: blockPiece).
+ * Paths come from combat/path.ts (A* with break costs); repath every ai.repathTicks. Daylight burns exposed zombies
+ * (ai.dayDps, scaled by shelter exposure). Far zombies despawn.
+ */
+import { entityIndex, NetId, Transform, timeOfDay, type Entity, type World } from "@engine/core";
+import { installSpatialIndex } from "@engine/world";
+import { Anim, AnimState, Attacker, BodyTemp, DamageCause, Dead, Exposure, Health, NoiseLevel, Survival, Zombie, ZombieBrain, ZState } from "../components.js";
+import { gameplayDefs, isAuthority } from "../config.js";
+import { secondsToTicks, type ZombieDef } from "../defs.js";
+import { DayPhase, emit, ZombieSpawned, ZombieStateChanged } from "../events.js";
+import { indexEntity } from "../spawn.js";
+import { dayPhase } from "../systems/environment.js";
+import { makeNoise } from "../systems/noise.js";
+import { shelterAt } from "../building/shelter.js";
+import { structures } from "../building/structure.js";
+import { TerrainRes } from "../world.js";
+import { applyDamage, setAnim } from "./combat.js";
+import { findPath, pieceHp } from "./path.js";
+
+const PHASE_KEY = { [DayPhase.Night]: "night", [DayPhase.Dawn]: "dawn", [DayPhase.Day]: "day", [DayPhase.Dusk]: "dusk" } as const;
+export const currentPhaseKey = (world: World): "night" | "dawn" | "day" | "dusk" => PHASE_KEY[dayPhase(timeOfDay(world).t)];
+
+/** Paths (sim-local, server). */
+const paths = new WeakMap<World, Map<Entity, { tiles: [number, number][]; i: number }>>();
+const pathsOf = (w: World): Map<Entity, { tiles: [number, number][]; i: number }> => { let m = paths.get(w); if (!m) paths.set(w, (m = new Map())); return m; };
+
+export function spawnZombie(world: World, kind: number | string, x: number, y: number, variant = 0): Entity {
+  const defs = gameplayDefs(world); const id = typeof kind === "string" ? defs.zombieId(kind) : kind;
+  const def = defs.zombies.get(id); if (!def) throw new Error(`unknown zombie ${kind}`);
+  const e = world.create();
+  world.add(e, Transform, { x, y }).add(e, Health, { hp: def.hp, max: def.hp }).add(e, Zombie, { kind: id, variant: variant % def.variants })
+    .add(e, ZombieBrain, { state: ZState.Wander, homeX: x, homeY: y, thinkAt: world.tick + (e % defs.ai.thinkTicks) })
+    .add(e, AnimState, { anim: Anim.Idle, startTick: world.tick }).add(e, Attacker).add(e, Exposure).add(e, BodyTemp);
+  indexEntity(world, e);
+  emit(world, ZombieSpawned, { zombie: e, kind: id });
+  return e;
+}
+
+export function zombieSpawnerSystem(world: World, dt: number): void {
+  if (!isAuthority(world) || world.isReplaying) return;
+  const defs = gameplayDefs(world); const sp = defs.spawning; const ph = currentPhaseKey(world);
+  const index = installSpatialIndex(world); const terrain = world.getResource(TerrainRes); const idx = structures(world);
+  const players = [...world.query([Survival, Transform], [Dead])].sort((a, b) => a - b);
+  for (const p of players) {
+    const t = world.get(p, Transform)!;
+    const noise = world.getField(p, NoiseLevel, "value") ?? 0;
+    const rate = sp.ratePerMinute[ph] * (1 + sp.noiseRateMul * noise / 10);
+    if (world.rng.next() >= rate * dt / 60) continue;
+    let near = 0; for (const z of index.queryRadius(t.x, t.y, sp.capRadius)) if (world.has(z, Zombie) && !world.has(z, Dead)) near++;
+    if (near >= sp.cap[ph]) continue;
+    for (let attempt = 0; attempt < 6; attempt++) {
+      const a = world.rng.range(-Math.PI, Math.PI); const d = world.rng.range(sp.minDistance, sp.maxDistance);
+      const x = t.x + Math.cos(a) * d, y = t.y + Math.sin(a) * d; const tx = Math.floor(x), ty = Math.floor(y);
+      if (terrain && defs.worldgen.unwalkableTiles.has(terrain.tileAt(tx, ty))) continue;
+      if (idx.deck(tx, ty, 0)) continue;
+      const kind = pickWeighted(world, sp.weights[ph], defs.zombieKinds); if (kind === undefined) break;
+      spawnZombie(world, kind, tx + 0.5, ty + 0.5, world.rng.int(0, 255));
+      break;
+    }
+  }
+}
+function pickWeighted(world: World, weights: readonly number[], kinds: readonly number[]): number | undefined {
+  const total = weights.reduce((s, w) => s + Math.max(0, w), 0); if (total <= 0) return undefined;
+  let r = world.rng.next() * total; for (let i = 0; i < weights.length; i++) { r -= Math.max(0, weights[i]!); if (r < 0) return kinds[i]; }
+  return kinds[kinds.length - 1];
+}
+
+function setState(world: World, z: Entity, state: ZState): void {
+  if (world.getField(z, ZombieBrain, "state") === state) return;
+  world.set(z, ZombieBrain, { state, stateTick: world.tick }); emit(world, ZombieStateChanged, { zombie: z, state });
+}
+const dist = (ax: number, ay: number, bx: number, by: number): number => Math.hypot(ax - bx, ay - by);
+
+/** Nearest living player seen (sight range) or heard (noise x hearing) from (x,y). */
+function acquire(world: World, x: number, y: number, def: ZombieDef): { e: Entity; seen: boolean } | undefined {
+  const R = Math.max(def.sightRange, 24); let best: { e: Entity; seen: boolean; d: number } | undefined;
+  for (const p of installSpatialIndex(world).queryRadius(x, y, R)) {
+    if (!world.has(p, Survival) || world.has(p, Dead)) continue;
+    const t = world.get(p, Transform)!; const d = dist(x, y, t.x, t.y);
+    const seen = d <= def.sightRange; const heard = d <= (world.getField(p, NoiseLevel, "value") ?? 0) * def.hearingMul;
+    if (!seen && !heard) continue;
+    if (!best || d < best.d || (d === best.d && p < best.e)) best = { e: p, seen, d };
+  }
+  return best && { e: best.e, seen: best.seen };
+}
+
+export function zombieAISystem(world: World, dt: number): void {
+  if (!isAuthority(world)) return;
+  const defs = gameplayDefs(world); const ai = defs.ai; const tf = world.store(Transform); const br = world.store(ZombieBrain);
+  const ps = pathsOf(world); const isDay = currentPhaseKey(world) === "day";
+  const breakTicks = (piece: Entity): number => pieceHp(world, piece) / 10;
+  for (const z of world.query([Zombie, ZombieBrain, Transform, Health], [Dead])) {
+    const idx = entityIndex(z); const s = br.slot(idx); const ts = tf.slot(idx);
+    const def = defs.zombies.get(world.getField(z, Zombie, "kind")!)!;
+    const x = tf.data.x[ts]!, y = tf.data.y[ts]!;
+    // think
+    if (world.tick >= br.data.thinkAt[s]!) {
+      br.data.thinkAt[s] = world.tick + ai.thinkTicks; br.markChanged(idx);
+      if (isDay && !world.isReplaying) {
+        const sh = shelterAt(world, x, y, 0);
+        if (sh.exposure > 0) applyDamage(world, z, ai.dayDps * sh.exposure * ai.thinkTicks * dt, 0 as Entity, DamageCause.Sunlight);
+      }
+      // despawn when no player is near
+      let anyNear = false; for (const p of installSpatialIndex(world).queryRadius(x, y, ai.despawnDistance)) if (world.has(p, Survival)) { anyNear = true; break; }
+      if (!anyNear && !world.isReplaying) { ps.delete(z); world.destroy(z); continue; }
+      const state = br.data.state[s]! as ZState; const target = br.data.target[s]!;
+      const tgt = acquire(world, x, y, def);
+      if (tgt) {
+        br.data.target[s] = tgt.e; const tt = world.get(tgt.e, Transform)!;
+        br.data.goalX[s] = tt.x; br.data.goalY[s] = tt.y;
+        if (state !== ZState.AttackStructure) setState(world, z, tgt.seen ? ZState.Chase : ZState.Investigate);
+        if (tgt.seen && dist(x, y, tt.x, tt.y) <= def.attackRange && state !== ZState.AttackStructure) setState(world, z, ZState.AttackPlayer);
+      } else if (state === ZState.Chase || state === ZState.AttackPlayer) {
+        const valid = world.isAlive(target) && !world.has(target, Dead);
+        const tt = valid ? world.get(target, Transform) : undefined;
+        if (!tt || dist(x, y, tt.x, tt.y) > def.sightRange * ai.loseTargetMul) setState(world, z, ZState.Investigate);
+      } else if (state === ZState.Investigate && world.tick > br.data.stateTick[s]! + secondsToTicks(ai.investigateSeconds, dt)) {
+        setState(world, z, ZState.Wander);
+      }
+      const st2 = br.data.state[s]! as ZState;
+      if (st2 === ZState.Wander && (!ps.has(z) || world.tick >= br.data.repathAt[s]!)) {
+        const rng = world.rngFor("zwander", world.getField(z, NetId, "id") ?? z);
+        br.data.goalX[s] = br.data.homeX[s]! + rng.range(-ai.wanderRadius, ai.wanderRadius);
+        br.data.goalY[s] = br.data.homeY[s]! + rng.range(-ai.wanderRadius, ai.wanderRadius);
+        br.data.repathAt[s] = 0;
+      }
+      if (st2 !== ZState.AttackPlayer && (world.tick >= br.data.repathAt[s]! || !ps.has(z))) {
+        br.data.repathAt[s] = world.tick + ai.repathTicks;
+        const p = findPath(world, Math.floor(x), Math.floor(y), Math.floor(br.data.goalX[s]!), Math.floor(br.data.goalY[s]!), breakTicks);
+        if (p) {
+          ps.set(z, { tiles: p.tiles, i: 1 });
+          // blocked right ahead? (next step crosses a wall/door)
+          if (p.blocker && p.blockerIndex <= 1) { br.data.blockPiece[s] = p.blocker; setState(world, z, ZState.AttackStructure); }
+          else if (br.data.state[s] === ZState.AttackStructure && !p.blocker) setState(world, z, ZState.Chase);
+          if (p.blocker && p.blockerIndex > 1) br.data.blockPiece[s] = p.blocker;
+        }
+      }
+    }
+    const state = br.data.state[s]! as ZState;
+    // act
+    if (state === ZState.AttackPlayer || state === ZState.AttackStructure) {
+      const tgt = state === ZState.AttackPlayer ? br.data.target[s]! : br.data.blockPiece[s]!;
+      if (!world.isAlive(tgt) || world.has(tgt, Dead)) { setState(world, z, ZState.Chase); br.data.repathAt[s] = 0; continue; }
+      const tt = world.get(tgt, Transform)!; const reach = def.attackRange + (state === ZState.AttackStructure ? 0.7 : 0.3);
+      if (dist(x, y, tt.x, tt.y) > reach) {
+        if (state === ZState.AttackPlayer) { setState(world, z, ZState.Chase); continue; }
+        moveToward(world, z, tt.x, tt.y, def.speed * dt, ts);
+        continue;
+      }
+      if (world.tick >= br.data.attackAt[s]!) {
+        br.data.attackAt[s] = world.tick + secondsToTicks(def.attackCooldownSeconds, dt); br.markChanged(idx);
+        setAnim(world, z, Anim.Attack);
+        if (state === ZState.AttackPlayer) applyDamage(world, tgt, def.damage, z);
+        else { applyDamage(world, tgt, def.structureDamage, z); makeNoise(world, z, defs.noise.structureHit); }
+      }
+      continue;
+    }
+    const path = ps.get(z);
+    if (path && path.i < path.tiles.length) {
+      const [px, py] = path.tiles[path.i]!; const gx = px + 0.5, gy = py + 0.5;
+      const [cx, cy] = path.tiles[path.i - 1]!;
+      // never walk through a blocker: if the next step is blocked, attack it
+      const blocked = structures(world).count ? stepBlockerCached(world, cx, cy, px, py) : 0;
+      if (blocked) { br.data.blockPiece[s] = blocked; setState(world, z, ZState.AttackStructure); continue; }
+      const step = def.speed * (state === ZState.Wander ? 0.5 : 1) * dt;
+      if (moveToward(world, z, gx, gy, step, ts)) path.i++;
+      setAnim(world, z, state === ZState.Wander ? Anim.Walk : Anim.Run);
+    } else setAnim(world, z, Anim.Idle);
+  }
+  for (const z of [...ps.keys()]) if (!world.isAlive(z) || world.has(z, Dead)) ps.delete(z);
+}
+import { stepBlocker } from "./path.js";
+import { StructureIndexRes } from "../building/structure.js";
+function stepBlockerCached(world: World, x: number, y: number, nx: number, ny: number): Entity | 0 { return stepBlocker(world.getResource(StructureIndexRes), x, y, nx, ny); }
+
+/** Moves toward (gx,gy) by up to `step`; returns true when arrived. */
+function moveToward(world: World, e: Entity, gx: number, gy: number, step: number, ts: number): boolean {
+  const tf = world.store(Transform); const x = tf.data.x[ts]!, y = tf.data.y[ts]!; const dx = gx - x, dy = gy - y; const d = Math.hypot(dx, dy);
+  if (d <= step || d === 0) { tf.data.x[ts] = gx; tf.data.y[ts] = gy; tf.markChanged(entityIndex(e)); return true; }
+  tf.data.x[ts] = x + (dx / d) * step; tf.data.y[ts] = y + (dy / d) * step; tf.data.facing[ts] = Math.atan2(dy, dx); tf.markChanged(entityIndex(e));
+  return false;
+}

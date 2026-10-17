@@ -5,6 +5,14 @@
   "type": "module",
   "main": "src/index.ts",
   "types": "src/index.ts",
-  "scripts": { "typecheck": "tsc -p tsconfig.json", "build": "tsc -p tsconfig.json" },
-  "dependencies": { "@engine/core": "workspace:*","@engine/world": "workspace:*" }
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json",
+    "lock:ids": "tsx scripts/write-lock.ts",
+    "test": "vitest run --root ../.. packages/gameplay"
+  },
+  "dependencies": {
+    "@engine/core": "workspace:*",
+    "@engine/world": "workspace:*"
+  }
 }

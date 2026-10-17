@@ -1,25 +1,499 @@
 {
-  "$comment": "Numeric ids are stable wire/save ids: never renumber, only append. id 0 = empty slot. weight in kg.",
+  "$comment": "Items. Numeric ids come from ids.lock.json (StableIdRegistry): never edit ids by hand, run `pnpm --filter @engine/gameplay lock:ids` after adding keys. Art: each item's manifest key = its key (Art & Assets owns the sprite). weight in kg.",
   "items": [
-    { "id": 1,  "key": "wood",          "name": "Wood",          "category": "resource",  "maxStack": 50, "weight": 0.5 },
-    { "id": 2,  "key": "stone",         "name": "Stone",         "category": "resource",  "maxStack": 50, "weight": 1.0 },
-    { "id": 3,  "key": "fiber",         "name": "Plant Fiber",   "category": "resource",  "maxStack": 99, "weight": 0.1 },
-    { "id": 4,  "key": "flint",         "name": "Flint",         "category": "resource",  "maxStack": 50, "weight": 0.3 },
-    { "id": 5,  "key": "iron_ore",      "name": "Iron Ore",      "category": "resource",  "maxStack": 30, "weight": 2.0 },
-    { "id": 6,  "key": "iron_ingot",    "name": "Iron Ingot",    "category": "resource",  "maxStack": 30, "weight": 1.5 },
-    { "id": 7,  "key": "berries",       "name": "Berries",       "category": "food",      "maxStack": 20, "weight": 0.1,
-      "food": { "hunger": 12, "thirst": 4, "health": 0 } },
-    { "id": 8,  "key": "water_flask",   "name": "Water Flask",   "category": "food",      "maxStack": 5,  "weight": 1.0,
-      "food": { "hunger": 0, "thirst": 35, "health": 0 } },
-    { "id": 9,  "key": "stone_axe",     "name": "Stone Axe",     "category": "tool",      "maxStack": 1,  "weight": 2.0,
-      "tool": { "kind": "axe", "tier": 1 } },
-    { "id": 10, "key": "stone_pickaxe", "name": "Stone Pickaxe", "category": "tool",      "maxStack": 1,  "weight": 2.5,
-      "tool": { "kind": "pickaxe", "tier": 1 } },
-    { "id": 11, "key": "iron_axe",      "name": "Iron Axe",      "category": "tool",      "maxStack": 1,  "weight": 3.0,
-      "tool": { "kind": "axe", "tier": 2 } },
-    { "id": 12, "key": "iron_pickaxe",  "name": "Iron Pickaxe",  "category": "tool",      "maxStack": 1,  "weight": 3.5,
-      "tool": { "kind": "pickaxe", "tier": 2 } },
-    { "id": 13, "key": "campfire_kit",  "name": "Campfire Kit",  "category": "placeable", "maxStack": 5,  "weight": 4.0 },
-    { "id": 14, "key": "workbench_kit", "name": "Workbench Kit", "category": "placeable", "maxStack": 1,  "weight": 10.0 }
+    {
+      "key": "wood",
+      "name": "Pine Log",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.5,
+      "fuelSeconds": 20
+    },
+    {
+      "key": "hardwood",
+      "name": "Oak Log",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.8,
+      "fuelSeconds": 30
+    },
+    {
+      "key": "sticks",
+      "name": "Sticks",
+      "category": "resource",
+      "maxStack": 99,
+      "weight": 0.1,
+      "fuelSeconds": 5
+    },
+    {
+      "key": "planks",
+      "name": "Pine Planks",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.3,
+      "fuelSeconds": 10
+    },
+    {
+      "key": "hardwood_planks",
+      "name": "Oak Planks",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.5,
+      "fuelSeconds": 15
+    },
+    {
+      "key": "stone",
+      "name": "Stone",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 1.0
+    },
+    {
+      "key": "flint",
+      "name": "Flint",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.3
+    },
+    {
+      "key": "clay",
+      "name": "Clay",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.8
+    },
+    {
+      "key": "sand",
+      "name": "Sand",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.6
+    },
+    {
+      "key": "fiber",
+      "name": "Plant Fiber",
+      "category": "resource",
+      "maxStack": 99,
+      "weight": 0.1
+    },
+    {
+      "key": "hide",
+      "name": "Hide",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 0.5
+    },
+    {
+      "key": "copper_ore",
+      "name": "Copper Ore",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 2.0
+    },
+    {
+      "key": "tin_ore",
+      "name": "Tin Ore",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 2.0
+    },
+    {
+      "key": "iron_ore",
+      "name": "Iron Ore",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 2.0
+    },
+    {
+      "key": "coal",
+      "name": "Coal",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 1.0,
+      "fuelSeconds": 60
+    },
+    {
+      "key": "rope",
+      "name": "Rope",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 0.2
+    },
+    {
+      "key": "cloth",
+      "name": "Cloth",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 0.2
+    },
+    {
+      "key": "leather",
+      "name": "Leather",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 0.4
+    },
+    {
+      "key": "stone_brick",
+      "name": "Stone Brick",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 1.2
+    },
+    {
+      "key": "clay_brick",
+      "name": "Clay Brick",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.9
+    },
+    {
+      "key": "mortar",
+      "name": "Mortar",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.5
+    },
+    {
+      "key": "charcoal",
+      "name": "Charcoal",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.3,
+      "fuelSeconds": 45
+    },
+    {
+      "key": "copper_ingot",
+      "name": "Copper Ingot",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 1.5
+    },
+    {
+      "key": "tin_ingot",
+      "name": "Tin Ingot",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 1.5
+    },
+    {
+      "key": "bronze_ingot",
+      "name": "Bronze Ingot",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 1.5
+    },
+    {
+      "key": "iron_ingot",
+      "name": "Iron Ingot",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 1.5
+    },
+    {
+      "key": "steel_ingot",
+      "name": "Steel Ingot",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 1.6
+    },
+    {
+      "key": "nails",
+      "name": "Nails",
+      "category": "resource",
+      "maxStack": 99,
+      "weight": 0.05
+    },
+    {
+      "key": "iron_plate",
+      "name": "Iron Plate",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 1.5
+    },
+    {
+      "key": "steel_plate",
+      "name": "Steel Plate",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 1.6
+    },
+    {
+      "key": "glass",
+      "name": "Glass Pane",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 0.5
+    },
+    {
+      "key": "dye",
+      "name": "Dye",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 0.1
+    },
+    {
+      "key": "berries",
+      "name": "Berries",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.1,
+      "food": {
+        "hunger": 12,
+        "thirst": 4,
+        "health": 0
+      },
+      "spoilSeconds": 1200
+    },
+    {
+      "key": "water_flask",
+      "name": "Water Flask",
+      "category": "food",
+      "maxStack": 5,
+      "weight": 1.0,
+      "food": {
+        "hunger": 0,
+        "thirst": 35,
+        "health": 0
+      }
+    },
+    {
+      "key": "raw_meat",
+      "name": "Raw Meat",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.4,
+      "food": {
+        "hunger": 8,
+        "thirst": 0,
+        "health": -5
+      },
+      "spoilSeconds": 900
+    },
+    {
+      "key": "cooked_meat",
+      "name": "Cooked Meat",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.3,
+      "food": {
+        "hunger": 30,
+        "thirst": 0,
+        "health": 5
+      },
+      "spoilSeconds": 2400
+    },
+    {
+      "key": "bandage",
+      "name": "Bandage",
+      "category": "food",
+      "maxStack": 10,
+      "weight": 0.1,
+      "food": {
+        "hunger": 0,
+        "thirst": 0,
+        "health": 25
+      }
+    },
+    {
+      "key": "stone_axe",
+      "name": "Stone Axe",
+      "category": "tool",
+      "maxStack": 1,
+      "weight": 2.0,
+      "tool": {
+        "kind": "axe",
+        "tier": 1
+      },
+      "weapon": {
+        "damage": 12,
+        "range": 1.4,
+        "cooldownSeconds": 0.9,
+        "staminaCost": 6,
+        "structureMul": 1.0
+      }
+    },
+    {
+      "key": "stone_pickaxe",
+      "name": "Stone Pickaxe",
+      "category": "tool",
+      "maxStack": 1,
+      "weight": 2.5,
+      "tool": {
+        "kind": "pickaxe",
+        "tier": 1
+      },
+      "weapon": {
+        "damage": 10,
+        "range": 1.4,
+        "cooldownSeconds": 1.0,
+        "staminaCost": 6,
+        "structureMul": 1.5
+      }
+    },
+    {
+      "key": "stone_shovel",
+      "name": "Stone Shovel",
+      "category": "tool",
+      "maxStack": 1,
+      "weight": 2.0,
+      "tool": {
+        "kind": "shovel",
+        "tier": 1
+      }
+    },
+    {
+      "key": "stone_knife",
+      "name": "Stone Knife",
+      "category": "tool",
+      "maxStack": 1,
+      "weight": 0.6,
+      "tool": {
+        "kind": "knife",
+        "tier": 1
+      },
+      "weapon": {
+        "damage": 9,
+        "range": 1.1,
+        "cooldownSeconds": 0.5,
+        "staminaCost": 3,
+        "structureMul": 0.3
+      }
+    },
+    {
+      "key": "bronze_axe",
+      "name": "Bronze Axe",
+      "category": "tool",
+      "maxStack": 1,
+      "weight": 2.5,
+      "tool": {
+        "kind": "axe",
+        "tier": 2
+      },
+      "weapon": {
+        "damage": 16,
+        "range": 1.4,
+        "cooldownSeconds": 0.85,
+        "staminaCost": 6,
+        "structureMul": 1.0
+      }
+    },
+    {
+      "key": "bronze_pickaxe",
+      "name": "Bronze Pickaxe",
+      "category": "tool",
+      "maxStack": 1,
+      "weight": 3.0,
+      "tool": {
+        "kind": "pickaxe",
+        "tier": 2
+      },
+      "weapon": {
+        "damage": 13,
+        "range": 1.4,
+        "cooldownSeconds": 1.0,
+        "staminaCost": 6,
+        "structureMul": 1.5
+      }
+    },
+    {
+      "key": "iron_axe",
+      "name": "Iron Axe",
+      "category": "tool",
+      "maxStack": 1,
+      "weight": 3.0,
+      "tool": {
+        "kind": "axe",
+        "tier": 3
+      },
+      "weapon": {
+        "damage": 20,
+        "range": 1.5,
+        "cooldownSeconds": 0.8,
+        "staminaCost": 6,
+        "structureMul": 1.0
+      }
+    },
+    {
+      "key": "iron_pickaxe",
+      "name": "Iron Pickaxe",
+      "category": "tool",
+      "maxStack": 1,
+      "weight": 3.5,
+      "tool": {
+        "kind": "pickaxe",
+        "tier": 3
+      },
+      "weapon": {
+        "damage": 16,
+        "range": 1.5,
+        "cooldownSeconds": 1.0,
+        "staminaCost": 6,
+        "structureMul": 1.5
+      }
+    },
+    {
+      "key": "wooden_club",
+      "name": "Wooden Club",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 1.5,
+      "weapon": {
+        "damage": 14,
+        "range": 1.3,
+        "cooldownSeconds": 0.8,
+        "staminaCost": 5,
+        "structureMul": 0.5
+      }
+    },
+    {
+      "key": "stone_spear",
+      "name": "Stone Spear",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 1.8,
+      "weapon": {
+        "damage": 18,
+        "range": 2.2,
+        "cooldownSeconds": 1.0,
+        "staminaCost": 6,
+        "structureMul": 0.3
+      }
+    },
+    {
+      "key": "bronze_sword",
+      "name": "Bronze Sword",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 2.0,
+      "weapon": {
+        "damage": 26,
+        "range": 1.6,
+        "cooldownSeconds": 0.7,
+        "staminaCost": 5,
+        "structureMul": 0.4
+      }
+    },
+    {
+      "key": "iron_sword",
+      "name": "Iron Sword",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 2.2,
+      "weapon": {
+        "damage": 34,
+        "range": 1.7,
+        "cooldownSeconds": 0.65,
+        "staminaCost": 5,
+        "structureMul": 0.4
+      }
+    },
+    {
+      "key": "rot",
+      "name": "Rot",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.1
+    }
   ]
 }

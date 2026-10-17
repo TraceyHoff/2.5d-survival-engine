@@ -1,0 +1,72 @@
+{
+  "$comment": "ProceduralGenerator bands (low -> high noise). tile ids are the shared terrain ids (1 water, 2 sand, 3 grass, 4 dirt/forest floor, 5 stone). nodes = resource keys (resolved to ids); nodeChance per tile. temp (deg C baseline) and humidity (0..1) feed world climate (installClimate); gameplay's ClimateModel adds day/night, weather and altitude.",
+  "bands": [
+    {
+      "max": 0.3,
+      "tile": 1,
+      "nodes": [],
+      "nodeChance": 0,
+      "temp": 16,
+      "humidity": 0.9
+    },
+    {
+      "max": 0.36,
+      "tile": 2,
+      "nodes": [
+        "loose_rocks",
+        "sand_dune"
+      ],
+      "nodeChance": 0.02,
+      "temp": 22,
+      "humidity": 0.5
+    },
+    {
+      "max": 0.62,
+      "tile": 3,
+      "nodes": [
+        "fallen_branches",
+        "fiber_grass",
+        "berry_bush",
+        "clay_deposit",
+        "animal_carcass"
+      ],
+      "nodeChance": 0.035,
+      "temp": 18,
+      "humidity": 0.55
+    },
+    {
+      "max": 0.8,
+      "tile": 4,
+      "nodes": [
+        "tree",
+        "tree",
+        "oak_tree",
+        "fallen_branches"
+      ],
+      "nodeChance": 0.08,
+      "temp": 15,
+      "humidity": 0.7
+    },
+    {
+      "max": 1.01,
+      "tile": 5,
+      "nodes": [
+        "boulder",
+        "boulder",
+        "copper_vein",
+        "tin_vein",
+        "iron_vein",
+        "coal_seam"
+      ],
+      "nodeChance": 0.05,
+      "temp": 8,
+      "humidity": 0.35
+    }
+  ],
+  "unbuildableTiles": [
+    1
+  ],
+  "unwalkableTiles": [
+    1
+  ]
+}

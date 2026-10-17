@@ -10,7 +10,7 @@ describe("inventory", () => {
     const w = makeWorld(); const p = spawnPlayer(w, { x: 0, y: 0, maxWeight: 0 });
     expect(addItem(w, p, WOOD, 30)).toBe(30);
     expect(addItem(w, p, WOOD, 30)).toBe(30); // maxStack 50 -> 50 + 10
-    expect(listSlots(w, p)).toEqual([{ slot: 0, item: WOOD, count: 50 }, { slot: 1, item: WOOD, count: 10 }]);
+    expect(listSlots(w, p)).toMatchObject([{ slot: 0, item: WOOD, count: 50 }, { slot: 1, item: WOOD, count: 10 }]);
     expect(addItem(w, p, AXE, 2)).toBe(2); // maxStack 1 -> two slots
     expect(listSlots(w, p).filter((s) => s.item === AXE).length).toBe(2);
   });
@@ -34,7 +34,7 @@ describe("inventory", () => {
     expect(removeItem(w, p, WOOD, 61)).toBe(false);
     expect(countItem(w, p, WOOD)).toBe(60);
     expect(removeItem(w, p, WOOD, 15)).toBe(true);
-    expect(listSlots(w, p)).toEqual([{ slot: 0, item: WOOD, count: 45 }]);
+    expect(listSlots(w, p)).toMatchObject([{ slot: 0, item: WOOD, count: 45 }]);
   });
 
   it("transfers what fits and marks both inventories changed", () => {

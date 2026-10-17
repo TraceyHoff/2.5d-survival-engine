@@ -1,105 +1,152 @@
 /**
- * Gameplay components. Plain numeric data only (ADR-007). Registration order below is part of the
- * world schema hash (ADR-008/009): append new components at the END of GAMEPLAY_COMPONENTS.
- *
- * networked: true  -> replicated by @engine/net (all fields; core replicates per component).
- * networked: false -> sim-local; each side derives it (caches, intents, timers).
- * "Owner-only" below is the intended relevancy; see DESIGN.md open question N1.
+ * Gameplay components: numeric SoA schemas (ADR-007), array fields + defaults (core batch 2).
+ * Registration order = component ids: append new components at the END of GAMEPLAY_COMPONENTS.
+ * Replication scope/class per component lives in replication.ts (net applies it); persistence in
+ * building/persist.ts. Render-facing fields are numeric references only (Art & Assets owns visuals).
  */
-import { defineComponent, type FieldSpec } from "@engine/core";
+import { defineComponent, defineModifierStack, type ComponentDef, type FieldSpec, type FieldType } from "@engine/core";
+import { Emitter } from "@engine/world";
+export { Emitter };
 
 const pct = (bits = 8): FieldSpec => ({ type: "f32", quant: { bits, min: 0, max: 100 } });
 
-/** Hit points. Networked to everyone (health bars). */
 export const Health = defineComponent("Health", {
-  hp: { type: "f32", quant: { bits: 10, min: 0, max: 1000 } },
-  max: { type: "f32", quant: { bits: 10, min: 0, max: 1000 } },
+  hp: { type: "f32", quant: { bits: 12, min: 0, max: 4000 } },
+  max: { type: "f32", quant: { bits: 12, min: 0, max: 4000 } },
 }, { networked: true });
 
-/** Survival needs. Networked, intended owner-only (HUD). 100 = full. bodyTemp in deg C. */
+/** persistent: saved with the chunk (core chunk codec), so depleted nodes and their absolute respawnAtTick survive reloads. */
+export const ResourceNode = defineComponent("ResourceNode", { kind: "u16", amount: "u16", respawnAtTick: "u32" }, { networked: true, persistent: true });
+
 export const Survival = defineComponent("Survival", {
   hunger: pct(), thirst: pct(), stamina: pct(), maxStamina: pct(),
   bodyTemp: { type: "f32", quant: { bits: 10, min: 25, max: 45 } },
+  staminaDelayTicks: "u16", // remaining regen delay (replicates as u16 ticks, per Netcode)
 }, { networked: true });
 
-export const enum DamageCause { None = 0, Starvation = 1, Dehydration = 2, Hypothermia = 3, Hyperthermia = 4, Combat = 5 }
-
-/** Sim-local vitals bookkeeping (both sides run it; reconciliation corrects drift). */
-export const VitalsState = defineComponent("VitalsState", {
-  staminaRegenAtTick: "u32", // stamina regen blocked until this tick
-  lastDamageCause: "u8",     // DamageCause
-});
-
-/** Per-tick multipliers computed by environment.exposure, consumed by vitals. Sim-local, derived. */
-export const VitalsModifiers = defineComponent("VitalsModifiers", {
-  hungerMul: "f32", thirstMul: "f32", staminaRegenMul: "f32",
-});
-
-/** Environmental exposure. Networked, intended owner-only (HUD: wet/cold icons). */
+export const enum DamageCause { None = 0, Starvation = 1, Dehydration = 2, Hypothermia = 3, Hyperthermia = 4, Combat = 5, Sunlight = 6 }
+export const VitalsState = defineComponent("VitalsState", { lastDamageCause: "u8" });
+/** Buff/debuff stat ids (core modifier stacks; 1..255, append only). */
+export const enum Stat { HungerRate = 1, ThirstRate = 2, StaminaRegen = 3, HealthRegen = 4, Insulation = 5, MoveSpeed = 6 }
+/** Buff kinds are just (stat, op) pairs with expiry; see systems/environment.ts + vitals.ts for the rules. */
+export const Buffs = defineModifierStack("gameplay.Buffs", 8, { networked: true });
 export const Exposure = defineComponent("Exposure", {
-  insulation: "f32", // deg C added to felt temperature (clothing; set by equipment system later)
-  sheltered: "u8",   // 1 = under roof (set by building system later)
+  insulation: "f32", sheltered: "u8",
   wetness: { type: "f32", quant: { bits: 7, min: 0, max: 1 } },
-  feltTemp: { type: "f32", quant: { bits: 10, min: -40, max: 60 } },
+  feltTemp: { type: "f32", quant: { bits: 10, min: -40, max: 60 }, default: 20 },
 }, { networked: true });
-
-/** Marker + cause of death. Networked to all. */
 export const Dead = defineComponent("Dead", { cause: "u8", tick: "u32" }, { networked: true });
 
-// ---- inventory: fixed-slot arrays flattened to item0..itemN / count0..countN (core has no array fields) ----
+/** Shared shape of Inventory and Container so inventory ops work on both. */
+export type InvSchema = {
+  slotCount: FieldSpec; maxWeight: FieldSpec; weight: FieldSpec; spoilMul: FieldSpec;
+  items: { type: FieldType; length: number }; counts: { type: FieldType; length: number };
+  /** Per-slot effective creation tick for spoilage (core decayAt); re-based when storage conditions change. */
+  createdTick: { type: FieldType; length: number };
+  /** Per-slot durability (tools/weapons; non-stackable items have count 1). 0 = n/a. */
+  durability: { type: FieldType; length: number };
+};
 export const INVENTORY_SLOTS = 16;
-export const ITEM_FIELDS: readonly string[] = Array.from({ length: INVENTORY_SLOTS }, (_, i) => `item${i}`);
-export const COUNT_FIELDS: readonly string[] = Array.from({ length: INVENTORY_SLOTS }, (_, i) => `count${i}`);
-const slotFields: Record<string, FieldSpec> = {};
-for (let i = 0; i < INVENTORY_SLOTS; i++) { slotFields[ITEM_FIELDS[i]!] = "u16"; slotFields[COUNT_FIELDS[i]!] = "u16"; }
-
-/** Fixed-slot inventory (players, chests). item id 0 = empty. Networked, intended owner-only (or viewers of a container). */
-type InventorySchema = { slotCount: "u8"; maxWeight: "f32"; weight: "f32" } & Record<string, FieldSpec>;
+export const CONTAINER_SLOTS = 24;
 export const Inventory = defineComponent("Inventory", {
-  slotCount: "u8",  // active slots (<= INVENTORY_SLOTS)
-  maxWeight: "f32", // kg; 0 = unlimited
-  weight: "f32",    // cached total, always rewritten by inventory ops
-  ...slotFields,    // item0..item15, count0..count15 (u16)
-} as InventorySchema, { networked: true });
+  slotCount: { type: "u8", default: INVENTORY_SLOTS }, maxWeight: { type: "f32", default: 60 }, weight: "f32", spoilMul: { type: "f32", default: 1 },
+  items: { type: "u16", length: INVENTORY_SLOTS }, counts: { type: "u16", length: INVENTORY_SLOTS }, createdTick: { type: "u32", length: INVENTORY_SLOTS }, durability: { type: "u16", length: INVENTORY_SLOTS },
+}, { networked: true, persistent: true }) as ComponentDef<InvSchema>;
 
 export const NO_SLOT = 255;
-/** Held item. Networked to all so remote players render the right tool. */
-export const Equipment = defineComponent("Equipment", {
-  mainHandSlot: "u8", // inventory slot index or NO_SLOT
-  mainHandItem: "u16", // derived in postSim from the slot (remote clients cannot see the inventory)
-}, { networked: true });
+export const Equipment = defineComponent("Equipment", { mainHandSlot: { type: "u8", default: NO_SLOT }, mainHandItem: "u16" }, { networked: true });
+export const Gatherer = defineComponent("Gatherer", { reach: { type: "f32", default: 1.5 }, cooldownUntilTick: "u32" }, { networked: true });
+export const CraftingStation = defineComponent("CraftingStation", { kind: "u8", range: { type: "f32", default: 2.5 } }, { networked: true });
+/** Crafting job: progress is derived (tick - startTick) so nothing is written per tick; the client predicts only that. */
+export const Crafter = defineComponent("Crafter", { recipe: "u16", startTick: "u32", totalTicks: "u16" }, { networked: true });
 
-/** Harvestable node. kind = resource def id; amount = gathers left (0 = depleted). Networked to all. */
-export const ResourceNode = defineComponent("ResourceNode", {
-  kind: "u16", amount: "u16", respawnAtTick: "u32",
-}, { networked: true });
-
-/** Can gather. Networked (owner) so the predicted cooldown reconciles. */
-export const Gatherer = defineComponent("Gatherer", { reach: "f32", cooldownUntilTick: "u32" }, { networked: true });
-
-/** Crafting station (campfire, workbench). kind = StationKind. Networked to all. */
-export const CraftingStation = defineComponent("CraftingStation", { kind: "u8", range: "f32" }, { networked: true });
-
-/** Warms nearby entities: +heat deg C at the centre, linear falloff to 0 at radius. Networked to all. */
-export const HeatSource = defineComponent("HeatSource", { heat: "f32", radius: "f32", lit: "u8" }, { networked: true });
-
-/** Current crafting job (recipe 0 = idle). Networked (owner) for the progress bar. */
-export const Crafter = defineComponent("Crafter", { recipe: "u16", progressTicks: "u16", totalTicks: "u16" }, { networked: true });
-
-export const enum IntentAction { None = 0, Gather = 1, Craft = 2, Use = 3, CancelCraft = 4 }
-/**
- * Per-tick player intent written in the input phase from the InputFrame/command stream (not replicated:
- * the server rebuilds it from inputs). One-shot `action` is cleared at the end of the simulation phase,
- * so world.simulate() replays stay correct. `target` is a LOCAL entity id resolved from a NetId by the
- * input adapter.
- */
+export const enum IntentAction {
+  None = 0, Gather = 1, Craft = 2, Use = 3, CancelCraft = 4, Equip = 5,
+  Place = 10, Upgrade = 11, Repair = 12, Demolish = 13, Paint = 14,
+  ToggleDoor = 20, LockDoor = 21, OpenContainer = 22, CloseContainer = 23, Deposit = 24, Withdraw = 25, ToggleFire = 26,
+  Attack = 30,
+}
+/** Per-tick intent, written in the input phase by applyGameplayInput (sim-local; rebuilt from inputs). */
 export const PlayerIntent = defineComponent("PlayerIntent", {
-  moving: "u8", sprint: "u8",
-  action: "u8", target: "u32", recipe: "u16", slot: "u8",
+  moving: "u8", sprint: "u8", action: "u8", target: "u32", recipe: "u16", slot: "u8",
+  piece: "u16", x: "f32", y: "f32", level: "u8", rot: "u8", tier: "u8", variant: "u8", paint: "u8", item: "u16", count: "u16",
 });
 
-/** Registration order (append only!). */
+// ---- building ----------------------------------------------------------------------------------
+/** Agreed with Netcode: static replication class, persisted per chunk. hp is written at most once per tick. */
+export const BuildPiece = defineComponent("BuildPiece", {
+  type: "u16", rot: "u8", variant: "u8", tier: "u8", hp: "u16", damageStage: "u8", paint: "u8",
+  /** Clan color index (set on place / claim change); render uses paint when paint != 0, else tint. */
+  tint: "u8",
+}, { networked: true, persistent: true });
+export const enum EdgeSide { None = 0, North = 1, West = 2 }
+/** Derived on every peer from Transform + def when the piece is indexed. */
+export const PieceSlot = defineComponent("PieceSlot", { tx: "i32", ty: "i32", z: "u8", side: "u8", gridId: "u32", parent: "u32" });
+/** Server-only, never replicated. */
+export const PieceStability = defineComponent("PieceStability", { value: "u8", placedTick: "u32", lastDamagedTick: "u32" });
+export const Tribe = defineComponent("Tribe", { id: "u16" }, { networked: true, persistent: true });
+export const PrivilegeZone = defineComponent("PrivilegeZone", { radius: "f32", tribe: "u16" }, { networked: true, persistent: true });
+export const DoorState = defineComponent("DoorState", { open: "u8", lockTribe: "u16" }, { networked: true, persistent: true });
+/** burnUntilTick is absolute so burning causes no per-tick writes (low-rate replication). */
+export const Fuel = defineComponent("Fuel", { burnUntilTick: "u32", lit: "u8" }, { networked: true, persistent: true });
+export const Container = defineComponent("Container", {
+  slotCount: { type: "u8", default: 12 }, maxWeight: "f32", weight: "f32", spoilMul: { type: "f32", default: 1 },
+  items: { type: "u16", length: CONTAINER_SLOTS }, counts: { type: "u16", length: CONTAINER_SLOTS }, createdTick: { type: "u32", length: CONTAINER_SLOTS }, durability: { type: "u16", length: CONTAINER_SLOTS },
+}, { networked: true, persistent: true }) as ComponentDef<InvSchema>;
+export const MAX_VIEWERS = 8;
+/** Who has the container open (server-only; net reads it for the "viewers" scope). */
+export const ContainerViewers = defineComponent("ContainerViewers", { clients: { type: "u16", length: MAX_VIEWERS }, count: "u8" });
+export const Viewing = defineComponent("Viewing", { container: "u32" });
+/** Client-only placement preview (the only predicted building state). */
+export const BuildGhost = defineComponent("BuildGhost", {
+  /** inputs (client UI): builder entity, piece type, pointer position (tiles), level, rotation step, tier, variant */
+  builder: "u32", piece: "u16", px: "f32", py: "f32", level: "u8", rot: "u8", tier: "u8", variant: "u8",
+  /** outputs (render): snapped position/height/facing, validity and BuildFail reason */
+  x: "f32", y: "f32", z: "f32", facing: "f32", valid: "u8", reason: "u8",
+});
+
+// ---- combat / zombies ----------------------------------------------------------------------------
+export const Attacker = defineComponent("Attacker", { cooldownUntilTick: "u32" }, { networked: true });
+export const Zombie = defineComponent("Zombie", { kind: "u8", variant: "u8" }, { networked: true });
+export const enum ZState { Wander = 0, Investigate = 1, Chase = 2, AttackPlayer = 3, AttackStructure = 4, Dead = 5 }
+export const ZombieBrain = defineComponent("ZombieBrain", {
+  state: "u8", target: "u32", goalX: "f32", goalY: "f32", homeX: "f32", homeY: "f32",
+  thinkAt: "u32", repathAt: "u32", attackAt: "u32", stateTick: "u32", blockPiece: "u32",
+});
+export const enum Anim { Idle = 0, Walk = 1, Run = 2, Attack = 3, Hurt = 4, Die = 5, Gather = 6, Build = 7 }
+export const AnimState = defineComponent("AnimState", { anim: "u8", startTick: "u32" }, { networked: true });
+export const NoiseLevel = defineComponent("NoiseLevel", { value: "f32" });
+/**
+ * Links an attachment entity (door state, fire/fuel, container) to its piece by grid slot, so peers resolve it
+ * without entity references. Attachments are separate entities because BuildPiece entities use net's static class
+ * (all their components ride the static channel, scopes don't apply).
+ */
+export const enum AttachKind { Door = 1, Fire = 2, Storage = 3, Light = 4 }
+export const PieceLink = defineComponent("PieceLink", { tx: "i32", ty: "i32", z: "u8", side: "u8", layer: "u8", kind: "u8" }, { networked: true, persistent: true });
+/** Render-facing (renderer contract): wetness 0..255 on characters and zombies, replicated to all. */
+export const Wetness = defineComponent("Wetness", { level: "u8" }, { networked: true });
+/** Render-facing (renderer contract): cold/heat stress 0..255 and shivering 0/1. Precise bodyTemp stays owner-scoped in Survival. */
+export const BodyTemp = defineComponent("BodyTemp", { cold: "u8", heat: "u8", shivering: "u8" }, { networked: true });
+/** Per-chunk surface wetness (0..1 as u8 0..255), one entity per active chunk at its center; server-driven, render reads it. */
+export const ChunkSurface = defineComponent("ChunkSurface", { cx: "i32", cy: "i32", wetness: "u8" }, { networked: true });
+/** Social summary for render/UI (scope all). Ids come from core GroupRegistry (party, clan); rank is clan rank. */
+export const GroupSummary = defineComponent("GroupSummary", { partyId: "u32", clanId: "u32", rank: "u8" }, { networked: true });
+/** Last tick this entity dealt or took combat damage (combat tag: blocks trade/logout rules, UI timer). */
+export const CombatTag = defineComponent("CombatTag", { untilTick: "u32" }, { networked: true });
+/** Death loot container marker (player corpse / bag): owner PlayerId, despawn tick. Contents in Container. */
+export const LootBag = defineComponent("LootBag", { owner: "u32", despawnAtTick: "u32" }, { networked: true, persistent: true });
+/** Written by net on the server (per-connection RTT) for range slack. */
+export const Latency = defineComponent("Latency", { rttMs: "u16" });
+
+/**
+ * The shared registration module: registration order = component ids on every peer (append only!).
+ * Includes engine-provided gameplay-facing components (world Emitter, the Buffs modifier stack).
+ */
 export const GAMEPLAY_COMPONENTS = [
-  Health, ResourceNode, Survival, VitalsState, VitalsModifiers, Exposure, Dead,
-  Inventory, Equipment, Gatherer, CraftingStation, HeatSource, Crafter, PlayerIntent,
+  Emitter, Buffs,
+  Health, ResourceNode, Survival, VitalsState, Exposure, Dead,
+  Inventory, Equipment, Gatherer, CraftingStation, Crafter, PlayerIntent,
+  BuildPiece, PieceSlot, PieceStability, Tribe, PrivilegeZone, DoorState, Fuel, Container, ContainerViewers, Viewing, BuildGhost,
+  Attacker, Zombie, ZombieBrain, AnimState, NoiseLevel, Latency, PieceLink, Wetness, BodyTemp, ChunkSurface,
+  GroupSummary, CombatTag, LootBag,
 ] as const;

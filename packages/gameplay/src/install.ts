@@ -1,17 +1,24 @@
-import { WeatherKind } from "./defs.js";
-import { DEFAULT_TICK_HZ, entityIndex, Owner, setTimeOfDay, TimeOfDay, Transform, Weather, type Entity, type World } from "@engine/core";
-import {
-  CraftingStation, Crafter, Equipment, Exposure, GAMEPLAY_COMPONENTS, Gatherer, Health, HeatSource, IntentAction,
-  Inventory, NO_SLOT, PlayerIntent, ResourceNode, Survival, VitalsModifiers, VitalsState,
-} from "./components.js";
-import { GameplayConfig, gameplayDefs, type GameplayRole } from "./config.js";
+import { DEFAULT_TICK_HZ, pruneModifiers, setTimeOfDay, TimeOfDay, Weather, type World } from "@engine/core";
+import { installSpatialIndex, setClimateModel, ClimateRes } from "@engine/world";
+import { Buffs, Equipment, GAMEPLAY_COMPONENTS, IntentAction, Inventory, NO_SLOT, PlayerIntent } from "./components.js";
+import { GameplayConfig, type GameplayRole } from "./config.js";
 import { defaultDefs } from "./data.js";
-import { StationKind, type GameDefs } from "./defs.js";
+import { WeatherKind, type GameDefs } from "./defs.js";
+import { commandIntentSystem } from "./input.js";
 import { slotItem } from "./inventory.js";
-import { clockSystem, exposureSystem, weatherSystem } from "./systems/environment.js";
+import { applyReplication, type NetReplicationHooks } from "./replication.js";
+import { chunkSurfaceSystem, clockSystem, exposureSystem, EXPOSURE_EVERY, gameplayClimateModel, SURFACE_EVERY, weatherSystem } from "./systems/environment.js";
 import { craftingSystem } from "./systems/crafting.js";
+import { fuelSystem } from "./systems/fuel.js";
 import { gatherSystem, respawnSystem } from "./systems/gathering.js";
+import { noiseDecaySystem } from "./systems/noise.js";
+import { spoilageSystem, SPOILAGE_EVERY } from "./systems/spoilage.js";
 import { consumeSystem, deathSystem, vitalsSystem } from "./systems/vitals.js";
+import { installBuildingSystems, BUILDING_SYSTEMS } from "./building/install.js";
+import { installCombatSystems, COMBAT_SYSTEMS } from "./combat/install.js";
+import { entityIndex } from "@engine/core";
+
+export * from "./spawn.js";
 
 export interface GameplayOptions {
   defs?: GameDefs;
@@ -19,52 +26,68 @@ export interface GameplayOptions {
   /** Overrides environment.json dayLengthSeconds. */
   dayLengthTicks?: number;
   tickHz?: number;
-  /** Set false if another package (or replication) owns TimeOfDay / Weather. */
-  driveClock?: boolean;
-  driveWeather?: boolean;
+  /** Server role: the NetServer (structurally) - BuildPiece is registered as static class and scopes applied. Call before clients join. */
+  net?: NetReplicationHooks;
 }
 
-/** System order. Exported so DESIGN.md / tests / tooling can assert it. */
-export const GAMEPLAY_SYSTEM_ORDER = [
+type Phase = "input" | "simulation" | "postSim";
+/** System order (gameplay systems only; third element = every N ticks). Tests assert world.systemOrder() matches. */
+export const GAMEPLAY_SYSTEM_ORDER: readonly (readonly [Phase, string, number?])[] = [
+  ["input", "gameplay.commands"],
   ["simulation", "gameplay.clock"],
   ["simulation", "gameplay.weather"],
-  ["simulation", "gameplay.exposure"],
+  ...BUILDING_SYSTEMS.pre,
+  ["simulation", "gameplay.exposure", EXPOSURE_EVERY],
+  ["simulation", "gameplay.fuel"],
   ["simulation", "gameplay.respawn"],
   ["simulation", "gameplay.gather"],
+  ...BUILDING_SYSTEMS.actions,
   ["simulation", "gameplay.craft"],
+  ...COMBAT_SYSTEMS.sim,
+  ...BUILDING_SYSTEMS.post,
   ["simulation", "gameplay.consume"],
   ["simulation", "gameplay.vitals"],
   ["simulation", "gameplay.death"],
+  ["simulation", "gameplay.spoilage", SPOILAGE_EVERY],
+  ["simulation", "gameplay.chunkSurface", SURFACE_EVERY],
   ["simulation", "gameplay.clearIntents"],
   ["postSim", "gameplay.equipmentSync"],
-] as const;
+  ...BUILDING_SYSTEMS.postSim,
+  ...COMBAT_SYSTEMS.postSim,
+  ["postSim", "gameplay.noiseDecay"],
+  ["postSim", "gameplay.pruneBuffs", 20],
+];
 
-/**
- * Registers gameplay components (fixed order, identical on client and server), resources and systems.
- * Second argument may be a number for backwards compatibility with the stub (dayLengthTicks).
- */
+/** Registers gameplay components (the shared registration module: fixed order on every peer), resources and systems. */
 export function installGameplay(world: World, options: GameplayOptions | number = {}): void {
   const opts: GameplayOptions = typeof options === "number" ? { dayLengthTicks: options } : options;
   const defs = opts.defs ?? defaultDefs();
   const env = defs.environment;
   for (const c of GAMEPLAY_COMPONENTS) world.register(c);
-  world.setResource(GameplayConfig, { defs, role: opts.role ?? "standalone" });
+  world.addSchemaSalt("gameplay.defs", defs.hashes.all);
+  const role = opts.role ?? "standalone";
+  world.setResource(GameplayConfig, { defs, role });
   const dayLengthTicks = opts.dayLengthTicks ?? Math.round(env.dayLengthSeconds * (opts.tickHz ?? DEFAULT_TICK_HZ));
   // Environment singleton is created by core; initialise TimeOfDay once (dayLengthTicks 0 = uninitialised).
   if (world.env(TimeOfDay).dayLengthTicks === 0) { world.env(TimeOfDay).dayLengthTicks = dayLengthTicks; setTimeOfDay(world, env.startTimeOfDay * 24, 0); }
   world.set(world.environment, Weather, { kind: WeatherKind.Clear });
+  installSpatialIndex(world);
+  if (world.getResource(ClimateRes)) setClimateModel(world, gameplayClimateModel(env));
+  if (opts.net && role === "server") applyReplication(opts.net);
 
-  if (opts.driveClock !== false) world.addSystem("simulation", "gameplay.clock", clockSystem);
-  if (opts.driveWeather !== false) world.addSystem("simulation", "gameplay.weather", weatherSystem);
-  world.addSystem("simulation", "gameplay.exposure", exposureSystem);
-  world.addSystem("simulation", "gameplay.respawn", respawnSystem);
-  world.addSystem("simulation", "gameplay.gather", gatherSystem);
-  world.addSystem("simulation", "gameplay.craft", craftingSystem);
-  world.addSystem("simulation", "gameplay.consume", consumeSystem);
-  world.addSystem("simulation", "gameplay.vitals", vitalsSystem);
-  world.addSystem("simulation", "gameplay.death", deathSystem);
-  world.addSystem("simulation", "gameplay.clearIntents", clearIntentsSystem);
-  world.addSystem("postSim", "gameplay.equipmentSync", equipmentSyncSystem);
+  const sys: Record<string, (w: World, dt: number) => void> = {
+    "gameplay.commands": commandIntentSystem, "gameplay.clock": clockSystem, "gameplay.weather": weatherSystem,
+    "gameplay.exposure": exposureSystem, "gameplay.fuel": fuelSystem, "gameplay.respawn": respawnSystem, "gameplay.gather": gatherSystem,
+    "gameplay.craft": craftingSystem, "gameplay.consume": consumeSystem, "gameplay.vitals": vitalsSystem, "gameplay.death": deathSystem,
+    "gameplay.spoilage": spoilageSystem, "gameplay.chunkSurface": chunkSurfaceSystem,
+    "gameplay.clearIntents": clearIntentsSystem, "gameplay.equipmentSync": equipmentSyncSystem, "gameplay.noiseDecay": noiseDecaySystem,
+    "gameplay.pruneBuffs": (w) => pruneModifiers(w, Buffs),
+    ...installBuildingSystems(world), ...installCombatSystems(world),
+  };
+  for (const [phase, name, every] of GAMEPLAY_SYSTEM_ORDER) {
+    const fn = sys[name]; if (!fn) throw new Error(`no system ${name}`);
+    world.addSystem(phase, name, fn, every ? { every } : {});
+  }
 }
 
 /** One-shot actions are consumed at the end of the simulation phase (so simulate() replays are correct). */
@@ -86,39 +109,3 @@ export function equipmentSyncSystem(world: World): void {
 
 // ---- spawn helpers (server spawns; NetId assignment is @engine/net's job) ----------------------
 
-export interface PlayerSpawn { x: number; y: number; clientId?: number; slots?: number; maxWeight?: number; reach?: number }
-export function spawnPlayer(world: World, p: PlayerSpawn): Entity {
-  const vt = gameplayDefs(world).vitals; const e = world.create();
-  world.add(e, Transform, { x: p.x, y: p.y })
-    .add(e, Health, { hp: vt.maxHealth, max: vt.maxHealth })
-    .add(e, Survival, { hunger: 100, thirst: 100, stamina: vt.maxStamina, maxStamina: vt.maxStamina, bodyTemp: vt.bodyTempNormal })
-    .add(e, VitalsState).add(e, VitalsModifiers, { hungerMul: 1, thirstMul: 1, staminaRegenMul: 1 })
-    .add(e, Exposure, { feltTemp: 20 })
-    .add(e, Inventory, { slotCount: p.slots ?? 16, maxWeight: p.maxWeight ?? 60 })
-    .add(e, Equipment, { mainHandSlot: NO_SLOT })
-    .add(e, Gatherer, { reach: p.reach ?? 1.5 })
-    .add(e, Crafter).add(e, PlayerIntent);
-  if (p.clientId !== undefined) world.add(e, Owner, { clientId: p.clientId });
-  return e;
-}
-
-export function spawnResourceNode(world: World, kind: number | string, x: number, y: number): Entity {
-  const defs = gameplayDefs(world);
-  const id = typeof kind === "string" ? defs.resourceId(kind) : kind;
-  const def = defs.resources.get(id); if (!def) throw new Error(`unknown resource ${kind}`);
-  const e = world.create();
-  world.add(e, Transform, { x, y }).add(e, ResourceNode, { kind: id, amount: def.capacity });
-  return e;
-}
-
-export function spawnStation(world: World, kind: StationKind, x: number, y: number, range = 2.5): Entity {
-  const e = world.create();
-  world.add(e, Transform, { x, y }).add(e, CraftingStation, { kind, range });
-  if (kind === StationKind.Campfire) world.add(e, HeatSource, { heat: 18, radius: 4, lit: 1 });
-  return e;
-}
-
-/** Input-phase adapter helper: writes a player's intent for this tick. */
-export function setIntent(world: World, e: Entity, intent: Partial<{ moving: number; sprint: number; action: IntentAction; target: Entity; recipe: number; slot: number }>): void {
-  world.set(e, PlayerIntent, intent);
-}

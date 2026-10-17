@@ -20,7 +20,7 @@ describe("gathering", () => {
     gather(w, p, branches);
     const wood = countItem(w, p, WOOD);
     expect(wood).toBeGreaterThanOrEqual(1); expect(wood).toBeLessThanOrEqual(2);
-    expect(got).toEqual([{ entity: p, node: branches, item: WOOD, count: wood }]);
+    expect(got).toMatchObject([{ entity: p, node: branches, item: WOOD, count: wood }]);
     expect(w.get(branches, ResourceNode)!.amount).toBe(2);
   });
 

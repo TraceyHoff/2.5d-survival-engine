@@ -1,0 +1,9 @@
+{
+  "$comment": "Player movement (tiles/s). Screen-aligned iso mapping (W = up-screen). Speed = walkSpeed x sprintMul (while sprinting with stamina) x encumbrance x wetness x MoveSpeed buffs. Encumbrance: above encumberedFrom x maxWeight the multiplier falls linearly to encumberedMinMul at full weight. Wetness slows by up to wetSlowMul.",
+  "walkSpeed": 4,
+  "sprintMul": 1.6,
+  "encumberedFrom": 0.7,
+  "encumberedMinMul": 0.45,
+  "wetSlowMul": 0.15,
+  "bodyRadius": 0.3
+}

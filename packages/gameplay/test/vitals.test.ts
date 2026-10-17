@@ -35,7 +35,7 @@ describe("vitals", () => {
     w.set(p, Health, { hp: 2 });
     steps(w, 3 * SEC);
     expect(depleted.filter((d) => d.vital === Vital.Hunger)).toHaveLength(1);
-    expect(died).toEqual([{ entity: p, cause: DamageCause.Starvation }]);
+    expect(died).toMatchObject([{ entity: p, cause: DamageCause.Starvation }]);
     expect(w.get(p, Dead)!.cause).toBe(DamageCause.Starvation);
     const hpAtDeath = w.get(p, Health)!.hp; steps(w, SEC);
     expect(w.get(p, Health)!.hp).toBe(hpAtDeath); // dead entities stop simulating
@@ -90,7 +90,7 @@ describe("vitals", () => {
     w.step(1 / 20);
     expect(countItem(w, p, berries)).toBe(2);
     expect(w.get(p, Survival)!.hunger).toBeCloseTo(62, 1);
-    expect(eaten).toEqual([{ entity: p, item: berries }]);
+    expect(eaten).toMatchObject([{ entity: p, item: berries }]);
   });
 
   it("well-fed players regenerate health", () => {

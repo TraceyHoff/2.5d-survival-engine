@@ -1,29 +1,68 @@
 /**
- * Gameplay events, emitted through core's EventBus (world.events.emit) and delivered at the end of
- * the tick in emission order. Payloads are numeric; entity fields are LOCAL entity ids. Events are
- * not replicated: the server uses them for logs/achievements/net-side effects, the client gets its
- * own from the predicted sim or derives them from snapshot changes (see DESIGN.md).
+ * Gameplay events through core's EventBus (delivered at end of tick; discarded by core during replay).
+ * Every payload is tick-stamped (`tick`) per Netcode; entity fields are local Entities (net maps to NetIds).
+ * Reliability per event: DESIGN.md section 7 / EVENT_RELIABILITY.
  */
-import { defineEvent, type Entity } from "@engine/core";
+import { defineEvent, type Entity, type EventType, type World } from "@engine/core";
 import type { WeatherKind } from "./defs.js";
-import type { DamageCause } from "./components.js";
+import type { DamageCause, ZState } from "./components.js";
+
+export type GEvent<T> = EventType<T & { tick: number }> & { readonly __payload?: T };
+const ev = <T>(name: string): GEvent<T> => defineEvent<T & { tick: number }>(name) as GEvent<T>;
+/** Emits with the current tick stamped in (core discards events queued during replay unless keepEvents). */
+export function emit<T>(world: World, type: GEvent<T>, payload: T): void {
+  world.events.emit(type, { ...payload, tick: world.tick });
+}
 
 export const enum GatherFail { Cooldown = 1, InvalidTarget = 2, Depleted = 3, OutOfRange = 4, WrongTool = 5, Exhausted = 6 }
 export const enum CraftFail { Busy = 1, UnknownRecipe = 2, NoStation = 3, MissingIngredients = 4, InventoryFull = 5, Cancelled = 6 }
 export const enum Vital { Hunger = 1, Thirst = 2, Stamina = 3 }
 export const enum DayPhase { Night = 0, Dawn = 1, Day = 2, Dusk = 3 }
+export const enum BuildFail {
+  UnknownPiece = 1, BadTier = 2, OutOfRange = 3, LevelLimit = 4, NoPrivilege = 5, ZoneFull = 6, Terrain = 7, Occupied = 8,
+  Blocked = 9, NoSocket = 10, NoSupport = 11, CannotAfford = 12, InvalidTarget = 13, NotPaintable = 14, RepairBlocked = 15,
+  NothingToRepair = 16, Locked = 17, ViewersFull = 18, NotViewing = 19, NotFuelable = 20,
+}
+export const enum DestroyCause { Damage = 1, Collapse = 2, Demolish = 3 }
 
-export const ItemGathered = defineEvent<{ entity: Entity; node: Entity; item: number; count: number }>("gameplay.ItemGathered");
-export const GatherSwing = defineEvent<{ entity: Entity; node: Entity }>("gameplay.GatherSwing");
-export const GatherFailed = defineEvent<{ entity: Entity; node: Entity; reason: GatherFail }>("gameplay.GatherFailed");
-export const NodeDepleted = defineEvent<{ node: Entity; kind: number }>("gameplay.NodeDepleted");
-export const NodeRespawned = defineEvent<{ node: Entity; kind: number }>("gameplay.NodeRespawned");
-export const InventoryOverflow = defineEvent<{ entity: Entity; item: number; lost: number }>("gameplay.InventoryOverflow");
-export const CraftStarted = defineEvent<{ entity: Entity; recipe: number; totalTicks: number }>("gameplay.CraftStarted");
-export const CraftCompleted = defineEvent<{ entity: Entity; recipe: number; item: number; count: number }>("gameplay.CraftCompleted");
-export const CraftFailed = defineEvent<{ entity: Entity; recipe: number; reason: CraftFail }>("gameplay.CraftFailed");
-export const ItemConsumed = defineEvent<{ entity: Entity; item: number }>("gameplay.ItemConsumed");
-export const VitalDepleted = defineEvent<{ entity: Entity; vital: Vital }>("gameplay.VitalDepleted");
-export const Died = defineEvent<{ entity: Entity; cause: DamageCause }>("gameplay.Died");
-export const WeatherChanged = defineEvent<{ from: WeatherKind; to: WeatherKind; intensity: number; ticks: number }>("gameplay.WeatherChanged");
-export const DayPhaseChanged = defineEvent<{ phase: DayPhase; day: number }>("gameplay.DayPhaseChanged");
+export const ItemGathered = ev<{ entity: Entity; node: Entity; item: number; count: number }>("gameplay.ItemGathered");
+export const GatherSwing = ev<{ entity: Entity; node: Entity }>("gameplay.GatherSwing");
+export const GatherFailed = ev<{ entity: Entity; node: Entity; reason: GatherFail }>("gameplay.GatherFailed");
+export const NodeDepleted = ev<{ node: Entity; kind: number }>("gameplay.NodeDepleted");
+export const NodeRespawned = ev<{ node: Entity; kind: number }>("gameplay.NodeRespawned");
+export const InventoryOverflow = ev<{ entity: Entity; item: number; lost: number }>("gameplay.InventoryOverflow");
+export const CraftStarted = ev<{ entity: Entity; recipe: number; totalTicks: number }>("gameplay.CraftStarted");
+export const CraftCompleted = ev<{ entity: Entity; recipe: number; item: number; count: number }>("gameplay.CraftCompleted");
+export const CraftFailed = ev<{ entity: Entity; recipe: number; reason: CraftFail }>("gameplay.CraftFailed");
+export const ItemConsumed = ev<{ entity: Entity; item: number }>("gameplay.ItemConsumed");
+export const VitalDepleted = ev<{ entity: Entity; vital: Vital }>("gameplay.VitalDepleted");
+export const Died = ev<{ entity: Entity; cause: DamageCause }>("gameplay.Died");
+export const WeatherChanged = ev<{ from: WeatherKind; to: WeatherKind; intensity: number; ticks: number }>("gameplay.WeatherChanged");
+export const DayPhaseChanged = ev<{ phase: DayPhase; day: number }>("gameplay.DayPhaseChanged");
+export const FuelOut = ev<{ entity: Entity }>("gameplay.FuelOut");
+export const FireToggled = ev<{ entity: Entity; lit: number }>("gameplay.FireToggled");
+// building
+export const PiecePlaced = ev<{ piece: Entity; type: number; builder: Entity }>("gameplay.PiecePlaced");
+export const BuildFailed = ev<{ entity: Entity; action: number; reason: BuildFail }>("gameplay.BuildFailed");
+export const PieceDamaged = ev<{ piece: Entity; hp: number; amount: number }>("gameplay.PieceDamaged");
+export const PieceDestroyed = ev<{ piece: Entity; type: number; cause: DestroyCause }>("gameplay.PieceDestroyed");
+export const PieceUpgraded = ev<{ piece: Entity; tier: number }>("gameplay.PieceUpgraded");
+export const PieceRepaired = ev<{ piece: Entity; hp: number }>("gameplay.PieceRepaired");
+export const PiecePainted = ev<{ piece: Entity; paint: number }>("gameplay.PiecePainted");
+export const DoorToggled = ev<{ door: Entity; open: number }>("gameplay.DoorToggled");
+export const ContainerOpened = ev<{ container: Entity; entity: Entity; clientId: number }>("gameplay.ContainerOpened");
+export const ContainerClosed = ev<{ container: Entity; entity: Entity; clientId: number }>("gameplay.ContainerClosed");
+// combat / zombies
+export const AttackSwing = ev<{ entity: Entity; target: Entity }>("gameplay.AttackSwing");
+export const Damaged = ev<{ target: Entity; source: Entity; amount: number; cause: DamageCause }>("gameplay.Damaged");
+export const ZombieSpawned = ev<{ zombie: Entity; kind: number }>("gameplay.ZombieSpawned");
+export const ZombieStateChanged = ev<{ zombie: Entity; state: ZState }>("gameplay.ZombieStateChanged");
+
+/** Suggested channel per event name (Netcode decides). */
+export const EVENT_RELIABILITY: Readonly<Record<string, "reliable" | "unreliable">> = {
+  "gameplay.PiecePlaced": "reliable", "gameplay.PieceDestroyed": "reliable", "gameplay.PieceUpgraded": "reliable", "gameplay.Died": "reliable",
+  "gameplay.CraftCompleted": "reliable", "gameplay.ItemGathered": "reliable", "gameplay.ContainerOpened": "reliable", "gameplay.ContainerClosed": "reliable",
+  "gameplay.BuildFailed": "reliable", "gameplay.ZombieSpawned": "reliable",
+  "gameplay.GatherSwing": "unreliable", "gameplay.AttackSwing": "unreliable", "gameplay.PieceDamaged": "unreliable", "gameplay.DoorToggled": "unreliable",
+  "gameplay.ZombieStateChanged": "unreliable", "gameplay.Damaged": "unreliable",
+};

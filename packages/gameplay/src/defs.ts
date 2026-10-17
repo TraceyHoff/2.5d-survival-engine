@@ -1,134 +1,225 @@
 /**
- * Data-driven definitions. JSON tables are authored with string keys for readability and carry
- * explicit, stable numeric ids. loadDefs() validates them and resolves every cross-reference to a
- * numeric id, so components only ever store numbers (ADR-007).
+ * Data-driven definitions. JSON tables use string keys; numeric ids come from core StableIdRegistry +
+ * data/ids.lock.json (append-only, so old ids never move). loadDefs() validates everything, resolves every
+ * cross-reference to numeric ids and returns the updated lock. Build pieces go through @engine/world
+ * loadBuildPieces (engine fields) plus gameplay extras.
+ *
+ * Visuals are owned by Art & Assets: defs only carry a manifest key (`sprite`, default = key) and an
+ * optional resolved numeric visualId (from an @engine/assets registry via opts.resolveSprite).
  */
+import { fnv1a, StableIdRegistry } from "@engine/core";
+import { loadBuildPieces, type BuildPieceDef, type BuildPieceRegistry, type RawBuildPiece } from "@engine/world";
+
 /** Weather kind ids (u8 in core Weather.kind). Owned by gameplay; append-only. */
 export const enum WeatherKind { Clear = 0, Rain = 1, Storm = 2, Snow = 3, Fog = 4 }
 
-export const enum ItemCategory { Resource = 0, Food = 1, Tool = 2, Placeable = 3 }
-export const enum ToolKind { None = 0, Axe = 1, Pickaxe = 2 }
-export const enum StationKind { None = 0, Campfire = 1, Workbench = 2 }
+export const enum ItemCategory { Resource = 0, Food = 1, Tool = 2, Placeable = 3, Weapon = 4 }
+export const enum ToolKind { None = 0, Axe = 1, Pickaxe = 2, Shovel = 3, Knife = 4 }
+export const enum StationKind { None = 0, Campfire = 1, Workbench = 2, Furnace = 3, Anvil = 4 }
+export const enum Placement { Cell = 0, Edge = 1, Opening = 2, Free = 3 }
+/** BuildingGrid socket kinds. */
+export const enum SocketKind { Edge = 1, Door = 2, Window = 3, Hatch = 4 }
 
-const CATEGORY: Record<string, ItemCategory> = { resource: ItemCategory.Resource, food: ItemCategory.Food, tool: ItemCategory.Tool, placeable: ItemCategory.Placeable };
-const TOOL: Record<string, ToolKind> = { none: ToolKind.None, axe: ToolKind.Axe, pickaxe: ToolKind.Pickaxe };
-const STATION: Record<string, StationKind> = { none: StationKind.None, campfire: StationKind.Campfire, workbench: StationKind.Workbench };
+const CATEGORY: Record<string, ItemCategory> = { resource: ItemCategory.Resource, food: ItemCategory.Food, tool: ItemCategory.Tool, placeable: ItemCategory.Placeable, weapon: ItemCategory.Weapon };
+const TOOL: Record<string, ToolKind> = { none: ToolKind.None, axe: ToolKind.Axe, pickaxe: ToolKind.Pickaxe, shovel: ToolKind.Shovel, knife: ToolKind.Knife };
+const STATION: Record<string, StationKind> = { none: StationKind.None, campfire: StationKind.Campfire, workbench: StationKind.Workbench, furnace: StationKind.Furnace, anvil: StationKind.Anvil };
 const WEATHER: Record<string, WeatherKind> = { clear: WeatherKind.Clear, rain: WeatherKind.Rain, storm: WeatherKind.Storm, snow: WeatherKind.Snow, fog: WeatherKind.Fog };
+const PLACEMENT: Record<string, Placement> = { cell: Placement.Cell, edge: Placement.Edge, opening: Placement.Opening, free: Placement.Free };
+const OPENING: Record<string, SocketKind> = { door: SocketKind.Door, window: SocketKind.Window, hatch: SocketKind.Hatch };
 
-// ---- resolved (runtime) definitions -------------------------------------------------------------
+// ---- resolved definitions -------------------------------------------------------------------------
 
 export interface FoodDef { readonly hunger: number; readonly thirst: number; readonly health: number }
 export interface ToolDef { readonly kind: ToolKind; readonly tier: number }
-export interface ItemDef {
+export interface WeaponDef { readonly damage: number; readonly range: number; readonly cooldownSeconds: number; readonly staminaCost: number; readonly structureMul: number }
+export interface Visual { readonly spriteKey: string; readonly visualId: number }
+export interface ItemDef extends Visual {
   readonly id: number; readonly key: string; readonly name: string; readonly category: ItemCategory;
   readonly maxStack: number; readonly weight: number; readonly food: FoodDef | null; readonly tool: ToolDef | null;
+  readonly weapon: WeaponDef | null; readonly fuelSeconds: number;
+  /** 0 = never spoils. Freshness = core decayAt(createdTick, 1/spoilTicks x spoilMul, tick). */
+  readonly spoilSeconds: number;
+  /** Durability for tools/weapons (data `durability`, default 200; 0 = n/a). */
+  readonly maxDurability: number;
+  /** May be traded (default true). */
+  readonly tradeable: boolean;
 }
 export interface ItemCount { readonly item: number; readonly count: number }
-export interface RecipeDef {
-  readonly id: number; readonly key: string; readonly station: StationKind; readonly seconds: number;
-  readonly ingredients: readonly ItemCount[]; readonly output: ItemCount;
-}
+export interface RecipeDef { readonly id: number; readonly key: string; readonly station: StationKind; readonly seconds: number; readonly ingredients: readonly ItemCount[]; readonly output: ItemCount }
 export interface YieldDef { readonly item: number; readonly min: number; readonly max: number; readonly chance: number }
-export interface ResourceDef {
-  readonly id: number; readonly key: string; readonly requiredTool: ToolKind; readonly minTier: number;
-  readonly capacity: number; readonly respawnSeconds: number; readonly cooldownSeconds: number;
-  readonly staminaCost: number; readonly bonusPerTier: number; readonly yields: readonly YieldDef[];
+export interface ResourceDef extends Visual {
+  readonly id: number; readonly key: string; readonly requiredTool: ToolKind; readonly minTier: number; readonly capacity: number;
+  readonly respawnSeconds: number; readonly cooldownSeconds: number; readonly staminaCost: number; readonly bonusPerTier: number; readonly yields: readonly YieldDef[];
 }
 export interface WeatherDef {
-  readonly kind: WeatherKind; readonly weight: number; readonly durationSeconds: readonly [number, number];
-  readonly intensity: readonly [number, number]; readonly tempOffset: number; readonly wetnessPerSec: number;
-  readonly thirstMul: number; readonly staminaRegenMul: number;
+  readonly kind: WeatherKind; readonly weight: number; readonly durationSeconds: readonly [number, number]; readonly intensity: readonly [number, number];
+  readonly tempOffset: number; readonly wetnessPerSec: number; readonly thirstMul: number; readonly staminaRegenMul: number;
+  /** Wind speed range (tiles/s) rolled with the weather; direction is uniform. */
+  readonly windSpeed: readonly [number, number];
 }
 export interface VitalsTuning {
-  readonly maxHealth: number; readonly maxStamina: number;
-  readonly hungerDecayPerSec: number; readonly thirstDecayPerSec: number;
-  readonly starvationDps: number; readonly dehydrationDps: number;
-  readonly healthRegenPerSec: number; readonly wellFedThreshold: number;
-  readonly lowNeedsThreshold: number; readonly lowNeedsStaminaRegenMul: number;
-  readonly staminaRegenPerSec: number; readonly sprintStaminaDrainPerSec: number; readonly staminaRegenDelaySeconds: number;
-  readonly bodyTempNormal: number; readonly bodyTempMin: number; readonly bodyTempMax: number;
-  readonly bodyTempChangePerDegreePerSec: number; readonly bodyTempRecoverPerSec: number;
-  readonly hypothermiaBelow: number; readonly hyperthermiaAbove: number; readonly exposureDps: number;
-  readonly comfortMin: number; readonly comfortMax: number; readonly coldHungerMul: number; readonly heatThirstMul: number;
+  readonly maxHealth: number; readonly maxStamina: number; readonly hungerDecayPerSec: number; readonly thirstDecayPerSec: number;
+  readonly starvationDps: number; readonly dehydrationDps: number; readonly healthRegenPerSec: number; readonly wellFedThreshold: number;
+  readonly lowNeedsThreshold: number; readonly lowNeedsStaminaRegenMul: number; readonly staminaRegenPerSec: number;
+  readonly sprintStaminaDrainPerSec: number; readonly staminaRegenDelaySeconds: number; readonly bodyTempNormal: number;
+  readonly bodyTempMin: number; readonly bodyTempMax: number; readonly bodyTempChangePerDegreePerSec: number; readonly bodyTempRecoverPerSec: number;
+  readonly hypothermiaBelow: number; readonly hyperthermiaAbove: number; readonly exposureDps: number; readonly comfortMin: number;
+  readonly comfortMax: number; readonly coldHungerMul: number; readonly heatThirstMul: number;
 }
 export interface EnvironmentTuning {
-  readonly dayLengthSeconds: number; readonly startTimeOfDay: number; readonly baseTemp: number;
-  readonly dayNightAmplitude: number; readonly nightThreatMul: number; readonly wetChill: number;
-  readonly dryPerSec: number; readonly heatDryMul: number; readonly shelterTempBonus: number;
-  readonly weather: readonly WeatherDef[];
+  readonly dayLengthSeconds: number; readonly startTimeOfDay: number; readonly baseTemp: number; readonly dayNightAmplitude: number;
+  readonly nightThreatMul: number; readonly wetChill: number; readonly dryPerSec: number; readonly heatDryMul: number;
+  readonly shelterTempBonus: number; readonly weather: readonly WeatherDef[];
+  readonly altitudeLapse: number; readonly humidityPerIntensity: number; readonly windChillPerSpeed: number;
+  readonly surface: { readonly rainPerSec: number; readonly dryPerSec: number; readonly windDryMul: number; readonly sunDryMul: number };
+  readonly wetBuffThreshold: number; readonly coldBuffBelow: number;
+  readonly spoilage: { readonly tempRefC: number; readonly mulPerDegree: number; readonly minMul: number; readonly maxMul: number; readonly rebaseThreshold: number; readonly sickSeconds: number; readonly spoiledItem: string; readonly staleFreshness: number };
 }
+export interface TierDef { readonly id: number; readonly key: string; readonly hpMul: number; readonly vertLoss: number; readonly horizLoss: number; readonly repairMul: number; readonly cost: readonly ItemCount[] }
+export interface BuildingTuning {
+  readonly buildReach: number; readonly playerMaxSpeed: number; readonly levelHeight: number; readonly maxLevel: number;
+  readonly minStability: number; readonly groundStability: number; readonly maxPiecesPerZone: number; readonly repairBlockedSeconds: number;
+  readonly demolishRefund: number; readonly damageStages: readonly number[]; readonly freeSnapSubtiles: number; readonly freeRotSteps: number;
+  readonly maxSlope: number; readonly maxContainerViewers: number; readonly containerReach: number;
+}
+/** Engine BuildPieceDef + gameplay rules. */
+export interface PieceDef extends BuildPieceDef, Visual {
+  readonly placement: Placement; readonly tiered: boolean; readonly costScale: number; readonly fixedTier: number;
+  readonly groundOnly: boolean; readonly ground: boolean; readonly minLevel: number; readonly needsDeck: boolean;
+  readonly supportsAbove: boolean; readonly roof: boolean; readonly blocksPath: boolean; readonly opening: SocketKind | 0;
+  readonly fits: SocketKind | 0; readonly door: boolean; readonly station: StationKind; readonly fired: boolean;
+  readonly heat: number; readonly heatRadius: number; readonly light: boolean; readonly container: number;
+  readonly privilegeRadius: number; readonly paintable: boolean; readonly variants: number; readonly spoilMul: number;
+}
+export interface ZombieDef extends Visual {
+  readonly id: number; readonly key: string; readonly hp: number; readonly speed: number; readonly damage: number; readonly structureDamage: number;
+  readonly attackRange: number; readonly attackCooldownSeconds: number; readonly sightRange: number; readonly hearingMul: number; readonly variants: number;
+}
+export type PhaseTable<T> = { readonly night: T; readonly dawn: T; readonly day: T; readonly dusk: T };
+export interface SpawnTuning {
+  readonly checkSeconds: number; readonly ratePerMinute: PhaseTable<number>; readonly cap: PhaseTable<number>; readonly capRadius: number;
+  readonly minDistance: number; readonly maxDistance: number; readonly noiseRateMul: number; readonly weights: PhaseTable<readonly number[]>;
+}
+export interface AiTuning {
+  readonly thinkTicks: number; readonly repathTicks: number; readonly maxSearchRadius: number; readonly maxExpandedNodes: number;
+  readonly breakCostMul: number; readonly wanderRadius: number; readonly loseTargetMul: number; readonly investigateSeconds: number;
+  readonly dayDps: number; readonly despawnDistance: number; readonly corpseSeconds: number;
+}
+export interface NoiseTuning { readonly gather: number; readonly build: number; readonly attack: number; readonly structureHit: number; readonly door: number; readonly decayPerSec: number }
+export interface WorldgenBand { readonly max: number; readonly tile: number; readonly nodes: readonly number[]; readonly nodeChance: number; readonly temp: number; readonly humidity: number }
+export interface WorldgenDef { readonly bands: readonly WorldgenBand[]; readonly unbuildableTiles: ReadonlySet<number>; readonly unwalkableTiles: ReadonlySet<number> }
+
+export interface MovementTuning { readonly walkSpeed: number; readonly sprintMul: number; readonly encumberedFrom: number; readonly encumberedMinMul: number; readonly wetSlowMul: number; readonly bodyRadius: number }
+
+export interface IdLock { items: Record<string, number>; resources: Record<string, number>; recipes: Record<string, number>; pieces: Record<string, number>; zombies: Record<string, number> }
 
 export interface GameDefs {
   readonly items: ReadonlyMap<number, ItemDef>;
   readonly recipes: ReadonlyMap<number, RecipeDef>;
   readonly resources: ReadonlyMap<number, ResourceDef>;
+  readonly pieces: ReadonlyMap<number, PieceDef>;
+  readonly pieceRegistry: BuildPieceRegistry;
+  readonly tiers: readonly TierDef[];
+  readonly building: BuildingTuning;
+  readonly zombies: ReadonlyMap<number, ZombieDef>;
+  /** Zombie ids in data order (spawning.weights index). */
+  readonly zombieKinds: readonly number[];
+  /** Item id that spoiled food turns into (0 = none). */
+  readonly spoiledItem: number;
+  readonly spawning: SpawnTuning;
+  readonly ai: AiTuning;
+  readonly noise: NoiseTuning;
   readonly vitals: VitalsTuning;
   readonly environment: EnvironmentTuning;
-  itemId(key: string): number;
-  recipeId(key: string): number;
-  resourceId(key: string): number;
+  readonly movement: MovementTuning;
+  readonly worldgen: WorldgenDef;
+  /** Updated id lock (persist to data/ids.lock.json when it changes). */
+  readonly lock: IdLock;
+  /** Hashes of (key,id) tables, embedded in saves and mixed into the world schema hash. */
+  readonly hashes: { readonly items: number; readonly pieces: number; readonly all: number };
+  itemId(key: string): number; recipeId(key: string): number; resourceId(key: string): number; pieceId(key: string): number; zombieId(key: string): number;
+  piece(key: string): PieceDef;
 }
 
 // ---- raw JSON shapes ----------------------------------------------------------------------------
 
-export interface RawItem { id: number; key: string; name: string; category: string; maxStack: number; weight: number; food?: FoodDef; tool?: { kind: string; tier: number } }
-export interface RawRecipe { id: number; key: string; station: string; seconds: number; ingredients: { item: string; count: number }[]; output: { item: string; count: number } }
-export interface RawResource { id: number; key: string; requiredTool: string; minTier: number; capacity: number; respawnSeconds: number; cooldownSeconds: number; staminaCost: number; bonusPerTier: number; yields: { item: string; min: number; max: number; chance: number }[] }
-export interface RawWeather { kind: string; weight: number; durationSeconds: number[]; intensity: number[]; tempOffset: number; wetnessPerSec: number; thirstMul: number; staminaRegenMul: number }
+interface RawVisual { sprite?: string }
+export interface RawItem extends RawVisual { key: string; name: string; category: string; maxStack: number; weight: number; food?: FoodDef; tool?: { kind: string; tier: number }; weapon?: WeaponDef; fuelSeconds?: number; spoilSeconds?: number; durability?: number; tradeable?: boolean }
+export interface RawRecipe { key: string; station: string; seconds: number; ingredients: { item: string; count: number }[]; output: { item: string; count: number } }
+export interface RawResource extends RawVisual { key: string; requiredTool: string; minTier: number; capacity: number; respawnSeconds: number; cooldownSeconds: number; staminaCost: number; bonusPerTier: number; yields: { item: string; min: number; max: number; chance: number }[] }
+export interface RawWeather { kind: string; weight: number; durationSeconds: number[]; intensity: number[]; tempOffset: number; wetnessPerSec: number; thirstMul: number; staminaRegenMul: number; windSpeed?: number[] }
+export interface RawPiece extends RawVisual {
+  key: string; placement: string; layer?: number; footprint?: { w: number; h: number }; levels?: number; solid?: boolean; hp: number;
+  sockets?: { x: number; y: number; z?: number; kind: number }[]; cost?: { resource: string; amount: number }[];
+  tiered?: boolean; costScale?: number; tier?: number; groundOnly?: boolean; ground?: boolean; minLevel?: number; needsDeck?: boolean;
+  supportsAbove?: boolean; roof?: boolean; blocksPath?: boolean; opening?: string; fits?: string; door?: boolean; station?: string;
+  fired?: boolean; heat?: number; heatRadius?: number; light?: boolean; container?: number; privilegeRadius?: number; paintable?: boolean; variants?: number; spoilMul?: number;
+}
+export interface RawZombie extends RawVisual { key: string; hp: number; speed: number; damage: number; structureDamage: number; attackRange: number; attackCooldownSeconds: number; sightRange: number; hearingMul: number; variants: number }
 export interface RawDefs {
   items: { items: RawItem[] };
   recipes: { recipes: RawRecipe[] };
   resources: { resources: RawResource[] };
   vitals: VitalsTuning & { $comment?: string };
   environment: Omit<EnvironmentTuning, "weather"> & { weather: RawWeather[]; $comment?: string };
+  pieces: { pieces: RawPiece[] };
+  tiers: { tiers: (Omit<TierDef, "id" | "cost"> & { cost: { item: string; count: number }[] })[]; building: BuildingTuning };
+  zombies: { zombies: RawZombie[]; spawning: SpawnTuning; ai: AiTuning; noise: NoiseTuning };
+  movement: MovementTuning & { $comment?: string };
+  worldgen: { bands: { max: number; tile: number; nodes: string[]; nodeChance: number; temp?: number; humidity?: number }[]; unbuildableTiles: number[]; unwalkableTiles: number[] };
 }
 
 export class DefsError extends Error {
   constructor(readonly issues: string[]) { super(`Invalid gameplay data:\n  - ${issues.join("\n  - ")}`); }
 }
 
-const MAX_ID = 0xffff; // ids are stored in u16 fields
+export interface LoadDefsOptions {
+  lock?: Partial<IdLock>;
+  /** Maps a manifest key to a numeric sprite id (e.g. AssetRegistry.ids.tryId). Unresolved -> visualId 0. */
+  resolveSprite?: (key: string) => number | undefined;
+}
 
-export function loadDefs(raw: RawDefs): GameDefs {
+const KEY = /^[a-z0-9_]+$/;
+
+export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
   const issues: string[] = [];
   const err = (m: string): void => { issues.push(m); };
+  const lockIn = opts.lock ?? {};
 
-  function indexTable<T extends { id: number; key: string }>(table: string, rows: readonly T[]): Map<string, number> {
-    const byKey = new Map<string, number>(); const ids = new Set<number>();
-    for (const r of rows) {
-      if (!Number.isInteger(r.id) || r.id < 1 || r.id > MAX_ID) err(`${table} ${r.key}: id ${r.id} must be an integer in 1..${MAX_ID}`);
-      if (ids.has(r.id)) err(`${table}: duplicate id ${r.id}`);
-      if (byKey.has(r.key)) err(`${table}: duplicate key ${r.key}`);
-      ids.add(r.id); byKey.set(r.key, r.id);
-    }
-    return byKey;
+  function registry(name: keyof IdLock, keys: string[], maxId = 0xffff): { reg: StableIdRegistry; lock: Record<string, number> } {
+    const seen = new Set<string>();
+    for (const k of keys) { if (!KEY.test(k)) err(`${name}: bad key "${k}"`); if (seen.has(k)) err(`${name}: duplicate key ${k}`); seen.add(k); }
+    const reg = new StableIdRegistry(name, maxId);
+    try { return { reg, lock: reg.assign(keys, lockIn[name] ?? {}) }; } catch (e) { err(String((e as Error).message)); return { reg, lock: {} }; }
   }
-  const itemKeys = indexTable("item", raw.items.items);
-  const recipeKeys = indexTable("recipe", raw.recipes.recipes);
-  const resourceKeys = indexTable("resource", raw.resources.resources);
+  const itemsR = registry("items", raw.items.items.map((i) => i.key));
+  const resR = registry("resources", raw.resources.resources.map((r) => r.key));
+  const recR = registry("recipes", raw.recipes.recipes.map((r) => r.key));
+  const zomR = registry("zombies", raw.zombies.zombies.map((z) => z.key), 0xff);
 
+  const visual = (key: string, sprite?: string): Visual => { const s = sprite ?? key; return { spriteKey: s, visualId: opts.resolveSprite?.(s) ?? 0 }; };
   const enumOf = <E>(map: Record<string, E>, v: string, where: string): E => {
     const r = map[v]; if (r === undefined) { err(`${where}: unknown value "${v}" (expected ${Object.keys(map).join("|")})`); return map[Object.keys(map)[0]!]!; }
     return r;
   };
-  const itemRef = (key: string, where: string): number => {
-    const id = itemKeys.get(key); if (id === undefined) { err(`${where}: unknown item "${key}"`); return 0; } return id;
-  };
-  const positiveInt = (n: number, where: string): void => { if (!Number.isInteger(n) || n < 1) err(`${where}: must be a positive integer (got ${n})`); };
+  const itemRef = (key: string, where: string): number => { const id = itemsR.reg.tryId(key); if (id === undefined) { err(`${where}: unknown item "${key}"`); return 0; } return id; };
+  const posInt = (n: number, where: string): void => { if (!Number.isInteger(n) || n < 1) err(`${where}: must be a positive integer (got ${n})`); };
 
   const items = new Map<number, ItemDef>();
   for (const r of raw.items.items) {
     const where = `item ${r.key}`;
-    positiveInt(r.maxStack, `${where}.maxStack`);
-    if (r.maxStack > MAX_ID) err(`${where}.maxStack exceeds u16`);
+    posInt(r.maxStack, `${where}.maxStack`); if (r.maxStack > 0xffff) err(`${where}.maxStack exceeds u16`);
     if (!(r.weight >= 0)) err(`${where}.weight must be >= 0`);
     const category = enumOf(CATEGORY, r.category, `${where}.category`);
     if (category === ItemCategory.Food && !r.food) err(`${where}: food item needs "food"`);
     if (category === ItemCategory.Tool && !r.tool) err(`${where}: tool item needs "tool"`);
-    items.set(r.id, {
-      id: r.id, key: r.key, name: r.name, category, maxStack: r.maxStack, weight: r.weight,
-      food: r.food ? { hunger: r.food.hunger, thirst: r.food.thirst, health: r.food.health } : null,
-      tool: r.tool ? { kind: enumOf(TOOL, r.tool.kind, `${where}.tool.kind`), tier: r.tool.tier } : null,
+    if (category === ItemCategory.Weapon && !r.weapon) err(`${where}: weapon item needs "weapon"`);
+    if ((r.tool || r.weapon) && r.maxStack !== 1) err(`${where}: tools/weapons are non-stackable (maxStack 1)`);
+    const id = itemsR.reg.tryId(r.key) ?? 0;
+    items.set(id, {
+      id, key: r.key, name: r.name, category, maxStack: r.maxStack, weight: r.weight, ...visual(r.key, r.sprite),
+      food: r.food ? { ...r.food } : null, tool: r.tool ? { kind: enumOf(TOOL, r.tool.kind, `${where}.tool.kind`), tier: r.tool.tier } : null,
+      weapon: r.weapon ? { ...r.weapon } : null, fuelSeconds: r.fuelSeconds ?? 0, spoilSeconds: r.spoilSeconds ?? 0, maxDurability: r.durability ?? (r.tool || r.weapon ? 200 : 0), tradeable: r.tradeable ?? true,
     });
   }
 
@@ -137,15 +228,16 @@ export function loadDefs(raw: RawDefs): GameDefs {
     const where = `recipe ${r.key}`;
     if (!(r.seconds > 0)) err(`${where}.seconds must be > 0`);
     if (r.ingredients.length === 0) err(`${where}: needs at least one ingredient`);
-    const ingredients = r.ingredients.map((g, i) => { positiveInt(g.count, `${where}.ingredients[${i}].count`); return { item: itemRef(g.item, `${where}.ingredients[${i}]`), count: g.count }; });
-    positiveInt(r.output.count, `${where}.output.count`);
-    recipes.set(r.id, { id: r.id, key: r.key, station: enumOf(STATION, r.station, `${where}.station`), seconds: r.seconds, ingredients, output: { item: itemRef(r.output.item, `${where}.output`), count: r.output.count } });
+    const ingredients = r.ingredients.map((g, i) => { posInt(g.count, `${where}.ingredients[${i}].count`); return { item: itemRef(g.item, `${where}.ingredients[${i}]`), count: g.count }; });
+    posInt(r.output.count, `${where}.output.count`);
+    const id = recR.reg.tryId(r.key) ?? 0;
+    recipes.set(id, { id, key: r.key, station: enumOf(STATION, r.station, `${where}.station`), seconds: r.seconds, ingredients, output: { item: itemRef(r.output.item, `${where}.output`), count: r.output.count } });
   }
 
   const resources = new Map<number, ResourceDef>();
   for (const r of raw.resources.resources) {
     const where = `resource ${r.key}`;
-    positiveInt(r.capacity, `${where}.capacity`);
+    posInt(r.capacity, `${where}.capacity`);
     if (!(r.respawnSeconds > 0)) err(`${where}.respawnSeconds must be > 0`);
     if (!(r.cooldownSeconds >= 0)) err(`${where}.cooldownSeconds must be >= 0`);
     const yields = r.yields.map((y, i) => {
@@ -155,33 +247,98 @@ export function loadDefs(raw: RawDefs): GameDefs {
       return { item: itemRef(y.item, w), min: y.min, max: y.max, chance: y.chance };
     });
     if (yields.length === 0) err(`${where}: needs at least one yield`);
-    resources.set(r.id, { id: r.id, key: r.key, requiredTool: enumOf(TOOL, r.requiredTool, `${where}.requiredTool`), minTier: r.minTier, capacity: r.capacity, respawnSeconds: r.respawnSeconds, cooldownSeconds: r.cooldownSeconds, staminaCost: r.staminaCost, bonusPerTier: r.bonusPerTier, yields });
+    const id = resR.reg.tryId(r.key) ?? 0;
+    resources.set(id, { id, key: r.key, ...visual(r.key, r.sprite), requiredTool: enumOf(TOOL, r.requiredTool, `${where}.requiredTool`), minTier: r.minTier, capacity: r.capacity, respawnSeconds: r.respawnSeconds, cooldownSeconds: r.cooldownSeconds, staminaCost: r.staminaCost, bonusPerTier: r.bonusPerTier, yields });
   }
 
   const env = raw.environment;
   if (!(env.dayLengthSeconds > 0)) err("environment.dayLengthSeconds must be > 0");
   const weather: WeatherDef[] = env.weather.map((w, i) => {
     const where = `environment.weather[${i}]`;
-    const pair = (a: number[], name: string): [number, number] => {
-      if (a.length !== 2 || !(a[0]! <= a[1]!)) err(`${where}.${name} must be [min, max]`);
-      return [a[0] ?? 0, a[1] ?? 0];
-    };
-    return { kind: enumOf(WEATHER, w.kind, `${where}.kind`), weight: w.weight, durationSeconds: pair(w.durationSeconds, "durationSeconds"), intensity: pair(w.intensity, "intensity"), tempOffset: w.tempOffset, wetnessPerSec: w.wetnessPerSec, thirstMul: w.thirstMul, staminaRegenMul: w.staminaRegenMul };
+    const pair = (a: number[], name: string): [number, number] => { if (a.length !== 2 || !(a[0]! <= a[1]!)) err(`${where}.${name} must be [min, max]`); return [a[0] ?? 0, a[1] ?? 0]; };
+    return { kind: enumOf(WEATHER, w.kind, `${where}.kind`), weight: w.weight, durationSeconds: pair(w.durationSeconds, "durationSeconds"), intensity: pair(w.intensity, "intensity"), tempOffset: w.tempOffset, wetnessPerSec: w.wetnessPerSec, thirstMul: w.thirstMul, staminaRegenMul: w.staminaRegenMul, windSpeed: w.windSpeed ? pair(w.windSpeed, "windSpeed") : [0, 0] };
   });
   if (!weather.some((w) => w.weight > 0)) err("environment.weather: at least one entry needs weight > 0");
 
+  // tiers
+  const tiers: TierDef[] = raw.tiers.tiers.map((t, i) => ({ id: i, key: t.key, hpMul: t.hpMul, vertLoss: t.vertLoss, horizLoss: t.horizLoss, repairMul: t.repairMul, cost: t.cost.map((c) => ({ item: itemRef(c.item, `tier ${t.key}`), count: c.count })) }));
+  if (tiers.length === 0 || tiers.length > 8) err("tiers: need 1..8 tiers");
+
+  // pieces: engine validation + gameplay extras
+  let pieceRegistry: BuildPieceRegistry | undefined; let pieceLock: Record<string, number> = {};
+  const pieces = new Map<number, PieceDef>();
+  try {
+    const engineRaw: RawBuildPiece[] = raw.pieces.pieces.map((p) => ({
+      key: p.key, hp: p.hp, ...(p.footprint && { footprint: p.footprint }), ...(p.levels !== undefined && { levels: p.levels }),
+      layer: p.layer ?? (p.placement === "edge" || p.placement === "opening" ? 1 : 2), solid: p.solid ?? (p.blocksPath ?? true),
+      ...(p.sockets && { sockets: p.sockets }), ...(p.cost && { cost: p.cost }), sprite: p.sprite ?? p.key,
+    }));
+    const res = loadBuildPieces(engineRaw, {
+      lock: lockIn.pieces ?? {},
+      resolveResource: (k) => itemsR.reg.tryId(k),
+      ...(opts.resolveSprite && { resolveSprite: opts.resolveSprite }),
+    });
+    pieceRegistry = res.registry; pieceLock = res.lock;
+  } catch (e) { err(String((e as Error).message)); }
+  if (pieceRegistry) for (const p of raw.pieces.pieces) {
+    const where = `piece ${p.key}`; const base = pieceRegistry.byKey(p.key);
+    const placement = enumOf(PLACEMENT, p.placement, `${where}.placement`);
+    const station = enumOf(STATION, p.station ?? "none", `${where}.station`);
+    if (placement === Placement.Opening && !p.fits) err(`${where}: opening piece needs "fits"`);
+    if (!p.tiered && p.tier === undefined) err(`${where}: needs "tiered" or a fixed "tier"`);
+    if (p.tier !== undefined && !(p.tier >= 0 && p.tier < tiers.length)) err(`${where}.tier out of range`);
+    if ((p.container ?? 0) > 24) err(`${where}.container exceeds 24 slots`);
+    pieces.set(base.id, {
+      ...base, ...visual(p.key, p.sprite), placement, tiered: p.tiered ?? false, costScale: p.costScale ?? 1, fixedTier: p.tier ?? 1,
+      groundOnly: p.groundOnly ?? false, ground: p.ground ?? false, minLevel: p.minLevel ?? 0, needsDeck: p.needsDeck ?? false,
+      supportsAbove: p.supportsAbove ?? false, roof: p.roof ?? false, blocksPath: p.blocksPath ?? false,
+      opening: p.opening ? enumOf(OPENING, p.opening, `${where}.opening`) : 0, fits: p.fits ? enumOf(OPENING, p.fits, `${where}.fits`) : 0,
+      door: p.door ?? false, station, fired: p.fired ?? false, heat: p.heat ?? 0, heatRadius: p.heatRadius ?? 0, light: p.light ?? false,
+      container: p.container ?? 0, privilegeRadius: p.privilegeRadius ?? 0, paintable: p.paintable ?? false, variants: Math.max(1, p.variants ?? 1), spoilMul: p.spoilMul ?? 1,
+    });
+  }
+
+  const zombies = new Map<number, ZombieDef>();
+  for (const z of raw.zombies.zombies) {
+    if (!(z.hp > 0 && z.speed > 0 && z.attackCooldownSeconds > 0)) err(`zombie ${z.key}: hp, speed, attackCooldownSeconds must be > 0`);
+    const id = zomR.reg.tryId(z.key) ?? 0;
+    zombies.set(id, { ...z, id, ...visual(z.key, z.sprite), variants: Math.max(1, z.variants) });
+  }
+  const zk = raw.zombies.zombies.length;
+  for (const ph of ["night", "dawn", "day", "dusk"] as const) if (raw.zombies.spawning.weights[ph].length !== zk) err(`zombies.spawning.weights.${ph} needs ${zk} entries`);
+
+  const bands: WorldgenBand[] = raw.worldgen.bands.map((b, i) => ({
+    max: b.max, tile: b.tile, nodeChance: b.nodeChance, temp: b.temp ?? 15, humidity: b.humidity ?? 0.5,
+    nodes: b.nodes.map((k) => { const id = resR.reg.tryId(k); if (id === undefined) err(`worldgen.bands[${i}]: unknown resource "${k}"`); return id ?? 0; }),
+  }));
+
+  const spoiledItem = itemsR.reg.tryId(env.spoilage.spoiledItem); if (spoiledItem === undefined) err(`environment.spoilage.spoiledItem: unknown item "${env.spoilage.spoiledItem}"`);
   if (issues.length) throw new DefsError(issues);
 
-  const lookup = (m: Map<string, number>, table: string) => (key: string): number => {
-    const id = m.get(key); if (id === undefined) throw new Error(`unknown ${table} key "${key}"`); return id;
-  };
-  const { $comment: _v, ...vitals } = raw.vitals;
-  const { $comment: _e, weather: _w, ...envRest } = env;
+  const strip = <T extends { $comment?: string }>(o: T): Omit<T, "$comment"> => { const { $comment: _c, ...rest } = o; return rest; };
+  const { weather: _w, ...envRest } = strip(env);
+  const lock: IdLock = { items: itemsR.lock, resources: resR.lock, recipes: recR.lock, pieces: pieceLock, zombies: zomR.lock };
+  const lookup = (r: StableIdRegistry) => (key: string): number => r.id(key);
+  const pieceHash = pieceRegistry!.hash;
+  const all = [itemsR.reg.hash, resR.reg.hash, recR.reg.hash, pieceHash, zomR.reg.hash].reduce((h, x) => fnv1a(`${x};`, h), 0x811c9dc5);
   return {
-    items, recipes, resources, vitals, environment: { ...envRest, weather },
-    itemId: lookup(itemKeys, "item"), recipeId: lookup(recipeKeys, "recipe"), resourceId: lookup(resourceKeys, "resource"),
+    items, recipes, resources, pieces, pieceRegistry: pieceRegistry!, tiers, building: { ...raw.tiers.building }, zombies,
+    zombieKinds: raw.zombies.zombies.map((z) => zomR.reg.id(z.key)), spoiledItem: spoiledItem ?? 0,
+    spawning: raw.zombies.spawning, ai: raw.zombies.ai, noise: raw.zombies.noise,
+    vitals: strip(raw.vitals), environment: { ...envRest, weather }, movement: strip(raw.movement),
+    worldgen: { bands, unbuildableTiles: new Set(raw.worldgen.unbuildableTiles), unwalkableTiles: new Set(raw.worldgen.unwalkableTiles) },
+    lock, hashes: { items: itemsR.reg.hash, pieces: pieceHash, all },
+    itemId: lookup(itemsR.reg), recipeId: lookup(recR.reg), resourceId: lookup(resR.reg), zombieId: lookup(zomR.reg),
+    pieceId: (key) => pieceRegistry!.byKey(key).id,
+    piece: (key) => pieces.get(pieceRegistry!.byKey(key).id)!,
   };
 }
 
 /** Seconds -> whole ticks (at least 1) for the fixed dt the system was called with. */
 export const secondsToTicks = (seconds: number, dt: number): number => Math.max(1, Math.ceil(seconds / dt - 1e-9));
+
+/** All manifest keys gameplay references (for Art & Assets). */
+export function manifestKeys(defs: GameDefs): { items: string[]; resources: string[]; pieces: string[]; zombies: string[] } {
+  const k = <T extends Visual>(m: ReadonlyMap<number, T>) => [...m.values()].map((d) => d.spriteKey);
+  return { items: k(defs.items), resources: k(defs.resources), pieces: k(defs.pieces), zombies: k(defs.zombies) };
+}

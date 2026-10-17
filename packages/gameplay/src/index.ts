@@ -1,6 +1,6 @@
 /**
- * @engine/gameplay — Survival Systems team.
- * Vitals, inventory, crafting, gathering and environment effects on @engine/core's ECS.
+ * @engine/gameplay - Survival Systems team. Rules for vitals, inventory, crafting, gathering, environment,
+ * base building (structures, integrity, persistence), combat and zombies on @engine/core + @engine/world.
  * See ../DESIGN.md.
  */
 export * from "./components.js";
@@ -9,8 +9,27 @@ export * from "./defs.js";
 export * from "./config.js";
 export * from "./data.js";
 export * from "./inventory.js";
+export * from "./input.js";
 export * from "./install.js";
+export * from "./replication.js";
+export * from "./realism.js";
+export * from "./world.js";
 export * from "./systems/environment.js";
 export * from "./systems/vitals.js";
 export * from "./systems/gathering.js";
 export * from "./systems/crafting.js";
+export * from "./systems/fuel.js";
+export * from "./systems/noise.js";
+export * from "./systems/spoilage.js";
+export * from "./systems/movement.js";
+export * from "./building/structure.js";
+export * from "./building/links.js";
+export * from "./building/place.js";
+export * from "./building/integrity.js";
+export * from "./building/actions.js";
+export * from "./building/ghost.js";
+export * from "./building/shelter.js";
+export * from "./building/persist.js";
+export * from "./combat/combat.js";
+export * from "./combat/path.js";
+export * from "./combat/zombies.js";

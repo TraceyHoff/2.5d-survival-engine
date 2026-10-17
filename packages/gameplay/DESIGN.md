@@ -1,243 +1,259 @@
-# @engine/gameplay — Survival Systems Design
+# @engine/gameplay — Survival Systems Design (v2)
 
-Status: v1, implemented against `@engine/core` (engine commit d457153+). Owner: Survival Systems team.
-Read with `docs/ARCHITECTURE.md`, `docs/DECISIONS.md` and `packages/net/ARCHITECTURE.md`.
+This version covers base building, an expanded resource and refining economy, combat, and zombies, on top of the v1 systems: vitals, inventory, crafting, gathering and environment.
+Read it with `docs/ARCHITECTURE.md` (core batches 2 and 3), `docs/DECISIONS.md` and `packages/net/ARCHITECTURE.md`.
 
-Implemented: **vitals, inventory, crafting, gathering, day/night + weather effects**.
-Design only (no code yet): **combat, building**.
+**Ownership.**
+- **Visuals belong to Art & Assets**: sprites, animations, VFX, SFX, UI, colours and palettes.
+- Gameplay exposes only numeric, render-facing fields: `BuildPiece.{type, tier, variant, paint, damageStage, rot}`, `AnimState`, `Zombie.kind`, `BuildGhost`, `Fuel.lit`, `DoorState.open`.
+- Every def carries a **manifest key** (`sprite`, defaulting to the def key). `visualId` is resolved from those keys through the `@engine/assets` registry (`resolveSprite`). Gameplay stores no paths, colours or styling.
+- `paint` is an index into an Art-owned palette.
 
-## 0. Ground rules (from the engine)
+## 0. Engine rules this package follows
 
-- Components are numeric schemas (`defineComponent(name, {field: "f32" | ...}, {networked})`), SoA, sparse-set. No strings,
-  objects or nested data. Item, recipe and resource definitions are referenced by **u16 numeric ids**. Enums are `const enum` stored in `u8`.
-- Systems are `(world, dt) => void`, registered in phases `input → simulation → postSim → network → renderPrep`.
-  The order is explicit and exported as `GAMEPLAY_SYSTEM_ORDER`. A test asserts it.
-- Fixed 20 Hz tick by default. All tuning is **per second** in JSON. Systems multiply rates by `dt`, and durations become ticks through
-  `secondsToTicks(seconds, dt)`. Timers are stored as absolute ticks (`*UntilTick`, `*AtTick`) and compared with `world.tick`.
-- There is no `Date.now`, `performance.now` or `Math.random`. Randomness comes only from `world.rng` (core `Rng`), and only on the authority.
-- The server is authoritative and runs the same sim. `installGameplay(world, { role })`:
-  - `server` / `standalone` run everything.
-  - `client` runs only the deterministic, RNG-free parts for prediction: vitals, stamina, gather cooldown and stamina cost, and crafting progress and completion.
-    It never rolls yields, never changes node state, never decides death and never drives weather. Those arrive by replication.
-- Writes go through `world.set`/`setField` (which mark the change) or through raw `store.data[f][slot]` followed by `store.markChanged(index)` (ADR-015).
-- Events go through `world.events.emit` (core `EventBus`) and are delivered at the end of the tick in emission order. Payloads are numeric, and entity fields are **local** ids.
+- **Components** are numeric SoA schemas. Inventories use array fields (`{type:"u16", length:N}`, accessed with `getArray`/`setElement`), and schemas declare `{default}`.
+- **No wall clock and no `Math.random`.**
+  - Outcomes that must agree across peers use `world.rngFor(key, netId)`: gather yields, zombie wander and zombie variants.
+  - Authority-only rolls use `world.rng`: weather, spawn placement.
+- **Server-authoritative.**
+  - The client predicts its own vitals, stamina, cooldowns, crafting progress, the placement **ghost**, and its attack swing.
+  - It never predicts placement, damage, destruction, AI or spawning.
+- **Replay guard.** Systems with side effects check `world.isReplaying`. Core also discards events emitted during replay. One-shot actions are cleared at the end of the simulation phase.
+- **Input.**
+  - `GameplayActions = defineActions([...])` (adds `Sprint`).
+  - `GAMEPLAY_COMMANDS` are core `defineCommand` schemas. `COMMAND_ENTITY_FIELDS` lists the NetId fields that net resolves to Entities before `applyGameplayInput`.
+- **Ids.** Items, resources, recipes, pieces and zombies use stable u16 ids from `StableIdRegistry` plus `data/ids.lock.json`. The lock is append-only; regenerate it with `pnpm --filter @engine/gameplay lock:ids`. A test fails if the lock is stale. Previously shipped ids are preserved.
+- **Range checks** use `reach + slack`, where `slack = playerMaxSpeed × min(rtt/2, 0.2 s)`. `rtt` is read from the `Latency` component, which net writes server-side.
+- **Events** are tick-stamped (`tick` in every payload) and go through core `EventBus`. Net chooses reliable or unreliable per event (§7).
 
 ### Replication legend
 
-core replicates **whole components** (`networked: true`). The *Scope* column is the intended relevancy. Owner-only scoping is not yet in core or net (see N1).
-
-| Mark | Meaning |
+| Scope | Meaning |
 |---|---|
-| **all** | networked, every client in interest range |
-| **owner** | networked, intended for the owning client only (HUD state) |
-| **local** | `networked: false`. Each side derives it. Never on the wire |
-| **P** | the client predicts this for its own entity and reconciles to the server value |
+| **all** | every client in AOI |
+| **owner** | owning client only |
+| **viewers** | owner plus clients listed in `ContainerViewers` |
+| **server** | `networked:false`, never on the wire |
+| **local** | `networked:false`, derived on each peer |
 
-## 1. Component registry (registration order = component ids, append-only)
-
-Built-ins first (core: NetId=0, Owner=1, Transform=2, PrevTransform=3), then `GAMEPLAY_COMPONENTS`:
-
-| # | Component | Fields (type) | Net | Scope | Written by |
-|---|---|---|---|---|---|
-| 4 | `Health` | hp f32 q10[0,1000] **P**, max f32 | yes | all | vitals, (combat) |
-| 5 | `ResourceNode` | kind u16 (resource id), amount u16, respawnAtTick u32 | yes | all | gathering (server) |
-| 6 | `Survival` | hunger, thirst, stamina, maxStamina f32 q8[0,100] **P**, bodyTemp f32 q10[25,45] **P** | yes | owner | vitals |
-| 7 | `VitalsState` | staminaRegenAtTick u32, lastDamageCause u8 (`DamageCause`) | no | local | vitals, gathering |
-| 8 | `VitalsModifiers` | hungerMul, thirstMul, staminaRegenMul f32 | no | local (derived) | exposure |
-| 9 | `Exposure` | insulation f32, sheltered u8, wetness f32 q7[0,1] **P**, feltTemp f32 q10[-40,60] **P** | yes | owner | exposure; insulation from equipment, sheltered from building |
-| 10 | `Dead` | cause u8, tick u32 | yes | all | vitals.death (server) |
-| 11 | `Inventory` | slotCount u8, maxWeight f32, weight f32, item0..item15 u16, count0..count15 u16 **P** | yes | owner (and container viewers) | inventory ops |
-| 12 | `Equipment` | mainHandSlot u8 (255 = none), mainHandItem u16 (derived) | yes | all | input adapter; equipmentSync |
-| 13 | `Gatherer` | reach f32, cooldownUntilTick u32 **P** | yes | owner | gathering |
-| 14 | `CraftingStation` | kind u8 (`StationKind`), range f32 | yes | all | spawn/building |
-| 15 | `HeatSource` | heat f32 (°C at centre), radius f32, lit u8 | yes | all | spawn/building |
-| 16 | `Crafter` | recipe u16 (0 = idle), progressTicks u16, totalTicks u16 **P** | yes | owner | crafting |
-| 17 | `PlayerIntent` | moving u8, sprint u8, action u8 (`IntentAction`), target u32 (local entity), recipe u16, slot u8 | no | local (rebuilt from inputs) | input phase |
-
-The inventory is a fixed-slot array. Core has no array fields yet (E1), so it is flattened into `itemN`/`countN`. Item id 0 means an empty slot.
-Core resources used: `TimeOfDay {t, dayLengthTicks, day}` and `Weather {kind, intensity, ticksRemaining}`.
-Gameplay adds the resource `GameplayConfig {defs, role}`, which is config and not replicated.
-
-## 2. System update order
-
-| # | Phase | System | Role | Reads → Writes |
-|---|---|---|---|---|
-| – | input | *(net/app adapter)* | both | InputFrame/commands → `PlayerIntent`, `Equipment.mainHandSlot` |
-| 1 | simulation | `gameplay.clock` | both | TimeOfDay (integer tick math, no drift) |
-| 2 | simulation | `gameplay.weather` | server | Weather, `world.rng` |
-| 3 | simulation | `gameplay.exposure` | both | TimeOfDay, Weather, HeatSource, Transform → Exposure, VitalsModifiers |
-| 4 | simulation | `gameplay.respawn` | server | ResourceNode |
-| 5 | simulation | `gameplay.gather` | both (yields: server) | PlayerIntent, Gatherer, Equipment, Inventory, Survival → ResourceNode, Inventory |
-| 6 | simulation | `gameplay.craft` | both | PlayerIntent, Crafter, CraftingStation, Inventory |
-| 7 | simulation | `gameplay.consume` | both | PlayerIntent(Use) → Inventory, Survival, Health |
-| 8 | simulation | `gameplay.vitals` | both | VitalsModifiers, Exposure, PlayerIntent → Survival, Health, VitalsState |
-| 9 | simulation | `gameplay.death` | server | Health → Dead |
-| 10 | simulation | `gameplay.clearIntents` | both | clears one-shot `PlayerIntent.action` |
-| 11 | postSim | `gameplay.equipmentSync` | both | Equipment.mainHandItem from the inventory slot |
-| – | network | *(net)* | | snapshots and deltas |
-| – | renderPrep | *(render)* | client | |
-
-Why this order:
-- Environment runs first so that exposure modifiers apply in the same tick.
-- Actions that spend stamina (gather) run before vitals regen, so the regen delay takes effect immediately.
-- Death runs after every damage source.
-- One-shot actions are cleared at the **end of simulation**, not in postSim. `world.simulate()` runs only the simulation phase, so a replayed tick consumes its own action and does not repeat it.
-
-## 3. Systems
-
-### 3.1 Resources and gathering (implemented)
-- **Components:** `ResourceNode`, `Gatherer`, `Equipment`, `Inventory`, `Transform`, `PlayerIntent`.
-- **Definitions:** `data/resources.json`. Each entry has `id, key, requiredTool (none|axe|pickaxe), minTier, capacity, respawnSeconds, cooldownSeconds, staminaCost, bonusPerTier, yields[{item,min,max,chance}]`.
-- **Tick** (`gather`, for each entity with `action == Gather`), validated in this order:
-  1. cooldown (`Cooldown`)
-  2. target alive and is a node (`InvalidTarget`)
-  3. amount > 0 (`Depleted`)
-  4. 2D distance ≤ reach (`OutOfRange`)
-  5. held tool kind and tier (`WrongTool`)
-  6. stamina ≥ cost (`Exhausted`)
-
-  On success the system spends stamina (which also delays regen), sets the cooldown and emits `GatherSwing`.
-  **Authority only:** for each yield it rolls `chance`, then `rng.int(min, max+1)`, and adds `bonusPerTier × (tier − minTier)` to the first yield.
-  It adds the result to the inventory and emits `ItemGathered`. Anything that does not fit raises `InventoryOverflow` and is lost; world drops come later.
-  It then decrements `amount`. At 0 it sets `respawnAtTick = tick + respawn` and emits `NodeDepleted`.
-- **`respawn`** (server): a node with `amount == 0` and `tick ≥ respawnAtTick` is refilled to capacity, and `NodeRespawned` is emitted.
-- **Authority:** the server decides yields and node state, and nodes replicate to all. The client predicts cooldown, stamina and swing feedback, and gets the items through the Inventory snapshot. Because of this, client RNG never diverges.
-- **Events:** `GatherSwing`, `GatherFailed{reason}`, `ItemGathered`, `InventoryOverflow`, `NodeDepleted`, `NodeRespawned`.
-
-### 3.2 Inventory and items (implemented)
-- **Components:** `Inventory` (16 fixed slots, `slotCount` active, `maxWeight` in kg where 0 means unlimited, cached `weight`) and `Equipment`.
-- **Definitions:** `data/items.json`. Each entry has `id, key, name, category (resource|food|tool|placeable), maxStack, weight, food{hunger,thirst,health}?, tool{kind,tier}?`.
-- **Operations** (`inventory.ts`), all running over a `SlotView` so the same code works on the live store or a scratch copy:
-  - `addItem` fills existing stacks first, then empty slots, lowest index first. It is partial and limited by both slots and weight, and returns the amount added.
-  - `removeItem` is all-or-nothing and takes from the highest slot first.
-  - `transferItem` moves `min(have, fits)`.
-  - `exchangeItems(take, give, dryRun)` is atomic, and crafting uses it.
-  - Also: `countItem`, `canAddItem`, `takeFromSlot`, `listSlots`.
-
-  Every write rewrites `weight` and calls `markChanged`.
-- **Authority:** the server is authoritative, and the client predicts the results of its own crafting and eating. Inventory replicates to the owner only (N1). Others see the held item through `Equipment.mainHandItem`.
-- **Events:** emitted by the callers (gather, craft, consume).
-
-### 3.3 Vitals: hunger, thirst, stamina, health, temperature (implemented)
-- **Components:** `Health`, `Survival`, `VitalsState`, `VitalsModifiers`, `Exposure`, `Dead`.
-- **Definitions:** `data/vitals.json`. It holds the decay rates, damage per second, regen, the stamina drain, regen and delay, the body-temperature model, the comfort band and the cold/heat multipliers.
-- **Tick:**
-  - `consume`: `Use` on a food slot takes one unit and adds hunger, thirst and health, clamped.
-  - `vitals`:
-    - hunger and thirst decay at `rate × modifier × dt`, emitting `VitalDepleted` on the crossing to 0;
-    - sprinting while moving drains stamina and pushes `staminaRegenAtTick`; otherwise stamina regenerates at `rate × weatherMul × (0.5 if hunger or thirst is low)`;
-    - body temperature moves toward the felt temperature when felt is outside `[comfortMin, comfortMax]`, and otherwise recovers toward 37 °C;
-    - damage comes from starvation, dehydration, hypothermia (< 35 °C) and hyperthermia (> 39 °C). The last cause is recorded;
-    - when well fed and undamaged, health regenerates.
-  - `death` (server): hp ≤ 0 adds `Dead{cause, tick}` and emits `Died`. Dead entities are excluded from every gameplay query.
-- **Authority:** the server is authoritative. The client predicts Survival and Health for its own entity, and death is never predicted.
-- **Events:** `VitalDepleted{vital}`, `ItemConsumed`, `Died{cause}`.
-
-### 3.4 Crafting (implemented); building (design)
-- **Components:** `Crafter`, `CraftingStation`, `Inventory`, `Transform`, `PlayerIntent`.
-- **Definitions:** `data/recipes.json`. Each entry has `id, key, station (none|campfire|workbench), seconds, ingredients[{item,count}], output{item,count}`.
-- **Tick** (`craft`):
-  - `CancelCraft` clears the job.
-  - `Craft` validates:
-    1. idle (`Busy`)
-    2. recipe exists (`UnknownRecipe`)
-    3. a station of the right kind within its `range` (`NoStation`)
-    4. ingredients present (`MissingIngredients`)
-    5. the output fits **after** the ingredients are removed (`InventoryFull`, a dry-run `exchangeItems`)
-
-    If all pass it starts the job (`totalTicks = secondsToTicks`) and emits `CraftStarted`.
-  - While a job is running, the station must stay in range or the job is cancelled with `NoStation`, and `progressTicks++`.
-  - At completion it re-validates and runs one atomic exchange: consume the ingredients and add the output, then emit `CraftCompleted`. If validation fails it emits `CraftFailed`.
-  - Nothing is consumed up front, so there are never refunds.
-- **Authority:** deterministic and RNG-free, so the client predicts it fully. The server result wins.
-- **Events:** `CraftStarted`, `CraftCompleted`, `CraftFailed{reason}`.
-- **Building (design only):**
-  - Components:
-    - `BuildIntent` (local): piece id, tile x/y, rotation;
-    - `Structure` {piece u16, hp f32, ownerClientId u16, stability u8} (all);
-    - `Shelter` derived per tile.
-  - Definitions: `data/pieces.json` {id, key, item (kit) id, footprint, hp, providesRoof, stationKind?, heat?}.
-  - System `build.place` runs after craft and checks Action.Build, tile validity (`@engine/world` TileMap/height), overlap through SpatialHash, and reach. It consumes the kit item and spawns a Structure. If the piece is a station it also gets `CraftingStation`/`HeatSource`.
-  - System `build.shelter` (before exposure) sets `Exposure.sheltered` for entities under roof tiles.
-  - Events: `StructurePlaced`, `StructureDamaged`, `StructureDestroyed`.
-  - Authority: server only. The client may show a predicted ghost, but placement is not predicted.
-
-### 3.5 Combat (design only)
-- **Components:**
-  - `Attacker` {cooldownUntilTick u32 P} (owner);
-  - `Armor` {value f32} (all);
-  - weapon stats come from the item def of the held item: `weapon{damage, range, arcDeg, cooldownSeconds, staminaCost, toolKind?}` in items.json;
-  - `Health` (exists); `DamageCause.Combat` (exists).
-- **Systems** (simulation, between `craft` and `consume`):
-  - `combat.attack` handles Action.Primary: cooldown and stamina checks, then a cone/arc query through SpatialHash. On the server it runs with **lag compensation** (rewind targets to the attacker's view tick, N7).
-  - `combat.damage` applies the damage after armor, sets `lastDamageCause = Combat` and adds knockback to Transform.
-  - Death goes through the existing `gameplay.death`.
-  - Night `threatLevel()` (environment) feeds a future `ai.spawner` system.
-- **Authority:** hits are decided only by the server. The client predicts the swing animation, its own cooldown and its stamina, and shows hit effects only when the server confirms (from replicated Health changes).
-- **Events:** `AttackSwing`, `Hit{attacker, target, damage}`, `Died`.
-
-### 3.6 Day/night survival pressure (implemented)
-- **Core resource:** `TimeOfDay`. `gameplay.clock` advances it one tick at a time using integer math (`round(t·len)+1`), so there is no float drift. `t = 0` is midnight and `0.5` is noon.
-- **Day phases:** Night [0.85, 0.2), Dawn [0.2, 0.3), Day [0.3, 0.75), Dusk [0.75, 0.85). `DayPhaseChanged` is emitted on each change.
-- **Pressure:**
-  - ambient = `baseTemp + amplitude·(−cos 2πt) + weather.tempOffset·intensity`, so night is 16 °C colder than noon with the default data;
-  - cold raises `hungerMul`;
-  - `threatLevel()` returns `nightThreatMul` at night, for spawners.
-- **Definitions:** `data/environment.json` (`dayLengthSeconds`, `startTimeOfDay`, `baseTemp`, `dayNightAmplitude`, `nightThreatMul`, ...).
-- **Authority:** deterministic from the tick, so both sides run it. The authoritative value arrives by resource replication (N3). Set `driveClock: false` if another owner drives it.
-
-### 3.7 Weather effects (implemented)
-- **Core resource:** `Weather {kind: WeatherKind, intensity, ticksRemaining}`.
-- **`gameplay.weather`** (server only, `driveWeather`) counts down. At 0 it picks the next kind by weight with `world.rng`, rolls intensity and duration, and emits `WeatherChanged`.
-- **Definitions:** `environment.json.weather[]` {kind (clear|rain|storm|snow|fog), weight, durationSeconds[min,max], intensity[min,max], tempOffset, wetnessPerSec, thirstMul, staminaRegenMul}.
-- **`gameplay.exposure`** (both sides), per entity:
-  - wetness rises with `wetnessPerSec·intensity` when the entity is not sheltered, and otherwise dries at `dryPerSec`, three times faster near heat;
-  - felt temperature = ambient + insulation + shelter bonus + Σ campfire heat (linear falloff) − `wetChill·wetness`;
-  - it writes `VitalsModifiers`: hungerMul (cold), thirstMul (weather × heat), and staminaRegenMul (weather, ignored when sheltered).
-- **Events:** `WeatherChanged{from,to,intensity,ticks}`.
-
-## 4. Events (all `gameplay.*`, delivered at end of tick)
-
-`ItemGathered, GatherSwing, GatherFailed, NodeDepleted, NodeRespawned, InventoryOverflow, CraftStarted, CraftCompleted, CraftFailed, ItemConsumed, VitalDepleted, Died, WeatherChanged, DayPhaseChanged`.
-
-Events are not replicated (N4). On the client they come from the predicted sim (feedback such as swings and craft progress) or are derived from snapshot changes.
-
-## 5. Data tables (`data/*.json`)
-
-| File | Contents |
+| Class | Meaning |
 |---|---|
-| `items.json` | 14 items: resources, food, stone/iron axe and pickaxe, kits |
-| `recipes.json` | 7 recipes: hand, campfire and workbench |
-| `resources.json` | 7 node kinds: branches, grass, berry bush, loose rocks (no tool), tree (axe), boulder and iron vein (pickaxe) |
-| `vitals.json` | vitals tuning |
-| `environment.json` | day/night and weather table |
+| **dynamic** | per-tick deltas |
+| **static** | sent once on chunk entry, then reliable changes, versioned per chunk |
+| **low-rate** | dynamic, capped send rate |
 
-Numeric ids are stable wire and save ids. Never renumber them; only append. `loadDefs()` does the following:
-- validates ids (1..65535, unique), keys, enums, counts and ranges;
-- resolves string keys to ids;
-- throws `DefsError` with every issue listed.
+`GAMEPLAY_REPLICATION` (`src/replication.ts`) exports `[def, scope, class, rateHz?]`. Net applies it with `NetServer.setScope`, and `containerViewersScope` is the viewers hook.
 
-## 6. Open questions
+## 1. Component registry (append-only; order = component ids after core built-ins)
 
-### Engine Architect (core gaps; core was not modified)
-- **E1 Array fields.** There is no fixed-length array field type, so the inventory is 32 named fields (`item0..15`, `count0..15`). Could we have `{type:"u16", length:N}` (one SoA array of stride N), and per-element change bits?
-- **E2 Field defaults.** There are no per-field defaults or enum metadata in schemas. `add()` zeroes everything, so `mainHandSlot = 255` must be passed explicitly.
-- **E3 Tick during replay.** `world.simulate()` does not advance `world.tick`. Our timers (`staminaRegenAtTick`, `cooldownUntilTick`, `respawnAtTick`, craft progress) compare against `world.tick`, so a replay runs with a stale tick. Should `simulate()` set `world.tick` for each replayed tick, or should systems receive the tick?
-- **E4 Events during replay.** Events emitted during `simulate()` stay queued and flush at the next `step()`, which duplicates predicted events. Can we get an `isResimulating` flag or event suppression?
-- **E5 RNG streams.** `world.rng` is one global stream, so any client-side RNG use desyncs every later roll. Could we have named per-system streams (`rng.fork` by a stable key) or a stateless hash RNG keyed by (tick, NetId, salt)? Either would make some outcomes predictable.
-- **E6 Resource replication.** TimeOfDay and Weather are not in snapshots and have no owner. Gameplay drives them for now (`driveClock`/`driveWeather`). Should resources replicate, or should these become a networked singleton entity?
-- **E7 System-order API.** There is no public introspection of system order. Our test reads a private field. Can we have `world.systemOrder()`?
-- **E8 WeatherKind.** `WeatherKind` is a core `const enum` (Clear, Rain, Storm, Snow, Fog). Adding heatwave or sandstorm needs a core change. Could weather kinds be data-driven ids?
-- **E9 Input actions.** `Action`/`InputFrame` (buttons and aim only) has no Sprint and no command payloads (craft recipeId, target NetId, inventory slot, build piece and rotation). We need a gameplay command channel.
-- **E10 Spatial index.** Heat-source and station lookups are O(N·M). Should there be a shared per-tick SpatialHash resource maintained by world/core, and who updates it?
+| Component | Fields | Scope / class | Persist |
+|---|---|---|---|
+| Health | hp f32 q10, max f32 | all / dynamic | – |
+| ResourceNode | kind u16, amount u16, respawnAtTick u32 | all / dynamic | regenerated by worldgen |
+| Survival | hunger, thirst, stamina, maxStamina f32 q8, bodyTemp f32 q10, staminaDelayTicks u16 | owner / dynamic (P) | – |
+| VitalsState | lastDamageCause u8 | server | – |
+| VitalsModifiers | hungerMul, thirstMul, staminaRegenMul f32 (default 1) | local | – |
+| Exposure | insulation, sheltered u8, wetness, feltTemp | owner / dynamic (P) | – |
+| Dead | cause u8, tick u32 | all | – |
+| Inventory | slotCount u8 (16), maxWeight f32 (60), weight f32, items u16[16], counts u16[16] | owner (P) | player save (app) |
+| Equipment | mainHandSlot u8 (255), mainHandItem u16 | all | – |
+| Gatherer | reach f32 (1.5), cooldownUntilTick u32 | owner (P) | – |
+| CraftingStation | kind u8, range f32 (2.5) | all / static | via piece |
+| HeatSource | heat, radius f32, lit u8 | all / low-rate 2 Hz | via piece |
+| Crafter | recipe u16, progressTicks, totalTicks u16 | owner (P) | – |
+| PlayerIntent | moving, sprint, action, target, recipe, slot, piece, x, y, level, rot, tier, variant, paint, item, count | local | – |
+| **BuildPiece** | type u16, rot u8, variant u8, tier u8, hp u16, damageStage u8, paint u8 | **all / static** | yes |
+| PieceSlot | tx, ty i32, z u8, side u8, gridId u32 | local (derived from Transform + def) | – |
+| PieceStability | value u8, placedTick u32, lastDamagedTick u32 | server | recomputed |
+| Tribe | id u16 | all / static | yes |
+| PrivilegeZone | radius f32, tribe u16 | all / static | derived from def + Tribe |
+| DoorState | open u8, lockTribe u16 | all / dynamic | yes |
+| Fuel | burnTicks u32, lit u8 | all / low-rate 2 Hz | yes |
+| Container | slotCount u8, maxWeight f32, weight f32, items u16[24], counts u16[24] | **viewers** | yes |
+| ContainerViewers | clients u16[8], count u8 | server (net reads it) | – |
+| Viewing | container u32 | server | – |
+| BuildGhost | piece u16, x, y, z, facing f32, valid u8, reason u8, tier u8, variant u8 | local (client) | – |
+| Attacker | cooldownUntilTick u32 | owner (P) | – |
+| Zombie | kind u8, variant u8 | all | – (respawned) |
+| ZombieBrain | state u8, target u32, goalX, goalY, homeX, homeY f32, thinkAt, repathAt, attackAt, stateTick u32, blockPiece u32 | server | – |
+| AnimState | anim u8, startTick u32 | all | – |
+| NoiseLevel | value f32 | server | – |
+| Latency | rttMs u16 | server (written by net) | – |
 
-### Netcode
-- **N1 Owner-only relevancy.** Replication is per component and goes to everyone. `Survival`, `Inventory`, `Exposure`, `Crafter` and `Gatherer` should go to the owner only (Inventory alone is 35 fields per player). Is that per-component relevancy, or a split into owner/public components?
-- **N2 Entity references in commands.** Commands should carry the target's NetId. The input-phase adapter resolves it to the local entity in `PlayerIntent.target`. Who owns that adapter, net or gameplay?
-- **N3 Time and weather replication.** TimeOfDay and Weather replication and late join: send them in the snapshot header, or as a singleton entity? (See E6.)
-- **N4 Events.** Should a reliable event channel carry gameplay events (Died, ItemGathered for toasts), or should clients derive them from snapshot diffs?
-- **N5 Sim-local state.** `VitalsState.staminaRegenAtTick` is sim-local, so after reconciliation the client's regen delay can drift. Should it be networked to the owner?
-- **N6 Quantization.** Please review the quantization hints (hunger, thirst, stamina 8-bit; hp 10-bit; wetness 7-bit; temperatures 10-bit).
-- **N7 Lag compensation.** Gathering range checks (and combat later) need it. What rewind window should server-side reach checks use?
-- **N8 Inventory deltas.** Full-component deltas for inventory changes are wasteful. Per-field change bits (ARCHITECTURE Q3) would help.
-- **N9 Command validation.** The server re-validates every intent (cooldowns, reach, ingredients). Do we also need per-connection rate limits for gameplay commands?
+(P) = predicted for the owned entity. Transform (core) replicates to all. Pieces have grid-snapped, static Transforms.
+
+## 2. System order
+
+| Phase | System | Role | Notes |
+|---|---|---|---|
+| input | *(net calls `applyGameplayInput`)* | both | actions → PlayerIntent, one command per tick (queued) |
+| simulation | gameplay.clock | both | TimeOfDay on `world.environment` |
+| | gameplay.weather | server | |
+| | gameplay.structureIndex | both | indexes new or replicated BuildPiece entities, drops removed ones |
+| | gameplay.exposure | both | heat through the spatial index; shelter from roofs above |
+| | gameplay.fuel | server | burn fuel from the Container, set lit |
+| | gameplay.respawn | server | |
+| | gameplay.gather | both (yields: server) | |
+| | gameplay.build | server (ghost: client) | place, upgrade, repair, demolish, paint |
+| | gameplay.doors | server | toggle and lock |
+| | gameplay.containers | server | open, close, deposit, withdraw, auto-close by range |
+| | gameplay.craft | both | |
+| | gameplay.combat | both (damage: server) | player attacks |
+| | gameplay.zombieSpawner | server | |
+| | gameplay.zombieAI | server | think, path, move, attack |
+| | gameplay.structureDamage | server | batched hp per piece, damage stages, destruction |
+| | gameplay.stability | server | dirty-only recompute → collapse |
+| | gameplay.consume | both | |
+| | gameplay.vitals | both | |
+| | gameplay.death | server | |
+| | gameplay.clearIntents | both | |
+| postSim | gameplay.equipmentSync, gameplay.ghost (client), gameplay.corpses (server), gameplay.noiseDecay (server) | | |
+| postSim | spatialIndex (world) | both | installed by `installGameplay` |
+
+## 3. Building (base building)
+
+### 3.1 Model
+- **One entity per piece**: grid-snapped `Transform`, `BuildPiece`, optional `Tribe`, plus feature components (`DoorState`, `Fuel`, `Container`, `CraftingStation`, `HeatSource`, `PrivilegeZone`).
+- **Grid.** One tile per building cell, with levels `z` 0..7 (`levelHeight = 2` tile units of Transform.z).
+- **Cell pieces** (foundation, floor, hatch frame, roofs, stairs, pillar, furniture, decor) live in `@engine/world` `BuildingGrid` on their layer: 0 deck, 1 structure, 2 furniture, 3 decor.
+- **Edge pieces** (walls) sit **between** tiles. They live in gameplay's `EdgeIndex` keyed by (tx, ty, z, side N|W). The edge midpoint is the Transform.
+- **Opening pieces** (doors, shutters, window glass/bars, hatches) mount into a parent's socket and live in the `OpeningIndex`, keyed by parent piece.
+- Gameplay keeps the maps `gridId ↔ entity`, plus per-chunk piece sets and a **chunk version** (bumped on every structural change in a chunk) for static replication and persistence.
+
+### 3.2 Placement
+- **Command:** `Place {piece, x, y, level, rot, tier, variant}`, carrying aim in world units.
+- **`snapPlacement`:**
+  - **cell:** tile = floor(aim), rot 0..3.
+  - **edge:** nearest `EDGE` socket of a deck at that level (through `BuildingGrid.snap`). Without a deck, the nearest edge of the aimed tile. rot is derived from the side.
+  - **opening:** nearest free socket of the matching kind (door, window, hatch) on a parent.
+  - **free:** aim snapped to 1/4 tile, rot in 16 steps (Transform.facing). Occupies its footprint tiles on its layer.
+- **Validation** (`validatePlacement` → `PlaceFail`, in this order):
+  1. `UnknownPiece`, `BadTier`
+  2. `OutOfRange` (reach + slack)
+  3. `LevelLimit`
+  4. `NoPrivilege`: the point is inside another tribe's `PrivilegeZone`, or a totem's zone would overlap another tribe's zone
+  5. `ZoneFull` (5,000 pieces per zone)
+  6. `Terrain`: unbuildable tile, or slope above `maxSlope` for foundations and ground furniture
+  7. `Occupied` (grid, edge or opening index)
+  8. `Blocked`: a creature or resource node in the footprint (spatial index)
+  9. `NoSocket`
+  10. `NoSupport`: a deck is required, or the computed support is below `minStability`
+  11. `CannotAfford`
+- **Effects.** On success the cost is consumed, the entity is spawned and indexed, stability is marked dirty, noise is made, and `PiecePlaced` is emitted. Otherwise `BuildFailed{reason}` is emitted.
+- **Ghost.** On the client the `gameplay.ghost` system runs `previewPlacement` (the same snap and validate, minus server-only stability values) each frame tick, for entities with `BuildGhost`. Renderers draw the ghost from `BuildGhost`. Placement itself is never predicted.
+
+### 3.3 Support and stability (server only; `PieceStability` never replicates)
+- **Directed support graph:**
+  - `foundation` and ground furniture are grounded (100).
+  - `wall@z` is supported by decks at z on either side, or by `wall@z-1`.
+  - `deck@z≥1` is supported by walls at z-1 on its edges, by `supportsAbove` pieces below (pillars; grid `supportsOf`), or by adjacent decks at z (horizontal).
+  - `stairs` and `pillar` are supported by the deck at z.
+  - Furniture and decor on a deck rest on that deck (no loss).
+  - Openings rest on their parent (no loss).
+- **Recompute.** Value = max over supporters of (supporter − loss), where loss is the receiving piece's tier `vertLoss` or `horizLoss`. It is computed as a max-Dijkstra with a bucket queue (values 0..100) over the dirty piece set: an O(n) flood.
+- **Hook.** It plugs into `BuildingGrid.stabilityRule`, so the rule returns `value ≥ minStability` and `grid.unstable(ids)` yields the collapse set.
+- **Collapse.** Pieces below the minimum are destroyed (`PieceDestroyed{cause: Collapse}`), and the flood repeats until no more pieces fall.
+
+### 3.4 HP, tiers, upgrades, repair, demolition
+- **Tiers** (tiers.json): twig, wood, stone, metal, reinforced. hp = base × `hpMul`. Cost = tier cost × `costScale`, rounded up.
+- **Damage stage** comes from the hp fraction (thresholds 0.75 / 0.5 / 0.25 → stages 0..3) and is shown by Art.
+- **Damage is batched.** `damagePiece()` adds to a per-tick pending map, and `gameplay.structureDamage` writes `BuildPiece.hp` at most once per piece per tick. It then emits one `PieceDamaged` per piece and destroys pieces at 0.
+- **`Upgrade {target, tier}`** needs privilege and a higher allowed tier. It pays the new tier's cost and keeps the hp fraction.
+- **`Repair {target}`** costs ceil(missing fraction × tier cost × `repairMul`). It is blocked for `repairBlockedSeconds` after damage.
+- **`Demolish {target}`** needs privilege and refunds `demolishRefund` × hp fraction of the cost. Dependents re-evaluate stability.
+- **`Paint {target, paint}`** needs a `paintable` piece and costs 1 dye. `variant` is chosen at placement (cycled by command).
+
+### 3.5 Doors, containers, privilege
+- **Doors.** `ToggleDoor {target}` works within reach + slack. If `lockTribe ≠ 0`, only that tribe can open the door. `LockDoor {target}` (with privilege) toggles the lock. A closed door blocks pathing; an open one does not. Doors emit noise.
+- **Containers.**
+  - `OpenContainer {target}` checks range, privilege (inside a zone only the owning tribe may open), and viewer capacity (8). It adds `Owner.clientId` to `ContainerViewers` and sets the player's `Viewing`.
+  - `CloseContainer` reverses that. Viewers are also removed automatically when they leave `containerReach + slack`, die, or the container is destroyed.
+  - `Deposit` and `Withdraw {target, item, count}` require an open view.
+  - Net uses `containerViewersScope` (`(world, e, clientId) → bool`) as the `viewers` scope for `Container`.
+- **Privilege.** `claim_totem` adds `PrivilegeZone {radius 12, tribe}`. Inside a zone, only that tribe may build, upgrade, demolish, lock, or open containers. Players and pieces carry `Tribe`.
+
+### 3.6 Persistence
+- `encodeStructures(world, chunkKey)` / `decodeStructures(world, bytes)` (`src/building/persist.ts`). This is gameplay's versioned, deterministic codec.
+- **Header:** magic `STRC`, u16 version, i32 cx, cy, u32 piece-id hash, u32 item-id hash, u32 count.
+- **Pieces** are sorted by (z, ty, tx, layer, side, key). Each record stores: type, rot, variant, tier, paint, hp, chunk-relative x/y as i16 in 1/4 tiles, z, tribe, and a feature bitmask with DoorState / Fuel / Container contents.
+- **Decode.** The decoder rejects newer versions and hash mismatches. It recreates entities, reindexes them, and recomputes stability. Re-encoding a decoded chunk gives byte-identical output, which a test checks.
+- **Integration.** Apps store the blob next to the engine chunk bytes. `attachWorldStreaming(world, chunkManager, storage)` does this on `onUnload` / `onLoad`.
+
+### 3.7 Events
+`PiecePlaced, BuildFailed{action, reason}, PieceDamaged{piece, hp, amount}, PieceDestroyed{piece, type, cause}, PieceUpgraded, PieceRepaired, PieceDemolished, PiecePainted, DoorToggled, ContainerOpened, ContainerClosed`.
+
+### 3.8 Render-facing (Art & Assets reads)
+- `BuildPiece.type` → piece manifest key. `tier` gives the material, `variant` the alternate model, `paint` the palette index (Art-owned), and `damageStage` 0..3.
+- `rot` (0..3, or 16 steps through Transform.facing for free pieces) and `DoorState.open`.
+- `Fuel.lit` and `HeatSource.lit` drive fire/light VFX.
+- `BuildGhost`: `valid` plus `reason`.
+
+## 4. Resources and refining
+
+- **Nodes** (resources.json): `fallen_branches, fiber_grass, berry_bush, loose_rocks, sand_dune, clay_deposit, tree (pine), oak_tree, boulder, copper_vein, tin_vein, iron_vein, coal_seam, animal_carcass`.
+  - Each node has a tool kind (none, axe, pickaxe, shovel, knife) and a min tier (stone 1, bronze 2, iron 3).
+  - Each also has yields, capacity, respawn time, cooldown, and stamina cost.
+- **World integration.** `worldgenBands(defs)` turns `data/worldgen.json` (tile ids plus node keys per band) into `ProceduralGenerator` bands. `attachWorldStreaming` spawns `ResourceNode` entities from `ChunkManager.onLoad(chunk, nodes)` and despawns them on unload. It is idempotent per chunk.
+- **Items** (items.json): logs, sticks, planks, stone, flint, clay, sand, fiber, hide, ores (copper, tin, iron), coal, and refined goods: rope, cloth, leather, stone_brick, clay_brick, mortar, charcoal, the ingots, nails, plates, glass, dye. Also food, bandage, tools (stone, bronze, iron) and weapons. Fuel items carry `fuelSeconds`.
+- **Recipes** (recipes.json), 34 in total, at stations: hand, workbench, campfire, furnace (fired) and anvil. Stations are build pieces. Fired stations need `Fuel.lit`.
+- **Fuel** (`gameplay.fuel`, server): a lit station burns `burnTicks`. At 0 it consumes the first fuel item in its `Container`, or goes out (`FuelOut`). `ToggleFire {target}` lights it or puts it out.
+- **Replication.** Nodes replicate to all. Yields roll with `rngFor("gather", nodeNetId)` on the server, and items reach the owner through the Inventory.
+- **Events:** `ItemGathered, GatherSwing, GatherFailed, NodeDepleted, NodeRespawned, InventoryOverflow, FuelOut, FireToggled`.
+
+## 5. Combat and zombies
+
+### 5.1 Combat (basic)
+- **`Attack {target}`.**
+  - Checks: `Attacker.cooldownUntilTick`, then range = weapon range (fists 1.0) + slack, then stamina.
+  - Damage = weapon damage (fists 5), applied with `applyDamage(target, amount, cause Combat, source)`.
+  - Attacking a piece calls `damagePiece(amount × structureMul)`.
+- **Prediction.** The client predicts the swing, cooldown and stamina only. Damage is applied only by the server (not during replay).
+- **Death.** Health reaching 0 → `Dead` (existing death system) → `Died`. Zombie corpses despawn after `corpseSeconds`.
+
+### 5.2 Spawning (server, `gameplay.zombieSpawner`)
+- Every `checkSeconds`, for each living player, the expected spawn count is computed from `ratePerMinute[phase] × (1 + noiseRateMul × NoiseLevel) × threatLevel()`, with a fractional chance for the remainder.
+- Spawning is capped by `cap[phase]` zombies within `capRadius`.
+- **Placement.** Position is on a ring of `minDistance..maxDistance`, rolled with `world.rng`, rejecting unwalkable tiles, pieces and privilege zones. Up to 4 tries.
+- **Kind** is weighted by phase. Variant comes from `rngFor("zvariant", entity)`.
+- **Noise.** Actions call `makeNoise(x, y, radius)`: gather, build, attack, structure hits, doors. This raises `NoiseLevel` for players within the radius (it decays at `decayPerSec`), and the spatial noise points draw nearby zombies.
+
+### 5.3 AI (server, `gameplay.zombieAI`)
+- **States:** `Wander → Investigate (noise) → Chase (player in sight) → AttackPlayer | AttackStructure`.
+- **Daylight.** In daylight zombies take `dayDps` and give up investigating.
+- **Thinking** is staggered (`thinkTicks`, by entity index). Targets are found with `SpatialIndex.queryRadius`.
+- **Pathing.**
+  - A* on the tile grid within `maxSearchRadius`, with deterministic tie-breaks and a cap on expanded nodes. Unwalkable tiles and solid cell pieces (`BuildingGrid.isBlocked`) are impassable.
+  - **Walls and closed doors are passable at a break cost** of `hp / (structureDamage / attackCooldown) × speed × breakCostMul` tile-equivalents. Open doorways are free.
+  - The path therefore goes through the cheapest barrier. Doors (low hp) are naturally preferred over stone walls.
+  - The first barrier on the path becomes `blockPiece`. The zombie walks to it and enters `AttackStructure`, which hits the piece through `damagePiece` (batched).
+  - When the barrier falls, the zombie repaths.
+- **Attacking players** happens only when no barrier lies between them.
+
+### 5.4 Render-facing
+- `Zombie.kind` gives the manifest key, and `Zombie.variant` the variant.
+- `AnimState.anim` is one of Idle, Walk, Run, Attack, Hurt, Die, Gather, Build. `AnimState.startTick` is the animation start, for phase. Transform.facing gives direction.
+- Health fraction drives the cute damage look; Art decides how.
+
+### 5.5 Events
+`ZombieSpawned, ZombieStateChanged (debug), Damaged{target, source, amount, cause}, AttackSwing, Died`.
+
+## 6. Existing systems (v1; still accurate)
+
+- **Vitals:**
+  - decay and modifiers; stamina drain, then `staminaDelayTicks` (u16, replicated to the owner), then regen;
+  - body temperature;
+  - damage from starvation, dehydration and hypothermia/hyperthermia;
+  - death.
+- **Inventory:** fixed slots. It is now array fields (`items[]`/`counts[]`). Ops are generic over `Inventory` and `Container`.
+- **Crafting:** validates at start and exchanges atomically at completion. Stations are found through the spatial index, and fired stations must be lit.
+- **Environment:** TimeOfDay and Weather live on `world.environment`. Exposure computes felt temperature (heat sources through the spatial index), wetness and modifiers. `sheltered` is set automatically when a roof or deck exists above the entity's tile.
+
+## 7. Event delivery (for Netcode)
+
+| Reliable | Unreliable (cosmetic) |
+|---|---|
+| PiecePlaced, PieceDestroyed, PieceUpgraded, PieceDemolished, Died, CraftCompleted, ItemGathered, ContainerOpened/Closed, BuildFailed (owner) | GatherSwing, AttackSwing, PieceDamaged, DoorToggled, ZombieStateChanged, Damaged |
+
+## 8. Asks
+
+See the bottom of README.md. The open lists are mirrored in the final report.

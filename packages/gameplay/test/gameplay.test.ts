@@ -12,9 +12,8 @@ describe("gameplay install", () => {
 
   it("registers systems in the documented order", () => {
     const w = new World(); installGameplay(w);
-    const names = (w as unknown as { systems: Map<string, { name: string }[]> }).systems;
-    const actual = [...names.entries()].flatMap(([p, l]) => l.map((s) => [p, s.name]));
-    expect(actual).toEqual(GAMEPLAY_SYSTEM_ORDER.map(([p, n]) => [p, n]));
+    const actual = w.systemOrder().filter((s) => s.name.startsWith("gameplay.")).map((s) => [s.phase, s.name, s.every ?? 1]);
+    expect(actual).toEqual(GAMEPLAY_SYSTEM_ORDER.map(([p, n, e]) => [p, n, e ?? 1]));
   });
 
   it("has a stable schema hash across worlds (same registration order on client and server)", () => {

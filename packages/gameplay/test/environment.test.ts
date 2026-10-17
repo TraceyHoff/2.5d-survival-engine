@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { TimeOfDay, Weather, World, setTimeOfDay, timeOfDay } from "@engine/core";
+import { evaluate, TimeOfDay, Weather, World, setTimeOfDay, timeOfDay } from "@engine/core";
 import { WeatherKind } from "../src/defs.js";
 import {
   ambientTemperature, DayPhase, DayPhaseChanged, dayPhase, defaultDefs, Exposure, installGameplay, spawnPlayer,
-  spawnStation, StationKind, threatLevel, VitalsModifiers, WeatherChanged,
+  spawnStation, StationKind, threatLevel, WeatherChanged, Buffs, Stat, Wetness,
 } from "../src/index.js";
 import { collect, makeWorld, steps } from "./helpers.js";
 
@@ -37,7 +37,7 @@ describe("weather", () => {
     const seq = (seed: number) => {
       const w = new World({ seed }); installGameplay(w, { role: "server" });
       const ev = collect(w, WeatherChanged);
-      for (let i = 0; i < 20 * 60 * 60; i++) w.step(1 / 20);
+      for (let i = 0; i < 20 * 60 * 30; i++) w.step(1 / 20);
       return ev.map((e) => [e.to, e.ticks]);
     };
     const a = seq(5);
@@ -62,24 +62,25 @@ describe("exposure", () => {
     return w;
   }
 
-  it("rain wets unsheltered players, which chills felt temperature; shelter keeps them dry", () => {
+  it("rain wets exposed players (5 Hz exposure), which chills felt temperature; render Wetness follows", () => {
     const w = rainy();
-    const out = spawnPlayer(w, { x: 0, y: 0 }); const inside = spawnPlayer(w, { x: 20, y: 0 });
-    w.setField(inside, Exposure, "sheltered", 1);
+    const out = spawnPlayer(w, { x: 0, y: 0 }); const dry = spawnPlayer(w, { x: 20, y: 0 });
     steps(w, 20 * 20);
-    const o = w.get(out, Exposure)!, i = w.get(inside, Exposure)!;
-    expect(o.wetness).toBeCloseTo(0.02 * 20, 2);
-    expect(i.wetness).toBe(0);
-    expect(i.feltTemp - o.feltTemp).toBeCloseTo(env.shelterTempBonus + env.wetChill * o.wetness, 2);
+    w.setField(dry, Exposure, "wetness", 0);
+    steps(w, 4);
+    const o = w.get(out, Exposure)!, d = w.get(dry, Exposure)!;
+    expect(o.wetness).toBeCloseTo(0.02 * 20, 1);
+    expect(d.feltTemp - o.feltTemp).toBeGreaterThan(env.wetChill * (o.wetness - d.wetness) * 0.9);
+    expect(w.get(out, Wetness)!.level).toBe(Math.round(o.wetness * 255));
   });
 
   it("campfires warm nearby players and speed drying", () => {
     const w = rainy(); setTimeOfDay(w, 0 * 24);
     const p = spawnPlayer(w, { x: 0, y: 0 }); const far = spawnPlayer(w, { x: 30, y: 0 });
-    w.setField(p, Exposure, "sheltered", 1); w.setField(far, Exposure, "sheltered", 1);
+    Object.assign(w.env(Weather), { kind: WeatherKind.Clear });
     w.setField(p, Exposure, "wetness", 0.5); w.setField(far, Exposure, "wetness", 0.5);
     spawnStation(w, StationKind.Campfire, 1, 0);
-    w.step(1 / 20);
+    steps(w, 8); // emitter index updates in postSim; exposure runs every 4 ticks
     const near = w.get(p, Exposure)!, cold = w.get(far, Exposure)!;
     expect(near.feltTemp).toBeGreaterThan(cold.feltTemp + 10);
     expect(near.wetness).toBeLessThan(cold.wetness);
@@ -88,11 +89,12 @@ describe("exposure", () => {
   it("cold raises hunger multiplier; weather sets thirst/stamina multipliers", () => {
     const w = rainy(); setTimeOfDay(w, 0 * 24);
     const p = spawnPlayer(w, { x: 0, y: 0 });
-    w.step(1 / 20);
-    const m = w.get(p, VitalsModifiers)!;
+    steps(w, 4);
     expect(w.get(p, Exposure)!.feltTemp).toBeLessThan(vt.comfortMin);
-    expect(m.hungerMul).toBeCloseTo(vt.coldHungerMul);
-    expect(m.thirstMul).toBeCloseTo(0.8);
-    expect(m.staminaRegenMul).toBeCloseTo(0.9);
+    expect(evaluate(w, p, Buffs, Stat.HungerRate, 1)).toBeCloseTo(vt.coldHungerMul);
+    expect(evaluate(w, p, Buffs, Stat.ThirstRate, 1)).toBeCloseTo(0.8);
+    expect(evaluate(w, p, Buffs, Stat.StaminaRegen, 1)).toBeCloseTo(0.9 * (w.get(p, Exposure)!.wetness >= env.wetBuffThreshold ? 0.9 : 1));
+    // modifiers lapse on their own when exposure stops refreshing them
+    expect(evaluate(w, p, Buffs, Stat.HungerRate, 1, w.tick + 100)).toBe(1);
   });
 });
