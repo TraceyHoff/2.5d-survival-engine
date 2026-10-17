@@ -94,6 +94,9 @@ export class World {
     this.stores.push(store); this.byDef.set(def, store);
     return store.id;
   }
+  store<S extends Schema>(def: ComponentDef<S>): ComponentStore<S>;
+  /** Fallback for unions of component defs (e.g. `opts.def ?? Transform`). */
+  store(def: ComponentDef): ComponentStore;
   store<S extends Schema>(def: ComponentDef<S>): ComponentStore<S> {
     const s = this.byDef.get(def as ComponentDef);
     if (!s) throw new Error(`Component not registered: ${def.name}`);
