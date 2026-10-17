@@ -59,6 +59,7 @@ export class LoopbackServerTransport implements ServerTransport {
   private connectFns: ((c: ConnId) => void)[] = [];
   private disconnectFns: ((c: ConnId) => void)[] = [];
   private messageFns: ((c: ConnId, b: Uint8Array, ch: Channel) => void)[] = [];
+  now(): number { return this.net.now; }
   constructor(private readonly net: LoopbackNetwork) {}
   onConnect(fn: (c: ConnId) => void): void { this.connectFns.push(fn); }
   onDisconnect(fn: (c: ConnId) => void): void { this.disconnectFns.push(fn); }

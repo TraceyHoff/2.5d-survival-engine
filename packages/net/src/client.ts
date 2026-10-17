@@ -11,6 +11,11 @@ import { NO_ENTITY } from "./server.js";
 import type { Schema } from "@engine/core";
 import { NetSchema, decodeDelta, fromWire, storeFieldLength, type CompValues, type EntityState, type WorldState } from "./state.js";
 import type { ClientTransport } from "./transport/types.js";
+import { readUtf8 } from "./utf8.js";
+import { ChatClient } from "./chat.js";
+import { GroupClient } from "./groups.js";
+import { TradeClient } from "./trade.js";
+import { encodeReport, type ReportReason } from "./anticheat.js";
 import { StaticClient, encodeStaticCtl } from "./static.js";
 
 export class NetRejectedError extends Error {
@@ -49,6 +54,7 @@ export interface NetClientOptions {
 }
 
 /** A server event as received: payload entity fields are resolved to local entities (NO_ENTITY if unknown). */
+export interface CommandRejection { command: MessageDefBase | undefined; commandId: number; reason: number; detail: string }
 export interface ReceivedEvent { tick: number; def: MessageDefBase; payload: Record<string, number> }
 
 
@@ -88,6 +94,18 @@ export class NetClient {
   readonly statics: StaticClient;
   private corrections = new Map<Entity, number[]>(); // visual offset per predicted entity (interp comp fields)
   private staticInbox: Uint8Array[] = [];
+  private rawHandlers = new Map<number, (r: BitReader) => void>();
+  private rejectHandlers: ((r: CommandRejection) => void)[] = [];
+  /** Recent command rejections (newest last, capped at 32). */
+  readonly rejections: CommandRejection[] = [];
+  /** Round-trip time in ms as measured by the server's ping/pong (-1 until known). */
+  rttMs = -1;
+  /** Chat transport (send/on). */
+  readonly chat: ChatClient;
+  /** Own party/clan rosters + member markers. */
+  readonly groups: GroupClient;
+  /** Trade session protocol. */
+  readonly trade: TradeClient;
 
   constructor(opts: NetClientOptions) {
     this.opts = opts; this.world = opts.world;
@@ -103,6 +121,7 @@ export class NetClient {
       remove: (id) => this.despawn(this.world, id),
       sendCtl: (kind, key) => { if (this.active) this.opts.transport.send(encodeStaticCtl(kind, key), "reliable"); },
     }, opts.staticCacheChunks ?? 64);
+    this.chat = new ChatClient(this); this.groups = new GroupClient(this); this.trade = new TradeClient(this);
     opts.transport.onMessage((b) => this.onMessage(b));
     opts.transport.onClose(() => { this.active = false; this.welcome?.reject(new Error("connection closed")); this.welcome = undefined; });
     this.world.addSystem("input", "net.client.input", (w) => this.inputSystem(w));
@@ -141,7 +160,9 @@ export class NetClient {
       const e = p[f]!; if (e === NO_ENTITY) { p[f] = 0; continue; }
       const n = this.netOf.get(e); if (n === undefined) return false; p[f] = n;
     }
-    const w = new BitWriter(); writeHeader(w, MsgType.Command); w.writeVarUint(id); writePayload(w, d, p);
+    const w = new BitWriter(); writeHeader(w, MsgType.Command); w.writeVarUint(id);
+    w.writeVarUint(this.latestTick < 0 ? 0 : Math.max(0, Math.floor(this.renderTick)) + 1); // view tick at send time (0 = unknown), for lag compensation
+    writePayload(w, d, p);
     this.opts.transport.send(w.finish(), "reliable");
     return true;
   }
@@ -188,6 +209,15 @@ export class NetClient {
       this.welcome?.resolve(w); this.welcome = undefined;
     } else if (h.type === MsgType.Snapshot) this.inbox.push(bytes);
     else if (h.type === MsgType.Static) this.staticInbox.push(bytes);
+    else if (h.type === MsgType.Ping) {
+      const nonce = r.readBits(32); const rtt = r.readBits(16); if (rtt > 0) this.rttMs = rtt;
+      const w = new BitWriter(); writeHeader(w, MsgType.Pong); w.writeBits(nonce, 32); this.opts.transport.send(w.finish(), "unreliable");
+    }
+    else if (h.type === MsgType.CommandRejected) {
+      const id = r.readVarUint(); const reason = r.readVarUint(); const detail = readUtf8(r);
+      const def = this.commands.get(id); if (this.rejections.length >= 32) this.rejections.shift(); this.rejections.push({ command: def, commandId: id, reason, detail });
+      for (const f of this.rejectHandlers) f({ command: def, commandId: id, reason, detail });
+    }
     else if (h.type === MsgType.Events) {
       const tick = r.readBits(32); const n = r.readVarUint();
       for (let i = 0; i < n; i++) {
@@ -195,6 +225,7 @@ export class NetClient {
         this.eventQueue.push({ tick, def, payload: readPayload(r, def) });
       }
     }
+    else this.rawHandlers.get(h.type)?.(r);
   }
 
   private ownedEntities(): Entity[] { return [...this.owned].map((id) => this.entities.get(id)).filter((e): e is Entity => e !== undefined); }
@@ -369,6 +400,15 @@ export class NetClient {
       w.set(e, this.interpStore.def, vals);
     }
   }
+
+  /** Handle a server->client message type (module-defined). Called on receipt, in arrival order. */
+  onRawMessage(type: number, fn: (r: BitReader) => void): void { this.rawHandlers.set(type, fn); }
+  /** Send raw bytes to the server. Returns false if not connected. */
+  sendRaw(bytes: Uint8Array, channel: "reliable" | "unreliable"): boolean { if (!this.active) return false; this.opts.transport.send(bytes, channel); return true; }
+  /** Report a player (spam/abuse/cheating/other), optionally pointing at a chat message tick. Rate-limited server-side. */
+  reportPlayer(targetPlayerId: number, reason: ReportReason, messageTick?: number): boolean { return this.sendRaw(encodeReport(targetPlayerId, reason, messageTick), "reliable"); }
+  /** Server rejected one of our commands (core CommandHandler validation or gameplay). */
+  onCommandRejected(fn: (r: CommandRejection) => void): () => void { this.rejectHandlers.push(fn); return () => { const i = this.rejectHandlers.indexOf(fn); if (i >= 0) this.rejectHandlers.splice(i, 1); }; }
 
   /**
    * Visual correction offset for a predicted entity, per field of the interpolated component (default Transform:

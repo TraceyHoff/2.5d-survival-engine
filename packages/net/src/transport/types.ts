@@ -12,6 +12,8 @@ export interface ClientTransport {
 }
 
 export interface ServerTransport {
+  /** Optional clock in ms for RTT (simulated transports); default performance.now(). */
+  now?(): number;
   onConnect(fn: (conn: ConnId) => void): void;
   onDisconnect(fn: (conn: ConnId) => void): void;
   onMessage(fn: (conn: ConnId, bytes: Uint8Array, channel: Channel) => void): void;

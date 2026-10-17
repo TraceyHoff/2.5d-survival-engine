@@ -1,6 +1,7 @@
 import * as core from "@engine/core";
 import { ENV_NET_ID, NetId, Owner, Transform, entityIndex, type ComponentDef, type Entity, type World } from "@engine/core";
 import { BitReader, BitWriter } from "./bits.js";
+import { writeUtf8 } from "./utf8.js";
 import { StaticServer, StaticSession, readChunkKey, type ReplicationClass } from "./static.js";
 import { NetInterest, type InterestOptions, type Viewpoint } from "./interest.js";
 import { PositionHistory } from "./lagcomp.js";
@@ -55,8 +56,16 @@ export class NetIdRegistry {
 }
 
 /** Who receives a networked component. A function scope is a "viewers" hook (e.g. open containers); the owner always passes. */
-export type ReplicationScope = "all" | "owner" | "none" | ((world: World, entity: Entity, clientId: number) => boolean);
-export type EventScope = "all" | { owner: number } | { clients: readonly number[] } | { nearby: { x: number; y: number } };
+export type ReplicationScope = "all" | "owner" | "none" | "party" | "clan" | ((world: World, entity: Entity, clientId: number) => boolean);
+export type EventScope = "all" | { owner: number } | { clients: readonly number[] } | { nearby: { x: number; y: number } }
+  /** Members (online) of a group id / of the party or clan of an entity's Owner. Needs a GroupScopeResolver (GroupReplicator). */
+  | { group: number } | { groupOf: Entity; kind: "party" | "clan" };
+/** Membership queries for group scopes; implemented by GroupReplicator over core's GroupRegistry. */
+export interface GroupScopeResolver {
+  share(clientA: number, clientB: number, kind: "party" | "clan"): boolean;
+  groupOf(clientId: number, kind: "party" | "clan"): number | undefined;
+  clientsOfGroup(group: number): number[];
+}
 
 export interface ClientSession {
   readonly clientId: number;
@@ -72,6 +81,10 @@ export interface ClientSession {
   lastSnapshotBytes: number;
   fullSnapshots: number;
   stats: { commands: number; droppedCommands: number; rateLimited: number; deferred: number; bytesSent: number };
+  /** Smoothed round-trip time in ms from transport-level ping/pong (-1 until measured). */
+  rttMs: number;
+  /** Session was created from a stored token via `resumeToken` (e.g. after a server restart). */
+  resumed: boolean;
 }
 interface SessionState extends ClientSession {
   static: StaticSession;
@@ -81,8 +94,10 @@ interface SessionState extends ClientSession {
   buckets: Map<number, TokenBucket>;
   commands: { def: MessageDefBase; payload: Record<string, number> }[];
   events: { reliable: boolean; def: MessageDefBase; payload: Record<string, number> }[];
+  pingAt: number; pingNonce: number; lastPingSent?: number;
 }
 
+export type AnomalyKind = "rateLimited" | "unknownCommand" | "malformed" | "inputFlood" | "badEntityRef" | "commandRejected" | "chatRateLimited" | "speed" | "teleport" | (string & {});
 export type ApplyInput = (world: World, entity: Entity, cmd: InputCmd | null, clientId: number) => void;
 export type CommandHandler<S extends core.Schema = core.Schema> = (session: ClientSession, payload: Payload<S>, world: World) => void;
 
@@ -109,6 +124,13 @@ export interface NetServerOptions {
   budgetBytes?: number;
   /** Per-client bytes per tick for streaming static chunks on entry (default 8 KiB); static change batches are not budgeted. */
   staticBudgetBytes?: number;
+  /**
+   * A client presented a token this server does not know (e.g. stored before a restart). Return true to accept it:
+   * a new session is created with that same token (session.resumed = true) and onClientJoin runs. Default: reject (BadToken).
+   */
+  resumeToken?: (token: Uint8Array, world: World) => boolean;
+  /** Ping interval in ms for RTT measurement (default 1000; 0 disables). */
+  pingIntervalMs?: number;
   /** Lag-compensation window in ticks (default tickHz = 1 s). */
   positionHistoryTicks?: number;
 }
@@ -142,6 +164,11 @@ export class NetServer {
   private excluded = new Set<number>();
   private pubCache = new WeakMap<EntityState, EntityState>();
   private globals = new Set<Entity>();
+  private groupResolver: GroupScopeResolver | undefined;
+  private rawHandlers = new Map<number, (s: ClientSession, r: BitReader) => void>();
+  private tickHooks: ((tick: number) => void)[] = [];
+  private anomalyHandlers: ((s: ClientSession, kind: AnomalyKind, detail: string) => void)[] = [];
+  private ownedCache = new Map<number, Entity[]>();
   private extraViews = new Map<number, readonly Viewpoint[]>();
   private staticCis = new Set<number>();
   private statics: StaticServer | undefined;
@@ -190,10 +217,52 @@ export class NetServer {
     if (scope === "owner") this.ownerScoped.add(ci);
     else if (scope === "none") this.excluded.add(ci);
     else if (typeof scope === "function") this.viewerScoped.set(ci, scope);
+    else if (scope === "party" || scope === "clan") {
+      // visible to the owner and to members of the owner's party/clan
+      this.viewerScoped.set(ci, (world, e, clientId) => {
+        const owner = world.getField(e, Owner, "clientId"); const r = this.groupResolver;
+        return owner !== undefined && owner !== 0 && !!r && r.share(owner, clientId, scope);
+      });
+    }
     this.pubCache = new WeakMap(); this.prevState = undefined;
     return this;
   }
   getScope(def: ComponentDef): ReplicationScope { const ci = this.schema.indexOf(def, this.world); return (ci !== undefined && this.scopes.get(ci)) || "all"; }
+  // ---------------- extension points (groups, chat, anti-cheat modules) ----------------
+  /** Install the membership resolver used by "party"/"clan" scopes (GroupReplicator does this). */
+  setGroupResolver(r: GroupScopeResolver | undefined): void { this.groupResolver = r; this.pubCache = new WeakMap(); }
+  get groups(): GroupScopeResolver | undefined { return this.groupResolver; }
+  /** Handle a client->server message type (module-defined, see MsgType). Throwing counts as a malformed-message anomaly. */
+  onRawMessage(type: number, fn: (session: ClientSession, r: BitReader) => void): void { this.rawHandlers.set(type, fn); }
+  /** Send raw bytes to a connected client. Returns false if not connected. */
+  sendRaw(clientId: number, bytes: Uint8Array, channel: "reliable" | "unreliable"): boolean {
+    const s = this.sessions.get(clientId); if (!s?.conn) return false;
+    this.opts.transport.send(s.conn, bytes, channel); s.stats.bytesSent += bytes.length; return true;
+  }
+  /** Called at the end of every network phase, after snapshots were sent. */
+  onTick(fn: (tick: number) => void): void { this.tickHooks.push(fn); }
+  /** Anti-cheat feed: rate-limited/unknown/malformed commands, input floods, rejections, module reports. */
+  onAnomaly(fn: (s: ClientSession, kind: AnomalyKind, detail: string) => void): void { this.anomalyHandlers.push(fn); }
+  /** Report an anomaly for a session (modules and gameplay can call this too). */
+  anomaly(s: ClientSession, kind: AnomalyKind, detail = ""): void { for (const f of this.anomalyHandlers) f(s, kind, detail); }
+  /** Entities owned by a client (Owner.clientId), as of the last input phase. */
+  ownedEntities(clientId: number): readonly Entity[] { return this.ownedCache.get(clientId) ?? []; }
+  /** Disconnect a client and forget its session (token no longer resumable). Safe inside onClientLeave. */
+  kick(clientId: number): void { this.removeSession(clientId); }
+  /** Connected sessions. */
+  connected(): IterableIterator<ClientSession> { return this.byConn.values(); }
+  /**
+   * Tell a client its command was rejected (forward core CommandHandler rejection events here; TODO(core batch 7):
+   * subscribe to core's rejection event automatically). `reason` is a numeric code, `detail` optional UTF-8 text.
+   */
+  rejectCommand(clientId: number, command: MessageDefBase | number, reason: number, detail = ""): void {
+    const s = this.sessions.get(clientId); if (!s) return;
+    const id = typeof command === "number" ? command : this.commands.id(command);
+    const w = new BitWriter(); writeHeader(w, MsgType.CommandRejected); w.writeVarUint(id); w.writeVarUint(reason); writeUtf8(w, detail);
+    this.sendRaw(clientId, w.finish(), "reliable");
+    this.anomaly(s, "commandRejected", `${id}:${reason}`);
+  }
+
   /**
    * Replication class of a networked component. "static": entities having any static-class component (and a
    * Transform) replicate ALL their replicated components over the static channel (per-chunk streaming on entry,
@@ -237,10 +306,18 @@ export class NetServer {
     for (const f of d.entityFields) { const e = p[f]!; p[f] = e === NO_ENTITY ? 0 : this.netIds.netIdOf(e) ?? 0; }
     const scope = opts.scope ?? "all";
     const near = typeof scope === "object" && "nearby" in scope ? scope.nearby : undefined;
+    let groupClients: Set<number> | undefined;
+    if (typeof scope === "object" && ("group" in scope || "groupOf" in scope)) {
+      const r = this.groupResolver; let gid: number | undefined;
+      if ("group" in scope) gid = scope.group;
+      else { const owner = this.world.isAlive(scope.groupOf) ? this.world.getField(scope.groupOf, Owner, "clientId") : undefined; gid = owner && r ? r.groupOf(owner, scope.kind) : undefined; }
+      groupClients = new Set(gid !== undefined && r ? r.clientsOfGroup(gid) : []);
+    }
     for (const s of this.byConn.values()) {
       if (typeof scope === "object") {
         if ("owner" in scope && s.clientId !== scope.owner) continue;
         if ("clients" in scope && !scope.clients.includes(s.clientId)) continue;
+        if (groupClients && !groupClients.has(s.clientId)) continue;
         if (near && this.interest && !this.interest.covers(s.clientId, near.x, near.y)) continue;
       }
       s.events.push({ reliable: opts.reliable ?? true, def: d, payload: p });
@@ -258,8 +335,10 @@ export class NetServer {
       if (h.type === MsgType.Hello) this.onHello(conn, r);
       else if (h.type === MsgType.Input) this.onInput(conn, r);
       else if (h.type === MsgType.Command) this.onCommandMsg(conn, r);
+      else if (h.type === MsgType.Pong) this.onPong(conn, r);
+      else if (this.rawHandlers.has(h.type)) { const s = this.byConn.get(conn); if (s) this.rawHandlers.get(h.type)!(s, r); }
       else if (h.type === MsgType.StaticCtl) { const s = this.byConn.get(conn); const kind = r.readBits(2); const key = readChunkKey(r); if (s && this.statics) this.statics.onCtl(s.static, kind, key); }
-    } catch { this.reject(conn, RejectReason.Malformed); }
+    } catch { const s = this.byConn.get(conn); if (s) this.anomaly(s, "malformed", `msg ${h.type}`); else this.reject(conn, RejectReason.Malformed); }
   }
 
   private onHello(conn: ConnId, r: BitReader): void {
@@ -270,25 +349,52 @@ export class NetServer {
     let s: SessionState | undefined;
     if (hello.token.some((b) => b !== 0)) {
       s = this.byToken.get(tokenKey(hello.token));
-      if (!s) { this.reject(conn, RejectReason.BadToken); return; }
-      if (s.conn !== undefined) this.byConn.delete(s.conn);
-      s.conn = conn; s.lastAckTick = -1; s.views.clear(); s.static = new StaticSession();
+      if (!s && this.opts.resumeToken?.(hello.token, this.world)) {
+        if (this.opts.maxClients !== undefined && this.sessions.size >= this.opts.maxClients) { this.reject(conn, RejectReason.ServerFull); return; }
+        s = this.newSession(conn, hello.token.slice(), true);
+      } else {
+        if (!s) { this.reject(conn, RejectReason.BadToken); return; }
+        if (s.conn !== undefined) this.byConn.delete(s.conn);
+        s.conn = conn; s.lastAckTick = -1; s.views.clear(); s.static = new StaticSession();
+      }
     } else {
       if (this.opts.maxClients !== undefined && this.sessions.size >= this.opts.maxClients) { this.reject(conn, RejectReason.ServerFull); return; }
-      const token = (this.opts.randomToken ?? defaultToken)();
-      s = {
-        clientId: this.nextClientId++, token, conn, lastAckTick: -1, lastReceivedSeq: -1, lastProcessedSeq: -1, lastViewTick: -1,
-        inputQueue: [], lastSnapshotBytes: 0, fullSnapshots: 0,
-        stats: { commands: 0, droppedCommands: 0, rateLimited: 0, deferred: 0, bytesSent: 0 },
-        views: new Map(), lastSent: new Int32Array(256), static: new StaticSession(), buckets: new Map(), commands: [], events: [],
-      };
-      this.sessions.set(s.clientId, s); this.byToken.set(tokenKey(token), s);
-      this.opts.onClientJoin?.(s, this.world);
+      s = this.newSession(conn, (this.opts.randomToken ?? defaultToken)(), false);
     }
     this.byConn.set(conn, s);
     this.opts.transport.send(conn, encodeWelcome({ clientId: s.clientId, token: s.token, tickHz: this.tickHz, serverTick: this.world.tick }), "reliable");
   }
 
+  private newSession(conn: ConnId, token: Uint8Array, resumed: boolean): SessionState {
+    const s: SessionState = {
+      clientId: this.nextClientId++, token, conn, lastAckTick: -1, lastReceivedSeq: -1, lastProcessedSeq: -1, lastViewTick: -1,
+      inputQueue: [], lastSnapshotBytes: 0, fullSnapshots: 0, rttMs: -1, resumed,
+      stats: { commands: 0, droppedCommands: 0, rateLimited: 0, deferred: 0, bytesSent: 0 },
+      views: new Map(), lastSent: new Int32Array(256), static: new StaticSession(), buckets: new Map(), commands: [], events: [],
+      pingAt: 0, pingNonce: 0,
+    };
+    this.sessions.set(s.clientId, s); this.byToken.set(tokenKey(token), s);
+    this.opts.onClientJoin?.(s, this.world);
+    return s;
+  }
+  private clock(): number { return this.opts.transport.now ? this.opts.transport.now() : now(); }
+  private onPong(conn: ConnId, r: BitReader): void {
+    const s = this.byConn.get(conn); if (!s) return;
+    const nonce = r.readBits(32); if (nonce !== s.pingNonce || !s.pingAt) return;
+    const rtt = this.clock() - s.pingAt; s.pingAt = 0;
+    s.rttMs = s.rttMs < 0 ? rtt : s.rttMs * 0.75 + rtt * 0.25;
+  }
+  private pings(): void {
+    const iv = this.opts.pingIntervalMs ?? 1000; if (iv <= 0) return;
+    const t = this.clock();
+    for (const s of this.byConn.values()) {
+      if (s.pingAt && t - s.pingAt < iv * 4) continue; // outstanding
+      if (s.lastPingSent !== undefined && t - s.lastPingSent < iv) continue;
+      s.pingNonce = (s.pingNonce + 1) >>> 0; s.pingAt = t; s.lastPingSent = t;
+      const w = new BitWriter(); writeHeader(w, MsgType.Ping); w.writeBits(s.pingNonce, 32); w.writeBits(Math.min(65535, Math.max(0, Math.round(s.rttMs))), 16);
+      this.opts.transport.send(s.conn!, w.finish(), "unreliable");
+    }
+  }
   private onInput(conn: ConnId, r: BitReader): void {
     const s = this.byConn.get(conn); if (!s) return;
     const m = decodeInput(r);
@@ -299,16 +405,18 @@ export class NetServer {
       s.lastReceivedSeq = c.seq; s.inputQueue.push(c);
     }
     const max = this.opts.maxInputQueue ?? 8;
-    if (s.inputQueue.length > max) s.inputQueue.splice(0, s.inputQueue.length - max);
+    if (s.inputQueue.length > max) { this.anomaly(s, "inputFlood", `${s.inputQueue.length}`); s.inputQueue.splice(0, s.inputQueue.length - max); }
   }
 
   private onCommandMsg(conn: ConnId, r: BitReader): void {
     const s = this.byConn.get(conn); if (!s) return;
-    const id = r.readVarUint(); const def = this.commands.get(id);
-    if (!def) { s.stats.droppedCommands++; return; }
+    const id = r.readVarUint(); const vt = r.readVarUint() - 1;
+    if (vt >= 0 && vt <= this.world.tick && vt > s.lastViewTick) s.lastViewTick = vt; // what the client saw when it issued this command
+    const def = this.commands.get(id);
+    if (!def) { s.stats.droppedCommands++; this.anomaly(s, "unknownCommand", `${id}`); return; }
     const payload = readPayload(r, def);
     let b = s.buckets.get(id); if (!b) { b = new TokenBucket(def.rate ?? DEFAULT_COMMAND_RATE); s.buckets.set(id, b); }
-    if (!b.take()) { s.stats.rateLimited++; return; }
+    if (!b.take()) { s.stats.rateLimited++; this.anomaly(s, "rateLimited", def.name); return; }
     s.commands.push({ def, payload });
   }
 
@@ -336,7 +444,7 @@ export class NetServer {
 
   // ---------------- input phase ----------------
   private inputPhase(w: World, dt: number): void {
-    const owned = this.ownedBy(w);
+    const owned = this.ownedBy(w); this.ownedCache = owned;
     for (const s of this.sessions.values() as IterableIterator<SessionState>) {
       for (const b of s.buckets.values()) b.refill(dt);
       const cmds = s.commands; s.commands = [];
@@ -348,7 +456,7 @@ export class NetServer {
           if (e === undefined || !w.isAlive(e)) { ok = false; break; }
           p[f] = e;
         }
-        if (!ok) { s.stats.droppedCommands++; continue; }
+        if (!ok) { s.stats.droppedCommands++; this.anomaly(s, "badEntityRef", c.def.name); continue; }
         s.stats.commands++;
         for (const h of this.handlers.get(c.def) ?? []) h(s, p, w);
       }
@@ -519,6 +627,8 @@ export class NetServer {
       }
     }
     this.perf.sendMs = now() - t1;
+    for (const f of this.tickHooks) f(tick);
+    this.pings();
   }
 
   /** Order by distance to the client's owned entities, discounted by staleness (ticks since last sent). */
