@@ -238,6 +238,22 @@ Typed schema additions (validated):
 - `building.states`: per-state `frames[rotation][damage]`; state index = declaration order = BuildingGrid `state`; `buildingFrame(id, rot, dmg, state)`, `stateIndex(id, name)`.
 - `sway {amp px, freq Hz, stiffness 0..1}` → `SpriteDef.sway`. Sound `loop: true | {start, end}` (seconds) → `SoundDef.loop` + `loopPoints`.
 
+**Scale pages, mask pages, sprite tints (batch 11):**
+
+```json
+{ "key": "surv_night", "image": "survival_fx/atlases/surv_night.png", "frameW": 64, "frameH": 64, "columns": 18, "rows": 1,
+  "pages": [{ "scale": 2, "image": "survival_fx/atlases/surv_night_2x.png" }],
+  "masks": { "emissive": true, "sheen": "sheen/characters_sheen.png", "sway": "sway/resources_sway.png", "tintmask": "masks/characters_tint.png" } }
+{ "key": "player", "category": "character", "atlas": "characters", "animations": { "idle": { "frames": [0], "fps": 1 } },
+  "tints": { "wet": { "color": "#6688cc", "strength": 0.35 }, "frost": { "color": "#cfe8ff", "strength": 0.5, "mode": "screen" }, "exhausted": { "color": "#f0eeff", "strength": 0.2, "mode": "lerp" } } }
+{ "key": "tree", "category": "resource", "sway": { "amp": 2.2, "freq": 0.35, "stiffness": 0.6, "mask": "sway/resources_tall_sway.png" } }
+```
+
+- `image` is the scale-1 page; `pages` adds variants (same grid, pixels × scale). `registry.pickPage(atlas, devicePixelRatio)` picks the smallest scale ≥ dpr (else the largest); `FrameRef.pages` and `AssetRegistry.scaled(ref, dpr)` give per-scale image + pixel rect.
+- `masks` are same-layout pages sampled by UV, so they serve all scales. `emissive: true` (atlas or mask) means the derived `<image>_emissive.<ext>`; `Atlas.emissiveImage` remains as an alias of `masks.emissive`.
+- `tints`: named status tints (`color` #rrggbb, `strength` 0..1, `mode` multiply|add|screen|lerp, default multiply); gameplay/render choose names and scale strength at runtime.
+- Legacy `x_survival` (survival_fx fragment) is still accepted: `hiDpiAtlases` → `pages` scale 2, `emissivePages`/`sheenMasks`/`swayMasks` → `masks` (matched by image stem), `sway` → sprite `sway` (typed fields win). `loadManifest` returns `warnings` (also `console.warn`) with a deprecation notice; `tuning`/`grading` stay renderer-owned and are reported as not mapped.
+
 ## 14. Testing
 
 - Unit: Vitest per package (`packages/*/test`). Headless helpers in core: `createTestWorld`, `stepN`, `FakeClock`, `TEST_SEED`.

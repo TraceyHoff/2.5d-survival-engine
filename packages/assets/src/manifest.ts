@@ -9,7 +9,7 @@ export type Category = (typeof ALL_CATEGORIES)[number];
 export const ROTATION_ART = ["mirror", "unique4"] as const;
 /** mirror: 1 row (symmetric), 2 rows (rotations 2/3 = rows 0/1 flipped on X) or 4 drawn rows; unique4: 4 rows required. */
 export type RotationArt = (typeof ROTATION_ART)[number];
-export interface SwayJson { /** px at frame top */ amp: number; /** Hz */ freq: number; /** 0..1, higher = stiffer */ stiffness: number }
+export interface SwayJson { /** px at frame top */ amp: number; /** Hz */ freq: number; /** 0..1, higher = stiffer */ stiffness: number; /** optional sway weight mask page (overrides the atlas sway mask) */ mask?: string }
 export interface LoopPoints { /** seconds */ start: number; /** seconds (> start) */ end: number }
 export const SOUND_CATEGORIES = ["sfx", "ambience", "ui"] as const;
 export type SoundCategory = (typeof SOUND_CATEGORIES)[number];
@@ -30,7 +30,19 @@ export interface AtlasJson {
   emissive?: boolean;
   /** UI atlases: nine-slice insets (pixels) per frame index. */
   nineSlice?: Record<string, NineSlice>;
+  /** Extra resolution variants of `image` (same grid, pixel sizes × scale). `image` is the scale-1 page. */
+  pages?: AtlasPageJson[];
+  /** Same-layout mask pages (sampled by UV, so they work with every scale page). `emissive: true` = derived `<image>_emissive.<ext>`. */
+  masks?: AtlasMasksJson;
 }
+export interface AtlasPageJson { scale: number; image: string }
+export const MASK_KINDS = ["emissive", "sheen", "sway", "tintmask"] as const;
+export type MaskKind = (typeof MASK_KINDS)[number];
+export type AtlasMasksJson = { emissive?: string | true; sheen?: string; sway?: string; tintmask?: string };
+export const TINT_MODES = ["multiply", "add", "screen", "lerp"] as const;
+export type TintMode = (typeof TINT_MODES)[number];
+/** Per-sprite status tint (wet, frost, exhausted, flush...): gameplay/render pick by name and scale strength at runtime. */
+export interface SpriteTintJson { color: string; strength: number; mode?: TintMode }
 export interface AnimationJson { frames: number[]; fps: number; directions?: Directions; /** frame offset per direction row (default: atlas columns) */ dirStride?: number; loop?: boolean }
 export interface BuildingSpriteJson {
   /** BuildPieceDef key (cross-checked with validateBuildingSprites). */
@@ -48,6 +60,7 @@ export interface SpriteJson {
   building?: BuildingSpriteJson;
   rotationArt?: RotationArt;
   sway?: SwayJson;
+  tints?: Record<string, SpriteTintJson>;
 }
 export interface SoundJson { key: string; files: string[]; volume?: number; pitchJitter?: number; /** true, or loop points in seconds */ loop?: boolean | LoopPoints; category: SoundCategory }
 export interface ParticleJson { rate: number; count: number; speed: [number, number]; spread: number; gravity: number; fade: boolean; scaleCurve: number[] }
@@ -59,14 +72,25 @@ export interface VariantSetJson { key: string; base: string; variants: VariantJs
 export interface ManifestJson {
   version: number; name?: string; atlases: AtlasJson[]; sprites: SpriteJson[];
   sounds?: SoundJson[]; vfx?: VfxJson[]; tintSets?: TintSetJson[]; palettes?: PaletteJson[]; variantSets?: VariantSetJson[];
+  /** @deprecated legacy survival_fx extension; mapped onto pages/masks/sway with a warning. */
+  x_survival?: { hiDpiAtlases?: Record<string, string>; emissivePages?: string[]; sheenMasks?: string[]; swayMasks?: string[]; sway?: Record<string, SwayJson>; [k: string]: unknown };
 }
 
 // ---------- resolved ----------
-export interface Atlas extends Omit<AtlasJson, "emissive" | "nineSlice"> { id: number; emissiveImage?: string; nineSlice: Map<number, NineSlice> }
+export interface AtlasPage { scale: number; image: string }
+export type AtlasMasks = Partial<Record<MaskKind, string>>;
+export interface Atlas extends Omit<AtlasJson, "emissive" | "nineSlice" | "pages" | "masks"> {
+  id: number; /** = masks.emissive (kept for compatibility) */ emissiveImage?: string; nineSlice: Map<number, NineSlice>;
+  /** All pages ascending by scale; pages[0] is scale 1 (= image). */ pages: AtlasPage[]; masks: AtlasMasks;
+}
+export interface SpriteTint { color: number; strength: number; mode: TintMode }
 export interface Animation { id: number; name: string; frames: number[]; fps: number; directions: Directions; dirStride: number; loop: boolean }
 export interface BuildingSprite { piece: string; footprint: { w: number; h: number }; layer: number; frames: number[][]; rotationArt: RotationArt; stateNames: string[]; states: number[][][] }
-export interface SpriteDef { id: number; key: string; category: Category; atlas: Atlas; anchor: { x: number; y: number }; animations: Map<string, Animation>; animList: Animation[]; building?: BuildingSprite; sway?: SwayJson }
-export interface FrameRef { atlas: Atlas; frame: number; x: number; y: number; w: number; h: number; anchorX: number; anchorY: number; emissiveImage?: string; nineSlice?: NineSlice; /** draw mirrored on X (mirror rotationArt) */ flipX?: boolean }
+export interface SpriteDef { id: number; key: string; category: Category; atlas: Atlas; anchor: { x: number; y: number }; animations: Map<string, Animation>; animList: Animation[]; building?: BuildingSprite; sway?: SwayJson; tints: Record<string, SpriteTint> }
+export interface FrameRef { atlas: Atlas; frame: number; x: number; y: number; w: number; h: number; anchorX: number; anchorY: number; emissiveImage?: string; nineSlice?: NineSlice; /** draw mirrored on X (mirror rotationArt) */ flipX?: boolean;
+  /** Scale pages of the atlas (x/y/w/h above are scale-1 pixels; multiply by page.scale). */ pages: AtlasPage[]; masks: AtlasMasks }
+/** A frame resolved on a concrete page. */
+export interface ScaledFrame { image: string; scale: number; x: number; y: number; w: number; h: number }
 export interface SoundDef { id: number; key: string; files: string[]; volume: number; pitchJitter: number; loop: boolean; loopPoints?: LoopPoints; category: SoundCategory }
 export interface VfxDef { id: number; key: string; sprite: number; anim: string; lifetime: number; blend: BlendMode; particles?: ParticleJson }
 /** Colors are packed 0xRRGGBB. */
@@ -109,7 +133,7 @@ export class AssetRegistry {
   private ref(s: SpriteDef, f: number): FrameRef {
     const at = s.atlas; const ns = at.nineSlice.get(f);
     return { atlas: at, frame: f, x: (f % at.columns) * at.frameW, y: Math.floor(f / at.columns) * at.frameH, w: at.frameW, h: at.frameH,
-      anchorX: s.anchor.x * at.frameW, anchorY: s.anchor.y * at.frameH, ...(at.emissiveImage ? { emissiveImage: at.emissiveImage } : {}), ...(ns ? { nineSlice: ns } : {}) };
+      anchorX: s.anchor.x * at.frameW, anchorY: s.anchor.y * at.frameH, ...(at.emissiveImage ? { emissiveImage: at.emissiveImage } : {}), ...(ns ? { nineSlice: ns } : {}), pages: at.pages, masks: at.masks };
   }
   /** Resolve the atlas rect for sprite/animation/facing at time t (seconds). */
   frame(spriteId: number, anim: string, facing: number, timeSec: number): FrameRef {
@@ -125,6 +149,16 @@ export class AssetRegistry {
     const ri = rows.length === 1 ? 0 : rows.length === 2 ? r & 1 : r;
     const ref = this.ref(s, rows[ri]![Math.max(0, Math.min(3, damageStage | 0))]!);
     return rows.length === 2 && r >= 2 ? { ...ref, flipX: true } : ref;
+  }
+  /** Page for a device pixel ratio: smallest scale >= dpr, else the largest available. */
+  static pickPage(atlas: Atlas, dpr = 1): AtlasPage {
+    for (const p of atlas.pages) if (p.scale >= dpr - 1e-6) return p; return atlas.pages[atlas.pages.length - 1]!;
+  }
+  pickPage(atlas: Atlas, dpr = 1): AtlasPage { return AssetRegistry.pickPage(atlas, dpr); }
+  /** Frame coordinates on the page chosen for `dpr`. */
+  static scaled(ref: FrameRef, dpr = 1): ScaledFrame {
+    const p = AssetRegistry.pickPage(ref.atlas, dpr); const k = p.scale;
+    return { image: p.image, scale: k, x: ref.x * k, y: ref.y * k, w: ref.w * k, h: ref.h * k };
   }
   /** State index by name for a building sprite (-1 if none). */
   stateIndex(spriteId: number, name: string): number { return this.sprite(spriteId).building?.stateNames.indexOf(name) ?? -1; }
@@ -145,14 +179,44 @@ export function validateBuildingSprites(reg: AssetRegistry, pieces: PieceLookup)
 }
 
 /** Validate + build a registry. Throws ManifestError listing every issue. Returns the updated (namespaced) id lock. */
-export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<string, number> } = {}): { registry: AssetRegistry; lock: Required<IdLock> } {
-  const issues: string[] = []; const m = json as ManifestJson;
+/** Maps the deprecated `x_survival` block onto typed fields (on a copy). Typed fields already present win. */
+export function applyLegacySurvival(src: ManifestJson, warnings: string[]): ManifestJson {
+  const m = structuredClone(src); const x = m.x_survival!; delete m.x_survival;
+  warnings.push("x_survival is deprecated: use atlas pages/masks and sprite sway/tints (mapped automatically)");
+  const stem = (path: string) => path.replace(/^.*\//, "").replace(/\.[a-z]+$/, "");
+  const byKey = new Map(m.atlases.map((a) => [a.key, a]));
+  for (const [k, img] of Object.entries(x.hiDpiAtlases ?? {})) {
+    const a = byKey.get(k); if (!a) { warnings.push(`x_survival.hiDpiAtlases: unknown atlas "${k}"`); continue; }
+    if (!(a.pages ?? []).some((pg) => pg.scale === 2)) a.pages = [...(a.pages ?? []), { scale: 2, image: img }];
+  }
+  const mapMasks = (list: string[] | undefined, kind: MaskKind, suffix: string) => {
+    for (const path of list ?? []) {
+      const base = stem(path).replace(new RegExp(`_${suffix}$`), "");
+      const a = m.atlases.find((at) => (kind === "emissive" ? emissivePath(at.image) === path : stem(at.image) === base));
+      if (!a) { warnings.push(`x_survival: no atlas for ${kind} mask ${path}`); continue; }
+      a.masks = { ...(a.masks ?? {}) }; if (a.masks[kind] === undefined) a.masks[kind] = path;
+    }
+  };
+  mapMasks(x.emissivePages, "emissive", "emissive"); mapMasks(x.sheenMasks, "sheen", "sheen"); mapMasks(x.swayMasks, "sway", "sway");
+  for (const [k, sw] of Object.entries(x.sway ?? {})) {
+    const s = m.sprites.find((sp) => sp.key === k); if (!s) { warnings.push(`x_survival.sway: unknown sprite "${k}"`); continue; }
+    if (!s.sway) s.sway = { ...sw };
+  }
+  const known = new Set(["doc", "hiDpiAtlases", "emissivePages", "sheenMasks", "swayMasks", "sway"]);
+  const rest = Object.keys(x).filter((k) => !known.has(k)); if (rest.length) warnings.push(`x_survival: not mapped (renderer-owned): ${rest.join(", ")}`);
+  return m;
+}
+
+export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<string, number> } = {}): { registry: AssetRegistry; lock: Required<IdLock>; warnings: string[] } {
+  const issues: string[] = []; let m = json as ManifestJson;
   if (!m || typeof m !== "object") throw new ManifestError(["manifest is not an object"]);
   if (m.version !== MANIFEST_VERSION) issues.push(`version must be ${MANIFEST_VERSION}`);
   if (!Array.isArray(m.atlases)) issues.push("atlases must be an array");
   if (!Array.isArray(m.sprites)) issues.push("sprites must be an array");
   for (const k of ["sounds", "vfx", "tintSets", "palettes", "variantSets"] as const) if (m[k] !== undefined && !Array.isArray(m[k])) issues.push(`${k} must be an array`);
   if (issues.length) throw new ManifestError(issues);
+  const warnings: string[] = [];
+  if (m.x_survival !== undefined) m = applyLegacySurvival(m, warnings);
   const KEY = /^[a-z0-9_]+$/;
   const uniq = (list: { key: string }[], what: string) => { const seen = new Set<string>(); list.forEach((x, i) => {
     if (!KEY.test(x.key ?? "")) issues.push(`${what}[${i}](${x.key}): bad key`);
@@ -171,8 +235,30 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
       if (![n.l, n.t, n.r, n.b].every((v) => Number.isInteger(v) && v >= 0) || n.l + n.r >= a.frameW || n.t + n.b >= a.frameH) issues.push(`${p}: nineSlice ${fs} insets invalid`);
       nine.set(f, n);
     }
-    const { emissive, nineSlice: _n, ...rest } = a;
-    atlases.set(a.key, { ...rest, id: atlases.size + 1, nineSlice: nine, ...(emissive ? { emissiveImage: emissivePath(a.image) } : {}) });
+    const IMG = /\.(png|webp)$/;
+    const pages: AtlasPage[] = [{ scale: 1, image: a.image }];
+    if (a.pages !== undefined) {
+      if (!Array.isArray(a.pages)) issues.push(`${p}: pages must be an array`);
+      else for (const pg of a.pages) {
+        if (!(typeof pg?.scale === "number" && pg.scale > 0 && pg.scale <= 8)) { issues.push(`${p}: page scale must be in (0, 8]`); continue; }
+        if (!pg.image || !IMG.test(pg.image)) issues.push(`${p}: page image must be .png/.webp`);
+        if (pages.some((x) => x.scale === pg.scale)) issues.push(`${p}: duplicate page scale ${pg.scale}`); else pages.push({ scale: pg.scale, image: pg.image });
+      }
+      pages.sort((x, y) => x.scale - y.scale);
+    }
+    const masks: AtlasMasks = {};
+    if (a.emissive) masks.emissive = emissivePath(a.image);
+    if (a.masks !== undefined) {
+      if (!a.masks || typeof a.masks !== "object") issues.push(`${p}: masks must be an object`);
+      else for (const [k, v] of Object.entries(a.masks)) {
+        if (!(MASK_KINDS as readonly string[]).includes(k)) { issues.push(`${p}: unknown mask "${k}" (emissive|sheen|sway|tintmask)`); continue; }
+        if (k === "emissive" && v === true) { masks.emissive = emissivePath(a.image); continue; }
+        if (typeof v !== "string" || !IMG.test(v)) { issues.push(`${p}: mask ${k} must be a .png/.webp path`); continue; }
+        masks[k as MaskKind] = v;
+      }
+    }
+    const { emissive: _e, nineSlice: _n, pages: _p, masks: _m, ...rest } = a;
+    atlases.set(a.key, { ...rest, id: atlases.size + 1, nineSlice: nine, pages, masks, ...(masks.emissive ? { emissiveImage: masks.emissive } : {}) });
   });
 
   // sprites
@@ -182,6 +268,16 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
     if (!(ALL_CATEGORIES as readonly string[]).includes(s.category)) issues.push(`${p}: unknown category "${s.category}"`);
     if (s.rotationArt !== undefined && !ROTATION_ART.includes(s.rotationArt)) issues.push(`${p}: rotationArt must be mirror|unique4`);
     if (s.rotationArt !== undefined && !s.building) issues.push(`${p}: rotationArt only applies to building sprites`);
+    if (s.sway?.mask !== undefined && !(typeof s.sway.mask === "string" && /\.(png|webp)$/.test(s.sway.mask))) issues.push(`${p}: sway.mask must be a .png/.webp path`);
+    if (s.tints !== undefined) {
+      if (!s.tints || typeof s.tints !== "object") issues.push(`${p}: tints must be an object`);
+      else for (const [n, t] of Object.entries(s.tints)) {
+        if (!KEY.test(n)) issues.push(`${p}: bad tint name "${n}"`);
+        if (!/^#[0-9a-fA-F]{6}$/.test(t?.color ?? "")) issues.push(`${p}: tint ${n} color must be #rrggbb`);
+        if (!(typeof t?.strength === "number" && t.strength >= 0 && t.strength <= 1)) issues.push(`${p}: tint ${n} strength must be within [0,1]`);
+        if (t?.mode !== undefined && !TINT_MODES.includes(t.mode)) issues.push(`${p}: tint ${n} mode must be multiply|add|screen|lerp`);
+      }
+    }
     if (s.sway !== undefined && !(s.sway && s.sway.amp >= 0 && s.sway.freq >= 0 && s.sway.stiffness >= 0 && s.sway.stiffness <= 1)) issues.push(`${p}: sway needs amp >= 0, freq >= 0, stiffness in [0,1]`);
     const at = atlases.get(s.atlas); if (!at) issues.push(`${p}: unknown atlas "${s.atlas}"`);
     const total = at ? at.columns * at.rows : 0;
@@ -300,7 +396,8 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
     sprites.set(id, { id, key: s.key, category: s.category, atlas: at, anchor: s.anchor ?? { x: 0.5, y: 0.9 }, animations: new Map(animList.map((a) => [a.name, a])), animList,
       ...(s.building ? { building: { piece: s.building.piece, footprint: { ...s.building.footprint }, layer: s.building.layer, frames: s.building.frames.map((r) => [...r]),
         rotationArt: s.rotationArt ?? "mirror", stateNames: Object.keys(s.building.states ?? {}), states: Object.values(s.building.states ?? {}).map((rows) => rows.map((r) => [...r])) } } : {}),
-      ...(s.sway ? { sway: { ...s.sway } } : {}) });
+      ...(s.sway ? { sway: { ...s.sway } } : {}),
+      tints: Object.fromEntries(Object.entries(s.tints ?? {}).map(([n, t]) => [n, { color: parseColor(t.color), strength: t.strength, mode: t.mode ?? "multiply" }])) });
   }
   const soundMap = new Map<number, SoundDef>(sounds.map((s) => { const id = ids.sounds.id(s.key); return [id, { id, key: s.key, files: [...s.files], volume: s.volume ?? 1, pitchJitter: s.pitchJitter ?? 0, loop: !!s.loop, ...(typeof s.loop === "object" ? { loopPoints: { ...s.loop } } : {}), category: s.category }]; }));
   const vfxMap = new Map<number, VfxDef>(vfx.map((v) => { const id = ids.vfx.id(v.key); const sp = m.sprites.find((s) => s.key === v.sprite)!;
@@ -315,7 +412,8 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
       ...(v.tint !== undefined ? { tint: tintMap.get(ids.tints.id(v.tint))!.tints[v.tintIndex ?? 0]! } : {}),
       ...(v.palette !== undefined ? { palette: ids.palettes.id(v.palette) } : {}) });
   }
-  return { registry: new AssetRegistry(atlases, sprites, ids, soundMap, vfxMap, tintMap, palMap, varMap), lock };
+  if (warnings.length && typeof console !== "undefined") for (const w of warnings) console.warn(`[assets] ${w}`);
+  return { registry: new AssetRegistry(atlases, sprites, ids, soundMap, vfxMap, tintMap, palMap, varMap), lock, warnings };
 }
 
 /** Mix the asset id hash into the world schema hash so client/server handshakes reject mismatched content. */
