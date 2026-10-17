@@ -85,7 +85,7 @@ export class NetClient {
     this.schema = new NetSchema(this.world);
     this.commands = new MessageRegistry(opts.commands);
     this.events = new MessageRegistry(opts.events);
-    const idef = opts.interpolated ?? Transform;
+    const idef: ComponentDef = opts.interpolated ?? (Transform as unknown as ComponentDef);
     this.interpIndex = this.schema.indexOf(idef, this.world);
     this.interpStore = this.world.store(idef) as unknown as ComponentStore;
     this.interp = new InterpolationBuffer(32, 1, this.interpStore.fields.map((f) => f === "facing"));

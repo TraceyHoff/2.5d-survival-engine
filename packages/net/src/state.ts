@@ -44,7 +44,9 @@ function readWire(r: BitReader, spec: FieldSpec): number { const q = fieldQuant(
 /** Read one component's wire values from a dense slot. */
 export function readComp(schema: NetSchema, ci: number, slot: number): number[] {
   const st = schema.stores[ci]!; const specs = schema.specs[ci]!;
-  return schema.layout[ci]!.map(([f, e], i) => toWire(specs[i]!, st.data[f]![slot * storeFieldLength(st, f) + e]!));
+  const lay = schema.layout[ci]!; const out = new Array<number>(lay.length);
+  for (let i = 0; i < lay.length; i++) { const [f, e] = lay[i]!; out[i] = toWire(specs[i]!, st.data[f]![slot * storeFieldLength(st, f) + e]!); }
+  return out;
 }
 
 /**
@@ -60,13 +62,26 @@ export function captureState(world: World, schema: NetSchema, prev: WorldState |
   for (let k = 0; k < ns.size; k++) {
     const index = entityIndex(ns.dense[k]!); const netId = ns.data.id[k]!;
     const old = prev?.get(netId);
-    if (old && !ns.isChanged(index) && !touched.has(index) && !schema.stores.some((s) => s.isChanged(index))) { out.set(netId, old); continue; }
-    const es = new Map<number, CompValues>();
-    schema.stores.forEach((st, ci) => {
-      if (exclude?.has(ci) || !st.has(index)) return;
-      es.set(ci, readComp(schema, ci, st.slot(index)));
-    });
-    out.set(netId, sameState(old, es) ? old! : es);
+    const stores = schema.stores; const isTouched = touched.has(index);
+    if (old && !isTouched && !ns.isChanged(index)) {
+      let any = false; for (let ci = 0; ci < stores.length; ci++) if (stores[ci]!.isChanged(index)) { any = true; break; }
+      if (!any) { out.set(netId, old); continue; }
+    }
+    const es = new Map<number, CompValues>(); let same = !!old;
+    for (let ci = 0; ci < stores.length; ci++) {
+      const st = stores[ci]!;
+      if (exclude?.has(ci) || !st.has(index)) { if (same && old!.has(ci)) same = false; continue; }
+      const prevV = old?.get(ci);
+      let v: CompValues;
+      if (prevV && !isTouched && !st.isChanged(index)) v = prevV; // structural sharing of untouched components
+      else {
+        v = readComp(schema, ci, st.slot(index));
+        if (prevV && prevV.length === v.length) { let eq = true; for (let i = 0; i < v.length; i++) if (v[i] !== prevV[i]) { eq = false; break; } if (eq) v = prevV; }
+      }
+      if (v !== prevV) same = false;
+      es.set(ci, v);
+    }
+    out.set(netId, same && old!.size === es.size ? old! : es);
   }
   return out;
 }

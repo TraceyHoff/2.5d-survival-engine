@@ -43,12 +43,12 @@ function run(sc: Scenario) {
   };
   for (let i = 0; i < 30; i++) tick(); // warm-up incl. initial full snapshots
   t.bytes.clear();
-  const N = 40; const t0 = performance.now(); let capture = 0;
-  for (let i = 0; i < N; i++) { tick(); capture += server.perf.captureMs; }
+  const N = 40; const t0 = performance.now(); let capture = 0; let enc = 0, shared = 0;
+  for (let i = 0; i < N; i++) { tick(); capture += server.perf.captureMs; enc += server.perf.encoded; shared += server.perf.shared; }
   const ms = (performance.now() - t0) / N;
   const total = [...t.bytes.values()].reduce((a, b) => a + b, 0);
   const perClient = total / sc.clients / N;
-  const r = { scenario: sc.name, msPerTick: +ms.toFixed(2), captureMsPerTick: +(capture / N).toFixed(2), bytesPerClientTick: Math.round(perClient), kbpsPerClient: +(perClient * 20 * 8 / 1000).toFixed(1) };
+  const r = { scenario: sc.name, msPerTick: +ms.toFixed(2), captureMsPerTick: +(capture / N).toFixed(2), bytesPerClientTick: Math.round(perClient), kbpsPerClient: +(perClient * 20 * 8 / 1000).toFixed(1), encodesPerTick: Math.round(enc / N), sharedPerTick: Math.round(shared / N) };
   console.log(JSON.stringify(r));
   return r;
 }
@@ -62,5 +62,7 @@ describe("replication benchmark (server only)", () => {
   it("100 clients clustered in one area with 10k entities (worst case, budgeted)", () => {
     const r = run({ name: "100c clustered x 10k (512x512, 4 KiB budget)", clients: 100, entities: 10_000, worldTiles: 512, clusterTiles: 64, movingFraction: 0.1, budget: 4096 });
     expect(r.bytesPerClientTick).toBeLessThanOrEqual(4096 + 64);
+    expect(r.msPerTick).toBeLessThan(100); // ~25 ms locally; generous for noisy CI
+    expect(r.sharedPerTick).toBeGreaterThan(r.encodesPerTick * 5); // per-(state,baseline) encodings are reused across clients
   }, 120_000);
 });

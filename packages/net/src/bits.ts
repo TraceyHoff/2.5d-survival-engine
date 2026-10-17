@@ -21,12 +21,25 @@ export class BitWriter implements FieldWriter {
   writeBits(value: number, bits: number): void {
     if (bits < 0 || bits > 32) throw new RangeError(`writeBits: bad width ${bits}`);
     this.ensure(bits);
-    const v = value >>> 0;
-    for (let i = 0; i < bits; i++) {
-      if ((v >>> i) & 1) { const p = this.pos; this.buf[p >>> 3] = this.buf[p >>> 3]! | (1 << (p & 7)); }
-      this.pos++;
+    let v = value >>> 0; let n = bits; let p = this.pos; const buf = this.buf;
+    while (n > 0) {
+      const off = p & 7; const take = Math.min(8 - off, n);
+      buf[p >>> 3] = buf[p >>> 3]! | ((v & ((1 << take) - 1)) << off);
+      v = take >= 32 ? 0 : v >>> take; n -= take; p += take;
     }
+    this.pos = p;
   }
+  /** Append `bitLen` bits from another writer's output (LSB-first, same layout). */
+  appendBits(src: Uint8Array, bitLen: number): void {
+    this.ensure(bitLen);
+    if ((this.pos & 7) === 0) { this.buf.set(src.subarray(0, (bitLen + 7) >>> 3), this.pos >>> 3); this.pos += bitLen;
+      if (bitLen & 7) { const last = (this.pos - 1) >>> 3; this.buf[last] = this.buf[last]! & ((1 << (bitLen & 7)) - 1); }
+      return; }
+    let i = 0; for (; i + 8 <= bitLen; i += 8) this.writeBits(src[i >>> 3]!, 8);
+    if (i < bitLen) this.writeBits(src[i >>> 3]! & ((1 << (bitLen - i)) - 1), bitLen - i);
+  }
+  /** Copy of the raw bytes written so far (with bitLength, for appendBits). */
+  snapshotBits(): { bytes: Uint8Array; bits: number } { return { bytes: this.buf.slice(0, this.byteLength), bits: this.pos }; }
   /** Roll back to an earlier bit position (used to drop a record that blew the budget). */
   truncate(bitPos: number): void {
     if (bitPos > this.pos) return;
@@ -64,11 +77,13 @@ export class BitReader implements FieldReader {
   readBits(bits: number): number {
     if (bits < 0 || bits > 32) throw new RangeError(`readBits: bad width ${bits}`);
     if (this.pos + bits > this.totalBits) throw new RangeError("BitReader: out of data");
-    let v = 0;
-    for (let i = 0; i < bits; i++) {
-      const p = this.pos++;
-      if ((this.buf[p >>> 3]! >>> (p & 7)) & 1) v |= 1 << i;
+    let v = 0; let got = 0; let p = this.pos; const buf = this.buf;
+    while (got < bits) {
+      const off = p & 7; const take = Math.min(8 - off, bits - got);
+      v += ((buf[p >>> 3]! >>> off) & ((1 << take) - 1)) * 2 ** got;
+      got += take; p += take;
     }
+    this.pos = p;
     return v >>> 0;
   }
   readString(): string { const n = this.readBits(8); let o = ""; for (let i = 0; i < n; i++) o += String.fromCharCode(this.readBits(8)); return o; }

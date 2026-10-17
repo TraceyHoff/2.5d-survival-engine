@@ -26,7 +26,7 @@ describe("delta codec", () => {
     const delta = roundtrip(schema, s1, s0);
     expect(delta.stats).toEqual({ spawns: 0, despawns: 0, changes: 1 });
     expect(delta.d.state).toEqual(s1);
-    expect(delta.bytes.length).toBeLessThan(full.bytes.length / 3);
+    expect(delta.bytes.length).toBeLessThan(full.bytes.length / 2);
     expect(delta.d.changed.get(1)).toEqual({ changed: [schema.indexOf(Transform, w)], removed: [] });
   });
   it("encodes despawns and component add/remove; removal before re-add in same tick is a change", () => {

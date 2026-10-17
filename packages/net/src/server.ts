@@ -74,7 +74,8 @@ export interface ClientSession {
 }
 interface SessionState extends ClientSession {
   views: Map<number, WorldState>;
-  lastSent: Map<number, number>;
+  /** Per netId: tick+1 it was last sent at (0 = never). Grown on demand. */
+  lastSent: Int32Array;
   buckets: Map<number, TokenBucket>;
   commands: { def: MessageDefBase; payload: Record<string, number> }[];
   events: { reliable: boolean; def: MessageDefBase; payload: Record<string, number> }[];
@@ -141,7 +142,12 @@ export class NetServer {
   private ownerCi: number | undefined;
   readonly tickHz: number; readonly historySize: number; readonly budgetBytes: number;
   /** Timings of the last network phase, for benchmarks. */
-  readonly perf = { captureMs: 0, sendMs: 0 };
+  private posX = new Float64Array(0);
+  private curArr: (EntityState | undefined)[] = [];
+  private stamp = new Int32Array(0);
+  private stampSeq = 0;
+  private posY = new Float64Array(0);
+  readonly perf = { captureMs: 0, sendMs: 0, encoded: 0, shared: 0 };
   private readonly opts: NetServerOptions;
 
   constructor(opts: NetServerOptions) {
@@ -239,7 +245,7 @@ export class NetServer {
         clientId: this.nextClientId++, token, conn, lastAckTick: -1, lastReceivedSeq: -1, lastProcessedSeq: -1, lastViewTick: -1,
         inputQueue: [], lastSnapshotBytes: 0, fullSnapshots: 0,
         stats: { commands: 0, droppedCommands: 0, rateLimited: 0, deferred: 0, bytesSent: 0 },
-        views: new Map(), lastSent: new Map(), buckets: new Map(), commands: [], events: [],
+        views: new Map(), lastSent: new Int32Array(256), buckets: new Map(), commands: [], events: [],
       };
       this.sessions.set(s.clientId, s); this.byToken.set(tokenKey(token), s);
       this.opts.onClientJoin?.(s, this.world);
@@ -369,44 +375,99 @@ export class NetServer {
     }
     const t1 = now(); this.perf.captureMs = t1 - t0;
     const tick = w.tick;
+    const globalSet = new Set(globals);
+    { // per-tick netId-indexed positions for prioritization
+      let max = 0; for (const id of cur.keys()) if (id > max) max = id;
+      if (this.posX.length <= max) { this.posX = new Float64Array(max * 2 + 1); this.posY = new Float64Array(max * 2 + 1); }
+      this.posX.fill(NaN); const tf = w.store(Transform);
+      for (const id of cur.keys()) {
+        const e = this.netIds.entityOf(id); if (e === undefined) continue; const i = entityIndex(e);
+        if (tf.has(i)) { const sl = tf.slot(i); this.posX[id] = tf.data.x[sl]!; this.posY[id] = tf.data.y[sl]!; } else this.posX[id] = NaN;
+      }
+    }
+    const scoped = this.ownerScoped.size > 0 || this.viewerScoped.size > 0;
+    const chunkIds = new Map<string, number[]>(); // per-tick netIds per chunk, shared by every client that sees it
+    // Per-tick cache of encoded entity records keyed by (current state object, baseline state object): clients with
+    // the same baseline for an entity share one encoding (states are immutable and shared, so identity == equality).
+    const enc = new Map<EntityState, Map<EntityState | typeof NO_BASE, EncodedRecord | null>>();
+    const record = (id: number, es: EntityState, old: EntityState | undefined): EncodedRecord | null => {
+      let m = enc.get(es); if (!m) { m = new Map(); enc.set(es, m); }
+      const k = old ?? NO_BASE; let r = m.get(k);
+      if (r === undefined) {
+        const bw = new BitWriter();
+        r = writeEntityRecord(bw, this.schema, id, es, old) ? { ...bw.snapshotBits(), id } : null;
+        if (r && r.id !== id) r = null;
+        m.set(k, r); this.perf.encoded++;
+      } else this.perf.shared++;
+      return r && r.id === id ? r : null;
+    };
+    this.perf.encoded = 0; this.perf.shared = 0;
+    // netId-indexed current states + a per-client stamp for O(1) dedupe without Map lookups
+    let maxId = 0; for (const id of cur.keys()) if (id > maxId) maxId = id;
+    if (this.curArr.length <= maxId) { this.curArr = new Array(maxId * 2 + 1); this.stamp = new Int32Array(maxId * 2 + 1); }
+    const curArr = this.curArr; curArr.fill(undefined);
+    for (const [id, es] of cur) curArr[id] = es;
+    const stamp = this.stamp;
     for (const s of this.byConn.values()) {
-      // ---- relevant view ----
-      const view = new Map<number, EntityState>();
-      const add = (netId: number): void => {
-        if (view.has(netId)) return; const es = cur.get(netId); if (!es) return;
-        const e = this.netIds.entityOf(netId); view.set(netId, e === undefined ? es : this.filterFor(e, es, s.clientId));
-      };
-      const ownedIds = new Set<number>();
-      for (const e of owned.get(s.clientId) ?? []) { const id = this.netIds.netIdOf(e); if (id !== undefined) { ownedIds.add(id); add(id); } }
-      for (const id of globals) add(id);
-      if (grid) { for (const e of grid.relevant(s.clientId)) { const id = this.netIds.netIdOf(e); if (id !== undefined) add(id); } }
-      else for (const id of cur.keys()) add(id);
-      // ---- encode against acked view ----
+      const seq = ++this.stampSeq;
       const base = s.lastAckTick >= 0 ? s.views.get(s.lastAckTick) : undefined;
       if (!base) s.fullSnapshots++;
+      const view = new Map<number, EntityState>(); // what the client will hold once it decodes this snapshot
+      const must: number[] = []; const rest: number[] = []; const restEs: EntityState[] = []; const mustEs: EntityState[] = [];
+      const ownedIds = new Set<number>();
+      const consider = (id: number, isMust: boolean): void => {
+        if (stamp[id] === seq) return; const es0 = curArr[id]; if (!es0) return; stamp[id] = seq;
+        let es = es0;
+        if (scoped) { const e = this.netIds.entityOf(id); if (e !== undefined) es = this.filterFor(e, es0, s.clientId); }
+        const old = base?.get(id);
+        if (old === es) { view.set(id, es); return; }
+        if (isMust) { must.push(id); mustEs.push(es); } else { rest.push(id); restEs.push(es); }
+      };
+      for (const e of owned.get(s.clientId) ?? []) { const id = this.netIds.netIdOf(e); if (id !== undefined) { ownedIds.add(id); consider(id, true); } }
+      for (const id of globals) consider(id, true);
+      if (grid) {
+        for (const key of grid.grid.get(s.clientId)?.chunks ?? []) {
+          let ids = chunkIds.get(key);
+          if (!ids) {
+            ids = [];
+            for (const e of grid.membership.entitiesIn(key)) { const id = this.netIds.netIdOf(e); if (id !== undefined) ids.push(id); }
+            chunkIds.set(key, ids);
+          }
+          for (let i = 0; i < ids.length; i++) consider(ids[i]!, false);
+        }
+      } else for (const id of cur.keys()) consider(id, false);
+      // ---- encode against acked view ----
       const bw = new BitWriter();
       writeHeader(bw, MsgType.Snapshot);
       bw.writeBits(tick, 32); bw.writeBits(base ? s.lastAckTick : NONE_U32, 32);
       bw.writeBits(s.lastProcessedSeq < 0 ? NONE_U32 : s.lastProcessedSeq, 32);
-      const sent = new Map(view);
-      if (base) for (const id of base.keys()) if (!view.has(id)) writeDespawn(bw, id);
-      const must: number[] = []; const rest: number[] = [];
-      for (const [id, es] of view) { if (base?.get(id) === es) continue; (ownedIds.has(id) || globals.includes(id) ? must : rest).push(id); }
-      for (const id of must) writeEntityRecord(bw, this.schema, id, view.get(id)!, base?.get(id));
-      if (rest.length > 1 && bw.byteLength < this.budgetBytes) this.prioritize(rest, s, owned.get(s.clientId) ?? [], tick);
+      if (base) for (const id of base.keys()) if (stamp[id] !== seq || curArr[id] === undefined) writeDespawn(bw, id);
+      for (let i = 0; i < must.length; i++) {
+        const id = must[i]!, es = mustEs[i]!; const r = record(id, es, base?.get(id));
+        if (r) bw.appendBits(r.bytes, r.bits); view.set(id, es);
+      }
+      if (rest.length > 1 && bw.byteLength < this.budgetBytes) {
+        const order = this.prioritize(rest, s, owned.get(s.clientId) ?? [], tick, Math.min(rest.length, (this.budgetBytes >> 2) + 64));
+        const ri = rest.slice(), re = restEs.slice();
+        for (let k = 0; k < order.length; k++) { rest[k] = ri[order[k]!]!; restEs[k] = re[order[k]!]!; }
+      }
+      const budgetBits = this.budgetBytes * 8 - 2;
       for (let i = 0; i < rest.length; i++) {
-        const id = rest[i]!; const mark = bw.bitLength;
-        if (bw.byteLength >= this.budgetBytes || !(writeEntityRecord(bw, this.schema, id, view.get(id)!, base?.get(id)), true) || bw.byteLength > this.budgetBytes) {
-          bw.truncate(mark);
+        const id = rest[i]!, es = restEs[i]!; const old = base?.get(id);
+        const r = record(id, es, old);
+        if (!r) { view.set(id, es); continue; }
+        if (bw.bitLength + r.bits > budgetBits) {
           // defer this and everything after it: the client keeps its baseline value / does not get the spawn yet
-          for (let j = i; j < rest.length; j++) { const d = rest[j]!; const old = base?.get(d); if (old) sent.set(d, old); else sent.delete(d); }
+          for (let j = i; j < rest.length; j++) { const o = base?.get(rest[j]!); if (o) view.set(rest[j]!, o); }
           s.stats.deferred += rest.length - i;
           break;
         }
-        s.lastSent.set(id, tick);
+        bw.appendBits(r.bytes, r.bits); view.set(id, es);
+        if (id >= s.lastSent.length) { const g = new Int32Array(Math.max(id + 1, s.lastSent.length * 2)); g.set(s.lastSent); s.lastSent = g; }
+        s.lastSent[id] = tick + 1;
       }
       writeEnd(bw);
-      s.views.set(tick, sent);
+      s.views.set(tick, view);
       for (const t of s.views.keys()) if (t < s.lastAckTick || t <= tick - this.historySize) s.views.delete(t);
       const bytes = bw.finish(); s.lastSnapshotBytes = bytes.length; s.stats.bytesSent += bytes.length;
       this.opts.transport.send(s.conn!, bytes, "unreliable");
@@ -416,20 +477,30 @@ export class NetServer {
   }
 
   /** Order by distance to the client's owned entities, discounted by staleness (ticks since last sent). */
-  private prioritize(ids: number[], s: SessionState, owned: Entity[], tick: number): void {
-    const w = this.world; const tf = w.store(Transform);
-    const centers = owned.filter((e) => tf.has(entityIndex(e))).map((e) => [w.getField(e, Transform, "x")!, w.getField(e, Transform, "y")!] as const);
-    const score = new Map<number, number>();
-    for (const id of ids) {
-      const e = this.netIds.entityOf(id); let d2 = 0;
-      if (e !== undefined && centers.length && tf.has(entityIndex(e))) {
-        const sl = tf.slot(entityIndex(e)); const x = tf.data.x[sl]!, y = tf.data.y[sl]!;
-        d2 = Math.min(...centers.map(([cx, cy]) => (x - cx) ** 2 + (y - cy) ** 2));
+  private prioritize(ids: number[], s: SessionState, owned: Entity[], tick: number, limit = ids.length): number[] {
+    const w = this.world; const tf = w.store(Transform); const px = this.posX, py = this.posY;
+    const cx: number[] = [], cy: number[] = [];
+    for (const e of owned) { const i = entityIndex(e); if (tf.has(i)) { const sl = tf.slot(i); cx.push(tf.data.x[sl]!); cy.push(tf.data.y[sl]!); } }
+    const score = new Float64Array(ids.length); const order = ids.map((_, i) => i);
+    for (let k = 0; k < ids.length; k++) {
+      const id = ids[k]!; let d2 = 0;
+      const x = id < px.length ? px[id]! : NaN, y = id < py.length ? py[id]! : NaN;
+      if (cx.length && x === x) {
+        d2 = Infinity;
+        for (let c = 0; c < cx.length; c++) { const dx = x - cx[c]!, dy = y - cy[c]!; const d = dx * dx + dy * dy; if (d < d2) d2 = d; }
       }
-      const stale = tick - (s.lastSent.get(id) ?? tick - 1);
-      score.set(id, d2 / (stale * stale));
+      const ls = id < s.lastSent.length ? s.lastSent[id]! : 0; const stale = ls ? tick + 1 - ls : 1;
+      score[k] = d2 / (stale * stale);
     }
-    ids.sort((a, b) => score.get(a)! - score.get(b)!);
+    // Only the first ~limit can fit the budget: find the score threshold with a typed-array sort, fully order just those.
+    let pick = order;
+    if (limit < ids.length) {
+      const sorted = score.slice().sort(); const thr = sorted[limit - 1]!;
+      const head: number[] = [], tail: number[] = [];
+      for (const k of order) (score[k]! <= thr && head.length < limit ? head : tail).push(k);
+      head.sort((a, b) => score[a]! - score[b]!); pick = head.concat(tail);
+    } else order.sort((a, b) => score[a]! - score[b]!);
+    return pick;
   }
 
   private flushEvents(s: SessionState, tick: number): void {
@@ -444,4 +515,6 @@ export class NetServer {
   }
 }
 
+interface EncodedRecord { bytes: Uint8Array; bits: number; id: number }
+const NO_BASE = Symbol("full");
 const now = (): number => (globalThis as { performance?: { now(): number } }).performance?.now() ?? 0;

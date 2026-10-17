@@ -26,3 +26,15 @@ describe("BitWriter/BitReader", () => {
     expect(() => new BitWriter().writeBits(0, 33)).toThrow(RangeError);
   });
 });
+describe("appendBits", () => {
+  it("concatenates unaligned bit streams exactly", () => {
+    const a = new BitWriter(); a.writeBits(5, 3); a.writeBits(0x1abc, 13);
+    const b = new BitWriter(); b.writeBits(1, 1); b.writeVarUint(300); b.writeBits(7, 3);
+    for (const lead of [0, 3, 8]) {
+      const w = new BitWriter(); w.writeBits(0, lead); const sa = a.snapshotBits(), sb = b.snapshotBits();
+      w.appendBits(sa.bytes, sa.bits); w.appendBits(sb.bytes, sb.bits); w.writeBits(3, 2);
+      const r = new BitReader(w.finish()); r.readBits(lead);
+      expect([r.readBits(3), r.readBits(13), r.readBits(1), r.readVarUint(), r.readBits(3), r.readBits(2)]).toEqual([5, 0x1abc, 1, 300, 7, 3]);
+    }
+  });
+});
