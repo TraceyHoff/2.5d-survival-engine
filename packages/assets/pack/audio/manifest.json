@@ -1,0 +1,128 @@
+{
+ "version": 1,
+ "sampleRate": 44100,
+ "format": "ogg vorbis q5 mono (+ .wav masters)",
+ "sounds": [
+  {
+   "key": "sfx_footstep",
+   "files": [
+    "audio/sfx/footstep_1.ogg",
+    "audio/sfx/footstep_2.ogg",
+    "audio/sfx/footstep_3.ogg",
+    "audio/sfx/footstep_4.ogg"
+   ],
+   "volume": 0.45,
+   "pitchJitter": 0.08,
+   "loop": false,
+   "category": "sfx"
+  },
+  {
+   "key": "sfx_chop",
+   "files": [
+    "audio/sfx/chop_1.ogg",
+    "audio/sfx/chop_2.ogg",
+    "audio/sfx/chop_3.ogg"
+   ],
+   "volume": 0.8,
+   "pitchJitter": 0.1,
+   "loop": false,
+   "category": "sfx"
+  },
+  {
+   "key": "sfx_mine",
+   "files": [
+    "audio/sfx/mine_1.ogg",
+    "audio/sfx/mine_2.ogg",
+    "audio/sfx/mine_3.ogg"
+   ],
+   "volume": 0.75,
+   "pitchJitter": 0.08,
+   "loop": false,
+   "category": "sfx"
+  },
+  {
+   "key": "sfx_hit",
+   "files": [
+    "audio/sfx/hit_1.ogg",
+    "audio/sfx/hit_2.ogg"
+   ],
+   "volume": 0.8,
+   "pitchJitter": 0.12,
+   "loop": false,
+   "category": "sfx"
+  },
+  {
+   "key": "sfx_zombie_groan",
+   "files": [
+    "audio/sfx/zombie_groan_1.ogg",
+    "audio/sfx/zombie_groan_2.ogg",
+    "audio/sfx/zombie_groan_3.ogg"
+   ],
+   "volume": 0.6,
+   "pitchJitter": 0.12,
+   "loop": false,
+   "category": "sfx"
+  },
+  {
+   "key": "sfx_pickup",
+   "files": [
+    "audio/sfx/pickup_1.ogg"
+   ],
+   "volume": 0.6,
+   "pitchJitter": 0.05,
+   "loop": false,
+   "category": "sfx"
+  },
+  {
+   "key": "sfx_build_place",
+   "files": [
+    "audio/sfx/build_place_1.ogg",
+    "audio/sfx/build_place_2.ogg"
+   ],
+   "volume": 0.8,
+   "pitchJitter": 0.06,
+   "loop": false,
+   "category": "sfx"
+  },
+  {
+   "key": "ui_click",
+   "files": [
+    "audio/ui/click.ogg"
+   ],
+   "volume": 0.6,
+   "pitchJitter": 0.03,
+   "loop": false,
+   "category": "ui"
+  },
+  {
+   "key": "amb_campfire",
+   "files": [
+    "audio/ambience/campfire_loop.ogg"
+   ],
+   "volume": 0.55,
+   "pitchJitter": 0,
+   "loop": true,
+   "category": "ambience"
+  },
+  {
+   "key": "amb_rain",
+   "files": [
+    "audio/ambience/rain_loop.ogg"
+   ],
+   "volume": 0.5,
+   "pitchJitter": 0,
+   "loop": true,
+   "category": "ambience"
+  },
+  {
+   "key": "amb_forest",
+   "files": [
+    "audio/ambience/forest_loop.ogg"
+   ],
+   "volume": 0.45,
+   "pitchJitter": 0,
+   "loop": true,
+   "category": "ambience"
+  }
+ ]
+}
