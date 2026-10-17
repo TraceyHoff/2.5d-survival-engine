@@ -6,10 +6,12 @@ export interface ComponentDef<S extends Schema = Schema> {
   readonly name: string;
   readonly schema: S;
   readonly networked: boolean;
+  /** Saved with its chunk by the chunk codec (world persistence). */
+  readonly persistent: boolean;
 }
-export function defineComponent<S extends Schema>(name: string, schema: S, opts: { networked?: boolean } = {}): ComponentDef<S> {
+export function defineComponent<S extends Schema>(name: string, schema: S, opts: { networked?: boolean; persistent?: boolean } = {}): ComponentDef<S> {
   for (const k of Object.keys(schema)) { const n = fieldLength(schema[k]!); if (!(Number.isInteger(n) && n >= 1)) throw new Error(`${name}.${k}: bad length`); }
-  return { name, schema, networked: opts.networked ?? false };
+  return { name, schema, networked: opts.networked ?? false, persistent: opts.persistent ?? false };
 }
 
 /**

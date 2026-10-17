@@ -103,9 +103,13 @@ export class World {
   storeById(id: number): ComponentStore | undefined { return this.stores[id]; }
   get componentStores(): readonly ComponentStore[] { return this.stores; }
   /** Deterministic hash over registration order: id, name, networked flag, schema signature (incl. quant hints). */
+  private schemaSalts = new Map<string, number>();
+  /** Mix an external hash (e.g. asset registry id hash) into getSchemaHash(), keyed by name. */
+  addSchemaSalt(name: string, hash: number): void { this.schemaSalts.set(name, hash >>> 0); }
   getSchemaHash(): number {
     let h = 0x811c9dc5;
-    for (const s of this.stores) h = fnv1a(`${s.id}|${s.def.name}|${s.def.networked ? 1 : 0}|${schemaSignature(s.def.schema)}\n`, h);
+    for (const [k, v] of [...this.schemaSalts].sort(([a], [b]) => (a < b ? -1 : 1))) h = fnv1a(`salt|${k}|${v}\n`, h);
+    for (const s of this.stores) h = fnv1a(`${s.id}|${s.def.name}|${s.def.networked ? 1 : 0}${s.def.persistent ? "p" : ""}|${schemaSignature(s.def.schema)}\n`, h);
     return h;
   }
 

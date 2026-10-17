@@ -1,0 +1,475 @@
+{
+  "version": 1,
+  "name": "placeholder",
+  "atlases": [
+    {
+      "key": "characters",
+      "image": "characters.png",
+      "frameW": 32,
+      "frameH": 48,
+      "columns": 4,
+      "rows": 8
+    },
+    {
+      "key": "zombies",
+      "image": "zombies.png",
+      "frameW": 32,
+      "frameH": 48,
+      "columns": 4,
+      "rows": 8
+    },
+    {
+      "key": "items",
+      "image": "items.png",
+      "frameW": 32,
+      "frameH": 32,
+      "columns": 4,
+      "rows": 1
+    },
+    {
+      "key": "equipment",
+      "image": "equipment.png",
+      "frameW": 32,
+      "frameH": 32,
+      "columns": 4,
+      "rows": 1
+    },
+    {
+      "key": "resources",
+      "image": "resources.png",
+      "frameW": 32,
+      "frameH": 64,
+      "columns": 4,
+      "rows": 1
+    },
+    {
+      "key": "buildings",
+      "image": "buildings.png",
+      "frameW": 64,
+      "frameH": 64,
+      "columns": 4,
+      "rows": 1
+    },
+    {
+      "key": "tiles",
+      "image": "tiles.png",
+      "frameW": 64,
+      "frameH": 32,
+      "columns": 4,
+      "rows": 2
+    }
+  ],
+  "sprites": [
+    {
+      "key": "player",
+      "category": "character",
+      "atlas": "characters",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.92
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0,
+            1
+          ],
+          "fps": 3,
+          "directions": 8
+        },
+        "walk": {
+          "frames": [
+            2,
+            3
+          ],
+          "fps": 8,
+          "directions": 8
+        }
+      }
+    },
+    {
+      "key": "zombie_walker",
+      "category": "zombie",
+      "atlas": "zombies",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.92
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0,
+            1
+          ],
+          "fps": 3,
+          "directions": 8
+        },
+        "walk": {
+          "frames": [
+            2,
+            3
+          ],
+          "fps": 8,
+          "directions": 8
+        }
+      }
+    },
+    {
+      "key": "wood",
+      "category": "item",
+      "atlas": "items",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 1
+        }
+      }
+    },
+    {
+      "key": "stone",
+      "category": "item",
+      "atlas": "items",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            1
+          ],
+          "fps": 1
+        }
+      }
+    },
+    {
+      "key": "berries",
+      "category": "item",
+      "atlas": "items",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            2
+          ],
+          "fps": 1
+        }
+      }
+    },
+    {
+      "key": "water_flask",
+      "category": "item",
+      "atlas": "items",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            3
+          ],
+          "fps": 1
+        }
+      }
+    },
+    {
+      "key": "stone_axe",
+      "category": "equipment",
+      "atlas": "equipment",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 1
+        }
+      }
+    },
+    {
+      "key": "stone_pickaxe",
+      "category": "equipment",
+      "atlas": "equipment",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            1
+          ],
+          "fps": 1
+        }
+      }
+    },
+    {
+      "key": "sword",
+      "category": "equipment",
+      "atlas": "equipment",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            2
+          ],
+          "fps": 1
+        }
+      }
+    },
+    {
+      "key": "shield",
+      "category": "equipment",
+      "atlas": "equipment",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            3
+          ],
+          "fps": 1
+        }
+      }
+    },
+    {
+      "key": "tree",
+      "category": "resource",
+      "atlas": "resources",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.92
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 1
+        }
+      }
+    },
+    {
+      "key": "boulder",
+      "category": "resource",
+      "atlas": "resources",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.92
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            1
+          ],
+          "fps": 1
+        }
+      }
+    },
+    {
+      "key": "berry_bush",
+      "category": "resource",
+      "atlas": "resources",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.92
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            2
+          ],
+          "fps": 1
+        }
+      }
+    },
+    {
+      "key": "iron_vein",
+      "category": "resource",
+      "atlas": "resources",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.92
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            3
+          ],
+          "fps": 1
+        }
+      }
+    },
+    {
+      "key": "floor",
+      "category": "building",
+      "atlas": "buildings",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 1
+        }
+      }
+    },
+    {
+      "key": "wall",
+      "category": "building",
+      "atlas": "buildings",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            1
+          ],
+          "fps": 1
+        }
+      }
+    },
+    {
+      "key": "pillar",
+      "category": "building",
+      "atlas": "buildings",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            2
+          ],
+          "fps": 1
+        }
+      }
+    },
+    {
+      "key": "campfire",
+      "category": "building",
+      "atlas": "buildings",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            3
+          ],
+          "fps": 1
+        }
+      }
+    },
+    {
+      "key": "tile_water",
+      "category": "tile",
+      "atlas": "tiles",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 1
+        }
+      }
+    },
+    {
+      "key": "tile_sand",
+      "category": "tile",
+      "atlas": "tiles",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            1
+          ],
+          "fps": 1
+        }
+      }
+    },
+    {
+      "key": "tile_grass",
+      "category": "tile",
+      "atlas": "tiles",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            2
+          ],
+          "fps": 1
+        }
+      }
+    },
+    {
+      "key": "tile_forest",
+      "category": "tile",
+      "atlas": "tiles",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            3
+          ],
+          "fps": 1
+        }
+      }
+    },
+    {
+      "key": "tile_rock",
+      "category": "tile",
+      "atlas": "tiles",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            4
+          ],
+          "fps": 1
+        }
+      }
+    }
+  ]
+}

@@ -6,7 +6,8 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "pnpm -r typecheck",
-    "build": "pnpm -r build"
+    "build": "pnpm -r build",
+    "check": "pnpm -r typecheck && vitest run"
   },
   "devDependencies": {
     "typescript": "^5.6.0",

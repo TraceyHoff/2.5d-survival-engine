@@ -57,6 +57,8 @@ Rule: **dependencies point toward core**. `core`/`world`/`gameplay` must not tou
 | `packages/world` | Engine/Architecture | Implemented |
 | `packages/render` | 2.5D Renderer team | Interfaces + `NullRenderer` |
 | `packages/net` | Netcode team | Interfaces + message schemas; design in its ARCHITECTURE.md |
+| `packages/assets` | Engine/Architecture (format), Art/Renderer (content) | Manifest loader, registry, placeholder art |
+| `packages/testkit` | Engine/Architecture | Headless multi-client harness |
 | `packages/gameplay` | Survival Systems team | Stub (Health, ResourceNode, day/night system) |
 | `apps/client`, `apps/server` | Engine (shared) | Bootstraps |
 
@@ -132,7 +134,55 @@ sequenceDiagram
 2. Floating-point determinism across browsers/Node: rely on reconciliation, or move sim to fixed-point for lockstep features?
 3. Change tracking granularity: per-component bits (arrays included); per-field/element bits requested by gameplay E1/net N8 — still open.
 4. ~~Removed-component tracking for delta replication~~ — resolved by ADR-023 (`world.removed(def)`). Remaining: does net need removal history beyond one tick (it must accumulate per-client between acks itself)?
-5. Chunk streaming/persistence format and server-side save games (reuse snapshot format?).
+5. ~~Chunk streaming/persistence format~~ — ADR-034/035. Open: storage backend, save-game index, async providers (worker generation).
 6. Renderer in a Worker with OffscreenCanvas?
 7. WebTransport timing and unreliable channel semantics.
 8. Scripting/modding layer, and asset pipeline (atlas packing, hot reload).
+
+## 10. World Streaming
+
+- **Coordinates**: chunks are 32×32 tiles with signed int32 chunk coords; `ChunkKey = "cx,cy"`; helpers `chunkKey`, `parseChunkKey`, `chunkOf(pos)`, `chunkKeyOf(x,y)`.
+- **ChunkManager** (extends `TileMap`): interest sources (`setSource({id,x,y,radius?})`) → active set (Chebyshev radius `loadRadius`), `unloadMargin` hysteresis, `maxLoadsPerUpdate` streaming budget, LRU (`cacheSize`) of inactive chunks. Hooks (stable names): `onLoad(chunk, nodes)`, `onUnload(chunk)`.
+- **Providers**: `ChunkProvider.load(cx,cy)` returns `{chunk, nodes}`; `ProceduralGenerator({seed})` is the seeded stub (value-noise biomes + resource-node placements → gameplay spawns ResourceNodes in `onLoad`). A storage-backed provider decodes saved bytes first and falls back to the generator.
+- **Persistence**: components flagged `persistent` are saved with their chunk via `encodeChunk(chunk, {world, entities, buildings})` / `decodeChunk(bytes, {world, buildings})` (versioned, RLE tiles, schema-hash checked, chunk-relative positions). No storage backend in engine packages.
+- **Membership**: `ChunkMembership` (postSim) keeps entity→chunk; used by interest and per-chunk save.
+- **Float precision**: f32 tile units are exact to 1/256 tile within ±65,536 tiles (`F32_SAFE_TILE_RANGE`). Beyond that use `WorldOrigin` rebasing (server regions, client camera) and chunk-relative storage. Never store absolute positions in f32 outside that range.
+
+```mermaid
+flowchart LR
+  P[Players / interest sources] --> CM[ChunkManager.update]
+  CM -- miss --> PR[ChunkProvider: storage → ProceduralGenerator]
+  PR --> CM
+  CM -- onLoad(chunk,nodes) --> GP[gameplay spawns nodes]
+  CM -- onUnload(chunk) --> SV[encodeChunk → app storage]
+  CM --> LRU[(LRU cache)]
+```
+
+## 11. Interest Management
+
+- `InterestGrid(membership, {radius, hysteresis})`; `setClient(id, x, y, radius?)`, `setAlwaysRelevant(id, entities)`, `update()`, `get(id)` → `{chunks, entities, enteredChunks, leftChunks, entered, left}`.
+- Cost per tick: O(clients × (2r+1)²) chunk checks + O(nearby entities); membership updates are O(moved entities).
+- Benchmark (in `packages/world/test/interest.test.ts`, box CPU): 200 players, 50k entities over 64×64 chunks, r=2: initial membership 50k ≈ 20 ms, first interest update ≈ 14 ms, steady tick (2.5k moved entities + interest for 200 players) ≈ 8 ms, ~300 relevant entities/player.
+- Netcode consumes enter/leave for spawn/despawn replication and budget prioritisation.
+
+## 12. Building Grid
+
+- `BuildPieceDef` (data, `loadBuildPieces(raw, {lock, resolveResource})`): `footprint {w,h}`, `levels`, `layer` (0 floor, 1 structure, 2 furniture, 3 decor), `solid`, `cost [{resource, amount}]`, `sockets [{x,y,z?,kind}]` in 1/4-tile units, `hp`, optional sprite.
+- `BuildingGrid`: per-chunk `StructureLayer` (sparse occupancy by level 0..15 × layer × tile; anchored instance set for persistence). `canPlace`, `place`, `remove`, `at`, `isBlocked`, `queryRect`, rotation 0..3, footprints may cross chunk borders.
+- Graph hooks: `supportsOf`, `dependentsOf`, `neighborsOf`, `stabilityRule` + `unstable()`. Sockets: `socketsOf`, `snap(sx, sy, z, {kind, maxDist})`.
+- Engine supplies structures and queries only; costs, permissions, decay, stability/collapse rules are Survival Systems'.
+- Open: thin edge walls (between tiles) are modelled as sockets/layer 1 for now.
+
+## 13. Asset Pipeline
+
+- `@engine/assets`: manifest v1 JSON (`atlases[]`, `sprites[]` with category, anchor, animations {frames, fps, directions 1|4|8, dirStride}).
+- `loadManifest(json, {lock})` validates and assigns stable u16 sprite ids from keys + `ids.lock.json` (`pnpm --filter @engine/assets lock:ids`); `AssetRegistry.frame(id, anim, facing, t)` → atlas rect + pivot; `installAssetHash(world, reg)` adds the id hash to the handshake schema hash.
+- Placeholder art: `pnpm --filter @engine/assets gen:placeholders` writes cute outlined shapes for every category to `packages/assets/sample/`.
+- Renderer team owns texture upload/batching; gameplay maps item/resource/piece ids to sprite keys.
+
+## 14. Testing
+
+- Unit: Vitest per package (`packages/*/test`). Headless helpers in core: `createTestWorld`, `stepN`, `FakeClock`, `TEST_SEED`.
+- Multi-client: `@engine/testkit` `createHarness({clients, makeWorld, applyInput, onClientJoin, link})` → in-process server + N clients over loopback; `h.tick(n)` advances clock, network, server and clients deterministically.
+- Benchmarks live as tests that log `[bench]` lines and assert generous ceilings.
+- `pnpm check` (typecheck + tests) must pass after every change; CI: `.github/workflows/ci.yml`.

@@ -10,3 +10,5 @@ export * from "./math.js";
 export * from "./serialize.js";
 export * from "./assets.js";
 export * from "./input.js";
+export * from "./testing.js";
+export * from "./ids.js";
