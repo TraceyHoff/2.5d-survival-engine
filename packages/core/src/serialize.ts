@@ -23,6 +23,8 @@ export class BinaryWriter {
     }
     this.offset += FieldSize[t];
   }
+  /** Raw bytes (no length prefix). */
+  bytes(b: Uint8Array): void { this.ensure(b.length); new Uint8Array(this.buf, this.offset, b.length).set(b); this.offset += b.length; }
   finish(): Uint8Array { return new Uint8Array(this.buf.slice(0, this.offset)); }
 }
 export class BinaryReader {
@@ -40,6 +42,28 @@ export class BinaryReader {
     }
     this.offset += FieldSize[t]; return v;
   }
+  bytes(n: number): Uint8Array {
+    if (this.remaining < n) throw new RangeError("BinaryReader: out of data");
+    const b = new Uint8Array(this.view.buffer, this.view.byteOffset + this.offset, n).slice(); this.offset += n; return b;
+  }
+}
+
+/**
+ * Variable-length UTF-8 string codec, for message records only (chat, rejection reasons) — never ECS components.
+ * Wire: varint byte length (LEB128, max 4 bytes) + UTF-8 bytes. Strings longer than maxBytes are rejected.
+ */
+const te = new TextEncoder(); const td = new TextDecoder("utf-8", { fatal: true });
+export const STRING_MAX_BYTES = 0x0fffffff;
+export function writeString(w: BinaryWriter, s: string, maxBytes = 4096): void {
+  const b = te.encode(s); if (b.length > maxBytes) throw new RangeError(`string too long: ${b.length} > ${maxBytes}`);
+  let n = b.length; do { let byte = n & 0x7f; n >>>= 7; if (n) byte |= 0x80; w.write("u8", byte); } while (n);
+  w.bytes(b);
+}
+export function readString(r: BinaryReader, maxBytes = 4096): string {
+  let n = 0, shift = 0, byte: number;
+  do { byte = r.read("u8"); n |= (byte & 0x7f) << shift; shift += 7; if (shift > 28) throw new RangeError("bad string length"); } while (byte & 0x80);
+  if (n > maxBytes) throw new RangeError(`string too long: ${n} > ${maxBytes}`);
+  return td.decode(r.bytes(n));
 }
 
 /** Hash of a single component schema (field names, types, quant hints). */

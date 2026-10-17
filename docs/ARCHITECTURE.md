@@ -240,3 +240,32 @@ Guidance:
 - Register `Emitter` and modifier stacks in the shared registration module so component ids match on all peers.
 - Benchmark (`packages/world/test/environment.test.ts`, box CPU): 2k emitters index build ≈ 17 ms; `sampleField` for 200 players ≈ 0.44 ms per tick (≈ 2 µs per sample).
 
+## 16. Social, Permissions, Combat & Crafting Support
+
+Core provides mechanisms; gameplay owns rules (roles, raid windows, damage math, recipes); net owns transport, persistence wiring and lag compensation.
+
+```mermaid
+flowchart TD
+  Cmd[Client command] -->|net decodes| Q[CommandHandlers queue]
+  Q -->|input phase, ordered actor/seq| Perm{can actor target action}
+  Perm --> R[Gameplay rules: raid window, decay] -->|allow/deny| Decide
+  R -->|no opinion| ACL[AccessList deny/allow]
+  ACL -->|no match| Own[OwnedBy player / group role via GroupRegistry]
+  Own -->|unowned| Claim[ClaimRegistry claim at position, zone flags]
+  Claim -->|unclaimed| Def[policy.defaultAllow]
+  ACL --> Decide; Own --> Decide; Claim --> Decide; Def --> Decide
+  Decide -->|deny| Rej[CommandRejected reason -> net -> client]
+  Decide -->|allow| V[validator] --> H[handler: Transaction / JobQueues / DamagePipeline]
+```
+
+| Area | Core/world API | Owner of rules |
+|---|---|---|
+| Identity | `PlayerId` (persistent) vs `Owner.clientId` (transient) | net maps accounts → PlayerId |
+| Groups | `GroupRegistry` (encode/decode, `changesSince`), `Membership`, `OwnedBy` | gameplay (invites, roles), net (sync, save) |
+| Permissions | `definePermissionActions`, `can`, `canAt`, `AccessList`, `addPermissionRule`, `ClaimRegistry`, `zoneAt` | gameplay |
+| Combat | `DamagePipeline` (`pre`/`mitigation`/`post`), `canDamage`, `DamageApplied` | gameplay; lag comp = `@engine/net` `PositionHistory.getPositionAt`, `rangeCheckWithSlack` |
+| Items | `SlotContainer` adapters over gameplay Inventory, `transfer`, `Transaction`/`transaction` | gameplay |
+| Crafting | `Scheduler`, `defineJobQueue` + `JobQueues`, `@engine/assets` `loadRecipes` | gameplay (station range, consumption, refunds) |
+| Chat | `ChannelRegistry`, `TokenBucket`, `MuteList`, `encodeChatMessage`, `writeString` | net (transport) |
+| Commands | `installCommandHandlers`, `CommandRejected` | gameplay handlers, net delivery |
+
