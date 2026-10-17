@@ -66,7 +66,8 @@ Art & Assets' `STYLE_GUIDE.md` and `render_tuning.json`.
 - Depth key = the front-most footprint tile + `z * zFactor` + `layer * 0.01`.
   - Walls split into per-column slices (one per tile column `x - y`), each keyed by its own front tile, so characters sort correctly against long walls.
   - Floors (layer 0, or sprites whose `building.layer` is 0) use ground-plane depth.
-- Level height: `style.levelHeightPx` (default 48 px = 3 z steps of 16 px). A piece on level `L` is drawn `L * levelHeightPx` higher.
+- Level height: `@engine/world` `FLOOR_HEIGHT_LEVELS` (3 terrain z steps = 48 px). A piece on level `L` is drawn at `floorToTerrainZ(L, groundZ)`; the focus' floor (cutaway) is `terrainZToFloor(z, groundZ)`.
+- Rotation / mirroring / damage / state: frames come from `AssetRegistry.buildingFrame(id, rotation, damageStage, state)`. A returned `flipX` (mirror rotationArt, 2 rows) is drawn mirrored around the pivot; slices are mirrored with it. A damage stage whose frame equals the intact frame falls back to the procedural crack overlay. `state` is read from an optional u8 `state` field on the bound BuildPiece component: 0 / absent = default frames, n = building state index n-1 (`registry.stateIndex(id, name) + 1`).
 - Damage: frames from `frames[rot][stage]` when present. Otherwise a procedural crack overlay is used.
 - Ghosts are drawn translucent with a green (1) or red (2) pulse.
 - Roof / upper-level cutaway: if the focus entity stands under a roof or upper level (`BuildingGrid`, flood fill over covered tiles), layer-3 pieces and pieces above the focus level that touch that region fade to `style.cutawayAlpha`.

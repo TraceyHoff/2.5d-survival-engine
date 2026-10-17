@@ -1,52 +1,62 @@
 /**
- * Content loading for the demo:
- *  1. /@art/manifest.json (Art & Assets' real content in /workspace/assets, read-only) when it exists;
- *  2. otherwise the @engine/assets SAMPLE manifest (debug placeholders) + a TexturePacker JSON-hash fixture
- *     (assets/debug/zombies_tp.json) merged through importTexturePacker -> mergeTexturePacker -> loadManifest.
+ * Content loading for the demo / screenshots:
+ *  1. default: Art & Assets' pack via @engine/assets fetchDefaultManifest("/@assets/") (packages/assets/pack/).
+ *     Optional survival_fx manifest fragments from /@art/survival_fx/build/*.json (read-only /workspace/assets) are
+ *     merged into the pack manifest on the way in (keys already in the pack win).
+ *  2. ?content=sample: the @engine/assets SAMPLE fixture + a TexturePacker JSON-hash fixture (assets/debug/zombies_tp.json)
+ *     merged through importTexturePacker -> mergeTexturePacker -> loadManifest (debug only).
  */
-import { loadManifest, type AssetRegistry, type ManifestJson } from "@engine/assets";
+import { DEFAULT_MANIFEST, fetchDefaultManifest, loadManifest, type AssetRegistry, type ManifestJson } from "@engine/assets";
 import { importTexturePacker, mergeTexturePacker, sourcesFromManifest, swayFromManifest, type AtlasSource, type SwayParams, type TPJsonHash } from "../src/index.js";
 
-export interface Content { registry: AssetRegistry; sources: Map<string, AtlasSource>; origin: "art" | "sample"; issues: string[]; sway: Record<string, SwayParams> }
+export interface Content { registry: AssetRegistry; sources: Map<string, AtlasSource>; origin: "pack" | "sample"; issues: string[]; sway: Record<string, SwayParams> }
 
 async function json<T>(url: string): Promise<T | null> {
   try { const r = await fetch(url); if (!r.ok) return null; const ct = r.headers.get("content-type") ?? ""; if (!ct.includes("json")) return null; return (await r.json()) as T; } catch { return null; }
 }
 
-export async function loadContent(opts: { preferArt: boolean }): Promise<Content> {
-  if (opts.preferArt) {
-    const art = await json<ManifestJson>("/@art/manifest.json");
-    if (art) {
-      const lock = await json<Record<string, Record<string, number>>>("/@art/ids.lock.json");
-      // survival_fx manifest fragments ({parts:[{atlas, sprites}]}) merged in; keys already in the base manifest win
-      const issues: string[] = []; const fxAtlases = new Set<string>();
-      const merged = { ...art, atlases: [...art.atlases], sprites: [...art.sprites] };
-      for (const f of ["heat", "status", "wind"]) {
+export const ASSETS_BASE = "/@assets/";
+const FX_FRAGMENTS = ["heat", "status", "wind"];
+
+export async function loadContent(opts: { content: "pack" | "sample" }): Promise<Content> {
+  if (opts.content === "pack") {
+    const manifestUrl = ASSETS_BASE + DEFAULT_MANIFEST;
+    const issues: string[] = []; const fxAtlases = new Set<string>(); let merged: ManifestJson | null = null;
+    // fetcher hook: merge optional survival_fx fragments into the pack manifest before loadManifest
+    const fetcher = async (u: string): Promise<{ ok: boolean; json(): Promise<unknown> }> => {
+      const r = await fetch(u);
+      if (u !== manifestUrl || !r.ok) return r;
+      const pack = (await r.json()) as ManifestJson;
+      const m: ManifestJson = { ...pack, atlases: [...pack.atlases], sprites: [...pack.sprites] };
+      for (const f of FX_FRAGMENTS) {
         const frag = await json<{ parts: { atlas: ManifestJson["atlases"][number]; sprites: ManifestJson["sprites"] }[] }>(`/@art/survival_fx/build/${f}.json`);
         for (const part of frag?.parts ?? []) {
-          if (merged.atlases.some((a) => a.key === part.atlas.key)) { issues.push(`fx atlas ${part.atlas.key} duplicates base`); continue; }
-          merged.atlases.push(part.atlas); fxAtlases.add(part.atlas.key);
-          for (const sp of part.sprites) { if (merged.sprites.some((x) => x.key === sp.key)) { issues.push(`fx sprite ${sp.key} duplicates base (kept base)`); continue; } merged.sprites.push(sp); }
+          if (m.atlases.some((a) => a.key === part.atlas.key)) { issues.push(`fx atlas ${part.atlas.key} duplicates pack`); continue; }
+          m.atlases.push(part.atlas); fxAtlases.add(part.atlas.key);
+          for (const sp of part.sprites) { if (m.sprites.some((x) => x.key === sp.key)) { issues.push(`fx sprite ${sp.key} duplicates pack (kept pack)`); continue; } m.sprites.push(sp); }
         }
       }
-      const { registry } = loadManifest(merged, lock ? { lock } : {});
-      const sw = swayFromManifest(merged);
-      const sources = sourcesFromManifest(registry, "/@art/manifest.json");
-      for (const k of fxAtlases) { const a = registry.atlases.get(k)!; sources.set(k, { url: `/@art/survival_fx/atlases/${a.image}`, emissiveUrl: a.emissiveImage ? `/@art/survival_fx/atlases/${a.emissiveImage}` : null }); }
-      return { registry, sources, origin: "art", issues: [...issues, ...sw.issues], sway: sw.table };
-    }
+      merged = m;
+      return { ok: true, json: async () => m };
+    };
+    const { registry } = await fetchDefaultManifest(ASSETS_BASE, fetcher);
+    const sources = sourcesFromManifest(registry, manifestUrl);
+    for (const k of fxAtlases) { const a = registry.atlases.get(k)!; sources.set(k, { url: `/@art/survival_fx/atlases/${a.image}`, emissiveUrl: a.emissiveImage ? `/@art/survival_fx/atlases/${a.emissiveImage}` : null }); }
+    // sway: SpriteDef.sway is read by AtlasManager directly; fragments may still carry legacy sway blocks
+    const sw = merged ? swayFromManifest(merged) : { table: {}, issues: [] as string[] };
+    return { registry, sources, origin: "pack", issues: [...issues, ...sw.issues], sway: sw.table };
   }
-  const base = await json<ManifestJson>("/@sample/manifest.json");
-  if (!base) throw new Error("sample manifest not found (/@sample/manifest.json)");
-  const lock = await json<Record<string, Record<string, number>>>("/@sample/ids.lock.json");
+  const base = await json<ManifestJson>("/@assets/sample/manifest.json");
+  if (!base) throw new Error("sample fixture not found (/@assets/sample/manifest.json)");
+  const lock = await json<Record<string, Record<string, number>>>("/@assets/sample/ids.lock.json");
   const tp = await json<TPJsonHash>("/debug/zombies_tp.json");
   const imports = tp ? [importTexturePacker(tp, { key: "zombies_tp", category: "zombie" })] : [];
-  const merged = mergeTexturePacker(base, imports);
-  const { registry } = loadManifest(merged.manifest, lock ? { lock } : {});
-  const sources = sourcesFromManifest(registry, "/@sample/manifest.json", merged.rects);
-  if (tp) sources.set("zombies_tp", { url: "/debug/zombies_tp.png", emissiveUrl: null, rects: merged.rects["zombies_tp"]! });
-  const sw = swayFromManifest(merged.manifest);
-  return { registry, sources, origin: "sample", issues: [...merged.issues, ...imports.flatMap((i) => i.issues), ...sw.issues], sway: sw.table };
+  const mergedS = mergeTexturePacker(base, imports);
+  const { registry } = loadManifest(mergedS.manifest, lock ? { lock } : {});
+  const sources = sourcesFromManifest(registry, "/@assets/sample/manifest.json", mergedS.rects);
+  if (tp) sources.set("zombies_tp", { url: "/debug/zombies_tp.png", emissiveUrl: null, rects: mergedS.rects["zombies_tp"]! });
+  const sw = swayFromManifest(mergedS.manifest);
+  return { registry, sources, origin: "sample", issues: [...mergedS.issues, ...imports.flatMap((i) => i.issues), ...sw.issues], sway: sw.table };
 }
 
 /** DEBUG theme: hue-shifted copies of some atlases, generated at runtime (exercises registerTheme/setTheme only). */

@@ -30,7 +30,7 @@ const fbm = (n: (x: number, y: number) => number, x: number, y: number): number 
 
 export interface Scene { map: TileMap; grid: BuildingGrid; index: ChunkedSpatialIndex; player: Entity; players: Entity[]; zombies: Entity[]; base: { x: number; y: number; w: number; h: number }; spriteCount: number; pieceCount: number; size: number }
 
-export function buildScene(world: World, reg: AssetRegistry, opts: { size: number; seed: number; density: number; zombies: number; inside: boolean }): Scene {
+export function buildScene(world: World, reg: AssetRegistry, opts: { size: number; seed: number; density: number; zombies: number; inside: boolean; occlusionTest?: boolean }): Scene {
   const { size, seed } = opts; const rng = new Rng(seed);
   const elev = valueNoise(seed);
   const map = new TileMap(); const index = new ChunkedSpatialIndex();
@@ -59,6 +59,9 @@ export function buildScene(world: World, reg: AssetRegistry, opts: { size: numbe
   };
   const light = (e: Entity, r: number, g: number, b: number, radius: number, intensity: number, flicker: number): void => { world.add(e, LightSource, { r, g, b, radius, intensity, flicker }); };
 
+  // pack tree variants when present (fixture has only "tree")
+  const trees = ["tree", "tree_pine", "tree_autumn", "tree_apple", "tree_twisty"].filter((k) => reg.ids.sprites.tryId(k) !== undefined);
+  const treeKey = (r: number): string => trees[Math.floor(r * 997) % trees.length]!;
   // resources
   for (let y = 1; y < size - 1; y++) for (let x = 1; x < size - 1; x++) {
     if (Math.abs(x - cx) < 9 && Math.abs(y - cy) < 12) continue;
@@ -68,13 +71,13 @@ export function buildScene(world: World, reg: AssetRegistry, opts: { size: numbe
       const r = rng.next(); const px = x + rng.range(0.2, 0.8), py = y + rng.range(0.2, 0.8);
       const flip = rng.next() < 0.5 ? SpriteFlag.FlipX : 0;
       if (id === TileId.Grass) {
-        if (r < 0.32) spawn(px, py, "tree", { flags: flip | SpriteFlag.Sway, scale: rng.range(1.1, 1.6), shadow: 1, occl: true });
+        if (r < 0.32) spawn(px, py, treeKey(r), { flags: flip | SpriteFlag.Sway, scale: rng.range(1.1, 1.6), shadow: 1 });
         else if (r < 0.42) spawn(px, py, "berry_bush", { flags: flip | SpriteFlag.Sway, scale: rng.range(0.9, 1.2), shadow: 0.8 });
         else if (r < 0.47) spawn(px, py, "boulder", { flags: flip, shadow: 0.9 });
       } else if (id === TileId.Dirt || id === TileId.Stone) {
         if (r < 0.2) spawn(px, py, "boulder", { flags: flip, scale: rng.range(1, 1.4), shadow: 0.9 });
         else if (r < 0.32) spawn(px, py, "iron_vein", { flags: flip, shadow: 0.9 });
-        else if (r < 0.4) spawn(px, py, "tree", { flags: flip | SpriteFlag.Sway, scale: 1.2, shadow: 1, occl: true });
+        else if (r < 0.4) spawn(px, py, trees.includes("tree_pine") ? "tree_pine" : "tree", { flags: flip | SpriteFlag.Sway, scale: 1.2, shadow: 1 });
       } else if (id === TileId.Sand && r < 0.05) spawn(px, py, "boulder", { scale: 0.8, shadow: 0.8 });
     }
   }
@@ -133,7 +136,8 @@ export function buildScene(world: World, reg: AssetRegistry, opts: { size: numbe
   const players: Entity[] = [];
   for (let i = 0; i < 3; i++) {
     const t = tints[(i * 3) % tints.length]! >>> 0; const tint = ((t << 8) | 0xff) >>> 0;
-    const e = spawn(base.x + base.w + 2 + i * 1.2, base.y + base.h + 1.5, "player", { scale: 1.4, shadow: 1, tint: i === 0 ? 0 : tint });
+    const pk = i > 0 && reg.ids.sprites.tryId(i === 1 ? "player_b" : "player_c") !== undefined ? (i === 1 ? "player_b" : "player_c") : "player";
+    const e = spawn(base.x + base.w + 2 + i * 1.2, base.y + base.h + 1.5, pk, { scale: 1.4, shadow: 1, tint: i === 0 ? 0 : tint });
     world.add(e, AnimState, { state: AnimStateId.Idle, startTick: i * 7 });
     world.add(e, Wetness, { level: 0 }); world.add(e, BodyTemp, { cold: 0, heat: 0, shivering: 0 });
     world.get(e, Transform); players.push(e);
@@ -141,6 +145,11 @@ export function buildScene(world: World, reg: AssetRegistry, opts: { size: numbe
   const player = players[0]!;
   if (opts.inside) { world.set(player, Transform, { x: base.x + 2.5, y: base.y + 2.5 }); index.insert(player, base.x + 2.5, base.y + 2.5); }
   light(player, 1, 0.86, 0.62, 4, 0.8, 0.08);
+  if (opts.occlusionTest) { // a tall tree and a boulder right in front of the local player (occlusion fade / silhouette check)
+    const t = world.get(player, Transform)!;
+    spawn(t.x + 0.9, t.y + 1.0, trees.includes("tree_pine") ? "tree_pine" : "tree", { flags: SpriteFlag.Sway, scale: 1.5, shadow: 1 });
+    spawn(t.x - 0.4, t.y + 2.2, treeKey(0.4), { flags: SpriteFlag.Sway, scale: 1.4, shadow: 1 });
+  }
   // zombies: native sample sprite + TexturePacker-imported one (if loaded)
   const zombies: Entity[] = [];
   const hasTP = reg.ids.sprites.tryId("zombie_tp") !== undefined;

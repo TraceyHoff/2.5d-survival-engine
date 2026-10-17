@@ -56,6 +56,10 @@ const SHOTS = {
   fire: "time=22.5&weather=clear&cam=fire&zoom=3&shot=1",
   dusk: "time=18.6&weather=fog&intensity=0.6&shot=1",
   zoomout: "time=11&weather=clear&zoom=0.35&shot=1",
+  occlusion: "time=10&weather=clear&occtest=1&zoom=2.4&shot=1",
+  occlusion_dither: "time=10&weather=clear&occtest=1&zoom=2.4&occ=dither&shot=1",
+  occlusion_off: "time=10&weather=clear&occtest=1&zoom=2.4&occ=off&shot=1",
+  fixture: "time=10&weather=clear&content=sample&shot=1",
 };
 if (process.env.EXTRA) for (const [i, q] of process.env.EXTRA.split("|").entries()) { SHOTS[`extra${i}`] = q; ONLY?.add(`extra${i}`); }
 for (const [name, query] of Object.entries(SHOTS)) {

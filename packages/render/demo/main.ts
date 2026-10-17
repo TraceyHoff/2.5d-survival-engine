@@ -2,7 +2,7 @@
  * Render demo: real @engine/core World + createGameLoop (20 Hz) driving IsoRenderer, content from
  * /workspace/assets (if present) or the @engine/assets sample manifest (debug placeholders) + a TexturePacker fixture.
  * URL params: time=0..24 weather=clear|rain|storm|snow|fog|<id> intensity=0..1 density=1 zombies=200 size=128 seed=7
- *             zoom=1 freeze=1 ui=0 lights=0 shadows=0 bench=SECONDS theme=alt gallery=1 inside=1 art=0 interp=0
+ *             zoom=1 freeze=1 ui=0 lights=0 shadows=0 bench=SECONDS theme=alt gallery=1 inside=1 content=sample interp=0 occtest=1 occ=fade|dither|off sil=0
  */
 import { World, InputState, Action, createGameLoop, Transform, entityIndex, PrevTransform, Weather } from "@engine/core";
 import { IsoRenderer } from "../src/index.js";
@@ -22,7 +22,7 @@ let lookInfo: { warnings: string[]; loaded: string[] } = { warnings: [], loaded:
 
 async function main(): Promise<void> {
   const canvas = document.getElementById("game") as HTMLCanvasElement;
-  const content = await loadContent({ preferArt: q.get("art") !== "0" });
+  const content = await loadContent({ content: q.get("content") === "sample" ? "sample" : "pack" });
   if (content.issues.length) console.warn("content issues", content.issues);
   const world = new World({ seed: num("seed", 7) });
   IsoRenderer.registerComponents(world);
@@ -37,14 +37,14 @@ async function main(): Promise<void> {
 
   const renderer = new IsoRenderer(canvas, { preserveDrawingBuffer: q.has("bench") || q.has("shot") });
   await renderer.atlas.setRegistry(content.registry, content.sources);
-  renderer.atlas.setSway({ ...(content.origin === "sample" ? { tree: { amp: 4, freq: 0.35, stiffness: 1.6 }, berry_bush: { amp: 2, freq: 0.6, stiffness: 1.2 } } : {}), ...content.sway }); // sample: DEBUG defaults; art: manifest sway blocks
+  renderer.atlas.setSway({ ...(content.origin === "sample" ? { tree: { amp: 4, freq: 0.35, stiffness: 0.5 }, berry_bush: { amp: 2, freq: 0.6, stiffness: 0.3 } } : {}), ...content.sway }); // pack: SpriteDef.sway (read by AtlasManager); sample fixture: DEBUG defaults
   if (q.get("look") !== "0") { const look = await renderer.loadLook(q.get("look") ?? "/@art/survival_fx/render_tuning.json"); if (look.warnings.length) console.warn("render tuning:", look.warnings); lookInfo = look; }
   const alt = await makeDebugTheme(content.sources, ["characters", "zombies", "zombies_tp"], 150);
   renderer.atlas.registerTheme("alt", alt);
   if (q.get("theme") === "alt") await renderer.atlas.setTheme("alt");
-  if (q.get("gallery") === "1") { showGallery(renderer.atlas, content.registry, `${content.origin === "art" ? "/workspace/assets" : "@engine/assets sample (DEBUG placeholders)"}${q.get("theme") === "alt" ? " — theme alt" : ""}`); window.__iso = { ready: true, gallery: true }; return; }
+  if (q.get("gallery") === "1") { showGallery(renderer.atlas, content.registry, `${content.origin === "pack" ? "@engine/assets pack (fetchDefaultManifest)" : "@engine/assets sample fixture (DEBUG)"}${q.get("theme") === "alt" ? " — theme alt" : ""}`); window.__iso = { ready: true, gallery: true }; return; }
 
-  const scene = buildScene(world, content.registry, { size: num("size", 128), seed: num("seed", 7), density: num("density", 1), zombies: num("zombies", 200), inside: q.get("inside") === "1" });
+  const scene = buildScene(world, content.registry, { size: num("size", 128), seed: num("seed", 7), density: num("density", 1), zombies: num("zombies", 200), inside: q.get("inside") === "1", occlusionTest: q.get("occtest") === "1" });
   renderer.tilemap = scene.map;
   renderer.bindGameplay({ buildPiece: BuildPiece, animState: AnimState, wetness: Wetness, bodyTemp: BodyTemp, emitter: Emitter, lit: Fuel });
   renderer.setBuildingGrid(scene.grid);
@@ -54,6 +54,8 @@ async function main(): Promise<void> {
   renderer.vfx.onEvent("hit", (ev) => spark === undefined ? null : { spriteId: spark, x: ev.payload.x!, y: ev.payload.y!, z: ev.payload.z ?? 0, lifetime: 0.4, scale: 1.2 });
   try { const r = await fetch("/@art/survival_fx/textures/heat_shimmer_rg_128.png"); if (r.ok && (r.headers.get("content-type") ?? "").includes("image")) renderer.setShimmerNoise(await createImageBitmap(await r.blob())); } catch { /* procedural fallback */ }
   if (q.get("bloom") === "0") renderer.setStyle({ bloom: { strength: 0 } });
+  { const m = q.get("occ"); if (m === "off") renderer.setStyle({ occlusion: { enabled: false } }); else if (m === "fade" || m === "dither") renderer.setStyle({ occlusion: { mode: m } }); }
+  if (q.get("sil") === "0") renderer.setStyle({ occlusion: { silhouette: false } });
   if (q.get("lights") === "0") renderer.settings.lights = false;
   if (q.get("shadows") === "0") renderer.settings.shadows = false;
   const cam = renderer.camera;

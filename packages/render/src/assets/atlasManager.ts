@@ -5,7 +5,13 @@
  *   AssetManager, packs every atlas image into layers of ONE RGBA8 TEXTURE_2D_ARRAY (default 2048²,
  *   mipmapped) plus a parallel emissive array with the identical layout, so all sprites from all
  *   atlases draw in a single instanced call.
- * - Builds a frame table (RGBA32F texture, 2 texels/entry: uv rect, size+layer+emissive flag)
+ * - Scale pages (Atlas.pages, ADR-070): the page for the current quality tier's target scale is picked with
+ *   AssetRegistry.pickPage(atlas, scale) and packed instead of the 1x image; frame sizes stay in 1x px, only the
+ *   uv rect changes. Mask pages (Atlas.masks emissive/sheen/sway/tintmask) share the 1x layout and are sampled by
+ *   the same UVs: they are resized to the chosen page on upload, so one mask covers every scale.
+ * - Status tint table (RGBA32F, 8 texels/row): row 0 = global status tints (render_tuning), one row per sprite with
+ *   SpriteDef.tints overrides. The row index rides in the frame table flags.
+ * - Builds a frame table (RGBA32F texture, 2 texels/entry: uv rect, size+layer+flags; flags = mask bits | tintRow << 4)
  *   indexed by `atlasBase[atlasId] + frameIndex`. Grid atlases use the manifest grid; TexturePacker
  *   atlases supply a RectTable (see texturePacker.ts).
  * - Precomputes per-sprite animation tables at load time so render-time resolution is array math
@@ -13,11 +19,19 @@
  * - Runtime switching: swapAtlas()/setTheme() replace atlas images (same layout & sprite keys -> same
  *   numeric ids), so ECS data is untouched. Old images are released (ref-counted) after the swap.
  */
-import { AssetRegistry, type Animation } from "@engine/assets";
+import { AssetRegistry, type Animation, type Atlas } from "@engine/assets";
+import { STATUS_TINTS, TINT_MODE_INDEX, type StatusTint, type StatusTintName } from "../style.js";
 import type { AssetManager } from "@engine/core";
 import type { RectTable } from "./texturePacker.js";
 
-export interface AtlasSource { url: string; emissiveUrl?: string | null; rects?: RectTable }
+export type MaskName = "sheen" | "sway" | "tintmask";
+/** Frame-table flag bits (low 4 bits of the flags float; tint row = flags >> 4). */
+export const FrameBits = { Emissive: 1, Sheen: 2, Sway: 4, TintMask: 8 } as const;
+/**
+ * Where an atlas' images live. `pages` = extra scale pages (1x = url). `masks`: one URL or candidate URLs tried in
+ * order (explicit manifest path, then sibling `<atlas>_<mask>.png`, then a fallback folder); missing ones are skipped.
+ */
+export interface AtlasSource { url: string; emissiveUrl?: string | null; rects?: RectTable; pages?: { scale: number; url: string }[]; masks?: Partial<Record<MaskName, string | string[]>> }
 export type ImageLike = ImageBitmap | HTMLImageElement | HTMLCanvasElement | OffscreenCanvas;
 
 /** AnimState.state -> animation names tried in order (first animation is the final fallback). */
@@ -36,7 +50,8 @@ interface SpriteRT {
   /** From the manifest's `building` block: footprint, layer, frames[rotation][damageStage]. */
   building?: { fw: number; fh: number; layer: number; frames: number[][] };
 }
-interface AtlasRT { key: string; id: number; source: AtlasSource; img: ImageLike | null; emis: ImageLike | null; base: number; count: number; fw: number; fh: number; cols: number; layer: number; px: number; py: number }
+interface AtlasRT { key: string; id: number; source: AtlasSource; img: ImageLike | null; emis: ImageLike | null; scale: number;
+  masks: Partial<Record<MaskName, ImageLike>>; maskUrls: Partial<Record<MaskName, string>>; base: number; count: number; fw: number; fh: number; cols: number; layer: number; px: number; py: number }
 
 export interface SwayParams { amp: number; freq: number; stiffness: number }
 /** Read optional per-sprite `sway: {amp, freq, stiffness}` blocks from raw manifest JSON (loadManifest ignores them). */
@@ -46,7 +61,7 @@ export function swayFromManifest(json: unknown): { table: Record<string, SwayPar
   for (const sp of sprites as { key?: string; sway?: Partial<SwayParams> }[]) {
     if (!sp?.sway || !sp.key) continue; const w = sp.sway;
     if (![w.amp, w.freq].every((n) => typeof n === "number" && Number.isFinite(n) && n >= 0)) { issues.push(`${sp.key}: bad sway`); continue; }
-    table[sp.key] = { amp: w.amp!, freq: w.freq!, stiffness: typeof w.stiffness === "number" ? w.stiffness : 1.5 };
+    table[sp.key] = { amp: w.amp!, freq: w.freq!, stiffness: typeof w.stiffness === "number" ? w.stiffness : 0.5 };
   }
   return { table, issues };
 }
@@ -54,15 +69,38 @@ export interface AtlasStats { layers: number; layerSize: number; atlases: number
 
 const TABLE_W = 1024; // entries per frame-table row
 
-/** Image sources for every atlas of a manifest-loaded registry, relative to the manifest URL (emissive pages included). */
-export function sourcesFromManifest(registry: AssetRegistry, manifestUrl: string, rects: Record<string, RectTable> = {}): Map<string, AtlasSource> {
+/**
+ * Image sources for every atlas of a manifest-loaded registry: scale pages (Atlas.pages) and masks (Atlas.masks).
+ * `resolve` maps a manifest image path to a URL (default: relative to the manifest URL). Masks the manifest does not
+ * name are looked up as siblings `<atlas image stem>_<mask>.png` and then under `fallbackMaskDirs[mask]`.
+ */
+export function sourcesFromManifest(registry: AssetRegistry, manifestUrl: string, rects: Record<string, RectTable> = {},
+  opts: { resolve?: (path: string) => string; fallbackMaskDirs?: Partial<Record<MaskName, string>>; probeSiblings?: boolean } = {}): Map<string, AtlasSource> {
   const base = manifestUrl.replace(/[^/]*$/, "");
+  const resolve = opts.resolve ?? ((p: string) => (/^(\/|[a-z]+:)/i.test(p) ? p : base + p));
   const out = new Map<string, AtlasSource>();
   for (const a of registry.atlases.values()) {
     const r = rects[a.key];
-    out.set(a.key, { url: base + a.image, emissiveUrl: a.emissiveImage ? base + a.emissiveImage : null, ...(r ? { rects: r } : {}) });
+    const pages = (a.pages ?? []).filter((p) => p.scale !== 1).map((p) => ({ scale: p.scale, url: resolve(p.image) }));
+    const masks: Partial<Record<MaskName, string[]>> = {};
+    for (const m of ["sheen", "sway", "tintmask"] as const) {
+      const c: string[] = []; const explicit = a.masks?.[m];
+      if (explicit) c.push(resolve(explicit));
+      if (opts.probeSiblings !== false) c.push(resolve(a.image).replace(/(\.[a-z]+)$/i, `_${m}$1`));
+      const dir = opts.fallbackMaskDirs?.[m]; if (dir) c.push(`${dir.replace(/\/?$/, "/")}${a.image.replace(/^.*\//, "").replace(/(\.[a-z]+)$/i, `_${m}$1`)}`);
+      if (c.length) masks[m] = [...new Set(c)];
+    }
+    out.set(a.key, { url: resolve(a.image), emissiveUrl: a.emissiveImage ? resolve(a.emissiveImage) : null, ...(r ? { rects: r } : {}), ...(pages.length ? { pages } : {}), masks });
   }
   return out;
+}
+
+/** Resize a mask to the chosen page size (masks share the 1x layout; sampled by the same UVs). null when impossible. */
+async function fitToPage(img: ImageLike, w: number, h: number): Promise<ImageLike | null> {
+  if (img.width === w && img.height === h) return img;
+  if (typeof createImageBitmap !== "function") return null;
+  if (Math.abs(img.width / img.height - w / h) > 0.01) return null; // not the same layout
+  return createImageBitmap(img as ImageBitmapSource, { resizeWidth: w, resizeHeight: h, resizeQuality: "pixelated", premultiplyAlpha: "none", colorSpaceConversion: "none" } as ImageBitmapOptions);
 }
 
 export async function defaultImageLoader(url: string): Promise<ImageLike> {
@@ -75,7 +113,16 @@ export class AtlasManager {
   readonly layerSize: number;
   tex: WebGLTexture | null = null;
   emisTex: WebGLTexture | null = null;
+  /** sheen (R sheen, G darken, B drip spawn), sway weight (R) and tint mask arrays, same layout as `tex`. */
+  sheenTex: WebGLTexture | null = null; swayTex: WebGLTexture | null = null; tintMaskTex: WebGLTexture | null = null;
+  /** Status tint table (see header). */
+  tintTex: WebGLTexture | null = null;
   frameTex: WebGLTexture | null = null;
+  /** Target page scale (quality tier x dpr x zoom); pages are chosen with AssetRegistry.pickPage. */
+  private pageScale = 1;
+  private statusTints: Record<StatusTintName, StatusTint> | null = null;
+  private tintRows: (Record<string, { color: number; strength: number; mode: string; saturation?: number }> | null)[] = [null];
+  private maskPixels = new Map<string, { w: number; h: number; data: Uint8ClampedArray } | null>();
   registry: AssetRegistry | null = null;
   /** Bumped on every successful (re)build. */
   version = 0;
@@ -85,25 +132,28 @@ export class AtlasManager {
   private held: [string, string][] = []; // (kind,url) pairs held in AssetManager
   private themes = new Map<string, Record<string, AtlasSource>>();
   private baseSources = new Map<string, AtlasSource>();
-  private layers = 0;
+  private layers = 0; private maxLayers = 256;
   private totalFrames = 0;
   private hasEmissive = false;
   static readonly IMAGE_KIND = "render:image";
   private swayByKey = new Map<string, SwayParams>();
   private swayById: (Float32Array | undefined)[] = [];
 
-  /** Per-sprite wind sway {amp px, freq Hz, stiffness} (from the manifest's optional `sway` blocks, see swayFromManifest). */
+  /** Per-sprite wind sway overrides {amp px at frame top, freq Hz, stiffness 0..1 (higher = stiffer)}; SpriteDef.sway is the default source. */
   setSway(table: Record<string, SwayParams>): void { for (const [k, v] of Object.entries(table)) this.swayByKey.set(k, v); this.resolveSway(); }
   swayOf(spriteId: number): Float32Array | undefined { return this.swayById[spriteId]; }
   private resolveSway(): void {
     this.swayById = [];
     if (!this.registry) return;
+    // SpriteDef.sway (manifest) is the source; setSway() entries override per key
+    for (const sp of this.registry.allSprites()) if (sp.sway) this.swayById[sp.id] = new Float32Array([sp.sway.amp, sp.sway.freq, sp.sway.stiffness]);
     for (const [k, v] of this.swayByKey) { const id = this.registry.ids.sprites.tryId(k); if (id !== undefined) this.swayById[id] = new Float32Array([v.amp, v.freq, v.stiffness]); }
   }
 
   constructor(private gl: WebGL2RenderingContext, private assets: AssetManager, opts: { layerSize?: number; imageLoader?: (url: string) => Promise<ImageLike> } = {}) {
     const max = gl.getParameter(gl.MAX_TEXTURE_SIZE) as number;
     this.layerSize = Math.min(opts.layerSize ?? 2048, max);
+    this.maxLayers = gl.getParameter(gl.MAX_ARRAY_TEXTURE_LAYERS) as number;
     assets.registerLoader<ImageLike>(AtlasManager.IMAGE_KIND, opts.imageLoader ?? defaultImageLoader);
   }
 
@@ -127,6 +177,31 @@ export class AtlasManager {
     await this.rebuild(this.registry, merged);
   }
 
+  /**
+   * Quality-tier page selection: atlases with scale pages use AssetRegistry.pickPage(atlas, scale). Rebuilds (async)
+   * when the choice changes. Pages that do not fit a layer fall back to the next smaller page.
+   */
+  async setPageScale(scale: number): Promise<boolean> {
+    const s = scale >= 1.5 ? 2 : 1; if (s === this.pageScale) return false;
+    this.pageScale = s;
+    if (!this.registry) return false;
+    const changes = this.atlases.some((a) => this.pickScale(this.registry!.atlases.get(a.key)!, a.source) !== a.scale);
+    if (!changes) return false;
+    await this.rebuild(this.registry, new Map(this.atlases.map((a) => [a.key, a.source] as [string, AtlasSource])));
+    return true;
+  }
+  get currentPageScale(): number { return this.pageScale; }
+  private pickScale(atlas: Atlas | undefined, src: AtlasSource): number {
+    if (!src.pages?.length || !atlas) return 1;
+    const want = atlas.pages?.length ? AssetRegistry.pickPage(atlas, this.pageScale).scale : this.pageScale;
+    const ok = (k: number) => k === 1 || ((src.pages!.some((p) => p.scale === k)) && atlas.columns * atlas.frameW * k <= this.layerSize && atlas.rows * atlas.frameH * k <= this.layerSize);
+    for (const k of [...new Set([want, ...src.pages.map((p) => p.scale).filter((k) => k < want).sort((a, b) => b - a), 1])]) if (ok(k)) return k;
+    return 1;
+  }
+
+  /** Global status tints (row 0 of the tint table). Per-sprite SpriteDef.tints override by name. */
+  setStatusTints(t: Record<StatusTintName, StatusTint>): void { this.statusTints = t; if (this.registry) this.uploadTints(); }
+
   /** Replace the image of one atlas (same layout). */
   async swapAtlas(atlasKey: string, source: AtlasSource): Promise<void> {
     if (!this.registry) throw new Error("swapAtlas before setRegistry");
@@ -141,15 +216,27 @@ export class AtlasManager {
       if (!url) return null;
       try { return await load(url); } catch { held.pop(); this.assets.release(AtlasManager.IMAGE_KIND, url); return null; }
     };
+    const firstOf = async (c: string | string[] | undefined): Promise<[ImageLike | null, string | undefined]> => {
+      for (const u of c === undefined ? [] : Array.isArray(c) ? c : [c]) { const im = await loadOpt(u); if (im) return [im, u]; }
+      return [null, undefined];
+    };
     const list: AtlasRT[] = [];
     await Promise.all([...registry.atlases.values()].map(async (a) => {
       const src = sources.get(a.key); if (!src) throw new Error(`no image source for atlas "${a.key}"`);
-      const [img, emis] = await Promise.all([load(src.url), loadOpt(src.emissiveUrl)]);
-      list.push({ key: a.key, id: a.id, source: src, img, emis, base: 0, count: src.rects ? src.rects.length : a.columns * a.rows, fw: a.frameW, fh: a.frameH, cols: a.columns, layer: 0, px: 0, py: 0 });
+      let scale = this.pickScale(a, src);
+      const pageUrl = scale === 1 ? src.url : src.pages!.find((p) => p.scale === scale)!.url;
+      let [img, emis] = await Promise.all([loadOpt(pageUrl), loadOpt(src.emissiveUrl)]);
+      if (!img) { scale = 1; img = await load(src.url); }
+      const masks: AtlasRT["masks"] = {}; const maskUrls: AtlasRT["maskUrls"] = {};
+      for (const m of ["sheen", "sway", "tintmask"] as const) { const [im, u] = await firstOf(src.masks?.[m]); if (im && u) { masks[m] = im; maskUrls[m] = u; } }
+      // masks (and the 1x emissive page) are resized to the chosen page so they line up under the same UVs
+      if (emis) emis = await fitToPage(emis, img.width, img.height);
+      for (const m of Object.keys(masks) as MaskName[]) { const f = await fitToPage(masks[m]!, img.width, img.height); if (f) masks[m] = f; else { delete masks[m]; delete maskUrls[m]; } }
+      list.push({ key: a.key, id: a.id, source: src, img, emis, scale, masks, maskUrls, base: 0, count: src.rects ? src.rects.length : a.columns * a.rows, fw: a.frameW, fh: a.frameH, cols: a.columns, layer: 0, px: 0, py: 0 });
     }));
     list.sort((a, b) => a.id - b.id);
     this.pack(list);
-    this.upload(list);
+    this.upload(list, this.frameTintRows(registry, list));
     // sprite runtime tables
     const sprites: (SpriteRT | undefined)[] = [];
     for (const s of registry.allSprites()) {
@@ -172,6 +259,8 @@ export class AtlasManager {
         ...(b ? { building: { fw: b.footprint.w, fh: b.footprint.h, layer: b.layer, frames: b.frames } } : {}) };
     }
     this.atlases = list; this.atlasById = new Map(list.map((a) => [a.id, a])); this.sprites = sprites; this.registry = registry; this.resolveSway();
+    this.uploadTints();
+    this.maskPixels.clear();
     this.held = held; this.version++;
     for (const [k, u] of prevHeld) this.assets.release(k, u);
   }
@@ -193,7 +282,77 @@ export class AtlasManager {
     this.totalFrames = base;
   }
 
-  private upload(list: AtlasRT[]): void {
+  /** frame entry -> tint row (sprites with SpriteDef.tints get their own row; 0 = globals). */
+  private frameTintRows(registry: AssetRegistry, list: AtlasRT[]): Map<number, number> {
+    const rows: AtlasManager["tintRows"] = [null]; const map = new Map<number, number>();
+    for (const s of registry.allSprites()) {
+      const tints = (s as { tints?: Record<string, { color: number; strength: number; mode: string; saturation?: number }> }).tints;
+      if (!tints || !Object.keys(tints).length) continue;
+      const at = list.find((a) => a.id === s.atlas.id); if (!at) continue;
+      const row = rows.length; rows.push(tints);
+      const mark = (f: number) => { if (f >= 0 && f < at.count) map.set(at.base + f, row); };
+      for (const an of s.animList) for (let d = 0; d < an.directions; d++) for (const f of an.frames) mark(f + d * an.dirStride);
+      for (const r of s.building?.frames ?? []) for (const f of r) mark(f);
+      for (const st of s.building?.states ?? []) for (const r of st) for (const f of r) mark(f);
+    }
+    this.tintRows = rows;
+    return map;
+  }
+
+  private uploadTints(): void {
+    const gl = this.gl; const rows = this.tintRows; const W = STATUS_TINTS.length * 2;
+    const data = new Float32Array(W * rows.length * 4);
+    const g = this.statusTints;
+    rows.forEach((over, r) => {
+      STATUS_TINTS.forEach((name, i) => {
+        const o = (r * W + i * 2) * 4; const t = over?.[name]; const d = g?.[name];
+        if (t) {
+          data[o] = ((t.color >>> 16) & 255) / 255; data[o + 1] = ((t.color >>> 8) & 255) / 255; data[o + 2] = (t.color & 255) / 255; data[o + 3] = t.strength;
+          data[o + 4] = TINT_MODE_INDEX[t.mode as keyof typeof TINT_MODE_INDEX] ?? 0; data[o + 5] = t.saturation ?? 1; data[o + 6] = 1;
+        } else if (d) {
+          data[o] = d.color[0]; data[o + 1] = d.color[1]; data[o + 2] = d.color[2]; data[o + 3] = d.strength;
+          data[o + 4] = TINT_MODE_INDEX[d.mode]; data[o + 5] = d.saturation;
+        } else { data[o] = data[o + 1] = data[o + 2] = 1; data[o + 3] = 0; data[o + 5] = 1; }
+      });
+    });
+    if (this.tintTex) gl.deleteTexture(this.tintTex);
+    const t = gl.createTexture()!; gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, W, rows.length, 0, gl.RGBA, gl.FLOAT, data);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    this.tintTex = t;
+  }
+
+  /**
+   * A random drip spawn point (sheen mask B > 0.5) of a frame, relative to the pivot in 1x px, or null (no sheen mask /
+   * no B pixels / no 2D canvas). Pixels are read once per atlas and cached.
+   */
+  dripPoint(spriteId: number, entryHint: number, rnd: () => number): [number, number] | null {
+    const s = this.sprites[spriteId]; if (!s) return null; const a = this.atlases[s.atlasIdx]!;
+    const mask = a.masks.sheen; if (!mask) return null;
+    let px = this.maskPixels.get(a.key);
+    if (px === undefined) {
+      px = null;
+      try {
+        if (typeof OffscreenCanvas !== "undefined") {
+          const c = new OffscreenCanvas(mask.width, mask.height); const g = c.getContext("2d")!; g.drawImage(mask as CanvasImageSource, 0, 0);
+          px = { w: mask.width, h: mask.height, data: g.getImageData(0, 0, mask.width, mask.height).data };
+        }
+      } catch { px = null; }
+      this.maskPixels.set(a.key, px);
+    }
+    if (!px) return null;
+    const f = entryHint - a.base; if (f < 0 || f >= a.count) return null;
+    const k = a.scale; const r = a.source.rects?.[f];
+    const fx = (r ? r.x : (f % a.cols) * a.fw) * k, fy = (r ? r.y : Math.floor(f / a.cols) * a.fh) * k, fw = (r ? r.w : a.fw) * k, fh = (r ? r.h : a.fh) * k;
+    for (let tries = 0; tries < 24; tries++) {
+      const x = Math.floor(rnd() * fw), y = Math.floor(rnd() * fh);
+      const o = ((fy + y) * px.w + fx + x) * 4;
+      if (px.data[o + 2]! > 127 && px.data[o + 3]! > 0) return [x / k - s.anchorX, y / k - s.anchorY];
+    }
+    return null;
+  }
+
+  private upload(list: AtlasRT[], tintRows: Map<number, number> = new Map()): void {
     const gl = this.gl; const S = this.layerSize;
     const mk = (): WebGLTexture => {
       const t = gl.createTexture()!; gl.bindTexture(gl.TEXTURE_2D_ARRAY, t);
@@ -206,6 +365,7 @@ export class AtlasManager {
       return t;
     };
     if (this.tex) gl.deleteTexture(this.tex); if (this.emisTex) gl.deleteTexture(this.emisTex);
+    for (const t of [this.sheenTex, this.swayTex, this.tintMaskTex]) if (t) gl.deleteTexture(t);
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
     this.tex = mk();
@@ -215,16 +375,31 @@ export class AtlasManager {
     this.hasEmissive = list.some((a) => a.emis);
     for (const a of list) if (a.emis) gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, a.px, a.py, a.layer, a.emis.width, a.emis.height, 1, gl.RGBA, gl.UNSIGNED_BYTE, a.emis as TexImageSource);
     gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
+    // mask arrays: full layout only when some atlas has that mask, else a 1x1 dummy (never sampled: flag bit unset)
+    const maskArray = (m: MaskName): WebGLTexture => {
+      if (!list.some((a) => a.masks[m])) {
+        const t = gl.createTexture()!; gl.bindTexture(gl.TEXTURE_2D_ARRAY, t);
+        gl.texStorage3D(gl.TEXTURE_2D_ARRAY, 1, gl.RGBA8, 1, 1, 1);
+        gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, 0, 1, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
+        return t;
+      }
+      const t = mk();
+      for (const a of list) { const im = a.masks[m]; if (im) gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, a.px, a.py, a.layer, im.width, im.height, 1, gl.RGBA, gl.UNSIGNED_BYTE, im as TexImageSource); }
+      gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
+      return t;
+    };
+    this.sheenTex = maskArray("sheen"); this.swayTex = maskArray("sway"); this.tintMaskTex = maskArray("tintmask");
     // frame table
     const n = Math.max(1, this.totalFrames); const rows = Math.ceil(n / TABLE_W);
     const data = new Float32Array(TABLE_W * 2 * rows * 4);
     for (const a of list) for (let f = 0; f < a.count; f++) {
       const r = a.source.rects?.[f];
       const x = r ? r.x : (f % a.cols) * a.fw, y = r ? r.y : Math.floor(f / a.cols) * a.fh;
-      const w = r ? r.w : a.fw, h = r ? r.h : a.fh;
+      const w = r ? r.w : a.fw, h = r ? r.h : a.fh; const k = a.scale;
       const o = (a.base + f) * 8;
-      data[o] = (a.px + x) / S; data[o + 1] = (a.py + y) / S; data[o + 2] = (a.px + x + w) / S; data[o + 3] = (a.py + y + h) / S;
-      data[o + 4] = w; data[o + 5] = h; data[o + 6] = a.layer; data[o + 7] = a.emis ? 1 : 0;
+      data[o] = (a.px + x * k) / S; data[o + 1] = (a.py + y * k) / S; data[o + 2] = (a.px + (x + w) * k) / S; data[o + 3] = (a.py + (y + h) * k) / S;
+      const bits = (a.emis ? FrameBits.Emissive : 0) | (a.masks.sheen ? FrameBits.Sheen : 0) | (a.masks.sway ? FrameBits.Sway : 0) | (a.masks.tintmask ? FrameBits.TintMask : 0);
+      data[o + 4] = w; data[o + 5] = h; data[o + 6] = a.layer; data[o + 7] = bits + (tintRows.get(a.base + f) ?? 0) * 16;
     }
     if (this.frameTex) gl.deleteTexture(this.frameTex);
     const ft = gl.createTexture()!; gl.bindTexture(gl.TEXTURE_2D, ft);
@@ -255,14 +430,18 @@ export class AtlasManager {
     return true;
   }
 
-  /** Resolve a build-piece frame: variant within idle frames, rotation as direction, damage stage frames if present. */
-  resolvePiece(spriteId: number, variant: number, rotation: number, damage: number, out: ResolvedFrame): boolean {
-    const s = this.sprites[spriteId]; if (!s) return false;
+  /**
+   * Resolve a build-piece frame through AssetRegistry.buildingFrame (rotation, damage stage, piece state, mirror
+   * rotationArt -> out.flipX). out.hasDamageFrames is false when the stage has no own frame (crack overlay fallback).
+   */
+  resolvePiece(spriteId: number, variant: number, rotation: number, damage: number, out: ResolvedFrame, state = -1): boolean {
+    const s = this.sprites[spriteId]; if (!s || !this.registry) return false;
     const a = this.atlases[s.atlasIdx]!;
     if (s.building) {
-      const rows = s.building.frames; const row = rows[rows.length === 1 ? 0 : rotation & 3] ?? rows[0]!;
-      const f = row[Math.max(0, Math.min(row.length - 1, damage | 0))]!;
-      this.fill(a, f, s, out); out.hasDamageFrames = row.length > 1; return true;
+      const ref = this.registry.buildingFrame(spriteId, rotation, damage, state);
+      const intact = damage > 0 ? this.registry.buildingFrame(spriteId, rotation, 0, state) : ref;
+      this.fill(a, ref.frame, s, out);
+      out.flipX = !!ref.flipX; out.hasDamageFrames = damage > 0 && ref.frame !== intact.frame; return true;
     }
     const an = s.anims[0]; if (!an) return false;
     let f = damage > 0 && s.damage[damage] !== undefined ? s.damage[damage]! : an.frames[variant % an.frames.length]!;
@@ -270,6 +449,17 @@ export class AtlasManager {
     this.fill(a, f, s, out);
     out.hasDamageFrames = damage > 0 && s.damage[damage] !== undefined;
     return true;
+  }
+
+  /**
+   * Frame-table entries of one animation (for shader-side animation by frame offset, e.g. terrain water).
+   * `contiguous` is true when frames[i] = frames[0] + i (then entry = first + floor(t * fps) % count is valid).
+   */
+  animEntries(spriteId: number, anim = 0): { first: number; count: number; fps: number; contiguous: boolean; w: number; h: number; ax: number; ay: number } | null {
+    const s = this.sprites[spriteId]; if (!s) return null; const a = this.atlases[s.atlasIdx]!; const an = s.anims[anim] ?? s.anims[0]; if (!an) return null;
+    const contiguous = an.frames.every((f, i) => f === an.frames[0]! + i);
+    const r = newResolved(); this.fill(a, an.frames[0]!, s, r);
+    return { first: r.entry, count: contiguous ? an.frames.length : 1, fps: an.fps, contiguous, w: r.w, h: r.h, ax: r.ax, ay: r.ay };
   }
 
   /** Footprint/layer of a building sprite (null for non-building sprites). Rotation 1/3 swaps w/h. */
@@ -283,12 +473,12 @@ export class AtlasManager {
     out.entry = a.base + fi;
     if (r) { out.w = r.w; out.h = r.h; out.ax = r.ax; out.ay = r.ay; }
     else { out.w = a.fw; out.h = a.fh; out.ax = s.anchorX * a.fw; out.ay = s.anchorY * a.fh; }
-    out.hasDamageFrames = false;
+    out.hasDamageFrames = false; out.flipX = false;
   }
 
   /** For galleries/tools: every atlas with its frame count and loaded image. */
-  listAtlases(): { key: string; id: number; count: number; image: ImageLike | null; emissive: ImageLike | null; rects?: RectTable; fw: number; fh: number; cols: number }[] {
-    return this.atlases.map((a) => ({ key: a.key, id: a.id, count: a.count, image: a.img, emissive: a.emis, ...(a.source.rects ? { rects: a.source.rects } : {}), fw: a.fw, fh: a.fh, cols: a.cols }));
+  listAtlases(): { key: string; id: number; count: number; image: ImageLike | null; emissive: ImageLike | null; rects?: RectTable; fw: number; fh: number; cols: number; scale: number; masks: Partial<Record<MaskName, string>> }[] {
+    return this.atlases.map((a) => ({ key: a.key, id: a.id, count: a.count, image: a.img, emissive: a.emis, ...(a.source.rects ? { rects: a.source.rects } : {}), fw: a.fw, fh: a.fh, cols: a.cols, scale: a.scale, masks: { ...a.maskUrls } }));
   }
 
   dispose(): void {
@@ -298,5 +488,5 @@ export class AtlasManager {
   }
 }
 
-export interface ResolvedFrame { entry: number; w: number; h: number; ax: number; ay: number; hasDamageFrames: boolean }
-export const newResolved = (): ResolvedFrame => ({ entry: 0, w: 0, h: 0, ax: 0, ay: 0, hasDamageFrames: false });
+export interface ResolvedFrame { entry: number; w: number; h: number; ax: number; ay: number; hasDamageFrames: boolean; /** draw mirrored (mirror rotationArt) */ flipX: boolean }
+export const newResolved = (): ResolvedFrame => ({ entry: 0, w: 0, h: 0, ax: 0, ay: 0, hasDamageFrames: false, flipX: false });

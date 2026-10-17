@@ -7,7 +7,7 @@
 import { CHUNK_SIZE, tileToChunk, tileToLocal, type TileMap, type Chunk, type IsoConfig } from "@engine/world";
 import { createProgram, GLSL_COMMON, type FrameStats, type Program } from "./gl/util.js";
 import type { Rect } from "./camera.js";
-import { TileId } from "./components.js";
+import { TileId, isWaterTile } from "./ids.js";
 
 /** Height of tile (tx,ty) or -1 when the tile is missing/empty. */
 export function tileHeight(map: TileMap, tx: number, ty: number): number {
@@ -17,10 +17,10 @@ export function tileHeight(map: TileMap, tx: number, ty: number): number {
   return c.tiles[i] === 0 ? -1 : c.height[i]!;
 }
 
-// Base palette (sRGB 0..255) per TileId.
+// Base palette (sRGB 0..255) per TileId: Art & Assets palette.json base tones (used under/without the tile atlas).
 const PALETTE: Record<number, [number, number, number]> = {
-  [TileId.Water]: [38, 92, 140], [TileId.Sand]: [196, 178, 122], [TileId.Grass]: [86, 140, 62],
-  [TileId.Dirt]: [128, 96, 64], [TileId.Stone]: [118, 118, 112], [TileId.Snow]: [232, 236, 242],
+  [TileId.Water]: [0x34, 0x84, 0xbc], [TileId.ShallowWater]: [0x4a, 0x9c, 0xc8], [TileId.Sand]: [0xf6, 0xdf, 0xa4], [TileId.Grass]: [0x8f, 0xd1, 0x5c],
+  [TileId.Dirt]: [0xc0, 0x8a, 0x5a], [TileId.Stone]: [0xb8, 0xb2, 0xb0], [TileId.Snow]: [0xee, 0xf4, 0xfb], [TileId.Forest]: [0x6f, 0xa8, 0x4a],
 };
 const SIDE: Record<number, [number, number, number]> = {
   [TileId.Grass]: [112, 84, 56], [TileId.Sand]: [168, 140, 92], [TileId.Water]: [38, 92, 140],
@@ -125,7 +125,7 @@ export class TilemapRenderer {
       minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z);
       const pal = PALETTE[id] ?? [255, 0, 255];
       const v = 0.94 + hash(x, y) * 0.12;
-      const water = id === TileId.Water ? 1 : 0;
+      const water = isWaterTile(id) ? 1 : 0;
       const zt = water ? z - 0.25 : z;
       quad([[x, y, zt], [x + 1, y, zt], [x + 1, y + 1, zt], [x, y + 1, zt]], pal[0] * v, pal[1] * v, pal[2] * v, water);
       // Camera-facing cliff faces: +x (screen lower-right) and +y (screen lower-left).
@@ -202,4 +202,4 @@ export class TilemapRenderer {
   }
 }
 
-function tileIsWater(map: TileMap, x: number, y: number): boolean { return map.getTile(x, y) === TileId.Water; }
+function tileIsWater(map: TileMap, x: number, y: number): boolean { return isWaterTile(map.getTile(x, y)); }

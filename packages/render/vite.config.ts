@@ -6,12 +6,12 @@ import { fileURLToPath } from "node:url";
 /**
  * Demo app (index.html at the package root, sources in demo/ + src/).
  * Read-only static mounts so the demo can load content without copying it:
- *   /@sample/  -> packages/assets/sample   (debug placeholder manifest from @engine/assets)
+ *   /@assets/  -> packages/assets          (pack/ = default content via fetchDefaultManifest; sample/ = test fixture)
  *   /@art/     -> /workspace/assets         (Art & Assets' real content, if present)
  *   /debug/    -> packages/render/assets/debug (served via publicDir)
  */
 const here = fileURLToPath(new URL(".", import.meta.url));
-const MOUNTS: Record<string, string> = { "/@sample/": join(here, "../assets/sample"), "/@art/": process.env.ART_DIR ?? "/workspace/assets" };
+const MOUNTS: Record<string, string> = { "/@assets/": join(here, "../assets"), "/@art/": process.env.ART_DIR ?? "/workspace/assets" };
 const TYPES: Record<string, string> = { ".json": "application/json", ".png": "image/png", ".webp": "image/webp" };
 const serve: Connect.NextHandleFunction = (req, res, next) => {
   const url = decodeURIComponent((req.url ?? "").split("?")[0]!);

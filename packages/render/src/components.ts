@@ -42,11 +42,4 @@ export const Occluder = defineComponent("Occluder", {
 
 export const RENDER_COMPONENTS = [Sprite, LightSource, Shadow, Occluder] as const;
 
-/** Sprite.flags bits. */
-export const enum SpriteFlag { FlipX = 1, Emissive = 2, Sway = 4, Flat = 8, NoOutline = 16, BloomSource = 32 }
-
-/**
- * Tile ids understood by the terrain palette (TileMap stores u16 ids, 0 = empty).
- * Temporary: should move to a shared tile registry (world/gameplay).
- */
-export const enum TileId { Empty = 0, Water = 1, Sand = 2, Grass = 3, Dirt = 4, Stone = 5, Snow = 6 }
+export { SpriteFlag, TileId } from "./ids.js";

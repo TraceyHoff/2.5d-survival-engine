@@ -12,7 +12,7 @@
  *   split into per-column slices, each keyed by its front-most footprint tile.
  */
 import { entityIndex, lerpAngle, PrevTransform, Transform, type ComponentDef, type World } from "@engine/core";
-import { CHUNK_SIZE, chunkKey, type BuildingGrid, type ChunkedSpatialIndex, type IsoConfig } from "@engine/world";
+import { CHUNK_SIZE, chunkKey, floorToTerrainZ, terrainZToFloor, type BuildingGrid, type ChunkedSpatialIndex, type IsoConfig } from "@engine/world";
 import { createProgram, GLSL_COMMON, type FrameStats, type Program } from "./gl/util.js";
 import { Sprite, Shadow, Occluder, SpriteFlag, LightSource } from "./components.js";
 import { newResolved, type AtlasManager, type ResolvedFrame } from "./assets/atlasManager.js";
@@ -50,13 +50,13 @@ layout(location=2) in vec4 aC; // ax, ay, sliceL, sliceR
 layout(location=3) in vec4 aD; // tint rgb, sliceFootDy
 layout(location=4) in vec4 aE; // shadowAlpha, ghost, damageOverlay, shadowWidth
 layout(location=5) in vec4 aF; // wet 0..1, cold 0..1, shivering 0/1, heat 0..1
-layout(location=6) in vec4 aG; // sway amp (px), freq (Hz), stiffness, -
+layout(location=6) in vec4 aG; // sway amp (px), freq (Hz), stiffness, occlusion 0..1
 ${GLSL_COMMON}
 uniform highp sampler2D uFrames;
 uniform float uZPerPx, uHH, uTime, uWind, uOutline;
 uniform int uShadowPass, uShadowMode;
 uniform vec2 uShadowDir; uniform float uBlobAspect; uniform vec2 uWindVec; // screen-x wind direction, strength 0..1
-out vec4 vFx; out vec3 vUv; out float vAlpha; flat out int vFlags; flat out vec4 vRect; out vec3 vTint; flat out vec3 vMisc; out vec2 vLocal;
+out vec4 vFx; out vec3 vUv; out float vAlpha; flat out int vFlags; flat out vec4 vRect; out vec3 vTint; flat out vec3 vMisc; out vec2 vLocal; out vec2 vScr; flat out float vOcc;
 void main() {
   int entry = int(aB.x + 0.5); int flags = int(aB.y + 0.5);
   ivec2 tc = ivec2((entry % 1024) * 2, entry / 1024);
@@ -65,7 +65,7 @@ void main() {
   vec2 c = vec2(float(gl_VertexID & 1), float((gl_VertexID >> 1) & 1));
   float s = aA.w;
   vFx = aF; vFlags = flags; vRect = uvr; vTint = aD.rgb; vMisc = vec3(aE.y, aE.z, dim.w); vAlpha = aB.w;
-  vLocal = c * 2.0 - 1.0;
+  vLocal = c * 2.0 - 1.0; vOcc = aG.w; vScr = aA.xy;
   if (uShadowPass == 1) {
     if (aE.x <= 0.0) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); return; }
     vAlpha = aE.x;
@@ -84,29 +84,33 @@ void main() {
     return;
   }
   float ow = (flags & 16) != 0 ? 0.0 : uOutline;
-  float x0 = max(-ow, aC.x + aC.z), x1 = min(dim.x + ow, aC.x + aC.w);
+  // slice bounds are screen-relative to the pivot; for mirrored sprites map them back into frame space
+  vec2 sl = (flags & 1) != 0 ? vec2(-aC.w, -aC.z) : aC.zw;
+  float x0 = max(-ow, aC.x + sl.x), x1 = min(dim.x + ow, aC.x + sl.y);
   float x = mix(x0, x1, c.x), y = mix(-ow, dim.y + ow, c.y);
   float flip = (flags & 1) != 0 ? -1.0 : 1.0;
   float px = (x - aC.x) * s * flip;
   float hp = (aC.y - y) * s;
   if (aG.x > 0.0) { // wind sway: weight from height above the pivot, global wind + per-instance phase
-    float wgt = pow(clamp(hp / max(1.0, aC.y * s), 0.0, 1.0), max(0.25, aG.z));
+    float wgt = pow(clamp(hp / max(1.0, aC.y * s), 0.0, 1.0), 1.0 + 2.0 * clamp(aG.z, 0.0, 1.0)); // stiffness 0..1, higher = stiffer
     px += uWindVec.x * uWindVec.y * aG.x * s * wgt * (0.65 + 0.35 * sin(uTime * aG.y * 6.283 + aB.z * 6.283));
   } else if ((flags & 4) != 0) px += sin(uTime * 1.6 + aB.z * 6.283) * uWind * max(hp, 0.0) * 0.05;
   if (aF.z > 0.5) px += sin(uTime * 52.0 + aB.z * 40.0) * (0.4 + 1.4 * aF.y) * s; // shiver
   vUv = vec3(mix(uvr.xy, uvr.zw, vec2(x / dim.x, y / dim.y)), dim.z);
-  vec2 iso = aA.xy + vec2(px, -hp);
+  vec2 iso = aA.xy + vec2(px, -hp); vScr = iso;
   float key = (flags & 8) != 0 ? aA.z + 0.01 - hp / uHH : aA.z + 0.02 + max(hp + aD.w, 0.0) * uZPerPx;
   gl_Position = vec4(isoToClip(iso), keyToNdc(key), 1.0);
 }`;
 
 const FS = /* glsl */ `#version 300 es
 precision highp float; precision highp int;
-in vec4 vFx; in vec3 vUv; in float vAlpha; flat in int vFlags; flat in vec4 vRect; in vec3 vTint; flat in vec3 vMisc; in vec2 vLocal;
+in vec4 vFx; in vec3 vUv; in float vAlpha; flat in int vFlags; flat in vec4 vRect; in vec3 vTint; flat in vec3 vMisc; in vec2 vLocal; in vec2 vScr; flat in float vOcc;
 uniform highp sampler2DArray uAtlas, uEmis;
 uniform int uShadowPass, uShadowMode;
 uniform float uShadowAlpha, uOutline, uTexel, uTime, uEmisStrength, uAlphaMul;
 uniform vec4 uOutlineColor; uniform vec3 uShadowColor, uFrostColor, uFlushTint; uniform float uWetDarken, uWetSheen;
+uniform int uOccMode, uSilhouette; uniform float uOccAlpha, uOccRadius; uniform vec2 uFocusScr; uniform vec4 uSilColor;
+const float BAYER[16] = float[16](0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0);
 layout(location=0) out vec4 oColor;
 layout(location=1) out vec4 oEmissive;
 float inRect(vec2 uv) { return step(vRect.x, uv.x) * step(uv.x, vRect.z) * step(vRect.y, uv.y) * step(uv.y, vRect.w); }
@@ -123,6 +127,10 @@ void main() {
     return;
   }
   vec4 t = texture(uAtlas, vUv) * inRect(vUv.xy);
+  if (uSilhouette == 1) { // focus drawn through occluders (depth GREATER)
+    if (t.a < 0.35) discard;
+    oColor = uSilColor; oEmissive = vec4(0.8, 0.0, 0.0, uSilColor.a); return;
+  }
   vec3 col = t.rgb * vTint; float a = t.a;
   if (a < 0.5 && uOutline > 0.0 && (vFlags & 16) == 0) {
     float o = 0.0; vec2 d = vec2(uOutline * uTexel);
@@ -133,6 +141,11 @@ void main() {
     if (o > 0.5) { col = uOutlineColor.rgb; a = uOutlineColor.a; }
   }
   if (a < 0.35) discard;
+  if (vOcc > 0.001 && uOccMode == 1) { // dithered circle cut around the focus
+    float d = length((vScr - uFocusScr) * vec2(1.0, 1.15)) / uOccRadius;
+    ivec2 p = ivec2(gl_FragCoord.xy) & 3;
+    if ((1.0 - smoothstep(0.6, 1.0, d)) * vOcc * 1.02 > (BAYER[p.y * 4 + p.x] + 0.5) / 16.0) discard;
+  }
   // procedural crack overlay when the atlas has no damage-stage frames
   float dmg = vMisc.y;
   if (dmg > 0.5) {
@@ -155,6 +168,7 @@ void main() {
   }
   if (vFx.w > 0.003) col = mix(col, col * uFlushTint, vFx.w);
   float alpha = smoothstep(0.35, 0.75, a) * vAlpha * uAlphaMul;
+  if (uOccMode == 0) alpha *= mix(1.0, uOccAlpha, vOcc);
   int ghost = int(vMisc.x + 0.5);
   if (ghost > 0) {
     vec3 gc = ghost == 1 ? vec3(0.35, 1.0, 0.45) : vec3(1.0, 0.3, 0.3);
@@ -175,8 +189,8 @@ export interface PrepareContext {
   spatial?: { index: ChunkedSpatialIndex; activeKeys?: ReadonlySet<string> } | undefined;
   activeKeys?: ReadonlySet<string> | undefined;
   grid?: BuildingGrid | undefined;
-  /** world z units per building level */
-  levelZ: number;
+  /** Terrain height under a tile (for the focus' floor index); 0 when unknown. */
+  groundZAt?: ((tx: number, ty: number) => number) | undefined;
   /** Where building sprites' pivot sits on the footprint (default "center"). */
   pieceAnchor?: "center" | "front";
   transformSource?: TransformSource | undefined;
@@ -208,6 +222,13 @@ export class SpriteBatch {
   visible = 0;
   staticInstances = 0; staticChunksDrawn = 0; staticRebuilds = 0;
   focusEntity = -1;
+  /** occlusion fade state per entity index (smoothed 0..1) */
+  private occT = new Float32Array(1024); private occLast = -1;
+  private silVbo: WebGLBuffer | null = null; private silVao: WebGLVertexArrayObject | null = null;
+  private silInst = new Float32Array(INSTANCE_FLOATS); private silOn = false;
+  private focusScr: [number, number] = [0, 0];
+  private occ: { occAmount: (i: number, hit: boolean) => number; overlapsFocus: (l: number, r: number, t: number, b: number) => boolean; occOn: boolean; fk: number } =
+    { occAmount: () => 0, overlapsFocus: () => false, occOn: false, fk: 0 };
   /** Entities whose pieces are currently cut away (debug/stat). */
   cutawayActive = false;
 
@@ -236,6 +257,15 @@ export class SpriteBatch {
   }
 
   /** Append one dynamic instance. */
+  /**
+   * Faded occluders (fade mode, occlusion > 0.5) go to a separate late batch drawn after the focus silhouette with
+   * depth writes off, so the silhouette only shows behind occluders that are still opaque.
+   */
+  private late: number[] = []; private lateVbo: WebGLBuffer | null = null; private lateVao: WebGLVertexArrayObject | null = null; private lateCount = 0;
+  private pushOcc(o: Float32Array | number[], src: number, occT: number, mode: "fade" | "dither"): void {
+    if (mode === "fade" && occT > 0.5) { for (let q = 0; q < INSTANCE_FLOATS; q++) this.late.push(o[src + q]!); }
+    else this.push(o, src);
+  }
   private push(o: Float32Array | number[], src: number): void {
     if (this.n >= this.capacity) { if (this.capacity >= 65536) return; this.ensure(this.n + 1); }
     const d = this.n * INSTANCE_FLOATS; const t = this.tmp;
@@ -298,6 +328,30 @@ export class SpriteBatch {
         fx = (fwx - fwy) * hw; fy = (fwx + fwy) * hh - fwz * zs - 20; fk = fwx + fwy + fwz * zf; hasFocus = true;
       }
     }
+    // focus screen rect (from its current frame; fallback 32x56) for the occlusion test
+    const occ = cx.style.occlusion; const occOn = occ.enabled && hasFocus;
+    let fl = 0, fr = 0, ft = 0, fb = 0;
+    if (occOn) {
+      const fsl = sp.slot(entityIndex(this.focusEntity));
+      const ok = fsl >= 0 && atlas.resolve(sp.data.spriteId[fsl]!, -1, 0, 0, sp.data.frameId[fsl]!, res);
+      const sc = fsl >= 0 ? sp.data.scale[fsl]! || 1 : 1;
+      const w = ok ? res.w * sc : 32, h = ok ? res.h * sc : 56, ax = ok ? res.ax * sc : 16, ay = ok ? res.ay * sc : 56;
+      const sx0 = (fwx - fwy) * hw, sy0 = (fwx + fwy) * hh - fwz * zs;
+      fl = sx0 - ax + w * 0.2; fr = sx0 - ax + w * 0.8; ft = sy0 - ay + h * 0.1; fb = sy0 - ay + h * 0.95;
+      this.focusScr = [sx0, sy0 - Math.min(ay, h) * 0.5];
+    }
+    const dtOcc = this.occLast < 0 ? 1 : Math.min(0.25, Math.max(0, cx.now - this.occLast)); this.occLast = cx.now;
+    const occStep = Math.min(1, dtOcc * occ.fadeSpeed);
+    /** Smoothed occlusion amount for entity index i given whether it occludes this frame. */
+    const occAmount = (i: number, hit: boolean): number => {
+      if (i >= this.occT.length) { const n = new Float32Array(Math.max(i + 1, this.occT.length * 2)); n.set(this.occT); this.occT = n; }
+      const v = this.occT[i]! + ((hit ? 1 : 0) - this.occT[i]!) * occStep;
+      this.occT[i] = v < 0.004 ? 0 : v; return this.occT[i]!;
+    };
+    /** Screen rect [l, r] x [t, b] of a sprite overlaps the focus rect. */
+    const overlapsFocus = (l: number, r: number, t: number, b: number): boolean => occOn && r > fl && l < fr && b > ft && t < fb;
+    this.silOn = false; this.late.length = 0;
+    this.occ = { occAmount, overlapsFocus, occOn, fk };
 
     // ---- dynamic Sprite entities ----
     const emitSprite = (k: number): void => {
@@ -319,11 +373,18 @@ export class SpriteBatch {
       if (!ok) return;
       const scale = sp.data.scale[k]! || 1;
       const key = x + y + z * zf;
-      let fade = 1;
-      const os = oc.slot(i);
-      if (os >= 0 && hasFocus && key > fk + 0.3) {
-        const left = sx - res.ax * scale, top = sy - res.ay * scale;
-        if (fx > left && fx < left + res.w * scale && fy > top && fy < sy) fade = oc.data.fade[os]!;
+      // occlusion: tall sprites (or explicit Occluders) in front of the focus whose rect overlaps it
+      let occT = 0, fade = 1;
+      if (occOn && e !== this.focusEntity) {
+        const os = oc.slot(i); const hgt = res.ay * scale;
+        let hit = false;
+        if ((os >= 0 || hgt >= occ.minHeightPx) && key > fk + 0.05) {
+          const left = sx - res.ax * scale, top = sy - res.ay * scale;
+          hit = overlapsFocus(left, left + res.w * scale, top, sy);
+        }
+        occT = occAmount(i, hit);
+        // explicit Occluder.fade overrides the style alpha (fade mode)
+        if (os >= 0 && occT > 0 && occ.mode === "fade") { fade = 1 - (1 - oc.data.fade[os]!) * occT / Math.max(1e-3, 1 - occ.alpha); occT = 0; }
       }
       const ss = sh.slot(i);
       const o0 = this.writeOne(sx, sy, key, scale, res, sp.data.flags[k]! | (ls.slot(i) >= 0 ? SpriteFlag.BloomSource : 0), (i * 0.618034) % 1, fade, -OPEN, OPEN, sp.data.tint[k]! >>> 0, 0,
@@ -333,7 +394,9 @@ export class SpriteBatch {
         if (o0[22]) cx.statusFx?.("cold", x, y, z, o0[21]); else if (bt.data.heat[s2]! > 150) cx.statusFx?.("heat", x, y, z, bt.data.heat[s2]! / 255); } }
       const sw = atlas.swayOf(sid);
       if (sw) { o0[24] = sw[0]!; o0[25] = sw[1]!; o0[26] = sw[2]!; }
-      this.push(o0, 0);
+      o0[27] = occT;
+      if (e === this.focusEntity && occ.silhouette) { this.silInst.set(o0.subarray(0, INSTANCE_FLOATS)); this.silInst[27] = 0; this.silOn = true; }
+      this.pushOcc(o0, 0, occT, occ.mode);
     };
     if (cx.spatial) {
       // chunk-level culling through the shared spatial index
@@ -366,15 +429,25 @@ export class SpriteBatch {
       for (let q = 0; q < INSTANCE_FLOATS; q++) inst[dst + q] = tmp[src + q]!;
     }
     this.visible = n;
+    // late (faded) batch: back-to-front by key
+    const L = this.late, lc = L.length / INSTANCE_FLOATS; this.lateCount = lc;
+    if (lc > 0) {
+      const order = Array.from({ length: lc }, (_, j) => j).sort((a, b) => L[a * INSTANCE_FLOATS + 2]! - L[b * INSTANCE_FLOATS + 2]!);
+      const buf = new Float32Array(L.length);
+      order.forEach((j, o) => { for (let q = 0; q < INSTANCE_FLOATS; q++) buf[o * INSTANCE_FLOATS + q] = L[j * INSTANCE_FLOATS + q]!; });
+      const gl = this.gl;
+      if (!this.lateVbo) { this.lateVbo = gl.createBuffer()!; this.lateVao = this.makeVao(this.lateVbo); }
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.lateVbo); gl.bufferData(gl.ARRAY_BUFFER, buf, gl.DYNAMIC_DRAW);
+    }
   }
 
   private gatherPieces(cx: PrepareContext, bp: ReturnType<World["store"]>, hasFocus: boolean, fwx: number, fwy: number, fwz: number): void {
     const { world, atlas, rect } = cx; const tr = world.store(Transform);
     const d = bp.data as Record<string, ArrayLike<number>>;
     const hw = this.iso.tileW / 2, hh = this.iso.tileH / 2, zs = this.iso.zStep, zf = this.zFactor;
-    const res = this.res; const levelZ = cx.levelZ;
+    const res = this.res;
     // cutaway region from BuildingGrid: tiles of the building the focus entity stands in
-    const playerLevel = hasFocus ? Math.max(0, Math.floor((fwz + 0.01) / levelZ)) : 0;
+    const playerLevel = hasFocus ? terrainZToFloor(fwz, Math.max(0, cx.groundZAt?.(Math.floor(fwx), Math.floor(fwy)) ?? 0)) : 0;
     const cut = hasFocus && cx.grid ? cutawayRegion(cx.grid, Math.floor(fwx), Math.floor(fwy), playerLevel) : null;
     this.cutawayActive = !!cut;
     const scratch = this.staticScratch; for (const v of scratch.values()) v.length = 0;
@@ -384,21 +457,31 @@ export class SpriteBatch {
       const e = bp.dense[k]!; const i = entityIndex(e); const ts = tr.slot(i); if (ts < 0) continue;
       const vis = d.visualId![k]!; const rot = d.rotation![k]! & 3; const level = d.level![k]!; const layer = d.layer![k]!;
       const ghost = d.ghost![k]!; const dmg = d.damageStage![k]!; const tint = d.tint![k]! >>> 0;
-      if (!atlas.resolvePiece(vis, d.variant![k]!, rot, dmg, res)) continue;
+      if (!atlas.resolvePiece(vis, d.variant![k]!, rot, dmg, res, d.state ? d.state[k]! - 1 : -1)) continue;
       const info = atlas.pieceInfo(vis);
       const fw = info ? (rot & 1 ? info.fh : info.fw) : 1, fh = info ? (rot & 1 ? info.fw : info.fh) : 1;
       const ax = Math.floor(tr.data.x[ts]!), ay = Math.floor(tr.data.y[ts]!);
-      const z = tr.data.z[ts]! + level * levelZ;
+      const z = floorToTerrainZ(level, tr.data.z[ts]!);
       const cutaway = !!cut && (layer === 3 || level > playerLevel) && footprintHits(cut, ax, ay, fw, fh);
-      const dynamic = ghost > 0 || cutaway;
+      // occlusion (walls etc. not in cutaway): a hit, or a still-fading piece, is drawn dynamically this frame
+      let occT = 0;
+      if (!cutaway && !flatLayer(layer, info?.layer) && this.occ.occOn) {
+        const bottom = (ax + ay + fw + fh) * hh - z * zs; // front footprint corner
+        const pivotY = cx.pieceAnchor === "front" ? bottom : (ax + ay + (fw + fh) / 2) * hh - z * zs;
+        const top = pivotY - res.ay; const left = (ax - (ay + fh)) * hw, right = (ax + fw - ay) * hw;
+        const front = ax + fw + ay + fh - 2 + 1.95 + z * zf;
+        const hit = res.ay >= cx.style.occlusion.minHeightPx && front > this.occ.fk + 0.05 && this.occ.overlapsFocus(left, right, top, bottom);
+        occT = this.occ.occAmount(i, hit);
+      }
+      const dynamic = ghost > 0 || cutaway || occT > 0;
       const alpha = cutaway ? cx.style.cutawayAlpha : 1;
       // footprint far corner (fx, fy); sprite pivot = footprint centre on the ground (art guide / sample manifest)
       // or the front-most footprint corner (cx.pieceAnchor === "front")
       const fx = ax + fw, fy = ay + fh;
       const pvx = cx.pieceAnchor === "front" ? fx : ax + fw / 2, pvy = cx.pieceAnchor === "front" ? fy : ay + fh / 2;
       const sx = (pvx - pvy) * hw, sy = (pvx + pvy) * hh - z * zs;
-      const flat = layer === 0 || info?.layer === 0; // floors, and roofs drawn with floor-type (flat) sprites
-      const flags = flat ? SpriteFlag.Flat : 0;
+      const flat = flatLayer(layer, info?.layer); // floors, and roofs drawn with floor-type (flat) sprites
+      const flags = (flat ? SpriteFlag.Flat : 0) | (res.flipX ? SpriteFlag.FlipX : 0);
       const dmgOverlay = dmg > 0 && !res.hasDamageFrames ? dmg : 0;
       const bias = layer * 0.01;
       tmp.length = 0;
@@ -419,12 +502,13 @@ export class SpriteBatch {
         // slice foot = screen y of the front corner of its front-most tile, relative to pivot
         const footDy = single ? 0 : (best + 2) * hh - z * zs - sy;
         const o = this.writeOne(sx, sy, key, 1, res, flags, (i * 0.618034) % 1, alpha, sliceL, sliceR, tint, footDy, 0, ghost, dmgOverlay, 0);
+        o[27] = occT;
         for (let q = 0; q < INSTANCE_FLOATS; q++) tmp.push(o[q]!);
         if (single) break;
       }
       if (dynamic) {
         if (sx < rect.x0 - 512 || sx > rect.x1 + 512 || sy < rect.y0 - 256 || sy > rect.y1 + 1024) continue;
-        for (let j = 0; j < tmp.length; j += INSTANCE_FLOATS) this.push(tmp, j);
+        for (let j = 0; j < tmp.length; j += INSTANCE_FLOATS) this.pushOcc(tmp, j, occT, cx.style.occlusion.mode);
       } else {
         const ck = chunkKey(Math.floor(ax / CHUNK_SIZE), Math.floor(ay / CHUNK_SIZE));
         let list = scratch.get(ck); if (!list) scratch.set(ck, (list = []));
@@ -480,6 +564,9 @@ export class SpriteBatch {
     gl.uniform2f(u.uShadowDir!, shadowDir[0], shadowDir[1]); gl.uniform1f(u.uShadowAlpha!, shadowAlpha);
     gl.uniform1f(u.uOutline!, style.outline.enabled ? style.outline.widthPx : 0);
     gl.uniform4fv(u.uOutlineColor!, style.outline.color);
+    const oc = style.occlusion;
+    gl.uniform1i(u.uOccMode!, oc.mode === "dither" ? 1 : 0); gl.uniform1f(u.uOccAlpha!, oc.alpha); gl.uniform1f(u.uOccRadius!, oc.radiusPx);
+    gl.uniform2f(u.uFocusScr!, this.focusScr[0], this.focusScr[1]); gl.uniform1i(u.uSilhouette!, 0); gl.uniform4fv(u.uSilColor!, oc.silhouetteColor);
     gl.uniform1f(u.uAlphaMul!, 1); gl.uniform1f(u.uTexel!, 1 / atlas.layerSize); gl.uniform1f(u.uEmisStrength!, style.emissiveStrength);
     gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D_ARRAY, atlas.tex); gl.uniform1i(u.uAtlas!, 0);
     gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, atlas.frameTex); gl.uniform1i(u.uFrames!, 1);
@@ -519,7 +606,35 @@ export class SpriteBatch {
     stats.drawCalls++;
     if (pass === "sprite") stats.sprites = this.visible + this.staticInstances;
   }
+
+  /** Faded occluders (late batch): depth-tested, no depth write. Call after drawSilhouette. */
+  drawLate(view: Float32Array, depth: Float32Array, atlas: AtlasManager, time: number, wind: number, style: StyleConfig, stats: FrameStats): void {
+    if (this.lateCount === 0 || !atlas.tex || !this.lateVao) return;
+    const gl = this.gl; const { u } = this.prog;
+    this.setup("sprite", u, view, depth, atlas, time, wind, [0, 0], 0, style);
+    gl.depthMask(false);
+    gl.bindVertexArray(this.lateVao); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, this.lateCount); gl.bindVertexArray(null);
+    gl.depthMask(true);
+    stats.drawCalls++; stats.sprites += this.lateCount;
+  }
+
+  /** Focus (local player) silhouette through occluders: one instance, depth GREATER, no depth write. Call after draw("sprite"). */
+  drawSilhouette(view: Float32Array, depth: Float32Array, atlas: AtlasManager, time: number, wind: number, style: StyleConfig, stats: FrameStats): void {
+    if (!this.silOn || !style.occlusion.enabled || !style.occlusion.silhouette || !atlas.tex) return;
+    const gl = this.gl; const { u } = this.prog;
+    if (!this.silVbo) { this.silVbo = gl.createBuffer()!; this.silVao = this.makeVao(this.silVbo); }
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.silVbo); gl.bufferData(gl.ARRAY_BUFFER, this.silInst, gl.DYNAMIC_DRAW);
+    this.setup("sprite", u, view, depth, atlas, time, wind, [0, 0], 0, style);
+    gl.uniform1i(u.uSilhouette!, 1); gl.uniform1f(u.uOutline!, 0);
+    gl.depthFunc(gl.GREATER); gl.depthMask(false);
+    gl.bindVertexArray(this.silVao); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, 1); gl.bindVertexArray(null);
+    gl.depthMask(true); gl.depthFunc(gl.LESS); gl.uniform1i(u.uSilhouette!, 0);
+    stats.drawCalls++;
+  }
 }
+
+/** Floors (layer 0) and roofs drawn with floor-type sprites are flat. */
+const flatLayer = (layer: number, spriteLayer: number | undefined): boolean => layer === 0 || spriteLayer === 0;
 
 /** Chunk keys whose tiles may project into the iso rect (tile box from inverted rect corners). */
 export function visibleChunkKeys(rect: Rect, hw: number, hh: number, zs: number, maxZ: number): string[] {

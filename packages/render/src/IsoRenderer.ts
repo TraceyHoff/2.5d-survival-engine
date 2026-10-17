@@ -17,6 +17,8 @@ import { AssetManager, type World } from "@engine/core";
 import { DEFAULT_ISO, type BuildingGrid, type ChunkedSpatialIndex, type IsoConfig, type TileMap } from "@engine/world";
 import { IsoCamera, type Rect } from "./camera.js";
 import { BloomPass } from "./bloom.js";
+import { TileTerrain } from "./terrainTiles.js";
+import { tileHeight } from "./tilemap.js";
 import { parseGradingKeyframes, sampleKeyframes, lutSizeFromImage, type GradingKeyframe } from "./grading.js";
 import { DEFAULT_EMITTER_KINDS, type EmitterVisual } from "./lighting.js";
 import { loadRenderTuning } from "./style.js";
@@ -88,6 +90,9 @@ export class IsoRenderer implements Renderer {
   private styleLut: LutBinding | null = null;
   private shimmerTex: WebGLTexture | null = null;
   private bloom: BloomPass;
+  private tiles: TileTerrain;
+  /** Use the textured tile atlas for terrain when the registry has tile sprites (else vertex colours only). */
+  texturedTerrain = true;
   private flash = 0; private nextBolt = 3; private cloudOff = [0, 0];
   /** Fires when lightning strikes (screen-space x/y of a random visible point, world tile coords). */
   onLightning: ((x: number, y: number) => void) | null = null;
@@ -141,6 +146,7 @@ export class IsoRenderer implements Renderer {
     this.composite = new CompositePass(gl);
     this.weather = new WeatherPass(gl);
     this.bloom = new BloomPass(gl);
+    this.tiles = new TileTerrain(gl, this.iso, this.zFactor);
   }
 
   /** Make sure the render components exist on this world (idempotent). */
@@ -284,10 +290,9 @@ export class IsoRenderer implements Renderer {
     const hh = this.iso.tileH / 2;
     const minKey = rect.y0 / hh - 64, maxKey = (rect.y1 + 2048) / hh + 64;
     this.depthU[0] = minKey; this.depthU[1] = 1 / (maxKey - minKey);
-    const levelZ = style.levelHeightPx / this.iso.zStep;
     this.sprites.prepare({
       world, alpha, rect, atlas: this.atlas, depthMin: minKey, depthRange: maxKey - minKey, tickHz: this.tickHz, style,
-      bindings: this.bindings, spatial: this.spatial, activeKeys: this.activeKeys, grid: this.grid, levelZ, pieceAnchor: this.pieceAnchor,
+      bindings: this.bindings, spatial: this.spatial, activeKeys: this.activeKeys, grid: this.grid, groundZAt: this.tilemap ? (x: number, y: number) => tileHeight(this.tilemap!, x, y) : undefined, pieceAnchor: this.pieceAnchor,
       transformSource: this.transformSource, vfx: this.vfx, now: this.time, statusFx: this.statusHook,
     });
     this.sprites.upload();
@@ -303,7 +308,14 @@ export class IsoRenderer implements Renderer {
     gl.clearBufferfi(gl.DEPTH_STENCIL, 0, 1, 0);
     gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LESS);
     gl.disable(gl.BLEND);
-    if (this.tilemap) this.terrain.draw(this.viewU, this.depthU, rect, this.time, stats, this.activeKeys);
+    if (this.tilemap) {
+      this.terrain.draw(this.viewU, this.depthU, rect, this.time, stats, this.activeKeys);
+      if (this.texturedTerrain && TileTerrain.available(this.atlas)) {
+        gl.depthFunc(gl.LEQUAL);
+        this.tiles.draw(this.tilemap, this.atlas, this.viewU, this.depthU, rect, this.time, stats, this.terrain.surface, this.terrain.perChunk, this.terrain.surfaceStyle, this.activeKeys);
+        gl.depthFunc(gl.LESS);
+      }
+    }
     gl.enable(gl.BLEND); gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     this.sprites.drawStatic(this.viewU, this.depthU, this.atlas, this.time, this.time, rect, this.activeKeys, style, stats);
     if (this.settings.shadows && style.shadowMode !== "none") {
@@ -314,6 +326,8 @@ export class IsoRenderer implements Renderer {
       gl.depthMask(true); gl.depthFunc(gl.LESS);
     }
     this.sprites.draw("sprite", this.viewU, this.depthU, this.atlas, this.time, ws.wind + 0.15, day.shadowDir, 1, style, stats);
+    this.sprites.drawSilhouette(this.viewU, this.depthU, this.atlas, this.time, ws.wind + 0.15, style, stats);
+    this.sprites.drawLate(this.viewU, this.depthU, this.atlas, this.time, ws.wind + 0.15, style, stats);
     gl.disable(gl.BLEND); gl.disable(gl.DEPTH_TEST);
 
     // --- 2. light pass ---------------------------------------------------------------------
