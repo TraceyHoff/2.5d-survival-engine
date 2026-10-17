@@ -53,9 +53,19 @@ importers:
       '@engine/net':
         specifier: workspace:*
         version: link:../../packages/net
+      '@engine/persist':
+        specifier: workspace:*
+        version: link:../../packages/persist
       '@engine/world':
         specifier: workspace:*
         version: link:../../packages/world
+      ws:
+        specifier: ^8.22.0
+        version: 8.22.0
+    devDependencies:
+      '@types/ws':
+        specifier: ^8.18.2
+        version: 8.18.2
 
   packages/assets:
     dependencies:
