@@ -7,7 +7,8 @@
  *    otherwise the chunk is streamed in Parts under a per-tick byte budget, closest chunks first. Changes during
  *    the stream are folded in (already-sent entities are re-queued / despawned), so place/destroy in the entry
  *    tick is handled. The final Part carries the version the client now holds.
- *  - subscribed chunks: one shared Delta(from -> to) per changed chunk per tick, encoded once for all clients.
+ *  - subscribed chunks: one shared Delta(from -> to) per changed chunk per tick, encoded once for all clients:
+ *    varuint nRemoved + sorted delta-varint netIds, then change/spawn records, End.
  *  - leaving: Leave; the client moves the chunk into a bounded LRU cache (Evict tells the server when it drops one).
  * Everything rides the reliable channel in one Static message per tick. A client that sees a version mismatch or a
  * Hit for a chunk it no longer has sends Nack; the server answers Leave + a fresh stream.
@@ -95,10 +96,12 @@ export class StaticServer {
     let b = this.deltaBlobs.get(key);
     if (!b) {
       const w = new BitWriter(); const c = this.chunks.get(key)!;
-      for (const [id, old] of this.changes.get(key)!.old) {
-        const es = c.ents.get(id);
-        if (!es) { if (old) writeDespawn(w, id); } else writeEntityRecord(w, this.schema, id, es, old);
-      }
+      // bulk removals first: sorted netIds as delta-varints (a raid wiping 500 pieces costs ~1-2 B per piece)
+      const gone: number[] = [];
+      for (const [id, old] of this.changes.get(key)!.old) if (!c.ents.has(id) && old) gone.push(id);
+      gone.sort((a, b) => a - b);
+      w.writeVarUint(gone.length); let prev = 0; for (const id of gone) { w.writeVarUint(id - prev); prev = id; }
+      for (const [id, old] of this.changes.get(key)!.old) { const es = c.ents.get(id); if (es) writeEntityRecord(w, this.schema, id, es, old); }
       writeEnd(w); b = w.snapshotBits(); this.deltaBlobs.set(key, b);
     }
     return b;
@@ -244,7 +247,9 @@ export class StaticClient {
         let a = this.active.get(key);
         if (!a && from === 0) { a = { version: 0, ents: new Map() }; this.active.set(key, a); }
         const ok = !!a && a.version === from;
+        const n = r.readVarUint(); const gone: number[] = []; let prev = 0; for (let i = 0; i < n; i++) { prev += r.readVarUint(); gone.push(prev); }
         let d; try { d = decodeDelta(r, this.schema, ok ? a!.ents : undefined); } catch { d = undefined; }
+        if (d) for (const id of gone) d.state.delete(id);
         if (!ok || !d) { if (!d) return; this.nack(key); continue; }
         this.stats.deltas++; this.applyDiff(key, a!.ents, d.state); a!.ents = d.state; a!.version = to; continue;
       }

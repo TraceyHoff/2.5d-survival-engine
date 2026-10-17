@@ -12,7 +12,7 @@ Server-authoritative snapshot replication. Clients predict their owned entities 
 - `LoopbackNetwork` (+ `LinkConditions {latencyMs, jitterMs, loss}`): in-memory, virtual clock, deterministic; loss hits unreliable only; reliable never reorders. Public API, used by `@engine/testkit` `createHarness`.
 - `WsServerTransport` (Node, `@engine/net/node`), `WebSocketClientTransport` (browser). Over WS both channels share TCP; unreliable sends are dropped while `bufferedAmount` > 64 KiB.
 
-## 3. Protocol (v2)
+## 3. Protocol (v3)
 Header on every packet (frozen layout): `u16 protocolVersion, u8 msgType`. Bodies are bit-packed (`BitWriter`/`BitReader`, implement core `FieldWriter/FieldReader`).
 
 | Msg | Channel | Body |
@@ -21,10 +21,17 @@ Header on every packet (frozen layout): `u16 protocolVersion, u8 msgType`. Bodie
 | Welcome / Reject | rel | clientId, token, tickHz, serverTick / reason, detail (mismatching hash name) |
 | Input | unrel | ackTick, viewTick (client render tick, for lag comp), ≤8 newest unprocessed inputs (consecutive seqs) |
 | Snapshot | unrel | serverTick, baselineTick (NONE = full), lastProcessedInputSeq, records… End |
-| Command | rel | varuint commandId, payload |
+| Command | rel | varuint commandId, varuint viewTick+1 (client render tick at send time; 0 = unknown), payload |
 | Events | rel or unrel | serverTick, varuint n, (eventId, payload)… |
 | Static (8) | rel | serverTick, sections `(more:1, kind:2, chunk cx,cy zigzag)`: Part(records…End, final:1 [version]) · Hit(version) · Delta(from, to, records…End) · Leave |
 | StaticCtl (9, c→s) | rel | kind:2 (Evict / Nack), chunk |
+| Groups (10) | rel | §13 roster changes |
+| Chat (11) | rel | §14 |
+| Markers (12) | unrel | §13 member markers |
+| CommandRejected (13) | rel | varuint commandId, varuint reason, utf8 detail |
+| Trade (14) | rel | §15 |
+| Ping (15) / Pong (16) | unrel | s→c: u32 nonce, u16 lastRttMs; c→s: u32 nonce |
+| Report (17, c→s) | rel | §17 |
 
 **Handshake hashes**: `schema` = `world.getSchemaHash()` (component ids/schemas plus core *salts*, so `installAssetHash` / `world.addSchemaSalt` are covered), `netdefs` = command+event registry, plus any `NetServerOptions.hashes` / `NetClientOptions.hashes` (e.g. a separate `assets` entry if wanted). Any missing/different name → `Reject(SchemaMismatch | HashMismatch, name)`. Adding a hash = adding a key on both sides.
 
@@ -158,3 +165,160 @@ packages/net/src/
 - Interest uses one viewpoint per client (`InterestGrid.setClient` takes a single position). Multi-viewpoint (party, camera) would need a world API.
 - Adaptive interpolation delay / clock sync.
 - Server-side rewind for combat (helpers exist; the policy belongs to gameplay).
+
+## 13. Groups: rosters, scopes, markers (milestone 4)
+Membership is owned by core's `GroupRegistry` (batch 7) and gameplay (policies, ranks, caps: party 8, clan 50, from data). Net only replicates
+and scopes. `new GroupReplicator(server, { groups, playerIdOf?, markerHz = 2, markerBudgetBytes = 512, markerHealth? })`. The code is written
+against a structural `GroupSource` (`seq, get, groupsOf, changesSince`), so core's registry plugs in directly. TODO(core batch 7): default
+`playerIdOf` should read core `PlayerId`; today it defaults to clientId.
+
+**Routing.** Every tick, `changesSince(lastSeq)` goes **only to affected members**: current members of the group, plus the removed player.
+- A player who joins a group gets that group's full roster.
+- A removed player gets `delete(group)`, so the client drops the group.
+- A new session gets the full rosters of all its groups.
+- If the log is overrun, everyone resyncs.
+
+**Roster wire (Groups, reliable):** `varuint n`, then `n` changes. Each change is `op:2 (0 create, 1 delete, 2 member)`, `varuint seq`,
+`varuint group`, then by op:
+- create: `u8 kind` (1 party, 2 clan).
+- member: `varuint playerId`, `u8 role` (0 removed, 1 member, 2 officer, 3 leader).
+
+**Client:** `client.groups.groups: Map<groupId, {kind, members: Map<playerId, role>}>`, `ofKind(kind)` and `on(change)`. Set
+`client.groups.into = coreRegistry` to mirror into core's registry via `apply()`.
+
+**Scopes.**
+- `server.setScope(def, "party" | "clan")`: the owner plus members of the owner's party or clan.
+- Event scopes `{ group: groupId }` and `{ groupOf: entity, kind: "party" | "clan" }` (online members only).
+- Gameplay's `Membership` summary component (partyId, clanId, rank) uses scope `"all"`.
+
+**Member markers (Markers, unreliable, 2 Hz):** group members outside the viewer's AOI only, party first then nearest, capped at
+`markerBudgetBytes`. Wire: `u32 tick`, then repeated `(bit more=1, varuint playerId, varuint zigzag(round(x·4)), varuint zigzag(round(y·4)),
+u8 hp%)`, ending with bit 0. hp% 255 = unknown. Client: `client.groups.markers: Map<playerId, {x, y, hp, tick}>`.
+
+## 14. Chat transport (milestone 4)
+`new ChatServer(server, opts)`. Client: `client.chat.send(channel, text, { to?, mentions?, emote? })`, `client.chat.on(msg => …)`,
+`client.chat.onReject((channel, reason) => …)`, `client.chat.history`.
+- **Channels:** Global 0, Local 1, Party 2, Clan 3, Trade 4, Whisper 5, System 6.
+- **Routing:**
+  - Local: owned-entity positions within `localRadius`, default 48 tiles.
+  - Party and clan: group resolver. Non-members are refused with NotMember and never receive anything.
+  - Global and trade: everyone.
+  - Whisper: by `toPlayerId`; the sender gets an echo.
+  - System: server only, `chat.system(text, toClients?)`.
+- **Server boundary, in order:**
+  1. per-session token bucket (default 2/s, burst 5; reports a `chatRateLimited` anomaly);
+  2. normalize hook (default NFC + trim);
+  3. empty check, then max length (default 256);
+  4. `isMuted`;
+  5. `policy.check` (core chat model adapter: channel rights, core rate limits, mutes; TODO(core batch 7));
+  6. `filter` (replace text or refuse);
+  7. recipients, minus anyone who blocks the sender (`policy.isBlocked`).
+- **Reject reasons:** RateLimited 1, TooLong 2, Muted 3, NotMember 4, NoTarget 5, Filtered 6, Empty 7, Policy 8, BadChannel 9.
+
+**Wire (Chat, reliable).** UTF-8 strings are `varuint byteLength` + bytes. TODO: switch to core's codec, same layout.
+- c→s: `u8 channel, varuint toPlayerId (0 unless whisper), utf8 text, u8 nMentions, nMentions × varuint playerId, u16 emote (0 = none)`.
+- s→c message: `bit 0, u8 channel, varuint fromPlayer (0 = system), varuint fromClient, u32 tick, utf8 text, u8 nMentions, varuint playerId…, u16 emote`.
+- s→c reject: `bit 1, u8 channel, u8 reason`.
+
+**Mentions.** The client resolves them from @name. The server dedupes them, drops ids that aren't online or are 0, and caps them at 8.
+Mentions are never used for delivery.
+
+## 15. Trade sessions (milestone 4)
+Net owns the state machine and messages. Gameplay registers the rules through `validate(world, a, b, phase, offers?)`, with phases request,
+offer, commit and tick; return a code to refuse or cancel, which reaches the client as `TradeEnd.Hook + code`. The swap goes through
+`TradeInventory.swap`. That must be atomic. TODO(core batch 7): implement it with core's atomic container transfer + transaction log. Each
+committed trade gets a `txnId`.
+
+**Item model.** Slots are parallel `item / count / durability` u16[16] plus `createdTick` u32[16], with no instance ids. An offer line is
+`{slot, count}`. The server snapshots the slot tuple when the offer is made. At commit, every slot must still hold the same item, durability
+and createdTick, with count ≥ offered, or the trade ends with Validation.
+
+**Flow.**
+1. Request → Accept or Decline.
+2. While Open: any number of Offer / Lock / Confirm(version).
+3. Commit when both sides have confirmed.
+
+**Rules.**
+- Any offer change bumps `version` and that side's `offerRevision`, and clears both locks and confirms.
+- A Confirm whose `version` is stale is ignored.
+- One active trade (requested or open) per client. Further requests get Busy; this is the double-spend guard, together with commit
+  re-validation.
+- The trade is cancelled on disconnect, missing or dead entity, distance > `maxDistance` (default 6), request timeout (30 s), idle timeout
+  (120 s), or the tick hook.
+- `TradeEnd` reasons: None 0, Declined 1, Timeout 2, Distance 3, Dead 4, Disconnect 5, Busy 6, Validation 7, Cancelled 8, NoTarget 9,
+  SwapFailed 10, Hook+n 100+n.
+
+**Wire (Trade, reliable).**
+- c→s: `u8 op`, then:
+  - Request (0): `varuint targetPlayer`;
+  - Accept (1), Decline (2), Lock (4), Cancel (6): `varuint tradeId`;
+  - Offer (3): `varuint tradeId, u8 n, n × (u8 slot, u16 count)`;
+  - Confirm (5): `varuint tradeId, varuint version`.
+- s→c **tradeUpdated** (sent to both traders on every change): `varuint tradeId, varuint partnerPlayer, u8 status (Requested 0, Open 1,
+  Done 2, Cancelled 3), u8 reason, bit iRequested, varuint version, varuint myOfferRevision, varuint theirOfferRevision, bit myLock,
+  bit myConfirm, bit theirLock, bit theirConfirm, myOffer, theirOffer`.
+  - Each offer is `u8 n, n × (u8 slot, u16 item, u16 count, u16 durability, u32 createdTick)`.
+  - The partner's item details are included, because they can't see your inventory.
+
+**Client:** `client.trade.request / accept / decline / offer / lock / confirm(id, version) / cancel`, plus `client.trade.current` and
+`client.trade.on(view => …)`.
+
+## 16. Commands, combat validation, lag compensation (milestone 4)
+- **Rejections.** `server.rejectCommand(clientId, def | id, reason, detail?)` sends CommandRejected. Client: `client.onCommandRejected(fn)`
+  and `client.rejections`. Core's CommandHandler validation forwards its rejection events here. TODO(core batch 7): subscribe
+  automatically. Net keeps its own per-command token buckets.
+- **View tick.** Commands carry the client's view tick, which updates `session.lastViewTick` on arrival. Without this, a command arriving
+  ahead of the input that carries the view tick would rewind to a stale tick.
+- **Position history.** `server.positions` (PositionHistory) is the authoritative history; core has none.
+  - Per-entity typed ring buffers (capacity 24), window = `positionHistoryTicks`.
+  - Entities idle for a whole window are purged and answered from their current Transform.
+  - `positions.track = (w, e) => w.has(e, Health)` limits recording to hittable entities. Memory is tracked movers × 24 × 16 B.
+- **`validateHit(server, session, attacker, target, { reach, coneDeg?, aim?, maxRewindMs = 200, slack = 0.25, attackerAt? })`.**
+  - Rewinds the target to `session.lastViewTick`, clamped to now − 200 ms.
+  - Checks reach, then the cone, widened by the target's angular size.
+  - Returns `{ok, rewindTick, distance, targetPos}` or `{ok: false, reason: noAttacker | noTarget | reach | cone}`.
+- **`rewindTickFor(server, session)`.**
+- **`FireRateGuard(server?, toleranceTicks = 1).tryUse(session, action, minIntervalTicks)`.** Reports `fireRate` anomalies.
+
+## 17. Anti-cheat and session plumbing (milestone 4)
+- **Position authority.** Clients send inputs and commands only, and Transform is never accepted from a client.
+- **`new AntiCheat(server, cfg)`.**
+  - **Movement validator** (postSim): owned entities' server-side motion against `maxSpeed` (default 8 tiles/s) × (1 + `speedTolerance`
+    0.25). Jumps over `teleportDistance` (default 4) count as teleport unless `allowTeleport(e)` returns true.
+  - **Anomaly feed** (`server.onAnomaly` / `server.anomaly(s, kind, detail)`): rateLimited, unknownCommand, malformed, inputFlood,
+    badEntityRef, commandRejected, chatRateLimited, fireRate, tradeOffer, speed, teleport, reportRateLimited. Gameplay can add kinds.
+  - **Suspicion score.** Weights per kind (`DEFAULT_WEIGHTS`, overridable) with linear decay (`decayPerSec`, default 0.5). Thresholds
+    default to 10 → log, 25 → flag, 50 → kick. Each fires once per crossing and re-arms below half the threshold.
+  - **Structured log** (`ac.log`, `onLog`): `{tick, clientId, playerId, kind, detail, score, action?, target?, reason?, messageTick?}`.
+    Also `onAction`, `score(id)`, `isFlagged(id)`, `counters(id)`.
+- **Player reports.** Client: `client.reportPlayer(targetPlayerId, reason, messageTick?)`, with reasons Spam 1, Abuse 2, Cheating 3,
+  Other 4. Rate-limited to 3/min (burst 3). Each report is logged as kind `report` and passed to `onReport(report)`. Wire (Report,
+  reliable): `varuint targetPlayerId, u8 reason, varuint messageTick+1 (0 = none)`.
+- **RTT.** The server pings every `pingIntervalMs` (default 1000). `session.rttMs` is a smoothed value, and `client.rttMs` is echoed in the
+  next Ping. Simulated transports provide `now()`.
+- **Resume.** `resumeToken(token, world) => boolean` accepts a stored token the server doesn't know (e.g. after a restart). A new session
+  is created with that token, `session.resumed` is set, and `onClientJoin` runs.
+- **Forget.** `server.kick(clientId)` (= `removeSession`) disconnects the client and forgets its session; it is safe inside `onClientLeave`.
+
+## 18. Crafting replication pattern (milestone 4)
+- The client predicts **progress only**: the shared craft system runs on the predicted entity.
+- At completion, the client holds at 100% and never runs the completion branch, so it never mints items.
+- The server completes the job, writes the owner-scoped inventory, and emits a reliable owner-scoped `CraftCompleted` event.
+- The item appears on the client only when the snapshot carrying the inventory arrives. A server refusal goes out as a command rejection,
+  and reconciliation resets the predicted progress.
+- `test/crafting.test.ts` demonstrates this with fake `Craft` / `Bag` components.
+
+## 19. Raids and large groups (milestone 4)
+**Raid bulk removal.** Static Delta sections start with `varuint nRemoved` + sorted delta-varint netIds, before the change and spawn
+records. Destroying 600 pieces across 9 chunks in one tick costs 664 B, 1.1 B per removal (individual despawn records were about 3 B
+each).
+
+**Benches** (`test/war.bench.test.ts`, fake sessions; strict ceilings only with `PERF=1`):
+
+| Scenario | ms/tick | bytes/client/tick | notes |
+|---|---|---|---|
+| 50v50 clan war, 256² area, 3k props, rosters + clan markers + party-scoped comp, 30 hit events/tick | ~16 | 386 (≈62 kbit/s) | markers 22.5 B/client/tick |
+| 100-player brawl in 64², 100 hit events/tick | ~14–25 (noisy box) | 2104 (≈337 kbit/s) | events ≈ 6 B each |
+
+Events are already aggregated as one Events message per tick per client per reliability class. Further hit compaction, such as a
+per-target damage sum, is left to gameplay, since it changes the event semantics.

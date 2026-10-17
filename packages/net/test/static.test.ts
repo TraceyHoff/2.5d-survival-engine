@@ -131,4 +131,18 @@ describe("static replication class (building pieces)", () => {
     expect(mismatches()).toEqual({ missing: 0, wrong: 0, extra: 0, expected: 3000 });
     expect(server.staticStats(1)!.streaming).toBe(0);
   });
+
+  it("raid: 600 pieces destroyed in one tick across chunks -> compact sorted delta-varint removal batches", async () => {
+    const { sw, A, server, pieces, step, mismatches } = await setup({ loss: 0.1 });
+    step(40); expect(mismatches().missing).toBe(0);
+    const b0 = server.staticStats(1)!.bytes;
+    const victims = pieces.filter((_, i) => i % 5 === 0).slice(0, 600); // spread over all 9 chunks
+    for (const e of victims) sw.destroy(e);
+    step(1);
+    const bytes = server.staticStats(1)!.bytes - b0;
+    console.log(JSON.stringify({ raidRemoved: victims.length, raidBytes: bytes, bytesPerRemoval: +(bytes / victims.length).toFixed(2) }));
+    expect(bytes).toBeLessThan(victims.length * 1.6);
+    step(5);
+    expect(mismatches()).toEqual({ missing: 0, wrong: 0, extra: 0, expected: 2400 });
+  });
 });
