@@ -6,9 +6,11 @@ describe("RecipeRegistry", () => {
   const items = new Map([["wood", 1], ["stone", 2], ["fiber", 3], ["stone_axe", 4], ["plank", 5]]);
   const look = { item: (k: string) => items.get(k) ?? 100 + k.length, station: (k: string) => ({ campfire: 1, workbench: 2 } as Record<string, number>)[k] };
   it("loads gameplay's recipes.json format unchanged with its ids", () => {
-    const raw = JSON.parse(readFileSync(new URL("../../gameplay/data/recipes.json", import.meta.url), "utf8"));
-    const { registry, errors } = loadRecipes(raw, look); expect(errors).toEqual([]);
-    for (const r of raw.recipes) expect(registry.byKey(r.key)!.id).toBe(r.id);
+    // gameplay owns the station keys (data/stations.json) and recipe ids (data/ids.lock.json)
+    const json = (f: string) => JSON.parse(readFileSync(new URL(`../../gameplay/data/${f}`, import.meta.url), "utf8"));
+    const raw = json("recipes.json"); const stations = json("stations.json").stations as Record<string, number>; const lock = json("ids.lock.json").recipes as Record<string, number>;
+    const { registry, errors } = loadRecipes(raw, { item: look.item, station: (k) => stations[k] }, lock); expect(errors).toEqual([]);
+    for (const r of raw.recipes) expect(registry.byKey(r.key)!.id).toBe(r.id ?? lock[r.key]);
   });
   it("extended fields, stable ids via lock, validation", () => {
     const raw = [
