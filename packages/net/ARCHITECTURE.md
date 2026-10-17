@@ -28,7 +28,7 @@ Header on every packet (frozen layout): `u16 protocolVersion, u8 msgType`. Bodie
 | Groups (10) | rel | §13 roster changes |
 | Chat (11) | rel | §14 |
 | Markers (12) | unrel | §13 member markers |
-| CommandRejected (13) | rel | varuint commandId, varuint reason, utf8 detail |
+| CommandRejected (13) | rel | bit core, varuint commandId (core: command type), varuint seq+1 (0 = unknown), varuint reason, utf8 detail |
 | Trade (14) | rel | §15 |
 | Ping (15) / Pong (16) | unrel | s→c: u32 nonce, u16 lastRttMs; c→s: u32 nonce |
 | Report (17, c→s) | rel | §17 |
@@ -169,21 +169,23 @@ packages/net/src/
 ## 13. Groups: rosters, scopes, markers (milestone 4)
 Membership is owned by core's `GroupRegistry` (batch 7) and gameplay (policies, ranks, caps: party 8, clan 50, from data). Net only replicates
 and scopes. `new GroupReplicator(server, { groups, playerIdOf?, markerHz = 2, markerBudgetBytes = 512, markerHealth? })`. The code is written
-against a structural `GroupSource` (`seq, get, groupsOf, changesSince`), so core's registry plugs in directly. TODO(core batch 7): default
-`playerIdOf` should read core `PlayerId`; today it defaults to clientId.
+against a structural `GroupSource` (`seq, get, groupsOf, changesSince`); core's `GroupRegistry` is passed directly (tests use it). `playerIdOf`
+defaults to core `PlayerId.id` on the client's owned entity, else clientId.
 
-**Routing.** Every tick, `changesSince(lastSeq)` goes **only to affected members**: current members of the group, plus the removed player.
-- A player who joins a group gets that group's full roster.
+**Routing (per client, last-acked seq).** Each client has its own last delivered seq (the reliable channel delivers in order, so sent = acked)
+and the set of groups it holds. Every tick, `changesSince(clientSeq)` is filtered to that client: changes of groups it holds (member/banner/delete).
+- A player who joins a group gets that group's full roster (create + members + banner).
 - A removed player gets `delete(group)`, so the client drops the group.
 - A new session gets the full rosters of all its groups.
-- If the log is overrun, everyone resyncs.
+- If `changesSince` returns undefined (log overrun), only that client resyncs: deletes for what it holds, then full rosters (`stats.resyncs`).
 
-**Roster wire (Groups, reliable):** `varuint n`, then `n` changes. Each change is `op:2 (0 create, 1 delete, 2 member)`, `varuint seq`,
+**Roster wire (Groups, reliable):** `varuint n`, then `n` changes. Each change is `op:2 (0 create, 1 delete, 2 member, 3 banner)`, `varuint seq`,
 `varuint group`, then by op:
 - create: `u8 kind` (1 party, 2 clan).
 - member: `varuint playerId`, `u8 role` (0 removed, 1 member, 2 officer, 3 leader).
+- banner: `bit has`, then if has `u8 shape, u8 pattern, u32 color0, u32 color1, u16 emblemId` (core Banner). has = 0 clears.
 
-**Client:** `client.groups.groups: Map<groupId, {kind, members: Map<playerId, role>}>`, `ofKind(kind)` and `on(change)`. Set
+**Client:** `client.groups.groups: Map<groupId, {kind, members: Map<playerId, role>, banner?}>`, `ofKind(kind)` and `on(change)`. Set
 `client.groups.into = coreRegistry` to mirror into core's registry via `apply()`.
 
 **Scopes.**
@@ -205,20 +207,26 @@ u8 hp%)`, ending with bit 0. hp% 255 = unknown. Client: `client.groups.markers: 
   - Global and trade: everyone.
   - Whisper: by `toPlayerId`; the sender gets an echo.
   - System: server only, `chat.system(text, toClients?)`.
+- Validation, recipients, mutes, blocks and rate limits are core's `ChannelRegistry` (passed as `opts.channels`, required); the payload is
+  core's `encodeChatMessage`. Net doesn't reimplement any of it. `opts.localRadius` (default 48) sets `channels.localRadius`.
 - **Server boundary, in order:**
-  1. per-session token bucket (default 2/s, burst 5; reports a `chatRateLimited` anomaly);
-  2. normalize hook (default NFC + trim);
-  3. empty check, then max length (default 256);
-  4. `isMuted`;
-  5. `policy.check` (core chat model adapter: channel rights, core rate limits, mutes; TODO(core batch 7));
-  6. `filter` (replace text or refuse);
-  7. recipients, minus anyone who blocks the sender (`policy.isBlocked`).
+  1. kind > System → BadChannel;
+  2. normalize hook (default NFC + trim), then empty check;
+  3. build core `ChatMessage {kind, channel: sender's party/clan group id | whisper target | 0, from: playerId, tick, text}`;
+  4. `channels.validate(m)`: system_only→BadChannel, too_long (512 B)→TooLong, muted→Muted, not_member→NotMember, no_target→NoTarget,
+     rate_limited→RateLimited (+ `chatRateLimited` anomaly). Core's TokenBucket is per player, on ticks (default capacity 5, 0.05/tick);
+  5. `maxLength` (UTF-16 units, default 256) → TooLong;
+  6. `filter` (replace text or refuse → Filtered);
+  7. `channels.recipients(m, online, sender)` (blocks applied by core; players without a position never count as local), mapped
+     playerId→client; the sender always gets its own line. Whisper to an offline target → NoTarget.
 - **Reject reasons:** RateLimited 1, TooLong 2, Muted 3, NotMember 4, NoTarget 5, Filtered 6, Empty 7, Policy 8, BadChannel 9.
+- Mute and block through `chat.channels.mutes` (core MuteList, serializable).
 
-**Wire (Chat, reliable).** UTF-8 strings are `varuint byteLength` + bytes. TODO: switch to core's codec, same layout.
-- c→s: `u8 channel, varuint toPlayerId (0 unless whisper), utf8 text, u8 nMentions, nMentions × varuint playerId, u16 emote (0 = none)`.
-- s→c message: `bit 0, u8 channel, varuint fromPlayer (0 = system), varuint fromClient, u32 tick, utf8 text, u8 nMentions, varuint playerId…, u16 emote`.
-- s→c reject: `bit 1, u8 channel, u8 reason`.
+**Wire (Chat, reliable).** utf8 = `varuint byteLength` + bytes.
+- c→s: `u8 kind, varuint toPlayerId (0 unless whisper), utf8 text, u8 nMentions, nMentions × varuint playerId, u16 emote (0 = none)`.
+- s→c message: `bit 0, varuint n, n bytes core encodeChatMessage (u8 kind, u32 channel, u32 from (0 = system), u32 tick, string text),
+  varuint fromClient, u8 nMentions, varuint playerId…, u16 emote`. Client view: `{channel, channelId, fromPlayer, fromClient, tick, text, mentions, emote}`.
+- s→c reject: `bit 1, u8 kind, u8 reason`.
 
 **Mentions.** The client resolves them from @name. The server dedupes them, drops ids that aren't online or are 0, and caps them at 8.
 Mentions are never used for delivery.
@@ -226,8 +234,10 @@ Mentions are never used for delivery.
 ## 15. Trade sessions (milestone 4)
 Net owns the state machine and messages. Gameplay registers the rules through `validate(world, a, b, phase, offers?)`, with phases request,
 offer, commit and tick; return a code to refuse or cancel, which reaches the client as `TradeEnd.Hook + code`. The swap goes through
-`TradeInventory.swap`. That must be atomic. TODO(core batch 7): implement it with core's atomic container transfer + transaction log. Each
-committed trade gets a `txnId`.
+`TradeInventory.swap`, which must be atomic. `coreTradeInventory({ createdTick? })` implements it over core `Containers` + `transaction()`:
+`readSlot` maps `Slot.meta` → durability; `swap` moves every line into a free slot of the other side with `tx.transfer` inside one core
+transaction (container validators run; any failure rolls both sides back). It needs enough empty slots; stacks aren't merged. Each committed
+trade gets a `txnId`.
 
 **Item model.** Slots are parallel `item / count / durability` u16[16] plus `createdTick` u32[16], with no instance ids. An offer line is
 `{slot, count}`. The server snapshots the slot tuple when the offer is made. At commit, every slot must still hold the same item, durability
@@ -264,9 +274,11 @@ and createdTick, with count ≥ offered, or the trade ends with Validation.
 `client.trade.on(view => …)`.
 
 ## 16. Commands, combat validation, lag compensation (milestone 4)
-- **Rejections.** `server.rejectCommand(clientId, def | id, reason, detail?)` sends CommandRejected. Client: `client.onCommandRejected(fn)`
-  and `client.rejections`. Core's CommandHandler validation forwards its rejection events here. TODO(core batch 7): subscribe
-  automatically. Net keeps its own per-command token buckets.
+- **Rejections.** `server.rejectCommand(clientId, def | id, reason, detail?, { seq?, core? })` sends CommandRejected. The server subscribes to
+  core `CommandRejected` events (from `installCommandHandlers`) and forwards each to the issuing client only, as
+  `{source: "core", commandId: type, seq, reason: 0, detail: reason string}`; disable with `forwardCoreRejections: false`. Client:
+  `client.onCommandRejected(fn)` and `client.rejections` (`{source: "net" | "core", command, commandId, reason, detail, seq?}`). Net keeps its
+  own per-command token buckets.
 - **View tick.** Commands carry the client's view tick, which updates `session.lastViewTick` on arrival. Without this, a command arriving
   ahead of the input that carries the view tick would rewind to a stale tick.
 - **Position history.** `server.positions` (PositionHistory) is the authoritative history; core has none.

@@ -1,69 +1,66 @@
 /**
- * Chat transport + delivery. Net owns framing and routing; the channel model, rate limits, mutes and blocks are
- * core's (batch 7) and plug in through ChatPolicy (TODO(core batch 7): adapter over core's chat model; until then
- * net's own token bucket / mute / block hooks below apply).
+ * Chat transport + delivery. Net owns framing and routing; the channel model, validation (mutes, membership,
+ * rate limit, byte cap), recipients and block lists are core's ChannelRegistry, and the message payload is core's
+ * encodeChatMessage. Net adds: text normalization/filter hooks, a UTF-16 maxLength, mentions, emote, playerId->client mapping.
  *
  * Wire (reliable, MsgType.Chat):
- *  client -> server: u8 channel, varuint toPlayerId (whisper target; else 0), utf8 text, u8 nMentions, nMentions x varuint
- *                    playerId (client-resolved from @name), u16 emote (0 = none)
+ *  client -> server: u8 kind (ChannelKind), varuint toPlayerId (whisper target; else 0), utf8 text, u8 nMentions,
+ *                    nMentions x varuint playerId (client-resolved from @name), u16 emote (0 = none)
  *  server -> client: bit kind
- *    0 message: u8 channel, varuint fromPlayer (0 = system), varuint fromClient, u32 tick, utf8 text,
- *               u8 nMentions, varuint playerId..., u16 emote
+ *    0 message: varuint n, n bytes core encodeChatMessage {u8 kind, u32 channel, u32 from, u32 tick, string text},
+ *               varuint fromClient, u8 nMentions, varuint playerId..., u16 emote
+ *      (channel = group id for party/clan, target playerId for whisper, else 0; from 0 = system)
+ *    1 reject:  u8 kind, u8 reason (ChatReject)
  *  Mentions are capped at 8, filtered to valid online players, and never used for delivery (whispers use toPlayerId).
- *    1 reject:  u8 channel, u8 reason (ChatReject)
  */
-import { Transform, type Entity } from "@engine/core";
+import { BinaryReader, type ChannelRegistry, Transform, decodeChatMessage, encodeChatMessage, type ChatMessage, type ChatPlayer, type Entity } from "@engine/core";
 import { BitWriter, type BitReader } from "./bits.js";
-import { TokenBucket, type RateLimit } from "./messages.js";
 import { MsgType, writeHeader } from "./protocol.js";
 import type { ClientSession, NetServer } from "./server.js";
 import { readUtf8, writeUtf8 } from "./utf8.js";
 
+/** Numeric mirror of core's ChannelKind (core's is a const enum). */
 export const ChatChannel = { Global: 0, Local: 1, Party: 2, Clan: 3, Trade: 4, Whisper: 5, System: 6 } as const;
 export type ChatChannel = (typeof ChatChannel)[keyof typeof ChatChannel];
 export const ChatReject = { RateLimited: 1, TooLong: 2, Muted: 3, NotMember: 4, NoTarget: 5, Filtered: 6, Empty: 7, Policy: 8, BadChannel: 9 } as const;
 export type ChatReject = (typeof ChatReject)[keyof typeof ChatReject];
+const CORE_REJECT: Record<string, ChatReject> = { muted: ChatReject.Muted, rate_limited: ChatReject.RateLimited, too_long: ChatReject.TooLong, not_member: ChatReject.NotMember, no_target: ChatReject.NoTarget, system_only: ChatReject.BadChannel };
 
-/** Core chat model adapter. Every method optional. */
-export interface ChatPolicy {
-  /** Channel permission / mute / rate decision for a sender. Return a ChatReject code to refuse. */
-  check?(fromPlayer: number, channel: ChatChannel, text: string, tick: number): ChatReject | undefined;
-  /** Recipient has blocked sender: message is not delivered to that recipient. */
-  isBlocked?(recipientPlayer: number, senderPlayer: number): boolean;
-}
 export interface ChatServerOptions {
-  /** Local channel radius in tiles (default 48), from owned-entity positions. */
+  /** Core channel model (validate / recipients / mutes / blocks / rate). Required. */
+  channels: ChannelRegistry;
+  /** Local channel radius in tiles; sets channels.localRadius (default 48). */
   localRadius?: number;
-  /** Max text length in UTF-16 code units after normalization (default 256). */
+  /** Max text length in UTF-16 code units after normalization (default 256); core also caps at CHAT_MAX_BYTES. */
   maxLength?: number;
-  /** Per-session send rate (default 2/s, burst 5). Applies on top of the policy. */
-  rate?: RateLimit;
-  /** Text normalization (trim, collapse whitespace, NFC... default: NFC + trim). */
+  /** Text normalization (default: NFC + trim). */
   normalize?: (text: string) => string;
-  /** Mute/filter hook: return replacement text, or null to refuse (Filtered). */
+  /** Profanity/filter hook: return replacement text, or null to refuse (Filtered). */
   filter?: (session: ClientSession, channel: ChatChannel, text: string) => string | null;
-  /** Muted senders (Muted). */
-  isMuted?: (session: ClientSession, channel: ChatChannel) => boolean;
-  policy?: ChatPolicy;
-  /** Persistent player id (TODO(core batch 7): core PlayerId). Default clientId. */
+  /** Persistent player id. Default: the group resolver's playerOf (core PlayerId), else clientId. */
   playerIdOf?: (session: ClientSession) => number;
 }
-export interface ChatDelivered { channel: ChatChannel; fromPlayer: number; fromClient: number; tick: number; text: string; mentions: number[]; emote: number }
+export interface ChatDelivered { channel: ChatChannel; /** group id (party/clan) / whisper target / 0 */ channelId: number; fromPlayer: number; fromClient: number; tick: number; text: string; mentions: number[]; emote: number }
 export const MAX_MENTIONS = 8;
 
 export class ChatServer {
-  private buckets = new Map<number, TokenBucket>();
   readonly stats = { delivered: 0, rejected: 0 };
   /** Server-side observers (logging/moderation). */
   readonly log: ((m: ChatDelivered & { recipients: number[] }) => void)[] = [];
-  constructor(readonly server: NetServer, readonly opts: ChatServerOptions = {}) {
+  readonly channels: ChannelRegistry;
+  constructor(readonly server: NetServer, readonly opts: ChatServerOptions) {
+    this.channels = opts.channels;
+    this.channels.localRadius = opts.localRadius ?? 48;
     server.onRawMessage(MsgType.Chat, (s, r) => this.onMessage(s, r));
-    server.onTick(() => { const dt = 1 / server.tickHz; for (const b of this.buckets.values()) b.refill(dt); });
   }
-  playerOf(s: ClientSession): number { return this.opts.playerIdOf ? this.opts.playerIdOf(s) : s.clientId; }
+  playerOf(s: ClientSession): number {
+    if (this.opts.playerIdOf) return this.opts.playerIdOf(s);
+    const g = this.server.groups as { playerOf?(c: number): number | undefined } | undefined;
+    return g?.playerOf?.(s.clientId) ?? s.clientId;
+  }
   private reject(s: ClientSession, channel: number, reason: ChatReject): void {
     this.stats.rejected++;
-    const w = new BitWriter(); writeHeader(w, MsgType.Chat); w.writeBool(true); w.writeBits(channel, 8); w.writeBits(reason, 8);
+    const w = new BitWriter(); writeHeader(w, MsgType.Chat); w.writeBool(true); w.writeBits(channel & 0xff, 8); w.writeBits(reason, 8);
     this.server.sendRaw(s.clientId, w.finish(), "reliable");
   }
   private pos(clientId: number): { x: number; y: number } | undefined {
@@ -71,65 +68,53 @@ export class ChatServer {
     for (const e of this.server.ownedEntities(clientId) as Entity[]) if (w.isAlive(e) && w.has(e, Transform)) { const t = w.get(e, Transform)!; return { x: t.x, y: t.y }; }
     return undefined;
   }
+  /** Online players for core recipients(); players without a position sit at +inf (never local). */
+  private online(): { list: ChatPlayer[]; client: Map<number, number> } {
+    const list: ChatPlayer[] = []; const client = new Map<number, number>();
+    for (const s of this.server.connected()) {
+      const id = this.playerOf(s); const p = this.pos(s.clientId);
+      list.push({ playerId: id, x: p?.x ?? Infinity, y: p?.y ?? Infinity }); client.set(id, s.clientId);
+    }
+    return { list, client };
+  }
   private onMessage(s: ClientSession, r: BitReader): void {
-    const channel = r.readBits(8) as ChatChannel; const target = r.readVarUint(); let text = readUtf8(r, 2048);
+    const kind = r.readBits(8) as ChatChannel; const target = r.readVarUint(); let text = readUtf8(r, 2048);
     const nm = r.readBits(8); const rawMentions: number[] = []; for (let i = 0; i < nm; i++) rawMentions.push(r.readVarUint());
     const emote = r.readBits(16);
-    const online = new Set([...this.server.connected()].map((x) => this.playerOf(x)));
-    const mentions = [...new Set(rawMentions)].filter((p) => p !== 0 && online.has(p)).slice(0, MAX_MENTIONS);
-    if (channel === ChatChannel.System || channel > ChatChannel.System) return this.reject(s, channel, ChatReject.BadChannel);
-    let b = this.buckets.get(s.clientId); if (!b) { b = new TokenBucket(this.opts.rate ?? { perSec: 2, burst: 5 }); this.buckets.set(s.clientId, b); }
-    if (!b.take()) { this.server.anomaly(s, "chatRateLimited"); return this.reject(s, channel, ChatReject.RateLimited); }
+    if (kind > ChatChannel.System) return this.reject(s, kind, ChatReject.BadChannel);
+    const from = this.playerOf(s); const tick = this.server.world.tick;
     text = (this.opts.normalize ?? ((t: string) => t.normalize("NFC").trim()))(text);
-    if (!text) return this.reject(s, channel, ChatReject.Empty);
-    if (text.length > (this.opts.maxLength ?? 256)) return this.reject(s, channel, ChatReject.TooLong);
-    if (this.opts.isMuted?.(s, channel)) return this.reject(s, channel, ChatReject.Muted);
-    const from = this.playerOf(s);
-    const pr = this.opts.policy?.check?.(from, channel, text, this.server.world.tick); if (pr) return this.reject(s, channel, pr);
-    if (this.opts.filter) { const f = this.opts.filter(s, channel, text); if (f === null) return this.reject(s, channel, ChatReject.Filtered); text = f; }
-    const rec = this.recipients(s, channel, target);
-    if (rec === "notMember") return this.reject(s, channel, ChatReject.NotMember);
-    if (rec === "noTarget") return this.reject(s, channel, ChatReject.NoTarget);
-    this.deliver(channel, from, s.clientId, text, rec, mentions, emote);
+    if (!text) return this.reject(s, kind, ChatReject.Empty);
+    let channel = 0;
+    if (kind === ChatChannel.Party || kind === ChatChannel.Clan) channel = this.server.groups?.groupOf(s.clientId, kind === ChatChannel.Party ? "party" : "clan") ?? 0;
+    else if (kind === ChatChannel.Whisper) channel = target;
+    const m: ChatMessage = { kind: kind as number as ChatMessage["kind"], channel, from, tick, text };
+    const core = this.channels.validate(m);
+    if (core) { if (core === "rate_limited") this.server.anomaly(s, "chatRateLimited"); return this.reject(s, kind, CORE_REJECT[core] ?? ChatReject.Policy); }
+    if (text.length > (this.opts.maxLength ?? 256)) return this.reject(s, kind, ChatReject.TooLong);
+    if (this.opts.filter) { const f = this.opts.filter(s, kind, text); if (f === null) return this.reject(s, kind, ChatReject.Filtered); m.text = f; }
+    const { list, client } = this.online();
+    const me = list.find((p) => p.playerId === from);
+    const ids = this.channels.recipients(m, list, me);
+    if (kind === ChatChannel.Whisper && !ids.length) return this.reject(s, kind, ChatReject.NoTarget);
+    const to = ids.map((id) => client.get(id)).filter((c): c is number => c !== undefined);
+    if (!to.includes(s.clientId)) to.push(s.clientId); // sender always sees its own line
+    const mentions = [...new Set(rawMentions)].filter((p) => p !== 0 && client.has(p)).slice(0, MAX_MENTIONS);
+    this.deliver(m, s.clientId, to, mentions, emote);
   }
-  private recipients(s: ClientSession, channel: ChatChannel, target: number): number[] | "notMember" | "noTarget" {
-    const all = [...this.server.connected()];
-    switch (channel) {
-      case ChatChannel.Global: case ChatChannel.Trade: return all.map((x) => x.clientId);
-      case ChatChannel.Local: {
-        const me = this.pos(s.clientId); if (!me) return [s.clientId];
-        const r2 = (this.opts.localRadius ?? 48) ** 2;
-        return all.filter((x) => { const p = x.clientId === s.clientId ? me : this.pos(x.clientId); return !!p && (p.x - me.x) ** 2 + (p.y - me.y) ** 2 <= r2; }).map((x) => x.clientId);
-      }
-      case ChatChannel.Party: case ChatChannel.Clan: {
-        const g = this.server.groups; const kind = channel === ChatChannel.Party ? "party" : "clan";
-        const gid = g?.groupOf(s.clientId, kind); if (gid === undefined) return "notMember";
-        return g!.clientsOfGroup(gid);
-      }
-      case ChatChannel.Whisper: {
-        const t = all.find((x) => this.playerOf(x) === target); if (!t) return "noTarget";
-        return t.clientId === s.clientId ? [s.clientId] : [t.clientId, s.clientId];
-      }
-      default: return [];
-    }
-  }
-  private deliver(channel: ChatChannel, fromPlayer: number, fromClient: number, text: string, to: readonly number[], mentions: readonly number[] = [], emote = 0): void {
-    const tick = this.server.world.tick;
-    const w = new BitWriter(); writeHeader(w, MsgType.Chat); w.writeBool(false); w.writeBits(channel, 8);
-    w.writeVarUint(fromPlayer); w.writeVarUint(fromClient); w.writeBits(tick, 32); writeUtf8(w, text);
-    w.writeBits(mentions.length, 8); for (const m of mentions) w.writeVarUint(m); w.writeBits(emote, 16);
+  private deliver(m: ChatMessage, fromClient: number, to: readonly number[], mentions: readonly number[] = [], emote = 0): void {
+    const payload = encodeChatMessage(m).finish();
+    const w = new BitWriter(); writeHeader(w, MsgType.Chat); w.writeBool(false);
+    w.writeVarUint(payload.length); w.writeBytes(payload); w.writeVarUint(fromClient);
+    w.writeBits(mentions.length, 8); for (const x of mentions) w.writeVarUint(x); w.writeBits(emote, 16);
     const bytes = w.finish(); const sent: number[] = [];
-    for (const c of to) {
-      const rs = this.server.sessions.get(c);
-      if (fromPlayer && rs && c !== fromClient && this.opts.policy?.isBlocked?.(this.playerOf(rs), fromPlayer)) continue;
-      if (this.server.sendRaw(c, bytes, "reliable")) sent.push(c);
-    }
+    for (const c of to) if (this.server.sendRaw(c, bytes, "reliable")) sent.push(c);
     this.stats.delivered += sent.length;
-    for (const f of this.log) f({ channel, fromPlayer, fromClient, tick, text, mentions: [...mentions], emote, recipients: sent });
+    for (const f of this.log) f({ channel: m.kind as number as ChatChannel, channelId: m.channel, fromPlayer: m.from, fromClient, tick: m.tick, text: m.text, mentions: [...mentions], emote, recipients: sent });
   }
-  /** Server/system message to everyone, or to the given clients. */
+  /** Server/system message to everyone, or to the given clients (bypasses validation and blocks). */
   system(text: string, to?: readonly number[]): void {
-    this.deliver(ChatChannel.System, 0, 0, text, to ?? [...this.server.connected()].map((s) => s.clientId));
+    this.deliver({ kind: ChatChannel.System as number as ChatMessage["kind"], channel: 0, from: 0, tick: this.server.world.tick, text }, 0, to ?? [...this.server.connected()].map((s) => s.clientId));
   }
 }
 
@@ -141,9 +126,9 @@ export class ChatClient {
   constructor(private readonly client: { sendRaw(b: Uint8Array, ch: "reliable" | "unreliable"): boolean; onRawMessage(type: number, fn: (r: BitReader) => void): void }, readonly historySize = 100) {
     client.onRawMessage(MsgType.Chat, (r) => {
       if (r.readBool()) { const ch = r.readBits(8) as ChatChannel; const reason = r.readBits(8) as ChatReject; for (const f of this.rejectHandlers) f(ch, reason); return; }
-      const channel = r.readBits(8) as ChatChannel; const fromPlayer = r.readVarUint(); const fromClient = r.readVarUint(); const tick = r.readBits(32); const text = readUtf8(r);
+      const core = decodeChatMessage(new BinaryReader(r.readBytes(r.readVarUint()))); const fromClient = r.readVarUint();
       const mentions: number[] = []; const nm = r.readBits(8); for (let i = 0; i < nm; i++) mentions.push(r.readVarUint());
-      const m: ChatDelivered = { channel, fromPlayer, fromClient, tick, text, mentions, emote: r.readBits(16) };
+      const m: ChatDelivered = { channel: core.kind as number as ChatChannel, channelId: core.channel, fromPlayer: core.from, fromClient, tick: core.tick, text: core.text, mentions, emote: r.readBits(16) };
       this.history.push(m); if (this.history.length > this.historySize) this.history.shift();
       for (const f of this.handlers) f(m);
     });

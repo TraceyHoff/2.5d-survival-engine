@@ -4,7 +4,7 @@
  * Item model: inventory slots are parallel arrays item/count/durability u16[16] + createdTick u32[16]; no instance ids.
  * Offers reference slot indices + counts; the server snapshots the slot tuple at offer time and commit re-validates that
  * each slot still holds exactly that tuple with at least the offered count. The swap itself goes through
- * TradeInventory.swap, which must be atomic. TODO(core batch 7): implement TradeInventory over core's atomic container
+ * TradeInventory.swap, which must be atomic. coreTradeInventory() implements TradeInventory over core's atomic container
  * transfer + transaction log.
  *
  * Flow: Request -> (target) Accept | Decline -> Open: Offer* / Lock / Confirm(version) -> commit when both confirmed.
@@ -22,6 +22,7 @@
  *   myOffer, theirOffer: u8 n, n x (u8 slot, u16 item, u16 count, u16 durability, u32 createdTick)
  */
 import { Transform, type Entity, type World } from "@engine/core";
+import { Containers, transaction, type TxResult } from "@engine/core";
 import { BitWriter, type BitReader } from "./bits.js";
 import { MsgType, writeHeader } from "./protocol.js";
 import type { ClientSession, NetServer } from "./server.js";
@@ -211,4 +212,39 @@ export class TradeClient {
   /** Confirm the offer at `version` (from the latest state); the server ignores confirms against an older version. */
   confirm(id: number, version: number): boolean { return this.op(TradeOp.Confirm, (w) => { w.writeVarUint(id); w.writeVarUint(version); }); }
   cancel(id: number): boolean { return this.op(TradeOp.Cancel, (w) => w.writeVarUint(id)); }
+}
+
+/**
+ * TradeInventory over core's Containers + transaction(): readSlot maps Slot.meta -> durability (createdTick from
+ * opts, core slots carry none); swap moves every line into a free slot of the other side inside ONE core transaction
+ * (validators run; any failure rolls everything back). Needs enough empty slots on each side (merging is not attempted
+ * so stacks keep their meta).
+ */
+export function coreTradeInventory(opts: { createdTick?: (world: World, e: Entity, slot: number) => number } = {}): TradeInventory {
+  return {
+    readSlot(world, e, slot) {
+      const a = world.resource(Containers).adapterFor(world, e);
+      if (!a || slot < 0 || slot >= a.capacity(world, e)) return undefined;
+      const s = a.getSlot(world, e, slot); if (!s.item || s.count <= 0) return undefined;
+      return { item: s.item, count: s.count, durability: s.meta, createdTick: opts.createdTick?.(world, e, slot) ?? 0 };
+    },
+    swap(world, a, b) {
+      const reg = world.resource(Containers);
+      const r = transaction(world, (tx) => {
+        const reserved = new Map<Entity, Set<number>>();
+        const move = (from: Entity, to: Entity, lines: readonly OfferedLine[]): TxResult => {
+          const cap = reg.adapterFor(world, to)?.capacity(world, to) ?? 0;
+          let res = reserved.get(to); if (!res) reserved.set(to, (res = new Set()));
+          for (const l of lines) {
+            let dst = -1; for (let i = 0; i < cap; i++) if (!res.has(i) && tx.get(to, i).item === 0) { dst = i; break; }
+            if (dst < 0) return { ok: false, reason: "no_space" };
+            res.add(dst); const t = tx.transfer(from, l.slot, to, dst, l.count); if (!t.ok) return t;
+          }
+          return { ok: true };
+        };
+        const x = move(a.entity, b.entity, a.lines); return x.ok ? move(b.entity, a.entity, b.lines) : x;
+      });
+      return r.ok;
+    },
+  };
 }

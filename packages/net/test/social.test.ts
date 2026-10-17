@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { defineComponent, Owner, Transform, type Entity } from "@engine/core";
+import { ChannelRegistry, GroupRegistry } from "@engine/core";
 import { CHUNK_SIZE } from "@engine/world";
 import { ChatChannel, ChatReject, ChatServer, GroupKind, GroupReplicator, GroupRole, LoopbackNetwork, NetClient, NetServer, defineNetEvent, type ChatDelivered } from "../src/index.js";
 import { frames, join, makeWorld } from "./fixture.js";
-import { FakeGroups } from "./fake-groups.js";
 
 const Intel = defineComponent("Intel", { v: "u8" }, { networked: true });
 const Ping = defineNetEvent("Ping", { n: "u8" });
@@ -11,15 +11,15 @@ const mk = () => { const w = makeWorld(); w.register(Intel); return w; };
 const POS: Record<number, [number, number]> = { 1: [10, 10], 2: [20, 10], 3: [30, 10], 4: [10 + 20 * CHUNK_SIZE, 10] };
 
 async function setup() {
-  const net = new LoopbackNetwork(3); const sw = mk(); const groups = new FakeGroups();
+  const net = new LoopbackNetwork(3); const sw = mk(); const groups = new GroupRegistry();
   const ents = new Map<number, Entity>();
   const server = new NetServer({ world: sw, transport: net.createServer(), events: [Ping], interest: { radius: 2, hysteresis: 0 },
     onClientJoin: (s, w) => { const e = w.create(); const [x, y] = POS[s.clientId]!; w.add(e, Transform, { x, y }).add(e, Owner, { clientId: s.clientId }).add(e, Intel, { v: s.clientId }); ents.set(s.clientId, e); } });
   server.setScope(Intel, "party");
   const rep = new GroupReplicator(server, { groups, markerHealth: () => 80 });
-  const chat = new ChatServer(server, { localRadius: 48, maxLength: 40 });
-  const party = groups.create(GroupKind.Party); groups.setRole(party, 1, GroupRole.Leader); groups.setRole(party, 2, GroupRole.Member);
-  const clan = groups.create(GroupKind.Clan); groups.setRole(clan, 1, GroupRole.Leader); groups.setRole(clan, 3, GroupRole.Officer);
+  const chat = new ChatServer(server, { channels: new ChannelRegistry(groups), localRadius: 48, maxLength: 40 });
+  const party = groups.create(GroupKind.Party).id; groups.setRole(party, 1, GroupRole.Leader); groups.setRole(party, 2, GroupRole.Member);
+  const clan = groups.create(GroupKind.Clan).id; groups.setRole(clan, 1, GroupRole.Leader); groups.setRole(clan, 3, GroupRole.Officer);
   const cs: NetClient[] = [];
   for (let i = 0; i < 4; i++) { const c = new NetClient({ world: mk(), transport: net.createClient({ latencyMs: 20 }), events: [Ping] }); await join(net, c); cs.push(c); }
   const step = (n = 1) => frames(net, [sw, ...cs.map((c) => c.world)], n);
@@ -45,6 +45,9 @@ describe("groups: rosters to affected members only, scopes, markers", () => {
     groups.setRole(party, 2, 0); step(2);
     expect(B.groups.groups.has(party)).toBe(false);
     expect([...A.groups.groups.get(party)!.members.keys()].sort()).toEqual([1, 4]);
+    groups.setBanner(clan, { shape: 2, pattern: 5, colors: [0xff0000ff, 0x00ff00ff], emblemId: 300 }); step(2);
+    expect(C.groups.groups.get(clan)!.banner).toEqual({ shape: 2, pattern: 5, colors: [0xff0000ff, 0x00ff00ff], emblemId: 300 });
+    expect(B.groups.groups.has(clan)).toBe(false);
     groups.setRole(clan, 3, GroupRole.Leader); step(2);
     expect(C.groups.groups.get(clan)!.members.get(3)).toBe(GroupRole.Leader);
     expect(rep.stats.rosterBytes).toBeLessThan(400);
@@ -93,9 +96,9 @@ describe("chat routing", () => {
     expect(rejects[0]!.filter((r) => r === ChatReject.RateLimited).length).toBe(4); // 3 spam + the long one (no tokens)
     step(60); A.chat.send(ChatChannel.Global, "x".repeat(41)); step(2); expect(rejects[0]!.at(-1)).toBe(ChatReject.TooLong);
     A.chat.send(ChatChannel.Global, "  e\u0301  "); step(2); expect(inbox[1]!.at(-1)!.text).toBe("\u00e9");
-    (chat.opts as { isMuted?: (s: { clientId: number }) => boolean }).isMuted = (s) => s.clientId === 2;
-    (chat.opts as { filter?: (s: unknown, c: number, t: string) => string | null }).filter = (_s, _c, t) => (t.includes("bad") ? null : t.replace("darn", "****"));
-    (chat.opts as { policy?: object }).policy = { isBlocked: (rec: number, from: number) => rec === 3 && from === 1 };
+    chat.channels.mutes.mute(2);
+    chat.opts.filter = (_s, _c, t) => (t.includes("bad") ? null : t.replace("darn", "****"));
+    chat.channels.mutes.block(3, 1);
     step(60);
     B.chat.send(ChatChannel.Global, "hi"); A.chat.send(ChatChannel.Global, "bad word"); A.chat.send(ChatChannel.Global, "darn it"); step(2);
     expect(rejects[1]!.at(-1)).toBe(ChatReject.Muted); expect(rejects[0]!.at(-1)).toBe(ChatReject.Filtered);

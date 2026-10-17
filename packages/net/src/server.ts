@@ -1,5 +1,5 @@
 import * as core from "@engine/core";
-import { ENV_NET_ID, NetId, Owner, Transform, entityIndex, type ComponentDef, type Entity, type World } from "@engine/core";
+import { ENV_NET_ID, NetId, Owner, Transform, entityIndex, type ComponentDef, type Entity, type World , CommandRejected } from "@engine/core";
 import { BitReader, BitWriter } from "./bits.js";
 import { writeUtf8 } from "./utf8.js";
 import { StaticServer, StaticSession, readChunkKey, type ReplicationClass } from "./static.js";
@@ -129,6 +129,8 @@ export interface NetServerOptions {
    * a new session is created with that same token (session.resumed = true) and onClientJoin runs. Default: reject (BadToken).
    */
   resumeToken?: (token: Uint8Array, world: World) => boolean;
+  /** Forward core CommandHandlers rejections (core.CommandRejected) to the issuing client (default true). */
+  forwardCoreRejections?: boolean;
   /** Ping interval in ms for RTT measurement (default 1000; 0 disables). */
   pingIntervalMs?: number;
   /** Lag-compensation window in ticks (default tickHz = 1 s). */
@@ -197,6 +199,7 @@ export class NetServer {
     const t = opts.transport;
     t.onMessage((c, b) => this.onMessage(c, b));
     t.onDisconnect((c) => this.onDisconnect(c));
+    if (opts.forwardCoreRejections !== false) this.world.events.on(CommandRejected, (r) => this.rejectCommand(r.clientId, r.type, 0, r.reason, { seq: r.seq, core: true }));
     this.world.addSystem("input", "net.server.applyInputs", (w, dt) => this.inputPhase(w, dt));
     this.world.addSystem("network", "net.server.replicate", (w) => this.replicate(w));
   }
@@ -252,15 +255,17 @@ export class NetServer {
   /** Connected sessions. */
   connected(): IterableIterator<ClientSession> { return this.byConn.values(); }
   /**
-   * Tell a client its command was rejected (forward core CommandHandler rejection events here; TODO(core batch 7):
-   * subscribe to core's rejection event automatically). `reason` is a numeric code, `detail` optional UTF-8 text.
+   * Tell a client its command was rejected: `reason` numeric code (0 = see detail), `detail` UTF-8 text, `seq` the
+   * command's sequence if known. Core CommandHandlers rejections (core.CommandRejected) are forwarded automatically
+   * with source "core", the core command type id, reason 0 and detail = core reason string.
    */
-  rejectCommand(clientId: number, command: MessageDefBase | number, reason: number, detail = ""): void {
+  rejectCommand(clientId: number, command: MessageDefBase | number, reason: number, detail = "", opts: { seq?: number; core?: boolean } = {}): void {
     const s = this.sessions.get(clientId); if (!s) return;
     const id = typeof command === "number" ? command : this.commands.id(command);
-    const w = new BitWriter(); writeHeader(w, MsgType.CommandRejected); w.writeVarUint(id); w.writeVarUint(reason); writeUtf8(w, detail);
+    const w = new BitWriter(); writeHeader(w, MsgType.CommandRejected); w.writeBool(!!opts.core); w.writeVarUint(id); w.writeVarUint(opts.seq === undefined ? 0 : opts.seq + 1);
+    w.writeVarUint(reason); writeUtf8(w, detail);
     this.sendRaw(clientId, w.finish(), "reliable");
-    this.anomaly(s, "commandRejected", `${id}:${reason}`);
+    this.anomaly(s, "commandRejected", `${id}:${reason}:${detail}`);
   }
 
   /**

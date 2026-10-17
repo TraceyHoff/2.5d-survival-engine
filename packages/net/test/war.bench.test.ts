@@ -5,9 +5,9 @@
  */
 import { describe, expect, it } from "vitest";
 import { defineComponent, Owner, Rng, Transform, type Entity } from "@engine/core";
+import { GroupRegistry } from "@engine/core";
 import { GroupKind, GroupReplicator, GroupRole, NetServer, defineNetEvent, encodeHello, encodeInput, type Channel, type ConnId, type ServerTransport } from "../src/index.js";
 import { DT, makeWorld } from "./fixture.js";
-import { FakeGroups } from "./fake-groups.js";
 
 const PERF = process.env["PERF"] === "1";
 const Hp = defineComponent("Hp", { hp: { type: "f32", quant: { bits: 10, min: 0, max: 1000 } } }, { networked: true });
@@ -30,13 +30,13 @@ function run(name: string, o: { players: number; area: number; props: number; hi
   const server = new NetServer({ world: w, transport: t, events: [Hit], budgetBytes: 8192, randomToken: () => new Uint8Array(16).fill(1 + (players.length % 200)),
     onClientJoin: (s, world) => { const e = world.create(); world.add(e, Transform, { x: rng.range(0, o.area), y: rng.range(0, o.area) }).add(e, Owner, { clientId: s.clientId }).add(e, Hp, { hp: 100 }).add(e, PartyInfo, { stamina: 50 }); players.push(e); } });
   server.setScope(PartyInfo, "party");
-  const groups = new FakeGroups();
+  const groups = new GroupRegistry();
   let rep: GroupReplicator | undefined;
   if (o.clans) {
     rep = new GroupReplicator(server, { groups, markerHealth: (e) => w.getField(e, Hp, "hp") });
-    const red = groups.create(GroupKind.Clan), blue = groups.create(GroupKind.Clan);
+    const red = groups.create(GroupKind.Clan).id, blue = groups.create(GroupKind.Clan).id;
     for (let p = 1; p <= o.players; p++) groups.setRole(p <= o.players / 2 ? red : blue, p, p === 1 || p === o.players / 2 + 1 ? GroupRole.Leader : GroupRole.Member);
-    for (let p = 1; p <= o.players; p += 5) { const party = groups.create(GroupKind.Party); for (let q = p; q < p + 5 && q <= o.players; q++) groups.setRole(party, q, GroupRole.Member); }
+    for (let p = 1; p <= o.players; p += 5) { const party = groups.create(GroupKind.Party).id; for (let q = p; q < p + 5 && q <= o.players; q++) groups.setRole(party, q, GroupRole.Member); }
   }
   for (let i = 0; i < o.props; i++) { const e = w.create(); w.add(e, Transform, { x: rng.range(0, 2048), y: rng.range(0, 2048) }); }
   for (let c = 1; c <= o.players; c++) t.inject(c, encodeHello({ hashes: server.requiredHashes, token: new Uint8Array(16) }));

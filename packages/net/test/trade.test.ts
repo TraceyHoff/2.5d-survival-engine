@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { Owner, Transform, type Entity, type World } from "@engine/core";
-import { LoopbackNetwork, NetClient, NetServer, TradeEnd, TradeServer, TradeStatus, type OfferedLine, type SlotTuple, type TradeInventory } from "../src/index.js";
+import { Owner, Transform, World, arrayFieldsContainer, defineComponent, entityIndex, installContainers, type Entity } from "@engine/core";
+import { LoopbackNetwork, NetClient, NetServer, TradeEnd, TradeServer, TradeStatus, coreTradeInventory, type OfferedLine, type SlotTuple, type TradeInventory } from "../src/index.js";
 import { frames, join, makeWorld } from "./fixture.js";
 
 /** Fake inventory: 16 parallel slot tuples per entity; atomic swap on copies (stand-in for core's container transfer). */
@@ -123,5 +123,28 @@ describe("trade sessions", () => {
     expect(x.cs[0]!.trade.current!.reason).toBe(TradeEnd.Timeout);
     id = await openTrade(x, 0, 2); x.setHook(3); x.step(2);
     expect(x.cs[2]!.trade.current!.reason).toBe(TradeEnd.Hook + 3);
+  });
+});
+
+describe("coreTradeInventory (core Containers + transaction)", () => {
+  const Bag = defineComponent("TradeBag", { item: { type: "u16", length: 4 }, count: { type: "u16", length: 4 }, meta: { type: "u16", length: 4 } });
+  it("reads tuples (meta = durability) and swaps atomically; full target rolls back both sides", () => {
+    const w = new World(); w.register(Bag); const C = installContainers(w);
+    C.register(Bag, arrayFieldsContainer(Bag, { item: "item", count: "count", meta: "meta" }));
+    const a = w.create(); w.add(a, Bag); const b = w.create(); w.add(b, Bag);
+    const st = w.store(Bag); const put = (e: Entity, i: number, item: number, count: number, meta: number) => { st.writeElement(entityIndex(e), "item", i, item); st.writeElement(entityIndex(e), "count", i, count); st.writeElement(entityIndex(e), "meta", i, meta); };
+    put(a, 0, 5, 10, 33); put(b, 0, 7, 1, 90);
+    const inv = coreTradeInventory({ createdTick: () => 4 });
+    const ta = inv.readSlot(w, a, 0)!; expect(ta).toEqual({ item: 5, count: 10, durability: 33, createdTick: 4 });
+    expect(inv.readSlot(w, a, 3)).toBeUndefined();
+    const tb = inv.readSlot(w, b, 0)!;
+    expect(inv.swap(w, { entity: a, lines: [{ ...ta, slot: 0, count: 4 }] }, { entity: b, lines: [{ ...tb, slot: 0 }] }, 1)).toBe(true);
+    expect(inv.readSlot(w, a, 0)!.count).toBe(6); expect(inv.readSlot(w, a, 1)).toMatchObject({ item: 7, count: 1, durability: 90 });
+    expect(inv.readSlot(w, b, 1)).toMatchObject({ item: 5, count: 4, durability: 33 }); expect(inv.readSlot(w, b, 0)).toBeUndefined();
+    // fill b completely -> a's line has nowhere to go; b's outgoing line must not have moved either
+    put(b, 0, 8, 1, 0); put(b, 2, 8, 1, 0); put(b, 3, 8, 1, 0);
+    const before = [0, 1, 2, 3].map((i) => [inv.readSlot(w, a, i), inv.readSlot(w, b, i)]);
+    expect(inv.swap(w, { entity: a, lines: [{ ...inv.readSlot(w, a, 0)!, slot: 0, count: 1 }] }, { entity: b, lines: [{ ...inv.readSlot(w, b, 1)!, slot: 1 }] }, 2)).toBe(false);
+    expect([0, 1, 2, 3].map((i) => [inv.readSlot(w, a, i), inv.readSlot(w, b, i)])).toEqual(before);
   });
 });

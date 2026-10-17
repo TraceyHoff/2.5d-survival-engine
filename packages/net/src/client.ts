@@ -54,7 +54,8 @@ export interface NetClientOptions {
 }
 
 /** A server event as received: payload entity fields are resolved to local entities (NO_ENTITY if unknown). */
-export interface CommandRejection { command: MessageDefBase | undefined; commandId: number; reason: number; detail: string }
+/** source "core": commandId = core CommandRegistry type, detail = core reason string (reason 0). */
+export interface CommandRejection { source: "net" | "core"; command: MessageDefBase | undefined; commandId: number; reason: number; detail: string; seq?: number }
 export interface ReceivedEvent { tick: number; def: MessageDefBase; payload: Record<string, number> }
 
 
@@ -214,9 +215,10 @@ export class NetClient {
       const w = new BitWriter(); writeHeader(w, MsgType.Pong); w.writeBits(nonce, 32); this.opts.transport.send(w.finish(), "unreliable");
     }
     else if (h.type === MsgType.CommandRejected) {
-      const id = r.readVarUint(); const reason = r.readVarUint(); const detail = readUtf8(r);
-      const def = this.commands.get(id); if (this.rejections.length >= 32) this.rejections.shift(); this.rejections.push({ command: def, commandId: id, reason, detail });
-      for (const f of this.rejectHandlers) f({ command: def, commandId: id, reason, detail });
+      const core = r.readBool(); const id = r.readVarUint(); const sq = r.readVarUint(); const reason = r.readVarUint(); const detail = readUtf8(r);
+      const rej: CommandRejection = { source: core ? "core" : "net", command: core ? undefined : this.commands.get(id), commandId: id, reason, detail, ...(sq > 0 && { seq: sq - 1 }) };
+      if (this.rejections.length >= 32) this.rejections.shift(); this.rejections.push(rej);
+      for (const f of this.rejectHandlers) f(rej);
     }
     else if (h.type === MsgType.Events) {
       const tick = r.readBits(32); const n = r.readVarUint();

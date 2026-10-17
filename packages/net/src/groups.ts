@@ -12,7 +12,7 @@
  * Client: `client.groups` (GroupClient) mirrors only the viewer's own groups; optional `into` (a core GroupRegistry)
  * gets every change via apply().
  */
-import { Transform, type Entity } from "@engine/core";
+import { PlayerId, Transform, type Entity } from "@engine/core";
 import { BitWriter, type BitReader } from "./bits.js";
 import { MsgType, writeHeader } from "./protocol.js";
 import type { ClientSession, NetServer, GroupScopeResolver } from "./server.js";
@@ -22,9 +22,11 @@ export const GroupRole = { Member: 1, Officer: 2, Leader: 3 } as const;
 export type GroupChangeLike =
   | { op: "create"; seq: number; group: number; kind: number }
   | { op: "delete"; seq: number; group: number }
-  | { op: "member"; seq: number; group: number; player: number; role: number };
-export interface GroupLike { readonly id: number; readonly kind: number; members: ReadonlyMap<number, number> }
-/** Structural subset of core's GroupRegistry. */
+  | { op: "member"; seq: number; group: number; player: number; role: number }
+  | { op: "banner"; seq: number; group: number; banner: BannerLike | null };
+export interface BannerLike { shape: number; pattern: number; colors: [number, number]; emblemId: number }
+export interface GroupLike { readonly id: number; readonly kind: number; members: ReadonlyMap<number, number>; banner?: BannerLike }
+/** Structural subset of core's GroupRegistry (core GroupRegistry satisfies it). */
 export interface GroupSource {
   readonly seq: number;
   get(id: number): GroupLike | undefined;
@@ -32,16 +34,21 @@ export interface GroupSource {
   changesSince(since: number): GroupChangeLike[] | undefined;
 }
 
-const OP = { create: 0, delete: 1, member: 2 } as const;
+const OP = { create: 0, delete: 1, member: 2, banner: 3 } as const;
 export function writeGroupChange(w: BitWriter, c: GroupChangeLike): void {
   w.writeBits(OP[c.op], 2); w.writeVarUint(c.seq); w.writeVarUint(c.group);
   if (c.op === "create") w.writeBits(c.kind, 8);
   else if (c.op === "member") { w.writeVarUint(c.player); w.writeBits(c.role, 8); }
+  else if (c.op === "banner") {
+    w.writeBool(!!c.banner);
+    if (c.banner) { w.writeBits(c.banner.shape, 8); w.writeBits(c.banner.pattern, 8); w.writeBits(c.banner.colors[0] >>> 0, 32); w.writeBits(c.banner.colors[1] >>> 0, 32); w.writeBits(c.banner.emblemId, 16); }
+  }
 }
 export function readGroupChange(r: BitReader): GroupChangeLike {
   const op = r.readBits(2); const seq = r.readVarUint(); const group = r.readVarUint();
   if (op === OP.create) return { op: "create", seq, group, kind: r.readBits(8) };
   if (op === OP.delete) return { op: "delete", seq, group };
+  if (op === OP.banner) return { op: "banner", seq, group, banner: r.readBool() ? { shape: r.readBits(8), pattern: r.readBits(8), colors: [r.readBits(32) >>> 0, r.readBits(32) >>> 0], emblemId: r.readBits(16) } : null };
   return { op: "member", seq, group, player: r.readVarUint(), role: r.readBits(8) };
 }
 const zz = (n: number): number => ((n << 1) ^ (n >> 31)) >>> 0;
@@ -49,7 +56,7 @@ const unzz = (n: number): number => (n >>> 1) ^ -(n & 1);
 
 export interface GroupReplicatorOptions {
   groups: GroupSource;
-  /** Persistent player id of a session. TODO(core batch 7): default to the owned entity's core PlayerId. Default: clientId. */
+  /** Persistent player id of a session. Default: core PlayerId on the owned entity, else clientId. */
   playerIdOf?: (session: ClientSession) => number;
   markerHz?: number;
   markerBudgetBytes?: number;
@@ -58,19 +65,22 @@ export interface GroupReplicatorOptions {
 }
 
 export class GroupReplicator implements GroupScopeResolver {
-  private lastSeq: number;
-  private known = new Map<number, Set<number>>(); // group -> members as last routed
-  private seen = new Set<number>(); // clientIds that got their initial rosters
+  /** Per client: last group seq delivered (reliable channel = acked in order) and the groups it holds. */
+  private clients = new Map<number, { seq: number; groups: Set<number> }>();
   private tickCount = 0;
   readonly stats = { rosterBytes: 0, markerBytes: 0, resyncs: 0 };
   constructor(readonly server: NetServer, readonly opts: GroupReplicatorOptions) {
-    this.lastSeq = opts.groups.seq;
     server.setGroupResolver(this);
     server.onTick(() => this.tick());
   }
+  /** Persistent player id: opts.playerIdOf, else core PlayerId on the client's owned entity, else clientId. */
   playerOf(clientId: number): number | undefined {
     const s = this.server.sessions.get(clientId); if (!s) return undefined;
-    return this.opts.playerIdOf ? this.opts.playerIdOf(s) : s.clientId;
+    if (this.opts.playerIdOf) return this.opts.playerIdOf(s);
+    const w = this.server.world;
+    try { w.componentId(PlayerId); } catch { return s.clientId; }
+    for (const e of this.server.ownedEntities(clientId)) if (w.isAlive(e) && w.has(e, PlayerId)) return w.getField(e, PlayerId, "id")!;
+    return s.clientId;
   }
   private clientOfPlayer(): Map<number, number> {
     const m = new Map<number, number>();
@@ -95,58 +105,46 @@ export class GroupReplicator implements GroupScopeResolver {
     return out;
   }
 
-  private full(w: BitWriter[], g: GroupLike, seq: number): GroupChangeLike[] {
-    void w; const out: GroupChangeLike[] = [{ op: "create", seq, group: g.id, kind: g.kind }];
+  private full(g: GroupLike, seq: number): GroupChangeLike[] {
+    const out: GroupChangeLike[] = [{ op: "create", seq, group: g.id, kind: g.kind }];
     for (const [player, role] of g.members) out.push({ op: "member", seq, group: g.id, player, role });
+    if (g.banner) out.push({ op: "banner", seq, group: g.id, banner: g.banner });
     return out;
   }
   private tick(): void {
-    const reg = this.opts.groups; const byP = this.clientOfPlayer();
-    const out = new Map<number, GroupChangeLike[]>(); // clientId -> changes
-    const push = (player: number, cs: GroupChangeLike[]): void => {
-      const c = byP.get(player); if (c === undefined || !this.seen.has(c)) return;
-      const l = out.get(c); if (l) l.push(...cs); else out.set(c, [...cs]);
-    };
-    let changes = reg.changesSince(this.lastSeq);
-    if (changes === undefined) { this.stats.resyncs++; this.seen.clear(); this.known.clear(); changes = []; }
-    for (const c of changes) {
-      const known = this.known.get(c.group) ?? new Set<number>();
-      if (c.op === "create") { this.known.set(c.group, known); continue; } // empty until members arrive
-      if (c.op === "delete") { for (const p of known) push(p, [c]); this.known.delete(c.group); continue; }
-      if (c.role > 0 && !known.has(c.player)) {
-        // newcomer: full roster (state as of now, already includes later changes) to them, the change to others
-        const g = reg.get(c.group);
-        for (const p of known) push(p, [c]);
-        if (g) push(c.player, this.full([], g, reg.seq));
-        known.add(c.player); this.known.set(c.group, known);
-      } else {
-        for (const p of known) push(p, c.role === 0 && p === c.player ? [{ op: "delete", seq: c.seq, group: c.group }] : [c]);
-        if (c.role === 0) known.delete(c.player);
-      }
-    }
-    this.lastSeq = reg.seq;
-    // fresh sessions: full rosters of all their groups
+    const reg = this.opts.groups; const now = reg.seq;
+    for (const c of [...this.clients.keys()]) if (!this.server.sessions.get(c)?.conn) this.clients.delete(c);
+    const cache = new Map<number, GroupChangeLike[] | undefined>(); // changesSince per distinct client seq
     for (const s of this.server.connected()) {
-      if (this.seen.has(s.clientId)) continue;
-      this.seen.add(s.clientId);
-      const p = this.playerOf(s.clientId); if (p === undefined) continue;
-      const cs: GroupChangeLike[] = [];
-      for (const g of reg.groupsOf(p)) {
-        cs.push(...this.full([], g, reg.seq));
-        const k = this.known.get(g.id) ?? new Set(); for (const m of g.members.keys()) k.add(m); this.known.set(g.id, k);
+      const me = this.playerOf(s.clientId); if (me === undefined) continue;
+      let st = this.clients.get(s.clientId); const out: GroupChangeLike[] = [];
+      let changes: GroupChangeLike[] | undefined;
+      if (st) { if (!cache.has(st.seq)) cache.set(st.seq, reg.changesSince(st.seq)); changes = cache.get(st.seq); }
+      if (!st || changes === undefined) {
+        // first contact or log overrun: drop what the client holds, send full rosters of its groups
+        if (st) { this.stats.resyncs++; for (const g of st.groups) out.push({ op: "delete", seq: now, group: g }); }
+        st = { seq: now, groups: new Set() }; this.clients.set(s.clientId, st);
+        for (const g of reg.groupsOf(me)) { out.push(...this.full(g, now)); st.groups.add(g.id); }
+      } else {
+        for (const c of changes) {
+          const known = st.groups.has(c.group);
+          if (c.op === "create") continue; // announced with the first member
+          if (c.op === "delete") { if (known) { out.push(c); st.groups.delete(c.group); } continue; }
+          if (c.op === "member" && c.player === me) {
+            if (c.role > 0 && !known) { const g = reg.get(c.group); if (g) { out.push(...this.full(g, now)); st.groups.add(c.group); } continue; }
+            if (c.role === 0 && known) { out.push({ op: "delete", seq: c.seq, group: c.group }); st.groups.delete(c.group); continue; }
+          }
+          if (known) out.push(c);
+        }
+        st.seq = now;
       }
-      out.set(s.clientId, [...(out.get(s.clientId) ?? []), ...cs]);
+      if (!out.length) continue;
+      const w = new BitWriter(); writeHeader(w, MsgType.Groups); w.writeVarUint(out.length);
+      for (const c of out) writeGroupChange(w, c);
+      const b = w.finish(); this.stats.rosterBytes += b.length; this.server.sendRaw(s.clientId, b, "reliable");
     }
-    for (const c of [...this.seen]) if (!this.server.sessions.get(c)?.conn) this.seen.delete(c);
-    for (const [clientId, cs] of out) {
-      if (!cs.length) continue;
-      const w = new BitWriter(); writeHeader(w, MsgType.Groups); w.writeVarUint(cs.length);
-      for (const c of cs) writeGroupChange(w, c);
-      const b = w.finish(); this.stats.rosterBytes += b.length; this.server.sendRaw(clientId, b, "reliable");
-    }
-    // markers
     const every = Math.max(1, Math.round(this.server.tickHz / (this.opts.markerHz ?? 2)));
-    if (this.tickCount++ % every === 0) this.markers(byP);
+    if (this.tickCount++ % every === 0) this.markers(this.clientOfPlayer());
   }
 
   private markers(byP: Map<number, number>): void {
@@ -185,7 +183,7 @@ export class GroupReplicator implements GroupScopeResolver {
 export interface MemberMarker { player: number; x: number; y: number; /** 0..100, 255 = unknown */ hp: number; tick: number }
 /** Client mirror of the viewer's own groups + member markers. */
 export class GroupClient {
-  readonly groups = new Map<number, { kind: number; members: Map<number, number> }>();
+  readonly groups = new Map<number, { kind: number; members: Map<number, number>; banner?: BannerLike }>();
   readonly markers = new Map<number, MemberMarker>();
   private listeners: ((c: GroupChangeLike) => void)[] = [];
   /** Optional core GroupRegistry (or anything with apply) that also receives every change. */
@@ -207,6 +205,7 @@ export class GroupClient {
   private apply(c: GroupChangeLike): void {
     if (c.op === "create") { if (!this.groups.has(c.group)) this.groups.set(c.group, { kind: c.kind, members: new Map() }); }
     else if (c.op === "delete") this.groups.delete(c.group);
+    else if (c.op === "banner") { const g = this.groups.get(c.group); if (g) { if (c.banner) g.banner = c.banner; else delete g.banner; } }
     else {
       const g = this.groups.get(c.group);
       if (g) { if (c.role > 0) g.members.set(c.player, c.role); else g.members.delete(c.player); }

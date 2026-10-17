@@ -40,7 +40,7 @@ describe("combat validation helpers", () => {
     const far = results[1]!; expect(far.ok).toBe(false); expect(far.ok ? "" : far.reason).toBe("reach");
     // cone: target behind the aim direction
     sw.setField(target, Transform, "x", 1); step(30);
-    sw.removeSystem?.("walk");
+    sw.removeSystem("walk");
     A.sendCommand(Attack, { target: A.entityOf(server.netIds.netIdOf(target)!)!, aimX: -1, aimY: 0 }); step(4);
     const cone = results.at(-1)!; expect(cone.ok ? "" : cone.reason).toMatch(/cone|reach/);
     // fire rate: two attacks one tick apart

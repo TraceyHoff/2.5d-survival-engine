@@ -1,4 +1,4 @@
-/** UTF-8 string codec for chat/rejection text. TODO(core batch 7): switch to core's UTF-8 codec once it lands (same wire: varuint byteLength + bytes). */
+/** UTF-8 string codec for chat/rejection text. Wire: varuint byteLength + bytes (bit-packed; core's writeString is byte-aligned and is used inside the chat payload). */
 import type { BitReader, BitWriter } from "./bits.js";
 const enc = new TextEncoder(); const dec = new TextDecoder("utf-8", { fatal: false });
 export const MAX_UTF8_BYTES = 4096;
