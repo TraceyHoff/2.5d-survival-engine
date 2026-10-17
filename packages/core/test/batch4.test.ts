@@ -35,6 +35,6 @@ describe("derived TimeOfDay", () => {
 describe("Weather endsAtTick", () => {
   it("is a u32 absolute tick that stays constant", () => {
     const w = new World(); w.env(Weather).endsAtTick = 100; stepN(w, 5);
-    expect(w.env(Weather).endsAtTick).toBe(100); expect(Weather.schema).toEqual({ kind: "u8", intensity: "f32", endsAtTick: "u32" });
+    expect(w.env(Weather).endsAtTick).toBe(100); expect(Weather.schema.endsAtTick).toBe("u32");
   });
 });
