@@ -17,6 +17,7 @@ const putChunk = db.prepare("INSERT INTO chunks(key, cx, cy, format, data, updat
 const delChunk = db.prepare("DELETE FROM chunks WHERE key = ?");
 const putPlayer = db.prepare("INSERT INTO players(token, name, format, data, updated_tick, updated_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(token) DO UPDATE SET name = excluded.name, format = excluded.format, data = excluded.data, updated_tick = excluded.updated_tick, updated_at = excluded.updated_at");
 const putMeta = db.prepare("INSERT INTO meta(k, v) VALUES (?, ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v");
+const putBlob = db.prepare("INSERT INTO blobs(key, format, data, updated_tick) VALUES (?, ?, ?, ?) ON CONFLICT(key) DO UPDATE SET format = excluded.format, data = excluded.data, updated_tick = excluded.updated_tick");
 
 /** @param {Uint8Array} u */
 const buf = (u) => Buffer.from(u.buffer, u.byteOffset, u.byteLength);
@@ -29,7 +30,8 @@ const apply = db.transaction((/** @type {any[]} */ parts) => {
     for (const k of p.deleteChunks ?? []) delChunk.run(k);
     for (const c of p.chunks ?? []) { const [cx, cy] = coords(c.key); putChunk.run(c.key, cx, cy, c.format, buf(c.bytes), c.tick); bytes += c.bytes.byteLength; chunks++; }
     for (const pl of p.players ?? []) { putPlayer.run(pl.token, pl.name, pl.format, buf(pl.bytes), pl.tick, now); bytes += pl.bytes.byteLength; players++; }
-    if (p.meta) for (const [k, v] of Object.entries(p.meta)) putMeta.run(k, String(v));
+    for (const b of p.blobs ?? []) { putBlob.run(b.key, b.format, buf(b.bytes), b.tick); bytes += b.bytes.byteLength; }
+    if (p.meta) for (const [k, v] of Object.entries(p.meta)) if (v !== undefined) putMeta.run(k, String(v));
   }
   return { bytes, chunks, players };
 });

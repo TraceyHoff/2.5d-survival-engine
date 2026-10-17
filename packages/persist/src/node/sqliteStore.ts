@@ -4,9 +4,10 @@ import { Worker } from "node:worker_threads";
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import type { ChunkKey } from "@engine/world";
-import { emptyStats, type BatchHandle, type SaveBatch, type StoredChunk, type StoredPlayer, type StoreStats, type WorldMeta, type WorldStore } from "../types.js";
+import { emptyStats, type BatchHandle, type SaveBatch, type StoredBlob, type StoredChunk, type StoredPlayer, type StoreStats, type WorldMeta, type WorldStore } from "../types.js";
 
-export const SQLITE_SCHEMA_VERSION = 1;
+/** v2 adds the blobs table (v1 files are upgraded in place: CREATE TABLE IF NOT EXISTS). */
+export const SQLITE_SCHEMA_VERSION = 2;
 const DDL = `
 CREATE TABLE IF NOT EXISTS chunks (
   key TEXT PRIMARY KEY,            -- "cx,cy" (ChunkKey)
@@ -24,6 +25,12 @@ CREATE TABLE IF NOT EXISTS players (
   updated_at INTEGER NOT NULL      -- wall clock ms (diagnostics only)
 ) WITHOUT ROWID;
 CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT NOT NULL) WITHOUT ROWID;
+CREATE TABLE IF NOT EXISTS blobs (
+  key TEXT PRIMARY KEY,            -- "groups" (core GroupRegistry format), "claims" (persist claim format), ...
+  format INTEGER NOT NULL,         -- the record's version byte
+  data BLOB NOT NULL,
+  updated_tick INTEGER NOT NULL
+) WITHOUT ROWID;
 `;
 
 export interface SqliteStoreOptions {
@@ -33,7 +40,7 @@ export interface SqliteStoreOptions {
   synchronous?: "NORMAL" | "FULL";
 }
 
-interface Pending { resolve: () => void; reject: (e: Error) => void; chunks: StoredChunk[]; players: StoredPlayer[]; done: Promise<void>; committed: boolean }
+interface Pending { resolve: () => void; reject: (e: Error) => void; chunks: StoredChunk[]; players: StoredPlayer[]; blobs: StoredBlob[]; done: Promise<void>; committed: boolean }
 
 /**
  * WorldStore over SQLite (WAL). Main thread: one connection for synchronous reads (chunk loads must be sync for
@@ -48,11 +55,12 @@ export class SqliteWorldStore implements WorldStore {
   private pending = new Map<number, Pending>();
   private overlayChunks = new Map<ChunkKey, StoredChunk>();
   private overlayPlayers = new Map<string, StoredPlayer>();
+  private overlayBlobs = new Map<string, StoredBlob>();
   private overlayMeta: WorldMeta | undefined;
   private inlineParts = new Map<number, SaveBatch[]>();
   private s: StoreStats = emptyStats();
   private closed = false;
-  private qChunk; private qPlayer; private qMeta; private qCount;
+  private qChunk; private qPlayer; private qMeta; private qBlob; private qCount;
 
   private constructor(readonly path: string, private readonly opts: SqliteStoreOptions) {
     if (path !== ":memory:") mkdirSync(dirname(path), { recursive: true });
@@ -67,6 +75,7 @@ export class SqliteWorldStore implements WorldStore {
     this.qChunk = this.db.prepare<[string], { format: number; data: Buffer; updated_tick: number }>("SELECT format, data, updated_tick FROM chunks WHERE key = ?");
     this.qPlayer = this.db.prepare<[string], { name: string; format: number; data: Buffer; updated_tick: number }>("SELECT name, format, data, updated_tick FROM players WHERE token = ?");
     this.qMeta = this.db.prepare<[], { k: string; v: string }>("SELECT k, v FROM meta");
+    this.qBlob = this.db.prepare<[string], { format: number; data: Buffer; updated_tick: number }>("SELECT format, data, updated_tick FROM blobs WHERE key = ?");
     this.qCount = { chunks: this.db.prepare<[], { n: number }>("SELECT count(*) AS n FROM chunks"), players: this.db.prepare<[], { n: number }>("SELECT count(*) AS n FROM players") };
   }
 
@@ -97,6 +106,7 @@ export class SqliteWorldStore implements WorldStore {
     // Drop overlay rows that this batch made durable (unless a newer, still pending write replaced them).
     for (const c of p.chunks) if (this.overlayChunks.get(c.key) === c) this.overlayChunks.delete(c.key);
     for (const pl of p.players) if (this.overlayPlayers.get(pl.token) === pl) this.overlayPlayers.delete(pl.token);
+    for (const b of p.blobs) if (this.overlayBlobs.get(b.key) === b) this.overlayBlobs.delete(b.key);
     if (!this.pending.size) { this.overlayMeta = undefined; this.worker?.unref(); }
     if (err) { p.reject(err); return; }
     this.s.committedBatches++; this.s.committedChunks += m?.chunks ?? 0; this.s.committedPlayers += m?.players ?? 0;
@@ -108,7 +118,11 @@ export class SqliteWorldStore implements WorldStore {
     if (this.overlayMeta) return { ...this.overlayMeta };
     const rows = this.qMeta.all(); if (!rows.length) return undefined;
     const m = Object.fromEntries(rows.map((r) => [r.k, Number(r.v)]));
-    return { seed: m["seed"] ?? 0, tick: m["tick"] ?? 0, schemaHash: m["schemaHash"] ?? 0, ...(m["createdAt"] !== undefined ? { createdAt: m["createdAt"] } : {}) };
+    return { seed: m["seed"] ?? 0, tick: m["tick"] ?? 0, schemaHash: m["schemaHash"] ?? 0, ...(m["createdAt"] !== undefined ? { createdAt: m["createdAt"] } : {}), ...(m["nextPlayerId"] !== undefined ? { nextPlayerId: m["nextPlayerId"] } : {}) };
+  }
+  readBlob(key: string): StoredBlob | undefined {
+    const o = this.overlayBlobs.get(key); if (o) return o;
+    const r = this.qBlob.get(key); return r ? { key, format: r.format, bytes: r.data, tick: r.updated_tick } : undefined;
   }
   readChunk(key: ChunkKey): StoredChunk | undefined {
     const o = this.overlayChunks.get(key); if (o) return o;
@@ -122,7 +136,7 @@ export class SqliteWorldStore implements WorldStore {
 
   openBatch(): BatchHandle {
     if (this.closed) throw new Error("store closed");
-    const id = this.nextId++; const rec = { resolve: () => {}, reject: () => {}, chunks: [], players: [], committed: false } as unknown as Pending;
+    const id = this.nextId++; const rec = { resolve: () => {}, reject: () => {}, chunks: [], players: [], blobs: [], committed: false } as unknown as Pending;
     const done = new Promise<void>((res, rej) => { rec.resolve = res; rec.reject = rej; });
     done.catch(() => undefined); // surfaced through commit()'s promise
     rec.done = done; this.pending.set(id, rec); this.worker?.ref();
@@ -131,6 +145,7 @@ export class SqliteWorldStore implements WorldStore {
         if (rec.committed) throw new Error("batch already committed");
         for (const c of part.chunks ?? []) { this.overlayChunks.set(c.key, c); rec.chunks.push(c); }
         for (const p of part.players ?? []) { this.overlayPlayers.set(p.token, p); rec.players.push(p); }
+        for (const b of part.blobs ?? []) { this.overlayBlobs.set(b.key, b); rec.blobs.push(b); }
         if (part.meta) this.overlayMeta = { ...part.meta };
         if (this.worker) this.worker.postMessage({ type: "part", id, part });
         else { let l = this.inlineParts.get(id); if (!l) this.inlineParts.set(id, (l = [])); l.push(part); }
@@ -155,6 +170,7 @@ export class SqliteWorldStore implements WorldStore {
       const dc = this.db.prepare("DELETE FROM chunks WHERE key = ?");
       const pp = this.db.prepare("INSERT INTO players(token, name, format, data, updated_tick, updated_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(token) DO UPDATE SET name = excluded.name, format = excluded.format, data = excluded.data, updated_tick = excluded.updated_tick, updated_at = excluded.updated_at");
       const pm = this.db.prepare("INSERT INTO meta(k, v) VALUES (?, ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v");
+      const pb = this.db.prepare("INSERT INTO blobs(key, format, data, updated_tick) VALUES (?, ?, ?, ?) ON CONFLICT(key) DO UPDATE SET format = excluded.format, data = excluded.data, updated_tick = excluded.updated_tick");
       const buf = (u: Uint8Array): Buffer => Buffer.from(u.buffer, u.byteOffset, u.byteLength);
       this.inlineTx = this.db.transaction((ps: SaveBatch[]) => {
         let bytes = 0, chunks = 0, players = 0; const now = Date.now();
@@ -162,7 +178,8 @@ export class SqliteWorldStore implements WorldStore {
           for (const k of p.deleteChunks ?? []) dc.run(k);
           for (const c of p.chunks ?? []) { const i = c.key.indexOf(","); pc.run(c.key, Number(c.key.slice(0, i)), Number(c.key.slice(i + 1)), c.format, buf(c.bytes), c.tick); bytes += c.bytes.length; chunks++; }
           for (const pl of p.players ?? []) { pp.run(pl.token, pl.name, pl.format, buf(pl.bytes), pl.tick, now); bytes += pl.bytes.length; players++; }
-          if (p.meta) for (const [k, v] of Object.entries(p.meta)) pm.run(k, String(v));
+          for (const b of p.blobs ?? []) { pb.run(b.key, b.format, buf(b.bytes), b.tick); bytes += b.bytes.length; }
+          if (p.meta) for (const [k, v] of Object.entries(p.meta)) if (v !== undefined) pm.run(k, String(v));
         }
         return { bytes, chunks, players };
       });

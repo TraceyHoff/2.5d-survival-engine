@@ -1,7 +1,8 @@
 import { entityIndex, Owner, Transform, type ComponentStore, type Entity, type World } from "@engine/core";
-import { ChunkMembership, decodeChunk, encodeChunk, parseChunkKey, chunkKeyOf, type BuildingGrid, type ChunkKey, type ChunkManager, type ChunkProvider, type GeneratedChunk } from "@engine/world";
+import { ChunkMembership, decodeChunk, encodeChunk, parseChunkKey, chunkKeyOf, type BuildingGrid, type ChunkKey, type AsyncChunkProvider, type ChunkManager, type ChunkProvider, type GeneratedChunk } from "@engine/world";
 import { decodePlayerInto, encodePlayer, PLAYER_VERSION, type PlayerCodecOptions, type PlayerRestoreResult } from "./playerCodec.js";
-import { chunkFormatOf, type BatchHandle, type SaveBatch, type StoredChunk, type WorldMeta, type WorldStore } from "./types.js";
+import { SocialSaver, type SocialState } from "./social.js";
+import { chunkFormatOf, type BatchHandle, type SaveBatch, type StoredBlob, type StoredChunk, type WorldMeta, type WorldStore } from "./types.js";
 
 export interface WorldPersistenceOptions {
   world: World;
@@ -29,6 +30,12 @@ export interface WorldPersistenceOptions {
    */
   regenerateNodes?: boolean;
   player?: PlayerCodecOptions;
+  /**
+   * World-level social state to save with every autosave round / saveAll (only records that changed): core's
+   * GroupRegistry (blob "groups", core format v2) and ClaimRegistry (blob "claims"). Load it with `loadSocial(store)`
+   * and hand the same objects to `installPermissions`.
+   */
+  social?: SocialState;
   /** Injected wall clock for the encode budget / stats (persist is infrastructure, not sim). */
   now?: () => number;
   log?: (msg: string) => void;
@@ -52,6 +59,10 @@ export interface PersistenceStats {
   chunksSavedOnUnload: number;
   playersSaved: number;
   decodeErrors: number;
+  /** Async backends: chunk reads issued / answered after ChunkManager stopped wanting the chunk (not decoded). */
+  asyncReads: number;
+  asyncLateDropped: number;
+  socialSaves: number;
 }
 
 interface Round { batch: BatchHandle; queue: ChunkKey[]; encoded: Set<ChunkKey>; requeued: Set<ChunkKey>; startTick: number; encodeMs: number; count: number; flushPlayers: boolean }
@@ -70,16 +81,30 @@ const isPlayer = (w: World, e: Entity): boolean => w.has(e, Owner) && w.getField
  *   ONE transaction off-thread. A chunk dirtied again after it was encoded in the running round is re-encoded once.
  * - onUnload: encode (if dirty) into the running round or its own batch, then despawn the chunk's entities and drop
  *   its buildings. Players: `trackPlayer/untrackPlayer`, `savePlayer`, `restorePlayer`, periodic save.
+ * - World-level social state (`social`: GroupRegistry + ClaimRegistry) rides along with each autosave round's final
+ *   part and saveAll when it changed; `allocatePlayerId()` hands out persistent account ids.
+ * - Async stores (IndexedDB): `provider` is an AsyncChunkProvider (deduped reads, late results never decoded).
  * - `saveAll()` for graceful shutdown.
  */
 export class WorldPersistence {
   readonly world: World;
   readonly store: WorldStore;
   readonly membership: ChunkMembership;
-  readonly provider: ChunkProvider;
+  /**
+   * Give this to ChunkManager. Sync stores (SQLite, memory): always answers synchronously. Async stores
+   * (`readChunkAsync`, IndexedDB): a Promise unless the row is in the store's pending overlay. Concurrent loads of a
+   * key share one read; a read that resolves after ChunkManager dropped the request is discarded WITHOUT decoding
+   * (decoding spawns the chunk's entities), and a re-request while the read is in flight reuses it.
+   */
+  readonly provider: AsyncChunkProvider;
+  readonly social: SocialState | undefined;
+  private socialSaver: SocialSaver | undefined;
+  private nextPlayerId: number;
+  private reads = new Map<ChunkKey, Promise<GeneratedChunk | undefined>>();
   readonly stats: PersistenceStats = {
     dirtyChunks: 0, roundsCompleted: 0, lastRoundChunks: 0, lastRoundTicks: 0, lastRoundEncodeMs: 0, lastTickMs: 0, maxTickMs: 0,
     chunksLoadedFromStore: 0, chunksGenerated: 0, chunksSavedOnUnload: 0, playersSaved: 0, decodeErrors: 0,
+    asyncReads: 0, asyncLateDropped: 0, socialSaves: 0,
   };
   private chunks: ChunkManager | undefined;
   private dirty = new Set<ChunkKey>();
@@ -92,8 +117,8 @@ export class WorldPersistence {
   private online = new Map<string, { entity: Entity; name: string }>();
   private quiet = false;
   private tickMs = 0;
-  /** EWMA of encode ms per cost unit (1 + pieces/200), for the per-tick budget. */
-  private msPerUnit = 0.2;
+  /** Encode cost model for the per-tick budget: ms ~= msBase + msPerPiece * anchored pieces (both EWMAs, conservative start). */
+  private msBase = 0.1; private msPerPiece = 0.0005;
   private readonly autosaveTicks: number; private readonly playerTicks: number; private readonly budget: number;
   private readonly persistEntity: (w: World, e: Entity) => boolean;
   private readonly despawn: (w: World, e: Entity) => boolean;
@@ -121,7 +146,10 @@ export class WorldPersistence {
         if (to !== undefined) { this.markDirty(to); this.persisted.add(e); } else this.persisted.delete(e);
       }
     };
-    this.provider = { load: (cx, cy) => this.load(cx, cy) };
+    this.provider = this.store.readChunkAsync ? { load: (cx, cy) => this.loadAsync(cx, cy) } : { load: (cx, cy) => this.load(cx, cy) };
+    this.social = opts.social;
+    if (opts.social) this.socialSaver = new SocialSaver(opts.social, this.store);
+    this.nextPlayerId = Math.max(1, this.store.readMeta()?.nextPlayerId ?? 1);
     if (opts.buildings) {
       const b = opts.buildings; const prevPlace = b.onPlace, prevRemove = b.onRemove;
       b.onPlace = (i) => { prevPlace?.(i); if (!this.quiet) this.markDirty(chunkKeyOf(i.tx, i.ty)); };
@@ -144,7 +172,25 @@ export class WorldPersistence {
     return this;
   }
 
-  meta(): WorldMeta { return { seed: this.world.seed, tick: this.world.tick, schemaHash: this.world.getSchemaHash() }; }
+  meta(): WorldMeta { return { seed: this.world.seed, tick: this.world.tick, schemaHash: this.world.getSchemaHash(), nextPlayerId: this.nextPlayerId }; }
+  /**
+   * Hands out the next account PlayerId (core `PlayerId`, persistent: it is saved in the player record). The counter
+   * is written right away, ahead of any player row that could carry the id, so ids are never reused after a crash.
+   */
+  allocatePlayerId(): number {
+    const id = this.nextPlayerId++;
+    void this.store.write({ meta: this.meta() }).catch((e) => this.opts.log?.(`persist: meta save failed: ${String(e)}`));
+    return id;
+  }
+  /** Changed social records (groups / claims) as blobs; [] without `social`. */
+  private socialBlobs(force = false): StoredBlob[] {
+    const b = this.socialSaver?.changed(this.world.tick, force) ?? []; this.stats.socialSaves += b.length; return b;
+  }
+  /** Writes groups / claims now if they changed (own transaction). */
+  saveSocial(): Promise<void> {
+    const blobs = this.socialBlobs(); if (!blobs.length) return Promise.resolve();
+    const p = this.store.write({ blobs, meta: this.meta() }); p.catch(() => this.socialSaver?.invalidate()); return p;
+  }
   /** Mark a chunk for the next autosave (e.g. gameplay changed building hp, which has no hook yet). */
   markDirty(key: ChunkKey): void {
     if (this.readOnly.has(key)) return;
@@ -157,8 +203,25 @@ export class WorldPersistence {
   resetMaxTick(): void { this.stats.maxTickMs = 0; }
 
   // ---------------- chunks ----------------
-  private load(cx: number, cy: number): GeneratedChunk | undefined {
-    const gen = this.opts.generator; const rec = this.store.readChunk(`${cx},${cy}`);
+  private load(cx: number, cy: number): GeneratedChunk | undefined { return this.fromRecord(cx, cy, this.store.readChunk(`${cx},${cy}`)); }
+  private loadAsync(cx: number, cy: number): GeneratedChunk | undefined | Promise<GeneratedChunk | undefined> {
+    const key: ChunkKey = `${cx},${cy}`;
+    const hot = this.store.readChunk(key); if (hot) return this.fromRecord(cx, cy, hot); // pending overlay / cache: sync
+    if (this.store.hasChunk?.(key) === false && !this.reads.has(key)) return this.fromRecord(cx, cy, undefined); // never saved: generator, sync
+    const inflight = this.reads.get(key); if (inflight) return inflight; // dedup (also a re-request after a drop)
+    this.stats.asyncReads++;
+    const p = this.store.readChunkAsync!(key).then((rec) => {
+      this.reads.delete(key);
+      // Late result: ChunkManager no longer waits for this chunk. Do not decode (it would spawn entities nobody owns).
+      if (this.chunks && !this.chunks.isPending(key)) { this.stats.asyncLateDropped++; return undefined; }
+      return this.fromRecord(cx, cy, rec);
+    }, (err: unknown) => { this.reads.delete(key); throw err; });
+    this.reads.set(key, p);
+    return p;
+  }
+  /** Stored row -> decodeChunk (entities spawned, buildings placed), else the generator. */
+  private fromRecord(cx: number, cy: number, rec: StoredChunk | undefined): GeneratedChunk | undefined {
+    const gen = this.opts.generator;
     if (rec) {
       this.quiet = true;
       try {
@@ -224,7 +287,10 @@ export class WorldPersistence {
   private autosaveStep(): void {
     const t = this.world.tick;
     if (this.playerTicks > 0 && t >= this.nextPlayerSave) { this.nextPlayerSave = t + this.playerTicks; if (this.online.size) void this.savePlayers().catch((e) => this.opts.log?.(`persist: player save failed: ${String(e)}`)); }
-    if (!this.round && this.autosaveTicks > 0 && t >= this.nextAutosave) { this.nextAutosave = t + this.autosaveTicks; this.beginRound(); }
+    if (!this.round && this.autosaveTicks > 0 && t >= this.nextAutosave) {
+      this.nextAutosave = t + this.autosaveTicks;
+      if (!this.beginRound() && !this.round) void this.saveSocial().catch((e) => this.opts.log?.(`persist: social save failed: ${String(e)}`));
+    }
     if (this.round) this.continueRound(this.budget);
   }
 
@@ -247,22 +313,23 @@ export class WorldPersistence {
       const k = r.queue[0]!; if (r.encoded.has(k)) { r.queue.shift(); continue; }
       // Predict this chunk's cost (building-heavy chunks cost more) and leave it for the next tick if it would
       // overrun the budget. At least one chunk per tick so a round always progresses.
-      const units = 1 + (this.opts.buildings?.layer(k)?.anchored.size ?? 0) / 200;
+      const pieces = this.opts.buildings?.layer(k)?.anchored.size ?? 0;
       const elapsed = this.now() - t0;
-      if (n > 0 && elapsed + this.msPerUnit * units > budgetMs) break;
+      if (n > 0 && elapsed + this.msBase + this.msPerPiece * pieces > budgetMs) break;
       r.queue.shift();
       const c0 = this.now(); const rec = this.encode(k); const ms = this.now() - c0;
-      this.msPerUnit = this.msPerUnit * 0.8 + (ms / units) * 0.2;
+      if (pieces < 200) this.msBase = this.msBase * 0.8 + ms * 0.2;
+      else this.msPerPiece = Math.max(this.msPerPiece * 0.5, this.msPerPiece * 0.7 + (Math.max(0, ms - this.msBase) / pieces) * 0.3);
       r.encoded.add(k); n++; if (rec) { part.push(rec); r.count++; }
     }
     r.encodeMs += this.now() - t0;
     const batch: SaveBatch = { chunks: part };
-    if (!r.queue.length) batch.meta = this.meta();
+    if (!r.queue.length) { batch.meta = this.meta(); const blobs = this.socialBlobs(); if (blobs.length) batch.blobs = blobs; }
     if (part.length || batch.meta) r.batch.append(batch);
     if (r.queue.length) return undefined;
     this.round = undefined;
     this.stats.roundsCompleted++; this.stats.lastRoundChunks = r.count; this.stats.lastRoundTicks = this.world.tick - r.startTick + 1; this.stats.lastRoundEncodeMs = r.encodeMs;
-    const p = r.batch.commit(); p.catch((e) => this.opts.log?.(`persist: autosave commit failed: ${String(e)}`));
+    const p = r.batch.commit(); p.catch((e) => { this.socialSaver?.invalidate(); this.opts.log?.(`persist: autosave commit failed: ${String(e)}`); });
     return p;
   }
 
@@ -300,7 +367,8 @@ export class WorldPersistence {
     let chunks = 0;
     if (this.round) { chunks = this.round.queue.length; await this.continueRound(Infinity); }
     const players = this.online.size; await this.savePlayers();
-    await this.store.write({ meta: this.meta() });
+    const blobs = this.socialBlobs();
+    await this.store.write({ meta: this.meta(), ...(blobs.length ? { blobs } : {}) });
     await this.store.flush();
     return { chunks, players };
   }

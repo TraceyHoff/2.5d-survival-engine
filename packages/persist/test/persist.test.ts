@@ -3,11 +3,11 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import Database from "better-sqlite3";
-import { Transform, entityIndex } from "@engine/core";
-import { installGameplay, spawnPlayer, Health, Survival, PlayerIntent } from "@engine/gameplay";
+import { Owner, Transform, entityIndex } from "@engine/core";
+import { installGameplay, spawnPlayer, Health, Survival, PlayerIntent, Inventory, Container } from "@engine/gameplay";
 import { World } from "@engine/core";
 import { SqliteWorldStore } from "../src/node.js";
-import { WorldPersistence, MemoryWorldStore, encodePlayer, decodePlayerInto, IndexedDbWorldStore, tokenToWords, wordsToToken, nameToWords, wordsToName, tokenToHex } from "../src/index.js";
+import { WorldPersistence, MemoryWorldStore, encodePlayer, decodePlayerInto, tokenToWords, wordsToToken, nameToWords, wordsToName, tokenToHex } from "../src/index.js";
 import { Crate, Stash, PIECES, buildBase, makeWorld, spawnCrate, step } from "./helpers.js";
 
 const WorldPersistenceCoords = (k: string): { cx: number; cy: number } => WorldPersistence.coords(k);
@@ -176,8 +176,24 @@ describe("players", () => {
     expect(wordsToName(nameToWords("ñandú-🦤-ñandú-🦤-ñandú"))).toMatch(/^ñandú/);
   });
 
-  it("IndexedDB store is an explicit stub", async () => {
-    await expect(IndexedDbWorldStore.open("x")).rejects.toThrow();
-    expect(new IndexedDbWorldStore("x").readChunk("0,0")).toBeUndefined();
+  it("gameplay slot metadata (createdTick, durability) round-trips in containers (chunk) and inventories (player)", async () => {
+    const store = new MemoryWorldStore();
+    const reg = (w: World) => { w.register(Inventory); w.register(Container); };
+    const a = makeWorld(store, { setup: reg }); a.chunks.setSource({ id: 1, x: 16, y: 16 }); step(a.world);
+    const box = a.world.create();
+    a.world.add(box, Transform, { x: 6, y: 6 }).add(box, Container, { slotCount: 12, items: [5, 9], counts: [1, 40], createdTick: [123456, 4294967295], durability: [873, 0] });
+    const p = a.world.create();
+    a.world.add(p, Transform, { x: 1, y: 1 }).add(p, Owner, { clientId: 1 }).add(p, Inventory, { items: [0, 0, 31], counts: [0, 0, 1], createdTick: [0, 0, 777], durability: [0, 0, 65535] });
+    a.persist.trackPlayer("cc".repeat(16), p); step(a.world, 2); await a.persist.saveAll();
+    const b = makeWorld(store, { setup: reg }); b.chunks.setSource({ id: 1, x: 16, y: 16 }); step(b.world);
+    const [box2] = [...b.world.query([Container])];
+    expect([...b.world.getArray(box2!, Container, "createdTick")!].slice(0, 2)).toEqual([123456, 4294967295]);
+    expect([...b.world.getArray(box2!, Container, "durability")!].slice(0, 2)).toEqual([873, 0]);
+    expect([...b.world.getArray(box2!, Container, "counts")!].slice(0, 2)).toEqual([1, 40]);
+    const p2 = b.world.create(); b.world.add(p2, Owner, { clientId: 2 });
+    expect(b.persist.restorePlayer("cc".repeat(16), p2)?.restored).toContain("Inventory");
+    expect(b.world.getArray(p2, Inventory, "createdTick")![2]).toBe(777);
+    expect(b.world.getArray(p2, Inventory, "durability")![2]).toBe(65535);
   });
+
 });

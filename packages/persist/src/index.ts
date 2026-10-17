@@ -5,3 +5,4 @@ export * from "./memoryStore.js";
 export * from "./indexedDbStore.js";
 export * from "./persistence.js";
 export * from "./session.js";
+export * from "./social.js";

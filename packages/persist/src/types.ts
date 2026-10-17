@@ -4,14 +4,21 @@ import type { ChunkKey } from "@engine/world";
 export interface StoredChunk { key: ChunkKey; format: number; bytes: Uint8Array; tick: number }
 /** One saved player row, keyed by the account/session token (hex). `format` = player record version. */
 export interface StoredPlayer { token: string; name: string; format: number; bytes: Uint8Array; tick: number }
+/**
+ * World-level record that is not per chunk or per player (blobs table), e.g. "groups" (core GroupRegistry format)
+ * and "claims" (persist claim format). `format` = the record's own version byte.
+ */
+export interface StoredBlob { key: string; format: number; bytes: Uint8Array; tick: number }
 /** World-level metadata (meta table). */
-export interface WorldMeta { seed: number; tick: number; schemaHash: number; createdAt?: number }
+export interface WorldMeta { seed: number; tick: number; schemaHash: number; createdAt?: number; /** Next account PlayerId to hand out. */ nextPlayerId?: number }
 
 /** Everything written in one transaction. Either all of it becomes durable or none of it does. */
 export interface SaveBatch {
   chunks?: StoredChunk[];
   players?: StoredPlayer[];
   meta?: WorldMeta;
+  /** World-level records (upsert by key). */
+  blobs?: StoredBlob[];
   /** Chunk keys to delete (e.g. a world reset of an area). */
   deleteChunks?: ChunkKey[];
 }
@@ -30,9 +37,10 @@ export interface StoreStats {
 }
 
 /**
- * Storage backend for a world. Reads are SYNCHRONOUS because `ChunkProvider.load` (ChunkManager) is synchronous;
- * writes are asynchronous, batched and transactional. A backend that can only read asynchronously (IndexedDB)
- * must prefetch rows into memory (see `prefetchChunks`) before ChunkManager asks for them.
+ * Storage backend for a world. Meta, blobs and players are read SYNCHRONOUSLY (backends without sync I/O load them
+ * at open). Chunks are read synchronously (`readChunk`, SQLite / memory) or asynchronously (`readChunkAsync`,
+ * IndexedDB), which WorldPersistence turns into a sync `ChunkProvider` or core's `AsyncChunkProvider`.
+ * Writes are asynchronous, batched and transactional.
  *
  * Read-your-writes: a row passed to write() must be returned by the read methods immediately, even before the
  * batch commits (implementations keep a pending overlay).
@@ -40,8 +48,14 @@ export interface StoreStats {
 export interface WorldStore {
   readonly kind: string;
   readMeta(): WorldMeta | undefined;
+  /** Sync chunk read. Async-only backends answer from their pending overlay / cache and may miss. */
   readChunk(key: ChunkKey): StoredChunk | undefined;
+  /** Present on backends whose chunk reads are asynchronous: the authoritative read (overlay, then disk). */
+  readChunkAsync?(key: ChunkKey): Promise<StoredChunk | undefined>;
+  /** Async backends that know their key set: false = definitely no row (load from the generator synchronously). */
+  hasChunk?(key: ChunkKey): boolean;
   readPlayer(token: string): StoredPlayer | undefined;
+  readBlob(key: string): StoredBlob | undefined;
   /** Optional async warm-up for backends without synchronous reads. */
   prefetchChunks?(keys: readonly ChunkKey[]): Promise<void>;
   /** Queue one transactional batch. Resolves when committed. Never blocks the caller on I/O. */
