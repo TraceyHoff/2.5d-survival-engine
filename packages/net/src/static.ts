@@ -16,7 +16,7 @@
 import { parseChunkKey, chunkKey, chunkKeyOf, CHUNK_SIZE, type ChunkKey } from "@engine/world";
 import { BitReader, BitWriter } from "./bits.js";
 import { MsgType, writeHeader } from "./protocol.js";
-import { decodeDelta, fromWire, writeDespawn, writeEnd, writeEntityRecord, type EntityState, type NetSchema, type WorldState } from "./state.js";
+import { decodeDelta, fromWire, readWire, writeWire, writeDespawn, writeEnd, writeEntityRecord, type EntityState, type NetSchema, type WorldState } from "./state.js";
 
 export const StaticSection = { Part: 0, Hit: 1, Delta: 2, Leave: 3 } as const;
 export const StaticCtl = { Evict: 0, Nack: 1 } as const;
@@ -101,7 +101,23 @@ export class StaticServer {
       for (const [id, old] of this.changes.get(key)!.old) if (!c.ents.has(id) && old) gone.push(id);
       gone.sort((a, b) => a - b);
       w.writeVarUint(gone.length); let prev = 0; for (const id of gone) { w.writeVarUint(id - prev); prev = id; }
-      for (const [id, old] of this.changes.get(key)!.old) { const es = c.ents.get(id); if (es) writeEntityRecord(w, this.schema, id, es, old); }
+      // column batches: entities whose only change is ONE element of ONE component (hp, state, damageStage...)
+      // grouped per (component, element): sorted delta-varint netIds, then the values (~2-3 B per piece)
+      const cols = new Map<number, { ci: number; ei: number; ids: number[] }>(); const rest: [number, EntityState, EntityState | undefined][] = [];
+      for (const [id, old] of this.changes.get(key)!.old) {
+        const es = c.ents.get(id); if (!es) continue;
+        const one = old ? singleElementChange(old, es) : undefined;
+        if (!one) { rest.push([id, es, old]); continue; }
+        const k = one[0] * 4096 + one[1]; let col = cols.get(k); if (!col) cols.set(k, (col = { ci: one[0], ei: one[1], ids: [] })); col.ids.push(id);
+      }
+      w.writeVarUint(cols.size);
+      for (const col of cols.values()) {
+        col.ids.sort((a, b) => a - b); const spec = this.schema.specs[col.ci]![col.ei]!;
+        w.writeVarUint(col.ci); w.writeVarUint(col.ei); w.writeVarUint(col.ids.length);
+        let p = 0; for (const id of col.ids) { w.writeVarUint(id - p); p = id; }
+        for (const id of col.ids) writeWire(w, spec, c.ents.get(id)!.get(col.ci)![col.ei]!);
+      }
+      for (const [id, es, old] of rest) writeEntityRecord(w, this.schema, id, es, old);
       writeEnd(w); b = w.snapshotBits(); this.deltaBlobs.set(key, b);
     }
     return b;
@@ -248,7 +264,21 @@ export class StaticClient {
         if (!a && from === 0) { a = { version: 0, ents: new Map() }; this.active.set(key, a); }
         const ok = !!a && a.version === from;
         const n = r.readVarUint(); const gone: number[] = []; let prev = 0; for (let i = 0; i < n; i++) { prev += r.readVarUint(); gone.push(prev); }
-        let d; try { d = decodeDelta(r, this.schema, ok ? a!.ents : undefined); } catch { d = undefined; }
+        const cols: { ci: number; ei: number; ids: number[]; vals: number[] }[] = [];
+        let d;
+        try {
+          const nc = r.readVarUint();
+          for (let k = 0; k < nc; k++) {
+            const ci = r.readVarUint(), ei = r.readVarUint(), m = r.readVarUint(); const spec = this.schema.specs[ci]?.[ei]; if (!spec) throw new Error("bad column");
+            const ids: number[] = []; let p = 0; for (let i = 0; i < m; i++) { p += r.readVarUint(); ids.push(p); }
+            cols.push({ ci, ei, ids, vals: ids.map(() => readWire(r, spec)) });
+          }
+          d = decodeDelta(r, this.schema, ok ? a!.ents : undefined);
+          for (const col of cols) col.ids.forEach((id, i) => {
+            const es = d!.state.get(id); const v = es?.get(col.ci); if (!es || !v) { if (ok) throw new Error("column for unknown entity"); return; }
+            const nv = [...v]; nv[col.ei] = col.vals[i]!; const ne = new Map(es); ne.set(col.ci, nv); d!.state.set(id, ne);
+          });
+        } catch { d = undefined; }
         if (d) for (const id of gone) d.state.delete(id);
         if (!ok || !d) { if (!d) return; this.nack(key); continue; }
         this.stats.deltas++; this.applyDiff(key, a!.ents, d.state); a!.ents = d.state; a!.version = to; continue;
@@ -264,4 +294,14 @@ export class StaticClient {
   }
   /** Connection reset: complete chunks go to the cache, entities are removed. */
   reset(): void { for (const key of [...this.active.keys()]) this.drop(key, true); }
+}
+
+/** [ci, element] when exactly one element of one component differs (no adds/removes), else undefined. */
+function singleElementChange(a: EntityState, b: EntityState): [number, number] | undefined {
+  if (a.size !== b.size) return undefined; let hit: [number, number] | undefined;
+  for (const [ci, v] of b) {
+    const o = a.get(ci); if (!o) return undefined; if (o === v) continue;
+    for (let i = 0; i < v.length; i++) if (v[i] !== o[i]) { if (hit) return undefined; hit = [ci, i]; }
+  }
+  return hit;
 }

@@ -127,20 +127,20 @@ describe("trade sessions", () => {
 });
 
 describe("coreTradeInventory (core Containers + transaction)", () => {
-  const Bag = defineComponent("TradeBag", { item: { type: "u16", length: 4 }, count: { type: "u16", length: 4 }, meta: { type: "u16", length: 4 } });
-  it("reads tuples (meta = durability) and swaps atomically; full target rolls back both sides", () => {
+  const Bag = defineComponent("TradeBag", { item: { type: "u16", length: 4 }, count: { type: "u16", length: 4 }, dur: { type: "u16", length: 4 }, born: { type: "u32", length: 4 } });
+  it("reads core slot tuples; durability + createdTick survive the trade swap and swaps atomically; full target rolls back both sides", () => {
     const w = new World(); w.register(Bag); const C = installContainers(w);
-    C.register(Bag, arrayFieldsContainer(Bag, { item: "item", count: "count", meta: "meta" }));
+    C.register(Bag, arrayFieldsContainer(Bag, { item: "item", count: "count", durability: "dur", createdTick: "born" }));
     const a = w.create(); w.add(a, Bag); const b = w.create(); w.add(b, Bag);
-    const st = w.store(Bag); const put = (e: Entity, i: number, item: number, count: number, meta: number) => { st.writeElement(entityIndex(e), "item", i, item); st.writeElement(entityIndex(e), "count", i, count); st.writeElement(entityIndex(e), "meta", i, meta); };
-    put(a, 0, 5, 10, 33); put(b, 0, 7, 1, 90);
-    const inv = coreTradeInventory({ createdTick: () => 4 });
-    const ta = inv.readSlot(w, a, 0)!; expect(ta).toEqual({ item: 5, count: 10, durability: 33, createdTick: 4 });
+    const st = w.store(Bag); const put = (e: Entity, i: number, item: number, count: number, meta: number) => { st.writeElement(entityIndex(e), "item", i, item); st.writeElement(entityIndex(e), "count", i, count); st.writeElement(entityIndex(e), "dur", i, meta); st.writeElement(entityIndex(e), "born", i, 1000 + item); };
+    put(a, 0, 5, 10, 0); put(b, 0, 7, 1, 90);
+    const inv = coreTradeInventory();
+    const ta = inv.readSlot(w, a, 0)!; expect(ta).toEqual({ item: 5, count: 10, durability: 0, createdTick: 1005 });
     expect(inv.readSlot(w, a, 3)).toBeUndefined();
     const tb = inv.readSlot(w, b, 0)!;
     expect(inv.swap(w, { entity: a, lines: [{ ...ta, slot: 0, count: 4 }] }, { entity: b, lines: [{ ...tb, slot: 0 }] }, 1)).toBe(true);
-    expect(inv.readSlot(w, a, 0)!.count).toBe(6); expect(inv.readSlot(w, a, 1)).toMatchObject({ item: 7, count: 1, durability: 90 });
-    expect(inv.readSlot(w, b, 1)).toMatchObject({ item: 5, count: 4, durability: 33 }); expect(inv.readSlot(w, b, 0)).toBeUndefined();
+    expect(inv.readSlot(w, a, 0)!.count).toBe(6); expect(inv.readSlot(w, a, 1)).toEqual({ item: 7, count: 1, durability: 90, createdTick: 1007 });
+    expect(inv.readSlot(w, b, 1)).toEqual({ item: 5, count: 4, durability: 0, createdTick: 1005 }); expect(inv.readSlot(w, b, 0)).toBeUndefined();
     // fill b completely -> a's line has nowhere to go; b's outgoing line must not have moved either
     put(b, 0, 8, 1, 0); put(b, 2, 8, 1, 0); put(b, 3, 8, 1, 0);
     const before = [0, 1, 2, 3].map((i) => [inv.readSlot(w, a, i), inv.readSlot(w, b, i)]);

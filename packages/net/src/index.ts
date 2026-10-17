@@ -18,3 +18,4 @@ export * from "./utf8.js";
 export * from "./trade.js";
 export * from "./combat.js";
 export * from "./anticheat.js";
+export * from "./tiles.js";

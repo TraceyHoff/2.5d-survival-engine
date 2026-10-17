@@ -294,6 +294,11 @@ export class NetServer {
    * Extra AOI viewpoints for a client (e.g. a spectator camera, a remote-viewed turret), unioned with its owned
    * entities' positions. Pass [] to clear. `r` = chunk radius (default the grid radius).
    */
+  private lastViews = new Map<number, readonly Viewpoint[]>();
+  /** Chunks in the client's AOI as of the last send (undefined = interest disabled: everything is relevant). */
+  relevantChunks(clientId: number): ReadonlySet<string> | undefined { return this.interest ? (this.interest.grid.get(clientId)?.chunks ?? NO_CHUNKS) : undefined; }
+  /** The client's AOI viewpoints (owned entities + extra) as of the last send; for closest-first ordering. */
+  viewpointsOf(clientId: number): readonly Viewpoint[] { return this.lastViews.get(clientId) ?? []; }
   setViewpoints(clientId: number, views: readonly Viewpoint[]): void { if (views.length) this.extraViews.set(clientId, views); else this.extraViews.delete(clientId); }
   /** Always replicate this entity to every client regardless of AOI (entities without Transform are global automatically). */
   setGlobal(e: Entity, global = true): void { if (global) this.globals.add(e); else this.globals.delete(e); }
@@ -513,7 +518,7 @@ export class NetServer {
     const globals: number[] = [];
     for (let k = 0; k < ns.size; k++) { const e = ns.dense[k]!; if (!tf.has(entityIndex(e)) || this.globals.has(e)) globals.push(ns.data.id[k]!); }
     const grid = this.interest;
-    const viewsOf = new Map<number, readonly Viewpoint[]>();
+    const viewsOf = new Map<number, readonly Viewpoint[]>(); this.lastViews = viewsOf;
     if (this.statics) this.statics.update(cur);
     if (grid) {
       grid.sync();

@@ -74,7 +74,7 @@ export class GroupReplicator implements GroupScopeResolver {
     server.onTick(() => this.tick());
   }
   /** Persistent player id: opts.playerIdOf, else core PlayerId on the client's owned entity, else clientId. */
-  private pidCache = new Map<number, number | undefined>(); private pidTick = -1; private hasPid: boolean | undefined;
+  private pidCache = new Map<number, number | undefined>(); private pidTick = -1;
   playerOf(clientId: number): number | undefined {
     const t = this.server.world.tick; if (t !== this.pidTick) { this.pidTick = t; this.pidCache.clear(); }
     if (this.pidCache.has(clientId)) return this.pidCache.get(clientId);
@@ -84,8 +84,7 @@ export class GroupReplicator implements GroupScopeResolver {
     const s = this.server.sessions.get(clientId); if (!s) return undefined;
     if (this.opts.playerIdOf) return this.opts.playerIdOf(s);
     const w = this.server.world;
-    if (this.hasPid === undefined) { try { w.componentId(PlayerId); this.hasPid = true; } catch { /* not registered yet */ } }
-    if (!this.hasPid) return s.clientId;
+    if (!w.isRegistered(PlayerId)) return s.clientId;
     for (const e of this.server.ownedEntities(clientId)) if (w.isAlive(e) && w.has(e, PlayerId)) return w.getField(e, PlayerId, "id")!;
     return s.clientId;
   }

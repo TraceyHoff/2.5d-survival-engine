@@ -145,4 +145,20 @@ describe("static replication class (building pieces)", () => {
     step(5);
     expect(mismatches()).toEqual({ missing: 0, wrong: 0, extra: 0, expected: 2400 });
   });
+
+  it("raid scale: 600 removals + 1000 hp changes in one tick ride one batched static delta (no BuildingGrid stream)", async () => {
+    const { sw, server, pieces, step, mismatches } = await setup({ loss: 0.1 });
+    step(40); expect(mismatches().missing).toBe(0);
+    const b0 = server.staticStats(1)!.bytes;
+    const victims = pieces.filter((_, i) => i % 5 === 0).slice(0, 600);
+    const damaged = pieces.filter((_, i) => i % 5 !== 0).slice(0, 1000);
+    for (const e of victims) sw.destroy(e);
+    damaged.forEach((e, i) => sw.setField(e, BuildPiece, "hp", 500 - 1 - (i % 400)));
+    step(1);
+    const bytes = server.staticStats(1)!.bytes - b0;
+    console.log(JSON.stringify({ raidRemoved: 600, raidHpChanges: 1000, raidBytes: bytes, bytesPerOp: +(bytes / 1600).toFixed(2) }));
+    expect(bytes).toBeLessThan(600 * 1.6 + 1000 * 3.5);
+    step(5);
+    expect(mismatches()).toEqual({ missing: 0, wrong: 0, extra: 0, expected: 2400 });
+  });
 });

@@ -16,6 +16,8 @@ import { ChatClient } from "./chat.js";
 import { GroupClient } from "./groups.js";
 import { TradeClient } from "./trade.js";
 import { encodeReport, type ReportReason } from "./anticheat.js";
+import { TileClient } from "./tiles.js";
+import type { TileMap } from "@engine/world";
 import { StaticClient, encodeStaticCtl } from "./static.js";
 
 export class NetRejectedError extends Error {
@@ -51,6 +53,9 @@ export interface NetClientOptions {
   correctionSmoothingSec?: number;
   /** Static-class chunks kept after leaving them, for instant re-entry (LRU, default 64). */
   staticCacheChunks?: number;
+  /** Replicated tile store (renderer reads it) and its leave-cache size; see TileClient. */
+  tiles?: TileMap;
+  tileCacheChunks?: number;
 }
 
 /** A server event as received: payload entity fields are resolved to local entities (NO_ENTITY if unknown). */
@@ -103,6 +108,8 @@ export class NetClient {
   rttMs = -1;
   /** Chat transport (send/on). */
   readonly chat: ChatClient;
+  /** Replicated tiles: `client.tiles.tiles.getTile(x, y)`, `client.tiles.on(...)`. */
+  readonly tiles: TileClient;
   /** Own party/clan rosters + member markers. */
   readonly groups: GroupClient;
   /** Trade session protocol. */
@@ -123,6 +130,7 @@ export class NetClient {
       sendCtl: (kind, key) => { if (this.active) this.opts.transport.send(encodeStaticCtl(kind, key), "reliable"); },
     }, opts.staticCacheChunks ?? 64);
     this.chat = new ChatClient(this); this.groups = new GroupClient(this); this.trade = new TradeClient(this);
+    this.tiles = new TileClient(this, { ...(opts.tiles ? { tiles: opts.tiles } : {}), ...(opts.tileCacheChunks ? { cacheChunks: opts.tileCacheChunks } : {}) });
     opts.transport.onMessage((b) => this.onMessage(b));
     opts.transport.onClose(() => { this.active = false; this.welcome?.reject(new Error("connection closed")); this.welcome = undefined; });
     this.world.addSystem("input", "net.client.input", (w) => this.inputSystem(w));

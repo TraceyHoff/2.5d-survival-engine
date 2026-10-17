@@ -215,18 +215,18 @@ export class TradeClient {
 }
 
 /**
- * TradeInventory over core's Containers + transaction(): readSlot maps Slot.meta -> durability (createdTick from
- * opts, core slots carry none); swap moves every line into a free slot of the other side inside ONE core transaction
- * (validators run; any failure rolls everything back). Needs enough empty slots on each side (merging is not attempted
- * so stacks keep their meta).
+ * TradeInventory over core's Containers + transaction(): readSlot returns core Slot durability/createdTick (0 when the
+ * container doesn't store them); swap moves every line into a free slot of the other side inside ONE core transaction
+ * (validators run; core carries durability/createdTick through transfer; any failure rolls everything back). Needs
+ * enough empty slots on each side (no merging, so tuples stay intact).
  */
-export function coreTradeInventory(opts: { createdTick?: (world: World, e: Entity, slot: number) => number } = {}): TradeInventory {
+export function coreTradeInventory(): TradeInventory {
   return {
     readSlot(world, e, slot) {
       const a = world.resource(Containers).adapterFor(world, e);
       if (!a || slot < 0 || slot >= a.capacity(world, e)) return undefined;
       const s = a.getSlot(world, e, slot); if (!s.item || s.count <= 0) return undefined;
-      return { item: s.item, count: s.count, durability: s.meta, createdTick: opts.createdTick?.(world, e, slot) ?? 0 };
+      return { item: s.item, count: s.count, durability: s.durability ?? 0, createdTick: s.createdTick ?? 0 };
     },
     swap(world, a, b) {
       const reg = world.resource(Containers);

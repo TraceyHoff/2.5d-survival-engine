@@ -38,8 +38,8 @@ export function toWire(spec: FieldSpec, v: number): number {
   return fieldType(spec) === "f32" ? Math.fround(v) : v;
 }
 export function fromWire(spec: FieldSpec, v: number): number { const q = fieldQuant(spec); return q ? dequantize(v, q) : v; }
-function writeWire(w: BitWriter, spec: FieldSpec, v: number): void { const q = fieldQuant(spec); if (q) w.writeBits(v, q.bits); else w.write(fieldType(spec), v); }
-function readWire(r: BitReader, spec: FieldSpec): number { const q = fieldQuant(spec); return q ? r.readBits(q.bits) : r.read(fieldType(spec)); }
+export function writeWire(w: BitWriter, spec: FieldSpec, v: number): void { const q = fieldQuant(spec); if (q) w.writeBits(v, q.bits); else w.write(fieldType(spec), v); }
+export function readWire(r: BitReader, spec: FieldSpec): number { const q = fieldQuant(spec); return q ? r.readBits(q.bits) : r.read(fieldType(spec)); }
 
 /** Read one component's wire values from a dense slot. */
 export function readComp(schema: NetSchema, ci: number, slot: number): number[] {

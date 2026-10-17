@@ -234,8 +234,8 @@ Mentions are never used for delivery.
 ## 15. Trade sessions (milestone 4)
 Net owns the state machine and messages. Gameplay registers the rules through `validate(world, a, b, phase, offers?)`, with phases request,
 offer, commit and tick; return a code to refuse or cancel, which reaches the client as `TradeEnd.Hook + code`. The swap goes through
-`TradeInventory.swap`, which must be atomic. `coreTradeInventory({ createdTick? })` implements it over core `Containers` + `transaction()`:
-`readSlot` maps `Slot.meta` → durability; `swap` moves every line into a free slot of the other side with `tx.transfer` inside one core
+`TradeInventory.swap`, which must be atomic. `coreTradeInventory()` implements it over core `Containers` + `transaction()` (durability and createdTick carried by core Slot):
+`readSlot` returns core `Slot.durability`/`createdTick` (0 if the container lacks them); `swap` moves every line into a free slot of the other side with `tx.transfer` inside one core
 transaction (container validators run; any failure rolls both sides back). It needs enough empty slots; stacks aren't merged. Each committed
 trade gets a `txnId`.
 
@@ -334,3 +334,38 @@ each).
 
 Events are already aggregated as one Events message per tick per client per reliability class. Further hit compaction, such as a
 per-target damage sum, is left to gameplay, since it changes the event semantics.
+
+## 20. Tile and building replication (milestone 5)
+**Tiles.** `new TileSync(server, { tiles: chunkManager, budgetBytes = 8 KiB })` is the sole drainer of `tiles.tileChanges()` (once per tick, in
+`onTick`). It reuses the static-class scheme. Each client has subscribed chunks with the version it holds, plus a server-side mirror of its LRU.
+- **AOI entry:** if the cached version matches → Hit (no data). Otherwise a Full chunk, closest first by viewpoint, under the per-tick budget
+  (at least one chunk per tick). Full blobs are cached per chunk version and shared across clients.
+- **Edits:** one core `encodeTileDelta` per changed chunk per tick, encoded once and sent to every subscriber holding an older version.
+  Deltas are never budgeted.
+- **Leave:** the client moves the chunk into its LRU (default 64). On eviction it sends TilesCtl Evict. A Hit or Delta the client can't apply →
+  Nack → Leave plus a fresh Full.
+- **Heights** travel only in Full; core keeps no height edit stream. A height edit bumps the version, so the chunk restreams on the next entry.
+- **Wire, Tiles (18, reliable):** `u32 tick`, then sections `bit 1, u2 kind, zigzag-varuint cx, cy`, ended by bit 0.
+  - Full 0: `varuint version, tile runs, height runs` (`varuint n, n × (varuint len, varuint value)`).
+  - Hit 1: `varuint version`.
+  - Delta 2: `varuint n, n bytes core tile delta (u32 version, u16 count, count × (u16 index, u16 tile))`.
+  - Leave 3: no payload.
+- **Wire, TilesCtl (19, c→s, reliable):** `u2 kind (0 Evict, 1 Nack), chunk key`.
+- **Client:** `client.tiles` (TileClient).
+  - `client.tiles.tiles` is a core `TileMap` (`getTile`, `getChunk`, `loadedChunks`). Pass your own with `NetClient({ tiles })`.
+  - `client.tiles.on((key, "full" | "hit" | "delta" | "leave", chunk) => …)`.
+  - Deltas go through core `applyTileDelta`, so `client.tiles.tiles.tileChanges()` also lists edited chunks for the renderer.
+  - `client.tiles.stats`.
+- **Server stats:** `sync.sessionStats(clientId)`, `sync.stats`.
+- **Server accessors added for this:** `server.relevantChunks(clientId)` and `server.viewpointsOf(clientId)`.
+
+**Buildings: static entity class, not BuildingGrid's stream.** Gameplay's authoritative pieces are entities with `BuildPiece` (static class,
+hp u16, damageStage, paint…), and edge walls exist only as entities. `BuildingGrid` is gameplay's server-side index (gridId ↔ entity). Net
+therefore replicates pieces only via the static class (§11) and never sends `buildingChanges()`, so nothing goes out twice. Clients rebuild
+their own grid/index from the replicated entities (gameplay's job). Nobody drains `BuildingGrid.buildingChanges()` today; gameplay should set
+`grid.recordChanges = false`, or drain it, to keep the buffer from growing.
+
+**Batched hp/state (protocol v4).** A static Delta section is `nRemoved + sorted delta-varint netIds`, then **column batches**, then records.
+Column batches carry entities whose only change is one element of one component (hp, state, damageStage):
+`varuint nCols`, each `varuint ci, varuint element, varuint n, n sorted delta-varint netIds, n values (field wire encoding)`. Everything else
+uses normal entity records.
