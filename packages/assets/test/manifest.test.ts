@@ -12,14 +12,14 @@ describe("asset manifest", () => {
   it("sample manifest loads, covers every category, atlases match PNG sizes", () => {
     const { registry } = loadManifest(sample);
     for (const c of CATEGORIES) expect(registry.byCategory(c).length).toBeGreaterThan(0);
-    for (const a of registry.atlases.values()) expect(pngSize(a.image)).toEqual({ w: a.frameW * a.columns, h: a.frameH * a.rows });
+    for (const a of registry.atlases.values()) { expect(pngSize(a.image)).toEqual({ w: a.frameW * a.columns, h: a.frameH * a.rows }); if (a.emissiveImage) expect(pngSize(a.emissiveImage)).toEqual(pngSize(a.image)); }
   });
   it("stable ids via lock: adding a key never renumbers", () => {
     const a = loadManifest(sample);
     const more = structuredClone(sample); more.sprites.unshift({ ...more.sprites[0], key: "aaa_new_hero" });
     const b = loadManifest(more, { lock: a.lock });
-    for (const [k, id] of Object.entries(a.lock)) expect(b.registry.id(k)).toBe(id);
-    expect(b.registry.id("aaa_new_hero")).toBe(Math.max(...Object.values(a.lock)) + 1);
+    for (const [k, id] of Object.entries(a.lock.sprites)) expect(b.registry.id(k)).toBe(id);
+    expect(b.registry.id("aaa_new_hero")).toBe(Math.max(...Object.values(a.lock.sprites)) + 1);
     expect(b.registry.hash).not.toBe(a.registry.hash);
   });
   it("animation frame resolution with 8 iso facings", () => {

@@ -175,10 +175,43 @@ flowchart LR
 
 ## 13. Asset Pipeline
 
-- `@engine/assets`: manifest v1 JSON (`atlases[]`, `sprites[]` with category, anchor, animations {frames, fps, directions 1|4|8, dirStride}).
-- `loadManifest(json, {lock})` validates and assigns stable u16 sprite ids from keys + `ids.lock.json` (`pnpm --filter @engine/assets lock:ids`); `AssetRegistry.frame(id, anim, facing, t)` → atlas rect + pivot; `installAssetHash(world, reg)` adds the id hash to the handshake schema hash.
-- Placeholder art: `pnpm --filter @engine/assets gen:placeholders` writes cute outlined shapes for every category to `packages/assets/sample/`.
-- Renderer team owns texture upload/batching; gameplay maps item/resource/piece ids to sprite keys.
+- `@engine/assets`: manifest v1 JSON. `loadManifest(json, {lock})` validates everything (all issues reported in one `ManifestError`) and assigns stable u16 ids per namespace (`sprites, sounds, vfx, variants, tints, palettes`) via `StableIdRegistry` + `ids.lock.json` (`pnpm --filter @engine/assets lock:ids` keeps existing ids and appends new keys; legacy flat sprite locks are migrated). `AssetRegistry.hash` covers all namespaces; `installAssetHash(world, reg)` adds it to the handshake schema hash.
+- Resolution: `frame(spriteId, anim, facing, t)`, `buildingFrame(spriteId, rotation, damageStage)` → atlas rect, pivot, optional `emissiveImage` and `nineSlice`; `sound(key)`, `effect(key)`, `variant(key)`, `variantsOf(set)`, `palette(key)`, `tintSet(key)`.
+- `validateBuildingSprites(reg, pieces)` cross-checks building sprites against `BuildPieceDef`s (piece exists, footprint, layer).
+- Placeholder art: `pnpm --filter @engine/assets gen:placeholders` (cute outlined shapes, emissive page for buildings, UI panel/button, vfx). Sound files are referenced but not shipped.
+- Renderer owns texture upload/batching, palette swap shaders and particles; audio owner plays `SoundDef`s; gameplay maps item/resource/piece ids to keys.
+
+Atlases (grid frames; optional emissive page `<image>_emissive.png` with identical layout; UI nine-slice insets per frame):
+```json
+{ "key": "buildings", "image": "buildings.png", "frameW": 64, "frameH": 64, "columns": 4, "rows": 4, "emissive": true }
+{ "key": "ui", "image": "ui.png", "frameW": 32, "frameH": 32, "columns": 2, "rows": 1, "nineSlice": { "0": { "l": 6, "t": 6, "r": 6, "b": 6 } } }
+```
+Sprites (category character|zombie|item|equipment|resource|building|tile|ui|vfx; animations with 1/4/8 iso directions):
+```json
+{ "key": "player", "category": "character", "atlas": "characters", "anchor": { "x": 0.5, "y": 0.92 },
+  "animations": { "idle": { "frames": [0, 1], "fps": 3, "directions": 8 }, "walk": { "frames": [2, 3], "fps": 8, "directions": 8 } } }
+```
+Building piece sprites (`frames[rotation][damageStage]`, 1 or 4 rotations × 4 stages; checked against BuildPieceDef):
+```json
+{ "key": "wall", "category": "building", "atlas": "buildings", "animations": { "idle": { "frames": [1], "fps": 1 } },
+  "building": { "piece": "wall", "footprint": { "w": 2, "h": 1 }, "layer": 1, "frames": [[1, 5, 9, 13]] } }
+```
+Sounds (random file variants):
+```json
+{ "key": "sfx_chop", "files": ["sfx/chop_1.ogg", "sfx/chop_2.ogg"], "volume": 0.8, "pitchJitter": 0.1, "loop": false, "category": "sfx" }
+```
+VFX (sprite animation + particles; blend normal|additive|multiply):
+```json
+{ "key": "campfire_sparks", "sprite": "fx_spark", "anim": "idle", "lifetime": 1.2, "blend": "additive",
+  "particles": { "rate": 12, "count": 0, "speed": [0.5, 1.5], "spread": 0.6, "gravity": -0.5, "fade": true, "scaleCurve": [1, 0.6, 0] } }
+```
+Tint sets, palette swaps and variant sets (player/zombie variants by tint, palette or alternate sprite):
+```json
+{ "key": "shirt_colors", "tints": ["#ff6b6b", "#ffd93d", "#4d96ff"] }
+{ "key": "zombie_pale", "source": ["#78aa5a", "#96d278"], "target": ["#9aa0a8", "#c8ccd2"] }
+{ "key": "zombie_variants", "base": "zombie_walker",
+  "variants": [{ "key": "zombie_green" }, { "key": "zombie_pale", "palette": "zombie_pale" }, { "key": "zombie_red", "tint": "shirt_colors", "tintIndex": 0 }] }
+```
 
 ## 14. Testing
 

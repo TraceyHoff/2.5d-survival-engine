@@ -1,25 +1,54 @@
 {
-  "berries": 1,
-  "berry_bush": 2,
-  "boulder": 3,
-  "campfire": 4,
-  "floor": 5,
-  "iron_vein": 6,
-  "pillar": 7,
-  "player": 8,
-  "shield": 9,
-  "stone": 10,
-  "stone_axe": 11,
-  "stone_pickaxe": 12,
-  "sword": 13,
-  "tile_forest": 14,
-  "tile_grass": 15,
-  "tile_rock": 16,
-  "tile_sand": 17,
-  "tile_water": 18,
-  "tree": 19,
-  "wall": 20,
-  "water_flask": 21,
-  "wood": 22,
-  "zombie_walker": 23
+  "sprites": {
+    "berries": 1,
+    "berry_bush": 2,
+    "boulder": 3,
+    "campfire": 4,
+    "floor": 5,
+    "iron_vein": 6,
+    "pillar": 7,
+    "player": 8,
+    "shield": 9,
+    "stone": 10,
+    "stone_axe": 11,
+    "stone_pickaxe": 12,
+    "sword": 13,
+    "tile_forest": 14,
+    "tile_grass": 15,
+    "tile_rock": 16,
+    "tile_sand": 17,
+    "tile_water": 18,
+    "tree": 19,
+    "wall": 20,
+    "water_flask": 21,
+    "wood": 22,
+    "zombie_walker": 23,
+    "fx_smoke": 24,
+    "fx_spark": 25,
+    "ui_button": 26,
+    "ui_panel": 27
+  },
+  "sounds": {
+    "amb_rain": 1,
+    "sfx_chop": 2,
+    "ui_click": 3
+  },
+  "vfx": {
+    "campfire_sparks": 1,
+    "hit_dust": 2
+  },
+  "variants": {
+    "player_blue": 1,
+    "player_red": 2,
+    "player_tan": 3,
+    "zombie_green": 4,
+    "zombie_pale": 5
+  },
+  "tints": {
+    "shirt_colors": 1
+  },
+  "palettes": {
+    "player_dark_hair": 1,
+    "zombie_pale": 2
+  }
 }

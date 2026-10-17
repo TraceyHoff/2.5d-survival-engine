@@ -48,6 +48,37 @@
       "frameW": 64,
       "frameH": 64,
       "columns": 4,
+      "rows": 4,
+      "emissive": true
+    },
+    {
+      "key": "ui",
+      "image": "ui.png",
+      "frameW": 32,
+      "frameH": 32,
+      "columns": 2,
+      "rows": 1,
+      "nineSlice": {
+        "0": {
+          "l": 6,
+          "t": 6,
+          "r": 6,
+          "b": 6
+        },
+        "1": {
+          "l": 8,
+          "t": 8,
+          "r": 8,
+          "b": 8
+        }
+      }
+    },
+    {
+      "key": "vfx",
+      "image": "vfx.png",
+      "frameW": 32,
+      "frameH": 32,
+      "columns": 4,
       "rows": 1
     },
     {
@@ -333,6 +364,22 @@
           ],
           "fps": 1
         }
+      },
+      "building": {
+        "piece": "floor",
+        "footprint": {
+          "w": 2,
+          "h": 2
+        },
+        "layer": 0,
+        "frames": [
+          [
+            0,
+            4,
+            8,
+            12
+          ]
+        ]
       }
     },
     {
@@ -350,6 +397,22 @@
           ],
           "fps": 1
         }
+      },
+      "building": {
+        "piece": "wall",
+        "footprint": {
+          "w": 2,
+          "h": 1
+        },
+        "layer": 1,
+        "frames": [
+          [
+            1,
+            5,
+            9,
+            13
+          ]
+        ]
       }
     },
     {
@@ -367,6 +430,22 @@
           ],
           "fps": 1
         }
+      },
+      "building": {
+        "piece": "pillar",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 1,
+        "frames": [
+          [
+            2,
+            6,
+            10,
+            14
+          ]
+        ]
       }
     },
     {
@@ -381,6 +460,90 @@
         "idle": {
           "frames": [
             3
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "campfire",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 2,
+        "frames": [
+          [
+            3,
+            7,
+            11,
+            15
+          ]
+        ]
+      }
+    },
+    {
+      "key": "ui_panel",
+      "category": "ui",
+      "atlas": "ui",
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 1
+        }
+      }
+    },
+    {
+      "key": "ui_button",
+      "category": "ui",
+      "atlas": "ui",
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            1
+          ],
+          "fps": 1
+        }
+      }
+    },
+    {
+      "key": "fx_spark",
+      "category": "vfx",
+      "atlas": "vfx",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 1
+        }
+      }
+    },
+    {
+      "key": "fx_smoke",
+      "category": "vfx",
+      "atlas": "vfx",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            1
           ],
           "fps": 1
         }
@@ -470,6 +633,150 @@
           "fps": 1
         }
       }
+    }
+  ],
+  "sounds": [
+    {
+      "key": "sfx_chop",
+      "files": [
+        "sfx/chop_1.ogg",
+        "sfx/chop_2.ogg",
+        "sfx/chop_3.ogg"
+      ],
+      "volume": 0.8,
+      "pitchJitter": 0.1,
+      "category": "sfx"
+    },
+    {
+      "key": "amb_rain",
+      "files": [
+        "ambience/rain_loop.ogg"
+      ],
+      "volume": 0.5,
+      "loop": true,
+      "category": "ambience"
+    },
+    {
+      "key": "ui_click",
+      "files": [
+        "ui/click.ogg"
+      ],
+      "volume": 0.6,
+      "category": "ui"
+    }
+  ],
+  "vfx": [
+    {
+      "key": "campfire_sparks",
+      "sprite": "fx_spark",
+      "lifetime": 1.2,
+      "blend": "additive",
+      "particles": {
+        "rate": 12,
+        "count": 0,
+        "speed": [
+          0.5,
+          1.5
+        ],
+        "spread": 0.6,
+        "gravity": -0.5,
+        "fade": true,
+        "scaleCurve": [
+          1,
+          0.6,
+          0
+        ]
+      }
+    },
+    {
+      "key": "hit_dust",
+      "sprite": "fx_smoke",
+      "anim": "idle",
+      "lifetime": 0.5,
+      "blend": "normal",
+      "particles": {
+        "rate": 0,
+        "count": 8,
+        "speed": [
+          1,
+          3
+        ],
+        "spread": 6.283,
+        "gravity": 0,
+        "fade": true,
+        "scaleCurve": [
+          0.5,
+          1.2
+        ]
+      }
+    }
+  ],
+  "tintSets": [
+    {
+      "key": "shirt_colors",
+      "tints": [
+        "#ff6b6b",
+        "#ffd93d",
+        "#6bcB77",
+        "#4d96ff"
+      ]
+    }
+  ],
+  "palettes": [
+    {
+      "key": "zombie_pale",
+      "source": [
+        "#78aa5a",
+        "#96d278"
+      ],
+      "target": [
+        "#9aa0a8",
+        "#c8ccd2"
+      ]
+    },
+    {
+      "key": "player_dark_hair",
+      "source": [
+        "#ffd6aa"
+      ],
+      "target": [
+        "#c68642"
+      ]
+    }
+  ],
+  "variantSets": [
+    {
+      "key": "player_variants",
+      "base": "player",
+      "variants": [
+        {
+          "key": "player_red",
+          "tint": "shirt_colors",
+          "tintIndex": 0
+        },
+        {
+          "key": "player_blue",
+          "tint": "shirt_colors",
+          "tintIndex": 3
+        },
+        {
+          "key": "player_tan",
+          "palette": "player_dark_hair"
+        }
+      ]
+    },
+    {
+      "key": "zombie_variants",
+      "base": "zombie_walker",
+      "variants": [
+        {
+          "key": "zombie_green"
+        },
+        {
+          "key": "zombie_pale",
+          "palette": "zombie_pale"
+        }
+      ]
     }
   ]
 }

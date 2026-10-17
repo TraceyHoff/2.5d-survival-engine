@@ -42,6 +42,30 @@ function creatureAtlas(name, body, head, eye) {
   }
   cv.save(`${name}.png`); return { key: name, image: `${name}.png`, frameW: FW, frameH: FH, columns: C, rows: R };
 }
+// Buildings: 4 pieces (columns) x 4 damage stages (rows); stage darkens + adds cracks. Emissive page: campfire glow.
+function buildingAtlas() {
+  const FW = 64, FH = 64, C = 4, R = 4, cv = new Canvas(FW * C, FH * R), em = new Canvas(FW * C, FH * R);
+  const pieces = [
+    (c, x, y, k) => c.diamond(x + 32, y + 48, 31, 15, [200 * k, 160 * k, 110 * k]),
+    (c, x, y, k) => { c.rect(x + 4, y + 16, 56, 32, [190 * k, 130 * k, 80 * k]); c.rect(x + 4, y + 12, 56, 6, [150 * k, 100 * k, 60 * k]); },
+    (c, x, y, k) => c.rect(x + 26, y + 6, 12, 50, [170 * k, 170 * k, 185 * k]),
+    (c, x, y, k) => { c.ellipse(x + 32, y + 50, 14, 6, [120 * k, 120 * k, 120 * k]); c.ellipse(x + 32, y + 42, 7, 10, [255 * k, 150 * k, 40]); },
+  ];
+  for (let st = 0; st < R; st++) pieces.forEach((fn, i) => {
+    const x = i * FW, y = st * FH; fn(cv, x, y, 1 - st * 0.18);
+    for (let k = 0; k < st * 3; k++) cv.set(x + 20 + k * 3, y + 30 + ((k * 7) % 11), [40, 30, 50]); // cracks
+  });
+  for (let st = 0; st < R; st++) em.ellipse(3 * FW + 32, st * FH + 42, 9, 12, [255, 200 - st * 40, 80]);
+  cv.save("buildings.png"); em.save("buildings_emissive.png");
+  return { key: "buildings", image: "buildings.png", frameW: FW, frameH: FH, columns: C, rows: R, emissive: true };
+}
+// UI: panel + button frames with nine-slice insets
+function uiAtlas() {
+  const FW = 32, FH = 32, cv = new Canvas(FW * 2, FH);
+  cv.rect(2, 2, 28, 28, [255, 240, 210]); cv.rect(34, 6, 28, 20, [120, 200, 255]);
+  cv.save("ui.png");
+  return { key: "ui", image: "ui.png", frameW: FW, frameH: FH, columns: 2, rows: 1, nineSlice: { "0": { l: 6, t: 6, r: 6, b: 6 }, "1": { l: 8, t: 8, r: 8, b: 8 } } };
+}
 // Icon grid atlases: 32x32 per frame, one shape per cell
 function iconAtlas(name, draws, FW = 32, FH = 32) {
   const C = 4, R = Math.ceil(draws.length / C), cv = new Canvas(FW * C, FH * R);
@@ -69,12 +93,12 @@ const atlases = [
     (c, x, y) => { c.ellipse(x + 16, y + 48, 13, 11, [70, 170, 70]); c.ellipse(x + 11, y + 45, 2, 2, [230, 40, 80]); c.ellipse(x + 20, y + 50, 2, 2, [230, 40, 80]); }, // bush
     (c, x, y) => { c.ellipse(x + 16, y + 50, 13, 10, [130, 120, 130]); c.ellipse(x + 13, y + 48, 3, 2, [230, 150, 90]); }, // iron vein
   ], 32, 64),
-  iconAtlas("buildings", [
-    (c, x, y) => c.diamond(x + 32, y + 48, 31, 15, [200, 160, 110]),           // floor
-    (c, x, y) => { c.rect(x + 4, y + 16, 56, 32, [190, 130, 80]); c.rect(x + 4, y + 12, 56, 6, [150, 100, 60]); }, // wall
-    (c, x, y) => { c.rect(x + 26, y + 6, 12, 50, [170, 170, 185]); },        // pillar
-    (c, x, y) => { c.ellipse(x + 32, y + 50, 14, 6, [120, 120, 120]); c.ellipse(x + 32, y + 42, 7, 10, [255, 150, 40]); }, // campfire
-  ], 64, 64),
+  buildingAtlas(),
+  uiAtlas(),
+  iconAtlas("vfx", [
+    (c, x, y) => c.ellipse(x + 16, y + 16, 5, 5, [255, 240, 120]),             // spark
+    (c, x, y) => c.ellipse(x + 16, y + 16, 9, 9, [200, 200, 210, 160]),       // smoke puff
+  ]),
   iconAtlas("tiles", [
     (c, x, y) => c.diamond(x + 32, y + 16, 31, 15, [80, 170, 240]),            // water
     (c, x, y) => c.diamond(x + 32, y + 16, 31, 15, [240, 220, 150]),           // sand
@@ -91,8 +115,31 @@ const manifest = { version: 1, name: "placeholder", atlases, sprites: [
   ...["wood", "stone", "berries", "water_flask"].map((k, i) => icon(k, "item", "items", i, { x: 0.5, y: 0.5 })),
   ...["stone_axe", "stone_pickaxe", "sword", "shield"].map((k, i) => icon(k, "equipment", "equipment", i, { x: 0.5, y: 0.5 })),
   ...["tree", "boulder", "berry_bush", "iron_vein"].map((k, i) => icon(k, "resource", "resources", i, { x: 0.5, y: 0.92 })),
-  ...["floor", "wall", "pillar", "campfire"].map((k, i) => icon(k, "building", "buildings", i, { x: 0.5, y: 0.75 })),
+  ...[["floor", 2, 2, 0], ["wall", 2, 1, 1], ["pillar", 1, 1, 1], ["campfire", 1, 1, 2]].map(([k, w, h, layer], i) => ({
+    ...icon(k, "building", "buildings", i, { x: 0.5, y: 0.75 }),
+    building: { piece: k, footprint: { w, h }, layer, frames: [[i, i + 4, i + 8, i + 12]] } })),
+  icon("ui_panel", "ui", "ui", 0, { x: 0, y: 0 }), icon("ui_button", "ui", "ui", 1, { x: 0, y: 0 }),
+  icon("fx_spark", "vfx", "vfx", 0, { x: 0.5, y: 0.5 }), icon("fx_smoke", "vfx", "vfx", 1, { x: 0.5, y: 0.5 }),
   ...["tile_water", "tile_sand", "tile_grass", "tile_forest", "tile_rock"].map((k, i) => icon(k, "tile", "tiles", i, { x: 0.5, y: 0.5 })),
-] };
+],
+  sounds: [
+    { key: "sfx_chop", files: ["sfx/chop_1.ogg", "sfx/chop_2.ogg", "sfx/chop_3.ogg"], volume: 0.8, pitchJitter: 0.1, category: "sfx" },
+    { key: "amb_rain", files: ["ambience/rain_loop.ogg"], volume: 0.5, loop: true, category: "ambience" },
+    { key: "ui_click", files: ["ui/click.ogg"], volume: 0.6, category: "ui" },
+  ],
+  vfx: [
+    { key: "campfire_sparks", sprite: "fx_spark", lifetime: 1.2, blend: "additive", particles: { rate: 12, count: 0, speed: [0.5, 1.5], spread: 0.6, gravity: -0.5, fade: true, scaleCurve: [1, 0.6, 0] } },
+    { key: "hit_dust", sprite: "fx_smoke", anim: "idle", lifetime: 0.5, blend: "normal", particles: { rate: 0, count: 8, speed: [1, 3], spread: 6.283, gravity: 0, fade: true, scaleCurve: [0.5, 1.2] } },
+  ],
+  tintSets: [{ key: "shirt_colors", tints: ["#ff6b6b", "#ffd93d", "#6bcB77", "#4d96ff"] }],
+  palettes: [
+    { key: "zombie_pale", source: ["#78aa5a", "#96d278"], target: ["#9aa0a8", "#c8ccd2"] },
+    { key: "player_dark_hair", source: ["#ffd6aa"], target: ["#c68642"] },
+  ],
+  variantSets: [
+    { key: "player_variants", base: "player", variants: [{ key: "player_red", tint: "shirt_colors", tintIndex: 0 }, { key: "player_blue", tint: "shirt_colors", tintIndex: 3 }, { key: "player_tan", palette: "player_dark_hair" }] },
+    { key: "zombie_variants", base: "zombie_walker", variants: [{ key: "zombie_green" }, { key: "zombie_pale", palette: "zombie_pale" }] },
+  ],
+};
 writeFileSync(OUT + "manifest.json", JSON.stringify(manifest, null, 2) + "\n");
 console.log(`wrote ${atlases.length} atlases + manifest.json (${manifest.sprites.length} sprites) to ${OUT}`);
