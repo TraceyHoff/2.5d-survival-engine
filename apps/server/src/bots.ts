@@ -8,17 +8,16 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import WebSocket from "ws";
 import { FixedLoop, World, DEFAULT_TICK_HZ } from "@engine/core";
-import { installGameplay } from "@engine/gameplay";
 import { NetClient, WebSocketClientTransport, type WebSocketCtor } from "@engine/net";
 import { AccountAssigned, ClaimAccount, SetName, nameToWords, tokenToWords, wordsToToken } from "@engine/persist";
-import { Act, applyMoveInput, DEMO_COMMANDS, DEMO_EVENTS, Ping, Pong } from "./protocol.js";
+import { Act, applyMoveInput, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS, Ping, Pong } from "./protocol.js";
 
 export interface Bot { index: number; client: NetClient; world: World; account: string | undefined; restored: boolean; rttMs: number; connected: boolean; stop(): void }
 export interface BotOptions { url: string; index: number; token?: string; rng?: () => number; onAccount?: (index: number, token: string) => void }
 
 export async function startBot(o: BotOptions): Promise<Bot> {
   const rnd = o.rng ?? Math.random; // bots are outside the sim: wall clock + Math.random are fine here
-  const world = new World({ seed: 1 }); installGameplay(world, { role: "client" });
+  const world = new World({ seed: 1 }); installDemoWorld(world, "client");
   let buttons = 0;
   const transport = new WebSocketClientTransport(o.url, WebSocket as unknown as WebSocketCtor);
   const client = new NetClient({

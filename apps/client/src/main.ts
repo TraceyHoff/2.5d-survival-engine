@@ -4,8 +4,7 @@
  */
 import { createGameLoop, World, Transform, PrevTransform, lerp, entityIndex, type FixedLoop } from "@engine/core";
 import { TileMap, worldToScreen, DEFAULT_ISO } from "@engine/world";
-import { installGameplay } from "@engine/gameplay";
-import { Act } from "@engine/server/protocol";
+import { Act, installDemoWorld } from "@engine/server/protocol";
 import { ClientSession } from "./session.js";
 import { mountConnectOverlay } from "./connect.js";
 
@@ -21,7 +20,7 @@ addEventListener("keyup", (e) => { const a = keys[e.code]; if (a !== undefined) 
 addEventListener("blur", () => { buttons = 0; });
 
 const session = new ClientSession({ storage: localStorage, slot: params.get("player") ?? "1", sampleButtons: () => buttons });
-let world = new World({ seed: 1234 }); installGameplay(world, { role: "client" });
+let world = new World({ seed: 1234 }); installDemoWorld(world, "client");
 // Tiles are not replicated yet (Netcode/world: chunk tile streaming); draw a placeholder ground.
 const map = new TileMap();
 for (let y = -64; y < 96; y++) for (let x = -64; x < 96; x++) map.setTile(x, y, 1 + ((x * 7 + y * 13) & 3) % 3);

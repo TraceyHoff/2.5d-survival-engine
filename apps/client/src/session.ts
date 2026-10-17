@@ -1,9 +1,8 @@
 /** Client network session: NetClient over WebSocket, account claim/restore, RTT. No DOM (testable headless). */
 import { World, type Entity } from "@engine/core";
-import { installGameplay } from "@engine/gameplay";
 import { NetClient, NetRejectedError, WebSocketClientTransport, type WebSocketCtor } from "@engine/net";
 import { AccountAssigned, ClaimAccount, SetName, nameToWords, tokenToWords, wordsToToken } from "@engine/persist";
-import { applyMoveInput, DEMO_COMMANDS, DEMO_EVENTS, Ping, Pong } from "@engine/server/protocol";
+import { applyMoveInput, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS, Ping, Pong } from "@engine/server/protocol";
 
 /** Minimal storage (localStorage in the browser, a Map in tests). */
 export interface KeyValue { getItem(k: string): string | null; setItem(k: string, v: string): void }
@@ -40,7 +39,7 @@ export class ClientSession {
   async connect(url: string, name: string): Promise<World> {
     this.disconnect();
     this.o.storage.setItem(this.key("server"), url); this.o.storage.setItem(this.key("name"), name);
-    const world = new World({ seed: 1 }); installGameplay(world, { role: "client" });
+    const world = new World({ seed: 1 }); installDemoWorld(world, "client");
     const transport = new WebSocketClientTransport(url, this.o.wsCtor);
     const client = new NetClient({
       world, transport, commands: DEMO_COMMANDS, events: DEMO_EVENTS,

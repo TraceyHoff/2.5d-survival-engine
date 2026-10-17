@@ -3,9 +3,9 @@
  * Input bits + movement (identical on server and in client prediction), and the ordered command/event lists.
  * Movement lives here because gameplay has no movement system yet; replace with gameplay's once it exists.
  */
-import { DEFAULT_TICK_HZ, defineActions, entityIndex, Transform, type Entity, type World } from "@engine/core";
+import { DEFAULT_TICK_HZ, defineActions, entityIndex, installPermissions, Transform, type ClaimRegistry, type Entity, type GroupRegistry, type PermissionsRes, type World } from "@engine/core";
 import { defineCommand, defineNetEvent, type InputCmd } from "@engine/net";
-import { PlayerIntent } from "@engine/gameplay";
+import { installGameplay, PlayerIntent } from "@engine/gameplay";
 import { SESSION_COMMANDS, SESSION_EVENTS } from "@engine/persist";
 
 export const Act = defineActions(["MoveUp", "MoveDown", "MoveLeft", "MoveRight", "Sprint", "Gather"]);
@@ -42,4 +42,14 @@ export function applyMoveInput(world: World, e: Entity, cmd: InputCmd | null, dt
     const st = world.store(PlayerIntent); const i = entityIndex(e); const s = st.slot(i);
     if (st.data.moving[s] !== moving || st.data.sprint[s] !== sprint) { st.data.moving[s] = moving; st.data.sprint[s] = sprint; st.markChanged(i); }
   }
+}
+
+/**
+ * The shared registration module for the demo: every peer (server, browser client, bots) calls this so component
+ * order and the schema hash match. Gameplay, then core permissions (PlayerId, Membership, OwnedBy, AccessList +
+ * the Permissions resource; the server passes its saved GroupRegistry / ClaimRegistry).
+ */
+export function installDemoWorld(world: World, role: "server" | "client", opts: { tickHz?: number; social?: { groups: GroupRegistry; claims: ClaimRegistry } } = {}): PermissionsRes {
+  installGameplay(world, { role, ...(opts.tickHz !== undefined ? { tickHz: opts.tickHz } : {}) });
+  return installPermissions(world, opts.social ?? {});
 }

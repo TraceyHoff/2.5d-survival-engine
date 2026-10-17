@@ -1,10 +1,10 @@
 /** Authoritative game server: world + gameplay + streaming chunks + persistence + NetServer sessions. */
-import { DEFAULT_TICK_HZ, FixedLoop, Transform, World, type Entity } from "@engine/core";
+import { DEFAULT_TICK_HZ, FixedLoop, Membership, PlayerId, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
 import { ChunkManager, ProceduralGenerator, chunkKeyOf, type BuildingGrid } from "@engine/world";
-import { installGameplay, spawnPlayer, spawnResourceNode, gameplayDefs, setIntent, IntentAction, ResourceNode, PlayerIntent } from "@engine/gameplay";
+import { spawnPlayer, spawnResourceNode, gameplayDefs, setIntent, IntentAction, ResourceNode, PlayerIntent } from "@engine/gameplay";
 import { NetServer, TileSync, type ClientSession, type ServerTransport } from "@engine/net";
-import { AccountAssigned, ClaimAccount, SetName, WorldPersistence, tokenToHex, tokenToWords, wordsToName, wordsToToken, type WorldStore } from "@engine/persist";
-import { Act, applyMoveInput, DEMO_COMMANDS, DEMO_EVENTS, Ping, Pong } from "./protocol.js";
+import { AccountAssigned, ClaimAccount, SetName, WorldPersistence, loadSocial, tokenToHex, tokenToWords, wordsToName, wordsToToken, type WorldStore } from "@engine/persist";
+import { Act, applyMoveInput, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS, Ping, Pong } from "./protocol.js";
 
 /** ProceduralGenerator node kinds -> gameplay resource keys (see DEFAULT_BANDS comments in @engine/world). */
 const NODE_RESOURCES: Record<number, string> = { 1: "fallen_branches", 2: "fiber_grass", 3: "berry_bush", 4: "loose_rocks", 5: "tree", 6: "boulder", 7: "iron_vein" };
@@ -28,6 +28,8 @@ interface Player { entity: Entity; account: string; name: string }
 
 export interface GameServer {
   world: World; net: NetServer; chunks: ChunkManager; persist: WorldPersistence | undefined; loop: FixedLoop;
+  /** Core permissions resource: GroupRegistry (parties/clans), ClaimRegistry, policy. Saved with the world. */
+  permissions: PermissionsRes;
   players: ReadonlyMap<number, Player>;
   /** Wall-clock ms of recent world.step calls (filled by the host loop via step()). */
   step(dt: number): void;
@@ -42,7 +44,8 @@ export function createGameServer(o: GameServerOptions): GameServer {
   const meta = o.store?.readMeta();
   const seed = meta?.seed ?? o.seed ?? 1234;
   const world = new World({ seed, maxEntities: 1 << 18 });
-  installGameplay(world, { role: "server", tickHz });
+  // Saved parties/clans/claims (throws on a corrupt record rather than starting empty and overwriting it).
+  const permissions = installDemoWorld(world, "server", { tickHz, ...(o.store ? { social: loadSocial(o.store) } : {}) });
   if (meta) { world.tick = meta.tick; if (meta.schemaHash !== world.getSchemaHash()) log(`persist: save schema ${meta.schemaHash.toString(16)} != build ${world.getSchemaHash().toString(16)}; chunks with changed persistent components load read-only`); }
   const generator = new ProceduralGenerator({ seed });
   const persist = o.store ? new WorldPersistence({
@@ -50,7 +53,9 @@ export function createGameServer(o: GameServerOptions): GameServer {
     ...(o.buildings ? { buildings: o.buildings } : {}),
     autosaveSeconds: o.autosaveSeconds ?? 30, playerSaveSeconds: o.playerSaveSeconds ?? 60,
     player: { exclude: [PlayerIntent] },
+    social: permissions,
   }) : undefined;
+  let localPlayerIds = 1; // no store: ids only need to be unique for this run
   const chunks = new ChunkManager({ provider: persist?.provider ?? generator, loadRadius: o.loadRadius ?? 2, unloadMargin: 1, cacheSize: 64, maxLoadsPerUpdate: 4 });
   const defs = gameplayDefs(world);
   const resIds = new Map<number, number>();
@@ -107,8 +112,17 @@ export function createGameServer(o: GameServerOptions): GameServer {
         persist?.trackPlayer(token, p.entity, p.name);
       }
     }
+    assignIdentity(p.entity);
     net.emitEvent(AccountAssigned, { ...tokenToWords(p.account), restored }, { scope: { owner: s.clientId } });
   });
+  /** Account PlayerId (restored from the player record, else newly allocated) + Membership mirrored from the registry. */
+  function assignIdentity(e: Entity): void {
+    let id = world.getField(e, PlayerId, "id") ?? 0;
+    if (!id) { id = persist ? persist.allocatePlayerId() : localPlayerIds++; if (world.has(e, PlayerId)) world.setField(e, PlayerId, "id", id); else world.add(e, PlayerId, { id }); }
+    const gs = permissions.groups.groupsOf(id);
+    const m = { partyId: gs.find((g) => g.kind === 1)?.id ?? 0, clanId: gs.find((g) => g.kind === 2)?.id ?? 0 };
+    if (world.has(e, Membership)) { world.setField(e, Membership, "partyId", m.partyId); world.setField(e, Membership, "clanId", m.clanId); } else world.add(e, Membership, m);
+  }
   net.onCommand(SetName, (s, payload) => {
     const p = players.get(s.clientId); if (!p) return;
     p.name = wordsToName(payload); persist?.trackPlayer(p.account, p.entity, p.name);
@@ -143,7 +157,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
   const step = (dt: number): void => { const t0 = performance.now(); world.step(dt); tickTimes.push(performance.now() - t0); if (tickTimes.length > 4096) tickTimes.splice(0, 2048); };
   const loop = new FixedLoop({ tickHz, step });
   return {
-    world, net, chunks, persist, loop, players, step, tickTimes,
+    world, net, chunks, persist, loop, permissions, players, step, tickTimes,
     async shutdown() {
       if (!persist || closing) return { chunks: 0, players: 0 };
       const r = await persist.saveAll(); closing = true; await persist.store.close(); return r;

@@ -2,12 +2,12 @@ import { describe, it, expect, afterEach } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { ENV_NET_ID, NetId, Transform, World, type Entity } from "@engine/core";
-import { installGameplay, Health } from "@engine/gameplay";
+import { ENV_NET_ID, Membership, NetId, PlayerId, Transform, World, type Entity } from "@engine/core";
+import { Health } from "@engine/gameplay";
 import { LoopbackNetwork, NetClient } from "@engine/net";
 import { AccountAssigned, ClaimAccount, MemoryWorldStore, SetName, nameToWords, tokenToWords, wordsToToken } from "@engine/persist";
 import { SqliteWorldStore } from "@engine/persist/node";
-import { createGameServer, parseServerArgs, Act, applyMoveInput, DEMO_COMMANDS, DEMO_EVENTS } from "../src/main.js";
+import { createGameServer, parseServerArgs, Act, applyMoveInput, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS } from "../src/main.js";
 
 const dirs: string[] = [];
 afterEach(() => { for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true }); });
@@ -19,7 +19,7 @@ async function setup(store?: ConstructorParameters<typeof Object>[0]) {
   const clients: TestClient[] = [];
   const tick = (n = 1): void => { for (let i = 0; i < n; i++) { net.advance(50); gs.step(1 / 20); for (const c of clients) { c.world.step(1 / 20); c.client.pollEvents(Infinity); } } };
   const join = async (token?: string, name = "p"): Promise<TestClient> => {
-    const world = new World({ seed: 1 }); installGameplay(world, { role: "client" });
+    const world = new World({ seed: 1 }); installDemoWorld(world, "client");
     const input = { buttons: 0 };
     const client = new NetClient({ world, transport: net.createClient(), commands: DEMO_COMMANDS, events: DEMO_EVENTS, sampleInput: () => ({ buttons: input.buttons, aimX: 0, aimY: 0 }), applyInput: (w, e, cmd) => applyMoveInput(w, e, cmd) });
     const tc: TestClient = { client, world, input };
@@ -76,6 +76,12 @@ describe("persistence across server restarts", () => {
     const pe = playerOf(r1.gs); const pos = { ...r1.gs.world.get(pe, Transform)! };
     r1.gs.world.setField(pe, Health, "hp", 37);
     r1.gs.chunks.setTile(3, 4, 222); // a world edit (as a gameplay tool would)
+    // social: carol founds a clan (banner), a party with a later player, and the clan claims the spawn area
+    const carolId = r1.gs.world.getField(pe, PlayerId, "id")!; expect(carolId).toBeGreaterThan(0);
+    const groups = r1.gs.permissions.groups;
+    const clan = groups.create(2, carolId); groups.addMember(clan.id, 900, 1);
+    groups.setBanner(clan.id, { shape: 2, pattern: 4, colors: [0x112233ff, 0xffeeddff], emblemId: 42 });
+    const claim = r1.gs.permissions.claims.add({ ownerGroup: clan.id, x0: 0, y0: 0, x1: 32, y1: 32, flags: 1 | 8, priority: 1 });
     r1.tick(50); // autosave (2 s) + periodic player save (1 s) run on the tick
     expect(r1.gs.persist!.stats.roundsCompleted).toBeGreaterThan(0);
     const tick1 = r1.gs.world.tick;
@@ -89,9 +95,15 @@ describe("persistence across server restarts", () => {
     const r2 = await setup(s2);
     expect(r2.gs.world.tick).toBeGreaterThanOrEqual(tick1);
     expect(r2.gs.chunks.getTile(3, 4)).toBe(222);
+    const clan2 = r2.gs.permissions.groups.get(clan.id)!;
+    expect(clan2.kind).toBe(2); expect([...clan2.members]).toEqual([[carolId, 3], [900, 1]]);
+    expect(clan2.banner).toEqual({ shape: 2, pattern: 4, colors: [0x112233ff, 0xffeeddff], emblemId: 42 });
+    expect(r2.gs.permissions.claims.get(claim.id)).toEqual(claim); expect(r2.gs.permissions.claims.zoneAt(3, 4)).toBe(1 | 8);
     const c2 = await r2.join(account, "carol");
     expect(c2.restored).toBe(true); expect(c2.account).toBe(account);
     const pe2 = playerOf(r2.gs);
+    expect(r2.gs.world.getField(pe2, PlayerId, "id")).toBe(carolId); // same account id after restart
+    expect(r2.gs.world.get(pe2, Membership)).toEqual({ partyId: 0, clanId: clan.id });
     expect(r2.gs.world.get(pe2, Transform)).toMatchObject({ x: pos.x, y: pos.y });
     expect(r2.gs.world.getField(pe2, Health, "hp")).toBeCloseTo(hpAtSave, 0);
     // disconnect saves; a reconnect in the same run restores from the new save
@@ -104,6 +116,7 @@ describe("persistence across server restarts", () => {
     // unknown token => fresh player, new account
     const c4 = await r2.join("0f".repeat(16));
     expect(c4.restored).toBe(false); expect(c4.account).toBe("0f".repeat(16));
+    expect(r2.gs.world.getField(playerOf(r2.gs, 1), PlayerId, "id")).toBeGreaterThan(carolId); // ids never reused
     await r2.gs.shutdown();
   });
 
