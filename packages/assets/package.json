@@ -9,9 +9,14 @@
     "typecheck": "tsc -p tsconfig.json",
     "build": "tsc -p tsconfig.json",
     "gen:placeholders": "node scripts/gen-placeholders.mjs",
-    "lock:ids": "tsx scripts/write-lock.ts"
+    "lock:ids": "tsx scripts/write-lock.ts",
+    "lock:ids:pack": "tsx scripts/write-lock-pack.ts"
   },
   "dependencies": {
     "@engine/core": "workspace:*"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./node": "./src/node.ts"
   }
 }

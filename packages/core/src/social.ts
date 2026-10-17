@@ -16,13 +16,20 @@ export const OwnedBy = defineComponent("OwnedBy", { playerId: "u32", groupId: "u
 export const enum GroupKind { Party = 1, Clan = 2 }
 /** Conventional role ranks (higher = more rights); gameplay defines the meaning. */
 export const enum GroupRole { Member = 1, Officer = 2, Leader = 3 }
-export interface Group { readonly id: number; readonly kind: number; version: number; members: Map<number, number> /* playerId -> role */ }
+/** Clan banner (gameplay/art define shapes, patterns and emblems). colors = [primary, secondary] as 0xRRGGBBAA/0xRRGGBB u32. */
+export interface Banner { shape: number; pattern: number; colors: [number, number]; emblemId: number }
+export interface Group { readonly id: number; readonly kind: number; version: number; members: Map<number, number> /* playerId -> role */; banner?: Banner }
 export type GroupChange =
   | { op: "create"; seq: number; group: number; kind: number }
   | { op: "delete"; seq: number; group: number }
   | { op: "member"; seq: number; group: number; player: number; role: number } // role 0 = removed
+  | { op: "banner"; seq: number; group: number; banner: Banner | null }
 ;
-const SAVE_VERSION = 1;
+const SAVE_VERSION = 2;
+const checkBanner = (b: Banner): void => {
+  const u = (v: number, max: number) => Number.isInteger(v) && v >= 0 && v <= max;
+  if (!(u(b.shape, 0xff) && u(b.pattern, 0xff) && u(b.emblemId, 0xffff) && b.colors.length === 2 && u(b.colors[0], 0xffffffff) && u(b.colors[1], 0xffffffff))) throw new Error("bad banner");
+};
 
 export class GroupRegistry {
   private groups = new Map<number, Group>();
@@ -54,6 +61,12 @@ export class GroupRegistry {
     else { if (g.members.get(player) === role) return; g.members.set(player, role); let s = this.byPlayer.get(player); if (!s) this.byPlayer.set(player, (s = new Set())); s.add(group); }
     g.version++; this.push({ op: "member", seq: ++this.seq, group, player, role });
   }
+  /** Set or clear (null) a group's banner (typically clans). Logged as a delta. */
+  setBanner(group: number, banner: Banner | null): void {
+    const g = this.groups.get(group); if (!g) throw new Error(`no group ${group}`);
+    if (banner) { checkBanner(banner); g.banner = { shape: banner.shape, pattern: banner.pattern, colors: [banner.colors[0], banner.colors[1]], emblemId: banner.emblemId }; } else delete g.banner;
+    g.version++; this.push({ op: "banner", seq: ++this.seq, group, banner: g.banner ? { ...g.banner, colors: [...g.banner.colors] } : null });
+  }
   addMember(group: number, player: number, role: number = GroupRole.Member): void { this.setRole(group, player, role); }
   removeMember(group: number, player: number): void { this.setRole(group, player, 0); }
   role(group: number, player: number): number { return this.groups.get(group)?.members.get(player) ?? 0; }
@@ -75,25 +88,32 @@ export class GroupRegistry {
   apply(c: GroupChange): void {
     if (c.op === "create") { if (!this.groups.has(c.group)) this.create(c.kind, undefined, c.group); }
     else if (c.op === "delete") this.delete(c.group);
+    else if (c.op === "banner") { if (this.groups.has(c.group)) this.setBanner(c.group, c.banner); }
     else if (this.groups.has(c.group)) this.setRole(c.group, c.player, c.role);
     this.seq = c.seq;
   }
-  /** Persistence: v1 = u8 ver, u32 nextId, u32 count, per group (u32 id, u8 kind, u32 version, u16 n, n×(u32 player, u8 role)). */
+  /**
+   * Persistence: v2 = u8 ver, u32 nextId, u32 count, per group (u32 id, u8 kind, u32 version, u16 n, n×(u32 player, u8 role),
+   * u8 hasBanner [, u8 shape, u8 pattern, u32 primary, u32 secondary, u16 emblemId]). v1 (no banner byte) still decodes.
+   */
   encode(): Uint8Array {
     const w = new BinaryWriter(64); w.write("u8", SAVE_VERSION); w.write("u32", this.nextId); const all = this.all(); w.write("u32", all.length);
     for (const g of all) {
       w.write("u32", g.id); w.write("u8", g.kind); w.write("u32", g.version); w.write("u16", g.members.size);
       for (const [p, r] of [...g.members].sort((a, b) => a[0] - b[0])) { w.write("u32", p); w.write("u8", r); }
+      const b = g.banner; w.write("u8", b ? 1 : 0);
+      if (b) { w.write("u8", b.shape); w.write("u8", b.pattern); w.write("u32", b.colors[0]); w.write("u32", b.colors[1]); w.write("u16", b.emblemId); }
     }
     return w.finish();
   }
   static decode(bytes: Uint8Array): GroupRegistry {
-    const r = new BinaryReader(bytes); const v = r.read("u8"); if (v !== SAVE_VERSION) throw new Error(`GroupRegistry: unsupported version ${v}`);
+    const r = new BinaryReader(bytes); const v = r.read("u8"); if (v !== 1 && v !== 2) throw new Error(`GroupRegistry: unsupported version ${v}`);
     const reg = new GroupRegistry(); const next = r.read("u32"); const n = r.read("u32");
     for (let i = 0; i < n; i++) {
       const id = r.read("u32"), kind = r.read("u8"), version = r.read("u32"), m = r.read("u16");
       const g: Group = { id, kind, version, members: new Map() }; reg.groups.set(id, g);
       for (let k = 0; k < m; k++) { const p = r.read("u32"), role = r.read("u8"); g.members.set(p, role); let s = reg.byPlayer.get(p); if (!s) reg.byPlayer.set(p, (s = new Set())); s.add(id); }
+      if (v >= 2 && r.read("u8")) g.banner = { shape: r.read("u8"), pattern: r.read("u8"), colors: [r.read("u32"), r.read("u32")], emblemId: r.read("u16") };
     }
     reg.nextId = next; return reg;
   }

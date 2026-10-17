@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { loadManifest, ManifestError, validateBuildingSprites, ID_KINDS } from "../src/index.js";
+import { loadManifest, ManifestError, ID_KINDS } from "../src/index.js";
 
 const dir = fileURLToPath(new URL("../sample/", import.meta.url));
 const sample = JSON.parse(readFileSync(dir + "manifest.json", "utf8"));
@@ -26,24 +26,6 @@ describe("extended manifest: sounds, vfx, UI, emissive, variants, buildings", ()
   it("UI nine-slice and emissive page surface on frame refs", () => {
     const f = registry.frame(registry.id("ui_panel"), "idle", 0, 0); expect(f.nineSlice).toEqual({ l: 6, t: 6, r: 6, b: 6 });
     const b = registry.buildingFrame(registry.id("campfire"), 0, 0); expect(b.emissiveImage).toBe("buildings_emissive.png");
-  });
-  it("building frames by rotation and damage stage", () => {
-    const id = registry.id("wall");
-    expect([0, 1, 2, 3].map((st) => registry.buildingFrame(id, 2, st).frame)).toEqual([1, 5, 9, 13]);
-    expect(registry.buildingFrame(id, 0, 9).frame).toBe(13);
-  });
-  it("variant sets with tints and palette swaps", () => {
-    expect(registry.variantsOf("player_variants").map((v) => v.key)).toEqual(["player_red", "player_blue", "player_tan"]);
-    expect(registry.variant("player_red").tint).toBe(0xff6b6b);
-    const z = registry.variant("zombie_pale"); expect(z.sprite).toBe(registry.id("zombie_walker"));
-    expect(registry.palettes.get(z.palette!)!.map.get(0x78aa5a)).toBe(0x9aa0a8);
-  });
-  it("cross-checks building sprites against BuildPieceDefs", () => {
-    const pieces: Record<string, { footprint: { w: number; h: number }; layer: number }> = {
-      floor: { footprint: { w: 2, h: 2 }, layer: 0 }, wall: { footprint: { w: 2, h: 1 }, layer: 1 }, pillar: { footprint: { w: 1, h: 1 }, layer: 2 } };
-    const lookup = { byKey: (k: string) => { const p = pieces[k]; if (!p) throw new Error("x"); return p; } };
-    const issues = validateBuildingSprites(registry, lookup);
-    expect(issues.length).toBe(2); expect(issues).toContain("campfire: unknown build piece \"campfire\""); expect(issues).toContain("pillar: layer 1 != piece layer 2");
   });
   it("validation reports every new-kind issue", () => {
     const msg = issuesOf(mutate((m) => {

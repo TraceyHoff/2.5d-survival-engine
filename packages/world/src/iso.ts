@@ -1,6 +1,15 @@
 /** 2:1 dimetric isometric projection. World = float tile units (x east-ish, y south-ish), z = height in tiles. */
 export interface IsoConfig { tileW: number; tileH: number; zStep: number }
 export const DEFAULT_ISO: IsoConfig = { tileW: 64, tileH: 32, zStep: 16 };
+/**
+ * Height convention: 1 terrain level = zStep (16 px); 1 building floor = FLOOR_HEIGHT_LEVELS terrain levels (walls are
+ * 48 px tall). Transform.z is in terrain levels; BuildingGrid z is a floor index. Roofs of floor f sit at terrain level (f+1)*3.
+ */
+export const FLOOR_HEIGHT_LEVELS = 3;
+/** Terrain-level z of the bottom of building floor `floor` above a base terrain height. */
+export const floorToTerrainZ = (floor: number, baseZ = 0): number => baseZ + floor * FLOOR_HEIGHT_LEVELS;
+/** Building floor index containing terrain-level z (relative to base terrain height). */
+export const terrainZToFloor = (z: number, baseZ = 0): number => Math.max(0, Math.floor((z - baseZ + 1e-6) / FLOOR_HEIGHT_LEVELS));
 export function worldToScreen(x: number, y: number, z = 0, c: IsoConfig = DEFAULT_ISO): { sx: number; sy: number } {
   return { sx: (x - y) * (c.tileW / 2), sy: (x + y) * (c.tileH / 2) - z * c.zStep };
 }

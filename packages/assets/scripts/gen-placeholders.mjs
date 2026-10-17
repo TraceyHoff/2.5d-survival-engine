@@ -141,5 +141,7 @@ const manifest = { version: 1, name: "placeholder", atlases, sprites: [
     { key: "zombie_variants", base: "zombie_walker", variants: [{ key: "zombie_green" }, { key: "zombie_pale", palette: "zombie_pale" }] },
   ],
 };
+// typed extras (ADR-064): rotationArt on building sprites, sway on trees
+for (const sp of manifest.sprites) { if (sp.building) sp.rotationArt = "mirror"; if (sp.key === "tree") sp.sway = { amp: 2, freq: 0.35, stiffness: 0.6 }; }
 writeFileSync(OUT + "manifest.json", JSON.stringify(manifest, null, 2) + "\n");
 console.log(`wrote ${atlases.length} atlases + manifest.json (${manifest.sprites.length} sprites) to ${OUT}`);

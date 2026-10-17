@@ -2,7 +2,15 @@ import { fnv1a, StableIdRegistry, type World } from "@engine/core";
 
 export const MANIFEST_VERSION = 1;
 export const CATEGORIES = ["character", "zombie", "item", "equipment", "resource", "building", "tile", "ui", "vfx"] as const;
-export type Category = (typeof CATEGORIES)[number];
+/** Optional categories: accepted by validation but not required to be present (e.g. by "covers every category" checks). */
+export const OPTIONAL_CATEGORIES = ["critter"] as const;
+export const ALL_CATEGORIES = [...CATEGORIES, ...OPTIONAL_CATEGORIES] as const;
+export type Category = (typeof ALL_CATEGORIES)[number];
+export const ROTATION_ART = ["mirror", "unique4"] as const;
+/** mirror: 1 row (symmetric), 2 rows (rotations 2/3 = rows 0/1 flipped on X) or 4 drawn rows; unique4: 4 rows required. */
+export type RotationArt = (typeof ROTATION_ART)[number];
+export interface SwayJson { /** px at frame top */ amp: number; /** Hz */ freq: number; /** 0..1, higher = stiffer */ stiffness: number }
+export interface LoopPoints { /** seconds */ start: number; /** seconds (> start) */ end: number }
 export const SOUND_CATEGORIES = ["sfx", "ambience", "ui"] as const;
 export type SoundCategory = (typeof SOUND_CATEGORIES)[number];
 export const BLEND_MODES = ["normal", "additive", "multiply"] as const;
@@ -29,6 +37,8 @@ export interface BuildingSpriteJson {
   piece: string; footprint: { w: number; h: number }; layer: number;
   /** frames[rotation][damageStage]: 1 or 4 rotations (0-3), exactly 4 damage stages (0 = intact .. 3 = wrecked). */
   frames: number[][];
+  /** Optional piece states (e.g. closed/open), each with its own frames[rotation][damageStage]. State index = declaration order (BuildingGrid state u8). */
+  states?: Record<string, number[][]>;
 }
 export interface SpriteJson {
   key: string; category: Category; atlas: string;
@@ -36,8 +46,10 @@ export interface SpriteJson {
   anchor?: { x: number; y: number };
   animations: Record<string, AnimationJson>;
   building?: BuildingSpriteJson;
+  rotationArt?: RotationArt;
+  sway?: SwayJson;
 }
-export interface SoundJson { key: string; files: string[]; volume?: number; pitchJitter?: number; loop?: boolean; category: SoundCategory }
+export interface SoundJson { key: string; files: string[]; volume?: number; pitchJitter?: number; /** true, or loop points in seconds */ loop?: boolean | LoopPoints; category: SoundCategory }
 export interface ParticleJson { rate: number; count: number; speed: [number, number]; spread: number; gravity: number; fade: boolean; scaleCurve: number[] }
 export interface VfxJson { key: string; sprite: string; anim?: string; lifetime: number; blend?: BlendMode; particles?: ParticleJson }
 export interface TintSetJson { key: string; tints: string[] }
@@ -52,10 +64,10 @@ export interface ManifestJson {
 // ---------- resolved ----------
 export interface Atlas extends Omit<AtlasJson, "emissive" | "nineSlice"> { id: number; emissiveImage?: string; nineSlice: Map<number, NineSlice> }
 export interface Animation { id: number; name: string; frames: number[]; fps: number; directions: Directions; dirStride: number; loop: boolean }
-export interface BuildingSprite { piece: string; footprint: { w: number; h: number }; layer: number; frames: number[][] }
-export interface SpriteDef { id: number; key: string; category: Category; atlas: Atlas; anchor: { x: number; y: number }; animations: Map<string, Animation>; animList: Animation[]; building?: BuildingSprite }
-export interface FrameRef { atlas: Atlas; frame: number; x: number; y: number; w: number; h: number; anchorX: number; anchorY: number; emissiveImage?: string; nineSlice?: NineSlice }
-export interface SoundDef { id: number; key: string; files: string[]; volume: number; pitchJitter: number; loop: boolean; category: SoundCategory }
+export interface BuildingSprite { piece: string; footprint: { w: number; h: number }; layer: number; frames: number[][]; rotationArt: RotationArt; stateNames: string[]; states: number[][][] }
+export interface SpriteDef { id: number; key: string; category: Category; atlas: Atlas; anchor: { x: number; y: number }; animations: Map<string, Animation>; animList: Animation[]; building?: BuildingSprite; sway?: SwayJson }
+export interface FrameRef { atlas: Atlas; frame: number; x: number; y: number; w: number; h: number; anchorX: number; anchorY: number; emissiveImage?: string; nineSlice?: NineSlice; /** draw mirrored on X (mirror rotationArt) */ flipX?: boolean }
+export interface SoundDef { id: number; key: string; files: string[]; volume: number; pitchJitter: number; loop: boolean; loopPoints?: LoopPoints; category: SoundCategory }
 export interface VfxDef { id: number; key: string; sprite: number; anim: string; lifetime: number; blend: BlendMode; particles?: ParticleJson }
 /** Colors are packed 0xRRGGBB. */
 export interface TintSet { id: number; key: string; tints: number[] }
@@ -106,11 +118,16 @@ export class AssetRegistry {
     return this.ref(s, a.frames[i]! + AssetRegistry.directionIndex(facing, a.directions) * a.dirStride);
   }
   /** Building piece frame by rotation (0-3) and damage stage (0-3). Single-rotation sprites reuse rotation 0. */
-  buildingFrame(spriteId: number, rotation: number, damageStage: number): FrameRef {
-    const s = this.sprite(spriteId); if (!s.building) throw new Error(`${s.key} is not a building sprite`);
-    const rows = s.building.frames; const row = rows[rows.length === 1 ? 0 : rotation & 3]!;
-    return this.ref(s, row[Math.max(0, Math.min(3, damageStage | 0))]!);
+  /** Frame for rotation (0-3), damage stage (0-3) and optional piece state index (out of range = default frames). */
+  buildingFrame(spriteId: number, rotation: number, damageStage: number, state = -1): FrameRef {
+    const s = this.sprite(spriteId); const b = s.building; if (!b) throw new Error(`${s.key} is not a building sprite`);
+    const rows = (state >= 0 && b.states[state]) || b.frames; const r = rotation & 3;
+    const ri = rows.length === 1 ? 0 : rows.length === 2 ? r & 1 : r;
+    const ref = this.ref(s, rows[ri]![Math.max(0, Math.min(3, damageStage | 0))]!);
+    return rows.length === 2 && r >= 2 ? { ...ref, flipX: true } : ref;
   }
+  /** State index by name for a building sprite (-1 if none). */
+  stateIndex(spriteId: number, name: string): number { return this.sprite(spriteId).building?.stateNames.indexOf(name) ?? -1; }
 }
 
 /** Minimal BuildPieceDef view (from @engine/world BuildPieceRegistry) for cross-checking. */
@@ -162,7 +179,10 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
   const spriteKeys = uniq(m.sprites, "sprites");
   m.sprites.forEach((s, i) => {
     const p = `sprites[${i}](${s.key})`;
-    if (!CATEGORIES.includes(s.category)) issues.push(`${p}: unknown category "${s.category}"`);
+    if (!(ALL_CATEGORIES as readonly string[]).includes(s.category)) issues.push(`${p}: unknown category "${s.category}"`);
+    if (s.rotationArt !== undefined && !ROTATION_ART.includes(s.rotationArt)) issues.push(`${p}: rotationArt must be mirror|unique4`);
+    if (s.rotationArt !== undefined && !s.building) issues.push(`${p}: rotationArt only applies to building sprites`);
+    if (s.sway !== undefined && !(s.sway && s.sway.amp >= 0 && s.sway.freq >= 0 && s.sway.stiffness >= 0 && s.sway.stiffness <= 1)) issues.push(`${p}: sway needs amp >= 0, freq >= 0, stiffness in [0,1]`);
     const at = atlases.get(s.atlas); if (!at) issues.push(`${p}: unknown atlas "${s.atlas}"`);
     const total = at ? at.columns * at.rows : 0;
     if (s.anchor && !(s.anchor.x >= 0 && s.anchor.x <= 1 && s.anchor.y >= 0 && s.anchor.y <= 1)) issues.push(`${p}: anchor must be within [0,1]`);
@@ -183,11 +203,22 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
       if (!b.piece) issues.push(`${q}: piece required`);
       if (!(Number.isInteger(b.footprint?.w) && b.footprint.w >= 1 && Number.isInteger(b.footprint?.h) && b.footprint.h >= 1)) issues.push(`${q}: bad footprint`);
       if (!(Number.isInteger(b.layer) && b.layer >= 0 && b.layer <= 3)) issues.push(`${q}: layer must be 0-3`);
-      if (!Array.isArray(b.frames) || ![1, 4].includes(b.frames.length)) issues.push(`${q}: frames must have 1 or 4 rotations`);
-      else b.frames.forEach((row, r) => {
-        if (!Array.isArray(row) || row.length !== 4) issues.push(`${q}: rotation ${r} needs 4 damage stages`);
-        else if (at) for (const f of row) if (!(Number.isInteger(f) && f >= 0 && f < total)) issues.push(`${q}: frame ${f} out of atlas range`);
-      });
+      const art = s.rotationArt ?? "mirror";
+      const checkRows = (rows: unknown, label: string) => {
+        if (!Array.isArray(rows)) { issues.push(`${q}: ${label} must be an array of rotations`); return; }
+        const okN = art === "unique4" ? [4] : [1, 2, 4];
+        if (!okN.includes(rows.length)) { issues.push(art === "unique4" ? `${q}: ${label} needs 4 rotations for rotationArt unique4` : `${q}: ${label} must have 1, 2 or 4 rotations`); return; }
+        (rows as number[][]).forEach((row, r) => {
+          if (!Array.isArray(row) || row.length !== 4) issues.push(`${q}: rotation ${r} needs 4 damage stages`);
+          else if (at) for (const f of row) if (!(Number.isInteger(f) && f >= 0 && f < total)) issues.push(`${q}: frame ${f} out of atlas range`);
+        });
+      };
+      checkRows(b.frames, "frames");
+      if (b.states !== undefined) {
+        const names = b.states && typeof b.states === "object" ? Object.keys(b.states) : [];
+        if (!names.length) issues.push(`${q}: states must be a non-empty object`); if (names.length > 255) issues.push(`${q}: at most 255 states`);
+        for (const n of names) { if (!/^[a-z0-9_]+$/.test(n)) issues.push(`${q}: bad state name "${n}"`); checkRows(b.states[n], `states.${n}`); }
+      }
     }
   });
 
@@ -200,6 +231,7 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
     if (s.volume !== undefined && !(s.volume >= 0 && s.volume <= 1)) issues.push(`${p}: volume must be within [0,1]`);
     if (s.pitchJitter !== undefined && !(s.pitchJitter >= 0 && s.pitchJitter <= 1)) issues.push(`${p}: pitchJitter must be within [0,1]`);
     if (!SOUND_CATEGORIES.includes(s.category)) issues.push(`${p}: category must be sfx|ambience|ui`);
+    if (s.loop !== undefined && typeof s.loop !== "boolean" && !(s.loop && s.loop.start >= 0 && s.loop.end > s.loop.start)) issues.push(`${p}: loop points need 0 <= start < end (seconds)`);
   });
 
   // vfx
@@ -266,9 +298,11 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
     Object.entries(s.animations).forEach(([name, a], i) => animList.push({ id: i, name, frames: a.frames, fps: a.fps, directions: a.directions ?? 1, dirStride: a.dirStride ?? at.columns, loop: a.loop ?? true }));
     const id = ids.sprites.id(s.key);
     sprites.set(id, { id, key: s.key, category: s.category, atlas: at, anchor: s.anchor ?? { x: 0.5, y: 0.9 }, animations: new Map(animList.map((a) => [a.name, a])), animList,
-      ...(s.building ? { building: { piece: s.building.piece, footprint: { ...s.building.footprint }, layer: s.building.layer, frames: s.building.frames.map((r) => [...r]) } } : {}) });
+      ...(s.building ? { building: { piece: s.building.piece, footprint: { ...s.building.footprint }, layer: s.building.layer, frames: s.building.frames.map((r) => [...r]),
+        rotationArt: s.rotationArt ?? "mirror", stateNames: Object.keys(s.building.states ?? {}), states: Object.values(s.building.states ?? {}).map((rows) => rows.map((r) => [...r])) } } : {}),
+      ...(s.sway ? { sway: { ...s.sway } } : {}) });
   }
-  const soundMap = new Map<number, SoundDef>(sounds.map((s) => { const id = ids.sounds.id(s.key); return [id, { id, key: s.key, files: [...s.files], volume: s.volume ?? 1, pitchJitter: s.pitchJitter ?? 0, loop: s.loop ?? false, category: s.category }]; }));
+  const soundMap = new Map<number, SoundDef>(sounds.map((s) => { const id = ids.sounds.id(s.key); return [id, { id, key: s.key, files: [...s.files], volume: s.volume ?? 1, pitchJitter: s.pitchJitter ?? 0, loop: !!s.loop, ...(typeof s.loop === "object" ? { loopPoints: { ...s.loop } } : {}), category: s.category }]; }));
   const vfxMap = new Map<number, VfxDef>(vfx.map((v) => { const id = ids.vfx.id(v.key); const sp = m.sprites.find((s) => s.key === v.sprite)!;
     return [id, { id, key: v.key, sprite: ids.sprites.id(v.sprite), anim: v.anim ?? Object.keys(sp.animations)[0]!, lifetime: v.lifetime, blend: v.blend ?? "normal", ...(v.particles ? { particles: v.particles } : {}) }]; }));
   const tintMap = new Map<number, TintSet>(tints.map((t) => { const id = ids.tints.id(t.key); return [id, { id, key: t.key, tints: t.tints.map(parseColor) }]; }));

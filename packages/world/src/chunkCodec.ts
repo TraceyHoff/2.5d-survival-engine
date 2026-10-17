@@ -10,7 +10,7 @@ export const CHUNK_VERSION = 1;
  *   u32 magic, u16 version, i32 cx, i32 cy
  *   tiles: u16 runCount, runCount x (u16 len, u16 id)      (RLE)
  *   height: 1024 x u8
- *   buildings: u16 n, n x (u16 piece, u8 lx, u8 ly, u8 z, u8 rot, f32 hp)
+ *   buildings: u16 n, n x (u16 piece, u8 lx, u8 ly, u8 z, u8 rot|state<<2, f32 hp)   (state 0..63 in the upper bits; v1-compatible)
  *   components: u8 n, n x (u16 componentId, u32 schemaHash)   (persistent components present in this chunk)
  *   entities: u32 n, n x (u8 compCount, compCount x (u8 tableIndex, record))
  * Transform x/y are stored chunk-relative (precision: see WorldOrigin guidance) and rebased on decode.
@@ -32,7 +32,7 @@ function encodeStatic(chunk: Chunk, buildings: BuildingGrid | undefined): number
   d.setUint16(o, nb, true); o += 2;
   if (anchored && nb) {
     const ox = chunk.cx * CHUNK_SIZE, oy = chunk.cy * CHUNK_SIZE;
-    for (const id of anchored) { const b = buildings!.get(id)!; d.setUint16(o, b.piece, true); d.setUint8(o + 2, b.tx - ox); d.setUint8(o + 3, b.ty - oy); d.setUint8(o + 4, b.z); d.setUint8(o + 5, b.rot); d.setFloat32(o + 6, b.hp, true); o += 10; }
+    for (const id of anchored) { const b = buildings!.get(id)!; d.setUint16(o, b.piece, true); d.setUint8(o + 2, b.tx - ox); d.setUint8(o + 3, b.ty - oy); d.setUint8(o + 4, b.z); d.setUint8(o + 5, (b.rot & 3) | (b.state << 2)); d.setFloat32(o + 6, b.hp, true); o += 10; }
   }
   return o;
 }
@@ -62,7 +62,7 @@ export function encodeChunk(chunk: Chunk, opts: { world?: World; entities?: Iter
   out.set(new Uint8Array(scratch, 0, head)); out.set(tail, head); return out;
 }
 
-export interface DecodedChunk { chunk: Chunk; buildings: { piece: number; tx: number; ty: number; z: number; rot: number; hp: number }[]; entities: Entity[] }
+export interface DecodedChunk { chunk: Chunk; buildings: { piece: number; tx: number; ty: number; z: number; rot: number; state: number; hp: number }[]; entities: Entity[] }
 /** Decodes a chunk; creates its persistent entities in `world` and places buildings into `buildings` if given. */
 export function decodeChunk(bytes: Uint8Array, opts: { world?: World; buildings?: BuildingGrid } = {}): DecodedChunk {
   const r = new BinaryReader(bytes);
@@ -76,8 +76,9 @@ export function decodeChunk(bytes: Uint8Array, opts: { world?: World; buildings?
   const ox = cx * CHUNK_SIZE, oy = cy * CHUNK_SIZE; const buildings: DecodedChunk["buildings"] = [];
   const nb = r.read("u16");
   for (let k = 0; k < nb; k++) {
-    const b = { piece: r.read("u16"), tx: ox + r.read("u8"), ty: oy + r.read("u8"), z: r.read("u8"), rot: r.read("u8"), hp: r.read("f32") };
-    buildings.push(b); opts.buildings?.place(b.piece, b.tx, b.ty, b.z, b.rot, b.hp);
+    const b = { piece: r.read("u16"), tx: ox + r.read("u8"), ty: oy + r.read("u8"), z: r.read("u8"), rotState: r.read("u8"), hp: r.read("f32") };
+    const rec = { piece: b.piece, tx: b.tx, ty: b.ty, z: b.z, rot: b.rotState & 3, state: b.rotState >> 2, hp: b.hp };
+    buildings.push(rec); opts.buildings?.place(rec.piece, rec.tx, rec.ty, rec.z, rec.rot, rec.hp, rec.state);
   }
   const nc = r.read("u8"); const table: ComponentStore[] = []; const world = opts.world;
   for (let k = 0; k < nc; k++) {

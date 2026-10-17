@@ -150,3 +150,17 @@ describe("command handlers", () => {
 describe("removeSystem", () => {
   it("removes by name", () => { const w = new World(); let n = 0; w.addSystem("simulation", "a", () => n++); stepN(w, 1); expect(w.removeSystem("a")).toBe(true); expect(w.removeSystem("a")).toBe(false); stepN(w, 1); expect(n).toBe(1); });
 });
+
+describe("clan banner", () => {
+  it("set/clear, delta log, persistence v2, v1 still decodes", () => {
+    const g = new GroupRegistry(); const clan = g.create(GroupKind.Clan, 1); const v1 = g.encode(); const s = g.seq;
+    const banner = { shape: 2, pattern: 5, colors: [0xff8800ff, 0x223344ff] as [number, number], emblemId: 300 };
+    g.setBanner(clan.id, banner); expect(g.get(clan.id)!.banner).toEqual(banner);
+    const d = g.changesSince(s)!; expect(d).toEqual([{ op: "banner", seq: s + 1, group: clan.id, banner }]);
+    const mirror = GroupRegistry.decode(v1); mirror.seq = s; for (const c of d) mirror.apply(c); expect(mirror.get(clan.id)!.banner).toEqual(banner);
+    expect(GroupRegistry.decode(g.encode()).get(clan.id)!.banner).toEqual(banner);
+    const legacy = new Uint8Array(v1); legacy[0] = 1; // v1 had no banner byte
+    expect(() => GroupRegistry.decode(legacy.slice(0, legacy.length - 1))).not.toThrow();
+    expect(() => g.setBanner(clan.id, { ...banner, emblemId: 70000 })).toThrow(); g.setBanner(clan.id, null); expect(g.get(clan.id)!.banner).toBeUndefined();
+  });
+});

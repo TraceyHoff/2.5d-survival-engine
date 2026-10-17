@@ -119,6 +119,8 @@ sequenceDiagram
 - Iso: 2:1 dimetric (64×32 px tiles, 16 px per z), `worldToScreen`, `screenToWorld(z)`, `screenToTile`, `isoDepth`.
 - `SpatialHash` uniform grid (default 4 tiles) for broad-phase proximity/interest.
 
+**Height convention (iso):** 1 terrain level = `zStep` = 16 px; 1 building floor = `FLOOR_HEIGHT_LEVELS` = 3 terrain levels (walls are 48 px tall; roofs of floor f sit at terrain level (f+1)·3 above the base). `Transform.z` is in terrain levels; `BuildingGrid` z is a floor index — convert with `floorToTerrainZ(floor, baseZ)` / `terrainZToFloor(z, baseZ)`.
+
 ## 8. Coding conventions
 
 - Strict TS, ESM only, `.js` suffix in relative imports, `import type` for types (`verbatimModuleSyntax`).
@@ -173,6 +175,9 @@ flowchart LR
 - Engine supplies structures and queries only; costs, permissions, decay, stability/collapse rules are Survival Systems'.
 - Open: thin edge walls (between tiles) are modelled as sockets/layer 1 for now.
 
+**Floors and states:** building z = floor index (1 floor = 3 terrain levels, see §7). Pieces carry a u8 `state` (0..63; e.g. door closed/open) changed only via `setState`, which records a `State` building change; it is persisted in the upper bits of the chunk codec rot byte (format v1 unchanged). Layers follow the art table in `/workspace/assets/INTEGRATION.md` (0 floor, 1 structure incl. walls/pillars/roofs/fences, 2 furniture, 3 decor).
+
+
 ## 13. Asset Pipeline
 
 - `@engine/assets`: manifest v1 JSON. `loadManifest(json, {lock})` validates everything (all issues reported in one `ManifestError`) and assigns stable u16 ids per namespace (`sprites, sounds, vfx, variants, tints, palettes`) via `StableIdRegistry` + `ids.lock.json` (`pnpm --filter @engine/assets lock:ids` keeps existing ids and appends new keys; legacy flat sprite locks are migrated). `AssetRegistry.hash` covers all namespaces; `installAssetHash(world, reg)` adds it to the handshake schema hash.
@@ -212,6 +217,26 @@ Tint sets, palette swaps and variant sets (player/zombie variants by tint, palet
 { "key": "zombie_variants", "base": "zombie_walker",
   "variants": [{ "key": "zombie_green" }, { "key": "zombie_pale", "palette": "zombie_pale" }, { "key": "zombie_red", "tint": "shirt_colors", "tintIndex": 0 }] }
 ```
+
+**Default content vs fixture (batch 9):** the real art pack in `packages/assets/pack/` is the default manifest (`DEFAULT_MANIFEST`, `fetchDefaultManifest(base)`, Node: `@engine/assets/node` `loadDefaultManifest()`); `packages/assets/sample/` is the placeholder **test fixture** (`FIXTURE_MANIFEST`, `loadFixtureManifest()`), and placeholder-specific assertions live in `test/fixture.test.ts`. Lock scripts: `pnpm --filter @engine/assets lock:ids` (fixture) and `lock:ids:pack`.
+
+Typed schema additions (validated):
+
+```json
+{ "key": "critter_bunny", "category": "critter", "atlas": "critters", "animations": { "idle": { "frames": [0, 1], "fps": 4, "directions": 4 } } }
+{ "key": "door", "category": "building", "atlas": "buildings", "rotationArt": "unique4", "animations": { "idle": { "frames": [8], "fps": 1 } },
+  "building": { "piece": "door", "footprint": { "w": 2, "h": 1 }, "layer": 1,
+    "frames": [[8,9,10,11],[12,13,14,15],[16,17,18,19],[20,21,22,23]],
+    "states": { "closed": [[8,9,10,11],[12,13,14,15],[16,17,18,19],[20,21,22,23]], "open": [[24,25,26,27],[28,29,30,31],[32,33,34,35],[36,37,38,39]] } } }
+{ "key": "fence", "category": "building", "rotationArt": "mirror", "building": { "frames": [[1,5,9,13],[2,6,10,14]] } }
+{ "key": "tree", "category": "resource", "sway": { "amp": 2.0, "freq": 0.35, "stiffness": 0.6 } }
+{ "key": "amb_rain", "files": ["audio/ambience/rain_loop.ogg"], "category": "ambience", "loop": { "start": 0.12, "end": 8.5 } }
+```
+
+- `critter` is an optional category (`OPTIONAL_CATEGORIES`; `CATEGORIES` = required set).
+- `rotationArt`: `mirror` accepts 1 (symmetric), 2 (rotations 2/3 = rows 0/1 with `FrameRef.flipX`) or 4 rows; `unique4` requires 4.
+- `building.states`: per-state `frames[rotation][damage]`; state index = declaration order = BuildingGrid `state`; `buildingFrame(id, rot, dmg, state)`, `stateIndex(id, name)`.
+- `sway {amp px, freq Hz, stiffness 0..1}` → `SpriteDef.sway`. Sound `loop: true | {start, end}` (seconds) → `SoundDef.loop` + `loopPoints`.
 
 ## 14. Testing
 

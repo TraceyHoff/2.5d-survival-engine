@@ -296,6 +296,11 @@
           ],
           "fps": 1
         }
+      },
+      "sway": {
+        "amp": 2,
+        "freq": 0.35,
+        "stiffness": 0.6
       }
     },
     {
@@ -380,7 +385,8 @@
             12
           ]
         ]
-      }
+      },
+      "rotationArt": "mirror"
     },
     {
       "key": "wall",
@@ -413,7 +419,8 @@
             13
           ]
         ]
-      }
+      },
+      "rotationArt": "mirror"
     },
     {
       "key": "pillar",
@@ -446,7 +453,8 @@
             14
           ]
         ]
-      }
+      },
+      "rotationArt": "mirror"
     },
     {
       "key": "campfire",
@@ -479,7 +487,8 @@
             15
           ]
         ]
-      }
+      },
+      "rotationArt": "mirror"
     },
     {
       "key": "ui_panel",
