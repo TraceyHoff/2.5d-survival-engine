@@ -1,10 +1,10 @@
 /** Area of interest on top of @engine/world's ChunkMembership + InterestGrid (32x32-tile chunks, "cx,cy" keys). */
-import { ChunkMembership, InterestGrid, chunkKeyOf, type InterestOptions } from "@engine/world";
+import { ChunkMembership, InterestGrid, chunkKeyOf, type InterestOptions, type Viewpoint } from "@engine/world";
 import type { Entity, World } from "@engine/core";
 
-export type { InterestOptions };
+export type { InterestOptions, Viewpoint };
 
-/** Net-facing view of per-client interest. One viewpoint per client (its first owned entity with a Transform). */
+/** Net-facing view of per-client interest: union of viewpoints (every owned entity with a Transform + extra server-set ones). */
 export class NetInterest {
   readonly membership: ChunkMembership;
   readonly grid: InterestGrid;
@@ -15,9 +15,8 @@ export class NetInterest {
   /** Apply this tick's Transform changes/removals (network phase, before change bits clear). O(changed). */
   sync(): void { this.membership.update(); }
   /** Set (or clear, with no positions) a client's viewpoint. */
-  setViewer(id: number, positions: readonly { x: number; y: number }[]): void {
-    const p = positions[0];
-    if (p) this.grid.setClient(id, p.x, p.y); else this.grid.removeClient(id);
+  setViewer(id: number, positions: readonly Viewpoint[]): void {
+    if (positions.length) this.grid.setClientViewpoints(id, positions); else this.grid.removeClient(id);
   }
   removeViewer(id: number): void { this.grid.removeClient(id); }
   update(): void { this.grid.update(); }

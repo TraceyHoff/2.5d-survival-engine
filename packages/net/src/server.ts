@@ -1,7 +1,7 @@
 import * as core from "@engine/core";
 import { ENV_NET_ID, NetId, Owner, Transform, entityIndex, type ComponentDef, type Entity, type World } from "@engine/core";
 import { BitReader, BitWriter } from "./bits.js";
-import { NetInterest, type InterestOptions } from "./interest.js";
+import { NetInterest, type InterestOptions, type Viewpoint } from "./interest.js";
 import { PositionHistory } from "./lagcomp.js";
 import { DEFAULT_COMMAND_RATE, MessageRegistry, TokenBucket, readPayload, writePayload, type MessageDef, type MessageDefBase, type Payload } from "./messages.js";
 import {
@@ -138,6 +138,7 @@ export class NetServer {
   private excluded = new Set<number>();
   private pubCache = new WeakMap<EntityState, EntityState>();
   private globals = new Set<Entity>();
+  private extraViews = new Map<number, readonly Viewpoint[]>();
   private handlers = new Map<MessageDefBase, CommandHandler[]>();
   private ownerCi: number | undefined;
   readonly tickHz: number; readonly historySize: number; readonly budgetBytes: number;
@@ -187,6 +188,11 @@ export class NetServer {
     return this;
   }
   getScope(def: ComponentDef): ReplicationScope { const ci = this.schema.indexOf(def, this.world); return (ci !== undefined && this.scopes.get(ci)) || "all"; }
+  /**
+   * Extra AOI viewpoints for a client (e.g. a spectator camera, a remote-viewed turret), unioned with its owned
+   * entities' positions. Pass [] to clear. `r` = chunk radius (default the grid radius).
+   */
+  setViewpoints(clientId: number, views: readonly Viewpoint[]): void { if (views.length) this.extraViews.set(clientId, views); else this.extraViews.delete(clientId); }
   /** Always replicate this entity to every client regardless of AOI (entities without Transform are global automatically). */
   setGlobal(e: Entity, global = true): void { if (global) this.globals.add(e); else this.globals.delete(e); }
 
@@ -286,7 +292,7 @@ export class NetServer {
 
   removeSession(clientId: number): void {
     const s = this.sessions.get(clientId) as SessionState | undefined; if (!s) return;
-    this.sessions.delete(clientId); this.byToken.delete(tokenKey(s.token)); this.interest?.removeViewer(clientId);
+    this.sessions.delete(clientId); this.byToken.delete(tokenKey(s.token)); this.interest?.removeViewer(clientId); this.extraViews.delete(clientId);
     if (s.conn !== undefined) { this.byConn.delete(s.conn); this.opts.transport.disconnect(s.conn); }
   }
 
@@ -369,7 +375,8 @@ export class NetServer {
       grid.sync();
       for (const s of this.byConn.values()) {
         const pos = (owned.get(s.clientId) ?? []).filter((e) => tf.has(entityIndex(e))).map((e) => ({ x: w.getField(e, Transform, "x")!, y: w.getField(e, Transform, "y")! }));
-        grid.setViewer(s.clientId, pos);
+        const extra = this.extraViews.get(s.clientId);
+        grid.setViewer(s.clientId, extra ? [...pos, ...extra] : pos);
       }
       grid.update();
     }

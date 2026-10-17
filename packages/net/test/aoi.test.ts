@@ -31,6 +31,26 @@ import { Buff, frames, join, makeWorld } from "./fixture.js";
   });
 }
 
+describe("multi-viewpoint AOI", () => {
+  it("unions every owned entity and extra server-set viewpoints", async () => {
+    const net = new LoopbackNetwork(5); const sw = makeWorld();
+    const far = 10 * CHUNK_SIZE;
+    const server = new NetServer({ world: sw, transport: net.createServer(), interest: { radius: 1, hysteresis: 0 },
+      onClientJoin: (s, w) => { for (const x of [1, far]) { const e = w.create(); w.add(e, Transform, { x, y: 1 }).add(e, Owner, { clientId: s.clientId }); } } });
+    const A = new NetClient({ world: makeWorld(), transport: net.createClient() });
+    await join(net, A);
+    const mk = (x: number) => { const e = sw.create(); sw.add(e, Transform, { x, y: 5 }); return e; };
+    const nearA = mk(5), nearB = mk(far + 5), cam = mk(20 * CHUNK_SIZE + 5);
+    const sees = (e: Entity) => A.entityOf(server.netIds.netIdOf(e) ?? -1) !== undefined;
+    frames(net, [sw, A.world], 5);
+    expect(sees(nearA)).toBe(true); expect(sees(nearB)).toBe(true); expect(sees(cam)).toBe(false);
+    server.setViewpoints(1, [{ x: 20 * CHUNK_SIZE, y: 1, r: 0 }]); frames(net, [sw, A.world], 5);
+    expect(sees(cam)).toBe(true);
+    server.setViewpoints(1, []); frames(net, [sw, A.world], 5);
+    expect(sees(cam)).toBe(false); expect(sees(nearB)).toBe(true);
+  });
+});
+
 describe("bandwidth budget", () => {
   it("spreads a large join over several ticks, nearest first, owned entity always in the first snapshot", async () => {
     const net = new LoopbackNetwork(4); const sw = makeWorld();
