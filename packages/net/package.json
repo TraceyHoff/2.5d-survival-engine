@@ -11,10 +11,12 @@
   },
   "dependencies": {
     "@engine/core": "workspace:*",
-    "ws": "^8.22.0"
+    "ws": "^8.22.0",
+    "@engine/world": "workspace:*"
   },
   "devDependencies": {
-    "@types/ws": "^8.18.2"
+    "@types/ws": "^8.18.2",
+    "@engine/testkit": "workspace:*"
   },
   "exports": {
     ".": "./src/index.ts",

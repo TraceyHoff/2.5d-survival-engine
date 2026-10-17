@@ -32,11 +32,14 @@ describe("NetServer", () => {
     const raw = net.createClient(); await raw.connect();
     const replies: number[][] = [];
     raw.onMessage((b) => { const r = new BitReader(b); const h = readHeader(r); replies.push([h.type, r.readBits(8)]); });
-    raw.send(encodeHello({ schemaHash: world.getSchemaHash(), token: new Uint8Array(16) }, PROTOCOL_VERSION + 1), "reliable");
-    raw.send(encodeHello({ schemaHash: 123, token: new Uint8Array(16) }), "reliable");
-    raw.send(encodeHello({ schemaHash: world.getSchemaHash(), token: new Uint8Array(16).fill(1) }), "reliable");
+    void world;
+    const ok = server.requiredHashes;
+    raw.send(encodeHello({ hashes: ok, token: new Uint8Array(16) }, PROTOCOL_VERSION + 1), "reliable");
+    raw.send(encodeHello({ hashes: { ...ok, schema: 123 }, token: new Uint8Array(16) }), "reliable");
+    raw.send(encodeHello({ hashes: ok, token: new Uint8Array(16).fill(1) }), "reliable");
+    raw.send(encodeHello({ hashes: { schema: ok.schema! }, token: new Uint8Array(16) }), "reliable");
     net.advance(1);
-    expect(replies).toEqual([[MsgType.Reject, RejectReason.ProtocolMismatch], [MsgType.Reject, RejectReason.SchemaMismatch], [MsgType.Reject, RejectReason.BadToken]]);
+    expect(replies).toEqual([[MsgType.Reject, RejectReason.ProtocolMismatch], [MsgType.Reject, RejectReason.SchemaMismatch], [MsgType.Reject, RejectReason.BadToken], [MsgType.Reject, RejectReason.HashMismatch]]);
     expect(server.sessions.size).toBe(0);
 
     const c1 = new NetClient({ world: makeWorld(), transport: net.createClient() });
@@ -71,7 +74,7 @@ describe("NetServer", () => {
   });
   it("sends a full snapshot without a valid ack, deltas after ack, and falls back when the ack ages out of history", async () => {
     const net = new LoopbackNetwork(); const world = makeWorld();
-    const server = new NetServer({ world, transport: net.createServer(), historySize: 32 });
+    const server = new NetServer({ world, transport: net.createServer(), historySize: 32, interest: false });
     for (let i = 0; i < 20; i++) { const e = world.create(); world.add(e, Transform, { x: i }); }
     const c = new NetClient({ world: makeWorld(), transport: net.createClient() });
     await join(net, c);

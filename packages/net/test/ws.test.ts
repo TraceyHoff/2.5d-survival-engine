@@ -14,15 +14,15 @@ describe("WebSocket transports (ws server + browser-style client)", () => {
   it("handshakes and replicates a snapshot over a real socket", async () => {
     const st = new WsServerTransport(); const port = await st.listen(0);
     const sworld = makeWorld();
-    new NetServer({ world: sworld, transport: st });
+    new NetServer({ world: sworld, transport: st, interest: false });
     const e = sworld.create(); sworld.add(e, Transform, { x: 3, y: 4 });
     const cworld = makeWorld();
     const client = new NetClient({ world: cworld, transport: new WebSocketClientTransport(`ws://127.0.0.1:${port}`, WebSocket as unknown as WebSocketCtor) });
     const welcome = await client.connect();
     expect(welcome.clientId).toBe(1);
     sworld.step(DT);
-    await until(() => { cworld.step(DT); return client.entities.size === 1; });
-    expect(cworld.get(client.entities.values().next().value!, Transform)!.x).toBe(3);
+    await until(() => { cworld.step(DT); return client.entities.size === 2; }); // + environment singleton
+    expect(cworld.get([...client.entities.values()].find((x) => x !== cworld.environment)!, Transform)!.x).toBe(3);
     client.close(); await st.close();
   });
 });

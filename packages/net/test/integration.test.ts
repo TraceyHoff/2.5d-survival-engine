@@ -32,7 +32,7 @@ describe("integration: server + 2 clients over a lossy, jittery loopback", () =>
 
     const frame = (n = 1) => { for (let i = 0; i < n; i++) { net.advance(50); sworld.step(DT); A.world.step(DT); B.world.step(DT); } };
     frame(10);
-    for (const c of [A.client, B.client]) { expect(c.entities.size).toBe(2); expect(c.owned.size).toBe(1); }
+    for (const c of [A.client, B.client]) { expect(c.entities.size).toBe(3); expect(c.owned.size).toBe(1); } // 2 players + environment
     const aSelf = ownedEntity(A.client), bSelf = ownedEntity(B.client);
     const bNetId = [...B.client.owned][0]!;
     const bOnA = A.client.entities.get(bNetId)!;
@@ -81,7 +81,7 @@ describe("integration: server + 2 clients over a lossy, jittery loopback", () =>
     expect(A.client.entities.has(bNetId)).toBe(false);
     expect(B.world.isAlive(bSelf)).toBe(false);
     expect(B.client.owned.size).toBe(0);
-    expect(A.client.entities.size).toBe(1);
+    expect(A.client.entities.size).toBe(2);
 
     // --- schema mismatch rejected ---
     const bad = new NetClient({ world: makeWorld({ extra: true }), transport: net.createClient({ latencyMs: 60 }) });

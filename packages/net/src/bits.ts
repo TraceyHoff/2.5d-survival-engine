@@ -27,6 +27,13 @@ export class BitWriter implements FieldWriter {
       this.pos++;
     }
   }
+  /** Roll back to an earlier bit position (used to drop a record that blew the budget). */
+  truncate(bitPos: number): void {
+    if (bitPos > this.pos) return;
+    for (let p = bitPos; p < this.pos; p++) this.buf[p >>> 3] = this.buf[p >>> 3]! & ~(1 << (p & 7));
+    this.pos = bitPos;
+  }
+  writeString(s: string): void { if (s.length > 255) throw new RangeError("string too long"); this.writeBits(s.length, 8); for (let i = 0; i < s.length; i++) this.writeBits(s.charCodeAt(i) & 0xff, 8); }
   writeBool(b: boolean): void { this.writeBits(b ? 1 : 0, 1); }
   /** LEB128-style varint in 7-bit groups; values 0..2^32-1. */
   writeVarUint(value: number): void {
@@ -64,6 +71,7 @@ export class BitReader implements FieldReader {
     }
     return v >>> 0;
   }
+  readString(): string { const n = this.readBits(8); let o = ""; for (let i = 0; i < n; i++) o += String.fromCharCode(this.readBits(8)); return o; }
   readBool(): boolean { return this.readBits(1) === 1; }
   readVarUint(): number {
     let v = 0, shift = 0;

@@ -57,6 +57,12 @@ importers:
         specifier: workspace:*
         version: link:../../packages/world
 
+  packages/assets:
+    dependencies:
+      '@engine/core':
+        specifier: workspace:*
+        version: link:../core
+
   packages/core: {}
 
   packages/gameplay:
@@ -73,10 +79,16 @@ importers:
       '@engine/core':
         specifier: workspace:*
         version: link:../core
+      '@engine/world':
+        specifier: workspace:*
+        version: link:../world
       ws:
         specifier: ^8.22.0
         version: 8.22.0
     devDependencies:
+      '@engine/testkit':
+        specifier: workspace:*
+        version: link:../testkit
       '@types/ws':
         specifier: ^8.18.2
         version: 8.18.2
@@ -86,6 +98,22 @@ importers:
       '@engine/core':
         specifier: workspace:*
         version: link:../core
+      '@engine/world':
+        specifier: workspace:*
+        version: link:../world
+    devDependencies:
+      playwright-core:
+        specifier: ^1.64.1
+        version: 1.64.1
+
+  packages/testkit:
+    dependencies:
+      '@engine/core':
+        specifier: workspace:*
+        version: link:../core
+      '@engine/net':
+        specifier: workspace:*
+        version: link:../net
       '@engine/world':
         specifier: workspace:*
         version: link:../world
@@ -656,6 +684,11 @@ packages:
   picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
 
+  playwright-core@1.64.1:
+    resolution: {integrity: sha512-BC4s8y6SEVA6Q1rSxZTto8hI1KUI3xXlHGZgvGqP4IqPdI/a6FX9H29IDNz7vKo9l21b6LfYosScPL6M3xxyDQ==}
+    engines: {node: '>=20'}
+    hasBin: true
+
   postcss@8.5.30:
     resolution: {integrity: sha512-zkd+e9S1AQHhmaBKye9zlFHWjOwVgqXl1q3ECYy8561K7qxR2cREf/STLskulBFd78k6AOFeA+ff1TtEzk9bAA==}
     engines: {node: ^10 || ^12 || >=14}
@@ -1167,6 +1200,8 @@ snapshots:
   pathval@2.0.1: {}
 
   picocolors@1.1.1: {}
+
+  playwright-core@1.64.1: {}
 
   postcss@8.5.30:
     dependencies:

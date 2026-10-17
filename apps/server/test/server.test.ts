@@ -8,3 +8,12 @@ describe("server sim", () => {
     expect(a.world.rng.state).toBe(b.world.rng.state);
   });
 });
+describe("server networking", () => {
+  it("assigns NetIds through NetServer (no hand-made ids; env singleton keeps ENV_NET_ID)", async () => {
+    const { ENV_NET_ID, NetId } = await import("@engine/core");
+    const { world, net, loop } = createServerSim(3);
+    loop.advance(50);
+    expect(world.getField(world.environment, NetId, "id")).toBe(ENV_NET_ID);
+    expect(net.netIds.size).toBeGreaterThanOrEqual(2);
+  });
+});

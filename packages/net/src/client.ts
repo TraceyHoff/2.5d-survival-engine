@@ -1,15 +1,19 @@
 import { ENV_NET_ID, NetId, entityIndex, Owner, Transform, type ComponentDef, type ComponentStore, type Entity, type World } from "@engine/core";
 import { BitReader } from "./bits.js";
 import { InterpolationBuffer } from "./interpolation.js";
+import { MessageRegistry, readPayload, writePayload, type MessageDef, type MessageDefBase, type Payload } from "./messages.js";
 import {
-  MsgType, NONE_U32, PROTOCOL_VERSION, decodeWelcome, emptyToken, encodeHello, encodeInput, readHeader,
-  type InputCmd, type RejectReason, type WelcomeMsg,
+  MsgType, NONE_U32, PROTOCOL_VERSION, decodeReject, decodeWelcome, emptyToken, encodeHello, encodeInput, readHeader, writeHeader,
+  type InputCmd, type NamedHashes, type RejectReason, type WelcomeMsg,
 } from "./protocol.js";
-import { NetSchema, decodeDelta, fromWire, type CompValues, type EntityState, type WorldState } from "./state.js";
+import { BitWriter } from "./bits.js";
+import { NO_ENTITY } from "./server.js";
+import type { Schema } from "@engine/core";
+import { NetSchema, decodeDelta, fromWire, storeFieldLength, type CompValues, type EntityState, type WorldState } from "./state.js";
 import type { ClientTransport } from "./transport/types.js";
 
 export class NetRejectedError extends Error {
-  constructor(readonly reason: RejectReason) { super(`server rejected connection (reason ${reason})`); }
+  constructor(readonly reason: RejectReason, readonly detail = "") { super(`server rejected connection (reason ${reason}${detail ? `: ${detail}` : ""})`); }
 }
 
 export interface NetClientOptions {
@@ -29,7 +33,19 @@ export interface NetClientOptions {
   interpolated?: ComponentDef;
   onSpawn?: (entity: Entity, netId: number, owned: boolean, world: World) => void;
   onDespawn?: (entity: Entity, netId: number, world: World) => void;
+  /** Called when Owner on a live entity starts/stops matching this client. */
+  onOwnershipChange?: (entity: Entity, netId: number, owned: boolean, world: World) => void;
+  commands?: readonly MessageDefBase[];
+  events?: readonly MessageDefBase[];
+  /** Extra handshake hashes (must match the server's), e.g. { assets }. */
+  hashes?: NamedHashes;
+  /** Names of simulation systems to run during reconciliation replay (core simulate {systems}); default all. */
+  predictedSystems?: readonly string[];
 }
+
+/** A server event as received: payload entity fields are resolved to local entities (NO_ENTITY if unknown). */
+export interface ReceivedEvent { tick: number; def: MessageDefBase; payload: Record<string, number> }
+
 
 /**
  * Client: handshake, snapshot apply (netId -> local entity map), input send with sequence numbers,
@@ -58,10 +74,17 @@ export class NetClient {
   private readonly interpStore: ComponentStore;
   stats = { snapshots: 0, dropped: 0, reconciliations: 0, lastCorrection: 0, maxCorrection: 0 };
   private readonly opts: NetClientOptions;
+  readonly commands: MessageRegistry;
+  readonly events: MessageRegistry;
+  private eventQueue: { tick: number; def: MessageDefBase; payload: Record<string, number> }[] = [];
+  private eventHandlers = new Map<MessageDefBase, ((p: Record<string, number>, tick: number) => void)[]>();
+  private netOf = new Map<Entity, number>();
 
   constructor(opts: NetClientOptions) {
     this.opts = opts; this.world = opts.world;
     this.schema = new NetSchema(this.world);
+    this.commands = new MessageRegistry(opts.commands);
+    this.events = new MessageRegistry(opts.events);
     const idef = opts.interpolated ?? Transform;
     this.interpIndex = this.schema.indexOf(idef, this.world);
     this.interpStore = this.world.store(idef) as unknown as ComponentStore;
@@ -78,16 +101,68 @@ export class NetClient {
   async connect(token?: Uint8Array): Promise<WelcomeMsg> {
     if (!this.opts.transport.connected) await this.opts.transport.connect();
     const p = new Promise<WelcomeMsg>((resolve, reject) => { this.welcome = { resolve, reject }; });
-    this.opts.transport.send(encodeHello({ schemaHash: this.world.getSchemaHash(), token: token ?? emptyToken() }), "reliable");
+    this.opts.transport.send(encodeHello({ hashes: this.hashes, token: token ?? emptyToken() }), "reliable");
     return p;
   }
+
+  /** Handshake hashes sent in Hello. */
+  get hashes(): NamedHashes { return { ...this.opts.hashes, schema: this.world.getSchemaHash(), netdefs: this.events.hash(this.commands.hash()) }; }
+
+  /** Interpolation (render) tick for remote entities, in server ticks. Play events with tick <= renderTick. */
+  get renderTick(): number { return this.serverTickEstimate - (this.opts.interpDelayTicks ?? 2); }
+
+  /** Local entity for a netId / netId for a local entity. */
+  entityOf(netId: number): Entity | undefined { return this.entities.get(netId); }
+  netIdOf(e: Entity): number | undefined { return this.netOf.get(e); }
+
+  /**
+   * Send a reliable command. Entity fields take LOCAL entities (or NO_ENTITY) and go out as NetIds.
+   * Returns false if not connected or an entity field has no NetId.
+   */
+  sendCommand<S extends Schema>(def: MessageDef<S>, payload: Payload<S>): boolean {
+    if (!this.active) return false;
+    const d = def as unknown as MessageDefBase; const id = this.commands.id(d);
+    const p: Record<string, number> = { ...payload };
+    for (const f of d.entityFields) {
+      const e = p[f]!; if (e === NO_ENTITY) { p[f] = 0; continue; }
+      const n = this.netOf.get(e); if (n === undefined) return false; p[f] = n;
+    }
+    const w = new BitWriter(); writeHeader(w, MsgType.Command); w.writeVarUint(id); writePayload(w, d, p);
+    this.opts.transport.send(w.finish(), "reliable");
+    return true;
+  }
+
+  /** Subscribe to an event type; called when the event is polled (see pollEvents). */
+  onEvent<S extends Schema>(def: MessageDef<S>, fn: (payload: Payload<S>, tick: number) => void): () => void {
+    const d = def as unknown as MessageDefBase; this.events.id(d);
+    const l = this.eventHandlers.get(d) ?? []; const h = fn as unknown as (p: Record<string, number>, t: number) => void;
+    l.push(h); this.eventHandlers.set(d, l);
+    return () => { const i = l.indexOf(h); if (i >= 0) l.splice(i, 1); };
+  }
+  /**
+   * Remove and return queued events with server tick <= upToTick (default: renderTick, so effects line up with
+   * interpolated entities; pass Infinity for owner/HUD events). Handlers registered via onEvent fire too.
+   */
+  pollEvents(upToTick = this.renderTick): ReceivedEvent[] {
+    const out: ReceivedEvent[] = []; const keep: typeof this.eventQueue = [];
+    for (const ev of this.eventQueue) {
+      if (ev.tick > upToTick) { keep.push(ev); continue; }
+      const p = { ...ev.payload };
+      for (const f of ev.def.entityFields) { const n = p[f]!; p[f] = n === 0 ? NO_ENTITY : this.entities.get(n) ?? NO_ENTITY; }
+      out.push({ tick: ev.tick, def: ev.def, payload: p });
+      for (const h of this.eventHandlers.get(ev.def) ?? []) h(p, ev.tick);
+    }
+    this.eventQueue = keep;
+    return out;
+  }
+  get pendingEvents(): number { return this.eventQueue.length; }
 
   private onMessage(bytes: Uint8Array): void {
     let r: BitReader; let h;
     try { r = new BitReader(bytes); h = readHeader(r); } catch { return; }
     if (h.type === MsgType.Reject) {
-      const reason = r.readBits(8) as RejectReason;
-      this.welcome?.reject(new NetRejectedError(reason)); this.welcome = undefined;
+      const { reason, detail } = decodeReject(r);
+      this.welcome?.reject(new NetRejectedError(reason, detail)); this.welcome = undefined;
       this.active = false; this.opts.transport.close(); return;
     }
     if (h.version !== PROTOCOL_VERSION) return;
@@ -97,6 +172,13 @@ export class NetClient {
       this.serverTickEstimate = w.serverTick; this.latestTick = -1; this.history.clear();
       this.welcome?.resolve(w); this.welcome = undefined;
     } else if (h.type === MsgType.Snapshot) this.inbox.push(bytes);
+    else if (h.type === MsgType.Events) {
+      const tick = r.readBits(32); const n = r.readVarUint();
+      for (let i = 0; i < n; i++) {
+        const def = this.events.get(r.readVarUint()); if (!def) return;
+        this.eventQueue.push({ tick, def, payload: readPayload(r, def) });
+      }
+    }
   }
 
   private ownedEntities(): Entity[] { return [...this.owned].map((id) => this.entities.get(id)).filter((e): e is Entity => e !== undefined); }
@@ -110,7 +192,8 @@ export class NetClient {
       for (const e of owned) this.opts.applyInput?.(w, e, cmd);
     }
     const n = this.opts.inputRedundancy ?? 8;
-    this.opts.transport.send(encodeInput({ ackTick: this.latestTick < 0 ? NONE_U32 : this.latestTick, cmds: this.pending.slice(-n) }), "unreliable");
+    const viewTick = this.latestTick < 0 ? undefined : Math.max(0, Math.floor(this.renderTick));
+    this.opts.transport.send(encodeInput({ ackTick: this.latestTick < 0 ? NONE_U32 : this.latestTick, ...(viewTick !== undefined && { viewTick }), cmds: this.pending.slice(-n) }), "unreliable");
   }
 
   private networkSystem(w: World, dt: number): void {
@@ -141,18 +224,21 @@ export class NetClient {
     if (prev) for (const netId of prev.keys()) if (!cur.has(netId)) this.despawn(w, netId);
     for (const [netId, es] of cur) {
       const old = prev?.get(netId);
-      // core-owned environment singleton: write into world.environment instead of spawning (ADR-028)
-      if (netId === ENV_NET_ID && w.has(w.environment, NetId)) { if (old !== es) this.writeComps(w, w.environment, es, old, false); continue; }
       let e = this.entities.get(netId);
       if (e === undefined || !w.isAlive(e)) {
-        e = w.create(); w.add(e, NetId, { id: netId }); this.entities.set(netId, e);
+        const env = w.environment;
+        if (netId === ENV_NET_ID && w.isAlive(env)) e = env; // core-owned environment singleton (ADR-028): adopt, never spawn
+        else { e = w.create(); w.add(e, NetId, { id: netId }); }
+        this.entities.set(netId, e); this.netOf.set(e, netId);
         this.writeComps(w, e, es, undefined, true);
         const owned = this.isOwned(es);
-        if (owned) this.owned.add(netId);
+        if (owned) this.setOwned(w, netId, e, true, false);
         this.opts.onSpawn?.(e, netId, owned, w);
       } else if (old !== es) {
         // removals first (a comp removed+re-added shows up only as changed here)
         for (const ci of old?.keys() ?? []) if (!es.has(ci)) w.remove(e, this.schema.stores[ci]!.def);
+        const owned = this.isOwned(es);
+        if (owned !== this.owned.has(netId)) this.setOwned(w, netId, e, owned, true);
         this.writeComps(w, e, es, old, this.owned.has(netId));
       }
       if (!this.owned.has(netId) && this.interpIndex !== undefined) {
@@ -160,6 +246,13 @@ export class NetClient {
         if (v) this.interp.push(netId, tick, this.decode(this.interpIndex, v));
       }
     }
+  }
+
+  private setOwned(w: World, netId: number, e: Entity, owned: boolean, notify: boolean): void {
+    const pred = w.predicted;
+    if (owned) { this.owned.add(netId); this.interp.remove(netId); pred.add(e); }
+    else { this.owned.delete(netId); pred.delete(e); if (!this.owned.size) this.pending.length = 0; }
+    if (notify) this.opts.onOwnershipChange?.(e, netId, owned, w);
   }
 
   private isOwned(es: EntityState): boolean {
@@ -175,15 +268,21 @@ export class NetClient {
       if (old?.get(ci) === v) continue;
       if (!full && ci === this.interpIndex && old?.has(ci)) continue;
       const st = this.schema.stores[ci]!; const vals = this.decode(ci, v);
-      const init: Record<string, number> = {}; st.fields.forEach((f, i) => { init[f] = vals[i]!; });
-      if (w.has(e, st.def)) w.set(e, st.def, init); else w.add(e, st.def, init);
+      const init: Record<string, number | number[]> = {};
+      this.schema.layout[ci]!.forEach(([f, el], i) => {
+        if (storeFieldLength(st, f) > 1) ((init[f] ??= []) as number[])[el] = vals[i]!; else init[f] = vals[i]!;
+      });
+      if (w.has(e, st.def)) w.set(e, st.def, init as never); else w.add(e, st.def, init as never);
     }
   }
 
   private despawn(w: World, netId: number): void {
     const e = this.entities.get(netId);
     this.entities.delete(netId); this.owned.delete(netId); this.interp.remove(netId);
-    if (e !== undefined && w.isAlive(e)) { this.opts.onDespawn?.(e, netId, w); w.destroy(e); }
+    if (e === undefined) return;
+    this.netOf.delete(e); w.predicted.delete(e);
+    if (e === w.environment) return; // never destroy core's singleton
+    if (w.isAlive(e)) { this.opts.onDespawn?.(e, netId, w); w.destroy(e); }
   }
 
   /** Reset owned entities to the authoritative state and replay unprocessed inputs via world.simulate. */
@@ -200,7 +299,9 @@ export class NetClient {
     }
     if (!owned.length) return;
     const pending = this.pending;
-    w.simulate(pending.length, dt, (i) => { for (const [e] of owned) this.opts.applyInput?.(w, e, pending[i]!); });
+    const beforeTick = (i: number): void => { for (const [e] of owned) this.opts.applyInput?.(w, e, pending[i]!); };
+    // core simulate: world.tick follows the replayed ticks, world.isReplaying is set, replay events are discarded.
+    w.simulate(pending.length, dt, { beforeTick, ...(this.opts.predictedSystems && { systems: this.opts.predictedSystems }) });
     this.stats.reconciliations++;
     let corr = 0;
     for (const [e, before] of owned) {
@@ -212,7 +313,7 @@ export class NetClient {
 
   /** Remote entities: write the interpolated component at (estimated server tick - delay). */
   private interpolate(w: World): void {
-    const t = this.serverTickEstimate - (this.opts.interpDelayTicks ?? 2);
+    const t = this.renderTick;
     for (const netId of this.interp.ids()) {
       const e = this.entities.get(netId); if (e === undefined || !w.isAlive(e) || !w.has(e, this.interpStore.def)) continue;
       const v = this.interp.sample(netId, t); if (!v) continue;

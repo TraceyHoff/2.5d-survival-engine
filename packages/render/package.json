@@ -5,6 +5,18 @@
   "type": "module",
   "main": "src/index.ts",
   "types": "src/index.ts",
-  "scripts": { "typecheck": "tsc -p tsconfig.json", "build": "tsc -p tsconfig.json" },
-  "dependencies": { "@engine/core": "workspace:*","@engine/world": "workspace:*" }
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && vite build",
+    "dev": "vite",
+    "preview": "vite preview --port 4173 --strictPort",
+    "shots": "node scripts/screenshots.mjs"
+  },
+  "dependencies": {
+    "@engine/core": "workspace:*",
+    "@engine/world": "workspace:*"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.64.1"
+  }
 }

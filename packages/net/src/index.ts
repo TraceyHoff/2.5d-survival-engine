@@ -8,3 +8,6 @@ export * from "./client.js";
 export * from "./transport/types.js";
 export * from "./transport/loopback.js";
 export * from "./transport/ws-client.js";
+export * from "./messages.js";
+export * from "./lagcomp.js";
+export * from "./interest.js";

@@ -1,21 +1,17 @@
 /**
- * @engine/render — OWNED BY 2.5D Renderer team. Stub interfaces only.
- * Contract: renderer reads a RenderFrame built in the renderPrep phase; it never mutates sim state.
+ * @engine/render — 2.5D isometric WebGL2 renderer (owned by the Renderer team).
+ * Contract: render(world, alpha) is read-only on the World; it interpolates PrevTransform->Transform.
  */
-import type { IsoConfig } from "@engine/world";
-export interface Sprite { entity: number; atlas: number; frame: number; sx: number; sy: number; depth: number; tint: number }
-export interface RenderFrame { alpha: number; camera: { x: number; y: number; zoom: number }; sprites: Sprite[]; ambientLight: number }
-export interface Renderer {
-  init(canvas: HTMLCanvasElement | OffscreenCanvas, iso: IsoConfig): Promise<void>;
-  resize(width: number, height: number, dpr: number): void;
-  draw(frame: RenderFrame): void;
-  dispose(): void;
-}
-/** Placeholder until the renderer team lands the WebGL2 backend. */
-export class NullRenderer implements Renderer {
-  frames = 0;
-  async init(): Promise<void> {}
-  resize(): void {}
-  draw(): void { this.frames++; }
-  dispose(): void {}
-}
+export * from "./types.js";
+export * from "./components.js";
+export * from "./IsoRenderer.js";
+export * from "./camera.js";
+export * from "./atlas.js";
+export * from "./tilemap.js";
+export * from "./sprites.js";
+export * from "./lighting.js";
+export * from "./weather.js";
+export * from "./composite.js";
+export * from "./timeOfDay.js";
+export * from "./depth.js";
+export { newStats, type FrameStats } from "./gl/util.js";

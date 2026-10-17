@@ -1,25 +1,31 @@
-import {
-  dequantize, entityIndex, fieldQuant, fieldType, NetId, quantize, wireValue,
-  type ComponentDef, type ComponentStore, type FieldSpec, type World,
-} from "@engine/core";
+import { dequantize, entityIndex, fieldQuant, fieldType, NetId, quantize, type ComponentDef, type ComponentStore, type FieldSpec, type World } from "@engine/core";
 import type { BitReader, BitWriter } from "./bits.js";
 
-/** Wire values (quantized ints / f32-rounded floats) of one component, in core's sorted field order. */
+/** Wire values (quantized ints / f32-rounded floats) of one component: fields in core's sorted order, array fields expanded per element. */
 export type CompValues = readonly number[];
-/** Replicated state of one entity: schema component index -> wire values. Treated as immutable once built. */
+/** Replicated state of one entity: schema component index -> wire values. Immutable once built (shared by reference). */
 export type EntityState = ReadonlyMap<number, CompValues>;
-/** Replicated world state at one tick: netId -> entity state. */
+/** Replicated world state: netId -> entity state. */
 export type WorldState = ReadonlyMap<number, EntityState>;
+
+/** Element count of a field; works with and without core array fields. */
+export function storeFieldLength(st: ComponentStore, f: string): number {
+  return (st as unknown as { lengths?: Record<string, number> }).lengths?.[f] ?? 1;
+}
 
 /** Replicated component list shared by client and server: networked stores except NetId, ascending id. */
 export class NetSchema {
   readonly stores: ComponentStore[];
+  /** Per component: one spec per wire element (array fields repeated). */
   readonly specs: FieldSpec[][];
+  /** Per component: [field, element] per wire element. */
+  readonly layout: [string, number][][];
   private readonly indexById = new Map<number, number>();
   constructor(world: World) {
     const netIdStore = world.store(NetId) as unknown as ComponentStore;
     this.stores = world.componentStores.filter((s) => s.def.networked && s !== netIdStore);
-    this.specs = this.stores.map((s) => s.fields.map((f) => s.def.schema[f]!));
+    this.layout = this.stores.map((s) => s.fields.flatMap((f) => Array.from({ length: storeFieldLength(s, f) }, (_, i) => [f, i] as [string, number])));
+    this.specs = this.stores.map((s, ci) => this.layout[ci]!.map(([f]) => s.def.schema[f]!));
     this.stores.forEach((s, i) => this.indexById.set(s.id, i));
   }
   get count(): number { return this.stores.length; }
@@ -35,12 +41,18 @@ export function fromWire(spec: FieldSpec, v: number): number { const q = fieldQu
 function writeWire(w: BitWriter, spec: FieldSpec, v: number): void { const q = fieldQuant(spec); if (q) w.writeBits(v, q.bits); else w.write(fieldType(spec), v); }
 function readWire(r: BitReader, spec: FieldSpec): number { const q = fieldQuant(spec); return q ? r.readBits(q.bits) : r.read(fieldType(spec)); }
 
+/** Read one component's wire values from a dense slot. */
+export function readComp(schema: NetSchema, ci: number, slot: number): number[] {
+  const st = schema.stores[ci]!; const specs = schema.specs[ci]!;
+  return schema.layout[ci]!.map(([f, e], i) => toWire(specs[i]!, st.data[f]![slot * storeFieldLength(st, f) + e]!));
+}
+
 /**
  * Server: capture replicated state of every entity that has a NetId. Entities with no change bit
  * and no removal this tick reuse the previous tick's (immutable) EntityState, so cost scales with churn.
- * Must run before world.step() clears change/removal tracking (i.e. in the network phase).
+ * `exclude` = component indices never put on the wire (scope "none"). Must run in the network phase.
  */
-export function captureState(world: World, schema: NetSchema, prev: WorldState | undefined): Map<number, EntityState> {
+export function captureState(world: World, schema: NetSchema, prev: WorldState | undefined, exclude?: ReadonlySet<number>): Map<number, EntityState> {
   const ns = world.store(NetId);
   const touched = new Set<number>();
   for (const st of schema.stores) for (const e of world.removed(st.def)) touched.add(entityIndex(e));
@@ -51,93 +63,98 @@ export function captureState(world: World, schema: NetSchema, prev: WorldState |
     if (old && !ns.isChanged(index) && !touched.has(index) && !schema.stores.some((s) => s.isChanged(index))) { out.set(netId, old); continue; }
     const es = new Map<number, CompValues>();
     schema.stores.forEach((st, ci) => {
-      if (!st.has(index)) return;
-      const slot = st.slot(index);
-      es.set(ci, st.fields.map((f) => wireValue(st, f, slot).value).map((v, i) => (fieldType(schema.specs[ci]![i]!) === "f32" && !fieldQuant(schema.specs[ci]![i]!) ? Math.fround(v) : v)));
+      if (exclude?.has(ci) || !st.has(index)) return;
+      es.set(ci, readComp(schema, ci, st.slot(index)));
     });
-    out.set(netId, es);
+    out.set(netId, sameState(old, es) ? old! : es);
   }
   return out;
 }
+/** Structural equality, so an entity whose dirty bit was set without a real change keeps its old object. */
+export function sameState(a: EntityState | undefined, b: EntityState): boolean {
+  if (!a || a.size !== b.size) return false;
+  for (const [ci, v] of b) { const o = a.get(ci); if (!o || o.length !== v.length || v.some((x, i) => x !== o[i])) return false; }
+  return true;
+}
 
-export interface DeltaStats { spawns: number; despawns: number; changes: number }
+export const RecordKind = { End: 0, Spawn: 1, Despawn: 2, Change: 3 } as const;
 
 /**
- * Delta body (bit-packed), against `base` (undefined = full snapshot):
- *   varuint nSpawn, { varuint netId, compMask[nComp], all fields of each present comp }
- *   varuint nDespawn, { varuint netId }
- *   varuint nChange, { varuint netId, changedMask[nComp], removedMask[nComp],
- *                      per changed comp: bit full ? all fields : fieldMask[nFields] + changed fields }
+ * Snapshot body = sequence of records, each `kind:2 bits` then payload, terminated by End:
+ *   Spawn   varuint netId, compMask[nComp], all elements of each present comp
+ *   Despawn varuint netId
+ *   Change  varuint netId, changedMask[nComp], removedMask[nComp],
+ *           per changed comp: bit full ? all elements : elementMask + changed elements
+ * Records are independent, so the server can drop any of them (bandwidth budget) by truncating the writer.
  */
-export function encodeDelta(w: BitWriter, schema: NetSchema, cur: WorldState, base: WorldState | undefined): DeltaStats {
+export function writeDespawn(w: BitWriter, netId: number): void { w.writeBits(RecordKind.Despawn, 2); w.writeVarUint(netId); }
+/** Writes a Spawn (old undefined) or Change record. Returns false (and writes nothing) if there is no difference. */
+export function writeEntityRecord(w: BitWriter, schema: NetSchema, netId: number, es: EntityState, old: EntityState | undefined): boolean {
   const n = schema.count;
-  const spawns: number[] = []; const despawns: number[] = [];
-  const changes: { netId: number; changed: number[]; removed: number[] }[] = [];
-  for (const [netId, es] of cur) {
-    const old = base?.get(netId);
-    if (!old) { spawns.push(netId); continue; }
-    if (old === es) continue;
-    const changed: number[] = []; const removed: number[] = [];
-    for (let ci = 0; ci < n; ci++) {
-      const a = old.get(ci); const b = es.get(ci);
-      if (a && !b) removed.push(ci);
-      else if (b && (!a || b.some((v, i) => v !== a[i]))) changed.push(ci);
-    }
-    if (changed.length || removed.length) changes.push({ netId, changed, removed });
-  }
-  if (base) for (const netId of base.keys()) if (!cur.has(netId)) despawns.push(netId);
-
-  w.writeVarUint(spawns.length);
-  for (const netId of spawns) {
-    const es = cur.get(netId)!; w.writeVarUint(netId);
+  if (!old) {
+    w.writeBits(RecordKind.Spawn, 2); w.writeVarUint(netId);
     for (let ci = 0; ci < n; ci++) w.writeBool(es.has(ci));
     for (let ci = 0; ci < n; ci++) { const v = es.get(ci); if (v) schema.specs[ci]!.forEach((s, i) => writeWire(w, s, v[i]!)); }
+    return true;
   }
-  w.writeVarUint(despawns.length);
-  for (const netId of despawns) w.writeVarUint(netId);
-  w.writeVarUint(changes.length);
-  for (const c of changes) {
-    const es = cur.get(c.netId)!; const old = base!.get(c.netId)!;
-    w.writeVarUint(c.netId);
-    for (let ci = 0; ci < n; ci++) w.writeBool(c.changed.includes(ci));
-    for (let ci = 0; ci < n; ci++) w.writeBool(c.removed.includes(ci));
-    for (const ci of c.changed) {
-      const v = es.get(ci)!; const a = old.get(ci); const specs = schema.specs[ci]!;
-      w.writeBool(!a);
-      if (!a) { specs.forEach((s, i) => writeWire(w, s, v[i]!)); continue; }
-      for (let i = 0; i < specs.length; i++) w.writeBool(v[i] !== a[i]);
-      for (let i = 0; i < specs.length; i++) if (v[i] !== a[i]) writeWire(w, specs[i]!, v[i]!);
-    }
+  if (old === es) return false;
+  const changed: number[] = []; const removed: number[] = [];
+  for (let ci = 0; ci < n; ci++) {
+    const a = old.get(ci); const b = es.get(ci);
+    if (a && !b) removed.push(ci);
+    else if (b && (!a || b.some((v, i) => v !== a[i]))) changed.push(ci);
   }
-  return { spawns: spawns.length, despawns: despawns.length, changes: changes.length };
+  if (!changed.length && !removed.length) return false;
+  w.writeBits(RecordKind.Change, 2); w.writeVarUint(netId);
+  for (let ci = 0; ci < n; ci++) w.writeBool(changed.includes(ci));
+  for (let ci = 0; ci < n; ci++) w.writeBool(removed.includes(ci));
+  for (const ci of changed) {
+    const v = es.get(ci)!; const a = old.get(ci); const specs = schema.specs[ci]!;
+    w.writeBool(!a);
+    if (!a) { specs.forEach((s, i) => writeWire(w, s, v[i]!)); continue; }
+    for (let i = 0; i < specs.length; i++) w.writeBool(v[i] !== a[i]);
+    for (let i = 0; i < specs.length; i++) if (v[i] !== a[i]) writeWire(w, specs[i]!, v[i]!);
+  }
+  return true;
+}
+export function writeEnd(w: BitWriter): void { w.writeBits(RecordKind.End, 2); }
+
+export interface DeltaStats { spawns: number; despawns: number; changes: number }
+/** Unbudgeted delta of `cur` against `base` (undefined = full). */
+export function encodeDelta(w: BitWriter, schema: NetSchema, cur: WorldState, base: WorldState | undefined): DeltaStats {
+  const st: DeltaStats = { spawns: 0, despawns: 0, changes: 0 };
+  if (base) for (const netId of base.keys()) if (!cur.has(netId)) { writeDespawn(w, netId); st.despawns++; }
+  for (const [netId, es] of cur) {
+    const old = base?.get(netId);
+    if (writeEntityRecord(w, schema, netId, es, old)) { if (old) st.changes++; else st.spawns++; }
+  }
+  writeEnd(w);
+  return st;
 }
 
 export interface DecodedDelta {
   state: Map<number, EntityState>;
   spawned: number[];
   despawned: number[];
-  /** netId -> component indices changed/added, and removed */
   changed: Map<number, { changed: number[]; removed: number[] }>;
 }
-
 export function decodeDelta(r: BitReader, schema: NetSchema, base: WorldState | undefined): DecodedDelta {
   const n = schema.count;
   const state = new Map<number, EntityState>(base ?? []);
   const spawned: number[] = []; const despawned: number[] = [];
   const changed = new Map<number, { changed: number[]; removed: number[] }>();
   const readAll = (ci: number): number[] => schema.specs[ci]!.map((s) => readWire(r, s));
-  const ns = r.readVarUint();
-  for (let k = 0; k < ns; k++) {
-    const netId = r.readVarUint(); const present: number[] = [];
-    for (let ci = 0; ci < n; ci++) if (r.readBool()) present.push(ci);
-    const es = new Map<number, CompValues>(); for (const ci of present) es.set(ci, readAll(ci));
-    state.set(netId, es); spawned.push(netId);
-  }
-  const nd = r.readVarUint();
-  for (let k = 0; k < nd; k++) { const netId = r.readVarUint(); state.delete(netId); despawned.push(netId); }
-  const nc = r.readVarUint();
-  for (let k = 0; k < nc; k++) {
+  for (;;) {
+    const kind = r.readBits(2);
+    if (kind === RecordKind.End) break;
     const netId = r.readVarUint();
+    if (kind === RecordKind.Despawn) { state.delete(netId); despawned.push(netId); continue; }
+    if (kind === RecordKind.Spawn) {
+      const present: number[] = [];
+      for (let ci = 0; ci < n; ci++) if (r.readBool()) present.push(ci);
+      const es = new Map<number, CompValues>(); for (const ci of present) es.set(ci, readAll(ci));
+      state.set(netId, es); spawned.push(netId); continue;
+    }
     const ch: number[] = []; const rm: number[] = [];
     for (let ci = 0; ci < n; ci++) if (r.readBool()) ch.push(ci);
     for (let ci = 0; ci < n; ci++) if (r.readBool()) rm.push(ci);
