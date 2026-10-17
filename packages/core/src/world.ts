@@ -91,6 +91,8 @@ export class World {
 
   // ---- components ----
   /** Registers a component; id = registration order (must match on client & server). Idempotent. */
+  /** True if the component def has been registered in this world. */
+  isRegistered(def: ComponentDef): boolean { return this.byDef.has(def); }
   register(def: ComponentDef): number {
     const ex = this.byDef.get(def); if (ex) return ex.id;
     const store = new ComponentStore(this.stores.length, def, this.maxEntities) as unknown as ComponentStore;

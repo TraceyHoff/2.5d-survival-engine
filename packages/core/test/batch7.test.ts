@@ -80,7 +80,7 @@ describe("containers & transactions", () => {
     const p = w.create(); w.add(p, Inv, { item0: 1, count0: 8, item1: 2, count1: 3 }); const b = w.create(); w.add(b, Box);
     expect(transfer(w, p, 0, b, 0, 5)).toEqual({ ok: true }); expect(w.getField(p, Inv, "count0")).toBe(3); expect(w.get(b, Box)!.count[0]).toBe(5);
     expect(transfer(w, p, 0, b, 0, 3)).toEqual({ ok: true }); expect(w.getField(p, Inv, "item0")).toBe(0);
-    w.set(p, Inv, { item0: 1, count0: 5 }); expect(transfer(w, p, 0, b, 0, 5)).toEqual({ ok: false, reason: "stack_full" });
+    w.set(p, Inv, { item0: 1, count0: 5 }); expect(transfer(w, p, 0, b, 0, 4)).toEqual({ ok: false, reason: "stack_full" });
     expect(transfer(w, p, 1, b, 0, 1)).toEqual({ ok: false, reason: "occupied" }); expect(transfer(w, p, 1, b, 0, 3)).toEqual({ ok: true }); // swap
     expect(w.getField(p, Inv, "item1")).toBe(1); expect(w.getField(p, Inv, "count1")).toBe(8);
     C.validators.push((_w, op) => (op.to === b && op.actor === p ? "forbidden" : undefined)); expect(transfer(w, p, 0, b, 1, 1, p)).toEqual({ ok: false, reason: "forbidden" }); C.validators.length = 0;

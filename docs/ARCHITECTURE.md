@@ -289,8 +289,8 @@ flowchart TD
 | Groups | `GroupRegistry` (encode/decode, `changesSince`), `Membership`, `OwnedBy` | gameplay (invites, roles), net (sync, save) |
 | Permissions | `definePermissionActions`, `can`, `canAt`, `AccessList`, `addPermissionRule`, `ClaimRegistry`, `zoneAt` | gameplay |
 | Combat | `DamagePipeline` (`pre`/`mitigation`/`post`), `canDamage`, `DamageApplied` | gameplay; lag comp = `@engine/net` `PositionHistory.getPositionAt`, `rangeCheckWithSlack` |
-| Items | `SlotContainer` adapters over gameplay Inventory, `transfer`, `Transaction`/`transaction` | gameplay |
-| Crafting | `Scheduler`, `defineJobQueue` + `JobQueues`, `@engine/assets` `loadRecipes` | gameplay (station range, consumption, refunds) |
+| Items | `SlotContainer` adapters over gameplay Inventory (item, count, meta, optional durability/createdTick), `transfer`, `Transaction`/`transaction`, `mergeMeta` (weighted createdTick, min durability), `maxStack(item, state)` (durability ⇒ 1) | gameplay |
+| Crafting | `Scheduler`, `defineJobQueue` + `JobQueues`, `@engine/assets` `loadRecipes` (stations auto-registered or via lookup) | gameplay (station range, consumption, refunds) |
 | Chat | `ChannelRegistry`, `TokenBucket`, `MuteList`, `encodeChatMessage`, `writeString` | net (transport) |
 | Commands | `installCommandHandlers`, `CommandRejected` | gameplay handlers, net delivery |
 

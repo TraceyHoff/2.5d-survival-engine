@@ -19,9 +19,12 @@ export interface RecipeEntry {
   inputs: { item: number; count: number }[]; outputs: { item: number; count: number }[];
   unlocks: number[]; skill: { key: string; level: number } | undefined; tags: string[];
 }
-export interface RecipeLookups { item(key: string): number | undefined; station?(key: string): number | undefined }
+/** station: map station keys to gameplay ids. Omit it to auto-assign stable ids ("none" = 0) via `registry.stationIds` (optionally seeded by `stationLock`). */
+export interface RecipeLookups { item(key: string): number | undefined; station?(key: string): number | undefined; stationLock?: Record<string, number> }
 export class RecipeRegistry {
   readonly ids = new StableIdRegistry("recipes");
+  readonly stationIds = new StableIdRegistry("stations", 0xff);
+  stationLock: Record<string, number> = {};
   private byId = new Map<number, RecipeEntry>();
   lock: Record<string, number> = {};
   get(id: number): RecipeEntry | undefined { return this.byId.get(id); }
@@ -40,10 +43,15 @@ export function loadRecipes(raw: { recipes: RawRecipeEntry[] } | RawRecipeEntry[
     if (r.id !== undefined) { if (lk[r.key] !== undefined && lk[r.key] !== r.id) errors.push(`recipe ${r.key}: id ${r.id} conflicts with lock ${lk[r.key]}`); lk[r.key] = r.id; }
   }
   try { reg.lock = reg.ids.assign(list.map((r) => r.key), lk); } catch (e) { errors.push((e as Error).message); return { registry: reg, errors }; }
+  if (!look.station) {
+    const keys = [...new Set(list.map((r) => r.station).filter((k): k is string => !!k && k !== "none"))];
+    try { reg.stationLock = reg.stationIds.assign(keys, look.stationLock ?? {}); } catch (e) { errors.push((e as Error).message); }
+  }
+  const stationOf = (k: string): number | undefined => look.station ? look.station(k) : reg.stationIds.tryId(k);
   const item = (rk: string, k: string, c: number) => { const id = look.item(k); if (id === undefined) errors.push(`recipe ${rk}: unknown item ${k}`); if (!(Number.isInteger(c) && c > 0)) errors.push(`recipe ${rk}: bad count for ${k}`); return { item: id ?? 0, count: c }; };
   for (const r of list) {
     if (!(r.seconds >= 0)) errors.push(`recipe ${r.key}: bad seconds`);
-    const st = !r.station || r.station === "none" ? 0 : look.station?.(r.station);
+    const st = !r.station || r.station === "none" ? 0 : stationOf(r.station);
     if (st === undefined) errors.push(`recipe ${r.key}: unknown station ${r.station}`);
     const outs = [...(r.output ? [r.output] : []), ...(r.outputs ?? [])]; if (!outs.length) errors.push(`recipe ${r.key}: no outputs`);
     if (!r.ingredients?.length) errors.push(`recipe ${r.key}: no ingredients`);
