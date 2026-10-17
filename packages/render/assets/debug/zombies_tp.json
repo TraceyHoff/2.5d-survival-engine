@@ -1,0 +1,814 @@
+{
+ "frames": {
+  "zombie_tp/idle/E/0.png": {
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 48
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "duration": 333
+  },
+  "zombie_tp/idle/E/1.png": {
+   "frame": {
+    "x": 32,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 48
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "duration": 333
+  },
+  "zombie_tp/walk/E/0.png": {
+   "frame": {
+    "x": 64,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 48
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "duration": 125
+  },
+  "zombie_tp/walk/E/1.png": {
+   "frame": {
+    "x": 96,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 48
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "duration": 125
+  },
+  "zombie_tp/idle/SE/0.png": {
+   "frame": {
+    "x": 0,
+    "y": 48,
+    "w": 32,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 48
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "duration": 333
+  },
+  "zombie_tp/idle/SE/1.png": {
+   "frame": {
+    "x": 32,
+    "y": 48,
+    "w": 32,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 48
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "duration": 333
+  },
+  "zombie_tp/walk/SE/0.png": {
+   "frame": {
+    "x": 64,
+    "y": 48,
+    "w": 32,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 48
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "duration": 125
+  },
+  "zombie_tp/walk/SE/1.png": {
+   "frame": {
+    "x": 96,
+    "y": 48,
+    "w": 32,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 48
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "duration": 125
+  },
+  "zombie_tp/idle/S/0.png": {
+   "frame": {
+    "x": 0,
+    "y": 96,
+    "w": 32,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 48
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "duration": 333
+  },
+  "zombie_tp/idle/S/1.png": {
+   "frame": {
+    "x": 32,
+    "y": 96,
+    "w": 32,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 48
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "duration": 333
+  },
+  "zombie_tp/walk/S/0.png": {
+   "frame": {
+    "x": 64,
+    "y": 96,
+    "w": 32,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 48
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "duration": 125
+  },
+  "zombie_tp/walk/S/1.png": {
+   "frame": {
+    "x": 96,
+    "y": 96,
+    "w": 32,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 48
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "duration": 125
+  },
+  "zombie_tp/idle/SW/0.png": {
+   "frame": {
+    "x": 0,
+    "y": 144,
+    "w": 32,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 48
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "duration": 333
+  },
+  "zombie_tp/idle/SW/1.png": {
+   "frame": {
+    "x": 32,
+    "y": 144,
+    "w": 32,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 48
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "duration": 333
+  },
+  "zombie_tp/walk/SW/0.png": {
+   "frame": {
+    "x": 64,
+    "y": 144,
+    "w": 32,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 48
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "duration": 125
+  },
+  "zombie_tp/walk/SW/1.png": {
+   "frame": {
+    "x": 96,
+    "y": 144,
+    "w": 32,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 48
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "duration": 125
+  },
+  "zombie_tp/idle/W/0.png": {
+   "frame": {
+    "x": 0,
+    "y": 192,
+    "w": 32,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 48
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "duration": 333
+  },
+  "zombie_tp/idle/W/1.png": {
+   "frame": {
+    "x": 32,
+    "y": 192,
+    "w": 32,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 48
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "duration": 333
+  },
+  "zombie_tp/walk/W/0.png": {
+   "frame": {
+    "x": 64,
+    "y": 192,
+    "w": 32,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 48
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "duration": 125
+  },
+  "zombie_tp/walk/W/1.png": {
+   "frame": {
+    "x": 96,
+    "y": 192,
+    "w": 32,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 48
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "duration": 125
+  },
+  "zombie_tp/idle/NW/0.png": {
+   "frame": {
+    "x": 0,
+    "y": 240,
+    "w": 32,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 48
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "duration": 333
+  },
+  "zombie_tp/idle/NW/1.png": {
+   "frame": {
+    "x": 32,
+    "y": 240,
+    "w": 32,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 48
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "duration": 333
+  },
+  "zombie_tp/walk/NW/0.png": {
+   "frame": {
+    "x": 64,
+    "y": 240,
+    "w": 32,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 48
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "duration": 125
+  },
+  "zombie_tp/walk/NW/1.png": {
+   "frame": {
+    "x": 96,
+    "y": 240,
+    "w": 32,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 48
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "duration": 125
+  },
+  "zombie_tp/idle/N/0.png": {
+   "frame": {
+    "x": 0,
+    "y": 288,
+    "w": 32,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 48
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "duration": 333
+  },
+  "zombie_tp/idle/N/1.png": {
+   "frame": {
+    "x": 32,
+    "y": 288,
+    "w": 32,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 48
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "duration": 333
+  },
+  "zombie_tp/walk/N/0.png": {
+   "frame": {
+    "x": 64,
+    "y": 288,
+    "w": 32,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 48
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "duration": 125
+  },
+  "zombie_tp/walk/N/1.png": {
+   "frame": {
+    "x": 96,
+    "y": 288,
+    "w": 32,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 48
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "duration": 125
+  },
+  "zombie_tp/idle/NE/0.png": {
+   "frame": {
+    "x": 0,
+    "y": 336,
+    "w": 32,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 48
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "duration": 333
+  },
+  "zombie_tp/idle/NE/1.png": {
+   "frame": {
+    "x": 32,
+    "y": 336,
+    "w": 32,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 48
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "duration": 333
+  },
+  "zombie_tp/walk/NE/0.png": {
+   "frame": {
+    "x": 64,
+    "y": 336,
+    "w": 32,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 48
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "duration": 125
+  },
+  "zombie_tp/walk/NE/1.png": {
+   "frame": {
+    "x": 96,
+    "y": 336,
+    "w": 32,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 48
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "duration": 125
+  }
+ },
+ "meta": {
+  "app": "fixture (TexturePacker JSON-hash format)",
+  "image": "zombies_tp.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 128,
+   "h": 384
+  },
+  "scale": "1"
+ }
+}

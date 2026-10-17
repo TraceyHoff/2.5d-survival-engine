@@ -2,117 +2,205 @@
   "note": "SOFTWARE-RENDERED (SwiftShader, headless Chromium) - not representative of GPU performance",
   "glRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
   "viewport": "1280x720",
-  "day": {
-    "ready": true,
-    "frameMs": 33.30000000000018,
-    "fps": 31.036623215394165,
-    "stats": {
-      "drawCalls": 8,
-      "sprites": 643,
-      "lights": 16,
-      "tiles": 4096,
-      "chunks": 4,
-      "particles": 0,
-      "cpuMs": 0.19999999925494194
-    },
-    "totalSprites": 8423,
-    "bench": null
-  },
-  "night": {
-    "ready": true,
-    "frameMs": 16.699999999999818,
-    "fps": 14.821964082585554,
-    "stats": {
-      "drawCalls": 7,
-      "sprites": 643,
-      "lights": 16,
-      "tiles": 4096,
-      "chunks": 4,
-      "particles": 0,
-      "cpuMs": 0.19999999925494194
-    },
-    "totalSprites": 8423,
-    "bench": null
-  },
-  "rain": {
+  "theme": {
     "ready": true,
     "frameMs": 116.59999999999991,
-    "fps": 10.534870421093819,
+    "fps": 6.952261140172541,
     "stats": {
-      "drawCalls": 10,
-      "sprites": 643,
-      "lights": 16,
+      "drawCalls": 15,
+      "sprites": 599,
+      "lights": 8,
+      "tiles": 4096,
+      "chunks": 4,
+      "particles": 0,
+      "staticChunks": 4,
+      "staticInstances": 61,
+      "cpuMs": 0.5999999977648258
+    },
+    "totalSprites": 6384,
+    "pieces": 35,
+    "origin": "art",
+    "look": {
+      "warnings": [
+        "render tuning not found: /@art/survival_fx/render_tuning.json (using defaults)"
+      ],
+      "loaded": []
+    },
+    "surface": {
+      "wet": 0,
+      "snow": 0
+    },
+    "bench": null
+  },
+  "gallery": {
+    "ready": true,
+    "gallery": true
+  },
+  "snow": {
+    "ready": true,
+    "frameMs": 183.40000000000055,
+    "fps": 6.017004578159176,
+    "stats": {
+      "drawCalls": 16,
+      "sprites": 500,
+      "lights": 8,
+      "tiles": 4096,
+      "chunks": 4,
+      "particles": 2240,
+      "staticChunks": 4,
+      "staticInstances": 61,
+      "cpuMs": 0.8000000007450581
+    },
+    "totalSprites": 6384,
+    "pieces": 35,
+    "origin": "art",
+    "look": {
+      "warnings": [
+        "render tuning not found: /@art/survival_fx/render_tuning.json (using defaults)"
+      ],
+      "loaded": []
+    },
+    "surface": {
+      "wet": 0,
+      "snow": 0.835283999999985
+    },
+    "bench": null
+  },
+  "storm": {
+    "ready": true,
+    "frameMs": 166.69999999999982,
+    "fps": 5.544038952898777,
+    "stats": {
+      "drawCalls": 17,
+      "sprites": 651,
+      "lights": 8,
       "tiles": 4096,
       "chunks": 4,
       "particles": 4160,
-      "cpuMs": 0.4000000022351742
+      "staticChunks": 4,
+      "staticInstances": 61,
+      "cpuMs": 0.7999999970197678
     },
-    "totalSprites": 8423,
+    "totalSprites": 6384,
+    "pieces": 35,
+    "origin": "art",
+    "look": {
+      "warnings": [
+        "render tuning not found: /@art/survival_fx/render_tuning.json (using defaults)"
+      ],
+      "loaded": []
+    },
+    "surface": {
+      "wet": 0.9242099999997765,
+      "snow": 0
+    },
+    "bench": null
+  },
+  "fire": {
+    "ready": true,
+    "frameMs": 166.60000000000036,
+    "fps": 6.79057367772822,
+    "stats": {
+      "drawCalls": 15,
+      "sprites": 382,
+      "lights": 6,
+      "tiles": 4096,
+      "chunks": 4,
+      "particles": 0,
+      "staticChunks": 4,
+      "staticInstances": 61,
+      "cpuMs": 0.6999999992549419
+    },
+    "totalSprites": 6384,
+    "pieces": 35,
+    "origin": "art",
+    "look": {
+      "warnings": [
+        "render tuning not found: /@art/survival_fx/render_tuning.json (using defaults)"
+      ],
+      "loaded": []
+    },
+    "surface": {
+      "wet": 0,
+      "snow": 0
+    },
     "bench": null
   },
   "dusk": {
     "ready": true,
-    "frameMs": 33.30000000000018,
-    "fps": 38.712174979030905,
+    "frameMs": 333.3000000000002,
+    "fps": 8.072188427943038,
     "stats": {
-      "drawCalls": 7,
-      "sprites": 643,
-      "lights": 16,
+      "drawCalls": 15,
+      "sprites": 601,
+      "lights": 8,
       "tiles": 4096,
       "chunks": 4,
       "particles": 0,
-      "cpuMs": 0.19999999925494194
-    },
-    "totalSprites": 8423,
-    "bench": null
-  },
-  "snow": {
-    "ready": true,
-    "frameMs": 50,
-    "fps": 17.07254219817034,
-    "stats": {
-      "drawCalls": 9,
-      "sprites": 643,
-      "lights": 16,
-      "tiles": 4096,
-      "chunks": 4,
-      "particles": 2240,
+      "staticChunks": 4,
+      "staticInstances": 61,
       "cpuMs": 0.6999999992549419
     },
-    "totalSprites": 8423,
+    "totalSprites": 6384,
+    "pieces": 35,
+    "origin": "art",
+    "look": {
+      "warnings": [
+        "render tuning not found: /@art/survival_fx/render_tuning.json (using defaults)"
+      ],
+      "loaded": []
+    },
+    "surface": {
+      "wet": 0,
+      "snow": 0
+    },
     "bench": null
   },
   "zoomout": {
     "ready": true,
-    "frameMs": 133.4000000000001,
-    "fps": 8.050719533050218,
+    "frameMs": 16.600000000000364,
+    "fps": 4.7363435427849705,
     "stats": {
-      "drawCalls": 17,
-      "sprites": 4837,
-      "lights": 61,
-      "tiles": 13312,
-      "chunks": 13,
+      "drawCalls": 25,
+      "sprites": 4196,
+      "lights": 8,
+      "tiles": 14336,
+      "chunks": 14,
       "particles": 0,
-      "cpuMs": 0.6999999992549419
+      "staticChunks": 4,
+      "staticInstances": 61,
+      "cpuMs": 1.6000000014901161
     },
-    "totalSprites": 8423,
+    "totalSprites": 6384,
+    "pieces": 35,
+    "origin": "art",
+    "look": {
+      "warnings": [
+        "render tuning not found: /@art/survival_fx/render_tuning.json (using defaults)"
+      ],
+      "loaded": []
+    },
+    "surface": {
+      "wet": 0,
+      "snow": 0
+    },
     "bench": null
   },
   "benchZoomedOut": {
-    "frames": 42,
-    "avgFps": 6.980918821886843,
-    "avgFrameMs": 143.24761904761903,
-    "maxFrameMs": 283.39999999999964,
-    "visibleSprites": 5992,
-    "drawCalls": 21
+    "frames": 16,
+    "avgFps": 2.5066190409048894,
+    "avgFrameMs": 398.94375,
+    "maxFrameMs": 466.5,
+    "visibleSprites": 9956,
+    "drawCalls": 29
   },
-  "benchTotalSprites": 8423,
+  "benchTotalSprites": 11405,
   "benchDefaultZoom": {
-    "frames": 82,
-    "avgFps": 13.554167079903465,
-    "avgFrameMs": 73.77804878048782,
-    "maxFrameMs": 233.30000000000018,
-    "visibleSprites": 642,
-    "drawCalls": 9
+    "frames": 31,
+    "avgFps": 5.110114730317816,
+    "avgFrameMs": 195.69032258064516,
+    "maxFrameMs": 416.6999999999998,
+    "visibleSprites": 1067,
+    "drawCalls": 17
   }
 }

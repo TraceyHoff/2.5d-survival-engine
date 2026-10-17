@@ -12,6 +12,7 @@ export class DebugUI {
   freeze = false;
   follow = false;
   interpolate = true;
+  onTheme: ((t: string | null) => void) | null = null;
 
   constructor(private world: World, private renderer: IsoRenderer, freeze: boolean) {
     this.freeze = freeze;
@@ -46,6 +47,11 @@ export class DebugUI {
     row("shadows", this.check(s.shadows, (v) => (s.shadows = v)));
     row("fog", this.check(s.fog, (v) => (s.fog = v)));
     row("particles", this.check(s.weather, (v) => (s.weather = v)));
+    const th = document.createElement("select");
+    for (const [v, n] of [["", "base"], ["alt", "alt (debug hue)"]] as const) { const o = document.createElement("option"); o.value = v; o.textContent = n; th.appendChild(o); }
+    th.value = new URLSearchParams(location.search).get("theme") === "alt" ? "alt" : "";
+    th.onchange = () => this.onTheme?.(th.value || null);
+    row("theme", th);
     row("follow", this.check(this.follow, (v) => (this.follow = v)));
     row("interp", this.check(this.interpolate, (v) => (this.interpolate = v)));
     const help = document.createElement("div"); help.style.cssText = "opacity:.7;margin-top:4px";

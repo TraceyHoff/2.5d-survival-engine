@@ -34,24 +34,39 @@ page.on("pageerror", (e) => errors.push(String(e)));
 
 async function shot(name, query, settleMs = 2500) {
   await page.goto(`http://localhost:${PORT}/?${query}`);
-  await page.waitForFunction(() => window.__iso?.ready === true, null, { timeout: 30000 });
+  await page.waitForFunction(() => window.__iso?.ready === true, null, { timeout: 120000 });
   await page.waitForTimeout(settleMs);
-  await page.screenshot({ path: join(shots, `${name}.png`) });
+  await page.screenshot({ path: join(shots, `${name}.png`), fullPage: name === "gallery" });
   const info = await page.evaluate(() => window.__iso);
   console.log(name, JSON.stringify({ fps: info.fps?.toFixed(1), stats: info.stats, total: info.totalSprites }));
   return info;
 }
 
 const results = {};
-results.day = await shot("day", "time=10&weather=clear&shot=1");
-results.night = await shot("night", "time=22&weather=clear&shot=1");
-results.rain = await shot("rain", "time=15&weather=rain&shot=1");
-results.dusk = await shot("dusk", "time=18.6&weather=fog&intensity=0.6&shot=1");
-results.snow = await shot("snow", "time=12&weather=snow&shot=1");
-results.zoomout = await shot("zoomout", "time=11&weather=clear&zoom=0.35&shot=1");
+const ONLY = process.env.ONLY ? new Set(process.env.ONLY.split(",")) : null;
+const SHOTS = {
+  day: "time=10&weather=clear&shot=1",
+  night: "time=22&weather=clear&shot=1",
+  rain: "time=15&weather=rain&shot=1",
+  inside: "time=21&weather=clear&inside=1&zoom=2.2&shot=1",
+  theme: "time=10&weather=clear&theme=alt&shot=1",
+  gallery: "gallery=1&shot=1",
+  snow: "time=8&weather=snow&zoom=2.4&shot=1",
+  storm: "time=17&weather=storm&shot=1",
+  fire: "time=22.5&weather=clear&cam=fire&zoom=3&shot=1",
+  dusk: "time=18.6&weather=fog&intensity=0.6&shot=1",
+  zoomout: "time=11&weather=clear&zoom=0.35&shot=1",
+};
+if (process.env.EXTRA) for (const [i, q] of process.env.EXTRA.split("|").entries()) { SHOTS[`extra${i}`] = q; ONLY?.add(`extra${i}`); }
+for (const [name, query] of Object.entries(SHOTS)) {
+  if (ONLY && !ONLY.has(name)) continue;
+  if (name === "gallery") { await page.setViewportSize({ width: 1280, height: 1400 }); results[name] = await shot(name, query, 800); await page.setViewportSize({ width: 1280, height: 720 }); }
+  else results[name] = await shot(name, query);
+}
+if (ONLY && !ONLY.has("bench")) { if (errors.length) console.log("PAGE ERRORS:\n" + errors.join("\n")); await browser.close(); server.kill(); process.exit(0); }
 
 // Benchmark: zoomed out so thousands of sprites are visible. SOFTWARE (SwiftShader) numbers.
-await page.goto(`http://localhost:${PORT}/?time=21&weather=rain&zoom=0.3&bench=6`);
+await page.goto(`http://localhost:${PORT}/?time=21&weather=rain&zoom=0.3&density=1.6&zombies=1500&bench=6`);
 await page.waitForFunction(() => window.__iso?.bench, null, { timeout: 60000 });
 const bench = await page.evaluate(() => window.__iso);
 results.benchZoomedOut = bench.bench; results.benchTotalSprites = bench.totalSprites;

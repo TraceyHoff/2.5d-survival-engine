@@ -4,12 +4,18 @@
  */
 import { defineComponent } from "@engine/core";
 
-/** Billboard sprite drawn at the entity's (interpolated) Transform foot point. */
+/**
+ * Billboard sprite drawn at the entity's (interpolated) Transform foot point.
+ * `spriteId` is the stable numeric id from the @engine/assets registry (key -> id at load time).
+ * With an AnimState component the frame comes from state/facing/time; otherwise `frameId` selects
+ * a frame (variant) of the sprite's first animation.
+ */
 export const Sprite = defineComponent("Sprite", {
-  atlasId: "u16", // which registered atlas (currently only atlas 0 is drawn)
-  frameId: "u16", // frame index within the atlas (see FrameId for the procedural atlas)
+  spriteId: "u16",
+  frameId: "u16",
   flags: "u8", // SpriteFlag bits
   scale: "f32", // uniform scale, 0 is treated as 1
+  tint: "u32", // RGBA8 packed multiply tint (0 = none), e.g. from an asset tint set / variant
 });
 
 /** Point light (flickering campfire/torch etc.). Colour is linear 0..1, radius in tiles. */
@@ -37,7 +43,7 @@ export const Occluder = defineComponent("Occluder", {
 export const RENDER_COMPONENTS = [Sprite, LightSource, Shadow, Occluder] as const;
 
 /** Sprite.flags bits. */
-export const enum SpriteFlag { FlipX = 1, Emissive = 2, Sway = 4 }
+export const enum SpriteFlag { FlipX = 1, Emissive = 2, Sway = 4, Flat = 8, NoOutline = 16, BloomSource = 32 }
 
 /**
  * Tile ids understood by the terrain palette (TileMap stores u16 ids, 0 = empty).

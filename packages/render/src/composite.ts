@@ -1,62 +1,126 @@
 /**
- * Composite pass (fullscreen): scene colour x lightmap (emissive pixels keep full brightness),
- * then fog/haze (world-anchored scrolling fbm), storm darkening, night grading and vignette.
+ * Composite pass (fullscreen): scene x lightmap (emissive pixels bypass darkness), optional light banding +
+ * night floor, heat shimmer (UV distortion above heat Emitters), cloud shadows, fog/haze, storm darkening,
+ * lightning flash, emissive-only bloom, time-of-day LUT grading (two strips blended on the GPU),
+ * parametric grading, vignette. All look parameters come from StyleConfig (neutral defaults).
  */
 import { createProgram, FULLSCREEN_VS, type Program } from "./gl/util.js";
+import { GLSL_LUT } from "./grading.js";
+import { MAX_HEAT } from "./lighting.js";
+import type { StyleConfig } from "./style.js";
 
 const FS = /* glsl */ `#version 300 es
 precision highp float; precision highp int;
 in vec2 vUv;
-uniform sampler2D uScene, uEmissive, uLight;
-uniform vec3 uAmbient, uFogColor;
-uniform float uFog, uHaze, uStorm, uTime, uNight, uWind;
-uniform vec2 uWorldOrigin; // iso px of the bottom-left screen corner
-uniform vec2 uWorldSize;   // iso px covered by the screen
+uniform sampler2D uScene, uEmissive, uLight, uBloom, uLutA, uLutB, uShimmerTex; uniform int uHasShimmerTex;
+uniform vec3 uAmbient, uFogColor, uNightTint, uLift, uGain, uFlashColor;
+uniform float uFog, uHaze, uStorm, uTime, uNight, uWind, uBands, uBandMix, uNightMin, uSat, uContrast;
+uniform float uBloomStrength, uLutSizeA, uLutSizeB, uLutMix, uLutStrength, uFlash, uCloudAlpha, uCloudScale, uShimmer, uShimmerScale, uShimmerSpeed;
+uniform vec2 uWorldOrigin, uWorldSize, uWindDir, uCloudOffset;
+uniform vec4 uHeat[${MAX_HEAT}]; uniform int uHeatCount;
 out vec4 o;
 float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float vnoise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
   return mix(mix(h21(i), h21(i + vec2(1, 0)), f.x), mix(h21(i + vec2(0, 1)), h21(i + vec2(1, 1)), f.x), f.y); }
 float fbm(vec2 p) { float s = 0.0, a = 0.5; for (int i = 0; i < 4; i++) { s += a * vnoise(p); p = p * 2.03 + 7.1; a *= 0.5; } return s; }
+${GLSL_LUT}
 void main() {
-  vec3 scene = texture(uScene, vUv).rgb;
-  float emis = texture(uEmissive, vUv).r;
-  vec3 light = texture(uLight, vUv).rgb * 2.0;
+  vec2 wpx = uWorldOrigin + vUv * uWorldSize; // world-anchored screen pixels
+  vec2 uv = vUv;
+  // heat shimmer: scrolled RG offset noise, strongest just above the emitter, fading with distance/height
+  if (uShimmer > 0.0) {
+    float amt = 0.0;
+    for (int i = 0; i < ${MAX_HEAT}; i++) { if (i >= uHeatCount) break;
+      vec4 h = uHeat[i]; vec2 d = wpx - h.xy; d.y += h.z * 0.25;
+      float r = length(d * vec2(1.0, 0.7)) / (h.z * 0.6);
+      amt += h.w * max(0.0, 1.0 - r) * smoothstep(0.0, 0.25 * h.z, -d.y + 0.25 * h.z);
+    }
+    if (amt > 0.001) {
+      vec2 q = wpx * 0.08 * uShimmerScale + vec2(0.0, uTime * 3.0 * uShimmerSpeed);
+      vec2 off = uHasShimmerTex == 1 ? texture(uShimmerTex, q * 0.125).rg - 0.5 : vec2(vnoise(q) - 0.5, vnoise(q + 17.3) - 0.5);
+      uv += off * amt * uShimmer * 6.0 / uWorldSize * vec2(1.0, -1.0);
+    }
+  }
+  vec3 scene = texture(uScene, uv).rgb;
+  float emis = clamp(texture(uEmissive, uv).r, 0.0, 1.0);
+  vec3 light = texture(uLight, uv).rgb * 2.0;
+  float ll = dot(light, vec3(0.299, 0.587, 0.114));
+  if (uNightMin > 0.0 && ll < uNightMin) light = mix(light, uNightTint * (uNightMin / max(0.001, dot(uNightTint, vec3(0.299, 0.587, 0.114)))), 1.0 - ll / uNightMin);
+  if (uBands > 0.5) { vec3 q = floor(light * uBands + 0.5) / uBands; light = mix(light, q, uBandMix); }
+  // cloud shadows: large tileable noise scrolled by wind, dims only the ambient/sun part
+  if (uCloudAlpha > 0.0) {
+    float c = smoothstep(0.42, 0.7, fbm((wpx + uCloudOffset) / uCloudScale));
+    light *= 1.0 - uCloudAlpha * c;
+  }
   vec3 col = mix(scene * light, scene * max(light, vec3(1.0)), emis);
-  // storm/rain darkening + slight desaturation
   float l = dot(col, vec3(0.299, 0.587, 0.114));
-  col = mix(col, vec3(l), 0.35 * uStorm + 0.25 * uNight) * (1.0 - 0.35 * uStorm);
-  // world-anchored fog: noise sampled in iso space so it sticks to the ground while drifting with wind
-  vec2 wp = (uWorldOrigin + vUv * uWorldSize) / 380.0;
+  col = mix(col, vec3(l), 0.35 * uStorm) * (1.0 - 0.3 * uStorm);
+  vec2 wp = wpx / 380.0;
   float n = fbm(wp + vec2(uTime * (0.04 + 0.12 * uWind), uTime * 0.015));
   float fogAmt = clamp(uFog * (0.45 + 0.75 * n), 0.0, 0.92);
-  vec3 fogCol = uFogColor * (0.25 + 0.75 * clamp(dot(uAmbient, vec3(0.33)), 0.0, 1.0)) + light * 0.08;
+  vec3 fogCol = uFogColor * (0.3 + 0.7 * clamp(dot(uAmbient, vec3(0.33)), 0.0, 1.0)) + light * 0.06;
   col = mix(col, fogCol, fogAmt);
-  col += vec3(1.0, 0.6, 0.35) * uHaze * 0.06;
-  // vignette, stronger at night
+  col += vec3(1.0, 0.6, 0.35) * uHaze * 0.05;
+  col += uFlashColor * uFlash * (0.35 + 0.65 * scene);
+  if (uBloomStrength > 0.0) col += texture(uBloom, vUv).rgb * uBloomStrength;
+  if (uLutStrength > 0.0 && uLutSizeA > 1.0) {
+    vec3 g = lutSample(uLutA, col, uLutSizeA);
+    if (uLutMix > 0.0 && uLutSizeB > 1.0) g = mix(g, lutSample(uLutB, col, uLutSizeB), uLutMix);
+    col = mix(col, g, uLutStrength);
+  }
+  l = dot(col, vec3(0.299, 0.587, 0.114));
+  col = mix(vec3(l), col, uSat);
+  col = (col - 0.5) * uContrast + 0.5;
+  col = col * uGain + uLift;
   vec2 d = vUv - 0.5;
-  col *= 1.0 - dot(d, d) * (0.35 + 0.6 * uNight);
-  o = vec4(col, 1.0);
+  col *= 1.0 - dot(d, d) * (0.25 + 0.5 * uNight);
+  o = vec4(clamp(col, 0.0, 1.0), 1.0);
 }`;
+
+export interface LutBinding { tex: WebGLTexture; size: number }
+export interface CompositeParams {
+  ambient: readonly [number, number, number]; fog: number; haze: number; storm: number; night: number; wind: number; time: number;
+  origin: readonly [number, number]; size: readonly [number, number]; style: StyleConfig;
+  fogColor?: readonly [number, number, number];
+  bloom?: WebGLTexture | null; bloomStrength?: number;
+  lutA?: LutBinding | null; lutB?: LutBinding | null; lutMix?: number;
+  flash?: number; cloudOffset?: readonly [number, number]; cloudAlpha?: number;
+  heat?: Float32Array; heatCount?: number;
+  /** Tileable RG offset noise (Art's heat_shimmer_rg); procedural noise when absent. */
+  shimmerTex?: WebGLTexture | null;
+}
 
 export class CompositePass {
   private prog: Program;
   private vao: WebGLVertexArrayObject;
+  private dummy: WebGLTexture;
   constructor(private gl: WebGL2RenderingContext) {
     this.prog = createProgram(gl, FULLSCREEN_VS, FS, "composite");
     this.vao = gl.createVertexArray()!;
+    this.dummy = gl.createTexture()!; gl.bindTexture(gl.TEXTURE_2D, this.dummy);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 255]));
   }
-  draw(scene: WebGLTexture, emissive: WebGLTexture, light: WebGLTexture, p: {
-    ambient: readonly [number, number, number]; fogColor: readonly [number, number, number]; fog: number; haze: number;
-    storm: number; night: number; wind: number; time: number; origin: readonly [number, number]; size: readonly [number, number];
-  }): void {
-    const gl = this.gl; const { u } = this.prog;
+  draw(scene: WebGLTexture, emissive: WebGLTexture, light: WebGLTexture, p: CompositeParams): void {
+    const gl = this.gl; const { u } = this.prog; const st = p.style;
     gl.useProgram(this.prog.prog);
-    const bind = (unit: number, t: WebGLTexture, name: string): void => { gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, t); gl.uniform1i(u[name]!, unit); };
+    const bind = (unit: number, t: WebGLTexture, name: string): void => { gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, t); gl.uniform1i(u[name] ?? null, unit); };
     bind(0, scene, "uScene"); bind(1, emissive, "uEmissive"); bind(2, light, "uLight");
-    gl.uniform3f(u.uAmbient!, p.ambient[0], p.ambient[1], p.ambient[2]); gl.uniform3f(u.uFogColor!, p.fogColor[0], p.fogColor[1], p.fogColor[2]);
-    gl.uniform1f(u.uFog!, p.fog); gl.uniform1f(u.uHaze!, p.haze); gl.uniform1f(u.uStorm!, p.storm);
-    gl.uniform1f(u.uNight!, p.night); gl.uniform1f(u.uWind!, p.wind); gl.uniform1f(u.uTime!, p.time);
-    gl.uniform2f(u.uWorldOrigin!, p.origin[0], p.origin[1]); gl.uniform2f(u.uWorldSize!, p.size[0], p.size[1]);
+    bind(3, p.bloom ?? this.dummy, "uBloom"); bind(4, p.lutA?.tex ?? this.dummy, "uLutA"); bind(5, p.lutB?.tex ?? this.dummy, "uLutB"); bind(6, p.shimmerTex ?? this.dummy, "uShimmerTex"); gl.uniform1i(u.uHasShimmerTex ?? null, p.shimmerTex ? 1 : 0);
+    const v3 = (n: string, v: readonly number[]): void => gl.uniform3f(u[n] ?? null, v[0]!, v[1]!, v[2]!);
+    const f = (n: string, v: number): void => gl.uniform1f(u[n] ?? null, v);
+    v3("uAmbient", p.ambient); v3("uFogColor", p.fogColor ?? st.fogColor); v3("uNightTint", st.nightTint); v3("uLift", st.grading.lift); v3("uGain", st.grading.gain);
+    v3("uFlashColor", st.lightning.color);
+    f("uFog", p.fog); f("uHaze", p.haze); f("uStorm", p.storm); f("uNight", p.night); f("uWind", p.wind); f("uTime", p.time);
+    f("uBands", st.lightBands); f("uBandMix", st.bandMix); f("uNightMin", st.nightMinBrightness);
+    f("uSat", st.grading.saturation); f("uContrast", st.grading.contrast);
+    f("uBloomStrength", p.bloom ? (p.bloomStrength ?? 0) : 0);
+    f("uLutSizeA", p.lutA?.size ?? 0); f("uLutSizeB", p.lutB?.size ?? 0); f("uLutMix", p.lutMix ?? 0); f("uLutStrength", p.lutA ? st.gradingLut.strength : 0);
+    f("uFlash", p.flash ?? 0); f("uCloudAlpha", p.cloudAlpha ?? 0); f("uCloudScale", Math.max(64, st.clouds.scalePx));
+    gl.uniform2f(u.uCloudOffset ?? null, p.cloudOffset?.[0] ?? 0, p.cloudOffset?.[1] ?? 0);
+    f("uShimmer", st.shimmer.strength); f("uShimmerScale", st.shimmer.scale); f("uShimmerSpeed", st.shimmer.speed);
+    gl.uniform1i(u.uHeatCount ?? null, p.heatCount ?? 0);
+    if (p.heat && (p.heatCount ?? 0) > 0) gl.uniform4fv(u.uHeat ?? null, p.heat);
+    gl.uniform2f(u.uWorldOrigin ?? null, p.origin[0], p.origin[1]); gl.uniform2f(u.uWorldSize ?? null, p.size[0], p.size[1]);
     gl.bindVertexArray(this.vao);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     gl.bindVertexArray(null);

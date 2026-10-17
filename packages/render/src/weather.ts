@@ -8,21 +8,29 @@ import { createProgram, type FrameStats, type Program } from "./gl/util.js";
 
 export interface WeatherLevels { rain: number; snow: number; fog: number; wind: number; storm: number }
 
-/** Weather kinds (values match @engine/core WeatherKind). */
+/** Default kind ids (gameplay WeatherKind: Clear 0, Rain 1, Storm 2, Snow 3, Fog 4). Gameplay owns the values. */
 export const enum WeatherKindId { Clear = 0, Rain = 1, Storm = 2, Snow = 3, Fog = 4 }
+
+/** Visual levels at intensity 1 for one weather kind; scaled by intensity (fog has a floor). */
+export interface WeatherVisual { rain: number; snow: number; fog: number; wind: number; storm: number; fogFloor?: number }
+/** kind -> visuals. Replace/extend with setWeatherTable() when gameplay adds kinds; unknown kinds fall back to `fallback`. */
+export const DEFAULT_WEATHER_TABLE: Record<number, WeatherVisual> = {
+  [WeatherKindId.Clear]: { rain: 0, snow: 0, fog: 0, wind: 0, storm: 0 },
+  [WeatherKindId.Rain]: { rain: 1, snow: 0, fog: 0.35, wind: 0.35, storm: 0.15 },
+  [WeatherKindId.Storm]: { rain: 1, snow: 0, fog: 0.5, wind: 1, storm: 0.45 },
+  [WeatherKindId.Snow]: { rain: 0, snow: 1, fog: 0.3, wind: 0.2, storm: 0 },
+  [WeatherKindId.Fog]: { rain: 0, snow: 0, fog: 1, wind: 0.05, storm: 0, fogFloor: 0.2 },
+};
+let table: Record<number, WeatherVisual> = DEFAULT_WEATHER_TABLE;
+let fallback: WeatherVisual = DEFAULT_WEATHER_TABLE[WeatherKindId.Clear]!;
+export function setWeatherTable(t: Record<number, WeatherVisual>, fb: WeatherVisual = DEFAULT_WEATHER_TABLE[WeatherKindId.Clear]!): void { table = t; fallback = fb; }
 
 export function weatherTargets(kind: number, intensity: number): WeatherLevels {
   const i = Math.max(0, Math.min(1, intensity));
-  switch (kind) {
-    case WeatherKindId.Rain: return { rain: i, snow: 0, fog: 0.35 * i, wind: 0.35 * i, storm: 0.15 * i };
-    case WeatherKindId.Storm: return { rain: 1, snow: 0, fog: 0.5, wind: 1, storm: 0.45 * Math.max(0.5, i) };
-    case WeatherKindId.Snow: return { rain: 0, snow: i, fog: 0.3 * i, wind: 0.2 * i, storm: 0 };
-    case WeatherKindId.Fog: return { rain: 0, snow: 0, fog: Math.max(0.2, i), wind: 0.05, storm: 0 };
-    default: return { rain: 0, snow: 0, fog: 0, wind: 0.08, storm: 0 };
-  }
+  const v = table[kind] ?? fallback;
+  return { rain: v.rain * i, snow: v.snow * i, fog: Math.max(v.fogFloor ?? 0, v.fog * i), wind: v.wind * i, storm: v.storm * i };
 }
 
-/** Exponential smoothing toward the target levels (visual-only state, renderer-owned). */
 export class WeatherState implements WeatherLevels {
   rain = 0; snow = 0; fog = 0; wind = 0; storm = 0;
   /** Seconds to reach ~63% of the way. */

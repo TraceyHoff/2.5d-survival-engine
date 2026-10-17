@@ -140,6 +140,9 @@ importers:
 
   packages/render:
     dependencies:
+      '@engine/assets':
+        specifier: workspace:*
+        version: link:../assets
       '@engine/core':
         specifier: workspace:*
         version: link:../core

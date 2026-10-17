@@ -1,0 +1,41 @@
+/**
+ * Render-side VFX layer: short-lived sprite effects (hit sparks, dust, muzzle flashes...) drawn in the
+ * dynamic sprite batch. Feed it from the net client's delayed event stream so effects line up with the
+ * interpolated remote view:   for (const ev of client.pollEvents(client.renderTick)) renderer.vfx.handle(ev)
+ * with a mapper registered via `renderer.vfx.onEvent(defName, ev => ({ spriteId, x, y, ... }))`.
+ */
+export interface VfxSpawn {
+  spriteId: number; x: number; y: number; z?: number;
+  /** Animation index (default 0) and lifetime in seconds (default: one pass of the animation or 0.5 s). */
+  anim?: number; lifetime?: number; scale?: number; facing?: number;
+  /** Ignore darkness (fire, sparks). */
+  emissive?: boolean;
+}
+export interface VfxInstance { spriteId: number; x: number; y: number; z: number; anim: number; born: number; lifetime: number; scale: number; facing: number; emissive: boolean }
+export interface VfxEventLike { tick: number; def: { name?: string; type?: number } | unknown; payload: Record<string, number> }
+
+export class VfxLayer {
+  readonly active: VfxInstance[] = [];
+  private mappers = new Map<string, (ev: VfxEventLike) => VfxSpawn | VfxSpawn[] | null>();
+  maxActive = 2048;
+  /** Renderer clock (seconds); set by the renderer each frame. */
+  now = 0;
+
+  spawn(s: VfxSpawn): void {
+    if (this.active.length >= this.maxActive) this.active.shift();
+    this.active.push({ spriteId: s.spriteId, x: s.x, y: s.y, z: s.z ?? 0, anim: s.anim ?? 0, born: this.now, lifetime: s.lifetime ?? 0.5, scale: s.scale ?? 1, facing: s.facing ?? 0, emissive: s.emissive ?? true });
+  }
+  /** Map a gameplay/net event (by def name) to effects. */
+  onEvent(defName: string, map: (ev: VfxEventLike) => VfxSpawn | VfxSpawn[] | null): void { this.mappers.set(defName, map); }
+  handle(ev: VfxEventLike): void {
+    const name = (ev.def as { name?: string } | undefined)?.name; if (!name) return;
+    const m = this.mappers.get(name); if (!m) return;
+    const r = m(ev); if (!r) return; for (const s of Array.isArray(r) ? r : [r]) this.spawn(s);
+  }
+  /** Drop expired effects. */
+  update(now: number): void {
+    this.now = now; let w = 0;
+    for (const v of this.active) if (now - v.born < v.lifetime) this.active[w++] = v;
+    this.active.length = w;
+  }
+}

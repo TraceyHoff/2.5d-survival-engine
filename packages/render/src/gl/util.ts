@@ -1,6 +1,6 @@
 /** Thin WebGL2 helpers: shader compilation and per-frame stats. */
-export interface FrameStats { drawCalls: number; sprites: number; lights: number; tiles: number; chunks: number; particles: number; cpuMs: number }
-export const newStats = (): FrameStats => ({ drawCalls: 0, sprites: 0, lights: 0, tiles: 0, chunks: 0, particles: 0, cpuMs: 0 });
+export interface FrameStats { drawCalls: number; sprites: number; lights: number; tiles: number; chunks: number; particles: number; staticChunks: number; staticInstances: number; cpuMs: number }
+export const newStats = (): FrameStats => ({ drawCalls: 0, sprites: 0, lights: 0, tiles: 0, chunks: 0, particles: 0, staticChunks: 0, staticInstances: 0, cpuMs: 0 });
 
 export function compile(gl: WebGL2RenderingContext, type: number, src: string, label: string): WebGLShader {
   const s = gl.createShader(type);

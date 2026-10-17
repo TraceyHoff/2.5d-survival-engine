@@ -8,7 +8,19 @@ import { entityIndex, PrevTransform, Transform, type World } from "@engine/core"
 import type { IsoConfig } from "@engine/world";
 import { createProgram, createTexture, GLSL_COMMON, type FrameStats, type Program } from "./gl/util.js";
 import { LightSource } from "./components.js";
+import type { ComponentDef, Entity } from "@engine/core";
+
+export const MAX_HEAT = 16;
+/** How an Emitter kind id (gameplay-defined) is visualised. */
+export interface EmitterVisual { type: "light" | "heat"; color: readonly [number, number, number]; intensity: number; flicker: number }
+/** Default mapping for gameplay's EmitterKind (Heat = 1, Light = 2). Unknown kinds are ignored. */
+export const DEFAULT_EMITTER_KINDS: Record<number, EmitterVisual> = {
+  1: { type: "heat", color: [1, 0.6, 0.3], intensity: 1, flicker: 0 },
+  2: { type: "light", color: [1, 0.62, 0.32], intensity: 1.3, flicker: 0.45 },
+};
+export interface EmitterContext { emitter?: ComponentDef | undefined; lit?: ComponentDef | undefined; kinds: Record<number, EmitterVisual> }
 import type { Rect } from "./camera.js";
+import type { TransformSource } from "./transformSource.js";
 
 const FLOATS = 8;
 const VS = /* glsl */ `#version 300 es
@@ -49,6 +61,7 @@ export class LightPass {
   fbo: WebGLFramebuffer | null = null; tex: WebGLTexture | null = null;
   private w = 0; private h = 0;
   count = 0;
+  private xf = new Float32Array(4);
   /** Lightmap resolution divisor (2 = half res). */
   readonly downscale = 2;
 
@@ -72,27 +85,53 @@ export class LightPass {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   }
 
-  prepare(world: World, alpha: number, rect: Rect, enabled: boolean): void {
-    this.count = 0; if (!enabled) return;
-    const ls = world.store(LightSource), tr = world.store(Transform), pv = world.store(PrevTransform);
+  /** Heat emitters visible this frame (screen sx, sy, radius px, strength), for the shimmer pass. */
+  heat = new Float32Array(MAX_HEAT * 4);
+  heatCount = 0;
+
+  prepare(world: World, alpha: number, rect: Rect, enabled: boolean, source?: TransformSource, fx?: EmitterContext): void {
+    this.count = 0; this.heatCount = 0;
+    const tr = world.store(Transform), pv = world.store(PrevTransform);
     const hw = this.iso.tileW / 2, hh = this.iso.tileH / 2, zs = this.iso.zStep;
-    if (this.data.length < ls.size * FLOATS) this.data = new Float32Array(ls.size * FLOATS * 2);
-    const d = this.data; let n = 0;
-    for (let k = 0; k < ls.size; k++) {
-      const i = entityIndex(ls.dense[k]!); const ts = tr.slot(i); if (ts < 0) continue;
-      const ps = pv.slot(i);
-      let x = tr.data.x[ts]!, y = tr.data.y[ts]!, z = tr.data.z[ts]!;
-      if (ps >= 0) { x = pv.data.x[ps]! + (x - pv.data.x[ps]!) * alpha; y = pv.data.y[ps]! + (y - pv.data.y[ps]!) * alpha; z = pv.data.z[ps]! + (z - pv.data.z[ps]!) * alpha; }
-      const sx = (x - y) * hw, sy = (x + y) * hh - z * zs;
-      const r = ls.data.radius[k]! * hw * 1.414;
-      if (sx + r < rect.x0 || sx - r > rect.x1 || sy + r < rect.y0 || sy - r > rect.y1) continue;
-      const o = n * FLOATS;
-      d[o] = sx; d[o + 1] = sy; d[o + 2] = r; d[o + 3] = ls.data.intensity[k]!;
-      d[o + 4] = ls.data.r[k]!; d[o + 5] = ls.data.g[k]!; d[o + 6] = ls.data.b[k]!; d[o + 7] = ls.data.flicker[k]!;
-      n++;
+    const pos = (e: Entity): boolean => {
+      const i = entityIndex(e); const ts = tr.slot(i); if (ts < 0) return false;
+      let x = tr.data.x[ts]!, y = tr.data.y[ts]!, z = tr.data.z[ts]!; const ps = pv.slot(i);
+      if (source && source.entities.has(e) && source.sample(world, e, alpha, this.xf)) { x = this.xf[0]!; y = this.xf[1]!; z = this.xf[2]!; }
+      else if (ps >= 0) { x = pv.data.x[ps]! + (x - pv.data.x[ps]!) * alpha; y = pv.data.y[ps]! + (y - pv.data.y[ps]!) * alpha; z = pv.data.z[ps]! + (z - pv.data.z[ps]!) * alpha; }
+      this.sx = (x - y) * hw; this.sy = (x + y) * hh - z * zs; return true;
+    };
+    const visible = (r: number): boolean => !(this.sx + r < rect.x0 || this.sx - r > rect.x1 || this.sy + r < rect.y0 || this.sy - r > rect.y1);
+    const add = (radiusTiles: number, intensity: number, r: number, g: number, b: number, flicker: number): void => {
+      const rp = radiusTiles * hw * 1.414; if (!visible(rp)) return;
+      if (this.data.length < (this.count + 1) * FLOATS) { const nd = new Float32Array(this.data.length * 2); nd.set(this.data); this.data = nd; }
+      const o = this.count * FLOATS, d = this.data;
+      d[o] = this.sx; d[o + 1] = this.sy; d[o + 2] = rp; d[o + 3] = intensity; d[o + 4] = r; d[o + 5] = g; d[o + 6] = b; d[o + 7] = flicker;
+      this.count++;
+    };
+    if (enabled) {
+      const ls = world.store(LightSource);
+      for (let k = 0; k < ls.size; k++) if (pos(ls.dense[k]!)) add(ls.data.radius[k]!, ls.data.intensity[k]!, ls.data.r[k]!, ls.data.g[k]!, ls.data.b[k]!, ls.data.flicker[k]!);
     }
-    this.count = n;
+    // core Emitter {kind, radius, strength, falloff}: kinds mapped via the emitter table; Fuel/Burning.lit gates fires
+    const em = fx?.emitter ? world.store(fx.emitter) : undefined;
+    if (em && fx) {
+      const lit = fx.lit ? world.store(fx.lit) : undefined;
+      const ed = em.data as Record<string, ArrayLike<number>>;
+      for (let k = 0; k < em.size; k++) {
+        const e = em.dense[k]! as Entity; const i = entityIndex(e);
+        if (lit) { const s = lit.slot(i); if (s >= 0 && !(lit.data as Record<string, ArrayLike<number>>).lit![s]) continue; }
+        const kind = fx.kinds[ed.kind![k]!]; if (!kind) continue;
+        if (!pos(e)) continue;
+        const radius = ed.radius![k]!, strength = ed.strength![k]!;
+        if (kind.type === "light" && enabled) add(radius, strength * kind.intensity, kind.color[0], kind.color[1], kind.color[2], kind.flicker);
+        else if (kind.type === "heat" && this.heatCount < MAX_HEAT) {
+          const rp = radius * hw * 1.414; if (!visible(rp)) continue;
+          const o = this.heatCount * 4; this.heat[o] = this.sx; this.heat[o + 1] = this.sy; this.heat[o + 2] = rp; this.heat[o + 3] = Math.min(1, strength); this.heatCount++;
+        }
+      }
+    }
   }
+  private sx = 0; private sy = 0;
 
   draw(view: Float32Array, ambient: readonly [number, number, number], strength: number, time: number, stats: FrameStats): void {
     const gl = this.gl;

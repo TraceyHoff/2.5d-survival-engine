@@ -50,10 +50,13 @@ void main() {
 const FS = /* glsl */ `#version 300 es
 precision highp float; precision highp int;
 in vec3 vColor; in vec2 vWorld; flat in int vFlags;
-uniform float uTime;
+uniform float uTime, uWet, uSnow, uPuddles, uWetDarken;
+uniform vec3 uSkyRefl;
 layout(location=0) out vec4 oColor;
 layout(location=1) out vec4 oEmissive;
 float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float vnoise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(h21(i), h21(i + vec2(1, 0)), f.x), mix(h21(i + vec2(0, 1)), h21(i + vec2(1, 1)), f.x), f.y); }
 void main() {
   vec3 c = vColor;
   if (vFlags == 1) {
@@ -68,9 +71,26 @@ void main() {
     float n = h21(floor(vWorld * 8.0));
     c *= 0.92 + 0.16 * n;
   }
+  if (vFlags != 1) {
+    // surface overlays (procedural fallback for the 64x32 overlay tiles): wet ground, puddles, snow cover
+    float m = vnoise(vWorld * 0.9) * 0.65 + vnoise(vWorld * 3.1 + 11.0) * 0.35;
+    if (uWet > 0.001) {
+      c *= mix(1.0, uWetDarken, uWet);
+      float pud = smoothstep(1.0 - 0.45 * uWet * uPuddles, 1.04 - 0.45 * uWet * uPuddles, m) * float(vFlags == 0);
+      float ripple = 0.5 + 0.5 * sin(length(fract(vWorld * 2.0) - 0.5) * 40.0 - uTime * 8.0);
+      c = mix(c, uSkyRefl * (0.85 + 0.15 * ripple), pud * 0.65);
+    }
+    if (uSnow > 0.001 && vFlags == 0) {
+      float cover = smoothstep(1.0 - uSnow, 1.0 - uSnow + 0.15, m * 0.6 + 0.4 * h21(floor(vWorld * 6.0)) * 0.5 + 0.2);
+      c = mix(c, vec3(0.9, 0.93, 0.98) * (0.94 + 0.06 * h21(floor(vWorld * 16.0))), cover);
+    }
+  }
   oColor = vec4(c, 1.0);
   oEmissive = vec4(0.0);
 }`;
+
+export interface SurfaceState { wet: number; snow: number }
+export type SurfaceProvider = (chunkKey: string) => SurfaceState | undefined;
 
 interface ChunkMesh { vao: WebGLVertexArrayObject; vbo: WebGLBuffer; ibo: WebGLBuffer; count: number; stamp: number; minZ: number; maxZ: number; cx: number; cy: number }
 
@@ -149,20 +169,31 @@ export class TilemapRenderer {
     return { minKey, maxKey };
   }
 
-  draw(view: Float32Array, depth: Float32Array, rect: Rect, time: number, stats: FrameStats): void {
+  /** Surface state: global (from Weather) unless `perChunk` (gameplay's per-chunk surface value) returns one. */
+  surface: SurfaceState = { wet: 0, snow: 0 };
+  perChunk: SurfaceProvider | undefined;
+  surfaceStyle = { puddles: 1, wetDarken: 0.72, skyRefl: [0.55, 0.62, 0.72] as readonly number[] };
+
+  draw(view: Float32Array, depth: Float32Array, rect: Rect, time: number, stats: FrameStats, activeKeys?: ReadonlySet<string>): void {
     const gl = this.gl; const { u } = this.prog;
     gl.useProgram(this.prog.prog);
     gl.uniform4fv(u.uView!, view); gl.uniform2fv(u.uDepth!, depth);
     gl.uniform3f(u.uIso!, this.iso.tileW / 2, this.iso.tileH / 2, this.iso.zStep);
     gl.uniform1f(u.uZFactor!, this.zFactor); gl.uniform1f(u.uTime!, time);
+    gl.uniform1f(u.uPuddles!, this.surfaceStyle.puddles); gl.uniform1f(u.uWetDarken!, this.surfaceStyle.wetDarken);
+    const sr = this.surfaceStyle.skyRefl; gl.uniform3f(u.uSkyRefl!, sr[0]!, sr[1]!, sr[2]!);
+    let lastW = -1, lastS = -1;
     const hw = this.iso.tileW / 2, hh = this.iso.tileH / 2, S = CHUNK_SIZE;
-    for (const m of this.meshes.values()) {
+    for (const [c, m] of this.meshes) {
       if (m.count === 0) continue;
+      if (activeKeys && !activeKeys.has(c.key)) continue;
       // Chunk iso bounds: diamond spanning corners (x0,y0)..(x0+S,y0+S), lifted by z range.
       const x0 = m.cx * S, y0 = m.cy * S;
       const sxMin = (x0 - (y0 + S)) * hw, sxMax = (x0 + S - y0) * hw;
       const syMin = (x0 + y0) * hh - m.maxZ * this.iso.zStep, syMax = (x0 + y0 + 2 * S) * hh - Math.min(0, m.minZ - 1) * this.iso.zStep;
       if (sxMax < rect.x0 || sxMin > rect.x1 || syMax < rect.y0 || syMin > rect.y1) continue;
+      const sf = this.perChunk?.(c.key) ?? this.surface;
+      if (sf.wet !== lastW) { gl.uniform1f(u.uWet!, (lastW = sf.wet)); } if (sf.snow !== lastS) { gl.uniform1f(u.uSnow!, (lastS = sf.snow)); }
       gl.bindVertexArray(m.vao);
       gl.drawElements(gl.TRIANGLES, m.count, m.count / 6 * 4 > 65535 ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT, 0);
       stats.drawCalls++; stats.chunks++; stats.tiles += S * S;

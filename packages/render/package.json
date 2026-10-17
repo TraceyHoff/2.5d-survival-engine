@@ -14,7 +14,8 @@
   },
   "dependencies": {
     "@engine/core": "workspace:*",
-    "@engine/world": "workspace:*"
+    "@engine/world": "workspace:*",
+    "@engine/assets": "workspace:*"
   },
   "devDependencies": {
     "playwright-core": "^1.64.1"
