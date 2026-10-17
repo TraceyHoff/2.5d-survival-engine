@@ -27,7 +27,7 @@ describe("scale pages, masks, sprite tints", () => {
   });
   it("typed sprite tints", () => {
     const { registry } = loadManifest(mutate((m) => { spr(m, "player").tints = { wet: { color: "#6688cc", strength: 0.35 }, frost: { color: "#cfe8ff", strength: 0.5, mode: "screen" } }; }));
-    expect(registry.sprite(registry.id("player")).tints).toEqual({ wet: { color: 0x6688cc, strength: 0.35, mode: "multiply" }, frost: { color: 0xcfe8ff, strength: 0.5, mode: "screen" } });
+    expect(registry.sprite(registry.id("player")).tints).toEqual({ wet: { color: 0x6688cc, strength: 0.35, mode: "multiply", saturation: 1 }, frost: { color: 0xcfe8ff, strength: 0.5, mode: "screen", saturation: 1 } });
     expect(registry.sprite(registry.id("tree")).tints).toEqual({});
   });
   it("validation", () => {
@@ -54,8 +54,9 @@ describe("scale pages, masks, sprite tints", () => {
   it("the real survival_fx fragment loads through the legacy alias", () => {
     const frag = "/workspace/assets/survival_fx/manifest.fragment.json"; if (!existsSync(frag)) return;
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const { registry, warnings } = loadManifest(JSON.parse(readFileSync(frag, "utf8")));
+    const json = JSON.parse(readFileSync(frag, "utf8")); const { registry, warnings } = loadManifest(json);
     const night = registry.atlases.get("surv_night")!; expect(night.pages.map((p) => p.scale)).toEqual([1, 2]); expect(night.masks.emissive).toBeDefined();
-    expect(warnings.some((w) => w.includes("deprecated"))).toBe(true); warn.mockRestore();
+    // Art has since migrated the fragment to the typed fields; only expect the deprecation warning while x_survival remains.
+    expect(warnings.some((w) => w.includes("deprecated"))).toBe("x_survival" in json); warn.mockRestore();
   });
 });

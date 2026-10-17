@@ -252,6 +252,12 @@ Typed schema additions (validated):
 - `image` is the scale-1 page; `pages` adds variants (same grid, pixels × scale). `registry.pickPage(atlas, devicePixelRatio)` picks the smallest scale ≥ dpr (else the largest); `FrameRef.pages` and `AssetRegistry.scaled(ref, dpr)` give per-scale image + pixel rect.
 - `masks` are same-layout pages sampled by UV, so they serve all scales. `emissive: true` (atlas or mask) means the derived `<image>_emissive.<ext>`; `Atlas.emissiveImage` remains as an alias of `masks.emissive`.
 - `tints`: named status tints (`color` #rrggbb, `strength` 0..1, `mode` multiply|add|screen|lerp, default multiply); gameplay/render choose names and scale strength at runtime.
+- `saturation` (batch 12, optional, default 1, range 0..4) is applied to the source pixel **before** the color mode: `c' = mix(luma(c), c, saturation)`, then the mode blends `color` by `strength`. E.g. `"exhausted": { "color": "#f0eeff", "strength": 0.2, "mode": "lerp", "saturation": 0.4 }`.
+
+**Input prompt glyphs (batch 12):** top-level `glyphs` maps glyph ids to sprite frames; Art supplies the sprites (optional `glyph` sprite category). Ids: `kbm.key.<key>` / `kbm.mouse.<left|right|middle|wheel>`, `gamepad.<xbox|playstation|switch|generic>.<button|ls|rs|dup..>`, `touch.<tap|doubleTap|longPress|joystick|swipe|pinch|button.<id>>`. `registry.glyph(id)` / `registry.glyphFrame(id)`; `@engine/input`'s `promptFor()` produces the ids.
+```json
+"glyphs": { "gamepad.xbox.a": { "sprite": "glyphs_xbox", "frame": 0 }, "kbm.key.e": { "sprite": "glyphs_kbm", "frame": 4 }, "touch.tap": { "sprite": "glyphs_touch" } }
+```
 - Legacy `x_survival` (survival_fx fragment) is still accepted: `hiDpiAtlases` → `pages` scale 2, `emissivePages`/`sheenMasks`/`swayMasks` → `masks` (matched by image stem), `sway` → sprite `sway` (typed fields win). `loadManifest` returns `warnings` (also `console.warn`) with a deprecation notice; `tuning`/`grading` stay renderer-owned and are reported as not mapped.
 
 ## 14. Testing
@@ -330,3 +336,178 @@ flowchart TD
 - `pnpm demo` — persistent server + Vite client (open the printed URL; reload = same player).
 - `pnpm demo:bots` — demo server with headless WebSocket bots.
 
+
+## 18. Input System
+
+`@engine/input` (packages/input) is a client-only, DOM-free input layer (Node-testable); `@engine/input/browser` is the only DOM module. It never runs in the sim: it is sampled **once per sim tick** into core's `InputState` -> `InputFrame`, so sim and netcode stay unchanged.
+
+```mermaid
+flowchart LR
+  subgraph Devices
+    KB[Keyboard+Mouse<br/>key.* mouse.*] ; GP[Gamepads<br/>pad.* polled in rAF] ; TD[TouchDevice<br/>touch.*]
+  end
+  PE[Pointer Events] --> VC[VirtualControls<br/>joystick/buttons/radial] --> TD
+  PE --> GR[GestureRecognizer<br/>tap/drag/pinch/rotate/swipe] --> TD
+  KB & GP & TD --> B[Bindings per device class<br/>profiles/*.json + user overrides<br/>composites, modifiers, chords,<br/>interactions, processors]
+  B --> C[Context stack<br/>Dialog > Chat > Trade/Social > Inventory/Crafting > Building > Gameplay<br/>priority, consume, passthrough, textEntry]
+  C --> A[Actions<br/>down/pressed/value + events]
+  A --> F[writeFrame -> InputState -> InputFrame<br/>hold bits, moveX/Y, edges, ghostNudge, aim+mode]
+  A --> FM[FocusManager<br/>UI.Navigate/Submit/Back/Tab]
+  A --> AR[AimResolver + gameplay hooks<br/>autoTarget, aimAssist, contextAction, ghostSnap, holdCancel]
+  AR --> F
+  F --> N[NetClient sampleInput / testkit harness]
+```
+
+**Core InputFrame v2** (append-only, `INPUT_FRAME_VERSION = 2`): legacy fields unchanged, then a u8 flags byte and optional `moveX/moveY` (q8, [-1,1]; the 4 digital move bits are still set as fallback, `frameMove()` reads either), `aimMode` (`AimMode.Direction` | `AimMode.WorldPoint`, interpreting aimX/aimY), `ghostNudgeX/Y` (q8), `edges` (u32 pulse bits, present only on the tick they fire). `encode/decodeInputFrame(..., version)` still read/write v1. `InputState` gains `moveX/moveY/aimMode/ghostNudgeX/ghostNudgeY`, `pulse(mask)`, `setActions(mask)`; `extendActions(base, names)` appends bits without renumbering. Net's own `InputCmd {buttons, aimX, aimY}` is untouched; Netcode can opt into the v2 fields later.
+
+**Frame mapping (Survival Systems contract).** Hold bits keep gameplay's order `MoveUp, MoveDown, MoveLeft, MoveRight, Sprint, Primary, Secondary, Interact, Build` (0..8) and append `Crouch` (9), `Charge` (10) (`DefaultHoldBits`). `Build` is set while the Building context is active. Edge bits (`DefaultEdgeBits`, append-only): `Jump, Reload, Hotbar1..8, HotbarNext, HotbarPrev, QuickUse, ToggleInventory, ToggleCrafting, ToggleMap, OpenChat, OpenSocial, Cancel`. Context actions (Build.*, Inv.*, Craft.*, Trade.*, Chat.*, Social.*, Dialog.*, ContextRadial) are client events (`input.on(name, fn)`); gameplay turns them into its existing commands (e.g. `PlaceCmd` **only** on `Build.PlaceConfirm`, never on touch release). Command ids are not renumbered.
+
+**Contexts.** `Gameplay` (0); `Building` (10, non-consuming: movement stays, but it claims mouse.left/right, R/Q, wheel, arrows, RT/A/RB/LB/d-pad so Primary/Reload/hotbar are shadowed); `Inventory`/`Crafting` (20, consume: movement blocked, UI.Back closes); `Trade`/`Social` (25, consume); `Chat` (30, consume + textEntry; passthrough `{gamepad: ["Move"]}` so you can walk while using the quick-phrase wheel); `Dialog` (40, consume). Higher contexts claim their controls; `consume` blocks lower contexts except `passthrough`; `textEntry` blocks all `key.*` for lower contexts. `autoContext(name, when)` pushes/pops automatically; `setEnabled` disables without popping.
+
+**Bindings.** `Binding {action, control | composite | chord, modifiers?, interaction?, processors?, threshold?}`; interactions `press | hold(ms) | longPress(ms) | tap(maxMs) | doubleTap(gapMs) | toggle | repeat(delay, rate)`; processors `deadzoneRadial (default 0.15) | deadzoneAxial | sensitivity | invert | curve | normalize | clamp`. Bindings with more satisfied modifiers shadow plainer ones on the same control (Shift+click vs click). Remapping: `rebind(action, deviceClass, binding, {context, index, swap})` returns same-context conflicts, `unbind`, `resetBindings(cls?, action?)`, `detectConflicts(cls)`, `listenForNextInput({deviceClass})` (Escape/Start cancel), `serializeOverrides()/loadOverrides()`, `useStorage(localStorageAdapter())`. Profiles are regenerated by `python3 packages/input/scripts/gen-profiles.py`; tables below by `scripts/bindings-table.py`.
+
+**Touch.** `VirtualControls(layout, touchDevice)` resolves data-only layouts (`profiles/touchLayout.json`: floating joystick with activation zone and deadzone, buttons, hotbar radial) against safe-area insets, fit-min scaling clamped to [0.75, 2], and a left-handed mirror; `geometry()` is what Renderer/Art draw. Dragging a finger off a button cancels it (no tap/hold fires; `canceled` event -> `holdCancel` hook). `GestureRecognizer` emits tap/doubleTap/longPress/drag/pinch/rotate/swipe and pulses `touch.tap|doubleTap|longPress|swipe.*|pinch.in/out|rotate.cw/ccw`. `TouchGhostController`: ghost floats `liftPx` above the finger, snaps through `ghostSnap` within a finger radius, rotates by gesture/button, and is placed only by `confirm()`.
+
+**Aim.** `AimResolver.resolve(world, actor, pos)`: mouse -> `screenToWorld(mouse.x, mouse.y)` (WorldPoint); gamepad -> right stick (fallback move dir, last dir kept) + `aimAssist` (gamepad only, never mouse) (Direction); touch -> tap target or `autoTarget` (WorldPoint) else move dir. `activeDevice` / `lastUsedDeviceClass` + `onDeviceChange` drive prompt swaps; every hook receives `{device, activeDevice}`.
+
+**UI.** `FocusManager`: nodes with rects, explicit neighbors, groups (wrap, tabs with memory), screens with focus memory, modal traps, `scrollIntoView` and `requestVirtualKeyboard` hooks, `tapAt` (focus + submit). `attach(input, DEFAULT_FOCUS_ACTIONS, {delayMs, rateMs})` + `tick()` drives it with repeat. `promptFor(input, action, deviceClass, layout?)` -> `{glyphs, interaction, modifiers}` glyph ids (see §13 glyphs).
+
+**Testing.** `FakeDevice`, `InputRecorder`/`InputReplayer` (device snapshots per tick), `applyScript`, `FrameLog`; `packages/input/test/harness.test.ts` drives the testkit harness with a scripted gamepad and a touch joystick.
+
+**Browser.** `attachBrowserInput(el, input, opts)`: keyboard (ignores text inputs, prevents Tab/Space/arrows), pointer events (mouse vs touch/pen with pointer capture), wheel (non-passive), contextmenu suppression, optional pointer lock, gamepad hot-plug + rAF polling, rumble via `vibrationActuator`/`hapticActuators` behind `Haptics`, and release-all on blur/visibilitychange. CSS on the game element: `touch-action: none; user-select: none; -webkit-touch-callout: none;`. Safe-area insets are read from CSS vars `--sat/--sar/--sab/--sal` (set them to `env(safe-area-inset-*)`). Not yet wired into apps/client (Netcode has uncommitted work in `apps/client/src/main.ts`); wiring is ~10 lines (see the package README).
+
+### Default bindings
+
+**Gameplay**
+
+| Action | Keyboard & mouse | Gamepad (standard / Xbox names) | Touch |
+|---|---|---|---|
+| Move | `W/S/A/D`, `ArrowUp/ArrowDown/ArrowLeft/ArrowRight` | `pad.lx/pad.ly` | `touch.move.x/touch.move.y` |
+| Sprint | `ShiftLeft` | `pad.ls` | `btn:sprint (toggle)` |
+| Primary | `mouse.left` | `pad.rt` | `btn:attack` |
+| Charge | `mouse.left (hold 350ms)` | `pad.rt (hold 350ms)` | `btn:attack (hold 350ms)` |
+| Secondary | `mouse.right` | `pad.lt` | `btn:secondary` |
+| Crouch | `ControlLeft` | `pad.rs` | `btn:crouch (toggle)` |
+| Interact | `E (tap 400ms)` | `pad.x (tap 400ms)` | `btn:context (tap 400ms)` |
+| ContextRadial | `E (longPress 500ms)` | `pad.x (longPress 500ms)` | `btn:context (longPress 500ms)` |
+| Jump | `Space` | `pad.a` | `btn:jump` |
+| Reload | `R` | `pad.y` | `btn:reload` |
+| Hotbar1 | `1` | `pad.dup` | `touch.hotbar.1` |
+| Hotbar2 | `2` | `pad.dright` | `touch.hotbar.2` |
+| Hotbar3 | `3` | `pad.ddown` | `touch.hotbar.3` |
+| Hotbar4 | `4` | `pad.dleft` | `touch.hotbar.4` |
+| Hotbar5 | `5` | `pad.lb+pad.dup` | `touch.hotbar.5` |
+| Hotbar6 | `6` | `pad.lb+pad.dright` | `touch.hotbar.6` |
+| Hotbar7 | `7` | `pad.lb+pad.ddown` | `touch.hotbar.7` |
+| Hotbar8 | `8` | `pad.lb+pad.dleft` | `touch.hotbar.8` |
+| HotbarNext | `mouse.wheelDown` | `pad.rb (tap 250ms)` | `touch.swipe.left` |
+| HotbarPrev | `mouse.wheelUp` | `pad.lb (tap 250ms)` | `touch.swipe.right` |
+| QuickUse | `X` | `pad.b` | `btn:quickuse` |
+| ToggleInventory | `Tab`, `I` | `pad.select (tap 250ms)` | `btn:inventory` |
+| ToggleCrafting | `C` | `pad.lb+pad.select` | `btn:crafting` |
+| ToggleMap | `M` | `pad.select (longPress 500ms)` | `btn:map` |
+| OpenChat | `Enter`, `Slash` | `pad.rb+pad.select` | `btn:chat` |
+| OpenSocial | `P` | `pad.start (longPress 500ms)` | `btn:social` |
+| Cancel | `Escape` | `pad.start (tap 250ms)` | `btn:back` |
+| ToggleBuild | `B` | `pad.lb+pad.y` | `btn:build` |
+| Camera.Zoom | `AltLeft+mouse.wheelDown/mouse.wheelUp`, `Minus/Equal` | `pad.rb+pad.ddown/pad.dup` | `touch.pinch.in/touch.pinch.out` |
+| Aim | — | `pad.rx/pad.ry` | `touch.aim.x/touch.aim.y` |
+
+**Building**
+
+| Action | Keyboard & mouse | Gamepad (standard / Xbox names) | Touch |
+|---|---|---|---|
+| Build.PlaceConfirm | `mouse.left` | `pad.rt`, `pad.a` | `btn:confirm` |
+| Build.RotateCW | `mouse.right`, `R` | `pad.rb` | `btn:rotate`, `touch.rotate.cw` |
+| Build.RotateCCW | `Q` | `pad.lb` | `touch.rotate.ccw` |
+| Build.Cancel | `Escape` | `pad.b` | `btn:cancel` |
+| Build.PieceNext | `mouse.wheelDown` | `pad.dright` | `touch.swipe.left` |
+| Build.PiecePrev | `mouse.wheelUp` | `pad.dleft` | `touch.swipe.right` |
+| Build.TierNext | `ShiftLeft+mouse.wheelDown` | `pad.dup` | `btn:tierup` |
+| Build.TierPrev | `ShiftLeft+mouse.wheelUp` | `pad.ddown` | `btn:tierdown` |
+| Build.ToggleSnap | `G` | `pad.rs` | `btn:snap` |
+| Build.LevelUp | `PageUp` | `pad.lt+pad.dup` | `btn:levelup` |
+| Build.LevelDown | `PageDown` | `pad.lt+pad.ddown` | `btn:leveldown` |
+| Build.DemolishMode | `X` | `pad.x (longPress 500ms)` | `btn:demolish` |
+| Build.UpgradeMode | `U` | `pad.y (tap 250ms)` | `btn:upgrade` |
+| Build.RepairMode | `H` | `pad.x (tap 250ms)` | `btn:repair` |
+| Build.Nudge | `ArrowUp/ArrowDown/ArrowLeft/ArrowRight` | `pad.rx/pad.ry` | `touch.ghost.x/touch.ghost.y` |
+| ToggleBuild | `B` | `pad.lb+pad.y` | `btn:build` |
+
+**Inventory**
+
+| Action | Keyboard & mouse | Gamepad (standard / Xbox names) | Touch |
+|---|---|---|---|
+| UI.Navigate | `ArrowUp/ArrowDown/ArrowLeft/ArrowRight` | `pad.dup/pad.ddown/pad.dleft/pad.dright`, `pad.lx/pad.ly` | — |
+| Inv.MoveSlot | `mouse.left` | `pad.a` | `touch.tap` |
+| Inv.QuickTransfer | `ShiftLeft+mouse.left` | `pad.y (tap 250ms)` | `touch.doubleTap` |
+| Inv.SplitStack | `mouse.right` | `pad.x (tap 250ms)` | `touch.longPress` |
+| Inv.Drop | `Q` | `pad.x (longPress 500ms)` | `btn:drop` |
+| Inv.Equip | `F` | `pad.lt` | `btn:equip` |
+| Inv.Use | `E` | `pad.rt` | `btn:use` |
+| Inv.TakeAll | `R` | `pad.y (longPress 500ms)` | `btn:takeall` |
+| Inv.Sort | `T` | `pad.rs` | `btn:sort` |
+| UI.TabNext | `BracketRight` | `pad.rb` | `touch.swipe.left` |
+| UI.TabPrev | `BracketLeft` | `pad.lb` | `touch.swipe.right` |
+| UI.Back | `Escape` | `pad.b` | `btn:back` |
+| ToggleInventory | `Tab`, `I` | `pad.select` | `btn:inventory` |
+
+**Crafting**
+
+| Action | Keyboard & mouse | Gamepad (standard / Xbox names) | Touch |
+|---|---|---|---|
+| UI.Navigate | `ArrowUp/ArrowDown/ArrowLeft/ArrowRight` | `pad.dup/pad.ddown/pad.dleft/pad.dright`, `pad.lx/pad.ly` | — |
+| Craft.Craft | `Enter`, `mouse.left` | `pad.a` | `btn:craft` |
+| Craft.Amount | `ShiftLeft+Enter (repeat)` | `pad.x (repeat)` | `btn:craftmore (repeat)` |
+| Craft.Cancel | `Backspace` | `pad.y` | `btn:cancelcraft` |
+| Craft.FilterNext | `E` | `pad.rb` | `touch.swipe.left` |
+| Craft.FilterPrev | `Q` | `pad.lb` | `touch.swipe.right` |
+| UI.Back | `Escape` | `pad.b` | `btn:back` |
+| ToggleCrafting | `C` | `pad.lb+pad.select` | — |
+
+**Trade**
+
+| Action | Keyboard & mouse | Gamepad (standard / Xbox names) | Touch |
+|---|---|---|---|
+| UI.Navigate | `ArrowUp/ArrowDown/ArrowLeft/ArrowRight` | `pad.dup/pad.ddown/pad.dleft/pad.dright`, `pad.lx/pad.ly` | — |
+| Trade.AddOffer | `mouse.left`, `Enter` | `pad.a` | `touch.tap` |
+| Trade.RemoveOffer | `mouse.right`, `Backspace` | `pad.x` | `touch.longPress` |
+| Trade.Lock | `L` | `pad.y` | `btn:lock` |
+| Trade.Confirm | `F` | `pad.start` | `btn:confirm` |
+| UI.TabNext | `BracketRight` | `pad.rb` | — |
+| UI.TabPrev | `BracketLeft` | `pad.lb` | — |
+| UI.Back | `Escape` | `pad.b` | `btn:back` |
+
+**Chat**
+
+| Action | Keyboard & mouse | Gamepad (standard / Xbox names) | Touch |
+|---|---|---|---|
+| Chat.Send | `Enter` | `pad.start` | `btn:send` |
+| Chat.Cancel | `Escape` | `pad.b` | `btn:back` |
+| Chat.SwitchChannel | `Tab` | `pad.rb` | `btn:channel` |
+| Chat.QuickPhrase | — | `pad.y` | — |
+
+**Social**
+
+| Action | Keyboard & mouse | Gamepad (standard / Xbox names) | Touch |
+|---|---|---|---|
+| UI.Navigate | `ArrowUp/ArrowDown/ArrowLeft/ArrowRight` | `pad.dup/pad.ddown/pad.dleft/pad.dright`, `pad.lx/pad.ly` | — |
+| Social.ContextMenu | `mouse.right` | `pad.a` | `touch.longPress` |
+| UI.Submit | `Enter` | — | — |
+| Social.Invite | `I` | `pad.x` | `btn:invite` |
+| Social.Kick | `K` | `pad.lt+pad.x` | `btn:kick` |
+| Social.Promote | `PageUp` | `pad.rb` | `btn:promote` |
+| Social.Demote | `PageDown` | `pad.lb` | `btn:demote` |
+| Social.Leave | `L (longPress 800ms)` | `pad.select (longPress 800ms)` | `btn:leave (longPress 800ms)` |
+| Social.SetPermissions | `O` | `pad.y` | `btn:perms` |
+| UI.TabNext | `BracketRight` | — | — |
+| UI.TabPrev | `BracketLeft` | — | — |
+| UI.Back | `Escape` | `pad.b` | `btn:back` |
+| OpenSocial | `P` | `pad.start (longPress 500ms)` | — |
+
+**Dialog**
+
+| Action | Keyboard & mouse | Gamepad (standard / Xbox names) | Touch |
+|---|---|---|---|
+| Dialog.Confirm | `Enter`, `Y` | `pad.a` | `btn:yes` |
+| Dialog.Cancel | `Escape`, `N` | `pad.b` | `btn:no` |

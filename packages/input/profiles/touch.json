@@ -1,0 +1,393 @@
+{
+ "id": "default.touch",
+ "deviceClass": "touch",
+ "bindings": {
+  "Gameplay": [
+   {
+    "action": "Move",
+    "composite": {
+     "x": "touch.move.x",
+     "y": "touch.move.y"
+    }
+   },
+   {
+    "action": "Aim",
+    "composite": {
+     "x": "touch.aim.x",
+     "y": "touch.aim.y"
+    }
+   },
+   {
+    "action": "Sprint",
+    "control": "touch.btn.sprint",
+    "interaction": {
+     "type": "toggle"
+    }
+   },
+   {
+    "action": "Primary",
+    "control": "touch.btn.attack"
+   },
+   {
+    "action": "Charge",
+    "control": "touch.btn.attack",
+    "interaction": {
+     "type": "hold",
+     "ms": 350
+    }
+   },
+   {
+    "action": "Secondary",
+    "control": "touch.btn.secondary"
+   },
+   {
+    "action": "Crouch",
+    "control": "touch.btn.crouch",
+    "interaction": {
+     "type": "toggle"
+    }
+   },
+   {
+    "action": "Interact",
+    "control": "touch.btn.context",
+    "interaction": {
+     "type": "tap",
+     "maxMs": 400
+    }
+   },
+   {
+    "action": "ContextRadial",
+    "control": "touch.btn.context",
+    "interaction": {
+     "type": "longPress",
+     "ms": 500
+    }
+   },
+   {
+    "action": "Jump",
+    "control": "touch.btn.jump"
+   },
+   {
+    "action": "Reload",
+    "control": "touch.btn.reload"
+   },
+   {
+    "action": "Hotbar1",
+    "control": "touch.hotbar.1"
+   },
+   {
+    "action": "Hotbar2",
+    "control": "touch.hotbar.2"
+   },
+   {
+    "action": "Hotbar3",
+    "control": "touch.hotbar.3"
+   },
+   {
+    "action": "Hotbar4",
+    "control": "touch.hotbar.4"
+   },
+   {
+    "action": "Hotbar5",
+    "control": "touch.hotbar.5"
+   },
+   {
+    "action": "Hotbar6",
+    "control": "touch.hotbar.6"
+   },
+   {
+    "action": "Hotbar7",
+    "control": "touch.hotbar.7"
+   },
+   {
+    "action": "Hotbar8",
+    "control": "touch.hotbar.8"
+   },
+   {
+    "action": "HotbarNext",
+    "control": "touch.swipe.left"
+   },
+   {
+    "action": "HotbarPrev",
+    "control": "touch.swipe.right"
+   },
+   {
+    "action": "QuickUse",
+    "control": "touch.btn.quickuse"
+   },
+   {
+    "action": "ToggleInventory",
+    "control": "touch.btn.inventory"
+   },
+   {
+    "action": "ToggleCrafting",
+    "control": "touch.btn.crafting"
+   },
+   {
+    "action": "ToggleMap",
+    "control": "touch.btn.map"
+   },
+   {
+    "action": "OpenChat",
+    "control": "touch.btn.chat"
+   },
+   {
+    "action": "OpenSocial",
+    "control": "touch.btn.social"
+   },
+   {
+    "action": "Cancel",
+    "control": "touch.btn.back"
+   },
+   {
+    "action": "ToggleBuild",
+    "control": "touch.btn.build"
+   },
+   {
+    "action": "Camera.Zoom",
+    "composite": {
+     "negative": "touch.pinch.in",
+     "positive": "touch.pinch.out"
+    }
+   }
+  ],
+  "Building": [
+   {
+    "action": "Build.PlaceConfirm",
+    "control": "touch.btn.confirm"
+   },
+   {
+    "action": "Build.Cancel",
+    "control": "touch.btn.cancel"
+   },
+   {
+    "action": "Build.RotateCW",
+    "control": "touch.btn.rotate"
+   },
+   {
+    "action": "Build.RotateCW",
+    "control": "touch.rotate.cw"
+   },
+   {
+    "action": "Build.RotateCCW",
+    "control": "touch.rotate.ccw"
+   },
+   {
+    "action": "Build.PieceNext",
+    "control": "touch.swipe.left"
+   },
+   {
+    "action": "Build.PiecePrev",
+    "control": "touch.swipe.right"
+   },
+   {
+    "action": "Build.TierNext",
+    "control": "touch.btn.tierup"
+   },
+   {
+    "action": "Build.TierPrev",
+    "control": "touch.btn.tierdown"
+   },
+   {
+    "action": "Build.ToggleSnap",
+    "control": "touch.btn.snap"
+   },
+   {
+    "action": "Build.LevelUp",
+    "control": "touch.btn.levelup"
+   },
+   {
+    "action": "Build.LevelDown",
+    "control": "touch.btn.leveldown"
+   },
+   {
+    "action": "Build.DemolishMode",
+    "control": "touch.btn.demolish"
+   },
+   {
+    "action": "Build.UpgradeMode",
+    "control": "touch.btn.upgrade"
+   },
+   {
+    "action": "Build.RepairMode",
+    "control": "touch.btn.repair"
+   },
+   {
+    "action": "Build.Nudge",
+    "composite": {
+     "x": "touch.ghost.x",
+     "y": "touch.ghost.y"
+    }
+   },
+   {
+    "action": "ToggleBuild",
+    "control": "touch.btn.build"
+   }
+  ],
+  "Inventory": [
+   {
+    "action": "Inv.MoveSlot",
+    "control": "touch.tap"
+   },
+   {
+    "action": "Inv.QuickTransfer",
+    "control": "touch.doubleTap"
+   },
+   {
+    "action": "Inv.SplitStack",
+    "control": "touch.longPress"
+   },
+   {
+    "action": "Inv.Drop",
+    "control": "touch.btn.drop"
+   },
+   {
+    "action": "Inv.Equip",
+    "control": "touch.btn.equip"
+   },
+   {
+    "action": "Inv.Use",
+    "control": "touch.btn.use"
+   },
+   {
+    "action": "Inv.TakeAll",
+    "control": "touch.btn.takeall"
+   },
+   {
+    "action": "Inv.Sort",
+    "control": "touch.btn.sort"
+   },
+   {
+    "action": "UI.TabNext",
+    "control": "touch.swipe.left"
+   },
+   {
+    "action": "UI.TabPrev",
+    "control": "touch.swipe.right"
+   },
+   {
+    "action": "UI.Back",
+    "control": "touch.btn.back"
+   },
+   {
+    "action": "ToggleInventory",
+    "control": "touch.btn.inventory"
+   }
+  ],
+  "Crafting": [
+   {
+    "action": "Craft.Craft",
+    "control": "touch.btn.craft"
+   },
+   {
+    "action": "Craft.Amount",
+    "control": "touch.btn.craftmore",
+    "interaction": {
+     "type": "repeat",
+     "delayMs": 400,
+     "rateMs": 120
+    }
+   },
+   {
+    "action": "Craft.Cancel",
+    "control": "touch.btn.cancelcraft"
+   },
+   {
+    "action": "Craft.FilterNext",
+    "control": "touch.swipe.left"
+   },
+   {
+    "action": "Craft.FilterPrev",
+    "control": "touch.swipe.right"
+   },
+   {
+    "action": "UI.Back",
+    "control": "touch.btn.back"
+   }
+  ],
+  "Trade": [
+   {
+    "action": "Trade.AddOffer",
+    "control": "touch.tap"
+   },
+   {
+    "action": "Trade.RemoveOffer",
+    "control": "touch.longPress"
+   },
+   {
+    "action": "Trade.Lock",
+    "control": "touch.btn.lock"
+   },
+   {
+    "action": "Trade.Confirm",
+    "control": "touch.btn.confirm"
+   },
+   {
+    "action": "UI.Back",
+    "control": "touch.btn.back"
+   }
+  ],
+  "Chat": [
+   {
+    "action": "Chat.Send",
+    "control": "touch.btn.send"
+   },
+   {
+    "action": "Chat.Cancel",
+    "control": "touch.btn.back"
+   },
+   {
+    "action": "Chat.SwitchChannel",
+    "control": "touch.btn.channel"
+   }
+  ],
+  "Social": [
+   {
+    "action": "Social.ContextMenu",
+    "control": "touch.longPress"
+   },
+   {
+    "action": "Social.Invite",
+    "control": "touch.btn.invite"
+   },
+   {
+    "action": "Social.Kick",
+    "control": "touch.btn.kick"
+   },
+   {
+    "action": "Social.Promote",
+    "control": "touch.btn.promote"
+   },
+   {
+    "action": "Social.Demote",
+    "control": "touch.btn.demote"
+   },
+   {
+    "action": "Social.Leave",
+    "control": "touch.btn.leave",
+    "interaction": {
+     "type": "longPress",
+     "ms": 800
+    }
+   },
+   {
+    "action": "Social.SetPermissions",
+    "control": "touch.btn.perms"
+   },
+   {
+    "action": "UI.Back",
+    "control": "touch.btn.back"
+   }
+  ],
+  "Dialog": [
+   {
+    "action": "Dialog.Confirm",
+    "control": "touch.btn.yes"
+   },
+   {
+    "action": "Dialog.Cancel",
+    "control": "touch.btn.no"
+   }
+  ]
+ }
+}

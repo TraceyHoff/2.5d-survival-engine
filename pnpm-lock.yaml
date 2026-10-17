@@ -97,6 +97,19 @@ importers:
         specifier: workspace:*
         version: link:../world
 
+  packages/input:
+    dependencies:
+      '@engine/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@engine/net':
+        specifier: workspace:*
+        version: link:../net
+      '@engine/testkit':
+        specifier: workspace:*
+        version: link:../testkit
+
   packages/net:
     dependencies:
       '@engine/core':

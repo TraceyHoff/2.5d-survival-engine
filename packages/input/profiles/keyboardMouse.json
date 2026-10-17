@@ -1,0 +1,546 @@
+{
+ "id": "default.keyboardMouse",
+ "deviceClass": "keyboardMouse",
+ "bindings": {
+  "Gameplay": [
+   {
+    "action": "Move",
+    "composite": {
+     "up": "key.KeyW",
+     "down": "key.KeyS",
+     "left": "key.KeyA",
+     "right": "key.KeyD"
+    },
+    "processors": [
+     {
+      "type": "normalize"
+     }
+    ]
+   },
+   {
+    "action": "Move",
+    "composite": {
+     "up": "key.ArrowUp",
+     "down": "key.ArrowDown",
+     "left": "key.ArrowLeft",
+     "right": "key.ArrowRight"
+    },
+    "processors": [
+     {
+      "type": "normalize"
+     }
+    ]
+   },
+   {
+    "action": "Sprint",
+    "control": "key.ShiftLeft"
+   },
+   {
+    "action": "Primary",
+    "control": "mouse.left"
+   },
+   {
+    "action": "Charge",
+    "control": "mouse.left",
+    "interaction": {
+     "type": "hold",
+     "ms": 350
+    }
+   },
+   {
+    "action": "Secondary",
+    "control": "mouse.right"
+   },
+   {
+    "action": "Crouch",
+    "control": "key.ControlLeft"
+   },
+   {
+    "action": "Interact",
+    "control": "key.KeyE",
+    "interaction": {
+     "type": "tap",
+     "maxMs": 400
+    }
+   },
+   {
+    "action": "ContextRadial",
+    "control": "key.KeyE",
+    "interaction": {
+     "type": "longPress",
+     "ms": 500
+    }
+   },
+   {
+    "action": "Jump",
+    "control": "key.Space"
+   },
+   {
+    "action": "Reload",
+    "control": "key.KeyR"
+   },
+   {
+    "action": "Hotbar1",
+    "control": "key.Digit1"
+   },
+   {
+    "action": "Hotbar2",
+    "control": "key.Digit2"
+   },
+   {
+    "action": "Hotbar3",
+    "control": "key.Digit3"
+   },
+   {
+    "action": "Hotbar4",
+    "control": "key.Digit4"
+   },
+   {
+    "action": "Hotbar5",
+    "control": "key.Digit5"
+   },
+   {
+    "action": "Hotbar6",
+    "control": "key.Digit6"
+   },
+   {
+    "action": "Hotbar7",
+    "control": "key.Digit7"
+   },
+   {
+    "action": "Hotbar8",
+    "control": "key.Digit8"
+   },
+   {
+    "action": "HotbarNext",
+    "control": "mouse.wheelDown"
+   },
+   {
+    "action": "HotbarPrev",
+    "control": "mouse.wheelUp"
+   },
+   {
+    "action": "QuickUse",
+    "control": "key.KeyX"
+   },
+   {
+    "action": "ToggleInventory",
+    "control": "key.Tab"
+   },
+   {
+    "action": "ToggleInventory",
+    "control": "key.KeyI"
+   },
+   {
+    "action": "ToggleCrafting",
+    "control": "key.KeyC"
+   },
+   {
+    "action": "ToggleMap",
+    "control": "key.KeyM"
+   },
+   {
+    "action": "OpenChat",
+    "control": "key.Enter"
+   },
+   {
+    "action": "OpenChat",
+    "control": "key.Slash"
+   },
+   {
+    "action": "OpenSocial",
+    "control": "key.KeyP"
+   },
+   {
+    "action": "Cancel",
+    "control": "key.Escape"
+   },
+   {
+    "action": "ToggleBuild",
+    "control": "key.KeyB"
+   },
+   {
+    "action": "Camera.Zoom",
+    "composite": {
+     "negative": "mouse.wheelDown",
+     "positive": "mouse.wheelUp"
+    },
+    "modifiers": [
+     "key.AltLeft"
+    ]
+   },
+   {
+    "action": "Camera.Zoom",
+    "composite": {
+     "negative": "key.Minus",
+     "positive": "key.Equal"
+    }
+   }
+  ],
+  "Building": [
+   {
+    "action": "Build.PlaceConfirm",
+    "control": "mouse.left"
+   },
+   {
+    "action": "Build.RotateCW",
+    "control": "mouse.right"
+   },
+   {
+    "action": "Build.RotateCW",
+    "control": "key.KeyR"
+   },
+   {
+    "action": "Build.RotateCCW",
+    "control": "key.KeyQ"
+   },
+   {
+    "action": "Build.Cancel",
+    "control": "key.Escape"
+   },
+   {
+    "action": "Build.PieceNext",
+    "control": "mouse.wheelDown"
+   },
+   {
+    "action": "Build.PiecePrev",
+    "control": "mouse.wheelUp"
+   },
+   {
+    "action": "Build.TierNext",
+    "control": "mouse.wheelDown",
+    "modifiers": [
+     "key.ShiftLeft"
+    ]
+   },
+   {
+    "action": "Build.TierPrev",
+    "control": "mouse.wheelUp",
+    "modifiers": [
+     "key.ShiftLeft"
+    ]
+   },
+   {
+    "action": "Build.ToggleSnap",
+    "control": "key.KeyG"
+   },
+   {
+    "action": "Build.LevelUp",
+    "control": "key.PageUp"
+   },
+   {
+    "action": "Build.LevelDown",
+    "control": "key.PageDown"
+   },
+   {
+    "action": "Build.DemolishMode",
+    "control": "key.KeyX"
+   },
+   {
+    "action": "Build.UpgradeMode",
+    "control": "key.KeyU"
+   },
+   {
+    "action": "Build.RepairMode",
+    "control": "key.KeyH"
+   },
+   {
+    "action": "Build.Nudge",
+    "composite": {
+     "up": "key.ArrowUp",
+     "down": "key.ArrowDown",
+     "left": "key.ArrowLeft",
+     "right": "key.ArrowRight"
+    },
+    "processors": [
+     {
+      "type": "normalize"
+     }
+    ]
+   },
+   {
+    "action": "ToggleBuild",
+    "control": "key.KeyB"
+   }
+  ],
+  "Inventory": [
+   {
+    "action": "UI.Navigate",
+    "composite": {
+     "up": "key.ArrowUp",
+     "down": "key.ArrowDown",
+     "left": "key.ArrowLeft",
+     "right": "key.ArrowRight"
+    },
+    "processors": [
+     {
+      "type": "normalize"
+     }
+    ]
+   },
+   {
+    "action": "Inv.MoveSlot",
+    "control": "mouse.left"
+   },
+   {
+    "action": "Inv.QuickTransfer",
+    "control": "mouse.left",
+    "modifiers": [
+     "key.ShiftLeft"
+    ]
+   },
+   {
+    "action": "Inv.SplitStack",
+    "control": "mouse.right"
+   },
+   {
+    "action": "Inv.Drop",
+    "control": "key.KeyQ"
+   },
+   {
+    "action": "Inv.Equip",
+    "control": "key.KeyF"
+   },
+   {
+    "action": "Inv.Use",
+    "control": "key.KeyE"
+   },
+   {
+    "action": "Inv.TakeAll",
+    "control": "key.KeyR"
+   },
+   {
+    "action": "Inv.Sort",
+    "control": "key.KeyT"
+   },
+   {
+    "action": "UI.TabNext",
+    "control": "key.BracketRight"
+   },
+   {
+    "action": "UI.TabPrev",
+    "control": "key.BracketLeft"
+   },
+   {
+    "action": "UI.Back",
+    "control": "key.Escape"
+   },
+   {
+    "action": "ToggleInventory",
+    "control": "key.Tab"
+   },
+   {
+    "action": "ToggleInventory",
+    "control": "key.KeyI"
+   }
+  ],
+  "Crafting": [
+   {
+    "action": "UI.Navigate",
+    "composite": {
+     "up": "key.ArrowUp",
+     "down": "key.ArrowDown",
+     "left": "key.ArrowLeft",
+     "right": "key.ArrowRight"
+    },
+    "processors": [
+     {
+      "type": "normalize"
+     }
+    ]
+   },
+   {
+    "action": "Craft.Craft",
+    "control": "key.Enter"
+   },
+   {
+    "action": "Craft.Craft",
+    "control": "mouse.left"
+   },
+   {
+    "action": "Craft.Amount",
+    "control": "key.Enter",
+    "modifiers": [
+     "key.ShiftLeft"
+    ],
+    "interaction": {
+     "type": "repeat",
+     "delayMs": 400,
+     "rateMs": 120
+    }
+   },
+   {
+    "action": "Craft.Cancel",
+    "control": "key.Backspace"
+   },
+   {
+    "action": "Craft.FilterNext",
+    "control": "key.KeyE"
+   },
+   {
+    "action": "Craft.FilterPrev",
+    "control": "key.KeyQ"
+   },
+   {
+    "action": "UI.Back",
+    "control": "key.Escape"
+   },
+   {
+    "action": "ToggleCrafting",
+    "control": "key.KeyC"
+   }
+  ],
+  "Trade": [
+   {
+    "action": "UI.Navigate",
+    "composite": {
+     "up": "key.ArrowUp",
+     "down": "key.ArrowDown",
+     "left": "key.ArrowLeft",
+     "right": "key.ArrowRight"
+    },
+    "processors": [
+     {
+      "type": "normalize"
+     }
+    ]
+   },
+   {
+    "action": "Trade.AddOffer",
+    "control": "mouse.left"
+   },
+   {
+    "action": "Trade.AddOffer",
+    "control": "key.Enter"
+   },
+   {
+    "action": "Trade.RemoveOffer",
+    "control": "mouse.right"
+   },
+   {
+    "action": "Trade.RemoveOffer",
+    "control": "key.Backspace"
+   },
+   {
+    "action": "Trade.Lock",
+    "control": "key.KeyL"
+   },
+   {
+    "action": "Trade.Confirm",
+    "control": "key.KeyF"
+   },
+   {
+    "action": "UI.TabNext",
+    "control": "key.BracketRight"
+   },
+   {
+    "action": "UI.TabPrev",
+    "control": "key.BracketLeft"
+   },
+   {
+    "action": "UI.Back",
+    "control": "key.Escape"
+   }
+  ],
+  "Chat": [
+   {
+    "action": "Chat.Send",
+    "control": "key.Enter"
+   },
+   {
+    "action": "Chat.Cancel",
+    "control": "key.Escape"
+   },
+   {
+    "action": "Chat.SwitchChannel",
+    "control": "key.Tab"
+   }
+  ],
+  "Social": [
+   {
+    "action": "UI.Navigate",
+    "composite": {
+     "up": "key.ArrowUp",
+     "down": "key.ArrowDown",
+     "left": "key.ArrowLeft",
+     "right": "key.ArrowRight"
+    },
+    "processors": [
+     {
+      "type": "normalize"
+     }
+    ]
+   },
+   {
+    "action": "Social.ContextMenu",
+    "control": "mouse.right"
+   },
+   {
+    "action": "UI.Submit",
+    "control": "key.Enter"
+   },
+   {
+    "action": "Social.Invite",
+    "control": "key.KeyI"
+   },
+   {
+    "action": "Social.Kick",
+    "control": "key.KeyK"
+   },
+   {
+    "action": "Social.Promote",
+    "control": "key.PageUp"
+   },
+   {
+    "action": "Social.Demote",
+    "control": "key.PageDown"
+   },
+   {
+    "action": "Social.Leave",
+    "control": "key.KeyL",
+    "interaction": {
+     "type": "longPress",
+     "ms": 800
+    }
+   },
+   {
+    "action": "Social.SetPermissions",
+    "control": "key.KeyO"
+   },
+   {
+    "action": "UI.TabNext",
+    "control": "key.BracketRight"
+   },
+   {
+    "action": "UI.TabPrev",
+    "control": "key.BracketLeft"
+   },
+   {
+    "action": "UI.Back",
+    "control": "key.Escape"
+   },
+   {
+    "action": "OpenSocial",
+    "control": "key.KeyP"
+   }
+  ],
+  "Dialog": [
+   {
+    "action": "Dialog.Confirm",
+    "control": "key.Enter"
+   },
+   {
+    "action": "Dialog.Confirm",
+    "control": "key.KeyY"
+   },
+   {
+    "action": "Dialog.Cancel",
+    "control": "key.Escape"
+   },
+   {
+    "action": "Dialog.Cancel",
+    "control": "key.KeyN"
+   }
+  ]
+ }
+}

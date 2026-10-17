@@ -1,0 +1,374 @@
+{
+ "gameplay": {
+  "id": "default.touch.gameplay",
+  "reference": {
+   "w": 844,
+   "h": 390
+  },
+  "elements": [
+   {
+    "id": "move",
+    "kind": "joystick",
+    "mode": "floating",
+    "anchor": {
+     "x": 0.18,
+     "y": 0.75
+    },
+    "radius": 60,
+    "deadzone": 0.12,
+    "zone": {
+     "x": 0,
+     "y": 0.35,
+     "w": 0.45,
+     "h": 0.65
+    },
+    "control": "touch.move"
+   },
+   {
+    "id": "attack",
+    "kind": "button",
+    "anchor": {
+     "x": 0.88,
+     "y": 0.78
+    },
+    "radius": 44,
+    "control": "touch.btn.attack",
+    "glyph": "touch.button.attack"
+   },
+   {
+    "id": "secondary",
+    "kind": "button",
+    "anchor": {
+     "x": 0.76,
+     "y": 0.86
+    },
+    "radius": 34,
+    "control": "touch.btn.secondary",
+    "glyph": "touch.button.secondary"
+   },
+   {
+    "id": "context",
+    "kind": "button",
+    "anchor": {
+     "x": 0.78,
+     "y": 0.66
+    },
+    "radius": 34,
+    "control": "touch.btn.context",
+    "glyph": "touch.button.context"
+   },
+   {
+    "id": "jump",
+    "kind": "button",
+    "anchor": {
+     "x": 0.92,
+     "y": 0.6
+    },
+    "radius": 34,
+    "control": "touch.btn.jump",
+    "glyph": "touch.button.jump"
+   },
+   {
+    "id": "sprint",
+    "kind": "button",
+    "anchor": {
+     "x": 0.08,
+     "y": 0.5
+    },
+    "radius": 28,
+    "control": "touch.btn.sprint",
+    "glyph": "touch.button.sprint"
+   },
+   {
+    "id": "crouch",
+    "kind": "button",
+    "anchor": {
+     "x": 0.15,
+     "y": 0.5
+    },
+    "radius": 28,
+    "control": "touch.btn.crouch",
+    "glyph": "touch.button.crouch"
+   },
+   {
+    "id": "reload",
+    "kind": "button",
+    "anchor": {
+     "x": 0.95,
+     "y": 0.45
+    },
+    "radius": 26,
+    "control": "touch.btn.reload",
+    "glyph": "touch.button.reload"
+   },
+   {
+    "id": "quickuse",
+    "kind": "button",
+    "anchor": {
+     "x": 0.68,
+     "y": 0.92
+    },
+    "radius": 26,
+    "control": "touch.btn.quickuse",
+    "glyph": "touch.button.quickuse"
+   },
+   {
+    "id": "inventory",
+    "kind": "button",
+    "anchor": {
+     "x": 0.95,
+     "y": 0.08
+    },
+    "radius": 24,
+    "control": "touch.btn.inventory",
+    "glyph": "touch.button.inventory"
+   },
+   {
+    "id": "crafting",
+    "kind": "button",
+    "anchor": {
+     "x": 0.88,
+     "y": 0.08
+    },
+    "radius": 24,
+    "control": "touch.btn.crafting",
+    "glyph": "touch.button.crafting"
+   },
+   {
+    "id": "map",
+    "kind": "button",
+    "anchor": {
+     "x": 0.81,
+     "y": 0.08
+    },
+    "radius": 24,
+    "control": "touch.btn.map",
+    "glyph": "touch.button.map"
+   },
+   {
+    "id": "chat",
+    "kind": "button",
+    "anchor": {
+     "x": 0.05,
+     "y": 0.08
+    },
+    "radius": 24,
+    "control": "touch.btn.chat",
+    "glyph": "touch.button.chat"
+   },
+   {
+    "id": "social",
+    "kind": "button",
+    "anchor": {
+     "x": 0.12,
+     "y": 0.08
+    },
+    "radius": 24,
+    "control": "touch.btn.social",
+    "glyph": "touch.button.social"
+   },
+   {
+    "id": "build",
+    "kind": "button",
+    "anchor": {
+     "x": 0.74,
+     "y": 0.08
+    },
+    "radius": 24,
+    "control": "touch.btn.build",
+    "glyph": "touch.button.build"
+   },
+   {
+    "id": "back",
+    "kind": "button",
+    "anchor": {
+     "x": 0.05,
+     "y": 0.2
+    },
+    "radius": 24,
+    "control": "touch.btn.back",
+    "glyph": "touch.button.back"
+   },
+   {
+    "id": "hotbar",
+    "kind": "radial",
+    "anchor": {
+     "x": 0.62,
+     "y": 0.8
+    },
+    "radius": 70,
+    "innerRadius": 22,
+    "items": [
+     "1",
+     "2",
+     "3",
+     "4",
+     "5",
+     "6",
+     "7",
+     "8"
+    ],
+    "control": "touch.hotbar"
+   }
+  ]
+ },
+ "building": {
+  "id": "default.touch.building",
+  "reference": {
+   "w": 844,
+   "h": 390
+  },
+  "elements": [
+   {
+    "id": "move",
+    "kind": "joystick",
+    "mode": "floating",
+    "anchor": {
+     "x": 0.18,
+     "y": 0.75
+    },
+    "radius": 60,
+    "deadzone": 0.12,
+    "zone": {
+     "x": 0,
+     "y": 0.35,
+     "w": 0.45,
+     "h": 0.65
+    },
+    "control": "touch.move"
+   },
+   {
+    "id": "confirm",
+    "kind": "button",
+    "anchor": {
+     "x": 0.88,
+     "y": 0.78
+    },
+    "radius": 40,
+    "control": "touch.btn.confirm",
+    "glyph": "touch.button.confirm"
+   },
+   {
+    "id": "cancel",
+    "kind": "button",
+    "anchor": {
+     "x": 0.76,
+     "y": 0.88
+    },
+    "radius": 34,
+    "control": "touch.btn.cancel",
+    "glyph": "touch.button.cancel"
+   },
+   {
+    "id": "rotate",
+    "kind": "button",
+    "anchor": {
+     "x": 0.92,
+     "y": 0.6
+    },
+    "radius": 34,
+    "control": "touch.btn.rotate",
+    "glyph": "touch.button.rotate"
+   },
+   {
+    "id": "tierup",
+    "kind": "button",
+    "anchor": {
+     "x": 0.95,
+     "y": 0.4
+    },
+    "radius": 24,
+    "control": "touch.btn.tierup",
+    "glyph": "touch.button.tierup"
+   },
+   {
+    "id": "tierdown",
+    "kind": "button",
+    "anchor": {
+     "x": 0.95,
+     "y": 0.3
+    },
+    "radius": 24,
+    "control": "touch.btn.tierdown",
+    "glyph": "touch.button.tierdown"
+   },
+   {
+    "id": "snap",
+    "kind": "button",
+    "anchor": {
+     "x": 0.85,
+     "y": 0.45
+    },
+    "radius": 24,
+    "control": "touch.btn.snap",
+    "glyph": "touch.button.snap"
+   },
+   {
+    "id": "levelup",
+    "kind": "button",
+    "anchor": {
+     "x": 0.78,
+     "y": 0.4
+    },
+    "radius": 24,
+    "control": "touch.btn.levelup",
+    "glyph": "touch.button.levelup"
+   },
+   {
+    "id": "leveldown",
+    "kind": "button",
+    "anchor": {
+     "x": 0.78,
+     "y": 0.3
+    },
+    "radius": 24,
+    "control": "touch.btn.leveldown",
+    "glyph": "touch.button.leveldown"
+   },
+   {
+    "id": "demolish",
+    "kind": "button",
+    "anchor": {
+     "x": 0.62,
+     "y": 0.92
+    },
+    "radius": 24,
+    "control": "touch.btn.demolish",
+    "glyph": "touch.button.demolish"
+   },
+   {
+    "id": "upgrade",
+    "kind": "button",
+    "anchor": {
+     "x": 0.55,
+     "y": 0.92
+    },
+    "radius": 24,
+    "control": "touch.btn.upgrade",
+    "glyph": "touch.button.upgrade"
+   },
+   {
+    "id": "repair",
+    "kind": "button",
+    "anchor": {
+     "x": 0.48,
+     "y": 0.92
+    },
+    "radius": 24,
+    "control": "touch.btn.repair",
+    "glyph": "touch.button.repair"
+   },
+   {
+    "id": "build",
+    "kind": "button",
+    "anchor": {
+     "x": 0.74,
+     "y": 0.08
+    },
+    "radius": 24,
+    "control": "touch.btn.build",
+    "glyph": "touch.button.build"
+   }
+  ]
+ }
+}

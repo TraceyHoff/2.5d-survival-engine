@@ -1,0 +1,609 @@
+{
+ "id": "default.gamepad",
+ "deviceClass": "gamepad",
+ "layout": "xbox",
+ "bindings": {
+  "Gameplay": [
+   {
+    "action": "Move",
+    "composite": {
+     "x": "pad.lx",
+     "y": "pad.ly"
+    },
+    "processors": [
+     {
+      "type": "deadzoneRadial",
+      "min": 0.15
+     }
+    ]
+   },
+   {
+    "action": "Aim",
+    "composite": {
+     "x": "pad.rx",
+     "y": "pad.ry"
+    },
+    "processors": [
+     {
+      "type": "deadzoneRadial",
+      "min": 0.15
+     }
+    ]
+   },
+   {
+    "action": "Sprint",
+    "control": "pad.ls"
+   },
+   {
+    "action": "Primary",
+    "control": "pad.rt"
+   },
+   {
+    "action": "Charge",
+    "control": "pad.rt",
+    "interaction": {
+     "type": "hold",
+     "ms": 350
+    }
+   },
+   {
+    "action": "Secondary",
+    "control": "pad.lt"
+   },
+   {
+    "action": "Crouch",
+    "control": "pad.rs"
+   },
+   {
+    "action": "Interact",
+    "control": "pad.x",
+    "interaction": {
+     "type": "tap",
+     "maxMs": 400
+    }
+   },
+   {
+    "action": "ContextRadial",
+    "control": "pad.x",
+    "interaction": {
+     "type": "longPress",
+     "ms": 500
+    }
+   },
+   {
+    "action": "Jump",
+    "control": "pad.a"
+   },
+   {
+    "action": "Reload",
+    "control": "pad.y"
+   },
+   {
+    "action": "QuickUse",
+    "control": "pad.b"
+   },
+   {
+    "action": "Hotbar1",
+    "control": "pad.dup"
+   },
+   {
+    "action": "Hotbar2",
+    "control": "pad.dright"
+   },
+   {
+    "action": "Hotbar3",
+    "control": "pad.ddown"
+   },
+   {
+    "action": "Hotbar4",
+    "control": "pad.dleft"
+   },
+   {
+    "action": "Hotbar5",
+    "control": "pad.dup",
+    "modifiers": [
+     "pad.lb"
+    ]
+   },
+   {
+    "action": "Hotbar6",
+    "control": "pad.dright",
+    "modifiers": [
+     "pad.lb"
+    ]
+   },
+   {
+    "action": "Hotbar7",
+    "control": "pad.ddown",
+    "modifiers": [
+     "pad.lb"
+    ]
+   },
+   {
+    "action": "Hotbar8",
+    "control": "pad.dleft",
+    "modifiers": [
+     "pad.lb"
+    ]
+   },
+   {
+    "action": "HotbarNext",
+    "control": "pad.rb",
+    "interaction": {
+     "type": "tap",
+     "maxMs": 250
+    }
+   },
+   {
+    "action": "HotbarPrev",
+    "control": "pad.lb",
+    "interaction": {
+     "type": "tap",
+     "maxMs": 250
+    }
+   },
+   {
+    "action": "ToggleInventory",
+    "control": "pad.select",
+    "interaction": {
+     "type": "tap",
+     "maxMs": 250
+    }
+   },
+   {
+    "action": "ToggleMap",
+    "control": "pad.select",
+    "interaction": {
+     "type": "longPress",
+     "ms": 500
+    }
+   },
+   {
+    "action": "ToggleCrafting",
+    "control": "pad.select",
+    "modifiers": [
+     "pad.lb"
+    ]
+   },
+   {
+    "action": "OpenChat",
+    "control": "pad.select",
+    "modifiers": [
+     "pad.rb"
+    ]
+   },
+   {
+    "action": "OpenSocial",
+    "control": "pad.start",
+    "interaction": {
+     "type": "longPress",
+     "ms": 500
+    }
+   },
+   {
+    "action": "Cancel",
+    "control": "pad.start",
+    "interaction": {
+     "type": "tap",
+     "maxMs": 250
+    }
+   },
+   {
+    "action": "ToggleBuild",
+    "control": "pad.y",
+    "modifiers": [
+     "pad.lb"
+    ]
+   },
+   {
+    "action": "Camera.Zoom",
+    "composite": {
+     "negative": "pad.ddown",
+     "positive": "pad.dup"
+    },
+    "modifiers": [
+     "pad.rb"
+    ]
+   }
+  ],
+  "Building": [
+   {
+    "action": "Build.PlaceConfirm",
+    "control": "pad.rt"
+   },
+   {
+    "action": "Build.PlaceConfirm",
+    "control": "pad.a"
+   },
+   {
+    "action": "Build.Cancel",
+    "control": "pad.b"
+   },
+   {
+    "action": "Build.RotateCW",
+    "control": "pad.rb"
+   },
+   {
+    "action": "Build.RotateCCW",
+    "control": "pad.lb"
+   },
+   {
+    "action": "Build.PieceNext",
+    "control": "pad.dright"
+   },
+   {
+    "action": "Build.PiecePrev",
+    "control": "pad.dleft"
+   },
+   {
+    "action": "Build.TierNext",
+    "control": "pad.dup"
+   },
+   {
+    "action": "Build.TierPrev",
+    "control": "pad.ddown"
+   },
+   {
+    "action": "Build.ToggleSnap",
+    "control": "pad.rs"
+   },
+   {
+    "action": "Build.LevelUp",
+    "control": "pad.dup",
+    "modifiers": [
+     "pad.lt"
+    ]
+   },
+   {
+    "action": "Build.LevelDown",
+    "control": "pad.ddown",
+    "modifiers": [
+     "pad.lt"
+    ]
+   },
+   {
+    "action": "Build.DemolishMode",
+    "control": "pad.x",
+    "interaction": {
+     "type": "longPress",
+     "ms": 500
+    }
+   },
+   {
+    "action": "Build.RepairMode",
+    "control": "pad.x",
+    "interaction": {
+     "type": "tap",
+     "maxMs": 250
+    }
+   },
+   {
+    "action": "Build.UpgradeMode",
+    "control": "pad.y",
+    "interaction": {
+     "type": "tap",
+     "maxMs": 250
+    }
+   },
+   {
+    "action": "Build.Nudge",
+    "composite": {
+     "x": "pad.rx",
+     "y": "pad.ry"
+    },
+    "processors": [
+     {
+      "type": "deadzoneRadial",
+      "min": 0.15
+     }
+    ]
+   },
+   {
+    "action": "ToggleBuild",
+    "control": "pad.y",
+    "modifiers": [
+     "pad.lb"
+    ]
+   }
+  ],
+  "Inventory": [
+   {
+    "action": "UI.Navigate",
+    "composite": {
+     "up": "pad.dup",
+     "down": "pad.ddown",
+     "left": "pad.dleft",
+     "right": "pad.dright"
+    }
+   },
+   {
+    "action": "UI.Navigate",
+    "composite": {
+     "x": "pad.lx",
+     "y": "pad.ly"
+    },
+    "processors": [
+     {
+      "type": "deadzoneRadial",
+      "min": 0.15
+     }
+    ]
+   },
+   {
+    "action": "Inv.MoveSlot",
+    "control": "pad.a"
+   },
+   {
+    "action": "Inv.QuickTransfer",
+    "control": "pad.y",
+    "interaction": {
+     "type": "tap",
+     "maxMs": 250
+    }
+   },
+   {
+    "action": "Inv.TakeAll",
+    "control": "pad.y",
+    "interaction": {
+     "type": "longPress",
+     "ms": 500
+    }
+   },
+   {
+    "action": "Inv.SplitStack",
+    "control": "pad.x",
+    "interaction": {
+     "type": "tap",
+     "maxMs": 250
+    }
+   },
+   {
+    "action": "Inv.Drop",
+    "control": "pad.x",
+    "interaction": {
+     "type": "longPress",
+     "ms": 500
+    }
+   },
+   {
+    "action": "Inv.Equip",
+    "control": "pad.lt"
+   },
+   {
+    "action": "Inv.Use",
+    "control": "pad.rt"
+   },
+   {
+    "action": "Inv.Sort",
+    "control": "pad.rs"
+   },
+   {
+    "action": "UI.TabNext",
+    "control": "pad.rb"
+   },
+   {
+    "action": "UI.TabPrev",
+    "control": "pad.lb"
+   },
+   {
+    "action": "UI.Back",
+    "control": "pad.b"
+   },
+   {
+    "action": "ToggleInventory",
+    "control": "pad.select"
+   }
+  ],
+  "Crafting": [
+   {
+    "action": "UI.Navigate",
+    "composite": {
+     "up": "pad.dup",
+     "down": "pad.ddown",
+     "left": "pad.dleft",
+     "right": "pad.dright"
+    }
+   },
+   {
+    "action": "UI.Navigate",
+    "composite": {
+     "x": "pad.lx",
+     "y": "pad.ly"
+    },
+    "processors": [
+     {
+      "type": "deadzoneRadial",
+      "min": 0.15
+     }
+    ]
+   },
+   {
+    "action": "Craft.Craft",
+    "control": "pad.a"
+   },
+   {
+    "action": "Craft.Amount",
+    "control": "pad.x",
+    "interaction": {
+     "type": "repeat",
+     "delayMs": 400,
+     "rateMs": 120
+    }
+   },
+   {
+    "action": "Craft.Cancel",
+    "control": "pad.y"
+   },
+   {
+    "action": "Craft.FilterNext",
+    "control": "pad.rb"
+   },
+   {
+    "action": "Craft.FilterPrev",
+    "control": "pad.lb"
+   },
+   {
+    "action": "UI.Back",
+    "control": "pad.b"
+   },
+   {
+    "action": "ToggleCrafting",
+    "control": "pad.select",
+    "modifiers": [
+     "pad.lb"
+    ]
+   }
+  ],
+  "Trade": [
+   {
+    "action": "UI.Navigate",
+    "composite": {
+     "up": "pad.dup",
+     "down": "pad.ddown",
+     "left": "pad.dleft",
+     "right": "pad.dright"
+    }
+   },
+   {
+    "action": "UI.Navigate",
+    "composite": {
+     "x": "pad.lx",
+     "y": "pad.ly"
+    },
+    "processors": [
+     {
+      "type": "deadzoneRadial",
+      "min": 0.15
+     }
+    ]
+   },
+   {
+    "action": "Trade.AddOffer",
+    "control": "pad.a"
+   },
+   {
+    "action": "Trade.RemoveOffer",
+    "control": "pad.x"
+   },
+   {
+    "action": "Trade.Lock",
+    "control": "pad.y"
+   },
+   {
+    "action": "Trade.Confirm",
+    "control": "pad.start"
+   },
+   {
+    "action": "UI.TabNext",
+    "control": "pad.rb"
+   },
+   {
+    "action": "UI.TabPrev",
+    "control": "pad.lb"
+   },
+   {
+    "action": "UI.Back",
+    "control": "pad.b"
+   }
+  ],
+  "Chat": [
+   {
+    "action": "Chat.Send",
+    "control": "pad.start"
+   },
+   {
+    "action": "Chat.Cancel",
+    "control": "pad.b"
+   },
+   {
+    "action": "Chat.SwitchChannel",
+    "control": "pad.rb"
+   },
+   {
+    "action": "Chat.QuickPhrase",
+    "control": "pad.y"
+   }
+  ],
+  "Social": [
+   {
+    "action": "UI.Navigate",
+    "composite": {
+     "up": "pad.dup",
+     "down": "pad.ddown",
+     "left": "pad.dleft",
+     "right": "pad.dright"
+    }
+   },
+   {
+    "action": "UI.Navigate",
+    "composite": {
+     "x": "pad.lx",
+     "y": "pad.ly"
+    },
+    "processors": [
+     {
+      "type": "deadzoneRadial",
+      "min": 0.15
+     }
+    ]
+   },
+   {
+    "action": "Social.ContextMenu",
+    "control": "pad.a"
+   },
+   {
+    "action": "Social.Invite",
+    "control": "pad.x"
+   },
+   {
+    "action": "Social.SetPermissions",
+    "control": "pad.y"
+   },
+   {
+    "action": "Social.Promote",
+    "control": "pad.rb"
+   },
+   {
+    "action": "Social.Demote",
+    "control": "pad.lb"
+   },
+   {
+    "action": "Social.Kick",
+    "control": "pad.x",
+    "modifiers": [
+     "pad.lt"
+    ]
+   },
+   {
+    "action": "Social.Leave",
+    "control": "pad.select",
+    "interaction": {
+     "type": "longPress",
+     "ms": 800
+    }
+   },
+   {
+    "action": "UI.Back",
+    "control": "pad.b"
+   },
+   {
+    "action": "OpenSocial",
+    "control": "pad.start",
+    "interaction": {
+     "type": "longPress",
+     "ms": 500
+    }
+   }
+  ],
+  "Dialog": [
+   {
+    "action": "Dialog.Confirm",
+    "control": "pad.a"
+   },
+   {
+    "action": "Dialog.Cancel",
+    "control": "pad.b"
+   }
+  ]
+ }
+}

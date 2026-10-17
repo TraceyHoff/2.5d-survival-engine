@@ -3,7 +3,7 @@ import { fnv1a, StableIdRegistry, type World } from "@engine/core";
 export const MANIFEST_VERSION = 1;
 export const CATEGORIES = ["character", "zombie", "item", "equipment", "resource", "building", "tile", "ui", "vfx"] as const;
 /** Optional categories: accepted by validation but not required to be present (e.g. by "covers every category" checks). */
-export const OPTIONAL_CATEGORIES = ["critter"] as const;
+export const OPTIONAL_CATEGORIES = ["critter", "glyph"] as const;
 export const ALL_CATEGORIES = [...CATEGORIES, ...OPTIONAL_CATEGORIES] as const;
 export type Category = (typeof ALL_CATEGORIES)[number];
 export const ROTATION_ART = ["mirror", "unique4"] as const;
@@ -42,7 +42,11 @@ export type AtlasMasksJson = { emissive?: string | true; sheen?: string; sway?: 
 export const TINT_MODES = ["multiply", "add", "screen", "lerp"] as const;
 export type TintMode = (typeof TINT_MODES)[number];
 /** Per-sprite status tint (wet, frost, exhausted, flush...): gameplay/render pick by name and scale strength at runtime. */
-export interface SpriteTintJson { color: string; strength: number; mode?: TintMode }
+/** saturation (default 1) is applied before the color mode (0 = grayscale, >1 = boost). */
+export interface SpriteTintJson { color: string; strength: number; mode?: TintMode; saturation?: number }
+/** Input prompt glyph: id like "gamepad.xbox.a", "kbm.key.e", "touch.tap" -> sprite (+ optional frame index within its idle animation). */
+export interface GlyphJson { sprite: string; frame?: number }
+export const GLYPH_ID = /^(kbm|gamepad|touch)(\.[a-z0-9_]+)+$/;
 export interface AnimationJson { frames: number[]; fps: number; directions?: Directions; /** frame offset per direction row (default: atlas columns) */ dirStride?: number; loop?: boolean }
 export interface BuildingSpriteJson {
   /** BuildPieceDef key (cross-checked with validateBuildingSprites). */
@@ -72,6 +76,8 @@ export interface VariantSetJson { key: string; base: string; variants: VariantJs
 export interface ManifestJson {
   version: number; name?: string; atlases: AtlasJson[]; sprites: SpriteJson[];
   sounds?: SoundJson[]; vfx?: VfxJson[]; tintSets?: TintSetJson[]; palettes?: PaletteJson[]; variantSets?: VariantSetJson[];
+  /** Input prompt glyphs keyed by glyph id (see GLYPH_ID). */
+  glyphs?: Record<string, GlyphJson>;
   /** @deprecated legacy survival_fx extension; mapped onto pages/masks/sway with a warning. */
   x_survival?: { hiDpiAtlases?: Record<string, string>; emissivePages?: string[]; sheenMasks?: string[]; swayMasks?: string[]; sway?: Record<string, SwayJson>; [k: string]: unknown };
 }
@@ -83,7 +89,8 @@ export interface Atlas extends Omit<AtlasJson, "emissive" | "nineSlice" | "pages
   id: number; /** = masks.emissive (kept for compatibility) */ emissiveImage?: string; nineSlice: Map<number, NineSlice>;
   /** All pages ascending by scale; pages[0] is scale 1 (= image). */ pages: AtlasPage[]; masks: AtlasMasks;
 }
-export interface SpriteTint { color: number; strength: number; mode: TintMode }
+export interface SpriteTint { color: number; strength: number; mode: TintMode; saturation: number }
+export interface GlyphDef { id: string; sprite: number; frame: number }
 export interface Animation { id: number; name: string; frames: number[]; fps: number; directions: Directions; dirStride: number; loop: boolean }
 export interface BuildingSprite { piece: string; footprint: { w: number; h: number }; layer: number; frames: number[][]; rotationArt: RotationArt; stateNames: string[]; states: number[][][] }
 export interface SpriteDef { id: number; key: string; category: Category; atlas: Atlas; anchor: { x: number; y: number }; animations: Map<string, Animation>; animList: Animation[]; building?: BuildingSprite; sway?: SwayJson; tints: Record<string, SpriteTint> }
@@ -150,6 +157,11 @@ export class AssetRegistry {
     const ref = this.ref(s, rows[ri]![Math.max(0, Math.min(3, damageStage | 0))]!);
     return rows.length === 2 && r >= 2 ? { ...ref, flipX: true } : ref;
   }
+  /** Input prompt glyphs by id (manifest `glyphs`). */
+  glyphs = new Map<string, GlyphDef>();
+  glyph(id: string): GlyphDef | undefined { return this.glyphs.get(id); }
+  /** Frame for a glyph id (undefined if Art hasn't supplied it). */
+  glyphFrame(id: string): FrameRef | undefined { const g = this.glyphs.get(id); return g ? this.ref(this.sprite(g.sprite), g.frame) : undefined; }
   /** Page for a device pixel ratio: smallest scale >= dpr, else the largest available. */
   static pickPage(atlas: Atlas, dpr = 1): AtlasPage {
     for (const p of atlas.pages) if (p.scale >= dpr - 1e-6) return p; return atlas.pages[atlas.pages.length - 1]!;
@@ -276,6 +288,7 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
         if (!/^#[0-9a-fA-F]{6}$/.test(t?.color ?? "")) issues.push(`${p}: tint ${n} color must be #rrggbb`);
         if (!(typeof t?.strength === "number" && t.strength >= 0 && t.strength <= 1)) issues.push(`${p}: tint ${n} strength must be within [0,1]`);
         if (t?.mode !== undefined && !TINT_MODES.includes(t.mode)) issues.push(`${p}: tint ${n} mode must be multiply|add|screen|lerp`);
+        if (t?.saturation !== undefined && !(typeof t.saturation === "number" && t.saturation >= 0 && t.saturation <= 4)) issues.push(`${p}: tint ${n} saturation must be within [0,4]`);
       }
     }
     if (s.sway !== undefined && !(s.sway && s.sway.amp >= 0 && s.sway.freq >= 0 && s.sway.stiffness >= 0 && s.sway.stiffness <= 1)) issues.push(`${p}: sway needs amp >= 0, freq >= 0, stiffness in [0,1]`);
@@ -397,7 +410,7 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
       ...(s.building ? { building: { piece: s.building.piece, footprint: { ...s.building.footprint }, layer: s.building.layer, frames: s.building.frames.map((r) => [...r]),
         rotationArt: s.rotationArt ?? "mirror", stateNames: Object.keys(s.building.states ?? {}), states: Object.values(s.building.states ?? {}).map((rows) => rows.map((r) => [...r])) } } : {}),
       ...(s.sway ? { sway: { ...s.sway } } : {}),
-      tints: Object.fromEntries(Object.entries(s.tints ?? {}).map(([n, t]) => [n, { color: parseColor(t.color), strength: t.strength, mode: t.mode ?? "multiply" }])) });
+      tints: Object.fromEntries(Object.entries(s.tints ?? {}).map(([n, t]) => [n, { color: parseColor(t.color), strength: t.strength, mode: t.mode ?? "multiply", saturation: t.saturation ?? 1 }])) });
   }
   const soundMap = new Map<number, SoundDef>(sounds.map((s) => { const id = ids.sounds.id(s.key); return [id, { id, key: s.key, files: [...s.files], volume: s.volume ?? 1, pitchJitter: s.pitchJitter ?? 0, loop: !!s.loop, ...(typeof s.loop === "object" ? { loopPoints: { ...s.loop } } : {}), category: s.category }]; }));
   const vfxMap = new Map<number, VfxDef>(vfx.map((v) => { const id = ids.vfx.id(v.key); const sp = m.sprites.find((s) => s.key === v.sprite)!;
@@ -412,8 +425,22 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
       ...(v.tint !== undefined ? { tint: tintMap.get(ids.tints.id(v.tint))!.tints[v.tintIndex ?? 0]! } : {}),
       ...(v.palette !== undefined ? { palette: ids.palettes.id(v.palette) } : {}) });
   }
+  const glyphs = new Map<string, GlyphDef>();
+  if (m.glyphs !== undefined) {
+    if (!m.glyphs || typeof m.glyphs !== "object") issues.push("glyphs must be an object");
+    else for (const [gid, g] of Object.entries(m.glyphs)) {
+      if (!GLYPH_ID.test(gid)) { issues.push(`glyphs.${gid}: id must look like kbm.key.e / gamepad.xbox.a / touch.tap`); continue; }
+      const sp = [...sprites.values()].find((x) => x.key === g?.sprite);
+      if (!sp) { issues.push(`glyphs.${gid}: unknown sprite "${g?.sprite}"`); continue; }
+      const total = sp.atlas.columns * sp.atlas.rows; const frame = g.frame ?? sp.animList[0]?.frames[0] ?? 0;
+      if (!(Number.isInteger(frame) && frame >= 0 && frame < total)) { issues.push(`glyphs.${gid}: frame out of atlas range`); continue; }
+      glyphs.set(gid, { id: gid, sprite: sp.id, frame });
+    }
+    if (issues.length) throw new ManifestError(issues);
+  }
   if (warnings.length && typeof console !== "undefined") for (const w of warnings) console.warn(`[assets] ${w}`);
-  return { registry: new AssetRegistry(atlases, sprites, ids, soundMap, vfxMap, tintMap, palMap, varMap), lock, warnings };
+  const registry = new AssetRegistry(atlases, sprites, ids, soundMap, vfxMap, tintMap, palMap, varMap); registry.glyphs = glyphs;
+  return { registry, lock, warnings };
 }
 
 /** Mix the asset id hash into the world schema hash so client/server handshakes reject mismatched content. */
