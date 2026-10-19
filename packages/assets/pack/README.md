@@ -128,7 +128,6 @@ Frames are listed as `anim: frames @fps (dirs, loop)`. The pivot is in pixels wi
 | `wall_low_twig` | buildings_twig | (64.0, 96.0) (0.5, 0.75) | idle: 20..20 (1f) @1 | piece `wall_low` 1×1 L1 rotArt `mirror` rots 4×4 dmg |
 | `wall_twig` | buildings_twig | (64.0, 96.0) (0.5, 0.75) | idle: 12..12 (1f) @1 | piece `wall` 1×1 L1 rotArt `mirror` rots 4×4 dmg |
 | `wall_window_twig` | buildings_twig | (64.0, 96.0) (0.5, 0.75) | idle: 28..28 (1f) @1 | piece `wall_window` 1×1 L1 rotArt `mirror` rots 4×4 dmg |
-| `claim_totem` | decor | (64.0, 96.0) (0.5, 0.75) | idle: 8..8 (1f) @1 | piece `claim_totem` 1×1 L2 rotArt `mirror` rots 1×4 dmg |
 | `flower_box` | decor | (64.0, 96.0) (0.5, 0.75) | idle: 20..20 (1f) @1 | piece `flower_box` 1×1 L3 rotArt `mirror` rots 1×4 dmg |
 | `flower_box_2` | decor | (64.0, 96.0) (0.5, 0.75) | idle: 32..32 (1f) @1 | piece `flower_box` 1×1 L3 rotArt `mirror` rots 1×4 dmg |
 | `flower_box_3` | decor | (64.0, 96.0) (0.5, 0.75) | idle: 44..44 (1f) @1 | piece `flower_box` 1×1 L3 rotArt `mirror` rots 1×4 dmg |

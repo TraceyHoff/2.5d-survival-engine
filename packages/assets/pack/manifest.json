@@ -8193,40 +8193,6 @@
    "rotationArt": "mirror"
   },
   {
-   "key": "claim_totem",
-   "category": "building",
-   "atlas": "decor",
-   "anchor": {
-    "x": 0.5,
-    "y": 0.75
-   },
-   "animations": {
-    "idle": {
-     "frames": [
-      8
-     ],
-     "fps": 1
-    }
-   },
-   "building": {
-    "piece": "claim_totem",
-    "footprint": {
-     "w": 1,
-     "h": 1
-    },
-    "layer": 2,
-    "frames": [
-     [
-      8,
-      9,
-      10,
-      11
-     ]
-    ]
-   },
-   "rotationArt": "mirror"
-  },
-  {
    "key": "rug",
    "category": "building",
    "atlas": "decor",
