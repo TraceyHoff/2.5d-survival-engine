@@ -52,7 +52,8 @@ void main() {
     float c = smoothstep(0.42, 0.7, fbm((wpx + uCloudOffset) / uCloudScale));
     light *= 1.0 - uCloudAlpha * c;
   }
-  vec3 col = mix(scene * light, scene * max(light, vec3(1.0)), emis);
+  // emissive pixels bypass scene lighting (natural flame colour, no light-colour tint)
+  vec3 col = mix(scene * light, scene, emis);
   float l = dot(col, vec3(0.299, 0.587, 0.114));
   col = mix(col, vec3(l), 0.35 * uStorm) * (1.0 - 0.3 * uStorm);
   vec2 wp = wpx / 380.0;
