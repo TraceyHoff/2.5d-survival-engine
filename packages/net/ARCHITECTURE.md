@@ -27,6 +27,8 @@ Header on every packet (frozen layout): `u16 protocolVersion, u8 msgType`. Bodie
 | StaticCtl (9, c→s) | rel | kind:2 (Evict / Nack), chunk |
 | Groups (10) | rel | §13 roster changes |
 | Chat (11) | rel | §14 |
+| Names (20) / NameReq (21) | rel | §21 name table |
+| Stall (22) | rel | §21 stall requests, results, sales |
 | Markers (12) | unrel | §13 member markers |
 | CommandRejected (13) | rel | bit core, varuint commandId (core: command type), varuint seq+1 (0 = unknown), varuint reason, utf8 detail |
 | Trade (14) | rel | §15 |
@@ -239,9 +241,9 @@ offer, commit and tick; return a code to refuse or cancel, which reaches the cli
 transaction (container validators run; any failure rolls both sides back). It needs enough empty slots; stacks aren't merged. Each committed
 trade gets a `txnId`.
 
-**Item model.** Slots are parallel `item / count / durability` u16[16] plus `createdTick` u32[16], with no instance ids. An offer line is
-`{slot, count}`. The server snapshots the slot tuple when the offer is made. At commit, every slot must still hold the same item, durability
-and createdTick, with count ≥ offered, or the trade ends with Validation.
+**Item model.** Slots are parallel `item / count / durability` u16[16] plus `createdTick` u32[16] and `crafterId` u32 (the crafter's PlayerId), with no instance ids. An offer line is
+`{slot, count}`. The server snapshots the slot tuple when the offer is made. At commit, every slot must still hold the same item, durability,
+createdTick and crafterId, with count ≥ offered, or the trade ends with Validation.
 
 **Flow.**
 1. Request → Accept or Decline.
@@ -267,7 +269,7 @@ and createdTick, with count ≥ offered, or the trade ends with Validation.
 - s→c **tradeUpdated** (sent to both traders on every change): `varuint tradeId, varuint partnerPlayer, u8 status (Requested 0, Open 1,
   Done 2, Cancelled 3), u8 reason, bit iRequested, varuint version, varuint myOfferRevision, varuint theirOfferRevision, bit myLock,
   bit myConfirm, bit theirLock, bit theirConfirm, myOffer, theirOffer`.
-  - Each offer is `u8 n, n × (u8 slot, u16 item, u16 count, u16 durability, u32 createdTick)`.
+  - Each offer is `u8 n, n × (u8 slot, u16 item, u16 count, u16 durability, u32 createdTick, varuint crafterId)`.
   - The partner's item details are included, because they can't see your inventory.
 
 **Client:** `client.trade.request / accept / decline / offer / lock / confirm(id, version) / cancel`, plus `client.trade.current` and
@@ -369,3 +371,91 @@ their own grid/index from the replicated entities (gameplay's job). Nobody drain
 Column batches carry entities whose only change is one element of one component (hp, state, damageStage):
 `varuint nCols`, each `varuint ci, varuint element, varuint n, n sorted delta-varint netIds, n values (field wire encoding)`. Everything else
 uses normal entity records.
+
+## 21. Trade stalls and the name table (milestone 7)
+**Ownership (locked with gameplay).**
+- Gameplay owns:
+  - the `StallHeader {ownerKind (0 player, 1 clan), ownerId, open, listingCount}` component, scope `"all"` (AOI);
+  - the `Listings` component (a revision plus up to 24 parallel listing arrays), scoped to viewers, i.e. clients with the stall open;
+  - placement, permissions (core `can()`, OwnedBy, Membership, clan ranks), the stall data caps (stall_blanket 4, stall_cart 8, stall_booth 12,
+    clan_pavilion 24; net sizes for `MAX_LISTINGS = 24`), the till and stock containers, and every rule.
+- Net replicates those components like any others. Element-level deltas give per-listing deltas: a price edit costs ~13 B to each viewer, using
+  the sparse element mask below. Net also owns the request transport, `checkListing`, `purchaseSwap`, results, and sale notifications.
+- **Sparse element masks (protocol v6):** a change record for a component with more than 8 elements carries `bit sparse`. If set, it's
+  `varuint k, k × varuint gap` (delta-coded element indices) instead of the per-element bitmask, whichever is smaller.
+
+**Listing as the UI reads it** (from the replicated `Listings` arrays at index i): `{listingId, slot (stock container slot), item, count,
+durability, crafterId (u32 PlayerId), price {itemId, count}}`. Barter by default; the usual currency is gameplay's crafted `coin` item.
+
+**Stall wire, MsgType.Stall (22, reliable).** Every message starts with `u4 op`. All numbers are varuint unless noted.
+| op | dir | body |
+|---|---|---|
+| 0 Buy | c→s | req, stallNetId, listingId, expectedRevision, priceItem, priceCount, qty |
+| 1 List | c→s | req, stallNetId, slot, priceItem, priceCount |
+| 2 EditPrice | c→s | req, stallNetId, listingId, priceItem, priceCount |
+| 3 Delist | c→s | req, stallNetId, listingId |
+| 4 Collect | c→s | req, stallNetId |
+| 8 Result | s→c | req, u4 op, u8 reason, detail (buy: qty; list: new listingId; collect: items collected) |
+| 9 Sale | s→c | stallNetId, listingId, item, qty, crafterId, priceItem, priceTotal, buyerId, u32 tick, bit queued, dropped |
+
+**Reasons (`StallResult`):** Ok 0, PriceChanged 1, SoldOut 2, NoFunds 3, Denied 4, Closed 5, OutOfRange 6, RateLimited 7, NoStall 8,
+TillFull 9, NoSpace 10, BadRequest 11, Disconnected 12 (client-side only: the connection dropped before a result), Hook+code (100+) for
+gameplay codes.
+
+**Server pipeline** (`new StallServer(server, { hooks, range = 4, rate = 4/s burst 8, offlineQueue = 32, playerIdOf?, names? })`):
+1. rate limit (per client, buys and owner ops share one bucket);
+2. stall netId → entity → `hooks.view` (NoStall);
+3. actor in range of the stall (OutOfRange);
+4. owner ops: `hooks.canManage(actor, stall, op)` (Denied; clan rank rules live here), then `hooks.owner(cmd)` → reason/detail;
+5. buy:
+   - stall open (Closed);
+   - `hooks.canBuy` (Denied);
+   - `checkListing` (SoldOut, PriceChanged). A different revision alone isn't a failure: only that listing's stock and price matter;
+   - `purchaseSwap` in ONE core `transaction()`: pay (NoFunds), move the goods by core transfer so crafterId, durability and createdTick are
+     kept (onto an identical stack, else an empty slot; NoSpace), proceeds into the till (TillFull). Any failure rolls everything back;
+   - `hooks.sold(sale)` (gameplay decrements the listing and bumps the revision), then Result Ok to the buyer;
+   - Sale to `hooks.saleRecipients` (owner, or clan members whose rank allows it).
+6. Messages are handled one at a time, so two buys for the last unit in the same tick give exactly one Ok and one SoldOut.
+- **Offline recipients:** sales queue per playerId, keeping the newest `offlineQueue` and counting the overflow as `dropped`. They're
+  delivered with `queued = 1` as soon as that player is online again. `stats.offline` is in-memory; see persistence below.
+- A disconnect mid-buy is safe: the swap is atomic and runs or not. The client's promise resolves with Disconnected when the client resets.
+
+**Core TradeStall adapter (ADR-075, fb7bf56).** For stalls built on core's `TradeStall` + `OwnedBy` + stock container:
+- Use `hooks.view = coreStallView` and `hooks.buy = coreStallBuy`.
+- The wire listingId is core's listing row + 1, the price is `{currency, price}` per bundle, and one bundle is bought per request (qty must
+  be 1). Proceeds go into the stall's own stock container (till = stall).
+- `coreStallBuy` checks the expected price first (PriceChanged), then calls core `buyFromStall(..., { expectRevision })`.
+- Core reasons map through `mapCoreBuyReason`:
+  - `stale_revision`: SoldOut if the listing is gone or out of stock, else PriceChanged (meaning refresh and retry);
+  - `no_listing`/`out_of_stock` → SoldOut, `insufficient_funds` → NoFunds, `denied` → Denied, `stall_full` → TillFull,
+    `buyer_full` → NoSpace, `not_stall` → NoStall.
+- The sale's crafterId comes from core's `SaleEntry.crafterIds[0]`. Core's SaleLedger is the persisted sale log (survival reads
+  `entriesSince`).
+
+**Client:** `client.stalls`:
+- `buy(stallNetId, listingId, expectedRevision, expectedPrice, qty)`, `list(stallNetId, slot, price)`, `editPrice(...)`, `delist(...)`,
+  `collect(...)`. Each returns `Promise<{req, op, reason, detail}>`.
+- `onSale(fn)` and `sales` (the last 100).
+
+**Name table.** `new NameSync(server, { names: core PlayerNameRegistry, rate = 10 req/s })`.
+- **Request flow:** clients ask on demand. `client.names.get(id)` returns undefined and requests the id, batched per microtask, at most 64
+  ids per request. Each id is sent to a client once and then cached.
+- **Renames:** every tick the server reads the registry's `changesSince(seq)` and pushes changed names to every client caching that id. If
+  the log is overrun, each client gets all its cached ids again.
+- **With stalls:** StallServer pushes buyer and crafter names alongside a Sale when `names` is set.
+- **Wire, NameReq (21, c→s):** `varuint n ≤ 64, n × varuint playerId`.
+- **Wire, Names (20, s→c):** `varuint n, n × (varuint playerId, bit has, [varuint len, len bytes of core writeString(name)])`. has = 0
+  means no name; the client caches that as well and is told if a name appears later.
+- **Client:**
+  - `client.names.get(id)`, `display(id)` ("#id" until known), `has`, `want(ids)` (prefetch, e.g. all crafterIds in a panel), and
+    `on((id, name) => …)` for arrivals and renames.
+  - The cache is dropped on reconnect.
+
+**Persistence (persist package; net does not edit it).** Needed:
+- Stalls with their StallHeader, Listings, and stock and till containers (slot tuples including crafterId), persisted with the chunk like other
+  entities. That's already covered when these components and containers are marked persistent.
+- Earnings are the till container's contents: same path.
+- `PlayerNameRegistry.encode()/decode()` as a world blob (like GroupRegistry).
+- Optional: undelivered sale notifications (`StallServer.offline`: `Map<playerId, {sales: SaleRecord[], dropped}>`) as a world blob so
+  offline owners still see them after a restart. A full sale log the owner can browse is deferred: it needs a persisted, append-only,
+  per-owner ledger.

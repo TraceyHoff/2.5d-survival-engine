@@ -16,7 +16,7 @@
  *        9 Sale      varuint stallNetId, varuint listingId, varuint item, varuint qty, varuint crafterId, varuint priceItem,
  *                    varuint priceTotal, varuint buyerId, u32 tick, bit queued (delivered after the owner came online), varuint dropped
  */
-import { Containers, Transform, sameStack, transaction, type Entity, type World } from "@engine/core";
+import { Containers, OwnedBy, Transform, TradeStall, buyFromStall, getStallListing, sameStack, stallRevision, transaction, type Entity, type World } from "@engine/core";
 import { BitWriter, type BitReader } from "./bits.js";
 import { TokenBucket, type RateLimit } from "./messages.js";
 import type { NameSync } from "./names.js";
@@ -94,7 +94,7 @@ export interface StallHooks {
   /** Persistent player ids to notify of a sale (owner; clan members with the right rank). */
   saleRecipients(world: World, stall: Entity, view: StallView): readonly number[];
   /** Full custom purchase (replaces checkListing + purchaseSwap); return 0 ok or a reason. */
-  buy?(world: World, buyer: Entity, stall: Entity, view: StallView, req: BuyRequest): number;
+  buy?(world: World, buyer: Entity, stall: Entity, view: StallView, req: BuyRequest): number | { reason: 0; crafterId?: number };
 }
 export interface StallServerOptions {
   hooks: StallHooks;
@@ -168,14 +168,15 @@ export class StallServer {
     if (H.canBuy && !H.canBuy(w, actor, stall, s)) return this.result(s, req, op, StallResult.Denied);
     const breq: BuyRequest = { listingId, expectedRevision: rev, expectedPrice: p!, qty };
     let reason: number | undefined; let l: ListingView | undefined;
-    if (H.buy) reason = H.buy(w, actor, stall, view, breq) || undefined;
+    let crafter: number | undefined;
+    if (H.buy) { const b = H.buy(w, actor, stall, view, breq); if (typeof b === "number") reason = b || undefined; else crafter = b.crafterId; }
     else {
       reason = checkListing(view, breq); l = view.listing(listingId);
       if (!reason) reason = purchaseSwap(w, { buyer: actor, stock: view.stock, slot: l!.slot, qty, till: view.till, price: l!.price, item: l!.item });
     }
     if (reason) return this.result(s, req, op, reason);
     l ??= view.listing(listingId);
-    const sale: SaleRecord = { stallNetId: netId, listingId, item: l?.item ?? 0, qty, crafterId: l?.crafterId ?? 0, price: { itemId: p!.itemId, count: p!.count * qty }, buyerId: this.playerOf(s), tick: w.tick };
+    const sale: SaleRecord = { stallNetId: netId, listingId, item: l?.item ?? 0, qty, crafterId: crafter ?? l?.crafterId ?? 0, price: { itemId: p!.itemId, count: p!.count * qty }, buyerId: this.playerOf(s), tick: w.tick };
     H.sold(w, stall, sale); this.stats.sales++;
     this.result(s, req, op, StallResult.Ok, qty);
     for (const f of this.saleLog) f(sale, stall);
@@ -253,4 +254,45 @@ export class StallClient {
   onSale(fn: (s: SaleMsg) => void): () => void { this.saleHandlers.push(fn); return () => { const i = this.saleHandlers.indexOf(fn); if (i >= 0) this.saleHandlers.splice(i, 1); }; }
   /** Connection reset: outstanding requests resolve with Disconnected (the server may or may not have applied them). */
   reset(): void { for (const [req, f] of this.waiting) f({ req, op: StallOp.Buy, reason: StallResult.Disconnected, detail: 0 }); this.waiting.clear(); }
+}
+
+// ---- core TradeStall adapter (ADR-075: TradeStall + OwnedBy + stall stock container, buyFromStall) ----
+/** listingId on the wire = core listing row + 1 (0 = none). Price = {currency, price} per bundle; count = bundles in stock. */
+export function coreStallView(world: World, stall: Entity, opts: { open?: boolean } = {}): StallView | undefined {
+  const own = world.get(stall, OwnedBy); if (!own || !world.has(stall, TradeStall)) return undefined;
+  const reg = world.resource(Containers); const ad = reg.adapterFor(world, stall);
+  const stockOf = (item: number): { n: number; crafter: number; dur: number } => {
+    let n = 0, crafter = 0, dur = 0; const cap = ad?.capacity(world, stall) ?? 0;
+    for (let i = 0; i < cap; i++) { const s = ad!.getSlot(world, stall, i); if (s.item !== item) continue; if (!n) { crafter = s.crafterId ?? 0; dur = s.durability ?? 0; } n += s.count; }
+    return { n, crafter, dur };
+  };
+  return {
+    open: opts.open ?? true, ownerKind: own.groupId ? 1 : 0, ownerId: own.groupId || own.playerId, revision: stallRevision(world, stall), stock: stall, till: stall,
+    listing: (id) => {
+      const l = getStallListing(world, stall, id - 1); if (!l) return undefined; const st = stockOf(l.item);
+      return { listingId: id, slot: id - 1, item: l.item, count: Math.floor(st.n / l.qty), durability: st.dur, crafterId: st.crafter, price: { itemId: l.currency, count: l.price } };
+    },
+  };
+}
+const CORE_BUY: Record<string, number> = {
+  not_stall: StallResult.NoStall, no_listing: StallResult.SoldOut, out_of_stock: StallResult.SoldOut, insufficient_funds: StallResult.NoFunds,
+  denied: StallResult.Denied, stall_full: StallResult.TillFull, buyer_full: StallResult.NoSpace, bad_qty: StallResult.BadRequest,
+};
+/**
+ * Map a core buyFromStall reason to a client result. stale_revision is resolved against the current listing: gone or not
+ * enough stock -> SoldOut, else PriceChanged (the stall changed since the client's view: refresh and retry).
+ */
+export function mapCoreBuyReason(world: World, stall: Entity, listingId: number, reason: string): number {
+  if (reason !== "stale_revision") return CORE_BUY[reason] ?? StallResult.BadRequest;
+  const v = coreStallView(world, stall); const l = v?.listing(listingId);
+  return !l || l.count < 1 ? StallResult.SoldOut : StallResult.PriceChanged;
+}
+/** hooks.buy over core buyFromStall (one bundle per request; qty must be 1), revision-checked with expectRevision. */
+export function coreStallBuy(world: World, buyer: Entity, stall: Entity, _view: StallView, req: BuyRequest): number | { reason: 0; crafterId: number } {
+  if (req.qty !== 1) return StallResult.BadRequest;
+  const l = getStallListing(world, stall, req.listingId - 1); if (!l) return StallResult.SoldOut;
+  if (l.currency !== req.expectedPrice.itemId || l.price !== req.expectedPrice.count) return StallResult.PriceChanged;
+  const r = buyFromStall(world, buyer, stall, req.listingId - 1, { expectRevision: req.expectedRevision });
+  if (!r.ok) return mapCoreBuyReason(world, stall, req.listingId, r.reason);
+  return { reason: 0, crafterId: r.sale.crafterIds[0] ?? 0 };
 }

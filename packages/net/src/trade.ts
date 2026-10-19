@@ -1,7 +1,7 @@
 /**
  * Two-party trade session protocol (net owns the state machine and messages; gameplay owns the rules).
  *
- * Item model: inventory slots are parallel arrays item/count/durability u16[16] + createdTick u32[16]; no instance ids.
+ * Item model: inventory slots are parallel arrays item/count/durability u16[16] + createdTick u32[16] + crafterId u32 (core Slot.crafterId, the crafter's PlayerId); no instance ids.
  * Offers reference slot indices + counts; the server snapshots the slot tuple at offer time and commit re-validates that
  * each slot still holds exactly that tuple with at least the offered count. The swap itself goes through
  * TradeInventory.swap, which must be atomic. coreTradeInventory() implements TradeInventory over core's atomic container
@@ -19,7 +19,7 @@
  *   varuint tradeId, varuint partnerPlayer, u8 status (TradeStatus), u8 reason (TradeEnd, 0 while active), bit iRequested,
  *   varuint version, varuint myOfferRevision, varuint theirOfferRevision (per side, +1 on every offer change by that side),
  *   bits myLock, myConfirm, theirLock, theirConfirm,
- *   myOffer, theirOffer: u8 n, n x (u8 slot, u16 item, u16 count, u16 durability, u32 createdTick)
+ *   myOffer, theirOffer: u8 n, n x (u8 slot, u16 item, u16 count, u16 durability, u32 createdTick, varuint crafterId)
  */
 import { Transform, type Entity, type World } from "@engine/core";
 import { Containers, transaction, type TxResult } from "@engine/core";
@@ -33,7 +33,7 @@ export const TradeEnd = {
   None: 0, Declined: 1, Timeout: 2, Distance: 3, Dead: 4, Disconnect: 5, Busy: 6, Validation: 7, Cancelled: 8, NoTarget: 9, SwapFailed: 10,
   /** gameplay validate-hook reasons are sent as Hook + code */ Hook: 100,
 } as const;
-export interface SlotTuple { item: number; count: number; durability: number; createdTick: number }
+export interface SlotTuple { item: number; count: number; durability: number; createdTick: number; /** crafter's PlayerId, 0 = none */ crafterId: number }
 export interface TradeOfferLine { slot: number; count: number }
 export interface OfferedLine extends SlotTuple { slot: number /* count = offered count */ }
 /** Inventory adapter (gameplay/core). */
@@ -112,7 +112,7 @@ export class TradeServer {
       for (const l of lines) {
         const tup = this.opts.inventory.readSlot(this.server.world, e, l.slot);
         if (!tup || tup.item === 0 || l.count < 1 || l.count > tup.count || used.has(l.slot)) { this.server.anomaly(s, "tradeOffer", `slot ${l.slot}`); return this.broadcast(t); }
-        used.add(l.slot); out.push({ slot: l.slot, item: tup.item, count: l.count, durability: tup.durability, createdTick: tup.createdTick });
+        used.add(l.slot); out.push({ slot: l.slot, item: tup.item, count: l.count, durability: tup.durability, createdTick: tup.createdTick, crafterId: tup.crafterId ?? 0 });
       }
       const other = this.entityOf(side === 0 ? t.b : t.a);
       const offers: [OfferedLine[], OfferedLine[]] = side === 0 ? [out, t.offers[1]] : [t.offers[0], out];
@@ -137,7 +137,7 @@ export class TradeServer {
     // re-validate: slots still hold exactly the offered tuples
     for (const [side, e] of [[0, ea], [1, eb]] as const) for (const l of t.offers[side]) {
       const tup = this.opts.inventory.readSlot(w, e, l.slot);
-      if (!tup || tup.item !== l.item || tup.durability !== l.durability || tup.createdTick !== l.createdTick || tup.count < l.count) return this.end(t, TradeEnd.Validation);
+      if (!tup || tup.item !== l.item || tup.durability !== l.durability || tup.createdTick !== l.createdTick || (tup.crafterId ?? 0) !== l.crafterId || tup.count < l.count) return this.end(t, TradeEnd.Validation);
     }
     const h = this.opts.validate?.(w, ea, eb, "commit", t.offers); if (h !== undefined) return this.end(t, TradeEnd.Hook + h);
     const txn = this.nextTxn++;
@@ -167,7 +167,7 @@ export class TradeServer {
   }
   private writeLines(w: BitWriter, lines: readonly OfferedLine[]): void {
     w.writeBits(lines.length, 8);
-    for (const l of lines) { w.writeBits(l.slot, 8); w.writeBits(l.item, 16); w.writeBits(l.count, 16); w.writeBits(l.durability, 16); w.writeBits(l.createdTick >>> 0, 32); }
+    for (const l of lines) { w.writeBits(l.slot, 8); w.writeBits(l.item, 16); w.writeBits(l.count, 16); w.writeBits(l.durability, 16); w.writeBits(l.createdTick >>> 0, 32); w.writeVarUint(l.crafterId >>> 0); }
   }
   private sendState(clientId: number, t: TradeInfo, reason = 0): void {
     const side = t.a === clientId ? 0 : 1; const o = 1 - side;
@@ -196,7 +196,7 @@ export class TradeClient {
   private handlers: ((v: TradeView) => void)[] = [];
   constructor(private readonly client: { sendRaw(b: Uint8Array, ch: "reliable" | "unreliable"): boolean; onRawMessage(type: number, fn: (r: BitReader) => void): void }) {
     client.onRawMessage(MsgType.Trade, (r) => {
-      const lines = (): OfferedLine[] => { const n = r.readBits(8); const o: OfferedLine[] = []; for (let i = 0; i < n; i++) o.push({ slot: r.readBits(8), item: r.readBits(16), count: r.readBits(16), durability: r.readBits(16), createdTick: r.readBits(32) }); return o; };
+      const lines = (): OfferedLine[] => { const n = r.readBits(8); const o: OfferedLine[] = []; for (let i = 0; i < n; i++) o.push({ slot: r.readBits(8), item: r.readBits(16), count: r.readBits(16), durability: r.readBits(16), createdTick: r.readBits(32), crafterId: r.readVarUint() }); return o; };
       const v: TradeView = { id: r.readVarUint(), partner: r.readVarUint(), status: r.readBits(8), reason: r.readBits(8), iRequested: r.readBool(), version: r.readVarUint(), myOfferRevision: r.readVarUint(), theirOfferRevision: r.readVarUint(),
         myLock: r.readBool(), myConfirm: r.readBool(), theirLock: r.readBool(), theirConfirm: r.readBool(), myOffer: lines(), theirOffer: lines() };
       this.current = v; for (const f of this.handlers) f(v);
@@ -215,7 +215,7 @@ export class TradeClient {
 }
 
 /**
- * TradeInventory over core's Containers + transaction(): readSlot returns core Slot durability/createdTick (0 when the
+ * TradeInventory over core's Containers + transaction(): readSlot returns core Slot durability/createdTick/crafterId (0 when the
  * container doesn't store them); swap moves every line into a free slot of the other side inside ONE core transaction
  * (validators run; core carries durability/createdTick through transfer; any failure rolls everything back). Needs
  * enough empty slots on each side (no merging, so tuples stay intact).
@@ -226,7 +226,7 @@ export function coreTradeInventory(): TradeInventory {
       const a = world.resource(Containers).adapterFor(world, e);
       if (!a || slot < 0 || slot >= a.capacity(world, e)) return undefined;
       const s = a.getSlot(world, e, slot); if (!s.item || s.count <= 0) return undefined;
-      return { item: s.item, count: s.count, durability: s.durability ?? 0, createdTick: s.createdTick ?? 0 };
+      return { item: s.item, count: s.count, durability: s.durability ?? 0, createdTick: s.createdTick ?? 0, crafterId: s.crafterId ?? 0 };
     },
     swap(world, a, b) {
       const reg = world.resource(Containers);
