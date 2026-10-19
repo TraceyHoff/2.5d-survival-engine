@@ -19,3 +19,5 @@ export * from "./trade.js";
 export * from "./combat.js";
 export * from "./anticheat.js";
 export * from "./tiles.js";
+export * from "./names.js";
+export * from "./stalls.js";

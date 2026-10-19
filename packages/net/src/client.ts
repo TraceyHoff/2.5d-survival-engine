@@ -17,6 +17,8 @@ import { GroupClient } from "./groups.js";
 import { TradeClient } from "./trade.js";
 import { encodeReport, type ReportReason } from "./anticheat.js";
 import { TileClient } from "./tiles.js";
+import { NamesClient } from "./names.js";
+import { StallClient } from "./stalls.js";
 import type { TileMap } from "@engine/world";
 import { StaticClient, encodeStaticCtl } from "./static.js";
 
@@ -110,6 +112,10 @@ export class NetClient {
   readonly chat: ChatClient;
   /** Replicated tiles: `client.tiles.tiles.getTile(x, y)`, `client.tiles.on(...)`. */
   readonly tiles: TileClient;
+  /** PlayerId -> display name cache: `client.names.get(id)` / `display(id)` / `on(...)`. */
+  readonly names: NamesClient;
+  /** Stall purchases / owner commands / sale notifications. */
+  readonly stalls: StallClient;
   /** Own party/clan rosters + member markers. */
   readonly groups: GroupClient;
   /** Trade session protocol. */
@@ -130,6 +136,7 @@ export class NetClient {
       sendCtl: (kind, key) => { if (this.active) this.opts.transport.send(encodeStaticCtl(kind, key), "reliable"); },
     }, opts.staticCacheChunks ?? 64);
     this.chat = new ChatClient(this); this.groups = new GroupClient(this); this.trade = new TradeClient(this);
+    this.names = new NamesClient(this); this.stalls = new StallClient(this);
     this.tiles = new TileClient(this, { ...(opts.tiles ? { tiles: opts.tiles } : {}), ...(opts.tileCacheChunks ? { cacheChunks: opts.tileCacheChunks } : {}) });
     opts.transport.onMessage((b) => this.onMessage(b));
     opts.transport.onClose(() => { this.active = false; this.welcome?.reject(new Error("connection closed")); this.welcome = undefined; });
@@ -214,7 +221,7 @@ export class NetClient {
       const w = decodeWelcome(r);
       this.clientId = w.clientId; this.token = w.token; this.active = true;
       this.serverTickEstimate = w.serverTick; this.latestTick = -1; this.history.clear();
-      this.staticInbox = []; this.statics.reset();
+      this.staticInbox = []; this.statics.reset(); this.names?.reset(); this.stalls?.reset();
       this.welcome?.resolve(w); this.welcome = undefined;
     } else if (h.type === MsgType.Snapshot) this.inbox.push(bytes);
     else if (h.type === MsgType.Static) this.staticInbox.push(bytes);

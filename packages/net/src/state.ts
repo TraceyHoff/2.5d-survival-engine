@@ -127,8 +127,14 @@ export function writeEntityRecord(w: BitWriter, schema: NetSchema, netId: number
     const v = es.get(ci)!; const a = old.get(ci); const specs = schema.specs[ci]!;
     w.writeBool(!a);
     if (!a) { specs.forEach((s, i) => writeWire(w, s, v[i]!)); continue; }
-    for (let i = 0; i < specs.length; i++) w.writeBool(v[i] !== a[i]);
-    for (let i = 0; i < specs.length; i++) if (v[i] !== a[i]) writeWire(w, specs[i]!, v[i]!);
+    // element mask, or (wide components, few changes) a sparse list of delta-coded indices: whichever is smaller
+    const idx: number[] = []; for (let i = 0; i < specs.length; i++) if (v[i] !== a[i]) idx.push(i);
+    let sparseBits = 0, p = -1; for (const i of idx) { sparseBits += varBits(i - p - 1); p = i; } sparseBits += varBits(idx.length);
+    const sparse = specs.length > 8 && sparseBits < specs.length;
+    if (specs.length > 8) w.writeBool(sparse);
+    if (sparse) { w.writeVarUint(idx.length); let q = -1; for (const i of idx) { w.writeVarUint(i - q - 1); q = i; } }
+    else for (let i = 0; i < specs.length; i++) w.writeBool(v[i] !== a[i]);
+    for (const i of idx) writeWire(w, specs[i]!, v[i]!);
   }
   return true;
 }
@@ -180,7 +186,11 @@ export function decodeDelta(r: BitReader, schema: NetSchema, base: WorldState | 
     for (const ci of ch) {
       if (r.readBool()) { es.set(ci, readAll(ci)); continue; }
       const prev = old.get(ci); if (!prev) throw new Error(`field delta for absent component ${ci}`);
-      const specs = schema.specs[ci]!; const mask = specs.map(() => r.readBool());
+      const specs = schema.specs[ci]!; let mask: boolean[];
+      if (specs.length > 8 && r.readBool()) {
+        mask = specs.map(() => false); const k = r.readVarUint(); let q = -1;
+        for (let j = 0; j < k; j++) { q += r.readVarUint() + 1; if (q >= specs.length) throw new Error("sparse index out of range"); mask[q] = true; }
+      } else mask = specs.map(() => r.readBool());
       const v = [...prev]; mask.forEach((m, i) => { if (m) v[i] = readWire(r, specs[i]!); });
       es.set(ci, v);
     }
@@ -188,3 +198,6 @@ export function decodeDelta(r: BitReader, schema: NetSchema, base: WorldState | 
   }
   return { state, spawned, despawned, changed };
 }
+
+/** Bits a writeVarUint(v) takes (7-bit groups + continuation bit). */
+function varBits(v: number): number { let n = 8; while (v >= 128) { v = Math.floor(v / 128); n += 8; } return n; }

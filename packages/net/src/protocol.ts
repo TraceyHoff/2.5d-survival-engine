@@ -4,8 +4,8 @@ import { BitReader, BitWriter } from "./bits.js";
  * Wire protocol. Every packet starts with a fixed header that must never change layout
  * across versions: u16 protocolVersion, u8 msgType (byte aligned). Body is bit-packed.
  */
-export const PROTOCOL_VERSION = 5;
-export const MsgType = { Hello: 1, Welcome: 2, Reject: 3, Input: 4, Snapshot: 5, Command: 6, Events: 7, Static: 8, StaticCtl: 9, Groups: 10, Chat: 11, Markers: 12, CommandRejected: 13, Trade: 14, Ping: 15, Pong: 16, Report: 17, Tiles: 18, TilesCtl: 19 } as const;
+export const PROTOCOL_VERSION = 6;
+export const MsgType = { Hello: 1, Welcome: 2, Reject: 3, Input: 4, Snapshot: 5, Command: 6, Events: 7, Static: 8, StaticCtl: 9, Groups: 10, Chat: 11, Markers: 12, CommandRejected: 13, Trade: 14, Ping: 15, Pong: 16, Report: 17, Tiles: 18, TilesCtl: 19, Names: 20, NameReq: 21, Stall: 22 } as const;
 export type MsgType = (typeof MsgType)[keyof typeof MsgType];
 export const RejectReason = { ProtocolMismatch: 1, SchemaMismatch: 2, BadToken: 3, ServerFull: 4, Malformed: 5, HashMismatch: 6 } as const;
 export type RejectReason = (typeof RejectReason)[keyof typeof RejectReason];
