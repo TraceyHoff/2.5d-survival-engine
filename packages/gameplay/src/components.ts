@@ -45,12 +45,14 @@ export type InvSchema = {
   createdTick: { type: FieldType; length: number };
   /** Per-slot durability (tools/weapons; non-stackable items have count 1). 0 = n/a. */
   durability: { type: FieldType; length: number };
+  /** Per-slot crafter provenance: persistent PlayerId (u32) of whoever crafted the item, 0 = gathered. Part of the stack key. */
+  crafterId: { type: FieldType; length: number };
 };
 export const INVENTORY_SLOTS = 16;
 export const CONTAINER_SLOTS = 24;
 export const Inventory = defineComponent("Inventory", {
   slotCount: { type: "u8", default: INVENTORY_SLOTS }, maxWeight: { type: "f32", default: 60 }, weight: "f32", spoilMul: { type: "f32", default: 1 },
-  items: { type: "u16", length: INVENTORY_SLOTS }, counts: { type: "u16", length: INVENTORY_SLOTS }, createdTick: { type: "u32", length: INVENTORY_SLOTS }, durability: { type: "u16", length: INVENTORY_SLOTS },
+  items: { type: "u16", length: INVENTORY_SLOTS }, counts: { type: "u16", length: INVENTORY_SLOTS }, createdTick: { type: "u32", length: INVENTORY_SLOTS }, durability: { type: "u16", length: INVENTORY_SLOTS }, crafterId: { type: "u32", length: INVENTORY_SLOTS },
 }, { networked: true, persistent: true }) as ComponentDef<InvSchema>;
 
 export const NO_SLOT = 255;
@@ -91,7 +93,7 @@ export const DoorState = defineComponent("DoorState", { open: "u8", lockTribe: "
 export const Fuel = defineComponent("Fuel", { burnUntilTick: "u32", lit: "u8" }, { networked: true, persistent: true });
 export const Container = defineComponent("Container", {
   slotCount: { type: "u8", default: 12 }, maxWeight: "f32", weight: "f32", spoilMul: { type: "f32", default: 1 },
-  items: { type: "u16", length: CONTAINER_SLOTS }, counts: { type: "u16", length: CONTAINER_SLOTS }, createdTick: { type: "u32", length: CONTAINER_SLOTS }, durability: { type: "u16", length: CONTAINER_SLOTS },
+  items: { type: "u16", length: CONTAINER_SLOTS }, counts: { type: "u16", length: CONTAINER_SLOTS }, createdTick: { type: "u32", length: CONTAINER_SLOTS }, durability: { type: "u16", length: CONTAINER_SLOTS }, crafterId: { type: "u32", length: CONTAINER_SLOTS },
 }, { networked: true, persistent: true }) as ComponentDef<InvSchema>;
 export const MAX_VIEWERS = 8;
 /** Who has the container open (server-only; net reads it for the "viewers" scope). */
@@ -121,7 +123,7 @@ export const NoiseLevel = defineComponent("NoiseLevel", { value: "f32" });
  * without entity references. Attachments are separate entities because BuildPiece entities use net's static class
  * (all their components ride the static channel, scopes don't apply).
  */
-export const enum AttachKind { Door = 1, Fire = 2, Storage = 3, Light = 4 }
+export const enum AttachKind { Door = 1, Fire = 2, Storage = 3, Light = 4, Till = 5 }
 export const PieceLink = defineComponent("PieceLink", { tx: "i32", ty: "i32", z: "u8", side: "u8", layer: "u8", kind: "u8" }, { networked: true, persistent: true });
 /** Render-facing (renderer contract): wetness 0..255 on characters and zombies, replicated to all. */
 export const Wetness = defineComponent("Wetness", { level: "u8" }, { networked: true });
@@ -138,6 +140,24 @@ export const LootBag = defineComponent("LootBag", { owner: "u32", despawnAtTick:
 /** Written by net on the server (per-connection RTT) for range slack. */
 export const Latency = defineComponent("Latency", { rttMs: "u16" });
 
+// ---- economy (trade stalls) ----------------------------------------------------------------------
+export const MAX_LISTINGS = 24;
+export const LEDGER_SIZE = 16;
+export const enum StallOwnerKind { None = 0, Player = 1, Clan = 2 }
+/** Lives on the stall's stock attachment (the entity with Container = stock). Scope all (AOI): owner kind/id, open, listing count. */
+export const StallHeader = defineComponent("StallHeader", { ownerKind: "u8", ownerId: "u32", open: "u8", listingCount: "u8" }, { networked: true, persistent: true });
+/** Per listing slot i (stock slot i): price {item,count}, quantity per sale, enabled. revision bumps on every change. Scope viewers. */
+export const Listings = defineComponent("Listings", {
+  priceItem: { type: "u16", length: MAX_LISTINGS }, priceCount: { type: "u16", length: MAX_LISTINGS },
+  qty: { type: "u16", length: MAX_LISTINGS }, enabled: { type: "u8", length: MAX_LISTINGS }, revision: "u32",
+}, { networked: true, persistent: true });
+/** Sales ledger ring buffer (capped, persisted); head = next write index, total = sales ever. Scope viewers (owner UI). */
+export const StallLedger = defineComponent("StallLedger", {
+  tick: { type: "u32", length: LEDGER_SIZE }, item: { type: "u16", length: LEDGER_SIZE }, count: { type: "u16", length: LEDGER_SIZE },
+  priceItem: { type: "u16", length: LEDGER_SIZE }, priceCount: { type: "u32", length: LEDGER_SIZE }, buyerId: { type: "u32", length: LEDGER_SIZE },
+  crafterId: { type: "u32", length: LEDGER_SIZE }, head: "u8", total: "u32",
+}, { networked: true, persistent: true });
+
 /**
  * The shared registration module: registration order = component ids on every peer (append only!).
  * Includes engine-provided gameplay-facing components (world Emitter, the Buffs modifier stack).
@@ -149,4 +169,5 @@ export const GAMEPLAY_COMPONENTS = [
   BuildPiece, PieceSlot, PieceStability, Tribe, PrivilegeZone, DoorState, Fuel, Container, ContainerViewers, Viewing, BuildGhost,
   Attacker, Zombie, ZombieBrain, AnimState, NoiseLevel, Latency, PieceLink, Wetness, BodyTemp, ChunkSurface,
   GroupSummary, CombatTag, LootBag,
+  StallHeader, Listings, StallLedger,
 ] as const;

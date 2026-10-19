@@ -13,6 +13,7 @@ import { gameplayDefs, isAuthority } from "../config.js";
 import { secondsToTicks, StationKind, type RecipeDef } from "../defs.js";
 import { CraftCompleted, CraftFail, CraftFailed, CraftStarted, emit } from "../events.js";
 import { exchangeItems } from "../inventory.js";
+import { crafterIdFor } from "../economy/provenance.js";
 
 /** Stations are looked up in the shared spatial index within this radius (>= any CraftingStation.range). */
 export const MAX_STATION_RANGE = 4;
@@ -40,7 +41,7 @@ export function isLit(world: World, e: Entity): boolean { return (world.getField
 function checkRecipe(world: World, e: Entity, r: RecipeDef): CraftFail | 0 {
   if (!stationInRange(world, e, r.station)) return CraftFail.NoStation;
   if (!exchangeItems(world, e, r.ingredients, [], true)) return CraftFail.MissingIngredients;
-  if (!exchangeItems(world, e, r.ingredients, [r.output], true)) return CraftFail.InventoryFull;
+  if (!exchangeItems(world, e, r.ingredients, [r.output], true, crafterIdFor(world, e, r.output.item))) return CraftFail.InventoryFull;
   return 0;
 }
 
@@ -75,7 +76,7 @@ export function craftingSystem(world: World, dt: number): void {
     const why = checkRecipe(world, e, r);
     clear();
     if (why) { fail(current, why); continue; }
-    exchangeItems(world, e, r.ingredients, [r.output]);
+    exchangeItems(world, e, r.ingredients, [r.output], false, crafterIdFor(world, e, r.output.item));
     emit(world, CraftCompleted, { entity: e, recipe: current, item: r.output.item, count: r.output.count });
   }
 }

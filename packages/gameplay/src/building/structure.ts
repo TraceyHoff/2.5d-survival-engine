@@ -14,7 +14,8 @@ import { gameplayDefs } from "../config.js";
 import { Placement, type GameDefs, type PieceDef } from "../defs.js";
 import { linkAttachment } from "./links.js";
 
-export const LAYER_DECK = 0, LAYER_STRUCT = 1, LAYER_OPENING = 4;
+/** Canonical piece layer ids (PieceLink.layer / BuildingGrid layer); render imports these from here only. */
+export const LAYER_DECK = 0, LAYER_STRUCT = 1, LAYER_FURNITURE = 2, LAYER_DECOR = 3, LAYER_OPENING = 4;
 const OFF = 1 << 20;
 export const edgeKey = (tx: number, ty: number, z: number, side: EdgeSide): number => ((tx + OFF) * 2 ** 21 + (ty + OFF)) * 32 + z * 2 + (side - 1);
 

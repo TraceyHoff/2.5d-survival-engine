@@ -90,6 +90,8 @@ export interface PieceDef extends BuildPieceDef, Visual {
   readonly fits: SocketKind | 0; readonly door: boolean; readonly station: StationKind; readonly fired: boolean;
   readonly heat: number; readonly heatRadius: number; readonly light: boolean; readonly container: number;
   readonly privilegeRadius: number; readonly paintable: boolean; readonly variants: number; readonly spoilMul: number;
+  /** Trade stall: listing slots (= stock Container slots) and whether only a clan may own it. null = not a stall. */
+  readonly stall: { readonly listings: number; readonly clanOnly: boolean } | null;
 }
 export interface ZombieDef extends Visual {
   readonly id: number; readonly key: string; readonly hp: number; readonly speed: number; readonly damage: number; readonly structureDamage: number;
@@ -154,6 +156,7 @@ export interface RawPiece extends RawVisual {
   tiered?: boolean; costScale?: number; tier?: number; groundOnly?: boolean; ground?: boolean; minLevel?: number; needsDeck?: boolean;
   supportsAbove?: boolean; roof?: boolean; blocksPath?: boolean; opening?: string; fits?: string; door?: boolean; station?: string;
   fired?: boolean; heat?: number; heatRadius?: number; light?: boolean; container?: number; privilegeRadius?: number; paintable?: boolean; variants?: number; spoilMul?: number;
+  stall?: { listings: number; clanOnly?: boolean };
 }
 export interface RawZombie extends RawVisual { key: string; hp: number; speed: number; damage: number; structureDamage: number; attackRange: number; attackCooldownSeconds: number; sightRange: number; hearingMul: number; variants: number }
 export interface RawDefs {
@@ -295,7 +298,9 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
       opening: p.opening ? enumOf(OPENING, p.opening, `${where}.opening`) : 0, fits: p.fits ? enumOf(OPENING, p.fits, `${where}.fits`) : 0,
       door: p.door ?? false, station, fired: p.fired ?? false, heat: p.heat ?? 0, heatRadius: p.heatRadius ?? 0, light: p.light ?? false,
       container: p.container ?? 0, privilegeRadius: p.privilegeRadius ?? 0, paintable: p.paintable ?? false, variants: Math.max(1, p.variants ?? 1), spoilMul: p.spoilMul ?? 1,
+      stall: p.stall ? { listings: p.stall.listings, clanOnly: p.stall.clanOnly ?? false } : null,
     });
+    if (p.stall && (p.stall.listings !== (p.container ?? 0))) err(`${where}.stall.listings must equal container`);
   }
 
   const zombies = new Map<number, ZombieDef>();

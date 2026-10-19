@@ -4,7 +4,7 @@
  * auto-close when out of range). The client predicts none of this (only the ghost).
  */
 import { entityIndex, Owner, Transform, type Entity, type World } from "@engine/core";
-import { AttachKind, BuildPiece, Container, ContainerViewers, Dead, DoorState, IntentAction, MAX_VIEWERS, PieceStability, PlayerIntent, Tribe, Viewing } from "../components.js";
+import { AttachKind, BuildPiece, PieceLink, StallHeader, Container, ContainerViewers, Dead, DoorState, IntentAction, MAX_VIEWERS, PieceStability, PlayerIntent, Tribe, Viewing } from "../components.js";
 import { gameplayDefs, isAuthority, rangeSlack } from "../config.js";
 import { secondsToTicks } from "../defs.js";
 import {
@@ -111,7 +111,7 @@ export function installDoorLookup(world: World): void {
 }
 
 const clientOf = (world: World, e: Entity): number => world.getField(e, Owner, "clientId") ?? 0;
-function addViewer(world: World, c: Entity, client: number): boolean {
+export function addViewer(world: World, c: Entity, client: number): boolean {
   const st = world.store(ContainerViewers); const s = st.slot(entityIndex(c)); if (s < 0) return false;
   const n = st.data.count[s]!; const a = st.data.clients;
   for (let i = 0; i < n; i++) if (a[s * MAX_VIEWERS + i] === client) return true;
@@ -154,6 +154,8 @@ export function containerSystem(world: World): void {
       continue;
     }
     if (world.getField(e, Viewing, "container") !== c) { fail(BuildFail.NotViewing); continue; }
+    // stall stock and tills move only through the economy commands (stock/unstock/buy/collect)
+    if (world.has(c, StallHeader) || world.getField(c, PieceLink, "kind") === AttachKind.Till) { fail(BuildFail.Locked); continue; }
     const item = it.data.item[s]!; const count = it.data.count[s]!;
     if (action === IntentAction.Deposit) { if (transferItem(world, e, c, item, count) === 0) fail(countItem(world, e, item) ? BuildFail.Occupied : BuildFail.CannotAfford); }
     else if (transferItem(world, c, e, item, count) === 0) fail(BuildFail.CannotAfford);

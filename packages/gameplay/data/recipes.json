@@ -34,6 +34,8 @@
     { "key": "bronze_sword",    "station": "anvil",     "seconds": 5, "ingredients": [{ "item": "leather", "count": 1 }, { "item": "bronze_ingot", "count": 4 }], "output": { "item": "bronze_sword", "count": 1 } },
     { "key": "iron_axe",        "station": "anvil",     "seconds": 4, "ingredients": [{ "item": "hardwood_planks", "count": 2 }, { "item": "iron_ingot", "count": 3 }], "output": { "item": "iron_axe", "count": 1 } },
     { "key": "iron_pickaxe",    "station": "anvil",     "seconds": 4, "ingredients": [{ "item": "hardwood_planks", "count": 2 }, { "item": "iron_ingot", "count": 3 }], "output": { "item": "iron_pickaxe", "count": 1 } },
-    { "key": "iron_sword",      "station": "anvil",     "seconds": 6, "ingredients": [{ "item": "leather", "count": 1 }, { "item": "iron_ingot", "count": 4 }], "output": { "item": "iron_sword", "count": 1 } }
+    { "key": "iron_sword",      "station": "anvil",     "seconds": 6, "ingredients": [{ "item": "leather", "count": 1 }, { "item": "iron_ingot", "count": 4 }], "output": { "item": "iron_sword", "count": 1 } },
+    { "key": "coin",            "station": "anvil",     "seconds": 2, "ingredients": [{ "item": "copper_ingot", "count": 1 }], "output": { "item": "coin", "count": 10 } },
+    { "key": "water_flask",     "station": "workbench", "seconds": 3, "ingredients": [{ "item": "leather", "count": 1 }, { "item": "rope", "count": 1 }], "output": { "item": "water_flask", "count": 1 } }
   ]
 }

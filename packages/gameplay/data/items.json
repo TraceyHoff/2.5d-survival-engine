@@ -494,6 +494,13 @@
       "category": "resource",
       "maxStack": 50,
       "weight": 0.1
+    },
+    {
+      "key": "coin",
+      "name": "Coin",
+      "category": "resource",
+      "maxStack": 500,
+      "weight": 0.01
     }
   ]
 }

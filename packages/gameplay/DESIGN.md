@@ -264,3 +264,33 @@ See the bottom of README.md. The open lists are mirrored in the final report.
 - Crafting completion should stamp `playerOf(world, e)` as crafter (pass it to `exchangeItems(..., crafter)`).
 - Names: core `PlayerNameRegistry` / `PlayerNames` resource. Store ids, resolve with `display(id)`.
 - Stalls: either core `TradeStall` + `installStalls/stockStall/withdrawStall/setStallListing/buyFromStall`, or your own `Listings` components calling core `atomicPurchase` (atomic, rollback on failure) and `can()`. Sale events: core `SaleLedger.entriesSince(cursor)`. No balance rules in core.
+
+## 9. Economy (player-driven; trade stalls)
+
+**Rules.** No NPC vendors (`data/economy.json noVendorSources`, tested: every item has a gather or craft source). Prices are `{item u16, count u16}`; `coin` is the conventional currency (anvil: 1 copper_ingot → 10 coin). Offline sales credit the till.
+
+**Listing model (one model): gameplay `Listings`**, not core `TradeStall`. Core's TradeStall (fb7bf56) caps at 8 rows (we need 24), has no enabled flag, pays into the stock container (we need a separate till), and keeps an in-memory ledger. Gameplay uses core `transaction()`, `Transaction.take/add` (crafterId stack key), `can()` and `PlayerNameRegistry`.
+
+**Crafter provenance.** Inventory/Container carry `crafterId u32[N]` (PlayerId, 0 = gathered or anonymous items such as coin, `economy.anonymousItems`). Registered with core Containers as `crafterId: "crafterId"`. Different crafters never stack. Provenance survives every transfer, trade (net purchaseSwap / coreTradeInventory), stall sale, death bag and STRC v2 persistence. `itemInfo(world, e, slot, names?)` → `{itemKey, count, durability, freshnessStage 0..3, crafterId, crafterName}` (names default = the world's PlayerNameRegistry; clients pass `client.names`).
+
+**Pieces** (`pieces.json` `stall: {listings, clanOnly}`): stall_blanket 1×1/4, stall_cart 2×1/8, stall_booth 2×2/12, clan_pavilion 3×2/24 (clan-owned only). Attachments: **stock** (Container slot i = listing i, StallHeader, Listings, StallLedger, OwnedBy) and **till** (Container, AttachKind.Till). Plain container deposit/withdraw is locked on both.
+
+| Component | Fields | Scope | Persist |
+|---|---|---|---|
+| StallHeader | ownerKind u8 (1 player, 2 clan), ownerId u32, open u8, listingCount u8 | all (AOI) | STRC v2 |
+| Listings | priceItem u16[24], priceCount u16[24], qty u16[24], enabled u8[24], revision u32 (bumps on every listing/open change) | viewers | STRC v2 |
+| StallLedger | ring of 16: tick, item, count, priceItem, priceCount, buyerId, crafterId; head, total | viewers | STRC v2 |
+
+**Permissions** (`StallActs` bits through `can()`, rule installed by `installEconomy`): a player-owned stall is managed by its owner only. Clan stalls follow `economy.rankPolicy`: leader and officer can list, price, collect and stock, plus remove for the leader. Members can only stock. Unlisted roles (recruits, outsiders) can only buy, and only while the stall is open.
+
+**Commands** (core CommandHandlers, ids appended after GAMEPLAY_COMMANDS): openStall{stall}, closeStall{}, stockStall{stall, listingSlot, invSlot, count}, unstockStall{stall, listingSlot, count}, setListing{stall, listingSlot, priceItem, priceCount, qty, enabled}, buyFromStall{stall, listingSlot, qty, expectedRevision, expectedPriceItem, expectedPriceCount}, collectTill{stall}, setStallOpen{stall, open}. The buy runs as `validateStallPurchase` (pure) and then `executeStallPurchase(tx, …)` inside one transaction. Rejection reasons: not_stall, stall_closed, out_of_range, forbidden, bad_listing, listing_disabled, price_changed, stale_listing, sold_out, no_funds, no_space, till_full, bad_qty. Buyers in the same tick are serialized in command order.
+
+**Events** (reliable): `gameplay.stall_sale {stall, listingSlot, item, count, priceItem, priceCount, buyerId, crafterId, ownerKind, ownerId}` goes to the owner (or clan) and the buyer. `gameplay.till_collected {stall, collectorId, items, ownerKind, ownerId}`.
+
+**Raiding.** A destroyed stall (anything except demolish) spills its stock and till into LootBags when `stallStockLootable` is set (the default).
+
+### UI data contract (Art & Assets)
+- Browse view: StallHeader plus per listing `{slot, stockItem, stock, priceItem, priceCount, qty, enabled}` (`stallListings`), and `revision` for the buy payload.
+- Owner manage view: the browse view, plus till contents and the ledger entries `{tick, item, count, priceItem, priceCount, buyerId, crafterId}`, newest first.
+- Tooltip: `itemInfo` → itemKey (manifest key), count, durability, freshnessStage 0..3, crafterName (resolved from crafterId).
+- Stall visuals: the piece key (manifest), `StallHeader.open` (0/1), and `BuildPiece.tint` = clanPalettes index (`clanTintIndex`).

@@ -1,0 +1,32 @@
+{
+  "$comment": "Player-driven economy. noVendorSources asserts there are no NPC vendors: every item must come from a gather or craft source (tested). Prices are {item,count}; currency is the conventional price item. rankPolicy maps core clan roles (1 member, 2 officer, 3 leader) to stall actions; roles not listed (e.g. recruits) can only buy.",
+  "noVendorSources": true,
+  "currency": "coin",
+  "offlineSales": true,
+  "stallStockLootable": true,
+  "browseRange": 3,
+  "tillSlots": 12,
+  "ledgerSize": 16,
+  "buyRatePerSecond": 4,
+  "rankPolicy": {
+    "3": [
+      "list",
+      "price",
+      "collect",
+      "stock",
+      "remove"
+    ],
+    "2": [
+      "list",
+      "price",
+      "collect",
+      "stock"
+    ],
+    "1": [
+      "stock"
+    ]
+  },
+  "anonymousItems": [
+    "coin"
+  ]
+}

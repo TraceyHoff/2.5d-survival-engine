@@ -17,6 +17,7 @@ import { consumeSystem, deathSystem, vitalsSystem } from "./systems/vitals.js";
 import { installBuildingSystems, BUILDING_SYSTEMS } from "./building/install.js";
 import { installCombatSystems, COMBAT_SYSTEMS } from "./combat/install.js";
 import { entityIndex } from "@engine/core";
+import { installGameplayContainers } from "./economy/provenance.js";
 
 export * from "./spawn.js";
 
@@ -72,6 +73,7 @@ export function installGameplay(world: World, options: GameplayOptions | number 
   if (world.env(TimeOfDay).dayLengthTicks === 0) { world.env(TimeOfDay).dayLengthTicks = dayLengthTicks; setTimeOfDay(world, env.startTimeOfDay * 24, 0); }
   world.set(world.environment, Weather, { kind: WeatherKind.Clear });
   installSpatialIndex(world);
+  installGameplayContainers(world);
   if (world.getResource(ClimateRes)) setClimateModel(world, gameplayClimateModel(env));
   if (opts.net && role === "server") applyReplication(opts.net);
 

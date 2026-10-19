@@ -7,13 +7,16 @@
  *   record: u16 type | u8 tier | u8 rot | u8 variant | u8 paint | u16 hp | u8 level | i16 qx | i16 qy (quarter tiles
  *           relative to the chunk origin) | u16 tribe | u8 flags (1 door, 2 fire, 4 storage)
  *           [door: u8 open, u16 lockTribe] [fire: u8 lit, u32 burnRemainingTicks]
- *           [container (fire or storage): u8 slotCount, u8 n, n x (u8 slot, u16 item, u16 count, u32 ageTicks, u16 durability)]
+ *           [container (fire or storage): u8 slotCount, u8 n, n x (u8 slot, u16 item, u16 count, u32 ageTicks, u16 durability, u32 crafterId (v2))]
+ *           [stall (flag 8, v2): u8 ownerKind, u32 ownerId, u8 open, u32 revision, u8 L, L x (u16 priceItem, u16 priceCount, u16 qty, u8 enabled),
+ *            u8 head, u32 total, LEDGER_SIZE x (u32 age, u16 item, u16 count, u16 priceItem, u32 priceCount, u32 buyerId, u32 crafterId), till container]
+ * v1 blobs (no crafterId, no stall block) still decode.
  * Records are sorted (decks, structure cells, edges, furniture, openings; then level, y, x, type, rot) so hosts
  * decode before openings and re-encoding a decoded chunk is byte-identical. Times are relative to the save tick.
  */
 import { BinaryReader, BinaryWriter, entityIndex, Transform, type Entity, type World } from "@engine/core";
 import { CHUNK_SIZE, chunkKey, type ChunkKey } from "@engine/world";
-import { AttachKind, BuildPiece, Container, DoorState, Fuel, PieceLink, PieceStability, Tribe } from "../components.js";
+import { AttachKind, BuildPiece, Container, DoorState, Fuel, LEDGER_SIZE, Listings, PieceLink, PieceStability, StallHeader, StallLedger, Tribe } from "../components.js";
 import { gameplayDefs, isAuthority } from "../config.js";
 import { Placement, type PieceDef } from "../defs.js";
 import { attachmentsOf, unlinkPiece } from "./links.js";
@@ -21,8 +24,9 @@ import { recomputeRegion } from "./integrity.js";
 import { placePiece } from "./place.js";
 import { openingParent, slotFromPos, slotTransform, structures, unmarkLinked, type StructureIndex } from "./structure.js";
 import { setEmittersLit } from "../systems/fuel.js";
+import { setStallOwnership } from "../economy/stall.js";
 
-export const STRC_VERSION = 1;
+export const STRC_VERSION = 2;
 const MAGIC = [0x53, 0x54, 0x52, 0x43];
 export class StructureCodecError extends Error {}
 
@@ -50,10 +54,12 @@ export function encodeStructures(world: World, cx: number, cy: number): Uint8Arr
     const atts = attachmentsOf(world, r.e);
     const door = atts.find((a) => world.has(a, DoorState)); const fire = atts.find((a) => world.has(a, Fuel));
     const store = atts.find((a) => world.has(a, Container) && !world.has(a, Fuel));
-    w.write("u8", (door !== undefined ? 1 : 0) | (fire !== undefined ? 2 : 0) | (store !== undefined ? 4 : 0));
+    const stall = store !== undefined && world.has(store, StallHeader) ? store : undefined;
+    w.write("u8", (door !== undefined ? 1 : 0) | (fire !== undefined ? 2 : 0) | (store !== undefined ? 4 : 0) | (stall !== undefined ? 8 : 0));
     if (door !== undefined) { const d = world.get(door, DoorState)!; w.write("u8", d.open); w.write("u16", d.lockTribe); }
     if (fire !== undefined) { const f = world.get(fire, Fuel)!; w.write("u8", f.lit); w.write("u32", Math.max(0, f.burnUntilTick - world.tick)); }
     for (const c of [fire, store]) if (c !== undefined) writeContainer(world, w, c);
+    if (stall !== undefined) writeStall(world, w, stall, atts.find((a) => world.getField(a, PieceLink, "kind") === AttachKind.Till));
   }
   return w.finish();
 }
@@ -61,17 +67,44 @@ function writeContainer(world: World, w: BinaryWriter, c: Entity): void {
   const n = world.getField(c, Container, "slotCount")!; const items = world.getArray(c, Container, "items")!, counts = world.getArray(c, Container, "counts")!, created = world.getArray(c, Container, "createdTick")!;
   const used: number[] = []; for (let i = 0; i < n; i++) if (items[i] && counts[i]) used.push(i);
   w.write("u8", n); w.write("u8", used.length);
-  const dur = world.getArray(c, Container, "durability")!;
-  for (const i of used) { w.write("u8", i); w.write("u16", items[i]!); w.write("u16", counts[i]!); w.write("u32", Math.max(0, world.tick - created[i]!)); w.write("u16", dur[i]!); }
+  const dur = world.getArray(c, Container, "durability")!, cr = world.getArray(c, Container, "crafterId")!;
+  for (const i of used) { w.write("u8", i); w.write("u16", items[i]!); w.write("u16", counts[i]!); w.write("u32", Math.max(0, world.tick - created[i]!)); w.write("u16", dur[i]!); w.write("u32", cr[i]!); }
 }
-function readContainer(world: World, r: BinaryReader, c: Entity | undefined): void {
+function writeStall(world: World, w: BinaryWriter, s: Entity, till: Entity | undefined): void {
+  const h = world.get(s, StallHeader)!; w.write("u8", h.ownerKind); w.write("u32", h.ownerId); w.write("u8", h.open);
+  w.write("u32", world.getField(s, Listings, "revision")!); const L = h.listingCount; w.write("u8", L);
+  const g = (f: "priceItem" | "priceCount" | "qty" | "enabled") => world.getArray(s, Listings, f)!;
+  for (let i = 0; i < L; i++) { w.write("u16", g("priceItem")[i]!); w.write("u16", g("priceCount")[i]!); w.write("u16", g("qty")[i]!); w.write("u8", g("enabled")[i]!); }
+  const l = (f: "tick" | "item" | "count" | "priceItem" | "priceCount" | "buyerId" | "crafterId") => world.getArray(s, StallLedger, f)!;
+  w.write("u8", world.getField(s, StallLedger, "head")!); w.write("u32", world.getField(s, StallLedger, "total")!);
+  for (let i = 0; i < LEDGER_SIZE; i++) { w.write("u32", Math.max(0, world.tick - l("tick")[i]!)); w.write("u16", l("item")[i]!); w.write("u16", l("count")[i]!); w.write("u16", l("priceItem")[i]!); w.write("u32", l("priceCount")[i]!); w.write("u32", l("buyerId")[i]!); w.write("u32", l("crafterId")[i]!); }
+  if (till !== undefined) writeContainer(world, w, till); else { w.write("u8", 0); w.write("u8", 0); }
+}
+function readStall(world: World, r: BinaryReader, s: Entity | undefined, till: Entity | undefined): void {
+  const ownerKind = r.read("u8"), ownerId = r.read("u32"), open = r.read("u8"), revision = r.read("u32"), L = r.read("u8");
+  const rows: number[][] = []; for (let i = 0; i < L; i++) rows.push([r.read("u16"), r.read("u16"), r.read("u16"), r.read("u8")]);
+  const head = r.read("u8"), total = r.read("u32");
+  const led: number[][] = []; for (let i = 0; i < LEDGER_SIZE; i++) led.push([r.read("u32"), r.read("u16"), r.read("u16"), r.read("u16"), r.read("u32"), r.read("u32"), r.read("u32")]);
+  if (s !== undefined) {
+    world.set(s, StallHeader, { ownerKind, ownerId, open }); world.setField(s, Listings, "revision", revision);
+    const g = (f: "priceItem" | "priceCount" | "qty" | "enabled") => world.getArray(s, Listings, f)!;
+    rows.forEach((x, i) => { g("priceItem")[i] = x[0]!; g("priceCount")[i] = x[1]!; g("qty")[i] = x[2]!; g("enabled")[i] = x[3]!; });
+    const l = (f: "tick" | "item" | "count" | "priceItem" | "priceCount" | "buyerId" | "crafterId") => world.getArray(s, StallLedger, f)!;
+    led.forEach((x, i) => { l("tick")[i] = x[1] ? Math.max(0, world.tick - x[0]!) : 0; l("item")[i] = x[1]!; l("count")[i] = x[2]!; l("priceItem")[i] = x[3]!; l("priceCount")[i] = x[4]!; l("buyerId")[i] = x[5]!; l("crafterId")[i] = x[6]!; });
+    world.setField(s, StallLedger, "head", head); world.setField(s, StallLedger, "total", total);
+    world.store(Listings).markChanged(entityIndex(s)); world.store(StallLedger).markChanged(entityIndex(s));
+    setStallOwnership(world, s, till, ownerKind, ownerId);
+  }
+  readContainer(world, r, till, 2);
+}
+function readContainer(world: World, r: BinaryReader, c: Entity | undefined, version: number): void {
   const n = r.read("u8"); const used = r.read("u8");
   const items = c !== undefined ? world.getArray(c, Container, "items") : undefined, counts = c !== undefined ? world.getArray(c, Container, "counts") : undefined, created = c !== undefined ? world.getArray(c, Container, "createdTick") : undefined;
   if (c !== undefined) world.setField(c, Container, "slotCount", n);
   for (let k = 0; k < used; k++) {
-    const i = r.read("u8"), item = r.read("u16"), count = r.read("u16"), age = r.read("u32"), d = r.read("u16");
-    const dur = c !== undefined ? world.getArray(c, Container, "durability") : undefined;
-    if (items && counts && created && dur && i < items.length) { items[i] = item; counts[i] = count; created[i] = Math.max(0, world.tick - age); dur[i] = d; }
+    const i = r.read("u8"), item = r.read("u16"), count = r.read("u16"), age = r.read("u32"), d = r.read("u16"), crafter = version >= 2 ? r.read("u32") : 0;
+    const dur = c !== undefined ? world.getArray(c, Container, "durability") : undefined, cr = c !== undefined ? world.getArray(c, Container, "crafterId") : undefined;
+    if (items && counts && created && dur && cr && i < items.length) { items[i] = item; counts[i] = count; created[i] = Math.max(0, world.tick - age); dur[i] = d; cr[i] = crafter; }
   }
   if (c !== undefined) world.store(Container).markChanged(entityIndex(c));
 }
@@ -81,7 +114,7 @@ export interface DecodedStructures { cx: number; cy: number; pieces: Entity[]; h
 export function decodeStructures(world: World, bytes: Uint8Array, opts: { strictHashes?: boolean } = {}): DecodedStructures {
   const defs = gameplayDefs(world); const idx = structures(world); const r = new BinaryReader(bytes); const lh = defs.building.levelHeight;
   for (const m of MAGIC) if (r.read("u8") !== m) throw new StructureCodecError("not a structure blob (bad magic)");
-  const version = r.read("u16"); if (version !== STRC_VERSION) throw new StructureCodecError(`unsupported structure blob version ${version} (expected ${STRC_VERSION})`);
+  const version = r.read("u16"); if (version !== STRC_VERSION && version !== 1) throw new StructureCodecError(`unsupported structure blob version ${version} (expected ${STRC_VERSION})`);
   const cx = r.read("i32"), cy = r.read("i32"); const ph = r.read("u32"), ih = r.read("u32");
   const hashMismatch = ph !== defs.hashes.pieces || ih !== defs.hashes.items;
   if (hashMismatch && opts.strictHashes) throw new StructureCodecError("structure blob was written with different piece/item ids");
@@ -106,8 +139,9 @@ export function decodeStructures(world: World, bytes: Uint8Array, opts: { strict
     const doorA = atts.find((a) => world.has(a, DoorState)); const fireA = atts.find((a) => world.has(a, Fuel)); const storeA = atts.find((a) => world.has(a, Container) && !world.has(a, Fuel));
     if (door && doorA !== undefined) world.set(doorA, DoorState, door);
     if (fire && fireA !== undefined) { world.set(fireA, Fuel, { lit: fire.lit, burnUntilTick: world.tick + fire.rem }); }
-    if (fire) readContainer(world, r, fireA);
-    if (flags & 4) readContainer(world, r, storeA);
+    if (fire) readContainer(world, r, fireA, version);
+    if (flags & 4) readContainer(world, r, storeA, version);
+    if (flags & 8) readStall(world, r, storeA !== undefined && world.has(storeA, StallHeader) ? storeA : undefined, atts.find((a) => world.getField(a, PieceLink, "kind") === AttachKind.Till));
   }
   if (isAuthority(world) && pieces.length) { recomputeRegion(world, idx, new Set(pieces)); idx.dirty.clear(); }
   // fires: restore emitter strength for lit fires

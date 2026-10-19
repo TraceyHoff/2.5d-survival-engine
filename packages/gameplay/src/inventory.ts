@@ -24,18 +24,21 @@ export interface SlotView {
   count(i: number): number;
   created(i: number): number;
   durability(i: number): number;
-  put(i: number, item: number, count: number, created?: number, durability?: number): void;
+  /** Crafter provenance (PlayerId, 0 = gathered); part of the stack key. */
+  crafter(i: number): number;
+  put(i: number, item: number, count: number, created?: number, durability?: number, crafter?: number): void;
 }
 
 export class ScratchSlots implements SlotView {
-  constructor(readonly slotCount: number, readonly maxWeight: number, readonly items: number[], readonly counts: number[], readonly createds: number[], readonly durs: number[] = [], readonly now = 0) {}
+  constructor(readonly slotCount: number, readonly maxWeight: number, readonly items: number[], readonly counts: number[], readonly createds: number[], readonly durs: number[] = [], readonly now = 0, readonly crafters: number[] = []) {}
   item(i: number): number { return this.items[i] ?? 0; }
   count(i: number): number { return this.counts[i] ?? 0; }
   created(i: number): number { return this.createds[i] ?? 0; }
   durability(i: number): number { return this.durs[i] ?? 0; }
-  /** Writes a whole slot tuple (item, count, createdTick, durability). */
-  put(i: number, item: number, count: number, created = this.created(i), durability = this.durability(i)): void {
-    const on = count > 0; this.items[i] = on ? item : 0; this.counts[i] = on ? count : 0; this.createds[i] = on ? created : 0; this.durs[i] = on ? durability : 0;
+  crafter(i: number): number { return this.crafters[i] ?? 0; }
+  /** Writes a whole slot tuple (item, count, createdTick, durability, crafterId). */
+  put(i: number, item: number, count: number, created = this.created(i), durability = this.durability(i), crafter = this.crafter(i)): void {
+    const on = count > 0; this.items[i] = on ? item : 0; this.counts[i] = on ? count : 0; this.createds[i] = on ? created : 0; this.durs[i] = on ? durability : 0; this.crafters[i] = on ? crafter : 0;
   }
 }
 
@@ -50,13 +53,13 @@ export const hasSlots = (world: World, e: Entity): boolean => world.has(e, Inven
 function readSlots(world: World, e: Entity): ScratchSlots {
   const def = slotsDef(world, e); const st = world.store(def); const s = st.slot(entityIndex(e));
   const n = Math.min(st.data.slotCount[s]!, def.schema.items.length);
-  const take = (f: "items" | "counts" | "createdTick" | "durability"): number[] => Array.from(world.getArray(e, def, f)!.subarray(0, n));
-  return new ScratchSlots(n, st.data.maxWeight[s]!, take("items"), take("counts"), take("createdTick"), take("durability"), world.tick);
+  const take = (f: "items" | "counts" | "createdTick" | "durability" | "crafterId"): number[] => Array.from(world.getArray(e, def, f)!.subarray(0, n));
+  return new ScratchSlots(n, st.data.maxWeight[s]!, take("items"), take("counts"), take("createdTick"), take("durability"), world.tick, take("crafterId"));
 }
 function writeSlots(world: World, e: Entity, v: ScratchSlots, defs: GameDefs): void {
   const def = slotsDef(world, e); const st = world.store(def); const idx = entityIndex(e);
-  const items = world.getArray(e, def, "items")!, counts = world.getArray(e, def, "counts")!, created = world.getArray(e, def, "createdTick")!, dur = world.getArray(e, def, "durability")!;
-  for (let i = 0; i < v.slotCount; i++) { items[i] = v.item(i); counts[i] = v.count(i); created[i] = v.created(i); dur[i] = v.durability(i); }
+  const items = world.getArray(e, def, "items")!, counts = world.getArray(e, def, "counts")!, created = world.getArray(e, def, "createdTick")!, dur = world.getArray(e, def, "durability")!, cr = world.getArray(e, def, "crafterId")!;
+  for (let i = 0; i < v.slotCount; i++) { items[i] = v.item(i); counts[i] = v.count(i); created[i] = v.created(i); dur[i] = v.durability(i); cr[i] = v.crafter(i); }
   st.data.weight[st.slot(idx)] = slotsWeight(v, defs);
   st.markChanged(idx);
 }
@@ -71,12 +74,12 @@ export function slotsCount(v: SlotView, item: number): number {
   let n = 0; for (let i = 0; i < v.slotCount; i++) if (v.item(i) === item) n += v.count(i); return n;
 }
 /** Max units of `item` that fit (slots and weight), capped at `count`. */
-export function slotsCanAdd(v: SlotView, item: number, count: number, defs: GameDefs): number {
+export function slotsCanAdd(v: SlotView, item: number, count: number, defs: GameDefs, crafter = 0): number {
   const def = defs.items.get(item); if (!def || count <= 0) return 0;
   let space = 0;
   for (let i = 0; i < v.slotCount && space < count; i++) {
     const id = v.item(i);
-    if (id === item) space += Math.max(0, def.maxStack - v.count(i));
+    if (id === item && v.crafter(i) === crafter) space += Math.max(0, def.maxStack - v.count(i));
     else if (id === 0) space += def.maxStack;
   }
   let fit = Math.min(space, count);
@@ -87,30 +90,30 @@ export function slotsCanAdd(v: SlotView, item: number, count: number, defs: Game
   return fit;
 }
 /** Adds with an effective created tick (merged stacks average by count). */
-export function slotsAdd(v: SlotView, item: number, count: number, defs: GameDefs, created = 0, durability = defs.items.get(item)?.maxDurability ?? 0): number {
+export function slotsAdd(v: SlotView, item: number, count: number, defs: GameDefs, created = 0, durability = defs.items.get(item)?.maxDurability ?? 0, crafter = 0): number {
   const def = defs.items.get(item); if (!def) return 0;
-  const total = slotsCanAdd(v, item, count, defs);
+  const total = slotsCanAdd(v, item, count, defs, crafter);
   let left = total;
   for (let i = 0; i < v.slotCount && left > 0; i++) {
-    if (v.item(i) !== item) continue;
+    if (v.item(i) !== item || v.crafter(i) !== crafter) continue;
     const c0 = v.count(i); const n = Math.min(left, def.maxStack - c0);
-    if (n > 0) { v.put(i, item, c0 + n, Math.round((v.created(i) * c0 + created * n) / (c0 + n)), Math.min(v.durability(i), durability)); left -= n; }
+    if (n > 0) { v.put(i, item, c0 + n, Math.round((v.created(i) * c0 + created * n) / (c0 + n)), Math.min(v.durability(i), durability), crafter); left -= n; }
   }
   for (let i = 0; i < v.slotCount && left > 0; i++) {
     if (v.item(i) !== 0) continue;
-    const n = Math.min(left, def.maxStack); v.put(i, item, n, created, durability); left -= n;
+    const n = Math.min(left, def.maxStack); v.put(i, item, n, created, durability, crafter); left -= n;
   }
   return total - left;
 }
 /** All-or-nothing; returns the removed (count, created) parts (highest slot first) or null. */
-export interface SlotPart { count: number; created: number; durability: number }
+export interface SlotPart { count: number; created: number; durability: number; crafter: number }
 export function slotsTake(v: SlotView, item: number, count: number): SlotPart[] | null {
   if (count <= 0) return [];
   if (slotsCount(v, item) < count) return null;
   const parts: SlotPart[] = []; let left = count;
   for (let i = v.slotCount - 1; i >= 0 && left > 0; i--) {
     if (v.item(i) !== item) continue;
-    const n = Math.min(left, v.count(i)); parts.push({ count: n, created: v.created(i), durability: v.durability(i) }); v.put(i, item, v.count(i) - n); left -= n;
+    const n = Math.min(left, v.count(i)); parts.push({ count: n, created: v.created(i), durability: v.durability(i), crafter: v.crafter(i) }); v.put(i, item, v.count(i) - n); left -= n;
   }
   return parts;
 }
@@ -128,10 +131,10 @@ export function countItem(world: World, e: Entity, item: number): number { retur
 export function canAddItem(world: World, e: Entity, item: number, count: number): number {
   return slotsCanAdd(readSlots(world, e), item, count, gameplayDefs(world));
 }
-/** Adds up to `count` fresh units (created = now); returns how many were added. */
-export function addItem(world: World, e: Entity, item: number, count: number): number {
+/** Adds up to `count` fresh units (created = now, crafterId = `crafter`, 0 = gathered); returns how many were added. */
+export function addItem(world: World, e: Entity, item: number, count: number, crafter = 0): number {
   const defs = gameplayDefs(world); const v = readSlots(world, e);
-  const n = slotsAdd(v, item, count, defs, world.tick); if (n > 0) writeSlots(world, e, v, defs); return n;
+  const n = slotsAdd(v, item, count, defs, world.tick, undefined, crafter); if (n > 0) writeSlots(world, e, v, defs); return n;
 }
 /** All-or-nothing. */
 export function removeItem(world: World, e: Entity, item: number, count: number): boolean {
@@ -144,10 +147,17 @@ export function transferItem(world: World, from: Entity, to: Entity, item: numbe
   if (from === to) return 0;
   const defs = gameplayDefs(world);
   const a = readSlots(world, from); const b = readSlots(world, to);
-  const n = Math.min(slotsCount(a, item), slotsCanAdd(b, item, count, defs));
-  if (n <= 0) return 0;
   const fm = spoilMulOf(world, from), tm = spoilMulOf(world, to);
-  for (const p of slotsTake(a, item, n)!) slotsAdd(b, item, p.count, defs, rebaseCreated(p.created, world.tick, fm, tm), p.durability);
+  let left = Math.min(count, slotsCount(a, item)), moved = 0;
+  // highest slot first, part by part (each part keeps its crafter); stops at the first part that doesn't fully fit
+  for (let i = a.slotCount - 1; i >= 0 && left > 0; i--) {
+    if (a.item(i) !== item) continue;
+    const want = Math.min(left, a.count(i)); const n = Math.min(want, slotsCanAdd(b, item, want, defs, a.crafter(i)));
+    if (n <= 0) continue;
+    slotsAdd(b, item, n, defs, rebaseCreated(a.created(i), world.tick, fm, tm), a.durability(i), a.crafter(i));
+    a.put(i, item, a.count(i) - n); left -= n; moved += n;
+  }
+  const n = moved; if (n <= 0) return 0;
   writeSlots(world, from, a, defs); writeSlots(world, to, b, defs);
   return n;
 }
@@ -155,10 +165,10 @@ export function transferItem(world: World, from: Entity, to: Entity, item: numbe
  * Atomically removes `take` and adds `give` (fresh). Returns false (and changes nothing) if any ingredient is
  * missing or any output does not fully fit after the removal.
  */
-export function exchangeItems(world: World, e: Entity, take: readonly ItemCount[], give: readonly ItemCount[], dryRun = false): boolean {
+export function exchangeItems(world: World, e: Entity, take: readonly ItemCount[], give: readonly ItemCount[], dryRun = false, crafter = 0): boolean {
   const defs = gameplayDefs(world); const v = readSlots(world, e);
   for (const t of take) if (!slotsRemove(v, t.item, t.count)) return false;
-  for (const g of give) if (slotsAdd(v, g.item, g.count, defs, world.tick) !== g.count) return false;
+  for (const g of give) if (slotsAdd(v, g.item, g.count, defs, world.tick, undefined, crafter) !== g.count) return false;
   if (!dryRun) writeSlots(world, e, v, defs);
   return true;
 }
@@ -182,10 +192,10 @@ export function freshness(defs: GameDefs, item: number, created: number, spoilMu
   return decayAt(created, (dt / sec) * spoilMul, tick);
 }
 /** Debug/UI view: non-empty slots. */
-export interface SlotTuple { slot: number; item: number; count: number; created: number; durability: number }
+export interface SlotTuple { slot: number; item: number; count: number; created: number; durability: number; crafterId: number }
 export function listSlots(world: World, e: Entity): SlotTuple[] {
   const v = readSlots(world, e); const out: SlotTuple[] = [];
-  for (let i = 0; i < v.slotCount; i++) if (v.item(i) !== 0) out.push({ slot: i, item: v.item(i), count: v.count(i), created: v.created(i), durability: v.durability(i) });
+  for (let i = 0; i < v.slotCount; i++) if (v.item(i) !== 0) out.push({ slot: i, item: v.item(i), count: v.count(i), created: v.created(i), durability: v.durability(i), crafterId: v.crafter(i) });
   return out;
 }
 /** Low-level: rewrite every slot through fn (used by spoilage re-basing / conversion). */
@@ -203,9 +213,9 @@ export function moveSlotTuples(world: World, from: Entity, to: Entity, moves: re
   const fm = spoilMulOf(world, from), tm = spoilMulOf(world, to);
   for (const m of moves) {
     const item = a.item(m.slot); if (!item || a.count(m.slot) < m.count || (m.item !== undefined && m.item !== item) || m.count <= 0) return false;
-    const created = a.created(m.slot), dur = a.durability(m.slot);
+    const created = a.created(m.slot), dur = a.durability(m.slot), cr = a.crafter(m.slot);
     a.put(m.slot, item, a.count(m.slot) - m.count);
-    if (slotsAdd(b, item, m.count, defs, rebaseCreated(created, world.tick, fm, tm), dur) !== m.count) return false;
+    if (slotsAdd(b, item, m.count, defs, rebaseCreated(created, world.tick, fm, tm), dur, cr) !== m.count) return false;
   }
   writeSlots(world, from, a, defs); writeSlots(world, to, b, defs); return true;
 }

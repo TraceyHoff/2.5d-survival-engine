@@ -6,7 +6,9 @@
  * Validation order: UnknownPiece, BadTier, LevelLimit, OutOfRange, NoPrivilege, ZoneFull, Terrain, Occupied,
  * NoSocket, Blocked, NoSupport, CannotAfford.
  */
-import { entityIndex, Transform, type Entity, type World } from "@engine/core";
+import { entityIndex, Membership, Transform, type Entity, type World } from "@engine/core";
+/** BuildPiece.tint for a clan: 1..255 index into assets clanPalettes (ADR-077). */
+export const clanTintIndex = (clanId: number): number => clanId ? 1 + ((clanId - 1) % 255) : 0;
 import { installSpatialIndex, SUBTILE } from "@engine/world";
 import {
   AttachKind, BuildPiece, Container, ContainerViewers, CraftingStation, DoorState, EdgeSide, Emitter, Fuel, Health,
@@ -23,6 +25,9 @@ import { linkAttachment } from "./links.js";
 import { anchorFor, gridRot, LAYER_OPENING, markLinked, slotTransform, structures, type Slot, type StructureIndex } from "./structure.js";
 import { Falloff } from "@engine/world";
 import { indexEntity } from "../spawn.js";
+import { tillSlots } from "../economy/config.js";
+import { assignStallOwner } from "../economy/stall.js";
+import { Listings, StallHeader, StallLedger } from "../components.js";
 
 export interface PlaceRequest { piece: number; x: number; y: number; level: number; rot: number; tier: number; variant: number }
 export interface Snapped { def: PieceDef; slot: Slot; parent: Entity | 0; pos: { x: number; y: number; z: number; facing: number }; tier: number; variant: number }
@@ -169,6 +174,9 @@ export function placePiece(world: World, builder: Entity | 0, sn: Snapped, opts:
   world.add(e, Transform, sn.pos)
     .add(e, BuildPiece, { type: def.id, rot: slot.rot, variant: sn.variant, tier: sn.tier, hp: opts.hp ?? maxHp(defs, def, sn.tier), damageStage: 0, paint: opts.paint ?? 0 });
   if (tribe) world.add(e, Tribe, { id: tribe });
+  // clan tint: u8 index into the assets manifest clanPalettes (0 = no clan; render wraps by palette count)
+  const clan = builder && world.isRegistered(Membership) ? world.getField(builder, Membership, "clanId") ?? 0 : 0;
+  if (clan) world.setField(e, BuildPiece, "tint", clanTintIndex(clan));
   if (def.privilegeRadius > 0) world.add(e, PrivilegeZone, { radius: def.privilegeRadius, tribe });
   if (def.station !== StationKind.None && !def.fired) world.add(e, CraftingStation, { kind: def.station });
   if (isAuthority(world)) world.add(e, PieceStability, { value: 0, placedTick: world.tick });
@@ -181,6 +189,7 @@ export function placePiece(world: World, builder: Entity | 0, sn: Snapped, opts:
     world.setField(e, PieceStability, "value", Math.max(0, Math.min(255, candidateStability(world, sn))));
     idx.dirty.add(e);
     spawnAttachments(world, e, def, sn);
+    if (def.stall && builder) assignStallOwner(world, e, builder);
   }
   return e;
 }
@@ -205,6 +214,12 @@ export function spawnAttachments(world: World, piece: Entity, def: PieceDef, sn:
     const heat = specs.find((s) => s.kind === 1);
     if (heat) world.add(f, Emitter, { kind: heat.kind, radius: heat.radius, strength: 0, falloff: Falloff.Linear });
     if (def.station !== StationKind.None) world.add(f, CraftingStation, { kind: def.station });
+  } else if (def.stall) {
+    // trade stall: stock (Container slot i = listing i) + header/listings/ledger on one attachment, proceeds in a separate till
+    const st = link(AttachKind.Storage);
+    world.add(st, Container, { slotCount: def.stall.listings }).add(st, ContainerViewers)
+      .add(st, StallHeader, { ownerKind: 0, ownerId: 0, open: 0, listingCount: def.stall.listings }).add(st, Listings).add(st, StallLedger);
+    world.add(link(AttachKind.Till), Container, { slotCount: tillSlots() });
   } else if (def.container > 0) world.add(link(AttachKind.Storage), Container, { slotCount: def.container }).add(out[out.length - 1]!, ContainerViewers);
   const light = specs.find((s) => s.kind === 2);
   if (light) world.add(link(AttachKind.Light), Emitter, { kind: light.kind, radius: light.radius, strength: def.fired ? 0 : light.strength, falloff: Falloff.Quadratic });

@@ -666,6 +666,115 @@
           "amount": 1
         }
       ]
+    },
+    {
+      "key": "stall_blanket",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 60,
+      "container": 4,
+      "footprint": {
+        "w": 1,
+        "h": 1
+      },
+      "cost": [
+        {
+          "resource": "cloth",
+          "amount": 2
+        },
+        {
+          "resource": "fiber",
+          "amount": 4
+        }
+      ],
+      "stall": {
+        "listings": 4
+      }
+    },
+    {
+      "key": "stall_cart",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 180,
+      "container": 8,
+      "footprint": {
+        "w": 2,
+        "h": 1
+      },
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 10
+        },
+        {
+          "resource": "rope",
+          "amount": 2
+        }
+      ],
+      "stall": {
+        "listings": 8
+      }
+    },
+    {
+      "key": "stall_booth",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 320,
+      "container": 12,
+      "footprint": {
+        "w": 2,
+        "h": 2
+      },
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 16
+        },
+        {
+          "resource": "nails",
+          "amount": 6
+        },
+        {
+          "resource": "cloth",
+          "amount": 4
+        }
+      ],
+      "stall": {
+        "listings": 12
+      }
+    },
+    {
+      "key": "clan_pavilion",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 600,
+      "container": 24,
+      "footprint": {
+        "w": 3,
+        "h": 2
+      },
+      "cost": [
+        {
+          "resource": "hardwood_planks",
+          "amount": 20
+        },
+        {
+          "resource": "nails",
+          "amount": 12
+        },
+        {
+          "resource": "cloth",
+          "amount": 8
+        }
+      ],
+      "stall": {
+        "listings": 24,
+        "clanOnly": true
+      }
     }
   ]
 }

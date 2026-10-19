@@ -51,7 +51,8 @@
     "stone_spear": 49,
     "tin_ingot": 50,
     "tin_ore": 51,
-    "wooden_club": 52
+    "wooden_club": 52,
+    "coin": 53
   },
   "resources": {
     "fallen_branches": 1,
@@ -105,7 +106,9 @@
     "stone_shovel": 33,
     "stone_spear": 34,
     "tin_ingot": 35,
-    "wooden_club": 36
+    "wooden_club": 36,
+    "coin": 37,
+    "water_flask": 38
   },
   "pieces": {
     "anvil": 1,
@@ -142,7 +145,11 @@
     "window_bars": 32,
     "window_glass": 33,
     "window_shutters": 34,
-    "workbench": 35
+    "workbench": 35,
+    "clan_pavilion": 36,
+    "stall_blanket": 37,
+    "stall_booth": 38,
+    "stall_cart": 39
   },
   "zombies": {
     "zombie_brute": 1,

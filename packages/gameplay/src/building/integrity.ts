@@ -10,6 +10,7 @@
  *    max-Dijkstra (values are integers 0..100, so 101 buckets), then everything under minStability collapses.
  * HP damage is batched per tick (one BuildPiece write per piece per tick) and drives damageStage.
  */
+import { spillStall } from "../economy/stall.js";
 import { type Entity, type World } from "@engine/core";
 import { AttachKind, BuildPiece, ContainerViewers, PieceStability, Viewing } from "../components.js";
 import { gameplayDefs, isAuthority } from "../config.js";
@@ -101,6 +102,7 @@ export function destroyPiece(world: World, e: Entity, cause: DestroyCause): void
     // close the container for viewers before it vanishes
     const vs = world.get(a, ContainerViewers);
     if (vs) for (const v of world.query([Viewing])) if (world.getField(v, Viewing, "container") === a) world.remove(v, Viewing);
+    if (cause !== DestroyCause.Demolish) spillStall(world, a);
     unmarkLinked(world, a); world.destroy(a);
   }
   idx.removePiece(e); idx.removedNeighbors.delete(e);

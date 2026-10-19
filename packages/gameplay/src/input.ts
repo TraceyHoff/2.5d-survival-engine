@@ -6,6 +6,7 @@
  */
 import { CommandRegistry, defineActions, defineCommand, defineResource, type Command, type CommandDef, type Entity, type InputFrame, type World } from "@engine/core";
 import { IntentAction, PlayerIntent } from "./components.js";
+import { ECONOMY_COMMAND_RATES, ECONOMY_COMMANDS, ECONOMY_ENTITY_FIELDS } from "./economy/stall.js";
 
 export const GameplayActions = defineActions(["MoveUp", "MoveDown", "MoveLeft", "MoveRight", "Sprint", "Primary", "Secondary", "Interact", "Build"] as const);
 const MOVE = GameplayActions.MoveUp | GameplayActions.MoveDown | GameplayActions.MoveLeft | GameplayActions.MoveRight;
@@ -40,14 +41,18 @@ export const GAMEPLAY_COMMANDS: readonly [CommandDef, IntentAction][] = [
   [WithdrawCmd, IntentAction.Withdraw], [ToggleFireCmd, IntentAction.ToggleFire], [AttackCmd, IntentAction.Attack],
 ];
 /** Command fields carrying a NetId that net must resolve to a local Entity before applyGameplayInput. */
-export const COMMAND_ENTITY_FIELDS: Readonly<Record<string, readonly string[]>> = Object.fromEntries(
-  GAMEPLAY_COMMANDS.filter(([d]) => "target" in d.schema).map(([d]) => [d.name, ["target"]]),
-);
+export const COMMAND_ENTITY_FIELDS: Readonly<Record<string, readonly string[]>> = {
+  ...Object.fromEntries(GAMEPLAY_COMMANDS.filter(([d]) => "target" in d.schema).map(([d]) => [d.name, ["target"]])),
+  ...ECONOMY_ENTITY_FIELDS,
+};
 /** Suggested per-command rate limits (per second) for net's limiter; gameplay still enforces cooldowns. */
-export const COMMAND_RATES: Readonly<Record<string, number>> = Object.fromEntries(GAMEPLAY_COMMANDS.map(([d]) => [d.name, d === PlaceCmd ? 8 : 20]));
+export const COMMAND_RATES: Readonly<Record<string, number>> = {
+  ...Object.fromEntries(GAMEPLAY_COMMANDS.map(([d]) => [d.name, d === PlaceCmd ? 8 : 20])), ...ECONOMY_COMMAND_RATES,
+};
 
 export function registerGameplayCommands(reg: CommandRegistry = new CommandRegistry()): CommandRegistry {
   for (const [d] of GAMEPLAY_COMMANDS) reg.register(d);
+  for (const d of ECONOMY_COMMANDS) reg.register(d); // append-only: ids after GAMEPLAY_COMMANDS
   return reg;
 }
 
