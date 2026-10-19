@@ -33,9 +33,10 @@ function sampleInput(): { buttons: number; aimX: number; aimY: number } {
 
 const session = new ClientSession({ storage: localStorage, slot: params.get("player") ?? "1", sampleInput });
 let world = new World({ seed: 1234 }); installDemoWorld(world, "client");
-// Tiles are not replicated yet (Netcode/world: chunk tile streaming); draw a placeholder ground.
-const map = new TileMap();
-for (let y = -64; y < 96; y++) for (let x = -64; x < 96; x++) map.setTile(x, y, 1 + ((x * 7 + y * 13) & 3) % 3);
+// Ground: replicated tiles from the server (net TileClient, `session.client.tiles.tiles`) once connected;
+// a placeholder ground is drawn only while offline.
+const placeholder = new TileMap();
+for (let y = -64; y < 96; y++) for (let x = -64; x < 96; x++) placeholder.setTile(x, y, 1 + ((x * 7 + y * 13) & 3) % 3);
 
 const colors = ["#000", "#3a5", "#495", "#874"];
 function render(w: World, alpha: number): void {
@@ -46,6 +47,7 @@ function render(w: World, alpha: number): void {
   ctx.setTransform(dpr, 0, 0, dpr, (innerWidth / 2 - cam.sx) * dpr, (innerHeight / 2 - cam.sy) * dpr);
   ctx.clearRect(-1e5, -1e5, 2e5, 2e5);
   const { tileW: tw, tileH: th } = DEFAULT_ISO;
+  const map: TileMap = session.client?.tiles.tiles ?? placeholder;
   const cx = Math.floor(pt?.x ?? 16), cy = Math.floor(pt?.y ?? 16);
   for (let y = cy - 20; y < cy + 20; y++) for (let x = cx - 20; x < cx + 20; x++) {
     const s = worldToScreen(x, y); ctx.fillStyle = colors[map.getTile(x, y)] ?? "#333";
