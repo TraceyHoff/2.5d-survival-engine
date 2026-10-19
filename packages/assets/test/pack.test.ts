@@ -48,11 +48,20 @@ describe("art pack", () => {
       expect(snd.loop).toBe(true); expect(snd.loopPoints!.end).toBeGreaterThan(snd.loopPoints!.start);
     }
   });
+  it("wave 2: survival_fx keys yielded (ids reserved), aliases, masks", () => {
+    for (const k of ["campfire", "torch_stand", "lantern", "fireplace", "wood_stove"]) {
+      expect(pack.sprites.some((s: { key: string }) => s.key === k)).toBe(false);
+      expect((lock as { sprites: Record<string, number> }).sprites[k] ?? lockFile.sprites[k]).toBe(lockFile.sprites[k]);
+    }
+    expect((lock as { sprites: Record<string, number> }).sprites["campfire"]).toBe(4);
+    for (const k of ["door", "door_wood", "stone_spear", "wooden_club", "storage_box", "chest"]) expect(registry.byKey(k)).toBeDefined();
+    expect(registry.byKey("player").atlas.masks.sheen).toBeDefined();
+  });
   it("characters and zombies have 8 baked directions", () => {
-    for (const k of ["player", "player_b", "player_c", "zombie_walker", "zombie_brute", "zombie_runner"]) {
+    for (const k of ["player", "player_b", "player_c", "zombie_walker", "zombie_brute", "zombie_runner", "zombie_mummy", "zombie_pumpkin"]) {
       const s = registry.byKey(k);
       for (const a of s.animList) expect(a.directions).toBe(8);
-      expect(registry.frame(s.id, "walk", Math.PI / 2, 0).frame).toBe(s.animations.get("walk")!.frames[0]! + 2 * s.atlas.columns);
+      const walk = s.animations.get("walk")!; expect(registry.frame(s.id, "walk", Math.PI / 2, 0).frame).toBe(walk.frames[0]! + 2 * walk.dirStride);
     }
   });
 });

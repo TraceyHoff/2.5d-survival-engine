@@ -1,0 +1,221 @@
+{
+ "frames": {
+  "fx_fire_huge_0": {
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 96
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "index": 0
+  },
+  "fx_fire_huge_1": {
+   "frame": {
+    "x": 64,
+    "y": 0,
+    "w": 64,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 96
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "index": 1
+  },
+  "fx_fire_huge_2": {
+   "frame": {
+    "x": 128,
+    "y": 0,
+    "w": 64,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 96
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "index": 2
+  },
+  "fx_fire_huge_3": {
+   "frame": {
+    "x": 192,
+    "y": 0,
+    "w": 64,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 96
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "index": 3
+  },
+  "fx_fire_huge_4": {
+   "frame": {
+    "x": 256,
+    "y": 0,
+    "w": 64,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 96
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "index": 4
+  },
+  "fx_fire_huge_5": {
+   "frame": {
+    "x": 320,
+    "y": 0,
+    "w": 64,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 96
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "index": 5
+  },
+  "fx_fire_huge_6": {
+   "frame": {
+    "x": 384,
+    "y": 0,
+    "w": 64,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 96
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "index": 6
+  },
+  "fx_fire_huge_7": {
+   "frame": {
+    "x": 448,
+    "y": 0,
+    "w": 64,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 96
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "index": 7
+  }
+ },
+ "meta": {
+  "app": "cozy-wild tools/build_all.py",
+  "version": "1.0",
+  "image": "vfx_fire_huge.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 512,
+   "h": 96
+  },
+  "scale": "1",
+  "grid": {
+   "frameW": 64,
+   "frameH": 96,
+   "columns": 8,
+   "rows": 1
+  }
+ }
+}

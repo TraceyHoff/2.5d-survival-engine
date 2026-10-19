@@ -1,0 +1,46 @@
+{
+ "frames": {
+  "oak_tree": {
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 160
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 160
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 160
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 0
+  }
+ },
+ "meta": {
+  "app": "cozy-wild tools/build_all.py",
+  "version": "1.0",
+  "image": "resources_huge.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 128,
+   "h": 160
+  },
+  "scale": "1",
+  "grid": {
+   "frameW": 128,
+   "frameH": 160,
+   "columns": 1,
+   "rows": 1
+  }
+ }
+}
