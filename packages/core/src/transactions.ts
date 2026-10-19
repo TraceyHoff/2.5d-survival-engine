@@ -7,13 +7,18 @@ import { defineResource, type World } from "./world.js";
  * and builds atomic transfer + all-or-nothing transactions on top of it.
  */
 /** durability (u16, 0/undefined = n/a) and createdTick (u32) are optional per-slot item state. */
-export interface Slot { item: number; count: number; meta: number; durability?: number; createdTick?: number }
-export type SlotExtras = { meta?: number; durability?: number; createdTick?: number };
+/** crafterId (u32 persistent PlayerId, 0/undefined = none) attributes crafted items; resolve names via PlayerNames. */
+export interface Slot { item: number; count: number; meta: number; durability?: number; createdTick?: number; crafterId?: number }
+export type SlotExtras = { meta?: number; durability?: number; createdTick?: number; crafterId?: number };
+/** Stack identity: units only merge when item, crafterId and durability all match (undefined = 0). */
+export const sameStack = (a: { durability?: number; crafterId?: number }, b: { durability?: number; crafterId?: number }): boolean =>
+  (a.crafterId ?? 0) === (b.crafterId ?? 0) && (a.durability ?? 0) === (b.durability ?? 0);
 /** Combine item state when `add` units of `b` merge into `a` (holding `aCount`). Returns the merged extras. */
 export type MergeMetaFn = (a: Slot, aCount: number, b: SlotExtras, addCount: number) => SlotExtras;
 /** Default merge: count-weighted average createdTick (rounded), min durability, keep a.meta. */
 export const defaultMergeMeta: MergeMetaFn = (a, an, b, bn) => {
   const out: SlotExtras = { meta: a.meta };
+  if (a.crafterId || b.crafterId) out.crafterId = a.crafterId ?? b.crafterId ?? 0;
   if (a.createdTick !== undefined || b.createdTick !== undefined) {
     const at = a.createdTick ?? b.createdTick!, bt = b.createdTick ?? a.createdTick!;
     out.createdTick = an + bn > 0 ? Math.round((at * an + bt * bn) / (an + bn)) : at;
@@ -22,7 +27,7 @@ export const defaultMergeMeta: MergeMetaFn = (a, an, b, bn) => {
   if (ds.length) out.durability = Math.min(...ds); else if (a.durability !== undefined || b.durability !== undefined) out.durability = 0;
   return out;
 };
-const extrasOf = (s: Slot): SlotExtras => ({ meta: s.meta, ...(s.durability !== undefined ? { durability: s.durability } : {}), ...(s.createdTick !== undefined ? { createdTick: s.createdTick } : {}) });
+const extrasOf = (s: Slot): SlotExtras => ({ meta: s.meta, ...(s.crafterId ? { crafterId: s.crafterId } : {}), ...(s.durability !== undefined ? { durability: s.durability } : {}), ...(s.createdTick !== undefined ? { createdTick: s.createdTick } : {}) });
 export interface SlotContainer {
   capacity(world: World, e: Entity): number;
   getSlot(world: World, e: Entity, i: number): Slot;
@@ -53,7 +58,7 @@ export function installContainers(world: World, maxStack?: MaxStackFn, opts: { m
   if (maxStack) r.maxStack = opts.durabilityStacks ? maxStack : (item, st) => (st?.durability ? 1 : maxStack(item, st));
   if (opts.mergeMeta) r.mergeMeta = opts.mergeMeta; return r;
 }
-const pick = (x: SlotExtras): { durability?: number; createdTick?: number } => ({ ...(x.durability !== undefined ? { durability: x.durability } : {}), ...(x.createdTick !== undefined ? { createdTick: x.createdTick } : {}) });
+const pick = (x: SlotExtras): { durability?: number; createdTick?: number; crafterId?: number } => ({ ...(x.crafterId ? { crafterId: x.crafterId } : {}), ...(x.durability !== undefined ? { durability: x.durability } : {}), ...(x.createdTick !== undefined ? { createdTick: x.createdTick } : {}) });
 export type TxResult = { ok: true } | { ok: false; reason: string };
 const EMPTY: Slot = { item: 0, count: 0, meta: 0 };
 
@@ -82,7 +87,7 @@ export class Transaction {
     if (from === to && slotA === slotB) return { ok: true };
     const op: TransferOp = { from, fromSlot: slotA, to, toSlot: slotB, count, item: src.item, ...(this.actor !== undefined ? { actor: this.actor } : {}) };
     for (const v of this.reg.validators) { const r = v(w, op); if (r) return { ok: false, reason: r }; }
-    if (dst.item !== 0 && dst.item !== src.item) {
+    if (dst.item !== 0 && (dst.item !== src.item || !sameStack(src, dst))) {
       if (count !== src.count) return { ok: false, reason: "occupied" };
       this.set(to, slotB, src); this.set(from, slotA, dst); return { ok: true }; // swap
     }
@@ -103,7 +108,7 @@ export class Transaction {
     const a = this.ad(e), n = a.capacity(this.world, e), max = this.reg.maxStack(item, ex); let left = count;
     const plan: [number, Slot][] = [];
     for (let pass = 0; pass < 2 && left > 0; pass++) for (let i = 0; i < n && left > 0; i++) {
-      const s = this.get(e, i); if (pass === 0 ? s.item !== item : s.item !== 0) continue;
+      const s = this.get(e, i); if (pass === 0 ? s.item !== item || !sameStack(s, ex) : s.item !== 0) continue;
       const cap = pass === 0 ? Math.min(max, this.reg.maxStack(item, extrasOf(s))) - s.count : max;
       const put = Math.min(left, cap); if (put <= 0) continue;
       if (pass === 0) { const m = this.reg.mergeMeta(s, s.count, ex, put); plan.push([i, { item, count: s.count + put, meta: m.meta ?? s.meta, ...pick(m) }]); }
@@ -122,6 +127,15 @@ export class Transaction {
     for (let i = n - 1; i >= 0 && left > 0; i--) { const s = this.get(e, i); if (s.item !== item) continue; const t = Math.min(left, s.count); this.set(e, i, { ...s, count: s.count - t }); left -= t; }
     return { ok: true };
   }
+  /** Remove `count` of `item` (highest slot first) returning the removed parts with their extras, or a failure without writes. */
+  take(e: Entity, item: number, count: number): { ok: true; parts: { count: number; extras: SlotExtras }[] } | { ok: false; reason: string } {
+    const n = this.ad(e).capacity(this.world, e); let have = 0;
+    for (let i = 0; i < n; i++) { const s = this.get(e, i); if (s.item === item) have += s.count; }
+    if (have < count) return { ok: false, reason: "missing_items" };
+    const parts: { count: number; extras: SlotExtras }[] = []; let left = count;
+    for (let i = n - 1; i >= 0 && left > 0; i--) { const s = this.get(e, i); if (s.item !== item) continue; const t = Math.min(left, s.count); parts.push({ count: t, extras: extrasOf(s) }); this.set(e, i, { ...s, count: s.count - t }); left -= t; }
+    return { ok: true, parts };
+  }
   get touched(): number { return this.undo.size; }
   commit(): void { this.done = true; this.undo.clear(); }
   rollback(): void { if (this.done) throw new Error("transaction finished"); for (const u of [...this.undo.values()].reverse()) u.a.setSlot(this.world, u.e, u.i, u.s); this.undo.clear(); this.done = true; }
@@ -137,25 +151,29 @@ export function transfer(world: World, from: Entity, slotA: number, to: Entity, 
   return transaction(world, (tx) => tx.transfer(from, slotA, to, slotB, count), actor);
 }
 /** Adapter for components with parallel array fields (e.g. gameplay Inventory {item u16[16], count u16[16]}); meta optional. */
-export function arrayFieldsContainer(def: ComponentDef, fields: { item: string; count: string; meta?: string; durability?: string; createdTick?: string; capacity?: string }): SlotContainer {
+export function arrayFieldsContainer(def: ComponentDef, fields: { item: string; count: string; meta?: string; durability?: string; createdTick?: string; crafterId?: string; capacity?: string }): SlotContainer {
   return {
     capacity: (w, e) => { const st = w.store(def); const n = st.lengths[fields.item]!; return fields.capacity ? Math.min(n, w.getField(e, def, fields.capacity) as number) : n; },
     getSlot: (w, e, i) => { const st = w.store(def); const x = entityIdx(e);
       const s: Slot = { item: st.readElement(x, fields.item, i) ?? 0, count: st.readElement(x, fields.count, i) ?? 0, meta: fields.meta ? st.readElement(x, fields.meta, i) ?? 0 : 0 };
-      if (fields.durability) s.durability = st.readElement(x, fields.durability, i) ?? 0; if (fields.createdTick) s.createdTick = st.readElement(x, fields.createdTick, i) ?? 0; return s; },
+      if (fields.durability) s.durability = st.readElement(x, fields.durability, i) ?? 0; if (fields.createdTick) s.createdTick = st.readElement(x, fields.createdTick, i) ?? 0;
+      if (fields.crafterId) s.crafterId = st.readElement(x, fields.crafterId, i) ?? 0; return s; },
     setSlot: (w, e, i, s) => { const st = w.store(def); const x = entityIdx(e); st.writeElement(x, fields.item, i, s.item); st.writeElement(x, fields.count, i, s.count); if (fields.meta) st.writeElement(x, fields.meta, i, s.meta);
-      if (fields.durability) st.writeElement(x, fields.durability, i, s.durability ?? 0); if (fields.createdTick) st.writeElement(x, fields.createdTick, i, s.createdTick ?? 0); },
+      if (fields.durability) st.writeElement(x, fields.durability, i, s.durability ?? 0); if (fields.createdTick) st.writeElement(x, fields.createdTick, i, s.createdTick ?? 0);
+      if (fields.crafterId) st.writeElement(x, fields.crafterId, i, s.crafterId ?? 0); },
   };
 }
 import { entityIndex as entityIdx } from "./entity.js";
 /** Adapter for components with one scalar field per slot (e.g. item0..item15 / count0..count15). */
-export function scalarFieldsContainer(def: ComponentDef, fields: { items: readonly string[]; counts: readonly string[]; metas?: readonly string[]; durabilities?: readonly string[]; createdTicks?: readonly string[]; capacity?: string }): SlotContainer {
+export function scalarFieldsContainer(def: ComponentDef, fields: { items: readonly string[]; counts: readonly string[]; metas?: readonly string[]; durabilities?: readonly string[]; createdTicks?: readonly string[]; crafterIds?: readonly string[]; capacity?: string }): SlotContainer {
   return {
     capacity: (w, e) => fields.capacity ? Math.min(fields.items.length, w.getField(e, def, fields.capacity) as number) : fields.items.length,
     getSlot: (w, e, i) => { const st = w.store(def); const x = entityIdx(e);
       const s: Slot = { item: st.read(x, fields.items[i]!) ?? 0, count: st.read(x, fields.counts[i]!) ?? 0, meta: fields.metas ? st.read(x, fields.metas[i]!) ?? 0 : 0 };
-      if (fields.durabilities) s.durability = st.read(x, fields.durabilities[i]!) ?? 0; if (fields.createdTicks) s.createdTick = st.read(x, fields.createdTicks[i]!) ?? 0; return s; },
+      if (fields.durabilities) s.durability = st.read(x, fields.durabilities[i]!) ?? 0; if (fields.createdTicks) s.createdTick = st.read(x, fields.createdTicks[i]!) ?? 0;
+      if (fields.crafterIds) s.crafterId = st.read(x, fields.crafterIds[i]!) ?? 0; return s; },
     setSlot: (w, e, i, s) => { const st = w.store(def); const x = entityIdx(e); st.write(x, fields.items[i]!, s.item); st.write(x, fields.counts[i]!, s.count); if (fields.metas) st.write(x, fields.metas[i]!, s.meta);
-      if (fields.durabilities) st.write(x, fields.durabilities[i]!, s.durability ?? 0); if (fields.createdTicks) st.write(x, fields.createdTicks[i]!, s.createdTick ?? 0); },
+      if (fields.durabilities) st.write(x, fields.durabilities[i]!, s.durability ?? 0); if (fields.createdTicks) st.write(x, fields.createdTicks[i]!, s.createdTick ?? 0);
+      if (fields.crafterIds) st.write(x, fields.crafterIds[i]!, s.crafterId ?? 0); },
   };
 }

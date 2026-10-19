@@ -56,7 +56,14 @@ export interface BuildingSpriteJson {
   /** Optional piece states (e.g. closed/open), each with its own frames[rotation][damageStage]. State index = declaration order (BuildingGrid state u8). */
   states?: Record<string, number[][]>;
 }
+/** Named attach point (stall display slots, price tags, name labels, vfx sockets): px offsets from the pivot at 1x scale; x is mirrored when flipX. Optional w/h = slot box. */
+export interface AttachPoint { x: number; y: number; z?: number; w?: number; h?: number }
+export type AttachMap = Record<string, AttachPoint>;
 export interface SpriteJson {
+  /** Sprite-level attach points (see AttachPoint). */
+  attach?: AttachMap;
+  /** Per-frame attach overrides keyed by atlas frame index; frame keys override sprite keys. */
+  frameAttach?: Record<string, AttachMap>;
   key: string; category: Category; atlas: string;
   /** Pivot in [0,1] of the frame; feet for characters (default 0.5, 0.9). */
   anchor?: { x: number; y: number };
@@ -93,8 +100,10 @@ export interface SpriteTint { color: number; strength: number; mode: TintMode; s
 export interface GlyphDef { id: string; sprite: number; frame: number }
 export interface Animation { id: number; name: string; frames: number[]; fps: number; directions: Directions; dirStride: number; loop: boolean }
 export interface BuildingSprite { piece: string; footprint: { w: number; h: number }; layer: number; frames: number[][]; rotationArt: RotationArt; stateNames: string[]; states: number[][][] }
-export interface SpriteDef { id: number; key: string; category: Category; atlas: Atlas; anchor: { x: number; y: number }; animations: Map<string, Animation>; animList: Animation[]; building?: BuildingSprite; sway?: SwayJson; tints: Record<string, SpriteTint> }
+export interface SpriteDef { id: number; key: string; category: Category; atlas: Atlas; anchor: { x: number; y: number }; animations: Map<string, Animation>; animList: Animation[]; building?: BuildingSprite; sway?: SwayJson; tints: Record<string, SpriteTint>;
+  /** Sprite-level attach points. */ attach?: AttachMap; /** Per-frame overrides by atlas frame index. */ frameAttach?: Map<number, AttachMap> }
 export interface FrameRef { atlas: Atlas; frame: number; x: number; y: number; w: number; h: number; anchorX: number; anchorY: number; emissiveImage?: string; nineSlice?: NineSlice; /** draw mirrored on X (mirror rotationArt) */ flipX?: boolean;
+  /** Effective attach points: sprite attach merged with this frame's override (frame wins). Unmirrored: negate x when flipX (see attachPoint). */ attach?: AttachMap;
   /** Scale pages of the atlas (x/y/w/h above are scale-1 pixels; multiply by page.scale). */ pages: AtlasPage[]; masks: AtlasMasks }
 /** A frame resolved on a concrete page. */
 export interface ScaledFrame { image: string; scale: number; x: number; y: number; w: number; h: number }
@@ -138,9 +147,10 @@ export class AssetRegistry {
     return Math.round(a / ((2 * Math.PI) / directions)) % directions;
   }
   private ref(s: SpriteDef, f: number): FrameRef {
-    const at = s.atlas; const ns = at.nineSlice.get(f);
+    const at = s.atlas; const ns = at.nineSlice.get(f); const fa = s.frameAttach?.get(f);
+    const attach = fa ? { ...(s.attach ?? {}), ...fa } : s.attach;
     return { atlas: at, frame: f, x: (f % at.columns) * at.frameW, y: Math.floor(f / at.columns) * at.frameH, w: at.frameW, h: at.frameH,
-      anchorX: s.anchor.x * at.frameW, anchorY: s.anchor.y * at.frameH, ...(at.emissiveImage ? { emissiveImage: at.emissiveImage } : {}), ...(ns ? { nineSlice: ns } : {}), pages: at.pages, masks: at.masks };
+      anchorX: s.anchor.x * at.frameW, anchorY: s.anchor.y * at.frameH, ...(at.emissiveImage ? { emissiveImage: at.emissiveImage } : {}), ...(ns ? { nineSlice: ns } : {}), ...(attach ? { attach } : {}), pages: at.pages, masks: at.masks };
   }
   /** Resolve the atlas rect for sprite/animation/facing at time t (seconds). */
   frame(spriteId: number, anim: string, facing: number, timeSec: number): FrameRef {
@@ -156,6 +166,10 @@ export class AssetRegistry {
     const ri = rows.length === 1 ? 0 : rows.length === 2 ? r & 1 : r;
     const ref = this.ref(s, rows[ri]![Math.max(0, Math.min(3, damageStage | 0))]!);
     return rows.length === 2 && r >= 2 ? { ...ref, flipX: true } : ref;
+  }
+  /** Attach point `name` of a resolved frame in pivot-relative 1x px, x mirrored when ref.flipX. */
+  static attachPoint(ref: FrameRef, name: string): AttachPoint | undefined {
+    const a = ref.attach?.[name]; if (!a) return undefined; return ref.flipX ? { ...a, x: -a.x } : a;
   }
   /** Input prompt glyphs by id (manifest `glyphs`). */
   glyphs = new Map<string, GlyphDef>();
@@ -217,6 +231,20 @@ export function applyLegacySurvival(src: ManifestJson, warnings: string[]): Mani
   const known = new Set(["doc", "hiDpiAtlases", "emissivePages", "sheenMasks", "swayMasks", "sway"]);
   const rest = Object.keys(x).filter((k) => !known.has(k)); if (rest.length) warnings.push(`x_survival: not mapped (renderer-owned): ${rest.join(", ")}`);
   return m;
+}
+
+const cloneAttach = (m: AttachMap): AttachMap => Object.fromEntries(Object.entries(m).map(([k, v]) => [k, { ...v }]));
+/** Validates an attach map: names match [a-z0-9_.]+, x/y finite, z finite, w/h > 0. */
+export function checkAttach(m: unknown, where: string, issues: string[]): void {
+  if (m === undefined) return;
+  if (!m || typeof m !== "object" || Array.isArray(m)) { issues.push(`${where} must be an object`); return; }
+  const fin = (v: unknown) => typeof v === "number" && Number.isFinite(v);
+  for (const [n, a] of Object.entries(m as Record<string, AttachPoint>)) {
+    if (!/^[a-z0-9_.]+$/.test(n)) issues.push(`${where}: bad attach name "${n}"`);
+    if (!a || !fin(a.x) || !fin(a.y)) { issues.push(`${where}.${n}: x and y must be finite numbers`); continue; }
+    if (a.z !== undefined && !fin(a.z)) issues.push(`${where}.${n}: z must be a finite number`);
+    for (const k of ["w", "h"] as const) if (a[k] !== undefined && !(fin(a[k]) && a[k]! > 0)) issues.push(`${where}.${n}: ${k} must be > 0`);
+  }
 }
 
 export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<string, number> } = {}): { registry: AssetRegistry; lock: Required<IdLock>; warnings: string[] } {
@@ -293,6 +321,14 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
     }
     if (s.sway !== undefined && !(s.sway && s.sway.amp >= 0 && s.sway.freq >= 0 && s.sway.stiffness >= 0 && s.sway.stiffness <= 1)) issues.push(`${p}: sway needs amp >= 0, freq >= 0, stiffness in [0,1]`);
     const at = atlases.get(s.atlas); if (!at) issues.push(`${p}: unknown atlas "${s.atlas}"`);
+    checkAttach(s.attach, `${p}.attach`, issues);
+    if (s.frameAttach !== undefined) {
+      if (!s.frameAttach || typeof s.frameAttach !== "object") issues.push(`${p}: frameAttach must be an object`);
+      else for (const [fs, am] of Object.entries(s.frameAttach)) {
+        const f = Number(fs); if (!(Number.isInteger(f) && f >= 0 && (!at || f < at.columns * at.rows))) issues.push(`${p}: frameAttach frame ${fs} out of atlas range`);
+        checkAttach(am, `${p}.frameAttach.${fs}`, issues);
+      }
+    }
     const total = at ? at.columns * at.rows : 0;
     if (s.anchor && !(s.anchor.x >= 0 && s.anchor.x <= 1 && s.anchor.y >= 0 && s.anchor.y <= 1)) issues.push(`${p}: anchor must be within [0,1]`);
     const anims = Object.entries(s.animations ?? {}); if (!anims.length) issues.push(`${p}: needs at least one animation`);
@@ -410,6 +446,8 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
       ...(s.building ? { building: { piece: s.building.piece, footprint: { ...s.building.footprint }, layer: s.building.layer, frames: s.building.frames.map((r) => [...r]),
         rotationArt: s.rotationArt ?? "mirror", stateNames: Object.keys(s.building.states ?? {}), states: Object.values(s.building.states ?? {}).map((rows) => rows.map((r) => [...r])) } } : {}),
       ...(s.sway ? { sway: { ...s.sway } } : {}),
+      ...(s.attach ? { attach: cloneAttach(s.attach) } : {}),
+      ...(s.frameAttach ? { frameAttach: new Map(Object.entries(s.frameAttach).map(([f, am]) => [Number(f), cloneAttach(am)])) } : {}),
       tints: Object.fromEntries(Object.entries(s.tints ?? {}).map(([n, t]) => [n, { color: parseColor(t.color), strength: t.strength, mode: t.mode ?? "multiply", saturation: t.saturation ?? 1 }])) });
   }
   const soundMap = new Map<number, SoundDef>(sounds.map((s) => { const id = ids.sounds.id(s.key); return [id, { id, key: s.key, files: [...s.files], volume: s.volume ?? 1, pitchJitter: s.pitchJitter ?? 0, loop: !!s.loop, ...(typeof s.loop === "object" ? { loopPoints: { ...s.loop } } : {}), category: s.category }]; }));

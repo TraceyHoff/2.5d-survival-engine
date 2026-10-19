@@ -181,7 +181,7 @@ flowchart LR
 ## 13. Asset Pipeline
 
 - `@engine/assets`: manifest v1 JSON. `loadManifest(json, {lock})` validates everything (all issues reported in one `ManifestError`) and assigns stable u16 ids per namespace (`sprites, sounds, vfx, variants, tints, palettes`) via `StableIdRegistry` + `ids.lock.json` (`pnpm --filter @engine/assets lock:ids` keeps existing ids and appends new keys; legacy flat sprite locks are migrated). `AssetRegistry.hash` covers all namespaces; `installAssetHash(world, reg)` adds it to the handshake schema hash.
-- Resolution: `frame(spriteId, anim, facing, t)`, `buildingFrame(spriteId, rotation, damageStage)` → atlas rect, pivot, optional `emissiveImage` and `nineSlice`; `sound(key)`, `effect(key)`, `variant(key)`, `variantsOf(set)`, `palette(key)`, `tintSet(key)`.
+- Resolution: `frame(spriteId, anim, facing, t)`, `buildingFrame(spriteId, rotation, damageStage)` → atlas rect, pivot, optional `emissiveImage`, `nineSlice` and `attach` (sprite `attach` merged with `frameAttach[frame]`, frame wins; `AssetRegistry.attachPoint(ref, name)` mirrors x when `flipX`; ADR-076); `sound(key)`, `effect(key)`, `variant(key)`, `variantsOf(set)`, `palette(key)`, `tintSet(key)`.
 - `validateBuildingSprites(reg, pieces)` cross-checks building sprites against `BuildPieceDef`s (piece exists, footprint, layer).
 - Placeholder art: `pnpm --filter @engine/assets gen:placeholders` (cute outlined shapes, emissive page for buildings, UI panel/button, vfx). Sound files are referenced but not shipped.
 - Renderer owns texture upload/batching, palette swap shaders and particles; audio owner plays `SoundDef`s; gameplay maps item/resource/piece ids to keys.
@@ -511,3 +511,23 @@ flowchart LR
 |---|---|---|---|
 | Dialog.Confirm | `Enter`, `Y` | `pad.a` | `btn:yes` |
 | Dialog.Cancel | `Escape`, `N` | `pad.b` | `btn:no` |
+
+## 19. Player Economy: Crafter Attribution, Player Names, Trade Stalls
+
+Engine primitives only; prices, fees, taxes and stall placement rules are Survival Systems'. Net owns replication and the purchase protocol.
+
+**Crafter attribution (ADR-074).** `Slot.crafterId` (u32 persistent `PlayerId`, 0 = none) is a plain per-slot field next to `durability`/`createdTick`, not a side table: adapters map it (`arrayFieldsContainer {crafterId}`, `scalarFieldsContainer {crafterIds}`) onto a `u32[n]` component array, so it rides the existing networked/persistent schema encoding (snapshot and chunk codec) with no extra format. The stack key is `(item, crafterId, durability)` (`sameStack`): `Transaction.add` only stacks onto matching slots, `transfer` treats a mismatched target as occupied (whole-stack moves swap). `Transaction.take(e, item, n)` returns removed parts with their extras so moves keep attribution. Names are never stored on items.
+
+**Player names (ADR-074).** `PlayerNameRegistry` (resource `PlayerNames`): `set(player, name|null)`, `get`, `display(player)` (fallback `#id`), `entries()`, `seq` + `changesSince(seq)`/`apply(change)` (same pattern as `GroupRegistry`; undefined = send full snapshot), `encode()`/`decode()` (v1: u8 ver, u32 seq, u32 n, n × (u32 id, u8 len, utf8 ≤ 64 B)).
+
+**Trade stalls (ADR-075).** `TradeStall` component (networked, persistent: `stallId`, `revision`, 8 listing rows `listItem/listQty/listPrice/listCurrency`) on an entity that also has `OwnedBy` (player and/or clan group) and a registered slot container (its stock). `installStalls(world, {stock, withdraw, manage, buy?})` takes gameplay permission bits; `stockStall`, `withdrawStall`, `setStallListing` call `can()` so clan rank (`policy.minRole`), ACLs, claims and rules apply. `buyFromStall(world, buyer, stall, listing, {expectRevision?, payFrom?, receiveTo?})` runs one `transaction()`: goods (with crafterId) stall→buyer, currency buyer→stall; any failure (`out_of_stock`, `insufficient_funds`, `stall_full`, `buyer_full`, `stale_revision`, `denied`, validator reasons) leaves everything unchanged. `atomicPurchase(world, spec)` is the same core without listings/ledger, for gameplay-owned listing components. Every stock/listing/sale change through these functions bumps `revision`. Sales append to `SaleLedger` (`entriesSince(seq)`, bounded memory, `undefined` when truncated) with buyer/owner PlayerIds, item, qty, currency, price and per-part `crafterIds`.
+
+```mermaid
+flowchart LR
+  Buy[buyFromStall] --> Rev{revision ok?} --> Perm{can buy?} --> Tx[transaction]
+  Tx --> T1[take goods from stock] --> T2[take currency from buyer] --> T3[add currency to stock] --> T4[add goods to buyer]
+  T4 -->|ok| C[commit, revision++, SaleLedger.append]
+  T1 & T2 & T3 & T4 -->|fail| RB[rollback, reason]
+```
+
+**Attach points (ADR-076).** Sprites may declare `attach: {name: {x, y, z?, w?, h?}}` (px from the pivot at 1x scale) and `frameAttach: {frameIndex: {...}}` overrides. Renderer uses them for stall display slots, price tags and name labels.

@@ -257,3 +257,10 @@ Read it with `docs/ARCHITECTURE.md` (core batches 2 and 3), `docs/DECISIONS.md` 
 ## 8. Asks
 
 See the bottom of README.md. The open lists are mirrored in the final report.
+
+## Engine note: economy primitives (from Engine Architect, ARCHITECTURE §19, ADR-074..076)
+
+- Core `Slot.crafterId` (u32 PlayerId) + `sameStack` (item, crafterId, durability). Map your `crafterId` arrays with `arrayFieldsContainer({..., crafterId: "crafterId"})` when registering Inventory/Container with core `Containers`.
+- Crafting completion should stamp `playerOf(world, e)` as crafter (pass it to `exchangeItems(..., crafter)`).
+- Names: core `PlayerNameRegistry` / `PlayerNames` resource. Store ids, resolve with `display(id)`.
+- Stalls: either core `TradeStall` + `installStalls/stockStall/withdrawStall/setStallListing/buyFromStall`, or your own `Listings` components calling core `atomicPurchase` (atomic, rollback on failure) and `can()`. Sale events: core `SaleLedger.entriesSince(cursor)`. No balance rules in core.
