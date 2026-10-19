@@ -140,6 +140,7 @@ export class IsoRenderer implements Renderer {
     this.pieceAnchor = opts.pieceAnchor ?? "center";
     this.style = mergeStyle(DEFAULT_STYLE, opts.style ?? {});
     this.atlas = new AtlasManager(gl, opts.assets ?? new AssetManager(), opts.atlasLayerSize !== undefined ? { layerSize: opts.atlasLayerSize } : {});
+    this.atlas.setStatusTints(this.style.statusTints);
     this.terrain = new TilemapRenderer(gl, this.iso, this.zFactor);
     this.sprites = new SpriteBatch(gl, this.iso, this.zFactor);
     this.lights = new LightPass(gl, this.iso);
@@ -162,7 +163,7 @@ export class IsoRenderer implements Renderer {
   setSpatialIndex(index: ChunkedSpatialIndex | undefined, activeKeys?: ReadonlySet<string>): void { this.spatial = index ? { index, ...(activeKeys ? { activeKeys } : {}) } : undefined; }
   setActiveChunks(keys: ReadonlySet<string> | undefined): void { this.activeKeys = keys; }
   setTransformSource(s: TransformSource | undefined): void { this.transformSource = s; }
-  setStyle(patch: StylePatch): void { this.style = mergeStyle(this.style, patch); }
+  setStyle(patch: StylePatch): void { this.style = mergeStyle(this.style, patch); this.atlas.setStatusTints(this.style.statusTints); }
   /** Gameplay's per-chunk surface value (wet/snow 0..1); undefined -> derive from Weather. */
   setSurfaceProvider(p: SurfaceProvider | undefined): void { this.terrain.perChunk = p; }
 
@@ -195,7 +196,7 @@ export class IsoRenderer implements Renderer {
     const base = tuningUrl.replace(/[^/]*$/, ""); const abs = (u: string): string => /^(\/|[a-z]+:)/i.test(u) ? u : base + u;
     const res = await fetcher(tuningUrl).catch(() => null);
     if (!res || !res.ok) return { warnings: [`render tuning not found: ${tuningUrl} (using defaults)`], loaded };
-    const t = loadRenderTuning(await res.json(), this.style); warnings.push(...t.warnings); this.style = t.style; loaded.push(tuningUrl);
+    const t = loadRenderTuning(await res.json(), this.style); warnings.push(...t.warnings); this.style = t.style; this.atlas.setStatusTints(this.style.statusTints); loaded.push(tuningUrl);
     const img = async (u: string): Promise<ImageBitmap | null> => { try { const r = await fetcher(u); if (!r.ok) return null; return await createImageBitmap(await r.blob(), { premultiplyAlpha: "none", colorSpaceConversion: "none" }); } catch { return null; } };
     const g = this.style.gradingLut;
     if (g.url) { const b = await img(abs(g.url)); if (b) { try { this.styleLut = this.addLut(g.url, b); loaded.push(abs(g.url)); } catch (e) { warnings.push(String(e)); } } else warnings.push(`LUT not found: ${abs(g.url)}`); }

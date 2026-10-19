@@ -286,7 +286,7 @@ export class AtlasManager {
   private frameTintRows(registry: AssetRegistry, list: AtlasRT[]): Map<number, number> {
     const rows: AtlasManager["tintRows"] = [null]; const map = new Map<number, number>();
     for (const s of registry.allSprites()) {
-      const tints = (s as { tints?: Record<string, { color: number; strength: number; mode: string; saturation?: number }> }).tints;
+      const tints = s.tints; // typed SpriteDef.tints (batch 11/12)
       if (!tints || !Object.keys(tints).length) continue;
       const at = list.find((a) => a.id === s.atlas.id); if (!at) continue;
       const row = rows.length; rows.push(tints);

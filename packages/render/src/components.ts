@@ -40,6 +40,14 @@ export const Occluder = defineComponent("Occluder", {
   fade: "f32", // alpha while occluding (e.g. 0.35)
 });
 
-export const RENDER_COMPONENTS = [Sprite, LightSource, Shadow, Occluder] as const;
+/**
+ * Secondary tint for two-tone tint masks (atlas `masks.tintmask`: R = Sprite.tint / BuildPiece.tint, G = this colour),
+ * e.g. clan colour pairs. RGBA8 packed like Sprite.tint; 0 = reuse the primary tint.
+ */
+export const TintSecondary = defineComponent("TintSecondary", {
+  tint: "u32",
+});
+
+export const RENDER_COMPONENTS = [Sprite, LightSource, Shadow, Occluder, TintSecondary] as const;
 
 export { SpriteFlag, TileId } from "./ids.js";

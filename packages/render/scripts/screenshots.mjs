@@ -9,7 +9,7 @@ import { chromium } from "playwright-core";
 import { createRequire } from "node:module";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const shots = join(root, "shots"); mkdirSync(shots, { recursive: true });
+const shots = process.env.SHOTS_DIR ?? join(root, "shots"); mkdirSync(shots, { recursive: true });
 const PORT = Number(process.env.PORT ?? 4791);
 const chrome = process.env.CHROME ?? ["/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser"].find(existsSync);
 

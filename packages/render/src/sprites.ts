@@ -14,14 +14,14 @@
 import { entityIndex, lerpAngle, PrevTransform, Transform, type ComponentDef, type World } from "@engine/core";
 import { CHUNK_SIZE, chunkKey, floorToTerrainZ, terrainZToFloor, type BuildingGrid, type ChunkedSpatialIndex, type IsoConfig } from "@engine/world";
 import { createProgram, GLSL_COMMON, type FrameStats, type Program } from "./gl/util.js";
-import { Sprite, Shadow, Occluder, SpriteFlag, LightSource } from "./components.js";
+import { Sprite, Shadow, Occluder, SpriteFlag, LightSource, TintSecondary } from "./components.js";
 import { newResolved, type AtlasManager, type ResolvedFrame } from "./assets/atlasManager.js";
 import type { Rect } from "./camera.js";
 import type { StyleConfig } from "./style.js";
 import type { TransformSource } from "./transformSource.js";
 import type { VfxLayer } from "./vfx.js";
 
-export const INSTANCE_FLOATS = 28;
+export const INSTANCE_FLOATS = 32;
 const OPEN = 1e5;
 
 /** Gameplay-owned components the renderer reads (schemas as agreed with Survival Systems). */
@@ -36,6 +36,8 @@ export interface GameplayBindings {
   wetness?: WetnessDefT;
   /** BodyTemp {cold, heat u8; shivering 0/1}: shivering gates the shiver, cold scales it and drives the frost rim, heat drives flush. */
   bodyTemp?: BodyTempDefT;
+  /** Exhaustion {level u8 0..255}: drives the `exhausted` status tint (SpriteDef.tints / render_tuning). */
+  exhausted?: ComponentDef<{ level: "u8" }>;
   /** core Emitter {kind, radius, strength, falloff} (kinds mapped by the emitter table). */
   emitter?: ComponentDef;
   /** Fuel/Burning {lit}: an Emitter on an entity with this component only shows while lit != 0. */
@@ -51,12 +53,13 @@ layout(location=3) in vec4 aD; // tint rgb, sliceFootDy
 layout(location=4) in vec4 aE; // shadowAlpha, ghost, damageOverlay, shadowWidth
 layout(location=5) in vec4 aF; // wet 0..1, cold 0..1, shivering 0/1, heat 0..1
 layout(location=6) in vec4 aG; // sway amp (px), freq (Hz), stiffness, occlusion 0..1
+layout(location=7) in vec4 aH; // secondary tint rgb (tintmask G; 0 = none), exhausted 0..1
 ${GLSL_COMMON}
 uniform highp sampler2D uFrames;
 uniform float uZPerPx, uHH, uTime, uWind, uOutline;
 uniform int uShadowPass, uShadowMode;
 uniform vec2 uShadowDir; uniform float uBlobAspect; uniform vec2 uWindVec; // screen-x wind direction, strength 0..1
-out vec4 vFx; out vec3 vUv; out float vAlpha; flat out int vFlags; flat out vec4 vRect; out vec3 vTint; flat out vec3 vMisc; out vec2 vLocal; out vec2 vScr; flat out float vOcc;
+out vec4 vFx; out vec3 vUv; out float vAlpha; flat out int vFlags; flat out vec4 vRect; out vec3 vTint; flat out vec3 vMisc; out vec2 vLocal; out vec2 vScr; flat out float vOcc; flat out ivec2 vFB; flat out vec4 vTint2; flat out float vSwayPx;
 void main() {
   int entry = int(aB.x + 0.5); int flags = int(aB.y + 0.5);
   ivec2 tc = ivec2((entry % 1024) * 2, entry / 1024);
@@ -64,7 +67,8 @@ void main() {
   vec4 dim = texelFetch(uFrames, tc + ivec2(1, 0), 0); // w, h, layer, hasEmissive
   vec2 c = vec2(float(gl_VertexID & 1), float((gl_VertexID >> 1) & 1));
   float s = aA.w;
-  vFx = aF; vFlags = flags; vRect = uvr; vTint = aD.rgb; vMisc = vec3(aE.y, aE.z, dim.w); vAlpha = aB.w;
+  vFx = aF; vFlags = flags; vRect = uvr; vTint = aD.rgb; int fw = int(dim.w + 0.5); vFB = ivec2(fw & 15, fw >> 4); vMisc = vec3(aE.y, aE.z, float(fw & 1)); vAlpha = aB.w;
+  vTint2 = aH; vSwayPx = 0.0;
   vLocal = c * 2.0 - 1.0; vOcc = aG.w; vScr = aA.xy;
   if (uShadowPass == 1) {
     if (aE.x <= 0.0) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); return; }
@@ -86,12 +90,14 @@ void main() {
   float ow = (flags & 16) != 0 ? 0.0 : uOutline;
   // slice bounds are screen-relative to the pivot; for mirrored sprites map them back into frame space
   vec2 sl = (flags & 1) != 0 ? vec2(-aC.w, -aC.z) : aC.zw;
-  float x0 = max(-ow, aC.x + sl.x), x1 = min(dim.x + ow, aC.x + sl.y);
+  bool maskSway = (vFB.x & 4) != 0 && aG.x > 0.0; float m = maskSway ? aG.x + 1.0 : 0.0; // sway mask: per-pixel UV shift, quad grows by amp
+  float x0 = max(-ow - m, aC.x + sl.x), x1 = min(dim.x + ow + m, aC.x + sl.y);
   float x = mix(x0, x1, c.x), y = mix(-ow, dim.y + ow, c.y);
   float flip = (flags & 1) != 0 ? -1.0 : 1.0;
   float px = (x - aC.x) * s * flip;
   float hp = (aC.y - y) * s;
-  if (aG.x > 0.0) { // wind sway: weight from height above the pivot, global wind + per-instance phase
+  if (maskSway) vSwayPx = uWindVec.x * uWindVec.y * aG.x * (0.65 + 0.35 * sin(uTime * aG.y * 6.283 + aB.z * 6.283)) * flip * (uvr.z - uvr.x) / dim.x;
+  else if (aG.x > 0.0) { // wind sway: weight from height above the pivot, global wind + per-instance phase
     float wgt = pow(clamp(hp / max(1.0, aC.y * s), 0.0, 1.0), 1.0 + 2.0 * clamp(aG.z, 0.0, 1.0)); // stiffness 0..1, higher = stiffer
     px += uWindVec.x * uWindVec.y * aG.x * s * wgt * (0.65 + 0.35 * sin(uTime * aG.y * 6.283 + aB.z * 6.283));
   } else if ((flags & 4) != 0) px += sin(uTime * 1.6 + aB.z * 6.283) * uWind * max(hp, 0.0) * 0.05;
@@ -104,8 +110,8 @@ void main() {
 
 const FS = /* glsl */ `#version 300 es
 precision highp float; precision highp int;
-in vec4 vFx; in vec3 vUv; in float vAlpha; flat in int vFlags; flat in vec4 vRect; in vec3 vTint; flat in vec3 vMisc; in vec2 vLocal; in vec2 vScr; flat in float vOcc;
-uniform highp sampler2DArray uAtlas, uEmis;
+in vec4 vFx; in vec3 vUv; in float vAlpha; flat in int vFlags; flat in vec4 vRect; in vec3 vTint; flat in vec3 vMisc; in vec2 vLocal; in vec2 vScr; flat in float vOcc; flat in ivec2 vFB; flat in vec4 vTint2; flat in float vSwayPx;
+uniform highp sampler2DArray uAtlas, uEmis, uSheenM, uSwayM, uTintM; uniform highp sampler2D uTints;
 uniform int uShadowPass, uShadowMode;
 uniform float uShadowAlpha, uOutline, uTexel, uTime, uEmisStrength, uAlphaMul;
 uniform vec4 uOutlineColor; uniform vec3 uShadowColor, uFrostColor, uFlushTint; uniform float uWetDarken, uWetSheen;
@@ -115,6 +121,15 @@ layout(location=0) out vec4 oColor;
 layout(location=1) out vec4 oEmissive;
 float inRect(vec2 uv) { return step(vRect.x, uv.x) * step(uv.x, vRect.z) * step(vRect.y, uv.y) * step(uv.y, vRect.w); }
 float alphaAt(vec2 uv) { return texture(uAtlas, vec3(uv, vUv.z)).a * inRect(uv); }
+// status tint row (AtlasManager tint table: per sprite SpriteDef.tints, row 0 = render_tuning globals)
+vec3 statusTint(vec3 c, int idx, float amount) {
+  if (amount <= 0.003) return c;
+  vec4 a = texelFetch(uTints, ivec2(idx * 2, vFB.y), 0), b = texelFetch(uTints, ivec2(idx * 2 + 1, vFB.y), 0);
+  float l = dot(c, vec3(0.299, 0.587, 0.114)); c = mix(vec3(l), c, mix(1.0, b.y, amount));
+  float k = a.w * amount; int mode = int(b.x + 0.5);
+  vec3 r = mode == 0 ? c * a.rgb : mode == 1 ? c + a.rgb : mode == 2 ? 1.0 - (1.0 - c) * (1.0 - a.rgb) : a.rgb;
+  return mix(c, r, k);
+}
 float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 void main() {
   if (uShadowPass == 1) {
@@ -126,12 +141,20 @@ void main() {
     oEmissive = vec4(0.0);
     return;
   }
-  vec4 t = texture(uAtlas, vUv) * inRect(vUv.xy);
+  vec3 uv = vUv;
+  if ((vFB.x & 4) != 0 && vSwayPx != 0.0) { // sway mask (R = weight): sample the source shifted against the wind
+    float w = texture(uSwayM, vUv).r; uv.x -= vSwayPx * w; // vSwayPx is in uv units
+  }
+  vec4 t = texture(uAtlas, uv) * inRect(uv.xy);
   if (uSilhouette == 1) { // focus drawn through occluders (depth GREATER)
     if (t.a < 0.35) discard;
     oColor = uSilColor; oEmissive = vec4(0.8, 0.0, 0.0, uSilColor.a); return;
   }
-  vec3 col = t.rgb * vTint; float a = t.a;
+  vec3 col; float a = t.a;
+  if ((vFB.x & 8) != 0) { // two-tone tint mask: R = primary (Sprite.tint), G = secondary (aH rgb)
+    vec4 tm = texture(uTintM, uv); vec3 t2 = dot(vTint2.rgb, vec3(1.0)) > 0.0 ? vTint2.rgb : vTint;
+    col = t.rgb * mix(vec3(1.0), vTint, tm.r) * mix(vec3(1.0), t2, tm.g);
+  } else col = t.rgb * vTint;
   if (a < 0.5 && uOutline > 0.0 && (vFlags & 16) == 0) {
     float o = 0.0; vec2 d = vec2(uOutline * uTexel);
     o = max(o, alphaAt(vUv.xy + vec2(d.x, 0.0))); o = max(o, alphaAt(vUv.xy - vec2(d.x, 0.0)));
@@ -155,10 +178,11 @@ void main() {
   }
   // survival FX: wetness (darken + sheen + drips), frost rim (cold), flush (heat)
   if (vFx.x > 0.003) {
-    col *= mix(1.0, uWetDarken, vFx.x);
-    float sheen = pow(max(0.0, 1.0 - length((vLocal - vec2(-0.35, -0.45)) * vec2(1.2, 0.9))), 3.0);
+    vec4 sm = (vFB.x & 2) != 0 ? texture(uSheenM, uv) : vec4(-1.0); // sheen mask: R sheen, G darken, B drip
+    col *= mix(1.0, uWetDarken, vFx.x * (sm.g >= 0.0 ? sm.g : 1.0));
+    float sheen = sm.r >= 0.0 ? sm.r : pow(max(0.0, 1.0 - length((vLocal - vec2(-0.35, -0.45)) * vec2(1.2, 0.9))), 3.0);
     vec2 px = vUv.xy / uTexel;
-    float drip = step(0.94, h21(vec2(floor(px.x / 2.0), floor((px.y - uTime * 24.0) / 5.0))));
+    float drip = step(0.94, h21(vec2(floor(px.x / 2.0), floor((px.y - uTime * 24.0) / 5.0)))) * (sm.b >= 0.0 ? step(0.5, sm.b) : 1.0);
     col += vec3(0.75, 0.85, 1.0) * vFx.x * uWetSheen * (sheen + drip * 0.6) * t.a;
   }
   if (vFx.y > 0.25) {
@@ -167,6 +191,8 @@ void main() {
     col = mix(col, uFrostColor, f * (1.0 - m) * 0.85 + f * 0.12);
   }
   if (vFx.w > 0.003) col = mix(col, col * uFlushTint, vFx.w);
+  // typed status tints (wet, frost, flush, exhausted) with mode + saturation, scaled by the status amount
+  col = statusTint(col, 0, vFx.x); col = statusTint(col, 1, vFx.y); col = statusTint(col, 2, vFx.w); col = statusTint(col, 3, vTint2.w);
   float alpha = smoothstep(0.35, 0.75, a) * vAlpha * uAlphaMul;
   if (uOccMode == 0) alpha *= mix(1.0, uOccAlpha, vOcc);
   int ghost = int(vMisc.x + 0.5);
@@ -180,6 +206,9 @@ void main() {
   // r: darkness bypass (emissive); g: bloom source (emissive pixels + light-source sprites)
   oEmissive = vec4(e * uEmisStrength, (vFlags & 32) != 0 ? max(e, 0.6) : e, 0.0, alpha);
 }`;
+
+/** Secondary tint (RGBA8 packed) into instance floats 28..30 (0 = reuse primary). */
+export function writeTint2(o: Float32Array, t: number): void { if (t === 0) { o[28] = o[29] = o[30] = 0; return; } o[28] = ((t >>> 24) & 255) / 255 || 1e-3; o[29] = ((t >>> 16) & 255) / 255; o[30] = ((t >>> 8) & 255) / 255; }
 
 interface StaticChunk { vao: WebGLVertexArrayObject; vbo: WebGLBuffer; count: number; checksum: number; cx: number; cy: number; maxZ: number; seen: number; born: number }
 
@@ -242,7 +271,7 @@ export class SpriteBatch {
   private makeVao(vbo: WebGLBuffer): WebGLVertexArrayObject {
     const gl = this.gl; const vao = gl.createVertexArray()!;
     gl.bindVertexArray(vao); gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-    for (let a = 0; a < 7; a++) { gl.enableVertexAttribArray(a); gl.vertexAttribPointer(a, 4, gl.FLOAT, false, INSTANCE_FLOATS * 4, a * 16); gl.vertexAttribDivisor(a, 1); }
+    for (let a = 0; a < 8; a++) { gl.enableVertexAttribArray(a); gl.vertexAttribPointer(a, 4, gl.FLOAT, false, INSTANCE_FLOATS * 4, a * 16); gl.vertexAttribDivisor(a, 1); }
     gl.bindVertexArray(null);
     return vao;
   }
@@ -290,7 +319,7 @@ export class SpriteBatch {
     if (tint === 0) { o[12] = 1; o[13] = 1; o[14] = 1; } else { o[12] = ((tint >>> 24) & 255) / 255; o[13] = ((tint >>> 16) & 255) / 255; o[14] = ((tint >>> 8) & 255) / 255; }
     o[15] = footDy;
     o[16] = shadowA; o[17] = ghost; o[18] = dmgOverlay; o[19] = shadowW;
-    o.fill(0, 20, 28);
+    o.fill(0, 20, 32);
     return o;
   }
 
@@ -305,6 +334,8 @@ export class SpriteBatch {
     const an = cx.bindings.animState ? world.store(cx.bindings.animState) : null;
     const wet = cx.bindings.wetness ? world.store(cx.bindings.wetness) : null;
     const bt = cx.bindings.bodyTemp ? world.store(cx.bindings.bodyTemp) : null;
+    const exh = cx.bindings.exhausted ? world.store(cx.bindings.exhausted) : null;
+    const t2s = world.isRegistered(TintSecondary) ? world.store(TintSecondary) : null;
     const hw = this.iso.tileW / 2, hh = this.iso.tileH / 2, zs = this.iso.zStep, zf = this.zFactor;
     const margin = 256;
     const r0x = rect.x0 - margin, r1x = rect.x1 + margin, r0y = rect.y0 - margin * 0.5, r1y = rect.y1 + margin * 2;
@@ -392,6 +423,8 @@ export class SpriteBatch {
       if (wet) { const s2 = wet.slot(i); if (s2 >= 0) { o0[20] = wet.data.level[s2]! / 255; if (o0[20] > 0.3) cx.statusFx?.("wet", x, y, z, o0[20]); } }
       if (bt) { const s2 = bt.slot(i); if (s2 >= 0) { o0[21] = bt.data.cold[s2]! / 255; o0[22] = bt.data.shivering[s2]! ? 1 : 0; o0[23] = (bt.data.heat[s2]! / 255) * cx.style.fx.flushStrength;
         if (o0[22]) cx.statusFx?.("cold", x, y, z, o0[21]); else if (bt.data.heat[s2]! > 150) cx.statusFx?.("heat", x, y, z, bt.data.heat[s2]! / 255); } }
+      if (exh) { const s2 = exh.slot(i); if (s2 >= 0) o0[31] = exh.data.level[s2]! / 255; }
+      if (t2s) { const s2 = t2s.slot(i); if (s2 >= 0) writeTint2(o0, t2s.data.tint[s2]! >>> 0); }
       const sw = atlas.swayOf(sid);
       if (sw) { o0[24] = sw[0]!; o0[25] = sw[1]!; o0[26] = sw[2]!; }
       o0[27] = occT;
@@ -571,6 +604,10 @@ export class SpriteBatch {
     gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D_ARRAY, atlas.tex); gl.uniform1i(u.uAtlas!, 0);
     gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, atlas.frameTex); gl.uniform1i(u.uFrames!, 1);
     gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D_ARRAY, atlas.emisTex); gl.uniform1i(u.uEmis!, 2);
+    gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D_ARRAY, atlas.sheenTex); gl.uniform1i(u.uSheenM!, 3);
+    gl.activeTexture(gl.TEXTURE4); gl.bindTexture(gl.TEXTURE_2D_ARRAY, atlas.swayTex); gl.uniform1i(u.uSwayM!, 4);
+    gl.activeTexture(gl.TEXTURE5); gl.bindTexture(gl.TEXTURE_2D_ARRAY, atlas.tintMaskTex); gl.uniform1i(u.uTintM!, 5);
+    gl.activeTexture(gl.TEXTURE6); gl.bindTexture(gl.TEXTURE_2D, atlas.tintTex); gl.uniform1i(u.uTints!, 6);
   }
 
   /** Static (cached) build-piece chunks: opaque, depth-written, one draw per visible chunk. */
