@@ -4,7 +4,7 @@ import { InterpolationBuffer } from "./interpolation.js";
 import { MessageRegistry, readPayload, writePayload, type MessageDef, type MessageDefBase, type Payload } from "./messages.js";
 import {
   MsgType, NONE_U32, PROTOCOL_VERSION, decodeReject, decodeWelcome, emptyToken, encodeHello, encodeInput, readHeader, writeHeader,
-  type InputCmd, type NamedHashes, type RejectReason, type WelcomeMsg,
+  quantizeInput, type InputCmd, type NamedHashes, type RejectReason, type WelcomeMsg,
 } from "./protocol.js";
 import { BitWriter } from "./bits.js";
 import { NO_ENTITY } from "./server.js";
@@ -30,7 +30,7 @@ export interface NetClientOptions {
   /** Applies one input to an owned entity; must be the same function the server uses (prediction). */
   applyInput?: (world: World, entity: Entity, cmd: InputCmd | null) => void;
   /** Samples the local input for this tick (input phase). */
-  sampleInput?: () => { buttons: number; aimX: number; aimY: number };
+  sampleInput?: () => Omit<InputCmd, "seq">;
   /** Remote entities render this many server ticks in the past (default 2). */
   interpDelayTicks?: number;
   /** Max unacked inputs repeated in each input packet (default 8). */
@@ -243,17 +243,38 @@ export class NetClient {
   private inputSystem(w: World): void {
     if (!this.active) return;
     const owned = this.ownedEntities();
-    if (owned.length && this.opts.sampleInput) {
-      const cmd: InputCmd = { seq: this.nextSeq++, ...this.opts.sampleInput() };
+    const fed = this.fed; this.fed = undefined;
+    if (owned.length && (fed || this.opts.sampleInput)) {
+      const cmd: InputCmd = { seq: this.nextSeq++, ...quantizeInput(fed ?? this.opts.sampleInput!()) };
+      if (!cmd.edges) delete cmd.edges;
       this.pending.push(cmd);
       for (const e of owned) this.opts.applyInput?.(w, e, cmd);
     }
     const n = this.opts.inputRedundancy ?? 8;
     const viewTick = this.latestTick < 0 ? undefined : Math.max(0, Math.floor(this.renderTick));
-    this.opts.transport.send(encodeInput({ ackTick: this.latestTick < 0 ? NONE_U32 : this.latestTick, ...(viewTick !== undefined && { viewTick }), cmds: this.pending.slice(-n) }), "unreliable");
+    this.opts.transport.send(encodeInput({ ackTick: this.latestTick < 0 ? NONE_U32 : this.latestTick, ...(viewTick !== undefined && { viewTick }), cmds: this.pending.slice(-n), edges: this.pending.filter((c) => c.edges).map((c) => ({ seq: c.seq, edges: c.edges! })) }), "unreliable");
+  }
+  private fed: Omit<InputCmd, "seq"> | undefined;
+  /**
+   * Feed this tick's core InputFrame (v2) instead of `sampleInput`. Several feeds before the next tick: the latest
+   * state wins, edge pulses are OR'd (never lost). Edges are delivered to the server exactly once per seq.
+   */
+  feedInput(f: { actions: number; aimX: number; aimY: number; moveX?: number; moveY?: number; aimMode?: number; ghostNudgeX?: number; ghostNudgeY?: number; edges?: number }): void {
+    const edges = ((this.fed?.edges ?? 0) | (f.edges ?? 0)) >>> 0;
+    const c: Omit<InputCmd, "seq"> = { buttons: f.actions >>> 0, aimX: f.aimX, aimY: f.aimY };
+    if (f.moveX !== undefined) c.moveX = f.moveX; if (f.moveY !== undefined) c.moveY = f.moveY;
+    if (f.aimMode) c.aimMode = f.aimMode;
+    if (f.ghostNudgeX !== undefined) c.ghostNudgeX = f.ghostNudgeX; if (f.ghostNudgeY !== undefined) c.ghostNudgeY = f.ghostNudgeY;
+    if (edges) c.edges = edges;
+    this.fed = c;
   }
 
+  private predictedBefore = new Map<Entity, number[]>();
   private networkSystem(w: World, dt: number): void {
+    this.predictedBefore.clear();
+    if (this.interpIndex !== undefined) for (const e of this.ownedEntities()) {
+      const v = w.isAlive(e) ? this.interpStore.get(entityIndex(e)) : undefined; if (v) this.predictedBefore.set(e, this.interpStore.fields.map((f) => v[f]!));
+    }
     this.serverTickEstimate += 1;
     const sin = this.staticInbox; this.staticInbox = [];
     for (const bytes of sin) { const r = new BitReader(bytes); readHeader(r); this.statics.handle(r, bytes.length); } // reliable, in order
@@ -374,9 +395,10 @@ export class NetClient {
     for (const netId of this.owned) {
       const e = this.entities.get(netId); const es = state.get(netId);
       if (e === undefined || !es) continue;
-      const before = this.interpIndex !== undefined ? this.interpStore.get(entityIndex(e)) : undefined;
+      // predicted value captured at the start of the network phase (applyState may already have written server state)
+      const before = this.predictedBefore.get(e);
       this.writeComps(w, e, es, undefined, true);
-      owned.push([e, before ? this.interpStore.fields.map((f) => before[f]!) : undefined]);
+      owned.push([e, before]);
     }
     if (!owned.length) return;
     const pending = this.pending;
@@ -387,7 +409,7 @@ export class NetClient {
     let corr = 0;
     for (const [e, before] of owned) {
       const after = this.interpStore.get(entityIndex(e)); if (!before || !after) continue;
-      corr = Math.max(corr, Math.hypot(...this.interpStore.fields.filter((f) => f !== "facing").map((f, i) => after[f]! - before[i]!)));
+      corr = Math.max(corr, Math.hypot(...this.interpStore.fields.map((f, i) => (f === "facing" ? 0 : after[f]! - before[i]!)))); // fields are schema-sorted (facing first): index before pairing
     }
     if ((this.opts.correctionSmoothingSec ?? 0.1) > 0) for (const [e, before] of owned) {
       const after = this.interpStore.get(entityIndex(e)); if (!before || !after) continue;

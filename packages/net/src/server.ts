@@ -75,12 +75,16 @@ export interface ClientSession {
   lastAckTick: number;
   lastReceivedSeq: number;
   lastProcessedSeq: number;
+  /** Highest input seq whose edge record has been taken (edges are exactly-once per seq). */
+  lastEdgeSeq: number;
+  /** Edges of seqs whose input never arrived (slid out of the redundancy window) or was dropped: OR'd into the next applied input. */
+  pendingEdges: number;
   /** Client's interpolation tick from its last input packet (for lag compensation), -1 = unknown. */
   lastViewTick: number;
   readonly inputQueue: InputCmd[];
   lastSnapshotBytes: number;
   fullSnapshots: number;
-  stats: { commands: number; droppedCommands: number; rateLimited: number; deferred: number; bytesSent: number };
+  stats: { commands: number; droppedCommands: number; rateLimited: number; deferred: number; bytesSent: number; lateEdges: number };
   /** Smoothed round-trip time in ms from transport-level ping/pong (-1 until measured). */
   rttMs: number;
   /** Session was created from a stored token via `resumeToken` (e.g. after a server restart). */
@@ -377,9 +381,9 @@ export class NetServer {
 
   private newSession(conn: ConnId, token: Uint8Array, resumed: boolean): SessionState {
     const s: SessionState = {
-      clientId: this.nextClientId++, token, conn, lastAckTick: -1, lastReceivedSeq: -1, lastProcessedSeq: -1, lastViewTick: -1,
+      clientId: this.nextClientId++, token, conn, lastAckTick: -1, lastReceivedSeq: -1, lastProcessedSeq: -1, lastEdgeSeq: -1, pendingEdges: 0, lastViewTick: -1,
       inputQueue: [], lastSnapshotBytes: 0, fullSnapshots: 0, rttMs: -1, resumed,
-      stats: { commands: 0, droppedCommands: 0, rateLimited: 0, deferred: 0, bytesSent: 0 },
+      stats: { commands: 0, droppedCommands: 0, rateLimited: 0, deferred: 0, bytesSent: 0, lateEdges: 0 },
       views: new Map(), lastSent: new Int32Array(256), static: new StaticSession(), buckets: new Map(), commands: [], events: [],
       pingAt: 0, pingNonce: 0,
     };
@@ -412,10 +416,21 @@ export class NetServer {
     if (m.viewTick !== undefined && m.viewTick <= this.world.tick) s.lastViewTick = m.viewTick;
     for (const c of m.cmds) {
       if (c.seq <= s.lastReceivedSeq) continue;
-      s.lastReceivedSeq = c.seq; s.inputQueue.push(c);
+      s.lastReceivedSeq = c.seq; delete c.edges; s.inputQueue.push(c);
+    }
+    // edge records: exactly once per seq (records arrive sorted; anything <= lastEdgeSeq was already taken)
+    for (const e of m.edges ?? []) {
+      if (e.seq <= s.lastEdgeSeq || e.seq > s.lastReceivedSeq) continue; // never ahead of the cmds it belongs to
+      s.lastEdgeSeq = e.seq;
+      const q = s.inputQueue.find((c) => c.seq === e.seq);
+      if (q) q.edges = ((q.edges ?? 0) | e.edges) >>> 0;
+      else { s.pendingEdges = (s.pendingEdges | e.edges) >>> 0; s.stats.lateEdges++; }
     }
     const max = this.opts.maxInputQueue ?? 8;
-    if (s.inputQueue.length > max) { this.anomaly(s, "inputFlood", `${s.inputQueue.length}`); s.inputQueue.splice(0, s.inputQueue.length - max); }
+    if (s.inputQueue.length > max) {
+      this.anomaly(s, "inputFlood", `${s.inputQueue.length}`);
+      for (const c of s.inputQueue.splice(0, s.inputQueue.length - max)) if (c.edges) s.pendingEdges = (s.pendingEdges | c.edges) >>> 0; // never lose a pulse
+    }
   }
 
   private onCommandMsg(conn: ConnId, r: BitReader): void {
@@ -471,7 +486,7 @@ export class NetServer {
         for (const h of this.handlers.get(c.def) ?? []) h(s, p, w);
       }
       const cmd = s.inputQueue.shift() ?? null;
-      if (cmd) s.lastProcessedSeq = cmd.seq;
+      if (cmd) { s.lastProcessedSeq = cmd.seq; if (s.pendingEdges) { cmd.edges = ((cmd.edges ?? 0) | s.pendingEdges) >>> 0; s.pendingEdges = 0; } }
       if (this.opts.applyInput) for (const e of owned.get(s.clientId) ?? []) this.opts.applyInput(w, e, cmd, s.clientId);
     }
   }

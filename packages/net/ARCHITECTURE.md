@@ -19,7 +19,7 @@ Header on every packet (frozen layout): `u16 protocolVersion, u8 msgType`. Bodie
 |---|---|---|
 | Hello | rel | token[16], named hashes `{name: u32}` |
 | Welcome / Reject | rel | clientId, token, tickHz, serverTick / reason, detail (mismatching hash name) |
-| Input | unrel | ackTick, viewTick (client render tick, for lag comp), ≤8 newest unprocessed inputs (consecutive seqs) |
+| Input | unrel | v5: u32 ackTick, u32 viewTick, u8 n, [u32 firstSeq], n × (varuint actions, f32 aimX, f32 aimY, bit hasMove, bit worldPoint, bit hasNudge, [i8 moveX, i8 moveY], [i8 nudgeX, i8 nudgeY]), varuint nEdges, nEdges × (varuint zigzag(seq−firstSeq), varuint edges). Analog values use core's q8. Edge pulses ride only in the edge records, sent for every unacked seq, and the server applies them exactly once (late ones are OR'd into the next tick). Client: `client.feedInput(coreInputFrame)` or the `sampleInput` option |
 | Snapshot | unrel | serverTick, baselineTick (NONE = full), lastProcessedInputSeq, records… End |
 | Command | rel | varuint commandId, varuint viewTick+1 (client render tick at send time; 0 = unknown), payload |
 | Events | rel or unrel | serverTick, varuint n, (eventId, payload)… |

@@ -46,7 +46,7 @@ describe("integration: server + 2 clients over a lossy, jittery loopback", () =>
     expect(midOnA).toBeGreaterThan(5); // A sees B moving (interpolated, in the past)
     expect(midOnA).toBeLessThan(pos(B.world, bSelf).y);
     // correction smoothing: reconciliation snaps sim state, the visual offset absorbs it and decays (~100 ms)
-    let maxOff = 0; let visualJump = 0; let lastVisual = pos(A.world, aSelf).x;
+    let maxOff = 0; let visualJump = 0; let lastVisual = pos(A.world, aSelf).x + (A.client.correctionOffset(aSelf)?.x ?? 0); // rendered position = sim + offset
     for (let i = 0; i < 20; i++) {
       frame(1);
       const o = A.client.correctionOffset(aSelf)?.x ?? 0; maxOff = Math.max(maxOff, Math.abs(o));
@@ -59,7 +59,7 @@ describe("integration: server + 2 clients over a lossy, jittery loopback", () =>
     expect(A.client.correctionOffset(aSelf)).toBeUndefined(); // fully decayed; sim untouched (asserted below)
 
     // prediction overshot the wall, reconciliation pulled it back to the authoritative position
-    expect(A.client.stats.maxCorrection).toBeGreaterThan(0.5);
+    expect(A.client.stats.maxCorrection).toBeGreaterThan(0.3); // >= 2 ticks of overshoot (0.2/tick); was >0.5 against the pre-m6 inflated stat
     expect(pos(A.world, aSelf).x).toBe(WALL);
     expect(pos(sworld, players.get(1)!).x).toBe(WALL);
     // B converged to the server and A sees the same position
