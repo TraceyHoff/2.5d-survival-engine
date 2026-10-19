@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { BinaryWriter, ClaimRegistry, GroupRegistry, Membership, Owner, OwnedBy, AccessList, PlayerId, Permissions, Transform, can, definePermissionActions, installPermissions, type World } from "@engine/core";
-import { CLAIMS_BLOB, GROUPS_BLOB, MemoryWorldStore, SocialCodecError, decodeClaims, encodeClaims, loadSocial } from "../src/index.js";
+import { CLAIMS_BLOB, GROUPS_BLOB, MemoryWorldStore, SocialCodecError, decodeClaims, encodeClaims, loadClaimsInto, loadSocial } from "../src/index.js";
 import { SqliteWorldStore } from "../src/node.js";
 import { makeWorld, step } from "./helpers.js";
 
@@ -23,9 +23,21 @@ describe("social persistence (groups, claims, privileges)", () => {
     const back = decodeClaims(encodeClaims(reg));
     expect(back.all()).toEqual(reg.all()); expect(back.defaultFlags).toBe(RAIDABLE);
     expect(back.zoneAt(10, 10)).toBe(NO_BUILD); expect(back.claimAt(-10, -10)?.ownerGroup).toBe(9);
+    expect(back.nextClaimId).toBe(reg.nextClaimId);
     expect(back.add({ ownerGroup: 1, x0: 0, y0: 0, x1: 1, y1: 1, flags: 0 }).id).toBe(41); // removed ids are not reused
     expect(encodeClaims(decodeClaims(encodeClaims(reg)))).toEqual(encodeClaims(reg)); // stable bytes
     expect(() => decodeClaims(new Uint8Array(20))).toThrow(SocialCodecError);
+  });
+  it("reads a claims blob in the former persist-owned v1 layout (written by hand) via core's codec, in place", () => {
+    const w = new BinaryWriter(64);
+    w.write("u32", 0x4d4c4c43); w.write("u8", 1); w.write("u32", 50); w.write("u32", RAIDABLE); w.write("u32", 1);
+    w.write("u32", 7); w.write("u32", 3); for (const v of [0, 0, 8, 8]) w.write("f64", v); w.write("u32", NO_BUILD); w.write("i32", 2);
+    const bytes = w.finish();
+    const store = new MemoryWorldStore(); void store.write({ blobs: [{ key: CLAIMS_BLOB, format: 1, bytes, tick: 1 }] });
+    const held = new ClaimRegistry(); expect(loadClaimsInto(store, held)).toBe(true);
+    expect(held.get(7)).toMatchObject({ ownerGroup: 3, x1: 8, flags: NO_BUILD, priority: 2 });
+    expect(held.nextClaimId).toBe(50); expect(held.defaultFlags).toBe(RAIDABLE);
+    expect(held.encode()).toEqual(bytes); // byte-identical
   });
 
   it("clans (with banners), parties, membership, a claim and building privileges survive a server restart", async () => {
