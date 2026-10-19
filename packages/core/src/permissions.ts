@@ -3,6 +3,7 @@ import { Transform } from "./builtins.js";
 import { entityIndex, type Entity } from "./entity.js";
 import { defineResource, type World } from "./world.js";
 import { Membership, OwnedBy, PlayerId, GroupRegistry } from "./social.js";
+import { BinaryReader, BinaryWriter } from "./serialize.js";
 
 /**
  * Generic permissions. Gameplay defines action bits with definePermissionActions (like defineActions).
@@ -68,6 +69,32 @@ export class ClaimRegistry {
   claimAt(x: number, y: number): Claim | undefined { return this.claimsAt(x, y)[0]; }
   /** Union of flags of all claims at (x,y), or defaultFlags when unclaimed. */
   zoneAt(x: number, y: number): number { const cs = this.claimsAt(x, y); if (!cs.length) return this.defaultFlags; let f = 0; for (const c of cs) f |= c.flags; return f; }
+  /** Next id add() assigns when none is given (ids of removed claims are never reused). */
+  get nextClaimId(): number { return this.nextId; }
+  static readonly MAGIC = 0x4d4c4c43; // "CLLM" little endian
+  static readonly SAVE_VERSION = 1;
+  /**
+   * Persistence (ADR-079). v1 = byte-identical to persist's committed "claims" blob (e0dfce9): u32 magic "CLLM", u8 version,
+   * u32 nextId, u32 defaultFlags, u32 count, count x (u32 id, u32 ownerGroup, f64 x0, y0, x1, y1, u32 flags, i32 priority), by id.
+   */
+  encode(): Uint8Array {
+    const all = this.all(); const w = new BinaryWriter(17 + all.length * 48);
+    w.write("u32", ClaimRegistry.MAGIC); w.write("u8", ClaimRegistry.SAVE_VERSION); w.write("u32", this.nextId); w.write("u32", this.defaultFlags >>> 0); w.write("u32", all.length);
+    for (const c of all) { w.write("u32", c.id); w.write("u32", c.ownerGroup); w.write("f64", c.x0); w.write("f64", c.y0); w.write("f64", c.x1); w.write("f64", c.y1); w.write("u32", c.flags >>> 0); w.write("i32", c.priority | 0); }
+    return w.finish();
+  }
+  static decode(bytes: Uint8Array): ClaimRegistry {
+    if (bytes.length < 17) throw new Error("ClaimRegistry: truncated");
+    const r = new BinaryReader(bytes); if (r.read("u32") !== ClaimRegistry.MAGIC) throw new Error("ClaimRegistry: bad magic");
+    const v = r.read("u8"); if (v !== 1) throw new Error(`ClaimRegistry: unsupported version ${v}`);
+    const next = r.read("u32"); const reg = new ClaimRegistry(); reg.defaultFlags = r.read("u32"); const n = r.read("u32");
+    for (let i = 0; i < n; i++) reg.add({ id: r.read("u32"), ownerGroup: r.read("u32"), x0: r.read("f64"), y0: r.read("f64"), x1: r.read("f64"), y1: r.read("f64"), flags: r.read("u32"), priority: r.read("i32") });
+    reg.nextId = Math.max(reg.nextId, next); return reg;
+  }
+  /** Replace this registry's contents with a decoded save (keeps object identity, e.g. inside the Permissions resource). */
+  load(bytes: Uint8Array): this {
+    const d = ClaimRegistry.decode(bytes); this.claims = d.claims; this.cells = d.cells; this.nextId = d.nextId; this.defaultFlags = d.defaultFlags; return this;
+  }
 }
 
 export type Decision = "allow" | "deny" | undefined;
