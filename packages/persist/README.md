@@ -9,7 +9,18 @@ owns storage.
   transaction per batch, serialized; `prefetchChunks` fills a sync cache; `IndexedDbWorldStore.delete(name)`).
 - Tables / object stores: `chunks(key "cx,cy", cx, cy, format, data, updated_tick)`, `players(token, name, format, data,
   updated_tick, updated_at)`, `blobs(key, format, data, updated_tick)`, `meta(k, v)` with `seed`, `tick`, `schemaHash`,
-  `nextPlayerId`. SQLite `PRAGMA user_version` = store schema version (2; v1 files gain `blobs` on open).
+  `nextPlayerId`, and `records(ns, id, format, data, owner_kind, owner_id, chunk, updated_tick)` (PK (ns, id), indexes
+  (ns, owner_kind, owner_id) and (ns, chunk)). SQLite `PRAGMA user_version` = store schema version (3; older files gain
+  `blobs` / `records` on open). IndexedDB version 2 (object store `records`, keyPath [ns, id]).
+- **Generic records** (`SaveBatch.records` / `deleteRecords`, `readRecord(ns, id)`, `listRecords(ns, {ownerKind, ownerId,
+  chunk})`): row-per-object world data owned by a gameplay system, opaque versioned bytes plus indexed owner
+  (`OwnerKind` None/Player=PlayerId/Group=party-or-clan id, like core `OwnedBy`) and anchoring chunk. Atomic with the rest
+  of a batch, read-your-writes, resident on IndexedDB. Planned use - trade stalls (not built yet): ns `stall` (one row
+  per stall, chunk = location, owner = player or clan), `listing` (one row per listed item; the item's slot bytes carry
+  `crafterId` like any inventory slot, so persist needs no change when items gain it), `earnings` (one row per owner).
+  A sale = one batch: delete the listing, upsert the earnings row. Stall entities in the world can keep using
+  persistent components (OwnedBy/AccessList) through the chunk codec; records hold what must outlive chunk unloads or
+  be queried by owner while the chunk is not loaded.
 - `WorldPersistence`: give `provider` to `ChunkManager`, then `attach(chunks)`.
   - Load: stored row → `decodeChunk` (entities + buildings), else the generator. Untouched generated chunks are never
     written, so the file grows with what players changed, not with world size.

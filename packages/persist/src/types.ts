@@ -9,6 +9,58 @@ export interface StoredPlayer { token: string; name: string; format: number; byt
  * and "claims" (persist claim format). `format` = the record's own version byte.
  */
 export interface StoredBlob { key: string; format: number; bytes: Uint8Array; tick: number }
+/**
+ * Owner of a generic record, mirroring core's `OwnedBy {playerId, groupId}`: a player (account PlayerId) or a group
+ * (party / clan id from GroupRegistry). Plain object (not a const enum) so it survives isolated transpilation.
+ */
+export const OwnerKind = { None: 0, Player: 1, Group: 2 } as const;
+/**
+ * Generic, row-per-object world data in a namespace (records table). The extension point for gameplay systems whose
+ * state is neither chunk-local entities nor one small world blob and that change row by row - e.g. the planned
+ * trade-stall economy: ns "stall" (one row per stall, `chunk` = where it stands), "listing" (one per listed item;
+ * the item bytes keep their crafterId like any other item slot), "earnings" (one per owner). Owner and chunk are
+ * indexed columns so "all listings of clan 7" / "stalls in chunk 3,4" do not decode every row.
+ * `bytes` / `format` belong to the namespace's owner (versioned by them); persist never interprets them.
+ */
+export interface StoredRecord {
+  ns: string; id: string; format: number; bytes: Uint8Array; tick: number;
+  /** OwnerKind + id (0/0 = unowned). */
+  ownerKind: number; ownerId: number;
+  /** Chunk the record is anchored to, "" for none. */
+  chunk: ChunkKey | "";
+}
+export interface RecordRef { ns: string; id: string }
+/** Filter for listRecords; omitted fields match anything. */
+export interface RecordQuery { ownerKind?: number; ownerId?: number; chunk?: ChunkKey | "" }
+export const recordMatches = (r: StoredRecord, q: RecordQuery = {}): boolean =>
+  (q.ownerKind === undefined || r.ownerKind === q.ownerKind) && (q.ownerId === undefined || r.ownerId === q.ownerId) && (q.chunk === undefined || r.chunk === q.chunk);
+export const recordKey = (ns: string, id: string): string => `${ns}\u0000${id}`;
+const byId = (a: StoredRecord, b: StoredRecord): number => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+/**
+ * In-memory record table with a pending overlay (used by the memory and IndexedDB stores, and as the SQLite
+ * overlay). `null` in the overlay = pending delete.
+ */
+export class RecordTable {
+  readonly rows = new Map<string, StoredRecord>();
+  readonly overlay = new Map<string, StoredRecord | null>();
+  get(ns: string, id: string): StoredRecord | undefined { const k = recordKey(ns, id); const o = this.overlay.get(k); return o !== undefined ? o ?? undefined : this.rows.get(k); }
+  /** Merges `base` (committed rows from disk, if the backend keeps them elsewhere) with rows + overlay. Sorted by id. */
+  list(ns: string, q: RecordQuery = {}, base: StoredRecord[] = []): StoredRecord[] {
+    const m = new Map<string, StoredRecord>();
+    for (const r of base) m.set(recordKey(r.ns, r.id), r);
+    for (const [k, r] of this.rows) if (r.ns === ns) m.set(k, r);
+    for (const [k, r] of this.overlay) { if (r === null) m.delete(k); else if (r.ns === ns) m.set(k, r); }
+    return [...m.values()].filter((r) => r.ns === ns && recordMatches(r, q)).sort(byId);
+  }
+  count(): number { const k = new Set(this.rows.keys()); for (const [x, r] of this.overlay) { if (r) k.add(x); else k.delete(x); } return k.size; }
+  stage(b: SaveBatch): void { for (const r of b.records ?? []) this.overlay.set(recordKey(r.ns, r.id), r); for (const d of b.deleteRecords ?? []) this.overlay.set(recordKey(d.ns, d.id), null); }
+  /** Applies committed rows (keep=false: only clear the overlay entries this batch staged). */
+  settle(b: SaveBatch, ok: boolean, keepRows = true): void {
+    for (const r of b.records ?? []) { const k = recordKey(r.ns, r.id); if (ok && keepRows) this.rows.set(k, r); if (this.overlay.get(k) === r) this.overlay.delete(k); }
+    for (const d of b.deleteRecords ?? []) { const k = recordKey(d.ns, d.id); if (ok && keepRows) this.rows.delete(k); if (this.overlay.get(k) === null) this.overlay.delete(k); }
+  }
+}
+
 /** World-level metadata (meta table). */
 export interface WorldMeta { seed: number; tick: number; schemaHash: number; createdAt?: number; /** Next account PlayerId to hand out. */ nextPlayerId?: number }
 
@@ -19,6 +71,9 @@ export interface SaveBatch {
   meta?: WorldMeta;
   /** World-level records (upsert by key). */
   blobs?: StoredBlob[];
+  /** Generic records (upsert by ns + id) and deletions; see StoredRecord. */
+  records?: StoredRecord[];
+  deleteRecords?: RecordRef[];
   /** Chunk keys to delete (e.g. a world reset of an area). */
   deleteChunks?: ChunkKey[];
 }
@@ -56,6 +111,9 @@ export interface WorldStore {
   hasChunk?(key: ChunkKey): boolean;
   readPlayer(token: string): StoredPlayer | undefined;
   readBlob(key: string): StoredBlob | undefined;
+  /** Generic records (sync on every backend: SQLite indexes, memory / IndexedDB keep them resident). */
+  readRecord(ns: string, id: string): StoredRecord | undefined;
+  listRecords(ns: string, q?: RecordQuery): StoredRecord[];
   /** Optional async warm-up for backends without synchronous reads. */
   prefetchChunks?(keys: readonly ChunkKey[]): Promise<void>;
   /** Queue one transactional batch. Resolves when committed. Never blocks the caller on I/O. */
@@ -68,7 +126,7 @@ export interface WorldStore {
   close(): Promise<void>;
   stats(): StoreStats;
   /** Number of chunk / player rows stored (diagnostics, tests). */
-  count(table: "chunks" | "players"): number;
+  count(table: "chunks" | "players" | "records"): number;
 }
 
 export function emptyStats(): StoreStats {
