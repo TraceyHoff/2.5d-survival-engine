@@ -2,7 +2,38 @@ import { entityIndex, Owner, Transform, type ComponentStore, type Entity, type W
 import { ChunkMembership, decodeChunk, encodeChunk, parseChunkKey, chunkKeyOf, type BuildingGrid, type ChunkKey, type AsyncChunkProvider, type ChunkManager, type ChunkProvider, type GeneratedChunk } from "@engine/world";
 import { decodePlayerInto, encodePlayer, PLAYER_VERSION, type PlayerCodecOptions, type PlayerRestoreResult } from "./playerCodec.js";
 import { SocialSaver, type SocialState } from "./social.js";
-import { chunkFormatOf, type BatchHandle, type SaveBatch, type StoredBlob, type StoredChunk, type WorldMeta, type WorldStore } from "./types.js";
+import { chunkFormatOf, type BatchHandle, type SaveBatch, type StoredBlob, type StoredChunk, type StoredRecord, type WorldMeta, type WorldStore } from "./types.js";
+
+/**
+ * A per-chunk blob owned by another system, stored next to the chunk row (records table: ns = `ns`, id = chunk
+ * key, chunk = chunk key) and written in the same transaction. Used for gameplay's structure codec (STRC): build
+ * pieces and their attachments are entities, but gameplay saves them itself, so persist must not save them again
+ * through the chunk codec (`owns`).
+ */
+export interface ChunkSidecar {
+  /** Records namespace, e.g. "chunk.structures". */
+  readonly ns: string;
+  /** Blob for a resident chunk; undefined = nothing to keep (the stored row, if any, is deleted). */
+  encode(world: World, cx: number, cy: number): Uint8Array | undefined;
+  /** Version byte(s) of a blob, stored in the record's `format` column. */
+  format(bytes: Uint8Array): number;
+  /** Recreates the chunk's content; returns every entity it spawned (they are not treated as new changes). */
+  decode(world: World, cx: number, cy: number, bytes: Uint8Array): Entity[];
+  /** Drops the chunk's content from the world after it was saved (no destruction rules). */
+  unload(world: World, key: ChunkKey): void;
+  /** Bumped on every change of the chunk's content (dirty tracking without per-tick scans). */
+  version(world: World, key: ChunkKey): number;
+  /** Entities this sidecar saves: excluded from the chunk codec's entity list. */
+  owns(world: World, e: Entity): boolean;
+  /** Encode cost hint (e.g. piece count) for the autosave budget. */
+  size?(world: World, key: ChunkKey): number;
+  /**
+   * Migration: the chunk row was written before this sidecar existed and its entity list contains entities the
+   * sidecar owns (decoded as plain entities). Adopt them (or replace them) and return the entities that now exist.
+   * The chunk is re-saved in the new layout by the next autosave. Default: keep them as decoded.
+   */
+  migrate?(world: World, cx: number, cy: number, legacy: Entity[]): Entity[];
+}
 
 export interface WorldPersistenceOptions {
   world: World;
@@ -36,6 +67,8 @@ export interface WorldPersistenceOptions {
    * and hand the same objects to `installPermissions`.
    */
   social?: SocialState;
+  /** Per-chunk blobs owned by other systems (gameplay structures). See ChunkSidecar. */
+  sidecars?: readonly ChunkSidecar[];
   /** Injected wall clock for the encode budget / stats (persist is infrastructure, not sim). */
   now?: () => number;
   log?: (msg: string) => void;
@@ -60,6 +93,8 @@ export interface PersistenceStats {
   playersSaved: number;
   decodeErrors: number;
   /** Async backends: chunk reads issued / answered after ChunkManager stopped wanting the chunk (not decoded). */
+  /** Chunks whose stored row carried sidecar-owned entities (pre-sidecar save) and were migrated. */
+  migratedChunks: number;
   asyncReads: number;
   asyncLateDropped: number;
   socialSaves: number;
@@ -104,11 +139,14 @@ export class WorldPersistence {
   readonly stats: PersistenceStats = {
     dirtyChunks: 0, roundsCompleted: 0, lastRoundChunks: 0, lastRoundTicks: 0, lastRoundEncodeMs: 0, lastTickMs: 0, maxTickMs: 0,
     chunksLoadedFromStore: 0, chunksGenerated: 0, chunksSavedOnUnload: 0, playersSaved: 0, decodeErrors: 0,
-    asyncReads: 0, asyncLateDropped: 0, socialSaves: 0,
+    migratedChunks: 0, asyncReads: 0, asyncLateDropped: 0, socialSaves: 0,
   };
   private chunks: ChunkManager | undefined;
   private dirty = new Set<ChunkKey>();
   private savedVersion = new Map<ChunkKey, number>();
+  /** Sidecar version at the last save/load, per sidecar index, per chunk. */
+  private savedSide = new Map<ChunkKey, number[]>();
+  private readonly sidecars: readonly ChunkSidecar[];
   /** Chunks whose stored row could not be decoded: never overwritten this session (keeps the data for a migration). */
   private readOnly = new Set<ChunkKey>();
   private persisted = new Set<Entity>();
@@ -135,7 +173,9 @@ export class WorldPersistence {
     this.now = opts.now ?? (() => performance.now());
     this.persistentStores = this.world.componentStores.filter((s) => s.def.persistent);
     const extra = this.persistentStores.filter((s) => s.def !== (Transform as unknown));
-    this.persistEntity = opts.persistEntity ?? ((w, e) => { const i = entityIndex(e); return w.isAlive(e) && !isPlayer(w, e) && extra.some((s) => s.has(i)); });
+    this.sidecars = opts.sidecars ?? [];
+    const base = opts.persistEntity ?? ((w: World, e: Entity) => { const i = entityIndex(e); return w.isAlive(e) && !isPlayer(w, e) && extra.some((s) => s.has(i)); });
+    this.persistEntity = this.sidecars.length ? (w, e) => base(w, e) && !this.ownedBySidecar(e) : base;
     this.despawn = opts.despawnOnUnload ?? ((w, e) => !isPlayer(w, e));
     this.nextAutosave = this.world.tick + this.autosaveTicks; this.nextPlayerSave = this.world.tick + this.playerTicks;
     this.membership = new ChunkMembership(this.world);
@@ -198,6 +238,8 @@ export class WorldPersistence {
     if (r && r.encoded.has(key) && !r.requeued.has(key)) { r.encoded.delete(key); r.requeued.add(key); r.queue.push(key); return; }
     this.dirty.add(key);
   }
+  private ownedBySidecar(e: Entity): boolean { for (const sc of this.sidecars) if (this.world.isAlive(e) && sc.owns(this.world, e)) return true; return false; }
+  private sideVersions(key: ChunkKey): number[] { return this.sidecars.map((sc) => sc.version(this.world, key)); }
   isDirty(key: ChunkKey): boolean { return this.dirty.has(key) || this.versionChanged(key); }
   get roundInProgress(): boolean { return this.round !== undefined; }
   resetMaxTick(): void { this.stats.maxTickMs = 0; }
@@ -228,6 +270,7 @@ export class WorldPersistence {
         const d = decodeChunk(rec.bytes, { world: this.world, ...(this.opts.buildings ? { buildings: this.opts.buildings } : {}) });
         for (const e of d.entities) { this.fresh.add(e); this.persisted.add(e); }
         this.savedVersion.set(d.chunk.key, d.chunk.version); this.stats.chunksLoadedFromStore++;
+        this.loadSidecars(cx, cy, d.chunk.key, d.entities);
         const nodes = this.opts.regenerateNodes === false ? [] : gen.load(cx, cy)?.nodes ?? [];
         return { chunk: d.chunk, nodes };
       } catch (err) {
@@ -235,11 +278,66 @@ export class WorldPersistence {
         this.opts.onDecodeError?.(rec.key, err); this.opts.log?.(`persist: chunk ${rec.key} failed to decode (${String(err)}); using generator, row kept read-only`);
       } finally { this.quiet = false; }
     }
-    const g = gen.load(cx, cy); if (g) { this.savedVersion.set(g.chunk.key, g.chunk.version); this.stats.chunksGenerated++; }
+    const g = gen.load(cx, cy);
+    if (g) {
+      this.savedVersion.set(g.chunk.key, g.chunk.version); this.stats.chunksGenerated++;
+      if (this.sidecars.length) { this.quiet = true; try { this.loadSidecars(cx, cy, g.chunk.key, []); } finally { this.quiet = false; } }
+    }
     return g;
   }
+  /**
+   * Sidecar rows for a chunk being loaded. A chunk row from before the sidecar existed may carry sidecar-owned
+   * entities (e.g. build pieces saved as plain entities): those are handed to `migrate` and the chunk is marked dirty so
+   * the next autosave writes the new layout (chunk row without them + sidecar row). If both exist, the sidecar row wins
+   * and the legacy entities are dropped.
+   */
+  private loadSidecars(cx: number, cy: number, key: ChunkKey, decoded: readonly Entity[]): void {
+    if (!this.sidecars.length) return;
+    const w = this.world;
+    this.sidecars.forEach((sc) => {
+      const legacy = decoded.filter((e) => w.isAlive(e) && sc.owns(w, e));
+      const row = this.store.readRecord(sc.ns, key);
+      if (row) {
+        for (const e of legacy) { this.persisted.delete(e); this.fresh.delete(e); if (w.isAlive(e)) w.destroy(e); }
+        if (legacy.length) { this.markDirty(key); this.stats.migratedChunks++; }
+        try { for (const e of sc.decode(w, cx, cy, row.bytes)) this.fresh.add(e); }
+        catch (err) {
+          this.stats.decodeErrors++; this.readOnly.add(key); this.opts.onDecodeError?.(key, err);
+          this.opts.log?.(`persist: ${sc.ns} ${key} failed to decode (${String(err)}); chunk kept read-only`);
+        }
+      } else if (legacy.length) {
+        for (const e of legacy) this.persisted.delete(e);
+        const now = sc.migrate ? sc.migrate(w, cx, cy, legacy) : legacy;
+        for (const e of now) this.fresh.add(e);
+        this.markDirty(key); this.stats.migratedChunks++;
+        this.opts.log?.(`persist: ${key}: migrated ${legacy.length} legacy ${sc.ns} entities to the sidecar layout`);
+      }
+    });
+    this.savedSide.set(key, this.sideVersions(key));
+  }
   private versionChanged(key: ChunkKey): boolean {
-    const c = this.chunks?.getChunkByKey(key); return !!c && this.savedVersion.get(key) !== c.version;
+    const c = this.chunks?.getChunkByKey(key); if (!c) return false;
+    if (this.savedVersion.get(key) !== c.version) return true;
+    if (!this.sidecars.length) return false;
+    const saved = this.savedSide.get(key); const now = this.sideVersions(key);
+    return !saved || now.some((v, i) => v !== saved[i]);
+  }
+  /** Sidecar rows of a resident chunk (upserts, or deletes for sidecars with nothing to keep). */
+  private encodeSidecars(key: ChunkKey): Pick<SaveBatch, "records" | "deleteRecords"> {
+    if (!this.sidecars.length) return {};
+    const { cx, cy } = parseChunkKey(key); const records: StoredRecord[] = []; const deleteRecords: { ns: string; id: string }[] = [];
+    for (const sc of this.sidecars) {
+      const bytes = sc.encode(this.world, cx, cy);
+      if (bytes) records.push({ ns: sc.ns, id: key, format: sc.format(bytes), bytes, tick: this.world.tick, ownerKind: 0, ownerId: 0, chunk: key });
+      else if (this.store.readRecord(sc.ns, key)) deleteRecords.push({ ns: sc.ns, id: key });
+    }
+    this.savedSide.set(key, this.sideVersions(key));
+    return { ...(records.length ? { records } : {}), ...(deleteRecords.length ? { deleteRecords } : {}) };
+  }
+  /** Chunk row + sidecar rows of one resident chunk as one batch part (undefined if not resident / read-only). */
+  encodePart(key: ChunkKey): SaveBatch | undefined {
+    const rec = this.encode(key); if (!rec) return undefined;
+    return { chunks: [rec], ...this.encodeSidecars(key) };
   }
   /** Encode one resident chunk (tiles, buildings anchored in it, persistent entities in it). */
   encode(key: ChunkKey): StoredChunk | undefined {
@@ -253,17 +351,18 @@ export class WorldPersistence {
     const r = this.round;
     const needs = this.dirty.has(key) || this.versionChanged(key) || (r !== undefined && r.queue.includes(key) && !r.encoded.has(key));
     if (needs) {
-      const rec = this.encode(key);
-      if (rec) { if (r) { r.batch.append({ chunks: [rec] }); r.encoded.add(key); r.count++; } else void this.store.write({ chunks: [rec] }).catch((e) => this.opts.log?.(`persist: unload save failed: ${String(e)}`)); this.stats.chunksSavedOnUnload++; }
+      const part = this.encodePart(key);
+      if (part) { if (r) { r.batch.append(part); r.encoded.add(key); r.count++; } else void this.store.write(part).catch((e) => this.opts.log?.(`persist: unload save failed: ${String(e)}`)); this.stats.chunksSavedOnUnload++; }
     }
     this.dirty.delete(key);
     if (r) { r.encoded.add(key); } // already saved (or clean): skip if still queued
     this.quiet = true;
     try {
-      for (const e of [...this.membership.entitiesIn(key)]) if (this.despawn(this.world, e)) { this.persisted.delete(e); this.membership.set(e, undefined); this.world.destroy(e); }
+      for (const sc of this.sidecars) sc.unload(this.world, key);
+      for (const e of [...this.membership.entitiesIn(key)]) if (!this.world.isAlive(e)) { this.persisted.delete(e); this.membership.set(e, undefined); } else if (this.despawn(this.world, e)) { this.persisted.delete(e); this.membership.set(e, undefined); this.world.destroy(e); }
       this.opts.buildings?.unloadChunk(key);
     } finally { this.quiet = false; }
-    this.savedVersion.delete(key); this.readOnly.delete(key);
+    this.savedVersion.delete(key); this.savedSide.delete(key); this.readOnly.delete(key);
   }
 
   // ---------------- per-tick ----------------
@@ -273,6 +372,7 @@ export class WorldPersistence {
     for (const s of this.persistentStores) {
       for (const i of s.changedIndices()) {
         const e = s.dense[s.slot(i)]! as Entity; if (this.fresh.has(e)) continue;
+        if (this.sidecars.length && this.ownedBySidecar(e)) { const k = this.membership.chunkOf(e); if (k !== undefined) this.markDirty(k); continue; } // e.g. chest contents
         if (!this.persistEntity(w, e)) {
           if (this.persisted.delete(e)) { const k = this.membership.chunkOf(e); if (k !== undefined) this.markDirty(k); } // stopped being persistent
           continue;
@@ -298,7 +398,7 @@ export class WorldPersistence {
   beginRound(): boolean {
     if (this.round || !this.chunks) return false;
     const queue: ChunkKey[] = [];
-    for (const c of this.chunks.loadedChunks()) if (this.dirty.has(c.key) || this.savedVersion.get(c.key) !== c.version) queue.push(c.key);
+    for (const c of this.chunks.loadedChunks()) if (this.dirty.has(c.key) || this.versionChanged(c.key)) queue.push(c.key);
     this.dirty.clear(); this.stats.dirtyChunks = 0;
     if (!queue.length) return false;
     this.round = { batch: this.store.openBatch(), queue, encoded: new Set(), requeued: new Set(), startTick: this.world.tick, encodeMs: 0, count: 0, flushPlayers: false };
@@ -307,23 +407,25 @@ export class WorldPersistence {
   /** Encodes queued chunks until `budgetMs` is used (always at least one), posts them, commits when the queue is empty. */
   continueRound(budgetMs: number): Promise<void> | undefined {
     const r = this.round; if (!r) return undefined;
-    const t0 = this.now(); const part: StoredChunk[] = [];
+    const t0 = this.now(); const part: StoredChunk[] = []; const records: StoredRecord[] = []; const deletes: { ns: string; id: string }[] = [];
     let n = 0;
     while (r.queue.length) {
       const k = r.queue[0]!; if (r.encoded.has(k)) { r.queue.shift(); continue; }
       // Predict this chunk's cost (building-heavy chunks cost more) and leave it for the next tick if it would
       // overrun the budget. At least one chunk per tick so a round always progresses.
-      const pieces = this.opts.buildings?.layer(k)?.anchored.size ?? 0;
+      let pieces = this.opts.buildings?.layer(k)?.anchored.size ?? 0;
+      for (const sc of this.sidecars) pieces += sc.size?.(this.world, k) ?? 0;
       const elapsed = this.now() - t0;
       if (n > 0 && elapsed + this.msBase + this.msPerPiece * pieces > budgetMs) break;
       r.queue.shift();
-      const c0 = this.now(); const rec = this.encode(k); const ms = this.now() - c0;
+      const c0 = this.now(); const p = this.encodePart(k); const rec = p?.chunks?.[0]; const ms = this.now() - c0;
+      if (p?.records) records.push(...p.records); if (p?.deleteRecords) deletes.push(...p.deleteRecords);
       if (pieces < 200) this.msBase = this.msBase * 0.8 + ms * 0.2;
       else this.msPerPiece = Math.max(this.msPerPiece * 0.5, this.msPerPiece * 0.7 + (Math.max(0, ms - this.msBase) / pieces) * 0.3);
       r.encoded.add(k); n++; if (rec) { part.push(rec); r.count++; }
     }
     r.encodeMs += this.now() - t0;
-    const batch: SaveBatch = { chunks: part };
+    const batch: SaveBatch = { chunks: part, ...(records.length ? { records } : {}), ...(deletes.length ? { deleteRecords: deletes } : {}) };
     if (!r.queue.length) { batch.meta = this.meta(); const blobs = this.socialBlobs(); if (blobs.length) batch.blobs = blobs; }
     if (part.length || batch.meta) r.batch.append(batch);
     if (r.queue.length) return undefined;

@@ -137,6 +137,9 @@ importers:
       '@engine/core':
         specifier: workspace:*
         version: link:../core
+      '@engine/gameplay':
+        specifier: workspace:*
+        version: link:../gameplay
       '@engine/net':
         specifier: workspace:*
         version: link:../net
@@ -147,9 +150,6 @@ importers:
         specifier: 12.9.0
         version: 12.9.0
     devDependencies:
-      '@engine/gameplay':
-        specifier: workspace:*
-        version: link:../gameplay
       '@types/better-sqlite3':
         specifier: ^9.6.0
         version: 9.6.0

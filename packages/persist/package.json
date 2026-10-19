@@ -11,16 +11,17 @@
   },
   "exports": {
     ".": "./src/index.ts",
-    "./node": "./src/node.ts"
+    "./node": "./src/node.ts",
+    "./gameplay": "./src/gameplay.ts"
   },
   "dependencies": {
     "@engine/core": "workspace:*",
+    "@engine/gameplay": "workspace:*",
     "@engine/net": "workspace:*",
     "@engine/world": "workspace:*",
     "better-sqlite3": "12.9.0"
   },
   "devDependencies": {
-    "@engine/gameplay": "workspace:*",
     "@types/better-sqlite3": "^9.6.0",
     "fake-indexeddb": "^6.2.6"
   }
