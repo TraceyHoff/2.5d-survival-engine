@@ -531,3 +531,11 @@ flowchart LR
 ```
 
 **Attach points (ADR-076).** Sprites may declare `attach: {name: {x, y, z?, w?, h?}}` (px from the pivot at 1x scale) and `frameAttach: {frameIndex: {...}}` overrides. Renderer uses them for stall display slots, price tags and name labels.
+
+**Manifest batch for clan/raid art (ADR-077, ADR-078).** All data/schema only; Renderer draws.
+- `clanPalettes: [{key, primary, secondary}]` (index = order, ≤ 256). Gameplay's `BuildPiece.tint` (u8) is the index; tintmask **R ← primary, G ← secondary**. `registry.clanPalette(i)`.
+- `validateAssetFiles(reg, io)` / node `validateAssetFilesOnDisk(reg, baseDir)`: atlas pages and masks (emissive, sheen, sway, tintmask) exist; masks match the atlas image size (and `@Nx` mask variants match page N); sprite `sway.mask` matches atlas or frame size.
+- Animations may carry `rotations: number[][]` (1/2/4 rows, same length as `frames`; 2 rows mirror for rotations 2/3). `registry.animFrame(id, anim, rotation, t)` uses rows, else falls back to the legacy `<anim>_r1` anim for odd rotations.
+- `building.crackOverlay` (sprite key with anims `stage1..stage3`) for pieces without damage frames; `building.stateVfx: {state: [{vfx, attach}]}` spawns vfx at the sprite's attach points (e.g. `burning` → fire, ember, smoke).
+- vfx `stretch: "none" | "velocity"` (+ `stretchMax`, default 4).
+- `decal` category (optional) with `autotile {neighbors: 4|8, group?, rules: [{mask, care?, frame}]}`: first rule with `(n & care) === (mask & care)` wins (bits N1 E2 S4 W8, NE16 SE32 SW64 NW128); a `care: 0` fallback is required. `registry.decalFrame(id, neighborMask)`.

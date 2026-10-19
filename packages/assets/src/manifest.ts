@@ -3,7 +3,8 @@ import { fnv1a, StableIdRegistry, type World } from "@engine/core";
 export const MANIFEST_VERSION = 1;
 export const CATEGORIES = ["character", "zombie", "item", "equipment", "resource", "building", "tile", "ui", "vfx"] as const;
 /** Optional categories: accepted by validation but not required to be present (e.g. by "covers every category" checks). */
-export const OPTIONAL_CATEGORIES = ["critter", "glyph"] as const;
+/** decal: ground overlays (territory edges, puddles) with optional autotile neighbor rules (ADR-078). */
+export const OPTIONAL_CATEGORIES = ["critter", "glyph", "decal"] as const;
 export const ALL_CATEGORIES = [...CATEGORIES, ...OPTIONAL_CATEGORIES] as const;
 export type Category = (typeof ALL_CATEGORIES)[number];
 export const ROTATION_ART = ["mirror", "unique4"] as const;
@@ -47,7 +48,17 @@ export interface SpriteTintJson { color: string; strength: number; mode?: TintMo
 /** Input prompt glyph: id like "gamepad.xbox.a", "kbm.key.e", "touch.tap" -> sprite (+ optional frame index within its idle animation). */
 export interface GlyphJson { sprite: string; frame?: number }
 export const GLYPH_ID = /^(kbm|gamepad|touch)(\.[a-z0-9_]+)+$/;
-export interface AnimationJson { frames: number[]; fps: number; directions?: Directions; /** frame offset per direction row (default: atlas columns) */ dirStride?: number; loop?: boolean }
+export interface AnimationJson { frames: number[]; fps: number; directions?: Directions; /** frame offset per direction row (default: atlas columns) */ dirStride?: number; loop?: boolean;
+  /** Optional per-rotation frame rows for building anims: 1, 2 (rotations 2/3 = rows 0/1 mirrored) or 4 rows, each the same length as frames. Replaces the `<anim>_r1` naming hack (still honored as fallback). */
+  rotations?: number[][] }
+/** Building state -> vfx spawned at a named attach point (e.g. burning: fire/ember/smoke). */
+export interface StateVfxJson { vfx: string; attach: string }
+export const STRETCH_MODES = ["none", "velocity"] as const;
+export type StretchMode = (typeof STRETCH_MODES)[number];
+/** Decal autotile: first rule whose (neighbors & care) === (mask & care) wins; a rule with care 0 is the required fallback. Bits: N=1,E=2,S=4,W=8 (+ NE=16,SE=32,SW=64,NW=128 when neighbors = 8). Neighbors count when they share `group` (default: same sprite). */
+export interface AutotileJson { neighbors: 4 | 8; group?: string; rules: { mask: number; care?: number; frame: number }[] }
+/** Clan palette pair: tintmask R channel <- primary, G <- secondary. BuildPiece.tint (u8) indexes clanPalettes. */
+export interface ClanPaletteJson { key: string; primary: string; secondary: string }
 export interface BuildingSpriteJson {
   /** BuildPieceDef key (cross-checked with validateBuildingSprites). */
   piece: string; footprint: { w: number; h: number }; layer: number;
@@ -55,6 +66,10 @@ export interface BuildingSpriteJson {
   frames: number[][];
   /** Optional piece states (e.g. closed/open), each with its own frames[rotation][damageStage]. State index = declaration order (BuildingGrid state u8). */
   states?: Record<string, number[][]>;
+  /** Fallback crack overlay sprite (anims stage1..stage3, drawn over damage stages 1-3) for pieces without bespoke damage frames. */
+  crackOverlay?: string;
+  /** State name (a building state or a gameplay status like "burning") -> vfx at attach points of this sprite. */
+  stateVfx?: Record<string, StateVfxJson[]>;
 }
 /** Named attach point (stall display slots, price tags, name labels, vfx sockets): px offsets from the pivot at 1x scale; x is mirrored when flipX. Optional w/h = slot box. */
 export interface AttachPoint { x: number; y: number; z?: number; w?: number; h?: number }
@@ -72,10 +87,13 @@ export interface SpriteJson {
   rotationArt?: RotationArt;
   sway?: SwayJson;
   tints?: Record<string, SpriteTintJson>;
+  /** decal sprites only. */
+  autotile?: AutotileJson;
 }
 export interface SoundJson { key: string; files: string[]; volume?: number; pitchJitter?: number; /** true, or loop points in seconds */ loop?: boolean | LoopPoints; category: SoundCategory }
 export interface ParticleJson { rate: number; count: number; speed: [number, number]; spread: number; gravity: number; fade: boolean; scaleCurve: number[] }
-export interface VfxJson { key: string; sprite: string; anim?: string; lifetime: number; blend?: BlendMode; particles?: ParticleJson }
+export interface VfxJson { key: string; sprite: string; anim?: string; lifetime: number; blend?: BlendMode; particles?: ParticleJson;
+  /** velocity: stretch the sprite along its velocity (trails, projectiles); stretchMax caps the length factor (default 4). */ stretch?: StretchMode; stretchMax?: number }
 export interface TintSetJson { key: string; tints: string[] }
 export interface PaletteJson { key: string; source: string[]; target: string[] }
 export interface VariantJson { key: string; sprite?: string; tint?: string; tintIndex?: number; palette?: string }
@@ -85,6 +103,8 @@ export interface ManifestJson {
   sounds?: SoundJson[]; vfx?: VfxJson[]; tintSets?: TintSetJson[]; palettes?: PaletteJson[]; variantSets?: VariantSetJson[];
   /** Input prompt glyphs keyed by glyph id (see GLYPH_ID). */
   glyphs?: Record<string, GlyphJson>;
+  /** Clan two-tone palettes, index = array order (u8). */
+  clanPalettes?: ClanPaletteJson[];
   /** @deprecated legacy survival_fx extension; mapped onto pages/masks/sway with a warning. */
   x_survival?: { hiDpiAtlases?: Record<string, string>; emissivePages?: string[]; sheenMasks?: string[]; swayMasks?: string[]; sway?: Record<string, SwayJson>; [k: string]: unknown };
 }
@@ -98,9 +118,11 @@ export interface Atlas extends Omit<AtlasJson, "emissive" | "nineSlice" | "pages
 }
 export interface SpriteTint { color: number; strength: number; mode: TintMode; saturation: number }
 export interface GlyphDef { id: string; sprite: number; frame: number }
-export interface Animation { id: number; name: string; frames: number[]; fps: number; directions: Directions; dirStride: number; loop: boolean }
-export interface BuildingSprite { piece: string; footprint: { w: number; h: number }; layer: number; frames: number[][]; rotationArt: RotationArt; stateNames: string[]; states: number[][][] }
+export interface Animation { id: number; name: string; frames: number[]; fps: number; directions: Directions; dirStride: number; loop: boolean; rotations?: number[][] }
+export interface BuildingSprite { piece: string; footprint: { w: number; h: number }; layer: number; frames: number[][]; rotationArt: RotationArt; stateNames: string[]; states: number[][][];
+  /** crack overlay sprite id */ crackOverlay?: number; stateVfx: Record<string, { vfx: number; attach: string }[]> }
 export interface SpriteDef { id: number; key: string; category: Category; atlas: Atlas; anchor: { x: number; y: number }; animations: Map<string, Animation>; animList: Animation[]; building?: BuildingSprite; sway?: SwayJson; tints: Record<string, SpriteTint>;
+  autotile?: AutotileJson;
   /** Sprite-level attach points. */ attach?: AttachMap; /** Per-frame overrides by atlas frame index. */ frameAttach?: Map<number, AttachMap> }
 export interface FrameRef { atlas: Atlas; frame: number; x: number; y: number; w: number; h: number; anchorX: number; anchorY: number; emissiveImage?: string; nineSlice?: NineSlice; /** draw mirrored on X (mirror rotationArt) */ flipX?: boolean;
   /** Effective attach points: sprite attach merged with this frame's override (frame wins). Unmirrored: negate x when flipX (see attachPoint). */ attach?: AttachMap;
@@ -108,7 +130,8 @@ export interface FrameRef { atlas: Atlas; frame: number; x: number; y: number; w
 /** A frame resolved on a concrete page. */
 export interface ScaledFrame { image: string; scale: number; x: number; y: number; w: number; h: number }
 export interface SoundDef { id: number; key: string; files: string[]; volume: number; pitchJitter: number; loop: boolean; loopPoints?: LoopPoints; category: SoundCategory }
-export interface VfxDef { id: number; key: string; sprite: number; anim: string; lifetime: number; blend: BlendMode; particles?: ParticleJson }
+export interface VfxDef { id: number; key: string; sprite: number; anim: string; lifetime: number; blend: BlendMode; particles?: ParticleJson; stretch: StretchMode; stretchMax: number }
+export interface ClanPalette { index: number; key: string; primary: number; secondary: number }
 /** Colors are packed 0xRRGGBB. */
 export interface TintSet { id: number; key: string; tints: number[] }
 export interface Palette { id: number; key: string; map: Map<number, number>; source: number[]; target: number[] }
@@ -171,6 +194,31 @@ export class AssetRegistry {
   static attachPoint(ref: FrameRef, name: string): AttachPoint | undefined {
     const a = ref.attach?.[name]; if (!a) return undefined; return ref.flipX ? { ...a, x: -a.x } : a;
   }
+  /**
+   * Animation frame for a building rotation (0-3): uses anim.rotations rows when present (2 rows: rotations 2/3 mirror
+   * rows 0/1 with flipX), else the legacy `<anim>_r1` anim for odd rotations, else the plain anim.
+   */
+  animFrame(spriteId: number, anim: string, rotation: number, timeSec: number): FrameRef {
+    const s = this.sprite(spriteId); const r = rotation & 3; let a = s.animations.get(anim) ?? s.animList[0]!;
+    const pick = (n: number, loop: boolean) => { let i = Math.floor(timeSec * a.fps); return loop ? i % n : Math.min(i, n - 1); };
+    if (a.rotations) {
+      const rows = a.rotations; const ri = rows.length === 1 ? 0 : rows.length === 2 ? r & 1 : r; const row = rows[ri]!;
+      const ref = this.ref(s, row[pick(row.length, a.loop)]!); return rows.length === 2 && r >= 2 ? { ...ref, flipX: true } : ref;
+    }
+    let flip = false;
+    if (r & 1) { const alt = s.animations.get(`${a.name}_r1`); if (alt) a = alt; }
+    if (r >= 2 && s.building?.rotationArt === "mirror") flip = true;
+    const ref = this.ref(s, a.frames[pick(a.frames.length, a.loop)]!); return flip ? { ...ref, flipX: true } : ref;
+  }
+  /** Decal frame for a neighbor bitmask (see AutotileJson); undefined if the sprite has no autotile rules. */
+  decalFrame(spriteId: number, neighbors: number): FrameRef | undefined {
+    const s = this.sprite(spriteId); const at = s.autotile; if (!at) return undefined;
+    for (const rule of at.rules) { const care = rule.care ?? (at.neighbors === 8 ? 0xff : 0xf); if ((neighbors & care) === (rule.mask & care)) return this.ref(s, rule.frame); }
+    return undefined;
+  }
+  /** Clan palettes by index (BuildPiece.tint). */
+  clanPalettes: ClanPalette[] = [];
+  clanPalette(index: number): ClanPalette | undefined { return this.clanPalettes[index]; }
   /** Input prompt glyphs by id (manifest `glyphs`). */
   glyphs = new Map<string, GlyphDef>();
   glyph(id: string): GlyphDef | undefined { return this.glyphs.get(id); }
@@ -341,6 +389,15 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
         const stride = a.dirStride ?? at.columns;
         for (const f of a.frames) if (!(Number.isInteger(f) && f >= 0 && f + (dirs - 1) * stride < total)) issues.push(`${q}: frame ${f} out of atlas range`);
       }
+      if (a.rotations !== undefined) {
+        if (!s.building) issues.push(`${q}: rotations only apply to building sprites`);
+        if (!Array.isArray(a.rotations) || ![1, 2, 4].includes(a.rotations.length)) issues.push(`${q}: rotations must have 1, 2 or 4 rows`);
+        else { if (s.rotationArt === "unique4" && a.rotations.length !== 4) issues.push(`${q}: rotations needs 4 rows for rotationArt unique4`);
+          a.rotations.forEach((row, r) => {
+            if (!Array.isArray(row) || row.length !== (a.frames?.length ?? 0)) issues.push(`${q}: rotation row ${r} must have ${a.frames?.length ?? 0} frames`);
+            else if (at) for (const f of row) if (!(Number.isInteger(f) && f >= 0 && f < total)) issues.push(`${q}: rotation ${r} frame ${f} out of atlas range`);
+          }); }
+      }
     }
     if (s.building) {
       const b = s.building; const q = `${p}.building`;
@@ -363,6 +420,38 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
         const names = b.states && typeof b.states === "object" ? Object.keys(b.states) : [];
         if (!names.length) issues.push(`${q}: states must be a non-empty object`); if (names.length > 255) issues.push(`${q}: at most 255 states`);
         for (const n of names) { if (!/^[a-z0-9_]+$/.test(n)) issues.push(`${q}: bad state name "${n}"`); checkRows(b.states[n], `states.${n}`); }
+      }
+      if (b.crackOverlay !== undefined) {
+        const cs = m.sprites.find((x) => x.key === b.crackOverlay);
+        if (!cs) issues.push(`${q}: unknown crackOverlay sprite "${b.crackOverlay}"`);
+        else for (const st of ["stage1", "stage2", "stage3"]) if (!(st in (cs.animations ?? {}))) issues.push(`${q}: crackOverlay ${b.crackOverlay} lacks animation "${st}"`);
+      }
+      if (b.stateVfx !== undefined) {
+        if (!b.stateVfx || typeof b.stateVfx !== "object") issues.push(`${q}: stateVfx must be an object`);
+        else for (const [st, list] of Object.entries(b.stateVfx)) {
+          if (!/^[a-z0-9_]+$/.test(st)) issues.push(`${q}: bad stateVfx state "${st}"`);
+          if (!Array.isArray(list) || !list.length) { issues.push(`${q}: stateVfx.${st} must be a non-empty array`); continue; }
+          const names = new Set([...Object.keys(s.attach ?? {}), ...Object.values(s.frameAttach ?? {}).flatMap((am) => Object.keys(am ?? {}))]);
+          for (const e of list) {
+            if (!(m.vfx ?? []).some((v) => v.key === e?.vfx)) issues.push(`${q}: stateVfx.${st}: unknown vfx "${e?.vfx}"`);
+            if (!names.has(e?.attach)) issues.push(`${q}: stateVfx.${st}: unknown attach point "${e?.attach}"`);
+          }
+        }
+      }
+    }
+    if (s.autotile !== undefined) {
+      const t = s.autotile; const q = `${p}.autotile`;
+      if (s.category !== "decal") issues.push(`${q}: only decal sprites may autotile`);
+      if (!t || (t.neighbors !== 4 && t.neighbors !== 8)) issues.push(`${q}: neighbors must be 4 or 8`);
+      else if (t.group !== undefined && !/^[a-z0-9_]+$/.test(t.group)) issues.push(`${q}: bad group`);
+      else if (!Array.isArray(t.rules) || !t.rules.length) issues.push(`${q}: rules required`);
+      else {
+        const lim = t.neighbors === 8 ? 0xff : 0xf;
+        t.rules.forEach((r, k) => {
+          if (!(Number.isInteger(r?.mask) && r.mask >= 0 && r.mask <= lim) || (r.care !== undefined && !(Number.isInteger(r.care) && r.care >= 0 && r.care <= lim))) issues.push(`${q}: rule ${k} mask/care must be integers within 0..${lim}`);
+          if (!(Number.isInteger(r?.frame) && r.frame >= 0 && r.frame < total)) issues.push(`${q}: rule ${k} frame out of atlas range`);
+        });
+        if (!t.rules.some((r) => r.care === 0)) issues.push(`${q}: needs a fallback rule with care 0`);
       }
     }
   });
@@ -388,6 +477,8 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
     else if (v.anim !== undefined && !(v.anim in (sp.animations ?? {}))) issues.push(`${p}: sprite ${v.sprite} has no animation "${v.anim}"`);
     if (!(v.lifetime > 0)) issues.push(`${p}: lifetime must be > 0`);
     if (v.blend !== undefined && !BLEND_MODES.includes(v.blend)) issues.push(`${p}: blend must be normal|additive|multiply`);
+    if (v.stretch !== undefined && !STRETCH_MODES.includes(v.stretch)) issues.push(`${p}: stretch must be none|velocity`);
+    if (v.stretchMax !== undefined && !(typeof v.stretchMax === "number" && v.stretchMax >= 1 && v.stretchMax <= 64)) issues.push(`${p}: stretchMax must be within [1,64]`);
     const pt = v.particles;
     if (pt) {
       if (!(pt.rate >= 0) || !(Number.isInteger(pt.count) && pt.count >= 0) || pt.rate + pt.count <= 0) issues.push(`${p}: particles need rate >= 0, integer count >= 0, and one of them > 0`);
@@ -408,6 +499,10 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
     if (!Array.isArray(pl.source) || !Array.isArray(pl.target) || pl.source.length !== pl.target.length || !pl.source.length) issues.push(`${p}: source and target must be equal-length, non-empty`);
     else { if (![...pl.source, ...pl.target].every((c) => HEX.test(c))) issues.push(`${p}: colors must be #rrggbb`); if (new Set(pl.source.map((c) => c.toLowerCase())).size !== pl.source.length) issues.push(`${p}: duplicate source color`); }
   });
+  const clanPals = m.clanPalettes ?? [];
+  if (!Array.isArray(clanPals)) issues.push("clanPalettes must be an array");
+  else { uniq(clanPals, "clanPalettes"); if (clanPals.length > 256) issues.push("clanPalettes: at most 256 (u8 index)");
+    clanPals.forEach((c, i) => { if (!HEX.test(c?.primary ?? "") || !HEX.test(c?.secondary ?? "")) issues.push(`clanPalettes[${i}](${c?.key}): primary and secondary must be #rrggbb`); }); }
   const sets = m.variantSets ?? []; uniq(sets, "variantSets");
   const variantKeys: string[] = [];
   sets.forEach((vs, i) => {
@@ -440,11 +535,14 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
   const sprites = new Map<number, SpriteDef>();
   for (const s of m.sprites) {
     const at = atlases.get(s.atlas)!; const animList: Animation[] = [];
-    Object.entries(s.animations).forEach(([name, a], i) => animList.push({ id: i, name, frames: a.frames, fps: a.fps, directions: a.directions ?? 1, dirStride: a.dirStride ?? at.columns, loop: a.loop ?? true }));
+    Object.entries(s.animations).forEach(([name, a], i) => animList.push({ id: i, name, frames: a.frames, fps: a.fps, directions: a.directions ?? 1, dirStride: a.dirStride ?? at.columns, loop: a.loop ?? true, ...(a.rotations ? { rotations: a.rotations.map((r) => [...r]) } : {}) }));
     const id = ids.sprites.id(s.key);
     sprites.set(id, { id, key: s.key, category: s.category, atlas: at, anchor: s.anchor ?? { x: 0.5, y: 0.9 }, animations: new Map(animList.map((a) => [a.name, a])), animList,
       ...(s.building ? { building: { piece: s.building.piece, footprint: { ...s.building.footprint }, layer: s.building.layer, frames: s.building.frames.map((r) => [...r]),
-        rotationArt: s.rotationArt ?? "mirror", stateNames: Object.keys(s.building.states ?? {}), states: Object.values(s.building.states ?? {}).map((rows) => rows.map((r) => [...r])) } } : {}),
+        rotationArt: s.rotationArt ?? "mirror", stateNames: Object.keys(s.building.states ?? {}), states: Object.values(s.building.states ?? {}).map((rows) => rows.map((r) => [...r])),
+        ...(s.building.crackOverlay ? { crackOverlay: ids.sprites.id(s.building.crackOverlay) } : {}),
+        stateVfx: Object.fromEntries(Object.entries(s.building.stateVfx ?? {}).map(([st, l]) => [st, l.map((e) => ({ vfx: ids.vfx.id(e.vfx), attach: e.attach }))])) } } : {}),
+      ...(s.autotile ? { autotile: { neighbors: s.autotile.neighbors, ...(s.autotile.group ? { group: s.autotile.group } : {}), rules: s.autotile.rules.map((r) => ({ ...r })) } } : {}),
       ...(s.sway ? { sway: { ...s.sway } } : {}),
       ...(s.attach ? { attach: cloneAttach(s.attach) } : {}),
       ...(s.frameAttach ? { frameAttach: new Map(Object.entries(s.frameAttach).map(([f, am]) => [Number(f), cloneAttach(am)])) } : {}),
@@ -452,7 +550,7 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
   }
   const soundMap = new Map<number, SoundDef>(sounds.map((s) => { const id = ids.sounds.id(s.key); return [id, { id, key: s.key, files: [...s.files], volume: s.volume ?? 1, pitchJitter: s.pitchJitter ?? 0, loop: !!s.loop, ...(typeof s.loop === "object" ? { loopPoints: { ...s.loop } } : {}), category: s.category }]; }));
   const vfxMap = new Map<number, VfxDef>(vfx.map((v) => { const id = ids.vfx.id(v.key); const sp = m.sprites.find((s) => s.key === v.sprite)!;
-    return [id, { id, key: v.key, sprite: ids.sprites.id(v.sprite), anim: v.anim ?? Object.keys(sp.animations)[0]!, lifetime: v.lifetime, blend: v.blend ?? "normal", ...(v.particles ? { particles: v.particles } : {}) }]; }));
+    return [id, { id, key: v.key, sprite: ids.sprites.id(v.sprite), anim: v.anim ?? Object.keys(sp.animations)[0]!, lifetime: v.lifetime, blend: v.blend ?? "normal", stretch: v.stretch ?? "none", stretchMax: v.stretchMax ?? 4, ...(v.particles ? { particles: v.particles } : {}) }]; }));
   const tintMap = new Map<number, TintSet>(tints.map((t) => { const id = ids.tints.id(t.key); return [id, { id, key: t.key, tints: t.tints.map(parseColor) }]; }));
   const palMap = new Map<number, Palette>(pals.map((p) => { const id = ids.palettes.id(p.key); const source = p.source.map(parseColor), target = p.target.map(parseColor);
     return [id, { id, key: p.key, source, target, map: new Map(source.map((c, i) => [c, target[i]!])) }]; }));
@@ -478,7 +576,40 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
   }
   if (warnings.length && typeof console !== "undefined") for (const w of warnings) console.warn(`[assets] ${w}`);
   const registry = new AssetRegistry(atlases, sprites, ids, soundMap, vfxMap, tintMap, palMap, varMap); registry.glyphs = glyphs;
+  registry.clanPalettes = clanPals.map((c, index) => ({ index, key: c.key, primary: parseColor(c.primary), secondary: parseColor(c.secondary) }));
   return { registry, lock, warnings };
+}
+
+/** File IO for validateAssetFiles: exists + image pixel size (undefined if unreadable). Paths are manifest paths. */
+export interface AssetFileIO { exists(path: string): boolean; imageSize(path: string): { w: number; h: number } | undefined }
+/**
+ * Checks atlas images, scale pages and mask pages (emissive, sheen, sway, tintmask) exist and that every mask matches its
+ * atlas page size (scale-1 mask = atlas image size; `<mask>@Nx` variants, when present, = page N size). Sprite
+ * `sway.mask` must match the atlas image or one frame. Returns issues (empty = ok).
+ */
+export function validateAssetFiles(reg: AssetRegistry, io: AssetFileIO): string[] {
+  const issues: string[] = []; const atSize = new Map<string, { w: number; h: number } | undefined>();
+  const size = (p: string) => { if (!atSize.has(p)) atSize.set(p, io.imageSize(p)); return atSize.get(p); };
+  const at2x = (p: string, k: number) => p.replace(/(\.[a-z]+)$/, `@${k}x$1`);
+  for (const a of reg.atlases.values()) {
+    for (const pg of a.pages) if (!io.exists(pg.image)) issues.push(`atlas ${a.key}: missing page ${pg.image}`);
+    const base = io.exists(a.image) ? size(a.image) : undefined;
+    for (const [kind, path] of Object.entries(a.masks) as [MaskKind, string][]) {
+      if (!io.exists(path)) { issues.push(`atlas ${a.key}: missing ${kind} mask ${path}`); continue; }
+      const ms = size(path); if (!ms || !base) continue;
+      if (ms.w !== base.w || ms.h !== base.h) issues.push(`atlas ${a.key}: ${kind} mask ${path} is ${ms.w}x${ms.h}, atlas image is ${base.w}x${base.h}`);
+      for (const pg of a.pages) { if (pg.scale === 1) continue; const mp = at2x(path, pg.scale); if (!io.exists(mp) || !io.exists(pg.image)) continue;
+        const a2 = size(pg.image), m2 = size(mp); if (a2 && m2 && (a2.w !== m2.w || a2.h !== m2.h)) issues.push(`atlas ${a.key}: ${kind} mask ${mp} is ${m2.w}x${m2.h}, page is ${a2.w}x${a2.h}`); }
+    }
+  }
+  for (const s of reg.allSprites()) {
+    const mp = s.sway?.mask; if (!mp) continue;
+    if (!io.exists(mp)) { issues.push(`sprite ${s.key}: missing sway mask ${mp}`); continue; }
+    const ms = size(mp), base = size(s.atlas.image); if (!ms) continue;
+    const okAtlas = base && ms.w === base.w && ms.h === base.h, okFrame = ms.w === s.atlas.frameW && ms.h === s.atlas.frameH;
+    if (!okAtlas && !okFrame) issues.push(`sprite ${s.key}: sway mask ${mp} is ${ms.w}x${ms.h}, expected atlas ${base ? `${base.w}x${base.h}` : "?"} or frame ${s.atlas.frameW}x${s.atlas.frameH}`);
+  }
+  return issues;
 }
 
 /** Mix the asset id hash into the world schema hash so client/server handshakes reject mismatched content. */
