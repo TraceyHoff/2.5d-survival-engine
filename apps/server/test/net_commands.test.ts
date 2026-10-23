@@ -95,3 +95,28 @@ describe("entity targets are NetIds, validated per client", () => {
     expect(eidOfNetId(C.world, nid)).toBeUndefined();
   }, 20_000);
 });
+
+describe("party rates and single-path Use/Place/Emote", () => {
+  it("all five gameplay.party* commands get CHAT_STYLE_RATE", async () => {
+    const { GAMEPLAY_NET_COMMANDS } = await import("../src/protocol.js");
+    const names = ["gameplay.partyInvite", "gameplay.partyAccept", "gameplay.partyDecline", "gameplay.partyLeave", "gameplay.partyKick"];
+    for (const n of names) {
+      const m = GAMEPLAY_NET_COMMANDS.filter((c) => c.core.name === n);
+      expect(m.length, n).toBe(1);
+      expect(m[0]!.net.rate, n).toEqual(CHAT_STYLE_RATE);
+    }
+  });
+  it("Use/Place/Emote are registered once and a single send runs once", async () => {
+    const { GAMEPLAY_NET_COMMANDS } = await import("../src/protocol.js");
+    const { GAMEPLAY_COMMANDS } = await import("@engine/gameplay");
+    for (const d of [UseCmd, PlaceCmd, EmoteCmd]) expect(GAMEPLAY_NET_COMMANDS.filter((c) => c.core.name === d.name).length, d.name).toBe(1);
+    // game.ts routes a command through exactly one path: the intent queue (GAMEPLAY_COMMANDS) or the handler queue, never both.
+    const queued = new Set(GAMEPLAY_COMMANDS.map(([d]) => d.name));
+    expect(queued.has(UseCmd.name)).toBe(true); expect(queued.has(PlaceCmd.name)).toBe(true); expect(queued.has(EmoteCmd.name)).toBe(false);
+    const s = await setup(); const A = await s.connect();
+    const seen: number[] = [];
+    s.gs.world.addSystem("input", "test.onceProbe", (w) => { const a = w.get(s.ent(A), PlayerIntent)?.action; if (a) seen.push(a); });
+    A.sendCommand(gameplayNet(UseCmd), { slot: 2 }); s.tick(10);
+    expect(seen.filter((a) => a === IntentAction.Use).length).toBe(1);
+  });
+});
