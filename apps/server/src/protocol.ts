@@ -27,7 +27,7 @@ export const Pong = defineNetEvent("demo.pong", { t: "u32" });
  * gameplay's party (and later clan) commands. Their entity fields (PARTY_ENTITY_FIELDS) still go out as NetIds.
  */
 export const CHAT_STYLE_RATE = { perSec: 1, burst: 5 } as const;
-export const SOCIAL_COMMAND_NAMES: ReadonlySet<string> = new Set(["gameplay.emote", "gameplay.partyInvite", "gameplay.partyAccept", "gameplay.partyLeave", "gameplay.kick"]);
+export const SOCIAL_COMMAND_NAMES: ReadonlySet<string> = new Set(["gameplay.emote", "gameplay.partyInvite", "gameplay.partyAccept", "gameplay.partyDecline", "gameplay.partyLeave", "gameplay.partyKick"]);
 const mirror = (d: CommandDef) => {
   if (SOCIAL_COMMAND_NAMES.has(d.name)) return defineCommand(d.name, d.schema, { entityFields: [...(ECONOMY_ENTITY_FIELDS[d.name] ?? PARTY_ENTITY_FIELDS[d.name] ?? [])], rate: { ...CHAT_STYLE_RATE } });
   const perSec = ECONOMY_COMMAND_RATES[d.name] ?? COMMAND_RATES[d.name] ?? 2;

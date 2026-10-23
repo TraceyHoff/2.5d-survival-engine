@@ -56,7 +56,7 @@ describe("net copies of gameplay Use / Place / Emote", () => {
 
   it("social commands use the chat-style rate; party/kick names are pre-registered", () => {
     expect(gameplayNet(EmoteCmd).rate).toEqual(CHAT_STYLE_RATE);
-    for (const n of ["gameplay.partyInvite", "gameplay.partyAccept", "gameplay.partyLeave", "gameplay.kick"]) expect(SOCIAL_COMMAND_NAMES.has(n)).toBe(true);
+    for (const n of ["gameplay.partyInvite", "gameplay.partyAccept", "gameplay.partyDecline", "gameplay.partyLeave", "gameplay.partyKick"]) expect(SOCIAL_COMMAND_NAMES.has(n)).toBe(true);
   });
 });
 
