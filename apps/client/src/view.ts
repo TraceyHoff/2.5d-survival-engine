@@ -23,6 +23,12 @@ const VFuel = defineComponent("ViewFuel", { burnUntilTick: "u32", lit: "u8" });
 /** gameplay Anim (Idle Walk Run Attack Hurt Die Gather Build) -> render AnimStateId (Idle Walk Run Attack Hit Death ...). */
 const ANIM_MAP = [0, 1, 2, 3, 4, 5, 3, 3];
 import { LightTable, type LightSpec } from "./lights.js";
+/** `?cam=animal`: debug camera that follows the first ambient animal instead of the player. */
+const CAM_ANIMAL = typeof location !== "undefined" && new URLSearchParams(location.search).get("cam") === "animal";
+/** Max bytes for the sprite texture array (mips included) before customization layers are dropped. */
+const ATLAS_BUDGET = 768 * 2 ** 20;
+/** Set when the paper-doll atlases were left out, so Appearance layers are not bound to missing sprites. */
+let noCosmetics = false;
 const PLAYER_KEYS = ["player", "player_b", "player_c"];
 
 export interface ViewOverrides { hours?: number; weather?: number; intensity?: number }
@@ -39,7 +45,7 @@ export class IsoView {
   private constructor(readonly renderer: IsoRenderer, readonly registry: AssetRegistry, private readonly ov: ViewOverrides, readonly lights: LightTable) {
     IsoRenderer.registerComponents(this.view);
     for (const c of [VAnim, VPiece, VWet, VTemp, VFuel]) this.view.register(c);
-    const cat = registry.cosmetics;
+    const cat = noCosmetics ? undefined : registry.cosmetics;
     if (cat?.size) this.view.register(Appearance);
     renderer.bindGameplay({ animState: VAnim, buildPiece: VPiece, wetness: VWet, bodyTemp: VTemp, lit: VFuel, pieceState: (e) => this.pieceStates.get(e),
       ...(cat?.size ? { appearance: coreAppearanceBinding(cat) } : {}) });
@@ -53,6 +59,18 @@ export class IsoView {
     const { registry } = await fetchDefaultManifest(`${base}art/`);
     onProgress(0.3, "Loading sprite atlases");
     const sources = sourcesFromManifest(registry, packBase + "manifest.json", {}, { probeSiblings: false });
+    // Art's customization pack (~220 paper-doll atlases, 1008x960): the renderer packs every atlas into one 2048² texture
+    // array, so these alone need ~1.7 GiB of VRAM ("Texture total allocation size is too large" -> every sprite black).
+    // Until Render loads outfit layers on demand, keep them out unless the array fits (?cz=1 forces them in).
+    const qs = new URLSearchParams(location.search), lowend = qs.get("gl") === "lowend";
+    const custom = [...registry.atlases.values()].filter((a) => /^customization\//.test(a.image)).map((a) => a.key);
+    for (const k of custom) { const src = sources.get(k); if (src) delete src.pages; } // 1x only for paper-doll layers
+    const czBytes = custom.length * 1008 * 1040 * 4 * 1.34;
+    if (custom.length && (lowend || (czBytes > ATLAS_BUDGET && qs.get("cz") !== "1"))) {
+      console.warn(`[view] customization layers need ~${(czBytes / 2 ** 20) | 0} MiB of sprite array; drawing base character sprites`);
+      for (const k of custom) { (registry.atlases as Map<string, unknown>).delete(k); sources.delete(k); }
+      noCosmetics = true;
+    }
     await renderer.atlas.setRegistry(registry, sources);
     onProgress(0.75, "Loading building variants");
     const pv = await fetch(packBase + "piece_variants.json").then((r) => (r.ok ? r.json() : null)).catch(() => null) as { pieces?: Record<string, string[]> } | null;
@@ -67,7 +85,7 @@ export class IsoView {
     const lights = new LightTable(); lights.load(await fetch(tuningUrl).then((r) => (r.ok ? r.json() : null)).catch(() => null));
     if (look.warnings.length) console.info("render tuning:", look.warnings);
     renderer.camera.zoom = 1.6; onProgress(1, "Ready");
-    return new IsoView(renderer, registry, ov, lights);
+    const view = new IsoView(renderer, registry, ov, lights); view.base = base; return view;
   }
 
   resize(w: number, h: number, dpr: number): void {
@@ -113,6 +131,7 @@ export class IsoView {
         if (spec.fuel) v.add(ve, VFuel, { burnUntilTick: 0, lit: 1 });
         if (spec.onCreate) this.scales.set(ve, spec.onCreate);
         if (e === player) r.setFocusEntity(ve);
+        if (CAM_ANIMAL && net.has(e, Animal) && (this.camAnimal === undefined || !this.map.has(this.camAnimal))) this.camAnimal = e;
       }
       seen.add(e);
       // facing from movement when the sim leaves it at 0
@@ -123,7 +142,9 @@ export class IsoView {
       v.set(ve, Transform, { x: cur.x, y: cur.y, z: ground(cur.x, cur.y, cur.z), facing });
       if (v.has(ve, VAnim)) {
         const ga = net.get(e, GAnim); const dead = net.has(e, Dead);
-        const state = dead ? 5 : ga && ga.anim > 1 ? ANIM_MAP[ga.anim] ?? 0 : moving ? (net.has(e, Zombie) ? 6 : 1) : 0;
+        let state = dead ? 5 : ga && ga.anim > 1 ? ANIM_MAP[ga.anim] ?? 0 : moving ? (net.has(e, Zombie) ? 6 : 1) : 0;
+        const an = net.get(e, Animal);
+        if (an) state = this.animalAnim(net, e, an, moving, dead, player);
         const a = v.get(ve, VAnim)!; if (a.state !== state) v.set(ve, VAnim, { state, startTick: v.tick });
         const wet = net.get(e, Wetness); if (wet) v.set(ve, VWet, { level: wet.level });
         const bt = net.get(e, BodyTemp); if (bt) v.set(ve, VTemp, { cold: bt.cold, heat: bt.heat, shivering: bt.shivering });
@@ -145,9 +166,10 @@ export class IsoView {
       if (v.has(ve, VPiece)) this.syncPieceState(net, e, ve, defs);
       if (v.has(ve, VFuel)) { const f = net.get(e, Fuel); if (f) v.set(ve, VFuel, { lit: f.lit, burnUntilTick: f.burnUntilTick }); }
     }
-    for (const [ne, ve] of this.map) if (!seen.has(ne)) { v.destroy(ve); this.map.delete(ne); this.lightOf.delete(ne); this.pieceStates.delete(ve); this.lastMove.delete(ne); this.scales.delete(ve); }
+    for (const [ne, ve] of this.map) if (!seen.has(ne)) { v.destroy(ve); this.map.delete(ne); this.lightOf.delete(ne); this.pieceStates.delete(ve); this.lastMove.delete(ne); this.animalHp.delete(ne); this.animalSfxAt.delete(ne); this.animalPrev.delete(ne); this.scales.delete(ve); }
 
-    const pv = player !== undefined ? this.map.get(player) : undefined;
+    const camE = CAM_ANIMAL && this.camAnimal !== undefined ? this.camAnimal : player;
+    const pv = camE !== undefined ? this.map.get(camE) : undefined;
     if (pv !== undefined) {
       const t = v.get(pv, Transform)!, p = v.get(pv, PrevTransform) ?? t;
       r.camera.lookAt(p.x + (t.x - p.x) * alpha, p.y + (t.y - p.y) * alpha, p.z + (t.z - p.z) * alpha);
@@ -160,6 +182,25 @@ export class IsoView {
     }
   }
   private checks = 0; private blackFrames = 0;
+  private animalHp = new Map<Entity, { hp: number; hitUntil: number }>();
+  private animalSfxAt = new Map<Entity, number>(); private sfxBudgetAt = 0;
+  /** Animal anim (render state ids: 0 idle, 1 walk, 2 run, 4 hit, 5 death) from Animal.state (0 idle, 1 wander, 2 flee), movement and Health. */
+  private animalAnim(net: World, e: Entity, an: { kind: number; state: number }, moving: boolean, dead: boolean, player: Entity | undefined): number {
+    const now = performance.now(); const hp = net.get(e, Health)?.hp; const rec = this.animalHp.get(e) ?? { hp: hp ?? 0, hitUntil: 0 };
+    let hurt = false; if (hp !== undefined) { if (hp < rec.hp - 1e-3) { rec.hitUntil = now + 250; hurt = true; } rec.hp = hp; } this.animalHp.set(e, rec);
+    const st = dead || (hp !== undefined && hp <= 0) ? 5 : now < rec.hitUntil ? 4 : an.state === 2 && moving ? 2 : moving ? 1 : 0;
+    // species sound: when hurt/killed, starting to flee, or now and then when idle; only near the player, rate-limited
+    const key = animalDefs()[an.kind]?.key; const pt = player !== undefined ? net.get(player, Transform) : undefined; const t = net.get(e, Transform);
+    if (key && pt && t && Math.hypot(pt.x - t.x, pt.y - t.y) < 9) {
+      const last = this.animalSfxAt.get(e) ?? 0; const prevState = this.animalPrev.get(e);
+      const want = hurt || (st === 5 && prevState !== 5) || (an.state === 2 && prevState !== 2 && now - last > 3000) || (st === 0 && now - last > 12000 && Math.random() < 0.002);
+      if (want && now > this.sfxBudgetAt) { this.animalSfxAt.set(e, now); this.sfxBudgetAt = now + 400; playAnimalSfx(this.base, key, Math.max(0.15, 1 - Math.hypot(pt.x - t.x, pt.y - t.y) / 9)); }
+    }
+    this.animalPrev.set(e, st === 5 ? 5 : an.state);
+    return st;
+  }
+  private animalPrev = new Map<Entity, number>();
+  base = "/"; private camAnimal: Entity | undefined;
 
   private scales = new Map<Entity, number>();
 
@@ -196,8 +237,8 @@ export class IsoView {
     if (net.has(e, Animal)) {
       const k = animalDefs()[net.get(e, Animal)!.kind]; const s = this.sid(k?.spriteKey);
       if (s !== undefined) return { sprite: s, animated: true, shadow: 0.8 };
-      const ph = this.sid("player"); // placeholder until Art's animal_* sprites land: a small base sprite
-      return ph === undefined ? undefined : { sprite: ph, animated: true, shadow: 0.6, scale: 0.55, onCreate: 0.55 };
+      const ph = this.sid(`animal_${k?.key ?? ""}`) ?? this.sid("player"); // species key fallback; base sprite only if the pack lacks animal art
+      return ph === undefined ? undefined : { sprite: ph, animated: true, shadow: 0.6, ...(this.sid(`animal_${k?.key ?? ""}`) === undefined ? { scale: 0.55, onCreate: 0.55 } : {}) };
     }
     if (net.has(e, Survival) || (!net.has(e, Zombie) && (net.has(e, PlayerId) || net.has(e, Appearance) || (net.has(e, Health) && net.has(e, GAnim))))) {
       const s = this.sid(own ? "player" : PLAYER_KEYS[h % PLAYER_KEYS.length]) ?? this.sid("player");
@@ -247,4 +288,9 @@ interface Spec {
   light?: { r: number; g: number; b: number; radius: number; intensity: number; flicker: number };
   pieceVisual?: number; variant?: number; rot?: number; onCreate?: number; tint?: number; damage?: number; level?: number; layer?: number; pieceKey?: string | undefined;
   /** light gated by this sibling's Fuel.lit (light attachment of a fired piece) */ fuelOf?: Entity | undefined;
+}
+
+/** Art's sfx_animal_<species> (2 variants, ogg); silently skipped if audio is unavailable or blocked before a user gesture. */
+function playAnimalSfx(base: string, species: string, vol: number): void {
+  try { const a = new Audio(`${base}art/pack/audio/sfx/animal_${species}_${1 + Math.floor(Math.random() * 2)}.ogg`); a.volume = 0.5 * vol; a.playbackRate = 0.9 + Math.random() * 0.2; void a.play().catch(() => undefined); } catch { /* no audio */ }
 }
