@@ -36,8 +36,11 @@ Then add `"lock:ids:pack": "tsx scripts/write-lock-pack.ts"` to `packages/assets
 - `rotation 0–3` = logical 90° steps. Local→world for step r applies `(x, y) → (−y, x)` r times, so `rot 1` maps local +x onto world +y.
   This matches `BuildingGrid.footprintTiles` (w/h swap on odd rotations).
 - Every building sprite carries `rotationArt: "mirror" | "unique4"` and `building.frames[rotation][damageStage]` (4 × 4):
-  - `mirror` (wall, wall_stone, wall_window, roof, fence): two drawn orientations. `frames[2] = frames[0]` and `frames[3] = frames[1]`.
-    Rot 1 is **re-rendered as mirrored geometry**, not a pixel flip, so the top-left lighting stays correct. The renderer should **not** set FlipX.
+  - Walls, wall variants, roof ridges, fences, openings, anvil (two drawn orientations; rot 1 is **re-rendered as mirrored geometry**,
+    not a pixel flip, so top-left lighting stays correct) ship **4 explicit rows** `[r0, r1, r0, r1]` and are tagged `unique4`
+    (`tools/finalize_manifest.py fix_rotation_art`): rot 2/3 must keep the rot 0/1 axis, and the engine never flips a 4-row table.
+  - True `mirror` = **2 rows** `[r0, r1]`; the engine draws rot 2/3 as rows 0/1 with FlipX. Used only where a pixel flip looks right
+    (`MIRROR_OK`: rugs; pvp_clan: raid_bell, watchtower, storage_box_locked; stalls: blankets, booths).
   - `unique4` (wall_corner, door, door_open, bed, chest, workbench, chair): four rendered rotations.
   - Rotation-symmetric pieces (floor, floor_stone, pillar, table, planter, campfire, torch) list a **single** rotation row (`frames.length === 1`).
     The engine's `buildingFrame` then reuses row 0, and they are tagged `rotationArt: "mirror"`.

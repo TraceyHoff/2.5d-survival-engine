@@ -31,7 +31,8 @@ describe("art pack", () => {
   it("building sprites: 4 damage stages, mirror/unique4 rotation art", () => {
     for (const s of pack.sprites.filter((x: { building?: unknown }) => x.building)) {
       expect(["mirror", "unique4"]).toContain(s.rotationArt);
-      if (s.rotationArt === "unique4") expect(new Set(s.building.frames.map((r: number[]) => r[0])).size).toBe(4);
+      if (s.rotationArt === "unique4") expect(s.building.frames.length).toBe(4); // may repeat rows: [r0,r1,r0,r1] keeps axis, no flip
+      else expect(s.building.frames.length).toBeLessThanOrEqual(2); // true mirror: rot 2/3 = rows 0/1 + flipX
       const id = registry.id(s.key);
       for (let r = 0; r < 4; r++) for (let st = 0; st < 4; st++) expect(registry.buildingFrame(id, r, st).w).toBe(128);
     }
