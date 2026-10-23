@@ -34,3 +34,19 @@ describe("craft queue (slice 5, core JobQueues)", () => {
     expect(rej).toEqual(["missing_ingredients"]);
   });
 });
+import { applySnapshot, decodeSnapshot, encodeSnapshot } from "@engine/core";
+describe("CraftOwed persistence", () => {
+  it("owed outputs merge, survive a snapshot round trip and are delivered when space frees", () => {
+    const { w, p } = setup(); const ax = id("stone_axe");
+    expect(G.oweCraftOutput(w, p, { item: ax, count: 1, crafterId: 0 })).toBe(true);
+    expect(G.oweCraftOutput(w, p, { item: ax, count: 1, crafterId: 0 })).toBe(true);
+    expect(G.owedOf(w, p)).toEqual([{ item: ax, count: 2, crafterId: 0 }]);
+    const w2 = makeWorld(); const p2 = G.spawnPlayer(w2, { x: 0, y: 0, maxWeight: 0 }); expect(p2).toBe(p);
+    const snap = decodeSnapshot(w2, encodeSnapshot(w, { all: true })); const oid = w2.store(G.CraftOwed).id;
+    for (const k of [...snap.components.keys()]) if (k !== oid) snap.components.delete(k);
+    applySnapshot(w2, snap);
+    expect(G.owedOf(w2, p)).toEqual([{ item: ax, count: 2, crafterId: 0 }]);
+    G.installCraftQueue(w2); steps(w2, 1);
+    expect(G.countItem(w2, p, ax)).toBe(2); expect(w2.has(p, G.CraftOwed)).toBe(false);
+  });
+});

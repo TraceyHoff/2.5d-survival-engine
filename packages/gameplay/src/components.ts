@@ -180,6 +180,11 @@ export const Animal = defineComponent("Animal", { kind: "u8", state: "u8", homeX
 
 /** Slice 5 queued crafting (core JobQueue layout, 4 slots; see systems/craft_queue.ts). */
 export const CraftQueue = defineJobQueue("gameplay.CraftQueue", 4);
+/** Queued-craft outputs that didn't fit at completion; persistent so they survive restarts (old saves: absent = nothing owed). */
+export const CRAFT_OWED_SLOTS = 8;
+export const CraftOwed = defineComponent("CraftOwed", {
+  item: { type: "u16", length: CRAFT_OWED_SLOTS }, count: { type: "u16", length: CRAFT_OWED_SLOTS }, crafterId: { type: "u32", length: CRAFT_OWED_SLOTS },
+}, { networked: false, persistent: true });
 export const GAMEPLAY_COMPONENTS = [
   Emitter, Buffs,
   Health, ResourceNode, Survival, VitalsState, Exposure, Dead,
@@ -193,4 +198,5 @@ export const GAMEPLAY_COMPONENTS = [
   Wardrobe,
   Animal,
   CraftQueue,
+  CraftOwed,
 ] as const;

@@ -6,12 +6,13 @@
  *    It enqueues only if that commits. Cancel refunds the unfinished units in one transaction (all or nothing).
  *  - Completion adds the output in a transaction with crafterId provenance. The station system (every tick) pauses the head
  *    when the station is out of range or the next output won't fit, and resumes it when that clears.
- *    If an add still fails at completion, the output is held in CraftOwed and delivered once there's space.
+ *    If an add still fails at completion, the output goes into the persistent CraftOwed component (8 merged entries) and is
+ *    delivered once there's space; it survives restarts, and saves from before it existed load with nothing owed.
  *  - Commands go through core installCommandHandlers: QueueCraftCmd {recipe, count}, CancelQueuedCraftCmd {slot}.
  */
 import { defineCommand, defineResource, installScheduler, JobQueues, JobState, transaction, type CommandHandlers, type Entity, type JobInfo, type World } from "@engine/core";
-import { CraftQueue, Dead, Inventory } from "../components.js";
-export { CraftQueue };
+import { CRAFT_OWED_SLOTS, CraftOwed, CraftQueue, Dead, Inventory } from "../components.js";
+export { CraftOwed, CraftQueue };
 import { gameplayDefs, isAuthority } from "../config.js";
 import { secondsToTicks } from "../defs.js";
 import { CraftCompleted, CraftFail, CraftFailed, CraftStarted, emit } from "../events.js";
@@ -26,7 +27,24 @@ export const CRAFT_QUEUE_COMMANDS = [QueueCraftCmd, CancelQueuedCraftCmd] as con
 
 interface Owed { item: number; count: number; crafterId: number }
 export const CraftQueuesRes = defineResource<JobQueues>("gameplay.CraftQueues");
-export const CraftOwed = defineResource<Map<Entity, Owed[]>>("gameplay.CraftOwed");
+/** Owed outputs of e (from the persistent CraftOwed component). */
+export function owedOf(w: World, e: Entity): Owed[] {
+  const c = w.get(e, CraftOwed); if (!c) return [];
+  const out: Owed[] = []; for (let i = 0; i < CRAFT_OWED_SLOTS; i++) if (c.item[i] && c.count[i]) out.push({ item: c.item[i]!, count: c.count[i]!, crafterId: c.crafterId[i]! });
+  return out;
+}
+function writeOwed(w: World, e: Entity, l: Owed[]): void {
+  if (l.length === 0) { if (w.has(e, CraftOwed)) w.remove(e, CraftOwed); return; }
+  const z = (f: (o: Owed) => number) => Array.from({ length: CRAFT_OWED_SLOTS }, (_, i) => (l[i] ? f(l[i]!) : 0));
+  const v = { item: z((o) => o.item), count: z((o) => o.count), crafterId: z((o) => o.crafterId) };
+  if (w.has(e, CraftOwed)) w.set(e, CraftOwed, v); else w.add(e, CraftOwed, v);
+}
+/** Append an owed output (merging same item + crafter). Returns false if all slots are taken (caller emits InventoryFull). */
+export function oweCraftOutput(w: World, e: Entity, o: Owed): boolean {
+  const l = owedOf(w, e); const m = l.find((x) => x.item === o.item && x.crafterId === o.crafterId && x.count + o.count <= 0xffff);
+  if (m) m.count += o.count; else if (l.length < CRAFT_OWED_SLOTS) l.push({ ...o }); else return false;
+  writeOwed(w, e, l); return true;
+}
 const DT = 1 / 20;
 
 const recipeOf = (w: World, id: number) => gameplayDefs(w).recipes.get(id);
@@ -45,7 +63,7 @@ export function installCraftQueue(world: World, handlers?: CommandHandlers): Job
       duration: (w, _e, id) => Math.max(1, secondsToTicks(recipeOf(w, id)?.seconds ?? 1, DT)),
       onComplete: (w, e, job: JobInfo) => {
         const o = outputFor(w, e, job.recipeId); if (!o) return;
-        if (!addOutput(w, e, o)) { let m = w.getResource(CraftOwed); if (!m) w.setResource(CraftOwed, (m = new Map())); const l = m.get(e) ?? []; l.push(o); m.set(e, l); }
+        if (!addOutput(w, e, o) && !oweCraftOutput(w, e, o)) { emit(w, CraftFailed, { entity: e, recipe: job.recipeId, reason: CraftFail.InventoryFull }); return; }
         emit(w, CraftCompleted, { entity: e, recipe: job.recipeId, item: o.item, count: o.count });
       },
       onCancel: (w, e, job: JobInfo) => {
@@ -96,16 +114,16 @@ function outputFits(world: World, e: Entity, recipe: number): boolean {
 /** Simulation phase, after the scheduler: deliver owed outputs, pause/resume heads on station range and space. */
 export function craftQueueSystem(world: World): void {
   if (!isAuthority(world) || world.isReplaying) return;
-  const owed = world.getResource(CraftOwed);
-  if (owed) for (const [e, l] of [...owed].sort((a, b) => a[0] - b[0])) {
-    if (!world.isAlive(e)) { owed.delete(e); continue; }
-    while (l.length && addOutput(world, e, l[0]!)) l.shift(); if (!l.length) owed.delete(e);
+  for (const e of [...world.query([CraftOwed])].sort((a, b) => a - b)) {
+    const l = owedOf(world, e); let n = 0;
+    while (n < l.length && addOutput(world, e, l[n]!)) n++;
+    if (n > 0) writeOwed(world, e, l.slice(n));
   }
   const q = world.getResource(CraftQueuesRes); if (!q) return;
   for (const e of [...world.query([CraftQueue])].sort((a, b) => a - b)) {
     const h = q.info(e, 0); if (h.state !== JobState.Running && h.state !== JobState.Paused) continue;
     const r = recipeOf(world, h.recipeId); if (!r) continue;
-    const ok = !world.has(e, Dead) && stationInRange(world, e, r.station) && !(owed?.has(e)) &&
+    const ok = !world.has(e, Dead) && stationInRange(world, e, r.station) && !world.has(e, CraftOwed) &&
       (h.state === JobState.Paused || h.endTick > world.tick + 1 || outputFits(world, e, h.recipeId));
     if (h.state === JobState.Running && !ok) q.pause(e);
     else if (h.state === JobState.Paused && ok && outputFits(world, e, h.recipeId)) q.resume(e);

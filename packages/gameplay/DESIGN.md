@@ -388,6 +388,12 @@ Contact spikes are still found by query, but each spike only checks the victims 
 - Enqueue checks recipe, station, count (1..50), queue space, and ingredients (dry run). It then removes ingredients x count in one `transaction()` and enqueues.
   Cancel refunds the remaining count in one transaction. On completion the output is added in a transaction with crafterId provenance.
 - Each tick the system pauses the head when the station is out of range, or when the next output won't fit one tick before it is due. It resumes the head when that clears.
-  If an add still fails at completion, the output waits in the `CraftOwed` resource, which is NOT persisted (known gap).
+  If an add still fails at completion, the output goes into the `CraftOwed` component (see §16).
 - Commands use core `installCommandHandlers`: `gameplay.queueCraft {recipe, count}` and `gameplay.cancelQueuedCraft {slot}`. They are registered after PVP_COMMANDS and rejected with reasons via core CommandRejected.
 - After a load, the server app must call `world.resource(CraftQueuesRes).rearmAll()`.
+
+## 16. Persistent CraftOwed
+- `CraftOwed` is a component with `{item u16[8], count u16[8], crafterId u32[8]}`. It is persistent, not networked, and appended at the end of GAMEPLAY_COMPONENTS, after CraftQueue.
+  Entries with the same item and crafter merge. If all 8 slots are taken, completion emits CraftFailed(InventoryFull). In practice this can't happen, because a queue head stays paused while anything is owed.
+- `gameplay.craftQueue` delivers owed entries in order as space frees up, and removes the component once it is empty. It runs on the authority and skips replays.
+- Old saves have no CraftOwed (or CraftQueue) component, so they load as "nothing owed" with no loader change (confirmed by Netcode). The test covers a core snapshot round trip.
