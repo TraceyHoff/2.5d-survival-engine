@@ -17,6 +17,8 @@ import { transaction, type SlotExtras, type TxResult } from "./transactions.js";
  *    revision-checked purchases (opts.expectRevision). Writing the stock container directly bypasses the bump.
  */
 export const STALL_LISTINGS = 8;
+/** Rows in the viewer-facing StallDisplay: matches gameplay's 24 listing / attach slots (TradeStall keeps its persisted 8; extra rows stay empty). */
+export const STALL_DISPLAY_ROWS = 24;
 export const TradeStall = defineComponent("TradeStall", {
   stallId: "u32", revision: "u32",
   listItem: { type: "u16", length: STALL_LISTINGS }, listQty: { type: "u16", length: STALL_LISTINGS },
@@ -30,8 +32,8 @@ export const TradeStall = defineComponent("TradeStall", {
  * stockStall / withdrawStall / buyFromStall call syncStallDisplay when the stall entity has it.
  */
 export const StallDisplay = defineComponent("StallDisplay", {
-  item: { type: "u16", length: STALL_LISTINGS }, qty: { type: "u16", length: STALL_LISTINGS },
-  price: { type: "u32", length: STALL_LISTINGS }, currency: { type: "u16", length: STALL_LISTINGS },
+  item: { type: "u16", length: STALL_DISPLAY_ROWS }, qty: { type: "u16", length: STALL_DISPLAY_ROWS },
+  price: { type: "u32", length: STALL_DISPLAY_ROWS }, currency: { type: "u16", length: STALL_DISPLAY_ROWS },
 }, { networked: true });
 /** Copies TradeStall listing rows into StallDisplay (no-op unless the entity has both). Marks changed only on a diff. Returns true if anything changed. */
 export function syncStallDisplay(world: World, stall: Entity): boolean {
@@ -39,7 +41,7 @@ export function syncStallDisplay(world: World, stall: Entity): boolean {
   const pairs = [["listItem", "item"], ["listQty", "qty"], ["listPrice", "price"], ["listCurrency", "currency"]] as const; let changed = false;
   for (const [src, dst] of pairs) {
     const a = world.getArray(stall, TradeStall, src)!, b = world.getArray(stall, StallDisplay, dst)!;
-    for (let i = 0; i < STALL_LISTINGS; i++) if (b[i] !== a[i]) { b[i] = a[i]!; changed = true; }
+    for (let i = 0; i < STALL_DISPLAY_ROWS; i++) { const v = i < a.length ? a[i]! : 0; if (b[i] !== v) { b[i] = v; changed = true; } }
   }
   if (changed) world.store(StallDisplay).markChanged(entityIndex(stall));
   return changed;
