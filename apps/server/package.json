@@ -12,6 +12,7 @@
     "bots": "tsx src/bots.ts"
   },
   "dependencies": {
+    "@engine/assets": "workspace:*",
     "@engine/core": "workspace:*",
     "@engine/world": "workspace:*",
     "@engine/net": "workspace:*",

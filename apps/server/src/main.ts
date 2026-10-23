@@ -59,7 +59,11 @@ async function main(): Promise<void> {
   } else console.log("server: no save (in-memory world)");
   const transport = new WsServerTransport();
   const port = await transport.listen(args.port, args.host);
-  const gs = createGameServer({ transport, ...(store ? { store } : {}), seed: args.seed, log: (m) => console.log(m) });
+  // Cosmetics catalog from the art pack (enables character customization); the server still runs without it.
+  let catalog: import("@engine/core").CosmeticCatalogLike | undefined;
+  try { const { loadDefaultManifest } = await import("@engine/assets/node"); catalog = loadDefaultManifest().registry.cosmetics; } catch (e) { console.log(`assets: no cosmetics catalog (${String(e)})`); }
+  if (!catalog) console.log("assets: customization disabled (no cosmetics in the pack manifest)");
+  const gs = createGameServer({ transport, ...(store ? { store } : {}), ...(catalog ? { catalog } : {}), seed: args.seed, log: (m) => console.log(m) });
   console.log(`server: listening ws://${args.host}:${port} protocol v${PROTOCOL_VERSION}, ${1000 / gs.loop.dtMs}Hz, seed ${gs.world.seed}, schema ${gs.world.getSchemaHash().toString(16)}`);
   let last = performance.now(); // wall clock lives OUTSIDE the sim
   const tick = setInterval(() => { const now = performance.now(); gs.loop.advance(now - last); last = now; }, gs.loop.dtMs / 4);

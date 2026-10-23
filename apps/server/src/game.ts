@@ -1,10 +1,11 @@
 /** Authoritative game server: world + gameplay + streaming chunks + persistence + NetServer sessions. */
-import { DEFAULT_TICK_HZ, FixedLoop, Membership, PlayerId, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
+import { DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, type CosmeticCatalogLike, Membership, PlayerId, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
 import { ChunkManager, ProceduralGenerator, chunkKeyOf, type BuildingGrid } from "@engine/world";
-import { spawnPlayer, spawnResourceNode, gameplayDefs, setIntent, IntentAction, ResourceNode, PlayerIntent } from "@engine/gameplay";
-import { NetServer, TileSync, type ClientSession, type ServerTransport } from "@engine/net";
+import { spawnPlayer, spawnResourceNode, gameplayDefs, setIntent, IntentAction, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installCustomization,
+  appearanceServerHooks, applyReplication, buyFromStall, stallListing, listingRevision, stallOf, tillOf, StallHeader, StallOwnerKind } from "@engine/gameplay";
+import { AppearanceServer, NetServer, StallResult, StallServer, TileSync, type ClientSession, type ServerTransport, type StallHooks } from "@engine/net";
 import { AccountAssigned, ClaimAccount, SetName, WorldPersistence, loadSocial, tokenToHex, tokenToWords, wordsToName, wordsToToken, type WorldStore } from "@engine/persist";
-import { Act, applyMoveInput, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS, Ping, Pong } from "./protocol.js";
+import { Act, applyMoveInput, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS, GAMEPLAY_NET_COMMANDS, Ping, Pong } from "./protocol.js";
 
 /** ProceduralGenerator node kinds -> gameplay resource keys (see DEFAULT_BANDS comments in @engine/world). */
 const NODE_RESOURCES: Record<number, string> = { 1: "fallen_branches", 2: "fiber_grass", 3: "berry_bush", 4: "loose_rocks", 5: "tree", 6: "boulder", 7: "iron_vein" };
@@ -22,15 +23,19 @@ export interface GameServerOptions {
   loadRadius?: number;
   buildings?: BuildingGrid;
   log?: (msg: string) => void;
+  /** Cosmetics catalog (@engine/assets CosmeticCatalog). Enables customization: Appearance net messages + gameplay commands. */
+  catalog?: CosmeticCatalogLike;
 }
 
-interface Player { entity: Entity; account: string; name: string }
+/** claimed: ClaimAccount processed (saved record restored), so a held join-time look can no longer be overwritten by the restore. */
+interface Player { entity: Entity; account: string; name: string; claimed: boolean }
 
 export interface GameServer {
   world: World; net: NetServer; chunks: ChunkManager; persist: WorldPersistence | undefined; loop: FixedLoop;
   /** Core permissions resource: GroupRegistry (parties/clans), ClaimRegistry, policy. Saved with the world. */
   permissions: PermissionsRes;
   players: ReadonlyMap<number, Player>;
+  stalls: StallServer; appearance: AppearanceServer | undefined;
   /** Wall-clock ms of recent world.step calls (filled by the host loop via step()). */
   step(dt: number): void;
   tickTimes: number[];
@@ -54,6 +59,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
     autosaveSeconds: o.autosaveSeconds ?? 30, playerSaveSeconds: o.playerSaveSeconds ?? 60,
     player: { exclude: [PlayerIntent] },
     social: permissions,
+    ...(o.catalog ? { appearance: { catalog: o.catalog } } : {}),
   }) : undefined;
   let localPlayerIds = 1; // no store: ids only need to be unique for this run
   const chunks = new ChunkManager({ provider: persist?.provider ?? generator, loadRadius: o.loadRadius ?? 2, unloadMargin: 1, cacheSize: 64, maxLoadsPerUpdate: 4 });
@@ -79,12 +85,50 @@ export function createGameServer(o: GameServerOptions): GameServer {
       const e = spawnPlayer(w, { x: SPAWN.x + (s.clientId % 7) - 3, y: SPAWN.y + ((s.clientId * 3) % 7) - 3, clientId: s.clientId });
       net.netIds.assign(e);
       const account = tokenToHex(s.token); // provisional account = net session token until the client claims one
-      players.set(s.clientId, { entity: e, account, name: "" });
+      players.set(s.clientId, { entity: e, account, name: "", claimed: false });
       persist?.trackPlayer(account, e);
       log(`join: client ${s.clientId}`);
     },
     onClientLeave: (s) => leave(s.clientId, "disconnect"),
   });
+
+  applyReplication(net);
+  // Gameplay commands: core handlers (economy + customization) fed by the net mirrors from protocol.ts.
+  const handlers = installCommandHandlers(world, registerGameplayCommands());
+  installEconomy(world, handlers);
+  if (o.catalog) installCustomization(world, { catalog: o.catalog, handlers });
+  let cmdSeq = 0;
+  for (const { core, net: def } of GAMEPLAY_NET_COMMANDS) {
+    if (!o.catalog && (core.name === "gameplay.setAppearance" || core.name === "gameplay.equipCosmetic")) continue; // no catalog: unhandled
+    const type = handlers.registry.register(core);
+    net.onCommand(def, (s, payload) => {
+      const p = players.get(s.clientId); if (!p || !world.isAlive(p.entity)) return;
+      handlers.enqueue(p.entity, s.clientId, cmdSeq++, { type, values: payload as never });
+    });
+  }
+  // Stall raw protocol (client.stalls): gameplay owns the purchase via the buy hook; owner ops go through the commands above.
+  const stallHooks: StallHooks = {
+    view: (w, target) => {
+      const st = stallOf(w, target); const h = st !== undefined ? w.get(st, StallHeader) : undefined; if (st === undefined || !h) return undefined;
+      return {
+        open: h.open === 1, ownerKind: h.ownerKind, ownerId: h.ownerId, revision: listingRevision(w, st), stock: st, till: tillOf(w, st) ?? st,
+        listing: (id) => { const l = stallListing(w, st, id); return l && l.enabled ? { listingId: id, slot: id, item: l.stockItem, count: l.stock, durability: 0, crafterId: 0, price: { itemId: l.priceItem, count: l.priceCount } } : undefined; },
+      };
+    },
+    canManage: () => false, owner: () => StallResult.Denied, sold: () => {},
+    saleRecipients: (_w, _st, v) => (v.ownerKind === StallOwnerKind.Player ? [v.ownerId] : []),
+  };
+  const stalls = new StallServer(net, { hooks: stallHooks, playerIdOf: (s) => { const e = players.get(s.clientId)?.entity; return (e !== undefined && world.getField(e, PlayerId, "id")) || 0; } });
+  stalls.setBuyHook((w, b, st, r) => buyFromStall(w, b, st, { ...r, listingSlot: r.listing }));
+  const appearance = o.catalog ? new AppearanceServer(net, {
+    catalog: o.catalog,
+    // The join-time look is held (AppearanceServer pending) until the account is claimed, then applied with initial=true:
+    // a new player has no created look, so gameplay's first-join rule passes; a returning player's restored look wins.
+    entityOf: (s) => { const p = players.get(s.clientId); return p?.claimed ? p.entity : undefined; },
+    ...appearanceServerHooks(world, (e) => {
+      for (const p of players.values()) if (p.entity === e && persist && !closing) { void persist.savePlayer(p.account, e, p.name).catch((x) => log(`persist: save failed ${String(x)}`)); break; }
+    }),
+  }) : undefined;
 
   new TileSync(net, { tiles: chunks }); // tile replication: full chunks on AOI entry + per-tick deltas (sole tileChanges() drainer)
 
@@ -112,7 +156,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
         persist?.trackPlayer(token, p.entity, p.name);
       }
     }
-    assignIdentity(p.entity);
+    assignIdentity(p.entity); p.claimed = true;
     net.emitEvent(AccountAssigned, { ...tokenToWords(p.account), restored }, { scope: { owner: s.clientId } });
   });
   /** Account PlayerId (restored from the player record, else newly allocated) + Membership mirrored from the registry. */
@@ -157,7 +201,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
   const step = (dt: number): void => { const t0 = performance.now(); world.step(dt); tickTimes.push(performance.now() - t0); if (tickTimes.length > 4096) tickTimes.splice(0, 2048); };
   const loop = new FixedLoop({ tickHz, step });
   return {
-    world, net, chunks, persist, loop, permissions, players, step, tickTimes,
+    world, net, chunks, persist, loop, permissions, players, stalls, appearance, step, tickTimes,
     async shutdown() {
       if (!persist || closing) return { chunks: 0, players: 0 };
       const r = await persist.saveAll(); closing = true; await persist.store.close(); return r;

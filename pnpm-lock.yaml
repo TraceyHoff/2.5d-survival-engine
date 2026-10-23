@@ -60,6 +60,9 @@ importers:
 
   apps/server:
     dependencies:
+      '@engine/assets':
+        specifier: workspace:*
+        version: link:../../packages/assets
       '@engine/core':
         specifier: workspace:*
         version: link:../../packages/core

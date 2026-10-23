@@ -3,9 +3,10 @@
  * Input bits + movement (identical on server and in client prediction), and the ordered command/event lists.
  * Movement lives here because gameplay has no movement system yet; replace with gameplay's once it exists.
  */
-import { DEFAULT_TICK_HZ, defineActions, entityIndex, installPermissions, Transform, type ClaimRegistry, type Entity, type GroupRegistry, type PermissionsRes, type World } from "@engine/core";
+import { Appearance, DEFAULT_TICK_HZ, defineActions, entityIndex, installPermissions, Transform, type ClaimRegistry, type Entity, type GroupRegistry, type PermissionsRes, type World } from "@engine/core";
 import { defineCommand, defineNetEvent, type InputCmd } from "@engine/net";
-import { installGameplay, PlayerIntent } from "@engine/gameplay";
+import { CUSTOMIZATION_COMMANDS, ECONOMY_COMMAND_RATES, ECONOMY_COMMANDS, ECONOMY_ENTITY_FIELDS, installGameplay, PlayerIntent } from "@engine/gameplay";
+import type { CommandDef } from "@engine/core";
 import { SESSION_COMMANDS, SESSION_EVENTS } from "@engine/persist";
 
 export const Act = defineActions(["MoveUp", "MoveDown", "MoveLeft", "MoveRight", "Sprint", "Gather"]);
@@ -17,7 +18,21 @@ export const Ping = defineCommand("demo.ping", { t: "u32" }, { rate: { perSec: 4
 export const Pong = defineNetEvent("demo.pong", { t: "u32" });
 
 /** Same order on both peers (checked by the "netdefs" handshake hash). */
-export const DEMO_COMMANDS = [...SESSION_COMMANDS, Ping] as const;
+/**
+ * Gameplay commands on the wire: net mirrors of gameplay's core CommandDefs (same name + schema; `stall` is a NetId
+ * resolved to an Entity). The server bridges each into core CommandHandlers (see game.ts). Append-only order.
+ */
+const mirror = (d: CommandDef) => {
+  const perSec = ECONOMY_COMMAND_RATES[d.name] ?? 2;
+  return defineCommand(d.name, d.schema, { entityFields: [...(ECONOMY_ENTITY_FIELDS[d.name] ?? [])], rate: { perSec, burst: Math.max(2, Math.ceil(perSec * 2)) } });
+};
+export const GAMEPLAY_NET_COMMANDS = [...ECONOMY_COMMANDS, ...CUSTOMIZATION_COMMANDS].map((d) => ({ core: d as CommandDef, net: mirror(d) }));
+/** Net command for a gameplay core CommandDef (clients: `client.sendCommand(gameplayNet(BuyFromStallCmd), {...})`). */
+export function gameplayNet<D extends CommandDef>(d: D): ReturnType<typeof defineCommand<D["schema"]>> {
+  const m = GAMEPLAY_NET_COMMANDS.find((x) => x.core === d); if (!m) throw new Error(`not a bridged gameplay command: ${d.name}`);
+  return m.net as unknown as ReturnType<typeof defineCommand<D["schema"]>>;
+}
+export const DEMO_COMMANDS = [...SESSION_COMMANDS, Ping, ...GAMEPLAY_NET_COMMANDS.map((x) => x.net)] as const;
 export const DEMO_EVENTS = [...SESSION_EVENTS, Pong] as const;
 
 /** Screen-aligned iso movement from input bits: W = up-screen, etc. */
@@ -51,5 +66,6 @@ export function applyMoveInput(world: World, e: Entity, cmd: InputCmd | null, dt
  */
 export function installDemoWorld(world: World, role: "server" | "client", opts: { tickHz?: number; social?: { groups: GroupRegistry; claims: ClaimRegistry } } = {}): PermissionsRes {
   installGameplay(world, { role, ...(opts.tickHz !== undefined ? { tickHz: opts.tickHz } : {}) });
+  if (!world.isRegistered(Appearance)) world.register(Appearance); // character look (same order on every peer)
   return installPermissions(world, opts.social ?? {});
 }
