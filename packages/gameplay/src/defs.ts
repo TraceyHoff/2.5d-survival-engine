@@ -104,6 +104,8 @@ export interface PieceDef extends BuildPieceDef, Visual {
 }
 export interface PieceFeatures {
   readonly windsock?: boolean; readonly clanTint?: boolean; readonly clanLock?: boolean; readonly breachAt?: number; readonly sightBonus?: number;
+  /** Mirror / wardrobe: players in range may re-edit their look (data/cosmetics.json wardrobeRange). */
+  readonly wardrobe?: boolean;
   readonly contact?: { readonly dps: number; readonly radius: number; readonly slowMul: number; readonly slowSeconds: number };
   readonly alarm?: { readonly radius: number; readonly cooldownSeconds: number };
 }

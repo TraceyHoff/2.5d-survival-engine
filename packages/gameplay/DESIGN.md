@@ -320,3 +320,21 @@ See the bottom of README.md. The open lists are mirrored in the final report.
 - Owner manage view: the browse view, plus till contents and the ledger entries `{tick, item, count, priceItem, priceCount, buyerId, crafterId}`, newest first.
 - Tooltip: `itemInfo` → itemKey (manifest key), count, durability, freshnessStage 0..3 (fresh/stale/spoiling/rotten, from `environment.spoilage.stages`), crafterName (resolved from crafterId), and `fill` 0..1 for liquid containers (water_flask; absent otherwise).
 - Stall visuals: the piece key (manifest), `StallHeader.open` (0/1), and `BuildPiece.tint` = clanPalettes index (`clanTintIndex`).
+
+## 10. Character customization (slice 8)
+Core owns `Appearance` + `validateAppearance`/`setAppearance`; Netcode owns `AppearanceServer`; Art & Assets owns the catalog/art.
+Gameplay (`src/customization.ts`, `data/cosmetics.json`) owns the *rules*:
+- **Unlock tags**: `cosmetics.json.unlockTags` (append-only; index = bit in `Wardrobe.unlocks u32[2]`, max 64). Grants are
+  data rules `{tag, on: firstJoin|craft|stallSale|raidBreach, recipe?}`. Wired: firstJoin (first successful look write),
+  craft (`CraftCompleted`), stallSale (`StallSale`, player-owned stall, seller online). `raidBreach` is exposed through
+  `noteUnlockEvent(world, attacker, "raidBreach")` and gets wired in slice 6, once damage has an attacker.
+- **Edit gate** `canEditAppearance(world,e,initial)`: the first-join creator is allowed once (`Wardrobe.created=0`). After that,
+  editing is only allowed within `wardrobeRange` of a piece with `features.wardrobe` (new `mirror` piece, id 50); the check uses the spatial index.
+- **Commands**: `gameplay.setAppearance {bodyType u8, skinTone u8, parts u16[8], primary u8[8], secondary u8[8]}` and
+  `gameplay.equipCosmetic {slot, wearable, primary, secondary}`. `validate` runs the gate plus `validateAppearance` in reject mode with the
+  player's unlocks, and the first issue becomes the CommandRejected reason. `handle` writes via `setAppearance`. Install with
+  `installCustomization(world, {catalog, handlers})`.
+- **Net adapter**: `appearanceServerHooks(world, markDirty)` → `{unlocksOf, allow, onChanged}`. It is structurally compatible with
+  AppearanceServer options, since gameplay imports neither net nor assets.
+- **UI contract (hooks, no art)**: the creator shows when `Wardrobe.created==0`. Wardrobe UI prompt near a `mirror`. Locked items show
+  their tag from `WearableDef.unlockTags` against the networked `Wardrobe.unlocks`. Rejections show the reason string.

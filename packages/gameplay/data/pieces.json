@@ -1053,6 +1053,31 @@
           "amount": 10
         }
       ]
+    },
+    {
+      "key": "mirror",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 60,
+      "ground": true,
+      "footprint": {
+        "w": 1,
+        "h": 1
+      },
+      "features": {
+        "wardrobe": true
+      },
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 4
+        },
+        {
+          "resource": "stone",
+          "amount": 2
+        }
+      ]
     }
   ]
 }

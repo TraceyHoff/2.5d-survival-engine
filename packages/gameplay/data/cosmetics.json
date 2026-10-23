@@ -1,0 +1,12 @@
+{
+  "$comment": "Character customization rules (docs/CHARACTER_CUSTOMIZATION.md). unlockTags: append-only list of tags gameplay can grant (bit = index, max 64); wearables in assets cosmetics reference these strings in unlockTags. rules grant a tag on a gameplay event: on = firstJoin | craft (recipe key) | stallSale (seller side) | raidBreach (attacker breached a gate/door). wardrobeRange: tiles from a piece with features.wardrobe for re-editing after the first-join creator.",
+  "unlockTags": ["founder", "chef", "merchant", "raider", "smith"],
+  "rules": [
+    { "tag": "founder", "on": "firstJoin" },
+    { "tag": "chef", "on": "craft", "recipe": "stew_bowl" },
+    { "tag": "smith", "on": "craft", "recipe": "coin" },
+    { "tag": "merchant", "on": "stallSale" },
+    { "tag": "raider", "on": "raidBreach" }
+  ],
+  "wardrobeRange": 2.5
+}

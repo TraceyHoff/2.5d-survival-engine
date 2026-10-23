@@ -150,6 +150,9 @@ export const StallHeader = defineComponent("StallHeader", { ownerKind: "u8", own
  * name = owner-editable sign text, sanitized printable ASCII, nameLen bytes used (max STALL_NAME_MAX). Saved in STRC v3. */
 export const STALL_NAME_MAX = 24;
 export const StallSign = defineComponent("StallSign", { soldOut: "u8", nameLen: "u8", name: { type: "u8", length: STALL_NAME_MAX } }, { networked: true });
+/** Per player customization state: created = first-join creator done; unlocks = bitmask over data/cosmetics.json
+ * unlockTags (index = bit, 64 max). Networked (owner UI shows locked/unlocked), persistent with the player. */
+export const Wardrobe = defineComponent("Wardrobe", { created: "u8", unlocks: { type: "u32", length: 2 } }, { networked: true, persistent: true });
 /** Per listing slot i (stock slot i): price {item,count}, quantity per sale, enabled. revision bumps on every change. Scope viewers. */
 export const Listings = defineComponent("Listings", {
   priceItem: { type: "u16", length: MAX_LISTINGS }, priceCount: { type: "u16", length: MAX_LISTINGS },
@@ -182,4 +185,5 @@ export const GAMEPLAY_COMPONENTS = [
   StallHeader, Listings, StallLedger,
   Burning,
   StallSign,
+  Wardrobe,
 ] as const;

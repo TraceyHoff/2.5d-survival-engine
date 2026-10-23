@@ -21,6 +21,7 @@ export * from "./systems/crafting.js";
 export * from "./systems/fuel.js";
 export * from "./systems/windsock.js";
 export * from "./food.js";
+export * from "./customization.js";
 export * from "./systems/noise.js";
 export * from "./systems/spoilage.js";
 export * from "./systems/movement.js";
