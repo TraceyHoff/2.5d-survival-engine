@@ -25,3 +25,4 @@ export * from "./names.js";
 export * from "./stalls.js";
 export * from "./appearance.js";
 export * from "./ai.js";
+export * from "./anim.js";

@@ -26,7 +26,9 @@ import { LightTable, type LightSpec } from "./lights.js";
 /** `?cam=animal`: debug camera that follows the first ambient animal instead of the player. */
 const CAM_ANIMAL = typeof location !== "undefined" && new URLSearchParams(location.search).get("cam") === "animal";
 /** Max bytes for the sprite texture array (mips included) before customization layers are dropped. */
-const ATLAS_BUDGET = 768 * 2 ** 20;
+/** ?gl=lowend: characters beyond the nearest N draw body-only. */
+const DRESSED_LOWEND = 8;
+let lowendDress = false;
 /** Set when the paper-doll atlases were left out, so Appearance layers are not bound to missing sprites. */
 let noCosmetics = false;
 const PLAYER_KEYS = ["player", "player_b", "player_c"];
@@ -67,12 +69,13 @@ export class IsoView {
     // Art's customization pack (~220 paper-doll atlases, 1008x960): the renderer packs every atlas into one 2048² texture
     // array, so these alone need ~1.7 GiB of VRAM ("Texture total allocation size is too large" -> every sprite black).
     // Until Render loads outfit layers on demand, keep them out unless the array fits (?cz=1 forces them in).
-    const qs = q0, lowend = renderer.capabilities.lowEnd || renderer.capabilities.flags.includes("lowend");
+    // Paper-doll layers are ON by default: Render streams wearable pages through a refcounted pool within the VRAM budget
+    // (renderer.vram). ?cz=0 turns them off; under ?gl=lowend only the nearest DRESSED_LOWEND characters are dressed.
     const custom = [...registry.atlases.values()].filter((a) => /(^|\/)customization\//.test(a.image)).map((a) => a.key);
     for (const k of custom) { const src = sources.get(k); if (src) delete src.pages; } // 1x only for paper-doll layers
-    const czBytes = custom.length * 1008 * 1040 * 4 * 1.34;
-    if (custom.length && (lowend || (czBytes > ATLAS_BUDGET && qs.get("cz") !== "1"))) {
-      console.warn(`[view] customization layers need ~${(czBytes / 2 ** 20) | 0} MiB of sprite array; drawing base character sprites`);
+    lowendDress = renderer.capabilities.lowEnd || renderer.capabilities.flags.includes("lowend");
+    if (q0.get("cz") === "1") lowendDress = false;
+    if (custom.length && q0.get("cz") === "0") {
       for (const k of custom) { (registry.atlases as Map<string, unknown>).delete(k); sources.delete(k); }
       noCosmetics = true;
     }
@@ -118,6 +121,12 @@ export class IsoView {
       if (!tiles) return z; const tx = Math.floor(x), ty = Math.floor(y); const c = tiles.getChunk(tileToChunk(tx), tileToChunk(ty));
       return c ? Math.max(z, c.height[tileToLocal(ty) * CHUNK_SIZE + tileToLocal(tx)] ?? 0) : z;
     };
+    let dressed: Set<Entity> | undefined;
+    if (lowendDress && this.appearanceEnabled && net.isRegistered(Appearance)) { // nearest N to the camera keep their layers
+      const cx = this.renderer.camera.x, cy = this.renderer.camera.y;
+      const d = [...net.query([Appearance, Transform])].map((e) => { const t = net.get(e, Transform)!; return { e, d: (t.x - cx) ** 2 + (t.y - cy) ** 2 }; });
+      dressed = new Set(d.sort((a, b) => a.d - b.d).slice(0, DRESSED_LOWEND).map((x) => x.e));
+    }
     for (const e of net.query([Transform])) {
       if (e === net.environment) continue;
       const cur = net.get(e, Transform)!; const prev = net.get(e, PrevTransform) ?? cur;
@@ -165,7 +174,8 @@ export class IsoView {
         const want = on ? lo.spec.intensity : 0; if (v.get(ve, LightSource)!.intensity !== want) v.set(ve, LightSource, { intensity: want });
       }
       if (this.appearanceEnabled && net.isRegistered(Appearance)) { // paper-doll look (server-assigned, replicated)
-        const a = net.get(e, Appearance); const va = a ? v.get(ve, Appearance) : undefined;
+        const a = dressed && !dressed.has(e) ? undefined : net.get(e, Appearance);
+        if (!a && v.has(ve, Appearance)) v.remove(ve, Appearance); const va = a ? v.get(ve, Appearance) : undefined;
         if (a && (!va || va.version !== a.version)) { const init = { bodyType: a.bodyType, skinTone: a.skinTone, version: a.version, parts: [...a.parts], primary: [...a.primary], secondary: [...a.secondary] }; if (va) v.set(ve, Appearance, init); else v.add(ve, Appearance, init); }
       }
       if (v.has(ve, VPiece)) this.syncPieceState(net, e, ve, defs);

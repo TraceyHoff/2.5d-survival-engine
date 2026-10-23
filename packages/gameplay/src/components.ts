@@ -115,7 +115,8 @@ export const ZombieBrain = defineComponent("ZombieBrain", {
   state: "u8", target: "u32", goalX: "f32", goalY: "f32", homeX: "f32", homeY: "f32",
   thinkAt: "u32", repathAt: "u32", attackAt: "u32", stateTick: "u32", blockPiece: "u32",
 });
-export const enum Anim { Idle = 0, Walk = 1, Run = 2, Attack = 3, Hurt = 4, Die = 5, Gather = 6, Build = 7 }
+/** Shared, wire-stable anim ids (core AnimState, ADR-093); `Anim` kept as gameplay's name. */
+export { AnimState as Anim, ANIM_STATE_NAMES } from "@engine/core";
 export const AnimState = defineComponent("AnimState", { anim: "u8", startTick: "u32" }, { networked: true });
 export const NoiseLevel = defineComponent("NoiseLevel", { value: "f32" });
 /**
