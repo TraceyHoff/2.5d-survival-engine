@@ -22,6 +22,16 @@ describe("ADR-081 renderer contracts", () => {
     expect(buildPieceVisual(r, { type: 2, rot: 0, tint: 9, paint: 0 }, { pieceKey }).palette).toBeUndefined();
     const none = buildPieceVisual(r, { type: 99, rot: 0, tint: 0, paint: 0 }, { pieceKey, ghost: 2 }); expect(none.visualId).toBe(0); expect(none.frame).toBeUndefined(); expect(none.ghost).toBe(2);
   });
+  it("buildPieceVisual variant: <piece>@<variant> when present, else default; numbers via variantName", () => {
+    const m = withClans(); const wall = m.sprites.find((s) => s.building?.piece === "wall")!;
+    m.sprites.push({ ...structuredClone(wall), key: "wall_mossy", building: { ...structuredClone(wall.building!), piece: "wall@mossy" } });
+    const { registry: r } = loadManifest(m); const pieceKey = (t: number) => (t === 1 ? "wall" : undefined); const p = { type: 1, rot: 0, tint: 0, paint: 0 };
+    const mossy = buildPieceVisual(r, p, { pieceKey, variant: "mossy" }); expect(mossy.visualId).toBe(r.id("wall_mossy")); expect(mossy.variant).toBe("mossy");
+    const miss = buildPieceVisual(r, p, { pieceKey, variant: "nope" }); expect(miss.visualId).toBe(r.id(wall.key)); expect(miss.variant).toBeUndefined();
+    expect(buildPieceVisual(r, p, { pieceKey, variant: "" }).visualId).toBe(r.id(wall.key));
+    expect(buildPieceVisual(r, p, { pieceKey, variant: 1, variantName: (_k, i) => ["ruined", "mossy"][i] }).variant).toBe("mossy");
+    expect(buildPieceVisual(r, p, { pieceKey, variant: 1 }).visualId).toBe(r.id(wall.key)); // no name order yet -> default
+  });
   it("mergeManifests merges every keyed section, reports collisions, resolves atlas paths, strict throws", () => {
     const a = { version: 1, name: "base", atlases: [{ key: "at", image: "a.png", frameW: 1, frameH: 1, columns: 1, rows: 1, masks: { tintmask: "a_t.png" } }], sprites: [],
       clanPalettes: [{ key: "red", primary: "#ff0000", secondary: "#000000" }], wearables: [{ key: "hat1" }], glyphs: { "kbm.key.e": { sprite: "s" } }, skinTones: [{ key: "pale", color: "#ffeedd" }] } as unknown as ManifestJson;

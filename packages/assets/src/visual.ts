@@ -17,18 +17,34 @@ export interface BuildPieceVisualOpts {
   ghost?: boolean | 0 | 1 | 2;
   /** Piece type id -> BuildPieceDef key (e.g. (t) => defs.pieces.get(t)?.key). */
   pieceKey?: (type: number) => string | undefined;
+  /**
+   * Optional art variant: the manifest key `<piece>@<variant>` (a building sprite whose building.piece is e.g. "wall@mossy") is used when it exists; otherwise the default piece sprite. Strings for now;
+   * a number is resolved through variantName (Survival's variant name order) and ignored without it.
+   */
+  variant?: string | number;
+  variantName?: (pieceKey: string, index: number) => string | undefined;
 }
 export interface BuildPieceVisual {
   visualId: number; rotation: number; damageStage: number; stateIndex: number;
   frame?: FrameRef; crack?: { sprite: number; anim: string; frame: FrameRef };
   level: number; layer: number; ghost: 0 | 1 | 2; tintIndex: number; palette?: ClanPalette;
+  /** Variant actually drawn (undefined = default sprite, also when the requested variant has no art). */
+  variant?: string;
+}
+
+/** Building sprite whose building.piece is `<pieceKey>@<variant>` (sprite keys cannot contain '@'), else undefined. */
+export function variantSprite(registry: AssetRegistry, pieceKey: string, variant: string): number | undefined {
+  return registry.spriteForPiece(`${pieceKey}@${variant}`);
 }
 
 export function buildPieceVisual(registry: AssetRegistry, piece: BuildPieceIn, opts: BuildPieceVisualOpts = {}): BuildPieceVisual {
   const g = opts.ghost; const ghost: 0 | 1 | 2 = g === true ? 1 : g === false || g === undefined ? 0 : g;
   const tintIndex = piece.paint ? piece.paint : piece.tint; const palette = registry.clanPaletteForTint(tintIndex);
   const rotation = piece.rot & 3; const damageStage = Math.max(0, Math.min(3, (piece.damageStage ?? 0) | 0)); const level = piece.level ?? 0;
-  const key = opts.pieceKey?.(piece.type); const visualId = key === undefined ? 0 : registry.spriteForPiece(key) ?? 0;
+  const key = opts.pieceKey?.(piece.type);
+  const vname = key === undefined || opts.variant === undefined || opts.variant === "" ? undefined : typeof opts.variant === "number" ? opts.variantName?.(key, opts.variant) : opts.variant;
+  const vid = key !== undefined && vname ? variantSprite(registry, key, vname) : undefined;
+  const visualId = vid ?? (key === undefined ? 0 : registry.spriteForPiece(key) ?? 0);
   const base = { rotation, damageStage, level, ghost, tintIndex, ...(palette ? { palette } : {}) };
   if (!visualId) return { visualId: 0, stateIndex: -1, layer: 0, ...base };
   const b = registry.sprite(visualId).building!;
@@ -36,5 +52,5 @@ export function buildPieceVisual(registry: AssetRegistry, piece: BuildPieceIn, o
   const frame = registry.buildingFrame(visualId, rotation, damageStage, stateIndex);
   let crack: BuildPieceVisual["crack"];
   if (b.crackOverlay !== undefined && damageStage > 0) { const anim = `stage${damageStage}`; crack = { sprite: b.crackOverlay, anim, frame: registry.animFrame(b.crackOverlay, anim, rotation, 0) }; }
-  return { visualId, stateIndex, frame, ...(crack ? { crack } : {}), layer: b.layer, ...base };
+  return { visualId, stateIndex, frame, ...(crack ? { crack } : {}), layer: b.layer, ...base, ...(vid !== undefined ? { variant: vname! } : {}) };
 }
