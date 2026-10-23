@@ -445,3 +445,7 @@ Gameplay owns data, not loops: there is **no spawn loop and no controller** here
 - `makeAgent` uses the archetype's routine (actions mapped to behavior names: sleep -> `sleep`, trade -> `stall_trade`) and imperfections; unknown archetypes (old saved "survivor" identities) fall back to agents.json.
 - `survivorRegistry` appends a `botUtility` consideration (0.5..1 from `scoreUtilities` over `botSignals`) to behaviors listed in `BEHAVIOR_ACTION`; non-bots.json archetypes get 1 (neutral).
 - `AgentWorldView` gains optional sensors `invSpaceFree`, `craftRecipe`, `buildPlan` (missing = neutral).
+
+## 25. AgentOutput -> inputs + bot emotes (`src/ai/agent_output.ts`)
+- Action strings (`gather[:t]`, `attack:t`, `eat:slot`, `drink:slot`, `craft:r[:n]`, `build:p:x:y`, `open:t`, `buy:stall:slot:qty:rev:pi:pc`, `sleep`) parse to `BotIntent`s; `agentOutputFrame` builds one InputFrame through `intentToFrame` (move/sprint/aim + merged action bits and commands; plain `gather` = Primary bit, no command).
+- `applyAgentEmote(world, e, out)`: AgentOutput.emote -> `requestEmote` on the bot's authoritative entity; skipped while `world.isReplaying`, unknown names ignored. Host-side only (not from server.onTick systems).

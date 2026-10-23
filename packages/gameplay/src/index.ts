@@ -48,5 +48,6 @@ export * from "./agents.js";
 export * from "./systems/craft_queue.js";
 export * from "./ai/population.js";
 export * from "./ai/bot_input.js";
+export * from "./ai/agent_output.js";
 export * from "./systems/stall_display.js";
 export * from "./expression.js";
