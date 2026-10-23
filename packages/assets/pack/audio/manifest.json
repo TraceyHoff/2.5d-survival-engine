@@ -132,6 +132,61 @@
     "end": 12.0
    },
    "category": "ambience"
+  },
+  {
+   "key": "sfx_animal_chicken",
+   "files": [
+    "audio/sfx/animal_chicken_1.ogg",
+    "audio/sfx/animal_chicken_2.ogg"
+   ],
+   "volume": 0.5,
+   "pitchJitter": 0.1,
+   "loop": false,
+   "category": "sfx"
+  },
+  {
+   "key": "sfx_animal_rabbit",
+   "files": [
+    "audio/sfx/animal_rabbit_1.ogg",
+    "audio/sfx/animal_rabbit_2.ogg"
+   ],
+   "volume": 0.5,
+   "pitchJitter": 0.1,
+   "loop": false,
+   "category": "sfx"
+  },
+  {
+   "key": "sfx_animal_deer",
+   "files": [
+    "audio/sfx/animal_deer_1.ogg",
+    "audio/sfx/animal_deer_2.ogg"
+   ],
+   "volume": 0.5,
+   "pitchJitter": 0.1,
+   "loop": false,
+   "category": "sfx"
+  },
+  {
+   "key": "sfx_animal_boar",
+   "files": [
+    "audio/sfx/animal_boar_1.ogg",
+    "audio/sfx/animal_boar_2.ogg"
+   ],
+   "volume": 0.5,
+   "pitchJitter": 0.1,
+   "loop": false,
+   "category": "sfx"
+  },
+  {
+   "key": "sfx_animal_wolf",
+   "files": [
+    "audio/sfx/animal_wolf_1.ogg",
+    "audio/sfx/animal_wolf_2.ogg"
+   ],
+   "volume": 0.5,
+   "pitchJitter": 0.1,
+   "loop": false,
+   "category": "sfx"
   }
  ]
 }

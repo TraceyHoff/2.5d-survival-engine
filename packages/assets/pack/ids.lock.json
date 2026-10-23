@@ -495,7 +495,12 @@
     "cz_acc_scarf_male": 493,
     "cz_acc_sunglasses_female": 494,
     "cz_acc_sunglasses_male": 495,
-    "cz_bottom_bloomers_female": 496
+    "cz_bottom_bloomers_female": 496,
+    "animal_boar": 497,
+    "animal_chicken": 498,
+    "animal_deer": 499,
+    "animal_rabbit": 500,
+    "animal_wolf": 501
   },
   "sounds": {
     "amb_rain": 1,
@@ -508,7 +513,12 @@
     "sfx_hit": 8,
     "sfx_mine": 9,
     "sfx_pickup": 10,
-    "sfx_zombie_groan": 11
+    "sfx_zombie_groan": 11,
+    "sfx_animal_boar": 12,
+    "sfx_animal_chicken": 13,
+    "sfx_animal_deer": 14,
+    "sfx_animal_rabbit": 15,
+    "sfx_animal_wolf": 16
   },
   "vfx": {
     "campfire_sparks": 1,
