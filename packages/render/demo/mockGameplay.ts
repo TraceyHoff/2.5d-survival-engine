@@ -5,7 +5,8 @@
 import { defineComponent } from "@engine/core";
 export const BuildPiece = defineComponent("BuildPiece", { visualId: "u16", variant: "u8", tint: "u32", damageStage: "u8", rotation: "u8", level: "u8", layer: "u8", ghost: "u8" });
 export const AnimState = defineComponent("AnimState", { state: "u8", startTick: "u32" });
-export const enum AnimStateId { Idle = 0, Walk = 1, Run = 2, Attack = 3, Hit = 4, Death = 5, Shamble = 6, Crawl = 7, Feed = 8 }
+/** Anim ids are core's wire-stable AnimState (ADR-093). */
+export { AnimState as AnimStateId } from "@engine/core";
 export const Wetness = defineComponent("Wetness", { level: "u8" });
 export const BodyTemp = defineComponent("BodyTemp", { cold: "u8", heat: "u8", shivering: "u8" });
 /** Core Emitter (Engine Architect, upcoming): kind ids from gameplay (Heat = 1, Light = 2). */

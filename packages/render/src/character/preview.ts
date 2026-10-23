@@ -10,6 +10,7 @@
  * `pollGamepad` (default on) maps LB/RB or the right stick to rotate. resize()/DPR is automatic for containers
  * (ResizeObserver) and callable by hand.
  */
+import { AnimState as CoreAnimState } from "@engine/core";
 import { Appearance, Transform, World, defineComponent, getAppearance, setAppearance, type AppearanceValue, type CosmeticCatalogLike, type Entity } from "@engine/core";
 import type { AssetRegistry } from "@engine/assets";
 import { IsoRenderer } from "../IsoRenderer.js";
@@ -20,7 +21,7 @@ import { coreAppearanceBinding, type AppearanceBinding } from "./layers.js";
 /** Preview-local anim driver (same schema as gameplay AnimState; the renderer only needs {state, startTick}). */
 export const PreviewAnim = defineComponent("PreviewAnimState", { state: "u8", startTick: "u32" });
 export type PreviewAnimName = "idle" | "walk";
-const ANIM_STATE: Record<PreviewAnimName, number> = { idle: 0, walk: 1 };
+const ANIM_STATE: Record<PreviewAnimName, number> = { idle: CoreAnimState.Idle, walk: CoreAnimState.Walk };
 /** Facing index 0..7 -> radians (k * 45 deg). Index 1 faces the camera in the pack's character sheets. */
 export const facingAngle = (k: number): number => (((k % 8) + 8) % 8) * Math.PI / 4;
 export const FRONT_FACING = 1;

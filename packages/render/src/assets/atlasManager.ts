@@ -25,6 +25,7 @@
  * - Runtime switching: swapAtlas()/setTheme() replace atlas images (same layout & sprite keys -> same
  *   numeric ids), so ECS data is untouched. Old images are released (ref-counted) after the swap.
  */
+import { AnimState as CoreAnimState, ANIM_STATE_NAMES } from "@engine/core";
 import { AssetRegistry, type Animation, type Atlas, type FrameRef } from "@engine/assets";
 import { STATUS_TINTS, TINT_MODE_INDEX, type StatusTint, type StatusTintName } from "../style.js";
 import type { AssetManager } from "@engine/core";
@@ -43,15 +44,22 @@ export const FrameBits = { Emissive: 1, Sheen: 2, Sway: 4, TintMask: 8 } as cons
 export interface AtlasSource { url: string; emissiveUrl?: string | null; rects?: RectTable; pages?: { scale: number; url: string }[]; masks?: Partial<Record<MaskName, string | string[]>> }
 export type ImageLike = ImageBitmap | HTMLImageElement | HTMLCanvasElement | OffscreenCanvas;
 
-/** AnimState.state -> animation names tried in order (first animation is the final fallback). */
-export const STATE_ANIMS: readonly (readonly string[])[] = [
-  ["idle"], ["walk"], ["run", "walk"], ["attack"], ["hit", "hurt", "idle"], ["death", "idle"], ["shamble", "walk"],
-  // 7 crawl, 8 feed (gameplay AnimState; zombie_*_crawl / zombie_*_feed in pack wave 2)
-  ["crawl", "shamble", "walk"], ["feed", "attack", "idle"],
-  // 9 eat, 10 graze (animals: manifest anims `eat` / `graze`, each falls back to the other, then idle)
-  ["eat", "graze", "idle"], ["graze", "eat", "idle"],
-];
-export const enum AnimStateId { Idle = 0, Walk = 1, Run = 2, Attack = 3, Hit = 4, Death = 5, Shamble = 6, Crawl = 7, Feed = 8, Eat = 9, Graze = 10 }
+/**
+ * AnimState.state -> animation names tried in order. Indexed by core's wire-stable AnimState (ADR-093); never use
+ * numeric literals here. Unknown / out-of-range states resolve to idle.
+ */
+const STATE_ANIM_TABLE: Record<CoreAnimState, readonly string[]> = {
+  [CoreAnimState.Idle]: ["idle"], [CoreAnimState.Walk]: ["walk"], [CoreAnimState.Run]: ["run", "walk"],
+  [CoreAnimState.Attack]: ["attack"], [CoreAnimState.Hurt]: ["hit", "hurt", "idle"], [CoreAnimState.Die]: ["death", "die", "idle"],
+  [CoreAnimState.Gather]: ["gather", "idle"], [CoreAnimState.Build]: ["build", "idle"],
+  // animals: manifest anims `eat` / `graze`, each falls back to the other, then idle
+  [CoreAnimState.Eat]: ["eat", "graze", "idle"], [CoreAnimState.Graze]: ["graze", "eat", "idle"],
+  // zombies: zombie_*_shamble / _crawl / _feed (pack wave 2)
+  [CoreAnimState.Shamble]: ["shamble", "walk"], [CoreAnimState.Crawl]: ["crawl", "shamble", "walk"], [CoreAnimState.Feed]: ["feed", "attack", "idle"],
+};
+export const STATE_ANIMS: readonly (readonly string[])[] = ANIM_STATE_NAMES.map((_, i) => STATE_ANIM_TABLE[i as CoreAnimState] ?? ["idle"]);
+/** @deprecated use core `AnimState` (ADR-093); kept as an alias so render callers read one numbering. */
+export { CoreAnimState as AnimStateId };
 
 interface SpriteRT {
   atlasIdx: number; anchorX: number; anchorY: number;
@@ -781,7 +789,7 @@ export class AtlasManager {
   /** Animation index of `name` on a sprite (-1 = unknown; resolve() then uses the first animation's frame list). */
   animIndex(spriteId: number, name: string): number { const s = this.sprites[spriteId]; if (!s) return -1; const i = s.anims.findIndex((a) => a.name === name); return i < 0 ? 0 : i; }
   animName(spriteId: number, anim: number): string | undefined { return this.sprites[spriteId]?.anims[anim]?.name; }
-  stateAnim(spriteId: number, state: number): number { const s = this.sprites[spriteId]; return s ? s.stateAnim[Math.min(state, STATE_ANIMS.length - 1)] ?? 0 : 0; }
+  stateAnim(spriteId: number, state: number): number { const s = this.sprites[spriteId]; return s ? s.stateAnim[state] ?? s.stateAnim[CoreAnimState.Idle] ?? 0 : 0; }
 
   private fill(a: AtlasRT, f: number, s: SpriteRT, out: ResolvedFrame): void {
     const fi = Math.min(Math.max(0, f), a.count - 1);

@@ -1,3 +1,4 @@
+import { AnimState } from "@engine/core";
 import { describe, it, expect } from "vitest";
 import { World, Weather, setDayLength, setTimeOfDay } from "@engine/core";
 import { loadManifest } from "@engine/assets";
@@ -56,9 +57,9 @@ describe("TexturePacker importer", () => {
 
 describe("animation + weather mapping", () => {
   it("AnimState fallbacks", () => {
-    expect(STATE_ANIMS[2]).toEqual(["run", "walk"]);
-    expect(STATE_ANIMS[4]).toContain("hurt");
-    expect(STATE_ANIMS[6]).toEqual(["shamble", "walk"]);
+    expect(STATE_ANIMS[AnimState.Run]).toEqual(["run", "walk"]);
+    expect(STATE_ANIMS[AnimState.Hurt]).toContain("hurt");
+    expect(STATE_ANIMS[AnimState.Shamble]).toEqual(["shamble", "walk"]);
   });
   it("unknown weather kinds fall back to clear; table is replaceable", () => {
     expect(weatherTargets(99, 1)).toEqual(weatherTargets(0, 1));

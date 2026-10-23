@@ -1,3 +1,4 @@
+import { AnimState, ANIM_STATE_NAMES } from "@engine/core";
 import { describe, expect, it } from "vitest";
 import { PageLRU, VramAccountant, rgbaBytes } from "../src/gl/vram.js";
 import { STATE_ANIMS, AnimStateId } from "../src/assets/atlasManager.js";
@@ -68,5 +69,13 @@ describe("animal anim states", () => {
   it("maps eat/graze to manifest names with idle fallback", () => {
     expect(STATE_ANIMS[AnimStateId.Eat]).toEqual(["eat", "graze", "idle"]);
     expect(STATE_ANIMS[AnimStateId.Graze]).toEqual(["graze", "eat", "idle"]);
+  });
+  it("STATE_ANIMS follows core AnimState (ADR-093)", () => {
+    expect(STATE_ANIMS.length).toBe(ANIM_STATE_NAMES.length);
+    expect([AnimStateId.Eat, AnimStateId.Graze, AnimStateId.Shamble, AnimStateId.Crawl, AnimStateId.Feed]).toEqual([AnimState.Eat, AnimState.Graze, 10, 11, 12]);
+    expect(STATE_ANIMS[AnimState.Gather]).toEqual(["gather", "idle"]);
+    expect(STATE_ANIMS[AnimState.Build]).toEqual(["build", "idle"]);
+    expect(STATE_ANIMS[AnimState.Crawl]![0]).toBe("crawl");
+    expect(STATE_ANIMS[AnimState.Feed]![0]).toBe("feed");
   });
 });
