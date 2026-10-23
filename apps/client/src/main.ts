@@ -1,4 +1,6 @@
 import { showRenderError } from "./glcheck.js";
+import { startDiag } from "./diag.js";
+import { installFullscreenRestore } from "./fullscreen.js";
 /**
  * Client bootstrap: fixed-step loop + WebGL2 IsoRenderer view (./view.ts, Art's pack) + network session.
  * Falls back to the Canvas2D debug draw with ?renderer=debug or when WebGL2 / the art fails to load.
@@ -63,6 +65,9 @@ function sampleInput(): { buttons: number; aimX: number; aimY: number } {
 
 const session = new ClientSession({ storage: localStorage, slot: params.get("player") ?? "1", sampleInput });
 let world = new World({ seed: 1234 }); installDemoWorld(world, "client");
+installFullscreenRestore();
+const diag = startDiag({ renderer: () => iso?.renderer, entities: () => world.entityCount, tick: () => world.tick, player: () => session.player,
+  snapshot: () => session.client ? { received: session.client.latestTick >= 0, latestTick: session.client.latestTick, snapshots: session.client.stats.snapshots } : undefined });
 // Ground: replicated tiles from the server (net TileClient, `session.client.tiles.tiles`) once connected;
 // a placeholder ground is drawn only while offline.
 const placeholder = new TileMap();
@@ -70,7 +75,7 @@ for (let y = -64; y < 96; y++) for (let x = -64; x < 96; x++) placeholder.setTil
 
 const colors = ["#000", "#3a5", "#495", "#874"];
 function render(w: World, alpha: number): void {
-  if (iso) { iso.render(w, session.client?.tiles.tiles, session.player, alpha); return; }
+  if (iso) { iso.render(w, session.client?.tiles.tiles, session.player, alpha); diag?.afterRender(); return; }
   if (!ctx) return;
   const canvas = debugCanvas;
   const dpr = devicePixelRatio || 1;

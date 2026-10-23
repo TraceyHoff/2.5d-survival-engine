@@ -3,16 +3,17 @@
  * with a progress bar, then the main menu (Singleplayer / Multiplayer / Settings).
  * Navigation: mouse, touch (buttons), keyboard (arrows/WASD/Tab, Enter/Space, Esc) and gamepad (d-pad/stick, A, B).
  */
+import { enterFullscreen } from "./fullscreen.js";
 interface Branding { title: string; tagline: string; logo: string; bg: "" | "flat" | "parallax"; plates: boolean; icons: boolean; loading: boolean; loadingAnim: boolean }
 declare const __BRANDING__: Branding | undefined;
 const BR: Branding = (typeof __BRANDING__ !== "undefined" && __BRANDING__) || { title: "Cozy Wild", tagline: "survival", logo: "", bg: "", plates: false, icons: false, loading: false, loadingAnim: false };
 /** {app.title}: Art's branding.json title (placeholder until the game is named). */
 export const APP_TITLE = BR.title;
 export type MenuChoice = { kind: "singleplayer" } | { kind: "multiplayer"; url: string };
-export interface Settings { bots: number; showHud: boolean }
+export interface Settings { bots: number; showHud: boolean; fullscreen: boolean }
 const SETTINGS_KEY = "engine-settings";
 export function loadSettings(): Settings {
-  try { return { bots: 3, showHud: true, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as Partial<Settings> }; } catch { return { bots: 3, showHud: true }; }
+  try { return { bots: 3, showHud: true, fullscreen: true, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as Partial<Settings> }; } catch { return { bots: 3, showHud: true, fullscreen: true }; }
 }
 
 const CSS = (base: string): string => `@font-face{font-family:Fredoka;src:url(${base}art/ui/fonts/Fredoka.ttf) format("truetype");font-display:swap}
@@ -96,7 +97,7 @@ export class BootUI {
     this.root.dataset["boot"] = "menu";
     return new Promise((resolve) => {
       const main = (): void => this.screen([
-        ["Singleplayer", () => resolve({ kind: "singleplayer" })],
+        ["Singleplayer", () => { enterFullscreen(); resolve({ kind: "singleplayer" }); }],
         ["Multiplayer", multi],
         ["Settings", settings, "alt"],
       ], undefined, `<div class="hint">Mouse / touch · arrows + Enter · gamepad D-pad + A</div>`);
@@ -105,7 +106,7 @@ export class BootUI {
         const note = opts.hostedStatic
           ? `<p><b>Multiplayer needs a hosted game server.</b> This GitHub Pages build is static and can't host one: run <code>pnpm --filter @engine/server start</code> on a machine and enter its <code>ws://</code> / <code>wss://</code> address (https pages need <code>wss://</code>). Human bots are off in multiplayer.</p>`
           : `<p>Enter the game server address. Human bots are off in multiplayer.</p>`;
-        this.screen([["Connect", () => { const url = input.value.trim(); if (!url) return; localStorage.setItem("engine-server-url", url); resolve({ kind: "multiplayer", url }); }], ["Back", main, "alt"]],
+        this.screen([["Connect", () => { const url = input.value.trim(); if (!url) return; localStorage.setItem("engine-server-url", url); enterFullscreen(); resolve({ kind: "multiplayer", url }); }], ["Back", main, "alt"]],
           main, `<h2>Multiplayer</h2>${note}`, input);
       };
       const settings = (): void => {
@@ -114,8 +115,10 @@ export class BootUI {
         const hud = document.createElement("input"); hud.type = "checkbox"; hud.checked = s.showHud;
         const l1 = document.createElement("label"); l1.append("Singleplayer human bots", bots);
         const l2 = document.createElement("label"); l2.append("Show HUD", hud);
-        const save = (): void => { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ bots: Math.max(0, Math.min(12, Number(bots.value) || 0)), showHud: hud.checked })); main(); };
-        this.screen([["Save", save], ["Back", main, "alt"]], main, `<h2>Settings</h2>`, l1, l2);
+        const fs = document.createElement("input"); fs.type = "checkbox"; fs.checked = s.fullscreen;
+        const l3 = document.createElement("label"); l3.append("Fullscreen when playing", fs);
+        const save = (): void => { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ bots: Math.max(0, Math.min(12, Number(bots.value) || 0)), showHud: hud.checked, fullscreen: fs.checked })); main(); };
+        this.screen([["Save", save], ["Back", main, "alt"]], main, `<h2>Settings</h2>`, l1, l2, l3);
       };
       main();
     });
