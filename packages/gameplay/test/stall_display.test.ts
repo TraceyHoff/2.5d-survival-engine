@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { installPermissions, Membership, PlayerId, StallDisplay, STALL_DISPLAY_ROWS, type Entity, type World } from "@engine/core";
+import { installPermissions, Membership, PlayerId, StallDisplay, STALL_DISPLAY_ROWS, STALL_LISTINGS, type Entity, type World } from "@engine/core";
 import * as G from "../src/index.js";
 import pieces from "../data/pieces.json";
 import { makeWorld } from "./helpers.js";
@@ -21,6 +21,19 @@ describe("stall display copy", () => {
     expect(G.syncGameplayStallDisplay(w, stall)).toBe(false);
   });
   it("row count comes from the core StallDisplay schema", () => { expect(G.stallDisplayRows()).toBe(STALL_DISPLAY_ROWS); });
+  it("live copy fills rows past core's persisted 8; Listings (24, persisted) rebuild it after a load", () => {
+    expect(G.Listings.persistent).toBe(true); expect(StallDisplay.persistent).toBeFalsy(); expect(G.MAX_LISTINGS).toBe(STALL_DISPLAY_ROWS);
+    const w = makeWorld(); installPermissions(w); G.installEconomy(w);
+    const A = G.spawnPlayer(w, { x: 0, y: 0, maxWeight: 0, clientId: 7 }); w.add(A, PlayerId, { id: 7 }).add(A, Membership, { partyId: 0, clanId: 0 });
+    const stall = G.stallOf(w, G.placePiece(w, A, snap(w, "stall_booth"), { pay: false }))! as Entity;
+    G.addItem(w, A, PLANK, 5); G.stockStall(w, A, stall, 10, 0, 5);
+    G.setListing(w, A, stall, 10, { priceItem: COIN, priceCount: 4, qty: 1, enabled: 1 });
+    G.stallDisplaySystem(w);
+    expect(w.getArray(stall, StallDisplay, "item")![10]).toBe(PLANK); expect(STALL_LISTINGS).toBe(8);
+    // StallDisplay is not saved: after a load it is missing and is rebuilt from gameplay Listings + stock.
+    w.remove(stall, StallDisplay); G.stallDisplaySystem(w);
+    expect(w.getArray(stall, StallDisplay, "item")![10]).toBe(PLANK); expect(w.getArray(stall, StallDisplay, "price")![10]).toBe(4);
+  });
   it("flags stall tiers that StallDisplay would cut off", () => {
     const cut = G.truncatedStallTiers(pieces.pieces as never);
     // core STALL_DISPLAY_ROWS = 24 (3aecd3c): every tier fits, so this list is empty.
