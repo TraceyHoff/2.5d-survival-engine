@@ -51,6 +51,10 @@ export class StaticServer {
   private spawnBlobs = new WeakMap<EntityState, Blob & { id: number }>();
   /** netIds replicated via the static channel this tick (excluded from snapshots). */
   readonly ids = new Set<number>();
+  /** Chunk a static netId currently lives in (undefined = not static). */
+  chunkOf(netId: number): ChunkKey | undefined { return this.where.get(netId); }
+  /** True if the session holds (or is streaming) the chunk containing static `netId`. */
+  knownTo(ss: StaticSession, netId: number): boolean { const k = this.where.get(netId); return k !== undefined && (ss.subs.has(k) || ss.streams.has(k)); }
   private readonly xi: number; private readonly yi: number;
   constructor(private readonly schema: NetSchema, readonly classCis: ReadonlySet<number>, private readonly transformCi: number | undefined) {
     const lay = transformCi === undefined ? [] : schema.layout[transformCi]!;

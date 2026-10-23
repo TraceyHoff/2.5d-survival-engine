@@ -22,3 +22,4 @@ export * from "./tiles.js";
 export * from "./names.js";
 export * from "./stalls.js";
 export * from "./appearance.js";
+export * from "./netid.js";

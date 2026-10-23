@@ -1,3 +1,4 @@
+import { registerNetIds } from "./netid.js";
 import * as core from "@engine/core";
 import { ENV_NET_ID, NetId, Owner, Transform, entityIndex, type ComponentDef, type Entity, type World , CommandRejected } from "@engine/core";
 import { BitReader, BitWriter } from "./bits.js";
@@ -129,6 +130,12 @@ export interface NetServerOptions {
    * effect after it stayed lower for `holdTicks` (default 60) so stepping off a tower briefly doesn't thrash chunks.
    */
   viewBonus?: { max?: number; holdTicks?: number };
+  /**
+   * Entity fields in client commands (MessageDef.entityFields) arrive as NetIds. "aoi" (default): the target must be
+   * alive AND currently held by that client (in a retained snapshot view, or in a static chunk it has) — unknown, stale
+   * (despawned / reused) or out-of-AOI targets drop the command with a "badEntityRef" anomaly. "alive": any live entity.
+   */
+  entityRefs?: "aoi" | "alive";
   /** Soft per-client snapshot budget in bytes (default 16 KiB). Owned/global entities and despawns always go. */
   budgetBytes?: number;
   /** Per-client bytes per tick for streaming static chunks on entry (default 8 KiB); static change batches are not budgeted. */
@@ -201,6 +208,7 @@ export class NetServer {
     this.schema = new NetSchema(this.world);
     this.ownerCi = this.schema.indexOf(Owner, this.world);
     this.netIds = new NetIdRegistry(this.world);
+    registerNetIds(this.world, this.netIds);
     this.commands = new MessageRegistry(opts.commands);
     this.events = new MessageRegistry(opts.events);
     this.positions = new PositionHistory(this.world, opts.positionHistoryTicks ?? this.tickHz);
@@ -498,6 +506,13 @@ export class NetServer {
     return owned;
   }
 
+  /** Whether `netId` is in what this client currently holds (any retained snapshot view, or a synced static chunk). */
+  clientHolds(session: ClientSession, netId: number): boolean {
+    const s = session as SessionState;
+    for (const v of s.views.values()) if (v.has(netId)) return true;
+    return this.statics?.knownTo(s.static, netId) ?? false;
+  }
+
   // ---------------- input phase ----------------
   private inputPhase(w: World, dt: number): void {
     const owned = this.ownedBy(w); this.ownedCache = owned;
@@ -509,7 +524,7 @@ export class NetServer {
         for (const f of c.def.entityFields) {
           const id = p[f]!; if (id === 0) { p[f] = NO_ENTITY; continue; }
           const e = this.netIds.entityOf(id);
-          if (e === undefined || !w.isAlive(e)) { ok = false; break; }
+          if (e === undefined || !w.isAlive(e) || (this.opts.entityRefs ?? "aoi") === "aoi" && !this.clientHolds(s, id)) { ok = false; break; }
           p[f] = e;
         }
         if (!ok) { s.stats.droppedCommands++; this.anomaly(s, "badEntityRef", c.def.name); continue; }

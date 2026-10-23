@@ -1,3 +1,4 @@
+import { registerNetIds } from "./netid.js";
 import { ENV_NET_ID, NetId, entityIndex, Owner, Transform, type ComponentDef, type ComponentStore, type Entity, type World } from "@engine/core";
 import { BitReader } from "./bits.js";
 import { InterpolationBuffer } from "./interpolation.js";
@@ -137,6 +138,7 @@ export class NetClient {
 
   constructor(opts: NetClientOptions) {
     this.opts = opts; this.world = opts.world;
+    registerNetIds(this.world, this);
     this.schema = new NetSchema(this.world);
     this.commands = new MessageRegistry(opts.commands);
     this.events = new MessageRegistry(opts.events);
