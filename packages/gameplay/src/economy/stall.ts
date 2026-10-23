@@ -12,6 +12,8 @@ import {
   addPermissionRule, can, canAt, defineCommand, definePermissionActions, entityIndex, Membership, OwnedBy, Owner, Permissions, PlayerId,
   playerOf, Transform, transaction, type CommandDef, type Slot, type SlotExtras, type CommandHandlers, type Entity, type Transaction, type TxResult, type World,
 } from "@engine/core";
+import { clanPermBit, rankMask } from "../clan_state.js";
+import { noteClanContribution } from "../clan.js";
 import { AttachKind, BuildPiece, Container, ContainerViewers, LEDGER_SIZE, Listings, LootBag, PieceLink, STALL_NAME_MAX, StallHeader, StallLedger, StallSign, StallOwnerKind, Viewing } from "../components.js";
 import { gameplayDefs, isAuthority, rangeSlack } from "../config.js";
 import { emit, type GEvent } from "../events.js";
@@ -88,8 +90,8 @@ export function stallRule(world: World, actor: Entity, target: Entity, action: n
   if (h.ownerKind === StallOwnerKind.Player) return h.ownerId === player ? "allow" : "deny";
   if (h.ownerKind === StallOwnerKind.Clan) {
     const role = world.resource(Permissions).groups.role(h.ownerId, player);
-    const allowed = ECONOMY.rankPolicy[role] ?? [];
-    return allowed.some((a) => ACT_OF[a] === action) ? "allow" : "deny";
+    const mask = rankMask(world, h.ownerId, role); // per-clan rank masks (clan_state.ts; defaults = economy.json rankPolicy)
+    return (Object.keys(ACT_OF) as StallAction[]).some((a) => ACT_OF[a] === action && (mask & clanPermBit(a)) !== 0) ? "allow" : "deny";
   }
   return "deny";
 }
@@ -162,6 +164,8 @@ export function stallListings(world: World, stall: Entity): Listing[] {
   const n = world.getField(stall, StallHeader, "listingCount") ?? 0; return Array.from({ length: n }, (_, i) => stallListing(world, stall, i)!);
 }
 export const listingRevision = (world: World, stall: Entity): number => world.getField(stall, Listings, "revision") ?? 0;
+/** Bumps the listing revision (clients refresh; buyers' expectedRevision goes stale). */
+export function bumpStall(world: World, stall: Entity): void { bump(world, stall); }
 function bump(world: World, stall: Entity): void {
   const st = world.store(Listings); const i = entityIndex(stall); const s = st.slot(i); st.data.revision[s] = (st.data.revision[s]! + 1) >>> 0; st.markChanged(i);
 }
@@ -249,7 +253,9 @@ export function stockStall(world: World, actor: Entity, target: Entity, listingS
   const m = manage(world, actor, target, StallActs.stock); if (m.why) return m.why; const stall = m.stall!;
   if (listingSlot >= (world.getField(stall, StallHeader, "listingCount") ?? 0)) return "bad_listing";
   const r = transaction(world, (tx) => tx.transfer(actor, invSlot, stall, listingSlot, count), actor);
-  refreshSoldOut(world, stall); return r.ok ? undefined : r.reason;
+  refreshSoldOut(world, stall);
+  if (r.ok && world.getField(stall, StallHeader, "ownerKind") === StallOwnerKind.Clan) noteClanContribution(world, actor, world.getField(stall, StallHeader, "ownerId") ?? 0, count);
+  return r.ok ? undefined : r.reason;
 }
 /** Return `count` units from a listing slot to the actor (anyone allowed to stock may unstock their stall). */
 export function unstockStall(world: World, actor: Entity, target: Entity, listingSlot: number, count: number): R {

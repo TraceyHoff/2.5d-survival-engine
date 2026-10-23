@@ -477,3 +477,13 @@ Gameplay owns data, not loops: there is **no spawn loop and no controller** here
     - `party_invite`: only bots with sociability ≥ 0.55, with a 45 s cooldown. This includes inviting the player.
     - `party_leave`: leaves after (0.5 + sociability) × 120 s with no mate in view.
   - Chat lines are `social.party.{invite,accept,decline,leave}.N` in en.json (outside the `bot.` namespace that bots.json owns).
+
+## 28. Clans (commands, permissions, persistence)
+
+- Commands (append-only after the party block, chat-style rate): `gameplay.clanCreate, clanInvite{target}, clanAccept{clan}, clanLeave, clanPromote{target}, clanDemote{target}, clanKick{target}, clanSetRankPerms{role,mask}, clanDisband`, plus **`gameplay.clanSetGoal{goal,x,y}`** (extra; leader/officers with the `goal` perm). Humans and bots use the same commands. Rejects: `in_clan, not_in_clan, no_permission, clan_full, not_leader, bad_role, max_rank, min_rank, bad_goal` (reuses the party `no_invite, invite_expired, outranked, self, no_player`).
+- Membership is the core `GroupRegistry` (kind Clan=2; Member/Officer/Leader). Promote Officer→Leader hands leadership over (the old leader becomes Officer). Demoting is leader-only. Leaving or kicking the last member disbands the clan.
+- Rank permissions (`clan_state.ts`): the bits are `list, price, collect, stock, remove, base, invite, kick, goal`. Defaults: the stall bits come from `economy.json` rankPolicy; members also get `base`; officers get `base, invite, kick, goal`. The leader always has every bit. `stallRule`'s clan branch checks `rankMask`.
+- Base permissions: `syncSocialMembership` sets `Tribe = clan id` when the rank has `base`, so building privileges and door locks use the clan. It only clears a Tribe it set itself.
+- **Disband rule (approved):** clan stalls and tills go to the leader (Player owner) and **close**. `OwnedBy.groupId=clan` becomes `playerId=leader`. Claims owned by the clan are removed. Pending invites are dropped. The leader keeps the Tribe.
+- Networked state: `ClanStatus{clan,role,goal,goalX,goalY,contrib}` (public) and `ClanInvitePending` (owner scope), so bots on replicas can read them. Contribution counts items stocked into clan stalls.
+- Persistence: the groups persist through core `social`. Rank masks, goals and contribution go in the server blob `gameplay.clans` (format 1), written on change. `apps/server/test/clan_persist.test.ts` checks that clan and party membership, the goal and ClanStatus survive a save and reload.

@@ -1,13 +1,14 @@
 /** Authoritative game server: world + gameplay + streaming chunks + persistence + NetServer sessions. */
 import { ChannelRegistry, CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, type CosmeticCatalogLike, Membership, PlayerId, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
 import { ChunkManager, ProceduralGenerator, chunkKeyOf, type BuildingGrid, type PopulationSpawner } from "@engine/world";
-import { GAMEPLAY_COMMANDS, installPartyCommands, PartyInvitePending, queueCommand, spawnPlayer, spawnResourceNode, gameplayDefs, setIntent, IntentAction, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installPopulation, installCustomization,
+import { GAMEPLAY_COMMANDS, installPartyCommands, PartyInvitePending, installClanCommands, ClanInvitePending, syncSocialMembership, clanState, encodeClanState, decodeClanState, loadClanState, queueCommand, spawnPlayer, spawnResourceNode, gameplayDefs, setIntent, IntentAction, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installPopulation, installCustomization,
   appearanceServerHooks, applyReplication, installStallBuyHook, installViewBonus, setHitValidator, installPvp, installCraftQueue, installExpressionCommands, requestEmote, CraftQueue, CraftQueuesRes, playerNames, stallListing, listingRevision, stallOf, tillOf, StallHeader, StallOwnerKind } from "@engine/gameplay";
 import { AppearanceServer, ChatServer, NameSync, NetServer, StallResult, StallServer, TileSync, validateHit, type ClientSession, type ServerTransport, type StallHooks } from "@engine/net";
 import { AccountAssigned, ClaimAccount, SetName, WorldPersistence, loadSocial, tokenToHex, tokenToWords, wordsToName, wordsToToken, type WorldStore } from "@engine/persist";
 import { seedStarterCamp, giveRandomAppearance } from "./camp.js";
 import { Act, applyMoveInput, installDemoWorld, rejectReasonCode, DevBotHello, DEMO_COMMANDS, DEMO_EVENTS, GAMEPLAY_NET_COMMANDS, Ping, Pong } from "./protocol.js";
 
+export const CLAN_BLOB = "gameplay.clans";
 /** ProceduralGenerator node kinds -> gameplay resource keys (see DEFAULT_BANDS comments in @engine/world). */
 const NODE_RESOURCES: Record<number, string> = { 1: "fallen_branches", 2: "fiber_grass", 3: "berry_bush", 4: "loose_rocks", 5: "tree", 6: "boulder", 7: "iron_vein" };
 export const SPAWN = { x: 16, y: 16 };
@@ -93,6 +94,9 @@ export function createGameServer(o: GameServerOptions): GameServer {
   // Saved parties/clans/claims (throws on a corrupt record rather than starting empty and overwriting it).
   const permissions = installDemoWorld(world, "server", { tickHz, ...(o.store ? { social: loadSocial(o.store) } : {}) });
   if (meta) { world.tick = meta.tick; if (meta.schemaHash !== world.getSchemaHash()) log(`persist: save schema ${meta.schemaHash.toString(16)} != build ${world.getSchemaHash().toString(16)}; chunks with changed persistent components load read-only`); }
+  // Clan rank masks / goals / contributions (gameplay ClanState) persist as the world blob "gameplay.clans", written on change.
+  { const b = o.store?.readBlob(CLAN_BLOB); if (b) { try { loadClanState(world, decodeClanState(b.bytes)); } catch (e) { log(`persist: clan state unreadable: ${String(e)}`); } } }
+  if (o.store) { const store = o.store; clanState(world).onChange = () => { if (closing) return; void store.write({ blobs: [{ key: CLAN_BLOB, format: 1, bytes: encodeClanState(clanState(world)), tick: world.tick }] }).catch((e) => log(`persist: clan save failed: ${String(e)}`)); }; }
   const generator = new ProceduralGenerator({ seed });
   const persist = o.store ? new WorldPersistence({
     world, store: o.store, generator, tickHz, log,
@@ -142,6 +146,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
 
   applyReplication(net);
   net.setScope(PartyInvitePending, "owner"); // pending party invite: only the invitee sees it
+  net.setScope(ClanInvitePending, "owner"); // pending clan invite: only the invitee sees it
   net.setScope(CraftQueue, "owner"); // queued crafting: networked + persistent, progress only to its owner
   // Gameplay commands: core handlers (economy + customization) fed by the net mirrors from protocol.ts.
   const handlers = installCommandHandlers(world, registerGameplayCommands());
@@ -149,6 +154,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
   installPvp(world, handlers); // gameplay.respawnPlayer
   installCraftQueue(world, handlers); // gameplay.queueCraft / cancelQueuedCraft (server-only timers)
   installExpressionCommands(world, handlers); // gameplay.emote -> Expression
+  installClanCommands(world, handlers); // gameplay.clan* on core GroupRegistry (GroupKind.Clan) + gameplay ClanState
   installPartyCommands(world, handlers); // gameplay.partyInvite / partyAccept / partyLeave / partyKick on core GroupRegistry
   const rearmCrafts = (): void => world.resource(CraftQueuesRes).rearmAll(); // timers are not saved: re-arm after any load
   // Melee hits from players are re-checked with lag compensation (target rewound to what the attacker saw).
@@ -256,9 +262,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
   function assignIdentity(e: Entity): void {
     let id = world.getField(e, PlayerId, "id") ?? 0;
     if (!id) { id = persist ? persist.allocatePlayerId() : localPlayerIds++; if (world.has(e, PlayerId)) world.setField(e, PlayerId, "id", id); else world.add(e, PlayerId, { id }); }
-    const gs = permissions.groups.groupsOf(id);
-    const m = { partyId: gs.find((g) => g.kind === 1)?.id ?? 0, clanId: gs.find((g) => g.kind === 2)?.id ?? 0 };
-    if (world.has(e, Membership)) { world.setField(e, Membership, "partyId", m.partyId); world.setField(e, Membership, "clanId", m.clanId); } else world.add(e, Membership, m);
+    syncSocialMembership(world, e); // Membership + ClanStatus + clan base Tribe from the registry
   }
   net.onCommand(SetName, (s, payload) => {
     const p = players.get(s.clientId); if (!p) return;

@@ -190,6 +190,10 @@ export const CraftOwed = defineComponent("CraftOwed", {
 export const Expression = defineComponent("Expression", { id: "u8", untilTick: "u32" }, { networked: true });
 /** Latest pending party invite for this player (owner-scoped mirror of PartyInvites; server writes it in party handlers only). */
 export const PartyInvitePending = defineComponent("PartyInvitePending", { party: "u32", from: "u32", expiresTick: "u32" }, { networked: true });
+/** Latest pending clan invite (owner-scoped mirror of ClanInvites; written in clan handlers only). */
+export const ClanInvitePending = defineComponent("ClanInvitePending", { clan: "u32", from: "u32", expiresTick: "u32" }, { networked: true });
+/** Clan view on each online member (AOI): clan, role, current clan goal (ClanGoal) + point, own contribution count. Clan handlers only. */
+export const ClanStatus = defineComponent("ClanStatus", { clan: "u32", role: "u8", goal: "u8", goalX: "f32", goalY: "f32", contrib: "u32" }, { networked: true });
 export const GAMEPLAY_COMPONENTS = [
   Emitter, Buffs,
   Health, ResourceNode, Survival, VitalsState, Exposure, Dead,
@@ -206,4 +210,6 @@ export const GAMEPLAY_COMPONENTS = [
   CraftOwed,
   Expression,
   PartyInvitePending,
+  ClanInvitePending,
+  ClanStatus,
 ] as const;
