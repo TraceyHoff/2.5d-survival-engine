@@ -30,3 +30,15 @@ describe("stall display copy", () => {
     expect(G.truncatedStallTiers(pieces.pieces as never, 24)).toEqual([]);
   });
 });
+
+describe("stall variants", () => {
+  it("variant names match the stall manifest skins, in order", () => {
+    const names = (k: string) => d.pieces.get(d.pieceId(k))!.variantNames;
+    expect(names("stall_blanket")).toEqual(["patch", "gingham", "picnic"]);
+    expect(names("stall_cart")).toEqual(["pine_red", "dark_teal", "sunny"]);
+    expect(names("stall_booth")).toEqual(["thatch", "redroof", "bluecloth"]);
+    expect(d.pieces.get(d.pieceId("stall_cart"))!.variants).toBe(3);
+    expect(G.pieceVariantKey(d.pieces.get(d.pieceId("stall_booth"))!, 1)).toBe("stall_booth@redroof");
+    expect(G.pieceVariantKey(d.pieces.get(d.pieceId("stall_booth"))!, 9)).toBe("stall_booth");
+  });
+});

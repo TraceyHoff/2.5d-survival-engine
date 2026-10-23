@@ -35,3 +35,8 @@ export function stallDisplaySystem(world: World): void {
 export function truncatedStallTiers(pieces: readonly { key: string; stall?: { listings: number } }[], rows = stallDisplayRows()): { key: string; listings: number; rows: number }[] {
   return pieces.filter((p) => p.stall && p.stall.listings > rows).map((p) => ({ key: p.key, listings: p.stall!.listings, rows }));
 }
+
+/** Sprite lookup key for a placed piece variant: `<piece>@<variantName>`, or the bare key when the variant is unnamed. */
+export function pieceVariantKey(def: { key: string; variantNames: readonly string[] }, variant: number): string {
+  const n = def.variantNames[variant]; return n ? `${def.key}@${n}` : def.key;
+}

@@ -692,7 +692,13 @@
       ],
       "stall": {
         "listings": 4
-      }
+      },
+      "variants": 3,
+      "variantNames": [
+        "patch",
+        "gingham",
+        "picnic"
+      ]
     },
     {
       "key": "stall_cart",
@@ -717,7 +723,13 @@
       ],
       "stall": {
         "listings": 8
-      }
+      },
+      "variants": 3,
+      "variantNames": [
+        "pine_red",
+        "dark_teal",
+        "sunny"
+      ]
     },
     {
       "key": "stall_booth",
@@ -746,7 +758,13 @@
       ],
       "stall": {
         "listings": 12
-      }
+      },
+      "variants": 3,
+      "variantNames": [
+        "thatch",
+        "redroof",
+        "bluecloth"
+      ]
     },
     {
       "key": "clan_pavilion",
