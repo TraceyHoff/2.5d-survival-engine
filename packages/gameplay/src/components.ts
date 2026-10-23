@@ -175,7 +175,7 @@ export const Burning = defineComponent("Burning", { lit: "u8", intensity: "u8", 
  * The shared registration module: registration order = component ids on every peer (append only!).
  * Includes engine-provided gameplay-facing components (world Emitter, the Buffs modifier stack).
  */
-/** Ambient wildlife (population spawner). kind = index into population.json animals. Not persistent: respawned by density. */
+/** Ambient wildlife (population spawner). kind = index into animalDefs() (ai.json animal_* archetypes; spawn rows in spawns.json). Not persistent: respawned by density. */
 export const Animal = defineComponent("Animal", { kind: "u8", state: "u8", homeX: "f32", homeY: "f32", goalX: "f32", goalY: "f32", thinkAt: "u32" }, { networked: true });
 
 /** Slice 5 queued crafting (core JobQueue layout, 4 slots; see systems/craft_queue.ts). */

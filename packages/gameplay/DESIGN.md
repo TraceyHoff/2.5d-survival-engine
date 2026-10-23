@@ -420,3 +420,14 @@ Gameplay owns data, not loops: there is **no spawn loop and no controller** here
 ## 21. Expression (`src/expression.ts`, `data/expressions.json`)
 - `Expression {id u8, untilTick u32}` comes after CraftOwed in GAMEPLAY_COMPONENTS. It is networked and broadcast, not persisted, and kept off Appearance. id = expressions index + 1 (0 = none). `expressionKey(id)` gives Render's resolveLayers `expression` option.
 - `gameplay.expression` (postSim, every 5 ticks, authority only) writes it. Moods are checked in data order (lowHealth→hurt, fleeing animal→scared, hungry, thirsty, tired→sleepy) and held for holdSeconds, refreshed only near expiry to avoid churn. Emotes come from `EmoteCmd {emote u16}` (same ids as the net chat emote: emoteNames index + 1; server wires `installExpressionCommands`) or `requestEmote` for host code such as bot AgentOutput.emote. An emote beats moods until its untilTick. When nothing applies, the expression is cleared once it expires.
+
+## 22. Spawner feed + animals (AI_AGENTS alignment)
+- `data/spawns.json` replaces `population.json`. Rows use the engine `SpawnEntry` field names (kind, category, density, timeWeights,
+  min/maxPlayerDistance, perChunkCap, globalCap, despawnDistance, group [min,max]) plus gameplay extras (biomeWeights, groupSpread, modes, fromZombies).
+- `toSpawnEntries(mode)` builds PopulationSpawner rows from `entriesForMode` + `chunkTarget` + `capFor`: density = best biome at the peak phase,
+  timeWeights = each phase relative to it, tiles = biomes with weight > 0. `installPopulation` uses it (mode "sp" with human bots, else "mp");
+  `humanBots.spawn(x, y, kind)` now gets the bot archetype.
+- Animal kinds equal the art keys: animal_rabbit, animal_deer, animal_boar, animal_wolf, animal_chicken (spriteKey = kind). Defs come from ai.json.
+- Animal AI: idle/wander/flee/attack/dead. aggro modes hostile/territorial/defensive; bites use applyDamage at ai.json attack cooldown;
+  flee at hp <= flee.hpFrac. Death: ai.json loot rolled (rngFor per entity) into an ownerless LootBag, a 3s corpse, then removal.
+- The wolf is goofy: aggro range 2.5, leash 7, flees at 70% hp. The chicken is passive and drops raw_meat plus maybe an egg.

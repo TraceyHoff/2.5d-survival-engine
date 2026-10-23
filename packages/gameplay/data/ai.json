@@ -1,5 +1,5 @@
 {
- "$comment": "Per-archetype behavior data (consumed by an external AgentController / AI; gameplay runs no controller). aggro.mode: hostile|territorial|defensive|passive. Zombies use fromZombies=true: hp/speed/attack/sight come from zombies.json. loot: item keys from items.json; chance 0..1.",
+ "$comment": "Per-archetype behavior data (consumed by an external AgentController / AI; gameplay runs no controller). aggro.mode: hostile|territorial|defensive|passive. Zombies use fromZombies=true: hp/speed/attack/sight come from zombies.json. loot: item keys from items.json; chance 0..1. Animal kinds match art keys (animal_*). The wolf is goofy: aggro only at close range, flees early.",
  "archetypes": {
   "zombie_walker": {
    "kind": "zombie",
@@ -103,7 +103,7 @@
     }
    ]
   },
-  "rabbit": {
+  "animal_rabbit": {
    "kind": "animal",
    "hp": 10,
    "speed": 3.2,
@@ -144,7 +144,7 @@
     }
    ]
   },
-  "deer": {
+  "animal_deer": {
    "kind": "animal",
    "hp": 50,
    "speed": 3.6,
@@ -185,7 +185,7 @@
     }
    ]
   },
-  "boar": {
+  "animal_boar": {
    "kind": "animal",
    "hp": 90,
    "speed": 2.4,
@@ -230,23 +230,23 @@
     }
    ]
   },
-  "wolf": {
+  "animal_wolf": {
    "kind": "animal",
    "hp": 70,
    "speed": 3.4,
    "perception": {
-    "sightRange": 16,
+    "sightRange": 10,
     "hearingMul": 1.4,
     "fovDeg": 220
    },
    "aggro": {
     "mode": "hostile",
-    "range": 12,
-    "leashRange": 28
+    "range": 2.5,
+    "leashRange": 7
    },
    "flee": {
-    "hpFrac": 0.25,
-    "range": 14
+    "hpFrac": 0.7,
+    "range": 8
    },
    "wander": {
     "radius": 14,
@@ -256,9 +256,9 @@
     ]
    },
    "attack": {
-    "damage": 10,
+    "damage": 4,
     "range": 1.0,
-    "cooldownSeconds": 0.9
+    "cooldownSeconds": 1.4
    },
    "loot": [
     {
@@ -497,6 +497,47 @@
      "min": 0,
      "max": 2,
      "chance": 0.5
+    }
+   ]
+  },
+  "animal_chicken": {
+   "kind": "animal",
+   "hp": 8,
+   "speed": 2.2,
+   "perception": {
+    "sightRange": 6,
+    "hearingMul": 1.2,
+    "fovDeg": 300
+   },
+   "aggro": {
+    "mode": "passive",
+    "range": 0,
+    "leashRange": 0
+   },
+   "flee": {
+    "hpFrac": 1,
+    "range": 4
+   },
+   "wander": {
+    "radius": 4,
+    "idleSeconds": [
+     1,
+     3
+    ]
+   },
+   "attack": null,
+   "loot": [
+    {
+     "item": "raw_meat",
+     "min": 1,
+     "max": 1,
+     "chance": 1
+    },
+    {
+     "item": "egg",
+     "min": 0,
+     "max": 1,
+     "chance": 0.4
     }
    ]
   }

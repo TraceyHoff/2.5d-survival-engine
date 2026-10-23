@@ -8,19 +8,23 @@ import aiRaw from "../../data/ai.json";
 import botsRaw from "../../data/bots.json";
 import zombiesRaw from "../../data/zombies.json";
 import itemsRaw from "../../data/items.json";
+import type { SpawnEntry as WorldSpawnEntry } from "@engine/world";
 
 export type SpawnPhase = "night" | "dawn" | "day" | "dusk";
 export const DAY_PHASES: readonly SpawnPhase[] = ["night", "dawn", "day", "dusk"];
 export type GameMode = "sp" | "mp";
 export type SpawnCategory = "zombies" | "animals" | "humans";
 export type PhaseRecord = Record<SpawnPhase, number>;
-export interface SpawnEntry {
-  archetype: string; fromZombies?: boolean; densityPerChunk: number; phaseMul?: PhaseRecord; biomeWeights: Record<string, number>;
-  group: { min: number; max: number; spread: number }; modes: Record<GameMode, boolean>; capPerChunk: number; globalCap: number;
+const CATEGORY = { zombies: "zombie", animals: "animal", humans: "human_bot" } as const;
+/** Gameplay spawn table row: engine SpawnEntry field names (@engine/world) + gameplay extras (biomeWeights, groupSpread, modes, fromZombies). */
+export interface GameSpawnEntry {
+  kind: string; category: "zombie" | "animal" | "human_bot"; fromZombies?: boolean; density: number; timeWeights?: PhaseRecord;
+  biomeWeights: Record<string, number>; minPlayerDistance: number; maxPlayerDistance?: number; perChunkCap: number; globalCap: number;
+  despawnDistance: number; group: [number, number]; groupSpread: number; modes: Record<GameMode, boolean>;
 }
 export interface SpawnData {
-  chunkTiles: number; phases: string[]; biomes: Record<string, number>;
-  modes: Record<GameMode, { densityMul: number; capMul: number }>; tables: Record<SpawnCategory, SpawnEntry[]>;
+  chunkTiles: number; intervalSeconds: number; phases: string[]; biomes: Record<string, number>;
+  modes: Record<GameMode, { densityMul: number; capMul: number }>; tables: Record<SpawnCategory, GameSpawnEntry[]>;
 }
 export type AggroMode = "hostile" | "territorial" | "defensive" | "passive";
 export interface Perception { sightRange: number; hearingMul: number; fovDeg: number }
@@ -65,18 +69,21 @@ export function validateSpawnData(d: SpawnData, ai: AiData = aiRaw as unknown as
   for (const cat of ["zombies", "animals", "humans"] as const) {
     const t = d.tables?.[cat]; if (!Array.isArray(t)) { err.push(`tables.${cat} missing`); continue; }
     for (const e of t) {
-      const p = `${cat}.${e.archetype}`;
-      if (seen.has(e.archetype)) err.push(`${p}: duplicate`); seen.add(e.archetype);
-      if (!ai.archetypes[e.archetype]) err.push(`${p}: no behavior in ai.json`);
-      if (e.fromZombies) { if (!zKeys.has(e.archetype)) err.push(`${p}: fromZombies but not in zombies.json`); }
-      else if (!e.phaseMul || DAY_PHASES.some((ph) => !nonNeg(e.phaseMul![ph]))) err.push(`${p}: phaseMul needs night/dawn/day/dusk >= 0`);
-      if (!nonNeg(e.densityPerChunk)) err.push(`${p}: densityPerChunk`);
+      const p = `${cat}.${e.kind}`;
+      if (seen.has(e.kind)) err.push(`${p}: duplicate`); seen.add(e.kind);
+      if (!ai.archetypes[e.kind]) err.push(`${p}: no behavior in ai.json`);
+      if (e.category !== CATEGORY[cat]) err.push(`${p}: category must be ${CATEGORY[cat]}`);
+      if (cat === "animals" && !e.kind.startsWith("animal_")) err.push(`${p}: animal kinds must match art keys animal_*`);
+      if (e.fromZombies) { if (!zKeys.has(e.kind)) err.push(`${p}: fromZombies but not in zombies.json`); }
+      else if (!e.timeWeights || DAY_PHASES.some((ph) => !nonNeg(e.timeWeights![ph]))) err.push(`${p}: timeWeights needs night/dawn/day/dusk >= 0`);
+      if (!nonNeg(e.density)) err.push(`${p}: density`);
+      if (!nonNeg(e.minPlayerDistance) || !(num(e.despawnDistance) && e.despawnDistance > e.minPlayerDistance) || (e.maxPlayerDistance !== undefined && !(e.maxPlayerDistance >= e.minPlayerDistance))) err.push(`${p}: player distances`);
       const bw = Object.entries(e.biomeWeights ?? {});
       if (!bw.length) err.push(`${p}: biomeWeights empty`);
       for (const [b, w] of bw) { if (!(b in d.biomes)) err.push(`${p}: unknown biome ${b}`); if (!nonNeg(w)) err.push(`${p}: biome weight ${b}`); }
-      const g = e.group; if (!g || !(Number.isInteger(g.min) && g.min >= 1 && Number.isInteger(g.max) && g.max >= g.min && nonNeg(g.spread))) err.push(`${p}: group`);
-      if (!(Number.isInteger(e.capPerChunk) && e.capPerChunk >= 1 && Number.isInteger(e.globalCap) && e.globalCap >= e.capPerChunk)) err.push(`${p}: caps`);
-      if (g && e.capPerChunk < g.min) err.push(`${p}: capPerChunk below group.min`);
+      const g = e.group; if (!Array.isArray(g) || !(Number.isInteger(g[0]) && g[0] >= 1 && Number.isInteger(g[1]) && g[1] >= g[0]) || !nonNeg(e.groupSpread)) err.push(`${p}: group`);
+      if (!(Number.isInteger(e.perChunkCap) && e.perChunkCap >= 1 && Number.isInteger(e.globalCap) && e.globalCap >= e.perChunkCap)) err.push(`${p}: caps`);
+      if (Array.isArray(g) && e.perChunkCap < g[0]) err.push(`${p}: perChunkCap below group min`);
       if (typeof e.modes?.sp !== "boolean" || typeof e.modes?.mp !== "boolean") err.push(`${p}: modes`);
       if (cat === "humans" && e.modes?.mp) err.push(`${p}: human bots must be disabled in mp`);
     }
@@ -150,26 +157,26 @@ export function resolveBehavior(key: string, ai: AiData = populationData().ai): 
 }
 
 /** Phase multiplier: explicit phaseMul, or (zombies) zombies.json ratePerMinute x weight share normalized so night of the walker = 1. */
-export function phaseMultiplier(e: SpawnEntry, phase: SpawnPhase): number {
-  if (!e.fromZombies) return e.phaseMul![phase];
-  const i = ZOMBIES.zombies.findIndex((z) => z.key === e.archetype); const s = ZOMBIES.spawning;
+export function phaseMultiplier(e: GameSpawnEntry, phase: SpawnPhase): number {
+  if (!e.fromZombies) return e.timeWeights![phase];
+  const i = ZOMBIES.zombies.findIndex((z) => z.key === e.kind); const s = ZOMBIES.spawning;
   const share = (ph: SpawnPhase): number => { const w = s.weights[ph]; const t = w.reduce((a, b) => a + b, 0); return t > 0 ? (w[i] ?? 0) / t : 0; };
   const ref = s.ratePerMinute.night * share("night") || 1;
   return (s.ratePerMinute[phase] * share(phase)) / ref;
 }
 
 /** Target live count for one chunk (spawner input). 0 when disabled for the mode or biome. */
-export function chunkTarget(e: SpawnEntry, biomeTile: number, phase: SpawnPhase, mode: GameMode, d: SpawnData = populationData().spawns): number {
+export function chunkTarget(e: GameSpawnEntry, biomeTile: number, phase: SpawnPhase, mode: GameMode, d: SpawnData = populationData().spawns): number {
   if (!e.modes[mode]) return 0;
   const biome = Object.keys(d.biomes).find((b) => d.biomes[b] === biomeTile); const bw = biome ? e.biomeWeights[biome] ?? 0 : 0;
-  const raw = e.densityPerChunk * bw * phaseMultiplier(e, phase) * d.modes[mode].densityMul;
+  const raw = e.density * bw * phaseMultiplier(e, phase) * d.modes[mode].densityMul;
   return Math.min(raw, capFor(e, mode, d).perChunk);
 }
-export function capFor(e: SpawnEntry, mode: GameMode, d: SpawnData = populationData().spawns): { perChunk: number; global: number } {
-  const m = d.modes[mode].capMul; return { perChunk: Math.max(1, Math.floor(e.capPerChunk * m)), global: Math.max(1, Math.floor(e.globalCap * m)) };
+export function capFor(e: GameSpawnEntry, mode: GameMode, d: SpawnData = populationData().spawns): { perChunk: number; global: number } {
+  const m = d.modes[mode].capMul; return { perChunk: Math.max(1, Math.floor(e.perChunkCap * m)), global: Math.max(1, Math.floor(e.globalCap * m)) };
 }
 /** All entries enabled in a mode (game-mode config hook). */
-export function entriesForMode(mode: GameMode, d: SpawnData = populationData().spawns): { category: SpawnCategory; entry: SpawnEntry }[] {
+export function entriesForMode(mode: GameMode, d: SpawnData = populationData().spawns): { category: SpawnCategory; entry: GameSpawnEntry }[] {
   return (["zombies", "animals", "humans"] as const).flatMap((category) => d.tables[category].filter((e) => e.modes[mode]).map((entry) => ({ category, entry })));
 }
 /** Routine activity for a phase. */
@@ -186,4 +193,23 @@ export function rollTraits(archetype: string, rand: () => number, b: BotData = p
 export function scoreUtilities(archetype: string, signals: Record<string, number>, b: BotData = populationData().bots): Record<string, number> {
   const a = b.archetypes[archetype]; if (!a) throw new Error(`unknown bot ${archetype}`);
   return Object.fromEntries(b.actions.map((act) => { const c = a.utility[act]!; let s = c.base; for (const [k, w] of Object.entries(c.inputs)) s += w * (signals[k] ?? 0); return [act, s]; }));
+}
+
+/**
+ * Engine PopulationSpawner rows for a mode, built from entriesForMode + chunkTarget + capFor:
+ * density = best-biome chunkTarget at the peak phase; timeWeights[phase] = that phase's best chunkTarget / density;
+ * tiles = biome tiles with weight > 0; caps from capFor. Deterministic and pure.
+ */
+export function toSpawnEntries(mode: GameMode, d: SpawnData = populationData().spawns): WorldSpawnEntry[] {
+  return entriesForMode(mode, d).map(({ entry: e }) => {
+    const tiles = Object.entries(e.biomeWeights).filter(([, w]) => w > 0).map(([b]) => d.biomes[b]!).sort((a, b) => a - b);
+    const per = Object.fromEntries(DAY_PHASES.map((ph) => [ph, Math.max(0, ...tiles.map((t) => chunkTarget(e, t, ph, mode, d)))])) as PhaseRecord;
+    const density = Math.max(...DAY_PHASES.map((ph) => per[ph]));
+    const timeWeights = Object.fromEntries(DAY_PHASES.map((ph) => [ph, density > 0 ? per[ph] / density : 0])) as PhaseRecord;
+    const cap = capFor(e, mode, d);
+    const out: WorldSpawnEntry = { kind: e.kind, category: e.category, density, timeWeights, tiles, minPlayerDistance: e.minPlayerDistance,
+      perChunkCap: cap.perChunk, globalCap: cap.global, despawnDistance: e.despawnDistance, group: [e.group[0], Math.min(e.group[1], cap.perChunk)] };
+    if (e.maxPlayerDistance !== undefined) out.maxPlayerDistance = e.maxPlayerDistance;
+    return out;
+  });
 }

@@ -561,9 +561,9 @@ See docs/CHARACTER_CUSTOMIZATION.md for the team contract and ADR-080 for the ra
 ## 22. Game Modes, Population and Virtual Players (ADR-090/091)
 - **Modes:** `createGameServer({ mode: "singleplayer" | "multiplayer", virtualPlayers?, population? })`. `game.mode` is the mode string; `game.modeConfig` is `{ mode, humanBots }`. Use `createLocalServer({ mode })` for the browser. The Node server takes `--mode` or `GAME_MODE` and defaults to multiplayer.
 - **Population** (`@engine/world` `PopulationSpawner`, wired by `@engine/gameplay` `installPopulation`):
-  - Tables live in `packages/gameplay/data/population.json`.
+  - Tables live in `packages/gameplay/data/spawns.json (fed through `toSpawnEntries`)`.
   - The host interface is `chunks / viewpoints / phase / tileAt / blocked / spawn / despawn / position / persistent`.
   - `spawn` may return `"pending"` for asynchronous spawns. Human bots use this: the server asks `virtualPlayers.connect(x, y)`, the host connects a client, and `game.markVirtual(clientId)` places it and adopts it.
   - Viewpoints are non-bot players only.
-- **Animals:** the `Animal` component is replicated to all clients and driven by `animalAISystem` (wander, then flee from Survival entities). Defs are in population.json `animals`. The sprite keys `animal_deer/rabbit/chicken` have no art yet.
+- **Animals:** the `Animal` component is replicated to all clients and driven by `animalAISystem` (wander, flee, close-range attack, loot on death). Defs come from ai.json; kinds are the art keys animal_rabbit/deer/boar/wolf/chicken.
 - **Agents:** see docs/AI_AGENTS.md.

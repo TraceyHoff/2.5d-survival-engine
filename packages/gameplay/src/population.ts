@@ -1,32 +1,61 @@
 /**
- * Gameplay side of the ambient population: the spawn table (data/population.json), animal defs + a simple
- * wander/flee AI, and installPopulation(), which wires @engine/world's PopulationSpawner to gameplay rules
+ * Gameplay side of the ambient population: the spawn table (data/spawns.json via toSpawnEntries), animal defs (ai.json) + an
+ * idle/wander/flee/attack AI with loot drops, and installPopulation(), which wires @engine/world's PopulationSpawner to gameplay rules
  * (walkable tiles, no structures, no land claims / safe zones). Authority only. Human bots are spawned through
  * a host callback (virtual players join through the normal client path; see agents.ts / docs/AI_AGENTS.md).
  */
 import { DEFAULT_TICK_HZ, Permissions, Transform, defineResource, type Entity, type World } from "@engine/core";
 import { PopulationSpawner, type BuildingGrid, type ChunkKey, type PhaseKey, type PopulationHost, type SpawnEntry, type PopulationViewpoint } from "@engine/world";
-import raw from "../data/population.json";
-import { Animal, Dead, Health, Survival } from "./components.js";
+import { Anim, AnimState, Animal, Container, ContainerViewers, Dead, Health, LootBag, Survival } from "./components.js";
 import { gameplayDefs, isAuthority } from "./config.js";
 import { indexEntity } from "./spawn.js";
 import { currentPhaseKey, PopulationZombies, spawnZombie } from "./combat/zombies.js";
+import { applyDamage, setAnim } from "./combat/combat.js";
+import { addItem } from "./inventory.js";
 import { structures } from "./building/structure.js";
 import { TerrainRes } from "./world.js";
 import { installSpatialIndex } from "@engine/world";
+import { populationData, resolveBehavior, toSpawnEntries, type AggroMode, type GameMode, type LootEntry } from "./ai/population.js";
 
-export interface AnimalDef { key: string; spriteKey: string; hp: number; speed: number; fleeSpeed: number; fleeRange: number; wanderRadius: number; drops: string[] }
-export interface PopulationData { intervalSeconds: number; spawns: SpawnEntry[]; animals: AnimalDef[] }
-export const POPULATION_DATA: PopulationData = raw as unknown as PopulationData;
-export const animalDefs = (): readonly AnimalDef[] => POPULATION_DATA.animals;
-export const animalKindOf = (key: string): number => { const i = POPULATION_DATA.animals.findIndex((a) => a.key === key); if (i < 0) throw new Error(`unknown animal ${key}`); return i; };
+/** Animal def resolved from ai.json (kind "animal"); key = art key (animal_*), spawn rows in spawns.json. */
+export interface AnimalDef {
+  key: string; spriteKey: string; hp: number; speed: number; fleeSpeed: number; fleeRange: number; fleeHpFrac: number; wanderRadius: number;
+  aggro: { mode: AggroMode; range: number; leashRange: number }; attack: { damage: number; range: number; cooldownSeconds: number } | null;
+  loot: readonly LootEntry[]; drops: string[];
+}
+let animalsCache: AnimalDef[] | undefined;
+export const animalDefs = (): readonly AnimalDef[] => (animalsCache ??= Object.entries(populationData().ai.archetypes)
+  .filter(([, a]) => a.kind === "animal").map(([key]) => {
+    const b = resolveBehavior(key);
+    return { key, spriteKey: key, hp: b.hp, speed: b.speed * 0.45, fleeSpeed: b.speed, fleeRange: b.flee.range, fleeHpFrac: b.flee.hpFrac, wanderRadius: b.wander.radius,
+      aggro: b.aggro, attack: b.attack, loot: b.loot, drops: b.loot.map((l) => l.item) };
+  }));
+export const animalKindOf = (key: string): number => { const i = animalDefs().findIndex((a) => a.key === key); if (i < 0) throw new Error(`unknown animal ${key}`); return i; };
+/** Data-driven defaults (data/spawns.json). */
+export const POPULATION_DATA = { get intervalSeconds(): number { return populationData().spawns.intervalSeconds; }, spawns: (mode: GameMode) => toSpawnEntries(mode) };
 
-export const enum AnimalState { Idle = 0, Wander = 1, Flee = 2 }
+export const enum AnimalState { Idle = 0, Wander = 1, Flee = 2, Attack = 3, Dead = 4 }
+/** Corpse lingers this long (death anim) before the animal entity is removed; loot stays in a LootBag. */
+export const ANIMAL_CORPSE_SECONDS = 3;
+const LOOT_BAG_SECONDS = 120;
 export function spawnAnimal(world: World, kind: number | string, x: number, y: number): Entity {
-  const k = typeof kind === "string" ? animalKindOf(kind) : kind; const def = POPULATION_DATA.animals[k]; if (!def) throw new Error(`unknown animal ${kind}`);
+  const k = typeof kind === "string" ? animalKindOf(kind) : kind; const def = animalDefs()[k]; if (!def) throw new Error(`unknown animal ${kind}`);
   const e = world.create();
-  world.add(e, Transform, { x, y }).add(e, Health, { hp: def.hp, max: def.hp }).add(e, Animal, { kind: k, homeX: x, homeY: y, goalX: x, goalY: y, thinkAt: world.tick });
+  world.add(e, Transform, { x, y }).add(e, Health, { hp: def.hp, max: def.hp }).add(e, Animal, { kind: k, homeX: x, homeY: y, goalX: x, goalY: y, thinkAt: world.tick })
+    .add(e, AnimState, { anim: Anim.Idle, startTick: world.tick });
   indexEntity(world, e); return e;
+}
+/** Roll an animal's loot (deterministic per entity) into an ownerless LootBag at its body. */
+export function dropAnimalLoot(world: World, e: Entity): Entity | undefined {
+  const a = world.get(e, Animal); const def = a && animalDefs()[a.kind]; const t = world.get(e, Transform); if (!def || !t) return undefined;
+  const rng = world.rngFor("animal.loot", e); const defs = gameplayDefs(world);
+  const rolled = def.loot.map((l) => ({ item: defs.itemId(l.item), n: rng.next() < l.chance ? rng.int(l.min, l.max + 1) : 0 })).filter((r) => r.n > 0);
+  if (!rolled.length) return undefined;
+  const bag = world.create();
+  world.add(bag, Transform, { x: t.x, y: t.y, z: t.z }).add(bag, Container, { slotCount: Math.max(4, rolled.length) }).add(bag, ContainerViewers)
+    .add(bag, LootBag, { owner: 0, despawnAtTick: world.tick + LOOT_BAG_SECONDS * DEFAULT_TICK_HZ });
+  for (const r of rolled) addItem(world, bag, r.item, r.n);
+  indexEntity(world, bag); return bag;
 }
 
 /** Tile lookup used by population when the world has no TerrainRes (the server reads ChunkManager directly). */
@@ -35,34 +64,65 @@ export function populationTile(world: World, tx: number, ty: number): number {
   const t = world.getResource(TerrainRes); if (t) return t.tileAt(tx, ty);
   return world.getResource(PopulationTiles)?.(tx, ty) ?? 0;
 }
-/** Animal AI (authority, every tick): idle/wander around home; flee from any living Survival entity in fleeRange. */
+const animAt = (world: World, e: Entity, anim: Anim): void => { if (world.has(e, AnimState) && world.getField(e, AnimState, "anim") !== Anim.Hurt) setAnim(world, e, anim); };
+/**
+ * Animal AI (authority, every tick). Idle/wander around home; flee from living survivors in fleeRange (or once hp <= fleeHpFrac);
+ * aggressive kinds (ai.json aggro) chase + bite targets within aggro.range, leash back past leashRange: hostile = anyone close,
+ * territorial = close to home, defensive = only after being hurt. Death: loot bag + corpse, then removal.
+ */
 export function animalAISystem(world: World, dt: number): void {
   if (!isAuthority(world) || world.isReplaying) return;
-  const index = installSpatialIndex(world); const unwalk = gameplayDefs(world).worldgen.unwalkableTiles;
+  const index = installSpatialIndex(world); const unwalk = gameplayDefs(world).worldgen.unwalkableTiles; const defs = animalDefs();
+  for (const e of [...world.query([Animal, Dead])].sort((x, y) => x - y)) {
+    const a = world.get(e, Animal)!;
+    if (a.state !== AnimalState.Dead) {
+      dropAnimalLoot(world, e); world.setField(e, Animal, "state", AnimalState.Dead);
+      world.setField(e, Animal, "thinkAt", world.tick + Math.round(ANIMAL_CORPSE_SECONDS / dt)); if (world.has(e, AnimState)) setAnim(world, e, Anim.Die);
+    } else if (world.tick >= a.thinkAt) world.destroy(e);
+  }
   for (const e of world.query([Animal, Transform], [Dead])) {
-    const a = world.get(e, Animal)!; const t = world.get(e, Transform)!; const def = POPULATION_DATA.animals[a.kind]; if (!def) continue;
-    let threat: { x: number; y: number; d: number } | undefined;
-    for (const p of index.queryRadius(t.x, t.y, def.fleeRange)) {
+    const a = world.get(e, Animal)!; const t = world.get(e, Transform)!; const def = defs[a.kind]; if (!def) continue;
+    const hp = world.get(e, Health); const hurt = !!hp && hp.hp < hp.max; const scared = !!hp && hp.hp <= hp.max * def.fleeHpFrac && hurt;
+    const aggressive = !!def.attack && def.aggro.mode !== "passive" && !scared;
+    const homeD = Math.hypot(t.x - a.homeX, t.y - a.homeY);
+    let threat: { e: Entity; x: number; y: number; d: number } | undefined;
+    for (const p of index.queryRadius(t.x, t.y, Math.max(def.fleeRange, aggressive ? def.aggro.leashRange : 0))) {
       if (!world.has(p, Survival) || world.has(p, Dead)) continue; const pt = world.get(p, Transform)!; const d = Math.hypot(pt.x - t.x, pt.y - t.y);
-      if (!threat || d < threat.d) threat = { x: pt.x, y: pt.y, d };
+      if (!threat || d < threat.d || (d === threat.d && p < threat.e)) threat = { e: p, x: pt.x, y: pt.y, d };
     }
     let state = a.state, gx = a.goalX, gy = a.goalY;
-    if (threat) { state = AnimalState.Flee; const ang = Math.atan2(t.y - threat.y, t.x - threat.x); gx = t.x + Math.cos(ang) * 4; gy = t.y + Math.sin(ang) * 4; }
-    else if (world.tick >= a.thinkAt || state === AnimalState.Flee) {
+    const engaged = state === AnimalState.Attack;
+    const wants = aggressive && threat && (engaged ? threat.d <= def.aggro.leashRange && homeD <= def.aggro.leashRange * 2
+      : threat.d <= def.aggro.range && (def.aggro.mode === "hostile" || (def.aggro.mode === "territorial" && homeD <= def.aggro.leashRange) || (def.aggro.mode === "defensive" && hurt)));
+    if (wants && threat && def.attack) {
+      state = AnimalState.Attack; gx = threat.x; gy = threat.y;
+      if (threat.d <= def.attack.range + 0.4) {
+        gx = t.x; gy = t.y;
+        if (world.tick >= a.thinkAt) {
+          applyDamage(world, threat.e, def.attack.damage, e); animAt(world, e, Anim.Attack);
+          world.setField(e, Animal, "thinkAt", world.tick + Math.max(1, Math.round(def.attack.cooldownSeconds / dt)));
+        }
+      }
+    } else if (threat && threat.d <= def.fleeRange && (!aggressive || scared || def.aggro.mode === "passive" || !def.attack)) {
+      state = AnimalState.Flee; const ang = Math.atan2(t.y - threat.y, t.x - threat.x); gx = t.x + Math.cos(ang) * 4; gy = t.y + Math.sin(ang) * 4;
+    } else if (scared && state === AnimalState.Flee) { /* keep running to the last goal */ }
+    else if (world.tick >= a.thinkAt || state === AnimalState.Flee || state === AnimalState.Attack) {
       const rng = world.rngFor("animal.think", e);
       if (rng.next() < 0.5) state = AnimalState.Idle;
       else { state = AnimalState.Wander; const ang = rng.range(-Math.PI, Math.PI), r = rng.range(1, def.wanderRadius); gx = a.homeX + Math.cos(ang) * r; gy = a.homeY + Math.sin(ang) * r; }
       world.setField(e, Animal, "thinkAt", world.tick + Math.round(rng.range(2, 6) * DEFAULT_TICK_HZ));
     }
+    let moving = false;
     if (state !== AnimalState.Idle) {
-      const dx = gx - t.x, dy = gy - t.y, d = Math.hypot(dx, dy); const sp = (state === AnimalState.Flee ? def.fleeSpeed : def.speed) * dt;
-      if (d < 0.1) state = AnimalState.Idle;
+      const dx = gx - t.x, dy = gy - t.y, d = Math.hypot(dx, dy); const sp = (state === AnimalState.Wander ? def.speed : def.fleeSpeed) * dt;
+      if (d < 0.1) { if (state !== AnimalState.Attack) state = AnimalState.Idle; }
       else {
         const nx = t.x + (dx / d) * Math.min(sp, d), ny = t.y + (dy / d) * Math.min(sp, d);
-        if (!unwalk.has(populationTile(world, Math.floor(nx), Math.floor(ny)))) { world.set(e, Transform, { x: nx, y: ny, facing: Math.atan2(dy, dx) }); }
+        if (!unwalk.has(populationTile(world, Math.floor(nx), Math.floor(ny)))) { world.set(e, Transform, { x: nx, y: ny, facing: Math.atan2(dy, dx) }); moving = true; }
         else state = AnimalState.Idle;
       }
     }
+    if (world.getField(e, AnimState, "anim") !== Anim.Attack || !moving) animAt(world, e, moving ? (state === AnimalState.Wander ? Anim.Walk : Anim.Run) : state === AnimalState.Attack ? world.getField(e, AnimState, "anim") as Anim : Anim.Idle);
     if (state !== a.state) world.setField(e, Animal, "state", state);
     if (gx !== a.goalX || gy !== a.goalY) { world.setField(e, Animal, "goalX", gx); world.setField(e, Animal, "goalY", gy); }
   }
@@ -76,10 +136,12 @@ export interface InstallPopulationOptions {
   /** Real (human) players: spawn distance + despawn reference. */
   viewpoints: () => PopulationViewpoint[];
   /** Enables the human_bot table entry; spawn is async (virtual players join through the client path). */
-  humanBots?: { spawn(x: number, y: number): boolean; despawn(e: Entity): void } | undefined;
+  humanBots?: { spawn(x: number, y: number, kind: string): boolean; despawn(e: Entity): void } | undefined;
   buildings?: BuildingGrid;
-  /** Override/extend the data table (tests, mods). */
+  /** Override/extend the data table (tests, mods); default toSpawnEntries(mode) from data/spawns.json. */
   spawns?: readonly SpawnEntry[];
+  /** Spawn-table mode; default "sp" when humanBots is set, else "mp". */
+  mode?: GameMode;
   intervalSeconds?: number;
   tickHz?: number;
   /** Tile lookup when the world has no TerrainRes (e.g. the server's ChunkManager.getTile). */
@@ -95,7 +157,7 @@ export function populationBlocked(world: World, tx: number, ty: number, building
 }
 export function installPopulation(world: World, o: InstallPopulationOptions): PopulationSpawner {
   if (o.tileAt) world.setResource(PopulationTiles, o.tileAt);
-  const spawns = (o.spawns ?? POPULATION_DATA.spawns).filter((s) => s.category !== "human_bot" || o.humanBots);
+  const spawns = (o.spawns ?? toSpawnEntries(o.mode ?? (o.humanBots ? "sp" : "mp"))).filter((s) => s.category !== "human_bot" || o.humanBots);
   const host: PopulationHost = {
     chunks: o.chunks, viewpoints: o.viewpoints,
     phase: (): PhaseKey => currentPhaseKey(world),
@@ -104,7 +166,7 @@ export function installPopulation(world: World, o: InstallPopulationOptions): Po
     spawn: (entry, x, y) => {
       if (entry.category === "zombie") { const rng = world.rngFor(`pop.variant:${entry.kind}`); return spawnZombie(world, entry.kind, x, y, rng.int(0, 255)); }
       if (entry.category === "animal") return spawnAnimal(world, entry.kind, x, y);
-      if (entry.category === "human_bot") return o.humanBots?.spawn(x, y) ? "pending" : undefined;
+      if (entry.category === "human_bot") return o.humanBots?.spawn(x, y, entry.kind) ? "pending" : undefined;
       return undefined;
     },
     despawn: (e) => { if (world.isAlive(e)) world.destroy(e); },

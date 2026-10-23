@@ -13,9 +13,9 @@ describe("population data", () => {
   it("shipped data validates", () => {
     expect(validateAiData(ai)).toEqual([]); expect(validateSpawnData(spawns, ai)).toEqual([]); expect(validateBotData(bots, ai)).toEqual([]);
   });
-  it("covers zombies, the four animals and five human archetypes", () => {
-    expect(spawns.tables.zombies.map((e) => e.archetype)).toEqual(["zombie_walker", "zombie_runner", "zombie_brute"]);
-    expect(spawns.tables.animals.map((e) => e.archetype)).toEqual(["rabbit", "deer", "boar", "wolf"]);
+  it("covers zombies, the five animals (art keys) and five human archetypes", () => {
+    expect(spawns.tables.zombies.map((e) => e.kind)).toEqual(["zombie_walker", "zombie_runner", "zombie_brute"]);
+    expect(spawns.tables.animals.map((e) => e.kind)).toEqual(["animal_rabbit", "animal_deer", "animal_boar", "animal_wolf", "animal_chicken"]);
     expect(Object.values(bots.archetypes).map((b) => b.role)).toEqual(["gatherer", "builder", "trader", "raider", "loner"]);
   });
   it("reuses zombies.json stats and phase rates", () => {
@@ -25,27 +25,27 @@ describe("population data", () => {
     expect(phaseMultiplier(spawns.tables.zombies[2]!, "dawn")).toBe(0); // brute weight 0 at dawn
   });
   it("chunk targets honor biome, night weighting, mode and caps", () => {
-    const wolf = spawns.tables.animals.find((e) => e.archetype === "wolf")!;
+    const wolf = spawns.tables.animals.find((e) => e.kind === "animal_wolf")!;
     expect(chunkTarget(wolf, 4, "night", "sp")).toBeGreaterThan(chunkTarget(wolf, 4, "day", "sp"));
     expect(chunkTarget(wolf, 1, "night", "sp")).toBe(0); // water
     const g = spawns.tables.humans[0]!;
     expect(chunkTarget(g, 3, "day", "sp")).toBeGreaterThan(0); expect(chunkTarget(g, 3, "day", "mp")).toBe(0);
     expect(entriesForMode("mp").some((x) => x.category === "humans")).toBe(false);
-    expect(capFor(wolf, "mp").global).toBe(30);
+    expect(capFor(wolf, "mp").global).toBe(15);
   });
   it("rejects bad spawn data", () => {
     const d = clone(spawns) as SpawnData;
-    d.tables.humans[0]!.modes.mp = true; d.tables.animals[0]!.biomeWeights = { lava: 1 }; d.tables.animals[1]!.group = { min: 3, max: 1, spread: 0 };
-    d.tables.animals[2]!.archetype = "dragon";
+    d.tables.humans[0]!.modes.mp = true; d.tables.animals[0]!.biomeWeights = { lava: 1 }; d.tables.animals[1]!.group = [3, 1];
+    d.tables.animals[2]!.kind = "dragon";
     const e = validateSpawnData(d, ai).join("\n");
-    expect(e).toMatch(/disabled in mp/); expect(e).toMatch(/unknown biome lava/); expect(e).toMatch(/deer: group/); expect(e).toMatch(/dragon: no behavior/);
+    expect(e).toMatch(/disabled in mp/); expect(e).toMatch(/unknown biome lava/); expect(e).toMatch(/animal_deer: group/); expect(e).toMatch(/dragon: no behavior/); expect(e).toMatch(/dragon: animal kinds must match art keys/);
     expect(() => loadPopulationData({ spawns: d })).toThrow(/spawns.json invalid/);
   });
   it("rejects bad behavior data", () => {
     const d = clone(ai) as AiData;
-    d.archetypes.wolf!.attack = null; d.archetypes.rabbit!.loot[0]!.item = "unobtainium"; d.archetypes.deer!.flee.hpFrac = 2;
+    d.archetypes.animal_wolf!.attack = null; d.archetypes.animal_rabbit!.loot[0]!.item = "unobtainium"; d.archetypes.animal_deer!.flee.hpFrac = 2;
     const e = validateAiData(d).join("\n");
-    expect(e).toMatch(/wolf: aggressive archetype needs attack/); expect(e).toMatch(/unknown loot item unobtainium/); expect(e).toMatch(/deer: flee/);
+    expect(e).toMatch(/animal_wolf: aggressive archetype needs attack/); expect(e).toMatch(/unknown loot item unobtainium/); expect(e).toMatch(/animal_deer: flee/);
   });
   it("rejects bad bot data", () => {
     const d = clone(bots) as BotData; const g = d.archetypes.bot_gatherer!;
