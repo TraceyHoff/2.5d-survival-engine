@@ -253,6 +253,17 @@ Read it with `docs/ARCHITECTURE.md` (core batches 2 and 3), `docs/DECISIONS.md` 
 - `pieces.json fuelMul` (default 1): each fuel item burns `fuelSeconds × fuelMul` (fireplace 1.5, wood_stove 2.0). `fuelMulOf(world, fire, defs)`.
 - `windsock` (decor, non-solid, `features.windsock`): no gameplay state. `windsockReading(world)` → `{dir, speed, strength 0..1, stage 0..3}` from replicated core `Weather.windDir/windSpeed` (`WINDSOCK_FULL_SPEED` = 12 tiles/s). Art hook: rotate to `dir`, inflation pose by `stage`.
 
+### 6.2 PvP / clan pieces and Burning (Art & Assets pvp_clan proposal)
+Pieces (`pieces.json features`, module `combat/pvp_pieces.ts`, systems `gameplay.contact` every 4 ticks and `gameplay.burning` every fire.checkSeconds, after zombieAI):
+- `barricade_spiked` `features.contact {dps, radius, slowMul, slowSeconds}`: creatures in radius take `DamageCause.Contact` damage and a MoveSpeed Mul slow; the piece's own Tribe is spared.
+- `raid_bell` `features.alarm {radius, cooldownSeconds}`: any piece damaged within radius → reliable `gameplay.RaidAlarm {bell, piece, tribe}` (per-bell cooldown, server memory only).
+- `gate_clan` `features.breachAt` (0.25): at hp/max ≤ breachAt the door goes `DoorState.open = 2` (`DOOR_BREACHED`, Art "breached" state), unlocked, cannot be toggled; repair above the threshold resets it to closed.
+- `gate_clan`, `clan_hall_door` `features.clanLock`: door spawns `lockTribe` = builder tribe.
+- `watchtower` `features.sightBonus` (12): `sightBonusAt(world, x, y)` hook for vision / AOI (not yet consumed — ask Netcode).
+- `banner_wall` `features.clanTint`: BuildPiece.tint = clan palette index.
+
+**Burning** `{lit u8, intensity u8, startTick u32}` (networked, persistent; matches packages/render/src/burning.ts). `ignite(world, e, intensity?)` / `extinguish`. Pieces: only `fire.json flammableTiers`; dps × intensity/255 per check, +growPerCheck, spread within spreadRadius with spreadChance (`world.rngFor("fire.spread", piece)`), rain/storm −rainQuench. Creatures: `DamageCause.Fire`, flame decays by growPerCheck. Events: Ignited/Extinguished (unreliable). STRC does not yet encode Burning (fires are not restored after load).
+
 ## 7. Event delivery (for Netcode)
 
 | Reliable | Unreliable (cosmetic) |

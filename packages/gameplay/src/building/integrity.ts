@@ -11,6 +11,7 @@
  * HP damage is batched per tick (one BuildPiece write per piece per tick) and drives damageStage.
  */
 import { spillStall } from "../economy/stall.js";
+import { onPieceDamaged } from "../combat/pvp_pieces.js";
 import { type Entity, type World } from "@engine/core";
 import { AttachKind, BuildPiece, ContainerViewers, PieceStability, Viewing } from "../components.js";
 import { gameplayDefs, isAuthority } from "../config.js";
@@ -132,6 +133,7 @@ export function structureDamageSystem(world: World): void {
     if (hp <= 0) { destroyPiece(world, e, DestroyCause.Damage); continue; }
     world.set(e, BuildPiece, { hp, damageStage: damageStageFor(world, hp, max) });
     emit(world, PieceDamaged, { piece: e, hp, amount });
+    onPieceDamaged(world, e, hp);
   }
 }
 export function maxHpOf(world: World, e: Entity): number {

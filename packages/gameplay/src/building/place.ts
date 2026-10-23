@@ -206,7 +206,7 @@ export function spawnAttachments(world: World, piece: Entity, def: PieceDef, sn:
     linkAttachment(world, piece, a); markLinked(world, a); indexEntity(world, a); out.push(a);
     return a;
   };
-  if (def.door) world.add(link(AttachKind.Door), DoorState, { open: 0, lockTribe: 0 });
+  if (def.door) world.add(link(AttachKind.Door), DoorState, { open: 0, lockTribe: def.features.clanLock ? world.getField(piece, Tribe, "id") ?? 0 : 0 });
   const specs = emitterSpecs(def);
   if (def.fired) {
     const f = link(AttachKind.Fire);

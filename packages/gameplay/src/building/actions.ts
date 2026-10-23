@@ -12,6 +12,7 @@ import {
 } from "../events.js";
 import { addItem, countItem, exchangeItems, transferItem } from "../inventory.js";
 import { makeNoise } from "../systems/noise.js";
+import { clearBreach, DOOR_BREACHED } from "../combat/pvp_pieces.js";
 import { distance } from "../systems/fuel.js";
 import { destroyPiece, maxHpOf } from "./integrity.js";
 import { pieceOf, resolveAttachment } from "./links.js";
@@ -62,7 +63,7 @@ export function buildActionSystem(world: World, dt: number): void {
         if (last > 0 && world.tick < last + secondsToTicks(b.repairBlockedSeconds, dt)) { fail(BuildFail.RepairBlocked); continue; }
         const missing = 1 - bp.hp / max; const mul = defs.tiers[bp.tier]?.repairMul ?? 0.3;
         if (!exchangeItems(world, e, pieceCost(defs, def, bp.tier, mul * missing), [])) { fail(BuildFail.CannotAfford); continue; }
-        world.set(p, BuildPiece, { hp: max, damageStage: 0 }); emit(world, PieceRepaired, { piece: p, hp: max });
+        world.set(p, BuildPiece, { hp: max, damageStage: 0 }); emit(world, PieceRepaired, { piece: p, hp: max }); clearBreach(world, p);
         break;
       }
       case IntentAction.Demolish: {
@@ -97,6 +98,7 @@ export function doorSystem(world: World): void {
     if (!inReach(world, e, d, defs.building.buildReach)) { fail(BuildFail.OutOfRange); continue; }
     const st = world.get(d, DoorState)!; const tribe = tribeOf(world, e);
     if (st.lockTribe !== 0 && st.lockTribe !== tribe) { fail(BuildFail.Locked); continue; }
+    if (st.open === DOOR_BREACHED) { fail(BuildFail.Locked); continue; } // breached gates stay open until repaired
     if (action === IntentAction.LockDoor) {
       if (tribe === 0) { fail(BuildFail.NoPrivilege); continue; }
       world.setField(d, DoorState, "lockTribe", st.lockTribe ? 0 : tribe); continue;

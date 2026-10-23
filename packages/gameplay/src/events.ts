@@ -55,6 +55,9 @@ export const ContainerClosed = ev<{ container: Entity; entity: Entity; clientId:
 // combat / zombies
 export const AttackSwing = ev<{ entity: Entity; target: Entity }>("gameplay.AttackSwing");
 export const Damaged = ev<{ target: Entity; source: Entity; amount: number; cause: DamageCause }>("gameplay.Damaged");
+export const RaidAlarm = ev<{ bell: Entity; piece: Entity; tribe: number }>("gameplay.RaidAlarm");
+export const Ignited = ev<{ entity: Entity }>("gameplay.Ignited");
+export const Extinguished = ev<{ entity: Entity }>("gameplay.Extinguished");
 export const ZombieSpawned = ev<{ zombie: Entity; kind: number }>("gameplay.ZombieSpawned");
 export const ZombieStateChanged = ev<{ zombie: Entity; state: ZState }>("gameplay.ZombieStateChanged");
 
@@ -62,7 +65,8 @@ export const ZombieStateChanged = ev<{ zombie: Entity; state: ZState }>("gamepla
 export const EVENT_RELIABILITY: Readonly<Record<string, "reliable" | "unreliable">> = {
   "gameplay.PiecePlaced": "reliable", "gameplay.PieceDestroyed": "reliable", "gameplay.PieceUpgraded": "reliable", "gameplay.Died": "reliable",
   "gameplay.CraftCompleted": "reliable", "gameplay.ItemGathered": "reliable", "gameplay.ContainerOpened": "reliable", "gameplay.ContainerClosed": "reliable",
-  "gameplay.BuildFailed": "reliable", "gameplay.ZombieSpawned": "reliable",
+  "gameplay.BuildFailed": "reliable", "gameplay.ZombieSpawned": "reliable", "gameplay.RaidAlarm": "reliable",
+  "gameplay.Ignited": "unreliable", "gameplay.Extinguished": "unreliable",
   "gameplay.GatherSwing": "unreliable", "gameplay.AttackSwing": "unreliable", "gameplay.PieceDamaged": "unreliable", "gameplay.DoorToggled": "unreliable",
   "gameplay.ZombieStateChanged": "unreliable", "gameplay.Damaged": "unreliable",
 };

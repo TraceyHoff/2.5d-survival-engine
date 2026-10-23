@@ -24,7 +24,7 @@ export const Survival = defineComponent("Survival", {
   staminaDelayTicks: "u16", // remaining regen delay (replicates as u16 ticks, per Netcode)
 }, { networked: true });
 
-export const enum DamageCause { None = 0, Starvation = 1, Dehydration = 2, Hypothermia = 3, Hyperthermia = 4, Combat = 5, Sunlight = 6 }
+export const enum DamageCause { None = 0, Starvation = 1, Dehydration = 2, Hypothermia = 3, Hyperthermia = 4, Combat = 5, Sunlight = 6, Fire = 7, Contact = 8 }
 export const VitalsState = defineComponent("VitalsState", { lastDamageCause: "u8" });
 /** Buff/debuff stat ids (core modifier stacks; 1..255, append only). */
 export const enum Stat { HungerRate = 1, ThirstRate = 2, StaminaRegen = 3, HealthRegen = 4, Insulation = 5, MoveSpeed = 6 }
@@ -159,6 +159,12 @@ export const StallLedger = defineComponent("StallLedger", {
 }, { networked: true, persistent: true });
 
 /**
+ * Burning status (render contract, packages/render/src/burning.ts): on BuildPiece entities (structure fire,
+ * data/fire.json) and creatures (damage over time). lit 0/1, intensity 0..255, startTick = ignition tick.
+ */
+export const Burning = defineComponent("Burning", { lit: "u8", intensity: "u8", startTick: "u32" }, { networked: true, persistent: true });
+
+/**
  * The shared registration module: registration order = component ids on every peer (append only!).
  * Includes engine-provided gameplay-facing components (world Emitter, the Buffs modifier stack).
  */
@@ -170,4 +176,5 @@ export const GAMEPLAY_COMPONENTS = [
   Attacker, Zombie, ZombieBrain, AnimState, NoiseLevel, Latency, PieceLink, Wetness, BodyTemp, ChunkSurface,
   GroupSummary, CombatTag, LootBag,
   StallHeader, Listings, StallLedger,
+  Burning,
 ] as const;
