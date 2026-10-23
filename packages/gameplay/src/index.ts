@@ -45,3 +45,4 @@ export * from "./net_hooks.js";
 export * from "./input_hooks.js";
 export * from "./population.js";
 export * from "./agents.js";
+export * from "./systems/craft_queue.js";

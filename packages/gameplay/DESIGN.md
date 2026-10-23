@@ -381,3 +381,13 @@ Contact spikes are still found by query, but each spike only checks the victims 
   - `touchPickRadiusTiles(dpr, tilePx, zoom)` covers a 48dp hit target.
   - `touchGhostPoint` moves the placement ghost touchGhostOffsetTiles along the aim direction, upward by default, so the finger doesn't cover it.
 - Charge, Crouch, Jump and Reload have bits but no gameplay effect yet. Art & Assets will add the skins.
+
+## 15. Slice 5: queued crafting on core JobQueues (`src/systems/craft_queue.ts`)
+- Single timed crafts (`CraftCmd`/Crafter, predicted on the client) are unchanged. Queued crafting is server-authoritative. Recipes come from gameplay's own loader (`gameplayDefs().recipes`).
+- `CraftQueue` = core `defineJobQueue("gameplay.CraftQueue", 4)`. It is networked and persistent, and appended at the end of GAMEPLAY_COMPONENTS. `installCraftQueue(world, handlers?)` installs the core Scheduler and JobQueues, plus the simulation system `gameplay.craftQueue`.
+- Enqueue checks recipe, station, count (1..50), queue space, and ingredients (dry run). It then removes ingredients x count in one `transaction()` and enqueues.
+  Cancel refunds the remaining count in one transaction. On completion the output is added in a transaction with crafterId provenance.
+- Each tick the system pauses the head when the station is out of range, or when the next output won't fit one tick before it is due. It resumes the head when that clears.
+  If an add still fails at completion, the output waits in the `CraftOwed` resource, which is NOT persisted (known gap).
+- Commands use core `installCommandHandlers`: `gameplay.queueCraft {recipe, count}` and `gameplay.cancelQueuedCraft {slot}`. They are registered after PVP_COMMANDS and rejected with reasons via core CommandRejected.
+- After a load, the server app must call `world.resource(CraftQueuesRes).rearmAll()`.

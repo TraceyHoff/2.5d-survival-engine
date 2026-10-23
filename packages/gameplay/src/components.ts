@@ -4,7 +4,7 @@
  * Replication scope/class per component lives in replication.ts (net applies it); persistence in
  * building/persist.ts. Render-facing fields are numeric references only (Art & Assets owns visuals).
  */
-import { defineComponent, defineModifierStack, type ComponentDef, type FieldSpec, type FieldType } from "@engine/core";
+import { defineComponent, defineJobQueue, defineModifierStack, type ComponentDef, type FieldSpec, type FieldType } from "@engine/core";
 import { Emitter } from "@engine/world";
 export { Emitter };
 
@@ -178,6 +178,8 @@ export const Burning = defineComponent("Burning", { lit: "u8", intensity: "u8", 
 /** Ambient wildlife (population spawner). kind = index into population.json animals. Not persistent: respawned by density. */
 export const Animal = defineComponent("Animal", { kind: "u8", state: "u8", homeX: "f32", homeY: "f32", goalX: "f32", goalY: "f32", thinkAt: "u32" }, { networked: true });
 
+/** Slice 5 queued crafting (core JobQueue layout, 4 slots; see systems/craft_queue.ts). */
+export const CraftQueue = defineJobQueue("gameplay.CraftQueue", 4);
 export const GAMEPLAY_COMPONENTS = [
   Emitter, Buffs,
   Health, ResourceNode, Survival, VitalsState, Exposure, Dead,
@@ -190,4 +192,5 @@ export const GAMEPLAY_COMPONENTS = [
   StallSign,
   Wardrobe,
   Animal,
+  CraftQueue,
 ] as const;
