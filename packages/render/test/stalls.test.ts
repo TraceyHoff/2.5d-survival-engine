@@ -88,8 +88,9 @@ describe("stall logic", () => {
       if (fr.length === 4) expect(p.flipX).toBe(false);
     }
     // synthetic unique4: same art row count 4 -> no flip at any rotation
-    const u = structuredClone(stalls) as unknown as { sprites: { key: string; building?: { frames: unknown[] } }[] };
-    for (const sp of u.sprites) if (sp.building && sp.building.frames.length === 2) sp.building.frames = [sp.building.frames[0], sp.building.frames[1], sp.building.frames[0], sp.building.frames[1]];
+    const u = structuredClone(stalls) as unknown as { sprites: { key: string; building?: { frames: unknown[]; states?: Record<string, unknown[]> } }[] };
+    const four = (rows: unknown[]) => (rows.length === 2 ? [rows[0], rows[1], rows[0], rows[1]] : rows);
+    for (const sp of u.sprites) if (sp.building) { sp.building.frames = four(sp.building.frames); for (const k in sp.building.states ?? {}) sp.building.states![k] = four(sp.building.states![k]!); }
     const r4 = loadManifest(mergeManifests([{ name: "u4", manifest: u as unknown as ManifestJson }, { name: "pvp_clan", manifest: pvp }]).manifest).registry;
     const s4 = [...r4.allSprites()].find((x) => x.building && x.attach?.slot0)!;
     for (let r = 0; r < 4; r++) expect(stallPoints(r4, s4.id, r, 0, stallStateIndex(r4, s4.id, 1)).flipX).toBe(false);
