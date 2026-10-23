@@ -99,6 +99,8 @@ interface Entry { entity: number; version: number; bucket: number; anim: string;
 export class LayerCache {
   private m = new Map<number, Entry>();
   /** resolveLayers calls since creation (stat / tests) */ resolves = 0;
+  /** Called when an entry's layer set changes or is dropped (texture page refcounts: AtlasManager.retainSprite/releaseSprite). */
+  onLayers: ((prev: readonly CachedLayer[] | null, next: readonly CachedLayer[] | null) => void) | null = null;
   constructor(public binding: AppearanceBinding) {}
   get size(): number { return this.m.size; }
   /** Layers for entity (index i, handle e). `version` = its Appearance.version (u16, wrapping: equality only, never
@@ -108,12 +110,13 @@ export class LayerCache {
     if (en && en.entity === e && en.version === version && en.bucket === bucket && en.anim === anim && en.expr === expr) return en.layers;
     this.resolves++;
     const layers = toCachedLayers(this.binding.resolve(read(), facing, opts), this.binding);
+    this.onLayers?.(en ? en.layers : null, layers);
     if (!en) { en = { entity: e, version, bucket, anim, expr, layers }; this.m.set(i, en); } else { en.entity = e; en.version = version; en.bucket = bucket; en.anim = anim; en.expr = expr; en.layers = layers; }
     return layers;
   }
   /** Drop entries not seen since `keep` returned false (call occasionally to free despawned entities). */
-  prune(alive: (entity: number) => boolean): void { for (const [i, en] of this.m) if (!alive(en.entity)) this.m.delete(i); }
-  clear(): void { this.m.clear(); }
+  prune(alive: (entity: number) => boolean): void { for (const [i, en] of this.m) if (!alive(en.entity)) { this.onLayers?.(en.layers, null); this.m.delete(i); } }
+  clear(): void { if (this.onLayers) for (const en of this.m.values()) this.onLayers(en.layers, null); this.m.clear(); }
 }
 
 /**

@@ -18,7 +18,7 @@ const sel = (label: string, opts: [number, string][], cur: number, on: (v: numbe
   const d = add(`<label>${label}</label><select>${opts.map(([v, n]) => `<option value="${v}"${v === cur ? " selected" : ""}>${n}</option>`).join("")}</select>`);
   d.querySelector("select")!.onchange = (ev) => on(Number((ev.target as HTMLSelectElement).value));
 };
-const edit = (f: (a: ReturnType<typeof pv.getAppearance>) => void): void => { const a = pv.getAppearance(); f(a); pv.setAppearance(a); };
+const edit = (f: (a: ReturnType<typeof pv.getAppearance>) => void): void => { const a = pv.getAppearance(); f(a); void pv.setAppearance(a); };
 const a0 = pv.getAppearance();
 sel("Body", [[0, "Body A"], [1, "Body B"]], a0.bodyType, (v) => edit((a) => { a.bodyType = v; }));
 sel("Skin", cat.skinTones.map((c, i) => [i, c.key]), a0.skinTone, (v) => edit((a) => { a.skinTone = v; }));

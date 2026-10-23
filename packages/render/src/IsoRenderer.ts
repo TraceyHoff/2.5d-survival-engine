@@ -71,6 +71,8 @@ export class IsoRenderer implements Renderer {
   readonly iso: IsoConfig;
   readonly zFactor: number;
   readonly atlas: AtlasManager;
+  /** Atlas VRAM accounting: bytes resident / reserved pool / streamed wearable pages vs capabilities.textureBudgetMB, page-ins, evictions. */
+  get vram(): AtlasManager["vramStats"] { return this.atlas.vramStats; }
   /** Device capabilities and every fallback chosen (formats, precision, limits, DPR cap, texture budget). */
   readonly capabilities: RenderCapabilities;
   /** Runtime errors for the client overlay: context-lost / context-restored / oom. After "context-restored" recreate the renderer. */

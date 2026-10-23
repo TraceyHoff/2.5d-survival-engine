@@ -1,0 +1,186 @@
+{
+  "before": {
+    "note": "SwiftShader headless Chromium, 1280x720, real customization pack",
+    "characters": 160,
+    "cz_streaming": {
+      "atlas": {
+        "layers": 5,
+        "layerSize": 2048,
+        "downscale": 0.25,
+        "gpuMB": 533,
+        "atlases": 300,
+        "frames": 61397,
+        "sprites": 963,
+        "version": 1
+      },
+      "vram": null,
+      "chars": {
+        "characters": 160,
+        "layerInstances": 0,
+        "resolves": 4800,
+        "cached": 160
+      },
+      "textureBudgetMB": 768,
+      "lowEnd": false
+    },
+    "cz_lowend": {
+      "atlas": {
+        "layers": 19,
+        "layerSize": 1024,
+        "downscale": 0.25,
+        "gpuMB": 507,
+        "atlases": 300,
+        "frames": 61397,
+        "sprites": 963,
+        "version": 1
+      },
+      "vram": null,
+      "chars": {
+        "characters": 160,
+        "layerInstances": 0,
+        "resolves": 3840,
+        "cached": 160
+      },
+      "textureBudgetMB": 160,
+      "lowEnd": true
+    },
+    "cz_preview": {
+      "atlas": {
+        "layers": 5,
+        "layerSize": 2048,
+        "downscale": 0.25,
+        "gpuMB": 533,
+        "atlases": 300,
+        "frames": 61397,
+        "sprites": 963,
+        "version": 1
+      },
+      "vram": null,
+      "chars": {
+        "characters": 1,
+        "layerInstances": 0,
+        "resolves": 4,
+        "cached": 1
+      }
+    },
+    "errors": []
+  },
+  "after": {
+    "note": "SwiftShader headless Chromium, 1280x720, real customization pack",
+    "characters": 160,
+    "cz_streaming": {
+      "atlas": {
+        "layers": 5,
+        "layerSize": 2048,
+        "downscale": 0.25,
+        "gpuMB": 533,
+        "atlases": 300,
+        "frames": 61397,
+        "sprites": 963,
+        "version": 1
+      },
+      "vram": {
+        "budgetMB": 768,
+        "residentMB": 106.7,
+        "streamedMB": 132,
+        "reservedMB": 426.7,
+        "totalMB": 533.3,
+        "pagesResident": 198,
+        "pageSlots": 224,
+        "pageIns": 198,
+        "evictions": 0,
+        "pending": 9,
+        "misses": 11336,
+        "withinBudget": true,
+        "poolScale": 0.25,
+        "layerSize": 2048,
+        "downscale": 0.25
+      },
+      "chars": {
+        "characters": 160,
+        "layerInstances": 1176,
+        "resolves": 7360,
+        "cached": 160
+      },
+      "textureBudgetMB": 768,
+      "lowEnd": false
+    },
+    "cz_lowend": {
+      "atlas": {
+        "layers": 6,
+        "layerSize": 1024,
+        "downscale": 0.25,
+        "gpuMB": 160,
+        "atlases": 300,
+        "frames": 61397,
+        "sprites": 963,
+        "version": 1
+      },
+      "vram": {
+        "budgetMB": 160,
+        "residentMB": 133.3,
+        "streamedMB": 8,
+        "reservedMB": 26.7,
+        "totalMB": 160,
+        "pagesResident": 12,
+        "pageSlots": 12,
+        "pageIns": 12,
+        "evictions": 0,
+        "pending": 0,
+        "misses": 53371,
+        "withinBudget": true,
+        "poolScale": 0.25,
+        "layerSize": 1024,
+        "downscale": 0.25
+      },
+      "chars": {
+        "characters": 160,
+        "layerInstances": 103,
+        "resolves": 15680,
+        "cached": 160
+      },
+      "textureBudgetMB": 160,
+      "lowEnd": true
+    },
+    "cz_preview": {
+      "select": {
+        "pageInsOnSelect": 4,
+        "ms": 120
+      },
+      "atlas": {
+        "layers": 7,
+        "layerSize": 2048,
+        "downscale": 0.5,
+        "gpuMB": 747,
+        "atlases": 300,
+        "frames": 61397,
+        "sprites": 963,
+        "version": 1
+      },
+      "vram": {
+        "budgetMB": 768,
+        "residentMB": 533.3,
+        "streamedMB": 32,
+        "reservedMB": 213.3,
+        "totalMB": 746.7,
+        "pagesResident": 12,
+        "pageSlots": 24,
+        "pageIns": 12,
+        "evictions": 0,
+        "pending": 0,
+        "misses": 0,
+        "withinBudget": true,
+        "poolScale": 0.5,
+        "layerSize": 2048,
+        "downscale": 0.5
+      },
+      "chars": {
+        "characters": 1,
+        "layerInstances": 8,
+        "resolves": 2,
+        "cached": 1
+      }
+    },
+    "errors": []
+  }
+}

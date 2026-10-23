@@ -38,6 +38,7 @@ async function main(): Promise<void> {
   { const w = world.env(Weather); w.windDir = num("windDir", 0.6); w.windSpeed = num("wind", wKind === 2 ? 14 : wKind ? 6 : 2); }
 
   const renderer = new IsoRenderer(canvas, { preserveDrawingBuffer: q.has("bench") || q.has("shot") });
+  (window as unknown as { __renderer: unknown }).__renderer = renderer;
   await renderer.atlas.setRegistry(content.registry, content.sources);
   renderer.atlas.setSway({ ...(content.origin === "sample" ? { tree: { amp: 4, freq: 0.35, stiffness: 0.5 }, berry_bush: { amp: 2, freq: 0.6, stiffness: 0.3 } } : {}), ...content.sway }); // pack: SpriteDef.sway (read by AtlasManager); sample fixture: DEBUG defaults
   if (q.get("look") !== "0") { const look = await renderer.loadLook(q.get("look") ?? "/@art/survival_fx/render_tuning.json"); if (look.warnings.length) console.warn("render tuning:", look.warnings); lookInfo = look; }
@@ -148,7 +149,7 @@ async function main(): Promise<void> {
       else { bench.frames++; bench.sumMs += dtMs; bench.maxMs = Math.max(bench.maxMs, dtMs); bench.sprites = st.sprites; bench.drawCalls = st.drawCalls; }
       if (now - bench.start >= bench.durationMs) bench.done = true;
     }
-    window.__iso = { capabilities: renderer.capabilities, atlasStats: renderer.atlas.stats, held: renderer.heldStats, chars: renderer.characterStats,
+    window.__iso = { capabilities: renderer.capabilities, atlasStats: renderer.atlas.stats, vram: renderer.vram, held: renderer.heldStats, chars: renderer.characterStats,
       ready: world.tick > 2, frameMs: lastFrameMs, fps: fpsAvg, stats: { ...st }, totalSprites: scene.spriteCount, pieces: scene.pieceCount, origin: content.origin, look: lookInfo, surface: { ...renderer.surface },
       bench: bench.done ? { frames: bench.frames, avgFps: (bench.frames * 1000) / bench.sumMs, avgFrameMs: bench.sumMs / bench.frames, maxFrameMs: bench.maxMs, visibleSprites: bench.sprites, drawCalls: bench.drawCalls } : null,
     };

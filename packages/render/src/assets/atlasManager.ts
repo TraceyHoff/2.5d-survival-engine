@@ -16,6 +16,12 @@
  *   atlases supply a RectTable (see texturePacker.ts).
  * - Precomputes per-sprite animation tables at load time so render-time resolution is array math
  *   (never string lookups).
+ * - Wearable streaming (VRAM budget): atlases used only by cosmetics wearables are "lazy". They are not loaded at
+ *   rebuild; a slot pool (extra layers of the same arrays, sized from the budget left after the resident art) holds
+ *   the pages in use. pageReady(sprite) requests a page (fetch + createImageBitmap, resized to the pool scale, own
+ *   mip chain) and returns false until it is uploaded, so callers draw a fallback (body only). Pages are
+ *   refcounted by LayerCache entries (retainSprite/releaseSprite) and evicted LRU (unreferenced first). Budget and
+ *   bytes are tracked by gl/vram.ts VramAccountant (vramStats). Mips are counted in every estimate.
  * - Runtime switching: swapAtlas()/setTheme() replace atlas images (same layout & sprite keys -> same
  *   numeric ids), so ECS data is untouched. Old images are released (ref-counted) after the swap.
  */
@@ -23,6 +29,7 @@ import { AssetRegistry, type Animation, type Atlas, type FrameRef } from "@engin
 import { STATUS_TINTS, TINT_MODE_INDEX, type StatusTint, type StatusTintName } from "../style.js";
 import type { AssetManager } from "@engine/core";
 import type { RectTable } from "./texturePacker.js";
+import { PageLRU, VramAccountant, rgbaBytes, type VramStats } from "../gl/vram.js";
 
 /** Held-item hand anchor of one character frame (Art hands.json). */
 export interface HandAnchor { x: number; y: number; angle: number; len?: number; behind: boolean }
@@ -41,8 +48,10 @@ export const STATE_ANIMS: readonly (readonly string[])[] = [
   ["idle"], ["walk"], ["run", "walk"], ["attack"], ["hit", "hurt", "idle"], ["death", "idle"], ["shamble", "walk"],
   // 7 crawl, 8 feed (gameplay AnimState; zombie_*_crawl / zombie_*_feed in pack wave 2)
   ["crawl", "shamble", "walk"], ["feed", "attack", "idle"],
+  // 9 eat, 10 graze (animals: manifest anims `eat` / `graze`, each falls back to the other, then idle)
+  ["eat", "graze", "idle"], ["graze", "eat", "idle"],
 ];
-export const enum AnimStateId { Idle = 0, Walk = 1, Run = 2, Attack = 3, Hit = 4, Death = 5, Shamble = 6, Crawl = 7, Feed = 8 }
+export const enum AnimStateId { Idle = 0, Walk = 1, Run = 2, Attack = 3, Hit = 4, Death = 5, Shamble = 6, Crawl = 7, Feed = 8, Eat = 9, Graze = 10 }
 
 interface SpriteRT {
   atlasIdx: number; anchorX: number; anchorY: number;
@@ -55,7 +64,11 @@ interface SpriteRT {
   building?: { fw: number; fh: number; layer: number; frames: number[][] };
 }
 interface AtlasRT { key: string; id: number; source: AtlasSource; img: ImageLike | null; emis: ImageLike | null; scale: number;
-  masks: Partial<Record<MaskName, ImageLike>>; maskUrls: Partial<Record<MaskName, string>>; base: number; count: number; fw: number; fh: number; cols: number; layer: number; px: number; py: number }
+  masks: Partial<Record<MaskName, ImageLike>>; maskUrls: Partial<Record<MaskName, string>>; base: number; count: number; fw: number; fh: number; cols: number; layer: number; px: number; py: number;
+  /** streamed wearable page: not loaded at rebuild (see header); w1/h1 = 1x page size */ lazy?: { w1: number; h1: number; state: 0 | 1 | 2 } }
+interface Pool { k: number; sw: number; sh: number; cols: number; perLayer: number; first: number; layers: number; lru: PageLRU<string>; slotBytes: number; tint: boolean }
+/** Minimum streamed pages kept resident at once (working set: ~8 wearables x a few distinct outfits on screen). */
+const POOL_MIN_SLOTS_DESKTOP = 48, POOL_MIN_SLOTS_LOWMEM = 24, POOL_GAP = 4, PAGE_CONCURRENCY = 6, POOL_PROTECT_FRAMES = 90;
 
 export interface SwayParams { amp: number; freq: number; stiffness: number }
 /** Read optional per-sprite `sway: {amp, freq, stiffness}` blocks from raw manifest JSON (loadManifest ignores them). */
@@ -161,6 +174,18 @@ export class AtlasManager {
   static readonly IMAGE_KIND = "render:image";
   private swayByKey = new Map<string, SwayParams>();
   private swayById: (Float32Array | undefined)[] = [];
+  /** Stream cosmetics-only atlases through the page pool (false = load everything at rebuild, the old behaviour). */
+  streamWearables = true;
+  /** Pool sizing (set before setRegistry). Default: the best scale that holds every streamed page, else the best
+   *  scale holding minSlots. A creator preview wants sharp art and few pages: { coverAll: false, minSlots: 16 }. */
+  poolPolicy: { coverAll: boolean; minSlots?: number } = { coverAll: true };
+  /** VRAM accountant (bytes resident / budget / page-ins / evictions); see vramStats. */
+  readonly vram: VramAccountant;
+  private pool: Pool | null = null;
+  private table: Float32Array = new Float32Array(0); private tableDirty0 = -1; private tableDirty1 = -1;
+  private tintRowMap = new Map<number, number>();
+  private frame = 1; private gen = 0; private inflight = 0; private queue: AtlasRT[] = [];
+  private loader: (url: string) => Promise<ImageLike>;
 
   /** Per-sprite wind sway overrides {amp px at frame top, freq Hz, stiffness 0..1 (higher = stiffer)}; SpriteDef.sway is the default source. */
   setSway(table: Record<string, SwayParams>): void { for (const [k, v] of Object.entries(table)) this.swayByKey.set(k, v); this.resolveSway(); }
@@ -185,6 +210,8 @@ export class AtlasManager {
     const max = gl.getParameter(gl.MAX_TEXTURE_SIZE) as number;
     this.layerSize = Math.min(opts.layerSize ?? 2048, max || 2048);
     this.textureBudgetMB = opts.textureBudgetMB ?? 768;
+    this.vram = new VramAccountant(this.textureBudgetMB * 1048576);
+    this.loader = opts.imageLoader ?? defaultImageLoader;
     this.maxLayers = gl.getParameter(gl.MAX_ARRAY_TEXTURE_LAYERS) as number;
     assets.registerLoader<ImageLike>(AtlasManager.IMAGE_KIND, opts.imageLoader ?? defaultImageLoader);
   }
@@ -217,7 +244,7 @@ export class AtlasManager {
     const s = scale >= 1.5 ? 2 : 1; if (s === this.pageScale) return false;
     this.pageScale = s;
     if (!this.registry) return false;
-    const changes = this.atlases.some((a) => this.pickScale(this.registry!.atlases.get(a.key)!, a.source) !== a.scale / this.downscale);
+    const changes = this.atlases.some((a) => !a.lazy && this.pickScale(this.registry!.atlases.get(a.key)!, a.source) !== a.scale / this.downscale);
     if (!changes) return false;
     await this.rebuild(this.registry, new Map(this.atlases.map((a) => [a.key, a.source] as [string, AtlasSource])));
     return true;
@@ -252,9 +279,16 @@ export class AtlasManager {
       for (const u of c === undefined ? [] : Array.isArray(c) ? c : [c]) { const im = await loadOpt(u); if (im) return [im, u]; }
       return [null, undefined];
     };
-    const list: AtlasRT[] = [];
+    const list: AtlasRT[] = []; const lazyList: AtlasRT[] = [];
+    const lazyKeys = this.streamWearables ? wearableOnlyAtlases(registry) : new Set<string>();
     await Promise.all([...registry.atlases.values()].map(async (a) => {
       const src = sources.get(a.key); if (!src) throw new Error(`no image source for atlas "${a.key}"`);
+      if (lazyKeys.has(a.key)) {
+        let w1 = a.columns * a.frameW, h1 = a.rows * a.frameH;
+        if (src.rects?.length) { w1 = 0; h1 = 0; for (const r of src.rects) { w1 = Math.max(w1, r.x + r.w); h1 = Math.max(h1, r.y + r.h); } }
+        lazyList.push({ key: a.key, id: a.id, source: src, img: null, emis: null, scale: 1, masks: {}, maskUrls: {}, base: 0, count: src.rects ? src.rects.length : a.columns * a.rows, fw: a.frameW, fh: a.frameH, cols: a.columns, layer: -1, px: 0, py: 0, lazy: { w1, h1, state: 0 } });
+        return;
+      }
       let scale = this.pickScale(a, src);
       const pageUrl = scale === 1 ? src.url : src.pages!.find((p) => p.scale === scale)!.url;
       let [img, emis] = await Promise.all([loadOpt(pageUrl), loadOpt(src.emissiveUrl)]);
@@ -266,16 +300,22 @@ export class AtlasManager {
       for (const m of Object.keys(masks) as MaskName[]) { const f = await fitToPage(masks[m]!, img.width, img.height); if (f) masks[m] = f; else { delete masks[m]; delete maskUrls[m]; } }
       list.push({ key: a.key, id: a.id, source: src, img, emis, scale, masks, maskUrls, base: 0, count: src.rects ? src.rects.length : a.columns * a.rows, fw: a.frameW, fh: a.frameH, cols: a.columns, layer: 0, px: 0, py: 0 });
     }));
-    list.sort((a, b) => a.id - b.id);
-    await this.fitBudget(list);
-    this.pack(list);
-    this.upload(list, this.frameTintRows(registry, list));
+    list.sort((a, b) => a.id - b.id); lazyList.sort((a, b) => a.id - b.id);
+    this.gen++; this.queue = []; this.pool = null;
+    const minSlots = Math.min(lazyList.length, this.poolPolicy.minSlots ?? (this.textureBudgetMB <= 256 ? POOL_MIN_SLOTS_LOWMEM : POOL_MIN_SLOTS_DESKTOP));
+    const reserve = lazyList.length ? this.poolReserveBytes(lazyList, minSlots, list) : 0;
+    await this.fitBudget(list, reserve);
+    const layout = (): void => { this.pack(list); this.planPool(lazyList, minSlots, list); let b = this.totalFrames; for (const a of lazyList) { a.base = b; b += a.count; } this.totalFrames = b; };
+    layout();
+    const all = [...list, ...lazyList];
+    this.upload(list, this.frameTintRows(registry, all), all);
     if (this.gl.getError() === this.gl.OUT_OF_MEMORY && this.downscale > 0.25) {
       // the driver refused the arrays: halve again and re-upload (once per step)
       const msg = `atlas upload out of GPU memory at ${this.gpuMB()} MB (downscale ${this.downscale}); retrying at ${this.downscale / 2}`;
       console.warn("[render] " + msg); this.onError?.({ kind: "oom", message: msg });
-      await scaleList(list, 0.5); this.downscale /= 2; this.pack(list); this.upload(list, this.frameTintRows(registry, list));
+      await scaleList(list, 0.5); this.downscale /= 2; layout(); this.upload(list, this.frameTintRows(registry, all), all);
     }
+    list.push(...lazyList);
     // sprite runtime tables
     const sprites: (SpriteRT | undefined)[] = [];
     for (const s of registry.allSprites()) {
@@ -307,12 +347,65 @@ export class AtlasManager {
   private gpuMB(): number { return Math.round(this.gpuBytes / 1048576); }
   /** Estimated bytes of the atlas arrays for a packing (colour + emissive + present masks, full mip chains). */
   private estimate(list: AtlasRT[]): number {
-    const arrays = 1 + (list.some((a) => a.emis) ? 1 : 0) + (["sheen", "sway", "tintmask"] as const).filter((m) => list.some((a) => a.masks[m])).length;
-    return this.layerSize * this.layerSize * 4 * (4 / 3) * this.layers * arrays;
+    return this.layerBytes(list) * this.layers;
+  }
+  /** Arrays allocated for a list (colour + emissive + masks present; pool pages add a tint mask array). */
+  private arrayCount(list: AtlasRT[], poolTint = !!this.pool?.tint): number {
+    return 1 + (list.some((a) => a.emis) ? 1 : 0) + (["sheen", "sway"] as const).filter((m) => list.some((a) => a.masks[m])).length + (poolTint || list.some((a) => a.masks.tintmask) ? 1 : 0);
+  }
+  /** Bytes of one layer across every allocated array, full mip chain included. */
+  private layerBytes(list: AtlasRT[], poolTint?: boolean): number { return rgbaBytes(this.layerSize, this.layerSize, true) * this.arrayCount(list, poolTint); }
+  private poolGeom(lazy: AtlasRT[], k: number): { sw: number; sh: number; cols: number; perLayer: number } {
+    const S = this.layerSize; const w1 = Math.max(...lazy.map((a) => a.lazy!.w1)), h1 = Math.max(...lazy.map((a) => a.lazy!.h1));
+    const sw = Math.max(1, Math.ceil(w1 * k)), sh = Math.max(1, Math.ceil(h1 * k));
+    const cols = Math.floor((S + POOL_GAP) / (sw + POOL_GAP)), rows = Math.floor((S + POOL_GAP) / (sh + POOL_GAP));
+    return { sw, sh, cols, perLayer: cols * rows };
+  }
+  /** Pool scales to try, best first: the 2x page (when the quality tier asks for it), 1x, 0.5, 0.25 (low-end layer size shrinks these too). */
+  private poolScales(lazy: AtlasRT[]): number[] {
+    const has2 = this.pageScale >= 2 && lazy.every((a) => a.source.pages?.some((p) => p.scale === 2));
+    return (has2 ? [2, 1, 0.5, 0.25] : [1, 0.5, 0.25]).filter((k) => this.poolGeom(lazy, k).perLayer > 0);
+  }
+  /** Budget held back for the pool before the resident art is downscaled: minSlots at the smallest workable scale. */
+  private poolReserveBytes(lazy: AtlasRT[], minSlots: number, resident: AtlasRT[]): number {
+    const tint = lazy.some((a) => a.source.masks?.tintmask);
+    const ks = this.poolScales(lazy); if (!ks.length) return 0;
+    const g = this.poolGeom(lazy, ks.includes(0.5) ? 0.5 : ks[ks.length - 1]!);
+    return Math.ceil(minSlots / g.perLayer) * this.layerBytes(resident, tint);
+  }
+  /** Choose pool scale + layer count from the budget left after the packed resident layers; appends the pool layers. */
+  private planPool(lazy: AtlasRT[], minSlots: number, resident: AtlasRT[]): void {
+    this.pool = null; if (!lazy.length) return;
+    const tint = lazy.some((a) => a.source.masks?.tintmask);
+    const per = this.layerBytes(resident, tint); const budget = this.textureBudgetMB * 1048576;
+    const freeLayers = Math.max(0, Math.min(this.maxLayers - this.layers, Math.floor((budget - per * this.layers) / per)));
+    let pick: Pool | null = null;
+    // 1) the best scale whose pool holds every streamed page (no misses at all), 2) else the best scale holding minSlots
+    if (this.poolPolicy.coverAll) for (const k of this.poolScales(lazy)) {
+      const g = this.poolGeom(lazy, k); const layers = Math.ceil(lazy.length / g.perLayer);
+      if (layers > freeLayers) continue;
+      pick = { k, ...g, first: this.layers, layers, lru: new PageLRU<string>(layers * g.perLayer, POOL_PROTECT_FRAMES), slotBytes: rgbaBytes(g.sw, g.sh, true) * (tint ? 2 : 1), tint };
+      break;
+    }
+    if (!pick) for (const k of this.poolScales(lazy)) {
+      const g = this.poolGeom(lazy, k);
+      const layers = Math.min(freeLayers, Math.ceil(lazy.length / g.perLayer));
+      if (layers <= 0) continue;
+      const p: Pool = { k, ...g, first: this.layers, layers, lru: new PageLRU<string>(layers * g.perLayer, POOL_PROTECT_FRAMES), slotBytes: rgbaBytes(g.sw, g.sh, true) * (tint ? 2 : 1), tint };
+      pick = p; if (p.lru.capacity >= minSlots) break;
+    }
+    if (!pick && freeLayers <= 0) {
+      // no budget left at all: one layer at the smallest scale (over budget is reported by vramStats.withinBudget)
+      const ks = this.poolScales(lazy); const k = ks[ks.length - 1]; if (k === undefined) return;
+      const g = this.poolGeom(lazy, k); pick = { k, ...g, first: this.layers, layers: 1, lru: new PageLRU<string>(g.perLayer, POOL_PROTECT_FRAMES), slotBytes: rgbaBytes(g.sw, g.sh, true) * (tint ? 2 : 1), tint };
+    }
+    if (!pick) return;
+    this.pool = pick; this.layers += pick.layers;
+    for (const a of lazy) { a.scale = pick.k; a.lazy!.state = 0; a.layer = -1; }
   }
   /** Pick the largest downscale (1, 0.5, 0.25) whose packed arrays fit textureBudgetMB; atlases larger than a layer are always shrunk. */
-  private async fitBudget(list: AtlasRT[]): Promise<void> {
-    const S = this.layerSize; const budget = this.textureBudgetMB * 1048576;
+  private async fitBudget(list: AtlasRT[], reserveBytes = 0): Promise<void> {
+    const S = this.layerSize; const budget = this.textureBudgetMB * 1048576 - reserveBytes;
     const tooBig = Math.max(1, ...list.map((a) => Math.max(a.img!.width, a.img!.height) / S));
     let d = 1; while (d > 1 / tooBig) d /= 2;
     const dims = (k: number) => list.map((a) => ({ ...a, img: { width: Math.max(1, Math.floor(a.img!.width * k)), height: Math.max(1, Math.floor(a.img!.height * k)) } as ImageLike }));
@@ -411,7 +504,8 @@ export class AtlasManager {
     return null;
   }
 
-  private upload(list: AtlasRT[], tintRows: Map<number, number> = new Map()): void {
+  private upload(list: AtlasRT[], tintRows: Map<number, number> = new Map(), all: AtlasRT[] = list): void {
+    this.tintRowMap = tintRows;
     const gl = this.gl; const S = this.layerSize;
     const mk = (): WebGLTexture => {
       const t = gl.createTexture()!; gl.bindTexture(gl.TEXTURE_2D_ARRAY, t);
@@ -433,11 +527,14 @@ export class AtlasManager {
     this.hasEmissive = list.some((a) => a.emis);
     this.emisTex = this.hasEmissive ? mk() : dummyArray(gl); // emissive is gated by a frame flag: no full array when unused
     this.gpuBytes = this.estimate(list);
+    const poolBytes = this.pool ? this.pool.layers * this.layerBytes(list) : 0;
+    this.vram.budgetBytes = this.textureBudgetMB * 1048576; this.vram.setResident(this.gpuBytes - poolBytes, poolBytes);
+    this.vram.pageSlots = this.pool ? this.pool.lru.capacity : 0; this.vram.pending = 0;
     for (const a of list) if (a.emis) gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, a.px, a.py, a.layer, a.emis.width, a.emis.height, 1, gl.RGBA, gl.UNSIGNED_BYTE, a.emis as TexImageSource);
     if (this.hasEmissive) gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
     // mask arrays: full layout only when some atlas has that mask, else a 1x1 dummy (never sampled: flag bit unset)
     const maskArray = (m: MaskName): WebGLTexture => {
-      if (!list.some((a) => a.masks[m])) {
+      if (!list.some((a) => a.masks[m]) && !(m === "tintmask" && this.pool?.tint)) {
         const t = gl.createTexture()!; gl.bindTexture(gl.TEXTURE_2D_ARRAY, t);
         gl.texStorage3D(gl.TEXTURE_2D_ARRAY, 1, gl.RGBA8, 1, 1, 1);
         gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, 0, 1, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
@@ -451,8 +548,21 @@ export class AtlasManager {
     this.sheenTex = maskArray("sheen"); this.swayTex = maskArray("sway"); this.tintMaskTex = maskArray("tintmask");
     // frame table
     const n = Math.max(1, this.totalFrames); const rows = Math.ceil(n / TABLE_W);
-    const data = new Float32Array(TABLE_W * 2 * rows * 4);
-    for (const a of list) for (let f = 0; f < a.count; f++) {
+    const data = new Float32Array(TABLE_W * 2 * rows * 4); this.table = data; this.tableDirty0 = this.tableDirty1 = -1;
+    void all;
+    for (const a of list) this.writeFrames(a, data, tintRows);
+    if (this.frameTex) gl.deleteTexture(this.frameTex);
+    const ft = gl.createTexture()!; gl.bindTexture(gl.TEXTURE_2D, ft);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, TABLE_W * 2, rows, 0, gl.RGBA, gl.FLOAT, data);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    this.frameTex = ft;
+  }
+
+  /** Frame-table rows of one atlas at its packed position (or zeroed when `clear`: a streamed page that is not resident). */
+  private writeFrames(a: AtlasRT, data: Float32Array, tintRows: Map<number, number>, clear = false): void {
+    const S = this.layerSize;
+    if (clear) { data.fill(0, a.base * 8, (a.base + a.count) * 8); this.markTable(a); return; }
+    for (let f = 0; f < a.count; f++) {
       const r = a.source.rects?.[f];
       const x = r ? r.x : (f % a.cols) * a.fw, y = r ? r.y : Math.floor(f / a.cols) * a.fh;
       const w = r ? r.w : a.fw, h = r ? r.h : a.fh; const k = a.scale;
@@ -461,11 +571,99 @@ export class AtlasManager {
       const bits = (a.emis ? FrameBits.Emissive : 0) | (a.masks.sheen ? FrameBits.Sheen : 0) | (a.masks.sway ? FrameBits.Sway : 0) | (a.masks.tintmask ? FrameBits.TintMask : 0);
       data[o + 4] = w; data[o + 5] = h; data[o + 6] = a.layer; data[o + 7] = bits + (tintRows.get(a.base + f) ?? 0) * 16;
     }
-    if (this.frameTex) gl.deleteTexture(this.frameTex);
-    const ft = gl.createTexture()!; gl.bindTexture(gl.TEXTURE_2D, ft);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, TABLE_W * 2, rows, 0, gl.RGBA, gl.FLOAT, data);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    this.frameTex = ft;
+    if (a.lazy) this.markTable(a);
+  }
+  private markTable(a: AtlasRT): void {
+    const r0 = Math.floor(a.base / TABLE_W), r1 = Math.floor((a.base + Math.max(1, a.count) - 1) / TABLE_W);
+    this.tableDirty0 = this.tableDirty0 < 0 ? r0 : Math.min(this.tableDirty0, r0); this.tableDirty1 = Math.max(this.tableDirty1, r1);
+  }
+
+  // ---- wearable page streaming -------------------------------------------------------------------------------------
+
+  /** Once per frame before drawing: advances the LRU clock and uploads frame-table rows patched by page-ins/evictions. */
+  beginFrame(): void {
+    this.frame++;
+    if (this.tableDirty0 < 0 || !this.frameTex) return;
+    const gl = this.gl; const r0 = this.tableDirty0, n = this.tableDirty1 - r0 + 1;
+    gl.bindTexture(gl.TEXTURE_2D, this.frameTex);
+    gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, r0, TABLE_W * 2, n, gl.RGBA, gl.FLOAT, this.table.subarray(r0 * TABLE_W * 8, (r0 + n) * TABLE_W * 8));
+    this.tableDirty0 = this.tableDirty1 = -1;
+  }
+  private lazyOf(spriteId: number): AtlasRT | null { const s = this.sprites[spriteId]; if (!s) return null; const a = this.atlases[s.atlasIdx]; return a?.lazy ? a : null; }
+  /** True when the sprite's art can be drawn now. Streamed pages are touched (LRU) and requested when missing. */
+  pageReady(spriteId: number): boolean {
+    const a = this.lazyOf(spriteId); if (!a) return true;
+    if (a.lazy!.state === 2 && this.pool!.lru.touch(a.key, this.frame)) return true;
+    this.vram.misses++; this.request(a); return false;
+  }
+  /** Page refcount (+1) for a sprite's atlas; held pages are evicted only after unreferenced ones. Prefetches. */
+  retainSprite(spriteId: number): void { const a = this.lazyOf(spriteId); if (!a || !this.pool) return; this.pool.lru.retain(a.key); this.request(a); }
+  releaseSprite(spriteId: number): void { const a = this.lazyOf(spriteId); if (a && this.pool) this.pool.lru.release(a.key); }
+  /** Request pages for these sprites (e.g. a creator preview selection); resolves when all are resident or failed. */
+  async prefetch(spriteIds: Iterable<number>): Promise<void> {
+    const want = [...new Set([...spriteIds].map((id) => this.lazyOf(id)).filter((a): a is AtlasRT => !!a))];
+    for (const a of want) this.request(a);
+    const g = this.gen;
+    for (let i = 0; i < 600 && g === this.gen && want.some((a) => a.lazy!.state === 1 || this.queue.includes(a)); i++) await new Promise((r) => setTimeout(r, 16));
+  }
+  /** Streamed wearable atlases resident / known. */
+  isStreamed(spriteId: number): boolean { return !!this.lazyOf(spriteId); }
+  get vramStats(): VramStats & { poolScale: number; layerSize: number; downscale: number } {
+    return { ...this.vram.stats(), poolScale: this.pool?.k ?? 0, layerSize: this.layerSize, downscale: this.downscale };
+  }
+  private request(a: AtlasRT): void {
+    if (!this.pool || a.lazy!.state !== 0 || this.queue.includes(a)) return;
+    if (!this.pool.lru.canAllocate(a.key, this.frame)) return; // every slot holds a page in use: keep the fallback, retry later
+    this.queue.push(a); this.vram.pending = this.queue.length + this.inflight; this.pump();
+  }
+  private pump(): void {
+    while (this.inflight < PAGE_CONCURRENCY && this.queue.length) {
+      const a = this.queue.shift()!; const g = this.gen;
+      if (!this.pool?.lru.canAllocate(a.key, this.frame)) continue;
+      a.lazy!.state = 1; this.inflight++;
+      this.pageIn(a, g).catch((e: unknown) => { console.warn(`[render] page-in ${a.key} failed`, e); if (g === this.gen) a.lazy!.state = 0; })
+        .finally(() => { this.inflight--; this.vram.pending = this.queue.length + this.inflight; this.pump(); });
+    }
+  }
+  private async pageIn(a: AtlasRT, g: number): Promise<void> {
+    const p = this.pool!; const src = a.source;
+    const url = p.k >= 2 ? src.pages!.find((q) => q.scale === 2)!.url : src.url;
+    const tintUrls = src.masks?.tintmask === undefined ? [] : Array.isArray(src.masks.tintmask) ? src.masks.tintmask : [src.masks.tintmask];
+    const [img, tint] = await Promise.all([this.loader(url), (async () => { if (!p.tint) return null; for (const u of tintUrls) { try { return await this.loader(u); } catch { /* next */ } } return null; })()]);
+    if (g !== this.gen) return;
+    const W = Math.max(1, Math.round(a.lazy!.w1 * p.k)), H = Math.max(1, Math.round(a.lazy!.h1 * p.k));
+    const chain = async (im: ImageLike, q: "high" | "pixelated"): Promise<ImageLike[]> => {
+      const out: ImageLike[] = []; let w = W, h = H; let cur = im;
+      const levels = Math.floor(Math.log2(this.layerSize)) + 1;
+      for (let l = 0; l < levels; l++) {
+        if (cur.width !== w || cur.height !== h) cur = await createImageBitmap(cur as ImageBitmapSource, { resizeWidth: w, resizeHeight: h, resizeQuality: q, premultiplyAlpha: "none", colorSpaceConversion: "none" } as ImageBitmapOptions);
+        out.push(cur); if (w === 1 && h === 1) break; w = Math.max(1, w >> 1); h = Math.max(1, h >> 1);
+      }
+      return out;
+    };
+    const [cc, tc] = await Promise.all([chain(img, "high"), tint ? chain(tint, "pixelated") : Promise.resolve(null)]);
+    if (g !== this.gen) return;
+    const slot = p.lru.allocate(a.key, this.frame);
+    if (!slot) { a.lazy!.state = 0; return; } // pool full of pages drawn this frame: retried on next pageReady
+    if (slot.evicted !== undefined) {
+      const ev = this.atlases.find((x) => x.key === slot.evicted);
+      if (ev?.lazy) { ev.lazy.state = 0; ev.layer = -1; this.writeFrames(ev, this.table, this.tintRowMap, true); }
+      this.vram.evict(p.slotBytes);
+    }
+    const layer = p.first + Math.floor(slot.slot / p.perLayer), si = slot.slot % p.perLayer;
+    const px = (si % p.cols) * (p.sw + POOL_GAP), py = Math.floor(si / p.cols) * (p.sh + POOL_GAP);
+    const gl = this.gl; gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false); gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+    const put = (tex: WebGLTexture | null, levels: ImageLike[]) => {
+      if (!tex) return; gl.bindTexture(gl.TEXTURE_2D_ARRAY, tex);
+      levels.forEach((im, l) => gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, l, px >> l, py >> l, layer, im.width, im.height, 1, gl.RGBA, gl.UNSIGNED_BYTE, im as TexImageSource));
+    };
+    put(this.tex, cc); if (tc) put(this.tintMaskTex, tc);
+    for (const im of [...cc, ...(tc ?? [])]) if (im !== img && im !== tint && typeof (im as ImageBitmap).close === "function") (im as ImageBitmap).close();
+    for (const im of [img, tint]) if (im && typeof (im as ImageBitmap).close === "function") (im as ImageBitmap).close();
+    a.layer = layer; a.px = px; a.py = py; a.scale = p.k;
+    a.masks = tc ? { tintmask: { width: W, height: H } as ImageLike } : {}; // flag only (CPU pixels released)
+    this.writeFrames(a, this.table, this.tintRowMap);
+    a.lazy!.state = 2; this.vram.pageIn(p.slotBytes);
   }
 
   get anyEmissive(): boolean { return this.hasEmissive; }
@@ -604,6 +802,23 @@ export class AtlasManager {
     this.held = [];
     const gl = this.gl; if (this.tex) gl.deleteTexture(this.tex); if (this.emisTex) gl.deleteTexture(this.emisTex); if (this.frameTex) gl.deleteTexture(this.frameTex);
   }
+}
+
+/** Atlases whose sprites are only referenced as cosmetics wearable art (not bodies, not world sprites). */
+export function wearableOnlyAtlases(registry: AssetRegistry): Set<string> {
+  const cat = registry.cosmetics as unknown as { bySlot?: (s: string) => unknown[]; bodySprite?: (b: string) => { sprite: number } | undefined; size?: number } | undefined;
+  const out = new Set<string>(); if (!cat?.bySlot || !cat.size) return out;
+  const wear = new Set<number>();
+  const walk = (v: unknown, depth: number): void => {
+    if (!v || typeof v !== "object" || depth > 6) return;
+    for (const [k, x] of Object.entries(v as Record<string, unknown>)) { if (k === "sprite" && typeof x === "number") wear.add(x); else walk(x, depth + 1); }
+  };
+  for (const s of ["hair", "hat", "accessory", "top", "bottom", "shoes", "face", "eyes"]) for (const w of cat.bySlot(s)) walk(w, 0);
+  const atlasOf = new Map<number, string>(); for (const s of registry.allSprites()) atlasOf.set(s.id, s.atlas.key);
+  for (const id of wear) { const k = atlasOf.get(id); if (k) out.add(k); }
+  // an atlas shared with anything else (bodies, mirrors, world props) stays resident
+  for (const s of registry.allSprites()) if (!wear.has(s.id)) out.delete(s.atlas.key);
+  return out;
 }
 
 export interface ResolvedFrame { entry: number; w: number; h: number; ax: number; ay: number; hasDamageFrames: boolean; /** draw mirrored (mirror rotationArt) */ flipX: boolean;

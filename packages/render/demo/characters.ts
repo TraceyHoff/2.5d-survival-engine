@@ -9,7 +9,7 @@ import { Shadow, Sprite } from "../src/index.js";
 import { AnimState, AnimStateId, BodyTemp, BuildPiece, Equipment, Wetness } from "./mockGameplay.js";
 import { DEMO_ITEM } from "./scene.js";
 
-type Cat = CosmeticCatalogLike & { byKey(k: string): { id: number } | undefined; skinTones: unknown[]; hairColors: unknown[]; clothingColors: unknown[] };
+type Cat = CosmeticCatalogLike & { byKey(k: string): { id: number; key?: string } | undefined; bySlot?(slot: WearableSlot, body?: "male" | "female"): { id: number; key: string }[]; skinTones: unknown[]; hairColors: unknown[]; clothingColors: unknown[] };
 
 export function makeAppearance(cat: Cat, o: { body?: number; skin?: number; parts?: Partial<Record<WearableSlot, [string, number?, number?]>> }): AppearanceValue {
   const a: AppearanceValue = { bodyType: o.body ?? 0, skinTone: o.skin ?? 0, parts: new Array(SLOT_COUNT).fill(0), primary: new Array(SLOT_COUNT).fill(0), secondary: new Array(SLOT_COUNT).fill(0) };
@@ -21,6 +21,18 @@ export function makeAppearance(cat: Cat, o: { body?: number; skin?: number; part
 export function variedAppearance(cat: Cat, n: number): AppearanceValue {
   const r = (k: number): number => { let x = Math.imul(n * 7919 + k * 104729 + 13, 0x9e3779b1); x ^= x >>> 15; return (x >>> 0) % 997; };
   const nc = cat.clothingColors.length, nh = cat.hairColors.length;
+  if (!cat.byKey("dbg_top_a") && cat.bySlot) {
+    // real customization pack: pick from every slot of the catalog (exercises layer streaming)
+    const body = n % 2; const bt = (["male", "female"] as const)[body];
+    const pick = (slot: WearableSlot, k: number, chance = 1): [string, number, number] | undefined => {
+      const items = cat.bySlot!(slot, bt); if (!items.length || r(k + 50) % 100 >= chance * 100) return undefined;
+      const pal = slot === "hair" || slot === "face" ? nh : nc; return [items[r(k) % items.length]!.key, r(k + 1) % pal, r(k + 2) % nc];
+    };
+    const parts: Partial<Record<WearableSlot, [string, number?, number?]>> = {};
+    const plan: [WearableSlot, number, number][] = [["hair", 2, 0.9], ["hat", 5, 0.35], ["top", 10, 1], ["bottom", 12, 1], ["shoes", 13, 0.9], ["accessory", 7, 0.4], ["face", 20, 1], ["eyes", 23, 1]];
+    for (const [slot, k, c] of plan) { const v = pick(slot, k, c); if (v) parts[slot] = v; }
+    return makeAppearance(cat, { body, skin: r(1) % cat.skinTones.length, parts });
+  }
   return makeAppearance(cat, { body: n % 2, skin: r(1) % cat.skinTones.length, parts: {
     hair: [r(2) % 2 ? "dbg_hair_short" : "dbg_hair_alt", r(3) % nh],
     ...(r(4) % 3 === 0 ? { hat: ["dbg_hat_cap", r(5) % nc, r(6) % nc] as [string, number, number] } : {}),

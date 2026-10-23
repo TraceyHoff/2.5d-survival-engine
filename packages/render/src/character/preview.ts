@@ -40,7 +40,9 @@ export interface CharacterPreviewOptions {
 
 export interface CharacterPreview {
   readonly canvas: HTMLCanvasElement; readonly renderer: IsoRenderer; readonly world: World; readonly entity: Entity;
-  setAppearance(a: AppearanceValue): void;
+  /** Pages the selection's streamed wearable art in first (the previous composite stays on screen meanwhile), then
+   *  applies it. Resolves once applied; a newer call supersedes an older pending one. */
+  setAppearance(a: AppearanceValue): Promise<void>;
   /** current Appearance (a copy; mutate and pass back to setAppearance) */ getAppearance(): AppearanceValue;
   setFacing(k: number): void; rotate(steps: number): void; readonly facing: number;
   setZoom(z: number): void; readonly zoom: number;
@@ -65,6 +67,8 @@ export async function createCharacterPreview(target: HTMLCanvasElement | HTMLEle
   const renderer = new IsoRenderer(canvas, { preserveDrawingBuffer: true, style: { blobShadow: { alpha: 0.45, widthFactor: 0.6, aspect: 0.4 }, occlusion: { enabled: false } } });
   renderer.settings.weather = false; renderer.settings.fog = false;
   renderer.backdrop = hexRgb(backdrop);
+  // one character: a small pool of sharp pages (paged in on selection) instead of the whole wardrobe at crowd scale
+  renderer.atlas.poolPolicy = { coverAll: false, minSlots: 16 };
   await renderer.atlas.setRegistry(o.registry, o.sources ?? new Map());
   const cat = o.registry.cosmetics as unknown as CosmeticCatalogLike | undefined;
   const binding = o.binding ?? (cat ? coreAppearanceBinding(cat) : undefined);
@@ -77,7 +81,15 @@ export async function createCharacterPreview(target: HTMLCanvasElement | HTMLEle
   world.add(e, Sprite, { spriteId: o.registry.cosmetics?.bodySprite?.("male")?.sprite ?? 0, frameId: 0, flags: 0, scale: 1, tint: 0 });
   world.add(e, Shadow, { alpha: 0.8, length: 0.6 });
   world.add(e, PreviewAnim, { state: ANIM_STATE[o.anim ?? "idle"], startTick: 0 });
+  // page in the initial outfit before the first frame (no layer pop-in)
+  const spritesOf = (a: AppearanceValue): number[] => { const out: number[] = []; for (let k = 0; k < 8; k++) for (const l of binding.resolve(a as never, facingAngle(k), {}) as unknown as { sprite: number }[]) out.push(l.sprite); return out; };
+  await renderer.atlas.prefetch(spritesOf(o.appearance)).catch(() => undefined);
   setAppearance(world, e, o.appearance);
+  let pick = 0;
+  const select = async (a: AppearanceValue): Promise<void> => {
+    const n = ++pick; await renderer.atlas.prefetch(spritesOf(a)).catch(() => undefined);
+    if (n === pick && !disposed) setAppearance(world, e, a);
+  };
   // soft key light (warm, front-left) + cool rim (back-right)
   const key = world.create(); world.add(key, Transform, { x: 1.2, y: 1.6, z: 1.5, facing: 0 }); world.add(key, LightSource, { r: 1, g: 0.93, b: 0.82, radius: 4, intensity: 0.7, flicker: 0 });
   const rim = world.create(); world.add(rim, Transform, { x: -1.4, y: -1.2, z: 1.5, facing: 0 }); world.add(rim, LightSource, { r: 0.7, g: 0.8, b: 1, radius: 3, intensity: 0.35, flicker: 0 });
@@ -133,7 +145,7 @@ export async function createCharacterPreview(target: HTMLCanvasElement | HTMLEle
 
   return {
     canvas, renderer, world, entity: e,
-    setAppearance: (a) => { setAppearance(world, e, a); },
+    setAppearance: select,
     getAppearance: () => { const a = getAppearance(world, e)!; return { bodyType: a.bodyType, skinTone: a.skinTone, parts: a.parts, primary: a.primary, secondary: a.secondary }; },
     setFacing, rotate: (s) => setFacing(facing + s), get facing() { return facing; },
     setZoom, get zoom() { return zoom; },

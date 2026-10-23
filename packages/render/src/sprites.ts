@@ -428,7 +428,13 @@ export class SpriteBatch {
     const eq = cx.bindings.equipment ? world.store(cx.bindings.equipment) : null; const heldOf = cx.bindings.heldSprite;
     const t2s = world.isRegistered(TintSecondary) ? world.store(TintSecondary) : null;
     const apB = cx.bindings.appearance; const ap0 = apB && world.isRegistered(apB.def) ? world.store(apB.def) : null; const ap = ap0 && (ap0.data as Record<string, unknown>).version ? ap0 : null;
-    if (apB && (!this.layerCache || this.layerCache.binding !== apB)) this.layerCache = new LayerCache(apB);
+    atlas.beginFrame();
+    if (apB && (!this.layerCache || this.layerCache.binding !== apB)) {
+      this.layerCache?.clear();
+      const lc = (this.layerCache = new LayerCache(apB));
+      // streamed wearable pages are refcounted by the cached layer sets (released on change / prune)
+      lc.onLayers = (prev, next) => { if (next) for (const l of next) atlas.retainSprite(l.sprite); if (prev) for (const l of prev) atlas.releaseSprite(l.sprite); };
+    }
     const apData = ap ? ap.data as Record<string, ArrayLike<number>> : null; const apLen = ap ? (ap as unknown as { lengths: Record<string, number> }).lengths : {};
     const apVer = apData?.version ?? null;
     const lodMinor = (cx.zoom ?? 1) < this.characterOpts.minorLayerMinZoom; const hitOf = cx.bindings.hitFlash;
@@ -566,6 +572,7 @@ export class SpriteBatch {
         for (const l of layers) {
           if (l === bodyL) continue; j++;
           if (lodMinor && l.minor) continue;
+          if (!atlas.pageReady(l.sprite)) continue; // streamed page not resident yet: body-only fallback
           const okL = st >= 0 ? atlas.resolve(l.sprite, atlas.stateAnim(l.sprite, st), f, t, 0, lr) : atlas.resolve(l.sprite, atlas.animIndex(l.sprite, l.animName), f, 0, sp.data.frameId[k]!, lr);
           if (!okL) continue;
           o0.set(base); o0[4] = lr.entry; o0[8] = lr.ax; o0[9] = lr.ay; o0[16] = 0;
