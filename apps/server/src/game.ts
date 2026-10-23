@@ -1,9 +1,9 @@
 /** Authoritative game server: world + gameplay + streaming chunks + persistence + NetServer sessions. */
-import { CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, type CosmeticCatalogLike, Membership, PlayerId, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
+import { ChannelRegistry, CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, type CosmeticCatalogLike, Membership, PlayerId, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
 import { ChunkManager, ProceduralGenerator, chunkKeyOf, type BuildingGrid, type PopulationSpawner } from "@engine/world";
 import { spawnPlayer, spawnResourceNode, gameplayDefs, setIntent, IntentAction, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installPopulation, installCustomization,
   appearanceServerHooks, applyReplication, installStallBuyHook, installViewBonus, setHitValidator, installPvp, installCraftQueue, installExpressionCommands, CraftQueue, CraftQueuesRes, playerNames, stallListing, listingRevision, stallOf, tillOf, StallHeader, StallOwnerKind } from "@engine/gameplay";
-import { AppearanceServer, NameSync, NetServer, StallResult, StallServer, TileSync, validateHit, type ClientSession, type ServerTransport, type StallHooks } from "@engine/net";
+import { AppearanceServer, ChatServer, NameSync, NetServer, StallResult, StallServer, TileSync, validateHit, type ClientSession, type ServerTransport, type StallHooks } from "@engine/net";
 import { AccountAssigned, ClaimAccount, SetName, WorldPersistence, loadSocial, tokenToHex, tokenToWords, wordsToName, wordsToToken, type WorldStore } from "@engine/persist";
 import { seedStarterCamp, giveRandomAppearance } from "./camp.js";
 import { Act, applyMoveInput, installDemoWorld, rejectReasonCode, DevBotHello, DEMO_COMMANDS, DEMO_EVENTS, GAMEPLAY_NET_COMMANDS, Ping, Pong } from "./protocol.js";
@@ -43,6 +43,8 @@ export interface GameServerOptions {
   population?: boolean;
   /** Dev load-test flag (NET_DEV_BOTS=1): accept DevBotHello-tagged connections in multiplayer. Default false. */
   devBots?: boolean;
+  /** Chat (net ChatServer over core ChannelRegistry): local radius in tiles (default 48), per-player token bucket (default core 5 burst, 0.05/tick). */
+  chat?: { localRadius?: number; rate?: { capacity: number; refillPerTick: number }; maxLength?: number };
 }
 /** True when the dev bot flag is set in the environment (NET_DEV_BOTS=1). */
 export const devBotsFromEnv = (env: Record<string, string | undefined>): boolean => env["NET_DEV_BOTS"] === "1";
@@ -72,6 +74,8 @@ export interface GameServer {
   /** Singleplayer host: mark a joined session as a virtual player (false = refused, e.g. multiplayer). */
   markVirtual(clientId: number): boolean;
   stalls: StallServer; appearance: AppearanceServer | undefined;
+  /** Local/party/clan/global/whisper chat with mentions + emotes; players and bots (loopback clients) both go through it. */
+  chat: ChatServer;
   /** Wall-clock ms of recent world.step calls (filled by the host loop via step()). */
   step(dt: number): void;
   tickTimes: number[];
@@ -209,6 +213,14 @@ export function createGameServer(o: GameServerOptions): GameServer {
     log(`leave: client ${clientId} (${why})${p.name ? ` "${p.name}"` : ""}`);
   }
 
+  const chat = new ChatServer(net, {
+    channels: new ChannelRegistry(permissions.groups, undefined, o.chat?.rate ?? { capacity: 5, refillPerTick: 0.05 }),
+    localRadius: o.chat?.localRadius ?? 48, ...(o.chat?.maxLength ? { maxLength: o.chat.maxLength } : {}),
+    // account PlayerId (what parties/clans are keyed by); 0 until claimed would collide, so fall back to a negative-free offset
+    playerIdOf: (s) => { const p = players.get(s.clientId); const id = p ? world.getField(p.entity, PlayerId, "id") ?? 0 : 0; return id || 0x40000000 + s.clientId; },
+    // parties/clans live in the core GroupRegistry keyed by account PlayerId
+    groupOf: (s, kind) => { const p = players.get(s.clientId); const id = p ? world.getField(p.entity, PlayerId, "id") ?? 0 : 0; return id ? permissions.groups.groupsOf(id).find((g) => g.kind === (kind === "party" ? 1 : 2))?.id : undefined; },
+  });
   net.onCommand(DevBotHello, (s) => {
     const p = players.get(s.clientId); if (!p) return;
     if (mode.mode === "multiplayer" && !o.devBots) { leave(s.clientId, "bot connection rejected: multiplayer server without NET_DEV_BOTS=1"); return; }
@@ -300,7 +312,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
   const step = (dt: number): void => { const t0 = performance.now(); world.step(dt); tickTimes.push(performance.now() - t0); if (tickTimes.length > 4096) tickTimes.splice(0, 2048); };
   const loop = new FixedLoop({ tickHz, step });
   return {
-    world, net, chunks, persist, loop, permissions, players, mode: mode.mode, modeConfig: mode, population, markVirtual, stalls, appearance, step, tickTimes,
+    world, net, chunks, persist, loop, permissions, players, mode: mode.mode, modeConfig: mode, population, markVirtual, stalls, appearance, chat, step, tickTimes,
     async shutdown() {
       if (!persist || closing) return { chunks: 0, players: 0 };
       const r = await persist.saveAll(); closing = true; await persist.store.close(); return r;

@@ -39,6 +39,8 @@ export interface ChatServerOptions {
   filter?: (session: ClientSession, channel: ChatChannel, text: string) => string | null;
   /** Persistent player id. Default: the group resolver's playerOf (core PlayerId), else clientId. */
   playerIdOf?: (session: ClientSession) => number;
+  /** Party/clan group id for a session. Default: the net group resolver (server.groups.groupOf), else 0. */
+  groupOf?: (session: ClientSession, kind: "party" | "clan") => number | undefined;
 }
 export interface ChatDelivered { channel: ChatChannel; /** group id (party/clan) / whisper target / 0 */ channelId: number; fromPlayer: number; fromClient: number; tick: number; text: string; mentions: number[]; emote: number }
 export const MAX_MENTIONS = 8;
@@ -86,7 +88,7 @@ export class ChatServer {
     text = (this.opts.normalize ?? ((t: string) => t.normalize("NFC").trim()))(text);
     if (!text) return this.reject(s, kind, ChatReject.Empty);
     let channel = 0;
-    if (kind === ChatChannel.Party || kind === ChatChannel.Clan) channel = this.server.groups?.groupOf(s.clientId, kind === ChatChannel.Party ? "party" : "clan") ?? 0;
+    if (kind === ChatChannel.Party || kind === ChatChannel.Clan) { const gk = kind === ChatChannel.Party ? "party" : "clan"; channel = (this.opts.groupOf ? this.opts.groupOf(s, gk) : this.server.groups?.groupOf(s.clientId, gk)) ?? 0; }
     else if (kind === ChatChannel.Whisper) channel = target;
     const m: ChatMessage = { kind: kind as number as ChatMessage["kind"], channel, from, tick, text };
     const core = this.channels.validate(m);
