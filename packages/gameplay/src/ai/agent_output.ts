@@ -5,7 +5,9 @@
  */
 import type { AgentOutput, CommandRegistry, Entity, InputFrame, World } from "@engine/core";
 import { intentToFrame, type BotIntent } from "./bot_input.js";
-import { GameplayActions } from "../input.js";
+import { GameplayActions, PlaceCmd, UseCmd } from "../input.js";
+import { BuyFromStallCmd, OpenStallCmd } from "../economy/stall.js";
+import { QueueCraftCmd } from "../systems/craft_queue.js";
 import { requestEmote } from "../expression.js";
 
 export function actionIntent(action: string): BotIntent | undefined {
@@ -45,4 +47,38 @@ export function agentOutputFrame(out: AgentOutput, tick: number, reg: CommandReg
 export function applyAgentEmote(world: World, e: Entity, out: AgentOutput): boolean {
   if (!out.emote || world.isReplaying) return false;
   return requestEmote(world, e, out.emote);
+}
+
+// ---------------- AgentOutput.commands (net command path) ----------------
+/** One discrete command by registered (net) command name; matches core AgentOutput.commands entries. */
+export interface AgentCommand { type: string; payload: unknown }
+/** Structural view of AgentOutput with the commands field. Kept so gameplay compiles against a core without it. */
+export type AgentOutputWithCommands = AgentOutput & { commands?: AgentCommand[] };
+
+/** Action string -> a net command (buy, use, craft, place, plus open of a stall). Other actions return undefined and stay frame-only. */
+/** Entity fields hold the bot's replica entity; the host (local.ts sendAgentCommands -> NetClient.sendCommand) maps them to NetIds. */
+export function actionCommand(action: string): AgentCommand | undefined {
+  const it = actionIntent(action); if (!it) return undefined;
+  switch (it.kind) {
+    case "eat": return { type: UseCmd.name, payload: { slot: it.slot } };
+    case "craft": return { type: QueueCraftCmd.name, payload: { recipe: it.recipe, count: Math.max(1, Math.min(255, it.count ?? 1)) } }; // CraftCmd is not on the wire
+    case "build": return { type: PlaceCmd.name, payload: { piece: it.piece, x: it.x, y: it.y, level: it.level ?? 0, rot: it.rot ?? 0, tier: it.tier ?? 0, variant: it.variant ?? 0 } };
+    case "open": return { type: OpenStallCmd.name, payload: { stall: it.target } };
+    case "buy": return { type: BuyFromStallCmd.name, payload: { stall: it.stall, listingSlot: it.listingSlot, qty: it.qty, expectedRevision: it.expectedRevision, expectedPriceItem: it.expectedPriceItem, expectedPriceCount: it.expectedPriceCount } };
+    default: return undefined;
+  }
+}
+const COMMAND_ACTIONS = new Set(["eat", "drink", "craft", "build", "open", "buy"]);
+/**
+ * Moves the command-type actions (eat, drink, craft, build, open, buy) out of out.actions and into out.commands, in order.
+  Movement and gather/attack/sleep stay
+ * as actions for the input frame. Mutates and returns out.
+ */
+export function emitAgentCommands<O extends AgentOutputWithCommands>(out: O): O {
+  const keep: string[] = [];
+  for (const a of out.actions) {
+    if (!COMMAND_ACTIONS.has(a.split(":")[0]!)) { keep.push(a); continue; }
+    const c = actionCommand(a); if (c) (out.commands ??= []).push(c);
+  }
+  out.actions = keep; return out;
 }

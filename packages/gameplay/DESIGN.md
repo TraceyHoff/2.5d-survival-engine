@@ -459,3 +459,7 @@ Gameplay owns data, not loops: there is **no spawn loop and no controller** here
 ## 27. Engine Architect decisions (net commands, AgentOutput.commands, parties)
 
 - **Net commands (append-only).** `GAMEPLAY_NET_COMMANDS` (apps/server/src/protocol.ts) gains `UseCmd, PlaceCmd, EmoteCmd` at the end, after the craft-queue commands, so the existing wire ids don't move. The server bridge routes defs that are in `GAMEPLAY_COMMANDS` (use, place) into the player's intent queue (`queueCommand`), the same way an InputFrame command goes. Everything else goes through core CommandHandlers (emote goes to `installExpressionCommands`). Rate limits fall back to the mirror default; Netcode owns the limiter.
+- **AgentOutput.commands.** Core now has `commands?: {type, payload}[]` (8855fb5, ADR-092). Gameplay still types it structurally (`AgentOutputWithCommands`) so it doesn't depend on that core revision. `survivorController` runs `emitAgentCommands` on every output:
+  - Command-type actions move from `actions` to `commands`, in order: eat/drink become `gameplay.use`, craft becomes `gameplay.queueCraft` (CraftCmd isn't on the wire), build becomes `gameplay.place`, and open/buy of a stall become `gameplay.openStall` / `gameplay.buyFromStall`.
+  - Entity fields carry the bot's replica entity. local.ts `sendAgentCommands` sends through NetClient.sendCommand, which maps them to NetIds (netOf), so there is no resolver here. Unknown names are dropped by the host.
+  - `commands: false` keeps the old action-string behavior. Gather, attack and sleep stay as frame actions.

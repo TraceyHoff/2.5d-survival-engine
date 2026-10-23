@@ -10,6 +10,7 @@ import { Animal, Dead, Health, ResourceNode, Survival, Zombie } from "./componen
 import { currentPhaseKey } from "./combat/zombies.js";
 import { populationData, rollTraits, scoreUtilities } from "./ai/population.js";
 import { fillAgentSensors, survivalBehaviors, type AgentSensors } from "./ai/survivor_behaviors.js";
+import { emitAgentCommands } from "./ai/agent_output.js";
 
 export interface AgentsData {
   archetypes: Record<string, { perception: PerceptionConfig; imperfections: Imperfections; schedule: ScheduleSlot[]; goals: string[]; chatMinSeconds: number }>;
@@ -131,7 +132,18 @@ export function makeAgent(identity: AgentIdentity, seed: number, tickHz = 20): A
   const schedule = b ? bots.routines[b.routine]!.map((s) => ({ ...s, prefer: s.prefer.map((p) => ACTION_BEHAVIOR[p] ?? p) })) : base.schedule;
   return new Agent(identity, seed, { perception: base.perception, imperfections: b ? b.imperfections : base.imperfections, schedule, chatMinSeconds: base.chatMinSeconds, tickHz });
 }
-export function survivorController(opts: { seed: number; thinkBudget?: number; thinkEvery?: number; extra?: readonly GameBehavior[]; chat?: ConstructorParameters<typeof AgentController<AgentWorldView>>[0]["chat"] }): AgentController<AgentWorldView> {
+/**
+ * The survivor AgentController. Each output's buy, use, craft, place and stall-open actions become AgentOutput.commands
+ * through emitAgentCommands. Set opts.commands to false to keep them as action strings only.
+ */
+export function survivorController(opts: { seed: number; thinkBudget?: number; thinkEvery?: number; extra?: readonly GameBehavior[]; chat?: ConstructorParameters<typeof AgentController<AgentWorldView>>[0]["chat"]; commands?: boolean }): AgentController<AgentWorldView> {
   const rng = new Rng(opts.seed ^ 0x5bd1e995);
+  const ctl = makeSurvivorController(opts, rng);
+  if (opts.commands === false) return ctl;
+  const tick = ctl.tick.bind(ctl);
+  ctl.tick = (t, view) => { const outs = tick(t, view); for (const o of outs.values()) emitAgentCommands(o); return outs; };
+  return ctl;
+}
+function makeSurvivorController(opts: Parameters<typeof survivorController>[0], rng: Rng): AgentController<AgentWorldView> {
   return new AgentController<AgentWorldView>({ behaviors: survivorRegistry(opts.extra), chat: opts.chat ?? new ChatTemplates(AGENTS_DATA.chat, () => rng.next()), thinkBudget: opts.thinkBudget ?? 4, thinkEvery: opts.thinkEvery ?? 10 });
 }

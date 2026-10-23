@@ -20,4 +20,16 @@ describe("AgentOutput -> inputs", () => {
     expect(G.applyAgentEmote(w, p, { ...idleOutput(), emote: "wave" })).toBe(true); steps(w, 6);
     expect(G.expressionKey(w.get(p, G.Expression)!.id)).toBe("happy");
   });
+  it("emitAgentCommands: buy/use/craft/place/open become net commands by registered name, in order", () => {
+    const out = { ...idleOutput(), actions: ["gather", "eat:3", "craft:5:2", "build:7:1.5:2", "open:40", "buy:40:2:1:9:11:3", "sleep"] };
+    G.emitAgentCommands(out);
+    expect(out.actions).toEqual(["gather", "sleep"]);
+    expect(out.commands).toEqual([
+      { type: "gameplay.use", payload: { slot: 3 } },
+      { type: "gameplay.queueCraft", payload: { recipe: 5, count: 2 } },
+      { type: "gameplay.place", payload: { piece: 7, x: 1.5, y: 2, level: 0, rot: 0, tier: 0, variant: 0 } },
+      { type: "gameplay.openStall", payload: { stall: 40 } }, // replica entity; NetClient.sendCommand maps it to a NetId
+      { type: "gameplay.buyFromStall", payload: { stall: 40, listingSlot: 2, qty: 1, expectedRevision: 9, expectedPriceItem: 11, expectedPriceCount: 3 } },
+    ]);
+  });
 });

@@ -36,8 +36,8 @@ describe("survival behaviors", () => {
   it("controller: a starving bot with food picks eat", () => {
     const { w, p, agent } = setup(); G.addItem(w, p, I("berries"), 3); w.set(p, G.Survival, { hunger: 5 });
     const ctl = G.survivorController({ seed: 1 }); ctl.add(agent);
-    let ate = false; for (let t = 0; t < 30 && !ate; t++) { const out = ctl.tick(t, () => G.buildAgentView(w, p, agent, { x: 0, y: 0 })).get(agent)!; ate = out.actions.some((a) => a.startsWith("eat:")); }
-    expect(ate).toBe(true);
+    let ate = false; for (let t = 0; t < 30 && !ate; t++) { const out = ctl.tick(t, () => G.buildAgentView(w, p, agent, { x: 0, y: 0 })).get(agent)!; ate = (out.commands ?? []).some((c) => c.type === G.UseCmd.name); expect(out.actions.some((a) => a.startsWith("eat:"))).toBe(false); }
+    expect(ate).toBe(true); // eat leaves as a gameplay.use command (AgentOutput.commands), not an action string
   });
   it("party follows a mate (with a wave); stall_trade opens then buys a visible listing", () => {
     const { w, p, agent } = setup(); w.set(p, Membership, { partyId: 9 });
