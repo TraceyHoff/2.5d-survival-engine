@@ -11,3 +11,4 @@ export * from "./hierarchical.js";
 export * from "./building.js";
 export * from "./emitters.js";
 export * from "./climate.js";
+export * from "./population.js";

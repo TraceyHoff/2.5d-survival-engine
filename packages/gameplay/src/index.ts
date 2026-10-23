@@ -43,3 +43,5 @@ export * from "./combat/pvp_pieces.js";
 export * from "./combat/pvp.js";
 export * from "./net_hooks.js";
 export * from "./input_hooks.js";
+export * from "./population.js";
+export * from "./agents.js";

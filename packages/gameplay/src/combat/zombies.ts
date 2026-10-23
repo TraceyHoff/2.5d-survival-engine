@@ -17,6 +17,9 @@ import { gameplayDefs, isAuthority } from "../config.js";
 import { secondsToTicks, type ZombieDef } from "../defs.js";
 import { DayPhase, emit, ZombieSpawned, ZombieStateChanged } from "../events.js";
 import { indexEntity } from "../spawn.js";
+import { defineResource } from "@engine/core";
+/** Set (true) when the population spawner owns zombie spawning; the legacy per-player spawner then stands down. */
+export const PopulationZombies = defineResource<boolean>("gameplay.PopulationZombies");
 import { dayPhase } from "../systems/environment.js";
 import { makeNoise } from "../systems/noise.js";
 import { shelterAt } from "../building/shelter.js";
@@ -46,6 +49,7 @@ export function spawnZombie(world: World, kind: number | string, x: number, y: n
 
 export function zombieSpawnerSystem(world: World, dt: number): void {
   if (!isAuthority(world) || world.isReplaying) return;
+  if (world.getResource(PopulationZombies)) return; // a PopulationSpawner owns zombie spawning
   const defs = gameplayDefs(world); const sp = defs.spawning; const ph = currentPhaseKey(world);
   const index = installSpatialIndex(world); const terrain = world.getResource(TerrainRes); const idx = structures(world);
   const players = [...world.query([Survival, Transform], [Dead])].sort((a, b) => a - b);

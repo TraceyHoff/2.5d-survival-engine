@@ -271,3 +271,23 @@ Atlases get `pages: [{scale, image}]`, a list of resolution variants. A list of 
 **Decision:** Optional extensions to ADR-080, all backward compatible: wearable `layers[]`; 8-entry or compass `layerByDir` with `directionIndex8`; sprite/animation `frameMeta` anchors with registry accessors (replacing `hands.json`); `faceAnims`/`expressions` plus a runtime `expression` option on `resolveLayers`; default `tintMode: multiply` with `tintNeutral` 0.78 and `out = base * mix(1, color/tintNeutral, strength)`; per-body `cosmeticDefaults` and `requiredSlots`; `displayName`/`locKey`; `outline: "body" | "none"` (booleans still accepted); UI widget types `charpreview` and `cosmeticslot` with `validateUiScreen`. See docs/CHARACTER_CUSTOMIZATION.md.
 **Why:** The renderer already draws 8 facings, and Art needs multi-piece garments, per-frame hand anchors and expressions. With a neutral grey, an authored mask reproduces the picked color exactly. The Appearance wire format is unchanged (still 42 bytes).
 **Known gap:** the render shader's multiply doesn't divide by tintNeutral yet, and its layer cache buckets by 4 facings. Those are Renderer follow-ups.
+## ADR-090: Game modes and a deterministic ambient PopulationSpawner
+**Decision.** `createGameServer({ mode })` takes `"singleplayer" | "multiplayer"`. `gameModeConfig(mode)` returns `{ mode, humanBots }`, and `humanBots` is true only in singleplayer. local.ts (the in-browser server) defaults to singleplayer. The Node server defaults to multiplayer (`--mode` / `GAME_MODE`). In multiplayer, no virtual-player host is installed, the human_bot spawn entry is filtered out, `markVirtual` is refused, and the local `bots` option is ignored. Ambient zombies, animals and bots come from one `PopulationSpawner` (in @engine/world). Its tables are data in gameplay/data/population.json:
+- density per loaded chunk, tile include/exclude lists, time-of-day weights, minimum and maximum player distance, and per-chunk and global caps
+- spawning is blocked by unwalkable tiles, structures, the BuildingGrid and claims
+- despawn beyond `despawnDistance` from every non-bot player, unless the entity is persistent
+- `rngFor("pop:<kind>:<chunk>")` on a 2 s cadence
+
+The legacy per-player zombie spawner turns itself off when population owns zombies (`PopulationZombies`).
+**Why.** One mechanism with data in gameplay, and it is deterministic and testable. Multiplayer stays bot-free by construction rather than by convention.
+
+## ADR-091: Human bots are virtual players driven by a data-driven agent framework
+**Decision.** A human bot is a real player session: a loopback NetClient with its own replica, account (ClaimAccount derived from its identity) and name. It is driven by `AgentController` (@engine/core/ai), and its only output is `AgentOutput`. local.ts maps that to the same `Act` buttons, aim and chat a human sends. Bots never touch the server World. The framework provides:
+- perception (sight cone, hearing, memory decay) and a blackboard
+- utility behaviors with curves, traits and schedule bonuses
+- a budgeted, round-robin think
+- reaction delay, aim error, jitter, path wobble, idle pauses and look-around
+- rate-limited templated chat with a pluggable `ChatProvider` (an LLM hook; the engine never calls external services)
+
+Identity is persisted in the `agents` record namespace. Gameplay supplies `referenceBehaviors()`, and you add more with `survivorController({ extra })`.
+**Why.** Bots go through the same authority, validation and anti-cheat path as humans, so whatever they can do, a human could have done.

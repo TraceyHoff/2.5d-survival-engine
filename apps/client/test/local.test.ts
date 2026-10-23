@@ -13,7 +13,7 @@ async function run(ms: number, local: { pump(ms: number): void }, session: Clien
 describe("local/offline mode (in-memory transport)", () => {
   it("hosts the server game module over loopback: connect, account, player spawn, bots join", async () => {
     let r = 0; const rng = (): number => ((r = (r * 1103515245 + 12345) >>> 0) / 2 ** 32);
-    const local = await createLocalServer({ store: new MemoryWorldStore(), seed: 5, bots: 2, rng });
+    const local = await createLocalServer({ store: new MemoryWorldStore(), seed: 5, bots: 2, rng, population: false });
     expect(local.bots.length).toBe(2);
     const session = new ClientSession({ storage: new MapStorage(), slot: "1", sampleButtons: () => 0 });
     const connecting = session.connect("local", "Tess", local.createTransport());

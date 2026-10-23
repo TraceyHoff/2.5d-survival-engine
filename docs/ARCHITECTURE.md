@@ -553,3 +553,13 @@ See docs/CHARACTER_CUSTOMIZATION.md for the team contract and ADR-080 for the ra
 - **Clan tint:** `BuildPiece.tint` 0 = none, 1..N = `clanPalettes[tint-1]`, out of range = none. Paint (≠0) overrides it. Use `registry.clanPaletteForTint(tint)`.
 - **BuildPiece visuals:** `buildPieceVisual(registry, piece, { ghost, pieceKey })` (@engine/assets/visual.ts) is the **only** mapping from gameplay `type/rot/tint/paint/damageStage/state/level` to render `visualId/frame/crack/layer/level/ghost/palette`. Don't re-derive it in render or gameplay.
 - **Manifest fragments:** `mergeManifests([{name, manifest}], { strict, resolve })` (@engine/assets/merge.ts) returns `{manifest, collisions, warnings}`. The first definition wins.
+
+## 22. Game Modes, Population and Virtual Players (ADR-090/091)
+- **Modes:** `createGameServer({ mode: "singleplayer" | "multiplayer", virtualPlayers?, population? })`. `game.mode` is the mode string; `game.modeConfig` is `{ mode, humanBots }`. Use `createLocalServer({ mode })` for the browser. The Node server takes `--mode` or `GAME_MODE` and defaults to multiplayer.
+- **Population** (`@engine/world` `PopulationSpawner`, wired by `@engine/gameplay` `installPopulation`):
+  - Tables live in `packages/gameplay/data/population.json`.
+  - The host interface is `chunks / viewpoints / phase / tileAt / blocked / spawn / despawn / position / persistent`.
+  - `spawn` may return `"pending"` for asynchronous spawns. Human bots use this: the server asks `virtualPlayers.connect(x, y)`, the host connects a client, and `game.markVirtual(clientId)` places it and adopts it.
+  - Viewpoints are non-bot players only.
+- **Animals:** the `Animal` component is replicated to all clients and driven by `animalAISystem` (wander, then flee from Survival entities). Defs are in population.json `animals`. The sprite keys `animal_deer/rabbit/chicken` have no art yet.
+- **Agents:** see docs/AI_AGENTS.md.

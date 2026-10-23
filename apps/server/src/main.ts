@@ -6,20 +6,21 @@
 import { existsSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
 import { PROTOCOL_VERSION } from "@engine/net";
-import { createGameServer, type GameServer } from "./game.js";
+import { createGameServer, type GameMode, type GameServer } from "./game.js";
 
 export { createGameServer } from "./game.js";
 export * from "./protocol.js";
 
-export interface ServerArgs { port: number; host: string; save: string | undefined; fresh: boolean; seed: number; statsSec: number }
+export interface ServerArgs { port: number; host: string; save: string | undefined; fresh: boolean; seed: number; statsSec: number; mode: GameMode }
+function parseMode(m: string): GameMode { if (m !== "singleplayer" && m !== "multiplayer") throw new Error(`--mode must be singleplayer or multiplayer, got ${m}`); return m; }
 export function parseServerArgs(argv: readonly string[], env: Record<string, string | undefined> = {}): ServerArgs {
-  const a: ServerArgs = { port: Number(env["PORT"] ?? 7777), host: env["HOST"] ?? "0.0.0.0", save: env["SAVE_PATH"] ?? "saves/demo.db", fresh: false, seed: 1234, statsSec: 5 };
+  const a: ServerArgs = { port: Number(env["PORT"] ?? 7777), host: env["HOST"] ?? "0.0.0.0", save: env["SAVE_PATH"] ?? "saves/demo.db", fresh: false, seed: 1234, statsSec: 5, mode: parseMode(env["GAME_MODE"] ?? "multiplayer") };
   for (let i = 0; i < argv.length; i++) {
     const k = argv[i]!, v = (): string => { const x = argv[++i]; if (x === undefined) throw new Error(`${k} needs a value`); return x; };
     if (k === "--") continue;
     if (k === "--port") a.port = Number(v()); else if (k === "--host") a.host = v(); else if (k === "--save") a.save = v();
     else if (k === "--no-save") a.save = undefined; else if (k === "--fresh") a.fresh = true; else if (k === "--seed") a.seed = Number(v());
-    else if (k === "--stats") a.statsSec = Number(v()); else throw new Error(`unknown argument ${k}`);
+    else if (k === "--stats") a.statsSec = Number(v()); else if (k === "--mode") a.mode = parseMode(v()); else throw new Error(`unknown argument ${k}`);
   }
   return a;
 }
@@ -63,7 +64,8 @@ async function main(): Promise<void> {
   let catalog: import("@engine/core").CosmeticCatalogLike | undefined;
   try { const { loadDefaultManifest } = await import("@engine/assets/node"); catalog = loadDefaultManifest().registry.cosmetics; } catch (e) { console.log(`assets: no cosmetics catalog (${String(e)})`); }
   if (!catalog) console.log("assets: customization disabled (no cosmetics in the pack manifest)");
-  const gs = createGameServer({ transport, ...(store ? { store } : {}), ...(catalog ? { catalog, randomAppearance: true } : {}), seed: args.seed, log: (m) => console.log(m) });
+  const gs = createGameServer({ transport, ...(store ? { store } : {}), ...(catalog ? { catalog, randomAppearance: true } : {}), seed: args.seed, mode: args.mode, log: (m) => console.log(m) });
+  console.log(`server: mode ${gs.mode} (human bots ${gs.modeConfig.humanBots ? "on" : "off"})`);
   console.log(`server: listening ws://${args.host}:${port} protocol v${PROTOCOL_VERSION}, ${1000 / gs.loop.dtMs}Hz, seed ${gs.world.seed}, schema ${gs.world.getSchemaHash().toString(16)}`);
   let last = performance.now(); // wall clock lives OUTSIDE the sim
   const tick = setInterval(() => { const now = performance.now(); gs.loop.advance(now - last); last = now; }, gs.loop.dtMs / 4);

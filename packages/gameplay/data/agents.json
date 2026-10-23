@@ -1,0 +1,25 @@
+{
+  "$comment": "Virtual-player (human bot) archetypes + templated chat lines keyed by situation (see docs/AI_AGENTS.md). Survival Systems owns this file; behaviors are registered in src/agents.ts.",
+  "archetypes": {
+    "survivor": {
+      "perception": { "sightRange": 12, "sightConeDeg": 140, "hearingRange": 18, "memorySeconds": 20 },
+      "imperfections": { "reactionTicks": [4, 12], "aimErrorRad": 0.15, "inputJitter": 0.08, "idlePauseChance": 0.004, "lookAroundChance": 0.01, "pathWobble": 0.25 },
+      "schedule": [
+        { "from": 0.3, "to": 0.72, "prefer": ["gather", "explore"] },
+        { "from": 0.72, "to": 0.85, "prefer": ["return_home"] },
+        { "from": 0.85, "to": 0.2, "prefer": ["rest"] }
+      ],
+      "goals": ["stockpile_food", "craft_better_gear", "build_base"],
+      "chatMinSeconds": 25
+    }
+  },
+  "names": ["Ash", "Briar", "Cole", "Dana", "Ellis", "Fern", "Gus", "Hollis", "Ivy", "Jun", "Kit", "Lark", "Moss", "Nell", "Otto", "Pip", "Quinn", "Rue", "Sage", "Tam"],
+  "chat": {
+    "greet": ["hey {player}", "oh hi, didn't see you there", "evening. stay safe out here", "hi! got any spare berries?"],
+    "flee": ["zombies! run!", "nope nope nope", "they're on me!"],
+    "gather": ["gonna grab some wood", "need more rocks", "these berries look ok"],
+    "return_home": ["getting dark, heading back", "not staying out at night"],
+    "rest": ["need some rest", "quiet night... hopefully"],
+    "idle": ["anyone around?", "this place is too quiet"]
+  }
+}

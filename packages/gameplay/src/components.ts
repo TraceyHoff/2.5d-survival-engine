@@ -175,6 +175,9 @@ export const Burning = defineComponent("Burning", { lit: "u8", intensity: "u8", 
  * The shared registration module: registration order = component ids on every peer (append only!).
  * Includes engine-provided gameplay-facing components (world Emitter, the Buffs modifier stack).
  */
+/** Ambient wildlife (population spawner). kind = index into population.json animals. Not persistent: respawned by density. */
+export const Animal = defineComponent("Animal", { kind: "u8", state: "u8", homeX: "f32", homeY: "f32", goalX: "f32", goalY: "f32", thinkAt: "u32" }, { networked: true });
+
 export const GAMEPLAY_COMPONENTS = [
   Emitter, Buffs,
   Health, ResourceNode, Survival, VitalsState, Exposure, Dead,
@@ -186,4 +189,5 @@ export const GAMEPLAY_COMPONENTS = [
   Burning,
   StallSign,
   Wardrobe,
+  Animal,
 ] as const;

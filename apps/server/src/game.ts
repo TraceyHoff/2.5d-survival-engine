@@ -1,7 +1,7 @@
 /** Authoritative game server: world + gameplay + streaming chunks + persistence + NetServer sessions. */
 import { CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, type CosmeticCatalogLike, Membership, PlayerId, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
-import { ChunkManager, ProceduralGenerator, chunkKeyOf, type BuildingGrid } from "@engine/world";
-import { spawnPlayer, spawnResourceNode, gameplayDefs, setIntent, IntentAction, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installCustomization,
+import { ChunkManager, ProceduralGenerator, chunkKeyOf, type BuildingGrid, type PopulationSpawner } from "@engine/world";
+import { spawnPlayer, spawnResourceNode, gameplayDefs, setIntent, IntentAction, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installPopulation, installCustomization,
   appearanceServerHooks, applyReplication, installStallBuyHook, installViewBonus, setHitValidator, installPvp, playerNames, stallListing, listingRevision, stallOf, tillOf, StallHeader, StallOwnerKind } from "@engine/gameplay";
 import { AppearanceServer, NameSync, NetServer, StallResult, StallServer, TileSync, validateHit, type ClientSession, type ServerTransport, type StallHooks } from "@engine/net";
 import { AccountAssigned, ClaimAccount, SetName, WorldPersistence, loadSocial, tokenToHex, tokenToWords, wordsToName, wordsToToken, type WorldStore } from "@engine/persist";
@@ -32,20 +32,41 @@ export interface GameServerOptions {
   starterCamp?: boolean;
   /** Give each joining client (players and bots) a random valid Appearance as a placeholder until they set their own look. */
   randomAppearance?: boolean;
-  /** Server mode (default "multiplayer"). "singleplayer" = in-browser local server with local human bots. */
-  mode?: ServerMode;
+  /**
+   * Game mode. "singleplayer" (local.ts) enables human bots (virtual players); "multiplayer" (the Node server,
+   * default) forcibly disables them - no bot table entry, no virtual-player joins. Animals + zombies spawn in both.
+   */
+  mode?: GameMode;
+  /** Singleplayer only: the host that connects a virtual player (a loopback client driven by an AgentController). */
+  virtualPlayers?: VirtualPlayerHost;
+  /** Ambient population (zombies, animals, bots via PopulationSpawner). Default true. */
+  population?: boolean;
 }
+export type GameMode = "singleplayer" | "multiplayer";
+/** Resolved mode config: humanBots is true only in singleplayer. */
+export interface GameModeConfig { mode: GameMode; humanBots: boolean }
+export function gameModeConfig(mode: GameMode = "multiplayer", wantBots = true): GameModeConfig { return { mode, humanBots: mode === "singleplayer" && wantBots }; }
+/** Connects a virtual player whose server entity should appear at (x, y); returns false if it cannot. */
+export interface VirtualPlayerHost { connect(x: number, y: number): boolean; disconnect(clientId: number): void }
 
 /** claimed: ClaimAccount processed (saved record restored), so a held join-time look can no longer be overwritten by the restore. */
-interface Player { entity: Entity; account: string; name: string; claimed: boolean }
+interface Player { entity: Entity; account: string; name: string; claimed: boolean; /** virtual player (singleplayer human bot) */ bot?: boolean }
 
-export type ServerMode = "singleplayer" | "multiplayer";
+/** Alias kept for the menu/client code. */
+export type ServerMode = GameMode;
 export interface GameServer {
-  readonly mode: ServerMode;
+  /** "singleplayer" | "multiplayer" (see modeConfig for derived flags). */
+  readonly mode: GameMode;
   world: World; net: NetServer; chunks: ChunkManager; persist: WorldPersistence | undefined; loop: FixedLoop;
   /** Core permissions resource: GroupRegistry (parties/clans), ClaimRegistry, policy. Saved with the world. */
   permissions: PermissionsRes;
   players: ReadonlyMap<number, Player>;
+  /** Resolved mode flags: humanBots only in singleplayer. */
+  modeConfig: GameModeConfig;
+  /** Ambient population spawner (undefined with population: false). */
+  population: PopulationSpawner | undefined;
+  /** Singleplayer host: mark a joined session as a virtual player (false = refused, e.g. multiplayer). */
+  markVirtual(clientId: number): boolean;
   stalls: StallServer; appearance: AppearanceServer | undefined;
   /** Wall-clock ms of recent world.step calls (filled by the host loop via step()). */
   step(dt: number): void;
@@ -80,7 +101,10 @@ export function createGameServer(o: GameServerOptions): GameServer {
   for (const [kind, key] of Object.entries(NODE_RESOURCES)) { try { resIds.set(Number(kind), defs.resourceId(key)); } catch { /* resource renamed: skip */ } }
   chunks.onLoad((_c, nodes) => { for (const n of nodes) { const id = resIds.get(n.kind); if (id !== undefined) spawnResourceNode(world, id, n.tx + 0.5, n.ty + 0.5); } });
 
+  const mode = gameModeConfig(o.mode ?? "multiplayer", !!o.virtualPlayers);
   const players = new Map<number, Player>();
+  // Spawn points chosen by the population spawner for virtual players still connecting. Always empty in multiplayer.
+  const pendingSpots: { x: number; y: number }[] = [];
   let closing = false; // after shutdown() the save is final: disconnects no longer write
   const removeEntity = (e: Entity): void => { if (world.isAlive(e)) world.destroy(e); };
 
@@ -232,6 +256,28 @@ export function createGameServer(o: GameServerOptions): GameServer {
     chunks.update();
   });
   persist?.attach(chunks);
+  // Ambient population: zombies + animals everywhere; human bots only in singleplayer (mode.humanBots).
+  const population = o.population === false ? undefined : installPopulation(world, {
+    tickHz,
+    chunks: () => chunks.activeKeys,
+    tileAt: (tx, ty) => chunks.getTile(tx, ty),
+    viewpoints: () => { const v: { x: number; y: number }[] = []; for (const p of players.values()) { if (p.bot) continue; const t = world.get(p.entity, Transform); if (t) v.push({ x: t.x, y: t.y }); } return v; },
+    ...(o.buildings ? { buildings: o.buildings } : {}),
+    humanBots: mode.humanBots && o.virtualPlayers ? {
+      spawn: (x, y) => { pendingSpots.push({ x, y }); if (o.virtualPlayers!.connect(x, y)) return true; pendingSpots.pop(); return false; },
+      despawn: (e) => { for (const [cid, p] of players) if (p.entity === e && p.bot) { o.virtualPlayers!.disconnect(cid); leave(cid, "bot despawned"); break; } },
+    } : undefined,
+  });
+  /**
+   * Singleplayer host marks a joined session as a virtual player: it is placed at the spawner's chosen point and
+   * tracked as population. Refused (false) in multiplayer, so no session can ever become a server-side bot there.
+   */
+  const markVirtual = (clientId: number): boolean => {
+    const p = players.get(clientId); if (!mode.humanBots || !p || p.bot) return false;
+    p.bot = true; const spot = pendingSpots.shift();
+    if (spot) { world.setField(p.entity, Transform, "x", spot.x); world.setField(p.entity, Transform, "y", spot.y); }
+    population?.adopt(p.entity, "human_bot"); return true;
+  };
   chunks.setSource({ id: 0, x: SPAWN.x, y: SPAWN.y, radius: 1 }); // keep spawn warm
   do chunks.update(); while (chunks.pendingLoads > 0); // load the spawn area before the first tick
   if (o.starterCamp !== false) { const n = seedStarterCamp(world, CAMP).length; if (n) log(`camp: seeded ${n} pieces at ${CAMP.x},${CAMP.y}`); }
@@ -240,7 +286,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
   const step = (dt: number): void => { const t0 = performance.now(); world.step(dt); tickTimes.push(performance.now() - t0); if (tickTimes.length > 4096) tickTimes.splice(0, 2048); };
   const loop = new FixedLoop({ tickHz, step });
   return {
-    mode: o.mode ?? "multiplayer", world, net, chunks, persist, loop, permissions, players, stalls, appearance, step, tickTimes,
+    world, net, chunks, persist, loop, permissions, players, mode: mode.mode, modeConfig: mode, population, markVirtual, stalls, appearance, step, tickTimes,
     async shutdown() {
       if (!persist || closing) return { chunks: 0, players: 0 };
       const r = await persist.saveAll(); closing = true; await persist.store.close(); return r;

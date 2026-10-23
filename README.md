@@ -50,6 +50,10 @@ Limits: single-player plus local bots only, and your world is saved per browser.
 `pnpm demo` or a hosted server: open the page with `?server=wss://your-host` to connect to one instead.
 Locally, `?offline=1` on the Vite dev client forces offline mode.
 
+### Singleplayer vs multiplayer
+- Offline/Pages (`createLocalServer`) is **singleplayer**. Zombies, animals and human bots (virtual players driven by the AI framework, see docs/AI_AGENTS.md) spawn on their own; no commands needed.
+- `pnpm demo` / the Node server is **multiplayer** by default (`--mode singleplayer` or `GAME_MODE=singleplayer` to override). Human bots are completely disabled there, and `?bots` is ignored.
+
 ## Controls
 
 **In the playable client today:** `WASD` move, `Shift` sprint, `E` gather. Reloading the tab reconnects you as the same player.
