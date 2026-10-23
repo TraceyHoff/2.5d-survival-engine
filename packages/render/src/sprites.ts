@@ -336,7 +336,7 @@ export class SpriteBatch {
 
   private heldRes = newResolved();
   /** debug: held items [with item, with hand anchor, drawn] since start */
-  readonly heldStats = [0, 0, 0];
+  readonly heldStats: [number, number, number] = [0, 0, 0];
   /**
    * Held item: pivot (grip) at the hand anchor of the character's current frame, rotated by the anchor angle, sorted just
    * behind / in front of the character, mirrored with the character's flipX. No anchor for the frame = not drawn.
