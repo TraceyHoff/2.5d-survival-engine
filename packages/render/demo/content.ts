@@ -1,7 +1,7 @@
 /**
  * Content loading for the demo / screenshots:
  *  1. default: Art & Assets' pack via @engine/assets fetchDefaultManifest("/@assets/") (packages/assets/pack/).
- *     Optional survival_fx manifest fragments from /@art/survival_fx/build/*.json (read-only /workspace/assets) are
+ *     Optional survival_fx manifest fragments from /@art/survival_fx/build/*.json (read-only assets/ (repo root)) are
  *     merged into the pack manifest on the way in (keys already in the pack win).
  *  2. ?content=sample: the @engine/assets SAMPLE fixture + a TexturePacker JSON-hash fixture (assets/debug/zombies_tp.json)
  *     merged through importTexturePacker -> mergeTexturePacker -> loadManifest (debug only).

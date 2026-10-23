@@ -24,6 +24,8 @@ import { STATUS_TINTS, TINT_MODE_INDEX, type StatusTint, type StatusTintName } f
 import type { AssetManager } from "@engine/core";
 import type { RectTable } from "./texturePacker.js";
 
+/** Held-item hand anchor of one character frame (Art hands.json). */
+export interface HandAnchor { x: number; y: number; angle: number; len?: number; behind: boolean }
 export type MaskName = "sheen" | "sway" | "tintmask";
 /** Frame-table flag bits (low 4 bits of the flags float; tint row = flags >> 4). */
 export const FrameBits = { Emissive: 1, Sheen: 2, Sway: 4, TintMask: 8 } as const;
@@ -37,8 +39,10 @@ export type ImageLike = ImageBitmap | HTMLImageElement | HTMLCanvasElement | Off
 /** AnimState.state -> animation names tried in order (first animation is the final fallback). */
 export const STATE_ANIMS: readonly (readonly string[])[] = [
   ["idle"], ["walk"], ["run", "walk"], ["attack"], ["hit", "hurt", "idle"], ["death", "idle"], ["shamble", "walk"],
+  // 7 crawl, 8 feed (gameplay AnimState; zombie_*_crawl / zombie_*_feed in pack wave 2)
+  ["crawl", "shamble", "walk"], ["feed", "attack", "idle"],
 ];
-export const enum AnimStateId { Idle = 0, Walk = 1, Run = 2, Attack = 3, Hit = 4, Death = 5, Shamble = 6 }
+export const enum AnimStateId { Idle = 0, Walk = 1, Run = 2, Attack = 3, Hit = 4, Death = 5, Shamble = 6, Crawl = 7, Feed = 8 }
 
 interface SpriteRT {
   atlasIdx: number; anchorX: number; anchorY: number;
@@ -258,7 +262,7 @@ export class AtlasManager {
       sprites[id] = { atlasIdx: list.indexOf(at), anchorX: s.anchor.x, anchorY: s.anchor.y, anims: s.animList, stateAnim, damage,
         ...(b ? { building: { fw: b.footprint.w, fh: b.footprint.h, layer: b.layer, frames: b.frames } } : {}) };
     }
-    this.atlases = list; this.atlasById = new Map(list.map((a) => [a.id, a])); this.sprites = sprites; this.registry = registry; this.resolveSway();
+    this.atlases = list; this.atlasById = new Map(list.map((a) => [a.id, a])); this.sprites = sprites; this.registry = registry; this.resolveSway(); this.resolveVariants(); this.resolveRoofs(); this.resolveHands();
     this.uploadTints();
     this.maskPixels.clear();
     this.held = held; this.version++;
@@ -435,6 +439,7 @@ export class AtlasManager {
    * rotationArt -> out.flipX). out.hasDamageFrames is false when the stage has no own frame (crack overlay fallback).
    */
   resolvePiece(spriteId: number, variant: number, rotation: number, damage: number, out: ResolvedFrame, state = -1): boolean {
+    if (variant > 0) { const g = this.variantById.get(spriteId); if (g?.length) { spriteId = g[variant % g.length]!; variant = 0; } }
     const s = this.sprites[spriteId]; if (!s || !this.registry) return false;
     const a = this.atlases[s.atlasIdx]!;
     if (s.building) {
@@ -460,6 +465,46 @@ export class AtlasManager {
     const contiguous = an.frames.every((f, i) => f === an.frames[0]! + i);
     const r = newResolved(); this.fill(a, an.frames[0]!, s, r);
     return { first: r.entry, count: contiguous ? an.frames.length : 1, fps: an.fps, contiguous, w: r.w, h: r.h, ax: r.ax, ay: r.ay };
+  }
+
+  /**
+   * BuildPiece.variant groups: base sprite key -> sprite keys by variant index (variant 0 = the base), e.g. Art's
+   * pack/piece_variants.json `pieces` or pvp_clan wall looks (`wall` + variant). Unknown keys are reported, not thrown.
+   * Building sprites without a group fall back to the variant-th frame of their first animation only when non-building.
+   */
+  setPieceVariants(table: Record<string, string[]>): string[] {
+    this.variantKeys = table; return this.resolveVariants();
+  }
+  private variantKeys: Record<string, string[]> = {};
+  private handsByAtlas = new Map<string, Record<string, HandAnchor>>();
+  private handByEntry = new Map<number, HandAnchor>();
+  /** Per-frame hand anchors of an atlas (Art `<atlas>.hands.json` `hands`: frame -> {x, y (1x px from frame top-left), angle deg, behind}). */
+  setHands(atlasKey: string, json: { hands: Record<string, HandAnchor> }): void { this.handsByAtlas.set(atlasKey, json.hands); this.resolveHands(); }
+  /** Hand anchor of a frame-table entry (ResolvedFrame.entry), if its atlas has one for that frame. */
+  handAt(entry: number): HandAnchor | undefined { return this.handByEntry.get(entry); }
+  private resolveHands(): void {
+    this.handByEntry.clear();
+    for (const a of this.atlases) { const hs = this.handsByAtlas.get(a.key); if (!hs) continue; for (const [f, h] of Object.entries(hs)) { const n = Number(f); if (n >= 0 && n < a.count) this.handByEntry.set(a.base + n, h); } }
+  }
+  private variantById = new Map<number, number[]>();
+  private roofById = new Set<number>();
+  private resolveVariants(): string[] {
+    const issues: string[] = []; this.variantById.clear(); const reg = this.registry; if (!reg) return issues;
+    for (const [base, keys] of Object.entries(this.variantKeys)) {
+      const b = reg.ids.sprites.tryId(base); if (b === undefined) { issues.push(`piece variants: unknown base ${base}`); continue; }
+      const ids = keys.map((k) => { const id = reg.ids.sprites.tryId(k); if (id === undefined) issues.push(`piece variants: unknown ${k}`); return id ?? b; });
+      this.variantById.set(b, ids);
+    }
+    return issues;
+  }
+  /**
+   * Roof pieces: detected from the sprite (building.piece / key `roof*`, Art wave 2 roof_slope/ridge/... tiers), never from
+   * the layer number. Roofs sit on the deck layer (gameplay LAYER_DECK = 0) of the level above the walls.
+   */
+  isRoof(spriteId: number): boolean { return this.roofById.has(spriteId); }
+  private resolveRoofs(): void {
+    this.roofById.clear(); if (!this.registry) return;
+    for (const s of this.registry.allSprites()) if ((s.building?.piece ?? s.key).startsWith("roof")) this.roofById.add(s.id);
   }
 
   /** Footprint/layer of a building sprite (null for non-building sprites). Rotation 1/3 swaps w/h. */

@@ -1,0 +1,271 @@
+{
+ "$schema": "./screen.schema.json",
+ "schema": "ui-screen/1",
+ "id": "main_menu",
+ "title": "Connect / main menu (replaces the netcode debug overlay)",
+ "layer": "modal",
+ "modal": true,
+ "root": {
+  "type": "box",
+  "id": "main_menu",
+  "w": "fill",
+  "h": "fill",
+  "children": [
+   {
+    "type": "backdrop",
+    "src": "{menu.backdrop}",
+    "w": "fill",
+    "h": "fill"
+   },
+   {
+    "type": "logo",
+    "text": "{app.title}",
+    "subtitle": "{app.tagline}",
+    "anchor": "tc",
+    "x": 0,
+    "y": 40,
+    "w": 640,
+    "h": 150
+   },
+   {
+    "type": "box",
+    "id": "connect_window",
+    "anchor": "cc",
+    "x": 0,
+    "y": 70,
+    "w": 460,
+    "h": 360,
+    "children": [
+     {
+      "type": "panel",
+      "frame": "panel_wood_vine",
+      "w": 460,
+      "h": 360,
+      "pad": 26,
+      "layout": "col",
+      "gap": 10,
+      "children": [
+       {
+        "type": "text",
+        "text": "Server",
+        "font": "label",
+        "h": 20
+       },
+       {
+        "type": "input",
+        "id": "server_url",
+        "bind": "{net.serverUrl}",
+        "placeholder": "ws://localhost:8080",
+        "w": "fill",
+        "h": 44,
+        "icon": "ic_signal",
+        "disabled": "{net.connecting}"
+       },
+       {
+        "type": "text",
+        "text": "Your name",
+        "font": "label",
+        "h": 20
+       },
+       {
+        "type": "box",
+        "layout": "row",
+        "gap": 8,
+        "w": "fill",
+        "h": 44,
+        "children": [
+         {
+          "type": "input",
+          "id": "player_name",
+          "bind": "{player.name}",
+          "placeholder": "Camper",
+          "maxLength": 16,
+          "w": "fill",
+          "h": 44,
+          "disabled": "{net.connecting}"
+         },
+         {
+          "type": "repeat",
+          "each": "{menu.colors}",
+          "as": "c",
+          "layout": "row",
+          "gap": 4,
+          "w": 124,
+          "h": 44,
+          "template": {
+           "type": "swatch",
+           "color": "{c.hex}",
+           "selected": "{c.selected}",
+           "w": 28,
+           "h": 28,
+           "action": {
+            "event": "player.setColor",
+            "args": {
+             "index": "{c.index}"
+            }
+           }
+          }
+         }
+        ]
+       },
+       {
+        "type": "box",
+        "layout": "row",
+        "gap": 10,
+        "w": "fill",
+        "h": 56,
+        "children": [
+         {
+          "type": "button",
+          "label": "{net.connecting ? 'Connecting\u2026' : 'Connect'}",
+          "variant": "primary",
+          "w": "fill",
+          "h": 56,
+          "icon": "ic_arrow_right",
+          "action": {
+           "event": "net.connect",
+           "args": {
+            "url": "{net.serverUrl}",
+            "name": "{player.name}"
+           }
+          },
+          "disabled": "{net.connecting}",
+          "hotkey": "Enter"
+         },
+         {
+          "type": "button",
+          "label": "Solo",
+          "variant": "secondary",
+          "w": 110,
+          "h": 56,
+          "icon": "ic_home",
+          "action": {
+           "event": "net.hostLocal"
+          }
+         }
+        ]
+       },
+       {
+        "type": "panel",
+        "id": "net_status",
+        "frame": "panel_inset",
+        "w": "fill",
+        "h": 44,
+        "pad": [
+         6,
+         10,
+         6,
+         10
+        ],
+        "layout": "row",
+        "gap": 8,
+        "align": "center",
+        "children": [
+         {
+          "type": "icon",
+          "icon": "{net.statusIcon}",
+          "w": 28,
+          "h": 28,
+          "spin": "{net.connecting}"
+         },
+         {
+          "type": "text",
+          "text": "{net.statusText}",
+          "font": "small",
+          "w": "fill"
+         },
+         {
+          "type": "icon",
+          "icon": "ic_signal",
+          "w": 24,
+          "h": 24,
+          "visible": "{net.connected}"
+         },
+         {
+          "type": "text",
+          "text": "{net.rtt|int} ms",
+          "font": "label",
+          "w": 56,
+          "align": "right",
+          "visible": "{net.connected}"
+         }
+        ]
+       },
+       {
+        "type": "text",
+        "text": "{net.error}",
+        "font": "small",
+        "color": "text.danger",
+        "h": 18,
+        "visible": "{net.error}"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "type": "box",
+    "anchor": "bc",
+    "x": 0,
+    "y": 24,
+    "w": 520,
+    "h": 44,
+    "layout": "row",
+    "gap": 12,
+    "justify": "center",
+    "children": [
+     {
+      "type": "button",
+      "label": "Settings",
+      "variant": "secondary",
+      "w": 150,
+      "h": 44,
+      "icon": "ic_gear",
+      "action": {
+       "event": "ui.open",
+       "args": {
+        "screen": "pause_settings"
+       }
+      }
+     },
+     {
+      "type": "button",
+      "label": "Credits",
+      "variant": "secondary",
+      "w": 150,
+      "h": 44,
+      "icon": "ic_star",
+      "action": {
+       "event": "ui.open",
+       "args": {
+        "screen": "credits"
+       }
+      }
+     },
+     {
+      "type": "button",
+      "label": "Quit",
+      "variant": "danger",
+      "w": 120,
+      "h": 44,
+      "action": {
+       "event": "app.quit"
+      }
+     }
+    ]
+   },
+   {
+    "type": "text",
+    "text": "v{app.version} \u00b7 {net.protocol}",
+    "font": "tiny",
+    "anchor": "br",
+    "x": 12,
+    "y": 10,
+    "color": "text.onDarkMuted",
+    "w": 200,
+    "align": "right"
+   }
+  ]
+ },
+ "replaces": "apps/client net connect overlay (server URL, name, Connect, status/RTT)"
+}

@@ -1,0 +1,525 @@
+{
+ "frames": {
+  "price_tag": {
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9
+   },
+   "index": 0
+  },
+  "shop_sign_0": {
+   "frame": {
+    "x": 96,
+    "y": 0,
+    "w": 96,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9
+   },
+   "index": 1
+  },
+  "shop_sign_1": {
+   "frame": {
+    "x": 192,
+    "y": 0,
+    "w": 96,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9
+   },
+   "index": 2
+  },
+  "shop_sign_2": {
+   "frame": {
+    "x": 288,
+    "y": 0,
+    "w": 96,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9
+   },
+   "index": 3
+  },
+  "coin_pouch": {
+   "frame": {
+    "x": 384,
+    "y": 0,
+    "w": 96,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9
+   },
+   "index": 4
+  },
+  "barter_scale": {
+   "frame": {
+    "x": 480,
+    "y": 0,
+    "w": 96,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9
+   },
+   "index": 5
+  },
+  "barter_scale_tip": {
+   "frame": {
+    "x": 576,
+    "y": 0,
+    "w": 96,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9
+   },
+   "index": 6
+  },
+  "display_slot": {
+   "frame": {
+    "x": 672,
+    "y": 0,
+    "w": 96,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9
+   },
+   "index": 7
+  },
+  "stall_lantern_off": {
+   "frame": {
+    "x": 0,
+    "y": 80,
+    "w": 96,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9
+   },
+   "index": 8
+  },
+  "stall_lantern_0": {
+   "frame": {
+    "x": 96,
+    "y": 80,
+    "w": 96,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9
+   },
+   "index": 9
+  },
+  "stall_lantern_1": {
+   "frame": {
+    "x": 192,
+    "y": 80,
+    "w": 96,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9
+   },
+   "index": 10
+  },
+  "stall_lantern_2": {
+   "frame": {
+    "x": 288,
+    "y": 80,
+    "w": 96,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9
+   },
+   "index": 11
+  },
+  "stall_lantern_3": {
+   "frame": {
+    "x": 384,
+    "y": 80,
+    "w": 96,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9
+   },
+   "index": 12
+  },
+  "shop_bell_0": {
+   "frame": {
+    "x": 480,
+    "y": 80,
+    "w": 96,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9
+   },
+   "index": 13
+  },
+  "shop_bell_1": {
+   "frame": {
+    "x": 576,
+    "y": 80,
+    "w": 96,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9
+   },
+   "index": 14
+  },
+  "shop_bell_2": {
+   "frame": {
+    "x": 672,
+    "y": 80,
+    "w": 96,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9
+   },
+   "index": 15
+  },
+  "shop_bell_3": {
+   "frame": {
+    "x": 0,
+    "y": 160,
+    "w": 96,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9
+   },
+   "index": 16
+  },
+  "shop_bell_4": {
+   "frame": {
+    "x": 96,
+    "y": 160,
+    "w": 96,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9
+   },
+   "index": 17
+  },
+  "shop_bell_5": {
+   "frame": {
+    "x": 192,
+    "y": 160,
+    "w": 96,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9
+   },
+   "index": 18
+  },
+  "stall_rent_marker": {
+   "frame": {
+    "x": 288,
+    "y": 160,
+    "w": 96,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9
+   },
+   "index": 19
+  }
+ },
+ "meta": {
+  "app": "pvp_clan/tools (procedural)",
+  "version": "1.0",
+  "image": "stall_props.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 768,
+   "h": 240
+  },
+  "scale": "1",
+  "grid": {
+   "frameW": 96,
+   "frameH": 80,
+   "columns": 8,
+   "rows": 3,
+   "firstRow": 0,
+   "margin": 2
+  },
+  "emissive": "stall_props_emissive.png",
+  "tintmask": "stall_props_tintmask.png"
+ }
+}

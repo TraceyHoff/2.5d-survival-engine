@@ -1,0 +1,1525 @@
+{
+ "frames": {
+  "wall_clan_wood/damage0/r0": {
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 0
+  },
+  "wall_clan_wood/damage0/r1": {
+   "frame": {
+    "x": 96,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 1
+  },
+  "wall_clan_wood/damage1/r0": {
+   "frame": {
+    "x": 192,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 2
+  },
+  "wall_clan_wood/damage1/r1": {
+   "frame": {
+    "x": 288,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 3
+  },
+  "wall_clan_wood/damage2/r0": {
+   "frame": {
+    "x": 384,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 4
+  },
+  "wall_clan_wood/damage2/r1": {
+   "frame": {
+    "x": 480,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 5
+  },
+  "wall_clan_wood/damage3/r0": {
+   "frame": {
+    "x": 576,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 6
+  },
+  "wall_clan_wood/damage3/r1": {
+   "frame": {
+    "x": 672,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 7
+  },
+  "wall_clan_stone/damage0/r0": {
+   "frame": {
+    "x": 768,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 8
+  },
+  "wall_clan_stone/damage0/r1": {
+   "frame": {
+    "x": 864,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 9
+  },
+  "wall_clan_stone/damage1/r0": {
+   "frame": {
+    "x": 0,
+    "y": 128,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 10
+  },
+  "wall_clan_stone/damage1/r1": {
+   "frame": {
+    "x": 96,
+    "y": 128,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 11
+  },
+  "wall_clan_stone/damage2/r0": {
+   "frame": {
+    "x": 192,
+    "y": 128,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 12
+  },
+  "wall_clan_stone/damage2/r1": {
+   "frame": {
+    "x": 288,
+    "y": 128,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 13
+  },
+  "wall_clan_stone/damage3/r0": {
+   "frame": {
+    "x": 384,
+    "y": 128,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 14
+  },
+  "wall_clan_stone/damage3/r1": {
+   "frame": {
+    "x": 480,
+    "y": 128,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 15
+  },
+  "wall_clan_palisade/damage0/r0": {
+   "frame": {
+    "x": 576,
+    "y": 128,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 16
+  },
+  "wall_clan_palisade/damage0/r1": {
+   "frame": {
+    "x": 672,
+    "y": 128,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 17
+  },
+  "wall_clan_palisade/damage1/r0": {
+   "frame": {
+    "x": 768,
+    "y": 128,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 18
+  },
+  "wall_clan_palisade/damage1/r1": {
+   "frame": {
+    "x": 864,
+    "y": 128,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 19
+  },
+  "wall_clan_palisade/damage2/r0": {
+   "frame": {
+    "x": 0,
+    "y": 256,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 20
+  },
+  "wall_clan_palisade/damage2/r1": {
+   "frame": {
+    "x": 96,
+    "y": 256,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 21
+  },
+  "wall_clan_palisade/damage3/r0": {
+   "frame": {
+    "x": 192,
+    "y": 256,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 22
+  },
+  "wall_clan_palisade/damage3/r1": {
+   "frame": {
+    "x": 288,
+    "y": 256,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 23
+  },
+  "barricade_spiked/damage0/r0": {
+   "frame": {
+    "x": 384,
+    "y": 256,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 24
+  },
+  "barricade_spiked/damage0/r1": {
+   "frame": {
+    "x": 480,
+    "y": 256,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 25
+  },
+  "barricade_spiked/damage1/r0": {
+   "frame": {
+    "x": 576,
+    "y": 256,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 26
+  },
+  "barricade_spiked/damage1/r1": {
+   "frame": {
+    "x": 672,
+    "y": 256,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 27
+  },
+  "barricade_spiked/damage2/r0": {
+   "frame": {
+    "x": 768,
+    "y": 256,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 28
+  },
+  "barricade_spiked/damage2/r1": {
+   "frame": {
+    "x": 864,
+    "y": 256,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 29
+  },
+  "barricade_spiked/damage3/r0": {
+   "frame": {
+    "x": 0,
+    "y": 384,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 30
+  },
+  "barricade_spiked/damage3/r1": {
+   "frame": {
+    "x": 96,
+    "y": 384,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 31
+  },
+  "storage_box_locked/damage0/r0": {
+   "frame": {
+    "x": 192,
+    "y": 384,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 32
+  },
+  "storage_box_locked/damage0/r1": {
+   "frame": {
+    "x": 288,
+    "y": 384,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 33
+  },
+  "storage_box_locked/damage1/r0": {
+   "frame": {
+    "x": 384,
+    "y": 384,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 34
+  },
+  "storage_box_locked/damage1/r1": {
+   "frame": {
+    "x": 480,
+    "y": 384,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 35
+  },
+  "storage_box_locked/damage2/r0": {
+   "frame": {
+    "x": 576,
+    "y": 384,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 36
+  },
+  "storage_box_locked/damage2/r1": {
+   "frame": {
+    "x": 672,
+    "y": 384,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 37
+  },
+  "storage_box_locked/damage3/r0": {
+   "frame": {
+    "x": 768,
+    "y": 384,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 38
+  },
+  "storage_box_locked/damage3/r1": {
+   "frame": {
+    "x": 864,
+    "y": 384,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 39
+  },
+  "raid_bell/damage0/r0": {
+   "frame": {
+    "x": 0,
+    "y": 512,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 40
+  },
+  "raid_bell/damage0/r1": {
+   "frame": {
+    "x": 96,
+    "y": 512,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 41
+  },
+  "raid_bell/damage1/r0": {
+   "frame": {
+    "x": 192,
+    "y": 512,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 42
+  },
+  "raid_bell/damage1/r1": {
+   "frame": {
+    "x": 288,
+    "y": 512,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 43
+  },
+  "raid_bell/damage2/r0": {
+   "frame": {
+    "x": 384,
+    "y": 512,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 44
+  },
+  "raid_bell/damage2/r1": {
+   "frame": {
+    "x": 480,
+    "y": 512,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 45
+  },
+  "raid_bell/damage3/r0": {
+   "frame": {
+    "x": 576,
+    "y": 512,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 46
+  },
+  "raid_bell/damage3/r1": {
+   "frame": {
+    "x": 672,
+    "y": 512,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 47
+  },
+  "raid_bell/ring/SE/0": {
+   "frame": {
+    "x": 768,
+    "y": 512,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 48
+  },
+  "raid_bell/ring/SE/1": {
+   "frame": {
+    "x": 864,
+    "y": 512,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 49
+  },
+  "raid_bell/ring/SE/2": {
+   "frame": {
+    "x": 0,
+    "y": 640,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 50
+  },
+  "raid_bell/ring/SE/3": {
+   "frame": {
+    "x": 96,
+    "y": 640,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 51
+  },
+  "raid_bell/ring/SE/4": {
+   "frame": {
+    "x": 192,
+    "y": 640,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 52
+  },
+  "raid_bell/ring/SE/5": {
+   "frame": {
+    "x": 288,
+    "y": 640,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 53
+  },
+  "raid_bell/ring/SW/0": {
+   "frame": {
+    "x": 384,
+    "y": 640,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 54
+  },
+  "raid_bell/ring/SW/1": {
+   "frame": {
+    "x": 480,
+    "y": 640,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 55
+  },
+  "raid_bell/ring/SW/2": {
+   "frame": {
+    "x": 576,
+    "y": 640,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 56
+  },
+  "raid_bell/ring/SW/3": {
+   "frame": {
+    "x": 672,
+    "y": 640,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 57
+  },
+  "raid_bell/ring/SW/4": {
+   "frame": {
+    "x": 768,
+    "y": 640,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 58
+  },
+  "raid_bell/ring/SW/5": {
+   "frame": {
+    "x": 864,
+    "y": 640,
+    "w": 96,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 128
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "index": 59
+  }
+ },
+ "meta": {
+  "app": "pvp_clan/tools (procedural)",
+  "version": "1.0",
+  "image": "clan_buildings.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 960,
+   "h": 768
+  },
+  "scale": "1",
+  "grid": {
+   "frameW": 96,
+   "frameH": 128,
+   "columns": 10,
+   "rows": 6,
+   "firstRow": 0,
+   "margin": 2
+  },
+  "emissive": null,
+  "tintmask": "clan_buildings_tintmask.png"
+ }
+}

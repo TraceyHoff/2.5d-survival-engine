@@ -1,0 +1,97 @@
+{
+ "source": "ui/theme.json chat.channels (tag color drives the bubble lip/outline); channelIds from theme chat.channelIds",
+ "channels": {
+  "global": {
+   "tag": "#D08C52",
+   "text": "#3B2433",
+   "name": "#3B2433",
+   "sprite": "bubble_global",
+   "tail": "bubble_global_tail"
+  },
+  "local": {
+   "tag": "#72C45C",
+   "text": "#3B2433",
+   "name": "#3B2433",
+   "sprite": "bubble_local",
+   "tail": "bubble_local_tail"
+  },
+  "party": {
+   "tag": "#5CC6DC",
+   "text": "#3B2433",
+   "name": "#3A66A8",
+   "sprite": "bubble_party",
+   "tail": "bubble_party_tail"
+  },
+  "clan": {
+   "tag": "#9B72D6",
+   "text": "#3B2433",
+   "name": "#7452AD",
+   "sprite": "bubble_clan",
+   "tail": "bubble_clan_tail"
+  },
+  "whisper": {
+   "tag": "#FF9EC4",
+   "text": "#3B2433",
+   "name": "#9C4A72",
+   "sprite": "bubble_whisper",
+   "tail": "bubble_whisper_tail"
+  },
+  "trade": {
+   "tag": "#F4A74A",
+   "text": "#3B2433",
+   "name": "#A24E34",
+   "sprite": "bubble_trade",
+   "tail": "bubble_trade_tail"
+  },
+  "system": {
+   "tag": "#A9A094",
+   "text": "#3B2433",
+   "name": "#6B4A5A",
+   "sprite": "bubble_system",
+   "tail": "bubble_system_tail"
+  },
+  "warning": {
+   "tag": "#E85D4F",
+   "text": "#3B2433",
+   "name": "#A24E34",
+   "sprite": "bubble_warning",
+   "tail": "bubble_warning_tail"
+  },
+  "combat": {
+   "tag": "#E8475F",
+   "text": "#3B2433",
+   "name": "#B8304F",
+   "sprite": "bubble_combat",
+   "tail": "bubble_combat_tail"
+  },
+  "admin": {
+   "tag": "#5CE0D8",
+   "text": "#3B2433",
+   "name": "#1F5E62",
+   "sprite": "bubble_admin",
+   "tail": "bubble_admin_tail"
+  }
+ },
+ "clanTintable": {
+  "sprite": "bubble_clan_tint",
+  "tail": "bubble_clan_tint_tail",
+  "mask": "chat_bubbles_tintmask R = lip"
+ },
+ "nameplateRoles": {
+  "neutral": "nameplate_neutral",
+  "self": "nameplate_self",
+  "party": "nameplate_party",
+  "clan": "nameplate_clan",
+  "enemy": "nameplate_enemy"
+ },
+ "nameplateText": {
+  "font": "fonts/font_nameplate.json (MSDF)",
+  "color": "#F6EAD2",
+  "stroke": "#2A1B2E"
+ },
+ "clanTag": {
+  "sprite": "nameplate_clan_tag",
+  "mask": "R face = clan primary, G lip = clan secondary",
+  "text": "#3B2433"
+ }
+}

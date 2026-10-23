@@ -1,0 +1,75 @@
+{
+ "frames": {
+  "badge_sold_out": {
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 64
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "index": 0
+  },
+  "badge_closed": {
+   "frame": {
+    "x": 128,
+    "y": 0,
+    "w": 128,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 64
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "index": 1
+  }
+ },
+ "meta": {
+  "app": "pvp_clan/tools (procedural)",
+  "version": "1.0",
+  "image": "stall_badges@2x.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 256,
+   "h": 64
+  },
+  "scale": "2",
+  "grid": {
+   "frameW": 128,
+   "frameH": 64,
+   "columns": 2,
+   "rows": 1,
+   "firstRow": 0,
+   "margin": 4
+  },
+  "emissive": null,
+  "tintmask": null
+ }
+}

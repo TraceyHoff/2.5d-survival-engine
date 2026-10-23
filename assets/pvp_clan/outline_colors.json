@@ -1,0 +1,56 @@
+{
+ "note": "World outline colors for player silhouettes / nameplate trims. Blue-vs-vermillion axis (Okabe-Ito style) keeps friend/foe separable for protan/deutan/tritan; self and neutral differ by luminance. Pair color with a shape cue (enemy pulse, party pip) for accessibility. Ink under-stroke for all: #3B2433 at 1px.",
+ "ink": "#3B2433",
+ "colors": {
+  "self": {
+   "color": "#FFE680",
+   "style": "solid",
+   "desc": "Your own character: warm sunny yellow, brightest."
+  },
+  "party": {
+   "color": "#7FE0EE",
+   "style": "solid + party crown/star pip",
+   "desc": "Party members: bright sky-cyan."
+  },
+  "clan": {
+   "color": "#4F8FD6",
+   "style": "solid",
+   "desc": "Clan mates / allies: true blue."
+  },
+  "neutral": {
+   "color": "#B8B0C8",
+   "style": "thin, 60% alpha",
+   "desc": "Neutral / unflagged players: soft lilac-grey (darker than self, so tritan eyes still split them)."
+  },
+  "enemy": {
+   "color": "#E8492E",
+   "style": "solid, +0.5px width, slow pulse",
+   "desc": "Hostile / enemy clan: vermillion (reads dark-olive to red-blind eyes, never confused with blue)."
+  }
+ },
+ "cvdCheck_CIELAB_dE76": {
+  "normal": {
+   "minDeltaE": 34.5,
+   "closestPair": "party/neutral"
+  },
+  "protan": {
+   "minDeltaE": 13.6,
+   "closestPair": "party/neutral"
+  },
+  "deutan": {
+   "minDeltaE": 11.8,
+   "closestPair": "party/neutral"
+  },
+  "tritan": {
+   "minDeltaE": 22.6,
+   "closestPair": "self/neutral"
+  }
+ },
+ "highContrastAlt": {
+  "self": "#FFFFFF",
+  "party": "#00E5FF",
+  "clan": "#2F6BFF",
+  "neutral": "#C9C2B8",
+  "enemy": "#FF3B1F"
+ }
+}

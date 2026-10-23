@@ -1,16 +1,16 @@
 /**
  * Render demo: real @engine/core World + createGameLoop (20 Hz) driving IsoRenderer, content from
- * /workspace/assets (if present) or the @engine/assets sample manifest (debug placeholders) + a TexturePacker fixture.
+ * assets/ (repo root) (if present) or the @engine/assets sample manifest (debug placeholders) + a TexturePacker fixture.
  * URL params: time=0..24 weather=clear|rain|storm|snow|fog|<id> intensity=0..1 density=1 zombies=200 size=128 seed=7
  *             zoom=1 freeze=1 ui=0 lights=0 shadows=0 bench=SECONDS theme=alt gallery=1 inside=1 content=sample interp=0 occtest=1 occ=fade|dither|off sil=0
  */
 import { World, InputState, Action, createGameLoop, Transform, entityIndex, PrevTransform, Weather } from "@engine/core";
 import { IsoRenderer } from "../src/index.js";
-import { buildScene, DEMO_COMPONENTS } from "./scene.js";
+import { buildScene, DEMO_COMPONENTS, DEMO_HELD } from "./scene.js";
 import { installDemoSystems } from "./systems.js";
 import { DebugUI, WEATHER_NAMES } from "./ui.js";
-import { BuildPiece, AnimState, Wetness, BodyTemp, Emitter, Fuel } from "./mockGameplay.js";
-import { loadContent, makeDebugTheme } from "./content.js";
+import { BuildPiece, AnimState, Wetness, BodyTemp, Emitter, Fuel, Burning, Equipment } from "./mockGameplay.js";
+import { loadContent, makeDebugTheme, ASSETS_BASE } from "./content.js";
 import { showGallery } from "./gallery.js";
 import { initTime, setWeather } from "./time.js";
 
@@ -44,9 +44,20 @@ async function main(): Promise<void> {
   if (q.get("theme") === "alt") await renderer.atlas.setTheme("alt");
   if (q.get("gallery") === "1") { showGallery(renderer.atlas, content.registry, `${content.origin === "pack" ? "@engine/assets pack (fetchDefaultManifest)" : "@engine/assets sample fixture (DEBUG)"}${q.get("theme") === "alt" ? " — theme alt" : ""}`); window.__iso = { ready: true, gallery: true }; return; }
 
-  const scene = buildScene(world, content.registry, { size: num("size", 128), seed: num("seed", 7), density: num("density", 1), zombies: num("zombies", 200), inside: q.get("inside") === "1", occlusionTest: q.get("occtest") === "1" });
+  // pack sidecars: BuildPiece.variant groups (piece_variants.json) and per-frame hand anchors (<atlas>.hands.json)
+  if (content.origin === "pack") {
+    const pv = await fetch(ASSETS_BASE + "pack/piece_variants.json").then((r) => r.ok ? r.json() : null).catch(() => null) as { pieces?: Record<string, string[]> } | null;
+    const vi = renderer.atlas.setPieceVariants({ ...(pv?.pieces ?? {}), ...(q.get("wallvariants") !== "0" ? { wall: ["wall", "wall_stone", "wall_metal", "wall_twig"] } : {}) });
+    if (vi.length) console.warn("piece variants:", vi);
+    for (const a of content.registry.atlases.keys()) {
+      const h = await fetch(`${ASSETS_BASE}pack/atlases/${a}.hands.json`).then((r) => r.ok && (r.headers.get("content-type") ?? "").includes("json") ? r.json() : null).catch(() => null);
+      if (h?.hands) renderer.atlas.setHands(a, h);
+    }
+  }
+  const scene = buildScene(world, content.registry, { size: num("size", 128), seed: num("seed", 7), density: num("density", 1), zombies: num("zombies", 200), inside: q.get("inside") === "1", occlusionTest: q.get("occtest") === "1", burn: q.get("burn") !== "0" });
   renderer.tilemap = scene.map;
-  renderer.bindGameplay({ buildPiece: BuildPiece, animState: AnimState, wetness: Wetness, bodyTemp: BodyTemp, emitter: Emitter, lit: Fuel });
+  renderer.bindGameplay({ buildPiece: BuildPiece, animState: AnimState, wetness: Wetness, bodyTemp: BodyTemp, emitter: Emitter, lit: Fuel,
+    burning: Burning, equipment: Equipment, heldSprite: (item) => { const k = DEMO_HELD[item]; return k ? content.registry.ids.sprites.tryId(k) : undefined; } });
   renderer.setBuildingGrid(scene.grid);
   renderer.setSpatialIndex(scene.index);
   renderer.setFocusEntity(scene.player);
@@ -59,7 +70,8 @@ async function main(): Promise<void> {
   if (q.get("lights") === "0") renderer.settings.lights = false;
   if (q.get("shadows") === "0") renderer.settings.shadows = false;
   const cam = renderer.camera;
-  if (q.get("cam") === "fire") cam.lookAt(scene.base.x + 3.5, scene.base.y + scene.base.h + 2, 1); else cam.lookAt(scene.base.x + 4, scene.base.y + 4, 1);
+  const camQ = q.get("cam"); const pl = world.get(scene.player, Transform)!;
+  if (camQ === "fire") cam.lookAt(scene.base.x + 3.5, scene.base.y + scene.base.h + 2, 1); else if (camQ === "burn") cam.lookAt(scene.base.x + 10, scene.base.y + 5.5, 1); else if (camQ === "players") cam.lookAt(pl.x + 1, pl.y, 1); else cam.lookAt(scene.base.x + 4, scene.base.y + 4, 1);
   cam.zoom = num("zoom", 1.6);
 
   const input = new InputState();
@@ -129,7 +141,7 @@ async function main(): Promise<void> {
       else { bench.frames++; bench.sumMs += dtMs; bench.maxMs = Math.max(bench.maxMs, dtMs); bench.sprites = st.sprites; bench.drawCalls = st.drawCalls; }
       if (now - bench.start >= bench.durationMs) bench.done = true;
     }
-    window.__iso = {
+    window.__iso = { held: renderer.heldStats,
       ready: world.tick > 2, frameMs: lastFrameMs, fps: fpsAvg, stats: { ...st }, totalSprites: scene.spriteCount, pieces: scene.pieceCount, origin: content.origin, look: lookInfo, surface: { ...renderer.surface },
       bench: bench.done ? { frames: bench.frames, avgFps: (bench.frames * 1000) / bench.sumMs, avgFrameMs: bench.sumMs / bench.frames, maxFrameMs: bench.maxMs, visibleSprites: bench.sprites, drawCalls: bench.drawCalls } : null,
     };

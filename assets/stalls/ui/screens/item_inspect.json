@@ -1,0 +1,303 @@
+{
+ "$schema": "../../../ui/screens/screen.schema.json",
+ "schema": "ui-screen/1",
+ "id": "item_inspect",
+ "title": "Inspect",
+ "layer": "modal",
+ "modal": true,
+ "input": {
+  "touch": "tap = focus+activate, long-press = inspect, swipe grid scrolls; min hit 48px",
+  "gamepad": "D-pad/LS moves focus over focusOrder; A activate, X inspect, Y sort, LB/RB filter tabs, B back",
+  "kbm": "click, wheel scroll, / focuses search, Enter buy, I inspect, Esc close"
+ },
+ "binds": "inspect.item = item VM incl. crafterId/crafterName, durability, food|fill; inspect.price = listing price (stall context) or null",
+ "root": {
+  "type": "box",
+  "layout": "abs",
+  "children": [
+   {
+    "type": "scrim",
+    "alpha": 0.45
+   },
+   {
+    "type": "panel",
+    "frame": "panel_wood",
+    "anchor": "cc",
+    "x": -150,
+    "w": 560,
+    "h": 560,
+    "pad": 22,
+    "layout": "col",
+    "children": [
+     {
+      "type": "panel",
+      "frame": "panel_parchment",
+      "w": "fill",
+      "h": "fill",
+      "pad": 18,
+      "layout": "col",
+      "gap": 10,
+      "rarityBorder": "{inspect.item.rarity}",
+      "children": [
+       {
+        "type": "box",
+        "layout": "row",
+        "children": [
+         {
+          "type": "slot",
+          "w": 112,
+          "h": 112,
+          "bind": "{inspect.item}",
+          "showCount": false
+         },
+         {
+          "type": "box",
+          "layout": "col",
+          "children": [
+           {
+            "type": "text",
+            "text": "{inspect.item.name}",
+            "font": "title",
+            "h": 36
+           },
+           {
+            "type": "text",
+            "text": "{inspect.item.rarityLabel} · {inspect.item.categoryLabel}",
+            "font": "label",
+            "h": 20,
+            "color": "{\"rarity.\" + inspect.item.rarity}"
+           },
+           {
+            "type": "include",
+            "src": "_partials/crafted_by.json",
+            "params": {
+             "item": "{inspect.item}"
+            }
+           },
+           {
+            "type": "box",
+            "layout": "row",
+            "children": [
+             {
+              "type": "icon",
+              "icon": "{inspect.price.icon}",
+              "w": 22,
+              "h": 22
+             },
+             {
+              "type": "text",
+              "text": "{inspect.price.count} {inspect.price.name} at {stall.header.stallName}",
+              "font": "label",
+              "w": "fill"
+             }
+            ],
+            "gap": 6,
+            "h": 24,
+            "align": "center",
+            "visible": "{inspect.price}",
+            "w": "fill"
+           }
+          ],
+          "w": "fill",
+          "h": 112,
+          "gap": 4
+         }
+        ],
+        "gap": 16,
+        "h": 112,
+        "align": "center",
+        "w": "fill"
+       },
+       {
+        "type": "divider",
+        "w": "fill",
+        "h": 14
+       },
+       {
+        "type": "text",
+        "text": "{inspect.item.description}",
+        "font": "body",
+        "w": "fill",
+        "wrap": true,
+        "h": "auto"
+       },
+       {
+        "type": "box",
+        "layout": "row",
+        "children": [
+         {
+          "type": "foodbadge",
+          "stage": "{inspect.item.food.stage}",
+          "w": 20,
+          "h": 20
+         },
+         {
+          "type": "text",
+          "text": "{inspect.item.food.stageLabel}",
+          "font": "label",
+          "w": 90,
+          "color": "{\"food.\" + inspect.item.food.stage}"
+         },
+         {
+          "type": "bar",
+          "vital": "hunger",
+          "value": "{1 - inspect.item.food.spoiled}",
+          "max": 1,
+          "w": "fill",
+          "h": 16
+         }
+        ],
+        "gap": 8,
+        "h": 24,
+        "w": "fill",
+        "visible": "{inspect.item.food}",
+        "align": "center"
+       },
+       {
+        "type": "box",
+        "layout": "row",
+        "children": [
+         {
+          "type": "icon",
+          "icon": "ic_hammer",
+          "w": 20,
+          "h": 20
+         },
+         {
+          "type": "text",
+          "text": "Durability",
+          "font": "label",
+          "w": 90
+         },
+         {
+          "type": "bar",
+          "vital": "stamina",
+          "value": "{inspect.item.durability}",
+          "max": 1,
+          "w": "fill",
+          "h": 16
+         },
+         {
+          "type": "text",
+          "text": "{inspect.item.durability|pct}",
+          "font": "label",
+          "w": 44
+         }
+        ],
+        "gap": 8,
+        "h": 24,
+        "w": "fill",
+        "visible": "{inspect.item.durability != null}",
+        "align": "center"
+       },
+       {
+        "type": "repeat",
+        "each": "{inspect.item.stats}",
+        "as": "stat",
+        "layout": "col",
+        "gap": 4,
+        "w": "fill",
+        "h": "auto",
+        "template": {
+         "type": "statrow",
+         "icon": "{stat.icon}",
+         "label": "{stat.label}",
+         "value": "{stat.value}",
+         "w": "fill",
+         "h": 24
+        }
+       },
+       {
+        "type": "box",
+        "layout": "row",
+        "children": [],
+        "h": "fill",
+        "w": "fill"
+       },
+       {
+        "type": "box",
+        "layout": "row",
+        "children": [
+         {
+          "type": "icon",
+          "icon": "ic_weight",
+          "w": 18,
+          "h": 18
+         },
+         {
+          "type": "text",
+          "text": "{inspect.item.weight|fixed1} kg · stacks to {inspect.item.maxStack}",
+          "font": "small",
+          "w": "fill"
+         }
+        ],
+        "gap": 6,
+        "h": 22,
+        "align": "center",
+        "w": "fill"
+       },
+       {
+        "type": "box",
+        "layout": "row",
+        "children": [
+         {
+          "type": "keyhint",
+          "key": "A",
+          "label": "Buy"
+         },
+         {
+          "type": "keyhint",
+          "key": "B",
+          "label": "Back"
+         }
+        ],
+        "gap": 14,
+        "h": 30,
+        "w": "auto",
+        "align": "center"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "type": "box",
+    "anchor": "cc",
+    "x": 330,
+    "y": -120,
+    "w": 268,
+    "h": "auto",
+    "children": [
+     {
+      "type": "include",
+      "src": "_partials/item_tooltip.json",
+      "params": {
+       "item": "{tipA.item}",
+       "price": "{tipA.price}"
+      }
+     }
+    ]
+   },
+   {
+    "type": "box",
+    "anchor": "cc",
+    "x": 330,
+    "y": 150,
+    "w": 268,
+    "h": "auto",
+    "children": [
+     {
+      "type": "include",
+      "src": "_partials/item_tooltip.json",
+      "params": {
+       "item": "{tipB.item}",
+       "price": "{null}"
+      }
+     }
+    ]
+   }
+  ],
+  "w": "fill",
+  "h": "fill"
+ }
+}

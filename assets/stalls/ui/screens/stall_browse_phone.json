@@ -1,0 +1,215 @@
+{
+ "$schema": "../../../ui/screens/screen.schema.json",
+ "schema": "ui-screen/1",
+ "id": "stall_browse_phone",
+ "title": "Stall (phone)",
+ "layer": "window",
+ "modal": false,
+ "setsState": {
+  "ui.windowOpen": true
+ },
+ "layoutFor": "viewport width < 720 or input=touch portrait",
+ "input": {
+  "touch": "tap = focus+activate, long-press = inspect, swipe grid scrolls; min hit 48px",
+  "gamepad": "D-pad/LS moves focus over focusOrder; A activate, X inspect, Y sort, LB/RB filter tabs, B back",
+  "kbm": "click, wheel scroll, / focuses search, Enter buy, I inspect, Esc close"
+ },
+ "root": {
+  "type": "box",
+  "layout": "abs",
+  "children": [
+   {
+    "type": "panel",
+    "frame": "panel_parchment",
+    "anchor": "cc",
+    "w": 380,
+    "h": 690,
+    "pad": 12,
+    "layout": "col",
+    "gap": 8,
+    "children": [
+     {
+      "type": "box",
+      "layout": "row",
+      "children": [
+       {
+        "type": "avatar",
+        "color": "{stall.header.ownerId}",
+        "w": 36,
+        "h": 36
+       },
+       {
+        "type": "box",
+        "layout": "col",
+        "children": [
+         {
+          "type": "text",
+          "text": "{stall.header.stallName}",
+          "font": "heading",
+          "h": 22
+         },
+         {
+          "type": "box",
+          "layout": "row",
+          "children": [
+           {
+            "type": "text",
+            "text": "{\"by \" + stall.header.ownerName}",
+            "font": "tiny",
+            "w": "auto"
+           },
+           {
+            "type": "badge",
+            "text": "{\"[\" + stall.header.clanTag + \"]\"}",
+            "color": "{stall.header.clanColor}",
+            "w": 56,
+            "h": 18,
+            "visible": "{stall.header.clanTag}"
+           }
+          ],
+          "gap": 6,
+          "h": 18,
+          "align": "center",
+          "w": "fill"
+         }
+        ],
+        "w": "fill",
+        "h": 40
+       },
+       {
+        "type": "button",
+        "variant": "close",
+        "w": 40,
+        "h": 40
+       }
+      ],
+      "gap": 8,
+      "h": 44,
+      "align": "center",
+      "w": "fill"
+     },
+     {
+      "type": "box",
+      "layout": "row",
+      "children": [
+       {
+        "type": "icon",
+        "icon": "coin",
+        "w": 22,
+        "h": 22
+       },
+       {
+        "type": "text",
+        "text": "{wallet.coinText}",
+        "font": "label",
+        "w": "auto"
+       },
+       {
+        "type": "box",
+        "layout": "row",
+        "children": [],
+        "w": "fill"
+       },
+       {
+        "type": "badge",
+        "text": "{stall.header.open ? \"Open\" : \"Closed\"}",
+        "color": "leaf-500",
+        "w": 70,
+        "h": 22
+       }
+      ],
+      "gap": 4,
+      "h": 26,
+      "align": "center",
+      "w": "fill"
+     },
+     {
+      "type": "input",
+      "bind": "{stall.ui.search}",
+      "placeholder": "Search goods…",
+      "w": "fill",
+      "h": 48
+     },
+     {
+      "type": "tabs",
+      "small": true,
+      "bind": "{stall.ui.filter}",
+      "w": "fill",
+      "h": 40,
+      "items": [
+       {
+        "id": "all",
+        "label": "All"
+       },
+       {
+        "id": "food",
+        "label": "Food"
+       },
+       {
+        "id": "tool",
+        "label": "Tools"
+       },
+       {
+        "id": "resource",
+        "label": "Stuff"
+       }
+      ]
+     },
+     {
+      "type": "list",
+      "w": "fill",
+      "h": "fill",
+      "children": [
+       {
+        "type": "repeat",
+        "each": "{stall.filtered}",
+        "as": "listing",
+        "layout": "grid",
+        "cols": 2,
+        "cell": [
+         158,
+         78
+        ],
+        "gap": 6,
+        "template": {
+         "type": "include",
+         "src": "_partials/listing_card_phone.json",
+         "params": {
+          "l": "{listing}"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "type": "box",
+      "layout": "row",
+      "children": [
+       {
+        "type": "button",
+        "label": "{stall.ui.sortLabel}",
+        "variant": "secondary",
+        "icon": "ui_stall_sort",
+        "w": 140,
+        "h": 52
+       },
+       {
+        "type": "button",
+        "label": "Buy",
+        "variant": "primary",
+        "icon": "coin",
+        "w": "fill",
+        "h": 52
+       }
+      ],
+      "gap": 8,
+      "h": 52,
+      "w": "fill"
+     }
+    ]
+   }
+  ],
+  "w": "fill",
+  "h": "fill"
+ }
+}

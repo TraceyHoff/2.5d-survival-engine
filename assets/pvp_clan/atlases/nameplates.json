@@ -1,0 +1,150 @@
+{
+ "frames": {
+  "nameplate_neutral": {
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 24
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 24
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 24
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "index": 0
+  },
+  "nameplate_self": {
+   "frame": {
+    "x": 64,
+    "y": 0,
+    "w": 64,
+    "h": 24
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 24
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 24
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "index": 1
+  },
+  "nameplate_party": {
+   "frame": {
+    "x": 128,
+    "y": 0,
+    "w": 64,
+    "h": 24
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 24
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 24
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "index": 2
+  },
+  "nameplate_clan": {
+   "frame": {
+    "x": 192,
+    "y": 0,
+    "w": 64,
+    "h": 24
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 24
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 24
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "index": 3
+  },
+  "nameplate_enemy": {
+   "frame": {
+    "x": 256,
+    "y": 0,
+    "w": 64,
+    "h": 24
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 24
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 24
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "index": 4
+  }
+ },
+ "meta": {
+  "app": "pvp_clan/tools (procedural)",
+  "version": "1.0",
+  "image": "nameplates.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 384,
+   "h": 24
+  },
+  "scale": "1",
+  "grid": {
+   "frameW": 64,
+   "frameH": 24,
+   "columns": 6,
+   "rows": 1,
+   "firstRow": 0,
+   "margin": 2
+  },
+  "emissive": null,
+  "tintmask": null
+ }
+}

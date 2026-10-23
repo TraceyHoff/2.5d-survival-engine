@@ -1,0 +1,425 @@
+{
+ "frames": {
+  "clan_pavilion/closed/damage0/r0": {
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 416,
+    "h": 448
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 416,
+    "h": 448
+   },
+   "sourceSize": {
+    "w": 416,
+    "h": 448
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9642857142857143
+   },
+   "index": 0
+  },
+  "clan_pavilion/closed/damage0/r1": {
+   "frame": {
+    "x": 416,
+    "y": 0,
+    "w": 416,
+    "h": 448
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 416,
+    "h": 448
+   },
+   "sourceSize": {
+    "w": 416,
+    "h": 448
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9642857142857143
+   },
+   "index": 1
+  },
+  "clan_pavilion/closed/damage1/r0": {
+   "frame": {
+    "x": 832,
+    "y": 0,
+    "w": 416,
+    "h": 448
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 416,
+    "h": 448
+   },
+   "sourceSize": {
+    "w": 416,
+    "h": 448
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9642857142857143
+   },
+   "index": 2
+  },
+  "clan_pavilion/closed/damage1/r1": {
+   "frame": {
+    "x": 1248,
+    "y": 0,
+    "w": 416,
+    "h": 448
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 416,
+    "h": 448
+   },
+   "sourceSize": {
+    "w": 416,
+    "h": 448
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9642857142857143
+   },
+   "index": 3
+  },
+  "clan_pavilion/closed/damage2/r0": {
+   "frame": {
+    "x": 0,
+    "y": 448,
+    "w": 416,
+    "h": 448
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 416,
+    "h": 448
+   },
+   "sourceSize": {
+    "w": 416,
+    "h": 448
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9642857142857143
+   },
+   "index": 4
+  },
+  "clan_pavilion/closed/damage2/r1": {
+   "frame": {
+    "x": 416,
+    "y": 448,
+    "w": 416,
+    "h": 448
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 416,
+    "h": 448
+   },
+   "sourceSize": {
+    "w": 416,
+    "h": 448
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9642857142857143
+   },
+   "index": 5
+  },
+  "clan_pavilion/closed/damage3/r0": {
+   "frame": {
+    "x": 832,
+    "y": 448,
+    "w": 416,
+    "h": 448
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 416,
+    "h": 448
+   },
+   "sourceSize": {
+    "w": 416,
+    "h": 448
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9642857142857143
+   },
+   "index": 6
+  },
+  "clan_pavilion/closed/damage3/r1": {
+   "frame": {
+    "x": 1248,
+    "y": 448,
+    "w": 416,
+    "h": 448
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 416,
+    "h": 448
+   },
+   "sourceSize": {
+    "w": 416,
+    "h": 448
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9642857142857143
+   },
+   "index": 7
+  },
+  "clan_pavilion/open/damage0/r0": {
+   "frame": {
+    "x": 0,
+    "y": 896,
+    "w": 416,
+    "h": 448
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 416,
+    "h": 448
+   },
+   "sourceSize": {
+    "w": 416,
+    "h": 448
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9642857142857143
+   },
+   "index": 8
+  },
+  "clan_pavilion/open/damage0/r1": {
+   "frame": {
+    "x": 416,
+    "y": 896,
+    "w": 416,
+    "h": 448
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 416,
+    "h": 448
+   },
+   "sourceSize": {
+    "w": 416,
+    "h": 448
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9642857142857143
+   },
+   "index": 9
+  },
+  "clan_pavilion/open/damage1/r0": {
+   "frame": {
+    "x": 832,
+    "y": 896,
+    "w": 416,
+    "h": 448
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 416,
+    "h": 448
+   },
+   "sourceSize": {
+    "w": 416,
+    "h": 448
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9642857142857143
+   },
+   "index": 10
+  },
+  "clan_pavilion/open/damage1/r1": {
+   "frame": {
+    "x": 1248,
+    "y": 896,
+    "w": 416,
+    "h": 448
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 416,
+    "h": 448
+   },
+   "sourceSize": {
+    "w": 416,
+    "h": 448
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9642857142857143
+   },
+   "index": 11
+  },
+  "clan_pavilion/open/damage2/r0": {
+   "frame": {
+    "x": 0,
+    "y": 1344,
+    "w": 416,
+    "h": 448
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 416,
+    "h": 448
+   },
+   "sourceSize": {
+    "w": 416,
+    "h": 448
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9642857142857143
+   },
+   "index": 12
+  },
+  "clan_pavilion/open/damage2/r1": {
+   "frame": {
+    "x": 416,
+    "y": 1344,
+    "w": 416,
+    "h": 448
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 416,
+    "h": 448
+   },
+   "sourceSize": {
+    "w": 416,
+    "h": 448
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9642857142857143
+   },
+   "index": 13
+  },
+  "clan_pavilion/open/damage3/r0": {
+   "frame": {
+    "x": 832,
+    "y": 1344,
+    "w": 416,
+    "h": 448
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 416,
+    "h": 448
+   },
+   "sourceSize": {
+    "w": 416,
+    "h": 448
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9642857142857143
+   },
+   "index": 14
+  },
+  "clan_pavilion/open/damage3/r1": {
+   "frame": {
+    "x": 1248,
+    "y": 1344,
+    "w": 416,
+    "h": 448
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 416,
+    "h": 448
+   },
+   "sourceSize": {
+    "w": 416,
+    "h": 448
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9642857142857143
+   },
+   "index": 15
+  }
+ },
+ "meta": {
+  "app": "pvp_clan/tools (procedural)",
+  "version": "1.0",
+  "image": "clan_pavilion@2x.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 1664,
+   "h": 1792
+  },
+  "scale": "2",
+  "grid": {
+   "frameW": 416,
+   "frameH": 448,
+   "columns": 4,
+   "rows": 4,
+   "firstRow": 0,
+   "margin": 4
+  },
+  "emissive": "clan_pavilion_emissive@2x.png",
+  "tintmask": "clan_pavilion_tintmask@2x.png"
+ }
+}

@@ -1,0 +1,425 @@
+{
+ "frames": {
+  "clan_trading_post/closed/damage0/r0": {
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 160
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 160
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 160
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.95
+   },
+   "index": 0
+  },
+  "clan_trading_post/closed/damage0/r1": {
+   "frame": {
+    "x": 144,
+    "y": 0,
+    "w": 144,
+    "h": 160
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 160
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 160
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.95
+   },
+   "index": 1
+  },
+  "clan_trading_post/closed/damage1/r0": {
+   "frame": {
+    "x": 288,
+    "y": 0,
+    "w": 144,
+    "h": 160
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 160
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 160
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.95
+   },
+   "index": 2
+  },
+  "clan_trading_post/closed/damage1/r1": {
+   "frame": {
+    "x": 432,
+    "y": 0,
+    "w": 144,
+    "h": 160
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 160
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 160
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.95
+   },
+   "index": 3
+  },
+  "clan_trading_post/closed/damage2/r0": {
+   "frame": {
+    "x": 0,
+    "y": 160,
+    "w": 144,
+    "h": 160
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 160
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 160
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.95
+   },
+   "index": 4
+  },
+  "clan_trading_post/closed/damage2/r1": {
+   "frame": {
+    "x": 144,
+    "y": 160,
+    "w": 144,
+    "h": 160
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 160
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 160
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.95
+   },
+   "index": 5
+  },
+  "clan_trading_post/closed/damage3/r0": {
+   "frame": {
+    "x": 288,
+    "y": 160,
+    "w": 144,
+    "h": 160
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 160
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 160
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.95
+   },
+   "index": 6
+  },
+  "clan_trading_post/closed/damage3/r1": {
+   "frame": {
+    "x": 432,
+    "y": 160,
+    "w": 144,
+    "h": 160
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 160
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 160
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.95
+   },
+   "index": 7
+  },
+  "clan_trading_post/open/damage0/r0": {
+   "frame": {
+    "x": 0,
+    "y": 320,
+    "w": 144,
+    "h": 160
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 160
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 160
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.95
+   },
+   "index": 8
+  },
+  "clan_trading_post/open/damage0/r1": {
+   "frame": {
+    "x": 144,
+    "y": 320,
+    "w": 144,
+    "h": 160
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 160
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 160
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.95
+   },
+   "index": 9
+  },
+  "clan_trading_post/open/damage1/r0": {
+   "frame": {
+    "x": 288,
+    "y": 320,
+    "w": 144,
+    "h": 160
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 160
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 160
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.95
+   },
+   "index": 10
+  },
+  "clan_trading_post/open/damage1/r1": {
+   "frame": {
+    "x": 432,
+    "y": 320,
+    "w": 144,
+    "h": 160
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 160
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 160
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.95
+   },
+   "index": 11
+  },
+  "clan_trading_post/open/damage2/r0": {
+   "frame": {
+    "x": 0,
+    "y": 480,
+    "w": 144,
+    "h": 160
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 160
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 160
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.95
+   },
+   "index": 12
+  },
+  "clan_trading_post/open/damage2/r1": {
+   "frame": {
+    "x": 144,
+    "y": 480,
+    "w": 144,
+    "h": 160
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 160
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 160
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.95
+   },
+   "index": 13
+  },
+  "clan_trading_post/open/damage3/r0": {
+   "frame": {
+    "x": 288,
+    "y": 480,
+    "w": 144,
+    "h": 160
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 160
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 160
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.95
+   },
+   "index": 14
+  },
+  "clan_trading_post/open/damage3/r1": {
+   "frame": {
+    "x": 432,
+    "y": 480,
+    "w": 144,
+    "h": 160
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 160
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 160
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.95
+   },
+   "index": 15
+  }
+ },
+ "meta": {
+  "app": "pvp_clan/tools (procedural)",
+  "version": "1.0",
+  "image": "clan_trading_post.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 576,
+   "h": 640
+  },
+  "scale": "1",
+  "grid": {
+   "frameW": 144,
+   "frameH": 160,
+   "columns": 4,
+   "rows": 4,
+   "firstRow": 0,
+   "margin": 2
+  },
+  "emissive": null,
+  "tintmask": "clan_trading_post_tintmask.png"
+ }
+}

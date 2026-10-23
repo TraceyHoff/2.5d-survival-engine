@@ -1,0 +1,125 @@
+{
+ "$comment": "Art pieces with no pieces.json entry (proposed for Survival Systems). Tiered structural art exists for twig/wood/stone/metal as <key>[_twig|_stone|_metal] (wood = bare key). Variant art for rug/flower_box/potted_plant/painting: see /workspace/assets/piece_variants.json.",
+ "pieces": [
+  {
+   "key": "bonfire",
+   "layer": 2,
+   "footprint": {
+    "w": 1,
+    "h": 1
+   }
+  },
+  {
+   "key": "chest",
+   "layer": 2,
+   "footprint": {
+    "w": 1,
+    "h": 1
+   }
+  },
+  {
+   "key": "cooking_pot",
+   "layer": 2,
+   "footprint": {
+    "w": 1,
+    "h": 1
+   }
+  },
+  {
+   "key": "door",
+   "layer": 1,
+   "footprint": {
+    "w": 1,
+    "h": 1
+   }
+  },
+  {
+   "key": "fence",
+   "layer": 1,
+   "footprint": {
+    "w": 1,
+    "h": 1
+   }
+  },
+  {
+   "key": "loom",
+   "layer": 2,
+   "footprint": {
+    "w": 2,
+    "h": 1
+   }
+  },
+  {
+   "key": "planter",
+   "layer": 3,
+   "footprint": {
+    "w": 1,
+    "h": 1
+   }
+  },
+  {
+   "key": "roof",
+   "layer": 0,
+   "footprint": {
+    "w": 1,
+    "h": 1
+   }
+  },
+  {
+   "key": "roof_corner",
+   "layer": 0,
+   "footprint": {
+    "w": 1,
+    "h": 1
+   }
+  },
+  {
+   "key": "roof_hip",
+   "layer": 0,
+   "footprint": {
+    "w": 1,
+    "h": 1
+   }
+  },
+  {
+   "key": "roof_peak",
+   "layer": 0,
+   "footprint": {
+    "w": 1,
+    "h": 1
+   }
+  },
+  {
+   "key": "roof_ridge",
+   "layer": 0,
+   "footprint": {
+    "w": 1,
+    "h": 1
+   }
+  },
+  {
+   "key": "roof_valley",
+   "layer": 0,
+   "footprint": {
+    "w": 1,
+    "h": 1
+   }
+  },
+  {
+   "key": "shelf",
+   "layer": 2,
+   "footprint": {
+    "w": 1,
+    "h": 1
+   }
+  },
+  {
+   "key": "wall_corner",
+   "layer": 1,
+   "footprint": {
+    "w": 1,
+    "h": 1
+   }
+  }
+ ]
+}

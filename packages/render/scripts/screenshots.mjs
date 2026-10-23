@@ -38,7 +38,7 @@ async function shot(name, query, settleMs = 2500) {
   await page.waitForTimeout(settleMs);
   await page.screenshot({ path: join(shots, `${name}.png`), fullPage: name === "gallery" });
   const info = await page.evaluate(() => window.__iso);
-  console.log(name, JSON.stringify({ fps: info.fps?.toFixed(1), stats: info.stats, total: info.totalSprites }));
+  console.log(name, JSON.stringify({ fps: info.fps?.toFixed(1), stats: info.stats, total: info.totalSprites, ...(info.held ? { held: info.held } : {}) }));
   return info;
 }
 

@@ -1,0 +1,10 @@
+{
+ "$comment": "Renderer hints for stalls (Renderer owns). Sign/tag text is SDF Fredoka drawn at attach points; auto-shrink to fit box then ellipsis.",
+ "sign": { "font": "ui/fonts/Fredoka.ttf", "weight": 700, "color": "#3B2433", "minSizePx": 6, "maxSizePx": 12, "fit": "shrink-then-ellipsis", "stroke": null, "onTintedBoard": { "color": "#3B2433", "lightenBoard": 0.0 } },
+ "priceTag": { "font": "ui/fonts/Fredoka.ttf", "weight": 700, "color": "#3B2433", "sizePx": 6, "iconSizePx": 7, "format": "{count}", "iconFromPriceItem": true, "layout": "icon-left-text-right" },
+ "slots": { "iconScale": 1.0, "bobPx": 0, "hideWhenClosed": true, "dimWhenOutOfStock": 0.45, "soldOutStamp": "stall_badge_sold_out" },
+ "worldPrompt": { "open": "stall_prompt_open", "soldOut": "stall_badge_sold_out", "closed": "stall_badge_closed", "offsetZ": 1.2, "fadeDistanceTiles": [6, 9], "drivenBy": "StallHeader {open, listingCount} + per-stall allSoldOut flag (needs header bit)" },
+ "lanterns": { "emissiveColor": "#FFD04A", "bloom": 0.6, "nightOnly": true, "flicker": { "amp": 0.08, "freq": 3.0 } },
+ "sway": { "maskChannel": "R", "note": "sway masks are per-atlas pages (masks.sway); awnings/bunting/banners/drapes weight 255, closed curtains ~90" },
+ "tint": { "R": "clan_primary", "G": "clan_secondary", "mode": "multiply", "tintSets": "from pvp_clan fragment (not redefined here)" }
+}

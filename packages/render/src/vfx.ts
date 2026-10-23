@@ -10,8 +10,11 @@ export interface VfxSpawn {
   anim?: number; lifetime?: number; scale?: number; facing?: number;
   /** Ignore darkness (fire, sparks). */
   emissive?: boolean;
+  /** Particle motion: velocity (tiles/s, z in terrain levels/s), gravity (levels/s², negative rises), fade over life, scale curve. */
+  vx?: number; vy?: number; vz?: number; gravity?: number; fade?: boolean; scaleCurve?: [number, number];
 }
-export interface VfxInstance { spriteId: number; x: number; y: number; z: number; anim: number; born: number; lifetime: number; scale: number; facing: number; emissive: boolean }
+export interface VfxInstance { spriteId: number; x: number; y: number; z: number; anim: number; born: number; lifetime: number; scale: number; facing: number; emissive: boolean;
+  vx: number; vy: number; vz: number; gravity: number; fade: boolean; s0: number; s1: number }
 export interface VfxEventLike { tick: number; def: { name?: string; type?: number } | unknown; payload: Record<string, number> }
 
 export class VfxLayer {
@@ -23,7 +26,8 @@ export class VfxLayer {
 
   spawn(s: VfxSpawn): void {
     if (this.active.length >= this.maxActive) this.active.shift();
-    this.active.push({ spriteId: s.spriteId, x: s.x, y: s.y, z: s.z ?? 0, anim: s.anim ?? 0, born: this.now, lifetime: s.lifetime ?? 0.5, scale: s.scale ?? 1, facing: s.facing ?? 0, emissive: s.emissive ?? true });
+    this.active.push({ spriteId: s.spriteId, x: s.x, y: s.y, z: s.z ?? 0, anim: s.anim ?? 0, born: this.now, lifetime: s.lifetime ?? 0.5, scale: s.scale ?? 1, facing: s.facing ?? 0, emissive: s.emissive ?? true,
+      vx: s.vx ?? 0, vy: s.vy ?? 0, vz: s.vz ?? 0, gravity: s.gravity ?? 0, fade: s.fade ?? false, s0: s.scaleCurve?.[0] ?? 1, s1: s.scaleCurve?.[1] ?? 1 });
   }
   /** Map a gameplay/net event (by def name) to effects. */
   onEvent(defName: string, map: (ev: VfxEventLike) => VfxSpawn | VfxSpawn[] | null): void { this.mappers.set(defName, map); }
@@ -34,8 +38,11 @@ export class VfxLayer {
   }
   /** Drop expired effects. */
   update(now: number): void {
-    this.now = now; let w = 0;
-    for (const v of this.active) if (now - v.born < v.lifetime) this.active[w++] = v;
+    const dt = Math.max(0, Math.min(0.1, now - this.now)); this.now = now; let w = 0;
+    for (const v of this.active) if (now - v.born < v.lifetime) {
+      if (v.vx || v.vy || v.vz || v.gravity) { v.x += v.vx * dt; v.y += v.vy * dt; v.vz -= v.gravity * dt; v.z += v.vz * dt; }
+      this.active[w++] = v;
+    }
     this.active.length = w;
   }
 }

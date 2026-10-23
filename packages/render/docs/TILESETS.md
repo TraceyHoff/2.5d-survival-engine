@@ -58,19 +58,20 @@ Art & Assets' `STYLE_GUIDE.md` and `render_tuning.json`.
   | damageStage | u8, 0..3 |
   | rotation | u8, 0..3 |
   | level | u8 |
-  | layer | u8: 0 floor, 1 wall, 2 furniture, 3 roof |
+  | layer | u8, canonical gameplay/world enum: 0 deck (floors, foundations **and roofs**), 1 structure (walls, pillars), 2 furniture, 3 decor. Roofs are detected from the sprite (`building.piece`/key `roof*`, `AtlasManager.isRoof`), never from a layer number |
+| variant | u8: index into the piece's variant group (`atlas.setPieceVariants`, e.g. pack `piece_variants.json` or clan wall looks `wall` + variant); 0 = base sprite |
   | ghost | u8: 0 normal, 1 valid, 2 invalid |
 
 - Transform x/y is the footprint's min tile. Rotations 1 and 3 swap w and h.
 - Pivot convention: `IsoRenderer({pieceAnchor})`. The default `"center"` is the footprint centre on the ground, which matches the art guide and the sample (`anchor (0.5, 0.75)` in 128x128 frames). `"front"` uses the front-most footprint corner.
-- Depth key = the front-most footprint tile + `z * zFactor` + `layer * 0.01`.
+- Depth key = the front-most footprint tile + `z * zFactor` + `layer * 0.01` (roofs: `+0.05`, above every other layer of the cell).
   - Walls split into per-column slices (one per tile column `x - y`), each keyed by its own front tile, so characters sort correctly against long walls.
-  - Floors (layer 0, or sprites whose `building.layer` is 0) use ground-plane depth.
+  - Deck pieces (layer 0) that are not roofs use ground-plane depth. Roofs are tall sprites drawn from their level's floor (= wall top of the level below).
 - Level height: `@engine/world` `FLOOR_HEIGHT_LEVELS` (3 terrain z steps = 48 px). A piece on level `L` is drawn at `floorToTerrainZ(L, groundZ)`; the focus' floor (cutaway) is `terrainZToFloor(z, groundZ)`.
 - Rotation / mirroring / damage / state: frames come from `AssetRegistry.buildingFrame(id, rotation, damageStage, state)`. A returned `flipX` (mirror rotationArt, 2 rows) is drawn mirrored around the pivot; slices are mirrored with it. A damage stage whose frame equals the intact frame falls back to the procedural crack overlay. `state` is read from an optional u8 `state` field on the bound BuildPiece component: 0 / absent = default frames, n = building state index n-1 (`registry.stateIndex(id, name) + 1`).
 - Damage: frames from `frames[rot][stage]` when present. Otherwise a procedural crack overlay is used.
 - Ghosts are drawn translucent with a green (1) or red (2) pulse.
-- Roof / upper-level cutaway: if the focus entity stands under a roof or upper level (`BuildingGrid`, flood fill over covered tiles), layer-3 pieces and pieces above the focus level that touch that region fade to `style.cutawayAlpha`.
+- Roof / upper-level cutaway: if the focus entity stands under a roof or upper level (`BuildingGrid`, flood fill over tiles covered by any piece on a higher level, or a roof piece on its own level), pieces above the focus level (and roofs on it) that touch that region fade to `style.cutawayAlpha`.
 - Caching: static pieces go into per-chunk instance buffers (one draw per visible chunk). A buffer is rebuilt only when that chunk's checksum changes. Streamed or newly arrived chunks fade in (`chunkFadeIn`).
 
 ## 5. Optional pages and blocks
@@ -105,3 +106,10 @@ Art & Assets' `STYLE_GUIDE.md` and `render_tuning.json`.
 
 - Surface wetness and snow cover come from Weather over time until gameplay's per-chunk value is wired in with `renderer.setSurfaceProvider(key => ({wet, snow}))`.
 - Weather kinds map through `setWeatherTable`. Unknown kinds fall back to clear.
+
+## 7. Wave 2 additions
+- **Held items:** `bindGameplay({ equipment, heldSprite })`. `equipment` is gameplay `Equipment {mainHandItem}`; `heldSprite(itemId)` maps an item to its `held_<item>` sprite. `atlas.setHands(atlasKey, <atlas>.hands.json)` loads per-frame anchors `{x, y, angle, behind}` (1x px from the frame's top-left). The item's grip pivot is placed on the anchor, rotated by `angle`, depth-biased ±0.05 vs the body (behind/in front), and mirrored with the body's FlipX.
+- **AnimState** 7 = crawl, 8 = feed (`crawl`/`shamble`/`walk`, `feed`/`attack`/`idle` fallbacks).
+- **Burning** `{lit, intensity, startTick}` on pieces (`bindGameplay({ burning })`, `renderer.burning.cfg`): `fire_huge` for footprint >= 4 tiles or intensity >= 170, else `fire_big`, one looping flame per tile (max 4); `campfire_sparks` embers and `campfire_smoke` smoke particles use the VfxDef rate/speed/spread/gravity/fade/scaleCurve, scaled by intensity.
+- **Masks/tints** (batch 11/12) are consumed in the sprite shader: sheen (R sheen, G darken, B drip gate), sway (R weight, per-pixel UV shift), two-tone tintmask (R = Sprite/BuildPiece tint, G = `TintSecondary`), typed status tints wet/frost/flush/exhausted with mode + saturation (row 0 = render_tuning globals, per-sprite `SpriteDef.tints` rows).
+- **Emissive** pages (zombie eyes, pumpkin carvings, held torch) bypass scene lighting in the composite and feed bloom.

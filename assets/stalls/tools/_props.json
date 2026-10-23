@@ -1,0 +1,584 @@
+{
+ "atlases": [
+  {
+   "key": "stall_props",
+   "image": "stalls/atlases/stall_props.png",
+   "frameW": 96,
+   "frameH": 80,
+   "columns": 8,
+   "rows": 3,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "stalls/atlases/stall_props@2x.png"
+    }
+   ],
+   "masks": {
+    "emissive": true,
+    "tintmask": "stalls/atlases/stall_props_tintmask.png",
+    "sway": "stalls/atlases/stall_props_sway.png"
+   }
+  },
+  {
+   "key": "stall_icons",
+   "image": "stalls/atlases/stall_icons.png",
+   "frameW": 48,
+   "frameH": 48,
+   "columns": 8,
+   "rows": 3,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "stalls/atlases/stall_icons@2x.png"
+    }
+   ],
+   "masks": {
+    "tintmask": "stalls/atlases/stall_icons_tintmask.png"
+   }
+  },
+  {
+   "key": "stall_badges",
+   "image": "stalls/atlases/stall_badges.png",
+   "frameW": 64,
+   "frameH": 32,
+   "columns": 2,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "stalls/atlases/stall_badges@2x.png"
+    }
+   ]
+  }
+ ],
+ "sprites": [
+  {
+   "key": "stall_price_tag",
+   "category": "ui",
+   "atlas": "stall_props",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "attach": {
+    "text": {
+     "x": 2,
+     "y": -11,
+     "w": 26,
+     "h": 12
+    }
+   }
+  },
+  {
+   "key": "stall_shop_sign",
+   "category": "ui",
+   "atlas": "stall_props",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    },
+    "scroll": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    },
+    "aframe": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   },
+   "attach": {
+    "sign": {
+     "x": 0,
+     "y": -21,
+     "w": 68,
+     "h": 16
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.6,
+    "stiffness": 0.7
+   }
+  },
+  {
+   "key": "stall_coin_pouch",
+   "category": "building",
+   "atlas": "stall_props",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "stall_barter_scale",
+   "category": "building",
+   "atlas": "stall_props",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      5
+     ],
+     "fps": 1
+    },
+    "tip": {
+     "frames": [
+      5,
+      6,
+      5
+     ],
+     "fps": 6,
+     "loop": false
+    }
+   },
+   "attach": {
+    "pan_l": {
+     "x": -20,
+     "y": -32,
+     "w": 14,
+     "h": 14
+    },
+    "pan_r": {
+     "x": 20,
+     "y": -32,
+     "w": 14,
+     "h": 14
+    }
+   }
+  },
+  {
+   "key": "stall_display_slot",
+   "category": "building",
+   "atlas": "stall_props",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      7
+     ],
+     "fps": 1
+    }
+   },
+   "attach": {
+    "slot0": {
+     "x": 0,
+     "y": -14,
+     "w": 18,
+     "h": 18
+    }
+   }
+  },
+  {
+   "key": "stall_lantern",
+   "category": "building",
+   "atlas": "stall_props",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      9
+     ],
+     "fps": 1
+    },
+    "lit": {
+     "frames": [
+      9,
+      10,
+      11,
+      12
+     ],
+     "fps": 4
+    },
+    "off": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 1.2,
+    "freq": 0.5,
+    "stiffness": 0.4
+   }
+  },
+  {
+   "key": "stall_shop_bell",
+   "category": "building",
+   "atlas": "stall_props",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      13
+     ],
+     "fps": 1
+    },
+    "ring": {
+     "frames": [
+      13,
+      14,
+      15,
+      16,
+      17,
+      18
+     ],
+     "fps": 12,
+     "loop": false
+    }
+   }
+  },
+  {
+   "key": "stall_rent_marker",
+   "category": "building",
+   "atlas": "stall_props",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      19
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 1.0,
+    "freq": 0.8,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "stall_prompt_open",
+   "category": "ui",
+   "atlas": "stall_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 4
+    }
+   }
+  },
+  {
+   "key": "coin",
+   "category": "item",
+   "atlas": "stall_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    },
+    "few": {
+     "frames": [
+      5
+     ],
+     "fps": 1
+    },
+    "many": {
+     "frames": [
+      6
+     ],
+     "fps": 1
+    }
+   },
+   "stackArt": {
+    "1": "idle",
+    "2": "few",
+    "10": "many"
+   }
+  },
+  {
+   "key": "ui_maker_mark",
+   "category": "ui",
+   "atlas": "stall_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      7
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_stall_stall",
+   "category": "ui",
+   "atlas": "stall_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_stall_till",
+   "category": "ui",
+   "atlas": "stall_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      9
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_stall_ledger",
+   "category": "ui",
+   "atlas": "stall_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      10
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_stall_tag",
+   "category": "ui",
+   "atlas": "stall_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      11
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_stall_restock",
+   "category": "ui",
+   "atlas": "stall_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_stall_search",
+   "category": "ui",
+   "atlas": "stall_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      13
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_stall_sort",
+   "category": "ui",
+   "atlas": "stall_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      14
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_stall_filter",
+   "category": "ui",
+   "atlas": "stall_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      15
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_stall_clan_key",
+   "category": "ui",
+   "atlas": "stall_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_stall_fill",
+   "category": "ui",
+   "atlas": "stall_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      17
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "stall_badge_sold_out",
+   "category": "ui",
+   "atlas": "stall_badges",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "attach": {
+    "text": {
+     "x": 7,
+     "y": 0,
+     "w": 34,
+     "h": 12
+    }
+   }
+  },
+  {
+   "key": "stall_badge_closed",
+   "category": "ui",
+   "atlas": "stall_badges",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   },
+   "attach": {
+    "text": {
+     "x": 7,
+     "y": 0,
+     "w": 34,
+     "h": 12
+    }
+   }
+  }
+ ]
+}

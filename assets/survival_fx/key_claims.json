@@ -1,0 +1,62 @@
+{
+ "claimed": [
+  "campfire",
+  "windsock"
+ ],
+ "emitted": {
+  "rot": "surv_rot",
+  "torch_stand": "surv_torch_stand",
+  "lantern": "surv_lantern",
+  "fireplace": "surv_fireplace",
+  "wood_stove": "surv_wood_stove"
+ },
+ "blockedBy": {
+  "rot": [
+   "/workspace/assets/manifest.json",
+   "/workspace/engine/packages/assets/pack/manifest.json"
+  ],
+  "torch_stand": [
+   "/workspace/assets/manifest.json",
+   "/workspace/engine/packages/assets/pack/manifest.json"
+  ],
+  "lantern": [
+   "/workspace/assets/manifest.json",
+   "/workspace/engine/packages/assets/pack/manifest.json"
+  ],
+  "fireplace": [
+   "/workspace/assets/manifest.json",
+   "/workspace/engine/packages/assets/pack/manifest.json"
+  ],
+  "wood_stove": [
+   "/workspace/assets/manifest.json",
+   "/workspace/engine/packages/assets/pack/manifest.json"
+  ]
+ },
+ "$comment": "Gameplay keys this pack provides art for. 'emitted' maps a gameplay key to the fallback key used because the main pack already has a sprite with that key; the build claims the key automatically once it is free.",
+ "textures": [
+  "survival_fx/lut/lut_dawn.png",
+  "survival_fx/lut/lut_deep_night.png",
+  "survival_fx/lut/lut_dusk.png",
+  "survival_fx/lut/lut_golden_hour.png",
+  "survival_fx/lut/lut_identity.png",
+  "survival_fx/lut/lut_morning.png",
+  "survival_fx/lut/lut_night.png",
+  "survival_fx/lut/lut_noon.png",
+  "survival_fx/lut/tod_ramp_256x8.png",
+  "survival_fx/textures/cloud_shadow_1024.png",
+  "survival_fx/textures/fog_noise_256.png",
+  "survival_fx/textures/heat_shimmer_mask_64x128.png",
+  "survival_fx/textures/heat_shimmer_rg_128.png",
+  "survival_fx/textures/light_cookie_128.png",
+  "survival_fx/textures/light_cookie_256.png",
+  "survival_fx/textures/light_cookie_512.png",
+  "survival_fx/textures/light_cookie_64.png",
+  "survival_fx/textures/light_cookie_fire_256.png",
+  "survival_fx/textures/light_cookie_window_256.png",
+  "survival_fx/textures/night_vignette_512.png",
+  "survival_fx/textures/rain_streak_tile_128x256.png",
+  "survival_fx/textures/screen_frost_vignette_512.png",
+  "survival_fx/textures/stars_tile_512.png",
+  "survival_fx/textures/stars_twinkle_phase_512.png"
+ ]
+}

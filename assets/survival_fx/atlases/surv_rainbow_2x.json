@@ -1,0 +1,42 @@
+{
+ "frames": {
+  "fx_rainbow/idle/0": {
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 512,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 512,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 512,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.97
+   },
+   "duration": 1000.0
+  }
+ },
+ "meta": {
+  "app": "survival_fx/tools",
+  "version": "1",
+  "image": "surv_rainbow_2x.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 512,
+   "h": 256
+  },
+  "scale": "2",
+  "padding": 2,
+  "note": "uniform grid 512x256; 2px transparent margin inside each frame"
+ }
+}

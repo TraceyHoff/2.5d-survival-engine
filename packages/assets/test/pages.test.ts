@@ -52,7 +52,7 @@ describe("scale pages, masks, sprite tints", () => {
     expect(applyLegacySurvival(j, []).x_survival).toBeUndefined();
   });
   it("the real survival_fx fragment loads through the legacy alias", () => {
-    const frag = "/workspace/assets/survival_fx/manifest.fragment.json"; if (!existsSync(frag)) return;
+    const frag = new URL("../../../assets/survival_fx/manifest.fragment.json", import.meta.url).pathname; if (!existsSync(frag)) return;
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const json = JSON.parse(readFileSync(frag, "utf8")); const { registry, warnings } = loadManifest(json);
     const night = registry.atlases.get("surv_night")!; expect(night.pages.map((p) => p.scale)).toEqual([1, 2]); expect(night.masks.emissive).toBeDefined();

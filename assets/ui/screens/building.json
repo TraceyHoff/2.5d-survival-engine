@@ -1,0 +1,311 @@
+{
+ "$schema": "./screen.schema.json",
+ "schema": "ui-screen/1",
+ "id": "building",
+ "setsState": {
+  "ui.buildMode": true
+ },
+ "title": "Building menu",
+ "layer": "window",
+ "modal": false,
+ "passThroughWorld": true,
+ "openWith": [
+  "KeyB"
+ ],
+ "root": {
+  "type": "box",
+  "id": "build",
+  "w": "fill",
+  "h": "fill",
+  "children": [
+   {
+    "type": "box",
+    "id": "build_ghost_hint",
+    "anchor": "cc",
+    "x": 0,
+    "y": -150,
+    "w": 380,
+    "h": 44,
+    "children": [
+     {
+      "type": "panel",
+      "frame": "panel_hud",
+      "w": "fill",
+      "h": "fill",
+      "pad": [
+       6,
+       12,
+       6,
+       12
+      ],
+      "layout": "row",
+      "gap": 8,
+      "align": "center",
+      "children": [
+       {
+        "type": "icon",
+        "icon": "{build.ghost.valid ? \"ic_check\" : \"ic_cross\"}",
+        "w": 28,
+        "h": 28
+       },
+       {
+        "type": "text",
+        "text": "{build.ghost.message}",
+        "font": "hud",
+        "w": "fill"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "type": "box",
+    "id": "build_panel",
+    "anchor": "bc",
+    "x": 0,
+    "y": 8,
+    "w": 960,
+    "h": 250,
+    "children": [
+     {
+      "type": "panel",
+      "frame": "panel_wood",
+      "anchor": "bl",
+      "x": 0,
+      "y": 0,
+      "w": 960,
+      "h": 228,
+      "pad": 18,
+      "children": [
+       {
+        "type": "box",
+        "id": "build_categories",
+        "anchor": "tl",
+        "x": 0,
+        "y": 8,
+        "w": 140,
+        "h": "fill",
+        "layout": "col",
+        "gap": 4,
+        "children": [
+         {
+          "type": "repeat",
+          "each": "{build.categories}",
+          "as": "cat",
+          "layout": "grid",
+          "cols": 3,
+          "cell": [
+           44,
+           40
+          ],
+          "gap": 4,
+          "w": 140,
+          "h": "fill",
+          "template": {
+           "type": "button",
+           "variant": "{cat.active ? \"gold\" : \"secondary\"}",
+           "icon": "{cat.icon}",
+           "w": 44,
+           "h": 40,
+           "tooltip": "{cat.label}",
+           "action": {
+            "event": "build.category",
+            "args": {
+             "id": "{cat.id}"
+            }
+           }
+          }
+         }
+        ]
+       },
+       {
+        "type": "panel",
+        "frame": "panel_inset",
+        "anchor": "tl",
+        "x": 152,
+        "y": 0,
+        "w": 508,
+        "h": "fill",
+        "pad": 8,
+        "children": [
+         {
+          "type": "repeat",
+          "id": "piece_grid",
+          "each": "{build.pieces}",
+          "as": "p",
+          "layout": "grid",
+          "cols": 6,
+          "cell": [
+           78,
+           70
+          ],
+          "gap": 4,
+          "w": "fill",
+          "h": "fill",
+          "template": {
+           "type": "card",
+           "w": 78,
+           "h": 70,
+           "icon": "{p.icon}",
+           "label": "{p.name}",
+           "selected": "{p.key == build.selected}",
+           "disabled": "{!p.affordable}",
+           "action": {
+            "event": "build.select",
+            "args": {
+             "piece": "{p.key}"
+            }
+           }
+          }
+         }
+        ]
+       },
+       {
+        "type": "panel",
+        "id": "piece_detail",
+        "frame": "panel_parchment",
+        "anchor": "tr",
+        "x": 0,
+        "y": 0,
+        "w": 240,
+        "h": "fill",
+        "pad": 12,
+        "layout": "col",
+        "gap": 6,
+        "children": [
+         {
+          "type": "text",
+          "text": "{build.current.name}",
+          "font": "heading",
+          "h": 24
+         },
+         {
+          "type": "text",
+          "text": "{build.current.description}",
+          "font": "tiny",
+          "h": 30,
+          "w": "fill",
+          "wrap": true
+         },
+         {
+          "type": "repeat",
+          "each": "{build.current.cost}",
+          "as": "c",
+          "layout": "row",
+          "gap": 6,
+          "w": "fill",
+          "h": 44,
+          "template": {
+           "type": "slot",
+           "w": 44,
+           "h": 44,
+           "bind": "{c}",
+           "countText": "{c.have}/{c.count}",
+           "missing": "{c.have < c.count}"
+          }
+         },
+         {
+          "type": "box",
+          "layout": "row",
+          "gap": 6,
+          "h": 22,
+          "w": "fill",
+          "children": [
+           {
+            "type": "icon",
+            "icon": "ic_home",
+            "w": 20,
+            "h": 20
+           },
+           {
+            "type": "text",
+            "text": "HP {build.current.hp} \u00b7 {build.current.footprint}",
+            "font": "tiny",
+            "w": "fill"
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "type": "panel",
+    "id": "build_hints",
+    "frame": "panel_hud",
+    "anchor": "bc",
+    "x": 0,
+    "y": 270,
+    "w": 700,
+    "h": 46,
+    "pad": [
+     8,
+     16,
+     8,
+     16
+    ],
+    "layout": "row",
+    "gap": 22,
+    "justify": "center",
+    "children": [
+     {
+      "type": "keyhint",
+      "key": "LMB",
+      "label": "Place"
+     },
+     {
+      "type": "keyhint",
+      "key": "R",
+      "label": "Rotate {build.rotation|deg}"
+     },
+     {
+      "type": "keyhint",
+      "key": "RMB",
+      "label": "Cancel"
+     },
+     {
+      "type": "keyhint",
+      "key": "Q/E",
+      "label": "Cycle"
+     },
+     {
+      "type": "keyhint",
+      "key": "B",
+      "label": "Close"
+     }
+    ]
+   },
+   {
+    "type": "ribbon",
+    "text": "Build Mode",
+    "anchor": "bc",
+    "x": 0,
+    "y": 218,
+    "w": 240,
+    "h": 40
+   }
+  ]
+ },
+ "hotkeys": {
+  "KeyR": {
+   "event": "build.rotate",
+   "args": {
+    "dir": 1
+   }
+  },
+  "KeyQ": {
+   "event": "build.cycle",
+   "args": {
+    "dir": -1
+   }
+  },
+  "KeyE": {
+   "event": "build.cycle",
+   "args": {
+    "dir": 1
+   }
+  }
+ }
+}

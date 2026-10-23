@@ -1,0 +1,63 @@
+{
+ "source": "ui/theme.json rarity tokens (color, light) + pvp_clan beam/glow extensions",
+ "order": [
+  "common",
+  "uncommon",
+  "rare",
+  "epic",
+  "legendary"
+ ],
+ "rarity": {
+  "common": {
+   "index": 0,
+   "color": "#A9A094",
+   "light": "#D6CFC2",
+   "beam": "#E6E0D6",
+   "glowIntensity": 0.35,
+   "beamHeightTiles": 0,
+   "sparkles": false,
+   "ground_glow_sprite": "loot_glow_common"
+  },
+  "uncommon": {
+   "index": 1,
+   "color": "#72C45C",
+   "light": "#B4EA80",
+   "beam": "#9FF07A",
+   "glowIntensity": 0.55,
+   "beamHeightTiles": 1.5,
+   "sparkles": false,
+   "ground_glow_sprite": "loot_glow_uncommon"
+  },
+  "rare": {
+   "index": 2,
+   "color": "#4F8FD6",
+   "light": "#86C0F2",
+   "beam": "#6FB4FF",
+   "glowIntensity": 0.75,
+   "beamHeightTiles": 2.5,
+   "sparkles": false,
+   "ground_glow_sprite": "loot_glow_rare"
+  },
+  "epic": {
+   "index": 3,
+   "color": "#9B72D6",
+   "light": "#C9A8F0",
+   "beam": "#C08CFF",
+   "glowIntensity": 0.95,
+   "beamHeightTiles": 3.5,
+   "sparkles": true,
+   "ground_glow_sprite": "loot_glow_epic"
+  },
+  "legendary": {
+   "index": 4,
+   "color": "#FFD45A",
+   "light": "#FFF2A8",
+   "beam": "#FFE070",
+   "glowIntensity": 1.2,
+   "beamHeightTiles": 5,
+   "sparkles": true,
+   "ground_glow_sprite": "loot_glow_legendary"
+  }
+ },
+ "note": "common has no beam by default (ground glow only). Beam: textures/loot_beam.png, additive, tile in v, tint = beam color."
+}

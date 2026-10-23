@@ -1,0 +1,625 @@
+{
+ "frames": {
+  "gate_clan/closed_damage0/r0": {
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 0
+  },
+  "gate_clan/closed_damage0/r1": {
+   "frame": {
+    "x": 160,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 1
+  },
+  "gate_clan/closed_damage1/r0": {
+   "frame": {
+    "x": 320,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 2
+  },
+  "gate_clan/closed_damage1/r1": {
+   "frame": {
+    "x": 480,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 3
+  },
+  "gate_clan/closed_damage2/r0": {
+   "frame": {
+    "x": 640,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 4
+  },
+  "gate_clan/closed_damage2/r1": {
+   "frame": {
+    "x": 800,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 5
+  },
+  "gate_clan/closed_damage3/r0": {
+   "frame": {
+    "x": 0,
+    "y": 256,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 6
+  },
+  "gate_clan/closed_damage3/r1": {
+   "frame": {
+    "x": 160,
+    "y": 256,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 7
+  },
+  "gate_clan/open_damage0/r0": {
+   "frame": {
+    "x": 320,
+    "y": 256,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 8
+  },
+  "gate_clan/open_damage0/r1": {
+   "frame": {
+    "x": 480,
+    "y": 256,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 9
+  },
+  "gate_clan/open_damage1/r0": {
+   "frame": {
+    "x": 640,
+    "y": 256,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 10
+  },
+  "gate_clan/open_damage1/r1": {
+   "frame": {
+    "x": 800,
+    "y": 256,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 11
+  },
+  "gate_clan/open_damage2/r0": {
+   "frame": {
+    "x": 0,
+    "y": 512,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 12
+  },
+  "gate_clan/open_damage2/r1": {
+   "frame": {
+    "x": 160,
+    "y": 512,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 13
+  },
+  "gate_clan/open_damage3/r0": {
+   "frame": {
+    "x": 320,
+    "y": 512,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 14
+  },
+  "gate_clan/open_damage3/r1": {
+   "frame": {
+    "x": 480,
+    "y": 512,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 15
+  },
+  "gate_clan/breached_damage0/r0": {
+   "frame": {
+    "x": 640,
+    "y": 512,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 16
+  },
+  "gate_clan/breached_damage0/r1": {
+   "frame": {
+    "x": 800,
+    "y": 512,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 17
+  },
+  "gate_clan/breached_damage1/r0": {
+   "frame": {
+    "x": 0,
+    "y": 768,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 18
+  },
+  "gate_clan/breached_damage1/r1": {
+   "frame": {
+    "x": 160,
+    "y": 768,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 19
+  },
+  "gate_clan/breached_damage2/r0": {
+   "frame": {
+    "x": 320,
+    "y": 768,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 20
+  },
+  "gate_clan/breached_damage2/r1": {
+   "frame": {
+    "x": 480,
+    "y": 768,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 21
+  },
+  "gate_clan/breached_damage3/r0": {
+   "frame": {
+    "x": 640,
+    "y": 768,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 22
+  },
+  "gate_clan/breached_damage3/r1": {
+   "frame": {
+    "x": 800,
+    "y": 768,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 23
+  }
+ },
+ "meta": {
+  "app": "pvp_clan/tools (procedural)",
+  "version": "1.0",
+  "image": "clan_gates.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 960,
+   "h": 1024
+  },
+  "scale": "1",
+  "grid": {
+   "frameW": 160,
+   "frameH": 256,
+   "columns": 6,
+   "rows": 4,
+   "firstRow": 0,
+   "margin": 2
+  },
+  "emissive": null,
+  "tintmask": "clan_gates_tintmask.png"
+ }
+}

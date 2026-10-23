@@ -1,0 +1,4636 @@
+{
+ "version": 1,
+ "name": "pvp_clan",
+ "atlases": [
+  {
+   "key": "pvp_swing_a",
+   "image": "pvp_clan/atlases/pvp_swing_a.png",
+   "frameW": 96,
+   "frameH": 96,
+   "columns": 10,
+   "rows": 8,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "pvp_clan/atlases/pvp_swing_a@2x.png"
+    }
+   ]
+  },
+  {
+   "key": "pvp_swing_b",
+   "image": "pvp_clan/atlases/pvp_swing_b.png",
+   "frameW": 96,
+   "frameH": 96,
+   "columns": 10,
+   "rows": 8,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "pvp_clan/atlases/pvp_swing_b@2x.png"
+    }
+   ]
+  },
+  {
+   "key": "pvp_fx",
+   "image": "pvp_clan/atlases/pvp_fx.png",
+   "frameW": 64,
+   "frameH": 64,
+   "columns": 16,
+   "rows": 5,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "pvp_clan/atlases/pvp_fx@2x.png"
+    }
+   ],
+   "masks": {
+    "emissive": true
+   }
+  },
+  {
+   "key": "pvp_fx_tall",
+   "image": "pvp_clan/atlases/pvp_fx_tall.png",
+   "frameW": 64,
+   "frameH": 96,
+   "columns": 12,
+   "rows": 4,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "pvp_clan/atlases/pvp_fx_tall@2x.png"
+    }
+   ],
+   "masks": {
+    "emissive": true
+   }
+  },
+  {
+   "key": "pvp_projectiles",
+   "image": "pvp_clan/atlases/pvp_projectiles.png",
+   "frameW": 48,
+   "frameH": 48,
+   "columns": 8,
+   "rows": 3,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "pvp_clan/atlases/pvp_projectiles@2x.png"
+    }
+   ]
+  },
+  {
+   "key": "pvp_trails",
+   "image": "pvp_clan/atlases/pvp_trails.png",
+   "frameW": 64,
+   "frameH": 16,
+   "columns": 1,
+   "rows": 3,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "pvp_clan/atlases/pvp_trails@2x.png"
+    }
+   ]
+  },
+  {
+   "key": "pvp_loot",
+   "image": "pvp_clan/atlases/pvp_loot.png",
+   "frameW": 64,
+   "frameH": 64,
+   "columns": 12,
+   "rows": 5,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "pvp_clan/atlases/pvp_loot@2x.png"
+    }
+   ],
+   "masks": {
+    "emissive": true
+   }
+  },
+  {
+   "key": "pvp_loot_beam",
+   "image": "pvp_clan/atlases/pvp_loot_beam.png",
+   "frameW": 32,
+   "frameH": 128,
+   "columns": 6,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "pvp_clan/atlases/pvp_loot_beam@2x.png"
+    }
+   ]
+  },
+  {
+   "key": "clan_banners",
+   "image": "pvp_clan/atlases/clan_banners.png",
+   "frameW": 64,
+   "frameH": 128,
+   "columns": 14,
+   "rows": 4,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "pvp_clan/atlases/clan_banners@2x.png"
+    }
+   ],
+   "masks": {
+    "emissive": true,
+    "tintmask": "pvp_clan/atlases/clan_banners_tintmask.png"
+   }
+  },
+  {
+   "key": "clan_territory",
+   "image": "pvp_clan/atlases/clan_territory.png",
+   "frameW": 64,
+   "frameH": 32,
+   "columns": 9,
+   "rows": 2,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "pvp_clan/atlases/clan_territory@2x.png"
+    }
+   ],
+   "masks": {
+    "tintmask": "pvp_clan/atlases/clan_territory_tintmask.png"
+   }
+  },
+  {
+   "key": "clan_emblems",
+   "image": "pvp_clan/atlases/clan_emblems.png",
+   "frameW": 32,
+   "frameH": 32,
+   "columns": 8,
+   "rows": 3,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "pvp_clan/atlases/clan_emblems@2x.png"
+    }
+   ]
+  },
+  {
+   "key": "clan_emblems_outline",
+   "image": "pvp_clan/atlases/clan_emblems_outline.png",
+   "frameW": 32,
+   "frameH": 32,
+   "columns": 8,
+   "rows": 3,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "pvp_clan/atlases/clan_emblems_outline@2x.png"
+    }
+   ]
+  },
+  {
+   "key": "clan_buildings",
+   "image": "pvp_clan/atlases/clan_buildings.png",
+   "frameW": 96,
+   "frameH": 128,
+   "columns": 10,
+   "rows": 6,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "pvp_clan/atlases/clan_buildings@2x.png"
+    }
+   ],
+   "masks": {
+    "tintmask": "pvp_clan/atlases/clan_buildings_tintmask.png"
+   }
+  },
+  {
+   "key": "clan_gates",
+   "image": "pvp_clan/atlases/clan_gates.png",
+   "frameW": 160,
+   "frameH": 256,
+   "columns": 6,
+   "rows": 4,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "pvp_clan/atlases/clan_gates@2x.png"
+    }
+   ],
+   "masks": {
+    "tintmask": "pvp_clan/atlases/clan_gates_tintmask.png"
+   }
+  },
+  {
+   "key": "clan_structures_large",
+   "image": "pvp_clan/atlases/clan_structures_large.png",
+   "frameW": 160,
+   "frameH": 256,
+   "columns": 6,
+   "rows": 3,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "pvp_clan/atlases/clan_structures_large@2x.png"
+    }
+   ],
+   "masks": {
+    "tintmask": "pvp_clan/atlases/clan_structures_large_tintmask.png"
+   }
+  },
+  {
+   "key": "raid_cracks",
+   "image": "pvp_clan/atlases/raid_cracks.png",
+   "frameW": 96,
+   "frameH": 128,
+   "columns": 3,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "pvp_clan/atlases/raid_cracks@2x.png"
+    }
+   ]
+  },
+  {
+   "key": "raid_cracks_large",
+   "image": "pvp_clan/atlases/raid_cracks_large.png",
+   "frameW": 160,
+   "frameH": 256,
+   "columns": 3,
+   "rows": 2,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "pvp_clan/atlases/raid_cracks_large@2x.png"
+    }
+   ]
+  },
+  {
+   "key": "raid_fx",
+   "image": "pvp_clan/atlases/raid_fx.png",
+   "frameW": 64,
+   "frameH": 64,
+   "columns": 12,
+   "rows": 4,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "pvp_clan/atlases/raid_fx@2x.png"
+    }
+   ],
+   "masks": {
+    "emissive": true
+   }
+  },
+  {
+   "key": "raid_fire",
+   "image": "pvp_clan/atlases/raid_fire.png",
+   "frameW": 64,
+   "frameH": 96,
+   "columns": 8,
+   "rows": 2,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "pvp_clan/atlases/raid_fire@2x.png"
+    }
+   ],
+   "masks": {
+    "emissive": true
+   }
+  },
+  {
+   "key": "raid_rubble",
+   "image": "pvp_clan/atlases/raid_rubble.png",
+   "frameW": 96,
+   "frameH": 128,
+   "columns": 6,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "pvp_clan/atlases/raid_rubble@2x.png"
+    }
+   ],
+   "masks": {
+    "emissive": true,
+    "tintmask": "pvp_clan/atlases/raid_rubble_tintmask.png"
+   }
+  },
+  {
+   "key": "raid_fx_big",
+   "image": "pvp_clan/atlases/raid_fx_big.png",
+   "frameW": 128,
+   "frameH": 128,
+   "columns": 5,
+   "rows": 2,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "pvp_clan/atlases/raid_fx_big@2x.png"
+    }
+   ]
+  },
+  {
+   "key": "nameplate_icons",
+   "image": "pvp_clan/atlases/nameplate_icons.png",
+   "frameW": 24,
+   "frameH": 24,
+   "columns": 8,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "pvp_clan/atlases/nameplate_icons@2x.png"
+    }
+   ],
+   "masks": {
+    "tintmask": "pvp_clan/atlases/nameplate_icons_tintmask.png"
+   }
+  },
+  {
+   "key": "nameplates",
+   "image": "pvp_clan/atlases/nameplates.png",
+   "frameW": 64,
+   "frameH": 24,
+   "columns": 6,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "pvp_clan/atlases/nameplates@2x.png"
+    }
+   ],
+   "nineSlice": {
+    "0": {
+     "l": 9,
+     "t": 8,
+     "r": 9,
+     "b": 8
+    },
+    "1": {
+     "l": 9,
+     "t": 8,
+     "r": 9,
+     "b": 8
+    },
+    "2": {
+     "l": 9,
+     "t": 8,
+     "r": 9,
+     "b": 8
+    },
+    "3": {
+     "l": 9,
+     "t": 8,
+     "r": 9,
+     "b": 8
+    },
+    "4": {
+     "l": 9,
+     "t": 8,
+     "r": 9,
+     "b": 8
+    }
+   }
+  },
+  {
+   "key": "nameplate_tags",
+   "image": "pvp_clan/atlases/nameplate_tags.png",
+   "frameW": 32,
+   "frameH": 32,
+   "columns": 4,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "pvp_clan/atlases/nameplate_tags@2x.png"
+    }
+   ],
+   "masks": {
+    "tintmask": "pvp_clan/atlases/nameplate_tags_tintmask.png"
+   },
+   "nineSlice": {
+    "0": {
+     "l": 10,
+     "t": 9,
+     "r": 10,
+     "b": 12
+    },
+    "1": {
+     "l": 10,
+     "t": 9,
+     "r": 10,
+     "b": 12
+    }
+   }
+  },
+  {
+   "key": "chat_bubbles",
+   "image": "pvp_clan/atlases/chat_bubbles.png",
+   "frameW": 48,
+   "frameH": 48,
+   "columns": 12,
+   "rows": 3,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "pvp_clan/atlases/chat_bubbles@2x.png"
+    }
+   ],
+   "masks": {
+    "tintmask": "pvp_clan/atlases/chat_bubbles_tintmask.png"
+   },
+   "nineSlice": {
+    "0": {
+     "l": 16,
+     "t": 16,
+     "r": 16,
+     "b": 16
+    },
+    "1": {
+     "l": 16,
+     "t": 16,
+     "r": 16,
+     "b": 16
+    },
+    "2": {
+     "l": 16,
+     "t": 16,
+     "r": 16,
+     "b": 16
+    },
+    "3": {
+     "l": 16,
+     "t": 16,
+     "r": 16,
+     "b": 16
+    },
+    "4": {
+     "l": 16,
+     "t": 16,
+     "r": 16,
+     "b": 16
+    },
+    "5": {
+     "l": 16,
+     "t": 16,
+     "r": 16,
+     "b": 16
+    },
+    "6": {
+     "l": 16,
+     "t": 16,
+     "r": 16,
+     "b": 16
+    },
+    "7": {
+     "l": 16,
+     "t": 16,
+     "r": 16,
+     "b": 16
+    },
+    "8": {
+     "l": 16,
+     "t": 16,
+     "r": 16,
+     "b": 16
+    },
+    "9": {
+     "l": 16,
+     "t": 16,
+     "r": 16,
+     "b": 16
+    },
+    "10": {
+     "l": 16,
+     "t": 16,
+     "r": 16,
+     "b": 16
+    }
+   }
+  }
+ ],
+ "sprites": [
+  {
+   "key": "fx_swing_blade",
+   "category": "vfx",
+   "atlas": "pvp_swing_a",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7
+   },
+   "animations": {
+    "swing": {
+     "frames": [
+      0,
+      1,
+      2,
+      3,
+      4
+     ],
+     "fps": 20,
+     "directions": 8,
+     "dirStride": 10,
+     "loop": false
+    }
+   }
+  },
+  {
+   "key": "fx_swing_blunt",
+   "category": "vfx",
+   "atlas": "pvp_swing_a",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7
+   },
+   "animations": {
+    "swing": {
+     "frames": [
+      5,
+      6,
+      7,
+      8,
+      9
+     ],
+     "fps": 20,
+     "directions": 8,
+     "dirStride": 10,
+     "loop": false
+    }
+   }
+  },
+  {
+   "key": "fx_swing_axe",
+   "category": "vfx",
+   "atlas": "pvp_swing_b",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7
+   },
+   "animations": {
+    "swing": {
+     "frames": [
+      0,
+      1,
+      2,
+      3,
+      4
+     ],
+     "fps": 20,
+     "directions": 8,
+     "dirStride": 10,
+     "loop": false
+    }
+   }
+  },
+  {
+   "key": "fx_swing_spear",
+   "category": "vfx",
+   "atlas": "pvp_swing_b",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7
+   },
+   "animations": {
+    "swing": {
+     "frames": [
+      5,
+      6,
+      7,
+      8,
+      9
+     ],
+     "fps": 20,
+     "directions": 8,
+     "dirStride": 10,
+     "loop": false
+    }
+   }
+  },
+  {
+   "key": "fx_bonk_stars",
+   "category": "vfx",
+   "atlas": "pvp_fx",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "fps": 18,
+     "loop": false
+    }
+   }
+  },
+  {
+   "key": "fx_crit_burst",
+   "category": "vfx",
+   "atlas": "pvp_fx",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+     ],
+     "fps": 18,
+     "loop": false
+    }
+   }
+  },
+  {
+   "key": "fx_parry_spark",
+   "category": "vfx",
+   "atlas": "pvp_fx",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16,
+      17,
+      18,
+      19,
+      20
+     ],
+     "fps": 20,
+     "loop": false
+    }
+   }
+  },
+  {
+   "key": "fx_block_shield",
+   "category": "vfx",
+   "atlas": "pvp_fx",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      21,
+      22,
+      23,
+      24,
+      25
+     ],
+     "fps": 16,
+     "loop": false
+    }
+   }
+  },
+  {
+   "key": "fx_dodge_dust",
+   "category": "vfx",
+   "atlas": "pvp_fx",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      32,
+      33,
+      34,
+      35,
+      36,
+      37
+     ],
+     "fps": 14,
+     "loop": false
+    }
+   }
+  },
+  {
+   "key": "fx_hit_spark",
+   "category": "vfx",
+   "atlas": "pvp_fx",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      38,
+      39,
+      40,
+      41,
+      42
+     ],
+     "fps": 24,
+     "loop": false
+    }
+   }
+  },
+  {
+   "key": "fx_impact_puff",
+   "category": "vfx",
+   "atlas": "pvp_fx",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      48,
+      49,
+      50,
+      51,
+      52,
+      53
+     ],
+     "fps": 16,
+     "loop": false
+    }
+   }
+  },
+  {
+   "key": "fx_impact_flash",
+   "category": "vfx",
+   "atlas": "pvp_fx",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      54,
+      55,
+      56
+     ],
+     "fps": 24,
+     "loop": false
+    }
+   }
+  },
+  {
+   "key": "fx_downed_ring",
+   "category": "vfx",
+   "atlas": "pvp_fx",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      64,
+      65,
+      66,
+      67,
+      68,
+      69,
+      70,
+      71
+     ],
+     "fps": 8,
+     "loop": true
+    }
+   }
+  },
+  {
+   "key": "fx_ko_puff",
+   "category": "vfx",
+   "atlas": "pvp_fx_tall",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9167
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+     ],
+     "fps": 12,
+     "loop": false
+    }
+   }
+  },
+  {
+   "key": "fx_ko_ghost",
+   "category": "vfx",
+   "atlas": "pvp_fx_tall",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9167
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12,
+      13,
+      14,
+      15,
+      16,
+      17
+     ],
+     "fps": 8,
+     "loop": true
+    }
+   }
+  },
+  {
+   "key": "fx_downed_overlay",
+   "category": "vfx",
+   "atlas": "pvp_fx_tall",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9167
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31
+     ],
+     "fps": 10,
+     "loop": true
+    }
+   }
+  },
+  {
+   "key": "fx_respawn_sparkle",
+   "category": "vfx",
+   "atlas": "pvp_fx_tall",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9167
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45
+     ],
+     "fps": 14,
+     "loop": false
+    }
+   }
+  },
+  {
+   "key": "proj_arrow",
+   "category": "vfx",
+   "atlas": "pvp_projectiles",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "proj_spear",
+   "category": "vfx",
+   "atlas": "pvp_projectiles",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "proj_sling_stone",
+   "category": "vfx",
+   "atlas": "pvp_projectiles",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16,
+      17,
+      18,
+      19
+     ],
+     "fps": 16
+    }
+   }
+  },
+  {
+   "key": "trail_arrow",
+   "category": "vfx",
+   "atlas": "pvp_trails",
+   "anchor": {
+    "x": 1.0,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "trail_stone",
+   "category": "vfx",
+   "atlas": "pvp_trails",
+   "anchor": {
+    "x": 1.0,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "trail_spear",
+   "category": "vfx",
+   "atlas": "pvp_trails",
+   "anchor": {
+    "x": 1.0,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "loot_sack_small",
+   "category": "item",
+   "atlas": "pvp_loot",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8438
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "fps": 6,
+     "loop": true
+    }
+   }
+  },
+  {
+   "key": "loot_sack_medium",
+   "category": "item",
+   "atlas": "pvp_loot",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8438
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+     ],
+     "fps": 6,
+     "loop": true
+    }
+   }
+  },
+  {
+   "key": "loot_sack_large",
+   "category": "item",
+   "atlas": "pvp_loot",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8438
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12,
+      13,
+      14,
+      15,
+      16,
+      17
+     ],
+     "fps": 6,
+     "loop": true
+    }
+   }
+  },
+  {
+   "key": "grave_marker",
+   "category": "item",
+   "atlas": "pvp_loot",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8438
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      18,
+      19,
+      20,
+      21
+     ],
+     "fps": 6,
+     "loop": true
+    }
+   }
+  },
+  {
+   "key": "loot_glow_common",
+   "category": "vfx",
+   "atlas": "pvp_loot",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8438
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      24,
+      25,
+      26,
+      27,
+      28,
+      29
+     ],
+     "fps": 8,
+     "loop": true
+    }
+   }
+  },
+  {
+   "key": "loot_glow_uncommon",
+   "category": "vfx",
+   "atlas": "pvp_loot",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8438
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      30,
+      31,
+      32,
+      33,
+      34,
+      35
+     ],
+     "fps": 8,
+     "loop": true
+    }
+   }
+  },
+  {
+   "key": "loot_glow_rare",
+   "category": "vfx",
+   "atlas": "pvp_loot",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8438
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      36,
+      37,
+      38,
+      39,
+      40,
+      41
+     ],
+     "fps": 8,
+     "loop": true
+    }
+   }
+  },
+  {
+   "key": "loot_glow_epic",
+   "category": "vfx",
+   "atlas": "pvp_loot",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8438
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      42,
+      43,
+      44,
+      45,
+      46,
+      47
+     ],
+     "fps": 8,
+     "loop": true
+    }
+   }
+  },
+  {
+   "key": "loot_glow_legendary",
+   "category": "vfx",
+   "atlas": "pvp_loot",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8438
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      48,
+      49,
+      50,
+      51,
+      52,
+      53
+     ],
+     "fps": 8,
+     "loop": true
+    }
+   }
+  },
+  {
+   "key": "fx_item_drop_bounce",
+   "category": "vfx",
+   "atlas": "pvp_loot",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8438
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      54,
+      55,
+      56,
+      57,
+      58,
+      59
+     ],
+     "fps": 14,
+     "loop": false
+    }
+   }
+  },
+  {
+   "key": "fx_loot_beam",
+   "category": "vfx",
+   "atlas": "pvp_loot_beam",
+   "anchor": {
+    "x": 0.5,
+    "y": 1.0
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "fps": 8
+    }
+   }
+  },
+  {
+   "key": "banner_small",
+   "category": "building",
+   "atlas": "clan_banners",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    },
+    "flap": {
+     "frames": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "fps": 10
+    }
+   },
+   "building": {
+    "piece": "banner",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "crackOverlay": "crack_1x1",
+    "stateVfx": {
+     "burning": [
+      {
+       "vfx": "raid_fire_small",
+       "attach": "fire"
+      },
+      {
+       "vfx": "raid_embers",
+       "attach": "ember"
+      },
+      {
+       "vfx": "raid_smoke",
+       "attach": "smoke"
+      }
+     ]
+    }
+   },
+   "rotationArt": "mirror",
+   "sway": {
+    "amp": 1.2,
+    "freq": 0.9,
+    "stiffness": 0.55
+   },
+   "attach": {
+    "fire": {
+     "x": 0,
+     "y": -24
+    },
+    "ember": {
+     "x": 0,
+     "y": -40
+    },
+    "smoke": {
+     "x": 0,
+     "y": -64
+    }
+   }
+  },
+  {
+   "key": "banner",
+   "category": "building",
+   "atlas": "clan_banners",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      7
+     ],
+     "fps": 1
+    },
+    "flap": {
+     "frames": [
+      8,
+      9,
+      10,
+      11,
+      12,
+      13
+     ],
+     "fps": 10
+    }
+   },
+   "building": {
+    "piece": "banner",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      7,
+      7,
+      7,
+      7
+     ]
+    ],
+    "crackOverlay": "crack_1x1",
+    "stateVfx": {
+     "burning": [
+      {
+       "vfx": "raid_fire_small",
+       "attach": "fire"
+      },
+      {
+       "vfx": "raid_embers",
+       "attach": "ember"
+      },
+      {
+       "vfx": "raid_smoke",
+       "attach": "smoke"
+      }
+     ]
+    }
+   },
+   "rotationArt": "mirror",
+   "sway": {
+    "amp": 1.6,
+    "freq": 0.8,
+    "stiffness": 0.5
+   },
+   "attach": {
+    "fire": {
+     "x": 0,
+     "y": -24
+    },
+    "ember": {
+     "x": 0,
+     "y": -40
+    },
+    "smoke": {
+     "x": 0,
+     "y": -64
+    }
+   }
+  },
+  {
+   "key": "banner_large",
+   "category": "building",
+   "atlas": "clan_banners",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      14
+     ],
+     "fps": 1
+    },
+    "flap": {
+     "frames": [
+      15,
+      16,
+      17,
+      18,
+      19,
+      20
+     ],
+     "fps": 10
+    }
+   },
+   "building": {
+    "piece": "banner",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      14,
+      14,
+      14,
+      14
+     ]
+    ],
+    "crackOverlay": "crack_1x1",
+    "stateVfx": {
+     "burning": [
+      {
+       "vfx": "raid_fire_small",
+       "attach": "fire"
+      },
+      {
+       "vfx": "raid_embers",
+       "attach": "ember"
+      },
+      {
+       "vfx": "raid_smoke",
+       "attach": "smoke"
+      }
+     ]
+    }
+   },
+   "rotationArt": "mirror",
+   "sway": {
+    "amp": 2.0,
+    "freq": 0.7,
+    "stiffness": 0.45
+   },
+   "attach": {
+    "fire": {
+     "x": 0,
+     "y": -24
+    },
+    "ember": {
+     "x": 0,
+     "y": -40
+    },
+    "smoke": {
+     "x": 0,
+     "y": -64
+    }
+   }
+  },
+  {
+   "key": "banner_wall",
+   "category": "building",
+   "atlas": "clan_banners",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      28
+     ],
+     "fps": 1
+    },
+    "flap": {
+     "frames": [
+      29,
+      30,
+      31,
+      32
+     ],
+     "fps": 6,
+     "rotations": [
+      [
+       29,
+       30,
+       31,
+       32
+      ],
+      [
+       34,
+       35,
+       36,
+       37
+      ]
+     ]
+    },
+    "flap_r1": {
+     "frames": [
+      34,
+      35,
+      36,
+      37
+     ],
+     "fps": 6
+    }
+   },
+   "building": {
+    "piece": "banner_wall",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      28,
+      28,
+      28,
+      28
+     ],
+     [
+      33,
+      33,
+      33,
+      33
+     ],
+     [
+      28,
+      28,
+      28,
+      28
+     ],
+     [
+      33,
+      33,
+      33,
+      33
+     ]
+    ],
+    "crackOverlay": "crack_1x1",
+    "stateVfx": {
+     "burning": [
+      {
+       "vfx": "raid_fire_small",
+       "attach": "fire"
+      },
+      {
+       "vfx": "raid_embers",
+       "attach": "ember"
+      },
+      {
+       "vfx": "raid_smoke",
+       "attach": "smoke"
+      }
+     ]
+    }
+   },
+   "rotationArt": "mirror",
+   "sway": {
+    "amp": 0.7,
+    "freq": 0.6,
+    "stiffness": 0.75
+   },
+   "attach": {
+    "fire": {
+     "x": 0,
+     "y": -24
+    },
+    "ember": {
+     "x": 0,
+     "y": -40
+    },
+    "smoke": {
+     "x": 0,
+     "y": -64
+    }
+   }
+  },
+  {
+   "key": "claim_totem",
+   "category": "building",
+   "atlas": "clan_banners",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      42,
+      43,
+      44,
+      45,
+      46,
+      47
+     ],
+     "fps": 6
+    }
+   },
+   "building": {
+    "piece": "claim_totem",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      42,
+      42,
+      42,
+      42
+     ]
+    ],
+    "crackOverlay": "crack_1x1",
+    "stateVfx": {
+     "burning": [
+      {
+       "vfx": "raid_fire_small",
+       "attach": "fire"
+      },
+      {
+       "vfx": "raid_embers",
+       "attach": "ember"
+      },
+      {
+       "vfx": "raid_smoke",
+       "attach": "smoke"
+      }
+     ]
+    }
+   },
+   "rotationArt": "mirror",
+   "attach": {
+    "fire": {
+     "x": 0,
+     "y": -24
+    },
+    "ember": {
+     "x": 0,
+     "y": -40
+    },
+    "smoke": {
+     "x": 0,
+     "y": -64
+    }
+   }
+  },
+  {
+   "key": "territory_ne",
+   "category": "decal",
+   "atlas": "clan_territory",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0,
+      9
+     ],
+     "fps": 2
+    }
+   }
+  },
+  {
+   "key": "territory_se",
+   "category": "decal",
+   "atlas": "clan_territory",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1,
+      10
+     ],
+     "fps": 2
+    }
+   }
+  },
+  {
+   "key": "territory_sw",
+   "category": "decal",
+   "atlas": "clan_territory",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2,
+      11
+     ],
+     "fps": 2
+    }
+   }
+  },
+  {
+   "key": "territory_nw",
+   "category": "decal",
+   "atlas": "clan_territory",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      3,
+      12
+     ],
+     "fps": 2
+    }
+   }
+  },
+  {
+   "key": "territory_in_n",
+   "category": "decal",
+   "atlas": "clan_territory",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4,
+      13
+     ],
+     "fps": 2
+    }
+   }
+  },
+  {
+   "key": "territory_in_e",
+   "category": "decal",
+   "atlas": "clan_territory",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      5,
+      14
+     ],
+     "fps": 2
+    }
+   }
+  },
+  {
+   "key": "territory_in_s",
+   "category": "decal",
+   "atlas": "clan_territory",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      6,
+      15
+     ],
+     "fps": 2
+    }
+   }
+  },
+  {
+   "key": "territory_in_w",
+   "category": "decal",
+   "atlas": "clan_territory",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      7,
+      16
+     ],
+     "fps": 2
+    }
+   }
+  },
+  {
+   "key": "territory_fill",
+   "category": "decal",
+   "atlas": "clan_territory",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8,
+      17
+     ],
+     "fps": 2
+    }
+   }
+  },
+  {
+   "key": "emblem_paw",
+   "category": "ui",
+   "atlas": "clan_emblems",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "emblem_star",
+   "category": "ui",
+   "atlas": "clan_emblems",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "emblem_heart",
+   "category": "ui",
+   "atlas": "clan_emblems",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "emblem_acorn",
+   "category": "ui",
+   "atlas": "clan_emblems",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "emblem_mushroom",
+   "category": "ui",
+   "atlas": "clan_emblems",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "emblem_leaf",
+   "category": "ui",
+   "atlas": "clan_emblems",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      5
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "emblem_flower",
+   "category": "ui",
+   "atlas": "clan_emblems",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      6
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "emblem_moon",
+   "category": "ui",
+   "atlas": "clan_emblems",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      7
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "emblem_sun",
+   "category": "ui",
+   "atlas": "clan_emblems",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "emblem_crown",
+   "category": "ui",
+   "atlas": "clan_emblems",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      9
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "emblem_shield",
+   "category": "ui",
+   "atlas": "clan_emblems",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      10
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "emblem_hammer",
+   "category": "ui",
+   "atlas": "clan_emblems",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      11
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "emblem_fish",
+   "category": "ui",
+   "atlas": "clan_emblems",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "emblem_bunny",
+   "category": "ui",
+   "atlas": "clan_emblems",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      13
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "emblem_cat",
+   "category": "ui",
+   "atlas": "clan_emblems",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      14
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "emblem_bear",
+   "category": "ui",
+   "atlas": "clan_emblems",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      15
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "emblem_frog",
+   "category": "ui",
+   "atlas": "clan_emblems",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "emblem_bee",
+   "category": "ui",
+   "atlas": "clan_emblems",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      17
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "emblem_cloud",
+   "category": "ui",
+   "atlas": "clan_emblems",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      18
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "emblem_carrot",
+   "category": "ui",
+   "atlas": "clan_emblems",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      19
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "emblem_pine",
+   "category": "ui",
+   "atlas": "clan_emblems",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      20
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "emblem_clover",
+   "category": "ui",
+   "atlas": "clan_emblems",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      21
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "emblem_bell",
+   "category": "ui",
+   "atlas": "clan_emblems",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      22
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "emblem_ghost",
+   "category": "ui",
+   "atlas": "clan_emblems",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      23
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "wall_clan_wood",
+   "category": "building",
+   "atlas": "clan_buildings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      0,
+      2,
+      4,
+      6
+     ],
+     [
+      1,
+      3,
+      5,
+      7
+     ],
+     [
+      0,
+      2,
+      4,
+      6
+     ],
+     [
+      1,
+      3,
+      5,
+      7
+     ]
+    ],
+    "stateVfx": {
+     "burning": [
+      {
+       "vfx": "raid_fire_small",
+       "attach": "fire"
+      },
+      {
+       "vfx": "raid_embers",
+       "attach": "ember"
+      },
+      {
+       "vfx": "raid_smoke",
+       "attach": "smoke"
+      }
+     ]
+    }
+   },
+   "rotationArt": "mirror",
+   "attach": {
+    "fire": {
+     "x": 0,
+     "y": -24
+    },
+    "ember": {
+     "x": 0,
+     "y": -40
+    },
+    "smoke": {
+     "x": 0,
+     "y": -64
+    }
+   }
+  },
+  {
+   "key": "wall_clan_stone",
+   "category": "building",
+   "atlas": "clan_buildings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      8,
+      10,
+      12,
+      14
+     ],
+     [
+      9,
+      11,
+      13,
+      15
+     ],
+     [
+      8,
+      10,
+      12,
+      14
+     ],
+     [
+      9,
+      11,
+      13,
+      15
+     ]
+    ]
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "wall_clan_palisade",
+   "category": "building",
+   "atlas": "clan_buildings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      16,
+      18,
+      20,
+      22
+     ],
+     [
+      17,
+      19,
+      21,
+      23
+     ],
+     [
+      16,
+      18,
+      20,
+      22
+     ],
+     [
+      17,
+      19,
+      21,
+      23
+     ]
+    ],
+    "stateVfx": {
+     "burning": [
+      {
+       "vfx": "raid_fire_small",
+       "attach": "fire"
+      },
+      {
+       "vfx": "raid_embers",
+       "attach": "ember"
+      },
+      {
+       "vfx": "raid_smoke",
+       "attach": "smoke"
+      }
+     ]
+    }
+   },
+   "rotationArt": "mirror",
+   "attach": {
+    "fire": {
+     "x": 0,
+     "y": -24
+    },
+    "ember": {
+     "x": 0,
+     "y": -40
+    },
+    "smoke": {
+     "x": 0,
+     "y": -64
+    }
+   }
+  },
+  {
+   "key": "barricade_spiked",
+   "category": "building",
+   "atlas": "clan_buildings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      24
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "barricade_spiked",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      24,
+      26,
+      28,
+      30
+     ],
+     [
+      25,
+      27,
+      29,
+      31
+     ],
+     [
+      24,
+      26,
+      28,
+      30
+     ],
+     [
+      25,
+      27,
+      29,
+      31
+     ]
+    ],
+    "stateVfx": {
+     "burning": [
+      {
+       "vfx": "raid_fire_small",
+       "attach": "fire"
+      },
+      {
+       "vfx": "raid_embers",
+       "attach": "ember"
+      },
+      {
+       "vfx": "raid_smoke",
+       "attach": "smoke"
+      }
+     ]
+    }
+   },
+   "rotationArt": "mirror",
+   "attach": {
+    "fire": {
+     "x": 0,
+     "y": -24
+    },
+    "ember": {
+     "x": 0,
+     "y": -40
+    },
+    "smoke": {
+     "x": 0,
+     "y": -64
+    }
+   }
+  },
+  {
+   "key": "storage_box_locked",
+   "category": "building",
+   "atlas": "clan_buildings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      32
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "storage_box",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      32,
+      34,
+      36,
+      38
+     ],
+     [
+      33,
+      35,
+      37,
+      39
+     ],
+     [
+      32,
+      34,
+      36,
+      38
+     ],
+     [
+      33,
+      35,
+      37,
+      39
+     ]
+    ],
+    "stateVfx": {
+     "burning": [
+      {
+       "vfx": "raid_fire_small",
+       "attach": "fire"
+      },
+      {
+       "vfx": "raid_embers",
+       "attach": "ember"
+      },
+      {
+       "vfx": "raid_smoke",
+       "attach": "smoke"
+      }
+     ]
+    }
+   },
+   "rotationArt": "mirror",
+   "attach": {
+    "fire": {
+     "x": 0,
+     "y": -24
+    },
+    "ember": {
+     "x": 0,
+     "y": -40
+    },
+    "smoke": {
+     "x": 0,
+     "y": -64
+    }
+   }
+  },
+  {
+   "key": "raid_bell",
+   "category": "building",
+   "atlas": "clan_buildings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      40
+     ],
+     "fps": 1
+    },
+    "ring": {
+     "frames": [
+      48,
+      49,
+      50,
+      51,
+      52,
+      53
+     ],
+     "fps": 12,
+     "rotations": [
+      [
+       48,
+       49,
+       50,
+       51,
+       52,
+       53
+      ],
+      [
+       54,
+       55,
+       56,
+       57,
+       58,
+       59
+      ]
+     ]
+    },
+    "ring_r1": {
+     "frames": [
+      54,
+      55,
+      56,
+      57,
+      58,
+      59
+     ],
+     "fps": 12
+    }
+   },
+   "building": {
+    "piece": "raid_bell",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      40,
+      42,
+      44,
+      46
+     ],
+     [
+      41,
+      43,
+      45,
+      47
+     ],
+     [
+      40,
+      42,
+      44,
+      46
+     ],
+     [
+      41,
+      43,
+      45,
+      47
+     ]
+    ],
+    "stateVfx": {
+     "burning": [
+      {
+       "vfx": "raid_fire_small",
+       "attach": "fire"
+      },
+      {
+       "vfx": "raid_embers",
+       "attach": "ember"
+      },
+      {
+       "vfx": "raid_smoke",
+       "attach": "smoke"
+      }
+     ]
+    }
+   },
+   "rotationArt": "mirror",
+   "attach": {
+    "fire": {
+     "x": 0,
+     "y": -24
+    },
+    "ember": {
+     "x": 0,
+     "y": -40
+    },
+    "smoke": {
+     "x": 0,
+     "y": -64
+    }
+   }
+  },
+  {
+   "key": "gate_clan",
+   "category": "building",
+   "atlas": "clan_gates",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    },
+    "open": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    },
+    "breached": {
+     "frames": [
+      16
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "gate_clan",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      0,
+      2,
+      4,
+      6
+     ],
+     [
+      1,
+      3,
+      5,
+      7
+     ],
+     [
+      0,
+      2,
+      4,
+      6
+     ],
+     [
+      1,
+      3,
+      5,
+      7
+     ]
+    ],
+    "states": {
+     "closed": [
+      [
+       0,
+       2,
+       4,
+       6
+      ],
+      [
+       1,
+       3,
+       5,
+       7
+      ],
+      [
+       0,
+       2,
+       4,
+       6
+      ],
+      [
+       1,
+       3,
+       5,
+       7
+      ]
+     ],
+     "open": [
+      [
+       8,
+       10,
+       12,
+       14
+      ],
+      [
+       9,
+       11,
+       13,
+       15
+      ],
+      [
+       8,
+       10,
+       12,
+       14
+      ],
+      [
+       9,
+       11,
+       13,
+       15
+      ]
+     ],
+     "breached": [
+      [
+       16,
+       18,
+       20,
+       22
+      ],
+      [
+       17,
+       19,
+       21,
+       23
+      ],
+      [
+       16,
+       18,
+       20,
+       22
+      ],
+      [
+       17,
+       19,
+       21,
+       23
+      ]
+     ]
+    },
+    "stateVfx": {
+     "burning": [
+      {
+       "vfx": "raid_fire_large",
+       "attach": "fire"
+      },
+      {
+       "vfx": "raid_embers",
+       "attach": "ember"
+      },
+      {
+       "vfx": "raid_smoke",
+       "attach": "smoke"
+      }
+     ],
+     "breached": [
+      {
+       "vfx": "raid_embers",
+       "attach": "ember"
+      },
+      {
+       "vfx": "raid_smoke",
+       "attach": "smoke"
+      }
+     ]
+    }
+   },
+   "rotationArt": "mirror",
+   "attach": {
+    "fire": {
+     "x": 0,
+     "y": -48
+    },
+    "ember": {
+     "x": 0,
+     "y": -80
+    },
+    "smoke": {
+     "x": 0,
+     "y": -128
+    }
+   }
+  },
+  {
+   "key": "clan_hall_door",
+   "category": "building",
+   "atlas": "clan_structures_large",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "clan_hall_door",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      0,
+      2,
+      4,
+      6
+     ],
+     [
+      1,
+      3,
+      5,
+      7
+     ],
+     [
+      0,
+      2,
+      4,
+      6
+     ],
+     [
+      1,
+      3,
+      5,
+      7
+     ]
+    ],
+    "stateVfx": {
+     "burning": [
+      {
+       "vfx": "raid_fire_large",
+       "attach": "fire"
+      },
+      {
+       "vfx": "raid_embers",
+       "attach": "ember"
+      },
+      {
+       "vfx": "raid_smoke",
+       "attach": "smoke"
+      }
+     ]
+    }
+   },
+   "rotationArt": "mirror",
+   "attach": {
+    "fire": {
+     "x": 0,
+     "y": -48
+    },
+    "ember": {
+     "x": 0,
+     "y": -80
+    },
+    "smoke": {
+     "x": 0,
+     "y": -128
+    }
+   }
+  },
+  {
+   "key": "watchtower",
+   "category": "building",
+   "atlas": "clan_structures_large",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "watchtower",
+    "footprint": {
+     "w": 2,
+     "h": 2
+    },
+    "layer": 1,
+    "frames": [
+     [
+      8,
+      10,
+      12,
+      14
+     ],
+     [
+      9,
+      11,
+      13,
+      15
+     ],
+     [
+      8,
+      10,
+      12,
+      14
+     ],
+     [
+      9,
+      11,
+      13,
+      15
+     ]
+    ],
+    "stateVfx": {
+     "burning": [
+      {
+       "vfx": "raid_fire_large",
+       "attach": "fire"
+      },
+      {
+       "vfx": "raid_embers",
+       "attach": "ember"
+      },
+      {
+       "vfx": "raid_smoke",
+       "attach": "smoke"
+      }
+     ]
+    }
+   },
+   "rotationArt": "mirror",
+   "attach": {
+    "fire": {
+     "x": 0,
+     "y": -48
+    },
+    "ember": {
+     "x": 0,
+     "y": -120
+    },
+    "smoke": {
+     "x": 0,
+     "y": -180
+    }
+   }
+  },
+  {
+   "key": "crack_1x1",
+   "category": "vfx",
+   "atlas": "raid_cracks",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "animations": {
+    "stage1": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    },
+    "stage2": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    },
+    "stage3": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "crack_2x1",
+   "category": "vfx",
+   "atlas": "raid_cracks_large",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "animations": {
+    "stage1": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    },
+    "stage2": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    },
+    "stage3": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "crack_2x2",
+   "category": "vfx",
+   "atlas": "raid_cracks_large",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "animations": {
+    "stage1": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    },
+    "stage2": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    },
+    "stage3": {
+     "frames": [
+      5
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "fx_hit_wood",
+   "category": "vfx",
+   "atlas": "raid_fx",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "fps": 16,
+     "loop": false
+    }
+   }
+  },
+  {
+   "key": "fx_hit_stone",
+   "category": "vfx",
+   "atlas": "raid_fx",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+     ],
+     "fps": 16,
+     "loop": false
+    }
+   }
+  },
+  {
+   "key": "fx_hit_dust",
+   "category": "vfx",
+   "atlas": "raid_fx",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12,
+      13,
+      14,
+      15,
+      16,
+      17
+     ],
+     "fps": 14,
+     "loop": false
+    }
+   }
+  },
+  {
+   "key": "fx_raid_ember",
+   "category": "vfx",
+   "atlas": "raid_fx",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      18,
+      19,
+      20,
+      21
+     ],
+     "fps": 8,
+     "loop": true
+    }
+   }
+  },
+  {
+   "key": "fx_raid_smoke",
+   "category": "vfx",
+   "atlas": "raid_fx",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      24,
+      25,
+      26,
+      27,
+      28,
+      29
+     ],
+     "fps": 8,
+     "loop": false
+    }
+   }
+  },
+  {
+   "key": "fx_repair_sparkle",
+   "category": "vfx",
+   "atlas": "raid_fx",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43
+     ],
+     "fps": 12,
+     "loop": false
+    }
+   }
+  },
+  {
+   "key": "fx_fire_small",
+   "category": "vfx",
+   "atlas": "raid_fire",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9167
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "fps": 12
+    }
+   }
+  },
+  {
+   "key": "fx_fire_large",
+   "category": "vfx",
+   "atlas": "raid_fire",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9167
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+     ],
+     "fps": 12
+    }
+   }
+  },
+  {
+   "key": "rubble_smoldering",
+   "category": "vfx",
+   "atlas": "raid_rubble",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9375
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "fps": 6
+    }
+   }
+  },
+  {
+   "key": "fx_collapse_poof",
+   "category": "vfx",
+   "atlas": "raid_fx_big",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+     ],
+     "fps": 14,
+     "loop": false
+    }
+   }
+  },
+  {
+   "key": "np_crown",
+   "category": "ui",
+   "atlas": "nameplate_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "np_star",
+   "category": "ui",
+   "atlas": "nameplate_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "np_shield",
+   "category": "ui",
+   "atlas": "nameplate_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "np_party_pip",
+   "category": "ui",
+   "atlas": "nameplate_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "np_pvp_flag",
+   "category": "ui",
+   "atlas": "nameplate_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "np_downed",
+   "category": "ui",
+   "atlas": "nameplate_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      5
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "np_officer",
+   "category": "ui",
+   "atlas": "nameplate_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      6
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "np_leader_clan",
+   "category": "ui",
+   "atlas": "nameplate_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      7
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "nameplate_neutral",
+   "category": "ui",
+   "atlas": "nameplates",
+   "anchor": {
+    "x": 0.5,
+    "y": 1.0
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "nameplate_self",
+   "category": "ui",
+   "atlas": "nameplates",
+   "anchor": {
+    "x": 0.5,
+    "y": 1.0
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "nameplate_party",
+   "category": "ui",
+   "atlas": "nameplates",
+   "anchor": {
+    "x": 0.5,
+    "y": 1.0
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "nameplate_clan",
+   "category": "ui",
+   "atlas": "nameplates",
+   "anchor": {
+    "x": 0.5,
+    "y": 1.0
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "nameplate_enemy",
+   "category": "ui",
+   "atlas": "nameplates",
+   "anchor": {
+    "x": 0.5,
+    "y": 1.0
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "nameplate_clan_tag",
+   "category": "ui",
+   "atlas": "nameplate_tags",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "nameplate_party_tag",
+   "category": "ui",
+   "atlas": "nameplate_tags",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bubble_global",
+   "category": "ui",
+   "atlas": "chat_bubbles",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bubble_global_tail",
+   "category": "ui",
+   "atlas": "chat_bubbles",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.0417
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bubble_local",
+   "category": "ui",
+   "atlas": "chat_bubbles",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bubble_local_tail",
+   "category": "ui",
+   "atlas": "chat_bubbles",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.0417
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      13
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bubble_party",
+   "category": "ui",
+   "atlas": "chat_bubbles",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bubble_party_tail",
+   "category": "ui",
+   "atlas": "chat_bubbles",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.0417
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      14
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bubble_clan",
+   "category": "ui",
+   "atlas": "chat_bubbles",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bubble_clan_tail",
+   "category": "ui",
+   "atlas": "chat_bubbles",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.0417
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      15
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bubble_whisper",
+   "category": "ui",
+   "atlas": "chat_bubbles",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bubble_whisper_tail",
+   "category": "ui",
+   "atlas": "chat_bubbles",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.0417
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bubble_trade",
+   "category": "ui",
+   "atlas": "chat_bubbles",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      5
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bubble_trade_tail",
+   "category": "ui",
+   "atlas": "chat_bubbles",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.0417
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      17
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bubble_system",
+   "category": "ui",
+   "atlas": "chat_bubbles",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      6
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bubble_system_tail",
+   "category": "ui",
+   "atlas": "chat_bubbles",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.0417
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      18
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bubble_warning",
+   "category": "ui",
+   "atlas": "chat_bubbles",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      7
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bubble_warning_tail",
+   "category": "ui",
+   "atlas": "chat_bubbles",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.0417
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      19
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bubble_combat",
+   "category": "ui",
+   "atlas": "chat_bubbles",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bubble_combat_tail",
+   "category": "ui",
+   "atlas": "chat_bubbles",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.0417
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      20
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bubble_admin",
+   "category": "ui",
+   "atlas": "chat_bubbles",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      9
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bubble_admin_tail",
+   "category": "ui",
+   "atlas": "chat_bubbles",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.0417
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      21
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bubble_clan_tint",
+   "category": "ui",
+   "atlas": "chat_bubbles",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      10
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bubble_clan_tint_tail",
+   "category": "ui",
+   "atlas": "chat_bubbles",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.0417
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      22
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bubble_typing",
+   "category": "ui",
+   "atlas": "chat_bubbles",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      24,
+      25,
+      26
+     ],
+     "fps": 4
+    }
+   }
+  },
+  {
+   "key": "territory_edge",
+   "category": "decal",
+   "atlas": "clan_territory",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+     ],
+     "fps": 1
+    }
+   },
+   "autotile": {
+    "neighbors": 8,
+    "group": "territory",
+    "rules": [
+     {
+      "mask": 255,
+      "care": 255,
+      "frame": 8
+     },
+     {
+      "mask": 0,
+      "care": 1,
+      "frame": 0
+     },
+     {
+      "mask": 0,
+      "care": 2,
+      "frame": 1
+     },
+     {
+      "mask": 0,
+      "care": 4,
+      "frame": 2
+     },
+     {
+      "mask": 0,
+      "care": 8,
+      "frame": 3
+     },
+     {
+      "mask": 0,
+      "care": 128,
+      "frame": 4
+     },
+     {
+      "mask": 0,
+      "care": 16,
+      "frame": 5
+     },
+     {
+      "mask": 0,
+      "care": 32,
+      "frame": 6
+     },
+     {
+      "mask": 0,
+      "care": 64,
+      "frame": 7
+     },
+     {
+      "mask": 0,
+      "care": 0,
+      "frame": 8
+     }
+    ]
+   }
+  }
+ ],
+ "vfx": [
+  {
+   "key": "pvp_hit_spark",
+   "sprite": "fx_hit_spark",
+   "lifetime": 0.21,
+   "blend": "additive"
+  },
+  {
+   "key": "pvp_bonk",
+   "sprite": "fx_bonk_stars",
+   "lifetime": 0.34,
+   "blend": "normal"
+  },
+  {
+   "key": "pvp_crit",
+   "sprite": "fx_crit_burst",
+   "lifetime": 0.34,
+   "blend": "additive",
+   "particles": {
+    "rate": 0,
+    "count": 8,
+    "speed": [
+     1.2,
+     2.8
+    ],
+    "spread": 6.283,
+    "gravity": 0.4,
+    "fade": true,
+    "scaleCurve": [
+     1,
+     0.6,
+     0
+    ]
+   }
+  },
+  {
+   "key": "pvp_parry",
+   "sprite": "fx_parry_spark",
+   "lifetime": 0.25,
+   "blend": "additive",
+   "particles": {
+    "rate": 0,
+    "count": 6,
+    "speed": [
+     1.5,
+     3.4
+    ],
+    "spread": 2.2,
+    "gravity": 0.8,
+    "fade": true,
+    "scaleCurve": [
+     1,
+     0.4
+    ]
+   }
+  },
+  {
+   "key": "pvp_block",
+   "sprite": "fx_block_shield",
+   "lifetime": 0.32,
+   "blend": "normal"
+  },
+  {
+   "key": "pvp_dodge",
+   "sprite": "fx_dodge_dust",
+   "lifetime": 0.43,
+   "blend": "normal"
+  },
+  {
+   "key": "pvp_impact_puff",
+   "sprite": "fx_impact_puff",
+   "lifetime": 0.38,
+   "blend": "normal"
+  },
+  {
+   "key": "pvp_impact_flash",
+   "sprite": "fx_impact_flash",
+   "lifetime": 0.13,
+   "blend": "additive"
+  },
+  {
+   "key": "pvp_ko",
+   "sprite": "fx_ko_puff",
+   "lifetime": 1.0,
+   "blend": "normal",
+   "particles": {
+    "rate": 0,
+    "count": 5,
+    "speed": [
+     0.6,
+     1.5
+    ],
+    "spread": 6.283,
+    "gravity": -0.3,
+    "fade": true,
+    "scaleCurve": [
+     0.6,
+     1,
+     0
+    ]
+   }
+  },
+  {
+   "key": "pvp_ko_ghost",
+   "sprite": "fx_ko_ghost",
+   "lifetime": 2.5,
+   "blend": "normal"
+  },
+  {
+   "key": "pvp_downed",
+   "sprite": "fx_downed_overlay",
+   "lifetime": 0.8,
+   "blend": "normal"
+  },
+  {
+   "key": "pvp_downed_ring",
+   "sprite": "fx_downed_ring",
+   "lifetime": 1.0,
+   "blend": "normal"
+  },
+  {
+   "key": "pvp_respawn",
+   "sprite": "fx_respawn_sparkle",
+   "lifetime": 0.72,
+   "blend": "additive",
+   "particles": {
+    "rate": 0,
+    "count": 10,
+    "speed": [
+     0.5,
+     1.4
+    ],
+    "spread": 6.283,
+    "gravity": -0.5,
+    "fade": true,
+    "scaleCurve": [
+     1,
+     0.5,
+     0
+    ]
+   }
+  },
+  {
+   "key": "pvp_swing_blade",
+   "sprite": "fx_swing_blade",
+   "lifetime": 0.25,
+   "blend": "normal"
+  },
+  {
+   "key": "pvp_swing_blunt",
+   "sprite": "fx_swing_blunt",
+   "lifetime": 0.25,
+   "blend": "normal"
+  },
+  {
+   "key": "pvp_swing_axe",
+   "sprite": "fx_swing_axe",
+   "lifetime": 0.25,
+   "blend": "normal"
+  },
+  {
+   "key": "pvp_swing_spear",
+   "sprite": "fx_swing_spear",
+   "lifetime": 0.25,
+   "blend": "normal"
+  },
+  {
+   "key": "loot_drop_bounce",
+   "sprite": "fx_item_drop_bounce",
+   "lifetime": 0.43,
+   "blend": "additive"
+  },
+  {
+   "key": "loot_beam",
+   "sprite": "fx_loot_beam",
+   "lifetime": 0.75,
+   "blend": "additive"
+  },
+  {
+   "key": "raid_hit_wood",
+   "sprite": "fx_hit_wood",
+   "lifetime": 0.4,
+   "blend": "normal",
+   "particles": {
+    "rate": 0,
+    "count": 6,
+    "speed": [
+     1.2,
+     2.8
+    ],
+    "spread": 2.4,
+    "gravity": 1.6,
+    "fade": true,
+    "scaleCurve": [
+     1,
+     0.8
+    ]
+   }
+  },
+  {
+   "key": "raid_hit_stone",
+   "sprite": "fx_hit_stone",
+   "lifetime": 0.4,
+   "blend": "normal",
+   "particles": {
+    "rate": 0,
+    "count": 6,
+    "speed": [
+     1.2,
+     2.5
+    ],
+    "spread": 2.4,
+    "gravity": 1.8,
+    "fade": true,
+    "scaleCurve": [
+     1,
+     0.8
+    ]
+   }
+  },
+  {
+   "key": "raid_hit_dust",
+   "sprite": "fx_hit_dust",
+   "lifetime": 0.5,
+   "blend": "normal"
+  },
+  {
+   "key": "raid_embers",
+   "sprite": "fx_raid_ember",
+   "lifetime": 1.4,
+   "blend": "additive",
+   "particles": {
+    "rate": 6,
+    "count": 0,
+    "speed": [
+     0.3,
+     0.9
+    ],
+    "spread": 1.2,
+    "gravity": -0.6,
+    "fade": true,
+    "scaleCurve": [
+     1,
+     0.7,
+     0
+    ]
+   }
+  },
+  {
+   "key": "raid_smoke",
+   "sprite": "fx_raid_smoke",
+   "lifetime": 2.5,
+   "blend": "normal",
+   "particles": {
+    "rate": 2.5,
+    "count": 0,
+    "speed": [
+     0.2,
+     0.45
+    ],
+    "spread": 0.8,
+    "gravity": -0.25,
+    "fade": true,
+    "scaleCurve": [
+     0.5,
+     1,
+     1.4
+    ]
+   }
+  },
+  {
+   "key": "raid_fire_small",
+   "sprite": "fx_fire_small",
+   "lifetime": 0.67,
+   "blend": "normal"
+  },
+  {
+   "key": "raid_fire_large",
+   "sprite": "fx_fire_large",
+   "lifetime": 0.67,
+   "blend": "normal"
+  },
+  {
+   "key": "raid_collapse",
+   "sprite": "fx_collapse_poof",
+   "lifetime": 0.72,
+   "blend": "normal",
+   "particles": {
+    "rate": 0,
+    "count": 12,
+    "speed": [
+     0.9,
+     2.2
+    ],
+    "spread": 6.283,
+    "gravity": 1.2,
+    "fade": true,
+    "scaleCurve": [
+     1,
+     0.6
+    ]
+   }
+  },
+  {
+   "key": "raid_repair",
+   "sprite": "fx_repair_sparkle",
+   "lifetime": 0.6,
+   "blend": "additive"
+  },
+  {
+   "key": "raid_rubble_smolder",
+   "sprite": "rubble_smoldering",
+   "lifetime": 1.0,
+   "blend": "normal"
+  },
+  {
+   "key": "pvp_trail_arrow",
+   "sprite": "trail_arrow",
+   "lifetime": 0.25,
+   "blend": "normal",
+   "stretch": "velocity",
+   "stretchMax": 4
+  },
+  {
+   "key": "pvp_trail_spear",
+   "sprite": "trail_spear",
+   "lifetime": 0.25,
+   "blend": "normal",
+   "stretch": "velocity",
+   "stretchMax": 3
+  },
+  {
+   "key": "pvp_trail_stone",
+   "sprite": "trail_stone",
+   "lifetime": 0.25,
+   "blend": "normal",
+   "stretch": "velocity",
+   "stretchMax": 2
+  }
+ ],
+ "tintSets": [
+  {
+   "key": "rarity_color",
+   "tints": [
+    "#A9A094",
+    "#72C45C",
+    "#4F8FD6",
+    "#9B72D6",
+    "#FFD45A"
+   ]
+  },
+  {
+   "key": "rarity_beam",
+   "tints": [
+    "#E6E0D6",
+    "#9FF07A",
+    "#6FB4FF",
+    "#C08CFF",
+    "#FFE070"
+   ]
+  },
+  {
+   "key": "outline_roles",
+   "tints": [
+    "#FFE680",
+    "#7FE0EE",
+    "#4F8FD6",
+    "#B8B0C8",
+    "#E8492E"
+   ]
+  }
+ ],
+ "clanPalettes": [
+  {
+   "key": "berry_cream",
+   "primary": "#E8475F",
+   "secondary": "#F6EAD2"
+  },
+  {
+   "key": "sky_sun",
+   "primary": "#4F8FD6",
+   "secondary": "#FFD45A"
+  },
+  {
+   "key": "meadow",
+   "primary": "#72C45C",
+   "secondary": "#FFFAF0"
+  },
+  {
+   "key": "plum_gold",
+   "primary": "#9B72D6",
+   "secondary": "#FFD45A"
+  },
+  {
+   "key": "pumpkin_cocoa",
+   "primary": "#F4A74A",
+   "secondary": "#87563A"
+  },
+  {
+   "key": "teal_rose",
+   "primary": "#3FB3A6",
+   "secondary": "#FF9EC4"
+  },
+  {
+   "key": "honey_bark",
+   "primary": "#F7C844",
+   "secondary": "#74432C"
+  },
+  {
+   "key": "denim_cream",
+   "primary": "#5A6FB0",
+   "secondary": "#F6EAD2"
+  },
+  {
+   "key": "rose_mint",
+   "primary": "#FF9EC4",
+   "secondary": "#94DCA8"
+  },
+  {
+   "key": "pine_gold",
+   "primary": "#4FA37A",
+   "secondary": "#FFD45A"
+  },
+  {
+   "key": "brick_sand",
+   "primary": "#D0705A",
+   "secondary": "#F6DFA4"
+  },
+  {
+   "key": "lilac_teal",
+   "primary": "#BBA4F0",
+   "secondary": "#3FB3A6"
+  },
+  {
+   "key": "mint_plum",
+   "primary": "#94DCA8",
+   "secondary": "#7452AD"
+  },
+  {
+   "key": "ember_sky",
+   "primary": "#FF8A2A",
+   "secondary": "#5CC6DC"
+  },
+  {
+   "key": "pebble_berry",
+   "primary": "#A9A094",
+   "secondary": "#E8475F"
+  },
+  {
+   "key": "midnight_star",
+   "primary": "#3A66A8",
+   "secondary": "#FFF2A8"
+  }
+ ]
+}

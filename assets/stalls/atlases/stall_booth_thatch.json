@@ -1,0 +1,425 @@
+{
+ "frames": {
+  "stall_booth_thatch/closed/damage0/r0": {
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 176
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 176
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 176
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9545454545454546
+   },
+   "index": 0
+  },
+  "stall_booth_thatch/closed/damage0/r1": {
+   "frame": {
+    "x": 144,
+    "y": 0,
+    "w": 144,
+    "h": 176
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 176
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 176
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9545454545454546
+   },
+   "index": 1
+  },
+  "stall_booth_thatch/closed/damage1/r0": {
+   "frame": {
+    "x": 288,
+    "y": 0,
+    "w": 144,
+    "h": 176
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 176
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 176
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9545454545454546
+   },
+   "index": 2
+  },
+  "stall_booth_thatch/closed/damage1/r1": {
+   "frame": {
+    "x": 432,
+    "y": 0,
+    "w": 144,
+    "h": 176
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 176
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 176
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9545454545454546
+   },
+   "index": 3
+  },
+  "stall_booth_thatch/closed/damage2/r0": {
+   "frame": {
+    "x": 0,
+    "y": 176,
+    "w": 144,
+    "h": 176
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 176
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 176
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9545454545454546
+   },
+   "index": 4
+  },
+  "stall_booth_thatch/closed/damage2/r1": {
+   "frame": {
+    "x": 144,
+    "y": 176,
+    "w": 144,
+    "h": 176
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 176
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 176
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9545454545454546
+   },
+   "index": 5
+  },
+  "stall_booth_thatch/closed/damage3/r0": {
+   "frame": {
+    "x": 288,
+    "y": 176,
+    "w": 144,
+    "h": 176
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 176
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 176
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9545454545454546
+   },
+   "index": 6
+  },
+  "stall_booth_thatch/closed/damage3/r1": {
+   "frame": {
+    "x": 432,
+    "y": 176,
+    "w": 144,
+    "h": 176
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 176
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 176
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9545454545454546
+   },
+   "index": 7
+  },
+  "stall_booth_thatch/open/damage0/r0": {
+   "frame": {
+    "x": 0,
+    "y": 352,
+    "w": 144,
+    "h": 176
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 176
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 176
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9545454545454546
+   },
+   "index": 8
+  },
+  "stall_booth_thatch/open/damage0/r1": {
+   "frame": {
+    "x": 144,
+    "y": 352,
+    "w": 144,
+    "h": 176
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 176
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 176
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9545454545454546
+   },
+   "index": 9
+  },
+  "stall_booth_thatch/open/damage1/r0": {
+   "frame": {
+    "x": 288,
+    "y": 352,
+    "w": 144,
+    "h": 176
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 176
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 176
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9545454545454546
+   },
+   "index": 10
+  },
+  "stall_booth_thatch/open/damage1/r1": {
+   "frame": {
+    "x": 432,
+    "y": 352,
+    "w": 144,
+    "h": 176
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 176
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 176
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9545454545454546
+   },
+   "index": 11
+  },
+  "stall_booth_thatch/open/damage2/r0": {
+   "frame": {
+    "x": 0,
+    "y": 528,
+    "w": 144,
+    "h": 176
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 176
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 176
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9545454545454546
+   },
+   "index": 12
+  },
+  "stall_booth_thatch/open/damage2/r1": {
+   "frame": {
+    "x": 144,
+    "y": 528,
+    "w": 144,
+    "h": 176
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 176
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 176
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9545454545454546
+   },
+   "index": 13
+  },
+  "stall_booth_thatch/open/damage3/r0": {
+   "frame": {
+    "x": 288,
+    "y": 528,
+    "w": 144,
+    "h": 176
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 176
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 176
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9545454545454546
+   },
+   "index": 14
+  },
+  "stall_booth_thatch/open/damage3/r1": {
+   "frame": {
+    "x": 432,
+    "y": 528,
+    "w": 144,
+    "h": 176
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 176
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 176
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9545454545454546
+   },
+   "index": 15
+  }
+ },
+ "meta": {
+  "app": "pvp_clan/tools (procedural)",
+  "version": "1.0",
+  "image": "stall_booth_thatch.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 576,
+   "h": 704
+  },
+  "scale": "1",
+  "grid": {
+   "frameW": 144,
+   "frameH": 176,
+   "columns": 4,
+   "rows": 4,
+   "firstRow": 0,
+   "margin": 2
+  },
+  "emissive": "stall_booth_thatch_emissive.png",
+  "tintmask": null
+ }
+}

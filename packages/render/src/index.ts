@@ -23,3 +23,4 @@ export { newStats, type FrameStats } from "./gl/util.js";
 export * from "./bloom.js";
 export * from "./grading.js";
 export { TERRAIN_SPRITES, SHORE_SPRITES, isWaterTile } from "./ids.js";
+export * from "./burning.js";

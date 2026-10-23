@@ -1,0 +1,3327 @@
+{
+ "atlases": [
+  {
+   "key": "ui_kit_176x176",
+   "image": "atlases/ui_kit_176x176.png",
+   "frameW": 176,
+   "frameH": 176,
+   "columns": 2,
+   "rows": 1
+  },
+  {
+   "key": "ui_kit_64x64",
+   "image": "atlases/ui_kit_64x64.png",
+   "frameW": 64,
+   "frameH": 64,
+   "columns": 2,
+   "rows": 2,
+   "nineSlice": {
+    "0": {
+     "l": 22,
+     "t": 22,
+     "r": 22,
+     "b": 22
+    },
+    "1": {
+     "l": 24,
+     "t": 24,
+     "r": 24,
+     "b": 24
+    },
+    "2": {
+     "l": 22,
+     "t": 22,
+     "r": 22,
+     "b": 22
+    },
+    "3": {
+     "l": 18,
+     "t": 18,
+     "r": 18,
+     "b": 18
+    }
+   }
+  },
+  {
+   "key": "ui_kit_72x56",
+   "image": "atlases/ui_kit_72x56.png",
+   "frameW": 72,
+   "frameH": 56,
+   "columns": 2,
+   "rows": 2,
+   "nineSlice": {
+    "0": {
+     "l": 40,
+     "t": 16,
+     "r": 16,
+     "b": 16
+    },
+    "1": {
+     "l": 40,
+     "t": 16,
+     "r": 16,
+     "b": 16
+    },
+    "2": {
+     "l": 40,
+     "t": 16,
+     "r": 16,
+     "b": 16
+    },
+    "3": {
+     "l": 40,
+     "t": 16,
+     "r": 16,
+     "b": 16
+    }
+   }
+  },
+  {
+   "key": "ui_kit_96x40",
+   "image": "atlases/ui_kit_96x40.png",
+   "frameW": 96,
+   "frameH": 40,
+   "columns": 1,
+   "rows": 2,
+   "nineSlice": {
+    "0": {
+     "l": 30,
+     "t": 16,
+     "r": 30,
+     "b": 16
+    },
+    "1": {
+     "l": 18,
+     "t": 14,
+     "r": 18,
+     "b": 16
+    }
+   }
+  },
+  {
+   "key": "ui_kit_48x48",
+   "image": "atlases/ui_kit_48x48.png",
+   "frameW": 48,
+   "frameH": 48,
+   "columns": 7,
+   "rows": 6,
+   "nineSlice": {
+    "0": {
+     "l": 14,
+     "t": 14,
+     "r": 14,
+     "b": 14
+    },
+    "1": {
+     "l": 14,
+     "t": 14,
+     "r": 14,
+     "b": 14
+    },
+    "2": {
+     "l": 14,
+     "t": 14,
+     "r": 14,
+     "b": 16
+    },
+    "3": {
+     "l": 16,
+     "t": 14,
+     "r": 16,
+     "b": 18
+    },
+    "4": {
+     "l": 16,
+     "t": 14,
+     "r": 16,
+     "b": 18
+    },
+    "5": {
+     "l": 16,
+     "t": 14,
+     "r": 16,
+     "b": 18
+    },
+    "6": {
+     "l": 16,
+     "t": 14,
+     "r": 16,
+     "b": 18
+    },
+    "7": {
+     "l": 16,
+     "t": 14,
+     "r": 16,
+     "b": 18
+    },
+    "8": {
+     "l": 16,
+     "t": 14,
+     "r": 16,
+     "b": 18
+    },
+    "9": {
+     "l": 16,
+     "t": 14,
+     "r": 16,
+     "b": 18
+    },
+    "10": {
+     "l": 16,
+     "t": 14,
+     "r": 16,
+     "b": 18
+    },
+    "11": {
+     "l": 16,
+     "t": 14,
+     "r": 16,
+     "b": 18
+    },
+    "12": {
+     "l": 16,
+     "t": 14,
+     "r": 16,
+     "b": 18
+    },
+    "13": {
+     "l": 16,
+     "t": 14,
+     "r": 16,
+     "b": 18
+    },
+    "14": {
+     "l": 16,
+     "t": 14,
+     "r": 16,
+     "b": 18
+    },
+    "15": {
+     "l": 16,
+     "t": 14,
+     "r": 16,
+     "b": 18
+    },
+    "16": {
+     "l": 16,
+     "t": 14,
+     "r": 16,
+     "b": 18
+    },
+    "17": {
+     "l": 16,
+     "t": 14,
+     "r": 16,
+     "b": 18
+    },
+    "18": {
+     "l": 16,
+     "t": 14,
+     "r": 16,
+     "b": 18
+    },
+    "19": {
+     "l": 14,
+     "t": 14,
+     "r": 14,
+     "b": 14
+    },
+    "20": {
+     "l": 14,
+     "t": 14,
+     "r": 14,
+     "b": 14
+    },
+    "21": {
+     "l": 14,
+     "t": 14,
+     "r": 14,
+     "b": 14
+    },
+    "22": {
+     "l": 14,
+     "t": 14,
+     "r": 14,
+     "b": 14
+    },
+    "23": {
+     "l": 14,
+     "t": 14,
+     "r": 14,
+     "b": 14
+    },
+    "24": {
+     "l": 14,
+     "t": 14,
+     "r": 14,
+     "b": 14
+    },
+    "25": {
+     "l": 14,
+     "t": 14,
+     "r": 14,
+     "b": 14
+    },
+    "26": {
+     "l": 14,
+     "t": 14,
+     "r": 14,
+     "b": 14
+    },
+    "27": {
+     "l": 14,
+     "t": 14,
+     "r": 14,
+     "b": 14
+    },
+    "28": {
+     "l": 14,
+     "t": 16,
+     "r": 14,
+     "b": 6
+    },
+    "29": {
+     "l": 14,
+     "t": 16,
+     "r": 14,
+     "b": 6
+    },
+    "30": {
+     "l": 14,
+     "t": 16,
+     "r": 14,
+     "b": 6
+    },
+    "34": {
+     "l": 14,
+     "t": 14,
+     "r": 14,
+     "b": 14
+    },
+    "35": {
+     "l": 14,
+     "t": 14,
+     "r": 14,
+     "b": 14
+    },
+    "36": {
+     "l": 14,
+     "t": 14,
+     "r": 14,
+     "b": 14
+    },
+    "37": {
+     "l": 16,
+     "t": 16,
+     "r": 16,
+     "b": 16
+    }
+   }
+  },
+  {
+   "key": "ui_kit_64x20",
+   "image": "atlases/ui_kit_64x20.png",
+   "frameW": 64,
+   "frameH": 20,
+   "columns": 2,
+   "rows": 2,
+   "nineSlice": {
+    "0": {
+     "l": 10,
+     "t": 9,
+     "r": 10,
+     "b": 9
+    },
+    "1": {
+     "l": 10,
+     "t": 9,
+     "r": 10,
+     "b": 9
+    },
+    "2": {
+     "l": 9,
+     "t": 9,
+     "r": 9,
+     "b": 9
+    },
+    "3": {
+     "l": 9,
+     "t": 9,
+     "r": 9,
+     "b": 9
+    }
+   }
+  },
+  {
+   "key": "ui_kit_32x32",
+   "image": "atlases/ui_kit_32x32.png",
+   "frameW": 32,
+   "frameH": 32,
+   "columns": 11,
+   "rows": 10,
+   "nineSlice": {
+    "3": {
+     "l": 10,
+     "t": 9,
+     "r": 10,
+     "b": 12
+    }
+   }
+  },
+  {
+   "key": "ui_kit_20x48",
+   "image": "atlases/ui_kit_20x48.png",
+   "frameW": 20,
+   "frameH": 48,
+   "columns": 3,
+   "rows": 1,
+   "nineSlice": {
+    "0": {
+     "l": 9,
+     "t": 10,
+     "r": 9,
+     "b": 10
+    },
+    "1": {
+     "l": 9,
+     "t": 10,
+     "r": 9,
+     "b": 12
+    },
+    "2": {
+     "l": 9,
+     "t": 10,
+     "r": 9,
+     "b": 12
+    }
+   }
+  },
+  {
+   "key": "ui_kit_64x14",
+   "image": "atlases/ui_kit_64x14.png",
+   "frameW": 64,
+   "frameH": 14,
+   "columns": 2,
+   "rows": 4,
+   "nineSlice": {
+    "0": {
+     "l": 18,
+     "t": 6,
+     "r": 18,
+     "b": 6
+    },
+    "1": {
+     "l": 7,
+     "t": 6,
+     "r": 7,
+     "b": 6
+    },
+    "2": {
+     "l": 7,
+     "t": 6,
+     "r": 7,
+     "b": 6
+    },
+    "3": {
+     "l": 7,
+     "t": 6,
+     "r": 7,
+     "b": 6
+    },
+    "4": {
+     "l": 7,
+     "t": 6,
+     "r": 7,
+     "b": 6
+    },
+    "5": {
+     "l": 7,
+     "t": 6,
+     "r": 7,
+     "b": 6
+    },
+    "6": {
+     "l": 7,
+     "t": 6,
+     "r": 7,
+     "b": 6
+    }
+   }
+  }
+ ],
+ "sprites": [
+  {
+   "key": "ui_minimap_frame",
+   "category": "ui",
+   "atlas": "ui_kit_176x176",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_minimap_mask",
+   "category": "ui",
+   "atlas": "ui_kit_176x176",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_panel_wood",
+   "category": "ui",
+   "atlas": "ui_kit_64x64",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_panel_wood_vine",
+   "category": "ui",
+   "atlas": "ui_kit_64x64",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_panel_wood_dark",
+   "category": "ui",
+   "atlas": "ui_kit_64x64",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_panel_parchment",
+   "category": "ui",
+   "atlas": "ui_kit_64x64",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_toast_info",
+   "category": "ui",
+   "atlas": "ui_kit_72x56",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_toast_success",
+   "category": "ui",
+   "atlas": "ui_kit_72x56",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_toast_warning",
+   "category": "ui",
+   "atlas": "ui_kit_72x56",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_toast_danger",
+   "category": "ui",
+   "atlas": "ui_kit_72x56",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ribbon_title",
+   "category": "ui",
+   "atlas": "ui_kit_96x40",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_btn_wood_plank",
+   "category": "ui",
+   "atlas": "ui_kit_96x40",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_panel_inset",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_panel_hud",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_panel_tooltip",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_btn_primary_normal",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_btn_primary_hover",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_btn_primary_pressed",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      5
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_btn_disabled",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      6
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_btn_secondary_normal",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      7
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_btn_secondary_hover",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_btn_secondary_pressed",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      9
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_btn_danger_normal",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      10
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_btn_danger_hover",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      11
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_btn_danger_pressed",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_btn_info_normal",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      13
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_btn_info_hover",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      14
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_btn_info_pressed",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      15
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_btn_gold_normal",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_btn_gold_hover",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      17
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_btn_gold_pressed",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      18
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_slot_empty",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      19
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_slot_hover",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      20
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_slot_selected",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      21
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_slot_locked",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      22
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_slot_common",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      23
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_slot_uncommon",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      24
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_slot_rare",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      25
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_slot_epic",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      26
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_slot_legendary",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      27
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_tab_normal",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      28
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_tab_hover",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      29
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_tab_active",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      30
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_toggle_off",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      31
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_toggle_on",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      32
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_toggle_disabled",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      33
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_input_normal",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      34
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_input_focus",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      35
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_input_disabled",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      36
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_bubble",
+   "category": "ui",
+   "atlas": "ui_kit_48x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      37
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_bar_track",
+   "category": "ui",
+   "atlas": "ui_kit_64x20",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_bar_shine",
+   "category": "ui",
+   "atlas": "ui_kit_64x20",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_slider_track",
+   "category": "ui",
+   "atlas": "ui_kit_64x20",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_slider_fill",
+   "category": "ui",
+   "atlas": "ui_kit_64x20",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_btn_close_normal",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_btn_close_hover",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_btn_close_pressed",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_keycap",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_bar_marker",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_scroll_grip",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      5
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_checkbox_off",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      6
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_checkbox_off_hover",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      7
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_checkbox_off_disabled",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_checkbox_on",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      9
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_checkbox_on_hover",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      10
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_checkbox_on_disabled",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      11
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_slider_knob",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_slider_knob_hover",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      13
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_bubble_tail",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.25
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      14
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_minimap_player",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      15
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_minimap_ping",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_notif_dot",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      17
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_vital_health",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      18
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_vital_health_low",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      19
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_vital_hunger",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      20
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_vital_hunger_low",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      21
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_vital_thirst",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      22
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_vital_thirst_low",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      23
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_vital_stamina",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      24
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_vital_stamina_low",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      25
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_vital_temp",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      26
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_vital_cold",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      27
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_vital_hot",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      28
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_vital_xp",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      29
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_st_wet",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      30
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_st_cold",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      31
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_st_hot",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      32
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_st_well_fed",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      33
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_st_bleeding",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      34
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_st_infected",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      35
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_st_sheltered",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      36
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_st_exhausted",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      37
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_st_warm",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      38
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_st_starving",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      39
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_st_poisoned",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      40
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_gear",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      41
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_map",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      42
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_chat",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      43
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_players",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      44
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_bag",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      45
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_hammer",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      46
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_craft",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      47
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_rotate",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      48
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_skull",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      49
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_sun",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      50
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_moon",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      51
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_clock",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      52
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_day",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      53
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_lock",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      54
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_check",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      55
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_cross",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      56
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_plus",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      57
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_minus",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      58
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_arrow_left",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      59
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_arrow_right",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      60
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_info",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      61
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_warn",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      62
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_mouse_left",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      63
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_mouse_right",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      64
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_trash",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      65
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_star",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      66
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_weight",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      67
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_signal",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      68
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_crown",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      69
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_pin",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      70
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_home",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      71
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_zombie",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      72
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_campfire",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      73
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_workbench",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      74
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_book",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      75
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_person",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      76
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_ic_door",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      77
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_eq_head",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      78
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_eq_chest",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      79
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_eq_legs",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      80
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_eq_feet",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      81
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_eq_hands",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      82
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_eq_back",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      83
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_eq_mainhand",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      84
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_eq_offhand",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      85
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_eq_trinket",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      86
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_bc_walls",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      87
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_bc_floors",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      88
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_bc_doors",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      89
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_bc_roofs",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      90
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_bc_stations",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      91
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_bc_storage",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      92
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_bc_defense",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      93
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_bc_decor",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      94
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_bc_farming",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      95
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_cursor_default",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.0938,
+    "y": 0.0625
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      96
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_cursor_pointer",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.3125,
+    "y": 0.0625
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      97
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_cursor_grab",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.4375
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      98
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_cursor_attack",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      99
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_cursor_gather",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.1562,
+    "y": 0.1562
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      100
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_cursor_build",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.1875,
+    "y": 0.1875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      101
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_cursor_forbidden",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      102
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_cursor_text",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      103
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_cursor_loading",
+   "category": "ui",
+   "atlas": "ui_kit_32x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      104
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_scroll_track",
+   "category": "ui",
+   "atlas": "ui_kit_20x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_scroll_thumb",
+   "category": "ui",
+   "atlas": "ui_kit_20x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_scroll_thumb_hover",
+   "category": "ui",
+   "atlas": "ui_kit_20x48",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_divider",
+   "category": "ui",
+   "atlas": "ui_kit_64x14",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_bar_fill_health",
+   "category": "ui",
+   "atlas": "ui_kit_64x14",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_bar_fill_hunger",
+   "category": "ui",
+   "atlas": "ui_kit_64x14",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_bar_fill_thirst",
+   "category": "ui",
+   "atlas": "ui_kit_64x14",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_bar_fill_stamina",
+   "category": "ui",
+   "atlas": "ui_kit_64x14",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_bar_fill_xp",
+   "category": "ui",
+   "atlas": "ui_kit_64x14",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      5
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_bar_fill_temperature",
+   "category": "ui",
+   "atlas": "ui_kit_64x14",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      6
+     ],
+     "fps": 1
+    }
+   }
+  }
+ ]
+}

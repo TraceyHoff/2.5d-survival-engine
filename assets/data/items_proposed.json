@@ -1,0 +1,231 @@
+{
+ "$comment": "Proposed gameplay item entries for Art icons that have no items.json entry yet (items.json format; ids via gameplay lock:ids). Values are suggestions for Survival Systems; alias_of = keep as an art alias, no new item. Held sprites: every weapon/tool has held_<key> in the 'held' atlas.",
+ "orphans": [
+  "mushroom",
+  "apple",
+  "carrot",
+  "campfire_kit",
+  "workbench_kit",
+  "gold_ore",
+  "gold_ingot",
+  "pumpkin",
+  "blueberries",
+  "herbs",
+  "arrow",
+  "sword",
+  "shield",
+  "spear",
+  "club",
+  "helmet_leather",
+  "armor_leather",
+  "boots_leather",
+  "bow",
+  "torch"
+ ],
+ "items": [
+  {
+   "key": "mushroom",
+   "name": "Mushroom",
+   "category": "food",
+   "maxStack": 20,
+   "weight": 0.1,
+   "food": {
+    "hunger": 6,
+    "thirst": 0,
+    "health": -2
+   },
+   "spoilSeconds": 900
+  },
+  {
+   "key": "apple",
+   "name": "Apple",
+   "category": "food",
+   "maxStack": 20,
+   "weight": 0.2,
+   "food": {
+    "hunger": 10,
+    "thirst": 6,
+    "health": 0
+   },
+   "spoilSeconds": 2400
+  },
+  {
+   "key": "carrot",
+   "name": "Carrot",
+   "category": "food",
+   "maxStack": 20,
+   "weight": 0.15,
+   "food": {
+    "hunger": 9,
+    "thirst": 2,
+    "health": 0
+   },
+   "spoilSeconds": 3000
+  },
+  {
+   "key": "campfire_kit",
+   "name": "Campfire Kit",
+   "category": "placeable",
+   "maxStack": 5,
+   "weight": 3.0,
+   "places": "campfire"
+  },
+  {
+   "key": "workbench_kit",
+   "name": "Workbench Kit",
+   "category": "placeable",
+   "maxStack": 1,
+   "weight": 8.0,
+   "places": "workbench"
+  },
+  {
+   "key": "gold_ore",
+   "name": "Gold Ore",
+   "category": "resource",
+   "maxStack": 30,
+   "weight": 1.5
+  },
+  {
+   "key": "gold_ingot",
+   "name": "Gold Ingot",
+   "category": "resource",
+   "maxStack": 20,
+   "weight": 1.0
+  },
+  {
+   "key": "pumpkin",
+   "name": "Pumpkin",
+   "category": "food",
+   "maxStack": 5,
+   "weight": 2.0,
+   "food": {
+    "hunger": 25,
+    "thirst": 8,
+    "health": 0
+   },
+   "spoilSeconds": 6000
+  },
+  {
+   "key": "blueberries",
+   "name": "Blueberries",
+   "category": "food",
+   "maxStack": 20,
+   "weight": 0.1,
+   "food": {
+    "hunger": 10,
+    "thirst": 5,
+    "health": 0
+   },
+   "spoilSeconds": 1200
+  },
+  {
+   "key": "herbs",
+   "name": "Wild Herbs",
+   "category": "resource",
+   "maxStack": 30,
+   "weight": 0.05
+  },
+  {
+   "key": "arrow",
+   "name": "Arrow",
+   "category": "resource",
+   "maxStack": 40,
+   "weight": 0.05
+  },
+  {
+   "key": "sword",
+   "name": "Sword (legacy icon; use bronze_sword/iron_sword)",
+   "alias_of": "iron_sword"
+  },
+  {
+   "key": "shield",
+   "name": "Wooden Shield",
+   "category": "armor",
+   "maxStack": 1,
+   "weight": 3.0,
+   "armor": {
+    "slot": "offhand",
+    "block": 0.5
+   }
+  },
+  {
+   "key": "spear",
+   "name": "legacy icon key",
+   "alias_of": "stone_spear"
+  },
+  {
+   "key": "club",
+   "name": "legacy icon key",
+   "alias_of": "wooden_club"
+  },
+  {
+   "key": "helmet_leather",
+   "name": "Leather Cap",
+   "category": "armor",
+   "maxStack": 1,
+   "weight": 0.8,
+   "armor": {
+    "slot": "head",
+    "defense": 3
+   }
+  },
+  {
+   "key": "armor_leather",
+   "name": "Leather Vest",
+   "category": "armor",
+   "maxStack": 1,
+   "weight": 2.5,
+   "armor": {
+    "slot": "chest",
+    "defense": 6
+   }
+  },
+  {
+   "key": "boots_leather",
+   "name": "Leather Boots",
+   "category": "armor",
+   "maxStack": 1,
+   "weight": 1.0,
+   "armor": {
+    "slot": "feet",
+    "defense": 2
+   }
+  },
+  {
+   "key": "bow",
+   "name": "Short Bow",
+   "category": "weapon",
+   "maxStack": 1,
+   "weight": 1.0,
+   "weapon": {
+    "damage": 14,
+    "range": 9,
+    "cooldownSeconds": 1.1,
+    "staminaCost": 4,
+    "structureMul": 0.1,
+    "ammo": "arrow"
+   }
+  },
+  {
+   "key": "torch",
+   "name": "Torch",
+   "category": "tool",
+   "maxStack": 5,
+   "weight": 0.6,
+   "light": {
+    "radius": 5,
+    "burnSeconds": 600
+   },
+   "weapon": {
+    "damage": 5,
+    "range": 1.2,
+    "cooldownSeconds": 0.8,
+    "staminaCost": 3,
+    "structureMul": 0.2
+   }
+  }
+ ],
+ "notes": {
+  "water_flask": "fill level only (no spoil stages): a single icon; UI should draw the fill level, the main pack ships no stage frames"
+ }
+}

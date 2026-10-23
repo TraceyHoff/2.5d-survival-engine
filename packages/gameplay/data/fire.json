@@ -1,0 +1,11 @@
+{
+  "$comment": "Structure fire. Burning pieces take dps x intensity/255 every check; spread to pieces within spreadRadius whose tier is flammable (twig, wood) with spreadChance per check (world.rngFor). Rain/storm reduces intensity by rainQuench per check; 0 = out. Gameplay sets numeric Burning only; render spawns fire/ember/smoke VFX.",
+  "checkSeconds": 1,
+  "dps": 6,
+  "igniteIntensity": 128,
+  "growPerCheck": 16,
+  "spreadRadius": 1.6,
+  "spreadChance": 0.08,
+  "rainQuench": 40,
+  "flammableTiers": [0, 1]
+}

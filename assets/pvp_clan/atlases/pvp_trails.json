@@ -1,0 +1,100 @@
+{
+ "frames": {
+  "trail_arrow/idle/0": {
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 16
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 16
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 16
+   },
+   "pivot": {
+    "x": 1.0,
+    "y": 0.5
+   },
+   "index": 0
+  },
+  "trail_stone/idle/0": {
+   "frame": {
+    "x": 0,
+    "y": 16,
+    "w": 64,
+    "h": 16
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 16
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 16
+   },
+   "pivot": {
+    "x": 1.0,
+    "y": 0.5
+   },
+   "index": 1
+  },
+  "trail_spear/idle/0": {
+   "frame": {
+    "x": 0,
+    "y": 32,
+    "w": 64,
+    "h": 16
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 16
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 16
+   },
+   "pivot": {
+    "x": 1.0,
+    "y": 0.5
+   },
+   "index": 2
+  }
+ },
+ "meta": {
+  "app": "pvp_clan/tools (procedural)",
+  "version": "1.0",
+  "image": "pvp_trails.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 64,
+   "h": 48
+  },
+  "scale": "1",
+  "grid": {
+   "frameW": 64,
+   "frameH": 16,
+   "columns": 1,
+   "rows": 3,
+   "firstRow": 0,
+   "margin": 2
+  },
+  "emissive": null,
+  "tintmask": null
+ }
+}

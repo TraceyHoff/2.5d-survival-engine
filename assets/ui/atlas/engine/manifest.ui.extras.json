@@ -1,0 +1,2093 @@
+{
+ "hiDpi": {
+  "suffix": "@2x",
+  "scale": 2,
+  "note": "identical grid layout at 2x; insets x2"
+ },
+ "cursors": {
+  "cursor_default": {
+   "hotspot": [
+    3,
+    2
+   ]
+  },
+  "cursor_pointer": {
+   "hotspot": [
+    10,
+    2
+   ]
+  },
+  "cursor_grab": {
+   "hotspot": [
+    16,
+    14
+   ]
+  },
+  "cursor_attack": {
+   "hotspot": [
+    16,
+    16
+   ]
+  },
+  "cursor_gather": {
+   "hotspot": [
+    5,
+    5
+   ]
+  },
+  "cursor_build": {
+   "hotspot": [
+    6,
+    6
+   ]
+  },
+  "cursor_forbidden": {
+   "hotspot": [
+    16,
+    16
+   ]
+  },
+  "cursor_text": {
+   "hotspot": [
+    16,
+    16
+   ]
+  },
+  "cursor_loading": {
+   "hotspot": [
+    16,
+    16
+   ]
+  }
+ },
+ "index": {
+  "minimap_frame": {
+   "atlas": "ui_kit_176x176",
+   "frame": 0,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    176,
+    176
+   ]
+  },
+  "minimap_mask": {
+   "atlas": "ui_kit_176x176",
+   "frame": 1,
+   "offset": [
+    18,
+    18
+   ],
+   "size": [
+    140,
+    140
+   ]
+  },
+  "panel_wood": {
+   "atlas": "ui_kit_64x64",
+   "frame": 0,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    64,
+    64
+   ]
+  },
+  "panel_wood_vine": {
+   "atlas": "ui_kit_64x64",
+   "frame": 1,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    64,
+    64
+   ]
+  },
+  "panel_wood_dark": {
+   "atlas": "ui_kit_64x64",
+   "frame": 2,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    64,
+    64
+   ]
+  },
+  "panel_parchment": {
+   "atlas": "ui_kit_64x64",
+   "frame": 3,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    64,
+    64
+   ]
+  },
+  "toast_info": {
+   "atlas": "ui_kit_72x56",
+   "frame": 0,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    72,
+    56
+   ]
+  },
+  "toast_success": {
+   "atlas": "ui_kit_72x56",
+   "frame": 1,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    72,
+    56
+   ]
+  },
+  "toast_warning": {
+   "atlas": "ui_kit_72x56",
+   "frame": 2,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    72,
+    56
+   ]
+  },
+  "toast_danger": {
+   "atlas": "ui_kit_72x56",
+   "frame": 3,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    72,
+    56
+   ]
+  },
+  "ribbon_title": {
+   "atlas": "ui_kit_96x40",
+   "frame": 0,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    96,
+    40
+   ]
+  },
+  "btn_wood_plank": {
+   "atlas": "ui_kit_96x40",
+   "frame": 1,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    96,
+    40
+   ]
+  },
+  "panel_inset": {
+   "atlas": "ui_kit_48x48",
+   "frame": 0,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "panel_hud": {
+   "atlas": "ui_kit_48x48",
+   "frame": 1,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "panel_tooltip": {
+   "atlas": "ui_kit_48x48",
+   "frame": 2,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "btn_primary_normal": {
+   "atlas": "ui_kit_48x48",
+   "frame": 3,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "btn_primary_hover": {
+   "atlas": "ui_kit_48x48",
+   "frame": 4,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "btn_primary_pressed": {
+   "atlas": "ui_kit_48x48",
+   "frame": 5,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "btn_disabled": {
+   "atlas": "ui_kit_48x48",
+   "frame": 6,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "btn_secondary_normal": {
+   "atlas": "ui_kit_48x48",
+   "frame": 7,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "btn_secondary_hover": {
+   "atlas": "ui_kit_48x48",
+   "frame": 8,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "btn_secondary_pressed": {
+   "atlas": "ui_kit_48x48",
+   "frame": 9,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "btn_danger_normal": {
+   "atlas": "ui_kit_48x48",
+   "frame": 10,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "btn_danger_hover": {
+   "atlas": "ui_kit_48x48",
+   "frame": 11,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "btn_danger_pressed": {
+   "atlas": "ui_kit_48x48",
+   "frame": 12,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "btn_info_normal": {
+   "atlas": "ui_kit_48x48",
+   "frame": 13,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "btn_info_hover": {
+   "atlas": "ui_kit_48x48",
+   "frame": 14,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "btn_info_pressed": {
+   "atlas": "ui_kit_48x48",
+   "frame": 15,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "btn_gold_normal": {
+   "atlas": "ui_kit_48x48",
+   "frame": 16,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "btn_gold_hover": {
+   "atlas": "ui_kit_48x48",
+   "frame": 17,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "btn_gold_pressed": {
+   "atlas": "ui_kit_48x48",
+   "frame": 18,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "slot_empty": {
+   "atlas": "ui_kit_48x48",
+   "frame": 19,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "slot_hover": {
+   "atlas": "ui_kit_48x48",
+   "frame": 20,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "slot_selected": {
+   "atlas": "ui_kit_48x48",
+   "frame": 21,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "slot_locked": {
+   "atlas": "ui_kit_48x48",
+   "frame": 22,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "slot_common": {
+   "atlas": "ui_kit_48x48",
+   "frame": 23,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "slot_uncommon": {
+   "atlas": "ui_kit_48x48",
+   "frame": 24,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "slot_rare": {
+   "atlas": "ui_kit_48x48",
+   "frame": 25,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "slot_epic": {
+   "atlas": "ui_kit_48x48",
+   "frame": 26,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "slot_legendary": {
+   "atlas": "ui_kit_48x48",
+   "frame": 27,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "tab_normal": {
+   "atlas": "ui_kit_48x48",
+   "frame": 28,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "tab_hover": {
+   "atlas": "ui_kit_48x48",
+   "frame": 29,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "tab_active": {
+   "atlas": "ui_kit_48x48",
+   "frame": 30,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "toggle_off": {
+   "atlas": "ui_kit_48x48",
+   "frame": 31,
+   "offset": [
+    0,
+    10
+   ],
+   "size": [
+    48,
+    28
+   ]
+  },
+  "toggle_on": {
+   "atlas": "ui_kit_48x48",
+   "frame": 32,
+   "offset": [
+    0,
+    10
+   ],
+   "size": [
+    48,
+    28
+   ]
+  },
+  "toggle_disabled": {
+   "atlas": "ui_kit_48x48",
+   "frame": 33,
+   "offset": [
+    0,
+    10
+   ],
+   "size": [
+    48,
+    28
+   ]
+  },
+  "input_normal": {
+   "atlas": "ui_kit_48x48",
+   "frame": 34,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "input_focus": {
+   "atlas": "ui_kit_48x48",
+   "frame": 35,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "input_disabled": {
+   "atlas": "ui_kit_48x48",
+   "frame": 36,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "bubble": {
+   "atlas": "ui_kit_48x48",
+   "frame": 37,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    48,
+    48
+   ]
+  },
+  "bar_track": {
+   "atlas": "ui_kit_64x20",
+   "frame": 0,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    64,
+    20
+   ]
+  },
+  "bar_shine": {
+   "atlas": "ui_kit_64x20",
+   "frame": 1,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    64,
+    20
+   ]
+  },
+  "slider_track": {
+   "atlas": "ui_kit_64x20",
+   "frame": 2,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    64,
+    20
+   ]
+  },
+  "slider_fill": {
+   "atlas": "ui_kit_64x20",
+   "frame": 3,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    64,
+    20
+   ]
+  },
+  "btn_close_normal": {
+   "atlas": "ui_kit_32x32",
+   "frame": 0,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "btn_close_hover": {
+   "atlas": "ui_kit_32x32",
+   "frame": 1,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "btn_close_pressed": {
+   "atlas": "ui_kit_32x32",
+   "frame": 2,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "keycap": {
+   "atlas": "ui_kit_32x32",
+   "frame": 3,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "bar_marker": {
+   "atlas": "ui_kit_32x32",
+   "frame": 4,
+   "offset": [
+    8,
+    2
+   ],
+   "size": [
+    16,
+    28
+   ]
+  },
+  "scroll_grip": {
+   "atlas": "ui_kit_32x32",
+   "frame": 5,
+   "offset": [
+    8,
+    8
+   ],
+   "size": [
+    16,
+    16
+   ]
+  },
+  "checkbox_off": {
+   "atlas": "ui_kit_32x32",
+   "frame": 6,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "checkbox_off_hover": {
+   "atlas": "ui_kit_32x32",
+   "frame": 7,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "checkbox_off_disabled": {
+   "atlas": "ui_kit_32x32",
+   "frame": 8,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "checkbox_on": {
+   "atlas": "ui_kit_32x32",
+   "frame": 9,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "checkbox_on_hover": {
+   "atlas": "ui_kit_32x32",
+   "frame": 10,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "checkbox_on_disabled": {
+   "atlas": "ui_kit_32x32",
+   "frame": 11,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "slider_knob": {
+   "atlas": "ui_kit_32x32",
+   "frame": 12,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "slider_knob_hover": {
+   "atlas": "ui_kit_32x32",
+   "frame": 13,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "bubble_tail": {
+   "atlas": "ui_kit_32x32",
+   "frame": 14,
+   "offset": [
+    4,
+    8
+   ],
+   "size": [
+    24,
+    16
+   ]
+  },
+  "minimap_player": {
+   "atlas": "ui_kit_32x32",
+   "frame": 15,
+   "offset": [
+    4,
+    4
+   ],
+   "size": [
+    24,
+    24
+   ]
+  },
+  "minimap_ping": {
+   "atlas": "ui_kit_32x32",
+   "frame": 16,
+   "offset": [
+    8,
+    8
+   ],
+   "size": [
+    16,
+    16
+   ]
+  },
+  "notif_dot": {
+   "atlas": "ui_kit_32x32",
+   "frame": 17,
+   "offset": [
+    8,
+    8
+   ],
+   "size": [
+    16,
+    16
+   ]
+  },
+  "vital_health": {
+   "atlas": "ui_kit_32x32",
+   "frame": 18,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "vital_health_low": {
+   "atlas": "ui_kit_32x32",
+   "frame": 19,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "vital_hunger": {
+   "atlas": "ui_kit_32x32",
+   "frame": 20,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "vital_hunger_low": {
+   "atlas": "ui_kit_32x32",
+   "frame": 21,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "vital_thirst": {
+   "atlas": "ui_kit_32x32",
+   "frame": 22,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "vital_thirst_low": {
+   "atlas": "ui_kit_32x32",
+   "frame": 23,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "vital_stamina": {
+   "atlas": "ui_kit_32x32",
+   "frame": 24,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "vital_stamina_low": {
+   "atlas": "ui_kit_32x32",
+   "frame": 25,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "vital_temp": {
+   "atlas": "ui_kit_32x32",
+   "frame": 26,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "vital_cold": {
+   "atlas": "ui_kit_32x32",
+   "frame": 27,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "vital_hot": {
+   "atlas": "ui_kit_32x32",
+   "frame": 28,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "vital_xp": {
+   "atlas": "ui_kit_32x32",
+   "frame": 29,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "st_wet": {
+   "atlas": "ui_kit_32x32",
+   "frame": 30,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "st_cold": {
+   "atlas": "ui_kit_32x32",
+   "frame": 31,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "st_hot": {
+   "atlas": "ui_kit_32x32",
+   "frame": 32,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "st_well_fed": {
+   "atlas": "ui_kit_32x32",
+   "frame": 33,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "st_bleeding": {
+   "atlas": "ui_kit_32x32",
+   "frame": 34,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "st_infected": {
+   "atlas": "ui_kit_32x32",
+   "frame": 35,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "st_sheltered": {
+   "atlas": "ui_kit_32x32",
+   "frame": 36,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "st_exhausted": {
+   "atlas": "ui_kit_32x32",
+   "frame": 37,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "st_warm": {
+   "atlas": "ui_kit_32x32",
+   "frame": 38,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "st_starving": {
+   "atlas": "ui_kit_32x32",
+   "frame": 39,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "st_poisoned": {
+   "atlas": "ui_kit_32x32",
+   "frame": 40,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_gear": {
+   "atlas": "ui_kit_32x32",
+   "frame": 41,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_map": {
+   "atlas": "ui_kit_32x32",
+   "frame": 42,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_chat": {
+   "atlas": "ui_kit_32x32",
+   "frame": 43,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_players": {
+   "atlas": "ui_kit_32x32",
+   "frame": 44,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_bag": {
+   "atlas": "ui_kit_32x32",
+   "frame": 45,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_hammer": {
+   "atlas": "ui_kit_32x32",
+   "frame": 46,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_craft": {
+   "atlas": "ui_kit_32x32",
+   "frame": 47,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_rotate": {
+   "atlas": "ui_kit_32x32",
+   "frame": 48,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_skull": {
+   "atlas": "ui_kit_32x32",
+   "frame": 49,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_sun": {
+   "atlas": "ui_kit_32x32",
+   "frame": 50,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_moon": {
+   "atlas": "ui_kit_32x32",
+   "frame": 51,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_clock": {
+   "atlas": "ui_kit_32x32",
+   "frame": 52,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_day": {
+   "atlas": "ui_kit_32x32",
+   "frame": 53,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_lock": {
+   "atlas": "ui_kit_32x32",
+   "frame": 54,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_check": {
+   "atlas": "ui_kit_32x32",
+   "frame": 55,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_cross": {
+   "atlas": "ui_kit_32x32",
+   "frame": 56,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_plus": {
+   "atlas": "ui_kit_32x32",
+   "frame": 57,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_minus": {
+   "atlas": "ui_kit_32x32",
+   "frame": 58,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_arrow_left": {
+   "atlas": "ui_kit_32x32",
+   "frame": 59,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_arrow_right": {
+   "atlas": "ui_kit_32x32",
+   "frame": 60,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_info": {
+   "atlas": "ui_kit_32x32",
+   "frame": 61,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_warn": {
+   "atlas": "ui_kit_32x32",
+   "frame": 62,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_mouse_left": {
+   "atlas": "ui_kit_32x32",
+   "frame": 63,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_mouse_right": {
+   "atlas": "ui_kit_32x32",
+   "frame": 64,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_trash": {
+   "atlas": "ui_kit_32x32",
+   "frame": 65,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_star": {
+   "atlas": "ui_kit_32x32",
+   "frame": 66,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_weight": {
+   "atlas": "ui_kit_32x32",
+   "frame": 67,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_signal": {
+   "atlas": "ui_kit_32x32",
+   "frame": 68,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_crown": {
+   "atlas": "ui_kit_32x32",
+   "frame": 69,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_pin": {
+   "atlas": "ui_kit_32x32",
+   "frame": 70,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_home": {
+   "atlas": "ui_kit_32x32",
+   "frame": 71,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_zombie": {
+   "atlas": "ui_kit_32x32",
+   "frame": 72,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_campfire": {
+   "atlas": "ui_kit_32x32",
+   "frame": 73,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_workbench": {
+   "atlas": "ui_kit_32x32",
+   "frame": 74,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_book": {
+   "atlas": "ui_kit_32x32",
+   "frame": 75,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_person": {
+   "atlas": "ui_kit_32x32",
+   "frame": 76,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "ic_door": {
+   "atlas": "ui_kit_32x32",
+   "frame": 77,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "eq_head": {
+   "atlas": "ui_kit_32x32",
+   "frame": 78,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "eq_chest": {
+   "atlas": "ui_kit_32x32",
+   "frame": 79,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "eq_legs": {
+   "atlas": "ui_kit_32x32",
+   "frame": 80,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "eq_feet": {
+   "atlas": "ui_kit_32x32",
+   "frame": 81,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "eq_hands": {
+   "atlas": "ui_kit_32x32",
+   "frame": 82,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "eq_back": {
+   "atlas": "ui_kit_32x32",
+   "frame": 83,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "eq_mainhand": {
+   "atlas": "ui_kit_32x32",
+   "frame": 84,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "eq_offhand": {
+   "atlas": "ui_kit_32x32",
+   "frame": 85,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "eq_trinket": {
+   "atlas": "ui_kit_32x32",
+   "frame": 86,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "bc_walls": {
+   "atlas": "ui_kit_32x32",
+   "frame": 87,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "bc_floors": {
+   "atlas": "ui_kit_32x32",
+   "frame": 88,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "bc_doors": {
+   "atlas": "ui_kit_32x32",
+   "frame": 89,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "bc_roofs": {
+   "atlas": "ui_kit_32x32",
+   "frame": 90,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "bc_stations": {
+   "atlas": "ui_kit_32x32",
+   "frame": 91,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "bc_storage": {
+   "atlas": "ui_kit_32x32",
+   "frame": 92,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "bc_defense": {
+   "atlas": "ui_kit_32x32",
+   "frame": 93,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "bc_decor": {
+   "atlas": "ui_kit_32x32",
+   "frame": 94,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "bc_farming": {
+   "atlas": "ui_kit_32x32",
+   "frame": 95,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "cursor_default": {
+   "atlas": "ui_kit_32x32",
+   "frame": 96,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "cursor_pointer": {
+   "atlas": "ui_kit_32x32",
+   "frame": 97,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "cursor_grab": {
+   "atlas": "ui_kit_32x32",
+   "frame": 98,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "cursor_attack": {
+   "atlas": "ui_kit_32x32",
+   "frame": 99,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "cursor_gather": {
+   "atlas": "ui_kit_32x32",
+   "frame": 100,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "cursor_build": {
+   "atlas": "ui_kit_32x32",
+   "frame": 101,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "cursor_forbidden": {
+   "atlas": "ui_kit_32x32",
+   "frame": 102,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "cursor_text": {
+   "atlas": "ui_kit_32x32",
+   "frame": 103,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "cursor_loading": {
+   "atlas": "ui_kit_32x32",
+   "frame": 104,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    32,
+    32
+   ]
+  },
+  "scroll_track": {
+   "atlas": "ui_kit_20x48",
+   "frame": 0,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    20,
+    48
+   ]
+  },
+  "scroll_thumb": {
+   "atlas": "ui_kit_20x48",
+   "frame": 1,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    20,
+    48
+   ]
+  },
+  "scroll_thumb_hover": {
+   "atlas": "ui_kit_20x48",
+   "frame": 2,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    20,
+    48
+   ]
+  },
+  "divider": {
+   "atlas": "ui_kit_64x14",
+   "frame": 0,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    64,
+    14
+   ]
+  },
+  "bar_fill_health": {
+   "atlas": "ui_kit_64x14",
+   "frame": 1,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    64,
+    14
+   ]
+  },
+  "bar_fill_hunger": {
+   "atlas": "ui_kit_64x14",
+   "frame": 2,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    64,
+    14
+   ]
+  },
+  "bar_fill_thirst": {
+   "atlas": "ui_kit_64x14",
+   "frame": 3,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    64,
+    14
+   ]
+  },
+  "bar_fill_stamina": {
+   "atlas": "ui_kit_64x14",
+   "frame": 4,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    64,
+    14
+   ]
+  },
+  "bar_fill_xp": {
+   "atlas": "ui_kit_64x14",
+   "frame": 5,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    64,
+    14
+   ]
+  },
+  "bar_fill_temperature": {
+   "atlas": "ui_kit_64x14",
+   "frame": 6,
+   "offset": [
+    0,
+    0
+   ],
+   "size": [
+    64,
+    14
+   ]
+  }
+ }
+}

@@ -1,0 +1,78 @@
+/* Prototype of the DOM/CSS overlay. All values come from ../theme.json (copied in as CSS vars by proto.js). */
+@font-face{font-family:Fredoka;src:url(../fonts/Fredoka.ttf);font-weight:300 700;font-stretch:75% 125%}
+@font-face{font-family:Nunito;src:url(../fonts/Nunito.ttf);font-weight:200 1000}
+html,body{margin:0;height:100%;overflow:hidden;background:#2a1b2e}
+#game{position:fixed;inset:0;background:url(bg.png) center/cover,#72c45c}
+.ui-root{position:fixed;inset:0;pointer-events:none;font:600 14px/1.25 Nunito,sans-serif;color:var(--ink);
+  transform-origin:0 0;cursor:url(../atlas/frames/cursor_default.png) 3 2,auto;user-select:none}
+.ui-root>*{pointer-events:auto}
+.ico{display:inline-block;width:32px;height:32px;background:var(--f) center/contain no-repeat;flex:none}
+.ico.sm{width:20px;height:20px}
+kbd{display:inline-block;min-width:14px;padding:0 3px;border-style:solid;border-width:6px 6px 8px;border-image:url(../atlas/frames/keycap.png) 10 10 12 10 fill / 6px 6px 8px stretch;
+  font:700 12px/8px Fredoka,sans-serif;color:var(--ink);text-align:center;margin-right:4px}
+/* 9-slice frames: border-image-slice == nineSlice insets from ui_atlas.json */
+.plaque{border-style:solid;border-width:14px;border-image:url(../atlas/frames/panel_hud.png) 14 fill / 14px stretch;color:var(--parchment-100);position:absolute}
+.hud-vitals{top:12px;left:12px;width:250px;display:flex;flex-direction:column;gap:4px;padding:0 2px}
+.hud-vitals header{display:flex;justify-content:space-between;font:700 15px Fredoka;color:var(--parchment-50);margin:-4px 0 2px}
+.lv{background:var(--plum-500,#8a5cb8);border-radius:8px;padding:0 8px;font-size:12px;color:var(--parchment-50)}
+.vital{display:flex;align-items:center;gap:6px;height:30px}
+.vital .num{width:30px;text-align:right;font:700 13px Fredoka;color:var(--parchment-50);text-shadow:0 1px 0 var(--ink)}
+.bar{position:relative;flex:1;height:8px;border-style:solid;border-width:6px 7px 6px 7px;border-image:url(../atlas/frames/bar_track.png) 9 10 9 10 fill / 6px 7px 6px 7px stretch}
+.bar .fill{position:absolute;inset:-3px -4px;border-radius:5px;width:calc(var(--v,0)*(100% + 8px));transition:width .25s;
+  background:linear-gradient(var(--light),var(--fill) 45%,var(--dark));box-shadow:inset 0 2px 0 rgba(255,246,200,.45)}
+.vital.low .ico{animation:pulse .8s ease-in-out infinite alternate}
+@keyframes pulse{to{transform:scale(1.15)}}
+.bar.temp{background:none}
+.bar.temp::after{content:"";position:absolute;inset:-3px -4px;border-radius:5px;background:var(--temp-gradient)}
+.bar.temp .marker{position:absolute;top:-8px;width:12px;height:24px;margin-left:-6px;left:calc(var(--v,.5)*100%);z-index:1;background:url(../atlas/frames/bar_marker.png) center/contain no-repeat}
+.bar.thin{height:4px;border-width:5px 6px;border-image-width:5px 6px}
+.hud-clock{top:186px;right:12px;display:flex;align-items:center;gap:8px;font:700 14px Fredoka;color:var(--parchment-50);padding:0 4px}
+.hud-clock .clock{margin-left:10px}
+.hud-minimap{position:absolute;top:6px;right:6px;width:176px;height:176px}
+.hud-minimap .map{position:absolute;inset:18px;border-radius:50%;background:radial-gradient(circle at 40% 45%,#b4ea80,#72c45c 55%,#479b55)}
+.hud-minimap img{position:absolute;inset:0}
+.hud-minimap .me{inset:auto;left:72px;top:72px;width:32px}
+.hud-hotbar{bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:4px}
+.hud-keys{position:absolute;right:16px;bottom:16px;display:flex;flex-direction:column;gap:8px;font:600 13px Fredoka;color:var(--parchment-50);text-shadow:0 1px 0 var(--ink),1px 0 0 var(--ink),-1px 0 0 var(--ink),0 -1px 0 var(--ink)}
+/* slots */
+.slot{position:relative;width:48px;height:48px;box-sizing:border-box;border-style:solid;border-width:14px;border-image:url(../atlas/frames/slot_empty.png) 14 fill / 14px stretch;
+  cursor:url(../atlas/frames/cursor_pointer.png) 10 2,pointer}
+.hud-hotbar .slot{width:52px;height:52px}
+.slot[data-rarity=common]{border-image-source:url(../atlas/frames/slot_common.png)}
+.slot[data-rarity=uncommon]{border-image-source:url(../atlas/frames/slot_uncommon.png)}
+.slot[data-rarity=rare]{border-image-source:url(../atlas/frames/slot_rare.png)}
+.slot[data-rarity=epic]{border-image-source:url(../atlas/frames/slot_epic.png)}
+.slot[data-rarity=legendary]{border-image-source:url(../atlas/frames/slot_legendary.png)}
+.slot:hover{border-image-source:url(../atlas/frames/slot_hover.png)}
+.slot.sel{border-image-source:url(../atlas/frames/slot_selected.png);transform:translateY(-3px)}
+.slot .icon{position:absolute;left:50%;top:50%;width:32px;height:32px;margin:-16px;image-rendering:pixelated}
+.slot .n{position:absolute;right:-10px;bottom:-11px;font:700 12px Fredoka;color:var(--parchment-50);text-shadow:0 1px 0 var(--ink),1px 0 0 var(--ink),-1px 0 0 var(--ink),0 -1px 0 var(--ink),1px 1px 0 var(--ink)}
+.slot .k{position:absolute;left:-10px;top:-11px;font:700 10px Fredoka;color:var(--ink-faint)}
+.slot .dur{position:absolute;left:-8px;right:-8px;bottom:-9px;height:3px;border-radius:2px;background:var(--ink)}
+.slot .dur::after{content:"";position:absolute;inset:0;width:calc(var(--d)*100%);border-radius:2px;background:var(--leaf-500)}
+/* window */
+.window{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:300px;border-style:solid;border-width:22px;
+  border-image:url(../atlas/frames/panel_wood.png) 22 fill / 22px stretch;filter:drop-shadow(0 8px 0 rgba(42,27,46,.35));animation:pop .2s cubic-bezier(.3,1.6,.5,1)}
+.window[hidden]{display:none}
+@keyframes pop{from{transform:translate(-50%,-50%) scale(.92);opacity:0}}
+.ribbon{position:absolute;left:50%;top:-38px;transform:translateX(-50%);margin:0;height:8px;padding:0 6px;border-style:solid;border-width:16px 30px;
+  border-image:url(../atlas/frames/ribbon_title.png) 16 30 fill / 16px 30px stretch;font:700 22px/8px Fredoka;color:var(--parchment-50);white-space:nowrap;
+  text-shadow:0 2px 0 var(--ink),2px 0 0 var(--ink),-2px 0 0 var(--ink),0 -2px 0 var(--ink),0 3px 0 var(--ink)}
+.close{position:absolute;right:-30px;top:-30px;width:32px;height:32px;border:0;background:url(../atlas/frames/btn_close_normal.png);cursor:inherit}
+.close:hover{background-image:url(../atlas/frames/btn_close_hover.png)}.close:active{background-image:url(../atlas/frames/btn_close_pressed.png)}
+.paper{border-style:solid;border-width:18px;border-image:url(../atlas/frames/panel_parchment.png) 18 fill / 18px stretch;padding:0}
+.grid{display:grid;grid-template-columns:repeat(4,48px);gap:6px;justify-content:center}
+.weight{display:flex;align-items:center;gap:6px;margin-top:10px;font:600 12px Fredoka}
+.weight .bar{--fill:var(--sun-500);--light:#fff0a8;--dark:#c8862e}
+.hint{font-size:11px;color:var(--ink-faint);margin:8px 0 0}
+.tooltip{position:absolute;max-width:220px;border-style:solid;border-width:14px;border-image:url(../atlas/frames/panel_tooltip.png) 14 fill / 14px stretch;pointer-events:none;z-index:50}
+.tooltip h3{margin:0;font:700 15px Fredoka}.tooltip .r{font:700 11px Fredoka}.tooltip p{margin:4px 0 0;font-size:12px;color:var(--ink-soft)}
+.toasts{position:absolute;right:12px;top:230px;display:flex;flex-direction:column;gap:6px;width:240px}
+.toast{border-style:solid;border-width:16px 16px 16px 40px;border-image:url(../atlas/frames/toast_info.png) 16 16 16 40 fill / 16px 16px 16px 40px stretch;font:700 13px Fredoka;animation:pop2 .25s}
+@keyframes pop2{from{transform:translateX(30px);opacity:0}}
+@media (prefers-reduced-motion:reduce){.ui-root *{animation:none!important;transition:none!important}}
+.slot .fbadge{position:absolute;right:-11px;top:-11px;width:11px;height:11px;image-rendering:pixelated}
+.tooltip .fresh{display:flex;align-items:center;gap:6px;margin-top:6px;font:700 12px Fredoka;color:var(--c)}
+.tooltip .fresh span{flex:1;height:6px;border-radius:3px;background:var(--ink);position:relative}
+.tooltip .fresh span::after{content:"";position:absolute;inset:1px;width:calc(var(--v)*100% - 2px);border-radius:2px;background:var(--c)}
+.ui-root.still *{animation:none!important;transition:none!important}

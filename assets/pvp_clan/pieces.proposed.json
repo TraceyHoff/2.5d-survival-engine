@@ -1,0 +1,78 @@
+{
+ "note": "Proposed additions to engine/packages/gameplay/data/pieces.json (owned by Survival Systems; hp/tier numbers are placeholders). Existing keys reused: wall, storage_box, claim_totem, banner.",
+ "pieces": [
+  {
+   "key": "barricade_spiked",
+   "placement": "free",
+   "layer": 1,
+   "tiered": false,
+   "tier": 2,
+   "hp": 500,
+   "ground": true,
+   "blocksPath": true,
+   "contactDamage": "proposed"
+  },
+  {
+   "key": "raid_bell",
+   "placement": "free",
+   "layer": 2,
+   "tier": 2,
+   "hp": 300,
+   "ground": true,
+   "alarm": "proposed: rings on structure damage within privilegeRadius"
+  },
+  {
+   "key": "banner_wall",
+   "placement": "edge",
+   "layer": 3,
+   "tier": 1,
+   "hp": 40,
+   "solid": false,
+   "paintable": true
+  },
+  {
+   "key": "gate_clan",
+   "placement": "free",
+   "layer": 1,
+   "tier": 3,
+   "hp": 1500,
+   "footprint": {
+    "w": 2,
+    "h": 1
+   },
+   "door": true,
+   "blocksPath": true,
+   "states": [
+    "closed",
+    "open",
+    "breached"
+   ]
+  },
+  {
+   "key": "clan_hall_door",
+   "placement": "free",
+   "layer": 1,
+   "tier": 3,
+   "hp": 1200,
+   "footprint": {
+    "w": 2,
+    "h": 1
+   },
+   "door": true,
+   "blocksPath": true
+  },
+  {
+   "key": "watchtower",
+   "placement": "free",
+   "layer": 1,
+   "tier": 2,
+   "hp": 900,
+   "footprint": {
+    "w": 2,
+    "h": 2
+   },
+   "levels": 3,
+   "ground": true
+  }
+ ]
+}

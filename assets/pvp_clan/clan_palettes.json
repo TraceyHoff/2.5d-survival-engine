@@ -1,0 +1,117 @@
+{
+ "note": "primary -> tintmask R, secondary -> tintmask G. Colors are multiplied onto neutral near-white cloth/trim, so use them as-is for BuildPiece.tint (0xRRGGBB00). All swatches come from palette.json ramps.",
+ "palettes": [
+  {
+   "index": 0,
+   "key": "berry_cream",
+   "name": "Berry & Cream",
+   "primary": "#E8475F",
+   "secondary": "#F6EAD2"
+  },
+  {
+   "index": 1,
+   "key": "sky_sun",
+   "name": "Sky & Sunbeam",
+   "primary": "#4F8FD6",
+   "secondary": "#FFD45A"
+  },
+  {
+   "index": 2,
+   "key": "meadow",
+   "name": "Meadow",
+   "primary": "#72C45C",
+   "secondary": "#FFFAF0"
+  },
+  {
+   "index": 3,
+   "key": "plum_gold",
+   "name": "Plum & Gold",
+   "primary": "#9B72D6",
+   "secondary": "#FFD45A"
+  },
+  {
+   "index": 4,
+   "key": "pumpkin_cocoa",
+   "name": "Pumpkin & Cocoa",
+   "primary": "#F4A74A",
+   "secondary": "#87563A"
+  },
+  {
+   "index": 5,
+   "key": "teal_rose",
+   "name": "Teal & Rose",
+   "primary": "#3FB3A6",
+   "secondary": "#FF9EC4"
+  },
+  {
+   "index": 6,
+   "key": "honey_bark",
+   "name": "Honey & Bark",
+   "primary": "#F7C844",
+   "secondary": "#74432C"
+  },
+  {
+   "index": 7,
+   "key": "denim_cream",
+   "name": "Denim & Cream",
+   "primary": "#5A6FB0",
+   "secondary": "#F6EAD2"
+  },
+  {
+   "index": 8,
+   "key": "rose_mint",
+   "name": "Rose & Mint",
+   "primary": "#FF9EC4",
+   "secondary": "#94DCA8"
+  },
+  {
+   "index": 9,
+   "key": "pine_gold",
+   "name": "Pine & Gold",
+   "primary": "#4FA37A",
+   "secondary": "#FFD45A"
+  },
+  {
+   "index": 10,
+   "key": "brick_sand",
+   "name": "Brick & Sand",
+   "primary": "#D0705A",
+   "secondary": "#F6DFA4"
+  },
+  {
+   "index": 11,
+   "key": "lilac_teal",
+   "name": "Lilac & Teal",
+   "primary": "#BBA4F0",
+   "secondary": "#3FB3A6"
+  },
+  {
+   "index": 12,
+   "key": "mint_plum",
+   "name": "Mint & Plum",
+   "primary": "#94DCA8",
+   "secondary": "#7452AD"
+  },
+  {
+   "index": 13,
+   "key": "ember_sky",
+   "name": "Ember & Sky",
+   "primary": "#FF8A2A",
+   "secondary": "#5CC6DC"
+  },
+  {
+   "index": 14,
+   "key": "pebble_berry",
+   "name": "Pebble & Berry",
+   "primary": "#A9A094",
+   "secondary": "#E8475F"
+  },
+  {
+   "index": 15,
+   "key": "midnight_star",
+   "name": "Midnight & Star",
+   "primary": "#3A66A8",
+   "secondary": "#FFF2A8"
+  }
+ ]
+}

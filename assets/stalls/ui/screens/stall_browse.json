@@ -1,0 +1,363 @@
+{
+ "$schema": "../../../ui/screens/screen.schema.json",
+ "schema": "ui-screen/1",
+ "id": "stall_browse",
+ "title": "Stall",
+ "layer": "window",
+ "modal": false,
+ "setsState": {
+  "ui.windowOpen": true
+ },
+ "opens": "interact with a stall piece (StallHeader in AOI) -> net sends full Listings to the viewer",
+ "binds": "stall.* (see DATA_PATHS.md). stall.filtered = adapter-derived (filter+search+sort over stall.listings).",
+ "input": {
+  "touch": "tap = focus+activate, long-press = inspect, swipe grid scrolls; min hit 48px",
+  "gamepad": "D-pad/LS moves focus over focusOrder; A activate, X inspect, Y sort, LB/RB filter tabs, B back",
+  "kbm": "click, wheel scroll, / focuses search, Enter buy, I inspect, Esc close"
+ },
+ "focusOrder": [
+  "search",
+  "tabs",
+  "sort",
+  "grid",
+  "buy"
+ ],
+ "hotkeys": {
+  "/": "focus:search",
+  "Enter": "stall.buySelected",
+  "I": "inspect",
+  "Esc": "close"
+ },
+ "root": {
+  "type": "box",
+  "layout": "abs",
+  "children": [
+   {
+    "type": "scrim",
+    "alpha": 0.3
+   },
+   {
+    "type": "panel",
+    "frame": "panel_wood_vine",
+    "anchor": "cc",
+    "w": 880,
+    "h": 600,
+    "pad": 24,
+    "layout": "col",
+    "gap": 10,
+    "children": [
+     {
+      "type": "panel",
+      "frame": "panel_parchment",
+      "w": "fill",
+      "h": "fill",
+      "pad": 16,
+      "layout": "col",
+      "gap": 10,
+      "children": [
+       {
+        "type": "box",
+        "layout": "row",
+        "children": [
+         {
+          "type": "avatar",
+          "color": "{stall.header.ownerId}",
+          "w": 40,
+          "h": 40
+         },
+         {
+          "type": "box",
+          "layout": "col",
+          "children": [
+           {
+            "type": "box",
+            "layout": "row",
+            "children": [
+             {
+              "type": "text",
+              "text": "{stall.header.stallName}",
+              "font": "title",
+              "w": "auto",
+              "h": 36
+             },
+             {
+              "type": "badge",
+              "text": "{stall.header.open ? \"Open\" : \"Closed\"}",
+              "icon": "{stall.header.open ? \"ic_check\" : \"ic_moon\"}",
+              "color": "{stall.header.open ? \"leaf-500\" : \"slate-500\"}",
+              "w": 86,
+              "h": 24
+             }
+            ],
+            "gap": 10,
+            "h": 36,
+            "align": "center",
+            "w": "fill"
+           },
+           {
+            "type": "box",
+            "layout": "row",
+            "children": [
+             {
+              "type": "text",
+              "text": "{\"by \" + stall.header.ownerName}",
+              "font": "small",
+              "w": "auto",
+              "h": 18,
+              "color": "text.secondary"
+             },
+             {
+              "type": "badge",
+              "text": "{\"[\" + stall.header.clanTag + \"]\"}",
+              "color": "{stall.header.clanColor}",
+              "w": 64,
+              "h": 20,
+              "visible": "{stall.header.clanTag}"
+             }
+            ],
+            "gap": 8,
+            "h": 20,
+            "align": "center",
+            "w": "fill"
+           }
+          ],
+          "w": "fill",
+          "h": 56
+         },
+         {
+          "type": "box",
+          "layout": "row",
+          "children": [
+           {
+            "type": "icon",
+            "icon": "coin",
+            "w": 28,
+            "h": 28
+           },
+           {
+            "type": "text",
+            "text": "{wallet.coinText}",
+            "font": "heading",
+            "w": "auto"
+           },
+           {
+            "type": "text",
+            "text": "in bag",
+            "font": "tiny",
+            "w": "auto",
+            "color": "text.muted"
+           }
+          ],
+          "gap": 4,
+          "h": 40,
+          "w": "auto",
+          "align": "center",
+          "comment": "wallet = count of `coin` (or the selected price item) in the player's Inventory"
+         }
+        ],
+        "gap": 12,
+        "h": 56,
+        "w": "fill",
+        "align": "center"
+       },
+       {
+        "type": "divider",
+        "w": "fill",
+        "h": 14
+       },
+       {
+        "type": "box",
+        "layout": "row",
+        "children": [
+         {
+          "type": "input",
+          "bind": "{stall.ui.search}",
+          "placeholder": "Search goods…",
+          "icon": "ic_info",
+          "w": 230,
+          "h": 40,
+          "id": "search",
+          "action": {
+           "event": "stall.search",
+           "args": {
+            "text": "$value"
+           }
+          }
+         },
+         {
+          "type": "tabs",
+          "small": true,
+          "bind": "{stall.ui.filter}",
+          "w": "fill",
+          "h": 36,
+          "items": [
+           {
+            "id": "all",
+            "label": "All"
+           },
+           {
+            "id": "food",
+            "label": "Food"
+           },
+           {
+            "id": "tool",
+            "label": "Tools"
+           },
+           {
+            "id": "resource",
+            "label": "Stuff"
+           },
+           {
+            "id": "weapon",
+            "label": "Gear"
+           }
+          ],
+          "action": {
+           "event": "stall.filter",
+           "args": {
+            "category": "$id"
+           }
+          }
+         },
+         {
+          "type": "button",
+          "label": "{stall.ui.sortLabel}",
+          "variant": "secondary",
+          "icon": "ui_stall_sort",
+          "w": 150,
+          "h": 40,
+          "action": {
+           "event": "stall.sort",
+           "args": {
+            "key": "next"
+           }
+          }
+         }
+        ],
+        "gap": 10,
+        "h": 40,
+        "w": "fill",
+        "align": "center"
+       },
+       {
+        "type": "list",
+        "w": "fill",
+        "h": "fill",
+        "pad": [
+         4,
+         0,
+         4,
+         4
+        ],
+        "children": [
+         {
+          "type": "repeat",
+          "each": "{stall.filtered}",
+          "as": "listing",
+          "layout": "grid",
+          "cols": 4,
+          "cell": [
+           196,
+           78
+          ],
+          "gap": 8,
+          "template": {
+           "type": "include",
+           "src": "_partials/listing_card.json",
+           "params": {
+            "l": "{listing}"
+           }
+          }
+         }
+        ]
+       },
+       {
+        "type": "box",
+        "layout": "row",
+        "children": [
+         {
+          "type": "box",
+          "layout": "row",
+          "children": [
+           {
+            "type": "keyhint",
+            "key": "A",
+            "label": "Buy"
+           },
+           {
+            "type": "keyhint",
+            "key": "X",
+            "label": "Inspect"
+           },
+           {
+            "type": "keyhint",
+            "key": "Y",
+            "label": "Sort"
+           },
+           {
+            "type": "keyhint",
+            "key": "LB RB",
+            "label": "Filter"
+           },
+           {
+            "type": "keyhint",
+            "key": "B",
+            "label": "Close"
+           }
+          ],
+          "gap": 14,
+          "h": 30,
+          "w": "auto",
+          "align": "center"
+         },
+         {
+          "type": "box",
+          "layout": "row",
+          "children": [],
+          "w": "fill"
+         },
+         {
+          "type": "button",
+          "label": "Buy…",
+          "variant": "primary",
+          "icon": "coin",
+          "w": 150,
+          "h": 44,
+          "disabled": "{!stall.selected || stall.selected.soldOut || !stall.header.open}",
+          "action": {
+           "event": "ui.open",
+           "args": {
+            "screen": "stall_buy"
+           }
+          }
+         }
+        ],
+        "gap": 10,
+        "h": 44,
+        "w": "fill",
+        "align": "center"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "type": "button",
+    "variant": "close",
+    "anchor": "cc",
+    "x": 424,
+    "y": -284,
+    "w": 40,
+    "h": 40,
+    "action": {
+     "event": "ui.close",
+     "args": {
+      "screen": "stall_browse"
+     }
+    }
+   }
+  ],
+  "w": "fill",
+  "h": "fill"
+ }
+}

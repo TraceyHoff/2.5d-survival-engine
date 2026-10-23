@@ -7,10 +7,13 @@ import { Rng, Transform, defineComponent, type World, type Entity } from "@engin
 import { CHUNK_SIZE, TileMap, tileToChunk, tileToLocal, BuildingGrid, loadBuildPieces, ChunkedSpatialIndex } from "@engine/world";
 import type { AssetRegistry } from "@engine/assets";
 import { Sprite, LightSource, Shadow, Occluder, SpriteFlag, TileId, tileHeight } from "../src/index.js";
-import { BuildPiece, AnimState, AnimStateId, Wetness, BodyTemp, Emitter, Fuel, EmitterKind } from "./mockGameplay.js";
+import { BuildPiece, AnimState, AnimStateId, Wetness, BodyTemp, Emitter, Fuel, EmitterKind, Burning, Equipment } from "./mockGameplay.js";
 
+/** DEMO item ids for the Equipment mock -> held sprite keys (gameplay item ids are not used by the render demo). */
+export const DEMO_ITEM = { iron_axe: 1, torch: 2, iron_sword: 3 } as const;
+export const DEMO_HELD: Record<number, string> = { 1: "held_iron_axe", 2: "held_torch", 3: "held_iron_sword" };
 export const Wander = defineComponent("Wander", { dx: "f32", dy: "f32", timer: "f32", speed: "f32" });
-export const DEMO_COMPONENTS = [Wander, BuildPiece, AnimState, Wetness, BodyTemp, Emitter, Fuel] as const;
+export const DEMO_COMPONENTS = [Wander, BuildPiece, AnimState, Wetness, BodyTemp, Emitter, Fuel, Burning, Equipment] as const;
 
 function valueNoise(seed: number): (x: number, y: number) => number {
   const h = (x: number, y: number): number => {
@@ -28,9 +31,10 @@ const fbm = (n: (x: number, y: number) => number, x: number, y: number): number 
   let s = 0, a = 0.5, f = 1; for (let i = 0; i < 5; i++) { s += a * n(x * f, y * f); f *= 2.03; a *= 0.5; } return s / 0.97;
 };
 
-export interface Scene { map: TileMap; grid: BuildingGrid; index: ChunkedSpatialIndex; player: Entity; players: Entity[]; zombies: Entity[]; base: { x: number; y: number; w: number; h: number }; spriteCount: number; pieceCount: number; size: number }
+export interface Scene { map: TileMap; grid: BuildingGrid; index: ChunkedSpatialIndex; player: Entity; players: Entity[]; zombies: Entity[]; base: { x: number; y: number; w: number; h: number }; spriteCount: number; burning: Entity[]; pieceCount: number; size: number }
 
-export function buildScene(world: World, reg: AssetRegistry, opts: { size: number; seed: number; density: number; zombies: number; inside: boolean; occlusionTest?: boolean }): Scene {
+export function buildScene(world: World, reg: AssetRegistry, opts: { size: number; seed: number; density: number; zombies: number; inside: boolean; occlusionTest?: boolean; burn?: boolean }): Scene {
+  const burning: Entity[] = [];
   const { size, seed } = opts; const rng = new Rng(seed);
   const elev = valueNoise(seed);
   const map = new TileMap(); const index = new ChunkedSpatialIndex();
@@ -82,14 +86,21 @@ export function buildScene(world: World, reg: AssetRegistry, opts: { size: numbe
     }
   }
 
-  // base: BuildingGrid + BuildPiece entities
-  const { registry: pieces } = loadBuildPieces([
-    { key: "floor", footprint: { w: 2, h: 2 }, layer: 0, hp: 100, sprite: "floor" },
-    { key: "wall", footprint: { w: 2, h: 1 }, layer: 1, hp: 200, sprite: "wall" },
-    { key: "pillar", footprint: { w: 1, h: 1 }, layer: 1, hp: 200, sprite: "pillar" },
-    { key: "campfire", footprint: { w: 1, h: 1 }, layer: 2, hp: 50, sprite: "campfire" },
-    { key: "roof", footprint: { w: 2, h: 2 }, layer: 3, hp: 80, sprite: reg.ids.sprites.tryId("roof") !== undefined ? "roof" : "floor" },
-  ], { resolveSprite: (k) => reg.ids.sprites.tryId(k) });
+  // base: BuildingGrid + BuildPiece entities. Footprints/layers come from the sprite's typed `building` block (pack wave 2:
+  // 1-tile pieces; fixture: 2x2 floors / 2x1 walls). Layers follow gameplay/world: 0 deck (floors, foundations AND roofs,
+  // placed on the level above the walls), 1 structure, 2 furniture, 3 decor.
+  const has = (k: string): boolean => reg.ids.sprites.tryId(k) !== undefined;
+  const pick = (...ks: string[]): string => ks.find(has) ?? ks[ks.length - 1]!;
+  const fp = (k: string) => { try { return reg.byKey(k).building?.footprint ?? { w: 1, h: 1 }; } catch { return { w: 1, h: 1 }; } };
+  const lay = (k: string, d: number) => { try { return reg.byKey(k).building?.layer ?? d; } catch { return d; } };
+  const roofKey = pick("roof_flat", "roof", "floor");
+  const fireKey = pick("bonfire", "campfire");
+  const defs = [
+    { key: "floor", sprite: "floor", layer: 0 }, { key: "wall", sprite: "wall", layer: 1 }, { key: "pillar", sprite: "pillar", layer: 1 },
+    { key: "campfire", sprite: fireKey, layer: 2 }, { key: "roof", sprite: roofKey, layer: 0 },
+    ...(has("rug") ? [{ key: "rug", sprite: "rug", layer: 3 }] : []),
+  ];
+  const { registry: pieces } = loadBuildPieces(defs.map((d) => ({ key: d.key, footprint: fp(d.sprite), layer: lay(d.sprite, d.layer), hp: 100, sprite: d.sprite })), { resolveSprite: (k) => reg.ids.sprites.tryId(k) });
   const grid = new BuildingGrid(pieces);
   let pieceCount = 0;
   const groundZ = Math.max(0, tileHeight(map, cx, cy));
@@ -101,19 +112,26 @@ export function buildScene(world: World, reg: AssetRegistry, opts: { size: numbe
     world.add(e, BuildPiece, { visualId: def.sprite ?? 0, variant: o.variant ?? 0, tint: o.tint ?? 0, damageStage: o.damage ?? 0, rotation: rot, level, layer: def.layer, ghost: o.ghost ?? 0 });
     pieceCount++; return e;
   };
-  for (let y = 0; y < base.h; y += 2) for (let x = 0; x < base.w; x += 2) piece("floor", base.x + x, base.y + y);
-  // back walls (along x at y = base.y) and left walls (along y at x = base.x), front/right walls with damage stages + a door gap
-  for (let x = 0; x < base.w; x += 2) piece("wall", base.x + x, base.y, 0);
-  for (let y = 0; y < base.h; y += 2) piece("wall", base.x, base.y + y, 1);
-  piece("wall", base.x, base.y + base.h - 1, 0, 0, { damage: 1 });
-  piece("wall", base.x + 4, base.y + base.h - 1, 0, 0, { damage: 3 });
-  piece("wall", base.x + base.w - 1, base.y, 1, 0, { damage: 2 });
-  piece("wall", base.x + base.w - 1, base.y + 4, 1, 0, { tint: 0xb0d0ffff });
+  const F = pieces.byKey("floor").footprint, W = pieces.byKey("wall").footprint.w;
+  for (let y = 0; y < base.h; y += F.h) for (let x = 0; x < base.w; x += F.w) piece("floor", base.x + x, base.y + y);
+  // back walls (along x at y = base.y) and left walls (along y at x = base.x); front/right walls with damage stages,
+  // a tinted one, and BuildPiece.variant (wall looks / clan walls come from the `wall` variant group when present)
+  for (let x = 0; x < base.w; x += W) piece("wall", base.x + x, base.y, 0, 0, { variant: x / W });
+  for (let y = W; y < base.h; y += W) piece("wall", base.x, base.y + y, 1, 0, { variant: y / W });
+  piece("wall", base.x + 1, base.y + base.h - 1, 0, 0, { damage: 1 });
+  piece("wall", base.x + base.w - 2, base.y + base.h - 1, 0, 0, { damage: 3 });
+  piece("wall", base.x + base.w - 1, base.y + 1, 1, 0, { damage: 2 });
+  piece("wall", base.x + base.w - 1, base.y + base.h - 2, 1, 0, { tint: 0xb0d0ffff });
   for (const [px, py] of [[0, 0], [base.w - 1, 0], [0, base.h - 1], [base.w - 1, base.h - 1]] as const) piece("pillar", base.x + px, base.y + py);
-  for (let y = 0; y < base.h; y += 2) for (let x = 0; x < base.w; x += 2) piece("roof", base.x + x, base.y + y, 0, 1);
+  if (has("rug")) for (let v = 0; v < 4; v++) piece("rug", base.x + 1 + v, base.y + 2, 0, 0, { variant: v });
+  const R = pieces.byKey("roof").footprint;
+  for (let y = 0; y < base.h; y += R.h) for (let x = 0; x < base.w; x += R.w) piece("roof", base.x + x, base.y + y, 0, 1);
   // ghost previews: valid (green) and invalid (red, overlapping the base)
   piece("wall", base.x + 9, base.y + 2, 0, 0, { ghost: 1 });
   piece("pillar", base.x + 4, base.y + 3, 0, 0, { ghost: 2 });
+  // burning pieces (gameplay Burning mock): a small low-intensity wall fire and a big hot one (?burn=0 disables)
+  burning.push(piece("wall", base.x + 9, base.y + 5, 0, 0, { damage: 2 }));
+  burning.push(piece("wall", base.x + 10, base.y + 5, 0, 0, { damage: 3 }));
   // campfire piece + its light (separate entity carrying LightSource)
   piece("campfire", base.x + 3, base.y + base.h + 2);
   // fire = core Emitter entities (light + heat) gated by Fuel.lit (gameplay attaches these to its fire entity)
@@ -140,6 +158,7 @@ export function buildScene(world: World, reg: AssetRegistry, opts: { size: numbe
     const e = spawn(base.x + base.w + 2 + i * 1.2, base.y + base.h + 1.5, pk, { scale: 1.4, shadow: 1, tint: i === 0 ? 0 : tint });
     world.add(e, AnimState, { state: AnimStateId.Idle, startTick: i * 7 });
     world.add(e, Wetness, { level: 0 }); world.add(e, BodyTemp, { cold: 0, heat: 0, shivering: 0 });
+    world.add(e, Equipment, { mainHandSlot: 0, mainHandItem: [DEMO_ITEM.iron_axe, DEMO_ITEM.torch, DEMO_ITEM.iron_sword][i]! });
     world.get(e, Transform); players.push(e);
   }
   const player = players[0]!;
@@ -153,15 +172,18 @@ export function buildScene(world: World, reg: AssetRegistry, opts: { size: numbe
   // zombies: native sample sprite + TexturePacker-imported one (if loaded)
   const zombies: Entity[] = [];
   const hasTP = reg.ids.sprites.tryId("zombie_tp") !== undefined;
+  const zkinds = ["zombie_walker", "zombie_mummy", "zombie_pumpkin", "zombie_runner"].filter(has);
   for (let n = 0, guard = 0; n < opts.zombies && guard < opts.zombies * 30; guard++) {
     const x = rng.range(cx - 22, cx + 22), y = rng.range(cy - 22, cy + 22);
     if (map.getTile(Math.floor(x), Math.floor(y)) === TileId.Water || (Math.abs(x - cx) < 5 && Math.abs(y - cy) < 5)) continue;
-    const e = spawn(x, y, hasTP && n % 2 ? "zombie_tp" : "zombie_walker", { scale: 1.4, shadow: 1 });
+    const zk = hasTP && n % 2 ? "zombie_tp" : zkinds[n % zkinds.length]!;
+    const e = spawn(x, y, zk, { scale: 1.4, shadow: 1 });
     const a = rng.range(0, Math.PI * 2);
     world.add(e, Wander, { dx: Math.cos(a), dy: Math.sin(a), timer: rng.range(0.5, 4), speed: rng.range(0.6, 1.4) });
-    world.add(e, AnimState, { state: n % 3 === 0 ? AnimStateId.Shamble : AnimStateId.Walk, startTick: rng.int(0, 40) });
+    world.add(e, AnimState, { state: n % 7 === 5 ? AnimStateId.Crawl : n % 7 === 6 ? AnimStateId.Feed : n % 3 === 0 ? AnimStateId.Shamble : AnimStateId.Walk, startTick: rng.int(0, 40) });
     world.add(e, Wetness, { level: 0 }); world.add(e, BodyTemp, { cold: 0, heat: 0, shivering: 0 });
     zombies.push(e); n++;
   }
-  return { map, grid, index, player, players, zombies, base, spriteCount, pieceCount, size };
+  if (opts.burn !== false) burning.forEach((e, n) => world.add(e, Burning, { lit: 1, intensity: n ? 230 : 90, startTick: 0 }));
+  return { map, grid, index, player, players, zombies, base, spriteCount, pieceCount, size, burning };
 }

@@ -1,0 +1,175 @@
+{
+ "frames": {
+  "crack_2x1/stage1": {
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 512
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 512
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 512
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 0
+  },
+  "crack_2x1/stage2": {
+   "frame": {
+    "x": 320,
+    "y": 0,
+    "w": 320,
+    "h": 512
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 512
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 512
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 1
+  },
+  "crack_2x1/stage3": {
+   "frame": {
+    "x": 640,
+    "y": 0,
+    "w": 320,
+    "h": 512
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 512
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 512
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 2
+  },
+  "crack_2x2/stage1": {
+   "frame": {
+    "x": 0,
+    "y": 512,
+    "w": 320,
+    "h": 512
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 512
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 512
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 3
+  },
+  "crack_2x2/stage2": {
+   "frame": {
+    "x": 320,
+    "y": 512,
+    "w": 320,
+    "h": 512
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 512
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 512
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 4
+  },
+  "crack_2x2/stage3": {
+   "frame": {
+    "x": 640,
+    "y": 512,
+    "w": 320,
+    "h": 512
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 512
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 512
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 5
+  }
+ },
+ "meta": {
+  "app": "pvp_clan/tools (procedural)",
+  "version": "1.0",
+  "image": "raid_cracks_large@2x.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 960,
+   "h": 1024
+  },
+  "scale": "2",
+  "grid": {
+   "frameW": 320,
+   "frameH": 512,
+   "columns": 3,
+   "rows": 2,
+   "firstRow": 0,
+   "margin": 4
+  },
+  "emissive": null,
+  "tintmask": null
+ }
+}

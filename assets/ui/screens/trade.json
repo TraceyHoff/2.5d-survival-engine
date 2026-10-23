@@ -1,0 +1,425 @@
+{
+ "$schema": "./screen.schema.json",
+ "schema": "ui-screen/1",
+ "id": "trade",
+ "setsState": {
+  "ui.windowOpen": true
+ },
+ "title": "Player trade",
+ "layer": "window",
+ "modal": false,
+ "opens": "tradeUpdated status 1 (Open)",
+ "binds": "trade.current = net TradeView verbatim (client.trade.current / client.trade.on). trade._vm (adapter): partnerName, mine/theirs = myOffer/theirOffer lines resolved to item view-models (+food stage from createdTick), maxLines (16), idleSecondsLeft (120 s since last tradeUpdated)",
+ "requestPrompt": "status 0 && !iRequested -> toast with Accept (trade.accept{id}) / Decline (trade.decline{id}); status 0 && iRequested -> 'Waiting for {partner}...' (30 s)",
+ "ends": "status 2|3 -> close; toast theme.trade.endReasons[reason] (reason >= 100 -> hook)",
+ "root": {
+  "type": "box",
+  "w": "fill",
+  "h": "fill",
+  "children": [
+   {
+    "type": "scrim",
+    "alpha": 0.35
+   },
+   {
+    "type": "box",
+    "id": "trade_window",
+    "anchor": "cc",
+    "x": 0,
+    "y": 0,
+    "w": 760,
+    "h": 520,
+    "children": [
+     {
+      "type": "panel",
+      "id": "trade_frame",
+      "frame": "panel_wood_vine",
+      "anchor": "tl",
+      "x": 0,
+      "y": 0,
+      "w": 760,
+      "h": 520,
+      "pad": 24,
+      "children": [
+       {
+        "type": "box",
+        "layout": "row",
+        "gap": 16,
+        "anchor": "tl",
+        "x": 0,
+        "y": 0,
+        "w": "fill",
+        "h": 280,
+        "children": [
+         {
+          "type": "box",
+          "layout": "col",
+          "gap": 6,
+          "w": "fill",
+          "h": "fill",
+          "children": [
+           {
+            "type": "box",
+            "layout": "row",
+            "gap": 6,
+            "h": 28,
+            "w": "fill",
+            "align": "center",
+            "children": [
+             {
+              "type": "avatar",
+              "color": "{me.playerId}",
+              "w": 28,
+              "h": 28
+             },
+             {
+              "type": "text",
+              "text": "You offer",
+              "font": "heading",
+              "w": "fill"
+             },
+             {
+              "type": "badge",
+              "icon": "{trade.current.myLock ? \"ic_lock\" : \"ic_info\"}",
+              "text": "{trade.current.myConfirm ? \"Confirmed!\" : trade.current.myLock ? \"Locked in\" : \"Editing\"}",
+              "color": "{trade.current.myLock ? \"leaf-500\" : \"slate-500\"}",
+              "w": 120,
+              "h": 24
+             }
+            ]
+           },
+           {
+            "type": "panel",
+            "frame": "panel_inset",
+            "w": "fill",
+            "h": 196,
+            "pad": 8,
+            "children": [
+             {
+              "type": "repeat",
+              "each": "{trade._vm.mine}",
+              "as": "o",
+              "layout": "grid",
+              "cols": 6,
+              "cell": [
+               44,
+               44
+              ],
+              "gap": 4,
+              "w": "fill",
+              "h": "fill",
+              "template": {
+               "type": "slot",
+               "w": 44,
+               "h": 44,
+               "bind": "{o}",
+               "draggable": true,
+               "foodStage": "{o.food.stage}",
+               "action": {
+                "event": "trade.offer",
+                "args": {
+                 "id": "{trade.current.id}",
+                 "remove": {
+                  "slot": "{o.slot}"
+                 }
+                }
+               }
+              }
+             },
+             {
+              "type": "lockstamp",
+              "anchor": "cc",
+              "visible": "{trade.current.myLock}",
+              "w": 120,
+              "h": 48
+             }
+            ]
+           },
+           {
+            "type": "text",
+            "text": "{trade._vm.mine.length}/{trade._vm.maxLines} lines \u00b7 rev {trade.current.myOfferRevision} \u00b7 drag from your bag",
+            "font": "tiny",
+            "h": 16
+           }
+          ]
+         },
+         {
+          "type": "box",
+          "layout": "col",
+          "w": 40,
+          "h": "fill",
+          "justify": "center",
+          "align": "center",
+          "children": [
+           {
+            "type": "icon",
+            "icon": "ic_arrow_right",
+            "w": 32,
+            "h": 32
+           },
+           {
+            "type": "icon",
+            "icon": "ic_arrow_left",
+            "w": 32,
+            "h": 32
+           }
+          ]
+         },
+         {
+          "type": "box",
+          "layout": "col",
+          "gap": 6,
+          "w": "fill",
+          "h": "fill",
+          "children": [
+           {
+            "type": "box",
+            "layout": "row",
+            "gap": 6,
+            "h": 28,
+            "w": "fill",
+            "align": "center",
+            "children": [
+             {
+              "type": "avatar",
+              "color": "{trade.current.partner}",
+              "w": 28,
+              "h": 28
+             },
+             {
+              "type": "text",
+              "text": "{trade._vm.partnerName} offers",
+              "font": "heading",
+              "w": "fill"
+             },
+             {
+              "type": "badge",
+              "icon": "{trade.current.theirLock ? \"ic_lock\" : \"ic_info\"}",
+              "text": "{trade.current.theirConfirm ? \"Confirmed!\" : trade.current.theirLock ? \"Locked in\" : \"Editing...\"}",
+              "color": "{trade.current.theirLock ? \"leaf-500\" : \"slate-500\"}",
+              "w": 132,
+              "h": 24
+             }
+            ]
+           },
+           {
+            "type": "panel",
+            "frame": "panel_inset",
+            "w": "fill",
+            "h": 196,
+            "pad": 8,
+            "children": [
+             {
+              "type": "repeat",
+              "each": "{trade._vm.theirs}",
+              "as": "o",
+              "layout": "grid",
+              "cols": 6,
+              "cell": [
+               44,
+               44
+              ],
+              "gap": 4,
+              "w": "fill",
+              "h": "fill",
+              "template": {
+               "type": "slot",
+               "w": 44,
+               "h": 44,
+               "bind": "{o}",
+               "draggable": false,
+               "foodStage": "{o.food.stage}"
+              }
+             },
+             {
+              "type": "lockstamp",
+              "anchor": "cc",
+              "visible": "{trade.current.theirLock}",
+              "w": 120,
+              "h": 48
+             }
+            ]
+           },
+           {
+            "type": "text",
+            "text": "rev {trade.current.theirOfferRevision} \u00b7 any change unlocks both sides!",
+            "font": "tiny",
+            "h": 16,
+            "color": "text.warning"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "type": "panel",
+        "frame": "panel_parchment",
+        "anchor": "tl",
+        "x": 0,
+        "y": 290,
+        "w": "fill",
+        "h": 86,
+        "pad": [
+         10,
+         12,
+         10,
+         12
+        ],
+        "children": [
+         {
+          "type": "text",
+          "text": "Your bag",
+          "font": "label",
+          "anchor": "tl",
+          "x": 0,
+          "y": 0,
+          "w": 200,
+          "h": 18
+         },
+         {
+          "type": "repeat",
+          "each": "{inventory.slots}",
+          "as": "slot",
+          "anchor": "tl",
+          "x": 0,
+          "y": 20,
+          "layout": "row",
+          "gap": 3,
+          "w": "fill",
+          "h": 40,
+          "limit": 16,
+          "template": {
+           "type": "slot",
+           "w": 38,
+           "h": 38,
+           "bind": "{slot}",
+           "draggable": true,
+           "foodStage": "{slot.item.food.stage}",
+           "action": {
+            "event": "trade.offer",
+            "args": {
+             "id": "{trade.current.id}",
+             "add": {
+              "slot": "{slot.index}",
+              "count": "$all|shift=half"
+             }
+            }
+           }
+          }
+         }
+        ]
+       },
+       {
+        "type": "box",
+        "anchor": "bl",
+        "x": 0,
+        "y": 0,
+        "w": "fill",
+        "h": 52,
+        "layout": "row",
+        "gap": 12,
+        "align": "center",
+        "children": [
+         {
+          "type": "box",
+          "layout": "col",
+          "w": 220,
+          "h": 44,
+          "gap": 4,
+          "children": [
+           {
+            "type": "text",
+            "text": "Idle timeout in {trade._vm.idleSecondsLeft}s",
+            "font": "small",
+            "h": 18
+           },
+           {
+            "type": "bar",
+            "vital": "stamina",
+            "value": "{trade._vm.idleSecondsLeft}",
+            "max": "{trade._vm.idleSeconds}",
+            "w": "fill",
+            "h": 16
+           }
+          ]
+         },
+         {
+          "type": "button",
+          "label": "{trade.current.myLock ? \"Locked\" : \"Lock offer\"}",
+          "variant": "gold",
+          "w": 170,
+          "h": 48,
+          "icon": "ic_lock",
+          "action": {
+           "event": "trade.lock",
+           "args": {
+            "id": "{trade.current.id}"
+           }
+          },
+          "disabled": "{trade.current.myLock || trade.current.status != 1}"
+         },
+         {
+          "type": "button",
+          "label": "Confirm",
+          "variant": "primary",
+          "w": 160,
+          "h": 48,
+          "icon": "ic_check",
+          "action": {
+           "event": "trade.confirm",
+           "args": {
+            "id": "{trade.current.id}",
+            "version": "{trade.current.version}"
+           }
+          },
+          "disabled": "{!(trade.current.myLock && trade.current.theirLock) || trade.current.myConfirm}"
+         },
+         {
+          "type": "button",
+          "label": "Cancel",
+          "variant": "danger",
+          "w": 120,
+          "h": 48,
+          "action": {
+           "event": "trade.cancel",
+           "args": {
+            "id": "{trade.current.id}"
+           }
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "type": "ribbon",
+      "text": "Trade",
+      "anchor": "tc",
+      "x": 0,
+      "y": -18,
+      "w": 220,
+      "h": 40
+     },
+     {
+      "type": "button",
+      "id": "close",
+      "variant": "close",
+      "anchor": "tr",
+      "x": 10,
+      "y": -10,
+      "w": 32,
+      "h": 32,
+      "action": {
+       "event": "ui.close",
+       "args": {
+        "screen": "trade"
+       }
+      },
+      "hotkey": "Escape",
+      "tooltip": "Close (Esc)"
+     }
+    ]
+   }
+  ]
+ }
+}

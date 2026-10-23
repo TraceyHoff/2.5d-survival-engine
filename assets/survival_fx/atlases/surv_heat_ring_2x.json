@@ -1,0 +1,117 @@
+{
+ "frames": {
+  "fx_heat_ring/idle/0": {
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 512,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 512,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 512,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 333.33
+  },
+  "fx_heat_ring/idle/1": {
+   "frame": {
+    "x": 512,
+    "y": 0,
+    "w": 512,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 512,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 512,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 333.33
+  },
+  "fx_heat_ring/idle/2": {
+   "frame": {
+    "x": 1024,
+    "y": 0,
+    "w": 512,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 512,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 512,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 333.33
+  },
+  "fx_heat_ring/idle/3": {
+   "frame": {
+    "x": 1536,
+    "y": 0,
+    "w": 512,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 512,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 512,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 333.33
+  }
+ },
+ "meta": {
+  "app": "survival_fx/tools",
+  "version": "1",
+  "image": "surv_heat_ring_2x.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 2048,
+   "h": 256
+  },
+  "scale": "2",
+  "padding": 2,
+  "note": "uniform grid 512x256; 2px transparent margin inside each frame"
+ }
+}

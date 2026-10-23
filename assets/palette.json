@@ -1,0 +1,655 @@
+{
+ "name": "cozy-wild",
+ "version": 2,
+ "rampOrder": [
+  "highlight",
+  "base",
+  "shade",
+  "deep"
+ ],
+ "lightDir": "top-left",
+ "outline": {
+  "default": "#3b2433",
+  "soft": "#4a2f3d",
+  "deep": "#2a1b2e",
+  "rule": "per-material: mix(material.deep, ink.shade, 0.55)"
+ },
+ "shadow": {
+  "color": "#2a1b2e",
+  "alpha": 0.3
+ },
+ "ramps": {
+  "ink": [
+   "#6b4a5a",
+   "#4a2f3d",
+   "#3b2433",
+   "#2a1b2e"
+  ],
+  "skin_light": [
+   "#ffe6cc",
+   "#ffd2ad",
+   "#eba98a",
+   "#c47a64"
+  ],
+  "skin_tan": [
+   "#f2c08f",
+   "#d9975f",
+   "#b06f45",
+   "#7d4a34"
+  ],
+  "skin_deep": [
+   "#b97a52",
+   "#8f5636",
+   "#6a3c2a",
+   "#4a2a22"
+  ],
+  "hair_brown": [
+   "#b9784a",
+   "#8a5232",
+   "#643822",
+   "#45261c"
+  ],
+  "hair_pink": [
+   "#ffc2d6",
+   "#f48fb1",
+   "#cf6690",
+   "#9c4a72"
+  ],
+  "hair_black": [
+   "#6a5470",
+   "#43344c",
+   "#2e2338",
+   "#1e1726"
+  ],
+  "hair_blonde": [
+   "#ffe9a0",
+   "#f5c95c",
+   "#d69a3c",
+   "#a8702e"
+  ],
+  "cloth_red": [
+   "#ff8c78",
+   "#e85d4f",
+   "#bb3f45",
+   "#862d3b"
+  ],
+  "cloth_blue": [
+   "#86c0f2",
+   "#4f8fd6",
+   "#3a66a8",
+   "#2b4780"
+  ],
+  "cloth_teal": [
+   "#7fe0cc",
+   "#3fb3a6",
+   "#2b8481",
+   "#1f5e62"
+  ],
+  "cloth_yellow": [
+   "#ffe680",
+   "#f7c844",
+   "#d39a2c",
+   "#9c6a24"
+  ],
+  "cloth_cream": [
+   "#fffaf0",
+   "#f6ead2",
+   "#d8c4a0",
+   "#a8906e"
+  ],
+  "cloth_denim": [
+   "#8fa2dc",
+   "#5a6fb0",
+   "#434f88",
+   "#323a66"
+  ],
+  "cloth_green": [
+   "#b8e07a",
+   "#86b94f",
+   "#5f8f3c",
+   "#40652e"
+  ],
+  "cloth_purple": [
+   "#c9a8f0",
+   "#9b72d6",
+   "#7452ad",
+   "#523a80"
+  ],
+  "leather": [
+   "#d69a64",
+   "#a8653c",
+   "#7a4630",
+   "#553025"
+  ],
+  "grass": [
+   "#c4ec7a",
+   "#8fd15c",
+   "#64b04c",
+   "#3f8a47"
+  ],
+  "grass_deep": [
+   "#7cc055",
+   "#56a045",
+   "#3d7f43",
+   "#2b6040"
+  ],
+  "leaf": [
+   "#b4ea80",
+   "#72c45c",
+   "#479b55",
+   "#2d7050"
+  ],
+  "leaf_autumn": [
+   "#ffd27a",
+   "#f4a74a",
+   "#d7743a",
+   "#a24e34"
+  ],
+  "pine": [
+   "#7fd39a",
+   "#4fa37a",
+   "#34806a",
+   "#22605a"
+  ],
+  "bark": [
+   "#b88058",
+   "#8a5a3c",
+   "#654130",
+   "#472d26"
+  ],
+  "berry": [
+   "#ff9fb2",
+   "#e8475f",
+   "#b8304f",
+   "#7e2140"
+  ],
+  "berry_blue": [
+   "#a9c8ff",
+   "#6a8ef0",
+   "#4a64c4",
+   "#33458f"
+  ],
+  "mush_red": [
+   "#ff9a8c",
+   "#ec5a4d",
+   "#c03d41",
+   "#8a2a38"
+  ],
+  "mush_glow": [
+   "#e6fff4",
+   "#9ff5d8",
+   "#5fd1c0",
+   "#3a9a9a"
+  ],
+  "flower_pink": [
+   "#ffd6e8",
+   "#ff9ec4",
+   "#e2709e",
+   "#b24e7c"
+  ],
+  "flower_yel": [
+   "#fff3b0",
+   "#ffd75e",
+   "#e8a93a",
+   "#b07a2a"
+  ],
+  "flower_blue": [
+   "#d6ecff",
+   "#93c6ff",
+   "#6694e0",
+   "#4a66b0"
+  ],
+  "dirt": [
+   "#dca878",
+   "#c08a5a",
+   "#9a6a45",
+   "#74503a"
+  ],
+  "sand": [
+   "#fff1c4",
+   "#f6dfa4",
+   "#e6c47e",
+   "#c9a265"
+  ],
+  "stone": [
+   "#e4e0d8",
+   "#b8b2b0",
+   "#8a8494",
+   "#5f5a70"
+  ],
+  "cobble": [
+   "#d6cfc2",
+   "#a9a094",
+   "#7d7480",
+   "#575064"
+  ],
+  "water": [
+   "#bdf2f0",
+   "#5cc6dc",
+   "#3a9ccc",
+   "#2d70a8"
+  ],
+  "water_deep": [
+   "#5cb8d8",
+   "#3484bc",
+   "#2a62a0",
+   "#244a80"
+  ],
+  "snow": [
+   "#ffffff",
+   "#eef4fb",
+   "#cdd9ec",
+   "#9fb0cf"
+  ],
+  "wood": [
+   "#f0b878",
+   "#d08c52",
+   "#a2633a",
+   "#74432c"
+  ],
+  "wood_dark": [
+   "#b07850",
+   "#87563a",
+   "#61402e",
+   "#432c24"
+  ],
+  "thatch": [
+   "#ffe08a",
+   "#f0c060",
+   "#cc9440",
+   "#94662e"
+  ],
+  "brick": [
+   "#f0a080",
+   "#d0705a",
+   "#a24e46",
+   "#743838"
+  ],
+  "iron": [
+   "#e8f0f4",
+   "#b4c2cc",
+   "#7e8ea0",
+   "#56637a"
+  ],
+  "gold": [
+   "#fff2a8",
+   "#ffd45a",
+   "#e0a032",
+   "#a8702a"
+  ],
+  "glass": [
+   "#e8fbff",
+   "#a8e4f4",
+   "#6cbcd8",
+   "#4a8ab0"
+  ],
+  "zomb_mint": [
+   "#c8f5c8",
+   "#94dca8",
+   "#62b48e",
+   "#3f8676"
+  ],
+  "zomb_teal": [
+   "#b4f0e4",
+   "#74d0c4",
+   "#45a8a6",
+   "#2e7a84"
+  ],
+  "zomb_lilac": [
+   "#e4d4ff",
+   "#bba4f0",
+   "#8f78cc",
+   "#65539e"
+  ],
+  "pumpkin": [
+   "#ffc879",
+   "#ff9a3c",
+   "#e0702a",
+   "#a8471f"
+  ],
+  "carrot": [
+   "#ffb070",
+   "#ff8436",
+   "#de5e2a",
+   "#a8402a"
+  ],
+  "copper": [
+   "#ffc89a",
+   "#e08a58",
+   "#b8613e",
+   "#84422f"
+  ],
+  "patina": [
+   "#b8f0d8",
+   "#6fd0b0",
+   "#45a890",
+   "#2f7a72"
+  ],
+  "clay": [
+   "#f2b49a",
+   "#d98770",
+   "#b0614f",
+   "#7f4440"
+  ],
+  "hide": [
+   "#f2d0a4",
+   "#d6a876",
+   "#ad7f55",
+   "#7e5a40"
+  ],
+  "slate": [
+   "#a8b4d0",
+   "#7c88ac",
+   "#5a6488",
+   "#3f4666"
+  ],
+  "metal_teal": [
+   "#b4e4e0",
+   "#7cbcbc",
+   "#538f98",
+   "#3a6474"
+  ],
+  "fur_orange": [
+   "#ffcf94",
+   "#f6a056",
+   "#d47638",
+   "#9c5030"
+  ],
+  "fur_brown": [
+   "#e0b08a",
+   "#b88262",
+   "#8e5e48",
+   "#644236"
+  ],
+  "frog": [
+   "#d4f58c",
+   "#9ed65a",
+   "#6fae44",
+   "#4a8038"
+  ],
+  "chick": [
+   "#fff8c4",
+   "#ffe680",
+   "#f2c444",
+   "#c4902e"
+  ],
+  "fire": [
+   "#fff6c2",
+   "#ffd04a",
+   "#ff8a2a",
+   "#e8492e"
+  ],
+  "glow": [
+   "#ffffe0",
+   "#fff3a0",
+   "#d4f07a",
+   "#9fd060"
+  ],
+  "eerie": [
+   "#e8fff8",
+   "#9ffff0",
+   "#5ce0d8",
+   "#2fa8b0"
+  ],
+  "smoke": [
+   "#f4f0f4",
+   "#d4ccd8",
+   "#a89cb4",
+   "#7a6e8c"
+  ]
+ },
+ "flat": {
+  "ink_hl": "#6b4a5a",
+  "ink_base": "#4a2f3d",
+  "ink_shade": "#3b2433",
+  "ink_deep": "#2a1b2e",
+  "skin_light_hl": "#ffe6cc",
+  "skin_light_base": "#ffd2ad",
+  "skin_light_shade": "#eba98a",
+  "skin_light_deep": "#c47a64",
+  "skin_tan_hl": "#f2c08f",
+  "skin_tan_base": "#d9975f",
+  "skin_tan_shade": "#b06f45",
+  "skin_tan_deep": "#7d4a34",
+  "skin_deep_hl": "#b97a52",
+  "skin_deep_base": "#8f5636",
+  "skin_deep_shade": "#6a3c2a",
+  "skin_deep_deep": "#4a2a22",
+  "hair_brown_hl": "#b9784a",
+  "hair_brown_base": "#8a5232",
+  "hair_brown_shade": "#643822",
+  "hair_brown_deep": "#45261c",
+  "hair_pink_hl": "#ffc2d6",
+  "hair_pink_base": "#f48fb1",
+  "hair_pink_shade": "#cf6690",
+  "hair_pink_deep": "#9c4a72",
+  "hair_black_hl": "#6a5470",
+  "hair_black_base": "#43344c",
+  "hair_black_shade": "#2e2338",
+  "hair_black_deep": "#1e1726",
+  "hair_blonde_hl": "#ffe9a0",
+  "hair_blonde_base": "#f5c95c",
+  "hair_blonde_shade": "#d69a3c",
+  "hair_blonde_deep": "#a8702e",
+  "cloth_red_hl": "#ff8c78",
+  "cloth_red_base": "#e85d4f",
+  "cloth_red_shade": "#bb3f45",
+  "cloth_red_deep": "#862d3b",
+  "cloth_blue_hl": "#86c0f2",
+  "cloth_blue_base": "#4f8fd6",
+  "cloth_blue_shade": "#3a66a8",
+  "cloth_blue_deep": "#2b4780",
+  "cloth_teal_hl": "#7fe0cc",
+  "cloth_teal_base": "#3fb3a6",
+  "cloth_teal_shade": "#2b8481",
+  "cloth_teal_deep": "#1f5e62",
+  "cloth_yellow_hl": "#ffe680",
+  "cloth_yellow_base": "#f7c844",
+  "cloth_yellow_shade": "#d39a2c",
+  "cloth_yellow_deep": "#9c6a24",
+  "cloth_cream_hl": "#fffaf0",
+  "cloth_cream_base": "#f6ead2",
+  "cloth_cream_shade": "#d8c4a0",
+  "cloth_cream_deep": "#a8906e",
+  "cloth_denim_hl": "#8fa2dc",
+  "cloth_denim_base": "#5a6fb0",
+  "cloth_denim_shade": "#434f88",
+  "cloth_denim_deep": "#323a66",
+  "cloth_green_hl": "#b8e07a",
+  "cloth_green_base": "#86b94f",
+  "cloth_green_shade": "#5f8f3c",
+  "cloth_green_deep": "#40652e",
+  "cloth_purple_hl": "#c9a8f0",
+  "cloth_purple_base": "#9b72d6",
+  "cloth_purple_shade": "#7452ad",
+  "cloth_purple_deep": "#523a80",
+  "leather_hl": "#d69a64",
+  "leather_base": "#a8653c",
+  "leather_shade": "#7a4630",
+  "leather_deep": "#553025",
+  "grass_hl": "#c4ec7a",
+  "grass_base": "#8fd15c",
+  "grass_shade": "#64b04c",
+  "grass_deep": "#3f8a47",
+  "grass_deep_hl": "#7cc055",
+  "grass_deep_base": "#56a045",
+  "grass_deep_shade": "#3d7f43",
+  "grass_deep_deep": "#2b6040",
+  "leaf_hl": "#b4ea80",
+  "leaf_base": "#72c45c",
+  "leaf_shade": "#479b55",
+  "leaf_deep": "#2d7050",
+  "leaf_autumn_hl": "#ffd27a",
+  "leaf_autumn_base": "#f4a74a",
+  "leaf_autumn_shade": "#d7743a",
+  "leaf_autumn_deep": "#a24e34",
+  "pine_hl": "#7fd39a",
+  "pine_base": "#4fa37a",
+  "pine_shade": "#34806a",
+  "pine_deep": "#22605a",
+  "bark_hl": "#b88058",
+  "bark_base": "#8a5a3c",
+  "bark_shade": "#654130",
+  "bark_deep": "#472d26",
+  "berry_hl": "#ff9fb2",
+  "berry_base": "#e8475f",
+  "berry_shade": "#b8304f",
+  "berry_deep": "#7e2140",
+  "berry_blue_hl": "#a9c8ff",
+  "berry_blue_base": "#6a8ef0",
+  "berry_blue_shade": "#4a64c4",
+  "berry_blue_deep": "#33458f",
+  "mush_red_hl": "#ff9a8c",
+  "mush_red_base": "#ec5a4d",
+  "mush_red_shade": "#c03d41",
+  "mush_red_deep": "#8a2a38",
+  "mush_glow_hl": "#e6fff4",
+  "mush_glow_base": "#9ff5d8",
+  "mush_glow_shade": "#5fd1c0",
+  "mush_glow_deep": "#3a9a9a",
+  "flower_pink_hl": "#ffd6e8",
+  "flower_pink_base": "#ff9ec4",
+  "flower_pink_shade": "#e2709e",
+  "flower_pink_deep": "#b24e7c",
+  "flower_yel_hl": "#fff3b0",
+  "flower_yel_base": "#ffd75e",
+  "flower_yel_shade": "#e8a93a",
+  "flower_yel_deep": "#b07a2a",
+  "flower_blue_hl": "#d6ecff",
+  "flower_blue_base": "#93c6ff",
+  "flower_blue_shade": "#6694e0",
+  "flower_blue_deep": "#4a66b0",
+  "dirt_hl": "#dca878",
+  "dirt_base": "#c08a5a",
+  "dirt_shade": "#9a6a45",
+  "dirt_deep": "#74503a",
+  "sand_hl": "#fff1c4",
+  "sand_base": "#f6dfa4",
+  "sand_shade": "#e6c47e",
+  "sand_deep": "#c9a265",
+  "stone_hl": "#e4e0d8",
+  "stone_base": "#b8b2b0",
+  "stone_shade": "#8a8494",
+  "stone_deep": "#5f5a70",
+  "cobble_hl": "#d6cfc2",
+  "cobble_base": "#a9a094",
+  "cobble_shade": "#7d7480",
+  "cobble_deep": "#575064",
+  "water_hl": "#bdf2f0",
+  "water_base": "#5cc6dc",
+  "water_shade": "#3a9ccc",
+  "water_deep": "#2d70a8",
+  "water_deep_hl": "#5cb8d8",
+  "water_deep_base": "#3484bc",
+  "water_deep_shade": "#2a62a0",
+  "water_deep_deep": "#244a80",
+  "snow_hl": "#ffffff",
+  "snow_base": "#eef4fb",
+  "snow_shade": "#cdd9ec",
+  "snow_deep": "#9fb0cf",
+  "wood_hl": "#f0b878",
+  "wood_base": "#d08c52",
+  "wood_shade": "#a2633a",
+  "wood_deep": "#74432c",
+  "wood_dark_hl": "#b07850",
+  "wood_dark_base": "#87563a",
+  "wood_dark_shade": "#61402e",
+  "wood_dark_deep": "#432c24",
+  "thatch_hl": "#ffe08a",
+  "thatch_base": "#f0c060",
+  "thatch_shade": "#cc9440",
+  "thatch_deep": "#94662e",
+  "brick_hl": "#f0a080",
+  "brick_base": "#d0705a",
+  "brick_shade": "#a24e46",
+  "brick_deep": "#743838",
+  "iron_hl": "#e8f0f4",
+  "iron_base": "#b4c2cc",
+  "iron_shade": "#7e8ea0",
+  "iron_deep": "#56637a",
+  "gold_hl": "#fff2a8",
+  "gold_base": "#ffd45a",
+  "gold_shade": "#e0a032",
+  "gold_deep": "#a8702a",
+  "glass_hl": "#e8fbff",
+  "glass_base": "#a8e4f4",
+  "glass_shade": "#6cbcd8",
+  "glass_deep": "#4a8ab0",
+  "zomb_mint_hl": "#c8f5c8",
+  "zomb_mint_base": "#94dca8",
+  "zomb_mint_shade": "#62b48e",
+  "zomb_mint_deep": "#3f8676",
+  "zomb_teal_hl": "#b4f0e4",
+  "zomb_teal_base": "#74d0c4",
+  "zomb_teal_shade": "#45a8a6",
+  "zomb_teal_deep": "#2e7a84",
+  "zomb_lilac_hl": "#e4d4ff",
+  "zomb_lilac_base": "#bba4f0",
+  "zomb_lilac_shade": "#8f78cc",
+  "zomb_lilac_deep": "#65539e",
+  "pumpkin_hl": "#ffc879",
+  "pumpkin_base": "#ff9a3c",
+  "pumpkin_shade": "#e0702a",
+  "pumpkin_deep": "#a8471f",
+  "carrot_hl": "#ffb070",
+  "carrot_base": "#ff8436",
+  "carrot_shade": "#de5e2a",
+  "carrot_deep": "#a8402a",
+  "copper_hl": "#ffc89a",
+  "copper_base": "#e08a58",
+  "copper_shade": "#b8613e",
+  "copper_deep": "#84422f",
+  "patina_hl": "#b8f0d8",
+  "patina_base": "#6fd0b0",
+  "patina_shade": "#45a890",
+  "patina_deep": "#2f7a72",
+  "clay_hl": "#f2b49a",
+  "clay_base": "#d98770",
+  "clay_shade": "#b0614f",
+  "clay_deep": "#7f4440",
+  "hide_hl": "#f2d0a4",
+  "hide_base": "#d6a876",
+  "hide_shade": "#ad7f55",
+  "hide_deep": "#7e5a40",
+  "slate_hl": "#a8b4d0",
+  "slate_base": "#7c88ac",
+  "slate_shade": "#5a6488",
+  "slate_deep": "#3f4666",
+  "metal_teal_hl": "#b4e4e0",
+  "metal_teal_base": "#7cbcbc",
+  "metal_teal_shade": "#538f98",
+  "metal_teal_deep": "#3a6474",
+  "fur_orange_hl": "#ffcf94",
+  "fur_orange_base": "#f6a056",
+  "fur_orange_shade": "#d47638",
+  "fur_orange_deep": "#9c5030",
+  "fur_brown_hl": "#e0b08a",
+  "fur_brown_base": "#b88262",
+  "fur_brown_shade": "#8e5e48",
+  "fur_brown_deep": "#644236",
+  "frog_hl": "#d4f58c",
+  "frog_base": "#9ed65a",
+  "frog_shade": "#6fae44",
+  "frog_deep": "#4a8038",
+  "chick_hl": "#fff8c4",
+  "chick_base": "#ffe680",
+  "chick_shade": "#f2c444",
+  "chick_deep": "#c4902e",
+  "fire_hl": "#fff6c2",
+  "fire_base": "#ffd04a",
+  "fire_shade": "#ff8a2a",
+  "fire_deep": "#e8492e",
+  "glow_hl": "#ffffe0",
+  "glow_base": "#fff3a0",
+  "glow_shade": "#d4f07a",
+  "glow_deep": "#9fd060",
+  "eerie_hl": "#e8fff8",
+  "eerie_base": "#9ffff0",
+  "eerie_shade": "#5ce0d8",
+  "eerie_deep": "#2fa8b0",
+  "smoke_hl": "#f4f0f4",
+  "smoke_base": "#d4ccd8",
+  "smoke_shade": "#a89cb4",
+  "smoke_deep": "#7a6e8c"
+ }
+}

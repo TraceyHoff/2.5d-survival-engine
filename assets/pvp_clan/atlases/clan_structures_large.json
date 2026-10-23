@@ -1,0 +1,425 @@
+{
+ "frames": {
+  "clan_hall_door/damage0/r0": {
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 0
+  },
+  "clan_hall_door/damage0/r1": {
+   "frame": {
+    "x": 160,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 1
+  },
+  "clan_hall_door/damage1/r0": {
+   "frame": {
+    "x": 320,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 2
+  },
+  "clan_hall_door/damage1/r1": {
+   "frame": {
+    "x": 480,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 3
+  },
+  "clan_hall_door/damage2/r0": {
+   "frame": {
+    "x": 640,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 4
+  },
+  "clan_hall_door/damage2/r1": {
+   "frame": {
+    "x": 800,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 5
+  },
+  "clan_hall_door/damage3/r0": {
+   "frame": {
+    "x": 0,
+    "y": 256,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 6
+  },
+  "clan_hall_door/damage3/r1": {
+   "frame": {
+    "x": 160,
+    "y": 256,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 7
+  },
+  "watchtower/damage0/r0": {
+   "frame": {
+    "x": 320,
+    "y": 256,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 8
+  },
+  "watchtower/damage0/r1": {
+   "frame": {
+    "x": 480,
+    "y": 256,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 9
+  },
+  "watchtower/damage1/r0": {
+   "frame": {
+    "x": 640,
+    "y": 256,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 10
+  },
+  "watchtower/damage1/r1": {
+   "frame": {
+    "x": 800,
+    "y": 256,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 11
+  },
+  "watchtower/damage2/r0": {
+   "frame": {
+    "x": 0,
+    "y": 512,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 12
+  },
+  "watchtower/damage2/r1": {
+   "frame": {
+    "x": 160,
+    "y": 512,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 13
+  },
+  "watchtower/damage3/r0": {
+   "frame": {
+    "x": 320,
+    "y": 512,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 14
+  },
+  "watchtower/damage3/r1": {
+   "frame": {
+    "x": 480,
+    "y": 512,
+    "w": 160,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 256
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.96875
+   },
+   "index": 15
+  }
+ },
+ "meta": {
+  "app": "pvp_clan/tools (procedural)",
+  "version": "1.0",
+  "image": "clan_structures_large.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 960,
+   "h": 768
+  },
+  "scale": "1",
+  "grid": {
+   "frameW": 160,
+   "frameH": 256,
+   "columns": 6,
+   "rows": 3,
+   "firstRow": 0,
+   "margin": 2
+  },
+  "emissive": null,
+  "tintmask": "clan_structures_large_tintmask.png"
+ }
+}

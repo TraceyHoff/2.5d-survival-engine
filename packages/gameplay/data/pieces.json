@@ -153,7 +153,9 @@
       "tiered": true,
       "costScale": 1.0,
       "hp": 250,
-      "blocksPath": true
+      "blocksPath": true,
+      "variants": 4,
+      "$variants": "0 plain, 1 wall_clan_wood, 2 wall_clan_stone, 3 wall_clan_palisade (art only; stats per material tier)"
     },
     {
       "key": "wall_low",
@@ -775,6 +777,250 @@
         "listings": 24,
         "clanOnly": true
       }
+    },
+    {
+      "key": "fireplace",
+      "placement": "free",
+      "layer": 2,
+      "tier": 2,
+      "hp": 700,
+      "ground": true,
+      "fired": true,
+      "heat": 22,
+      "heatRadius": 5,
+      "light": true,
+      "container": 4,
+      "footprint": {
+        "w": 2,
+        "h": 1
+      },
+      "cost": [
+        {
+          "resource": "stone_brick",
+          "amount": 16
+        },
+        {
+          "resource": "mortar",
+          "amount": 6
+        }
+      ]
+    },
+    {
+      "key": "wood_stove",
+      "placement": "free",
+      "layer": 2,
+      "tier": 3,
+      "hp": 500,
+      "ground": true,
+      "station": "campfire",
+      "fired": true,
+      "heat": 16,
+      "heatRadius": 4,
+      "light": true,
+      "container": 4,
+      "cost": [
+        {
+          "resource": "iron_plate",
+          "amount": 6
+        },
+        {
+          "resource": "nails",
+          "amount": 4
+        }
+      ]
+    },
+    {
+      "key": "windsock",
+      "placement": "free",
+      "layer": 3,
+      "tier": 1,
+      "hp": 40,
+      "ground": true,
+      "features": {
+        "windsock": true
+      },
+      "cost": [
+        {
+          "resource": "sticks",
+          "amount": 4
+        },
+        {
+          "resource": "cloth",
+          "amount": 2
+        }
+      ]
+    },
+    {
+      "key": "banner_wall",
+      "placement": "edge",
+      "layer": 3,
+      "tier": 1,
+      "hp": 40,
+      "solid": false,
+      "paintable": true,
+      "features": {
+        "clanTint": true
+      },
+      "cost": [
+        {
+          "resource": "cloth",
+          "amount": 3
+        },
+        {
+          "resource": "sticks",
+          "amount": 2
+        }
+      ]
+    },
+    {
+      "key": "barricade_spiked",
+      "placement": "free",
+      "layer": 1,
+      "tier": 1,
+      "hp": 500,
+      "ground": true,
+      "blocksPath": true,
+      "features": {
+        "contact": {
+          "dps": 8,
+          "radius": 0.9,
+          "slowMul": 0.5,
+          "slowSeconds": 1.5
+        }
+      },
+      "cost": [
+        {
+          "resource": "wood",
+          "amount": 12
+        },
+        {
+          "resource": "sticks",
+          "amount": 10
+        },
+        {
+          "resource": "rope",
+          "amount": 2
+        }
+      ]
+    },
+    {
+      "key": "raid_bell",
+      "placement": "free",
+      "layer": 2,
+      "tier": 2,
+      "hp": 300,
+      "ground": true,
+      "features": {
+        "alarm": {
+          "radius": 20,
+          "cooldownSeconds": 30
+        }
+      },
+      "cost": [
+        {
+          "resource": "bronze_ingot",
+          "amount": 4
+        },
+        {
+          "resource": "planks",
+          "amount": 4
+        },
+        {
+          "resource": "rope",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "key": "gate_clan",
+      "placement": "free",
+      "layer": 1,
+      "tier": 3,
+      "hp": 1500,
+      "footprint": {
+        "w": 2,
+        "h": 1
+      },
+      "door": true,
+      "blocksPath": true,
+      "features": {
+        "breachAt": 0.25,
+        "clanLock": true
+      },
+      "cost": [
+        {
+          "resource": "iron_plate",
+          "amount": 10
+        },
+        {
+          "resource": "hardwood_planks",
+          "amount": 12
+        },
+        {
+          "resource": "nails",
+          "amount": 12
+        }
+      ]
+    },
+    {
+      "key": "clan_hall_door",
+      "placement": "free",
+      "layer": 1,
+      "tier": 3,
+      "hp": 1200,
+      "footprint": {
+        "w": 2,
+        "h": 1
+      },
+      "door": true,
+      "blocksPath": true,
+      "features": {
+        "clanLock": true
+      },
+      "cost": [
+        {
+          "resource": "iron_plate",
+          "amount": 8
+        },
+        {
+          "resource": "hardwood_planks",
+          "amount": 10
+        },
+        {
+          "resource": "nails",
+          "amount": 8
+        }
+      ]
+    },
+    {
+      "key": "watchtower",
+      "placement": "free",
+      "layer": 1,
+      "tier": 2,
+      "hp": 900,
+      "footprint": {
+        "w": 2,
+        "h": 2
+      },
+      "levels": 3,
+      "ground": true,
+      "features": {
+        "sightBonus": 12
+      },
+      "cost": [
+        {
+          "resource": "hardwood_planks",
+          "amount": 30
+        },
+        {
+          "resource": "rope",
+          "amount": 6
+        },
+        {
+          "resource": "nails",
+          "amount": 10
+        }
+      ]
     }
   ]
 }

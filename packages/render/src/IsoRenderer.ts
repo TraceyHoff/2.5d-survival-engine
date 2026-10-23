@@ -38,6 +38,7 @@ import { DEFAULT_STYLE, mergeStyle, type StyleConfig, type StylePatch } from "./
 import { readDayFraction, readWeather, readWind } from "./env.js";
 import type { TransformSource } from "./transformSource.js";
 import { VfxLayer } from "./vfx.js";
+import { BurningFx } from "./burning.js";
 import type { Renderer } from "./types.js";
 
 export interface IsoRendererOptions {
@@ -68,6 +69,8 @@ export class IsoRenderer implements Renderer {
   readonly settings: RenderSettings = { lights: true, shadows: true, weather: true, fog: true };
   readonly weatherState = new WeatherState();
   readonly vfx = new VfxLayer();
+  /** Burning -> fire/ember/smoke VFX (keys in burning.cfg). */
+  readonly burning = new BurningFx();
   style: StyleConfig;
   stats: FrameStats = newStats();
   lighting: DayLighting = computeDayLighting(0.5);
@@ -108,6 +111,8 @@ export class IsoRenderer implements Renderer {
 
   private terrain: TilemapRenderer;
   private sprites: SpriteBatch;
+  /** debug counters of held-item drawing: [with item, with hand anchor, drawn] */
+  get heldStats(): readonly number[] { return this.sprites.heldStats; }
   private lights: LightPass;
   private composite: CompositePass;
   private weather: WeatherPass;
@@ -245,6 +250,7 @@ export class IsoRenderer implements Renderer {
     const gl = this.gl; const style = this.style;
     if (this.w === 0) this.resize(this.canvas.clientWidth || 800, this.canvas.clientHeight || 600, 1);
     this.vfx.update(this.time); this.statusDt = dt;
+    if (this.bindings.burning) this.burning.update(world, this.bindings.burning, this.bindings.buildPiece, this.atlas, this.vfx, this.time, dt);
 
     // --- 0. prep ---------------------------------------------------------------------------
     const dayFrac = readDayFraction(world);

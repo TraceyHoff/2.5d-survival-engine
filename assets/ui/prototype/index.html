@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Cozy Camp UI prototype: HUD + inventory (DOM/CSS overlay)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="proto.css">
+</head><body>
+<!-- Stand-in for the engine's WebGL canvas. The UI overlay sits above it with pointer-events only on widgets. -->
+<div id="game"></div>
+<div id="ui" class="ui-root" data-ui-scale="1">
+  <section class="hud-vitals plaque" aria-label="Vitals">
+    <header><span data-bind="{player.name}"></span><span class="lv">Lv <b data-bind="{player.xp.level}"></b></span></header>
+    <div class="vital" data-vital="health"><i class="ico" style="--f:url(../atlas/frames/vital_health.png)"></i><div class="bar"><div class="fill"></div></div><b class="num"></b></div>
+    <div class="vital" data-vital="hunger"><i class="ico" style="--f:url(../atlas/frames/vital_hunger.png)"></i><div class="bar"><div class="fill"></div></div><b class="num"></b></div>
+    <div class="vital" data-vital="thirst"><i class="ico" style="--f:url(../atlas/frames/vital_thirst.png)"></i><div class="bar"><div class="fill"></div></div><b class="num"></b></div>
+    <div class="vital" data-vital="stamina"><i class="ico" style="--f:url(../atlas/frames/vital_stamina.png)"></i><div class="bar"><div class="fill"></div></div><b class="num"></b></div>
+    <div class="vital" data-vital="temperature"><i class="ico" style="--f:url(../atlas/frames/vital_temp.png)"></i><div class="bar temp"><div class="marker"></div></div><b class="num"></b></div>
+  </section>
+  <section class="hud-clock plaque"><i class="ico" style="--f:url(../atlas/frames/ic_sun.png)"></i><span>Day <b data-bind="{world.time.day}"></b></span><b class="clock"></b></section>
+  <div class="hud-minimap"><div class="map"></div><img src="../atlas/frames/minimap_frame.png" alt=""><img class="me" src="../atlas/frames/minimap_player.png" alt=""></div>
+  <section class="hud-hotbar plaque" aria-label="Hotbar"></section>
+  <nav class="hud-keys"><span><kbd>Tab</kbd>Backpack</span><span><kbd>1</kbd>–<kbd>8</kbd>Select</span><span><kbd>Space</kbd>Use</span></nav>
+
+  <section class="window inv" hidden role="dialog" aria-labelledby="inv-title">
+    <h2 class="ribbon" id="inv-title">Backpack</h2>
+    <button class="close" aria-label="Close" data-action="ui.close"></button>
+    <div class="paper">
+      <div class="grid"></div>
+      <div class="weight"><i class="ico sm" style="--f:url(../atlas/frames/ic_weight.png)"></i><span class="w"></span><div class="bar thin"><div class="fill"></div></div></div>
+      <p class="hint"><kbd>Shift</kbd>+click to quick-move · <kbd>RMB</kbd> split · drag to hotbar</p>
+    </div>
+  </section>
+  <div class="tooltip" hidden></div>
+  <div class="toasts" aria-live="polite"></div>
+</div>
+<script type="module" src="proto.js"></script>
+</body></html>

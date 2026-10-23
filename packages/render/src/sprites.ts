@@ -21,7 +21,9 @@ import type { StyleConfig } from "./style.js";
 import type { TransformSource } from "./transformSource.js";
 import type { VfxLayer } from "./vfx.js";
 
-export const INSTANCE_FLOATS = 32;
+export const INSTANCE_FLOATS = 36;
+/** Depth offset of held items vs the body (must exceed depth-key precision; < the next tile row). */
+const HELD_BIAS = 0.05;
 const OPEN = 1e5;
 
 /** Gameplay-owned components the renderer reads (schemas as agreed with Survival Systems). */
@@ -36,6 +38,12 @@ export interface GameplayBindings {
   wetness?: WetnessDefT;
   /** BodyTemp {cold, heat u8; shivering 0/1}: shivering gates the shiver, cold scales it and drives the frost rim, heat drives flush. */
   bodyTemp?: BodyTempDefT;
+  /** gameplay Burning {lit, intensity 0-255, startTick} on build pieces: fire/ember/smoke VFX (see burning.ts). */
+  burning?: ComponentDef<{ lit: "u8"; intensity: "u8"; startTick: "u32" }>;
+  /** gameplay Equipment {mainHandItem u16 (0 = empty)}: the item is drawn at the character frame's hand anchor (Art `<atlas>.hands.json`). */
+  equipment?: ComponentDef<{ mainHandItem: "u16" }>;
+  /** Item id -> held sprite id (`held_<item key>` in the `held` atlas); undefined = draw nothing. */
+  heldSprite?: (itemId: number) => number | undefined;
   /** Exhaustion {level u8 0..255}: drives the `exhausted` status tint (SpriteDef.tints / render_tuning). */
   exhausted?: ComponentDef<{ level: "u8" }>;
   /** core Emitter {kind, radius, strength, falloff} (kinds mapped by the emitter table). */
@@ -54,6 +62,7 @@ layout(location=4) in vec4 aE; // shadowAlpha, ghost, damageOverlay, shadowWidth
 layout(location=5) in vec4 aF; // wet 0..1, cold 0..1, shivering 0/1, heat 0..1
 layout(location=6) in vec4 aG; // sway amp (px), freq (Hz), stiffness, occlusion 0..1
 layout(location=7) in vec4 aH; // secondary tint rgb (tintmask G; 0 = none), exhausted 0..1
+layout(location=8) in vec4 aI; // rotation (radians, screen, around the pivot; held items), unused x3
 ${GLSL_COMMON}
 uniform highp sampler2D uFrames;
 uniform float uZPerPx, uHH, uTime, uWind, uOutline;
@@ -103,7 +112,9 @@ void main() {
   } else if ((flags & 4) != 0) px += sin(uTime * 1.6 + aB.z * 6.283) * uWind * max(hp, 0.0) * 0.05;
   if (aF.z > 0.5) px += sin(uTime * 52.0 + aB.z * 40.0) * (0.4 + 1.4 * aF.y) * s; // shiver
   vUv = vec3(mix(uvr.xy, uvr.zw, vec2(x / dim.x, y / dim.y)), dim.z);
-  vec2 iso = aA.xy + vec2(px, -hp); vScr = iso;
+  vec2 off = vec2(px, -hp);
+  if (aI.x != 0.0) { float cr = cos(aI.x), sr = sin(aI.x); off = vec2(cr * off.x - sr * off.y, sr * off.x + cr * off.y); }
+  vec2 iso = aA.xy + off; vScr = iso;
   float key = (flags & 8) != 0 ? aA.z + 0.01 - hp / uHH : aA.z + 0.02 + max(hp + aD.w, 0.0) * uZPerPx;
   gl_Position = vec4(isoToClip(iso), keyToNdc(key), 1.0);
 }`;
@@ -271,7 +282,7 @@ export class SpriteBatch {
   private makeVao(vbo: WebGLBuffer): WebGLVertexArrayObject {
     const gl = this.gl; const vao = gl.createVertexArray()!;
     gl.bindVertexArray(vao); gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-    for (let a = 0; a < 8; a++) { gl.enableVertexAttribArray(a); gl.vertexAttribPointer(a, 4, gl.FLOAT, false, INSTANCE_FLOATS * 4, a * 16); gl.vertexAttribDivisor(a, 1); }
+    for (let a = 0; a < 9; a++) { gl.enableVertexAttribArray(a); gl.vertexAttribPointer(a, 4, gl.FLOAT, false, INSTANCE_FLOATS * 4, a * 16); gl.vertexAttribDivisor(a, 1); }
     gl.bindVertexArray(null);
     return vao;
   }
@@ -319,8 +330,28 @@ export class SpriteBatch {
     if (tint === 0) { o[12] = 1; o[13] = 1; o[14] = 1; } else { o[12] = ((tint >>> 24) & 255) / 255; o[13] = ((tint >>> 16) & 255) / 255; o[14] = ((tint >>> 8) & 255) / 255; }
     o[15] = footDy;
     o[16] = shadowA; o[17] = ghost; o[18] = dmgOverlay; o[19] = shadowW;
-    o.fill(0, 20, 32);
+    o.fill(0, 20, 36);
     return o;
+  }
+
+  private heldRes = newResolved();
+  /** debug: held items [with item, with hand anchor, drawn] since start */
+  readonly heldStats = [0, 0, 0];
+  /**
+   * Held item: pivot (grip) at the hand anchor of the character's current frame, rotated by the anchor angle, sorted just
+   * behind / in front of the character, mirrored with the character's flipX. No anchor for the frame = not drawn.
+   */
+  private emitHeld(atlas: AtlasManager, heldOf: (item: number) => number | undefined, item: number, body: ResolvedFrame, sx: number, sy: number, key: number,
+    scale: number, facing: number, flip: boolean, fade: number, occT: number, mode: "fade" | "dither"): void {
+    if (!item) return; const hid = heldOf(item); if (hid === undefined) return; this.heldStats[0]++;
+    const h = atlas.handAt(body.entry); if (!h) return; this.heldStats[1]++;
+    const r = this.heldRes; if (!atlas.resolve(hid, 0, facing, 0, 0, r)) return; this.heldStats[2]++;
+    const m = flip ? -1 : 1;
+    const hx = sx + (h.x - body.ax) * scale * m, hy = sy + (h.y - body.ay) * scale;
+    const o = this.writeOne(hx, hy, key + (h.behind ? -HELD_BIAS : HELD_BIAS), scale, r, (flip ? SpriteFlag.FlipX : 0) | SpriteFlag.NoOutline, 0, fade, -OPEN, OPEN, 0, 0, 0, 0, 0, 0);
+    // anchor (pivot) height above the body pivot keeps the item's depth on the body's column
+    o[15] = (body.ay - h.y) * scale; o[32] = (h.angle * Math.PI / 180) * m; o[27] = occT;
+    this.pushOcc(o, 0, occT, mode);
   }
 
   /** CPU phase: gather, interpolate, resolve, cull, sort. */
@@ -335,6 +366,7 @@ export class SpriteBatch {
     const wet = cx.bindings.wetness ? world.store(cx.bindings.wetness) : null;
     const bt = cx.bindings.bodyTemp ? world.store(cx.bindings.bodyTemp) : null;
     const exh = cx.bindings.exhausted ? world.store(cx.bindings.exhausted) : null;
+    const eq = cx.bindings.equipment ? world.store(cx.bindings.equipment) : null; const heldOf = cx.bindings.heldSprite;
     const t2s = world.isRegistered(TintSecondary) ? world.store(TintSecondary) : null;
     const hw = this.iso.tileW / 2, hh = this.iso.tileH / 2, zs = this.iso.zStep, zf = this.zFactor;
     const margin = 256;
@@ -430,6 +462,7 @@ export class SpriteBatch {
       o0[27] = occT;
       if (e === this.focusEntity && occ.silhouette) { this.silInst.set(o0.subarray(0, INSTANCE_FLOATS)); this.silInst[27] = 0; this.silOn = true; }
       this.pushOcc(o0, 0, occT, occ.mode);
+      if (eq && heldOf) { const s2 = eq.slot(i); if (s2 >= 0) this.emitHeld(atlas, heldOf, eq.data.mainHandItem[s2]!, res, sx, sy, key, scale, f, (sp.data.flags[k]! & SpriteFlag.FlipX) !== 0, fade, occT, occ.mode); }
     };
     if (cx.spatial) {
       // chunk-level culling through the shared spatial index
@@ -445,8 +478,9 @@ export class SpriteBatch {
       const sx = (v.x - v.y) * hw, sy = (v.x + v.y) * hh - v.z * zs;
       if (sx < r0x || sx > r1x || sy < r0y || sy > r1y) continue;
       if (!atlas.resolve(v.spriteId, v.anim, v.facing, cx.now - v.born, 0, res)) continue;
-      const fadeOut = Math.min(1, (v.lifetime - (cx.now - v.born)) / 0.15);
-      this.push(this.writeOne(sx, sy, v.x + v.y + v.z * zf + 0.05, v.scale, res, (v.emissive ? SpriteFlag.Emissive : 0) | SpriteFlag.NoOutline, 0, fadeOut, -OPEN, OPEN, 0, 0, 0, 0, 0, 0), 0);
+      const life = Math.min(1, (cx.now - v.born) / Math.max(1e-3, v.lifetime));
+      const fadeOut = v.fade ? 1 - life : Math.min(1, (v.lifetime - (cx.now - v.born)) / 0.15);
+      this.push(this.writeOne(sx, sy, v.x + v.y + v.z * zf + 0.05, v.scale * (v.s0 + (v.s1 - v.s0) * life), res, (v.emissive ? SpriteFlag.Emissive : 0) | SpriteFlag.NoOutline, 0, fadeOut, -OPEN, OPEN, 0, 0, 0, 0, 0, 0), 0);
     }
 
     // ---- build pieces ----
@@ -481,7 +515,7 @@ export class SpriteBatch {
     const res = this.res;
     // cutaway region from BuildingGrid: tiles of the building the focus entity stands in
     const playerLevel = hasFocus ? terrainZToFloor(fwz, Math.max(0, cx.groundZAt?.(Math.floor(fwx), Math.floor(fwy)) ?? 0)) : 0;
-    const cut = hasFocus && cx.grid ? cutawayRegion(cx.grid, Math.floor(fwx), Math.floor(fwy), playerLevel) : null;
+    const cut = hasFocus && cx.grid ? cutawayRegion(cx.grid, Math.floor(fwx), Math.floor(fwy), playerLevel, 600, (sid) => atlas.isRoof(sid)) : null;
     this.cutawayActive = !!cut;
     const scratch = this.staticScratch; for (const v of scratch.values()) v.length = 0;
     const checksums = new Map<string, number>();
@@ -494,11 +528,13 @@ export class SpriteBatch {
       const info = atlas.pieceInfo(vis);
       const fw = info ? (rot & 1 ? info.fh : info.fw) : 1, fh = info ? (rot & 1 ? info.fw : info.fh) : 1;
       const ax = Math.floor(tr.data.x[ts]!), ay = Math.floor(tr.data.y[ts]!);
+      const roof = atlas.isRoof(vis);
+      // roofs are deck-layer (0) pieces placed on the level above the walls and drawn from that level's floor (= wall top)
       const z = floorToTerrainZ(level, tr.data.z[ts]!);
-      const cutaway = !!cut && (layer === 3 || level > playerLevel) && footprintHits(cut, ax, ay, fw, fh);
+      const cutaway = !!cut && (level > playerLevel || (roof && level === playerLevel)) && footprintHits(cut, ax, ay, fw, fh);
       // occlusion (walls etc. not in cutaway): a hit, or a still-fading piece, is drawn dynamically this frame
       let occT = 0;
-      if (!cutaway && !flatLayer(layer, info?.layer) && this.occ.occOn) {
+      if (!cutaway && !flatLayer(layer, roof) && this.occ.occOn) {
         const bottom = (ax + ay + fw + fh) * hh - z * zs; // front footprint corner
         const pivotY = cx.pieceAnchor === "front" ? bottom : (ax + ay + (fw + fh) / 2) * hh - z * zs;
         const top = pivotY - res.ay; const left = (ax - (ay + fh)) * hw, right = (ax + fw - ay) * hw;
@@ -513,10 +549,10 @@ export class SpriteBatch {
       const fx = ax + fw, fy = ay + fh;
       const pvx = cx.pieceAnchor === "front" ? fx : ax + fw / 2, pvy = cx.pieceAnchor === "front" ? fy : ay + fh / 2;
       const sx = (pvx - pvy) * hw, sy = (pvx + pvy) * hh - z * zs;
-      const flat = flatLayer(layer, info?.layer); // floors, and roofs drawn with floor-type (flat) sprites
+      const flat = flatLayer(layer, roof); // deck pieces (floors/foundations), never roofs
       const flags = (flat ? SpriteFlag.Flat : 0) | (res.flipX ? SpriteFlag.FlipX : 0);
       const dmgOverlay = dmg > 0 && !res.hasDamageFrames ? dmg : 0;
-      const bias = layer * 0.01;
+      const bias = roof ? 0.05 : layer * 0.01; // roofs above every other layer of the cell
       tmp.length = 0;
       // per-column slices: columns c = x - y over the footprint
       const cMin = ax - (fy - 1), cMax = (fx - 1) - ay;
@@ -670,8 +706,15 @@ export class SpriteBatch {
   }
 }
 
-/** Floors (layer 0) and roofs drawn with floor-type sprites are flat. */
-const flatLayer = (layer: number, spriteLayer: number | undefined): boolean => layer === 0 || spriteLayer === 0;
+/**
+ * Deck layer (floors, foundations; gameplay building/structure.ts LAYER_DECK, world BuildingGrid layer 0). Roofs share
+ * that layer but are not flat, so they are told apart by sprite (AtlasManager.isRoof), never by a layer number.
+ * TODO(world): import a named layer enum once @engine/world exports one.
+ */
+export let PIECE_LAYER_DECK = 0;
+/** Override the deck layer index (inject gameplay's LAYER_DECK). */
+export function setPieceLayers(l: { deck: number }): void { PIECE_LAYER_DECK = l.deck; }
+const flatLayer = (layer: number, roof: boolean): boolean => layer === PIECE_LAYER_DECK && !roof;
 
 /** Chunk keys whose tiles may project into the iso rect (tile box from inverted rect corners). */
 export function visibleChunkKeys(rect: Rect, hw: number, hh: number, zs: number, maxZ: number): string[] {
@@ -692,13 +735,20 @@ export function visibleChunkKeys(rect: Rect, hw: number, hh: number, zs: number,
 }
 
 /** Set of packed tile keys ("x,y") forming the building the focus stands in, or null when not under a roof/upper floor. */
-export function cutawayRegion(grid: BuildingGrid, tx: number, ty: number, level: number, maxTiles = 600): Set<string> | null {
+export function cutawayRegion(grid: BuildingGrid, tx: number, ty: number, level: number, maxTiles = 600, isRoofSprite: (spriteId: number) => boolean = () => false): Set<string> | null {
+  // anything on a higher level (roofs included: deck pieces of level+1) covers the tile; isRoofSprite is kept for
+  // roof pieces gameplay places on the walls' own level
+  const roofAt = (x: number, y: number): boolean => {
+    const id = grid.at(x, y, level, PIECE_LAYER_DECK); if (!id) return false;
+    const inst = grid.get(id); if (!inst) return false; const sp = grid.pieces.get(inst.piece).sprite;
+    return (sp !== undefined && isRoofSprite(sp)) || grid.pieces.get(inst.piece).key.startsWith("roof");
+  };
   const covered = (x: number, y: number): boolean => {
     for (let lv = level + 1; lv < 16; lv++) if (grid.at(x, y, lv) !== 0) return true;
-    return grid.at(x, y, level, 3) !== 0;
+    return roofAt(x, y);
   };
   if (!covered(tx, ty)) return null;
-  const inside = (x: number, y: number): boolean => covered(x, y) || grid.at(x, y, level, 0) !== 0;
+  const inside = (x: number, y: number): boolean => covered(x, y) || grid.at(x, y, level, PIECE_LAYER_DECK) !== 0;
   const seen = new Set<string>(); const q: [number, number][] = [[tx, ty]]; seen.add(`${tx},${ty}`);
   while (q.length && seen.size < maxTiles) {
     const [x, y] = q.shift()!;

@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { loadManifest, CATEGORIES } from "../src/index.js";
 
-// Real art pack (Cozy-Wild wave 1). Source of truth: /workspace/assets (tools/build_all.py).
+// Real art pack (Cozy-Wild wave 1). Source of truth: assets/ (repo root) (tools/build_all.py).
 const dir = fileURLToPath(new URL("../pack/", import.meta.url));
 const sampleDir = fileURLToPath(new URL("../sample/", import.meta.url));
 const pack = JSON.parse(readFileSync(dir + "manifest.json", "utf8"));

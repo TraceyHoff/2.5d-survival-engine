@@ -92,6 +92,13 @@ export interface PieceDef extends BuildPieceDef, Visual {
   readonly privilegeRadius: number; readonly paintable: boolean; readonly variants: number; readonly spoilMul: number;
   /** Trade stall: listing slots (= stock Container slots) and whether only a clan may own it. null = not a stall. */
   readonly stall: { readonly listings: number; readonly clanOnly: boolean } | null;
+  /** Feature data (windsock, contact damage, alarm, gate breach, clan lock, sight bonus); {} when none. */
+  readonly features: PieceFeatures;
+}
+export interface PieceFeatures {
+  readonly windsock?: boolean; readonly clanTint?: boolean; readonly clanLock?: boolean; readonly breachAt?: number; readonly sightBonus?: number;
+  readonly contact?: { readonly dps: number; readonly radius: number; readonly slowMul: number; readonly slowSeconds: number };
+  readonly alarm?: { readonly radius: number; readonly cooldownSeconds: number };
 }
 export interface ZombieDef extends Visual {
   readonly id: number; readonly key: string; readonly hp: number; readonly speed: number; readonly damage: number; readonly structureDamage: number;
@@ -157,6 +164,7 @@ export interface RawPiece extends RawVisual {
   supportsAbove?: boolean; roof?: boolean; blocksPath?: boolean; opening?: string; fits?: string; door?: boolean; station?: string;
   fired?: boolean; heat?: number; heatRadius?: number; light?: boolean; container?: number; privilegeRadius?: number; paintable?: boolean; variants?: number; spoilMul?: number;
   stall?: { listings: number; clanOnly?: boolean };
+  features?: PieceFeatures;
 }
 export interface RawZombie extends RawVisual { key: string; hp: number; speed: number; damage: number; structureDamage: number; attackRange: number; attackCooldownSeconds: number; sightRange: number; hearingMul: number; variants: number }
 export interface RawDefs {
@@ -298,7 +306,7 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
       opening: p.opening ? enumOf(OPENING, p.opening, `${where}.opening`) : 0, fits: p.fits ? enumOf(OPENING, p.fits, `${where}.fits`) : 0,
       door: p.door ?? false, station, fired: p.fired ?? false, heat: p.heat ?? 0, heatRadius: p.heatRadius ?? 0, light: p.light ?? false,
       container: p.container ?? 0, privilegeRadius: p.privilegeRadius ?? 0, paintable: p.paintable ?? false, variants: Math.max(1, p.variants ?? 1), spoilMul: p.spoilMul ?? 1,
-      stall: p.stall ? { listings: p.stall.listings, clanOnly: p.stall.clanOnly ?? false } : null,
+      stall: p.stall ? { listings: p.stall.listings, clanOnly: p.stall.clanOnly ?? false } : null, features: p.features ?? {},
     });
     if (p.stall && (p.stall.listings !== (p.container ?? 0))) err(`${where}.stall.listings must equal container`);
   }

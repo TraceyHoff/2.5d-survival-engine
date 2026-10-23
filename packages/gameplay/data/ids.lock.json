@@ -149,7 +149,16 @@
     "clan_pavilion": 36,
     "stall_blanket": 37,
     "stall_booth": 38,
-    "stall_cart": 39
+    "stall_cart": 39,
+    "banner_wall": 40,
+    "barricade_spiked": 41,
+    "clan_hall_door": 42,
+    "fireplace": 43,
+    "gate_clan": 44,
+    "raid_bell": 45,
+    "watchtower": 46,
+    "windsock": 47,
+    "wood_stove": 48
   },
   "zombies": {
     "zombie_brute": 1,

@@ -1,0 +1,359 @@
+{
+ "$comment": "Typed fields for the MAIN pack's own entries (engine 0b9e0c8, ARCHITECTURE \u00a713). Merge key-by-key into /workspace/assets/manifest.json: atlases[].masks (shallow-merge), sprites[].sway / sprites[].tints. Mask pages are written next to each atlas by survival_fx/tools/make_sheen_mask.py and make_sway_mask.py (default output dir = the atlas's folder) during the main-pack build. Tint strength = value at max status level; scale linearly at runtime.",
+ "atlases": [
+  {
+   "key": "characters",
+   "masks": {
+    "sheen": "atlases/characters_sheen.png"
+   }
+  },
+  {
+   "key": "characters_b",
+   "masks": {
+    "sheen": "atlases/characters_b_sheen.png"
+   }
+  },
+  {
+   "key": "characters_c",
+   "masks": {
+    "sheen": "atlases/characters_c_sheen.png"
+   }
+  },
+  {
+   "key": "zombies",
+   "masks": {
+    "sheen": "atlases/zombies_sheen.png"
+   }
+  },
+  {
+   "key": "zombies_brute",
+   "masks": {
+    "sheen": "atlases/zombies_brute_sheen.png"
+   }
+  },
+  {
+   "key": "zombies_runner",
+   "masks": {
+    "sheen": "atlases/zombies_runner_sheen.png"
+   }
+  },
+  {
+   "key": "zombies_mummy",
+   "masks": {
+    "sheen": "atlases/zombies_mummy_sheen.png"
+   }
+  },
+  {
+   "key": "zombies_pumpkin",
+   "masks": {
+    "sheen": "atlases/zombies_pumpkin_sheen.png"
+   }
+  },
+  {
+   "key": "resources_tall",
+   "masks": {
+    "sway": "atlases/resources_tall_sway.png"
+   }
+  },
+  {
+   "key": "resources",
+   "masks": {
+    "sway": "atlases/resources_sway.png"
+   }
+  }
+ ],
+ "sprites": [
+  {
+   "key": "player",
+   "tints": {
+    "wet": {
+     "color": "#ccd9f7",
+     "strength": 0.9,
+     "mode": "multiply"
+    },
+    "frost": {
+     "color": "#cfe8ff",
+     "strength": 0.35,
+     "mode": "screen"
+    },
+    "flush": {
+     "color": "#ff8a7a",
+     "strength": 0.15,
+     "mode": "lerp"
+    },
+    "exhausted": {
+     "color": "#b8b4c8",
+     "strength": 0.22,
+     "mode": "lerp"
+    }
+   }
+  },
+  {
+   "key": "player_b",
+   "tints": {
+    "wet": {
+     "color": "#ccd9f7",
+     "strength": 0.9,
+     "mode": "multiply"
+    },
+    "frost": {
+     "color": "#cfe8ff",
+     "strength": 0.35,
+     "mode": "screen"
+    },
+    "flush": {
+     "color": "#ff8a7a",
+     "strength": 0.15,
+     "mode": "lerp"
+    },
+    "exhausted": {
+     "color": "#b8b4c8",
+     "strength": 0.22,
+     "mode": "lerp"
+    }
+   }
+  },
+  {
+   "key": "player_c",
+   "tints": {
+    "wet": {
+     "color": "#ccd9f7",
+     "strength": 0.9,
+     "mode": "multiply"
+    },
+    "frost": {
+     "color": "#cfe8ff",
+     "strength": 0.35,
+     "mode": "screen"
+    },
+    "flush": {
+     "color": "#ff8a7a",
+     "strength": 0.15,
+     "mode": "lerp"
+    },
+    "exhausted": {
+     "color": "#b8b4c8",
+     "strength": 0.22,
+     "mode": "lerp"
+    }
+   }
+  },
+  {
+   "key": "zombie_walker",
+   "tints": {
+    "wet": {
+     "color": "#ccd9f7",
+     "strength": 0.9,
+     "mode": "multiply"
+    },
+    "frost": {
+     "color": "#cfe8ff",
+     "strength": 0.35,
+     "mode": "screen"
+    },
+    "flush": {
+     "color": "#ff8a7a",
+     "strength": 0.15,
+     "mode": "lerp"
+    },
+    "exhausted": {
+     "color": "#b8b4c8",
+     "strength": 0.22,
+     "mode": "lerp"
+    }
+   }
+  },
+  {
+   "key": "zombie_brute",
+   "tints": {
+    "wet": {
+     "color": "#ccd9f7",
+     "strength": 0.9,
+     "mode": "multiply"
+    },
+    "frost": {
+     "color": "#cfe8ff",
+     "strength": 0.35,
+     "mode": "screen"
+    },
+    "flush": {
+     "color": "#ff8a7a",
+     "strength": 0.15,
+     "mode": "lerp"
+    },
+    "exhausted": {
+     "color": "#b8b4c8",
+     "strength": 0.22,
+     "mode": "lerp"
+    }
+   }
+  },
+  {
+   "key": "zombie_runner",
+   "tints": {
+    "wet": {
+     "color": "#ccd9f7",
+     "strength": 0.9,
+     "mode": "multiply"
+    },
+    "frost": {
+     "color": "#cfe8ff",
+     "strength": 0.35,
+     "mode": "screen"
+    },
+    "flush": {
+     "color": "#ff8a7a",
+     "strength": 0.15,
+     "mode": "lerp"
+    },
+    "exhausted": {
+     "color": "#b8b4c8",
+     "strength": 0.22,
+     "mode": "lerp"
+    }
+   }
+  },
+  {
+   "key": "zombie_mummy",
+   "tints": {
+    "wet": {
+     "color": "#ccd9f7",
+     "strength": 0.9,
+     "mode": "multiply"
+    },
+    "frost": {
+     "color": "#cfe8ff",
+     "strength": 0.35,
+     "mode": "screen"
+    },
+    "flush": {
+     "color": "#ff8a7a",
+     "strength": 0.15,
+     "mode": "lerp"
+    },
+    "exhausted": {
+     "color": "#b8b4c8",
+     "strength": 0.22,
+     "mode": "lerp"
+    }
+   }
+  },
+  {
+   "key": "zombie_pumpkin",
+   "tints": {
+    "wet": {
+     "color": "#ccd9f7",
+     "strength": 0.9,
+     "mode": "multiply"
+    },
+    "frost": {
+     "color": "#cfe8ff",
+     "strength": 0.35,
+     "mode": "screen"
+    },
+    "flush": {
+     "color": "#ff8a7a",
+     "strength": 0.15,
+     "mode": "lerp"
+    },
+    "exhausted": {
+     "color": "#b8b4c8",
+     "strength": 0.22,
+     "mode": "lerp"
+    }
+   }
+  },
+  {
+   "key": "tree",
+   "sway": {
+    "amp": 2.2,
+    "freq": 0.35,
+    "stiffness": 0.6
+   }
+  },
+  {
+   "key": "tree_apple",
+   "sway": {
+    "amp": 2.0,
+    "freq": 0.33,
+    "stiffness": 0.62
+   }
+  },
+  {
+   "key": "tree_autumn",
+   "sway": {
+    "amp": 2.3,
+    "freq": 0.36,
+    "stiffness": 0.58
+   }
+  },
+  {
+   "key": "tree_pine",
+   "sway": {
+    "amp": 1.4,
+    "freq": 0.28,
+    "stiffness": 0.78
+   }
+  },
+  {
+   "key": "tree_twisty",
+   "sway": {
+    "amp": 2.6,
+    "freq": 0.24,
+    "stiffness": 0.45
+   }
+  },
+  {
+   "key": "bush",
+   "sway": {
+    "amp": 0.9,
+    "freq": 0.5,
+    "stiffness": 0.7
+   }
+  },
+  {
+   "key": "berry_bush",
+   "sway": {
+    "amp": 0.9,
+    "freq": 0.5,
+    "stiffness": 0.7
+   }
+  },
+  {
+   "key": "fiber_grass",
+   "sway": {
+    "amp": 1.8,
+    "freq": 0.85,
+    "stiffness": 0.28
+   }
+  },
+  {
+   "key": "mushrooms",
+   "sway": {
+    "amp": 0.3,
+    "freq": 0.4,
+    "stiffness": 0.9
+   }
+  },
+  {
+   "key": "glow_mushrooms",
+   "sway": {
+    "amp": 0.35,
+    "freq": 0.4,
+    "stiffness": 0.9
+   }
+  },
+  {
+   "key": "flowers",
+   "sway": {
+    "amp": 1.2,
+    "freq": 0.95,
+    "stiffness": 0.38
+   }
+  }
+ ],
+ "maskCommands": [
+  "python survival_fx/tools/make_sheen_mask.py atlases/characters.png atlases/characters_b.png atlases/characters_c.png atlases/zombies.png atlases/zombies_brute.png atlases/zombies_runner.png atlases/zombies_mummy.png atlases/zombies_pumpkin.png",
+  "python survival_fx/tools/make_sway_mask.py atlases/resources_tall.png atlases/resources.png"
+ ]
+}
