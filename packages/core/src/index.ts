@@ -23,3 +23,4 @@ export * from "./chat.js";
 export * from "./commands.js";
 export * from "./names.js";
 export * from "./stalls.js";
+export * from "./appearance.js";

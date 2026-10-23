@@ -539,3 +539,10 @@ flowchart LR
 - `building.crackOverlay` (sprite key with anims `stage1..stage3`) for pieces without damage frames; `building.stateVfx: {state: [{vfx, attach}]}` spawns vfx at the sprite's attach points (e.g. `burning` → fire, ember, smoke).
 - vfx `stretch: "none" | "velocity"` (+ `stretchMax`, default 4).
 - `decal` category (optional) with `autotile {neighbors: 4|8, group?, rules: [{mask, care?, frame}]}`: first rule with `(n & care) === (mask & care)` wins (bits N1 E2 S4 W8, NE16 SE32 SW64 NW128); a `care: 0` fallback is required. `registry.decalFrame(id, neighborMask)`.
+
+## 20. Character Customization (Appearance)
+See docs/CHARACTER_CUSTOMIZATION.md for the team contract and ADR-080 for the rationale.
+- **Data (assets):** the manifest sections `bodyTypes`, `wearables`, `skinTones`, `hairColors` and `clothingColors` load through `loadManifest` (checked by `loadCosmetics`) into `registry.cosmetics: CosmeticCatalog` (`wearable(id)`, `byKey`, `bySlot(slot, body)`, `bodySprite`). Wearable ids are stable u16 values in the `wearables` section of `ids.lock.json`, and the catalog hash is mixed into `registry.hash` when it is non-empty.
+- **State (core):** `Appearance` is networked and persistent: `bodyType`, `skinTone`, `parts[8]` (u16, 0 = none), and `primary[8]`/`secondary[8]` (u8 palette indices), indexed by `WEARABLE_SLOTS`. It is opt-in (not in `BUILTIN_COMPONENTS`). Registering it changes the world schema hash.
+- **Helpers (core, pure):** `defaultAppearance(cat?, bodyType)`, `validateAppearance(cat, value, { mode: "clamp"|"reject", unlocked })` and `resolveLayers(cat, value, facing) → DrawLayer[]` (back to front; respects `hidesSlots`, hat `hatHair`, and `layerByDir` per 4-way facing; the body sits at `BODY_LAYER`).
+- **Equipment:** kept separate. The optional item-def field `equipCosmetic` is reserved for a later armor-to-look override and is not wired yet.

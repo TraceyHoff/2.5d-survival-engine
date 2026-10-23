@@ -1,3 +1,4 @@
+import { loadCosmetics, type CosmeticCatalog, type CosmeticsJson } from "./cosmetics.js";
 import { fnv1a, StableIdRegistry, type World } from "@engine/core";
 
 export const MANIFEST_VERSION = 1;
@@ -98,7 +99,7 @@ export interface TintSetJson { key: string; tints: string[] }
 export interface PaletteJson { key: string; source: string[]; target: string[] }
 export interface VariantJson { key: string; sprite?: string; tint?: string; tintIndex?: number; palette?: string }
 export interface VariantSetJson { key: string; base: string; variants: VariantJson[] }
-export interface ManifestJson {
+export interface ManifestJson extends CosmeticsJson {
   version: number; name?: string; atlases: AtlasJson[]; sprites: SpriteJson[];
   sounds?: SoundJson[]; vfx?: VfxJson[]; tintSets?: TintSetJson[]; palettes?: PaletteJson[]; variantSets?: VariantSetJson[];
   /** Input prompt glyphs keyed by glyph id (see GLYPH_ID). */
@@ -151,7 +152,9 @@ export class AssetRegistry {
     readonly palettes = new Map<number, Palette>(), readonly variants = new Map<number, Variant>(),
   ) {}
   /** Combined hash over every id namespace (for the handshake). */
-  get hash(): number { let h = 0x811c9dc5; for (const k of ID_KINDS) h = fnv1a(`${k}:${this.ids[k].hash};`, h); return h; }
+  get hash(): number { let h = 0x811c9dc5; for (const k of ID_KINDS) h = fnv1a(`${k}:${this.ids[k].hash};`, h); if (this.cosmetics?.size) h = fnv1a(`cosmetics:${this.cosmetics.hash};`, h); return h; }
+  /** Character customization catalog (manifest wearables/bodyTypes/skinTones/hairColors/clothingColors); undefined if none. */
+  cosmetics: CosmeticCatalog | undefined;
   get size(): number { return this.sprites.size; }
   id(key: string): number { return this.ids.sprites.id(key); }
   sprite(id: number): SpriteDef { const s = this.sprites.get(id); if (!s) throw new Error(`unknown sprite ${id}`); return s; }
@@ -295,7 +298,7 @@ export function checkAttach(m: unknown, where: string, issues: string[]): void {
   }
 }
 
-export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<string, number> } = {}): { registry: AssetRegistry; lock: Required<IdLock>; warnings: string[] } {
+export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<string, number> } = {}): { registry: AssetRegistry; lock: Required<IdLock> & { wearables?: Record<string, number> }; warnings: string[] } {
   const issues: string[] = []; let m = json as ManifestJson;
   if (!m || typeof m !== "object") throw new ManifestError(["manifest is not an object"]);
   if (m.version !== MANIFEST_VERSION) issues.push(`version must be ${MANIFEST_VERSION}`);
@@ -577,6 +580,12 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
   if (warnings.length && typeof console !== "undefined") for (const w of warnings) console.warn(`[assets] ${w}`);
   const registry = new AssetRegistry(atlases, sprites, ids, soundMap, vfxMap, tintMap, palMap, varMap); registry.glyphs = glyphs;
   registry.clanPalettes = clanPals.map((c, index) => ({ index, key: c.key, primary: parseColor(c.primary), secondary: parseColor(c.secondary) }));
+  if (m.wearables !== undefined || m.bodyTypes !== undefined || m.skinTones !== undefined || m.hairColors !== undefined || m.clothingColors !== undefined) {
+    const ci: string[] = []; const wl = rawLock.wearables;
+    const c = loadCosmetics(m, registry, wl && typeof wl === "object" ? (wl as Record<string, number>) : undefined, ci);
+    if (ci.length) throw new ManifestError(ci);
+    registry.cosmetics = c.catalog; if (c.catalog.size) return { registry, lock: { ...lock, wearables: c.lock }, warnings };
+  }
   return { registry, lock, warnings };
 }
 
