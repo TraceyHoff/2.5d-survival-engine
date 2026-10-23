@@ -4,6 +4,7 @@
  * input phase. Gameplay queues commands per entity and turns ONE per tick into PlayerIntent (so a burst of commands
  * is processed in order over consecutive ticks, identically on server and predicting client).
  */
+import { PARTY_COMMANDS } from "./party.js";
 import { CommandRegistry, defineActions, defineCommand, defineResource, type Command, type CommandDef, type Entity, type InputFrame, type World } from "@engine/core";
 import { IntentAction, PlayerIntent } from "./components.js";
 import { CUSTOMIZATION_COMMANDS } from "./customization.js";
@@ -62,6 +63,7 @@ export function registerGameplayCommands(reg: CommandRegistry = new CommandRegis
   for (const d of PVP_COMMANDS) reg.register(d);
   for (const d of CRAFT_QUEUE_COMMANDS) reg.register(d);
   for (const d of EXPRESSION_COMMANDS) reg.register(d);
+  for (const d of PARTY_COMMANDS) reg.register(d);
   return reg;
 }
 

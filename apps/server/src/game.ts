@@ -1,7 +1,7 @@
 /** Authoritative game server: world + gameplay + streaming chunks + persistence + NetServer sessions. */
 import { ChannelRegistry, CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, type CosmeticCatalogLike, Membership, PlayerId, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
 import { ChunkManager, ProceduralGenerator, chunkKeyOf, type BuildingGrid, type PopulationSpawner } from "@engine/world";
-import { GAMEPLAY_COMMANDS, queueCommand, spawnPlayer, spawnResourceNode, gameplayDefs, setIntent, IntentAction, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installPopulation, installCustomization,
+import { GAMEPLAY_COMMANDS, installPartyCommands, queueCommand, spawnPlayer, spawnResourceNode, gameplayDefs, setIntent, IntentAction, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installPopulation, installCustomization,
   appearanceServerHooks, applyReplication, installStallBuyHook, installViewBonus, setHitValidator, installPvp, installCraftQueue, installExpressionCommands, CraftQueue, CraftQueuesRes, playerNames, stallListing, listingRevision, stallOf, tillOf, StallHeader, StallOwnerKind } from "@engine/gameplay";
 import { AppearanceServer, ChatServer, NameSync, NetServer, StallResult, StallServer, TileSync, validateHit, type ClientSession, type ServerTransport, type StallHooks } from "@engine/net";
 import { AccountAssigned, ClaimAccount, SetName, WorldPersistence, loadSocial, tokenToHex, tokenToWords, wordsToName, wordsToToken, type WorldStore } from "@engine/persist";
@@ -147,6 +147,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
   installPvp(world, handlers); // gameplay.respawnPlayer
   installCraftQueue(world, handlers); // gameplay.queueCraft / cancelQueuedCraft (server-only timers)
   installExpressionCommands(world, handlers); // gameplay.emote -> Expression
+  installPartyCommands(world, handlers); // gameplay.partyInvite / partyAccept / partyLeave / partyKick on core GroupRegistry
   const rearmCrafts = (): void => world.resource(CraftQueuesRes).rearmAll(); // timers are not saved: re-arm after any load
   // Melee hits from players are re-checked with lag compensation (target rewound to what the attacker saw).
   setHitValidator(world, (attacker, target, check) => {

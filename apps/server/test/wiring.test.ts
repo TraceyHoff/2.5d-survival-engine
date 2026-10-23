@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { CommandRejected, World, defaultAppearance, getAppearance, type CosmeticCatalogLike, type WearableDef } from "@engine/core";
-import { CommandQueues, EmoteCmd, Expression, PlaceCmd, UseCmd, HitValidatorRes, RespawnCmd, BuyFromStallCmd, OpenStallCmd, SetAppearanceCmd, hasCreatedLook, hasUnlock } from "@engine/gameplay";
+import { PartyLeaveCmd, PARTY_COMMANDS, CommandQueues, EmoteCmd, Expression, PlaceCmd, UseCmd, HitValidatorRes, RespawnCmd, BuyFromStallCmd, OpenStallCmd, SetAppearanceCmd, hasCreatedLook, hasUnlock } from "@engine/gameplay";
 import { AppearanceResult, LoopbackNetwork, NetClient, StallResult } from "@engine/net";
 import { ClaimAccount, MemoryWorldStore } from "@engine/persist";
-import { createGameServer, applyMoveInput, installDemoWorld, gameplayNet, DEMO_COMMANDS, DEMO_EVENTS } from "../src/main.js";
+import { createGameServer, applyMoveInput, installDemoWorld, gameplayNet, rejectReasonCode, DEMO_COMMANDS, DEMO_EVENTS } from "../src/main.js";
 
 const wd = (id: number, slot: WearableDef["slot"]): WearableDef => ({
   id, key: `w${id}`, slot, bodies: { male: { sprite: id, anim: "idle" }, female: { sprite: id, anim: "idle" } }, layer: 1, z: 0, tintChannels: 1, hidesSlots: [], hatHair: false, unlockTags: [],
@@ -100,5 +100,14 @@ describe("apps/server gameplay wiring", () => {
     // Use/Place join the intent queue (no core handler), so nothing bounces as unknown_command.
     expect(rejected.filter((r) => r.includes("unknown_command"))).toEqual([]);
     expect(gs.world.getResource(CommandQueues)?.get(e)?.length ?? 0).toBe(0); // consumed by the intent system
+  });
+  it("registers the party commands append-only and bridges them with clear reject reasons", async () => {
+    for (const d of PARTY_COMMANDS) expect(DEMO_COMMANDS).toContain(gameplayNet(d));
+    const names = DEMO_COMMANDS.map((d) => d.name); expect(names.indexOf(PARTY_COMMANDS[0].name)).toBe(names.indexOf(EmoteCmd.name) + 1);
+    const { tick, connect } = await setup();
+    const c = await connect(); c.sendCommand(ClaimAccount, { t0: 0, t1: 0, t2: 0, t3: 0 }); tick(3);
+    const got: number[] = []; c.onCommandRejected((r) => got.push(r.reason));
+    c.sendCommand(gameplayNet(PartyLeaveCmd), {}); tick(3);
+    expect(got).toEqual([rejectReasonCode("not_in_party")]); expect(got[0]).toBeGreaterThan(0);
   });
 });

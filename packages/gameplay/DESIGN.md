@@ -463,3 +463,10 @@ Gameplay owns data, not loops: there is **no spawn loop and no controller** here
   - Command-type actions move from `actions` to `commands`, in order: eat/drink become `gameplay.use`, craft becomes `gameplay.queueCraft` (CraftCmd isn't on the wire), build becomes `gameplay.place`, and open/buy of a stall become `gameplay.openStall` / `gameplay.buyFromStall`.
   - Entity fields carry the bot's replica entity. local.ts `sendAgentCommands` sends through NetClient.sendCommand, which maps them to NetIds (netOf), so there is no resolver here. Unknown names are dropped by the host.
   - `commands: false` keeps the old action-string behavior. Gather, attack and sleep stay as frame actions.
+- **Party commands (`src/party.ts`).** `gameplay.partyInvite {target}`, `partyAccept {party}`, `partyDecline {party}`, `partyLeave {}` and `partyKick {target}` run on core GroupRegistry (GroupKind.Party, keyed by PlayerId). They are appended after EmoteCmd in GAMEPLAY_NET_COMMANDS, which DEMO_COMMANDS picks up, and after EXPRESSION_COMMANDS in registerGameplayCommands. `target` is an entity field (NetId on the wire).
+  - A first invite creates the party with the inviter as Leader. Inviting and kicking need at least Officer, and a kick also needs a strictly higher role than the target.
+  - Invites expire on world tick (`PARTY_RULES.inviteTicks` = 60 s). A repeat invite refreshes the expiry, and expired invites are pruned when checked.
+  - When the Leader leaves, the next leader is the member with the highest role, then the lowest PlayerId. An empty party is deleted, along with its invites. Max size is 6.
+  - Membership.partyId on online member entities mirrors the registry.
+  - Reject reasons are appended to COMMAND_REJECT_REASONS: no_player, self, in_party, not_in_party, not_officer, party_full, no_invite, invite_expired, outranked.
+  - Netcode owns rate limits and group replication.
