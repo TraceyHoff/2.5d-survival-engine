@@ -2,7 +2,8 @@ import { describe, it, expect } from "vitest";
 import { PlayerId, Transform, World } from "@engine/core";
 import { ChatChannel, ChatReject, GroupKind, GroupRole, LoopbackNetwork, NetClient, type ChatDelivered } from "@engine/net";
 import { ClaimAccount, MemoryWorldStore } from "@engine/persist";
-import { createGameServer, applyMoveInput, installDemoWorld, DevBotHello, DEMO_COMMANDS, DEMO_EVENTS, type GameServerOptions } from "../src/main.js";
+import { createGameServer, applyMoveInput, installDemoWorld, DevBotHello, DEMO_COMMANDS, DEMO_EVENTS } from "../src/main.js";
+import type { GameServerOptions } from "../src/game.js";
 
 async function setup(o: Partial<GameServerOptions> = {}) {
   const net = new LoopbackNetwork(3);
