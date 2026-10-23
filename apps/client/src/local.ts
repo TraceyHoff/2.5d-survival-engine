@@ -98,7 +98,7 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
   const loops = new Map<VirtualPlayer, FixedLoop>();
   const agentLoop = new FixedLoop({ tickHz: DEFAULT_TICK_HZ, step: () => {
     const outs = controller.tick(game.world.tick, (a) => { const vp = bots.find((b) => b.agent === a); const e = vp && selfOf(vp); return vp && e !== undefined ? buildAgentView(vp.world, e, a, vp.home) : undefined; });
-    for (const vp of bots) { const out = outs.get(vp.agent); if (!out) continue; vp.output = out; if (out.chat) vp.client.chat.send(ChatChannel.Local, out.chat.text); if (out.emote) { const e = serverEntityOf(vp.client.clientId); if (e !== undefined) applyAgentEmote(game.world, e, out); } }
+    for (const vp of bots) { const out = outs.get(vp.agent); if (!out) continue; vp.output = out; if (out.chat) vp.client.chat.send(ChatChannel.Local, out.chat.text); if (out.emote) { const e = serverEntityOf(vp.client.clientId); if (e !== undefined) applyAgentEmote(game.world, e, out); } if (out.commands) sendAgentCommands(vp.client, out.commands); }
   } });
   const pump = (ms: number): void => {
     for (const q of queued.splice(0)) connecting.push(addBot(q.x, q.y, false).catch((e) => o.log?.(`bot failed: ${String(e)}`)));
@@ -117,4 +117,18 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
   };
   if (mode === "singleplayer") for (let i = 0; i < (o.bots ?? 0); i++) await addBot(SPAWN.x + i, SPAWN.y + 2);
   return server;
+}
+
+/**
+ * Sends an agent's discrete commands through the bot's NetClient exactly as human input does (same wire path, rate limits and
+ * server validation). Looks the def up by name in DEMO_COMMANDS; entity fields are replica entities, which NetClient.sendCommand
+ * maps to network ids. Returns how many were sent (unknown names / unmapped targets are dropped).
+ */
+export function sendAgentCommands(client: NetClient, cmds: readonly { type: string; payload: unknown }[]): number {
+  let n = 0;
+  for (const c of cmds) {
+    const def = DEMO_COMMANDS.find((d) => d.name === c.type);
+    if (def && client.sendCommand(def as never, (c.payload ?? {}) as never)) n++;
+  }
+  return n;
 }

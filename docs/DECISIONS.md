@@ -291,3 +291,7 @@ The legacy per-player zombie spawner turns itself off when population owns zombi
 
 Identity is persisted in the `agents` record namespace. Gameplay supplies `referenceBehaviors()`, and you add more with `survivorController({ extra })`.
 **Why.** Bots go through the same authority, validation and anti-cheat path as humans, so whatever they can do, a human could have done.
+
+## ADR-092: Bot commands use the human command path
+**Decision.** `AgentOutput.commands` (`{ type: name, payload }[]`) is sent by the bot host through the bot's own `NetClient.sendCommand`, the same as human input. There is no server-side shortcut. Targets on the wire are network entity ids: agents reference replica entities, and NetClient's netId mapping translates them (unmappable targets are dropped client-side).
+**Why.** One validation, rate-limit and rejection path for humans and bots, so a bot can never do anything a human client couldn't. Tested in apps/client/test/local.test.ts (refused buy: identical rejection).

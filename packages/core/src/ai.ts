@@ -75,7 +75,10 @@ export class AgentMemory {
 
 // ---------------- output = the human input stream ----------------
 /** What a controller emits each tick: the same stream a human client sends (mapped to InputFrame/commands by the host). */
-export interface AgentOutput { moveX: number; moveY: number; aimX: number; aimY: number; sprint: boolean; actions: string[]; chat?: { channel: string; text: string }; emote?: string }
+export interface AgentOutput { moveX: number; moveY: number; aimX: number; aimY: number; sprint: boolean; actions: string[]; chat?: { channel: string; text: string }; emote?: string;
+  /** Discrete commands (buy, place, craft…) by registered command name; sent through the same client command path and server
+   *  validation as a human's. Entity-typed payload fields hold the bot's replica entities (the host maps them to network ids). */
+  commands?: { type: string; payload: unknown }[] }
 export const idleOutput = (): AgentOutput => ({ moveX: 0, moveY: 0, aimX: 0, aimY: 0, sprint: false, actions: [] });
 
 // ---------------- behaviors ----------------

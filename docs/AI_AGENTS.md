@@ -6,7 +6,8 @@ Human bots are **virtual players**: real sessions that only send input. They exi
 - `AgentController({ behaviors, chat?, thinkBudget, thinkEvery, tickHz })`
   - `tick(tick, agent => { self, world }) → Map<Agent, AgentOutput>`
   - `thinksLastTick` reports the budget actually used.
-- `AgentOutput { moveX, moveY, aimX, aimY, sprint, actions[], chat?, emote? }` is the only thing an agent produces.
+- `AgentOutput { moveX, moveY, aimX, aimY, sprint, actions[], chat?, emote?, commands? }` is the only thing an agent produces.
+  - `commands?: { type, payload }[]` are discrete commands (buy, place, craft…). `type` is the registered command name (e.g. `gameplay.buyFromStall`), and `payload` is that command's schema. The host (`sendAgentCommands` in apps/client/src/local.ts) sends them through the bot's `client.sendCommand`, the same path human input uses, so the rate limits, server validation and rejections (`onCommandRejected`) are identical. Entity-typed fields hold the bot's replica entities. `NetClient.sendCommand` maps them to network entity ids, and a command whose target the bot can't see is dropped. Unknown names are dropped.
 - `BehaviorRegistry.register({ name, considerations: [{ name, input(ctx), curve, weight? }], traits?, scheduleBonus?, inertia?, chatOnStart?, run(ctx, out) })`
   - Utility is the compensated product of the curves, multiplied by the trait factor, plus the schedule bonus and inertia.
 - Curves: `linear`, `quadratic`, `logistic`, `inverse`, `step`.
