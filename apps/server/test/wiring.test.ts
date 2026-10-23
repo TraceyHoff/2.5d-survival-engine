@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { CommandRejected, World, defaultAppearance, getAppearance, type CosmeticCatalogLike, type WearableDef } from "@engine/core";
-import { HitValidatorRes, RespawnCmd, BuyFromStallCmd, OpenStallCmd, SetAppearanceCmd, hasCreatedLook, hasUnlock } from "@engine/gameplay";
+import { CommandQueues, EmoteCmd, Expression, PlaceCmd, UseCmd, HitValidatorRes, RespawnCmd, BuyFromStallCmd, OpenStallCmd, SetAppearanceCmd, hasCreatedLook, hasUnlock } from "@engine/gameplay";
 import { AppearanceResult, LoopbackNetwork, NetClient, StallResult } from "@engine/net";
 import { ClaimAccount, MemoryWorldStore } from "@engine/persist";
 import { createGameServer, applyMoveInput, installDemoWorld, gameplayNet, DEMO_COMMANDS, DEMO_EVENTS } from "../src/main.js";
@@ -86,5 +86,19 @@ describe("apps/server gameplay wiring", () => {
     c.sendCommand(gameplayNet(RespawnCmd), {}); tick(3);
     expect(rejected.some((r) => r.startsWith("gameplay.respawnPlayer:"))).toBe(true);
     expect(gs.world.getResource(HitValidatorRes)?.fn).toBeTypeOf("function");
+  });
+
+  it("bridges the appended gameplay.use / gameplay.place (intent queue) and gameplay.emote (Expression)", async () => {
+    const { gs, tick, connect } = await setup();
+    const c = await connect(); c.sendCommand(ClaimAccount, { t0: 0, t1: 0, t2: 0, t3: 0 }); tick(3);
+    const e = [...gs.players.values()][0]!.entity;
+    const rejected: string[] = []; gs.world.events.on(CommandRejected, (r) => { rejected.push(`${r.command}:${r.reason}`); });
+    c.sendCommand(gameplayNet(EmoteCmd), { emote: 1 }); tick(8);
+    expect(rejected).toEqual([]);
+    expect(gs.world.get(e, Expression)?.id ?? 0).toBeGreaterThan(0);
+    c.sendCommand(gameplayNet(UseCmd), { slot: 0 }); c.sendCommand(gameplayNet(PlaceCmd), { piece: 0, x: 0, y: 0, level: 0, rot: 0, tier: 0, variant: 0 }); tick(3);
+    // Use/Place join the intent queue (no core handler), so nothing bounces as unknown_command.
+    expect(rejected.filter((r) => r.includes("unknown_command"))).toEqual([]);
+    expect(gs.world.getResource(CommandQueues)?.get(e)?.length ?? 0).toBe(0); // consumed by the intent system
   });
 });

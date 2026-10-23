@@ -1,7 +1,7 @@
 /** Authoritative game server: world + gameplay + streaming chunks + persistence + NetServer sessions. */
 import { ChannelRegistry, CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, type CosmeticCatalogLike, Membership, PlayerId, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
 import { ChunkManager, ProceduralGenerator, chunkKeyOf, type BuildingGrid, type PopulationSpawner } from "@engine/world";
-import { spawnPlayer, spawnResourceNode, gameplayDefs, setIntent, IntentAction, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installPopulation, installCustomization,
+import { GAMEPLAY_COMMANDS, queueCommand, spawnPlayer, spawnResourceNode, gameplayDefs, setIntent, IntentAction, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installPopulation, installCustomization,
   appearanceServerHooks, applyReplication, installStallBuyHook, installViewBonus, setHitValidator, installPvp, installCraftQueue, installExpressionCommands, CraftQueue, CraftQueuesRes, playerNames, stallListing, listingRevision, stallOf, tillOf, StallHeader, StallOwnerKind } from "@engine/gameplay";
 import { AppearanceServer, ChatServer, NameSync, NetServer, StallResult, StallServer, TileSync, validateHit, type ClientSession, type ServerTransport, type StallHooks } from "@engine/net";
 import { AccountAssigned, ClaimAccount, SetName, WorldPersistence, loadSocial, tokenToHex, tokenToWords, wordsToName, wordsToToken, type WorldStore } from "@engine/persist";
@@ -159,12 +159,15 @@ export function createGameServer(o: GameServerOptions): GameServer {
   installViewBonus(world, (c, n) => net.setViewRadiusBonus(c, n));
   if (o.catalog) installCustomization(world, { catalog: o.catalog, handlers });
   let cmdSeq = 0;
+  const INPUT_QUEUE = new Set(GAMEPLAY_COMMANDS.map(([d]) => d.name));
   const netDefOf = new Map<number, (typeof GAMEPLAY_NET_COMMANDS)[number]["net"]>(); // core command type -> net mirror
   for (const { core, net: def } of GAMEPLAY_NET_COMMANDS) {
     if (!o.catalog && (core.name === "gameplay.setAppearance" || core.name === "gameplay.equipCosmetic")) continue; // no catalog: unhandled
     const type = handlers.registry.register(core); netDefOf.set(type, def);
     net.onCommand(def, (s, payload) => {
       const p = players.get(s.clientId); if (!p || !world.isAlive(p.entity)) return;
+      // Input-queue commands (gameplay.use / gameplay.place) have no core handler: they join the player's intent queue like an InputFrame command.
+      if (INPUT_QUEUE.has(core.name)) { queueCommand(world, p.entity, handlers.registry, { type, values: payload as never }); return; }
       handlers.enqueue(p.entity, s.clientId, cmdSeq++, { type, values: payload as never });
     });
   }
