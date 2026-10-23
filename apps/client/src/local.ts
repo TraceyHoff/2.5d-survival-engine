@@ -6,8 +6,8 @@
  * PlayerId/account/inventory) driven by an AgentController that only emits the input stream a human sends.
  * mode: "multiplayer" disables human bots entirely (and ignores `bots`). No Node-only imports.
  */
-import { DEFAULT_TICK_HZ, FixedLoop, Owner, World, type CosmeticCatalogLike, type Agent, type AgentOutput, type Entity } from "@engine/core";
-import { buildAgentView, makeAgent, makeAgentIdentity, survivorController } from "@engine/gameplay";
+import { CommandRegistry, DEFAULT_TICK_HZ, FixedLoop, Owner, World, type CosmeticCatalogLike, type Agent, type AgentOutput, type Entity } from "@engine/core";
+import { agentOutputFrame, applyAgentEmote, buildAgentView, makeAgent, makeAgentIdentity, survivorController } from "@engine/gameplay";
 import { ChatChannel, LoopbackNetwork, NetClient, type ClientTransport } from "@engine/net";
 import { ClaimAccount, IndexedDbWorldStore, MemoryWorldStore, SetName, nameToWords, tokenToWords, type WorldStore } from "@engine/persist";
 import { createGameServer, SPAWN, type GameMode, type GameServer } from "@engine/server/game";
@@ -47,6 +47,8 @@ export async function openBrowserStore(dbName = "engine-local-world"): Promise<W
 const AGENT_NS = "agents";
 const hex32 = (s: string): string => { let h = 0x811c9dc5, out = ""; for (let k = 0; k < 4; k++) { for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i) ^ k, 0x01000193) >>> 0; out += h.toString(16).padStart(8, "0"); } return out; };
 
+const NO_COMMANDS = new CommandRegistry();
+const ACT_MASK = Act.MoveUp | Act.MoveDown | Act.MoveLeft | Act.MoveRight | Act.Sprint | Act.Gather;
 export async function createLocalServer(o: LocalServerOptions = {}): Promise<LocalServer> {
   const seed = o.seed ?? 1234; const mode: GameMode = o.mode ?? "singleplayer";
   const network = new LoopbackNetwork(seed);
@@ -71,10 +73,8 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
     const vp: VirtualPlayer = { client: undefined as unknown as NetClient, world, agent, output: { moveX: 0, moveY: 0, aimX: 0, aimY: 0, sprint: false, actions: [] }, home: { x, y } };
     // The exact input path a human client uses: buttons + aim sampled each client tick.
     const sample = (): { buttons: number; aimX: number; aimY: number } => {
-      const out = vp.output; let b = 0;
-      if (out.moveY < -0.35) b |= Act.MoveUp; if (out.moveY > 0.35) b |= Act.MoveDown; if (out.moveX < -0.35) b |= Act.MoveLeft; if (out.moveX > 0.35) b |= Act.MoveRight;
-      if (out.sprint) b |= Act.Sprint; if (out.actions.includes("gather")) b |= Act.Gather;
-      return { buttons: b, aimX: out.aimX, aimY: out.aimY };
+      const f = agentOutputFrame(vp.output, 0, NO_COMMANDS); // gameplay intentToFrame; GameplayActions bits 0-5 == Act bits
+      return { buttons: f.actions & ACT_MASK, aimX: f.aimX, aimY: f.aimY };
     };
     const client = new NetClient({ world, transport: network.createClient(), commands: DEMO_COMMANDS, events: DEMO_EVENTS, sampleInput: sample, applyInput: (w, e, cmd) => applyMoveInput(w, e, cmd) });
     vp.client = client;
@@ -93,11 +93,12 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
     const i = bots.findIndex((b) => b.client.clientId === clientId); if (i < 0) return;
     const b = bots[i]!; controller.remove(b.agent); b.client.close(); bots.splice(i, 1);
   }
+  const serverEntityOf = (cid: number): Entity | undefined => { for (const e of game.world.query([Owner])) if (game.world.getField(e, Owner, "clientId") === cid) return e; return undefined; };
   const selfOf = (vp: VirtualPlayer): Entity | undefined => { for (const e of vp.world.query([Owner])) if (vp.world.getField(e, Owner, "clientId") === vp.client.clientId) return e; return undefined; };
   const loops = new Map<VirtualPlayer, FixedLoop>();
   const agentLoop = new FixedLoop({ tickHz: DEFAULT_TICK_HZ, step: () => {
     const outs = controller.tick(game.world.tick, (a) => { const vp = bots.find((b) => b.agent === a); const e = vp && selfOf(vp); return vp && e !== undefined ? buildAgentView(vp.world, e, a, vp.home) : undefined; });
-    for (const vp of bots) { const out = outs.get(vp.agent); if (!out) continue; vp.output = out; if (out.chat) vp.client.chat.send(ChatChannel.Local, out.chat.text); }
+    for (const vp of bots) { const out = outs.get(vp.agent); if (!out) continue; vp.output = out; if (out.chat) vp.client.chat.send(ChatChannel.Local, out.chat.text); if (out.emote) { const e = serverEntityOf(vp.client.clientId); if (e !== undefined) applyAgentEmote(game.world, e, out); } }
   } });
   const pump = (ms: number): void => {
     for (const q of queued.splice(0)) connecting.push(addBot(q.x, q.y, false).catch((e) => o.log?.(`bot failed: ${String(e)}`)));
