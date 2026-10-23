@@ -2,8 +2,8 @@
 import { DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, type CosmeticCatalogLike, Membership, PlayerId, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
 import { ChunkManager, ProceduralGenerator, chunkKeyOf, type BuildingGrid } from "@engine/world";
 import { spawnPlayer, spawnResourceNode, gameplayDefs, setIntent, IntentAction, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installCustomization,
-  appearanceServerHooks, applyReplication, buyFromStall, stallListing, listingRevision, stallOf, tillOf, StallHeader, StallOwnerKind } from "@engine/gameplay";
-import { AppearanceServer, NetServer, StallResult, StallServer, TileSync, type ClientSession, type ServerTransport, type StallHooks } from "@engine/net";
+  appearanceServerHooks, applyReplication, installStallBuyHook, installViewBonus, setHitValidator, installPvp, stallListing, listingRevision, stallOf, tillOf, StallHeader, StallOwnerKind } from "@engine/gameplay";
+import { AppearanceServer, NetServer, StallResult, StallServer, TileSync, validateHit, type ClientSession, type ServerTransport, type StallHooks } from "@engine/net";
 import { AccountAssigned, ClaimAccount, SetName, WorldPersistence, loadSocial, tokenToHex, tokenToWords, wordsToName, wordsToToken, type WorldStore } from "@engine/persist";
 import { Act, applyMoveInput, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS, GAMEPLAY_NET_COMMANDS, Ping, Pong } from "./protocol.js";
 
@@ -96,6 +96,16 @@ export function createGameServer(o: GameServerOptions): GameServer {
   // Gameplay commands: core handlers (economy + customization) fed by the net mirrors from protocol.ts.
   const handlers = installCommandHandlers(world, registerGameplayCommands());
   installEconomy(world, handlers);
+  installPvp(world, handlers); // gameplay.respawnPlayer
+  // Melee hits from players are re-checked with lag compensation (target rewound to what the attacker saw).
+  setHitValidator(world, (attacker, target, check) => {
+    let s: ClientSession | undefined; for (const [cid, p] of players) if (p.entity === attacker) { s = net.sessions.get(cid); break; }
+    if (!s) return undefined; // not a connected player: nothing to rewind against
+    const r = validateHit(net, s, attacker, target, { reach: check.reach, coneDeg: check.coneDeg });
+    return r.ok ? undefined : r.reason;
+  });
+  // Watchtower sight: gameplay computes per-client chunk bonus; net caps it and applies hysteresis.
+  installViewBonus(world, (c, n) => net.setViewRadiusBonus(c, n));
   if (o.catalog) installCustomization(world, { catalog: o.catalog, handlers });
   let cmdSeq = 0;
   for (const { core, net: def } of GAMEPLAY_NET_COMMANDS) {
@@ -119,7 +129,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
     saleRecipients: (_w, _st, v) => (v.ownerKind === StallOwnerKind.Player ? [v.ownerId] : []),
   };
   const stalls = new StallServer(net, { hooks: stallHooks, playerIdOf: (s) => { const e = players.get(s.clientId)?.entity; return (e !== undefined && world.getField(e, PlayerId, "id")) || 0; } });
-  stalls.setBuyHook((w, b, st, r) => buyFromStall(w, b, st, { ...r, listingSlot: r.listing }));
+  installStallBuyHook(stalls);
   const appearance = o.catalog ? new AppearanceServer(net, {
     catalog: o.catalog,
     // The join-time look is held (AppearanceServer pending) until the account is claimed, then applied with initial=true:

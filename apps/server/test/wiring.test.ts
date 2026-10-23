@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { CommandRejected, World, defaultAppearance, getAppearance, type CosmeticCatalogLike, type WearableDef } from "@engine/core";
-import { BuyFromStallCmd, OpenStallCmd, SetAppearanceCmd, hasCreatedLook, hasUnlock } from "@engine/gameplay";
+import { HitValidatorRes, RespawnCmd, BuyFromStallCmd, OpenStallCmd, SetAppearanceCmd, hasCreatedLook, hasUnlock } from "@engine/gameplay";
 import { AppearanceResult, LoopbackNetwork, NetClient, StallResult } from "@engine/net";
 import { ClaimAccount, MemoryWorldStore } from "@engine/persist";
 import { createGameServer, applyMoveInput, installDemoWorld, gameplayNet, DEMO_COMMANDS, DEMO_EVENTS } from "../src/main.js";
@@ -25,7 +25,8 @@ async function setup() {
     const p = client.connect(); await new Promise((r) => setTimeout(r, 0)); net.advance(100); await p;
     clients.push(client); return client;
   };
-  return { gs, tick, connect };
+  const close = (c: NetClient): void => { c.close(); clients.splice(clients.indexOf(c), 1); tick(3); };
+  return { gs, tick, connect, close };
 }
 
 describe("apps/server gameplay wiring", () => {
@@ -62,5 +63,28 @@ describe("apps/server gameplay wiring", () => {
     expect(rejected.some((r) => r.startsWith("gameplay.buyFromStall:"))).toBe(true);
     const r = c.stalls.buy(999, 1, 0, { itemId: 1, count: 1 }); tick(3);
     expect((await r).reason).toBe(StallResult.NoStall);
+  });
+
+  it("view-radius bonus: a new client starts at 0 and the bonus resets on reconnect", async () => {
+    const { gs, tick, connect, close } = await setup();
+    const a = await connect(); a.sendCommand(ClaimAccount, { t0: 0, t1: 0, t2: 0, t3: 0 }); tick(12); // past a gameplay.viewBonus pass
+    const cid = [...gs.players.keys()][0]!;
+    expect(gs.net.viewRadiusBonus(cid)).toBe(0);
+    expect(gs.net.setViewRadiusBonus(cid, 5)).toBe(2); // capped
+    expect(gs.net.viewRadiusBonus(cid)).toBe(2);
+    close(a);
+    const b = await connect(); b.sendCommand(ClaimAccount, { t0: 0, t1: 0, t2: 0, t3: 0 }); tick(12);
+    const cid2 = [...gs.players.keys()][0]!;
+    expect(gs.net.viewRadiusBonus(cid2)).toBe(0);
+    expect(gs.net.viewRadiusBonus(cid)).toBe(0); // old session's bonus dropped with it
+  });
+
+  it("bridges gameplay.respawnPlayer (alive player is rejected) and installs the hit validator", async () => {
+    const { gs, tick, connect } = await setup();
+    const c = await connect(); c.sendCommand(ClaimAccount, { t0: 0, t1: 0, t2: 0, t3: 0 }); tick(3);
+    const rejected: string[] = []; gs.world.events.on(CommandRejected, (r) => { rejected.push(`${r.command}:${r.reason}`); });
+    c.sendCommand(gameplayNet(RespawnCmd), {}); tick(3);
+    expect(rejected.some((r) => r.startsWith("gameplay.respawnPlayer:"))).toBe(true);
+    expect(gs.world.getResource(HitValidatorRes)?.fn).toBeTypeOf("function");
   });
 });
