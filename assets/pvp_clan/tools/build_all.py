@@ -85,6 +85,10 @@ TERRITORY_PIECES = ("ne", "se", "sw", "nw", "in_n", "in_e", "in_s", "in_w", "fil
 TERRITORY_RULES = [("fill", 0xFF, 0xFF), ("ne", 0, 1), ("se", 0, 2), ("sw", 0, 4), ("nw", 0, 8),
                    ("in_n", 0, 128), ("in_e", 0, 16), ("in_s", 0, 32), ("in_w", 0, 64), ("fill", 0, 0)]   # (piece, mask, care); last = care 0 fallback
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "tools"))
+from finalize_manifest import fix_rotation_art
+MIRROR_OK = {"raid_bell", "watchtower", "storage_box_locked"}
+
 def schema11(frag):
     """Apply the ADR-077/078 fields to a fragment dict (idempotent)."""
     A = {a["key"]: a for a in frag["atlases"]}; S = {s["key"]: s for s in frag["sprites"]}
@@ -109,6 +113,10 @@ def schema11(frag):
         sv = {"burning": [{"vfx": fire, "attach": "fire"}, {"vfx": "raid_embers", "attach": "ember"}, {"vfx": "raid_smoke", "attach": "smoke"}]}
         if "breached" in b.get("states", {}): sv["breached"] = [{"vfx": "raid_embers", "attach": "ember"}, {"vfx": "raid_smoke", "attach": "smoke"}]
         b["stateVfx"] = sv
+    # rotationArt: r1 here is a pixel mirror of r0, so a runtime flip is equivalent. Only pieces that are square, free-standing and
+    # read the same from behind keep 'mirror' with 2 rows; edge walls/gates/doors (axis must survive rot 2/3), spiked barricade and
+    # wall banner (face one side) ship 4 rows as 'unique4'.
+    fix_rotation_art(frag["sprites"], MIRROR_OK)
     for n in TERRITORY_PIECES: S["territory_" + n]["category"] = "decal"
     first = {n: S["territory_" + n]["animations"]["idle"]["frames"][0] for n in TERRITORY_PIECES}
     edge = {"key": "territory_edge", "category": "decal", "atlas": "clan_territory", "anchor": dict(S["territory_fill"]["anchor"]),

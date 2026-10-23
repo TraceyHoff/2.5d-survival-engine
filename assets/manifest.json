@@ -3994,7 +3994,7 @@
      ]
     ]
    },
-   "rotationArt": "mirror"
+   "rotationArt": "unique4"
   },
   {
    "key": "wall_low_twig",
@@ -4046,7 +4046,7 @@
      ]
     ]
    },
-   "rotationArt": "mirror"
+   "rotationArt": "unique4"
   },
   {
    "key": "wall_window_twig",
@@ -4098,7 +4098,7 @@
      ]
     ]
    },
-   "rotationArt": "mirror"
+   "rotationArt": "unique4"
   },
   {
    "key": "wall_doorway_twig",
@@ -4150,7 +4150,7 @@
      ]
     ]
    },
-   "rotationArt": "mirror"
+   "rotationArt": "unique4"
   },
   {
    "key": "wall_corner_twig",
@@ -4392,7 +4392,7 @@
      ]
     ]
    },
-   "rotationArt": "mirror"
+   "rotationArt": "unique4"
   },
   {
    "key": "roof_hip_twig",
@@ -4770,7 +4770,7 @@
      ]
     ]
    },
-   "rotationArt": "mirror"
+   "rotationArt": "unique4"
   },
   {
    "key": "wall_low",
@@ -4822,7 +4822,7 @@
      ]
     ]
    },
-   "rotationArt": "mirror"
+   "rotationArt": "unique4"
   },
   {
    "key": "wall_window",
@@ -4874,7 +4874,7 @@
      ]
     ]
    },
-   "rotationArt": "mirror"
+   "rotationArt": "unique4"
   },
   {
    "key": "wall_doorway",
@@ -4926,7 +4926,7 @@
      ]
     ]
    },
-   "rotationArt": "mirror"
+   "rotationArt": "unique4"
   },
   {
    "key": "wall_corner",
@@ -5168,7 +5168,7 @@
      ]
     ]
    },
-   "rotationArt": "mirror"
+   "rotationArt": "unique4"
   },
   {
    "key": "roof_hip",
@@ -5444,7 +5444,7 @@
      ]
     ]
    },
-   "rotationArt": "mirror"
+   "rotationArt": "unique4"
   },
   {
    "key": "roof",
@@ -5496,7 +5496,7 @@
      ]
     ]
    },
-   "rotationArt": "mirror"
+   "rotationArt": "unique4"
   },
   {
    "key": "foundation_stone",
@@ -5650,7 +5650,7 @@
      ]
     ]
    },
-   "rotationArt": "mirror"
+   "rotationArt": "unique4"
   },
   {
    "key": "wall_low_stone",
@@ -5702,7 +5702,7 @@
      ]
     ]
    },
-   "rotationArt": "mirror"
+   "rotationArt": "unique4"
   },
   {
    "key": "wall_window_stone",
@@ -5754,7 +5754,7 @@
      ]
     ]
    },
-   "rotationArt": "mirror"
+   "rotationArt": "unique4"
   },
   {
    "key": "wall_doorway_stone",
@@ -5806,7 +5806,7 @@
      ]
     ]
    },
-   "rotationArt": "mirror"
+   "rotationArt": "unique4"
   },
   {
    "key": "wall_corner_stone",
@@ -6048,7 +6048,7 @@
      ]
     ]
    },
-   "rotationArt": "mirror"
+   "rotationArt": "unique4"
   },
   {
    "key": "roof_hip_stone",
@@ -6426,7 +6426,7 @@
      ]
     ]
    },
-   "rotationArt": "mirror"
+   "rotationArt": "unique4"
   },
   {
    "key": "wall_low_metal",
@@ -6478,7 +6478,7 @@
      ]
     ]
    },
-   "rotationArt": "mirror"
+   "rotationArt": "unique4"
   },
   {
    "key": "wall_window_metal",
@@ -6530,7 +6530,7 @@
      ]
     ]
    },
-   "rotationArt": "mirror"
+   "rotationArt": "unique4"
   },
   {
    "key": "wall_doorway_metal",
@@ -6582,7 +6582,7 @@
      ]
     ]
    },
-   "rotationArt": "mirror"
+   "rotationArt": "unique4"
   },
   {
    "key": "wall_corner_metal",
@@ -6824,7 +6824,7 @@
      ]
     ]
    },
-   "rotationArt": "mirror"
+   "rotationArt": "unique4"
   },
   {
    "key": "roof_hip_metal",
@@ -7496,7 +7496,7 @@
      ]
     }
    },
-   "rotationArt": "mirror"
+   "rotationArt": "unique4"
   },
   {
    "key": "window_glass",
@@ -7548,7 +7548,7 @@
      ]
     ]
    },
-   "rotationArt": "mirror"
+   "rotationArt": "unique4"
   },
   {
    "key": "window_bars",
@@ -7600,7 +7600,7 @@
      ]
     ]
    },
-   "rotationArt": "mirror"
+   "rotationArt": "unique4"
   },
   {
    "key": "bed",
@@ -7946,7 +7946,7 @@
      ]
     ]
    },
-   "rotationArt": "mirror"
+   "rotationArt": "unique4"
   },
   {
    "key": "shelf",
@@ -8227,18 +8227,6 @@
       17,
       18,
       19
-     ],
-     [
-      12,
-      13,
-      14,
-      15
-     ],
-     [
-      16,
-      17,
-      18,
-      19
      ]
     ]
    },
@@ -8302,18 +8290,6 @@
     },
     "layer": 3,
     "frames": [
-     [
-      24,
-      25,
-      26,
-      27
-     ],
-     [
-      28,
-      29,
-      30,
-      31
-     ],
      [
       24,
       25,
@@ -8399,18 +8375,6 @@
       41,
       42,
       43
-     ],
-     [
-      36,
-      37,
-      38,
-      39
-     ],
-     [
-      40,
-      41,
-      42,
-      43
      ]
     ]
    },
@@ -8474,18 +8438,6 @@
     },
     "layer": 3,
     "frames": [
-     [
-      48,
-      49,
-      50,
-      51
-     ],
-     [
-      52,
-      53,
-      54,
-      55
-     ],
      [
       48,
       49,
