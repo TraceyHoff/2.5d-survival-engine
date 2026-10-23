@@ -30,6 +30,8 @@ export interface GameServerOptions {
   catalog?: CosmeticCatalogLike;
   /** Seed the starter camp near spawn (default true; skipped if pieces already stand there). */
   starterCamp?: boolean;
+  /** Give each joining client (players and bots) a random valid Appearance as a placeholder until they set their own look. */
+  randomAppearance?: boolean;
 }
 
 /** claimed: ClaimAccount processed (saved record restored), so a held join-time look can no longer be overwritten by the restore. */
@@ -92,7 +94,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
       const e = spawnPlayer(w, { x: SPAWN.x + (s.clientId % 7) - 3, y: SPAWN.y + ((s.clientId * 3) % 7) - 3, clientId: s.clientId });
       net.netIds.assign(e);
       // random valid look (replicates; a restored player record or the client's own setAppearance replaces it)
-      if (o.catalog) giveRandomAppearance(w, e, o.catalog, Math.random);
+      if (o.catalog && o.randomAppearance) giveRandomAppearance(w, e, o.catalog, Math.random);
       const account = tokenToHex(s.token); // provisional account = net session token until the client claims one
       players.set(s.clientId, { entity: e, account, name: "", claimed: false });
       persist?.trackPlayer(account, e);

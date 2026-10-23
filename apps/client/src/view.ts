@@ -202,7 +202,7 @@ export class IsoView {
       const em = net.get(e, Emitter);
       const isLight = em?.kind === 2 || (net.has(e, Fuel) && !this.hasLightSibling(net, e));
       const spec = isLight ? this.lights.get(key) ?? this.lights.get("campfire") : undefined;
-      return spec ? { light: { ...spec, radius: Math.max(spec.radius, em?.kind === 2 ? Math.min(em.radius, spec.radius * 1.5) : 0) }, ...(em?.kind === 2 ? { fuelOf: this.fuelSibling(net, e) } : {}) } : undefined;
+      return spec ? { light: spec, ...(em?.kind === 2 ? { fuelOf: this.fuelSibling(net, e) } : {}) } : undefined;
     }
     if (net.has(e, CraftingStation)) { // free-standing station (spawnStation): bonfire sprite + light following Fuel.lit
       const s = this.sid("bonfire") ?? this.sid("campfire_lit") ?? this.sid("fx_fire"); if (s === undefined) return undefined;
