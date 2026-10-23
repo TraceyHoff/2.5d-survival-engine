@@ -1,0 +1,872 @@
+{
+ "$comment": "Human bot steering data for Engine Architect's AgentController (data only; no controller here). traits: [min,max] in 0..1, rolled per bot with world.rngFor. routine: per day phase activity (must be a utility action or wander). goals: weights for base/gear/food (sum 1). imperfection: reactionDelayTicks [min,max] at 20Hz, aimErrorDeg, idleLookChancePerSec, idleLookSeconds. chat: situation -> localization text keys only. utility: action -> {base, inputs: consideration -> weight}; inputs names are 0..1 signals (traits or world sensors).",
+ "traits": [
+  "bravery",
+  "sociability",
+  "greed",
+  "diligence",
+  "aggression",
+  "curiosity"
+ ],
+ "actions": [
+  "gather",
+  "craft",
+  "build",
+  "fight",
+  "flee",
+  "eat",
+  "sleep",
+  "trade"
+ ],
+ "situations": [
+  "seeEnemy",
+  "lowHealth",
+  "hungry",
+  "nightFalls",
+  "greetPlayer",
+  "tradeOffer",
+  "tradeDeclined",
+  "baseAttacked",
+  "killedEnemy",
+  "idle"
+ ],
+ "routines": {
+  "worker": [
+   {
+    "phase": "dawn",
+    "activity": "eat"
+   },
+   {
+    "phase": "day",
+    "activity": "gather"
+   },
+   {
+    "phase": "dusk",
+    "activity": "craft"
+   },
+   {
+    "phase": "night",
+    "activity": "sleep"
+   }
+  ],
+  "builder": [
+   {
+    "phase": "dawn",
+    "activity": "gather"
+   },
+   {
+    "phase": "day",
+    "activity": "build"
+   },
+   {
+    "phase": "dusk",
+    "activity": "eat"
+   },
+   {
+    "phase": "night",
+    "activity": "sleep"
+   }
+  ],
+  "merchant": [
+   {
+    "phase": "dawn",
+    "activity": "craft"
+   },
+   {
+    "phase": "day",
+    "activity": "trade"
+   },
+   {
+    "phase": "dusk",
+    "activity": "eat"
+   },
+   {
+    "phase": "night",
+    "activity": "sleep"
+   }
+  ],
+  "nocturnal": [
+   {
+    "phase": "dawn",
+    "activity": "sleep"
+   },
+   {
+    "phase": "day",
+    "activity": "sleep"
+   },
+   {
+    "phase": "dusk",
+    "activity": "eat"
+   },
+   {
+    "phase": "night",
+    "activity": "fight"
+   }
+  ],
+  "drifter": [
+   {
+    "phase": "dawn",
+    "activity": "gather"
+   },
+   {
+    "phase": "day",
+    "activity": "wander"
+   },
+   {
+    "phase": "dusk",
+    "activity": "craft"
+   },
+   {
+    "phase": "night",
+    "activity": "sleep"
+   }
+  ]
+ },
+ "archetypes": {
+  "bot_gatherer": {
+   "role": "gatherer",
+   "traits": {
+    "bravery": [
+     0.3,
+     0.7
+    ],
+    "sociability": [
+     0.3,
+     0.7
+    ],
+    "greed": [
+     0.3,
+     0.7
+    ],
+    "diligence": [
+     0.6,
+     0.9
+    ],
+    "aggression": [
+     0.05,
+     0.3
+    ],
+    "curiosity": [
+     0.3,
+     0.7
+    ]
+   },
+   "routine": "worker",
+   "goals": {
+    "base": 0.2,
+    "gear": 0.3,
+    "food": 0.5
+   },
+   "imperfection": {
+    "reactionDelayTicks": [
+     6,
+     14
+    ],
+    "aimErrorDeg": 12,
+    "idleLookChancePerSec": 0.15,
+    "idleLookSeconds": [
+     0.5,
+     1.5
+    ]
+   },
+   "chat": {
+    "seeEnemy": [
+     "bot.gatherer.seeEnemy.1",
+     "bot.gatherer.seeEnemy.2"
+    ],
+    "lowHealth": [
+     "bot.gatherer.lowHealth.1",
+     "bot.gatherer.lowHealth.2"
+    ],
+    "hungry": [
+     "bot.gatherer.hungry.1",
+     "bot.gatherer.hungry.2"
+    ],
+    "nightFalls": [
+     "bot.gatherer.nightFalls.1",
+     "bot.gatherer.nightFalls.2"
+    ],
+    "greetPlayer": [
+     "bot.gatherer.greetPlayer.1",
+     "bot.gatherer.greetPlayer.2"
+    ],
+    "tradeOffer": [
+     "bot.gatherer.tradeOffer.1",
+     "bot.gatherer.tradeOffer.2"
+    ],
+    "tradeDeclined": [
+     "bot.gatherer.tradeDeclined.1",
+     "bot.gatherer.tradeDeclined.2"
+    ],
+    "baseAttacked": [
+     "bot.gatherer.baseAttacked.1",
+     "bot.gatherer.baseAttacked.2"
+    ],
+    "killedEnemy": [
+     "bot.gatherer.killedEnemy.1",
+     "bot.gatherer.killedEnemy.2"
+    ],
+    "idle": [
+     "bot.gatherer.idle.1",
+     "bot.gatherer.idle.2"
+    ]
+   },
+   "utility": {
+    "gather": {
+     "base": 0.7,
+     "inputs": {
+      "invSpaceFree": 0.4,
+      "diligence": 0.3
+     }
+    },
+    "craft": {
+     "base": 0.3,
+     "inputs": {
+      "hasIngredients": 0.6,
+      "diligence": 0.2
+     }
+    },
+    "build": {
+     "base": 0.2,
+     "inputs": {
+      "baseMissing": 0.7,
+      "diligence": 0.3
+     }
+    },
+    "fight": {
+     "base": 0.1,
+     "inputs": {
+      "enemyNear": 0.8,
+      "aggression": 0.5,
+      "healthFrac": 0.3
+     }
+    },
+    "flee": {
+     "base": 0.0,
+     "inputs": {
+      "enemyNear": 0.5,
+      "lowHealth": 0.9,
+      "bravery": -0.6
+     }
+    },
+    "eat": {
+     "base": 0.0,
+     "inputs": {
+      "hunger": 1.0
+     }
+    },
+    "sleep": {
+     "base": 0.0,
+     "inputs": {
+      "isNight": 0.8,
+      "fatigue": 0.4
+     }
+    },
+    "trade": {
+     "base": 0.1,
+     "inputs": {
+      "playerNear": 0.4,
+      "sociability": 0.4,
+      "greed": 0.3
+     }
+    }
+   }
+  },
+  "bot_builder": {
+   "role": "builder",
+   "traits": {
+    "bravery": [
+     0.3,
+     0.7
+    ],
+    "sociability": [
+     0.4,
+     0.8
+    ],
+    "greed": [
+     0.3,
+     0.7
+    ],
+    "diligence": [
+     0.7,
+     1.0
+    ],
+    "aggression": [
+     0.3,
+     0.7
+    ],
+    "curiosity": [
+     0.3,
+     0.7
+    ]
+   },
+   "routine": "builder",
+   "goals": {
+    "base": 0.6,
+    "gear": 0.25,
+    "food": 0.15
+   },
+   "imperfection": {
+    "reactionDelayTicks": [
+     6,
+     12
+    ],
+    "aimErrorDeg": 10,
+    "idleLookChancePerSec": 0.1,
+    "idleLookSeconds": [
+     0.5,
+     1.2
+    ]
+   },
+   "chat": {
+    "seeEnemy": [
+     "bot.builder.seeEnemy.1",
+     "bot.builder.seeEnemy.2"
+    ],
+    "lowHealth": [
+     "bot.builder.lowHealth.1",
+     "bot.builder.lowHealth.2"
+    ],
+    "hungry": [
+     "bot.builder.hungry.1",
+     "bot.builder.hungry.2"
+    ],
+    "nightFalls": [
+     "bot.builder.nightFalls.1",
+     "bot.builder.nightFalls.2"
+    ],
+    "greetPlayer": [
+     "bot.builder.greetPlayer.1",
+     "bot.builder.greetPlayer.2"
+    ],
+    "tradeOffer": [
+     "bot.builder.tradeOffer.1",
+     "bot.builder.tradeOffer.2"
+    ],
+    "tradeDeclined": [
+     "bot.builder.tradeDeclined.1",
+     "bot.builder.tradeDeclined.2"
+    ],
+    "baseAttacked": [
+     "bot.builder.baseAttacked.1",
+     "bot.builder.baseAttacked.2"
+    ],
+    "killedEnemy": [
+     "bot.builder.killedEnemy.1",
+     "bot.builder.killedEnemy.2"
+    ],
+    "idle": [
+     "bot.builder.idle.1",
+     "bot.builder.idle.2"
+    ]
+   },
+   "utility": {
+    "gather": {
+     "base": 0.5,
+     "inputs": {
+      "invSpaceFree": 0.4,
+      "diligence": 0.3
+     }
+    },
+    "craft": {
+     "base": 0.3,
+     "inputs": {
+      "hasIngredients": 0.6,
+      "diligence": 0.2
+     }
+    },
+    "build": {
+     "base": 0.6,
+     "inputs": {
+      "baseMissing": 0.7,
+      "diligence": 0.3
+     }
+    },
+    "fight": {
+     "base": 0.1,
+     "inputs": {
+      "enemyNear": 0.8,
+      "aggression": 0.5,
+      "healthFrac": 0.3
+     }
+    },
+    "flee": {
+     "base": 0.0,
+     "inputs": {
+      "enemyNear": 0.5,
+      "lowHealth": 0.9,
+      "bravery": -0.6
+     }
+    },
+    "eat": {
+     "base": 0.0,
+     "inputs": {
+      "hunger": 1.0
+     }
+    },
+    "sleep": {
+     "base": 0.0,
+     "inputs": {
+      "isNight": 0.8,
+      "fatigue": 0.4
+     }
+    },
+    "trade": {
+     "base": 0.1,
+     "inputs": {
+      "playerNear": 0.4,
+      "sociability": 0.4,
+      "greed": 0.3
+     }
+    }
+   }
+  },
+  "bot_trader": {
+   "role": "trader",
+   "traits": {
+    "bravery": [
+     0.3,
+     0.7
+    ],
+    "sociability": [
+     0.7,
+     1.0
+    ],
+    "greed": [
+     0.6,
+     0.95
+    ],
+    "diligence": [
+     0.3,
+     0.7
+    ],
+    "aggression": [
+     0.0,
+     0.2
+    ],
+    "curiosity": [
+     0.3,
+     0.7
+    ]
+   },
+   "routine": "merchant",
+   "goals": {
+    "base": 0.2,
+    "gear": 0.4,
+    "food": 0.4
+   },
+   "imperfection": {
+    "reactionDelayTicks": [
+     8,
+     16
+    ],
+    "aimErrorDeg": 15,
+    "idleLookChancePerSec": 0.2,
+    "idleLookSeconds": [
+     0.6,
+     1.8
+    ]
+   },
+   "chat": {
+    "seeEnemy": [
+     "bot.trader.seeEnemy.1",
+     "bot.trader.seeEnemy.2"
+    ],
+    "lowHealth": [
+     "bot.trader.lowHealth.1",
+     "bot.trader.lowHealth.2"
+    ],
+    "hungry": [
+     "bot.trader.hungry.1",
+     "bot.trader.hungry.2"
+    ],
+    "nightFalls": [
+     "bot.trader.nightFalls.1",
+     "bot.trader.nightFalls.2"
+    ],
+    "greetPlayer": [
+     "bot.trader.greetPlayer.1",
+     "bot.trader.greetPlayer.2"
+    ],
+    "tradeOffer": [
+     "bot.trader.tradeOffer.1",
+     "bot.trader.tradeOffer.2"
+    ],
+    "tradeDeclined": [
+     "bot.trader.tradeDeclined.1",
+     "bot.trader.tradeDeclined.2"
+    ],
+    "baseAttacked": [
+     "bot.trader.baseAttacked.1",
+     "bot.trader.baseAttacked.2"
+    ],
+    "killedEnemy": [
+     "bot.trader.killedEnemy.1",
+     "bot.trader.killedEnemy.2"
+    ],
+    "idle": [
+     "bot.trader.idle.1",
+     "bot.trader.idle.2"
+    ]
+   },
+   "utility": {
+    "gather": {
+     "base": 0.5,
+     "inputs": {
+      "invSpaceFree": 0.4,
+      "diligence": 0.3
+     }
+    },
+    "craft": {
+     "base": 0.3,
+     "inputs": {
+      "hasIngredients": 0.6,
+      "diligence": 0.2
+     }
+    },
+    "build": {
+     "base": 0.2,
+     "inputs": {
+      "baseMissing": 0.7,
+      "diligence": 0.3
+     }
+    },
+    "fight": {
+     "base": 0.1,
+     "inputs": {
+      "enemyNear": 0.8,
+      "aggression": 0.5,
+      "healthFrac": 0.3
+     }
+    },
+    "flee": {
+     "base": 0.0,
+     "inputs": {
+      "enemyNear": 0.5,
+      "lowHealth": 0.9,
+      "bravery": -0.6
+     }
+    },
+    "eat": {
+     "base": 0.0,
+     "inputs": {
+      "hunger": 1.0
+     }
+    },
+    "sleep": {
+     "base": 0.0,
+     "inputs": {
+      "isNight": 0.8,
+      "fatigue": 0.4
+     }
+    },
+    "trade": {
+     "base": 0.7,
+     "inputs": {
+      "playerNear": 0.4,
+      "sociability": 0.4,
+      "greed": 0.3
+     }
+    }
+   }
+  },
+  "bot_raider": {
+   "role": "raider",
+   "traits": {
+    "bravery": [
+     0.6,
+     0.95
+    ],
+    "sociability": [
+     0.1,
+     0.4
+    ],
+    "greed": [
+     0.5,
+     0.9
+    ],
+    "diligence": [
+     0.3,
+     0.7
+    ],
+    "aggression": [
+     0.7,
+     1.0
+    ],
+    "curiosity": [
+     0.3,
+     0.7
+    ]
+   },
+   "routine": "nocturnal",
+   "goals": {
+    "base": 0.1,
+    "gear": 0.7,
+    "food": 0.2
+   },
+   "imperfection": {
+    "reactionDelayTicks": [
+     4,
+     9
+    ],
+    "aimErrorDeg": 7,
+    "idleLookChancePerSec": 0.08,
+    "idleLookSeconds": [
+     0.3,
+     0.8
+    ]
+   },
+   "chat": {
+    "seeEnemy": [
+     "bot.raider.seeEnemy.1",
+     "bot.raider.seeEnemy.2"
+    ],
+    "lowHealth": [
+     "bot.raider.lowHealth.1",
+     "bot.raider.lowHealth.2"
+    ],
+    "hungry": [
+     "bot.raider.hungry.1",
+     "bot.raider.hungry.2"
+    ],
+    "nightFalls": [
+     "bot.raider.nightFalls.1",
+     "bot.raider.nightFalls.2"
+    ],
+    "greetPlayer": [
+     "bot.raider.greetPlayer.1",
+     "bot.raider.greetPlayer.2"
+    ],
+    "tradeOffer": [
+     "bot.raider.tradeOffer.1",
+     "bot.raider.tradeOffer.2"
+    ],
+    "tradeDeclined": [
+     "bot.raider.tradeDeclined.1",
+     "bot.raider.tradeDeclined.2"
+    ],
+    "baseAttacked": [
+     "bot.raider.baseAttacked.1",
+     "bot.raider.baseAttacked.2"
+    ],
+    "killedEnemy": [
+     "bot.raider.killedEnemy.1",
+     "bot.raider.killedEnemy.2"
+    ],
+    "idle": [
+     "bot.raider.idle.1",
+     "bot.raider.idle.2"
+    ]
+   },
+   "utility": {
+    "gather": {
+     "base": 0.5,
+     "inputs": {
+      "invSpaceFree": 0.4,
+      "diligence": 0.3
+     }
+    },
+    "craft": {
+     "base": 0.3,
+     "inputs": {
+      "hasIngredients": 0.6,
+      "diligence": 0.2
+     }
+    },
+    "build": {
+     "base": 0.2,
+     "inputs": {
+      "baseMissing": 0.7,
+      "diligence": 0.3
+     }
+    },
+    "fight": {
+     "base": 0.5,
+     "inputs": {
+      "enemyNear": 0.8,
+      "aggression": 0.5,
+      "healthFrac": 0.3
+     }
+    },
+    "flee": {
+     "base": 0.0,
+     "inputs": {
+      "enemyNear": 0.5,
+      "lowHealth": 0.9,
+      "bravery": -0.6
+     }
+    },
+    "eat": {
+     "base": 0.0,
+     "inputs": {
+      "hunger": 1.0
+     }
+    },
+    "sleep": {
+     "base": 0.0,
+     "inputs": {
+      "isNight": 0.8,
+      "fatigue": 0.4
+     }
+    },
+    "trade": {
+     "base": 0.1,
+     "inputs": {
+      "playerNear": 0.4,
+      "sociability": 0.4,
+      "greed": 0.3
+     }
+    }
+   }
+  },
+  "bot_loner": {
+   "role": "loner",
+   "traits": {
+    "bravery": [
+     0.4,
+     0.8
+    ],
+    "sociability": [
+     0.0,
+     0.2
+    ],
+    "greed": [
+     0.3,
+     0.7
+    ],
+    "diligence": [
+     0.3,
+     0.7
+    ],
+    "aggression": [
+     0.3,
+     0.7
+    ],
+    "curiosity": [
+     0.5,
+     0.9
+    ]
+   },
+   "routine": "drifter",
+   "goals": {
+    "base": 0.35,
+    "gear": 0.35,
+    "food": 0.3
+   },
+   "imperfection": {
+    "reactionDelayTicks": [
+     5,
+     12
+    ],
+    "aimErrorDeg": 9,
+    "idleLookChancePerSec": 0.25,
+    "idleLookSeconds": [
+     0.5,
+     2.0
+    ]
+   },
+   "chat": {
+    "seeEnemy": [
+     "bot.loner.seeEnemy.1",
+     "bot.loner.seeEnemy.2"
+    ],
+    "lowHealth": [
+     "bot.loner.lowHealth.1",
+     "bot.loner.lowHealth.2"
+    ],
+    "hungry": [
+     "bot.loner.hungry.1",
+     "bot.loner.hungry.2"
+    ],
+    "nightFalls": [
+     "bot.loner.nightFalls.1",
+     "bot.loner.nightFalls.2"
+    ],
+    "greetPlayer": [
+     "bot.loner.greetPlayer.1",
+     "bot.loner.greetPlayer.2"
+    ],
+    "tradeOffer": [
+     "bot.loner.tradeOffer.1",
+     "bot.loner.tradeOffer.2"
+    ],
+    "tradeDeclined": [
+     "bot.loner.tradeDeclined.1",
+     "bot.loner.tradeDeclined.2"
+    ],
+    "baseAttacked": [
+     "bot.loner.baseAttacked.1",
+     "bot.loner.baseAttacked.2"
+    ],
+    "killedEnemy": [
+     "bot.loner.killedEnemy.1",
+     "bot.loner.killedEnemy.2"
+    ],
+    "idle": [
+     "bot.loner.idle.1",
+     "bot.loner.idle.2"
+    ]
+   },
+   "utility": {
+    "gather": {
+     "base": 0.5,
+     "inputs": {
+      "invSpaceFree": 0.4,
+      "diligence": 0.3
+     }
+    },
+    "craft": {
+     "base": 0.3,
+     "inputs": {
+      "hasIngredients": 0.6,
+      "diligence": 0.2
+     }
+    },
+    "build": {
+     "base": 0.2,
+     "inputs": {
+      "baseMissing": 0.7,
+      "diligence": 0.3
+     }
+    },
+    "fight": {
+     "base": 0.1,
+     "inputs": {
+      "enemyNear": 0.8,
+      "aggression": 0.5,
+      "healthFrac": 0.3
+     }
+    },
+    "flee": {
+     "base": 0.0,
+     "inputs": {
+      "enemyNear": 0.5,
+      "lowHealth": 0.9,
+      "bravery": -0.6
+     }
+    },
+    "eat": {
+     "base": 0.0,
+     "inputs": {
+      "hunger": 1.0
+     }
+    },
+    "sleep": {
+     "base": 0.0,
+     "inputs": {
+      "isNight": 0.8,
+      "fatigue": 0.4
+     }
+    },
+    "trade": {
+     "base": 0.0,
+     "inputs": {
+      "playerNear": 0.4,
+      "sociability": 0.4,
+      "greed": 0.3
+     }
+    }
+   }
+  }
+ }
+}

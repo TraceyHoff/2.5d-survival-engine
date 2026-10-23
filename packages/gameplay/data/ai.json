@@ -1,0 +1,504 @@
+{
+ "$comment": "Per-archetype behavior data (consumed by an external AgentController / AI; gameplay runs no controller). aggro.mode: hostile|territorial|defensive|passive. Zombies use fromZombies=true: hp/speed/attack/sight come from zombies.json. loot: item keys from items.json; chance 0..1.",
+ "archetypes": {
+  "zombie_walker": {
+   "kind": "zombie",
+   "fromZombies": true,
+   "aggro": {
+    "mode": "hostile",
+    "range": 10,
+    "leashRange": 24
+   },
+   "flee": {
+    "hpFrac": 0,
+    "range": 0
+   },
+   "wander": {
+    "radius": 8,
+    "idleSeconds": [
+     2,
+     6
+    ]
+   },
+   "loot": [
+    {
+     "item": "cloth",
+     "min": 0,
+     "max": 2,
+     "chance": 0.5
+    },
+    {
+     "item": "rot",
+     "min": 1,
+     "max": 2,
+     "chance": 0.6
+    }
+   ]
+  },
+  "zombie_runner": {
+   "kind": "zombie",
+   "fromZombies": true,
+   "aggro": {
+    "mode": "hostile",
+    "range": 14,
+    "leashRange": 30
+   },
+   "flee": {
+    "hpFrac": 0,
+    "range": 0
+   },
+   "wander": {
+    "radius": 10,
+    "idleSeconds": [
+     1,
+     4
+    ]
+   },
+   "loot": [
+    {
+     "item": "cloth",
+     "min": 0,
+     "max": 1,
+     "chance": 0.4
+    },
+    {
+     "item": "coin",
+     "min": 1,
+     "max": 3,
+     "chance": 0.2
+    }
+   ]
+  },
+  "zombie_brute": {
+   "kind": "zombie",
+   "fromZombies": true,
+   "aggro": {
+    "mode": "hostile",
+    "range": 8,
+    "leashRange": 20
+   },
+   "flee": {
+    "hpFrac": 0,
+    "range": 0
+   },
+   "wander": {
+    "radius": 5,
+    "idleSeconds": [
+     3,
+     8
+    ]
+   },
+   "loot": [
+    {
+     "item": "iron_ore",
+     "min": 1,
+     "max": 3,
+     "chance": 0.5
+    },
+    {
+     "item": "leather",
+     "min": 1,
+     "max": 2,
+     "chance": 0.5
+    }
+   ]
+  },
+  "rabbit": {
+   "kind": "animal",
+   "hp": 10,
+   "speed": 3.2,
+   "perception": {
+    "sightRange": 9,
+    "hearingMul": 1.5,
+    "fovDeg": 300
+   },
+   "aggro": {
+    "mode": "passive",
+    "range": 0,
+    "leashRange": 0
+   },
+   "flee": {
+    "hpFrac": 1,
+    "range": 7
+   },
+   "wander": {
+    "radius": 6,
+    "idleSeconds": [
+     1,
+     3
+    ]
+   },
+   "attack": null,
+   "loot": [
+    {
+     "item": "raw_meat",
+     "min": 1,
+     "max": 1,
+     "chance": 1
+    },
+    {
+     "item": "hide",
+     "min": 0,
+     "max": 1,
+     "chance": 0.5
+    }
+   ]
+  },
+  "deer": {
+   "kind": "animal",
+   "hp": 50,
+   "speed": 3.6,
+   "perception": {
+    "sightRange": 14,
+    "hearingMul": 1.3,
+    "fovDeg": 280
+   },
+   "aggro": {
+    "mode": "passive",
+    "range": 0,
+    "leashRange": 0
+   },
+   "flee": {
+    "hpFrac": 1,
+    "range": 12
+   },
+   "wander": {
+    "radius": 12,
+    "idleSeconds": [
+     2,
+     6
+    ]
+   },
+   "attack": null,
+   "loot": [
+    {
+     "item": "raw_meat",
+     "min": 2,
+     "max": 4,
+     "chance": 1
+    },
+    {
+     "item": "hide",
+     "min": 1,
+     "max": 2,
+     "chance": 1
+    }
+   ]
+  },
+  "boar": {
+   "kind": "animal",
+   "hp": 90,
+   "speed": 2.4,
+   "perception": {
+    "sightRange": 8,
+    "hearingMul": 1.0,
+    "fovDeg": 200
+   },
+   "aggro": {
+    "mode": "defensive",
+    "range": 3,
+    "leashRange": 12
+   },
+   "flee": {
+    "hpFrac": 0.2,
+    "range": 10
+   },
+   "wander": {
+    "radius": 8,
+    "idleSeconds": [
+     2,
+     5
+    ]
+   },
+   "attack": {
+    "damage": 12,
+    "range": 1.1,
+    "cooldownSeconds": 1.4
+   },
+   "loot": [
+    {
+     "item": "raw_meat",
+     "min": 2,
+     "max": 3,
+     "chance": 1
+    },
+    {
+     "item": "hide",
+     "min": 1,
+     "max": 2,
+     "chance": 0.8
+    }
+   ]
+  },
+  "wolf": {
+   "kind": "animal",
+   "hp": 70,
+   "speed": 3.4,
+   "perception": {
+    "sightRange": 16,
+    "hearingMul": 1.4,
+    "fovDeg": 220
+   },
+   "aggro": {
+    "mode": "hostile",
+    "range": 12,
+    "leashRange": 28
+   },
+   "flee": {
+    "hpFrac": 0.25,
+    "range": 14
+   },
+   "wander": {
+    "radius": 14,
+    "idleSeconds": [
+     1,
+     4
+    ]
+   },
+   "attack": {
+    "damage": 10,
+    "range": 1.0,
+    "cooldownSeconds": 0.9
+   },
+   "loot": [
+    {
+     "item": "raw_meat",
+     "min": 1,
+     "max": 2,
+     "chance": 1
+    },
+    {
+     "item": "hide",
+     "min": 1,
+     "max": 2,
+     "chance": 1
+    }
+   ]
+  },
+  "bot_gatherer": {
+   "kind": "human",
+   "hp": 100,
+   "speed": 2.2,
+   "perception": {
+    "sightRange": 16,
+    "hearingMul": 1.0,
+    "fovDeg": 140
+   },
+   "aggro": {
+    "mode": "defensive",
+    "range": 6,
+    "leashRange": 24
+   },
+   "flee": {
+    "hpFrac": 0.5,
+    "range": 16
+   },
+   "wander": {
+    "radius": 16,
+    "idleSeconds": [
+     2,
+     8
+    ]
+   },
+   "attack": {
+    "damage": 8,
+    "range": 1.2,
+    "cooldownSeconds": 1.0
+   },
+   "loot": [
+    {
+     "item": "berries",
+     "min": 1,
+     "max": 4,
+     "chance": 0.8
+    },
+    {
+     "item": "cloth",
+     "min": 0,
+     "max": 2,
+     "chance": 0.5
+    }
+   ]
+  },
+  "bot_builder": {
+   "kind": "human",
+   "hp": 100,
+   "speed": 2.2,
+   "perception": {
+    "sightRange": 16,
+    "hearingMul": 1.0,
+    "fovDeg": 140
+   },
+   "aggro": {
+    "mode": "defensive",
+    "range": 6,
+    "leashRange": 24
+   },
+   "flee": {
+    "hpFrac": 0.4,
+    "range": 16
+   },
+   "wander": {
+    "radius": 16,
+    "idleSeconds": [
+     2,
+     8
+    ]
+   },
+   "attack": {
+    "damage": 9,
+    "range": 1.2,
+    "cooldownSeconds": 1.0
+   },
+   "loot": [
+    {
+     "item": "planks",
+     "min": 1,
+     "max": 4,
+     "chance": 0.8
+    },
+    {
+     "item": "cloth",
+     "min": 0,
+     "max": 2,
+     "chance": 0.5
+    }
+   ]
+  },
+  "bot_trader": {
+   "kind": "human",
+   "hp": 100,
+   "speed": 2.2,
+   "perception": {
+    "sightRange": 16,
+    "hearingMul": 1.0,
+    "fovDeg": 140
+   },
+   "aggro": {
+    "mode": "passive",
+    "range": 6,
+    "leashRange": 24
+   },
+   "flee": {
+    "hpFrac": 0.6,
+    "range": 16
+   },
+   "wander": {
+    "radius": 16,
+    "idleSeconds": [
+     2,
+     8
+    ]
+   },
+   "attack": {
+    "damage": 7,
+    "range": 1.2,
+    "cooldownSeconds": 1.0
+   },
+   "loot": [
+    {
+     "item": "coin",
+     "min": 1,
+     "max": 4,
+     "chance": 0.8
+    },
+    {
+     "item": "cloth",
+     "min": 0,
+     "max": 2,
+     "chance": 0.5
+    }
+   ]
+  },
+  "bot_raider": {
+   "kind": "human",
+   "hp": 100,
+   "speed": 2.2,
+   "perception": {
+    "sightRange": 16,
+    "hearingMul": 1.0,
+    "fovDeg": 140
+   },
+   "aggro": {
+    "mode": "hostile",
+    "range": 14,
+    "leashRange": 24
+   },
+   "flee": {
+    "hpFrac": 0.2,
+    "range": 16
+   },
+   "wander": {
+    "radius": 16,
+    "idleSeconds": [
+     2,
+     8
+    ]
+   },
+   "attack": {
+    "damage": 14,
+    "range": 1.2,
+    "cooldownSeconds": 1.0
+   },
+   "loot": [
+    {
+     "item": "coin",
+     "min": 1,
+     "max": 4,
+     "chance": 0.8
+    },
+    {
+     "item": "cloth",
+     "min": 0,
+     "max": 2,
+     "chance": 0.5
+    }
+   ]
+  },
+  "bot_loner": {
+   "kind": "human",
+   "hp": 100,
+   "speed": 2.2,
+   "perception": {
+    "sightRange": 16,
+    "hearingMul": 1.0,
+    "fovDeg": 140
+   },
+   "aggro": {
+    "mode": "territorial",
+    "range": 6,
+    "leashRange": 24
+   },
+   "flee": {
+    "hpFrac": 0.35,
+    "range": 16
+   },
+   "wander": {
+    "radius": 16,
+    "idleSeconds": [
+     2,
+     8
+    ]
+   },
+   "attack": {
+    "damage": 11,
+    "range": 1.2,
+    "cooldownSeconds": 1.0
+   },
+   "loot": [
+    {
+     "item": "cooked_meat",
+     "min": 1,
+     "max": 4,
+     "chance": 0.8
+    },
+    {
+     "item": "cloth",
+     "min": 0,
+     "max": 2,
+     "chance": 0.5
+    }
+   ]
+  }
+ }
+}

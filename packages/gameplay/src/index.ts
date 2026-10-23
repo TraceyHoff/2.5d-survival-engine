@@ -46,3 +46,5 @@ export * from "./input_hooks.js";
 export * from "./population.js";
 export * from "./agents.js";
 export * from "./systems/craft_queue.js";
+export * from "./ai/population.js";
+export * from "./ai/bot_input.js";

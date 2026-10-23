@@ -1,0 +1,30 @@
+{
+  "$comment": "Data-only spawn tables for an external PopulationSpawner (gameplay owns no spawn loop). biomes map names to worldgen tile ids. densityPerChunk = target live count per loaded chunk before weighting; phaseMul scales by day phase; biomeWeights (0 = never) scale by chunk biome; capPerChunk / globalCap per mode; group = pack size and spread in tiles. modes: which game modes enable the entry plus optional per-mode density multipliers. Zombie entries with fromZombies=true take phaseMul/cap from zombies.json spawning (reused, not duplicated).",
+  "chunkTiles": 32,
+  "phases": ["night", "dawn", "day", "dusk"],
+  "biomes": { "water": 1, "sand": 2, "grass": 3, "forest": 4, "stone": 5 },
+  "modes": {
+    "sp": { "densityMul": 1.0, "capMul": 1.0 },
+    "mp": { "densityMul": 0.8, "capMul": 1.5 }
+  },
+  "tables": {
+    "zombies": [
+      { "archetype": "zombie_walker", "fromZombies": true, "densityPerChunk": 0.6, "biomeWeights": { "sand": 0.6, "grass": 1, "forest": 1, "stone": 0.5 }, "group": { "min": 1, "max": 3, "spread": 3 }, "modes": { "sp": true, "mp": true }, "capPerChunk": 4, "globalCap": 60 },
+      { "archetype": "zombie_runner", "fromZombies": true, "densityPerChunk": 0.25, "biomeWeights": { "sand": 0.8, "grass": 1, "forest": 0.6, "stone": 0.4 }, "group": { "min": 1, "max": 2, "spread": 2 }, "modes": { "sp": true, "mp": true }, "capPerChunk": 2, "globalCap": 25 },
+      { "archetype": "zombie_brute", "fromZombies": true, "densityPerChunk": 0.08, "biomeWeights": { "grass": 0.5, "forest": 1, "stone": 1 }, "group": { "min": 1, "max": 1, "spread": 0 }, "modes": { "sp": true, "mp": true }, "capPerChunk": 1, "globalCap": 8 }
+    ],
+    "animals": [
+      { "archetype": "rabbit", "densityPerChunk": 1.2, "phaseMul": { "night": 0.4, "dawn": 1.3, "day": 1, "dusk": 1.3 }, "biomeWeights": { "grass": 1, "forest": 0.6, "sand": 0.2 }, "group": { "min": 1, "max": 3, "spread": 4 }, "modes": { "sp": true, "mp": true }, "capPerChunk": 6, "globalCap": 80 },
+      { "archetype": "deer", "densityPerChunk": 0.5, "phaseMul": { "night": 0.5, "dawn": 1.4, "day": 1, "dusk": 1.4 }, "biomeWeights": { "grass": 0.8, "forest": 1 }, "group": { "min": 2, "max": 4, "spread": 5 }, "modes": { "sp": true, "mp": true }, "capPerChunk": 4, "globalCap": 40 },
+      { "archetype": "boar", "densityPerChunk": 0.3, "phaseMul": { "night": 0.8, "dawn": 1, "day": 1, "dusk": 1 }, "biomeWeights": { "forest": 1, "grass": 0.4 }, "group": { "min": 1, "max": 3, "spread": 3 }, "modes": { "sp": true, "mp": true }, "capPerChunk": 3, "globalCap": 25 },
+      { "archetype": "wolf", "densityPerChunk": 0.15, "phaseMul": { "night": 1.8, "dawn": 0.8, "day": 0.4, "dusk": 1.2 }, "biomeWeights": { "forest": 1, "stone": 0.8, "grass": 0.3 }, "group": { "min": 2, "max": 5, "spread": 4 }, "modes": { "sp": true, "mp": true }, "capPerChunk": 5, "globalCap": 20 }
+    ],
+    "humans": [
+      { "archetype": "bot_gatherer", "densityPerChunk": 0.05, "phaseMul": { "night": 0.3, "dawn": 1, "day": 1, "dusk": 0.7 }, "biomeWeights": { "grass": 1, "forest": 1, "stone": 0.6, "sand": 0.4 }, "group": { "min": 1, "max": 2, "spread": 3 }, "modes": { "sp": true, "mp": false }, "capPerChunk": 1, "globalCap": 6 },
+      { "archetype": "bot_builder", "densityPerChunk": 0.03, "phaseMul": { "night": 0.5, "dawn": 1, "day": 1, "dusk": 0.8 }, "biomeWeights": { "grass": 1, "forest": 0.8, "stone": 0.5 }, "group": { "min": 1, "max": 3, "spread": 4 }, "modes": { "sp": true, "mp": false }, "capPerChunk": 1, "globalCap": 4 },
+      { "archetype": "bot_trader", "densityPerChunk": 0.015, "phaseMul": { "night": 0.2, "dawn": 0.8, "day": 1, "dusk": 0.6 }, "biomeWeights": { "grass": 1, "sand": 0.8 }, "group": { "min": 1, "max": 1, "spread": 0 }, "modes": { "sp": true, "mp": false }, "capPerChunk": 1, "globalCap": 2 },
+      { "archetype": "bot_raider", "densityPerChunk": 0.02, "phaseMul": { "night": 1.5, "dawn": 0.6, "day": 0.5, "dusk": 1.2 }, "biomeWeights": { "forest": 1, "stone": 1, "grass": 0.5 }, "group": { "min": 2, "max": 4, "spread": 3 }, "modes": { "sp": true, "mp": false }, "capPerChunk": 4, "globalCap": 8 },
+      { "archetype": "bot_loner", "densityPerChunk": 0.02, "phaseMul": { "night": 0.6, "dawn": 1, "day": 1, "dusk": 1 }, "biomeWeights": { "forest": 1, "stone": 0.8, "grass": 0.6, "sand": 0.6 }, "group": { "min": 1, "max": 1, "spread": 0 }, "modes": { "sp": true, "mp": false }, "capPerChunk": 1, "globalCap": 3 }
+    ]
+  }
+}
