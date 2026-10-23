@@ -69,3 +69,34 @@ describe("replication benchmark (server only)", () => {
     expect(r.sharedPerTick).toBeGreaterThan(r.encodesPerTick * 5); // per-(state,baseline) encodings are reused across clients
   }, 120_000);
 });
+
+/** AOI radius bonus (watchtower): half the clients flicker on/off a tower every 10 ticks. Chunk churn with vs without hysteresis. */
+function towerFlicker(holdTicks: number) {
+  const w: World = makeWorld(); const rng = new Rng(7); const t = new FakeTransport(); let n = 0;
+  const server = new NetServer({ world: w, transport: t, randomToken: () => new Uint8Array(16).fill(1 + n % 200), viewBonus: { max: 2, holdTicks },
+    onClientJoin: (s, world) => { n++; const e = world.create(); world.add(e, Transform, { x: rng.range(0, 2048), y: rng.range(0, 2048) }).add(e, Owner, { clientId: s.clientId }); } });
+  for (let i = 0; i < 5000; i++) { const e = w.create(); w.add(e, Transform, { x: rng.range(0, 2048), y: rng.range(0, 2048) }); }
+  const C = 100; for (let c = 1; c <= C; c++) t.inject(c, encodeHello({ hashes: server.requiredHashes, token: new Uint8Array(16) }));
+  const ids = () => [...server.sessions.keys()];
+  const tick = (k: number): void => {
+    if (k % 10 === 0) for (const id of ids()) if (id % 2) server.setViewRadiusBonus(id, (k / 10) % 2 ? 0 : 9); // 9 -> capped at 2
+    w.step(DT); for (let c = 1; c <= C; c++) t.inject(c, encodeInput({ ackTick: Math.max(0, w.tick - 3), cmds: [] }));
+  };
+  for (let k = 0; k < 30; k++) tick(k);
+  let churn = 0; const N = 120; const t0 = performance.now();
+  for (let k = 30; k < 30 + N; k++) { tick(k); for (const id of ids()) { const g = server.interest!.grid.get(id)!; churn += g.enteredChunks.length + g.leftChunks.length; } }
+  const r = { scenario: `100c tower flicker (hold ${holdTicks})`, msPerTick: +((performance.now() - t0) / N).toFixed(2), chunkChurnPerTick: +(churn / N).toFixed(1), maxBonus: Math.max(...ids().map((id) => server.viewRadiusBonus(id))) };
+  console.log(JSON.stringify(r));
+  for (const id of ids()) server.setViewRadiusBonus(id, 0); // leave the tower for good: bonus drops after holdTicks
+  for (let k = 0; k <= holdTicks; k++) { w.step(DT); for (let c = 1; c <= C; c++) t.inject(c, encodeInput({ ackTick: Math.max(0, w.tick - 3), cmds: [] })); }
+  return { ...r, afterLeave: Math.max(...ids().map((id) => server.viewRadiusBonus(id))) };
+}
+describe("AOI radius bonus benchmark", () => {
+  it("capped server-side; hysteresis keeps a flickering tower bonus from thrashing chunks", () => {
+    const held = towerFlicker(60), raw = towerFlicker(0);
+    expect(held.maxBonus).toBe(2); // asked for 9
+    expect(held.afterLeave).toBe(0); expect(raw.afterLeave).toBe(0);
+    expect(held.chunkChurnPerTick).toBeLessThan(raw.chunkChurnPerTick / 4);
+    expect(held.msPerTick).toBeLessThan(PERF ? 30 : 500);
+  }, 60_000);
+});

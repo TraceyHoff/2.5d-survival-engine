@@ -185,7 +185,7 @@ export class NetClient {
   sendCommand<S extends Schema>(def: MessageDef<S>, payload: Payload<S>): boolean {
     if (!this.active) return false;
     const d = def as unknown as MessageDefBase; const id = this.commands.id(d);
-    const p: Record<string, number> = { ...payload };
+    const p = { ...payload } as Record<string, number>; // entity fields are scalars; array fields pass through
     for (const f of d.entityFields) {
       const e = p[f]!; if (e === NO_ENTITY) { p[f] = 0; continue; }
       const n = this.netOf.get(e); if (n === undefined) return false; p[f] = n;

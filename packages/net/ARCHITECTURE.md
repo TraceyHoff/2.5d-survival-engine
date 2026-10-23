@@ -467,6 +467,26 @@ gameplay codes.
 
 Wire: `u2 kind` (0 set, 1 initial, 2 result), varuint req. A value is bodyType, skinTone, n, then n × (part, primary, secondary). n travels on the wire and must be ≤ SLOT_COUNT. `version` is never client-sent.
 
-Pending looks are applied in an **input-phase system**, not `onTick`. Tick hooks run after the snapshot capture and `World.step` then clears change bits, so a component write from an `onTick` hook is never replicated unless something else touches the entity later. This applies to any module that writes the world from `onTick`.
+Pending looks are applied in an **input-phase system**. (Before §23, tick hooks ran after the snapshot capture, so `onTick` writes were lost; that is fixed, see §23.)
 
 A client built without Appearance (old schema) fails the handshake with `SchemaMismatch`. The message reads "world schema hash mismatch …: client and server must ship together".
+
+## 23. Write phases, array command fields, stall buy hook, AOI bonus
+
+**Supported write phases.** Gameplay systems (any phase up to `network`) and `server.onTick` hooks. Tick hooks run at the **start** of the network phase, before NetId assignment, AOI and snapshot capture. Component writes and entities created there replicate in this tick's snapshot. Raw messages a hook sends go out ahead of the snapshot. Writes made *after* the network phase (between `world.step` calls, or from transport callbacks outside a step) are captured at the next step only if their change bits survive, so prefer systems or hooks. The regression test is `test/ontick.test.ts`.
+
+**Array fields in commands and events.** Fixed-length array fields (`{ type: "u8", length: 24 }`) are encoded as exactly `length` elements in sorted field order. Short input is zero-padded and long input truncated; the receiving side gets `number[]`. `Payload<S>` types such a field as `ArrayLike<number>`. Earlier the codec silently wrote one scalar. The netdefs hash already included the length, so the protocol version is unchanged.
+
+**Pluggable stall buy.** `stalls.setBuyHook(fn)`, or `new StallServer(server, { hooks, buyHook })`:
+`StallBuyHook = (world, buyer, stall, req: StallBuyRequest) => string | undefined | { crafterId?, reason? }`, with
+`StallBuyRequest = { listing, qty, expectedRevision, expectedPriceItem, expectedPriceCount }` (`listing` = the wire listingId).
+- The hook must be all-or-nothing (one core transaction). Success is `undefined`/`""`/`{ crafterId }`; anything else is a reason string.
+- Reasons map through `STALL_BUY_REASONS`: sold_out→SoldOut, no_funds→NoFunds, price_changed→PriceChanged, stale_listing→StaleListing (13, new), forbidden→Denied, no_space→NoSpace, till_full→TillFull. Gameplay's other BUY_REASONS map too, and unknown strings become BadRequest. The client turns a code back into a name with `stallReasonName`.
+- Precedence: buy hook > `hooks.buy` > `coreStallBuy` (entity has core TradeStall) > checkListing+purchaseSwap.
+- Net still does range, open, canBuy and the rate limit first, and does `sold`, the result and sale notifications afterwards.
+
+**AOI radius bonus.** `server.setViewRadiusBonus(clientId, chunks)` adds chunks to every viewpoint of the client.
+- Capped server-side by `viewBonus.max` (default 2); negative or NaN becomes 0.
+- A raise applies on the next send. A lower value applies only after it has held for `viewBonus.holdTicks` (default 60), on top of the grid's per-chunk hysteresis.
+- `viewRadiusBonus(clientId)` reads the applied value.
+- Bench: 100 clients flickering a tower bonus every 10 ticks give 0 chunk changes per tick with hold 60, versus 160 with hold 0.

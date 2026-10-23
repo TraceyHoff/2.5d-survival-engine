@@ -27,7 +27,7 @@ export const StallOp = { Buy: 0, List: 1, EditPrice: 2, Delist: 3, Collect: 4 } 
 export type StallOp = (typeof StallOp)[keyof typeof StallOp];
 export const StallResult = {
   Ok: 0, PriceChanged: 1, SoldOut: 2, NoFunds: 3, Denied: 4, Closed: 5, OutOfRange: 6, RateLimited: 7, NoStall: 8, TillFull: 9,
-  NoSpace: 10, BadRequest: 11, Disconnected: 12, /** gameplay codes are Hook + code */ Hook: 100,
+  NoSpace: 10, BadRequest: 11, Disconnected: 12, StaleListing: 13, /** gameplay codes are Hook + code */ Hook: 100,
 } as const;
 export const MAX_LISTINGS = 24; // clan_pavilion; stall_blanket 4, stall_cart 8, stall_booth 12 (gameplay data)
 export interface Price { itemId: number; count: number }
@@ -78,6 +78,27 @@ export function purchaseSwap(world: World, o: { buyer: Entity; stock: Entity; sl
   return r.ok ? undefined : (reason ?? StallResult.BadRequest);
 }
 
+/**
+ * Pluggable purchase (gameplay supplies buyFromStall). Request as gameplay's PurchaseRequest, `listing` = wire listingId.
+ * MUST be all-or-nothing (one core transaction): on any failure nothing moved. Return undefined / "" on success (or
+ * `{ crafterId }`), else a reason string; STALL_BUY_REASONS map 1:1 to StallResult codes the client receives.
+ */
+export interface StallBuyRequest { listing: number; qty: number; expectedRevision: number; expectedPriceItem: number; expectedPriceCount: number }
+export type StallBuyHook = (world: World, buyer: Entity, stall: Entity, req: StallBuyRequest) => string | undefined | { crafterId?: number; reason?: string };
+export const STALL_BUY_REASONS: Readonly<Record<string, number>> = {
+  sold_out: StallResult.SoldOut, no_funds: StallResult.NoFunds, price_changed: StallResult.PriceChanged, stale_listing: StallResult.StaleListing,
+  forbidden: StallResult.Denied, no_space: StallResult.NoSpace, till_full: StallResult.TillFull,
+  // other gameplay BUY_REASONS
+  not_stall: StallResult.NoStall, stall_closed: StallResult.Closed, out_of_range: StallResult.OutOfRange,
+  bad_listing: StallResult.SoldOut, listing_disabled: StallResult.SoldOut, bad_qty: StallResult.BadRequest,
+};
+/** Client-side name of a result code (inverse of STALL_BUY_REASONS for the seven buy reasons; "ok"; else undefined). */
+export function stallReasonName(code: number): string | undefined {
+  if (code === StallResult.Ok) return "ok";
+  for (const k of ["sold_out", "no_funds", "price_changed", "stale_listing", "forbidden", "no_space", "till_full"]) if (STALL_BUY_REASONS[k] === code) return k;
+  return undefined;
+}
+
 export interface SaleRecord { stallNetId: number; listingId: number; item: number; qty: number; crafterId: number; price: Price; buyerId: number; tick: number }
 export interface OwnerCommand { op: StallOp; actor: Entity; stall: Entity; session: ClientSession; listingId?: number; slot?: number; price?: Price }
 export interface StallHooks {
@@ -106,6 +127,8 @@ export interface StallServerOptions {
   offlineQueue?: number;
   /** Persistent player id of a session (default: group resolver playerOf, else clientId). */
   playerIdOf?: (s: ClientSession) => number;
+  /** Pluggable purchase; same as setBuyHook(). Precedence: buy hook > hooks.buy > coreStallBuy (core TradeStall) > checkListing+purchaseSwap. */
+  buyHook?: StallBuyHook;
   /** Push buyer/crafter names alongside sales. */
   names?: NameSync;
 }
@@ -117,7 +140,11 @@ export class StallServer {
   readonly offline = new Map<number, { sales: SaleRecord[]; dropped: number }>();
   readonly stats = { buys: 0, sales: 0, rejected: new Map<number, number>(), queued: 0, delivered: 0 };
   readonly saleLog: ((s: SaleRecord, stall: Entity) => void)[] = [];
+  private buyHook: StallBuyHook | undefined;
+  /** Register (or clear with undefined) the gameplay purchase. When set it is the default buy path. */
+  setBuyHook(fn: StallBuyHook | undefined): void { this.buyHook = fn; }
   constructor(readonly server: NetServer, readonly opts: StallServerOptions) {
+    this.buyHook = opts.buyHook;
     server.onRawMessage(MsgType.Stall, (s, r) => this.onMessage(s, r));
     server.onTick(() => this.tick());
   }
@@ -169,7 +196,13 @@ export class StallServer {
     const breq: BuyRequest = { listingId, expectedRevision: rev, expectedPrice: p!, qty };
     let reason: number | undefined; let l: ListingView | undefined;
     let crafter: number | undefined;
-    if (H.buy) { const b = H.buy(w, actor, stall, view, breq); if (typeof b === "number") reason = b || undefined; else crafter = b.crafterId; }
+    l = view.listing(listingId); // read before the swap: a sold-out listing may vanish
+    if (this.buyHook) {
+      const b = this.buyHook(w, actor, stall, { listing: listingId, qty, expectedRevision: rev, expectedPriceItem: p!.itemId, expectedPriceCount: p!.count });
+      const why = typeof b === "object" ? b.reason : b;
+      if (why) reason = STALL_BUY_REASONS[why] ?? StallResult.BadRequest; else if (typeof b === "object") crafter = b.crafterId;
+    } else if (H.buy) { const b = H.buy(w, actor, stall, view, breq); if (typeof b === "number") reason = b || undefined; else crafter = b.crafterId; }
+    else if (w.isRegistered(TradeStall) && w.has(stall, TradeStall)) { const b = coreStallBuy(w, actor, stall, view, breq); if (typeof b === "number") reason = b || undefined; else crafter = b.crafterId; }
     else {
       reason = checkListing(view, breq); l = view.listing(listingId);
       if (!reason) reason = purchaseSwap(w, { buyer: actor, stock: view.stock, slot: l!.slot, qty, till: view.till, price: l!.price, item: l!.item });

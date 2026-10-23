@@ -1,4 +1,4 @@
-import { fieldType, fnv1a, schemaFields, schemaSignature, type Schema } from "@engine/core";
+import { fieldLength, fieldType, fnv1a, isArrayField, schemaFields, schemaSignature, type Schema } from "@engine/core";
 import type { BitReader, BitWriter } from "./bits.js";
 
 /** Token bucket config: sustained `perSec`, bursts up to `burst`. */
@@ -6,8 +6,9 @@ export interface RateLimit { perSec: number; burst: number }
 export const DEFAULT_COMMAND_RATE: RateLimit = { perSec: 10, burst: 20 };
 
 /**
- * A schema'd message type (client->server command or server->client event). Payload fields are scalar
- * core field types, encoded in sorted field order. Fields listed in `entityFields` are entity references:
+ * A schema'd message type (client->server command or server->client event). Payload fields are core field types
+ * (scalars, or fixed-length arrays such as `name: { type: "u8", length: 24 }`, sent as exactly `length` elements;
+ * short arrays are zero-padded, long ones truncated), encoded in sorted field order. Fields listed in `entityFields` are entity references:
  * callers pass LOCAL entity ids, net sends NetIds and resolves them back to local entities on the other side.
  */
 /** Non-generic view used for registries/lists (MessageDef<S> is invariant in S because of keyof). */
@@ -22,7 +23,9 @@ export interface MessageDef<S extends Schema = Schema> extends MessageDefBase {
   readonly schema: S;
   readonly entityFields: readonly (keyof S & string)[];
 }
-export type Payload<S extends Schema> = { [K in keyof S]: number };
+export type Payload<S extends Schema> = { [K in keyof S]: S[K] extends string ? number : S[K] extends { length: number } ? ArrayLike<number> : number };
+/** Untyped payload as handlers see it: entity / scalar fields are numbers, array fields number[]. */
+export type PayloadValues = Record<string, number | ArrayLike<number>>;
 
 export function defineCommand<S extends Schema>(name: string, schema: S, opts: { entityFields?: (keyof S & string)[]; rate?: RateLimit } = {}): MessageDef<S> {
   return { kind: "command", name, schema, entityFields: opts.entityFields ?? [], ...(opts.rate && { rate: opts.rate }) };
@@ -45,11 +48,21 @@ export class MessageRegistry {
   }
 }
 
-export function writePayload(w: BitWriter, def: MessageDefBase, p: Readonly<Record<string, number>>): void {
-  for (const f of schemaFields(def.schema)) w.write(fieldType(def.schema[f]!), p[f] ?? 0);
+export function writePayload(w: BitWriter, def: MessageDefBase, p: Readonly<Record<string, unknown>>): void {
+  for (const f of schemaFields(def.schema)) {
+    const spec = def.schema[f]!; const t = fieldType(spec); const v = p[f];
+    if (isArrayField(spec)) { const a = (v ?? []) as ArrayLike<number>; for (let i = 0, n = fieldLength(spec); i < n; i++) w.write(t, a[i] ?? 0); }
+    else w.write(t, typeof v === "number" ? v : 0);
+  }
 }
 export function readPayload(r: BitReader, def: MessageDefBase): Record<string, number> {
-  const o: Record<string, number> = {}; for (const f of schemaFields(def.schema)) o[f] = r.read(fieldType(def.schema[f]!)); return o;
+  const o: Record<string, number | number[]> = {};
+  for (const f of schemaFields(def.schema)) {
+    const spec = def.schema[f]!; const t = fieldType(spec);
+    if (isArrayField(spec)) { const a: number[] = []; for (let i = 0, n = fieldLength(spec); i < n; i++) a.push(r.read(t)); o[f] = a; }
+    else o[f] = r.read(t);
+  }
+  return o as Record<string, number>; // array fields are number[] at runtime (Payload<S> types them as ArrayLike<number>)
 }
 
 /** Deterministic token bucket driven by server ticks (no wall clock). */

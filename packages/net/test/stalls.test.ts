@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { PlayerNameRegistry } from "@engine/core";
-import { NameSync, StallResult, checkListing, type StallResultMsg } from "../src/index.js";
+import { NameSync, STALL_BUY_REASONS, StallResult, checkListing, stallReasonName, type StallBuyRequest, type StallResultMsg } from "../src/index.js";
 import { COIN, Listings, StallHeader, stallRig } from "./stall-fixture.js";
 
 const SWORD = 50, BREAD = 60, ALICE = 1, BOB = 2, CAROL = 3;
@@ -126,3 +126,27 @@ describe("owner commands", () => {
   });
 });
 import { Transform } from "@engine/core";
+
+describe("pluggable buy hook (gameplay buyFromStall)", () => {
+  it("is the default path when registered: gets the request, its reasons reach the client, failures move nothing; unset falls back", async () => {
+    const x = await market(0);
+    const seen: StallBuyRequest[] = []; let answer: string | undefined | { crafterId: number } = "sold_out";
+    x.stalls.setBuyHook((_w, buyer, stall, req) => { expect(buyer).toBe(x.players.get(2)); expect(stall).toBe(x.stall); seen.push(req); return answer; });
+    const before = coins(x);
+    for (const why of ["sold_out", "no_funds", "price_changed", "stale_listing", "forbidden", "no_space", "till_full", "made_up"]) {
+      answer = why;
+      const r = await x.res(x.b1.stalls.buy(x.nid, x.bread, 5, { itemId: COIN, count: 2 }, 3));
+      expect(r.reason).toBe(STALL_BUY_REASONS[why] ?? StallResult.BadRequest);
+      if (why !== "made_up") expect(stallReasonName(r.reason)).toBe(why);
+    }
+    expect(seen[0]).toEqual({ listing: x.bread, qty: 3, expectedRevision: 5, expectedPriceItem: COIN, expectedPriceCount: 2 });
+    expect(coins(x)).toBe(before); expect(x.slot(x.stall, 1).count).toBe(5);
+    const sales: unknown[] = []; x.owner.stalls.onSale((s) => sales.push(s));
+    answer = { crafterId: 4242 }; // hook did the swap itself
+    expect(await x.res(x.b1.stalls.buy(x.nid, x.bread, 5, { itemId: COIN, count: 2 }, 2))).toMatchObject({ reason: StallResult.Ok, detail: 2 });
+    x.step(6); expect(sales).toEqual([expect.objectContaining({ listingId: x.bread, item: BREAD, qty: 2, crafterId: 4242, price: { itemId: COIN, count: 4 } })]);
+    x.stalls.setBuyHook(undefined); // fallback: built-in checkListing + purchaseSwap
+    expect(await x.res(x.b1.stalls.buy(x.nid, x.sword, 0, { itemId: COIN, count: 30 }))).toMatchObject({ reason: StallResult.Ok });
+    expect(x.total(x.players.get(2)!, COIN)).toBe(70);
+  });
+});

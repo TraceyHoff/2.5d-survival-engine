@@ -124,6 +124,11 @@ export interface NetServerOptions {
   hashes?: NamedHashes;
   /** Chunk area-of-interest; false = every entity is relevant to every client. */
   interest?: InterestOptions | false;
+  /**
+   * Per-client AOI radius bonus (setViewRadiusBonus): `max` chunks cap (default 2); a lowered bonus only takes
+   * effect after it stayed lower for `holdTicks` (default 60) so stepping off a tower briefly doesn't thrash chunks.
+   */
+  viewBonus?: { max?: number; holdTicks?: number };
   /** Soft per-client snapshot budget in bytes (default 16 KiB). Owned/global entities and despawns always go. */
   budgetBytes?: number;
   /** Per-client bytes per tick for streaming static chunks on entry (default 8 KiB); static change batches are not budgeted. */
@@ -246,7 +251,11 @@ export class NetServer {
     const s = this.sessions.get(clientId); if (!s?.conn) return false;
     this.opts.transport.send(s.conn, bytes, channel); s.stats.bytesSent += bytes.length; return true;
   }
-  /** Called at the end of every network phase, after snapshots were sent. */
+  /**
+   * Called once per network phase, BEFORE NetId assignment and snapshot capture: component writes (and entities
+   * created) here replicate in this tick's snapshot. This is the supported late write phase for net modules and
+   * gameplay; raw messages sent here go out ahead of this tick's snapshot (channels are not mutually ordered anyway).
+   */
   onTick(fn: (tick: number) => void): void { this.tickHooks.push(fn); }
   /** Anti-cheat feed: rate-limited/unknown/malformed commands, input floods, rejections, module reports. */
   onAnomaly(fn: (s: ClientSession, kind: AnomalyKind, detail: string) => void): void { this.anomalyHandlers.push(fn); }
@@ -303,6 +312,28 @@ export class NetServer {
   relevantChunks(clientId: number): ReadonlySet<string> | undefined { return this.interest ? (this.interest.grid.get(clientId)?.chunks ?? NO_CHUNKS) : undefined; }
   /** The client's AOI viewpoints (owned entities + extra) as of the last send; for closest-first ordering. */
   viewpointsOf(clientId: number): readonly Viewpoint[] { return this.lastViews.get(clientId) ?? []; }
+  private viewBonus = new Map<number, { target: number; eff: number; lowFor: number }>();
+  /**
+   * Extra AOI chunk radius for a client (watchtower, spyglass), added to every one of its viewpoints. Capped
+   * server-side at viewBonus.max; raising applies on the next send, lowering after viewBonus.holdTicks. 0 clears.
+   * Returns the capped target.
+   */
+  setViewRadiusBonus(clientId: number, chunks: number): number {
+    const max = Math.max(0, Math.floor(this.opts.viewBonus?.max ?? 2));
+    const target = Math.min(max, Math.max(0, Math.floor(Number.isFinite(chunks) ? chunks : 0)));
+    const b = this.viewBonus.get(clientId);
+    if (b) { b.target = target; if (target >= b.eff) { b.eff = target; b.lowFor = 0; } }
+    else if (target) this.viewBonus.set(clientId, { target, eff: target, lowFor: 0 });
+    return target;
+  }
+  /** The bonus currently applied to the client's AOI (after hysteresis). */
+  viewRadiusBonus(clientId: number): number { return this.viewBonus.get(clientId)?.eff ?? 0; }
+  private effectiveBonus(clientId: number): number {
+    const b = this.viewBonus.get(clientId); if (!b) return 0;
+    if (b.target < b.eff && ++b.lowFor >= (this.opts.viewBonus?.holdTicks ?? 60)) { b.eff = b.target; b.lowFor = 0; }
+    if (!b.eff && !b.target) this.viewBonus.delete(clientId);
+    return b.eff;
+  }
   setViewpoints(clientId: number, views: readonly Viewpoint[]): void { if (views.length) this.extraViews.set(clientId, views); else this.extraViews.delete(clientId); }
   /** Always replicate this entity to every client regardless of AOI (entities without Transform are global automatically). */
   setGlobal(e: Entity, global = true): void { if (global) this.globals.add(e); else this.globals.delete(e); }
@@ -316,7 +347,7 @@ export class NetServer {
   /** Queue a tick-stamped event (entity fields = local entities; sent as NetIds). Flushed in this tick's network phase. */
   emitEvent<S extends core.Schema>(def: MessageDef<S>, payload: Payload<S>, opts: { reliable?: boolean; scope?: EventScope } = {}): void {
     const d = def as unknown as MessageDefBase; this.events.id(d);
-    const p: Record<string, number> = { ...payload };
+    const p = { ...payload } as Record<string, number>; // entity fields are scalars; array fields pass through
     for (const f of d.entityFields) { const e = p[f]!; p[f] = e === NO_ENTITY ? 0 : this.netIds.netIdOf(e) ?? 0; }
     const scope = opts.scope ?? "all";
     const near = typeof scope === "object" && "nearby" in scope ? scope.nearby : undefined;
@@ -454,7 +485,7 @@ export class NetServer {
 
   removeSession(clientId: number): void {
     const s = this.sessions.get(clientId) as SessionState | undefined; if (!s) return;
-    this.sessions.delete(clientId); this.byToken.delete(tokenKey(s.token)); this.interest?.removeViewer(clientId); this.extraViews.delete(clientId);
+    this.sessions.delete(clientId); this.byToken.delete(tokenKey(s.token)); this.interest?.removeViewer(clientId); this.extraViews.delete(clientId); this.viewBonus.delete(clientId);
     if (s.conn !== undefined) { this.byConn.delete(s.conn); this.opts.transport.disconnect(s.conn); }
   }
 
@@ -517,6 +548,7 @@ export class NetServer {
   }
 
   private replicate(w: World): void {
+    for (const f of this.tickHooks) f(w.tick); // before capture: hook writes must not be lost to the end-of-step bit clear
     const t0 = now();
     const ns = w.store(NetId);
     for (const index of [...ns.changedIndices()]) { const e = ns.dense[ns.slot(index)]!; if (this.netIds.netIdOf(e) === undefined) this.netIds.adopt(e); }
@@ -540,7 +572,10 @@ export class NetServer {
       for (const s of this.byConn.values()) {
         const pos = (owned.get(s.clientId) ?? []).filter((e) => tf.has(entityIndex(e))).map((e) => ({ x: w.getField(e, Transform, "x")!, y: w.getField(e, Transform, "y")! }));
         const extra = this.extraViews.get(s.clientId);
-        const vp = extra ? [...pos, ...extra] : pos; viewsOf.set(s.clientId, vp);
+        let vp: readonly Viewpoint[] = extra ? [...pos, ...extra] : pos;
+        const bonus = this.effectiveBonus(s.clientId);
+        if (bonus) vp = vp.map((v) => ({ x: v.x, y: v.y, r: (v.r ?? grid.grid.radius) + bonus }));
+        viewsOf.set(s.clientId, vp);
         grid.setViewer(s.clientId, vp);
       }
       grid.update();
@@ -652,7 +687,6 @@ export class NetServer {
       }
     }
     this.perf.sendMs = now() - t1;
-    for (const f of this.tickHooks) f(tick);
     this.pings();
   }
 
