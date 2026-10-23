@@ -7,3 +7,4 @@ export * from "./persistence.js";
 export * from "./session.js";
 export * from "./social.js";
 export * from "./migrate.js";
+export * from "./appearance.js";

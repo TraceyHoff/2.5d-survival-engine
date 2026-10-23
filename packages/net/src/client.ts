@@ -18,12 +18,24 @@ import { TradeClient } from "./trade.js";
 import { encodeReport, type ReportReason } from "./anticheat.js";
 import { TileClient } from "./tiles.js";
 import { NamesClient } from "./names.js";
+import { AppearanceClient } from "./appearance.js";
+import { RejectReason as RejectReasonV } from "./protocol.js";
 import { StallClient } from "./stalls.js";
 import type { TileMap } from "@engine/world";
 import { StaticClient, encodeStaticCtl } from "./static.js";
 
+const REJECT_TEXT: Record<number, string> = {
+  [RejectReasonV.ProtocolMismatch]: "protocol version mismatch: client and server builds differ",
+  [RejectReasonV.SchemaMismatch]: "world schema hash mismatch (components changed, e.g. Appearance): client and server must ship together",
+  [RejectReasonV.HashMismatch]: "content hash mismatch: client and server must ship together",
+  [RejectReasonV.BadToken]: "bad session token", [RejectReasonV.ServerFull]: "server full", [RejectReasonV.Malformed]: "malformed handshake",
+};
+/** Human-readable rejection, naming the mismatched hash (e.g. "assets") when the server sent one. */
+export function rejectMessage(reason: number, detail = ""): string {
+  return `server rejected connection: ${REJECT_TEXT[reason] ?? `reason ${reason}`}${detail ? ` [${detail}]` : ""}`;
+}
 export class NetRejectedError extends Error {
-  constructor(readonly reason: RejectReason, readonly detail = "") { super(`server rejected connection (reason ${reason}${detail ? `: ${detail}` : ""})`); }
+  constructor(readonly reason: RejectReason, readonly detail = "") { super(rejectMessage(reason, detail)); }
 }
 
 export interface NetClientOptions {
@@ -116,6 +128,8 @@ export class NetClient {
   readonly names: NamesClient;
   /** Stall purchases / owner commands / sale notifications. */
   readonly stalls: StallClient;
+  /** Character look: `client.appearance.setInitial(v)` before connect (sent at join), `set(v)` later. */
+  readonly appearance: AppearanceClient;
   /** Own party/clan rosters + member markers. */
   readonly groups: GroupClient;
   /** Trade session protocol. */
@@ -136,7 +150,7 @@ export class NetClient {
       sendCtl: (kind, key) => { if (this.active) this.opts.transport.send(encodeStaticCtl(kind, key), "reliable"); },
     }, opts.staticCacheChunks ?? 64);
     this.chat = new ChatClient(this); this.groups = new GroupClient(this); this.trade = new TradeClient(this);
-    this.names = new NamesClient(this); this.stalls = new StallClient(this);
+    this.names = new NamesClient(this); this.stalls = new StallClient(this); this.appearance = new AppearanceClient(this);
     this.tiles = new TileClient(this, { ...(opts.tiles ? { tiles: opts.tiles } : {}), ...(opts.tileCacheChunks ? { cacheChunks: opts.tileCacheChunks } : {}) });
     opts.transport.onMessage((b) => this.onMessage(b));
     opts.transport.onClose(() => { this.active = false; this.welcome?.reject(new Error("connection closed")); this.welcome = undefined; });
@@ -222,7 +236,7 @@ export class NetClient {
       this.clientId = w.clientId; this.token = w.token; this.active = true;
       this.serverTickEstimate = w.serverTick; this.latestTick = -1; this.history.clear();
       this.staticInbox = []; this.statics.reset(); this.names?.reset(); this.stalls?.reset();
-      this.welcome?.resolve(w); this.welcome = undefined;
+      this.welcome?.resolve(w); this.appearance?.onWelcome(); this.welcome = undefined;
     } else if (h.type === MsgType.Snapshot) this.inbox.push(bytes);
     else if (h.type === MsgType.Static) this.staticInbox.push(bytes);
     else if (h.type === MsgType.Ping) {

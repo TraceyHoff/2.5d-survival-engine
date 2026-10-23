@@ -13,7 +13,9 @@ export const CRAFTER_ID_MIGRATIONS: readonly AddedFields[] = [
   { component: "Inventory", fields: ["crafterId"] },
   { component: "Container", fields: ["crafterId"] },
 ];
-export const DEFAULT_MIGRATIONS: readonly AddedFields[] = CRAFTER_ID_MIGRATIONS;
+/** core Appearance.version (a287243): saves from 81cdf46 lack it; 0 = first version. */
+export const APPEARANCE_VERSION_MIGRATION: AddedFields = { component: "Appearance", fields: ["version"] };
+export const DEFAULT_MIGRATIONS: readonly AddedFields[] = [...CRAFTER_ID_MIGRATIONS, APPEARANCE_VERSION_MIGRATION];
 
 const BYTES: Record<FieldType, number> = { f32: 4, f64: 8, i8: 1, u8: 1, i16: 2, u16: 2, i32: 4, u32: 4 };
 export const oldSchemaOf = (s: Schema, added: readonly string[]): Schema =>

@@ -2,6 +2,8 @@ import { entityIndex, Owner, Transform, type ComponentStore, type Entity, type W
 import { ChunkMembership, decodeChunk, encodeChunk, parseChunkKey, chunkKeyOf, type BuildingGrid, type ChunkKey, type AsyncChunkProvider, type ChunkManager, type ChunkProvider, type GeneratedChunk } from "@engine/world";
 import { decodePlayerInto, encodePlayer, PLAYER_VERSION, type PlayerCodecOptions, type PlayerRestoreResult } from "./playerCodec.js";
 import { SocialSaver, type SocialState } from "./social.js";
+import { ensureAppearance, type AppearanceRepair } from "./appearance.js";
+import type { CosmeticCatalogLike } from "@engine/core";
 import { DEFAULT_MIGRATIONS, migrateChunkBytes, type AddedFields } from "./migrate.js";
 import { chunkFormatOf, type BatchHandle, type SaveBatch, type StoredChunk, type StoredRecord, type WorldMeta, type WorldStore } from "./types.js";
 
@@ -67,6 +69,8 @@ export interface WorldPersistenceOptions {
    * whose schema hash is an older layout. Default DEFAULT_MIGRATIONS (crafterId on Inventory/Container, filled 0).
    */
   migrations?: readonly AddedFields[];
+  /** With a catalog, restored players get `ensureAppearance` (default for old saves, clamp repair otherwise). */
+  appearance?: { catalog: CosmeticCatalogLike };
   /**
    * World-level social state to save with every autosave round / saveAll (only records that changed): core's
    * GroupRegistry (blob "groups", core format v2) and ClaimRegistry (blob "claims"). Load it with `loadSocial(store)`
@@ -458,9 +462,11 @@ export class WorldPersistence {
   get onlinePlayers(): ReadonlyMap<string, { entity: Entity; name: string }> { return this.online; }
   hasPlayer(token: string): boolean { return this.store.readPlayer(token) !== undefined; }
   /** Restores a saved player onto `entity`; undefined if the token has no save. */
-  restorePlayer(token: string, entity: Entity): (PlayerRestoreResult & { name: string }) | undefined {
+  restorePlayer(token: string, entity: Entity): (PlayerRestoreResult & { name: string; appearance?: AppearanceRepair }) | undefined {
     const rec = this.store.readPlayer(token); if (!rec) return undefined;
-    return { ...decodePlayerInto(this.world, entity, rec.bytes, { ...(this.opts.migrations ? { migrations: this.opts.migrations } : {}), ...this.opts.player }), name: rec.name };
+    const r = decodePlayerInto(this.world, entity, rec.bytes, { ...(this.opts.migrations ? { migrations: this.opts.migrations } : {}), ...this.opts.player });
+    const appearance = this.opts.appearance ? ensureAppearance(this.world, entity, this.opts.appearance.catalog) : undefined;
+    return { ...r, name: rec.name, ...(appearance ? { appearance } : {}) };
   }
   /** Encode + queue a player save (its own transaction). */
   savePlayer(token: string, entity: Entity, name?: string): Promise<void> {

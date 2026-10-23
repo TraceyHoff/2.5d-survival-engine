@@ -29,6 +29,7 @@ Header on every packet (frozen layout): `u16 protocolVersion, u8 msgType`. Bodie
 | Chat (11) | rel | §14 |
 | Names (20) / NameReq (21) | rel | §21 name table |
 | Stall (22) | rel | §21 stall requests, results, sales |
+| Appearance (23) | rel | §22 character look requests (set / first-join initial) and results; the look itself replicates as the core `Appearance` component |
 | Markers (12) | unrel | §13 member markers |
 | CommandRejected (13) | rel | bit core, varuint commandId (core: command type), varuint seq+1 (0 = unknown), varuint reason, utf8 detail |
 | Trade (14) | rel | §15 |
@@ -459,3 +460,13 @@ gameplay codes.
 - Optional: undelivered sale notifications (`StallServer.offline`: `Map<playerId, {sales: SaleRecord[], dropped}>`) as a world blob so
   offline owners still see them after a restart. A full sale log the owner can browse is deferred: it needs a persisted, append-only,
   per-owner ledger.
+
+## 22. Character appearance (protocol v7)
+
+`AppearanceServer(server, { catalog, unlocksOf, allow?, rate?, onChanged? })` + `client.appearance`. The client calls `setInitial(look)` before `connect()`, and the look is sent once per Welcome. `set(look)` resolves to `{ result, issue }`. The server applies `validateAppearance(cat, v, { mode: "reject", unlocked })` and writes only through core `setAppearance`, which bumps `version`. Results: Ok, RateLimited (default 0.5/s, burst 3), Invalid (`issue` = first issue), Denied (game rule `allow`, or a second initial look), NoEntity, Malformed. An initial look that arrives before the player entity exists is held for up to 200 ticks.
+
+Wire: `u2 kind` (0 set, 1 initial, 2 result), varuint req. A value is bodyType, skinTone, n, then n × (part, primary, secondary). n travels on the wire and must be ≤ SLOT_COUNT. `version` is never client-sent.
+
+Pending looks are applied in an **input-phase system**, not `onTick`. Tick hooks run after the snapshot capture and `World.step` then clears change bits, so a component write from an `onTick` hook is never replicated unless something else touches the entity later. This applies to any module that writes the world from `onTick`.
+
+A client built without Appearance (old schema) fails the handshake with `SchemaMismatch`. The message reads "world schema hash mismatch …: client and server must ship together".

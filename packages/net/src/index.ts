@@ -21,3 +21,4 @@ export * from "./anticheat.js";
 export * from "./tiles.js";
 export * from "./names.js";
 export * from "./stalls.js";
+export * from "./appearance.js";
