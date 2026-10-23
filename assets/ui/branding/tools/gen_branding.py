@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Cozy-Wild branding generator: logo, main-menu backdrop (+parallax), menu buttons, loading bar.
 Usage:  python3 gen_branding.py [--title "My Game"] [--tagline "..."]
-Title defaults to branding.json "title" (PLACEHOLDER until the game is named). Everything is regenerated
+Title defaults to branding.json "title" (currently "SurVivaZ"). Everything is regenerated
 under ui/branding/ (1x + @2x), plus engine atlases + manifest fragment in ui/branding/engine/.
 Python3 + Pillow + numpy. Drawn supersampled, LANCZOS downscaled. Palette: /workspace/assets/palette.json.
 """
@@ -229,9 +229,12 @@ def letter_img(ch, f, stroke_in, stroke_out, face_ramp, seed):
     out.paste(Image.new("RGBA", (W, H), (255, 255, 255, 255)), (0, 0), ImageChops.multiply(gl, face))
     return out, ox, oy
 
+ACCENT = ["#d8ffd0", "#8fe0a0", "#4f9f7a"]
+
 def title_block(title, S, ramps):
     """returns RGBA image of hand-lettered title (supersampled px)."""
-    lines = split_title(title.upper())
+    lines = split_title(title if any(c.islower() for c in title) else title.upper())
+    mixed = any(c.islower() for c in title)
     sizes = [int(230 * S) if len(lines) == 1 else int(210 * S), int(230 * S)]
     imgs = []
     for li, line in enumerate(lines):
@@ -240,11 +243,16 @@ def title_block(title, S, ramps):
         letters = []; x = 0
         for i, ch in enumerate(line):
             if ch == " ": x += f.size * .3; continue
-            im, ox, oy = letter_img(ch, f, sin_, sout, ramps[(i + li) % len(ramps)], i)
-            ang = random.Random(i * 7 + li).uniform(-6, 6)
+            accent = mixed and ch.isupper() and i > 0   # mid-word capitals (e.g. SurVivaZ's V and Z) become zombie-mint showpiece letters
+            fi = font(f.size * 1.24, 700, 112) if accent else (font(f.size * 1.1, 700, 112) if mixed and ch.isupper() else f)
+            warm = ramps[:2] if mixed else ramps
+            ramp = ACCENT if accent else warm[(i + li) % len(warm)]
+            im, ox, oy = letter_img(ch, fi, int(fi.size * .07), int(fi.size * .14), ramp, i)
+            ang = (-9 if (i % 2) else 9) if accent else random.Random(i * 7 + li).uniform(-6, 6)
             im = im.rotate(ang, Image.BICUBIC, expand=True)
-            adv = f.getlength(ch)
-            dy = math.sin(i * 1.3 + li) * f.size * .05
+            if accent: sparkle(ImageDraw.Draw(im), im.width * .82, im.height * .2, fi.size * .07)
+            adv = fi.getlength(ch) * (1.02 if accent else 1)
+            dy = math.sin(i * 1.3 + li) * f.size * .05 - (f.size * .06 if accent else 0)
             letters.append((im, x, dy)); x += adv * .93
         lw = int(x + sout * 4); lh = max(im.height for im, _, _ in letters) + int(f.size * .12)
         L = Image.new("RGBA", (lw, lh), (0, 0, 0, 0))
@@ -273,7 +281,7 @@ def make_logo(title, tagline, S=2):
     for nx, ny in ((px0 + 34 * S, py0 + 28 * S), (px1 - 34 * S, py0 + 28 * S), (px0 + 34 * S, py1 - 28 * S), (px1 - 34 * S, py1 - 28 * S)):
         part(d, blob(nx, ny, 9 * S, 9 * S), PAL["cloth_yellow"], 3 * S)
     # zombie peeking from behind the top-right of the sign
-    zx, zy = tx + T.width - 150 * S, ty - 18 * S
+    zx, zy = tx + T.width * (.66 if any(c.islower() for c in title) else 1) - (0 if any(c.islower() for c in title) else 150 * S), ty - 18 * S
     zombie_head(d, zx, zy, 1.25 * S, seed=5, look=-1.0)
     # leaf sprigs left + right of sign
     for i, (lx, ly, a, rmp) in enumerate(((px0 + 10 * S, py0 + 20 * S, -2.5, "leaf"), (px0 - 5 * S, py0 + 70 * S, 3.0, "leaf_autumn"),
@@ -527,7 +535,7 @@ def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--title"); ap.add_argument("--tagline"); ap.add_argument("--fast", action="store_true")
     args = ap.parse_args()
     cfgp = os.path.join(OUT, "branding.json"); cfg = json.load(open(cfgp)) if os.path.exists(cfgp) else {}
-    title = args.title or cfg.get("title") or "Cozy Undead"
+    title = args.title or cfg.get("title") or "SurVivaZ"
     tagline = args.tagline if args.tagline is not None else cfg.get("tagline", "a cozy survival camp-out")
     random.seed(1)
     # logo
@@ -560,7 +568,7 @@ def main():
     save12(frames_sheet(zf, 6, 64, 64), os.path.join(ldir, "loading_zombie_walk.png"), 64 * 6)
     def cf(im, i): campfire(im, im.width // 2, im.height - 12, im.width / 190, phase=i / 6 * 2 * math.pi, glow=False)
     save12(frames_sheet(cf, 6, 64, 64), os.path.join(ldir, "loading_campfire.png"), 64 * 6)
-    cfg.update({"title": title, "tagline": tagline})
+    cfg.update({"title": title, "tagline": tagline}); cfg.setdefault("app", {}).update({"title": title, "tagline": tagline})
     json.dump(cfg, open(cfgp, "w"), indent=1)
     print("title:", title)
 

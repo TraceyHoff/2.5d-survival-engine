@@ -1,7 +1,7 @@
 # Branding (Cozy-Wild / Cozy Camp)
 
-**Title: "Cozy Undead" is a PLACEHOLDER.** The engine repo has no game name yet (root package.json is `engine`, README says
-"2.5D Survival Engine", client `<title>` is "Engine Client"). To rename everything:
+**Title: "SurVivaZ"** (exact casing; final, `titleIsPlaceholder: false`). Mid-word capitals (the V and Z) are drawn as
+larger, tilted zombie-mint showpiece letters; the rest uses warm campfire ramps. To rename everything:
 
 ```sh
 python3 tools/gen_branding.py --title "Real Name" --tagline "optional tagline"   # also saved to branding.json
