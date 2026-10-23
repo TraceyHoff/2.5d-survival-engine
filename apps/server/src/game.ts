@@ -2,7 +2,7 @@
 import { CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, type CosmeticCatalogLike, Membership, PlayerId, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
 import { ChunkManager, ProceduralGenerator, chunkKeyOf, type BuildingGrid, type PopulationSpawner } from "@engine/world";
 import { spawnPlayer, spawnResourceNode, gameplayDefs, setIntent, IntentAction, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installPopulation, installCustomization,
-  appearanceServerHooks, applyReplication, installStallBuyHook, installViewBonus, setHitValidator, installPvp, playerNames, stallListing, listingRevision, stallOf, tillOf, StallHeader, StallOwnerKind } from "@engine/gameplay";
+  appearanceServerHooks, applyReplication, installStallBuyHook, installViewBonus, setHitValidator, installPvp, installCraftQueue, CraftQueue, CraftQueuesRes, playerNames, stallListing, listingRevision, stallOf, tillOf, StallHeader, StallOwnerKind } from "@engine/gameplay";
 import { AppearanceServer, NameSync, NetServer, StallResult, StallServer, TileSync, validateHit, type ClientSession, type ServerTransport, type StallHooks } from "@engine/net";
 import { AccountAssigned, ClaimAccount, SetName, WorldPersistence, loadSocial, tokenToHex, tokenToWords, wordsToName, wordsToToken, type WorldStore } from "@engine/persist";
 import { seedStarterCamp, giveRandomAppearance } from "./camp.js";
@@ -132,10 +132,13 @@ export function createGameServer(o: GameServerOptions): GameServer {
   });
 
   applyReplication(net);
+  net.setScope(CraftQueue, "owner"); // queued crafting: networked + persistent, progress only to its owner
   // Gameplay commands: core handlers (economy + customization) fed by the net mirrors from protocol.ts.
   const handlers = installCommandHandlers(world, registerGameplayCommands());
   installEconomy(world, handlers);
   installPvp(world, handlers); // gameplay.respawnPlayer
+  installCraftQueue(world, handlers); // gameplay.queueCraft / cancelQueuedCraft (server-only timers)
+  const rearmCrafts = (): void => world.resource(CraftQueuesRes).rearmAll(); // timers are not saved: re-arm after any load
   // Melee hits from players are re-checked with lag compensation (target rewound to what the attacker saw).
   setHitValidator(world, (attacker, target, check) => {
     let s: ClientSession | undefined; for (const [cid, p] of players) if (p.entity === attacker) { s = net.sessions.get(cid); break; }
@@ -211,7 +214,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
         for (const [cid, other] of players) if (cid !== s.clientId && other.account === token) leave(cid, "account taken over by a new connection");
         persist?.untrackPlayer(p.account); p.account = token;
         const r = persist?.restorePlayer(token, p.entity);
-        if (r) { restored = 1; if (r.name && !p.name) p.name = r.name; log(`restore: client ${s.clientId} account ${token.slice(0, 8)}… (${r.restored.length} components${r.skipped.length ? `, skipped ${r.skipped.join(",")}` : ""})`); }
+        if (r) { restored = 1; rearmCrafts(); if (r.name && !p.name) p.name = r.name; log(`restore: client ${s.clientId} account ${token.slice(0, 8)}… (${r.restored.length} components${r.skipped.length ? `, skipped ${r.skipped.join(",")}` : ""})`); }
         persist?.trackPlayer(token, p.entity, p.name);
       }
     }
@@ -281,6 +284,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
   chunks.setSource({ id: 0, x: SPAWN.x, y: SPAWN.y, radius: 1 }); // keep spawn warm
   do chunks.update(); while (chunks.pendingLoads > 0); // load the spawn area before the first tick
   if (o.starterCamp !== false) { const n = seedStarterCamp(world, CAMP).length; if (n) log(`camp: seeded ${n} pieces at ${CAMP.x},${CAMP.y}`); }
+  rearmCrafts();
 
   const tickTimes: number[] = [];
   const step = (dt: number): void => { const t0 = performance.now(); world.step(dt); tickTimes.push(performance.now() - t0); if (tickTimes.length > 4096) tickTimes.splice(0, 2048); };
