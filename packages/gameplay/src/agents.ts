@@ -4,10 +4,11 @@
  * only write AgentOutput (move axes / aim / action names / chat) - the host maps that to the same InputFrame +
  * commands a human client sends. Survival Systems extends this with registerBehavior() and data/agents.json.
  */
-import { Agent, AgentController, BehaviorRegistry, ChatTemplates, Rng, Transform, canSee, randomTraits, timeOfDay, type AgentIdentity, type AgentSelf, type BehaviorDef, type ScheduleSlot, type World, type Entity, type Imperfections, type PerceptionConfig } from "@engine/core";
+import { Agent, AgentController, BehaviorRegistry, ChatTemplates, Rng, Transform, canSee, timeOfDay, type AgentContext, type AgentIdentity, type AgentSelf, type BehaviorDef, type ScheduleSlot, type World, type Entity, type Imperfections, type PerceptionConfig } from "@engine/core";
 import raw from "../data/agents.json";
 import { Animal, Dead, Health, ResourceNode, Survival, Zombie } from "./components.js";
 import { currentPhaseKey } from "./combat/zombies.js";
+import { populationData, rollTraits, scoreUtilities } from "./ai/population.js";
 
 export interface AgentsData {
   archetypes: Record<string, { perception: PerceptionConfig; imperfections: Imperfections; schedule: ScheduleSlot[]; goals: string[]; chatMinSeconds: number }>;
@@ -16,7 +17,11 @@ export interface AgentsData {
 export const AGENTS_DATA: AgentsData = raw as unknown as AgentsData;
 
 export interface SeenThing { id: number; kind: "zombie" | "player" | "node" | "animal"; x: number; y: number }
-export interface AgentWorldView { seen: SeenThing[]; home: { x: number; y: number }; playerName: string }
+export interface AgentWorldView {
+  seen: SeenThing[]; home: { x: number; y: number }; playerName: string;
+  /** Optional sensors (0..1 / plans) the host fills from the bot's replica; missing = neutral. */
+  invSpaceFree?: number; craftRecipe?: number; buildPlan?: { piece: number; x: number; y: number };
+}
 export type GameBehavior = BehaviorDef<AgentWorldView>;
 
 /** Perception from a client-side replica: everything replicated near `self` (sight cone + range is applied to memory). */
@@ -83,17 +88,46 @@ export function referenceBehaviors(): GameBehavior[] {
   ];
 }
 
+/** bots.json utility action each behavior answers to (behaviors without one are not biased). */
+export const BEHAVIOR_ACTION: Readonly<Record<string, string>> = { flee: "flee", gather: "gather", rest: "sleep", sleep: "sleep", eat: "eat", drink: "eat", craft: "craft", build: "build", stall_trade: "trade" };
+const ACTION_BEHAVIOR: Readonly<Record<string, string>> = { sleep: "sleep", trade: "stall_trade" };
+const clamp01 = (v: number): number => Math.max(0, Math.min(1, v));
+/** scoreUtilities signals from what the bot perceives: traits + sensors in 0..1. */
+export function botSignals(c: AgentContext<AgentWorldView>): Record<string, number> {
+  const near = (k: string, r: number): number => { const m = c.memory.nearest(k, c.self.x, c.self.y, 0.3); return m ? clamp01(1 - Math.hypot(m.x - c.self.x, m.y - c.self.y) / r) : 0; };
+  const w = c.world;
+  return { ...c.traits, enemyNear: Math.max(near("zombie", 12), w.seen.some((s) => s.kind === "animal") ? 0.2 : 0), lowHealth: clamp01(1 - c.self.hp * 2), healthFrac: c.self.hp,
+    hunger: clamp01(1 - c.self.hunger), thirst: clamp01(1 - c.self.thirst), fatigue: clamp01(1 - c.self.stamina), isNight: night(c.self.phase) >= 1 ? 1 : 0,
+    playerNear: near("player", 10), invSpaceFree: w.invSpaceFree ?? 0.5, hasIngredients: w.craftRecipe !== undefined ? 1 : 0, baseMissing: w.buildPlan ? 1 : 0 };
+}
+/** Multiplier 0.5..1 from bots.json scoreUtilities for the agent's bot archetype (1 when the archetype is not a bots.json one). */
+export function botUtilityFactor(c: AgentContext<AgentWorldView>, behavior: string): number {
+  const act = BEHAVIOR_ACTION[behavior]; const arch = c.agent.identity.archetype;
+  if (!act || !populationData().bots.archetypes[arch]) return 1;
+  return 0.5 + 0.5 * clamp01(scoreUtilities(arch, botSignals(c))[act] ?? 0);
+}
+const withBotUtility = (b: GameBehavior): GameBehavior => (BEHAVIOR_ACTION[b.name] ? { ...b, considerations: [...b.considerations, { name: "botUtility", curve: { type: "linear", m: 1, b: 0 }, input: (c) => botUtilityFactor(c, b.name) }] } : b);
+
 export function survivorRegistry(extra: readonly GameBehavior[] = []): BehaviorRegistry<AgentWorldView> {
-  const r = new BehaviorRegistry<AgentWorldView>(); for (const b of [...referenceBehaviors(), ...extra]) r.register(b); return r;
+  const r = new BehaviorRegistry<AgentWorldView>(); for (const b of [...referenceBehaviors(), ...extra]) r.register(withBotUtility(b)); return r;
 }
-/** Deterministic identity for virtual player #slot of a world seed (name, traits, archetype, goals). */
-export function makeAgentIdentity(seed: number, slot: number, archetype = "survivor"): AgentIdentity {
-  const rng = new Rng((seed * 2654435761 + slot * 40503) >>> 0); const arch = AGENTS_DATA.archetypes[archetype]!;
-  return { id: `bot-${seed}-${slot}`, name: AGENTS_DATA.names[(slot + rng.int(0, AGENTS_DATA.names.length)) % AGENTS_DATA.names.length]!, relationship: 0, traits: randomTraits(rng), archetype, goals: arch.goals.map((name) => ({ name, progress: 0 })) };
+/**
+ * Deterministic identity for virtual player #slot of a world seed. archetype = a bots.json archetype (picked by the
+ * seed when omitted); traits come from rollTraits within that archetype's ranges, goals from its goal weights.
+ */
+export function makeAgentIdentity(seed: number, slot: number, archetype?: string): AgentIdentity {
+  const rng = new Rng((seed * 2654435761 + slot * 40503) >>> 0); const bots = populationData().bots; const keys = Object.keys(bots.archetypes);
+  const arch = archetype ?? keys[rng.int(0, keys.length)]!; const b = bots.archetypes[arch]; if (!b) throw new Error(`unknown bot archetype ${arch}`);
+  const name = AGENTS_DATA.names[(slot + rng.int(0, AGENTS_DATA.names.length)) % AGENTS_DATA.names.length]!;
+  const goals = Object.entries(b.goals).sort((x, y) => y[1] - x[1]).map(([g]) => ({ name: g, progress: 0 }));
+  return { id: `bot-${seed}-${slot}`, name, relationship: 0, traits: rollTraits(arch, () => rng.next()), archetype: arch, goals };
 }
+/** Agent from an identity: bots.json archetypes use their routine (as behavior names) + imperfections; others agents.json. */
 export function makeAgent(identity: AgentIdentity, seed: number, tickHz = 20): Agent {
-  const arch = AGENTS_DATA.archetypes[identity.archetype] ?? AGENTS_DATA.archetypes["survivor"]!;
-  return new Agent(identity, seed, { perception: arch.perception, imperfections: arch.imperfections, schedule: arch.schedule, chatMinSeconds: arch.chatMinSeconds, tickHz });
+  const base = AGENTS_DATA.archetypes[identity.archetype] ?? AGENTS_DATA.archetypes["survivor"]!;
+  const bots = populationData().bots; const b = bots.archetypes[identity.archetype];
+  const schedule = b ? bots.routines[b.routine]!.map((s) => ({ ...s, prefer: s.prefer.map((p) => ACTION_BEHAVIOR[p] ?? p) })) : base.schedule;
+  return new Agent(identity, seed, { perception: base.perception, imperfections: b ? b.imperfections : base.imperfections, schedule, chatMinSeconds: base.chatMinSeconds, tickHz });
 }
 export function survivorController(opts: { seed: number; thinkBudget?: number; thinkEvery?: number; extra?: readonly GameBehavior[]; chat?: ConstructorParameters<typeof AgentController<AgentWorldView>>[0]["chat"] }): AgentController<AgentWorldView> {
   const rng = new Rng(opts.seed ^ 0x5bd1e995);

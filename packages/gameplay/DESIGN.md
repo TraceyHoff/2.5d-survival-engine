@@ -439,3 +439,9 @@ Gameplay owns data, not loops: there is **no spawn loop and no controller** here
   the day to be covered exactly once. `routineActivity(arch, phase)` = `scheduledAt(slots, PHASE_MID[phase])[0]`.
 - `imperfection` became core `Imperfections` (reactionTicks, aimErrorRad, inputJitter, idlePauseChance, lookAroundChance, pathWobble).
   `jitterAim` takes radians; `intentSequence` takes reactionTicks.
+
+## 24. Survivor agents on bots.json (`src/agents.ts`)
+- `makeAgentIdentity(seed, slot, archetype?)` picks a bots.json archetype from the seed when omitted; traits via `rollTraits` (seeded Rng, never Math.random); goals ordered by the archetype's goal weights.
+- `makeAgent` uses the archetype's routine (actions mapped to behavior names: sleep -> `sleep`, trade -> `stall_trade`) and imperfections; unknown archetypes (old saved "survivor" identities) fall back to agents.json.
+- `survivorRegistry` appends a `botUtility` consideration (0.5..1 from `scoreUtilities` over `botSignals`) to behaviors listed in `BEHAVIOR_ACTION`; non-bots.json archetypes get 1 (neutral).
+- `AgentWorldView` gains optional sensors `invSpaceFree`, `craftRecipe`, `buildPlan` (missing = neutral).
