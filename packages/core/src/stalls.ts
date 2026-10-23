@@ -23,6 +23,33 @@ export const TradeStall = defineComponent("TradeStall", {
   listPrice: { type: "u32", length: STALL_LISTINGS }, listCurrency: { type: "u16", length: STALL_LISTINGS },
 }, { networked: true, persistent: true });
 
+/**
+ * Viewer-facing mirror of the TradeStall listing rows (ADR-081). Networked with no scope hook, so net broadcasts it to
+ * every observer of the stall (TradeStall itself stays the authoritative row source). Slot i mirrors listing row i:
+ * item (item def id, 0 = empty), qty (units per purchase), price, currency (item def id). Optional: setStallListing /
+ * stockStall / withdrawStall / buyFromStall call syncStallDisplay when the stall entity has it.
+ */
+export const StallDisplay = defineComponent("StallDisplay", {
+  item: { type: "u16", length: STALL_LISTINGS }, qty: { type: "u16", length: STALL_LISTINGS },
+  price: { type: "u32", length: STALL_LISTINGS }, currency: { type: "u16", length: STALL_LISTINGS },
+}, { networked: true });
+/** Copies TradeStall listing rows into StallDisplay (no-op unless the entity has both). Marks changed only on a diff. Returns true if anything changed. */
+export function syncStallDisplay(world: World, stall: Entity): boolean {
+  if (!world.isRegistered(StallDisplay) || !world.has(stall, StallDisplay) || !world.has(stall, TradeStall)) return false;
+  const pairs = [["listItem", "item"], ["listQty", "qty"], ["listPrice", "price"], ["listCurrency", "currency"]] as const; let changed = false;
+  for (const [src, dst] of pairs) {
+    const a = world.getArray(stall, TradeStall, src)!, b = world.getArray(stall, StallDisplay, dst)!;
+    for (let i = 0; i < STALL_LISTINGS; i++) if (b[i] !== a[i]) { b[i] = a[i]!; changed = true; }
+  }
+  if (changed) world.store(StallDisplay).markChanged(entityIndex(stall));
+  return changed;
+}
+/** Registers StallDisplay if needed, adds it to a stall and syncs it. */
+export function addStallDisplay(world: World, stall: Entity): void {
+  if (!world.isRegistered(StallDisplay)) world.register(StallDisplay);
+  if (!world.has(stall, StallDisplay)) world.add(stall, StallDisplay, {});
+  syncStallDisplay(world, stall);
+}
 export interface StallListing { item: number; qty: number; price: number; currency: number }
 export interface StallActions { stock: number; withdraw: number; manage: number; /** 0 = anyone may buy */ buy?: number }
 export interface SaleEntry {
@@ -63,7 +90,7 @@ export function makeStall(world: World, e: Entity, owner: { playerId?: number; g
 export const stallRevision = (world: World, stall: Entity): number => world.getField(stall, TradeStall, "revision") as number | undefined ?? 0;
 function bump(world: World, stall: Entity): void {
   const st = world.store(TradeStall); const i = entityIndex(stall); const s = st.slot(i);
-  st.data.revision[s] = (st.data.revision[s]! + 1) >>> 0; st.markChanged(i);
+  st.data.revision[s] = (st.data.revision[s]! + 1) >>> 0; st.markChanged(i); syncStallDisplay(world, stall);
 }
 export function getStallListing(world: World, stall: Entity, idx: number): StallListing | undefined {
   if (!world.has(stall, TradeStall) || idx < 0 || idx >= STALL_LISTINGS) return undefined;

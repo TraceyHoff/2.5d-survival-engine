@@ -1,4 +1,4 @@
-import { BODY_TYPES, StableIdRegistry, WEARABLE_SLOTS, fnv1a, type BodyType, type CosmeticCatalogLike, type PaletteColor,
+import { BODY_TYPES, TINT_MODES, type TintMode, StableIdRegistry, WEARABLE_SLOTS, fnv1a, type BodyType, type CosmeticCatalogLike, type PaletteColor,
   type WearableDef, type WearableSlot } from "@engine/core";
 import type { AssetRegistry, SpriteDef } from "./manifest.js";
 
@@ -10,6 +10,8 @@ export interface WearableJson {
   layer: number; /** 4 entries E,S,W,N */ layerByDir?: number[]; z?: number;
   /** 0 untinted (default), 1 = tintmask R <- primary, 2 = + G <- secondary. Requires the atlas tintmask mask. */
   tintChannels?: 0 | 1 | 2; hidesSlots?: WearableSlot[]; hatHair?: boolean; unlockTags?: string[];
+  /** Optional render hints: tint blend mode, strength 0..1, saturation 0..2; minor = droppable by crowd LOD; outline false = no outline. */
+  tintMode?: TintMode; tintStrength?: number; tintSaturation?: number; minor?: boolean; outline?: boolean;
 }
 export interface PaletteColorJson { key: string; color: string }
 export interface CosmeticsJson {
@@ -84,6 +86,11 @@ export function loadCosmetics(m: CosmeticsJson, reg: AssetRegistry, lock: Record
     if (w.layerByDir !== undefined && !(Array.isArray(w.layerByDir) && w.layerByDir.length === 4 && w.layerByDir.every(Number.isInteger))) issues.push(`${p}: layerByDir must be 4 integers (E,S,W,N)`);
     if (w.z !== undefined && typeof w.z !== "number") issues.push(`${p}: z must be a number`);
     const tint = w.tintChannels ?? 0; if (![0, 1, 2].includes(tint)) issues.push(`${p}: tintChannels must be 0|1|2`);
+    if (w.tintMode !== undefined && !TINT_MODES.includes(w.tintMode)) issues.push(`${p}: tintMode must be one of ${TINT_MODES.join("|")}`);
+    if (w.tintStrength !== undefined && !(typeof w.tintStrength === "number" && w.tintStrength >= 0 && w.tintStrength <= 1)) issues.push(`${p}: tintStrength must be a number in 0..1`);
+    if (w.tintSaturation !== undefined && !(typeof w.tintSaturation === "number" && w.tintSaturation >= 0 && w.tintSaturation <= 2)) issues.push(`${p}: tintSaturation must be a number in 0..2`);
+    if (w.minor !== undefined && typeof w.minor !== "boolean") issues.push(`${p}: minor must be a boolean`);
+    if (w.outline !== undefined && typeof w.outline !== "boolean") issues.push(`${p}: outline must be a boolean`);
     if (tint > 0 && !(w.slot === "hair" || w.slot === "face" ? hairColors : clothingColors).length) issues.push(`${p}: tinted but its palette is empty`);
     for (const h of w.hidesSlots ?? []) {
       if (!(WEARABLE_SLOTS as readonly string[]).includes(h)) issues.push(`${p}: hidesSlots has unknown slot "${h}"`);
@@ -106,7 +113,10 @@ export function loadCosmetics(m: CosmeticsJson, reg: AssetRegistry, lock: Record
     }
     const id = ids.tryId(w.key); if (id === undefined) return;
     parts.set(id, { id, key: w.key, slot: w.slot, bodies: out, layer: w.layer, ...(w.layerByDir ? { layerByDir: w.layerByDir } : {}), z: w.z ?? 0,
-      tintChannels: tint as 0 | 1 | 2, hidesSlots: [...(w.hidesSlots ?? [])], hatHair: !!w.hatHair, unlockTags: [...(w.unlockTags ?? [])] });
+      tintChannels: tint as 0 | 1 | 2, hidesSlots: [...(w.hidesSlots ?? [])], hatHair: !!w.hatHair, unlockTags: [...(w.unlockTags ?? [])],
+      ...(w.tintMode !== undefined ? { tintMode: w.tintMode } : {}), ...(typeof w.tintStrength === "number" ? { tintStrength: w.tintStrength } : {}),
+      ...(typeof w.tintSaturation === "number" ? { tintSaturation: w.tintSaturation } : {}), ...(typeof w.minor === "boolean" ? { minor: w.minor } : {}),
+      ...(typeof w.outline === "boolean" ? { outline: w.outline } : {}) });
   });
   for (const [a, hs] of hides) for (const b of hs) if (hides.get(b)?.has(a)) { if (a < b) issues.push(`slot conflict: ${a} and ${b} wearables hide each other`); }
   return { catalog: new CosmeticCatalog(ids, parts, bodies, skinTones, hairColors, clothingColors), lock: outLock };

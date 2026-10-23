@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { World, defineComponent, installContainers, arrayFieldsContainer, transfer, transaction, sameStack, encodeSnapshot, decodeSnapshot, applySnapshot,
   installPermissions, definePermissionActions, PlayerId, GroupKind, GroupRole, PlayerNameRegistry, installStalls, makeStall, setStallListing, stockStall,
-  withdrawStall, buyFromStall, atomicPurchase, stallRevision, TradeStall, SaleLedger, NetId } from "../src/index.js";
+  withdrawStall, buyFromStall, atomicPurchase, stallRevision, TradeStall, SaleLedger, NetId, StallDisplay, syncStallDisplay, addStallDisplay, STALL_LISTINGS } from "../src/index.js";
 
 const N = 6;
 const Inv = defineComponent("InvEco", { items: { type: "u16", length: N }, counts: { type: "u16", length: N }, createdTick: { type: "u32", length: N },
@@ -78,6 +78,20 @@ describe("trade stalls", () => {
     expect(setStallListing(w, leader, stall, 1, { item: ROPE, qty: 0, price: 5, currency: COIN })).toEqual({ ok: false, reason: "bad_listing" });
     expect(withdrawStall(w, leader, stall, 0, leader, 0, 1)).toEqual({ ok: true }); expect(stallRevision(w, stall)).toBe(r0 + 3);
     expect(slots(w, leader)[0]).toMatchObject({ item: ROPE, count: 1, crafterId: 2 });
+  });
+  it("StallDisplay mirrors listings via setStallListing/stock/withdraw/buy; networked; optional", () => {
+    const { w, leader, outsider, stall } = clanStall();
+    expect(StallDisplay.networked).toBe(true); expect(syncStallDisplay(w, stall)).toBe(false);
+    setStallListing(w, leader, stall, 2, { item: ROPE, qty: 3, price: 70000, currency: COIN });
+    addStallDisplay(w, stall); const arr = (f: "item" | "qty" | "price" | "currency") => Array.from(w.getArray(stall, StallDisplay, f)!);
+    expect(arr("item")).toHaveLength(STALL_LISTINGS); expect(arr("item")[2]).toBe(ROPE); expect(arr("price")[2]).toBe(70000);
+    setStallListing(w, leader, stall, 0, { item: AXE, qty: 1, price: 5, currency: COIN });
+    expect([arr("item")[0], arr("qty")[0], arr("price")[0], arr("currency")[0]]).toEqual([AXE, 1, 5, COIN]);
+    setStallListing(w, leader, stall, 2, null); expect(arr("item")[2]).toBe(0); expect(arr("price")[2]).toBe(0);
+    transaction(w, (tx) => { tx.add(stall, AXE, 1); return tx.add(outsider, COIN, 5); });
+    w.getArray(stall, StallDisplay, "price")![0] = 1; // drift; next core op resyncs
+    expect(buyFromStall(w, outsider, stall, 0).ok).toBe(true); expect(arr("price")[0]).toBe(5);
+    expect(syncStallDisplay(w, stall)).toBe(false);
   });
   it("atomic purchase moves goods with crafterId, pays the stall, appends the ledger", () => {
     const { w, S, leader, outsider, stall, clan } = clanStall();

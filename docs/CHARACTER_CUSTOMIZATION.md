@@ -46,7 +46,7 @@ for (const l of layers) {   // back to front
   draw(ref, { tintR: l.tintR, tintG: l.tintG });  // tintmask R/G -> 0xRRGGBB, undefined = untinted
 }
 ```
-`DrawLayer = { slot: "body" | WearableSlot, wearable, sprite, anim, layer, z, tintR?, tintG? }`. Hidden slots are already left out. Read the Appearance arrays with the store's array accessors, or build an `AppearanceValue` from them.
+`DrawLayer = { slot: "body" | WearableSlot, wearable, sprite, anim, layer, z, tintR?, tintG?, tintMode?, tintStrength?, tintSaturation?, minor?, outline? }`. The last five are optional per-wearable render hints copied from the manifest when set (`tintMode` multiply|add|screen|lerp, `tintStrength` 0..1, `tintSaturation` 0..2, `minor` = droppable by the crowd LOD, `outline: false` = skip the outline pass); absent means renderer defaults. Hidden slots are already left out. Read the Appearance arrays with the store's array accessors, or build an `AppearanceValue` from them.
 
 ## Netcode: replication and persistence
 - `Appearance` is a networked, persistent component, about 44 bytes per character (including `version`). Clients use the replicated `version` only for cache invalidation and never write it. It changes rarely, so the delta stays at 0 bytes per tick otherwise.
