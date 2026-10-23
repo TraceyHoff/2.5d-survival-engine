@@ -1,4 +1,6 @@
-# 2.5D Survival Engine
+# SurVivaZ
+
+_A cozy survival game built on the 2.5D Survival Engine._
 
 A cute, cartoony **2.5D isometric multiplayer co-op survival game** and its custom engine. It is browser-first and written in **TypeScript + WebGL2**. You gather resources, build bases, craft, trade with other players and survive cold, rain, hunger and the night, alone or with your clan. An authoritative Node server runs the same headless simulation as the browser client. The client predicts locally and interpolates everyone else.
 

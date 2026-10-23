@@ -1,3 +1,4 @@
+import { showRenderError } from "./glcheck.js";
 /**
  * Client bootstrap: fixed-step loop + WebGL2 IsoRenderer view (./view.ts, Art's pack) + network session.
  * Falls back to the Canvas2D debug draw with ?renderer=debug or when WebGL2 / the art fails to load.
@@ -31,8 +32,9 @@ const wantIso = params.get("renderer") !== "debug" && typeof WebGL2RenderingCont
 const isoReady: Promise<void> = wantIso ? (async () => {
   const v = await IsoView.create(canvas, import.meta.env.BASE_URL, { ...(num("time") !== undefined ? { hours: num("time")! } : {}), ...(wi >= 0 ? { weather: wi, intensity: num("intensity") ?? 1 } : {}) });
   const onResize = (): void => v.resize(innerWidth, innerHeight, devicePixelRatio || 1); addEventListener("resize", onResize); onResize();
+  canvas.addEventListener("webglcontextlost", () => showRenderError("WebGL context lost", "The GPU reset or ran out of memory; reload the page (or try ?safe=1)."));
   iso = v; (window as { __view?: unknown }).__view = { ready: true, renderer: "iso" };
-})().catch((e: unknown) => { console.warn("IsoRenderer unavailable, using debug renderer", e); fallback(); }) : Promise.resolve(fallback());
+})().catch((e: unknown) => { console.warn("IsoRenderer unavailable, using debug renderer", e); showRenderError("3D renderer unavailable — showing debug view", e instanceof Error ? e.message : String(e)); fallback(); }) : Promise.resolve(fallback());
 function fallback(): void {
   // a WebGL context may already own #game: draw Canvas2D on an overlay (input stays bound to #game)
   const c = document.createElement("canvas"); c.id = "game-debug"; c.style.cssText = "position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none";
@@ -130,5 +132,5 @@ if (boot) {
 if (params.get("hud") !== "0" && settings.showHud) mountHud(() => world, () => session.player, { ...(num("time") !== undefined ? { hours: num("time")! } : {}), ...(wi >= 0 ? { weather: wi } : {}) });
 
 let last = performance.now();
-function frame(now: number): void { const dt = Math.min(now - last, 250); pumpLocal?.(dt); loop.advance(now - last); last = now; session.poll(); requestAnimationFrame(frame); }
+function frame(now: number): void { requestAnimationFrame(frame); const dt = Math.min(now - last, 250); last = now; try { pumpLocal?.(dt); loop.advance(dt); session.poll(); } catch (e) { showRenderError("Frame error", e instanceof Error ? e.stack ?? e.message : String(e)); } }
 requestAnimationFrame(frame);

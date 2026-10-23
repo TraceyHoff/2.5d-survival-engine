@@ -1,5 +1,5 @@
 import { defineConfig, type Plugin, type Connect } from "vite";
-import { cpSync, createReadStream, existsSync, mkdirSync, readdirSync, statSync } from "node:fs";
+import { cpSync, createReadStream, existsSync, readFileSync, mkdirSync, readdirSync, statSync } from "node:fs";
 import { extname, join, normalize, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -53,11 +53,23 @@ function art(): Plugin {
   };
 }
 
-/** Art's logo (assets/ui/branding/logo.*), resolved at build time so the client never probes a missing file (no 404s). */
-const BRANDING_LOGO = ["logo.png", "logo.webp", "logo.svg"].find((f) => existsSync(join(root, "assets/ui/branding", f))) ?? "";
+/** Art's branding (assets/ui/branding/, branding.json title = {app.title}), resolved at build time so the client never probes missing files (no 404s). */
+const BR = join(root, "assets/ui/branding");
+const brandingJson = ((): { title?: string; tagline?: string } => { try { return JSON.parse(readFileSync(join(BR, "branding.json"), "utf8")) as { title?: string; tagline?: string }; } catch { return {}; } })();
+/** {app.title}: the game's name. Art's logo is used only once it is drawn for this title (branding.json title matches). */
+const APP_TITLE = "SurVivaZ";
+const BRANDING = {
+  title: APP_TITLE, tagline: brandingJson.tagline ?? "a cozy survival camp-out",
+  logo: brandingJson.title === APP_TITLE ? ["logo/logo_1024.png", "logo/logo_512.png", "logo.png"].find((f) => existsSync(join(BR, f))) ?? "" : "",
+  bg: existsSync(join(BR, "background/parallax/menu_bg_sky.png")) ? "parallax" : existsSync(join(BR, "background/menu_bg_1920x1080.png")) ? "flat" : "",
+  plates: existsSync(join(BR, "buttons/plates/btn_plate_singleplayer_normal.png")),
+  icons: existsSync(join(BR, "buttons/icons/ic_menu_singleplayer.png")),
+  loading: existsSync(join(BR, "loading/loading_frame.png")) && existsSync(join(BR, "loading/loading_fill.png")),
+  loadingAnim: existsSync(join(BR, "loading/loading_zombie_walk.png")) && existsSync(join(BR, "loading/loading_campfire.png")),
+};
 
 export default defineConfig({
-  define: { __BRANDING_LOGO__: JSON.stringify(BRANDING_LOGO) },
+  define: { __BRANDING__: JSON.stringify(BRANDING) },
   base: process.env["BASE"] ?? "/",
   plugins: [art()],
   build: { target: "es2022" },

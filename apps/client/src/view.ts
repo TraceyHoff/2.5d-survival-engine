@@ -1,3 +1,4 @@
+import { showRenderError, glInfo, frameIsBlack } from "./glcheck.js";
 /**
  * WebGL2 game view: @engine/render IsoRenderer + Art's pack (packages/assets/pack, served at `<base>art/pack/`).
  *
@@ -7,11 +8,11 @@
  * from the gameplay components (Survival = character, Zombie, ResourceNode, CraftingStation, BuildPiece) using the
  * gameplay defs' sprite keys. Terrain is the net TileClient's TileMap, drawn directly.
  */
-import { World, Transform, PrevTransform, TimeOfDay, Weather, Appearance, defineComponent, entityIndex, type Entity } from "@engine/core";
+import { World, Transform, PrevTransform, TimeOfDay, Weather, Appearance, PlayerId, defineComponent, entityIndex, type Entity } from "@engine/core";
 import { CHUNK_SIZE, tileToChunk, tileToLocal, type TileMap } from "@engine/world";
 import { fetchDefaultManifest, buildPieceVisual, type AssetRegistry } from "@engine/assets";
 import { IsoRenderer, Sprite, Shadow, LightSource, Occluder, SpriteFlag, sourcesFromManifest, coreAppearanceBinding } from "@engine/render";
-import { gameplayDefs, Survival, Zombie, ResourceNode, CraftingStation, Fuel, AnimState as GAnim, BuildPiece as GPiece, Dead, Wetness, BodyTemp, Emitter, PieceLink } from "@engine/gameplay";
+import { gameplayDefs, animalDefs, Animal, Health, Survival, Zombie, ResourceNode, CraftingStation, Fuel, AnimState as GAnim, BuildPiece as GPiece, Dead, Wetness, BodyTemp, Emitter, PieceLink } from "@engine/gameplay";
 
 /** Render-side schemas the renderer's bindings expect (view World only). */
 const VAnim = defineComponent("ViewAnimState", { state: "u8", startTick: "u32" });
@@ -69,7 +70,10 @@ export class IsoView {
     return new IsoView(renderer, registry, ov, lights);
   }
 
-  resize(w: number, h: number, dpr: number): void { this.renderer.resize(w, h, Math.min(2, dpr)); }
+  resize(w: number, h: number, dpr: number): void {
+    const safe = new URLSearchParams(location.search).get("safe") === "1";
+    try { this.renderer.resize(w, h, safe ? 1 : Math.min(2, dpr)); } catch (e) { showRenderError("Resize failed", `${e instanceof Error ? e.message : String(e)}\n${glInfo(this.renderer.gl)}`); }
+  }
 
   private sid(key: string | undefined): number | undefined { return key ? this.registry.ids.sprites.tryId(key) : undefined; }
 
@@ -149,8 +153,13 @@ export class IsoView {
       r.camera.lookAt(p.x + (t.x - p.x) * alpha, p.y + (t.y - p.y) * alpha, p.z + (t.z - p.z) * alpha);
     } else r.camera.lookAt(16, 16, 1);
     v.runPhase("renderPrep", 0);
-    r.render(v, alpha);
+    try { r.render(v, alpha); } catch (e) { showRenderError("Renderer exception", `${e instanceof Error ? e.stack ?? e.message : String(e)}\n${glInfo(r.gl)}`); return; }
+    // all-black self-check over the first frames (daytime only, where black means a broken pass)
+    if (this.checks < 90 && ++this.checks % 30 === 0 && r.lighting.daylight > 0.5) {
+      if (frameIsBlack(r.gl)) { if (++this.blackFrames >= 2) showRenderError("World rendered black", glInfo(r.gl)); } else this.blackFrames = 0;
+    }
   }
+  private checks = 0; private blackFrames = 0;
 
   private scales = new Map<Entity, number>();
 
@@ -183,7 +192,14 @@ export class IsoView {
 
   private classify(net: World, e: Entity, defs: ReturnType<typeof gameplayDefs> | undefined, own: boolean): Spec | undefined {
     const h = (entityIndex(e) * 2654435761) >>> 0;
-    if (net.has(e, Survival)) {
+    // characters: own player (Survival is owner-only) + other players and human bots (PlayerId / Appearance / Health+AnimState)
+    if (net.has(e, Animal)) {
+      const k = animalDefs()[net.get(e, Animal)!.kind]; const s = this.sid(k?.spriteKey);
+      if (s !== undefined) return { sprite: s, animated: true, shadow: 0.8 };
+      const ph = this.sid("player"); // placeholder until Art's animal_* sprites land: a small base sprite
+      return ph === undefined ? undefined : { sprite: ph, animated: true, shadow: 0.6, scale: 0.55, onCreate: 0.55 };
+    }
+    if (net.has(e, Survival) || (!net.has(e, Zombie) && (net.has(e, PlayerId) || net.has(e, Appearance) || (net.has(e, Health) && net.has(e, GAnim))))) {
       const s = this.sid(own ? "player" : PLAYER_KEYS[h % PLAYER_KEYS.length]) ?? this.sid("player");
       return s === undefined ? undefined : { sprite: s, animated: true, shadow: 1 };
     }

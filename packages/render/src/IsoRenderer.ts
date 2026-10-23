@@ -224,7 +224,11 @@ export class IsoRenderer implements Renderer {
   }
 
   resize(cssW: number, cssH: number, dpr: number): void {
-    const w = Math.max(1, Math.round(cssW * dpr)), h = Math.max(1, Math.round(cssH * dpr));
+    // Clamp the backing store to GPU limits (mobile GPUs are often 4096): an oversized scene FBO is incomplete -> black world.
+    const gl0 = this.gl; const vp = gl0.getParameter(gl0.MAX_VIEWPORT_DIMS) as Int32Array | null;
+    const lim = Math.min(gl0.getParameter(gl0.MAX_TEXTURE_SIZE) as number || 4096, gl0.getParameter(gl0.MAX_RENDERBUFFER_SIZE) as number || 4096, vp ? Math.min(vp[0]!, vp[1]!) : 4096);
+    dpr = Math.min(dpr, lim / Math.max(1, cssW), lim / Math.max(1, cssH));
+    const w = Math.max(1, Math.min(lim, Math.round(cssW * dpr))), h = Math.max(1, Math.min(lim, Math.round(cssH * dpr)));
     this.canvas.width = w; this.canvas.height = h;
     this.camera.setViewport(w, h, dpr);
     if (w === this.w && h === this.h) return;
