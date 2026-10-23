@@ -1,3 +1,4 @@
+import { DEFAULT_MIGRATIONS, planFor, upgradeRecord, type AddedFields } from "./migrate.js";
 import { BinaryReader, BinaryWriter, decodeField, encodeField, entityIndex, NetId, Owner, PrevTransform, schemaHash, type ComponentDef, type Entity, type World } from "@engine/core";
 
 export const PLAYER_MAGIC = 0x52594c50; // "PLYR"
@@ -8,6 +9,8 @@ export const PLAYER_ALWAYS_EXCLUDED: readonly ComponentDef[] = [NetId, Owner, Pr
 export interface PlayerCodecOptions {
   /** Extra components not to save/restore (transient per-tick state such as input intents). */
   exclude?: readonly ComponentDef[];
+  /** Older component layouts restored with added fields set to 0. Default DEFAULT_MIGRATIONS. */
+  migrations?: readonly AddedFields[];
 }
 
 /**
@@ -32,7 +35,8 @@ export function encodePlayer(world: World, e: Entity, opts: PlayerCodecOptions =
   return w.finish();
 }
 
-export interface PlayerRestoreResult { restored: string[]; skipped: string[] }
+/** `migrated`: restored through a schema migration (subset of `restored`). */
+export interface PlayerRestoreResult { restored: string[]; skipped: string[]; migrated?: string[] }
 /**
  * Writes a saved player record onto an existing (freshly spawned) entity. Components missing on the entity are
  * added; components whose name is unknown or whose schema hash changed are skipped (the fresh spawn values stay).
@@ -49,7 +53,14 @@ export function decodePlayerInto(world: World, e: Entity, bytes: Uint8Array, opt
     const len = r.read("u8"); let name = ""; for (let c = 0; c < len; c++) name += String.fromCharCode(r.read("u8"));
     const h = r.read("u32"); const size = r.read("u32");
     const st = byName.get(name);
-    if (!st || skip.has(st.def as ComponentDef) || schemaHash(st.def.schema) !== h) { r.offset += size; out.skipped.push(name); continue; }
+    const plan = st && !skip.has(st.def as ComponentDef) && schemaHash(st.def.schema) !== h ? planFor(st, h, opts.migrations ?? DEFAULT_MIGRATIONS) : undefined;
+    if (!st || skip.has(st.def as ComponentDef) || (schemaHash(st.def.schema) !== h && (!plan || plan.oldSize !== size))) { r.offset += size; out.skipped.push(name); continue; }
+    if (plan) {
+      const wide = new Uint8Array(plan.newSize); upgradeRecord(plan, bytes, r.offset, wide, 0); r.offset += size;
+      const slot = st.has(i) ? st.slot(i) : st.add(e, i); const sub = new BinaryReader(wide);
+      for (const f of st.fields) decodeField(st, f, slot, sub);
+      st.markChanged(i); out.restored.push(name); out.migrated = [...(out.migrated ?? []), name]; continue;
+    }
     const start = r.offset;
     const slot = st.has(i) ? st.slot(i) : st.add(e, i);
     for (const f of st.fields) decodeField(st, f, slot, r);

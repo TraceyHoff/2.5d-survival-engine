@@ -2,7 +2,8 @@ import { entityIndex, Owner, Transform, type ComponentStore, type Entity, type W
 import { ChunkMembership, decodeChunk, encodeChunk, parseChunkKey, chunkKeyOf, type BuildingGrid, type ChunkKey, type AsyncChunkProvider, type ChunkManager, type ChunkProvider, type GeneratedChunk } from "@engine/world";
 import { decodePlayerInto, encodePlayer, PLAYER_VERSION, type PlayerCodecOptions, type PlayerRestoreResult } from "./playerCodec.js";
 import { SocialSaver, type SocialState } from "./social.js";
-import { chunkFormatOf, type BatchHandle, type SaveBatch, type StoredBlob, type StoredChunk, type StoredRecord, type WorldMeta, type WorldStore } from "./types.js";
+import { DEFAULT_MIGRATIONS, migrateChunkBytes, type AddedFields } from "./migrate.js";
+import { chunkFormatOf, type BatchHandle, type SaveBatch, type StoredChunk, type StoredRecord, type WorldMeta, type WorldStore } from "./types.js";
 
 /**
  * A per-chunk blob owned by another system, stored next to the chunk row (records table: ns = `ns`, id = chunk
@@ -61,6 +62,11 @@ export interface WorldPersistenceOptions {
    */
   regenerateNodes?: boolean;
   player?: PlayerCodecOptions;
+  /**
+   * Component schema migrations applied to stored chunk rows (and, unless `player.migrations` is set, player records)
+   * whose schema hash is an older layout. Default DEFAULT_MIGRATIONS (crafterId on Inventory/Container, filled 0).
+   */
+  migrations?: readonly AddedFields[];
   /**
    * World-level social state to save with every autosave round / saveAll (only records that changed): core's
    * GroupRegistry (blob "groups", core format v2) and ClaimRegistry (blob "claims"). Load it with `loadSocial(store)`
@@ -222,14 +228,17 @@ export class WorldPersistence {
     void this.store.write({ meta: this.meta() }).catch((e) => this.opts.log?.(`persist: meta save failed: ${String(e)}`));
     return id;
   }
-  /** Changed social records (groups / claims) as blobs; [] without `social`. */
-  private socialBlobs(force = false): StoredBlob[] {
-    const b = this.socialSaver?.changed(this.world.tick, force) ?? []; this.stats.socialSaves += b.length; return b;
+  /** Changed social state: groups / claims as blobs, names / sales as records; {} without `social`. */
+  private socialPart(force = false): Pick<SaveBatch, "blobs" | "records" | "deleteRecords"> {
+    const sv = this.socialSaver; if (!sv) return {};
+    const blobs = sv.changed(this.world.tick, force); const { records, deleteRecords } = sv.changedRecords(this.world.tick, force);
+    this.stats.socialSaves += blobs.length + records.length;
+    return { ...(blobs.length ? { blobs } : {}), ...(records.length ? { records } : {}), ...(deleteRecords.length ? { deleteRecords } : {}) };
   }
   /** Writes groups / claims now if they changed (own transaction). */
   saveSocial(): Promise<void> {
-    const blobs = this.socialBlobs(); if (!blobs.length) return Promise.resolve();
-    const p = this.store.write({ blobs, meta: this.meta() }); p.catch(() => this.socialSaver?.invalidate()); return p;
+    const part = this.socialPart(); if (!part.blobs && !part.records && !part.deleteRecords) return Promise.resolve();
+    const p = this.store.write({ ...part, meta: this.meta() }); p.catch(() => this.socialSaver?.invalidate()); return p;
   }
   /** Mark a chunk for the next autosave (e.g. gameplay changed building hp, which has no hook yet). */
   markDirty(key: ChunkKey): void {
@@ -267,7 +276,9 @@ export class WorldPersistence {
     if (rec) {
       this.quiet = true;
       try {
-        const d = decodeChunk(rec.bytes, { world: this.world, ...(this.opts.buildings ? { buildings: this.opts.buildings } : {}) });
+        const up = migrateChunkBytes(this.world, rec.bytes, this.opts.migrations ?? DEFAULT_MIGRATIONS);
+        if (up) { this.stats.migratedChunks++; this.opts.log?.(`persist: ${rec.key}: schema-migrated (added fields zero-filled)`); }
+        const d = decodeChunk(up ?? rec.bytes, { world: this.world, ...(this.opts.buildings ? { buildings: this.opts.buildings } : {}) });
         for (const e of d.entities) { this.fresh.add(e); this.persisted.add(e); }
         this.savedVersion.set(d.chunk.key, d.chunk.version); this.stats.chunksLoadedFromStore++;
         this.loadSidecars(cx, cy, d.chunk.key, d.entities);
@@ -426,7 +437,12 @@ export class WorldPersistence {
     }
     r.encodeMs += this.now() - t0;
     const batch: SaveBatch = { chunks: part, ...(records.length ? { records } : {}), ...(deletes.length ? { deleteRecords: deletes } : {}) };
-    if (!r.queue.length) { batch.meta = this.meta(); const blobs = this.socialBlobs(); if (blobs.length) batch.blobs = blobs; }
+    if (!r.queue.length) {
+      batch.meta = this.meta(); const sp = this.socialPart();
+      if (sp.blobs) batch.blobs = sp.blobs;
+      if (sp.records) batch.records = [...(batch.records ?? []), ...sp.records];
+      if (sp.deleteRecords) batch.deleteRecords = [...(batch.deleteRecords ?? []), ...sp.deleteRecords];
+    }
     if (part.length || batch.meta) r.batch.append(batch);
     if (r.queue.length) return undefined;
     this.round = undefined;
@@ -444,7 +460,7 @@ export class WorldPersistence {
   /** Restores a saved player onto `entity`; undefined if the token has no save. */
   restorePlayer(token: string, entity: Entity): (PlayerRestoreResult & { name: string }) | undefined {
     const rec = this.store.readPlayer(token); if (!rec) return undefined;
-    return { ...decodePlayerInto(this.world, entity, rec.bytes, this.opts.player), name: rec.name };
+    return { ...decodePlayerInto(this.world, entity, rec.bytes, { ...(this.opts.migrations ? { migrations: this.opts.migrations } : {}), ...this.opts.player }), name: rec.name };
   }
   /** Encode + queue a player save (its own transaction). */
   savePlayer(token: string, entity: Entity, name?: string): Promise<void> {
@@ -469,8 +485,7 @@ export class WorldPersistence {
     let chunks = 0;
     if (this.round) { chunks = this.round.queue.length; await this.continueRound(Infinity); }
     const players = this.online.size; await this.savePlayers();
-    const blobs = this.socialBlobs();
-    await this.store.write({ meta: this.meta(), ...(blobs.length ? { blobs } : {}) });
+    await this.store.write({ meta: this.meta(), ...this.socialPart() });
     await this.store.flush();
     return { chunks, players };
   }
