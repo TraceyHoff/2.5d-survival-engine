@@ -4,7 +4,7 @@
  * Movement lives here because gameplay has no movement system yet; replace with gameplay's once it exists.
  */
 import { Appearance, DEFAULT_TICK_HZ, defineActions, entityIndex, installPermissions, Transform, type ClaimRegistry, type Entity, type GroupRegistry, type PermissionsRes, type World } from "@engine/core";
-import { defineCommand, defineNetEvent, type InputCmd } from "@engine/net";
+import { defineCommand, defineNetEvent, type CommandRejection, type InputCmd, type NetClient } from "@engine/net";
 import { PVP_COMMANDS, CUSTOMIZATION_COMMANDS, ECONOMY_COMMAND_RATES, ECONOMY_COMMANDS, ECONOMY_ENTITY_FIELDS, installGameplay, PlayerIntent } from "@engine/gameplay";
 import type { CommandDef } from "@engine/core";
 import { SESSION_COMMANDS, SESSION_EVENTS } from "@engine/persist";
@@ -34,6 +34,28 @@ export function gameplayNet<D extends CommandDef>(d: D): ReturnType<typeof defin
 }
 export const DEMO_COMMANDS = [...SESSION_COMMANDS, Ping, ...GAMEPLAY_NET_COMMANDS.map((x) => x.net)] as const;
 export const DEMO_EVENTS = [...SESSION_EVENTS, Pong] as const;
+
+/**
+ * Wire codes for gameplay command rejections (CommandRejection.reason; the reason string also rides in `detail`).
+ * Append-only; 0 = unknown (read `detail`).
+ */
+export const COMMAND_REJECT_REASONS = [
+  "unknown_command", "no_actor", "forbidden", "not_allowed", "rate_limited",
+  "not_stall", "stall_closed", "out_of_range", "bad_listing", "listing_disabled", "stale_listing", "price_changed", "sold_out",
+  "no_funds", "no_space", "till_full", "till_empty", "bad_qty", "bad_slot", "viewers_full",
+  "no_catalog", "no_appearance", "no_target", "not_dead",
+] as const;
+export type CommandRejectReason = (typeof COMMAND_REJECT_REASONS)[number];
+export function rejectReasonCode(reason: string): number { const i = (COMMAND_REJECT_REASONS as readonly string[]).indexOf(reason); return i < 0 ? 0 : i + 1; }
+export function rejectReasonName(code: number): CommandRejectReason | undefined { return code > 0 ? COMMAND_REJECT_REASONS[code - 1] : undefined; }
+export interface GameplayRejection { command: CommandDef; code: number; reason: string; raw: CommandRejection }
+/** Client: gameplay command rejected by the server (core CommandDef, reason code, reason name). Returns unsubscribe. */
+export function onGameplayRejected(client: Pick<NetClient, "onCommandRejected">, fn: (r: GameplayRejection) => void): () => void {
+  return client.onCommandRejected((raw) => {
+    const m = GAMEPLAY_NET_COMMANDS.find((x) => x.net === raw.command); if (!m) return;
+    fn({ command: m.core, code: raw.reason, reason: rejectReasonName(raw.reason) ?? raw.detail, raw });
+  });
+}
 
 /** Screen-aligned iso movement from input bits: W = up-screen, etc. */
 export function moveDelta(buttons: number, dt: number): { dx: number; dy: number } {

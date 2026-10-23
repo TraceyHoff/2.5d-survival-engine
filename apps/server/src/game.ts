@@ -1,11 +1,11 @@
 /** Authoritative game server: world + gameplay + streaming chunks + persistence + NetServer sessions. */
-import { DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, type CosmeticCatalogLike, Membership, PlayerId, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
+import { CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, type CosmeticCatalogLike, Membership, PlayerId, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
 import { ChunkManager, ProceduralGenerator, chunkKeyOf, type BuildingGrid } from "@engine/world";
 import { spawnPlayer, spawnResourceNode, gameplayDefs, setIntent, IntentAction, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installCustomization,
-  appearanceServerHooks, applyReplication, installStallBuyHook, installViewBonus, setHitValidator, installPvp, stallListing, listingRevision, stallOf, tillOf, StallHeader, StallOwnerKind } from "@engine/gameplay";
-import { AppearanceServer, NetServer, StallResult, StallServer, TileSync, validateHit, type ClientSession, type ServerTransport, type StallHooks } from "@engine/net";
+  appearanceServerHooks, applyReplication, installStallBuyHook, installViewBonus, setHitValidator, installPvp, playerNames, stallListing, listingRevision, stallOf, tillOf, StallHeader, StallOwnerKind } from "@engine/gameplay";
+import { AppearanceServer, NameSync, NetServer, StallResult, StallServer, TileSync, validateHit, type ClientSession, type ServerTransport, type StallHooks } from "@engine/net";
 import { AccountAssigned, ClaimAccount, SetName, WorldPersistence, loadSocial, tokenToHex, tokenToWords, wordsToName, wordsToToken, type WorldStore } from "@engine/persist";
-import { Act, applyMoveInput, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS, GAMEPLAY_NET_COMMANDS, Ping, Pong } from "./protocol.js";
+import { Act, applyMoveInput, installDemoWorld, rejectReasonCode, DEMO_COMMANDS, DEMO_EVENTS, GAMEPLAY_NET_COMMANDS, Ping, Pong } from "./protocol.js";
 
 /** ProceduralGenerator node kinds -> gameplay resource keys (see DEFAULT_BANDS comments in @engine/world). */
 const NODE_RESOURCES: Record<number, string> = { 1: "fallen_branches", 2: "fiber_grass", 3: "berry_bush", 4: "loose_rocks", 5: "tree", 6: "boulder", 7: "iron_vein" };
@@ -62,7 +62,8 @@ export function createGameServer(o: GameServerOptions): GameServer {
     ...(o.catalog ? { appearance: { catalog: o.catalog } } : {}),
   }) : undefined;
   let localPlayerIds = 1; // no store: ids only need to be unique for this run
-  const chunks = new ChunkManager({ provider: persist?.provider ?? generator, loadRadius: o.loadRadius ?? 2, unloadMargin: 1, cacheSize: 64, maxLoadsPerUpdate: 4 });
+  const loadRadius = o.loadRadius ?? 2;
+  const chunks = new ChunkManager({ provider: persist?.provider ?? generator, loadRadius, unloadMargin: 1, cacheSize: 64, maxLoadsPerUpdate: 4 });
   const defs = gameplayDefs(world);
   const resIds = new Map<number, number>();
   for (const [kind, key] of Object.entries(NODE_RESOURCES)) { try { resIds.set(Number(kind), defs.resourceId(key)); } catch { /* resource renamed: skip */ } }
@@ -75,6 +76,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
   const net: NetServer = new NetServer({
     world, tickHz, transport: o.transport,
     commands: DEMO_COMMANDS, events: DEMO_EVENTS,
+    forwardCoreRejections: false, // forwarded below with the net command def + a reason code (protocol.ts)
     applyInput: (w, e, cmd, clientId) => {
       applyMoveInput(w, e, cmd, 1 / tickHz);
       if (cmd && (cmd.buttons & Act.Gather) && players.get(clientId)?.entity === e) {
@@ -108,14 +110,20 @@ export function createGameServer(o: GameServerOptions): GameServer {
   installViewBonus(world, (c, n) => net.setViewRadiusBonus(c, n));
   if (o.catalog) installCustomization(world, { catalog: o.catalog, handlers });
   let cmdSeq = 0;
+  const netDefOf = new Map<number, (typeof GAMEPLAY_NET_COMMANDS)[number]["net"]>(); // core command type -> net mirror
   for (const { core, net: def } of GAMEPLAY_NET_COMMANDS) {
     if (!o.catalog && (core.name === "gameplay.setAppearance" || core.name === "gameplay.equipCosmetic")) continue; // no catalog: unhandled
-    const type = handlers.registry.register(core);
+    const type = handlers.registry.register(core); netDefOf.set(type, def);
     net.onCommand(def, (s, payload) => {
       const p = players.get(s.clientId); if (!p || !world.isAlive(p.entity)) return;
       handlers.enqueue(p.entity, s.clientId, cmdSeq++, { type, values: payload as never });
     });
   }
+  // Gameplay rejections -> the issuing client (client.onCommandRejected / onGameplayRejected): net command + reason code + text.
+  world.events.on(CommandRejected, (r) => {
+    if (!net.sessions.get(r.clientId)?.conn) return;
+    const def = netDefOf.get(r.type); net.rejectCommand(r.clientId, def ?? r.type, rejectReasonCode(r.reason), r.reason);
+  });
   // Stall raw protocol (client.stalls): gameplay owns the purchase via the buy hook; owner ops go through the commands above.
   const stallHooks: StallHooks = {
     view: (w, target) => {
@@ -128,8 +136,12 @@ export function createGameServer(o: GameServerOptions): GameServer {
     canManage: () => false, owner: () => StallResult.Denied, sold: () => {},
     saleRecipients: (_w, _st, v) => (v.ownerKind === StallOwnerKind.Player ? [v.ownerId] : []),
   };
-  const stalls = new StallServer(net, { hooks: stallHooks, playerIdOf: (s) => { const e = players.get(s.clientId)?.entity; return (e !== undefined && world.getField(e, PlayerId, "id")) || 0; } });
+  const names = playerNames(world);
+  const nameSync = new NameSync(net, { names }); // crafter/buyer names for sale notifications + client.names
+  const stalls = new StallServer(net, { hooks: stallHooks, names: nameSync, playerIdOf: (s) => { const e = players.get(s.clientId)?.entity; return (e !== undefined && world.getField(e, PlayerId, "id")) || 0; } });
   installStallBuyHook(stalls);
+  // The buyer gets the sale record too (crafter provenance + names), unless they are also the recipient owner.
+  stalls.saleLog.push((sale, st) => { const v = stallHooks.view(world, st); if (sale.buyerId && !(v && stallHooks.saleRecipients(world, st, v).includes(sale.buyerId))) stalls.notify(sale, [sale.buyerId]); });
   const appearance = o.catalog ? new AppearanceServer(net, {
     catalog: o.catalog,
     // The join-time look is held (AppearanceServer pending) until the account is claimed, then applied with initial=true:
@@ -167,6 +179,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
       }
     }
     assignIdentity(p.entity); p.claimed = true;
+    if (p.name) names.set(world.getField(p.entity, PlayerId, "id")!, p.name);
     net.emitEvent(AccountAssigned, { ...tokenToWords(p.account), restored }, { scope: { owner: s.clientId } });
   });
   /** Account PlayerId (restored from the player record, else newly allocated) + Membership mirrored from the registry. */
@@ -180,6 +193,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
   net.onCommand(SetName, (s, payload) => {
     const p = players.get(s.clientId); if (!p) return;
     p.name = wordsToName(payload); persist?.trackPlayer(p.account, p.entity, p.name);
+    const id = world.getField(p.entity, PlayerId, "id"); if (id) names.set(id, p.name);
   });
   net.onCommand(Ping, (s, payload) => net.emitEvent(Pong, { t: payload.t }, { scope: { owner: s.clientId } }));
 
@@ -200,7 +214,8 @@ export function createGameServer(o: GameServerOptions): GameServer {
 
   // Streaming: players are the interest sources. Runs before persist.track (registered by attach below).
   world.addSystem("postSim", "server.chunks", () => {
-    for (const [cid, p] of players) { const t = world.get(p.entity, Transform); if (t) chunks.setSource({ id: cid, x: t.x, y: t.y }); }
+    // A watchtower's AOI bonus widens streaming too, so the extra chunks exist to be sent.
+    for (const [cid, p] of players) { const t = world.get(p.entity, Transform); if (t) chunks.setSource({ id: cid, x: t.x, y: t.y, radius: loadRadius + net.viewRadiusBonus(cid) }); }
     chunks.update();
   });
   persist?.attach(chunks);
