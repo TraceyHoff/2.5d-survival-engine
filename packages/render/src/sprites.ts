@@ -550,7 +550,7 @@ export class SpriteBatch {
           const okL = st >= 0 ? atlas.resolve(l.sprite, atlas.stateAnim(l.sprite, st), f, t, 0, lr) : atlas.resolve(l.sprite, atlas.animIndex(l.sprite, l.animName), f, 0, sp.data.frameId[k]!, lr);
           if (!okL) continue;
           o0.set(base); o0[4] = lr.entry; o0[8] = lr.ax; o0[9] = lr.ay; o0[16] = 0;
-          if (outlineOn && !(sp.data.flags[k]! & SpriteFlag.NoOutline)) {
+          if (outlineOn && l.outline && !(sp.data.flags[k]! & SpriteFlag.NoOutline)) {
             o0[2] = key - LAYER_BIAS * 0.5; o0[5] = (base[5]! & ~SpriteFlag.NoOutline) | OUTLINE_ONLY;
             this.pushOcc(o0, 0, occT, occ.mode); this.layerInstances++;
           }

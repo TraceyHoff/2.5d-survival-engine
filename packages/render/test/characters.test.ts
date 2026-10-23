@@ -72,3 +72,11 @@ describe("LayerCache invalidation", () => {
     const c = new LayerCache(binding); const a = app({}); c.get(0, 1, 5, 0, () => a); c.get(0, 2, 5, 0, () => a); expect(c.resolves).toBe(2);
   });
 });
+
+describe("core DrawLayer render hints (c734b72)", () => {
+  it("tintMode/strength/saturation/minor/outline pass through toCachedLayers", () => {
+    const [l] = toCachedLayers([{ slot: "hat", sprite: 1, anim: "idle", tintR: 0xff0000, tintMode: "lerp", tintStrength: 0.5, tintSaturation: 1.5, minor: true, outline: false }], {});
+    expect(l).toMatchObject({ mode: 3, strength: 0.5, saturation: 1.5, minor: true, outline: false });
+    expect(toCachedLayers([{ slot: "torso", sprite: 1, anim: "idle" }], {})[0]!.outline).toBe(true);
+  });
+});

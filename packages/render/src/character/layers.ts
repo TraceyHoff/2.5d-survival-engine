@@ -20,14 +20,14 @@ export interface AppearanceLike { bodyType: number; skinTone: number; parts: Arr
 
 /**
  * One back-to-front draw layer (core DrawLayer). `tintR`/`tintG` are 0xRRGGBB for tintmask R / G (body: R = skin).
- * Optional render extensions (spec gap, see README): tint mode/strength/saturation per layer, outline participation,
- * and `minor` (dropped by the crowd LOD).
+ * Optional render hints from core DrawLayer (c734b72, passed through resolveLayers): tint mode/strength/saturation,
+ * `minor` (dropped by the crowd LOD) and `outline` (false = excluded from the union outline pass).
  */
 export interface CharacterDrawLayer {
   slot: string; sprite: number; anim: string; layer?: number; z?: number; wearable?: number;
   tintR?: number; tintG?: number;
   tintMode?: TintMode; tintStrength?: number; tintSaturation?: number;
-  minor?: boolean;
+  minor?: boolean; outline?: boolean;
 }
 
 export type ResolveLayersFn = (appearance: AppearanceLike, facing: number) => readonly CharacterDrawLayer[];
@@ -47,7 +47,7 @@ export interface CachedLayer {
   slot: string; sprite: number; animName: string;
   /** RGBA8 packed (0 = untinted) */ tint: number; tint2: number;
   /** 0..3 = multiply|add|screen|lerp */ mode: number; strength: number; saturation: number;
-  minor: boolean;
+  minor: boolean; /** participates in the character outline pass */ outline: boolean;
 }
 
 const DEFAULT_MINOR = ["accessory", "shoes", "face", "eyes"];
@@ -64,7 +64,7 @@ export function toCachedLayers(list: readonly CharacterDrawLayer[], b: Pick<Appe
     const mode = TINT_MODES.indexOf(l.tintMode ?? d?.mode ?? "multiply");
     return { slot: l.slot, sprite: l.sprite, animName: l.anim, tint: rgbToRgba8(l.tintR), tint2: rgbToRgba8(l.tintG),
       mode: mode < 0 ? 0 : mode, strength: l.tintStrength ?? d?.strength ?? 1, saturation: l.tintSaturation ?? d?.saturation ?? 1,
-      minor: l.minor ?? minor.includes(l.slot) };
+      minor: l.minor ?? minor.includes(l.slot), outline: l.outline !== false };
   });
 }
 

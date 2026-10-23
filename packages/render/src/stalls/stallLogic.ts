@@ -38,7 +38,7 @@ export function parseStallTuning(json: unknown): { tuning: StallTuning; warnings
   const warnings: string[] = []; const t = structuredClone(DEFAULT_STALL_TUNING) as unknown as Record<string, Record<string, unknown>>;
   if (!json || typeof json !== "object") return { tuning: t as unknown as StallTuning, warnings: ["render_tuning.stalls: not an object"] };
   for (const [k, v] of Object.entries(json as Record<string, unknown>)) {
-    if (k.startsWith("$")) continue;
+    if (k.startsWith("$") || k === "attach") continue; // attach: informational (box-centre convention, tagMin)
     const dst = t[k]; if (!dst) { warnings.push(`render_tuning.stalls: unknown section ${k}`); continue; }
     if (!v || typeof v !== "object") continue;
     for (const [f, fv] of Object.entries(v as Record<string, unknown>)) {

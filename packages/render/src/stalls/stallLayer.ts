@@ -222,18 +222,20 @@ export class StallLayer {
     }
     r.vfx.overlay = ov;
   }
+  /**
+   * Price tag at attach.tagN. The stall frames bake the 18x8 tag board (1x) at every tagN, so the layer draws only the tag
+   * contents over the art: price-item icon + price text laid out icon-left-text-right inside the 14x6 text box (attach w/h,
+   * x/y = box centre). The separate stall_price_tag sprite is not drawn (it duplicated the baked board).
+   */
   private priceTag(pi: PieceInfo, p: { x: number; y: number; w?: number; h?: number }, l: ListingView, key: number): void {
-    const t = this.tuning; const ov = this.overlay; const tagW = p.w ?? 14; // tag attach = the 14x6 text box of the 18x8 tag
-    if (this.ids.tag !== undefined) {
-      const ts = this.reg.sprite(this.ids.tag); const tb = ts.attach?.text ?? { x: 0, y: -ts.atlas.frameH / 2, w: 14, h: 6 };
-      const o = this.place(this.ids.tag, pi.sx + p.x, pi.sy + p.y, tagW, key, 1, { w: tb.w ?? 14, cx: tb.x, cy: tb.y }); // tag text box -> tag attach box
-      if (o) ov.push(o);
-    }
+    const t = this.tuning; const ov = this.overlay; const bw = p.w ?? 14, bh = p.h ?? 6;
     const txt = formatPrice(t.priceTag.format, l.priceCount); const f = this.text?.font;
-    const tw = f ? measureText(f, txt, t.priceTag.sizePx) : 0; const iconW = t.priceTag.iconFromPriceItem ? t.priceTag.iconSizePx : 0;
-    const x0 = pi.sx + p.x - (tw + iconW) / 2;
-    if (iconW) { const ic = this.b.itemSprite(l.priceItem); if (ic !== undefined) { const o = this.place(ic, x0 + iconW / 2, pi.sy + p.y, iconW, key + 0.001, 1); if (o) ov.push(o); } }
-    if (this.text) this.text.add({ text: txt, x: x0 + iconW, y: pi.sy + p.y + t.priceTag.sizePx * 0.35, sizePx: t.priceTag.sizePx, color: hexColor(t.priceTag.color), align: "left" });
+    const iconW = t.priceTag.iconFromPriceItem ? Math.min(t.priceTag.iconSizePx, bh + 1) : 0; const gap = iconW ? 1 : 0;
+    const fit = f ? fitText(txt, bw - iconW - gap, (s, px) => measureText(f, s, px), Math.min(4, t.priceTag.sizePx), Math.min(t.priceTag.sizePx, bh)) : { text: txt, sizePx: t.priceTag.sizePx };
+    const tw = f ? measureText(f, fit.text, fit.sizePx) : 0;
+    const cx = pi.sx + p.x, cy = pi.sy + p.y; const x0 = cx - (tw + iconW + gap) / 2;
+    if (iconW) { const ic = this.b.itemSprite(l.priceItem); if (ic !== undefined) { const o = this.place(ic, x0 + iconW / 2, cy, iconW, key + 0.001, 1); if (o) ov.push(o); } }
+    if (this.text) this.text.add({ text: fit.text, x: x0 + iconW + gap, y: cy + fit.sizePx * 0.35, sizePx: fit.sizePx, color: hexColor(t.priceTag.color), align: "left" });
   }
   private signSoldOut(world: World, stall: Entity): boolean | undefined {
     const S = this.b.stallSign; if (!S || !world.has(stall, S)) return undefined; return world.getField(stall, S as ComponentDef<any>, "soldOut" as never) === 1;

@@ -18,7 +18,7 @@ process.on("exit", stop);
 await new Promise((res, rej) => { const t = setTimeout(() => rej(new Error("preview timeout")), 20000); server.stdout.on("data", (d) => { if (String(d).includes(String(PORT))) { clearTimeout(t); res(); } }); });
 const browser = await chromium.launch({ ...(chrome ? { executablePath: chrome } : {}), args: ["--use-angle=swiftshader", "--use-gl=angle", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
-const errors = []; page.on("console", (m) => { if (m.type() === "error" || m.type() === "warning") errors.push(m.text()); }); page.on("pageerror", (e) => errors.push(String(e)));
+const errors = []; page.on("console", (m) => { if (m.type() === "error" || m.type() === "warning") errors.push(m.text()); }); page.on("requestfailed", (r) => errors.push("reqfail " + r.url())); page.on("response", (r) => { if (r.status() >= 400) errors.push(r.status() + " " + r.url()); }); page.on("pageerror", (e) => errors.push(String(e)));
 const SHOTS = {
   stalls_rotations: "mode=rotations&time=11&zoom=0.95",
   stalls_states: "mode=states&time=11&zoom=1.7",
@@ -36,7 +36,7 @@ for (const [name, query] of Object.entries(SHOTS)) {
   const info = await page.evaluate(() => window.__iso);
   if (info.error) { console.error(name, info.error); failed = true; continue; }
   await page.screenshot({ path: join(shots, `${name}.png`) });
-  console.log(name, JSON.stringify({ stalls: info.stalls, glyphs: info.glyphs, draws: info.stats?.drawCalls, sprites: info.stats?.sprites }));
+  console.log(name, JSON.stringify({ font: info.font, fragments: info.fragments, collisions: info.collisions, issues: info.issues, stalls: info.stalls, glyphs: info.glyphs, draws: info.stats?.drawCalls, sprites: info.stats?.sprites }));
 }
 if (errors.length) console.log("PAGE MESSAGES:\n" + errors.join("\n"));
 await browser.close(); stop(); process.exit(failed ? 1 : 0);
