@@ -14,6 +14,7 @@ export * from "./transformSource.js";
 export * from "./vfx.js";
 export * from "./tilemap.js";
 export * from "./sprites.js";
+export * from "./buildPieces.js";
 export * from "./lighting.js";
 export * from "./weather.js";
 export * from "./composite.js";

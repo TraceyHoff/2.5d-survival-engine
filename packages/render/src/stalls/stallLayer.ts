@@ -1,9 +1,11 @@
 /**
  * StallLayer: draws the trade-stall integration on top of the generic build-piece path.
- *  1. listing item icons + price tags at attach slotN/tagN (per rotation via frameAttach; x mirrored on flipX), hidden when
- *     StallHeader.open == 0, dimmed + stamped when a listing is sold out;
+ *  1. listing item icons + price tags at attach slotN/tagN (per rotation via frameAttach; x mirrored on flipX), read from the
+ *     broadcast core StallDisplay (ADR-081, every observer sees them), hidden when StallHeader.open == 0, dimmed + stamped when
+ *     a listing is sold out (per listing from the stock container when this peer sees it, else all listings when the
+ *     all-sold-out bit is set);
  *  2. sign text at `sign` (SDF Fredoka, shrink-then-ellipsis);
- *  3. clan tint (tintmask R = primary, G = secondary from clanPalettes[BuildPiece.tint]) + clan emblem at `emblem`;
+ *  3. clan tint (tintmask R = primary, G = secondary from registry.clanPaletteForTint(tint)) + clan emblem at `emblem`;
  *  4. sway masks: build pieces now pass SpriteDef.sway to the sprite shader, which reads masks.sway (R);
  *  5. lantern emissive only at night (core timeOfDay -> daylight) with flicker (uniform gate, static chunks untouched);
  *  6. world prompt / badge (open, sold out, closed) above the stall, faded by focus distance;
@@ -12,14 +14,14 @@
  * Usage (per frame):  stalls.prepare(world); renderer.render(world, alpha); stalls.drawOverlay();
  * Events:             for (const ev of client.pollEvents(client.renderTick)) renderer.vfx.handle(ev);
  */
-import { entityIndex, Transform, type ComponentDef, type Entity, type World } from "@engine/core";
+import { entityIndex, StallDisplay, STALL_LISTINGS, Transform, type ComponentDef, type Entity, type World } from "@engine/core";
 import { floorToTerrainZ } from "@engine/world";
 import type { AssetRegistry, VfxDef } from "@engine/assets";
 import type { IsoRenderer } from "../IsoRenderer.js";
 import type { VfxSpawn } from "../vfx.js";
 import { readDayFraction } from "../env.js";
 import {
-  clanTintPair, DEFAULT_STALL_TUNING, fitText, formatPrice, isoPlace, lanternGate, listingSoldOut, promptAlpha, stallPoints, stallStateIndex, stallVisual,
+  clanTintPair, DEFAULT_STALL_TUNING, stallStrings, fitText, formatPrice, isoPlace, lanternGate, listingSoldOut, promptAlpha, stallPoints, stallStateIndex, stallVisual,
   type ListingView, type StallTuning, type StallVisual,
 } from "./stallLogic.js";
 import { measureText, SdfTextPass, type SdfFontData } from "./sdfText.js";
@@ -31,9 +33,9 @@ export type StallHeaderDefT = ComponentDef<{ ownerKind: "u8"; ownerId: "u32"; op
 export interface StallBindings {
   /** gameplay StallHeader; lives on the stall entity returned by stallOf. */
   stallHeader: StallHeaderDefT;
-  /** gameplay Listings {priceItem[], priceCount[], qty[], enabled[]} ("viewers" scope: absent for non-viewers). */
-  listings?: ComponentDef;
-  /** gameplay Container used as stall stock {items[], counts[]} (same entity as StallHeader). */
+  /** Broadcast listing rows {item[], qty[], price[], currency[]} (default: core StallDisplay, ADR-081). Same entity as StallHeader. */
+  stallDisplay?: ComponentDef;
+  /** Optional stock container {counts[]} (viewer-scoped: only used for per-listing sold-out dimming when this peer has it). */
   stock?: ComponentDef;
   /** Piece entity -> stall (stock attachment) entity; default: the piece itself when it has StallHeader. Gameplay: attachmentsOf(world, piece).find(has StallHeader). */
   stallOf?: (world: World, piece: Entity) => Entity | undefined;
@@ -57,13 +59,17 @@ export interface StallBindings {
   /** Focus position (tiles) for prompt fading; default: no fade. */
   focus?: () => { x: number; y: number } | undefined;
 }
-export interface StallStrings { soldOut: string; closed: string }
+/** Badge labels resolved from stalls/strings/<locale>.json via worldPrompt.labelKeys (stallStrings); defaults are the keys. */
+export interface StallStrings { open: string; soldOut: string; closed: string }
 
 interface PieceInfo { sx: number; sy: number; key: number; vis: number; rot: number; dmg: number; x: number; y: number }
 
 export class StallLayer {
   tuning: StallTuning = DEFAULT_STALL_TUNING;
-  strings: StallStrings = { soldOut: "Sold out", closed: "Closed" };
+  strings: StallStrings = { open: DEFAULT_STALL_TUNING.worldPrompt.labelKeys.open, soldOut: DEFAULT_STALL_TUNING.worldPrompt.labelKeys.soldOut, closed: DEFAULT_STALL_TUNING.worldPrompt.labelKeys.closed };
+  /** Install a strings table (stalls/strings/en.json); labels resolve through tuning.worldPrompt.labelKeys. */
+  setStrings(table: Record<string, unknown>): void { const s = stallStrings(this.tuning, table); this.strings = { open: s.open, soldOut: s.soldOut, closed: s.closed }; this.stringTable = table; }
+  private stringTable: Record<string, unknown> | null = null;
   /** Night lantern gate written each prepare() (0 by day). */
   readonly night = { sprites: new Set<number>(), gate: 1 };
   /** Per-frame stats (tests/screenshots). */
@@ -100,8 +106,8 @@ export class StallLayer {
     const fx = this.reg.ids.vfx.tryId("stall_sale_coins");
     this.ids = { tag: id("stall_price_tag"), open: id(t.worldPrompt.open), soldOut: id(t.worldPrompt.soldOut), closed: id(t.worldPrompt.closed), ...(fx !== undefined ? { coin: this.reg.effect("stall_sale_coins") } : {}) };
   }
-  setTuning(t: StallTuning): void { this.tuning = t; this.refreshIds(); }
-  /** Fredoka SDF font (buildRuntimeSdf or a shipped MTSDF). Without one, text is skipped. */
+  setTuning(t: StallTuning): void { this.tuning = t; this.refreshIds(); if (this.stringTable) this.setStrings(this.stringTable); }
+  /** Fredoka font: Art's MTSDF atlas (loadBmFont / parseBmFont of tuning sign.font), buildRuntimeSdf only as fallback. Without one, text is skipped. */
   setFont(font: SdfFontData): void { this.text = new SdfTextPass(this.renderer.gl, font); }
   isStallSprite(spriteId: number): boolean { return this.stallSprites.has(spriteId); }
 
@@ -115,7 +121,7 @@ export class StallLayer {
     const w = this.world; if (!w) return undefined; const vis = this.bpVis(w, e); if (vis === undefined || !this.stallSprites.has(vis)) return undefined;
     const idx = this.b.clanIndex ? this.b.clanIndex(w, e) : (w.getField(e, this.renderer.bindings.buildPiece!, "tint") ?? 0);
     let t = this.tintCache.get(idx);
-    if (!t) { const p = clanTintPair(this.reg.clanPalettes, idx); t = [p.primary, p.secondary] as const; this.tintCache.set(idx, t); }
+    if (!t) { const p = clanTintPair(this.reg, idx); t = [p.primary, p.secondary] as const; this.tintCache.set(idx, t); }
     return t;
   }
   private stateOf(e: number): number | undefined {
@@ -168,8 +174,9 @@ export class StallLayer {
       const pi = this.pieceInfo(world, e); if (!pi) continue;
       const h = world.get(stall, this.b.stallHeader)!; st.stalls++; this.baseSy = pi.sy;
       const pts = stallPoints(this.reg, pi.vis, pi.rot, pi.dmg, stallStateIndex(this.reg, pi.vis, h.open));
-      const listings = this.listingsOf(world, stall, h.listingCount);
-      const vstate = stallVisual(h.open, h.listingCount, listings, this.b.allSoldOut ? this.b.allSoldOut(world, stall) : this.signSoldOut(world, stall));
+      const allSold = this.b.allSoldOut ? this.b.allSoldOut(world, stall) : this.signSoldOut(world, stall);
+      const listings = this.listingsOf(world, stall, h.listingCount, allSold === true);
+      const vstate = stallVisual(h.open, h.listingCount, listings, allSold);
       // 1. listing icons + price tags (hidden when closed)
       if ((h.open || !t.slots.hideWhenClosed) && listings) {
         for (const s of pts.slots) {
@@ -200,10 +207,10 @@ export class StallLayer {
       const pid = vstate === "open" ? this.ids.open : vstate === "soldOut" ? this.ids.soldOut : this.ids.closed;
       const a = focus ? promptAlpha(Math.hypot(focus.x - pi.x, focus.y - pi.y), t.worldPrompt.fadeDistanceTiles) : 1;
       if (pid !== undefined && a > 0.01) {
-        const top = pi.sy - pts.frame.anchorY * 0.8 - t.worldPrompt.offsetZ * r.iso.zStep; // frames carry ~20% headroom
+        const top = pi.sy - pts.frame.anchorY - t.worldPrompt.offsetZ * r.iso.zStep; // frames are top-trimmed: anchorY = pivot -> art top
         const ps = this.reg.sprite(pid); const pw = ps.atlas.frameW * 0.5;
         const o = this.place(pid, pi.sx, top, pw, pi.key + 0.2, a); if (o) ov.push(o); // centred offsetZ above the frame top
-        const label = vstate === "soldOut" ? this.strings.soldOut : vstate === "closed" ? this.strings.closed : "";
+        const label = vstate === "soldOut" ? this.strings.soldOut : vstate === "closed" ? this.strings.closed : vstate === "open" ? this.strings.open : "";
         const tb = ps.attach?.text; // pivot-relative text box centre (frame px)
         if (label && tb && this.text && o) {
           const fit = fitText(label, (tb.w ?? 34) * o.k, (s, px) => measureText(this.text!.font, s, px), 4, (tb.h ?? 12) * o.k * 0.75);
@@ -216,10 +223,10 @@ export class StallLayer {
     r.vfx.overlay = ov;
   }
   private priceTag(pi: PieceInfo, p: { x: number; y: number; w?: number; h?: number }, l: ListingView, key: number): void {
-    const t = this.tuning; const ov = this.overlay; const tagW = p.w ?? 8;
+    const t = this.tuning; const ov = this.overlay; const tagW = p.w ?? 14; // tag attach = the 14x6 text box of the 18x8 tag
     if (this.ids.tag !== undefined) {
-      const ts = this.reg.sprite(this.ids.tag); const tb = ts.attach?.text ?? { x: 0, y: -ts.atlas.frameH / 2, w: ts.atlas.frameW, h: 12 };
-      const o = this.place(this.ids.tag, pi.sx + p.x, pi.sy + p.y, tagW, key, 1, { w: tb.w ?? 26, cx: tb.x, cy: tb.y }); // tag text box -> tag attach box
+      const ts = this.reg.sprite(this.ids.tag); const tb = ts.attach?.text ?? { x: 0, y: -ts.atlas.frameH / 2, w: 14, h: 6 };
+      const o = this.place(this.ids.tag, pi.sx + p.x, pi.sy + p.y, tagW, key, 1, { w: tb.w ?? 14, cx: tb.x, cy: tb.y }); // tag text box -> tag attach box
       if (o) ov.push(o);
     }
     const txt = formatPrice(t.priceTag.format, l.priceCount); const f = this.text?.font;
@@ -236,12 +243,18 @@ export class StallLayer {
     const n = world.getField(stall, S as ComponentDef<any>, "nameLen" as never) ?? 0; const a = world.getArray(stall, S as ComponentDef<any>, "name" as never); if (!a || !n) return undefined;
     return String.fromCharCode(...Array.from(a.subarray(0, n)));
   }
-  private listingsOf(world: World, stall: Entity, n: number): ListingView[] | null {
-    const L = this.b.listings, S = this.b.stock; if (!L || !S || !world.has(stall, L) || !world.has(stall, S)) return null;
+  /** Listing rows from the broadcast StallDisplay; stock from the (viewer-only) container when present, else unknown (not sold out unless allSold). */
+  private listingsOf(world: World, stall: Entity, count: number, allSold: boolean): ListingView[] | null {
+    const D = this.b.stallDisplay ?? StallDisplay; if (!world.isRegistered(D) || !world.has(stall, D)) return null;
     const g = (def: ComponentDef, f: string) => world.getArray(stall, def as ComponentDef<any>, f as never);
-    const items = g(S, "items"), counts = g(S, "counts"), pi = g(L, "priceItem"), pc = g(L, "priceCount"), q = g(L, "qty"), en = g(L, "enabled");
-    if (!items || !counts || !pi || !pc || !q || !en) return null;
-    return Array.from({ length: n }, (_, i) => ({ item: items[i]!, stock: counts[i]!, qty: q[i]!, enabled: !!en[i], priceItem: pi[i]!, priceCount: pc[i]! }));
+    const item = g(D, "item"), qty = g(D, "qty"), price = g(D, "price"), cur = g(D, "currency"); if (!item || !qty || !price || !cur) return null;
+    const S = this.b.stock; const has = !!S && world.isRegistered(S) && world.has(stall, S);
+    const sItems = has ? g(S!, "items") : undefined, sCounts = has ? g(S!, "counts") : undefined;
+    // core stall stock is any slot container: units of a listing = sum of counts of its item
+    const stockOf = (it: number): number => { if (!sItems || !sCounts) return Number.POSITIVE_INFINITY; let c = 0; for (let k = 0; k < sItems.length; k++) if (sItems[k] === it) c += sCounts[k]!; return c; };
+    const n = Math.min(count, STALL_LISTINGS, item.length);
+    return Array.from({ length: n }, (_, i) => ({ item: item[i]!, qty: qty[i]!, enabled: item[i]! !== 0, priceItem: cur[i]!, priceCount: price[i]!,
+      stock: allSold ? 0 : stockOf(item[i]!) }));
   }
   /** Draw sign / tag / badge text over the composited frame. Call after renderer.render. */
   drawOverlay(): void {

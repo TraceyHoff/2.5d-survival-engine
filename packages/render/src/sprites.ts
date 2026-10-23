@@ -511,8 +511,10 @@ export class SpriteBatch {
       let occT = 0, fade = 1;
       if (occOn && e !== this.focusEntity) {
         const os = oc.slot(i); const hgt = res.ay * scale;
+        // characters / animated actors never auto-occlude (only tall static props); an explicit Occluder still opts in
+        const actor = aps >= 0 || as >= 0;
         let hit = false;
-        if ((os >= 0 || hgt >= occ.minHeightPx) && key > fk + 0.05) {
+        if ((os >= 0 || (hgt >= occ.minHeightPx && !actor)) && key > fk + 0.05) {
           const left = sx - res.ax * scale, top = sy - res.ay * scale;
           hit = overlapsFocus(left, left + res.w * scale, top, sy);
         }

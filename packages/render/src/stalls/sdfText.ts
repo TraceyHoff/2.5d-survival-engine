@@ -1,17 +1,41 @@
 /**
  * World-space SDF text (stall signs, price tags, badge labels) in Fredoka.
  *
- * NOTE: there is no Fredoka MTSDF atlas in the repo (assets/ui/fonts/sdf/font_prompt.* is an MSDF of CozyPrompt for input
- * prompts), so the glyph atlas is generated at runtime: glyphs are rasterised from ui/fonts/Fredoka.ttf (FontFace, weight
- * from render_tuning) and converted to a single-channel signed distance field (exact Euclidean distance transform).
- * When Art ships a Fredoka MTSDF (BMFont JSON + PNG), pass it as SdfFontData with msdf = true instead: the shader
- * already takes median(r,g,b) when `uMsdf` is set.
+ * Primary source: Art's shipped Fredoka MTSDF atlases (stalls/fonts/fredoka_{regular,bold}_mtsdf.{png,json}, BMFont JSON,
+ * fieldType mtsdf, distanceRange 4, em 48) loaded with parseBmFont: the shader takes median(r,g,b) for the glyph edge and
+ * uses A (true SDF) for effects (optional halo). buildRuntimeSdf (runtime-rasterised single-channel SDF from a CSS font)
+ * stays only as a fallback when the atlas is missing.
  */
 import { createProgram, type Program } from "../gl/util.js";
 
 export interface GlyphInfo { u0: number; v0: number; u1: number; v1: number; w: number; h: number; xoff: number; yoff: number; adv: number }
 /** Glyph metrics in units of the atlas em size `px` (scale by sizePx / px). */
-export interface SdfFontData { px: number; lineH: number; base: number; glyphs: Map<number, GlyphInfo>; image: TexImageSource | null; width: number; height: number; msdf: boolean }
+export interface SdfFontData { px: number; lineH: number; base: number; glyphs: Map<number, GlyphInfo>; image: TexImageSource | null; width: number; height: number; msdf: boolean;
+  /** mtsdf: A channel holds a true SDF (used for halo effects). */ mtsdf?: boolean; /** distance range in atlas px */ pxRange?: number }
+
+/** BMFont JSON (msdf-bmfont / msdfgen layout: pages, chars[], info.size, common.{lineHeight,base,scaleW,scaleH}, distanceField). */
+export interface BmFontJson {
+  info: { size: number; padding?: number[] }; common: { lineHeight: number; base: number; scaleW: number; scaleH: number };
+  distanceField?: { fieldType: string; distanceRange: number };
+  chars: { id: number; x: number; y: number; width: number; height: number; xoffset: number; yoffset: number; xadvance: number; page?: number }[];
+}
+/** BMFont MTSDF/MSDF atlas -> SdfFontData (metrics in atlas px at em info.size; single page). */
+export function parseBmFont(json: BmFontJson, image: TexImageSource | null): SdfFontData {
+  const W = json.common.scaleW, H = json.common.scaleH; const glyphs = new Map<number, GlyphInfo>();
+  for (const c of json.chars) glyphs.set(c.id, { u0: c.x / W, v0: c.y / H, u1: (c.x + c.width) / W, v1: (c.y + c.height) / H, w: c.width, h: c.height, xoff: c.xoffset, yoff: c.yoffset, adv: c.xadvance });
+  const ft = json.distanceField?.fieldType ?? "sdf";
+  return { px: json.info.size, lineH: json.common.lineHeight, base: json.common.base, glyphs, image, width: W, height: H,
+    msdf: ft === "msdf" || ft === "mtsdf", mtsdf: ft === "mtsdf", pxRange: json.distanceField?.distanceRange ?? 4 };
+}
+/** Fetch + decode a BMFont MTSDF atlas (JSON URL; page PNG resolved next to it). Browser only. */
+export async function loadBmFont(jsonUrl: string): Promise<SdfFontData> {
+  const json = await (await fetch(jsonUrl)).json() as BmFontJson & { pages: string[] };
+  const page = new URL(json.pages[0]!, new URL(jsonUrl, location.href)).href;
+  const img = await createImageBitmap(await (await fetch(page)).blob(), { premultiplyAlpha: "none", colorSpaceConversion: "none" });
+  return parseBmFont(json, img);
+}
+/** Ellipsis fallback: "…" -> "..." when the font has no U+2026 (Latin-1 atlases). */
+export const fontText = (font: Pick<SdfFontData, "glyphs">, text: string): string => (font.glyphs.has(0x2026) ? text : text.replace(/\u2026/g, "..."));
 
 /** Exact squared EDT (Felzenszwalb-Huttenlocher) of a binary grid: 0 inside `on`, inf outside. */
 function edt(grid: Float64Array, w: number, h: number): void {
@@ -63,7 +87,7 @@ export function buildRuntimeSdf(family: string, weight: number, px = 32, pad = 6
 
 /** Text width in px at sizePx (advance sum). */
 export function measureText(font: Pick<SdfFontData, "px" | "glyphs">, text: string, sizePx: number): number {
-  let w = 0; for (const ch of text) w += font.glyphs.get(ch.codePointAt(0)!)?.adv ?? font.px * 0.5; return (w * sizePx) / font.px;
+  let w = 0; for (const ch of fontText(font, text)) w += font.glyphs.get(ch.codePointAt(0)!)?.adv ?? font.px * 0.5; return (w * sizePx) / font.px;
 }
 
 export interface TextRun { text: string; x: number; y: number; sizePx: number; color: [number, number, number, number]; align: "left" | "center" | "right" }
@@ -82,20 +106,25 @@ void main() {
 }`;
 const FS = /* glsl */ `#version 300 es
 precision highp float;
-in vec2 vUv; in vec4 vCol; uniform sampler2D uTex; uniform int uMsdf; uniform vec3 uLight;
+in vec2 vUv; in vec4 vCol; uniform sampler2D uTex; uniform int uMsdf; uniform vec3 uLight; uniform vec4 uHalo; // halo rgb + strength (mtsdf A channel)
 out vec4 o;
 float median(float r, float g, float b) { return max(min(r, g), min(max(r, g), b)); }
 void main() {
-  vec3 s = texture(uTex, vUv).rgb; float d = uMsdf == 1 ? median(s.r, s.g, s.b) : s.r;
+  vec4 t = texture(uTex, vUv); float d = uMsdf >= 1 ? median(t.r, t.g, t.b) : t.r;
   float w = max(fwidth(d), 1e-4) * 0.75; float a = smoothstep(0.5 - w, 0.5 + w, d) * vCol.a;
-  if (a <= 0.004) discard;
-  o = vec4(vCol.rgb * uLight * a, a); // premultiplied
+  // mtsdf: A = true SDF -> soft halo just outside the glyph (off when uHalo.a == 0)
+  float h = uMsdf == 2 ? smoothstep(0.2, 0.5, t.a) * uHalo.a * vCol.a : 0.0;
+  float oa = a + h * (1.0 - a);
+  if (oa <= 0.004) discard;
+  o = vec4(vCol.rgb * uLight * a + uHalo.rgb * h * (1.0 - a), oa); // premultiplied
 }`;
 
 /** Instanced SDF glyph quads, drawn over the composited frame (after IsoRenderer.render) in iso screen space. */
 export class SdfTextPass {
   private prog: Program; private vao: WebGLVertexArrayObject; private vbo: WebGLBuffer; private tex: WebGLTexture | null = null;
   private data = new Float32Array(12 * 256); private n = 0; glyphsDrawn = 0;
+  /** Halo colour + strength (mtsdf fonts only; 0 = off). */
+  halo: [number, number, number, number] = [0, 0, 0, 0];
   constructor(private gl: WebGL2RenderingContext, public font: SdfFontData) {
     this.prog = createProgram(gl, VS, FS, "sdfText"); this.vbo = gl.createBuffer()!; this.vao = gl.createVertexArray()!;
     gl.bindVertexArray(this.vao); gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
@@ -114,7 +143,7 @@ export class SdfTextPass {
   add(r: TextRun): void {
     const f = this.font; const k = r.sizePx / f.px; const w = measureText(f, r.text, r.sizePx);
     let x = r.align === "center" ? r.x - w / 2 : r.align === "right" ? r.x - w : r.x; const top = r.y - f.base * k;
-    for (const ch of r.text) {
+    for (const ch of fontText(f, r.text)) {
       const g = f.glyphs.get(ch.codePointAt(0)!); if (!g) { x += f.px * 0.5 * k; continue; }
       if (ch !== " ") {
         if ((this.n + 1) * 12 > this.data.length) { const d = new Float32Array(this.data.length * 2); d.set(this.data); this.data = d; }
@@ -129,7 +158,7 @@ export class SdfTextPass {
     const gl = this.gl; this.glyphsDrawn = this.n; if (!this.n || !this.tex) return;
     gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
     gl.disable(gl.DEPTH_TEST); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-    gl.useProgram(this.prog.prog); gl.uniform4fv(this.prog.u.uView!, viewU); gl.uniform1i(this.prog.u.uMsdf!, this.font.msdf ? 1 : 0); gl.uniform3fv(this.prog.u.uLight!, light);
+    gl.useProgram(this.prog.prog); gl.uniform4fv(this.prog.u.uView!, viewU); gl.uniform1i(this.prog.u.uMsdf!, this.font.mtsdf ? 2 : this.font.msdf ? 1 : 0); gl.uniform4fv(this.prog.u.uHalo!, this.halo); gl.uniform3fv(this.prog.u.uLight!, light);
     gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.tex); gl.uniform1i(this.prog.u.uTex!, 0);
     gl.bindVertexArray(this.vao); gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo); gl.bufferData(gl.ARRAY_BUFFER, this.data.subarray(0, this.n * 12), gl.DYNAMIC_DRAW);
     gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, this.n); gl.bindVertexArray(null); gl.disable(gl.BLEND);

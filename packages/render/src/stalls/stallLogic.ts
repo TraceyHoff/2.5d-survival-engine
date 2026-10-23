@@ -8,20 +8,27 @@ import { AssetRegistry, type AttachPoint, type ClanPalette, type FrameRef } from
 import { computeDayLighting } from "../timeOfDay.js";
 
 // ---------------------------------------------------------------------------------------------- tuning
+/** Font reference: Art's MTSDF atlas (BMFont JSON path under the art root) or a legacy TTF path. */
+export interface StallFontRef { atlas: string; atlasRegular?: string; fieldType: string; pxRange: number; emPx: number; fallbackTtf?: string }
+export type StallFont = string | StallFontRef;
+/** Font atlas JSON path (art-relative) of a tuning font, undefined for legacy TTF-only refs. */
+export const stallFontAtlas = (f: StallFont): string | undefined => (typeof f === "string" ? (f.endsWith(".json") ? f : undefined) : f.atlas);
 export interface StallTuning {
-  sign: { font: string; weight: number; color: string; minSizePx: number; maxSizePx: number };
-  priceTag: { font: string; weight: number; color: string; sizePx: number; iconSizePx: number; format: string; iconFromPriceItem: boolean };
+  sign: { font: StallFont; weight: number; color: string; minSizePx: number; maxSizePx: number };
+  priceTag: { font: StallFont; weight: number; color: string; sizePx: number; iconSizePx: number; format: string; iconFromPriceItem: boolean };
   slots: { iconScale: number; bobPx: number; hideWhenClosed: boolean; dimWhenOutOfStock: number; soldOutStamp: string };
-  worldPrompt: { open: string; soldOut: string; closed: string; offsetZ: number; fadeDistanceTiles: [number, number] };
+  worldPrompt: { open: string; soldOut: string; closed: string; offsetZ: number; fadeDistanceTiles: [number, number];
+    /** String keys of the badge labels (stalls/strings/<locale>.json). */ labelKeys: { open: string; soldOut: string; closed: string; clan?: string }; strings?: string };
   lanterns: { emissiveColor: string; bloom: number; nightOnly: boolean; flicker: { amp: number; freq: number } };
   sway: { maskChannel: string };
   tint: { R: string; G: string; mode: string };
 }
 export const DEFAULT_STALL_TUNING: StallTuning = {
-  sign: { font: "ui/fonts/Fredoka.ttf", weight: 700, color: "#3B2433", minSizePx: 6, maxSizePx: 12 },
-  priceTag: { font: "ui/fonts/Fredoka.ttf", weight: 700, color: "#3B2433", sizePx: 6, iconSizePx: 7, format: "{count}", iconFromPriceItem: true },
+  sign: { font: "stalls/fonts/fredoka_bold_mtsdf.json", weight: 700, color: "#3B2433", minSizePx: 6, maxSizePx: 12 },
+  priceTag: { font: "stalls/fonts/fredoka_bold_mtsdf.json", weight: 700, color: "#3B2433", sizePx: 6, iconSizePx: 7, format: "{count}", iconFromPriceItem: true },
   slots: { iconScale: 1, bobPx: 0, hideWhenClosed: true, dimWhenOutOfStock: 0.45, soldOutStamp: "stall_badge_sold_out" },
-  worldPrompt: { open: "stall_prompt_open", soldOut: "stall_badge_sold_out", closed: "stall_badge_closed", offsetZ: 1.2, fadeDistanceTiles: [6, 9] },
+  worldPrompt: { open: "stall_prompt_open", soldOut: "stall_badge_sold_out", closed: "stall_badge_closed", offsetZ: 1.2, fadeDistanceTiles: [6, 9],
+    labelKeys: { open: "stall.badge.open", soldOut: "stall.badge.soldout", closed: "stall.badge.closed", clan: "stall.badge.clan" }, strings: "stalls/strings/en.json" },
   lanterns: { emissiveColor: "#FFD04A", bloom: 0.6, nightOnly: true, flicker: { amp: 0.08, freq: 3 } },
   sway: { maskChannel: "R" },
   tint: { R: "clan_primary", G: "clan_secondary", mode: "multiply" },
@@ -34,11 +41,21 @@ export function parseStallTuning(json: unknown): { tuning: StallTuning; warnings
     if (k.startsWith("$")) continue;
     const dst = t[k]; if (!dst) { warnings.push(`render_tuning.stalls: unknown section ${k}`); continue; }
     if (!v || typeof v !== "object") continue;
-    for (const [f, fv] of Object.entries(v as Record<string, unknown>)) if (f in dst && fv !== null && typeof fv === typeof dst[f]) dst[f] = fv;
+    for (const [f, fv] of Object.entries(v as Record<string, unknown>)) {
+      if (!(f in dst) || fv === null) continue;
+      if (f === "font" && (typeof fv === "string" || (typeof fv === "object" && typeof (fv as StallFontRef).atlas === "string"))) { dst[f] = fv; continue; }
+      if (typeof fv === typeof dst[f]) dst[f] = f === "labelKeys" ? { ...(dst[f] as object), ...(fv as object) } : fv;
+    }
   }
   if (t.sway!.maskChannel !== "R") warnings.push(`render_tuning.stalls: sway.maskChannel ${String(t.sway!.maskChannel)} unsupported (shader reads R)`);
   if (t.tint!.mode !== "multiply") warnings.push(`render_tuning.stalls: tint.mode ${String(t.tint!.mode)} unsupported (sprite shader multiplies)`);
+  for (const k of ["sign", "priceTag"] as const) { const f = t[k]!.font as StallFont; if (typeof f === "object" && f.fieldType !== "mtsdf" && f.fieldType !== "msdf") warnings.push(`render_tuning.stalls: ${k}.font.fieldType ${f.fieldType} unsupported`); }
   return { tuning: t as unknown as StallTuning, warnings };
+}
+/** Badge labels from a strings table (stalls/strings/<locale>.json) through worldPrompt.labelKeys; missing keys fall back to the key. */
+export function stallStrings(t: StallTuning, table: Record<string, unknown> | null | undefined): { open: string; soldOut: string; closed: string; clan: string } {
+  const k = t.worldPrompt.labelKeys; const get = (key: string | undefined): string => { const v = key ? table?.[key] : undefined; return typeof v === "string" ? v : key ?? ""; };
+  return { open: get(k.open), soldOut: get(k.soldOut), closed: get(k.closed), clan: get(k.clan) };
 }
 
 // ---------------------------------------------------------------------------------------------- attach points
@@ -102,16 +119,14 @@ export function lanternGate(dayT: number, timeSec: number, cfg: StallTuning["lan
 
 // ---------------------------------------------------------------------------------------------- clan tint
 /**
- * BuildPiece.tint (u8) -> clan palette. 0 = untinted. Gameplay writes clanTintIndex = 1..255 while the registry's
- * clanPalettes are 0-based (16 entries from pvp_clan), so index i maps to clanPalettes[(i - 1) % n] (see report).
+ * BuildPiece tint index (u8, gameplay paint || tint) -> clan palette via AssetRegistry.clanPaletteForTint (ADR-081):
+ * 0 = none, 1..N = clanPalettes[tint - 1], out of range = none (no modulo).
  */
-export function clanPaletteFor(palettes: readonly ClanPalette[], tint: number): ClanPalette | undefined {
-  if (!tint || palettes.length === 0) return undefined; return palettes[(tint - 1) % palettes.length];
-}
+export function clanPaletteFor(reg: Pick<AssetRegistry, "clanPaletteForTint">, tint: number): ClanPalette | undefined { return reg.clanPaletteForTint(tint); }
 /** Registry colours are 0xRRGGBB; sprite tints are RGBA8 (0 = none). */
 export const clanRgbToRgba8 = (rgb: number): number => (((rgb & 0xffffff) << 8) | 0xff) >>> 0;
-export function clanTintPair(palettes: readonly ClanPalette[], tint: number): { primary: number; secondary: number } {
-  const p = clanPaletteFor(palettes, tint); return p ? { primary: clanRgbToRgba8(p.primary), secondary: clanRgbToRgba8(p.secondary) } : { primary: 0, secondary: 0 };
+export function clanTintPair(reg: Pick<AssetRegistry, "clanPaletteForTint">, tint: number): { primary: number; secondary: number } {
+  const p = clanPaletteFor(reg, tint); return p ? { primary: clanRgbToRgba8(p.primary), secondary: clanRgbToRgba8(p.secondary) } : { primary: 0, secondary: 0 };
 }
 
 // ---------------------------------------------------------------------------------------------- text fit
