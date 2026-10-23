@@ -2,8 +2,8 @@ import { describe, it, expect, afterEach } from "vitest";
 import { copyFileSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { PlayerId, Transform, World, type Entity } from "@engine/core";
-import { addItem, countItem, defaultDefs, BuildPiece, CraftQueue, CraftQueuesRes, Health, CancelQueuedCraftCmd, QueueCraftCmd } from "@engine/gameplay";
+import { PlayerId, Transform, transaction, World, type Entity } from "@engine/core";
+import { addItem, countItem, defaultDefs, BuildPiece, CraftQueue, CraftQueuesRes, owedOf, Health, removeItem, CancelQueuedCraftCmd, QueueCraftCmd } from "@engine/gameplay";
 import { LoopbackNetwork, NetClient } from "@engine/net";
 import { AccountAssigned, wordsToToken, ClaimAccount, MemoryWorldStore, tokenToWords, type WorldStore } from "@engine/persist";
 import { SqliteWorldStore } from "@engine/persist/node";
@@ -65,7 +65,7 @@ describe("apps/server craft queue", () => {
     expect(got.map((r) => [r.command, r.reason])).toEqual([[QueueCraftCmd, "missing_ingredients"], [CancelQueuedCraftCmd, "no_job"]]);
   });
 
-  it("a queue survives save + restart, is re-armed on reclaim, and finishes", async () => {
+  it("a queue survives save + restart, is re-armed on reclaim, and finishes", { timeout: 20_000 }, async () => { // restart under load ~5.5s
     const dir = mkdtempSync(join(tmpdir(), "cq-")); dirs.push(dir); const path = join(dir, "w.db");
     const s1 = setup(await SqliteWorldStore.open(path)); let token = "";
     const A = await s1.connect((t) => { token = t; }); const w1 = s1.gs.world; stock(w1, A.e);
@@ -80,7 +80,7 @@ describe("apps/server craft queue", () => {
     await s2.gs.shutdown();
   });
 
-  it("loads a pre-81a7b11 save (no CraftQueue anywhere): player + chunk entities restore, CraftQueue absent, no schema-hash failure", async () => {
+  it("loads a pre-81a7b11 save (no CraftQueue anywhere): player + chunk entities restore, CraftQueue absent, no schema-hash failure", { timeout: 20_000 }, async () => { // restart under load ~5.5s
     const dir = mkdtempSync(join(tmpdir(), "cq-old-")); dirs.push(dir); const path = join(dir, "w.db");
     copyFileSync(new URL("./fixtures/pre81a7b11.sqlite.bin", import.meta.url), path);
     const fx = JSON.parse(readFileSync(new URL("./fixtures/pre81a7b11.json", import.meta.url), "utf8")) as { account: string; pid: number; pieceX: number; pieceY: number };
@@ -98,5 +98,40 @@ describe("apps/server craft queue", () => {
     stock(w, P.e); P.c.sendCommand(gameplayNet(QueueCraftCmd), { recipe: AXE, count: 1 }); s.tick(60);
     expect(countItem(w, P.e, id("stone_axe"))).toBe(1);
     await s.gs.shutdown();
+  });
+
+  it("CraftOwed persists: a full inventory finishes a craft, the owed axe (with crafterId) survives a restart and arrives once there is space", { timeout: 20_000 }, async () => { // restart under load ~5.5s
+    const dir = mkdtempSync(join(tmpdir(), "cq-owed-")); dirs.push(dir); const path = join(dir, "w.db");
+    const s1 = setup(await SqliteWorldStore.open(path)); let token = "";
+    const A = await s1.connect((t) => { token = t; }); const w1 = s1.gs.world; const q = w1.resource(CraftQueuesRes); stock(w1, A.e); s1.tick(2);
+    const pid = w1.getField(A.e, PlayerId, "id")!;
+    A.c.sendCommand(gameplayNet(QueueCraftCmd), { recipe: AXE, count: 1 }); s1.tick(2);
+    // Fill every bag slot (core transaction add: slot-limited like the completion add) inside the completion tick,
+    // after the queue system's fit check, so the output add at completion fails and gameplay holds it in CraftOwed.
+    let filled = false; let pre = 0;
+    w1.addSystem("simulation", "test.fillBag", (w) => {
+      if (filled || !q.jobs(A.e).length || q.info(A.e, 0).endTick > w.tick + 1) return;
+      filled = true;
+      for (const it of d.items.keys()) for (let n = 0; n < 64 && transaction(w, (tx) => tx.add(A.e, it, 1), A.e).ok; n++) if (it === id("stone_axe")) pre++;
+    });
+    for (let i = 0; i < 200 && !owedOf(w1, A.e).length; i++) s1.tick(1);
+    const owed = owedOf(w1, A.e);
+    expect(owed).toEqual([{ item: id("stone_axe"), count: 1, crafterId: expect.any(Number) }]);
+    const crafterId = owed![0]!.crafterId; expect(crafterId).toBe(pid);
+    expect(countItem(w1, A.e, id("stone_axe"))).toBe(pre);
+    s1.tick(5); await s1.gs.shutdown();
+    const s2 = setup(await SqliteWorldStore.open(path)); const B = await s2.connect(token); const w2 = s2.gs.world;
+    expect(owedOf(w2, B.e)).toEqual(owed);
+    s2.tick(5); expect(countItem(w2, B.e, id("stone_axe"))).toBe(pre); // still full
+    for (const it of d.items.keys()) { const n = countItem(w2, B.e, it); if (n) removeItem(w2, B.e, it, n); }
+    s2.tick(5);
+    expect(countItem(w2, B.e, id("stone_axe"))).toBe(1);
+    expect(owedOf(w2, B.e)).toEqual([]);
+    s2.tick(5); await s2.gs.shutdown();
+    // delivered once: the row is gone, a third start owes nothing and the axe is in the saved inventory
+    const s3 = setup(await SqliteWorldStore.open(path)); const C = await s3.connect(token);
+    expect(owedOf(s3.gs.world, C.e)).toEqual([]);
+    expect(countItem(s3.gs.world, C.e, id("stone_axe"))).toBe(1);
+    await s3.gs.shutdown();
   });
 });
