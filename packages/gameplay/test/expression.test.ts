@@ -7,7 +7,7 @@ describe("Expression", () => {
   it("data validates; component is networked, not persisted, appended after CraftOwed", () => {
     expect(G.validateExpressionData(G.EXPRESSION_DATA)).toEqual([]);
     expect(G.Expression.networked).toBe(true); expect(G.Expression.persistent).toBeFalsy();
-    const L = G.GAMEPLAY_COMPONENTS; expect(L[L.length - 1]).toBe(G.Expression); expect(L[L.length - 2]).toBe(G.CraftOwed);
+    const L = G.GAMEPLAY_COMPONENTS; expect(L.indexOf(G.Expression)).toBe(L.indexOf(G.CraftOwed) + 1); expect(L.indexOf(G.PartyInvitePending)).toBe(L.indexOf(G.Expression) + 1);
   });
   it("moods set an expression that expires; emotes win until untilTick", () => {
     const w = makeWorld(); const p = G.spawnPlayer(w, { x: 0, y: 0, maxWeight: 0, clientId: 1 });

@@ -99,5 +99,16 @@
  "bot.loner.killedEnemy.1": "Shh. Done now.",
  "bot.loner.killedEnemy.2": "That's that.",
  "bot.loner.idle.1": "*hums quietly*",
- "bot.loner.idle.2": "Nice tree. Good tree."
+ "bot.loner.idle.2": "Nice tree. Good tree.",
+ "social.party.invite.1": "Wanna team up? Snacks included!",
+ "social.party.invite.2": "Squad up? I'm great at holding flashlights!",
+ "social.party.invite.3": "Party time! The surviving kind!",
+ "social.party.accept.1": "Yay, buddies!",
+ "social.party.accept.2": "Count me in, partner!",
+ "social.party.accept.3": "Teamwork makes the zombies hurt!",
+ "social.party.decline.1": "Aw, maybe later!",
+ "social.party.decline.2": "I'm more of a lone berry-picker.",
+ "social.party.decline.3": "Thanks, but I'm shy!",
+ "social.party.leave.1": "Gonna wander off, byeee!",
+ "social.party.leave.2": "Off on my own adventure!"
 }

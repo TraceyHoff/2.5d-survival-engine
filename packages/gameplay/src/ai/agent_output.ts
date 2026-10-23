@@ -8,6 +8,7 @@ import { intentToFrame, type BotIntent } from "./bot_input.js";
 import { GameplayActions, PlaceCmd, UseCmd } from "../input.js";
 import { BuyFromStallCmd, OpenStallCmd } from "../economy/stall.js";
 import { QueueCraftCmd } from "../systems/craft_queue.js";
+import { PartyAcceptCmd, PartyDeclineCmd, PartyInviteCmd, PartyKickCmd, PartyLeaveCmd } from "../party.js";
 import { requestEmote } from "../expression.js";
 
 export function actionIntent(action: string): BotIntent | undefined {
@@ -58,6 +59,7 @@ export type AgentOutputWithCommands = AgentOutput & { commands?: AgentCommand[] 
 /** Action string -> a net command (buy, use, craft, place, plus open of a stall). Other actions return undefined and stay frame-only. */
 /** Entity fields hold the bot's replica entity; the host (local.ts sendAgentCommands -> NetClient.sendCommand) maps them to NetIds. */
 export function actionCommand(action: string): AgentCommand | undefined {
+  const party = partyActionCommand(action); if (party !== null) return party;
   const it = actionIntent(action); if (!it) return undefined;
   switch (it.kind) {
     case "eat": return { type: UseCmd.name, payload: { slot: it.slot } };
@@ -68,7 +70,23 @@ export function actionCommand(action: string): AgentCommand | undefined {
     default: return undefined;
   }
 }
-const COMMAND_ACTIONS = new Set(["eat", "drink", "craft", "build", "open", "buy"]);
+/**
+ * Party action strings: "pinvite:<entity>" | "paccept:<party>" | "pdecline:<party>" | "pleave" | "pkick:<entity>".
+ * Returns null when the action is not a party action, and undefined when it is one but malformed.
+ */
+function partyActionCommand(action: string): AgentCommand | undefined | null {
+  const [k, a] = action.split(":"); const n = Number(a);
+  const one = (type: string, field: string): AgentCommand | undefined => (Number.isFinite(n) && a !== undefined ? { type, payload: { [field]: n } } : undefined);
+  switch (k) {
+    case "pinvite": return one(PartyInviteCmd.name, "target");
+    case "paccept": return one(PartyAcceptCmd.name, "party");
+    case "pdecline": return one(PartyDeclineCmd.name, "party");
+    case "pkick": return one(PartyKickCmd.name, "target");
+    case "pleave": return { type: PartyLeaveCmd.name, payload: {} };
+    default: return null;
+  }
+}
+const COMMAND_ACTIONS = new Set(["eat", "drink", "craft", "build", "open", "buy", "pinvite", "paccept", "pdecline", "pleave", "pkick"]);
 /**
  * Moves the command-type actions (eat, drink, craft, build, open, buy) out of out.actions and into out.commands, in order.
   Movement and gather/attack/sleep stay

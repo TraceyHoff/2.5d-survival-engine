@@ -470,3 +470,10 @@ Gameplay owns data, not loops: there is **no spawn loop and no controller** here
   - Membership.partyId on online member entities mirrors the registry.
   - Reject reasons are appended to COMMAND_REJECT_REASONS: no_player, self, in_party, not_in_party, not_officer, party_full, no_invite, invite_expired, outranked.
   - Netcode owns rate limits and group replication.
+- **Bot parties (`src/ai/party_behaviors.ts`).** The server mirrors the newest unexpired invite onto the invitee as `PartyInvitePending {party, from, expiresTick}`. It is networked and owner-scoped (`net.setScope` in game.ts) and is written only in party handlers, so bots read their invite from their replica like a human's UI does.
+  - Sensors: `partyId`, `partyInvite`, and `partyless` (visible PlayerId holders with no party within 10 m).
+  - Behaviors emit `pinvite:/paccept:/pdecline:/pleave/pkick:` actions, which emitAgentCommands turns into the `gameplay.party*` commands:
+    - `party_decide`: waits 2 s after seeing the invite, then rolls `partyAcceptChance` with the agent rng (`0.15 + 0.45·sociability + 0.25·trust + 0.25·need − 0.15·bravery`, clamped). Trust is identity.relationship (−1..1), and need is max(1−hp, 1−hunger).
+    - `party_invite`: only bots with sociability ≥ 0.55, with a 45 s cooldown. This includes inviting the player.
+    - `party_leave`: leaves after (0.5 + sociability) × 120 s with no mate in view.
+  - Chat lines are `social.party.{invite,accept,decline,leave}.N` in en.json (outside the `bot.` namespace that bots.json owns).

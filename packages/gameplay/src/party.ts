@@ -4,6 +4,7 @@
  * registry is only changed in command handlers. Netcode handles rate limiting and group replication.
  * Membership.partyId on each online member entity mirrors the registry.
  */
+import { PartyInvitePending } from "./components.js";
 import { defineCommand, defineResource, GroupKind, GroupRole, Membership, Permissions, PlayerId, playerOf, type CommandHandlers, type Entity, type GroupRegistry, type World } from "@engine/core";
 
 export const PartyInviteCmd = defineCommand("gameplay.partyInvite", { target: "u32" });
@@ -33,10 +34,17 @@ function syncMembership(w: World, player: number): void {
   const p = partyOf(w, player);
   if (w.has(e, Membership)) w.setField(e, Membership, "partyId", p); else w.add(e, Membership, { partyId: p, clanId: 0 });
 }
+/** Mirrors the newest unexpired invite onto the invitee entity (PartyInvitePending), or removes it. */
+function syncInvite(w: World, player: number): void {
+  const e = entityOfPlayer(w, player); if (e === undefined) return;
+  const l = (invites(w).get(player) ?? []).filter((x) => x.expiresTick > w.tick); const top = l[l.length - 1];
+  if (!top) { if (w.has(e, PartyInvitePending)) w.remove(e, PartyInvitePending); return; }
+  if (w.has(e, PartyInvitePending)) w.set(e, PartyInvitePending, { ...top }); else w.add(e, PartyInvitePending, { ...top });
+}
 /** Pending, unexpired invite for a player to a party. Expired ones are pruned here. */
 export function pendingInvite(w: World, player: number, party: number): PartyInvite | undefined | "expired" {
   const l = invites(w).get(player); const i = l?.findIndex((x) => x.party === party) ?? -1; if (!l || i < 0) return undefined;
-  if (l[i]!.expiresTick <= w.tick) { l.splice(i, 1); return "expired"; } return l[i];
+  if (l[i]!.expiresTick <= w.tick) { l.splice(i, 1); syncInvite(w, player); return "expired"; } return l[i];
 }
 
 export function inviteReject(w: World, actor: Entity, target: number): string | undefined {
@@ -71,12 +79,12 @@ export function partyInvite(w: World, actor: Entity, target: number): string | u
   let p = partyOf(w, me); if (!p) { p = groups(w).create(GroupKind.Party, me).id; syncMembership(w, me); }
   const l = invites(w).get(them) ?? []; invites(w).set(them, l);
   const expiresTick = w.tick + PARTY_RULES.inviteTicks; const ex = l.find((x) => x.party === p);
-  if (ex) { ex.expiresTick = expiresTick; ex.from = me; } else l.push({ party: p, from: me, expiresTick });
-  return undefined;
+  if (ex) { l.splice(l.indexOf(ex), 1); } l.push({ party: p, from: me, expiresTick }); // newest last
+  syncInvite(w, them); return undefined;
 }
 export function partyAccept(w: World, actor: Entity, party: number): string | undefined {
   const r = acceptReject(w, actor, party); if (r) return r;
-  const me = playerOf(w, actor); groups(w).addMember(party, me, GroupRole.Member); invites(w).delete(me); syncMembership(w, me);
+  const me = playerOf(w, actor); groups(w).addMember(party, me, GroupRole.Member); invites(w).delete(me); syncMembership(w, me); syncInvite(w, me);
   return undefined;
 }
 /** Removes a player; the leader hands over to the highest role, then lowest PlayerId; an empty party is deleted. */
@@ -91,7 +99,7 @@ function removeFromParty(w: World, p: number, player: number): void {
 export function partyDecline(w: World, actor: Entity, party: number): string | undefined {
   const me = playerOf(w, actor); if (!me) return "no_player";
   const inv = pendingInvite(w, me, party); if (inv === "expired") return "invite_expired"; if (!inv) return "no_invite";
-  const l = invites(w).get(me)!; l.splice(l.indexOf(inv), 1); return undefined;
+  const l = invites(w).get(me)!; l.splice(l.indexOf(inv), 1); syncInvite(w, me); return undefined;
 }
 export function partyLeave(w: World, actor: Entity): string | undefined {
   const me = playerOf(w, actor); if (!me) return "no_player"; const p = partyOf(w, me); if (!p) return "not_in_party";
