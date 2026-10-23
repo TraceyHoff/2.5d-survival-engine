@@ -35,6 +35,9 @@ export interface AppearanceValue { bodyType: number; skinTone: number; parts: nu
 
 /** Per body-type art for one wearable (ids resolved by the assets loader). */
 export interface WearableBodyArt { sprite: number; anim: string; /** alt art used when a hat sets `hatHair` (hair slot only) */ hatHair?: { sprite: number; anim: string } }
+/** Tintmask blend modes understood by the Renderer (render TINT_MODES). */
+export type TintMode = "multiply" | "add" | "screen" | "lerp";
+export const TINT_MODES: readonly TintMode[] = ["multiply", "add", "screen", "lerp"];
 export interface WearableDef {
   id: number; key: string; slot: WearableSlot;
   /** Keyed by BodyType; a part is compatible only with listed body types. */
@@ -43,6 +46,12 @@ export interface WearableDef {
   layer: number; layerByDir?: number[]; z: number;
   /** Tintmask channels used: 0 = untinted, 1 = R<-primary, 2 = R<-primary + G<-secondary. */
   tintChannels: 0 | 1 | 2;
+  /** Optional render hints (passed through resolveLayers; renderer defaults apply when absent). */
+  tintMode?: TintMode; tintStrength?: number; tintSaturation?: number;
+  /** Small detail part the Renderer's crowd LOD may drop. */
+  minor?: boolean;
+  /** false = excluded from the character outline pass (default: participates). */
+  outline?: boolean;
   hidesSlots: WearableSlot[];
   /** Hat only: hair draws its hatHair variant (or is hidden if the hair lacks one). */
   hatHair: boolean;
@@ -108,6 +117,8 @@ export interface DrawLayer {
   layer: number; z: number;
   /** Tintmask R / G target colors (0xRRGGBB); undefined channel = untinted. Body: r = skin tone. */
   tintR?: number; tintG?: number;
+  /** Passed through from the WearableDef when set (see WearableDef). */
+  tintMode?: TintMode; tintStrength?: number; tintSaturation?: number; minor?: boolean; outline?: boolean;
 }
 /** 4-way direction index (0 = +x/E, 1 = +y/S, 2 = W, 3 = N), same convention as AssetRegistry.directionIndex. */
 export function directionIndex4(facing: number): number {
@@ -135,7 +146,10 @@ export function resolveLayers(cat: CosmeticCatalogLike, a: AppearanceValue, faci
     const pal = cat[SLOT_PALETTE[w.slot]];
     out.push({ slot: w.slot, wearable: w.id, sprite: art.sprite, anim: art.anim, layer: w.layerByDir?.[dir] ?? w.layer, z: w.z, order: i,
       ...(w.tintChannels >= 1 ? { tintR: pal[a.primary[i] ?? 0]?.color ?? 0xffffff } : {}),
-      ...(w.tintChannels >= 2 ? { tintG: pal[a.secondary[i] ?? 0]?.color ?? 0xffffff } : {}) });
+      ...(w.tintChannels >= 2 ? { tintG: pal[a.secondary[i] ?? 0]?.color ?? 0xffffff } : {}),
+      ...(w.tintMode !== undefined ? { tintMode: w.tintMode } : {}), ...(w.tintStrength !== undefined ? { tintStrength: w.tintStrength } : {}),
+      ...(w.tintSaturation !== undefined ? { tintSaturation: w.tintSaturation } : {}), ...(w.minor !== undefined ? { minor: w.minor } : {}),
+      ...(w.outline !== undefined ? { outline: w.outline } : {}) });
   });
   out.sort((x, y) => x.layer - y.layer || x.z - y.z || x.order - y.order);
   return out.map(({ order: _o, ...l }) => l);

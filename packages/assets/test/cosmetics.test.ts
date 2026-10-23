@@ -89,4 +89,15 @@ describe("Appearance helpers", () => {
     a.parts[slotIndex("hat")] = id("hat_helm"); expect(resolveLayers(cat, a, 0).some((x) => x.slot === "hair")).toBe(false);
     a.bodyType = 1; a.parts[slotIndex("hat")] = id("hat_cap"); expect(resolveLayers(cat, a, 0).some((x) => x.slot === "hair")).toBe(false); // female hair lacks hatHair art
   });
+  it("render hints (tintMode/strength/saturation, minor, outline) validate and pass through resolveLayers", () => {
+    const hinted = loadManifest(base((m) => { Object.assign(m.wearables[0], { tintMode: "lerp", tintStrength: 0.6, tintSaturation: 1.2, outline: false }); Object.assign(m.wearables[4], { minor: true }); })).registry.cosmetics!;
+    const hid = (k: string): number => hinted.byKey(k)!.id;
+    const a = look((a) => { a.parts[slotIndex("hair")] = hid("hair_short"); a.parts[slotIndex("shoes")] = hid("shoes_boots"); a.parts[slotIndex("top")] = hid("top_shirt"); });
+    const l = resolveLayers(hinted, a, 0);
+    expect(l.find((x) => x.slot === "hair")).toMatchObject({ tintMode: "lerp", tintStrength: 0.6, tintSaturation: 1.2, outline: false });
+    expect(l.find((x) => x.slot === "shoes")!.minor).toBe(true);
+    const top = l.find((x) => x.slot === "top")!; for (const k of ["tintMode", "tintStrength", "tintSaturation", "minor", "outline"]) expect(k in top).toBe(false);
+    const list = issues(base((m) => { Object.assign(m.wearables[0], { tintMode: "glow", tintStrength: 2, tintSaturation: -1, minor: "yes", outline: 1 }); })).join("\n");
+    for (const s of ["tintMode must be one of", "tintStrength must be a number in 0..1", "tintSaturation must be a number in 0..2", "minor must be a boolean", "outline must be a boolean"]) expect(list).toContain(s);
+  });
 });
