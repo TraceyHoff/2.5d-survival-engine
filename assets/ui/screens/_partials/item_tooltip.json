@@ -1,161 +1,270 @@
 {
- "schema": "ui-partial/1",
- "params": {
-  "item": "{hover.item}"
- },
- "root": {
-  "type": "tooltip",
-  "id": "item_tooltip",
-  "w": 260,
-  "h": "auto",
-  "pad": 12,
-  "layout": "col",
-  "gap": 6,
-  "children": [
-   {
-    "type": "box",
-    "layout": "row",
-    "gap": 8,
-    "h": 40,
-    "align": "center",
-    "children": [
-     {
-      "type": "slot",
-      "w": 40,
-      "h": 40,
-      "bind": "{$item}",
-      "showCount": false
-     },
-     {
-      "type": "box",
-      "layout": "col",
-      "w": "fill",
-      "h": 40,
-      "children": [
-       {
-        "type": "text",
-        "text": "{$item.name}",
-        "font": "heading",
-        "h": 22
-       },
-       {
-        "type": "text",
-        "text": "{$item.rarityLabel} \u00b7 {$item.categoryLabel}",
-        "font": "small",
-        "color": "{\"rarity.\" + $item.rarity}",
-        "h": 16
-       }
-      ]
-     }
-    ]
-   },
-   {
-    "type": "divider",
-    "w": "fill",
-    "h": 14
-   },
-   {
-    "type": "text",
-    "text": "{$item.description}",
-    "font": "small",
-    "w": "fill",
-    "wrap": true,
-    "h": "auto"
-   },
-   {
-    "type": "box",
-    "layout": "row",
-    "gap": 6,
-    "h": 20,
-    "w": "fill",
-    "align": "center",
-    "visible": "{$item.food}",
-    "children": [
-     {
-      "type": "foodbadge",
-      "stage": "{$item.food.stage}",
-      "w": 16,
-      "h": 16
-     },
-     {
-      "type": "text",
-      "text": "{$item.food.stageLabel}",
-      "font": "label",
-      "w": 70,
-      "color": "{\"food.\" + $item.food.stage}"
-     },
-     {
-      "type": "bar",
-      "vital": "hunger",
-      "value": "{1 - $item.food.spoiled}",
-      "max": 1,
-      "w": "fill",
-      "h": 12,
-      "thin": true
-     }
-    ]
-   },
-   {
-    "type": "repeat",
-    "each": "{$item.stats}",
-    "as": "stat",
-    "layout": "col",
-    "gap": 2,
-    "w": "fill",
+  "$schema": "../../screen.schema.json",
+  "schema": "ui-partial/1",
+  "$comment": "Drop-in successor of ui/screens/_partials/item_tooltip.json (see ../../PATCH_ui_tooltip.md). Adds rarity border, Crafted-by line, durability bar, fill level (water_flask), price line (stalls).",
+  "params": {
+    "item": "{hover.item}",
+    "price": "{null}"
+  },
+  "root": {
+    "type": "tooltip",
+    "id": "item_tooltip",
+    "w": 268,
     "h": "auto",
-    "template": {
-     "type": "box",
-     "layout": "row",
-     "gap": 6,
-     "h": 20,
-     "w": "fill",
-     "children": [
-      {
-       "type": "icon",
-       "icon": "{stat.icon}",
-       "w": 20,
-       "h": 20
-      },
-      {
-       "type": "text",
-       "text": "{stat.label}",
-       "font": "small",
-       "w": "fill"
-      },
-      {
-       "type": "text",
-       "text": "{stat.value}",
-       "font": "label",
-       "color": "{stat.color}"
-      }
-     ]
-    }
-   },
-   {
-    "type": "box",
-    "layout": "row",
-    "h": 18,
-    "w": "fill",
+    "pad": 12,
+    "layout": "col",
+    "gap": 6,
+    "rarityBorder": "{$item.rarity}",
     "children": [
-     {
-      "type": "icon",
-      "icon": "ic_weight",
-      "w": 16,
-      "h": 16
-     },
-     {
-      "type": "text",
-      "text": "{$item.weight|fixed1} kg",
-      "font": "tiny",
-      "w": "fill"
-     },
-     {
-      "type": "text",
-      "text": "{$item.count}/{$item.maxStack}",
-      "font": "tiny"
-     }
+      {
+        "type": "box",
+        "layout": "row",
+        "children": [
+          {
+            "type": "slot",
+            "w": 44,
+            "h": 44,
+            "bind": "{$item}",
+            "showCount": false
+          },
+          {
+            "type": "box",
+            "layout": "col",
+            "children": [
+              {
+                "type": "text",
+                "text": "{$item.name}",
+                "font": "heading",
+                "h": 22,
+                "w": "fill"
+              },
+              {
+                "type": "text",
+                "text": "{$item.rarityLabel} \u00b7 {$item.categoryLabel}",
+                "font": "small",
+                "h": 16,
+                "color": "{\"rarity.\" + $item.rarity}"
+              }
+            ],
+            "w": "fill",
+            "h": 44
+          }
+        ],
+        "gap": 8,
+        "h": 44,
+        "align": "center",
+        "w": "fill"
+      },
+      {
+        "type": "include",
+        "src": "_partials/crafted_by.json",
+        "params": {
+          "item": "{$item}"
+        }
+      },
+      {
+        "type": "divider",
+        "w": "fill",
+        "h": 14
+      },
+      {
+        "type": "text",
+        "text": "{$item.description}",
+        "font": "small",
+        "w": "fill",
+        "wrap": true,
+        "h": "auto"
+      },
+      {
+        "type": "box",
+        "layout": "row",
+        "children": [
+          {
+            "type": "foodbadge",
+            "stage": "{$item.food.stage}",
+            "w": 16,
+            "h": 16
+          },
+          {
+            "type": "text",
+            "text": "{$item.food.stageLabel}",
+            "font": "label",
+            "w": 70,
+            "color": "{\"food.\" + $item.food.stage}"
+          },
+          {
+            "type": "bar",
+            "vital": "hunger",
+            "value": "{1 - $item.food.spoiled}",
+            "max": 1,
+            "w": "fill",
+            "h": 12,
+            "thin": true
+          }
+        ],
+        "gap": 6,
+        "h": 20,
+        "w": "fill",
+        "align": "center",
+        "visible": "{$item.food}"
+      },
+      {
+        "type": "box",
+        "layout": "row",
+        "children": [
+          {
+            "type": "icon",
+            "icon": "ui_stall_fill",
+            "w": 16,
+            "h": 16
+          },
+          {
+            "type": "text",
+            "text": "Fill",
+            "font": "label",
+            "w": 70,
+            "color": "text.link"
+          },
+          {
+            "type": "bar",
+            "vital": "thirst",
+            "value": "{$item.fill}",
+            "max": 1,
+            "w": "fill",
+            "h": 12,
+            "thin": true
+          }
+        ],
+        "gap": 6,
+        "h": 20,
+        "w": "fill",
+        "align": "center",
+        "visible": "{$item.fill != null}",
+        "comment": "water_flask: no spoilage, fill level only"
+      },
+      {
+        "type": "box",
+        "layout": "row",
+        "children": [
+          {
+            "type": "icon",
+            "icon": "ic_hammer",
+            "w": 16,
+            "h": 16
+          },
+          {
+            "type": "text",
+            "text": "Durability",
+            "font": "label",
+            "w": 86
+          },
+          {
+            "type": "bar",
+            "vital": "stamina",
+            "value": "{$item.durability}",
+            "max": 1,
+            "w": "fill",
+            "h": 12,
+            "thin": true
+          },
+          {
+            "type": "text",
+            "text": "{$item.durability|pct}",
+            "font": "tiny",
+            "w": 36,
+            "align": "right"
+          }
+        ],
+        "gap": 6,
+        "h": 20,
+        "w": "fill",
+        "align": "center",
+        "visible": "{$item.durability != null}"
+      },
+      {
+        "type": "repeat",
+        "each": "{$item.stats}",
+        "as": "stat",
+        "layout": "col",
+        "gap": 2,
+        "w": "fill",
+        "h": "auto",
+        "template": {
+          "type": "box",
+          "layout": "row",
+          "children": [
+            {
+              "type": "icon",
+              "icon": "{stat.icon}",
+              "w": 20,
+              "h": 20
+            },
+            {
+              "type": "text",
+              "text": "{stat.label}",
+              "font": "small",
+              "w": "fill"
+            },
+            {
+              "type": "text",
+              "text": "{stat.value}",
+              "font": "label",
+              "color": "{stat.color}"
+            }
+          ],
+          "gap": 6,
+          "h": 20,
+          "w": "fill"
+        }
+      },
+      {
+        "type": "box",
+        "layout": "row",
+        "children": [
+          {
+            "type": "icon",
+            "icon": "{$price.icon}",
+            "w": 18,
+            "h": 18
+          },
+          {
+            "type": "text",
+            "text": "{$price ? \"Price \" + $price.count + \" \" + $price.name : \"\"}",
+            "font": "label",
+            "w": "fill"
+          }
+        ],
+        "gap": 6,
+        "h": 20,
+        "w": "fill",
+        "align": "center",
+        "visible": "{$price}"
+      },
+      {
+        "type": "box",
+        "layout": "row",
+        "children": [
+          {
+            "type": "icon",
+            "icon": "ic_weight",
+            "w": 16,
+            "h": 16
+          },
+          {
+            "type": "text",
+            "text": "{$item.weight|fixed1} kg",
+            "font": "tiny",
+            "w": "fill"
+          },
+          {
+            "type": "text",
+            "text": "{$item.count}/{$item.maxStack}",
+            "font": "tiny"
+          }
+        ],
+        "h": 18,
+        "w": "fill"
+      }
     ]
-   }
-  ]
- }
+  }
 }

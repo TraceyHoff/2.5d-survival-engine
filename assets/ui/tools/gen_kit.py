@@ -106,7 +106,7 @@ def main():
                 ox, oy = place[m]
                 page.alpha_composite(imgs[sc][m], (((i % cols) * w + ox) * sc, ((i // cols) * h + oy) * sc))
             page.save(os.path.join(OUT, 'engine', f'{key}{"" if sc == 1 else "@2x"}.png'), optimize=True)
-        at = {"key": key, "image": f'{key}.png', "frameW": w, "frameH": h, "columns": cols, "rows": rows}
+        at = {"key": key, "image": f'{key}.png', "frameW": w, "frameH": h, "columns": cols, "rows": rows, "pages": [{"scale": 2, "image": f"{key}@2x.png"}]}
         ns = {str(i): dict(zip("ltrb", kit.SPRITES[m]['nine'])) for i, m in enumerate(members) if kit.SPRITES[m]['nine']}
         if ns:
             at["nineSlice"] = ns

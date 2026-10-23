@@ -1,269 +1,269 @@
 {
- "$schema": "./screen.schema.json",
- "schema": "ui-screen/1",
- "id": "world_map",
- "setsState": {
-  "ui.windowOpen": true
- },
- "title": "World map",
- "layer": "window",
- "modal": true,
- "openWith": [
-  "KeyM"
- ],
- "root": {
-  "type": "box",
-  "w": "fill",
-  "h": "fill",
-  "children": [
-   {
-    "type": "scrim",
-    "alpha": 0.5
-   },
-   {
+  "$schema": "../screen.schema.json",
+  "schema": "ui-screen/1",
+  "id": "world_map",
+  "setsState": {
+    "ui.windowOpen": true
+  },
+  "title": "World map",
+  "layer": "window",
+  "modal": true,
+  "openWith": [
+    "KeyM"
+  ],
+  "root": {
     "type": "box",
-    "id": "world_map_window",
-    "anchor": "cc",
-    "x": 0,
-    "y": 0,
-    "w": 1060,
-    "h": 580,
+    "w": "fill",
+    "h": "fill",
     "children": [
-     {
-      "type": "include",
-      "src": "_partials/journal_tabs.json",
-      "params": {
-       "active": "map"
+      {
+        "type": "scrim",
+        "alpha": 0.5
       },
-      "anchor": "tl",
-      "x": 28,
-      "y": -40
-     },
-     {
-      "type": "panel",
-      "id": "world_map_frame",
-      "frame": "panel_wood_vine",
-      "anchor": "tl",
-      "x": 0,
-      "y": 0,
-      "w": 1060,
-      "h": 580,
-      "pad": 24,
-      "children": [
-       {
-        "type": "panel",
-        "frame": "panel_inset",
-        "anchor": "tl",
+      {
+        "type": "box",
+        "id": "world_map_window",
+        "anchor": "cc",
         "x": 0,
         "y": 0,
-        "w": 760,
-        "h": 520,
-        "pad": 6,
+        "w": 1060,
+        "h": 580,
         "children": [
-         {
-          "type": "mapview",
-          "id": "map",
-          "w": "fill",
-          "h": "fill",
-          "bind": "{map.texture}",
-          "center": "{map.center}",
-          "zoom": "{map.zoom}",
-          "markers": "{map.markers}",
-          "memberPins": "{map.memberPins}",
-          "fog": "{map.explored}",
-          "action": {
-           "event": "map.ping",
-           "args": {
-            "at": "$cursorWorld"
-           }
-          }
-         },
-         {
-          "type": "box",
-          "anchor": "tr",
-          "x": 8,
-          "y": 8,
-          "w": 40,
-          "h": 88,
-          "layout": "col",
-          "gap": 6,
-          "children": [
-           {
-            "type": "button",
-            "variant": "secondary",
-            "icon": "ic_plus",
-            "w": 40,
-            "h": 40,
-            "action": {
-             "event": "map.zoom",
-             "args": {
-              "delta": 1
-             }
-            }
-           },
-           {
-            "type": "button",
-            "variant": "secondary",
-            "icon": "ic_minus",
-            "w": 40,
-            "h": 40,
-            "action": {
-             "event": "map.zoom",
-             "args": {
-              "delta": -1
-             }
-            }
-           }
-          ]
-         },
-         {
-          "type": "panel",
-          "frame": "panel_hud",
-          "anchor": "bl",
-          "x": 8,
-          "y": 8,
-          "w": 210,
-          "h": 34,
-          "pad": [
-           4,
-           10,
-           4,
-           8
-          ],
-          "layout": "row",
-          "gap": 6,
-          "align": "center",
-          "children": [
-           {
-            "type": "icon",
-            "icon": "ic_pin",
-            "w": 24,
-            "h": 24
-           },
-           {
-            "type": "text",
-            "text": "{map.cursor.x|int}, {map.cursor.y|int} \u00b7 {map.cursor.biome}",
-            "font": "hudSmall",
-            "w": "fill"
-           }
-          ]
-         }
-        ]
-       },
-       {
-        "type": "panel",
-        "frame": "panel_parchment",
-        "anchor": "tr",
-        "x": 0,
-        "y": 0,
-        "w": 236,
-        "h": 520,
-        "pad": 14,
-        "layout": "col",
-        "gap": 8,
-        "children": [
-         {
-          "type": "text",
-          "text": "Legend",
-          "font": "heading",
-          "h": 24
-         },
-         {
-          "type": "repeat",
-          "each": "{map.legend}",
-          "as": "l",
-          "layout": "col",
-          "gap": 6,
-          "w": "fill",
-          "h": 260,
-          "template": {
-           "type": "box",
-           "layout": "row",
-           "gap": 8,
-           "h": 32,
-           "w": "fill",
-           "align": "center",
-           "children": [
-            {
-             "type": "icon",
-             "icon": "{l.icon}",
-             "w": 28,
-             "h": 28
+          {
+            "type": "include",
+            "src": "_partials/journal_tabs.json",
+            "params": {
+              "active": "map"
             },
-            {
-             "type": "text",
-             "text": "{l.label}",
-             "font": "label",
-             "w": "fill"
+            "anchor": "tl",
+            "x": 28,
+            "y": -40
+          },
+          {
+            "type": "panel",
+            "id": "world_map_frame",
+            "frame": "panel_wood_vine",
+            "anchor": "tl",
+            "x": 0,
+            "y": 0,
+            "w": 1060,
+            "h": 580,
+            "pad": 24,
+            "children": [
+              {
+                "type": "panel",
+                "frame": "panel_inset",
+                "anchor": "tl",
+                "x": 0,
+                "y": 0,
+                "w": 760,
+                "h": 520,
+                "pad": 6,
+                "children": [
+                  {
+                    "type": "mapview",
+                    "id": "map",
+                    "w": "fill",
+                    "h": "fill",
+                    "bind": "{map.texture}",
+                    "center": "{map.center}",
+                    "zoom": "{map.zoom}",
+                    "markers": "{map.markers}",
+                    "memberPins": "{map.memberPins}",
+                    "fog": "{map.explored}",
+                    "action": {
+                      "event": "map.ping",
+                      "args": {
+                        "at": "$cursorWorld"
+                      }
+                    }
+                  },
+                  {
+                    "type": "box",
+                    "anchor": "tr",
+                    "x": 8,
+                    "y": 8,
+                    "w": 40,
+                    "h": 88,
+                    "layout": "col",
+                    "gap": 6,
+                    "children": [
+                      {
+                        "type": "button",
+                        "variant": "secondary",
+                        "icon": "ic_plus",
+                        "w": 40,
+                        "h": 40,
+                        "action": {
+                          "event": "map.zoom",
+                          "args": {
+                            "delta": 1
+                          }
+                        }
+                      },
+                      {
+                        "type": "button",
+                        "variant": "secondary",
+                        "icon": "ic_minus",
+                        "w": 40,
+                        "h": 40,
+                        "action": {
+                          "event": "map.zoom",
+                          "args": {
+                            "delta": -1
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "panel",
+                    "frame": "panel_hud",
+                    "anchor": "bl",
+                    "x": 8,
+                    "y": 8,
+                    "w": 210,
+                    "h": 34,
+                    "pad": [
+                      4,
+                      10,
+                      4,
+                      8
+                    ],
+                    "layout": "row",
+                    "gap": 6,
+                    "align": "center",
+                    "children": [
+                      {
+                        "type": "icon",
+                        "icon": "ic_pin",
+                        "w": 24,
+                        "h": 24
+                      },
+                      {
+                        "type": "text",
+                        "text": "{map.cursor.x|int}, {map.cursor.y|int} \u00b7 {map.cursor.biome}",
+                        "font": "hudSmall",
+                        "w": "fill"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "panel",
+                "frame": "panel_parchment",
+                "anchor": "tr",
+                "x": 0,
+                "y": 0,
+                "w": 236,
+                "h": 520,
+                "pad": 14,
+                "layout": "col",
+                "gap": 8,
+                "children": [
+                  {
+                    "type": "text",
+                    "text": "Legend",
+                    "font": "heading",
+                    "h": 24
+                  },
+                  {
+                    "type": "repeat",
+                    "each": "{map.legend}",
+                    "as": "l",
+                    "layout": "col",
+                    "gap": 6,
+                    "w": "fill",
+                    "h": 260,
+                    "template": {
+                      "type": "box",
+                      "layout": "row",
+                      "gap": 8,
+                      "h": 32,
+                      "w": "fill",
+                      "align": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "icon": "{l.icon}",
+                          "w": 28,
+                          "h": 28
+                        },
+                        {
+                          "type": "text",
+                          "text": "{l.label}",
+                          "font": "label",
+                          "w": "fill"
+                        },
+                        {
+                          "type": "checkbox",
+                          "bind": "{l.visible}",
+                          "w": 28,
+                          "h": 28
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "divider",
+                    "w": "fill",
+                    "h": 14
+                  },
+                  {
+                    "type": "button",
+                    "label": "Center on me",
+                    "variant": "info",
+                    "w": "fill",
+                    "h": 40,
+                    "icon": "ic_person",
+                    "action": {
+                      "event": "map.center",
+                      "args": {
+                        "on": "player"
+                      }
+                    }
+                  },
+                  {
+                    "type": "button",
+                    "label": "Ping here",
+                    "variant": "secondary",
+                    "w": "fill",
+                    "h": 40,
+                    "icon": "ic_pin",
+                    "action": {
+                      "event": "map.ping"
+                    }
+                  },
+                  {
+                    "type": "keyhint",
+                    "key": "M",
+                    "label": "Close map"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "button",
+            "id": "close",
+            "variant": "close",
+            "anchor": "tr",
+            "x": 10,
+            "y": -10,
+            "w": 32,
+            "h": 32,
+            "action": {
+              "event": "ui.close",
+              "args": {
+                "screen": "world_map"
+              }
             },
-            {
-             "type": "checkbox",
-             "bind": "{l.visible}",
-             "w": 28,
-             "h": 28
-            }
-           ]
+            "hotkey": "Escape",
+            "tooltip": "Close (Esc)"
           }
-         },
-         {
-          "type": "divider",
-          "w": "fill",
-          "h": 14
-         },
-         {
-          "type": "button",
-          "label": "Center on me",
-          "variant": "info",
-          "w": "fill",
-          "h": 40,
-          "icon": "ic_person",
-          "action": {
-           "event": "map.center",
-           "args": {
-            "on": "player"
-           }
-          }
-         },
-         {
-          "type": "button",
-          "label": "Ping here",
-          "variant": "secondary",
-          "w": "fill",
-          "h": 40,
-          "icon": "ic_pin",
-          "action": {
-           "event": "map.ping"
-          }
-         },
-         {
-          "type": "keyhint",
-          "key": "M",
-          "label": "Close map"
-         }
         ]
-       }
-      ]
-     },
-     {
-      "type": "button",
-      "id": "close",
-      "variant": "close",
-      "anchor": "tr",
-      "x": 10,
-      "y": -10,
-      "w": 32,
-      "h": 32,
-      "action": {
-       "event": "ui.close",
-       "args": {
-        "screen": "world_map"
-       }
-      },
-      "hotkey": "Escape",
-      "tooltip": "Close (Esc)"
-     }
+      }
     ]
-   }
-  ]
- }
+  }
 }

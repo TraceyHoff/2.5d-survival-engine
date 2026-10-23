@@ -1,0 +1,44 @@
+{
+  "$schema": "../screen.schema.json",
+  "schema": "ui-screen/1",
+  "id": "stall_toasts",
+  "title": "Stall toasts",
+  "layer": "overlay",
+  "modal": false,
+  "events": {
+    "gameplay.stall_sale": "owner(s) only: success toast + coin vfx at stall + bell ring anim",
+    "gameplay.till_collected": "collector: info toast"
+  },
+  "root": {
+    "type": "box",
+    "layout": "abs",
+    "children": [
+      {
+        "type": "toast",
+        "kind": "success",
+        "icon": "coin",
+        "title": "Sold! {toast.sale.count}\u00d7 {toast.sale.itemName}",
+        "text": "{toast.sale.buyerName} paid {toast.sale.priceCount} {toast.sale.priceName}",
+        "anchor": "tr",
+        "x": 20,
+        "y": 90,
+        "w": 330,
+        "h": 56
+      },
+      {
+        "type": "toast",
+        "kind": "info",
+        "icon": "ui_stall_till",
+        "title": "Till collected",
+        "text": "{toast.till.items} stacks moved to your bag",
+        "anchor": "tr",
+        "x": 20,
+        "y": 152,
+        "w": 330,
+        "h": 56
+      }
+    ],
+    "w": "fill",
+    "h": "fill"
+  }
+}

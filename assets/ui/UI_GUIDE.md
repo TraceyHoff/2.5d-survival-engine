@@ -358,3 +358,9 @@ These are for the Engine Architect / client owner. **Nothing has been committed 
   - Can the client get the idle-timeout deadline, or should it count 120 s from the last update?
 - Party/clan actions (invite, leave, kick, promote): these aren't in net yet. Are they gameplay commands?
 - Banner art: shape, pattern and emblem id tables are needed to render `banner`.
+
+## Engine layout (ADR-082 UI kit placement)
+Screens: `assets/ui/screens/<name>.json` (+ `_partials/`), schema `assets/ui/screen.schema.json`, kit atlases `assets/ui/kit/`
+(`manifest.ui.kit.json`, merged into the pack manifest `ui` category), strings `assets/ui/strings/en.json`. See `kit/README.md`.
+New screens: `character_creator`, `wardrobe`, `craft_queue`, `touch_context`, `survival_events`, plus stall screens
+(`stall_browse[_phone]`, `stall_buy`, `stall_manage[_perms]`, `stall_toasts`, `item_inspect`, `market_board`).

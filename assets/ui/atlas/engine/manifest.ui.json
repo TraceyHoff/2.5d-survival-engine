@@ -8,7 +8,13 @@
    "frameW": 176,
    "frameH": 176,
    "columns": 2,
-   "rows": 1
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "ui_kit_176x176@2x.png"
+    }
+   ]
   },
   {
    "key": "ui_kit_64x64",
@@ -42,7 +48,13 @@
      "r": 18,
      "b": 18
     }
-   }
+   },
+   "pages": [
+    {
+     "scale": 2,
+     "image": "ui_kit_64x64@2x.png"
+    }
+   ]
   },
   {
    "key": "ui_kit_72x56",
@@ -76,7 +88,13 @@
      "r": 16,
      "b": 16
     }
-   }
+   },
+   "pages": [
+    {
+     "scale": 2,
+     "image": "ui_kit_72x56@2x.png"
+    }
+   ]
   },
   {
    "key": "ui_kit_96x40",
@@ -98,7 +116,13 @@
      "r": 18,
      "b": 16
     }
-   }
+   },
+   "pages": [
+    {
+     "scale": 2,
+     "image": "ui_kit_96x40@2x.png"
+    }
+   ]
   },
   {
    "key": "ui_kit_48x48",
@@ -318,7 +342,13 @@
      "r": 16,
      "b": 16
     }
-   }
+   },
+   "pages": [
+    {
+     "scale": 2,
+     "image": "ui_kit_48x48@2x.png"
+    }
+   ]
   },
   {
    "key": "ui_kit_64x20",
@@ -352,7 +382,13 @@
      "r": 9,
      "b": 9
     }
-   }
+   },
+   "pages": [
+    {
+     "scale": 2,
+     "image": "ui_kit_64x20@2x.png"
+    }
+   ]
   },
   {
    "key": "ui_kit_32x32",
@@ -368,7 +404,13 @@
      "r": 10,
      "b": 12
     }
-   }
+   },
+   "pages": [
+    {
+     "scale": 2,
+     "image": "ui_kit_32x32@2x.png"
+    }
+   ]
   },
   {
    "key": "ui_kit_20x48",
@@ -396,7 +438,13 @@
      "r": 9,
      "b": 12
     }
-   }
+   },
+   "pages": [
+    {
+     "scale": 2,
+     "image": "ui_kit_20x48@2x.png"
+    }
+   ]
   },
   {
    "key": "ui_kit_64x14",
@@ -448,7 +496,13 @@
      "r": 7,
      "b": 6
     }
-   }
+   },
+   "pages": [
+    {
+     "scale": 2,
+     "image": "ui_kit_64x14@2x.png"
+    }
+   ]
   }
  ],
  "sprites": [

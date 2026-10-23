@@ -34,8 +34,8 @@ def render_all(reg):
     global _REG
     import multiprocessing as mp
     _REG = reg; imgs = {1: {}, 2: {}}
-    jobs = [(n, sc) for n in reg for sc in (1, 2)]
-    with mp.get_context('fork').Pool() as pool:
+    jobs = sorted([(n, sc) for n in reg for sc in (1, 2)])
+    with mp.get_context('fork').Pool(int(os.environ.get('GI_PROCS', '4')), maxtasksperchild=40) as pool:
         for i, (n, sc, b, size) in enumerate(pool.imap_unordered(_one, jobs, chunksize=4)):
             imgs[sc][n] = Image.frombytes('RGBA', size, b)
             if i % 100 == 0: print(f'  {i}/{len(jobs)}', flush=True)

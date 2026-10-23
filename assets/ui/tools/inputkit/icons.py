@@ -201,7 +201,13 @@ def art_icon(key, size):
     return im.resize((size * 2, size * 2), Image.NEAREST).resize((size, size), Image.LANCZOS)
 
 
+_ICACHE = {}
 def icon_image(src, size):
+    k = (src, size)
+    if k not in _ICACHE: _ICACHE[k] = _icon_image(src, size)
+    return _ICACHE[k].copy()
+
+def _icon_image(src, size):
     """src: 'p:<painter>' | 'k:<kit sprite>' | 'a:<art key>' -> RGBA size x size."""
     kind, name = src.split(':', 1)
     if kind == 'k': return kit_icon(name, size)
