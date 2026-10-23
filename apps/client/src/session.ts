@@ -1,6 +1,6 @@
 /** Client network session: NetClient over WebSocket, account claim/restore, RTT. No DOM (testable headless). */
 import { World, type Entity } from "@engine/core";
-import { NetClient, NetRejectedError, WebSocketClientTransport, type WebSocketCtor } from "@engine/net";
+import { NetClient, NetRejectedError, WebSocketClientTransport, type ClientTransport, type WebSocketCtor } from "@engine/net";
 import { AccountAssigned, ClaimAccount, SetName, nameToWords, tokenToWords, wordsToToken } from "@engine/persist";
 import { applyMoveInput, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS, Ping, Pong } from "@engine/server/protocol";
 
@@ -39,11 +39,12 @@ export class ClientSession {
   get player(): Entity | undefined { const w = this.world; if (!w) return undefined; for (const e of w.predicted) return e; return undefined; }
 
   /** Connects with a fresh World (returned) so a reconnect never stacks net systems on an old world. */
-  async connect(url: string, name: string): Promise<World> {
+  /** `transport` overrides the WebSocket (e.g. the in-browser local server's loopback; `url` is then a label). */
+  async connect(url: string, name: string, transportOverride?: ClientTransport): Promise<World> {
     this.disconnect();
     this.o.storage.setItem(this.key("server"), url); this.o.storage.setItem(this.key("name"), name);
     const world = new World({ seed: 1 }); installDemoWorld(world, "client");
-    const transport = new WebSocketClientTransport(url, this.o.wsCtor);
+    const transport = transportOverride ?? new WebSocketClientTransport(url, this.o.wsCtor);
     const client = new NetClient({
       world, transport, commands: DEMO_COMMANDS, events: DEMO_EVENTS,
       sampleInput: () => this.o.sampleInput?.() ?? { buttons: this.o.sampleButtons?.() ?? 0, aimX: 0, aimY: 0 },

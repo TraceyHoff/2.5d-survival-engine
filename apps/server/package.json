@@ -24,6 +24,7 @@
   },
   "exports": {
     ".": "./src/main.ts",
-    "./protocol": "./src/protocol.ts"
+    "./protocol": "./src/protocol.ts",
+    "./game": "./src/game.ts"
   }
 }

@@ -39,7 +39,7 @@ const OldInv = defineComponent("Inventory", { items: { type: "u16", length: 4 },
 const NewInv = defineComponent("Inventory", { items: { type: "u16", length: 4 }, counts: { type: "u16", length: 4 }, durability: { type: "u16", length: 4 }, crafterId: { type: "u32", length: 4 } }, { persistent: true });
 const OldBox = defineComponent("Container", { items: { type: "u16", length: 2 }, counts: { type: "u16", length: 2 } }, { persistent: true });
 const NewBox = defineComponent("Container", { items: { type: "u16", length: 2 }, crafterId: { type: "u32", length: 2 }, counts: { type: "u16", length: 2 } }, { persistent: true });
-const arr = (w: World, e: Entity, def: typeof NewInv | typeof NewBox, f: string): number[] => { const st = w.store(def); const n = st.lengths[f]!; const s = st.slot((e as number) & 0xfffff); return [...st.data[f]!.slice(s * n, s * n + n)]; };
+const arr = (w: World, e: Entity, def: typeof NewInv | typeof NewBox, f: string): number[] => { const st = w.store(def); const n = (st.lengths as Record<string, number>)[f]!; const s = st.slot((e as number) & 0xfffff); return Array.from((st.data as unknown as Record<string, ArrayLike<number>>)[f]!).slice(s * n, s * n + n); };
 
 describe("crafterId schema migration (fills 0)", () => {
   it("chunk rows written before crafterId decode with crafterId = 0 and the rest intact", async () => {

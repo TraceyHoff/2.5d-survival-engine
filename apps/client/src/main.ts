@@ -64,12 +64,28 @@ function render(w: World, alpha: number): void {
 let loop: FixedLoop = createGameLoop(world, { render });
 function useWorld(w: World): void { world = w; loop = createGameLoop(w, { render }); }
 
-const defaultUrl = params.get("server") ?? `ws://${location.hostname || "localhost"}:7777`;
-const connect = (url: string, name: string): void => { session.connect(url, name).then(useWorld, (e: unknown) => console.warn("connect failed", e)); };
-mountConnectOverlay(session, { defaultUrl, onConnect: connect, onDisconnect: () => session.disconnect() });
-// Reload = reconnect as the same player (account token in localStorage).
-if (session.account && session.savedUrl && params.get("autoconnect") !== "0") connect(params.get("server") ?? session.savedUrl, session.savedName ?? "");
+const serverParam = params.get("server");
+/** Offline mode: no `server` param on a static host (Pages build sets VITE_DEFAULT_OFFLINE=1), or ?offline=1. */
+const offline = !serverParam && (params.get("offline") === "1" || import.meta.env["VITE_DEFAULT_OFFLINE"] === "1");
+let pumpLocal: ((ms: number) => void) | undefined;
+if (offline) {
+  // Lazy chunk: the in-browser authoritative server is only loaded in offline mode.
+  void (async () => {
+    const { createLocalServer, openBrowserStore } = await import("./local.js");
+    const bots = Number(params.get("bots") ?? 3);
+    const local = await createLocalServer({ store: await openBrowserStore(`engine-local-${params.get("player") ?? "1"}`), bots, log: (m) => console.info(`[local] ${m}`) });
+    pumpLocal = local.pump;
+    addEventListener("pagehide", () => { void local.game.persist?.saveAll(); });
+    useWorld(await session.connect("local", session.savedName ?? "", local.createTransport()));
+  })().catch((e: unknown) => console.error("local server failed", e));
+} else {
+  const defaultUrl = serverParam ?? `ws://${location.hostname || "localhost"}:7777`;
+  const connect = (url: string, name: string): void => { session.connect(url, name).then(useWorld, (e: unknown) => console.warn("connect failed", e)); };
+  mountConnectOverlay(session, { defaultUrl, onConnect: connect, onDisconnect: () => session.disconnect() });
+  // Reload = reconnect as the same player (account token in localStorage).
+  if (session.account && session.savedUrl && params.get("autoconnect") !== "0") connect(serverParam ?? session.savedUrl, session.savedName ?? "");
+}
 
 let last = performance.now();
-function frame(now: number): void { loop.advance(now - last); last = now; session.poll(); requestAnimationFrame(frame); }
+function frame(now: number): void { const dt = Math.min(now - last, 250); pumpLocal?.(dt); loop.advance(now - last); last = now; session.poll(); requestAnimationFrame(frame); }
 requestAnimationFrame(frame);

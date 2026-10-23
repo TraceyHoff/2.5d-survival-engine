@@ -39,6 +39,17 @@ Use `?player=2` in a second tab to play co-op with yourself.
 
 Renderer demo URL params include `?time=0..24`, `weather=clear|rain|storm|snow|fog`, `cam=fire`, `gallery=1` and `inside=1`. See [packages/render/README.md](packages/render/README.md).
 
+## Play in your browser
+
+**https://traceyhoff.github.io/2.5d-survival-engine/**
+
+The GitHub Pages build is static, so it runs in **local/offline mode**: the authoritative server game module
+(`apps/server/src/game.ts`, the same code `pnpm demo` runs) is hosted in the page over `@engine/net`'s in-memory
+loopback transport, with IndexedDB persistence (memory fallback) and 3 local AI bots (`?bots=N` to change).
+Limits: single-player plus local bots only, and your world is saved per browser. Real multiplayer needs
+`pnpm demo` or a hosted server: open the page with `?server=wss://your-host` to connect to one instead.
+Locally, `?offline=1` on the Vite dev client forces offline mode.
+
 ## Controls
 
 **In the playable client today:** `WASD` move, `Shift` sprint, `E` gather. Reloading the tab reconnects you as the same player.
