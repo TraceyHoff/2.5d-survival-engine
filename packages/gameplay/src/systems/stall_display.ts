@@ -5,7 +5,7 @@ import { stallListings } from "../economy/stall.js";
 /**
  * Copies gameplay stall Listings (viewer-scoped) into core StallDisplay (broadcast to every observer, ADR-081) so
  * passers-by see what a stall sells. Row i = listing i: item = stock item when enabled (else 0), qty, price =
- * priceCount, currency = priceItem. Rows past StallDisplay's length (core STALL_LISTINGS) are cut off; see
+ * priceCount, currency = priceItem. Rows past StallDisplay's length (core STALL_DISPLAY_ROWS) are cut off; see
  * stallDisplayRows / truncatedStallTiers. Marks changed only on a diff.
  */
 export const STALL_DISPLAY_EVERY = 5;

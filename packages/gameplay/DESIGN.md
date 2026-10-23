@@ -411,7 +411,7 @@ Gameplay owns data, not loops: there is **no spawn loop and no controller** here
 
 ## 19. Stall display copy (`src/systems/stall_display.ts`)
 - `gameplay.stallDisplay` (postSim, every 5 ticks) copies each stall's viewer-scoped Listings into core `StallDisplay`, which is broadcast. installGameplay registers StallDisplay after GAMEPLAY_COMPONENTS. Row i = listing i: item = stock item if enabled (else 0), qty, price = priceCount, currency = priceItem. Writes only on a diff.
-- The row count is `fieldLength(StallDisplay.schema.item)` (core STALL_LISTINGS, currently 8). `truncatedStallTiers` lists pieces whose `stall.listings` exceed it: stall_booth (12) and clan_pavilion (24) are cut off until core raises STALL_LISTINGS to 24. The test pins that list.
+- The row count is `fieldLength(StallDisplay.schema.item)` (core STALL_DISPLAY_ROWS = 24 since 3aecd3c). `truncatedStallTiers` lists pieces whose `stall.listings` exceed it. The list is now empty: booth (12) and pavilion (24) fit.
 
 ## 20. Stall variants (`data/pieces.json` `variants` + `variantNames`)
 - A piece may list `variantNames` (one per variant, validated). The BuildPiece.variant index selects one, and `pieceVariantKey(def, v)` returns `<piece>@<name>` for the Renderer's buildPieceVisual `variant` lookup, or the bare key when the variant is unnamed. The Renderer falls back to the default sprite.

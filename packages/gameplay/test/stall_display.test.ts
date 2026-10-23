@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { installPermissions, Membership, PlayerId, StallDisplay, STALL_LISTINGS, type Entity, type World } from "@engine/core";
+import { installPermissions, Membership, PlayerId, StallDisplay, STALL_DISPLAY_ROWS, type Entity, type World } from "@engine/core";
 import * as G from "../src/index.js";
 import pieces from "../data/pieces.json";
 import { makeWorld } from "./helpers.js";
@@ -20,10 +20,10 @@ describe("stall display copy", () => {
     expect(arr("item")).toEqual([PLANK, 0]); expect(arr("qty")).toEqual([2, 1]); expect(arr("price")).toEqual([3, 9]); expect(arr("currency")).toEqual([COIN, COIN]);
     expect(G.syncGameplayStallDisplay(w, stall)).toBe(false);
   });
-  it("row count comes from the core StallDisplay schema", () => { expect(G.stallDisplayRows()).toBe(STALL_LISTINGS); });
+  it("row count comes from the core StallDisplay schema", () => { expect(G.stallDisplayRows()).toBe(STALL_DISPLAY_ROWS); });
   it("flags stall tiers that StallDisplay would cut off", () => {
     const cut = G.truncatedStallTiers(pieces.pieces as never);
-    // Raise core STALL_LISTINGS to 24 to clear this list (ask sent to core/Renderer).
+    // core STALL_DISPLAY_ROWS = 24 (3aecd3c): every tier fits, so this list is empty.
     const expected = [{ key: "stall_booth", listings: 12 }, { key: "clan_pavilion", listings: 24 }].filter((t) => t.listings > G.stallDisplayRows());
     expect(cut.map(({ key, listings }) => ({ key, listings }))).toEqual(expected);
     if (cut.length) console.warn(`StallDisplay (${G.stallDisplayRows()} rows) cuts off: ${cut.map((c) => `${c.key}(${c.listings})`).join(", ")}`);
