@@ -547,3 +547,9 @@ See docs/CHARACTER_CUSTOMIZATION.md for the team contract and ADR-080 for the ra
 - **Writes:** `version` (u16, wrapping, networked and persistent) is bumped by `setAppearance(world, e, value)`, which must be the only writer. Read with `getAppearance(world, e)`. The Renderer caches layers by version.
 - **Helpers (core, pure):** `defaultAppearance(cat?, bodyType)`, `validateAppearance(cat, value, { mode: "clamp"|"reject", unlocked })` and `resolveLayers(cat, value, facing) → DrawLayer[]` (back to front; respects `hidesSlots`, hat `hatHair`, and `layerByDir` per 4-way facing; the body sits at `BODY_LAYER`).
 - **Equipment:** kept separate. The optional item-def field `equipCosmetic` is reserved for a later armor-to-look override and is not wired yet.
+
+## 21. Renderer Contracts (ADR-081)
+- **StallDisplay** (core/stalls.ts): networked mirror of the 8 TradeStall listing rows (item, qty, price, currency) for all observers. Core stall ops keep it in sync, and `syncStallDisplay` / `addStallDisplay` are also exported.
+- **Clan tint:** `BuildPiece.tint` 0 = none, 1..N = `clanPalettes[tint-1]`, out of range = none. Paint (≠0) overrides it. Use `registry.clanPaletteForTint(tint)`.
+- **BuildPiece visuals:** `buildPieceVisual(registry, piece, { ghost, pieceKey })` (@engine/assets/visual.ts) is the **only** mapping from gameplay `type/rot/tint/paint/damageStage/state/level` to render `visualId/frame/crack/layer/level/ghost/palette`. Don't re-derive it in render or gameplay.
+- **Manifest fragments:** `mergeManifests([{name, manifest}], { strict, resolve })` (@engine/assets/merge.ts) returns `{manifest, collisions, warnings}`. The first definition wins.

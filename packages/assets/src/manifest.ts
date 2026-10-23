@@ -58,7 +58,7 @@ export const STRETCH_MODES = ["none", "velocity"] as const;
 export type StretchMode = (typeof STRETCH_MODES)[number];
 /** Decal autotile: first rule whose (neighbors & care) === (mask & care) wins; a rule with care 0 is the required fallback. Bits: N=1,E=2,S=4,W=8 (+ NE=16,SE=32,SW=64,NW=128 when neighbors = 8). Neighbors count when they share `group` (default: same sprite). */
 export interface AutotileJson { neighbors: 4 | 8; group?: string; rules: { mask: number; care?: number; frame: number }[] }
-/** Clan palette pair: tintmask R channel <- primary, G <- secondary. BuildPiece.tint (u8) indexes clanPalettes. */
+/** Clan palette pair: tintmask R channel <- primary, G <- secondary. BuildPiece.tint (u8): 0 = none, 1..N = clanPalettes[tint-1] (clanPaletteForTint). */
 export interface ClanPaletteJson { key: string; primary: string; secondary: string }
 export interface BuildingSpriteJson {
   /** BuildPieceDef key (cross-checked with validateBuildingSprites). */
@@ -219,9 +219,22 @@ export class AssetRegistry {
     for (const rule of at.rules) { const care = rule.care ?? (at.neighbors === 8 ? 0xff : 0xf); if ((neighbors & care) === (rule.mask & care)) return this.ref(s, rule.frame); }
     return undefined;
   }
-  /** Clan palettes by index (BuildPiece.tint). */
+  /** Clan palettes by array index. BuildPiece.tint is 1-based: use clanPaletteForTint. */
   clanPalettes: ClanPalette[] = [];
   clanPalette(index: number): ClanPalette | undefined { return this.clanPalettes[index]; }
+  /**
+   * Clan palette for a BuildPiece.tint value (ADR-081): 0 = no clan tint, 1..N = clanPalettes[tint - 1]. Out-of-range or
+   * non-integer values give undefined (no tint; never wrapped with modulo).
+   */
+  clanPaletteForTint(tint: number): ClanPalette | undefined {
+    return Number.isInteger(tint) && tint >= 1 && tint <= this.clanPalettes.length ? this.clanPalettes[tint - 1] : undefined;
+  }
+  private pieceSprites?: Map<string, number>;
+  /** Building sprite id for a BuildPieceDef key (sprite.building.piece; first declared wins), undefined if none. */
+  spriteForPiece(pieceKey: string): number | undefined {
+    if (!this.pieceSprites) { this.pieceSprites = new Map(); for (const s of this.sprites.values()) if (s.building && !this.pieceSprites.has(s.building.piece)) this.pieceSprites.set(s.building.piece, s.id); }
+    return this.pieceSprites.get(pieceKey);
+  }
   /** Input prompt glyphs by id (manifest `glyphs`). */
   glyphs = new Map<string, GlyphDef>();
   glyph(id: string): GlyphDef | undefined { return this.glyphs.get(id); }
