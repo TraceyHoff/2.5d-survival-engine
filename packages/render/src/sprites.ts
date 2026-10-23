@@ -20,7 +20,7 @@ import type { Rect } from "./camera.js";
 import type { StyleConfig } from "./style.js";
 import type { TransformSource } from "./transformSource.js";
 import type { VfxLayer } from "./vfx.js";
-import { LayerCache, readAppearanceSlot, type AppearanceBinding, type CachedLayer } from "./character/layers.js";
+import { LayerCache, activeExpression, readAppearanceSlot, type AppearanceBinding, type CachedLayer } from "./character/layers.js";
 
 export const INSTANCE_FLOATS = 36;
 /** Depth offset of held items vs the body (must exceed depth-key precision; < the next tile row). */
@@ -503,13 +503,15 @@ export class SpriteBatch {
         // anim resolved on the body sprite (re-resolved once when the body sprite's anim name differs from the guess)
         const as0 = an ? an.slot(i) : -1; const st0 = as0 >= 0 && an ? an.data.state[as0]! : -1;
         const read = () => readAppearanceSlot(apData!, apLen, aps);
+        const expr = activeExpression(world as never, e, this.layerCache.binding);
+        const ro = (anim: string | undefined) => ({ ...(anim !== undefined ? { anim } : {}), ...(expr !== undefined ? { expression: expr } : {}) });
         let animName = st0 >= 0 ? atlas.animName(sid, atlas.stateAnim(sid, st0)) : undefined;
-        layers = this.layerCache.get(i, e, apVer![aps]!, f, read, animName !== undefined ? { anim: animName } : {});
+        layers = this.layerCache.get(i, e, apVer![aps]!, f, read, ro(animName));
         for (const l of layers) if (l.slot === "body") { bodyL = l; sid = l.sprite; break; }
         if (bodyL && st0 >= 0) { const nm = atlas.animName(sid, atlas.stateAnim(sid, st0)); if (nm !== animName) { animName = nm;
-          layers = this.layerCache.get(i, e, apVer![aps]!, f, read, nm !== undefined ? { anim: nm } : {}); bodyL = null;
+          layers = this.layerCache.get(i, e, apVer![aps]!, f, read, ro(nm)); bodyL = null;
           for (const l of layers) if (l.slot === "body") { bodyL = l; sid = l.sprite; break; } } }
-        else if (bodyL && st0 < 0 && bodyL.animName) { layers = this.layerCache.get(i, e, apVer![aps]!, f, read, { anim: bodyL.animName }); bodyL = null;
+        else if (bodyL && st0 < 0 && bodyL.animName) { layers = this.layerCache.get(i, e, apVer![aps]!, f, read, ro(bodyL.animName)); bodyL = null;
           for (const l of layers) if (l.slot === "body") { bodyL = l; sid = l.sprite; break; } }
       }
       let ok: boolean;

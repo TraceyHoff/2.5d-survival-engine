@@ -14,7 +14,7 @@
  * Usage (per frame):  stalls.prepare(world); renderer.render(world, alpha); stalls.drawOverlay();
  * Events:             for (const ev of client.pollEvents(client.renderTick)) renderer.vfx.handle(ev);
  */
-import { entityIndex, StallDisplay, STALL_LISTINGS, Transform, type ComponentDef, type Entity, type World } from "@engine/core";
+import { entityIndex, StallDisplay, STALL_DISPLAY_ROWS, Transform, type ComponentDef, type Entity, type World } from "@engine/core";
 import { floorToTerrainZ } from "@engine/world";
 import type { AssetRegistry, VfxDef } from "@engine/assets";
 import type { IsoRenderer } from "../IsoRenderer.js";
@@ -173,7 +173,7 @@ export class StallLayer {
       const e = store.dense[k]!; const stall = this.stallEntity(world, e); if (stall === undefined) continue;
       const pi = this.pieceInfo(world, e); if (!pi) continue;
       const h = world.get(stall, this.b.stallHeader)!; st.stalls++; this.baseSy = pi.sy;
-      const pts = stallPoints(this.reg, pi.vis, pi.rot, pi.dmg, stallStateIndex(this.reg, pi.vis, h.open));
+      const pts = stallPoints(this.reg, pi.vis, pi.rot, pi.dmg, stallStateIndex(this.reg, pi.vis, h.open), t.worldPrompt.anchorAttach ?? "badge");
       const allSold = this.b.allSoldOut ? this.b.allSoldOut(world, stall) : this.signSoldOut(world, stall);
       const listings = this.listingsOf(world, stall, h.listingCount, allSold === true);
       const vstate = stallVisual(h.open, h.listingCount, listings, allSold);
@@ -188,7 +188,7 @@ export class StallLayer {
         }
         for (const g of pts.tags) {
           const l = listings[g.index]; if (!l || !l.enabled || !l.item || !l.priceCount) continue;
-          this.priceTag(pi, g.p, l, pi.key + 0.12 + (g.p.z ?? 0) * 0.001); st.tags++;
+          this.priceTag(pi, g.p, l, pi.key + 0.12 + (g.p.z ?? 0) * 0.001, pts.flipX); st.tags++;
         }
       }
       // 2. sign text
@@ -207,9 +207,13 @@ export class StallLayer {
       const pid = vstate === "open" ? this.ids.open : vstate === "soldOut" ? this.ids.soldOut : this.ids.closed;
       const a = focus ? promptAlpha(Math.hypot(focus.x - pi.x, focus.y - pi.y), t.worldPrompt.fadeDistanceTiles) : 1;
       if (pid !== undefined && a > 0.01) {
-        const top = pi.sy - pts.frame.anchorY - t.worldPrompt.offsetZ * r.iso.zStep; // frames are top-trimmed: anchorY = pivot -> art top
-        const ps = this.reg.sprite(pid); const pw = ps.atlas.frameW * 0.5;
-        const o = this.place(pid, pi.sx, top, pw, pi.key + 0.2, a); if (o) ov.push(o); // centred offsetZ above the frame top
+        const ps = this.reg.sprite(pid); const pw = ps.atlas.frameW * 0.5; const lift = t.worldPrompt.offsetZ * r.iso.zStep;
+        // badge sprites are bottom-anchored: their pivot sits on pivot + attach.badge (2px above the trimmed art top);
+        // frames without the attach fall back to centring the badge offsetZ above the frame top (anchorY = pivot -> art top)
+        const o = pts.badge
+          ? this.place(pid, pi.sx + pts.badge.x, pi.sy + pts.badge.y - lift, pw, pi.key + 0.2, a, { w: ps.atlas.frameW, cx: 0, cy: 0 })
+          : this.place(pid, pi.sx, pi.sy - pts.frame.anchorY - lift, pw, pi.key + 0.2, a);
+        if (o) ov.push(o);
         const label = vstate === "soldOut" ? this.strings.soldOut : vstate === "closed" ? this.strings.closed : vstate === "open" ? this.strings.open : "";
         const tb = ps.attach?.text; // pivot-relative text box centre (frame px)
         if (label && tb && this.text && o) {
@@ -223,12 +227,18 @@ export class StallLayer {
     r.vfx.overlay = ov;
   }
   /**
-   * Price tag at attach.tagN. The stall frames bake the 18x8 tag board (1x) at every tagN, so the layer draws only the tag
-   * contents over the art: price-item icon + price text laid out icon-left-text-right inside the 14x6 text box (attach w/h,
-   * x/y = box centre). The separate stall_price_tag sprite is not drawn (it duplicated the baked board).
+   * Price tag at attach.tagN (enabled listings only). The stall art no longer bakes tag boards: the stall_price_tag sprite
+   * is drawn 1:1 with its pivot at tagN - (1.5, -9) (x negated on flipped rows) so its text attach {x:1.5, y:-9, w:14, h:6}
+   * lands on tagN; then price-item icon + price text, icon-left-text-right inside that 14x6 box (x/y = box centre).
    */
-  private priceTag(pi: PieceInfo, p: { x: number; y: number; w?: number; h?: number }, l: ListingView, key: number): void {
+  private priceTag(pi: PieceInfo, p: { x: number; y: number; w?: number; h?: number }, l: ListingView, key: number, flipX = false): void {
     const t = this.tuning; const ov = this.overlay; const bw = p.w ?? 14, bh = p.h ?? 6;
+    const tid = this.ids.tag;
+    if (tid !== undefined) {
+      const ts = this.reg.sprite(tid); const ta = ts.attach?.text ?? { x: 1.5, y: -9 };
+      const o = this.place(tid, pi.sx + p.x - (flipX ? -ta.x : ta.x), pi.sy + p.y - ta.y, ts.atlas.frameW, key - 0.002, 1, { w: ts.atlas.frameW, cx: 0, cy: 0 });
+      if (o) ov.push(o);
+    }
     const txt = formatPrice(t.priceTag.format, l.priceCount); const f = this.text?.font;
     const iconW = t.priceTag.iconFromPriceItem ? Math.min(t.priceTag.iconSizePx, bh + 1) : 0; const gap = iconW ? 1 : 0;
     const fit = f ? fitText(txt, bw - iconW - gap, (s, px) => measureText(f, s, px), Math.min(4, t.priceTag.sizePx), Math.min(t.priceTag.sizePx, bh)) : { text: txt, sizePx: t.priceTag.sizePx };
@@ -254,7 +264,7 @@ export class StallLayer {
     const sItems = has ? g(S!, "items") : undefined, sCounts = has ? g(S!, "counts") : undefined;
     // core stall stock is any slot container: units of a listing = sum of counts of its item
     const stockOf = (it: number): number => { if (!sItems || !sCounts) return Number.POSITIVE_INFINITY; let c = 0; for (let k = 0; k < sItems.length; k++) if (sItems[k] === it) c += sCounts[k]!; return c; };
-    const n = Math.min(count, STALL_LISTINGS, item.length);
+    const n = Math.min(count, STALL_DISPLAY_ROWS, item.length);
     return Array.from({ length: n }, (_, i) => ({ item: item[i]!, qty: qty[i]!, enabled: item[i]! !== 0, priceItem: cur[i]!, priceCount: price[i]!,
       stock: allSold ? 0 : stockOf(item[i]!) }));
   }

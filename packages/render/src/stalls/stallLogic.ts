@@ -18,6 +18,7 @@ export interface StallTuning {
   priceTag: { font: StallFont; weight: number; color: string; sizePx: number; iconSizePx: number; format: string; iconFromPriceItem: boolean };
   slots: { iconScale: number; bobPx: number; hideWhenClosed: boolean; dimWhenOutOfStock: number; soldOutStamp: string };
   worldPrompt: { open: string; soldOut: string; closed: string; offsetZ: number; fadeDistanceTiles: [number, number];
+    /** Frame attach the badge pivot sits on (pivot + attach); frames without it fall back to the art top + offsetZ. */ anchorAttach?: string;
     /** String keys of the badge labels (stalls/strings/<locale>.json). */ labelKeys: { open: string; soldOut: string; closed: string; clan?: string }; strings?: string };
   lanterns: { emissiveColor: string; bloom: number; nightOnly: boolean; flicker: { amp: number; freq: number } };
   sway: { maskChannel: string };
@@ -27,7 +28,7 @@ export const DEFAULT_STALL_TUNING: StallTuning = {
   sign: { font: "stalls/fonts/fredoka_bold_mtsdf.json", weight: 700, color: "#3B2433", minSizePx: 6, maxSizePx: 12 },
   priceTag: { font: "stalls/fonts/fredoka_bold_mtsdf.json", weight: 700, color: "#3B2433", sizePx: 6, iconSizePx: 7, format: "{count}", iconFromPriceItem: true },
   slots: { iconScale: 1, bobPx: 0, hideWhenClosed: true, dimWhenOutOfStock: 0.45, soldOutStamp: "stall_badge_sold_out" },
-  worldPrompt: { open: "stall_prompt_open", soldOut: "stall_badge_sold_out", closed: "stall_badge_closed", offsetZ: 1.2, fadeDistanceTiles: [6, 9],
+  worldPrompt: { open: "stall_prompt_open", soldOut: "stall_badge_sold_out", closed: "stall_badge_closed", offsetZ: 0, fadeDistanceTiles: [6, 9], anchorAttach: "badge",
     labelKeys: { open: "stall.badge.open", soldOut: "stall.badge.soldout", closed: "stall.badge.closed", clan: "stall.badge.clan" }, strings: "stalls/strings/en.json" },
   lanterns: { emissiveColor: "#FFD04A", bloom: 0.6, nightOnly: true, flicker: { amp: 0.08, freq: 3 } },
   sway: { maskChannel: "R" },
@@ -60,13 +61,13 @@ export function stallStrings(t: StallTuning, table: Record<string, unknown> | nu
 
 // ---------------------------------------------------------------------------------------------- attach points
 export interface StallAttach { name: string; index: number; p: AttachPoint }
-export interface StallPoints { frame: FrameRef; flipX: boolean; slots: StallAttach[]; tags: StallAttach[]; sign?: AttachPoint; emblem?: AttachPoint }
+export interface StallPoints { frame: FrameRef; flipX: boolean; slots: StallAttach[]; tags: StallAttach[]; sign?: AttachPoint; emblem?: AttachPoint; badge?: AttachPoint }
 /**
  * Effective attach points of a stall piece for rotation/damage/state, through the typed engine plumbing:
  * AssetRegistry.buildingFrame (frame keys override sprite keys) + AssetRegistry.attachPoint (x mirrored when flipX).
  * slotN/tagN are returned sorted by N (listing slot index).
  */
-export function stallPoints(reg: AssetRegistry, spriteId: number, rotation: number, damage: number, state: number): StallPoints {
+export function stallPoints(reg: AssetRegistry, spriteId: number, rotation: number, damage: number, state: number, badgeAttach = "badge"): StallPoints {
   const frame = reg.buildingFrame(spriteId, rotation, damage, state);
   const slots: StallAttach[] = [], tags: StallAttach[] = [];
   for (const name of Object.keys(frame.attach ?? {})) {
@@ -74,8 +75,8 @@ export function stallPoints(reg: AssetRegistry, spriteId: number, rotation: numb
     const p = AssetRegistry.attachPoint(frame, name)!; (m[1] === "slot" ? slots : tags).push({ name, index: Number(m[2]), p });
   }
   slots.sort((a, b) => a.index - b.index); tags.sort((a, b) => a.index - b.index);
-  const sign = AssetRegistry.attachPoint(frame, "sign"), emblem = AssetRegistry.attachPoint(frame, "emblem");
-  return { frame, flipX: !!frame.flipX, slots, tags, ...(sign ? { sign } : {}), ...(emblem ? { emblem } : {}) };
+  const sign = AssetRegistry.attachPoint(frame, "sign"), emblem = AssetRegistry.attachPoint(frame, "emblem"), badge = AssetRegistry.attachPoint(frame, badgeAttach);
+  return { frame, flipX: !!frame.flipX, slots, tags, ...(sign ? { sign } : {}), ...(emblem ? { emblem } : {}), ...(badge ? { badge } : {}) };
 }
 /** Piece state index from StallHeader.open: states are declared closed (0), open (1) in the fragment. -1 = default frames. */
 export function stallStateIndex(reg: AssetRegistry, spriteId: number, open: number): number {

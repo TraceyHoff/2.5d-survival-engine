@@ -43,6 +43,21 @@ export interface AppearanceBinding {
   slotTint?: Partial<Record<string, { mode?: TintMode; strength?: number; saturation?: number }>>;
   /** Slots dropped by the crowd LOD (default accessory, shoes, face, eyes). */
   minorSlots?: readonly string[];
+  /**
+   * Broadcast gameplay `Expression {id, untilTick}` (networked; optional). While world.tick < untilTick, name(id) is
+   * passed to resolveLayers as `expression`; expired or id 0 = none. name defaults to String(id) until Survival ships
+   * the expression name order.
+   */
+  expression?: { def: ComponentDef; name?: (id: number) => string | undefined };
+}
+
+/** Active face expression of `e` from binding.expression (undefined when absent, id 0 or untilTick has passed). */
+export function activeExpression(world: { tick: number; has(e: number, d: ComponentDef): boolean; getField(e: number, d: ComponentDef<any>, f: never): number | undefined },
+  e: number, b: Pick<AppearanceBinding, "expression">): string | undefined {
+  const x = b.expression; if (!x || !world.has(e, x.def)) return undefined;
+  const id = world.getField(e, x.def, "id" as never) ?? 0, until = world.getField(e, x.def, "untilTick" as never) ?? 0;
+  if (!id || world.tick >= until) return undefined;
+  return x.name ? x.name(id) : String(id);
 }
 
 /** Render-ready layer (sprite + packed tint params). */

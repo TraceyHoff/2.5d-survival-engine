@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { World, Transform, TimeOfDay, defineComponent, setTimeOfDay, TradeStall, StallDisplay, addStallDisplay } from "@engine/core";
+import { World, Transform, TimeOfDay, defineComponent, setTimeOfDay, TradeStall, StallDisplay, addStallDisplay, STALL_LISTINGS } from "@engine/core";
 import { loadManifest, AssetRegistry, mergeManifests, type ManifestJson } from "@engine/assets";
 import {
   stallPoints, stallStateIndex, stallVisual, parseStallTuning, lanternGate, clanTintPair, fitText, isoPlace, promptAlpha, stallStrings, parseBmFont, measureText, fontText, applyBuildPieceVisual,
@@ -171,9 +171,23 @@ describe("StallLayer", () => {
     expect(c.layer.stats.icons).toBe(0); expect(c.layer.stats.tags).toBe(0); expect(c.layer.stats.prompts.closed).toBe(1); expect(c.bindings.pieceState!(c.e)).toBe(0);
     expect(c.vfx.overlay.length).toBe(1); // only the badge
   });
+  it("stall_price_tag sprite per enabled listing at tagN - (1.5,-9) (x negated when flipped); badge at pivot + attach.badge", () => {
+    for (const rot of [0, 2]) {
+      const a = setup("stall_cart_sunny", { open: 1, rot }); a.layer.prepare(a.w);
+      const reg = (a.layer as unknown as { reg: AssetRegistry }).reg; const tagId = reg.byKey("stall_price_tag").id;
+      const tags = a.vfx.overlay.filter((o) => o.spriteId === tagId) as unknown as { px: number; py: number }[]; expect(tags).toHaveLength(8);
+      const s = reg.byKey("stall_cart_sunny"); const pts = stallPoints(reg, s.id, rot, 0, stallStateIndex(reg, s.id, 1));
+      const pi = (a.layer as unknown as { pieceInfo(w: World, e: number): { sx: number; sy: number } }).pieceInfo(a.w, a.e)!;
+      const t0 = pts.tags[0]!.p; const dx = pts.flipX ? -1.5 : 1.5;
+      expect(tags.some((o) => Math.abs(o.px - (pi.sx + t0.x - dx)) < 1e-6 && Math.abs(o.py - (pi.sy + t0.y + 9)) < 1e-6)).toBe(true);
+      expect(pts.badge).toBeDefined();
+      const badge = a.vfx.overlay.find((o) => o.spriteId === reg.byKey("stall_prompt_open").id) as unknown as { px: number; py: number };
+      expect(badge.px).toBeCloseTo(pi.sx + pts.badge!.x); expect(badge.py).toBeCloseTo(pi.sy + pts.badge!.y);
+    }
+  });
   it("sold out: dimmed icons + stamps, sold-out badge", () => {
     const s = setup("stall_booth_thatch", { open: 1, stock: 0 }); s.layer.prepare(s.w);
-    expect(s.layer.stats.prompts.soldOut).toBe(1); expect(s.vfx.overlay.filter((o) => o.alpha === 0.45).length).toBe(8); // StallDisplay caps at STALL_LISTINGS
+    expect(s.layer.stats.prompts.soldOut).toBe(1); expect(s.vfx.overlay.filter((o) => o.alpha === 0.45).length).toBe(Math.min(12, STALL_LISTINGS)); // booth has 12 listings; StallDisplay holds 24 rows, core TradeStall fills STALL_LISTINGS
   });
   it("clan tint + emblem on clan pavilion", () => {
     const s = setup("clan_pavilion", { open: 1, tint: 2, ownerKind: 2 }); s.layer.prepare(s.w);
