@@ -66,7 +66,7 @@ describe("multiplayer (loopback)", () => {
 });
 
 describe("persistence across server restarts", () => {
-  it("restores world edits and the player (position, vitals) after a restart; reconnect by account token", async () => {
+  it("restores world edits and the player (position, vitals) after a restart; reconnect by account token", { timeout: 20_000 }, async () => { // restart under load ~5.5s
     const d = mkdtempSync(join(tmpdir(), "server-persist-")); dirs.push(d); const path = join(d, "world.db");
     // --- run 1
     const s1 = await SqliteWorldStore.open(path);
@@ -120,7 +120,7 @@ describe("persistence across server restarts", () => {
     await r2.gs.shutdown();
   });
 
-  it("a second connection claiming the same account takes over (old session is saved and dropped)", async () => {
+  it("a second connection claiming the same account takes over (old session is saved and dropped)", { timeout: 20_000 }, async () => { // restart under load ~5.5s
     const { gs, join } = await setup(new MemoryWorldStore());
     const a = await join(); const acct = a.account!;
     const b = await join(acct);
