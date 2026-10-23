@@ -54,7 +54,12 @@ export class IsoView {
 
   static async create(canvas: HTMLCanvasElement, base: string, ov: ViewOverrides = {}, onProgress: (f: number, label: string) => void = () => {}): Promise<IsoView> {
     onProgress(0.05, "Loading art manifest");
-    const renderer = new IsoRenderer(canvas, { preserveDrawingBuffer: new URLSearchParams(location.search).has("shot") });
+    const q0 = new URLSearchParams(location.search);
+    const renderer = new IsoRenderer(canvas, { preserveDrawingBuffer: q0.has("shot"),
+      // ?safe=1 implies ?gl=lowend (mediump, no float targets, low texture memory)
+      ...(q0.get("safe") === "1" && !q0.get("gl") ? { gl: ["lowend" as const] } : {}),
+      onError: (e) => { if (e.kind !== "context-restored") showRenderError(`Renderer: ${e.kind}`, `${e.message}${e.detail ? `\n${e.detail.slice(0, 300)}` : ""}\nTry ?gl=lowend or ?safe=1 — please report this text.`); } });
+    { const c = renderer.capabilities; console.info(`[view] gl ${c.renderer} mobile=${c.mobile} lowEnd=${c.lowEnd} flags=${c.flags.join(",")} fallbacks=${c.fallbacks.join("; ")}`); (globalThis as { __renderCaps?: unknown }).__renderCaps = c; }
     const packBase = `${base}art/pack/`;
     const { registry } = await loadMergedManifest(`${base}art/`);
     onProgress(0.3, "Loading sprite atlases");
@@ -62,7 +67,7 @@ export class IsoView {
     // Art's customization pack (~220 paper-doll atlases, 1008x960): the renderer packs every atlas into one 2048² texture
     // array, so these alone need ~1.7 GiB of VRAM ("Texture total allocation size is too large" -> every sprite black).
     // Until Render loads outfit layers on demand, keep them out unless the array fits (?cz=1 forces them in).
-    const qs = new URLSearchParams(location.search), lowend = qs.get("gl") === "lowend";
+    const qs = q0, lowend = renderer.capabilities.lowEnd || renderer.capabilities.flags.includes("lowend");
     const custom = [...registry.atlases.values()].filter((a) => /(^|\/)customization\//.test(a.image)).map((a) => a.key);
     for (const k of custom) { const src = sources.get(k); if (src) delete src.pages; } // 1x only for paper-doll layers
     const czBytes = custom.length * 1008 * 1040 * 4 * 1.34;
