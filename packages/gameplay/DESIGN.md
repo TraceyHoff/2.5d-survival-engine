@@ -408,3 +408,7 @@ Gameplay owns data, not loops: there is **no spawn loop and no controller** here
 
 ## 18. Locale text (`data/locale/en.json`)
 - SurVivaZ English strings. Every bot chat key `bot.<role>.<situation>.N` in bots.json has a short, cartoony line (at most 48 chars). `test/locale.test.ts` fails on a missing, empty, too-long or orphaned bot key.
+
+## 19. Stall display copy (`src/systems/stall_display.ts`)
+- `gameplay.stallDisplay` (postSim, every 5 ticks) copies each stall's viewer-scoped Listings into core `StallDisplay`, which is broadcast. installGameplay registers StallDisplay after GAMEPLAY_COMPONENTS. Row i = listing i: item = stock item if enabled (else 0), qty, price = priceCount, currency = priceItem. Writes only on a diff.
+- The row count is `fieldLength(StallDisplay.schema.item)` (core STALL_LISTINGS, currently 8). `truncatedStallTiers` lists pieces whose `stall.listings` exceed it: stall_booth (12) and clan_pavilion (24) are cut off until core raises STALL_LISTINGS to 24. The test pins that list.

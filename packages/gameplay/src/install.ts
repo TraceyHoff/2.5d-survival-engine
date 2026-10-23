@@ -1,4 +1,4 @@
-import { DEFAULT_TICK_HZ, pruneModifiers, setTimeOfDay, TimeOfDay, Weather, type World } from "@engine/core";
+import { DEFAULT_TICK_HZ, pruneModifiers, setTimeOfDay, StallDisplay, TimeOfDay, Weather, type World } from "@engine/core";
 import { installSpatialIndex, setClimateModel, ClimateRes } from "@engine/world";
 import { Buffs, Equipment, GAMEPLAY_COMPONENTS, IntentAction, Inventory, NO_SLOT, PlayerIntent } from "./components.js";
 import { GameplayConfig, type GameplayRole } from "./config.js";
@@ -18,6 +18,7 @@ import { installBuildingSystems, BUILDING_SYSTEMS } from "./building/install.js"
 import { installCombatSystems, COMBAT_SYSTEMS } from "./combat/install.js";
 import { entityIndex } from "@engine/core";
 import { installGameplayContainers } from "./economy/provenance.js";
+import { stallDisplaySystem, STALL_DISPLAY_EVERY } from "./systems/stall_display.js";
 
 export * from "./spawn.js";
 
@@ -58,6 +59,7 @@ export const GAMEPLAY_SYSTEM_ORDER: readonly (readonly [Phase, string, number?])
   ...COMBAT_SYSTEMS.postSim,
   ["postSim", "gameplay.noiseDecay"],
   ["postSim", "gameplay.pruneBuffs", 20],
+  ["postSim", "gameplay.stallDisplay", STALL_DISPLAY_EVERY],
 ];
 
 /** Registers gameplay components (the shared registration module: fixed order on every peer), resources and systems. */
@@ -66,6 +68,7 @@ export function installGameplay(world: World, options: GameplayOptions | number 
   const defs = opts.defs ?? defaultDefs();
   const env = defs.environment;
   for (const c of GAMEPLAY_COMPONENTS) world.register(c);
+  if (!world.isRegistered(StallDisplay)) world.register(StallDisplay); // core broadcast mirror, fed by gameplay.stallDisplay
   world.addSchemaSalt("gameplay.defs", defs.hashes.all);
   const role = opts.role ?? "standalone";
   world.setResource(GameplayConfig, { defs, role });
@@ -84,7 +87,7 @@ export function installGameplay(world: World, options: GameplayOptions | number 
     "gameplay.craft": craftingSystem, "gameplay.consume": consumeSystem, "gameplay.vitals": vitalsSystem, "gameplay.death": deathSystem,
     "gameplay.spoilage": spoilageSystem, "gameplay.chunkSurface": chunkSurfaceSystem,
     "gameplay.clearIntents": clearIntentsSystem, "gameplay.equipmentSync": equipmentSyncSystem, "gameplay.noiseDecay": noiseDecaySystem,
-    "gameplay.pruneBuffs": (w) => pruneModifiers(w, Buffs),
+    "gameplay.pruneBuffs": (w) => pruneModifiers(w, Buffs), "gameplay.stallDisplay": stallDisplaySystem,
     ...installBuildingSystems(world), ...installCombatSystems(world),
   };
   for (const [phase, name, every] of GAMEPLAY_SYSTEM_ORDER) {
