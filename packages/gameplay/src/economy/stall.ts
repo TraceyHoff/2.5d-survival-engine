@@ -221,6 +221,10 @@ export function executeStallPurchase(tx: Transaction, buyer: Entity, stall: Enti
 }
 /** Full authoritative buy: validate, one transaction, ledger + stall_sale. Returns a reason on rejection. */
 export function buyFromStall(world: World, buyer: Entity, stallTarget: Entity, req: PurchaseRequest): BuyReason | undefined {
+  const r = buyFromStallResult(world, buyer, stallTarget, req); return typeof r === "string" ? r : undefined;
+}
+/** Same as buyFromStall; on success returns the sold stack's crafterId (net StallBuyHook shape). */
+export function buyFromStallResult(world: World, buyer: Entity, stallTarget: Entity, req: PurchaseRequest): BuyReason | { crafterId: number } {
   const why = validateStallPurchase(world, buyer, stallTarget, req); if (why) return why;
   const stall = stallOf(world, stallTarget)!; const till = tillOf(world, stall); if (till === undefined) return "not_stall";
   let res: PurchaseResult | undefined;
@@ -229,7 +233,7 @@ export function buyFromStall(world: World, buyer: Entity, stallTarget: Entity, r
   refreshSoldOut(world, stall); const h = world.get(stall, StallHeader)!; const buyerId = playerOf(world, buyer);
   appendLedger(world, stall, { item: res!.item, count: res!.count, priceItem: res!.priceItem, priceCount: res!.priceCount, buyerId, crafterId: res!.crafterId });
   if (!world.isReplaying) emit(world, StallSale, { stall, listingSlot: req.listingSlot, item: res!.item, count: res!.count, priceItem: res!.priceItem, priceCount: res!.priceCount, buyerId, crafterId: res!.crafterId, ownerKind: h.ownerKind, ownerId: h.ownerId });
-  return undefined;
+  return { crafterId: res!.crafterId };
 }
 
 // ---- owner operations ------------------------------------------------------------------------------

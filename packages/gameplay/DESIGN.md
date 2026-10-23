@@ -355,3 +355,9 @@ Gameplay (`src/customization.ts`, `data/cosmetics.json`) owns the *rules*:
   (0 = fire/environment), and `onPieceDamaged` receives it. A clan gate that transitions to breached emits `GateBreached{piece, attacker}` and grants the
   attacker the `raidBreach` unlock rule (raider tag, §10).
 - Fix: vitals health regen no longer revives a player whose hp reached 0 earlier in the same tick.
+
+## 12. Netcode adapters (`src/net_hooks.ts`, for net 7ed4157, no net import)
+- `installStallBuyHook(stallServer)` → `setBuyHook(gameplayStallBuyHook)`. It maps `listing`→`listingSlot` and calls `buyFromStallResult`, which runs one
+  core transaction and returns a reason string or `{crafterId}`. Net does the range/open/permission/rate checks first and sends the notifications afterwards.
+- Watchtower AOI: `installViewBonus(world, (cid, n) => server.setViewRadiusBonus(cid, n))`. The system `gameplay.viewBonus` (postSim, every 10 ticks) runs on the authority
+  and skips replays. It converts `sightBonusAt` tiles to chunks (ceil / CHUNK_SIZE; net caps the value at 2 and holds it 60 ticks before lowering) and only calls on change. A dead player gets 0. It writes no components.
