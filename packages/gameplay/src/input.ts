@@ -8,6 +8,7 @@ import { CommandRegistry, defineActions, defineCommand, defineResource, type Com
 import { IntentAction, PlayerIntent } from "./components.js";
 import { CUSTOMIZATION_COMMANDS } from "./customization.js";
 import { PVP_COMMANDS } from "./combat/pvp.js";
+import { analogMoving, hotbarSlotFromEdges, runInputHooks } from "./input_hooks.js";
 import { ECONOMY_COMMAND_RATES, ECONOMY_COMMANDS, ECONOMY_ENTITY_FIELDS } from "./economy/stall.js";
 
 export const GameplayActions = defineActions(["MoveUp", "MoveDown", "MoveLeft", "MoveRight", "Sprint", "Primary", "Secondary", "Interact", "Build"] as const);
@@ -68,8 +69,12 @@ const MAX_QUEUE = 16;
 export function applyGameplayInput(world: World, e: Entity, frame: InputFrame | null, reg: CommandRegistry): void {
   if (!world.has(e, PlayerIntent)) return;
   const actions = frame?.actions ?? 0;
-  world.set(e, PlayerIntent, { moving: actions & MOVE ? 1 : 0, sprint: actions & GameplayActions.Sprint ? 1 : 0 });
+  world.set(e, PlayerIntent, { moving: actions & MOVE || analogMoving(frame) ? 1 : 0, sprint: actions & GameplayActions.Sprint ? 1 : 0 });
   for (const c of frame?.commands ?? []) queueCommand(world, e, reg, c);
+  if (!frame) return;
+  const slot = hotbarSlotFromEdges(frame.edges ?? 0);
+  if (slot >= 0) { try { queueCommand(world, e, reg, reg.make(EquipCmd, { slot })); } catch { /* EquipCmd not in this registry */ } }
+  runInputHooks(world, e, frame, reg);
 }
 export function queueCommand(world: World, e: Entity, reg: CommandRegistry, c: Command): boolean {
   const def = reg.def(c.type); const entry = def && GAMEPLAY_COMMANDS.find(([d]) => d.name === def.name);

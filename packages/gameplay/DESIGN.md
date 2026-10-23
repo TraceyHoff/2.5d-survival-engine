@@ -367,3 +367,17 @@ Fire spread, contact victims, raid-bell lookup and `sightBonusAt` now query the 
 The search radius is the fire spreadRadius, the contact radius, or the largest alarm radius / sight footprint across all defs (cached per defs object).
 Before each query the index is flushed with `update()`, which is idempotent, so pieces placed earlier in the same tick are still found. Results are sorted by entity id, which keeps rng draw order deterministic.
 Contact spikes are still found by query, but each spike only checks the victims near it.
+
+## 14. Slice 7: input hooks and touch helpers (`src/input_hooks.ts`, `data/input.json`)
+- Bit orders copy `@engine/input` without importing it, and tests pin them. Hold bits are `GameplayHoldBits` = GameplayActions plus Crouch (bit 9) and Charge (bit 10). Edge bits are `GameplayEdgeBits`, in EDGE_ACTIONS order.
+  `extendGameplayActions(names)` adds new actions append-only through core `extendActions`.
+- `applyGameplayInput`:
+  - Analog move counts as moving when |moveX, moveY| > moveDeadzone (0.15). The digital move bits still work as a fallback.
+  - A Hotbar1..8 edge queues `EquipCmd{slot}`; if several are pressed, the lowest one wins.
+  - Then it runs `addInputHook` hooks, on both peers in the input phase. Hooks should only queue commands.
+- Touch (pure, no DOM):
+  - `contextCommandFor(world, player, target, defs)` gives the command the context button issues for a target: bag or container → open, node → gather, door → toggle, fire → toggle, creature → attack.
+  - `pickContextTarget(world, x, y, r, actionable)` returns the nearest actionable target found through SpatialIndex.
+  - `touchPickRadiusTiles(dpr, tilePx, zoom)` covers a 48dp hit target.
+  - `touchGhostPoint` moves the placement ghost touchGhostOffsetTiles along the aim direction, upward by default, so the finger doesn't cover it.
+- Charge, Crouch, Jump and Reload have bits but no gameplay effect yet. Art & Assets will add the skins.
