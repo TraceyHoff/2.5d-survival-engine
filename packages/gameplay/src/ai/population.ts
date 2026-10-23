@@ -9,6 +9,8 @@ import botsRaw from "../../data/bots.json";
 import zombiesRaw from "../../data/zombies.json";
 import itemsRaw from "../../data/items.json";
 import type { SpawnEntry as WorldSpawnEntry } from "@engine/world";
+import { TRAIT_KEYS, scheduledAt, type Imperfections, type ScheduleSlot, type Traits } from "@engine/core";
+export type TraitKey = (typeof TRAIT_KEYS)[number];
 
 export type SpawnPhase = "night" | "dawn" | "day" | "dusk";
 export const DAY_PHASES: readonly SpawnPhase[] = ["night", "dawn", "day", "dusk"];
@@ -42,13 +44,13 @@ export interface ResolvedBehavior extends ArchetypeBehavior { hp: number; speed:
 export type Range = [number, number];
 export interface Consideration { base: number; inputs: Record<string, number> }
 export interface BotArchetype {
-  role: string; traits: Record<string, Range>; routine: string; goals: { base: number; gear: number; food: number };
-  imperfection: { reactionDelayTicks: Range; aimErrorDeg: number; idleLookChancePerSec: number; idleLookSeconds: Range };
+  role: string; traits: Record<TraitKey, Range>; routine: string; goals: { base: number; gear: number; food: number };
+  imperfections: Imperfections;
   chat: Record<string, string[]>; utility: Record<string, Consideration>;
 }
 export interface BotData {
-  traits: string[]; actions: string[]; situations: string[];
-  routines: Record<string, { phase: SpawnPhase; activity: string }[]>; archetypes: Record<string, BotArchetype>;
+  traits: TraitKey[]; actions: string[]; situations: string[];
+  routines: Record<string, ScheduleSlot[]>; archetypes: Record<string, BotArchetype>;
 }
 
 type Z = { zombies: { key: string; hp: number; speed: number; damage: number; structureDamage: number; attackRange: number; attackCooldownSeconds: number; sightRange: number; hearingMul: number }[];
@@ -59,6 +61,9 @@ const ITEM_KEYS = new Set((itemsRaw as unknown as { items: { key: string }[] }).
 const num = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 const nonNeg = (v: unknown): boolean => num(v) && v >= 0;
 const frac = (v: unknown): boolean => num(v) && v >= 0 && v <= 1;
+const inSlot = (s: ScheduleSlot, t: number): boolean => (s.from <= s.to ? t >= s.from && t < s.to : t >= s.from || t < s.to);
+/** Representative dayT per phase (gameplay dayPhase bounds: night 0.85-0.2, dawn -0.3, day -0.75, dusk -0.85). */
+export const PHASE_MID: PhaseRecord = { night: 0.02, dawn: 0.25, day: 0.5, dusk: 0.8 };
 const range = (v: unknown, ok: (n: unknown) => boolean): boolean => Array.isArray(v) && v.length === 2 && ok(v[0]) && ok(v[1]) && (v[0] as number) <= (v[1] as number);
 
 export function validateSpawnData(d: SpawnData, ai: AiData = aiRaw as unknown as AiData): string[] {
@@ -116,20 +121,21 @@ export function validateAiData(d: AiData): string[] {
 
 export function validateBotData(d: BotData, ai: AiData = aiRaw as unknown as AiData): string[] {
   const err: string[] = []; const acts = new Set(d.actions); const activities = new Set([...d.actions, "wander"]);
-  for (const [r, steps] of Object.entries(d.routines ?? {})) {
-    const phases = new Set(steps.map((s) => s.phase));
-    if (DAY_PHASES.some((p) => !phases.has(p)) || phases.size !== steps.length) err.push(`routine ${r}: needs each day phase exactly once`);
-    for (const s of steps) if (!activities.has(s.activity)) err.push(`routine ${r}: unknown activity ${s.activity}`);
+  if (d.traits?.length !== TRAIT_KEYS.length || TRAIT_KEYS.some((t, i) => d.traits[i] !== t)) err.push(`traits must be core TRAIT_KEYS ${TRAIT_KEYS.join(",")}`);
+  for (const [r, slots] of Object.entries(d.routines ?? {})) {
+    if (!Array.isArray(slots) || slots.some((s) => !frac(s.from) || !frac(s.to) || !Array.isArray(s.prefer) || !s.prefer.length)) { err.push(`routine ${r}: slots need from/to in 0..1 and prefer[]`); continue; }
+    for (let i = 0; i < 100; i++) { const t = (i + 0.5) / 100; const n = slots.filter((s) => inSlot(s, t)).length; if (n !== 1) { err.push(`routine ${r}: must cover the day exactly once (t=${t})`); break; } }
+    for (const s of slots) for (const a of s.prefer) if (!activities.has(a)) err.push(`routine ${r}: unknown activity ${a}`);
   }
   for (const [k, b] of Object.entries(d.archetypes ?? {})) {
     if (ai.archetypes[k]?.kind !== "human") err.push(`${k}: needs a human behavior in ai.json`);
     for (const t of d.traits) if (!range(b.traits?.[t], frac)) err.push(`${k}: trait ${t} range`);
-    for (const t of Object.keys(b.traits ?? {})) if (!d.traits.includes(t)) err.push(`${k}: unknown trait ${t}`);
+    for (const t of Object.keys(b.traits ?? {})) if (!(d.traits as string[]).includes(t)) err.push(`${k}: unknown trait ${t}`);
     if (!d.routines[b.routine]) err.push(`${k}: unknown routine ${b.routine}`);
     const g = b.goals; if (!g || ![g.base, g.gear, g.food].every(frac) || Math.abs(g.base + g.gear + g.food - 1) > 1e-6) err.push(`${k}: goals must be 0..1 and sum to 1`);
-    const im = b.imperfection;
-    if (!im || !range(im.reactionDelayTicks, (n) => Number.isInteger(n) && (n as number) >= 0) || !(num(im.aimErrorDeg) && im.aimErrorDeg >= 0 && im.aimErrorDeg <= 90)
-      || !frac(im.idleLookChancePerSec) || !range(im.idleLookSeconds, nonNeg)) err.push(`${k}: imperfection`);
+    const im = b.imperfections;
+    if (!im || !range(im.reactionTicks, (n) => Number.isInteger(n) && (n as number) >= 0) || !(num(im.aimErrorRad) && im.aimErrorRad >= 0 && im.aimErrorRad <= Math.PI / 2)
+      || !frac(im.inputJitter) || !frac(im.idlePauseChance) || !frac(im.lookAroundChance) || !frac(im.pathWobble)) err.push(`${k}: imperfections`);
     for (const s of d.situations) { const lines = b.chat?.[s]; if (!Array.isArray(lines) || !lines.length || lines.some((l) => typeof l !== "string" || !/^[a-z0-9_.]+$/i.test(l))) err.push(`${k}: chat ${s} needs text keys`); }
     for (const s of Object.keys(b.chat ?? {})) if (!d.situations.includes(s)) err.push(`${k}: unknown chat situation ${s}`);
     for (const a of d.actions) { const c = b.utility?.[a]; if (!c || !num(c.base) || Object.values(c.inputs ?? {}).some((w) => !num(w))) err.push(`${k}: utility ${a}`); }
@@ -182,12 +188,12 @@ export function entriesForMode(mode: GameMode, d: SpawnData = populationData().s
 /** Routine activity for a phase. */
 export function routineActivity(archetype: string, phase: SpawnPhase, b: BotData = populationData().bots): string {
   const a = b.archetypes[archetype]; if (!a) throw new Error(`unknown bot ${archetype}`);
-  return b.routines[a.routine]!.find((s) => s.phase === phase)!.activity;
+  return scheduledAt(b.routines[a.routine]!, PHASE_MID[phase])[0]!;
 }
 /** Roll traits in range from a caller-supplied rng (pass world.rngFor(...) - never Math.random). */
-export function rollTraits(archetype: string, rand: () => number, b: BotData = populationData().bots): Record<string, number> {
+export function rollTraits(archetype: string, rand: () => number, b: BotData = populationData().bots): Traits {
   const a = b.archetypes[archetype]; if (!a) throw new Error(`unknown bot ${archetype}`);
-  return Object.fromEntries(b.traits.map((t) => { const [lo, hi] = a.traits[t]!; return [t, lo + (hi - lo) * rand()]; }));
+  return Object.fromEntries(TRAIT_KEYS.map((t) => { const [lo, hi] = a.traits[t]; return [t, lo + (hi - lo) * rand()]; })) as unknown as Traits;
 }
 /** Score each utility action: base + sum(weight * signal), signals = traits + sensors (0..1; missing = 0). */
 export function scoreUtilities(archetype: string, signals: Record<string, number>, b: BotData = populationData().bots): Record<string, number> {

@@ -50,14 +50,14 @@ export function intentToFrame(intent: BotIntent, tick: number, reg: CommandRegis
   return f;
 }
 /** Sequence of frames for a list of intents starting at tick, honoring a reaction delay (idle frames first). */
-export function intentSequence(intents: readonly BotIntent[], startTick: number, reg: CommandRegistry, reactionDelayTicks = 0): InputFrame[] {
+export function intentSequence(intents: readonly BotIntent[], startTick: number, reg: CommandRegistry, reactionTicks = 0): InputFrame[] {
   const out: InputFrame[] = [];
-  for (let i = 0; i < reactionDelayTicks; i++) out.push(intentToFrame({ kind: "idle" }, startTick + i, reg));
-  intents.forEach((it, i) => out.push(intentToFrame(it, startTick + reactionDelayTicks + i, reg)));
+  for (let i = 0; i < reactionTicks; i++) out.push(intentToFrame({ kind: "idle" }, startTick + i, reg));
+  intents.forEach((it, i) => out.push(intentToFrame(it, startTick + reactionTicks + i, reg)));
   return out;
 }
-/** Apply aim error (degrees, from bots.json imperfection) to a direction using a caller rng in [0,1). */
-export function jitterAim(x: number, y: number, aimErrorDeg: number, rand: () => number): { x: number; y: number } {
-  const a = ((rand() * 2 - 1) * aimErrorDeg * Math.PI) / 180, c = Math.cos(a), s = Math.sin(a);
+/** Apply aim error (radians, Imperfections.aimErrorRad from bots.json) to a direction using a caller rng in [0,1). */
+export function jitterAim(x: number, y: number, aimErrorRad: number, rand: () => number): { x: number; y: number } {
+  const a = (rand() * 2 - 1) * aimErrorRad, c = Math.cos(a), s = Math.sin(a);
   return { x: x * c - y * s, y: x * s + y * c };
 }

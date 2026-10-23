@@ -431,3 +431,11 @@ Gameplay owns data, not loops: there is **no spawn loop and no controller** here
 - Animal AI: idle/wander/flee/attack/dead. aggro modes hostile/territorial/defensive; bites use applyDamage at ai.json attack cooldown;
   flee at hp <= flee.hpFrac. Death: ai.json loot rolled (rngFor per entity) into an ownerless LootBag, a 3s corpse, then removal.
 - The wolf is goofy: aggro range 2.5, leash 7, flees at 70% hp. The chicken is passive and drops raw_meat plus maybe an egg.
+
+## 23. Bot field names (core ai.ts)
+- bots.json `traits` = core `TRAIT_KEYS` (bravery, sociability, greed, industriousness, chattiness). Old diligence became industriousness and
+  curiosity became chattiness; aggression was folded into bravery (max of ranges; utility weights summed). `rollTraits` returns core `Traits`.
+- `routines` are core `ScheduleSlot[]` `{from, to, prefer[]}` over dayT 0..1 (wrapping), matching dayPhase bounds. The validator requires
+  the day to be covered exactly once. `routineActivity(arch, phase)` = `scheduledAt(slots, PHASE_MID[phase])[0]`.
+- `imperfection` became core `Imperfections` (reactionTicks, aimErrorRad, inputJitter, idlePauseChance, lookAroundChance, pathWobble).
+  `jitterAim` takes radians; `intentSequence` takes reactionTicks.

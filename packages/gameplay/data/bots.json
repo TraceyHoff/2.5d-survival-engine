@@ -1,12 +1,11 @@
 {
- "$comment": "Human bot steering data for Engine Architect's AgentController (data only; no controller here). traits: [min,max] in 0..1, rolled per bot with world.rngFor. routine: per day phase activity (must be a utility action or wander). goals: weights for base/gear/food (sum 1). imperfection: reactionDelayTicks [min,max] at 20Hz, aimErrorDeg, idleLookChancePerSec, idleLookSeconds. chat: situation -> localization text keys only. utility: action -> {base, inputs: consideration -> weight}; inputs names are 0..1 signals (traits or world sensors).",
+ "$comment": "Human bot steering data for Engine Architect's AgentController (data only; no controller here). traits: [min,max] in 0..1, rolled per bot with world.rngFor. routine: per day phase activity (must be a utility action or wander). goals: weights for base/gear/food (sum 1). imperfection: reactionDelayTicks [min,max] at 20Hz, aimErrorDeg, idleLookChancePerSec, idleLookSeconds. chat: situation -> localization text keys only. utility: action -> {base, inputs: consideration -> weight}; inputs names are 0..1 signals (traits or world sensors). Field names follow @engine/core ai.ts: traits = TRAIT_KEYS (bravery, sociability, greed, industriousness, chattiness; old diligence->industriousness, curiosity->chattiness, aggression folded into bravery), routines = ScheduleSlot[] {from,to (dayT 0..1, wraps), prefer[]}, imperfections = Imperfections.",
  "traits": [
   "bravery",
   "sociability",
   "greed",
-  "diligence",
-  "aggression",
-  "curiosity"
+  "industriousness",
+  "chattiness"
  ],
  "actions": [
   "gather",
@@ -33,92 +32,152 @@
  "routines": {
   "worker": [
    {
-    "phase": "dawn",
-    "activity": "eat"
+    "from": 0.2,
+    "to": 0.3,
+    "prefer": [
+     "eat"
+    ]
    },
    {
-    "phase": "day",
-    "activity": "gather"
+    "from": 0.3,
+    "to": 0.75,
+    "prefer": [
+     "gather"
+    ]
    },
    {
-    "phase": "dusk",
-    "activity": "craft"
+    "from": 0.75,
+    "to": 0.85,
+    "prefer": [
+     "craft"
+    ]
    },
    {
-    "phase": "night",
-    "activity": "sleep"
+    "from": 0.85,
+    "to": 0.2,
+    "prefer": [
+     "sleep"
+    ]
    }
   ],
   "builder": [
    {
-    "phase": "dawn",
-    "activity": "gather"
+    "from": 0.2,
+    "to": 0.3,
+    "prefer": [
+     "gather"
+    ]
    },
    {
-    "phase": "day",
-    "activity": "build"
+    "from": 0.3,
+    "to": 0.75,
+    "prefer": [
+     "build"
+    ]
    },
    {
-    "phase": "dusk",
-    "activity": "eat"
+    "from": 0.75,
+    "to": 0.85,
+    "prefer": [
+     "eat"
+    ]
    },
    {
-    "phase": "night",
-    "activity": "sleep"
+    "from": 0.85,
+    "to": 0.2,
+    "prefer": [
+     "sleep"
+    ]
    }
   ],
   "merchant": [
    {
-    "phase": "dawn",
-    "activity": "craft"
+    "from": 0.2,
+    "to": 0.3,
+    "prefer": [
+     "craft"
+    ]
    },
    {
-    "phase": "day",
-    "activity": "trade"
+    "from": 0.3,
+    "to": 0.75,
+    "prefer": [
+     "trade"
+    ]
    },
    {
-    "phase": "dusk",
-    "activity": "eat"
+    "from": 0.75,
+    "to": 0.85,
+    "prefer": [
+     "eat"
+    ]
    },
    {
-    "phase": "night",
-    "activity": "sleep"
+    "from": 0.85,
+    "to": 0.2,
+    "prefer": [
+     "sleep"
+    ]
    }
   ],
   "nocturnal": [
    {
-    "phase": "dawn",
-    "activity": "sleep"
+    "from": 0.2,
+    "to": 0.3,
+    "prefer": [
+     "sleep"
+    ]
    },
    {
-    "phase": "day",
-    "activity": "sleep"
+    "from": 0.3,
+    "to": 0.75,
+    "prefer": [
+     "sleep"
+    ]
    },
    {
-    "phase": "dusk",
-    "activity": "eat"
+    "from": 0.75,
+    "to": 0.85,
+    "prefer": [
+     "eat"
+    ]
    },
    {
-    "phase": "night",
-    "activity": "fight"
+    "from": 0.85,
+    "to": 0.2,
+    "prefer": [
+     "fight"
+    ]
    }
   ],
   "drifter": [
    {
-    "phase": "dawn",
-    "activity": "gather"
+    "from": 0.2,
+    "to": 0.3,
+    "prefer": [
+     "gather"
+    ]
    },
    {
-    "phase": "day",
-    "activity": "wander"
+    "from": 0.3,
+    "to": 0.75,
+    "prefer": [
+     "wander"
+    ]
    },
    {
-    "phase": "dusk",
-    "activity": "craft"
+    "from": 0.75,
+    "to": 0.85,
+    "prefer": [
+     "craft"
+    ]
    },
    {
-    "phase": "night",
-    "activity": "sleep"
+    "from": 0.85,
+    "to": 0.2,
+    "prefer": [
+     "sleep"
+    ]
    }
   ]
  },
@@ -138,15 +197,11 @@
      0.3,
      0.7
     ],
-    "diligence": [
+    "industriousness": [
      0.6,
      0.9
     ],
-    "aggression": [
-     0.05,
-     0.3
-    ],
-    "curiosity": [
+    "chattiness": [
      0.3,
      0.7
     ]
@@ -156,18 +211,6 @@
     "base": 0.2,
     "gear": 0.3,
     "food": 0.5
-   },
-   "imperfection": {
-    "reactionDelayTicks": [
-     6,
-     14
-    ],
-    "aimErrorDeg": 12,
-    "idleLookChancePerSec": 0.15,
-    "idleLookSeconds": [
-     0.5,
-     1.5
-    ]
    },
    "chat": {
     "seeEnemy": [
@@ -216,28 +259,28 @@
      "base": 0.7,
      "inputs": {
       "invSpaceFree": 0.4,
-      "diligence": 0.3
+      "industriousness": 0.3
      }
     },
     "craft": {
      "base": 0.3,
      "inputs": {
       "hasIngredients": 0.6,
-      "diligence": 0.2
+      "industriousness": 0.2
      }
     },
     "build": {
      "base": 0.2,
      "inputs": {
       "baseMissing": 0.7,
-      "diligence": 0.3
+      "industriousness": 0.3
      }
     },
     "fight": {
      "base": 0.1,
      "inputs": {
       "enemyNear": 0.8,
-      "aggression": 0.5,
+      "bravery": 0.5,
       "healthFrac": 0.3
      }
     },
@@ -270,6 +313,17 @@
       "greed": 0.3
      }
     }
+   },
+   "imperfections": {
+    "reactionTicks": [
+     6,
+     14
+    ],
+    "aimErrorRad": 0.2094,
+    "inputJitter": 0.08,
+    "idlePauseChance": 0.004,
+    "lookAroundChance": 0.0075,
+    "pathWobble": 0.2
    }
   },
   "bot_builder": {
@@ -287,15 +341,11 @@
      0.3,
      0.7
     ],
-    "diligence": [
+    "industriousness": [
      0.7,
      1.0
     ],
-    "aggression": [
-     0.3,
-     0.7
-    ],
-    "curiosity": [
+    "chattiness": [
      0.3,
      0.7
     ]
@@ -305,18 +355,6 @@
     "base": 0.6,
     "gear": 0.25,
     "food": 0.15
-   },
-   "imperfection": {
-    "reactionDelayTicks": [
-     6,
-     12
-    ],
-    "aimErrorDeg": 10,
-    "idleLookChancePerSec": 0.1,
-    "idleLookSeconds": [
-     0.5,
-     1.2
-    ]
    },
    "chat": {
     "seeEnemy": [
@@ -365,28 +403,28 @@
      "base": 0.5,
      "inputs": {
       "invSpaceFree": 0.4,
-      "diligence": 0.3
+      "industriousness": 0.3
      }
     },
     "craft": {
      "base": 0.3,
      "inputs": {
       "hasIngredients": 0.6,
-      "diligence": 0.2
+      "industriousness": 0.2
      }
     },
     "build": {
      "base": 0.6,
      "inputs": {
       "baseMissing": 0.7,
-      "diligence": 0.3
+      "industriousness": 0.3
      }
     },
     "fight": {
      "base": 0.1,
      "inputs": {
       "enemyNear": 0.8,
-      "aggression": 0.5,
+      "bravery": 0.5,
       "healthFrac": 0.3
      }
     },
@@ -419,6 +457,17 @@
       "greed": 0.3
      }
     }
+   },
+   "imperfections": {
+    "reactionTicks": [
+     6,
+     12
+    ],
+    "aimErrorRad": 0.1745,
+    "inputJitter": 0.08,
+    "idlePauseChance": 0.004,
+    "lookAroundChance": 0.005,
+    "pathWobble": 0.2
    }
   },
   "bot_trader": {
@@ -436,15 +485,11 @@
      0.6,
      0.95
     ],
-    "diligence": [
+    "industriousness": [
      0.3,
      0.7
     ],
-    "aggression": [
-     0.0,
-     0.2
-    ],
-    "curiosity": [
+    "chattiness": [
      0.3,
      0.7
     ]
@@ -454,18 +499,6 @@
     "base": 0.2,
     "gear": 0.4,
     "food": 0.4
-   },
-   "imperfection": {
-    "reactionDelayTicks": [
-     8,
-     16
-    ],
-    "aimErrorDeg": 15,
-    "idleLookChancePerSec": 0.2,
-    "idleLookSeconds": [
-     0.6,
-     1.8
-    ]
    },
    "chat": {
     "seeEnemy": [
@@ -514,28 +547,28 @@
      "base": 0.5,
      "inputs": {
       "invSpaceFree": 0.4,
-      "diligence": 0.3
+      "industriousness": 0.3
      }
     },
     "craft": {
      "base": 0.3,
      "inputs": {
       "hasIngredients": 0.6,
-      "diligence": 0.2
+      "industriousness": 0.2
      }
     },
     "build": {
      "base": 0.2,
      "inputs": {
       "baseMissing": 0.7,
-      "diligence": 0.3
+      "industriousness": 0.3
      }
     },
     "fight": {
      "base": 0.1,
      "inputs": {
       "enemyNear": 0.8,
-      "aggression": 0.5,
+      "bravery": 0.5,
       "healthFrac": 0.3
      }
     },
@@ -568,14 +601,25 @@
       "greed": 0.3
      }
     }
+   },
+   "imperfections": {
+    "reactionTicks": [
+     8,
+     16
+    ],
+    "aimErrorRad": 0.2618,
+    "inputJitter": 0.08,
+    "idlePauseChance": 0.004,
+    "lookAroundChance": 0.01,
+    "pathWobble": 0.2
    }
   },
   "bot_raider": {
    "role": "raider",
    "traits": {
     "bravery": [
-     0.6,
-     0.95
+     0.7,
+     1.0
     ],
     "sociability": [
      0.1,
@@ -585,15 +629,11 @@
      0.5,
      0.9
     ],
-    "diligence": [
+    "industriousness": [
      0.3,
      0.7
     ],
-    "aggression": [
-     0.7,
-     1.0
-    ],
-    "curiosity": [
+    "chattiness": [
      0.3,
      0.7
     ]
@@ -603,18 +643,6 @@
     "base": 0.1,
     "gear": 0.7,
     "food": 0.2
-   },
-   "imperfection": {
-    "reactionDelayTicks": [
-     4,
-     9
-    ],
-    "aimErrorDeg": 7,
-    "idleLookChancePerSec": 0.08,
-    "idleLookSeconds": [
-     0.3,
-     0.8
-    ]
    },
    "chat": {
     "seeEnemy": [
@@ -663,28 +691,28 @@
      "base": 0.5,
      "inputs": {
       "invSpaceFree": 0.4,
-      "diligence": 0.3
+      "industriousness": 0.3
      }
     },
     "craft": {
      "base": 0.3,
      "inputs": {
       "hasIngredients": 0.6,
-      "diligence": 0.2
+      "industriousness": 0.2
      }
     },
     "build": {
      "base": 0.2,
      "inputs": {
       "baseMissing": 0.7,
-      "diligence": 0.3
+      "industriousness": 0.3
      }
     },
     "fight": {
      "base": 0.5,
      "inputs": {
       "enemyNear": 0.8,
-      "aggression": 0.5,
+      "bravery": 0.5,
       "healthFrac": 0.3
      }
     },
@@ -717,6 +745,17 @@
       "greed": 0.3
      }
     }
+   },
+   "imperfections": {
+    "reactionTicks": [
+     4,
+     9
+    ],
+    "aimErrorRad": 0.1222,
+    "inputJitter": 0.08,
+    "idlePauseChance": 0.004,
+    "lookAroundChance": 0.004,
+    "pathWobble": 0.2
    }
   },
   "bot_loner": {
@@ -734,15 +773,11 @@
      0.3,
      0.7
     ],
-    "diligence": [
+    "industriousness": [
      0.3,
      0.7
     ],
-    "aggression": [
-     0.3,
-     0.7
-    ],
-    "curiosity": [
+    "chattiness": [
      0.5,
      0.9
     ]
@@ -752,18 +787,6 @@
     "base": 0.35,
     "gear": 0.35,
     "food": 0.3
-   },
-   "imperfection": {
-    "reactionDelayTicks": [
-     5,
-     12
-    ],
-    "aimErrorDeg": 9,
-    "idleLookChancePerSec": 0.25,
-    "idleLookSeconds": [
-     0.5,
-     2.0
-    ]
    },
    "chat": {
     "seeEnemy": [
@@ -812,28 +835,28 @@
      "base": 0.5,
      "inputs": {
       "invSpaceFree": 0.4,
-      "diligence": 0.3
+      "industriousness": 0.3
      }
     },
     "craft": {
      "base": 0.3,
      "inputs": {
       "hasIngredients": 0.6,
-      "diligence": 0.2
+      "industriousness": 0.2
      }
     },
     "build": {
      "base": 0.2,
      "inputs": {
       "baseMissing": 0.7,
-      "diligence": 0.3
+      "industriousness": 0.3
      }
     },
     "fight": {
      "base": 0.1,
      "inputs": {
       "enemyNear": 0.8,
-      "aggression": 0.5,
+      "bravery": 0.5,
       "healthFrac": 0.3
      }
     },
@@ -866,6 +889,17 @@
       "greed": 0.3
      }
     }
+   },
+   "imperfections": {
+    "reactionTicks": [
+     5,
+     12
+    ],
+    "aimErrorRad": 0.1571,
+    "inputJitter": 0.08,
+    "idlePauseChance": 0.004,
+    "lookAroundChance": 0.0125,
+    "pathWobble": 0.2
    }
   }
  }

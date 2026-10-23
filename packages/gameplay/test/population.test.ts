@@ -52,7 +52,7 @@ describe("population data", () => {
     g.goals.food = 0.9; g.traits.bravery = [0.8, 0.2]; delete g.chat.hungry; g.utility.dance = { base: 1, inputs: {} };
     d.routines.worker = d.routines.worker!.slice(1);
     const e = validateBotData(d, ai).join("\n");
-    for (const re of [/sum to 1/, /trait bravery/, /chat hungry/, /unknown utility action dance/, /routine worker/]) expect(e).toMatch(re);
+    for (const re of [/sum to 1/, /trait bravery/, /chat hungry/, /unknown utility action dance/, /routine worker: must cover/, /trait bravery/]) expect(e).toMatch(re);
   });
   it("routines, traits and utility scoring", () => {
     expect(routineActivity("bot_raider", "night")).toBe("fight"); expect(routineActivity("bot_gatherer", "day")).toBe("gather");
@@ -84,6 +84,6 @@ describe("bot intents -> InputFrame", () => {
   it("sequence applies reaction delay; aim jitter stays within error", () => {
     const seq = intentSequence([{ kind: "attack", target: 1 }], 10, reg, 3);
     expect(seq.map((f) => f.tick)).toEqual([10, 11, 12, 13]); expect(seq.slice(0, 3).every((f) => f.commands.length === 0)).toBe(true);
-    const j = jitterAim(1, 0, 10, () => 1); expect(Math.atan2(j.y, j.x) * 180 / Math.PI).toBeCloseTo(10);
+    const j = jitterAim(1, 0, (10 * Math.PI) / 180, () => 1); expect(Math.atan2(j.y, j.x) * 180 / Math.PI).toBeCloseTo(10);
   });
 });
