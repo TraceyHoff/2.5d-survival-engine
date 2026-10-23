@@ -62,27 +62,23 @@ for a in se['atlases']:
 kit['sprites']+=[s for s in se['sprites'] if s['atlas'] in hk]
 if not kit['glyphs']: del kit['glyphs']
 json.dump(kit,open(K+'/manifest.ui.kit.json','w'),indent=1); open(K+'/manifest.ui.kit.json','a').write('\n')
-# 5 merge into pack: kit images copied flat to pack/atlases (branding pattern); se fx atlases to pack/atlases too
+# 5 pack: only the hook VFX atlases/sprites/vfx (survival_events) go into the pack; the kit is the ui-kit sub-manifest
+#   (assets/ui/kit/manifest.ui.kit.json, loaded by the client via mergeManifests) and is never copied into the pack.
 m=json.load(open(PACK+'/manifest.json'))
 def addA(a,src_dir):
   a=json.loads(json.dumps(a))
-  for i,setter in [(a['image'],lambda v:a.__setitem__('image',v))]+[(p['image'],(lambda p:lambda v:p.__setitem__('image',v))(p)) for p in a.get('pages',[])]:
-    b=os.path.basename(i); cp(os.path.join(src_dir,b),PACK+'/atlases/'+b); setter('atlases/'+b)
+  def f(i): b=os.path.basename(i); cp(os.path.join(src_dir,b),PACK+'/atlases/'+b); return 'atlases/'+b
+  a['image']=f(a['image'])
+  for p in a.get('pages',[]): p['image']=f(p['image'])
   for k,v in list(a.get('masks',{}).items()):
-    b=os.path.basename(v); cp(os.path.join(src_dir,b),PACK+'/atlases/'+b); a['masks'][k]='atlases/'+b
+    if isinstance(v,str): a['masks'][k]=f(v)
   return a
-newA=[addA(a,K) for a in kit['atlases']]+[addA(a,S+'/survival_events/atlases') for a in se['atlases'] if a['key'] not in hk]
-newS=kit['sprites']+[s for s in se['sprites'] if s['atlas'] not in hk]
-newV=se.get('vfx',[])
-ex={sec:{e['key'] for e in m.get(sec,[])} for sec in ('atlases','sprites','vfx')}
-col=[(sec,e['key']) for sec,L in (('atlases',newA),('sprites',newS),('vfx',newV)) for e in L if e['key'] in ex[sec]]
-print('collisions',col[:10],len(col))
-ak={a['key'] for a in newA}; sk={s['key'] for s in newS}; vk={v['key'] for v in newV}
+newA=[addA(a,S+'/survival_events/atlases') for a in se['atlases'] if a['key'] not in hk]
+newS=[s for s in se['sprites'] if s['atlas'] not in hk]; newV=se.get('vfx',[])
+ak={a['key'] for a in newA}|{a['key'] for a in kit['atlases']}; sk={s['key'] for s in newS}|{s['key'] for s in kit['sprites']}; vk={v['key'] for v in newV}
 m['atlases']=[a for a in m['atlases'] if a['key'] not in ak]+newA
 m['sprites']=[s for s in m['sprites'] if s['key'] not in sk]+newS
 m['vfx']=[v for v in m['vfx'] if v['key'] not in vk]+newV
-if kit.get('glyphs'):
-  g=m.setdefault('glyphs',{}); 
-  if isinstance(g,dict): g.update(kit['glyphs'])
 json.dump(m,open(PACK+'/manifest.json','w'),indent=2); open(PACK+'/manifest.json','a').write('\n')
-print('kit atlases',len(kit['atlases']),'kit sprites',len(kit['sprites']),'fx atlases',len(newA)-len(kit['atlases']),'fx sprites',len(newS)-len(kit['sprites']),'vfx',len(newV))
+print('kit atlases',len(kit['atlases']),'kit sprites',len(kit['sprites']),'fx atlases',len(newA),'fx sprites',len(newS),'vfx',len(newV))
+print('next: pnpm --filter @engine/assets lock:ids:pack (locks pack + sub-manifests, fails on duplicate keys)')

@@ -5,7 +5,7 @@ larger, tilted zombie-mint showpiece letters; the rest uses warm campfire ramps.
 
 ```sh
 python3 tools/gen_branding.py --title "Real Name" --tagline "optional tagline"   # also saved to branding.json
-python3 tools/make_engine_pack.py --engine /workspace/engine   # atlases + merge into packages/assets/pack/manifest.json
+python3 tools/make_engine_pack.py --engine /workspace/engine   # writes assets/ui/branding/{manifest.branding.json,atlases/} (client "branding" sub-manifest; nothing in the pack)
 (cd /workspace/engine && pnpm --filter @engine/assets lock:ids:pack)          # keys are stable, so ids do not change
 python3 tools/build_preview.py
 ```

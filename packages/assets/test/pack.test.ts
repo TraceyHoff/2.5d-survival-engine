@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { loadManifest, CATEGORIES } from "../src/index.js";
+import { loadManifest, mergeManifests, CATEGORIES, type ManifestJson } from "../src/index.js";
 
 // Real art pack (Cozy-Wild wave 1). Source of truth: assets/ (repo root) (tools/build_all.py).
 const dir = fileURLToPath(new URL("../pack/", import.meta.url));
@@ -12,7 +12,13 @@ const sampleLock = JSON.parse(readFileSync(sampleDir + "ids.lock.json", "utf8"))
 const pngSize = (f: string) => { const b = readFileSync(dir + f); expect(b.subarray(1, 4).toString()).toBe("PNG"); return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) }; };
 
 describe("art pack", () => {
-  const { registry, lock } = loadManifest(pack, { lock: lockFile });
+  const { registry } = loadManifest(pack, { lock: lockFile });
+  // ids.lock.json covers the merged runtime manifest (pack + sub-manifests, as apps/client/src/view.ts loads it).
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const subs = [["ui-kit", root + "assets/ui/kit/manifest.ui.kit.json"], ["branding", root + "assets/ui/branding/manifest.branding.json"], ["customization", dir + "customization/manifest.customization.json"]];
+  const merged = mergeManifests([{ name: "pack", manifest: pack as ManifestJson }, ...subs.filter(([, f]) => existsSync(f!)).map(([name, f]) => ({ name: name!, manifest: JSON.parse(readFileSync(f!, "utf8")) as ManifestJson }))]);
+  const { lock } = loadManifest(merged.manifest, { lock: lockFile });
+  it("sub-manifests do not duplicate pack keys", () => expect(merged.collisions).toEqual([]));
   it("loads, covers every category, lock is up to date", () => {
     for (const c of CATEGORIES) expect(registry.byCategory(c).length).toBeGreaterThan(0);
     expect(lock).toEqual(lockFile);

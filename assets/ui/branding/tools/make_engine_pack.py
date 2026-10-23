@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Packs ui/branding art into engine manifest-v1 uniform-grid atlases (+@2x pages) and writes
-engine/manifest.branding.pack.json (paths relative to packages/assets/pack). With --engine DIR, copies the
-atlases into DIR/packages/assets/pack/atlases/ and merges (replaces) the brand_* atlases / branding sprites
-in its manifest.json. Run gen_branding.py first."""
+engine/manifest.branding.pack.json (paths relative to packages/assets/pack). Also writes manifest.branding.json (paths relative to
+ui/branding). With --engine DIR, copies atlases into DIR/assets/ui/branding/atlases/ and writes the branding sub-manifest
+assets/ui/branding/manifest.branding.json (+ atlases/) there; nothing goes into the pack manifest. Run gen_branding.py first."""
 import json, os, sys, shutil
 from PIL import Image
 B = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); E = os.path.join(B, "engine"); A = os.path.join(E, "atlases")
@@ -61,12 +61,12 @@ for k, an, fps in (("zombie_walk", "walk", 7), ("campfire", "idle", 10)):
 frag = {"version": 1, "name": "ui-branding", "atlases": atlases, "sprites": sprites}
 json.dump(frag, open(os.path.join(E, "manifest.branding.pack.json"), "w"), indent=1)
 print(len(atlases), "atlases", len(sprites), "sprites")
+frag_sub = json.loads(json.dumps(frag)); frag_sub["name"] = "ui-branding"
+json.dump(frag_sub, open(os.path.join(B, "manifest.branding.json"), "w"), indent=1)
 if "--engine" in sys.argv:
-    eng = sys.argv[sys.argv.index("--engine") + 1]; pack = os.path.join(eng, "packages/assets/pack")
-    for f in os.listdir(A): shutil.copy(os.path.join(A, f), os.path.join(pack, "atlases", f))
-    mp = os.path.join(pack, "manifest.json"); m = json.load(open(mp))
-    ak = {a["key"] for a in atlases}; sk = {s["key"] for s in sprites}
-    m["atlases"] = [a for a in m["atlases"] if a["key"] not in ak] + atlases
-    m["sprites"] = [s for s in m["sprites"] if s["key"] not in sk] + sprites
-    json.dump(m, open(mp, "w"), indent=1)
-    print("merged into", mp)
+    # Branding is the client's "branding" sub-manifest (art/ui/branding/manifest.branding.json, mergeManifests):
+    # write it + atlases into DIR/assets/ui/branding/ only; never into packages/assets/pack (no duplicate keys).
+    eng = sys.argv[sys.argv.index("--engine") + 1]; dst = os.path.join(eng, "assets/ui/branding"); os.makedirs(os.path.join(dst, "atlases"), exist_ok=True)
+    for f in os.listdir(A): shutil.copy(os.path.join(A, f), os.path.join(dst, "atlases", f))
+    shutil.copy(os.path.join(B, "manifest.branding.json"), os.path.join(dst, "manifest.branding.json"))
+    print("wrote", dst, "- then pnpm --filter @engine/assets lock:ids:pack")

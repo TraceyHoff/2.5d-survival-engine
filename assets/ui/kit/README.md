@@ -8,10 +8,12 @@
 | Strings | `assets/ui/strings/en.json` (hooks `craftq.*`/`event.*`/`respawn.*`/`ctx.*`, wardrobe unlock hints/reasons, `stall.*`) |
 
 `manifest.ui.kit.json` = `ui_kit_*` (frames/panels/buttons, nineSlice) + `input_glyphs_*`/`input_touch_*` (pad/keyboard glyphs, touch kit, `glyphs` table)
-+ `ui_hooks_*` (craft queue, survival-event banners, touch context). The same entries are merged into
-`packages/assets/pack/manifest.json` (category `ui`/`glyph`) with copies in `pack/atlases/` — the branding pattern
-(`assets/ui/branding/tools/make_engine_pack.py`) — since the client loads only the pack manifest.
-Hook VFX (`death_bag`, `respawn_poof`, gate breach …) come from `assets/survival_events/manifest.fragment.json`.
++ `ui_hooks_*` (craft queue, survival-event banners, touch context). This is the client's `ui-kit`
+sub-manifest: `apps/client/src/view.ts` loads it with `mergeManifests` alongside the pack, branding and customization
+manifests, so none of these entries (or their PNGs) live in `packages/assets/pack`. `tools/sync_engine_kit.py` writes only
+this sub-manifest; ids stay reserved in the single `packages/assets/pack/ids.lock.json` (`pnpm lock:ids:pack` locks the merge
+and fails on duplicate keys).
+Hook VFX (the only part still written into the pack manifest) (`death_bag`, `respawn_poof`, gate breach …) come from `assets/survival_events/manifest.fragment.json`.
 
 Stall screens (from `assets/stalls/ui/screens`) are copied here; `_partials/item_tooltip.json` is the stalls drop-in successor
 (rarity border, crafted-by, durability, price). Stall mock state: `screens/mock/stall_state.json`.
