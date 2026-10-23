@@ -19,10 +19,10 @@ const params = new URLSearchParams(location.search);
 let ctx: CanvasRenderingContext2D | null = null;
 let iso: IsoView | undefined;
 const WEATHERS = ["clear", "rain", "storm", "snow", "fog"];
+const num = (k: string): number | undefined => { const v = params.get(k); return v === null || !Number.isFinite(Number(v)) ? undefined : Number(v); };
+const wq = params.get("weather"); const wi = wq ? WEATHERS.indexOf(wq) : -1;
 const wantIso = params.get("renderer") !== "debug" && typeof WebGL2RenderingContext !== "undefined";
 const isoReady: Promise<void> = wantIso ? (async () => {
-  const num = (k: string): number | undefined => { const v = params.get(k); return v === null || !Number.isFinite(Number(v)) ? undefined : Number(v); };
-  const wq = params.get("weather"); const wi = wq ? WEATHERS.indexOf(wq) : -1;
   const v = await IsoView.create(canvas, import.meta.env.BASE_URL, { ...(num("time") !== undefined ? { hours: num("time")! } : {}), ...(wi >= 0 ? { weather: wi, intensity: num("intensity") ?? 1 } : {}) });
   const onResize = (): void => v.resize(innerWidth, innerHeight, devicePixelRatio || 1); addEventListener("resize", onResize); onResize();
   iso = v; (window as { __view?: unknown }).__view = { ready: true, renderer: "iso" };
@@ -98,7 +98,7 @@ if (offline) {
   void (async () => {
     const { createLocalServer, openBrowserStore } = await import("./local.js");
     const bots = Number(params.get("bots") ?? 3);
-    const local = await createLocalServer({ store: await openBrowserStore(`engine-local-${params.get("player") ?? "1"}`), bots, log: (m) => console.info(`[local] ${m}`) });
+    const local = await createLocalServer({ store: await openBrowserStore(`engine-local-${params.get("player") ?? "1"}`), bots, ...(await isoReady, iso?.registry.cosmetics?.size ? { catalog: iso.registry.cosmetics } : {}), log: (m) => console.info(`[local] ${m}`) });
     pumpLocal = local.pump;
     addEventListener("pagehide", () => { void local.game.persist?.saveAll(); });
     useWorld(await session.connect("local", session.savedName ?? "", local.createTransport()));
@@ -111,7 +111,7 @@ if (offline) {
   if (session.account && session.savedUrl && params.get("autoconnect") !== "0") connect(serverParam ?? session.savedUrl, session.savedName ?? "");
 }
 
-if (params.get("hud") !== "0") mountHud(() => world, () => session.player);
+if (params.get("hud") !== "0") mountHud(() => world, () => session.player, { ...(num("time") !== undefined ? { hours: num("time")! } : {}), ...(wi >= 0 ? { weather: wi } : {}) });
 
 let last = performance.now();
 function frame(now: number): void { const dt = Math.min(now - last, 250); pumpLocal?.(dt); loop.advance(now - last); last = now; session.poll(); requestAnimationFrame(frame); }

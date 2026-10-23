@@ -5,11 +5,14 @@ import { spawnPlayer, spawnResourceNode, gameplayDefs, setIntent, IntentAction, 
   appearanceServerHooks, applyReplication, installStallBuyHook, installViewBonus, setHitValidator, installPvp, playerNames, stallListing, listingRevision, stallOf, tillOf, StallHeader, StallOwnerKind } from "@engine/gameplay";
 import { AppearanceServer, NameSync, NetServer, StallResult, StallServer, TileSync, validateHit, type ClientSession, type ServerTransport, type StallHooks } from "@engine/net";
 import { AccountAssigned, ClaimAccount, SetName, WorldPersistence, loadSocial, tokenToHex, tokenToWords, wordsToName, wordsToToken, type WorldStore } from "@engine/persist";
+import { seedStarterCamp, giveRandomAppearance } from "./camp.js";
 import { Act, applyMoveInput, installDemoWorld, rejectReasonCode, DEMO_COMMANDS, DEMO_EVENTS, GAMEPLAY_NET_COMMANDS, Ping, Pong } from "./protocol.js";
 
 /** ProceduralGenerator node kinds -> gameplay resource keys (see DEFAULT_BANDS comments in @engine/world). */
 const NODE_RESOURCES: Record<number, string> = { 1: "fallen_branches", 2: "fiber_grass", 3: "berry_bush", 4: "loose_rocks", 5: "tree", 6: "boulder", 7: "iron_vein" };
 export const SPAWN = { x: 16, y: 16 };
+/** Starter camp hut origin (NE of spawn; yard reaches back toward spawn). */
+export const CAMP = { x: 19, y: 8 };
 
 export interface GameServerOptions {
   transport: ServerTransport;
@@ -25,6 +28,8 @@ export interface GameServerOptions {
   log?: (msg: string) => void;
   /** Cosmetics catalog (@engine/assets CosmeticCatalog). Enables customization: Appearance net messages + gameplay commands. */
   catalog?: CosmeticCatalogLike;
+  /** Seed the starter camp near spawn (default true; skipped if pieces already stand there). */
+  starterCamp?: boolean;
 }
 
 /** claimed: ClaimAccount processed (saved record restored), so a held join-time look can no longer be overwritten by the restore. */
@@ -86,6 +91,8 @@ export function createGameServer(o: GameServerOptions): GameServer {
     onClientJoin: (s, w) => {
       const e = spawnPlayer(w, { x: SPAWN.x + (s.clientId % 7) - 3, y: SPAWN.y + ((s.clientId * 3) % 7) - 3, clientId: s.clientId });
       net.netIds.assign(e);
+      // random valid look (replicates; a restored player record or the client's own setAppearance replaces it)
+      if (o.catalog) giveRandomAppearance(w, e, o.catalog, Math.random);
       const account = tokenToHex(s.token); // provisional account = net session token until the client claims one
       players.set(s.clientId, { entity: e, account, name: "", claimed: false });
       persist?.trackPlayer(account, e);
@@ -221,6 +228,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
   persist?.attach(chunks);
   chunks.setSource({ id: 0, x: SPAWN.x, y: SPAWN.y, radius: 1 }); // keep spawn warm
   do chunks.update(); while (chunks.pendingLoads > 0); // load the spawn area before the first tick
+  if (o.starterCamp !== false) { const n = seedStarterCamp(world, CAMP).length; if (n) log(`camp: seeded ${n} pieces at ${CAMP.x},${CAMP.y}`); }
 
   const tickTimes: number[] = [];
   const step = (dt: number): void => { const t0 = performance.now(); world.step(dt); tickTimes.push(performance.now() - t0); if (tickTimes.length > 4096) tickTimes.splice(0, 2048); };

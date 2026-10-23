@@ -15,7 +15,7 @@ const root = resolve(here, "../..");
 const MOUNTS: [string, string, (rel: string) => boolean][] = [
   ["pack/", join(root, "packages/assets/pack"), (r) => /^(manifest\.json|piece_variants\.json|ids\.lock\.json|atlases\/[^/]+\.(png|json))$/.test(r)],
   ["survival_fx/", join(root, "assets/survival_fx"), (r) => /^(render_tuning\.json|daynight_grading\.json|textures\/[^/]+\.png|lut\/[^/]+\.(png|json))$/.test(r)],
-  ["ui/", join(root, "assets/ui"), (r) => /^(theme\.json|fonts\/(Fredoka\.ttf|OFL-Fredoka\.txt))$/.test(r)],
+  ["ui/", join(root, "assets/ui"), (r) => /^(theme\.json|fonts\/(Fredoka\.ttf|OFL-Fredoka\.txt)|atlas\/ui_atlas\.(png|json))$/.test(r)],
 ];
 const TYPES: Record<string, string> = { ".json": "application/json", ".png": "image/png", ".webp": "image/webp", ".ttf": "font/ttf", ".txt": "text/plain" };
 

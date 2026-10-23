@@ -6,10 +6,11 @@
 import { DEFAULT_TICK_HZ, FixedLoop, World } from "@engine/core";
 import { LoopbackNetwork, NetClient, type ClientTransport } from "@engine/net";
 import { IndexedDbWorldStore, MemoryWorldStore, SetName, nameToWords, type WorldStore } from "@engine/persist";
+import type { CosmeticCatalogLike } from "@engine/core";
 import { createGameServer, type GameServer } from "@engine/server/game";
 import { Act, applyMoveInput, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS } from "@engine/server/protocol";
 
-export interface LocalServerOptions { store?: WorldStore; seed?: number; bots?: number; rng?: () => number; log?: (s: string) => void }
+export interface LocalServerOptions { store?: WorldStore; seed?: number; bots?: number; rng?: () => number; log?: (s: string) => void; catalog?: CosmeticCatalogLike }
 export interface LocalServer {
   game: GameServer; network: LoopbackNetwork;
   /** A fresh client transport connected to this in-memory server (pass to ClientSession.connect / NetClient). */
@@ -29,7 +30,7 @@ export async function openBrowserStore(dbName = "engine-local-world"): Promise<W
 export async function createLocalServer(o: LocalServerOptions = {}): Promise<LocalServer> {
   const network = new LoopbackNetwork(o.seed ?? 1234);
   const transport = network.createServer();
-  const game = createGameServer({ transport, ...(o.store ? { store: o.store } : {}), seed: o.seed ?? 1234, ...(o.log ? { log: o.log } : {}) });
+  const game = createGameServer({ transport, ...(o.store ? { store: o.store } : {}), seed: o.seed ?? 1234, ...(o.log ? { log: o.log } : {}), ...(o.catalog ? { catalog: o.catalog } : {}) });
   const rnd = o.rng ?? Math.random;
   const bots: LocalServer["bots"] = [];
   const botState: { buttons: number; next: number; loop: FixedLoop }[] = [];
