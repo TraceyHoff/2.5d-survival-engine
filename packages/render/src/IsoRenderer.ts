@@ -32,7 +32,8 @@ import { CompositePass } from "./composite.js";
 import { WeatherPass, WeatherState, weatherTargets } from "./weather.js";
 import { computeDayLighting, type DayLighting } from "./timeOfDay.js";
 import { isoZDepthFactor } from "./depth.js";
-import { createTexture, newStats, type FrameStats } from "./gl/util.js";
+import { assertFramebuffer, createTexture, newStats, RenderGLError, setFragmentMediump, type FrameStats } from "./gl/util.js";
+import { clampDrawingBuffer, detectCapabilities, parseGlFlags, type GlFlag, type RenderCapabilities, type RenderError } from "./gl/capabilities.js";
 import { RENDER_COMPONENTS } from "./components.js";
 import { DEFAULT_STYLE, mergeStyle, type StyleConfig, type StylePatch } from "./style.js";
 import { readDayFraction, readWeather, readWind } from "./env.js";
@@ -56,6 +57,10 @@ export interface IsoRendererOptions {
   style?: StylePatch;
   /** Building sprite pivot convention: footprint centre (default; art guide + @engine/assets sample) or front-most corner. */
   pieceAnchor?: "center" | "front";
+  /** Forced fallbacks for testing ("lowend" = all). Default: parsed from `?gl=` in location.search. */
+  gl?: GlFlag[];
+  /** Runtime render errors (context loss, OOM). Construction errors are thrown as RenderGLError (`.info`). */
+  onError?: (e: RenderError) => void;
 }
 
 export interface RenderSettings { lights: boolean; shadows: boolean; weather: boolean; fog: boolean }
@@ -66,6 +71,15 @@ export class IsoRenderer implements Renderer {
   readonly iso: IsoConfig;
   readonly zFactor: number;
   readonly atlas: AtlasManager;
+  /** Device capabilities and every fallback chosen (formats, precision, limits, DPR cap, texture budget). */
+  readonly capabilities: RenderCapabilities;
+  /** Runtime errors for the client overlay: context-lost / context-restored / oom. After "context-restored" recreate the renderer. */
+  onError: ((e: RenderError) => void) | null = null;
+  /** True between webglcontextlost and webglcontextrestored; render() is a no-op meanwhile. */
+  contextLost = false;
+  private onLost = (ev: Event): void => { ev.preventDefault(); this.contextLost = true; this.emit({ kind: "context-lost", message: "WebGL context lost (GPU reset or out of memory); waiting for restore" }); };
+  private onRestored = (): void => { this.contextLost = false; this.emit({ kind: "context-restored", message: "WebGL context restored: recreate the renderer to re-upload GPU resources" }); };
+  private emit(e: RenderError): void { console.warn(`[render] ${e.kind}: ${e.message}`); this.onError?.(e); }
   /** Override the sky clear colour (linear-ish 0..1 RGB), e.g. a neutral backdrop for the character preview. */
   backdrop: [number, number, number] | null = null;
   readonly settings: RenderSettings = { lights: true, shadows: true, weather: true, fog: true };
@@ -143,8 +157,16 @@ export class IsoRenderer implements Renderer {
       antialias: false, alpha: false, depth: false, stencil: false, powerPreference: "high-performance",
       preserveDrawingBuffer: opts.preserveDrawingBuffer ?? false,
     });
-    if (!gl) throw new Error("WebGL2 not available");
+    if (!gl) throw new RenderGLError({ kind: "webgl2", message: "WebGL2 is not available in this browser/GPU" });
     this.gl = gl;
+    if (opts.onError) this.onError = opts.onError;
+    const flags = opts.gl ?? parseGlFlags(typeof location !== "undefined" ? location.search : undefined);
+    const caps = (this.capabilities = detectCapabilities(gl, { flags, ...(opts.atlasLayerSize !== undefined ? { layerSize: opts.atlasLayerSize } : {}) }));
+    setFragmentMediump(gl, !caps.precision.fragmentHighp);
+    console.info(`[render] ${caps.renderer} | frag ${caps.precision.fragment} | atlas ${caps.atlasLayerSize}px budget ${caps.textureBudgetMB}MB | dpr<=${caps.maxDpr}` + (caps.fallbacks.length ? `\n  fallbacks: ${caps.fallbacks.join("; ")}` : ""));
+    if (caps.problems.length) { console.error("[render] GPU limits: " + caps.problems.join("; ")); }
+    canvas.addEventListener("webglcontextlost", this.onLost, false);
+    canvas.addEventListener("webglcontextrestored", this.onRestored, false);
     this.iso = opts.iso ?? DEFAULT_ISO;
     this.zFactor = isoZDepthFactor(this.iso);
     this.camera = new IsoCamera(this.iso);
@@ -152,7 +174,8 @@ export class IsoRenderer implements Renderer {
     this.tickHz = opts.tickHz ?? 20;
     this.pieceAnchor = opts.pieceAnchor ?? "center";
     this.style = mergeStyle(DEFAULT_STYLE, opts.style ?? {});
-    this.atlas = new AtlasManager(gl, opts.assets ?? new AssetManager(), opts.atlasLayerSize !== undefined ? { layerSize: opts.atlasLayerSize } : {});
+    this.atlas = new AtlasManager(gl, opts.assets ?? new AssetManager(), { layerSize: caps.atlasLayerSize, textureBudgetMB: caps.textureBudgetMB });
+    this.atlas.onError = (e) => this.emit(e);
     this.atlas.setStatusTints(this.style.statusTints);
     this.terrain = new TilemapRenderer(gl, this.iso, this.zFactor);
     this.sprites = new SpriteBatch(gl, this.iso, this.zFactor);
@@ -223,12 +246,9 @@ export class IsoRenderer implements Renderer {
     return { warnings, loaded };
   }
 
-  resize(cssW: number, cssH: number, dpr: number): void {
-    // Clamp the backing store to GPU limits (mobile GPUs are often 4096): an oversized scene FBO is incomplete -> black world.
-    const gl0 = this.gl; const vp = gl0.getParameter(gl0.MAX_VIEWPORT_DIMS) as Int32Array | null;
-    const lim = Math.min(gl0.getParameter(gl0.MAX_TEXTURE_SIZE) as number || 4096, gl0.getParameter(gl0.MAX_RENDERBUFFER_SIZE) as number || 4096, vp ? Math.min(vp[0]!, vp[1]!) : 4096);
-    dpr = Math.min(dpr, lim / Math.max(1, cssW), lim / Math.max(1, cssH));
-    const w = Math.max(1, Math.min(lim, Math.round(cssW * dpr))), h = Math.max(1, Math.min(lim, Math.round(cssH * dpr)));
+  resize(cssW: number, cssH: number, dprIn: number): void {
+    // DPR / pixel budget caps + MAX_TEXTURE/RENDERBUFFER/VIEWPORT clamp (an oversized scene FBO is incomplete -> black world) (mobile 2, low-end 1): phones report DPR 2.6-3.5
+    const { w, h, dpr } = clampDrawingBuffer(cssW, cssH, dprIn, this.capabilities);
     this.canvas.width = w; this.canvas.height = h;
     this.camera.setViewport(w, h, dpr);
     if (w === this.w && h === this.h) return;
@@ -246,8 +266,14 @@ export class IsoRenderer implements Renderer {
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.sceneTex, 0);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, this.emisTex, 0);
     gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, this.depthRb);
-    const st = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
-    if (st !== gl.FRAMEBUFFER_COMPLETE) throw new Error(`scene FBO incomplete: 0x${st.toString(16)}`);
+    if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
+      // fallback: drop to DEPTH_COMPONENT16 (some PowerVR / older Mali drivers)
+      console.warn("[render] scene FBO incomplete with DEPTH_COMPONENT24, retrying DEPTH_COMPONENT16");
+      gl.bindRenderbuffer(gl.RENDERBUFFER, this.depthRb); gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, w, h);
+      gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, this.depthRb);
+      if (!this.capabilities.fallbacks.includes("scene depth DEPTH_COMPONENT16")) this.capabilities.fallbacks.push("scene depth DEPTH_COMPONENT16");
+    }
+    assertFramebuffer(gl, "scene");
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     this.lights.resize(w, h);
     this.bloom.resize(w, h);
@@ -255,6 +281,7 @@ export class IsoRenderer implements Renderer {
 
   /** Read-only: draws the world at interpolation factor alpha in [0,1). */
   render(world: World, alpha: number): void {
+    if (this.contextLost || this.gl.isContextLost()) return;
     const t0 = performance.now();
     const dt = this.lastNow < 0 ? 0 : Math.min(0.1, (t0 - this.lastNow) / 1000);
     this.lastNow = t0; this.time += dt;
@@ -381,6 +408,7 @@ export class IsoRenderer implements Renderer {
   }
 
   dispose(): void {
+    this.canvas.removeEventListener("webglcontextlost", this.onLost); this.canvas.removeEventListener("webglcontextrestored", this.onRestored);
     this.atlas.dispose();
     const ext = this.gl.getExtension("WEBGL_lose_context"); ext?.loseContext();
   }

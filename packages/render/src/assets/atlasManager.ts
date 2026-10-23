@@ -69,7 +69,7 @@ export function swayFromManifest(json: unknown): { table: Record<string, SwayPar
   }
   return { table, issues };
 }
-export interface AtlasStats { layers: number; layerSize: number; atlases: number; frames: number; sprites: number; version: number }
+export interface AtlasStats { layers: number; layerSize: number; /** atlas images scaled by this to fit the GPU memory budget (1 = full res) */ downscale: number; gpuMB: number; atlases: number; frames: number; sprites: number; version: number }
 
 const TABLE_W = 1024; // entries per frame-table row
 
@@ -97,6 +97,25 @@ export function sourcesFromManifest(registry: AssetRegistry, manifestUrl: string
     out.set(a.key, { url: resolve(a.image), emissiveUrl: a.emissiveImage ? resolve(a.emissiveImage) : null, ...(r ? { rects: r } : {}), ...(pages.length ? { pages } : {}), masks });
   }
   return out;
+}
+
+/** 1x1 transparent array (stands in for unused emissive / mask arrays). */
+function dummyArray(gl: WebGL2RenderingContext): WebGLTexture {
+  const t = gl.createTexture()!; gl.bindTexture(gl.TEXTURE_2D_ARRAY, t);
+  gl.texStorage3D(gl.TEXTURE_2D_ARRAY, 1, gl.RGBA8, 1, 1, 1);
+  gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, 0, 1, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
+  return t;
+}
+
+/** Downscale every image of the list by k (colour/emissive smooth, masks pixelated); frame sizes stay in 1x px via a.scale. */
+async function scaleList(list: AtlasRT[], k: number): Promise<void> {
+  if (typeof createImageBitmap !== "function") return;
+  const rs = (im: ImageLike, q: "high" | "pixelated") => createImageBitmap(im as ImageBitmapSource, { resizeWidth: Math.max(1, Math.floor(im.width * k)), resizeHeight: Math.max(1, Math.floor(im.height * k)), resizeQuality: q, premultiplyAlpha: "none", colorSpaceConversion: "none" } as ImageBitmapOptions);
+  await Promise.all(list.map(async (a) => {
+    a.img = await rs(a.img!, "high"); if (a.emis) a.emis = await rs(a.emis, "high");
+    for (const m of Object.keys(a.masks) as MaskName[]) a.masks[m] = await rs(a.masks[m]!, "pixelated");
+    a.scale *= k;
+  }));
 }
 
 /** Resize a mask to the chosen page size (masks share the 1x layout; sampled by the same UVs). null when impossible. */
@@ -154,14 +173,23 @@ export class AtlasManager {
     for (const [k, v] of this.swayByKey) { const id = this.registry.ids.sprites.tryId(k); if (id !== undefined) this.swayById[id] = new Float32Array([v.amp, v.freq, v.stiffness]); }
   }
 
-  constructor(private gl: WebGL2RenderingContext, private assets: AssetManager, opts: { layerSize?: number; imageLoader?: (url: string) => Promise<ImageLike> } = {}) {
+  /** GPU memory budget for the atlas texture arrays (MB); over budget -> images are downscaled (0.5, 0.25). */
+  textureBudgetMB: number;
+  /** Current budget downscale (1 = full res). */
+  downscale = 1;
+  private gpuBytes = 0;
+  /** Reports GL out-of-memory on upload (the client overlay listens through IsoRenderer.onError). */
+  onError: ((e: { kind: "oom"; message: string }) => void) | null = null;
+
+  constructor(private gl: WebGL2RenderingContext, private assets: AssetManager, opts: { layerSize?: number; imageLoader?: (url: string) => Promise<ImageLike>; textureBudgetMB?: number } = {}) {
     const max = gl.getParameter(gl.MAX_TEXTURE_SIZE) as number;
-    this.layerSize = Math.min(opts.layerSize ?? 2048, max);
+    this.layerSize = Math.min(opts.layerSize ?? 2048, max || 2048);
+    this.textureBudgetMB = opts.textureBudgetMB ?? 768;
     this.maxLayers = gl.getParameter(gl.MAX_ARRAY_TEXTURE_LAYERS) as number;
     assets.registerLoader<ImageLike>(AtlasManager.IMAGE_KIND, opts.imageLoader ?? defaultImageLoader);
   }
 
-  get stats(): AtlasStats { return { layers: this.layers, layerSize: this.layerSize, atlases: this.atlases.length, frames: this.totalFrames, sprites: this.sprites.filter(Boolean).length, version: this.version }; }
+  get stats(): AtlasStats { return { layers: this.layers, layerSize: this.layerSize, downscale: this.downscale, gpuMB: Math.round(this.gpuBytes / 1048576), atlases: this.atlases.length, frames: this.totalFrames, sprites: this.sprites.filter(Boolean).length, version: this.version }; }
 
   /** Install a registry and where its atlas images live. Resolves once GPU data is ready. */
   async setRegistry(registry: AssetRegistry, sources: Map<string, AtlasSource> | Record<string, AtlasSource>): Promise<void> {
@@ -189,7 +217,7 @@ export class AtlasManager {
     const s = scale >= 1.5 ? 2 : 1; if (s === this.pageScale) return false;
     this.pageScale = s;
     if (!this.registry) return false;
-    const changes = this.atlases.some((a) => this.pickScale(this.registry!.atlases.get(a.key)!, a.source) !== a.scale);
+    const changes = this.atlases.some((a) => this.pickScale(this.registry!.atlases.get(a.key)!, a.source) !== a.scale / this.downscale);
     if (!changes) return false;
     await this.rebuild(this.registry, new Map(this.atlases.map((a) => [a.key, a.source] as [string, AtlasSource])));
     return true;
@@ -239,8 +267,15 @@ export class AtlasManager {
       list.push({ key: a.key, id: a.id, source: src, img, emis, scale, masks, maskUrls, base: 0, count: src.rects ? src.rects.length : a.columns * a.rows, fw: a.frameW, fh: a.frameH, cols: a.columns, layer: 0, px: 0, py: 0 });
     }));
     list.sort((a, b) => a.id - b.id);
+    await this.fitBudget(list);
     this.pack(list);
     this.upload(list, this.frameTintRows(registry, list));
+    if (this.gl.getError() === this.gl.OUT_OF_MEMORY && this.downscale > 0.25) {
+      // the driver refused the arrays: halve again and re-upload (once per step)
+      const msg = `atlas upload out of GPU memory at ${this.gpuMB()} MB (downscale ${this.downscale}); retrying at ${this.downscale / 2}`;
+      console.warn("[render] " + msg); this.onError?.({ kind: "oom", message: msg });
+      await scaleList(list, 0.5); this.downscale /= 2; this.pack(list); this.upload(list, this.frameTintRows(registry, list));
+    }
     // sprite runtime tables
     const sprites: (SpriteRT | undefined)[] = [];
     for (const s of registry.allSprites()) {
@@ -267,6 +302,26 @@ export class AtlasManager {
     this.maskPixels.clear();
     this.held = held; this.version++;
     for (const [k, u] of prevHeld) this.assets.release(k, u);
+  }
+
+  private gpuMB(): number { return Math.round(this.gpuBytes / 1048576); }
+  /** Estimated bytes of the atlas arrays for a packing (colour + emissive + present masks, full mip chains). */
+  private estimate(list: AtlasRT[]): number {
+    const arrays = 1 + (list.some((a) => a.emis) ? 1 : 0) + (["sheen", "sway", "tintmask"] as const).filter((m) => list.some((a) => a.masks[m])).length;
+    return this.layerSize * this.layerSize * 4 * (4 / 3) * this.layers * arrays;
+  }
+  /** Pick the largest downscale (1, 0.5, 0.25) whose packed arrays fit textureBudgetMB; atlases larger than a layer are always shrunk. */
+  private async fitBudget(list: AtlasRT[]): Promise<void> {
+    const S = this.layerSize; const budget = this.textureBudgetMB * 1048576;
+    const tooBig = Math.max(1, ...list.map((a) => Math.max(a.img!.width, a.img!.height) / S));
+    let d = 1; while (d > 1 / tooBig) d /= 2;
+    const dims = (k: number) => list.map((a) => ({ ...a, img: { width: Math.max(1, Math.floor(a.img!.width * k)), height: Math.max(1, Math.floor(a.img!.height * k)) } as ImageLike }));
+    while (d > 0.25) { this.pack(dims(d)); if (this.estimate(list) <= budget) break; d /= 2; }
+    this.downscale = d;
+    if (d < 1) {
+      this.pack(dims(d)); console.warn(`[render] atlas arrays over the ${this.textureBudgetMB} MB GPU budget at full res: downscaling atlas images x${d} (~${Math.round(this.estimate(list) / 1048576)} MB)`);
+      await scaleList(list, d);
+    }
   }
 
   /** Shelf-pack whole atlas images into array layers (2px gutter). */
@@ -375,10 +430,11 @@ export class AtlasManager {
     this.tex = mk();
     for (const a of list) gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, a.px, a.py, a.layer, a.img!.width, a.img!.height, 1, gl.RGBA, gl.UNSIGNED_BYTE, a.img as TexImageSource);
     gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
-    this.emisTex = mk();
     this.hasEmissive = list.some((a) => a.emis);
+    this.emisTex = this.hasEmissive ? mk() : dummyArray(gl); // emissive is gated by a frame flag: no full array when unused
+    this.gpuBytes = this.estimate(list);
     for (const a of list) if (a.emis) gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, a.px, a.py, a.layer, a.emis.width, a.emis.height, 1, gl.RGBA, gl.UNSIGNED_BYTE, a.emis as TexImageSource);
-    gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
+    if (this.hasEmissive) gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
     // mask arrays: full layout only when some atlas has that mask, else a 1x1 dummy (never sampled: flag bit unset)
     const maskArray = (m: MaskName): WebGLTexture => {
       if (!list.some((a) => a.masks[m])) {

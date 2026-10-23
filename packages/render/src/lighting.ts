@@ -6,7 +6,7 @@
  */
 import { entityIndex, PrevTransform, Transform, type World } from "@engine/core";
 import type { IsoConfig } from "@engine/world";
-import { createProgram, createTexture, GLSL_COMMON, type FrameStats, type Program } from "./gl/util.js";
+import { createColorTarget, createProgram, GLSL_COMMON, type FrameStats, type Program } from "./gl/util.js";
 import { LightSource } from "./components.js";
 import type { ComponentDef, Entity } from "@engine/core";
 
@@ -78,11 +78,8 @@ export class LightPass {
     if (lw === this.w && lh === this.h) return;
     this.w = lw; this.h = lh;
     if (this.tex) gl.deleteTexture(this.tex); if (this.fbo) gl.deleteFramebuffer(this.fbo);
-    this.tex = createTexture(gl, lw, lh, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, gl.LINEAR);
-    this.fbo = gl.createFramebuffer();
-    gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.tex, 0);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    // LDR lightmap: RGBA8 stores light * 0.5 (composite decodes x2), renderable + filterable everywhere
+    const t = createColorTarget(gl, lw, lh, gl.LINEAR, "lightmap"); this.tex = t.tex; this.fbo = t.fbo;
   }
 
   /** Heat emitters visible this frame (screen sx, sy, radius px, strength), for the shimmer pass. */

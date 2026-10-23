@@ -1,0 +1,137 @@
+/**
+ * WebGL2 capability probe + fallback policy for mobile GPUs (Adreno, Mali, PowerVR) and iOS Safari.
+ *
+ * Everything the renderer chooses per device lives in one `RenderCapabilities` object (exposed as
+ * `IsoRenderer.capabilities`) so the client can show it in an error overlay / debug panel:
+ * - render target formats (all LDR RGBA8; the lightmap is LDR-encoded at 0.5x, i.e. range [0,2])
+ * - whether float / half-float colour buffers and float linear filtering exist (never required)
+ * - fragment shader precision (highp when the GPU reports it, else mediump)
+ * - limits (texture size, units, attribs, uniforms) and the atlas texture memory budget
+ * - DPR cap (mobile 2, low-end 1) and max drawing-buffer pixels
+ * Force the fallbacks for testing with `?gl=lowend` (all fallbacks), `?gl=mediump`, `?gl=nofloat`, `?gl=lowmem`
+ * (comma-separated), or `IsoRendererOptions.gl`.
+ */
+
+export type GlFlag = "lowend" | "mediump" | "nofloat" | "lowmem";
+
+export interface RenderCapabilities {
+  renderer: string; vendor: string; mobile: boolean; lowEnd: boolean; flags: GlFlag[];
+  ext: { colorBufferFloat: boolean; colorBufferHalfFloat: boolean; floatLinear: boolean; debugRendererInfo: boolean };
+  /** Chosen colour formats of the render targets. */
+  formats: { scene: "RGBA8"; emissive: "RGBA8"; lightmap: "RGBA8" | "RGBA16F"; bloom: "RGBA8" | "RGBA16F"; lightmapEncode: number; dataTables: "RGBA32F"; lut: "RGBA8-2D-strip" };
+  /** Filtering used on float textures (data tables are always texelFetch / NEAREST). */
+  floatFilter: "LINEAR" | "NEAREST";
+  precision: { fragmentHighp: boolean; fragment: "highp" | "mediump"; vertex: "highp" | "mediump"; fragmentHighpBits: number };
+  limits: { maxTextureSize: number; maxArrayLayers: number; maxRenderbufferSize: number; maxViewport: [number, number]; maxTextureUnits: number; maxVertexTextureUnits: number; maxCombinedTextureUnits: number; maxVertexAttribs: number; maxFragmentUniformVectors: number; maxVertexUniformVectors: number; maxDrawBuffers: number; maxColorAttachments: number };
+  /** Atlas page size (min(2048 or requested, MAX_TEXTURE_SIZE)) and GPU memory budget for atlas arrays. */
+  atlasLayerSize: number; textureBudgetMB: number;
+  maxDpr: number; maxPixels: number;
+  /** Every fallback taken (also logged with console.warn). */
+  fallbacks: string[];
+  /** Hard problems found (limits below what the shaders need). */
+  problems: string[];
+}
+
+export interface RenderError { kind: "shader" | "link" | "fbo" | "context-lost" | "context-restored" | "oom" | "limits" | "webgl2"; message: string; detail?: string }
+
+/** Parse `gl=` flags from a query string (e.g. location.search). */
+export function parseGlFlags(search: string | undefined): GlFlag[] {
+  if (!search) return [];
+  const v = new URLSearchParams(search).get("gl"); if (!v) return [];
+  const all: GlFlag[] = ["lowend", "mediump", "nofloat", "lowmem"];
+  return v.split(",").map((s) => s.trim().toLowerCase()).filter((s): s is GlFlag => (all as string[]).includes(s));
+}
+
+const MOBILE_GPU = /adreno|mali|powervr|apple gpu|apple a\d|videocore|tegra|immortalis|xclipse|maleoon/i;
+const MOBILE_UA = /android|iphone|ipad|ipod|mobile/i;
+
+export function detectCapabilities(gl: WebGL2RenderingContext, opts: { flags?: GlFlag[]; userAgent?: string; layerSize?: number } = {}): RenderCapabilities {
+  const flags = [...new Set(opts.flags ?? [])];
+  const has = (f: GlFlag): boolean => flags.includes(f) || (f !== "lowend" && flags.includes("lowend"));
+  const p = (n: number): number => Number(gl.getParameter(n)) || 0;
+  const dbg = gl.getExtension("WEBGL_debug_renderer_info") as { UNMASKED_RENDERER_WEBGL: number; UNMASKED_VENDOR_WEBGL: number } | null;
+  const renderer = String((dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)) ?? "");
+  const vendor = String((dbg ? gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) : gl.getParameter(gl.VENDOR)) ?? "");
+  const ua = opts.userAgent ?? (typeof navigator !== "undefined" ? navigator.userAgent : "");
+  const mobile = MOBILE_GPU.test(renderer) || MOBILE_UA.test(ua) || (/macintosh/i.test(ua) && typeof navigator !== "undefined" && (navigator.maxTouchPoints ?? 0) > 1);
+  const nofloat = has("nofloat");
+  const ext = {
+    colorBufferFloat: !nofloat && !!gl.getExtension("EXT_color_buffer_float"),
+    colorBufferHalfFloat: !nofloat && !!gl.getExtension("EXT_color_buffer_half_float"),
+    floatLinear: !nofloat && !!gl.getExtension("OES_texture_float_linear"),
+    debugRendererInfo: !!dbg,
+  };
+  const hp = gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT);
+  const fragmentHighpBits = hp ? hp.precision : 0;
+  const fragmentHighp = fragmentHighpBits >= 23 && !has("mediump");
+  const vp = gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.HIGH_FLOAT);
+  const vh = gl.getParameter(gl.MAX_VIEWPORT_DIMS) as Int32Array | number[] | null;
+  const limits = {
+    maxTextureSize: p(gl.MAX_TEXTURE_SIZE), maxArrayLayers: p(gl.MAX_ARRAY_TEXTURE_LAYERS), maxRenderbufferSize: p(gl.MAX_RENDERBUFFER_SIZE),
+    maxViewport: [vh?.[0] ?? 4096, vh?.[1] ?? 4096] as [number, number],
+    maxTextureUnits: p(gl.MAX_TEXTURE_IMAGE_UNITS), maxVertexTextureUnits: p(gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS), maxCombinedTextureUnits: p(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS),
+    maxVertexAttribs: p(gl.MAX_VERTEX_ATTRIBS), maxFragmentUniformVectors: p(gl.MAX_FRAGMENT_UNIFORM_VECTORS), maxVertexUniformVectors: p(gl.MAX_VERTEX_UNIFORM_VECTORS),
+    maxDrawBuffers: p(gl.MAX_DRAW_BUFFERS), maxColorAttachments: p(gl.MAX_COLOR_ATTACHMENTS),
+  };
+  const fallbacks: string[] = []; const problems: string[] = [];
+  const lowEnd = flags.includes("lowend");
+  // Render targets stay LDR RGBA8 everywhere (renderable + linear-filterable on every WebGL2 device); the
+  // lightmap stores light * 0.5 so [0,2] fits. Float targets would only be an optional upgrade.
+  if (!ext.colorBufferFloat && !ext.colorBufferHalfFloat) fallbacks.push("no float colour buffers: lightmap/bloom RGBA8 (lightmap LDR-encoded x0.5)");
+  if (!ext.floatLinear) fallbacks.push("no OES_texture_float_linear: float data tables use NEAREST/texelFetch only");
+  if (!fragmentHighp) fallbacks.push(`fragment shaders use mediump (highp ${fragmentHighpBits ? fragmentHighpBits + " bits" : "unsupported"}${has("mediump") ? ", forced" : ""})`);
+  // shader requirements (sprites: 9 instanced attribs, 6 fragment samplers + 1 vertex sampler; composite: 7 samplers, 16 heat vec4s)
+  if (limits.maxVertexAttribs < 10) problems.push(`MAX_VERTEX_ATTRIBS ${limits.maxVertexAttribs} < 10`);
+  if (limits.maxTextureUnits < 8) problems.push(`MAX_TEXTURE_IMAGE_UNITS ${limits.maxTextureUnits} < 8`);
+  if (limits.maxVertexTextureUnits < 1) problems.push("no vertex texture units (frame table is fetched in the vertex shader)");
+  if (limits.maxFragmentUniformVectors < 64) problems.push(`MAX_FRAGMENT_UNIFORM_VECTORS ${limits.maxFragmentUniformVectors} < 64`);
+  if (limits.maxDrawBuffers < 2 || limits.maxColorAttachments < 2) problems.push("scene pass needs 2 draw buffers (colour + emissive)");
+  let atlasLayerSize = Math.min(opts.layerSize ?? 2048, limits.maxTextureSize || 2048);
+  if (atlasLayerSize < (opts.layerSize ?? 2048)) fallbacks.push(`atlas layer clamped to MAX_TEXTURE_SIZE ${atlasLayerSize}`);
+  atlasLayerSize = 1 << Math.floor(Math.log2(Math.max(256, atlasLayerSize)));
+  // mediump (fp16, 10-bit mantissa) atlas UVs are only ~1/2048 accurate near 1.0: cap pages at 1024 so the
+  // UV error stays under half a texel (oversized atlas images are downscaled to fit by AtlasManager)
+  if (!fragmentHighp && atlasLayerSize > 1024) { atlasLayerSize = 1024; fallbacks.push("mediump: atlas layer 1024 (UV precision)"); }
+  // GPU memory budget for the atlas arrays: phones share RAM with the GPU and Chrome's GPU process caps it;
+  // a 2048^2 x 11 layer x 4 array set with mips is ~0.9 GB, which fails (OOM / context loss) on Android.
+  const lowmem = has("lowmem");
+  const textureBudgetMB = lowmem ? 160 : mobile ? 256 : 768;
+  if (lowmem || mobile) fallbacks.push(`atlas texture budget ${textureBudgetMB} MB${mobile ? " (mobile)" : ""}`);
+  const maxDpr = lowEnd ? 1 : mobile ? 2 : 3;
+  const maxPixels = lowEnd ? 1280 * 720 : mobile ? 2_400_000 : 3840 * 2160;
+  if (maxDpr < 3) fallbacks.push(`DPR capped at ${maxDpr}, max ${maxPixels} px`);
+  return {
+    renderer, vendor, mobile, lowEnd, flags, ext,
+    formats: { scene: "RGBA8", emissive: "RGBA8", lightmap: "RGBA8", bloom: "RGBA8", lightmapEncode: 0.5, dataTables: "RGBA32F", lut: "RGBA8-2D-strip" },
+    floatFilter: ext.floatLinear ? "LINEAR" : "NEAREST",
+    precision: { fragmentHighp, fragment: fragmentHighp ? "highp" : "mediump", vertex: vp && vp.precision >= 23 ? "highp" : "mediump", fragmentHighpBits },
+    limits, atlasLayerSize, textureBudgetMB, maxDpr, maxPixels, fallbacks, problems,
+  };
+}
+
+/** Rewrite a fragment shader for mediump-only GPUs (or the forced `?gl=mediump` path). */
+export function toMediump(src: string): string {
+  // Only the default float precision drops to mediump. Uniforms get an explicit highp so their precision still
+  // matches the vertex stage (a mismatch is a link error); ints, samplers and explicit qualifiers are left alone
+  // (GLSL ES 3.00 guarantees highp int in fragment shaders).
+  return src.replace(/precision\s+highp\s+float\s*;/g, "precision mediump float;")
+    .replace(/\buniform\s+(?!highp\b|mediump\b|lowp\b)((?:float|vec[234]|mat[234](?:x[234])?)\b)/g, "uniform highp $1");
+}
+
+/** Clamp a requested drawing-buffer size to the device caps (DPR cap, pixel budget, viewport / renderbuffer limits). */
+export function clampDrawingBuffer(cssW: number, cssH: number, dpr: number, caps: Pick<RenderCapabilities, "maxDpr" | "maxPixels" | "limits">): { w: number; h: number; dpr: number } {
+  let d = Math.max(0.5, Math.min(dpr || 1, caps.maxDpr));
+  const px = cssW * cssH * d * d; if (px > caps.maxPixels) d *= Math.sqrt(caps.maxPixels / px);
+  const lim = Math.min(caps.limits.maxRenderbufferSize || 4096, caps.limits.maxTextureSize || 4096, caps.limits.maxViewport[0], caps.limits.maxViewport[1]);
+  d = Math.min(d, lim / Math.max(1, cssW), lim / Math.max(1, cssH));
+  return { w: Math.max(1, Math.round(cssW * d)), h: Math.max(1, Math.round(cssH * d)), dpr: d };
+}
+
+/** Annotated source excerpt around the lines named in a shader info log ("ERROR: 0:12: ..."). */
+export function annotateShaderLog(src: string, log: string): string {
+  const lines = src.split("\n"); const nums = new Set<number>();
+  for (const m of log.matchAll(/(?:ERROR|WARNING):\s*\d+:(\d+)/g)) nums.add(Number(m[1]));
+  const out: string[] = [];
+  for (const n of [...nums].sort((a, b) => a - b)) for (let i = Math.max(1, n - 1); i <= Math.min(lines.length, n + 1); i++) out.push(`${i === n ? ">" : " "}${String(i).padStart(4)}| ${lines[i - 1]}`);
+  return out.join("\n");
+}

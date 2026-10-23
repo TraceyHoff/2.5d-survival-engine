@@ -148,7 +148,7 @@ async function main(): Promise<void> {
       else { bench.frames++; bench.sumMs += dtMs; bench.maxMs = Math.max(bench.maxMs, dtMs); bench.sprites = st.sprites; bench.drawCalls = st.drawCalls; }
       if (now - bench.start >= bench.durationMs) bench.done = true;
     }
-    window.__iso = { held: renderer.heldStats, chars: renderer.characterStats,
+    window.__iso = { capabilities: renderer.capabilities, atlasStats: renderer.atlas.stats, held: renderer.heldStats, chars: renderer.characterStats,
       ready: world.tick > 2, frameMs: lastFrameMs, fps: fpsAvg, stats: { ...st }, totalSprites: scene.spriteCount, pieces: scene.pieceCount, origin: content.origin, look: lookInfo, surface: { ...renderer.surface },
       bench: bench.done ? { frames: bench.frames, avgFps: (bench.frames * 1000) / bench.sumMs, avgFrameMs: bench.sumMs / bench.frames, maxFrameMs: bench.maxMs, visibleSprites: bench.sprites, drawCalls: bench.drawCalls } : null,
     };

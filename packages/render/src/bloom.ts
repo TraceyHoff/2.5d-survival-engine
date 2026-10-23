@@ -3,7 +3,7 @@
  * sprites such as fire, lit windows, glowing eyes), never a global brightness threshold. Half-res extract,
  * separable 9-tap blur (H then V). 3 draw calls.
  */
-import { createProgram, createTexture, FULLSCREEN_VS, type FrameStats, type Program } from "./gl/util.js";
+import { createColorTarget, createProgram, FULLSCREEN_VS, type FrameStats, type Program } from "./gl/util.js";
 
 const EXTRACT = /* glsl */ `#version 300 es
 precision highp float; in vec2 vUv; uniform sampler2D uScene, uEmissive; out vec4 o;
@@ -33,9 +33,7 @@ export class BloomPass {
     if (bw === this.w && bh === this.h) return; this.w = bw; this.h = bh;
     for (let i = 0; i < 2; i++) {
       if (this.tex[i]) gl.deleteTexture(this.tex[i]!); if (this.fbo[i]) gl.deleteFramebuffer(this.fbo[i]!);
-      this.tex[i] = createTexture(gl, bw, bh, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, gl.LINEAR);
-      this.fbo[i] = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo[i]!);
-      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.tex[i]!, 0);
+      const t = createColorTarget(gl, bw, bh, gl.LINEAR, `bloom${i}`); this.tex[i] = t.tex; this.fbo[i] = t.fbo;
     }
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   }
