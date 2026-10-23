@@ -7,10 +7,10 @@
  *   AppearanceLike  ~ core AppearanceValue      CharacterDrawLayer ~ core DrawLayer (+ optional render tint fields)
  *
  * `LayerCache` keeps each entity's resolved, render-ready layer list and re-resolves only on a key change.
- * Key = (entity, Appearance.version, directionIndex4(facing)). version is bumped by core's setAppearance (the only
+ * Key = (entity, Appearance.version, directionIndex8(facing), anim, expression). version is bumped by core's setAppearance (the only
  * sanctioned writer) and wraps, so it is compared for equality only.
  */
-import { Appearance, directionIndex4, resolveLayers, type AppearanceValue, type ComponentDef, type CosmeticCatalogLike } from "@engine/core";
+import { Appearance, DEFAULT_TINT_NEUTRAL, directionIndex8, resolveLayers, type ResolveLayersOptions, type AppearanceValue, type ComponentDef, type CosmeticCatalogLike } from "@engine/core";
 
 export type TintMode = "multiply" | "add" | "screen" | "lerp";
 export const TINT_MODES: readonly TintMode[] = ["multiply", "add", "screen", "lerp"];
@@ -28,9 +28,12 @@ export interface CharacterDrawLayer {
   tintR?: number; tintG?: number;
   tintMode?: TintMode; tintStrength?: number; tintSaturation?: number;
   minor?: boolean; outline?: boolean;
+  /** ADR-082: wearable layer name (multi-layer wearables emit one DrawLayer per layer), neutral grey of the multiply/lerp
+   *  contract (default 0.78), outline mode ("none" = excluded from the outline pass; wins over `outline`), face expression. */
+  layerName?: string; tintNeutral?: number; outlineMode?: "body" | "none"; expression?: string;
 }
 
-export type ResolveLayersFn = (appearance: AppearanceLike, facing: number) => readonly CharacterDrawLayer[];
+export type ResolveLayersFn = (appearance: AppearanceLike, facing: number, opts?: ResolveLayersOptions) => readonly CharacterDrawLayer[];
 
 /** What the renderer needs: the Appearance component def (core schema) and a resolver (wraps core resolveLayers). */
 export interface AppearanceBinding {
@@ -44,16 +47,17 @@ export interface AppearanceBinding {
 
 /** Render-ready layer (sprite + packed tint params). */
 export interface CachedLayer {
-  slot: string; sprite: number; animName: string;
+  slot: string; sprite: number; animName: string; /** wearable layer name ("" = single-layer) */ layerName: string;
+  /** neutral grey of the multiply/lerp tint contract */ neutral: number;
   /** RGBA8 packed (0 = untinted) */ tint: number; tint2: number;
   /** 0..3 = multiply|add|screen|lerp */ mode: number; strength: number; saturation: number;
   minor: boolean; /** participates in the character outline pass */ outline: boolean;
 }
 
 const DEFAULT_MINOR = ["accessory", "shoes", "face", "eyes"];
-export const FACING_BUCKETS = 4;
-/** resolveLayers only varies by core's 4-way direction (layerByDir), so that is the cache's facing key. */
-export function facingBucket(f: number): number { return directionIndex4(f); }
+export const FACING_BUCKETS = 8;
+/** resolveLayers varies by core's 8-way direction (8-entry layerByDir, ADR-082), so that is the cache's facing key. */
+export function facingBucket(f: number): number { return directionIndex8(f); }
 
 export const rgbToRgba8 = (c: number | undefined): number => (c === undefined ? 0 : (((c & 0xffffff) << 8) | 255) >>> 0);
 
@@ -62,9 +66,9 @@ export function toCachedLayers(list: readonly CharacterDrawLayer[], b: Pick<Appe
   return list.map((l) => {
     const d = b.slotTint?.[l.slot];
     const mode = TINT_MODES.indexOf(l.tintMode ?? d?.mode ?? "multiply");
-    return { slot: l.slot, sprite: l.sprite, animName: l.anim, tint: rgbToRgba8(l.tintR), tint2: rgbToRgba8(l.tintG),
+    return { slot: l.slot, sprite: l.sprite, animName: l.anim, layerName: l.layerName ?? "", neutral: l.tintNeutral && l.tintNeutral > 0 ? l.tintNeutral : DEFAULT_TINT_NEUTRAL, tint: rgbToRgba8(l.tintR), tint2: rgbToRgba8(l.tintG),
       mode: mode < 0 ? 0 : mode, strength: l.tintStrength ?? d?.strength ?? 1, saturation: l.tintSaturation ?? d?.saturation ?? 1,
-      minor: l.minor ?? minor.includes(l.slot), outline: l.outline !== false };
+      minor: l.minor ?? minor.includes(l.slot), outline: l.outlineMode !== undefined ? l.outlineMode !== "none" : l.outline !== false };
   });
 }
 
@@ -74,7 +78,7 @@ export function readAppearanceSlot(data: Record<string, ArrayLike<number>>, leng
   return { bodyType: data.bodyType?.[slot] ?? 0, skinTone: data.skinTone?.[slot] ?? 0, parts: arr("parts"), primary: arr("primary"), secondary: arr("secondary") };
 }
 
-interface Entry { entity: number; version: number; bucket: number; layers: CachedLayer[] }
+interface Entry { entity: number; version: number; bucket: number; anim: string; expr: string; layers: CachedLayer[] }
 
 /** Per-entity resolved layer cache (keyed by entity index, validated by entity handle + Appearance.version + facing4). */
 export class LayerCache {
@@ -84,12 +88,12 @@ export class LayerCache {
   get size(): number { return this.m.size; }
   /** Layers for entity (index i, handle e). `version` = its Appearance.version (u16, wrapping: equality only, never
    *  ordered); `read` builds the value on miss. */
-  get(i: number, e: number, version: number, facing: number, read: () => AppearanceLike): CachedLayer[] {
-    const bucket = facingBucket(facing); let en = this.m.get(i);
-    if (en && en.entity === e && en.version === version && en.bucket === bucket) return en.layers;
+  get(i: number, e: number, version: number, facing: number, read: () => AppearanceLike, opts: ResolveLayersOptions = {}): CachedLayer[] {
+    const bucket = facingBucket(facing); const anim = opts.anim ?? "", expr = opts.expression ?? ""; let en = this.m.get(i);
+    if (en && en.entity === e && en.version === version && en.bucket === bucket && en.anim === anim && en.expr === expr) return en.layers;
     this.resolves++;
-    const layers = toCachedLayers(this.binding.resolve(read(), facing), this.binding);
-    if (!en) { en = { entity: e, version, bucket, layers }; this.m.set(i, en); } else { en.entity = e; en.version = version; en.bucket = bucket; en.layers = layers; }
+    const layers = toCachedLayers(this.binding.resolve(read(), facing, opts), this.binding);
+    if (!en) { en = { entity: e, version, bucket, anim, expr, layers }; this.m.set(i, en); } else { en.entity = e; en.version = version; en.bucket = bucket; en.anim = anim; en.expr = expr; en.layers = layers; }
     return layers;
   }
   /** Drop entries not seen since `keep` returned false (call occasionally to free despawned entities). */
@@ -102,5 +106,20 @@ export class LayerCache {
  * applies hidesSlots, hatHair and layerByDir). `catalog` is the @engine/assets CosmeticCatalog.
  */
 export function coreAppearanceBinding(catalog: CosmeticCatalogLike, opts: Omit<AppearanceBinding, "def" | "resolve"> = {}): AppearanceBinding {
-  return { def: Appearance as unknown as ComponentDef, resolve: (a, facing) => resolveLayers(catalog, a as AppearanceValue, facing), ...opts };
+  return { def: Appearance as unknown as ComponentDef, resolve: (a, facing, o) => resolveLayers(catalog, a as AppearanceValue, facing, o), ...opts };
+}
+
+/**
+ * CPU reference of the sprite shader's layerTint (ADR-082 pinned contract), per channel 0..1. multiply:
+ * out = base * mix(1, color / neutral, strength * mask); lerp: mix(base, luma(base) * color / neutral, k); add / screen
+ * use the raw colour. tintSaturation is applied to the tinted result (scaled by k), never before the tint.
+ */
+export function layerTintRef(base: [number, number, number], color: [number, number, number], mode: number, strength: number, mask = 1, saturation = 1, neutral = DEFAULT_TINT_NEUTRAL): [number, number, number] {
+  const k = strength * mask; if (k <= 0.003) return [...base] as [number, number, number];
+  const d = mode === 0 || mode === 3 ? 1 / neutral : 1; const tc = color.map((c) => c * d);
+  const lum = (c: number[]): number => 0.299 * c[0]! + 0.587 * c[1]! + 0.114 * c[2]!; const L = lum(base);
+  const cl = (v: number): number => Math.min(1, Math.max(0, v)); const mix = (a: number, b: number, t: number): number => a + (b - a) * t;
+  let r = base.map((c, i) => cl(mode === 0 ? c * mix(1, tc[i]!, k) : mode === 1 ? mix(c, c + tc[i]!, k) : mode === 2 ? mix(c, 1 - (1 - c) * (1 - tc[i]!), k) : mix(c, tc[i]! * L, k)));
+  if (saturation !== 1) { const l2 = lum(r); const s = mix(1, saturation, k); r = r.map((c) => cl(mix(l2, c, s))); }
+  return r as [number, number, number];
 }

@@ -19,7 +19,7 @@
  * - Runtime switching: swapAtlas()/setTheme() replace atlas images (same layout & sprite keys -> same
  *   numeric ids), so ECS data is untouched. Old images are released (ref-counted) after the swap.
  */
-import { AssetRegistry, type Animation, type Atlas } from "@engine/assets";
+import { AssetRegistry, type Animation, type Atlas, type FrameRef } from "@engine/assets";
 import { STATUS_TINTS, TINT_MODE_INDEX, type StatusTint, type StatusTintName } from "../style.js";
 import type { AssetManager } from "@engine/core";
 import type { RectTable } from "./texturePacker.js";
@@ -430,7 +430,7 @@ export class AtlasManager {
       f = an.frames[i]!;
     }
     f += AssetRegistry.directionIndex(facing, an.directions) * (an.directions > 1 ? an.dirStride : 0);
-    this.fill(a, f, s, out);
+    this.fill(a, f, s, out); out.sprite = spriteId; out.frame = f; out.anim = an.name ?? "";
     return true;
   }
 
@@ -482,6 +482,20 @@ export class AtlasManager {
   setHands(atlasKey: string, json: { hands: Record<string, HandAnchor> }): void { this.handsByAtlas.set(atlasKey, json.hands); this.resolveHands(); }
   /** Hand anchor of a frame-table entry (ResolvedFrame.entry), if its atlas has one for that frame. */
   handAt(entry: number): HandAnchor | undefined { return this.handByEntry.get(entry); }
+  /**
+   * Hand anchor of a resolved frame (ADR-082): frameMeta `name` (default handR) via AssetRegistry.anchorPoint (pivot-relative,
+   * unmirrored here; the caller mirrors with the instance flip), converted to frame top-left px like hands.json. Falls back to
+   * Art's legacy `<atlas>.hands.json` only when the frame has no such anchor.
+   */
+  handOf(r: ResolvedFrame, name = "handR"): HandAnchor | undefined {
+    const reg = this.registry;
+    if (reg && r.sprite >= 0) {
+      const anchors = reg.frameAnchors(r.sprite, r.frame, r.anim || undefined);
+      const a = anchors ? AssetRegistry.anchorPoint({ anchors } as FrameRef, name) : undefined;
+      if (a) return { x: r.ax + a.x, y: r.ay + a.y, angle: a.angle ?? 0, ...(a.len !== undefined ? { len: a.len } : {}), behind: a.behind ?? false };
+    }
+    return this.handByEntry.get(r.entry);
+  }
   private resolveHands(): void {
     this.handByEntry.clear();
     for (const a of this.atlases) { const hs = this.handsByAtlas.get(a.key); if (!hs) continue; for (const [f, h] of Object.entries(hs)) { const n = Number(f); if (n >= 0 && n < a.count) this.handByEntry.set(a.base + n, h); } }
@@ -512,6 +526,7 @@ export class AtlasManager {
 
   /** Animation index of `name` on a sprite (-1 = unknown; resolve() then uses the first animation's frame list). */
   animIndex(spriteId: number, name: string): number { const s = this.sprites[spriteId]; if (!s) return -1; const i = s.anims.findIndex((a) => a.name === name); return i < 0 ? 0 : i; }
+  animName(spriteId: number, anim: number): string | undefined { return this.sprites[spriteId]?.anims[anim]?.name; }
   stateAnim(spriteId: number, state: number): number { const s = this.sprites[spriteId]; return s ? s.stateAnim[Math.min(state, STATE_ANIMS.length - 1)] ?? 0 : 0; }
 
   private fill(a: AtlasRT, f: number, s: SpriteRT, out: ResolvedFrame): void {
@@ -520,7 +535,7 @@ export class AtlasManager {
     out.entry = a.base + fi;
     if (r) { out.w = r.w; out.h = r.h; out.ax = r.ax; out.ay = r.ay; }
     else { out.w = a.fw; out.h = a.fh; out.ax = s.anchorX * a.fw; out.ay = s.anchorY * a.fh; }
-    out.hasDamageFrames = false; out.flipX = false;
+    out.hasDamageFrames = false; out.flipX = false; out.sprite = -1; out.frame = -1; out.anim = "";
   }
 
   /** For galleries/tools: every atlas with its frame count and loaded image. */
@@ -535,5 +550,6 @@ export class AtlasManager {
   }
 }
 
-export interface ResolvedFrame { entry: number; w: number; h: number; ax: number; ay: number; hasDamageFrames: boolean; /** draw mirrored (mirror rotationArt) */ flipX: boolean }
-export const newResolved = (): ResolvedFrame => ({ entry: 0, w: 0, h: 0, ax: 0, ay: 0, hasDamageFrames: false, flipX: false });
+export interface ResolvedFrame { entry: number; w: number; h: number; ax: number; ay: number; hasDamageFrames: boolean; /** draw mirrored (mirror rotationArt) */ flipX: boolean;
+  /** source sprite id / atlas frame index / anim name (resolve() only; -1 / "" otherwise): frameMeta anchor lookup */ sprite: number; frame: number; anim: string }
+export const newResolved = (): ResolvedFrame => ({ entry: 0, w: 0, h: 0, ax: 0, ay: 0, hasDamageFrames: false, flipX: false, sprite: -1, frame: -1, anim: "" });

@@ -80,3 +80,45 @@ describe("core DrawLayer render hints (c734b72)", () => {
     expect(toCachedLayers([{ slot: "torso", sprite: 1, anim: "idle" }], {})[0]!.outline).toBe(true);
   });
 });
+
+import { layerTintRef } from "../src/character/layers.js";
+import { DEFAULT_TINT_NEUTRAL, directionIndex8, resolveLayers } from "@engine/core";
+describe("ADR-082 layer tint contract", () => {
+  const N = DEFAULT_TINT_NEUTRAL;
+  it("multiply: neutral grey (tintNeutral) at full strength becomes exactly the colour", () => {
+    expect(N).toBe(0.78);
+    const c: [number, number, number] = [0.6, 0.3, 0.15];
+    layerTintRef([N, N, N], c, 0, 1).forEach((v, i) => expect(v).toBeCloseTo(c[i]!, 6));
+    const n2 = 0.5; layerTintRef([n2, n2, n2], c, 0, 1, 1, 1, n2).forEach((v, i) => expect(v).toBeCloseTo(c[i]!, 6));
+  });
+  it("multiply: strength*mask mixes the factor (half strength = base * (1 + (c/N - 1)/2)); no pre-saturation", () => {
+    const r = layerTintRef([N, N, N], [0.39, 0.39, 0.39], 0, 0.5); expect(r[0]).toBeCloseTo(N * (1 + (0.5 - 1) * 0.5), 6);
+    expect(layerTintRef([0.5, 0.2, 0.1], [0.3, 0.6, 0.9], 0, 1, 0)).toEqual([0.5, 0.2, 0.1]);
+    // saturated base keeps its ratios (no luma pull before tinting)
+    const b: [number, number, number] = [0.8, 0.4, 0.2]; const w = layerTintRef(b, [N, N, N], 0, 1); w.forEach((v, i) => expect(v).toBeCloseTo(b[i]!, 6));
+  });
+  it("lerp uses tintNeutral too: a neutral-luma pixel becomes the colour", () => {
+    layerTintRef([N, N, N], [0.2, 0.5, 0.7], 3, 1).forEach((v, i) => expect(v).toBeCloseTo([0.2, 0.5, 0.7][i]!, 6));
+  });
+  it("toCachedLayers carries tintNeutral (default 0.78), layerName, outlineMode; facing buckets are directionIndex8", () => {
+    const [a, b, c] = toCachedLayers([{ slot: "top", sprite: 1, anim: "idle", tintNeutral: 0.6, layerName: "sleeves", outlineMode: "none", outline: true },
+      { slot: "top", sprite: 2, anim: "idle", outlineMode: "body", outline: false }, { slot: "hat", sprite: 3, anim: "idle", outline: false }], {});
+    expect([a!.neutral, a!.layerName, a!.outline]).toEqual([0.6, "sleeves", false]);
+    expect([b!.neutral, b!.layerName, b!.outline]).toEqual([0.78, "", true]);
+    expect(c!.outline).toBe(false);
+    for (let k = 0; k < 16; k++) { const f = (k / 16) * Math.PI * 2; expect(facingBucket(f)).toBe(directionIndex8(f)); }
+  });
+  it("multi-layer wearable -> one cached layer per layerName; LayerCache keys anim/expression and passes them to resolveLayers", () => {
+    const coat = w(9, "coat", "top", 20, { layers: [
+      { name: "back", layer: 5, z: 0, tintChannels: 1, bodies: { male: { sprite: 7, anim: "idle" } } },
+      { name: "front", layer: 25, z: 0, tintChannels: 0, outlineMode: "none", bodies: { male: { sprite: 8, anim: "idle" } } }] } as Partial<WearableDef>);
+    const cat2: CosmeticCatalogLike = { ...cat, wearable: (id) => (id === 9 ? coat : parts.find((p) => p.id === id)) };
+    const a = app({ top: 9 }); const raw = resolveLayers(cat2, a, 0);
+    const top = toCachedLayers(raw, {}).filter((l) => l.slot === "top");
+    expect(top.map((l) => [l.layerName, l.sprite, l.outline])).toEqual([["back", 7, true], ["front", 8, false]]);
+    const seen: unknown[] = []; const cache = new LayerCache({ def: Appearance as never, resolve: (_a, _f, o) => { seen.push(o); return raw; } });
+    cache.get(0, 1, 1, 0, () => a, { anim: "idle" }); cache.get(0, 1, 1, 0, () => a, { anim: "idle" });
+    cache.get(0, 1, 1, 0, () => a, { anim: "hurt" }); cache.get(0, 1, 1, 0, () => a, { anim: "hurt", expression: "smile" });
+    expect(cache.resolves).toBe(3); expect(seen[2]).toEqual({ anim: "hurt", expression: "smile" });
+  });
+});

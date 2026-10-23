@@ -4,11 +4,11 @@
   "players": 200,
   "layered": {
     "bench": {
-      "frames": 4,
-      "avgFps": 0.6154035508784886,
-      "avgFrameMs": 1624.9499999999998,
-      "maxFrameMs": 1850,
-      "visibleSprites": 1951,
+      "frames": 3,
+      "avgFps": 0.36364958725771845,
+      "avgFrameMs": 2749.9,
+      "maxFrameMs": 3133.199999999999,
+      "visibleSprites": 1950,
       "drawCalls": 28
     },
     "chars": {
@@ -20,11 +20,11 @@
   },
   "lod": {
     "bench": {
-      "frames": 7,
-      "avgFps": 1.004837575183383,
-      "avgFrameMs": 995.1857142857142,
-      "maxFrameMs": 1866.5,
-      "visibleSprites": 1688,
+      "frames": 3,
+      "avgFps": 0.4500180007200287,
+      "avgFrameMs": 2222.1333333333337,
+      "maxFrameMs": 3466.5,
+      "visibleSprites": 1680,
       "drawCalls": 28
     },
     "chars": {
@@ -36,11 +36,11 @@
   },
   "bodyOnly": {
     "bench": {
-      "frames": 14,
-      "avgFps": 2.288890705468814,
-      "avgFrameMs": 436.89285714285717,
-      "maxFrameMs": 650,
-      "visibleSprites": 1039,
+      "frames": 7,
+      "avgFps": 1.0966458303958895,
+      "avgFrameMs": 911.8714285714284,
+      "maxFrameMs": 1050,
+      "visibleSprites": 1033,
       "drawCalls": 28
     },
     "chars": {

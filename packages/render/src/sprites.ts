@@ -45,7 +45,7 @@ export interface GameplayBindings {
   bodyTemp?: BodyTempDefT;
   /** gameplay Burning {lit, intensity 0-255, startTick} on build pieces: fire/ember/smoke VFX (see burning.ts). */
   burning?: ComponentDef<{ lit: "u8"; intensity: "u8"; startTick: "u32" }>;
-  /** gameplay Equipment {mainHandItem u16 (0 = empty)}: the item is drawn at the character frame's hand anchor (Art `<atlas>.hands.json`). */
+  /** gameplay Equipment {mainHandItem u16 (0 = empty)}: the item is drawn at the character frame's hand anchor (frameMeta handR via AssetRegistry.anchorPoint; legacy hands.json fallback). */
   equipment?: ComponentDef<{ mainHandItem: "u16" }>;
   /** Item id -> held sprite id (`held_<item key>` in the `held` atlas); undefined = draw nothing. */
   heldSprite?: (itemId: number) => number | undefined;
@@ -156,12 +156,15 @@ vec3 statusTint(vec3 c, int idx, float amount) {
   vec3 r = mode == 0 ? c * a.rgb : mode == 1 ? c + a.rgb : mode == 2 ? 1.0 - (1.0 - c) * (1.0 - a.rgb) : a.rgb;
   return mix(c, r, k);
 }
-// character layer tint (resolveLayers): saturation first, then mode; lerp keeps the art's shading (luma-scaled target)
+// character layer tint (resolveLayers, ADR-082 pinned contract). tc arrives pre-divided by tintNeutral for multiply/lerp
+// (CPU side), so multiply is exactly out = base * mix(1, color / tintNeutral, strength * mask): a tintNeutral grey pixel
+// becomes color at full strength. No pre-saturation; tintSaturation adjusts the tinted result afterwards.
 vec3 layerTint(vec3 c, vec3 tc, int mode, float k, float sat) {
   if (k <= 0.003) return c;
-  float l = dot(c, vec3(0.299, 0.587, 0.114)); vec3 s = mix(vec3(l), c, sat);
-  vec3 r = mode == 0 ? s * tc : mode == 1 ? s + tc : mode == 2 ? 1.0 - (1.0 - s) * (1.0 - tc) : tc * clamp(l / 0.55, 0.0, 1.6);
-  return mix(c, clamp(r, 0.0, 1.0), k);
+  vec3 r = mode == 0 ? c * mix(vec3(1.0), tc, k) : mode == 1 ? mix(c, c + tc, k) : mode == 2 ? mix(c, 1.0 - (1.0 - c) * (1.0 - tc), k)
+    : mix(c, tc * dot(c, vec3(0.299, 0.587, 0.114)), k);
+  r = clamp(r, 0.0, 1.0);
+  return sat == 1.0 ? r : clamp(mix(vec3(dot(r, vec3(0.299, 0.587, 0.114))), r, mix(1.0, sat, k)), 0.0, 1.0);
 }
 float ringAt(vec2 uv) {
   float o = 0.0; vec2 d = vec2(uOutline * uTexel);
@@ -381,11 +384,13 @@ export class SpriteBatch {
   }
 
   private layerBase = new Float32Array(INSTANCE_FLOATS);
-  /** Layer tint: primary -> rgb 12..14, secondary -> 28..30, mode+1 / strength / saturation -> 33..35. */
+  /** Layer tint: primary -> rgb 12..14, secondary -> 28..30, mode+1 / strength / saturation -> 33..35. multiply / lerp
+   *  colours are divided by the layer's tintNeutral here (see layerTint). */
   private writeLayerTint(o: Float32Array, l: CachedLayer): void {
-    const t = l.tint;
-    if (t === 0) { o[12] = o[13] = o[14] = 1; } else { o[12] = ((t >>> 24) & 255) / 255; o[13] = ((t >>> 16) & 255) / 255; o[14] = ((t >>> 8) & 255) / 255; }
+    const t = l.tint; const d = l.mode === 0 || l.mode === 3 ? 1 / l.neutral : 1;
+    if (t === 0) { o[12] = o[13] = o[14] = 1; } else { o[12] = ((t >>> 24) & 255) / 255 * d; o[13] = ((t >>> 16) & 255) / 255 * d; o[14] = ((t >>> 8) & 255) / 255 * d; }
     writeTint2(o, l.tint2);
+    if (l.tint2 !== 0 && d !== 1) { o[28] = o[28]! * d; o[29] = o[29]! * d; o[30] = o[30]! * d; }
     o[33] = t === 0 && l.tint2 === 0 ? 0 : l.mode + 1; o[34] = l.strength; o[35] = l.saturation;
   }
   private heldRes = newResolved();
@@ -398,7 +403,7 @@ export class SpriteBatch {
   private emitHeld(atlas: AtlasManager, heldOf: (item: number) => number | undefined, item: number, body: ResolvedFrame, sx: number, sy: number, key: number,
     scale: number, facing: number, flip: boolean, fade: number, occT: number, mode: "fade" | "dither"): void {
     if (!item) return; const hid = heldOf(item); if (hid === undefined) return; this.heldStats[0]++;
-    const h = atlas.handAt(body.entry); if (!h) return; this.heldStats[1]++;
+    const h = atlas.handOf(body); if (!h) return; this.heldStats[1]++;
     const r = this.heldRes; if (!atlas.resolve(hid, 0, facing, 0, 0, r)) return; this.heldStats[2]++;
     const m = flip ? -1 : 1;
     const hx = sx + (h.x - body.ax) * scale * m, hy = sy + (h.y - body.ay) * scale;
@@ -494,8 +499,18 @@ export class SpriteBatch {
       const aps = ap ? ap.slot(i) : -1;
       if (aps >= 0 && this.layerCache) {
         // key (entity, Appearance.version, facing4); version wraps (u16) so the cache compares it for equality only
-        layers = this.layerCache.get(i, e, apVer![aps]!, f, () => readAppearanceSlot(apData!, apLen, aps));
+        // resolveLayers gets the body's current anim name (face/eyes expressions via faceAnims, ADR-082): the AnimState
+        // anim resolved on the body sprite (re-resolved once when the body sprite's anim name differs from the guess)
+        const as0 = an ? an.slot(i) : -1; const st0 = as0 >= 0 && an ? an.data.state[as0]! : -1;
+        const read = () => readAppearanceSlot(apData!, apLen, aps);
+        let animName = st0 >= 0 ? atlas.animName(sid, atlas.stateAnim(sid, st0)) : undefined;
+        layers = this.layerCache.get(i, e, apVer![aps]!, f, read, animName !== undefined ? { anim: animName } : {});
         for (const l of layers) if (l.slot === "body") { bodyL = l; sid = l.sprite; break; }
+        if (bodyL && st0 >= 0) { const nm = atlas.animName(sid, atlas.stateAnim(sid, st0)); if (nm !== animName) { animName = nm;
+          layers = this.layerCache.get(i, e, apVer![aps]!, f, read, nm !== undefined ? { anim: nm } : {}); bodyL = null;
+          for (const l of layers) if (l.slot === "body") { bodyL = l; sid = l.sprite; break; } } }
+        else if (bodyL && st0 < 0 && bodyL.animName) { layers = this.layerCache.get(i, e, apVer![aps]!, f, read, { anim: bodyL.animName }); bodyL = null;
+          for (const l of layers) if (l.slot === "body") { bodyL = l; sid = l.sprite; break; } }
       }
       let ok: boolean;
       const as = an ? an.slot(i) : -1;
@@ -518,7 +533,9 @@ export class SpriteBatch {
           const left = sx - res.ax * scale, top = sy - res.ay * scale;
           hit = overlapsFocus(left, left + res.w * scale, top, sy);
         }
-        occT = occAmount(i, hit);
+        // actors without an explicit Occluder never fade: also reset the smoothed state (entity indices are reused, e.g.
+        // a character spawned on a destroyed tree's slot inherited its fade -> semi-transparent character in chars_lineup)
+        if (actor && os < 0) { if (i < this.occT.length) this.occT[i] = 0; occT = 0; } else occT = occAmount(i, hit);
         // explicit Occluder.fade overrides the style alpha (fade mode)
         if (os >= 0 && occT > 0 && occ.mode === "fade") { fade = 1 - (1 - oc.data.fade[os]!) * occT / Math.max(1e-3, 1 - occ.alpha); occT = 0; }
       }

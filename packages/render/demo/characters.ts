@@ -62,7 +62,8 @@ export function spawnCharacters(world: World, reg: AssetRegistry, index: Chunked
       if (k % 3 === 0) world.add(e, Equipment, { mainHandSlot: 0, mainHandItem: [DEMO_ITEM.iron_axe, DEMO_ITEM.torch, DEMO_ITEM.iron_sword][(k / 3) % 3]! });
     }
   }
-  const flashE = mode === "lineup" ? out[6] : undefined;
+  // hit flash is opt-in (?flash=1): a frozen 0.45 white flash read as a semi-transparent character in chars_lineup
+  const flashE = mode === "lineup" && new URLSearchParams(location.search).get("flash") === "1" ? out[6] : undefined;
   return { entities: out, hitFlash: (e) => (flashE !== undefined && e === flashE ? 0.45 : 0) };
 }
 export { WEARABLE_SLOTS };
