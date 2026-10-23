@@ -361,3 +361,9 @@ Gameplay (`src/customization.ts`, `data/cosmetics.json`) owns the *rules*:
   core transaction and returns a reason string or `{crafterId}`. Net does the range/open/permission/rate checks first and sends the notifications afterwards.
 - Watchtower AOI: `installViewBonus(world, (cid, n) => server.setViewRadiusBonus(cid, n))`. The system `gameplay.viewBonus` (postSim, every 10 ticks) runs on the authority
   and skips replays. It converts `sightBonusAt` tiles to chunks (ceil / CHUNK_SIZE; net caps the value at 2 and holds it 60 ticks before lowering) and only calls on change. A dead player gets 0. It writes no components.
+
+## 13. Spatial queries for PvP pieces
+Fire spread, contact victims, raid-bell lookup and `sightBonusAt` now query the shared `SpatialIndex` (@engine/world) instead of scanning every piece.
+The search radius is the fire spreadRadius, the contact radius, or the largest alarm radius / sight footprint across all defs (cached per defs object).
+Before each query the index is flushed with `update()`, which is idempotent, so pieces placed earlier in the same tick are still found. Results are sorted by entity id, which keeps rng draw order deterministic.
+Contact spikes are still found by query, but each spike only checks the victims near it.
