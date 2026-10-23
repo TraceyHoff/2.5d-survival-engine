@@ -5,7 +5,7 @@
  */
 import { Appearance, DEFAULT_TICK_HZ, defineActions, entityIndex, installPermissions, Transform, type ClaimRegistry, type Entity, type GroupRegistry, type PermissionsRes, type World } from "@engine/core";
 import { defineCommand, defineNetEvent, type CommandRejection, type InputCmd, type NetClient } from "@engine/net";
-import { PVP_COMMANDS, CRAFT_QUEUE_COMMANDS, CUSTOMIZATION_COMMANDS, ECONOMY_COMMAND_RATES, ECONOMY_COMMANDS, ECONOMY_ENTITY_FIELDS, installGameplay, PlayerIntent, UseCmd, PlaceCmd, EmoteCmd, PARTY_COMMANDS, PARTY_ENTITY_FIELDS, PARTY_REJECT_REASONS } from "@engine/gameplay";
+import { COMMAND_RATES, PVP_COMMANDS, CRAFT_QUEUE_COMMANDS, CUSTOMIZATION_COMMANDS, ECONOMY_COMMAND_RATES, ECONOMY_COMMANDS, ECONOMY_ENTITY_FIELDS, installGameplay, PlayerIntent, UseCmd, PlaceCmd, EmoteCmd, PARTY_COMMANDS, PARTY_ENTITY_FIELDS, PARTY_REJECT_REASONS } from "@engine/gameplay";
 import type { CommandDef } from "@engine/core";
 import { SESSION_COMMANDS, SESSION_EVENTS } from "@engine/persist";
 
@@ -22,8 +22,15 @@ export const Pong = defineNetEvent("demo.pong", { t: "u32" });
  * Gameplay commands on the wire: net mirrors of gameplay's core CommandDefs (same name + schema; `stall` is a NetId
  * resolved to an Entity). The server bridges each into core CommandHandlers (see game.ts). Append-only order.
  */
+/**
+ * Chat-style limit (core ChannelRegistry default: 5 burst, 0.05/tick = 1/s at 20 Hz) for social commands: emotes and
+ * gameplay's party (and later clan) commands. Their entity fields (PARTY_ENTITY_FIELDS) still go out as NetIds.
+ */
+export const CHAT_STYLE_RATE = { perSec: 1, burst: 5 } as const;
+export const SOCIAL_COMMAND_NAMES: ReadonlySet<string> = new Set(["gameplay.emote", "gameplay.partyInvite", "gameplay.partyAccept", "gameplay.partyLeave", "gameplay.kick"]);
 const mirror = (d: CommandDef) => {
-  const perSec = ECONOMY_COMMAND_RATES[d.name] ?? 2;
+  if (SOCIAL_COMMAND_NAMES.has(d.name)) return defineCommand(d.name, d.schema, { entityFields: [...(ECONOMY_ENTITY_FIELDS[d.name] ?? PARTY_ENTITY_FIELDS[d.name] ?? [])], rate: { ...CHAT_STYLE_RATE } });
+  const perSec = ECONOMY_COMMAND_RATES[d.name] ?? COMMAND_RATES[d.name] ?? 2;
   return defineCommand(d.name, d.schema, { entityFields: [...(ECONOMY_ENTITY_FIELDS[d.name] ?? PARTY_ENTITY_FIELDS[d.name] ?? [])], rate: { perSec, burst: Math.max(2, Math.ceil(perSec * 2)) } });
 };
 export const GAMEPLAY_NET_COMMANDS = [...ECONOMY_COMMANDS, ...CUSTOMIZATION_COMMANDS, ...PVP_COMMANDS, ...CRAFT_QUEUE_COMMANDS, /* appended */ UseCmd, PlaceCmd, EmoteCmd, ...PARTY_COMMANDS].map((d) => ({ core: d as CommandDef, net: mirror(d) }));

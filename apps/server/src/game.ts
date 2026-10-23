@@ -2,7 +2,7 @@
 import { ChannelRegistry, CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, type CosmeticCatalogLike, Membership, PlayerId, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
 import { ChunkManager, ProceduralGenerator, chunkKeyOf, type BuildingGrid, type PopulationSpawner } from "@engine/world";
 import { GAMEPLAY_COMMANDS, installPartyCommands, queueCommand, spawnPlayer, spawnResourceNode, gameplayDefs, setIntent, IntentAction, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installPopulation, installCustomization,
-  appearanceServerHooks, applyReplication, installStallBuyHook, installViewBonus, setHitValidator, installPvp, installCraftQueue, installExpressionCommands, CraftQueue, CraftQueuesRes, playerNames, stallListing, listingRevision, stallOf, tillOf, StallHeader, StallOwnerKind } from "@engine/gameplay";
+  appearanceServerHooks, applyReplication, installStallBuyHook, installViewBonus, setHitValidator, installPvp, installCraftQueue, installExpressionCommands, requestEmote, CraftQueue, CraftQueuesRes, playerNames, stallListing, listingRevision, stallOf, tillOf, StallHeader, StallOwnerKind } from "@engine/gameplay";
 import { AppearanceServer, ChatServer, NameSync, NetServer, StallResult, StallServer, TileSync, validateHit, type ClientSession, type ServerTransport, type StallHooks } from "@engine/net";
 import { AccountAssigned, ClaimAccount, SetName, WorldPersistence, loadSocial, tokenToHex, tokenToWords, wordsToName, wordsToToken, type WorldStore } from "@engine/persist";
 import { seedStarterCamp, giveRandomAppearance } from "./camp.js";
@@ -53,7 +53,8 @@ export type GameMode = "singleplayer" | "multiplayer";
 export interface GameModeConfig { mode: GameMode; humanBots: boolean }
 export function gameModeConfig(mode: GameMode = "multiplayer", wantBots = true): GameModeConfig { return { mode, humanBots: mode === "singleplayer" && wantBots }; }
 /** Connects a virtual player whose server entity should appear at (x, y); returns false if it cannot. */
-export interface VirtualPlayerHost { connect(x: number, y: number): boolean; disconnect(clientId: number): void }
+/** `kind` = the population entry's human_bot kind (e.g. a bots.json archetype); optional so older hosts still type-check. */
+export interface VirtualPlayerHost { connect(x: number, y: number, kind?: string): boolean; disconnect(clientId: number): void }
 
 /** claimed: ClaimAccount processed (saved record restored), so a held join-time look can no longer be overwritten by the restore. */
 interface Player { entity: Entity; account: string; name: string; claimed: boolean; /** virtual player (singleplayer human bot) */ bot?: boolean }
@@ -225,6 +226,8 @@ export function createGameServer(o: GameServerOptions): GameServer {
     // parties/clans live in the core GroupRegistry keyed by account PlayerId
     groupOf: (s, kind) => { const p = players.get(s.clientId); const id = p ? world.getField(p.entity, PlayerId, "id") ?? 0 : 0; return id ? permissions.groups.groupsOf(id).find((g) => g.kind === (kind === "party" ? 1 : 2))?.id : undefined; },
   });
+  // Chat emotes drive the face like EmoteCmd: ChatDelivered.emote = emoteNames() index + 1 (requestEmote range-checks it).
+  chat.log.push((d) => { if (!d.emote) return; const p = players.get(d.fromClient); if (p && world.isAlive(p.entity)) requestEmote(world, p.entity, d.emote); });
   net.onCommand(DevBotHello, (s) => {
     const p = players.get(s.clientId); if (!p) return;
     if (mode.mode === "multiplayer" && !o.devBots) { leave(s.clientId, "bot connection rejected: multiplayer server without NET_DEV_BOTS=1"); return; }
@@ -293,7 +296,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
     viewpoints: () => { const v: { x: number; y: number }[] = []; for (const p of players.values()) { if (p.bot) continue; const t = world.get(p.entity, Transform); if (t) v.push({ x: t.x, y: t.y }); } return v; },
     ...(o.buildings ? { buildings: o.buildings } : {}),
     humanBots: mode.humanBots && o.virtualPlayers ? {
-      spawn: (x, y) => { pendingSpots.push({ x, y }); if (o.virtualPlayers!.connect(x, y)) return true; pendingSpots.pop(); return false; },
+      spawn: (x, y, kind?: string) => { pendingSpots.push({ x, y }); if (kind !== undefined ? o.virtualPlayers!.connect(x, y, kind) : o.virtualPlayers!.connect(x, y)) return true; pendingSpots.pop(); return false; },
       despawn: (e) => { for (const [cid, p] of players) if (p.entity === e && p.bot) { o.virtualPlayers!.disconnect(cid); leave(cid, "bot despawned"); break; } },
     } : undefined,
   });
