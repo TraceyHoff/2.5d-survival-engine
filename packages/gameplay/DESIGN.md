@@ -264,6 +264,11 @@ Pieces (`pieces.json features`, module `combat/pvp_pieces.ts`, systems `gameplay
 
 **Burning** `{lit u8, intensity u8, startTick u32}` (networked, persistent; matches packages/render/src/burning.ts). `ignite(world, e, intensity?)` / `extinguish`. Pieces: only `fire.json flammableTiers`; dps × intensity/255 per check, +growPerCheck, spread within spreadRadius with spreadChance (`world.rngFor("fire.spread", piece)`), rain/storm −rainQuench. Creatures: `DamageCause.Fire`, flame decays by growPerCheck. Events: Ignited/Extinguished (unreliable). STRC does not yet encode Burning (fires are not restored after load).
 
+### 6.3 Foods, spoilage stages, water flask
+- New foods (items.json): mushroom, carrot, apple, fish → cooked_fish, wild_grain → bread, stew_bowl (campfire: planks + raw_meat + carrot + mushroom), egg. Gathered as yields of berry_bush / fiber_grass / tree; fish comes from clay_deposit as a stopgap until water tiles exist.
+- Four stages are in `environment.spoilage.stages` `{key, minFresh, nutritionMul, sick}`. `src/food.ts` `spoilStageIndex`; eating multiplies the food by the stage's nutritionMul, and a sick stage applies the sickness debuffs. Freshness is still lazy (no per-tick cost).
+- Liquid containers: item `sips` (water_flask 4; requires maxStack 1 and durability = sips). Fill = slot durability, so it needs no new replicated or persisted state. Each Use drinks food/sips and keeps the flask; an empty flask does nothing. `fillContainer(world, e, slot, sips?)` is the hook for wells and water tiles (no source exists yet).
+
 ## 7. Event delivery (for Netcode)
 
 | Reliable | Unreliable (cosmetic) |
@@ -308,5 +313,5 @@ See the bottom of README.md. The open lists are mirrored in the final report.
 ### UI data contract (Art & Assets)
 - Browse view: StallHeader plus per listing `{slot, stockItem, stock, priceItem, priceCount, qty, enabled}` (`stallListings`), and `revision` for the buy payload.
 - Owner manage view: the browse view, plus till contents and the ledger entries `{tick, item, count, priceItem, priceCount, buyerId, crafterId}`, newest first.
-- Tooltip: `itemInfo` → itemKey (manifest key), count, durability, freshnessStage 0..3, crafterName (resolved from crafterId).
+- Tooltip: `itemInfo` → itemKey (manifest key), count, durability, freshnessStage 0..3 (fresh/stale/spoiling/rotten, from `environment.spoilage.stages`), crafterName (resolved from crafterId), and `fill` 0..1 for liquid containers (water_flask; absent otherwise).
 - Stall visuals: the piece key (manifest), `StallHeader.open` (0/1), and `BuildPiece.tint` = clanPalettes index (`clanTintIndex`).

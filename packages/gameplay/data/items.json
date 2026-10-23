@@ -249,13 +249,15 @@
       "key": "water_flask",
       "name": "Water Flask",
       "category": "food",
-      "maxStack": 5,
+      "maxStack": 1,
       "weight": 1.0,
       "food": {
         "hunger": 0,
         "thirst": 35,
         "health": 0
-      }
+      },
+      "sips": 4,
+      "durability": 4
     },
     {
       "key": "raw_meat",
@@ -501,6 +503,117 @@
       "category": "resource",
       "maxStack": 500,
       "weight": 0.01
+    },
+    {
+      "key": "mushroom",
+      "name": "Mushroom",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.05,
+      "food": {
+        "hunger": 6,
+        "thirst": 1,
+        "health": 0
+      },
+      "spoilSeconds": 900
+    },
+    {
+      "key": "carrot",
+      "name": "Carrot",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.1,
+      "food": {
+        "hunger": 8,
+        "thirst": 3,
+        "health": 0
+      },
+      "spoilSeconds": 1800
+    },
+    {
+      "key": "apple",
+      "name": "Apple",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.15,
+      "food": {
+        "hunger": 10,
+        "thirst": 6,
+        "health": 0
+      },
+      "spoilSeconds": 2400
+    },
+    {
+      "key": "fish",
+      "name": "Raw Fish",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.4,
+      "food": {
+        "hunger": 6,
+        "thirst": 0,
+        "health": -4
+      },
+      "spoilSeconds": 600
+    },
+    {
+      "key": "cooked_fish",
+      "name": "Cooked Fish",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.3,
+      "food": {
+        "hunger": 24,
+        "thirst": 0,
+        "health": 4
+      },
+      "spoilSeconds": 1500
+    },
+    {
+      "key": "wild_grain",
+      "name": "Wild Grain",
+      "category": "resource",
+      "maxStack": 40,
+      "weight": 0.05
+    },
+    {
+      "key": "bread",
+      "name": "Bread",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.3,
+      "food": {
+        "hunger": 28,
+        "thirst": -2,
+        "health": 0
+      },
+      "spoilSeconds": 3600
+    },
+    {
+      "key": "stew_bowl",
+      "name": "Stew Bowl",
+      "category": "food",
+      "maxStack": 5,
+      "weight": 0.8,
+      "food": {
+        "hunger": 45,
+        "thirst": 20,
+        "health": 10
+      },
+      "spoilSeconds": 1800
+    },
+    {
+      "key": "egg",
+      "name": "Egg",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.1,
+      "food": {
+        "hunger": 10,
+        "thirst": 0,
+        "health": 0
+      },
+      "spoilSeconds": 1500
     }
   ]
 }

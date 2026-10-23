@@ -52,7 +52,16 @@
     "tin_ingot": 50,
     "tin_ore": 51,
     "wooden_club": 52,
-    "coin": 53
+    "coin": 53,
+    "apple": 54,
+    "bread": 55,
+    "carrot": 56,
+    "cooked_fish": 57,
+    "egg": 58,
+    "fish": 59,
+    "mushroom": 60,
+    "stew_bowl": 61,
+    "wild_grain": 62
   },
   "resources": {
     "fallen_branches": 1,
@@ -108,7 +117,10 @@
     "tin_ingot": 35,
     "wooden_club": 36,
     "coin": 37,
-    "water_flask": 38
+    "water_flask": 38,
+    "bread": 39,
+    "cooked_fish": 40,
+    "stew_bowl": 41
   },
   "pieces": {
     "anvil": 1,

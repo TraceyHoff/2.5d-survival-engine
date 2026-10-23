@@ -12,6 +12,8 @@
  * transfers, trades (net purchaseSwap / coreTradeInventory) and stall sales run in core transaction() and core's
  * stack key (item, crafterId, durability) keeps different crafters apart. Gameplay's own SlotView ops use the same key.
  */
+import { fillLevel, spoilStageIndex, spoilStages } from "../food.js";
+import type { SpoilStage } from "../defs.js";
 import { arrayFieldsContainer, installContainers, playerOf, PlayerId, PlayerNames, PlayerNameRegistry, type Entity, type World } from "@engine/core";
 import { Container, Inventory } from "../components.js";
 import { gameplayDefs } from "../config.js";
@@ -40,9 +42,12 @@ export function crafterIdFor(world: World, e: Entity, item: number): number {
 }
 
 export interface NameLookup { get(playerId: number): string | undefined }
-export interface ItemInfo { itemKey: string; count: number; durability: number; freshnessStage: number; crafterId: number; crafterName: string }
+export interface ItemInfo { itemKey: string; count: number; durability: number; freshnessStage: number; crafterId: number; crafterName: string;
+  /** Liquid containers (water_flask): fill 0..1; undefined otherwise. */
+  fill?: number }
 /** Spoilage stage 0..3 from the spoiled fraction (thresholds 25/50/80%); items that never spoil are stage 0. */
-export function freshnessStage(fresh: number): number { const spoiled = 1 - fresh; return spoiled < 0.25 ? 0 : spoiled < 0.5 ? 1 : spoiled < 0.8 ? 2 : 3; }
+/** Stage 0..3 (fresh, stale, spoiling, rotten); data stages from environment.spoilage.stages. */
+export function freshnessStage(fresh: number, stages?: readonly SpoilStage[]): number { return spoilStageIndex(fresh, stages); }
 /**
  * Tooltip / inspection data for a slot. crafterName is resolved from the PlayerId at read time (follows renames):
  * server = the world's name directory; client = pass `client.names`.
@@ -53,8 +58,11 @@ export function itemInfo(world: World, e: Entity, slot: number, names: NameLooku
   const defs = gameplayDefs(world);
   const crafterId = world.getArray(e, def, "crafterId")![slot]!;
   const fresh = freshness(defs, item, world.getArray(e, def, "createdTick")![slot]!, spoilMulOf(world, e), world.tick, 1 / 20);
-  return {
+  const info: ItemInfo = {
     itemKey: defs.items.get(item)?.key ?? "", count: world.getArray(e, def, "counts")![slot]!, durability: world.getArray(e, def, "durability")![slot]!,
-    freshnessStage: freshnessStage(fresh), crafterId, crafterName: crafterId ? names.get(crafterId) ?? `#${crafterId}` : "",
+    freshnessStage: freshnessStage(fresh, spoilStages(defs)), crafterId, crafterName: crafterId ? names.get(crafterId) ?? `#${crafterId}` : "",
   };
+  const fill = fillLevel(defs, item, world.getArray(e, def, "durability")![slot]!);
+  if (fill !== undefined) info.fill = fill;
+  return info;
 }

@@ -50,13 +50,13 @@ export function slotsDef(world: World, e: Entity): ComponentDef<InvSchema> {
 }
 export const hasSlots = (world: World, e: Entity): boolean => world.has(e, Inventory) || world.has(e, Container);
 
-function readSlots(world: World, e: Entity): ScratchSlots {
+export function readSlots(world: World, e: Entity): ScratchSlots {
   const def = slotsDef(world, e); const st = world.store(def); const s = st.slot(entityIndex(e));
   const n = Math.min(st.data.slotCount[s]!, def.schema.items.length);
   const take = (f: "items" | "counts" | "createdTick" | "durability" | "crafterId"): number[] => Array.from(world.getArray(e, def, f)!.subarray(0, n));
   return new ScratchSlots(n, st.data.maxWeight[s]!, take("items"), take("counts"), take("createdTick"), take("durability"), world.tick, take("crafterId"));
 }
-function writeSlots(world: World, e: Entity, v: ScratchSlots, defs: GameDefs): void {
+export function writeSlots(world: World, e: Entity, v: ScratchSlots, defs: GameDefs): void {
   const def = slotsDef(world, e); const st = world.store(def); const idx = entityIndex(e);
   const items = world.getArray(e, def, "items")!, counts = world.getArray(e, def, "counts")!, created = world.getArray(e, def, "createdTick")!, dur = world.getArray(e, def, "durability")!, cr = world.getArray(e, def, "crafterId")!;
   for (let i = 0; i < v.slotCount; i++) { items[i] = v.item(i); counts[i] = v.count(i); created[i] = v.created(i); dur[i] = v.durability(i); cr[i] = v.crafter(i); }

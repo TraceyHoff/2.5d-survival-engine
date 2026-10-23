@@ -9,6 +9,7 @@ import { gameplayDefs, isAuthority } from "../config.js";
 import { secondsToTicks } from "../defs.js";
 import { Died, emit, ItemConsumed, Vital, VitalDepleted } from "../events.js";
 import { slotFreshness, slotItem, takeFromSlot } from "../inventory.js";
+import { spoilStageIndex, spoilStages, takeSip } from "../food.js";
 
 const clamp = (v: number, lo: number, hi: number): number => (v < lo ? lo : v > hi ? hi : v);
 
@@ -22,13 +23,18 @@ export function consumeSystem(world: World, dt = 1 / 20): void {
     const { item } = slotItem(world, e, intent.data.slot[s]!);
     const food = defs.items.get(item)?.food; if (!food) continue;
     // freshness scales the benefit; stale food (below staleFreshness) makes you sick
-    const fresh = slotFreshness(world, e, intent.data.slot[s]!);
-    takeFromSlot(world, e, intent.data.slot[s]!);
-    const sv = world.get(e, Survival)!; const hp = world.get(e, Health)!; const k = 0.25 + 0.75 * fresh;
+    const slot = intent.data.slot[s]!; const idef = defs.items.get(item)!;
+    // liquid containers (water_flask): one sip of food/sips per use, the container stays; empty = no-op
+    const per = idef.sips > 0 ? 1 / idef.sips : 1;
+    if (idef.sips > 0 && !takeSip(world, e, slot)) continue;
+    // freshness stage (environment.spoilage.stages) scales the benefit; sick stages make you ill
+    const stage = spoilStages(defs)[spoilStageIndex(slotFreshness(world, e, slot), spoilStages(defs))]!;
+    if (idef.sips === 0) takeFromSlot(world, e, slot);
+    const sv = world.get(e, Survival)!; const hp = world.get(e, Health)!; const k = stage.nutritionMul * per;
     world.set(e, Survival, { hunger: clamp(sv.hunger + food.hunger * k, 0, 100), thirst: clamp(sv.thirst + food.thirst * k, 0, 100) });
     world.set(e, Health, { hp: clamp(hp.hp + food.health * k, 0, hp.max) });
     const sp = defs.environment.spoilage;
-    if (fresh < sp.staleFreshness) {
+    if (stage.sick) {
       const until = world.tick + secondsToTicks(sp.sickSeconds, dt);
       addModifier(world, e, Buffs, { stat: Stat.HealthRegen, op: ModOp.Add, value: -defs.vitals.healthRegenPerSec * 2, expiresAtTick: until });
       addModifier(world, e, Buffs, { stat: Stat.StaminaRegen, op: ModOp.Add, value: -defs.vitals.staminaRegenPerSec * 0.5, expiresAtTick: until });

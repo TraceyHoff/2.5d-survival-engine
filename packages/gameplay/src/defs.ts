@@ -43,7 +43,10 @@ export interface ItemDef extends Visual {
   readonly maxDurability: number;
   /** May be traded (default true). */
   readonly tradeable: boolean;
+  /** Liquid container (water_flask): sips when full; current fill lives in the slot's durability (0..sips). 0 = n/a. */
+  readonly sips: number;
 }
+export interface SpoilStage { readonly key: string; readonly minFresh: number; readonly nutritionMul: number; readonly sick: boolean }
 export interface ItemCount { readonly item: number; readonly count: number }
 export interface RecipeDef { readonly id: number; readonly key: string; readonly station: StationKind; readonly seconds: number; readonly ingredients: readonly ItemCount[]; readonly output: ItemCount }
 export interface YieldDef { readonly item: number; readonly min: number; readonly max: number; readonly chance: number }
@@ -73,7 +76,9 @@ export interface EnvironmentTuning {
   readonly altitudeLapse: number; readonly humidityPerIntensity: number; readonly windChillPerSpeed: number;
   readonly surface: { readonly rainPerSec: number; readonly dryPerSec: number; readonly windDryMul: number; readonly sunDryMul: number };
   readonly wetBuffThreshold: number; readonly coldBuffBelow: number;
-  readonly spoilage: { readonly tempRefC: number; readonly mulPerDegree: number; readonly minMul: number; readonly maxMul: number; readonly rebaseThreshold: number; readonly sickSeconds: number; readonly spoiledItem: string; readonly staleFreshness: number };
+  readonly spoilage: { readonly tempRefC: number; readonly mulPerDegree: number; readonly minMul: number; readonly maxMul: number; readonly rebaseThreshold: number; readonly sickSeconds: number; readonly spoiledItem: string; readonly staleFreshness: number;
+    /** Four freshness stages, descending minFresh (fresh, stale, spoiling, rotten). */
+    readonly stages?: readonly SpoilStage[] };
 }
 export interface TierDef { readonly id: number; readonly key: string; readonly hpMul: number; readonly vertLoss: number; readonly horizLoss: number; readonly repairMul: number; readonly cost: readonly ItemCount[] }
 export interface BuildingTuning {
@@ -155,7 +160,7 @@ export interface GameDefs {
 // ---- raw JSON shapes ----------------------------------------------------------------------------
 
 interface RawVisual { sprite?: string }
-export interface RawItem extends RawVisual { key: string; name: string; category: string; maxStack: number; weight: number; food?: FoodDef; tool?: { kind: string; tier: number }; weapon?: WeaponDef; fuelSeconds?: number; spoilSeconds?: number; durability?: number; tradeable?: boolean }
+export interface RawItem extends RawVisual { key: string; name: string; category: string; maxStack: number; weight: number; food?: FoodDef; tool?: { kind: string; tier: number }; weapon?: WeaponDef; fuelSeconds?: number; spoilSeconds?: number; durability?: number; tradeable?: boolean; sips?: number }
 export interface RawRecipe { key: string; station: string; seconds: number; ingredients: { item: string; count: number }[]; output: { item: string; count: number } }
 export interface RawResource extends RawVisual { key: string; requiredTool: string; minTier: number; capacity: number; respawnSeconds: number; cooldownSeconds: number; staminaCost: number; bonusPerTier: number; yields: { item: string; min: number; max: number; chance: number }[] }
 export interface RawWeather { kind: string; weight: number; durationSeconds: number[]; intensity: number[]; tempOffset: number; wetnessPerSec: number; thirstMul: number; staminaRegenMul: number; windSpeed?: number[] }
@@ -227,12 +232,13 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
     if (category === ItemCategory.Food && !r.food) err(`${where}: food item needs "food"`);
     if (category === ItemCategory.Tool && !r.tool) err(`${where}: tool item needs "tool"`);
     if (category === ItemCategory.Weapon && !r.weapon) err(`${where}: weapon item needs "weapon"`);
+    if (r.sips && (r.maxStack !== 1 || r.durability !== r.sips)) err(`${where}: liquid containers need maxStack 1 and durability = sips`);
     if ((r.tool || r.weapon) && r.maxStack !== 1) err(`${where}: tools/weapons are non-stackable (maxStack 1)`);
     const id = itemsR.reg.tryId(r.key) ?? 0;
     items.set(id, {
       id, key: r.key, name: r.name, category, maxStack: r.maxStack, weight: r.weight, ...visual(r.key, r.sprite),
       food: r.food ? { ...r.food } : null, tool: r.tool ? { kind: enumOf(TOOL, r.tool.kind, `${where}.tool.kind`), tier: r.tool.tier } : null,
-      weapon: r.weapon ? { ...r.weapon } : null, fuelSeconds: r.fuelSeconds ?? 0, spoilSeconds: r.spoilSeconds ?? 0, maxDurability: r.durability ?? (r.tool || r.weapon ? 200 : 0), tradeable: r.tradeable ?? true,
+      weapon: r.weapon ? { ...r.weapon } : null, fuelSeconds: r.fuelSeconds ?? 0, spoilSeconds: r.spoilSeconds ?? 0, maxDurability: r.durability ?? (r.tool || r.weapon ? 200 : 0), tradeable: r.tradeable ?? true, sips: r.sips ?? 0,
     });
   }
 
