@@ -34,6 +34,12 @@ export function startDiag(src: DiagSources): { afterRender(): void } | undefined
       L.push(`glError ${glErr ? "0x" + glErr.toString(16) : "none"} centre ${pixel} cam ${r.camera.x.toFixed(1)},${r.camera.y.toFixed(1)} z${r.camera.zoom}`);
       if (c.fallbacks.length) L.push(`fallbacks: ${c.fallbacks.join("; ")}`);
       if (c.problems.length) L.push(`PROBLEMS: ${c.problems.join("; ")}`);
+      // Renderer-provided report (renderer.diagReport() / capabilities.diag) when available.
+      try {
+        const rr = r as unknown as { diagReport?: () => unknown }, cd = (c as unknown as { diag?: unknown }).diag;
+        const rep = typeof rr.diagReport === "function" ? rr.diagReport() : cd;
+        if (rep !== undefined) L.push(`report: ${typeof rep === "string" ? rep : JSON.stringify(rep)}`);
+      } catch (e) { L.push(`report error: ${String(e)}`); }
     } else L.push("renderer: not created (debug view)");
     const s = src.snapshot();
     L.push(`entities ${src.entities()} player ${src.player() !== undefined ? "yes" : "no"} snapshot ${s ? `${s.received ? "yes" : "NO"} tick ${s.latestTick} n=${s.snapshots}` : "no session"}`);
