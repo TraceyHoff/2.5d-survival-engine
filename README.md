@@ -31,7 +31,7 @@ Use `?player=2` in a second tab to play co-op with yourself.
 | Command | What it does |
 |---|---|
 | `pnpm demo` | server + browser client (`--bots 5` adds 5 bot players, `--fresh` starts a new world) |
-| `pnpm demo:bots` | headless load run: fresh server + 20 bots, prints stats |
+| `pnpm demo:bots` | **dev load test only**: fresh server + 20 bots, prints stats (sets `NET_DEV_BOTS=1` for both) |
 | `pnpm test` | all Vitest suites |
 | `pnpm test:net` | net, testkit and server/client multiplayer integration tests |
 | `pnpm check` | `pnpm -r typecheck` + `vitest run` (what CI runs) |
@@ -92,6 +92,10 @@ Locally, `?offline=1` on the Vite dev client forces offline mode.
 - ✅ **Authoritative server** over WebSocket, with snapshot deltas, **client-side prediction and reconciliation**, entity interpolation, lag compensation and basic anti-cheat
 - ✅ **Persistence:** SQLite on the server (world chunks, building data, players, claims) and IndexedDB/memory in the browser. Worlds and players survive restarts, and reconnects use an account token.
 - ✅ **Bots:** headless bot players (wander + gather) for load testing. 20 Hz holds with dozens of bots.
+  Bots are a **dev load-test tool, never part of multiplayer**: `apps/server/src/bots.ts` refuses to start unless
+  `NET_DEV_BOTS=1`, tags its connections (`demo.devBot`), and a multiplayer server (the Node default, `mode: "multiplayer"`)
+  drops tagged connections unless it was also started with `NET_DEV_BOTS=1`. The production server path (main.ts / game.ts)
+  never imports bots.ts. Human bots exist only in singleplayer/offline (the browser's local mode, `mode: "singleplayer"`).
 
 ### Survival gameplay (`packages/gameplay`)
 - 🔧 **Vitals:** hunger, thirst, stamina (drain, delay, regen), health, death; damage from starvation, dehydration, hypothermia and hyperthermia

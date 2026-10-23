@@ -6,7 +6,7 @@ import { spawnPlayer, spawnResourceNode, gameplayDefs, setIntent, IntentAction, 
 import { AppearanceServer, NameSync, NetServer, StallResult, StallServer, TileSync, validateHit, type ClientSession, type ServerTransport, type StallHooks } from "@engine/net";
 import { AccountAssigned, ClaimAccount, SetName, WorldPersistence, loadSocial, tokenToHex, tokenToWords, wordsToName, wordsToToken, type WorldStore } from "@engine/persist";
 import { seedStarterCamp, giveRandomAppearance } from "./camp.js";
-import { Act, applyMoveInput, installDemoWorld, rejectReasonCode, DEMO_COMMANDS, DEMO_EVENTS, GAMEPLAY_NET_COMMANDS, Ping, Pong } from "./protocol.js";
+import { Act, applyMoveInput, installDemoWorld, rejectReasonCode, DevBotHello, DEMO_COMMANDS, DEMO_EVENTS, GAMEPLAY_NET_COMMANDS, Ping, Pong } from "./protocol.js";
 
 /** ProceduralGenerator node kinds -> gameplay resource keys (see DEFAULT_BANDS comments in @engine/world). */
 const NODE_RESOURCES: Record<number, string> = { 1: "fallen_branches", 2: "fiber_grass", 3: "berry_bush", 4: "loose_rocks", 5: "tree", 6: "boulder", 7: "iron_vein" };
@@ -41,7 +41,11 @@ export interface GameServerOptions {
   virtualPlayers?: VirtualPlayerHost;
   /** Ambient population (zombies, animals, bots via PopulationSpawner). Default true. */
   population?: boolean;
+  /** Dev load-test flag (NET_DEV_BOTS=1): accept DevBotHello-tagged connections in multiplayer. Default false. */
+  devBots?: boolean;
 }
+/** True when the dev bot flag is set in the environment (NET_DEV_BOTS=1). */
+export const devBotsFromEnv = (env: Record<string, string | undefined>): boolean => env["NET_DEV_BOTS"] === "1";
 export type GameMode = "singleplayer" | "multiplayer";
 /** Resolved mode config: humanBots is true only in singleplayer. */
 export interface GameModeConfig { mode: GameMode; humanBots: boolean }
@@ -205,6 +209,11 @@ export function createGameServer(o: GameServerOptions): GameServer {
     log(`leave: client ${clientId} (${why})${p.name ? ` "${p.name}"` : ""}`);
   }
 
+  net.onCommand(DevBotHello, (s) => {
+    const p = players.get(s.clientId); if (!p) return;
+    if (mode.mode === "multiplayer" && !o.devBots) { leave(s.clientId, "bot connection rejected: multiplayer server without NET_DEV_BOTS=1"); return; }
+    p.bot = true;
+  });
   net.onCommand(ClaimAccount, (s, payload) => {
     const p = players.get(s.clientId); if (!p) return;
     const zero = !payload.t0 && !payload.t1 && !payload.t2 && !payload.t3;

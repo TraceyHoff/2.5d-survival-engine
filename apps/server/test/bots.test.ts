@@ -20,7 +20,8 @@ describe("headless bots over WebSocket", () => {
     const port = await transport.listen(0, "127.0.0.1"); // OS-assigned port, read back
     expect(port).toBeGreaterThan(0);
     const url = `ws://127.0.0.1:${port}`;
-    const gs = createGameServer({ transport, store: new MemoryWorldStore(), seed: 5 });
+    process.env["NET_DEV_BOTS"] = "1"; // dev load-test tool: bots refuse to start without it
+    const gs = createGameServer({ transport, store: new MemoryWorldStore(), seed: 5, devBots: true });
     let last = performance.now();
     const timer = setInterval(() => { const n = performance.now(); gs.loop.advance(n - last); last = n; }, 10);
     const bots: Bot[] = [];

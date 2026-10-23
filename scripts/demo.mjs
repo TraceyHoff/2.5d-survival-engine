@@ -39,7 +39,7 @@ if (fresh && existsSync(tokens)) rmSync(tokens);
 
 const children = [];
 function run(name, cmd, args, cwd, onLine) {
-  const c = spawn(cmd, args, { cwd, env: { ...process.env, FORCE_COLOR: "0" }, stdio: ["ignore", "pipe", "pipe"] });
+  const c = spawn(cmd, args, { cwd, env: { ...process.env, FORCE_COLOR: "0", ...(bots > 0 ? { NET_DEV_BOTS: "1" } : {}) }, stdio: ["ignore", "pipe", "pipe"] });
   const pipe = (s) => { let buf = ""; s.on("data", (d) => { buf += d; let i; while ((i = buf.indexOf("\n")) >= 0) { const l = buf.slice(0, i); buf = buf.slice(i + 1); console.log(`[${name}] ${l}`); onLine?.(l); } }); };
   pipe(c.stdout); pipe(c.stderr); children.push({ name, c }); return c;
 }

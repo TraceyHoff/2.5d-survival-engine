@@ -3,7 +3,10 @@
  * wander (random movement inputs, occasional sprint) and gather (Gather bit -> server targets the nearest node).
  * Shoppers: when a replicated stall is in view, bots browse it (gameplay.openStall) and try a buy via client.stalls
  * (the server routes it through gameplay's buy hook); results are counted in bot.stallResults.
- *   tsx src/bots.ts --url ws://127.0.0.1:7777 --count 5 [--duration 20] [--tokens saves/bots.json] [--stats 5]
+ * DEV LOAD-TEST TOOL ONLY: refuses to start unless NET_DEV_BOTS=1, and tags every connection (DevBotHello); a
+ * multiplayer server drops tagged connections unless it was also started with NET_DEV_BOTS=1. Never imported by the
+ * production server path (main.ts / game.ts).
+ *   NET_DEV_BOTS=1 tsx src/bots.ts --url ws://127.0.0.1:7777 --count 5 [--duration 20] [--tokens saves/bots.json] [--stats 5]
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
@@ -12,12 +15,15 @@ import { FixedLoop, NetId, Transform, World, DEFAULT_TICK_HZ } from "@engine/cor
 import { Listings, OpenStallCmd, StallHeader } from "@engine/gameplay";
 import { NetClient, WebSocketClientTransport, type WebSocketCtor } from "@engine/net";
 import { AccountAssigned, ClaimAccount, SetName, nameToWords, tokenToWords, wordsToToken } from "@engine/persist";
-import { Act, applyMoveInput, gameplayNet, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS, Ping, Pong } from "./protocol.js";
+import { Act, DevBotHello, applyMoveInput, gameplayNet, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS, Ping, Pong } from "./protocol.js";
 
 export interface Bot { index: number; client: NetClient; world: World; account: string | undefined; restored: boolean; rttMs: number; connected: boolean; stallResults: Map<number, number>; stop(): void }
 export interface BotOptions { url: string; index: number; token?: string; rng?: () => number; onAccount?: (index: number, token: string) => void }
 
+export const DEV_BOTS_REFUSAL = "bots.ts is a dev load-test tool: set NET_DEV_BOTS=1 to run it (the server needs NET_DEV_BOTS=1 too)";
+export function assertDevBots(env: Record<string, string | undefined> = process.env): void { if (env["NET_DEV_BOTS"] !== "1") throw new Error(DEV_BOTS_REFUSAL); }
 export async function startBot(o: BotOptions): Promise<Bot> {
+  assertDevBots();
   const rnd = o.rng ?? Math.random; // bots are outside the sim: wall clock + Math.random are fine here
   const world = new World({ seed: 1 }); installDemoWorld(world, "client");
   let buttons = 0;
@@ -32,6 +38,7 @@ export async function startBot(o: BotOptions): Promise<Bot> {
   client.onEvent(Pong, (p) => { bot.rttMs = (Math.round(performance.now()) >>> 0) - p.t; });
   await client.connect();
   bot.connected = true; transport.onClose(() => { bot.connected = false; });
+  client.sendCommand(DevBotHello, { v: 1 });
   client.sendCommand(ClaimAccount, o.token ? tokenToWords(o.token) : { t0: 0, t1: 0, t2: 0, t3: 0 });
   client.sendCommand(SetName, nameToWords(`bot-${o.index}`));
   const loop = new FixedLoop({ tickHz: DEFAULT_TICK_HZ, step: (dt) => world.step(dt) });
@@ -82,6 +89,7 @@ export async function startBots(url: string, count: number, tokensFile?: string,
 }
 
 async function main(): Promise<void> {
+  assertDevBots();
   const args = process.argv.slice(2); const get = (k: string): string | undefined => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : undefined; };
   const url = get("--url") ?? `ws://127.0.0.1:${process.env["PORT"] ?? 7777}`;
   const count = Number(get("--count") ?? 5), duration = Number(get("--duration") ?? 0), statsSec = Number(get("--stats") ?? 5);

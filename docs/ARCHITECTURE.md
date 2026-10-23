@@ -334,7 +334,11 @@ flowchart TD
 - `pnpm bench` — benchmarks with strict timing asserts (`PERF=1`).
 - `pnpm test:net` — multiplayer/network test suite.
 - `pnpm demo` — persistent server + Vite client (open the printed URL; reload = same player).
-- `pnpm demo:bots` — demo server with headless WebSocket bots.
+- `pnpm demo:bots` — demo server with headless WebSocket bots (dev load test; sets `NET_DEV_BOTS=1`).
+- **Bots and server mode.** `createGameServer({ mode })`: `"multiplayer"` (default; the Node server) has no human bots and
+  drops connections tagged with `DevBotHello` (`demo.devBot`, sent by `apps/server/src/bots.ts`) unless `devBots`
+  (`NET_DEV_BOTS=1`) is set; `"singleplayer"` (local/offline) accepts them. bots.ts itself refuses to start without
+  `NET_DEV_BOTS=1`, and nothing on the production path (main.ts, game.ts, protocol.ts) imports it.
 
 
 ## 18. Input System

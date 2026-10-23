@@ -32,7 +32,12 @@ export function gameplayNet<D extends CommandDef>(d: D): ReturnType<typeof defin
   const m = GAMEPLAY_NET_COMMANDS.find((x) => x.core === d); if (!m) throw new Error(`not a bridged gameplay command: ${d.name}`);
   return m.net as unknown as ReturnType<typeof defineCommand<D["schema"]>>;
 }
-export const DEMO_COMMANDS = [...SESSION_COMMANDS, Ping, ...GAMEPLAY_NET_COMMANDS.map((x) => x.net)] as const;
+/**
+ * Dev load-test bots (src/bots.ts) tag their connection with this before ClaimAccount. A multiplayer server drops tagged
+ * connections unless started with the dev flag (NET_DEV_BOTS=1 / devBots). Human bots are a singleplayer/offline thing.
+ */
+export const DevBotHello = defineCommand("demo.devBot", { v: "u8" }, { rate: { perSec: 1, burst: 1 } });
+export const DEMO_COMMANDS = [...SESSION_COMMANDS, Ping, ...GAMEPLAY_NET_COMMANDS.map((x) => x.net), DevBotHello] as const;
 export const DEMO_EVENTS = [...SESSION_EVENTS, Pong] as const;
 
 /**
