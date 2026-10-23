@@ -1,0 +1,835 @@
+{
+ "version": 1,
+ "name": "ui-branding",
+ "atlases": [
+  {
+   "key": "brand_logo",
+   "image": "atlases/brand_logo.png",
+   "frameW": 512,
+   "frameH": 166,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/brand_logo@2x.png"
+    }
+   ]
+  },
+  {
+   "key": "brand_menu_bg",
+   "image": "atlases/brand_menu_bg.png",
+   "frameW": 1920,
+   "frameH": 1080,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/brand_menu_bg@2x.png"
+    }
+   ]
+  },
+  {
+   "key": "brand_menu_bg_sky",
+   "image": "atlases/brand_menu_bg_sky.png",
+   "frameW": 1920,
+   "frameH": 1080,
+   "columns": 1,
+   "rows": 1
+  },
+  {
+   "key": "brand_menu_bg_far",
+   "image": "atlases/brand_menu_bg_far.png",
+   "frameW": 1920,
+   "frameH": 1080,
+   "columns": 1,
+   "rows": 1
+  },
+  {
+   "key": "brand_menu_bg_near",
+   "image": "atlases/brand_menu_bg_near.png",
+   "frameW": 1920,
+   "frameH": 1080,
+   "columns": 1,
+   "rows": 1
+  },
+  {
+   "key": "brand_menu_bg_fireflies",
+   "image": "atlases/brand_menu_bg_fireflies.png",
+   "frameW": 1920,
+   "frameH": 1080,
+   "columns": 1,
+   "rows": 1
+  },
+  {
+   "key": "brand_menu_bg_vignette",
+   "image": "atlases/brand_menu_bg_vignette.png",
+   "frameW": 1920,
+   "frameH": 1080,
+   "columns": 1,
+   "rows": 1
+  },
+  {
+   "key": "brand_btn_plates",
+   "image": "atlases/brand_btn_plates.png",
+   "frameW": 96,
+   "frameH": 76,
+   "columns": 4,
+   "rows": 4,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/brand_btn_plates@2x.png"
+    }
+   ],
+   "nineSlice": {
+    "0": {
+     "l": 22,
+     "t": 18,
+     "r": 22,
+     "b": 20
+    },
+    "1": {
+     "l": 22,
+     "t": 18,
+     "r": 22,
+     "b": 20
+    },
+    "2": {
+     "l": 22,
+     "t": 18,
+     "r": 22,
+     "b": 20
+    },
+    "3": {
+     "l": 22,
+     "t": 18,
+     "r": 22,
+     "b": 20
+    },
+    "4": {
+     "l": 22,
+     "t": 18,
+     "r": 22,
+     "b": 20
+    },
+    "5": {
+     "l": 22,
+     "t": 18,
+     "r": 22,
+     "b": 20
+    },
+    "6": {
+     "l": 22,
+     "t": 18,
+     "r": 22,
+     "b": 20
+    },
+    "7": {
+     "l": 22,
+     "t": 18,
+     "r": 22,
+     "b": 20
+    },
+    "8": {
+     "l": 22,
+     "t": 18,
+     "r": 22,
+     "b": 20
+    },
+    "9": {
+     "l": 22,
+     "t": 18,
+     "r": 22,
+     "b": 20
+    },
+    "10": {
+     "l": 22,
+     "t": 18,
+     "r": 22,
+     "b": 20
+    },
+    "11": {
+     "l": 22,
+     "t": 18,
+     "r": 22,
+     "b": 20
+    },
+    "12": {
+     "l": 22,
+     "t": 18,
+     "r": 22,
+     "b": 20
+    },
+    "13": {
+     "l": 22,
+     "t": 18,
+     "r": 22,
+     "b": 20
+    },
+    "14": {
+     "l": 22,
+     "t": 18,
+     "r": 22,
+     "b": 20
+    },
+    "15": {
+     "l": 22,
+     "t": 18,
+     "r": 22,
+     "b": 20
+    }
+   }
+  },
+  {
+   "key": "brand_btn_labelled",
+   "image": "atlases/brand_btn_labelled.png",
+   "frameW": 320,
+   "frameH": 76,
+   "columns": 4,
+   "rows": 4,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/brand_btn_labelled@2x.png"
+    }
+   ]
+  },
+  {
+   "key": "brand_btn_icons",
+   "image": "atlases/brand_btn_icons.png",
+   "frameW": 40,
+   "frameH": 40,
+   "columns": 4,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/brand_btn_icons@2x.png"
+    }
+   ]
+  },
+  {
+   "key": "brand_loading_frame",
+   "image": "atlases/brand_loading_frame.png",
+   "frameW": 64,
+   "frameH": 32,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/brand_loading_frame@2x.png"
+    }
+   ],
+   "nineSlice": {
+    "0": {
+     "l": 14,
+     "t": 12,
+     "r": 16,
+     "b": 15
+    }
+   }
+  },
+  {
+   "key": "brand_loading_fill",
+   "image": "atlases/brand_loading_fill.png",
+   "frameW": 32,
+   "frameH": 18,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/brand_loading_fill@2x.png"
+    }
+   ],
+   "nineSlice": {
+    "0": {
+     "l": 8,
+     "t": 7,
+     "r": 8,
+     "b": 7
+    }
+   }
+  },
+  {
+   "key": "brand_loading_zombie_walk",
+   "image": "atlases/brand_loading_zombie_walk.png",
+   "frameW": 64,
+   "frameH": 64,
+   "columns": 6,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/brand_loading_zombie_walk@2x.png"
+    }
+   ]
+  },
+  {
+   "key": "brand_loading_campfire",
+   "image": "atlases/brand_loading_campfire.png",
+   "frameW": 64,
+   "frameH": 64,
+   "columns": 6,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/brand_loading_campfire@2x.png"
+    }
+   ]
+  }
+ ],
+ "sprites": [
+  {
+   "key": "ui_brand_logo",
+   "category": "ui",
+   "atlas": "brand_logo",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_menu_bg",
+   "category": "ui",
+   "atlas": "brand_menu_bg",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_menu_bg_sky",
+   "category": "ui",
+   "atlas": "brand_menu_bg_sky",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_menu_bg_far",
+   "category": "ui",
+   "atlas": "brand_menu_bg_far",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_menu_bg_near",
+   "category": "ui",
+   "atlas": "brand_menu_bg_near",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_menu_bg_fireflies",
+   "category": "ui",
+   "atlas": "brand_menu_bg_fireflies",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_menu_bg_vignette",
+   "category": "ui",
+   "atlas": "brand_menu_bg_vignette",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_menu_btn_plate_singleplayer",
+   "category": "ui",
+   "atlas": "brand_btn_plates",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "normal": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    },
+    "hover": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    },
+    "pressed": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    },
+    "disabled": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_menu_btn_singleplayer",
+   "category": "ui",
+   "atlas": "brand_btn_labelled",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "normal": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    },
+    "hover": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    },
+    "pressed": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    },
+    "disabled": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_menu_ic_singleplayer",
+   "category": "ui",
+   "atlas": "brand_btn_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_menu_btn_plate_multiplayer",
+   "category": "ui",
+   "atlas": "brand_btn_plates",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "normal": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    },
+    "hover": {
+     "frames": [
+      5
+     ],
+     "fps": 1
+    },
+    "pressed": {
+     "frames": [
+      6
+     ],
+     "fps": 1
+    },
+    "disabled": {
+     "frames": [
+      7
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_menu_btn_multiplayer",
+   "category": "ui",
+   "atlas": "brand_btn_labelled",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "normal": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    },
+    "hover": {
+     "frames": [
+      5
+     ],
+     "fps": 1
+    },
+    "pressed": {
+     "frames": [
+      6
+     ],
+     "fps": 1
+    },
+    "disabled": {
+     "frames": [
+      7
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_menu_ic_multiplayer",
+   "category": "ui",
+   "atlas": "brand_btn_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_menu_btn_plate_settings",
+   "category": "ui",
+   "atlas": "brand_btn_plates",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "normal": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    },
+    "hover": {
+     "frames": [
+      9
+     ],
+     "fps": 1
+    },
+    "pressed": {
+     "frames": [
+      10
+     ],
+     "fps": 1
+    },
+    "disabled": {
+     "frames": [
+      11
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_menu_btn_settings",
+   "category": "ui",
+   "atlas": "brand_btn_labelled",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "normal": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    },
+    "hover": {
+     "frames": [
+      9
+     ],
+     "fps": 1
+    },
+    "pressed": {
+     "frames": [
+      10
+     ],
+     "fps": 1
+    },
+    "disabled": {
+     "frames": [
+      11
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_menu_ic_settings",
+   "category": "ui",
+   "atlas": "brand_btn_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_menu_btn_plate_quit",
+   "category": "ui",
+   "atlas": "brand_btn_plates",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "normal": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    },
+    "hover": {
+     "frames": [
+      13
+     ],
+     "fps": 1
+    },
+    "pressed": {
+     "frames": [
+      14
+     ],
+     "fps": 1
+    },
+    "disabled": {
+     "frames": [
+      15
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_menu_btn_quit",
+   "category": "ui",
+   "atlas": "brand_btn_labelled",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "normal": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    },
+    "hover": {
+     "frames": [
+      13
+     ],
+     "fps": 1
+    },
+    "pressed": {
+     "frames": [
+      14
+     ],
+     "fps": 1
+    },
+    "disabled": {
+     "frames": [
+      15
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_menu_ic_quit",
+   "category": "ui",
+   "atlas": "brand_btn_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_loading_frame",
+   "category": "ui",
+   "atlas": "brand_loading_frame",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_loading_fill",
+   "category": "ui",
+   "atlas": "brand_loading_fill",
+   "anchor": {
+    "x": 0,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_loading_zombie",
+   "category": "ui",
+   "atlas": "brand_loading_zombie_walk",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "animations": {
+    "walk": {
+     "frames": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "fps": 7,
+     "loop": true
+    }
+   }
+  },
+  {
+   "key": "ui_loading_campfire",
+   "category": "ui",
+   "atlas": "brand_loading_campfire",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.92
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "fps": 10,
+     "loop": true
+    }
+   }
+  }
+ ]
+}
