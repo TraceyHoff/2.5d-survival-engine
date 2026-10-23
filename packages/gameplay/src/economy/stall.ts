@@ -9,10 +9,10 @@
  * validateStallPurchase / executeStallPurchase are pure helpers (no events) that the command and net can reuse.
  */
 import {
-  addPermissionRule, can, defineCommand, definePermissionActions, entityIndex, Membership, OwnedBy, Owner, Permissions, PlayerId,
+  addPermissionRule, can, canAt, defineCommand, definePermissionActions, entityIndex, Membership, OwnedBy, Owner, Permissions, PlayerId,
   playerOf, Transform, transaction, type CommandDef, type Slot, type SlotExtras, type CommandHandlers, type Entity, type Transaction, type TxResult, type World,
 } from "@engine/core";
-import { AttachKind, BuildPiece, Container, ContainerViewers, LEDGER_SIZE, Listings, LootBag, PieceLink, StallHeader, StallLedger, StallOwnerKind, Viewing } from "../components.js";
+import { AttachKind, BuildPiece, Container, ContainerViewers, LEDGER_SIZE, Listings, LootBag, PieceLink, STALL_NAME_MAX, StallHeader, StallLedger, StallSign, StallOwnerKind, Viewing } from "../components.js";
 import { gameplayDefs, isAuthority, rangeSlack } from "../config.js";
 import { emit, type GEvent } from "../events.js";
 import { defineEvent } from "@engine/core";
@@ -35,7 +35,7 @@ function give(tx: Transaction, to: Entity, item: number, parts: readonly Part[])
 }
 
 /** Gameplay permission bits for stalls (core can()). */
-export const StallActs = definePermissionActions(["list", "price", "collect", "stock", "remove", "buy"] as const);
+export const StallActs = definePermissionActions(["list", "price", "collect", "stock", "remove", "buy", "place"] as const);
 const ACT_OF: Record<StallAction, number> = { list: StallActs.list, price: StallActs.price, collect: StallActs.collect, stock: StallActs.stock, remove: StallActs.remove };
 const ALL_STALL = StallActs.list | StallActs.price | StallActs.collect | StallActs.stock | StallActs.remove | StallActs.buy;
 
@@ -83,7 +83,7 @@ export function stallRule(world: World, actor: Entity, target: Entity, action: n
   const stall = world.has(target, StallHeader) ? target : isTill(world, target) ? stallOf(world, pieceOf(world, target) ?? target) : undefined;
   if (stall === undefined) return undefined;
   const h = world.get(stall, StallHeader)!; const player = playerOf(world, actor);
-  if (action === StallActs.buy) return h.open ? "allow" : "deny";
+  if (action === StallActs.buy) return h.open && claimAllowsTrade(world, stall, h.ownerKind, h.ownerId) ? "allow" : "deny";
   if (!player) return "deny";
   if (h.ownerKind === StallOwnerKind.Player) return h.ownerId === player ? "allow" : "deny";
   if (h.ownerKind === StallOwnerKind.Clan) {
@@ -92,6 +92,62 @@ export function stallRule(world: World, actor: Entity, target: Entity, action: n
     return allowed.some((a) => ACT_OF[a] === action) ? "allow" : "deny";
   }
   return "deny";
+}
+
+// ---- land claims (core ClaimRegistry) ---------------------------------------------------------------
+const claimAtEntity = (world: World, e: Entity) => {
+  const P = world.getResource(Permissions); const t = world.get(e, Transform); return P && t ? P.claims.claimAt(t.x, t.y) : undefined;
+};
+/** Whether stall owner (player or clan) belongs to the claim's owner group. */
+function ownerInClaim(world: World, ownerGroup: number, kind: number, id: number): boolean {
+  if (kind === StallOwnerKind.Clan) return id === ownerGroup;
+  return kind === StallOwnerKind.Player && world.resource(Permissions).groups.role(ownerGroup, id) > 0;
+}
+/** A stall standing in a foreign claim (not its owner's) cannot sell unless data claims.tradeInForeignClaim. */
+export function claimAllowsTrade(world: World, stall: Entity, kind: number, id: number): boolean {
+  if (ECONOMY.claims.tradeInForeignClaim) return true;
+  const c = claimAtEntity(world, stall); return !c || !c.ownerGroup || ownerInClaim(world, c.ownerGroup, kind, id);
+}
+/** Placement rule (canAt, target 0): NoBuild zones refuse stalls; foreign claims refuse them unless data allows. */
+export function stallPlaceRule(world: World, actor: Entity, claim: { ownerGroup: number; flags: number } | undefined): "allow" | "deny" | undefined {
+  if (!claim) return undefined;
+  if (claim.flags & 8 /* ZoneFlag.NoBuild */) return "deny";
+  if (claim.ownerGroup && !ECONOMY.claims.placeInForeignClaim && world.resource(Permissions).groups.role(claim.ownerGroup, playerOf(world, actor)) <= 0) return "deny";
+  return "allow";
+}
+/** Validation used by placement for stall pieces: clanOnly needs a clan; claim rules when core permissions are installed. */
+export function canPlaceStall(world: World, builder: Entity, x: number, y: number, clanOnly: boolean): boolean {
+  if (clanOnly && !(world.isRegistered(Membership) && (world.getField(builder, Membership, "clanId") ?? 0))) return false;
+  return world.getResource(Permissions) ? canAt(world, builder, x, y, StallActs.place) : true;
+}
+
+// ---- sign + sold-out (StallSign) -----------------------------------------------------------------
+/** Printable ASCII only, whitespace collapsed, trimmed, capped at data stallNameMax (<= STALL_NAME_MAX). */
+export function sanitizeStallName(raw: string): string {
+  const max = Math.min(ECONOMY.stallNameMax, STALL_NAME_MAX);
+  return raw.replace(/[^\x20-\x7e]/g, " ").replace(/\s+/g, " ").trim().slice(0, max).trimEnd();
+}
+export function stallName(world: World, stall: Entity): string {
+  const n = world.getField(stall, StallSign, "nameLen") ?? 0; const a = world.getArray(stall, StallSign, "name"); if (!a) return "";
+  let out = ""; for (let i = 0; i < n; i++) out += String.fromCharCode(a[i]!); return out;
+}
+export function writeStallName(world: World, stall: Entity, raw: string): string {
+  if (!world.has(stall, StallSign)) world.add(stall, StallSign, { soldOut: 1 });
+  const name = sanitizeStallName(raw); const a = world.getArray(stall, StallSign, "name")!;
+  a.fill(0); for (let i = 0; i < name.length; i++) a[i] = name.charCodeAt(i);
+  world.setField(stall, StallSign, "nameLen", name.length); world.store(StallSign).markChanged(entityIndex(stall)); return name;
+}
+/** soldOut = no enabled listing with stock >= qty. Called after every stock/listing/sale change. */
+export function refreshSoldOut(world: World, stall: Entity): void {
+  if (!world.has(stall, StallSign)) world.add(stall, StallSign, { soldOut: 1 });
+  const sold = stallListings(world, stall).every((l) => !l.enabled || !l.stockItem || l.stock < Math.max(1, l.qty)) ? 1 : 0;
+  if (world.getField(stall, StallSign, "soldOut") !== sold) world.setField(stall, StallSign, "soldOut", sold);
+}
+export const stallSoldOut = (world: World, stall: Entity): boolean => world.getField(stall, StallSign, "soldOut") === 1;
+/** Owner (list permission) renames the sign. */
+export function setStallName(world: World, actor: Entity, target: Entity, raw: string): string | undefined {
+  const m = manage(world, actor, target, StallActs.list, false); if (m.why) return m.why;
+  writeStallName(world, m.stall!, raw); return undefined;
 }
 
 // ---- reads ---------------------------------------------------------------------------------------
@@ -170,7 +226,7 @@ export function buyFromStall(world: World, buyer: Entity, stallTarget: Entity, r
   let res: PurchaseResult | undefined;
   const r = transaction(world, (tx) => { const x = executeStallPurchase(tx, buyer, stall, till, req); res = x.result; return x; }, buyer);
   if (!r.ok) return r.reason as BuyReason;
-  const h = world.get(stall, StallHeader)!; const buyerId = playerOf(world, buyer);
+  refreshSoldOut(world, stall); const h = world.get(stall, StallHeader)!; const buyerId = playerOf(world, buyer);
   appendLedger(world, stall, { item: res!.item, count: res!.count, priceItem: res!.priceItem, priceCount: res!.priceCount, buyerId, crafterId: res!.crafterId });
   if (!world.isReplaying) emit(world, StallSale, { stall, listingSlot: req.listingSlot, item: res!.item, count: res!.count, priceItem: res!.priceItem, priceCount: res!.priceCount, buyerId, crafterId: res!.crafterId, ownerKind: h.ownerKind, ownerId: h.ownerId });
   return undefined;
@@ -189,14 +245,14 @@ export function stockStall(world: World, actor: Entity, target: Entity, listingS
   const m = manage(world, actor, target, StallActs.stock); if (m.why) return m.why; const stall = m.stall!;
   if (listingSlot >= (world.getField(stall, StallHeader, "listingCount") ?? 0)) return "bad_listing";
   const r = transaction(world, (tx) => tx.transfer(actor, invSlot, stall, listingSlot, count), actor);
-  return r.ok ? undefined : r.reason;
+  refreshSoldOut(world, stall); return r.ok ? undefined : r.reason;
 }
 /** Return `count` units from a listing slot to the actor (anyone allowed to stock may unstock their stall). */
 export function unstockStall(world: World, actor: Entity, target: Entity, listingSlot: number, count: number): R {
   const m = manage(world, actor, target, StallActs.list); if (m.why) return m.why; const stall = m.stall!;
   const r = transaction(world, (tx) => { const s = tx.get(stall, listingSlot); if (!s.item) return { ok: false, reason: "sold_out" };
     const t = takeSlot(tx, stall, listingSlot, Math.min(count, s.count)); return t ? give(tx, actor, s.item, t) : { ok: false, reason: "sold_out" }; }, actor);
-  return r.ok ? undefined : r.reason;
+  refreshSoldOut(world, stall); return r.ok ? undefined : r.reason;
 }
 export interface ListingInput { priceItem: number; priceCount: number; qty: number; enabled: number }
 export function setListing(world: World, actor: Entity, target: Entity, listingSlot: number, l: ListingInput): R {
@@ -205,7 +261,7 @@ export function setListing(world: World, actor: Entity, target: Entity, listingS
   if (l.enabled && (!gameplayDefs(world).items.has(l.priceItem) || l.qty < 1 || l.priceCount < 1)) return "bad_listing";
   const a = (f: "priceItem" | "priceCount" | "qty" | "enabled") => world.getArray(stall, Listings, f)!;
   a("priceItem")[listingSlot] = l.priceItem; a("priceCount")[listingSlot] = l.priceCount; a("qty")[listingSlot] = l.qty; a("enabled")[listingSlot] = l.enabled ? 1 : 0;
-  bump(world, stall); return undefined;
+  bump(world, stall); refreshSoldOut(world, stall); return undefined;
 }
 export function setStallOpen(world: World, actor: Entity, target: Entity, open: number): R {
   const m = manage(world, actor, target, StallActs.list); if (m.why) return m.why;
@@ -247,7 +303,7 @@ export function spillStall(world: World, att: Entity): Entity | undefined {
   const t = world.get(att, Transform)!; const bag = world.create();
   world.add(bag, Transform, { x: t.x, y: t.y, z: t.z }).add(bag, Container, { slotCount: 24 }).add(bag, ContainerViewers)
     .add(bag, LootBag, { owner: 0, despawnAtTick: world.tick + 20 * 600 });
-  moveSlotTuples(world, att, bag, moves); indexEntity(world, bag); return bag;
+  moveSlotTuples(world, att, bag, moves); indexEntity(world, bag); if (world.has(att, StallSign)) refreshSoldOut(world, att); return bag;
 }
 
 // ---- commands (append-only ids, registered after GAMEPLAY_COMMANDS) ---------------------------------
@@ -259,7 +315,9 @@ export const SetListingCmd = defineCommand("gameplay.setListing", { stall: "u32"
 export const BuyFromStallCmd = defineCommand("gameplay.buyFromStall", { stall: "u32", listingSlot: "u8", qty: "u16", expectedRevision: "u32", expectedPriceItem: "u16", expectedPriceCount: "u16" });
 export const CollectTillCmd = defineCommand("gameplay.collectTill", { stall: "u32" });
 export const SetStallOpenCmd = defineCommand("gameplay.setStallOpen", { stall: "u32", open: "u8" });
-export const ECONOMY_COMMANDS: readonly CommandDef[] = [OpenStallCmd, CloseStallCmd, StockStallCmd, UnstockStallCmd, SetListingCmd, BuyFromStallCmd, CollectTillCmd, SetStallOpenCmd];
+/** Sign text as bytes (len used); the server sanitizes. */
+export const SetStallNameCmd = defineCommand("gameplay.setStallName", { stall: "u32", len: "u8", name: { type: "u8", length: STALL_NAME_MAX } });
+export const ECONOMY_COMMANDS: readonly CommandDef[] = [OpenStallCmd, CloseStallCmd, StockStallCmd, UnstockStallCmd, SetListingCmd, BuyFromStallCmd, CollectTillCmd, SetStallOpenCmd, SetStallNameCmd];
 /** NetId fields net resolves to Entities. */
 export const ECONOMY_ENTITY_FIELDS: Readonly<Record<string, readonly string[]>> = Object.fromEntries(ECONOMY_COMMANDS.filter((d) => "stall" in d.schema).map((d) => [d.name, ["stall"]]));
 export const ECONOMY_COMMAND_RATES: Readonly<Record<string, number>> = Object.fromEntries(ECONOMY_COMMANDS.map((d) => [d.name, d === BuyFromStallCmd ? ECONOMY.buyRatePerSecond : 8]));
@@ -269,7 +327,7 @@ export const ECONOMY_COMMAND_RATES: Readonly<Record<string, number>> = Object.fr
  * handlers. Rejections surface as core CommandRejected with the reason codes above. Call after installPermissions.
  */
 export function installEconomy(world: World, handlers?: CommandHandlers): void {
-  addPermissionRule(world, (ctx) => ctx.target ? stallRule(ctx.world, ctx.actor, ctx.target, ctx.action) : undefined);
+  addPermissionRule(world, (ctx) => ctx.target ? stallRule(ctx.world, ctx.actor, ctx.target, ctx.action) : ctx.action === StallActs.place ? stallPlaceRule(ctx.world, ctx.actor, ctx.claim) : undefined);
   if (!handlers) return;
   // validate does the work so the reason reaches CommandRejected; handle is a no-op (the op already ran or nothing changed)
   const op = <V>(f: (v: V, actor: Entity) => R) => ({ validate: (v: V, ctx: { actor: Entity }) => f(v, ctx.actor), handle: () => {} });
@@ -282,4 +340,6 @@ export function installEconomy(world: World, handlers?: CommandHandlers): void {
   handlers.on(BuyFromStallCmd, op<V>((v, a) => buyFromStall(world, a, v.stall!, { listingSlot: v.listingSlot!, qty: v.qty!, expectedRevision: v.expectedRevision!, expectedPriceItem: v.expectedPriceItem!, expectedPriceCount: v.expectedPriceCount! })));
   handlers.on(CollectTillCmd, op<V>((v, a) => collectTill(world, a, v.stall!)));
   handlers.on(SetStallOpenCmd, op<V>((v, a) => setStallOpen(world, a, v.stall!, v.open!)));
+  handlers.on(SetStallNameCmd, op<{ stall: number; len: number; name: ArrayLike<number> }>((v, a) =>
+    setStallName(world, a, v.stall, Array.from({ length: Math.min(v.len, STALL_NAME_MAX) }, (_, i) => String.fromCharCode(v.name[i] ?? 32)).join(""))));
 }

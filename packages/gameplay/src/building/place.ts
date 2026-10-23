@@ -26,8 +26,8 @@ import { anchorFor, gridRot, LAYER_OPENING, markLinked, slotTransform, structure
 import { Falloff } from "@engine/world";
 import { indexEntity } from "../spawn.js";
 import { tillSlots } from "../economy/config.js";
-import { assignStallOwner } from "../economy/stall.js";
-import { Listings, StallHeader, StallLedger } from "../components.js";
+import { assignStallOwner, canPlaceStall } from "../economy/stall.js";
+import { Listings, StallHeader, StallLedger, StallSign } from "../components.js";
 
 export interface PlaceRequest { piece: number; x: number; y: number; level: number; rot: number; tier: number; variant: number }
 export interface Snapped { def: PieceDef; slot: Slot; parent: Entity | 0; pos: { x: number; y: number; z: number; facing: number }; tier: number; variant: number }
@@ -127,6 +127,8 @@ export function validatePlacement(world: World, builder: Entity, sn: Snapped, op
   const tribe = tribeOf(world, builder);
   const zones = zonesAt(world, sn.pos.x, sn.pos.y, def.privilegeRadius);
   if (zones.some((z) => world.getField(z, PrivilegeZone, "tribe") !== tribe) || (def.privilegeRadius > 0 && tribe === 0)) return BuildFail.NoPrivilege;
+  // stalls: clanOnly needs a clan; core land claims (economy.claims) via the stall place permission rule
+  if (def.stall && !canPlaceStall(world, builder, sn.pos.x, sn.pos.y, def.stall.clanOnly)) return BuildFail.NoPrivilege;
   const own = zonesAt(world, sn.pos.x, sn.pos.y)[0];
   if (own !== undefined && (idx.zoneCounts.get(own) ?? 0) >= b.maxPiecesPerZone) return BuildFail.ZoneFull;
   // terrain for ground-level pieces
@@ -218,7 +220,7 @@ export function spawnAttachments(world: World, piece: Entity, def: PieceDef, sn:
     // trade stall: stock (Container slot i = listing i) + header/listings/ledger on one attachment, proceeds in a separate till
     const st = link(AttachKind.Storage);
     world.add(st, Container, { slotCount: def.stall.listings }).add(st, ContainerViewers)
-      .add(st, StallHeader, { ownerKind: 0, ownerId: 0, open: 0, listingCount: def.stall.listings }).add(st, Listings).add(st, StallLedger);
+      .add(st, StallHeader, { ownerKind: 0, ownerId: 0, open: 0, listingCount: def.stall.listings }).add(st, Listings).add(st, StallLedger).add(st, StallSign, { soldOut: 1 });
     world.add(link(AttachKind.Till), Container, { slotCount: tillSlots() });
   } else if (def.container > 0) world.add(link(AttachKind.Storage), Container, { slotCount: def.container }).add(out[out.length - 1]!, ContainerViewers);
   const light = specs.find((s) => s.kind === 2);

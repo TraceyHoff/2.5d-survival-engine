@@ -10,11 +10,13 @@
  *           [container (fire or storage): u8 slotCount, u8 n, n x (u8 slot, u16 item, u16 count, u32 ageTicks, u16 durability, u32 crafterId (v2))]
  *           [stall (flag 8, v2): u8 ownerKind, u32 ownerId, u8 open, u32 revision, u8 L, L x (u16 priceItem, u16 priceCount, u16 qty, u8 enabled),
  *            u8 head, u32 total, LEDGER_SIZE x (u32 age, u16 item, u16 count, u16 priceItem, u32 priceCount, u32 buyerId, u32 crafterId), till container]
- * v1 blobs (no crafterId, no stall block) still decode.
+ *            [v3: u8 nameLen, nameLen x u8 sign text (StallSign)]
+ * v1 blobs (no crafterId, no stall block) and v2 blobs (no sign text) still decode.
  * Records are sorted (decks, structure cells, edges, furniture, openings; then level, y, x, type, rot) so hosts
  * decode before openings and re-encoding a decoded chunk is byte-identical. Times are relative to the save tick.
  */
 import { BinaryReader, BinaryWriter, entityIndex, Transform, type Entity, type World } from "@engine/core";
+import { refreshSoldOut, stallName, writeStallName } from "../economy/stall.js";
 import { CHUNK_SIZE, chunkKey, type ChunkKey } from "@engine/world";
 import { AttachKind, BuildPiece, Container, DoorState, Fuel, LEDGER_SIZE, Listings, PieceLink, PieceStability, StallHeader, StallLedger, Tribe } from "../components.js";
 import { gameplayDefs, isAuthority } from "../config.js";
@@ -26,7 +28,7 @@ import { openingParent, slotFromPos, slotTransform, structures, unmarkLinked, ty
 import { setEmittersLit } from "../systems/fuel.js";
 import { setStallOwnership } from "../economy/stall.js";
 
-export const STRC_VERSION = 2;
+export const STRC_VERSION = 3;
 const MAGIC = [0x53, 0x54, 0x52, 0x43];
 export class StructureCodecError extends Error {}
 
@@ -79,8 +81,9 @@ function writeStall(world: World, w: BinaryWriter, s: Entity, till: Entity | und
   w.write("u8", world.getField(s, StallLedger, "head")!); w.write("u32", world.getField(s, StallLedger, "total")!);
   for (let i = 0; i < LEDGER_SIZE; i++) { w.write("u32", Math.max(0, world.tick - l("tick")[i]!)); w.write("u16", l("item")[i]!); w.write("u16", l("count")[i]!); w.write("u16", l("priceItem")[i]!); w.write("u32", l("priceCount")[i]!); w.write("u32", l("buyerId")[i]!); w.write("u32", l("crafterId")[i]!); }
   if (till !== undefined) writeContainer(world, w, till); else { w.write("u8", 0); w.write("u8", 0); }
+  const name = stallName(world, s); const bytes = Array.from(name, (ch) => ch.charCodeAt(0)); w.write("u8", bytes.length); for (const b of bytes) w.write("u8", b);
 }
-function readStall(world: World, r: BinaryReader, s: Entity | undefined, till: Entity | undefined): void {
+function readStall(world: World, r: BinaryReader, s: Entity | undefined, till: Entity | undefined, version: number): void {
   const ownerKind = r.read("u8"), ownerId = r.read("u32"), open = r.read("u8"), revision = r.read("u32"), L = r.read("u8");
   const rows: number[][] = []; for (let i = 0; i < L; i++) rows.push([r.read("u16"), r.read("u16"), r.read("u16"), r.read("u8")]);
   const head = r.read("u8"), total = r.read("u32");
@@ -96,6 +99,8 @@ function readStall(world: World, r: BinaryReader, s: Entity | undefined, till: E
     setStallOwnership(world, s, till, ownerKind, ownerId);
   }
   readContainer(world, r, till, 2);
+  if (version >= 3) { const n = r.read("u8"); let name = ""; for (let i = 0; i < n; i++) name += String.fromCharCode(r.read("u8")); if (s !== undefined) writeStallName(world, s, name); }
+  if (s !== undefined) refreshSoldOut(world, s);
 }
 function readContainer(world: World, r: BinaryReader, c: Entity | undefined, version: number): void {
   const n = r.read("u8"); const used = r.read("u8");
@@ -114,7 +119,7 @@ export interface DecodedStructures { cx: number; cy: number; pieces: Entity[]; h
 export function decodeStructures(world: World, bytes: Uint8Array, opts: { strictHashes?: boolean } = {}): DecodedStructures {
   const defs = gameplayDefs(world); const idx = structures(world); const r = new BinaryReader(bytes); const lh = defs.building.levelHeight;
   for (const m of MAGIC) if (r.read("u8") !== m) throw new StructureCodecError("not a structure blob (bad magic)");
-  const version = r.read("u16"); if (version !== STRC_VERSION && version !== 1) throw new StructureCodecError(`unsupported structure blob version ${version} (expected ${STRC_VERSION})`);
+  const version = r.read("u16"); if (version !== STRC_VERSION && version !== 1 && version !== 2) throw new StructureCodecError(`unsupported structure blob version ${version} (expected ${STRC_VERSION})`);
   const cx = r.read("i32"), cy = r.read("i32"); const ph = r.read("u32"), ih = r.read("u32");
   const hashMismatch = ph !== defs.hashes.pieces || ih !== defs.hashes.items;
   if (hashMismatch && opts.strictHashes) throw new StructureCodecError("structure blob was written with different piece/item ids");
@@ -141,7 +146,7 @@ export function decodeStructures(world: World, bytes: Uint8Array, opts: { strict
     if (fire && fireA !== undefined) { world.set(fireA, Fuel, { lit: fire.lit, burnUntilTick: world.tick + fire.rem }); }
     if (fire) readContainer(world, r, fireA, version);
     if (flags & 4) readContainer(world, r, storeA, version);
-    if (flags & 8) readStall(world, r, storeA !== undefined && world.has(storeA, StallHeader) ? storeA : undefined, atts.find((a) => world.getField(a, PieceLink, "kind") === AttachKind.Till));
+    if (flags & 8) readStall(world, r, storeA !== undefined && world.has(storeA, StallHeader) ? storeA : undefined, atts.find((a) => world.getField(a, PieceLink, "kind") === AttachKind.Till), version);
   }
   if (isAuthority(world) && pieces.length) { recomputeRegion(world, idx, new Set(pieces)); idx.dirty.clear(); }
   // fires: restore emitter strength for lit fires

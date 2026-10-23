@@ -19,6 +19,10 @@ export interface EconomyConfig {
   readonly rankPolicy: Readonly<Record<number, readonly StallAction[]>>;
   /** Item keys that never record a crafter (fungible currency). */
   readonly anonymousItems: readonly string[];
+  /** Max sign text length (capped by STALL_NAME_MAX). */
+  readonly stallNameMax: number;
+  /** Land-claim rules for stalls (core ClaimRegistry). */
+  readonly claims: { readonly placeInForeignClaim: boolean; readonly tradeInForeignClaim: boolean };
 }
 const r = raw as unknown as Omit<EconomyConfig, "rankPolicy" | "anonymousItems"> & { rankPolicy: Record<string, StallAction[]>; anonymousItems?: string[] };
 export const ECONOMY: EconomyConfig = Object.freeze({

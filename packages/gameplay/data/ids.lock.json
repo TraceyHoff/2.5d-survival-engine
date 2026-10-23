@@ -170,7 +170,8 @@
     "raid_bell": 45,
     "watchtower": 46,
     "windsock": 47,
-    "wood_stove": 48
+    "wood_stove": 48,
+    "market_counter": 49
   },
   "zombies": {
     "zombie_brute": 1,

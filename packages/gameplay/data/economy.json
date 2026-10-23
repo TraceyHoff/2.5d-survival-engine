@@ -28,5 +28,11 @@
   },
   "anonymousItems": [
     "coin"
-  ]
+  ],
+  "stallNameMax": 24,
+  "claims": {
+    "$comment": "Stalls in a claim owned by a group the builder/owner is not in: placement refused (placeInForeignClaim false); existing ones cannot sell (tradeInForeignClaim false). NoBuild zones refuse stalls.",
+    "placeInForeignClaim": false,
+    "tradeInForeignClaim": false
+  }
 }

@@ -779,6 +779,36 @@
       }
     },
     {
+      "key": "market_counter",
+      "placement": "free",
+      "layer": 2,
+      "tier": 2,
+      "hp": 400,
+      "container": 6,
+      "footprint": {
+        "w": 2,
+        "h": 1
+      },
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 12
+        },
+        {
+          "resource": "stone_brick",
+          "amount": 8
+        },
+        {
+          "resource": "nails",
+          "amount": 8
+        }
+      ],
+      "stall": {
+        "listings": 6,
+        "clanOnly": true
+      }
+    },
+    {
       "key": "fireplace",
       "placement": "free",
       "layer": 2,

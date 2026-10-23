@@ -288,18 +288,23 @@ See the bottom of README.md. The open lists are mirrored in the final report.
 
 ## 9. Economy (player-driven; trade stalls)
 
+**Land claims (core ClaimRegistry, slice 4).** `installEconomy` adds one permission rule (addPermissionRule). For target 0 + `StallActs.place` (`canAt` from validatePlacement for stall pieces), a NoBuild zone is denied, and so is a claim whose ownerGroup the builder is not in (unless `economy.claims.placeInForeignClaim`). Buying from a stall in a claim not owned by the stall's owner (the clan id itself, or a player who belongs to the claim group) is denied (`forbidden`) unless `claims.tradeInForeignClaim`. Management is unaffected, so owners can still empty or move a squatting stall. Without installPermissions, placement skips the claim check.
+
+**Sign text.** `setStallName(world, actor, stall, text)` needs the `list` permission; command `gameplay.setStallName {stall, len u8, name u8[24]}` is appended after setStallOpen. `sanitizeStallName`: anything outside printable ASCII becomes a space, whitespace is collapsed, the text is trimmed and capped at `economy.stallNameMax` (≤ STALL_NAME_MAX 24). Reads: `stallName`, `stallSoldOut`. soldOut and name live in a separate StallSign component, not in StallHeader. That keeps the StallHeader schema and hash unchanged for existing saves and net; render reads both from the stock entity.
+
 **Rules.** No NPC vendors (`data/economy.json noVendorSources`, tested: every item has a gather or craft source). Prices are `{item u16, count u16}`; `coin` is the conventional currency (anvil: 1 copper_ingot → 10 coin). Offline sales credit the till.
 
 **Listing model (one model): gameplay `Listings`**, not core `TradeStall`. Core's TradeStall (fb7bf56) caps at 8 rows (we need 24), has no enabled flag, pays into the stock container (we need a separate till), and keeps an in-memory ledger. Gameplay uses core `transaction()`, `Transaction.take/add` (crafterId stack key), `can()` and `PlayerNameRegistry`.
 
 **Crafter provenance.** Inventory/Container carry `crafterId u32[N]` (PlayerId, 0 = gathered or anonymous items such as coin, `economy.anonymousItems`). Registered with core Containers as `crafterId: "crafterId"`. Different crafters never stack. Provenance survives every transfer, trade (net purchaseSwap / coreTradeInventory), stall sale, death bag and STRC v2 persistence. `itemInfo(world, e, slot, names?)` → `{itemKey, count, durability, freshnessStage 0..3, crafterId, crafterName}` (names default = the world's PlayerNameRegistry; clients pass `client.names`).
 
-**Pieces** (`pieces.json` `stall: {listings, clanOnly}`): stall_blanket 1×1/4, stall_cart 2×1/8, stall_booth 2×2/12, clan_pavilion 3×2/24 (clan-owned only). Attachments: **stock** (Container slot i = listing i, StallHeader, Listings, StallLedger, OwnedBy) and **till** (Container, AttachKind.Till). Plain container deposit/withdraw is locked on both.
+**Pieces** (`pieces.json` `stall: {listings, clanOnly}`): stall_blanket 1×1/4, stall_cart 2×1/8, stall_booth 2×2/12, clan_pavilion 3×2/24 (clan-owned only), market_counter 2×1/6 (clan trading post; clan-owned only; tier 2 cost planks+stone_brick+nails; from assets/stalls/pieces.proposed.json). A clanOnly stall cannot be placed by a player without a clan (BuildFail.NoPrivilege). Attachments: **stock** (Container slot i = listing i, StallHeader, Listings, StallLedger, OwnedBy) and **till** (Container, AttachKind.Till). Plain container deposit/withdraw is locked on both.
 
 | Component | Fields | Scope | Persist |
 |---|---|---|---|
 | StallHeader | ownerKind u8 (1 player, 2 clan), ownerId u32, open u8, listingCount u8 | all (AOI) | STRC v2 |
 | Listings | priceItem u16[24], priceCount u16[24], qty u16[24], enabled u8[24], revision u32 (bumps on every listing/open change) | viewers | STRC v2 |
+| StallSign | soldOut u8 (1 = no enabled listing has stock ≥ qty; server-maintained after stock/unstock/listing/sale/spill), nameLen u8, name u8[24] (sign text, printable ASCII) | all (AOI) | STRC v3 (name; soldOut recomputed on load) |
 | StallLedger | ring of 16: tick, item, count, priceItem, priceCount, buyerId, crafterId; head, total | viewers | STRC v2 |
 
 **Permissions** (`StallActs` bits through `can()`, rule installed by `installEconomy`): a player-owned stall is managed by its owner only. Clan stalls follow `economy.rankPolicy`: leader and officer can list, price, collect and stock, plus remove for the leader. Members can only stock. Unlisted roles (recruits, outsiders) can only buy, and only while the stall is open.

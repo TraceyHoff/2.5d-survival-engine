@@ -146,6 +146,10 @@ export const LEDGER_SIZE = 16;
 export const enum StallOwnerKind { None = 0, Player = 1, Clan = 2 }
 /** Lives on the stall's stock attachment (the entity with Container = stock). Scope all (AOI): owner kind/id, open, listing count. */
 export const StallHeader = defineComponent("StallHeader", { ownerKind: "u8", ownerId: "u32", open: "u8", listingCount: "u8" }, { networked: true, persistent: true });
+/** Stall sign + derived flags, replicated to all (Art & Assets): soldOut = no enabled listing has stock (server-maintained);
+ * name = owner-editable sign text, sanitized printable ASCII, nameLen bytes used (max STALL_NAME_MAX). Saved in STRC v3. */
+export const STALL_NAME_MAX = 24;
+export const StallSign = defineComponent("StallSign", { soldOut: "u8", nameLen: "u8", name: { type: "u8", length: STALL_NAME_MAX } }, { networked: true });
 /** Per listing slot i (stock slot i): price {item,count}, quantity per sale, enabled. revision bumps on every change. Scope viewers. */
 export const Listings = defineComponent("Listings", {
   priceItem: { type: "u16", length: MAX_LISTINGS }, priceCount: { type: "u16", length: MAX_LISTINGS },
@@ -177,4 +181,5 @@ export const GAMEPLAY_COMPONENTS = [
   GroupSummary, CombatTag, LootBag,
   StallHeader, Listings, StallLedger,
   Burning,
+  StallSign,
 ] as const;
