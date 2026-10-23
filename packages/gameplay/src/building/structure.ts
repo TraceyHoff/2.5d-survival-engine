@@ -59,7 +59,7 @@ export class StructureIndex {
   readonly pendingDamage = new Map<Entity, number>();
   /** entity -> where it is indexed (removal works even after the entity died). */
   readonly info = new Map<Entity, { slot: Slot; gridId: number; parent: Entity | 0; def: PieceDef; ck: ChunkKey }>();
-  constructor(readonly world: World, readonly defs: GameDefs) { this.grid = new BuildingGrid(defs.pieceRegistry); }
+  constructor(readonly world: World, readonly defs: GameDefs) { this.grid = new BuildingGrid(defs.pieceRegistry); this.grid.recordChanges = false; } // nothing drains buildingChanges(); pieces replicate via ECS
 
   def(e: Entity): PieceDef | undefined { const i = this.info.get(e); if (i) return i.def; const t = this.world.getField(e, BuildPiece, "type"); return t === undefined ? undefined : this.defs.pieces.get(t); }
   slotOf(e: Entity): Slot & { gridId: number; parent: number } | undefined {
