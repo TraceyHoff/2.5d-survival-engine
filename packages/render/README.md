@@ -99,6 +99,11 @@ Controls: drag/WASD to pan, wheel to zoom, arrow keys move the player, F follows
 - `scripts/make-tp-fixture.mjs`
 - `test/`: unit tests
 
+## Character customization
+Layered paper-doll characters (core `Appearance` + `resolveLayers`), tintmask tinting, a per-entity layer cache and
+`createCharacterPreview` for the creator UI (`preview.html`). See [docs/CHARACTERS.md](docs/CHARACTERS.md).
+Shots: `shots/chars_lineup.png`, `chars_facings.png`, `chars_crowd.png`, `chars_preview.png`.
+
 ## Performance
 `shots/bench.json` is **software-rendered** (SwiftShader in headless Chromium on a shared, loaded box) and does **not** represent GPU performance.
 - Render CPU per frame is about 0.5–1 ms for roughly 600–1,000 visible sprites.

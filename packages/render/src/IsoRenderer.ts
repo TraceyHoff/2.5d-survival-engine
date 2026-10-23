@@ -66,6 +66,8 @@ export class IsoRenderer implements Renderer {
   readonly iso: IsoConfig;
   readonly zFactor: number;
   readonly atlas: AtlasManager;
+  /** Override the sky clear colour (linear-ish 0..1 RGB), e.g. a neutral backdrop for the character preview. */
+  backdrop: [number, number, number] | null = null;
   readonly settings: RenderSettings = { lights: true, shadows: true, weather: true, fog: true };
   readonly weatherState = new WeatherState();
   readonly vfx = new VfxLayer();
@@ -113,6 +115,12 @@ export class IsoRenderer implements Renderer {
   private sprites: SpriteBatch;
   /** debug counters of held-item drawing: [with item, with hand anchor, drawn] */
   get heldStats(): readonly number[] { return this.sprites.heldStats; }
+  /** layered characters drawn last frame, extra layer instances, and total resolveLayers calls (cache misses) */
+  get characterStats(): { characters: number; layerInstances: number; resolves: number; cached: number } {
+    const s = this.sprites; return { characters: s.characters, layerInstances: s.layerInstances, resolves: s.layerCache?.resolves ?? 0, cached: s.layerCache?.size ?? 0 };
+  }
+  /** Character layer options: outline "union" (all layers) | "body"; minor layers (accessory/shoes/face/eyes) skipped below this zoom. */
+  setCharacterOptions(o: Partial<{ outline: "union" | "body"; minorLayerMinZoom: number }>): void { Object.assign(this.sprites.characterOpts, o); }
   private lights: LightPass;
   private composite: CompositePass;
   private weather: WeatherPass;
@@ -300,7 +308,7 @@ export class IsoRenderer implements Renderer {
     this.sprites.prepare({
       world, alpha, rect, atlas: this.atlas, depthMin: minKey, depthRange: maxKey - minKey, tickHz: this.tickHz, style,
       bindings: this.bindings, spatial: this.spatial, activeKeys: this.activeKeys, grid: this.grid, groundZAt: this.tilemap ? (x: number, y: number) => tileHeight(this.tilemap!, x, y) : undefined, pieceAnchor: this.pieceAnchor,
-      transformSource: this.transformSource, vfx: this.vfx, now: this.time, statusFx: this.statusHook,
+      transformSource: this.transformSource, vfx: this.vfx, now: this.time, statusFx: this.statusHook, zoom: this.camera.zoom,
     });
     this.sprites.upload();
     this.lights.prepare(world, alpha, rect, this.settings.lights, this.transformSource, { emitter: this.bindings.emitter, lit: this.bindings.lit, kinds: this.emitterKinds });
@@ -310,7 +318,7 @@ export class IsoRenderer implements Renderer {
     gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]);
     gl.viewport(0, 0, this.w, this.h);
     gl.depthMask(true);
-    gl.clearBufferfv(gl.COLOR, 0, [day.sky[0], day.sky[1], day.sky[2], 1]);
+    { const bg = this.backdrop ?? day.sky; gl.clearBufferfv(gl.COLOR, 0, [bg[0], bg[1], bg[2], 1]); }
     gl.clearBufferfv(gl.COLOR, 1, [0, 0, 0, 0]);
     gl.clearBufferfi(gl.DEPTH_STENCIL, 0, 1, 0);
     gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LESS);

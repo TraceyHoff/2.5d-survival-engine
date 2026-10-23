@@ -20,11 +20,16 @@ import type { Rect } from "./camera.js";
 import type { StyleConfig } from "./style.js";
 import type { TransformSource } from "./transformSource.js";
 import type { VfxLayer } from "./vfx.js";
+import { LayerCache, readAppearanceSlot, type AppearanceBinding, type CachedLayer } from "./character/layers.js";
 
 export const INSTANCE_FLOATS = 36;
 /** Depth offset of held items vs the body (must exceed depth-key precision; < the next tile row). */
-const HELD_BIAS = 0.05;
+export const HELD_BIAS = 0.05;
 const OPEN = 1e5;
+/** Depth-key step between a character's paper-doll layers (10 layers < HELD_BIAS; far below one tile = 1.0). */
+export const LAYER_BIAS = 0.001;
+/** Render-internal instance flag (above the u8 SpriteFlag range): draw only the outline ring of this frame. */
+export const OUTLINE_ONLY = 256;
 
 /** Gameplay-owned components the renderer reads (schemas as agreed with Survival Systems). */
 export type BuildPieceDefT = ComponentDef<{ visualId: "u16"; variant: "u8"; tint: "u32"; damageStage: "u8"; rotation: "u8"; level: "u8"; layer: "u8"; ghost: "u8" }>;
@@ -50,6 +55,16 @@ export interface GameplayBindings {
   emitter?: ComponentDef;
   /** Fuel/Burning {lit}: an Emitter on an entity with this component only shows while lit != 0. */
   lit?: ComponentDef;
+  /** Night-only emissive art (stall lanterns): atlas-emissive pixels of these sprites are multiplied by `gate` (StallLayer: 0 by day, flicker at night). */
+  nightEmissive?: { readonly sprites: ReadonlySet<number>; gate: number };
+  /** Per build-piece [primary, secondary] RGBA8 tint override (clan palette for tintmask R/G); undefined = BuildPiece.tint, no secondary. */
+  pieceTints?: (entity: number) => readonly [number, number] | undefined;
+  /** Per build-piece state index override (e.g. stall closed/open from StallHeader.open); undefined = BuildPiece.state. */
+  pieceState?: (entity: number) => number | undefined;
+  /** core Appearance + resolveLayers (character customization): entities with Appearance draw their resolved layers. */
+  appearance?: AppearanceBinding;
+  /** Hit flash 0..1 per entity (white flash on the body and all its layers); undefined/0 = none. */
+  hitFlash?: (entity: number) => number;
 }
 
 const VS = /* glsl */ `#version 300 es
@@ -68,7 +83,7 @@ uniform highp sampler2D uFrames;
 uniform float uZPerPx, uHH, uTime, uWind, uOutline;
 uniform int uShadowPass, uShadowMode;
 uniform vec2 uShadowDir; uniform float uBlobAspect; uniform vec2 uWindVec; // screen-x wind direction, strength 0..1
-out vec4 vFx; out vec3 vUv; out float vAlpha; flat out int vFlags; flat out vec4 vRect; out vec3 vTint; flat out vec3 vMisc; out vec2 vLocal; out vec2 vScr; flat out float vOcc; flat out ivec2 vFB; flat out vec4 vTint2; flat out float vSwayPx;
+out vec4 vFx; out vec3 vUv; out float vAlpha; flat out int vFlags; flat out vec4 vRect; out vec3 vTint; flat out vec3 vMisc; out vec2 vLocal; out vec2 vScr; flat out float vOcc; flat out ivec2 vFB; flat out vec4 vTint2; flat out float vSwayPx; flat out vec4 vLT;
 void main() {
   int entry = int(aB.x + 0.5); int flags = int(aB.y + 0.5);
   ivec2 tc = ivec2((entry % 1024) * 2, entry / 1024);
@@ -77,7 +92,7 @@ void main() {
   vec2 c = vec2(float(gl_VertexID & 1), float((gl_VertexID >> 1) & 1));
   float s = aA.w;
   vFx = aF; vFlags = flags; vRect = uvr; vTint = aD.rgb; int fw = int(dim.w + 0.5); vFB = ivec2(fw & 15, fw >> 4); vMisc = vec3(aE.y, aE.z, float(fw & 1)); vAlpha = aB.w;
-  vTint2 = aH; vSwayPx = 0.0;
+  vTint2 = aH; vSwayPx = 0.0; vLT = aI;
   vLocal = c * 2.0 - 1.0; vOcc = aG.w; vScr = aA.xy;
   if (uShadowPass == 1) {
     if (aE.x <= 0.0) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); return; }
@@ -121,10 +136,10 @@ void main() {
 
 const FS = /* glsl */ `#version 300 es
 precision highp float; precision highp int;
-in vec4 vFx; in vec3 vUv; in float vAlpha; flat in int vFlags; flat in vec4 vRect; in vec3 vTint; flat in vec3 vMisc; in vec2 vLocal; in vec2 vScr; flat in float vOcc; flat in ivec2 vFB; flat in vec4 vTint2; flat in float vSwayPx;
+in vec4 vFx; in vec3 vUv; in float vAlpha; flat in int vFlags; flat in vec4 vRect; in vec3 vTint; flat in vec3 vMisc; in vec2 vLocal; in vec2 vScr; flat in float vOcc; flat in ivec2 vFB; flat in vec4 vTint2; flat in float vSwayPx; flat in vec4 vLT;
 uniform highp sampler2DArray uAtlas, uEmis, uSheenM, uSwayM, uTintM; uniform highp sampler2D uTints;
 uniform int uShadowPass, uShadowMode;
-uniform float uShadowAlpha, uOutline, uTexel, uTime, uEmisStrength, uAlphaMul;
+uniform float uShadowAlpha, uOutline, uTexel, uTime, uEmisStrength, uAlphaMul, uNightGate;
 uniform vec4 uOutlineColor; uniform vec3 uShadowColor, uFrostColor, uFlushTint; uniform float uWetDarken, uWetSheen;
 uniform int uOccMode, uSilhouette; uniform float uOccAlpha, uOccRadius; uniform vec2 uFocusScr; uniform vec4 uSilColor;
 const float BAYER[16] = float[16](0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0);
@@ -140,6 +155,21 @@ vec3 statusTint(vec3 c, int idx, float amount) {
   float k = a.w * amount; int mode = int(b.x + 0.5);
   vec3 r = mode == 0 ? c * a.rgb : mode == 1 ? c + a.rgb : mode == 2 ? 1.0 - (1.0 - c) * (1.0 - a.rgb) : a.rgb;
   return mix(c, r, k);
+}
+// character layer tint (resolveLayers): saturation first, then mode; lerp keeps the art's shading (luma-scaled target)
+vec3 layerTint(vec3 c, vec3 tc, int mode, float k, float sat) {
+  if (k <= 0.003) return c;
+  float l = dot(c, vec3(0.299, 0.587, 0.114)); vec3 s = mix(vec3(l), c, sat);
+  vec3 r = mode == 0 ? s * tc : mode == 1 ? s + tc : mode == 2 ? 1.0 - (1.0 - s) * (1.0 - tc) : tc * clamp(l / 0.55, 0.0, 1.6);
+  return mix(c, clamp(r, 0.0, 1.0), k);
+}
+float ringAt(vec2 uv) {
+  float o = 0.0; vec2 d = vec2(uOutline * uTexel);
+  o = max(o, alphaAt(uv + vec2(d.x, 0.0))); o = max(o, alphaAt(uv - vec2(d.x, 0.0)));
+  o = max(o, alphaAt(uv + vec2(0.0, d.y))); o = max(o, alphaAt(uv - vec2(0.0, d.y)));
+  o = max(o, alphaAt(uv + d * 0.7071)); o = max(o, alphaAt(uv - d * 0.7071));
+  o = max(o, alphaAt(uv + vec2(d.x, -d.y) * 0.7071)); o = max(o, alphaAt(uv + vec2(-d.x, d.y) * 0.7071));
+  return o;
 }
 float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 void main() {
@@ -161,18 +191,22 @@ void main() {
     if (t.a < 0.35) discard;
     oColor = uSilColor; oEmissive = vec4(0.8, 0.0, 0.0, uSilColor.a); return;
   }
+  if ((vFlags & 256) != 0) { // outline-only pass of a character layer (drawn just behind the body: union silhouette outline)
+    if (t.a >= 0.5 || uOutline <= 0.0 || ringAt(vUv.xy) <= 0.5) discard;
+    float oa = uOutlineColor.a * vAlpha * uAlphaMul * (uOccMode == 0 ? mix(1.0, uOccAlpha, vOcc) : 1.0);
+    oColor = vec4(uOutlineColor.rgb, oa); oEmissive = vec4(0.0, 0.0, 0.0, oa); return;
+  }
   vec3 col; float a = t.a;
-  if ((vFB.x & 8) != 0) { // two-tone tint mask: R = primary (Sprite.tint), G = secondary (aH rgb)
+  if (vLT.y > 0.5) { // character layer: tintmask R <- primary (vTint), G <- secondary (vTint2); no mask = whole frame primary
+    vec4 tm = (vFB.x & 8) != 0 ? texture(uTintM, uv) : vec4(1.0, 0.0, 0.0, 1.0); int mode = int(vLT.y - 0.5);
+    col = layerTint(t.rgb, vTint, mode, vLT.z * tm.r, vLT.w);
+    if (dot(vTint2.rgb, vec3(1.0)) > 0.0) col = layerTint(col, vTint2.rgb, mode, vLT.z * tm.g, vLT.w);
+  } else if ((vFB.x & 8) != 0) { // two-tone tint mask: R = primary (Sprite.tint), G = secondary (aH rgb)
     vec4 tm = texture(uTintM, uv); vec3 t2 = dot(vTint2.rgb, vec3(1.0)) > 0.0 ? vTint2.rgb : vTint;
     col = t.rgb * mix(vec3(1.0), vTint, tm.r) * mix(vec3(1.0), t2, tm.g);
   } else col = t.rgb * vTint;
   if (a < 0.5 && uOutline > 0.0 && (vFlags & 16) == 0) {
-    float o = 0.0; vec2 d = vec2(uOutline * uTexel);
-    o = max(o, alphaAt(vUv.xy + vec2(d.x, 0.0))); o = max(o, alphaAt(vUv.xy - vec2(d.x, 0.0)));
-    o = max(o, alphaAt(vUv.xy + vec2(0.0, d.y))); o = max(o, alphaAt(vUv.xy - vec2(0.0, d.y)));
-    o = max(o, alphaAt(vUv.xy + d * 0.7071)); o = max(o, alphaAt(vUv.xy - d * 0.7071));
-    o = max(o, alphaAt(vUv.xy + vec2(d.x, -d.y) * 0.7071)); o = max(o, alphaAt(vUv.xy + vec2(-d.x, d.y) * 0.7071));
-    if (o > 0.5) { col = uOutlineColor.rgb; a = uOutlineColor.a; }
+    if (ringAt(vUv.xy) > 0.5) { col = uOutlineColor.rgb; a = uOutlineColor.a; }
   }
   if (a < 0.35) discard;
   if (vOcc > 0.001 && uOccMode == 1) { // dithered circle cut around the focus
@@ -204,6 +238,7 @@ void main() {
   if (vFx.w > 0.003) col = mix(col, col * uFlushTint, vFx.w);
   // typed status tints (wet, frost, flush, exhausted) with mode + saturation, scaled by the status amount
   col = statusTint(col, 0, vFx.x); col = statusTint(col, 1, vFx.y); col = statusTint(col, 2, vFx.w); col = statusTint(col, 3, vTint2.w);
+  if (dmg < -0.001) col = mix(col, vec3(1.0), -dmg); // hit flash (dynamic sprites store -flash in the damage slot)
   float alpha = smoothstep(0.35, 0.75, a) * vAlpha * uAlphaMul;
   if (uOccMode == 0) alpha *= mix(1.0, uOccAlpha, vOcc);
   int ghost = int(vMisc.x + 0.5);
@@ -212,7 +247,7 @@ void main() {
     col = mix(col, gc, 0.55); alpha *= 0.5 + 0.18 * sin(uTime * 6.0);
   }
   float e = (vFlags & 2) != 0 ? 1.0 : 0.0;
-  if (vMisc.z > 0.5) { vec4 em = texture(uEmis, vUv); e = max(e, max(em.r, max(em.g, em.b)) * em.a); }
+  if (vMisc.z > 0.5) { vec4 em = texture(uEmis, vUv); e = max(e, max(em.r, max(em.g, em.b)) * em.a * ((vFlags & 64) != 0 ? uNightGate : 1.0)); } // 64: night-only emissive
   oColor = vec4(col, alpha);
   // r: darkness bypass (emissive); g: bloom source (emissive pixels + light-source sprites)
   oEmissive = vec4(e * uEmisStrength, (vFlags & 32) != 0 ? max(e, 0.6) : e, 0.0, alpha);
@@ -237,6 +272,8 @@ export interface PrepareContext {
   vfx?: VfxLayer | undefined;
   /** renderer clock, seconds (static chunk fade-in, vfx) */
   now: number;
+  /** Camera zoom (character crowd LOD). */
+  zoom?: number;
   /** Status particle hook (drips when wet, breath when cold, sweat when hot); called per visible entity with level 0..1. */
   statusFx?: ((kind: "wet" | "cold" | "heat", x: number, y: number, z: number, level: number) => void) | undefined;
 }
@@ -269,8 +306,17 @@ export class SpriteBatch {
   private focusScr: [number, number] = [0, 0];
   private occ: { occAmount: (i: number, hit: boolean) => number; overlapsFocus: (l: number, r: number, t: number, b: number) => boolean; occOn: boolean; fk: number } =
     { occAmount: () => 0, overlapsFocus: () => false, occOn: false, fk: 0 };
+  /** Character layer cache (per entity; re-resolved on Appearance change or facing bucket change). */
+  layerCache: LayerCache | null = null;
+  /** Character layers: outline mode ("union" = one outline around body+layers, "body" = body only); crowd LOD zoom. */
+  characterOpts = { outline: "union" as "union" | "body", minorLayerMinZoom: 0.75 };
+  /** Per-frame stats: characters with Appearance drawn, extra layer instances pushed. */
+  characters = 0; layerInstances = 0;
+  private layerRes = newResolved();
   /** Entities whose pieces are currently cut away (debug/stat). */
   cutawayActive = false;
+  /** Night-only emissive gate (GameplayBindings.nightEmissive.gate), latched in prepare. */
+  nightGate = 1;
 
   constructor(private gl: WebGL2RenderingContext, private iso: IsoConfig, private zFactor: number) {
     this.prog = createProgram(gl, VS, FS, "sprites");
@@ -334,6 +380,14 @@ export class SpriteBatch {
     return o;
   }
 
+  private layerBase = new Float32Array(INSTANCE_FLOATS);
+  /** Layer tint: primary -> rgb 12..14, secondary -> 28..30, mode+1 / strength / saturation -> 33..35. */
+  private writeLayerTint(o: Float32Array, l: CachedLayer): void {
+    const t = l.tint;
+    if (t === 0) { o[12] = o[13] = o[14] = 1; } else { o[12] = ((t >>> 24) & 255) / 255; o[13] = ((t >>> 16) & 255) / 255; o[14] = ((t >>> 8) & 255) / 255; }
+    writeTint2(o, l.tint2);
+    o[33] = t === 0 && l.tint2 === 0 ? 0 : l.mode + 1; o[34] = l.strength; o[35] = l.saturation;
+  }
   private heldRes = newResolved();
   /** debug: held items [with item, with hand anchor, drawn] since start */
   readonly heldStats: [number, number, number] = [0, 0, 0];
@@ -368,6 +422,14 @@ export class SpriteBatch {
     const exh = cx.bindings.exhausted ? world.store(cx.bindings.exhausted) : null;
     const eq = cx.bindings.equipment ? world.store(cx.bindings.equipment) : null; const heldOf = cx.bindings.heldSprite;
     const t2s = world.isRegistered(TintSecondary) ? world.store(TintSecondary) : null;
+    const apB = cx.bindings.appearance; const ap0 = apB && world.isRegistered(apB.def) ? world.store(apB.def) : null; const ap = ap0 && (ap0.data as Record<string, unknown>).version ? ap0 : null;
+    if (apB && (!this.layerCache || this.layerCache.binding !== apB)) this.layerCache = new LayerCache(apB);
+    const apData = ap ? ap.data as Record<string, ArrayLike<number>> : null; const apLen = ap ? (ap as unknown as { lengths: Record<string, number> }).lengths : {};
+    const apVer = apData?.version ?? null;
+    const lodMinor = (cx.zoom ?? 1) < this.characterOpts.minorLayerMinZoom; const hitOf = cx.bindings.hitFlash;
+    const outlineOn = cx.style.outline.enabled && this.characterOpts.outline === "union";
+    this.characters = 0; this.layerInstances = 0;
+    if (this.layerCache && (this.frameNo & 255) === 0) this.layerCache.prune((e) => world.isAlive(e));
     const hw = this.iso.tileW / 2, hh = this.iso.tileH / 2, zs = this.iso.zStep, zf = this.zFactor;
     const margin = 256;
     const r0x = rect.x0 - margin, r1x = rect.x1 + margin, r0y = rect.y0 - margin * 0.5, r1y = rect.y1 + margin * 2;
@@ -426,13 +488,22 @@ export class SpriteBatch {
       else if (ps >= 0) { x = px[ps]! + (x - px[ps]!) * alpha; y = py[ps]! + (y - py[ps]!) * alpha; z = pz[ps]! + (z - pz[ps]!) * alpha; f = lerpAngle(pf[ps]!, f, alpha); }
       const sx = (x - y) * hw, sy = (x + y) * hh - z * zs;
       if (sx < r0x || sx > r1x || sy < r0y || sy > r1y) return;
-      const sid = sp.data.spriteId[k]!;
+      let sid = sp.data.spriteId[k]!;
+      // character customization: resolved paper-doll layers (cached); the "body" layer replaces Sprite.spriteId
+      let layers: CachedLayer[] | null = null; let bodyL: CachedLayer | null = null;
+      const aps = ap ? ap.slot(i) : -1;
+      if (aps >= 0 && this.layerCache) {
+        // key (entity, Appearance.version, facing4); version wraps (u16) so the cache compares it for equality only
+        layers = this.layerCache.get(i, e, apVer![aps]!, f, () => readAppearanceSlot(apData!, apLen, aps));
+        for (const l of layers) if (l.slot === "body") { bodyL = l; sid = l.sprite; break; }
+      }
       let ok: boolean;
       const as = an ? an.slot(i) : -1;
+      let st = -1, t = 0;
       if (as >= 0 && an) {
-        const st = an.data.state[as]!; const t = (tickTime - an.data.startTick[as]!) / cx.tickHz;
+        st = an.data.state[as]!; t = (tickTime - an.data.startTick[as]!) / cx.tickHz;
         ok = atlas.resolve(sid, atlas.stateAnim(sid, st), f, t, 0, res);
-      } else ok = atlas.resolve(sid, -1, f, 0, sp.data.frameId[k]!, res);
+      } else ok = atlas.resolve(sid, bodyL ? atlas.animIndex(sid, bodyL.animName) : -1, f, 0, sp.data.frameId[k]!, res);
       if (!ok) return;
       const scale = sp.data.scale[k]! || 1;
       const key = x + y + z * zf;
@@ -460,8 +531,33 @@ export class SpriteBatch {
       const sw = atlas.swayOf(sid);
       if (sw) { o0[24] = sw[0]!; o0[25] = sw[1]!; o0[26] = sw[2]!; }
       o0[27] = occT;
+      if (hitOf) { const hf = hitOf(e); if (hf > 0) o0[18] = -Math.min(1, hf); }
+      if (bodyL) this.writeLayerTint(o0, bodyL);
       if (e === this.focusEntity && occ.silhouette) { this.silInst.set(o0.subarray(0, INSTANCE_FLOATS)); this.silInst[27] = 0; this.silOn = true; }
       this.pushOcc(o0, 0, occT, occ.mode);
+      if (layers && layers.length) {
+        this.characters++;
+        // copy the body instance (pivot, flip, seed -> same shiver, status fx, occlusion, flash) and swap frame + tint;
+        // keys step by LAYER_BIAS in resolveLayers order so a character's layers stay contiguous; outline-only copies
+        // sit just behind the body so only the ring outside the union silhouette survives
+        const base = this.layerBase; base.set(o0.subarray(0, INSTANCE_FLOATS));
+        const lr = this.layerRes; let j = 0;
+        for (const l of layers) {
+          if (l === bodyL) continue; j++;
+          if (lodMinor && l.minor) continue;
+          const okL = st >= 0 ? atlas.resolve(l.sprite, atlas.stateAnim(l.sprite, st), f, t, 0, lr) : atlas.resolve(l.sprite, atlas.animIndex(l.sprite, l.animName), f, 0, sp.data.frameId[k]!, lr);
+          if (!okL) continue;
+          o0.set(base); o0[4] = lr.entry; o0[8] = lr.ax; o0[9] = lr.ay; o0[16] = 0;
+          if (outlineOn && !(sp.data.flags[k]! & SpriteFlag.NoOutline)) {
+            o0[2] = key - LAYER_BIAS * 0.5; o0[5] = (base[5]! & ~SpriteFlag.NoOutline) | OUTLINE_ONLY;
+            this.pushOcc(o0, 0, occT, occ.mode); this.layerInstances++;
+          }
+          o0[2] = key + j * LAYER_BIAS; o0[5] = base[5]! | SpriteFlag.NoOutline;
+          this.writeLayerTint(o0, l);
+          this.pushOcc(o0, 0, occT, occ.mode); this.layerInstances++;
+        }
+        o0.set(base);
+      }
       if (eq && heldOf) { const s2 = eq.slot(i); if (s2 >= 0) this.emitHeld(atlas, heldOf, eq.data.mainHandItem[s2]!, res, sx, sy, key, scale, f, (sp.data.flags[k]! & SpriteFlag.FlipX) !== 0, fade, occT, occ.mode); }
     };
     if (cx.spatial) {
@@ -479,7 +575,7 @@ export class SpriteBatch {
       if (sx < r0x || sx > r1x || sy < r0y || sy > r1y) continue;
       if (!atlas.resolve(v.spriteId, v.anim, v.facing, cx.now - v.born, 0, res)) continue;
       const life = Math.min(1, (cx.now - v.born) / Math.max(1e-3, v.lifetime));
-      const fadeOut = v.fade ? 1 - life : Math.min(1, (v.lifetime - (cx.now - v.born)) / 0.15);
+      const fadeOut = (v.fade ? 1 - life : Math.min(1, (v.lifetime - (cx.now - v.born)) / 0.15)) * v.alpha;
       this.push(this.writeOne(sx, sy, v.x + v.y + v.z * zf + 0.05, v.scale * (v.s0 + (v.s1 - v.s0) * life), res, (v.emissive ? SpriteFlag.Emissive : 0) | SpriteFlag.NoOutline, 0, fadeOut, -OPEN, OPEN, 0, 0, 0, 0, 0, 0), 0);
     }
 
@@ -519,13 +615,13 @@ export class SpriteBatch {
     this.cutawayActive = !!cut;
     const scratch = this.staticScratch; for (const v of scratch.values()) v.length = 0;
     const checksums = new Map<string, number>();
-    const tmp: number[] = [];
+    const tmp: number[] = []; const nightSet = cx.bindings.nightEmissive?.sprites; this.nightGate = cx.bindings.nightEmissive?.gate ?? 1;
     for (let k = 0; k < bp.size; k++) {
       const e = bp.dense[k]!; const i = entityIndex(e); const ts = tr.slot(i); if (ts < 0) continue;
       const vis = d.visualId![k]!; const rot = d.rotation![k]! & 3; const level = d.level![k]!; const layer = d.layer![k]!;
-      const ghost = d.ghost![k]!; const dmg = d.damageStage![k]!; const tint = d.tint![k]! >>> 0;
-      if (!atlas.resolvePiece(vis, d.variant![k]!, rot, dmg, res, d.state ? d.state[k]! - 1 : -1)) continue;
-      const info = atlas.pieceInfo(vis);
+      const ghost = d.ghost![k]!; const dmg = d.damageStage![k]!; const tints = cx.bindings.pieceTints?.(e); const tint = tints ? tints[0] : d.tint![k]! >>> 0;
+      if (!atlas.resolvePiece(vis, d.variant![k]!, rot, dmg, res, cx.bindings.pieceState?.(e) ?? (d.state ? d.state[k]! - 1 : -1))) continue;
+      const info = atlas.pieceInfo(vis); const sway = atlas.swayOf(vis);
       const fw = info ? (rot & 1 ? info.fh : info.fw) : 1, fh = info ? (rot & 1 ? info.fw : info.fh) : 1;
       const ax = Math.floor(tr.data.x[ts]!), ay = Math.floor(tr.data.y[ts]!);
       const roof = atlas.isRoof(vis);
@@ -550,7 +646,7 @@ export class SpriteBatch {
       const pvx = cx.pieceAnchor === "front" ? fx : ax + fw / 2, pvy = cx.pieceAnchor === "front" ? fy : ay + fh / 2;
       const sx = (pvx - pvy) * hw, sy = (pvx + pvy) * hh - z * zs;
       const flat = flatLayer(layer, roof); // deck pieces (floors/foundations), never roofs
-      const flags = (flat ? SpriteFlag.Flat : 0) | (res.flipX ? SpriteFlag.FlipX : 0);
+      const flags = (flat ? SpriteFlag.Flat : 0) | (res.flipX ? SpriteFlag.FlipX : 0) | (nightSet?.has(vis) ? 64 : 0);
       const dmgOverlay = dmg > 0 && !res.hasDamageFrames ? dmg : 0;
       const bias = roof ? 0.05 : layer * 0.01; // roofs above every other layer of the cell
       tmp.length = 0;
@@ -572,6 +668,8 @@ export class SpriteBatch {
         const footDy = single ? 0 : (best + 2) * hh - z * zs - sy;
         const o = this.writeOne(sx, sy, key, 1, res, flags, (i * 0.618034) % 1, alpha, sliceL, sliceR, tint, footDy, 0, ghost, dmgOverlay, 0);
         o[27] = occT;
+        if (sway) { o[24] = sway[0]!; o[25] = sway[1]!; o[26] = sway[2]!; } // SpriteDef.sway (+ masks.sway weights in the shader)
+        if (tints?.[1]) writeTint2(o, tints[1]);
         for (let q = 0; q < INSTANCE_FLOATS; q++) tmp.push(o[q]!);
         if (single) break;
       }
@@ -583,7 +681,7 @@ export class SpriteBatch {
         let list = scratch.get(ck); if (!list) scratch.set(ck, (list = []));
         for (const v of tmp) list.push(v);
         let h = checksums.get(ck) ?? 0x811c9dc5;
-        for (let j = 0; j < tmp.length; j += 3) h = Math.imul(h ^ Math.round(tmp[j]! * 64), 16777619) >>> 0;
+        for (let j = 0; j < tmp.length; j++) h = Math.imul(h ^ Math.round(tmp[j]! * 64), 16777619) >>> 0;
         checksums.set(ck, h);
       }
     }
@@ -636,7 +734,7 @@ export class SpriteBatch {
     const oc = style.occlusion;
     gl.uniform1i(u.uOccMode!, oc.mode === "dither" ? 1 : 0); gl.uniform1f(u.uOccAlpha!, oc.alpha); gl.uniform1f(u.uOccRadius!, oc.radiusPx);
     gl.uniform2f(u.uFocusScr!, this.focusScr[0], this.focusScr[1]); gl.uniform1i(u.uSilhouette!, 0); gl.uniform4fv(u.uSilColor!, oc.silhouetteColor);
-    gl.uniform1f(u.uAlphaMul!, 1); gl.uniform1f(u.uTexel!, 1 / atlas.layerSize); gl.uniform1f(u.uEmisStrength!, style.emissiveStrength);
+    gl.uniform1f(u.uAlphaMul!, 1); gl.uniform1f(u.uTexel!, 1 / atlas.layerSize); gl.uniform1f(u.uEmisStrength!, style.emissiveStrength); gl.uniform1f(u.uNightGate!, this.nightGate);
     gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D_ARRAY, atlas.tex); gl.uniform1i(u.uAtlas!, 0);
     gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, atlas.frameTex); gl.uniform1i(u.uFrames!, 1);
     gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D_ARRAY, atlas.emisTex); gl.uniform1i(u.uEmis!, 2);

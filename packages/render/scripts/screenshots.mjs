@@ -33,12 +33,14 @@ page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
 page.on("pageerror", (e) => errors.push(String(e)));
 
 async function shot(name, query, settleMs = 2500) {
-  await page.goto(`http://localhost:${PORT}/?${query}`);
+  const [path, q] = query.startsWith("/") ? query.split("?") : ["/", query];
+  await page.goto(`http://localhost:${PORT}${path}?${q}`);
+  if (path !== "/") { await page.waitForFunction(() => window.__ready === true, null, { timeout: 120000 }); await page.waitForTimeout(settleMs); await page.screenshot({ path: join(shots, `${name}.png`) }); console.log(name, JSON.stringify(await page.evaluate(() => window.__pv?.renderer.characterStats))); return {}; }
   await page.waitForFunction(() => window.__iso?.ready === true, null, { timeout: 120000 });
   await page.waitForTimeout(settleMs);
   await page.screenshot({ path: join(shots, `${name}.png`), fullPage: name === "gallery" });
   const info = await page.evaluate(() => window.__iso);
-  console.log(name, JSON.stringify({ fps: info.fps?.toFixed(1), stats: info.stats, total: info.totalSprites, ...(info.held ? { held: info.held } : {}) }));
+  console.log(name, JSON.stringify({ fps: info.fps?.toFixed(1), stats: info.stats, total: info.totalSprites, ...(info.held ? { held: info.held } : {}), ...(info.chars?.characters ? { chars: info.chars } : {}) }));
   return info;
 }
 
@@ -59,6 +61,11 @@ const SHOTS = {
   occlusion: "time=10&weather=clear&occtest=1&zoom=2.4&shot=1",
   occlusion_dither: "time=10&weather=clear&occtest=1&zoom=2.4&occ=dither&shot=1",
   occlusion_off: "time=10&weather=clear&occtest=1&zoom=2.4&occ=off&shot=1",
+  chars_lineup: "time=10&weather=clear&chars=lineup&n=9&cam=chars&zombies=0&density=0&ui=0&zoom=3&shot=1",
+  chars_facings: "time=10&weather=clear&chars=facings&cam=chars&zombies=0&density=0&ui=0&zoom=3.2&shot=1",
+  chars_crowd: "time=10&weather=clear&chars=crowd&n=200&cam=chars&zombies=0&ui=0&zoom=1.1&shot=1",
+  chars_preview: "/preview.html?seed=2&zoom=1.2",
+  chars_preview_b: "/preview.html?seed=6&facing=3&anim=walk",
   fixture: "time=10&weather=clear&content=sample&shot=1",
 };
 if (process.env.EXTRA) for (const [i, q] of process.env.EXTRA.split("|").entries()) { SHOTS[`extra${i}`] = q; ONLY?.add(`extra${i}`); }
@@ -66,6 +73,17 @@ for (const [name, query] of Object.entries(SHOTS)) {
   if (ONLY && !ONLY.has(name)) continue;
   if (name === "gallery") { await page.setViewportSize({ width: 1280, height: 1400 }); results[name] = await shot(name, query, 800); await page.setViewportSize({ width: 1280, height: 720 }); }
   else results[name] = await shot(name, query);
+}
+if (!ONLY || ONLY.has("charbench")) {
+  // 200 layered players (SOFTWARE-rendered): full layers vs LOD (minor layers dropped below zoom 1.5) vs body-only.
+  const cb = {};
+  for (const [k, q] of Object.entries({ layered: "chars=crowd&n=200&zombies=0&zoom=1&cam=chars&bench=6", lod: "chars=crowd&n=200&zombies=0&zoom=1&cam=chars&lod=1.5&bench=6", bodyOnly: "chars=crowd&n=200&zombies=0&zoom=1&cam=chars&layers=0&bench=6" })) {
+    await page.goto(`http://localhost:${PORT}/?time=10&weather=clear&${q}`);
+    await page.waitForFunction(() => window.__iso?.bench, null, { timeout: 90000 });
+    const r = await page.evaluate(() => ({ bench: window.__iso.bench, chars: window.__iso.chars }));
+    cb[k] = r; console.log("charbench", k, JSON.stringify(r));
+  }
+  writeFileSync(join(shots, "chars_bench.json"), JSON.stringify({ note: "SOFTWARE-RENDERED (SwiftShader, headless Chromium) - not representative of GPU performance", viewport: "1280x720", players: 200, ...cb }, null, 2));
 }
 if (ONLY && !ONLY.has("bench")) { if (errors.length) console.log("PAGE ERRORS:\n" + errors.join("\n")); await browser.close(); server.kill(); process.exit(0); }
 

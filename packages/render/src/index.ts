@@ -24,3 +24,5 @@ export * from "./bloom.js";
 export * from "./grading.js";
 export { TERRAIN_SPRITES, SHORE_SPRITES, isWaterTile } from "./ids.js";
 export * from "./burning.js";
+export * from "./character/layers.js";
+export * from "./character/preview.js";

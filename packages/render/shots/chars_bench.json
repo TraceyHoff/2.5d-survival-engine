@@ -1,0 +1,53 @@
+{
+  "note": "SOFTWARE-RENDERED (SwiftShader, headless Chromium) - not representative of GPU performance",
+  "viewport": "1280x720",
+  "players": 200,
+  "layered": {
+    "bench": {
+      "frames": 4,
+      "avgFps": 0.6154035508784886,
+      "avgFrameMs": 1624.9499999999998,
+      "maxFrameMs": 1850,
+      "visibleSprites": 1951,
+      "drawCalls": 28
+    },
+    "chars": {
+      "characters": 200,
+      "layerInstances": 933,
+      "resolves": 200,
+      "cached": 200
+    }
+  },
+  "lod": {
+    "bench": {
+      "frames": 7,
+      "avgFps": 1.004837575183383,
+      "avgFrameMs": 995.1857142857142,
+      "maxFrameMs": 1866.5,
+      "visibleSprites": 1688,
+      "drawCalls": 28
+    },
+    "chars": {
+      "characters": 200,
+      "layerInstances": 664,
+      "resolves": 200,
+      "cached": 200
+    }
+  },
+  "bodyOnly": {
+    "bench": {
+      "frames": 14,
+      "avgFps": 2.288890705468814,
+      "avgFrameMs": 436.89285714285717,
+      "maxFrameMs": 650,
+      "visibleSprites": 1039,
+      "drawCalls": 28
+    },
+    "chars": {
+      "characters": 0,
+      "layerInstances": 0,
+      "resolves": 0,
+      "cached": 0
+    }
+  }
+}

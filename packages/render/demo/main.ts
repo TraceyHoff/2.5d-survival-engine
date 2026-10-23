@@ -3,9 +3,11 @@
  * assets/ (repo root) (if present) or the @engine/assets sample manifest (debug placeholders) + a TexturePacker fixture.
  * URL params: time=0..24 weather=clear|rain|storm|snow|fog|<id> intensity=0..1 density=1 zombies=200 size=128 seed=7
  *             zoom=1 freeze=1 ui=0 lights=0 shadows=0 bench=SECONDS theme=alt gallery=1 inside=1 content=sample interp=0 occtest=1 occ=fade|dither|off sil=0
+ *             chars=lineup|facings|crowd n=COUNT cam=chars layers=0 (body only) lod=MINZOOM (drop minor layers below)
  */
 import { World, InputState, Action, createGameLoop, Transform, entityIndex, PrevTransform, Weather } from "@engine/core";
-import { IsoRenderer } from "../src/index.js";
+import { IsoRenderer, coreAppearanceBinding } from "../src/index.js";
+import { spawnCharacters } from "./characters.js";
 import { buildScene, DEMO_COMPONENTS, DEMO_HELD } from "./scene.js";
 import { installDemoSystems } from "./systems.js";
 import { DebugUI, WEATHER_NAMES } from "./ui.js";
@@ -22,7 +24,7 @@ let lookInfo: { warnings: string[]; loaded: string[] } = { warnings: [], loaded:
 
 async function main(): Promise<void> {
   const canvas = document.getElementById("game") as HTMLCanvasElement;
-  const content = await loadContent({ content: q.get("content") === "sample" ? "sample" : "pack" });
+  const content = await loadContent({ content: q.get("content") === "sample" ? "sample" : "pack", debugCharacters: !!q.get("chars") });
   if (content.issues.length) console.warn("content issues", content.issues);
   const world = new World({ seed: num("seed", 7) });
   IsoRenderer.registerComponents(world);
@@ -50,13 +52,18 @@ async function main(): Promise<void> {
     const vi = renderer.atlas.setPieceVariants({ ...(pv?.pieces ?? {}), ...(q.get("wallvariants") !== "0" ? { wall: ["wall", "wall_stone", "wall_metal", "wall_twig"] } : {}) });
     if (vi.length) console.warn("piece variants:", vi);
     for (const a of content.registry.atlases.keys()) {
+      if (a.startsWith("dbg_")) continue; // runtime DEBUG layer atlases have no sidecars
       const h = await fetch(`${ASSETS_BASE}pack/atlases/${a}.hands.json`).then((r) => r.ok && (r.headers.get("content-type") ?? "").includes("json") ? r.json() : null).catch(() => null);
       if (h?.hands) renderer.atlas.setHands(a, h);
     }
   }
   const scene = buildScene(world, content.registry, { size: num("size", 128), seed: num("seed", 7), density: num("density", 1), zombies: num("zombies", 200), inside: q.get("inside") === "1", occlusionTest: q.get("occtest") === "1", burn: q.get("burn") !== "0" });
   renderer.tilemap = scene.map;
-  renderer.bindGameplay({ buildPiece: BuildPiece, animState: AnimState, wetness: Wetness, bodyTemp: BodyTemp, emitter: Emitter, lit: Fuel,
+  const charsMode = q.get("chars"); const plT = world.get(scene.player, Transform)!;
+  const chars = charsMode && content.registry.cosmetics?.size ? spawnCharacters(world, content.registry, scene.index, { x: plT.x - 1, y: plT.y + (charsMode === "lineup" ? 4 : 8), z: plT.z }, charsMode, num("n", charsMode === "crowd" ? 200 : 8), scene.players) : null;
+  if (q.has("lod")) renderer.setCharacterOptions({ minorLayerMinZoom: num("lod", 1.5) });
+  if (charsMode && !chars) console.warn("chars: no cosmetics catalog", content.issues);
+  renderer.bindGameplay({ ...(chars && q.get("layers") !== "0" ? { appearance: coreAppearanceBinding(content.registry.cosmetics!), hitFlash: chars.hitFlash } : {}), buildPiece: BuildPiece, animState: AnimState, wetness: Wetness, bodyTemp: BodyTemp, emitter: Emitter, lit: Fuel,
     burning: Burning, equipment: Equipment, heldSprite: (item) => { const k = DEMO_HELD[item]; return k ? content.registry.ids.sprites.tryId(k) : undefined; } });
   renderer.setBuildingGrid(scene.grid);
   renderer.setSpatialIndex(scene.index);
@@ -71,7 +78,7 @@ async function main(): Promise<void> {
   if (q.get("shadows") === "0") renderer.settings.shadows = false;
   const cam = renderer.camera;
   const camQ = q.get("cam"); const pl = world.get(scene.player, Transform)!;
-  if (camQ === "fire") cam.lookAt(scene.base.x + 3.5, scene.base.y + scene.base.h + 2, 1); else if (camQ === "burn") cam.lookAt(scene.base.x + 10, scene.base.y + 5.5, 1); else if (camQ === "players") cam.lookAt(pl.x + 1, pl.y, 1); else cam.lookAt(scene.base.x + 4, scene.base.y + 4, 1);
+  if (camQ === "fire") cam.lookAt(scene.base.x + 3.5, scene.base.y + scene.base.h + 2, 1); else if (camQ === "burn") cam.lookAt(scene.base.x + 10, scene.base.y + 5.5, 1); else if (camQ === "chars" && chars?.entities.length) { const t0 = world.get(chars.entities[0]!, Transform)!, t1 = world.get(chars.entities[chars.entities.length - 1]!, Transform)!; cam.lookAt((t0.x + t1.x) / 2, (t0.y + t1.y) / 2, t0.z); } else if (camQ === "players") cam.lookAt(pl.x + 1, pl.y, 1); else cam.lookAt(scene.base.x + 4, scene.base.y + 4, 1);
   cam.zoom = num("zoom", 1.6);
 
   const input = new InputState();
@@ -141,7 +148,7 @@ async function main(): Promise<void> {
       else { bench.frames++; bench.sumMs += dtMs; bench.maxMs = Math.max(bench.maxMs, dtMs); bench.sprites = st.sprites; bench.drawCalls = st.drawCalls; }
       if (now - bench.start >= bench.durationMs) bench.done = true;
     }
-    window.__iso = { held: renderer.heldStats,
+    window.__iso = { held: renderer.heldStats, chars: renderer.characterStats,
       ready: world.tick > 2, frameMs: lastFrameMs, fps: fpsAvg, stats: { ...st }, totalSprites: scene.spriteCount, pieces: scene.pieceCount, origin: content.origin, look: lookInfo, surface: { ...renderer.surface },
       bench: bench.done ? { frames: bench.frames, avgFps: (bench.frames * 1000) / bench.sumMs, avgFrameMs: bench.sumMs / bench.frames, maxFrameMs: bench.maxMs, visibleSprites: bench.sprites, drawCalls: bench.drawCalls } : null,
     };

@@ -28,5 +28,5 @@ const mounts = (): Plugin => ({ name: "render-demo-mounts", configureServer: (s)
 
 export default defineConfig({
   base: "./", publicDir: "assets", plugins: [mounts()],
-  build: { outDir: "dist", target: "es2022" }, server: { port: 5173 },
+  build: { outDir: "dist", target: "es2022", rollupOptions: { input: { main: join(here, "index.html"), preview: join(here, "preview.html") } } }, server: { port: 5173 },
 });

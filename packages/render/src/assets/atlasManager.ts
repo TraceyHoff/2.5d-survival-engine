@@ -510,6 +510,8 @@ export class AtlasManager {
   /** Footprint/layer of a building sprite (null for non-building sprites). Rotation 1/3 swaps w/h. */
   pieceInfo(spriteId: number): { fw: number; fh: number; layer: number } | null { const b = this.sprites[spriteId]?.building; return b ? { fw: b.fw, fh: b.fh, layer: b.layer } : null; }
 
+  /** Animation index of `name` on a sprite (-1 = unknown; resolve() then uses the first animation's frame list). */
+  animIndex(spriteId: number, name: string): number { const s = this.sprites[spriteId]; if (!s) return -1; const i = s.anims.findIndex((a) => a.name === name); return i < 0 ? 0 : i; }
   stateAnim(spriteId: number, state: number): number { const s = this.sprites[spriteId]; return s ? s.stateAnim[Math.min(state, STATE_ANIMS.length - 1)] ?? 0 : 0; }
 
   private fill(a: AtlasRT, f: number, s: SpriteRT, out: ResolvedFrame): void {

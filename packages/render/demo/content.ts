@@ -7,6 +7,7 @@
  *     merged through importTexturePacker -> mergeTexturePacker -> loadManifest (debug only).
  */
 import { DEFAULT_MANIFEST, fetchDefaultManifest, loadManifest, type AssetRegistry, type ManifestJson } from "@engine/assets";
+import { buildDebugCharacterPack, type DebugCharacterPack } from "../src/character/debugPack.js";
 import { importTexturePacker, mergeTexturePacker, sourcesFromManifest, swayFromManifest, type AtlasSource, type SwayParams, type TPJsonHash } from "../src/index.js";
 
 export interface Content { registry: AssetRegistry; sources: Map<string, AtlasSource>; origin: "pack" | "sample"; issues: string[]; sway: Record<string, SwayParams> }
@@ -18,10 +19,10 @@ async function json<T>(url: string): Promise<T | null> {
 export const ASSETS_BASE = "/@assets/";
 const FX_FRAGMENTS = ["heat", "status", "wind"];
 
-export async function loadContent(opts: { content: "pack" | "sample" }): Promise<Content> {
+export async function loadContent(opts: { content: "pack" | "sample"; debugCharacters?: boolean }): Promise<Content> {
   if (opts.content === "pack") {
     const manifestUrl = ASSETS_BASE + DEFAULT_MANIFEST;
-    const issues: string[] = []; const fxAtlases = new Set<string>(); let merged: ManifestJson | null = null;
+    const issues: string[] = []; const fxAtlases = new Set<string>(); let merged: ManifestJson | null = null; let dbg: DebugCharacterPack | null = null;
     // fetcher hook: merge optional survival_fx fragments into the pack manifest before loadManifest
     const fetcher = async (u: string): Promise<{ ok: boolean; json(): Promise<unknown> }> => {
       const r = await fetch(u);
@@ -36,11 +37,15 @@ export async function loadContent(opts: { content: "pack" | "sample" }): Promise
           for (const sp of part.sprites) { if (m.sprites.some((x) => x.key === sp.key)) { issues.push(`fx sprite ${sp.key} duplicates pack (kept pack)`); continue; } m.sprites.push(sp); }
         }
       }
-      merged = m;
-      return { ok: true, json: async () => m };
+      let out = m;
+      // DEBUG paper-doll pack (runtime-cut layers) unless the pack already ships wearables
+      if (opts.debugCharacters && !m.wearables) { dbg = await buildDebugCharacterPack(m, (img) => new URL(img, new URL(manifestUrl, location.href)).href); out = dbg.patch(m); }
+      merged = out;
+      return { ok: true, json: async () => out };
     };
     const { registry } = await fetchDefaultManifest(ASSETS_BASE, fetcher);
     const sources = sourcesFromManifest(registry, manifestUrl);
+    if (dbg) for (const [k, v] of (dbg as DebugCharacterPack).sources) sources.set(k, v);
     for (const k of fxAtlases) { const a = registry.atlases.get(k)!; sources.set(k, { url: `/@art/survival_fx/atlases/${a.image}`, emissiveUrl: a.emissiveImage ? `/@art/survival_fx/atlases/${a.emissiveImage}` : null }); }
     // sway: SpriteDef.sway is read by AtlasManager directly; fragments may still carry legacy sway blocks
     const sw = merged ? swayFromManifest(merged) : { table: {}, issues: [] as string[] };
