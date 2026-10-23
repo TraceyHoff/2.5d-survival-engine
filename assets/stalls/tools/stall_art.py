@@ -29,13 +29,15 @@ class SP(Piece):
     def glow(self, pts, col): self.em.fill(pts, col)
     def att(self, name, x, y, z, w, h):
         px, py = self.p(x, y, z); self.attach[name] = {"x": round(px - self.piv[0], 1), "y": round(py - self.piv[1], 1), "z": round(z / 16, 2), "w": w, "h": h}
-    def tag(self, name, x, y, z, w=14, h=8):
-        """blank parchment price tag hanging on a string; renderer prints the price into it"""
-        c = self.p(x, y, z)
-        self.line([(c[0], c[1] - 4), (c[0] + 0.5, c[1] - h / 2)], H(RAMPS["leather"][2]), 0.6)
-        t = rrect(c[0] - w / 2, c[1] - h / 2, c[0] + w / 2, c[1] + h / 2, 1.6)
-        self.part(t, CREAM, lw=0.6, shade=0.18, hl=0.0); self.fill(circle(c[0] - w / 2 + 2.2, c[1], 0.7, 8), H(RAMPS["leather"][2]))
-        self.attach[name] = {"x": round(c[0] - self.piv[0] + 1, 1), "y": round(c[1] - self.piv[1], 1), "z": round(z / 16, 2), "w": w - 4, "h": h - 2}
+    def slot(self, name, x, y, z, w, h):
+        """listing icon box; x/y = CENTRE of the box (icon sits with its bottom quarter on the surface point)"""
+        self.att(name, x, y, z, w, h); self.attach[name]["y"] = round(self.attach[name]["y"] - 0.25 * h, 1)
+    def tag(self, name, x, y, z, w=18, h=8):
+        """price tag placement only (attach); no art is baked so unused listings show no blank board"""
+        c = self.p(x, y, z)   # NOT baked: the renderer draws stall_price_tag (18x8 face) per enabled listing, text box on tagN
+        # text box = tag face right of the string hole; x/y = CENTRE of that box (>= 14x6 at 1x: 7px coin icon + digits)
+        bx0, bx1 = c[0] - w / 2 + 3.5, c[0] + w / 2 - 0.5
+        self.attach[name] = {"x": round((bx0 + bx1) / 2 - self.piv[0], 1), "y": round(c[1] - self.piv[1], 1), "z": round(z / 16, 2), "w": round(bx1 - bx0, 1), "h": h - 2}
     def finish2(self, st, seed):
         img, tm, em = self.finish(st, seed, lean=False)
         sw = apply_alpha_from(self.sw.img, img)
@@ -93,8 +95,8 @@ def blanket(v, state, st, seed=11):
         p.line([(c[0] - 5, c[1] - 9), (c[0], c[1] - 16), (c[0] + 5, c[1] - 9)], Rr("wood")[2], 1.0)
     # sign: a cardboard stub on a stick behind
     s = p.p(0.05, -0.45, 0); p.line([s, (s[0], s[1] - 26)], Rr("wood")[2], 1.4)
-    b = rrect(s[0] - 14, s[1] - 38, s[0] + 14, s[1] - 24, 2); p.part(b, [lerp(c, (255, 250, 240), 0.35) for c in Rr("wood")], lw=0.8, shade=0.2, hl=0.15)
-    p.attach["sign"] = {"x": round(s[0] - p.piv[0], 1), "y": round(s[1] - 31 - p.piv[1], 1), "w": 24, "h": 10}
+    b = rrect(s[0] - 27, s[1] - 40, s[0] + 27, s[1] - 24, 2); p.part(b, [lerp(c, (255, 250, 240), 0.35) for c in Rr("wood")], lw=0.8, shade=0.2, hl=0.15)
+    p.attach["sign"] = {"x": round(s[0] - p.piv[0], 1), "y": round(s[1] - 32 - p.piv[1], 1), "w": 50, "h": 12}
     if v == 2:  # tiny parasol (sways)
         c = p.p(-0.38, 0.1, 0); p.line([c, (c[0], c[1] - 40)], Rr("wood")[3], 1.2)
         um = [(c[0] - 16, c[1] - 34)] + [(c[0] + 16 * math.cos(a), c[1] - 38 - 9 * math.sin(a)) for a in np.linspace(math.pi, 0, 16)] + [(c[0] + 16, c[1] - 34)]
@@ -103,10 +105,10 @@ def blanket(v, state, st, seed=11):
     slots = [(-0.2, -0.05), (0.2, -0.05), (-0.2, 0.25), (0.2, 0.25)]
     if state == 1:
         for k, (x, y) in enumerate(slots):
-            mat(p, x, y, 2); p.att(f"slot{k}", x, y, 3, 16, 16)
+            mat(p, x, y, 2); p.slot(f"slot{k}", x, y, 3, 16, 16)
         for k, (x, y) in enumerate(slots):
             c = p.p(x + 0.12, y + 0.14, 2); p.part(capsule_pts(c[0], c[1], c[0], c[1] - 6, 0.5), Rr("wood"), lw=0.3)
-            p.tag(f"tag{k}", x + 0.12, y + 0.14, 10, 12, 7)
+            p.tag(f"tag{k}", x + 0.12, y + 0.14, 10 + 6 * (k % 2))
     else:  # goods bundled under a tied cloth
         c = p.p(0, 0.08, 6); cl = wobbly(c[0], c[1], 22, 10, seed=8, wob=0.1)
         p.part(cl, Rr(rb), lw=1.0, shade=0.3, hl=0.15)
@@ -140,11 +142,10 @@ def cart(v, state, st, seed=21):
         p.box(x, x + 0.08, 0.34, 0.42, 28, 58, wd, left=planks_v(9), seed=seed + 5)
     slots = [(-0.66 + 0.44 * i, -0.15 + 0.3 * j) for j in range(2) for i in range(4)]
     if state == 1:
-        for k, (x, y) in enumerate(slots): mat(p, x, y, 28.5, rp=rb); p.att(f"slot{k}", x, y, 30, 16, 16)
-        for k, (x, y) in enumerate(slots[4:]): p.tag(f"tag{k + 4}", x + 0.12, 0.44, 22, 13, 7)
+        for k, (x, y) in enumerate(slots): mat(p, x, y, 28.5, rp=rb); p.slot(f"slot{k}", x, y, 30, 16, 16)
+        for k, (x, y) in enumerate(slots[4:]): p.tag(f"tag{k + 4}", x + 0.12, 0.44, 22 - 8 * (k % 2))
         for k, (x, y) in enumerate(slots[:4]):  # back row tags hang from the awning
-            c = p.p(x, -0.1, 62); p.line([c, (c[0], c[1] + 10)], Rr("leather")[2], 0.5)
-            p.tag(f"tag{k}", x, -0.1, 50, 13, 7)
+            p.tag(f"tag{k}", x, -0.1, 50 - 8 * (k % 2))
         awning(p, -0.95, 0.95, -0.45, 0.55, 66, 56, Rr(ra), Rr(rb), n=6)
     else:
         awning(p, -0.95, 0.95, -0.45, 0.55, 66, 56, Rr(ra), Rr(rb), n=6)
@@ -189,11 +190,11 @@ def booth(v, state, st, seed=31):
     if state == 1:
         for k, (x, y, z) in enumerate(slots):
             if z < 20 or y > 0: mat(p, x, y, z, rp=acc)
-            p.att(f"slot{k}", x, y, z + 2, 16, 16)
+            p.slot(f"slot{k}", x, y, z + 2, 16, 16)
         for k, (x, y, z) in enumerate(slots):
-            if y < -0.5: p.tag(f"tag{k}", x, -0.58, z - 5, 12, 7)
-            elif y > 0.5 and z > 20: p.tag(f"tag{k}", x, 0.92, 16, 12, 7)
-            else: p.tag(f"tag{k}", x, y + 0.22, z - 6, 12, 7)
+            if y < -0.5: p.tag(f"tag{k}", x, -0.58, z - 5)
+            elif y > 0.5 and z > 20: p.tag(f"tag{k}", x, 0.92, 16)
+            else: p.tag(f"tag{k}", x, y + 0.22, z - 6)
     else:
         # shutters drop over the counter, crates covered
         q = [p.p(-0.9, 0.92, 62), p.p(0.92, 0.92, 62), p.p(0.92, 0.92, 26), p.p(-0.9, 0.92, 26)]
@@ -272,11 +273,11 @@ def pavilion(state, st, seed=41):
     if state == 1:
         for k, (x, y, z) in enumerate(allslots):
             if y > 0.3 or x > 0.9: mat(p, x, y, z - 0.5, 3.5, "cloth_cream")
-            p.att(f"slot{k}", x, y, z + 2, 14, 14)
+            p.slot(f"slot{k}", x, y, z + 2, 14, 14)
         for k, (x, y, z) in enumerate(allslots):
-            if k < 8: p.tag(f"tag{k}", x, -0.6, 37, 11, 6)
-            elif k < 16: p.tag(f"tag{k}", x, 0.9, 13, 11, 6)
-            else: p.tag(f"tag{k}", 1.42, y, 15 if k < 20 else 9, 11, 6)
+            if k < 8: p.tag(f"tag{k}", x, -0.6, 37 - 8 * (k % 2))
+            elif k < 16: p.tag(f"tag{k}", x, 0.9, 13 - 8 * (k % 2))
+            else: p.tag(f"tag{k}", 1.42, y, 15 if k < 20 else 9)
     else:
         for k in range(24): p.att(f"slot{k}", 0, 0, 0, 0, 0); p.attach[f"tag{k}"] = dict(p.attach[f"slot{k}"])
     # roof: big peaked clan canopy, stripes R/G
@@ -341,8 +342,8 @@ def trading_post(state, st, seed=51):
     cl = p.front(-0.6, 0.6, 0.455, 7, 15); p.part(cl, NEUTRAL, lw=0.6, shade=0.15); p.tint(cl, 0)
     slots = [(-0.7 + 0.28 * i, 0.28, 24.5) for i in range(6)]
     if state == 1:
-        for k, (x, y, z) in enumerate(slots): mat(p, x, y, z); p.att(f"slot{k}", x, y, z + 2, 15, 15)
-        for k, (x, y, z) in enumerate(slots): p.tag(f"tag{k}", x, 0.48, 20 if k % 2 else 12, 11, 6)
+        for k, (x, y, z) in enumerate(slots): mat(p, x, y, z); p.slot(f"slot{k}", x, y, z + 2, 15, 15)
+        for k, (x, y, z) in enumerate(slots): p.tag(f"tag{k}", x, 0.48, 20 if k % 2 else 12)
         # ledger chalkboard on the counter + bell
         c = p.p(0.82, 0.25, 24); p.part(rrect(c[0] - 6, c[1] - 14, c[0] + 6, c[1], 1.4), Rr("wood_dark"), lw=0.7)
         p.fill(rrect(c[0] - 4.5, c[1] - 12.5, c[0] + 4.5, c[1] - 1.5, 1), (70, 90, 80))
@@ -393,18 +394,40 @@ class StallSheet(Sheet):
         if m: a["masks"] = m
         return a
 
+TRIM = {}
+BADGE_GAP = 2
+
 def build_piece(key, piece, fp, W, Hh, fn, sway=None, tags=None):
-    sh = StallSheet(key, W, Hh, 4, (0.5, (Hh - 8) / Hh)); attach = {}
+    attach = {}; outs = {}
+    for state in (0, 1):
+        for dmg in range(4): outs[(state, dmg)] = fn(state, dmg)
+    # trim empty headroom: union alpha over every frame (mirror = same rows), keep MARGIN+1 px clear above the art.
+    # attach points are pivot-relative, so only frameH and anchor.y change.
+    SSf = outs[(0, 0)][0][0].height / Hh; top = Hh
+    for (img, tm, em, sw), _ in outs.values():
+        rows = np.nonzero(np.asarray(img)[..., 3].max(axis=1) > 8)[0]
+        if len(rows): top = min(top, int(rows[0] / SSf))
+    T = max(0, top - MARGIN - 1); Hh0 = Hh; Hh = Hh0 - T; TRIM[key] = (Hh0, Hh)
+    # world prompt / badge anchor: centred over the pivot, BADGE_GAP px above the topmost art row (all states/damage).
+    # Badge sprites are anchored at their body bottom, so the renderer places the sprite anchor exactly here.
+    by = round((top - T) - (Hh - 8) - BADGE_GAP, 1)
+    for (_, at) in outs.values(): at["badge"] = {"x": 0.0, "y": by, "w": 30, "h": 10}
+    crop = lambda im: im.crop((0, int(T * SSf), im.width, im.height))
+    sh = StallSheet(key, W, Hh, 4, (0.5, (Hh - 8) / Hh))
     for state in (0, 1):
         for dmg in range(4):
-            (img, tm, em, sw), at = fn(state, dmg)
+            (img, tm, em, sw), at = outs[(state, dmg)]; img, tm, em, sw = map(crop, (img, tm, em, sw))
             i0 = state * 8 + dmg * 2
             sh.addf(f"{key}/{['closed','open'][state]}/damage{dmg}/r0", img, tm, em, sw, i0)
             sh.addf(f"{key}/{['closed','open'][state]}/damage{dmg}/r1", mirror(img), mirror(tm), mirror(em), mirror(sw), i0 + 1)
             if dmg == 0: attach[["closed", "open"][state]] = at
     sh.save()
-    rows = lambda s: [[s * 8 + d * 2 for d in range(4)], [s * 8 + d * 2 + 1 for d in range(4)], [s * 8 + d * 2 for d in range(4)], [s * 8 + d * 2 + 1 for d in range(4)]]
-    spr = {"key": key, "category": "building", "atlas": key, "anchor": {"x": 0.5, "y": round((Hh - 8) / Hh, 5)}, "rotationArt": "mirror",
+    # rotationArt: art is drawn for r0 + baked mirror r1. Square footprints (blanket 1x1, booth 2x2) truly mirror: 2 rows,
+    # engine flips rows 0/1 for rotations 2/3. Non-square (cart/post 2x1, pavilion 3x2): a flip would swap the long axis,
+    # so rotations 2/3 must reuse rows 0/1 unflipped -> 4 explicit rows = unique4 (shopfront stays toward the camera).
+    sq = fp[0] == fp[1]; art = "mirror" if sq else "unique4"
+    rows = lambda s: [[s * 8 + d * 2 for d in range(4)], [s * 8 + d * 2 + 1 for d in range(4)]] * (1 if sq else 2)
+    spr = {"key": key, "category": "building", "atlas": key, "anchor": {"x": 0.5, "y": round((Hh - 8) / Hh, 5)}, "rotationArt": art,
            "animations": {"idle": {"frames": [8], "fps": 1}, "closed": {"frames": [0], "fps": 1}},
            "building": {"piece": piece, "footprint": {"w": fp[0], "h": fp[1]}, "layer": 2, "frames": rows(1),
                         "states": {"closed": rows(0), "open": rows(1)}},
@@ -424,7 +447,7 @@ def build_all():
     for v, (nm, *_ ) in enumerate(BOOTH_V):
         sh, s = build_piece(f"stall_booth_{nm}", "stall_booth", (2, 2), 144, 176, lambda st, d, v=v: booth(v, st, d), sway={"amp": 1.0, "freq": 0.6, "stiffness": 0.6}, tags={"tier": 3, "variant": nm}); sheets.append(sh); sprites.append(s)
     sh, s = build_piece("clan_pavilion", "clan_pavilion", (3, 2), 208, 224, pavilion, sway={"amp": 1.8, "freq": 0.75, "stiffness": 0.5}, tags={"clan": True, "tint": ["clan_primary", "clan_secondary"]}); sheets.append(sh); sprites.append(s)
-    sh, s = build_piece("clan_trading_post", "market_counter", (2, 1), 144, 160, trading_post, sway={"amp": 1.2, "freq": 0.7, "stiffness": 0.6}, tags={"clan": True, "provisionalPiece": True}); sheets.append(sh); sprites.append(s)
+    sh, s = build_piece("clan_trading_post", "market_counter", (2, 1), 144, 160, trading_post, sway={"amp": 1.2, "freq": 0.7, "stiffness": 0.6}, tags={"clan": True}); sheets.append(sh); sprites.append(s)
     return sheets, sprites
 
 if __name__ == "__main__":

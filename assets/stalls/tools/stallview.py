@@ -39,36 +39,58 @@ def tint(img, mask, p, s):
     P = np.array([int(p[i:i + 2], 16) for i in (1, 3, 5)], np.float32) / 255; S = np.array([int(s[i:i + 2], 16) for i in (1, 3, 5)], np.float32) / 255
     rgb = a[..., :3]; rgb = rgb * (1 - m[..., :1]) + rgb * P * m[..., :1]; rgb = rgb * (1 - m[..., 1:2]) + rgb * S * m[..., 1:2]
     return Image.fromarray((np.concatenate([rgb, a[..., 3:]], -1) * 255).astype(np.uint8))
+def fit_sign(name, w, h, font, scale=1):
+    """Sign policy (render_tuning sign.fit): 1 line, shrink to 6px; else word-wrap to 2 lines, shrink to 5px; else ellipsis."""
+    name = name[:24]
+    for sz in range(int(h), int(6 * scale) - 1, -1):
+        if font(sz).getlength(name) <= w: return [name], sz
+    words = name.split(" "); best = None
+    for k in range(1, len(words)):
+        a, b = " ".join(words[:k]), " ".join(words[k:]); m = max(len(a), len(b))
+        if best is None or m < best[0]: best = (m, a, b)
+    if best:
+        for sz in range(int(h / 2), int(5 * scale) - 1, -1):
+            f = font(sz)
+            if max(f.getlength(best[1]), f.getlength(best[2])) <= w: return [best[1], best[2]], sz
+    f = font(int(5 * scale)); t = name
+    while t and f.getlength(t + "\u2026") > w: t = t[:-1]
+    return [t + "\u2026"], int(5 * scale)
+
+
 def draw_sprite(canvas, key, sx, sy, state="open", rot=0, dmg=0, scale=1, clan=None, listings=None, name=None, emis=None, anim=None, frame=0):
     s = SPR.get(key) or MSPR[key]; atl = ATL.get(s["atlas"]) or MATL[s["atlas"]]
     if "building" in s:
         rows = s["building"]["states"][state] if "states" in s["building"] else s["building"]["frames"]
-        idx = rows[rot][dmg]
+        flip = len(rows) == 2 and rot >= 2          # 2-row mirror: rotations 2/3 = rows 0/1 flipped (engine flipX)
+        idx = rows[rot if len(rows) == 4 else (rot & 1) % len(rows)][dmg]
     else:
-        idx = s["animations"][anim or "idle"]["frames"][frame]
-    flip = False
+        idx = s["animations"][anim or "idle"]["frames"][frame]; flip = False
     img = cell(atl, idx, scale)
     if clan and "masks" in atl and "tintmask" in atl["masks"]: img = tint(img, cell(atl, idx, scale, "t"), *clan)
+    if flip: img = img.transpose(Image.FLIP_LEFT_RIGHT)
     px, py = sx - s["anchor"]["x"] * atl["frameW"] * scale, sy - s["anchor"]["y"] * atl["frameH"] * scale
     canvas.alpha_composite(img, (int(px), int(py)))
     if emis is not None and "masks" in atl and atl["masks"].get("emissive"):
-        emis.alpha_composite(cell(atl, idx, scale, "e"), (int(px), int(py)))
+        ei = cell(atl, idx, scale, "e"); emis.alpha_composite(ei.transpose(Image.FLIP_LEFT_RIGHT) if flip else ei, (int(px), int(py)))
     att = dict(s.get("attach", {})); att.update((s.get("frameAttach") or {}).get(str(idx), {}))
-    mir = 1  # mirrored rows carry x-negated frameAttach
+    mir = -1 if flip else 1  # baked-mirror rows carry x-negated frameAttach; runtime flipX negates again
     d = ImageDraw.Draw(canvas)
     if listings and state == "open":
         for k, L in enumerate(listings):
             a = att.get(f"slot{k}")
             if not a or not L: continue
             ic = item_icon(L[0], int(a["w"] * scale))
-            if ic: canvas.alpha_composite(ic, (int(sx + mir * a["x"] * scale - ic.width / 2), int(sy + a["y"] * scale - ic.height * 0.75)))
+            if ic: canvas.alpha_composite(ic, (int(sx + mir * a["x"] * scale - ic.width / 2), int(sy + a["y"] * scale - ic.height / 2)))  # attach x/y = box centre
             t = att.get(f"tag{k}")
-            if t and len(L) > 1:
+            if t and len(L) > 1 and key != "stall_price_tag":
+                ts = SPR["stall_price_tag"]; tt = ts["attach"]["text"]  # renderer: tag sprite so its text box lands on tagN
+                draw_sprite(canvas, "stall_price_tag", sx + (mir * t["x"] - tt["x"]) * scale, sy + (t["y"] - tt["y"]) * scale, scale=scale)
                 f = font(max(6, int(t["h"] * scale * 0.95))); txt = str(L[1])
                 d.text((sx + mir * t["x"] * scale, sy + t["y"] * scale), txt, font=f, fill=INK, anchor="mm")
     if name and "sign" in att:
         a = att["sign"]; tn = TUNE.get("sign", {})
-        sz = int(a["h"] * scale * 1.0); f = font(sz)
-        while f.getlength(name) > a["w"] * scale and sz > 6: sz -= 1; f = font(sz)
-        d.text((sx + mir * a["x"] * scale, sy + a["y"] * scale), name, font=f, fill=tuple(int(tn.get("color", "#3B2433")[i:i + 2], 16) for i in (1, 3, 5)), anchor="mm")
+        col = tuple(int(tn.get("color", "#3B2433")[i:i + 2], 16) for i in (1, 3, 5))
+        lines, sz = fit_sign(name, a["w"] * scale, a["h"] * scale, font, scale)
+        f = font(sz); lh = sz * 1.0; cy = sy + a["y"] * scale - lh * (len(lines) - 1) / 2
+        for i, ln in enumerate(lines): d.text((sx + mir * a["x"] * scale, cy + i * lh), ln, font=f, fill=col, anchor="mm")
     return att

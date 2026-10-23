@@ -660,6 +660,7 @@
    "id": 0,
    "crafterId": 7,
    "crafterName": "Mabel",
+   "freshnessStage": 1,
    "food": {
     "spoiled": 0.32,
     "stage": "stale",
@@ -2084,10 +2085,13 @@
    "ownerName": "Berry Clan",
    "clanTag": "BRY",
    "clanColor": "berry-500",
-   "stallName": "Berry Clan Market",
    "open": 1,
-   "listingCount": 24,
-   "allSoldOut": false
+   "listingCount": 24
+  },
+  "sign": {
+   "name": "Berry Clan Market",
+   "nameLen": 17,
+   "soldOut": 0
   },
   "revision": 17,
   "listings": [
@@ -2116,6 +2120,7 @@
      "id": 0,
      "crafterId": 0,
      "crafterName": null,
+     "freshnessStage": 0,
      "food": {
       "spoiled": 0.1,
       "stage": "fresh",
@@ -2160,6 +2165,7 @@
      "id": 0,
      "crafterId": 7,
      "crafterName": "Mabel",
+     "freshnessStage": 1,
      "food": {
       "spoiled": 0.32,
       "stage": "stale",
@@ -2536,6 +2542,7 @@
      "id": 0,
      "crafterId": 0,
      "crafterName": null,
+     "freshnessStage": 0,
      "food": {
       "spoiled": 0.1,
       "stage": "fresh",
@@ -2580,6 +2587,7 @@
      "id": 0,
      "crafterId": 7,
      "crafterName": "Mabel",
+     "freshnessStage": 1,
      "food": {
       "spoiled": 0.32,
       "stage": "stale",
@@ -3123,7 +3131,7 @@
   ],
   "perms": [
    {
-    "rank": 3,
+    "rank": "leader",
     "label": "Leader",
     "acts": [
      {
@@ -3154,7 +3162,7 @@
     ]
    },
    {
-    "rank": 2,
+    "rank": "officer",
     "label": "Officer",
     "acts": [
      {
@@ -3185,7 +3193,7 @@
     ]
    },
    {
-    "rank": 1,
+    "rank": "member",
     "label": "Member",
     "acts": [
      {
@@ -3216,7 +3224,7 @@
     ]
    },
    {
-    "rank": 0,
+    "rank": "recruit",
     "label": "Recruit",
     "acts": [
      {
@@ -3431,6 +3439,7 @@
    "id": 0,
    "crafterId": 7,
    "crafterName": "Mabel",
+   "freshnessStage": 1,
    "food": {
     "spoiled": 0.32,
     "stage": "stale",

@@ -59,7 +59,9 @@
           "children": [
            {
             "type": "input",
-            "bind": "{stall.header.stallName}",
+            "bind": "{stall.sign.name}",
+            "maxLength": 24,
+            "placeholder": "Sign text (24 max)",
             "w": 300,
             "h": 40,
             "disabled": "{!stall.viewer.perms.list}",

@@ -5,7 +5,7 @@
     "x": 0,
     "y": 0,
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "rotated": false,
    "trimmed": false,
@@ -13,15 +13,15 @@
     "x": 0,
     "y": 0,
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "sourceSize": {
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.9444444444444444
+    "y": 0.936
    },
    "index": 0
   },
@@ -30,7 +30,7 @@
     "x": 144,
     "y": 0,
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "rotated": false,
    "trimmed": false,
@@ -38,15 +38,15 @@
     "x": 0,
     "y": 0,
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "sourceSize": {
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.9444444444444444
+    "y": 0.936
    },
    "index": 1
   },
@@ -55,7 +55,7 @@
     "x": 288,
     "y": 0,
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "rotated": false,
    "trimmed": false,
@@ -63,15 +63,15 @@
     "x": 0,
     "y": 0,
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "sourceSize": {
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.9444444444444444
+    "y": 0.936
    },
    "index": 2
   },
@@ -80,7 +80,7 @@
     "x": 432,
     "y": 0,
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "rotated": false,
    "trimmed": false,
@@ -88,24 +88,24 @@
     "x": 0,
     "y": 0,
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "sourceSize": {
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.9444444444444444
+    "y": 0.936
    },
    "index": 3
   },
   "stall_cart_sunny/closed/damage2/r0": {
    "frame": {
     "x": 0,
-    "y": 144,
+    "y": 125,
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "rotated": false,
    "trimmed": false,
@@ -113,24 +113,24 @@
     "x": 0,
     "y": 0,
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "sourceSize": {
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.9444444444444444
+    "y": 0.936
    },
    "index": 4
   },
   "stall_cart_sunny/closed/damage2/r1": {
    "frame": {
     "x": 144,
-    "y": 144,
+    "y": 125,
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "rotated": false,
    "trimmed": false,
@@ -138,24 +138,24 @@
     "x": 0,
     "y": 0,
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "sourceSize": {
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.9444444444444444
+    "y": 0.936
    },
    "index": 5
   },
   "stall_cart_sunny/closed/damage3/r0": {
    "frame": {
     "x": 288,
-    "y": 144,
+    "y": 125,
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "rotated": false,
    "trimmed": false,
@@ -163,24 +163,24 @@
     "x": 0,
     "y": 0,
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "sourceSize": {
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.9444444444444444
+    "y": 0.936
    },
    "index": 6
   },
   "stall_cart_sunny/closed/damage3/r1": {
    "frame": {
     "x": 432,
-    "y": 144,
+    "y": 125,
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "rotated": false,
    "trimmed": false,
@@ -188,24 +188,24 @@
     "x": 0,
     "y": 0,
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "sourceSize": {
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.9444444444444444
+    "y": 0.936
    },
    "index": 7
   },
   "stall_cart_sunny/open/damage0/r0": {
    "frame": {
     "x": 0,
-    "y": 288,
+    "y": 250,
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "rotated": false,
    "trimmed": false,
@@ -213,24 +213,24 @@
     "x": 0,
     "y": 0,
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "sourceSize": {
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.9444444444444444
+    "y": 0.936
    },
    "index": 8
   },
   "stall_cart_sunny/open/damage0/r1": {
    "frame": {
     "x": 144,
-    "y": 288,
+    "y": 250,
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "rotated": false,
    "trimmed": false,
@@ -238,24 +238,24 @@
     "x": 0,
     "y": 0,
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "sourceSize": {
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.9444444444444444
+    "y": 0.936
    },
    "index": 9
   },
   "stall_cart_sunny/open/damage1/r0": {
    "frame": {
     "x": 288,
-    "y": 288,
+    "y": 250,
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "rotated": false,
    "trimmed": false,
@@ -263,24 +263,24 @@
     "x": 0,
     "y": 0,
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "sourceSize": {
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.9444444444444444
+    "y": 0.936
    },
    "index": 10
   },
   "stall_cart_sunny/open/damage1/r1": {
    "frame": {
     "x": 432,
-    "y": 288,
+    "y": 250,
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "rotated": false,
    "trimmed": false,
@@ -288,24 +288,24 @@
     "x": 0,
     "y": 0,
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "sourceSize": {
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.9444444444444444
+    "y": 0.936
    },
    "index": 11
   },
   "stall_cart_sunny/open/damage2/r0": {
    "frame": {
     "x": 0,
-    "y": 432,
+    "y": 375,
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "rotated": false,
    "trimmed": false,
@@ -313,24 +313,24 @@
     "x": 0,
     "y": 0,
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "sourceSize": {
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.9444444444444444
+    "y": 0.936
    },
    "index": 12
   },
   "stall_cart_sunny/open/damage2/r1": {
    "frame": {
     "x": 144,
-    "y": 432,
+    "y": 375,
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "rotated": false,
    "trimmed": false,
@@ -338,24 +338,24 @@
     "x": 0,
     "y": 0,
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "sourceSize": {
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.9444444444444444
+    "y": 0.936
    },
    "index": 13
   },
   "stall_cart_sunny/open/damage3/r0": {
    "frame": {
     "x": 288,
-    "y": 432,
+    "y": 375,
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "rotated": false,
    "trimmed": false,
@@ -363,24 +363,24 @@
     "x": 0,
     "y": 0,
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "sourceSize": {
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.9444444444444444
+    "y": 0.936
    },
    "index": 14
   },
   "stall_cart_sunny/open/damage3/r1": {
    "frame": {
     "x": 432,
-    "y": 432,
+    "y": 375,
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "rotated": false,
    "trimmed": false,
@@ -388,15 +388,15 @@
     "x": 0,
     "y": 0,
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "sourceSize": {
     "w": 144,
-    "h": 144
+    "h": 125
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.9444444444444444
+    "y": 0.936
    },
    "index": 15
   }
@@ -408,12 +408,12 @@
   "format": "RGBA8888",
   "size": {
    "w": 576,
-   "h": 576
+   "h": 500
   },
   "scale": "1",
   "grid": {
    "frameW": 144,
-   "frameH": 144,
+   "frameH": 125,
    "columns": 4,
    "rows": 4,
    "firstRow": 0,

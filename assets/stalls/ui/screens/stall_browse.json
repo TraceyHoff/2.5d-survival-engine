@@ -75,7 +75,7 @@
             "children": [
              {
               "type": "text",
-              "text": "{stall.header.stallName}",
+              "text": "{stall.sign.name}",
               "font": "title",
               "w": "auto",
               "h": 36
@@ -87,6 +87,15 @@
               "color": "{stall.header.open ? \"leaf-500\" : \"slate-500\"}",
               "w": 86,
               "h": 24
+             },
+             {
+              "type": "badge",
+              "text": "Sold out",
+              "color": "berry-500",
+              "w": 90,
+              "h": 24,
+              "visible": "{stall.sign.soldOut}",
+              "comment": "StallSign.soldOut (server-maintained)"
              }
             ],
             "gap": 10,

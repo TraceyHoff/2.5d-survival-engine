@@ -1,0 +1,7 @@
+{
+ "$comment": "Stall localisation (en). Keys are stable; other locales copy this file as strings/<locale>.json. World badges + UI pills read these via render_tuning.worldPrompt.labelKeys / ui screens.",
+ "stall.badge.open": "Open",
+ "stall.badge.soldout": "Sold out",
+ "stall.badge.closed": "Closed",
+ "stall.badge.clan": "Clan"
+}

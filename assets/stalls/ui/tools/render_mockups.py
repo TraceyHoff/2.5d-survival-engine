@@ -69,7 +69,7 @@ jobs = [
     ("ui_buy_insufficient", "stall_buy", dict(bg=bg, also=["stall_browse"], extra_state={"buy": dict(RP.STATE["buy"], listing=RP.STATE["stall"]["listings"][3], qty=1, maxQty=1, total=2, have=0, haveAfter=0, canAfford=False, state="funds", message="You need 2 iron. You have 0.")})),
     ("ui_buy_bagfull", "stall_buy", dict(bg=bg, also=["stall_browse"], extra_state={"buy": dict(RP.STATE["buy"], state="space", message="Your bag is full. Make room for 2 Stone Axes.")})),
     ("ui_manage", "stall_manage", dict(bg=bgn)),
-    ("ui_manage_owner", "stall_manage", dict(bg=bgn, extra_state={"stall": dict(RP.STATE["stall"], header=dict(RP.STATE["stall"]["header"], ownerKind=1, ownerName="Mabel", clanTag=None, stallName="Mabel's Pantry"),
+    ("ui_manage_owner", "stall_manage", dict(bg=bgn, extra_state={"stall": dict(RP.STATE["stall"], header=dict(RP.STATE["stall"]["header"], ownerKind=1, ownerName="Mabel", clanTag=None), sign={"name": "Mabel's Cozy Pantry Shop", "nameLen": 24, "soldOut": 0},
                                                                                      viewer={"role": 9, "roleLabel": "Owner", "canBuy": True, "perms": {k: True for k in ("list", "price", "stock", "collect", "remove")}, "lockReason": {}})})),
     ("ui_manage_perms", "stall_manage_perms", dict(bg=bgn)),
     ("ui_market_board", "market_board", dict(bg=bg)),

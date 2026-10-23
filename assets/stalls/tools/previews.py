@@ -1,6 +1,7 @@
 import sys, os, math, random
 sys.path.insert(0, os.path.dirname(__file__))
 from stallview import *
+S = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "strings", "en.json")))  # localised badge labels
 P = R + "/preview"; os.makedirs(P, exist_ok=True)
 def tile(key): s = MSPR[key]; return cell(MATL[s["atlas"]], s["animations"]["idle"]["frames"][0]), s
 def ground(W, H, ox, oy, n=14, path=None):
@@ -24,12 +25,12 @@ def scene(night=False, out="market_day.png", scale=2):
     items = [
         ("clan_pavilion", (-2, 3), "open", 0, ("#E8475F", "#F6EAD2"), G[:24], "Berry Clan"),
         ("clan_pavilion", (5, -1), "open", 1, ("#4F8FD6", "#FFD45A"), G[3:27], "Sky Traders"),
-        ("stall_booth_thatch", (1, 6), "open", 0, None, G[:12], "Mabel's Pantry"),
+        ("stall_booth_thatch", (1, 6), "open", 0, None, G[:12], "Mabel's Cozy Pantry Shop"),
         ("stall_booth_redroof", (7, 2), "closed", 1, None, None, "Iron Ivo"),
         ("stall_cart_pine_red", (-2, 6), "open", 0, None, G[4:12], "Pip's Cart"),
         ("stall_cart_dark_teal", (5, 6), "open", 1, None, G[1:9], "Teal & Tea"),
         ("stall_cart_sunny", (10, 0), "closed", 0, None, None, "Sunny Sprouts"),
-        ("stall_blanket_patch", (3, 9), "open", 0, None, G[5:9], "Odds"),
+        ("stall_blanket_patch", (3, 9), "open", 0, None, G[5:9], "Odds & Ends Swap Blanket"),
         ("stall_blanket_gingham", (0, 9), "open", 0, None, G[8:12], "Bo"),
         ("stall_blanket_picnic", (8, 7), "open", 0, None, G[0:4], "Fern"),
         ("stall_rent_marker", (-1, 11), None, 0, None, None, None),
@@ -49,12 +50,13 @@ def scene(night=False, out="market_day.png", scale=2):
     for key, sx, sy, st in prompts:
         s = SPR[key]
         if st:
-            hgt = ATL[s["atlas"]]["frameH"] * s["anchor"]["y"]
+            ba = s["attach"]["badge"]; bx, by = sx + ba["x"], sy + ba["y"]   # anchor of prompt/badge sprite = attach badge
             pk = "stall_prompt_open" if st == "open" else "stall_badge_closed"
-            draw_sprite(g, pk, sx, sy - hgt - 6 + (0 if st == "open" else 12))
+            draw_sprite(g, pk, bx, by)
             if st == "closed":
-                ImageDraw.Draw(g).text((sx + 7, sy - hgt + 6), "Closed", font=font(9), fill=(246, 234, 210), anchor="mm")
-    sx, sy = scr(3, 9, ox, oy); draw_sprite(g, "stall_badge_sold_out", sx + 30, sy - 40); ImageDraw.Draw(g).text((sx + 37, sy - 40), "Sold out", font=font(8), fill=(255, 250, 240), anchor="mm")
+                tb = SPR[pk]["attach"]["text"]
+                ImageDraw.Draw(g).text((bx + tb["x"], by + tb["y"]), S["stall.badge.closed"], font=font(9), fill=(246, 234, 210), anchor="mm")
+    sx, sy = scr(3, 9, ox, oy); draw_sprite(g, "stall_badge_sold_out", sx + 30, sy - 40); ImageDraw.Draw(g).text((sx + 37, sy - 40), S["stall.badge.soldout"], font=font(8), fill=(255, 250, 240), anchor="mm")
     if night:
         a = np.asarray(g, np.float32)
         a[..., :3] *= np.array([0.36, 0.34, 0.55]); a[..., 2] += 18

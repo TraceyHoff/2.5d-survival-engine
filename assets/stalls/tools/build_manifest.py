@@ -18,5 +18,5 @@ frag = {"version": 1, "name": "stalls", "$comment": "Trade stalls (player + clan
           {"key": "stall_sale_coins", "sprite": "coin", "anim": "idle", "lifetime": 0.8, "blend": "normal",
            "particles": {"rate": 0, "count": 5, "speed": [0.8, 1.6], "spread": 1.2, "gravity": 1.4, "fade": True, "scaleCurve": [0.6, 1, 0.8]}}]}
 json.dump(frag, open(os.path.join(R, "manifest.fragment.json"), "w"), indent=1)
-# pieces.proposed.json: hand-maintained (only market_counter is new)
+# pieces.proposed.json: empty (market_counter landed in ab09fa3)
 print(len(frag["atlases"]), "atlases", len(frag["sprites"]), "sprites")

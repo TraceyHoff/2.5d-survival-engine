@@ -86,7 +86,7 @@
              },
              {
               "type": "text",
-              "text": "{inspect.price.count} {inspect.price.name} at {stall.header.stallName}",
+              "text": "{inspect.price.count} {inspect.price.name} at {stall.sign.name}",
               "font": "label",
               "w": "fill"
              }

@@ -1,12 +1,14 @@
 import json, os
 UI = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 base = json.load(open("/workspace/assets/ui/screens/mock/state.json"))
+STAGES = ["fresh", "stale", "spoiling", "rotten"]  # engine gameplay/data/environment.json spoilage.stages  # itemInfo.fill 0..1 is set only for liquid containers (water_flask)
 def it(key, name, cat, desc, rarity="common", count=1, maxStack=20, weight=0.5, crafter=0, cname=None, dur=None, food=None, fill=None, stats=None):
     d = {"key": key, "name": name, "icon": "item_" + key, "category": cat, "categoryLabel": {"food": "Food", "tool": "Tool", "resource": "Material", "weapon": "Weapon", "medical": "Medical"}.get(cat, cat.title()),
          "rarity": rarity, "rarityLabel": rarity.title(), "count": count, "maxStack": maxStack, "weight": weight, "description": desc, "stats": stats or [], "id": 0,
          "crafterId": crafter, "crafterName": cname}
     if dur is not None: d["durability"] = dur
-    if food: d["food"] = food
+    if food:  # itemInfo.freshnessStage 0..3 -> environment.spoilage.stages[i].key (fresh/stale/spoiling/rotten)
+        d["freshnessStage"] = STAGES.index(food["stage"]); d["food"] = food
     if fill is not None: d["fill"] = fill
     return d
 COIN = {"item": "coin", "icon": "coin", "name": "coins"}
@@ -33,7 +35,8 @@ for i, (item, qty, pr, stock) in enumerate(goods):
                      "state": "selected" if i == 2 else None})
 st = base
 st["stall"] = {"header": {"stallId": 4021, "pieceKey": "clan_pavilion", "ownerKind": 2, "ownerId": 3, "ownerName": "Berry Clan", "clanTag": "BRY", "clanColor": "berry-500",
-                          "stallName": "Berry Clan Market", "open": 1, "listingCount": 24, "allSoldOut": False},
+                          "open": 1, "listingCount": 24},
+               "sign": {"name": "Berry Clan Market", "nameLen": 17, "soldOut": 0},
                "revision": 17, "listings": listings, "filtered": listings, "selected": listings[2],
                "ui": {"filter": "all", "sort": "price", "sortLabel": "Cheapest", "search": ""},
                "viewer": {"role": 2, "roleLabel": "Member", "canBuy": True, "perms": {"list": False, "price": False, "stock": True, "collect": False, "remove": False},
@@ -44,7 +47,7 @@ st["manage"] = {"tab": "listings", "till": {"items": [{"key": "coin", "name": "C
                 "ledgerTotal": 214, "ledger": [{"icon": f"item_{g[0]['key']}", "buyerName": b, "count": c, "priceIcon": g[2]["icon"], "priceCount": g[2]["count"] * c, "ago": a}
                     for g, b, c, a in [(goods[0], "Juniper", 3, "1m"), (goods[2], "Rook", 1, "4m"), (goods[3], "Wren", 1, "12m"), (goods[4], "Juniper", 2, "20m"), (goods[9], "Bo", 1, "1h"), (goods[1], "Fern", 2, "2h"), (goods[8], "Ivo", 1, "3h")]],
                 "perms": [{"rank": r, "label": l, "acts": [{"act": a, "on": on, "reason": "" if on else f"{l}s can't {a.lower()}"} for a, on in zip(("List", "Price", "Stock", "Collect", "Buy"), acts)]}
-                          for r, l, acts in [(3, "Leader", (1, 1, 1, 1, 1)), (2, "Officer", (1, 1, 1, 1, 1)), (1, "Member", (0, 0, 1, 0, 1)), (0, "Recruit", (0, 0, 0, 0, 1))]],
+                          for r, l, acts in [("leader", "Leader", (1, 1, 1, 1, 1)), ("officer", "Officer", (1, 1, 1, 1, 1)), ("member", "Member", (0, 0, 1, 0, 1)), ("recruit", "Recruit", (0, 0, 0, 0, 1))]],
                 "permNote": "You are a Member: you can stock goods. Ask an officer to change prices or collect the till."}
 st["market"] = {"query": "axe", "sortLabel": "Cheapest", "results": [
     {"item": goods[2][0], "stallName": "Berry Clan Market", "ownerName": "Berry Clan", "clanTag": "BRY", "clanColor": "berry-500", "priceIcon": "coin", "priceCount": 12, "stock": 2, "distance": 14, "x": 10, "y": 4},

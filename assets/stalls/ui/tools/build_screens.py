@@ -57,8 +57,9 @@ tooltip = {"schema": "ui-partial/1", "$comment": "Drop-in successor of ui/screen
 # ------------------------------------------------------------------ browse
 header = box([
     dict(type="avatar", color="{stall.header.ownerId}", w=40, h=40),
-    box([box([T("{stall.header.stallName}", "title", w="auto", h=36),
-              dict(type="badge", text="{stall.header.open ? \"Open\" : \"Closed\"}", icon="{stall.header.open ? \"ic_check\" : \"ic_moon\"}", color="{stall.header.open ? \"leaf-500\" : \"slate-500\"}", w=86, h=24)], gap=10, h=36, align="center"),
+    box([box([T("{stall.sign.name}", "title", w="auto", h=36),
+              dict(type="badge", text="{stall.header.open ? \"Open\" : \"Closed\"}", icon="{stall.header.open ? \"ic_check\" : \"ic_moon\"}", color="{stall.header.open ? \"leaf-500\" : \"slate-500\"}", w=86, h=24),
+              dict(type="badge", text="Sold out", color="berry-500", w=90, h=24, visible="{stall.sign.soldOut}", comment="StallSign.soldOut (server-maintained)")], gap=10, h=36, align="center"),
          box([T("{\"by \" + stall.header.ownerName}", "small", w="auto", h=18, color="text.secondary"),
               dict(type="badge", text="{\"[\" + stall.header.clanTag + \"]\"}", color="{stall.header.clanColor}", w=64, h=20, visible="{stall.header.clanTag}")], gap=8, h=20, align="center")], "col", w="fill", h=56),
     box([ic("coin", 28), T("{wallet.coinText}", "heading", w="auto"), T("in bag", "tiny", w="auto", color="text.muted")], gap=4, h=40, w="auto", align="center",
@@ -83,7 +84,7 @@ browse = screen("stall_browse", "Stall", box([dict(type="scrim", alpha=0.3),
 browse_phone = screen("stall_browse_phone", "Stall (phone)", box([
     dict(type="panel", frame="panel_parchment", anchor="cc", w=380, h=690, pad=12, layout="col", gap=8, children=[
         box([dict(type="avatar", color="{stall.header.ownerId}", w=36, h=36),
-             box([T("{stall.header.stallName}", "heading", h=22), box([T("{\"by \" + stall.header.ownerName}", "tiny", w="auto"), dict(type="badge", text="{\"[\" + stall.header.clanTag + \"]\"}", color="{stall.header.clanColor}", w=56, h=18, visible="{stall.header.clanTag}")], gap=6, h=18, align="center")], "col", w="fill", h=40),
+             box([T("{stall.sign.name}", "heading", h=22), box([T("{\"by \" + stall.header.ownerName}", "tiny", w="auto"), dict(type="badge", text="{\"[\" + stall.header.clanTag + \"]\"}", color="{stall.header.clanColor}", w=56, h=18, visible="{stall.header.clanTag}")], gap=6, h=18, align="center")], "col", w="fill", h=40),
              dict(type="button", variant="close", w=40, h=40)], gap=8, h=44, align="center"),
         box([ic("coin", 22), T("{wallet.coinText}", "label", w="auto"), box([], w="fill"), dict(type="badge", text="{stall.header.open ? \"Open\" : \"Closed\"}", color="leaf-500", w=70, h=22)], gap=4, h=26, align="center"),
         dict(type="input", bind="{stall.ui.search}", placeholder="Search goods\u2026", w="fill", h=48),
@@ -143,7 +144,7 @@ till = dict(type="panel", frame="panel_inset", w=300, h="fill", pad=12, layout="
 manage = screen("stall_manage", "Manage stall", box([dict(type="scrim", alpha=0.3),
     dict(type="panel", frame="panel_wood_vine", anchor="cc", w=1180, h=640, pad=22, layout="col", gap=8, children=[
         dict(type="panel", frame="panel_parchment", w="fill", h="fill", pad=14, layout="col", gap=10, children=[
-            box([ic("ui_stall_stall", 36), box(w=640, children=[dict(type="input", bind="{stall.header.stallName}", w=300, h=40, disabled="{!stall.viewer.perms.list}", action={"event": "stall.rename", "args": {"name": "$value"}}),
+            box([ic("ui_stall_stall", 36), box(w=640, children=[dict(type="input", bind="{stall.sign.name}", maxLength=24, placeholder="Sign text (24 max)", w=300, h=40, disabled="{!stall.viewer.perms.list}", action={"event": "stall.rename", "args": {"name": "$value"}}),
                  T("{stall.header.ownerKind == 2 ? \"Clan stall \u00b7 [\" + stall.header.clanTag + \"] \u00b7 you are \" + stall.viewer.roleLabel : \"Your stall\"}", "small", w="auto", color="text.secondary")], gap=12, h=40, align="center"),
                  box([], w="fill"), T("{stall.header.open ? \"Open for trade\" : \"Closed\"}", "label", w="auto"),
                  dict(type="toggle", bind="{stall.header.open}", w=56, h=32, id="open", disabled="{!stall.viewer.perms.list}", action={"event": "stall.setOpen", "args": {"stall": "{stall.header.stallId}", "open": "$value"}}), ic("{stall.viewer.perms.list ? \"\" : \"ic_lock\"}", 20)], gap=10, h=44, w="fill", align="center"),
@@ -158,14 +159,14 @@ manage = screen("stall_manage", "Manage stall", box([dict(type="scrim", alpha=0.
     setsState={"ui.windowOpen": True}, opens="owner (or clan member with any right) interacts with own stall; Shift/hold-interact on clan stall", input=INPUT_NOTE,
     sends="stall.list {invSlot, listingSlot, qty, price{item,count}} | stall.setPrice {slot, item?, count|delta} | stall.stock {slot, invSlot, count} | stall.enable {slot, enabled} | stall.collect {stall} | stall.setOpen {stall, open} | stall.remove {slot}",
     permissions="clan stalls: leader+officer list/price/collect, member stock only, recruit buy only (StallActs). Disabled controls show ic_lock + tooltip stall.viewer.lockReason.<act>")
-perm_row = box([dict(type="rank", rank="{r.rank}", w=28, h=28), T("{r.label}", "label", w=120),
+perm_row = box([dict(type="rank", rank="{r.rank}", w=84, h=26), box([], w=64),
                 {"type": "repeat", "each": "{r.acts}", "as": "a", "layout": "row", "gap": 10, "w": "auto", "h": 30,
                  "template": box([dict(type="checkbox", bind="{a.on}", w=26, h=26, disabled=True), ic("{a.on ? \"\" : \"ic_lock\"}", 16)], gap=2, w=78, h=30, align="center", tooltip="{a.reason}")}],
                gap=8, h=36, w="fill", align="center")
 perms = screen("stall_manage_perms", "Clan stall rights", box([dict(type="scrim", alpha=0.3),
     dict(type="panel", frame="panel_wood_vine", anchor="cc", w=760, h=520, pad=22, layout="col", gap=8, children=[
         dict(type="panel", frame="panel_parchment", w="fill", h="fill", pad=16, layout="col", gap=10, children=[
-            box([ic("ui_stall_clan_key", 32), T("Clan stall rights \u00b7 [{stall.header.clanTag}] {stall.header.stallName}", "heading", w="fill")], gap=8, h=36, align="center"),
+            box([ic("ui_stall_clan_key", 32), T("Clan stall rights \u00b7 [{stall.header.clanTag}] {stall.sign.name}", "heading", w="fill")], gap=8, h=36, align="center"),
             T("Who may do what at clan stalls. Set by the clan's ranks (economy config).", "small", w="fill", color="text.secondary"),
             box([T("", "tiny", w=156)] + [T(x, "label", w=78, align="center") for x in ("List", "Price", "Stock", "Collect", "Buy")], gap=10, h=22, pad=[0, 0, 0, 8]),
             {"type": "repeat", "each": "{manage.perms}", "as": "r", "layout": "col", "gap": 4, "w": "fill", "h": "auto", "template": perm_row},
@@ -199,7 +200,7 @@ inspect = screen("item_inspect", "Inspect", box([dict(type="scrim", alpha=0.45),
             box([dict(type="slot", w=112, h=112, bind="{inspect.item}", showCount=False),
                  box([T("{inspect.item.name}", "title", h=36), T("{inspect.item.rarityLabel} \u00b7 {inspect.item.categoryLabel}", "label", h=20, color="{\"rarity.\" + inspect.item.rarity}"),
                       {"type": "include", "src": "_partials/crafted_by.json", "params": {"item": "{inspect.item}"}},
-                      box([ic("{inspect.price.icon}", 22), T("{inspect.price.count} {inspect.price.name} at {stall.header.stallName}", "label", w="fill")], gap=6, h=24, align="center", visible="{inspect.price}")], "col", w="fill", h=112, gap=4)], gap=16, h=112, align="center"),
+                      box([ic("{inspect.price.icon}", 22), T("{inspect.price.count} {inspect.price.name} at {stall.sign.name}", "label", w="fill")], gap=6, h=24, align="center", visible="{inspect.price}")], "col", w="fill", h=112, gap=4)], gap=16, h=112, align="center"),
             {"type": "divider", "w": "fill", "h": 14},
             T("{inspect.item.description}", "body", w="fill", wrap=True, h="auto"),
             box([dict(type="foodbadge", stage="{inspect.item.food.stage}", w=20, h=20), T("{inspect.item.food.stageLabel}", "label", w=90, color="{\"food.\" + inspect.item.food.stage}"),

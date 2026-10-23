@@ -38,9 +38,9 @@ def coin_icon(n):
 
 def price_tag(blank=True):
     c = C(48, 32)
-    c.line([(6, 4), (11, 14)], H(RAMPS["leather"][2]), 0.9)
-    t = [(10, 10), (42, 10), (44, 12), (44, 26), (42, 28), (10, 28), (5, 19)]
-    c.part(t, CREAM, lw=0.9, shade=0.2, hl=0.12); c.part(circle(11, 19, 1.6, 10), RP("leather"), lw=0.4)
+    # same 18x8 board the stalls used to bake: face x 15..33, y 15..23 (centre 24,19); hole at x 17.2
+    c.line([(24, 11), (24.5, 15)], H(RAMPS["leather"][2]), 0.6)
+    c.part(rrect(15, 15, 33, 23, 1.6), CREAM, lw=0.6, shade=0.18, hl=0.0); c.fill(circle(17.2, 19, 0.7, 8), H(RAMPS["leather"][2]))
     return out(c)
 
 def sign_board(shape):
@@ -223,7 +223,7 @@ def build():
     piv = {"x": 0.5, "y": 0.9}
     def spr(key, cat, anims, extra=None):
         s = {"key": key, "category": cat, "atlas": "stall_props", "anchor": piv, "animations": anims}; s.update(extra or {}); sprites.append(s)
-    spr("stall_price_tag", "ui", {"idle": {"frames": [rec["price_tag"]], "fps": 1}}, {"attach": {"text": {"x": 2, "y": -11, "w": 26, "h": 12}}})
+    spr("stall_price_tag", "ui", {"idle": {"frames": [rec["price_tag"]], "fps": 1}}, {"attach": {"text": {"x": 1.5, "y": -9, "w": 14, "h": 6}}})
     spr("stall_shop_sign", "ui", {"idle": {"frames": [rec["shop_sign_0"]], "fps": 1}, "scroll": {"frames": [rec["shop_sign_1"]], "fps": 1}, "aframe": {"frames": [rec["shop_sign_2"]], "fps": 1}},
         {"attach": {"sign": {"x": 0, "y": -21, "w": 68, "h": 16}}, "sway": {"amp": 0.8, "freq": 0.6, "stiffness": 0.7}})
     spr("stall_coin_pouch", "building", {"idle": {"frames": [rec["coin_pouch"]], "fps": 1}})
@@ -255,8 +255,8 @@ def build():
          "stackArt": {"1": "idle", "2": "few", "10": "many"}})
     spr2("ui_maker_mark", "ui", [r2["maker_mark"]])
     for k in ("ic_stall", "ic_till", "ic_ledger", "ic_tag", "ic_restock", "ic_search", "ic_sort", "ic_filter", "ic_clan_key", "ic_fill"): spr2("ui_stall_" + k[3:], "ui", [r2[k]])
-    spr2("stall_badge_sold_out", "ui", [0], atlas="stall_badges", extra={"attach": {"text": {"x": 7, "y": 0, "w": 34, "h": 12}}})
-    spr2("stall_badge_closed", "ui", [1], atlas="stall_badges", extra={"attach": {"text": {"x": 7, "y": 0, "w": 34, "h": 12}}})
+    spr2("stall_badge_sold_out", "ui", [0], atlas="stall_badges", extra={"anchor": {"x": 0.5, "y": 0.84375}, "attach": {"text": {"x": 7, "y": -11, "w": 34, "h": 12}}})
+    spr2("stall_badge_closed", "ui", [1], atlas="stall_badges", extra={"anchor": {"x": 0.5, "y": 0.84375}, "attach": {"text": {"x": 7, "y": -11, "w": 34, "h": 12}}})
     # export 1x/2x pngs of UI icons for the DOM kit
     os.makedirs(os.path.join(ROOT, "ui", "icons"), exist_ok=True)
     for name, i in r2.items():

@@ -1,23 +1,4 @@
 {
- "$comment": "PROPOSED for gameplay/data/pieces.json. stall_blanket/cart/booth/clan_pavilion already exist there (used as-is). market_counter = clan trading post / warehouse counter, 'maybe later' per Survival Systems.",
- "pieces": [
-  {
-   "key": "market_counter",
-   "placement": "cell",
-   "layer": 2,
-   "footprint": {
-    "w": 2,
-    "h": 1
-   },
-   "listings": 6,
-   "hp": 400,
-   "stall": true,
-   "clanOnly": true,
-   "provisional": "maybe later per Survival Systems",
-   "states": [
-    "closed",
-    "open"
-   ]
-  }
- ]
+ "$comment": "No proposed pieces. market_counter landed in engine ab09fa3 (pieces.json: 2x1, stall.listings 6, clanOnly).",
+ "pieces": []
 }

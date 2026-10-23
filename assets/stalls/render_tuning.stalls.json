@@ -1,10 +1,100 @@
 {
- "$comment": "Renderer hints for stalls (Renderer owns). Sign/tag text is SDF Fredoka drawn at attach points; auto-shrink to fit box then ellipsis.",
- "sign": { "font": "ui/fonts/Fredoka.ttf", "weight": 700, "color": "#3B2433", "minSizePx": 6, "maxSizePx": 12, "fit": "shrink-then-ellipsis", "stroke": null, "onTintedBoard": { "color": "#3B2433", "lightenBoard": 0.0 } },
- "priceTag": { "font": "ui/fonts/Fredoka.ttf", "weight": 700, "color": "#3B2433", "sizePx": 6, "iconSizePx": 7, "format": "{count}", "iconFromPriceItem": true, "layout": "icon-left-text-right" },
- "slots": { "iconScale": 1.0, "bobPx": 0, "hideWhenClosed": true, "dimWhenOutOfStock": 0.45, "soldOutStamp": "stall_badge_sold_out" },
- "worldPrompt": { "open": "stall_prompt_open", "soldOut": "stall_badge_sold_out", "closed": "stall_badge_closed", "offsetZ": 1.2, "fadeDistanceTiles": [6, 9], "drivenBy": "StallHeader {open, listingCount} + per-stall allSoldOut flag (needs header bit)" },
- "lanterns": { "emissiveColor": "#FFD04A", "bloom": 0.6, "nightOnly": true, "flicker": { "amp": 0.08, "freq": 3.0 } },
- "sway": { "maskChannel": "R", "note": "sway masks are per-atlas pages (masks.sway); awnings/bunting/banners/drapes weight 255, closed curtains ~90" },
- "tint": { "R": "clan_primary", "G": "clan_secondary", "mode": "multiply", "tintSets": "from pvp_clan fragment (not redefined here)" }
+  "$comment": "Renderer hints for stalls (Renderer owns). Sign/tag text is MTSDF Fredoka (stalls/fonts, BMFont JSON + RGBA PNG; RGB median = MSDF, A = true SDF) drawn at attach points (x/y = box CENTRE); auto-shrink to fit box then ellipsis.",
+  "sign": {
+    "font": {
+      "atlas": "stalls/fonts/fredoka_bold_mtsdf.json",
+      "atlasRegular": "stalls/fonts/fredoka_regular_mtsdf.json",
+      "fieldType": "mtsdf",
+      "pxRange": 4,
+      "emPx": 48,
+      "charset": "ASCII 0x20-0x7E + Latin-1 0xA0-0xFF",
+      "fallbackTtf": "ui/fonts/Fredoka.ttf"
+    },
+    "weight": 700,
+    "color": "#3B2433",
+    "minSizePx": 6,
+    "maxSizePx": 12,
+    "fit": "1 line shrink to minSizePx 6; else word-wrap 2 lines shrink to 5; else ellipsis",
+    "stroke": null,
+    "onTintedBoard": {
+      "color": "#3B2433",
+      "lightenBoard": 0.0
+    },
+    "maxChars": 24,
+    "source": "StallSign.name (nameLen u8, name u8[24], printable ASCII)"
+  },
+  "priceTag": {
+    "font": {
+      "atlas": "stalls/fonts/fredoka_bold_mtsdf.json",
+      "atlasRegular": "stalls/fonts/fredoka_regular_mtsdf.json",
+      "fieldType": "mtsdf",
+      "pxRange": 4,
+      "emPx": 48,
+      "charset": "ASCII 0x20-0x7E + Latin-1 0xA0-0xFF",
+      "fallbackTtf": "ui/fonts/Fredoka.ttf"
+    },
+    "weight": 700,
+    "color": "#3B2433",
+    "sizePx": 6,
+    "iconSizePx": 7,
+    "format": "{count}",
+    "iconFromPriceItem": true,
+    "layout": "icon-left-text-right"
+  },
+  "slots": {
+    "iconScale": 1.0,
+    "bobPx": 0,
+    "hideWhenClosed": true,
+    "dimWhenOutOfStock": 0.45,
+    "soldOutStamp": "stall_badge_sold_out"
+  },
+  "worldPrompt": {
+    "open": "stall_prompt_open",
+    "soldOut": "stall_badge_sold_out",
+    "closed": "stall_badge_closed",
+    "offsetZ": 0,
+    "fadeDistanceTiles": [
+      6,
+      9
+    ],
+    "drivenBy": "StallHeader.open + StallSign.soldOut (both on the stock entity)",
+    "labelKeys": {
+      "open": "stall.badge.open",
+      "soldOut": "stall.badge.soldout",
+      "closed": "stall.badge.closed",
+      "clan": "stall.badge.clan"
+    },
+    "strings": "stalls/strings/en.json",
+    "anchorAttach": "badge",
+    "$anchor": "Place the prompt/badge sprite ANCHOR at the stall attach \"badge\" (pivot-relative, centred, 2px above the topmost art row of the trimmed frame; per-rotation via frameAttach). Badge anchors are their body bottom (y 0.84375), prompt anchor is its pointer tip (0.9). Do not use anchorY*0.8."
+  },
+  "lanterns": {
+    "emissiveColor": "#FFD04A",
+    "bloom": 0.6,
+    "nightOnly": true,
+    "flicker": {
+      "amp": 0.08,
+      "freq": 3.0
+    }
+  },
+  "sway": {
+    "maskChannel": "R",
+    "note": "sway masks are per-atlas pages (masks.sway); awnings/bunting/banners/drapes weight 255, closed curtains ~90"
+  },
+  "tint": {
+    "R": "clan_primary",
+    "G": "clan_secondary",
+    "mode": "multiply",
+    "tintSets": "from pvp_clan fragment (not redefined here)"
+  },
+  "attach": {
+    "origin": "pivot (1x px, y down)",
+    "xy": "CENTRE of the box",
+    "box": "w x h",
+    "tagMin": [
+      14,
+      6
+    ],
+    "tags": "tagN = centre of the stall_price_tag text box (14x6). Nothing is baked: draw stall_price_tag at tagN - sprite.attach.text (1.5,-9) only for enabled listings."
+  }
 }
