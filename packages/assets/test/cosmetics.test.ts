@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { Appearance, World, defaultAppearance, resolveLayers, slotIndex, validateAppearance, schemaHash } from "@engine/core";
+import { Appearance, World, setAppearance, getAppearance, defaultAppearance, resolveLayers, slotIndex, validateAppearance, schemaHash } from "@engine/core";
 import { loadManifest, ManifestError } from "../src/index.js";
 
 const dir = fileURLToPath(new URL("../sample/", import.meta.url));
@@ -61,6 +61,13 @@ describe("Appearance helpers", () => {
   it("Appearance is networked+persistent and compact", () => {
     expect(Appearance.networked && Appearance.persistent).toBe(true);
     const w = new World(); const before = w.getSchemaHash(); w.register(Appearance); expect(w.getSchemaHash()).not.toBe(before); expect(typeof schemaHash(Appearance.schema)).toBe("number");
+  });
+  it("setAppearance writes and bumps a wrapping version", () => {
+    const w = new World(); w.register(Appearance); const e = w.create();
+    const a = look((a) => { a.parts[slotIndex("top")] = id("top_shirt"); a.primary[slotIndex("top")] = 2; });
+    expect(setAppearance(w, e, a)).toBe(0); expect(getAppearance(w, e)).toMatchObject({ ...a, version: 0 });
+    expect(setAppearance(w, e, a)).toBe(1);
+    w.setField(e, Appearance, "version", 0xffff); expect(setAppearance(w, e, a)).toBe(0);
   });
   it("validateAppearance clamps or rejects", () => {
     const a = look((a) => { a.bodyType = 1; a.skinTone = 9; a.parts[slotIndex("hat")] = id("hat_helm"); a.parts[slotIndex("top")] = id("hair_short"); a.parts[slotIndex("shoes")] = 999; a.primary[slotIndex("top")] = 77; });

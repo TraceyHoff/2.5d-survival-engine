@@ -6,6 +6,9 @@ Players choose a body type (`male` | `female`), a skin tone, and wearables in 8 
 Slots (fixed order; this order is the wire/save layout, so only append): `hair, hat, accessory, top, bottom, shoes, face, eyes`.
 Palettes: `hair` and `face` (beards, brows) use `hairColors`; all other slots use `clothingColors`; the body uses `skinTones`.
 
+## Writing Appearance (everyone)
+**All writers must use `setAppearance(world, e, value)`**: the server command handler, load-time repair, spawn defaults and tools. It writes the whole value and bumps `Appearance.version` (u16, wraps 0xffff → 0, networked and persistent). Never use `world.set`, `setField` or `setElement` on Appearance directly, because Renderer caches would go stale. Validate first (`validateAppearance`); `setAppearance` doesn't validate. Read with `getAppearance(world, e)`.
+
 ## Art: what to author
 Add these to `packages/assets/pack/manifest.json`, then run `pnpm --filter @engine/assets lock:ids` to write the `wearables` lock section:
 ```jsonc
@@ -35,7 +38,10 @@ Add these to `packages/assets/pack/manifest.json`, then run `pnpm --filter @engi
 ## Renderer
 ```ts
 const cat = registry.cosmetics!;
-for (const l of resolveLayers(cat, appearanceOf(e), transform.facing)) {   // back to front
+// cache per entity: recompute only when Appearance.version or the 4-way facing changes
+const a = getAppearance(world, e)!; const key = a.version * 4 + directionIndex4(transform.facing);
+const layers = cache.get(e)?.key === key ? cache.get(e)!.layers : (cache.set(e, { key, layers: resolveLayers(cat, a, transform.facing) }), cache.get(e)!.layers);
+for (const l of layers) {   // back to front
   const ref = registry.frame(l.sprite, currentAnim /* or l.anim */, transform.facing, t);
   draw(ref, { tintR: l.tintR, tintG: l.tintG });  // tintmask R/G -> 0xRRGGBB, undefined = untinted
 }
@@ -43,10 +49,10 @@ for (const l of resolveLayers(cat, appearanceOf(e), transform.facing)) {   // ba
 `DrawLayer = { slot: "body" | WearableSlot, wearable, sprite, anim, layer, z, tintR?, tintG? }`. Hidden slots are already left out. Read the Appearance arrays with the store's array accessors, or build an `AppearanceValue` from them.
 
 ## Netcode: replication and persistence
-- `Appearance` is a networked, persistent component, about 42 bytes per character. It changes rarely, so the delta stays at 0 bytes per tick otherwise.
+- `Appearance` is a networked, persistent component, about 44 bytes per character (including `version`). Clients use the replicated `version` only for cache invalidation and never write it. It changes rarely, so the delta stays at 0 bytes per tick otherwise.
 - **Schema hash:** registering `Appearance` changes `world.getSchemaHash()`, and new wearables change `registry.hash` (both are part of the handshake). Bump the client and server together.
-- **Existing saves:** they have no Appearance records. On load, add `Appearance` to every player entity that lacks it, using `defaultAppearance(cat)`. Then run `validateAppearance(cat, value)` in clamp mode on every loaded Appearance, so removed or retired parts and out-of-range palette indices fall back to 0 and don't crash rendering.
-- **Server validation:** the `setAppearance` command is handled server-side with `validateAppearance(cat, payload, { mode: "reject", unlocked: playerUnlockTags })`. Reject with the first issue as the `CommandRejected` reason, and write the component only when it passes.
+- **Existing saves:** they have no Appearance records. On load, add `Appearance` to every player entity that lacks it, through `setAppearance(world, e, defaultAppearance(cat))`. Then run `validateAppearance(cat, value)` in clamp mode on every loaded Appearance, so removed or retired parts and out-of-range palette indices fall back to 0 and don't crash rendering.
+- **Server validation:** the `setAppearance` command is handled server-side with `validateAppearance(cat, payload, { mode: "reject", unlocked: playerUnlockTags })`. Reject with the first issue as the `CommandRejected` reason, and write the component only when it passes, via `setAppearance`.
 
 ## Survival: creator flow, command and unlocks
 - **Creator screen:** pick a body type, then a skin tone (`cat.skinTones`), then each slot from `cat.bySlot(slot, body)`, filtered by unlocks, with colors from that slot's palette. Preview with `resolveLayers` locally. Changing the body type re-runs `validateAppearance` in clamp mode, which drops parts the new body doesn't support.

@@ -1,4 +1,6 @@
 import { defineComponent } from "./component.js";
+import type { Entity } from "./entity.js";
+import type { World } from "./world.js";
 
 /**
  * Character customization (cosmetic paper-doll) contract. Pure data + helpers; no art, UI or rendering.
@@ -18,9 +20,12 @@ export const SLOT_PALETTE: Record<WearableSlot, "hairColors" | "clothingColors">
   bottom: "clothingColors", shoes: "clothingColors", face: "hairColors", eyes: "clothingColors",
 };
 
-/** Networked + persistent. parts[slot] = wearable id (0 = none); primary/secondary[slot] = palette index (u8). */
+/**
+ * Networked + persistent. `version` (u16, wrapping) is bumped on every write so the Renderer can cache resolveLayers
+ * output per entity; ALL writers must go through setAppearance (never world.set/setElement on Appearance directly).
+ * parts[slot] = wearable id (0 = none); primary/secondary[slot] = palette index (u8). */
 export const Appearance = defineComponent("Appearance", {
-  bodyType: "u8", skinTone: "u8",
+  bodyType: "u8", skinTone: "u8", version: "u16",
   parts: { type: "u16", length: SLOT_COUNT },
   primary: { type: "u8", length: SLOT_COUNT },
   secondary: { type: "u8", length: SLOT_COUNT },
@@ -134,4 +139,21 @@ export function resolveLayers(cat: CosmeticCatalogLike, a: AppearanceValue, faci
   });
   out.sort((x, y) => x.layer - y.layer || x.z - y.z || x.order - y.order);
   return out.map(({ order: _o, ...l }) => l);
+}
+
+/** Read an entity's Appearance as a plain value (copies arrays); undefined if absent. */
+export function getAppearance(world: World, e: Entity): (AppearanceValue & { version: number }) | undefined {
+  const v = world.get(e, Appearance); if (!v) return undefined;
+  return { bodyType: v.bodyType, skinTone: v.skinTone, version: v.version, parts: [...v.parts], primary: [...v.primary], secondary: [...v.secondary] };
+}
+/**
+ * The only sanctioned Appearance writer: adds or overwrites the component and bumps `version` (wraps at 0xffff -> 0).
+ * Validate first (validateAppearance); this does not. Returns the new version.
+ */
+export function setAppearance(world: World, e: Entity, value: AppearanceValue): number {
+  const prev = world.get(e, Appearance);
+  const version = prev ? (prev.version + 1) & 0xffff : 0;
+  const init = { bodyType: value.bodyType, skinTone: value.skinTone, version, parts: value.parts, primary: value.primary, secondary: value.secondary };
+  if (prev) world.set(e, Appearance, init); else world.add(e, Appearance, init);
+  return version;
 }
