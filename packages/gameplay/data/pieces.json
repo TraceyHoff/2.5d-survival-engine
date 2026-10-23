@@ -1,5 +1,5 @@
 {
-  "$comment": "Build pieces. Engine fields (key, footprint, levels, layer 0 deck/1 structure/2 furniture/3 decor, solid, cost, sockets in 1/4 tiles, hp) are validated by @engine/world loadBuildPieces; ids from ids.lock.json. Gameplay fields: placement cell|edge|opening|free, tiered (cost/hp from tiers.json x costScale; hp = base hp at wood tier), z rules, support flags, station/heat/fuel/container/privilege. Socket kinds: 1 edge, 2 door, 3 window, 4 hatch. Art: manifest key = sprite or key; Art & Assets owns all visuals.",
+  "$comment": "Build pieces. Engine fields (key, footprint, levels, layer 0 deck/1 structure/2 furniture/3 decor, solid, cost, sockets in 1/4 tiles, hp) are validated by @engine/world loadBuildPieces; ids from ids.lock.json. Gameplay fields: placement cell|edge|opening|free, tiered (cost/hp from tiers.json x costScale; hp = base hp at wood tier), z rules, support flags, station/heat/fuel/container/privilege. Socket kinds: 1 edge, 2 door, 3 window, 4 hatch. Art: manifest key = sprite or key; Art & Assets owns all visuals. fuelMul: heat sources burn each fuel item fuelMul x its fuelSeconds (fireplace/wood_stove are efficient). features.windsock: reads core Weather wind via windsockReading (no extra state).",
   "pieces": [
     {
       "key": "foundation",
@@ -803,7 +803,8 @@
           "resource": "mortar",
           "amount": 6
         }
-      ]
+      ],
+      "fuelMul": 1.5
     },
     {
       "key": "wood_stove",
@@ -827,7 +828,8 @@
           "resource": "nails",
           "amount": 4
         }
-      ]
+      ],
+      "fuelMul": 2.0
     },
     {
       "key": "windsock",

@@ -17,11 +17,17 @@ import { attachmentsOf, pieceOf } from "../building/links.js";
 
 function burnNext(world: World, fire: Entity, defs: GameDefs, dt: number): boolean {
   if (!world.has(fire, Container)) return false;
+  const mul = fuelMulOf(world, fire, defs);
   for (const s of listSlots(world, fire)) {
     const sec = defs.items.get(s.item)?.fuelSeconds ?? 0;
-    if (sec > 0 && removeItem(world, fire, s.item, 1)) { world.setField(fire, Fuel, "burnUntilTick", world.tick + secondsToTicks(sec, dt)); return true; }
+    if (sec > 0 && removeItem(world, fire, s.item, 1)) { world.setField(fire, Fuel, "burnUntilTick", world.tick + secondsToTicks(sec * mul, dt)); return true; }
   }
   return false;
+}
+/** Piece fuelMul (fireplace/wood_stove burn fuel slower); free-standing stations = 1. */
+export function fuelMulOf(world: World, fire: Entity, defs: GameDefs): number {
+  const piece = pieceOf(world, fire); const t = piece === undefined ? undefined : world.getField(piece, BuildPiece, "type");
+  return (t === undefined ? undefined : defs.pieces.get(t)?.fuelMul) ?? 1;
 }
 function setLit(world: World, fire: Entity, lit: number): void {
   world.setField(fire, Fuel, "lit", lit);

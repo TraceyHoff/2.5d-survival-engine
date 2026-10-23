@@ -90,6 +90,8 @@ export interface PieceDef extends BuildPieceDef, Visual {
   readonly fits: SocketKind | 0; readonly door: boolean; readonly station: StationKind; readonly fired: boolean;
   readonly heat: number; readonly heatRadius: number; readonly light: boolean; readonly container: number;
   readonly privilegeRadius: number; readonly paintable: boolean; readonly variants: number; readonly spoilMul: number;
+  /** Fuel efficiency: each fuel item burns fuelSeconds x fuelMul here (1 = campfire). */
+  readonly fuelMul: number;
   /** Trade stall: listing slots (= stock Container slots) and whether only a clan may own it. null = not a stall. */
   readonly stall: { readonly listings: number; readonly clanOnly: boolean } | null;
   /** Feature data (windsock, contact damage, alarm, gate breach, clan lock, sight bonus); {} when none. */
@@ -162,7 +164,7 @@ export interface RawPiece extends RawVisual {
   sockets?: { x: number; y: number; z?: number; kind: number }[]; cost?: { resource: string; amount: number }[];
   tiered?: boolean; costScale?: number; tier?: number; groundOnly?: boolean; ground?: boolean; minLevel?: number; needsDeck?: boolean;
   supportsAbove?: boolean; roof?: boolean; blocksPath?: boolean; opening?: string; fits?: string; door?: boolean; station?: string;
-  fired?: boolean; heat?: number; heatRadius?: number; light?: boolean; container?: number; privilegeRadius?: number; paintable?: boolean; variants?: number; spoilMul?: number;
+  fired?: boolean; heat?: number; heatRadius?: number; light?: boolean; container?: number; privilegeRadius?: number; paintable?: boolean; variants?: number; spoilMul?: number; fuelMul?: number;
   stall?: { listings: number; clanOnly?: boolean };
   features?: PieceFeatures;
 }
@@ -305,7 +307,7 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
       supportsAbove: p.supportsAbove ?? false, roof: p.roof ?? false, blocksPath: p.blocksPath ?? false,
       opening: p.opening ? enumOf(OPENING, p.opening, `${where}.opening`) : 0, fits: p.fits ? enumOf(OPENING, p.fits, `${where}.fits`) : 0,
       door: p.door ?? false, station, fired: p.fired ?? false, heat: p.heat ?? 0, heatRadius: p.heatRadius ?? 0, light: p.light ?? false,
-      container: p.container ?? 0, privilegeRadius: p.privilegeRadius ?? 0, paintable: p.paintable ?? false, variants: Math.max(1, p.variants ?? 1), spoilMul: p.spoilMul ?? 1,
+      container: p.container ?? 0, privilegeRadius: p.privilegeRadius ?? 0, paintable: p.paintable ?? false, variants: Math.max(1, p.variants ?? 1), spoilMul: p.spoilMul ?? 1, fuelMul: p.fuelMul ?? 1,
       stall: p.stall ? { listings: p.stall.listings, clanOnly: p.stall.clanOnly ?? false } : null, features: p.features ?? {},
     });
     if (p.stall && (p.stall.listings !== (p.container ?? 0))) err(`${where}.stall.listings must equal container`);

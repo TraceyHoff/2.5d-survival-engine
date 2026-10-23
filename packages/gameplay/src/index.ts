@@ -19,6 +19,7 @@ export * from "./systems/vitals.js";
 export * from "./systems/gathering.js";
 export * from "./systems/crafting.js";
 export * from "./systems/fuel.js";
+export * from "./systems/windsock.js";
 export * from "./systems/noise.js";
 export * from "./systems/spoilage.js";
 export * from "./systems/movement.js";

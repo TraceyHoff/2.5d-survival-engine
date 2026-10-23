@@ -248,6 +248,11 @@ Read it with `docs/ARCHITECTURE.md` (core batches 2 and 3), `docs/DECISIONS.md` 
 - **Crafting:** validates at start and exchanges atomically at completion. Stations are found through the spatial index, and fired stations must be lit.
 - **Environment:** TimeOfDay and Weather live on `world.environment`. Exposure computes felt temperature (heat sources through the spatial index), wetness and modifiers. `sheltered` is set automatically when a roof or deck exists above the entity's tile.
 
+### 6.1 Heat sources and windsock (slice: fireplace / wood_stove / windsock)
+- `fireplace` (2×1, tier 2, heat 22 r5) and `wood_stove` (tier 3, heat 16 r4, cooks as campfire) are `fired` pieces: Fuel + fuel Container + heat Emitter + light, lit via ToggleFire like campfires.
+- `pieces.json fuelMul` (default 1): each fuel item burns `fuelSeconds × fuelMul` (fireplace 1.5, wood_stove 2.0). `fuelMulOf(world, fire, defs)`.
+- `windsock` (decor, non-solid, `features.windsock`): no gameplay state. `windsockReading(world)` → `{dir, speed, strength 0..1, stage 0..3}` from replicated core `Weather.windDir/windSpeed` (`WINDSOCK_FULL_SPEED` = 12 tiles/s). Art hook: rotate to `dir`, inflation pose by `stage`.
+
 ## 7. Event delivery (for Netcode)
 
 | Reliable | Unreliable (cosmetic) |
