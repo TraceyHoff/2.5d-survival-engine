@@ -15,9 +15,9 @@ const root = resolve(here, "../..");
 const MOUNTS: [string, string, (rel: string) => boolean][] = [
   ["pack/", join(root, "packages/assets/pack"), (r) => /^(manifest\.json|piece_variants\.json|ids\.lock\.json|atlases\/[^/]+\.(png|json))$/.test(r)],
   ["survival_fx/", join(root, "assets/survival_fx"), (r) => /^(render_tuning\.json|daynight_grading\.json|textures\/[^/]+\.png|lut\/[^/]+\.(png|json))$/.test(r)],
-  ["ui/", join(root, "assets/ui"), (r) => /^(theme\.json|fonts\/(Fredoka\.ttf|OFL-Fredoka\.txt)|atlas\/ui_atlas\.(png|json))$/.test(r)],
+  ["ui/", join(root, "assets/ui"), (r) => /^(theme\.json|fonts\/(Fredoka\.ttf|OFL-Fredoka\.txt)|atlas\/ui_atlas\.(png|json)|branding\/[^/]+\.(png|webp|svg|json))$/.test(r)],
 ];
-const TYPES: Record<string, string> = { ".json": "application/json", ".png": "image/png", ".webp": "image/webp", ".ttf": "font/ttf", ".txt": "text/plain" };
+const TYPES: Record<string, string> = { ".json": "application/json", ".png": "image/png", ".webp": "image/webp", ".ttf": "font/ttf", ".txt": "text/plain", ".svg": "image/svg+xml" };
 
 function walk(dir: string, rel = ""): string[] {
   if (!existsSync(dir)) return [];
@@ -53,7 +53,11 @@ function art(): Plugin {
   };
 }
 
+/** Art's logo (assets/ui/branding/logo.*), resolved at build time so the client never probes a missing file (no 404s). */
+const BRANDING_LOGO = ["logo.png", "logo.webp", "logo.svg"].find((f) => existsSync(join(root, "assets/ui/branding", f))) ?? "";
+
 export default defineConfig({
+  define: { __BRANDING_LOGO__: JSON.stringify(BRANDING_LOGO) },
   base: process.env["BASE"] ?? "/",
   plugins: [art()],
   build: { target: "es2022" },

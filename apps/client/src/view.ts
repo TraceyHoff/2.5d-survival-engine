@@ -45,23 +45,27 @@ export class IsoView {
   }
   get appearanceEnabled(): boolean { return this.view.isRegistered(Appearance); }
 
-  static async create(canvas: HTMLCanvasElement, base: string, ov: ViewOverrides = {}): Promise<IsoView> {
+  static async create(canvas: HTMLCanvasElement, base: string, ov: ViewOverrides = {}, onProgress: (f: number, label: string) => void = () => {}): Promise<IsoView> {
+    onProgress(0.05, "Loading art manifest");
     const renderer = new IsoRenderer(canvas, { preserveDrawingBuffer: new URLSearchParams(location.search).has("shot") });
     const packBase = `${base}art/pack/`;
     const { registry } = await fetchDefaultManifest(`${base}art/`);
+    onProgress(0.3, "Loading sprite atlases");
     const sources = sourcesFromManifest(registry, packBase + "manifest.json", {}, { probeSiblings: false });
     await renderer.atlas.setRegistry(registry, sources);
+    onProgress(0.75, "Loading building variants");
     const pv = await fetch(packBase + "piece_variants.json").then((r) => (r.ok ? r.json() : null)).catch(() => null) as { pieces?: Record<string, string[]> } | null;
     if (pv?.pieces) renderer.atlas.setPieceVariants(pv.pieces);
     for (const a of ["characters", "characters_b", "characters_c"]) if (registry.atlases.has(a)) {
       const h = await fetch(`${packBase}atlases/${a}.hands.json`).then((r) => (r.ok ? r.json() : null)).catch(() => null);
       if (h?.hands) renderer.atlas.setHands(a, h);
     }
+    onProgress(0.9, "Loading lighting");
     const tuningUrl = `${base}art/survival_fx/render_tuning.json`;
     const look = await renderer.loadLook(tuningUrl);
     const lights = new LightTable(); lights.load(await fetch(tuningUrl).then((r) => (r.ok ? r.json() : null)).catch(() => null));
     if (look.warnings.length) console.info("render tuning:", look.warnings);
-    renderer.camera.zoom = 1.6;
+    renderer.camera.zoom = 1.6; onProgress(1, "Ready");
     return new IsoView(renderer, registry, ov, lights);
   }
 

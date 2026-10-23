@@ -32,12 +32,16 @@ export interface GameServerOptions {
   starterCamp?: boolean;
   /** Give each joining client (players and bots) a random valid Appearance as a placeholder until they set their own look. */
   randomAppearance?: boolean;
+  /** Server mode (default "multiplayer"). "singleplayer" = in-browser local server with local human bots. */
+  mode?: ServerMode;
 }
 
 /** claimed: ClaimAccount processed (saved record restored), so a held join-time look can no longer be overwritten by the restore. */
 interface Player { entity: Entity; account: string; name: string; claimed: boolean }
 
+export type ServerMode = "singleplayer" | "multiplayer";
 export interface GameServer {
+  readonly mode: ServerMode;
   world: World; net: NetServer; chunks: ChunkManager; persist: WorldPersistence | undefined; loop: FixedLoop;
   /** Core permissions resource: GroupRegistry (parties/clans), ClaimRegistry, policy. Saved with the world. */
   permissions: PermissionsRes;
@@ -236,7 +240,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
   const step = (dt: number): void => { const t0 = performance.now(); world.step(dt); tickTimes.push(performance.now() - t0); if (tickTimes.length > 4096) tickTimes.splice(0, 2048); };
   const loop = new FixedLoop({ tickHz, step });
   return {
-    world, net, chunks, persist, loop, permissions, players, stalls, appearance, step, tickTimes,
+    mode: o.mode ?? "multiplayer", world, net, chunks, persist, loop, permissions, players, stalls, appearance, step, tickTimes,
     async shutdown() {
       if (!persist || closing) return { chunks: 0, players: 0 };
       const r = await persist.saveAll(); closing = true; await persist.store.close(); return r;

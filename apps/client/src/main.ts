@@ -2,6 +2,7 @@
  * Client bootstrap: fixed-step loop + WebGL2 IsoRenderer view (./view.ts, Art's pack) + network session.
  * Falls back to the Canvas2D debug draw with ?renderer=debug or when WebGL2 / the art fails to load.
  * URL params: ?server=ws://host:7777 (default: same host, port 7777), ?player=N (separate saved account per N),
+ *             ?offline=1 (skip the menu: singleplayer), ?menu=0 (skip the menu: legacy connect overlay), ?bots=N,
  *             ?renderer=debug, ?time=0..24 / ?weather=clear|rain|storm|snow|fog &intensity=0..1 (view-only overrides), ?hud=0.
  */
 import { createGameLoop, World, Transform, PrevTransform, lerp, entityIndex, InputState, type FixedLoop } from "@engine/core";
@@ -13,6 +14,7 @@ import { ClientSession } from "./session.js";
 import { mountConnectOverlay } from "./connect.js";
 import { IsoView } from "./view.js";
 import { mountHud } from "./hud.js";
+import { BootUI, loadSettings } from "./menu.js";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const params = new URLSearchParams(location.search);
@@ -21,6 +23,10 @@ let iso: IsoView | undefined;
 const WEATHERS = ["clear", "rain", "storm", "snow", "fog"];
 const num = (k: string): number | undefined => { const v = params.get(k); return v === null || !Number.isFinite(Number(v)) ? undefined : Number(v); };
 const wq = params.get("weather"); const wi = wq ? WEATHERS.indexOf(wq) : -1;
+const serverParam = params.get("server");
+/** Main menu unless a URL param already picks the mode (?offline=1, ?server=, ?menu=0: tests/screenshots). */
+const useMenu = !serverParam && params.get("offline") !== "1" && params.get("menu") !== "0";
+const boot = useMenu ? new BootUI(import.meta.env.BASE_URL) : undefined;
 const wantIso = params.get("renderer") !== "debug" && typeof WebGL2RenderingContext !== "undefined";
 const isoReady: Promise<void> = wantIso ? (async () => {
   const v = await IsoView.create(canvas, import.meta.env.BASE_URL, { ...(num("time") !== undefined ? { hours: num("time")! } : {}), ...(wi >= 0 ? { weather: wi, intensity: num("intensity") ?? 1 } : {}) });
@@ -89,29 +95,39 @@ function render(w: World, alpha: number): void {
 let loop: FixedLoop = createGameLoop(world, { render });
 function useWorld(w: World): void { world = w; loop = createGameLoop(w, { render }); }
 
-const serverParam = params.get("server");
-/** Offline mode: no `server` param on a static host (Pages build sets VITE_DEFAULT_OFFLINE=1), or ?offline=1. */
-const offline = !serverParam && (params.get("offline") === "1" || import.meta.env["VITE_DEFAULT_OFFLINE"] === "1");
 let pumpLocal: ((ms: number) => void) | undefined;
-if (offline) {
-  // Lazy chunk: the in-browser authoritative server is only loaded in offline mode.
+const settings = loadSettings();
+/** Singleplayer: in-browser authoritative server (lazy chunk) in "singleplayer" mode; human bots spawn automatically. */
+async function startSingleplayer(): Promise<void> {
+  const { createLocalServer, openBrowserStore } = await import("./local.js");
+  const bots = Number(params.get("bots") ?? settings.bots);
+  const local = await createLocalServer({ store: await openBrowserStore(`engine-local-${params.get("player") ?? "1"}`), bots, ...(await isoReady, iso?.registry.cosmetics?.size ? { catalog: iso.registry.cosmetics } : {}), log: (m) => console.info(`[local] ${m}`) });
+  pumpLocal = local.pump;
+  addEventListener("pagehide", () => { void local.game.persist?.saveAll(); });
+  useWorld(await session.connect("local", session.savedName ?? "", local.createTransport()));
+}
+const connectTo = (url: string, name: string): void => { session.connect(url, name).then(useWorld, (e: unknown) => console.warn("connect failed", e)); };
+const defaultUrl = serverParam ?? `${location.protocol === "https:" ? "wss" : "ws"}://${location.hostname || "localhost"}:7777`;
+if (boot) {
   void (async () => {
-    const { createLocalServer, openBrowserStore } = await import("./local.js");
-    const bots = Number(params.get("bots") ?? 3);
-    const local = await createLocalServer({ store: await openBrowserStore(`engine-local-${params.get("player") ?? "1"}`), bots, ...(await isoReady, iso?.registry.cosmetics?.size ? { catalog: iso.registry.cosmetics } : {}), log: (m) => console.info(`[local] ${m}`) });
-    pumpLocal = local.pump;
-    addEventListener("pagehide", () => { void local.game.persist?.saveAll(); });
-    useWorld(await session.connect("local", session.savedName ?? "", local.createTransport()));
-  })().catch((e: unknown) => console.error("local server failed", e));
+    await isoReady; boot.progress(1, "Ready");
+    const choice = await boot.menu({ hostedStatic: import.meta.env["VITE_DEFAULT_OFFLINE"] === "1", defaultUrl });
+    boot.hide();
+    if (choice.kind === "singleplayer") await startSingleplayer();
+    else { // multiplayer: remote server, no local human bots
+      mountConnectOverlay(session, { defaultUrl: choice.url, onConnect: connectTo, onDisconnect: () => session.disconnect() });
+      connectTo(choice.url, session.savedName ?? "");
+    }
+  })().catch((e: unknown) => console.error("start failed", e));
+} else if (!serverParam && (params.get("offline") === "1" || (params.get("menu") === "0" && import.meta.env["VITE_DEFAULT_OFFLINE"] === "1"))) {
+  startSingleplayer().catch((e: unknown) => console.error("local server failed", e));
 } else {
-  const defaultUrl = serverParam ?? `ws://${location.hostname || "localhost"}:7777`;
-  const connect = (url: string, name: string): void => { session.connect(url, name).then(useWorld, (e: unknown) => console.warn("connect failed", e)); };
-  mountConnectOverlay(session, { defaultUrl, onConnect: connect, onDisconnect: () => session.disconnect() });
+  mountConnectOverlay(session, { defaultUrl, onConnect: connectTo, onDisconnect: () => session.disconnect() });
   // Reload = reconnect as the same player (account token in localStorage).
-  if (session.account && session.savedUrl && params.get("autoconnect") !== "0") connect(serverParam ?? session.savedUrl, session.savedName ?? "");
+  if (session.account && session.savedUrl && params.get("autoconnect") !== "0") connectTo(serverParam ?? session.savedUrl, session.savedName ?? "");
 }
 
-if (params.get("hud") !== "0") mountHud(() => world, () => session.player, { ...(num("time") !== undefined ? { hours: num("time")! } : {}), ...(wi >= 0 ? { weather: wi } : {}) });
+if (params.get("hud") !== "0" && settings.showHud) mountHud(() => world, () => session.player, { ...(num("time") !== undefined ? { hours: num("time")! } : {}), ...(wi >= 0 ? { weather: wi } : {}) });
 
 let last = performance.now();
 function frame(now: number): void { const dt = Math.min(now - last, 250); pumpLocal?.(dt); loop.advance(now - last); last = now; session.poll(); requestAnimationFrame(frame); }
