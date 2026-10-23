@@ -12,6 +12,7 @@ import { installSpatialIndex } from "@engine/world";
 import raw from "../data/cosmetics.json";
 import { BuildPiece, StallOwnerKind, Wardrobe } from "./components.js";
 import { StallSale } from "./economy/stall.js";
+import { hasPlayerId } from "./combat/pvp.js";
 import { gameplayDefs, isAuthority } from "./config.js";
 import { CraftCompleted } from "./events.js";
 
@@ -115,7 +116,8 @@ export function installCustomization(world: World, opts: { catalog: CosmeticCata
   world.events.on(CraftCompleted, (p: { entity: Entity; recipe: number }) => noteUnlockEvent(world, p.entity, "craft", defs.recipes.get(p.recipe)?.key));
   // stall sales: the selling player (player-owned stalls, owner online) earns stallSale tags
   world.events.on(StallSale, (p: { ownerKind: number; ownerId: number }) => { if (p.ownerKind !== StallOwnerKind.Player) return;
-    for (const e of world.query([PlayerId])) if (world.getField(e, PlayerId, "id") === p.ownerId) { noteUnlockEvent(world, e, "stallSale"); break; } });
+    if (!world.isRegistered(PlayerId)) return;
+    for (const e of world.query([PlayerId])) if ((hasPlayerId(world, e) ? world.getField(e, PlayerId, "id") : undefined) === p.ownerId) { noteUnlockEvent(world, e, "stallSale"); break; } });
   const h = opts.handlers; if (!h) return;
   const fromCmd = (v: { bodyType: number; skinTone: number; parts: ArrayLike<number>; primary: ArrayLike<number>; secondary: ArrayLike<number> }): AppearanceValue =>
     ({ bodyType: v.bodyType, skinTone: v.skinTone, parts: Array.from(v.parts), primary: Array.from(v.primary), secondary: Array.from(v.secondary) });

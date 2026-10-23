@@ -8,7 +8,7 @@ import type { WeatherKind } from "./defs.js";
 import type { DamageCause, ZState } from "./components.js";
 
 export type GEvent<T> = EventType<T & { tick: number }> & { readonly __payload?: T };
-const ev = <T>(name: string): GEvent<T> => defineEvent<T & { tick: number }>(name) as GEvent<T>;
+export const ev = <T>(name: string): GEvent<T> => defineEvent<T & { tick: number }>(name) as GEvent<T>;
 /** Emits with the current tick stamped in (core discards events queued during replay unless keepEvents). */
 export function emit<T>(world: World, type: GEvent<T>, payload: T): void {
   world.events.emit(type, { ...payload, tick: world.tick });
@@ -44,7 +44,7 @@ export const FireToggled = ev<{ entity: Entity; lit: number }>("gameplay.FireTog
 // building
 export const PiecePlaced = ev<{ piece: Entity; type: number; builder: Entity }>("gameplay.PiecePlaced");
 export const BuildFailed = ev<{ entity: Entity; action: number; reason: BuildFail }>("gameplay.BuildFailed");
-export const PieceDamaged = ev<{ piece: Entity; hp: number; amount: number }>("gameplay.PieceDamaged");
+export const PieceDamaged = ev<{ piece: Entity; hp: number; amount: number; attacker: Entity }>("gameplay.PieceDamaged");
 export const PieceDestroyed = ev<{ piece: Entity; type: number; cause: DestroyCause }>("gameplay.PieceDestroyed");
 export const PieceUpgraded = ev<{ piece: Entity; tier: number }>("gameplay.PieceUpgraded");
 export const PieceRepaired = ev<{ piece: Entity; hp: number }>("gameplay.PieceRepaired");
@@ -69,4 +69,5 @@ export const EVENT_RELIABILITY: Readonly<Record<string, "reliable" | "unreliable
   "gameplay.Ignited": "unreliable", "gameplay.Extinguished": "unreliable",
   "gameplay.GatherSwing": "unreliable", "gameplay.AttackSwing": "unreliable", "gameplay.PieceDamaged": "unreliable", "gameplay.DoorToggled": "unreliable",
   "gameplay.ZombieStateChanged": "unreliable", "gameplay.Damaged": "unreliable",
+  "gameplay.DeathBagDropped": "reliable", "gameplay.Respawned": "reliable", "gameplay.HitRejected": "unreliable", "gameplay.GateBreached": "reliable",
 };

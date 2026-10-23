@@ -6,6 +6,8 @@
  */
 import { CommandRegistry, defineActions, defineCommand, defineResource, type Command, type CommandDef, type Entity, type InputFrame, type World } from "@engine/core";
 import { IntentAction, PlayerIntent } from "./components.js";
+import { CUSTOMIZATION_COMMANDS } from "./customization.js";
+import { PVP_COMMANDS } from "./combat/pvp.js";
 import { ECONOMY_COMMAND_RATES, ECONOMY_COMMANDS, ECONOMY_ENTITY_FIELDS } from "./economy/stall.js";
 
 export const GameplayActions = defineActions(["MoveUp", "MoveDown", "MoveLeft", "MoveRight", "Sprint", "Primary", "Secondary", "Interact", "Build"] as const);
@@ -53,6 +55,8 @@ export const COMMAND_RATES: Readonly<Record<string, number>> = {
 export function registerGameplayCommands(reg: CommandRegistry = new CommandRegistry()): CommandRegistry {
   for (const [d] of GAMEPLAY_COMMANDS) reg.register(d);
   for (const d of ECONOMY_COMMANDS) reg.register(d); // append-only: ids after GAMEPLAY_COMMANDS
+  for (const d of CUSTOMIZATION_COMMANDS) reg.register(d);
+  for (const d of PVP_COMMANDS) reg.register(d);
   return reg;
 }
 

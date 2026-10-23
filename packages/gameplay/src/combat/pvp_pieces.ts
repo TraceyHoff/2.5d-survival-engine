@@ -11,7 +11,7 @@
  *  - Burning: `ignite(world, e)`; pieces burn per fire.json (dps x intensity/255, grow, spread to flammable tiers,
  *    rain/storm quench); creatures take dps x intensity/255 and the flame decays by growPerCheck per check.
  */
-import { addModifier, ModOp, Transform, Weather, type Entity, type World } from "@engine/core";
+import { addModifier, ModOp, PlayerId, Transform, Weather, type Entity, type World } from "@engine/core";
 import fireRaw from "../../data/fire.json";
 import { BuildPiece, Buffs, Burning, DamageCause, Dead, DoorState, Health, Stat, Tribe } from "../components.js";
 import { gameplayDefs, isAuthority } from "../config.js";
@@ -20,6 +20,8 @@ import { emit, Extinguished, Ignited, RaidAlarm } from "../events.js";
 import { applyDamage } from "./combat.js";
 import { damagePiece, maxHpOf } from "../building/integrity.js";
 import { attachmentsOf } from "../building/links.js";
+import { noteUnlockEvent } from "../customization.js";
+import { GateBreached, hasPlayerId } from "./pvp.js";
 
 export interface FireTuning { checkSeconds: number; dps: number; igniteIntensity: number; growPerCheck: number; spreadRadius: number; spreadChance: number; rainQuench: number; flammableTiers: number[] }
 export const FIRE: Readonly<FireTuning> = fireRaw;
@@ -94,11 +96,16 @@ export function contactSystem(world: World, dt: number): void {
 }
 
 /** Called by structureDamageSystem after a piece's hp drops (authority): gate breach + raid bells. */
-export function onPieceDamaged(world: World, e: Entity, hp: number): void {
+export function onPieceDamaged(world: World, e: Entity, hp: number, attacker: Entity = 0 as Entity): void {
   const def = defOf(world, e); if (!def) return;
   const breachAt = def.features.breachAt;
   if (breachAt !== undefined && def.door && hp / Math.max(1, maxHpOf(world, e)) <= breachAt) {
-    for (const a of attachmentsOf(world, e)) if (world.has(a, DoorState) && world.getField(a, DoorState, "open") !== DOOR_BREACHED) world.set(a, DoorState, { open: DOOR_BREACHED, lockTribe: 0 });
+    let breached = false;
+    for (const a of attachmentsOf(world, e)) if (world.has(a, DoorState) && world.getField(a, DoorState, "open") !== DOOR_BREACHED) { world.set(a, DoorState, { open: DOOR_BREACHED, lockTribe: 0 }); breached = true; }
+    if (breached) {
+      emit(world, GateBreached, { piece: e, attacker });
+      if (attacker && world.isAlive(attacker) && hasPlayerId(world, attacker)) noteUnlockEvent(world, attacker, "raidBreach");
+    }
   }
   const p = pos(world, e); if (!p) return;
   let cd = bellCooldown.get(world); if (!cd) bellCooldown.set(world, cd = new Map());

@@ -113,7 +113,7 @@ export function vitalsSystem(world: World, dt: number): void {
     if (body > vt.hyperthermiaAbove) hurt(vt.exposureDps * dt, DamageCause.Hyperthermia);
     let hp = hs.data.hp[h]!;
     if (dmg > 0) { hp -= dmg; vs.data.lastDamageCause[v] = cause; }
-    else {
+    else if (hp > 0) { // hp 0 = dying this tick (death system runs next); no regen back from 0
       const wellFed = hunger >= vt.wellFedThreshold && thirst >= vt.wellFedThreshold;
       const regen = evaluate(world, e, Buffs, Stat.HealthRegen, wellFed ? vt.healthRegenPerSec : 0);
       hp = Math.min(hs.data.max[h]!, hp + regen * dt);

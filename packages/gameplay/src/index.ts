@@ -40,3 +40,4 @@ export * from "./economy/config.js";
 export * from "./economy/provenance.js";
 export * from "./economy/stall.js";
 export * from "./combat/pvp_pieces.js";
+export * from "./combat/pvp.js";

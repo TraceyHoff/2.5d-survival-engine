@@ -1,0 +1,12 @@
+{
+  "bagSlots": 24,
+  "bagDespawnSeconds": 900,
+  "bagOwnerOnlySeconds": 60,
+  "respawnSeconds": 10,
+  "respawnHealthFrac": 0.5,
+  "respawnHunger": 60,
+  "respawnThirst": 60,
+  "combatTagSeconds": 30,
+  "hitConeDeg": 140,
+  "spawnPoints": [{ "x": 0, "y": 0 }]
+}

@@ -14,6 +14,7 @@ import { damagePiece } from "../building/integrity.js";
 import { makeNoise } from "../systems/noise.js";
 import { distance } from "../systems/fuel.js";
 import { spendStamina } from "../systems/vitals.js";
+import { checkHit, tagCombat } from "./pvp.js";
 
 export const FISTS: WeaponDef = { damage: 5, range: 1.0, cooldownSeconds: 0.6, staminaCost: 3, structureMul: 0.2 };
 export function heldWeapon(world: World, e: Entity): WeaponDef {
@@ -31,11 +32,12 @@ export function setAnim(world: World, e: Entity, anim: Anim): void {
 /** Applies damage (authority): creatures lose hp now; structures get batched damage. */
 export function applyDamage(world: World, target: Entity, amount: number, source: Entity, cause: DamageCause = DamageCause.Combat): void {
   if (!isAuthority(world) || world.isReplaying || amount <= 0 || !world.isAlive(target)) return;
-  if (world.has(target, BuildPiece)) { damagePiece(world, target, amount); return; }
+  if (world.has(target, BuildPiece)) { damagePiece(world, target, amount, source); return; }
   const hp = world.getField(target, Health, "hp"); if (hp === undefined || world.has(target, Dead)) return;
   world.setField(target, Health, "hp", Math.max(0, hp - amount));
   if (world.has(target, VitalsState)) world.setField(target, VitalsState, "lastDamageCause", cause);
   emit(world, Damaged, { target, source, amount, cause });
+  if (cause === DamageCause.Combat) tagCombat(world, source, target);
   if (world.has(target, AnimState) && hp - amount > 0) setAnim(world, target, Anim.Hurt);
 }
 
@@ -54,6 +56,7 @@ export function combatSystem(world: World, dt: number): void {
     if (world.has(e, AnimState)) setAnim(world, e, Anim.Attack);
     emit(world, AttackSwing, { entity: e, target });
     if (!authority) continue;
+    if (!checkHit(world, e, target, reach)) continue;
     applyDamage(world, target, world.has(target, BuildPiece) ? w.damage * w.structureMul : w.damage, e);
     makeNoise(world, e, noise.attack);
   }

@@ -49,6 +49,7 @@ export const GAMEPLAY_SYSTEM_ORDER: readonly (readonly [Phase, string, number?])
   ["simulation", "gameplay.consume"],
   ["simulation", "gameplay.vitals"],
   ["simulation", "gameplay.death"],
+  ["simulation", "gameplay.deathBags"],
   ["simulation", "gameplay.spoilage", SPOILAGE_EVERY],
   ["simulation", "gameplay.chunkSurface", SURFACE_EVERY],
   ["simulation", "gameplay.clearIntents"],

@@ -338,3 +338,20 @@ Gameplay (`src/customization.ts`, `data/cosmetics.json`) owns the *rules*:
   AppearanceServer options, since gameplay imports neither net nor assets.
 - **UI contract (hooks, no art)**: the creator shows when `Wardrobe.created==0`. Wardrobe UI prompt near a `mirror`. Locked items show
   their tag from `WearableDef.unlockTags` against the networked `Wardrobe.unlocks`. Rejections show the reason string.
+
+## 11. PvP rules (slice 6): `src/combat/pvp.ts`, `data/pvp.json`
+- **Death bags**: `gameplay.deathBags` runs right after `gameplay.death`. When a player (Inventory+Survival) dies, every stack moves into a new
+  `LootBag{owner PlayerId, despawnAtTick}` + Container at the body, crafter provenance included, and Equipment is cleared. Event `DeathBagDropped`.
+  For the first `bagOwnerOnlySeconds`, only the owner can open the bag (`canLootBag`, enforced on OpenContainer → BuildFail.Locked).
+  `gameplay.lootBags` (postSim, every 20 ticks) removes a bag once it is empty or reaches despawnAtTick. Stall spill bags (owner 0) stay open to anyone.
+- **Respawn**: the command `gameplay.respawnPlayer {}` or `respawnPlayer(world,e)`, allowed `respawnSeconds` after Dead.tick. The spawn point comes from
+  `rngFor("pvp.respawn", e)`. The player gets hp = max×respawnHealthFrac, hunger/thirst from data, and full stamina. Dead, Burning and CombatTag are cleared. Event `Respawned`.
+  UI hook: a respawn button countdown from `Dead.tick`, with the reasons `too_soon` / `not_dead`.
+- **Hit validation**: the server calls `setHitValidator(world, (attacker, target, {reach, coneDeg}) => reason|undefined)`, e.g.
+  `const r = validateHit(server, sessionOf(a), a, t, {reach, coneDeg, aim}); return r.ok ? undefined : r.reason`.
+  The combat system checks it for PlayerId attackers on the authority before applying damage. A rejection emits `HitRejected` (unreliable). Gameplay does not import net.
+- **Combat tag**: player-vs-player Combat damage sets `CombatTag.untilTick` on both players for `combatTagSeconds`. Read it with `inCombat(world,e)`.
+- **Raid attribution**: `damagePiece(world, piece, amount, attacker?)` remembers the last attacker in each tick's batch. `PieceDamaged` now carries `attacker`
+  (0 = fire/environment), and `onPieceDamaged` receives it. A clan gate that transitions to breached emits `GateBreached{piece, attacker}` and grants the
+  attacker the `raidBreach` unlock rule (raider tag, §10).
+- Fix: vitals health regen no longer revives a player whose hp reached 0 earlier in the same tick.

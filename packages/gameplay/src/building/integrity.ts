@@ -112,10 +112,14 @@ export function destroyPiece(world: World, e: Entity, cause: DestroyCause): void
 }
 
 /** Queue hp damage on a piece; applied once per tick by structureDamageSystem. */
-export function damagePiece(world: World, e: Entity, amount: number): void {
+export function damagePiece(world: World, e: Entity, amount: number, attacker?: Entity): void {
   if (!isAuthority(world) || world.isReplaying || amount <= 0 || !world.has(e, BuildPiece)) return;
   const idx = structures(world); idx.pendingDamage.set(e, (idx.pendingDamage.get(e) ?? 0) + amount);
+  if (attacker !== undefined && attacker !== e) pieceAttackers(world).set(e, attacker); // last attacker this tick wins
 }
+const attackersByWorld = new WeakMap<World, Map<Entity, Entity>>();
+/** Raid attribution: last attacker per piece for the pending damage batch (0 = environment/fire/unknown). */
+export function pieceAttackers(world: World): Map<Entity, Entity> { let m = attackersByWorld.get(world); if (!m) attackersByWorld.set(world, m = new Map()); return m; }
 export function damageStageFor(world: World, hp: number, max: number): number {
   const st = gameplayDefs(world).building.damageStages; const f = max > 0 ? hp / max : 0;
   let s = 0; for (const t of st) if (f <= t) s++; return s;
@@ -125,15 +129,17 @@ export function structureDamageSystem(world: World): void {
   if (!isAuthority(world)) return;
   const idx = structures(world); if (idx.pendingDamage.size === 0) return;
   const pending = [...idx.pendingDamage].sort((a, b) => a[0] - b[0]); idx.pendingDamage.clear();
+  const attackers = pieceAttackers(world); const by = new Map(attackers); attackers.clear();
   for (const [e, amount] of pending) {
     if (!world.isAlive(e)) continue;
+    const attacker = by.get(e) ?? (0 as Entity);
     const bp = world.get(e, BuildPiece)!; const def = idx.def(e); if (!def) continue;
     const max = maxHpOf(world, e); const hp = Math.max(0, Math.round(bp.hp - amount));
     world.setField(e, PieceStability, "lastDamagedTick", world.tick);
     if (hp <= 0) { destroyPiece(world, e, DestroyCause.Damage); continue; }
     world.set(e, BuildPiece, { hp, damageStage: damageStageFor(world, hp, max) });
-    emit(world, PieceDamaged, { piece: e, hp, amount });
-    onPieceDamaged(world, e, hp);
+    emit(world, PieceDamaged, { piece: e, hp, amount, attacker });
+    onPieceDamaged(world, e, hp, attacker);
   }
 }
 export function maxHpOf(world: World, e: Entity): number {
