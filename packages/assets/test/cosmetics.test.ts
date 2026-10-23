@@ -98,6 +98,6 @@ describe("Appearance helpers", () => {
     expect(l.find((x) => x.slot === "shoes")!.minor).toBe(true);
     const top = l.find((x) => x.slot === "top")!; for (const k of ["tintMode", "tintStrength", "tintSaturation", "minor", "outline"]) expect(k in top).toBe(false);
     const list = issues(base((m) => { Object.assign(m.wearables[0], { tintMode: "glow", tintStrength: 2, tintSaturation: -1, minor: "yes", outline: 1 }); })).join("\n");
-    for (const s of ["tintMode must be one of", "tintStrength must be a number in 0..1", "tintSaturation must be a number in 0..2", "minor must be a boolean", "outline must be a boolean"]) expect(list).toContain(s);
+    for (const s of ["tintMode must be one of", "tintStrength must be a number in 0..1", "tintSaturation must be a number in 0..2", "minor must be a boolean", "outline must be \"body\" | \"none\""]) expect(list).toContain(s);
   });
 });

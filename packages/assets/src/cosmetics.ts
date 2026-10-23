@@ -1,29 +1,62 @@
-import { BODY_TYPES, TINT_MODES, type TintMode, StableIdRegistry, WEARABLE_SLOTS, fnv1a, type BodyType, type CosmeticCatalogLike, type PaletteColor,
-  type WearableDef, type WearableSlot } from "@engine/core";
+import { BODY_TYPES, DEFAULT_REQUIRED_SLOTS, DEFAULT_TINT_NEUTRAL, DIRECTIONS8, OUTLINE_MODES, TINT_MODES, type TintMode, StableIdRegistry, WEARABLE_SLOTS, fnv1a,
+  normalizeOutline, type BodyType, type BodyTypeInfo, type CosmeticCatalogLike, type Direction8, type OutlineMode, type PaletteColor,
+  type WearableDef, type WearableLayerDef, type WearableLayerProps, type WearableSlot } from "@engine/core";
 import type { AssetRegistry, SpriteDef } from "./manifest.js";
 
-/** Manifest JSON for character customization (see docs/CHARACTER_CUSTOMIZATION.md). */
+/** Manifest JSON for character customization (see docs/CHARACTER_CUSTOMIZATION.md, ADR-082). */
 export interface BodyArtJson { sprite: string; /** default "idle" (first anim if absent) */ anim?: string }
+export interface BodyTypeJson extends BodyArtJson {
+  displayName?: string; locKey?: string;
+  /** slot -> wearable key: used by defaultAppearance and to fill requiredSlots in validateAppearance. */
+  cosmeticDefaults?: Partial<Record<WearableSlot, string>>;
+}
 export interface WearableBodyJson extends BodyArtJson { /** hair only: art drawn under a hat with hatHair: true */ hatHair?: BodyArtJson }
-export interface WearableJson {
-  key: string; slot: WearableSlot; bodies: Partial<Record<BodyType, WearableBodyJson>>;
-  layer: number; /** 4 entries E,S,W,N */ layerByDir?: number[]; z?: number;
+/** layerByDir: 4 numbers (E,S,W,N), 8 numbers (E,SE,S,SW,W,NW,N,NE) or an object keyed by compass name (missing = `layer`). */
+export type LayerByDirJson = number[] | Partial<Record<Direction8, number>>;
+export interface WearableLayerPropsJson {
+  layerByDir?: LayerByDirJson; z?: number;
   /** 0 untinted (default), 1 = tintmask R <- primary, 2 = + G <- secondary. Requires the atlas tintmask mask. */
-  tintChannels?: 0 | 1 | 2; hidesSlots?: WearableSlot[]; hatHair?: boolean; unlockTags?: string[];
-  /** Optional render hints: tint blend mode, strength 0..1, saturation 0..2; minor = droppable by crowd LOD; outline false = no outline. */
-  tintMode?: TintMode; tintStrength?: number; tintSaturation?: number; minor?: boolean; outline?: boolean;
+  tintChannels?: 0 | 1 | 2;
+  /** Optional render hints: tint blend mode (default multiply), strength 0..1, saturation 0..2, neutral grey 0..1 (default manifest tintNeutral); minor = droppable by crowd LOD. */
+  tintMode?: TintMode; tintStrength?: number; tintSaturation?: number; tintNeutral?: number; minor?: boolean;
+  /** "body" (default) | "none"; legacy boolean true = body, false = none. */
+  outline?: boolean | OutlineMode;
+}
+export interface WearableLayerJson extends WearableLayerPropsJson { name: string; layer: number; bodies: Partial<Record<BodyType, WearableBodyJson>> }
+export interface WearableJson extends WearableLayerPropsJson {
+  key: string; slot: WearableSlot;
+  /** Required for the single-layer form; optional with `layers` (then layers define the body set). */
+  bodies?: Partial<Record<BodyType, WearableBodyJson>>;
+  /** Required for the single-layer form; with `layers` defaults to layers[0].layer. */
+  layer?: number;
+  /** Multi-layer form: one DrawLayer per entry; unset layer props inherit from the wearable. */
+  layers?: WearableLayerJson[];
+  hidesSlots?: WearableSlot[]; hatHair?: boolean; unlockTags?: string[];
+  displayName?: string; locKey?: string;
+  /** face/eyes only: body anim -> expression key (overrides manifest faceAnims). */
+  faceAnims?: Record<string, string>;
+  /** face/eyes only: expression key -> per-body art. Every anim of the part's sprite is also an expression key. */
+  expressions?: Record<string, Partial<Record<BodyType, BodyArtJson>>>;
 }
 export interface PaletteColorJson { key: string; color: string }
 export interface CosmeticsJson {
-  bodyTypes?: Partial<Record<BodyType, BodyArtJson>>; wearables?: WearableJson[];
+  bodyTypes?: Partial<Record<BodyType, BodyTypeJson>>; wearables?: WearableJson[];
   skinTones?: PaletteColorJson[]; hairColors?: PaletteColorJson[]; clothingColors?: PaletteColorJson[];
+  /** Neutral grey of masked regions (0..1, default 0.78). */
+  tintNeutral?: number;
+  /** Slots that must be filled; default ["face","eyes"] when any body declares cosmeticDefaults, else none. */
+  requiredSlots?: WearableSlot[];
+  /** Catalog-wide face/eyes anim -> expression key. */
+  faceAnims?: Record<string, string>;
 }
 
 /** Resolved cosmetics; implements the core CosmeticCatalogLike used by validateAppearance / resolveLayers. */
 export class CosmeticCatalog implements CosmeticCatalogLike {
   constructor(readonly ids: StableIdRegistry, private readonly parts: Map<number, WearableDef>,
-    private readonly bodies: Partial<Record<BodyType, { sprite: number; anim: string }>>,
-    readonly skinTones: PaletteColor[], readonly hairColors: PaletteColor[], readonly clothingColors: PaletteColor[]) {}
+    private readonly bodies: Partial<Record<BodyType, BodyTypeInfo>>,
+    readonly skinTones: PaletteColor[], readonly hairColors: PaletteColor[], readonly clothingColors: PaletteColor[],
+    readonly tintNeutral: number = DEFAULT_TINT_NEUTRAL, readonly requiredSlots: readonly WearableSlot[] = [],
+    readonly faceAnims?: Record<string, string>) {}
   get size(): number { return this.parts.size; }
   get hash(): number {
     let h = fnv1a(`cosmetics:${this.ids.hash}`);
@@ -33,7 +66,10 @@ export class CosmeticCatalog implements CosmeticCatalogLike {
   wearable(id: number): WearableDef | undefined { return this.parts.get(id); }
   byKey(key: string): WearableDef | undefined { const id = this.ids.tryId(key); return id === undefined ? undefined : this.parts.get(id); }
   bySlot(slot: WearableSlot, body?: BodyType): WearableDef[] { return [...this.parts.values()].filter((w) => w.slot === slot && (!body || !!w.bodies[body])).sort((a, b) => a.id - b.id); }
-  bodySprite(b: BodyType): { sprite: number; anim: string } | undefined { return this.bodies[b]; }
+  bodySprite(b: BodyType): { sprite: number; anim: string } | undefined { const x = this.bodies[b]; return x && { sprite: x.sprite, anim: x.anim }; }
+  /** Body art + displayName/locKey + cosmeticDefaults (wearable ids). */
+  bodyType(b: BodyType): BodyTypeInfo | undefined { return this.bodies[b]; }
+  bodyDefaults(b: BodyType): Partial<Record<WearableSlot, number>> | undefined { return this.bodies[b]?.cosmeticDefaults; }
 }
 
 const KEY = /^[a-z0-9_]+$/; const COLOR = /^#[0-9a-fA-F]{6}$/;
@@ -64,11 +100,24 @@ export function loadCosmetics(m: CosmeticsJson, reg: AssetRegistry, lock: Record
     if (tint > 0 && !s.atlas.masks.tintmask) issues.push(`${p}: tintChannels ${tint} but atlas ${s.atlas.key} has no tintmask`);
     return { sprite: s.id, anim: an.name };
   };
-  const bodies: Partial<Record<BodyType, { sprite: number; anim: string }>> = {};
+  const bodies: Partial<Record<BodyType, BodyTypeInfo>> = {};
+  const str = (p: string, k: string, v: unknown) => { if (v !== undefined && !(typeof v === "string" && v.length > 0)) issues.push(`${p}: ${k} must be a non-empty string`); };
   for (const [b, a] of Object.entries(m.bodyTypes ?? {})) {
     if (!(BODY_TYPES as readonly string[]).includes(b)) { issues.push(`bodyTypes.${b}: unknown body type (male|female)`); continue; }
-    const r = art(`bodyTypes.${b}`, a, 1); if (r) bodies[b as BodyType] = r;
+    str(`bodyTypes.${b}`, "displayName", a?.displayName); str(`bodyTypes.${b}`, "locKey", a?.locKey);
+    const r = art(`bodyTypes.${b}`, a, 1);
+    if (r) bodies[b as BodyType] = { ...r, ...(a.displayName ? { displayName: a.displayName } : {}), ...(a.locKey ? { locKey: a.locKey } : {}) };
   }
+  const tintNeutral = m.tintNeutral ?? DEFAULT_TINT_NEUTRAL;
+  const unit = (v: unknown) => typeof v === "number" && v > 0 && v <= 1;
+  if (!unit(tintNeutral)) issues.push("tintNeutral must be a number in (0,1]");
+  const faceMap = (p: string, f: unknown): Record<string, string> | undefined => {
+    if (f === undefined) return undefined;
+    if (!f || typeof f !== "object" || Array.isArray(f)) { issues.push(`${p}: faceAnims must be an object`); return undefined; }
+    for (const [k, v] of Object.entries(f)) if (!KEY.test(k) || typeof v !== "string" || !KEY.test(v)) issues.push(`${p}: faceAnims.${k} must map an anim name to an expression key`);
+    return { ...(f as Record<string, string>) };
+  };
+  const catFace = faceMap("manifest", m.faceAnims);
   const list = m.wearables ?? [];
   if (!Array.isArray(list)) issues.push("wearables must be an array");
   const wl = Array.isArray(list) ? list : [];
@@ -79,19 +128,59 @@ export function loadCosmetics(m: CosmeticsJson, reg: AssetRegistry, lock: Record
   let outLock: Record<string, number> = {};
   try { outLock = ids.assign(wl.map((w) => w.key), lock ?? {}); } catch (e) { issues.push(String((e as Error).message)); }
   const parts = new Map<number, WearableDef>(); const hides = new Map<WearableSlot, Set<WearableSlot>>();
+  const dirs = (p: string, d: LayerByDirJson | undefined, layer: number): number[] | undefined => {
+    if (d === undefined) return undefined;
+    if (Array.isArray(d)) {
+      if (!((d.length === 4 || d.length === 8) && d.every(Number.isInteger))) issues.push(`${p}: layerByDir must be 4 integers (E,S,W,N) or 8 (E,SE,S,SW,W,NW,N,NE)`);
+      return [...d];
+    }
+    if (!d || typeof d !== "object") { issues.push(`${p}: layerByDir must be an array or a compass-keyed object`); return undefined; }
+    for (const [k, v] of Object.entries(d)) {
+      if (!(DIRECTIONS8 as readonly string[]).includes(k)) issues.push(`${p}: layerByDir has unknown direction "${k}" (N,NE,E,SE,S,SW,W,NW)`);
+      else if (!Number.isInteger(v)) issues.push(`${p}: layerByDir.${k} must be an integer`);
+    }
+    return DIRECTIONS8.map((k) => (d as Partial<Record<Direction8, number>>)[k] ?? layer);
+  };
+  /** Validate + normalize shared layer props; `base` supplies inherited values for layers. */
+  const props = (p: string, j: WearableLayerPropsJson, layer: unknown, slot: WearableSlot, base?: WearableLayerProps): WearableLayerProps => {
+    if (!Number.isInteger(layer)) issues.push(`${p}: layer must be an integer`);
+    const L = typeof layer === "number" ? layer : 0;
+    if (j.z !== undefined && typeof j.z !== "number") issues.push(`${p}: z must be a number`);
+    const tint = j.tintChannels ?? base?.tintChannels ?? 0; if (![0, 1, 2].includes(tint)) issues.push(`${p}: tintChannels must be 0|1|2`);
+    if (j.tintMode !== undefined && !TINT_MODES.includes(j.tintMode)) issues.push(`${p}: tintMode must be one of ${TINT_MODES.join("|")}`);
+    if (j.tintStrength !== undefined && !(typeof j.tintStrength === "number" && j.tintStrength >= 0 && j.tintStrength <= 1)) issues.push(`${p}: tintStrength must be a number in 0..1`);
+    if (j.tintSaturation !== undefined && !(typeof j.tintSaturation === "number" && j.tintSaturation >= 0 && j.tintSaturation <= 2)) issues.push(`${p}: tintSaturation must be a number in 0..2`);
+    if (j.tintNeutral !== undefined && !unit(j.tintNeutral)) issues.push(`${p}: tintNeutral must be a number in (0,1]`);
+    if (j.minor !== undefined && typeof j.minor !== "boolean") issues.push(`${p}: minor must be a boolean`);
+    if (j.outline !== undefined && typeof j.outline !== "boolean" && !OUTLINE_MODES.includes(j.outline)) issues.push(`${p}: outline must be "body" | "none" (or legacy boolean)`);
+    if (tint > 0 && !(slot === "hair" || slot === "face" ? hairColors : clothingColors).length) issues.push(`${p}: tinted but its palette is empty`);
+    const lbd = j.layerByDir !== undefined ? dirs(p, j.layerByDir, L) : base?.layerByDir;
+    const om: OutlineMode | undefined = (typeof j.outline === "boolean" || OUTLINE_MODES.includes(j.outline as OutlineMode) ? normalizeOutline(j.outline) : undefined) ?? base?.outlineMode;
+    const pick = <K extends "tintMode" | "tintStrength" | "tintSaturation" | "tintNeutral" | "minor">(k: K) => (j[k] !== undefined ? j[k] : base?.[k]);
+    const o: WearableLayerProps = { layer: L, z: typeof j.z === "number" ? j.z : base?.z ?? 0, tintChannels: tint as 0 | 1 | 2 };
+    if (lbd) o.layerByDir = lbd;
+    for (const k of ["tintMode", "tintStrength", "tintSaturation", "tintNeutral", "minor"] as const) { const v = pick(k); if (v !== undefined) (o as unknown as Record<string, unknown>)[k] = v; }
+    if (om) { o.outlineMode = om; o.outline = om === "body"; }
+    return o;
+  };
+  const bodyArt = (p: string, src: Partial<Record<BodyType, WearableBodyJson>> | undefined, slot: WearableSlot, tint: number): WearableDef["bodies"] => {
+    const bt = Object.keys(src ?? {});
+    if (!bt.length) issues.push(`${p}: bodies must list at least one body type`);
+    const out: WearableDef["bodies"] = {};
+    for (const b of bt) {
+      if (!(BODY_TYPES as readonly string[]).includes(b)) { issues.push(`${p}: unknown body type "${b}"`); continue; }
+      if (!bodies[b as BodyType]) issues.push(`${p}: body type ${b} has no bodyTypes.${b} base art`);
+      const ba = src![b as BodyType]!; const r = art(`${p}.bodies.${b}`, ba, tint); if (!r) continue;
+      if (ba.hatHair !== undefined && slot !== "hair") issues.push(`${p}.bodies.${b}: hatHair art is only valid on hair`);
+      const hh = ba.hatHair !== undefined ? art(`${p}.bodies.${b}.hatHair`, ba.hatHair, tint) : undefined;
+      out[b as BodyType] = { ...r, ...(hh ? { hatHair: hh } : {}) };
+    }
+    return out;
+  };
   wl.forEach((w, i) => {
     const p = `wearables[${i}](${w.key})`;
     if (!(WEARABLE_SLOTS as readonly string[]).includes(w.slot)) { issues.push(`${p}: unknown slot "${w.slot}"`); return; }
-    if (!Number.isInteger(w.layer)) issues.push(`${p}: layer must be an integer`);
-    if (w.layerByDir !== undefined && !(Array.isArray(w.layerByDir) && w.layerByDir.length === 4 && w.layerByDir.every(Number.isInteger))) issues.push(`${p}: layerByDir must be 4 integers (E,S,W,N)`);
-    if (w.z !== undefined && typeof w.z !== "number") issues.push(`${p}: z must be a number`);
-    const tint = w.tintChannels ?? 0; if (![0, 1, 2].includes(tint)) issues.push(`${p}: tintChannels must be 0|1|2`);
-    if (w.tintMode !== undefined && !TINT_MODES.includes(w.tintMode)) issues.push(`${p}: tintMode must be one of ${TINT_MODES.join("|")}`);
-    if (w.tintStrength !== undefined && !(typeof w.tintStrength === "number" && w.tintStrength >= 0 && w.tintStrength <= 1)) issues.push(`${p}: tintStrength must be a number in 0..1`);
-    if (w.tintSaturation !== undefined && !(typeof w.tintSaturation === "number" && w.tintSaturation >= 0 && w.tintSaturation <= 2)) issues.push(`${p}: tintSaturation must be a number in 0..2`);
-    if (w.minor !== undefined && typeof w.minor !== "boolean") issues.push(`${p}: minor must be a boolean`);
-    if (w.outline !== undefined && typeof w.outline !== "boolean") issues.push(`${p}: outline must be a boolean`);
-    if (tint > 0 && !(w.slot === "hair" || w.slot === "face" ? hairColors : clothingColors).length) issues.push(`${p}: tinted but its palette is empty`);
+    str(p, "displayName", w.displayName); str(p, "locKey", w.locKey);
     for (const h of w.hidesSlots ?? []) {
       if (!(WEARABLE_SLOTS as readonly string[]).includes(h)) issues.push(`${p}: hidesSlots has unknown slot "${h}"`);
       else if (h === w.slot) issues.push(`${p}: cannot hide its own slot`);
@@ -100,24 +189,75 @@ export function loadCosmetics(m: CosmeticsJson, reg: AssetRegistry, lock: Record
     if (w.hatHair && w.slot !== "hat") issues.push(`${p}: hatHair is only valid on hats`);
     if (w.hatHair && w.hidesSlots?.includes("hair")) issues.push(`${p}: hatHair conflicts with hidesSlots hair`);
     for (const t of w.unlockTags ?? []) if (!KEY.test(t)) issues.push(`${p}: bad unlock tag "${t}"`);
-    const bt = Object.keys(w.bodies ?? {});
-    if (!bt.length) issues.push(`${p}: bodies must list at least one body type`);
-    const out: WearableDef["bodies"] = {};
-    for (const b of bt) {
-      if (!(BODY_TYPES as readonly string[]).includes(b)) { issues.push(`${p}: unknown body type "${b}"`); continue; }
-      if (!bodies[b as BodyType]) issues.push(`${p}: body type ${b} has no bodyTypes.${b} base art`);
-      const ba = w.bodies[b as BodyType]!; const r = art(`${p}.bodies.${b}`, ba, tint); if (!r) continue;
-      if (ba.hatHair !== undefined && w.slot !== "hair") issues.push(`${p}.bodies.${b}: hatHair art is only valid on hair`);
-      const hh = ba.hatHair !== undefined ? art(`${p}.bodies.${b}.hatHair`, ba.hatHair, tint) : undefined;
-      out[b as BodyType] = { ...r, ...(hh ? { hatHair: hh } : {}) };
+    const multi = w.layers !== undefined;
+    if (multi && !(Array.isArray(w.layers) && w.layers.length > 0)) { issues.push(`${p}: layers must be a non-empty array`); return; }
+    const top = props(p, w, multi && w.layer === undefined ? w.layers![0]?.layer : w.layer, w.slot);
+    let out: WearableDef["bodies"]; let layers: WearableLayerDef[] | undefined;
+    if (multi) {
+      const names = new Set<string>(); let set: string | undefined;
+      layers = w.layers!.map((lj, li) => {
+        const q = `${p}.layers[${li}](${lj?.name})`;
+        if (!KEY.test(lj?.name ?? "")) issues.push(`${q}: bad layer name`); else if (names.has(lj.name)) issues.push(`${q}: duplicate layer name`); names.add(lj?.name);
+        const lp = props(q, lj, lj?.layer, w.slot, top);
+        const b = bodyArt(q, lj?.bodies ?? w.bodies, w.slot, lp.tintChannels);
+        const ks = Object.keys(lj?.bodies ?? w.bodies ?? {}).sort().join(",");
+        if (set === undefined) set = ks; else if (ks !== set) issues.push(`${q}: bodies must cover the same body types as layers[0] (${set})`);
+        return { name: lj?.name, ...lp, bodies: b };
+      });
+      out = layers[0]!.bodies;
+      if (w.bodies !== undefined && Object.keys(w.bodies).sort().join(",") !== set) issues.push(`${p}: bodies must match the layers' body types (${set})`);
+    } else out = bodyArt(p, w.bodies, w.slot, top.tintChannels);
+    // face/eyes expressions: every anim of the base sprite + explicit expressions
+    let expressions: WearableDef["expressions"]; let fa: Record<string, string> | undefined;
+    if (w.faceAnims !== undefined || w.expressions !== undefined) if (w.slot !== "face" && w.slot !== "eyes") issues.push(`${p}: faceAnims/expressions are only valid on face and eyes`);
+    if (w.slot === "face" || w.slot === "eyes") {
+      expressions = {};
+      for (const [b, a] of Object.entries(out)) { const s = reg.sprite(a.sprite); for (const an of s.animList) (expressions[an.name] ??= {})[b as BodyType] = { sprite: s.id, anim: an.name }; }
+      if (w.expressions !== undefined) {
+        if (!w.expressions || typeof w.expressions !== "object") issues.push(`${p}: expressions must be an object`);
+        else for (const [k, per] of Object.entries(w.expressions)) {
+          if (!KEY.test(k)) issues.push(`${p}: bad expression key "${k}"`);
+          for (const [b, a] of Object.entries(per ?? {})) {
+            if (!out[b as BodyType]) { issues.push(`${p}.expressions.${k}: body type ${b} not supported by this wearable`); continue; }
+            const r = art(`${p}.expressions.${k}.${b}`, a, top.tintChannels); if (r) (expressions[k] ??= {})[b as BodyType] = r;
+          }
+        }
+      }
+      fa = faceMap(p, w.faceAnims);
+      for (const [an, k] of Object.entries(fa ?? catFace ?? {})) if (!expressions[k] && (fa || Object.keys(catFace ?? {}).length)) {
+        if (fa) issues.push(`${p}: faceAnims.${an} -> unknown expression "${k}" (not an anim of the part's sprite nor in expressions)`);
+      }
+      if (!Object.keys(expressions).length) expressions = undefined;
     }
     const id = ids.tryId(w.key); if (id === undefined) return;
-    parts.set(id, { id, key: w.key, slot: w.slot, bodies: out, layer: w.layer, ...(w.layerByDir ? { layerByDir: w.layerByDir } : {}), z: w.z ?? 0,
-      tintChannels: tint as 0 | 1 | 2, hidesSlots: [...(w.hidesSlots ?? [])], hatHair: !!w.hatHair, unlockTags: [...(w.unlockTags ?? [])],
-      ...(w.tintMode !== undefined ? { tintMode: w.tintMode } : {}), ...(typeof w.tintStrength === "number" ? { tintStrength: w.tintStrength } : {}),
-      ...(typeof w.tintSaturation === "number" ? { tintSaturation: w.tintSaturation } : {}), ...(typeof w.minor === "boolean" ? { minor: w.minor } : {}),
-      ...(typeof w.outline === "boolean" ? { outline: w.outline } : {}) });
+    parts.set(id, { id, key: w.key, slot: w.slot, bodies: out, ...top, ...(layers ? { layers } : {}),
+      hidesSlots: [...(w.hidesSlots ?? [])], hatHair: !!w.hatHair, unlockTags: [...(w.unlockTags ?? [])],
+      ...(w.displayName ? { displayName: w.displayName } : {}), ...(w.locKey ? { locKey: w.locKey } : {}),
+      ...(fa ? { faceAnims: fa } : {}), ...(expressions ? { expressions } : {}) });
   });
   for (const [a, hs] of hides) for (const b of hs) if (hides.get(b)?.has(a)) { if (a < b) issues.push(`slot conflict: ${a} and ${b} wearables hide each other`); }
-  return { catalog: new CosmeticCatalog(ids, parts, bodies, skinTones, hairColors, clothingColors), lock: outLock };
+  // per-body cosmeticDefaults + requiredSlots
+  let anyDefaults = false;
+  for (const [b, bj] of Object.entries(m.bodyTypes ?? {})) {
+    const info = bodies[b as BodyType]; const d = bj?.cosmeticDefaults; if (d === undefined) continue; anyDefaults = true;
+    if (!d || typeof d !== "object") { issues.push(`bodyTypes.${b}: cosmeticDefaults must be an object`); continue; }
+    const ids2: Partial<Record<WearableSlot, number>> = {};
+    for (const [slot, key] of Object.entries(d)) {
+      const q = `bodyTypes.${b}.cosmeticDefaults.${slot}`;
+      if (!(WEARABLE_SLOTS as readonly string[]).includes(slot)) { issues.push(`${q}: unknown slot`); continue; }
+      const id = typeof key === "string" ? ids.tryId(key) : undefined; const wd = id !== undefined ? parts.get(id) : undefined;
+      if (!wd) { issues.push(`${q}: unknown wearable "${key}"`); continue; }
+      if (wd.slot !== slot) issues.push(`${q}: ${key} belongs to slot ${wd.slot}`);
+      else if (!wd.bodies[b as BodyType]) issues.push(`${q}: ${key} has no ${b} art`);
+      else ids2[slot as WearableSlot] = id!;
+    }
+    if (info) info.cosmeticDefaults = ids2;
+  }
+  const requiredSlots = m.requiredSlots ?? (anyDefaults ? [...DEFAULT_REQUIRED_SLOTS] : []);
+  if (!Array.isArray(requiredSlots)) issues.push("requiredSlots must be an array");
+  else for (const r of requiredSlots) {
+    if (!(WEARABLE_SLOTS as readonly string[]).includes(r)) { issues.push(`requiredSlots: unknown slot "${r}"`); continue; }
+    for (const b of Object.keys(bodies)) if (!bodies[b as BodyType]!.cosmeticDefaults?.[r]) issues.push(`requiredSlots: ${r} is required but bodyTypes.${b}.cosmeticDefaults.${r} is missing`);
+  }
+  return { catalog: new CosmeticCatalog(ids, parts, bodies, skinTones, hairColors, clothingColors, tintNeutral, Array.isArray(requiredSlots) ? requiredSlots : [], catFace), lock: outLock };
 }
