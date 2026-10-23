@@ -10,7 +10,7 @@ import { showRenderError, glInfo, frameIsBlack } from "./glcheck.js";
  */
 import { World, Transform, PrevTransform, TimeOfDay, Weather, Appearance, PlayerId, defineComponent, entityIndex, type Entity } from "@engine/core";
 import { CHUNK_SIZE, tileToChunk, tileToLocal, type TileMap } from "@engine/world";
-import { fetchDefaultManifest, buildPieceVisual, type AssetRegistry } from "@engine/assets";
+import { loadManifest, mergeManifests, buildPieceVisual, type AssetRegistry, type ManifestFragment, type ManifestJson } from "@engine/assets";
 import { IsoRenderer, Sprite, Shadow, LightSource, Occluder, SpriteFlag, sourcesFromManifest, coreAppearanceBinding } from "@engine/render";
 import { gameplayDefs, animalDefs, Animal, Health, Survival, Zombie, ResourceNode, CraftingStation, Fuel, AnimState as GAnim, BuildPiece as GPiece, Dead, Wetness, BodyTemp, Emitter, PieceLink } from "@engine/gameplay";
 
@@ -56,14 +56,14 @@ export class IsoView {
     onProgress(0.05, "Loading art manifest");
     const renderer = new IsoRenderer(canvas, { preserveDrawingBuffer: new URLSearchParams(location.search).has("shot") });
     const packBase = `${base}art/pack/`;
-    const { registry } = await fetchDefaultManifest(`${base}art/`);
+    const { registry } = await loadMergedManifest(`${base}art/`);
     onProgress(0.3, "Loading sprite atlases");
     const sources = sourcesFromManifest(registry, packBase + "manifest.json", {}, { probeSiblings: false });
     // Art's customization pack (~220 paper-doll atlases, 1008x960): the renderer packs every atlas into one 2048² texture
     // array, so these alone need ~1.7 GiB of VRAM ("Texture total allocation size is too large" -> every sprite black).
     // Until Render loads outfit layers on demand, keep them out unless the array fits (?cz=1 forces them in).
     const qs = new URLSearchParams(location.search), lowend = qs.get("gl") === "lowend";
-    const custom = [...registry.atlases.values()].filter((a) => /^customization\//.test(a.image)).map((a) => a.key);
+    const custom = [...registry.atlases.values()].filter((a) => /(^|\/)customization\//.test(a.image)).map((a) => a.key);
     for (const k of custom) { const src = sources.get(k); if (src) delete src.pages; } // 1x only for paper-doll layers
     const czBytes = custom.length * 1008 * 1040 * 4 * 1.34;
     if (custom.length && (lowend || (czBytes > ATLAS_BUDGET && qs.get("cz") !== "1"))) {
@@ -293,4 +293,33 @@ interface Spec {
 /** Art's sfx_animal_<species> (2 variants, ogg); silently skipped if audio is unavailable or blocked before a user gesture. */
 function playAnimalSfx(base: string, species: string, vol: number): void {
   try { const a = new Audio(`${base}art/pack/audio/sfx/animal_${species}_${1 + Math.floor(Math.random() * 2)}.ogg`); a.volume = 0.5 * vol; a.playbackRate = 0.9 + Math.random() * 0.2; void a.play().catch(() => undefined); } catch { /* no audio */ }
+}
+
+/**
+ * Sub-manifests merged onto the pack manifest (ADR-081 mergeManifests, first definition wins). Overridable by an optional
+ * `<art>/manifests.index.json` ({ fragments: [{ name, url, optional? }] }, urls relative to <art>/). Missing optional
+ * fragments are skipped, so Art can split branding/customization out of pack/manifest.json without a client change.
+ */
+const MANIFEST_INDEX: { name: string; url: string; optional?: boolean }[] = [
+  { name: "pack", url: "pack/manifest.json" },
+  { name: "ui-kit", url: "ui/kit/manifest.ui.kit.json", optional: true },
+  { name: "branding", url: "ui/branding/manifest.branding.json", optional: true },
+  { name: "customization", url: "pack/customization/manifest.customization.json", optional: true },
+];
+async function loadMergedManifest(art: string): Promise<ReturnType<typeof loadManifest>> {
+  const get = async (u: string): Promise<unknown> => { try { const r = await fetch(u); return r.ok ? await r.json() : undefined; } catch { return undefined; } };
+  const idx = (await get(art + "manifests.index.json")) as { fragments?: typeof MANIFEST_INDEX } | undefined;
+  const list = idx?.fragments?.length ? idx.fragments : MANIFEST_INDEX;
+  const frags: ManifestFragment[] = []; const dirOf = new Map<string, string>();
+  for (const f of list) {
+    const url = new URL(f.url, new URL(art, location.href)).href; const m = await get(url);
+    if (m === undefined) { if (f.optional) continue; throw new Error(`manifest fetch failed: ${url}`); }
+    frags.push({ name: f.name, manifest: m as ManifestJson }); dirOf.set(f.name, url.replace(/[^/]*$/, ""));
+  }
+  // atlas paths become absolute per fragment, so sourcesFromManifest (pack base) loads each PNG from its one source
+  const { manifest, collisions, warnings } = mergeManifests(frags, { resolve: (p, frag) => (/^(\/|[a-z]+:)/i.test(p) ? p : new URL(p, dirOf.get(frag)).pathname) });
+  if (collisions.length) console.info(`[view] manifest: ${collisions.length} duplicate keys kept from the first fragment (${collisions.slice(0, 5).map((c) => `${c.section}.${c.key}`).join(", ")}...)`);
+  for (const w of warnings) if (!/ defined in /.test(w)) console.warn(`[view] manifest: ${w}`);
+  const lock = await get(art + "pack/ids.lock.json") as Parameters<typeof loadManifest>[1] extends infer O ? O extends { lock?: infer L } ? L : never : never;
+  return loadManifest(manifest, lock ? { lock } : {});
 }
