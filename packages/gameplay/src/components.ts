@@ -185,6 +185,8 @@ export const CRAFT_OWED_SLOTS = 8;
 export const CraftOwed = defineComponent("CraftOwed", {
   item: { type: "u16", length: CRAFT_OWED_SLOTS }, count: { type: "u16", length: CRAFT_OWED_SLOTS }, crafterId: { type: "u32", length: CRAFT_OWED_SLOTS },
 }, { networked: false, persistent: true });
+/** Face expression (id = data/expressions.json index + 1, 0 = none) shown until untilTick. Broadcast, not persisted, kept off Appearance. */
+export const Expression = defineComponent("Expression", { id: "u8", untilTick: "u32" }, { networked: true });
 export const GAMEPLAY_COMPONENTS = [
   Emitter, Buffs,
   Health, ResourceNode, Survival, VitalsState, Exposure, Dead,
@@ -199,4 +201,5 @@ export const GAMEPLAY_COMPONENTS = [
   Animal,
   CraftQueue,
   CraftOwed,
+  Expression,
 ] as const;

@@ -416,3 +416,7 @@ Gameplay owns data, not loops: there is **no spawn loop and no controller** here
 ## 20. Stall variants (`data/pieces.json` `variants` + `variantNames`)
 - A piece may list `variantNames` (one per variant, validated). The BuildPiece.variant index selects one, and `pieceVariantKey(def, v)` returns `<piece>@<name>` for the Renderer's buildPieceVisual `variant` lookup, or the bare key when the variant is unnamed. The Renderer falls back to the default sprite.
 - Order matches assets/stalls manifest skins: stall_blanket patch, gingham, picnic; stall_cart pine_red, dark_teal, sunny; stall_booth thatch, redroof, bluecloth. clan_pavilion has a single sprite, so it has no variants.
+
+## 21. Expression (`src/expression.ts`, `data/expressions.json`)
+- `Expression {id u8, untilTick u32}` comes after CraftOwed in GAMEPLAY_COMPONENTS. It is networked and broadcast, not persisted, and kept off Appearance. id = expressions index + 1 (0 = none). `expressionKey(id)` gives Render's resolveLayers `expression` option.
+- `gameplay.expression` (postSim, every 5 ticks, authority only) writes it. Moods are checked in data order (lowHealth→hurt, fleeing animal→scared, hungry, thirsty, tired→sleepy) and held for holdSeconds, refreshed only near expiry to avoid churn. Emotes come from `EmoteCmd {emote u16}` (same ids as the net chat emote: emoteNames index + 1; server wires `installExpressionCommands`) or `requestEmote` for host code such as bot AgentOutput.emote. An emote beats moods until its untilTick. When nothing applies, the expression is cleared once it expires.

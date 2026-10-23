@@ -18,6 +18,7 @@ import { installBuildingSystems, BUILDING_SYSTEMS } from "./building/install.js"
 import { installCombatSystems, COMBAT_SYSTEMS } from "./combat/install.js";
 import { entityIndex } from "@engine/core";
 import { installGameplayContainers } from "./economy/provenance.js";
+import { expressionSystem, EXPRESSION_EVERY } from "./expression.js";
 import { stallDisplaySystem, STALL_DISPLAY_EVERY } from "./systems/stall_display.js";
 
 export * from "./spawn.js";
@@ -60,6 +61,7 @@ export const GAMEPLAY_SYSTEM_ORDER: readonly (readonly [Phase, string, number?])
   ["postSim", "gameplay.noiseDecay"],
   ["postSim", "gameplay.pruneBuffs", 20],
   ["postSim", "gameplay.stallDisplay", STALL_DISPLAY_EVERY],
+  ["postSim", "gameplay.expression", EXPRESSION_EVERY],
 ];
 
 /** Registers gameplay components (the shared registration module: fixed order on every peer), resources and systems. */
@@ -87,7 +89,7 @@ export function installGameplay(world: World, options: GameplayOptions | number 
     "gameplay.craft": craftingSystem, "gameplay.consume": consumeSystem, "gameplay.vitals": vitalsSystem, "gameplay.death": deathSystem,
     "gameplay.spoilage": spoilageSystem, "gameplay.chunkSurface": chunkSurfaceSystem,
     "gameplay.clearIntents": clearIntentsSystem, "gameplay.equipmentSync": equipmentSyncSystem, "gameplay.noiseDecay": noiseDecaySystem,
-    "gameplay.pruneBuffs": (w) => pruneModifiers(w, Buffs), "gameplay.stallDisplay": stallDisplaySystem,
+    "gameplay.pruneBuffs": (w) => pruneModifiers(w, Buffs), "gameplay.stallDisplay": stallDisplaySystem, "gameplay.expression": expressionSystem,
     ...installBuildingSystems(world), ...installCombatSystems(world),
   };
   for (const [phase, name, every] of GAMEPLAY_SYSTEM_ORDER) {

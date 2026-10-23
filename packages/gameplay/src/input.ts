@@ -9,6 +9,7 @@ import { IntentAction, PlayerIntent } from "./components.js";
 import { CUSTOMIZATION_COMMANDS } from "./customization.js";
 import { PVP_COMMANDS } from "./combat/pvp.js";
 import { CancelQueuedCraftCmd, CRAFT_QUEUE_COMMANDS, QueueCraftCmd } from "./systems/craft_queue.js";
+import { EXPRESSION_COMMANDS } from "./expression.js";
 import { analogMoving, hotbarSlotFromEdges, runInputHooks } from "./input_hooks.js";
 import { ECONOMY_COMMAND_RATES, ECONOMY_COMMANDS, ECONOMY_ENTITY_FIELDS } from "./economy/stall.js";
 
@@ -60,6 +61,7 @@ export function registerGameplayCommands(reg: CommandRegistry = new CommandRegis
   for (const d of CUSTOMIZATION_COMMANDS) reg.register(d);
   for (const d of PVP_COMMANDS) reg.register(d);
   for (const d of CRAFT_QUEUE_COMMANDS) reg.register(d);
+  for (const d of EXPRESSION_COMMANDS) reg.register(d);
   return reg;
 }
 
