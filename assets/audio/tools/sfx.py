@@ -671,7 +671,7 @@ def engine(rng, dur, f):
     y = lp(fire * gains, f * 8) * 0.8
     y += lp(noise(rng, n), f * 6) * (0.3 + 0.7 * np.exp(-frac * 4)) * 0.3
     y += sine(f * 0.5, n) * 0.15
-    return S_(y)
+    return S_(hp(y, 35))
 
 
 def engine_start(rng, dur, f, stop=False):

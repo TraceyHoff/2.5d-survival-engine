@@ -1010,9 +1010,10 @@
   "gather.chop": {
    "bus": "sfx",
    "files": [
-    "audio/sfx/chop_1",
-    "audio/sfx/chop_2",
-    "audio/sfx/chop_3"
+    "audio/sfx/gather_chop_1",
+    "audio/sfx/gather_chop_2",
+    "audio/sfx/gather_chop_3",
+    "audio/sfx/gather_chop_4"
    ],
    "volume": 0.8,
    "pitchJitter": 0.08,
@@ -1028,6 +1029,10 @@
   },
   "gather.tree_fall": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/gather_tree_fall_1",
+    "audio/sfx/gather_tree_fall_2"
+   ],
    "volume": 0.9,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1043,9 +1048,10 @@
   "gather.mine": {
    "bus": "sfx",
    "files": [
-    "audio/sfx/mine_1",
-    "audio/sfx/mine_2",
-    "audio/sfx/mine_3"
+    "audio/sfx/gather_mine_1",
+    "audio/sfx/gather_mine_2",
+    "audio/sfx/gather_mine_3",
+    "audio/sfx/gather_mine_4"
    ],
    "volume": 0.75,
    "pitchJitter": 0.08,
@@ -1061,6 +1067,10 @@
   },
   "gather.rock_break": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/gather_rock_break_1",
+    "audio/sfx/gather_rock_break_2"
+   ],
    "volume": 0.8,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1075,6 +1085,12 @@
   },
   "gather.dig": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/gather_dig_1",
+    "audio/sfx/gather_dig_2",
+    "audio/sfx/gather_dig_3",
+    "audio/sfx/gather_dig_4"
+   ],
    "volume": 0.6,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1089,6 +1105,12 @@
   },
   "gather.harvest": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/gather_harvest_1",
+    "audio/sfx/gather_harvest_2",
+    "audio/sfx/gather_harvest_3",
+    "audio/sfx/gather_harvest_4"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1103,6 +1125,11 @@
   },
   "gather.pick": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/gather_pick_1",
+    "audio/sfx/gather_pick_2",
+    "audio/sfx/gather_pick_3"
+   ],
    "volume": 0.45,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1118,7 +1145,9 @@
   "item.pickup": {
    "bus": "sfx",
    "files": [
-    "audio/sfx/pickup_1"
+    "audio/sfx/item_pickup_1",
+    "audio/sfx/item_pickup_2",
+    "audio/sfx/item_pickup_3"
    ],
    "volume": 0.6,
    "pitchJitter": 0.08,
@@ -1134,6 +1163,11 @@
   },
   "item.drop": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/item_drop_1",
+    "audio/sfx/item_drop_2",
+    "audio/sfx/item_drop_3"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1150,7 +1184,8 @@
    "bus": "sfx",
    "files": [
     "audio/sfx/build_place_1",
-    "audio/sfx/build_place_2"
+    "audio/sfx/build_place_2",
+    "audio/sfx/build_place_3"
    ],
    "volume": 0.8,
    "pitchJitter": 0.08,
@@ -1166,6 +1201,11 @@
   },
   "build.place.wood": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/build_place_wood_1",
+    "audio/sfx/build_place_wood_2",
+    "audio/sfx/build_place_wood_3"
+   ],
    "volume": 0.8,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1180,6 +1220,11 @@
   },
   "build.place.stone": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/build_place_stone_1",
+    "audio/sfx/build_place_stone_2",
+    "audio/sfx/build_place_stone_3"
+   ],
    "volume": 0.8,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1194,6 +1239,11 @@
   },
   "build.place.metal": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/build_place_metal_1",
+    "audio/sfx/build_place_metal_2",
+    "audio/sfx/build_place_metal_3"
+   ],
    "volume": 0.8,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1208,6 +1258,11 @@
   },
   "build.break": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/build_break_1",
+    "audio/sfx/build_break_2",
+    "audio/sfx/build_break_3"
+   ],
    "volume": 0.85,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1222,6 +1277,11 @@
   },
   "build.break.wood": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/build_break_wood_1",
+    "audio/sfx/build_break_wood_2",
+    "audio/sfx/build_break_wood_3"
+   ],
    "volume": 0.85,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1236,6 +1296,11 @@
   },
   "build.break.stone": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/build_break_stone_1",
+    "audio/sfx/build_break_stone_2",
+    "audio/sfx/build_break_stone_3"
+   ],
    "volume": 0.85,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1250,6 +1315,11 @@
   },
   "build.break.metal": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/build_break_metal_1",
+    "audio/sfx/build_break_metal_2",
+    "audio/sfx/build_break_metal_3"
+   ],
    "volume": 0.85,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1264,6 +1334,10 @@
   },
   "build.repair": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/build_repair_1",
+    "audio/sfx/build_repair_2"
+   ],
    "volume": 0.6,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1295,6 +1369,10 @@
   },
   "craft.start": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/craft_start_1",
+    "audio/sfx/craft_start_2"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1309,6 +1387,9 @@
   },
   "craft.loop": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/craft_loop_1"
+   ],
    "volume": 0.3,
    "pitchJitter": 0.03,
    "volumeJitter": 0,
@@ -1341,6 +1422,9 @@
   },
   "cook.sizzle": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/cook_sizzle_1"
+   ],
    "volume": 0.4,
    "pitchJitter": 0.03,
    "volumeJitter": 0,
@@ -1355,6 +1439,10 @@
   },
   "cook.complete": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/cook_complete_1",
+    "audio/sfx/cook_complete_2"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1369,6 +1457,11 @@
   },
   "fire.ignite": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/fire_ignite_1",
+    "audio/sfx/fire_ignite_2",
+    "audio/sfx/fire_ignite_3"
+   ],
    "volume": 0.7,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1384,7 +1477,8 @@
   "fire.crackle": {
    "bus": "ambient",
    "files": [
-    "audio/ambience/campfire_loop"
+    "audio/ambience/fire_crackle_1",
+    "audio/ambience/fire_crackle_2"
    ],
    "volume": 0.55,
    "pitchJitter": 0.03,
@@ -1400,6 +1494,10 @@
   },
   "fire.extinguish": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/fire_extinguish_1",
+    "audio/sfx/fire_extinguish_2"
+   ],
    "volume": 0.6,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1414,6 +1512,10 @@
   },
   "fire.snuffed": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/fire_snuffed_1",
+    "audio/sfx/fire_snuffed_2"
+   ],
    "volume": 0.75,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1428,6 +1530,9 @@
   },
   "fire.burning": {
    "bus": "ambient",
+   "files": [
+    "audio/ambience/fire_burning_1"
+   ],
    "volume": 0.8,
    "pitchJitter": 0.03,
    "volumeJitter": 0,
@@ -1442,6 +1547,11 @@
   },
   "door.open": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/door_open_1",
+    "audio/sfx/door_open_2",
+    "audio/sfx/door_open_3"
+   ],
    "volume": 0.6,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1456,6 +1566,11 @@
   },
   "door.close": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/door_close_1",
+    "audio/sfx/door_close_2",
+    "audio/sfx/door_close_3"
+   ],
    "volume": 0.6,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1470,6 +1585,9 @@
   },
   "door.locked": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/door_locked_1"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1484,6 +1602,10 @@
   },
   "door.open.metal": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/door_open_metal_1",
+    "audio/sfx/door_open_metal_2"
+   ],
    "volume": 0.6,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1498,6 +1620,10 @@
   },
   "door.close.metal": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/door_close_metal_1",
+    "audio/sfx/door_close_metal_2"
+   ],
    "volume": 0.6,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1512,6 +1638,10 @@
   },
   "container.open": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/container_open_1",
+    "audio/sfx/container_open_2"
+   ],
    "volume": 0.55,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1526,6 +1656,10 @@
   },
   "container.close": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/container_close_1",
+    "audio/sfx/container_close_2"
+   ],
    "volume": 0.55,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1540,6 +1674,12 @@
   },
   "consume.eat": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/consume_eat_1",
+    "audio/sfx/consume_eat_2",
+    "audio/sfx/consume_eat_3",
+    "audio/sfx/consume_eat_4"
+   ],
    "volume": 0.55,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1554,6 +1694,11 @@
   },
   "consume.drink": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/consume_drink_1",
+    "audio/sfx/consume_drink_2",
+    "audio/sfx/consume_drink_3"
+   ],
    "volume": 0.55,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1568,6 +1713,14 @@
   },
   "player.hurt": {
    "bus": "voice",
+   "files": [
+    "audio/voice/player_hurt_1",
+    "audio/voice/player_hurt_2",
+    "audio/voice/player_hurt_3",
+    "audio/voice/player_hurt_4",
+    "audio/voice/player_hurt_5",
+    "audio/voice/player_hurt_6"
+   ],
    "volume": 0.7,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1582,6 +1735,11 @@
   },
   "player.death": {
    "bus": "voice",
+   "files": [
+    "audio/voice/player_death_1",
+    "audio/voice/player_death_2",
+    "audio/voice/player_death_3"
+   ],
    "volume": 0.85,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1596,6 +1754,11 @@
   },
   "player.hurt.cold": {
    "bus": "voice",
+   "files": [
+    "audio/voice/player_hurt_cold_1",
+    "audio/voice/player_hurt_cold_2",
+    "audio/voice/player_hurt_cold_3"
+   ],
    "volume": 0.4,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1610,6 +1773,11 @@
   },
   "player.exhausted": {
    "bus": "voice",
+   "files": [
+    "audio/voice/player_exhausted_1",
+    "audio/voice/player_exhausted_2",
+    "audio/voice/player_exhausted_3"
+   ],
    "volume": 0.4,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2041,8 +2209,9 @@
   "animal.rabbit.idle": {
    "bus": "sfx",
    "files": [
-    "audio/sfx/animal_rabbit_1",
-    "audio/sfx/animal_rabbit_2"
+    "audio/sfx/animal_rabbit_idle_1",
+    "audio/sfx/animal_rabbit_idle_2",
+    "audio/sfx/animal_rabbit_idle_3"
    ],
    "volume": 0.5,
    "pitchJitter": 0.08,
@@ -2059,8 +2228,9 @@
   "animal.rabbit.hurt": {
    "bus": "sfx",
    "files": [
-    "audio/sfx/animal_rabbit_1",
-    "audio/sfx/animal_rabbit_2"
+    "audio/sfx/animal_rabbit_hurt_1",
+    "audio/sfx/animal_rabbit_hurt_2",
+    "audio/sfx/animal_rabbit_hurt_3"
    ],
    "volume": 0.65,
    "pitchJitter": 0.08,
@@ -2077,8 +2247,8 @@
   "animal.rabbit.death": {
    "bus": "sfx",
    "files": [
-    "audio/sfx/animal_rabbit_1",
-    "audio/sfx/animal_rabbit_2"
+    "audio/sfx/animal_rabbit_death_1",
+    "audio/sfx/animal_rabbit_death_2"
    ],
    "volume": 0.7,
    "pitchJitter": 0.08,
@@ -2095,8 +2265,9 @@
   "animal.deer.idle": {
    "bus": "sfx",
    "files": [
-    "audio/sfx/animal_deer_1",
-    "audio/sfx/animal_deer_2"
+    "audio/sfx/animal_deer_idle_1",
+    "audio/sfx/animal_deer_idle_2",
+    "audio/sfx/animal_deer_idle_3"
    ],
    "volume": 0.5,
    "pitchJitter": 0.08,
@@ -2113,8 +2284,9 @@
   "animal.deer.hurt": {
    "bus": "sfx",
    "files": [
-    "audio/sfx/animal_deer_1",
-    "audio/sfx/animal_deer_2"
+    "audio/sfx/animal_deer_hurt_1",
+    "audio/sfx/animal_deer_hurt_2",
+    "audio/sfx/animal_deer_hurt_3"
    ],
    "volume": 0.65,
    "pitchJitter": 0.08,
@@ -2131,8 +2303,8 @@
   "animal.deer.death": {
    "bus": "sfx",
    "files": [
-    "audio/sfx/animal_deer_1",
-    "audio/sfx/animal_deer_2"
+    "audio/sfx/animal_deer_death_1",
+    "audio/sfx/animal_deer_death_2"
    ],
    "volume": 0.7,
    "pitchJitter": 0.08,
@@ -2149,8 +2321,9 @@
   "animal.boar.idle": {
    "bus": "sfx",
    "files": [
-    "audio/sfx/animal_boar_1",
-    "audio/sfx/animal_boar_2"
+    "audio/sfx/animal_boar_idle_1",
+    "audio/sfx/animal_boar_idle_2",
+    "audio/sfx/animal_boar_idle_3"
    ],
    "volume": 0.5,
    "pitchJitter": 0.08,
@@ -2167,8 +2340,9 @@
   "animal.boar.hurt": {
    "bus": "sfx",
    "files": [
-    "audio/sfx/animal_boar_1",
-    "audio/sfx/animal_boar_2"
+    "audio/sfx/animal_boar_hurt_1",
+    "audio/sfx/animal_boar_hurt_2",
+    "audio/sfx/animal_boar_hurt_3"
    ],
    "volume": 0.65,
    "pitchJitter": 0.08,
@@ -2185,8 +2359,8 @@
   "animal.boar.death": {
    "bus": "sfx",
    "files": [
-    "audio/sfx/animal_boar_1",
-    "audio/sfx/animal_boar_2"
+    "audio/sfx/animal_boar_death_1",
+    "audio/sfx/animal_boar_death_2"
    ],
    "volume": 0.7,
    "pitchJitter": 0.08,
@@ -2203,8 +2377,9 @@
   "animal.wolf.idle": {
    "bus": "sfx",
    "files": [
-    "audio/sfx/animal_wolf_1",
-    "audio/sfx/animal_wolf_2"
+    "audio/sfx/animal_wolf_idle_1",
+    "audio/sfx/animal_wolf_idle_2",
+    "audio/sfx/animal_wolf_idle_3"
    ],
    "volume": 0.5,
    "pitchJitter": 0.08,
@@ -2221,8 +2396,9 @@
   "animal.wolf.hurt": {
    "bus": "sfx",
    "files": [
-    "audio/sfx/animal_wolf_1",
-    "audio/sfx/animal_wolf_2"
+    "audio/sfx/animal_wolf_hurt_1",
+    "audio/sfx/animal_wolf_hurt_2",
+    "audio/sfx/animal_wolf_hurt_3"
    ],
    "volume": 0.65,
    "pitchJitter": 0.08,
@@ -2239,8 +2415,8 @@
   "animal.wolf.death": {
    "bus": "sfx",
    "files": [
-    "audio/sfx/animal_wolf_1",
-    "audio/sfx/animal_wolf_2"
+    "audio/sfx/animal_wolf_death_1",
+    "audio/sfx/animal_wolf_death_2"
    ],
    "volume": 0.7,
    "pitchJitter": 0.08,
@@ -2257,8 +2433,9 @@
   "animal.chicken.idle": {
    "bus": "sfx",
    "files": [
-    "audio/sfx/animal_chicken_1",
-    "audio/sfx/animal_chicken_2"
+    "audio/sfx/animal_chicken_idle_1",
+    "audio/sfx/animal_chicken_idle_2",
+    "audio/sfx/animal_chicken_idle_3"
    ],
    "volume": 0.5,
    "pitchJitter": 0.08,
@@ -2275,8 +2452,9 @@
   "animal.chicken.hurt": {
    "bus": "sfx",
    "files": [
-    "audio/sfx/animal_chicken_1",
-    "audio/sfx/animal_chicken_2"
+    "audio/sfx/animal_chicken_hurt_1",
+    "audio/sfx/animal_chicken_hurt_2",
+    "audio/sfx/animal_chicken_hurt_3"
    ],
    "volume": 0.65,
    "pitchJitter": 0.08,
@@ -2293,8 +2471,8 @@
   "animal.chicken.death": {
    "bus": "sfx",
    "files": [
-    "audio/sfx/animal_chicken_1",
-    "audio/sfx/animal_chicken_2"
+    "audio/sfx/animal_chicken_death_1",
+    "audio/sfx/animal_chicken_death_2"
    ],
    "volume": 0.7,
    "pitchJitter": 0.08,
@@ -2310,6 +2488,11 @@
   },
   "animal.stag.idle": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_stag_idle_1",
+    "audio/sfx/animal_stag_idle_2",
+    "audio/sfx/animal_stag_idle_3"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2324,6 +2507,11 @@
   },
   "animal.stag.hurt": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_stag_hurt_1",
+    "audio/sfx/animal_stag_hurt_2",
+    "audio/sfx/animal_stag_hurt_3"
+   ],
    "volume": 0.65,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2338,6 +2526,10 @@
   },
   "animal.stag.death": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_stag_death_1",
+    "audio/sfx/animal_stag_death_2"
+   ],
    "volume": 0.7,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2352,6 +2544,11 @@
   },
   "animal.red_deer.idle": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_red_deer_idle_1",
+    "audio/sfx/animal_red_deer_idle_2",
+    "audio/sfx/animal_red_deer_idle_3"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2366,6 +2563,11 @@
   },
   "animal.red_deer.hurt": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_red_deer_hurt_1",
+    "audio/sfx/animal_red_deer_hurt_2",
+    "audio/sfx/animal_red_deer_hurt_3"
+   ],
    "volume": 0.65,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2380,6 +2582,10 @@
   },
   "animal.red_deer.death": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_red_deer_death_1",
+    "audio/sfx/animal_red_deer_death_2"
+   ],
    "volume": 0.7,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2394,6 +2600,11 @@
   },
   "animal.elk.idle": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_elk_idle_1",
+    "audio/sfx/animal_elk_idle_2",
+    "audio/sfx/animal_elk_idle_3"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2408,6 +2619,11 @@
   },
   "animal.elk.hurt": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_elk_hurt_1",
+    "audio/sfx/animal_elk_hurt_2",
+    "audio/sfx/animal_elk_hurt_3"
+   ],
    "volume": 0.65,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2422,6 +2638,10 @@
   },
   "animal.elk.death": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_elk_death_1",
+    "audio/sfx/animal_elk_death_2"
+   ],
    "volume": 0.7,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2436,6 +2656,11 @@
   },
   "animal.moose.idle": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_moose_idle_1",
+    "audio/sfx/animal_moose_idle_2",
+    "audio/sfx/animal_moose_idle_3"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2450,6 +2675,11 @@
   },
   "animal.moose.hurt": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_moose_hurt_1",
+    "audio/sfx/animal_moose_hurt_2",
+    "audio/sfx/animal_moose_hurt_3"
+   ],
    "volume": 0.65,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2464,6 +2694,10 @@
   },
   "animal.moose.death": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_moose_death_1",
+    "audio/sfx/animal_moose_death_2"
+   ],
    "volume": 0.7,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2478,6 +2712,11 @@
   },
   "animal.bear.idle": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_bear_idle_1",
+    "audio/sfx/animal_bear_idle_2",
+    "audio/sfx/animal_bear_idle_3"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2492,6 +2731,11 @@
   },
   "animal.bear.hurt": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_bear_hurt_1",
+    "audio/sfx/animal_bear_hurt_2",
+    "audio/sfx/animal_bear_hurt_3"
+   ],
    "volume": 0.65,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2506,6 +2750,10 @@
   },
   "animal.bear.death": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_bear_death_1",
+    "audio/sfx/animal_bear_death_2"
+   ],
    "volume": 0.7,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2520,6 +2768,11 @@
   },
   "animal.fox.idle": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_fox_idle_1",
+    "audio/sfx/animal_fox_idle_2",
+    "audio/sfx/animal_fox_idle_3"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2534,6 +2787,11 @@
   },
   "animal.fox.hurt": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_fox_hurt_1",
+    "audio/sfx/animal_fox_hurt_2",
+    "audio/sfx/animal_fox_hurt_3"
+   ],
    "volume": 0.65,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2548,6 +2806,10 @@
   },
   "animal.fox.death": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_fox_death_1",
+    "audio/sfx/animal_fox_death_2"
+   ],
    "volume": 0.7,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2562,6 +2824,11 @@
   },
   "animal.hare.idle": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_hare_idle_1",
+    "audio/sfx/animal_hare_idle_2",
+    "audio/sfx/animal_hare_idle_3"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2576,6 +2843,11 @@
   },
   "animal.hare.hurt": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_hare_hurt_1",
+    "audio/sfx/animal_hare_hurt_2",
+    "audio/sfx/animal_hare_hurt_3"
+   ],
    "volume": 0.65,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2590,6 +2862,10 @@
   },
   "animal.hare.death": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_hare_death_1",
+    "audio/sfx/animal_hare_death_2"
+   ],
    "volume": 0.7,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2604,6 +2880,11 @@
   },
   "animal.squirrel.idle": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_squirrel_idle_1",
+    "audio/sfx/animal_squirrel_idle_2",
+    "audio/sfx/animal_squirrel_idle_3"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2618,6 +2899,11 @@
   },
   "animal.squirrel.hurt": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_squirrel_hurt_1",
+    "audio/sfx/animal_squirrel_hurt_2",
+    "audio/sfx/animal_squirrel_hurt_3"
+   ],
    "volume": 0.65,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2632,6 +2918,10 @@
   },
   "animal.squirrel.death": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_squirrel_death_1",
+    "audio/sfx/animal_squirrel_death_2"
+   ],
    "volume": 0.7,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2646,6 +2936,11 @@
   },
   "animal.turkey.idle": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_turkey_idle_1",
+    "audio/sfx/animal_turkey_idle_2",
+    "audio/sfx/animal_turkey_idle_3"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2660,6 +2955,11 @@
   },
   "animal.turkey.hurt": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_turkey_hurt_1",
+    "audio/sfx/animal_turkey_hurt_2",
+    "audio/sfx/animal_turkey_hurt_3"
+   ],
    "volume": 0.65,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2674,6 +2974,10 @@
   },
   "animal.turkey.death": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_turkey_death_1",
+    "audio/sfx/animal_turkey_death_2"
+   ],
    "volume": 0.7,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2688,6 +2992,11 @@
   },
   "animal.duck.idle": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_duck_idle_1",
+    "audio/sfx/animal_duck_idle_2",
+    "audio/sfx/animal_duck_idle_3"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2702,6 +3011,11 @@
   },
   "animal.duck.hurt": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_duck_hurt_1",
+    "audio/sfx/animal_duck_hurt_2",
+    "audio/sfx/animal_duck_hurt_3"
+   ],
    "volume": 0.65,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2716,6 +3030,10 @@
   },
   "animal.duck.death": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_duck_death_1",
+    "audio/sfx/animal_duck_death_2"
+   ],
    "volume": 0.7,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2730,6 +3048,11 @@
   },
   "animal.goose.idle": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_goose_idle_1",
+    "audio/sfx/animal_goose_idle_2",
+    "audio/sfx/animal_goose_idle_3"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2744,6 +3067,11 @@
   },
   "animal.goose.hurt": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_goose_hurt_1",
+    "audio/sfx/animal_goose_hurt_2",
+    "audio/sfx/animal_goose_hurt_3"
+   ],
    "volume": 0.65,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2758,6 +3086,10 @@
   },
   "animal.goose.death": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_goose_death_1",
+    "audio/sfx/animal_goose_death_2"
+   ],
    "volume": 0.7,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2772,6 +3104,11 @@
   },
   "animal.goat.idle": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_goat_idle_1",
+    "audio/sfx/animal_goat_idle_2",
+    "audio/sfx/animal_goat_idle_3"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2786,6 +3123,11 @@
   },
   "animal.goat.hurt": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_goat_hurt_1",
+    "audio/sfx/animal_goat_hurt_2",
+    "audio/sfx/animal_goat_hurt_3"
+   ],
    "volume": 0.65,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2800,6 +3142,10 @@
   },
   "animal.goat.death": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_goat_death_1",
+    "audio/sfx/animal_goat_death_2"
+   ],
    "volume": 0.7,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2814,6 +3160,11 @@
   },
   "animal.sheep.idle": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_sheep_idle_1",
+    "audio/sfx/animal_sheep_idle_2",
+    "audio/sfx/animal_sheep_idle_3"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2828,6 +3179,11 @@
   },
   "animal.sheep.hurt": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_sheep_hurt_1",
+    "audio/sfx/animal_sheep_hurt_2",
+    "audio/sfx/animal_sheep_hurt_3"
+   ],
    "volume": 0.65,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2842,6 +3198,10 @@
   },
   "animal.sheep.death": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_sheep_death_1",
+    "audio/sfx/animal_sheep_death_2"
+   ],
    "volume": 0.7,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2856,6 +3216,11 @@
   },
   "animal.cow.idle": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_cow_idle_1",
+    "audio/sfx/animal_cow_idle_2",
+    "audio/sfx/animal_cow_idle_3"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2870,6 +3235,11 @@
   },
   "animal.cow.hurt": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_cow_hurt_1",
+    "audio/sfx/animal_cow_hurt_2",
+    "audio/sfx/animal_cow_hurt_3"
+   ],
    "volume": 0.65,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2884,6 +3254,10 @@
   },
   "animal.cow.death": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_cow_death_1",
+    "audio/sfx/animal_cow_death_2"
+   ],
    "volume": 0.7,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2898,6 +3272,11 @@
   },
   "animal.bison.idle": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_bison_idle_1",
+    "audio/sfx/animal_bison_idle_2",
+    "audio/sfx/animal_bison_idle_3"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2912,6 +3291,11 @@
   },
   "animal.bison.hurt": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_bison_hurt_1",
+    "audio/sfx/animal_bison_hurt_2",
+    "audio/sfx/animal_bison_hurt_3"
+   ],
    "volume": 0.65,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2926,6 +3310,10 @@
   },
   "animal.bison.death": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_bison_death_1",
+    "audio/sfx/animal_bison_death_2"
+   ],
    "volume": 0.7,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2940,6 +3328,11 @@
   },
   "animal.snake.idle": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_snake_idle_1",
+    "audio/sfx/animal_snake_idle_2",
+    "audio/sfx/animal_snake_idle_3"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2954,6 +3347,11 @@
   },
   "animal.snake.hurt": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_snake_hurt_1",
+    "audio/sfx/animal_snake_hurt_2",
+    "audio/sfx/animal_snake_hurt_3"
+   ],
    "volume": 0.65,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2968,6 +3366,10 @@
   },
   "animal.snake.death": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_snake_death_1",
+    "audio/sfx/animal_snake_death_2"
+   ],
    "volume": 0.7,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2982,6 +3384,11 @@
   },
   "animal.attack": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/animal_attack_1",
+    "audio/sfx/animal_attack_2",
+    "audio/sfx/animal_attack_3"
+   ],
    "volume": 0.7,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -2996,6 +3403,10 @@
   },
   "vehicle.engine.start": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/vehicle_engine_start_1",
+    "audio/sfx/vehicle_engine_start_2"
+   ],
    "volume": 0.7,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -3010,6 +3421,10 @@
   },
   "vehicle.engine.stop": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/vehicle_engine_stop_1",
+    "audio/sfx/vehicle_engine_stop_2"
+   ],
    "volume": 0.6,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -3024,6 +3439,9 @@
   },
   "vehicle.car.idle": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/vehicle_car_idle_1"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.03,
    "volumeJitter": 0,
@@ -3038,6 +3456,9 @@
   },
   "vehicle.car.rev": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/vehicle_car_rev_1"
+   ],
    "volume": 0.6,
    "pitchJitter": 0.03,
    "volumeJitter": 0,
@@ -3052,6 +3473,9 @@
   },
   "vehicle.truck.idle": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/vehicle_truck_idle_1"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.03,
    "volumeJitter": 0,
@@ -3066,6 +3490,9 @@
   },
   "vehicle.truck.rev": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/vehicle_truck_rev_1"
+   ],
    "volume": 0.6,
    "pitchJitter": 0.03,
    "volumeJitter": 0,
@@ -3080,6 +3507,9 @@
   },
   "vehicle.van.idle": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/vehicle_van_idle_1"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.03,
    "volumeJitter": 0,
@@ -3094,6 +3524,9 @@
   },
   "vehicle.van.rev": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/vehicle_van_rev_1"
+   ],
    "volume": 0.6,
    "pitchJitter": 0.03,
    "volumeJitter": 0,
@@ -3108,6 +3541,9 @@
   },
   "vehicle.camper.idle": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/vehicle_camper_idle_1"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.03,
    "volumeJitter": 0,
@@ -3122,6 +3558,9 @@
   },
   "vehicle.camper.rev": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/vehicle_camper_rev_1"
+   ],
    "volume": 0.6,
    "pitchJitter": 0.03,
    "volumeJitter": 0,
@@ -3136,6 +3575,9 @@
   },
   "vehicle.semi.idle": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/vehicle_semi_idle_1"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.03,
    "volumeJitter": 0,
@@ -3150,6 +3592,9 @@
   },
   "vehicle.semi.rev": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/vehicle_semi_rev_1"
+   ],
    "volume": 0.6,
    "pitchJitter": 0.03,
    "volumeJitter": 0,
@@ -3164,6 +3609,10 @@
   },
   "vehicle.horn": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/vehicle_horn_1",
+    "audio/sfx/vehicle_horn_2"
+   ],
    "volume": 0.8,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -3178,6 +3627,9 @@
   },
   "vehicle.horn.truck": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/vehicle_horn_truck_1"
+   ],
    "volume": 0.9,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -3192,6 +3644,10 @@
   },
   "vehicle.door.open": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/vehicle_door_open_1",
+    "audio/sfx/vehicle_door_open_2"
+   ],
    "volume": 0.6,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -3206,6 +3662,10 @@
   },
   "vehicle.door.close": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/vehicle_door_close_1",
+    "audio/sfx/vehicle_door_close_2"
+   ],
    "volume": 0.7,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -3220,6 +3680,9 @@
   },
   "vehicle.skid": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/vehicle_skid_1"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.03,
    "volumeJitter": 0,
@@ -3234,6 +3697,11 @@
   },
   "vehicle.crash": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/vehicle_crash_1",
+    "audio/sfx/vehicle_crash_2",
+    "audio/sfx/vehicle_crash_3"
+   ],
    "volume": 0.9,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -3248,6 +3716,9 @@
   },
   "vehicle.bicycle.ride": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/vehicle_bicycle_ride_1"
+   ],
    "volume": 0.35,
    "pitchJitter": 0.03,
    "volumeJitter": 0,
@@ -3262,6 +3733,10 @@
   },
   "vehicle.bicycle.bell": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/vehicle_bicycle_bell_1",
+    "audio/sfx/vehicle_bicycle_bell_2"
+   ],
    "volume": 0.6,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -3276,6 +3751,10 @@
   },
   "vehicle.bicycle.mount": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/vehicle_bicycle_mount_1",
+    "audio/sfx/vehicle_bicycle_mount_2"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -3307,6 +3786,11 @@
   },
   "turret.fire": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/turret_fire_1",
+    "audio/sfx/turret_fire_2",
+    "audio/sfx/turret_fire_3"
+   ],
    "volume": 0.75,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -3321,6 +3805,11 @@
   },
   "turret.fire.gun": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/turret_fire_gun_1",
+    "audio/sfx/turret_fire_gun_2",
+    "audio/sfx/turret_fire_gun_3"
+   ],
    "volume": 0.9,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -3335,6 +3824,10 @@
   },
   "trap.snap": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/trap_snap_1",
+    "audio/sfx/trap_snap_2"
+   ],
    "volume": 0.85,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -3349,6 +3842,10 @@
   },
   "trap.spike": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/trap_spike_1",
+    "audio/sfx/trap_spike_2"
+   ],
    "volume": 0.8,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -3363,6 +3860,11 @@
   },
   "farm.till": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/farm_till_1",
+    "audio/sfx/farm_till_2",
+    "audio/sfx/farm_till_3"
+   ],
    "volume": 0.6,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -3377,6 +3879,9 @@
   },
   "farm.water": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/farm_water_1"
+   ],
    "volume": 0.45,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -3391,6 +3896,11 @@
   },
   "farm.plant": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/farm_plant_1",
+    "audio/sfx/farm_plant_2",
+    "audio/sfx/farm_plant_3"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -3422,6 +3932,10 @@
   },
   "farm.fertilize": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/farm_fertilize_1",
+    "audio/sfx/farm_fertilize_2"
+   ],
    "volume": 0.45,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,

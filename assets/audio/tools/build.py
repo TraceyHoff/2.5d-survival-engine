@@ -151,7 +151,7 @@ def render_sfx(r, rng):
     if key == "fire.ignite":
         return S.ignite(rng, dur, f)
     if key in ("fire.crackle", "fire.burning"):
-        return S.crackle_bed(rng, dur, stereo=key == "fire.burning")
+        return S.crackle_bed(rng, dur, stereo=True)
     if key == "fire.extinguish":
         return S.sizzle(rng, dur, f, "steam")
     if key == "fire.snuffed":
@@ -252,7 +252,13 @@ def post(r, y):
         L = n_(r["dur"])
         if len(y) > L:
             y = loop_xfade(y, L, min(n_(1.0), len(y) - L)) if len(y) - L > n_(0.05) else y[:L]
-        y = norm_peak(y - np.mean(y, 0), -1.5)
+        y = y - np.mean(y, 0)
+        # loops are circular: start at the quietest 10 ms so the codec's start-of-stream error is inaudible
+        e = (y ** 2).reshape(len(y), -1).sum(1)
+        w = n_(0.01)
+        rms = np.convolve(np.concatenate([e, e[:w]]), np.ones(w), "valid")[: len(y)]
+        y = np.roll(y, -int(np.argmin(rms) + w // 2), axis=0)
+        y = norm_peak(y, -1.5)
         return y, ("loopst" if stereo else "loopmono")
     if stereo:
         y = y.mean(1)
@@ -275,13 +281,16 @@ def encode(wav, base, kind):
     subprocess.run(common + ["-c:a", "aac", "-b:a", ab, "-ar", "48000", "-movflags", "+faststart", base + ".m4a"], check=True)
 
 
+SFX_AMB = ("fire.crackle", "fire.burning")  # ambient-bus loops rendered by sfx recipes
+
+
 def job(args):
     r, i = args
     rng = np.random.default_rng(seed(r["key"], i))
     if r["bus"] == "music" or r["key"] == "music.stinger.dawn":
         import music as M
         y = M.render(r["key"], i, rng, r["dur"])
-    elif r["bus"] == "ambient" and r["key"] not in ("fire.burning",):
+    elif r["bus"] == "ambient" and r["key"] not in SFX_AMB:
         y, _ = A.render_amb(r["key"], rng, r["dur"], float(r["f"]))
     else:
         y = render_sfx(r, rng)
@@ -291,7 +300,7 @@ def job(args):
         # recipes that rendered exactly dur: re-render longer for crossfade
         r2 = dict(r, dur=r["dur"] + 1.0)
         rng = np.random.default_rng(seed(r["key"], i))
-        y = render_sfx(r2, rng) if r["bus"] != "ambient" or r["key"] == "fire.burning" else A.render_amb(r["key"], rng, r["dur"] + 1.0, float(r["f"]))[0]
+        y = render_sfx(r2, rng) if r["bus"] != "ambient" or r["key"] in SFX_AMB else A.render_amb(r["key"], rng, r["dur"] + 1.0, float(r["f"]))[0]
     y, kind = post(r, y)
     name = r["key"].replace(".", "_") + f"_{i}"
     d = DIRS[r["bus"]] if r["key"] != "music.stinger.dawn" else "music"
