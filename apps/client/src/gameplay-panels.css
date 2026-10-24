@@ -19,30 +19,33 @@
 /* section headings */
 .gm-modal .gm-panel [data-role=section]{display:flex;align-items:center;gap:8px;color:var(--cz-bark);font-size:15px;letter-spacing:.02em;margin-top:4px}
 .gm-modal .gm-panel [data-role=section]::after{content:"";flex:1;height:14px;border-style:solid;border-width:0 18px;border-image:image-set(url("../../../assets/ui/kit/css/ui_bar_track.png") 1x, url("../../../assets/ui/kit/css/ui_bar_track@2x.png") 2x) 45% 15.625% fill / 0 18px;opacity:.35}
-/* ---- tooltips (title) : hover (mouse) + focus-visible (pad/keys) ---- */
-.gm-modal .gm-panel [data-role=body] button[title]:not([title=""])::before{content:attr(title);position:absolute;left:50%;bottom:calc(100% + 8px);transform:translate(-50%,4px);z-index:5;
+/* ---- tooltips from [data-tip] (no title=): hover (mouse), focus-visible (pad/keys), focus/active (tap on touch) ---- */
+.gm-modal .gm-panel [data-tip]:not([data-tip=""]){position:relative}
+.gm-modal .gm-panel [data-tip]:not([data-tip=""])::before{content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 8px);transform:translate(-50%,4px);z-index:5;
   width:max-content;max-width:min(260px,70vw);white-space:pre-line;text-align:left;font:600 13px/1.3 Fredoka,system-ui,sans-serif;color:var(--cz-ink);
   border-style:solid;border-width:14px 14px 16px 14px;border-image:image-set(url("../../../assets/ui/kit/css/ui_panel_tooltip.png") 1x, url("../../../assets/ui/kit/css/ui_panel_tooltip@2x.png") 2x) 29.167% 29.167% 33.333% 29.167% fill / 14px 14px 16px 14px stretch;padding:0 2px;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .12s,transform .12s;filter:drop-shadow(0 3px 0 rgba(67,44,36,.35))}
-@media (hover:hover){.gm-modal .gm-panel [data-role=body] button[title]:hover::before{opacity:1;visibility:visible;transform:translate(-50%,0);transition-delay:.25s}}
-.gm-modal .gm-panel [data-role=body] button[title]:focus-visible::before{opacity:1;visibility:visible;transform:translate(-50%,0)}
-.gm-modal .gm-panel [data-role=body] .gm-grid > button[title]:first-child::before{left:0;transform:none}
+@media (hover:hover){.gm-modal .gm-panel [data-tip]:not([data-tip=""]):hover::before{opacity:1;visibility:visible;transform:translate(-50%,0);transition-delay:.25s}}
+.gm-modal .gm-panel [data-tip]:not([data-tip=""]):focus-visible::before{opacity:1;visibility:visible;transform:translate(-50%,0)}
+@media (hover:none),(pointer:coarse){.gm-modal .gm-panel [data-tip]:not([data-tip=""]):focus::before,.gm-modal .gm-panel [data-tip]:not([data-tip=""]):active::before{opacity:1;visibility:visible;transform:translate(-50%,0);transition-delay:0s}}
+.gm-modal .gm-panel .gm-grid > [data-tip]:first-child::before{left:0;transform:none}
 /* ---- item slots: kit slot frame + icon well ---- */
 .gm-modal .gm-panel [data-role=body] button[data-role=slot],.gm-modal .gm-panel [data-role=body] button[data-role=recipe],.gm-modal .gm-panel [data-role=body] button[data-key^=draft-slot-]{color:var(--cz-ink);text-shadow:none;background:none;box-shadow:none;
   border-style:solid;border-width:14px 14px 14px 14px;border-image:image-set(url("../../../assets/ui/kit/css/ui_slot_empty.png") 1x, url("../../../assets/ui/kit/css/ui_slot_empty@2x.png") 2x) 29.167% 29.167% 29.167% 29.167% fill / 14px 14px 14px 14px stretch;min-height:64px;padding:0 2px 0 44px;text-align:left;font-size:14px}
 .gm-modal .gm-panel [data-role=body] button[data-role=slot]::after,.gm-modal .gm-panel [data-role=body] button[data-role=recipe]::after,.gm-modal .gm-panel [data-role=body] button[data-key^=draft-slot-]:not([aria-pressed=true])::after{content:"";position:absolute;left:-4px;top:50%;width:36px;height:36px;margin-top:-18px;
   background:image-set(url("../../../assets/ui/kit/css/ui_ic_bag.png") 1x, url("../../../assets/ui/kit/css/ui_ic_bag@2x.png") 2x) center/contain no-repeat;pointer-events:none}
 .gm-modal .gm-panel [data-role=body] button[data-role=recipe]::after{background-image:image-set(url("../../../assets/ui/kit/css/ui_ic_craft.png") 1x, url("../../../assets/ui/kit/css/ui_ic_craft@2x.png") 2x)}
+/* real item icon: [data-icon=<manifest key>] sets --cz-icon/--cz-ipos/--cz-isize (generated block at the end); unknown keys keep the bag */
+.gm-modal .gm-panel [data-icon]:is([data-role=slot],[data-role=recipe],[data-key^=draft-slot-])::after{background:var(--cz-icon,image-set(url("../../../assets/ui/kit/css/ui_ic_bag.png") 1x, url("../../../assets/ui/kit/css/ui_ic_bag@2x.png") 2x)) var(--cz-ipos,center) / var(--cz-isize,contain) no-repeat;image-rendering:auto}
 @media (hover:hover){.gm-modal .gm-panel [data-role=body] button[data-role=slot]:hover,.gm-modal .gm-panel [data-role=body] button[data-role=recipe]:not(.alt):hover,.gm-modal .gm-panel [data-role=body] button[data-key^=draft-slot-]:hover{border-image-source:image-set(url("../../../assets/ui/kit/css/ui_slot_hover.png") 1x, url("../../../assets/ui/kit/css/ui_slot_hover@2x.png") 2x)}}
 .gm-modal .gm-panel [data-role=body] button[data-role=slot]:focus-visible,.gm-modal .gm-panel [data-role=body] button[data-role=recipe]:focus-visible,.gm-modal .gm-panel [data-role=body] button[data-key^=draft-slot-][aria-pressed=true]{border-image-source:image-set(url("../../../assets/ui/kit/css/ui_slot_selected.png") 1x, url("../../../assets/ui/kit/css/ui_slot_selected@2x.png") 2x)}
 .gm-modal .gm-panel [data-role=body] button[data-role=recipe].alt{border-image-source:image-set(url("../../../assets/ui/kit/css/ui_slot_locked.png") 1x, url("../../../assets/ui/kit/css/ui_slot_locked@2x.png") 2x);color:#61402E}
 .gm-modal .gm-panel [data-role=body] .gm-grid:has(> button[data-role=slot]){grid-template-columns:repeat(auto-fill,minmax(148px,1fr))}
-/* ---- craft queue job: progress track + animated fill ---- */
+/* ---- craft queue job: kit track + fill width from --p (0..1) ---- */
 .gm-modal .gm-panel [data-role=body] button[data-role=job]{padding-bottom:22px;text-align:left}
-.gm-modal .gm-panel [data-role=body] button[data-role=job]::after{content:"";position:absolute;left:10px;right:10px;bottom:7px;height:12px;border-radius:6px;
-  background:repeating-linear-gradient(115deg,rgba(255,250,240,.35) 0 6px,transparent 6px 14px) 0 0/28px 100%,linear-gradient(#9FD86A,#5A9A4A);
-  box-shadow:inset 0 0 0 2px var(--cz-ink),0 2px 0 rgba(67,44,36,.5);animation:cz-job 1.1s linear infinite}
-@keyframes cz-job{to{background-position:28px 0,0 0}}
-@media (prefers-reduced-motion:reduce){.gm-modal .gm-panel [data-role=body] button[data-role=job]::after{animation:none}}
+.gm-modal .gm-panel [data-role=body] button[data-role=job]::before{content:"";position:absolute;left:10px;right:10px;bottom:7px;height:12px;border-style:solid;border-width:0 6px;border-image:image-set(url("../../../assets/ui/kit/css/ui_bar_track.png") 1x, url("../../../assets/ui/kit/css/ui_bar_track@2x.png") 2x) 45% 15.625% fill / 0 6px;pointer-events:none}
+.gm-modal .gm-panel [data-role=body] button[data-role=job]::after{content:"";position:absolute;left:10px;bottom:7px;height:12px;width:calc((100% - 20px) * clamp(0, var(--p, 0), 1));border-radius:6px;
+  background:linear-gradient(#9FD86A,#5A9A4A);box-shadow:inset 0 0 0 2px var(--cz-ink),inset 0 4px 0 rgba(255,250,240,.35);transition:width .25s linear;pointer-events:none}
+@media (prefers-reduced-motion:reduce){.gm-modal .gm-panel [data-role=body] button[data-role=job]::after{transition:none}}
 .gm-modal .gm-panel [data-role=owed]{border-style:solid;border-width:14px 14px 14px 14px;border-image:image-set(url("../../../assets/ui/kit/css/ui_panel_inset.png") 1x, url("../../../assets/ui/kit/css/ui_panel_inset@2x.png") 2x) 29.167% 29.167% 29.167% 29.167% fill / 14px 14px 14px 14px stretch;padding:0 4px;color:var(--cz-ink)}
 /* ---- build pieces ---- */
 .gm-modal .gm-panel [data-role=body] button[data-role=piece]{text-transform:capitalize}
@@ -120,16 +123,21 @@
 .gm-modal .gm-panel [data-key=skin-9]{--cz-sw:#46291c}
 .gm-modal .gm-panel [data-key=skin-10]{--cz-sw:#c6a27a}
 .gm-modal .gm-panel [data-key=skin-11]{--cz-sw:#a8c98a}
-/* ---- unlocks: badge chips (state is only in the text glyph; see report) ---- */
+/* ---- unlocks: [data-unlocked] = unlocked (check, leaf), absent = locked (lock, greyed) ---- */
 .gm-modal .gm-panel [data-role=unlocks]{display:flex;flex-wrap:wrap;gap:6px}
-.gm-modal .gm-panel [data-role=unlock]{display:inline-flex;align-items:center;gap:4px;min-height:32px;text-transform:capitalize;color:var(--cz-ink);border-style:solid;border-width:14px 14px 14px 14px;border-image:image-set(url("../../../assets/ui/kit/css/ui_panel_inset.png") 1x, url("../../../assets/ui/kit/css/ui_panel_inset@2x.png") 2x) 29.167% 29.167% 29.167% 29.167% fill / 14px 14px 14px 14px stretch;padding:0 4px;font-size:13px}
-/* ---- party / clan: member rows, rank badges, rank-permission rows ---- */
-.gm-modal .gm-panel [data-role=member]{display:flex;flex-wrap:wrap;align-items:center;gap:6px;border-style:solid;border-width:14px 14px 14px 14px;border-image:image-set(url("../../../assets/ui/kit/css/ui_panel_inset.png") 1x, url("../../../assets/ui/kit/css/ui_panel_inset@2x.png") 2x) 29.167% 29.167% 29.167% 29.167% fill / 14px 14px 14px 14px stretch;padding:0 2px;grid-column:1/-1}
+.gm-modal .gm-panel [data-role=unlock]{display:inline-flex;align-items:center;gap:4px;min-height:32px;text-transform:capitalize;color:#7d6a5c;border-style:solid;border-width:14px 14px 14px 14px;border-image:image-set(url("../../../assets/ui/kit/css/ui_slot_locked.png") 1x, url("../../../assets/ui/kit/css/ui_slot_locked@2x.png") 2x) 29.167% 29.167% 29.167% 29.167% fill / 14px 14px 14px 14px stretch;padding:0 4px;font-size:13px;filter:grayscale(.4)}
+.gm-modal .gm-panel [data-role=unlock]::before{content:"";width:18px;height:18px;flex:none;background:image-set(url("../../../assets/ui/kit/css/ui_ic_lock.png") 1x, url("../../../assets/ui/kit/css/ui_ic_lock@2x.png") 2x) center/contain no-repeat}
+.gm-modal .gm-panel [data-role=unlock][data-unlocked]{color:var(--cz-ink);filter:none;border-image-source:image-set(url("../../../assets/ui/kit/css/ui_panel_inset.png") 1x, url("../../../assets/ui/kit/css/ui_panel_inset@2x.png") 2x);box-shadow:inset 0 -3px 0 var(--cz-leaf)}
+.gm-modal .gm-panel [data-role=unlock][data-unlocked]::before{background-image:image-set(url("../../../assets/ui/kit/css/ui_ic_check.png") 1x, url("../../../assets/ui/kit/css/ui_ic_check@2x.png") 2x)}
+/* ---- party / clan: member rows with data-rank=member|officer|leader badges, rank-permission rows ---- */
+.gm-modal .gm-panel [data-role=member]{--cz-rank:#72C45C;--cz-rank-ic:image-set(url("../../../assets/ui/kit/css/ui_ic_person.png") 1x, url("../../../assets/ui/kit/css/ui_ic_person@2x.png") 2x);display:flex;flex-wrap:wrap;align-items:center;gap:6px;border-style:solid;border-width:14px 14px 14px 14px;border-image:image-set(url("../../../assets/ui/kit/css/ui_panel_inset.png") 1x, url("../../../assets/ui/kit/css/ui_panel_inset@2x.png") 2x) 29.167% 29.167% 29.167% 29.167% fill / 14px 14px 14px 14px stretch;padding:0 2px;grid-column:1/-1;box-shadow:inset 6px 0 0 var(--cz-rank)}
+.gm-modal .gm-panel [data-role=member][data-rank=officer]{--cz-rank:#4F8FD6;--cz-rank-ic:image-set(url("../../../assets/ui/kit/css/ui_ic_star.png") 1x, url("../../../assets/ui/kit/css/ui_ic_star@2x.png") 2x)}
+.gm-modal .gm-panel [data-role=member][data-rank=leader]{--cz-rank:#F7C844;--cz-rank-ic:image-set(url("../../../assets/ui/kit/css/ui_ic_crown.png") 1x, url("../../../assets/ui/kit/css/ui_ic_crown@2x.png") 2x)}
 .gm-modal .gm-panel div[data-role=member] > p{flex:1 1 100%;display:flex;align-items:center;gap:6px;color:var(--cz-ink)}
-.gm-modal .gm-panel div[data-role=member] > p::before{content:"";width:24px;height:24px;flex:none;background:image-set(url("../../../assets/ui/kit/css/ui_ic_person.png") 1x, url("../../../assets/ui/kit/css/ui_ic_person@2x.png") 2x) center/contain no-repeat}
+.gm-modal .gm-panel div[data-role=member] > p::before{content:"";width:24px;height:24px;flex:none;background:var(--cz-rank-ic) center/contain no-repeat}
 .gm-modal .gm-panel div[data-role=member] > button{flex:1 1 0;min-width:var(--cz-hit)}
-.gm-modal .gm-panel button[data-role=member]{grid-column:auto;padding-left:34px;color:var(--cz-ink);background:none;box-shadow:none}
-.gm-modal .gm-panel button[data-role=member]::after{content:"";position:absolute;left:-2px;top:50%;margin-top:-12px;width:24px;height:24px;background:image-set(url("../../../assets/ui/kit/css/ui_ic_person.png") 1x, url("../../../assets/ui/kit/css/ui_ic_person@2x.png") 2x) center/contain no-repeat}
+.gm-modal .gm-panel button[data-role=member]{grid-column:auto;padding-left:34px;color:var(--cz-ink);background:none}
+.gm-modal .gm-panel button[data-role=member]::after{content:"";position:absolute;left:-2px;top:50%;margin-top:-12px;width:24px;height:24px;background:var(--cz-rank-ic) center/contain no-repeat}
 .gm-modal .gm-panel [data-role=body] [data-role=perm]{position:relative;padding-left:40px;border-left:6px solid var(--cz-rank,#9a8f7a);border-radius:10px}
 .gm-modal .gm-panel [data-role=body] [data-role=perm]::before{content:"";position:absolute;left:4px;top:50%;margin-top:-14px;width:28px;height:28px;background:var(--cz-rank-ic) center/contain no-repeat}
 .gm-modal .gm-panel [data-role=perm][data-key="3"]{--cz-rank:#F7C844;--cz-rank-ic:image-set(url("../../../assets/ui/kit/css/ui_ic_crown.png") 1x, url("../../../assets/ui/kit/css/ui_ic_crown@2x.png") 2x)}
@@ -150,10 +158,441 @@
 .gm-modal .gm-panel [data-role=body] button[data-role=listing]:focus-visible{border-image-source:image-set(url("../../../assets/ui/kit/css/ui_slot_selected.png") 1x, url("../../../assets/ui/kit/css/ui_slot_selected@2x.png") 2x)}
 .gm-modal .gm-panel [data-role=body] input[data-role=stall-name]{width:100%;min-height:var(--cz-hit);border-style:solid;border-width:14px 14px 14px 14px;border-image:image-set(url("../../../assets/ui/kit/css/ui_panel_inset.png") 1x, url("../../../assets/ui/kit/css/ui_panel_inset@2x.png") 2x) 29.167% 29.167% 29.167% 29.167% fill / 14px 14px 14px 14px stretch;padding:0 4px;background:none}
 .gm-modal .gm-panel [data-role=body] button[data-key=collect]::after{content:"";position:absolute;right:6px;top:50%;margin-top:-9px;width:18px;height:18px;border-radius:50%;background:radial-gradient(circle,#FFD45A 0 55%,#B8741E 56%);box-shadow:0 0 0 2px var(--cz-ink)}
-/* ---- chat: channel colours (buttons; log lines carry no channel hook) ---- */
+/* ---- chat: channel colours on buttons (chan-N) and log lines ([data-chan]) ---- */
 .gm-modal .gm-panel [data-role=chat-channels] button{--cz-ch:#9a8f7a;border-color:var(--cz-ink);box-shadow:inset 0 -6px 0 var(--cz-ch),0 3px 0 var(--cz-bark);min-height:var(--cz-hit)}
 .gm-modal .gm-panel [data-role=chat-channels] button[aria-pressed=true]{background:var(--cz-ch);border-image:none;border:3px solid var(--cz-ink);color:var(--cz-cream);text-shadow:0 2px 0 rgba(59,36,51,.6);box-shadow:0 0 0 3px var(--cz-gold),0 3px 0 var(--cz-bark)}
-.gm-modal .gm-panel [data-key=chan-0]{--cz-ch:#4F8FD6} .gm-modal .gm-panel [data-key=chan-1]{--cz-ch:#5A9A4A} .gm-modal .gm-panel [data-key=chan-2]{--cz-ch:#3FB3A6}
-.gm-modal .gm-panel [data-key=chan-3]{--cz-ch:#9B72D6} .gm-modal .gm-panel [data-key=chan-4]{--cz-ch:#E9A72E} .gm-modal .gm-panel [data-key=chan-5]{--cz-ch:#E86FA8}
+.gm-modal .gm-panel [data-key=chan-0],.gm-modal .gm-panel [data-chan=global]{--cz-ch:#4F8FD6} .gm-modal .gm-panel [data-key=chan-1],.gm-modal .gm-panel [data-chan=local]{--cz-ch:#5A9A4A} .gm-modal .gm-panel [data-key=chan-2],.gm-modal .gm-panel [data-chan=party]{--cz-ch:#3FB3A6}
+.gm-modal .gm-panel [data-key=chan-3],.gm-modal .gm-panel [data-chan=clan]{--cz-ch:#9B72D6} .gm-modal .gm-panel [data-key=chan-4],.gm-modal .gm-panel [data-chan=trade]{--cz-ch:#E9A72E} .gm-modal .gm-panel [data-key=chan-5],.gm-modal .gm-panel [data-chan=whisper]{--cz-ch:#E86FA8} .gm-modal .gm-panel [data-key=chan-6],.gm-modal .gm-panel [data-chan=system]{--cz-ch:#8A7F70}
 .gm-modal .gm-panel [data-role=whisper-picker] button{box-shadow:inset 0 -6px 0 #E86FA8,0 3px 0 var(--cz-bark)}
 .gm-modal .gm-panel [data-role=chat-log]{border-style:solid;border-width:14px 14px 14px 14px;border-image:image-set(url("../../../assets/ui/kit/css/ui_panel_inset.png") 1x, url("../../../assets/ui/kit/css/ui_panel_inset@2x.png") 2x) 29.167% 29.167% 29.167% 29.167% fill / 14px 14px 14px 14px stretch;padding:0 4px;color:var(--cz-ink)}
+.gm-modal .gm-panel [data-role=chat-log] p[data-chan]{margin:2px 0;padding:2px 6px 2px 8px;border-left:4px solid var(--cz-ch);border-radius:4px;background:color-mix(in srgb,var(--cz-ch) 12%,transparent)}
+.gm-modal .gm-panel [data-role=chat-log] p[data-chan=system]{font-style:italic;color:#6b5d50}
+.gm-modal .gm-panel [data-role=chat-log] p[data-chan=whisper]{color:#9a3d70}
+/* ---- camper station (assets/ui/screens/camper_station.md; opened on station-opened) ---- */
+.gm-modal .gm-panel[data-panel=camper-station]{width:min(720px,96vw)}
+.gm-modal .gm-panel[data-panel=camper-station] [data-role=body]{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"fuel fuel" "tabs tabs" "work inv";gap:10px}
+@media (max-width:620px){.gm-modal .gm-panel[data-panel=camper-station] [data-role=body]{grid-template-columns:1fr;grid-template-areas:"fuel" "tabs" "work" "inv"}}
+.gm-modal .gm-panel[data-panel=camper-station] [data-role=station-fuel]{grid-area:fuel;display:flex;align-items:center;gap:10px;border-style:solid;border-width:14px;border-image:image-set(url("../../../assets/ui/kit/css/ui_panel_inset.png") 1x, url("../../../assets/ui/kit/css/ui_panel_inset@2x.png") 2x) 29.167% fill / 14px stretch;padding:0 4px}
+.gm-modal .gm-panel[data-panel=camper-station] [data-role=fuel-gauge]{position:relative;flex:1;height:18px;border-style:solid;border-width:0 9px;border-image:image-set(url("../../../assets/ui/kit/css/ui_bar_track.png") 1x, url("../../../assets/ui/kit/css/ui_bar_track@2x.png") 2x) 45% 15.625% fill / 0 9px}
+.gm-modal .gm-panel[data-panel=camper-station] [data-role=fuel-gauge]::after{content:"";position:absolute;left:-4px;top:3px;bottom:3px;width:calc((100% + 8px) * clamp(0, var(--p, 0), 1));border-radius:6px;background:linear-gradient(#FFD45A,#F08A34);box-shadow:inset 0 0 0 2px var(--cz-ink),inset 0 4px 0 rgba(255,250,240,.4);transition:width .25s linear}
+.gm-modal .gm-panel[data-panel=camper-station] [data-role=fuel-gauge][data-low]::after{background:linear-gradient(#FF8A8A,var(--cz-berry));animation:cz-low 1s steps(2) infinite}
+@keyframes cz-low{50%{filter:brightness(1.25)}}
+@media (prefers-reduced-motion:reduce){.gm-modal .gm-panel[data-panel=camper-station] [data-role=fuel-gauge][data-low]::after{animation:none}}
+.gm-modal .gm-panel[data-panel=camper-station] [data-role=station-tabs]{grid-area:tabs;display:flex;gap:8px}
+.gm-modal .gm-panel[data-panel=camper-station] [data-role=station-tabs] button{flex:1;font-size:16px}
+.gm-modal .gm-panel[data-panel=camper-station] [data-role=station-craft],.gm-modal .gm-panel[data-panel=camper-station] [data-role=station-cook]{grid-area:work;display:flex;flex-direction:column;gap:8px}
+.gm-modal .gm-panel[data-panel=camper-station] [data-role=body]:has([data-key=tab-cook][aria-pressed=true]) [data-role=station-craft],.gm-modal .gm-panel[data-panel=camper-station] [data-role=body]:has([data-key=tab-craft][aria-pressed=true]) [data-role=station-cook]{display:none}
+.gm-modal .gm-panel[data-panel=camper-station] [data-role=station-inv]{grid-area:inv}
+.gm-modal .gm-panel[data-panel=camper-station] [data-role=station-inv] .gm-grid,.gm-modal .gm-panel[data-panel=camper-station] [data-role=cook-inputs]{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--cz-hit),1fr));gap:6px}
+.gm-modal .gm-panel[data-panel=camper-station] [data-role=station-inv] button[data-role=slot],.gm-modal .gm-panel[data-panel=camper-station] [data-role=cook-inputs] button[data-role=slot],.gm-modal .gm-panel[data-panel=camper-station] button[data-key=fuel-slot],.gm-modal .gm-panel[data-panel=camper-station] button[data-key=cook-out]{aspect-ratio:1;min-height:var(--cz-hit);padding:0;font-size:0;color:transparent}
+.gm-modal .gm-panel[data-panel=camper-station] [data-role=station-inv] button[data-role=slot]::after,.gm-modal .gm-panel[data-panel=camper-station] [data-role=cook-inputs] button[data-role=slot]::after,.gm-modal .gm-panel[data-panel=camper-station] button[data-key=fuel-slot]::after,.gm-modal .gm-panel[data-panel=camper-station] button[data-key=cook-out]::after{left:50%;margin-left:-18px}
+.gm-modal .gm-panel[data-panel=camper-station] button[data-role=slot][data-count]::before{content:attr(data-count);position:absolute;right:-6px;bottom:-8px;z-index:1;font:700 12px/1 Fredoka,system-ui,sans-serif;color:var(--cz-cream);text-shadow:0 0 2px var(--cz-ink),0 1px 0 var(--cz-ink)}
+.gm-modal .gm-panel[data-panel=camper-station] button[data-role=slot]:not([data-item])::after{opacity:.25}
+.gm-modal .gm-panel[data-panel=camper-station] [data-role=cook-row]{display:flex;align-items:center;gap:8px}
+.gm-modal .gm-panel[data-panel=camper-station] [data-role=cook-row] [data-role=job]{flex:1}
+/* ICONS:BEGIN generated by packages/assets/pack/vehicle_items/src/gen_icon_css.py (400 keys: {'equipment': 21, 'items': 48, 'items_icons': 191, 'vitems_icons': 140}) */
+[data-icon="stone_axe"],[data-icon="stone_pickaxe"],[data-icon="sword"],[data-icon="shield"],[data-icon="iron_axe"],[data-icon="iron_pickaxe"],[data-icon="spear"],[data-icon="club"],[data-icon="helmet_leather"],[data-icon="armor_leather"],[data-icon="boots_leather"],[data-icon="stone_shovel"],[data-icon="stone_knife"],[data-icon="bronze_axe"],[data-icon="bronze_pickaxe"],[data-icon="bronze_sword"],[data-icon="iron_sword"],[data-icon="bow"],[data-icon="torch"],[data-icon="stone_spear"],[data-icon="wooden_club"]{--cz-icon:url("../../../packages/assets/pack/atlases/equipment.png");--cz-isize:800% 300%}
+[data-icon="stone_axe"]{--cz-ipos:0% 0%}
+[data-icon="stone_pickaxe"]{--cz-ipos:14.29% 0%}
+[data-icon="sword"]{--cz-ipos:28.57% 0%}
+[data-icon="shield"]{--cz-ipos:42.86% 0%}
+[data-icon="iron_axe"]{--cz-ipos:57.14% 0%}
+[data-icon="iron_pickaxe"]{--cz-ipos:71.43% 0%}
+[data-icon="spear"]{--cz-ipos:85.71% 0%}
+[data-icon="club"]{--cz-ipos:100% 0%}
+[data-icon="helmet_leather"]{--cz-ipos:0% 50%}
+[data-icon="armor_leather"]{--cz-ipos:14.29% 50%}
+[data-icon="boots_leather"]{--cz-ipos:28.57% 50%}
+[data-icon="stone_shovel"]{--cz-ipos:42.86% 50%}
+[data-icon="stone_knife"]{--cz-ipos:57.14% 50%}
+[data-icon="bronze_axe"]{--cz-ipos:71.43% 50%}
+[data-icon="bronze_pickaxe"]{--cz-ipos:85.71% 50%}
+[data-icon="bronze_sword"]{--cz-ipos:100% 50%}
+[data-icon="iron_sword"]{--cz-ipos:0% 100%}
+[data-icon="bow"]{--cz-ipos:14.29% 100%}
+[data-icon="torch"]{--cz-ipos:28.57% 100%}
+[data-icon="stone_spear"]{--cz-ipos:85.71% 0%}
+[data-icon="wooden_club"]{--cz-ipos:100% 0%}
+[data-icon="wood"],[data-icon="stone"],[data-icon="fiber"],[data-icon="flint"],[data-icon="iron_ore"],[data-icon="iron_ingot"],[data-icon="berries"],[data-icon="water_flask"],[data-icon="mushroom"],[data-icon="cooked_meat"],[data-icon="apple"],[data-icon="carrot"],[data-icon="bandage"],[data-icon="campfire_kit"],[data-icon="workbench_kit"],[data-icon="hardwood"],[data-icon="sticks"],[data-icon="planks"],[data-icon="hardwood_planks"],[data-icon="clay"],[data-icon="sand"],[data-icon="hide"],[data-icon="copper_ore"],[data-icon="tin_ore"],[data-icon="coal"],[data-icon="gold_ore"],[data-icon="rope"],[data-icon="cloth"],[data-icon="leather"],[data-icon="stone_brick"],[data-icon="clay_brick"],[data-icon="mortar"],[data-icon="charcoal"],[data-icon="copper_ingot"],[data-icon="tin_ingot"],[data-icon="bronze_ingot"],[data-icon="steel_ingot"],[data-icon="gold_ingot"],[data-icon="nails"],[data-icon="iron_plate"],[data-icon="steel_plate"],[data-icon="glass"],[data-icon="dye"],[data-icon="raw_meat"],[data-icon="pumpkin"],[data-icon="blueberries"],[data-icon="herbs"],[data-icon="arrow"]{--cz-icon:url("../../../packages/assets/pack/atlases/items.png");--cz-isize:800% 700%}
+[data-icon="wood"]{--cz-ipos:0% 0%}
+[data-icon="stone"]{--cz-ipos:14.29% 0%}
+[data-icon="fiber"]{--cz-ipos:28.57% 0%}
+[data-icon="flint"]{--cz-ipos:42.86% 0%}
+[data-icon="iron_ore"]{--cz-ipos:57.14% 0%}
+[data-icon="iron_ingot"]{--cz-ipos:71.43% 0%}
+[data-icon="berries"]{--cz-ipos:85.71% 0%}
+[data-icon="water_flask"]{--cz-ipos:100% 0%}
+[data-icon="mushroom"]{--cz-ipos:0% 16.67%}
+[data-icon="cooked_meat"]{--cz-ipos:14.29% 16.67%}
+[data-icon="apple"]{--cz-ipos:28.57% 16.67%}
+[data-icon="carrot"]{--cz-ipos:42.86% 16.67%}
+[data-icon="bandage"]{--cz-ipos:57.14% 16.67%}
+[data-icon="campfire_kit"]{--cz-ipos:71.43% 16.67%}
+[data-icon="workbench_kit"]{--cz-ipos:85.71% 16.67%}
+[data-icon="hardwood"]{--cz-ipos:100% 16.67%}
+[data-icon="sticks"]{--cz-ipos:0% 33.33%}
+[data-icon="planks"]{--cz-ipos:14.29% 33.33%}
+[data-icon="hardwood_planks"]{--cz-ipos:28.57% 33.33%}
+[data-icon="clay"]{--cz-ipos:42.86% 33.33%}
+[data-icon="sand"]{--cz-ipos:57.14% 33.33%}
+[data-icon="hide"]{--cz-ipos:71.43% 33.33%}
+[data-icon="copper_ore"]{--cz-ipos:85.71% 33.33%}
+[data-icon="tin_ore"]{--cz-ipos:100% 33.33%}
+[data-icon="coal"]{--cz-ipos:0% 50%}
+[data-icon="gold_ore"]{--cz-ipos:14.29% 50%}
+[data-icon="rope"]{--cz-ipos:28.57% 50%}
+[data-icon="cloth"]{--cz-ipos:42.86% 50%}
+[data-icon="leather"]{--cz-ipos:57.14% 50%}
+[data-icon="stone_brick"]{--cz-ipos:71.43% 50%}
+[data-icon="clay_brick"]{--cz-ipos:85.71% 50%}
+[data-icon="mortar"]{--cz-ipos:100% 50%}
+[data-icon="charcoal"]{--cz-ipos:0% 66.67%}
+[data-icon="copper_ingot"]{--cz-ipos:14.29% 66.67%}
+[data-icon="tin_ingot"]{--cz-ipos:28.57% 66.67%}
+[data-icon="bronze_ingot"]{--cz-ipos:42.86% 66.67%}
+[data-icon="steel_ingot"]{--cz-ipos:57.14% 66.67%}
+[data-icon="gold_ingot"]{--cz-ipos:71.43% 66.67%}
+[data-icon="nails"]{--cz-ipos:85.71% 66.67%}
+[data-icon="iron_plate"]{--cz-ipos:100% 66.67%}
+[data-icon="steel_plate"]{--cz-ipos:0% 83.33%}
+[data-icon="glass"]{--cz-ipos:14.29% 83.33%}
+[data-icon="dye"]{--cz-ipos:28.57% 83.33%}
+[data-icon="raw_meat"]{--cz-ipos:42.86% 83.33%}
+[data-icon="pumpkin"]{--cz-ipos:71.43% 83.33%}
+[data-icon="blueberries"]{--cz-ipos:85.71% 83.33%}
+[data-icon="herbs"]{--cz-ipos:100% 83.33%}
+[data-icon="arrow"]{--cz-ipos:0% 100%}
+[data-icon="cotton"],[data-icon="beeswax"],[data-icon="resin"],[data-icon="salt"],[data-icon="scrap_metal"],[data-icon="saltpeter"],[data-icon="sulfur"],[data-icon="lead_ore"],[data-icon="crude_oil"],[data-icon="chromite_ore"],[data-icon="bone"],[data-icon="sinew"],[data-icon="animal_fat"],[data-icon="feather"],[data-icon="fur"],[data-icon="honey"],[data-icon="potato"],[data-icon="corn"],[data-icon="wild_onion"],[data-icon="jerky"],[data-icon="baked_potato"],[data-icon="roasted_corn"],[data-icon="roasted_mushroom"],[data-icon="fried_egg"],[data-icon="omelette"],[data-icon="salted_fish"],[data-icon="berry_pie"],[data-icon="meat_pie"],[data-icon="cornbread"],[data-icon="honey_cake"],[data-icon="potato_soup"],[data-icon="fish_stew"],[data-icon="trail_mix"],[data-icon="canned_stew"],[data-icon="canned_fish"],[data-icon="canned_corn"],[data-icon="herbal_tea"],[data-icon="herbal_poultice"],[data-icon="antiseptic"],[data-icon="medkit"],[data-icon="thread"],[data-icon="linen"],[data-icon="padded_cloth"],[data-icon="waxed_cloth"],[data-icon="hardened_leather"],[data-icon="fur_pelt"],[data-icon="bowstring"],[data-icon="glue"],[data-icon="flour"],[data-icon="gunpowder"],[data-icon="fuse"],[data-icon="lead_ingot"],[data-icon="casings"],[data-icon="iron_pipe"],[data-icon="gun_barrel"],[data-icon="spring"],[data-icon="mechanism"],[data-icon="chain_rings"],[data-icon="glass_bottle"],[data-icon="tin_can"],[data-icon="lamp_oil"],[data-icon="polymer_sheet"],[data-icon="aramid_weave"],[data-icon="ceramic_plate"],[data-icon="alloy_ingot"],[data-icon="alloy_plate"],[data-icon="salvaged_parts"],[data-icon="bronze_shovel"],[data-icon="bronze_knife"],[data-icon="iron_shovel"],[data-icon="iron_knife"],[data-icon="steel_axe"],[data-icon="steel_pickaxe"],[data-icon="steel_shovel"],[data-icon="steel_knife"],[data-icon="alloy_axe"],[data-icon="alloy_pickaxe"],[data-icon="alloy_shovel"],[data-icon="alloy_knife"],[data-icon="straw_hat"],[data-icon="linen_cap"],[data-icon="rain_hood"],[data-icon="fur_hat"],[data-icon="linen_shirt"],[data-icon="padded_jacket"],[data-icon="fur_coat"],[data-icon="raincoat"],[data-icon="oilskin_coat"],[data-icon="linen_trousers"],[data-icon="padded_trousers"],[data-icon="fur_leggings"],[data-icon="waxed_trousers"],[data-icon="reed_sandals"],[data-icon="leather_boots"],[data-icon="fur_boots"],[data-icon="rubber_boots"],[data-icon="cloth_gloves"],[data-icon="leather_gloves"],[data-icon="fur_mittens"],[data-icon="fur_cloak"],[data-icon="reed_satchel"],[data-icon="leather_backpack"],[data-icon="frame_pack"],[data-icon="tactical_pack"],[data-icon="bone_helmet"],[data-icon="bone_cuirass"],[data-icon="bone_greaves"],[data-icon="bone_boots"],[data-icon="bone_gauntlets"],[data-icon="bronze_helmet"],[data-icon="bronze_cuirass"],[data-icon="bronze_greaves"],[data-icon="bronze_boots"],[data-icon="bronze_gauntlets"],[data-icon="iron_helmet"],[data-icon="iron_cuirass"],[data-icon="iron_greaves"],[data-icon="iron_boots"],[data-icon="iron_gauntlets"],[data-icon="steel_helmet"],[data-icon="steel_cuirass"],[data-icon="steel_greaves"],[data-icon="steel_boots"],[data-icon="steel_gauntlets"],[data-icon="composite_helmet"],[data-icon="composite_cuirass"],[data-icon="composite_greaves"],[data-icon="composite_boots"],[data-icon="composite_gauntlets"],[data-icon="bronze_mace"],[data-icon="iron_mace"],[data-icon="steel_mace"],[data-icon="alloy_warhammer"],[data-icon="steel_sword"],[data-icon="alloy_sword"],[data-icon="bone_dagger"],[data-icon="bronze_dagger"],[data-icon="iron_dagger"],[data-icon="steel_dagger"],[data-icon="iron_machete"],[data-icon="steel_machete"],[data-icon="stone_maul"],[data-icon="iron_sledgehammer"],[data-icon="steel_sledgehammer"],[data-icon="nail_bat"],[data-icon="sling_stone"],[data-icon="flint_arrow"],[data-icon="iron_arrow"],[data-icon="fire_arrow"],[data-icon="iron_bolt"],[data-icon="steel_bolt"],[data-icon="musket_ball"],[data-icon="pistol_round"],[data-icon="rifle_round"],[data-icon="ap_rifle_round"],[data-icon="shotgun_shell"],[data-icon="slug_shell"],[data-icon="incendiary_shell"],[data-icon="sling"],[data-icon="short_bow"],[data-icon="recurve_bow"],[data-icon="longbow"],[data-icon="laminated_bow"],[data-icon="compound_bow"],[data-icon="light_crossbow"],[data-icon="crossbow"],[data-icon="steel_crossbow"],[data-icon="flintlock_pistol"],[data-icon="revolver"],[data-icon="semi_auto_pistol"],[data-icon="pipe_shotgun"],[data-icon="pump_shotgun"],[data-icon="hunting_rifle"],[data-icon="marksman_rifle"],[data-icon="auto_rifle"],[data-icon="bronze_spear"],[data-icon="iron_spear"],[data-icon="steel_spear"],[data-icon="bronze_throwing_axe"],[data-icon="iron_throwing_axe"],[data-icon="steel_throwing_axe"],[data-icon="bayonet_musket"],[data-icon="bayonet_rifle"],[data-icon="bayonet_carbine"],[data-icon="molotov"],[data-icon="incendiary_grenade"],[data-icon="black_powder_bomb"],[data-icon="pipe_bomb"],[data-icon="grenade"],[data-icon="satchel_charge"],[data-icon="breaching_charge"]{--cz-icon:image-set(url("../../../packages/assets/pack/items/atlases/items_icons.png") 1x, url("../../../packages/assets/pack/items/atlases/items_icons@2x.png") 2x);--cz-isize:1600% 1200%}
+[data-icon="cotton"]{--cz-ipos:0% 0%}
+[data-icon="beeswax"]{--cz-ipos:6.667% 0%}
+[data-icon="resin"]{--cz-ipos:13.33% 0%}
+[data-icon="salt"]{--cz-ipos:20% 0%}
+[data-icon="scrap_metal"]{--cz-ipos:26.67% 0%}
+[data-icon="saltpeter"]{--cz-ipos:33.33% 0%}
+[data-icon="sulfur"]{--cz-ipos:40% 0%}
+[data-icon="lead_ore"]{--cz-ipos:46.67% 0%}
+[data-icon="crude_oil"]{--cz-ipos:53.33% 0%}
+[data-icon="chromite_ore"]{--cz-ipos:60% 0%}
+[data-icon="bone"]{--cz-ipos:66.67% 0%}
+[data-icon="sinew"]{--cz-ipos:73.33% 0%}
+[data-icon="animal_fat"]{--cz-ipos:80% 0%}
+[data-icon="feather"]{--cz-ipos:86.67% 0%}
+[data-icon="fur"]{--cz-ipos:93.33% 0%}
+[data-icon="honey"]{--cz-ipos:100% 0%}
+[data-icon="potato"]{--cz-ipos:0% 9.091%}
+[data-icon="corn"]{--cz-ipos:6.667% 9.091%}
+[data-icon="wild_onion"]{--cz-ipos:13.33% 9.091%}
+[data-icon="jerky"]{--cz-ipos:20% 9.091%}
+[data-icon="baked_potato"]{--cz-ipos:26.67% 9.091%}
+[data-icon="roasted_corn"]{--cz-ipos:33.33% 9.091%}
+[data-icon="roasted_mushroom"]{--cz-ipos:40% 9.091%}
+[data-icon="fried_egg"]{--cz-ipos:46.67% 9.091%}
+[data-icon="omelette"]{--cz-ipos:53.33% 9.091%}
+[data-icon="salted_fish"]{--cz-ipos:60% 9.091%}
+[data-icon="berry_pie"]{--cz-ipos:66.67% 9.091%}
+[data-icon="meat_pie"]{--cz-ipos:73.33% 9.091%}
+[data-icon="cornbread"]{--cz-ipos:80% 9.091%}
+[data-icon="honey_cake"]{--cz-ipos:86.67% 9.091%}
+[data-icon="potato_soup"]{--cz-ipos:93.33% 9.091%}
+[data-icon="fish_stew"]{--cz-ipos:100% 9.091%}
+[data-icon="trail_mix"]{--cz-ipos:0% 18.18%}
+[data-icon="canned_stew"]{--cz-ipos:6.667% 18.18%}
+[data-icon="canned_fish"]{--cz-ipos:13.33% 18.18%}
+[data-icon="canned_corn"]{--cz-ipos:20% 18.18%}
+[data-icon="herbal_tea"]{--cz-ipos:26.67% 18.18%}
+[data-icon="herbal_poultice"]{--cz-ipos:33.33% 18.18%}
+[data-icon="antiseptic"]{--cz-ipos:40% 18.18%}
+[data-icon="medkit"]{--cz-ipos:46.67% 18.18%}
+[data-icon="thread"]{--cz-ipos:53.33% 18.18%}
+[data-icon="linen"]{--cz-ipos:60% 18.18%}
+[data-icon="padded_cloth"]{--cz-ipos:66.67% 18.18%}
+[data-icon="waxed_cloth"]{--cz-ipos:73.33% 18.18%}
+[data-icon="hardened_leather"]{--cz-ipos:80% 18.18%}
+[data-icon="fur_pelt"]{--cz-ipos:86.67% 18.18%}
+[data-icon="bowstring"]{--cz-ipos:93.33% 18.18%}
+[data-icon="glue"]{--cz-ipos:100% 18.18%}
+[data-icon="flour"]{--cz-ipos:0% 27.27%}
+[data-icon="gunpowder"]{--cz-ipos:6.667% 27.27%}
+[data-icon="fuse"]{--cz-ipos:13.33% 27.27%}
+[data-icon="lead_ingot"]{--cz-ipos:20% 27.27%}
+[data-icon="casings"]{--cz-ipos:26.67% 27.27%}
+[data-icon="iron_pipe"]{--cz-ipos:33.33% 27.27%}
+[data-icon="gun_barrel"]{--cz-ipos:40% 27.27%}
+[data-icon="spring"]{--cz-ipos:46.67% 27.27%}
+[data-icon="mechanism"]{--cz-ipos:53.33% 27.27%}
+[data-icon="chain_rings"]{--cz-ipos:60% 27.27%}
+[data-icon="glass_bottle"]{--cz-ipos:66.67% 27.27%}
+[data-icon="tin_can"]{--cz-ipos:73.33% 27.27%}
+[data-icon="lamp_oil"]{--cz-ipos:80% 27.27%}
+[data-icon="polymer_sheet"]{--cz-ipos:86.67% 27.27%}
+[data-icon="aramid_weave"]{--cz-ipos:93.33% 27.27%}
+[data-icon="ceramic_plate"]{--cz-ipos:100% 27.27%}
+[data-icon="alloy_ingot"]{--cz-ipos:0% 36.36%}
+[data-icon="alloy_plate"]{--cz-ipos:6.667% 36.36%}
+[data-icon="salvaged_parts"]{--cz-ipos:13.33% 36.36%}
+[data-icon="bronze_shovel"]{--cz-ipos:20% 36.36%}
+[data-icon="bronze_knife"]{--cz-ipos:26.67% 36.36%}
+[data-icon="iron_shovel"]{--cz-ipos:33.33% 36.36%}
+[data-icon="iron_knife"]{--cz-ipos:40% 36.36%}
+[data-icon="steel_axe"]{--cz-ipos:46.67% 36.36%}
+[data-icon="steel_pickaxe"]{--cz-ipos:53.33% 36.36%}
+[data-icon="steel_shovel"]{--cz-ipos:60% 36.36%}
+[data-icon="steel_knife"]{--cz-ipos:66.67% 36.36%}
+[data-icon="alloy_axe"]{--cz-ipos:73.33% 36.36%}
+[data-icon="alloy_pickaxe"]{--cz-ipos:80% 36.36%}
+[data-icon="alloy_shovel"]{--cz-ipos:86.67% 36.36%}
+[data-icon="alloy_knife"]{--cz-ipos:93.33% 36.36%}
+[data-icon="straw_hat"]{--cz-ipos:100% 36.36%}
+[data-icon="linen_cap"]{--cz-ipos:0% 45.45%}
+[data-icon="rain_hood"]{--cz-ipos:6.667% 45.45%}
+[data-icon="fur_hat"]{--cz-ipos:13.33% 45.45%}
+[data-icon="linen_shirt"]{--cz-ipos:20% 45.45%}
+[data-icon="padded_jacket"]{--cz-ipos:26.67% 45.45%}
+[data-icon="fur_coat"]{--cz-ipos:33.33% 45.45%}
+[data-icon="raincoat"]{--cz-ipos:40% 45.45%}
+[data-icon="oilskin_coat"]{--cz-ipos:46.67% 45.45%}
+[data-icon="linen_trousers"]{--cz-ipos:53.33% 45.45%}
+[data-icon="padded_trousers"]{--cz-ipos:60% 45.45%}
+[data-icon="fur_leggings"]{--cz-ipos:66.67% 45.45%}
+[data-icon="waxed_trousers"]{--cz-ipos:73.33% 45.45%}
+[data-icon="reed_sandals"]{--cz-ipos:80% 45.45%}
+[data-icon="leather_boots"]{--cz-ipos:86.67% 45.45%}
+[data-icon="fur_boots"]{--cz-ipos:93.33% 45.45%}
+[data-icon="rubber_boots"]{--cz-ipos:100% 45.45%}
+[data-icon="cloth_gloves"]{--cz-ipos:0% 54.55%}
+[data-icon="leather_gloves"]{--cz-ipos:6.667% 54.55%}
+[data-icon="fur_mittens"]{--cz-ipos:13.33% 54.55%}
+[data-icon="fur_cloak"]{--cz-ipos:20% 54.55%}
+[data-icon="reed_satchel"]{--cz-ipos:26.67% 54.55%}
+[data-icon="leather_backpack"]{--cz-ipos:33.33% 54.55%}
+[data-icon="frame_pack"]{--cz-ipos:40% 54.55%}
+[data-icon="tactical_pack"]{--cz-ipos:46.67% 54.55%}
+[data-icon="bone_helmet"]{--cz-ipos:53.33% 54.55%}
+[data-icon="bone_cuirass"]{--cz-ipos:60% 54.55%}
+[data-icon="bone_greaves"]{--cz-ipos:66.67% 54.55%}
+[data-icon="bone_boots"]{--cz-ipos:73.33% 54.55%}
+[data-icon="bone_gauntlets"]{--cz-ipos:80% 54.55%}
+[data-icon="bronze_helmet"]{--cz-ipos:86.67% 54.55%}
+[data-icon="bronze_cuirass"]{--cz-ipos:93.33% 54.55%}
+[data-icon="bronze_greaves"]{--cz-ipos:100% 54.55%}
+[data-icon="bronze_boots"]{--cz-ipos:0% 63.64%}
+[data-icon="bronze_gauntlets"]{--cz-ipos:6.667% 63.64%}
+[data-icon="iron_helmet"]{--cz-ipos:13.33% 63.64%}
+[data-icon="iron_cuirass"]{--cz-ipos:20% 63.64%}
+[data-icon="iron_greaves"]{--cz-ipos:26.67% 63.64%}
+[data-icon="iron_boots"]{--cz-ipos:33.33% 63.64%}
+[data-icon="iron_gauntlets"]{--cz-ipos:40% 63.64%}
+[data-icon="steel_helmet"]{--cz-ipos:46.67% 63.64%}
+[data-icon="steel_cuirass"]{--cz-ipos:53.33% 63.64%}
+[data-icon="steel_greaves"]{--cz-ipos:60% 63.64%}
+[data-icon="steel_boots"]{--cz-ipos:66.67% 63.64%}
+[data-icon="steel_gauntlets"]{--cz-ipos:73.33% 63.64%}
+[data-icon="composite_helmet"]{--cz-ipos:80% 63.64%}
+[data-icon="composite_cuirass"]{--cz-ipos:86.67% 63.64%}
+[data-icon="composite_greaves"]{--cz-ipos:93.33% 63.64%}
+[data-icon="composite_boots"]{--cz-ipos:100% 63.64%}
+[data-icon="composite_gauntlets"]{--cz-ipos:0% 72.73%}
+[data-icon="bronze_mace"]{--cz-ipos:6.667% 72.73%}
+[data-icon="iron_mace"]{--cz-ipos:13.33% 72.73%}
+[data-icon="steel_mace"]{--cz-ipos:20% 72.73%}
+[data-icon="alloy_warhammer"]{--cz-ipos:26.67% 72.73%}
+[data-icon="steel_sword"]{--cz-ipos:33.33% 72.73%}
+[data-icon="alloy_sword"]{--cz-ipos:40% 72.73%}
+[data-icon="bone_dagger"]{--cz-ipos:46.67% 72.73%}
+[data-icon="bronze_dagger"]{--cz-ipos:53.33% 72.73%}
+[data-icon="iron_dagger"]{--cz-ipos:60% 72.73%}
+[data-icon="steel_dagger"]{--cz-ipos:66.67% 72.73%}
+[data-icon="iron_machete"]{--cz-ipos:73.33% 72.73%}
+[data-icon="steel_machete"]{--cz-ipos:80% 72.73%}
+[data-icon="stone_maul"]{--cz-ipos:86.67% 72.73%}
+[data-icon="iron_sledgehammer"]{--cz-ipos:93.33% 72.73%}
+[data-icon="steel_sledgehammer"]{--cz-ipos:100% 72.73%}
+[data-icon="nail_bat"]{--cz-ipos:0% 81.82%}
+[data-icon="sling_stone"]{--cz-ipos:6.667% 81.82%}
+[data-icon="flint_arrow"]{--cz-ipos:13.33% 81.82%}
+[data-icon="iron_arrow"]{--cz-ipos:20% 81.82%}
+[data-icon="fire_arrow"]{--cz-ipos:26.67% 81.82%}
+[data-icon="iron_bolt"]{--cz-ipos:33.33% 81.82%}
+[data-icon="steel_bolt"]{--cz-ipos:40% 81.82%}
+[data-icon="musket_ball"]{--cz-ipos:46.67% 81.82%}
+[data-icon="pistol_round"]{--cz-ipos:53.33% 81.82%}
+[data-icon="rifle_round"]{--cz-ipos:60% 81.82%}
+[data-icon="ap_rifle_round"]{--cz-ipos:66.67% 81.82%}
+[data-icon="shotgun_shell"]{--cz-ipos:73.33% 81.82%}
+[data-icon="slug_shell"]{--cz-ipos:80% 81.82%}
+[data-icon="incendiary_shell"]{--cz-ipos:86.67% 81.82%}
+[data-icon="sling"]{--cz-ipos:93.33% 81.82%}
+[data-icon="short_bow"]{--cz-ipos:100% 81.82%}
+[data-icon="recurve_bow"]{--cz-ipos:0% 90.91%}
+[data-icon="longbow"]{--cz-ipos:6.667% 90.91%}
+[data-icon="laminated_bow"]{--cz-ipos:13.33% 90.91%}
+[data-icon="compound_bow"]{--cz-ipos:20% 90.91%}
+[data-icon="light_crossbow"]{--cz-ipos:26.67% 90.91%}
+[data-icon="crossbow"]{--cz-ipos:33.33% 90.91%}
+[data-icon="steel_crossbow"]{--cz-ipos:40% 90.91%}
+[data-icon="flintlock_pistol"]{--cz-ipos:46.67% 90.91%}
+[data-icon="revolver"]{--cz-ipos:53.33% 90.91%}
+[data-icon="semi_auto_pistol"]{--cz-ipos:60% 90.91%}
+[data-icon="pipe_shotgun"]{--cz-ipos:66.67% 90.91%}
+[data-icon="pump_shotgun"]{--cz-ipos:73.33% 90.91%}
+[data-icon="hunting_rifle"]{--cz-ipos:80% 90.91%}
+[data-icon="marksman_rifle"]{--cz-ipos:86.67% 90.91%}
+[data-icon="auto_rifle"]{--cz-ipos:93.33% 90.91%}
+[data-icon="bronze_spear"]{--cz-ipos:100% 90.91%}
+[data-icon="iron_spear"]{--cz-ipos:0% 100%}
+[data-icon="steel_spear"]{--cz-ipos:6.667% 100%}
+[data-icon="bronze_throwing_axe"]{--cz-ipos:13.33% 100%}
+[data-icon="iron_throwing_axe"]{--cz-ipos:20% 100%}
+[data-icon="steel_throwing_axe"]{--cz-ipos:26.67% 100%}
+[data-icon="bayonet_musket"]{--cz-ipos:33.33% 100%}
+[data-icon="bayonet_rifle"]{--cz-ipos:40% 100%}
+[data-icon="bayonet_carbine"]{--cz-ipos:46.67% 100%}
+[data-icon="molotov"]{--cz-ipos:53.33% 100%}
+[data-icon="incendiary_grenade"]{--cz-ipos:60% 100%}
+[data-icon="black_powder_bomb"]{--cz-ipos:66.67% 100%}
+[data-icon="pipe_bomb"]{--cz-ipos:73.33% 100%}
+[data-icon="grenade"]{--cz-ipos:80% 100%}
+[data-icon="satchel_charge"]{--cz-ipos:86.67% 100%}
+[data-icon="breaching_charge"]{--cz-ipos:93.33% 100%}
+[data-icon="item_plant_oil"],[data-icon="item_gasoline"],[data-icon="item_diesel"],[data-icon="item_biofuel"],[data-icon="item_rubber"],[data-icon="item_copper_wire"],[data-icon="item_sulfuric_acid"],[data-icon="item_bike_frame"],[data-icon="item_bike_tire"],[data-icon="item_bike_wheel"],[data-icon="item_bike_chain"],[data-icon="item_saddle"],[data-icon="item_tire"],[data-icon="item_wheel_rim"],[data-icon="item_wheel"],[data-icon="item_axle"],[data-icon="item_steering_column"],[data-icon="item_chassis_small"],[data-icon="item_chassis_medium"],[data-icon="item_chassis_large"],[data-icon="item_chassis_heavy"],[data-icon="item_trailer_frame"],[data-icon="item_hitch_coupler"],[data-icon="item_body_panel"],[data-icon="item_windshield"],[data-icon="item_headlight"],[data-icon="item_seat"],[data-icon="item_fuel_tank"],[data-icon="item_battery"],[data-icon="item_radiator"],[data-icon="item_gearbox"],[data-icon="item_engine_small"],[data-icon="item_engine_medium"],[data-icon="item_engine_large"],[data-icon="item_engine_diesel"],[data-icon="item_camper_interior"],[data-icon="item_tank_shell"],[data-icon="item_patch_kit"],[data-icon="item_repair_kit"],[data-icon="item_reeds"],[data-icon="item_flax"],[data-icon="item_vehicle_kit_bike_basic"],[data-icon="item_vehicle_kit_bike_road"],[data-icon="item_vehicle_kit_bike_mountain"],[data-icon="item_vehicle_kit_bike_bmx"],[data-icon="item_vehicle_kit_bike_fat_tire"],[data-icon="item_vehicle_kit_bike_cruiser"],[data-icon="item_vehicle_kit_bike_tandem"],[data-icon="item_vehicle_kit_bike_cargo"],[data-icon="item_vehicle_kit_bike_trike"],[data-icon="item_vehicle_kit_car_compact"],[data-icon="item_vehicle_kit_car_sedan"],[data-icon="item_vehicle_kit_car_muscle"],[data-icon="item_vehicle_kit_car_offroad"],[data-icon="item_vehicle_kit_car_wagon"],[data-icon="item_vehicle_kit_truck_pickup"],[data-icon="item_vehicle_kit_truck_flatbed"],[data-icon="item_vehicle_kit_truck_box"],[data-icon="item_vehicle_kit_van_cargo"],[data-icon="item_vehicle_kit_van_passenger"],[data-icon="item_vehicle_kit_camper_van"],[data-icon="item_vehicle_kit_camper_rv"],[data-icon="item_vehicle_kit_semi_tractor"],[data-icon="item_vehicle_kit_trailer_utility_small"],[data-icon="item_vehicle_kit_trailer_cargo_medium"],[data-icon="item_vehicle_kit_trailer_flatbed_large"],[data-icon="item_vehicle_kit_trailer_livestock"],[data-icon="item_vehicle_kit_trailer_tanker"],[data-icon="item_vehicle_kit_trailer_camper"],[data-icon="item_vehicle_kit_semi_trailer_box"],[data-icon="item_vehicle_kit_semi_trailer_flatbed"],[data-icon="plant_oil"],[data-icon="gasoline"],[data-icon="diesel"],[data-icon="biofuel"],[data-icon="rubber"],[data-icon="copper_wire"],[data-icon="sulfuric_acid"],[data-icon="bike_frame"],[data-icon="bike_tire"],[data-icon="bike_wheel"],[data-icon="bike_chain"],[data-icon="saddle"],[data-icon="tire"],[data-icon="wheel_rim"],[data-icon="wheel"],[data-icon="axle"],[data-icon="steering_column"],[data-icon="chassis_small"],[data-icon="chassis_medium"],[data-icon="chassis_large"],[data-icon="chassis_heavy"],[data-icon="trailer_frame"],[data-icon="hitch_coupler"],[data-icon="body_panel"],[data-icon="windshield"],[data-icon="headlight"],[data-icon="seat"],[data-icon="fuel_tank"],[data-icon="battery"],[data-icon="radiator"],[data-icon="gearbox"],[data-icon="engine_small"],[data-icon="engine_medium"],[data-icon="engine_large"],[data-icon="engine_diesel"],[data-icon="camper_interior"],[data-icon="tank_shell"],[data-icon="patch_kit"],[data-icon="repair_kit"],[data-icon="vehicle_kit_bike_basic"],[data-icon="vehicle_kit_bike_road"],[data-icon="vehicle_kit_bike_mountain"],[data-icon="vehicle_kit_bike_bmx"],[data-icon="vehicle_kit_bike_fat_tire"],[data-icon="vehicle_kit_bike_cruiser"],[data-icon="vehicle_kit_bike_tandem"],[data-icon="vehicle_kit_bike_cargo"],[data-icon="vehicle_kit_bike_trike"],[data-icon="vehicle_kit_car_compact"],[data-icon="vehicle_kit_car_sedan"],[data-icon="vehicle_kit_car_muscle"],[data-icon="vehicle_kit_car_offroad"],[data-icon="vehicle_kit_car_wagon"],[data-icon="vehicle_kit_truck_pickup"],[data-icon="vehicle_kit_truck_flatbed"],[data-icon="vehicle_kit_truck_box"],[data-icon="vehicle_kit_van_cargo"],[data-icon="vehicle_kit_van_passenger"],[data-icon="vehicle_kit_camper_van"],[data-icon="vehicle_kit_camper_rv"],[data-icon="vehicle_kit_semi_tractor"],[data-icon="vehicle_kit_trailer_utility_small"],[data-icon="vehicle_kit_trailer_cargo_medium"],[data-icon="vehicle_kit_trailer_flatbed_large"],[data-icon="vehicle_kit_trailer_livestock"],[data-icon="vehicle_kit_trailer_tanker"],[data-icon="vehicle_kit_trailer_camper"],[data-icon="vehicle_kit_semi_trailer_box"],[data-icon="vehicle_kit_semi_trailer_flatbed"]{--cz-icon:image-set(url("../../../packages/assets/pack/vehicle_items/atlases/vitems_icons.png") 1x, url("../../../packages/assets/pack/vehicle_items/atlases/vitems_icons@2x.png") 2x);--cz-isize:1600% 500%}
+[data-icon="item_plant_oil"]{--cz-ipos:0% 0%}
+[data-icon="item_gasoline"]{--cz-ipos:6.667% 0%}
+[data-icon="item_diesel"]{--cz-ipos:13.33% 0%}
+[data-icon="item_biofuel"]{--cz-ipos:20% 0%}
+[data-icon="item_rubber"]{--cz-ipos:26.67% 0%}
+[data-icon="item_copper_wire"]{--cz-ipos:33.33% 0%}
+[data-icon="item_sulfuric_acid"]{--cz-ipos:40% 0%}
+[data-icon="item_bike_frame"]{--cz-ipos:46.67% 0%}
+[data-icon="item_bike_tire"]{--cz-ipos:53.33% 0%}
+[data-icon="item_bike_wheel"]{--cz-ipos:60% 0%}
+[data-icon="item_bike_chain"]{--cz-ipos:66.67% 0%}
+[data-icon="item_saddle"]{--cz-ipos:73.33% 0%}
+[data-icon="item_tire"]{--cz-ipos:80% 0%}
+[data-icon="item_wheel_rim"]{--cz-ipos:86.67% 0%}
+[data-icon="item_wheel"]{--cz-ipos:93.33% 0%}
+[data-icon="item_axle"]{--cz-ipos:100% 0%}
+[data-icon="item_steering_column"]{--cz-ipos:0% 25%}
+[data-icon="item_chassis_small"]{--cz-ipos:6.667% 25%}
+[data-icon="item_chassis_medium"]{--cz-ipos:13.33% 25%}
+[data-icon="item_chassis_large"]{--cz-ipos:20% 25%}
+[data-icon="item_chassis_heavy"]{--cz-ipos:26.67% 25%}
+[data-icon="item_trailer_frame"]{--cz-ipos:33.33% 25%}
+[data-icon="item_hitch_coupler"]{--cz-ipos:40% 25%}
+[data-icon="item_body_panel"]{--cz-ipos:46.67% 25%}
+[data-icon="item_windshield"]{--cz-ipos:53.33% 25%}
+[data-icon="item_headlight"]{--cz-ipos:60% 25%}
+[data-icon="item_seat"]{--cz-ipos:66.67% 25%}
+[data-icon="item_fuel_tank"]{--cz-ipos:73.33% 25%}
+[data-icon="item_battery"]{--cz-ipos:80% 25%}
+[data-icon="item_radiator"]{--cz-ipos:86.67% 25%}
+[data-icon="item_gearbox"]{--cz-ipos:93.33% 25%}
+[data-icon="item_engine_small"]{--cz-ipos:100% 25%}
+[data-icon="item_engine_medium"]{--cz-ipos:0% 50%}
+[data-icon="item_engine_large"]{--cz-ipos:6.667% 50%}
+[data-icon="item_engine_diesel"]{--cz-ipos:13.33% 50%}
+[data-icon="item_camper_interior"]{--cz-ipos:20% 50%}
+[data-icon="item_tank_shell"]{--cz-ipos:26.67% 50%}
+[data-icon="item_patch_kit"]{--cz-ipos:33.33% 50%}
+[data-icon="item_repair_kit"]{--cz-ipos:40% 50%}
+[data-icon="item_reeds"]{--cz-ipos:46.67% 50%}
+[data-icon="item_flax"]{--cz-ipos:53.33% 50%}
+[data-icon="item_vehicle_kit_bike_basic"]{--cz-ipos:60% 50%}
+[data-icon="item_vehicle_kit_bike_road"]{--cz-ipos:66.67% 50%}
+[data-icon="item_vehicle_kit_bike_mountain"]{--cz-ipos:73.33% 50%}
+[data-icon="item_vehicle_kit_bike_bmx"]{--cz-ipos:80% 50%}
+[data-icon="item_vehicle_kit_bike_fat_tire"]{--cz-ipos:86.67% 50%}
+[data-icon="item_vehicle_kit_bike_cruiser"]{--cz-ipos:93.33% 50%}
+[data-icon="item_vehicle_kit_bike_tandem"]{--cz-ipos:100% 50%}
+[data-icon="item_vehicle_kit_bike_cargo"]{--cz-ipos:0% 75%}
+[data-icon="item_vehicle_kit_bike_trike"]{--cz-ipos:6.667% 75%}
+[data-icon="item_vehicle_kit_car_compact"]{--cz-ipos:13.33% 75%}
+[data-icon="item_vehicle_kit_car_sedan"]{--cz-ipos:20% 75%}
+[data-icon="item_vehicle_kit_car_muscle"]{--cz-ipos:26.67% 75%}
+[data-icon="item_vehicle_kit_car_offroad"]{--cz-ipos:33.33% 75%}
+[data-icon="item_vehicle_kit_car_wagon"]{--cz-ipos:40% 75%}
+[data-icon="item_vehicle_kit_truck_pickup"]{--cz-ipos:46.67% 75%}
+[data-icon="item_vehicle_kit_truck_flatbed"]{--cz-ipos:53.33% 75%}
+[data-icon="item_vehicle_kit_truck_box"]{--cz-ipos:60% 75%}
+[data-icon="item_vehicle_kit_van_cargo"]{--cz-ipos:66.67% 75%}
+[data-icon="item_vehicle_kit_van_passenger"]{--cz-ipos:73.33% 75%}
+[data-icon="item_vehicle_kit_camper_van"]{--cz-ipos:80% 75%}
+[data-icon="item_vehicle_kit_camper_rv"]{--cz-ipos:86.67% 75%}
+[data-icon="item_vehicle_kit_semi_tractor"]{--cz-ipos:93.33% 75%}
+[data-icon="item_vehicle_kit_trailer_utility_small"]{--cz-ipos:100% 75%}
+[data-icon="item_vehicle_kit_trailer_cargo_medium"]{--cz-ipos:0% 100%}
+[data-icon="item_vehicle_kit_trailer_flatbed_large"]{--cz-ipos:6.667% 100%}
+[data-icon="item_vehicle_kit_trailer_livestock"]{--cz-ipos:13.33% 100%}
+[data-icon="item_vehicle_kit_trailer_tanker"]{--cz-ipos:20% 100%}
+[data-icon="item_vehicle_kit_trailer_camper"]{--cz-ipos:26.67% 100%}
+[data-icon="item_vehicle_kit_semi_trailer_box"]{--cz-ipos:33.33% 100%}
+[data-icon="item_vehicle_kit_semi_trailer_flatbed"]{--cz-ipos:40% 100%}
+[data-icon="plant_oil"]{--cz-ipos:0% 0%}
+[data-icon="gasoline"]{--cz-ipos:6.667% 0%}
+[data-icon="diesel"]{--cz-ipos:13.33% 0%}
+[data-icon="biofuel"]{--cz-ipos:20% 0%}
+[data-icon="rubber"]{--cz-ipos:26.67% 0%}
+[data-icon="copper_wire"]{--cz-ipos:33.33% 0%}
+[data-icon="sulfuric_acid"]{--cz-ipos:40% 0%}
+[data-icon="bike_frame"]{--cz-ipos:46.67% 0%}
+[data-icon="bike_tire"]{--cz-ipos:53.33% 0%}
+[data-icon="bike_wheel"]{--cz-ipos:60% 0%}
+[data-icon="bike_chain"]{--cz-ipos:66.67% 0%}
+[data-icon="saddle"]{--cz-ipos:73.33% 0%}
+[data-icon="tire"]{--cz-ipos:80% 0%}
+[data-icon="wheel_rim"]{--cz-ipos:86.67% 0%}
+[data-icon="wheel"]{--cz-ipos:93.33% 0%}
+[data-icon="axle"]{--cz-ipos:100% 0%}
+[data-icon="steering_column"]{--cz-ipos:0% 25%}
+[data-icon="chassis_small"]{--cz-ipos:6.667% 25%}
+[data-icon="chassis_medium"]{--cz-ipos:13.33% 25%}
+[data-icon="chassis_large"]{--cz-ipos:20% 25%}
+[data-icon="chassis_heavy"]{--cz-ipos:26.67% 25%}
+[data-icon="trailer_frame"]{--cz-ipos:33.33% 25%}
+[data-icon="hitch_coupler"]{--cz-ipos:40% 25%}
+[data-icon="body_panel"]{--cz-ipos:46.67% 25%}
+[data-icon="windshield"]{--cz-ipos:53.33% 25%}
+[data-icon="headlight"]{--cz-ipos:60% 25%}
+[data-icon="seat"]{--cz-ipos:66.67% 25%}
+[data-icon="fuel_tank"]{--cz-ipos:73.33% 25%}
+[data-icon="battery"]{--cz-ipos:80% 25%}
+[data-icon="radiator"]{--cz-ipos:86.67% 25%}
+[data-icon="gearbox"]{--cz-ipos:93.33% 25%}
+[data-icon="engine_small"]{--cz-ipos:100% 25%}
+[data-icon="engine_medium"]{--cz-ipos:0% 50%}
+[data-icon="engine_large"]{--cz-ipos:6.667% 50%}
+[data-icon="engine_diesel"]{--cz-ipos:13.33% 50%}
+[data-icon="camper_interior"]{--cz-ipos:20% 50%}
+[data-icon="tank_shell"]{--cz-ipos:26.67% 50%}
+[data-icon="patch_kit"]{--cz-ipos:33.33% 50%}
+[data-icon="repair_kit"]{--cz-ipos:40% 50%}
+[data-icon="vehicle_kit_bike_basic"]{--cz-ipos:60% 50%}
+[data-icon="vehicle_kit_bike_road"]{--cz-ipos:66.67% 50%}
+[data-icon="vehicle_kit_bike_mountain"]{--cz-ipos:73.33% 50%}
+[data-icon="vehicle_kit_bike_bmx"]{--cz-ipos:80% 50%}
+[data-icon="vehicle_kit_bike_fat_tire"]{--cz-ipos:86.67% 50%}
+[data-icon="vehicle_kit_bike_cruiser"]{--cz-ipos:93.33% 50%}
+[data-icon="vehicle_kit_bike_tandem"]{--cz-ipos:100% 50%}
+[data-icon="vehicle_kit_bike_cargo"]{--cz-ipos:0% 75%}
+[data-icon="vehicle_kit_bike_trike"]{--cz-ipos:6.667% 75%}
+[data-icon="vehicle_kit_car_compact"]{--cz-ipos:13.33% 75%}
+[data-icon="vehicle_kit_car_sedan"]{--cz-ipos:20% 75%}
+[data-icon="vehicle_kit_car_muscle"]{--cz-ipos:26.67% 75%}
+[data-icon="vehicle_kit_car_offroad"]{--cz-ipos:33.33% 75%}
+[data-icon="vehicle_kit_car_wagon"]{--cz-ipos:40% 75%}
+[data-icon="vehicle_kit_truck_pickup"]{--cz-ipos:46.67% 75%}
+[data-icon="vehicle_kit_truck_flatbed"]{--cz-ipos:53.33% 75%}
+[data-icon="vehicle_kit_truck_box"]{--cz-ipos:60% 75%}
+[data-icon="vehicle_kit_van_cargo"]{--cz-ipos:66.67% 75%}
+[data-icon="vehicle_kit_van_passenger"]{--cz-ipos:73.33% 75%}
+[data-icon="vehicle_kit_camper_van"]{--cz-ipos:80% 75%}
+[data-icon="vehicle_kit_camper_rv"]{--cz-ipos:86.67% 75%}
+[data-icon="vehicle_kit_semi_tractor"]{--cz-ipos:93.33% 75%}
+[data-icon="vehicle_kit_trailer_utility_small"]{--cz-ipos:100% 75%}
+[data-icon="vehicle_kit_trailer_cargo_medium"]{--cz-ipos:0% 100%}
+[data-icon="vehicle_kit_trailer_flatbed_large"]{--cz-ipos:6.667% 100%}
+[data-icon="vehicle_kit_trailer_livestock"]{--cz-ipos:13.33% 100%}
+[data-icon="vehicle_kit_trailer_tanker"]{--cz-ipos:20% 100%}
+[data-icon="vehicle_kit_trailer_camper"]{--cz-ipos:26.67% 100%}
+[data-icon="vehicle_kit_semi_trailer_box"]{--cz-ipos:33.33% 100%}
+[data-icon="vehicle_kit_semi_trailer_flatbed"]{--cz-ipos:40% 100%}
+/* ICONS:END */

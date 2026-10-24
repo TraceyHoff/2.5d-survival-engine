@@ -9,7 +9,7 @@ const lockPath = dir + "ids.lock.json";
 const prev = existsSync(lockPath) ? JSON.parse(readFileSync(lockPath, "utf8")) : JSON.parse(readFileSync(here + "sample/ids.lock.json", "utf8"));
 // One lock for the merged runtime manifest: pack + the sub-manifests the client loads (apps/client/src/view.ts MANIFEST_INDEX).
 const root = here + "../../";
-const SUBS: [string, string][] = [["ui-kit", root + "assets/ui/kit/manifest.ui.kit.json"], ["branding", root + "assets/ui/branding/manifest.branding.json"], ["customization", dir + "customization/manifest.customization.json"], ["vehicles", dir + "vehicles/manifest.vehicles.json"], ["items", dir + "items/manifest.items.json"]];
+const SUBS: [string, string][] = [["ui-kit", root + "assets/ui/kit/manifest.ui.kit.json"], ["branding", root + "assets/ui/branding/manifest.branding.json"], ["customization", dir + "customization/manifest.customization.json"], ["vehicles", dir + "vehicles/manifest.vehicles.json"], ["items", dir + "items/manifest.items.json"], ["vehicle_items", dir + "vehicle_items/manifest.vehicle_items.json"]];
 const frags = [{ name: "pack", manifest: JSON.parse(readFileSync(dir + "manifest.json", "utf8")) as ManifestJson },
   ...SUBS.filter(([, f]) => existsSync(f)).map(([name, f]) => ({ name, manifest: JSON.parse(readFileSync(f, "utf8")) as ManifestJson }))];
 const merged = mergeManifests(frags);

@@ -15,7 +15,7 @@ describe("art pack", () => {
   const { registry } = loadManifest(pack, { lock: lockFile });
   // ids.lock.json covers the merged runtime manifest (pack + sub-manifests, as apps/client/src/view.ts loads it).
   const root = fileURLToPath(new URL("../../../", import.meta.url));
-  const subs = [["ui-kit", root + "assets/ui/kit/manifest.ui.kit.json"], ["branding", root + "assets/ui/branding/manifest.branding.json"], ["customization", dir + "customization/manifest.customization.json"], ["vehicles", dir + "vehicles/manifest.vehicles.json"], ["items", dir + "items/manifest.items.json"]];
+  const subs = [["ui-kit", root + "assets/ui/kit/manifest.ui.kit.json"], ["branding", root + "assets/ui/branding/manifest.branding.json"], ["customization", dir + "customization/manifest.customization.json"], ["vehicles", dir + "vehicles/manifest.vehicles.json"], ["items", dir + "items/manifest.items.json"], ["vehicle_items", dir + "vehicle_items/manifest.vehicle_items.json"]];
   const merged = mergeManifests([{ name: "pack", manifest: pack as ManifestJson }, ...subs.filter(([, f]) => existsSync(f!)).map(([name, f]) => ({ name: name!, manifest: JSON.parse(readFileSync(f!, "utf8")) as ManifestJson }))]);
   const { lock } = loadManifest(merged.manifest, { lock: lockFile });
   it("sub-manifests do not duplicate pack keys", () => expect(merged.collisions).toEqual([]));
@@ -96,5 +96,27 @@ describe("vehicles sub-manifest", () => {
       for (const l of v.lights) { expect(l.dirs.length).toBe(8); expect(s.attach[l.name]).toBeDefined(); }
     }
     for (const s of vm.sounds) for (const f of s.files) expect(existsSync(dir + f)).toBe(true);
+  });
+});
+
+describe("vehicle_items sub-manifest", () => {
+  const vdir = dir + "vehicle_items/";
+  const vm = JSON.parse(readFileSync(vdir + "manifest.vehicle_items.json", "utf8"));
+  const size = (f: string) => { const b = readFileSync(vdir + f); return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) }; };
+  it("atlases match their grid, 2x pages <= 2048", () => {
+    for (const a of vm.atlases) {
+      expect(size(a.image)).toEqual({ w: a.frameW * a.columns, h: a.frameH * a.rows });
+      const p2 = size(a.pages[0].image); expect(p2).toEqual({ w: a.frameW * a.columns * 2, h: a.frameH * a.rows * 2 }); expect(Math.max(p2.w, p2.h)).toBeLessThanOrEqual(2048);
+    }
+  });
+  it("every ART_KEYS_VEHICLES item key has an icon; piece_garage has 4 rotations x 4 damage stages, tiers and a crack overlay", () => {
+    const keys = new Set(vm.sprites.map((s: { key: string }) => s.key));
+    const doc = readFileSync(fileURLToPath(new URL("../../gameplay/docs/ART_KEYS_VEHICLES.md", import.meta.url)), "utf8");
+    for (const m of doc.matchAll(/`(item_[a-z0-9_]+|piece_[a-z0-9_]+)`/g)) expect(keys.has(m[1]!)).toBe(true);
+    for (const k of ["piece_garage", "piece_garage_tier2", "piece_garage_tier3"]) {
+      const s = vm.sprites.find((x: { key: string }) => x.key === k);
+      expect(s.building.frames.length).toBe(4); for (const r of s.building.frames) expect(r.length).toBe(4);
+      expect(s.building.crackOverlay).toBe("piece_garage_crack");
+    }
   });
 });

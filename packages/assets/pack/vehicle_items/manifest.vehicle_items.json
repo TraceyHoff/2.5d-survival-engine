@@ -1,0 +1,2662 @@
+{
+ "version": 1,
+ "name": "vehicle_items",
+ "atlases": [
+  {
+   "key": "vitems_icons",
+   "image": "atlases/vitems_icons.png",
+   "frameW": 32,
+   "frameH": 32,
+   "columns": 16,
+   "rows": 5,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/vitems_icons@2x.png"
+    }
+   ]
+  },
+  {
+   "key": "vitems_garage",
+   "image": "atlases/vitems_garage.png",
+   "frameW": 176,
+   "frameH": 176,
+   "columns": 5,
+   "rows": 4,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/vitems_garage@2x.png"
+    }
+   ]
+  },
+  {
+   "key": "vitems_garage_t2",
+   "image": "atlases/vitems_garage_t2.png",
+   "frameW": 176,
+   "frameH": 176,
+   "columns": 5,
+   "rows": 4,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/vitems_garage_t2@2x.png"
+    }
+   ]
+  },
+  {
+   "key": "vitems_garage_t3",
+   "image": "atlases/vitems_garage_t3.png",
+   "frameW": 176,
+   "frameH": 176,
+   "columns": 5,
+   "rows": 4,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/vitems_garage_t3@2x.png"
+    }
+   ]
+  }
+ ],
+ "sprites": [
+  {
+   "key": "item_plant_oil",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_gasoline",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_diesel",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_biofuel",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_rubber",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_copper_wire",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      5
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_sulfuric_acid",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      6
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_bike_frame",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      7
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_bike_tire",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_bike_wheel",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      9
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_bike_chain",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      10
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_saddle",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      11
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_tire",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_wheel_rim",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      13
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_wheel",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      14
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_axle",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      15
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_steering_column",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_chassis_small",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      17
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_chassis_medium",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      18
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_chassis_large",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      19
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_chassis_heavy",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      20
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_trailer_frame",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      21
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_hitch_coupler",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      22
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_body_panel",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      23
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_windshield",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      24
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_headlight",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      25
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_seat",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      26
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_fuel_tank",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      27
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_battery",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      28
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_radiator",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      29
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_gearbox",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      30
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_engine_small",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      31
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_engine_medium",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      32
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_engine_large",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      33
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_engine_diesel",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      34
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_camper_interior",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      35
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_tank_shell",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      36
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_patch_kit",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      37
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_repair_kit",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      38
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_reeds",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      39
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_flax",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      40
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_vehicle_kit_bike_basic",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      41
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_vehicle_kit_bike_road",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      42
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_vehicle_kit_bike_mountain",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      43
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_vehicle_kit_bike_bmx",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      44
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_vehicle_kit_bike_fat_tire",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      45
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_vehicle_kit_bike_cruiser",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      46
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_vehicle_kit_bike_tandem",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      47
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_vehicle_kit_bike_cargo",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      48
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_vehicle_kit_bike_trike",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      49
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_vehicle_kit_car_compact",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      50
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_vehicle_kit_car_sedan",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      51
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_vehicle_kit_car_muscle",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      52
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_vehicle_kit_car_offroad",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      53
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_vehicle_kit_car_wagon",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      54
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_vehicle_kit_truck_pickup",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      55
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_vehicle_kit_truck_flatbed",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      56
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_vehicle_kit_truck_box",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      57
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_vehicle_kit_van_cargo",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      58
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_vehicle_kit_van_passenger",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      59
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_vehicle_kit_camper_van",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      60
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_vehicle_kit_camper_rv",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      61
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_vehicle_kit_semi_tractor",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      62
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_vehicle_kit_trailer_utility_small",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      63
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_vehicle_kit_trailer_cargo_medium",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      64
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_vehicle_kit_trailer_flatbed_large",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      65
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_vehicle_kit_trailer_livestock",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      66
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_vehicle_kit_trailer_tanker",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      67
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_vehicle_kit_trailer_camper",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      68
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_vehicle_kit_semi_trailer_box",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      69
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "item_vehicle_kit_semi_trailer_flatbed",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      70
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "plant_oil",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "gasoline",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "diesel",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "biofuel",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "rubber",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "copper_wire",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      5
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "sulfuric_acid",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      6
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bike_frame",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      7
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bike_tire",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bike_wheel",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      9
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bike_chain",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      10
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "saddle",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      11
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "tire",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "wheel_rim",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      13
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "wheel",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      14
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "axle",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      15
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "steering_column",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "chassis_small",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      17
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "chassis_medium",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      18
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "chassis_large",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      19
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "chassis_heavy",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      20
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "trailer_frame",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      21
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "hitch_coupler",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      22
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "body_panel",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      23
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "windshield",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      24
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "headlight",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      25
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "seat",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      26
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "fuel_tank",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      27
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "battery",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      28
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "radiator",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      29
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "gearbox",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      30
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "engine_small",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      31
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "engine_medium",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      32
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "engine_large",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      33
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "engine_diesel",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      34
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "camper_interior",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      35
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "tank_shell",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      36
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "patch_kit",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      37
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "repair_kit",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      38
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "vehicle_kit_bike_basic",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      41
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "vehicle_kit_bike_road",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      42
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "vehicle_kit_bike_mountain",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      43
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "vehicle_kit_bike_bmx",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      44
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "vehicle_kit_bike_fat_tire",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      45
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "vehicle_kit_bike_cruiser",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      46
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "vehicle_kit_bike_tandem",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      47
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "vehicle_kit_bike_cargo",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      48
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "vehicle_kit_bike_trike",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      49
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "vehicle_kit_car_compact",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      50
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "vehicle_kit_car_sedan",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      51
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "vehicle_kit_car_muscle",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      52
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "vehicle_kit_car_offroad",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      53
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "vehicle_kit_car_wagon",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      54
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "vehicle_kit_truck_pickup",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      55
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "vehicle_kit_truck_flatbed",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      56
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "vehicle_kit_truck_box",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      57
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "vehicle_kit_van_cargo",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      58
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "vehicle_kit_van_passenger",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      59
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "vehicle_kit_camper_van",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      60
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "vehicle_kit_camper_rv",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      61
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "vehicle_kit_semi_tractor",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      62
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "vehicle_kit_trailer_utility_small",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      63
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "vehicle_kit_trailer_cargo_medium",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      64
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "vehicle_kit_trailer_flatbed_large",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      65
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "vehicle_kit_trailer_livestock",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      66
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "vehicle_kit_trailer_tanker",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      67
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "vehicle_kit_trailer_camper",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      68
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "vehicle_kit_semi_trailer_box",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      69
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "vehicle_kit_semi_trailer_flatbed",
+   "category": "item",
+   "atlas": "vitems_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      70
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "piece_garage_crack",
+   "category": "vfx",
+   "atlas": "vitems_garage",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "stage1": {
+     "frames": [
+      16
+     ],
+     "fps": 1
+    },
+    "stage2": {
+     "frames": [
+      17
+     ],
+     "fps": 1
+    },
+    "stage3": {
+     "frames": [
+      18
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "piece_garage",
+   "category": "building",
+   "atlas": "vitems_garage",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "garage",
+    "footprint": {
+     "w": 3,
+     "h": 2
+    },
+    "layer": 2,
+    "frames": [
+     [
+      0,
+      1,
+      2,
+      3
+     ],
+     [
+      4,
+      5,
+      6,
+      7
+     ],
+     [
+      8,
+      9,
+      10,
+      11
+     ],
+     [
+      12,
+      13,
+      14,
+      15
+     ]
+    ],
+    "crackOverlay": "piece_garage_crack"
+   },
+   "rotationArt": "unique4",
+   "attach": {
+    "craft_station": {
+     "x": 0.0,
+     "y": -30.0
+    },
+    "door": {
+     "x": -32.0,
+     "y": 8.0
+    }
+   }
+  },
+  {
+   "key": "piece_garage_tier2",
+   "category": "building",
+   "atlas": "vitems_garage_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "garage@tier2",
+    "footprint": {
+     "w": 3,
+     "h": 2
+    },
+    "layer": 2,
+    "frames": [
+     [
+      0,
+      1,
+      2,
+      3
+     ],
+     [
+      4,
+      5,
+      6,
+      7
+     ],
+     [
+      8,
+      9,
+      10,
+      11
+     ],
+     [
+      12,
+      13,
+      14,
+      15
+     ]
+    ],
+    "crackOverlay": "piece_garage_crack"
+   },
+   "rotationArt": "unique4",
+   "attach": {
+    "craft_station": {
+     "x": 0.0,
+     "y": -30.0
+    },
+    "door": {
+     "x": -32.0,
+     "y": 8.0
+    }
+   }
+  },
+  {
+   "key": "piece_garage_tier3",
+   "category": "building",
+   "atlas": "vitems_garage_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "garage@tier3",
+    "footprint": {
+     "w": 3,
+     "h": 2
+    },
+    "layer": 2,
+    "frames": [
+     [
+      0,
+      1,
+      2,
+      3
+     ],
+     [
+      4,
+      5,
+      6,
+      7
+     ],
+     [
+      8,
+      9,
+      10,
+      11
+     ],
+     [
+      12,
+      13,
+      14,
+      15
+     ]
+    ],
+    "crackOverlay": "piece_garage_crack"
+   },
+   "rotationArt": "unique4",
+   "attach": {
+    "craft_station": {
+     "x": 0.0,
+     "y": -30.0
+    },
+    "door": {
+     "x": -32.0,
+     "y": 8.0
+    }
+   }
+  }
+ ]
+}
