@@ -35,7 +35,9 @@ export function chooseRenderer(probe: ContextProbe, opts: { forceDebug?: boolean
   return "debug";
 }
 
-const TILE_COLORS = ["#1b1f1a", "#3f7a3a", "#4f8a43", "#7a6440", "#2d5d8a", "#c8b47a", "#6b6b6b", "#e8eef0"];
+/** Flat ground fill per world tile id (world DEFAULT_BANDS: 1 water, 2 sand, 3 grass, 4 forest, 5 rock; 0 = none). The old
+ * table was shifted by one, so grass (3) drew brown, forest blue and water green. */
+export const TILE_COLORS = ["#1b1f1a", "#2d5d8a", "#c8b47a", "#4f8a43", "#3f7a3a", "#6b6b6b", "#7a6440", "#e8eef0"];
 
 export class Canvas2DRenderer {
   readonly kind = "canvas2d" as const;
