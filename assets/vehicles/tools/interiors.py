@@ -78,7 +78,7 @@ def build(OUT):
         sp = {"key": key, "category": "building", "atlas": "veh_camper_interior", "anchor": {"x": 0.5, "y": 0.75},
               "animations": {"idle": {"frames": [first[0]], "fps": 1}}, "building": b, "rotationArt": "mirror", "attach": attach}
         sprites.append(sp)
-    n = len(frames); cols = min(n, 2048 // (FW * 2)); rws = -(-n // cols)
+    n = len(frames); cols = min(n, 1008 // FW); rws = -(-n // cols)  # 1x page <= 1008 (4 per 2048 layer); @2x <= 2016
     P1 = np.zeros((rws * FH, cols * FW, 4), np.uint8); P2 = np.zeros((rws * FH * 2, cols * FW * 2, 4), np.uint8); TM = np.zeros((rws * FH, cols * FW), np.uint8); EM = np.zeros((rws * FH, cols * FW, 3), np.uint8)
     for k, (i1, i2, t1, e1) in enumerate(frames):
         c, r = k % cols, k // cols

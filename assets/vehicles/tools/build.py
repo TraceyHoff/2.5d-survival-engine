@@ -7,8 +7,10 @@ from vehicles import FAMILIES, STATES, fit_factors, apply_fit
 from effects import EFFECTS
 
 OUT = sys.argv[1] if len(sys.argv) > 1 else "/tmp/veh_out"; PREV = sys.argv[2] if len(sys.argv) > 2 else "/tmp/veh_prev"
-PAD = 3  # >=2px transparent gutter per frame side is asserted below
+PAD = int(os.environ.get("VEH_PAD", "3"))  # >=2px transparent gutter per frame side is asserted below
 MAXP = 2048
+# 1x page limit: 1008 = largest multiple of 16 <= 1020, so 4 pages share one 2048 array layer and @2x (2016) fits MAXP.
+PAGE1 = 1008
 # One atlas per vehicle at TRUE target size (docs/VEHICLES_RENDER.md): key, source model, L x H px (E view, 1x), body width
 # (tiles, vehicles.json footprint), seat z px, legacy keys still emitted as aliases. Atlas = veh_art_<key> (+ _1.. overflow).
 VEH = [
@@ -49,11 +51,13 @@ def shadow_poly(m, d, piv, k=SS):
     for p in pts: x, y, _ = project_point(p, d, xf); out.append(((x + piv[0]) * k, (y + piv[1]) * k))
     return out
 
+SHM = int(os.environ.get("VEH_SHM", "3"))  # shadow margin px
+
 def measure(args):
     key, st = args; m = model(key, st); res = []
     for d in range(8):
         mn, mx = render(m.prims, d, m.xf)
-        sp = np.array(shadow_poly(m, d, (0, 0), 1)); mn = np.minimum(mn, sp.min(0) - 3); mx = np.maximum(mx, sp.max(0) + 3)
+        sp = np.array(shadow_poly(m, d, (0, 0), 1)); mn = np.minimum(mn, sp.min(0) - SHM); mx = np.maximum(mx, sp.max(0) + SHM)
         res.append((mn.tolist(), mx.tolist()))
     return args, res
 
@@ -73,6 +77,7 @@ def render_frame(args):
     return args[:3], np.asarray(i1), i2, t1, e1, att, vis
 
 def r4(n): return (n + 3) // 4 * 4
+def r16(n): return (n + 15) // 16 * 16  # page dims: multiples of 16 (renderer mip/block alignment)
 
 def main():
     os.makedirs(OUT + "/atlases", exist_ok=True); os.makedirs(PREV, exist_ok=True)
@@ -92,7 +97,8 @@ def main():
         fw = piv[0] + math.ceil(ext[2]) + PAD; fh = piv[1] + math.ceil(ext[3]) + PAD
         # @2x pages mirror the 1x grid and must stay <= MAXP, so lay 1x pages out within MAXP/2 whenever one state's
         # 8 facings fit there (more, smaller pages); otherwise keep MAXP and ship 1x only (listed as no-@2x below).
-        lim = MAXP // 2 if any(c * fw <= MAXP // 2 and math.ceil(8 / c) * fh <= MAXP // 2 for c in range(1, 9)) else MAXP
+        fits = lambda L: any(c * fw <= L and math.ceil(8 / c) * fh <= L for c in range(1, 9))
+        lim = PAGE1 if fits(PAGE1) else MAXP // 2 if fits(MAXP // 2) else MAXP  # 1024 keeps @2x=2048 (split_facings.py adds <=1008 pages)
         cols = min(lim // fw, 8 * len(states)); rows_max = lim // fh
         spp = max(1, (cols * rows_max) // 8)  # whole states per page
         chunks = [states[i:i + spp] for i in range(0, len(states), spp)]
@@ -101,8 +107,8 @@ def main():
             gkey = f"veh_art_{key}" + (f"_{ci}" if ci else ""); n = 8 * len(ch)
             c_ = min((c for c in range(1, min(cols, n) + 1) if c * fw <= lim and math.ceil(n / c) * fh <= lim),
                      key=lambda c: (max(c * fw, math.ceil(n / c) * fh), c * fw * math.ceil(n / c) * fh)); rows = math.ceil(n / c_)
-            W1, H1 = r4(c_ * fw), r4(rows * fh); hi = max(W1, H1) <= MAXP // 2
-            fjobs = [(key, s, d, fw, fh, piv, hash((key, s)) % 1000 + d, hi) for s in ch for d in range(8)]
+            W1, H1 = r16(c_ * fw), r16(rows * fh); hi = max(W1, H1) <= MAXP // 2
+            fjobs = [(key, s, d, fw, fh, piv, hash((key, s)) % 1000 + d, True) for s in ch for d in range(8)]  # @2x always rendered (split_facings.py reuses it)
             results = pool.map(render_frame, fjobs)
             P1 = np.zeros((H1, W1, 4), np.uint8); P2 = np.zeros((H1 * 2, W1 * 2, 4), np.uint8) if hi else None
             TM = np.zeros((H1, W1), np.uint8); EM = np.zeros((H1, W1, 3), np.uint8); fr = {}
@@ -111,7 +117,8 @@ def main():
                 i1 = i1.copy(); t1 = t1.copy(); e1 = e1.copy()
                 for arr, g in ((i1, 2), (t1, 2), (e1, 2)): arr[:g] = 0; arr[-g:] = 0; arr[:, :g] = 0; arr[:, -g:] = 0  # guaranteed 2px gutter
                 P1[r * fh:(r + 1) * fh, c * fw:(c + 1) * fw] = i1
-                if hi: i2 = i2.copy(); i2[:4] = 0; i2[-4:] = 0; i2[:, :4] = 0; i2[:, -4:] = 0; P2[r * fh * 2:(r + 1) * fh * 2, c * fw * 2:(c + 1) * fw * 2] = i2
+                i2 = i2.copy(); i2[:4] = 0; i2[-4:] = 0; i2[:, :4] = 0; i2[:, -4:] = 0
+                if hi: P2[r * fh * 2:(r + 1) * fh * 2, c * fw * 2:(c + 1) * fw * 2] = i2
                 TM[r * fh:(r + 1) * fh, c * fw:(c + 1) * fw] = t1; EM[r * fh:(r + 1) * fh, c * fw:(c + 1) * fw] = e1
                 fr[k] = (key3, att, vis); allframes[(gkey, k)] = (key3, i1, i2, t1, e1)
             Image.fromarray(P1).save(f"{OUT}/atlases/{gkey}.png", optimize=True)

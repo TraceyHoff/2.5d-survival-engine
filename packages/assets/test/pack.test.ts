@@ -79,9 +79,10 @@ describe("vehicles sub-manifest", () => {
   const size = (f: string) => { const b = readFileSync(vdir + f); return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) }; };
   it("atlases match their grid, 2x pages <= 2048, masks share the 1x layout", () => {
     for (const a of vm.atlases) {
-      // native-size vehicle pages are padded to a multiple of 4 (block-compression friendly); @2x is optional
+      // native-size vehicle pages are padded to a multiple of 16 (mip/block aligned down the chain); @2x is optional
       const s1 = size(a.image), gw = a.frameW * a.columns, gh = a.frameH * a.rows;
-      expect(s1.w - gw).toBeGreaterThanOrEqual(0); expect(s1.w - gw).toBeLessThan(4); expect(s1.h - gh).toBeGreaterThanOrEqual(0); expect(s1.h - gh).toBeLessThan(4);
+      expect(s1.w - gw).toBeGreaterThanOrEqual(0); expect(s1.w - gw).toBeLessThan(16); expect(s1.h - gh).toBeGreaterThanOrEqual(0); expect(s1.h - gh).toBeLessThan(16);
+      expect([s1.w % 16, s1.h % 16]).toEqual([0, 0]);
       expect(Math.max(s1.w, s1.h)).toBeLessThanOrEqual(2048);
       if (a.pages?.[0]) { const p2 = size(a.pages[0].image); expect(p2.w).toBeGreaterThanOrEqual(gw * 2); expect(p2.h).toBeGreaterThanOrEqual(gh * 2); expect(Math.max(p2.w, p2.h)).toBeLessThanOrEqual(2048); }
       for (const m of Object.values(a.masks) as string[]) expect(size(m)).toEqual(size(a.image));
