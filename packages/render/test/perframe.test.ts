@@ -60,7 +60,8 @@ describe("explicit per-frame (page, rect) dirFrames for every anim", () => {
       expect(rw.frame - am.atlases[rw.atlas].extra.n0).toBe(r0.frame - am.atlases[r0.atlas].extra.n0); expect([rw.w, rw.h, rw.ax, rw.ay]).toEqual([r0.w, r0.h, r0.ax, r0.ay]);
     }
     // arithmetic fallback untouched: walk resolves on the legacy page by frames[i] + dir * dirStride
-    const wk = animOf(reg, b, "walk"); am.resolve(b, wk, 2, 0, 0, r0); const an = reg.sprite(b).animList[wk]!;
+    // (Art 118 rect-packs the bodies, so strip walk's dirFrames to exercise the arithmetic path)
+    const wk = animOf(reg, b, "walk"); const an = reg.sprite(b).animList[wk]!; (an as any).dirFrames = undefined; am.sprites[b].dirAt[wk] = null; am.sprites[b].dirF[wk] = null; am.resolve(b, wk, 2, 0, 0, r0);
     expect(r0.atlas).toBe(am.sprites[b].atlasIdx); expect(r0.frame).toBe(an.frames[0]! + AssetRegistry.directionIndex(2, an.directions) * (an.directions > 1 ? an.dirStride : 0));
   });
   it("frame table rows of the extra entries carry the rect UVs; matches AssetRegistry.dirFrame()", () => {

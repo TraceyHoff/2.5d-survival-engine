@@ -64,10 +64,12 @@ describe("body pages 20x14 (Art 64a18d2)", () => {
   const reg = merged(["pack", "manifest.json"], ["customization", "customization/manifest.customization.json"]);
   it("@2x pages fit a 2048 layer and carry the @2x tint mask KTX2 through sourcesFromManifest", () => {
     const src = sourcesFromManifest(reg, "/art/pack/customization/manifest.customization.json"); let n = 0;
+    const dims = new Set<string>();
     for (const a of reg.atlases.values()) { if (!/^body_/.test(a.key)) continue; n++;
-      expect([a.columns * a.frameW, a.rows * a.frameH]).toEqual([880, 840]);
+      // Art 118: rect-packed body pages (one per body type, same size so they share the body pool slot), <= 1016 px
+      const w = a.columns * a.frameW, h = a.rows * a.frameH; dims.add(`${w}x${h}`); expect(Math.max(w, h)).toBeLessThanOrEqual(1016); expect(w * h).toBeLessThanOrEqual(880 * 840);
       const p2 = src.get(a.key)!.pages!.find((p) => p.scale === 2)!; expect(p2.ktx2).toMatch(/@2x\.ktx2$/); expect(p2.masksKtx2?.tintmask).toMatch(/tintmask@2x\.ktx2$/); }
-    expect(n).toBe(2);
+    expect(n).toBe(2); expect(dims.size).toBe(1);
   });
   it("bodies pool at 2x only when the quality tier asks for it", () => {
     const am = Object.create(AtlasManager.prototype) as any; Object.defineProperty(am, "layerSize", { value: 2048 });

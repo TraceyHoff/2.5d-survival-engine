@@ -132,7 +132,7 @@ def main(eng, slots=None, dry=False, tight=(), bodies=False):
         if k in BODY: continue
         ws = sorted(by[sig[k]])
         if len(ws) > 1: units.setdefault(f"{ws[0]}_{variant_of(k)}_shared", []).append(k)
-    def layout(keys):
+    def layout(keys, wfix=None, hmin=0):
         items, seen = [], set()
         for k in keys:
             for ks in ENT[k].values():
@@ -141,14 +141,14 @@ def main(eng, slots=None, dry=False, tight=(), bodies=False):
         sizes = [(1, 1) if h == "blank" else (CROP[h][0].shape[1], CROP[h][0].shape[0]) for h in items]
         order = sorted(range(len(items)), key=lambda i: (-sizes[i][1], -sizes[i][0], i))
         best = None
-        for Wd in range(64, MAXP8 + 1, 8):
+        for Wd in ([wfix] if wfix else range(64, MAXP8 + 1, 8)):
             if max(s[0] for s in sizes) > Wd: continue
             pos = {}; x = y = sh = 0
             for i in order:
                 w, h = sizes[i]
                 if x + w > Wd: y += sh; x = 0; sh = 0
                 pos[i] = (x, y); x += w; sh = max(sh, h)
-            H = r8(y + sh)
+            H = max(r8(y + sh), hmin)
             if H > MAXP8: continue
             sc = (Wd * H, max(Wd, H))
             if best is None or sc < best[0]: best = (sc, Wd, H, pos)
@@ -171,6 +171,17 @@ def main(eng, slots=None, dry=False, tight=(), bodies=False):
                 if len(bs) == 1: lab.append(next(iter(bs)))
                 if len(vs) == 1 and vs != {"base"} and not name.endswith("_shared"): lab.append(next(iter(vs)))
             plan.append(((name if name in BODY else PFX + name) + "".join("_" + x for x in lab if x), g, l))
+    # bodies share one body-pool slot geometry (max w x max h of the body pages): give every body page the same size
+    bi = [j for j, (pk, g, l) in enumerate(plan) if g[0] in BODY]
+    if len(bi) > 1:
+        best = None
+        for Wd in range(64, MAXP8 + 1, 8):
+            L = [layout(plan[j][1], Wd) for j in bi]
+            if any(l is None for l in L): continue
+            sc = (Wd * max(l[1] for l in L), Wd)
+            if best is None or sc < best[0]: best = (sc, Wd, max(l[1] for l in L))
+        _, Wd, Hm = best
+        for j in bi: plan[j] = (plan[j][0], plan[j][1], layout(plan[j][1], Wd, Hm))
     old_used = {S[k]["atlas"] for k in sel} | {d["atlas"] for k in sel for an in S[k]["animations"].values() for d in an.get("dirFrames", [])}
     ncrop = len(CROP); px0 = sum(A[a]["frameW"] * A[a]["columns"] * A[a]["frameH"] * A[a]["rows"] for a in old_used)
     for pk, g, (Wd, H, pos) in plan: print(f"{pk}: {len(g)} sprites, {len(pos)} rects, {Wd}x{H}")
