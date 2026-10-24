@@ -563,3 +563,10 @@ Identity is persisted in the `agents` record namespace. Gameplay supplies `refer
 - **No ECS change:** audio is client-only. The gameplay world schema hash (server role, `World.getSchemaHash`) is **b585c117**, the same before and after this change.
 
 **Consequences:** every peer hears the same events from the same replicated state, at zero bandwidth cost. Sounds the snapshot cannot show (other players' horns, exact hit victims in crowds) are approximated or local-only. Placeholders are deliberately lo-fi. Real assets replace them per key with no code change.
+
+## ADR-118: Loading bar driven by real progress; zombie walks the fill edge
+
+- Boot progress is a weighted stage list (`apps/client/src/load-progress.ts`): renderer/shader init 8%, art manifest 10%, sprite atlases 52%, building variants/hands 10%, lighting + shader warm-up (`loadLook`) 15%, ready 5%. `IsoView.create` reports stages via `onStage`; the atlas stage counts image/KTX2 responses with Resource Timing (`PerformanceObserver`) against the number of eager atlases (capped at 97% until `setRegistry` resolves) and shows MB transferred.
+- `LoadProgress.value` is monotonic; `EasedBar` eases the shown fill exponentially toward it (never backwards, dt clamped for background tabs). `BootUI.finish()` eases to 100% then hands off to the menu (1.2 s cap). `BootUI.fail()` turns the bar red with a message (e.g. the safe-quality reload); a renderer fallback shows a notice and still completes.
+- The zombie sits on a `.lane` above the track at `left = fill%`, with a 6-frame walk + bob while the fill moves (Art's `loading_zombie_walk.png` when branding provides it, otherwise an inline pixel SVG). `prefers-reduced-motion` snaps the fill, freezes frame/bob and stops the campfire animation. The track has `role=progressbar` + `aria-valuenow`.
+- Not covered: the audio bank (decoding needs an unlocked AudioContext, so it is not on the boot path), and world join after the menu (not part of the boot screen).

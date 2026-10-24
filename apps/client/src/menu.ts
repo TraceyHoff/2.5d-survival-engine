@@ -7,6 +7,7 @@ import { deleteConfirm, deleteLocalProgress, listLocalSaves, type LocalSaveKind 
 import { mountUi } from "./ui-root.js";
 import { enterFullscreen } from "./fullscreen.js";
 import { BackHistory, focusVisible } from "./back-history.js";
+import { EasedBar, zombiePose } from "./load-progress.js";
 interface Branding { title: string; tagline: string; logo: string; bg: "" | "flat" | "parallax"; plates: boolean; icons: boolean; loading: boolean; loadingAnim: boolean }
 declare const __BRANDING__: Branding | undefined;
 const BR: Branding = (typeof __BRANDING__ !== "undefined" && __BRANDING__) || { title: "Cozy Wild", tagline: "survival", logo: "", bg: "", plates: false, icons: false, loading: false, loadingAnim: false };
@@ -32,6 +33,9 @@ text-shadow:0 3px 0 #74432C,0 6px 0 #432C24,0 10px 18px rgba(0,0,0,.5);-webkit-t
 .boot .logo{max-width:min(620px,84vw);max-height:38vh;filter:drop-shadow(0 8px 14px rgba(0,0,0,.45))}
 .boot .track{width:min(420px,76vw);height:18px;background:#E6C47E;border:3px solid #4A2F3D;border-radius:10px;overflow:hidden;box-shadow:0 3px 0 #432C24}
 .boot .fill{height:100%;width:0;background:linear-gradient(#FFE28A,#F4A74A);transition:width .2s}
+.boot .lane{position:relative;width:min(420px,76vw);padding-top:40px}.boot .lane .track{width:100%}
+.boot .lane .zw{position:absolute;left:0;bottom:16px;width:36px;height:36px;margin-left:-18px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect x='5' y='1' width='6' height='5' fill='%2379a85a'/%3E%3Crect x='6' y='3' width='1' height='1' fill='%23c0302a'/%3E%3Crect x='9' y='3' width='1' height='1' fill='%23c0302a'/%3E%3Crect x='4' y='6' width='8' height='5' fill='%234a6b8a'/%3E%3Crect x='11' y='6' width='4' height='2' fill='%2379a85a'/%3E%3Crect x='5' y='11' width='2' height='4' fill='%233b2433'/%3E%3Crect x='9' y='11' width='2' height='4' fill='%233b2433'/%3E%3C/svg%3E") center/contain no-repeat;image-rendering:pixelated;pointer-events:none;will-change:transform,left}
+.boot[data-boot=error] .fill{background:#C0302A}.boot[data-boot=error] .lbl{color:#FF9A8A}.boot[data-boot=menu] .lane .zw{display:none}
 .boot .lbl{font-size:13px;color:#E6C47E;min-height:1em}
 .boot .panel{display:flex;flex-direction:column;gap:12px;background:#F6EAD2;border:4px solid #74432C;border-radius:18px;padding:18px 22px;
 box-shadow:0 4px 0 #432C24,0 10px 24px rgba(0,0,0,.45);min-width:min(320px,86vw);max-width:92vw;color:#3B2433;box-sizing:border-box;
@@ -65,10 +69,11 @@ function artCss(base: string): string {
   }
   if (BR.loading) c += `.boot .track{border:0;border-style:solid;border-image:${u("loading/loading_frame.png")} 12 16 15 14 fill / 12px 16px 15px 14px stretch;background:none;box-shadow:none;height:32px;padding:6px 9px 8px 8px;box-sizing:border-box;border-radius:0;overflow:visible;position:relative}
 .boot .fill{border:0;border-style:solid;border-image:${u("loading/loading_fill.png")} 7 8 7 8 fill / 7px 8px 7px 8px stretch;background:none;min-width:16px;height:18px}`;
-  if (BR.loadingAnim) c += `.boot .zw,.boot .cf{position:absolute;bottom:22px;width:64px;height:64px;background-size:384px 64px;image-rendering:pixelated}
-.boot .zw{background-image:${u("loading/loading_zombie_walk.png")};animation:bootsheet .857s steps(6) infinite;transform:translateX(-32px);transition:left .2s}
+  if (BR.loadingAnim) c += `.boot .cf{position:absolute;bottom:22px;width:64px;height:64px;background-size:384px 64px;image-rendering:pixelated}
+.boot .lane .zw{background-image:${u("loading/loading_zombie_walk.png")};background-size:384px 64px;width:64px;height:64px;bottom:22px;margin-left:-32px}
 .boot .cf{right:-40px;background-image:${u("loading/loading_campfire.png")};animation:bootsheet .6s steps(6) infinite}
-@keyframes bootsheet{to{background-position:-384px 0}}.boot[data-boot=menu] .zw,.boot[data-boot=menu] .cf{display:none}`;
+@keyframes bootsheet{to{background-position:-384px 0}}.boot[data-boot=menu] .zw,.boot[data-boot=menu] .cf{display:none}
+@media (prefers-reduced-motion:reduce){.boot .cf{animation:none}}`;
   return c;
 }
 
@@ -92,8 +97,11 @@ export class BootUI {
     document.title = BR.title;
     if (BR.bg === "parallax") ["sky", "far", "near", "fireflies", "vignette"].forEach((l, i) => { const d = document.createElement("div"); d.className = "px"; d.style.backgroundImage = `url(${base}art/ui/branding/background/parallax/menu_bg_${l}.png)`; d.style.setProperty("--d", String([0, 0.15, 0.35, 0.6, 0][i])); this.root.append(d); });
     const track = document.createElement("div"); track.className = "track"; this.fill.className = "fill"; track.append(this.fill);
-    if (BR.loadingAnim) { this.zw.className = "zw"; const cf = document.createElement("div"); cf.className = "cf"; track.append(this.zw, cf); }
-    this.lbl.className = "lbl"; this.body.append(track, this.lbl);
+    const lane = document.createElement("div"); lane.className = "lane"; this.zw.className = "zw"; this.zw.dataset["role"] = "loading-zombie"; lane.append(track, this.zw);
+    if (BR.loadingAnim) { const cf = document.createElement("div"); cf.className = "cf"; track.append(cf); }
+    track.setAttribute("role", "progressbar"); track.setAttribute("aria-valuemin", "0"); track.setAttribute("aria-valuemax", "100"); this.track = track;
+    this.lbl.className = "lbl"; this.lbl.setAttribute("aria-live", "polite"); this.body.append(lane, this.lbl);
+    try { this.bar.reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { /* old browsers */ }
     this.root.append(this.header, this.body); mountUi(this.root);
     void this.loadLogo();
   }
@@ -102,7 +110,38 @@ export class BootUI {
     if (!BR.logo) return;
     try { const img = new Image(); img.className = "logo"; img.alt = BR.title; img.src = `${this.base}art/ui/branding/${BR.logo}`; await img.decode(); this.header.replaceChildren(img); } catch { /* keep text title */ }
   }
-  progress(f: number, label: string): void { const pc = `${Math.round(Math.max(0, Math.min(1, f)) * 100)}%`; this.fill.style.width = pc; this.zw.style.left = pc; this.lbl.textContent = label; }
+  private track: HTMLElement | undefined;
+  private readonly bar = new EasedBar();
+  private raf = 0; private lastT = 0; private finishWaiters: (() => void)[] = [];
+  /** Target progress (0..1, ADR-118): the fill eases toward it, never backwards; the zombie walks on the fill edge. */
+  progress(f: number, label: string): void {
+    if (this.root.dataset["boot"] === "error") return;
+    this.bar.set(f); this.lbl.textContent = label; this.kick();
+  }
+  /** Ease to 100% then resolve (capped so a hidden tab or slow frame never blocks the hand-off). */
+  finish(label = "Ready"): Promise<void> {
+    this.progress(1, label);
+    return new Promise((ok) => { if (this.bar.done) { ok(); return; } this.finishWaiters.push(ok); setTimeout(() => { this.bar.reducedMotion = true; this.paint(0); }, 1200); });
+  }
+  /** Error state: stop the walk, red bar, message stays (the caller decides whether boot continues). */
+  fail(message: string): void { this.root.dataset["boot"] = "error"; this.lbl.textContent = message; this.paint(0); }
+  private kick(): void {
+    if (this.raf) return;
+    const raf = typeof requestAnimationFrame === "function" ? requestAnimationFrame : (cb: FrameRequestCallback) => setTimeout(() => cb(performance.now()), 16) as unknown as number;
+    const tick = (t: number): void => { const dt = this.lastT ? (t - this.lastT) / 1000 : 1 / 60; this.lastT = t; this.raf = 0; if (this.paint(dt)) this.raf = raf(tick); else this.lastT = 0; };
+    this.raf = raf(tick);
+  }
+  /** One frame; returns true while still animating. */
+  private paint(dt: number): boolean {
+    const before = this.bar.shown; const v = this.bar.step(dt); const moving = v > before && this.root.dataset["boot"] !== "error";
+    const pc = `${(v * 100).toFixed(2)}%`; this.fill.style.width = pc; this.zw.style.left = pc;
+    this.track?.setAttribute("aria-valuenow", String(Math.round(v * 100)));
+    const pose = zombiePose(performance.now() / 1000, moving, this.bar.reducedMotion);
+    this.zw.style.transform = `translateY(${pose.bob.toFixed(1)}px)`;
+    if (BR.loadingAnim) this.zw.style.backgroundPosition = `${-64 * pose.frame}px 0`;
+    if (this.bar.done) { const w = this.finishWaiters; this.finishWaiters = []; for (const f of w) f(); }
+    return v < this.bar.goal || (moving && !this.bar.done);
+  }
 
   /** Main menu; resolves with the player's choice. */
   /** notice: shown once on the main screen (e.g. "Host ended the session"), hook `.boot [data-role=notice]`. */

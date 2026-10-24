@@ -16,6 +16,7 @@ import { setDayFraction } from "@engine/render";
 import { pieceVariantOpts } from "./piece-variant.js";
 import { loadManifest, mergeManifests, buildPieceVisual, type AssetRegistry, type ManifestFragment, type ManifestJson } from "@engine/assets";
 import { BuildGhost, pieceArtRow, ROT_EXACT_PIVOT, IsoRenderer, Canvas2DRenderer, chooseRenderer, Sprite, Shadow, LightSource, Occluder, SpriteFlag, sourcesFromManifest, coreAppearanceBinding, CameraTargetGuard } from "@engine/render";
+import { countFraction } from "./load-progress.js";
 import { gameplayDefs, rotationSteps, animalDefs, Animal, Health, Survival, Zombie, ResourceNode, CraftingStation, Fuel, AnimState as GAnim, BuildPiece as GPiece, Dead, Wetness, BodyTemp, Emitter, PieceLink, Crop, cropSpriteKey, clutterForChunk, resolveSprite, type ResolvedSprite } from "@engine/gameplay";
 
 /** Render-side schemas the renderer's bindings expect (view World only). */
@@ -48,6 +49,15 @@ const CAMERA_GRACE_FRAMES = 300;
 export interface ViewStatus { localServer: string; snapshots: number; error?: string }
 export interface ViewOverrides { hours?: number; weather?: number; intensity?: number }
 
+/** Resource Timing watcher (ADR-118): calls back with the count and transfer bytes of matching responses since start. */
+function watchResources(match: RegExp, cb: (count: number, bytes: number) => void): () => void {
+  if (typeof PerformanceObserver !== "function") return () => {};
+  let n = 0, bytes = 0;
+  try {
+    const po = new PerformanceObserver((list) => { let hit = false; for (const e of list.getEntries()) if (match.test(e.name)) { n++; bytes += (e as PerformanceResourceTiming).transferSize || (e as PerformanceResourceTiming).encodedBodySize || 0; hit = true; } if (hit) cb(n, bytes); });
+    po.observe({ type: "resource", buffered: false }); return () => po.disconnect();
+  } catch { return () => {}; }
+}
 export class IsoView {
   readonly view = new World({ seed: 1 });
   private map = new Map<Entity, Entity>();
@@ -67,8 +77,8 @@ export class IsoView {
   }
   get appearanceEnabled(): boolean { return this.view.isRegistered(Appearance); }
 
-  static async create(canvas: HTMLCanvasElement, base: string, ov: ViewOverrides = {}, onProgress: (f: number, label: string) => void = () => {}): Promise<IsoView> {
-    onProgress(0.05, "Loading art manifest");
+  static async create(canvas: HTMLCanvasElement, base: string, ov: ViewOverrides = {}, onStage: (stage: string, f: number, label?: string) => void = () => {}): Promise<IsoView> {
+    onStage("renderer", 0);
     const q0 = new URLSearchParams(location.search);
     // WebGL2 -> Canvas2D sprites -> (main.ts) debug. Probe a FRESH canvas: a lost/blocked context on #game must not decide.
     const probe = (k: "webgl2" | "2d"): unknown => document.createElement("canvas").getContext(k, k === "webgl2" ? { powerPreference: "default" } : undefined);
@@ -84,9 +94,10 @@ export class IsoView {
       onError: (e) => { if (e.kind !== "context-restored") showRenderError(`Renderer: ${e.kind}`, `${e.message}${e.detail ? `\n${e.detail.slice(0, 300)}` : ""}\nTry ?gl=lowend or ?safe=1 — please report this text.`); } });
     } catch (e) { console.warn("[view] IsoRenderer failed", e); renderer = make2d(); }
     { const c = renderer.capabilities; console.info(`[view] gl ${c.renderer} mobile=${c.mobile} lowEnd=${c.lowEnd} flags=${c.flags.join(",")} fallbacks=${c.fallbacks.join("; ")}`); (globalThis as { __renderCaps?: unknown }).__renderCaps = c; }
+    onStage("manifest", 0);
     const packBase = `${base}art/pack/`;
     const { registry } = await loadMergedManifest(`${base}art/`);
-    onProgress(0.3, "Loading sprite atlases");
+    onStage("atlases", 0);
     const sources = sourcesFromManifest(registry, packBase + "manifest.json", {}, { probeSiblings: false });
     // Art's customization pack (~220 paper-doll atlases, 1008x960): the renderer packs every atlas into one 2048² texture
     // array, so these alone need ~1.7 GiB of VRAM ("Texture total allocation size is too large" -> every sprite black).
@@ -101,20 +112,25 @@ export class IsoView {
       for (const k of custom) { (registry.atlases as Map<string, unknown>).delete(k); sources.delete(k); }
       noCosmetics = true;
     }
-    await renderer.atlas.setRegistry(registry, sources);
-    onProgress(0.75, "Loading building variants");
+    // ADR-118: count atlas/KTX2 image responses as they land (Resource Timing works for fetch and <img>); expected =
+    // the eager atlases (paper-doll/streamed ones load on demand later), so the fraction stays honest and capped < 1.
+    const expected = [...registry.atlases.keys()].filter((k) => !custom.includes(k)).length;
+    const stopWatch = watchResources(/\.(png|webp|ktx2|avif|jpe?g)(\?|$)/i, (n, bytes) => onStage("atlases", countFraction(n, expected), `Loading sprite atlases (${n}/${expected}${bytes ? `, ${(bytes / 1048576).toFixed(1)} MB` : ""})`));
+    try { await renderer.atlas.setRegistry(registry, sources); } finally { stopWatch(); }
+    onStage("atlases", 1); onStage("variants", 0);
     const pv = await fetch(packBase + "piece_variants.json").then((r) => (r.ok ? r.json() : null)).catch(() => null) as { pieces?: Record<string, string[]> } | null;
     if (pv?.pieces) renderer.atlas.setPieceVariants(pv.pieces);
     for (const a of ["characters", "characters_b", "characters_c"]) if (registry.atlases.has(a)) {
       const h = await fetch(`${packBase}atlases/${a}.hands.json`).then((r) => (r.ok ? r.json() : null)).catch(() => null);
       if (h?.hands) renderer.atlas.setHands(a, h);
     }
-    onProgress(0.9, "Loading lighting");
+    onStage("lighting", 0);
     const tuningUrl = `${base}art/survival_fx/render_tuning.json`;
     const look = await renderer.loadLook(tuningUrl);
     const lights = new LightTable(); lights.load(await fetch(tuningUrl).then((r) => (r.ok ? r.json() : null)).catch(() => null));
     if (look.warnings.length) console.info("render tuning:", look.warnings);
-    renderer.camera.zoom = DESKTOP_ZOOM; // main.ts attachZoom then sizes it per viewport (ADR-100) onProgress(1, "Ready");
+    renderer.camera.zoom = DESKTOP_ZOOM; // main.ts attachZoom then sizes it per viewport (ADR-100)
+    onStage("ready", 0);
     const view = new IsoView(renderer, registry, ov, lights); view.base = base; return view;
   }
 

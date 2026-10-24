@@ -1,4 +1,5 @@
 import { lastPlayedKey } from "./delete-progress.js";
+import { LoadProgress } from "./load-progress.js";
 import { attachZoom } from "./camera-zoom.js";
 import { mountUi } from "./ui-root.js";
 import { showRenderError } from "./glcheck.js";
@@ -48,17 +49,22 @@ const serverParam = params.get("server");
 /** Main menu unless a URL param already picks the mode (?offline=1, ?server=, ?menu=0: tests/screenshots). */
 const useMenu = !serverParam && params.get("offline") !== "1" && params.get("menu") !== "0";
 const boot = useMenu ? new BootUI(import.meta.env.BASE_URL) : undefined;
+/** ADR-118: weighted boot stages -> the loading bar (monotonic; BootUI eases the fill and walks the zombie). */
+const loadProgress = new LoadProgress();
+const onStage = (id: string, f: number, label?: string): void => { const v = loadProgress.update(id, f, label); boot?.progress(v, loadProgress.label); };
+onStage("renderer", 0);
 const glLevel = effectiveLevel(location.search);
 const wantIso = glLevel !== "debug" && typeof WebGL2RenderingContext !== "undefined";
 const isoReady: Promise<void> = wantIso ? (async () => {
-  const v = await IsoView.create(canvas, import.meta.env.BASE_URL, { ...(num("time") !== undefined ? { hours: num("time")! } : {}), ...(wi >= 0 ? { weather: wi, intensity: num("intensity") ?? 1 } : {}) });
+  const v = await IsoView.create(canvas, import.meta.env.BASE_URL, { ...(num("time") !== undefined ? { hours: num("time")! } : {}), ...(wi >= 0 ? { weather: wi, intensity: num("intensity") ?? 1 } : {}) }, onStage);
   const onResize = (): void => v.resize(innerWidth, innerHeight, devicePixelRatio || 1); addEventListener("resize", onResize); onResize();
   attachContextRecovery(canvas, { notify: showRenderError });
   attachZoom(v.renderer.camera, canvas, { enabled: () => !document.querySelector("[data-boot=menu]") });
   iso = v; (window as { __view?: unknown }).__view = { ready: true, renderer: "iso", iso: v };
 })().catch((e: unknown) => {
   // keep the sprite renderer: retry once at safe quality (still full art) before the Canvas2D debug view
-  if (glLevel !== "safe" && retryIsoAtSafe()) return;
+  if (glLevel !== "safe" && retryIsoAtSafe()) { boot?.fail("Graphics hiccup — reloading at safe quality…"); return; }
+  boot?.progress(loadProgress.value, "3D renderer unavailable — using the simple view");
   console.warn("IsoRenderer unavailable, using debug renderer", e); showRenderError("3D renderer unavailable — showing debug view", e instanceof Error ? e.message + ((e as { info?: unknown }).info ? `\n${JSON.stringify((e as { info?: unknown }).info).slice(0, 300)}` : "") : String(e)); fallback(); }) : Promise.resolve(fallback());
 function fallback(): void {
   // a WebGL context may already own #game: draw Canvas2D on an overlay (input stays bound to #game)
@@ -358,7 +364,7 @@ const connectTo = (url: string, name: string): void => { connectRemote(url); ses
 const defaultUrl = serverParam ?? `${location.protocol === "https:" ? "wss" : "ws"}://${location.hostname || "localhost"}:7777`;
 if (boot) {
   void (async () => {
-    await isoReady; boot.progress(1, "Ready");
+    await isoReady; loadProgress.complete(); await boot.finish("Ready");
     let notice: string | undefined; try { notice = sessionStorage.getItem(P2P_NOTICE_KEY) ?? undefined; sessionStorage.removeItem(P2P_NOTICE_KEY); } catch { /* ignore */ }
     const choice = await boot.menu({ slot: SLOT, hostedStatic: import.meta.env["VITE_DEFAULT_OFFLINE"] === "1", defaultUrl, ...(notice ? { notice } : {}) });
     boot.hide();
