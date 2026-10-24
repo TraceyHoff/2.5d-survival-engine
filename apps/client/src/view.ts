@@ -114,7 +114,7 @@ export class IsoView {
   }
   resize(w: number, h: number, dpr: number): void {
     const safe = new URLSearchParams(location.search).get("safe") === "1";
-    try { this.renderer.resize(w, h, safe ? 1 : Math.min(2, dpr)); } catch (e) { showRenderError("Resize failed", `${e instanceof Error ? e.message : String(e)}\n${glInfo(this.renderer.gl)}`); }
+    try { this.renderer.resize(w, h, safe ? 1 : dpr); } catch (e) { showRenderError("Resize failed", `${e instanceof Error ? e.message : String(e)}\n${glInfo(this.renderer.gl)}`); }
   }
 
   private sid(key: string | undefined): number | undefined { return key ? this.registry.ids.sprites.tryId(key) : undefined; }
