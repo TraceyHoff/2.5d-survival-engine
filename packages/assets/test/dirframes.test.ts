@@ -29,4 +29,16 @@ describe("facing-split dirFrames (vehicles)", () => {
     expect(() => loadManifest(m)).toThrow(/unknown atlas/);
     a.dirFrames.pop(); expect(() => loadManifest(m)).toThrow(/dirFrames must have/);
   });
+  it("accepts a dirFrames anchor outside its rect (finite, within the slack) and dirFrame() keeps it unclamped", () => {
+    const m = veh(); const s = m.sprites.find((x: any) => Object.values<any>(x.animations).some((a) => a.dirFrames));
+    const [name, a]: any = Object.entries<any>(s.animations).find(([, a]) => a.dirFrames);
+    for (const d of a.dirFrames) d.anchor = { x: -0.5, y: 2.25 };
+    const pack = JSON.parse(readFileSync(PACK_DIR + "manifest.json", "utf8"));
+    const load = () => loadManifest(mergeManifests([{ name: "pack", manifest: pack }, { name: "vehicles", manifest: m }] as never).manifest);
+    const { registry } = load();
+    const ref = registry.dirFrame(registry.id(s.key), name, 0, 0);
+    expect(ref.anchorX).toBeCloseTo(-0.5 * ref.w); expect(ref.anchorY).toBeCloseTo(2.25 * ref.h);
+    a.dirFrames[0].anchor = { x: 0.5, y: Number.NaN }; expect(load).toThrow(/anchor must be finite/);
+    a.dirFrames[0].anchor = { x: 0.5, y: 12 }; expect(load).toThrow(/anchor must be finite/);
+  });
 });

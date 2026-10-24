@@ -71,8 +71,13 @@ export interface AnimationJson { /** Per-frame metadata keyed by atlas frame ind
   dirFrames?: DirFrameJson[] }
 /** One explicit (page, frame) of an anim at one facing. `rect` (page px at 1x) addresses any region of the page directly
  *  (no grid / TexturePacker table needed) and wins over `frame`; identical rects (across frames, facings, anims or
- *  sprites, e.g. a held frame or a mirrored-pose reuse) share one frame-table entry. `anchor` is relative to the rect. */
+ *  sprites, e.g. a held frame or a mirrored-pose reuse) share one frame-table entry. `anchor` is relative to the rect and
+ *  may lie outside it (see DIRFRAME_ANCHOR_SLACK). */
 export interface DirFrameJson { atlas: string; frame?: number; rect?: DirFrameRect; anchor: { x: number; y: number } }
+/** dirFrames anchors may lie outside their trimmed rect (e.g. a feet pivot under a head-only face/eyes rect, or a held
+ *  item's grip off the art): rect-relative, any finite value within this many rect sizes either side. */
+export const DIRFRAME_ANCHOR_SLACK = 8;
+const dfAnchorOk = (v: unknown): boolean => typeof v === "number" && Number.isFinite(v) && v >= -DIRFRAME_ANCHOR_SLACK && v <= 1 + DIRFRAME_ANCHOR_SLACK;
 export interface DirFrameRect { x: number; y: number; w: number; h: number }
 /** Building state -> vfx spawned at a named attach point (e.g. burning: fire/ember/smoke). */
 export interface StateVfxJson { vfx: string; attach: string }
@@ -500,7 +505,7 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
           else if (d.rect !== undefined) { const r = d.rect; const pw = da.columns * da.frameW, ph = da.rows * da.frameH;
             if (!r || ![r.x, r.y, r.w, r.h].every((v) => Number.isInteger(v)) || r.x < 0 || r.y < 0 || r.w <= 0 || r.h <= 0 || r.x + r.w > pw || r.y + r.h > ph) issues.push(`${q}.dirFrames[${i}]: rect must be integer px inside the ${pw}x${ph} page`); }
           else if (!(Number.isInteger(d.frame) && d.frame! >= 0 && d.frame! < da.columns * da.rows)) issues.push(`${q}.dirFrames[${i}]: frame ${d.frame} out of range`);
-          if (!d?.anchor || !(d.anchor.x >= 0 && d.anchor.x <= 1 && d.anchor.y >= 0 && d.anchor.y <= 1)) issues.push(`${q}.dirFrames[${i}]: anchor must be within [0,1]`); });
+          if (!d?.anchor || !(dfAnchorOk(d.anchor.x) && dfAnchorOk(d.anchor.y))) issues.push(`${q}.dirFrames[${i}]: anchor must be finite and within [${-DIRFRAME_ANCHOR_SLACK},${1 + DIRFRAME_ANCHOR_SLACK}] of the rect`); });
       }
       else if (at) {
         const stride = a.dirStride ?? at.columns;
