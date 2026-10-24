@@ -8,7 +8,7 @@
       "frameW": 48,
       "frameH": 64,
       "columns": 24,
-      "rows": 8,
+      "rows": 12,
       "masks": {
         "sheen": "atlases/characters_sheen.png"
       }
@@ -19,7 +19,7 @@
       "frameW": 48,
       "frameH": 64,
       "columns": 24,
-      "rows": 8,
+      "rows": 12,
       "masks": {
         "sheen": "atlases/characters_b_sheen.png"
       }
@@ -30,7 +30,7 @@
       "frameW": 48,
       "frameH": 64,
       "columns": 24,
-      "rows": 8,
+      "rows": 12,
       "masks": {
         "sheen": "atlases/characters_c_sheen.png"
       }
@@ -41,7 +41,7 @@
       "frameW": 48,
       "frameH": 64,
       "columns": 19,
-      "rows": 16,
+      "rows": 19,
       "masks": {
         "emissive": true,
         "sheen": "atlases/zombies_sheen.png"
@@ -53,7 +53,7 @@
       "frameW": 64,
       "frameH": 80,
       "columns": 19,
-      "rows": 16,
+      "rows": 19,
       "masks": {
         "emissive": true,
         "sheen": "atlases/zombies_brute_sheen.png"
@@ -65,7 +65,7 @@
       "frameW": 48,
       "frameH": 64,
       "columns": 19,
-      "rows": 16,
+      "rows": 19,
       "masks": {
         "emissive": true,
         "sheen": "atlases/zombies_runner_sheen.png"
@@ -77,7 +77,7 @@
       "frameW": 48,
       "frameH": 64,
       "columns": 19,
-      "rows": 16,
+      "rows": 19,
       "masks": {
         "emissive": true,
         "sheen": "atlases/zombies_mummy_sheen.png"
@@ -89,7 +89,7 @@
       "frameW": 48,
       "frameH": 64,
       "columns": 19,
-      "rows": 16,
+      "rows": 19,
       "masks": {
         "emissive": true,
         "sheen": "atlases/zombies_pumpkin_sheen.png"
@@ -112,7 +112,7 @@
       "frameW": 32,
       "frameH": 32,
       "columns": 8,
-      "rows": 16,
+      "rows": 24,
       "masks": {
         "sheen": "atlases/critters_sheen.png"
       }
@@ -305,7 +305,7 @@
       "frameW": 32,
       "frameH": 32,
       "columns": 32,
-      "rows": 14,
+      "rows": 17,
       "pages": [
         {
           "scale": 2,
@@ -499,6 +499,31 @@
           ],
           "fps": 14,
           "directions": 8
+        },
+        "swim": {
+          "frames": [
+            192,
+            193,
+            194,
+            195,
+            196,
+            197
+          ],
+          "fps": 6,
+          "directions": 8,
+          "dirStride": 6
+        },
+        "punch": {
+          "frames": [
+            240,
+            241,
+            242,
+            243
+          ],
+          "fps": 12,
+          "directions": 8,
+          "dirStride": 4,
+          "loop": false
         }
       },
       "tints": {
@@ -587,6 +612,31 @@
           ],
           "fps": 14,
           "directions": 8
+        },
+        "swim": {
+          "frames": [
+            192,
+            193,
+            194,
+            195,
+            196,
+            197
+          ],
+          "fps": 6,
+          "directions": 8,
+          "dirStride": 6
+        },
+        "punch": {
+          "frames": [
+            240,
+            241,
+            242,
+            243
+          ],
+          "fps": 12,
+          "directions": 8,
+          "dirStride": 4,
+          "loop": false
         }
       },
       "tints": {
@@ -675,6 +725,31 @@
           ],
           "fps": 14,
           "directions": 8
+        },
+        "swim": {
+          "frames": [
+            192,
+            193,
+            194,
+            195,
+            196,
+            197
+          ],
+          "fps": 6,
+          "directions": 8,
+          "dirStride": 6
+        },
+        "punch": {
+          "frames": [
+            240,
+            241,
+            242,
+            243
+          ],
+          "fps": 12,
+          "directions": 8,
+          "dirStride": 4,
+          "loop": false
         }
       },
       "tints": {
@@ -818,6 +893,19 @@
           "fps": 7,
           "directions": 8,
           "dirStride": 38
+        },
+        "swim": {
+          "frames": [
+            304,
+            305,
+            306,
+            307,
+            308,
+            309
+          ],
+          "fps": 6,
+          "directions": 8,
+          "dirStride": 6
         }
       },
       "tints": {
@@ -961,6 +1049,19 @@
           "fps": 7,
           "directions": 8,
           "dirStride": 38
+        },
+        "swim": {
+          "frames": [
+            304,
+            305,
+            306,
+            307,
+            308,
+            309
+          ],
+          "fps": 6,
+          "directions": 8,
+          "dirStride": 6
         }
       },
       "tints": {
@@ -1104,6 +1205,19 @@
           "fps": 7,
           "directions": 8,
           "dirStride": 38
+        },
+        "swim": {
+          "frames": [
+            304,
+            305,
+            306,
+            307,
+            308,
+            309
+          ],
+          "fps": 6,
+          "directions": 8,
+          "dirStride": 6
         }
       },
       "tints": {
@@ -1247,6 +1361,19 @@
           "fps": 7,
           "directions": 8,
           "dirStride": 38
+        },
+        "swim": {
+          "frames": [
+            304,
+            305,
+            306,
+            307,
+            308,
+            309
+          ],
+          "fps": 6,
+          "directions": 8,
+          "dirStride": 6
         }
       },
       "tints": {
@@ -1390,6 +1517,19 @@
           "fps": 7,
           "directions": 8,
           "dirStride": 38
+        },
+        "swim": {
+          "frames": [
+            304,
+            305,
+            306,
+            307,
+            308,
+            309
+          ],
+          "fps": 6,
+          "directions": 8,
+          "dirStride": 6
         }
       },
       "tints": {
@@ -1684,6 +1824,17 @@
           ],
           "fps": 10,
           "directions": 4
+        },
+        "swim": {
+          "frames": [
+            128,
+            129,
+            130,
+            131
+          ],
+          "fps": 6,
+          "directions": 4,
+          "dirStride": 4
         }
       }
     },
@@ -1715,6 +1866,17 @@
           ],
           "fps": 10,
           "directions": 4
+        },
+        "swim": {
+          "frames": [
+            144,
+            145,
+            146,
+            147
+          ],
+          "fps": 6,
+          "directions": 4,
+          "dirStride": 4
         }
       }
     },
@@ -1756,6 +1918,17 @@
           ],
           "fps": 9,
           "directions": 4
+        },
+        "swim": {
+          "frames": [
+            160,
+            161,
+            162,
+            163
+          ],
+          "fps": 6,
+          "directions": 4,
+          "dirStride": 4
         }
       }
     },
@@ -1787,6 +1960,17 @@
           ],
           "fps": 8,
           "directions": 4
+        },
+        "swim": {
+          "frames": [
+            176,
+            177,
+            178,
+            179
+          ],
+          "fps": 6,
+          "directions": 4,
+          "dirStride": 4
         }
       }
     },
@@ -9798,6 +9982,19 @@
           "directions": 8,
           "dirStride": 27,
           "loop": false
+        },
+        "swim": {
+          "frames": [
+            448,
+            449,
+            450,
+            451,
+            452,
+            453
+          ],
+          "fps": 6,
+          "directions": 8,
+          "dirStride": 6
         }
       }
     },
@@ -9914,6 +10111,19 @@
           "directions": 8,
           "dirStride": 27,
           "loop": false
+        },
+        "swim": {
+          "frames": [
+            496,
+            497,
+            498,
+            499,
+            500,
+            501
+          ],
+          "fps": 6,
+          "directions": 8,
+          "dirStride": 6
         }
       }
     },

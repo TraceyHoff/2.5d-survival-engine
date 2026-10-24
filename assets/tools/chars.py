@@ -65,6 +65,8 @@ def tool_part(cv, rig, hand3, dir3, kind="axe", depth=0.0):
 
 BAKE_TOOL = False   # wave 2: tools are separate held-equipment sprites attached at META["hand"]
 
+SWIM_Z = 17.0   # world z of the swim waterline (chest); swim_merge_main.py sinks frames so it sits at the feet pivot
+
 def build_figure(cv, phi, spec, anim, fi, nframes, zombie=False, ox=24, oy=59, scale=1.0):
     rig = Rig(cv, phi, ox, oy, scale)
     sk, top, bot = spec["skin"], spec["top"], spec["bottom"]
@@ -94,6 +96,12 @@ def build_figure(cv, phi, spec, anim, fi, nframes, zombie=False, ox=24, oy=59, s
         crouch = 6.5 + [0, 0.6, 0, 0.6][fi % 4]; lean = lean + 2.5; tilt = [1, -1, 1.5, -0.5][fi % 4]
     elif anim == "attack":
         crouch = [0, -1, 2, 0.5][fi % 4]
+    elif anim == "swim":     # ADR-107: paddle/flail in place; legs kick below the waterline (cleared by swim_merge_main.py)
+        bob = math.sin(ph) * 0.6; lean = lean + 1.2; sw = 2.0
+        legs = [(math.sin(ph) * sw, 1.5 + math.cos(ph)), (-math.sin(ph) * sw, 1.5 - math.cos(ph))]
+        if zombie: tilt = math.sin(ph) * 1.5
+    elif anim == "punch":    # ADR-107: guard, wind-up, right jab, recover
+        crouch = [0, 0.4, 0.2, 0][fi % 4]; lean = lean + [0.5, -0.4, 2.6, 1.0][fi % 4]
     elif anim == "gather":
         crouch = [2, 3.5, 3.0, 3.5][fi % 4]
     elif anim == "hurt":
@@ -219,6 +227,13 @@ def build_figure(cv, phi, spec, anim, fi, nframes, zombie=False, ox=24, oy=59, s
                 hand3 = [(shw - 1, -5, bz + 15), (shw - 2, 6, bz + 15), (shw - 3, 11, bz - 2), (shw, 5, bz - 1)][fi % 4]
             else:
                 hand3 = (side * (shw + 0.5), 3, bz - 1)
+        elif anim == "swim":
+            if zombie: hand3 = (side * (shw - 2.0), 11 + math.sin(ph + side * 1.3) * 2.5, SWIM_Z + 3 + math.cos(ph * 2 + side) * 2.0)
+            else:
+                a_ = ph + (0 if side > 0 else math.pi); hand3 = (side * (shw + 0.8), 6.0 + math.sin(a_) * 3.5, SWIM_Z + 2.0 + bob + math.cos(a_) * 2.6)
+        elif anim == "punch":
+            if side == 1: hand3 = [(shw - 2.5, 5, bz + 7), (shw - 1, 1, bz + 7.5), (shw - 3.5, 14, bz + 7), (shw - 2, 8, bz + 6.5)][fi % 4]
+            else: hand3 = (side * (shw - 2.5), 6, bz + 7.5)
         elif anim == "gather":
             k = fi % 4; up = [0, 2.5, 0, 2.5][k] if side > 0 else [2.5, 0, 2.5, 0][k]
             hand3 = (side * 4.5, 9, bz - 7 + up)
@@ -237,6 +252,7 @@ def build_figure(cv, phi, spec, anim, fi, nframes, zombie=False, ox=24, oy=59, s
         # held-equipment anchor (right hand): screen pos (1x px), tool direction angle (deg, 0 = up, clockwise), draw order
         h = hands[1]; k = fi % 4
         if anim == "attack": d = [(0.1, -0.6, 0.8), (0.0, 0.7, 0.7), (0.0, 0.6, -0.8), (0.1, 0.9, -0.2)][k]
+        elif anim == "punch": d = (0.0, 0.95, 0.3)
         elif anim == "gather": d = (0.0, 0.85, [-0.5, -0.2, -0.5, -0.2][k])
         elif anim == "run": d = (0.15, -0.45, 0.85)
         elif anim == "walk": d = (0.15, 0.3 + 0.08 * math.sin(ph), 0.92)
@@ -464,7 +480,7 @@ def face(cv, rig, c3, hr, spec, zombie, blink, anim, fi, rot, hm):
             if anim == "attack": cv.part(circle(mp, 1.5 * k, 1.3), [ramp("berry")[1]] * 2 + [ramp("berry")[2], r_ink[3]], lw=0.5, shade=0.2, hl=0)
             else: cv.line([(mp[0] - 1.6 * k, mp[1] - 0.4), (mp[0] - 0.5 * k, mp[1] + 0.5), (mp[0] + 0.5 * k, mp[1] - 0.1), (mp[0] + 0.5 * k, mp[1] - 0.1), (mp[0] + 1.6 * k, mp[1] + 0.5) if False else (mp[0] + 1.6 * k, mp[1] - 0.4)], r_ink[3], 0.6)
         else:
-            open_ = anim in ("attack", "idle", "walk", "run", "crawl") or (anim == "feed" and fi % 2 == 1)
+            open_ = anim in ("attack", "punch", "swim", "idle", "walk", "run", "crawl") or (anim == "feed" and fi % 2 == 1)
             cv.part(circle((mp[0], mp[1] + 0.2), 2.4 * k, 1.4 if open_ else 0.8), r_ink, lw=0.5, flat=True, outline=False)
             # tooth + tongue
             cv.fill([(mp[0] - 1.0 * k, mp[1] - 1.0), (mp[0] + 0.1, mp[1] - 1.0), (mp[0] - 0.4, mp[1] + 0.4)], (255, 250, 240))
