@@ -51,7 +51,7 @@ ACC = [("round_glasses", 1, 36), ("sunglasses", 1, 36), ("eyepatch", 1, 36), ("s
 for k, t, l in ACC: add("acc_" + k, "accessory", {"style": k}, tint=t, layer=l)
 for k in ["smile", "grin", "freckles", "moustache", "beard", "cat", "bushy", "tongue", "stubble"]: add("face_" + k, "face", {"style": k}, tint=1)
 for k in ["round", "sparkle", "sleepy", "happy", "cat", "button", "lashes", "wide", "wink"]:
-    add("eyes_" + k, "eyes", {"style": k}, tint=(0 if k in ("happy", "button") else 1))
+    add("eyes_" + k, "eyes", {"style": k}, tint=1)
 LAYER = dict(shoes=15, bottom=18, top=20, accessory=30, face=32, eyes=34, hair=40, hat=50)
 # ---- ADR-114 starter wearables (append-only; no unlock tags -> listed in the creator for everyone)
 for s in ["wavy", "topknot", "space_buns", "shag"]: add("hair_" + s, "hair", {"style": s}, tint=1, hatHair=True)

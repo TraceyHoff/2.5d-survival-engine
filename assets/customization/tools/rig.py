@@ -181,6 +181,12 @@ class MCanvas(Canvas):
             s._detail(m, tm)
     def line(s, pts, color, width=1.0, clip=None, alpha=255, tm=None):
         Canvas.line(s, pts, tint_col(color), width, clip, alpha)
+        if tm is not None:
+            m = Image.new("L", (s.W, s.H), 0); d = ImageDraw.Draw(m); sp = s.S(pts); rr = width * SS / 2
+            d.line(sp, fill=255, width=max(1, int(width * SS)), joint="curve")
+            for p in (sp[0], sp[-1]): d.ellipse([p[0] - rr, p[1] - rr, p[0] + rr, p[1] + rr], fill=255)
+            if clip is not None: m = Image.fromarray(np.minimum(np.asarray(m), np.asarray(clip)))
+            s._detail(m, tm)
     def erase(s, m_im):
         if m_im is None: return
         m = np.asarray(m_im, np.float32) / 255
@@ -197,7 +203,7 @@ class Ctx:
     """One frame of one layer: shared pose + canvas + depth-sorted draw list."""
     def __init__(s, K):
         s.K = K; s.cv = MCanvas(FW, FH, seed=17 + K["d"] * 3 + K["fi"] + ANIM_START[K["anim"]] * 7)
-        s.rig = K["rig"]; s.rig.cv = s.cv; s.items = []
+        s.rig = K["rig"]; s.rig.cv = s.cv; s.items = []; s.fdy = 0.0  # face lift (px up) applied by sph while drawing face/eyes/glasses
     def P(s, p): return s.rig.proj(*p)
     def p(s, p): return s.rig.proj(*p)[0]
     def nv(s, x, y): return s.rig.nv(x, y)
@@ -207,7 +213,7 @@ class Ctx:
     def sph(s, az, el, rk=1.0, c3=None):
         c3 = c3 or s.K["hc"]; r = s.K["hr"] * rk; a, e = math.radians(az), math.radians(el)
         x = c3[0] + r * math.sin(a) * math.cos(e); y = c3[1] + r * math.cos(a) * math.cos(e); z = c3[2] + r * math.sin(e)
-        return s.p((x, y, z)), s.nv(math.sin(a) * math.cos(e), math.cos(a) * math.cos(e))
+        q = s.p((x, y, z)); return (q[0], q[1] - s.fdy), s.nv(math.sin(a) * math.cos(e), math.cos(a) * math.cos(e))
     def facev(s): return s.nv(0, 1)
     def headmask(s):
         hp = s.p(s.K["hc"]); hr = s.K["hr"]; rot = math.radians(s.K["tilt"] * 2.5)

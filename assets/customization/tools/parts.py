@@ -36,6 +36,15 @@ def cut(c, pts, t):
     return out
 
 def hv(c): return c.P(c.K["hc"])[1]
+FACE_LIFT = {0: 5.0, 1: 5.0, 2: 5.0, 3: 4.0, 7: 4.0}   # px the face/eyes/glasses features sit above the bare sph() position per facing
+MOUTH_LIFT = .5
+def lifted(c, fn):
+    """run a face-feature draw with sph() lifted onto the head (features sat on the chin/collar before)."""
+    def g():
+        c.fdy = FACE_LIFT.get(c.K["d"], 0.0)
+        try: fn()
+        finally: c.fdy = 0.0
+    return g
 def fv(c): return c.facev()
 
 # ============================================================ BODY
@@ -593,7 +602,7 @@ def draw_acc(c, spec):
             if st == "sunglasses":  # frames tinted: paint mask over lens rims
                 m = cv.mask_from([circle(p, 3.9 * max(.45, min(1, v * 1.2)), 3.2) for p, v in eyes if v > .05])
                 cv._upd(m, (1, 0), ring=False)
-        c.add(hv(c) + 3, g)
+        c.add(hv(c) + 3, lifted(c, g))
     elif st == "scarf":
         def sc():
             z = K["bz"] + 7.4; nc = (K["tc"][0], K["tc"][1], z)
@@ -690,17 +699,23 @@ def mouth(c, kind):
     else:
         cv.line([(x - 1.7 * k, y - .5), (x - .6 * k, y + .45), (x + .6 * k, y + .45), (x + 1.7 * k, y - .5)], INK[3], .85)
 
-def brows(c, thick=.7, lift=0, shape="arc"):
-    cv = c.cv; e = c.K["expr"]
+def brows(c, thick=.7, lift=0, shape="arc", wide=1.0, uni=False):
+    cv = c.cv; e = c.K["expr"]; inn = []
     for s in (-1, 1):
         p, v = c.sph(s * 30, 18 + lift, 1.0)
         if v <= .12: continue
-        sq = max(.4, min(1, v * 1.2)); w = 1.9 * sq
+        sq = max(.4, min(1, v * 1.2)); w = 1.9 * sq * wide
         tilt = {"sleepy": -.5, "happy": -.3, "focus": .9, "yell": 1.3, "ouch": -1.0, "dizzy": -.8, "dead": -.8}.get(e, 0) * s
         inner, outer = (p[0] - s * w, p[1] + tilt * .6), (p[0] + s * w, p[1] - tilt * .2)
         mid = (p[0], p[1] - (.7 if shape == "arc" else .2))
         cv.line([inner, mid, outer], "P3", thick + .5)
         cv._upd(cv.mask_from([capsule_pts(inner[0], inner[1], mid[0], mid[1], thick, thick), capsule_pts(mid[0], mid[1], outer[0], outer[1], thick, thick)]), (1, 0), ring=False)
+        if shape == "bushy":  # shaggy upper fringe
+            for k in (-.6, 0, .6):
+                q = (p[0] + s * k * w, p[1] - thick * .9); cv.line([(q[0] - s * .3, q[1] + .8), (q[0] + s * .5, q[1] - .6)], "P3", .7, tm=(1, 0))
+        inn.append(inner)
+    if uni and len(inn) == 2 and e not in ("focus", "yell"):
+        a, b = inn; cv.line([a, ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2 + .4), b], "P3", thick * .8 + .4, tm=(1, 0))
 
 def facial_hair(c, kind):
     cv = c.cv
@@ -738,9 +753,9 @@ def facial_hair(c, kind):
             if c.sph(s * 75, -20, 1.0)[1] > -.2: c.cv.part(hull(pts), "P", lw=.9, shade=.2, hl=.12)
     if kind == "stubble":
         hm = c.headmask()
-        for i, (az, el) in enumerate([(a, e) for a in range(-70, 71, 14) for e in (-40, -52, -30)]):
+        for i, (az, el) in enumerate([(a, e) for a in range(-70, 71, 14) for e in (-40, -52, -30, -46, -35)]):
             p, v = c.sph(az + (i % 3) * 3, el, 1.0)
-            if v > .1: cv.fill(circle(p, .38), "P3", clip=hm, alpha=170, tm=(1, 0))
+            if v > .1: cv.fill(circle(p, .52), "P3", clip=hm, alpha=225, tm=(1, 0))
 
 def draw_face(c, spec):
     st = spec["style"]
@@ -748,22 +763,28 @@ def draw_face(c, spec):
         if fv(c) < -.3: return
         hm = c.headmask()
         if st == "freckles":
-            for i, (az, el) in enumerate([(-44, -18), (-36, -24), (-50, -26), (44, -18), (36, -24), (50, -26), (-40, -14), (40, -14)]):
+            for i, (az, el) in enumerate([(s * a, e) for s in (-1, 1) for a, e in ((44, -18), (36, -24), (50, -26), (40, -13), (30, -18), (54, -20), (46, -30), (24, -12))]):
                 p, v = c.sph(az, el, 1.0)
-                if v > .15: c.cv.fill(circle(p, .45), ramp("wood")[2], clip=hm, alpha=220)
+                if v > .15: c.cv.fill(circle(p, .62 if i % 3 else .74), ramp("wood")[3], clip=hm, alpha=245)
         if st == "rosy":
             for s in (-1, 1):
                 p, v = c.sph(s * 42, -20, 1.0)
-                if v > .15: c.cv.fill(circle(p, 1.5, 1.0), ramp("flower_pink")[1], clip=hm, alpha=150)
-        brows(c, thick={"bushy": 1.25, "chops": .9}.get(st, .55), lift={"bushy": 1}.get(st, 0), shape="flat" if st in ("bushy", "beard", "long_beard", "chops") else "arc")
+                if v > .15:
+                    c.cv.fill(circle(p, 2.3, 1.5), ramp("flower_pink")[1], clip=hm, alpha=200)
+                    c.cv.fill(circle((p[0] - .4, p[1] - .3), 1.3, .8), ramp("flower_pink")[2], clip=hm, alpha=150)
+        brows(c, thick={"bushy": 1.75, "chops": .9}.get(st, .55), lift={"bushy": 1.4}.get(st, 0), shape="bushy" if st == "bushy" else "flat" if st in ("beard", "long_beard", "chops") else "arc",
+              wide=1.3 if st == "bushy" else 1.0, uni=st == "bushy")
+        full = c.fdy; c.fdy = 0.0   # facial hair is jaw-anchored (body nose/chin are not lifted)
         facial_hair(c, {"beard": "beard", "moustache": "moustache", "stubble": "stubble", "goatee": "goatee", "long_beard": "long_beard", "chops": "chops"}.get(st, ""))
+        c.fdy = full * MOUTH_LIFT   # mouth: half lift, stays under the body nose
         if st not in ("beard", "long_beard"): mouth(c, {"grin": "grin", "cat": "cat", "tongue": "tongue"}.get(st, "smile"))
+        c.fdy = full
         if st == "cat":
             for s in (-1, 1):
                 p, v = c.sph(s * 50, -30, 1.0)
                 if v > .15:
                     for dy in (-.6, .6): c.cv.line([(p[0] - s * .8, p[1] + dy * .5), (p[0] + s * 2.2, p[1] + dy)], INK[2], .4, alpha=200)
-    c.add(hv(c) + 2.5, f)
+    c.add(hv(c) + 2.5, lifted(c, f))
 
 # ============================================================ EYES  tint R = clothingColors (iris)
 def draw_eyes(c, spec):
@@ -788,14 +809,19 @@ def draw_eyes(c, spec):
                 cv.line([(x - 2.3 * sq, y + .2), (x, y + .9), (x + 2.3 * sq, y + .2)], INK[3], .9)
                 cv.line([(x - 2.0 * sq, y - .9), (x + 2.0 * sq, y - .7)], INK[3], .5); continue
             if e == "happy" and st != "button":
-                cv.line([(x - 2.2 * sq, y + .8), (x, y - 1.1), (x + 2.2 * sq, y + .8)], INK[3], 1.0); continue
+                cv.line([(x - 2.2 * sq, y + .8), (x, y - 1.1), (x + 2.2 * sq, y + .8)], INK[3], 1.0)
+                if st == "happy": cv.line([(x - 1.5 * sq, y + 1.1), (x, y + .0), (x + 1.5 * sq, y + 1.1)], "P2", .8, tm=(1, 0))
+                continue
             if e == "blink" or (st == "wink" and idx == 1 and e != "yell") or st == "happy":
                 cv.line([(x - 2.2 * sq, y + (.3 if st != "happy" else .8)), (x, y + (1.2 if st != "happy" else -.9)), (x + 2.2 * sq, y + (.3 if st != "happy" else .8))], INK[3], .9)
+                if st == "happy":  # tinted crescent under the closed arc (eye colour)
+                    cv.line([(x - 1.5 * sq, y + 1.1), (x, y + .0), (x + 1.5 * sq, y + 1.1)], "P2", .8, tm=(1, 0))
                 if st == "lashes" or (st == "wink"): cv.line([(x + 2.2 * sq * (1 if az > 0 else -1), y + .3), (x + 3.0 * sq * (1 if az > 0 else -1), y - .4)], INK[3], .6)
                 continue
             rx, ry = {"round": (2.4, 3.1), "sparkle": (2.7, 3.4), "sleepy": (2.4, 2.9), "cat": (2.5, 3.0), "button": (1.3, 1.4), "lashes": (2.4, 3.1), "wide": (2.9, 3.3), "wink": (2.4, 3.1)}[st]
             if st == "button":
-                cv.part(circle(p, rx * sq + .2, ry), INK, lw=.4, flat=True, outline=False); cv.fill(circle((x - .4, y - .5), .45), (255, 255, 255)); continue
+                cv.part(circle(p, rx * sq + .7, ry + .5), [NEU[2], NEU[3], NEU[3], NEU[3]], tm=(1, 0), lw=.45, flat=True, ink=INK[3])  # tinted ring
+                cv.fill(circle(p, rx * sq * .62 + .1, ry * .62 + .1), INK[3], tm=(0, 0)); cv.fill(circle((x - .4, y - .5), .45), (255, 255, 255), tm=(0, 0)); continue
             if st == "wide":
                 cv.part(circle(p, rx * sq, ry, wob=.02), "cloth_cream", lw=.6, shade=.15, hl=0, ink=INK[3])
                 cv.part(circle((x + .2 * sq, y + .3), 1.6 * sq, 2.0), "P", lw=.4, ink=INK[3], shade=.3, hl=0)
@@ -818,4 +844,4 @@ def draw_eyes(c, spec):
             if st == "lashes":
                 sgn = 1 if az > 0 else -1
                 for k in range(3): cv.line([(x + sgn * (rx * sq - .3), y - 1.6 + k * .9), (x + sgn * (rx * sq + 1.2), y - 2.4 + k * 1.0)], INK[3], .55)
-    c.add(hv(c) + 2.6, f)
+    c.add(hv(c) + 2.6, lifted(c, f))
