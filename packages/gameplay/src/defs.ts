@@ -161,7 +161,8 @@ export interface NoiseTuning { readonly gather: number; readonly build: number; 
 export interface WorldgenBand { readonly max: number; readonly tile: number; readonly nodes: readonly number[]; readonly nodeChance: number; readonly temp: number; readonly humidity: number }
 export interface WorldgenDef { readonly bands: readonly WorldgenBand[]; readonly unbuildableTiles: ReadonlySet<number>; readonly unwalkableTiles: ReadonlySet<number> }
 
-export interface MovementTuning { readonly walkSpeed: number; readonly sprintMul: number; readonly encumberedFrom: number; readonly encumberedMinMul: number; readonly wetSlowMul: number; readonly bodyRadius: number }
+export interface MovementTuning { readonly walkSpeed: number; readonly sprintMul: number; readonly encumberedFrom: number; readonly encumberedMinMul: number; readonly wetSlowMul: number; readonly bodyRadius: number;
+  /** ADR-107 swimming: terrain ids players may swim in, and the speed multiplier there. */ readonly swimTiles: ReadonlySet<number>; readonly swimSpeedMul: number }
 
 export interface IdLock { items: Record<string, number>; resources: Record<string, number>; recipes: Record<string, number>; pieces: Record<string, number>; zombies: Record<string, number> }
 
@@ -169,6 +170,8 @@ export interface GameDefs {
   readonly items: ReadonlyMap<number, ItemDef>;
   readonly recipes: ReadonlyMap<number, RecipeDef>;
   readonly resources: ReadonlyMap<number, ResourceDef>;
+  /** Unarmed gathering of low-tier tool nodes (resources.json bareHands, ADR-107). */
+  readonly bareHands: BareHandsDef;
   readonly pieces: ReadonlyMap<number, PieceDef>;
   readonly pieceRegistry: BuildPieceRegistry;
   readonly tiers: readonly TierDef[];
@@ -192,6 +195,9 @@ export interface GameDefs {
   itemId(key: string): number; recipeId(key: string): number; resourceId(key: string): number; pieceId(key: string): number; zombieId(key: string): number;
   piece(key: string): PieceDef;
 }
+
+/** resources.json `bareHands`: which tool nodes fists can work, and how poorly (ADR-107). */
+export interface BareHandsDef { readonly maxMinTier: number; readonly tools: ReadonlySet<ToolKind>; readonly yieldMul: number; readonly minYield: number; readonly cooldownMul: number }
 
 // ---- raw JSON shapes ----------------------------------------------------------------------------
 
@@ -217,13 +223,13 @@ export interface RawZombie extends RawVisual { key: string; hp: number; speed: n
 export interface RawDefs {
   items: { items: RawItem[] };
   recipes: { recipes: RawRecipe[] };
-  resources: { resources: RawResource[] };
+  resources: { resources: RawResource[]; bareHands?: { maxMinTier: number; tools: string[]; yieldMul: number; minYield: number; cooldownMul: number } };
   vitals: VitalsTuning & { $comment?: string };
   environment: Omit<EnvironmentTuning, "weather"> & { weather: RawWeather[]; $comment?: string };
   pieces: { pieces: RawPiece[] };
   tiers: { tiers: (Omit<TierDef, "id" | "cost" | "raid"> & { cost: { item: string; count: number }[]; raid?: Partial<RaidMuls> })[]; building: BuildingTuning };
   zombies: { zombies: RawZombie[]; spawning: SpawnTuning; ai: AiTuning; noise: NoiseTuning };
-  movement: MovementTuning & { $comment?: string };
+  movement: Omit<MovementTuning, "swimTiles" | "swimSpeedMul"> & { $comment?: string; swimTiles?: number[]; swimSpeedMul?: number };
   worldgen: { bands: { max: number; tile: number; nodes: string[]; nodeChance: number; temp?: number; humidity?: number }[]; unbuildableTiles: number[]; unwalkableTiles: number[] };
 }
 
@@ -402,6 +408,10 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
   const spoiledItem = itemsR.reg.tryId(env.spoilage.spoiledItem); if (spoiledItem === undefined) err(`environment.spoilage.spoiledItem: unknown item "${env.spoilage.spoiledItem}"`);
   if (issues.length) throw new DefsError(issues);
 
+  const bh = raw.resources.bareHands;
+  const bareHands: BareHandsDef = bh ? { maxMinTier: bh.maxMinTier, tools: new Set(bh.tools.map((t, i) => enumOf(TOOL, t, `resources.bareHands.tools[${i}]`))), yieldMul: bh.yieldMul, minYield: bh.minYield, cooldownMul: bh.cooldownMul }
+    : { maxMinTier: -1, tools: new Set(), yieldMul: 0, minYield: 0, cooldownMul: 1 };
+  if (!(bareHands.yieldMul >= 0 && bareHands.yieldMul <= 1) || !(bareHands.cooldownMul >= 1)) err("resources.bareHands: yieldMul must be 0..1 and cooldownMul >= 1");
   const strip = <T extends { $comment?: string }>(o: T): Omit<T, "$comment"> => { const { $comment: _c, ...rest } = o; return rest; };
   const { weather: _w, ...envRest } = strip(env);
   const lock: IdLock = { items: itemsR.lock, resources: resR.lock, recipes: recR.lock, pieces: pieceLock, zombies: zomR.lock };
@@ -412,9 +422,9 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
     items, recipes, resources, pieces, pieceRegistry: pieceRegistry!, tiers, building: { ...raw.tiers.building }, zombies,
     zombieKinds: raw.zombies.zombies.map((z) => zomR.reg.id(z.key)), spoiledItem: spoiledItem ?? 0,
     spawning: raw.zombies.spawning, ai: raw.zombies.ai, noise: raw.zombies.noise,
-    vitals: strip(raw.vitals), environment: { ...envRest, weather }, movement: strip(raw.movement),
+    vitals: strip(raw.vitals), environment: { ...envRest, weather }, movement: { ...strip(raw.movement), swimTiles: new Set(raw.movement.swimTiles ?? []), swimSpeedMul: raw.movement.swimSpeedMul ?? 1 },
     worldgen: { bands, unbuildableTiles: new Set(raw.worldgen.unbuildableTiles), unwalkableTiles: new Set(raw.worldgen.unwalkableTiles) },
-    lock, hashes: { items: itemsR.reg.hash, pieces: pieceHash, all },
+    lock, hashes: { items: itemsR.reg.hash, pieces: pieceHash, all }, bareHands,
     itemId: lookup(itemsR.reg), recipeId: lookup(recR.reg), resourceId: lookup(resR.reg), zombieId: lookup(zomR.reg),
     pieceId: (key) => pieceRegistry!.byKey(key).id,
     piece: (key) => pieces.get(pieceRegistry!.byKey(key).id)!,

@@ -63,6 +63,7 @@ const STATE_ANIM_TABLE: Record<CoreAnimState, readonly string[]> = {
   [CoreAnimState.Shamble]: ["shamble", "walk"], [CoreAnimState.Crawl]: ["crawl", "shamble", "walk"], [CoreAnimState.Feed]: ["feed", "attack", "idle"],
   // vehicle riders (ADR-101): `sit`, else idle (the body crops the legs anyway)
   [CoreAnimState.Sit]: ["sit", "idle"],
+  [CoreAnimState.Swim]: ["swim", "walk", "idle"], [CoreAnimState.Punch]: ["punch", "attack", "idle"],
 };
 export const STATE_ANIMS: readonly (readonly string[])[] = ANIM_STATE_NAMES.map((_, i) => STATE_ANIM_TABLE[i as CoreAnimState] ?? ["idle"]);
 /** @deprecated use core `AnimState` (ADR-093); kept as an alias so render callers read one numbering. */

@@ -16,6 +16,7 @@ import { gatherSystem, respawnSystem } from "./systems/gathering.js";
 import { noiseDecaySystem } from "./systems/noise.js";
 import { spoilageSystem, SPOILAGE_EVERY } from "./systems/spoilage.js";
 import { consumeSystem, deathSystem, vitalsSystem } from "./systems/vitals.js";
+import { animSettleSystem } from "./systems/movement.js";
 import { installBuildingSystems, BUILDING_SYSTEMS } from "./building/install.js";
 import { installCombatSystems, COMBAT_SYSTEMS } from "./combat/install.js";
 import { entityIndex } from "@engine/core";
@@ -68,6 +69,7 @@ export const GAMEPLAY_SYSTEM_ORDER: readonly (readonly [Phase, string, number?])
   ["postSim", "gameplay.pruneBuffs", 20],
   ["postSim", "gameplay.stallDisplay", STALL_DISPLAY_EVERY],
   ["postSim", "gameplay.expression", EXPRESSION_EVERY],
+  ["postSim", "gameplay.animSettle"], // ADR-107: swim + player one-shot anims
   ["postSim", "gameplay.vehicleGuard"], // server-only, no-op until installVehicleGuard (vehicle_net.ts)
 ];
 
@@ -99,7 +101,7 @@ export function installGameplay(world: World, options: GameplayOptions | number 
     "gameplay.craft": craftingSystem, "gameplay.consume": consumeSystem, "gameplay.vitals": vitalsSystem, "gameplay.death": deathSystem,
     "gameplay.spoilage": spoilageSystem, "gameplay.chunkSurface": chunkSurfaceSystem,
     "gameplay.clearIntents": clearIntentsSystem, "gameplay.equipmentSync": equipmentSyncSystem, "gameplay.noiseDecay": noiseDecaySystem,
-    "gameplay.pruneBuffs": (w) => pruneModifiers(w, Buffs), "gameplay.stallDisplay": stallDisplaySystem, "gameplay.expression": expressionSystem, "gameplay.vehicles": vehicleSystem, "gameplay.vehicleGuard": vehicleGuardSystem,
+    "gameplay.pruneBuffs": (w) => pruneModifiers(w, Buffs), "gameplay.stallDisplay": stallDisplaySystem, "gameplay.expression": expressionSystem, "gameplay.vehicles": vehicleSystem, "gameplay.vehicleGuard": vehicleGuardSystem, "gameplay.animSettle": animSettleSystem,
     ...installBuildingSystems(world), ...installCombatSystems(world),
   };
   for (const [phase, name, every] of GAMEPLAY_SYSTEM_ORDER) {

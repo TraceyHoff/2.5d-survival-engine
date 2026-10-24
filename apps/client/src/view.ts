@@ -22,7 +22,9 @@ const VWet = defineComponent("ViewWetness", { level: "u8" });
 const VTemp = defineComponent("ViewBodyTemp", { cold: "u8", heat: "u8", shivering: "u8" });
 const VFuel = defineComponent("ViewFuel", { burnUntilTick: "u32", lit: "u8" });
 /** gameplay Anim (Idle Walk Run Attack Hurt Die Gather Build) -> render AnimStateId (Idle Walk Run Attack Hit Death ...). */
-const ANIM_MAP = [0, 1, 2, 3, 4, 5, 3, 3];
+const ANIM_MAP: readonly number[] = [0, 1, 2, 3, 4, 5, 3, 3];
+/** ADR-107: Swim (14) / Punch (15) pass straight through (atlas fallbacks: swim->walk, punch->attack). */
+const animMap = (a: number): number => (a === 14 || a === 15 ? a : ANIM_MAP[a] ?? 0);
 import { LightTable, type LightSpec } from "./lights.js";
 /** `?cam=animal`: debug camera that follows the first ambient animal instead of the player. */
 const CAM_ANIMAL = typeof location !== "undefined" && new URLSearchParams(location.search).get("cam") === "animal";
@@ -173,9 +175,11 @@ export class IsoView {
       v.set(ve, Transform, { x: cur.x, y: cur.y, z: ground(cur.x, cur.y, cur.z), facing });
       if (v.has(ve, VAnim)) {
         const ga = net.get(e, GAnim); const dead = net.has(e, Dead);
-        let state = dead ? 5 : ga && ga.anim > 1 ? ANIM_MAP[ga.anim] ?? 0 : moving ? (net.has(e, Zombie) ? 6 : 1) : 0;
+        let state = dead ? 5 : ga && ga.anim > 1 ? animMap(ga.anim) : moving ? (net.has(e, Zombie) ? 6 : 1) : 0;
         const an = net.get(e, Animal);
         if (an) state = this.animalAnim(net, e, an, moving, dead, player);
+        // ADR-107: anything on a swim tile at ground level swims (players have no replicated AnimState; locomotion only)
+        if (!dead && (state <= 2 || state === 6 || state === 14) && cur.z < 0.5 && defs && tiles && defs.movement.swimTiles.has(tiles.getTile(Math.floor(cur.x), Math.floor(cur.y)))) state = 14;
         const a = v.get(ve, VAnim)!; if (a.state !== state) v.set(ve, VAnim, { state, startTick: v.tick });
         const wet = net.get(e, Wetness); if (wet) v.set(ve, VWet, { level: wet.level });
         const bt = net.get(e, BodyTemp); if (bt) v.set(ve, VTemp, { cold: bt.cold, heat: bt.heat, shivering: bt.shivering });

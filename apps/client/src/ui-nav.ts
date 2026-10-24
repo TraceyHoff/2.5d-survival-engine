@@ -11,6 +11,7 @@
  * Spatial moves use @engine/input's FocusManager over element rects; with no layout (all rects empty) they fall back to DOM order.
  */
 import { FocusManager, type Dir } from "@engine/input";
+import { BackHistory, focusVisible } from "./back-history.js";
 
 export interface ContextStack { push(name: string): void; pop(name?: string): void; isActive?(name: string): boolean }
 /** Input contexts in which Esc belongs to the game (Build.Cancel), not the pause menu. */
@@ -30,6 +31,8 @@ export interface UINavOptions {
   /** default true: poll gamepads every animation frame */
   pollGamepads?: boolean;
   now?: () => number;
+  /** default true: Android/browser back (popstate) closes the top modal */
+  history?: boolean;
 }
 export interface GamepadLikeNav { buttons: readonly { pressed: boolean }[]; axes: readonly number[] }
 export const PAD = { A: 0, B: 1, X: 2, Y: 3, LB: 4, RB: 5, SELECT: 8, START: 9, UP: 12, DOWN: 13, LEFT: 14, RIGHT: 15 } as const;
@@ -43,11 +46,14 @@ export class UINav {
   private prevPad: Record<string, boolean> = {};
   private held: Dir | undefined; private nextAt = 0; private raf = 0;
   private readonly onKey = (e: KeyboardEvent): void => this.key(e);
+  /** Android/browser back closes the top modal like Esc / B (ADR-107); opt out with history:false. */
+  private readonly backHistory: BackHistory | undefined;
   constructor(readonly o: UINavOptions) {
     addEventListener("keydown", this.onKey, true);
+    this.backHistory = o.history === false ? undefined : new BackHistory(() => { this.close(); });
     if (o.pollGamepads !== false && typeof requestAnimationFrame === "function") { const loop = (): void => { this.pollGamepad(); this.raf = requestAnimationFrame(loop); }; this.raf = requestAnimationFrame(loop); }
   }
-  destroy(): void { removeEventListener("keydown", this.onKey, true); if (this.raf) cancelAnimationFrame(this.raf); this.closeAll(); }
+  destroy(): void { removeEventListener("keydown", this.onKey, true); if (this.raf) cancelAnimationFrame(this.raf); this.closeAll(); this.backHistory?.destroy(); }
 
   get isOpen(): boolean { return this.stack.length > 0; }
   get top(): string | undefined { return this.stack.at(-1)?.id; }
@@ -60,8 +66,15 @@ export class UINav {
     const restore = document.activeElement;
     this.o.root.append(el);
     if (!this.stack.length) this.o.input?.push("Dialog");
+    // Every modal gets a visible Back/Close control (ADR-107): panels built by GameMenus carry [data-role=close]; anything else gets one.
+    if (!el.querySelector("[data-role=close],[data-role=back]")) {
+      const b = document.createElement("button"); b.type = "button"; b.className = "alt ui-back"; b.dataset["role"] = "back"; b.textContent = "← Back";
+      b.setAttribute("aria-label", "Back"); b.addEventListener("click", () => this.closeId(id));
+      (el.querySelector(".gm-panel") ?? el).prepend(b);
+    }
     this.stack.push({ id, el, onClose, restore });
-    const first = el.querySelector<HTMLElement>("[autofocus]") ?? this.focusables()[0]; first?.focus();
+    this.backHistory?.sync(true);
+    const first = el.querySelector<HTMLElement>("[autofocus]") ?? this.focusables()[0]; focusVisible(first);
     return { id, el, close: () => this.closeId(id) };
   }
   /** Close the top modal (B / Esc / Back button). */
@@ -69,7 +82,8 @@ export class UINav {
     const s = this.stack.pop(); if (!s) return;
     s.el.remove(); s.onClose?.();
     if (!this.stack.length) this.o.input?.pop("Dialog");
-    const t = this.stack.at(-1); if (t) (this.focusables()[0])?.focus(); else if (s.restore instanceof HTMLElement && s.restore.isConnected) s.restore.focus();
+    this.backHistory?.sync(this.stack.length > 0);
+    const t = this.stack.at(-1); if (t) focusVisible(this.focusables()[0]); else if (s.restore instanceof HTMLElement && s.restore.isConnected) s.restore.focus();
   }
   closeId(id: string): void { while (this.isOpenId(id)) this.close(); }
   private closeTo(id: string): void { while (this.top && this.top !== id) this.close(); this.close(); }
@@ -86,12 +100,12 @@ export class UINav {
   /** Linear (Tab order) move, wrapping inside the top modal. */
   step(delta: number): HTMLElement | undefined {
     const f = this.focusables(); if (!f.length) return undefined;
-    const i = this.focused ? f.indexOf(this.focused) : -1; const n = f[i < 0 ? (delta > 0 ? 0 : f.length - 1) : (i + delta + f.length) % f.length]!; n.focus(); return n;
+    const i = this.focused ? f.indexOf(this.focused) : -1; const n = f[i < 0 ? (delta > 0 ? 0 : f.length - 1) : (i + delta + f.length) % f.length]!; focusVisible(n); return n;
   }
   /** Spatial move (arrows / D-pad / stick). */
   move(dir: Dir): HTMLElement | undefined {
     const f = this.focusables(); if (!f.length) return undefined;
-    const cur = this.focused; if (!cur) { f[0]!.focus(); return f[0]; }
+    const cur = this.focused; if (!cur) { focusVisible(f[0]); return f[0]; }
     const rects = f.map((e) => e.getBoundingClientRect());
     if (rects.every((r) => r.width === 0 && r.height === 0)) return this.step(dir === "up" || dir === "left" ? -1 : 1);
     const fm = new FocusManager(); fm.pushScreen("modal", true);
@@ -99,7 +113,7 @@ export class UINav {
     fm.setFocus(String(f.indexOf(cur)));
     const next = fm.navigate(dir);
     if (next === undefined || next === String(f.indexOf(cur))) return this.step(dir === "up" || dir === "left" ? -1 : 1); // edge: wrap in DOM order
-    const n = f[Number(next)]!; n.focus(); return n;
+    const n = f[Number(next)]!; focusVisible(n); return n;
   }
   /** A / Enter / Space on the focused control. */
   activate(): void {

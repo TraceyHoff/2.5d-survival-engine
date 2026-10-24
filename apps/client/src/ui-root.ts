@@ -11,6 +11,10 @@ const CSS = `#${ROOT_ID}{position:fixed;inset:0;overflow:hidden;background:#111;
 touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
 #${ROOT_ID}:fullscreen{width:100%;height:100%}
 #${ROOT_ID} canvas{display:block;width:100%;height:100%;touch-action:none}
+/* ADR-107: every menu/panel/modal scrolls inside the visible viewport (dvh + safe areas), also in fullscreen */
+#${ROOT_ID} [data-modal]>*,#${ROOT_ID} .gm-panel,#${ROOT_ID} [data-role=delete-confirm],#p2p-overlay,.ui-scroll{max-height:calc(100vh - 16px);max-height:calc(100dvh - var(--sat,0px) - var(--sab,0px) - 16px);
+overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;box-sizing:border-box}
+#${ROOT_ID} [data-modal]{touch-action:pan-y}
 #${ROOT_ID} button,#${ROOT_ID} input,#${ROOT_ID} select,#${ROOT_ID} textarea{touch-action:manipulation;user-select:auto;-webkit-user-select:auto}`;
 
 /** The root container (created around `#game` if index.html doesn't have it). */

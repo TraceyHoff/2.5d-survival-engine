@@ -20,7 +20,7 @@ export interface P2POverlay { root: HTMLElement; update(): void; destroy(): void
 export function mountP2POverlay(m: P2POverlayModel): P2POverlay {
   const root = document.createElement("div");
   root.id = "p2p-overlay"; root.dataset["mode"] = m.mode;
-  root.style.cssText = "position:absolute;top:calc(4px + var(--sat,0px));left:50%;transform:translateX(-50%);z-index:10;background:#fff;padding:4px 8px;font:12px sans-serif;max-width:min(240px,40vw);pointer-events:auto";
+  root.style.cssText = "position:absolute;top:calc(4px + var(--sat,0px));left:50%;transform:translateX(-50%);z-index:10;background:#fff;padding:4px 8px;font:12px sans-serif;max-width:min(240px,40vw);pointer-events:auto;max-height:calc(100dvh - var(--sat,0px) - var(--sab,0px) - 16px);overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;box-sizing:border-box";
   const code = document.createElement("div"); code.dataset["role"] = "code";
   code.textContent = m.mode === "host" ? `Room code: ${m.code}` : `Joined: ${m.code}`;
   const cap = document.createElement("div"); cap.dataset["role"] = "cap";

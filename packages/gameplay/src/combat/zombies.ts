@@ -25,6 +25,7 @@ import { makeNoise } from "../systems/noise.js";
 import { shelterAt } from "../building/shelter.js";
 import { structures } from "../building/structure.js";
 import { TerrainRes } from "../world.js";
+import { swimSpeedMulAt } from "../systems/movement.js";
 import { applyDamage, setAnim } from "./combat.js";
 import { findPath, pieceHp } from "./path.js";
 
@@ -156,7 +157,7 @@ export function zombieAISystem(world: World, dt: number): void {
       const tt = world.get(tgt, Transform)!; const reach = def.attackRange + (state === ZState.AttackStructure ? 0.7 : 0.3);
       if (dist(x, y, tt.x, tt.y) > reach) {
         if (state === ZState.AttackPlayer) { setState(world, z, ZState.Chase); continue; }
-        moveToward(world, z, tt.x, tt.y, def.speed * dt, ts);
+        moveToward(world, z, tt.x, tt.y, def.speed * swimSpeedMulAt(world, x, y) * dt, ts);
         continue;
       }
       if (world.tick >= br.data.attackAt[s]!) {
@@ -174,7 +175,7 @@ export function zombieAISystem(world: World, dt: number): void {
       // never walk through a blocker: if the next step is blocked, attack it
       const blocked = structures(world).count ? stepBlockerCached(world, cx, cy, px, py) : 0;
       if (blocked) { br.data.blockPiece[s] = blocked; setState(world, z, ZState.AttackStructure); continue; }
-      const step = def.speed * (state === ZState.Wander ? 0.5 : 1) * dt;
+      const step = def.speed * (state === ZState.Wander ? 0.5 : 1) * swimSpeedMulAt(world, x, y) * dt;
       if (moveToward(world, z, gx, gy, step, ts)) path.i++;
       setAnim(world, z, state === ZState.Wander ? Anim.Walk : Anim.Run);
     } else setAnim(world, z, Anim.Idle);

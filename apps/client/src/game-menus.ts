@@ -30,8 +30,8 @@ export const GAME_MENUS: readonly MenuDef[] = [
   { id: "settings", title: "Settings", icon: "⚙", hotkeys: ["KeyO"], text: "" },
 ];
 const CSS = `.gm-modal{position:absolute;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:rgba(10,8,6,.55);
-padding:calc(8px + var(--sat,0px)) calc(8px + var(--sar,0px)) calc(8px + var(--sab,0px)) calc(8px + var(--sal,0px));box-sizing:border-box;pointer-events:auto;touch-action:manipulation}
-.gm-panel{background:#F6EAD2;color:#3B2433;border:3px solid #74432C;border-radius:14px;box-shadow:0 4px 0 #432C24;max-width:min(560px,94vw);max-height:100%;overflow:auto;
+padding:calc(8px + var(--sat,0px)) calc(8px + var(--sar,0px)) calc(8px + var(--sab,0px)) calc(8px + var(--sal,0px));box-sizing:border-box;pointer-events:auto;touch-action:pan-y}
+.gm-panel{background:#F6EAD2;color:#3B2433;border:3px solid #74432C;border-radius:14px;box-shadow:0 4px 0 #432C24;max-width:min(560px,94vw);max-height:100%;max-height:calc(100dvh - var(--sat,0px) - var(--sab,0px) - 16px);overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;
 padding:12px 14px;display:flex;flex-direction:column;gap:10px;font:600 15px Fredoka,system-ui,sans-serif;box-sizing:border-box;min-width:min(300px,90vw)}
 .gm-panel header{display:flex;align-items:center;justify-content:space-between;gap:8px}.gm-panel h2{margin:0;font-size:20px;color:#74432C}
 .gm-panel p{margin:0;font-size:14px}.gm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}

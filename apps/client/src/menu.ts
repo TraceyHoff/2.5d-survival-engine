@@ -6,6 +6,7 @@
 import { deleteConfirm, deleteLocalProgress, listLocalSaves, type LocalSaveKind } from "./delete-progress.js";
 import { mountUi } from "./ui-root.js";
 import { enterFullscreen } from "./fullscreen.js";
+import { BackHistory, focusVisible } from "./back-history.js";
 interface Branding { title: string; tagline: string; logo: string; bg: "" | "flat" | "parallax"; plates: boolean; icons: boolean; loading: boolean; loadingAnim: boolean }
 declare const __BRANDING__: Branding | undefined;
 const BR: Branding = (typeof __BRANDING__ !== "undefined" && __BRANDING__) || { title: "Cozy Wild", tagline: "survival", logo: "", bg: "", plates: false, icons: false, loading: false, loadingAnim: false };
@@ -22,7 +23,8 @@ export function loadSettings(): Settings {
 
 const CSS = (base: string): string => `@font-face{font-family:Fredoka;src:url(${base}art/ui/fonts/Fredoka.ttf) format("truetype");font-display:swap}
 .boot{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;
-font:600 16px Fredoka,system-ui,sans-serif;color:#FFFAF0;background:radial-gradient(ellipse at 50% 35%,#3d5a3a 0%,#22301f 55%,#14110f 100%);transition:opacity .35s}
+font:600 16px Fredoka,system-ui,sans-serif;color:#FFFAF0;background:radial-gradient(ellipse at 50% 35%,#3d5a3a 0%,#22301f 55%,#14110f 100%);transition:opacity .35s;
+overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);box-sizing:border-box}
 .boot.hide{opacity:0;pointer-events:none}
 .boot .title{font-size:clamp(34px,7vw,68px);font-weight:700;letter-spacing:1px;color:#FFD45A;text-align:center;line-height:1.05;
 text-shadow:0 3px 0 #74432C,0 6px 0 #432C24,0 10px 18px rgba(0,0,0,.5);-webkit-text-stroke:2px #3B2433}
@@ -32,7 +34,8 @@ text-shadow:0 3px 0 #74432C,0 6px 0 #432C24,0 10px 18px rgba(0,0,0,.5);-webkit-t
 .boot .fill{height:100%;width:0;background:linear-gradient(#FFE28A,#F4A74A);transition:width .2s}
 .boot .lbl{font-size:13px;color:#E6C47E;min-height:1em}
 .boot .panel{display:flex;flex-direction:column;gap:12px;background:#F6EAD2;border:4px solid #74432C;border-radius:18px;padding:18px 22px;
-box-shadow:0 4px 0 #432C24,0 10px 24px rgba(0,0,0,.45);min-width:min(320px,86vw);max-width:92vw;color:#3B2433}
+box-shadow:0 4px 0 #432C24,0 10px 24px rgba(0,0,0,.45);min-width:min(320px,86vw);max-width:92vw;color:#3B2433;box-sizing:border-box;
+max-height:calc(100vh - 24px);max-height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 24px);overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;flex-shrink:0}
 .boot button{font:700 20px Fredoka,system-ui,sans-serif;color:#FFFAF0;background:#5A9A4A;border:3px solid #3B2433;border-radius:14px;padding:10px 18px;
 box-shadow:0 4px 0 #2D5A2E;cursor:pointer;touch-action:manipulation;text-shadow:0 2px 0 #2D5A2E;min-height:48px}
 .boot button.alt{background:#C98A4B;box-shadow:0 4px 0 #74432C;text-shadow:0 2px 0 #74432C}
@@ -76,6 +79,7 @@ export class BootUI {
   private padTimer = 0;
   private keyHandler: ((e: KeyboardEvent) => void) | undefined;
   private back: (() => void) | undefined;
+  private readonly history = new BackHistory(() => { this.back?.(); });
 
   constructor(private readonly base: string) {
     const st = document.createElement("style"); st.textContent = CSS(base); document.head.append(st);
@@ -165,7 +169,7 @@ export class BootUI {
             setTimeout(() => { if (this.root.dataset["boot"] === "menu") saves(); }, 1500); // refresh the list
             return r.message;
           } });
-        this.screen([], main, `<h2>Delete progress</h2>`, box, note, c.el);
+        this.screen([["Back", main, "alt"]], main, `<h2>Delete progress</h2>`, box, note, c.el);
         this.cleanup = () => c.destroy();
         void listLocalSaves({ slot }).then((list) => {
           if (!box.isConnected) return;
@@ -186,6 +190,7 @@ export class BootUI {
 
   private screen(items: [string, () => void, string?][], back: (() => void) | undefined, html = "", ...extra: HTMLElement[]): void {
     this.back = back; this.cleanup?.(); this.cleanup = undefined;
+    this.history.sync(!!back); // Android/browser back = this screen's Back (ADR-107)
     const panel = document.createElement("div"); panel.className = "panel"; panel.setAttribute("role", "menu");
     if (html) { const h = document.createElement("div"); h.style.cssText = "display:flex;flex-direction:column;gap:8px"; h.innerHTML = html; if (h.querySelector(".hint")) { h.remove(); } else panel.append(h); }
     panel.append(...extra);
@@ -197,7 +202,7 @@ export class BootUI {
     const nodes: HTMLElement[] = [panel]; if (html.includes("hint")) { const h = document.createElement("div"); h.className = "hint"; h.textContent = "Mouse / touch · arrows + Enter · gamepad D-pad + A"; nodes.push(h); }
     this.body.replaceChildren(...nodes);
     const focusables = (): HTMLElement[] => Array.from(panel.querySelectorAll<HTMLElement>("input,button"));
-    let idx = focusables().indexOf(buttons[0]!); const focus = (i: number): void => { const f = focusables(); if (!f.length) return; idx = (i + f.length) % f.length; f[idx]!.focus(); };
+    let idx = focusables().indexOf(buttons[0]!); const focus = (i: number): void => { const f = focusables(); if (!f.length) return; idx = (i + f.length) % f.length; focusVisible(f[idx]); };
     panel.addEventListener("focusin", (e) => { const i = focusables().indexOf(e.target as HTMLElement); if (i >= 0) idx = i; }); // content added later (save picker)
     focus(idx);
     if (this.keyHandler) removeEventListener("keydown", this.keyHandler);
@@ -227,6 +232,7 @@ export class BootUI {
 
   hide(): void {
     cancelAnimationFrame(this.padTimer); if (this.keyHandler) removeEventListener("keydown", this.keyHandler);
+    this.history.sync(false); this.history.destroy();
     this.root.classList.add("hide"); this.root.dataset["boot"] = "done"; setTimeout(() => this.root.remove(), 400);
   }
 }

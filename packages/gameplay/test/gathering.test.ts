@@ -26,12 +26,12 @@ describe("gathering", () => {
 
   it("enforces tool kind and tier; higher tiers add bonus yield", () => {
     const w = makeWorld(); const p = spawnPlayer(w, { x: 0, y: 0, maxWeight: 0 });
-    const tree = spawnResourceNode(w, "tree", 1, 0);
+    const tree = spawnResourceNode(w, "tree", 1, 0); const oak = spawnResourceNode(w, "oak_tree", 1, 0.5); // oak: axe tier 2 (no bare hands, ADR-107)
     const failed = collect(w, GatherFailed);
-    gather(w, p, tree);
+    gather(w, p, oak);
     expect(failed.at(-1)!.reason).toBe(GatherFail.WrongTool);
     addItem(w, p, d.itemId("stone_pickaxe"), 1); w.set(p, Equipment, { mainHandSlot: 0 });
-    gather(w, p, tree);
+    gather(w, p, oak);
     expect(failed.at(-1)!.reason).toBe(GatherFail.WrongTool);
     addItem(w, p, d.itemId("iron_axe"), 1); w.set(p, Equipment, { mainHandSlot: 1 });
     w.step(1 / 20);

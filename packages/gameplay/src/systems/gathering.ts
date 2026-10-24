@@ -24,6 +24,11 @@ export function heldTool(world: World, e: Entity, defs: GameDefs): ToolDef {
   return defs.items.get(slotItem(world, e, slot).item)?.tool ?? BARE_HANDS;
 }
 
+/** Fists can work this tool node (resources.json bareHands, ADR-107): low tier and a listed tool kind. */
+export function bareHandsCan(defs: GameDefs, def: { requiredTool: ToolKind; minTier: number }): boolean {
+  return def.requiredTool === ToolKind.None || (def.minTier <= defs.bareHands.maxMinTier && defs.bareHands.tools.has(def.requiredTool));
+}
+
 export function respawnSystem(world: World): void {
   if (!isAuthority(world)) return;
   const defs = gameplayDefs(world); const rn = world.store(ResourceNode);
@@ -54,20 +59,23 @@ export function gatherSystem(world: World, dt: number): void {
     const dist = Math.hypot(tf.data.x[a]! - tf.data.x[b]!, tf.data.y[a]! - tf.data.y[b]!);
     if (dist > world.getField(e, Gatherer, "reach")! + rangeSlack(world, e)) { fail(GatherFail.OutOfRange); continue; }
     const tool = heldTool(world, e, defs);
-    if (def.requiredTool !== ToolKind.None && (tool.kind !== def.requiredTool || tool.tier < def.minTier)) { fail(GatherFail.WrongTool); continue; }
+    const bare = def.requiredTool !== ToolKind.None && (tool.kind !== def.requiredTool || tool.tier < def.minTier);
+    if (bare && !bareHandsCan(defs, def)) { fail(GatherFail.WrongTool); continue; }
     if (world.has(e, Survival) && !spendStamina(world, e, def.staminaCost, dt)) { fail(GatherFail.Exhausted); continue; }
 
-    world.setField(e, Gatherer, "cooldownUntilTick", world.tick + secondsToTicks(def.cooldownSeconds, dt));
+    world.setField(e, Gatherer, "cooldownUntilTick", world.tick + secondsToTicks(def.cooldownSeconds * (bare ? defs.bareHands.cooldownMul : 1), dt));
     emit(world, GatherSwing, { entity: e, node });
     if (!authority || world.isReplaying) continue;
     makeNoise(world, e, defs.noise.gather);
     // Per-node deterministic stream keyed by the node's NetId (same on every peer), not the shared world.rng.
     const rng = world.rngFor("gather", world.getField(node, NetId, "id") ?? node);
 
-    const bonus = def.requiredTool !== ToolKind.None ? Math.max(0, tool.tier - def.minTier) * def.bonusPerTier : 0;
+    const bonus = def.requiredTool !== ToolKind.None && !bare ? Math.max(0, tool.tier - def.minTier) * def.bonusPerTier : 0;
     def.yields.forEach((y, i) => {
+      if (bare && i > 0) return; // fists: first yield only
       if (y.chance < 1 && rng.next() >= y.chance) return;
-      const n = rng.int(y.min, y.max + 1) + (i === 0 ? bonus : 0);
+      const rolled = rng.int(y.min, y.max + 1) + (i === 0 ? bonus : 0);
+      const n = bare ? Math.max(defs.bareHands.minYield, Math.floor(rolled * defs.bareHands.yieldMul)) : rolled;
       if (n <= 0) return;
       const added = addItem(world, e, y.item, n);
       if (added > 0) emit(world, ItemGathered, { entity: e, node, item: y.item, count: added });

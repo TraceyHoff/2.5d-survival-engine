@@ -15,6 +15,8 @@ import { makeNoise } from "../systems/noise.js";
 import { distance } from "../systems/fuel.js";
 import { spendStamina } from "../systems/vitals.js";
 import { checkHit, tagCombat } from "./pvp.js";
+import { installSpatialIndex } from "@engine/world";
+import { Animal } from "../components.js";
 import { armorReduce, igniteTarget, landThrown, resolveAttack, spendRound, throwExplosive } from "./arms.js";
 
 export const FISTS: WeaponDef = { damage: 5, range: 1.0, cooldownSeconds: 0.6, staminaCost: 3, structureMul: 0.2 };
@@ -22,6 +24,22 @@ export function heldWeapon(world: World, e: Entity): WeaponDef {
   const slot = world.getField(e, Equipment, "mainHandSlot");
   if (slot === undefined || slot === NO_SLOT || !world.has(e, Inventory)) return FISTS;
   return gameplayDefs(world).items.get(slotItem(world, e, slot).item)?.weapon ?? FISTS;
+}
+
+/**
+ * Primary-button melee target for a human (ADR-107): the nearest live zombie or animal within the held weapon's
+ * melee reach (+0.4 + slack, the same reach combatSystem checks). Players and structures are never auto-targeted
+ * (PvP / demolition stay explicit). undefined -> the button falls back to gathering.
+ */
+export function nearestMeleeTarget(world: World, e: Entity): Entity | undefined {
+  const t = world.get(e, Transform); if (!t) return undefined;
+  const reach = heldWeapon(world, e).range + 0.4 + rangeSlack(world, e);
+  let best: Entity | undefined; let bd = Infinity;
+  for (const o of installSpatialIndex(world).queryRadius(t.x, t.y, reach)) {
+    if (o === e || !world.isAlive(o) || !world.has(o, Health) || world.has(o, Dead) || !(world.has(o, Zombie) || world.has(o, Animal))) continue;
+    const d = distance(world, e, o); if (d <= reach && d < bd) { bd = d; best = o; }
+  }
+  return best;
 }
 
 export function setAnim(world: World, e: Entity, anim: Anim): void {
@@ -59,7 +77,7 @@ export function combatSystem(world: World, dt: number): void {
     const stamina = mode.kind === "ranged" ? mode.staminaCost : w.staminaCost;
     if (world.has(e, Survival) && !spendStamina(world, e, stamina, dt)) continue;
     world.setField(e, Attacker, "cooldownUntilTick", world.tick + secondsToTicks(mode.kind === "ranged" ? mode.cooldownSeconds : w.cooldownSeconds, dt));
-    if (world.has(e, AnimState)) setAnim(world, e, Anim.Attack);
+    if (authority || world.has(e, AnimState)) setAnim(world, e, w === FISTS && mode.kind === "melee" ? Anim.Punch : Anim.Attack); // players get AnimState lazily (settled by gameplay.animSettle)
     emit(world, AttackSwing, { entity: e, target });
     if (!authority) continue;
     if (mode.kind === "explosive") { // lands at the target's position; no hit check (area effect resolves later)

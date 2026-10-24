@@ -11,7 +11,7 @@
  *   the depth buffer, so terrain cliffs, walls and sprites interleave correctly. Multi-tile pieces are
  *   split into per-column slices, each keyed by its front-most footprint tile.
  */
-import { entityIndex, lerpAngle, PrevTransform, Transform, type ComponentDef, type World } from "@engine/core";
+import { AnimState as CoreAnimState, entityIndex, lerpAngle, PrevTransform, Transform, type ComponentDef, type World } from "@engine/core";
 import { CHUNK_SIZE, chunkKey, floorToTerrainZ, terrainZToFloor, type BuildingGrid, type ChunkedSpatialIndex, type IsoConfig } from "@engine/world";
 import { createProgram, GLSL_COMMON, type FrameStats, type Program } from "./gl/util.js";
 import { Sprite, Shadow, Occluder, SpriteFlag, LightSource, TintSecondary } from "./components.js";
@@ -26,10 +26,12 @@ import { PRIO_NEAR } from "./gl/vram.js";
 import { crackAnim, PieceCoverIndex, ROT_EXACT_PIVOT } from "./building/modular.js";
 import { InteriorRoute, inInteriorRegion, interiorOrder, type InteriorRegion } from "./vehicles/interiorPass.js";
 
-export const INSTANCE_FLOATS = 36;
+export const INSTANCE_FLOATS = 40;
 /** Depth offset of held items vs the body (must exceed depth-key precision; < the next tile row). */
 export const HELD_BIAS = 0.05;
 const OPEN = 1e5;
+/** Swim fallback (ADR-107): fraction of the pivot height hidden below the waterline, and the bob amplitude in sprite px. */
+const SWIM_CLIP = 0.45, SWIM_BOB_PX = 1.5;
 /** Depth-key step between a character's paper-doll layers (10 layers < HELD_BIAS; far below one tile = 1.0). */
 export const LAYER_BIAS = 0.001;
 /** Frame px of slack below the body cell for wear cells / outline that reach lower than the body (see paper-doll depth). */
@@ -92,6 +94,7 @@ layout(location=5) in vec4 aF; // wet 0..1, cold 0..1, shivering 0/1, heat 0..1
 layout(location=6) in vec4 aG; // sway amp (px), freq (Hz), stiffness, occlusion 0..1
 layout(location=7) in vec4 aH; // secondary tint rgb (tintmask G; 0 = none), exhausted 0..1
 layout(location=8) in vec4 aI; // rotation (radians, screen, around the pivot; held items), unused x3
+layout(location=9) in vec4 aJ; // ADR-107 swim fallback: hidden sprite px above the pivot (lower body clip), bob amp px, unused x2
 ${GLSL_COMMON}
 uniform highp sampler2D uFrames;
 uniform float uZPerPx, uHH, uTime, uWind, uOutline;
@@ -136,7 +139,7 @@ void main() {
   vec2 sl = (flags & 1) != 0 ? vec2(-aC.w, -aC.z) : aC.zw;
   bool maskSway = (vFB.x & 4) != 0 && aG.x > 0.0; float m = maskSway ? aG.x + 1.0 : 0.0; // sway mask: per-pixel UV shift, quad grows by amp
   float x0 = max(-ow - m, aC.x + sl.x), x1 = min(dim.x + ow + m, aC.x + sl.y);
-  float x = mix(x0, x1, c.x), y = mix(-ow, dim.y + ow, c.y);
+  float x = mix(x0, x1, c.x), y = mix(-ow, aJ.x > 0.0 ? min(dim.y + ow, aC.y - aJ.x) : dim.y + ow, c.y); // swim: lower body clipped
   float flip = (flags & 1) != 0 ? -1.0 : 1.0;
   float px = (x - aC.x) * s * flip;
   float hp = (aC.y - y) * s;
@@ -148,6 +151,7 @@ void main() {
   if (aF.z > 0.5) px += sin(uTime * 52.0 + aB.z * 40.0) * (0.4 + 1.4 * aF.y) * s; // shiver
   vUvRaw = vec3(mix(uvr.xy, uvr.zw, vec2(x / dim.x, y / dim.y)), dim.z); vLayer = int(dim.z + 0.5);
   vec2 off = vec2(px, -hp);
+  if (aJ.x > 0.0) off.y += (aJ.x + sin(uTime * 3.0 + aB.z * 6.283) * aJ.y) * s; // swim: sink the upper body to the waterline + bob
   if (aI.x != 0.0) { float cr = cos(aI.x), sr = sin(aI.x); off = vec2(cr * off.x - sr * off.y, sr * off.x + cr * off.y); }
   vec2 iso = snapPivot(aA.xy) + off; vScr = iso;
   float hpd = hp + aD.w; // Footprint (128): pixels below the pivot are ground-level box faces nearer the camera
@@ -391,7 +395,7 @@ export class SpriteBatch {
   private makeVao(vbo: WebGLBuffer): WebGLVertexArrayObject {
     const gl = this.gl; const vao = gl.createVertexArray()!;
     gl.bindVertexArray(vao); gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-    for (let a = 0; a < 9; a++) { gl.enableVertexAttribArray(a); gl.vertexAttribPointer(a, 4, gl.FLOAT, false, INSTANCE_FLOATS * 4, a * 16); gl.vertexAttribDivisor(a, 1); }
+    for (let a = 0; a < 10; a++) { gl.enableVertexAttribArray(a); gl.vertexAttribPointer(a, 4, gl.FLOAT, false, INSTANCE_FLOATS * 4, a * 16); gl.vertexAttribDivisor(a, 1); }
     gl.bindVertexArray(null);
     return vao;
   }
@@ -453,7 +457,7 @@ export class SpriteBatch {
     if (tint === 0) { o[12] = 1; o[13] = 1; o[14] = 1; } else { o[12] = ((tint >>> 24) & 255) / 255; o[13] = ((tint >>> 16) & 255) / 255; o[14] = ((tint >>> 8) & 255) / 255; }
     o[15] = footDy;
     o[16] = shadowA; o[17] = ghost; o[18] = dmgOverlay; o[19] = shadowW;
-    o.fill(0, 20, 36);
+    o.fill(0, 20, INSTANCE_FLOATS);
     return o;
   }
 
@@ -639,6 +643,8 @@ export class SpriteBatch {
       if (sw) { o0[24] = sw[0]!; o0[25] = sw[1]!; o0[26] = sw[2]!; }
       o0[27] = occT;
       if (hitOf) { const hf = hitOf(e); if (hf > 0) o0[18] = -Math.min(1, hf); }
+      // ADR-107 swim fallback: no "swim" frames on this sprite -> walk frames, lower body clipped at the waterline + bob
+      if (st === CoreAnimState.Swim && atlas.animName(sid, atlas.stateAnim(sid, st)) !== "swim") { o0[36] = res.ay * SWIM_CLIP; o0[37] = SWIM_BOB_PX; }
       if (bodyL) this.writeLayerTint(o0, bodyL);
       // paper-doll depth: the vertex shader clamps the height term per vertex (max(hp, 0)), so a quad reaching below the
       // pivot gets a flatter interpolated depth slope than one that doesn't. Body and wear quads have different extents

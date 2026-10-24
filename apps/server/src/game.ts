@@ -1,7 +1,7 @@
 /** Authoritative game server: world + gameplay + streaming chunks + persistence + NetServer sessions. */
-import { ChannelRegistry, CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, type CosmeticCatalogLike, Membership, Owner, PlayerId, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
+import { ChannelRegistry, CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, type CosmeticCatalogLike, Membership, Owner, PlayerId, TimeOfDay, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
 import { CHUNK_SIZE, ChunkManager, ProceduralGenerator, computeSpawnPoints, chunkKeyOf, type BuildingGrid, type PopulationSpawner } from "@engine/world";
-import { GAMEPLAY_COMMANDS, ARMS_COMMANDS, ARMS_EVENT_RELIABILITY, Exploded, Reloaded, VehicleStationOpened, installPartyCommands, PartyInvitePending, installClanCommands, ClanInvitePending, ClanStatus, syncSocialMembership, clanState, encodeClanState, decodeClanState, loadClanState, queueCommand, spawnPlayer, spawnResourceNode, setSpawnPoints, spawnPoints as worldSpawnPoints, pickSpawnPoint, gameplayDefs, setIntent, IntentAction, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installPopulation, installCustomization,
+import { GAMEPLAY_COMMANDS, ARMS_COMMANDS, ARMS_EVENT_RELIABILITY, Exploded, Reloaded, VehicleStationOpened, installPartyCommands, PartyInvitePending, installClanCommands, ClanInvitePending, ClanStatus, syncSocialMembership, clanState, encodeClanState, decodeClanState, loadClanState, queueCommand, spawnPlayer, spawnResourceNode, setSpawnPoints, spawnPoints as worldSpawnPoints, pickSpawnPoint, gameplayDefs, setIntent, IntentAction, nearestMeleeTarget, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installPopulation, installCustomization,
   appearanceServerHooks, applyReplication, installStallBuyHook, installViewBonus, setHitValidator, installPvp, installCraftQueue, installExpressionCommands, installVehicleCommands, installVehicleCraftCommands, installVehicleGuard, requestEmote, CraftQueue, CraftQueuesRes, playerNames, stallListing, listingRevision, stallOf, tillOf, StallHeader, StallOwnerKind } from "@engine/gameplay";
 import { AppearanceServer, ChatServer, NameSync, NetServer, StallResult, StallServer, TileSync, validateHit, type ClientSession, type ServerTransport, type StallHooks } from "@engine/net";
 import { createAgentStore, type AgentIdentityStore } from "./agents.js";
@@ -102,12 +102,16 @@ export interface GameServer {
 
 export function createGameServer(o: GameServerOptions): GameServer {
   const log = o.log ?? (() => {});
+  const LEGACY_START_TIME_OF_DAY = 0.25;
   const tickHz = o.tickHz ?? DEFAULT_TICK_HZ;
   const meta = o.store?.readMeta();
   const seed = meta?.seed ?? o.seed ?? 1234;
   const world = new World({ seed, maxEntities: 1 << 18 });
   // Saved parties/clans/claims (throws on a corrupt record rather than starting empty and overwriting it).
   const permissions = installDemoWorld(world, "server", { tickHz, ...(o.store ? { social: loadSocial(o.store) } : {}) });
+  // ADR-107: new worlds start just after dawn (environment.startTimeOfDay 0.3 = 07:12). Saves made before ADR-107 were created at
+  // 0.25 (06:00) and never stored the epoch, so re-derive their clock from that legacy start: existing worlds keep their time.
+  if (meta) { const tod = world.env(TimeOfDay); tod.epochTick = -Math.round(LEGACY_START_TIME_OF_DAY * tod.dayLengthTicks); }
   if (meta) { world.tick = meta.tick; if (meta.schemaHash !== world.getSchemaHash()) log(`persist: save schema ${meta.schemaHash.toString(16)} != build ${world.getSchemaHash().toString(16)}; chunks with changed persistent components load read-only`); }
   // Clan rank masks / goals / contributions (gameplay ClanState) persist as the world blob "gameplay.clans", written on change.
   { const b = o.store?.readBlob(CLAN_BLOB); if (b) { try { loadClanState(world, decodeClanState(b.bytes)); } catch (e) { log(`persist: clan state unreadable: ${String(e)}`); } } }
@@ -148,7 +152,10 @@ export function createGameServer(o: GameServerOptions): GameServer {
     applyInput: (w, e, cmd, clientId) => {
       applyDemoInput(w, e, cmd, 1 / tickHz); // riders: drive input (only the seat-0 driver steers, gameplay.vehicles)
       if (cmd && (cmd.buttons & Act.Gather) && players.get(clientId)?.entity === e) {
-        const target = nearestNode(e); if (target !== undefined) setIntent(w, e, { action: IntentAction.Gather, target });
+        // ADR-107: the primary button punches/strikes a zombie or animal in melee reach first, else gathers
+        const foe = nearestMeleeTarget(w, e);
+        if (foe !== undefined) setIntent(w, e, { action: IntentAction.Attack, target: foe });
+        else { const target = nearestNode(e); if (target !== undefined) setIntent(w, e, { action: IntentAction.Gather, target }); }
       }
     },
     onClientJoin: (s, w) => {

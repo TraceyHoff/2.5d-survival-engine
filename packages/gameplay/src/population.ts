@@ -14,6 +14,7 @@ import { applyDamage, setAnim } from "./combat/combat.js";
 import { addItem } from "./inventory.js";
 import { structures } from "./building/structure.js";
 import { TerrainRes } from "./world.js";
+import { swimSpeedMulAt } from "./systems/movement.js";
 import { installSpatialIndex } from "@engine/world";
 import { populationData, resolveBehavior, toSpawnEntries, type AggroMode, type GameMode, type LootEntry } from "./ai/population.js";
 
@@ -114,7 +115,7 @@ export function animalAISystem(world: World, dt: number): void {
     }
     let moving = false;
     if (state !== AnimalState.Idle) {
-      const dx = gx - t.x, dy = gy - t.y, d = Math.hypot(dx, dy); const sp = (state === AnimalState.Wander ? def.speed : def.fleeSpeed) * dt;
+      const dx = gx - t.x, dy = gy - t.y, d = Math.hypot(dx, dy); const sp = (state === AnimalState.Wander ? def.speed : def.fleeSpeed) * swimSpeedMulAt(world, t.x, t.y) * dt;
       if (d < 0.1) { if (state !== AnimalState.Attack) state = AnimalState.Idle; }
       else {
         const nx = t.x + (dx / d) * Math.min(sp, d), ny = t.y + (dy / d) * Math.min(sp, d);
