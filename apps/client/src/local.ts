@@ -7,7 +7,7 @@
  * mode: "multiplayer" disables human bots entirely (and ignores `bots`). No Node-only imports.
  */
 import { CommandRegistry, DEFAULT_TICK_HZ, FixedLoop, Owner, World, type CosmeticCatalogLike, type Agent, type AgentOutput, type Entity } from "@engine/core";
-import { agentOutputFrame, applyAgentEmote, buildAgentView, makeAgent, makeAgentIdentity, survivorController } from "@engine/gameplay";
+import { agentOutputFrame, applyAgentEmote, buildAgentView, flushSocialMemory, makeAgent, makeAgentIdentity, survivorController } from "@engine/gameplay";
 import { ChatChannel, LoopbackNetwork, NetClient, type ClientTransport } from "@engine/net";
 import { ClaimAccount, IndexedDbWorldStore, MemoryWorldStore, SetName, nameToWords, tokenToWords, type WorldStore } from "@engine/persist";
 import { createGameServer, SPAWN, type GameMode, type GameServer } from "@engine/server/game";
@@ -88,9 +88,10 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
     game.agents.put(identity.id, { ...identity }); // persisted ("agents" records); gameplay updates relationship / party / clan memory via game.agents.put
     bots.push(vp);
   }
+  const putAgent = (id: string, partial: Parameters<typeof game.agents.put>[1]): unknown => game.agents.put(id, partial);
   function dropBot(clientId: number): void {
     const i = bots.findIndex((b) => b.client.clientId === clientId); if (i < 0) return;
-    const b = bots[i]!; controller.remove(b.agent); b.client.close(); bots.splice(i, 1);
+    const b = bots[i]!; flushSocialMemory([b.agent], putAgent, game.world.tick, true); controller.remove(b.agent); b.client.close(); bots.splice(i, 1);
   }
   const serverEntityOf = (cid: number): Entity | undefined => { for (const e of game.world.query([Owner])) if (game.world.getField(e, Owner, "clientId") === cid) return e; return undefined; };
   const selfOf = (vp: VirtualPlayer): Entity | undefined => { for (const e of vp.world.query([Owner])) if (vp.world.getField(e, Owner, "clientId") === vp.client.clientId) return e; return undefined; };
@@ -98,6 +99,7 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
   const agentLoop = new FixedLoop({ tickHz: DEFAULT_TICK_HZ, step: () => {
     const outs = controller.tick(game.world.tick, (a) => { const vp = bots.find((b) => b.agent === a); const e = vp && selfOf(vp); return vp && e !== undefined ? buildAgentView(vp.world, e, a, vp.home) : undefined; });
     for (const vp of bots) { const out = outs.get(vp.agent); if (!out) continue; vp.output = out; if (out.chat) vp.client.chat.send(ChatChannel.Local, out.chat.text); if (out.emote) { const e = serverEntityOf(vp.client.clientId); if (e !== undefined) applyAgentEmote(game.world, e, out); } if (out.commands) sendAgentCommands(vp.client, out.commands); }
+    flushSocialMemory(bots.map((b) => b.agent), putAgent, game.world.tick); // debounced social-memory write-through
   } });
   const pump = (ms: number): void => {
     for (const q of queued.splice(0)) connecting.push(addBot(q.x, q.y, false).catch((e) => o.log?.(`bot failed: ${String(e)}`)));
@@ -112,7 +114,7 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
   const server: LocalServer = {
     game, network, bots, pump,
     createTransport: () => network.createClient(),
-    async stop() { stopped = true; await Promise.allSettled(connecting); for (const b of bots) b.client.close(); await game.shutdown(); transport.close(); },
+    async stop() { stopped = true; await Promise.allSettled(connecting); flushSocialMemory(bots.map((b) => b.agent), putAgent, game.world.tick, true); for (const b of bots) b.client.close(); await game.shutdown(); transport.close(); },
   };
   if (mode === "singleplayer") for (let i = 0; i < (o.bots ?? 0); i++) await addBot(SPAWN.x + i, SPAWN.y + 2);
   return server;

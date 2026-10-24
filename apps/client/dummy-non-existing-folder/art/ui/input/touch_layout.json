@@ -1,0 +1,1786 @@
+{
+ "_doc": "VirtualLayout per variant/context. Pick variant: tablet if min(cssW,cssH) >= 600dp else phone; portrait if h > w. Anchors are normalized inside the safe area (env(safe-area-inset-*) -> --sat/--sar/--sab/--sal). radius in dp at reference; engine scale = clamp(min(w/refW, h/refH), 0.75, 2). Mirror x for left-handed (settings.input.leftHanded).",
+ "minHitDp": 48,
+ "safeArea": {
+  "cssVars": [
+   "--sat",
+   "--sar",
+   "--sab",
+   "--sal"
+  ],
+  "minInsetDp": {
+   "top": 8,
+   "right": 12,
+   "bottom": 10,
+   "left": 12
+  },
+  "note": "add minInsetDp on top of the device insets so thumbs never land on the home indicator / rounded corners"
+ },
+ "variantRule": {
+  "tabletMinShortSideDp": 600,
+  "portraitIf": "h > w"
+ },
+ "opacity": {
+  "idle": 0.72,
+  "pressed": 1.0,
+  "disabled": 0.4,
+  "fadeAfterIdleMs": 6000,
+  "fadedOpacity": 0.38
+ },
+ "joystick": {
+  "base": "input_vj_base",
+  "baseActive": "input_vj_base_active",
+  "knob": "input_vj_knob",
+  "knobPressed": "input_vj_knob_pressed",
+  "knobTravel": 0.62,
+  "zoneHint": "input_vj_zone",
+  "returnMs": 120
+ },
+ "hotbarRadial": {
+  "ring": "input_rad_ring",
+  "segment": "input_rad_seg",
+  "segmentHi": "input_rad_seg_hi",
+  "hub": "input_rad_hub",
+  "openOn": "hold 220ms on the hotbar strip or the hotbar element",
+  "selectOn": "release over segment"
+ },
+ "layouts": {
+  "phone.landscape": {
+   "gameplay": {
+    "id": "cozy.touch.phone.landscape.gameplay",
+    "reference": {
+     "w": 844,
+     "h": 390
+    },
+    "elements": [
+     {
+      "id": "move",
+      "kind": "joystick",
+      "mode": "floating",
+      "anchor": {
+       "x": 0.1777,
+       "y": 0.7436
+      },
+      "radius": 60.0,
+      "deadzone": 0.12,
+      "zone": {
+       "x": 0,
+       "y": 0.35,
+       "w": 0.45,
+       "h": 0.65
+      },
+      "control": "touch.move",
+      "x_hitRadiusDp": 60.0,
+      "x_sprite": "input_vj_base"
+     },
+     {
+      "id": "attack",
+      "kind": "button",
+      "anchor": {
+       "x": 0.8957,
+       "y": 0.7641
+      },
+      "radius": 44.0,
+      "control": "touch.btn.attack",
+      "glyph": "touch.button.attack",
+      "x_hitRadiusDp": 44.0,
+      "x_sprite": "input_vb_attack_normal"
+     },
+     {
+      "id": "secondary",
+      "kind": "button",
+      "anchor": {
+       "x": 0.7749,
+       "y": 0.8667
+      },
+      "radius": 34.0,
+      "control": "touch.btn.secondary",
+      "glyph": "touch.button.secondary",
+      "x_hitRadiusDp": 34.0,
+      "x_sprite": "input_vb_secondary_normal"
+     },
+     {
+      "id": "context",
+      "kind": "button",
+      "anchor": {
+       "x": 0.7915,
+       "y": 0.6154
+      },
+      "radius": 34.0,
+      "control": "touch.btn.context",
+      "glyph": "touch.button.context",
+      "x_hitRadiusDp": 34.0,
+      "x_sprite": "input_vb_context_normal"
+     },
+     {
+      "id": "jump",
+      "kind": "button",
+      "anchor": {
+       "x": 0.9265,
+       "y": 0.4615
+      },
+      "radius": 34.0,
+      "control": "touch.btn.jump",
+      "glyph": "touch.button.jump",
+      "x_hitRadiusDp": 34.0,
+      "x_sprite": "input_vb_jump_normal"
+     },
+     {
+      "id": "sprint",
+      "kind": "button",
+      "anchor": {
+       "x": 0.0616,
+       "y": 0.4564
+      },
+      "radius": 28.0,
+      "control": "touch.btn.sprint",
+      "glyph": "touch.button.sprint",
+      "x_hitRadiusDp": 28.0,
+      "x_sprite": "input_vb_sprint_normal"
+     },
+     {
+      "id": "crouch",
+      "kind": "button",
+      "anchor": {
+       "x": 0.1422,
+       "y": 0.4564
+      },
+      "radius": 28.0,
+      "control": "touch.btn.crouch",
+      "glyph": "touch.button.crouch",
+      "x_hitRadiusDp": 28.0,
+      "x_sprite": "input_vb_crouch_normal"
+     },
+     {
+      "id": "reload",
+      "kind": "button",
+      "anchor": {
+       "x": 0.9455,
+       "y": 0.2564
+      },
+      "radius": 26.0,
+      "control": "touch.btn.reload",
+      "glyph": "touch.button.reload",
+      "x_hitRadiusDp": 26.0,
+      "x_sprite": "input_vb_reload_normal"
+     },
+     {
+      "id": "quickuse",
+      "kind": "button",
+      "anchor": {
+       "x": 0.6682,
+       "y": 0.8872
+      },
+      "radius": 26.0,
+      "control": "touch.btn.quickuse",
+      "glyph": "touch.button.quickuse",
+      "x_hitRadiusDp": 26.0,
+      "x_sprite": "input_vb_quickuse_normal"
+     },
+     {
+      "id": "inventory",
+      "kind": "button",
+      "anchor": {
+       "x": 0.9573,
+       "y": 0.0872
+      },
+      "radius": 24.0,
+      "control": "touch.btn.inventory",
+      "glyph": "touch.button.inventory",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_inventory_normal"
+     },
+     {
+      "id": "crafting",
+      "kind": "button",
+      "anchor": {
+       "x": 0.8863,
+       "y": 0.0872
+      },
+      "radius": 24.0,
+      "control": "touch.btn.crafting",
+      "glyph": "touch.button.crafting",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_crafting_normal"
+     },
+     {
+      "id": "map",
+      "kind": "button",
+      "anchor": {
+       "x": 0.8152,
+       "y": 0.0872
+      },
+      "radius": 24.0,
+      "control": "touch.btn.map",
+      "glyph": "touch.button.map",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_map_normal"
+     },
+     {
+      "id": "chat",
+      "kind": "button",
+      "anchor": {
+       "x": 0.0427,
+       "y": 0.0872
+      },
+      "radius": 24.0,
+      "control": "touch.btn.chat",
+      "glyph": "touch.button.chat",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_chat_normal"
+     },
+     {
+      "id": "social",
+      "kind": "button",
+      "anchor": {
+       "x": 0.1137,
+       "y": 0.0872
+      },
+      "radius": 24.0,
+      "control": "touch.btn.social",
+      "glyph": "touch.button.social",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_social_normal"
+     },
+     {
+      "id": "build",
+      "kind": "button",
+      "anchor": {
+       "x": 0.7441,
+       "y": 0.0872
+      },
+      "radius": 24.0,
+      "control": "touch.btn.build",
+      "glyph": "touch.button.build",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_build_normal"
+     },
+     {
+      "id": "back",
+      "kind": "button",
+      "anchor": {
+       "x": 0.0427,
+       "y": 0.241
+      },
+      "radius": 24.0,
+      "control": "touch.btn.back",
+      "glyph": "touch.button.back",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_back_normal"
+     },
+     {
+      "id": "hotbar",
+      "kind": "radial",
+      "anchor": {
+       "x": 0.5474,
+       "y": 0.7846
+      },
+      "radius": 70.0,
+      "innerRadius": 22.0,
+      "items": [
+       "1",
+       "2",
+       "3",
+       "4",
+       "5",
+       "6",
+       "7",
+       "8"
+      ],
+      "control": "touch.hotbar",
+      "x_hitRadiusDp": 70.0,
+      "x_sprite": "input_rad_ring"
+     }
+    ]
+   },
+   "building": {
+    "id": "cozy.touch.phone.landscape.building",
+    "reference": {
+     "w": 844,
+     "h": 390
+    },
+    "elements": [
+     {
+      "id": "move",
+      "kind": "joystick",
+      "mode": "floating",
+      "anchor": {
+       "x": 0.1777,
+       "y": 0.7436
+      },
+      "radius": 60.0,
+      "deadzone": 0.12,
+      "zone": {
+       "x": 0,
+       "y": 0.35,
+       "w": 0.45,
+       "h": 0.65
+      },
+      "control": "touch.move",
+      "x_hitRadiusDp": 60.0,
+      "x_sprite": "input_vj_base"
+     },
+     {
+      "id": "confirm",
+      "kind": "button",
+      "anchor": {
+       "x": 0.8957,
+       "y": 0.7641
+      },
+      "radius": 40.0,
+      "control": "touch.btn.confirm",
+      "glyph": "touch.button.confirm",
+      "x_hitRadiusDp": 40.0,
+      "x_sprite": "input_vb_confirm_normal"
+     },
+     {
+      "id": "cancel",
+      "kind": "button",
+      "anchor": {
+       "x": 0.7678,
+       "y": 0.8667
+      },
+      "radius": 34.0,
+      "control": "touch.btn.cancel",
+      "glyph": "touch.button.cancel",
+      "x_hitRadiusDp": 34.0,
+      "x_sprite": "input_vb_cancel_normal"
+     },
+     {
+      "id": "rotate",
+      "kind": "button",
+      "anchor": {
+       "x": 0.9171,
+       "y": 0.4718
+      },
+      "radius": 34.0,
+      "control": "touch.btn.rotate",
+      "glyph": "touch.button.rotate",
+      "x_hitRadiusDp": 34.0,
+      "x_sprite": "input_vb_rotate_normal"
+     },
+     {
+      "id": "tierup",
+      "kind": "button",
+      "anchor": {
+       "x": 0.9526,
+       "y": 0.1538
+      },
+      "radius": 24.0,
+      "control": "touch.btn.tierup",
+      "glyph": "touch.button.tierup",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_tierup_normal"
+     },
+     {
+      "id": "tierdown",
+      "kind": "button",
+      "anchor": {
+       "x": 0.9526,
+       "y": 0.3077
+      },
+      "radius": 24.0,
+      "control": "touch.btn.tierdown",
+      "glyph": "touch.button.tierdown",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_tierdown_normal"
+     },
+     {
+      "id": "snap",
+      "kind": "button",
+      "anchor": {
+       "x": 0.8104,
+       "y": 0.5385
+      },
+      "radius": 24.0,
+      "control": "touch.btn.snap",
+      "glyph": "touch.button.snap",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_snap_normal"
+     },
+     {
+      "id": "levelup",
+      "kind": "button",
+      "anchor": {
+       "x": 0.7085,
+       "y": 0.4615
+      },
+      "radius": 24.0,
+      "control": "touch.btn.levelup",
+      "glyph": "touch.button.levelup",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_levelup_normal"
+     },
+     {
+      "id": "leveldown",
+      "kind": "button",
+      "anchor": {
+       "x": 0.7085,
+       "y": 0.6154
+      },
+      "radius": 24.0,
+      "control": "touch.btn.leveldown",
+      "glyph": "touch.button.leveldown",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_leveldown_normal"
+     },
+     {
+      "id": "demolish",
+      "kind": "button",
+      "anchor": {
+       "x": 0.4289,
+       "y": 0.8974
+      },
+      "radius": 24.0,
+      "control": "touch.btn.demolish",
+      "glyph": "touch.button.demolish",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_demolish_normal"
+     },
+     {
+      "id": "upgrade",
+      "kind": "button",
+      "anchor": {
+       "x": 0.5,
+       "y": 0.8974
+      },
+      "radius": 24.0,
+      "control": "touch.btn.upgrade",
+      "glyph": "touch.button.upgrade",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_upgrade_normal"
+     },
+     {
+      "id": "repair",
+      "kind": "button",
+      "anchor": {
+       "x": 0.5711,
+       "y": 0.8974
+      },
+      "radius": 24.0,
+      "control": "touch.btn.repair",
+      "glyph": "touch.button.repair",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_repair_normal"
+     },
+     {
+      "id": "build",
+      "kind": "button",
+      "anchor": {
+       "x": 0.7441,
+       "y": 0.0872
+      },
+      "radius": 24.0,
+      "control": "touch.btn.build",
+      "glyph": "touch.button.build",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_build_normal"
+     }
+    ]
+   }
+  },
+  "phone.portrait": {
+   "gameplay": {
+    "id": "cozy.touch.phone.portrait.gameplay",
+    "reference": {
+     "w": 390,
+     "h": 844
+    },
+    "elements": [
+     {
+      "id": "move",
+      "kind": "joystick",
+      "mode": "floating",
+      "anchor": {
+       "x": 0.2538,
+       "y": 0.84
+      },
+      "radius": 54.0,
+      "deadzone": 0.12,
+      "zone": {
+       "x": 0,
+       "y": 0.55,
+       "w": 0.55,
+       "h": 0.45
+      },
+      "control": "touch.move",
+      "x_hitRadiusDp": 54.0,
+      "x_sprite": "input_vj_base"
+     },
+     {
+      "id": "attack",
+      "kind": "button",
+      "anchor": {
+       "x": 0.8108,
+       "y": 0.8507
+      },
+      "radius": 39.6,
+      "control": "touch.btn.attack",
+      "glyph": "touch.button.attack",
+      "x_hitRadiusDp": 39.6,
+      "x_sprite": "input_vb_attack_normal"
+     },
+     {
+      "id": "secondary",
+      "kind": "button",
+      "anchor": {
+       "x": 0.6077,
+       "y": 0.9083
+      },
+      "radius": 30.6,
+      "control": "touch.btn.secondary",
+      "glyph": "touch.button.secondary",
+      "x_hitRadiusDp": 30.6,
+      "x_sprite": "input_vb_secondary_normal"
+     },
+     {
+      "id": "context",
+      "kind": "button",
+      "anchor": {
+       "x": 0.6308,
+       "y": 0.7697
+      },
+      "radius": 30.6,
+      "control": "touch.btn.context",
+      "glyph": "touch.button.context",
+      "x_hitRadiusDp": 30.6,
+      "x_sprite": "input_vb_context_normal"
+     },
+     {
+      "id": "jump",
+      "kind": "button",
+      "anchor": {
+       "x": 0.8754,
+       "y": 0.7206
+      },
+      "radius": 30.6,
+      "control": "touch.btn.jump",
+      "glyph": "touch.button.jump",
+      "x_hitRadiusDp": 30.6,
+      "x_sprite": "input_vb_jump_normal"
+     },
+     {
+      "id": "sprint",
+      "kind": "button",
+      "anchor": {
+       "x": 0.1062,
+       "y": 0.695
+      },
+      "radius": 25.2,
+      "control": "touch.btn.sprint",
+      "glyph": "touch.button.sprint",
+      "x_hitRadiusDp": 25.2,
+      "x_sprite": "input_vb_sprint_normal"
+     },
+     {
+      "id": "crouch",
+      "kind": "button",
+      "anchor": {
+       "x": 0.2446,
+       "y": 0.6801
+      },
+      "radius": 25.2,
+      "control": "touch.btn.crouch",
+      "glyph": "touch.button.crouch",
+      "x_hitRadiusDp": 25.2,
+      "x_sprite": "input_vb_crouch_normal"
+     },
+     {
+      "id": "reload",
+      "kind": "button",
+      "anchor": {
+       "x": 0.9031,
+       "y": 0.6417
+      },
+      "radius": 23.4,
+      "control": "touch.btn.reload",
+      "glyph": "touch.button.reload",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_reload_normal"
+     },
+     {
+      "id": "quickuse",
+      "kind": "button",
+      "anchor": {
+       "x": 0.4692,
+       "y": 0.9573
+      },
+      "radius": 23.4,
+      "control": "touch.btn.quickuse",
+      "glyph": "touch.button.quickuse",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_quickuse_normal"
+     },
+     {
+      "id": "inventory",
+      "kind": "button",
+      "anchor": {
+       "x": 0.9215,
+       "y": 0.0363
+      },
+      "radius": 21.6,
+      "control": "touch.btn.inventory",
+      "glyph": "touch.button.inventory",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_inventory_normal"
+     },
+     {
+      "id": "crafting",
+      "kind": "button",
+      "anchor": {
+       "x": 0.7877,
+       "y": 0.0363
+      },
+      "radius": 21.6,
+      "control": "touch.btn.crafting",
+      "glyph": "touch.button.crafting",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_crafting_normal"
+     },
+     {
+      "id": "map",
+      "kind": "button",
+      "anchor": {
+       "x": 0.6538,
+       "y": 0.0363
+      },
+      "radius": 21.6,
+      "control": "touch.btn.map",
+      "glyph": "touch.button.map",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_map_normal"
+     },
+     {
+      "id": "chat",
+      "kind": "button",
+      "anchor": {
+       "x": 0.0785,
+       "y": 0.0363
+      },
+      "radius": 21.6,
+      "control": "touch.btn.chat",
+      "glyph": "touch.button.chat",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_chat_normal"
+     },
+     {
+      "id": "social",
+      "kind": "button",
+      "anchor": {
+       "x": 0.2123,
+       "y": 0.0363
+      },
+      "radius": 21.6,
+      "control": "touch.btn.social",
+      "glyph": "touch.button.social",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_social_normal"
+     },
+     {
+      "id": "build",
+      "kind": "button",
+      "anchor": {
+       "x": 0.52,
+       "y": 0.0363
+      },
+      "radius": 21.6,
+      "control": "touch.btn.build",
+      "glyph": "touch.button.build",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_build_normal"
+     },
+     {
+      "id": "back",
+      "kind": "button",
+      "anchor": {
+       "x": 0.0785,
+       "y": 0.0981
+      },
+      "radius": 21.6,
+      "control": "touch.btn.back",
+      "glyph": "touch.button.back",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_back_normal"
+     },
+     {
+      "id": "hotbar",
+      "kind": "radial",
+      "anchor": {
+       "x": 0.5,
+       "y": 0.6161
+      },
+      "radius": 63.0,
+      "innerRadius": 19.8,
+      "items": [
+       "1",
+       "2",
+       "3",
+       "4",
+       "5",
+       "6",
+       "7",
+       "8"
+      ],
+      "control": "touch.hotbar",
+      "x_hitRadiusDp": 63.0,
+      "x_sprite": "input_rad_ring"
+     }
+    ]
+   },
+   "building": {
+    "id": "cozy.touch.phone.portrait.building",
+    "reference": {
+     "w": 390,
+     "h": 844
+    },
+    "elements": [
+     {
+      "id": "move",
+      "kind": "joystick",
+      "mode": "floating",
+      "anchor": {
+       "x": 0.2538,
+       "y": 0.84
+      },
+      "radius": 54.0,
+      "deadzone": 0.12,
+      "zone": {
+       "x": 0,
+       "y": 0.55,
+       "w": 0.55,
+       "h": 0.45
+      },
+      "control": "touch.move",
+      "x_hitRadiusDp": 54.0,
+      "x_sprite": "input_vj_base"
+     },
+     {
+      "id": "confirm",
+      "kind": "button",
+      "anchor": {
+       "x": 0.8108,
+       "y": 0.8507
+      },
+      "radius": 36.0,
+      "control": "touch.btn.confirm",
+      "glyph": "touch.button.confirm",
+      "x_hitRadiusDp": 36.0,
+      "x_sprite": "input_vb_confirm_normal"
+     },
+     {
+      "id": "cancel",
+      "kind": "button",
+      "anchor": {
+       "x": 0.5938,
+       "y": 0.9147
+      },
+      "radius": 30.6,
+      "control": "touch.btn.cancel",
+      "glyph": "touch.button.cancel",
+      "x_hitRadiusDp": 30.6,
+      "x_sprite": "input_vb_cancel_normal"
+     },
+     {
+      "id": "rotate",
+      "kind": "button",
+      "anchor": {
+       "x": 0.8569,
+       "y": 0.727
+      },
+      "radius": 30.6,
+      "control": "touch.btn.rotate",
+      "glyph": "touch.button.rotate",
+      "x_hitRadiusDp": 30.6,
+      "x_sprite": "input_vb_rotate_normal"
+     },
+     {
+      "id": "tierup",
+      "kind": "button",
+      "anchor": {
+       "x": 0.9169,
+       "y": 0.5735
+      },
+      "radius": 21.6,
+      "control": "touch.btn.tierup",
+      "glyph": "touch.button.tierup",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_tierup_normal"
+     },
+     {
+      "id": "tierdown",
+      "kind": "button",
+      "anchor": {
+       "x": 0.9169,
+       "y": 0.6374
+      },
+      "radius": 21.6,
+      "control": "touch.btn.tierdown",
+      "glyph": "touch.button.tierdown",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_tierdown_normal"
+     },
+     {
+      "id": "snap",
+      "kind": "button",
+      "anchor": {
+       "x": 0.6538,
+       "y": 0.7547
+      },
+      "radius": 21.6,
+      "control": "touch.btn.snap",
+      "glyph": "touch.button.snap",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_snap_normal"
+     },
+     {
+      "id": "levelup",
+      "kind": "button",
+      "anchor": {
+       "x": 0.0923,
+       "y": 0.6161
+      },
+      "radius": 21.6,
+      "control": "touch.btn.levelup",
+      "glyph": "touch.button.levelup",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_levelup_normal"
+     },
+     {
+      "id": "leveldown",
+      "kind": "button",
+      "anchor": {
+       "x": 0.0923,
+       "y": 0.6801
+      },
+      "radius": 21.6,
+      "control": "touch.btn.leveldown",
+      "glyph": "touch.button.leveldown",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_leveldown_normal"
+     },
+     {
+      "id": "demolish",
+      "kind": "button",
+      "anchor": {
+       "x": 0.3615,
+       "y": 0.1066
+      },
+      "radius": 21.6,
+      "control": "touch.btn.demolish",
+      "glyph": "touch.button.demolish",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_demolish_normal"
+     },
+     {
+      "id": "upgrade",
+      "kind": "button",
+      "anchor": {
+       "x": 0.5,
+       "y": 0.1066
+      },
+      "radius": 21.6,
+      "control": "touch.btn.upgrade",
+      "glyph": "touch.button.upgrade",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_upgrade_normal"
+     },
+     {
+      "id": "repair",
+      "kind": "button",
+      "anchor": {
+       "x": 0.6385,
+       "y": 0.1066
+      },
+      "radius": 21.6,
+      "control": "touch.btn.repair",
+      "glyph": "touch.button.repair",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_repair_normal"
+     },
+     {
+      "id": "build",
+      "kind": "button",
+      "anchor": {
+       "x": 0.52,
+       "y": 0.0363
+      },
+      "radius": 21.6,
+      "control": "touch.btn.build",
+      "glyph": "touch.button.build",
+      "x_hitRadiusDp": 24.0,
+      "x_sprite": "input_vb_build_normal"
+     }
+    ]
+   }
+  },
+  "tablet.landscape": {
+   "gameplay": {
+    "id": "cozy.touch.tablet.landscape.gameplay",
+    "reference": {
+     "w": 1180,
+     "h": 820
+    },
+    "elements": [
+     {
+      "id": "move",
+      "kind": "joystick",
+      "mode": "floating",
+      "anchor": {
+       "x": 0.1398,
+       "y": 0.8659
+      },
+      "radius": 66.0,
+      "deadzone": 0.12,
+      "zone": {
+       "x": 0,
+       "y": 0.35,
+       "w": 0.45,
+       "h": 0.65
+      },
+      "control": "touch.move",
+      "x_hitRadiusDp": 66.0,
+      "x_sprite": "input_vj_base"
+     },
+     {
+      "id": "attack",
+      "kind": "button",
+      "anchor": {
+       "x": 0.918,
+       "y": 0.8766
+      },
+      "radius": 48.4,
+      "control": "touch.btn.attack",
+      "glyph": "touch.button.attack",
+      "x_hitRadiusDp": 48.4,
+      "x_sprite": "input_vb_attack_normal"
+     },
+     {
+      "id": "secondary",
+      "kind": "button",
+      "anchor": {
+       "x": 0.8229,
+       "y": 0.9302
+      },
+      "radius": 37.4,
+      "control": "touch.btn.secondary",
+      "glyph": "touch.button.secondary",
+      "x_hitRadiusDp": 37.4,
+      "x_sprite": "input_vb_secondary_normal"
+     },
+     {
+      "id": "context",
+      "kind": "button",
+      "anchor": {
+       "x": 0.8359,
+       "y": 0.7988
+      },
+      "radius": 37.4,
+      "control": "touch.btn.context",
+      "glyph": "touch.button.context",
+      "x_hitRadiusDp": 37.4,
+      "x_sprite": "input_vb_context_normal"
+     },
+     {
+      "id": "jump",
+      "kind": "button",
+      "anchor": {
+       "x": 0.9422,
+       "y": 0.7183
+      },
+      "radius": 37.4,
+      "control": "touch.btn.jump",
+      "glyph": "touch.button.jump",
+      "x_hitRadiusDp": 37.4,
+      "x_sprite": "input_vb_jump_normal"
+     },
+     {
+      "id": "sprint",
+      "kind": "button",
+      "anchor": {
+       "x": 0.0485,
+       "y": 0.7156
+      },
+      "radius": 30.8,
+      "control": "touch.btn.sprint",
+      "glyph": "touch.button.sprint",
+      "x_hitRadiusDp": 30.8,
+      "x_sprite": "input_vb_sprint_normal"
+     },
+     {
+      "id": "crouch",
+      "kind": "button",
+      "anchor": {
+       "x": 0.1119,
+       "y": 0.7156
+      },
+      "radius": 30.8,
+      "control": "touch.btn.crouch",
+      "glyph": "touch.button.crouch",
+      "x_hitRadiusDp": 30.8,
+      "x_sprite": "input_vb_crouch_normal"
+     },
+     {
+      "id": "reload",
+      "kind": "button",
+      "anchor": {
+       "x": 0.9571,
+       "y": 0.611
+      },
+      "radius": 28.6,
+      "control": "touch.btn.reload",
+      "glyph": "touch.button.reload",
+      "x_hitRadiusDp": 28.6,
+      "x_sprite": "input_vb_reload_normal"
+     },
+     {
+      "id": "quickuse",
+      "kind": "button",
+      "anchor": {
+       "x": 0.739,
+       "y": 0.941
+      },
+      "radius": 28.6,
+      "control": "touch.btn.quickuse",
+      "glyph": "touch.button.quickuse",
+      "x_hitRadiusDp": 28.6,
+      "x_sprite": "input_vb_quickuse_normal"
+     },
+     {
+      "id": "inventory",
+      "kind": "button",
+      "anchor": {
+       "x": 0.9664,
+       "y": 0.0456
+      },
+      "radius": 26.4,
+      "control": "touch.btn.inventory",
+      "glyph": "touch.button.inventory",
+      "x_hitRadiusDp": 26.4,
+      "x_sprite": "input_vb_inventory_normal"
+     },
+     {
+      "id": "crafting",
+      "kind": "button",
+      "anchor": {
+       "x": 0.9105,
+       "y": 0.0456
+      },
+      "radius": 26.4,
+      "control": "touch.btn.crafting",
+      "glyph": "touch.button.crafting",
+      "x_hitRadiusDp": 26.4,
+      "x_sprite": "input_vb_crafting_normal"
+     },
+     {
+      "id": "map",
+      "kind": "button",
+      "anchor": {
+       "x": 0.8546,
+       "y": 0.0456
+      },
+      "radius": 26.4,
+      "control": "touch.btn.map",
+      "glyph": "touch.button.map",
+      "x_hitRadiusDp": 26.4,
+      "x_sprite": "input_vb_map_normal"
+     },
+     {
+      "id": "chat",
+      "kind": "button",
+      "anchor": {
+       "x": 0.0336,
+       "y": 0.0456
+      },
+      "radius": 26.4,
+      "control": "touch.btn.chat",
+      "glyph": "touch.button.chat",
+      "x_hitRadiusDp": 26.4,
+      "x_sprite": "input_vb_chat_normal"
+     },
+     {
+      "id": "social",
+      "kind": "button",
+      "anchor": {
+       "x": 0.0895,
+       "y": 0.0456
+      },
+      "radius": 26.4,
+      "control": "touch.btn.social",
+      "glyph": "touch.button.social",
+      "x_hitRadiusDp": 26.4,
+      "x_sprite": "input_vb_social_normal"
+     },
+     {
+      "id": "build",
+      "kind": "button",
+      "anchor": {
+       "x": 0.7986,
+       "y": 0.0456
+      },
+      "radius": 26.4,
+      "control": "touch.btn.build",
+      "glyph": "touch.button.build",
+      "x_hitRadiusDp": 26.4,
+      "x_sprite": "input_vb_build_normal"
+     },
+     {
+      "id": "back",
+      "kind": "button",
+      "anchor": {
+       "x": 0.0336,
+       "y": 0.1261
+      },
+      "radius": 26.4,
+      "control": "touch.btn.back",
+      "glyph": "touch.button.back",
+      "x_hitRadiusDp": 26.4,
+      "x_sprite": "input_vb_back_normal"
+     },
+     {
+      "id": "hotbar",
+      "kind": "radial",
+      "anchor": {
+       "x": 0.5373,
+       "y": 0.8873
+      },
+      "radius": 77.0,
+      "innerRadius": 24.2,
+      "items": [
+       "1",
+       "2",
+       "3",
+       "4",
+       "5",
+       "6",
+       "7",
+       "8"
+      ],
+      "control": "touch.hotbar",
+      "x_hitRadiusDp": 77.0,
+      "x_sprite": "input_rad_ring"
+     }
+    ]
+   },
+   "building": {
+    "id": "cozy.touch.tablet.landscape.building",
+    "reference": {
+     "w": 1180,
+     "h": 820
+    },
+    "elements": [
+     {
+      "id": "move",
+      "kind": "joystick",
+      "mode": "floating",
+      "anchor": {
+       "x": 0.1398,
+       "y": 0.8659
+      },
+      "radius": 66.0,
+      "deadzone": 0.12,
+      "zone": {
+       "x": 0,
+       "y": 0.35,
+       "w": 0.45,
+       "h": 0.65
+      },
+      "control": "touch.move",
+      "x_hitRadiusDp": 66.0,
+      "x_sprite": "input_vj_base"
+     },
+     {
+      "id": "confirm",
+      "kind": "button",
+      "anchor": {
+       "x": 0.918,
+       "y": 0.8766
+      },
+      "radius": 44.0,
+      "control": "touch.btn.confirm",
+      "glyph": "touch.button.confirm",
+      "x_hitRadiusDp": 44.0,
+      "x_sprite": "input_vb_confirm_normal"
+     },
+     {
+      "id": "cancel",
+      "kind": "button",
+      "anchor": {
+       "x": 0.8173,
+       "y": 0.9302
+      },
+      "radius": 37.4,
+      "control": "touch.btn.cancel",
+      "glyph": "touch.button.cancel",
+      "x_hitRadiusDp": 37.4,
+      "x_sprite": "input_vb_cancel_normal"
+     },
+     {
+      "id": "rotate",
+      "kind": "button",
+      "anchor": {
+       "x": 0.9347,
+       "y": 0.7237
+      },
+      "radius": 37.4,
+      "control": "touch.btn.rotate",
+      "glyph": "touch.button.rotate",
+      "x_hitRadiusDp": 37.4,
+      "x_sprite": "input_vb_rotate_normal"
+     },
+     {
+      "id": "tierup",
+      "kind": "button",
+      "anchor": {
+       "x": 0.9627,
+       "y": 0.5573
+      },
+      "radius": 26.4,
+      "control": "touch.btn.tierup",
+      "glyph": "touch.button.tierup",
+      "x_hitRadiusDp": 26.4,
+      "x_sprite": "input_vb_tierup_normal"
+     },
+     {
+      "id": "tierdown",
+      "kind": "button",
+      "anchor": {
+       "x": 0.9627,
+       "y": 0.6378
+      },
+      "radius": 26.4,
+      "control": "touch.btn.tierdown",
+      "glyph": "touch.button.tierdown",
+      "x_hitRadiusDp": 26.4,
+      "x_sprite": "input_vb_tierdown_normal"
+     },
+     {
+      "id": "snap",
+      "kind": "button",
+      "anchor": {
+       "x": 0.8508,
+       "y": 0.7585
+      },
+      "radius": 26.4,
+      "control": "touch.btn.snap",
+      "glyph": "touch.button.snap",
+      "x_hitRadiusDp": 26.4,
+      "x_sprite": "input_vb_snap_normal"
+     },
+     {
+      "id": "levelup",
+      "kind": "button",
+      "anchor": {
+       "x": 0.7707,
+       "y": 0.7183
+      },
+      "radius": 26.4,
+      "control": "touch.btn.levelup",
+      "glyph": "touch.button.levelup",
+      "x_hitRadiusDp": 26.4,
+      "x_sprite": "input_vb_levelup_normal"
+     },
+     {
+      "id": "leveldown",
+      "kind": "button",
+      "anchor": {
+       "x": 0.7707,
+       "y": 0.7988
+      },
+      "radius": 26.4,
+      "control": "touch.btn.leveldown",
+      "glyph": "touch.button.leveldown",
+      "x_hitRadiusDp": 26.4,
+      "x_sprite": "input_vb_leveldown_normal"
+     },
+     {
+      "id": "demolish",
+      "kind": "button",
+      "anchor": {
+       "x": 0.4441,
+       "y": 0.9463
+      },
+      "radius": 26.4,
+      "control": "touch.btn.demolish",
+      "glyph": "touch.button.demolish",
+      "x_hitRadiusDp": 26.4,
+      "x_sprite": "input_vb_demolish_normal"
+     },
+     {
+      "id": "upgrade",
+      "kind": "button",
+      "anchor": {
+       "x": 0.5,
+       "y": 0.9463
+      },
+      "radius": 26.4,
+      "control": "touch.btn.upgrade",
+      "glyph": "touch.button.upgrade",
+      "x_hitRadiusDp": 26.4,
+      "x_sprite": "input_vb_upgrade_normal"
+     },
+     {
+      "id": "repair",
+      "kind": "button",
+      "anchor": {
+       "x": 0.5559,
+       "y": 0.9463
+      },
+      "radius": 26.4,
+      "control": "touch.btn.repair",
+      "glyph": "touch.button.repair",
+      "x_hitRadiusDp": 26.4,
+      "x_sprite": "input_vb_repair_normal"
+     },
+     {
+      "id": "build",
+      "kind": "button",
+      "anchor": {
+       "x": 0.7986,
+       "y": 0.0456
+      },
+      "radius": 26.4,
+      "control": "touch.btn.build",
+      "glyph": "touch.button.build",
+      "x_hitRadiusDp": 26.4,
+      "x_sprite": "input_vb_build_normal"
+     }
+    ]
+   }
+  },
+  "tablet.portrait": {
+   "gameplay": {
+    "id": "cozy.touch.tablet.portrait.gameplay",
+    "reference": {
+     "w": 820,
+     "h": 1180
+    },
+    "elements": [
+     {
+      "id": "move",
+      "kind": "joystick",
+      "mode": "floating",
+      "anchor": {
+       "x": 0.1409,
+       "y": 0.8665
+      },
+      "radius": 63.0,
+      "deadzone": 0.12,
+      "zone": {
+       "x": 0,
+       "y": 0.55,
+       "w": 0.55,
+       "h": 0.45
+      },
+      "control": "touch.move",
+      "x_hitRadiusDp": 63.0,
+      "x_sprite": "input_vj_base"
+     },
+     {
+      "id": "attack",
+      "kind": "button",
+      "anchor": {
+       "x": 0.895,
+       "y": 0.8754
+      },
+      "radius": 46.2,
+      "control": "touch.btn.attack",
+      "glyph": "touch.button.attack",
+      "x_hitRadiusDp": 46.2,
+      "x_sprite": "input_vb_attack_normal"
+     },
+     {
+      "id": "secondary",
+      "kind": "button",
+      "anchor": {
+       "x": 0.7823,
+       "y": 0.9235
+      },
+      "radius": 35.7,
+      "control": "touch.btn.secondary",
+      "glyph": "touch.button.secondary",
+      "x_hitRadiusDp": 35.7,
+      "x_sprite": "input_vb_secondary_normal"
+     },
+     {
+      "id": "context",
+      "kind": "button",
+      "anchor": {
+       "x": 0.7951,
+       "y": 0.8078
+      },
+      "radius": 35.7,
+      "control": "touch.btn.context",
+      "glyph": "touch.button.context",
+      "x_hitRadiusDp": 35.7,
+      "x_sprite": "input_vb_context_normal"
+     },
+     {
+      "id": "jump",
+      "kind": "button",
+      "anchor": {
+       "x": 0.9309,
+       "y": 0.7669
+      },
+      "radius": 35.7,
+      "control": "touch.btn.jump",
+      "glyph": "touch.button.jump",
+      "x_hitRadiusDp": 35.7,
+      "x_sprite": "input_vb_jump_normal"
+     },
+     {
+      "id": "sprint",
+      "kind": "button",
+      "anchor": {
+       "x": 0.0589,
+       "y": 0.7455
+      },
+      "radius": 29.4,
+      "control": "touch.btn.sprint",
+      "glyph": "touch.button.sprint",
+      "x_hitRadiusDp": 29.4,
+      "x_sprite": "input_vb_sprint_normal"
+     },
+     {
+      "id": "crouch",
+      "kind": "button",
+      "anchor": {
+       "x": 0.1357,
+       "y": 0.7331
+      },
+      "radius": 29.4,
+      "control": "touch.btn.crouch",
+      "glyph": "touch.button.crouch",
+      "x_hitRadiusDp": 29.4,
+      "x_sprite": "input_vb_crouch_normal"
+     },
+     {
+      "id": "reload",
+      "kind": "button",
+      "anchor": {
+       "x": 0.9462,
+       "y": 0.701
+      },
+      "radius": 27.3,
+      "control": "touch.btn.reload",
+      "glyph": "touch.button.reload",
+      "x_hitRadiusDp": 27.3,
+      "x_sprite": "input_vb_reload_normal"
+     },
+     {
+      "id": "quickuse",
+      "kind": "button",
+      "anchor": {
+       "x": 0.7055,
+       "y": 0.9644
+      },
+      "radius": 27.3,
+      "control": "touch.btn.quickuse",
+      "glyph": "touch.button.quickuse",
+      "x_hitRadiusDp": 27.3,
+      "x_sprite": "input_vb_quickuse_normal"
+     },
+     {
+      "id": "inventory",
+      "kind": "button",
+      "anchor": {
+       "x": 0.9565,
+       "y": 0.0303
+      },
+      "radius": 25.2,
+      "control": "touch.btn.inventory",
+      "glyph": "touch.button.inventory",
+      "x_hitRadiusDp": 25.2,
+      "x_sprite": "input_vb_inventory_normal"
+     },
+     {
+      "id": "crafting",
+      "kind": "button",
+      "anchor": {
+       "x": 0.8822,
+       "y": 0.0303
+      },
+      "radius": 25.2,
+      "control": "touch.btn.crafting",
+      "glyph": "touch.button.crafting",
+      "x_hitRadiusDp": 25.2,
+      "x_sprite": "input_vb_crafting_normal"
+     },
+     {
+      "id": "map",
+      "kind": "button",
+      "anchor": {
+       "x": 0.8079,
+       "y": 0.0303
+      },
+      "radius": 25.2,
+      "control": "touch.btn.map",
+      "glyph": "touch.button.map",
+      "x_hitRadiusDp": 25.2,
+      "x_sprite": "input_vb_map_normal"
+     },
+     {
+      "id": "chat",
+      "kind": "button",
+      "anchor": {
+       "x": 0.0435,
+       "y": 0.0303
+      },
+      "radius": 25.2,
+      "control": "touch.btn.chat",
+      "glyph": "touch.button.chat",
+      "x_hitRadiusDp": 25.2,
+      "x_sprite": "input_vb_chat_normal"
+     },
+     {
+      "id": "social",
+      "kind": "button",
+      "anchor": {
+       "x": 0.1178,
+       "y": 0.0303
+      },
+      "radius": 25.2,
+      "control": "touch.btn.social",
+      "glyph": "touch.button.social",
+      "x_hitRadiusDp": 25.2,
+      "x_sprite": "input_vb_social_normal"
+     },
+     {
+      "id": "build",
+      "kind": "button",
+      "anchor": {
+       "x": 0.7337,
+       "y": 0.0303
+      },
+      "radius": 25.2,
+      "control": "touch.btn.build",
+      "glyph": "touch.button.build",
+      "x_hitRadiusDp": 25.2,
+      "x_sprite": "input_vb_build_normal"
+     },
+     {
+      "id": "back",
+      "kind": "button",
+      "anchor": {
+       "x": 0.0435,
+       "y": 0.0819
+      },
+      "radius": 25.2,
+      "control": "touch.btn.back",
+      "glyph": "touch.button.back",
+      "x_hitRadiusDp": 25.2,
+      "x_sprite": "input_vb_back_normal"
+     },
+     {
+      "id": "hotbar",
+      "kind": "radial",
+      "anchor": {
+       "x": 0.5,
+       "y": 0.6797
+      },
+      "radius": 73.5,
+      "innerRadius": 23.1,
+      "items": [
+       "1",
+       "2",
+       "3",
+       "4",
+       "5",
+       "6",
+       "7",
+       "8"
+      ],
+      "control": "touch.hotbar",
+      "x_hitRadiusDp": 73.5,
+      "x_sprite": "input_rad_ring"
+     }
+    ]
+   },
+   "building": {
+    "id": "cozy.touch.tablet.portrait.building",
+    "reference": {
+     "w": 820,
+     "h": 1180
+    },
+    "elements": [
+     {
+      "id": "move",
+      "kind": "joystick",
+      "mode": "floating",
+      "anchor": {
+       "x": 0.1409,
+       "y": 0.8665
+      },
+      "radius": 63.0,
+      "deadzone": 0.12,
+      "zone": {
+       "x": 0,
+       "y": 0.55,
+       "w": 0.55,
+       "h": 0.45
+      },
+      "control": "touch.move",
+      "x_hitRadiusDp": 63.0,
+      "x_sprite": "input_vj_base"
+     },
+     {
+      "id": "confirm",
+      "kind": "button",
+      "anchor": {
+       "x": 0.895,
+       "y": 0.8754
+      },
+      "radius": 42.0,
+      "control": "touch.btn.confirm",
+      "glyph": "touch.button.confirm",
+      "x_hitRadiusDp": 42.0,
+      "x_sprite": "input_vb_confirm_normal"
+     },
+     {
+      "id": "cancel",
+      "kind": "button",
+      "anchor": {
+       "x": 0.7746,
+       "y": 0.9288
+      },
+      "radius": 35.7,
+      "control": "touch.btn.cancel",
+      "glyph": "touch.button.cancel",
+      "x_hitRadiusDp": 35.7,
+      "x_sprite": "input_vb_cancel_normal"
+     },
+     {
+      "id": "rotate",
+      "kind": "button",
+      "anchor": {
+       "x": 0.9206,
+       "y": 0.7722
+      },
+      "radius": 35.7,
+      "control": "touch.btn.rotate",
+      "glyph": "touch.button.rotate",
+      "x_hitRadiusDp": 35.7,
+      "x_sprite": "input_vb_rotate_normal"
+     },
+     {
+      "id": "tierup",
+      "kind": "button",
+      "anchor": {
+       "x": 0.9539,
+       "y": 0.6441
+      },
+      "radius": 25.2,
+      "control": "touch.btn.tierup",
+      "glyph": "touch.button.tierup",
+      "x_hitRadiusDp": 25.2,
+      "x_sprite": "input_vb_tierup_normal"
+     },
+     {
+      "id": "tierdown",
+      "kind": "button",
+      "anchor": {
+       "x": 0.9539,
+       "y": 0.6975
+      },
+      "radius": 25.2,
+      "control": "touch.btn.tierdown",
+      "glyph": "touch.button.tierdown",
+      "x_hitRadiusDp": 25.2,
+      "x_sprite": "input_vb_tierdown_normal"
+     },
+     {
+      "id": "snap",
+      "kind": "button",
+      "anchor": {
+       "x": 0.8079,
+       "y": 0.7953
+      },
+      "radius": 25.2,
+      "control": "touch.btn.snap",
+      "glyph": "touch.button.snap",
+      "x_hitRadiusDp": 25.2,
+      "x_sprite": "input_vb_snap_normal"
+     },
+     {
+      "id": "levelup",
+      "kind": "button",
+      "anchor": {
+       "x": 0.0512,
+       "y": 0.6797
+      },
+      "radius": 25.2,
+      "control": "touch.btn.levelup",
+      "glyph": "touch.button.levelup",
+      "x_hitRadiusDp": 25.2,
+      "x_sprite": "input_vb_levelup_normal"
+     },
+     {
+      "id": "leveldown",
+      "kind": "button",
+      "anchor": {
+       "x": 0.0512,
+       "y": 0.7331
+      },
+      "radius": 25.2,
+      "control": "touch.btn.leveldown",
+      "glyph": "touch.button.leveldown",
+      "x_hitRadiusDp": 25.2,
+      "x_sprite": "input_vb_leveldown_normal"
+     },
+     {
+      "id": "demolish",
+      "kind": "button",
+      "anchor": {
+       "x": 0.4232,
+       "y": 0.089
+      },
+      "radius": 25.2,
+      "control": "touch.btn.demolish",
+      "glyph": "touch.button.demolish",
+      "x_hitRadiusDp": 25.2,
+      "x_sprite": "input_vb_demolish_normal"
+     },
+     {
+      "id": "upgrade",
+      "kind": "button",
+      "anchor": {
+       "x": 0.5,
+       "y": 0.089
+      },
+      "radius": 25.2,
+      "control": "touch.btn.upgrade",
+      "glyph": "touch.button.upgrade",
+      "x_hitRadiusDp": 25.2,
+      "x_sprite": "input_vb_upgrade_normal"
+     },
+     {
+      "id": "repair",
+      "kind": "button",
+      "anchor": {
+       "x": 0.5768,
+       "y": 0.089
+      },
+      "radius": 25.2,
+      "control": "touch.btn.repair",
+      "glyph": "touch.button.repair",
+      "x_hitRadiusDp": 25.2,
+      "x_sprite": "input_vb_repair_normal"
+     },
+     {
+      "id": "build",
+      "kind": "button",
+      "anchor": {
+       "x": 0.7337,
+       "y": 0.0303
+      },
+      "radius": 25.2,
+      "control": "touch.btn.build",
+      "glyph": "touch.button.build",
+      "x_hitRadiusDp": 25.2,
+      "x_sprite": "input_vb_build_normal"
+     }
+    ]
+   }
+  }
+ },
+ "issues": {}
+}

@@ -1,0 +1,466 @@
+{
+  "$schema": "../screen.schema.json",
+  "schema": "ui-screen/1",
+  "id": "crafting",
+  "setsState": {
+    "ui.windowOpen": true
+  },
+  "title": "Crafting",
+  "layer": "window",
+  "modal": false,
+  "openWith": [
+    "KeyC"
+  ],
+  "root": {
+    "type": "box",
+    "w": "fill",
+    "h": "fill",
+    "children": [
+      {
+        "type": "scrim",
+        "alpha": 0.35
+      },
+      {
+        "type": "box",
+        "id": "crafting_window",
+        "anchor": "cc",
+        "x": 0,
+        "y": 0,
+        "w": 900,
+        "h": 500,
+        "children": [
+          {
+            "type": "include",
+            "src": "_partials/journal_tabs.json",
+            "params": {
+              "active": "crafting"
+            },
+            "anchor": "tl",
+            "x": 28,
+            "y": -40
+          },
+          {
+            "type": "panel",
+            "id": "crafting_frame",
+            "frame": "panel_wood_vine",
+            "anchor": "tl",
+            "x": 0,
+            "y": 0,
+            "w": 900,
+            "h": 500,
+            "pad": 24,
+            "children": [
+              {
+                "type": "box",
+                "id": "recipe_col",
+                "anchor": "tl",
+                "x": 0,
+                "y": 4,
+                "w": 300,
+                "h": 430,
+                "layout": "col",
+                "gap": 8,
+                "children": [
+                  {
+                    "type": "input",
+                    "w": "fill",
+                    "h": 40,
+                    "bind": "{crafting.filter}",
+                    "placeholder": "Search recipes...",
+                    "icon": "ic_info"
+                  },
+                  {
+                    "type": "box",
+                    "layout": "row",
+                    "gap": 4,
+                    "h": 36,
+                    "w": "fill",
+                    "children": [
+                      {
+                        "type": "repeat",
+                        "each": "{crafting.categories}",
+                        "as": "cat",
+                        "layout": "row",
+                        "gap": 4,
+                        "w": "fill",
+                        "h": 36,
+                        "template": {
+                          "type": "button",
+                          "variant": "{cat.active ? \"gold\" : \"secondary\"}",
+                          "icon": "{cat.icon}",
+                          "w": 44,
+                          "h": 36,
+                          "tooltip": "{cat.label}",
+                          "action": {
+                            "event": "crafting.filterCategory",
+                            "args": {
+                              "id": "{cat.id}"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "panel",
+                    "frame": "panel_inset",
+                    "w": "fill",
+                    "h": "fill",
+                    "pad": 8,
+                    "children": [
+                      {
+                        "type": "list",
+                        "id": "recipe_list",
+                        "w": "fill",
+                        "h": "fill",
+                        "scroll": "{crafting.scroll}",
+                        "children": [
+                          {
+                            "type": "repeat",
+                            "each": "{recipes}",
+                            "as": "r",
+                            "layout": "col",
+                            "gap": 4,
+                            "w": "fill",
+                            "h": "auto",
+                            "template": {
+                              "type": "listitem",
+                              "w": "fill",
+                              "h": 46,
+                              "selected": "{r.id == crafting.selected}",
+                              "disabled": "{r.locked}",
+                              "action": {
+                                "event": "crafting.select",
+                                "args": {
+                                  "recipe": "{r.id}"
+                                }
+                              },
+                              "children": [
+                                {
+                                  "type": "slot",
+                                  "w": 38,
+                                  "h": 38,
+                                  "bind": "{r.output}",
+                                  "showCount": false,
+                                  "anchor": "cl",
+                                  "x": 4
+                                },
+                                {
+                                  "type": "text",
+                                  "text": "{r.name}",
+                                  "font": "label",
+                                  "anchor": "cl",
+                                  "x": 50,
+                                  "y": -8,
+                                  "w": 170
+                                },
+                                {
+                                  "type": "text",
+                                  "text": "{r.stationLabel}",
+                                  "font": "tiny",
+                                  "anchor": "cl",
+                                  "x": 50,
+                                  "y": 10,
+                                  "w": 170
+                                },
+                                {
+                                  "type": "icon",
+                                  "icon": "{r.craftable ? \"ic_check\" : r.locked ? \"ic_lock\" : \"ic_cross\"}",
+                                  "w": 24,
+                                  "h": 24,
+                                  "anchor": "cr",
+                                  "x": 8
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "panel",
+                "id": "recipe_detail",
+                "frame": "panel_parchment",
+                "anchor": "tl",
+                "x": 316,
+                "y": 4,
+                "w": 318,
+                "h": 430,
+                "pad": 16,
+                "layout": "col",
+                "gap": 8,
+                "children": [
+                  {
+                    "type": "box",
+                    "layout": "row",
+                    "gap": 12,
+                    "h": 68,
+                    "w": "fill",
+                    "align": "center",
+                    "children": [
+                      {
+                        "type": "slot",
+                        "w": 64,
+                        "h": 64,
+                        "bind": "{crafting.current.output}",
+                        "rarityFrame": true
+                      },
+                      {
+                        "type": "box",
+                        "layout": "col",
+                        "w": "fill",
+                        "h": 60,
+                        "gap": 2,
+                        "children": [
+                          {
+                            "type": "text",
+                            "text": "{crafting.current.name}",
+                            "font": "heading",
+                            "h": 24
+                          },
+                          {
+                            "type": "text",
+                            "text": "Makes {crafting.current.output.count} \u00b7 {crafting.current.seconds}s",
+                            "font": "small",
+                            "h": 18
+                          },
+                          {
+                            "type": "badge",
+                            "icon": "{crafting.current.stationIcon}",
+                            "text": "{crafting.current.stationLabel}",
+                            "color": "{crafting.current.stationOk ? \"leaf-500\" : \"berry-500\"}",
+                            "h": 22,
+                            "w": 140
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "text": "{crafting.current.description}",
+                    "font": "small",
+                    "w": "fill",
+                    "h": 36,
+                    "wrap": true
+                  },
+                  {
+                    "type": "divider",
+                    "w": "fill",
+                    "h": 14
+                  },
+                  {
+                    "type": "text",
+                    "text": "Needs",
+                    "font": "label",
+                    "h": 20
+                  },
+                  {
+                    "type": "repeat",
+                    "each": "{crafting.current.ingredients}",
+                    "as": "ing",
+                    "layout": "col",
+                    "gap": 6,
+                    "w": "fill",
+                    "h": 150,
+                    "template": {
+                      "type": "box",
+                      "layout": "row",
+                      "gap": 8,
+                      "h": 42,
+                      "w": "fill",
+                      "align": "center",
+                      "children": [
+                        {
+                          "type": "slot",
+                          "w": 40,
+                          "h": 40,
+                          "bind": "{ing}",
+                          "showCount": false
+                        },
+                        {
+                          "type": "box",
+                          "layout": "col",
+                          "w": "fill",
+                          "h": 40,
+                          "children": [
+                            {
+                              "type": "text",
+                              "text": "{ing.name}",
+                              "font": "label",
+                              "h": 20
+                            },
+                            {
+                              "type": "text",
+                              "text": "You have {ing.have}",
+                              "font": "tiny",
+                              "h": 16,
+                              "color": "{ing.have >= ing.count ? \"text.success\" : \"text.danger\"}"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "text": "\u00d7{ing.count}",
+                          "font": "heading",
+                          "w": 50,
+                          "align": "right",
+                          "color": "{ing.have >= ing.count ? \"text.primary\" : \"text.danger\"}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "box",
+                    "layout": "row",
+                    "gap": 8,
+                    "h": 48,
+                    "w": "fill",
+                    "align": "center",
+                    "children": [
+                      {
+                        "type": "stepper",
+                        "bind": "{crafting.quantity}",
+                        "min": 1,
+                        "max": "{crafting.current.maxCraftable}",
+                        "w": 120,
+                        "h": 40
+                      },
+                      {
+                        "type": "button",
+                        "label": "Craft!",
+                        "variant": "primary",
+                        "w": "fill",
+                        "h": 48,
+                        "icon": "ic_craft",
+                        "action": {
+                          "event": "crafting.craft",
+                          "args": {
+                            "recipe": "{crafting.selected}",
+                            "count": "{crafting.quantity}"
+                          }
+                        },
+                        "disabled": "{!crafting.current.craftable}",
+                        "hotkey": "Enter"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "panel",
+                "id": "craft_queue",
+                "frame": "panel_inset",
+                "anchor": "tl",
+                "x": 650,
+                "y": 4,
+                "w": 202,
+                "h": 430,
+                "pad": 10,
+                "layout": "col",
+                "gap": 8,
+                "children": [
+                  {
+                    "type": "text",
+                    "text": "Queue",
+                    "font": "label",
+                    "h": 20
+                  },
+                  {
+                    "type": "repeat",
+                    "each": "{crafting.queue}",
+                    "as": "q",
+                    "layout": "col",
+                    "gap": 8,
+                    "w": "fill",
+                    "h": "fill",
+                    "template": {
+                      "type": "box",
+                      "layout": "row",
+                      "gap": 6,
+                      "h": 48,
+                      "w": "fill",
+                      "align": "center",
+                      "children": [
+                        {
+                          "type": "slot",
+                          "w": 44,
+                          "h": 44,
+                          "bind": "{q.output}"
+                        },
+                        {
+                          "type": "box",
+                          "layout": "col",
+                          "w": "fill",
+                          "h": 40,
+                          "gap": 4,
+                          "children": [
+                            {
+                              "type": "text",
+                              "text": "{q.name}",
+                              "font": "small",
+                              "h": 16
+                            },
+                            {
+                              "type": "bar",
+                              "vital": "stamina",
+                              "value": "{q.progress}",
+                              "max": "{q.total}",
+                              "w": "fill",
+                              "h": 16
+                            }
+                          ]
+                        },
+                        {
+                          "type": "button",
+                          "variant": "close",
+                          "w": 24,
+                          "h": 24,
+                          "action": {
+                            "event": "crafting.cancel",
+                            "args": {
+                              "index": "{q.index}"
+                            }
+                          },
+                          "tooltip": "Cancel"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": "{crafting.queue.length}/{crafting.queueMax} slots",
+                    "font": "tiny",
+                    "h": 16,
+                    "align": "center"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "button",
+            "id": "close",
+            "variant": "close",
+            "anchor": "tr",
+            "x": 10,
+            "y": -10,
+            "w": 32,
+            "h": 32,
+            "action": {
+              "event": "ui.close",
+              "args": {
+                "screen": "crafting"
+              }
+            },
+            "hotkey": "Escape",
+            "tooltip": "Close (Esc)"
+          }
+        ]
+      }
+    ]
+  }
+}

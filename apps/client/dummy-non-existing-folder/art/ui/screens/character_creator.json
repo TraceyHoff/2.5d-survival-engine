@@ -1,0 +1,870 @@
+{
+  "$schema": "../screen.schema.json",
+  "schema": "ui-screen/1",
+  "id": "character_creator",
+  "title": "Character creator (first join)",
+  "layer": "modal",
+  "modal": true,
+  "trigger": "local player's gameplay Wardrobe.created == 0 (DESIGN \u00a710); sends gameplay.setAppearance; closes on success (created -> 1)",
+  "binds": "creator.draft = AppearanceValue being edited; creator._vm per tab: body -> swatchesA=skinTones, items=[] ; hair -> swatchesA=hairColors(hair primary), items=hair; face -> swatchesA=hairColors(face primary), items=face+eyes; outfit -> starter outfits/top/bottom/shoes (locked items hidden in the creator), swatchesA=clothingColors primary, swatchesC=secondary",
+  "inputs": {
+    "kbm": [
+      {
+        "key": "Q/E",
+        "label": "Rotate"
+      },
+      {
+        "key": "Tab",
+        "label": "Next tab"
+      },
+      {
+        "key": "R",
+        "label": "Randomize"
+      },
+      {
+        "key": "LMB",
+        "label": "Pick"
+      },
+      {
+        "key": "Enter",
+        "label": "Done"
+      }
+    ],
+    "gamepad": [
+      {
+        "key": "LB/RB",
+        "label": "Tab"
+      },
+      {
+        "key": "RS",
+        "label": "Rotate"
+      },
+      {
+        "key": "A",
+        "label": "Pick"
+      },
+      {
+        "key": "X",
+        "label": "Colour"
+      },
+      {
+        "key": "Y",
+        "label": "Randomize"
+      },
+      {
+        "key": "Start",
+        "label": "Done"
+      }
+    ],
+    "touch": [
+      {
+        "gesture": "drag preview",
+        "label": "Rotate"
+      },
+      {
+        "gesture": "pinch preview",
+        "label": "Zoom"
+      },
+      {
+        "gesture": "tap",
+        "label": "Pick"
+      },
+      {
+        "gesture": "long-press locked",
+        "label": "Show unlock hint"
+      }
+    ]
+  },
+  "strings": "strings/en.json",
+  "root": {
+    "type": "box",
+    "id": "creator",
+    "w": "fill",
+    "h": "fill",
+    "children": [
+      {
+        "type": "scrim",
+        "alpha": 0.25
+      },
+      {
+        "type": "ribbon",
+        "text": "Make your camper!",
+        "anchor": "tc",
+        "x": 0,
+        "y": 18,
+        "w": 420,
+        "h": 46
+      },
+      {
+        "type": "box",
+        "anchor": "tc",
+        "x": 0,
+        "y": 84,
+        "w": 1120,
+        "h": 486,
+        "layout": "row",
+        "gap": 16,
+        "children": [
+          {
+            "type": "panel",
+            "frame": "panel_inset",
+            "w": 300,
+            "h": 486,
+            "pad": 12,
+            "layout": "col",
+            "gap": 8,
+            "align": "center",
+            "children": [
+              {
+                "type": "charpreview",
+                "id": "live_preview",
+                "facing": "{creator.facing}",
+                "anim": "{creator.anim}",
+                "w": 260,
+                "h": 376,
+                "drag": "rotate",
+                "wheel": "zoom",
+                "note": "render createCharacterPreview(); drag/LB-RB/Q-E rotate in 45\u00b0 steps",
+                "appearance": "{creator.draft}",
+                "rotate": true,
+                "zoom": true,
+                "expression": "{creator.expression}"
+              },
+              {
+                "type": "box",
+                "layout": "row",
+                "gap": 8,
+                "w": "fill",
+                "h": 44,
+                "justify": "center",
+                "children": [
+                  {
+                    "type": "button",
+                    "label": "",
+                    "variant": "secondary",
+                    "w": 52,
+                    "h": 44,
+                    "icon": "ic_arrow_left",
+                    "action": {
+                      "event": "creator.rotate",
+                      "args": {
+                        "by": -1
+                      }
+                    },
+                    "tooltip": "Turn left (Q)"
+                  },
+                  {
+                    "type": "button",
+                    "label": "{creator.animLabel}",
+                    "variant": "secondary",
+                    "w": 120,
+                    "h": 44,
+                    "icon": "ic_rotate",
+                    "action": {
+                      "event": "creator.cycleAnim"
+                    },
+                    "tooltip": "Try an animation"
+                  },
+                  {
+                    "type": "button",
+                    "label": "",
+                    "variant": "secondary",
+                    "w": 52,
+                    "h": 44,
+                    "icon": "ic_arrow_right",
+                    "action": {
+                      "event": "creator.rotate",
+                      "args": {
+                        "by": 1
+                      }
+                    },
+                    "tooltip": "Turn right (E)"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "box",
+            "layout": "col",
+            "gap": 10,
+            "w": "fill",
+            "h": 486,
+            "children": [
+              {
+                "type": "panel",
+                "frame": "panel_parchment",
+                "w": "fill",
+                "h": 486,
+                "pad": 16,
+                "layout": "col",
+                "gap": 8,
+                "children": [
+                  {
+                    "type": "tabs",
+                    "w": "fill",
+                    "h": 44,
+                    "bind": "{creator.tab}",
+                    "small": true,
+                    "items": [
+                      {
+                        "id": "body",
+                        "label": "Body",
+                        "icon": "ic_person",
+                        "action": {
+                          "event": "creator.tab",
+                          "args": {
+                            "tab": "body"
+                          }
+                        }
+                      },
+                      {
+                        "id": "hair",
+                        "label": "Hair",
+                        "icon": "ic_star",
+                        "action": {
+                          "event": "creator.tab",
+                          "args": {
+                            "tab": "hair"
+                          }
+                        }
+                      },
+                      {
+                        "id": "face",
+                        "label": "Face",
+                        "icon": "ic_sun",
+                        "action": {
+                          "event": "creator.tab",
+                          "args": {
+                            "tab": "face"
+                          }
+                        }
+                      },
+                      {
+                        "id": "outfit",
+                        "label": "Outfit",
+                        "icon": "ic_bag",
+                        "action": {
+                          "event": "creator.tab",
+                          "args": {
+                            "tab": "outfit"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "box",
+                    "layout": "row",
+                    "gap": 8,
+                    "w": "fill",
+                    "h": 44,
+                    "align": "center",
+                    "visible": "{creator.tab == 'body'}",
+                    "children": [
+                      {
+                        "type": "text",
+                        "text": "Body",
+                        "font": "label",
+                        "w": 90
+                      },
+                      {
+                        "type": "button",
+                        "label": "Type A",
+                        "variant": "{creator.draft.bodyType == 0 ? 'primary' : 'secondary'}",
+                        "w": 120,
+                        "h": 40,
+                        "action": {
+                          "event": "creator.body",
+                          "args": {
+                            "bodyType": 0
+                          }
+                        }
+                      },
+                      {
+                        "type": "button",
+                        "label": "Type B",
+                        "variant": "{creator.draft.bodyType == 1 ? 'primary' : 'secondary'}",
+                        "w": 120,
+                        "h": 40,
+                        "action": {
+                          "event": "creator.body",
+                          "args": {
+                            "bodyType": 1
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "text": "{creator._vm.sectionA}",
+                    "font": "label",
+                    "h": 20
+                  },
+                  {
+                    "type": "repeat",
+                    "each": "{creator._vm.swatchesA}",
+                    "as": "c",
+                    "layout": "grid",
+                    "gap": 4,
+                    "w": "fill",
+                    "h": 60,
+                    "template": {
+                      "type": "swatch",
+                      "w": 24,
+                      "h": 28,
+                      "color": "{c.color}",
+                      "selected": "{c.selected}",
+                      "tooltip": "{c.key}",
+                      "action": {
+                        "event": "creator.color",
+                        "args": {
+                          "channel": "{creator._vm.channelA}",
+                          "index": "{c.index}"
+                        }
+                      }
+                    },
+                    "cols": 13,
+                    "cell": [
+                      24,
+                      28
+                    ],
+                    "note": "12 per row, wraps (fixes overflow with 16+ palette entries)"
+                  },
+                  {
+                    "type": "text",
+                    "text": "{creator._vm.sectionB}",
+                    "font": "label",
+                    "h": 20
+                  },
+                  {
+                    "type": "panel",
+                    "frame": "panel_inset",
+                    "w": "fill",
+                    "h": "fill",
+                    "pad": 8,
+                    "children": [
+                      {
+                        "type": "repeat",
+                        "each": "{creator._vm.items}",
+                        "as": "w",
+                        "layout": "grid",
+                        "cols": 10,
+                        "cell": [
+                          64,
+                          64
+                        ],
+                        "gap": 6,
+                        "w": "fill",
+                        "h": "fill",
+                        "template": {
+                          "type": "cosmeticslot",
+                          "w": 64,
+                          "h": 64,
+                          "bind": "{w}",
+                          "wearable": "{w.key}",
+                          "selected": "{w.equipped}",
+                          "locked": "{w.locked}",
+                          "tag": "{w.lockTag}",
+                          "tooltip": "{w.locked ? w.hint : w.name}",
+                          "action": {
+                            "event": "creator.pick",
+                            "args": {
+                              "slot": "{w.slot}",
+                              "wearable": "{w.id}"
+                            }
+                          },
+                          "longPress": {
+                            "event": "ui.toast",
+                            "args": {
+                              "text": "{w.hint}"
+                            }
+                          },
+                          "slot": "{w.slot}",
+                          "bodyType": "{creator.draft.bodyType}",
+                          "unlocked": "unlocked",
+                          "paletteChannel": "primary"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "text": "{creator._vm.sectionC}",
+                    "font": "label",
+                    "h": 20,
+                    "visible": "{creator._vm.swatchesC}"
+                  },
+                  {
+                    "type": "repeat",
+                    "each": "{creator._vm.swatchesC}",
+                    "as": "c",
+                    "layout": "grid",
+                    "gap": 4,
+                    "w": "fill",
+                    "h": 60,
+                    "template": {
+                      "type": "swatch",
+                      "w": 24,
+                      "h": 28,
+                      "color": "{c.color}",
+                      "selected": "{c.selected}",
+                      "tooltip": "{c.key}",
+                      "action": {
+                        "event": "creator.color",
+                        "args": {
+                          "channel": "secondary",
+                          "index": "{c.index}"
+                        }
+                      }
+                    },
+                    "cols": 13,
+                    "cell": [
+                      24,
+                      28
+                    ],
+                    "note": "12 per row, wraps (fixes overflow with 16+ palette entries)"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "box",
+        "anchor": "bc",
+        "x": 0,
+        "y": 58,
+        "w": 1120,
+        "h": 52,
+        "children": [
+          {
+            "type": "box",
+            "layout": "row",
+            "gap": 10,
+            "w": 1120,
+            "h": 52,
+            "align": "center",
+            "children": [
+              {
+                "type": "input",
+                "bind": "{creator.name}",
+                "placeholder": "Your camper's name",
+                "icon": "ic_person",
+                "w": "fill",
+                "h": 48,
+                "maxLength": 16,
+                "action": {
+                  "event": "creator.name"
+                }
+              },
+              {
+                "type": "button",
+                "label": "Randomize",
+                "variant": "gold",
+                "w": 150,
+                "h": 48,
+                "icon": "ic_star",
+                "action": {
+                  "event": "creator.randomize"
+                },
+                "hotkey": "KeyR"
+              },
+              {
+                "type": "button",
+                "label": "Let's go!",
+                "variant": "primary",
+                "w": 150,
+                "h": 48,
+                "icon": "ic_check",
+                "action": {
+                  "event": "creator.confirm"
+                },
+                "hotkey": "Enter",
+                "disabled": "{!creator.name || creator.busy}"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "toast",
+        "kind": "warning",
+        "anchor": "tc",
+        "x": 0,
+        "y": 70,
+        "w": 520,
+        "h": 48,
+        "visible": "{creator.error}",
+        "icon": "{creator.error.icon}",
+        "title": "{creator.error.text}"
+      },
+      {
+        "type": "box",
+        "id": "input_hints",
+        "anchor": "bc",
+        "x": 0,
+        "y": 10,
+        "w": 1100,
+        "h": 32,
+        "layout": "row",
+        "gap": 18,
+        "justify": "center",
+        "children": [
+          {
+            "type": "repeat",
+            "each": "{input.hints}",
+            "as": "k",
+            "layout": "row",
+            "gap": 18,
+            "h": 32,
+            "template": {
+              "type": "keyhint",
+              "key": "{k.key}",
+              "label": "{k.label}"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "variants": {
+    "phone": {
+      "type": "box",
+      "id": "creator_phone",
+      "w": "fill",
+      "h": "fill",
+      "children": [
+        {
+          "type": "ribbon",
+          "text": "Make your camper!",
+          "anchor": "tc",
+          "x": 0,
+          "y": 24,
+          "w": 360,
+          "h": 44
+        },
+        {
+          "type": "box",
+          "anchor": "tc",
+          "x": 0,
+          "y": 84,
+          "w": 680,
+          "h": 1180,
+          "layout": "col",
+          "gap": 12,
+          "align": "center",
+          "children": [
+            {
+              "type": "panel",
+              "frame": "panel_inset",
+              "w": 680,
+              "h": 400,
+              "pad": 10,
+              "children": [
+                {
+                  "type": "charpreview",
+                  "facing": "{creator.facing}",
+                  "anim": "{creator.anim}",
+                  "anchor": "cc",
+                  "w": 300,
+                  "h": 370,
+                  "drag": "rotate",
+                  "pinch": "zoom",
+                  "appearance": "{creator.draft}",
+                  "rotate": true,
+                  "zoom": true,
+                  "expression": "{creator.expression}"
+                },
+                {
+                  "type": "button",
+                  "label": "",
+                  "variant": "gold",
+                  "w": 64,
+                  "h": 64,
+                  "icon": "ic_star",
+                  "action": {
+                    "event": "creator.randomize"
+                  },
+                  "anchor": "tr",
+                  "x": 6,
+                  "y": 6,
+                  "tooltip": "Randomize"
+                }
+              ]
+            },
+            {
+              "type": "panel",
+              "frame": "panel_parchment",
+              "w": 680,
+              "h": 600,
+              "pad": 16,
+              "layout": "col",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "tabs",
+                  "w": "fill",
+                  "h": 44,
+                  "bind": "{creator.tab}",
+                  "small": true,
+                  "items": [
+                    {
+                      "id": "body",
+                      "label": "Body",
+                      "icon": "ic_person",
+                      "action": {
+                        "event": "creator.tab",
+                        "args": {
+                          "tab": "body"
+                        }
+                      }
+                    },
+                    {
+                      "id": "hair",
+                      "label": "Hair",
+                      "icon": "ic_star",
+                      "action": {
+                        "event": "creator.tab",
+                        "args": {
+                          "tab": "hair"
+                        }
+                      }
+                    },
+                    {
+                      "id": "face",
+                      "label": "Face",
+                      "icon": "ic_sun",
+                      "action": {
+                        "event": "creator.tab",
+                        "args": {
+                          "tab": "face"
+                        }
+                      }
+                    },
+                    {
+                      "id": "outfit",
+                      "label": "Outfit",
+                      "icon": "ic_bag",
+                      "action": {
+                        "event": "creator.tab",
+                        "args": {
+                          "tab": "outfit"
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "box",
+                  "layout": "row",
+                  "gap": 8,
+                  "w": "fill",
+                  "h": 44,
+                  "align": "center",
+                  "visible": "{creator.tab == 'body'}",
+                  "children": [
+                    {
+                      "type": "text",
+                      "text": "Body",
+                      "font": "label",
+                      "w": 90
+                    },
+                    {
+                      "type": "button",
+                      "label": "Type A",
+                      "variant": "{creator.draft.bodyType == 0 ? 'primary' : 'secondary'}",
+                      "w": 120,
+                      "h": 40,
+                      "action": {
+                        "event": "creator.body",
+                        "args": {
+                          "bodyType": 0
+                        }
+                      }
+                    },
+                    {
+                      "type": "button",
+                      "label": "Type B",
+                      "variant": "{creator.draft.bodyType == 1 ? 'primary' : 'secondary'}",
+                      "w": 120,
+                      "h": 40,
+                      "action": {
+                        "event": "creator.body",
+                        "args": {
+                          "bodyType": 1
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "{creator._vm.sectionA}",
+                  "font": "label",
+                  "h": 20
+                },
+                {
+                  "type": "repeat",
+                  "each": "{creator._vm.swatchesA}",
+                  "as": "c",
+                  "layout": "grid",
+                  "gap": 4,
+                  "w": "fill",
+                  "h": 60,
+                  "template": {
+                    "type": "swatch",
+                    "w": 24,
+                    "h": 28,
+                    "color": "{c.color}",
+                    "selected": "{c.selected}",
+                    "tooltip": "{c.key}",
+                    "action": {
+                      "event": "creator.color",
+                      "args": {
+                        "channel": "{creator._vm.channelA}",
+                        "index": "{c.index}"
+                      }
+                    }
+                  },
+                  "cols": 13,
+                  "cell": [
+                    24,
+                    28
+                  ],
+                  "note": "12 per row, wraps (fixes overflow with 16+ palette entries)"
+                },
+                {
+                  "type": "text",
+                  "text": "{creator._vm.sectionB}",
+                  "font": "label",
+                  "h": 20
+                },
+                {
+                  "type": "panel",
+                  "frame": "panel_inset",
+                  "w": "fill",
+                  "h": "fill",
+                  "pad": 8,
+                  "children": [
+                    {
+                      "type": "repeat",
+                      "each": "{creator._vm.items}",
+                      "as": "w",
+                      "layout": "grid",
+                      "cols": 7,
+                      "cell": [
+                        64,
+                        64
+                      ],
+                      "gap": 6,
+                      "w": "fill",
+                      "h": "fill",
+                      "template": {
+                        "type": "cosmeticslot",
+                        "w": 64,
+                        "h": 64,
+                        "bind": "{w}",
+                        "wearable": "{w.key}",
+                        "selected": "{w.equipped}",
+                        "locked": "{w.locked}",
+                        "tag": "{w.lockTag}",
+                        "tooltip": "{w.locked ? w.hint : w.name}",
+                        "action": {
+                          "event": "creator.pick",
+                          "args": {
+                            "slot": "{w.slot}",
+                            "wearable": "{w.id}"
+                          }
+                        },
+                        "longPress": {
+                          "event": "ui.toast",
+                          "args": {
+                            "text": "{w.hint}"
+                          }
+                        },
+                        "slot": "{w.slot}",
+                        "bodyType": "{creator.draft.bodyType}",
+                        "unlocked": "unlocked",
+                        "paletteChannel": "primary"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "{creator._vm.sectionC}",
+                  "font": "label",
+                  "h": 20,
+                  "visible": "{creator._vm.swatchesC}"
+                },
+                {
+                  "type": "repeat",
+                  "each": "{creator._vm.swatchesC}",
+                  "as": "c",
+                  "layout": "grid",
+                  "gap": 4,
+                  "w": "fill",
+                  "h": 60,
+                  "template": {
+                    "type": "swatch",
+                    "w": 24,
+                    "h": 28,
+                    "color": "{c.color}",
+                    "selected": "{c.selected}",
+                    "tooltip": "{c.key}",
+                    "action": {
+                      "event": "creator.color",
+                      "args": {
+                        "channel": "secondary",
+                        "index": "{c.index}"
+                      }
+                    }
+                  },
+                  "cols": 13,
+                  "cell": [
+                    24,
+                    28
+                  ],
+                  "note": "12 per row, wraps (fixes overflow with 16+ palette entries)"
+                }
+              ]
+            },
+            {
+              "type": "box",
+              "layout": "row",
+              "gap": 10,
+              "w": 680,
+              "h": 72,
+              "align": "center",
+              "children": [
+                {
+                  "type": "input",
+                  "bind": "{creator.name}",
+                  "placeholder": "Your camper's name",
+                  "w": "fill",
+                  "h": 64,
+                  "maxLength": 16
+                },
+                {
+                  "type": "button",
+                  "label": "Let's go!",
+                  "variant": "primary",
+                  "w": 210,
+                  "h": 64,
+                  "icon": "ic_check",
+                  "action": {
+                    "event": "creator.confirm"
+                  },
+                  "disabled": "{!creator.name}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

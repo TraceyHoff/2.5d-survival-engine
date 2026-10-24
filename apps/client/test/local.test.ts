@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { MemoryWorldStore } from "@engine/persist";
 import { NO_ENTITY } from "@engine/net";
-import { BuyFromStallCmd } from "@engine/gameplay";
+import { BuyFromStallCmd, noteSocialEvent, socialMemoryDirty } from "@engine/gameplay";
 import { gameplayNet } from "@engine/server/protocol";
 import { createLocalServer, sendAgentCommands } from "../src/local.js";
 import { ClientSession, type KeyValue } from "../src/session.js";
@@ -54,5 +54,18 @@ describe("local/offline mode (in-memory transport)", () => {
     expect({ ...b, who: "" }).toEqual({ ...h, who: "" });
     expect(b!.name).toBe(BuyFromStallCmd.name);
     session.disconnect(); await run(200, local, session); await local.stop();
+  });
+
+  it("force-flushes dirty bot social memory through game.agents.put on stop", async () => {
+    let r = 0; const rng = (): number => ((r = (r * 1103515245 + 12345) >>> 0) / 2 ** 32);
+    const local = await createLocalServer({ store: new MemoryWorldStore(), seed: 9, bots: 1, rng, population: false });
+    const agent = local.bots[0]!.agent; const id = agent.identity.id;
+    const puts: { id: string; partial: unknown }[] = []; const orig = local.game.agents.put.bind(local.game.agents);
+    (local.game.agents as { put: unknown }).put = (i: string, p: Parameters<typeof orig>[1]) => { puts.push({ id: i, partial: p }); return orig(i, p); };
+    noteSocialEvent(agent, 4, "kicked", local.game.world.tick);
+    expect(socialMemoryDirty(agent)).toBe(true);
+    await local.stop();
+    expect(socialMemoryDirty(agent)).toBe(false);
+    expect(puts.some((p) => p.id === id && typeof p.partial === "object" && p.partial !== null && "social" in p.partial)).toBe(true);
   });
 });

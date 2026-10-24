@@ -1,0 +1,1069 @@
+{
+ "source": "engine packages/input profiles + touchLayout via glyphFor() port (tools/input_ids.py)",
+ "count": 169,
+ "invalid": [],
+ "ids": {
+  "gamepad.generic.a": [
+   "gamepad/Building/Build.PlaceConfirm",
+   "gamepad/Crafting/Craft.Craft",
+   "gamepad/Dialog/Dialog.Confirm",
+   "gamepad/Gameplay/Jump",
+   "gamepad/Inventory/Inv.MoveSlot",
+   "gamepad/Social/Social.ContextMenu",
+   "gamepad/Trade/Trade.AddOffer"
+  ],
+  "gamepad.generic.b": [
+   "gamepad/Building/Build.Cancel",
+   "gamepad/Chat/Chat.Cancel",
+   "gamepad/Crafting/UI.Back",
+   "gamepad/Dialog/Dialog.Cancel",
+   "gamepad/Gameplay/QuickUse",
+   "gamepad/Inventory/UI.Back",
+   "gamepad/Social/UI.Back",
+   "gamepad/Trade/UI.Back"
+  ],
+  "gamepad.generic.ddown": [
+   "gamepad/Building/Build.LevelDown",
+   "gamepad/Building/Build.TierPrev",
+   "gamepad/Crafting/UI.Navigate",
+   "gamepad/Gameplay/Camera.Zoom",
+   "gamepad/Gameplay/Hotbar3",
+   "gamepad/Gameplay/Hotbar7",
+   "gamepad/Inventory/UI.Navigate",
+   "gamepad/Social/UI.Navigate",
+   "gamepad/Trade/UI.Navigate"
+  ],
+  "gamepad.generic.dleft": [
+   "gamepad/Building/Build.PiecePrev",
+   "gamepad/Crafting/UI.Navigate",
+   "gamepad/Gameplay/Hotbar4",
+   "gamepad/Gameplay/Hotbar8",
+   "gamepad/Inventory/UI.Navigate",
+   "gamepad/Social/UI.Navigate",
+   "gamepad/Trade/UI.Navigate"
+  ],
+  "gamepad.generic.dright": [
+   "gamepad/Building/Build.PieceNext",
+   "gamepad/Crafting/UI.Navigate",
+   "gamepad/Gameplay/Hotbar2",
+   "gamepad/Gameplay/Hotbar6",
+   "gamepad/Inventory/UI.Navigate",
+   "gamepad/Social/UI.Navigate",
+   "gamepad/Trade/UI.Navigate"
+  ],
+  "gamepad.generic.dup": [
+   "gamepad/Building/Build.LevelUp",
+   "gamepad/Building/Build.TierNext",
+   "gamepad/Crafting/UI.Navigate",
+   "gamepad/Gameplay/Camera.Zoom",
+   "gamepad/Gameplay/Hotbar1",
+   "gamepad/Gameplay/Hotbar5",
+   "gamepad/Inventory/UI.Navigate",
+   "gamepad/Social/UI.Navigate",
+   "gamepad/Trade/UI.Navigate"
+  ],
+  "gamepad.generic.lb": [
+   "gamepad/Building/Build.RotateCCW",
+   "gamepad/Building/ToggleBuild",
+   "gamepad/Crafting/Craft.FilterPrev",
+   "gamepad/Crafting/ToggleCrafting",
+   "gamepad/Gameplay/Hotbar5",
+   "gamepad/Gameplay/Hotbar6",
+   "gamepad/Gameplay/Hotbar7",
+   "gamepad/Gameplay/Hotbar8",
+   "gamepad/Gameplay/HotbarPrev",
+   "gamepad/Gameplay/ToggleBuild",
+   "gamepad/Gameplay/ToggleCrafting",
+   "gamepad/Inventory/UI.TabPrev",
+   "gamepad/Social/Social.Demote",
+   "gamepad/Trade/UI.TabPrev"
+  ],
+  "gamepad.generic.ls": [
+   "gamepad/Crafting/UI.Navigate",
+   "gamepad/Gameplay/Move",
+   "gamepad/Gameplay/Sprint",
+   "gamepad/Inventory/UI.Navigate",
+   "gamepad/Social/UI.Navigate",
+   "gamepad/Trade/UI.Navigate"
+  ],
+  "gamepad.generic.lt": [
+   "gamepad/Building/Build.LevelDown",
+   "gamepad/Building/Build.LevelUp",
+   "gamepad/Gameplay/Secondary",
+   "gamepad/Inventory/Inv.Equip",
+   "gamepad/Social/Social.Kick"
+  ],
+  "gamepad.generic.rb": [
+   "gamepad/Building/Build.RotateCW",
+   "gamepad/Chat/Chat.SwitchChannel",
+   "gamepad/Crafting/Craft.FilterNext",
+   "gamepad/Gameplay/Camera.Zoom",
+   "gamepad/Gameplay/HotbarNext",
+   "gamepad/Gameplay/OpenChat",
+   "gamepad/Inventory/UI.TabNext",
+   "gamepad/Social/Social.Promote",
+   "gamepad/Trade/UI.TabNext"
+  ],
+  "gamepad.generic.rs": [
+   "gamepad/Building/Build.Nudge",
+   "gamepad/Building/Build.ToggleSnap",
+   "gamepad/Gameplay/Aim",
+   "gamepad/Gameplay/Crouch",
+   "gamepad/Inventory/Inv.Sort"
+  ],
+  "gamepad.generic.rt": [
+   "gamepad/Building/Build.PlaceConfirm",
+   "gamepad/Gameplay/Charge",
+   "gamepad/Gameplay/Primary",
+   "gamepad/Inventory/Inv.Use"
+  ],
+  "gamepad.generic.select": [
+   "gamepad/Crafting/ToggleCrafting",
+   "gamepad/Gameplay/OpenChat",
+   "gamepad/Gameplay/ToggleCrafting",
+   "gamepad/Gameplay/ToggleInventory",
+   "gamepad/Gameplay/ToggleMap",
+   "gamepad/Inventory/ToggleInventory",
+   "gamepad/Social/Social.Leave"
+  ],
+  "gamepad.generic.start": [
+   "gamepad/Chat/Chat.Send",
+   "gamepad/Gameplay/Cancel",
+   "gamepad/Gameplay/OpenSocial",
+   "gamepad/Social/OpenSocial",
+   "gamepad/Trade/Trade.Confirm"
+  ],
+  "gamepad.generic.x": [
+   "gamepad/Building/Build.DemolishMode",
+   "gamepad/Building/Build.RepairMode",
+   "gamepad/Crafting/Craft.Amount",
+   "gamepad/Gameplay/ContextRadial",
+   "gamepad/Gameplay/Interact",
+   "gamepad/Inventory/Inv.Drop",
+   "gamepad/Inventory/Inv.SplitStack",
+   "gamepad/Social/Social.Invite",
+   "gamepad/Social/Social.Kick",
+   "gamepad/Trade/Trade.RemoveOffer"
+  ],
+  "gamepad.generic.y": [
+   "gamepad/Building/Build.UpgradeMode",
+   "gamepad/Building/ToggleBuild",
+   "gamepad/Chat/Chat.QuickPhrase",
+   "gamepad/Crafting/Craft.Cancel",
+   "gamepad/Gameplay/Reload",
+   "gamepad/Gameplay/ToggleBuild",
+   "gamepad/Inventory/Inv.QuickTransfer",
+   "gamepad/Inventory/Inv.TakeAll",
+   "gamepad/Social/Social.SetPermissions",
+   "gamepad/Trade/Trade.Lock"
+  ],
+  "gamepad.playstation.circle": [
+   "gamepad/Building/Build.Cancel",
+   "gamepad/Chat/Chat.Cancel",
+   "gamepad/Crafting/UI.Back",
+   "gamepad/Dialog/Dialog.Cancel",
+   "gamepad/Gameplay/QuickUse",
+   "gamepad/Inventory/UI.Back",
+   "gamepad/Social/UI.Back",
+   "gamepad/Trade/UI.Back"
+  ],
+  "gamepad.playstation.cross": [
+   "gamepad/Building/Build.PlaceConfirm",
+   "gamepad/Crafting/Craft.Craft",
+   "gamepad/Dialog/Dialog.Confirm",
+   "gamepad/Gameplay/Jump",
+   "gamepad/Inventory/Inv.MoveSlot",
+   "gamepad/Social/Social.ContextMenu",
+   "gamepad/Trade/Trade.AddOffer"
+  ],
+  "gamepad.playstation.ddown": [
+   "gamepad/Building/Build.LevelDown",
+   "gamepad/Building/Build.TierPrev",
+   "gamepad/Crafting/UI.Navigate",
+   "gamepad/Gameplay/Camera.Zoom",
+   "gamepad/Gameplay/Hotbar3",
+   "gamepad/Gameplay/Hotbar7",
+   "gamepad/Inventory/UI.Navigate",
+   "gamepad/Social/UI.Navigate",
+   "gamepad/Trade/UI.Navigate"
+  ],
+  "gamepad.playstation.dleft": [
+   "gamepad/Building/Build.PiecePrev",
+   "gamepad/Crafting/UI.Navigate",
+   "gamepad/Gameplay/Hotbar4",
+   "gamepad/Gameplay/Hotbar8",
+   "gamepad/Inventory/UI.Navigate",
+   "gamepad/Social/UI.Navigate",
+   "gamepad/Trade/UI.Navigate"
+  ],
+  "gamepad.playstation.dright": [
+   "gamepad/Building/Build.PieceNext",
+   "gamepad/Crafting/UI.Navigate",
+   "gamepad/Gameplay/Hotbar2",
+   "gamepad/Gameplay/Hotbar6",
+   "gamepad/Inventory/UI.Navigate",
+   "gamepad/Social/UI.Navigate",
+   "gamepad/Trade/UI.Navigate"
+  ],
+  "gamepad.playstation.dup": [
+   "gamepad/Building/Build.LevelUp",
+   "gamepad/Building/Build.TierNext",
+   "gamepad/Crafting/UI.Navigate",
+   "gamepad/Gameplay/Camera.Zoom",
+   "gamepad/Gameplay/Hotbar1",
+   "gamepad/Gameplay/Hotbar5",
+   "gamepad/Inventory/UI.Navigate",
+   "gamepad/Social/UI.Navigate",
+   "gamepad/Trade/UI.Navigate"
+  ],
+  "gamepad.playstation.l1": [
+   "gamepad/Building/Build.RotateCCW",
+   "gamepad/Building/ToggleBuild",
+   "gamepad/Crafting/Craft.FilterPrev",
+   "gamepad/Crafting/ToggleCrafting",
+   "gamepad/Gameplay/Hotbar5",
+   "gamepad/Gameplay/Hotbar6",
+   "gamepad/Gameplay/Hotbar7",
+   "gamepad/Gameplay/Hotbar8",
+   "gamepad/Gameplay/HotbarPrev",
+   "gamepad/Gameplay/ToggleBuild",
+   "gamepad/Gameplay/ToggleCrafting",
+   "gamepad/Inventory/UI.TabPrev",
+   "gamepad/Social/Social.Demote",
+   "gamepad/Trade/UI.TabPrev"
+  ],
+  "gamepad.playstation.l2": [
+   "gamepad/Building/Build.LevelDown",
+   "gamepad/Building/Build.LevelUp",
+   "gamepad/Gameplay/Secondary",
+   "gamepad/Inventory/Inv.Equip",
+   "gamepad/Social/Social.Kick"
+  ],
+  "gamepad.playstation.l3": [
+   "gamepad/Crafting/UI.Navigate",
+   "gamepad/Gameplay/Move",
+   "gamepad/Gameplay/Sprint",
+   "gamepad/Inventory/UI.Navigate",
+   "gamepad/Social/UI.Navigate",
+   "gamepad/Trade/UI.Navigate"
+  ],
+  "gamepad.playstation.options": [
+   "gamepad/Chat/Chat.Send",
+   "gamepad/Gameplay/Cancel",
+   "gamepad/Gameplay/OpenSocial",
+   "gamepad/Social/OpenSocial",
+   "gamepad/Trade/Trade.Confirm"
+  ],
+  "gamepad.playstation.r1": [
+   "gamepad/Building/Build.RotateCW",
+   "gamepad/Chat/Chat.SwitchChannel",
+   "gamepad/Crafting/Craft.FilterNext",
+   "gamepad/Gameplay/Camera.Zoom",
+   "gamepad/Gameplay/HotbarNext",
+   "gamepad/Gameplay/OpenChat",
+   "gamepad/Inventory/UI.TabNext",
+   "gamepad/Social/Social.Promote",
+   "gamepad/Trade/UI.TabNext"
+  ],
+  "gamepad.playstation.r2": [
+   "gamepad/Building/Build.PlaceConfirm",
+   "gamepad/Gameplay/Charge",
+   "gamepad/Gameplay/Primary",
+   "gamepad/Inventory/Inv.Use"
+  ],
+  "gamepad.playstation.r3": [
+   "gamepad/Building/Build.Nudge",
+   "gamepad/Building/Build.ToggleSnap",
+   "gamepad/Gameplay/Aim",
+   "gamepad/Gameplay/Crouch",
+   "gamepad/Inventory/Inv.Sort"
+  ],
+  "gamepad.playstation.share": [
+   "gamepad/Crafting/ToggleCrafting",
+   "gamepad/Gameplay/OpenChat",
+   "gamepad/Gameplay/ToggleCrafting",
+   "gamepad/Gameplay/ToggleInventory",
+   "gamepad/Gameplay/ToggleMap",
+   "gamepad/Inventory/ToggleInventory",
+   "gamepad/Social/Social.Leave"
+  ],
+  "gamepad.playstation.square": [
+   "gamepad/Building/Build.DemolishMode",
+   "gamepad/Building/Build.RepairMode",
+   "gamepad/Crafting/Craft.Amount",
+   "gamepad/Gameplay/ContextRadial",
+   "gamepad/Gameplay/Interact",
+   "gamepad/Inventory/Inv.Drop",
+   "gamepad/Inventory/Inv.SplitStack",
+   "gamepad/Social/Social.Invite",
+   "gamepad/Social/Social.Kick",
+   "gamepad/Trade/Trade.RemoveOffer"
+  ],
+  "gamepad.playstation.triangle": [
+   "gamepad/Building/Build.UpgradeMode",
+   "gamepad/Building/ToggleBuild",
+   "gamepad/Chat/Chat.QuickPhrase",
+   "gamepad/Crafting/Craft.Cancel",
+   "gamepad/Gameplay/Reload",
+   "gamepad/Gameplay/ToggleBuild",
+   "gamepad/Inventory/Inv.QuickTransfer",
+   "gamepad/Inventory/Inv.TakeAll",
+   "gamepad/Social/Social.SetPermissions",
+   "gamepad/Trade/Trade.Lock"
+  ],
+  "gamepad.switch.a": [
+   "gamepad/Building/Build.Cancel",
+   "gamepad/Chat/Chat.Cancel",
+   "gamepad/Crafting/UI.Back",
+   "gamepad/Dialog/Dialog.Cancel",
+   "gamepad/Gameplay/QuickUse",
+   "gamepad/Inventory/UI.Back",
+   "gamepad/Social/UI.Back",
+   "gamepad/Trade/UI.Back"
+  ],
+  "gamepad.switch.b": [
+   "gamepad/Building/Build.PlaceConfirm",
+   "gamepad/Crafting/Craft.Craft",
+   "gamepad/Dialog/Dialog.Confirm",
+   "gamepad/Gameplay/Jump",
+   "gamepad/Inventory/Inv.MoveSlot",
+   "gamepad/Social/Social.ContextMenu",
+   "gamepad/Trade/Trade.AddOffer"
+  ],
+  "gamepad.switch.ddown": [
+   "gamepad/Building/Build.LevelDown",
+   "gamepad/Building/Build.TierPrev",
+   "gamepad/Crafting/UI.Navigate",
+   "gamepad/Gameplay/Camera.Zoom",
+   "gamepad/Gameplay/Hotbar3",
+   "gamepad/Gameplay/Hotbar7",
+   "gamepad/Inventory/UI.Navigate",
+   "gamepad/Social/UI.Navigate",
+   "gamepad/Trade/UI.Navigate"
+  ],
+  "gamepad.switch.dleft": [
+   "gamepad/Building/Build.PiecePrev",
+   "gamepad/Crafting/UI.Navigate",
+   "gamepad/Gameplay/Hotbar4",
+   "gamepad/Gameplay/Hotbar8",
+   "gamepad/Inventory/UI.Navigate",
+   "gamepad/Social/UI.Navigate",
+   "gamepad/Trade/UI.Navigate"
+  ],
+  "gamepad.switch.dright": [
+   "gamepad/Building/Build.PieceNext",
+   "gamepad/Crafting/UI.Navigate",
+   "gamepad/Gameplay/Hotbar2",
+   "gamepad/Gameplay/Hotbar6",
+   "gamepad/Inventory/UI.Navigate",
+   "gamepad/Social/UI.Navigate",
+   "gamepad/Trade/UI.Navigate"
+  ],
+  "gamepad.switch.dup": [
+   "gamepad/Building/Build.LevelUp",
+   "gamepad/Building/Build.TierNext",
+   "gamepad/Crafting/UI.Navigate",
+   "gamepad/Gameplay/Camera.Zoom",
+   "gamepad/Gameplay/Hotbar1",
+   "gamepad/Gameplay/Hotbar5",
+   "gamepad/Inventory/UI.Navigate",
+   "gamepad/Social/UI.Navigate",
+   "gamepad/Trade/UI.Navigate"
+  ],
+  "gamepad.switch.l": [
+   "gamepad/Building/Build.RotateCCW",
+   "gamepad/Building/ToggleBuild",
+   "gamepad/Crafting/Craft.FilterPrev",
+   "gamepad/Crafting/ToggleCrafting",
+   "gamepad/Gameplay/Hotbar5",
+   "gamepad/Gameplay/Hotbar6",
+   "gamepad/Gameplay/Hotbar7",
+   "gamepad/Gameplay/Hotbar8",
+   "gamepad/Gameplay/HotbarPrev",
+   "gamepad/Gameplay/ToggleBuild",
+   "gamepad/Gameplay/ToggleCrafting",
+   "gamepad/Inventory/UI.TabPrev",
+   "gamepad/Social/Social.Demote",
+   "gamepad/Trade/UI.TabPrev"
+  ],
+  "gamepad.switch.lstick": [
+   "gamepad/Crafting/UI.Navigate",
+   "gamepad/Gameplay/Move",
+   "gamepad/Gameplay/Sprint",
+   "gamepad/Inventory/UI.Navigate",
+   "gamepad/Social/UI.Navigate",
+   "gamepad/Trade/UI.Navigate"
+  ],
+  "gamepad.switch.minus": [
+   "gamepad/Crafting/ToggleCrafting",
+   "gamepad/Gameplay/OpenChat",
+   "gamepad/Gameplay/ToggleCrafting",
+   "gamepad/Gameplay/ToggleInventory",
+   "gamepad/Gameplay/ToggleMap",
+   "gamepad/Inventory/ToggleInventory",
+   "gamepad/Social/Social.Leave"
+  ],
+  "gamepad.switch.plus": [
+   "gamepad/Chat/Chat.Send",
+   "gamepad/Gameplay/Cancel",
+   "gamepad/Gameplay/OpenSocial",
+   "gamepad/Social/OpenSocial",
+   "gamepad/Trade/Trade.Confirm"
+  ],
+  "gamepad.switch.r": [
+   "gamepad/Building/Build.RotateCW",
+   "gamepad/Chat/Chat.SwitchChannel",
+   "gamepad/Crafting/Craft.FilterNext",
+   "gamepad/Gameplay/Camera.Zoom",
+   "gamepad/Gameplay/HotbarNext",
+   "gamepad/Gameplay/OpenChat",
+   "gamepad/Inventory/UI.TabNext",
+   "gamepad/Social/Social.Promote",
+   "gamepad/Trade/UI.TabNext"
+  ],
+  "gamepad.switch.rstick": [
+   "gamepad/Building/Build.Nudge",
+   "gamepad/Building/Build.ToggleSnap",
+   "gamepad/Gameplay/Aim",
+   "gamepad/Gameplay/Crouch",
+   "gamepad/Inventory/Inv.Sort"
+  ],
+  "gamepad.switch.x": [
+   "gamepad/Building/Build.UpgradeMode",
+   "gamepad/Building/ToggleBuild",
+   "gamepad/Chat/Chat.QuickPhrase",
+   "gamepad/Crafting/Craft.Cancel",
+   "gamepad/Gameplay/Reload",
+   "gamepad/Gameplay/ToggleBuild",
+   "gamepad/Inventory/Inv.QuickTransfer",
+   "gamepad/Inventory/Inv.TakeAll",
+   "gamepad/Social/Social.SetPermissions",
+   "gamepad/Trade/Trade.Lock"
+  ],
+  "gamepad.switch.y": [
+   "gamepad/Building/Build.DemolishMode",
+   "gamepad/Building/Build.RepairMode",
+   "gamepad/Crafting/Craft.Amount",
+   "gamepad/Gameplay/ContextRadial",
+   "gamepad/Gameplay/Interact",
+   "gamepad/Inventory/Inv.Drop",
+   "gamepad/Inventory/Inv.SplitStack",
+   "gamepad/Social/Social.Invite",
+   "gamepad/Social/Social.Kick",
+   "gamepad/Trade/Trade.RemoveOffer"
+  ],
+  "gamepad.switch.zl": [
+   "gamepad/Building/Build.LevelDown",
+   "gamepad/Building/Build.LevelUp",
+   "gamepad/Gameplay/Secondary",
+   "gamepad/Inventory/Inv.Equip",
+   "gamepad/Social/Social.Kick"
+  ],
+  "gamepad.switch.zr": [
+   "gamepad/Building/Build.PlaceConfirm",
+   "gamepad/Gameplay/Charge",
+   "gamepad/Gameplay/Primary",
+   "gamepad/Inventory/Inv.Use"
+  ],
+  "gamepad.xbox.a": [
+   "gamepad/Building/Build.PlaceConfirm",
+   "gamepad/Crafting/Craft.Craft",
+   "gamepad/Dialog/Dialog.Confirm",
+   "gamepad/Gameplay/Jump",
+   "gamepad/Inventory/Inv.MoveSlot",
+   "gamepad/Social/Social.ContextMenu",
+   "gamepad/Trade/Trade.AddOffer"
+  ],
+  "gamepad.xbox.b": [
+   "gamepad/Building/Build.Cancel",
+   "gamepad/Chat/Chat.Cancel",
+   "gamepad/Crafting/UI.Back",
+   "gamepad/Dialog/Dialog.Cancel",
+   "gamepad/Gameplay/QuickUse",
+   "gamepad/Inventory/UI.Back",
+   "gamepad/Social/UI.Back",
+   "gamepad/Trade/UI.Back"
+  ],
+  "gamepad.xbox.ddown": [
+   "gamepad/Building/Build.LevelDown",
+   "gamepad/Building/Build.TierPrev",
+   "gamepad/Crafting/UI.Navigate",
+   "gamepad/Gameplay/Camera.Zoom",
+   "gamepad/Gameplay/Hotbar3",
+   "gamepad/Gameplay/Hotbar7",
+   "gamepad/Inventory/UI.Navigate",
+   "gamepad/Social/UI.Navigate",
+   "gamepad/Trade/UI.Navigate"
+  ],
+  "gamepad.xbox.dleft": [
+   "gamepad/Building/Build.PiecePrev",
+   "gamepad/Crafting/UI.Navigate",
+   "gamepad/Gameplay/Hotbar4",
+   "gamepad/Gameplay/Hotbar8",
+   "gamepad/Inventory/UI.Navigate",
+   "gamepad/Social/UI.Navigate",
+   "gamepad/Trade/UI.Navigate"
+  ],
+  "gamepad.xbox.dright": [
+   "gamepad/Building/Build.PieceNext",
+   "gamepad/Crafting/UI.Navigate",
+   "gamepad/Gameplay/Hotbar2",
+   "gamepad/Gameplay/Hotbar6",
+   "gamepad/Inventory/UI.Navigate",
+   "gamepad/Social/UI.Navigate",
+   "gamepad/Trade/UI.Navigate"
+  ],
+  "gamepad.xbox.dup": [
+   "gamepad/Building/Build.LevelUp",
+   "gamepad/Building/Build.TierNext",
+   "gamepad/Crafting/UI.Navigate",
+   "gamepad/Gameplay/Camera.Zoom",
+   "gamepad/Gameplay/Hotbar1",
+   "gamepad/Gameplay/Hotbar5",
+   "gamepad/Inventory/UI.Navigate",
+   "gamepad/Social/UI.Navigate",
+   "gamepad/Trade/UI.Navigate"
+  ],
+  "gamepad.xbox.lb": [
+   "gamepad/Building/Build.RotateCCW",
+   "gamepad/Building/ToggleBuild",
+   "gamepad/Crafting/Craft.FilterPrev",
+   "gamepad/Crafting/ToggleCrafting",
+   "gamepad/Gameplay/Hotbar5",
+   "gamepad/Gameplay/Hotbar6",
+   "gamepad/Gameplay/Hotbar7",
+   "gamepad/Gameplay/Hotbar8",
+   "gamepad/Gameplay/HotbarPrev",
+   "gamepad/Gameplay/ToggleBuild",
+   "gamepad/Gameplay/ToggleCrafting",
+   "gamepad/Inventory/UI.TabPrev",
+   "gamepad/Social/Social.Demote",
+   "gamepad/Trade/UI.TabPrev"
+  ],
+  "gamepad.xbox.ls": [
+   "gamepad/Crafting/UI.Navigate",
+   "gamepad/Gameplay/Move",
+   "gamepad/Gameplay/Sprint",
+   "gamepad/Inventory/UI.Navigate",
+   "gamepad/Social/UI.Navigate",
+   "gamepad/Trade/UI.Navigate"
+  ],
+  "gamepad.xbox.lt": [
+   "gamepad/Building/Build.LevelDown",
+   "gamepad/Building/Build.LevelUp",
+   "gamepad/Gameplay/Secondary",
+   "gamepad/Inventory/Inv.Equip",
+   "gamepad/Social/Social.Kick"
+  ],
+  "gamepad.xbox.menu": [
+   "gamepad/Chat/Chat.Send",
+   "gamepad/Gameplay/Cancel",
+   "gamepad/Gameplay/OpenSocial",
+   "gamepad/Social/OpenSocial",
+   "gamepad/Trade/Trade.Confirm"
+  ],
+  "gamepad.xbox.rb": [
+   "gamepad/Building/Build.RotateCW",
+   "gamepad/Chat/Chat.SwitchChannel",
+   "gamepad/Crafting/Craft.FilterNext",
+   "gamepad/Gameplay/Camera.Zoom",
+   "gamepad/Gameplay/HotbarNext",
+   "gamepad/Gameplay/OpenChat",
+   "gamepad/Inventory/UI.TabNext",
+   "gamepad/Social/Social.Promote",
+   "gamepad/Trade/UI.TabNext"
+  ],
+  "gamepad.xbox.rs": [
+   "gamepad/Building/Build.Nudge",
+   "gamepad/Building/Build.ToggleSnap",
+   "gamepad/Gameplay/Aim",
+   "gamepad/Gameplay/Crouch",
+   "gamepad/Inventory/Inv.Sort"
+  ],
+  "gamepad.xbox.rt": [
+   "gamepad/Building/Build.PlaceConfirm",
+   "gamepad/Gameplay/Charge",
+   "gamepad/Gameplay/Primary",
+   "gamepad/Inventory/Inv.Use"
+  ],
+  "gamepad.xbox.view": [
+   "gamepad/Crafting/ToggleCrafting",
+   "gamepad/Gameplay/OpenChat",
+   "gamepad/Gameplay/ToggleCrafting",
+   "gamepad/Gameplay/ToggleInventory",
+   "gamepad/Gameplay/ToggleMap",
+   "gamepad/Inventory/ToggleInventory",
+   "gamepad/Social/Social.Leave"
+  ],
+  "gamepad.xbox.x": [
+   "gamepad/Building/Build.DemolishMode",
+   "gamepad/Building/Build.RepairMode",
+   "gamepad/Crafting/Craft.Amount",
+   "gamepad/Gameplay/ContextRadial",
+   "gamepad/Gameplay/Interact",
+   "gamepad/Inventory/Inv.Drop",
+   "gamepad/Inventory/Inv.SplitStack",
+   "gamepad/Social/Social.Invite",
+   "gamepad/Social/Social.Kick",
+   "gamepad/Trade/Trade.RemoveOffer"
+  ],
+  "gamepad.xbox.y": [
+   "gamepad/Building/Build.UpgradeMode",
+   "gamepad/Building/ToggleBuild",
+   "gamepad/Chat/Chat.QuickPhrase",
+   "gamepad/Crafting/Craft.Cancel",
+   "gamepad/Gameplay/Reload",
+   "gamepad/Gameplay/ToggleBuild",
+   "gamepad/Inventory/Inv.QuickTransfer",
+   "gamepad/Inventory/Inv.TakeAll",
+   "gamepad/Social/Social.SetPermissions",
+   "gamepad/Trade/Trade.Lock"
+  ],
+  "kbm.key.1": [
+   "keyboardMouse/Gameplay/Hotbar1"
+  ],
+  "kbm.key.2": [
+   "keyboardMouse/Gameplay/Hotbar2"
+  ],
+  "kbm.key.3": [
+   "keyboardMouse/Gameplay/Hotbar3"
+  ],
+  "kbm.key.4": [
+   "keyboardMouse/Gameplay/Hotbar4"
+  ],
+  "kbm.key.5": [
+   "keyboardMouse/Gameplay/Hotbar5"
+  ],
+  "kbm.key.6": [
+   "keyboardMouse/Gameplay/Hotbar6"
+  ],
+  "kbm.key.7": [
+   "keyboardMouse/Gameplay/Hotbar7"
+  ],
+  "kbm.key.8": [
+   "keyboardMouse/Gameplay/Hotbar8"
+  ],
+  "kbm.key.a": [
+   "keyboardMouse/Gameplay/Move"
+  ],
+  "kbm.key.alt": [
+   "keyboardMouse/Gameplay/Camera.Zoom"
+  ],
+  "kbm.key.arrow": [
+   "keyboardMouse/Building/Build.Nudge",
+   "keyboardMouse/Crafting/UI.Navigate",
+   "keyboardMouse/Gameplay/Move",
+   "keyboardMouse/Inventory/UI.Navigate",
+   "keyboardMouse/Social/UI.Navigate",
+   "keyboardMouse/Trade/UI.Navigate"
+  ],
+  "kbm.key.arrowdown": [
+   "keyboardMouse/Building/Build.Nudge",
+   "keyboardMouse/Crafting/UI.Navigate",
+   "keyboardMouse/Gameplay/Move",
+   "keyboardMouse/Inventory/UI.Navigate",
+   "keyboardMouse/Social/UI.Navigate",
+   "keyboardMouse/Trade/UI.Navigate"
+  ],
+  "kbm.key.arrowup": [
+   "keyboardMouse/Building/Build.Nudge",
+   "keyboardMouse/Crafting/UI.Navigate",
+   "keyboardMouse/Gameplay/Move",
+   "keyboardMouse/Inventory/UI.Navigate",
+   "keyboardMouse/Social/UI.Navigate",
+   "keyboardMouse/Trade/UI.Navigate"
+  ],
+  "kbm.key.b": [
+   "keyboardMouse/Building/ToggleBuild",
+   "keyboardMouse/Gameplay/ToggleBuild"
+  ],
+  "kbm.key.backspace": [
+   "keyboardMouse/Crafting/Craft.Cancel",
+   "keyboardMouse/Trade/Trade.RemoveOffer"
+  ],
+  "kbm.key.bracket": [
+   "keyboardMouse/Inventory/UI.TabNext",
+   "keyboardMouse/Inventory/UI.TabPrev",
+   "keyboardMouse/Social/UI.TabNext",
+   "keyboardMouse/Social/UI.TabPrev",
+   "keyboardMouse/Trade/UI.TabNext",
+   "keyboardMouse/Trade/UI.TabPrev"
+  ],
+  "kbm.key.c": [
+   "keyboardMouse/Crafting/ToggleCrafting",
+   "keyboardMouse/Gameplay/ToggleCrafting"
+  ],
+  "kbm.key.control": [
+   "keyboardMouse/Gameplay/Crouch"
+  ],
+  "kbm.key.d": [
+   "keyboardMouse/Gameplay/Move"
+  ],
+  "kbm.key.e": [
+   "keyboardMouse/Crafting/Craft.FilterNext",
+   "keyboardMouse/Gameplay/ContextRadial",
+   "keyboardMouse/Gameplay/Interact",
+   "keyboardMouse/Inventory/Inv.Use"
+  ],
+  "kbm.key.enter": [
+   "keyboardMouse/Chat/Chat.Send",
+   "keyboardMouse/Crafting/Craft.Amount",
+   "keyboardMouse/Crafting/Craft.Craft",
+   "keyboardMouse/Dialog/Dialog.Confirm",
+   "keyboardMouse/Gameplay/OpenChat",
+   "keyboardMouse/Social/UI.Submit",
+   "keyboardMouse/Trade/Trade.AddOffer"
+  ],
+  "kbm.key.equal": [
+   "keyboardMouse/Gameplay/Camera.Zoom"
+  ],
+  "kbm.key.escape": [
+   "keyboardMouse/Building/Build.Cancel",
+   "keyboardMouse/Chat/Chat.Cancel",
+   "keyboardMouse/Crafting/UI.Back",
+   "keyboardMouse/Dialog/Dialog.Cancel",
+   "keyboardMouse/Gameplay/Cancel",
+   "keyboardMouse/Inventory/UI.Back",
+   "keyboardMouse/Social/UI.Back",
+   "keyboardMouse/Trade/UI.Back"
+  ],
+  "kbm.key.f": [
+   "keyboardMouse/Inventory/Inv.Equip",
+   "keyboardMouse/Trade/Trade.Confirm"
+  ],
+  "kbm.key.g": [
+   "keyboardMouse/Building/Build.ToggleSnap"
+  ],
+  "kbm.key.h": [
+   "keyboardMouse/Building/Build.RepairMode"
+  ],
+  "kbm.key.i": [
+   "keyboardMouse/Gameplay/ToggleInventory",
+   "keyboardMouse/Inventory/ToggleInventory",
+   "keyboardMouse/Social/Social.Invite"
+  ],
+  "kbm.key.k": [
+   "keyboardMouse/Social/Social.Kick"
+  ],
+  "kbm.key.l": [
+   "keyboardMouse/Social/Social.Leave",
+   "keyboardMouse/Trade/Trade.Lock"
+  ],
+  "kbm.key.m": [
+   "keyboardMouse/Gameplay/ToggleMap"
+  ],
+  "kbm.key.minus": [
+   "keyboardMouse/Gameplay/Camera.Zoom"
+  ],
+  "kbm.key.n": [
+   "keyboardMouse/Dialog/Dialog.Cancel"
+  ],
+  "kbm.key.o": [
+   "keyboardMouse/Social/Social.SetPermissions"
+  ],
+  "kbm.key.p": [
+   "keyboardMouse/Gameplay/OpenSocial",
+   "keyboardMouse/Social/OpenSocial"
+  ],
+  "kbm.key.pagedown": [
+   "keyboardMouse/Building/Build.LevelDown",
+   "keyboardMouse/Social/Social.Demote"
+  ],
+  "kbm.key.pageup": [
+   "keyboardMouse/Building/Build.LevelUp",
+   "keyboardMouse/Social/Social.Promote"
+  ],
+  "kbm.key.q": [
+   "keyboardMouse/Building/Build.RotateCCW",
+   "keyboardMouse/Crafting/Craft.FilterPrev",
+   "keyboardMouse/Inventory/Inv.Drop"
+  ],
+  "kbm.key.r": [
+   "keyboardMouse/Building/Build.RotateCW",
+   "keyboardMouse/Gameplay/Reload",
+   "keyboardMouse/Inventory/Inv.TakeAll"
+  ],
+  "kbm.key.s": [
+   "keyboardMouse/Gameplay/Move"
+  ],
+  "kbm.key.shift": [
+   "keyboardMouse/Building/Build.TierNext",
+   "keyboardMouse/Building/Build.TierPrev",
+   "keyboardMouse/Crafting/Craft.Amount",
+   "keyboardMouse/Gameplay/Sprint",
+   "keyboardMouse/Inventory/Inv.QuickTransfer"
+  ],
+  "kbm.key.slash": [
+   "keyboardMouse/Gameplay/OpenChat"
+  ],
+  "kbm.key.space": [
+   "keyboardMouse/Gameplay/Jump"
+  ],
+  "kbm.key.t": [
+   "keyboardMouse/Inventory/Inv.Sort"
+  ],
+  "kbm.key.tab": [
+   "keyboardMouse/Chat/Chat.SwitchChannel",
+   "keyboardMouse/Gameplay/ToggleInventory",
+   "keyboardMouse/Inventory/ToggleInventory"
+  ],
+  "kbm.key.u": [
+   "keyboardMouse/Building/Build.UpgradeMode"
+  ],
+  "kbm.key.w": [
+   "keyboardMouse/Gameplay/Move"
+  ],
+  "kbm.key.x": [
+   "keyboardMouse/Building/Build.DemolishMode",
+   "keyboardMouse/Gameplay/QuickUse"
+  ],
+  "kbm.key.y": [
+   "keyboardMouse/Dialog/Dialog.Confirm"
+  ],
+  "kbm.mouse.left": [
+   "keyboardMouse/Building/Build.PlaceConfirm",
+   "keyboardMouse/Crafting/Craft.Craft",
+   "keyboardMouse/Gameplay/Charge",
+   "keyboardMouse/Gameplay/Primary",
+   "keyboardMouse/Inventory/Inv.MoveSlot",
+   "keyboardMouse/Inventory/Inv.QuickTransfer",
+   "keyboardMouse/Trade/Trade.AddOffer"
+  ],
+  "kbm.mouse.right": [
+   "keyboardMouse/Building/Build.RotateCW",
+   "keyboardMouse/Gameplay/Secondary",
+   "keyboardMouse/Inventory/Inv.SplitStack",
+   "keyboardMouse/Social/Social.ContextMenu",
+   "keyboardMouse/Trade/Trade.RemoveOffer"
+  ],
+  "kbm.mouse.wheel": [
+   "keyboardMouse/Building/Build.PieceNext",
+   "keyboardMouse/Building/Build.PiecePrev",
+   "keyboardMouse/Building/Build.TierNext",
+   "keyboardMouse/Building/Build.TierPrev",
+   "keyboardMouse/Gameplay/Camera.Zoom",
+   "keyboardMouse/Gameplay/HotbarNext",
+   "keyboardMouse/Gameplay/HotbarPrev"
+  ],
+  "touch.button.attack": [
+   "touch/Gameplay/Charge",
+   "touch/Gameplay/Primary",
+   "touchLayout/default.touch.gameplay/attack"
+  ],
+  "touch.button.back": [
+   "touch/Chat/Chat.Cancel",
+   "touch/Crafting/UI.Back",
+   "touch/Gameplay/Cancel",
+   "touch/Inventory/UI.Back",
+   "touch/Social/UI.Back",
+   "touch/Trade/UI.Back",
+   "touchLayout/default.touch.gameplay/back"
+  ],
+  "touch.button.build": [
+   "touch/Building/ToggleBuild",
+   "touch/Gameplay/ToggleBuild",
+   "touchLayout/default.touch.building/build",
+   "touchLayout/default.touch.gameplay/build"
+  ],
+  "touch.button.cancel": [
+   "touch/Building/Build.Cancel",
+   "touchLayout/default.touch.building/cancel"
+  ],
+  "touch.button.cancelcraft": [
+   "touch/Crafting/Craft.Cancel"
+  ],
+  "touch.button.channel": [
+   "touch/Chat/Chat.SwitchChannel"
+  ],
+  "touch.button.chat": [
+   "touch/Gameplay/OpenChat",
+   "touchLayout/default.touch.gameplay/chat"
+  ],
+  "touch.button.confirm": [
+   "touch/Building/Build.PlaceConfirm",
+   "touch/Trade/Trade.Confirm",
+   "touchLayout/default.touch.building/confirm"
+  ],
+  "touch.button.context": [
+   "touch/Gameplay/ContextRadial",
+   "touch/Gameplay/Interact",
+   "touchLayout/default.touch.gameplay/context"
+  ],
+  "touch.button.craft": [
+   "touch/Crafting/Craft.Craft"
+  ],
+  "touch.button.crafting": [
+   "touch/Gameplay/ToggleCrafting",
+   "touchLayout/default.touch.gameplay/crafting"
+  ],
+  "touch.button.craftmore": [
+   "touch/Crafting/Craft.Amount"
+  ],
+  "touch.button.crouch": [
+   "touch/Gameplay/Crouch",
+   "touchLayout/default.touch.gameplay/crouch"
+  ],
+  "touch.button.demolish": [
+   "touch/Building/Build.DemolishMode",
+   "touchLayout/default.touch.building/demolish"
+  ],
+  "touch.button.demote": [
+   "touch/Social/Social.Demote"
+  ],
+  "touch.button.drop": [
+   "touch/Inventory/Inv.Drop"
+  ],
+  "touch.button.equip": [
+   "touch/Inventory/Inv.Equip"
+  ],
+  "touch.button.inventory": [
+   "touch/Gameplay/ToggleInventory",
+   "touch/Inventory/ToggleInventory",
+   "touchLayout/default.touch.gameplay/inventory"
+  ],
+  "touch.button.invite": [
+   "touch/Social/Social.Invite"
+  ],
+  "touch.button.jump": [
+   "touch/Gameplay/Jump",
+   "touchLayout/default.touch.gameplay/jump"
+  ],
+  "touch.button.kick": [
+   "touch/Social/Social.Kick"
+  ],
+  "touch.button.leave": [
+   "touch/Social/Social.Leave"
+  ],
+  "touch.button.leveldown": [
+   "touch/Building/Build.LevelDown",
+   "touchLayout/default.touch.building/leveldown"
+  ],
+  "touch.button.levelup": [
+   "touch/Building/Build.LevelUp",
+   "touchLayout/default.touch.building/levelup"
+  ],
+  "touch.button.lock": [
+   "touch/Trade/Trade.Lock"
+  ],
+  "touch.button.map": [
+   "touch/Gameplay/ToggleMap",
+   "touchLayout/default.touch.gameplay/map"
+  ],
+  "touch.button.no": [
+   "touch/Dialog/Dialog.Cancel"
+  ],
+  "touch.button.perms": [
+   "touch/Social/Social.SetPermissions"
+  ],
+  "touch.button.promote": [
+   "touch/Social/Social.Promote"
+  ],
+  "touch.button.quickuse": [
+   "touch/Gameplay/QuickUse",
+   "touchLayout/default.touch.gameplay/quickuse"
+  ],
+  "touch.button.reload": [
+   "touch/Gameplay/Reload",
+   "touchLayout/default.touch.gameplay/reload"
+  ],
+  "touch.button.repair": [
+   "touch/Building/Build.RepairMode",
+   "touchLayout/default.touch.building/repair"
+  ],
+  "touch.button.rotate": [
+   "touch/Building/Build.RotateCW",
+   "touchLayout/default.touch.building/rotate"
+  ],
+  "touch.button.secondary": [
+   "touch/Gameplay/Secondary",
+   "touchLayout/default.touch.gameplay/secondary"
+  ],
+  "touch.button.send": [
+   "touch/Chat/Chat.Send"
+  ],
+  "touch.button.snap": [
+   "touch/Building/Build.ToggleSnap",
+   "touchLayout/default.touch.building/snap"
+  ],
+  "touch.button.social": [
+   "touch/Gameplay/OpenSocial",
+   "touchLayout/default.touch.gameplay/social"
+  ],
+  "touch.button.sort": [
+   "touch/Inventory/Inv.Sort"
+  ],
+  "touch.button.sprint": [
+   "touch/Gameplay/Sprint",
+   "touchLayout/default.touch.gameplay/sprint"
+  ],
+  "touch.button.takeall": [
+   "touch/Inventory/Inv.TakeAll"
+  ],
+  "touch.button.tierdown": [
+   "touch/Building/Build.TierPrev",
+   "touchLayout/default.touch.building/tierdown"
+  ],
+  "touch.button.tierup": [
+   "touch/Building/Build.TierNext",
+   "touchLayout/default.touch.building/tierup"
+  ],
+  "touch.button.upgrade": [
+   "touch/Building/Build.UpgradeMode",
+   "touchLayout/default.touch.building/upgrade"
+  ],
+  "touch.button.use": [
+   "touch/Inventory/Inv.Use"
+  ],
+  "touch.button.yes": [
+   "touch/Dialog/Dialog.Confirm"
+  ],
+  "touch.doubletap": [
+   "touch/Inventory/Inv.QuickTransfer"
+  ],
+  "touch.ghost": [
+   "touch/Building/Build.Nudge"
+  ],
+  "touch.hotbar": [
+   "touch/Gameplay/Hotbar1",
+   "touch/Gameplay/Hotbar2",
+   "touch/Gameplay/Hotbar3",
+   "touch/Gameplay/Hotbar4",
+   "touch/Gameplay/Hotbar5",
+   "touch/Gameplay/Hotbar6",
+   "touch/Gameplay/Hotbar7",
+   "touch/Gameplay/Hotbar8"
+  ],
+  "touch.joystick": [
+   "touch/Gameplay/Aim",
+   "touch/Gameplay/Move",
+   "touchLayout/default.touch.building/move",
+   "touchLayout/default.touch.gameplay/move"
+  ],
+  "touch.longpress": [
+   "touch/Inventory/Inv.SplitStack",
+   "touch/Social/Social.ContextMenu",
+   "touch/Trade/Trade.RemoveOffer"
+  ],
+  "touch.pinch": [
+   "touch/Gameplay/Camera.Zoom"
+  ],
+  "touch.rotate": [
+   "touch/Building/Build.RotateCCW",
+   "touch/Building/Build.RotateCW"
+  ],
+  "touch.swipe": [
+   "touch/Building/Build.PieceNext",
+   "touch/Building/Build.PiecePrev",
+   "touch/Crafting/Craft.FilterNext",
+   "touch/Crafting/Craft.FilterPrev",
+   "touch/Gameplay/HotbarNext",
+   "touch/Gameplay/HotbarPrev",
+   "touch/Inventory/UI.TabNext",
+   "touch/Inventory/UI.TabPrev"
+  ],
+  "touch.tap": [
+   "touch/Inventory/Inv.MoveSlot",
+   "touch/Trade/Trade.AddOffer"
+  ]
+ }
+}

@@ -1,0 +1,118 @@
+{
+  "craftq.cancel.tip": "Cancel and refund: {0}",
+  "craftq.err.unknown_recipe": "That recipe doesn't exist.",
+  "craftq.err.no_actor": "You can't craft right now.",
+  "craftq.err.bad_count": "Pick between 1 and the max.",
+  "craftq.err.no_station": "You need to be at the right station.",
+  "craftq.err.queue_full": "The queue is full (4 slots).",
+  "craftq.err.missing_ingredients": "Missing ingredients.",
+  "craftq.err.no_job": "Nothing to cancel in that slot.",
+  "event.breach.ours": "Your {0} was breached!",
+  "event.breach.theirs": "You broke through the {0}!",
+  "event.respawned": "Back on your feet!",
+  "event.bag.dropped": "You dropped your bag. Go get it!",
+  "event.bag.locked": "Your bag is safe for {0}s",
+  "respawn.in": "Respawn in {0}",
+  "respawn.err.too_soon": "Not yet, catch your breath…",
+  "respawn.err.not_dead": "You're still alive!",
+  "ctx.interact": "Use",
+  "ctx.open": "Open",
+  "ctx.loot": "Loot",
+  "ctx.gather": "Gather",
+  "ctx.chop": "Chop",
+  "ctx.mine": "Mine",
+  "ctx.pick": "Pick",
+  "ctx.dig": "Dig",
+  "ctx.door": "Door",
+  "ctx.fire": "Fire",
+  "ctx.attack": "Attack",
+  "ctx.talk": "Talk",
+  "ctx.buy": "Buy",
+  "ctx.build": "Build",
+  "ctx.repair": "Repair",
+  "ctx.craft": "Craft",
+  "ctx.dress": "Dress",
+  "ctx.sleep": "Sleep",
+  "ctx.none": "—",
+  "unlockHints": {
+    "founder": "Founders' gift: made a camper in the first season",
+    "chef": "Cook a Stew Bowl to unlock",
+    "smith": "Mint a Coin at the workbench to unlock",
+    "merchant": "Sell something at your own stall to unlock",
+    "raider": "Breach a rival clan's gate to unlock"
+  },
+  "unlockTagLabels": {
+    "founder": "Founder",
+    "chef": "Chef",
+    "smith": "Smith",
+    "merchant": "Merchant",
+    "raider": "Raider"
+  },
+  "$reasonsDoc": "CommandRejected.reason from gameplay.setAppearance / equipCosmetic (DESIGN §10 + core validateAppearance). First matching pattern wins; {1},{2} = regex groups; {item} = wearable display name; {hint} = unlockHints[tag].",
+  "reasons": [
+    {
+      "match": "^not_allowed$",
+      "text": "Find a mirror to change your look! (Stand right next to one.)",
+      "icon": "ic_info"
+    },
+    {
+      "match": "^no_catalog$",
+      "text": "The wardrobe is still unpacking... try again in a moment.",
+      "icon": "ic_clock"
+    },
+    {
+      "match": "^no_appearance$",
+      "text": "Make your camper first!",
+      "icon": "ic_person"
+    },
+    {
+      "match": "^bad_slot$",
+      "text": "Hmm, that slot doesn't exist.",
+      "icon": "ic_warn"
+    },
+    {
+      "match": "^(\\w+): wearable (\\w+) is locked$",
+      "text": "{item} is still locked. {hint}",
+      "icon": "ic_lock"
+    },
+    {
+      "match": "^(\\w+): unknown wearable",
+      "text": "That item wandered off. It isn't in the wardrobe any more.",
+      "icon": "ic_warn"
+    },
+    {
+      "match": "^(\\w+): wearable (\\w+) belongs to (\\w+)$",
+      "text": "{item} doesn't go there, silly!",
+      "icon": "ic_warn"
+    },
+    {
+      "match": "^(\\w+): wearable (\\w+) has no (\\w+) art$",
+      "text": "{item} doesn't come in that fit yet.",
+      "icon": "ic_warn"
+    },
+    {
+      "match": "^(\\w+): bad (primary|secondary) color",
+      "text": "That colour isn't on the palette.",
+      "icon": "ic_warn"
+    },
+    {
+      "match": "^bad skinTone",
+      "text": "Pick a skin tone from the swatches.",
+      "icon": "ic_warn"
+    },
+    {
+      "match": "^bad bodyType",
+      "text": "Pick a body type first.",
+      "icon": "ic_warn"
+    },
+    {
+      "match": ".*",
+      "text": "Couldn't change your look right now ({reason}).",
+      "icon": "ic_warn"
+    }
+  ],
+  "stall.badge.open": "Open",
+  "stall.badge.soldout": "Sold out",
+  "stall.badge.closed": "Closed",
+  "stall.badge.clan": "Clan"
+}

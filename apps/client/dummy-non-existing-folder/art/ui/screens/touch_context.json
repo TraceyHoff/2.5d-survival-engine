@@ -1,0 +1,129 @@
+{
+  "$schema": "../screen.schema.json",
+  "schema": "ui-screen/1",
+  "id": "touch_context",
+  "title": "Touch context button + placement ghost (input.json touchPickRadiusDp 24, touchGhostOffsetTiles 1.5)",
+  "layer": "hud",
+  "modal": false,
+  "platform": "touch",
+  "binds": "ctx.verb = contextCommandFor(target) mapped through hooks/atlas/hooks_index.json ctx (open/loot/gather->chop|mine|pick|dig by resource tag/door/fire/attack/talk/buy/build/repair/craft/dress/sleep; none -> disabled interact). place.* while a build piece is held: finger pos, ghost = finger + (0,-1.5 tiles) in screen space, valid flag.",
+  "strings": "strings/en.json",
+  "inputs": {
+    "kbm": [
+      {
+        "key": "E",
+        "label": "Context action"
+      }
+    ],
+    "gamepad": [
+      {
+        "key": "A",
+        "label": "Context action"
+      }
+    ],
+    "touch": [
+      {
+        "gesture": "tap ctx button",
+        "label": "Context action"
+      },
+      {
+        "gesture": "drag (placing)",
+        "label": "Move ghost, offset above finger"
+      },
+      {
+        "gesture": "lift",
+        "label": "Confirm if valid"
+      },
+      {
+        "gesture": "two-finger twist",
+        "label": "Rotate piece"
+      }
+    ]
+  },
+  "root": {
+    "type": "box",
+    "w": "fill",
+    "h": "fill",
+    "children": [
+      {
+        "type": "button",
+        "id": "ctx_button",
+        "anchor": "br",
+        "x": -150,
+        "y": -210,
+        "w": 96,
+        "h": 96,
+        "hit": 96,
+        "minTap": 48,
+        "skin": "ui_hooks_vb_ctx_{ctx.verb}_{ctx.state}",
+        "label": "",
+        "tooltip": "{ctx.label}",
+        "disabled": "{ctx.verb == 'none'}",
+        "action": {
+          "event": "input.context"
+        }
+      },
+      {
+        "type": "text",
+        "anchor": "br",
+        "x": -150,
+        "y": -196,
+        "w": 96,
+        "h": 20,
+        "align": "center",
+        "font": "small",
+        "text": "{ctx.label}"
+      },
+      {
+        "type": "box",
+        "id": "ghost_layer",
+        "w": "fill",
+        "h": "fill",
+        "visible": "{place.active}",
+        "children": [
+          {
+            "type": "icon",
+            "sprite": "ui_hooks_ghost_finger",
+            "x": "{place.finger.x}",
+            "y": "{place.finger.y}",
+            "w": 64,
+            "h": 64,
+            "anchor": "cc"
+          },
+          {
+            "type": "repeat",
+            "each": "{place.lineDots}",
+            "as": "p",
+            "template": {
+              "type": "icon",
+              "sprite": "ui_hooks_ghost_seg",
+              "x": "{p.x}",
+              "y": "{p.y}",
+              "rot": "{p.angle}",
+              "w": 16,
+              "h": 8
+            }
+          },
+          {
+            "type": "icon",
+            "sprite": "{place.valid ? 'ui_hooks_ghost_reticle_ok' : 'ui_hooks_ghost_reticle_bad'}",
+            "x": "{place.ghost.x}",
+            "y": "{place.ghost.y}",
+            "w": 72,
+            "h": 40,
+            "anchor": "cc"
+          },
+          {
+            "type": "icon",
+            "sprite": "ui_hooks_ghost_dot",
+            "x": "{place.ghost.x}",
+            "y": "{place.ghost.y}",
+            "w": 16,
+            "h": 16,
+            "anchor": "cc"
+          }
+        ]
+      }
+    ]
+  }
+}

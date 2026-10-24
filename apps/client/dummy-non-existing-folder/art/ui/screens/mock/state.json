@@ -1,0 +1,2086 @@
+{
+ "app": {
+  "title": "Cozy Wild",
+  "tagline": "survive together · build a cozy camp",
+  "version": "0.1.0"
+ },
+ "theme": {
+  "vitals": {
+   "health": {
+    "lowAt": 0.25
+   }
+  }
+ },
+ "input": {
+  "bindings": {
+   "interact": "E"
+  }
+ },
+ "player": {
+  "name": "Maple",
+  "facing": 0.6,
+  "appearance": {
+   "skin": "skin_light",
+   "hair": "hair_brown",
+   "shirt": "cloth_red"
+  },
+  "vitals": {
+   "health": 72,
+   "healthMax": 100,
+   "hunger": 18,
+   "thirst": 64,
+   "stamina": 41,
+   "staminaMax": 100,
+   "bodyTemp": 35.4,
+   "feltTemp": 4,
+   "wetness": 0.6
+  },
+  "xp": {
+   "level": 4,
+   "value": 340,
+   "next": 500
+  },
+  "stats": {
+   "insulation": 6,
+   "kills": 23,
+   "days": 3
+  },
+  "effects": [
+   {
+    "icon": "st_wet",
+    "label": "Soggy",
+    "description": "Rain makes you colder.",
+    "remaining": 42,
+    "tone": "bad"
+   },
+   {
+    "icon": "st_cold",
+    "label": "Chilly",
+    "description": "Find a fire or a roof.",
+    "remaining": null,
+    "tone": "bad"
+   },
+   {
+    "icon": "st_well_fed",
+    "label": "Snacked",
+    "description": "Health regen +10%.",
+    "remaining": 95,
+    "tone": "good"
+   },
+   {
+    "icon": "st_sheltered",
+    "label": "Cozy",
+    "description": "Under a roof.",
+    "remaining": null,
+    "tone": "good"
+   }
+  ],
+  "skills": [
+   {
+    "icon": "ic_hammer",
+    "label": "Building",
+    "level": 3
+   },
+   {
+    "icon": "ic_craft",
+    "label": "Crafting",
+    "level": 2
+   },
+   {
+    "icon": "ic_bag",
+    "label": "Foraging",
+    "level": 4
+   },
+   {
+    "icon": "cursor_attack",
+    "label": "Bonking",
+    "level": 1
+   }
+  ]
+ },
+ "hotbar": {
+  "selected": 0,
+  "slots": [
+   {
+    "index": 0,
+    "container": "player",
+    "item": {
+     "key": "stone_axe",
+     "name": "Stone Axe",
+     "icon": "item_stone_axe",
+     "category": "tool",
+     "categoryLabel": "Tool",
+     "rarity": "common",
+     "rarityLabel": "Common",
+     "count": 1,
+     "maxStack": 1,
+     "weight": 2.0,
+     "description": "Chops trees. Slowly. Lovingly.",
+     "stats": [],
+     "id": 0,
+     "durability": 0.7
+    },
+    "hotkey": "1",
+    "state": "selected"
+   },
+   {
+    "index": 1,
+    "container": "player",
+    "item": {
+     "key": "sword",
+     "name": "Sword",
+     "icon": "item_sword",
+     "category": "tool",
+     "categoryLabel": "Tool",
+     "rarity": "rare",
+     "rarityLabel": "Rare",
+     "count": 1,
+     "maxStack": 1,
+     "weight": 2.5,
+     "description": "Bonks zombies into poofs.",
+     "stats": [],
+     "id": 0,
+     "durability": 0.9
+    },
+    "hotkey": "2",
+    "state": null
+   },
+   {
+    "index": 2,
+    "container": "player",
+    "item": {
+     "key": "stone_pickaxe",
+     "name": "Stone Pickaxe",
+     "icon": "item_stone_pickaxe",
+     "category": "tool",
+     "categoryLabel": "Tool",
+     "rarity": "common",
+     "rarityLabel": "Common",
+     "count": 1,
+     "maxStack": 1,
+     "weight": 2.5,
+     "description": "For rocks and ore.",
+     "stats": [],
+     "id": 0
+    },
+    "hotkey": "3",
+    "state": null
+   },
+   {
+    "index": 3,
+    "container": "player",
+    "item": {
+     "key": "berries",
+     "name": "Berries",
+     "icon": "item_berries",
+     "category": "food",
+     "categoryLabel": "Food",
+     "rarity": "common",
+     "rarityLabel": "Common",
+     "count": 12,
+     "maxStack": 20,
+     "weight": 1.2000000000000002,
+     "description": "Sweet and squishy. A tiny snack.",
+     "stats": [
+      {
+       "icon": "vital_hunger",
+       "label": "Hunger",
+       "value": "+12",
+       "color": "text.success"
+      },
+      {
+       "icon": "vital_thirst",
+       "label": "Thirst",
+       "value": "+4",
+       "color": "text.success"
+      }
+     ],
+     "id": 7,
+     "food": {
+      "spoiled": 0.38,
+      "stage": "stale",
+      "stageLabel": "Stale"
+     }
+    },
+    "hotkey": "4",
+    "state": "hover"
+   },
+   {
+    "index": 4,
+    "container": "player",
+    "item": {
+     "key": "water_flask",
+     "name": "Water Flask",
+     "icon": "item_water_flask",
+     "category": "food",
+     "categoryLabel": "Food",
+     "rarity": "uncommon",
+     "rarityLabel": "Uncommon",
+     "count": 2,
+     "maxStack": 5,
+     "weight": 2.0,
+     "description": "Fresh water in a leather flask.",
+     "stats": [],
+     "id": 8
+    },
+    "hotkey": "5",
+    "state": null
+   },
+   {
+    "index": 5,
+    "container": "player",
+    "item": {
+     "key": "wood",
+     "name": "Wood",
+     "icon": "item_wood",
+     "category": "resource",
+     "categoryLabel": "Resource",
+     "rarity": "common",
+     "rarityLabel": "Common",
+     "count": 34,
+     "maxStack": 50,
+     "weight": 17.0,
+     "description": "Sturdy logs. Smells like a campfire waiting to happen.",
+     "stats": [],
+     "id": 1
+    },
+    "hotkey": "6",
+    "state": null
+   },
+   {
+    "index": 6,
+    "container": "player",
+    "item": {
+     "key": "stone",
+     "name": "Stone",
+     "icon": "item_stone",
+     "category": "resource",
+     "categoryLabel": "Resource",
+     "rarity": "common",
+     "rarityLabel": "Common",
+     "count": 18,
+     "maxStack": 50,
+     "weight": 18.0,
+     "description": "A nice round rock. Very throwable.",
+     "stats": [],
+     "id": 2
+    },
+    "hotkey": "7",
+    "state": null
+   },
+   {
+    "index": 7,
+    "container": "player",
+    "item": null,
+    "hotkey": "8",
+    "state": null
+   }
+  ]
+ },
+ "inventory": {
+  "slots": [
+   {
+    "index": 0,
+    "container": "player",
+    "item": {
+     "key": "stone_axe",
+     "name": "Stone Axe",
+     "icon": "item_stone_axe",
+     "category": "tool",
+     "categoryLabel": "Tool",
+     "rarity": "common",
+     "rarityLabel": "Common",
+     "count": 1,
+     "maxStack": 1,
+     "weight": 2.0,
+     "description": "Chops trees. Slowly. Lovingly.",
+     "stats": [],
+     "id": 0,
+     "durability": 0.7
+    },
+    "hotkey": "1",
+    "state": "selected"
+   },
+   {
+    "index": 1,
+    "container": "player",
+    "item": {
+     "key": "sword",
+     "name": "Sword",
+     "icon": "item_sword",
+     "category": "tool",
+     "categoryLabel": "Tool",
+     "rarity": "rare",
+     "rarityLabel": "Rare",
+     "count": 1,
+     "maxStack": 1,
+     "weight": 2.5,
+     "description": "Bonks zombies into poofs.",
+     "stats": [],
+     "id": 0,
+     "durability": 0.9
+    },
+    "hotkey": "2",
+    "state": null
+   },
+   {
+    "index": 2,
+    "container": "player",
+    "item": {
+     "key": "stone_pickaxe",
+     "name": "Stone Pickaxe",
+     "icon": "item_stone_pickaxe",
+     "category": "tool",
+     "categoryLabel": "Tool",
+     "rarity": "common",
+     "rarityLabel": "Common",
+     "count": 1,
+     "maxStack": 1,
+     "weight": 2.5,
+     "description": "For rocks and ore.",
+     "stats": [],
+     "id": 0
+    },
+    "hotkey": "3",
+    "state": null
+   },
+   {
+    "index": 3,
+    "container": "player",
+    "item": {
+     "key": "berries",
+     "name": "Berries",
+     "icon": "item_berries",
+     "category": "food",
+     "categoryLabel": "Food",
+     "rarity": "common",
+     "rarityLabel": "Common",
+     "count": 12,
+     "maxStack": 20,
+     "weight": 1.2000000000000002,
+     "description": "Sweet and squishy. A tiny snack.",
+     "stats": [
+      {
+       "icon": "vital_hunger",
+       "label": "Hunger",
+       "value": "+12",
+       "color": "text.success"
+      },
+      {
+       "icon": "vital_thirst",
+       "label": "Thirst",
+       "value": "+4",
+       "color": "text.success"
+      }
+     ],
+     "id": 7,
+     "food": {
+      "spoiled": 0.38,
+      "stage": "stale",
+      "stageLabel": "Stale"
+     }
+    },
+    "hotkey": "4",
+    "state": "hover"
+   },
+   {
+    "index": 4,
+    "container": "player",
+    "item": {
+     "key": "water_flask",
+     "name": "Water Flask",
+     "icon": "item_water_flask",
+     "category": "food",
+     "categoryLabel": "Food",
+     "rarity": "uncommon",
+     "rarityLabel": "Uncommon",
+     "count": 2,
+     "maxStack": 5,
+     "weight": 2.0,
+     "description": "Fresh water in a leather flask.",
+     "stats": [],
+     "id": 8
+    },
+    "hotkey": "5",
+    "state": null
+   },
+   {
+    "index": 5,
+    "container": "player",
+    "item": {
+     "key": "wood",
+     "name": "Wood",
+     "icon": "item_wood",
+     "category": "resource",
+     "categoryLabel": "Resource",
+     "rarity": "common",
+     "rarityLabel": "Common",
+     "count": 34,
+     "maxStack": 50,
+     "weight": 17.0,
+     "description": "Sturdy logs. Smells like a campfire waiting to happen.",
+     "stats": [],
+     "id": 1
+    },
+    "hotkey": "6",
+    "state": null
+   },
+   {
+    "index": 6,
+    "container": "player",
+    "item": {
+     "key": "stone",
+     "name": "Stone",
+     "icon": "item_stone",
+     "category": "resource",
+     "categoryLabel": "Resource",
+     "rarity": "common",
+     "rarityLabel": "Common",
+     "count": 18,
+     "maxStack": 50,
+     "weight": 18.0,
+     "description": "A nice round rock. Very throwable.",
+     "stats": [],
+     "id": 2
+    },
+    "hotkey": "7",
+    "state": null
+   },
+   {
+    "index": 7,
+    "container": "player",
+    "item": null,
+    "hotkey": "8",
+    "state": null
+   },
+   {
+    "index": 8,
+    "container": "player",
+    "item": {
+     "key": "fiber",
+     "name": "Plant Fiber",
+     "icon": "item_fiber",
+     "category": "resource",
+     "categoryLabel": "Resource",
+     "rarity": "common",
+     "rarityLabel": "Common",
+     "count": 27,
+     "maxStack": 99,
+     "weight": 2.7,
+     "description": "Twisty grass for rope and string.",
+     "stats": [],
+     "id": 3
+    },
+    "hotkey": null,
+    "state": null
+   },
+   {
+    "index": 9,
+    "container": "player",
+    "item": {
+     "key": "flint",
+     "name": "Flint",
+     "icon": "item_flint",
+     "category": "resource",
+     "categoryLabel": "Resource",
+     "rarity": "uncommon",
+     "rarityLabel": "Uncommon",
+     "count": 6,
+     "maxStack": 50,
+     "weight": 1.7999999999999998,
+     "description": "Sharp and sparky.",
+     "stats": [],
+     "id": 4
+    },
+    "hotkey": null,
+    "state": null
+   },
+   {
+    "index": 10,
+    "container": "player",
+    "item": {
+     "key": "iron_ore",
+     "name": "Iron Ore",
+     "icon": "item_iron_ore",
+     "category": "resource",
+     "categoryLabel": "Resource",
+     "rarity": "uncommon",
+     "rarityLabel": "Uncommon",
+     "count": 4,
+     "maxStack": 30,
+     "weight": 8.0,
+     "description": "Lumpy rock with shiny bits.",
+     "stats": [],
+     "id": 5
+    },
+    "hotkey": null,
+    "state": null
+   },
+   {
+    "index": 11,
+    "container": "player",
+    "item": {
+     "key": "iron_ingot",
+     "name": "Iron Ingot",
+     "icon": "item_iron_ingot",
+     "category": "resource",
+     "categoryLabel": "Resource",
+     "rarity": "rare",
+     "rarityLabel": "Rare",
+     "count": 2,
+     "maxStack": 30,
+     "weight": 3.0,
+     "description": "Smelted at a campfire. Heavy!",
+     "stats": [],
+     "id": 6
+    },
+    "hotkey": null,
+    "state": null
+   },
+   {
+    "index": 12,
+    "container": "player",
+    "item": {
+     "key": "campfire_kit",
+     "name": "Campfire Kit",
+     "icon": "item_campfire_kit",
+     "category": "placeable",
+     "categoryLabel": "Placeable",
+     "rarity": "uncommon",
+     "rarityLabel": "Uncommon",
+     "count": 1,
+     "maxStack": 1,
+     "weight": 4.0,
+     "description": "Place to make warmth, light and cooking.",
+     "stats": [],
+     "id": 14
+    },
+    "hotkey": null,
+    "state": null
+   },
+   {
+    "index": 13,
+    "container": "player",
+    "item": {
+     "key": "cooked_meat",
+     "name": "Cooked Drumstick",
+     "icon": "item_cooked_meat",
+     "category": "food",
+     "categoryLabel": "Food",
+     "rarity": "uncommon",
+     "rarityLabel": "Uncommon",
+     "count": 3,
+     "maxStack": 10,
+     "weight": 1.2000000000000002,
+     "description": "Hot and juicy. Very filling.",
+     "stats": [],
+     "id": 10,
+     "food": {
+      "spoiled": 0.66,
+      "stage": "spoiling",
+      "stageLabel": "Spoiling"
+     }
+    },
+    "hotkey": null,
+    "state": null
+   },
+   {
+    "index": 14,
+    "container": "player",
+    "item": {
+     "key": "apple",
+     "name": "Apple",
+     "icon": "item_apple",
+     "category": "food",
+     "categoryLabel": "Food",
+     "rarity": "common",
+     "rarityLabel": "Common",
+     "count": 5,
+     "maxStack": 20,
+     "weight": 1.0,
+     "description": "Crunchy!",
+     "stats": [],
+     "id": 11,
+     "food": {
+      "spoiled": 0.05,
+      "stage": "fresh",
+      "stageLabel": "Fresh"
+     }
+    },
+    "hotkey": null,
+    "state": null
+   },
+   {
+    "index": 15,
+    "container": "player",
+    "item": {
+     "key": "golden_acorn",
+     "name": "Golden Acorn",
+     "icon": "item_golden_acorn",
+     "category": "trinket",
+     "categoryLabel": "Trinket",
+     "rarity": "legendary",
+     "rarityLabel": "Legendary",
+     "count": 1,
+     "maxStack": 1,
+     "weight": 0.1,
+     "description": "Lucky! Zombies seem to like it too.",
+     "stats": [],
+     "id": 0
+    },
+    "hotkey": null,
+    "state": null
+   }
+  ],
+  "weight": 31.6,
+  "maxWeight": 50,
+  "selected": 0
+ },
+ "hover": {
+  "item": {
+   "key": "berries",
+   "name": "Berries",
+   "icon": "item_berries",
+   "category": "food",
+   "categoryLabel": "Food",
+   "rarity": "common",
+   "rarityLabel": "Common",
+   "count": 12,
+   "maxStack": 20,
+   "weight": 1.2000000000000002,
+   "description": "Sweet and squishy. A tiny snack.",
+   "stats": [
+    {
+     "icon": "vital_hunger",
+     "label": "Hunger",
+     "value": "+12",
+     "color": "text.success"
+    },
+    {
+     "icon": "vital_thirst",
+     "label": "Thirst",
+     "value": "+4",
+     "color": "text.success"
+    }
+   ],
+   "id": 7,
+   "food": {
+    "spoiled": 0.38,
+    "stage": "stale",
+    "stageLabel": "Stale"
+   }
+  },
+  "screenPos": [
+   560,
+   110
+  ]
+ },
+ "equipment": {
+  "head": {
+   "item": {
+    "key": "helmet_leather",
+    "name": "Leather Cap",
+    "icon": "item_helmet_leather",
+    "category": "equipment",
+    "categoryLabel": "Clothing",
+    "rarity": "uncommon",
+    "rarityLabel": "Uncommon",
+    "count": 1,
+    "maxStack": 1,
+    "weight": 0.8,
+    "description": "Snug and a little warm.",
+    "stats": [],
+    "id": 0
+   }
+  },
+  "chest": {
+   "item": {
+    "key": "armor_leather",
+    "name": "Leather Vest",
+    "icon": "item_armor_leather",
+    "category": "equipment",
+    "categoryLabel": "Clothing",
+    "rarity": "epic",
+    "rarityLabel": "Epic",
+    "count": 1,
+    "maxStack": 1,
+    "weight": 3.0,
+    "description": "Stitched with love. +Warmth.",
+    "stats": [],
+    "id": 0
+   }
+  },
+  "feet": {
+   "item": {
+    "key": "boots_leather",
+    "name": "Leather Boots",
+    "icon": "item_boots_leather",
+    "category": "equipment",
+    "categoryLabel": "Clothing",
+    "rarity": "uncommon",
+    "rarityLabel": "Uncommon",
+    "count": 1,
+    "maxStack": 1,
+    "weight": 0.8,
+    "description": "Squeak a little.",
+    "stats": [],
+    "id": 0
+   }
+  },
+  "mainhand": {
+   "item": {
+    "key": "stone_axe",
+    "name": "Stone Axe",
+    "icon": "item_stone_axe",
+    "category": "tool",
+    "categoryLabel": "Tool",
+    "rarity": "common",
+    "rarityLabel": "Common",
+    "count": 1,
+    "maxStack": 1,
+    "weight": 2.0,
+    "description": "Chops trees. Slowly. Lovingly.",
+    "stats": [],
+    "id": 0
+   }
+  },
+  "legs": {
+   "item": null
+  },
+  "offhand": {
+   "item": {
+    "key": "shield",
+    "name": "Wooden Shield",
+    "icon": "item_shield",
+    "category": "equipment",
+    "categoryLabel": "Clothing",
+    "rarity": "uncommon",
+    "rarityLabel": "Uncommon",
+    "count": 1,
+    "maxStack": 1,
+    "weight": 3.0,
+    "description": "Blocks hugs.",
+    "stats": [],
+    "id": 0
+   }
+  },
+  "hands": {
+   "item": null
+  },
+  "back": {
+   "item": null
+  },
+  "trinket": {
+   "item": {
+    "key": "golden_acorn",
+    "name": "Golden Acorn",
+    "icon": "item_golden_acorn",
+    "category": "trinket",
+    "categoryLabel": "Trinket",
+    "rarity": "legendary",
+    "rarityLabel": "Legendary",
+    "count": 1,
+    "maxStack": 1,
+    "weight": 0.1,
+    "description": "Lucky! Zombies seem to like it too.",
+    "stats": [],
+    "id": 0
+   }
+  }
+ },
+ "world": {
+  "time": {
+   "hours": 17.6,
+   "day": 3,
+   "phase": "dusk",
+   "phaseIcon": "ic_sun"
+  },
+  "weather": {
+   "kind": 1,
+   "label": "Drizzly",
+   "icon": "st_wet"
+  }
+ },
+ "map": {
+  "minimap": "minimap_tex",
+  "markers": [
+   {
+    "kind": "global",
+    "x": 0,
+    "y": 0
+   },
+   {
+    "kind": "member",
+    "playerId": 2,
+    "x": 20,
+    "y": -12,
+    "color": "#4F8FD6",
+    "note": "in-AOI party member (from replicated entity)"
+   },
+   {
+    "kind": "camp",
+    "x": -18,
+    "y": 14
+   }
+  ],
+  "legend": [
+   {
+    "icon": "ic_home",
+    "label": "Camp",
+    "visible": true
+   },
+   {
+    "icon": "ic_players",
+    "label": "Friends",
+    "visible": true
+   },
+   {
+    "icon": "ic_campfire",
+    "label": "Campfires",
+    "visible": true
+   },
+   {
+    "icon": "ic_zombie",
+    "label": "Zombie dens",
+    "visible": false
+   },
+   {
+    "icon": "ic_pin",
+    "label": "Pings",
+    "visible": true
+   },
+   {
+    "icon": "ic_skull",
+    "label": "Where I poofed",
+    "visible": true
+   }
+  ],
+  "cursor": {
+   "x": 132,
+   "y": -48,
+   "biome": "Meadow"
+  },
+  "zoom": 1,
+  "center": [
+   0,
+   0
+  ],
+  "memberPins": [
+   {
+    "playerId": 3,
+    "kind": "party",
+    "name": "Pip",
+    "x": 41.5,
+    "y": -12.25,
+    "hp": 64
+   },
+   {
+    "playerId": 4,
+    "kind": "clan",
+    "name": "Thistle",
+    "x": 60.0,
+    "y": -8.0,
+    "hp": 255
+   }
+  ]
+ },
+ "net": {
+  "connected": true,
+  "connecting": false,
+  "rtt": 42,
+  "serverUrl": "ws://localhost:8080",
+  "status": "connected",
+  "statusText": "Connected to Maple's Camp · 3 campers",
+  "statusIcon": "ic_check",
+  "error": null,
+  "protocol": "net v3"
+ },
+ "session": {
+  "players": [
+   {
+    "name": "Maple",
+    "ping": 42,
+    "isHost": true,
+    "color": "#E85D4F",
+    "status": "Chopping trees"
+   },
+   {
+    "name": "Bramble",
+    "ping": 88,
+    "isHost": false,
+    "color": "#4F8FD6",
+    "status": "At the campfire"
+   },
+   {
+    "name": "Pip",
+    "ping": 191,
+    "isHost": false,
+    "color": "#72C45C",
+    "status": "Respawning..."
+   }
+  ]
+ },
+ "chat": {
+  "history": [
+   {
+    "channel": 6,
+    "channelId": 0,
+    "fromPlayer": 0,
+    "fromClient": 0,
+    "tick": 72000,
+    "text": "Welcome to Maple's Camp! Be kind, share berries.",
+    "mentions": [],
+    "emote": 0,
+    "_vm": {
+     "fromName": "",
+     "mentionsMe": false,
+     "kind": null
+    }
+   },
+   {
+    "channel": 1,
+    "channelId": 0,
+    "fromPlayer": 2,
+    "fromClient": 12,
+    "tick": 72400,
+    "text": "hiii :D",
+    "mentions": [],
+    "emote": 0,
+    "_vm": {
+     "fromName": "Bramble",
+     "mentionsMe": false,
+     "kind": null
+    }
+   },
+   {
+    "channel": 2,
+    "channelId": 9,
+    "fromPlayer": 3,
+    "fromClient": 13,
+    "tick": 73200,
+    "text": "anyone got a spare axe?",
+    "mentions": [
+     1
+    ],
+    "emote": 0,
+    "_vm": {
+     "fromName": "Pip",
+     "mentionsMe": true,
+     "kind": null
+    }
+   },
+   {
+    "channel": 2,
+    "channelId": 9,
+    "fromPlayer": 1,
+    "fromClient": 11,
+    "tick": 73400,
+    "text": "making one now, meet at the workbench",
+    "mentions": [],
+    "emote": 0,
+    "_vm": {
+     "fromName": "Maple",
+     "mentionsMe": false,
+     "kind": null
+    }
+   },
+   {
+    "channel": 6,
+    "channelId": 0,
+    "fromPlayer": 0,
+    "fromClient": 0,
+    "tick": 75000,
+    "text": "Night is coming. Zombies get bolder in the dark.",
+    "mentions": [],
+    "emote": 0,
+    "_vm": {
+     "fromName": "",
+     "mentionsMe": false,
+     "kind": "warning"
+    }
+   },
+   {
+    "channel": 3,
+    "channelId": 3,
+    "fromPlayer": 4,
+    "fromClient": 14,
+    "tick": 75300,
+    "text": "clan meeting at the big oak tonight",
+    "mentions": [],
+    "emote": 0,
+    "_vm": {
+     "fromName": "Thistle",
+     "mentionsMe": false,
+     "kind": null
+    }
+   },
+   {
+    "channel": 0,
+    "channelId": 0,
+    "fromPlayer": 2,
+    "fromClient": 12,
+    "tick": 75500,
+    "text": "",
+    "mentions": [],
+    "emote": 1,
+    "_vm": {
+     "fromName": "Bramble",
+     "mentionsMe": false,
+     "kind": null
+    }
+   },
+   {
+    "channel": 4,
+    "channelId": 0,
+    "fromPlayer": 5,
+    "fromClient": 15,
+    "tick": 75800,
+    "text": "trading 5 flint for berries?",
+    "mentions": [],
+    "emote": 0,
+    "_vm": {
+     "fromName": "Juniper",
+     "mentionsMe": false,
+     "kind": null
+    }
+   },
+   {
+    "channel": 5,
+    "channelId": 1,
+    "fromPlayer": 2,
+    "fromClient": 12,
+    "tick": 76000,
+    "text": "psst, I hid the golden acorn",
+    "mentions": [],
+    "emote": 0,
+    "_vm": {
+     "fromName": "Bramble",
+     "mentionsMe": false,
+     "kind": null
+    }
+   }
+  ],
+  "recent": [
+   {
+    "channel": 0,
+    "channelId": 0,
+    "fromPlayer": 2,
+    "fromClient": 12,
+    "tick": 75500,
+    "text": "",
+    "mentions": [],
+    "emote": 1,
+    "_vm": {
+     "fromName": "Bramble",
+     "mentionsMe": false,
+     "kind": null
+    }
+   },
+   {
+    "channel": 4,
+    "channelId": 0,
+    "fromPlayer": 5,
+    "fromClient": 15,
+    "tick": 75800,
+    "text": "trading 5 flint for berries?",
+    "mentions": [],
+    "emote": 0,
+    "_vm": {
+     "fromName": "Juniper",
+     "mentionsMe": false,
+     "kind": null
+    }
+   },
+   {
+    "channel": 5,
+    "channelId": 1,
+    "fromPlayer": 2,
+    "fromClient": 12,
+    "tick": 76000,
+    "text": "psst, I hid the golden acorn",
+    "mentions": [],
+    "emote": 0,
+    "_vm": {
+     "fromName": "Bramble",
+     "mentionsMe": false,
+     "kind": null
+    }
+   }
+  ],
+  "draft": "",
+  "channel": 0
+ },
+ "toasts": [
+  {
+   "kind": "success",
+   "title": "+3 Wood",
+   "text": "Into your backpack.",
+   "icon": "item_wood"
+  },
+  {
+   "kind": "warning",
+   "title": "Getting dark",
+   "text": "Light a campfire soon!",
+   "icon": "ic_moon"
+  },
+  {
+   "kind": "danger",
+   "title": "So hungry...",
+   "text": "Eat something, quick!",
+   "icon": "vital_hunger_low"
+  }
+ ],
+ "interact": {
+  "visible": true,
+  "verb": "Chop",
+  "targetName": "Oak Tree",
+  "progress": 0.55,
+  "screenPos": [
+   680,
+   290
+  ]
+ },
+ "crafting": {
+  "filter": "",
+  "selected": 3,
+  "quantity": 1,
+  "queueMax": 4,
+  "scroll": 0,
+  "categories": [
+   {
+    "id": "all",
+    "label": "All",
+    "icon": "ic_star",
+    "active": true
+   },
+   {
+    "id": "tools",
+    "label": "Tools",
+    "icon": "ic_hammer",
+    "active": false
+   },
+   {
+    "id": "survival",
+    "label": "Survival",
+    "icon": "ic_campfire",
+    "active": false
+   },
+   {
+    "id": "food",
+    "label": "Food",
+    "icon": "vital_hunger",
+    "active": false
+   },
+   {
+    "id": "build",
+    "label": "Building",
+    "icon": "bc_walls",
+    "active": false
+   }
+  ],
+  "current": {
+   "name": "Campfire Kit",
+   "output": {
+    "key": "campfire_kit",
+    "name": "Campfire Kit",
+    "icon": "item_campfire_kit",
+    "category": "placeable",
+    "categoryLabel": "Placeable",
+    "rarity": "uncommon",
+    "rarityLabel": "Uncommon",
+    "count": 1,
+    "maxStack": 1,
+    "weight": 4.0,
+    "description": "Place to make warmth, light and cooking.",
+    "stats": [],
+    "id": 14
+   },
+   "seconds": 3,
+   "station": "none",
+   "stationLabel": "Hand craft",
+   "stationIcon": "ic_check",
+   "stationOk": true,
+   "description": "Warmth, light and cooking. Zombies hate it!",
+   "ingredients": [
+    {
+     "key": "wood",
+     "name": "Wood",
+     "icon": "item_wood",
+     "category": "resource",
+     "categoryLabel": "Resource",
+     "rarity": "common",
+     "rarityLabel": "Common",
+     "count": 5,
+     "maxStack": 50,
+     "weight": 0.5,
+     "description": "Sturdy logs. Smells like a campfire waiting to happen.",
+     "stats": [],
+     "id": 1,
+     "have": 34
+    },
+    {
+     "key": "stone",
+     "name": "Stone",
+     "icon": "item_stone",
+     "category": "resource",
+     "categoryLabel": "Resource",
+     "rarity": "common",
+     "rarityLabel": "Common",
+     "count": 4,
+     "maxStack": 50,
+     "weight": 1.0,
+     "description": "A nice round rock. Very throwable.",
+     "stats": [],
+     "id": 2,
+     "have": 18
+    }
+   ],
+   "craftable": true,
+   "maxCraftable": 3
+  },
+  "queue": [
+   {
+    "index": 0,
+    "name": "Bandage",
+    "output": {
+     "key": "bandage",
+     "name": "Bandage",
+     "icon": "item_bandage",
+     "category": "food",
+     "categoryLabel": "Food",
+     "rarity": "uncommon",
+     "rarityLabel": "Uncommon",
+     "count": 1,
+     "maxStack": 10,
+     "weight": 0.1,
+     "description": "Patches you right up.",
+     "stats": [],
+     "id": 13
+    },
+    "progress": 0.7,
+    "total": 1
+   },
+   {
+    "index": 1,
+    "name": "Stone Axe",
+    "output": {
+     "key": "stone_axe",
+     "name": "Stone Axe",
+     "icon": "item_stone_axe",
+     "category": "tool",
+     "categoryLabel": "Tool",
+     "rarity": "common",
+     "rarityLabel": "Common",
+     "count": 1,
+     "maxStack": 1,
+     "weight": 2.0,
+     "description": "Chops trees. Slowly. Lovingly.",
+     "stats": [],
+     "id": 0
+    },
+    "progress": 0,
+    "total": 2
+   }
+  ]
+ },
+ "recipes": [
+  {
+   "id": 1,
+   "key": "stone_axe",
+   "name": "Stone Axe",
+   "station": "none",
+   "stationLabel": "Hand craft",
+   "seconds": 2,
+   "craftable": true,
+   "locked": false,
+   "output": {
+    "key": "stone_axe",
+    "name": "Stone Axe",
+    "icon": "item_stone_axe",
+    "category": "tool",
+    "categoryLabel": "Tool",
+    "rarity": "common",
+    "rarityLabel": "Common",
+    "count": 1,
+    "maxStack": 1,
+    "weight": 2.0,
+    "description": "Chops trees. Slowly. Lovingly.",
+    "stats": [],
+    "id": 0
+   }
+  },
+  {
+   "id": 2,
+   "key": "stone_pickaxe",
+   "name": "Stone Pickaxe",
+   "station": "none",
+   "stationLabel": "Hand craft",
+   "seconds": 2,
+   "craftable": true,
+   "locked": false,
+   "output": {
+    "key": "stone_pickaxe",
+    "name": "Stone Pickaxe",
+    "icon": "item_stone_pickaxe",
+    "category": "tool",
+    "categoryLabel": "Tool",
+    "rarity": "common",
+    "rarityLabel": "Common",
+    "count": 1,
+    "maxStack": 1,
+    "weight": 2.5,
+    "description": "For rocks and ore.",
+    "stats": [],
+    "id": 0
+   }
+  },
+  {
+   "id": 3,
+   "key": "campfire_kit",
+   "name": "Campfire Kit",
+   "station": "none",
+   "stationLabel": "Hand craft",
+   "seconds": 3,
+   "craftable": true,
+   "locked": false,
+   "output": {
+    "key": "campfire_kit",
+    "name": "Campfire Kit",
+    "icon": "item_campfire_kit",
+    "category": "placeable",
+    "categoryLabel": "Placeable",
+    "rarity": "uncommon",
+    "rarityLabel": "Uncommon",
+    "count": 1,
+    "maxStack": 1,
+    "weight": 4.0,
+    "description": "Place to make warmth, light and cooking.",
+    "stats": [],
+    "id": 14
+   }
+  },
+  {
+   "id": 4,
+   "key": "workbench_kit",
+   "name": "Workbench Kit",
+   "station": "none",
+   "stationLabel": "Hand craft",
+   "seconds": 5,
+   "craftable": false,
+   "locked": false,
+   "output": {
+    "key": "workbench_kit",
+    "name": "Workbench Kit",
+    "icon": "item_workbench_kit",
+    "category": "placeable",
+    "categoryLabel": "Placeable",
+    "rarity": "uncommon",
+    "rarityLabel": "Uncommon",
+    "count": 1,
+    "maxStack": 1,
+    "weight": 6.0,
+    "description": "Unlocks iron tools.",
+    "stats": [],
+    "id": 15
+   }
+  },
+  {
+   "id": 5,
+   "key": "iron_ingot",
+   "name": "Iron Ingot",
+   "station": "campfire",
+   "stationLabel": "At a campfire",
+   "seconds": 4,
+   "craftable": true,
+   "locked": false,
+   "output": {
+    "key": "iron_ingot",
+    "name": "Iron Ingot",
+    "icon": "item_iron_ingot",
+    "category": "resource",
+    "categoryLabel": "Resource",
+    "rarity": "rare",
+    "rarityLabel": "Rare",
+    "count": 1,
+    "maxStack": 30,
+    "weight": 1.5,
+    "description": "Smelted at a campfire. Heavy!",
+    "stats": [],
+    "id": 6
+   }
+  },
+  {
+   "id": 6,
+   "key": "iron_axe",
+   "name": "Iron Axe",
+   "station": "workbench",
+   "stationLabel": "At a workbench",
+   "seconds": 4,
+   "craftable": false,
+   "locked": true,
+   "output": {
+    "key": "iron_axe",
+    "name": "Iron Axe",
+    "icon": "item_iron_axe",
+    "category": "tool",
+    "categoryLabel": "Tool",
+    "rarity": "rare",
+    "rarityLabel": "Rare",
+    "count": 1,
+    "maxStack": 1,
+    "weight": 3.0,
+    "description": "Chops trees much faster.",
+    "stats": [],
+    "id": 0
+   }
+  },
+  {
+   "id": 7,
+   "key": "iron_pickaxe",
+   "name": "Iron Pickaxe",
+   "station": "workbench",
+   "stationLabel": "At a workbench",
+   "seconds": 4,
+   "craftable": false,
+   "locked": true,
+   "output": {
+    "key": "iron_pickaxe",
+    "name": "Iron Pickaxe",
+    "icon": "item_iron_pickaxe",
+    "category": "tool",
+    "categoryLabel": "Tool",
+    "rarity": "rare",
+    "rarityLabel": "Rare",
+    "count": 1,
+    "maxStack": 1,
+    "weight": 3.5,
+    "description": "Mines iron veins with ease.",
+    "stats": [],
+    "id": 0
+   }
+  },
+  {
+   "id": 8,
+   "key": "bandage",
+   "name": "Bandage",
+   "station": "none",
+   "stationLabel": "Hand craft",
+   "seconds": 1,
+   "craftable": true,
+   "locked": false,
+   "output": {
+    "key": "bandage",
+    "name": "Bandage",
+    "icon": "item_bandage",
+    "category": "food",
+    "categoryLabel": "Food",
+    "rarity": "uncommon",
+    "rarityLabel": "Uncommon",
+    "count": 1,
+    "maxStack": 10,
+    "weight": 0.1,
+    "description": "Patches you right up.",
+    "stats": [],
+    "id": 13
+   }
+  }
+ ],
+ "build": {
+  "rotation": 90,
+  "selected": "wall",
+  "ghost": {
+   "valid": true,
+   "message": "Looks good! Click to place"
+  },
+  "categories": [
+   {
+    "id": "struct",
+    "label": "Structure",
+    "icon": "bc_walls",
+    "active": true
+   },
+   {
+    "id": "floor",
+    "label": "Floors",
+    "icon": "bc_floors",
+    "active": false
+   },
+   {
+    "id": "door",
+    "label": "Doors",
+    "icon": "bc_doors",
+    "active": false
+   },
+   {
+    "id": "roof",
+    "label": "Roofs",
+    "icon": "bc_roofs",
+    "active": false
+   },
+   {
+    "id": "station",
+    "label": "Stations",
+    "icon": "bc_stations",
+    "active": false
+   },
+   {
+    "id": "storage",
+    "label": "Storage",
+    "icon": "bc_storage",
+    "active": false
+   },
+   {
+    "id": "defense",
+    "label": "Defense",
+    "icon": "bc_defense",
+    "active": false
+   },
+   {
+    "id": "farm",
+    "label": "Farming",
+    "icon": "bc_farming",
+    "active": false
+   },
+   {
+    "id": "decor",
+    "label": "Decor",
+    "icon": "bc_decor",
+    "active": false
+   }
+  ],
+  "pieces": [
+   {
+    "key": "floor",
+    "name": "Wood Floor",
+    "icon": "bc_floors",
+    "affordable": true
+   },
+   {
+    "key": "wall",
+    "name": "Log Wall",
+    "icon": "bc_walls",
+    "affordable": true
+   },
+   {
+    "key": "wall_window",
+    "name": "Window Wall",
+    "icon": "bc_walls",
+    "affordable": true
+   },
+   {
+    "key": "door",
+    "name": "Door",
+    "icon": "bc_doors",
+    "affordable": true
+   },
+   {
+    "key": "roof",
+    "name": "Thatch Roof",
+    "icon": "bc_roofs",
+    "affordable": true
+   },
+   {
+    "key": "fence",
+    "name": "Picket Fence",
+    "icon": "bc_defense",
+    "affordable": true
+   },
+   {
+    "key": "chest",
+    "name": "Chest",
+    "icon": "bc_storage",
+    "affordable": true
+   },
+   {
+    "key": "campfire",
+    "name": "Campfire",
+    "icon": "bc_stations",
+    "affordable": true
+   },
+   {
+    "key": "workbench",
+    "name": "Workbench",
+    "icon": "ic_workbench",
+    "affordable": false
+   },
+   {
+    "key": "crop_plot",
+    "name": "Crop Plot",
+    "icon": "bc_farming",
+    "affordable": true
+   },
+   {
+    "key": "flower_box",
+    "name": "Flower Box",
+    "icon": "bc_decor",
+    "affordable": true
+   },
+   {
+    "key": "spikes",
+    "name": "Spikes",
+    "icon": "bc_defense",
+    "affordable": false
+   }
+  ],
+  "current": {
+   "name": "Log Wall",
+   "description": "Keeps zombies out. Mostly.",
+   "hp": 300,
+   "footprint": "2×1",
+   "cost": [
+    {
+     "key": "wood",
+     "name": "Wood",
+     "icon": "item_wood",
+     "category": "resource",
+     "categoryLabel": "Resource",
+     "rarity": "common",
+     "rarityLabel": "Common",
+     "count": 6,
+     "maxStack": 50,
+     "weight": 0.5,
+     "description": "Sturdy logs. Smells like a campfire waiting to happen.",
+     "stats": [],
+     "id": 1,
+     "have": 34
+    },
+    {
+     "key": "fiber",
+     "name": "Plant Fiber",
+     "icon": "item_fiber",
+     "category": "resource",
+     "categoryLabel": "Resource",
+     "rarity": "common",
+     "rarityLabel": "Common",
+     "count": 2,
+     "maxStack": 99,
+     "weight": 0.1,
+     "description": "Twisty grass for rope and string.",
+     "stats": [],
+     "id": 3,
+     "have": 27
+    },
+    {
+     "key": "stone",
+     "name": "Stone",
+     "icon": "item_stone",
+     "category": "resource",
+     "categoryLabel": "Resource",
+     "rarity": "common",
+     "rarityLabel": "Common",
+     "count": 20,
+     "maxStack": 50,
+     "weight": 1.0,
+     "description": "A nice round rock. Very throwable.",
+     "stats": [],
+     "id": 2,
+     "have": 18
+    }
+   ]
+  }
+ },
+ "settings": {
+  "tab": "audio",
+  "audio": {
+   "master": 0.8,
+   "music": 0.55,
+   "sfx": 0.9
+  },
+  "ui": {
+   "scale": 1.25
+  },
+  "access": {
+   "largeText": false,
+   "reduceMotion": true,
+   "shapeCues": true
+  }
+ },
+ "menu": {
+  "backdrop": "menu_bg",
+  "colors": [
+   {
+    "hex": "#E85D4F",
+    "selected": true,
+    "index": 0
+   },
+   {
+    "hex": "#4F8FD6",
+    "selected": false,
+    "index": 1
+   },
+   {
+    "hex": "#72C45C",
+    "selected": false,
+    "index": 2
+   },
+   {
+    "hex": "#F7C844",
+    "selected": false,
+    "index": 3
+   }
+  ]
+ },
+ "death": {
+  "causeText": "Starved on day 4 (should've eaten those berries)",
+  "canRespawnAtCamp": true,
+  "cooldown": 10,
+  "cooldownLeft": 4,
+  "stats": [
+   {
+    "icon": "ic_day",
+    "value": "4",
+    "label": "Days"
+   },
+   {
+    "icon": "ic_zombie",
+    "value": "23",
+    "label": "Zombies poofed"
+   },
+   {
+    "icon": "ic_craft",
+    "value": "17",
+    "label": "Things made"
+   },
+   {
+    "icon": "ic_home",
+    "value": "41",
+    "label": "Pieces built"
+   }
+  ]
+ },
+ "me": {
+  "playerId": 1,
+  "clientId": 11,
+  "membership": {
+   "partyId": 9,
+   "clanId": 3,
+   "rank": 3
+  }
+ },
+ "groups": {
+  "groups": [
+   {
+    "id": 9,
+    "kind": 1,
+    "members": [
+     {
+      "playerId": 1,
+      "role": 3
+     },
+     {
+      "playerId": 2,
+      "role": 1
+     },
+     {
+      "playerId": 3,
+      "role": 1
+     }
+    ]
+   },
+   {
+    "id": 3,
+    "kind": 2,
+    "members": [
+     {
+      "playerId": 1,
+      "role": 3
+     },
+     {
+      "playerId": 4,
+      "role": 2
+     },
+     {
+      "playerId": 2,
+      "role": 1
+     },
+     {
+      "playerId": 5,
+      "role": 1
+     }
+    ],
+    "banner": {
+     "shape": 1,
+     "pattern": 2,
+     "colors": [
+      1951575551,
+      4292107007
+     ],
+     "emblemId": 4
+    }
+   }
+  ],
+  "markers": [
+   {
+    "playerId": 3,
+    "x": 41.5,
+    "y": -12.25,
+    "hp": 64,
+    "tick": 76080
+   },
+   {
+    "playerId": 4,
+    "x": 60.0,
+    "y": -8.0,
+    "hp": 255,
+    "tick": 76080
+   }
+  ],
+  "_vm": {
+   "party": {
+    "id": 9,
+    "kind": 1,
+    "max": 8,
+    "members": [
+     {
+      "playerId": 1,
+      "role": 3,
+      "_vm": {
+       "name": "Maple",
+       "online": true,
+       "hpPct": 0.72,
+       "inView": true
+      }
+     },
+     {
+      "playerId": 2,
+      "role": 1,
+      "_vm": {
+       "name": "Bramble",
+       "online": true,
+       "hpPct": 0.95,
+       "inView": true
+      }
+     },
+     {
+      "playerId": 3,
+      "role": 1,
+      "_vm": {
+       "name": "Pip",
+       "online": true,
+       "hpPct": 0.64,
+       "inView": false
+      }
+     }
+    ]
+   },
+   "clan": {
+    "id": 3,
+    "kind": 2,
+    "max": 50,
+    "name": "Acorn Gang",
+    "tag": "ACRN",
+    "banner": {
+     "shape": 1,
+     "pattern": 2,
+     "colors": [
+      "#7452AD",
+      "#FFD45A"
+     ],
+     "emblemId": 4
+    },
+    "members": [
+     {
+      "playerId": 1,
+      "role": 3,
+      "_vm": {
+       "name": "Maple",
+       "online": true,
+       "hpPct": 0.72,
+       "inView": true
+      }
+     },
+     {
+      "playerId": 4,
+      "role": 2,
+      "_vm": {
+       "name": "Thistle",
+       "online": true,
+       "hpPct": null,
+       "inView": false
+      }
+     },
+     {
+      "playerId": 2,
+      "role": 1,
+      "_vm": {
+       "name": "Bramble",
+       "online": true,
+       "hpPct": 0.95,
+       "inView": true
+      }
+     },
+     {
+      "playerId": 5,
+      "role": 1,
+      "_vm": {
+       "name": "Juniper",
+       "online": false,
+       "hpPct": null,
+       "inView": true
+      }
+     }
+    ]
+   }
+  }
+ },
+ "social": {
+  "tab": "party"
+ },
+ "trade": {
+  "current": {
+   "id": 7,
+   "partner": 2,
+   "status": 1,
+   "reason": 0,
+   "iRequested": true,
+   "version": 8,
+   "myOfferRevision": 3,
+   "theirOfferRevision": 5,
+   "myLock": true,
+   "myConfirm": false,
+   "theirLock": false,
+   "theirConfirm": false,
+   "myOffer": [
+    {
+     "slot": 5,
+     "item": 1,
+     "count": 10,
+     "durability": 0,
+     "createdTick": 70000
+    },
+    {
+     "slot": 3,
+     "item": 7,
+     "count": 6,
+     "durability": 0,
+     "createdTick": 61000
+    }
+   ],
+   "theirOffer": [
+    {
+     "slot": 2,
+     "item": 0,
+     "count": 1,
+     "durability": 52428,
+     "createdTick": 50000
+    },
+    {
+     "slot": 9,
+     "item": 4,
+     "count": 5,
+     "durability": 0,
+     "createdTick": 52000
+    },
+    {
+     "slot": 11,
+     "item": 6,
+     "count": 2,
+     "durability": 0,
+     "createdTick": 55000
+    }
+   ]
+  },
+  "_vm": {
+   "partnerName": "Bramble",
+   "mine": [
+    {
+     "key": "wood",
+     "name": "Wood",
+     "icon": "item_wood",
+     "category": "resource",
+     "categoryLabel": "Resource",
+     "rarity": "common",
+     "rarityLabel": "Common",
+     "count": 10,
+     "maxStack": 50,
+     "weight": 5.0,
+     "description": "Sturdy logs. Smells like a campfire waiting to happen.",
+     "stats": [],
+     "id": 1,
+     "slot": 5,
+     "createdTick": 70000
+    },
+    {
+     "key": "berries",
+     "name": "Berries",
+     "icon": "item_berries",
+     "category": "food",
+     "categoryLabel": "Food",
+     "rarity": "common",
+     "rarityLabel": "Common",
+     "count": 6,
+     "maxStack": 20,
+     "weight": 0.6000000000000001,
+     "description": "Sweet and squishy. A tiny snack.",
+     "stats": [],
+     "id": 7,
+     "food": {
+      "spoiled": 0.38,
+      "stage": "stale",
+      "stageLabel": "Stale"
+     },
+     "slot": 3,
+     "createdTick": 61000
+    }
+   ],
+   "theirs": [
+    {
+     "key": "iron_axe",
+     "name": "Iron Axe",
+     "icon": "item_iron_axe",
+     "category": "tool",
+     "categoryLabel": "Tool",
+     "rarity": "rare",
+     "rarityLabel": "Rare",
+     "count": 1,
+     "maxStack": 1,
+     "weight": 3.0,
+     "description": "Chops trees much faster.",
+     "stats": [],
+     "id": 0,
+     "slot": 2,
+     "durability": 0.8,
+     "createdTick": 50000
+    },
+    {
+     "key": "flint",
+     "name": "Flint",
+     "icon": "item_flint",
+     "category": "resource",
+     "categoryLabel": "Resource",
+     "rarity": "uncommon",
+     "rarityLabel": "Uncommon",
+     "count": 5,
+     "maxStack": 50,
+     "weight": 1.5,
+     "description": "Sharp and sparky.",
+     "stats": [],
+     "id": 4,
+     "slot": 9,
+     "createdTick": 52000
+    },
+    {
+     "key": "iron_ingot",
+     "name": "Iron Ingot",
+     "icon": "item_iron_ingot",
+     "category": "resource",
+     "categoryLabel": "Resource",
+     "rarity": "rare",
+     "rarityLabel": "Rare",
+     "count": 2,
+     "maxStack": 30,
+     "weight": 3.0,
+     "description": "Smelted at a campfire. Heavy!",
+     "stats": [],
+     "id": 6,
+     "slot": 11,
+     "createdTick": 55000
+    }
+   ],
+   "maxLines": 16,
+   "idleSecondsLeft": 94,
+   "idleSeconds": 120,
+   "bothLocked": false
+  }
+ }
+}

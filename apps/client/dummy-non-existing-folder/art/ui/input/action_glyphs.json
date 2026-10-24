@@ -1,0 +1,5458 @@
+{
+ "source": "engine packages/input/profiles via tools/gen_action_glyphs.py (glyphFor port, commit 4f133b4)",
+ "devices": {
+  "kbm": {
+   "Gameplay": {
+    "Move": [
+     {
+      "collapse": "wasd",
+      "glyphs": [
+       "kbm.key.w",
+       "kbm.key.a",
+       "kbm.key.s",
+       "kbm.key.d"
+      ],
+      "modifiers": [],
+      "label": "Move"
+     },
+     {
+      "collapse": "arrows",
+      "glyphs": [
+       "kbm.key.arrowup",
+       "kbm.key.arrow",
+       "kbm.key.arrowdown"
+      ],
+      "modifiers": [],
+      "label": "Move"
+     }
+    ],
+    "Sprint": [
+     {
+      "glyphs": [
+       "kbm.key.shift"
+      ],
+      "modifiers": [],
+      "label": "Sprint"
+     }
+    ],
+    "Primary": [
+     {
+      "glyphs": [
+       "kbm.mouse.left"
+      ],
+      "modifiers": [],
+      "label": "Attack / Use"
+     }
+    ],
+    "Charge": [
+     {
+      "glyphs": [
+       "kbm.mouse.left"
+      ],
+      "modifiers": [],
+      "interaction": "hold",
+      "label": "Charge"
+     }
+    ],
+    "Secondary": [
+     {
+      "glyphs": [
+       "kbm.mouse.right"
+      ],
+      "modifiers": [],
+      "label": "Block / Alt"
+     }
+    ],
+    "Crouch": [
+     {
+      "glyphs": [
+       "kbm.key.control"
+      ],
+      "modifiers": [],
+      "label": "Sneak"
+     }
+    ],
+    "Interact": [
+     {
+      "glyphs": [
+       "kbm.key.e"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Interact"
+     }
+    ],
+    "ContextRadial": [
+     {
+      "glyphs": [
+       "kbm.key.e"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Actions wheel"
+     }
+    ],
+    "Jump": [
+     {
+      "glyphs": [
+       "kbm.key.space"
+      ],
+      "modifiers": [],
+      "label": "Jump / Dodge"
+     }
+    ],
+    "Reload": [
+     {
+      "glyphs": [
+       "kbm.key.r"
+      ],
+      "modifiers": [],
+      "label": "Reload"
+     }
+    ],
+    "Hotbar1": [
+     {
+      "glyphs": [
+       "kbm.key.1"
+      ],
+      "modifiers": [],
+      "label": "Slot 1"
+     }
+    ],
+    "Hotbar2": [
+     {
+      "glyphs": [
+       "kbm.key.2"
+      ],
+      "modifiers": [],
+      "label": "Slot 2"
+     }
+    ],
+    "Hotbar3": [
+     {
+      "glyphs": [
+       "kbm.key.3"
+      ],
+      "modifiers": [],
+      "label": "Slot 3"
+     }
+    ],
+    "Hotbar4": [
+     {
+      "glyphs": [
+       "kbm.key.4"
+      ],
+      "modifiers": [],
+      "label": "Slot 4"
+     }
+    ],
+    "Hotbar5": [
+     {
+      "glyphs": [
+       "kbm.key.5"
+      ],
+      "modifiers": [],
+      "label": "Slot 5"
+     }
+    ],
+    "Hotbar6": [
+     {
+      "glyphs": [
+       "kbm.key.6"
+      ],
+      "modifiers": [],
+      "label": "Slot 6"
+     }
+    ],
+    "Hotbar7": [
+     {
+      "glyphs": [
+       "kbm.key.7"
+      ],
+      "modifiers": [],
+      "label": "Slot 7"
+     }
+    ],
+    "Hotbar8": [
+     {
+      "glyphs": [
+       "kbm.key.8"
+      ],
+      "modifiers": [],
+      "label": "Slot 8"
+     }
+    ],
+    "HotbarNext": [
+     {
+      "glyphs": [
+       "kbm.mouse.wheel"
+      ],
+      "modifiers": [],
+      "label": "Next slot"
+     }
+    ],
+    "HotbarPrev": [
+     {
+      "glyphs": [
+       "kbm.mouse.wheel"
+      ],
+      "modifiers": [],
+      "label": "Previous slot"
+     }
+    ],
+    "QuickUse": [
+     {
+      "glyphs": [
+       "kbm.key.x"
+      ],
+      "modifiers": [],
+      "label": "Quick eat / use"
+     }
+    ],
+    "ToggleInventory": [
+     {
+      "glyphs": [
+       "kbm.key.tab"
+      ],
+      "modifiers": [],
+      "label": "Backpack"
+     },
+     {
+      "glyphs": [
+       "kbm.key.i"
+      ],
+      "modifiers": [],
+      "label": "Backpack"
+     }
+    ],
+    "ToggleCrafting": [
+     {
+      "glyphs": [
+       "kbm.key.c"
+      ],
+      "modifiers": [],
+      "label": "Crafting"
+     }
+    ],
+    "ToggleMap": [
+     {
+      "glyphs": [
+       "kbm.key.m"
+      ],
+      "modifiers": [],
+      "label": "Map"
+     }
+    ],
+    "OpenChat": [
+     {
+      "glyphs": [
+       "kbm.key.enter"
+      ],
+      "modifiers": [],
+      "label": "Chat"
+     },
+     {
+      "glyphs": [
+       "kbm.key.slash"
+      ],
+      "modifiers": [],
+      "label": "Chat"
+     }
+    ],
+    "OpenSocial": [
+     {
+      "glyphs": [
+       "kbm.key.p"
+      ],
+      "modifiers": [],
+      "label": "Clan & friends"
+     }
+    ],
+    "Cancel": [
+     {
+      "glyphs": [
+       "kbm.key.escape"
+      ],
+      "modifiers": [],
+      "label": "Back"
+     }
+    ],
+    "ToggleBuild": [
+     {
+      "glyphs": [
+       "kbm.key.b"
+      ],
+      "modifiers": [],
+      "label": "Build"
+     }
+    ],
+    "Camera.Zoom": [
+     {
+      "glyphs": [
+       "kbm.mouse.wheel",
+       "kbm.mouse.wheel"
+      ],
+      "modifiers": [
+       "kbm.key.alt"
+      ],
+      "label": "Zoom"
+     },
+     {
+      "glyphs": [
+       "kbm.key.minus",
+       "kbm.key.equal"
+      ],
+      "modifiers": [],
+      "label": "Zoom"
+     }
+    ]
+   },
+   "Building": {
+    "Build.PlaceConfirm": [
+     {
+      "glyphs": [
+       "kbm.mouse.left"
+      ],
+      "modifiers": [],
+      "label": "Place"
+     }
+    ],
+    "Build.RotateCW": [
+     {
+      "glyphs": [
+       "kbm.mouse.right"
+      ],
+      "modifiers": [],
+      "label": "Rotate"
+     },
+     {
+      "glyphs": [
+       "kbm.key.r"
+      ],
+      "modifiers": [],
+      "label": "Rotate"
+     }
+    ],
+    "Build.RotateCCW": [
+     {
+      "glyphs": [
+       "kbm.key.q"
+      ],
+      "modifiers": [],
+      "label": "Rotate back"
+     }
+    ],
+    "Build.Cancel": [
+     {
+      "glyphs": [
+       "kbm.key.escape"
+      ],
+      "modifiers": [],
+      "label": "Cancel"
+     }
+    ],
+    "Build.PieceNext": [
+     {
+      "glyphs": [
+       "kbm.mouse.wheel"
+      ],
+      "modifiers": [],
+      "label": "Next piece"
+     }
+    ],
+    "Build.PiecePrev": [
+     {
+      "glyphs": [
+       "kbm.mouse.wheel"
+      ],
+      "modifiers": [],
+      "label": "Previous piece"
+     }
+    ],
+    "Build.TierNext": [
+     {
+      "glyphs": [
+       "kbm.mouse.wheel"
+      ],
+      "modifiers": [
+       "kbm.key.shift"
+      ],
+      "label": "Tier up"
+     }
+    ],
+    "Build.TierPrev": [
+     {
+      "glyphs": [
+       "kbm.mouse.wheel"
+      ],
+      "modifiers": [
+       "kbm.key.shift"
+      ],
+      "label": "Tier down"
+     }
+    ],
+    "Build.ToggleSnap": [
+     {
+      "glyphs": [
+       "kbm.key.g"
+      ],
+      "modifiers": [],
+      "label": "Snap"
+     }
+    ],
+    "Build.LevelUp": [
+     {
+      "glyphs": [
+       "kbm.key.pageup"
+      ],
+      "modifiers": [],
+      "label": "Floor up"
+     }
+    ],
+    "Build.LevelDown": [
+     {
+      "glyphs": [
+       "kbm.key.pagedown"
+      ],
+      "modifiers": [],
+      "label": "Floor down"
+     }
+    ],
+    "Build.DemolishMode": [
+     {
+      "glyphs": [
+       "kbm.key.x"
+      ],
+      "modifiers": [],
+      "label": "Demolish"
+     }
+    ],
+    "Build.UpgradeMode": [
+     {
+      "glyphs": [
+       "kbm.key.u"
+      ],
+      "modifiers": [],
+      "label": "Upgrade"
+     }
+    ],
+    "Build.RepairMode": [
+     {
+      "glyphs": [
+       "kbm.key.h"
+      ],
+      "modifiers": [],
+      "label": "Repair"
+     }
+    ],
+    "Build.Nudge": [
+     {
+      "collapse": "arrows",
+      "glyphs": [
+       "kbm.key.arrowup",
+       "kbm.key.arrow",
+       "kbm.key.arrowdown"
+      ],
+      "modifiers": [],
+      "label": "Nudge"
+     }
+    ],
+    "ToggleBuild": [
+     {
+      "glyphs": [
+       "kbm.key.b"
+      ],
+      "modifiers": [],
+      "label": "Build"
+     }
+    ]
+   },
+   "Inventory": {
+    "UI.Navigate": [
+     {
+      "collapse": "arrows",
+      "glyphs": [
+       "kbm.key.arrowup",
+       "kbm.key.arrow",
+       "kbm.key.arrowdown"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     }
+    ],
+    "Inv.MoveSlot": [
+     {
+      "glyphs": [
+       "kbm.mouse.left"
+      ],
+      "modifiers": [],
+      "label": "Pick up / place"
+     }
+    ],
+    "Inv.QuickTransfer": [
+     {
+      "glyphs": [
+       "kbm.mouse.left"
+      ],
+      "modifiers": [
+       "kbm.key.shift"
+      ],
+      "label": "Quick move"
+     }
+    ],
+    "Inv.SplitStack": [
+     {
+      "glyphs": [
+       "kbm.mouse.right"
+      ],
+      "modifiers": [],
+      "label": "Split stack"
+     }
+    ],
+    "Inv.Drop": [
+     {
+      "glyphs": [
+       "kbm.key.q"
+      ],
+      "modifiers": [],
+      "label": "Drop"
+     }
+    ],
+    "Inv.Equip": [
+     {
+      "glyphs": [
+       "kbm.key.f"
+      ],
+      "modifiers": [],
+      "label": "Equip"
+     }
+    ],
+    "Inv.Use": [
+     {
+      "glyphs": [
+       "kbm.key.e"
+      ],
+      "modifiers": [],
+      "label": "Use"
+     }
+    ],
+    "Inv.TakeAll": [
+     {
+      "glyphs": [
+       "kbm.key.r"
+      ],
+      "modifiers": [],
+      "label": "Take all"
+     }
+    ],
+    "Inv.Sort": [
+     {
+      "glyphs": [
+       "kbm.key.t"
+      ],
+      "modifiers": [],
+      "label": "Sort"
+     }
+    ],
+    "UI.TabNext": [
+     {
+      "glyphs": [
+       "kbm.key.bracket"
+      ],
+      "modifiers": [],
+      "label": "Next tab"
+     }
+    ],
+    "UI.TabPrev": [
+     {
+      "glyphs": [
+       "kbm.key.bracket"
+      ],
+      "modifiers": [],
+      "label": "Previous tab"
+     }
+    ],
+    "UI.Back": [
+     {
+      "glyphs": [
+       "kbm.key.escape"
+      ],
+      "modifiers": [],
+      "label": "Back"
+     }
+    ],
+    "ToggleInventory": [
+     {
+      "glyphs": [
+       "kbm.key.tab"
+      ],
+      "modifiers": [],
+      "label": "Backpack"
+     },
+     {
+      "glyphs": [
+       "kbm.key.i"
+      ],
+      "modifiers": [],
+      "label": "Backpack"
+     }
+    ]
+   },
+   "Crafting": {
+    "UI.Navigate": [
+     {
+      "collapse": "arrows",
+      "glyphs": [
+       "kbm.key.arrowup",
+       "kbm.key.arrow",
+       "kbm.key.arrowdown"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     }
+    ],
+    "Craft.Craft": [
+     {
+      "glyphs": [
+       "kbm.key.enter"
+      ],
+      "modifiers": [],
+      "label": "Craft"
+     },
+     {
+      "glyphs": [
+       "kbm.mouse.left"
+      ],
+      "modifiers": [],
+      "label": "Craft"
+     }
+    ],
+    "Craft.Amount": [
+     {
+      "glyphs": [
+       "kbm.key.enter"
+      ],
+      "modifiers": [
+       "kbm.key.shift"
+      ],
+      "interaction": "repeat",
+      "label": "Amount"
+     }
+    ],
+    "Craft.Cancel": [
+     {
+      "glyphs": [
+       "kbm.key.backspace"
+      ],
+      "modifiers": [],
+      "label": "Cancel craft"
+     }
+    ],
+    "Craft.FilterNext": [
+     {
+      "glyphs": [
+       "kbm.key.e"
+      ],
+      "modifiers": [],
+      "label": "Next category"
+     }
+    ],
+    "Craft.FilterPrev": [
+     {
+      "glyphs": [
+       "kbm.key.q"
+      ],
+      "modifiers": [],
+      "label": "Previous category"
+     }
+    ],
+    "UI.Back": [
+     {
+      "glyphs": [
+       "kbm.key.escape"
+      ],
+      "modifiers": [],
+      "label": "Back"
+     }
+    ],
+    "ToggleCrafting": [
+     {
+      "glyphs": [
+       "kbm.key.c"
+      ],
+      "modifiers": [],
+      "label": "Crafting"
+     }
+    ]
+   },
+   "Trade": {
+    "UI.Navigate": [
+     {
+      "collapse": "arrows",
+      "glyphs": [
+       "kbm.key.arrowup",
+       "kbm.key.arrow",
+       "kbm.key.arrowdown"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     }
+    ],
+    "Trade.AddOffer": [
+     {
+      "glyphs": [
+       "kbm.mouse.left"
+      ],
+      "modifiers": [],
+      "label": "Offer"
+     },
+     {
+      "glyphs": [
+       "kbm.key.enter"
+      ],
+      "modifiers": [],
+      "label": "Offer"
+     }
+    ],
+    "Trade.RemoveOffer": [
+     {
+      "glyphs": [
+       "kbm.mouse.right"
+      ],
+      "modifiers": [],
+      "label": "Take back"
+     },
+     {
+      "glyphs": [
+       "kbm.key.backspace"
+      ],
+      "modifiers": [],
+      "label": "Take back"
+     }
+    ],
+    "Trade.Lock": [
+     {
+      "glyphs": [
+       "kbm.key.l"
+      ],
+      "modifiers": [],
+      "label": "Lock offer"
+     }
+    ],
+    "Trade.Confirm": [
+     {
+      "glyphs": [
+       "kbm.key.f"
+      ],
+      "modifiers": [],
+      "label": "Accept trade"
+     }
+    ],
+    "UI.TabNext": [
+     {
+      "glyphs": [
+       "kbm.key.bracket"
+      ],
+      "modifiers": [],
+      "label": "Next tab"
+     }
+    ],
+    "UI.TabPrev": [
+     {
+      "glyphs": [
+       "kbm.key.bracket"
+      ],
+      "modifiers": [],
+      "label": "Previous tab"
+     }
+    ],
+    "UI.Back": [
+     {
+      "glyphs": [
+       "kbm.key.escape"
+      ],
+      "modifiers": [],
+      "label": "Back"
+     }
+    ]
+   },
+   "Chat": {
+    "Chat.Send": [
+     {
+      "glyphs": [
+       "kbm.key.enter"
+      ],
+      "modifiers": [],
+      "label": "Send"
+     }
+    ],
+    "Chat.Cancel": [
+     {
+      "glyphs": [
+       "kbm.key.escape"
+      ],
+      "modifiers": [],
+      "label": "Close chat"
+     }
+    ],
+    "Chat.SwitchChannel": [
+     {
+      "glyphs": [
+       "kbm.key.tab"
+      ],
+      "modifiers": [],
+      "label": "Channel"
+     }
+    ]
+   },
+   "Social": {
+    "UI.Navigate": [
+     {
+      "collapse": "arrows",
+      "glyphs": [
+       "kbm.key.arrowup",
+       "kbm.key.arrow",
+       "kbm.key.arrowdown"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     }
+    ],
+    "Social.ContextMenu": [
+     {
+      "glyphs": [
+       "kbm.mouse.right"
+      ],
+      "modifiers": [],
+      "label": "Options"
+     }
+    ],
+    "UI.Submit": [
+     {
+      "glyphs": [
+       "kbm.key.enter"
+      ],
+      "modifiers": [],
+      "label": "Select"
+     }
+    ],
+    "Social.Invite": [
+     {
+      "glyphs": [
+       "kbm.key.i"
+      ],
+      "modifiers": [],
+      "label": "Invite"
+     }
+    ],
+    "Social.Kick": [
+     {
+      "glyphs": [
+       "kbm.key.k"
+      ],
+      "modifiers": [],
+      "label": "Kick"
+     }
+    ],
+    "Social.Promote": [
+     {
+      "glyphs": [
+       "kbm.key.pageup"
+      ],
+      "modifiers": [],
+      "label": "Promote"
+     }
+    ],
+    "Social.Demote": [
+     {
+      "glyphs": [
+       "kbm.key.pagedown"
+      ],
+      "modifiers": [],
+      "label": "Demote"
+     }
+    ],
+    "Social.Leave": [
+     {
+      "glyphs": [
+       "kbm.key.l"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Leave clan"
+     }
+    ],
+    "Social.SetPermissions": [
+     {
+      "glyphs": [
+       "kbm.key.o"
+      ],
+      "modifiers": [],
+      "label": "Permissions"
+     }
+    ],
+    "UI.TabNext": [
+     {
+      "glyphs": [
+       "kbm.key.bracket"
+      ],
+      "modifiers": [],
+      "label": "Next tab"
+     }
+    ],
+    "UI.TabPrev": [
+     {
+      "glyphs": [
+       "kbm.key.bracket"
+      ],
+      "modifiers": [],
+      "label": "Previous tab"
+     }
+    ],
+    "UI.Back": [
+     {
+      "glyphs": [
+       "kbm.key.escape"
+      ],
+      "modifiers": [],
+      "label": "Back"
+     }
+    ],
+    "OpenSocial": [
+     {
+      "glyphs": [
+       "kbm.key.p"
+      ],
+      "modifiers": [],
+      "label": "Clan & friends"
+     }
+    ]
+   },
+   "Dialog": {
+    "Dialog.Confirm": [
+     {
+      "glyphs": [
+       "kbm.key.enter"
+      ],
+      "modifiers": [],
+      "label": "Confirm"
+     },
+     {
+      "glyphs": [
+       "kbm.key.y"
+      ],
+      "modifiers": [],
+      "label": "Confirm"
+     }
+    ],
+    "Dialog.Cancel": [
+     {
+      "glyphs": [
+       "kbm.key.escape"
+      ],
+      "modifiers": [],
+      "label": "Cancel"
+     },
+     {
+      "glyphs": [
+       "kbm.key.n"
+      ],
+      "modifiers": [],
+      "label": "Cancel"
+     }
+    ]
+   }
+  },
+  "touch": {
+   "Gameplay": {
+    "Move": [
+     {
+      "glyphs": [
+       "touch.joystick",
+       "touch.joystick"
+      ],
+      "modifiers": [],
+      "label": "Move"
+     }
+    ],
+    "Aim": [
+     {
+      "glyphs": [
+       "touch.joystick",
+       "touch.joystick"
+      ],
+      "modifiers": [],
+      "label": "Aim"
+     }
+    ],
+    "Sprint": [
+     {
+      "glyphs": [
+       "touch.button.sprint"
+      ],
+      "modifiers": [],
+      "interaction": "toggle",
+      "label": "Sprint"
+     }
+    ],
+    "Primary": [
+     {
+      "glyphs": [
+       "touch.button.attack"
+      ],
+      "modifiers": [],
+      "label": "Attack / Use"
+     }
+    ],
+    "Charge": [
+     {
+      "glyphs": [
+       "touch.button.attack"
+      ],
+      "modifiers": [],
+      "interaction": "hold",
+      "label": "Charge"
+     }
+    ],
+    "Secondary": [
+     {
+      "glyphs": [
+       "touch.button.secondary"
+      ],
+      "modifiers": [],
+      "label": "Block / Alt"
+     }
+    ],
+    "Crouch": [
+     {
+      "glyphs": [
+       "touch.button.crouch"
+      ],
+      "modifiers": [],
+      "interaction": "toggle",
+      "label": "Sneak"
+     }
+    ],
+    "Interact": [
+     {
+      "glyphs": [
+       "touch.button.context"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Interact"
+     }
+    ],
+    "ContextRadial": [
+     {
+      "glyphs": [
+       "touch.button.context"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Actions wheel"
+     }
+    ],
+    "Jump": [
+     {
+      "glyphs": [
+       "touch.button.jump"
+      ],
+      "modifiers": [],
+      "label": "Jump / Dodge"
+     }
+    ],
+    "Reload": [
+     {
+      "glyphs": [
+       "touch.button.reload"
+      ],
+      "modifiers": [],
+      "label": "Reload"
+     }
+    ],
+    "Hotbar1": [
+     {
+      "glyphs": [
+       "touch.hotbar"
+      ],
+      "modifiers": [],
+      "label": "Slot 1"
+     }
+    ],
+    "Hotbar2": [
+     {
+      "glyphs": [
+       "touch.hotbar"
+      ],
+      "modifiers": [],
+      "label": "Slot 2"
+     }
+    ],
+    "Hotbar3": [
+     {
+      "glyphs": [
+       "touch.hotbar"
+      ],
+      "modifiers": [],
+      "label": "Slot 3"
+     }
+    ],
+    "Hotbar4": [
+     {
+      "glyphs": [
+       "touch.hotbar"
+      ],
+      "modifiers": [],
+      "label": "Slot 4"
+     }
+    ],
+    "Hotbar5": [
+     {
+      "glyphs": [
+       "touch.hotbar"
+      ],
+      "modifiers": [],
+      "label": "Slot 5"
+     }
+    ],
+    "Hotbar6": [
+     {
+      "glyphs": [
+       "touch.hotbar"
+      ],
+      "modifiers": [],
+      "label": "Slot 6"
+     }
+    ],
+    "Hotbar7": [
+     {
+      "glyphs": [
+       "touch.hotbar"
+      ],
+      "modifiers": [],
+      "label": "Slot 7"
+     }
+    ],
+    "Hotbar8": [
+     {
+      "glyphs": [
+       "touch.hotbar"
+      ],
+      "modifiers": [],
+      "label": "Slot 8"
+     }
+    ],
+    "HotbarNext": [
+     {
+      "glyphs": [
+       "touch.swipe"
+      ],
+      "modifiers": [],
+      "label": "Next slot"
+     }
+    ],
+    "HotbarPrev": [
+     {
+      "glyphs": [
+       "touch.swipe"
+      ],
+      "modifiers": [],
+      "label": "Previous slot"
+     }
+    ],
+    "QuickUse": [
+     {
+      "glyphs": [
+       "touch.button.quickuse"
+      ],
+      "modifiers": [],
+      "label": "Quick eat / use"
+     }
+    ],
+    "ToggleInventory": [
+     {
+      "glyphs": [
+       "touch.button.inventory"
+      ],
+      "modifiers": [],
+      "label": "Backpack"
+     }
+    ],
+    "ToggleCrafting": [
+     {
+      "glyphs": [
+       "touch.button.crafting"
+      ],
+      "modifiers": [],
+      "label": "Crafting"
+     }
+    ],
+    "ToggleMap": [
+     {
+      "glyphs": [
+       "touch.button.map"
+      ],
+      "modifiers": [],
+      "label": "Map"
+     }
+    ],
+    "OpenChat": [
+     {
+      "glyphs": [
+       "touch.button.chat"
+      ],
+      "modifiers": [],
+      "label": "Chat"
+     }
+    ],
+    "OpenSocial": [
+     {
+      "glyphs": [
+       "touch.button.social"
+      ],
+      "modifiers": [],
+      "label": "Clan & friends"
+     }
+    ],
+    "Cancel": [
+     {
+      "glyphs": [
+       "touch.button.back"
+      ],
+      "modifiers": [],
+      "label": "Back"
+     }
+    ],
+    "ToggleBuild": [
+     {
+      "glyphs": [
+       "touch.button.build"
+      ],
+      "modifiers": [],
+      "label": "Build"
+     }
+    ],
+    "Camera.Zoom": [
+     {
+      "glyphs": [
+       "touch.pinch",
+       "touch.pinch"
+      ],
+      "modifiers": [],
+      "label": "Zoom"
+     }
+    ]
+   },
+   "Building": {
+    "Build.PlaceConfirm": [
+     {
+      "glyphs": [
+       "touch.button.confirm"
+      ],
+      "modifiers": [],
+      "label": "Place"
+     }
+    ],
+    "Build.Cancel": [
+     {
+      "glyphs": [
+       "touch.button.cancel"
+      ],
+      "modifiers": [],
+      "label": "Cancel"
+     }
+    ],
+    "Build.RotateCW": [
+     {
+      "glyphs": [
+       "touch.button.rotate"
+      ],
+      "modifiers": [],
+      "label": "Rotate"
+     },
+     {
+      "glyphs": [
+       "touch.rotate"
+      ],
+      "modifiers": [],
+      "label": "Rotate"
+     }
+    ],
+    "Build.RotateCCW": [
+     {
+      "glyphs": [
+       "touch.rotate"
+      ],
+      "modifiers": [],
+      "label": "Rotate back"
+     }
+    ],
+    "Build.PieceNext": [
+     {
+      "glyphs": [
+       "touch.swipe"
+      ],
+      "modifiers": [],
+      "label": "Next piece"
+     }
+    ],
+    "Build.PiecePrev": [
+     {
+      "glyphs": [
+       "touch.swipe"
+      ],
+      "modifiers": [],
+      "label": "Previous piece"
+     }
+    ],
+    "Build.TierNext": [
+     {
+      "glyphs": [
+       "touch.button.tierup"
+      ],
+      "modifiers": [],
+      "label": "Tier up"
+     }
+    ],
+    "Build.TierPrev": [
+     {
+      "glyphs": [
+       "touch.button.tierdown"
+      ],
+      "modifiers": [],
+      "label": "Tier down"
+     }
+    ],
+    "Build.ToggleSnap": [
+     {
+      "glyphs": [
+       "touch.button.snap"
+      ],
+      "modifiers": [],
+      "label": "Snap"
+     }
+    ],
+    "Build.LevelUp": [
+     {
+      "glyphs": [
+       "touch.button.levelup"
+      ],
+      "modifiers": [],
+      "label": "Floor up"
+     }
+    ],
+    "Build.LevelDown": [
+     {
+      "glyphs": [
+       "touch.button.leveldown"
+      ],
+      "modifiers": [],
+      "label": "Floor down"
+     }
+    ],
+    "Build.DemolishMode": [
+     {
+      "glyphs": [
+       "touch.button.demolish"
+      ],
+      "modifiers": [],
+      "label": "Demolish"
+     }
+    ],
+    "Build.UpgradeMode": [
+     {
+      "glyphs": [
+       "touch.button.upgrade"
+      ],
+      "modifiers": [],
+      "label": "Upgrade"
+     }
+    ],
+    "Build.RepairMode": [
+     {
+      "glyphs": [
+       "touch.button.repair"
+      ],
+      "modifiers": [],
+      "label": "Repair"
+     }
+    ],
+    "Build.Nudge": [
+     {
+      "glyphs": [
+       "touch.ghost",
+       "touch.ghost"
+      ],
+      "modifiers": [],
+      "label": "Nudge"
+     }
+    ],
+    "ToggleBuild": [
+     {
+      "glyphs": [
+       "touch.button.build"
+      ],
+      "modifiers": [],
+      "label": "Build"
+     }
+    ]
+   },
+   "Inventory": {
+    "Inv.MoveSlot": [
+     {
+      "glyphs": [
+       "touch.tap"
+      ],
+      "modifiers": [],
+      "label": "Pick up / place"
+     }
+    ],
+    "Inv.QuickTransfer": [
+     {
+      "glyphs": [
+       "touch.doubletap"
+      ],
+      "modifiers": [],
+      "label": "Quick move"
+     }
+    ],
+    "Inv.SplitStack": [
+     {
+      "glyphs": [
+       "touch.longpress"
+      ],
+      "modifiers": [],
+      "label": "Split stack"
+     }
+    ],
+    "Inv.Drop": [
+     {
+      "glyphs": [
+       "touch.button.drop"
+      ],
+      "modifiers": [],
+      "label": "Drop"
+     }
+    ],
+    "Inv.Equip": [
+     {
+      "glyphs": [
+       "touch.button.equip"
+      ],
+      "modifiers": [],
+      "label": "Equip"
+     }
+    ],
+    "Inv.Use": [
+     {
+      "glyphs": [
+       "touch.button.use"
+      ],
+      "modifiers": [],
+      "label": "Use"
+     }
+    ],
+    "Inv.TakeAll": [
+     {
+      "glyphs": [
+       "touch.button.takeall"
+      ],
+      "modifiers": [],
+      "label": "Take all"
+     }
+    ],
+    "Inv.Sort": [
+     {
+      "glyphs": [
+       "touch.button.sort"
+      ],
+      "modifiers": [],
+      "label": "Sort"
+     }
+    ],
+    "UI.TabNext": [
+     {
+      "glyphs": [
+       "touch.swipe"
+      ],
+      "modifiers": [],
+      "label": "Next tab"
+     }
+    ],
+    "UI.TabPrev": [
+     {
+      "glyphs": [
+       "touch.swipe"
+      ],
+      "modifiers": [],
+      "label": "Previous tab"
+     }
+    ],
+    "UI.Back": [
+     {
+      "glyphs": [
+       "touch.button.back"
+      ],
+      "modifiers": [],
+      "label": "Back"
+     }
+    ],
+    "ToggleInventory": [
+     {
+      "glyphs": [
+       "touch.button.inventory"
+      ],
+      "modifiers": [],
+      "label": "Backpack"
+     }
+    ]
+   },
+   "Crafting": {
+    "Craft.Craft": [
+     {
+      "glyphs": [
+       "touch.button.craft"
+      ],
+      "modifiers": [],
+      "label": "Craft"
+     }
+    ],
+    "Craft.Amount": [
+     {
+      "glyphs": [
+       "touch.button.craftmore"
+      ],
+      "modifiers": [],
+      "interaction": "repeat",
+      "label": "Amount"
+     }
+    ],
+    "Craft.Cancel": [
+     {
+      "glyphs": [
+       "touch.button.cancelcraft"
+      ],
+      "modifiers": [],
+      "label": "Cancel craft"
+     }
+    ],
+    "Craft.FilterNext": [
+     {
+      "glyphs": [
+       "touch.swipe"
+      ],
+      "modifiers": [],
+      "label": "Next category"
+     }
+    ],
+    "Craft.FilterPrev": [
+     {
+      "glyphs": [
+       "touch.swipe"
+      ],
+      "modifiers": [],
+      "label": "Previous category"
+     }
+    ],
+    "UI.Back": [
+     {
+      "glyphs": [
+       "touch.button.back"
+      ],
+      "modifiers": [],
+      "label": "Back"
+     }
+    ]
+   },
+   "Trade": {
+    "Trade.AddOffer": [
+     {
+      "glyphs": [
+       "touch.tap"
+      ],
+      "modifiers": [],
+      "label": "Offer"
+     }
+    ],
+    "Trade.RemoveOffer": [
+     {
+      "glyphs": [
+       "touch.longpress"
+      ],
+      "modifiers": [],
+      "label": "Take back"
+     }
+    ],
+    "Trade.Lock": [
+     {
+      "glyphs": [
+       "touch.button.lock"
+      ],
+      "modifiers": [],
+      "label": "Lock offer"
+     }
+    ],
+    "Trade.Confirm": [
+     {
+      "glyphs": [
+       "touch.button.confirm"
+      ],
+      "modifiers": [],
+      "label": "Accept trade"
+     }
+    ],
+    "UI.Back": [
+     {
+      "glyphs": [
+       "touch.button.back"
+      ],
+      "modifiers": [],
+      "label": "Back"
+     }
+    ]
+   },
+   "Chat": {
+    "Chat.Send": [
+     {
+      "glyphs": [
+       "touch.button.send"
+      ],
+      "modifiers": [],
+      "label": "Send"
+     }
+    ],
+    "Chat.Cancel": [
+     {
+      "glyphs": [
+       "touch.button.back"
+      ],
+      "modifiers": [],
+      "label": "Close chat"
+     }
+    ],
+    "Chat.SwitchChannel": [
+     {
+      "glyphs": [
+       "touch.button.channel"
+      ],
+      "modifiers": [],
+      "label": "Channel"
+     }
+    ]
+   },
+   "Social": {
+    "Social.ContextMenu": [
+     {
+      "glyphs": [
+       "touch.longpress"
+      ],
+      "modifiers": [],
+      "label": "Options"
+     }
+    ],
+    "Social.Invite": [
+     {
+      "glyphs": [
+       "touch.button.invite"
+      ],
+      "modifiers": [],
+      "label": "Invite"
+     }
+    ],
+    "Social.Kick": [
+     {
+      "glyphs": [
+       "touch.button.kick"
+      ],
+      "modifiers": [],
+      "label": "Kick"
+     }
+    ],
+    "Social.Promote": [
+     {
+      "glyphs": [
+       "touch.button.promote"
+      ],
+      "modifiers": [],
+      "label": "Promote"
+     }
+    ],
+    "Social.Demote": [
+     {
+      "glyphs": [
+       "touch.button.demote"
+      ],
+      "modifiers": [],
+      "label": "Demote"
+     }
+    ],
+    "Social.Leave": [
+     {
+      "glyphs": [
+       "touch.button.leave"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Leave clan"
+     }
+    ],
+    "Social.SetPermissions": [
+     {
+      "glyphs": [
+       "touch.button.perms"
+      ],
+      "modifiers": [],
+      "label": "Permissions"
+     }
+    ],
+    "UI.Back": [
+     {
+      "glyphs": [
+       "touch.button.back"
+      ],
+      "modifiers": [],
+      "label": "Back"
+     }
+    ]
+   },
+   "Dialog": {
+    "Dialog.Confirm": [
+     {
+      "glyphs": [
+       "touch.button.yes"
+      ],
+      "modifiers": [],
+      "label": "Confirm"
+     }
+    ],
+    "Dialog.Cancel": [
+     {
+      "glyphs": [
+       "touch.button.no"
+      ],
+      "modifiers": [],
+      "label": "Cancel"
+     }
+    ]
+   }
+  },
+  "gamepad.xbox": {
+   "Gameplay": {
+    "Move": [
+     {
+      "collapse": "stick",
+      "glyphs": [
+       "gamepad.xbox.ls"
+      ],
+      "modifiers": [],
+      "label": "Move"
+     }
+    ],
+    "Aim": [
+     {
+      "collapse": "stick",
+      "glyphs": [
+       "gamepad.xbox.rs"
+      ],
+      "modifiers": [],
+      "label": "Aim"
+     }
+    ],
+    "Sprint": [
+     {
+      "glyphs": [
+       "gamepad.xbox.ls"
+      ],
+      "modifiers": [],
+      "label": "Sprint"
+     }
+    ],
+    "Primary": [
+     {
+      "glyphs": [
+       "gamepad.xbox.rt"
+      ],
+      "modifiers": [],
+      "label": "Attack / Use"
+     }
+    ],
+    "Charge": [
+     {
+      "glyphs": [
+       "gamepad.xbox.rt"
+      ],
+      "modifiers": [],
+      "interaction": "hold",
+      "label": "Charge"
+     }
+    ],
+    "Secondary": [
+     {
+      "glyphs": [
+       "gamepad.xbox.lt"
+      ],
+      "modifiers": [],
+      "label": "Block / Alt"
+     }
+    ],
+    "Crouch": [
+     {
+      "glyphs": [
+       "gamepad.xbox.rs"
+      ],
+      "modifiers": [],
+      "label": "Sneak"
+     }
+    ],
+    "Interact": [
+     {
+      "glyphs": [
+       "gamepad.xbox.x"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Interact"
+     }
+    ],
+    "ContextRadial": [
+     {
+      "glyphs": [
+       "gamepad.xbox.x"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Actions wheel"
+     }
+    ],
+    "Jump": [
+     {
+      "glyphs": [
+       "gamepad.xbox.a"
+      ],
+      "modifiers": [],
+      "label": "Jump / Dodge"
+     }
+    ],
+    "Reload": [
+     {
+      "glyphs": [
+       "gamepad.xbox.y"
+      ],
+      "modifiers": [],
+      "label": "Reload"
+     }
+    ],
+    "QuickUse": [
+     {
+      "glyphs": [
+       "gamepad.xbox.b"
+      ],
+      "modifiers": [],
+      "label": "Quick eat / use"
+     }
+    ],
+    "Hotbar1": [
+     {
+      "glyphs": [
+       "gamepad.xbox.dup"
+      ],
+      "modifiers": [],
+      "label": "Slot 1"
+     }
+    ],
+    "Hotbar2": [
+     {
+      "glyphs": [
+       "gamepad.xbox.dright"
+      ],
+      "modifiers": [],
+      "label": "Slot 2"
+     }
+    ],
+    "Hotbar3": [
+     {
+      "glyphs": [
+       "gamepad.xbox.ddown"
+      ],
+      "modifiers": [],
+      "label": "Slot 3"
+     }
+    ],
+    "Hotbar4": [
+     {
+      "glyphs": [
+       "gamepad.xbox.dleft"
+      ],
+      "modifiers": [],
+      "label": "Slot 4"
+     }
+    ],
+    "Hotbar5": [
+     {
+      "glyphs": [
+       "gamepad.xbox.dup"
+      ],
+      "modifiers": [
+       "gamepad.xbox.lb"
+      ],
+      "label": "Slot 5"
+     }
+    ],
+    "Hotbar6": [
+     {
+      "glyphs": [
+       "gamepad.xbox.dright"
+      ],
+      "modifiers": [
+       "gamepad.xbox.lb"
+      ],
+      "label": "Slot 6"
+     }
+    ],
+    "Hotbar7": [
+     {
+      "glyphs": [
+       "gamepad.xbox.ddown"
+      ],
+      "modifiers": [
+       "gamepad.xbox.lb"
+      ],
+      "label": "Slot 7"
+     }
+    ],
+    "Hotbar8": [
+     {
+      "glyphs": [
+       "gamepad.xbox.dleft"
+      ],
+      "modifiers": [
+       "gamepad.xbox.lb"
+      ],
+      "label": "Slot 8"
+     }
+    ],
+    "HotbarNext": [
+     {
+      "glyphs": [
+       "gamepad.xbox.rb"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Next slot"
+     }
+    ],
+    "HotbarPrev": [
+     {
+      "glyphs": [
+       "gamepad.xbox.lb"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Previous slot"
+     }
+    ],
+    "ToggleInventory": [
+     {
+      "glyphs": [
+       "gamepad.xbox.view"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Backpack"
+     }
+    ],
+    "ToggleMap": [
+     {
+      "glyphs": [
+       "gamepad.xbox.view"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Map"
+     }
+    ],
+    "ToggleCrafting": [
+     {
+      "glyphs": [
+       "gamepad.xbox.view"
+      ],
+      "modifiers": [
+       "gamepad.xbox.lb"
+      ],
+      "label": "Crafting"
+     }
+    ],
+    "OpenChat": [
+     {
+      "glyphs": [
+       "gamepad.xbox.view"
+      ],
+      "modifiers": [
+       "gamepad.xbox.rb"
+      ],
+      "label": "Chat"
+     }
+    ],
+    "OpenSocial": [
+     {
+      "glyphs": [
+       "gamepad.xbox.menu"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Clan & friends"
+     }
+    ],
+    "Cancel": [
+     {
+      "glyphs": [
+       "gamepad.xbox.menu"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Back"
+     }
+    ],
+    "ToggleBuild": [
+     {
+      "glyphs": [
+       "gamepad.xbox.y"
+      ],
+      "modifiers": [
+       "gamepad.xbox.lb"
+      ],
+      "label": "Build"
+     }
+    ],
+    "Camera.Zoom": [
+     {
+      "collapse": "dpad",
+      "glyphs": [
+       "gamepad.xbox.dpad"
+      ],
+      "modifiers": [
+       "gamepad.xbox.rb"
+      ],
+      "label": "Zoom"
+     }
+    ]
+   },
+   "Building": {
+    "Build.PlaceConfirm": [
+     {
+      "glyphs": [
+       "gamepad.xbox.rt"
+      ],
+      "modifiers": [],
+      "label": "Place"
+     },
+     {
+      "glyphs": [
+       "gamepad.xbox.a"
+      ],
+      "modifiers": [],
+      "label": "Place"
+     }
+    ],
+    "Build.Cancel": [
+     {
+      "glyphs": [
+       "gamepad.xbox.b"
+      ],
+      "modifiers": [],
+      "label": "Cancel"
+     }
+    ],
+    "Build.RotateCW": [
+     {
+      "glyphs": [
+       "gamepad.xbox.rb"
+      ],
+      "modifiers": [],
+      "label": "Rotate"
+     }
+    ],
+    "Build.RotateCCW": [
+     {
+      "glyphs": [
+       "gamepad.xbox.lb"
+      ],
+      "modifiers": [],
+      "label": "Rotate back"
+     }
+    ],
+    "Build.PieceNext": [
+     {
+      "glyphs": [
+       "gamepad.xbox.dright"
+      ],
+      "modifiers": [],
+      "label": "Next piece"
+     }
+    ],
+    "Build.PiecePrev": [
+     {
+      "glyphs": [
+       "gamepad.xbox.dleft"
+      ],
+      "modifiers": [],
+      "label": "Previous piece"
+     }
+    ],
+    "Build.TierNext": [
+     {
+      "glyphs": [
+       "gamepad.xbox.dup"
+      ],
+      "modifiers": [],
+      "label": "Tier up"
+     }
+    ],
+    "Build.TierPrev": [
+     {
+      "glyphs": [
+       "gamepad.xbox.ddown"
+      ],
+      "modifiers": [],
+      "label": "Tier down"
+     }
+    ],
+    "Build.ToggleSnap": [
+     {
+      "glyphs": [
+       "gamepad.xbox.rs"
+      ],
+      "modifiers": [],
+      "label": "Snap"
+     }
+    ],
+    "Build.LevelUp": [
+     {
+      "glyphs": [
+       "gamepad.xbox.dup"
+      ],
+      "modifiers": [
+       "gamepad.xbox.lt"
+      ],
+      "label": "Floor up"
+     }
+    ],
+    "Build.LevelDown": [
+     {
+      "glyphs": [
+       "gamepad.xbox.ddown"
+      ],
+      "modifiers": [
+       "gamepad.xbox.lt"
+      ],
+      "label": "Floor down"
+     }
+    ],
+    "Build.DemolishMode": [
+     {
+      "glyphs": [
+       "gamepad.xbox.x"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Demolish"
+     }
+    ],
+    "Build.RepairMode": [
+     {
+      "glyphs": [
+       "gamepad.xbox.x"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Repair"
+     }
+    ],
+    "Build.UpgradeMode": [
+     {
+      "glyphs": [
+       "gamepad.xbox.y"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Upgrade"
+     }
+    ],
+    "Build.Nudge": [
+     {
+      "collapse": "stick",
+      "glyphs": [
+       "gamepad.xbox.rs"
+      ],
+      "modifiers": [],
+      "label": "Nudge"
+     }
+    ],
+    "ToggleBuild": [
+     {
+      "glyphs": [
+       "gamepad.xbox.y"
+      ],
+      "modifiers": [
+       "gamepad.xbox.lb"
+      ],
+      "label": "Build"
+     }
+    ]
+   },
+   "Inventory": {
+    "UI.Navigate": [
+     {
+      "collapse": "dpad",
+      "glyphs": [
+       "gamepad.xbox.dpad"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     },
+     {
+      "collapse": "stick",
+      "glyphs": [
+       "gamepad.xbox.ls"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     }
+    ],
+    "Inv.MoveSlot": [
+     {
+      "glyphs": [
+       "gamepad.xbox.a"
+      ],
+      "modifiers": [],
+      "label": "Pick up / place"
+     }
+    ],
+    "Inv.QuickTransfer": [
+     {
+      "glyphs": [
+       "gamepad.xbox.y"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Quick move"
+     }
+    ],
+    "Inv.TakeAll": [
+     {
+      "glyphs": [
+       "gamepad.xbox.y"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Take all"
+     }
+    ],
+    "Inv.SplitStack": [
+     {
+      "glyphs": [
+       "gamepad.xbox.x"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Split stack"
+     }
+    ],
+    "Inv.Drop": [
+     {
+      "glyphs": [
+       "gamepad.xbox.x"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Drop"
+     }
+    ],
+    "Inv.Equip": [
+     {
+      "glyphs": [
+       "gamepad.xbox.lt"
+      ],
+      "modifiers": [],
+      "label": "Equip"
+     }
+    ],
+    "Inv.Use": [
+     {
+      "glyphs": [
+       "gamepad.xbox.rt"
+      ],
+      "modifiers": [],
+      "label": "Use"
+     }
+    ],
+    "Inv.Sort": [
+     {
+      "glyphs": [
+       "gamepad.xbox.rs"
+      ],
+      "modifiers": [],
+      "label": "Sort"
+     }
+    ],
+    "UI.TabNext": [
+     {
+      "glyphs": [
+       "gamepad.xbox.rb"
+      ],
+      "modifiers": [],
+      "label": "Next tab"
+     }
+    ],
+    "UI.TabPrev": [
+     {
+      "glyphs": [
+       "gamepad.xbox.lb"
+      ],
+      "modifiers": [],
+      "label": "Previous tab"
+     }
+    ],
+    "UI.Back": [
+     {
+      "glyphs": [
+       "gamepad.xbox.b"
+      ],
+      "modifiers": [],
+      "label": "Back"
+     }
+    ],
+    "ToggleInventory": [
+     {
+      "glyphs": [
+       "gamepad.xbox.view"
+      ],
+      "modifiers": [],
+      "label": "Backpack"
+     }
+    ]
+   },
+   "Crafting": {
+    "UI.Navigate": [
+     {
+      "collapse": "dpad",
+      "glyphs": [
+       "gamepad.xbox.dpad"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     },
+     {
+      "collapse": "stick",
+      "glyphs": [
+       "gamepad.xbox.ls"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     }
+    ],
+    "Craft.Craft": [
+     {
+      "glyphs": [
+       "gamepad.xbox.a"
+      ],
+      "modifiers": [],
+      "label": "Craft"
+     }
+    ],
+    "Craft.Amount": [
+     {
+      "glyphs": [
+       "gamepad.xbox.x"
+      ],
+      "modifiers": [],
+      "interaction": "repeat",
+      "label": "Amount"
+     }
+    ],
+    "Craft.Cancel": [
+     {
+      "glyphs": [
+       "gamepad.xbox.y"
+      ],
+      "modifiers": [],
+      "label": "Cancel craft"
+     }
+    ],
+    "Craft.FilterNext": [
+     {
+      "glyphs": [
+       "gamepad.xbox.rb"
+      ],
+      "modifiers": [],
+      "label": "Next category"
+     }
+    ],
+    "Craft.FilterPrev": [
+     {
+      "glyphs": [
+       "gamepad.xbox.lb"
+      ],
+      "modifiers": [],
+      "label": "Previous category"
+     }
+    ],
+    "UI.Back": [
+     {
+      "glyphs": [
+       "gamepad.xbox.b"
+      ],
+      "modifiers": [],
+      "label": "Back"
+     }
+    ],
+    "ToggleCrafting": [
+     {
+      "glyphs": [
+       "gamepad.xbox.view"
+      ],
+      "modifiers": [
+       "gamepad.xbox.lb"
+      ],
+      "label": "Crafting"
+     }
+    ]
+   },
+   "Trade": {
+    "UI.Navigate": [
+     {
+      "collapse": "dpad",
+      "glyphs": [
+       "gamepad.xbox.dpad"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     },
+     {
+      "collapse": "stick",
+      "glyphs": [
+       "gamepad.xbox.ls"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     }
+    ],
+    "Trade.AddOffer": [
+     {
+      "glyphs": [
+       "gamepad.xbox.a"
+      ],
+      "modifiers": [],
+      "label": "Offer"
+     }
+    ],
+    "Trade.RemoveOffer": [
+     {
+      "glyphs": [
+       "gamepad.xbox.x"
+      ],
+      "modifiers": [],
+      "label": "Take back"
+     }
+    ],
+    "Trade.Lock": [
+     {
+      "glyphs": [
+       "gamepad.xbox.y"
+      ],
+      "modifiers": [],
+      "label": "Lock offer"
+     }
+    ],
+    "Trade.Confirm": [
+     {
+      "glyphs": [
+       "gamepad.xbox.menu"
+      ],
+      "modifiers": [],
+      "label": "Accept trade"
+     }
+    ],
+    "UI.TabNext": [
+     {
+      "glyphs": [
+       "gamepad.xbox.rb"
+      ],
+      "modifiers": [],
+      "label": "Next tab"
+     }
+    ],
+    "UI.TabPrev": [
+     {
+      "glyphs": [
+       "gamepad.xbox.lb"
+      ],
+      "modifiers": [],
+      "label": "Previous tab"
+     }
+    ],
+    "UI.Back": [
+     {
+      "glyphs": [
+       "gamepad.xbox.b"
+      ],
+      "modifiers": [],
+      "label": "Back"
+     }
+    ]
+   },
+   "Chat": {
+    "Chat.Send": [
+     {
+      "glyphs": [
+       "gamepad.xbox.menu"
+      ],
+      "modifiers": [],
+      "label": "Send"
+     }
+    ],
+    "Chat.Cancel": [
+     {
+      "glyphs": [
+       "gamepad.xbox.b"
+      ],
+      "modifiers": [],
+      "label": "Close chat"
+     }
+    ],
+    "Chat.SwitchChannel": [
+     {
+      "glyphs": [
+       "gamepad.xbox.rb"
+      ],
+      "modifiers": [],
+      "label": "Channel"
+     }
+    ],
+    "Chat.QuickPhrase": [
+     {
+      "glyphs": [
+       "gamepad.xbox.y"
+      ],
+      "modifiers": [],
+      "label": "Quick chat"
+     }
+    ]
+   },
+   "Social": {
+    "UI.Navigate": [
+     {
+      "collapse": "dpad",
+      "glyphs": [
+       "gamepad.xbox.dpad"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     },
+     {
+      "collapse": "stick",
+      "glyphs": [
+       "gamepad.xbox.ls"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     }
+    ],
+    "Social.ContextMenu": [
+     {
+      "glyphs": [
+       "gamepad.xbox.a"
+      ],
+      "modifiers": [],
+      "label": "Options"
+     }
+    ],
+    "Social.Invite": [
+     {
+      "glyphs": [
+       "gamepad.xbox.x"
+      ],
+      "modifiers": [],
+      "label": "Invite"
+     }
+    ],
+    "Social.SetPermissions": [
+     {
+      "glyphs": [
+       "gamepad.xbox.y"
+      ],
+      "modifiers": [],
+      "label": "Permissions"
+     }
+    ],
+    "Social.Promote": [
+     {
+      "glyphs": [
+       "gamepad.xbox.rb"
+      ],
+      "modifiers": [],
+      "label": "Promote"
+     }
+    ],
+    "Social.Demote": [
+     {
+      "glyphs": [
+       "gamepad.xbox.lb"
+      ],
+      "modifiers": [],
+      "label": "Demote"
+     }
+    ],
+    "Social.Kick": [
+     {
+      "glyphs": [
+       "gamepad.xbox.x"
+      ],
+      "modifiers": [
+       "gamepad.xbox.lt"
+      ],
+      "label": "Kick"
+     }
+    ],
+    "Social.Leave": [
+     {
+      "glyphs": [
+       "gamepad.xbox.view"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Leave clan"
+     }
+    ],
+    "UI.Back": [
+     {
+      "glyphs": [
+       "gamepad.xbox.b"
+      ],
+      "modifiers": [],
+      "label": "Back"
+     }
+    ],
+    "OpenSocial": [
+     {
+      "glyphs": [
+       "gamepad.xbox.menu"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Clan & friends"
+     }
+    ]
+   },
+   "Dialog": {
+    "Dialog.Confirm": [
+     {
+      "glyphs": [
+       "gamepad.xbox.a"
+      ],
+      "modifiers": [],
+      "label": "Confirm"
+     }
+    ],
+    "Dialog.Cancel": [
+     {
+      "glyphs": [
+       "gamepad.xbox.b"
+      ],
+      "modifiers": [],
+      "label": "Cancel"
+     }
+    ]
+   }
+  },
+  "gamepad.playstation": {
+   "Gameplay": {
+    "Move": [
+     {
+      "collapse": "stick",
+      "glyphs": [
+       "gamepad.playstation.l3"
+      ],
+      "modifiers": [],
+      "label": "Move"
+     }
+    ],
+    "Aim": [
+     {
+      "collapse": "stick",
+      "glyphs": [
+       "gamepad.playstation.r3"
+      ],
+      "modifiers": [],
+      "label": "Aim"
+     }
+    ],
+    "Sprint": [
+     {
+      "glyphs": [
+       "gamepad.playstation.l3"
+      ],
+      "modifiers": [],
+      "label": "Sprint"
+     }
+    ],
+    "Primary": [
+     {
+      "glyphs": [
+       "gamepad.playstation.r2"
+      ],
+      "modifiers": [],
+      "label": "Attack / Use"
+     }
+    ],
+    "Charge": [
+     {
+      "glyphs": [
+       "gamepad.playstation.r2"
+      ],
+      "modifiers": [],
+      "interaction": "hold",
+      "label": "Charge"
+     }
+    ],
+    "Secondary": [
+     {
+      "glyphs": [
+       "gamepad.playstation.l2"
+      ],
+      "modifiers": [],
+      "label": "Block / Alt"
+     }
+    ],
+    "Crouch": [
+     {
+      "glyphs": [
+       "gamepad.playstation.r3"
+      ],
+      "modifiers": [],
+      "label": "Sneak"
+     }
+    ],
+    "Interact": [
+     {
+      "glyphs": [
+       "gamepad.playstation.square"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Interact"
+     }
+    ],
+    "ContextRadial": [
+     {
+      "glyphs": [
+       "gamepad.playstation.square"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Actions wheel"
+     }
+    ],
+    "Jump": [
+     {
+      "glyphs": [
+       "gamepad.playstation.cross"
+      ],
+      "modifiers": [],
+      "label": "Jump / Dodge"
+     }
+    ],
+    "Reload": [
+     {
+      "glyphs": [
+       "gamepad.playstation.triangle"
+      ],
+      "modifiers": [],
+      "label": "Reload"
+     }
+    ],
+    "QuickUse": [
+     {
+      "glyphs": [
+       "gamepad.playstation.circle"
+      ],
+      "modifiers": [],
+      "label": "Quick eat / use"
+     }
+    ],
+    "Hotbar1": [
+     {
+      "glyphs": [
+       "gamepad.playstation.dup"
+      ],
+      "modifiers": [],
+      "label": "Slot 1"
+     }
+    ],
+    "Hotbar2": [
+     {
+      "glyphs": [
+       "gamepad.playstation.dright"
+      ],
+      "modifiers": [],
+      "label": "Slot 2"
+     }
+    ],
+    "Hotbar3": [
+     {
+      "glyphs": [
+       "gamepad.playstation.ddown"
+      ],
+      "modifiers": [],
+      "label": "Slot 3"
+     }
+    ],
+    "Hotbar4": [
+     {
+      "glyphs": [
+       "gamepad.playstation.dleft"
+      ],
+      "modifiers": [],
+      "label": "Slot 4"
+     }
+    ],
+    "Hotbar5": [
+     {
+      "glyphs": [
+       "gamepad.playstation.dup"
+      ],
+      "modifiers": [
+       "gamepad.playstation.l1"
+      ],
+      "label": "Slot 5"
+     }
+    ],
+    "Hotbar6": [
+     {
+      "glyphs": [
+       "gamepad.playstation.dright"
+      ],
+      "modifiers": [
+       "gamepad.playstation.l1"
+      ],
+      "label": "Slot 6"
+     }
+    ],
+    "Hotbar7": [
+     {
+      "glyphs": [
+       "gamepad.playstation.ddown"
+      ],
+      "modifiers": [
+       "gamepad.playstation.l1"
+      ],
+      "label": "Slot 7"
+     }
+    ],
+    "Hotbar8": [
+     {
+      "glyphs": [
+       "gamepad.playstation.dleft"
+      ],
+      "modifiers": [
+       "gamepad.playstation.l1"
+      ],
+      "label": "Slot 8"
+     }
+    ],
+    "HotbarNext": [
+     {
+      "glyphs": [
+       "gamepad.playstation.r1"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Next slot"
+     }
+    ],
+    "HotbarPrev": [
+     {
+      "glyphs": [
+       "gamepad.playstation.l1"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Previous slot"
+     }
+    ],
+    "ToggleInventory": [
+     {
+      "glyphs": [
+       "gamepad.playstation.share"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Backpack"
+     }
+    ],
+    "ToggleMap": [
+     {
+      "glyphs": [
+       "gamepad.playstation.share"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Map"
+     }
+    ],
+    "ToggleCrafting": [
+     {
+      "glyphs": [
+       "gamepad.playstation.share"
+      ],
+      "modifiers": [
+       "gamepad.playstation.l1"
+      ],
+      "label": "Crafting"
+     }
+    ],
+    "OpenChat": [
+     {
+      "glyphs": [
+       "gamepad.playstation.share"
+      ],
+      "modifiers": [
+       "gamepad.playstation.r1"
+      ],
+      "label": "Chat"
+     }
+    ],
+    "OpenSocial": [
+     {
+      "glyphs": [
+       "gamepad.playstation.options"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Clan & friends"
+     }
+    ],
+    "Cancel": [
+     {
+      "glyphs": [
+       "gamepad.playstation.options"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Back"
+     }
+    ],
+    "ToggleBuild": [
+     {
+      "glyphs": [
+       "gamepad.playstation.triangle"
+      ],
+      "modifiers": [
+       "gamepad.playstation.l1"
+      ],
+      "label": "Build"
+     }
+    ],
+    "Camera.Zoom": [
+     {
+      "collapse": "dpad",
+      "glyphs": [
+       "gamepad.playstation.dpad"
+      ],
+      "modifiers": [
+       "gamepad.playstation.r1"
+      ],
+      "label": "Zoom"
+     }
+    ]
+   },
+   "Building": {
+    "Build.PlaceConfirm": [
+     {
+      "glyphs": [
+       "gamepad.playstation.r2"
+      ],
+      "modifiers": [],
+      "label": "Place"
+     },
+     {
+      "glyphs": [
+       "gamepad.playstation.cross"
+      ],
+      "modifiers": [],
+      "label": "Place"
+     }
+    ],
+    "Build.Cancel": [
+     {
+      "glyphs": [
+       "gamepad.playstation.circle"
+      ],
+      "modifiers": [],
+      "label": "Cancel"
+     }
+    ],
+    "Build.RotateCW": [
+     {
+      "glyphs": [
+       "gamepad.playstation.r1"
+      ],
+      "modifiers": [],
+      "label": "Rotate"
+     }
+    ],
+    "Build.RotateCCW": [
+     {
+      "glyphs": [
+       "gamepad.playstation.l1"
+      ],
+      "modifiers": [],
+      "label": "Rotate back"
+     }
+    ],
+    "Build.PieceNext": [
+     {
+      "glyphs": [
+       "gamepad.playstation.dright"
+      ],
+      "modifiers": [],
+      "label": "Next piece"
+     }
+    ],
+    "Build.PiecePrev": [
+     {
+      "glyphs": [
+       "gamepad.playstation.dleft"
+      ],
+      "modifiers": [],
+      "label": "Previous piece"
+     }
+    ],
+    "Build.TierNext": [
+     {
+      "glyphs": [
+       "gamepad.playstation.dup"
+      ],
+      "modifiers": [],
+      "label": "Tier up"
+     }
+    ],
+    "Build.TierPrev": [
+     {
+      "glyphs": [
+       "gamepad.playstation.ddown"
+      ],
+      "modifiers": [],
+      "label": "Tier down"
+     }
+    ],
+    "Build.ToggleSnap": [
+     {
+      "glyphs": [
+       "gamepad.playstation.r3"
+      ],
+      "modifiers": [],
+      "label": "Snap"
+     }
+    ],
+    "Build.LevelUp": [
+     {
+      "glyphs": [
+       "gamepad.playstation.dup"
+      ],
+      "modifiers": [
+       "gamepad.playstation.l2"
+      ],
+      "label": "Floor up"
+     }
+    ],
+    "Build.LevelDown": [
+     {
+      "glyphs": [
+       "gamepad.playstation.ddown"
+      ],
+      "modifiers": [
+       "gamepad.playstation.l2"
+      ],
+      "label": "Floor down"
+     }
+    ],
+    "Build.DemolishMode": [
+     {
+      "glyphs": [
+       "gamepad.playstation.square"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Demolish"
+     }
+    ],
+    "Build.RepairMode": [
+     {
+      "glyphs": [
+       "gamepad.playstation.square"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Repair"
+     }
+    ],
+    "Build.UpgradeMode": [
+     {
+      "glyphs": [
+       "gamepad.playstation.triangle"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Upgrade"
+     }
+    ],
+    "Build.Nudge": [
+     {
+      "collapse": "stick",
+      "glyphs": [
+       "gamepad.playstation.r3"
+      ],
+      "modifiers": [],
+      "label": "Nudge"
+     }
+    ],
+    "ToggleBuild": [
+     {
+      "glyphs": [
+       "gamepad.playstation.triangle"
+      ],
+      "modifiers": [
+       "gamepad.playstation.l1"
+      ],
+      "label": "Build"
+     }
+    ]
+   },
+   "Inventory": {
+    "UI.Navigate": [
+     {
+      "collapse": "dpad",
+      "glyphs": [
+       "gamepad.playstation.dpad"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     },
+     {
+      "collapse": "stick",
+      "glyphs": [
+       "gamepad.playstation.l3"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     }
+    ],
+    "Inv.MoveSlot": [
+     {
+      "glyphs": [
+       "gamepad.playstation.cross"
+      ],
+      "modifiers": [],
+      "label": "Pick up / place"
+     }
+    ],
+    "Inv.QuickTransfer": [
+     {
+      "glyphs": [
+       "gamepad.playstation.triangle"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Quick move"
+     }
+    ],
+    "Inv.TakeAll": [
+     {
+      "glyphs": [
+       "gamepad.playstation.triangle"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Take all"
+     }
+    ],
+    "Inv.SplitStack": [
+     {
+      "glyphs": [
+       "gamepad.playstation.square"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Split stack"
+     }
+    ],
+    "Inv.Drop": [
+     {
+      "glyphs": [
+       "gamepad.playstation.square"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Drop"
+     }
+    ],
+    "Inv.Equip": [
+     {
+      "glyphs": [
+       "gamepad.playstation.l2"
+      ],
+      "modifiers": [],
+      "label": "Equip"
+     }
+    ],
+    "Inv.Use": [
+     {
+      "glyphs": [
+       "gamepad.playstation.r2"
+      ],
+      "modifiers": [],
+      "label": "Use"
+     }
+    ],
+    "Inv.Sort": [
+     {
+      "glyphs": [
+       "gamepad.playstation.r3"
+      ],
+      "modifiers": [],
+      "label": "Sort"
+     }
+    ],
+    "UI.TabNext": [
+     {
+      "glyphs": [
+       "gamepad.playstation.r1"
+      ],
+      "modifiers": [],
+      "label": "Next tab"
+     }
+    ],
+    "UI.TabPrev": [
+     {
+      "glyphs": [
+       "gamepad.playstation.l1"
+      ],
+      "modifiers": [],
+      "label": "Previous tab"
+     }
+    ],
+    "UI.Back": [
+     {
+      "glyphs": [
+       "gamepad.playstation.circle"
+      ],
+      "modifiers": [],
+      "label": "Back"
+     }
+    ],
+    "ToggleInventory": [
+     {
+      "glyphs": [
+       "gamepad.playstation.share"
+      ],
+      "modifiers": [],
+      "label": "Backpack"
+     }
+    ]
+   },
+   "Crafting": {
+    "UI.Navigate": [
+     {
+      "collapse": "dpad",
+      "glyphs": [
+       "gamepad.playstation.dpad"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     },
+     {
+      "collapse": "stick",
+      "glyphs": [
+       "gamepad.playstation.l3"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     }
+    ],
+    "Craft.Craft": [
+     {
+      "glyphs": [
+       "gamepad.playstation.cross"
+      ],
+      "modifiers": [],
+      "label": "Craft"
+     }
+    ],
+    "Craft.Amount": [
+     {
+      "glyphs": [
+       "gamepad.playstation.square"
+      ],
+      "modifiers": [],
+      "interaction": "repeat",
+      "label": "Amount"
+     }
+    ],
+    "Craft.Cancel": [
+     {
+      "glyphs": [
+       "gamepad.playstation.triangle"
+      ],
+      "modifiers": [],
+      "label": "Cancel craft"
+     }
+    ],
+    "Craft.FilterNext": [
+     {
+      "glyphs": [
+       "gamepad.playstation.r1"
+      ],
+      "modifiers": [],
+      "label": "Next category"
+     }
+    ],
+    "Craft.FilterPrev": [
+     {
+      "glyphs": [
+       "gamepad.playstation.l1"
+      ],
+      "modifiers": [],
+      "label": "Previous category"
+     }
+    ],
+    "UI.Back": [
+     {
+      "glyphs": [
+       "gamepad.playstation.circle"
+      ],
+      "modifiers": [],
+      "label": "Back"
+     }
+    ],
+    "ToggleCrafting": [
+     {
+      "glyphs": [
+       "gamepad.playstation.share"
+      ],
+      "modifiers": [
+       "gamepad.playstation.l1"
+      ],
+      "label": "Crafting"
+     }
+    ]
+   },
+   "Trade": {
+    "UI.Navigate": [
+     {
+      "collapse": "dpad",
+      "glyphs": [
+       "gamepad.playstation.dpad"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     },
+     {
+      "collapse": "stick",
+      "glyphs": [
+       "gamepad.playstation.l3"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     }
+    ],
+    "Trade.AddOffer": [
+     {
+      "glyphs": [
+       "gamepad.playstation.cross"
+      ],
+      "modifiers": [],
+      "label": "Offer"
+     }
+    ],
+    "Trade.RemoveOffer": [
+     {
+      "glyphs": [
+       "gamepad.playstation.square"
+      ],
+      "modifiers": [],
+      "label": "Take back"
+     }
+    ],
+    "Trade.Lock": [
+     {
+      "glyphs": [
+       "gamepad.playstation.triangle"
+      ],
+      "modifiers": [],
+      "label": "Lock offer"
+     }
+    ],
+    "Trade.Confirm": [
+     {
+      "glyphs": [
+       "gamepad.playstation.options"
+      ],
+      "modifiers": [],
+      "label": "Accept trade"
+     }
+    ],
+    "UI.TabNext": [
+     {
+      "glyphs": [
+       "gamepad.playstation.r1"
+      ],
+      "modifiers": [],
+      "label": "Next tab"
+     }
+    ],
+    "UI.TabPrev": [
+     {
+      "glyphs": [
+       "gamepad.playstation.l1"
+      ],
+      "modifiers": [],
+      "label": "Previous tab"
+     }
+    ],
+    "UI.Back": [
+     {
+      "glyphs": [
+       "gamepad.playstation.circle"
+      ],
+      "modifiers": [],
+      "label": "Back"
+     }
+    ]
+   },
+   "Chat": {
+    "Chat.Send": [
+     {
+      "glyphs": [
+       "gamepad.playstation.options"
+      ],
+      "modifiers": [],
+      "label": "Send"
+     }
+    ],
+    "Chat.Cancel": [
+     {
+      "glyphs": [
+       "gamepad.playstation.circle"
+      ],
+      "modifiers": [],
+      "label": "Close chat"
+     }
+    ],
+    "Chat.SwitchChannel": [
+     {
+      "glyphs": [
+       "gamepad.playstation.r1"
+      ],
+      "modifiers": [],
+      "label": "Channel"
+     }
+    ],
+    "Chat.QuickPhrase": [
+     {
+      "glyphs": [
+       "gamepad.playstation.triangle"
+      ],
+      "modifiers": [],
+      "label": "Quick chat"
+     }
+    ]
+   },
+   "Social": {
+    "UI.Navigate": [
+     {
+      "collapse": "dpad",
+      "glyphs": [
+       "gamepad.playstation.dpad"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     },
+     {
+      "collapse": "stick",
+      "glyphs": [
+       "gamepad.playstation.l3"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     }
+    ],
+    "Social.ContextMenu": [
+     {
+      "glyphs": [
+       "gamepad.playstation.cross"
+      ],
+      "modifiers": [],
+      "label": "Options"
+     }
+    ],
+    "Social.Invite": [
+     {
+      "glyphs": [
+       "gamepad.playstation.square"
+      ],
+      "modifiers": [],
+      "label": "Invite"
+     }
+    ],
+    "Social.SetPermissions": [
+     {
+      "glyphs": [
+       "gamepad.playstation.triangle"
+      ],
+      "modifiers": [],
+      "label": "Permissions"
+     }
+    ],
+    "Social.Promote": [
+     {
+      "glyphs": [
+       "gamepad.playstation.r1"
+      ],
+      "modifiers": [],
+      "label": "Promote"
+     }
+    ],
+    "Social.Demote": [
+     {
+      "glyphs": [
+       "gamepad.playstation.l1"
+      ],
+      "modifiers": [],
+      "label": "Demote"
+     }
+    ],
+    "Social.Kick": [
+     {
+      "glyphs": [
+       "gamepad.playstation.square"
+      ],
+      "modifiers": [
+       "gamepad.playstation.l2"
+      ],
+      "label": "Kick"
+     }
+    ],
+    "Social.Leave": [
+     {
+      "glyphs": [
+       "gamepad.playstation.share"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Leave clan"
+     }
+    ],
+    "UI.Back": [
+     {
+      "glyphs": [
+       "gamepad.playstation.circle"
+      ],
+      "modifiers": [],
+      "label": "Back"
+     }
+    ],
+    "OpenSocial": [
+     {
+      "glyphs": [
+       "gamepad.playstation.options"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Clan & friends"
+     }
+    ]
+   },
+   "Dialog": {
+    "Dialog.Confirm": [
+     {
+      "glyphs": [
+       "gamepad.playstation.cross"
+      ],
+      "modifiers": [],
+      "label": "Confirm"
+     }
+    ],
+    "Dialog.Cancel": [
+     {
+      "glyphs": [
+       "gamepad.playstation.circle"
+      ],
+      "modifiers": [],
+      "label": "Cancel"
+     }
+    ]
+   }
+  },
+  "gamepad.switch": {
+   "Gameplay": {
+    "Move": [
+     {
+      "collapse": "stick",
+      "glyphs": [
+       "gamepad.switch.lstick"
+      ],
+      "modifiers": [],
+      "label": "Move"
+     }
+    ],
+    "Aim": [
+     {
+      "collapse": "stick",
+      "glyphs": [
+       "gamepad.switch.rstick"
+      ],
+      "modifiers": [],
+      "label": "Aim"
+     }
+    ],
+    "Sprint": [
+     {
+      "glyphs": [
+       "gamepad.switch.lstick"
+      ],
+      "modifiers": [],
+      "label": "Sprint"
+     }
+    ],
+    "Primary": [
+     {
+      "glyphs": [
+       "gamepad.switch.zr"
+      ],
+      "modifiers": [],
+      "label": "Attack / Use"
+     }
+    ],
+    "Charge": [
+     {
+      "glyphs": [
+       "gamepad.switch.zr"
+      ],
+      "modifiers": [],
+      "interaction": "hold",
+      "label": "Charge"
+     }
+    ],
+    "Secondary": [
+     {
+      "glyphs": [
+       "gamepad.switch.zl"
+      ],
+      "modifiers": [],
+      "label": "Block / Alt"
+     }
+    ],
+    "Crouch": [
+     {
+      "glyphs": [
+       "gamepad.switch.rstick"
+      ],
+      "modifiers": [],
+      "label": "Sneak"
+     }
+    ],
+    "Interact": [
+     {
+      "glyphs": [
+       "gamepad.switch.y"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Interact"
+     }
+    ],
+    "ContextRadial": [
+     {
+      "glyphs": [
+       "gamepad.switch.y"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Actions wheel"
+     }
+    ],
+    "Jump": [
+     {
+      "glyphs": [
+       "gamepad.switch.b"
+      ],
+      "modifiers": [],
+      "label": "Jump / Dodge"
+     }
+    ],
+    "Reload": [
+     {
+      "glyphs": [
+       "gamepad.switch.x"
+      ],
+      "modifiers": [],
+      "label": "Reload"
+     }
+    ],
+    "QuickUse": [
+     {
+      "glyphs": [
+       "gamepad.switch.a"
+      ],
+      "modifiers": [],
+      "label": "Quick eat / use"
+     }
+    ],
+    "Hotbar1": [
+     {
+      "glyphs": [
+       "gamepad.switch.dup"
+      ],
+      "modifiers": [],
+      "label": "Slot 1"
+     }
+    ],
+    "Hotbar2": [
+     {
+      "glyphs": [
+       "gamepad.switch.dright"
+      ],
+      "modifiers": [],
+      "label": "Slot 2"
+     }
+    ],
+    "Hotbar3": [
+     {
+      "glyphs": [
+       "gamepad.switch.ddown"
+      ],
+      "modifiers": [],
+      "label": "Slot 3"
+     }
+    ],
+    "Hotbar4": [
+     {
+      "glyphs": [
+       "gamepad.switch.dleft"
+      ],
+      "modifiers": [],
+      "label": "Slot 4"
+     }
+    ],
+    "Hotbar5": [
+     {
+      "glyphs": [
+       "gamepad.switch.dup"
+      ],
+      "modifiers": [
+       "gamepad.switch.l"
+      ],
+      "label": "Slot 5"
+     }
+    ],
+    "Hotbar6": [
+     {
+      "glyphs": [
+       "gamepad.switch.dright"
+      ],
+      "modifiers": [
+       "gamepad.switch.l"
+      ],
+      "label": "Slot 6"
+     }
+    ],
+    "Hotbar7": [
+     {
+      "glyphs": [
+       "gamepad.switch.ddown"
+      ],
+      "modifiers": [
+       "gamepad.switch.l"
+      ],
+      "label": "Slot 7"
+     }
+    ],
+    "Hotbar8": [
+     {
+      "glyphs": [
+       "gamepad.switch.dleft"
+      ],
+      "modifiers": [
+       "gamepad.switch.l"
+      ],
+      "label": "Slot 8"
+     }
+    ],
+    "HotbarNext": [
+     {
+      "glyphs": [
+       "gamepad.switch.r"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Next slot"
+     }
+    ],
+    "HotbarPrev": [
+     {
+      "glyphs": [
+       "gamepad.switch.l"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Previous slot"
+     }
+    ],
+    "ToggleInventory": [
+     {
+      "glyphs": [
+       "gamepad.switch.minus"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Backpack"
+     }
+    ],
+    "ToggleMap": [
+     {
+      "glyphs": [
+       "gamepad.switch.minus"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Map"
+     }
+    ],
+    "ToggleCrafting": [
+     {
+      "glyphs": [
+       "gamepad.switch.minus"
+      ],
+      "modifiers": [
+       "gamepad.switch.l"
+      ],
+      "label": "Crafting"
+     }
+    ],
+    "OpenChat": [
+     {
+      "glyphs": [
+       "gamepad.switch.minus"
+      ],
+      "modifiers": [
+       "gamepad.switch.r"
+      ],
+      "label": "Chat"
+     }
+    ],
+    "OpenSocial": [
+     {
+      "glyphs": [
+       "gamepad.switch.plus"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Clan & friends"
+     }
+    ],
+    "Cancel": [
+     {
+      "glyphs": [
+       "gamepad.switch.plus"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Back"
+     }
+    ],
+    "ToggleBuild": [
+     {
+      "glyphs": [
+       "gamepad.switch.x"
+      ],
+      "modifiers": [
+       "gamepad.switch.l"
+      ],
+      "label": "Build"
+     }
+    ],
+    "Camera.Zoom": [
+     {
+      "collapse": "dpad",
+      "glyphs": [
+       "gamepad.switch.dpad"
+      ],
+      "modifiers": [
+       "gamepad.switch.r"
+      ],
+      "label": "Zoom"
+     }
+    ]
+   },
+   "Building": {
+    "Build.PlaceConfirm": [
+     {
+      "glyphs": [
+       "gamepad.switch.zr"
+      ],
+      "modifiers": [],
+      "label": "Place"
+     },
+     {
+      "glyphs": [
+       "gamepad.switch.b"
+      ],
+      "modifiers": [],
+      "label": "Place"
+     }
+    ],
+    "Build.Cancel": [
+     {
+      "glyphs": [
+       "gamepad.switch.a"
+      ],
+      "modifiers": [],
+      "label": "Cancel"
+     }
+    ],
+    "Build.RotateCW": [
+     {
+      "glyphs": [
+       "gamepad.switch.r"
+      ],
+      "modifiers": [],
+      "label": "Rotate"
+     }
+    ],
+    "Build.RotateCCW": [
+     {
+      "glyphs": [
+       "gamepad.switch.l"
+      ],
+      "modifiers": [],
+      "label": "Rotate back"
+     }
+    ],
+    "Build.PieceNext": [
+     {
+      "glyphs": [
+       "gamepad.switch.dright"
+      ],
+      "modifiers": [],
+      "label": "Next piece"
+     }
+    ],
+    "Build.PiecePrev": [
+     {
+      "glyphs": [
+       "gamepad.switch.dleft"
+      ],
+      "modifiers": [],
+      "label": "Previous piece"
+     }
+    ],
+    "Build.TierNext": [
+     {
+      "glyphs": [
+       "gamepad.switch.dup"
+      ],
+      "modifiers": [],
+      "label": "Tier up"
+     }
+    ],
+    "Build.TierPrev": [
+     {
+      "glyphs": [
+       "gamepad.switch.ddown"
+      ],
+      "modifiers": [],
+      "label": "Tier down"
+     }
+    ],
+    "Build.ToggleSnap": [
+     {
+      "glyphs": [
+       "gamepad.switch.rstick"
+      ],
+      "modifiers": [],
+      "label": "Snap"
+     }
+    ],
+    "Build.LevelUp": [
+     {
+      "glyphs": [
+       "gamepad.switch.dup"
+      ],
+      "modifiers": [
+       "gamepad.switch.zl"
+      ],
+      "label": "Floor up"
+     }
+    ],
+    "Build.LevelDown": [
+     {
+      "glyphs": [
+       "gamepad.switch.ddown"
+      ],
+      "modifiers": [
+       "gamepad.switch.zl"
+      ],
+      "label": "Floor down"
+     }
+    ],
+    "Build.DemolishMode": [
+     {
+      "glyphs": [
+       "gamepad.switch.y"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Demolish"
+     }
+    ],
+    "Build.RepairMode": [
+     {
+      "glyphs": [
+       "gamepad.switch.y"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Repair"
+     }
+    ],
+    "Build.UpgradeMode": [
+     {
+      "glyphs": [
+       "gamepad.switch.x"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Upgrade"
+     }
+    ],
+    "Build.Nudge": [
+     {
+      "collapse": "stick",
+      "glyphs": [
+       "gamepad.switch.rstick"
+      ],
+      "modifiers": [],
+      "label": "Nudge"
+     }
+    ],
+    "ToggleBuild": [
+     {
+      "glyphs": [
+       "gamepad.switch.x"
+      ],
+      "modifiers": [
+       "gamepad.switch.l"
+      ],
+      "label": "Build"
+     }
+    ]
+   },
+   "Inventory": {
+    "UI.Navigate": [
+     {
+      "collapse": "dpad",
+      "glyphs": [
+       "gamepad.switch.dpad"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     },
+     {
+      "collapse": "stick",
+      "glyphs": [
+       "gamepad.switch.lstick"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     }
+    ],
+    "Inv.MoveSlot": [
+     {
+      "glyphs": [
+       "gamepad.switch.b"
+      ],
+      "modifiers": [],
+      "label": "Pick up / place"
+     }
+    ],
+    "Inv.QuickTransfer": [
+     {
+      "glyphs": [
+       "gamepad.switch.x"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Quick move"
+     }
+    ],
+    "Inv.TakeAll": [
+     {
+      "glyphs": [
+       "gamepad.switch.x"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Take all"
+     }
+    ],
+    "Inv.SplitStack": [
+     {
+      "glyphs": [
+       "gamepad.switch.y"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Split stack"
+     }
+    ],
+    "Inv.Drop": [
+     {
+      "glyphs": [
+       "gamepad.switch.y"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Drop"
+     }
+    ],
+    "Inv.Equip": [
+     {
+      "glyphs": [
+       "gamepad.switch.zl"
+      ],
+      "modifiers": [],
+      "label": "Equip"
+     }
+    ],
+    "Inv.Use": [
+     {
+      "glyphs": [
+       "gamepad.switch.zr"
+      ],
+      "modifiers": [],
+      "label": "Use"
+     }
+    ],
+    "Inv.Sort": [
+     {
+      "glyphs": [
+       "gamepad.switch.rstick"
+      ],
+      "modifiers": [],
+      "label": "Sort"
+     }
+    ],
+    "UI.TabNext": [
+     {
+      "glyphs": [
+       "gamepad.switch.r"
+      ],
+      "modifiers": [],
+      "label": "Next tab"
+     }
+    ],
+    "UI.TabPrev": [
+     {
+      "glyphs": [
+       "gamepad.switch.l"
+      ],
+      "modifiers": [],
+      "label": "Previous tab"
+     }
+    ],
+    "UI.Back": [
+     {
+      "glyphs": [
+       "gamepad.switch.a"
+      ],
+      "modifiers": [],
+      "label": "Back"
+     }
+    ],
+    "ToggleInventory": [
+     {
+      "glyphs": [
+       "gamepad.switch.minus"
+      ],
+      "modifiers": [],
+      "label": "Backpack"
+     }
+    ]
+   },
+   "Crafting": {
+    "UI.Navigate": [
+     {
+      "collapse": "dpad",
+      "glyphs": [
+       "gamepad.switch.dpad"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     },
+     {
+      "collapse": "stick",
+      "glyphs": [
+       "gamepad.switch.lstick"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     }
+    ],
+    "Craft.Craft": [
+     {
+      "glyphs": [
+       "gamepad.switch.b"
+      ],
+      "modifiers": [],
+      "label": "Craft"
+     }
+    ],
+    "Craft.Amount": [
+     {
+      "glyphs": [
+       "gamepad.switch.y"
+      ],
+      "modifiers": [],
+      "interaction": "repeat",
+      "label": "Amount"
+     }
+    ],
+    "Craft.Cancel": [
+     {
+      "glyphs": [
+       "gamepad.switch.x"
+      ],
+      "modifiers": [],
+      "label": "Cancel craft"
+     }
+    ],
+    "Craft.FilterNext": [
+     {
+      "glyphs": [
+       "gamepad.switch.r"
+      ],
+      "modifiers": [],
+      "label": "Next category"
+     }
+    ],
+    "Craft.FilterPrev": [
+     {
+      "glyphs": [
+       "gamepad.switch.l"
+      ],
+      "modifiers": [],
+      "label": "Previous category"
+     }
+    ],
+    "UI.Back": [
+     {
+      "glyphs": [
+       "gamepad.switch.a"
+      ],
+      "modifiers": [],
+      "label": "Back"
+     }
+    ],
+    "ToggleCrafting": [
+     {
+      "glyphs": [
+       "gamepad.switch.minus"
+      ],
+      "modifiers": [
+       "gamepad.switch.l"
+      ],
+      "label": "Crafting"
+     }
+    ]
+   },
+   "Trade": {
+    "UI.Navigate": [
+     {
+      "collapse": "dpad",
+      "glyphs": [
+       "gamepad.switch.dpad"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     },
+     {
+      "collapse": "stick",
+      "glyphs": [
+       "gamepad.switch.lstick"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     }
+    ],
+    "Trade.AddOffer": [
+     {
+      "glyphs": [
+       "gamepad.switch.b"
+      ],
+      "modifiers": [],
+      "label": "Offer"
+     }
+    ],
+    "Trade.RemoveOffer": [
+     {
+      "glyphs": [
+       "gamepad.switch.y"
+      ],
+      "modifiers": [],
+      "label": "Take back"
+     }
+    ],
+    "Trade.Lock": [
+     {
+      "glyphs": [
+       "gamepad.switch.x"
+      ],
+      "modifiers": [],
+      "label": "Lock offer"
+     }
+    ],
+    "Trade.Confirm": [
+     {
+      "glyphs": [
+       "gamepad.switch.plus"
+      ],
+      "modifiers": [],
+      "label": "Accept trade"
+     }
+    ],
+    "UI.TabNext": [
+     {
+      "glyphs": [
+       "gamepad.switch.r"
+      ],
+      "modifiers": [],
+      "label": "Next tab"
+     }
+    ],
+    "UI.TabPrev": [
+     {
+      "glyphs": [
+       "gamepad.switch.l"
+      ],
+      "modifiers": [],
+      "label": "Previous tab"
+     }
+    ],
+    "UI.Back": [
+     {
+      "glyphs": [
+       "gamepad.switch.a"
+      ],
+      "modifiers": [],
+      "label": "Back"
+     }
+    ]
+   },
+   "Chat": {
+    "Chat.Send": [
+     {
+      "glyphs": [
+       "gamepad.switch.plus"
+      ],
+      "modifiers": [],
+      "label": "Send"
+     }
+    ],
+    "Chat.Cancel": [
+     {
+      "glyphs": [
+       "gamepad.switch.a"
+      ],
+      "modifiers": [],
+      "label": "Close chat"
+     }
+    ],
+    "Chat.SwitchChannel": [
+     {
+      "glyphs": [
+       "gamepad.switch.r"
+      ],
+      "modifiers": [],
+      "label": "Channel"
+     }
+    ],
+    "Chat.QuickPhrase": [
+     {
+      "glyphs": [
+       "gamepad.switch.x"
+      ],
+      "modifiers": [],
+      "label": "Quick chat"
+     }
+    ]
+   },
+   "Social": {
+    "UI.Navigate": [
+     {
+      "collapse": "dpad",
+      "glyphs": [
+       "gamepad.switch.dpad"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     },
+     {
+      "collapse": "stick",
+      "glyphs": [
+       "gamepad.switch.lstick"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     }
+    ],
+    "Social.ContextMenu": [
+     {
+      "glyphs": [
+       "gamepad.switch.b"
+      ],
+      "modifiers": [],
+      "label": "Options"
+     }
+    ],
+    "Social.Invite": [
+     {
+      "glyphs": [
+       "gamepad.switch.y"
+      ],
+      "modifiers": [],
+      "label": "Invite"
+     }
+    ],
+    "Social.SetPermissions": [
+     {
+      "glyphs": [
+       "gamepad.switch.x"
+      ],
+      "modifiers": [],
+      "label": "Permissions"
+     }
+    ],
+    "Social.Promote": [
+     {
+      "glyphs": [
+       "gamepad.switch.r"
+      ],
+      "modifiers": [],
+      "label": "Promote"
+     }
+    ],
+    "Social.Demote": [
+     {
+      "glyphs": [
+       "gamepad.switch.l"
+      ],
+      "modifiers": [],
+      "label": "Demote"
+     }
+    ],
+    "Social.Kick": [
+     {
+      "glyphs": [
+       "gamepad.switch.y"
+      ],
+      "modifiers": [
+       "gamepad.switch.zl"
+      ],
+      "label": "Kick"
+     }
+    ],
+    "Social.Leave": [
+     {
+      "glyphs": [
+       "gamepad.switch.minus"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Leave clan"
+     }
+    ],
+    "UI.Back": [
+     {
+      "glyphs": [
+       "gamepad.switch.a"
+      ],
+      "modifiers": [],
+      "label": "Back"
+     }
+    ],
+    "OpenSocial": [
+     {
+      "glyphs": [
+       "gamepad.switch.plus"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Clan & friends"
+     }
+    ]
+   },
+   "Dialog": {
+    "Dialog.Confirm": [
+     {
+      "glyphs": [
+       "gamepad.switch.b"
+      ],
+      "modifiers": [],
+      "label": "Confirm"
+     }
+    ],
+    "Dialog.Cancel": [
+     {
+      "glyphs": [
+       "gamepad.switch.a"
+      ],
+      "modifiers": [],
+      "label": "Cancel"
+     }
+    ]
+   }
+  },
+  "gamepad.generic": {
+   "Gameplay": {
+    "Move": [
+     {
+      "collapse": "stick",
+      "glyphs": [
+       "gamepad.generic.ls"
+      ],
+      "modifiers": [],
+      "label": "Move"
+     }
+    ],
+    "Aim": [
+     {
+      "collapse": "stick",
+      "glyphs": [
+       "gamepad.generic.rs"
+      ],
+      "modifiers": [],
+      "label": "Aim"
+     }
+    ],
+    "Sprint": [
+     {
+      "glyphs": [
+       "gamepad.generic.ls"
+      ],
+      "modifiers": [],
+      "label": "Sprint"
+     }
+    ],
+    "Primary": [
+     {
+      "glyphs": [
+       "gamepad.generic.rt"
+      ],
+      "modifiers": [],
+      "label": "Attack / Use"
+     }
+    ],
+    "Charge": [
+     {
+      "glyphs": [
+       "gamepad.generic.rt"
+      ],
+      "modifiers": [],
+      "interaction": "hold",
+      "label": "Charge"
+     }
+    ],
+    "Secondary": [
+     {
+      "glyphs": [
+       "gamepad.generic.lt"
+      ],
+      "modifiers": [],
+      "label": "Block / Alt"
+     }
+    ],
+    "Crouch": [
+     {
+      "glyphs": [
+       "gamepad.generic.rs"
+      ],
+      "modifiers": [],
+      "label": "Sneak"
+     }
+    ],
+    "Interact": [
+     {
+      "glyphs": [
+       "gamepad.generic.x"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Interact"
+     }
+    ],
+    "ContextRadial": [
+     {
+      "glyphs": [
+       "gamepad.generic.x"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Actions wheel"
+     }
+    ],
+    "Jump": [
+     {
+      "glyphs": [
+       "gamepad.generic.a"
+      ],
+      "modifiers": [],
+      "label": "Jump / Dodge"
+     }
+    ],
+    "Reload": [
+     {
+      "glyphs": [
+       "gamepad.generic.y"
+      ],
+      "modifiers": [],
+      "label": "Reload"
+     }
+    ],
+    "QuickUse": [
+     {
+      "glyphs": [
+       "gamepad.generic.b"
+      ],
+      "modifiers": [],
+      "label": "Quick eat / use"
+     }
+    ],
+    "Hotbar1": [
+     {
+      "glyphs": [
+       "gamepad.generic.dup"
+      ],
+      "modifiers": [],
+      "label": "Slot 1"
+     }
+    ],
+    "Hotbar2": [
+     {
+      "glyphs": [
+       "gamepad.generic.dright"
+      ],
+      "modifiers": [],
+      "label": "Slot 2"
+     }
+    ],
+    "Hotbar3": [
+     {
+      "glyphs": [
+       "gamepad.generic.ddown"
+      ],
+      "modifiers": [],
+      "label": "Slot 3"
+     }
+    ],
+    "Hotbar4": [
+     {
+      "glyphs": [
+       "gamepad.generic.dleft"
+      ],
+      "modifiers": [],
+      "label": "Slot 4"
+     }
+    ],
+    "Hotbar5": [
+     {
+      "glyphs": [
+       "gamepad.generic.dup"
+      ],
+      "modifiers": [
+       "gamepad.generic.lb"
+      ],
+      "label": "Slot 5"
+     }
+    ],
+    "Hotbar6": [
+     {
+      "glyphs": [
+       "gamepad.generic.dright"
+      ],
+      "modifiers": [
+       "gamepad.generic.lb"
+      ],
+      "label": "Slot 6"
+     }
+    ],
+    "Hotbar7": [
+     {
+      "glyphs": [
+       "gamepad.generic.ddown"
+      ],
+      "modifiers": [
+       "gamepad.generic.lb"
+      ],
+      "label": "Slot 7"
+     }
+    ],
+    "Hotbar8": [
+     {
+      "glyphs": [
+       "gamepad.generic.dleft"
+      ],
+      "modifiers": [
+       "gamepad.generic.lb"
+      ],
+      "label": "Slot 8"
+     }
+    ],
+    "HotbarNext": [
+     {
+      "glyphs": [
+       "gamepad.generic.rb"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Next slot"
+     }
+    ],
+    "HotbarPrev": [
+     {
+      "glyphs": [
+       "gamepad.generic.lb"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Previous slot"
+     }
+    ],
+    "ToggleInventory": [
+     {
+      "glyphs": [
+       "gamepad.generic.select"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Backpack"
+     }
+    ],
+    "ToggleMap": [
+     {
+      "glyphs": [
+       "gamepad.generic.select"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Map"
+     }
+    ],
+    "ToggleCrafting": [
+     {
+      "glyphs": [
+       "gamepad.generic.select"
+      ],
+      "modifiers": [
+       "gamepad.generic.lb"
+      ],
+      "label": "Crafting"
+     }
+    ],
+    "OpenChat": [
+     {
+      "glyphs": [
+       "gamepad.generic.select"
+      ],
+      "modifiers": [
+       "gamepad.generic.rb"
+      ],
+      "label": "Chat"
+     }
+    ],
+    "OpenSocial": [
+     {
+      "glyphs": [
+       "gamepad.generic.start"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Clan & friends"
+     }
+    ],
+    "Cancel": [
+     {
+      "glyphs": [
+       "gamepad.generic.start"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Back"
+     }
+    ],
+    "ToggleBuild": [
+     {
+      "glyphs": [
+       "gamepad.generic.y"
+      ],
+      "modifiers": [
+       "gamepad.generic.lb"
+      ],
+      "label": "Build"
+     }
+    ],
+    "Camera.Zoom": [
+     {
+      "collapse": "dpad",
+      "glyphs": [
+       "gamepad.generic.dpad"
+      ],
+      "modifiers": [
+       "gamepad.generic.rb"
+      ],
+      "label": "Zoom"
+     }
+    ]
+   },
+   "Building": {
+    "Build.PlaceConfirm": [
+     {
+      "glyphs": [
+       "gamepad.generic.rt"
+      ],
+      "modifiers": [],
+      "label": "Place"
+     },
+     {
+      "glyphs": [
+       "gamepad.generic.a"
+      ],
+      "modifiers": [],
+      "label": "Place"
+     }
+    ],
+    "Build.Cancel": [
+     {
+      "glyphs": [
+       "gamepad.generic.b"
+      ],
+      "modifiers": [],
+      "label": "Cancel"
+     }
+    ],
+    "Build.RotateCW": [
+     {
+      "glyphs": [
+       "gamepad.generic.rb"
+      ],
+      "modifiers": [],
+      "label": "Rotate"
+     }
+    ],
+    "Build.RotateCCW": [
+     {
+      "glyphs": [
+       "gamepad.generic.lb"
+      ],
+      "modifiers": [],
+      "label": "Rotate back"
+     }
+    ],
+    "Build.PieceNext": [
+     {
+      "glyphs": [
+       "gamepad.generic.dright"
+      ],
+      "modifiers": [],
+      "label": "Next piece"
+     }
+    ],
+    "Build.PiecePrev": [
+     {
+      "glyphs": [
+       "gamepad.generic.dleft"
+      ],
+      "modifiers": [],
+      "label": "Previous piece"
+     }
+    ],
+    "Build.TierNext": [
+     {
+      "glyphs": [
+       "gamepad.generic.dup"
+      ],
+      "modifiers": [],
+      "label": "Tier up"
+     }
+    ],
+    "Build.TierPrev": [
+     {
+      "glyphs": [
+       "gamepad.generic.ddown"
+      ],
+      "modifiers": [],
+      "label": "Tier down"
+     }
+    ],
+    "Build.ToggleSnap": [
+     {
+      "glyphs": [
+       "gamepad.generic.rs"
+      ],
+      "modifiers": [],
+      "label": "Snap"
+     }
+    ],
+    "Build.LevelUp": [
+     {
+      "glyphs": [
+       "gamepad.generic.dup"
+      ],
+      "modifiers": [
+       "gamepad.generic.lt"
+      ],
+      "label": "Floor up"
+     }
+    ],
+    "Build.LevelDown": [
+     {
+      "glyphs": [
+       "gamepad.generic.ddown"
+      ],
+      "modifiers": [
+       "gamepad.generic.lt"
+      ],
+      "label": "Floor down"
+     }
+    ],
+    "Build.DemolishMode": [
+     {
+      "glyphs": [
+       "gamepad.generic.x"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Demolish"
+     }
+    ],
+    "Build.RepairMode": [
+     {
+      "glyphs": [
+       "gamepad.generic.x"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Repair"
+     }
+    ],
+    "Build.UpgradeMode": [
+     {
+      "glyphs": [
+       "gamepad.generic.y"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Upgrade"
+     }
+    ],
+    "Build.Nudge": [
+     {
+      "collapse": "stick",
+      "glyphs": [
+       "gamepad.generic.rs"
+      ],
+      "modifiers": [],
+      "label": "Nudge"
+     }
+    ],
+    "ToggleBuild": [
+     {
+      "glyphs": [
+       "gamepad.generic.y"
+      ],
+      "modifiers": [
+       "gamepad.generic.lb"
+      ],
+      "label": "Build"
+     }
+    ]
+   },
+   "Inventory": {
+    "UI.Navigate": [
+     {
+      "collapse": "dpad",
+      "glyphs": [
+       "gamepad.generic.dpad"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     },
+     {
+      "collapse": "stick",
+      "glyphs": [
+       "gamepad.generic.ls"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     }
+    ],
+    "Inv.MoveSlot": [
+     {
+      "glyphs": [
+       "gamepad.generic.a"
+      ],
+      "modifiers": [],
+      "label": "Pick up / place"
+     }
+    ],
+    "Inv.QuickTransfer": [
+     {
+      "glyphs": [
+       "gamepad.generic.y"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Quick move"
+     }
+    ],
+    "Inv.TakeAll": [
+     {
+      "glyphs": [
+       "gamepad.generic.y"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Take all"
+     }
+    ],
+    "Inv.SplitStack": [
+     {
+      "glyphs": [
+       "gamepad.generic.x"
+      ],
+      "modifiers": [],
+      "interaction": "tap",
+      "label": "Split stack"
+     }
+    ],
+    "Inv.Drop": [
+     {
+      "glyphs": [
+       "gamepad.generic.x"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Drop"
+     }
+    ],
+    "Inv.Equip": [
+     {
+      "glyphs": [
+       "gamepad.generic.lt"
+      ],
+      "modifiers": [],
+      "label": "Equip"
+     }
+    ],
+    "Inv.Use": [
+     {
+      "glyphs": [
+       "gamepad.generic.rt"
+      ],
+      "modifiers": [],
+      "label": "Use"
+     }
+    ],
+    "Inv.Sort": [
+     {
+      "glyphs": [
+       "gamepad.generic.rs"
+      ],
+      "modifiers": [],
+      "label": "Sort"
+     }
+    ],
+    "UI.TabNext": [
+     {
+      "glyphs": [
+       "gamepad.generic.rb"
+      ],
+      "modifiers": [],
+      "label": "Next tab"
+     }
+    ],
+    "UI.TabPrev": [
+     {
+      "glyphs": [
+       "gamepad.generic.lb"
+      ],
+      "modifiers": [],
+      "label": "Previous tab"
+     }
+    ],
+    "UI.Back": [
+     {
+      "glyphs": [
+       "gamepad.generic.b"
+      ],
+      "modifiers": [],
+      "label": "Back"
+     }
+    ],
+    "ToggleInventory": [
+     {
+      "glyphs": [
+       "gamepad.generic.select"
+      ],
+      "modifiers": [],
+      "label": "Backpack"
+     }
+    ]
+   },
+   "Crafting": {
+    "UI.Navigate": [
+     {
+      "collapse": "dpad",
+      "glyphs": [
+       "gamepad.generic.dpad"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     },
+     {
+      "collapse": "stick",
+      "glyphs": [
+       "gamepad.generic.ls"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     }
+    ],
+    "Craft.Craft": [
+     {
+      "glyphs": [
+       "gamepad.generic.a"
+      ],
+      "modifiers": [],
+      "label": "Craft"
+     }
+    ],
+    "Craft.Amount": [
+     {
+      "glyphs": [
+       "gamepad.generic.x"
+      ],
+      "modifiers": [],
+      "interaction": "repeat",
+      "label": "Amount"
+     }
+    ],
+    "Craft.Cancel": [
+     {
+      "glyphs": [
+       "gamepad.generic.y"
+      ],
+      "modifiers": [],
+      "label": "Cancel craft"
+     }
+    ],
+    "Craft.FilterNext": [
+     {
+      "glyphs": [
+       "gamepad.generic.rb"
+      ],
+      "modifiers": [],
+      "label": "Next category"
+     }
+    ],
+    "Craft.FilterPrev": [
+     {
+      "glyphs": [
+       "gamepad.generic.lb"
+      ],
+      "modifiers": [],
+      "label": "Previous category"
+     }
+    ],
+    "UI.Back": [
+     {
+      "glyphs": [
+       "gamepad.generic.b"
+      ],
+      "modifiers": [],
+      "label": "Back"
+     }
+    ],
+    "ToggleCrafting": [
+     {
+      "glyphs": [
+       "gamepad.generic.select"
+      ],
+      "modifiers": [
+       "gamepad.generic.lb"
+      ],
+      "label": "Crafting"
+     }
+    ]
+   },
+   "Trade": {
+    "UI.Navigate": [
+     {
+      "collapse": "dpad",
+      "glyphs": [
+       "gamepad.generic.dpad"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     },
+     {
+      "collapse": "stick",
+      "glyphs": [
+       "gamepad.generic.ls"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     }
+    ],
+    "Trade.AddOffer": [
+     {
+      "glyphs": [
+       "gamepad.generic.a"
+      ],
+      "modifiers": [],
+      "label": "Offer"
+     }
+    ],
+    "Trade.RemoveOffer": [
+     {
+      "glyphs": [
+       "gamepad.generic.x"
+      ],
+      "modifiers": [],
+      "label": "Take back"
+     }
+    ],
+    "Trade.Lock": [
+     {
+      "glyphs": [
+       "gamepad.generic.y"
+      ],
+      "modifiers": [],
+      "label": "Lock offer"
+     }
+    ],
+    "Trade.Confirm": [
+     {
+      "glyphs": [
+       "gamepad.generic.start"
+      ],
+      "modifiers": [],
+      "label": "Accept trade"
+     }
+    ],
+    "UI.TabNext": [
+     {
+      "glyphs": [
+       "gamepad.generic.rb"
+      ],
+      "modifiers": [],
+      "label": "Next tab"
+     }
+    ],
+    "UI.TabPrev": [
+     {
+      "glyphs": [
+       "gamepad.generic.lb"
+      ],
+      "modifiers": [],
+      "label": "Previous tab"
+     }
+    ],
+    "UI.Back": [
+     {
+      "glyphs": [
+       "gamepad.generic.b"
+      ],
+      "modifiers": [],
+      "label": "Back"
+     }
+    ]
+   },
+   "Chat": {
+    "Chat.Send": [
+     {
+      "glyphs": [
+       "gamepad.generic.start"
+      ],
+      "modifiers": [],
+      "label": "Send"
+     }
+    ],
+    "Chat.Cancel": [
+     {
+      "glyphs": [
+       "gamepad.generic.b"
+      ],
+      "modifiers": [],
+      "label": "Close chat"
+     }
+    ],
+    "Chat.SwitchChannel": [
+     {
+      "glyphs": [
+       "gamepad.generic.rb"
+      ],
+      "modifiers": [],
+      "label": "Channel"
+     }
+    ],
+    "Chat.QuickPhrase": [
+     {
+      "glyphs": [
+       "gamepad.generic.y"
+      ],
+      "modifiers": [],
+      "label": "Quick chat"
+     }
+    ]
+   },
+   "Social": {
+    "UI.Navigate": [
+     {
+      "collapse": "dpad",
+      "glyphs": [
+       "gamepad.generic.dpad"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     },
+     {
+      "collapse": "stick",
+      "glyphs": [
+       "gamepad.generic.ls"
+      ],
+      "modifiers": [],
+      "label": "Navigate"
+     }
+    ],
+    "Social.ContextMenu": [
+     {
+      "glyphs": [
+       "gamepad.generic.a"
+      ],
+      "modifiers": [],
+      "label": "Options"
+     }
+    ],
+    "Social.Invite": [
+     {
+      "glyphs": [
+       "gamepad.generic.x"
+      ],
+      "modifiers": [],
+      "label": "Invite"
+     }
+    ],
+    "Social.SetPermissions": [
+     {
+      "glyphs": [
+       "gamepad.generic.y"
+      ],
+      "modifiers": [],
+      "label": "Permissions"
+     }
+    ],
+    "Social.Promote": [
+     {
+      "glyphs": [
+       "gamepad.generic.rb"
+      ],
+      "modifiers": [],
+      "label": "Promote"
+     }
+    ],
+    "Social.Demote": [
+     {
+      "glyphs": [
+       "gamepad.generic.lb"
+      ],
+      "modifiers": [],
+      "label": "Demote"
+     }
+    ],
+    "Social.Kick": [
+     {
+      "glyphs": [
+       "gamepad.generic.x"
+      ],
+      "modifiers": [
+       "gamepad.generic.lt"
+      ],
+      "label": "Kick"
+     }
+    ],
+    "Social.Leave": [
+     {
+      "glyphs": [
+       "gamepad.generic.select"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Leave clan"
+     }
+    ],
+    "UI.Back": [
+     {
+      "glyphs": [
+       "gamepad.generic.b"
+      ],
+      "modifiers": [],
+      "label": "Back"
+     }
+    ],
+    "OpenSocial": [
+     {
+      "glyphs": [
+       "gamepad.generic.start"
+      ],
+      "modifiers": [],
+      "interaction": "longPress",
+      "label": "Clan & friends"
+     }
+    ]
+   },
+   "Dialog": {
+    "Dialog.Confirm": [
+     {
+      "glyphs": [
+       "gamepad.generic.a"
+      ],
+      "modifiers": [],
+      "label": "Confirm"
+     }
+    ],
+    "Dialog.Cancel": [
+     {
+      "glyphs": [
+       "gamepad.generic.b"
+      ],
+      "modifiers": [],
+      "label": "Cancel"
+     }
+    ]
+   }
+  }
+ },
+ "_doc": "entry = {glyphs[], modifiers[], interaction?, collapse?, label}; first entry is the primary prompt"
+}

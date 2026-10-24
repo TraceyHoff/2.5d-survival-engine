@@ -1,0 +1,30 @@
+{
+ "$comment": "BuildPiece.variant index -> sprite key (variant 0 = the base key)",
+ "pieces": {
+  "rug": [
+   "rug",
+   "rug_2",
+   "rug_3",
+   "rug_4"
+  ],
+  "flower_box": [
+   "flower_box",
+   "flower_box_2",
+   "flower_box_3",
+   "flower_box_4"
+  ],
+  "potted_plant": [
+   "potted_plant",
+   "potted_plant_2",
+   "potted_plant_3"
+  ],
+  "painting": [
+   "painting",
+   "painting_2",
+   "painting_3",
+   "painting_4",
+   "painting_5",
+   "painting_6"
+  ]
+ }
+}

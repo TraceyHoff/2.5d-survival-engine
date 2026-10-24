@@ -1,0 +1,64 @@
+{
+  "$schema": "../../screen.schema.json",
+  "schema": "ui-partial/1",
+  "params": {
+    "active": "inventory"
+  },
+  "root": {
+    "type": "tabs",
+    "id": "journal_tabs",
+    "w": 560,
+    "h": 44,
+    "bind": "{$active}",
+    "items": [
+      {
+        "id": "inventory",
+        "label": "Backpack",
+        "icon": "ic_bag",
+        "hotkey": "Tab",
+        "action": {
+          "event": "ui.open",
+          "args": {
+            "screen": "inventory"
+          }
+        }
+      },
+      {
+        "id": "crafting",
+        "label": "Crafting",
+        "icon": "ic_craft",
+        "hotkey": "C",
+        "action": {
+          "event": "ui.open",
+          "args": {
+            "screen": "crafting"
+          }
+        }
+      },
+      {
+        "id": "character",
+        "label": "Me",
+        "icon": "ic_person",
+        "hotkey": "K",
+        "action": {
+          "event": "ui.open",
+          "args": {
+            "screen": "character"
+          }
+        }
+      },
+      {
+        "id": "map",
+        "label": "Map",
+        "icon": "ic_map",
+        "hotkey": "M",
+        "action": {
+          "event": "ui.open",
+          "args": {
+            "screen": "world_map"
+          }
+        }
+      }
+    ]
+  }
+}

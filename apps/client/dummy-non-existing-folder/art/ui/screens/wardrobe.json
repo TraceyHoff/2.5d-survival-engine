@@ -1,0 +1,835 @@
+{
+  "$schema": "../screen.schema.json",
+  "schema": "ui-screen/1",
+  "id": "wardrobe",
+  "setsState": {
+    "ui.windowOpen": true
+  },
+  "title": "Wardrobe (mirror)",
+  "layer": "window",
+  "modal": false,
+  "opens": "interact prompt 'Change look' within cosmetics.json wardrobeRange of a piece with features.wardrobe (mirror, id 50)",
+  "binds": "wardrobe.draft = local copy of Appearance; items = catalog.bySlot(slot) for draft.bodyType, locked = unlockTags.length && !unlockTags.some(t in Wardrobe.unlocks) -> lockTag = first tag, hint = strings.unlockHints[tag]; apply -> gameplay.setAppearance; single quick-equip -> gameplay.equipCosmetic",
+  "rejections": "CommandRejected.reason -> strings.reasons (first regex match) -> toast",
+  "inputs": {
+    "kbm": [
+      {
+        "key": "Q/E",
+        "label": "Rotate"
+      },
+      {
+        "key": "Tab",
+        "label": "Next tab"
+      },
+      {
+        "key": "R",
+        "label": "Randomize"
+      },
+      {
+        "key": "LMB",
+        "label": "Pick"
+      },
+      {
+        "key": "Enter",
+        "label": "Done"
+      }
+    ],
+    "gamepad": [
+      {
+        "key": "LB/RB",
+        "label": "Tab"
+      },
+      {
+        "key": "RS",
+        "label": "Rotate"
+      },
+      {
+        "key": "A",
+        "label": "Pick"
+      },
+      {
+        "key": "X",
+        "label": "Colour"
+      },
+      {
+        "key": "Y",
+        "label": "Randomize"
+      },
+      {
+        "key": "Start",
+        "label": "Done"
+      }
+    ],
+    "touch": [
+      {
+        "gesture": "drag preview",
+        "label": "Rotate"
+      },
+      {
+        "gesture": "pinch preview",
+        "label": "Zoom"
+      },
+      {
+        "gesture": "tap",
+        "label": "Pick"
+      },
+      {
+        "gesture": "long-press locked",
+        "label": "Show unlock hint"
+      }
+    ]
+  },
+  "strings": "strings/en.json",
+  "root": {
+    "type": "box",
+    "id": "wardrobe",
+    "w": "fill",
+    "h": "fill",
+    "children": [
+      {
+        "type": "scrim",
+        "alpha": 0.35
+      },
+      {
+        "type": "box",
+        "id": "wardrobe_window",
+        "anchor": "cc",
+        "x": 0,
+        "y": -10,
+        "w": 1160,
+        "h": 560,
+        "children": [
+          {
+            "type": "panel",
+            "id": "wardrobe_frame",
+            "frame": "panel_wood_vine",
+            "anchor": "tl",
+            "x": 0,
+            "y": 0,
+            "w": 1160,
+            "h": 560,
+            "pad": 24,
+            "layout": "row",
+            "gap": 14,
+            "children": [
+              {
+                "type": "panel",
+                "frame": "panel_inset",
+                "w": 300,
+                "h": 512,
+                "pad": 12,
+                "layout": "col",
+                "gap": 8,
+                "align": "center",
+                "children": [
+                  {
+                    "type": "charpreview",
+                    "id": "live_preview",
+                    "facing": "{wardrobe.facing}",
+                    "anim": "{wardrobe.anim}",
+                    "w": 260,
+                    "h": 402,
+                    "drag": "rotate",
+                    "wheel": "zoom",
+                    "note": "render createCharacterPreview(); drag/LB-RB/Q-E rotate in 45\u00b0 steps",
+                    "appearance": "{wardrobe.draft}",
+                    "rotate": true,
+                    "zoom": true,
+                    "expression": "{wardrobe.expression}"
+                  },
+                  {
+                    "type": "box",
+                    "layout": "row",
+                    "gap": 8,
+                    "w": "fill",
+                    "h": 44,
+                    "justify": "center",
+                    "children": [
+                      {
+                        "type": "button",
+                        "label": "",
+                        "variant": "secondary",
+                        "w": 52,
+                        "h": 44,
+                        "icon": "ic_arrow_left",
+                        "action": {
+                          "event": "wardrobe.rotate",
+                          "args": {
+                            "by": -1
+                          }
+                        },
+                        "tooltip": "Turn left (Q)"
+                      },
+                      {
+                        "type": "button",
+                        "label": "{wardrobe.animLabel}",
+                        "variant": "secondary",
+                        "w": 120,
+                        "h": 44,
+                        "icon": "ic_rotate",
+                        "action": {
+                          "event": "wardrobe.cycleAnim"
+                        },
+                        "tooltip": "Try an animation"
+                      },
+                      {
+                        "type": "button",
+                        "label": "",
+                        "variant": "secondary",
+                        "w": 52,
+                        "h": 44,
+                        "icon": "ic_arrow_right",
+                        "action": {
+                          "event": "wardrobe.rotate",
+                          "args": {
+                            "by": 1
+                          }
+                        },
+                        "tooltip": "Turn right (E)"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "box",
+                "layout": "col",
+                "gap": 6,
+                "w": 150,
+                "h": "fill",
+                "children": [
+                  {
+                    "type": "repeat",
+                    "each": "{wardrobe._vm.slots}",
+                    "as": "s",
+                    "layout": "col",
+                    "gap": 6,
+                    "w": "fill",
+                    "template": {
+                      "type": "listitem",
+                      "w": 150,
+                      "h": 46,
+                      "selected": "{s.active}",
+                      "action": {
+                        "event": "wardrobe.slot",
+                        "args": {
+                          "slot": "{s.id}"
+                        }
+                      },
+                      "children": [
+                        {
+                          "type": "cosmeticslot",
+                          "anchor": "cl",
+                          "x": 4,
+                          "y": 0,
+                          "w": 38,
+                          "h": 38,
+                          "wearable": "{s.equipped}",
+                          "mini": true,
+                          "slot": "{s.id}",
+                          "bodyType": "{wardrobe.draft.bodyType}",
+                          "unlocked": "all",
+                          "paletteChannel": "primary"
+                        },
+                        {
+                          "type": "text",
+                          "text": "{s.label}",
+                          "font": "label",
+                          "anchor": "cl",
+                          "x": 50,
+                          "y": 0,
+                          "w": 80,
+                          "h": 24
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "panel",
+                "frame": "panel_parchment",
+                "w": "fill",
+                "h": 512,
+                "pad": 14,
+                "layout": "col",
+                "gap": 8,
+                "children": [
+                  {
+                    "type": "box",
+                    "layout": "row",
+                    "gap": 8,
+                    "h": 28,
+                    "w": "fill",
+                    "align": "center",
+                    "children": [
+                      {
+                        "type": "text",
+                        "text": "{wardrobe._vm.slotLabel}",
+                        "font": "heading",
+                        "w": "fill"
+                      },
+                      {
+                        "type": "badge",
+                        "icon": "ic_check",
+                        "text": "{wardrobe._vm.owned} owned",
+                        "color": "leaf-500",
+                        "w": 120,
+                        "h": 24
+                      },
+                      {
+                        "type": "badge",
+                        "icon": "ic_lock",
+                        "text": "{wardrobe._vm.locked} locked",
+                        "color": "slate-500",
+                        "w": 120,
+                        "h": 24
+                      }
+                    ]
+                  },
+                  {
+                    "type": "panel",
+                    "frame": "panel_inset",
+                    "w": "fill",
+                    "h": "fill",
+                    "pad": 8,
+                    "children": [
+                      {
+                        "type": "repeat",
+                        "each": "{wardrobe._vm.items}",
+                        "as": "w",
+                        "layout": "grid",
+                        "cols": 8,
+                        "cell": [
+                          68,
+                          68
+                        ],
+                        "gap": 6,
+                        "w": "fill",
+                        "h": "fill",
+                        "template": {
+                          "type": "cosmeticslot",
+                          "w": 68,
+                          "h": 68,
+                          "bind": "{w}",
+                          "wearable": "{w.key}",
+                          "selected": "{w.equipped}",
+                          "locked": "{w.locked}",
+                          "tag": "{w.lockTag}",
+                          "tooltip": "{w.locked ? w.hint : w.name}",
+                          "action": {
+                            "event": "wardrobe.pick",
+                            "args": {
+                              "slot": "{w.slot}",
+                              "wearable": "{w.id}"
+                            }
+                          },
+                          "longPress": {
+                            "event": "ui.toast",
+                            "args": {
+                              "text": "{w.hint}"
+                            }
+                          },
+                          "slot": "{w.slot}",
+                          "bodyType": "{wardrobe.draft.bodyType}",
+                          "unlocked": "all",
+                          "paletteChannel": "primary"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "box",
+                    "layout": "row",
+                    "gap": 8,
+                    "h": 24,
+                    "w": "fill",
+                    "align": "center",
+                    "visible": "{wardrobe._vm.focus.locked}",
+                    "children": [
+                      {
+                        "type": "icon",
+                        "icon": "ic_lock",
+                        "w": 22,
+                        "h": 22
+                      },
+                      {
+                        "type": "text",
+                        "text": "{wardrobe._vm.focus.name}: {wardrobe._vm.focus.hint}",
+                        "font": "small",
+                        "w": "fill",
+                        "color": "text.warning"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "text": "Main colour",
+                    "font": "label",
+                    "h": 18,
+                    "visible": "{wardrobe._vm.tint >= 1}"
+                  },
+                  {
+                    "type": "repeat",
+                    "each": "{wardrobe._vm.primary}",
+                    "as": "c",
+                    "layout": "grid",
+                    "gap": 4,
+                    "w": "fill",
+                    "h": 60,
+                    "template": {
+                      "type": "swatch",
+                      "w": 24,
+                      "h": 28,
+                      "color": "{c.color}",
+                      "selected": "{c.selected}",
+                      "tooltip": "{c.key}",
+                      "action": {
+                        "event": "wardrobe.color",
+                        "args": {
+                          "channel": "primary",
+                          "index": "{c.index}"
+                        }
+                      }
+                    },
+                    "cols": 13,
+                    "cell": [
+                      24,
+                      28
+                    ],
+                    "note": "12 per row, wraps (fixes overflow with 16+ palette entries)"
+                  },
+                  {
+                    "type": "text",
+                    "text": "Accent colour",
+                    "font": "label",
+                    "h": 18,
+                    "visible": "{wardrobe._vm.tint >= 2}"
+                  },
+                  {
+                    "type": "repeat",
+                    "each": "{wardrobe._vm.secondary}",
+                    "as": "c",
+                    "layout": "grid",
+                    "gap": 4,
+                    "w": "fill",
+                    "h": 60,
+                    "template": {
+                      "type": "swatch",
+                      "w": 24,
+                      "h": 28,
+                      "color": "{c.color}",
+                      "selected": "{c.selected}",
+                      "tooltip": "{c.key}",
+                      "action": {
+                        "event": "wardrobe.color",
+                        "args": {
+                          "channel": "secondary",
+                          "index": "{c.index}"
+                        }
+                      }
+                    },
+                    "cols": 13,
+                    "cell": [
+                      24,
+                      28
+                    ],
+                    "note": "12 per row, wraps (fixes overflow with 16+ palette entries)"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "ribbon",
+            "text": "Wardrobe",
+            "anchor": "tc",
+            "x": 0,
+            "y": -18,
+            "w": 300,
+            "h": 40
+          },
+          {
+            "type": "button",
+            "id": "close",
+            "variant": "close",
+            "anchor": "tr",
+            "x": 10,
+            "y": -10,
+            "w": 32,
+            "h": 32,
+            "action": {
+              "event": "ui.close",
+              "args": {
+                "screen": "wardrobe"
+              }
+            },
+            "hotkey": "Escape",
+            "tooltip": "Close (Esc)"
+          },
+          {
+            "type": "box",
+            "anchor": "bc",
+            "x": 0,
+            "y": -56,
+            "w": 600,
+            "h": 48,
+            "layout": "row",
+            "gap": 12,
+            "justify": "center",
+            "children": [
+              {
+                "type": "button",
+                "label": "Undo all",
+                "variant": "secondary",
+                "w": 150,
+                "h": 46,
+                "icon": "ic_arrow_left",
+                "action": {
+                  "event": "wardrobe.revert"
+                },
+                "disabled": "{!wardrobe.dirty}"
+              },
+              {
+                "type": "button",
+                "label": "Looks good!",
+                "variant": "primary",
+                "w": 190,
+                "h": 46,
+                "icon": "ic_check",
+                "action": {
+                  "event": "wardrobe.apply"
+                },
+                "hotkey": "Enter",
+                "disabled": "{!wardrobe.dirty || wardrobe.busy}"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "toast",
+        "kind": "warning",
+        "anchor": "tc",
+        "x": 0,
+        "y": 20,
+        "w": 560,
+        "h": 48,
+        "visible": "{wardrobe.error}",
+        "icon": "{wardrobe.error.icon}",
+        "title": "{wardrobe.error.text}"
+      },
+      {
+        "type": "box",
+        "id": "input_hints",
+        "anchor": "bc",
+        "x": 0,
+        "y": 10,
+        "w": 1100,
+        "h": 32,
+        "layout": "row",
+        "gap": 18,
+        "justify": "center",
+        "children": [
+          {
+            "type": "repeat",
+            "each": "{input.hints}",
+            "as": "k",
+            "layout": "row",
+            "gap": 18,
+            "h": 32,
+            "template": {
+              "type": "keyhint",
+              "key": "{k.key}",
+              "label": "{k.label}"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "variants": {
+    "phone": {
+      "type": "box",
+      "id": "wardrobe_phone",
+      "w": "fill",
+      "h": "fill",
+      "children": [
+        {
+          "type": "ribbon",
+          "text": "Wardrobe",
+          "anchor": "tc",
+          "x": 0,
+          "y": 24,
+          "w": 300,
+          "h": 44
+        },
+        {
+          "type": "box",
+          "anchor": "tc",
+          "x": 0,
+          "y": 84,
+          "w": 680,
+          "h": 1180,
+          "layout": "col",
+          "gap": 10,
+          "children": [
+            {
+              "type": "panel",
+              "frame": "panel_inset",
+              "w": 680,
+              "h": 340,
+              "pad": 10,
+              "children": [
+                {
+                  "type": "charpreview",
+                  "facing": "{wardrobe.facing}",
+                  "anchor": "cc",
+                  "w": 260,
+                  "h": 320,
+                  "drag": "rotate",
+                  "appearance": "{wardrobe.draft}",
+                  "rotate": true,
+                  "zoom": true,
+                  "anim": "{wardrobe.anim}",
+                  "expression": "{wardrobe.expression}"
+                }
+              ]
+            },
+            {
+              "type": "repeat",
+              "each": "{wardrobe._vm.slots}",
+              "as": "s",
+              "layout": "row",
+              "gap": 6,
+              "w": 680,
+              "h": 72,
+              "template": {
+                "type": "cosmeticslot",
+                "w": 78,
+                "h": 72,
+                "wearable": "{s.equipped}",
+                "selected": "{s.active}",
+                "label": "{s.label}",
+                "action": {
+                  "event": "wardrobe.slot",
+                  "args": {
+                    "slot": "{s.id}"
+                  }
+                },
+                "slot": "{s.id}",
+                "bodyType": "{wardrobe.draft.bodyType}",
+                "unlocked": "all",
+                "paletteChannel": "primary"
+              }
+            },
+            {
+              "type": "panel",
+              "frame": "panel_parchment",
+              "w": 680,
+              "h": 600,
+              "pad": 14,
+              "layout": "col",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "box",
+                  "layout": "row",
+                  "gap": 8,
+                  "h": 28,
+                  "w": "fill",
+                  "align": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "text": "{wardrobe._vm.slotLabel}",
+                      "font": "heading",
+                      "w": "fill"
+                    },
+                    {
+                      "type": "badge",
+                      "icon": "ic_check",
+                      "text": "{wardrobe._vm.owned} owned",
+                      "color": "leaf-500",
+                      "w": 120,
+                      "h": 24
+                    },
+                    {
+                      "type": "badge",
+                      "icon": "ic_lock",
+                      "text": "{wardrobe._vm.locked} locked",
+                      "color": "slate-500",
+                      "w": 120,
+                      "h": 24
+                    }
+                  ]
+                },
+                {
+                  "type": "panel",
+                  "frame": "panel_inset",
+                  "w": "fill",
+                  "h": "fill",
+                  "pad": 8,
+                  "children": [
+                    {
+                      "type": "repeat",
+                      "each": "{wardrobe._vm.items}",
+                      "as": "w",
+                      "layout": "grid",
+                      "cols": 7,
+                      "cell": [
+                        68,
+                        68
+                      ],
+                      "gap": 6,
+                      "w": "fill",
+                      "h": "fill",
+                      "template": {
+                        "type": "cosmeticslot",
+                        "w": 68,
+                        "h": 68,
+                        "bind": "{w}",
+                        "wearable": "{w.key}",
+                        "selected": "{w.equipped}",
+                        "locked": "{w.locked}",
+                        "tag": "{w.lockTag}",
+                        "tooltip": "{w.locked ? w.hint : w.name}",
+                        "action": {
+                          "event": "wardrobe.pick",
+                          "args": {
+                            "slot": "{w.slot}",
+                            "wearable": "{w.id}"
+                          }
+                        },
+                        "longPress": {
+                          "event": "ui.toast",
+                          "args": {
+                            "text": "{w.hint}"
+                          }
+                        },
+                        "slot": "{w.slot}",
+                        "bodyType": "{wardrobe.draft.bodyType}",
+                        "unlocked": "all",
+                        "paletteChannel": "primary"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "box",
+                  "layout": "row",
+                  "gap": 8,
+                  "h": 24,
+                  "w": "fill",
+                  "align": "center",
+                  "visible": "{wardrobe._vm.focus.locked}",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "icon": "ic_lock",
+                      "w": 22,
+                      "h": 22
+                    },
+                    {
+                      "type": "text",
+                      "text": "{wardrobe._vm.focus.name}: {wardrobe._vm.focus.hint}",
+                      "font": "small",
+                      "w": "fill",
+                      "color": "text.warning"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "Main colour",
+                  "font": "label",
+                  "h": 18,
+                  "visible": "{wardrobe._vm.tint >= 1}"
+                },
+                {
+                  "type": "repeat",
+                  "each": "{wardrobe._vm.primary}",
+                  "as": "c",
+                  "layout": "grid",
+                  "gap": 4,
+                  "w": "fill",
+                  "h": 60,
+                  "template": {
+                    "type": "swatch",
+                    "w": 24,
+                    "h": 28,
+                    "color": "{c.color}",
+                    "selected": "{c.selected}",
+                    "tooltip": "{c.key}",
+                    "action": {
+                      "event": "wardrobe.color",
+                      "args": {
+                        "channel": "primary",
+                        "index": "{c.index}"
+                      }
+                    }
+                  },
+                  "cols": 13,
+                  "cell": [
+                    24,
+                    28
+                  ],
+                  "note": "12 per row, wraps (fixes overflow with 16+ palette entries)"
+                },
+                {
+                  "type": "text",
+                  "text": "Accent colour",
+                  "font": "label",
+                  "h": 18,
+                  "visible": "{wardrobe._vm.tint >= 2}"
+                },
+                {
+                  "type": "repeat",
+                  "each": "{wardrobe._vm.secondary}",
+                  "as": "c",
+                  "layout": "grid",
+                  "gap": 4,
+                  "w": "fill",
+                  "h": 60,
+                  "template": {
+                    "type": "swatch",
+                    "w": 24,
+                    "h": 28,
+                    "color": "{c.color}",
+                    "selected": "{c.selected}",
+                    "tooltip": "{c.key}",
+                    "action": {
+                      "event": "wardrobe.color",
+                      "args": {
+                        "channel": "secondary",
+                        "index": "{c.index}"
+                      }
+                    }
+                  },
+                  "cols": 13,
+                  "cell": [
+                    24,
+                    28
+                  ],
+                  "note": "12 per row, wraps (fixes overflow with 16+ palette entries)"
+                }
+              ]
+            },
+            {
+              "type": "button",
+              "label": "Looks good!",
+              "variant": "primary",
+              "w": 680,
+              "h": 64,
+              "icon": "ic_check",
+              "action": {
+                "event": "wardrobe.apply"
+              },
+              "disabled": "{!wardrobe.dirty}"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

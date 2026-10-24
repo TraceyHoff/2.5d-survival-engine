@@ -1,0 +1,271 @@
+{
+ "version": 1,
+ "doc": "Cozy-Wild day/night grading keyframes. ambient = linear light multiplier (replaces render/timeOfDay.ts AMBIENT), sun = key-light colour (moon at night), shadowTint = colour projected/blob shadows and the cool split-tone go toward, fogTint = StyleConfig.fogColor, sky = clear colour. saturation/contrast/lift/gain map 1:1 to StyleConfig.grading. LUTs bake grading only (sat, contrast, split-tone, gain, lift) and are applied AFTER lighting/fog, so do not also apply StyleConfig.grading when a LUT is bound. Interpolate keyframes by hour with smoothstep, wrapping at 24h; blend the two neighbouring LUTs with the same weight.",
+ "lutFormat": {
+  "size": [
+   256,
+   16
+  ],
+  "cube": 16,
+  "layout": "16 slices of 16x16; red along x within a slice, green along y (top row = green 0), blue = slice index (left = blue 0)",
+  "colorSpace": "sRGB in / sRGB out (gamma-space, like the composite shader)",
+  "identity": "lut/lut_identity.png"
+ },
+ "todRamp": {
+  "image": "lut/tod_ramp_256x8.png",
+  "x": "hour * 256 / 24",
+  "rows": [
+   "ambient / 1.25",
+   "sun colour * intensity",
+   "shadowTint",
+   "fogTint",
+   "sky",
+   "lift * 4",
+   "gain / 1.25",
+   "R saturation/1.25, G contrast/1.25, B vignette"
+  ]
+ },
+ "styleSuggestions": {
+  "lightBands": 4,
+  "bandMix": 0.55,
+  "nightMinBrightness": 0.3,
+  "nightTint": [
+   0.55,
+   0.58,
+   0.95
+  ],
+  "emissiveStrength": 1.15,
+  "daylightLightScale": 0.25,
+  "blobShadow": {
+   "alpha": 0.3
+  }
+ },
+ "keyframes": [
+  {
+   "name": "deep_night",
+   "hour": 2.0,
+   "ambient": [
+    0.33,
+    0.31,
+    0.58
+   ],
+   "sun": "#9fb0ff",
+   "sunIntensity": 0.22,
+   "sunElevationDeg": -30,
+   "moonlight": true,
+   "shadowTint": "#2a2350",
+   "fogTint": "#3a3f6e",
+   "sky": "#141a3a",
+   "saturation": 0.86,
+   "contrast": 1.02,
+   "lift": [
+    0.03,
+    0.016,
+    0.06
+   ],
+   "gain": [
+    0.95,
+    0.94,
+    1.08
+   ],
+   "vignette": 0.55,
+   "splitShadow": 0.18,
+   "splitHighlight": 0.04,
+   "lut": "lut/lut_deep_night.png",
+   "ambientHex": "#544f93"
+  },
+  {
+   "name": "dawn",
+   "hour": 5.8,
+   "ambient": [
+    0.84,
+    0.66,
+    0.72
+   ],
+   "sun": "#ffb08a",
+   "sunIntensity": 0.5,
+   "sunElevationDeg": 4,
+   "shadowTint": "#5a3c6e",
+   "fogTint": "#d9a8b8",
+   "sky": "#f0a890",
+   "saturation": 1.04,
+   "contrast": 1.0,
+   "lift": [
+    0.035,
+    0.012,
+    0.035
+   ],
+   "gain": [
+    1.05,
+    0.96,
+    1.0
+   ],
+   "vignette": 0.25,
+   "splitShadow": 0.14,
+   "splitHighlight": 0.1,
+   "lut": "lut/lut_dawn.png",
+   "ambientHex": "#d6a8b7"
+  },
+  {
+   "name": "morning",
+   "hour": 8.5,
+   "ambient": [
+    0.96,
+    0.95,
+    0.9
+   ],
+   "sun": "#fff0d0",
+   "sunIntensity": 0.9,
+   "sunElevationDeg": 30,
+   "shadowTint": "#5a5a8a",
+   "fogTint": "#cfe0ec",
+   "sky": "#a8d4f0",
+   "saturation": 1.05,
+   "contrast": 1.02,
+   "lift": [
+    0.0,
+    0.004,
+    0.012
+   ],
+   "gain": [
+    1.0,
+    1.0,
+    0.99
+   ],
+   "vignette": 0.1,
+   "splitShadow": 0.08,
+   "splitHighlight": 0.05,
+   "lut": "lut/lut_morning.png",
+   "ambientHex": "#f4f2e5"
+  },
+  {
+   "name": "noon",
+   "hour": 12.5,
+   "ambient": [
+    1.02,
+    1.0,
+    0.97
+   ],
+   "sun": "#fffaf0",
+   "sunIntensity": 1.0,
+   "sunElevationDeg": 68,
+   "shadowTint": "#4c5a8c",
+   "fogTint": "#d8e8f0",
+   "sky": "#8cc8f0",
+   "saturation": 1.08,
+   "contrast": 1.03,
+   "lift": [
+    0.0,
+    0.0,
+    0.01
+   ],
+   "gain": [
+    1.0,
+    1.0,
+    0.99
+   ],
+   "vignette": 0.08,
+   "splitShadow": 0.07,
+   "splitHighlight": 0.03,
+   "lut": "lut/lut_noon.png",
+   "ambientHex": "#fffff7"
+  },
+  {
+   "name": "golden_hour",
+   "hour": 17.3,
+   "ambient": [
+    1.0,
+    0.76,
+    0.62
+   ],
+   "sun": "#ffb070",
+   "sunIntensity": 0.85,
+   "sunElevationDeg": 12,
+   "shadowTint": "#6a4a7a",
+   "fogTint": "#f0c890",
+   "sky": "#ffc890",
+   "saturation": 1.04,
+   "contrast": 1.04,
+   "lift": [
+    0.03,
+    0.0,
+    0.025
+   ],
+   "gain": [
+    1.06,
+    0.95,
+    0.97
+   ],
+   "vignette": 0.18,
+   "splitShadow": 0.16,
+   "splitHighlight": 0.06,
+   "lut": "lut/lut_golden_hour.png",
+   "ambientHex": "#ffc19e"
+  },
+  {
+   "name": "dusk",
+   "hour": 19.0,
+   "ambient": [
+    0.72,
+    0.52,
+    0.7
+   ],
+   "sun": "#ff8a70",
+   "sunIntensity": 0.35,
+   "sunElevationDeg": 1,
+   "shadowTint": "#4a3268",
+   "fogTint": "#a07aa8",
+   "sky": "#b06a8a",
+   "saturation": 1.05,
+   "contrast": 1.02,
+   "lift": [
+    0.035,
+    0.01,
+    0.055
+   ],
+   "gain": [
+    1.02,
+    0.92,
+    1.04
+   ],
+   "vignette": 0.32,
+   "splitShadow": 0.18,
+   "splitHighlight": 0.1,
+   "lut": "lut/lut_dusk.png",
+   "ambientHex": "#b784b2"
+  },
+  {
+   "name": "night",
+   "hour": 21.5,
+   "ambient": [
+    0.43,
+    0.41,
+    0.7
+   ],
+   "sun": "#b0c0ff",
+   "sunIntensity": 0.3,
+   "sunElevationDeg": -15,
+   "moonlight": true,
+   "shadowTint": "#2e2a5c",
+   "fogTint": "#4a5088",
+   "sky": "#1e2450",
+   "saturation": 0.92,
+   "contrast": 1.02,
+   "lift": [
+    0.03,
+    0.018,
+    0.065
+   ],
+   "gain": [
+    0.97,
+    0.95,
+    1.08
+   ],
+   "vignette": 0.48,
+   "splitShadow": 0.18,
+   "splitHighlight": 0.05,
+   "lut": "lut/lut_night.png",
+   "ambientHex": "#6d68b2"
+  }
+ ]
+}

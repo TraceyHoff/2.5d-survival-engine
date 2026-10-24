@@ -1,0 +1,93 @@
+{
+  "$schema": "../../screen.schema.json",
+  "schema": "ui-partial/1",
+  "params": {
+    "l": "{listing}"
+  },
+  "root": {
+    "type": "panel",
+    "w": 158,
+    "h": 78,
+    "pad": 6,
+    "layout": "row",
+    "gap": 8,
+    "align": "center",
+    "focusable": true,
+    "frame": "{$l.state == \"selected\" ? \"slot_selected\" : \"panel_inset\"}",
+    "action": {
+      "event": "stall.selectListing",
+      "args": {
+        "slot": "{$l.slot}"
+      }
+    },
+    "longPress": {
+      "event": "ui.open",
+      "args": {
+        "screen": "item_inspect",
+        "slot": "{$l.slot}"
+      }
+    },
+    "children": [
+      {
+        "type": "slot",
+        "w": 48,
+        "h": 48,
+        "bind": "{$l.item}",
+        "showCount": false,
+        "missing": "{$l.soldOut}"
+      },
+      {
+        "type": "box",
+        "layout": "col",
+        "children": [
+          {
+            "type": "text",
+            "text": "{$l.item.name}",
+            "font": "label",
+            "h": 18,
+            "w": "fill"
+          },
+          {
+            "type": "box",
+            "layout": "row",
+            "children": [
+              {
+                "type": "icon",
+                "icon": "{$l.price.icon}",
+                "w": 20,
+                "h": 20
+              },
+              {
+                "type": "text",
+                "text": "{$l.price.count}",
+                "font": "heading",
+                "w": "auto"
+              },
+              {
+                "type": "text",
+                "text": "{$l.qty > 1 ? \"for \" + $l.qty : \"\"}",
+                "font": "tiny",
+                "w": "auto",
+                "color": "text.muted"
+              }
+            ],
+            "gap": 3,
+            "h": 22,
+            "align": "center",
+            "w": "fill"
+          },
+          {
+            "type": "text",
+            "text": "{$l.soldOut ? \"Sold out\" : $l.stock + \" left\"}",
+            "font": "tiny",
+            "h": 16,
+            "color": "{$l.soldOut ? \"text.danger\" : \"text.muted\"}"
+          }
+        ],
+        "w": "fill",
+        "h": 60,
+        "gap": 1
+      }
+    ]
+  }
+}
