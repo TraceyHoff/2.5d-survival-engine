@@ -32,11 +32,26 @@ export class FallbackLadder {
     if (this.exhausted || frame - this.lastEscalation < this.cooldownFrames) { this.suppressed++; this.log(source, detail, frame); return null; }
     this.step++; this.lastEscalation = frame; this.log(source, detail, frame); return this.step;
   }
+  /** Floor set by atLeast (e.g. ?gl=safe): recovery never goes below it. */
+  floor: number = FallbackStep.Full;
+  /** Times the ladder stepped back up. */
+  recoveries = 0;
+  /**
+   * Step back up one rung after `quietFrames` without a fault (memory freed: evictions, fewer dressed characters on
+   * screen). Safe mode is sticky (render targets were rebuilt for it). Returns the new step when it moved, else null.
+   */
+  recover(frame: number, quietFrames = 1800): number | null {
+    if (this.step <= this.floor || this.step >= FallbackStep.Safe) return null;
+    const last = Math.max(this.lastEscalation, this.lastRecovery);
+    if (frame - last < quietFrames) return null;
+    this.step--; this.lastRecovery = frame; this.recoveries++; return this.step;
+  }
+  private lastRecovery = -Infinity;
   /** Force a minimum step (e.g. `?gl=safe` at start). */
-  atLeast(step: number): void { this.step = Math.max(this.step, Math.min(MAX_FALLBACK_STEP, step)); }
+  atLeast(step: number): void { this.step = Math.max(this.step, Math.min(MAX_FALLBACK_STEP, step)); this.floor = Math.max(this.floor, this.step); }
   private log(source: string, detail: string, frame: number): void { this.faults.push({ frame, source, detail, step: this.step }); if (this.faults.length > this.maxLog) this.faults.shift(); }
   report(): string[] {
-    const L = [`fallback: step ${this.step} (${this.name})${this.suppressed ? `, ${this.suppressed} faults suppressed` : ""}`];
+    const L = [`fallback: step ${this.step} (${this.name})${this.recoveries ? `, stepped up ${this.recoveries}x` : ""}${this.suppressed ? `, ${this.suppressed} faults suppressed` : ""}`];
     for (const f of this.faults) L.push(`  f${f.frame} ${f.source}: ${f.detail} -> ${FALLBACK_STEP_NAMES[f.step]}`);
     return L;
   }

@@ -41,6 +41,9 @@ export interface VehicleViewOpts {
   /** localPlayerVehicle(world, eid) from gameplay (net id of the vehicle the local player drives, or null): cutaway it */ localVehicle?: number | null;
   /** rider keys are entities of this view world: suppress their ground Shadow while seated (default true; Art 64357f1) */ riderShadows?: boolean;
   /** drift yaw added to the drawn heading (fraction of Vehicle.drift) */ driftYaw?: number;
+  /** World (tile) position on screen? Off-screen vehicles skip their streamed art page (no pageReady touch), so the
+   *  LRU can evict it for visible ones; without this a full pool of off-screen pages starves e.g. car_compact. */
+  inView?: (x: number, y: number) => boolean;
 }
 export interface VehicleSpatial { insert(e: Entity, x: number, y: number): void; remove(e: Entity): void }
 export interface RiderPlacement { rider: number; vehicle: number; seat: number; x: number; y: number; z: number; facing: number; cropped: boolean }
@@ -88,7 +91,8 @@ export class VehicleView {
       const n = r.segs.length;
       // Art body: one billboard (8-dir row = heading + art offset), shown once its streamed page is resident; the
       // placeholder segments stay visible meanwhile (and in the interior cutaway - Art has no per-segment _int pieces).
-      const artOn = !!r.art && r.body !== undefined && !inside && (!this.pages || this.pages.pageReady(r.art.spriteId));
+      const vis = !o.inView || o.inView(x, y);
+      const artOn = !!r.art && r.body !== undefined && !inside && vis && (!this.pages || this.pages.pageReady(r.art.spriteId));
       if (r.body !== undefined) {
         const b = r.body; w.set(b, Transform, { x, y, z, facing: hq + r.art!.facingOffset });
         const sp = w.get(b, Sprite)!; const sc = r.art!.scale;

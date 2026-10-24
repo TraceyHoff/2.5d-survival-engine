@@ -85,6 +85,12 @@ uniform float uZPerPx, uHH, uTime, uWind, uOutline;
 uniform int uShadowPass, uShadowMode;
 uniform vec2 uShadowDir; uniform float uBlobAspect; uniform vec2 uWindVec; // screen-x wind direction, strength 0..1
 out vec4 vFx; out vec3 vUvRaw; flat out int vLayer; out float vAlpha; flat out int vFlags; flat out vec4 vRect; out vec3 vTint; flat out vec3 vMisc; out vec2 vLocal; out vec2 vScr; flat out float vOcc; flat out ivec2 vFB; flat out vec4 vTint2; flat out float vSwayPx; flat out vec4 vLT;
+uniform vec2 uViewPx; // drawing-buffer size (device px): sprite pivots snap to whole device pixels (no shimmer / half-texel blur)
+vec2 snapPivot(vec2 p) {
+  if (uViewPx.x <= 0.0) return p;
+  vec2 k = uView.zw * uViewPx * 0.5; // iso px -> device px
+  return uView.xy + floor((p - uView.xy) * k + 0.5) / k;
+}
 void main() {
   int entry = int(aB.x + 0.5); int flags = int(aB.y + 0.5);
   ivec2 tc = ivec2((entry % 1024) * 2, entry / 1024);
@@ -130,7 +136,7 @@ void main() {
   vUvRaw = vec3(mix(uvr.xy, uvr.zw, vec2(x / dim.x, y / dim.y)), dim.z); vLayer = int(dim.z + 0.5);
   vec2 off = vec2(px, -hp);
   if (aI.x != 0.0) { float cr = cos(aI.x), sr = sin(aI.x); off = vec2(cr * off.x - sr * off.y, sr * off.x + cr * off.y); }
-  vec2 iso = aA.xy + off; vScr = iso;
+  vec2 iso = snapPivot(aA.xy) + off; vScr = iso;
   float hpd = hp + aD.w; // Footprint (128): pixels below the pivot are ground-level box faces nearer the camera
   float key = (flags & 8) != 0 ? aA.z + 0.01 - hp / uHH
     : (flags & 192) == 192 ? aA.z + 0.62 + max(-hpd, 0.0) / uHH // Footprint|Cutaway: open interior, no height term (low walls/floor never out-rank occupants drawn upright)
@@ -513,6 +519,7 @@ export class SpriteBatch {
       const sx = (x - y) * hw, sy = (x + y) * hh - z * zs;
       if (sx < r0x || sx > r1x || sy < r0y || sy > r1y) return;
       let sid = sp.data.spriteId[k]!;
+      atlas.markUsed(sid); // hot/cold tiers: drawn-near-camera atlases stay (or are re-tiered) full res
       // character customization: resolved paper-doll layers (cached); the "body" layer replaces Sprite.spriteId
       let layers: CachedLayer[] | null = null; let bodyL: CachedLayer | null = null;
       const aps = ap ? ap.slot(i) : -1;
@@ -767,7 +774,7 @@ export class SpriteBatch {
     shadowDir: readonly [number, number], shadowAlpha: number, style: StyleConfig): void {
     const gl = this.gl;
     gl.useProgram(this.prog.prog);
-    gl.uniform4fv(u.uView!, view); gl.uniform2fv(u.uDepth!, depth);
+    gl.uniform4fv(u.uView!, view); gl.uniform2fv(u.uDepth!, depth); gl.uniform2f(u.uViewPx!, gl.drawingBufferWidth, gl.drawingBufferHeight);
     gl.uniform1f(u.uZPerPx!, this.zFactor / this.iso.zStep); gl.uniform1f(u.uHH!, this.iso.tileH / 2);
     gl.uniform1f(u.uTime!, time); gl.uniform1f(u.uWind!, wind);
     gl.uniform2fv(u.uWindVec!, this.windVec); gl.uniform3fv(u.uShadowColor!, this.shadowColor);

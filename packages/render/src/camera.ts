@@ -18,7 +18,12 @@ export class IsoCamera {
 
   constructor(readonly iso: IsoConfig = DEFAULT_ISO) {}
 
-  get scale(): number { return this.zoom * this.dpr; }
+  /** Snap the effective device scale (zoom x dpr) to quarter steps >= 1 so non-integer zooms (ADR-100 ~1.4) x
+   *  fractional DPRs (2.625) sample the atlas on a stable grid; the view center snaps to whole device pixels. */
+  snap = true;
+  get scale(): number { const s = this.zoom * this.dpr; return this.snap && s >= 1 ? Math.round(s * 4) / 4 : s; }
+  /** Effective CSS zoom actually drawn (zoom after scale snapping). */
+  get drawZoom(): number { return this.scale / this.dpr; }
 
   setViewport(w: number, h: number, dpr: number): void { this.viewW = w; this.viewH = h; this.dpr = dpr; }
 
@@ -26,7 +31,7 @@ export class IsoCamera {
   lookAt(wx: number, wy: number, wz = 0): void { const s = worldToScreen(wx, wy, wz, this.iso); this.x = s.sx; this.y = s.sy; }
 
   /** Pan by a CSS-pixel delta (e.g. a mouse drag). */
-  panScreen(dxCss: number, dyCss: number): void { this.x -= dxCss / this.zoom; this.y -= dyCss / this.zoom; }
+  panScreen(dxCss: number, dyCss: number): void { const z = this.drawZoom; this.x -= dxCss / z; this.y -= dyCss / z; }
 
   /** Zoom by factor keeping the iso point under the given CSS pixel fixed. */
   zoomAt(factor: number, cssX: number, cssY: number): void {
@@ -38,7 +43,7 @@ export class IsoCamera {
 
   cssToIso(cssX: number, cssY: number): { x: number; y: number } {
     const w = this.viewW / this.dpr, h = this.viewH / this.dpr;
-    return { x: this.x + (cssX - w / 2) / this.zoom, y: this.y + (cssY - h / 2) / this.zoom };
+    const z = this.drawZoom; return { x: this.x + (cssX - w / 2) / z, y: this.y + (cssY - h / 2) / z };
   }
 
   /** World position on ground plane z under a CSS pixel. */
@@ -56,7 +61,9 @@ export class IsoCamera {
 
   /** Uniform for GLSL_COMMON's uView. */
   viewUniform(out: Float32Array): Float32Array {
-    out[0] = this.x; out[1] = this.y; out[2] = (2 * this.scale) / this.viewW; out[3] = (-2 * this.scale) / this.viewH;
+    const k = this.scale; let cx = this.x, cy = this.y;
+    if (this.snap && k > 0) { cx = Math.round(cx * k) / k + ((this.viewW & 1) ? 0.5 / k : 0); cy = Math.round(cy * k) / k + ((this.viewH & 1) ? 0.5 / k : 0); }
+    out[0] = cx; out[1] = cy; out[2] = (2 * this.scale) / this.viewW; out[3] = (-2 * this.scale) / this.viewH;
     return out;
   }
 }

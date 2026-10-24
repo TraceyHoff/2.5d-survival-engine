@@ -17,6 +17,8 @@ export type GlFlag = "lowend" | "mediump" | "nofloat" | "lowmem" | "safe";
 
 export interface RenderCapabilities {
   renderer: string; vendor: string; mobile: boolean; lowEnd: boolean; flags: GlFlag[];
+  /** GPU-compressed texture families (KTX2 transcode targets); all false = PNG/RGBA8 path. */
+  compressed: CompressedTextureSupport;
   ext: { colorBufferFloat: boolean; colorBufferHalfFloat: boolean; floatLinear: boolean; debugRendererInfo: boolean };
   /** Chosen colour formats of the render targets. */
   formats: { scene: "RGBA8"; emissive: "RGBA8"; lightmap: "RGBA8" | "RGBA16F"; bloom: "RGBA8" | "RGBA16F"; lightmapEncode: number; dataTables: "RGBA32F"; lut: "RGBA8-2D-strip" };
@@ -49,6 +51,15 @@ export function parseGlFlags(search: string | undefined): GlFlag[] {
 
 const MOBILE_GPU = /adreno|mali|powervr|apple gpu|apple a\d|videocore|tegra|immortalis|xclipse|maleoon/i;
 const MOBILE_UA = /android|iphone|ipad|ipod|mobile/i;
+
+export interface CompressedTextureSupport { etc2: boolean; astc: boolean; s3tc: boolean; bptc: boolean }
+/** Probe compressed-texture extensions (ETC2 is core in WebGL2 but only hardware-native on mobile: the extension
+ *  WEBGL_compressed_texture_etc is what browsers expose when it is not emulated). ?gl=safe reports none. */
+export function probeCompressedTextures(gl: { getExtension(name: string): unknown }, safe = false): CompressedTextureSupport {
+  if (safe) return { etc2: false, astc: false, s3tc: false, bptc: false };
+  const has = (n: string): boolean => { try { return !!gl.getExtension(n); } catch { return false; } };
+  return { etc2: has("WEBGL_compressed_texture_etc"), astc: has("WEBGL_compressed_texture_astc"), s3tc: has("WEBGL_compressed_texture_s3tc"), bptc: has("EXT_texture_compression_bptc") };
+}
 
 export function detectCapabilities(gl: WebGL2RenderingContext, opts: { flags?: GlFlag[]; userAgent?: string; layerSize?: number } = {}): RenderCapabilities {
   const flags = [...new Set(opts.flags ?? [])];
@@ -100,14 +111,18 @@ export function detectCapabilities(gl: WebGL2RenderingContext, opts: { flags?: G
   // GPU memory budget for the atlas arrays: phones share RAM with the GPU and Chrome's GPU process caps it;
   // a 2048^2 x 11 layer x 4 array set with mips is ~0.9 GB, which fails (OOM / context loss) on Android.
   const lowmem = has("lowmem");
-  const textureBudgetMB = lowmem || flags.includes("safe") ? 160 : mobile ? 256 : 768;
+  // Mobile: 128 MB of atlas + streaming pools keeps the whole GPU set (plus ~30 MB of native-DPR render targets)
+  // under ~160 MB. Memory comes from cold tiers + eviction, not from blurring visible art (see AtlasManager.fitBudget).
+  const textureBudgetMB = lowmem || flags.includes("safe") ? 160 : mobile ? 128 : 768;
   if (flags.includes("safe")) fallbacks.push("safe mode (?gl=safe): no float targets, bloom or LUT; direct composite");
   if (lowmem || mobile) fallbacks.push(`atlas texture budget ${textureBudgetMB} MB${mobile ? " (mobile)" : ""}`);
-  const maxDpr = lowEnd ? 1 : mobile ? 2 : 3;
-  const maxPixels = lowEnd ? 1280 * 720 : mobile ? 2_400_000 : 3840 * 2160;
-  if (maxDpr < 3) fallbacks.push(`DPR capped at ${maxDpr}, max ${maxPixels} px`);
+  // Mobile renders at the native DPR (a 2.625 phone backed at 2x is upscaled 1.31x by the compositor = blurry); the pixel
+  // budget still caps 3.5x / 1440p panels. ?gl=lowend keeps DPR 1 (explicit low-end choice).
+  const maxDpr = lowEnd ? 1 : 3;
+  const maxPixels = lowEnd ? 1280 * 720 : mobile ? 3_200_000 : 3840 * 2160;
+  if (maxDpr < 3 || mobile) fallbacks.push(`DPR capped at ${maxDpr}, max ${maxPixels} px`);
   return {
-    renderer, vendor, mobile, lowEnd, flags, ext,
+    renderer, vendor, mobile, lowEnd, flags, ext, compressed: probeCompressedTextures(gl, flags.includes("safe")),
     formats: { scene: "RGBA8", emissive: "RGBA8", lightmap: "RGBA8", bloom: "RGBA8", lightmapEncode: 0.5, dataTables: "RGBA32F", lut: "RGBA8-2D-strip" },
     floatFilter: ext.floatLinear ? "LINEAR" : "NEAREST",
     precision: { fragmentHighp, fragment: fragmentHighp ? "highp" : "mediump", vertex: vp && vp.precision >= 23 ? "highp" : "mediump", fragmentHighpBits },

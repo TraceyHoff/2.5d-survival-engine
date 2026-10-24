@@ -130,7 +130,8 @@ async function main(): Promise<void> {
         const s = tr.slot(i), p = pv.slot(i);
         if (s >= 0) { const a = p >= 0 ? alpha : 1; const l = (f: "x" | "y" | "z"): number => p >= 0 ? pv.data[f][p]! + (tr.data[f][s]! - pv.data[f][p]!) * a : tr.data[f][s]!; cam.lookAt(l("x"), l("y"), l("z")); }
       }
-      if (veh) { const n = performance.now(); veh.frame(1 - (renderer.lighting?.daylight ?? 1), Math.min(0.1, (n - vehLast) / 1000)); vehLast = n; }
+      if (veh) { const n = performance.now(); const vr = renderer.camera.visibleRect(96); const iso = renderer.camera.iso; const hw = iso.tileW / 2, hh = iso.tileH / 2;
+        veh.frame(1 - (renderer.lighting?.daylight ?? 1), Math.min(0.1, (n - vehLast) / 1000), (x, y) => { const sx = (x - y) * hw, sy = (x + y) * hh; return sx >= vr.x0 && sx <= vr.x1 && sy >= vr.y0 && sy <= vr.y1; }); vehLast = n; }
       renderer.render(w, ui && !ui.interpolate ? 1 : alpha);
     },
   });

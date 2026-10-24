@@ -31,8 +31,10 @@ describe("render capabilities (mobile WebGL2)", () => {
     const c = detectCapabilities(mockGl({ renderer: "Mali-G57", ext: [], fragHighpBits: 0 }), { userAgent: ANDROID_UA });
     expect(c.mobile).toBe(true); expect(c.renderer).toBe("Mali-G57"); expect(c.ext).toMatchObject({ colorBufferFloat: false, colorBufferHalfFloat: false, floatLinear: false });
     expect(c.floatFilter).toBe("NEAREST"); expect(c.precision).toMatchObject({ fragmentHighp: false, fragment: "mediump" }); expect(c.atlasLayerSize).toBe(1024);
-    expect(c.textureBudgetMB).toBe(256); expect(c.maxDpr).toBe(2); expect(c.formats.lightmap).toBe("RGBA8");
-    expect(c.fallbacks.join("|")).toMatch(/float colour buffers.*OES_texture_float_linear.*mediump.*1024.*256 MB.*DPR capped at 2/);
+    expect(c.textureBudgetMB).toBe(128); expect(c.maxDpr).toBe(3);
+    // Pixel-7-class phone (412x915 CSS @ DPR 2.625) gets a native backbuffer, not a 2x one upscaled by the compositor
+    expect(clampDrawingBuffer(412, 915, 2.625, c)).toEqual({ w: 1082, h: 2402, dpr: 2.625 }); expect(c.formats.lightmap).toBe("RGBA8");
+    expect(c.fallbacks.join("|")).toMatch(/float colour buffers.*OES_texture_float_linear.*mediump.*1024.*128 MB.*DPR capped at 3, max 3200000 px/);
   });
   it("mobile detected from the GPU name alone (desktop-mode UA)", () => { expect(detectCapabilities(mockGl({ renderer: "Adreno (TM) 610" }), { userAgent: DESKTOP_UA }).mobile).toBe(true); });
   it("?gl=lowend implies mediump + nofloat + lowmem, DPR 1", () => {

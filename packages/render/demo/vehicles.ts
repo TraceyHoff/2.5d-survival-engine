@@ -86,11 +86,11 @@ export function setupVehicleDemo(world: World, reg: AssetRegistry, o: { x: numbe
   return {
     view,
     focus: o.camper ? { x: stand[0], y: stand[1] } : o.lineup ? { x: x + 6, y: y + 13 } : { x: x + 6, y: y + 8 },
-    frame(dark: number, dt: number): void {
+    frame(dark: number, dt: number, inView?: (x: number, y: number) => boolean): void {
       if (world.tick !== lastTick) { lastTick = world.tick; step(0.05); } // net-rate snapshots
       const list = [...parked, ...movers.map((m) => m.snap), trailer];
       const local = o.camper ? { x: stand[0], y: stand[1] } : undefined;
-      const placed = view.sync(o.lineup ? lineup : list, dt, { darkness: dark, lowEnd: o.lowEnd, localVehicle: o.camper ? rv.key : null, localRider: 0, driftYaw: 0.3 });
+      const placed = view.sync(o.lineup ? lineup : list, dt, { darkness: dark, lowEnd: o.lowEnd, localVehicle: o.camper ? rv.key : null, localRider: 0, driftYaw: 0.3, ...(inView ? { inView } : {}) });
       const put = (e: Entity, p: { x: number; y: number; z: number; facing: number }): void => {
         world.set(e, Transform, p); if (world.has(e, PrevTransform)) world.set(e, PrevTransform, p); o.index?.insert(e, p.x, p.y);
         if (world.has(e, AnimState)) { const a = world.get(e, AnimState)!; if (a.state !== AnimStateId.Sit) world.set(e, AnimState, { ...a, state: AnimStateId.Sit }); }

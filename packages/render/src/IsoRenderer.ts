@@ -191,6 +191,13 @@ export class IsoRenderer implements Renderer {
     }
     if (step >= FallbackStep.Safe) this.enterSafe("fallback ladder");
   }
+  /** Ladder recovery: undo the step we just left (wearables back on, dressed cap lifted, default atlas tiers). */
+  private recoverFallback(step: number): void {
+    if (step < FallbackStep.LowTier) this.atlas.restoreTier().then(() => { this.w = 0; }, (e: unknown) => this.fault("atlas", `tier restore failed: ${String(e)}`));
+    if (step < FallbackStep.CapDressed) this.sprites.maxDressed = Infinity;
+    if (step < FallbackStep.EvictWearables) this.atlas.setWearables(true);
+    this.diagState.messages.push(`GPU fallback recovered to step ${step} (${FALLBACK_STEP_NAMES[step]})`);
+  }
   private enterSafe(why: string): void {
     const d = this.diagState; if (d.safe) return;
     d.safe = true; d.autoSafe++; this.capabilities.safe = true; this.capabilities.fallbacks.push(`auto safe mode (${why})`);
@@ -294,7 +301,9 @@ export class IsoRenderer implements Renderer {
     return { warnings, loaded };
   }
 
+  private lastCss: [number, number, number] = [0, 0, 1];
   resize(cssW: number, cssH: number, dprIn: number): void {
+    this.lastCss = [cssW, cssH, dprIn];
     // DPR / pixel budget caps + MAX_TEXTURE/RENDERBUFFER/VIEWPORT clamp (an oversized scene FBO is incomplete -> black world) (mobile 2, low-end 1): phones report DPR 2.6-3.5
     const { w, h, dpr } = clampDrawingBuffer(cssW, cssH, dprIn, this.capabilities);
     this.canvas.width = w; this.canvas.height = h;
@@ -359,7 +368,8 @@ export class IsoRenderer implements Renderer {
     this.frameCount++; this.totalFrames++; const probe = this.frameCount === 1 || this.frameCount === 60; const diag = this.diagState;
     const pass = (name: string): void => { if (probe) { const e = gl.getError(); if (diag.enabled || e !== gl.NO_ERROR) diag.passErrors[name] = glErrorName(e); } };
     const gl = this.gl; const style = this.style;
-    if (this.w === 0) this.resize(this.canvas.clientWidth || 800, this.canvas.clientHeight || 600, 1);
+    // re-layout after an atlas rebuild / fallback: keep the caller's CSS size + DPR (a hard-coded 1 here dropped phones to a DPR-1 backbuffer = blurry)
+    if (this.w === 0) this.resize(this.lastCss[0] || this.canvas.clientWidth || 800, this.lastCss[1] || this.canvas.clientHeight || 600, this.lastCss[2]);
     this.vfx.update(this.time); this.statusDt = dt;
     if (this.bindings.burning) this.burning.update(world, this.bindings.burning, this.bindings.buildPiece, this.atlas, this.vfx, this.time, dt);
 
@@ -401,6 +411,8 @@ export class IsoRenderer implements Renderer {
       }
     }
 
+    { const up = this.fallback.recover(this.totalFrames); if (up !== null) this.recoverFallback(up); }
+    if (this.totalFrames >= 30 && this.totalFrames % 30 === 0) void this.atlas.retier(this.totalFrames).then((r) => { if (r) { this.w = 0; console.info(`[render] re-tiered atlases: ${this.atlas.tiers.hot.length} hot x${this.atlas.tiers.hotScale}`); } }, () => undefined);
     if (this.tilemap) this.terrain.sync(this.tilemap);
     this.camera.viewUniform(this.viewU);
     const rect = this.camera.visibleRect(0, this.rect);
@@ -541,7 +553,9 @@ export class IsoRenderer implements Renderer {
     try {
       const r = formatDiagReport(this.diagState, { renderer: c.renderer, mobile: c.mobile, precision: c.precision.fragment, budgetMB: c.textureBudgetMB, ...(vramMB !== undefined ? { vramMB } : {}), fallbacks: c.fallbacks, problems: c.problems });
       const a = this.atlas; const sp = this.sprites;
-      const extra = [...this.fallback.report(), this.watchdog.report(),
+      const t = a.tiers; const fi = a.fitInfo;
+      const tierLine = `tiers: hot x${t.hotScale} (${t.hot.length}), cold x${t.coldScale} (${t.cold.length}), side arrays x1/${1 << a.sideShift}, page @${a.currentPageScale}x; pool reserve ${fi.reserveMB}/${fi.reserveWantedMB} MB, demoted ${fi.demoted}${a.needsRetier ? ", RETIER pending" : ""}; ladder step ${this.fallback.step} (${this.fallback.name}); backbuffer ${this.w}x${this.h} @dpr ${this.camera.dpr.toFixed(3)} scale ${this.camera.scale.toFixed(3)}`;
+      const extra = [tierLine, ...this.fallback.report(), this.watchdog.report(),
         `wearables: ${a.wearablesEnabled ? "on" : "OFF"}, page faults ${a.pageFaults}, budget refusals ${a.pageBudgetRefusals}; dressed cap ${Number.isFinite(sp.maxDressed) ? sp.maxDressed : "none"} (${sp.dressCapped} body-only last frame)`].join("\n");
       const sc = this.sceneDiag; const hint = sc && sc.entities === 0 ? "\n! no entities replicated: nothing to draw (GPU is fine; check localServer/snapshots/lastError)" : "";
       const out = r + "\n" + extra + "\n" + formatSceneDiag(sc) + hint;
