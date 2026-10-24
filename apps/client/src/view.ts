@@ -285,7 +285,7 @@ export class IsoView {
     v.runPhase("renderPrep", 0);
     try { r.render(v, alpha); } catch (e) { showRenderError("Renderer exception", `${e instanceof Error ? e.stack ?? e.message : String(e)}\n${glInfo(r.gl)}`); return; }
     // all-black self-check over the first frames (daytime only, where black means a broken pass)
-    if (this.checks < 90 && ++this.checks % 30 === 0 && r.lighting.daylight > 0.5) {
+    if (this.checks < 90 && ++this.checks % 30 === 0 && daylightOf(r) > 0.5) {
       if (frameIsBlack(r.gl)) { if (++this.blackFrames >= 2) showRenderError("World rendered black", glInfo(r.gl)); } else this.blackFrames = 0;
     }
   }
@@ -461,3 +461,6 @@ async function loadMergedManifest(art: string): Promise<ReturnType<typeof loadMa
   const lock = await get(art + "pack/ids.lock.json") as Parameters<typeof loadManifest>[1] extends infer O ? O extends { lock?: infer L } ? L : never : never;
   return loadManifest(manifest, lock ? { lock } : {});
 }
+
+/** Daylight for the black-frame self-check; renderers without a `lighting` state (Canvas2D) count as night (check skipped). */
+export function daylightOf(r: { lighting?: { daylight?: number } | undefined }): number { return r.lighting?.daylight ?? 0; }
