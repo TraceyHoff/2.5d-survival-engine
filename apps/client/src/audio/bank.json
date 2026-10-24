@@ -3938,6 +3938,9 @@
   },
   "music.menu": {
    "bus": "music",
+   "files": [
+    "audio/music/music_menu_1"
+   ],
    "volume": 0.6,
    "pitchJitter": 0.02,
    "volumeJitter": 0,
@@ -3953,6 +3956,11 @@
   },
   "music.explore": {
    "bus": "music",
+   "files": [
+    "audio/music/music_explore_1",
+    "audio/music/music_explore_2",
+    "audio/music/music_explore_3"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.02,
    "volumeJitter": 0,
@@ -3968,6 +3976,10 @@
   },
   "music.night": {
    "bus": "music",
+   "files": [
+    "audio/music/music_night_1",
+    "audio/music/music_night_2"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.02,
    "volumeJitter": 0,
@@ -3983,6 +3995,9 @@
   },
   "music.combat.low": {
    "bus": "music",
+   "files": [
+    "audio/music/music_combat_low_1"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.02,
    "volumeJitter": 0,
@@ -3998,6 +4013,9 @@
   },
   "music.combat.high": {
    "bus": "music",
+   "files": [
+    "audio/music/music_combat_high_1"
+   ],
    "volume": 0.55,
    "pitchJitter": 0.02,
    "volumeJitter": 0,
@@ -4013,6 +4031,9 @@
   },
   "music.stinger.death": {
    "bus": "music",
+   "files": [
+    "audio/music/music_stinger_death_1"
+   ],
    "volume": 0.7,
    "pitchJitter": 0.02,
    "volumeJitter": 0,
@@ -4028,6 +4049,9 @@
   },
   "music.stinger.dawn": {
    "bus": "music",
+   "files": [
+    "audio/music/music_stinger_dawn_1"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.02,
    "volumeJitter": 0,
