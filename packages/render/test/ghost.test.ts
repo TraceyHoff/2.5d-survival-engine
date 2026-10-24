@@ -45,3 +45,29 @@ describe("build-placement ghost (buildPreview)", () => {
     expect(SPRITE_FS).toMatch(/oEmissive = vec4\(ghost > 0 \? 1\.0 : e \* uEmisStrength, \(vFlags & 32\) != 0 \? max\(e, 0\.6\) : e/);
   });
 });
+
+describe("rotSteps + tier (buildPieceVisual / BuildGhost)", () => {
+  it("quarterTurn: 4 steps masks as before, 16 steps rounds to nearest quarter", async () => {
+    const { quarterTurn } = await import("@engine/assets");
+    for (let r = 0; r < 8; r++) expect(quarterTurn(r, 4)).toBe(r & 3);
+    expect(quarterTurn(6)).toBe(2);
+    expect([...Array(16).keys()].map((r) => quarterTurn(r, 16))).toEqual([0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0]);
+  });
+  it("placed piece with rotSteps 16 draws the nearest quarter frame (mirror rules via buildingFrame)", async () => {
+    const { buildPieceVisual } = await import("@engine/assets");
+    const pk = () => key;
+    const v = buildPieceVisual(reg, { type: 1, rot: 9, tint: 0, paint: 0, rotSteps: 16 }, { pieceKey: pk });
+    expect(v.rotation).toBe(2); expect(!!v.frame!.flipX).toBe(true); // 9/16 turn -> 2 (mask would give 1)
+    expect(buildPieceVisual(reg, { type: 1, rot: 3, tint: 0, paint: 0, rotSteps: 16 }, { pieceKey: pk }).rotation).toBe(1);
+    expect(buildPieceVisual(reg, { type: 1, rot: 3, tint: 0, paint: 0 }, { pieceKey: pk }).rotation).toBe(3);
+  });
+  it("ghost tier: uses <piece>@tier<N> art when present, else default sprite; stays untinted", () => {
+    const tierSprite = [...reg.allSprites()].find((s) => s.building && s.id !== pieceSprite.id)!;
+    const r2 = new Proxy(reg, { get(t, p) { if (p === "spriteForPiece") return (k: string) => (k === `${key}@tier2` ? tierSprite.id : t.spriteForPiece(k)); const v = Reflect.get(t, p, t); return typeof v === "function" ? v.bind(t) : v; } });
+    const w = mk(); const g = new BuildGhost(w, BP, r2);
+    const p: BuildPreview = { pieceKey: key, x: 1, y: 2, rot: 0, valid: true };
+    const v = g.sync(p, { tier: 2 })!; expect(v.visualId).toBe(tierSprite.id); expect(v.tier).toBe(2);
+    expect(w.get(g.entity!, BP)).toMatchObject({ visualId: tierSprite.id, tint: 0, ghost: 1 });
+    const d = g.sync(p, { tier: 3 })!; expect(d.visualId).toBe(pieceSprite.id); expect(d.tier).toBeUndefined();
+  });
+});
