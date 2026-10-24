@@ -1,6 +1,7 @@
 """Drawers for the body and every wearable. Each drawer(c: Ctx, spec) queues depth-sorted items on c and may
 set c.extra (drawn after the front-arm cut, e.g. front sleeves). 'P'/'S' ramps = tint mask R/G (neutral art)."""
 import math
+import numpy as np
 from PIL import ImageChops
 from rig import NECK, circle, hull, NEU, NEU_INK, ramp, ellipse_pts, capsule_pts
 
@@ -265,8 +266,41 @@ def _(c, hat):
     for i, (x, y, z) in enumerate([(-10.5, -2.5, -3), (10.5, -2.5, -3), (-8, -8, -6), (8, -8, -6), (0, -10.5, -5)]):
         blob3(c, (x, y, z), 4.6, 5.4, seed=50 + i)
 
+HAIR_NO_SCALP = {"mohawk"}                      # shaved sides are the style
+def scalp_cover(c, rk=1.035):
+    """skull cover under every style (bug: bald scalp showed through cap gaps on side/back facings): the head sphere
+    above the hairline (front) / around the ears (sides) / to the nape (back); the style's cap and masses draw over it."""
+    cv = c.cv; pts = []; sd = c.nv(1, 0); vf = c.nv(0, 1)
+    for el in range(-24, 91, 5):
+        for az in range(-180, 180, 5):
+            fr = math.cos(math.radians(az)); lim = 34 if fr > .35 else (6 if fr > -.15 else -22)
+            if el < lim: continue
+            e = math.radians(el); vis = math.cos(e) * (math.sin(math.radians(az)) * sd + fr * vf) + math.sin(e) * .55
+            if vis < -.02: continue
+            p, _ = c.sph(az, el, rk); pts.append(circle(p, 1.2))
+    if pts: cv.part(None, "P", mask=cv.mask_from(pts), lw=1.0, shade=.2, hl=.1)
+def eye_clear(c):
+    """bangs/fringe never cover the eyes on front and 3/4 facings: cut the hair layer above the eye line, inked rim"""
+    if fv(c) < -.3: return
+    cv = c.cv; E = []; c.fdy = FACE_LIFT.get(c.K["d"], 0.0)
+    try:
+        for az in (-30, 30):
+            p, v = c.sph(az, -8, 1.0)
+            if v <= .12: continue
+            sq = max(.35, min(1, v * 1.2)); E.append(circle((p[0], p[1] - .3), 3.3 * sq + .7, 4.2))
+    finally: c.fdy = 0.0
+    if not E: return
+    m = cv.mask_from(E); hair_a = cv.img.getchannel("A")
+    if not np.any((np.asarray(m) > 0) & (np.asarray(hair_a) > 0)): return
+    for e in E:                                   # ink only the upper arc (cut fringe edge), not a ring around the eye
+        cy = sum(q[1] for q in e) / len(e); k0 = min(range(len(e)), key=lambda i: e[i][1])
+        rot = e[k0:] + e[:k0]; arc = [q for q in rot[len(rot) // 2:] + rot[:len(rot) // 2] if q[1] <= cy]
+        if len(arc) > 2: cv.line(sorted(arc), INK[3], .9, clip=hair_a)
+    cv.erase(m)
 def draw_hair(c, spec, hat=False):
+    if spec["style"] not in HAIR_NO_SCALP: c.add(hv(c) + 1.95, lambda: scalp_cover(c, 1.06 if spec["style"] == "buzz" else 1.035))  # buzz cap is the tightest
     HAIR[spec["style"]](c, hat)
+    c.add(1e9, lambda: eye_clear(c))
 
 # ============================================================ HATS
 HAT_DZ = 3.6
