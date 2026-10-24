@@ -128,3 +128,21 @@ describe("BuildGhost: tri rotation + exact pivot", () => {
     const t = w.get(g.entity!, Transform)!; expect(t.x).toBeCloseTo(3.333, 4); expect(t.y).toBeCloseTo(4.667, 4); expect(t.z).toBe(3);
   });
 });
+
+describe("triArtRow vs screen convention", () => {
+  // Art: row r = model rotated r x 90 deg clockwise ON SCREEN, row 0 edge 0 faces SE. Gameplay (triEdges): edge k normal at
+  // world angle (rot + 4k) x 30 deg. Screen = ((x - y) hw, (x + y) hh), y down.
+  const scr = (a: number) => { const x = Math.cos(a), y = Math.sin(a); return [x - y, (x + y) / 2] as const; };
+  const cw = (a: readonly [number, number], b: readonly [number, number]) => a[0] * b[1] - a[1] * b[0] > 0; // y-down: >0 = clockwise
+  it("rot 0 edge 0 faces SE and increasing rot turns clockwise on screen", () => {
+    const e0 = scr(0); expect(e0[0]).toBeGreaterThan(0); expect(e0[1]).toBeGreaterThan(0);
+    expect(cw(scr(0), scr(Math.PI / 6))).toBe(true);
+  });
+  it("each 30 deg step lands exactly on the row with the same edge set (mod 120 deg)", () => {
+    for (let rot = 0; rot < 12; rot++) {
+      const row = triArtRow(rot); // row r = r x 90 deg CW from rot 0, so edges at (3r + 4k) x 30 deg
+      const want = new Set([0, 1, 2].map((k) => (rot + 4 * k) % 12)), got = new Set([0, 1, 2].map((k) => (3 * row + 4 * k) % 12));
+      expect(got).toEqual(want);
+    }
+  });
+});

@@ -836,10 +836,12 @@ export class SpriteBatch {
       const flat = flatLayer(layer, roof); // deck pieces (floors/foundations), never roofs
       const flags = (flat ? SpriteFlag.Flat : 0) | (res.flipX ? SpriteFlag.FlipX : 0) | (nightSet?.has(vis) ? 64 : 0);
       // damage 1-3: Art's crack overlay sprite (building.crackOverlay = bld_crack, anim stage<N>) on top of the (baked)
-      // damage frame; the procedural shader crack only when no overlay is declared or its page is not resident
+      // damage frame. Where bld_crack covers the stage, no procedural shader crack at all (a not-yet-resident page just
+      // shows the bare damage frame for a moment); the procedural crack is kept only for sets with no overlay declared
       const crackSid = dmg > 0 ? atlas.crackOverlayOf(drawVis) : -1; const ca = crackAnim(dmg);
-      const crack = crackSid >= 0 && ca !== undefined && atlas.pageReady(crackSid, PRIO_NEAR) && atlas.resolve(crackSid, atlas.animIndex(crackSid, ca), 0, 0, 0, this.crackRes);
-      const dmgOverlay = dmg > 0 && !res.hasDamageFrames && !crack ? dmg : 0;
+      const crackCovered = crackSid >= 0 && ca !== undefined;
+      const crack = crackCovered && atlas.pageReady(crackSid, PRIO_NEAR) && atlas.resolve(crackSid, atlas.animIndex(crackSid, ca), 0, 0, 0, this.crackRes);
+      const dmgOverlay = dmg > 0 && !res.hasDamageFrames && !crackCovered ? dmg : 0;
       const bias = roof ? 0.05 : layer * 0.01; // roofs above every other layer of the cell
       tmp.length = 0;
       // per-column slices: columns c = x - y over the footprint
