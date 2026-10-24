@@ -487,3 +487,21 @@ Gameplay owns data, not loops: there is **no spawn loop and no controller** here
 - **Disband rule (approved):** clan stalls and tills go to the leader (Player owner) and **close**. `OwnedBy.groupId=clan` becomes `playerId=leader`. Claims owned by the clan are removed. Pending invites are dropped. The leader keeps the Tribe.
 - Networked state: `ClanStatus{clan,role,goal,goalX,goalY,contrib}` (scoped: only the owner and same-clan viewers receive it, since it carries the goal and raid target) and `ClanInvitePending` (owner scope), so bots on replicas can read them. Contribution counts items stocked into clan stalls.
 - Persistence: the groups persist through core `social`. Rank masks, goals and contribution go in the server blob `gameplay.clans` (format 1), written on change. Goal coordinates must be finite and within `CLAN_RULES.goalBound` (32768), else `bad_goal`. `apps/server/test/clan_persist.test.ts` checks that clan and party membership, the goal and ClanStatus survive a save and reload.
+
+## 29. Clan behaviors (`src/ai/clan_behaviors.ts`)
+
+- Sensors (`fillClanSensors`, read from the replica only): the bot's own `ClanStatus` and `ClanInvitePending`, visible players without a clan, visible clanmates' `ClanStatus` (the server only sends those to clanmates, §28), the nearest own-clan stall with a listed item the bot carries (`clanStock`), and the nearest rival stall.
+- Behaviors (each has a cooldown):
+  - `clan_found`: needs 0.5·sociability + 0.5·max(industriousness, greed) ≥ 0.72.
+  - `clan_decide`: accept chance comes from `clanAcceptChance` (sociability, trust, industriousness). A declined invite is ignored until it expires; there's no decline command.
+  - `clan_recruit`: officers and the leader, if sociability ≥ 0.5.
+  - `clan_manage` (leader only):
+    - once, if industrious: lets members stock (base + stock bits)
+    - promotes members whose contribution is ≥ 20
+    - kicks members idle with zero contribution for about 600 s, sooner for unsociable leaders
+    - sets the goal via `chooseClanGoal`: Defend if ≥ 2 zombies are near the base; Raid at a rival stall if brave and greedy; StockStalls once a clan stall exists; otherwise BuildBase.
+  - `clan_stock`: walks to the clan stall and stocks it; the stall counts the contribution.
+  - `clan_goal`: walks to the goal for BuildBase, Defend and Raid.
+- Action strings go through `emitAgentCommands` (`ccreate, cinvite, caccept, cleave, cpromote, cdemote, ckick, cperms, cgoal, cstock`) to the same `gameplay.clan*` / `gameplay.stockStall` commands humans use.
+- Chat lines: `social.clan.{found,invite,accept,decline,promote,kick,goal,contribute,defend,raid}.N` in en.json.
+- Limit: `clanStock` reads `StallDisplay`, so it only sees listings that are enabled and already stocked.

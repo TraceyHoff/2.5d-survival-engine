@@ -9,6 +9,8 @@ import { GameplayActions, PlaceCmd, UseCmd } from "../input.js";
 import { BuyFromStallCmd, OpenStallCmd } from "../economy/stall.js";
 import { QueueCraftCmd } from "../systems/craft_queue.js";
 import { PartyAcceptCmd, PartyDeclineCmd, PartyInviteCmd, PartyKickCmd, PartyLeaveCmd } from "../party.js";
+import { ClanAcceptCmd, ClanCreateCmd, ClanDemoteCmd, ClanInviteCmd, ClanKickCmd, ClanLeaveCmd, ClanPromoteCmd, ClanSetGoalCmd, ClanSetRankPermsCmd } from "../clan.js";
+import { StockStallCmd } from "../economy/stall.js";
 import { requestEmote } from "../expression.js";
 
 export function actionIntent(action: string): BotIntent | undefined {
@@ -60,6 +62,7 @@ export type AgentOutputWithCommands = AgentOutput & { commands?: AgentCommand[] 
 /** Entity fields hold the bot's replica entity; the host (local.ts sendAgentCommands -> NetClient.sendCommand) maps them to NetIds. */
 export function actionCommand(action: string): AgentCommand | undefined {
   const party = partyActionCommand(action); if (party !== null) return party;
+  const clan = clanActionCommand(action); if (clan !== null) return clan;
   const it = actionIntent(action); if (!it) return undefined;
   switch (it.kind) {
     case "eat": return { type: UseCmd.name, payload: { slot: it.slot } };
@@ -86,7 +89,28 @@ function partyActionCommand(action: string): AgentCommand | undefined | null {
     default: return null;
   }
 }
-const COMMAND_ACTIONS = new Set(["eat", "drink", "craft", "build", "open", "buy", "pinvite", "paccept", "pdecline", "pleave", "pkick"]);
+/**
+ * Clan action strings: "ccreate" | "cinvite:<entity>" | "caccept:<clan>" | "cleave" | "cpromote:<entity>" | "cdemote:<entity>"
+ * | "ckick:<entity>" | "cperms:<role>:<mask>" | "cgoal:<goal>:<x>:<y>" | "cstock:<stall>:<listing>:<invSlot>:<count>".
+ * null = not a clan action; undefined = malformed.
+ */
+function clanActionCommand(action: string): AgentCommand | undefined | null {
+  const [k, ...rest] = action.split(":"); const n = rest.map(Number); const ok = (c: number) => n.length >= c && n.every(Number.isFinite);
+  switch (k) {
+    case "ccreate": return { type: ClanCreateCmd.name, payload: {} };
+    case "cleave": return { type: ClanLeaveCmd.name, payload: {} };
+    case "cinvite": return ok(1) ? { type: ClanInviteCmd.name, payload: { target: n[0]! } } : undefined;
+    case "caccept": return ok(1) ? { type: ClanAcceptCmd.name, payload: { clan: n[0]! } } : undefined;
+    case "cpromote": return ok(1) ? { type: ClanPromoteCmd.name, payload: { target: n[0]! } } : undefined;
+    case "cdemote": return ok(1) ? { type: ClanDemoteCmd.name, payload: { target: n[0]! } } : undefined;
+    case "ckick": return ok(1) ? { type: ClanKickCmd.name, payload: { target: n[0]! } } : undefined;
+    case "cperms": return ok(2) ? { type: ClanSetRankPermsCmd.name, payload: { role: n[0]!, mask: n[1]! } } : undefined;
+    case "cgoal": return ok(3) ? { type: ClanSetGoalCmd.name, payload: { goal: n[0]!, x: n[1]!, y: n[2]! } } : undefined;
+    case "cstock": return ok(4) ? { type: StockStallCmd.name, payload: { stall: n[0]!, listingSlot: n[1]!, invSlot: n[2]!, count: Math.max(1, Math.min(65535, n[3]!)) } } : undefined;
+    default: return null;
+  }
+}
+const COMMAND_ACTIONS = new Set(["ccreate", "cinvite", "caccept", "cleave", "cpromote", "cdemote", "ckick", "cperms", "cgoal", "cstock", "eat", "drink", "craft", "build", "open", "buy", "pinvite", "paccept", "pdecline", "pleave", "pkick"]);
 /**
  * Moves the command-type actions (eat, drink, craft, build, open, buy) out of out.actions and into out.commands, in order.
   Movement and gather/attack/sleep stay
