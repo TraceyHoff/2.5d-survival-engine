@@ -22,6 +22,7 @@ import type { TransformSource } from "./transformSource.js";
 import type { VfxLayer } from "./vfx.js";
 import { LayerCache, activeExpression, readAppearanceSlot, type AppearanceBinding, type CachedLayer } from "./character/layers.js";
 import { nearestCutoff } from "./gl/fallback.js";
+import { PRIO_NEAR } from "./gl/vram.js";
 
 export const INSTANCE_FLOATS = 36;
 /** Depth offset of held items vs the body (must exceed depth-key precision; < the next tile row). */
@@ -327,6 +328,9 @@ export class SpriteBatch {
   characterOpts = { outline: "union" as "union" | "body", minorLayerMinZoom: 0.75 };
   /** Per-frame stats: characters with Appearance drawn, extra layer instances pushed. */
   characters = 0; layerInstances = 0;
+  /** ?diag: local player + characters within PRIO_NEAR this frame (layer count, resident pages, worst pool scale). */
+  readonly nearInfo: { e: number; d: number; layers: number; resident: number; scale: number; missing: string[] }[] = Array.from({ length: 8 }, () => ({ e: -1, d: 0, layers: 0, resident: 0, scale: 1, missing: [] }));
+  nearN = 0;
   /** Fallback step 2: only the nearest `maxDressed` layered characters (to the view centre) draw their wearables; the rest body-only. */
   maxDressed = Infinity;
   /** Characters drawn body-only by the maxDressed cap last frame. */
@@ -456,7 +460,7 @@ export class SpriteBatch {
     const apVer = apData?.version ?? null;
     const lodMinor = (cx.zoom ?? 1) < this.characterOpts.minorLayerMinZoom; const hitOf = cx.bindings.hitFlash;
     const outlineOn = cx.style.outline.enabled && this.characterOpts.outline === "union";
-    this.characters = 0; this.layerInstances = 0;
+    this.characters = 0; this.layerInstances = 0; this.nearN = 0;
     // nearest-N cutoff from last frame's candidate distances (one frame lag, no per-frame sort of all sprites)
     this.dressCut = nearestCutoff(this.dressD2, this.dressN, this.maxDressed); this.dressN = 0; this.dressDrawn = 0; this.dressCapped = 0;
     if (this.layerCache && (this.frameNo & 255) === 0) this.layerCache.prune((e) => world.isAlive(e));
@@ -540,6 +544,7 @@ export class SpriteBatch {
         else if (bodyL && st0 < 0 && bodyL.animName) { layers = this.layerCache.get(i, e, apVer![aps]!, f, read, ro(bodyL.animName)); bodyL = null;
           for (const l of layers) if (l.slot === "body") { bodyL = l; sid = l.sprite; break; } }
       }
+      if (bodyL) atlas.markUsed(sid); // the paper-doll body sheet is visible art too: keep it in the hot (full-res) tier
       let ok: boolean;
       const as = an ? an.slot(i) : -1;
       let st = -1, t = 0;
@@ -583,7 +588,11 @@ export class SpriteBatch {
       if (e === this.focusEntity && occ.silhouette) { this.silInst.set(o0.subarray(0, INSTANCE_FLOATS)); this.silInst[27] = 0; this.silOn = true; }
       this.pushOcc(o0, 0, occT, occ.mode);
       let dress = true;
-      if (layers && layers.length && Number.isFinite(this.maxDressed)) {
+      // page priority: 0 = local player, else squared tile distance to them; near characters (<= PRIO_NEAR) are
+      // exempt from the dress cap and the ladder's wearable eviction and win pool slots over farther ones
+      const cdx = x - fwx, cdy = y - fwy; const prio = e === this.focusEntity ? 0 : hasFocus ? cdx * cdx + cdy * cdy : Infinity;
+      const nearC = prio <= PRIO_NEAR;
+      if (layers && layers.length && Number.isFinite(this.maxDressed) && !nearC) {
         const dx = sx - (r0x + r1x) * 0.5, dy = sy - (r0y + r1y) * 0.5, d2 = dx * dx + dy * dy;
         if (this.dressN >= this.dressD2.length) { const g = new Float32Array(this.dressD2.length * 2); g.set(this.dressD2); this.dressD2 = g; }
         this.dressD2[this.dressN++] = d2;
@@ -591,6 +600,7 @@ export class SpriteBatch {
       }
       if (layers && layers.length && dress) {
         this.characters++;
+        if (nearC && this.nearN < this.nearInfo.length) { const ni = this.nearInfo[this.nearN]!; ni.e = e; ni.d = Math.sqrt(prio); ni.layers = 0; ni.resident = 0; ni.scale = 1; ni.missing.length = 0; }
         // copy the body instance (pivot, flip, seed -> same shiver, status fx, occlusion, flash) and swap frame + tint;
         // keys step by LAYER_BIAS in resolveLayers order so a character's layers stay contiguous; outline-only copies
         // sit just behind the body so only the ring outside the union silhouette survives
@@ -598,8 +608,10 @@ export class SpriteBatch {
         const lr = this.layerRes; let j = 0;
         for (const l of layers) {
           if (l === bodyL) continue; j++;
-          if (lodMinor && l.minor) continue;
-          if (!atlas.pageReady(l.sprite)) continue; // streamed page not resident yet: body-only fallback
+          if (lodMinor && l.minor && !nearC) continue;
+          const rdy = atlas.pageReady(l.sprite, prio);
+          if (nearC && this.nearN < this.nearInfo.length) { const ni = this.nearInfo[this.nearN]!; if (ni.e === e) { ni.layers++; if (rdy) ni.resident++; else ni.missing.push(l.slot); const pi = atlas.pageInfo(l.sprite); ni.scale = Math.min(ni.scale, pi.scale); } }
+          if (!rdy) continue; // streamed page not resident yet: body-only fallback
           const okL = st >= 0 ? atlas.resolve(l.sprite, atlas.stateAnim(l.sprite, st), f, t, 0, lr) : atlas.resolve(l.sprite, atlas.animIndex(l.sprite, l.animName), f, 0, sp.data.frameId[k]!, lr);
           if (!okL) continue;
           o0.set(base); o0[4] = lr.entry; o0[8] = lr.ax; o0[9] = lr.ay; o0[16] = 0;
@@ -612,6 +624,7 @@ export class SpriteBatch {
           this.pushOcc(o0, 0, occT, occ.mode); this.layerInstances++;
         }
         o0.set(base);
+        if (nearC && this.nearN < this.nearInfo.length) this.nearN++;
       }
       if (eq && heldOf) { const s2 = eq.slot(i); if (s2 >= 0) this.emitHeld(atlas, heldOf, eq.data.mainHandItem[s2]!, res, sx, sy, key, scale, f, (sp.data.flags[k]! & SpriteFlag.FlipX) !== 0, fade, occT, occ.mode); }
     };

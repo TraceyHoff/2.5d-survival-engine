@@ -51,7 +51,13 @@ export class VramAccountant {
   }
 }
 
-interface PageEntry { slot: number; refs: number; lastUsed: number }
+interface PageEntry { slot: number; refs: number; lastUsed: number; prio: number }
+/**
+ * Page priority (lower = more important): 0 = the local player, else squared tile distance to them. Pages at or under
+ * PRIO_NEAR (local player + characters within 12 tiles) are exempt from dress caps / ladder eviction, and a nearer
+ * request may evict a farther page even inside the protect window (eviction by distance).
+ */
+export const PRIO_NEAR = 144;
 
 /** Slot pool keyed by page id (atlas key). */
 export class PageLRU<K = string> {
@@ -71,32 +77,37 @@ export class PageLRU<K = string> {
     const n = Math.max(0, (this.refs.get(k) ?? 0) - 1); if (n) this.refs.set(k, n); else this.refs.delete(k);
     const p = this.pages.get(k); if (p) p.refs = n;
   }
-  touch(k: K, frame: number): boolean { const p = this.pages.get(k); if (!p) return false; p.lastUsed = frame; return true; }
+  touch(k: K, frame: number, prio = Infinity): boolean { const p = this.pages.get(k); if (!p) return false; p.prio = p.lastUsed === frame ? Math.min(p.prio, prio) : prio; p.lastUsed = frame; return true; }
+  /** Best (lowest) priority the page was last drawn at (Infinity if not resident). */
+  prioOf(k: K): number { return this.pages.get(k)?.prio ?? Infinity; }
   /** The page that would be evicted to make room, or undefined when all pages were used in `frame` (pool full of live pages). */
-  victim(frame: number): K | undefined {
+  victim(frame: number, prio = Infinity): K | undefined {
     let best: K | undefined; let bp: PageEntry | undefined;
     for (const [k, p] of this.pages) {
       if (p.lastUsed >= frame - this.protectFrames) continue;
       if (!bp || (p.refs > 0 ? 1 : 0) < (bp.refs > 0 ? 1 : 0) || ((p.refs > 0) === (bp.refs > 0) && p.lastUsed < bp.lastUsed)) { best = k; bp = p; }
     }
+    if (best !== undefined || !Number.isFinite(prio)) return best;
+    // every page is live: a nearer request takes the farthest live page (that character drops to its fallback)
+    for (const [k, p] of this.pages) if (p.prio > prio && (!bp || p.prio > bp.prio)) { best = k; bp = p; }
     return best;
   }
   /**
    * Allocate a slot for `k` (stamped `frame`). Returns { slot, evicted } or null when the pool is full of pages used
    * this frame. `evicted` is the page whose slot was reused.
    */
-  allocate(k: K, frame: number): { slot: number; evicted?: K } | null {
-    const have = this.pages.get(k); if (have) { have.lastUsed = frame; return { slot: have.slot }; }
+  allocate(k: K, frame: number, prio = Infinity): { slot: number; evicted?: K } | null {
+    const have = this.pages.get(k); if (have) { have.lastUsed = frame; have.prio = prio; return { slot: have.slot }; }
     let slot = this.free.pop(); let evicted: K | undefined;
     if (slot === undefined) {
-      evicted = this.victim(frame); if (evicted === undefined) return null;
+      evicted = this.victim(frame, prio); if (evicted === undefined) return null;
       slot = this.pages.get(evicted)!.slot; this.pages.delete(evicted);
     }
-    this.pages.set(k, { slot, refs: this.refs.get(k) ?? 0, lastUsed: frame });
+    this.pages.set(k, { slot, refs: this.refs.get(k) ?? 0, lastUsed: frame, prio });
     return evicted === undefined ? { slot } : { slot, evicted };
   }
   /** True when allocate(k, frame) would succeed (resident, a free slot, or an evictable page). */
-  canAllocate(k: K, frame: number): boolean { return this.pages.has(k) || this.free.length > 0 || this.victim(frame) !== undefined; }
+  canAllocate(k: K, frame: number, prio = Infinity): boolean { return this.pages.has(k) || this.free.length > 0 || this.victim(frame, prio) !== undefined; }
   remove(k: K): void { const p = this.pages.get(k); if (!p) return; this.pages.delete(k); this.free.push(p.slot); }
   keys(): K[] { return [...this.pages.keys()]; }
 }

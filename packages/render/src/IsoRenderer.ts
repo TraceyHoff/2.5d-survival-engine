@@ -556,7 +556,8 @@ export class IsoRenderer implements Renderer {
       const t = a.tiers; const fi = a.fitInfo;
       const tierLine = `tiers: hot x${t.hotScale} (${t.hot.length}), cold x${t.coldScale} (${t.cold.length}), side arrays x1/${1 << a.sideShift}, page @${a.currentPageScale}x; pool reserve ${fi.reserveMB}/${fi.reserveWantedMB} MB, demoted ${fi.demoted}${a.needsRetier ? ", RETIER pending" : ""}; ladder step ${this.fallback.step} (${this.fallback.name}); backbuffer ${this.w}x${this.h} @dpr ${this.camera.dpr.toFixed(3)} scale ${this.camera.scale.toFixed(3)}`;
       const extra = [tierLine, ...this.fallback.report(), this.watchdog.report(),
-        `wearables: ${a.wearablesEnabled ? "on" : "OFF"}, page faults ${a.pageFaults}, budget refusals ${a.pageBudgetRefusals}; dressed cap ${Number.isFinite(sp.maxDressed) ? sp.maxDressed : "none"} (${sp.dressCapped} body-only last frame)`].join("\n");
+        `wearables: ${a.wearablesEnabled ? "on" : "OFF"}, page faults ${a.pageFaults}, budget refusals ${a.pageBudgetRefusals}; dressed cap ${Number.isFinite(sp.maxDressed) ? sp.maxDressed : "none"} (${sp.dressCapped} body-only last frame)`,
+        ...sp.nearInfo.slice(0, sp.nearN).map((n) => `char ${n.d === 0 ? "LOCAL" : "near"} e${n.e} d=${n.d.toFixed(1)}t: tier x${n.scale} (dress-cap/ladder exempt), layers ${n.resident}/${n.layers} resident${n.missing.length ? ` missing [${n.missing.join(",")}]` : ""}`)].join("\n");
       const sc = this.sceneDiag; const hint = sc && sc.entities === 0 ? "\n! no entities replicated: nothing to draw (GPU is fine; check localServer/snapshots/lastError)" : "";
       const out = r + "\n" + extra + "\n" + formatSceneDiag(sc) + hint;
       return this.frameCount === 0 ? out + "\n(no frame rendered yet: readbacks appear after frames 1 and 60)" : out;
