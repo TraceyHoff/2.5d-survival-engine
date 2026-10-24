@@ -11,6 +11,13 @@ const hold = (w: World, e: Entity, key: string, n = 1) => { addItem(w, e, id(key
 const hp = (w: World, e: Entity) => w.getField(e, Health, "hp")!;
 function world() { const w = makeWorld(); installPermissions(w); return w; }
 
+describe("registration order", () => {
+  it("arms components are appended after vehicles", () => {
+    const L = G.GAMEPLAY_COMPONENTS; const i = L.indexOf(G.Hitch);
+    expect(L.slice(i + 1)).toEqual([Worn, WeaponState, G.LiveExplosive]);
+  });
+});
+
 describe("wear (clothing / armor / packs)", () => {
   it("wearing sums insulation, waterproof (mean of 6 slots), armor and carry; toggling off reverts", () => {
     const w = world(); const a = mk(w, 1); const mw0 = w.getField(a, Inventory, "maxWeight")!;
