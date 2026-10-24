@@ -7,11 +7,12 @@
 import { PARTY_COMMANDS } from "./party.js";
 import { CLAN_COMMANDS, ClanDeclineCmd } from "./clan.js";
 import { CommandRegistry, defineActions, defineCommand, defineResource, type Command, type CommandDef, type Entity, type InputFrame, type World } from "@engine/core";
-import { IntentAction, PlayerIntent } from "./components.js";
+import { Driver, IntentAction, PlayerIntent } from "./components.js";
 import { CUSTOMIZATION_COMMANDS } from "./customization.js";
 import { PVP_COMMANDS } from "./combat/pvp.js";
 import { CancelQueuedCraftCmd, CRAFT_QUEUE_COMMANDS, QueueCraftCmd } from "./systems/craft_queue.js";
 import { EXPRESSION_COMMANDS } from "./expression.js";
+import { driveFromBits, setDriveInput, VEHICLE_COMMANDS, VEHICLE_ENTITY_FIELDS } from "./vehicles.js";
 import { analogMoving, hotbarSlotFromEdges, runInputHooks } from "./input_hooks.js";
 import { ECONOMY_COMMAND_RATES, ECONOMY_COMMANDS, ECONOMY_ENTITY_FIELDS } from "./economy/stall.js";
 
@@ -51,6 +52,7 @@ export const GAMEPLAY_COMMANDS: readonly [CommandDef, IntentAction][] = [
 export const COMMAND_ENTITY_FIELDS: Readonly<Record<string, readonly string[]>> = {
   ...Object.fromEntries(GAMEPLAY_COMMANDS.filter(([d]) => "target" in d.schema).map(([d]) => [d.name, ["target"]])),
   ...ECONOMY_ENTITY_FIELDS,
+  ...VEHICLE_ENTITY_FIELDS,
 };
 /** Suggested per-command rate limits (per second) for net's limiter; gameplay still enforces cooldowns. */
 export const COMMAND_RATES: Readonly<Record<string, number>> = {
@@ -67,6 +69,7 @@ export function registerGameplayCommands(reg: CommandRegistry = new CommandRegis
   for (const d of PARTY_COMMANDS) reg.register(d);
   for (const d of CLAN_COMMANDS) reg.register(d); // append-only, after party
   reg.register(ClanDeclineCmd);
+  for (const d of VEHICLE_COMMANDS) reg.register(d); // append-only, after ClanDecline (ADR-096)
   return reg;
 }
 
@@ -78,7 +81,11 @@ const MAX_QUEUE = 16;
 export function applyGameplayInput(world: World, e: Entity, frame: InputFrame | null, reg: CommandRegistry): void {
   if (!world.has(e, PlayerIntent)) return;
   const actions = frame?.actions ?? 0;
-  world.set(e, PlayerIntent, { moving: actions & MOVE || analogMoving(frame) ? 1 : 0, sprint: actions & GameplayActions.Sprint ? 1 : 0 });
+  if (world.has(e, Driver)) { // riders steer their vehicle with the same move axes; Sprint = boost (ADR-096)
+    const b = driveFromBits(actions); const analog = analogMoving(frame);
+    setDriveInput(world, e, analog ? frame!.moveX! : b.x, analog ? frame!.moveY! : b.y, (actions & GameplayActions.Sprint) !== 0);
+    world.set(e, PlayerIntent, { moving: 0, sprint: 0 });
+  } else world.set(e, PlayerIntent, { moving: actions & MOVE || analogMoving(frame) ? 1 : 0, sprint: actions & GameplayActions.Sprint ? 1 : 0 });
   for (const c of frame?.commands ?? []) queueCommand(world, e, reg, c);
   if (!frame) return;
   const slot = hotbarSlotFromEdges(frame.edges ?? 0);

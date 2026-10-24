@@ -1,0 +1,1133 @@
+{
+ "$comment": "Vehicle defs (schema: vehicles.schema.json, spec docs/VEHICLES.md). APPEND ONLY: Vehicle.defId = index + 1. Units: tiles, tiles/s, rad/s, kg.",
+ "vehicles": [
+  {
+   "id": "bike_basic",
+   "class": "bicycle",
+   "size": "xs",
+   "seats": 1,
+   "mass": 15,
+   "maxSpeed": 6,
+   "accel": 4,
+   "brake": 6.0,
+   "turn": 2.6,
+   "grip": 0.85,
+   "fuel": null,
+   "stamina": {
+    "perSecond": 1.0
+   },
+   "health": 60,
+   "storage": {
+    "slots": 2,
+    "maxWeight": 8
+   },
+   "hitches": [],
+   "interior": {
+    "stations": []
+   },
+   "footprint": {
+    "length": 1.8,
+    "width": 0.6
+   },
+   "collider": {
+    "radius": 0.4
+   }
+  },
+  {
+   "id": "bike_road",
+   "class": "bicycle",
+   "size": "xs",
+   "seats": 1,
+   "mass": 9,
+   "maxSpeed": 8,
+   "accel": 5,
+   "brake": 7.5,
+   "turn": 2.2,
+   "grip": 0.8,
+   "fuel": null,
+   "stamina": {
+    "perSecond": 1.1
+   },
+   "health": 60,
+   "storage": {
+    "slots": 1,
+    "maxWeight": 4
+   },
+   "hitches": [],
+   "interior": {
+    "stations": []
+   },
+   "footprint": {
+    "length": 1.8,
+    "width": 0.6
+   },
+   "collider": {
+    "radius": 0.4
+   }
+  },
+  {
+   "id": "bike_mountain",
+   "class": "bicycle",
+   "size": "xs",
+   "seats": 1,
+   "mass": 14,
+   "maxSpeed": 6.5,
+   "accel": 4.5,
+   "brake": 6.75,
+   "turn": 2.8,
+   "grip": 0.9,
+   "fuel": null,
+   "stamina": {
+    "perSecond": 1.0
+   },
+   "health": 60,
+   "storage": {
+    "slots": 2,
+    "maxWeight": 8
+   },
+   "hitches": [],
+   "interior": {
+    "stations": []
+   },
+   "footprint": {
+    "length": 1.8,
+    "width": 0.6
+   },
+   "collider": {
+    "radius": 0.4
+   }
+  },
+  {
+   "id": "bike_bmx",
+   "class": "bicycle",
+   "size": "xs",
+   "seats": 1,
+   "mass": 11,
+   "maxSpeed": 5.5,
+   "accel": 5.5,
+   "brake": 8.25,
+   "turn": 3.4,
+   "grip": 0.75,
+   "fuel": null,
+   "stamina": {
+    "perSecond": 1.2
+   },
+   "health": 60,
+   "storage": {
+    "slots": 1,
+    "maxWeight": 3
+   },
+   "hitches": [],
+   "interior": {
+    "stations": []
+   },
+   "footprint": {
+    "length": 1.8,
+    "width": 0.6
+   },
+   "collider": {
+    "radius": 0.4
+   }
+  },
+  {
+   "id": "bike_fat_tire",
+   "class": "bicycle",
+   "size": "xs",
+   "seats": 1,
+   "mass": 18,
+   "maxSpeed": 5.5,
+   "accel": 3.5,
+   "brake": 5.25,
+   "turn": 2.4,
+   "grip": 0.95,
+   "fuel": null,
+   "stamina": {
+    "perSecond": 1.1
+   },
+   "health": 60,
+   "storage": {
+    "slots": 3,
+    "maxWeight": 12
+   },
+   "hitches": [],
+   "interior": {
+    "stations": []
+   },
+   "footprint": {
+    "length": 1.8,
+    "width": 0.6
+   },
+   "collider": {
+    "radius": 0.4
+   }
+  },
+  {
+   "id": "bike_cruiser",
+   "class": "bicycle",
+   "size": "xs",
+   "seats": 1,
+   "mass": 17,
+   "maxSpeed": 5.5,
+   "accel": 3.5,
+   "brake": 5.25,
+   "turn": 2.2,
+   "grip": 0.85,
+   "fuel": null,
+   "stamina": {
+    "perSecond": 0.9
+   },
+   "health": 60,
+   "storage": {
+    "slots": 3,
+    "maxWeight": 10
+   },
+   "hitches": [],
+   "interior": {
+    "stations": []
+   },
+   "footprint": {
+    "length": 1.8,
+    "width": 0.6
+   },
+   "collider": {
+    "radius": 0.4
+   }
+  },
+  {
+   "id": "bike_tandem",
+   "class": "bicycle",
+   "size": "s",
+   "seats": 2,
+   "mass": 22,
+   "maxSpeed": 7,
+   "accel": 4,
+   "brake": 6.0,
+   "turn": 1.8,
+   "grip": 0.85,
+   "fuel": null,
+   "stamina": {
+    "perSecond": 0.8
+   },
+   "health": 60,
+   "storage": {
+    "slots": 2,
+    "maxWeight": 10
+   },
+   "hitches": [],
+   "interior": {
+    "stations": []
+   },
+   "footprint": {
+    "length": 2.6,
+    "width": 0.6
+   },
+   "collider": {
+    "radius": 0.4
+   }
+  },
+  {
+   "id": "bike_cargo",
+   "class": "bicycle",
+   "size": "s",
+   "seats": 1,
+   "mass": 30,
+   "maxSpeed": 5,
+   "accel": 3,
+   "brake": 4.5,
+   "turn": 1.8,
+   "grip": 0.9,
+   "fuel": null,
+   "stamina": {
+    "perSecond": 1.4
+   },
+   "health": 60,
+   "storage": {
+    "slots": 6,
+    "maxWeight": 40
+   },
+   "hitches": [],
+   "interior": {
+    "stations": []
+   },
+   "footprint": {
+    "length": 2.4,
+    "width": 0.8
+   },
+   "collider": {
+    "radius": 0.5
+   }
+  },
+  {
+   "id": "bike_trike",
+   "class": "bicycle",
+   "size": "s",
+   "seats": 1,
+   "mass": 28,
+   "maxSpeed": 4.5,
+   "accel": 3,
+   "brake": 4.5,
+   "turn": 2,
+   "grip": 0.95,
+   "fuel": null,
+   "stamina": {
+    "perSecond": 1.2
+   },
+   "health": 60,
+   "storage": {
+    "slots": 5,
+    "maxWeight": 30
+   },
+   "hitches": [],
+   "interior": {
+    "stations": []
+   },
+   "footprint": {
+    "length": 1.9,
+    "width": 1.0
+   },
+   "collider": {
+    "radius": 0.6
+   }
+  },
+  {
+   "id": "car_compact",
+   "class": "car",
+   "size": "s",
+   "seats": 2,
+   "mass": 900,
+   "maxSpeed": 13,
+   "accel": 6,
+   "brake": 9.600000000000001,
+   "turn": 2.2,
+   "grip": 0.8,
+   "fuel": {
+    "capacity": 35,
+    "perSecond": 0.08
+   },
+   "stamina": null,
+   "health": 300,
+   "storage": {
+    "slots": 6,
+    "maxWeight": 80
+   },
+   "hitches": [],
+   "interior": {
+    "stations": []
+   },
+   "footprint": {
+    "length": 3.6,
+    "width": 1.6
+   },
+   "collider": {
+    "radius": 0.8
+   }
+  },
+  {
+   "id": "car_sedan",
+   "class": "car",
+   "size": "m",
+   "seats": 4,
+   "mass": 1300,
+   "maxSpeed": 15,
+   "accel": 6,
+   "brake": 9.600000000000001,
+   "turn": 2.0,
+   "grip": 0.8,
+   "fuel": {
+    "capacity": 50,
+    "perSecond": 0.1
+   },
+   "stamina": null,
+   "health": 350,
+   "storage": {
+    "slots": 8,
+    "maxWeight": 120
+   },
+   "hitches": [],
+   "interior": {
+    "stations": []
+   },
+   "footprint": {
+    "length": 4.6,
+    "width": 1.8
+   },
+   "collider": {
+    "radius": 0.9
+   }
+  },
+  {
+   "id": "car_muscle",
+   "class": "car",
+   "size": "m",
+   "seats": 2,
+   "mass": 1500,
+   "maxSpeed": 18,
+   "accel": 8,
+   "brake": 12.8,
+   "turn": 1.9,
+   "grip": 0.65,
+   "fuel": {
+    "capacity": 60,
+    "perSecond": 0.16
+   },
+   "stamina": null,
+   "health": 350,
+   "storage": {
+    "slots": 6,
+    "maxWeight": 90
+   },
+   "hitches": [],
+   "interior": {
+    "stations": []
+   },
+   "footprint": {
+    "length": 4.8,
+    "width": 1.9
+   },
+   "collider": {
+    "radius": 0.95
+   }
+  },
+  {
+   "id": "car_offroad",
+   "class": "car",
+   "size": "m",
+   "seats": 4,
+   "mass": 1700,
+   "maxSpeed": 13,
+   "accel": 6,
+   "brake": 9.600000000000001,
+   "turn": 2.0,
+   "grip": 0.9,
+   "fuel": {
+    "capacity": 60,
+    "perSecond": 0.12
+   },
+   "stamina": null,
+   "health": 450,
+   "storage": {
+    "slots": 10,
+    "maxWeight": 160
+   },
+   "hitches": [
+    {
+     "at": "rear",
+     "offset": 2.4,
+     "accepts": [
+      "trailer"
+     ]
+    }
+   ],
+   "interior": {
+    "stations": []
+   },
+   "footprint": {
+    "length": 4.4,
+    "width": 1.9
+   },
+   "collider": {
+    "radius": 0.95
+   }
+  },
+  {
+   "id": "car_wagon",
+   "class": "car",
+   "size": "m",
+   "seats": 5,
+   "mass": 1450,
+   "maxSpeed": 14,
+   "accel": 5.5,
+   "brake": 8.8,
+   "turn": 1.9,
+   "grip": 0.8,
+   "fuel": {
+    "capacity": 55,
+    "perSecond": 0.11
+   },
+   "stamina": null,
+   "health": 350,
+   "storage": {
+    "slots": 12,
+    "maxWeight": 220
+   },
+   "hitches": [
+    {
+     "at": "rear",
+     "offset": 2.65,
+     "accepts": [
+      "trailer"
+     ]
+    }
+   ],
+   "interior": {
+    "stations": []
+   },
+   "footprint": {
+    "length": 4.9,
+    "width": 1.8
+   },
+   "collider": {
+    "radius": 0.9
+   }
+  },
+  {
+   "id": "truck_pickup",
+   "class": "truck",
+   "size": "l",
+   "seats": 3,
+   "mass": 2200,
+   "maxSpeed": 14,
+   "accel": 5,
+   "brake": 8.0,
+   "turn": 1.7,
+   "grip": 0.8,
+   "fuel": {
+    "capacity": 80,
+    "perSecond": 0.14
+   },
+   "stamina": null,
+   "health": 500,
+   "storage": {
+    "slots": 14,
+    "maxWeight": 400
+   },
+   "hitches": [
+    {
+     "at": "rear",
+     "offset": 2.9,
+     "accepts": [
+      "trailer"
+     ]
+    }
+   ],
+   "interior": {
+    "stations": []
+   },
+   "footprint": {
+    "length": 5.4,
+    "width": 2.0
+   },
+   "collider": {
+    "radius": 1.0
+   }
+  },
+  {
+   "id": "truck_flatbed",
+   "class": "truck",
+   "size": "l",
+   "seats": 2,
+   "mass": 3500,
+   "maxSpeed": 12,
+   "accel": 4,
+   "brake": 6.4,
+   "turn": 1.5,
+   "grip": 0.85,
+   "fuel": {
+    "capacity": 100,
+    "perSecond": 0.18
+   },
+   "stamina": null,
+   "health": 600,
+   "storage": {
+    "slots": 18,
+    "maxWeight": 900
+   },
+   "hitches": [
+    {
+     "at": "rear",
+     "offset": 3.45,
+     "accepts": [
+      "trailer"
+     ]
+    }
+   ],
+   "interior": {
+    "stations": []
+   },
+   "footprint": {
+    "length": 6.5,
+    "width": 2.2
+   },
+   "collider": {
+    "radius": 1.1
+   }
+  },
+  {
+   "id": "truck_box",
+   "class": "truck",
+   "size": "l",
+   "seats": 2,
+   "mass": 4500,
+   "maxSpeed": 11,
+   "accel": 3.5,
+   "brake": 5.6000000000000005,
+   "turn": 1.4,
+   "grip": 0.85,
+   "fuel": {
+    "capacity": 120,
+    "perSecond": 0.2
+   },
+   "stamina": null,
+   "health": 650,
+   "storage": {
+    "slots": 22,
+    "maxWeight": 1500
+   },
+   "hitches": [
+    {
+     "at": "rear",
+     "offset": 3.7,
+     "accepts": [
+      "trailer"
+     ]
+    }
+   ],
+   "interior": {
+    "stations": []
+   },
+   "footprint": {
+    "length": 7.0,
+    "width": 2.3
+   },
+   "collider": {
+    "radius": 1.15
+   }
+  },
+  {
+   "id": "van_cargo",
+   "class": "van",
+   "size": "l",
+   "seats": 2,
+   "mass": 2000,
+   "maxSpeed": 13,
+   "accel": 4.5,
+   "brake": 7.2,
+   "turn": 1.7,
+   "grip": 0.8,
+   "fuel": {
+    "capacity": 75,
+    "perSecond": 0.13
+   },
+   "stamina": null,
+   "health": 450,
+   "storage": {
+    "slots": 18,
+    "maxWeight": 700
+   },
+   "hitches": [
+    {
+     "at": "rear",
+     "offset": 2.8,
+     "accepts": [
+      "trailer"
+     ]
+    }
+   ],
+   "interior": {
+    "stations": []
+   },
+   "footprint": {
+    "length": 5.2,
+    "width": 2.0
+   },
+   "collider": {
+    "radius": 1.0
+   }
+  },
+  {
+   "id": "van_passenger",
+   "class": "van",
+   "size": "l",
+   "seats": 8,
+   "mass": 2100,
+   "maxSpeed": 13,
+   "accel": 4.5,
+   "brake": 7.2,
+   "turn": 1.7,
+   "grip": 0.8,
+   "fuel": {
+    "capacity": 75,
+    "perSecond": 0.13
+   },
+   "stamina": null,
+   "health": 450,
+   "storage": {
+    "slots": 10,
+    "maxWeight": 300
+   },
+   "hitches": [
+    {
+     "at": "rear",
+     "offset": 2.9,
+     "accepts": [
+      "trailer"
+     ]
+    }
+   ],
+   "interior": {
+    "stations": []
+   },
+   "footprint": {
+    "length": 5.4,
+    "width": 2.0
+   },
+   "collider": {
+    "radius": 1.0
+   }
+  },
+  {
+   "id": "camper_van",
+   "class": "camper",
+   "size": "l",
+   "seats": 4,
+   "mass": 2800,
+   "maxSpeed": 12,
+   "accel": 4,
+   "brake": 6.4,
+   "turn": 1.6,
+   "grip": 0.8,
+   "fuel": {
+    "capacity": 90,
+    "perSecond": 0.15
+   },
+   "stamina": null,
+   "health": 550,
+   "storage": {
+    "slots": 16,
+    "maxWeight": 500
+   },
+   "hitches": [
+    {
+     "at": "rear",
+     "offset": 3.2,
+     "accepts": [
+      "trailer"
+     ]
+    }
+   ],
+   "interior": {
+    "stations": [
+     "campfire",
+     "workbench"
+    ]
+   },
+   "footprint": {
+    "length": 6.0,
+    "width": 2.1
+   },
+   "collider": {
+    "radius": 1.05
+   }
+  },
+  {
+   "id": "camper_rv",
+   "class": "camper",
+   "size": "xl",
+   "seats": 6,
+   "mass": 6500,
+   "maxSpeed": 10,
+   "accel": 3,
+   "brake": 4.800000000000001,
+   "turn": 1.2,
+   "grip": 0.85,
+   "fuel": {
+    "capacity": 160,
+    "perSecond": 0.25
+   },
+   "stamina": null,
+   "health": 800,
+   "storage": {
+    "slots": 24,
+    "maxWeight": 1200
+   },
+   "hitches": [
+    {
+     "at": "rear",
+     "offset": 4.7,
+     "accepts": [
+      "trailer"
+     ]
+    }
+   ],
+   "interior": {
+    "stations": [
+     "campfire",
+     "workbench",
+     "furnace"
+    ]
+   },
+   "footprint": {
+    "length": 9.0,
+    "width": 2.5
+   },
+   "collider": {
+    "radius": 1.25
+   }
+  },
+  {
+   "id": "semi_tractor",
+   "class": "semi",
+   "size": "xl",
+   "seats": 2,
+   "mass": 8000,
+   "maxSpeed": 12,
+   "accel": 3,
+   "brake": 4.800000000000001,
+   "turn": 1.1,
+   "grip": 0.85,
+   "fuel": {
+    "capacity": 300,
+    "perSecond": 0.3
+   },
+   "stamina": null,
+   "health": 1000,
+   "storage": {
+    "slots": 8,
+    "maxWeight": 200
+   },
+   "hitches": [
+    {
+     "at": "rear",
+     "offset": 1.2,
+     "accepts": [
+      "trailer"
+     ]
+    }
+   ],
+   "interior": {
+    "stations": []
+   },
+   "footprint": {
+    "length": 6.5,
+    "width": 2.5
+   },
+   "collider": {
+    "radius": 1.25
+   }
+  },
+  {
+   "id": "trailer_utility_small",
+   "class": "trailer",
+   "size": "s",
+   "seats": 0,
+   "mass": 250,
+   "maxSpeed": 0,
+   "accel": 0,
+   "brake": 0,
+   "turn": 0,
+   "grip": 0.9,
+   "fuel": null,
+   "stamina": null,
+   "health": 200,
+   "storage": {
+    "slots": 8,
+    "maxWeight": 300
+   },
+   "hitches": [
+    {
+     "at": "front",
+     "offset": 1.85,
+     "accepts": [
+      "car",
+      "truck",
+      "van",
+      "camper",
+      "semi"
+     ]
+    }
+   ],
+   "interior": {
+    "stations": []
+   },
+   "footprint": {
+    "length": 2.5,
+    "width": 1.5
+   },
+   "collider": {
+    "radius": 0.75
+   }
+  },
+  {
+   "id": "trailer_cargo_medium",
+   "class": "trailer",
+   "size": "m",
+   "seats": 0,
+   "mass": 600,
+   "maxSpeed": 0,
+   "accel": 0,
+   "brake": 0,
+   "turn": 0,
+   "grip": 0.9,
+   "fuel": null,
+   "stamina": null,
+   "health": 300,
+   "storage": {
+    "slots": 14,
+    "maxWeight": 800
+   },
+   "hitches": [
+    {
+     "at": "front",
+     "offset": 2.6,
+     "accepts": [
+      "truck",
+      "van",
+      "camper",
+      "semi"
+     ]
+    }
+   ],
+   "interior": {
+    "stations": []
+   },
+   "footprint": {
+    "length": 4.0,
+    "width": 2.0
+   },
+   "collider": {
+    "radius": 1.0
+   }
+  },
+  {
+   "id": "trailer_flatbed_large",
+   "class": "trailer",
+   "size": "l",
+   "seats": 0,
+   "mass": 1200,
+   "maxSpeed": 0,
+   "accel": 0,
+   "brake": 0,
+   "turn": 0,
+   "grip": 0.9,
+   "fuel": null,
+   "stamina": null,
+   "health": 400,
+   "storage": {
+    "slots": 18,
+    "maxWeight": 2000
+   },
+   "hitches": [
+    {
+     "at": "front",
+     "offset": 3.6,
+     "accepts": [
+      "truck",
+      "van",
+      "camper",
+      "semi"
+     ]
+    }
+   ],
+   "interior": {
+    "stations": []
+   },
+   "footprint": {
+    "length": 6.0,
+    "width": 2.3
+   },
+   "collider": {
+    "radius": 1.15
+   }
+  },
+  {
+   "id": "trailer_livestock",
+   "class": "trailer",
+   "size": "l",
+   "seats": 0,
+   "mass": 1100,
+   "maxSpeed": 0,
+   "accel": 0,
+   "brake": 0,
+   "turn": 0,
+   "grip": 0.9,
+   "fuel": null,
+   "stamina": null,
+   "health": 400,
+   "storage": {
+    "slots": 16,
+    "maxWeight": 1500
+   },
+   "hitches": [
+    {
+     "at": "front",
+     "offset": 3.6,
+     "accepts": [
+      "truck",
+      "van",
+      "camper",
+      "semi"
+     ]
+    }
+   ],
+   "interior": {
+    "stations": []
+   },
+   "footprint": {
+    "length": 6.0,
+    "width": 2.3
+   },
+   "collider": {
+    "radius": 1.15
+   }
+  },
+  {
+   "id": "trailer_tanker",
+   "class": "trailer",
+   "size": "l",
+   "seats": 0,
+   "mass": 1500,
+   "maxSpeed": 0,
+   "accel": 0,
+   "brake": 0,
+   "turn": 0,
+   "grip": 0.9,
+   "fuel": null,
+   "stamina": null,
+   "health": 500,
+   "storage": {
+    "slots": 6,
+    "maxWeight": 3000
+   },
+   "hitches": [
+    {
+     "at": "front",
+     "offset": 3.85,
+     "accepts": [
+      "truck",
+      "semi"
+     ]
+    }
+   ],
+   "interior": {
+    "stations": []
+   },
+   "footprint": {
+    "length": 6.5,
+    "width": 2.3
+   },
+   "collider": {
+    "radius": 1.15
+   }
+  },
+  {
+   "id": "trailer_camper",
+   "class": "trailer",
+   "size": "l",
+   "seats": 0,
+   "mass": 1400,
+   "maxSpeed": 0,
+   "accel": 0,
+   "brake": 0,
+   "turn": 0,
+   "grip": 0.9,
+   "fuel": null,
+   "stamina": null,
+   "health": 350,
+   "storage": {
+    "slots": 12,
+    "maxWeight": 500
+   },
+   "hitches": [
+    {
+     "at": "front",
+     "offset": 3.85,
+     "accepts": [
+      "truck",
+      "van",
+      "camper",
+      "semi"
+     ]
+    }
+   ],
+   "interior": {
+    "stations": [
+     "campfire",
+     "workbench"
+    ]
+   },
+   "footprint": {
+    "length": 6.5,
+    "width": 2.3
+   },
+   "collider": {
+    "radius": 1.15
+   }
+  },
+  {
+   "id": "semi_trailer_box",
+   "class": "trailer",
+   "size": "xl",
+   "seats": 0,
+   "mass": 6000,
+   "maxSpeed": 0,
+   "accel": 0,
+   "brake": 0,
+   "turn": 0,
+   "grip": 0.9,
+   "fuel": null,
+   "stamina": null,
+   "health": 800,
+   "storage": {
+    "slots": 24,
+    "maxWeight": 8000
+   },
+   "hitches": [
+    {
+     "at": "front",
+     "offset": 7.1,
+     "accepts": [
+      "semi"
+     ]
+    }
+   ],
+   "interior": {
+    "stations": []
+   },
+   "footprint": {
+    "length": 13.0,
+    "width": 2.5
+   },
+   "collider": {
+    "radius": 1.25
+   }
+  },
+  {
+   "id": "semi_trailer_flatbed",
+   "class": "trailer",
+   "size": "xl",
+   "seats": 0,
+   "mass": 5000,
+   "maxSpeed": 0,
+   "accel": 0,
+   "brake": 0,
+   "turn": 0,
+   "grip": 0.9,
+   "fuel": null,
+   "stamina": null,
+   "health": 800,
+   "storage": {
+    "slots": 24,
+    "maxWeight": 10000
+   },
+   "hitches": [
+    {
+     "at": "front",
+     "offset": 7.1,
+     "accepts": [
+      "semi"
+     ]
+    }
+   ],
+   "interior": {
+    "stations": []
+   },
+   "footprint": {
+    "length": 13.0,
+    "width": 2.5
+   },
+   "collider": {
+    "radius": 1.25
+   }
+  }
+ ]
+}

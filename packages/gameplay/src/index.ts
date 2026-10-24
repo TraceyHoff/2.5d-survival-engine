@@ -60,3 +60,4 @@ export * from "./clan_state.js";
 export * from "./clan.js";
 export * from "./ui/menus.js";
 export * from "./ui/placement.js";
+export * from "./vehicles.js";

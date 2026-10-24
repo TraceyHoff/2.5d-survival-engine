@@ -18,6 +18,7 @@ import { installBuildingSystems, BUILDING_SYSTEMS } from "./building/install.js"
 import { installCombatSystems, COMBAT_SYSTEMS } from "./combat/install.js";
 import { entityIndex } from "@engine/core";
 import { installGameplayContainers } from "./economy/provenance.js";
+import { VEHICLE_DEFS_HASH, vehicleSystem } from "./vehicles.js";
 import { expressionSystem, EXPRESSION_EVERY } from "./expression.js";
 import { stallDisplaySystem, STALL_DISPLAY_EVERY } from "./systems/stall_display.js";
 
@@ -39,6 +40,7 @@ export const GAMEPLAY_SYSTEM_ORDER: readonly (readonly [Phase, string, number?])
   ["input", "gameplay.commands"],
   ["simulation", "gameplay.clock"],
   ["simulation", "gameplay.weather"],
+  ["simulation", "gameplay.vehicles"],
   ...BUILDING_SYSTEMS.pre,
   ["simulation", "gameplay.exposure", EXPOSURE_EVERY],
   ["simulation", "gameplay.fuel"],
@@ -72,6 +74,7 @@ export function installGameplay(world: World, options: GameplayOptions | number 
   for (const c of GAMEPLAY_COMPONENTS) world.register(c);
   if (!world.isRegistered(StallDisplay)) world.register(StallDisplay); // core broadcast mirror, fed by gameplay.stallDisplay
   world.addSchemaSalt("gameplay.defs", defs.hashes.all);
+  world.addSchemaSalt("gameplay.vehicles", VEHICLE_DEFS_HASH);
   const role = opts.role ?? "standalone";
   world.setResource(GameplayConfig, { defs, role });
   const dayLengthTicks = opts.dayLengthTicks ?? Math.round(env.dayLengthSeconds * (opts.tickHz ?? DEFAULT_TICK_HZ));
@@ -89,7 +92,7 @@ export function installGameplay(world: World, options: GameplayOptions | number 
     "gameplay.craft": craftingSystem, "gameplay.consume": consumeSystem, "gameplay.vitals": vitalsSystem, "gameplay.death": deathSystem,
     "gameplay.spoilage": spoilageSystem, "gameplay.chunkSurface": chunkSurfaceSystem,
     "gameplay.clearIntents": clearIntentsSystem, "gameplay.equipmentSync": equipmentSyncSystem, "gameplay.noiseDecay": noiseDecaySystem,
-    "gameplay.pruneBuffs": (w) => pruneModifiers(w, Buffs), "gameplay.stallDisplay": stallDisplaySystem, "gameplay.expression": expressionSystem,
+    "gameplay.pruneBuffs": (w) => pruneModifiers(w, Buffs), "gameplay.stallDisplay": stallDisplaySystem, "gameplay.expression": expressionSystem, "gameplay.vehicles": vehicleSystem,
     ...installBuildingSystems(world), ...installCombatSystems(world),
   };
   for (const [phase, name, every] of GAMEPLAY_SYSTEM_ORDER) {

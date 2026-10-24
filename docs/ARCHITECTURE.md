@@ -583,3 +583,7 @@ See docs/CHARACTER_CUSTOMIZATION.md for the team contract and ADR-080 for the ra
 | Menus | I/Tab inventory, C crafting, B build, K character, P party, L clan, T trade, Enter or / chat, O settings | via pause menu | menu bar / pause menu |
 
 Pause → **Quit to main menu** exits fullscreen, saves / leaves the session and returns to the main menu.
+
+**EDGE_ACTIONS are append-only.** The bit index of each entry in `EDGE_ACTIONS` (`packages/input/src/defaults.ts`) and its mirror `GAMEPLAY_EDGES` is wire format. New edges go at the end of both lists, and removed edges keep their slot.
+
+**Vehicles (ADR-096).** `Vehicle, VehicleSeats, Driver, Hitch` are appended after ClanStatus. The `gameplay.vehicles` system and the vehicle commands are covered in docs/VEHICLES.md.

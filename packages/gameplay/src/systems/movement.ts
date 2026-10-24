@@ -6,7 +6,7 @@
  * by edge walls/closed doors, solid cell pieces at the player's level and unwalkable terrain (per-axis slide).
  */
 import { entityIndex, evaluate, Transform, type Entity, type World } from "@engine/core";
-import { Buffs, Dead, EdgeSide, Inventory, PlayerIntent, Stat, Survival, Wetness } from "../components.js";
+import { Buffs, Dead, Driver, EdgeSide, Inventory, PlayerIntent, Stat, Survival, Wetness } from "../components.js";
 import { gameplayDefs } from "../config.js";
 import { GameplayActions as A } from "../input.js";
 import { StructureIndexRes } from "../building/structure.js";
@@ -33,7 +33,8 @@ export function speedMultiplier(world: World, e: Entity, sprint: boolean): numbe
   return evaluate(world, e, Buffs, Stat.MoveSpeed, m);
 }
 
-function blocked(world: World, x0: number, y0: number, x1: number, y1: number, level: number): boolean {
+/** Movement collision query (terrain, edge walls/doors, solid cells); vehicles reuse it per footprint corner. */
+export function movementBlocked(world: World, x0: number, y0: number, x1: number, y1: number, level: number): boolean {
   const defs = gameplayDefs(world); const terrain = world.getResource(TerrainRes);
   const tx0 = Math.floor(x0), ty0 = Math.floor(y0), tx1 = Math.floor(x1), ty1 = Math.floor(y1);
   if (terrain && defs.worldgen.unwalkableTiles.has(terrain.tileAt(tx1, ty1))) return true;
@@ -47,6 +48,7 @@ function blocked(world: World, x0: number, y0: number, x1: number, y1: number, l
 /** Applies one tick of movement input (server authority + client prediction). Writes PlayerIntent.moving/sprint. */
 export function applyMovementInput(world: World, e: Entity, actions: number, dt: number): void {
   const t = world.get(e, Transform); if (!t) return;
+  if (world.has(e, Driver)) return; // riders move with their vehicle (gameplay.vehicles)
   const dead = world.has(e, Dead);
   const { dx, dy } = dead ? { dx: 0, dy: 0 } : moveDirection(actions);
   const moving = dx || dy ? 1 : 0; const sprint = moving && actions & A.Sprint ? 1 : 0;
@@ -58,7 +60,7 @@ export function applyMovementInput(world: World, e: Entity, actions: number, dt:
   const sp = gameplayDefs(world).movement.walkSpeed * speedMultiplier(world, e, sprint === 1) * dt;
   const level = Math.max(0, Math.round(t.z / gameplayDefs(world).building.levelHeight));
   let x = t.x, y = t.y; const nx = x + dx * sp, ny = y + dy * sp;
-  if (!blocked(world, x, y, nx, y, level)) x = nx;
-  if (!blocked(world, x, y, x, ny, level)) y = ny;
+  if (!movementBlocked(world, x, y, nx, y, level)) x = nx;
+  if (!movementBlocked(world, x, y, x, ny, level)) y = ny;
   if (x !== t.x || y !== t.y) world.set(e, Transform, { x, y, facing: Math.atan2(dy, dx) });
 }

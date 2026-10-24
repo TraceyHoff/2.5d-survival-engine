@@ -194,6 +194,19 @@ export const PartyInvitePending = defineComponent("PartyInvitePending", { party:
 export const ClanInvitePending = defineComponent("ClanInvitePending", { clan: "u32", from: "u32", expiresTick: "u32" }, { networked: true });
 /** Clan view on each online member (AOI): clan, role, current clan goal (ClanGoal) + point, own contribution count. Clan handlers only. */
 export const ClanStatus = defineComponent("ClanStatus", { clan: "u32", role: "u8", goal: "u8", goalX: "f32", goalY: "f32", contrib: "u32" }, { networked: true });
+// ---- vehicles (docs/VEHICLES.md, ADR-096) ---------------------------------------------------------
+export const VEHICLE_MAX_SEATS = 8;
+/** A drivable vehicle or trailer. defId = data/vehicles.json index + 1. heading radians; drift = velocity angle minus heading
+ * (arcade slide); steer = current steering angle. Storage lives in Container on the same entity. */
+export const Vehicle = defineComponent("Vehicle", {
+  defId: "u16", speed: "f32", heading: "f32", fuel: "f32", health: "f32", drift: "f32", steer: "f32",
+}, { networked: true, persistent: true });
+/** Seat occupancy on the vehicle: rider NetIds (0 = empty), seat 0 = driver. Not persisted (riders are ejected on load). */
+export const VehicleSeats = defineComponent("VehicleSeats", { occupant: { type: "u32", length: VEHICLE_MAX_SEATS } }, { networked: true });
+/** On a rider: the vehicle NetId and seat index (0 = driver). */
+export const Driver = defineComponent("Driver", { vehicleNetId: "u32", seat: "u8" }, { networked: true });
+/** Hitch links (NetIds, 0 = none): towNetId = what this entity tows at its rear; parentNetId = what tows this entity. */
+export const Hitch = defineComponent("Hitch", { towNetId: "u32", parentNetId: "u32" }, { networked: true, persistent: true });
 export const GAMEPLAY_COMPONENTS = [
   Emitter, Buffs,
   Health, ResourceNode, Survival, VitalsState, Exposure, Dead,
@@ -212,4 +225,5 @@ export const GAMEPLAY_COMPONENTS = [
   PartyInvitePending,
   ClanInvitePending,
   ClanStatus,
+  Vehicle, VehicleSeats, Driver, Hitch, // append-only (ADR-096)
 ] as const;

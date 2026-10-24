@@ -1,0 +1,238 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "vehicles.schema.json",
+ "type": "object",
+ "required": [
+  "vehicles"
+ ],
+ "properties": {
+  "vehicles": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "id",
+     "class",
+     "size",
+     "seats",
+     "mass",
+     "maxSpeed",
+     "accel",
+     "brake",
+     "turn",
+     "grip",
+     "fuel",
+     "stamina",
+     "health",
+     "storage",
+     "hitches",
+     "interior",
+     "footprint",
+     "collider"
+    ],
+    "properties": {
+     "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$"
+     },
+     "class": {
+      "enum": [
+       "bicycle",
+       "car",
+       "truck",
+       "van",
+       "camper",
+       "semi",
+       "trailer"
+      ]
+     },
+     "size": {
+      "enum": [
+       "xs",
+       "s",
+       "m",
+       "l",
+       "xl"
+      ]
+     },
+     "seats": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 8
+     },
+     "mass": {
+      "type": "number",
+      "exclusiveMinimum": 0
+     },
+     "maxSpeed": {
+      "type": "number",
+      "minimum": 0
+     },
+     "accel": {
+      "type": "number",
+      "minimum": 0
+     },
+     "brake": {
+      "type": "number",
+      "minimum": 0
+     },
+     "turn": {
+      "type": "number",
+      "minimum": 0
+     },
+     "grip": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+     },
+     "fuel": {
+      "oneOf": [
+       {
+        "type": "null"
+       },
+       {
+        "type": "object",
+        "required": [
+         "capacity",
+         "perSecond"
+        ],
+        "properties": {
+         "capacity": {
+          "type": "number",
+          "exclusiveMinimum": 0
+         },
+         "perSecond": {
+          "type": "number",
+          "minimum": 0
+         }
+        }
+       }
+      ]
+     },
+     "stamina": {
+      "oneOf": [
+       {
+        "type": "null"
+       },
+       {
+        "type": "object",
+        "required": [
+         "perSecond"
+        ],
+        "properties": {
+         "perSecond": {
+          "type": "number",
+          "minimum": 0
+         }
+        }
+       }
+      ]
+     },
+     "health": {
+      "type": "number",
+      "exclusiveMinimum": 0
+     },
+     "storage": {
+      "type": "object",
+      "required": [
+       "slots",
+       "maxWeight"
+      ],
+      "properties": {
+       "slots": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 24
+       },
+       "maxWeight": {
+        "type": "number",
+        "minimum": 0
+       }
+      }
+     },
+     "hitches": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "required": [
+        "at",
+        "offset",
+        "accepts"
+       ],
+       "properties": {
+        "at": {
+         "enum": [
+          "front",
+          "rear"
+         ]
+        },
+        "offset": {
+         "type": "number",
+         "minimum": 0
+        },
+        "accepts": {
+         "type": "array",
+         "items": {
+          "enum": [
+           "bicycle",
+           "car",
+           "truck",
+           "van",
+           "camper",
+           "semi",
+           "trailer"
+          ]
+         }
+        }
+       }
+      }
+     },
+     "interior": {
+      "type": "object",
+      "required": [
+       "stations"
+      ],
+      "properties": {
+       "stations": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "footprint": {
+      "type": "object",
+      "required": [
+       "length",
+       "width"
+      ],
+      "properties": {
+       "length": {
+        "type": "number",
+        "exclusiveMinimum": 0
+       },
+       "width": {
+        "type": "number",
+        "exclusiveMinimum": 0
+       }
+      }
+     },
+     "collider": {
+      "type": "object",
+      "required": [
+       "radius"
+      ],
+      "properties": {
+       "radius": {
+        "type": "number",
+        "exclusiveMinimum": 0
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}
