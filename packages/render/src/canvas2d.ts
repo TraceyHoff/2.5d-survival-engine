@@ -108,7 +108,7 @@ export class Canvas2DRenderer {
       const sp = world.get(it.e, Sprite)!; if (sp.scale > 0 && sp.scale < 0.01) continue;
       let anim = "idle"; let tAnim = time;
       if (an && world.has(it.e, an)) { const a = world.get(it.e, an)!; const names = STATE_ANIMS[a.state] ?? ["idle"]; let def; try { def = reg!.sprite(sp.spriteId); } catch { def = undefined; }
-        anim = names.find((n) => def?.animations.has(n)) ?? "idle"; tAnim = Math.max(0, (tick - a.startTick) / 20); }
+        anim = names.find((n) => def?.animations.has(n)) ?? "idle"; tAnim = Math.max(0, (tick - a.startTick) / 20) * (this.bindings.animRate?.(it.e, a.state) ?? 1); }
       let f; try { f = reg!.dirFrame(sp.spriteId, anim, world.get(it.e, Transform)!.facing, tAnim); } catch { continue; }
       const img = this.image(f.atlas.key); if (!img) continue;
       const k = sp.scale || 1; const dw = f.w * k, dh = f.h * k;

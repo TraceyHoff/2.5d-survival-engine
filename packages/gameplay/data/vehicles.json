@@ -724,7 +724,7 @@
     }
    ],
    "mass": 3500,
-   "maxSpeed": 12,
+   "maxSpeed": 12.5,
    "accel": 4,
    "brake": 6.4,
    "turn": 1.5,
@@ -782,7 +782,7 @@
     }
    ],
    "mass": 4500,
-   "maxSpeed": 11,
+   "maxSpeed": 12.5,
    "accel": 3.5,
    "brake": 5.6000000000000005,
    "turn": 1.4,
@@ -996,7 +996,7 @@
     }
    ],
    "mass": 2800,
-   "maxSpeed": 12,
+   "maxSpeed": 12.5,
    "accel": 4,
    "brake": 6.4,
    "turn": 1.6,
@@ -1077,7 +1077,7 @@
     }
    ],
    "mass": 6500,
-   "maxSpeed": 10,
+   "maxSpeed": 12.5,
    "accel": 3,
    "brake": 4.800000000000001,
    "turn": 1.2,
@@ -1139,7 +1139,7 @@
     }
    ],
    "mass": 8000,
-   "maxSpeed": 12,
+   "maxSpeed": 12.5,
    "accel": 3,
    "brake": 4.800000000000001,
    "turn": 1.1,

@@ -69,6 +69,9 @@ export function applyMovementInput(world: World, e: Entity, actions: number, dt:
   if (x !== t.x || y !== t.y) world.set(e, Transform, { x, y, facing: Math.atan2(dy, dx) });
 }
 
+/** ADR-125: character walk-cycle playback rate (walkSpeed / walkAnimRefSpeed) so feet match ground speed; shared by both renderers. */
+export function walkAnimRate(world: World): number { const mv = gameplayDefs(world).movement; return mv.walkAnimRefSpeed > 0 ? mv.walkSpeed / mv.walkAnimRefSpeed : 1; }
+
 // ---- swimming (ADR-107) -------------------------------------------------------------------------------------
 /** True when (x, y) is on a swim tile (movement.json swimTiles). */
 export function inWater(world: World, x: number, y: number): boolean {

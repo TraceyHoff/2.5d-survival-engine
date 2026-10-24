@@ -17,7 +17,7 @@ import { pieceVariantOpts } from "./piece-variant.js";
 import { loadManifest, mergeManifests, buildPieceVisual, type AssetRegistry, type ManifestFragment, type ManifestJson } from "@engine/assets";
 import { BuildGhost, pieceArtRow, ROT_EXACT_PIVOT, IsoRenderer, Canvas2DRenderer, chooseRenderer, Sprite, Shadow, LightSource, Occluder, SpriteFlag, sourcesFromManifest, coreAppearanceBinding, CameraTargetGuard } from "@engine/render";
 import { countFraction } from "./load-progress.js";
-import { Road, Sign, surfaceDef, signDef } from "@engine/gameplay";
+import { Road, Sign, surfaceDef, signDef, walkAnimRate } from "@engine/gameplay";
 import { gameplayDefs, rotationSteps, animalDefs, Animal, Health, Survival, Zombie, ResourceNode, CraftingStation, Fuel, AnimState as GAnim, BuildPiece as GPiece, Dead, Wetness, BodyTemp, Emitter, PieceLink, Crop, cropSpriteKey, clutterForChunk, resolveSprite, type ResolvedSprite } from "@engine/gameplay";
 
 /** Render-side schemas the renderer's bindings expect (view World only). */
@@ -68,12 +68,15 @@ export class IsoView {
   private lightOf = new Map<Entity, { spec: LightSpec; fuel?: Entity }>();
   /** Piece view entity -> building state index (e.g. "unlit") for the renderer's pieceState binding. */
   private pieceStates = new Map<number, number>();
+  /** ADR-125: character view entities (players/human bots); their Walk plays at walkAnimRate so feet match ground speed. */
+  private characters = new Set<number>(); private walkRate = 1;
   private constructor(readonly renderer: IsoRenderer, readonly registry: AssetRegistry, private readonly ov: ViewOverrides, readonly lights: LightTable) {
     IsoRenderer.registerComponents(this.view);
     for (const c of [VAnim, VPiece, VWet, VTemp, VFuel]) this.view.register(c);
     const cat = noCosmetics ? undefined : registry.cosmetics;
     if (cat?.size) this.view.register(Appearance);
     renderer.bindGameplay({ animState: VAnim, buildPiece: VPiece, wetness: VWet, bodyTemp: VTemp, lit: VFuel, pieceState: (e) => this.pieceStates.get(e),
+      animRate: (e, st) => (st === 1 && this.characters.has(e) ? this.walkRate : undefined),
       ...(cat?.size ? { appearance: coreAppearanceBinding(cat) } : {}) });
   }
   get appearanceEnabled(): boolean { return this.view.isRegistered(Appearance); }
@@ -210,6 +213,7 @@ export class IsoView {
         if (spec.shadow) v.add(ve, Shadow, { alpha: spec.shadow, length: 1 });
         if (spec.occluder) v.add(ve, Occluder, { fade: 0.35 });
         if (spec.light) { v.add(ve, LightSource, { ...spec.light, intensity: 0 }); this.lightOf.set(e, { spec: spec.light, ...(spec.fuelOf !== undefined ? { fuel: spec.fuelOf } : {}) }); }
+        if (spec.character) { this.characters.add(ve); if (defs) this.walkRate = walkAnimRate(net); }
         if (spec.animated) { v.add(ve, VAnim, { state: 0, startTick: 0 }); v.add(ve, VWet, { level: 0 }); v.add(ve, VTemp, { cold: 0, heat: 0, shivering: 0 }); }
         if (spec.fuel) v.add(ve, VFuel, { burnUntilTick: 0, lit: 1 });
         if (spec.onCreate) this.scales.set(ve, spec.onCreate);
@@ -253,7 +257,7 @@ export class IsoView {
       if (v.has(ve, VPiece)) this.syncPieceState(net, e, ve, defs);
       if (v.has(ve, VFuel)) { const f = net.get(e, Fuel); if (f) v.set(ve, VFuel, { lit: f.lit, burnUntilTick: f.burnUntilTick }); }
     }
-    for (const [ne, ve] of this.map) if (!seen.has(ne)) { v.destroy(ve); this.map.delete(ne); this.lightOf.delete(ne); this.pieceStates.delete(ve); this.lastMove.delete(ne); this.animalHp.delete(ne); this.animalPrev.delete(ne); this.scales.delete(ve); }
+    for (const [ne, ve] of this.map) if (!seen.has(ne)) { v.destroy(ve); this.map.delete(ne); this.characters.delete(ve); this.lightOf.delete(ne); this.pieceStates.delete(ve); this.lastMove.delete(ne); this.animalHp.delete(ne); this.animalPrev.delete(ne); this.scales.delete(ve); }
 
     this.syncClutter(tiles, ground);
     const camE = CAM_ANIMAL && this.camAnimal !== undefined ? this.camAnimal : player;
@@ -350,7 +354,7 @@ export class IsoView {
     }
     if (net.has(e, Survival) || (!net.has(e, Zombie) && (net.has(e, PlayerId) || net.has(e, Appearance) || (net.has(e, Health) && net.has(e, GAnim))))) {
       const s = this.sid(own ? "player" : PLAYER_KEYS[h % PLAYER_KEYS.length]) ?? this.sid("player");
-      return s === undefined ? undefined : { sprite: s, animated: true, shadow: 1 };
+      return s === undefined ? undefined : { sprite: s, animated: true, shadow: 1, character: true };
     }
     if (net.has(e, Zombie)) {
       const z = net.get(e, Zombie)!; const key = defs?.zombies.get(z.kind)?.spriteKey;
@@ -411,7 +415,7 @@ const exactPivot = (def: { placement?: number; key?: string } | undefined): bool
 const artRot = (rot: number, steps: number): { rot: number; rotSteps: number } => (steps === 12 ? { rot: pieceArtRow(rot, 12), rotSteps: 4 } : { rot, rotSteps: steps });
 
 interface Spec {
-  sprite?: number; frame?: number; flags?: number; scale?: number; shadow?: number; occluder?: boolean; animated?: boolean; fuel?: boolean;
+  sprite?: number; frame?: number; flags?: number; scale?: number; shadow?: number; occluder?: boolean; animated?: boolean; character?: boolean; fuel?: boolean;
   light?: { r: number; g: number; b: number; radius: number; intensity: number; flicker: number };
   pieceVisual?: number; variant?: number; rot?: number; onCreate?: number; tint?: number; damage?: number; level?: number; layer?: number; pieceKey?: string | undefined;
   /** light gated by this sibling's Fuel.lit (light attachment of a fired piece) */ fuelOf?: Entity | undefined;

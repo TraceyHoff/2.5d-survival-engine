@@ -59,6 +59,8 @@ export type BodyTempDefT = ComponentDef<{ cold: "u8"; heat: "u8"; shivering: "u8
 /** Gameplay-owned components the renderer reads (injected; render does not depend on gameplay). Emitter/lit come from core. */
 export interface GameplayBindings {
   buildPiece?: BuildPieceDefT; animState?: AnimStateDefT;
+  /** Per-entity anim playback rate for an AnimState state (ADR-125 character walk vs. ground speed); undefined = 1. */
+  animRate?: (entity: number, state: number) => number | undefined;
   /** Wetness {level u8 0..255} (art's 0-3 intensity maps onto 0..255). */
   wetness?: WetnessDefT;
   /** BodyTemp {cold, heat u8; shivering 0/1}: shivering gates the shiver, cold scales it and drives the frost rim, heat drives flush. */
@@ -634,7 +636,7 @@ export class SpriteBatch {
       const as = an ? an.slot(i) : -1;
       let st = -1, t = 0; let dollAnim = "";
       if (as >= 0 && an) {
-        st = an.data.state[as]!; t = (tickTime - an.data.startTick[as]!) / cx.tickHz;
+        st = an.data.state[as]!; t = (tickTime - an.data.startTick[as]!) / cx.tickHz * (cx.bindings.animRate?.(e, st) ?? 1);
         // paper doll: body + wear play one shared anim (frame-aligned across multi-page sheets, e.g. swim/punch pages)
         const bai = bodyL && layers ? atlas.sharedStateAnim(sid, layers, st) : atlas.stateAnim(sid, st);
         ok = atlas.resolve(sid, bai, f, t, 0, res);

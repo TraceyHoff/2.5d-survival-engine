@@ -666,3 +666,13 @@ Identity is persisted in the `agents` record namespace. Gameplay supplies `refer
   - In this mode there is no auto-turn and the animation clock is fixed at t = 0.
   - Once the preview's art has loaded and two frames have drawn, it sets `window.__creatorReady = { ok, seed, facing, renderer, appearance }` and `[data-boot=creator][data-ready=1]`.
   - It sets `{ ok: false, error }` if the pack did not load.
+## ADR-125: Slower on-foot movement so vehicles matter
+
+- **Problem:** players walked at 4 tiles/s and sprinted at 6.4, so even cars (13–18) were only ~2–3× a sprint and walking everywhere was fine.
+- **Change** (`movement.json`, one shared constant read by server simulation and client prediction through `applyMovementInput`/`speedMultiplier`):
+  - `walkSpeed` 4 → **2.6** tiles/s (−35%, about a jog). `sprintMul` stays 1.6, so sprint 6.4 → **4.16**.
+  - Swim stays ×0.4: 1.6 → **1.04** (walk) / 2.56 → **1.66** (sprint). Roads (ADR-119 ×1.1/1.2/1.3), encumbrance, wetness, skills and buffs are unchanged multipliers on the new base.
+  - Motor vehicles below 12.5 were raised to **12.5** (trucks 11/12, campers 10/12, semi 12), so every car/truck/van/camper/semi tops out at 12.5–18 = **3.0–4.3× sprint** (before boost). Bicycles (4.5–8) are unchanged: about 1–2× sprint, without stamina cost.
+- **Animation:** new `walkAnimRefSpeed` (4 = the speed the walk art was authored for). `walkAnimRate()` = walkSpeed / walkAnimRefSpeed (0.65). The client binds it as a new render `animRate` binding for character Walk (WebGL `SpriteBatch` and Canvas2D), so feet don't slide.
+- **Zombies are unchanged:** walker 1.4, brute 1.0, snuffer 2.0, runner **2.8**. A runner is faster than a walking player (2.6) but slower than a sprinting one (4.16), so you escape a runner only by sprinting. `adr125_speeds.test.ts` pins this.
+- **Netcode:** AntiCheat and range slack only set upper bounds (`building.playerMaxSpeed` 5 is unchanged), so slower movement can't trip them. Vehicle caps follow the updated `maxSpeed` via `riderMaxSpeed`.
