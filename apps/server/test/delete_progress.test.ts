@@ -4,10 +4,11 @@ import { ClanCreateCmd, ClanInviteCmd, ClanAcceptCmd, PartyInviteCmd, PartyAccep
 import { LoopbackNetwork, NetClient } from "@engine/net";
 import { AccountAssigned, ClaimAccount, MemoryWorldStore, tokenToWords, wordsToToken } from "@engine/persist";
 import { createGameServer, applyMoveInput, installDemoWorld, gameplayNet, rejectReasonCode, DEMO_COMMANDS, DEMO_EVENTS, DeleteMyProgressCmd, DELETE_PROGRESS_CONFIRM, ProgressDeleted } from "../src/main.js";
+import { SPAWN } from "../src/game.js";
 
 async function boot(store: MemoryWorldStore) {
   const net = new LoopbackNetwork(11);
-  const gs = createGameServer({ transport: net.createServer(), store, seed: 21, autosaveSeconds: 1, playerSaveSeconds: 1 });
+  const gs = createGameServer({ transport: net.createServer(), spawnPoints: [SPAWN], store, seed: 21, autosaveSeconds: 1, playerSaveSeconds: 1 });
   const cs: NetClient[] = [];
   const tick = (n = 1): void => { for (let i = 0; i < n; i++) { net.advance(50); gs.step(1 / 20); for (const c of cs) { c.world.step(1 / 20); c.pollEvents(Infinity); } } };
   const join = async (token?: string) => {

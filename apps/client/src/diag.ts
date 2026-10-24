@@ -6,7 +6,9 @@
 import { mountUi } from "./ui-root.js";
 import type { IsoRenderer } from "@engine/render";
 
-export interface DiagSources { renderer(): IsoRenderer | undefined; entities(): number; tick(): number; snapshot(): { received: boolean; latestTick: number; snapshots: number } | undefined; player(): unknown }
+export interface DiagSources { renderer(): IsoRenderer | undefined; entities(): number; tick(): number; snapshot(): { received: boolean; latestTick: number; snapshots: number } | undefined; player(): unknown;
+  /** World spawn points (ADR-106) and the seed they were computed for. */
+  spawnPoints?(): { seed: number; points: { x: number; y: number }[] } | undefined }
 let lastError = "";
 const hex = (r: number, g: number, b: number): string => "#" + [r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("");
 
@@ -46,6 +48,7 @@ export function startDiag(src: DiagSources): { afterRender(): void } | undefined
     const sd = r?.sceneDiag; if (sd) L.push(`view entities ${sd.entities} player eid ${sd.playerEid ?? "none"} cam target ${sd.cameraTarget ? `${sd.cameraTarget.kind} ${sd.cameraTarget.x.toFixed(1)},${sd.cameraTarget.y.toFixed(1)}` : "none"} local server ${sd.localServer ?? "?"} snapshots ${sd.snapshots ?? "?"}${sd.lastError ? ` scene error: ${sd.lastError}` : ""}`);
     L.push(`entities ${src.entities()} player ${src.player() !== undefined ? "yes" : "no"} snapshot ${s ? `${s.received ? "yes" : "NO"} tick ${s.latestTick} n=${s.snapshots}` : "no session"}`);
     L.push(`sim tick ${src.tick()} @ ${rate.toFixed(1)}/s`);
+    const sp = src.spawnPoints?.(); if (sp) L.push(`spawns (seed ${sp.seed}) ${sp.points.map((p) => `${p.x.toFixed(0)},${p.y.toFixed(0)}`).join("  ")}`);
     L.push(`last error: ${lastError || "none"}`);
     el.textContent = L.join("\n");
   }, 500);

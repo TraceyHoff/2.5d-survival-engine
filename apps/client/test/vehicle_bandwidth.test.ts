@@ -51,13 +51,15 @@ async function measure(fleet: number, ticks: number): Promise<{ mean: number; p9
   for (let i = 0; i < MOBILE_PLAYER_CAP - 1; i++) { const s = mk(`g${i}`); await until(r, s.connect(`p2p:${host.code}`, `G${i}`, guestTransport(sig, host.code))); }
   const gs = host.local.game; const w: World = gs.world;
   setVehicleBlocker(w, () => false);
-  // fleet: cars + trucks on rings 6..60 tiles around spawn, each towing a trailer, driven by an NPC rider at full boost
+  // ring centre = the host player's spawn point (ADR-106: joins spread over 4 far-apart spawn points)
+  const hp = w.get([...gs.players.values()].find((p) => p.entity !== undefined)!.entity, Transform)!; const CX = hp.x, CY = hp.y;
+  // fleet: cars + trucks on rings 6..60 tiles around the host's spawn, each towing a trailer, driven by an NPC rider at full boost
   const drivers: Entity[] = [];
   for (let i = 0; i < fleet; i++) {
     const a = (i / fleet) * Math.PI * 2, rad = 6 + (i * 54) / Math.max(1, fleet - 1);
-    const v = spawnVehicle(w, i % 2 ? "truck_pickup" : "car_offroad", 16 + Math.cos(a) * rad, 16 + Math.sin(a) * rad, a + Math.PI / 2); gs.net.netIds.assign(v);
-    const t = spawnVehicle(w, "trailer_utility_small", 16 + Math.cos(a) * rad - 4, 16 + Math.sin(a) * rad, a + Math.PI / 2); gs.net.netIds.assign(t);
-    const d = w.create(); w.add(d, Transform, { x: 16 + Math.cos(a) * rad, y: 16 + Math.sin(a) * rad }); gs.net.netIds.assign(d);
+    const v = spawnVehicle(w, i % 2 ? "truck_pickup" : "car_offroad", CX + Math.cos(a) * rad, CY + Math.sin(a) * rad, a + Math.PI / 2); gs.net.netIds.assign(v);
+    const t = spawnVehicle(w, "trailer_utility_small", CX + Math.cos(a) * rad - 4, CY + Math.sin(a) * rad, a + Math.PI / 2); gs.net.netIds.assign(t);
+    const d = w.create(); w.add(d, Transform, { x: CX + Math.cos(a) * rad, y: CY + Math.sin(a) * rad }); gs.net.netIds.assign(d);
     w.add(d, Driver, { vehicleNetId: w.getField(v, NetId, "id")!, seat: 0 });
     const occ = Array.from(w.get(v, VehicleSeats)!.occupant as ArrayLike<number>); occ[0] = w.getField(d, NetId, "id")!; w.set(v, VehicleSeats, { occupant: occ });
     w.set(t, Transform, { x: 0, y: 0 }); // snap next to the tow's pin for hitching

@@ -42,6 +42,7 @@ export * from "./economy/provenance.js";
 export * from "./economy/stall.js";
 export * from "./combat/pvp_pieces.js";
 export * from "./combat/pvp.js";
+export * from "./spawn_points.js";
 export * from "./combat/arms.js";
 export * from "./net_hooks.js";
 export * from "./input_hooks.js";

@@ -4,11 +4,12 @@ import { ChatChannel, LoopbackNetwork, NetClient, NO_ENTITY, eidOfNetId, netIdOf
 import { ClaimAccount, MemoryWorldStore } from "@engine/persist";
 import { CollectTillCmd, EmoteCmd, Expression, EXPRESSION_DATA, emoteId, emoteNames, expressionId, LootBag, PlaceCmd, PlayerIntent, IntentAction, UseCmd } from "@engine/gameplay";
 import { createGameServer, applyMoveInput, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS } from "../src/main.js";
+import { SPAWN } from "../src/game.js";
 import { CHAT_STYLE_RATE, gameplayNet, onGameplayRejected, SOCIAL_COMMAND_NAMES } from "../src/protocol.js";
 
 async function setup() {
   const net = new LoopbackNetwork(3);
-  const gs = createGameServer({ transport: net.createServer(), store: new MemoryWorldStore(), seed: 5, population: false });
+  const gs = createGameServer({ transport: net.createServer(), spawnPoints: [SPAWN], store: new MemoryWorldStore(), seed: 5, population: false });
   const clients: NetClient[] = []; const rejected = new Map<NetClient, string[]>();
   const tick = (n = 1): void => { for (let i = 0; i < n; i++) { net.advance(50); gs.step(1 / 20); for (const c of clients) { c.world.step(1 / 20); c.pollEvents(Infinity); } } };
   const connect = async (): Promise<NetClient> => {

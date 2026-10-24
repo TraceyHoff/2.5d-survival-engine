@@ -1,12 +1,12 @@
 /** Authoritative game server: world + gameplay + streaming chunks + persistence + NetServer sessions. */
 import { ChannelRegistry, CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, type CosmeticCatalogLike, Membership, Owner, PlayerId, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
-import { CHUNK_SIZE, ChunkManager, ProceduralGenerator, chunkKeyOf, type BuildingGrid, type PopulationSpawner } from "@engine/world";
-import { GAMEPLAY_COMMANDS, ARMS_COMMANDS, ARMS_EVENT_RELIABILITY, Exploded, Reloaded, VehicleStationOpened, installPartyCommands, PartyInvitePending, installClanCommands, ClanInvitePending, ClanStatus, syncSocialMembership, clanState, encodeClanState, decodeClanState, loadClanState, queueCommand, spawnPlayer, spawnResourceNode, gameplayDefs, setIntent, IntentAction, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installPopulation, installCustomization,
+import { CHUNK_SIZE, ChunkManager, ProceduralGenerator, computeSpawnPoints, chunkKeyOf, type BuildingGrid, type PopulationSpawner } from "@engine/world";
+import { GAMEPLAY_COMMANDS, ARMS_COMMANDS, ARMS_EVENT_RELIABILITY, Exploded, Reloaded, VehicleStationOpened, installPartyCommands, PartyInvitePending, installClanCommands, ClanInvitePending, ClanStatus, syncSocialMembership, clanState, encodeClanState, decodeClanState, loadClanState, queueCommand, spawnPlayer, spawnResourceNode, setSpawnPoints, spawnPoints as worldSpawnPoints, pickSpawnPoint, gameplayDefs, setIntent, IntentAction, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installPopulation, installCustomization,
   appearanceServerHooks, applyReplication, installStallBuyHook, installViewBonus, setHitValidator, installPvp, installCraftQueue, installExpressionCommands, installVehicleCommands, installVehicleCraftCommands, installVehicleGuard, requestEmote, CraftQueue, CraftQueuesRes, playerNames, stallListing, listingRevision, stallOf, tillOf, StallHeader, StallOwnerKind } from "@engine/gameplay";
 import { AppearanceServer, ChatServer, NameSync, NetServer, StallResult, StallServer, TileSync, validateHit, type ClientSession, type ServerTransport, type StallHooks } from "@engine/net";
 import { createAgentStore, type AgentIdentityStore } from "./agents.js";
 import { AccountAssigned, ClaimAccount, SetName, WorldPersistence, loadSocial, tokenToHex, tokenToWords, wordsToName, wordsToToken, type WorldStore } from "@engine/persist";
-import { seedStarterCamp, giveRandomAppearance } from "./camp.js";
+import { giveRandomAppearance } from "./appearance.js";
 import { SocialSync } from "./social_sync.js";
 import { Act, applyDemoInput, installDemoWorld, rejectReasonCode, DevBotHello, DEMO_COMMANDS, DEMO_EVENTS, ExplodedEvt, GAMEPLAY_NET_COMMANDS, Ping, Pong, ReloadedEvt, VehicleStationOpenedEvt, DeleteMyProgressCmd, DELETE_PROGRESS_CONFIRM, ProgressDeleted } from "./protocol.js";
 import { forgetPlayer, sweepForgottenPlayers } from "@engine/gameplay";
@@ -14,9 +14,8 @@ import { forgetPlayer, sweepForgottenPlayers } from "@engine/gameplay";
 export const CLAN_BLOB = "gameplay.clans";
 /** ProceduralGenerator node kinds -> gameplay resource keys (see DEFAULT_BANDS comments in @engine/world). */
 const NODE_RESOURCES: Record<number, string> = { 1: "fallen_branches", 2: "fiber_grass", 3: "berry_bush", 4: "loose_rocks", 5: "tree", 6: "boulder", 7: "iron_vein" };
+/** Legacy origin spawn (camera fallback only). Players and bots spawn at `spawnPoints(world)` (ADR-106). */
 export const SPAWN = { x: 16, y: 16 };
-/** Starter camp hut origin (NE of spawn; yard reaches back toward spawn). */
-export const CAMP = { x: 19, y: 8 };
 
 export interface GameServerOptions {
   transport: ServerTransport;
@@ -32,8 +31,6 @@ export interface GameServerOptions {
   log?: (msg: string) => void;
   /** Cosmetics catalog (@engine/assets CosmeticCatalog). Enables customization: Appearance net messages + gameplay commands. */
   catalog?: CosmeticCatalogLike;
-  /** Seed the starter camp near spawn (default true; skipped if pieces already stand there). */
-  starterCamp?: boolean;
   /** Give each joining client (players and bots) a random valid Appearance as a placeholder until they set their own look. */
   randomAppearance?: boolean;
   /**
@@ -43,6 +40,8 @@ export interface GameServerOptions {
   mode?: GameMode;
   /** Singleplayer only: the host that connects a virtual player (a loopback client driven by an AgentController). */
   virtualPlayers?: VirtualPlayerHost;
+  /** Override the seed's four spawn points (tests / dev: e.g. [SPAWN] keeps every join co-located). */
+  spawnPoints?: readonly { x: number; y: number }[];
   /** Ambient population (zombies, animals, bots via PopulationSpawner). Default true. */
   population?: boolean;
   /** Player cap (all sessions, incl. a P2P host's own client); extra joins get RejectReason.ServerFull + serverFullDetail. */
@@ -83,6 +82,8 @@ export interface GameServer {
   players: ReadonlyMap<number, Player>;
   /** Resolved mode flags: humanBots only in singleplayer. */
   modeConfig: GameModeConfig;
+  /** The world's four spawn points (deterministic per seed, ADR-106). */
+  spawnPoints: { x: number; y: number }[];
   /** Ambient population spawner (undefined with population: false). */
   population: PopulationSpawner | undefined;
   /** Singleplayer host: mark a joined session as a virtual player (false = refused, e.g. multiplayer). */
@@ -112,6 +113,8 @@ export function createGameServer(o: GameServerOptions): GameServer {
   { const b = o.store?.readBlob(CLAN_BLOB); if (b) { try { loadClanState(world, decodeClanState(b.bytes)); } catch (e) { log(`persist: clan state unreadable: ${String(e)}`); } } }
   if (o.store) { const store = o.store; clanState(world).onChange = () => { if (closing) return; void store.write({ blobs: [{ key: CLAN_BLOB, format: 1, bytes: encodeClanState(clanState(world)), tick: world.tick }] }).catch((e) => log(`persist: clan save failed: ${String(e)}`)); }; }
   const generator = new ProceduralGenerator({ seed });
+  // Four far-apart starter-biome spawn points, deterministic per seed (ADR-106).
+  setSpawnPoints(world, o.spawnPoints?.length ? o.spawnPoints : computeSpawnPoints(generator));
   const persist = o.store ? new WorldPersistence({
     world, store: o.store, generator, tickHz, log,
     ...(o.buildings ? { buildings: o.buildings } : {}),
@@ -149,7 +152,8 @@ export function createGameServer(o: GameServerOptions): GameServer {
       }
     },
     onClientJoin: (s, w) => {
-      const e = spawnPlayer(w, { x: SPAWN.x + (s.clientId % 7) - 3, y: SPAWN.y + ((s.clientId * 3) % 7) - 3, clientId: s.clientId });
+      const at = pickSpawnPoint(w, "join", s.clientId); // least crowded of the 4 (+ jitter)
+      const e = spawnPlayer(w, { x: at.x, y: at.y, clientId: s.clientId });
       net.netIds.assign(e);
       // random valid look (replicates; a restored player record or the client's own setAppearance replaces it)
       if (o.catalog && o.randomAppearance) giveRandomAppearance(w, e, o.catalog, Math.random);
@@ -380,9 +384,12 @@ export function createGameServer(o: GameServerOptions): GameServer {
     viewpoints: () => { const v: { x: number; y: number }[] = []; for (const p of players.values()) { if (p.bot) continue; const t = world.get(p.entity, Transform); if (t) v.push({ x: t.x, y: t.y }); } return v; },
     ...(o.buildings ? { buildings: o.buildings } : {}),
     humanBots: mode.humanBots && o.virtualPlayers ? {
-      spawn: (x, y, kind?: string) => { pendingSpots.push({ x, y }); if (kind !== undefined ? o.virtualPlayers!.connect(x, y, kind) : o.virtualPlayers!.connect(x, y)) return true; pendingSpots.pop(); return false; },
+      // human bots start at the least crowded world spawn point (ADR-106), not where the spawner rolled
+      spawn: (_x, _y, kind?: string) => { const { x, y } = pickSpawnPoint(world, "bot", pendingSpots.length); pendingSpots.push({ x, y }); if (kind !== undefined ? o.virtualPlayers!.connect(x, y, kind) : o.virtualPlayers!.connect(x, y)) return true; pendingSpots.pop(); return false; },
       despawn: (e) => { for (const [cid, p] of players) if (p.entity === e && p.bot) { o.virtualPlayers!.disconnect(cid); leave(cid, "bot despawned"); break; } },
     } : undefined,
+    // bots placed at a far spawn point must not be culled for being out of the player's view
+    persistent: (e) => { for (const p of players.values()) if (p.entity === e) return !!p.bot; return false; },
   });
   /**
    * Singleplayer host marks a joined session as a virtual player: it is placed at the spawner's chosen point and
@@ -394,16 +401,16 @@ export function createGameServer(o: GameServerOptions): GameServer {
     if (spot) { world.setField(p.entity, Transform, "x", spot.x); world.setField(p.entity, Transform, "y", spot.y); }
     population?.adopt(p.entity, "human_bot"); return true;
   };
-  chunks.setSource({ id: 0, x: SPAWN.x, y: SPAWN.y, radius: 1 }); // keep spawn warm
+  // keep the spawn points warm (source ids -1..-4 never collide with client ids)
+  worldSpawnPoints(world).forEach((p, i) => chunks.setSource({ id: -1 - i, x: p.x, y: p.y, radius: 1 }));
   do chunks.update(); while (chunks.pendingLoads > 0); // load the spawn area before the first tick
-  if (o.starterCamp !== false) { const n = seedStarterCamp(world, CAMP).length; if (n) log(`camp: seeded ${n} pieces at ${CAMP.x},${CAMP.y}`); }
   rearmCrafts();
 
   const tickTimes: number[] = [];
   const step = (dt: number): void => { const t0 = performance.now(); world.step(dt); tickTimes.push(performance.now() - t0); if (tickTimes.length > 4096) tickTimes.splice(0, 2048); };
   const loop = new FixedLoop({ tickHz, step });
   return {
-    world, net, chunks, persist, loop, permissions, players, mode: mode.mode, modeConfig: mode, population, markVirtual, stalls, appearance, chat, agents, step, tickTimes,
+    world, net, chunks, persist, loop, permissions, players, spawnPoints: worldSpawnPoints(world), mode: mode.mode, modeConfig: mode, population, markVirtual, stalls, appearance, chat, agents, step, tickTimes,
     async shutdown() {
       if (!persist || closing) return { chunks: 0, players: 0 };
       await agents.flush();

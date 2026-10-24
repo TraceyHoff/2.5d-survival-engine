@@ -8,6 +8,7 @@ import { LoopbackNetwork, NetClient } from "@engine/net";
 import { AccountAssigned, ClaimAccount, MemoryWorldStore, SetName, nameToWords, tokenToWords, wordsToToken } from "@engine/persist";
 import { SqliteWorldStore } from "@engine/persist/node";
 import { createGameServer, parseServerArgs, Act, applyMoveInput, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS } from "../src/main.js";
+import { SPAWN } from "../src/game.js";
 
 const dirs: string[] = [];
 afterEach(() => { for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true }); });
@@ -15,7 +16,7 @@ afterEach(() => { for (const d of dirs.splice(0)) rmSync(d, { recursive: true, f
 interface TestClient { client: NetClient; world: World; input: { buttons: number }; account?: string; restored?: boolean }
 async function setup(store?: ConstructorParameters<typeof Object>[0]) {
   const net = new LoopbackNetwork(7);
-  const gs = createGameServer({ transport: net.createServer(), ...(store ? { store } : {}), seed: 99, autosaveSeconds: 2, playerSaveSeconds: 1 });
+  const gs = createGameServer({ transport: net.createServer(), spawnPoints: [SPAWN], ...(store ? { store } : {}), seed: 99, autosaveSeconds: 2, playerSaveSeconds: 1 });
   const clients: TestClient[] = [];
   const tick = (n = 1): void => { for (let i = 0; i < n; i++) { net.advance(50); gs.step(1 / 20); for (const c of clients) { c.world.step(1 / 20); c.client.pollEvents(Infinity); } } };
   const join = async (token?: string, name = "p"): Promise<TestClient> => {

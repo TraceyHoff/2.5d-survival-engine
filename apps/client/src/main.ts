@@ -16,7 +16,7 @@ import { mountTouchOverlay } from "./touch-overlay.js";
  *             ?ice=<JSON RTCIceServer[]> (P2P STUN/TURN override, also VITE_ICE_SERVERS), ?renderer=debug, ?time=0..24 / ?weather=clear|rain|storm|snow|fog &intensity=0..1 (view-only overrides), ?hud=0.
  */
 import { createGameLoop, World, Transform, PrevTransform, lerp, entityIndex, InputState, type FixedLoop } from "@engine/core";
-import { TileMap, worldToScreen, screenToWorld, DEFAULT_ISO } from "@engine/world";
+import { TileMap, worldToScreen, screenToWorld, DEFAULT_ISO, ProceduralGenerator, computeSpawnPoints } from "@engine/world";
 import { InputSystem, AimResolver, DEFAULT_ACTIONS, DEFAULT_CONTEXTS, DEFAULT_PROFILES, DEFAULT_TOUCH_LAYOUTS, type FrameMapping } from "@engine/input";
 import { attachBrowserInput } from "@engine/input/browser";
 import { Act, ClanRoster, ClanRosterMember, OnlinePlayer, VehicleStationOpenedEvt, gameplayNet, installDemoWorld } from "@engine/server/protocol";
@@ -134,7 +134,9 @@ const session = new ClientSession({ storage: localStorage, slot: SLOT, sampleInp
 let world = new World({ seed: 1234 }); installDemoWorld(world, "client");
 installFullscreenRestore();
 const diag = startDiag({ renderer: () => iso?.renderer, entities: () => world.entityCount, tick: () => world.tick, player: () => session.player,
-  snapshot: () => session.client ? { received: session.client.latestTick >= 0, latestTick: session.client.latestTick, snapshots: session.client.stats.snapshots } : undefined });
+  snapshot: () => session.client ? { received: session.client.latestTick >= 0, latestTick: session.client.latestTick, snapshots: session.client.stats.snapshots } : undefined,
+  // local/hosted worlds use the default seed 1234 (createGameServer); ?seed= overrides for a remote server's seed
+  spawnPoints: (() => { let c: { seed: number; points: { x: number; y: number }[] } | undefined; return () => (c ??= (() => { const seed = Number(params.get("seed") ?? 1234); return { seed, points: computeSpawnPoints(new ProceduralGenerator({ seed })) }; })()); })() });
 // Ground: replicated tiles from the server (net TileClient, `session.client.tiles.tiles`) once connected;
 // a placeholder ground is drawn only while offline.
 const placeholder = new TileMap();

@@ -146,6 +146,8 @@ export interface InstallPopulationOptions {
   tickHz?: number;
   /** Tile lookup when the world has no TerrainRes (e.g. the server's ChunkManager.getTile). */
   tileAt?: (tx: number, ty: number) => number;
+  /** Tracked entities that must not be despawned for being far from every viewpoint (e.g. bots at a far spawn point). */
+  persistent?: (e: Entity) => boolean;
 }
 /** Is (tx,ty) off-limits for ambient spawns: unwalkable, under a structure, building grid, or inside a claim. */
 export function populationBlocked(world: World, tx: number, ty: number, buildings?: BuildingGrid): boolean {
@@ -170,6 +172,7 @@ export function installPopulation(world: World, o: InstallPopulationOptions): Po
       return undefined;
     },
     despawn: (e) => { if (world.isAlive(e)) world.destroy(e); },
+    ...(o.persistent ? { persistent: o.persistent } : {}),
     position: (e) => { if (!world.isAlive(e) || world.has(e, Dead)) return undefined; const t = world.get(e, Transform); return t ? { x: t.x, y: t.y } : undefined; },
   };
   // Human bots are despawned by their host (session leave), not by destroying the entity.

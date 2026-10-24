@@ -1,6 +1,6 @@
 {
   "$comment": "Day/night + weather tuning. timeOfDay 0 = midnight, 0.5 = noon. kind must match core WeatherKind: clear|rain|storm|snow|fog. Temperature uses world climate (bands temp + gameplay ClimateModel) when installed, else baseTemp. surface = per-chunk surface wetness rates. spoilage scales food decay by temperature and container. spoilage.stages: four freshness stages (fresh/stale/spoiling/rotten) by minFresh, descending; nutritionMul scales food, sick applies the sickness debuff. Render reads itemInfo.freshnessStage 0..3.",
-  "dayLengthSeconds": 1200,
+  "dayLengthSeconds": 3600,
   "startTimeOfDay": 0.25,
   "baseTemp": 14,
   "dayNightAmplitude": 8,

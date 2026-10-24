@@ -11,7 +11,7 @@ import { Animal, Dead, Health, ResourceNode, Zombie, agentOutputFrame, applyAgen
 import { ChatChannel, DirectClient, LoopbackNetwork, MultiServerTransport, NetClient, type ClientTransport, type ServerTransport } from "@engine/net";
 import { ClaimAccount, IndexedDbWorldStore, MemoryWorldStore, SetName, nameToWords, tokenToWords, type WorldStore } from "@engine/persist";
 import { detectDevice, isMobileHost, type DeviceHints } from "./p2p.js";
-import { createGameServer, SPAWN, type GameMode, type GameServer } from "@engine/server/game";
+import { createGameServer, type GameMode, type GameServer } from "@engine/server/game";
 import { Act, applyDemoInput, VEHICLE_CLIENT_OPTIONS, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS } from "@engine/server/protocol";
 
 /** Device-scaled default bot cap (ADR-105): phones get far fewer bots than desktops. */
@@ -209,7 +209,7 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
     createTransport: () => network.createClient(),
     async stop() { stopped = true; await Promise.allSettled(connecting); flushSocialMemory(bots.map((b) => b.agent), putAgent, game.world.tick, true); for (const b of bots) b.client.close(); await game.shutdown(); serverTransport.close(); },
   };
-  if (mode === "singleplayer") for (let i = 0; i < Math.min(o.bots ?? 0, maxBots); i++) await addBot(SPAWN.x + i, SPAWN.y + 2);
+  if (mode === "singleplayer") for (let i = 0; i < Math.min(o.bots ?? 0, maxBots); i++) { const sp = game.spawnPoints[i % game.spawnPoints.length]!; await addBot(sp.x + 1, sp.y + 1); } // dev bots over the 4 spawn points (ADR-106)
   return server;
 }
 

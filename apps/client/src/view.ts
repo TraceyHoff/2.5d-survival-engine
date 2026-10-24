@@ -34,7 +34,7 @@ let lowendDress = false;
 let noCosmetics = false;
 const PLAYER_KEYS = ["player", "player_b", "player_c"];
 
-/** Camera fallback when no player is replicated for CAMERA_GRACE_FRAMES: the world spawn (server SPAWN, camp nearby). */
+/** Camera fallback when no player is replicated for CAMERA_GRACE_FRAMES: the legacy origin spawn (server SPAWN). */
 export const CAMERA_FALLBACK = { x: 16, y: 16, z: 0 };
 const CAMERA_GRACE_FRAMES = 300;
 export interface ViewStatus { localServer: string; snapshots: number; error?: string }
@@ -124,7 +124,7 @@ export class IsoView {
     const v = this.view, r = this.renderer;
     r.tilemap = tiles;
     v.tick = net.tick;
-    const td = v.env(TimeOfDay), nt = net.env(TimeOfDay); td.dayLengthTicks = nt.dayLengthTicks || 24000; td.epochTick = nt.epochTick;
+    const td = v.env(TimeOfDay), nt = net.env(TimeOfDay); td.dayLengthTicks = nt.dayLengthTicks || 72000; // fallback = 3600 s day @ 20 Hz (ADR-106) td.epochTick = nt.epochTick;
     if (this.ov.hours !== undefined) td.epochTick = Math.round(v.tick - (this.ov.hours / 24) * td.dayLengthTicks);
     const w = v.env(Weather), nw = net.env(Weather) as unknown as Record<string, number>;
     for (const k of Object.keys(w)) (w as unknown as Record<string, number>)[k] = nw[k] ?? 0;

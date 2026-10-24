@@ -4,12 +4,13 @@ import { Survival, Inventory, Equipment } from "@engine/gameplay";
 import { LoopbackNetwork, NetClient } from "@engine/net";
 import { ClaimAccount, MemoryWorldStore } from "@engine/persist";
 import { createGameServer, applyMoveInput, installDemoWorld, DevBotHello, DEMO_COMMANDS, DEMO_EVENTS } from "../src/main.js";
+import { SPAWN } from "../src/game.js";
 
 /** Every player's look (core Appearance, scope "all"; Equipment, scope "all") reaches every client in AOI; vitals stay owner-only. */
 describe("public look", () => {
   it("client B sees client A's look and a bot's look; A's Survival/Inventory stay private", async () => {
     const net = new LoopbackNetwork(3);
-    const gs = createGameServer({ transport: net.createServer(), store: new MemoryWorldStore(), seed: 5, devBots: true });
+    const gs = createGameServer({ transport: net.createServer(), spawnPoints: [SPAWN], store: new MemoryWorldStore(), seed: 5, devBots: true });
     const clients: NetClient[] = [];
     const tick = (n = 1): void => { for (let i = 0; i < n; i++) { net.advance(50); gs.step(1 / 20); for (const c of clients) { c.world.step(1 / 20); c.pollEvents(Infinity); } } };
     const connect = async (bot: boolean): Promise<NetClient> => {

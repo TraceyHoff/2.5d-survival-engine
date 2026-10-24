@@ -4,7 +4,7 @@
  *  - Death bag: the tick a player (Inventory + Survival) gets Dead, every stack moves (with provenance) into a new
  *    LootBag container at the body; equipment is cleared. Only the owner may loot for bagOwnerOnlySeconds; the bag
  *    despawns at despawnAtTick or when empty.
- *  - Respawn: `respawnPlayer` (or gameplay.respawn command) after respawnSeconds: spawn point, partial vitals, clears
+ *  - Respawn: `respawnPlayer` (or gameplay.respawn command) after respawnSeconds: bed/claim hook or world spawn point, partial vitals, clears
  *    Dead / Burning / CombatTag.
  *  - Hit validation: `setHitValidator(world, fn)`; the combat system calls it for player attackers on the authority
  *    before damage (server wires net validateHit + lag-comp rewind; gameplay cannot import net).
@@ -18,6 +18,7 @@ import { secondsToTicks } from "../defs.js";
 import { emit, ev } from "../events.js";
 import { listSlots, moveSlotTuples } from "../inventory.js";
 import { indexEntity } from "../spawn.js";
+import { pickSpawnPoint, respawnLocation } from "../spawn_points.js";
 
 export interface PvpTuning {
   bagSlots: number; bagDespawnSeconds: number; bagOwnerOnlySeconds: number; respawnSeconds: number; respawnHealthFrac: number;
@@ -98,7 +99,8 @@ export function canRespawn(world: World, e: Entity): RespawnReject {
 }
 export function respawnPlayer(world: World, e: Entity): RespawnReject {
   const r = canRespawn(world, e); if (r || !isAuthority(world) || world.isReplaying) return r;
-  const p = PVP.spawnPoints[world.rngFor("pvp.respawn", e).int(0, PVP.spawnPoints.length)]!;
+  // bed / claim hook first (setRespawnLocator), else the least crowded world spawn point (+ jitter), ADR-106
+  const p = respawnLocation(world, e) ?? pickSpawnPoint(world, "pvp.respawn", e, { exclude: e });
   const vt = gameplayDefs(world).vitals; const max = world.getField(e, Health, "max") ?? vt.maxHealth;
   world.remove(e, Dead); if (world.has(e, Burning)) world.remove(e, Burning); if (world.has(e, CombatTag)) world.remove(e, CombatTag);
   world.set(e, Transform, { x: p.x, y: p.y });

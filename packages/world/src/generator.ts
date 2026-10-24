@@ -54,6 +54,8 @@ export class ProceduralGenerator implements ChunkProvider, BaseClimateSource {
     const seed = this.opts.seed >>> 0;
     return 0.65 * valueNoise(seed, tx, ty, 48) + 0.35 * valueNoise(seed ^ 0xabc, tx, ty, 12);
   }
+  /** Generated tile id at (tx,ty) (pure; no chunk load). */
+  tileAt(tx: number, ty: number): number { const n = this.noiseAt(tx, ty); return (this.bands.find((b) => n < b.max) ?? this.bands[this.bands.length - 1]!).tile; }
   /** Deterministic base climate for a tile (no chunk needs to be loaded). Altitude matches generated tile height. */
   baseClimate(tx: number, ty: number): BaseClimate {
     const n = this.noiseAt(tx, ty); const band = this.bands.find((b) => n < b.max) ?? this.bands[this.bands.length - 1]!;

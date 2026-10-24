@@ -29,7 +29,7 @@ describe("pvp (slice 6)", () => {
     steps(w, 20 * G.PVP.respawnSeconds);
     const ev = collect(w, G.Respawned); expect(G.respawnPlayer(w, a)).toBeUndefined();
     expect(w.has(a, Dead)).toBe(false); expect(w.getField(a, Health, "hp")).toBeGreaterThan(0);
-    const sp = G.PVP.spawnPoints[0]!; expect(w.get(a, Transform)).toMatchObject({ x: sp.x, y: sp.y });
+    const sp = G.PVP.spawnPoints[0]!; const t = w.get(a, Transform)!; expect(Math.hypot(t.x - sp.x, t.y - sp.y)).toBeLessThanOrEqual(G.SPAWN_JITTER + 1e-9); // pvp.json fallback + jitter
     steps(w, 1); expect(ev.length).toBe(1);
     expect(G.respawnPlayer(w, a)).toBe("not_dead");
   });

@@ -3,11 +3,12 @@ import { PlayerId, Transform, World } from "@engine/core";
 import { ChatChannel, ChatReject, GroupKind, GroupRole, LoopbackNetwork, NetClient, type ChatDelivered } from "@engine/net";
 import { ClaimAccount, MemoryWorldStore } from "@engine/persist";
 import { createGameServer, applyMoveInput, installDemoWorld, DevBotHello, DEMO_COMMANDS, DEMO_EVENTS } from "../src/main.js";
+import { SPAWN } from "../src/game.js";
 import type { GameServerOptions } from "../src/game.js";
 
 async function setup(o: Partial<GameServerOptions> = {}) {
   const net = new LoopbackNetwork(3);
-  const gs = createGameServer({ transport: net.createServer(), store: new MemoryWorldStore(), seed: 5, devBots: true, ...o });
+  const gs = createGameServer({ transport: net.createServer(), spawnPoints: [SPAWN], store: new MemoryWorldStore(), seed: 5, devBots: true, ...o });
   const clients: NetClient[] = []; const inbox = new Map<NetClient, ChatDelivered[]>(); const rejects = new Map<NetClient, number[]>();
   const tick = (n = 1): void => { for (let i = 0; i < n; i++) { net.advance(50); gs.step(1 / 20); for (const c of clients) { c.world.step(1 / 20); c.pollEvents(Infinity); } } };
   const connect = async (bot = false): Promise<NetClient> => {
