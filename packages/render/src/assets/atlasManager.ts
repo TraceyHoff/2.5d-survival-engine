@@ -26,7 +26,7 @@
  *   numeric ids), so ECS data is untouched. Old images are released (ref-counted) after the swap.
  */
 import { AnimState as CoreAnimState, ANIM_STATE_NAMES } from "@engine/core";
-import { AssetRegistry, type Animation, type Atlas, type FrameRef } from "@engine/assets";
+import { AssetRegistry, type Animation, type Atlas, type DirFrameRect, type FrameRef } from "@engine/assets";
 import { STATUS_TINTS, TINT_MODE_INDEX, type StatusTint, type StatusTintName } from "../style.js";
 import type { AssetManager } from "@engine/core";
 import type { RectTable } from "./texturePacker.js";
@@ -74,6 +74,8 @@ interface SpriteRT {
   anims: Animation[];
   /** per anim: atlas index of each dirFrames entry (facing-split pages, Art 62e55cf), or null (legacy layout via frame()) */
   dirAt: (Int32Array | null)[];
+  /** per anim: atlas-local frame of each dirFrames entry (`frame`, or the shared extra entry of an explicit `rect`) */
+  dirF: (Int32Array | null)[];
   /** state -> index into anims */
   stateAnim: Int16Array;
   /** "damaged"/"damage1.." frames for build pieces: list of frame indices per stage (stage 0 = idle). */
@@ -84,7 +86,8 @@ interface SpriteRT {
 interface AtlasRT { key: string; id: number; source: AtlasSource; img: ImageLike | null; emis: ImageLike | null; scale: number;
   masks: Partial<Record<MaskName, ImageLike>>; maskUrls: Partial<Record<MaskName, string>>; base: number; count: number; fw: number; fh: number; cols: number; layer: number; px: number; py: number;
   /** streamed wearable page: not loaded at rebuild (see header); w1/h1 = 1x page size */ lazy?: { w1: number; h1: number; state: 0 | 1 | 2; pool: number; prio?: number };
-  /** budget tier: cold art is downscaled before hot art (see fitBudget) */ cold?: boolean }
+  /** budget tier: cold art is downscaled before hot art (see fitBudget) */ cold?: boolean;
+  /** explicit dirFrames rects (deduped), frame-table entries n0.. after the grid/TexturePacker frames */ extra?: { n0: number; rects: DirFrameRect[]; byKey: Map<string, number> } }
 /** One streaming pool (wearables, vehicles): own slot geometry, layers and LRU; all pools share the VRAM accountant. */
 interface Pool { k: number; sw: number; sh: number; /** slot pitch (16-aligned: KTX2 4x4 blocks stay aligned down to mip 2) */ pw: number; ph: number; cols: number; perLayer: number; first: number; layers: number; lru: PageLRU<string>; slotBytes: number; tint: boolean; emis: boolean; cls: PoolClass;
   /** wear pool: its own colour array (poolTex), KTX2-compressed (`fmt` = GL internal format) or RGBA8 (fmt null), `levels` mips only */
@@ -564,6 +567,7 @@ export class AtlasManager {
       list.push({ key: a.key, id: a.id, source: src, img, emis, scale, masks, maskUrls, base: 0, count: src.rects ? src.rects.length : a.columns * a.rows, fw: a.frameW, fh: a.frameH, cols: a.columns, layer: 0, px: 0, py: 0 });
     }));
     list.sort((a, b) => a.id - b.id); lazyList.sort((a, b) => a.id - b.id);
+    addDirFrameRects(registry, [...list, ...lazyList]);
     this.gen++; this.queue = []; this.pools = []; this.layoutVersion++; this.fallbackCache.clear();
     const lowMem = this.textureBudgetMB <= 256; this.sideShift = lowMem ? SIDE_SHIFT_LOWMEM : SIDE_SHIFT;
     const groups: { cls: PoolClass; lazy: AtlasRT[]; minSlots: number; cap: boolean }[] = [];
@@ -622,7 +626,8 @@ export class AtlasManager {
       }
       const b = s.building;
       const dirAt = s.animList.map((an) => an.dirFrames ? Int32Array.from(an.dirFrames, (d) => list.findIndex((x) => x.id === d.atlas.id)) : null);
-      sprites[id] = { atlasIdx: list.indexOf(at), anchorX: s.anchor.x, anchorY: s.anchor.y, anims: s.animList, dirAt, stateAnim, damage,
+      const dirF = s.animList.map((an, k) => an.dirFrames ? Int32Array.from(an.dirFrames, (d, j) => dirFrameIndex(list[dirAt[k]![j]!], d)) : null);
+      sprites[id] = { atlasIdx: list.indexOf(at), anchorX: s.anchor.x, anchorY: s.anchor.y, anims: s.animList, dirAt, dirF, stateAnim, damage,
         ...(b ? { building: { fw: b.footprint.w, fh: b.footprint.h, layer: b.layer, frames: b.frames } } : {}) };
     }
     this.usedMark = new Uint8Array(list.length); this.atlases = list; this.atlasById = new Map(list.map((a) => [a.id, a])); this.sprites = sprites; this.registry = registry; this.resolveSway(); this.resolveVariants(); this.resolveRoofs(); this.resolveHands();
@@ -876,7 +881,7 @@ export class AtlasManager {
     }
     if (!px) return null;
     const f = entryHint - a.base; if (f < 0 || f >= a.count) return null;
-    const k = a.scale; const r = a.source.rects?.[f];
+    const k = a.scale; const r = rectOf(a, f);
     const fx = (r ? r.x : (f % a.cols) * a.fw) * k, fy = (r ? r.y : Math.floor(f / a.cols) * a.fh) * k, fw = (r ? r.w : a.fw) * k, fh = (r ? r.h : a.fh) * k;
     const ms = this.sideScale; // side masks are stored at half size
     for (let tries = 0; tries < 24; tries++) {
@@ -972,7 +977,7 @@ export class AtlasManager {
     const S = this.layerSize;
     if (clear) { data.fill(0, a.base * 8, (a.base + a.count) * 8); this.markTable(a); return; }
     for (let f = 0; f < a.count; f++) {
-      const r = a.source.rects?.[f];
+      const r = rectOf(a, f);
       const x = r ? r.x : (f % a.cols) * a.fw, y = r ? r.y : Math.floor(f / a.cols) * a.fh;
       const w = r ? r.w : a.fw, h = r ? r.h : a.fh; const k = a.scale;
       const o = (a.base + f) * 8;
@@ -1281,9 +1286,10 @@ export class AtlasManager {
     if (dz && dirs) {
       const di = i * an.directions + AssetRegistry.directionIndex(facing, an.directions); const d = dirs[di]; const ia = dz[di];
       if (d && ia !== undefined && ia >= 0) {
-        const da = this.atlases[ia]!; this.fill(da, d.frame, s, out);
-        if (!da.source.rects?.[d.frame]) { out.ax = d.anchor.x * da.fw; out.ay = d.anchor.y * da.fh; }
-        out.sprite = spriteId; out.frame = d.frame; out.anim = an.name ?? ""; out.atlas = ia; return true;
+        const da = this.atlases[ia]!; const fz = s.dirF?.[ai]; const fi = fz ? fz[di]! : d.frame; this.fill(da, fi, s, out);
+        if (d.rect) { out.w = d.rect.w; out.h = d.rect.h; out.ax = d.anchor.x * d.rect.w; out.ay = d.anchor.y * d.rect.h; }
+        else if (!da.source.rects?.[fi]) { out.ax = d.anchor.x * da.fw; out.ay = d.anchor.y * da.fh; }
+        out.sprite = spriteId; out.frame = fi; out.anim = an.name ?? ""; out.atlas = ia; return true;
       }
     }
     let f = an.frames[i]!;
@@ -1456,6 +1462,27 @@ export class AtlasManager {
 
 /** Atlases whose sprites are only referenced as cosmetics wearable art (not bodies, not world sprites). */
 /** Sprite ids referenced by cosmetic wearables (hair, hats, tops, ...). */
+/** Frame rect of atlas-local frame `f`: an explicit dirFrames rect (extra entries), a TexturePacker rect, or undefined (grid). */
+function rectOf(a: AtlasRT, f: number): { x: number; y: number; w: number; h: number } | undefined {
+  const e = a.extra; return e && f >= e.n0 ? e.rects[f - e.n0] : a.source.rects?.[f];
+}
+/** Gives every distinct explicit dirFrames rect of each page its own frame-table entry (identical rects share one), so
+ *  any anim (body, wear, swim/punch pages...) can list arbitrary per-frame (page, rect) pairs; grid frames keep their
+ *  arithmetic indices. Idempotent across rebuilds (counts are recomputed from the grid/TexturePacker base). */
+export function addDirFrameRects(registry: AssetRegistry, atlases: AtlasRT[]): void {
+  const byId = new Map(atlases.map((a) => [a.id, a]));
+  for (const a of atlases) if (a.extra) { a.count = a.extra.n0; delete a.extra; }
+  for (const s of registry.allSprites()) for (const an of s.animList) for (const d of an.dirFrames ?? []) {
+    if (!d.rect) continue; const a = byId.get(d.atlas.id); if (!a) continue;
+    const e = (a.extra ??= { n0: a.count, rects: [], byKey: new Map() }); const k = `${d.rect.x},${d.rect.y},${d.rect.w},${d.rect.h}`;
+    if (!e.byKey.has(k)) { e.byKey.set(k, e.n0 + e.rects.length); e.rects.push(d.rect); }
+  }
+  for (const a of atlases) if (a.extra) a.count = a.extra.n0 + a.extra.rects.length;
+}
+/** Atlas-local frame-table index of one dirFrames entry. */
+export function dirFrameIndex(a: AtlasRT | undefined, d: { frame: number; rect?: DirFrameRect }): number {
+  if (!a || !d.rect) return d.frame; return a.extra?.byKey.get(`${d.rect.x},${d.rect.y},${d.rect.w},${d.rect.h}`) ?? d.frame;
+}
 /** Atlases only the legacy full-size layout of facing-split sprites (anims with dirFrames) uses: sprite.atlas of such
  *  sprites, unless a sprite without dirFrames or any dirFrames entry also uses it. Art may delete these pages. */
 export function legacyDirFrameAtlases(registry: AssetRegistry): Set<string> {

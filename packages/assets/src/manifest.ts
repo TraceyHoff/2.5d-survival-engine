@@ -69,7 +69,11 @@ export interface AnimationJson { /** Per-frame metadata keyed by atlas frame ind
    * anchor. Lets one facing group (E/W, N/S, diagonals) live on a tightly trimmed page. `frames`/sprite.atlas stay the
    * legacy uniform layout for consumers that ignore this; resolve with AssetRegistry.dirFrame(). */
   dirFrames?: DirFrameJson[] }
-export interface DirFrameJson { atlas: string; frame: number; anchor: { x: number; y: number } }
+/** One explicit (page, frame) of an anim at one facing. `rect` (page px at 1x) addresses any region of the page directly
+ *  (no grid / TexturePacker table needed) and wins over `frame`; identical rects (across frames, facings, anims or
+ *  sprites, e.g. a held frame or a mirrored-pose reuse) share one frame-table entry. `anchor` is relative to the rect. */
+export interface DirFrameJson { atlas: string; frame?: number; rect?: DirFrameRect; anchor: { x: number; y: number } }
+export interface DirFrameRect { x: number; y: number; w: number; h: number }
 /** Building state -> vfx spawned at a named attach point (e.g. burning: fire/ember/smoke). */
 export interface StateVfxJson { vfx: string; attach: string }
 export const STRETCH_MODES = ["none", "velocity"] as const;
@@ -146,7 +150,7 @@ export interface Atlas extends Omit<AtlasJson, "emissive" | "nineSlice" | "pages
 }
 export interface SpriteTint { color: number; strength: number; mode: TintMode; saturation: number }
 export interface GlyphDef { id: string; sprite: number; frame: number }
-export interface Animation { id: number; name: string; frames: number[]; fps: number; directions: Directions; dirStride: number; loop: boolean; rotations?: number[][]; frameMeta?: Map<number, FrameMeta>; dirFrames?: { atlas: Atlas; frame: number; anchor: { x: number; y: number } }[] }
+export interface Animation { id: number; name: string; frames: number[]; fps: number; directions: Directions; dirStride: number; loop: boolean; rotations?: number[][]; frameMeta?: Map<number, FrameMeta>; dirFrames?: { atlas: Atlas; frame: number; rect?: DirFrameRect; anchor: { x: number; y: number } }[] }
 export interface BuildingSprite { piece: string; footprint: { w: number; h: number }; layer: number; frames: number[][]; rotationArt: RotationArt; stateNames: string[]; states: number[][][];
   /** crack overlay sprite id */ crackOverlay?: number; stateVfx: Record<string, { vfx: number; attach: string }[]> }
 export interface SpriteDef { id: number; key: string; category: Category; atlas: Atlas; anchor: { x: number; y: number }; animations: Map<string, Animation>; animList: Animation[]; building?: BuildingSprite; sway?: SwayJson; tints: Record<string, SpriteTint>;
@@ -225,8 +229,9 @@ export class AssetRegistry {
     const n = a.frames.length; let i = Math.floor(timeSec * a.fps); i = a.loop ? i % n : Math.min(i, n - 1);
     const d = a.dirFrames[i * a.directions + AssetRegistry.directionIndex(facing, a.directions)]; if (!d) return base;
     const at = d.atlas; const f = d.frame; const { emissiveImage: _e, ...rest } = base;
-    return { ...rest, atlas: at, frame: f, x: (f % at.columns) * at.frameW, y: Math.floor(f / at.columns) * at.frameH, w: at.frameW, h: at.frameH,
-      anchorX: d.anchor.x * at.frameW, anchorY: d.anchor.y * at.frameH, pages: at.pages, masks: at.masks, ...(at.emissiveImage ? { emissiveImage: at.emissiveImage } : {}) };
+    const r = d.rect; const w = r ? r.w : at.frameW, h = r ? r.h : at.frameH;
+    return { ...rest, atlas: at, frame: f, x: r ? r.x : (f % at.columns) * at.frameW, y: r ? r.y : Math.floor(f / at.columns) * at.frameH, w, h,
+      anchorX: d.anchor.x * w, anchorY: d.anchor.y * h, pages: at.pages, masks: at.masks, ...(at.emissiveImage ? { emissiveImage: at.emissiveImage } : {}) };
   }
   /** Per-frame metadata for an atlas frame: sprite frameMeta merged with the anim's (anim anchors win by name). */
   frameMeta(spriteId: number, frame: number, anim?: string): FrameMeta | undefined {
@@ -492,7 +497,9 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
         if (!Array.isArray(a.dirFrames) || !Array.isArray(a.frames) || a.dirFrames.length !== a.frames.length * dirs) issues.push(`${q}: dirFrames must have frames.length x directions entries`);
         else a.dirFrames.forEach((d, i) => { const da = atlases.get(d?.atlas);
           if (!da) issues.push(`${q}.dirFrames[${i}]: unknown atlas ${d?.atlas}`);
-          else if (!(Number.isInteger(d.frame) && d.frame >= 0 && d.frame < da.columns * da.rows)) issues.push(`${q}.dirFrames[${i}]: frame ${d.frame} out of range`);
+          else if (d.rect !== undefined) { const r = d.rect; const pw = da.columns * da.frameW, ph = da.rows * da.frameH;
+            if (!r || ![r.x, r.y, r.w, r.h].every((v) => Number.isInteger(v)) || r.x < 0 || r.y < 0 || r.w <= 0 || r.h <= 0 || r.x + r.w > pw || r.y + r.h > ph) issues.push(`${q}.dirFrames[${i}]: rect must be integer px inside the ${pw}x${ph} page`); }
+          else if (!(Number.isInteger(d.frame) && d.frame! >= 0 && d.frame! < da.columns * da.rows)) issues.push(`${q}.dirFrames[${i}]: frame ${d.frame} out of range`);
           if (!d?.anchor || !(d.anchor.x >= 0 && d.anchor.x <= 1 && d.anchor.y >= 0 && d.anchor.y <= 1)) issues.push(`${q}.dirFrames[${i}]: anchor must be within [0,1]`); });
       }
       else if (at) {
@@ -653,7 +660,7 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
   const sprites = new Map<number, SpriteDef>();
   for (const s of m.sprites) {
     const at = atlases.get(s.atlas)!; const animList: Animation[] = [];
-    Object.entries(s.animations).forEach(([name, a], i) => animList.push({ id: i, name, frames: a.frames, fps: a.fps, directions: a.directions ?? 1, dirStride: a.dirStride ?? at.columns, loop: a.loop ?? true, ...(a.rotations ? { rotations: a.rotations.map((r) => [...r]) } : {}), ...(a.frameMeta ? { frameMeta: cloneMeta(a.frameMeta) } : {}), ...(a.dirFrames ? { dirFrames: a.dirFrames.map((d) => ({ atlas: atlases.get(d.atlas)!, frame: d.frame, anchor: { ...d.anchor } })) } : {}) }));
+    Object.entries(s.animations).forEach(([name, a], i) => animList.push({ id: i, name, frames: a.frames, fps: a.fps, directions: a.directions ?? 1, dirStride: a.dirStride ?? at.columns, loop: a.loop ?? true, ...(a.rotations ? { rotations: a.rotations.map((r) => [...r]) } : {}), ...(a.frameMeta ? { frameMeta: cloneMeta(a.frameMeta) } : {}), ...(a.dirFrames ? { dirFrames: a.dirFrames.map((d) => ({ atlas: atlases.get(d.atlas)!, frame: d.frame ?? 0, ...(d.rect ? { rect: { x: d.rect.x, y: d.rect.y, w: d.rect.w, h: d.rect.h } } : {}), anchor: { ...d.anchor } })) } : {}) }));
     const id = ids.sprites.id(s.key);
     sprites.set(id, { id, key: s.key, category: s.category, atlas: at, anchor: s.anchor ?? { x: 0.5, y: 0.9 }, animations: new Map(animList.map((a) => [a.name, a])), animList,
       ...(s.building ? { building: { piece: s.building.piece, footprint: { ...s.building.footprint }, layer: s.building.layer, frames: s.building.frames.map((r) => [...r]),
