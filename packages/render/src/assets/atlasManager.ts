@@ -31,6 +31,8 @@ import { STATUS_TINTS, TINT_MODE_INDEX, type StatusTint, type StatusTintName } f
 import type { AssetManager } from "@engine/core";
 import type { RectTable } from "./texturePacker.js";
 import { PageLRU, PRIO_NEAR, VramAccountant, rgbaBytes, type VramStats } from "../gl/vram.js";
+import { blockBytes, GL_FORMAT, ktx2Target, loadKtx2, loadKtx2Rgba, type Ktx2Target } from "./ktx2.js";
+import type { CompressedTextureSupport } from "../gl/capabilities.js";
 
 /** Held-item hand anchor of one character frame (Art hands.json). */
 export interface HandAnchor { x: number; y: number; angle: number; len?: number; behind: boolean }
@@ -41,7 +43,9 @@ export const FrameBits = { Emissive: 1, Sheen: 2, Sway: 4, TintMask: 8 } as cons
  * Where an atlas' images live. `pages` = extra scale pages (1x = url). `masks`: one URL or candidate URLs tried in
  * order (explicit manifest path, then sibling `<atlas>_<mask>.png`, then a fallback folder); missing ones are skipped.
  */
-export interface AtlasSource { url: string; emissiveUrl?: string | null; rects?: RectTable; pages?: { scale: number; url: string }[]; masks?: Partial<Record<MaskName, string | string[]>> }
+export interface AtlasSource { url: string; emissiveUrl?: string | null; rects?: RectTable; pages?: { scale: number; url: string }[]; masks?: Partial<Record<MaskName, string | string[]>>;
+  /** KTX2 twins (Art 211785f): colour page (ETC1S) and masks (UASTC). Used for the streamed wearable pool when a transcode target exists. */
+  ktx2?: string; masksKtx2?: Partial<Record<MaskName, string>> }
 export type ImageLike = ImageBitmap | HTMLImageElement | HTMLCanvasElement | OffscreenCanvas;
 
 /**
@@ -78,7 +82,9 @@ interface AtlasRT { key: string; id: number; source: AtlasSource; img: ImageLike
   /** streamed wearable page: not loaded at rebuild (see header); w1/h1 = 1x page size */ lazy?: { w1: number; h1: number; state: 0 | 1 | 2; pool: number; prio?: number };
   /** budget tier: cold art is downscaled before hot art (see fitBudget) */ cold?: boolean }
 /** One streaming pool (wearables, vehicles): own slot geometry, layers and LRU; all pools share the VRAM accountant. */
-interface Pool { k: number; sw: number; sh: number; cols: number; perLayer: number; first: number; layers: number; lru: PageLRU<string>; slotBytes: number; tint: boolean; emis: boolean; cls: PoolClass }
+interface Pool { k: number; sw: number; sh: number; cols: number; perLayer: number; first: number; layers: number; lru: PageLRU<string>; slotBytes: number; tint: boolean; emis: boolean; cls: PoolClass;
+  /** wear pool: its own colour array (poolTex), KTX2-compressed (`fmt` = GL internal format) or RGBA8 (fmt null), `levels` mips only */
+  own?: { fmt: number | null; target: Ktx2Target | null; levels: number } }
 export type PoolClass = "wear" | "veh";
 /** Vehicle art pages kept resident at once (one page = one grouped Art sheet, ~1024^2 at 1x): desktop / low memory. */
 const VEH_POOL_SLOTS_DESKTOP = 8, VEH_POOL_SLOTS_LOWMEM = 6;
@@ -122,6 +128,8 @@ export function sourcesFromManifest(registry: AssetRegistry, manifestUrl: string
   const out = new Map<string, AtlasSource>();
   for (const a of registry.atlases.values()) {
     const r = rects[a.key];
+    // KTX2 twins sit beside the image: resolve them like the image (the client rewrites image paths of merged packs)
+    const img = resolve(a.image); const sib = (p: string): string => (/^(\/|[a-z]+:)/i.test(p) ? p : img.replace(/[^/]*$/, "") + p.replace(/^.*\//, ""));
     const pages = (a.pages ?? []).filter((p) => p.scale !== 1).map((p) => ({ scale: p.scale, url: resolve(p.image) }));
     const masks: Partial<Record<MaskName, string[]>> = {};
     for (const m of ["sheen", "sway", "tintmask"] as const) {
@@ -131,7 +139,9 @@ export function sourcesFromManifest(registry: AssetRegistry, manifestUrl: string
       const dir = opts.fallbackMaskDirs?.[m]; if (dir) c.push(`${dir.replace(/\/?$/, "/")}${a.image.replace(/^.*\//, "").replace(/(\.[a-z]+)$/i, `_${m}$1`)}`);
       if (c.length) masks[m] = [...new Set(c)];
     }
-    out.set(a.key, { url: resolve(a.image), emissiveUrl: a.emissiveImage ? resolve(a.emissiveImage) : null, ...(r ? { rects: r } : {}), ...(pages.length ? { pages } : {}), masks });
+    const mk2: Partial<Record<MaskName, string>> = {}; for (const m of ["sheen", "sway", "tintmask"] as const) { const v = a.masksKtx2?.[m as keyof typeof a.masksKtx2]; if (typeof v === "string") mk2[m] = sib(v); }
+    out.set(a.key, { url: resolve(a.image), emissiveUrl: a.emissiveImage ? resolve(a.emissiveImage) : null, ...(r ? { rects: r } : {}), ...(pages.length ? { pages } : {}), masks,
+      ...(a.ktx2 ? { ktx2: sib(a.ktx2) } : {}), ...(Object.keys(mk2).length ? { masksKtx2: mk2 } : {}) });
   }
   return out;
 }
@@ -205,6 +215,49 @@ export async function defaultImageLoader(url: string): Promise<ImageLike> {
 export class AtlasManager {
   readonly layerSize: number;
   tex: WebGLTexture | null = null;
+  /** Wearable pool colour array (compressed when KTX2 is usable); sampled for layers >= poolFirst (shader uPoolFirst). */
+  poolTex: WebGLTexture | null = null; poolFirst = 1 << 20;
+  private compressedCaps: CompressedTextureSupport | null = null;
+  /** GPU compressed-texture support (IsoRenderer passes capabilities.compressed); KTX2 is used only with a transcoder installed. */
+  setCompressed(c: CompressedTextureSupport | null): void { this.compressedCaps = c; }
+  get ktx2Target(): Ktx2Target | null { return this.compressedCaps ? ktx2Target(this.compressedCaps) : null; }
+  /**
+   * Device px per 1x texel of nearby characters (camera scale x sprite scale), set every frame by IsoRenderer. The wear
+   * pool is stored at the smallest page scale whose texels are still >= 1 device px (never blurrier than the 1:1 mip):
+   * magnified (r >= 1) -> 1x with no mip chain (levels never sampled are not allocated).
+   */
+  charFootprint = 1;
+  setCharFootprint(r: number): void { if (r > 0 && Number.isFinite(r)) this.charFootprint = r; }
+  wearScale(): number { const r = this.charFootprint; return r > 0.5 ? 1 : r > 0.25 ? 0.5 : 0.25; }
+  private wearPool(): Pool | undefined { return this.pools.find((p) => p.cls === "wear"); }
+  /** Colour bytes of one layer of the own wear array (vs rgbaBytes(S,S,true) in the shared array). */
+  private ownLayerBytes(o: NonNullable<Pool["own"]>): number { let b = 0, s = this.layerSize; for (let l = 0; l < o.levels; l++, s = Math.max(1, s >> 1)) b += o.fmt !== null ? blockBytes(s, s) : s * s * 4; return b; }
+  private ownSaving(): number { return this.pools.reduce((t, p) => t + (p.own ? p.layers * (rgbaBytes(this.layerSize, this.layerSize, true) - this.ownLayerBytes(p.own)) : 0), 0); }
+  /**
+   * Streamed pools (vehicles, then wearables) are the tail layers: give them their own colour array, KTX2-compressed
+   * (ETC1S -> probe target, level 0) when every streamed atlas has a KTX2 twin and pages are 1x, else RGBA8. Only the
+   * levels that are sampled are allocated: magnified (footprint >= page scale) -> 1 level.
+   */
+  /** Side-array bytes not allocated for pool layers (sheen/sway always, emissive unless a pool streams emissive). */
+  private sideSaving(list: AtlasRT[]): number {
+    const h = Math.max(1, this.layerSize >> this.sideShift); const poolLayers = this.pools.reduce((t, p) => t + p.layers, 0);
+    const skipped = (["sheen", "sway"] as const).filter((m) => list.some((a) => a.masks[m])).length + (!this.pools.some((p) => p.emis) && list.some((a) => a.emis) ? 1 : 0);
+    return poolLayers * skipped * rgbaBytes(h, h, true);
+  }
+  private planOwn(): void {
+    for (const p of this.pools) delete p.own;
+    const tail = this.pools.filter((p) => p.cls === "veh" || p.cls === "wear").sort((x, y) => x.first - y.first);
+    if (!tail.length) return;
+    let at = tail[0]!.first; for (const p of tail) { if (p.first !== at) return; at += p.layers; } if (at !== this.layers) return;
+    const t = this.ktx2Target;
+    const comp = t !== null && tail.every((p) => p.k === 1) && this.atlases.every((a) => !a.lazy || !tail.includes(this.poolOfA(a)!) || !!a.source.ktx2);
+    const levels = comp ? 1 : tail.every((p) => this.charFootprint >= p.k) ? 1 : 2;
+    for (const p of tail) {
+      p.own = { fmt: comp ? GL_FORMAT[t!][0] : null, target: comp ? t : null, levels };
+      let cb = 0; for (let l = 0, w = p.sw, h = p.sh; l < levels; l++, w = Math.max(1, w >> 1), h = Math.max(1, h >> 1)) cb += comp ? blockBytes(w, h) : w * h * 4;
+      p.slotBytes = p.slotBytes - rgbaBytes(p.sw, p.sh, true) + cb;
+    }
+  }
   emisTex: WebGLTexture | null = null;
   /** sheen (R sheen, G darken, B drip spawn), sway weight (R) and tint mask arrays, same layout as `tex`. */
   sheenTex: WebGLTexture | null = null; swayTex: WebGLTexture | null = null; tintMaskTex: WebGLTexture | null = null;
@@ -329,6 +382,7 @@ export class AtlasManager {
   }
   /** True when an atlas drawn near the camera is stored downscaled (cold tier): a re-tier would make it crisp again. */
   get needsRetier(): boolean {
+    const wp = this.wearPool(); if (wp && wp.k <= 1 && wp.k !== this.wearScale() && this.poolScales(this.atlases.filter((a) => a.lazy?.pool === 0)).includes(this.wearScale())) return true; // zoom changed the crisp wear scale
     if (this.coldDownscale >= 1 && this.downscale >= 1) return false;
     return this.atlases.some((a) => !a.lazy && this.recentlyUsed.has(a.key) && !this.retiered.has(a.key) && (a.cold ? this.coldDownscale : this.downscale) < 1);
   }
@@ -440,8 +494,9 @@ export class AtlasManager {
     const lowMem = this.textureBudgetMB <= 256; this.sideShift = lowMem ? SIDE_SHIFT_LOWMEM : SIDE_SHIFT;
     const groups: { cls: PoolClass; lazy: AtlasRT[]; minSlots: number; cap: boolean }[] = [];
     const wear = lazyList.filter((a) => a.lazy!.pool === 0), veh = lazyList.filter((a) => a.lazy!.pool === 1);
-    if (wear.length) groups.push({ cls: "wear", lazy: wear, minSlots: Math.min(wear.length, this.poolPolicy.minSlots ?? (lowMem ? POOL_MIN_SLOTS_LOWMEM : POOL_MIN_SLOTS_DESKTOP)), cap: false });
+    // vehicles first: the wear pool's layers come last so they can live in their own (compressed) array
     if (veh.length) groups.push({ cls: "veh", lazy: veh, minSlots: Math.min(veh.length, lowMem ? VEH_POOL_SLOTS_LOWMEM : VEH_POOL_SLOTS_DESKTOP), cap: true });
+    if (wear.length) groups.push({ cls: "wear", lazy: wear, minSlots: Math.min(wear.length, this.poolPolicy.minSlots ?? (lowMem ? POOL_MIN_SLOTS_LOWMEM : POOL_MIN_SLOTS_DESKTOP)), cap: false });
     // vehicles are visible art: their pool keeps a full-res (1x) working set that fitBudget never trades away; the
     // wearables pool is the streaming tier and may shrink (more paging) before any visible art is blurred
     const vehG = groups.find((g) => g.cls === "veh"); const keep = vehG ? this.poolReserveBytes(vehG.lazy, vehG.minSlots, list, 1) : 0;
@@ -541,7 +596,7 @@ export class AtlasManager {
     } else {
       // Character wearables are never planned below 1x: a downscaled wear pool is what made mobile characters blurry
       // blobs (0.25x, 12 slots). Memory pressure is met by fewer slots (distance-priority eviction), not by blur.
-      const ks = this.poolScales(lazy).filter((k) => cls !== "wear" || k >= 1);
+      const wk = this.wearScale(); const ks = this.poolScales(lazy).filter((k) => cls !== "wear" || k >= wk);
       // 1) the best scale whose pool holds every streamed page (no misses at all), 2) else the best scale holding minSlots
       if (this.poolPolicy.coverAll) for (const k of ks) {
         const g = this.poolGeom(lazy, k); const layers = Math.ceil(lazy.length / g.perLayer);
@@ -557,8 +612,8 @@ export class AtlasManager {
       if (cls === "wear" && (!pick || pick.lru.capacity < minSlots)) {
         // 1x wear pool holding minSlots even over budget (reported by vramStats.withinBudget) - the local player and
         // nearby characters must always be fully dressed at full res
-        const g = this.poolGeom(lazy, 1); const n = Math.min(minSlots, this.textureBudgetMB <= 256 ? WEAR_1X_SLOTS_LOWMEM : WEAR_1X_SLOTS_DESKTOP);
-        if (!pick || pick.k < 1 || pick.lru.capacity < n) pick = mk(1, g, Math.max(1, Math.ceil(n / g.perLayer)));
+        const k1 = ks.includes(wk) ? wk : 1; const g = this.poolGeom(lazy, k1); const n = Math.min(minSlots, this.textureBudgetMB <= 256 ? WEAR_1X_SLOTS_LOWMEM : WEAR_1X_SLOTS_DESKTOP);
+        if (!pick || pick.k < wk || pick.lru.capacity < n) pick = mk(k1, g, Math.max(1, Math.ceil(n / g.perLayer)));
       }
     }
     if (!pick && freeLayers <= 0) {
@@ -724,11 +779,19 @@ export class AtlasManager {
       const w = Math.min(im.width, H - x), h = Math.min(im.height, H - y); if (w <= 0 || h <= 0) return;
       if (w !== im.width || h !== im.height) { this.uploadErrors.push(`side image ${a.key} ${im.width}x${im.height} clipped`); return; }
       gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, x, y, a.layer, w, h, 1, gl.RGBA, gl.UNSIGNED_BYTE, im as TexImageSource); };
-    const mk = (side = false): WebGLTexture => {
+    this.planOwn();
+    const owned = this.pools.filter((p) => p.own); const own = owned[0];
+    const ownLayers = owned.reduce((t, p) => t + p.layers, 0);
+    const colourLayers = Math.max(1, this.layers - ownLayers);
+    // streamed pool layers (the tail) never carry sheen/sway masks (and emissive only for vehicle pools): those side
+    // arrays stop at the first pool layer (their flag bits are never set for pool pages, so they are never sampled there)
+    const firstPool = this.pools.length ? Math.min(...this.pools.map((p) => p.first)) : this.layers;
+    const residentLayers = Math.max(1, firstPool);
+    const mk = (side = false, nLayers?: number): WebGLTexture => {
       const t = gl.createTexture()!; gl.bindTexture(gl.TEXTURE_2D_ARRAY, t);
       const S = side ? Math.max(1, this.layerSize >> this.sideShift) : this.layerSize;
       const levels = Math.floor(Math.log2(S)) + 1;
-      gl.texStorage3D(gl.TEXTURE_2D_ARRAY, levels, gl.RGBA8, S, S, this.layers); if (!side) this.texLevels = levels;
+      gl.texStorage3D(gl.TEXTURE_2D_ARRAY, levels, gl.RGBA8, S, S, nLayers ?? (side ? this.layers : colourLayers)); if (!side) this.texLevels = levels;
       const err = gl.getError(); if (err !== gl.NO_ERROR) { this.uploadErrors.push(`texStorage3D ${S}x${S}x${this.layers} levels ${levels}: 0x${err.toString(16)}`); if (err === gl.OUT_OF_MEMORY) this.oomFlag = true; }
       setLevelRange(gl, gl.TEXTURE_2D_ARRAY, levels);
       gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -740,12 +803,23 @@ export class AtlasManager {
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
     this.tex = mk();
+    if (this.poolTex) gl.deleteTexture(this.poolTex);
+    if (own) {
+      const o = own.own!; const t = gl.createTexture()!; gl.bindTexture(gl.TEXTURE_2D_ARRAY, t);
+      gl.texStorage3D(gl.TEXTURE_2D_ARRAY, o.levels, o.fmt ?? gl.RGBA8, this.layerSize, this.layerSize, ownLayers);
+      const err = gl.getError(); if (err !== gl.NO_ERROR) { this.uploadErrors.push(`pool texStorage3D ${o.fmt ?? "RGBA8"} x${ownLayers}: 0x${err.toString(16)}`); if (err === gl.OUT_OF_MEMORY) this.oomFlag = true; }
+      setLevelRange(gl, gl.TEXTURE_2D_ARRAY, o.levels);
+      gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      this.poolTex = t; this.poolFirst = own.first;
+    } else { for (const p of this.pools) delete p.own; this.poolTex = dummyArray(gl); this.poolFirst = 1 << 20; }
+    gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.tex);
     for (const a of list) gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, a.px, a.py, a.layer, a.img!.width, a.img!.height, 1, gl.RGBA, gl.UNSIGNED_BYTE, a.img as TexImageSource);
     gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
     this.hasEmissive = list.some((a) => a.emis) || this.pools.some((p) => p.emis);
-    this.emisTex = this.hasEmissive ? mk(true) : dummyArray(gl); // emissive is gated by a frame flag: no full array when unused
-    this.gpuBytes = this.estimate(list);
-    const poolBytes = this.pools.reduce((t, p) => t + p.layers * this.layerBytes(list), 0);
+    this.emisTex = this.hasEmissive ? mk(true, this.pools.some((p) => p.emis) ? this.layers : residentLayers) : dummyArray(gl); // emissive is gated by a frame flag: no full array when unused
+    const sideSave = this.sideSaving(list);
+    this.gpuBytes = this.estimate(list) - this.ownSaving() - sideSave;
+    const poolBytes = this.pools.reduce((t, p) => t + p.layers * this.layerBytes(list), 0) - this.ownSaving() - sideSave;
     this.vram.budgetBytes = this.textureBudgetMB * 1048576; this.vram.setResident(this.gpuBytes - poolBytes, poolBytes);
     this.vram.pageSlots = this.pools.reduce((t, p) => t + p.lru.capacity, 0); this.vram.pending = 0;
     for (const a of list) if (a.emis) sub(a.emis, a);
@@ -759,7 +833,7 @@ export class AtlasManager {
         setLevelRange(gl, gl.TEXTURE_2D_ARRAY, 1);
         return t;
       }
-      const t = mk(true);
+      const t = mk(true, m === "tintmask" ? this.layers : residentLayers);
       for (const a of list) { const im = a.masks[m]; if (im) sub(im, a); }
       gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
       return t;
@@ -862,6 +936,7 @@ export class AtlasManager {
   }
   private async pageIn(a: AtlasRT, g: number): Promise<void> {
     const p = this.poolOfA(a)!; const src = a.source;
+    if (p.own) return this.pageInOwn(a, g, p);
     const url = p.k >= 2 ? src.pages!.find((q) => q.scale === 2)!.url : src.url;
     const tintUrls = src.masks?.tintmask === undefined ? [] : Array.isArray(src.masks.tintmask) ? src.masks.tintmask : [src.masks.tintmask];
     const [img, tint, emi] = await Promise.all([this.loader(url), (async () => { if (!p.tint) return null; for (const u of tintUrls) { try { return await this.loader(u); } catch { /* next */ } } return null; })(),
@@ -916,6 +991,80 @@ export class AtlasManager {
     this.writeFrames(a, this.table, this.tintRowMap);
     a.lazy!.state = 2; this.vram.pageIn(p.slotBytes);
   }
+
+  /** KTX2 page-ins (compressed colour) and KTX2 mask decodes, PNG fallbacks (diag). */
+  ktx2Stats = { colour: 0, masks: 0, pngFallback: 0, failed: 0 };
+  /**
+   * Page-in for the wear pool's own array: colour from KTX2 (ETC1S -> probe target, compressedTexSubImage3D, level 0 only)
+   * or PNG (RGBA8, only the allocated levels); tint mask from the UASTC KTX2 twin (decoded to RGBA, side resolution) or PNG.
+   */
+  private async pageInOwn(a: AtlasRT, g: number, p: Pool): Promise<void> {
+    const src = a.source; const o = p.own!; const gl = this.gl;
+    const W = Math.max(1, Math.round(a.lazy!.w1 * p.k)), H = Math.max(1, Math.round(a.lazy!.h1 * p.k));
+    const tintUrls = src.masks?.tintmask === undefined ? [] : Array.isArray(src.masks.tintmask) ? src.masks.tintmask : [src.masks.tintmask];
+    const bmp = (im: ImageLike | ImageData, w: number, h: number, q: "high" | "pixelated") => createImageBitmap(im as ImageBitmapSource, { resizeWidth: w, resizeHeight: h, resizeQuality: q, premultiplyAlpha: "none", colorSpaceConversion: "none" } as ImageBitmapOptions);
+    const colourP = (async (): Promise<{ kt: Awaited<ReturnType<typeof loadKtx2>>; levels: ImageLike[] }> => {
+      if (o.fmt !== null && src.ktx2 && this.compressedCaps) { const kt = await loadKtx2(src.ktx2, this.compressedCaps, false); if (kt && kt.target === o.target) return { kt, levels: [] }; }
+      if (o.fmt !== null) return { kt: null, levels: [] }; // compressed array cannot take RGBA: page fails (body-only)
+      const im = await this.loader(src.url); const out: ImageLike[] = []; let w = W, h = H, cur: ImageLike = im;
+      for (let l = 0; l < o.levels; l++) { if (cur.width !== w || cur.height !== h) cur = await bmp(cur, w, h, "high"); out.push(cur); w = Math.max(1, w >> 1); h = Math.max(1, h >> 1); }
+      return { kt: null, levels: out };
+    })();
+    const sideW = Math.max(1, W >> this.sideShift), sideH = Math.max(1, H >> this.sideShift);
+    const tintP = (async (): Promise<ImageLike[] | null> => {
+      if (!p.tint) return null;
+      let base: ImageLike | null = null;
+      const k2 = src.masksKtx2?.tintmask; if (k2) { const r = await loadKtx2Rgba(k2); if (r) { base = await bmp(new ImageData(new Uint8ClampedArray(r.data), r.width, r.height), sideW, sideH, "pixelated"); this.ktx2Stats.masks++; } }
+      if (!base) for (const u of tintUrls) { try { base = await this.loader(u); break; } catch { /* next */ } }
+      if (!base) return null;
+      const out: ImageLike[] = []; let w = sideW, h = sideH, cur = base; const n = Math.floor(Math.log2(Math.max(1, this.layerSize >> this.sideShift))) + 1;
+      for (let l = 0; l < n; l++) { if (cur.width !== w || cur.height !== h) cur = await bmp(cur, w, h, "pixelated"); out.push(cur); if (w === 1 && h === 1) break; w = Math.max(1, w >> 1); h = Math.max(1, h >> 1); }
+      return out;
+    })();
+    const emisP = (async (): Promise<ImageLike[] | null> => {
+      if (!p.emis || !src.emissiveUrl) return null; let cur: ImageLike; try { cur = await this.loader(src.emissiveUrl); } catch { return null; }
+      const out: ImageLike[] = []; let w = sideW, h = sideH; const n = Math.floor(Math.log2(Math.max(1, this.layerSize >> this.sideShift))) + 1;
+      for (let l = 0; l < n; l++) { if (cur.width !== w || cur.height !== h) cur = await bmp(cur, w, h, "high"); out.push(cur); if (w === 1 && h === 1) break; w = Math.max(1, w >> 1); h = Math.max(1, h >> 1); }
+      return out;
+    })();
+    const [col, tc, ec] = await Promise.all([colourP, tintP, emisP]);
+    if (g !== this.gen) return;
+    if (!col.kt && !col.levels.length) { this.ktx2Stats.failed++; a.lazy!.state = 0; return; }
+    if (col.kt) this.ktx2Stats.colour++; else if (src.ktx2 && this.ktx2Target) this.ktx2Stats.pngFallback++;
+    if ((a.lazy!.prio ?? Infinity) > PRIO_NEAR && !this.vram.canPageIn(p.slotBytes)) { this.pageBudgetRefusals++; a.lazy!.state = 0; return; }
+    const slot = p.lru.allocate(a.key, this.frame, a.lazy!.prio ?? Infinity);
+    if (!slot) { a.lazy!.state = 0; return; }
+    if (slot.evicted !== undefined) {
+      const ev = this.atlases.find((x) => x.key === slot.evicted);
+      if (ev?.lazy) { ev.lazy.state = 0; ev.layer = -1; this.writeFrames(ev, this.table, this.tintRowMap, true); }
+      this.vram.evict(p.slotBytes);
+    }
+    const layer = p.first + Math.floor(slot.slot / p.perLayer), si = slot.slot % p.perLayer;
+    const px = (si % p.cols) * (p.sw + POOL_GAP), py = Math.floor(si / p.cols) * (p.sh + POOL_GAP);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false); gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+    gl.getError();
+    gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.poolTex);
+    if (col.kt) {
+      const w4 = Math.min(this.layerSize - px, Math.ceil(col.kt.width / 4) * 4), h4 = Math.min(this.layerSize - py, Math.ceil(col.kt.height / 4) * 4);
+      gl.compressedTexSubImage3D(gl.TEXTURE_2D_ARRAY, 0, px, py, layer - this.poolFirst, w4, h4, 1, o.fmt!, col.kt.levels[0]!);
+    } else col.levels.forEach((im, l) => gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, l, px >> l, py >> l, layer - this.poolFirst, im.width, im.height, 1, gl.RGBA, gl.UNSIGNED_BYTE, im as TexImageSource));
+    if (tc && this.tintMaskTex) { gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.tintMaskTex); tc.forEach((im, l) => gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, l, px >> (l + this.sideShift), py >> (l + this.sideShift), layer, im.width, im.height, 1, gl.RGBA, gl.UNSIGNED_BYTE, im as TexImageSource)); }
+    if (ec && this.emisTex) { gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.emisTex); ec.forEach((im, l) => gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, l, px >> (l + this.sideShift), py >> (l + this.sideShift), layer, im.width, im.height, 1, gl.RGBA, gl.UNSIGNED_BYTE, im as TexImageSource)); }
+    for (const im of [...col.levels, ...(tc ?? []), ...(ec ?? [])]) if (typeof (im as ImageBitmap).close === "function") (im as ImageBitmap).close();
+    const err = gl.getError();
+    if (err !== gl.NO_ERROR) {
+      p.lru.remove(a.key); a.lazy!.state = 0; a.layer = -1; this.pageFaults++;
+      const msg = `page-in ${a.key}${col.kt ? " (ktx2 " + o.target + ")" : ""}: ${err === gl.OUT_OF_MEMORY ? "OUT_OF_MEMORY" : "0x" + err.toString(16)}`;
+      if (this.uploadErrors.length < 32) this.uploadErrors.push(msg); this.onFault?.("page", msg); return;
+    }
+    a.layer = layer; a.px = px; a.py = py; a.scale = p.k;
+    a.masks = tc ? { tintmask: { width: W, height: H } as ImageLike } : {};
+    a.emis = ec ? ({ width: W, height: H } as ImageLike) : null;
+    this.writeFrames(a, this.table, this.tintRowMap);
+    a.lazy!.state = 2; this.vram.pageIn(p.slotBytes);
+  }
+  /** Wear pool storage for ?diag. */
+  get wearPoolInfo(): string { const p = this.wearPool(); if (!p) return "none"; const o = p.own; const v = this.pools.find((q) => q.cls === "veh"); return `${v ? `veh x${v.k} ${v.lru.capacity} slots ${(v.slotBytes / 1048576).toFixed(1)}MB/slot; ` : ""}wear x${p.k} ${p.lru.capacity} slots ${(p.slotBytes / 1048576).toFixed(1)}MB/slot, ${o ? (o.fmt !== null ? `KTX2->${o.target}` : "RGBA8") + ` ${o.levels} lvl` : "shared RGBA8"}; ktx2 target ${this.ktx2Target ?? "none"}; ktx2 pages ${this.ktx2Stats.colour}, masks ${this.ktx2Stats.masks}, png fallback ${this.ktx2Stats.pngFallback}, failed ${this.ktx2Stats.failed}; footprint ${this.charFootprint.toFixed(2)} px/texel`; }
 
   get anyEmissive(): boolean { return this.hasEmissive; }
 

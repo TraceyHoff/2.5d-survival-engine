@@ -57,7 +57,7 @@ interface PageEntry { slot: number; refs: number; lastUsed: number; prio: number
  * PRIO_NEAR (local player + characters within 12 tiles) are exempt from dress caps / ladder eviction, and a nearer
  * request may evict a farther page even inside the protect window (eviction by distance).
  */
-export const PRIO_NEAR = 144;
+export const PRIO_NEAR = 16; // squared tiles: characters within ~4 tiles never drop below the 1:1 mip
 
 /** Slot pool keyed by page id (atlas key). */
 export class PageLRU<K = string> {

@@ -26,6 +26,7 @@ import { loadRenderTuning } from "./style.js";
 import type { SurfaceProvider } from "./tilemap.js";
 import type { LutBinding } from "./composite.js";
 import { AtlasManager } from "./assets/atlasManager.js";
+import { basisTranscoder, setKtx2Transcoder } from "./assets/ktx2.js";
 import { TilemapRenderer } from "./tilemap.js";
 import { SpriteBatch, type GameplayBindings } from "./sprites.js";
 import { LightPass } from "./lighting.js";
@@ -228,6 +229,10 @@ export class IsoRenderer implements Renderer {
     this.pieceAnchor = opts.pieceAnchor ?? "center";
     this.style = mergeStyle(DEFAULT_STYLE, opts.style ?? {});
     this.atlas = new AtlasManager(gl, opts.assets ?? new AssetManager(), { layerSize: caps.atlasLayerSize, textureBudgetMB: caps.textureBudgetMB });
+    { // KTX2 wearables: Basis transcoder (vendored, lazy) unless ?ktx2=0 or safe mode; probe target from compressed caps
+      const off = caps.safe || (typeof location !== "undefined" && /[?&]ktx2=0\b/.test(location.search));
+      setKtx2Transcoder(off ? null : basisTranscoder); this.atlas.setCompressed(off ? null : caps.compressed);
+    }
     this.atlas.onError = (e) => this.emit(e);
     this.atlas.onFault = (src, detail) => this.fault(src, detail);
     if (caps.safe) this.fallback.atLeast(FallbackStep.Safe);
@@ -412,6 +417,7 @@ export class IsoRenderer implements Renderer {
     }
 
     { const up = this.fallback.recover(this.totalFrames); if (up !== null) this.recoverFallback(up); }
+    this.atlas.setCharFootprint(this.camera.scale);
     if (this.totalFrames >= 30 && this.totalFrames % 30 === 0) void this.atlas.retier(this.totalFrames).then((r) => { if (r) { this.w = 0; console.info(`[render] re-tiered atlases: ${this.atlas.tiers.hot.length} hot x${this.atlas.tiers.hotScale}`); } }, () => undefined);
     if (this.tilemap) this.terrain.sync(this.tilemap);
     this.camera.viewUniform(this.viewU);
@@ -555,7 +561,7 @@ export class IsoRenderer implements Renderer {
       const a = this.atlas; const sp = this.sprites;
       const t = a.tiers; const fi = a.fitInfo;
       const tierLine = `tiers: hot x${t.hotScale} (${t.hot.length}), cold x${t.coldScale} (${t.cold.length}), side arrays x1/${1 << a.sideShift}, page @${a.currentPageScale}x; pool reserve ${fi.reserveMB}/${fi.reserveWantedMB} MB, demoted ${fi.demoted}${a.needsRetier ? ", RETIER pending" : ""}; ladder step ${this.fallback.step} (${this.fallback.name}); backbuffer ${this.w}x${this.h} @dpr ${this.camera.dpr.toFixed(3)} scale ${this.camera.scale.toFixed(3)}`;
-      const extra = [tierLine, ...this.fallback.report(), this.watchdog.report(),
+      const extra = [tierLine, `wear pool: ${a.wearPoolInfo}`, ...this.fallback.report(), this.watchdog.report(),
         `wearables: ${a.wearablesEnabled ? "on" : "OFF"}, page faults ${a.pageFaults}, budget refusals ${a.pageBudgetRefusals}; dressed cap ${Number.isFinite(sp.maxDressed) ? sp.maxDressed : "none"} (${sp.dressCapped} body-only last frame)`,
         ...sp.nearInfo.slice(0, sp.nearN).map((n) => `char ${n.d === 0 ? "LOCAL" : "near"} e${n.e} d=${n.d.toFixed(1)}t: tier x${n.scale} (dress-cap/ladder exempt), layers ${n.resident}/${n.layers} resident${n.missing.length ? ` missing [${n.missing.join(",")}]` : ""}`)].join("\n");
       const sc = this.sceneDiag; const hint = sc && sc.entities === 0 ? "\n! no entities replicated: nothing to draw (GPU is fine; check localServer/snapshots/lastError)" : "";

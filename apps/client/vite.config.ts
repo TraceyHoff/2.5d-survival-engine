@@ -13,11 +13,11 @@ import { fileURLToPath } from "node:url";
 const here = fileURLToPath(new URL(".", import.meta.url));
 const root = resolve(here, "../..");
 const MOUNTS: [string, string, (rel: string) => boolean][] = [
-  ["pack/", join(root, "packages/assets/pack"), (r) => /^(manifest\.json|piece_variants\.json|ids\.lock\.json|(?:customization\/)?(?:atlases|mirror)\/[^/]+\.(png|json)|customization\/strings\/en\.json|customization\/manifest\.customization\.json|audio\/sfx\/animal_[a-z]+_\d+\.ogg)$/.test(r)],
+  ["pack/", join(root, "packages/assets/pack"), (r) => /^(manifest\.json|piece_variants\.json|ids\.lock\.json|(?:customization\/)?(?:atlases|mirror)\/[^/]+\.(png|json|ktx2)|customization\/strings\/en\.json|customization\/manifest\.customization\.json|audio\/sfx\/animal_[a-z]+_\d+\.ogg)$/.test(r)],
   ["survival_fx/", join(root, "assets/survival_fx"), (r) => /^(render_tuning\.json|daynight_grading\.json|textures\/[^/]+\.png|lut\/[^/]+\.(png|json))$/.test(r)],
   ["ui/", join(root, "assets/ui"), (r) => /^(theme\.json|screen\.schema\.json|fonts\/(?:sdf\/)?[^/]+\.(ttf|txt|png|json)|atlas\/ui_atlas(@2x)?\.(png|json)|(?:kit|screens|strings|branding|hooks\/atlas|input|input\/atlas)\/(?:[\w-]+\/)*[^/]+\.(png|webp|svg|json))$/.test(r) && !/\/frames\//.test(r)],
 ];
-const TYPES: Record<string, string> = { ".json": "application/json", ".png": "image/png", ".webp": "image/webp", ".ttf": "font/ttf", ".txt": "text/plain", ".svg": "image/svg+xml", ".ogg": "audio/ogg" };
+const TYPES: Record<string, string> = { ".json": "application/json", ".png": "image/png", ".webp": "image/webp", ".ttf": "font/ttf", ".txt": "text/plain", ".svg": "image/svg+xml", ".ogg": "audio/ogg", ".ktx2": "image/ktx2" };
 
 function walk(dir: string, rel = ""): string[] {
   if (!existsSync(dir)) return [];

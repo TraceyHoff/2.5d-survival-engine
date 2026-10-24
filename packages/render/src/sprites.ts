@@ -148,7 +148,7 @@ void main() {
 const FS = /* glsl */ `#version 300 es
 precision highp float; precision highp int;
 in vec4 vFx; in vec3 vUvRaw; flat in int vLayer; in float vAlpha; flat in int vFlags; flat in vec4 vRect; in vec3 vTint; flat in vec3 vMisc; in vec2 vLocal; in vec2 vScr; flat in float vOcc; flat in ivec2 vFB; flat in vec4 vTint2; flat in float vSwayPx; flat in vec4 vLT;
-uniform highp sampler2DArray uAtlas, uEmis, uSheenM, uSwayM, uTintM; uniform highp sampler2D uTints;
+uniform highp sampler2DArray uAtlas, uPoolTex, uEmis, uSheenM, uSwayM, uTintM; uniform highp sampler2D uTints;
 #define vUv vec3(vUvRaw.xy, float(vLayer)) // flat int array layer (no interpolated layer index)
 uniform int uShadowPass, uShadowMode;
 uniform float uShadowAlpha, uOutline, uTexel, uTime, uEmisStrength, uAlphaMul, uNightGate;
@@ -158,7 +158,9 @@ const float BAYER[16] = float[16](0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0
 layout(location=0) out vec4 oColor;
 layout(location=1) out vec4 oEmissive;
 float inRect(vec2 uv) { return step(vRect.x, uv.x) * step(uv.x, vRect.z) * step(vRect.y, uv.y) * step(uv.y, vRect.w); }
-float alphaAt(vec2 uv) { return texture(uAtlas, vec3(uv, vUv.z)).a * inRect(uv); }
+uniform int uPoolFirst;
+vec4 atlasAt(vec3 uv) { int l = int(uv.z + 0.5); return l >= uPoolFirst ? texture(uPoolTex, vec3(uv.xy, float(l - uPoolFirst))) : texture(uAtlas, uv); }
+float alphaAt(vec2 uv) { return atlasAt(vec3(uv, vUv.z)).a * inRect(uv); }
 // status tint row (AtlasManager tint table: per sprite SpriteDef.tints, row 0 = render_tuning globals)
 vec3 statusTint(vec3 c, int idx, float amount) {
   if (amount <= 0.003) return c;
@@ -201,7 +203,7 @@ void main() {
   if ((vFB.x & 4) != 0 && vSwayPx != 0.0) { // sway mask (R = weight): sample the source shifted against the wind
     float w = texture(uSwayM, vUv).r; uv.x -= vSwayPx * w; // vSwayPx is in uv units
   }
-  vec4 t = texture(uAtlas, uv) * inRect(uv.xy);
+  vec4 t = atlasAt(uv) * inRect(uv.xy);
   if (uSilhouette == 1) { // focus drawn through occluders (depth GREATER)
     if (t.a < 0.35) discard;
     oColor = uSilColor; oEmissive = vec4(0.8, 0.0, 0.0, uSilColor.a); return;
@@ -810,6 +812,8 @@ export class SpriteBatch {
     gl.activeTexture(gl.TEXTURE4); gl.bindTexture(gl.TEXTURE_2D_ARRAY, atlas.swayTex); gl.uniform1i(u.uSwayM!, 4);
     gl.activeTexture(gl.TEXTURE5); gl.bindTexture(gl.TEXTURE_2D_ARRAY, atlas.tintMaskTex); gl.uniform1i(u.uTintM!, 5);
     gl.activeTexture(gl.TEXTURE6); gl.bindTexture(gl.TEXTURE_2D, atlas.tintTex); gl.uniform1i(u.uTints!, 6);
+    gl.activeTexture(gl.TEXTURE7); gl.bindTexture(gl.TEXTURE_2D_ARRAY, atlas.poolTex); if (u.uPoolTex) gl.uniform1i(u.uPoolTex, 7); if (u.uPoolFirst) gl.uniform1i(u.uPoolFirst, atlas.poolFirst);
+    gl.activeTexture(gl.TEXTURE0);
   }
 
   /** Static (cached) build-piece chunks: opaque, depth-written, one draw per visible chunk. */

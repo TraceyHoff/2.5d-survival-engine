@@ -16,7 +16,7 @@ const ctx = await browser.newContext({ viewport: { width: 412, height: 915 }, de
   userAgent: "Mozilla/5.0 (Linux; Android 14; SM-A546B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Mobile Safari/537.36" });
 const page = await ctx.newPage(); const logs = [];
 page.on("console", (m) => logs.push(`${m.type()}: ${m.text()}`)); page.on("pageerror", (e) => logs.push(`pageerror: ${e}`));
-await page.goto(`http://127.0.0.1:${PORT}/?offline=1&bots=${process.env.BOTS ?? 6}&diag=1&shot=1&time=12&weather=clear&player=chars${Date.now()}`);
+await page.goto(`http://127.0.0.1:${PORT}/?offline=1&bots=${process.env.BOTS ?? 6}&diag=1&shot=1&time=12&weather=clear&player=${process.env.PLAYER ?? "chars" + Date.now()}${process.env.EXTRA ?? ""}`);
 await page.waitForFunction(() => window.__view?.ready === true, null, { timeout: 150000 }).catch(() => { console.log(logs.slice(-20).join("\n")); process.exit(1); });
 await page.waitForTimeout(Number(process.env.WAIT_MS ?? 25000));
 const diag = await page.evaluate(() => { const d = document.getElementById("diag"); const t = d?.textContent ?? ""; if (d) d.style.visibility = "hidden"; return t; });

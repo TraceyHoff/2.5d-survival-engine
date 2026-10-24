@@ -31,7 +31,7 @@ describe("compressed textures", () => {
     const c = probeCompressedTextures(gl); expect(c).toEqual({ etc2: true, astc: true, s3tc: false, bptc: false });
     expect(probeCompressedTextures(gl, true).astc).toBe(false);
     expect(ktx2Target(c)).toBeNull(); expect(pickTextureUrl("a/x.png", c)).toBe("a/x.png");
-    setKtx2Transcoder(async () => ({ width: 1, height: 1, levels: [], internalFormat: 0 }));
+    setKtx2Transcoder(async () => ({ width: 1, height: 1, levels: [], internalFormat: 0, target: "astc" as const }));
     expect(ktx2Target(c)).toBe("astc"); expect(pickTextureUrl("a/x.png", c)).toBe("a/x.ktx2"); expect(pickTextureUrl("a/x.png", c, () => false)).toBe("a/x.png");
     setKtx2Transcoder(null);
   });
