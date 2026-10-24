@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { Transform, World, type Entity } from "@engine/core";
 import { LoopbackNetwork, NetClient } from "@engine/net";
 import { ClaimAccount, MemoryWorldStore } from "@engine/persist";
-import { ARMS_EVENT_RELIABILITY, ClanDeclineCmd, emit, Exploded, IntentAction, PlayerIntent, Reloaded, ReloadCmd, WearCmd } from "@engine/gameplay";
+import { ARMS_EVENT_RELIABILITY, ClanDeclineCmd, emit, Exploded, IntentAction, PlayerIntent, Reloaded, ReloadCmd, VEHICLE_COMMANDS, WearCmd } from "@engine/gameplay";
 import { createGameServer, applyMoveInput, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS } from "../src/main.js";
 import { CHAT_STYLE_RATE, ExplodedEvt, gameplayNet, onGameplayRejected, ReloadedEvt } from "../src/protocol.js";
 
@@ -29,7 +29,7 @@ describe("arms net commands", () => {
     const names = DEMO_COMMANDS.map((d) => d.name);
     const iDecline = names.indexOf(ClanDeclineCmd.name);
     expect(names.indexOf(ReloadCmd.name)).toBe(iDecline + 1); expect(names.indexOf(WearCmd.name)).toBe(iDecline + 2);
-    expect(names[iDecline + 3]).toBe("demo.devBot"); // last gameplay entries; only DevBotHello (non-gameplay, after the list) shifts
+    expect(names[iDecline + 3]).toBe(VEHICLE_COMMANDS[0]!.name); // later appends (vehicles, ADR-097) follow; nothing before shifts
   });
   it("rates: reload 5/s burst 10, wear chat-style", () => {
     expect(gameplayNet(ReloadCmd).rate).toEqual({ perSec: 5, burst: 10 });

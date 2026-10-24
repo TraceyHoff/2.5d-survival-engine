@@ -66,6 +66,20 @@ export interface NetClientOptions {
   predictedSystems?: readonly string[];
   /** Time constant (seconds) of the predicted-entity correction offset decay (default 0.1). 0 disables smoothing. */
   correctionSmoothingSec?: number;
+  /**
+   * Corrections larger than this (tiles, positional fields) snap instead of being smoothed (default: never snap).
+   * Use for fast entities (vehicles) where a long smoothed slide looks worse than a one-frame jump.
+   */
+  correctionSnapDistance?: number;
+  /**
+   * Extra non-owned entities to predict + reconcile alongside the owned ones (e.g. the vehicle the local player
+   * drives and its hitched trailers). Called once per network phase with the owned entities; returned entities are
+   * reset to server state and replayed with the owned inputs (applyInput still only runs for owned entities) and are
+   * not interpolated. Leaving the set resumes interpolation from the next snapshot.
+   */
+  controlled?: (world: World, owned: readonly Entity[]) => Iterable<Entity>;
+  /** Runs at the end of the network phase after remote interpolation (e.g. pose hitched trailers in the hitch frame). */
+  afterInterpolate?: (world: World) => void;
   /** Static-class chunks kept after leaving them, for instant re-entry (LRU, default 64). */
   staticCacheChunks?: number;
   /** Replicated tile store (renderer reads it) and its leave-cache size; see TileClient. */
@@ -91,6 +105,8 @@ export class NetClient {
   token: Uint8Array = emptyToken();
   readonly entities = new Map<number, Entity>(); // netId -> local entity
   readonly owned = new Set<number>(); // netIds predicted locally
+  /** Non-owned netIds predicted locally via options.controlled (driven vehicle + trailers). */
+  readonly controlled = new Set<number>();
   readonly interp: InterpolationBuffer;
   /** Inputs sent but not yet processed by the server, oldest first. */
   readonly pending: InputCmd[] = [];
@@ -104,7 +120,7 @@ export class NetClient {
   private welcome: { resolve: (w: WelcomeMsg) => void; reject: (e: Error) => void } | undefined;
   private readonly interpIndex: number | undefined;
   private readonly interpStore: ComponentStore;
-  stats = { snapshots: 0, dropped: 0, reconciliations: 0, lastCorrection: 0, maxCorrection: 0 };
+  stats = { snapshots: 0, dropped: 0, reconciliations: 0, lastCorrection: 0, maxCorrection: 0, snaps: 0 };
   private readonly opts: NetClientOptions;
   readonly commands: MessageRegistry;
   readonly events: MessageRegistry;
@@ -262,6 +278,20 @@ export class NetClient {
   }
 
   private ownedEntities(): Entity[] { return [...this.owned].map((id) => this.entities.get(id)).filter((e): e is Entity => e !== undefined); }
+  private predictedEntities(): Entity[] { return [...this.owned, ...this.controlled].map((id) => this.entities.get(id)).filter((e): e is Entity => e !== undefined); }
+  /** Recompute options.controlled after applying snapshots (before reconciliation). */
+  private refreshControlled(w: World): void {
+    const fn = this.opts.controlled; if (!fn) return;
+    const next = new Set<number>();
+    for (const e of fn(w, this.ownedEntities())) { const id = this.netOf.get(e); if (id !== undefined && !this.owned.has(id) && w.isAlive(e)) next.add(id); }
+    for (const id of this.controlled) if (!next.has(id)) {
+      this.controlled.delete(id); const e = this.entities.get(id);
+      if (e !== undefined) { if (!this.owned.has(id)) w.predicted.delete(e); this.corrections.delete(e); }
+    }
+    for (const id of next) if (!this.controlled.has(id)) {
+      this.controlled.add(id); this.interp.remove(id); const e = this.entities.get(id); if (e !== undefined) w.predicted.add(e);
+    }
+  }
 
   private inputSystem(w: World): void {
     if (!this.active) return;
@@ -295,7 +325,7 @@ export class NetClient {
   private predictedBefore = new Map<Entity, number[]>();
   private networkSystem(w: World, dt: number): void {
     this.predictedBefore.clear();
-    if (this.interpIndex !== undefined) for (const e of this.ownedEntities()) {
+    if (this.interpIndex !== undefined) for (const e of this.predictedEntities()) {
       const v = w.isAlive(e) ? this.interpStore.get(entityIndex(e)) : undefined; if (v) this.predictedBefore.set(e, this.interpStore.fields.map((f) => v[f]!));
     }
     this.serverTickEstimate += 1;
@@ -317,7 +347,12 @@ export class NetClient {
       this.applyState(w, tick, prevState, d.state);
       if (processed !== NONE_U32) reconcileSeq = processed; else reconcileSeq ??= -1;
     }
-    if (this.latestTick >= 0 && (this.serverTickEstimate < this.latestTick || this.serverTickEstimate - this.latestTick > 4)) this.serverTickEstimate = this.latestTick;
+    // Behind the newest snapshot: catch up. Too far ahead (a burst of lost/late snapshots): hold at latest+4 instead of
+    // snapping back, so render time never runs backwards (a backward jump reads as a stutter on fast vehicles; ADR-097).
+    if (this.latestTick >= 0) {
+      if (this.serverTickEstimate < this.latestTick) this.serverTickEstimate = this.latestTick;
+      else if (this.serverTickEstimate - this.latestTick > 4) this.serverTickEstimate = this.latestTick + 4;
+    }
     const tau = this.opts.correctionSmoothingSec ?? 0.1;
     if (tau > 0) {
       const k = Math.exp(-dt / tau);
@@ -327,8 +362,10 @@ export class NetClient {
         if (m < 1e-3) this.corrections.delete(e); // sub-pixel
       }
     }
+    this.refreshControlled(w);
     if (reconcileSeq !== undefined) this.reconcile(w, dt, reconcileSeq);
     this.interpolate(w);
+    this.opts.afterInterpolate?.(w);
   }
 
   /** Bring the local world in line with `cur` (diffed against the previously applied state, which may be an older tick). */
@@ -351,9 +388,9 @@ export class NetClient {
         for (const ci of old?.keys() ?? []) if (!es.has(ci)) w.remove(e, this.schema.stores[ci]!.def);
         const owned = this.isOwned(es);
         if (owned !== this.owned.has(netId)) this.setOwned(w, netId, e, owned, true);
-        this.writeComps(w, e, es, old, this.owned.has(netId));
+        this.writeComps(w, e, es, old, this.owned.has(netId) || this.controlled.has(netId));
       }
-      if (!this.owned.has(netId) && this.interpIndex !== undefined) {
+      if (!this.owned.has(netId) && !this.controlled.has(netId) && this.interpIndex !== undefined) {
         const v = es.get(this.interpIndex);
         if (v) this.interp.push(netId, tick, this.decode(this.interpIndex, v));
       }
@@ -403,7 +440,7 @@ export class NetClient {
 
   private despawn(w: World, netId: number): void {
     const e = this.entities.get(netId);
-    this.entities.delete(netId); this.owned.delete(netId); this.interp.remove(netId);
+    this.entities.delete(netId); this.owned.delete(netId); this.controlled.delete(netId); this.interp.remove(netId);
     if (e === undefined) return;
     this.netOf.delete(e); w.predicted.delete(e);
     if (e === w.environment) return; // never destroy core's singleton
@@ -414,18 +451,18 @@ export class NetClient {
   private reconcile(w: World, dt: number, processedSeq: number): void {
     while (this.pending.length && this.pending[0]!.seq <= processedSeq) this.pending.shift();
     const state = this.history.get(this.latestTick); if (!state) return;
-    const owned: [Entity, number[] | undefined][] = [];
-    for (const netId of this.owned) {
+    const owned: [Entity, number[] | undefined][] = []; const inputs: Entity[] = [];
+    for (const netId of [...this.owned, ...this.controlled]) {
       const e = this.entities.get(netId); const es = state.get(netId);
       if (e === undefined || !es) continue;
       // predicted value captured at the start of the network phase (applyState may already have written server state)
       const before = this.predictedBefore.get(e);
       this.writeComps(w, e, es, undefined, true);
-      owned.push([e, before]);
+      owned.push([e, before]); if (this.owned.has(netId)) inputs.push(e);
     }
     if (!owned.length) return;
     const pending = this.pending;
-    const beforeTick = (i: number): void => { for (const [e] of owned) this.opts.applyInput?.(w, e, pending[i]!); };
+    const beforeTick = (i: number): void => { for (const e of inputs) this.opts.applyInput?.(w, e, pending[i]!); };
     // core simulate: world.tick follows the replayed ticks, world.isReplaying is set, replay events are discarded.
     w.simulate(pending.length, dt, { beforeTick, ...(this.opts.predictedSystems && { systems: this.opts.predictedSystems }) });
     this.stats.reconciliations++;
@@ -438,6 +475,8 @@ export class NetClient {
       const after = this.interpStore.get(entityIndex(e)); if (!before || !after) continue;
       const d = this.interpStore.fields.map((f, i) => { const x = before[i]! - after[f]!; return f === "facing" ? Math.atan2(Math.sin(x), Math.cos(x)) : x; });
       if (Math.max(...d.map(Math.abs)) < 1e-4) continue; // no visible correction
+      const snap = this.opts.correctionSnapDistance;
+      if (snap !== undefined && Math.hypot(...this.interpStore.fields.map((f, i) => (f === "facing" ? 0 : d[i]!))) > snap) { this.corrections.delete(e); this.stats.snaps++; continue; }
       const off = this.corrections.get(e) ?? d.map(() => 0);
       d.forEach((x, i) => { off[i]! += x; });
       this.corrections.set(e, off);

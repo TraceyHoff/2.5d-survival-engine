@@ -4,8 +4,8 @@
  * Movement lives here because gameplay has no movement system yet; replace with gameplay's once it exists.
  */
 import { Appearance, DEFAULT_TICK_HZ, defineActions, entityIndex, installPermissions, Transform, type ClaimRegistry, type Entity, type GroupRegistry, type PermissionsRes, type World } from "@engine/core";
-import { defineCommand, defineNetEvent, type CommandRejection, type InputCmd, type NetClient } from "@engine/net";
-import { COMMAND_RATES, PVP_COMMANDS, CRAFT_QUEUE_COMMANDS, CUSTOMIZATION_COMMANDS, ECONOMY_COMMAND_RATES, ECONOMY_COMMANDS, ECONOMY_ENTITY_FIELDS, installGameplay, PlayerIntent, UseCmd, PlaceCmd, EmoteCmd, PARTY_COMMANDS, PARTY_ENTITY_FIELDS, PARTY_REJECT_REASONS, CLAN_COMMANDS, CLAN_ENTITY_FIELDS, CLAN_REJECT_REASONS, ClanDeclineCmd, PaintCmd, ReloadCmd, WearCmd } from "@engine/gameplay";
+import { defineCommand, defineNetEvent, type CommandRejection, type InputCmd, type NetClient, type NetClientOptions } from "@engine/net";
+import { COMMAND_RATES, PVP_COMMANDS, CRAFT_QUEUE_COMMANDS, CUSTOMIZATION_COMMANDS, ECONOMY_COMMAND_RATES, ECONOMY_COMMANDS, ECONOMY_ENTITY_FIELDS, installGameplay, PlayerIntent, UseCmd, PlaceCmd, EmoteCmd, PARTY_COMMANDS, PARTY_ENTITY_FIELDS, PARTY_REJECT_REASONS, CLAN_COMMANDS, CLAN_ENTITY_FIELDS, CLAN_REJECT_REASONS, ClanDeclineCmd, PaintCmd, ReloadCmd, WearCmd, VEHICLE_COMMANDS, VEHICLE_COMMAND_RATES, VEHICLE_ENTITY_FIELDS, VEHICLE_REJECT_REASONS, Driver, driveFromBits, setDriveInput, controlledVehicles, poseTrailersInHitchFrame } from "@engine/gameplay";
 import type { CommandDef } from "@engine/core";
 import { SESSION_COMMANDS, SESSION_EVENTS } from "@engine/persist";
 
@@ -36,10 +36,10 @@ const mirror = (d: CommandDef) => {
   const fixed = NET_RATE_OVERRIDES[d.name];
   if (fixed) return defineCommand(d.name, d.schema, { entityFields: [...(INPUT_ENTITY_FIELDS[d.name] ?? [])], rate: { ...fixed } });
   if (SOCIAL_COMMAND_NAMES.has(d.name)) return defineCommand(d.name, d.schema, { entityFields: [...(ECONOMY_ENTITY_FIELDS[d.name] ?? PARTY_ENTITY_FIELDS[d.name] ?? CLAN_ENTITY_FIELDS[d.name] ?? [])], rate: { ...CHAT_STYLE_RATE } });
-  const perSec = ECONOMY_COMMAND_RATES[d.name] ?? COMMAND_RATES[d.name] ?? 2;
-  return defineCommand(d.name, d.schema, { entityFields: [...(ECONOMY_ENTITY_FIELDS[d.name] ?? PARTY_ENTITY_FIELDS[d.name] ?? CLAN_ENTITY_FIELDS[d.name] ?? INPUT_ENTITY_FIELDS[d.name] ?? [])], rate: { perSec, burst: Math.max(2, Math.ceil(perSec * 2)) } });
+  const perSec = ECONOMY_COMMAND_RATES[d.name] ?? VEHICLE_COMMAND_RATES[d.name] ?? COMMAND_RATES[d.name] ?? 2;
+  return defineCommand(d.name, d.schema, { entityFields: [...(ECONOMY_ENTITY_FIELDS[d.name] ?? PARTY_ENTITY_FIELDS[d.name] ?? CLAN_ENTITY_FIELDS[d.name] ?? INPUT_ENTITY_FIELDS[d.name] ?? VEHICLE_ENTITY_FIELDS[d.name] ?? [])], rate: { perSec, burst: Math.max(2, Math.ceil(perSec * 2)) } });
 };
-export const GAMEPLAY_NET_COMMANDS = [...ECONOMY_COMMANDS, ...CUSTOMIZATION_COMMANDS, ...PVP_COMMANDS, ...CRAFT_QUEUE_COMMANDS, /* appended */ UseCmd, PlaceCmd, EmoteCmd, ...PARTY_COMMANDS, ...CLAN_COMMANDS, PaintCmd, ClanDeclineCmd, ReloadCmd, WearCmd].map((d) => ({ core: d as CommandDef, net: mirror(d) }));
+export const GAMEPLAY_NET_COMMANDS = [...ECONOMY_COMMANDS, ...CUSTOMIZATION_COMMANDS, ...PVP_COMMANDS, ...CRAFT_QUEUE_COMMANDS, /* appended */ UseCmd, PlaceCmd, EmoteCmd, ...PARTY_COMMANDS, ...CLAN_COMMANDS, PaintCmd, ClanDeclineCmd, ReloadCmd, WearCmd, ...VEHICLE_COMMANDS].map((d) => ({ core: d as CommandDef, net: mirror(d) }));
 /** Net command for a gameplay core CommandDef (clients: `client.sendCommand(gameplayNet(BuyFromStallCmd), {...})`). */
 export function gameplayNet<D extends CommandDef>(d: D): ReturnType<typeof defineCommand<D["schema"]>> {
   const m = GAMEPLAY_NET_COMMANDS.find((x) => x.core === d); if (!m) throw new Error(`not a bridged gameplay command: ${d.name}`);
@@ -83,6 +83,8 @@ export const COMMAND_REJECT_REASONS = [
   "unknown_recipe", "bad_count", "no_station", "queue_full", "missing_ingredients", "no_job", "not_authority",
   ...PARTY_REJECT_REASONS,
   ...CLAN_REJECT_REASONS,
+  /* appended: vehicles (ADR-097). A name already listed above (no_station) keeps its earlier code (first match). */
+  ...VEHICLE_REJECT_REASONS,
 ] as const;
 export type CommandRejectReason = (typeof COMMAND_REJECT_REASONS)[number];
 export function rejectReasonCode(reason: string): number { const i = (COMMAND_REJECT_REASONS as readonly string[]).indexOf(reason); return i < 0 ? 0 : i + 1; }
@@ -119,6 +121,28 @@ export function applyMoveInput(world: World, e: Entity, cmd: InputCmd | null, dt
     if (st.data.moving[s] !== moving || st.data.sprint[s] !== sprint) { st.data.moving[s] = moving; st.data.sprint[s] = sprint; st.markChanged(i); }
   }
 }
+
+/**
+ * Demo input shared by server and client prediction: a rider's move bits become drive input for its vehicle
+ * (gameplay.vehicles reads only the seat-0 rider's, so passengers cannot steer); on foot it is applyMoveInput.
+ */
+export function applyDemoInput(world: World, e: Entity, cmd: InputCmd | null, dt = 1 / DEFAULT_TICK_HZ): void {
+  if (!world.has(e, Driver)) { applyMoveInput(world, e, cmd, dt); return; }
+  const d = driveFromBits(cmd?.buttons ?? 0); setDriveInput(world, e, d.x, d.y, d.boost);
+}
+
+/**
+ * NetClient options for vehicles (ADR-097): the driver predicts + reconciles its vehicle and trailer chain, corrections
+ * over 2 tiles snap (a smoothed slide at vehicle speed looks worse), remote trailers sit in their tow's hitch frame.
+ * Use with `applyInput: applyDemoInput` (the same input function as the server).
+ */
+export const VEHICLE_CLIENT_OPTIONS = {
+  controlled: (w: World, owned: readonly Entity[]) => controlledVehicles(w, owned),
+  afterInterpolate: (w: World) => { poseTrailersInHitchFrame(w); },
+  correctionSnapDistance: 2,
+  /** 4 ticks (200 ms): covers 2 lost/late snapshots and the P2P host's every-3rd-tick distant throttle without starving. */
+  interpDelayTicks: 4,
+} satisfies Partial<NetClientOptions>;
 
 /**
  * The shared registration module for the demo: every peer (server, browser client, bots) calls this so component

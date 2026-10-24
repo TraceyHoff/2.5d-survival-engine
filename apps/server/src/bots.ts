@@ -15,7 +15,7 @@ import { FixedLoop, NetId, Transform, World, DEFAULT_TICK_HZ } from "@engine/cor
 import { Listings, OpenStallCmd, StallHeader } from "@engine/gameplay";
 import { NetClient, WebSocketClientTransport, type WebSocketCtor } from "@engine/net";
 import { AccountAssigned, ClaimAccount, SetName, nameToWords, tokenToWords, wordsToToken } from "@engine/persist";
-import { Act, DevBotHello, applyMoveInput, gameplayNet, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS, Ping, Pong } from "./protocol.js";
+import { Act, DevBotHello, applyDemoInput, VEHICLE_CLIENT_OPTIONS, gameplayNet, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS, Ping, Pong } from "./protocol.js";
 
 export interface Bot { index: number; client: NetClient; world: World; account: string | undefined; restored: boolean; rttMs: number; connected: boolean; stallResults: Map<number, number>; stop(): void }
 export interface BotOptions { url: string; index: number; token?: string; rng?: () => number; onAccount?: (index: number, token: string) => void }
@@ -31,7 +31,7 @@ export async function startBot(o: BotOptions): Promise<Bot> {
   const client = new NetClient({
     world, transport, commands: DEMO_COMMANDS, events: DEMO_EVENTS,
     sampleInput: () => ({ buttons, aimX: 0, aimY: 0 }),
-    applyInput: (w, e, cmd) => applyMoveInput(w, e, cmd),
+    ...VEHICLE_CLIENT_OPTIONS, applyInput: (w, e, cmd) => applyDemoInput(w, e, cmd),
   });
   const bot: Bot = { index: o.index, client, world, account: o.token, restored: false, rttMs: NaN, connected: false, stallResults: new Map(), stop: () => {} };
   client.onEvent(AccountAssigned, (p) => { bot.account = wordsToToken(p); bot.restored = p.restored === 1; o.onAccount?.(o.index, bot.account); });

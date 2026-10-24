@@ -85,7 +85,7 @@ export interface ClientSession {
   readonly inputQueue: InputCmd[];
   lastSnapshotBytes: number;
   fullSnapshots: number;
-  stats: { commands: number; droppedCommands: number; rateLimited: number; deferred: number; bytesSent: number; lateEdges: number };
+  stats: { commands: number; droppedCommands: number; rateLimited: number; deferred: number; bytesSent: number; lateEdges: number; throttled: number };
   /** Smoothed round-trip time in ms from transport-level ping/pong (-1 until measured). */
   rttMs: number;
   /** Session was created from a stored token via `resumeToken` (e.g. after a server restart). */
@@ -140,6 +140,12 @@ export interface NetServerOptions {
   entityRefs?: "aoi" | "alive";
   /** Soft per-client snapshot budget in bytes (default 16 KiB). Owned/global entities and despawns always go. */
   budgetBytes?: number;
+  /**
+   * Distance throttle for changed non-owned entities: beyond `nearTiles` of every one of the client's owned entities,
+   * a delta update (never a spawn) is sent at most every `interval` ticks; skipped ticks keep the client's baseline
+   * and the interpolation buffer bridges the gap. Targets fast movers (vehicles) that change every tick far away.
+   */
+  distantThrottle?: { nearTiles: number; interval: number };
   /** Per-client bytes per tick for streaming static chunks on entry (default 8 KiB); static change batches are not budgeted. */
   staticBudgetBytes?: number;
   /**
@@ -424,7 +430,7 @@ export class NetServer {
     const s: SessionState = {
       clientId: this.nextClientId++, token, conn, lastAckTick: -1, lastReceivedSeq: -1, lastProcessedSeq: -1, lastEdgeSeq: -1, pendingEdges: 0, lastViewTick: -1,
       inputQueue: [], lastSnapshotBytes: 0, fullSnapshots: 0, rttMs: -1, resumed,
-      stats: { commands: 0, droppedCommands: 0, rateLimited: 0, deferred: 0, bytesSent: 0, lateEdges: 0 },
+      stats: { commands: 0, droppedCommands: 0, rateLimited: 0, deferred: 0, bytesSent: 0, lateEdges: 0, throttled: 0 },
       views: new Map(), lastSent: new Int32Array(256), static: new StaticSession(), buckets: new Map(), commands: [], events: [],
       pingAt: 0, pingNonce: 0,
     };
@@ -677,8 +683,21 @@ export class NetServer {
         for (let k = 0; k < order.length; k++) { rest[k] = ri[order[k]!]!; restEs[k] = re[order[k]!]!; }
       }
       const budgetBits = this.budgetBytes * 8 - 2;
+      const thr = this.opts.distantThrottle; let vx: number[] | undefined, vy: number[] | undefined;
+      if (thr && thr.interval > 1) {
+        vx = []; vy = [];
+        for (const id of ownedIds) { const x = this.posX[id]; if (x !== undefined && !Number.isNaN(x)) { vx.push(x); vy.push(this.posY[id]!); } }
+        if (!vx.length) vx = undefined;
+      }
       for (let i = 0; i < rest.length; i++) {
         const id = rest[i]!, es = restEs[i]!; const old = base?.get(id);
+        if (vx && old && thr && id < s.lastSent.length && s.lastSent[id]! > 0 && tick + 1 - s.lastSent[id]! < thr.interval) {
+          const x = this.posX[id]; const near2 = thr.nearTiles * thr.nearTiles;
+          if (x !== undefined && !Number.isNaN(x)) {
+            let far = true; for (let k = 0; k < vx.length; k++) { const dx = x - vx[k]!, dy = this.posY[id]! - vy![k]!; if (dx * dx + dy * dy <= near2) { far = false; break; } }
+            if (far) { view.set(id, old); s.stats.throttled++; continue; }
+          }
+        }
         const r = record(id, es, old);
         if (!r) { view.set(id, es); continue; }
         if (bw.bitLength + r.bits > budgetBits) {

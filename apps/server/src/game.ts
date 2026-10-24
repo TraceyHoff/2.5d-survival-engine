@@ -2,13 +2,13 @@
 import { ChannelRegistry, CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, type CosmeticCatalogLike, Membership, Owner, PlayerId, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
 import { CHUNK_SIZE, ChunkManager, ProceduralGenerator, chunkKeyOf, type BuildingGrid, type PopulationSpawner } from "@engine/world";
 import { GAMEPLAY_COMMANDS, ARMS_COMMANDS, ARMS_EVENT_RELIABILITY, Exploded, Reloaded, installPartyCommands, PartyInvitePending, installClanCommands, ClanInvitePending, ClanStatus, syncSocialMembership, clanState, encodeClanState, decodeClanState, loadClanState, queueCommand, spawnPlayer, spawnResourceNode, gameplayDefs, setIntent, IntentAction, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installPopulation, installCustomization,
-  appearanceServerHooks, applyReplication, installStallBuyHook, installViewBonus, setHitValidator, installPvp, installCraftQueue, installExpressionCommands, installVehicleCommands, installVehicleCraftCommands, requestEmote, CraftQueue, CraftQueuesRes, playerNames, stallListing, listingRevision, stallOf, tillOf, StallHeader, StallOwnerKind } from "@engine/gameplay";
+  appearanceServerHooks, applyReplication, installStallBuyHook, installViewBonus, setHitValidator, installPvp, installCraftQueue, installExpressionCommands, installVehicleCommands, installVehicleCraftCommands, installVehicleGuard, requestEmote, CraftQueue, CraftQueuesRes, playerNames, stallListing, listingRevision, stallOf, tillOf, StallHeader, StallOwnerKind } from "@engine/gameplay";
 import { AppearanceServer, ChatServer, NameSync, NetServer, StallResult, StallServer, TileSync, validateHit, type ClientSession, type ServerTransport, type StallHooks } from "@engine/net";
 import { createAgentStore, type AgentIdentityStore } from "./agents.js";
 import { AccountAssigned, ClaimAccount, SetName, WorldPersistence, loadSocial, tokenToHex, tokenToWords, wordsToName, wordsToToken, type WorldStore } from "@engine/persist";
 import { seedStarterCamp, giveRandomAppearance } from "./camp.js";
 import { SocialSync } from "./social_sync.js";
-import { Act, applyMoveInput, installDemoWorld, rejectReasonCode, DevBotHello, DEMO_COMMANDS, DEMO_EVENTS, ExplodedEvt, GAMEPLAY_NET_COMMANDS, Ping, Pong, ReloadedEvt } from "./protocol.js";
+import { Act, applyDemoInput, installDemoWorld, rejectReasonCode, DevBotHello, DEMO_COMMANDS, DEMO_EVENTS, ExplodedEvt, GAMEPLAY_NET_COMMANDS, Ping, Pong, ReloadedEvt } from "./protocol.js";
 
 export const CLAN_BLOB = "gameplay.clans";
 /** ProceduralGenerator node kinds -> gameplay resource keys (see DEFAULT_BANDS comments in @engine/world). */
@@ -49,6 +49,8 @@ export interface GameServerOptions {
   serverFullDetail?: string;
   /** Dev load-test flag (NET_DEV_BOTS=1): accept DevBotHello-tagged connections in multiplayer. Default false. */
   devBots?: boolean;
+  /** Throttle deltas for entities far from all of a client's owned entities (P2P mobile host bandwidth; ADR-097). */
+  distantThrottle?: { nearTiles: number; interval: number };
   /** Chat (net ChatServer over core ChannelRegistry): local radius in tiles (default 48), per-player token bucket (default core 5 burst, 0.05/tick). */
   chat?: { localRadius?: number; rate?: { capacity: number; refillPerTick: number }; maxLength?: number; /** chat replay ring on join (default 50; 0 = off) */ historySize?: number };
 }
@@ -132,10 +134,11 @@ export function createGameServer(o: GameServerOptions): GameServer {
   const net: NetServer = new NetServer({
     world, tickHz, transport: o.transport,
     ...(o.maxClients !== undefined ? { maxClients: o.maxClients } : {}), ...(o.serverFullDetail ? { serverFullDetail: o.serverFullDetail } : {}),
+    ...(o.distantThrottle ? { distantThrottle: o.distantThrottle } : {}),
     commands: DEMO_COMMANDS, events: DEMO_EVENTS,
     forwardCoreRejections: false, // forwarded below with the net command def + a reason code (protocol.ts)
     applyInput: (w, e, cmd, clientId) => {
-      applyMoveInput(w, e, cmd, 1 / tickHz);
+      applyDemoInput(w, e, cmd, 1 / tickHz); // riders: drive input (only the seat-0 driver steers, gameplay.vehicles)
       if (cmd && (cmd.buttons & Act.Gather) && players.get(clientId)?.entity === e) {
         const target = nearestNode(e); if (target !== undefined) setIntent(w, e, { action: IntentAction.Gather, target });
       }
@@ -171,6 +174,11 @@ export function createGameServer(o: GameServerOptions): GameServer {
   installExpressionCommands(world, handlers); // gameplay.emote -> Expression
   installVehicleCommands(world, handlers); // gameplay.vehicle* (enter/exit/hitch/unhitch/station), ADR-096
   installVehicleCraftCommands(world, handlers); // gameplay.vehicleDeploy / vehicleRefuel / vehicleRepair (gameplay DESIGN.md §31)
+  // ADR-097: server vehicle speed/teleport sanity (reverts the step) -> anomaly on the driver's session (AntiCheat scores it)
+  installVehicleGuard(world, (v) => {
+    const cid = v.driver !== undefined ? world.getField(v.driver, Owner, "clientId") : undefined; if (cid === undefined) return;
+    for (const s of net.connected()) if (s.clientId === cid) { net.anomaly(s, v.kind, `vehicle ${v.distance.toFixed(2)} tiles`); break; }
+  });
   installClanCommands(world, handlers); // gameplay.clan* on core GroupRegistry (GroupKind.Clan) + gameplay ClanState
   installPartyCommands(world, handlers); // gameplay.partyInvite / partyAccept / partyLeave / partyKick on core GroupRegistry
   const rearmCrafts = (): void => world.resource(CraftQueuesRes).rearmAll(); // timers are not saved: re-arm after any load

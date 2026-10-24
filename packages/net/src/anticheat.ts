@@ -26,6 +26,8 @@ export interface PlayerReport { tick: number; reporterClientId: number; reporter
 export interface AntiCheatConfig {
   /** Max owned-entity speed in tiles/s (default 8) and relative tolerance (default 0.25). */
   maxSpeed?: number; speedTolerance?: number;
+  /** Per-entity max speed override in tiles/s (e.g. a rider moves at its vehicle's top speed); undefined = maxSpeed. */
+  maxSpeedFor?: (e: Entity) => number | undefined;
   /** One-tick displacement counted as a teleport (default 4 tiles). */
   teleportDistance?: number;
   /** Return true when a jump of `e` is legitimate (respawn, gameplay teleport). */
@@ -105,7 +107,8 @@ export class AntiCheat {
       this.last.set(e, { x: t.x, y: t.y, tick: w.tick });
       if (!p) continue;
       const ticks = Math.max(1, w.tick - p.tick); const d = Math.hypot(t.x - p.x, t.y - p.y);
-      if (d <= maxStep * ticks) continue;
+      const ov = this.cfg.maxSpeedFor?.(e);
+      if (d <= (ov === undefined ? maxStep : ov * dt * (1 + (this.cfg.speedTolerance ?? 0.25))) * ticks) continue;
       if (this.cfg.allowTeleport?.(e)) continue;
       this.record(s, d > tele * ticks ? "teleport" : "speed", `${d.toFixed(2)} tiles in ${ticks} tick(s)`);
     }

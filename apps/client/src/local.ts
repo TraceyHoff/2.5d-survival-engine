@@ -11,7 +11,7 @@ import { agentOutputFrame, applyAgentEmote, buildAgentView, flushSocialMemory, m
 import { ChatChannel, LoopbackNetwork, MultiServerTransport, NetClient, type ClientTransport, type ServerTransport } from "@engine/net";
 import { ClaimAccount, IndexedDbWorldStore, MemoryWorldStore, SetName, nameToWords, tokenToWords, type WorldStore } from "@engine/persist";
 import { createGameServer, SPAWN, type GameMode, type GameServer } from "@engine/server/game";
-import { Act, applyMoveInput, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS } from "@engine/server/protocol";
+import { Act, applyDemoInput, VEHICLE_CLIENT_OPTIONS, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS } from "@engine/server/protocol";
 
 export interface LocalServerOptions {
   store?: WorldStore; seed?: number;
@@ -29,6 +29,8 @@ export interface LocalServerOptions {
   extraTransports?: ServerTransport[];
   /** Player cap incl. the host's own client; extra joins are rejected (ServerFull + serverFullDetail). */
   maxClients?: number; serverFullDetail?: string;
+  /** Distant-entity delta throttle forwarded to the NetServer (P2P host; ADR-097). */
+  distantThrottle?: { nearTiles: number; interval: number };
 }
 export interface VirtualPlayer { client: NetClient; world: World; agent: Agent; output: AgentOutput; home: { x: number; y: number } }
 export interface LocalServer {
@@ -95,7 +97,7 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
   const game = createGameServer({
     transport: serverTransport, ...(store ? { store } : {}), seed, mode,
     ...(o.maxClients !== undefined ? { maxClients: o.maxClients } : {}), ...(o.serverFullDetail ? { serverFullDetail: o.serverFullDetail } : {}), ...(o.log ? { log: o.log } : {}), ...(o.catalog ? { catalog: o.catalog, randomAppearance: true } : {}),
-    ...(o.population === false ? { population: false } : {}),
+    ...(o.population === false ? { population: false } : {}), ...(o.distantThrottle ? { distantThrottle: o.distantThrottle } : {}),
     ...(mode === "singleplayer" ? { virtualPlayers: { connect: connectBot, disconnect: (cid: number) => dropBot(cid) } } : {}),
   });
 
@@ -109,7 +111,7 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
       const f = agentOutputFrame(vp.output, 0, NO_COMMANDS); // gameplay intentToFrame; GameplayActions bits 0-5 == Act bits
       return { buttons: f.actions & ACT_MASK, aimX: f.aimX, aimY: f.aimY };
     };
-    const client = new NetClient({ world, transport: network.createClient(), commands: DEMO_COMMANDS, events: DEMO_EVENTS, sampleInput: sample, applyInput: (w, e, cmd) => applyMoveInput(w, e, cmd) });
+    const client = new NetClient({ world, transport: network.createClient(), commands: DEMO_COMMANDS, events: DEMO_EVENTS, sampleInput: sample, ...VEHICLE_CLIENT_OPTIONS, applyInput: (w, e, cmd) => applyDemoInput(w, e, cmd) });
     vp.client = client;
     let ok = false, err: unknown; const conn = client.connect().then(() => { ok = true; }, (e: unknown) => { err = e; ok = true; });
     if (drive) for (let k = 0; k < 200 && !ok; k++) { network.advance(10); game.loop.advance(10); await Promise.resolve(); } // handshake on the virtual clock

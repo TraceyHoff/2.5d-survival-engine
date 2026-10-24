@@ -15,6 +15,7 @@ import stationsRaw from "../data/stations.json";
 import { AnimState, Container, CONTAINER_SLOTS, Dead, Driver, Hitch, Survival, Vehicle, VehicleSeats, VehicleState, VEHICLE_ENGINE_ON, VEHICLE_HEADLIGHTS, VEHICLE_MAX_SEATS } from "./components.js";
 import { movementBlocked } from "./systems/movement.js";
 import { spendStamina } from "./systems/vitals.js";
+import { netIdEntity } from "./vehicle_net.js";
 
 export const VEHICLE_CLASSES = ["bicycle", "car", "truck", "van", "camper", "semi", "trailer"] as const;
 export type VehicleClass = (typeof VEHICLE_CLASSES)[number];
@@ -100,15 +101,9 @@ export function spawnVehicle(world: World, def: number | string, x: number, y: n
 export const netIdOf = (world: World, e: Entity): number => world.getField(e, NetId, "id") ?? 0;
 /** Vehicle entity for a NetId (0 / unknown -> undefined). */
 export function vehicleByNetId(world: World, id: number): Entity | undefined {
-  if (!id) return undefined;
-  for (const e of world.query([Vehicle, NetId])) if (world.getField(e, NetId, "id") === id) return e;
-  return undefined;
+  const e = netIdEntity(world, id); return e !== undefined && world.has(e, Vehicle) ? e : undefined; // O(1) (vehicle_net.ts)
 }
-function entityByNetId(world: World, id: number): Entity | undefined {
-  if (!id) return undefined;
-  for (const e of world.query([NetId])) if (world.getField(e, NetId, "id") === id) return e;
-  return undefined;
-}
+const entityByNetId = (world: World, id: number): Entity | undefined => netIdEntity(world, id);
 export const isParked = (world: World, v: Entity): boolean => Math.abs(world.getField(v, Vehicle, "speed") ?? 0) < VEHICLE_TUNING.parkedSpeed;
 export const ridingVehicle = (world: World, rider: Entity): Entity | undefined => world.has(rider, Driver) ? vehicleByNetId(world, world.getField(rider, Driver, "vehicleNetId")!) : undefined;
 const seatsOf = (world: World, v: Entity): ArrayLike<number> | undefined => world.has(v, VehicleSeats) ? (world.get(v, VehicleSeats)!.occupant as ArrayLike<number>) : undefined;
@@ -345,12 +340,18 @@ export function hitchVehicles(world: World, actor: Entity, trailer: Entity, tow:
   world.setField(trailer, Hitch, "parentNetId", netIdOf(world, tow)); world.setField(tow, Hitch, "towNetId", netIdOf(world, trailer));
   return undefined;
 }
-export function unhitchVehicle(world: World, actor: Entity, trailer: Entity): string | undefined {
+export function validateUnhitch(world: World, actor: Entity, trailer: Entity): string | undefined {
   if (world.has(actor, Dead)) return "dead";
+  if (!world.isAlive(trailer) || !world.has(trailer, Hitch)) return "not_vehicle";
   const pid = world.getField(trailer, Hitch, "parentNetId") ?? 0; if (!pid) return "not_hitched";
   const tow = vehicleByNetId(world, pid);
   if (tow !== undefined && !isParked(world, tow)) return "moving";
   const d = vehicleDefOf(world, trailer); if (d && dist(world, actor, trailer) > reachOf(d) + 2 && (tow === undefined || dist(world, actor, tow) > reachOf(d) + 2)) return "actor_too_far";
+  return undefined;
+}
+export function unhitchVehicle(world: World, actor: Entity, trailer: Entity): string | undefined {
+  const r = validateUnhitch(world, actor, trailer); if (r) return r;
+  const pid = world.getField(trailer, Hitch, "parentNetId")!; const tow = vehicleByNetId(world, pid);
   world.setField(trailer, Hitch, "parentNetId", 0); world.setField(trailer, Vehicle, "speed", 0);
   if (tow !== undefined && world.getField(tow, Hitch, "towNetId") === netIdOf(world, trailer)) world.setField(tow, Hitch, "towNetId", 0);
   return undefined;
@@ -432,7 +433,7 @@ export function installVehicleCommands(world: World, handlers: CommandHandlers):
   handlers.on(VehicleEnterCmd, { validate: (v, c) => validateEnter(world, c.actor, v.target as Entity, v.seat), handle: (v, c) => run(() => enterVehicle(world, c.actor, v.target as Entity, v.seat)) });
   handlers.on(VehicleExitCmd, { validate: (_v, c) => (world.has(c.actor, Driver) ? undefined : "not_riding"), handle: (_v, c) => run(() => exitVehicle(world, c.actor)) });
   handlers.on(VehicleHitchCmd, { validate: (v, c) => validateHitch(world, c.actor, v.target as Entity, v.tow as Entity), handle: (v, c) => run(() => hitchVehicles(world, c.actor, v.target as Entity, v.tow as Entity)) });
-  handlers.on(VehicleUnhitchCmd, { validate: (v) => (world.has(v.target as Entity, Hitch) ? undefined : "not_vehicle"), handle: (v, c) => run(() => unhitchVehicle(world, c.actor, v.target as Entity)) });
+  handlers.on(VehicleUnhitchCmd, { validate: (v, c) => validateUnhitch(world, c.actor, v.target as Entity), handle: (v, c) => run(() => unhitchVehicle(world, c.actor, v.target as Entity)) });
   for (const [def, bit] of [[VehicleEngineCmd, VEHICLE_ENGINE_ON], [VehicleHeadlightsCmd, VEHICLE_HEADLIGHTS]] as const)
     handlers.on(def, { validate: (v, c) => validateVehicleToggle(world, c.actor, v.target as Entity, bit, v.on), handle: (v, c) => run(() => setVehicleToggle(world, c.actor, v.target as Entity, bit, v.on)) });
   handlers.on(VehicleStationCmd, { validate: (v, c) => (usableVehicleStations(world, c.actor, v.target as Entity).some((s) => s.index === v.station) ? undefined : "no_station"), handle: (v, c) => run(() => useVehicleStation(world, c.actor, v.target as Entity, v.station)) });

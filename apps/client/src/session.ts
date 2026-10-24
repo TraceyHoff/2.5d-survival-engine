@@ -2,7 +2,7 @@
 import { World, type Entity } from "@engine/core";
 import { NetClient, NetRejectedError, WebSocketClientTransport, type ClientTransport, type WebSocketCtor } from "@engine/net";
 import { AccountAssigned, ClaimAccount, SetName, nameToWords, tokenToWords, wordsToToken } from "@engine/persist";
-import { applyMoveInput, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS, Ping, Pong } from "@engine/server/protocol";
+import { applyDemoInput, VEHICLE_CLIENT_OPTIONS, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS, Ping, Pong } from "@engine/server/protocol";
 
 /** Minimal storage (localStorage in the browser, a Map in tests). */
 export interface KeyValue { getItem(k: string): string | null; setItem(k: string, v: string): void }
@@ -52,7 +52,7 @@ export class ClientSession {
     const client = new NetClient({
       world, transport, commands: DEMO_COMMANDS, events: DEMO_EVENTS,
       sampleInput: () => this.o.sampleInput?.() ?? { buttons: this.o.sampleButtons?.() ?? 0, aimX: 0, aimY: 0 },
-      applyInput: (w, e, cmd) => applyMoveInput(w, e, cmd),
+      ...VEHICLE_CLIENT_OPTIONS, applyInput: (w, e, cmd) => applyDemoInput(w, e, cmd),
     });
     this.world = world; this.client = client; this.status = "connecting"; this.detail = url; this.rttMs = undefined; this.restored = false;
     const now = this.o.now ?? (() => performance.now());

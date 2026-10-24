@@ -587,3 +587,5 @@ Pause → **Quit to main menu** exits fullscreen, saves / leaves the session and
 **EDGE_ACTIONS are append-only.** The bit index of each entry in `EDGE_ACTIONS` (`packages/input/src/defaults.ts`) and its mirror `GAMEPLAY_EDGES` is wire format. New edges go at the end of both lists, and removed edges keep their slot.
 
 **Vehicles (ADR-096).** `Vehicle, VehicleSeats, Driver, Hitch` are appended after ClanStatus. The `gameplay.vehicles` system and the vehicle commands are covered in docs/VEHICLES.md.
+
+**Vehicle netcode (ADR-097).** The seat-0 driver predicts and reconciles its vehicle and trailer chain through `NetClientOptions.controlled`, with corrections over 2 tiles snapping. Observers interpolate with a 4-tick delay, and hitched trailers are posed in the tow's hitch frame. The AOI bonus scales with speed (≤2 chunks, with hysteresis). The P2P host throttles deltas for entities more than 24 tiles away to every 3rd tick, which keeps a guest's mean snapshot at 353 B with 8 vehicles and 8 trailers. `gameplay.vehicleGuard` reports speed and teleport anomalies. `netIdEntity` is an O(1) NetId to Entity map. Details are in packages/net/ARCHITECTURE.md §24.
