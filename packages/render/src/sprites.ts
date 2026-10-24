@@ -44,6 +44,12 @@ const CHAR_DEPTH_MARGIN = 24;
 export function paperDollDepth(key: number, frameH: number, anchorY: number, scale: number, zPerPx: number): { footDy: number; key: number } {
   const footDy = (Math.max(0, frameH - anchorY) + CHAR_DEPTH_MARGIN) * scale; return { footDy, key: key - footDy * zPerPx };
 }
+/**
+ * Depth key of the behind-wall silhouette (drawn with depth GREATER): in front of every paper-doll layer of its own
+ * character (layers draw at key + j * LAYER_BIAS, nearer than the body), so it only passes where a real occluder wrote
+ * depth nearer than the whole doll - never against the character's own wear/face/hair.
+ */
+export function silhouetteKey(bodyKey: number, layerCount: number): number { return bodyKey + (layerCount + 2) * LAYER_BIAS; }
 /** Render-internal instance flag (above the u8 SpriteFlag range): draw only the outline ring of this frame. */
 export const OUTLINE_ONLY = 256;
 /** Render-internal instance flag: face/eyes paper-doll layer (mip bias, small contrast lift, partial darkness bypass; see characterOpts.face*). */
@@ -689,7 +695,7 @@ export class SpriteBatch {
       // ...and the drawn key drops by the same lift x uZPerPx (paperDollDepth): pivot depth unchanged, so dressed characters
       // do not sort ahead of walls/props they stand behind. `key` (occlusion tests) is not changed.
       let dkey = key; if (bodyL) { const pd = paperDollDepth(key, res.h, res.ay, scale, this.zFactor / this.iso.zStep); o0[15] = pd.footDy; o0[2] = dkey = pd.key; }
-      if (e === this.focusEntity && occ.silhouette) { this.silInst.set(o0.subarray(0, INSTANCE_FLOATS)); this.silInst[27] = 0; this.silOn = true; }
+      if (e === this.focusEntity && occ.silhouette) { this.silInst.set(o0.subarray(0, INSTANCE_FLOATS)); this.silInst[27] = 0; this.silInst[2] = silhouetteKey(dkey, layers?.length ?? 0); this.silOn = true; }
       this.pushOcc(o0, 0, occT, occ.mode);
       let dress = true;
       // page priority: 0 = local player, else squared tile distance to them; near characters (<= PRIO_NEAR) are
