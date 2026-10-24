@@ -40,7 +40,7 @@ def group_trees(_=None):
     static_atlas("nature_bushes", B, 8, canvas=(flora.PW, flora.PH, flora.PB))
 
 GROUPS = [group_trees]
-for name in ("crops", "fauna", "itemicons", "placeholder"):
+for name in ("crops", "fauna", "itemicons", "roads", "signs", "placeholder"):
     if os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), name + ".py")):
         mod = __import__(name); GROUPS += mod.GROUPS
 

@@ -2,7 +2,7 @@
 Run from repo root: python3 packages/assets/pack/vehicle_items/src/gen_icon_css.py  (rewrites between the ICONS markers)."""
 import json, os
 R = 'packages/assets/pack/'
-SRC = [('manifest.json', {'items', 'equipment'}), ('items/manifest.items.json', {'items_icons'}), ('vehicle_items/manifest.vehicle_items.json', {'vitems_icons'})]
+SRC = [('manifest.json', {'items', 'equipment'}), ('items/manifest.items.json', {'items_icons'}), ('vehicle_items/manifest.vehicle_items.json', {'vitems_icons'}), ('nature/manifest.nature.json', {'nature_roadicons'})]
 rel = '../../../packages/assets/pack/'
 out, keys, seen = [], {}, set()
 for f, atl in SRC:
