@@ -27,7 +27,7 @@ import { mountConnectOverlay } from "./connect.js";
 import { IsoView } from "./view.js";
 import { mountHud } from "./hud.js";
 import { controlLabel, mountFarmPrompt, quickUseFires, type PromptDevice } from "./farm-prompt.js";
-import { attachContextRecovery, effectiveLevel } from "./gl-recovery.js";
+import { attachContextRecovery, effectiveLevel, retryIsoAtSafe } from "./gl-recovery.js";
 import { BootUI, loadSettings } from "./menu.js";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
@@ -53,7 +53,10 @@ const isoReady: Promise<void> = wantIso ? (async () => {
   attachContextRecovery(canvas, { notify: showRenderError });
   attachZoom(v.renderer.camera, canvas, { enabled: () => !document.querySelector("[data-boot=menu]") });
   iso = v; (window as { __view?: unknown }).__view = { ready: true, renderer: "iso", iso: v };
-})().catch((e: unknown) => { console.warn("IsoRenderer unavailable, using debug renderer", e); showRenderError("3D renderer unavailable — showing debug view", e instanceof Error ? e.message + ((e as { info?: unknown }).info ? `\n${JSON.stringify((e as { info?: unknown }).info).slice(0, 300)}` : "") : String(e)); fallback(); }) : Promise.resolve(fallback());
+})().catch((e: unknown) => {
+  // keep the sprite renderer: retry once at safe quality (still full art) before the Canvas2D debug view
+  if (glLevel !== "safe" && retryIsoAtSafe()) return;
+  console.warn("IsoRenderer unavailable, using debug renderer", e); showRenderError("3D renderer unavailable — showing debug view", e instanceof Error ? e.message + ((e as { info?: unknown }).info ? `\n${JSON.stringify((e as { info?: unknown }).info).slice(0, 300)}` : "") : String(e)); fallback(); }) : Promise.resolve(fallback());
 function fallback(): void {
   // a WebGL context may already own #game: draw Canvas2D on an overlay (input stays bound to #game)
   const c = document.createElement("canvas"); c.id = "game-debug"; c.style.cssText = "position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none";

@@ -1,6 +1,6 @@
 /** Scene FBO completeness ladder (ANGLE/D3D11 basic adapters report UNSUPPORTED for some depth formats) + basic adapter detection. */
 import { describe, it, expect } from "vitest";
-import { buildSceneTarget, isBasicAdapter } from "../src/gl/sceneTarget.js";
+import { buildSceneTarget, isBasicAdapter, isConsole } from "../src/gl/sceneTarget.js";
 import { detectCapabilities } from "../src/gl/capabilities.js";
 
 const C = { FRAMEBUFFER: 1, RENDERBUFFER: 2, TEXTURE_2D: 3, COLOR_ATTACHMENT0: 10, COLOR_ATTACHMENT1: 11, DEPTH_ATTACHMENT: 12, DEPTH_STENCIL_ATTACHMENT: 13,
@@ -27,15 +27,17 @@ describe("scene target ladder", () => {
 });
 
 describe("basic adapter detection", () => {
-  it.each(["ANGLE (Microsoft, SraKmd_arden (0x0000D000) Direct3D11 vs_5_0 ps_5_0, D3D11)", "ANGLE (Microsoft, Microsoft Basic Render Driver Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  it.each(["ANGLE (Microsoft, Microsoft Basic Render Driver Direct3D11 vs_5_0 ps_5_0, D3D11)",
     "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero)), SwiftShader driver)", "llvmpipe (LLVM 15.0.7, 256 bits)"])("%s", (r) => expect(isBasicAdapter(r)).toBe(true));
-  it.each(["ANGLE (NVIDIA, NVIDIA GeForce RTX 3070 Direct3D11 vs_5_0 ps_5_0, D3D11)", "ANGLE (Intel, Intel(R) UHD Graphics 620 Direct3D11 vs_5_0 ps_5_0, D3D11)", "Adreno (TM) 740"])("not %s", (r) => expect(isBasicAdapter(r)).toBe(false));
-  it("SraKmd starts lowend: 160 MB budget, DPR 1", () => {
+  it.each(["ANGLE (NVIDIA, NVIDIA GeForce RTX 3070 Direct3D11 vs_5_0 ps_5_0, D3D11)", "ANGLE (Intel, Intel(R) UHD Graphics 620 Direct3D11 vs_5_0 ps_5_0, D3D11)", "Adreno (TM) 740", "ANGLE (Microsoft, SraKmd_arden (0x0000D000) Direct3D11 vs_5_0 ps_5_0, D3D11)"])("not %s", (r) => expect(isBasicAdapter(r)).toBe(false));
+  it("Xbox SraKmd: console tier, full art (not lowend/safe), 256 MB budget, <=1080p", () => {
     const P: Record<number, unknown> = { 100: "ANGLE (Microsoft, SraKmd_arden (0x0000D000) Direct3D11 vs_5_0 ps_5_0, D3D11)" };
     const gl = { MAX_VIEWPORT_DIMS: 4, FRAGMENT_SHADER: 20, VERTEX_SHADER: 21, HIGH_FLOAT: 22, getParameter: (n: number) => P[n] ?? (n === 4 ? new Int32Array([16384, 16384]) : 16),
       getExtension: (n: string) => (n === "WEBGL_debug_renderer_info" ? { UNMASKED_RENDERER_WEBGL: 100, UNMASKED_VENDOR_WEBGL: 101 } : null),
       getShaderPrecisionFormat: () => ({ precision: 23 }) } as unknown as WebGL2RenderingContext;
     const c = detectCapabilities(gl, { userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/141" });
-    expect(c.basicAdapter).toBe(true); expect(c.lowEnd).toBe(true); expect(c.flags).toContain("lowend"); expect(c.textureBudgetMB).toBe(160); expect(c.maxDpr).toBe(1);
+    expect(c.console).toBe(true); expect(c.basicAdapter).toBe(false); expect(c.lowEnd).toBe(false); expect(c.safe).toBe(false); expect(c.textureBudgetMB).toBe(256); expect(c.maxPixels).toBe(1920 * 1080);
   });
 });
+
+describe("console detection", () => { it("Xbox UA or SraKmd", () => { expect(isConsole("ANGLE (Intel)", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; Xbox; Xbox Series X) Edg/141")).toBe(true); expect(isConsole("SraKmd_arden", "")).toBe(true); expect(isConsole("ANGLE (NVIDIA)", "Windows NT 10.0 Chrome")).toBe(false); }); });

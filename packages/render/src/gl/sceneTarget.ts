@@ -37,5 +37,11 @@ export function buildSceneTarget(gl: WebGL2RenderingContext, color: WebGLTexture
 }
 
 /** Software / basic / virtual GPU adapters: start them on the low-end path (?gl=lowend) automatically. */
-export const BASIC_ADAPTER = /swiftshader|llvmpipe|softpipe|lavapipe|microsoft basic render|basic render driver|srakmd|\bwarp\b|vmware svga|virtualbox|parallels display|citrix|remotefx|indirect display/i;
+export const BASIC_ADAPTER = /swiftshader|llvmpipe|softpipe|lavapipe|microsoft basic render|basic render driver|\bwarp\b|vmware svga|virtualbox|parallels display|citrix|remotefx|indirect display/i;
 export function isBasicAdapter(renderer: string): boolean { return BASIC_ADAPTER.test(renderer); }
+
+/** Console browsers (Xbox Edge: ANGLE D3D11 on the "SraKmd" adapter): a real mid-tier GPU with a shared, capped memory
+ *  pool. Full sprite art, but a limited atlas budget (KTX2 + downscale) and a capped backbuffer instead of lowend. */
+export const CONSOLE_ADAPTER = /srakmd/i;
+export const CONSOLE_UA = /xbox|playstation|nintendo/i;
+export function isConsole(renderer: string, ua: string): boolean { return CONSOLE_ADAPTER.test(renderer) || CONSOLE_UA.test(ua); }

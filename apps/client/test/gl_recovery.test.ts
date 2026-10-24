@@ -6,9 +6,9 @@ const kv = () => { const m = new Map<string, string>(); return { getItem: (k: st
 
 describe("gl recovery levels", () => {
   it("url levels", () => { const s = kv(); expect(effectiveLevel("", s)).toBe("full"); expect(effectiveLevel("?gl=lowend", s)).toBe("lowend"); expect(effectiveLevel("?safe=1", s)).toBe("safe"); expect(effectiveLevel("?renderer=debug", s)).toBe("debug"); });
-  it("each loss steps down, never loops past debug", () => {
-    const s = kv(); expect(stepDownAfterLoss("", s)).toBe("lowend"); expect(stepDownAfterLoss("", s)).toBe("safe"); expect(stepDownAfterLoss("", s)).toBe("debug"); expect(stepDownAfterLoss("", s)).toBe("debug");
-    expect(effectiveLevel("", s)).toBe("debug");
+  it("each loss steps down to safe (sprites kept), never auto debug/dots", () => {
+    const s = kv(); expect(stepDownAfterLoss("", s)).toBe("lowend"); expect(stepDownAfterLoss("", s)).toBe("safe"); expect(stepDownAfterLoss("", s)).toBe("safe");
+    expect(effectiveLevel("", s)).toBe("safe");
   });
   it("flags", () => { expect(levelFlags("full")).toBeUndefined(); expect(levelFlags("lowend")).toEqual(["lowend"]); expect(levelFlags("safe")).toEqual(["lowend", "safe"]); });
 });

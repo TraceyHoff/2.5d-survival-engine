@@ -13,12 +13,12 @@
  * (comma-separated), or `IsoRendererOptions.gl`.
  */
 
-import { isBasicAdapter } from "./sceneTarget.js";
+import { isBasicAdapter, isConsole } from "./sceneTarget.js";
 
 export type GlFlag = "lowend" | "mediump" | "nofloat" | "lowmem" | "safe";
 
 export interface RenderCapabilities {
-  renderer: string; vendor: string; mobile: boolean; lowEnd: boolean; /** software / basic / remote adapter (auto lowend) */ basicAdapter: boolean; flags: GlFlag[];
+  renderer: string; vendor: string; mobile: boolean; lowEnd: boolean; /** software / basic / remote adapter (auto lowend) */ basicAdapter: boolean; /** console browser (Xbox): full art, 256 MB atlas budget, <=1080p */ console: boolean; flags: GlFlag[];
   /** GPU-compressed texture families (KTX2 transcode targets); all false = PNG/RGBA8 path. */
   compressed: CompressedTextureSupport;
   ext: { colorBufferFloat: boolean; colorBufferHalfFloat: boolean; floatLinear: boolean; debugRendererInfo: boolean };
@@ -120,16 +120,19 @@ export function detectCapabilities(gl: WebGL2RenderingContext, opts: { flags?: G
   const lowmem = has("lowmem");
   // Mobile: 128 MB of atlas + streaming pools keeps the whole GPU set (plus ~30 MB of native-DPR render targets)
   // under ~160 MB. Memory comes from cold tiers + eviction, not from blurring visible art (see AtlasManager.fitBudget).
-  const textureBudgetMB = lowmem || flags.includes("safe") ? 160 : mobile ? 128 : 768;
+  const console_ = isConsole(renderer, ua) && !basic;
+  // console: ~half of the ~512 MB the browser GPU process gets; atlases fit by KTX2 + cold-tier downscale, never dropped
+  const textureBudgetMB = lowmem || flags.includes("safe") ? 160 : mobile ? 128 : console_ ? 256 : 768;
+  if (console_) fallbacks.push(`console GPU (${renderer.slice(0, 40)}): atlas budget ${textureBudgetMB} MB, RGBA8 targets, <=1080p`);
   if (flags.includes("safe")) fallbacks.push("safe mode (?gl=safe): no float targets, bloom or LUT; direct composite");
   if (lowmem || mobile) fallbacks.push(`atlas texture budget ${textureBudgetMB} MB${mobile ? " (mobile)" : ""}`);
   // Mobile renders at the native DPR (a 2.625 phone backed at 2x is upscaled 1.31x by the compositor = blurry); the pixel
   // budget still caps 3.5x / 1440p panels. ?gl=lowend keeps DPR 1 (explicit low-end choice).
   const maxDpr = lowEnd ? 1 : 3;
-  const maxPixels = lowEnd ? 1280 * 720 : mobile ? 3_200_000 : 3840 * 2160;
+  const maxPixels = lowEnd ? 1280 * 720 : console_ ? 1920 * 1080 : mobile ? 3_200_000 : 3840 * 2160;
   if (maxDpr < 3 || mobile) fallbacks.push(`DPR capped at ${maxDpr}, max ${maxPixels} px`);
   return {
-    renderer, vendor, mobile, lowEnd, basicAdapter: basic, flags, ext, compressed: probeCompressedTextures(gl, flags.includes("safe")),
+    renderer, vendor, mobile, lowEnd, basicAdapter: basic, console: console_, flags, ext, compressed: probeCompressedTextures(gl, flags.includes("safe")),
     formats: { scene: "RGBA8", emissive: "RGBA8", lightmap: "RGBA8", bloom: "RGBA8", lightmapEncode: 0.5, dataTables: "RGBA32F", lut: "RGBA8-2D-strip" },
     floatFilter: ext.floatLinear ? "LINEAR" : "NEAREST",
     precision: { fragmentHighp, fragment: fragmentHighp ? "highp" : "mediump", vertex: vp && vp.precision >= 23 ? "highp" : "mediump", fragmentHighpBits },
