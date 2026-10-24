@@ -6,24 +6,28 @@
  * with smoothing off: crisp on high-DPR phones.
  */
 import type { AppearanceValue } from "@engine/core";
-import type { AssetRegistry, FrameRef } from "@engine/assets";
+import { AssetRegistry, type FrameRef } from "@engine/assets";
 import type { AtlasSource } from "../assets/atlasManager.js";
 import { layerTintRef, type AppearanceBinding, type CharacterDrawLayer } from "./layers.js";
 import { facingAngle, FRONT_FACING } from "./preview.js";
 
-export interface PreviewLayer2D { layer: CharacterDrawLayer; ref: FrameRef; url: string; maskUrl?: string | undefined }
+/** `dx`/`dy`: ADR-128 head offset (unmirrored frame px) for head-group layers, 0 otherwise. */
+export interface PreviewLayer2D { layer: CharacterDrawLayer; ref: FrameRef; url: string; maskUrl?: string | undefined; dx: number; dy: number }
 type Img = CanvasImageSource & { width: number; height: number };
 
 /** Back-to-front layers for appearance `a` at facing index k (0..7) and time t (s), with their sheet URLs. */
-export function previewLayers2D(registry: AssetRegistry, binding: AppearanceBinding, a: AppearanceValue, k: number, t = 0, sources?: ReadonlyMap<string, AtlasSource>): PreviewLayer2D[] {
-  const out: PreviewLayer2D[] = []; const fa = facingAngle(k);
+export function previewLayers2D(registry: AssetRegistry, binding: AppearanceBinding, a: AppearanceValue, k: number, t = 0, sources?: ReadonlyMap<string, AtlasSource>, animName = "idle", facingRad?: number): PreviewLayer2D[] {
+  const out: PreviewLayer2D[] = []; const fa = facingRad ?? facingAngle(k); let ho = { x: 0, y: 0 }; const head: number[] = [];
   for (const l of binding.resolve(a as never, fa, {}) as readonly CharacterDrawLayer[]) {
     let s; try { s = registry.sprite(l.sprite); } catch { continue; }
-    const anim = s.animations.has("idle") ? "idle" : l.anim;
+    const anim = s.animations.has(animName) ? animName : s.animations.has("idle") ? "idle" : l.anim;
     const ref = registry.dirFrame(l.sprite, anim, fa, t); const src = sources?.get(ref.atlas.key);
     const m = src?.masks?.tintmask ?? ref.atlas.masks?.tintmask; const maskUrl = Array.isArray(m) ? m[0] : typeof m === "string" ? m : undefined;
-    out.push({ layer: l, ref, url: src?.url ?? ref.atlas.image, maskUrl });
+    if (l.slot === "body") ho = AssetRegistry.headOffset(ref);
+    out.push({ layer: l, ref, url: src?.url ?? ref.atlas.image, maskUrl, dx: 0, dy: 0 }); if (s.group === "head" && l.slot !== "body") head.push(out.length - 1);
   }
+  // body may follow back layers (long hair behind the body): apply its head offset once every layer is known
+  for (const i of head) { out[i]!.dx = ho.x; out[i]!.dy = ho.y; }
   return out;
 }
 const rgb = (c: number): [number, number, number] => [(c >> 16 & 255) / 255, (c >> 8 & 255) / 255, (c & 255) / 255];
@@ -88,7 +92,7 @@ export class CharacterPreview2D {
     g.fillStyle = "rgba(0,0,0,.25)"; g.beginPath(); g.ellipse(ox, oy, 14 * s, 5 * s, 0, 0, Math.PI * 2); g.fill();
     for (const p of previewLayers2D(this.o.registry, this.o.binding, this.a, this.facing, timeSec, this.o.sources)) {
       const c = this.layerCanvas(p); if (!c) continue; const r = p.ref;
-      g.setTransform(r.flipX ? -s : s, 0, 0, s, ox, oy); g.drawImage(c, -Math.round(r.anchorX), -Math.round(r.anchorY));
+      g.setTransform(r.flipX ? -s : s, 0, 0, s, ox, oy); g.drawImage(c, Math.round(p.dx - r.anchorX), Math.round(p.dy - r.anchorY));
     }
     g.setTransform(1, 0, 0, 1, 0, 0);
   }

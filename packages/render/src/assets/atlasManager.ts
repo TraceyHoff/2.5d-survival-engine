@@ -36,6 +36,7 @@ import { blockBytes, GL_FORMAT, ktx2Target, loadKtx2, loadKtx2Rgba, type Ktx2Tar
 import type { CompressedTextureSupport } from "../gl/capabilities.js";
 import { streamingFallbackKeys } from "../building/modular.js";
 
+export const NO_HEAD_OFFSET: Readonly<{ x: number; y: number }> = Object.freeze({ x: 0, y: 0 });
 /** Held-item hand anchor of one character frame (Art hands.json). */
 export interface HandAnchor { x: number; y: number; angle: number; len?: number; behind: boolean }
 export type MaskName = "sheen" | "sway" | "tintmask";
@@ -687,7 +688,7 @@ export class AtlasManager {
       sprites[id] = { atlasIdx: list.indexOf(at), anchorX: s.anchor.x, anchorY: s.anchor.y, anims: s.animList, dirAt, dirF, stateAnim, damage,
         ...(b ? { building: { fw: b.footprint.w, fh: b.footprint.h, layer: b.layer, frames: b.frames } } : {}) };
     }
-    this.usedMark = new Uint8Array(list.length); this.atlases = list; this.atlasById = new Map(list.map((a) => [a.id, a])); this.sprites = sprites; this.registry = registry; this.resolveSway(); this.resolveVariants(); this.resolveRoofs(); this.resolveHands();
+    this.usedMark = new Uint8Array(list.length); this.atlases = list; this.atlasById = new Map(list.map((a) => [a.id, a])); this.sprites = sprites; this.registry = registry; this.headGroup.clear(); this.resolveSway(); this.resolveVariants(); this.resolveRoofs(); this.resolveHands();
     this.uploadTints();
     this.maskPixels.clear();
     // body pages: resident from the first frame (prio 0: no budget refusal; one slot each, so never evicted)
@@ -1466,6 +1467,23 @@ export class AtlasManager {
     }
     return this.handByEntry.get(r.entry);
   }
+  /**
+   * ADR-128 neck: offset (unmirrored 1x frame px, +y down) of head-group layers over body frame `r`: the frame's `head`
+   * anchor (frameMeta, keyed df -> rect -> frame like handR) minus the body's reference `head` attach point. {0,0}
+   * without a head anchor or reference, so art without neck metadata draws unchanged.
+   */
+  headOffsetOf(r: ResolvedFrame): { x: number; y: number } {
+    const reg = this.registry; if (!reg || r.sprite < 0) return NO_HEAD_OFFSET;
+    const anchors = r.dfi >= 0 && r.anim ? reg.dirFrameAnchors(r.sprite, r.anim, r.dfi, r.frame) : reg.frameAnchors(r.sprite, r.frame, r.anim || undefined);
+    if (!anchors?.head) return NO_HEAD_OFFSET;
+    const s = reg.sprite(r.sprite); const fa = s.frameAttach?.get(r.frame); const attach = fa ? { ...(s.attach ?? {}), ...fa } : s.attach;
+    return AssetRegistry.headOffset(attach ? { anchors, attach } : { anchors });
+  }
+  /** Head-group sprite (ADR-128), cached per sprite id. */
+  isHeadSprite(sprite: number): boolean {
+    let v = this.headGroup.get(sprite); if (v === undefined) { v = !!this.registry?.isHeadGroup(sprite); this.headGroup.set(sprite, v); } return v;
+  }
+  private headGroup = new Map<number, boolean>();
   private resolveHands(): void {
     this.handByEntry.clear();
     for (const a of this.atlases) { const hs = this.handsByAtlas.get(a.key); if (!hs) continue; for (const [f, h] of Object.entries(hs)) { const n = Number(f); if (n >= 0 && n < a.count) this.handByEntry.set(a.base + n, h); } }

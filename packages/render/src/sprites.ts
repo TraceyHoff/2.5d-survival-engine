@@ -710,6 +710,8 @@ export class SpriteBatch {
         // sit just behind the body so only the ring outside the union silhouette survives
         const base = this.layerBase; base.set(o0.subarray(0, INSTANCE_FLOATS));
         const lr = this.layerRes; let j = 0;
+        // ADR-128 neck: head-group layers (face, eyes, hair, headwear) follow the body frame's head anchor
+        const ho = atlas.headOffsetOf(res); const hoOn = ho.x !== 0 || ho.y !== 0;
         for (const l of layers) {
           if (l === bodyL) continue; j++;
           const faceL = FACE_SLOTS.includes(l.slot);
@@ -732,6 +734,7 @@ export class SpriteBatch {
             if (!g || g.sprite !== l.sprite || !(g.atlas >= 0 ? atlas.pageReadyAt(g.atlas, lp) : atlas.pageReady(l.sprite, lp))) continue; // body-only fallback
             lr.entry = g.entry; lr.ax = g.ax; lr.ay = g.ay; this.lastGoodHits++; }
           o0.set(base); o0[4] = lr.entry; o0[8] = lr.ax; o0[9] = lr.ay; o0[16] = 0;
+          if (hoOn && atlas.isHeadSprite(l.sprite)) { o0[8] = lr.ax - ho.x; o0[9] = lr.ay - ho.y; }
           if (outlineOn && l.outline && !(sp.data.flags[k]! & SpriteFlag.NoOutline)) {
             o0[2] = dkey - LAYER_BIAS * 0.5; o0[5] = (base[5]! & ~SpriteFlag.NoOutline) | OUTLINE_ONLY;
             this.pushOcc(o0, 0, occT, occ.mode); this.layerInstances++;
