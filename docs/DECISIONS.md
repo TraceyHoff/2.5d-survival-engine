@@ -414,3 +414,41 @@ Identity is persisted in the `agents` record namespace. Gameplay supplies `refer
 **Decision.** Deploying a crafted vehicle kit locks the vehicle (new append-only `VehicleLock` {keyId, owner, issued}; keyId is a stable per-world id, max+1) and gives the deployer a `vehicle_key` item (maxStack 1) whose slot `crafterId` holds the keyId — the item's instance data, so it syncs through the existing owner-only Inventory/Container replication, persists with the slots, and keeps its binding when stored, traded, looted or dropped in a death bag (`moveSlotTuples` carries crafterId). Tooltip shows a short code (`keyCode`, e.g. `K-3F9A`), or "vehicle destroyed" once the vehicle entity is gone (the key opens nothing). `validateEnter` requires the matching key in the actor's Inventory for seat 0 (auto-seat 255 skips the driver seat without it); `validateVehicleToggle` requires it to switch the engine on; passengers need none. New reject reason `no_key` appended to COMMAND_REJECT_REASONS. AI humans drive through the same command path, so a bot holding the key can drive. Legacy vehicles (no VehicleLock) are migrated by `keyIssueSystem` (authority, every 20 ticks from vehicleSystem): crafted ones (VehicleCondition.crafterId) lock and their key is handed to the owner when that player is present (`issued` flag, once); world-spawned ones get keyId 0 and stay open.
 **Why.** Owner request: vehicles should be theft-able only by taking the key.
 **Consequences.** Schema hash 85da6c05 → 9230b2f4 (appended `VehicleLock`). No new AnimState values. Art: `vehicle_key` icon.
+
+## ADR-110: Wildlife, farming, flora and ground clutter
+
+**Context.** The world needed more to hunt and gather, plus real farming: you get seeds by harvesting wild plants and crops, then plant them on your own land.
+
+**Decision.**
+- **Wildlife.** 16 new animal archetypes were appended to `ai.json`, keeping the existing `Animal.kind` indices.
+  - Passive: stag, red deer, fox, hare, squirrel, turkey, duck, sheep.
+  - Defensive: elk, goose, goat, cow, bison.
+  - Territorial: moose, bear, snake.
+  - Each animal has data-driven loot. Depending on species this is meat cuts (venison, poultry, small game, prime cut), hide, fur, bone, fat, feathers, antler, wool, milk or snake skin.
+  - Matching spawn rows were appended to `spawns.json`, with small biome-weighted caps.
+  - `installPopulation({ animalCapMul })` scales the animal per-chunk and global caps. The local host passes `clamp(maxBots / 32, 0.4, 1)`, multiplied by 0.6 under `?gl=lowend` or `?safe=1`, so mobile hosts get fewer animals.
+- **Recipes.** New recipes cover tallow and tallow candles, bone meal and fertilizer, a bone needle, knife and axe, an antler pickaxe, bone arrows, wool and snakeskin processing, leather and wool clothing, a fur vest, a hoe, a watering can, cooked cuts and meals. Tanning (hide → leather) already existed.
+- **Farming.** Configured in `data/farming.json` and implemented in `src/farming.ts`. There are 34 plantables: 19 crops, 4 berry bushes and 11 tree saplings, 5 of them fruit trees.
+  - Use a hoe to till the tile in front of you. This creates a `Crop` entity with kind 0 (tilled soil).
+  - Using a crop seed on tilled soil plants it. Saplings and berry seeds plant on any free allowed tile.
+  - You can't plant inside someone else's claim. Plants need ≥0.9 tiles of spacing.
+  - Water from the watering can or rain gives full speed for 10 minutes. Unwatered plants grow at 0.5×. Fertilizer adds 1.5× until the plant matures.
+  - Crops mature in 6–18 minutes, bushes in 15 and trees in 28–40, all within a 1-hour day.
+  - `Crop {kind, stage, growth, waterUntilTick, fertilized}` is networked and persistent. It is appended at the end of `GAMEPLAY_COMPONENTS`.
+  - When a plant matures it becomes a resource node. `crop_*` nodes are `oneShot`: they are destroyed when depleted and yield produce plus seeds at 0.6. Trees and bushes regrow normally.
+  - Seeds come only from gathering: wild crops drop them at 0.3, and wild trees and bushes drop saplings or seeds. No recipe makes them (this is tested).
+- **Flora.** New nodes include:
+  - Trees: pine, birch, maple, willow, palm.
+  - Fruit trees: apple, pear, cherry, orange, peach. They need no tool and regrow in 300 s.
+  - Bushes: blueberry, raspberry, blackberry, strawberry, fiber, dry shrub.
+  - Logs and stumps: fallen log, mossy log, tree stump, rotten stump.
+  - Other: 16 wild crops and a shoreline fish shoal.
+  - Worldgen places these per biome. Node chance is slightly higher: sand 0.025, grass 0.045, forest 0.09.
+- **Clutter.** `clutterForChunk` places clutter deterministically from a hash of the tile and biome. It is render-only: no ECS entity on the server and no network traffic.
+  - The client creates view-World sprites for chunks near the camera.
+  - Normal quality: density 1, 2-chunk radius, 1600-sprite cap.
+  - Lowend or safe mode: density 0.35, 1-chunk radius, 400-sprite cap.
+  - `?clutter=0` turns it off. If the art is missing, nothing is drawn.
+- **Rendering.** `*_tree` nodes are drawn tall, act as occluders and sway. `*_bush` nodes sway. Crops are drawn with `farm_soil`, `crop_<plant>_<stage>` or `sapling_<key>_<stage>`.
+
+**Consequences.** The schema hash is now b39d3a19 (was 9230b2f4). Existing worlds keep their animal and item ids, since `ids.lock.json` was regenerated with the new ids appended.

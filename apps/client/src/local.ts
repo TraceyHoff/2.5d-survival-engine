@@ -17,6 +17,9 @@ import { Act, applyDemoInput, VEHICLE_CLIENT_OPTIONS, installDemoWorld, DEMO_COM
 /** Device-scaled default bot cap (ADR-105): phones get far fewer bots than desktops. */
 export const MOBILE_MAX_BOTS = 8;
 export const DESKTOP_MAX_BOTS = 32;
+/** ADR-110: wildlife caps follow the bot budget (mobile hosts get fewer animals), x0.6 under ?gl=lowend / ?safe=1. */
+export function animalCapMulFor(maxBots: number, lowEnd = false): number { return Math.min(1, Math.max(0.4, maxBots / DESKTOP_MAX_BOTS)) * (lowEnd ? 0.6 : 1); }
+function lowEndQuery(): boolean { try { const q = new URLSearchParams(globalThis.location?.search ?? ""); return q.get("gl") === "lowend" || q.get("safe") === "1"; } catch { return false; } }
 export function defaultMaxBots(d: DeviceHints = detectDevice()): number { return isMobileHost(d) ? MOBILE_MAX_BOTS : DESKTOP_MAX_BOTS; }
 
 export interface LocalServerOptions {
@@ -32,6 +35,8 @@ export interface LocalServerOptions {
    * `defaultMaxBots()` = MOBILE_MAX_BOTS on phones / tablets (coarse pointer or UA mobile), DESKTOP_MAX_BOTS elsewhere.
    */
   maxBots?: number;
+  /** ADR-110: low-end quality (fewer animals); default from ?gl=lowend / ?safe=1. */
+  lowEnd?: boolean;
   /** Unused (kept for API compatibility); bot behavior is seeded from the world seed. */
   rng?: () => number; log?: (s: string) => void;
   /** Cosmetics catalog: enables customization + random placeholder appearances (players and bots). */
@@ -112,6 +117,7 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
   const maxBots = Math.max(0, Math.floor(o.maxBots ?? defaultMaxBots()));
   const connectBot = (x: number, y: number): boolean => { if (bots.length + queued.length + inflight >= maxBots) return false; queued.push({ x, y }); return true; };
   const game = createGameServer({
+    animalCapMul: animalCapMulFor(maxBots, o.lowEnd ?? lowEndQuery()),
     transport: serverTransport, ...(store ? { store } : {}), seed, mode,
     ...(o.maxClients !== undefined ? { maxClients: o.maxClients } : {}), ...(o.serverFullDetail ? { serverFullDetail: o.serverFullDetail } : {}), ...(o.log ? { log: o.log } : {}), ...(o.catalog ? { catalog: o.catalog, randomAppearance: true } : {}),
     ...(o.population === false ? { population: false } : {}), ...(o.distantThrottle ? { distantThrottle: o.distantThrottle } : {}),

@@ -51,6 +51,8 @@ export interface GameServerOptions {
   spawnPoints?: readonly { x: number; y: number }[];
   /** Ambient population (zombies, animals, bots via PopulationSpawner). Default true. */
   population?: boolean;
+  /** ADR-110: animal spawn-cap multiplier (mobile / lowend local hosts). */
+  animalCapMul?: number;
   /** Player cap (all sessions, incl. a P2P host's own client); extra joins get RejectReason.ServerFull + serverFullDetail. */
   maxClients?: number;
   serverFullDetail?: string;
@@ -390,7 +392,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
   persist?.attach(chunks);
   // Ambient population: zombies + animals everywhere; human bots only in singleplayer (mode.humanBots).
   const population = o.population === false ? undefined : installPopulation(world, {
-    tickHz,
+    tickHz, ...(o.animalCapMul !== undefined ? { animalCapMul: o.animalCapMul } : {}),
     chunks: () => chunks.activeKeys,
     tileAt: (tx, ty) => chunks.getTile(tx, ty),
     viewpoints: () => { const v: { x: number; y: number }[] = []; for (const p of players.values()) { if (p.bot) continue; const t = world.get(p.entity, Transform); if (t) v.push({ x: t.x, y: t.y }); } return v; },

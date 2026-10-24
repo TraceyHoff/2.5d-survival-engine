@@ -69,7 +69,7 @@ export interface RecipeDef { readonly id: number; readonly key: string; readonly
 export interface YieldDef { readonly item: number; readonly min: number; readonly max: number; readonly chance: number }
 export interface ResourceDef extends Visual {
   readonly id: number; readonly key: string; readonly requiredTool: ToolKind; readonly minTier: number; readonly capacity: number;
-  readonly respawnSeconds: number; readonly cooldownSeconds: number; readonly staminaCost: number; readonly bonusPerTier: number; readonly yields: readonly YieldDef[];
+  readonly respawnSeconds: number; readonly cooldownSeconds: number; readonly staminaCost: number; readonly bonusPerTier: number; readonly yields: readonly YieldDef[]; /** ADR-110: removed when depleted (harvested crops) */ readonly oneShot: boolean;
 }
 export interface WeatherDef {
   readonly kind: WeatherKind; readonly weight: number; readonly durationSeconds: readonly [number, number]; readonly intensity: readonly [number, number];
@@ -220,7 +220,7 @@ export interface RawItem extends RawVisual { key: string; name: string; category
   ranged?: Omit<RangedDef, "ammo" | "chargeSeconds" | "minChargeMul" | "staminaCost" | "structureMul"> & { ammo: string[]; chargeSeconds?: number; minChargeMul?: number; staminaCost?: number; structureMul?: number };
   thrown?: ThrownDef; ammo?: { damageMul: number; structureMul?: number; armorPierce?: number; ignite?: boolean }; explosive?: Omit<ExplosiveDef, "ignite"> & { ignite?: boolean } }
 export interface RawRecipe { key: string; station: string; seconds: number; ingredients: { item: string; count: number }[]; output: { item: string; count: number }; skill?: { key: string; level: number } }
-export interface RawResource extends RawVisual { key: string; requiredTool: string; minTier: number; capacity: number; respawnSeconds: number; cooldownSeconds: number; staminaCost: number; bonusPerTier: number; yields: { item: string; min: number; max: number; chance: number }[] }
+export interface RawResource extends RawVisual { key: string; requiredTool: string; minTier: number; capacity: number; respawnSeconds: number; cooldownSeconds: number; staminaCost: number; bonusPerTier: number; yields: { item: string; min: number; max: number; chance: number }[]; oneShot?: boolean }
 export interface RawWeather { kind: string; weight: number; durationSeconds: number[]; intensity: number[]; tempOffset: number; wetnessPerSec: number; thirstMul: number; staminaRegenMul: number; windSpeed?: number[] }
 export interface RawPiece extends RawVisual {
   key: string; placement: string; layer?: number; footprint?: { w: number; h: number }; levels?: number; solid?: boolean; hp: number;
@@ -345,7 +345,7 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
     });
     if (yields.length === 0) err(`${where}: needs at least one yield`);
     const id = resR.reg.tryId(r.key) ?? 0;
-    resources.set(id, { id, key: r.key, ...visual(r.key, r.sprite), requiredTool: enumOf(TOOL, r.requiredTool, `${where}.requiredTool`), minTier: r.minTier, capacity: r.capacity, respawnSeconds: r.respawnSeconds, cooldownSeconds: r.cooldownSeconds, staminaCost: r.staminaCost, bonusPerTier: r.bonusPerTier, yields });
+    resources.set(id, { id, key: r.key, ...visual(r.key, r.sprite), requiredTool: enumOf(TOOL, r.requiredTool, `${where}.requiredTool`), minTier: r.minTier, capacity: r.capacity, respawnSeconds: r.respawnSeconds, cooldownSeconds: r.cooldownSeconds, staminaCost: r.staminaCost, bonusPerTier: r.bonusPerTier, yields, oneShot: r.oneShot === true });
   }
 
   const env = raw.environment;

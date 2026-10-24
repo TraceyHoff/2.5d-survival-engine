@@ -88,5 +88,6 @@ export function gatherSystem(world: World, dt: number): void {
       emit(world, NodeDepleted, { node, kind: def.id });
     }
     rn.markChanged(nIdx);
+    if (left === 0 && def.oneShot) world.destroy(node); // ADR-110: harvested crop
   }
 }

@@ -13,9 +13,9 @@ describe("population data", () => {
   it("shipped data validates", () => {
     expect(validateAiData(ai)).toEqual([]); expect(validateSpawnData(spawns, ai)).toEqual([]); expect(validateBotData(bots, ai)).toEqual([]);
   });
-  it("covers zombies, the five animals (art keys) and five human archetypes", () => {
+  it("covers zombies, the animals (art keys) and five human archetypes", () => {
     expect(spawns.tables.zombies.map((e) => e.kind)).toEqual(["zombie_walker", "zombie_runner", "zombie_brute", "zombie_snuffer"]);
-    expect(spawns.tables.animals.map((e) => e.kind)).toEqual(["animal_rabbit", "animal_deer", "animal_boar", "animal_wolf", "animal_chicken"]);
+    expect(spawns.tables.animals.map((e) => e.kind)).toEqual(["animal_rabbit", "animal_deer", "animal_boar", "animal_wolf", "animal_chicken", "animal_stag", "animal_red_deer", "animal_elk", "animal_moose", "animal_bear", "animal_fox", "animal_hare", "animal_squirrel", "animal_turkey", "animal_duck", "animal_goose", "animal_goat", "animal_sheep", "animal_cow", "animal_bison", "animal_snake"]); // ADR-110 appended 16
     expect(Object.values(bots.archetypes).map((b) => b.role)).toEqual(["gatherer", "builder", "trader", "raider", "loner"]);
   });
   it("reuses zombies.json stats and phase rates", () => {

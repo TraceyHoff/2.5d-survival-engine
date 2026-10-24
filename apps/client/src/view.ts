@@ -13,7 +13,7 @@ import { World, Transform, PrevTransform, TimeOfDay, Weather, Appearance, Player
 import { CHUNK_SIZE, tileToChunk, tileToLocal, type TileMap } from "@engine/world";
 import { loadManifest, mergeManifests, buildPieceVisual, type AssetRegistry, type ManifestFragment, type ManifestJson } from "@engine/assets";
 import { BuildGhost, pieceArtRow, ROT_EXACT_PIVOT, IsoRenderer, Sprite, Shadow, LightSource, Occluder, SpriteFlag, sourcesFromManifest, coreAppearanceBinding, CameraTargetGuard } from "@engine/render";
-import { gameplayDefs, rotationSteps, animalDefs, Animal, Health, Survival, Zombie, ResourceNode, CraftingStation, Fuel, AnimState as GAnim, BuildPiece as GPiece, Dead, Wetness, BodyTemp, Emitter, PieceLink } from "@engine/gameplay";
+import { gameplayDefs, rotationSteps, animalDefs, Animal, Health, Survival, Zombie, ResourceNode, CraftingStation, Fuel, AnimState as GAnim, BuildPiece as GPiece, Dead, Wetness, BodyTemp, Emitter, PieceLink, Crop, cropSpriteKey, clutterForChunk } from "@engine/gameplay";
 
 /** Render-side schemas the renderer's bindings expect (view World only). */
 const VAnim = defineComponent("ViewAnimState", { state: "u8", startTick: "u32" });
@@ -29,6 +29,9 @@ import { LightTable, type LightSpec } from "./lights.js";
 /** `?cam=animal`: debug camera that follows the first ambient animal instead of the player. */
 const CAM_ANIMAL = typeof location !== "undefined" && new URLSearchParams(location.search).get("cam") === "animal";
 /** Max bytes for the sprite texture array (mips included) before customization layers are dropped. */
+/** ADR-110 clutter quality: lowend / safe = 0.35 density, radius 1 chunk, 400 sprites; else 1, 2 chunks, 1600. */
+const CLUTTER = (() => { const q = new URLSearchParams(globalThis.location?.search ?? ""); const low = q.get("gl") === "lowend" || q.get("safe") === "1";
+  return q.get("clutter") === "0" ? { density: 0, radius: 0, cap: 0 } : low ? { density: 0.35, radius: 1, cap: 400 } : { density: 1, radius: 2, cap: 1600 }; })();
 /** ?gl=lowend: characters beyond the nearest N draw body-only. */
 const DRESSED_LOWEND = 8;
 let lowendDress = false;
@@ -199,11 +202,13 @@ export class IsoView {
         if (!a && v.has(ve, Appearance)) v.remove(ve, Appearance); const va = a ? v.get(ve, Appearance) : undefined;
         if (a && (!va || va.version !== a.version)) { const init = { bodyType: a.bodyType, skinTone: a.skinTone, version: a.version, parts: [...a.parts], primary: [...a.primary], secondary: [...a.secondary] }; if (va) v.set(ve, Appearance, init); else v.add(ve, Appearance, init); }
       }
+      if (v.has(ve, Sprite) && net.has(e, Crop)) { const c = net.get(e, Crop)!; const s = this.sid(cropSpriteKey(c.kind, c.stage)); if (s !== undefined && v.get(ve, Sprite)!.spriteId !== s) v.set(ve, Sprite, { spriteId: s }); }
       if (v.has(ve, VPiece)) this.syncPieceState(net, e, ve, defs);
       if (v.has(ve, VFuel)) { const f = net.get(e, Fuel); if (f) v.set(ve, VFuel, { lit: f.lit, burnUntilTick: f.burnUntilTick }); }
     }
     for (const [ne, ve] of this.map) if (!seen.has(ne)) { v.destroy(ve); this.map.delete(ne); this.lightOf.delete(ne); this.pieceStates.delete(ve); this.lastMove.delete(ne); this.animalHp.delete(ne); this.animalSfxAt.delete(ne); this.animalPrev.delete(ne); this.scales.delete(ve); }
 
+    this.syncClutter(tiles, ground);
     const camE = CAM_ANIMAL && this.camAnimal !== undefined ? this.camAnimal : player;
     const pv = camE !== undefined ? this.map.get(camE) : undefined;
     let want: { x: number; y: number; z: number } | undefined;
@@ -222,6 +227,27 @@ export class IsoView {
     }
   }
   private checks = 0; private blackFrames = 0;
+  /** ADR-110 render-only ground clutter: view-World sprites for chunks around the camera (never networked). Density 1,
+   *  ~0.35 under ?gl=lowend / ?safe=1; hard cap on live sprites; ?clutter=0 disables. Missing clutter_* art = nothing. */
+  private clutter = new Map<string, Entity[]>(); private clutterFrame = 0; private clutterCount = 0;
+  private syncClutter(tiles: TileMap | undefined, ground: (x: number, y: number, z: number) => number): void {
+    if (!tiles || CLUTTER.density <= 0 || ++this.clutterFrame % 15 !== 1) return;
+    const v = this.view; const ccx = tileToChunk(Math.floor(this.renderer.camera.x)), ccy = tileToChunk(Math.floor(this.renderer.camera.y)); const R = CLUTTER.radius;
+    for (const [k, list] of this.clutter) { const [x, y] = k.split(",").map(Number) as [number, number];
+      if (Math.abs(x - ccx) > R + 1 || Math.abs(y - ccy) > R + 1) { for (const ve of list) v.destroy(ve); this.clutterCount -= list.length; this.clutter.delete(k); } }
+    for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
+      const cx = ccx + dx, cy = ccy + dy, k = `${cx},${cy}`; if (this.clutter.has(k) || !tiles.getChunk(cx, cy)) continue;
+      const list: Entity[] = [];
+      for (const it of clutterForChunk(0x5eed, cx, cy, CHUNK_SIZE, (tx, ty) => tiles.getTile(tx, ty), CLUTTER.density)) {
+        if (this.clutterCount + list.length >= CLUTTER.cap) break;
+        const s = this.sid(it.key); if (s === undefined) continue;
+        const ve = v.create(); const z = ground(it.x, it.y, 0);
+        v.add(ve, Transform, { x: it.x, y: it.y, z, facing: 0 }).add(ve, PrevTransform, { x: it.x, y: it.y, z, facing: 0 }).add(ve, Sprite, { spriteId: s, frameId: 0, flags: it.flip ? SpriteFlag.FlipX : 0, scale: it.scale, tint: 0 });
+        list.push(ve);
+      }
+      this.clutter.set(k, list); this.clutterCount += list.length;
+    }
+  }
   /** Set by the app each frame (local-server state, snapshots received, startup error) for diag + the camera fallback. */
   status: ViewStatus | undefined;
   readonly camGuard = new CameraTargetGuard(CAMERA_FALLBACK, CAMERA_GRACE_FRAMES);
@@ -295,9 +321,13 @@ export class IsoView {
     if (net.has(e, ResourceNode)) {
       const n = net.get(e, ResourceNode)!; const key = defs?.resources.get(n.kind)?.spriteKey;
       const s = this.sid(key); if (s === undefined) return undefined;
-      const tall = key === "tree" || key?.startsWith("tree_");
+      const tall = key === "tree" || !!key?.startsWith("tree_") || !!key?.endsWith("_tree"); // ADR-110 species: <x>_tree
       const scale = tall ? 1.1 + (h % 50) / 100 : 1;
-      return { sprite: s, flags: (h & 1 ? SpriteFlag.FlipX : 0) | (tall || key === "berry_bush" ? SpriteFlag.Sway : 0), scale, shadow: 0.9, occluder: !!tall, onCreate: scale };
+      return { sprite: s, flags: (h & 1 ? SpriteFlag.FlipX : 0) | (tall || !!key?.endsWith("_bush") ? SpriteFlag.Sway : 0), scale, shadow: 0.9, occluder: !!tall, onCreate: scale };
+    }
+    if (net.has(e, Crop)) { // ADR-110: farm_soil / crop_<plant>_<stage> / sapling_<tree|bush>_<stage> (stage synced per frame)
+      const c = net.get(e, Crop)!; const s = this.sid(cropSpriteKey(c.kind, c.stage)) ?? this.sid(cropSpriteKey(c.kind, 0)); if (s === undefined) return undefined;
+      return { sprite: s, flags: (h & 1 ? SpriteFlag.FlipX : 0) | (c.kind > 0 ? SpriteFlag.Sway : 0), shadow: c.kind > 0 ? 0.5 : 0 };
     }
     // Piece attachments (fire/fuel, light, door, storage) share the piece's position: no sprite of their own, but a
     // light Emitter (kind 2) or a fired attachment becomes a renderer light keyed by the owning piece.

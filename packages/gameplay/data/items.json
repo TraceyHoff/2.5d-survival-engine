@@ -3560,6 +3560,1007 @@
       "maxStack": 1,
       "weight": 0.05,
       "tradeable": true
+    },
+    {
+      "key": "raw_venison",
+      "name": "Raw Venison",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.4,
+      "food": {
+        "hunger": 9,
+        "thirst": 0,
+        "health": -5
+      },
+      "spoilSeconds": 900
+    },
+    {
+      "key": "cooked_venison",
+      "name": "Cooked Venison",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.3,
+      "food": {
+        "hunger": 34,
+        "thirst": 0,
+        "health": 6
+      },
+      "spoilSeconds": 2400
+    },
+    {
+      "key": "raw_poultry",
+      "name": "Raw Poultry",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.3,
+      "food": {
+        "hunger": 6,
+        "thirst": 0,
+        "health": -6
+      },
+      "spoilSeconds": 700
+    },
+    {
+      "key": "cooked_poultry",
+      "name": "Cooked Poultry",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.25,
+      "food": {
+        "hunger": 24,
+        "thirst": 0,
+        "health": 4
+      },
+      "spoilSeconds": 2000
+    },
+    {
+      "key": "raw_small_game",
+      "name": "Raw Small Game",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.2,
+      "food": {
+        "hunger": 4,
+        "thirst": 0,
+        "health": -4
+      },
+      "spoilSeconds": 700
+    },
+    {
+      "key": "cooked_small_game",
+      "name": "Cooked Small Game",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.15,
+      "food": {
+        "hunger": 16,
+        "thirst": 0,
+        "health": 3
+      },
+      "spoilSeconds": 2000
+    },
+    {
+      "key": "raw_prime_cut",
+      "name": "Raw Prime Cut",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.6,
+      "food": {
+        "hunger": 12,
+        "thirst": 0,
+        "health": -5
+      },
+      "spoilSeconds": 900
+    },
+    {
+      "key": "cooked_prime_cut",
+      "name": "Cooked Prime Cut",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.5,
+      "food": {
+        "hunger": 45,
+        "thirst": 0,
+        "health": 8
+      },
+      "spoilSeconds": 2400
+    },
+    {
+      "key": "milk",
+      "name": "Milk",
+      "category": "food",
+      "maxStack": 10,
+      "weight": 0.4,
+      "food": {
+        "hunger": 4,
+        "thirst": 18,
+        "health": 1
+      },
+      "spoilSeconds": 900
+    },
+    {
+      "key": "tallow",
+      "name": "Tallow",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.2,
+      "fuelSeconds": 45
+    },
+    {
+      "key": "antler",
+      "name": "Antler",
+      "category": "resource",
+      "maxStack": 20,
+      "weight": 0.5
+    },
+    {
+      "key": "wool",
+      "name": "Wool",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.05
+    },
+    {
+      "key": "snake_skin",
+      "name": "Snake Skin",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 0.1
+    },
+    {
+      "key": "bone_meal",
+      "name": "Bone Meal",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.1
+    },
+    {
+      "key": "tallow_candle",
+      "name": "Tallow Candle",
+      "category": "resource",
+      "maxStack": 20,
+      "weight": 0.1,
+      "fuelSeconds": 180
+    },
+    {
+      "key": "bone_needle",
+      "name": "Bone Needle",
+      "category": "resource",
+      "maxStack": 20,
+      "weight": 0.02
+    },
+    {
+      "key": "bone_knife",
+      "name": "Bone Knife",
+      "category": "tool",
+      "maxStack": 1,
+      "weight": 0.3,
+      "tool": {
+        "kind": "knife",
+        "tier": 1
+      },
+      "weapon": {
+        "damage": 8,
+        "range": 1.0,
+        "cooldownSeconds": 0.5,
+        "staminaCost": 3,
+        "structureMul": 0.2
+      },
+      "tier": 1,
+      "family": "knife",
+      "durability": 110
+    },
+    {
+      "key": "bone_axe",
+      "name": "Bone Axe",
+      "category": "tool",
+      "maxStack": 1,
+      "weight": 0.9,
+      "tool": {
+        "kind": "axe",
+        "tier": 1
+      },
+      "weapon": {
+        "damage": 10,
+        "range": 1.2,
+        "cooldownSeconds": 0.8,
+        "staminaCost": 5,
+        "structureMul": 0.6
+      },
+      "tier": 1,
+      "family": "axe",
+      "durability": 120
+    },
+    {
+      "key": "antler_pickaxe",
+      "name": "Antler Pickaxe",
+      "category": "tool",
+      "maxStack": 1,
+      "weight": 1.0,
+      "tool": {
+        "kind": "pickaxe",
+        "tier": 1
+      },
+      "weapon": {
+        "damage": 9,
+        "range": 1.2,
+        "cooldownSeconds": 0.9,
+        "staminaCost": 5,
+        "structureMul": 0.6
+      },
+      "tier": 1,
+      "family": "pickaxe",
+      "durability": 130
+    },
+    {
+      "key": "bone_arrow",
+      "name": "Bone Arrow",
+      "category": "ammo",
+      "maxStack": 50,
+      "weight": 0.04,
+      "tier": 1,
+      "family": "arrow",
+      "ammo": {
+        "damageMul": 0.9,
+        "structureMul": 1
+      }
+    },
+    {
+      "key": "wool_cloth",
+      "name": "Wool Cloth",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 0.2
+    },
+    {
+      "key": "leather_cap",
+      "name": "Leather Cap",
+      "category": "clothing",
+      "maxStack": 1,
+      "weight": 0.3,
+      "tier": 2,
+      "family": "leathercap",
+      "wear": {
+        "slot": "head",
+        "insulation": 1,
+        "waterproof": 0.3,
+        "armor": 1
+      }
+    },
+    {
+      "key": "leather_jacket",
+      "name": "Leather Jacket",
+      "category": "clothing",
+      "maxStack": 1,
+      "weight": 1.5,
+      "tier": 2,
+      "family": "leatherjacket",
+      "wear": {
+        "slot": "torso",
+        "insulation": 3,
+        "waterproof": 0.4,
+        "armor": 2
+      }
+    },
+    {
+      "key": "leather_trousers",
+      "name": "Leather Trousers",
+      "category": "clothing",
+      "maxStack": 1,
+      "weight": 1.2,
+      "tier": 2,
+      "family": "leathertrousers",
+      "wear": {
+        "slot": "legs",
+        "insulation": 2,
+        "waterproof": 0.4,
+        "armor": 2
+      }
+    },
+    {
+      "key": "wool_sweater",
+      "name": "Wool Sweater",
+      "category": "clothing",
+      "maxStack": 1,
+      "weight": 0.8,
+      "tier": 2,
+      "family": "sweater",
+      "wear": {
+        "slot": "torso",
+        "insulation": 5,
+        "waterproof": 0.1
+      }
+    },
+    {
+      "key": "wool_hat",
+      "name": "Wool Hat",
+      "category": "clothing",
+      "maxStack": 1,
+      "weight": 0.2,
+      "tier": 2,
+      "family": "woolhat",
+      "wear": {
+        "slot": "head",
+        "insulation": 2.5,
+        "waterproof": 0.1
+      }
+    },
+    {
+      "key": "fur_vest",
+      "name": "Fur Vest",
+      "category": "clothing",
+      "maxStack": 1,
+      "weight": 1.2,
+      "tier": 3,
+      "family": "furvest",
+      "wear": {
+        "slot": "torso",
+        "insulation": 6,
+        "waterproof": 0.2,
+        "armor": 1
+      }
+    },
+    {
+      "key": "snakeskin_boots",
+      "name": "Snakeskin Boots",
+      "category": "clothing",
+      "maxStack": 1,
+      "weight": 0.6,
+      "tier": 2,
+      "family": "boots",
+      "wear": {
+        "slot": "feet",
+        "insulation": 1,
+        "waterproof": 0.6,
+        "armor": 1
+      }
+    },
+    {
+      "key": "hoe",
+      "name": "Hoe",
+      "category": "resource",
+      "maxStack": 1,
+      "weight": 1.0
+    },
+    {
+      "key": "watering_can",
+      "name": "Watering Can",
+      "category": "resource",
+      "maxStack": 1,
+      "weight": 1.0
+    },
+    {
+      "key": "fertilizer",
+      "name": "Fertilizer",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 0.3
+    },
+    {
+      "key": "wheat",
+      "name": "Wheat",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.05
+    },
+    {
+      "key": "tomato",
+      "name": "Tomato",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.15,
+      "food": {
+        "hunger": 6,
+        "thirst": 8,
+        "health": 0
+      },
+      "spoilSeconds": 1400
+    },
+    {
+      "key": "pumpkin",
+      "name": "Pumpkin",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.15,
+      "food": {
+        "hunger": 14,
+        "thirst": 6,
+        "health": 0
+      },
+      "spoilSeconds": 4800
+    },
+    {
+      "key": "squash",
+      "name": "Squash",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.15,
+      "food": {
+        "hunger": 10,
+        "thirst": 5,
+        "health": 0
+      },
+      "spoilSeconds": 3600
+    },
+    {
+      "key": "beans",
+      "name": "Beans",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.15,
+      "food": {
+        "hunger": 8,
+        "thirst": 0,
+        "health": 0
+      },
+      "spoilSeconds": 7200
+    },
+    {
+      "key": "cabbage",
+      "name": "Cabbage",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.15,
+      "food": {
+        "hunger": 8,
+        "thirst": 6,
+        "health": 1
+      },
+      "spoilSeconds": 2400
+    },
+    {
+      "key": "onion",
+      "name": "Onion",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.15,
+      "food": {
+        "hunger": 4,
+        "thirst": 2,
+        "health": 0
+      },
+      "spoilSeconds": 4800
+    },
+    {
+      "key": "garlic",
+      "name": "Garlic",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.15,
+      "food": {
+        "hunger": 2,
+        "thirst": 0,
+        "health": 2
+      },
+      "spoilSeconds": 7200
+    },
+    {
+      "key": "hemp",
+      "name": "Hemp",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.05
+    },
+    {
+      "key": "yarrow",
+      "name": "Yarrow",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.15,
+      "food": {
+        "hunger": 0,
+        "thirst": 0,
+        "health": 10
+      },
+      "spoilSeconds": 2400
+    },
+    {
+      "key": "ginseng",
+      "name": "Ginseng",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.15,
+      "food": {
+        "hunger": 2,
+        "thirst": 0,
+        "health": 14
+      },
+      "spoilSeconds": 3600
+    },
+    {
+      "key": "aloe",
+      "name": "Aloe Vera",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.15,
+      "food": {
+        "hunger": 0,
+        "thirst": 4,
+        "health": 12
+      },
+      "spoilSeconds": 2400
+    },
+    {
+      "key": "blueberry",
+      "name": "Blueberries",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.1,
+      "food": {
+        "hunger": 10,
+        "thirst": 5,
+        "health": 1
+      },
+      "spoilSeconds": 1200
+    },
+    {
+      "key": "raspberry",
+      "name": "Raspberries",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.1,
+      "food": {
+        "hunger": 10,
+        "thirst": 5,
+        "health": 0
+      },
+      "spoilSeconds": 1200
+    },
+    {
+      "key": "blackberry",
+      "name": "Blackberries",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.1,
+      "food": {
+        "hunger": 11,
+        "thirst": 5,
+        "health": 0
+      },
+      "spoilSeconds": 1200
+    },
+    {
+      "key": "strawberry",
+      "name": "Strawberries",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.1,
+      "food": {
+        "hunger": 9,
+        "thirst": 6,
+        "health": 1
+      },
+      "spoilSeconds": 1200
+    },
+    {
+      "key": "pear",
+      "name": "Pear",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.15,
+      "food": {
+        "hunger": 10,
+        "thirst": 7,
+        "health": 0
+      },
+      "spoilSeconds": 2400
+    },
+    {
+      "key": "cherry",
+      "name": "Cherries",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.15,
+      "food": {
+        "hunger": 8,
+        "thirst": 5,
+        "health": 0
+      },
+      "spoilSeconds": 2400
+    },
+    {
+      "key": "orange",
+      "name": "Orange",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.15,
+      "food": {
+        "hunger": 9,
+        "thirst": 10,
+        "health": 1
+      },
+      "spoilSeconds": 2400
+    },
+    {
+      "key": "peach",
+      "name": "Peach",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.15,
+      "food": {
+        "hunger": 10,
+        "thirst": 8,
+        "health": 0
+      },
+      "spoilSeconds": 2400
+    },
+    {
+      "key": "wheat_seeds",
+      "name": "Wheat Seeds",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.01
+    },
+    {
+      "key": "corn_seeds",
+      "name": "Corn Seeds",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.01
+    },
+    {
+      "key": "seed_potato",
+      "name": "Seed Potato",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.01
+    },
+    {
+      "key": "carrot_seeds",
+      "name": "Carrot Seeds",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.01
+    },
+    {
+      "key": "tomato_seeds",
+      "name": "Tomato Seeds",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.01
+    },
+    {
+      "key": "pumpkin_seeds",
+      "name": "Pumpkin Seeds",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.01
+    },
+    {
+      "key": "squash_seeds",
+      "name": "Squash Seeds",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.01
+    },
+    {
+      "key": "beans_seeds",
+      "name": "Bean Seeds",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.01
+    },
+    {
+      "key": "cabbage_seeds",
+      "name": "Cabbage Seeds",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.01
+    },
+    {
+      "key": "onion_seeds",
+      "name": "Onion Seeds",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.01
+    },
+    {
+      "key": "garlic_clove",
+      "name": "Garlic Clove",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.01
+    },
+    {
+      "key": "cotton_seeds",
+      "name": "Cotton Seeds",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.01
+    },
+    {
+      "key": "flax_seeds",
+      "name": "Flax Seeds",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.01
+    },
+    {
+      "key": "hemp_seeds",
+      "name": "Hemp Seeds",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.01
+    },
+    {
+      "key": "herbs_seeds",
+      "name": "Herb Seeds",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.01
+    },
+    {
+      "key": "mushroom_spores",
+      "name": "Mushroom Spores",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.01
+    },
+    {
+      "key": "yarrow_seeds",
+      "name": "Yarrow Seeds",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.01
+    },
+    {
+      "key": "ginseng_seeds",
+      "name": "Ginseng Seeds",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.01
+    },
+    {
+      "key": "aloe_seeds",
+      "name": "Aloe Vera Seeds",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.01
+    },
+    {
+      "key": "blueberry_seeds",
+      "name": "Blueberry Seeds",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.01
+    },
+    {
+      "key": "raspberry_seeds",
+      "name": "Raspberry Seeds",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.01
+    },
+    {
+      "key": "blackberry_seeds",
+      "name": "Blackberry Seeds",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.01
+    },
+    {
+      "key": "strawberry_seeds",
+      "name": "Strawberry Seeds",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.01
+    },
+    {
+      "key": "oak_sapling",
+      "name": "Oak Sapling",
+      "category": "resource",
+      "maxStack": 10,
+      "weight": 0.3
+    },
+    {
+      "key": "pine_sapling",
+      "name": "Pine Sapling",
+      "category": "resource",
+      "maxStack": 10,
+      "weight": 0.3
+    },
+    {
+      "key": "birch_sapling",
+      "name": "Birch Sapling",
+      "category": "resource",
+      "maxStack": 10,
+      "weight": 0.3
+    },
+    {
+      "key": "maple_sapling",
+      "name": "Maple Sapling",
+      "category": "resource",
+      "maxStack": 10,
+      "weight": 0.3
+    },
+    {
+      "key": "willow_sapling",
+      "name": "Willow Sapling",
+      "category": "resource",
+      "maxStack": 10,
+      "weight": 0.3
+    },
+    {
+      "key": "palm_sapling",
+      "name": "Palm Sapling",
+      "category": "resource",
+      "maxStack": 10,
+      "weight": 0.3
+    },
+    {
+      "key": "apple_sapling",
+      "name": "Apple Sapling",
+      "category": "resource",
+      "maxStack": 10,
+      "weight": 0.3
+    },
+    {
+      "key": "pear_sapling",
+      "name": "Pear Sapling",
+      "category": "resource",
+      "maxStack": 10,
+      "weight": 0.3
+    },
+    {
+      "key": "cherry_sapling",
+      "name": "Cherry Sapling",
+      "category": "resource",
+      "maxStack": 10,
+      "weight": 0.3
+    },
+    {
+      "key": "orange_sapling",
+      "name": "Orange Sapling",
+      "category": "resource",
+      "maxStack": 10,
+      "weight": 0.3
+    },
+    {
+      "key": "peach_sapling",
+      "name": "Peach Sapling",
+      "category": "resource",
+      "maxStack": 10,
+      "weight": 0.3
+    },
+    {
+      "key": "birch_bark",
+      "name": "Birch Bark",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.05
+    },
+    {
+      "key": "maple_sap",
+      "name": "Maple Sap",
+      "category": "resource",
+      "maxStack": 20,
+      "weight": 0.3
+    },
+    {
+      "key": "willow_bark",
+      "name": "Willow Bark",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.05
+    },
+    {
+      "key": "palm_frond",
+      "name": "Palm Frond",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.1
+    },
+    {
+      "key": "coconut",
+      "name": "Coconut",
+      "category": "food",
+      "maxStack": 10,
+      "weight": 0.8,
+      "food": {
+        "hunger": 8,
+        "thirst": 14,
+        "health": 0
+      },
+      "spoilSeconds": 7200
+    },
+    {
+      "key": "maple_syrup",
+      "name": "Maple Syrup",
+      "category": "food",
+      "maxStack": 10,
+      "weight": 0.3,
+      "food": {
+        "hunger": 10,
+        "thirst": 2,
+        "health": 2
+      },
+      "spoilSeconds": 14400
+    },
+    {
+      "key": "pine_cone",
+      "name": "Pine Cone",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.05,
+      "fuelSeconds": 15
+    },
+    {
+      "key": "vegetable_stew",
+      "name": "Vegetable Stew",
+      "category": "food",
+      "maxStack": 5,
+      "weight": 0.6,
+      "food": {
+        "hunger": 40,
+        "thirst": 15,
+        "health": 6
+      },
+      "spoilSeconds": 3600
+    },
+    {
+      "key": "pumpkin_pie",
+      "name": "Pumpkin Pie",
+      "category": "food",
+      "maxStack": 10,
+      "weight": 0.4,
+      "food": {
+        "hunger": 35,
+        "thirst": 4,
+        "health": 4
+      },
+      "spoilSeconds": 3600
+    },
+    {
+      "key": "fruit_salad",
+      "name": "Fruit Salad",
+      "category": "food",
+      "maxStack": 10,
+      "weight": 0.3,
+      "food": {
+        "hunger": 28,
+        "thirst": 14,
+        "health": 4
+      },
+      "spoilSeconds": 1800
+    },
+    {
+      "key": "baked_beans",
+      "name": "Baked Beans",
+      "category": "food",
+      "maxStack": 10,
+      "weight": 0.3,
+      "food": {
+        "hunger": 22,
+        "thirst": 0,
+        "health": 3
+      },
+      "spoilSeconds": 7200
+    },
+    {
+      "key": "roasted_garlic",
+      "name": "Roasted Garlic",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.05,
+      "food": {
+        "hunger": 4,
+        "thirst": 0,
+        "health": 6
+      },
+      "spoilSeconds": 4800
+    },
+    {
+      "key": "willow_tea",
+      "name": "Willow Bark Tea",
+      "category": "food",
+      "maxStack": 10,
+      "weight": 0.4,
+      "food": {
+        "hunger": 0,
+        "thirst": 25,
+        "health": 15
+      },
+      "spoilSeconds": 3600
     }
   ]
 }

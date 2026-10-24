@@ -138,6 +138,8 @@ export interface InstallPopulationOptions {
   viewpoints: () => PopulationViewpoint[];
   /** Enables the human_bot table entry; spawn is async (virtual players join through the client path). */
   humanBots?: { spawn(x: number, y: number, kind: string): boolean; despawn(e: Entity): void } | undefined;
+  /** ADR-110: scales animal perChunk / global caps (mobile / lowend hosts pass < 1). Default 1. */
+  animalCapMul?: number;
   buildings?: BuildingGrid;
   /** Override/extend the data table (tests, mods); default toSpawnEntries(mode) from data/spawns.json. */
   spawns?: readonly SpawnEntry[];
@@ -158,9 +160,15 @@ export function populationBlocked(world: World, tx: number, ty: number, building
   const perms = world.getResource(Permissions); if (perms?.claims.claimAt(tx, ty)) return true;
   return false;
 }
+/** ADR-110: animal caps * mul (at least 1 each; group clamped to the per-chunk cap). */
+export function scaleAnimalCaps<T extends { category: string; perChunkCap: number; globalCap: number; group?: [number, number] }>(entries: T[], mul: number): T[] {
+  if (mul === 1) return entries;
+  return entries.map((e) => { if (e.category !== "animal") return e; const per = Math.max(1, Math.floor(e.perChunkCap * mul));
+    return { ...e, perChunkCap: per, globalCap: Math.max(1, Math.floor(e.globalCap * mul)), ...(e.group ? { group: [Math.min(e.group[0], per), Math.min(e.group[1], per)] as [number, number] } : {}) }; });
+}
 export function installPopulation(world: World, o: InstallPopulationOptions): PopulationSpawner {
   if (o.tileAt) world.setResource(PopulationTiles, o.tileAt);
-  const spawns = (o.spawns ?? toSpawnEntries(o.mode ?? (o.humanBots ? "sp" : "mp"))).filter((s) => s.category !== "human_bot" || o.humanBots);
+  const spawns = scaleAnimalCaps((o.spawns ?? toSpawnEntries(o.mode ?? (o.humanBots ? "sp" : "mp"))).filter((s) => s.category !== "human_bot" || o.humanBots), o.animalCapMul ?? 1);
   const host: PopulationHost = {
     chunks: o.chunks, viewpoints: o.viewpoints,
     phase: (): PhaseKey => currentPhaseKey(world),

@@ -11,11 +11,11 @@ describe("animals (spawns.json -> PopulationSpawner, ai.json behavior)", () => {
   it("toSpawnEntries feeds every animal kind (art keys) incl. boar, wolf and chicken in both modes", () => {
     for (const mode of ["sp", "mp"] as const) {
       const es = G.toSpawnEntries(mode); const kinds = es.filter((e) => e.category === "animal").map((e) => e.kind);
-      expect(kinds).toEqual(["animal_rabbit", "animal_deer", "animal_boar", "animal_wolf", "animal_chicken"]);
+      expect(kinds).toEqual(["animal_rabbit", "animal_deer", "animal_boar", "animal_wolf", "animal_chicken", "animal_stag", "animal_red_deer", "animal_elk", "animal_moose", "animal_bear", "animal_fox", "animal_hare", "animal_squirrel", "animal_turkey", "animal_duck", "animal_goose", "animal_goat", "animal_sheep", "animal_cow", "animal_bison", "animal_snake"]);
       for (const e of es) { expect(e.density).toBeGreaterThan(0); expect(Math.max(...Object.values(e.timeWeights!))).toBeCloseTo(1); expect(e.tiles!.length).toBeGreaterThan(0); }
       expect(es.some((e) => e.category === "human_bot")).toBe(mode === "sp");
     }
-    expect(G.animalDefs().map((a) => a.spriteKey)).toEqual(["animal_rabbit", "animal_deer", "animal_boar", "animal_wolf", "animal_chicken"]);
+    expect(G.animalDefs().map((a) => a.spriteKey)).toEqual(["animal_rabbit", "animal_deer", "animal_boar", "animal_wolf", "animal_chicken", "animal_stag", "animal_red_deer", "animal_elk", "animal_moose", "animal_bear", "animal_fox", "animal_hare", "animal_squirrel", "animal_turkey", "animal_duck", "animal_goose", "animal_goat", "animal_sheep", "animal_cow", "animal_bison", "animal_snake"]);
   });
   it("the spawner actually spawns boar and wolf (and chicken) over forest/grass", () => {
     const w = new World(); const got: Record<string, number> = {}; let n = 0;

@@ -1,0 +1,420 @@
+{
+  "$comment": "ADR-110 farming. Seeds/saplings (items) planted with Use become a Crop entity that grows through `stages` over growSeconds (1-hour day => most crops mature in 6-18 min, trees ~30-40 min) and then turns into the `becomes` resource node (crop_* nodes are oneShot: harvested once, may drop seeds). Crops (type crop) need tilled soil (Use a hoe). Watering (watering can, or rain) gives wateredMul for wateredSeconds; fertilizer gives fertilizerMul until maturity. tiles: allowed terrain ids (0 = unknown, always allowed).",
+  "unwateredMul": 0.5,
+  "wateredMul": 1.0,
+  "wateredSeconds": 600,
+  "fertilizerMul": 1.5,
+  "waterRadius": 2.0,
+  "fertilizeRadius": 1.5,
+  "plantReach": 2.5,
+  "minSpacing": 0.9,
+  "tickSeconds": 1,
+  "plantables": [
+    {
+      "seed": "wheat_seeds",
+      "key": "wheat",
+      "type": "crop",
+      "growSeconds": 540,
+      "stages": 4,
+      "becomes": "crop_wheat",
+      "tiles": [
+        3,
+        4
+      ]
+    },
+    {
+      "seed": "corn_seeds",
+      "key": "corn",
+      "type": "crop",
+      "growSeconds": 720,
+      "stages": 4,
+      "becomes": "crop_corn",
+      "tiles": [
+        3,
+        4
+      ]
+    },
+    {
+      "seed": "seed_potato",
+      "key": "potato",
+      "type": "crop",
+      "growSeconds": 600,
+      "stages": 4,
+      "becomes": "crop_potato",
+      "tiles": [
+        3,
+        4
+      ]
+    },
+    {
+      "seed": "carrot_seeds",
+      "key": "carrot",
+      "type": "crop",
+      "growSeconds": 480,
+      "stages": 4,
+      "becomes": "crop_carrot",
+      "tiles": [
+        3,
+        4
+      ]
+    },
+    {
+      "seed": "tomato_seeds",
+      "key": "tomato",
+      "type": "crop",
+      "growSeconds": 660,
+      "stages": 4,
+      "becomes": "crop_tomato",
+      "tiles": [
+        3,
+        4
+      ]
+    },
+    {
+      "seed": "pumpkin_seeds",
+      "key": "pumpkin",
+      "type": "crop",
+      "growSeconds": 960,
+      "stages": 4,
+      "becomes": "crop_pumpkin",
+      "tiles": [
+        3,
+        4
+      ]
+    },
+    {
+      "seed": "squash_seeds",
+      "key": "squash",
+      "type": "crop",
+      "growSeconds": 840,
+      "stages": 4,
+      "becomes": "crop_squash",
+      "tiles": [
+        3,
+        4
+      ]
+    },
+    {
+      "seed": "beans_seeds",
+      "key": "beans",
+      "type": "crop",
+      "growSeconds": 540,
+      "stages": 4,
+      "becomes": "crop_beans",
+      "tiles": [
+        3,
+        4
+      ]
+    },
+    {
+      "seed": "cabbage_seeds",
+      "key": "cabbage",
+      "type": "crop",
+      "growSeconds": 600,
+      "stages": 4,
+      "becomes": "crop_cabbage",
+      "tiles": [
+        3,
+        4
+      ]
+    },
+    {
+      "seed": "onion_seeds",
+      "key": "onion",
+      "type": "crop",
+      "growSeconds": 540,
+      "stages": 4,
+      "becomes": "crop_onion",
+      "tiles": [
+        3,
+        4
+      ]
+    },
+    {
+      "seed": "garlic_clove",
+      "key": "garlic",
+      "type": "crop",
+      "growSeconds": 720,
+      "stages": 4,
+      "becomes": "crop_garlic",
+      "tiles": [
+        3,
+        4
+      ]
+    },
+    {
+      "seed": "cotton_seeds",
+      "key": "cotton",
+      "type": "crop",
+      "growSeconds": 720,
+      "stages": 4,
+      "becomes": "crop_cotton",
+      "tiles": [
+        3,
+        4
+      ]
+    },
+    {
+      "seed": "flax_seeds",
+      "key": "flax",
+      "type": "crop",
+      "growSeconds": 600,
+      "stages": 4,
+      "becomes": "crop_flax",
+      "tiles": [
+        3,
+        4
+      ]
+    },
+    {
+      "seed": "hemp_seeds",
+      "key": "hemp",
+      "type": "crop",
+      "growSeconds": 720,
+      "stages": 4,
+      "becomes": "crop_hemp",
+      "tiles": [
+        3,
+        4
+      ]
+    },
+    {
+      "seed": "herbs_seeds",
+      "key": "herbs",
+      "type": "crop",
+      "growSeconds": 360,
+      "stages": 4,
+      "becomes": "crop_herbs",
+      "tiles": [
+        3,
+        4
+      ]
+    },
+    {
+      "seed": "mushroom_spores",
+      "key": "mushroom",
+      "type": "crop",
+      "growSeconds": 420,
+      "stages": 4,
+      "becomes": "crop_mushroom",
+      "tiles": [
+        3,
+        4
+      ]
+    },
+    {
+      "seed": "yarrow_seeds",
+      "key": "yarrow",
+      "type": "crop",
+      "growSeconds": 480,
+      "stages": 4,
+      "becomes": "crop_yarrow",
+      "tiles": [
+        3,
+        4
+      ]
+    },
+    {
+      "seed": "ginseng_seeds",
+      "key": "ginseng",
+      "type": "crop",
+      "growSeconds": 1080,
+      "stages": 4,
+      "becomes": "crop_ginseng",
+      "tiles": [
+        3,
+        4
+      ]
+    },
+    {
+      "seed": "aloe_seeds",
+      "key": "aloe",
+      "type": "crop",
+      "growSeconds": 840,
+      "stages": 4,
+      "becomes": "crop_aloe",
+      "tiles": [
+        2,
+        3
+      ]
+    },
+    {
+      "seed": "blueberry_seeds",
+      "key": "blueberry_bush",
+      "type": "bush",
+      "growSeconds": 900,
+      "stages": 3,
+      "becomes": "blueberry_bush",
+      "tiles": [
+        3,
+        4
+      ]
+    },
+    {
+      "seed": "raspberry_seeds",
+      "key": "raspberry_bush",
+      "type": "bush",
+      "growSeconds": 900,
+      "stages": 3,
+      "becomes": "raspberry_bush",
+      "tiles": [
+        3,
+        4
+      ]
+    },
+    {
+      "seed": "blackberry_seeds",
+      "key": "blackberry_bush",
+      "type": "bush",
+      "growSeconds": 900,
+      "stages": 3,
+      "becomes": "blackberry_bush",
+      "tiles": [
+        3,
+        4
+      ]
+    },
+    {
+      "seed": "strawberry_seeds",
+      "key": "strawberry_bush",
+      "type": "bush",
+      "growSeconds": 900,
+      "stages": 3,
+      "becomes": "strawberry_bush",
+      "tiles": [
+        3,
+        4
+      ]
+    },
+    {
+      "seed": "oak_sapling",
+      "key": "oak_tree",
+      "type": "tree",
+      "growSeconds": 2400,
+      "stages": 3,
+      "becomes": "oak_tree",
+      "tiles": [
+        3,
+        4
+      ]
+    },
+    {
+      "seed": "pine_sapling",
+      "key": "pine_tree",
+      "type": "tree",
+      "growSeconds": 1800,
+      "stages": 3,
+      "becomes": "pine_tree",
+      "tiles": [
+        3,
+        4
+      ]
+    },
+    {
+      "seed": "birch_sapling",
+      "key": "birch_tree",
+      "type": "tree",
+      "growSeconds": 1680,
+      "stages": 3,
+      "becomes": "birch_tree",
+      "tiles": [
+        3,
+        4
+      ]
+    },
+    {
+      "seed": "maple_sapling",
+      "key": "maple_tree",
+      "type": "tree",
+      "growSeconds": 2160,
+      "stages": 3,
+      "becomes": "maple_tree",
+      "tiles": [
+        3,
+        4
+      ]
+    },
+    {
+      "seed": "willow_sapling",
+      "key": "willow_tree",
+      "type": "tree",
+      "growSeconds": 1800,
+      "stages": 3,
+      "becomes": "willow_tree",
+      "tiles": [
+        3,
+        4
+      ]
+    },
+    {
+      "seed": "palm_sapling",
+      "key": "palm_tree",
+      "type": "tree",
+      "growSeconds": 1920,
+      "stages": 3,
+      "becomes": "palm_tree",
+      "tiles": [
+        2
+      ]
+    },
+    {
+      "seed": "apple_sapling",
+      "key": "apple_tree",
+      "type": "tree",
+      "growSeconds": 1800,
+      "stages": 3,
+      "becomes": "apple_tree",
+      "tiles": [
+        3,
+        4
+      ]
+    },
+    {
+      "seed": "pear_sapling",
+      "key": "pear_tree",
+      "type": "tree",
+      "growSeconds": 1800,
+      "stages": 3,
+      "becomes": "pear_tree",
+      "tiles": [
+        3,
+        4
+      ]
+    },
+    {
+      "seed": "cherry_sapling",
+      "key": "cherry_tree",
+      "type": "tree",
+      "growSeconds": 1680,
+      "stages": 3,
+      "becomes": "cherry_tree",
+      "tiles": [
+        3,
+        4
+      ]
+    },
+    {
+      "seed": "orange_sapling",
+      "key": "orange_tree",
+      "type": "tree",
+      "growSeconds": 2040,
+      "stages": 3,
+      "becomes": "orange_tree",
+      "tiles": [
+        2
+      ]
+    },
+    {
+      "seed": "peach_sapling",
+      "key": "peach_tree",
+      "type": "tree",
+      "growSeconds": 1800,
+      "stages": 3,
+      "becomes": "peach_tree",
+      "tiles": [
+        3,
+        4
+      ]
+    }
+  ]
+}

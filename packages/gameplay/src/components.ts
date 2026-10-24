@@ -235,6 +235,10 @@ export const VehicleCondition = defineComponent("VehicleCondition", { crafterId:
  * only goes on the wire when toggled, not with every moving-Vehicle delta. Written only by the vehicle state commands. */
 export const VehicleState = defineComponent("VehicleState", { flags: "u8" }, { networked: true, persistent: true });
 export const VEHICLE_ENGINE_ON = 1, VEHICLE_HEADLIGHTS = 2;
+/** ADR-110 planted crop / sapling / bush (farming.ts). kind = farming.json plantables index + 1 (0 = tilled soil, nothing planted);
+ *  growth 0..1, stage = render stage; waterUntilTick = watered boost end; fertilized 0/1. Matures into a resource node. */
+export const Crop = defineComponent("Crop", { kind: "u8", stage: "u8", growth: "f32", waterUntilTick: "u32", fertilized: "u8" }, { networked: true, persistent: true });
+
 export const GAMEPLAY_COMPONENTS = [
   Emitter, Buffs,
   Health, ResourceNode, Survival, VitalsState, Exposure, Dead,
@@ -260,4 +264,5 @@ export const GAMEPLAY_COMPONENTS = [
   VehicleState, // append-only (ADR-101)
   Defense, // append-only (ADR-108)
   VehicleLock, // append-only (ADR-109)
+  Crop, // append-only (ADR-110)
 ] as const;
