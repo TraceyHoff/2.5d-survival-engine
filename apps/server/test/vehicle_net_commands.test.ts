@@ -1,4 +1,4 @@
-/** Vehicle command wiring over the wire (ADR-097 + gameplay DESIGN §31): applies once, AOI-validated targets, rates. */
+/** Vehicle command wiring over the wire (ADR-102 + gameplay DESIGN §31): applies once, AOI-validated targets, rates. */
 import { describe, it, expect, vi } from "vitest";
 vi.setConfig({ testTimeout: 30_000 });
 import { Transform, World, type Entity } from "@engine/core";

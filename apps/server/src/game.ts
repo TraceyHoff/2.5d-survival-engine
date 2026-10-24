@@ -50,7 +50,7 @@ export interface GameServerOptions {
   serverFullDetail?: string;
   /** Dev load-test flag (NET_DEV_BOTS=1): accept DevBotHello-tagged connections in multiplayer. Default false. */
   devBots?: boolean;
-  /** Throttle deltas for entities far from all of a client's owned entities (P2P mobile host bandwidth; ADR-097). */
+  /** Throttle deltas for entities far from all of a client's owned entities (P2P mobile host bandwidth; ADR-102). */
   distantThrottle?: { nearTiles: number; interval: number };
   /** Chat (net ChatServer over core ChannelRegistry): local radius in tiles (default 48), per-player token bucket (default core 5 burst, 0.05/tick). */
   chat?: { localRadius?: number; rate?: { capacity: number; refillPerTick: number }; maxLength?: number; /** chat replay ring on join (default 50; 0 = off) */ historySize?: number };
@@ -179,7 +179,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
   installExpressionCommands(world, handlers); // gameplay.emote -> Expression
   installVehicleCommands(world, handlers); // gameplay.vehicle* (enter/exit/hitch/unhitch/station), ADR-096
   installVehicleCraftCommands(world, handlers); // gameplay.vehicleDeploy / vehicleRefuel / vehicleRepair (gameplay DESIGN.md §31)
-  // ADR-097: server vehicle speed/teleport sanity (reverts the step) -> anomaly on the driver's session (AntiCheat scores it)
+  // ADR-102: server vehicle speed/teleport sanity (reverts the step) -> anomaly on the driver's session (AntiCheat scores it)
   installVehicleGuard(world, (v) => {
     const cid = v.driver !== undefined ? world.getField(v.driver, Owner, "clientId") : undefined; if (cid === undefined) return;
     for (const s of net.connected()) if (s.clientId === cid) { net.anomaly(s, v.kind, `vehicle ${v.distance.toFixed(2)} tiles`); break; }

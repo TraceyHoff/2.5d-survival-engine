@@ -1,5 +1,5 @@
 /**
- * P2P vehicle bandwidth (ADR-097): mobile host config (cap 6 = host + 5 guests, RTC unreliable sends dropped above
+ * P2P vehicle bandwidth (ADR-102): mobile host config (cap 6 = host + 5 guests, RTC unreliable sends dropped above
  * 64 KiB bufferedAmount) with 8 fast vehicles towing 8 trailers. Measures the snapshot bytes each guest receives and
  * asserts the stated budget (VEHICLE_P2P_BUDGET).
  */

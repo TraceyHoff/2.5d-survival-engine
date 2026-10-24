@@ -491,7 +491,7 @@ A client built without Appearance (old schema) fails the handshake with `SchemaM
 - `viewRadiusBonus(clientId)` reads the applied value.
 - Bench: 100 clients flickering a tower bonus every 10 ticks give 0 chunk changes per tick with hold 60, versus 160 with hold 0.
 
-## 24. Vehicle netcode (ADR-097)
+## 24. Vehicle netcode (ADR-102)
 
 **Driver prediction.** `NetClientOptions.controlled(world, owned)` names extra entities the client predicts. These are vehicles and trailers that are not owned but are moved by an owned rider. The apps pass `controlledVehicles`, which returns the seat-0 rider's vehicle plus its towNetId chain. `client.controlled` holds their NetIds and is refreshed after `applyState` and before reconcile. Controlled entities get full component writes with no interpolation samples, are reset and replayed by `w.simulate` together with owned entities, and get input only through the owned rider. The server and client use the same input function, `applyDemoInput`: a rider's move bits become drive input, otherwise it is walking.
 
@@ -509,4 +509,4 @@ A client built without Appearance (old schema) fails the handshake with `SchemaM
 
 **Commands.** Vehicle commands use the ADR-092 path with AOI entity references (`badEntityRef`). Per-command token buckets come from `VEHICLE_COMMAND_RATES` (enter/exit/station 2/s, hitch/unhitch 1/s). Reason codes are `VEHICLE_REJECT_REASONS`, appended to `COMMAND_REJECT_REASONS`. Driver-only control holds because `gameplay.vehicles` reads only the seat-0 rider's drive input. There is no ownership permission because VEHICLES.md does not define one. `gameplay.vehicleGuard` (postSim, server only) checks each driven or hitched vehicle against maxSpeed × boost × dt × 1.25 per tick, and trailers only against the 4-tile teleport bound. A violation reverts the vehicle and its riders, zeroes the speed, and reports `speed` or `teleport` to `net.anomaly` on the driver's session. Scripted moves of parked vehicles pass.
 
-**Command wiring (ADR-097 addendum).** Net ids 39–43 are enter, exit, hitch, unhitch and station at 4/s with burst 8. Net ids 44–46 are deploy, refuel and repair at 2/s with burst 4. Targets are aoi-validated NetIds, and each command has exactly one dispatch path, handlers.enqueue. Tests: apps/server/test/vehicle_net_commands.test.ts.
+**Command wiring (ADR-102 addendum).** Net ids 39–43 are enter, exit, hitch, unhitch and station at 4/s with burst 8. Net ids 44–46 are deploy, refuel and repair at 2/s with burst 4. Targets are aoi-validated NetIds, and each command has exactly one dispatch path, handlers.enqueue. Tests: apps/server/test/vehicle_net_commands.test.ts.

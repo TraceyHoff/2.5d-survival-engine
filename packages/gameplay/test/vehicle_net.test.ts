@@ -1,4 +1,4 @@
-/** ADR-097 gameplay pieces: O(1) NetId index, controlled chain, hitch-frame posing, view bonus, guard. */
+/** ADR-102 gameplay pieces: O(1) NetId index, controlled chain, hitch-frame posing, view bonus, guard. */
 import { describe, expect, it } from "vitest";
 import { NetId, Transform, type Entity, type World } from "@engine/core";
 import * as G from "../src/index.js";

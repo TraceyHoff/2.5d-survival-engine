@@ -1,4 +1,4 @@
-/** Vehicle netcode end-to-end (ADR-097): prediction/reconciliation, trailer smoothing, view bonus, command validation, guard. */
+/** Vehicle netcode end-to-end (ADR-102): prediction/reconciliation, trailer smoothing, view bonus, command validation, guard. */
 import { describe, it, expect, vi } from "vitest";
 vi.setConfig({ testTimeout: 30_000 });
 import { NetId, Transform, World, type Entity } from "@engine/core";

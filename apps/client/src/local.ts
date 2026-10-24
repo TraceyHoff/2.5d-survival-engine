@@ -29,7 +29,7 @@ export interface LocalServerOptions {
   extraTransports?: ServerTransport[];
   /** Player cap incl. the host's own client; extra joins are rejected (ServerFull + serverFullDetail). */
   maxClients?: number; serverFullDetail?: string;
-  /** Distant-entity delta throttle forwarded to the NetServer (P2P host; ADR-097). */
+  /** Distant-entity delta throttle forwarded to the NetServer (P2P host; ADR-102). */
   distantThrottle?: { nearTiles: number; interval: number };
 }
 export interface VirtualPlayer { client: NetClient; world: World; agent: Agent; output: AgentOutput; home: { x: number; y: number } }

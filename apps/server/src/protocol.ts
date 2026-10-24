@@ -30,7 +30,7 @@ export const CHAT_STYLE_RATE = { perSec: 1, burst: 5 } as const;
 export const SOCIAL_COMMAND_NAMES: ReadonlySet<string> = new Set(["gameplay.emote", "gameplay.partyInvite", "gameplay.partyAccept", "gameplay.partyDecline", "gameplay.partyLeave", "gameplay.partyKick", ...CLAN_COMMANDS.map((d) => d.name), ClanDeclineCmd.name]);
 /** NetId entity fields of bridged input-queue commands (validated under the server's entityRefs, default "aoi"). */
 export const INPUT_ENTITY_FIELDS: Readonly<Record<string, readonly string[]>> = { [PaintCmd.name]: ["target"], ...VEHICLE_ENTITY_FIELDS, ...VEHICLE_CRAFT_ENTITY_FIELDS };
-/** Vehicle wire rates (ADR-097): seat/hitch/station 4/s burst 8; deploy/refuel/repair 2/s burst 4. Dispatch: handlers.enqueue only (not INPUT_QUEUE). */
+/** Vehicle wire rates (ADR-102): seat/hitch/station 4/s burst 8; deploy/refuel/repair 2/s burst 4. Dispatch: handlers.enqueue only (not INPUT_QUEUE). */
 export const VEHICLE_NET_RATES: Readonly<Record<string, { perSec: number; burst: number }>> = Object.fromEntries([
   ...VEHICLE_COMMANDS.map((d) => [d.name, { perSec: 4, burst: 8 }] as const),
   ...VEHICLE_CRAFT_COMMANDS.map((d) => [d.name, { perSec: 2, burst: 4 }] as const),
@@ -101,7 +101,7 @@ export const COMMAND_REJECT_REASONS = [
   "unknown_recipe", "bad_count", "no_station", "queue_full", "missing_ingredients", "no_job", "not_authority",
   ...PARTY_REJECT_REASONS,
   ...CLAN_REJECT_REASONS,
-  /* appended: vehicles (ADR-097). A name already listed above (no_station) keeps its earlier code (first match). */
+  /* appended: vehicles (ADR-102). A name already listed above (no_station) keeps its earlier code (first match). */
   ...VEHICLE_REJECT_REASONS,
   /* appended: vehicle crafting (gameplay DESIGN §31) */
   "empty_slot", "not_kit", "no_tank", "not_fuel", "wrong_fuel", "not_repair_item", "wrong_part", "needs_garage",
@@ -153,7 +153,7 @@ export function applyDemoInput(world: World, e: Entity, cmd: InputCmd | null, dt
 }
 
 /**
- * NetClient options for vehicles (ADR-097): the driver predicts + reconciles its vehicle and trailer chain, corrections
+ * NetClient options for vehicles (ADR-102): the driver predicts + reconciles its vehicle and trailer chain, corrections
  * over 2 tiles snap (a smoothed slide at vehicle speed looks worse), remote trailers sit in their tow's hitch frame.
  * Use with `applyInput: applyDemoInput` (the same input function as the server).
  */

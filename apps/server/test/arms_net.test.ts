@@ -29,7 +29,7 @@ describe("arms net commands", () => {
     const names = DEMO_COMMANDS.map((d) => d.name);
     const iDecline = names.indexOf(ClanDeclineCmd.name);
     expect(names.indexOf(ReloadCmd.name)).toBe(iDecline + 1); expect(names.indexOf(WearCmd.name)).toBe(iDecline + 2);
-    expect(names[iDecline + 3]).toBe(VEHICLE_COMMANDS[0]!.name); // later appends (vehicles, ADR-097) follow; nothing before shifts
+    expect(names[iDecline + 3]).toBe(VEHICLE_COMMANDS[0]!.name); // later appends (vehicles, ADR-102) follow; nothing before shifts
   });
   it("rates: reload 5/s burst 10, wear chat-style", () => {
     expect(gameplayNet(ReloadCmd).rate).toEqual({ perSec: 5, burst: 10 });

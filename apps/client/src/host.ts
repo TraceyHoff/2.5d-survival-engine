@@ -31,7 +31,7 @@ export interface P2PHost {
   unload(): void;
 }
 
-/** P2P host uplink: deltas for entities > 24 tiles from all of a guest's owned entities go out every 3rd tick (ADR-097). */
+/** P2P host uplink: deltas for entities > 24 tiles from all of a guest's owned entities go out every 3rd tick (ADR-102). */
 export const P2P_DISTANT_THROTTLE = { nearTiles: 24, interval: 3 };
 export async function startP2PHost(o: P2PHostOptions): Promise<P2PHost> {
   const rtc = new RtcServerTransport();

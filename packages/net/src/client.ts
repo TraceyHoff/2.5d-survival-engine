@@ -348,7 +348,7 @@ export class NetClient {
       if (processed !== NONE_U32) reconcileSeq = processed; else reconcileSeq ??= -1;
     }
     // Behind the newest snapshot: catch up. Too far ahead (a burst of lost/late snapshots): hold at latest+4 instead of
-    // snapping back, so render time never runs backwards (a backward jump reads as a stutter on fast vehicles; ADR-097).
+    // snapping back, so render time never runs backwards (a backward jump reads as a stutter on fast vehicles; ADR-102).
     if (this.latestTick >= 0) {
       if (this.serverTickEstimate < this.latestTick) this.serverTickEstimate = this.latestTick;
       else if (this.serverTickEstimate - this.latestTick > 4) this.serverTickEstimate = this.latestTick + 4;
