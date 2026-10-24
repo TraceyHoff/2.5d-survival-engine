@@ -14,9 +14,9 @@ def reed_bed(c, dep):
         x = GX-16+i*2.4+R.uniform(-1, 1); h = (6 if dep else 24)+R.uniform(0, 8 if not dep else 2); lean = R.uniform(-4, 4)
         c.stroke([(x, GY-2), (x+lean*.4, GY-2-h*.6), (x+lean, GY-2-h)], 1.3, mix('#7fbf4a', '#b8c460', R.random()), owf=.6)
         if not dep and i % 3 == 0: c.rect(x+lean-1.2, GY-2-h-1, x+lean+1.2, GY-2-h+5, '#8a5a35', r=1.2, owf=.6)
-def patch(c, dep, flower, stem='#5ea844', leafy=False, n=11):
+def patch(c, dep, flower, stem='#5ea844', leafy=False, n=11, seed=0):
     ground(c); c.ell(GX, GY-1, 21, 8, '#8a5a3a', shade=.2)
-    R = random.Random(hash(flower) % 99)
+    R = random.Random(seed)  # was hash(flower) % 99 (PYTHONHASHSEED-dependent); seeds recovered from the committed atlas
     for i in range(n):
         a = i/n*math.tau; x = GX+math.cos(a)*14*R.uniform(.3, 1); y = GY-1+math.sin(a)*5*R.uniform(.3, 1); h = 4 if dep else R.uniform(12, 18)
         if leafy:
@@ -106,8 +106,8 @@ def oil_seep(c, dep):
         for x, y in ((GX+6, GY-6), (GX-3, GY-1)): c.ell(x, y, 1.5, 1.1, '#2e2a36', owf=.4); c.shine(x-.5, y-.4, .4, 180)
         tuftg(c, GX-20, GY-3, '#6a8a40', 6); tuftg(c, GX+19, GY-1, '#6a8a40', 5)
 N = {
-    'reed_bed': reed_bed, 'flax_patch': lambda c, d: patch(c, d, '#6d8fe8'), 'cotton_bush': cotton_bush,
-    'herb_patch': lambda c, d: patch(c, d, '#e9f0a0', '#4f9a45', leafy=True, n=9), 'wild_garden': wild_garden, 'beehive': beehive, 'resin_tree': resin_tree,
+    'reed_bed': reed_bed, 'flax_patch': lambda c, d: patch(c, d, '#6d8fe8', seed=15), 'cotton_bush': cotton_bush,
+    'herb_patch': lambda c, d: patch(c, d, '#e9f0a0', '#4f9a45', leafy=True, n=9, seed=83), 'wild_garden': wild_garden, 'beehive': beehive, 'resin_tree': resin_tree,
     'salt_flat': salt_flat, 'rubble_pile': rubble, 'saltpeter_deposit': lambda c, d: vein(c, d, '#7f7a80', '#f4f6f8', crust=True),
     'sulfur_vent': sulfur_vent, 'galena_vein': lambda c, d: vein(c, d, '#8a8a92', '#b9c0ca', cubic=True), 'oil_seep': oil_seep,
     'chromite_vein': lambda c, d: vein(c, d, '#6b6670', '#2a2a32', sheen='#c8d4e4'),

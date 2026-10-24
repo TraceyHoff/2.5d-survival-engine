@@ -9,9 +9,16 @@ HELD_C = list(BONE)  # held-only keys (icons live in the nature pack)
 from nodes import N, SWAY
 OUT = sys.argv[1]; PREV = sys.argv[2]
 os.makedirs(OUT+'/atlases', exist_ok=True); os.makedirs(PREV, exist_ok=True)
-ICONS = list(T); NODES = list(N)
+import new8, vehicle_key
+# icon cells: table.T (0-190), then the follow-up icons in commit order: new8 (191-198, 64357f1), vehicle_key (199, 29ef4c0)
+EXTRA = list(new8.NEW8) + ['vehicle_key']
+ICONS = list(T) + EXTRA; NODES = list(N)
 def icon(k):
-    c = C(32, 8); T[k](c); return c.out(64), c.out(32), c.img
+    if k == 'vehicle_key': return vehicle_key.render()
+    c = C(32, 8); (T.get(k) or new8.NEW8[k])(c); out = c.out(64), c.out(32)
+    if k in T: return out
+    def comp(im): b = Image.new('RGBA', im.size, (0, 0, 0, 0)); b.alpha_composite(im); return b  # new8 cells were alpha-composited in (alpha-0 RGB zeroed)
+    return tuple(comp(im) for im in out)
 TILT = [0, -22, -38, -22, 0, 22, 38, 22]; SQ = [.62, .85, 1, .85, .62, .85, 1, .85]; DIM = [1, 1, 1, .9, .82, .9, 1, 1]
 def held(k):
     import icons; icons.NOSHADOW[0] = True
@@ -53,10 +60,10 @@ if __name__ == '__main__':
         a1, rows = sheet(f1, cell, cols); a2, _ = sheet(f2, cell*2, cols)
         assert max(a2.size) <= 2048, (key, a2.size)
         a1.save(f'{OUT}/atlases/{key}.png', optimize=True); a2.save(f'{OUT}/atlases/{key}@2x.png', optimize=True)
-        man["atlases"].append({"key": key, "image": f"atlases/{key}.png", "frameW": cell, "frameH": cell, "columns": cols, "rows": rows, "pages": [{"scale": 2, "image": f"atlases/{key}@2x.png"}]})
+        man["atlases"].append({"key": key, "image": f"atlases/{key}.png", "frameW": cell, "frameH": cell, "columns": cols, "rows": rows, "pages": [{"scale": 2, "image": f"atlases/{key}@2x.png", "ktx2": f"atlases/{key}@2x.ktx2"}], "ktx2": f"atlases/{key}.ktx2"})  # ktx2 twins: assets/tools/ktx2.py
     atlas('items_icons', [x[1] for x in ic], [x[0] for x in ic], 32, 16)
     EQ = ('_axe', '_pickaxe', '_shovel', '_knife', '_helmet', '_cuirass', '_greaves', '_boots', '_gauntlets', '_hat', '_cap', '_hood', '_shirt', '_jacket', '_coat', 'raincoat', '_trousers', '_leggings', '_sandals', '_gloves', '_mittens', '_cloak', '_satchel', '_backpack', '_pack')
-    for i, k in enumerate(ICONS):
+    for i, k in enumerate(T):
         cat = "equipment" if (k in HELD or any(k.endswith(s) for s in EQ)) else "item"
         man["sprites"].append({"key": k, "category": cat, "atlas": "items_icons", "anchor": {"x": 0.5, "y": 0.5}, "animations": {"idle": {"frames": [i], "fps": 1}}})
     atlas('items_nodes', [f for n in nd for f in (n[0][1], n[1][1])], [f for n in nd for f in (n[0][0], n[1][0])], 64, 8)
@@ -68,6 +75,8 @@ if __name__ == '__main__':
         key = f'items_held_{part}'; atlas(key, [f for h in hs for f in h[1]], [f for h in hs for f in h[0]], 48, 16)
         for i, k in enumerate(ks):
             man["sprites"].append({"key": f"held_{k}", "category": "equipment", "atlas": key, "anchor": {"x": 0.5, "y": 0.75}, "animations": {"idle": {"frames": [8*i], "fps": 1, "directions": 8, "dirStride": 1}}})
+    for k in EXTRA:  # sprite order matches the follow-up commits (appended after the held sprites)
+        man["sprites"].append({"key": k, "category": "item", "atlas": "items_icons", "anchor": {"x": 0.5, "y": 0.5}, "animations": {"idle": {"frames": [ICONS.index(k)], "fps": 1}}})
     atlas('items_held_c', [f for h in hc for f in h[1]], [f for h in hc for f in h[0]], 48, 16)
     for i, k in enumerate(HELD_C):
         man["sprites"].append({"key": f"held_{k}", "category": "equipment", "atlas": 'items_held_c', "anchor": {"x": 0.5, "y": 0.75}, "animations": {"idle": {"frames": [8*i], "fps": 1, "directions": 8, "dirStride": 1}}})
