@@ -130,6 +130,11 @@ const POOL_MIN_SLOTS_DESKTOP = 48, POOL_MIN_SLOTS_LOWMEM = 24, POOL_GAP = 4, PAG
 export const STREAM_POOL_SLOTS_DESKTOP = 24, STREAM_POOL_SLOTS_LOWMEM = 12, STREAM_UPLOADS_PER_FRAME = 2, STREAM_UNLOAD_FRAMES = 180;
 export const STREAM_MARGIN_PX = 256, STREAM_MARGIN_ANIMAL_PX = 640, STREAM_KEEP_FACTOR = 1.5;
 const WEAR_1X_SLOTS_LOWMEM = 18, WEAR_1X_SLOTS_DESKTOP = 32;
+/** Wear pages whose 1x size fits WEAR_SMALL_PX square (faces, eyes, shoes, small accessories: ~1/3 of the MaxRects-
+ *  trimmed customization pages) get their own wear pool sized to them: 672 + 2x688 pitch = 2048 -> 3x3 slots per 2048 layer instead
+ *  of the 2x2 the largest (1016px hair/coat) pages force on everyone. Split only when each side has >= WEAR_SPLIT_MIN pages and layers are >= 2048 (at 1024 every slot is one layer, so splitting
+ *  only shrinks the large pool and thrashes it: spMobile 146.2 MB / 256 misses vs 140.5 MB / 85). */
+export const WEAR_SMALL_PX = 672, WEAR_SPLIT_MIN = 4;
 
 export interface SwayParams { amp: number; freq: number; stiffness: number }
 /** Read optional per-sprite `sway: {amp, freq, stiffness}` blocks from raw manifest JSON (loadManifest ignores them). */
@@ -341,7 +346,7 @@ export class AtlasManager {
   streamWearables = true;
   /** Pool sizing (set before setRegistry). Default: the best scale that holds every streamed page, else the best
    *  scale holding minSlots. A creator preview wants sharp art and few pages: { coverAll: false, minSlots: 16 }. */
-  poolPolicy: { coverAll: boolean; minSlots?: number } = { coverAll: true };
+  poolPolicy: { coverAll: boolean; minSlots?: number; /** false: one wear pool sized to the largest page (pre-split behaviour) */ splitWear?: boolean } = { coverAll: true };
   /** VRAM accountant (bytes resident / budget / page-ins / evictions); see vramStats. */
   readonly vram: VramAccountant;
   private pools: Pool[] = [];
@@ -608,7 +613,7 @@ export class AtlasManager {
     addDirFrameRects(registry, [...list, ...lazyList]);
     this.gen++; this.queue = []; this.pools = []; this.layoutVersion++; this.fallbackCache.clear();
     const lowMem = this.textureBudgetMB <= 256; this.sideShift = lowMem ? SIDE_SHIFT_LOWMEM : SIDE_SHIFT;
-    const groups: { cls: PoolClass; lazy: AtlasRT[]; minSlots: number; cap: boolean }[] = [];
+    const groups: { cls: PoolClass; lazy: AtlasRT[]; minSlots: number; cap: boolean; /** wear split: fraction of the 1x working set */ share?: number }[] = [];
     const wear = lazyList.filter((a) => a.lazy!.pool === 0), veh = lazyList.filter((a) => a.lazy!.pool === 1), bld = lazyList.filter((a) => a.lazy!.pool === 2), body = lazyList.filter((a) => a.lazy!.pool === 3), strm = lazyList.filter((a) => a.lazy!.pool === 4);
     // building tiers first: main colour array (never the compressed tail of vehicle/wear pools)
     if (bld.length) groups.push({ cls: "bld", lazy: bld, minSlots: Math.min(bld.length, lowMem ? BLD_POOL_SLOTS_LOWMEM : BLD_POOL_SLOTS_DESKTOP), cap: true });
@@ -618,7 +623,17 @@ export class AtlasManager {
     if (veh.length) groups.push({ cls: "veh", lazy: veh, minSlots: Math.min(veh.length, lowMem ? VEH_POOL_SLOTS_LOWMEM : VEH_POOL_SLOTS_DESKTOP), cap: true });
     // manifest stream sheets: visible art (kept at 1x, counted in keepVis like vehicles), a small LRU working set
     if (strm.length) groups.push({ cls: "stream", lazy: strm, minSlots: Math.min(strm.length, lowMem ? STREAM_POOL_SLOTS_LOWMEM : STREAM_POOL_SLOTS_DESKTOP), cap: true });
-    if (wear.length) groups.push({ cls: "wear", lazy: wear, minSlots: Math.min(wear.length, this.poolPolicy.minSlots ?? (lowMem ? POOL_MIN_SLOTS_LOWMEM : POOL_MIN_SLOTS_DESKTOP)), cap: false });
+    if (wear.length) {
+      const min = Math.min(wear.length, this.poolPolicy.minSlots ?? (lowMem ? POOL_MIN_SLOTS_LOWMEM : POOL_MIN_SLOTS_DESKTOP));
+      const small = this.poolPolicy.splitWear === false || this.layerSize < 2048 ? [] : wear.filter((a) => a.lazy!.w1 <= WEAR_SMALL_PX && a.lazy!.h1 <= WEAR_SMALL_PX);
+      if (small.length >= WEAR_SPLIT_MIN && wear.length - small.length >= WEAR_SPLIT_MIN) {
+        // slots (and the forced 1x working set) shared by page count: a worn set has small and large pages in about that ratio
+        const share = small.length / wear.length, big = wear.filter((a) => !small.includes(a));
+        const ms = Math.max(1, Math.min(small.length, Math.round(min * share))), mb = Math.max(1, Math.min(big.length, min - ms));
+        // small first: it covers all its pages in a few layers (faces/eyes never miss), the large pool takes what is left
+        groups.push({ cls: "wear", lazy: small, minSlots: ms, cap: false, share }, { cls: "wear", lazy: big, minSlots: mb, cap: false, share: 1 - share });
+      } else groups.push({ cls: "wear", lazy: wear, minSlots: min, cap: false });
+    }
     // vehicles are visible art: their pool keeps a full-res (1x) working set that fitBudget never trades away; the
     // wearables pool is the streaming tier and may shrink (more paging) before any visible art is blurred
     // wear is never planned below wearScale and always keeps its 1x working set (planPool forces it even over budget), so
@@ -626,12 +641,12 @@ export class AtlasManager {
     // overshot the budget (mobile: 140 MB at 128)
     const w1x = lowMem ? WEAR_1X_SLOTS_LOWMEM : WEAR_1X_SLOTS_DESKTOP; const wk = this.wearScale();
     const wearG = groups.filter((g) => g.cls === "wear");
-    const keepWear = wearG.reduce((t, g) => t + this.poolReserveBytes(g.lazy, Math.min(g.minSlots, w1x), list, wk), 0);
+    const keepWear = wearG.reduce((t, g) => t + this.poolReserveBytes(g.lazy, Math.min(g.minSlots, Math.ceil(w1x * (g.share ?? 1))), list, wk), 0);
     const wantWear = wearG.reduce((t, g) => t + this.poolReserveBytes(g.lazy, g.minSlots, list, wk), 0);
     const keepVis = groups.filter((g) => g.cls !== "wear").reduce((t, g) => t + this.poolReserveBytes(g.lazy, g.minSlots, list, 1), 0);
     const keep = keepVis + Math.min(keepWear, wantWear) / 2, reserve = keepVis + Math.max(keepWear, wantWear);
     this.registryForTier = registry; await this.fitBudget(list, reserve, keep); this.sideScale = (await halveSide(list, this.sideShift)) ? 1 / (1 << this.sideShift) : 1;
-    const layout = (): void => { this.pack(list); this.pools = []; for (const g of groups) this.planPool(g.lazy, g.minSlots, list, g.cls, g.cap); let b = this.totalFrames; for (const a of lazyList) { a.base = b; b += a.count; } this.totalFrames = b; };
+    const layout = (): void => { this.pack(list); this.pools = []; for (const g of groups) this.planPool(g.lazy, g.minSlots, list, g.cls, g.cap, g.share); let b = this.totalFrames; for (const a of lazyList) { a.base = b; b += a.count; } this.totalFrames = b; };
     layout();
     const all = [...list, ...lazyList];
     this.upload(list, this.frameTintRows(registry, all), all);
@@ -734,7 +749,7 @@ export class AtlasManager {
    * the pool layers. `cap`: never more layers than minSlots needs (vehicles: a small working set, refcounted per
    * vehicle; the 2x page only when that still leaves half the free layers).
    */
-  private planPool(lazy: AtlasRT[], minSlots: number, resident: AtlasRT[], cls: PoolClass = "wear", cap = false): void {
+  private planPool(lazy: AtlasRT[], minSlots: number, resident: AtlasRT[], cls: PoolClass = "wear", cap = false, share = 1): void {
     if (!lazy.length) return;
     const tint = lazy.some((a) => a.source.masks?.tintmask), emis = cls !== "wear" && lazy.some((a) => a.source.emissiveUrl);
     const anyTint = tint || this.pools.some((p) => p.tint), anyEmis = emis || this.pools.some((p) => p.emis);
@@ -771,7 +786,7 @@ export class AtlasManager {
       if (cls === "wear" && (!pick || pick.lru.capacity < minSlots)) {
         // 1x wear pool holding minSlots even over budget (reported by vramStats.withinBudget) - the local player and
         // nearby characters must always be fully dressed at full res
-        const k1 = ks.includes(wk) ? wk : 1; const g = this.poolGeom(lazy, k1); const n = Math.min(minSlots, this.textureBudgetMB <= 256 ? WEAR_1X_SLOTS_LOWMEM : WEAR_1X_SLOTS_DESKTOP);
+        const k1 = ks.includes(wk) ? wk : 1; const g = this.poolGeom(lazy, k1); const n = Math.min(minSlots, Math.ceil((this.textureBudgetMB <= 256 ? WEAR_1X_SLOTS_LOWMEM : WEAR_1X_SLOTS_DESKTOP) * share));
         if (!pick || pick.k < wk || pick.lru.capacity < n) pick = mk(k1, g, Math.max(1, Math.ceil(n / g.perLayer)));
       }
     }
