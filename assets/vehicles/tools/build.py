@@ -90,13 +90,16 @@ def main():
             for mn, mx in meas[(key, s)]: ext = [min(ext[0], mn[0]), min(ext[1], mn[1]), max(ext[2], mx[0]), max(ext[3], mx[1])]
         piv = (math.ceil(-ext[0]) + PAD, math.ceil(-ext[1]) + PAD)
         fw = piv[0] + math.ceil(ext[2]) + PAD; fh = piv[1] + math.ceil(ext[3]) + PAD
-        cols = min(MAXP // fw, 8 * len(states)); rows_max = MAXP // fh
+        # @2x pages mirror the 1x grid and must stay <= MAXP, so lay 1x pages out within MAXP/2 whenever one state's
+        # 8 facings fit there (more, smaller pages); otherwise keep MAXP and ship 1x only (listed as no-@2x below).
+        lim = MAXP // 2 if any(c * fw <= MAXP // 2 and math.ceil(8 / c) * fh <= MAXP // 2 for c in range(1, 9)) else MAXP
+        cols = min(lim // fw, 8 * len(states)); rows_max = lim // fh
         spp = max(1, (cols * rows_max) // 8)  # whole states per page
         chunks = [states[i:i + spp] for i in range(0, len(states), spp)]
         m0 = model(key, "intact"); state_atlas = {}; fattach = {}; anims_by = {}
         for ci, ch in enumerate(chunks):
             gkey = f"veh_art_{key}" + (f"_{ci}" if ci else ""); n = 8 * len(ch)
-            c_ = min((c for c in range(1, min(cols, n) + 1) if math.ceil(n / c) * fh <= MAXP),
+            c_ = min((c for c in range(1, min(cols, n) + 1) if c * fw <= lim and math.ceil(n / c) * fh <= lim),
                      key=lambda c: (max(c * fw, math.ceil(n / c) * fh), c * fw * math.ceil(n / c) * fh)); rows = math.ceil(n / c_)
             W1, H1 = r4(c_ * fw), r4(rows * fh); hi = max(W1, H1) <= MAXP // 2
             fjobs = [(key, s, d, fw, fh, piv, hash((key, s)) % 1000 + d, hi) for s in ch for d in range(8)]
