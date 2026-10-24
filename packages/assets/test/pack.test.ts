@@ -15,7 +15,7 @@ describe("art pack", () => {
   const { registry } = loadManifest(pack, { lock: lockFile });
   // ids.lock.json covers the merged runtime manifest (pack + sub-manifests, as apps/client/src/view.ts loads it).
   const root = fileURLToPath(new URL("../../../", import.meta.url));
-  const subs = [["ui-kit", root + "assets/ui/kit/manifest.ui.kit.json"], ["branding", root + "assets/ui/branding/manifest.branding.json"], ["customization", dir + "customization/manifest.customization.json"], ["vehicles", dir + "vehicles/manifest.vehicles.json"], ["items", dir + "items/manifest.items.json"], ["vehicle_items", dir + "vehicle_items/manifest.vehicle_items.json"]];
+  const subs = [["ui-kit", root + "assets/ui/kit/manifest.ui.kit.json"], ["branding", root + "assets/ui/branding/manifest.branding.json"], ["customization", dir + "customization/manifest.customization.json"], ["vehicles", dir + "vehicles/manifest.vehicles.json"], ["items", dir + "items/manifest.items.json"], ["vehicle_items", dir + "vehicle_items/manifest.vehicle_items.json"], ["building", dir + "building/manifest.building.json"]];
   const merged = mergeManifests([{ name: "pack", manifest: pack as ManifestJson }, ...subs.filter(([, f]) => existsSync(f!)).map(([name, f]) => ({ name: name!, manifest: JSON.parse(readFileSync(f!, "utf8")) as ManifestJson }))]);
   const { lock } = loadManifest(merged.manifest, { lock: lockFile });
   it("sub-manifests do not duplicate pack keys", () => expect(merged.collisions).toEqual([]));
@@ -118,5 +118,29 @@ describe("vehicle_items sub-manifest", () => {
       expect(s.building.frames.length).toBe(4); for (const r of s.building.frames) expect(r.length).toBe(4);
       expect(s.building.crackOverlay).toBe("piece_garage_crack");
     }
+  });
+});
+
+describe("building sub-manifest", () => {
+  const bdir = dir + "building/";
+  const bm = JSON.parse(readFileSync(bdir + "manifest.building.json", "utf8"));
+  const size = (f: string) => { const b = readFileSync(bdir + f); return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) }; };
+  it("tier pages match their grid and are <= 2048", () => {
+    for (const a of bm.atlases) { const s = size(a.image); expect(s).toEqual({ w: a.frameW * a.columns, h: a.frameH * a.rows }); expect(Math.max(s.w, s.h)).toBeLessThanOrEqual(2048); }
+  });
+  it("every KEYS.md piece has per-tier art with 4 damage stages, mirror or 4 unique rows, and the crack overlay", () => {
+    const doc = readFileSync(fileURLToPath(new URL("../../../assets/building/KEYS.md", import.meta.url)), "utf8");
+    type B = { piece: string; frames: number[][]; crackOverlay: string; rotationArt?: string | undefined };
+    const pieces = new Map<string, B>((bm.sprites as { building?: B; rotationArt?: string }[]).filter((s) => s.building).map((s): [string, B] => [s.building!.piece, { ...s.building!, rotationArt: s.rotationArt }]));
+    const sec = doc.slice(doc.indexOf("## Piece keys"), doc.indexOf("## Damage"));
+    const bare = [...new Set([...sec.matchAll(/`([a-z_]+)`/g)].map((m) => m[1]!))];
+    expect(bare.length).toBeGreaterThanOrEqual(24);
+    const keys = bare.flatMap((k) => [1, 2, 3, 4].map((t) => `${k}@tier${t}`));
+    for (const k of keys) {
+      const b = pieces.get(k); expect(b, k).toBeDefined();
+      expect(b!.frames.length).toBe(b!.rotationArt === "mirror" ? 1 : 4); for (const r of b!.frames) expect(r.length).toBe(4);
+      expect(b!.crackOverlay).toBe("bld_crack");
+    }
+    expect(bm.sprites.find((s: { key: string }) => s.key === "bld_crack").animations.stage3).toBeDefined();
   });
 });

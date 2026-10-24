@@ -1,0 +1,169 @@
+"""Base-building piece set, tiers 1 wood / 2 stone / 3 metal / 4 reinforced. Reuses the main pack's iso box/roof
+toolkit (assets/tools/buildings*.py) so materials, outlines, damage and the grid match the existing pieces exactly:
+1 cell = 1 tile (64x32), pivot = cell centre on the ground, walls on the cell centre line, 1 floor = 48 px."""
+import os, sys, numpy as np
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../../../../assets/tools'))
+import buildings2 as b2
+from buildings import B, render_boxes, planksH, planksV, flat
+from toon import SS, noise
+from buildings2 import WALL_H, T, L, tx, TIERS
+
+def tex_plates(w, h, s, pw=14, ph=12):
+    """riveted steel plates with a cross brace (reinforced tier)"""
+    yy, xx = np.mgrid[0:h, 0:w].astype(np.float32); P, Q = pw * SS, ph * SS
+    fx, fy = xx % P, yy % Q; t = 1.0 + (noise(w, h, 5 * SS, s) - 0.5) * 0.25
+    t = np.where((fx < SS * 0.9) | (fy < SS * 0.9), 2.9, t)
+    riv = ((np.abs(fx - SS * 2.2) < SS * 0.9) | (np.abs(fx - P + SS * 2.2) < SS * 0.9)) & ((np.abs(fy - SS * 2.2) < SS * 0.9) | (np.abs(fy - Q + SS * 2.2) < SS * 0.9))
+    t = np.where(riv, -0.5, t)
+    u = xx / max(1, w); v = yy / max(1, h); br = (np.abs(u - v) < 0.05) | (np.abs(u + v - 1) < 0.05)
+    return np.where(br, t - 0.55, t) + np.where(noise(w, h, 4 * SS, s + 5) > 0.82, 0.7, 0)
+b2.TEX["plates"] = tex_plates
+TIERS["reinforced"] = dict(wall=("iron", "plates"), base=("slate", "ashlar"), frame=("slate", "plates"), floor=("iron", "diamond"),
+                           found=("slate", "ashlar"), roof="slate", roof_style="corrugated", trim="brick", post_w=0.1, beam=True)
+TIER_NAMES = {1: "wood", 2: "stone", 3: "metal", 4: "reinforced"}
+
+def _W(M, thick=T):
+    wrp, wtx = M["wall"]; return lambda x0, x1, za, zb: B(x0, x1, -thick, thick, za, zb, wrp, left=tx(wtx), right=tx(wtx), top=flat())
+def _frame(M, bx, top, thick=T):
+    frp, ftx = M["frame"]; pw = M["post_w"]
+    for sx in (-1, 1): bx.append(B(sx * L - (pw if sx > 0 else 0), sx * L + (pw if sx < 0 else 0), -thick - 0.04, thick + 0.04, 0, top + 1, frp, left=tx(ftx), right=tx(ftx)))
+    bx.append(B(-L, L, -thick - 0.05, thick + 0.05, top - 5, top, frp, top=flat()))
+def _plinth(M, bx, x0=-L, x1=L, thick=T):
+    if M["base"]: brp, btx = M["base"]; bx.append(B(x0, x1, -thick - 0.03, thick + 0.03, 0, 7, brp, top=tx(btx), left=tx(btx), right=tx(btx))); return 7
+    return 0
+
+def wall_arched(tier):
+    M = TIERS[tier]; W = _W(M); bx = []; pw = M["post_w"]; inner = L - pw; hw = 0.3; spring = 26
+    if M["base"]:
+        brp, btx = M["base"]
+        for a, b in ((-L, -hw), (hw, L)): bx.append(B(a, b, -T - 0.03, T + 0.03, 0, 7, brp, top=tx(btx), left=tx(btx), right=tx(btx)))
+    z0 = 7 if M["base"] else 0
+    bx += [W(-inner, -hw, z0, WALL_H - 5), W(hw, inner, z0, WALL_H - 5)]
+    n = 7   # arch: stepped voussoirs (half-circle approximated with boxes)
+    for k in range(n):
+        x0 = -hw + hw * (1 - np.cos(np.pi / 2 * k / n)) * 0; a = hw * np.cos(np.pi / 2 * (k + 1) / n); zb = spring + hw * 36 * np.sin(np.pi / 2 * (k + 1) / n) * 0.75
+        za = spring + hw * 36 * np.sin(np.pi / 2 * k / n) * 0.75
+        bx += [W(-hw, -a, za, WALL_H - 5), W(a, hw, za, WALL_H - 5)]
+    bx.append(W(-0.04, 0.04, spring + hw * 27, WALL_H - 5))
+    fr = M["trim"]; bx.append(B(-0.06, 0.06, -T - 0.04, T + 0.04, spring + hw * 27 - 2, spring + hw * 27 + 4, fr))   # keystone
+    bx.append(B(-hw, hw, -T, T, 0, 1.5, M["base"][0] if M["base"] else "dirt", top=flat()))
+    _frame(M, bx, WALL_H); return bx, []
+
+def wall_fortified(tier):
+    M = TIERS[tier]; t2 = T * 1.5; W = _W(M, t2); bx = []
+    z0 = _plinth(M, bx, thick=t2 + 0.02)
+    bx.append(W(-L + M["post_w"], L - M["post_w"], z0, WALL_H - 5))
+    _frame(M, bx, WALL_H, t2)
+    frp, ftx = M["frame"]
+    for x in (-0.25, 0.25):   # buttresses on the outer (+y) face
+        bx.append(B(x - 0.07, x + 0.07, t2, t2 + 0.14, 0, 30, frp, left=tx(ftx), right=tx(ftx), top=flat()))
+    for x in (-0.38, 0.0, 0.38):   # merlons
+        bx.append(B(x - 0.09, x + 0.09, -t2 - 0.05, t2 + 0.05, WALL_H, WALL_H + 7, frp, top=flat(), left=tx(ftx), right=tx(ftx)))
+    return bx, []
+
+def foundation_triangle(tier):
+    M = TIERS[tier]; rp, t = M["found"]; frp, ft = M["floor"]; n = 12; bx = []
+    for k in range(n):   # right triangle: legs along -x and -y edges, hypotenuse x + y = 0 (stepped strips, ink-smoothed)
+        y0 = -0.5 + k / n; y1 = y0 + 1 / n; xm = -(y0 + y1) / 2
+        bx += [B(-0.5, xm, y0, y1, 0, 9, rp, top=tx(t), left=tx(t), right=tx(t), edge=False), B(-0.47, xm - 0.03, y0 + 0.0, y1, 9, 12, frp, top=tx(ft), left=tx("flat"), right=tx("flat"), edge=False)]
+    return bx, []
+
+def foundation_steps(tier):
+    M = TIERS[tier]; rp, t = M["found"]; frp, ft = M["floor"]
+    bx = [B(-0.5, 0.5, -0.5, 0.0, 0, 9, rp, top=tx(t), left=tx(t), right=tx(t)), B(-0.47, 0.47, -0.47, 0.0, 9, 12, frp, top=tx(ft), left=tx("flat"), right=tx("flat"))]
+    for k in range(3):   # steps down toward +y
+        y0 = k / 6; bx.append(B(-0.45, 0.45, y0, y0 + 1 / 6, 0, 12 - (k + 1) * 3.5, frp, top=tx(ft), left=tx("flat"), right=tx("flat")))
+    return bx, []
+
+def foundation_stilt(tier):
+    M = TIERS[tier]; frp, ft = M["frame"]; drp, dt = M["floor"]; bx = []
+    for sx in (-0.38, 0.38):
+        for sy in (-0.38, 0.38): bx.append(B(sx - 0.07, sx + 0.07, sy - 0.07, sy + 0.07, 0, 8, frp, left=tx(ft), right=tx(ft)))
+    bx += [B(-0.5, 0.5, -0.5, 0.5, 8, 10, frp, top=flat(), left=planksH(3), right=planksH(3)), B(-0.48, 0.48, -0.48, 0.48, 10, 12, drp, top=tx(dt), left=tx("flat"), right=tx("flat"))]
+    return bx, []
+
+def _deck(M, holes):
+    """floor slab (z 0..4) with rectangular holes [(x0,x1,y0,y1)] — built from the boxes around one hole."""
+    rp, t = M["floor"]; (x0, x1, y0, y1), = holes; S = lambda a, b, c, d: B(a, b, c, d, 0, 4, rp, top=tx(t), left=tx("flat"), right=tx("flat"))
+    return [S(-0.5, 0.5, -0.5, y0), S(-0.5, 0.5, y1, 0.5), S(-0.5, x0, y0, y1), S(x1, 0.5, y0, y1)]
+
+def floor_stairwell(tier):
+    M = TIERS[tier]; x0, x1, y0, y1 = -0.4, 0.4, -0.2, 0.2; bx = _deck(M, [(x0, x1, y0, y1)]); frp = M["trim"]
+    bx.append(B(x0, x1, y0, y1, 0, 0.6, "ink", top=flat(0.05), faces="t", edge=False))
+    for y in (y0 - 0.04, y1):   # railings along both long sides
+        bx.append(B(x0, x1, y, y + 0.04, 13, 15, frp, top=flat()))
+        for x in (x0, 0.0, x1 - 0.04): bx.append(B(x, x + 0.04, y, y + 0.04, 4, 13, frp))
+    return bx, []
+
+def floor_skylight(tier):
+    M = TIERS[tier]; h = 0.24; bx = _deck(M, [(-h, h, -h, h)]); trim = M["trim"]
+    bx += [B(-h, h, -h, h, 1.5, 2.5, "glass", top=flat(0.3), faces="t", edge=False), B(-0.02, 0.02, -h, h, 2.5, 3.2, trim, faces="t"), B(-h, h, -0.02, 0.02, 2.5, 3.2, trim, faces="t"),
+           B(-h - 0.04, h + 0.04, -h - 0.04, -h, 4, 5, trim), B(-h - 0.04, h + 0.04, h, h + 0.04, 4, 5, trim), B(-h - 0.04, -h, -h, h, 4, 5, trim), B(h, h + 0.04, -h, h, 4, 5, trim)]
+    return bx, []
+
+def wall_corner_outer(tier):
+    bx, d = b2.wall_corner(tier); M = TIERS[tier]; frp, ftx = M["frame"]
+    for z in range(0, WALL_H - 6, 12):   # quoins on the outer corner
+        bx.append(B(-T - 0.08, T + 0.08, -T - 0.08, T + 0.08, z, z + 6, frp, top=flat(), left=tx(ftx), right=tx(ftx)))
+    return bx, d
+
+def wall_corner_inner(tier):
+    M = TIERS[tier]; W = _W(M); wrp, wtx = M["wall"]; frp, ftx = M["frame"]; bx = []; z0 = 0
+    if M["base"]:
+        brp, btx = M["base"]; z0 = 7
+        bx += [B(-T, 0.5, -T - 0.03, T + 0.03, 0, 7, brp, top=tx(btx), left=tx(btx), right=tx(btx)), B(-T - 0.03, T + 0.03, -T, 0.5, 0, 7, brp, top=tx(btx), left=tx(btx), right=tx(btx))]
+    bx += [B(T, 0.5, -T, T, z0, WALL_H - 5, wrp, left=tx(wtx), right=tx(wtx), top=flat()), B(-T, T, T, 0.5, z0, WALL_H - 5, wrp, left=tx(wtx), right=tx(wtx), top=flat()),
+           B(-T, T, -T, T, 0, WALL_H, frp, left=tx(ftx), right=tx(ftx)),
+           B(-T, 0.5, -T - 0.05, T + 0.05, WALL_H - 5, WALL_H, frp, top=flat()), B(-T - 0.05, T + 0.05, -T, 0.5, WALL_H - 5, WALL_H, frp, top=flat()),
+           B(T, T + 0.06, T, T + 0.06, z0, WALL_H - 5, M["trim"])]   # cove trim in the concave angle
+    return bx, []
+
+def wall_corner_angled(tier):
+    M = TIERS[tier]; wrp, wtx = M["wall"]; frp, ftx = M["frame"]; bx = []; n = 9
+    for k in range(n):   # 45-degree wall from (-0.5, 0) to (0, -0.5), stepped strips
+        f0, f1 = k / n, (k + 1) / n; x0, x1 = -0.5 + f0 * 0.5, -0.5 + f1 * 0.5; yc = -(x0 + x1) / 2 - 0.5
+        bx.append(B(x0, x1, yc - T, yc + T, 0, WALL_H - 5, wrp, left=tx(wtx), right=tx(wtx), top=flat(), edge=False))
+        bx.append(B(x0, x1, yc - T - 0.03, yc + T + 0.03, WALL_H - 5, WALL_H, frp, top=flat(), edge=False))
+    for (x, y) in ((-0.5, 0.0), (0.0, -0.5)): bx.append(B(x - 0.08, x + 0.08, y - 0.08, y + 0.08, 0, WALL_H + 1, frp, left=tx(ftx), right=tx(ftx)))
+    return bx, []
+
+def roof_chimney(tier):
+    M = TIERS[tier]; rp = M["roof"]; trim = M["trim"]; srp = "brick" if tier in ("wood", "stone") else "iron"
+    stx = (lambda w, h, s: b2.tex_ashlar(w, h, s, 7, 5)) if srp == "brick" else tx("panels")
+    bx = [B(-0.5, 0.5, -0.5, 0.5, 0, 4, rp, top=flat(0.15), left=flat(), right=flat()), B(-0.5, 0.5, -0.5, 0.5, 4, 7, trim, top=None, faces="lr"),
+          B(-0.16, 0.16, -0.16, 0.16, 4, 40, srp, left=stx, right=stx, top=flat()), B(-0.2, 0.2, -0.2, 0.2, 40, 44, trim, top=flat()),
+          B(-0.1, 0.1, -0.1, 0.1, 43.5, 44.2, "ink", top=flat(0.05), faces="t", edge=False)]
+    return bx, []
+CHIMNEY_SMOKE_Z = 46
+
+# piece key -> (kind, builder/arg, layer, rows, tall, existing)
+#   rows: 1 symmetric (rotationArt mirror, one row), 2 axis pieces (rows 0/1 reused for rot 2/3), 4 unique
+W = lambda kind: (lambda tier: b2.wall(tier, kind))
+PIECES = {
+  "foundation":          ("boxes", b2.foundation, 0, 1, False, True),
+  "foundation_triangle": ("boxes", foundation_triangle, 0, 4, False, False),
+  "foundation_steps":    ("boxes", foundation_steps, 0, 4, False, False),
+  "foundation_stilt":    ("boxes", foundation_stilt, 0, 1, False, False),
+  "wall":                ("boxes", W("plain"), 1, 2, True, True),
+  "wall_window":         ("boxes", W("window"), 1, 2, True, True),
+  "wall_doorway":        ("boxes", W("doorway"), 1, 2, True, True),
+  "wall_low":            ("boxes", W("low"), 1, 2, True, True),
+  "wall_arched":         ("boxes", wall_arched, 1, 2, True, False),
+  "wall_fortified":      ("boxes", wall_fortified, 1, 2, True, False),
+  "floor":               ("boxes", b2.floor, 0, 1, False, True),
+  "floor_hatch_frame":   ("boxes", b2.hatch_frame, 0, 1, False, True),
+  "floor_stairwell":     ("boxes", floor_stairwell, 0, 2, False, False),
+  "floor_skylight":      ("boxes", floor_skylight, 0, 1, False, False),
+  "wall_corner_outer":   ("boxes", wall_corner_outer, 1, 4, True, False),
+  "wall_corner_inner":   ("boxes", wall_corner_inner, 1, 4, True, False),
+  "pillar":              ("boxes", b2.pillar, 1, 1, True, True),
+  "wall_corner_angled":  ("boxes", wall_corner_angled, 1, 4, True, False),
+  "roof_flat":           ("roof", "flat", 0, 1, False, True),
+  "roof_slope":          ("roof", "slope", 0, 4, False, True),
+  "roof_gable":          ("roof", "ridge", 0, 2, False, False),
+  "roof_hip":            ("roof", "hip", 0, 4, False, True),
+  "roof_corner":         ("roof", "corner", 0, 4, False, True),
+  "roof_chimney":        ("boxes", roof_chimney, 0, 1, True, False),
+}
+# extra piece keys that reuse another piece's frames (main-pack art-only keys get tier art too)
+ALIAS = {"wall_corner": "wall_corner_outer", "roof_ridge": "roof_gable"}

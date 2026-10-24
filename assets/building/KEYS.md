@@ -1,6 +1,6 @@
 # Building piece art keys (sub-manifest `packages/assets/pack/building/manifest.building.json`)
 
-Status: art in progress. Survival: adopt these **piece keys** (`BuildPieceDef.key`); the renderer resolves
+Status: art landed (4 tier pages). Survival: adopt these **piece keys** (`BuildPieceDef.key`); the renderer resolves
 `building.piece` = `<pieceKey>@tier<N>` from `BuildPiece.tier` (render 9b50b7d) and falls back to the bare `<pieceKey>` sprite.
 If `packages/gameplay/docs/ART_KEYS_BUILDING.md` lands, that doc wins and this file will be aligned to it.
 
@@ -37,3 +37,10 @@ Every sprite declares `crackOverlay: "bld_crack"` (anims `stage1..3`).
 ## Grid
 1 cell = 1 iso tile 64x32, pivot = cell centre on the ground, wall height 48 px (1 floor); ceilings and roofs are drawn
 from their own level's floor (z = level * floor height), so they sit on wall tops.
+
+## Sprite keys (manifest)
+`bld_<piece>_t<N>` -> `building.piece` `<piece>@tier<N>`; new pieces also have `bld_<piece>` -> bare `<piece>` (tier1 art).
+`wall_corner@tierN` / `roof_ridge@tierN` reuse the `wall_corner_outer` / `roof_gable` frames. Crack overlay sprite: `bld_crack`.
+
+## Atlas
+One page per tier, `building_t1..t4`: 2016x960, 84x96 cells, pivot (42,72) = anchor (0.5, 0.75), 1x only, ~7.7 MB RGBA each.
