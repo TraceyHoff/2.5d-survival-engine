@@ -550,3 +550,6 @@ Known gaps: `PaintCmd` is not net-bridged; clan roster/perms only cover replicat
 - `interactPanel(ctx)`: Interact near a stall (≤2.5) opens that stall's trade panel, near a wardrobe opens Character.
 - Owner stall UI: `priceItemChoices`, `listItemIntents(stall, draft)` = stockStall then setListing(enabled).
 - Panels refresh by DOM diff (`ui-diff.morph`, focus/input preserved), only while open, every 250ms (500ms low-end).
+- Build-mode conflicts are resolved by input contexts: "Building" (priority 10) binds mouse.left/KeyR/Escape to Build.PlaceConfirm/RotateCW/Cancel,
+  shadowing Gameplay's Primary/Reload on the same controls; UINav leaves Esc to the input system while Building is active (no pause).
+- Placed pieces and the ghost pass `rotSteps` (rotationSteps) and `tier` to the renderer (nearest quarter turn; `<piece>@tier<N>` art).

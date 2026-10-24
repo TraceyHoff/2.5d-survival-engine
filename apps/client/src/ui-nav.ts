@@ -12,7 +12,9 @@
  */
 import { FocusManager, type Dir } from "@engine/input";
 
-export interface ContextStack { push(name: string): void; pop(name?: string): void }
+export interface ContextStack { push(name: string): void; pop(name?: string): void; isActive?(name: string): boolean }
+/** Input contexts in which Esc belongs to the game (Build.Cancel), not the pause menu. */
+export const ESC_OWNING_CONTEXTS = ["Building"] as const;
 export interface ModalHandle { id: string; el: HTMLElement; close(): void }
 export interface UINavOptions {
   root: HTMLElement;
@@ -107,6 +109,7 @@ export class UINav {
     const typing = isText(document.activeElement);
     if (!this.isOpen) {
       if (typing) return;
+      if (e.key === "Escape" && ESC_OWNING_CONTEXTS.some((c) => this.o.input?.isActive?.(c))) return; // Build.Cancel via the input system
       if (e.key === "Escape") { this.pause(); e.preventDefault(); e.stopPropagation(); return; }
       const h = this.o.hotkeys?.[e.code]; if (h && !e.ctrlKey && !e.metaKey && !e.altKey) { h(); e.preventDefault(); e.stopPropagation(); }
       return;

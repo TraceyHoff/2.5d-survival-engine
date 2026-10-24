@@ -10,9 +10,9 @@ import { showRenderError, glInfo, frameIsBlack } from "./glcheck.js";
  */
 import { World, Transform, PrevTransform, TimeOfDay, Weather, Appearance, PlayerId, defineComponent, entityIndex, type Entity } from "@engine/core";
 import { CHUNK_SIZE, tileToChunk, tileToLocal, type TileMap } from "@engine/world";
-import { loadManifest, mergeManifests, buildPieceVisual, type AssetRegistry, type ManifestFragment, type ManifestJson } from "@engine/assets";
+import { loadManifest, mergeManifests, buildPieceVisual, quarterTurn, type AssetRegistry, type ManifestFragment, type ManifestJson } from "@engine/assets";
 import { BuildGhost, IsoRenderer, Sprite, Shadow, LightSource, Occluder, SpriteFlag, sourcesFromManifest, coreAppearanceBinding } from "@engine/render";
-import { gameplayDefs, animalDefs, Animal, Health, Survival, Zombie, ResourceNode, CraftingStation, Fuel, AnimState as GAnim, BuildPiece as GPiece, Dead, Wetness, BodyTemp, Emitter, PieceLink } from "@engine/gameplay";
+import { gameplayDefs, rotationSteps, animalDefs, Animal, Health, Survival, Zombie, ResourceNode, CraftingStation, Fuel, AnimState as GAnim, BuildPiece as GPiece, Dead, Wetness, BodyTemp, Emitter, PieceLink } from "@engine/gameplay";
 
 /** Render-side schemas the renderer's bindings expect (view World only). */
 const VAnim = defineComponent("ViewAnimState", { state: "u8", startTick: "u32" });
@@ -104,8 +104,8 @@ export class IsoView {
     this.ghost ??= new BuildGhost(this.view, VPiece as never, this.registry);
     if (!p) { this.ghost.sync(null); return; }
     const names = gameplayDefs(net).pieces.get(p.piece)?.variantNames ?? [];
-    const rot = p.rotSteps === 4 ? p.rot & 3 : Math.round((p.rot * 4) / p.rotSteps) & 3;
-    this.ghost.sync({ pieceKey: p.pieceKey, x: p.x, y: p.y, rot, valid: p.valid }, { z: p.z, level: p.level, ...(names[p.variant] ? { variant: names[p.variant]! } : { variant: p.variant }) });
+    const rot = quarterTurn(p.rot, p.rotSteps);
+    this.ghost.sync({ pieceKey: p.pieceKey, x: p.x, y: p.y, rot, valid: p.valid }, { z: p.z, level: p.level, tier: p.tier, ...(names[p.variant] ? { variant: names[p.variant]! } : { variant: p.variant }) });
   }
   resize(w: number, h: number, dpr: number): void {
     const safe = new URLSearchParams(location.search).get("safe") === "1";
@@ -252,7 +252,7 @@ export class IsoView {
     if ((net.tick + entityIndex(e)) % 15 !== 0 && this.pieceStates.has(ve)) return; // cheap: lit flips are rare
     const fire = this.siblings(net, e).find((o) => net.has(o, Fuel)); const lit = fire !== undefined && net.get(fire, Fuel)!.lit === 1;
     const p = net.get(e, GPiece)!;
-    const vis = buildPieceVisual(this.registry, { type: p.type, rot: p.rot, tint: p.tint, paint: p.paint, state: lit ? "idle" : "unlit" }, { pieceKey: (t) => defs?.pieces.get(t)?.key });
+    const vis = buildPieceVisual(this.registry, { type: p.type, rot: p.rot, rotSteps: rotationSteps(net, p.type), tint: p.tint, paint: p.paint, state: lit ? "idle" : "unlit" }, { pieceKey: (t) => defs?.pieces.get(t)?.key });
     this.pieceStates.set(ve, vis.stateIndex);
   }
   private baseScale(ve: Entity): number { return this.scales.get(ve) ?? 1; }
@@ -298,7 +298,7 @@ export class IsoView {
     }
     if (net.has(e, GPiece) && defs) {
       const p = net.get(e, GPiece)!; const def = defs.pieces.get(p.type);
-      const vis = buildPieceVisual(this.registry, { type: p.type, rot: p.rot, tint: p.tint, paint: p.paint, damageStage: p.damageStage }, { pieceKey: (t) => defs.pieces.get(t)?.key });
+      const vis = buildPieceVisual(this.registry, { type: p.type, rot: p.rot, rotSteps: rotationSteps(net, p.type), tint: p.tint, paint: p.paint, damageStage: p.damageStage }, { tier: p.tier, pieceKey: (t) => defs.pieces.get(t)?.key });
       if (!vis.visualId) return undefined;
       const lh = (defs as unknown as { building?: { levelHeight?: number } }).building?.levelHeight ?? 1;
       const z = net.get(e, Transform)!.z; const level = Math.max(0, Math.round(z / (lh || 1)));

@@ -35,3 +35,22 @@ describe("morph (panel diff refresh)", () => {
     expect(document.activeElement).toBe(inp); expect(inp.value).toBe("typed");
   });
 });
+
+import { InputSystem, KeyboardMouseDevice, DEFAULT_ACTIONS, DEFAULT_CONTEXTS, DEFAULT_PROFILES } from "@engine/input";
+import { UINav } from "../src/ui-nav.js";
+describe("build-mode control conflicts (input contexts)", () => {
+  test("Building: left mouse places (no Primary), R rotates (no Reload), Esc cancels (no pause)", () => {
+    const c = { t: 0, now: () => c.t }; const sys = new InputSystem(c, { actions: DEFAULT_ACTIONS, contexts: DEFAULT_CONTEXTS, profiles: DEFAULT_PROFILES });
+    const kbm = new KeyboardMouseDevice(); sys.addDevice(kbm); sys.push("Gameplay"); const tick = () => { c.t += 50; sys.update(); };
+    kbm.press("key.KeyR"); tick(); expect(sys.pressed("Reload")).toBe(true); kbm.releaseAll(); tick();
+    sys.push("Building");
+    kbm.press("mouse.left"); tick(); expect(sys.pressed("Build.PlaceConfirm")).toBe(true); expect(sys.down("Primary")).toBe(false); kbm.releaseAll(); tick();
+    kbm.press("key.KeyR"); tick(); expect(sys.pressed("Build.RotateCW")).toBe(true); expect(sys.pressed("Reload")).toBe(false); kbm.releaseAll(); tick();
+    kbm.press("key.Escape"); tick(); expect(sys.pressed("Build.Cancel")).toBe(true); kbm.releaseAll(); tick();
+    document.body.innerHTML = `<div id="r"></div>`; let paused = 0;
+    const nav = new UINav({ root: document.getElementById("r")!, onPause: () => paused++, input: sys, pollGamepads: false });
+    document.body.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", code: "Escape", bubbles: true })); expect(paused).toBe(0);
+    sys.pop("Building"); document.body.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", code: "Escape", bubbles: true })); expect(paused).toBe(1);
+    nav.destroy?.();
+  });
+});
