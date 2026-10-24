@@ -15,7 +15,7 @@ import { AnimState as CoreAnimState, entityIndex, lerpAngle, PrevTransform, Tran
 import { CHUNK_SIZE, chunkKey, floorToTerrainZ, terrainZToFloor, type BuildingGrid, type ChunkedSpatialIndex, type IsoConfig } from "@engine/world";
 import { createProgram, GLSL_COMMON, type FrameStats, type Program } from "./gl/util.js";
 import { Sprite, Shadow, Occluder, SpriteFlag, LightSource, TintSecondary } from "./components.js";
-import { newResolved, type AtlasManager, type ResolvedFrame } from "./assets/atlasManager.js";
+import { newResolved, STREAM_MARGIN_PX, STREAM_MARGIN_ANIMAL_PX, STREAM_KEEP_FACTOR, type AtlasManager, type ResolvedFrame } from "./assets/atlasManager.js";
 import type { Rect } from "./camera.js";
 import type { StyleConfig } from "./style.js";
 import type { TransformSource } from "./transformSource.js";
@@ -339,6 +339,8 @@ export class SpriteBatch {
   sortIncremental = 0; sortFull = 0;
   /** Static chunks skipped by the chunk-grid cull this frame (kept cached, not re-gathered). */
   culledChunks = 0;
+  /** Sprites drawn as their placeholder this frame because their stream sheet was still loading. */
+  streamPlaceholders = 0;
   /** Chunk screen bounds (any height up to 1024 px above ground) against the view rect grown by 512 px. */
   private chunkOnScreen(cx: number, cy: number, r: Rect, hw: number, hh: number): boolean {
     const x0 = cx * CHUNK_SIZE, y0 = cy * CHUNK_SIZE, x1 = x0 + CHUNK_SIZE, y1 = y0 + CHUNK_SIZE;
@@ -517,7 +519,7 @@ export class SpriteBatch {
     const apVer = apData?.version ?? null;
     const lodMinor = (cx.zoom ?? 1) < this.characterOpts.minorLayerMinZoom; const hitOf = cx.bindings.hitFlash;
     const outlineOn = cx.style.outline.enabled && this.characterOpts.outline === "union";
-    this.characters = 0; this.layerInstances = 0; this.nearN = 0;
+    this.streamPlaceholders = 0; this.characters = 0; this.layerInstances = 0; this.nearN = 0;
     // nearest-N cutoff from last frame's candidate distances (one frame lag, no per-frame sort of all sprites)
     this.dressCut = nearestCutoff(this.dressD2, this.dressN, this.maxDressed); this.dressN = 0; this.dressDrawn = 0; this.dressCapped = 0;
     if (this.layerCache && (this.frameNo & 255) === 0) this.layerCache.prune((e) => world.isAlive(e));
@@ -578,8 +580,16 @@ export class SpriteBatch {
       if (src && src.entities.has(e) && src.sample(world, e, alpha, xf)) { x = xf[0]!; y = xf[1]!; z = xf[2]!; f = xf[3]!; }
       else if (ps >= 0) { x = px[ps]! + (x - px[ps]!) * alpha; y = py[ps]! + (y - py[ps]!) * alpha; z = pz[ps]! + (z - pz[ps]!) * alpha; f = lerpAngle(pf[ps]!, f, alpha); }
       const sx = (x - y) * hw, sy = (x + y) * hh - z * zs;
-      if (sx < r0x || sx > r1x || sy < r0y || sy > r1y) return;
       let sid = sp.data.spriteId[k]!;
+      // manifest "stream" sheets: page in inside view + margin (animals: wider, they walk into view), keep resident inside
+      // margin x STREAM_KEEP_FACTOR (hysteresis); outside both the page times out (AtlasManager.unloadIdleStream)
+      const sprio = hasFocus ? (x - fwx) * (x - fwx) + (y - fwy) * (y - fwy) : Infinity;
+      if (atlas.isStreamSprite(sid)) {
+        const m = an && an.slot(i) >= 0 ? STREAM_MARGIN_ANIMAL_PX : STREAM_MARGIN_PX; const km = m * STREAM_KEEP_FACTOR;
+        if (sx >= rect.x0 - km && sx <= rect.x1 + km && sy >= rect.y0 - km && sy <= rect.y1 + km)
+          atlas.streamNear(sid, sx >= rect.x0 - m && sx <= rect.x1 + m && sy >= rect.y0 - m && sy <= rect.y1 + m, sprio);
+      }
+      if (sx < r0x || sx > r1x || sy < r0y || sy > r1y) return;
       this.curRoute = 0;
       for (const rg of this.interiorRegions) if (inInteriorRegion(rg, x, y)) { this.curRoute = this.interiorFloorIds.has(sid) ? InteriorRoute.Floor : InteriorRoute.Occupant; break; }
       atlas.markUsed(sid); // hot/cold tiers: drawn-near-camera atlases stay (or are re-tiered) full res
@@ -614,6 +624,11 @@ export class SpriteBatch {
         ok = atlas.resolve(sid, bai, f, t, 0, res);
         if (bodyL) { dollAnim = res.anim; if (ok && res.atlas >= 0) atlas.markUsedAt(res.atlas); }
       } else ok = atlas.resolve(sid, bodyL ? atlas.animIndex(sid, bodyL.animName) : -1, f, 0, sp.data.frameId[k]!, res);
+      // stream sheet still loading: its placeholder (resident sprout/stub) or nothing
+      if (ok && !bodyL && res.atlas >= 0 && !atlas.streamPageReady(res.atlas, sprio)) {
+        const ph = atlas.placeholderOf(sid); if (ph < 0) return;
+        sid = ph; ok = atlas.resolve(ph, -1, f, 0, 0, res); this.streamPlaceholders++;
+      }
       if (!ok) return;
       const scale = sp.data.scale[k]! || 1;
       const key = x + y + z * zf;

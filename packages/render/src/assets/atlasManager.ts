@@ -89,7 +89,7 @@ interface AtlasRT { key: string; id: number; source: AtlasSource; img: ImageLike
 interface Pool { k: number; sw: number; sh: number; /** slot pitch (16-aligned: KTX2 4x4 blocks stay aligned down to mip 2) */ pw: number; ph: number; cols: number; perLayer: number; first: number; layers: number; lru: PageLRU<string>; slotBytes: number; tint: boolean; emis: boolean; cls: PoolClass;
   /** wear pool: its own colour array (poolTex), KTX2-compressed (`fmt` = GL internal format) or RGBA8 (fmt null), `levels` mips only */
   own?: { fmt: number | null; target: Ktx2Target | null; levels: number } }
-export type PoolClass = "wear" | "veh" | "bld" | "body";
+export type PoolClass = "wear" | "veh" | "bld" | "body" | "stream";
 /** Max mip levels of the compressed tail array: slot pitch is 16-aligned, so offsets stay 4x4-block aligned down to level 2. */
 const OWN_MAX_LEVELS = 3;
 /** Vehicle art pages kept resident at once (one page = one grouped Art sheet, ~1024^2 at 1x): desktop / low memory. */
@@ -121,6 +121,11 @@ export const SIDE_SHIFT: number = 1;
 export const SIDE_SHIFT_LOWMEM: number = 2;
 const POOL_MIN_SLOTS_DESKTOP = 48, POOL_MIN_SLOTS_LOWMEM = 24, POOL_GAP = 4, PAGE_CONCURRENCY = 6, POOL_PROTECT_FRAMES = 90;
 /** 1x wear pool slots when the budget cannot hold minSlots at 1x: the local player's worn set + the nearest neighbour's (~9 layers each); farther characters page by distance priority. */
+/** Manifest residency "stream" sheets (crops, saplings, clutter, ADR-110 animals): pool slots, page-in starts per
+ *  frame (upload budget), frames off-screen before a page is dropped (~3 s at 60 fps; touched again inside the keep
+ *  radius = hysteresis), and screen-px margins around the view: load radius, keep radius (x1.5), animals (move into view). */
+export const STREAM_POOL_SLOTS_DESKTOP = 24, STREAM_POOL_SLOTS_LOWMEM = 12, STREAM_UPLOADS_PER_FRAME = 2, STREAM_UNLOAD_FRAMES = 180;
+export const STREAM_MARGIN_PX = 256, STREAM_MARGIN_ANIMAL_PX = 640, STREAM_KEEP_FACTOR = 1.5;
 const WEAR_1X_SLOTS_LOWMEM = 18, WEAR_1X_SLOTS_DESKTOP = 32;
 
 export interface SwayParams { amp: number; freq: number; stiffness: number }
@@ -341,6 +346,8 @@ export class AtlasManager {
   streamVehicles = true;
   /** Stream building_t1..t4 per tier present nearby (refcounted by IsoRenderer's BuildingTierStreamer). */
   streamBuildingTiers = true;
+  /** Page manifest `residency: "stream"` atlases through the stream pool (false = load them resident like before). */
+  streamSheets = true;
   /** Bumped on every rebuild (pools / sprite tables replaced): refcount holders re-retain. */
   layoutVersion = 0;
   /** glGetError after each page-in (a CPU/GPU sync). IsoRenderer.syncPoints=false turns it off for honest profiling. */
@@ -348,7 +355,7 @@ export class AtlasManager {
   private poolOfA(a: AtlasRT): Pool | undefined { return a.lazy ? this.pools[a.lazy.pool] : undefined; }
   /** Pool may page now (fallback step 1 stops the wearable pool only; vehicles keep their placeholder fallback). */
   /** Wearables off (ladder EvictWearables) still pages in the local player + nearby characters (prio <= PRIO_NEAR). */
-  private poolOn(p: Pool, prio = Infinity): boolean { return p.cls !== "wear" || this.wearablesOn || prio <= PRIO_NEAR; }
+  private poolOn(p: Pool, prio = Infinity): boolean { return (p.cls !== "wear" && p.cls !== "stream") || this.wearablesOn || prio <= PRIO_NEAR; }
   private table: Float32Array = new Float32Array(0); private tableDirty0 = -1; private tableDirty1 = -1;
   private tintRowMap = new Map<number, number>();
   private frame = 1; private gen = 0; private inflight = 0; private queue: AtlasRT[] = [];
@@ -409,9 +416,11 @@ export class AtlasManager {
   get wearablesEnabled(): boolean { return this.wearablesOn; }
   /** Fallback step 1: drop every streamed page and stop paging (layers draw the body-only fallback). */
   setWearables(on: boolean): void {
-    if (on === this.wearablesOn) return; this.wearablesOn = on; if (on || !this.pools.some((p) => p.cls === "wear")) return;
-    this.gen++; this.queue = this.queue.filter((a) => this.poolOfA(a)?.cls !== "wear");
-    for (const a of this.atlases) { const p = this.poolOfA(a); if (!p || p.cls !== "wear" || a.lazy!.state === 0) continue;
+    if (on === this.wearablesOn) return; this.wearablesOn = on; if (on || !this.pools.some((p) => p.cls === "wear" || p.cls === "stream")) return;
+    // stream sheets ride the same ladder step: far ones drop to their placeholder
+    const ev = (p: Pool | undefined) => p?.cls === "wear" || p?.cls === "stream";
+    this.gen++; this.queue = this.queue.filter((a) => !ev(this.poolOfA(a)));
+    for (const a of this.atlases) { const p = this.poolOfA(a); if (!p || !ev(p) || a.lazy!.state === 0) continue;
       if (a.lazy!.state === 2 && p.lru.prioOf(a.key) <= PRIO_NEAR) continue; // local player / nearby characters stay dressed
       if (a.lazy!.state === 2) { p.lru.remove(a.key); this.vram.evict(p.slotBytes); } a.lazy!.state = 0; a.layer = -1; this.writeFrames(a, this.table, this.tintRowMap, true); }
     this.vram.pending = this.queue.length;
@@ -526,16 +535,18 @@ export class AtlasManager {
     const bldKeys = new Set<string>(); if (this.streamBuildingTiers) for (const a of registry.atlases.values()) { const src = sources.get(a.key); if (src && !lazyKeys.has(a.key) && !vehKeys.has(a.key) && isStreamedBuildingAtlas(a.key, src.url)) bldKeys.add(a.key); }
     // bodies (page geometry from the manifest: columns x rows x frame size per page, any number of pages) go compressed when KTX2 is available: KTX2 colour + tint mask KTX2
     // (@2x: pages[].ktx2 + pages[].masksKtx2.tintmask) at the scale poolScales picks; paged in eagerly at rebuild, never evicted
+    const streamKeys = new Set<string>(); if (this.streamSheets) for (const a of registry.atlases.values()) { const src = sources.get(a.key); if (src && a.residency === "stream" && !lazyKeys.has(a.key) && !vehKeys.has(a.key) && !bldKeys.has(a.key) && !legacy.has(a.key) && !/^(blob|data):/.test(src.url)) streamKeys.add(a.key); }
+    this.placeholderCache.clear();
     const bodyPages = bodyAtlasKeys(registry); this.bodyPageKeys = bodyPages;
-    const bodyKeys = new Set<string>(); if (this.ktx2Target && this.streamWearables) for (const a of registry.atlases.values()) { const src = sources.get(a.key); if (src?.ktx2 && bodyPages.has(a.key) && !lazyKeys.has(a.key) && !vehKeys.has(a.key) && !bldKeys.has(a.key) && !/^(blob|data):/.test(src.url)) bodyKeys.add(a.key); }
+    const bodyKeys = new Set<string>(); if (this.ktx2Target && this.streamWearables) for (const a of registry.atlases.values()) { const src = sources.get(a.key); if (src?.ktx2 && bodyPages.has(a.key) && !lazyKeys.has(a.key) && !vehKeys.has(a.key) && !bldKeys.has(a.key) && !streamKeys.has(a.key) && !/^(blob|data):/.test(src.url)) bodyKeys.add(a.key); }
     await Promise.all([...registry.atlases.values()].map(async (a) => {
       const src = sources.get(a.key); if (!src) throw new Error(`no image source for atlas "${a.key}"`);
-      if (lazyKeys.has(a.key) || vehKeys.has(a.key) || legacy.has(a.key) || bldKeys.has(a.key) || bodyKeys.has(a.key)) {
+      if (lazyKeys.has(a.key) || vehKeys.has(a.key) || legacy.has(a.key) || bldKeys.has(a.key) || bodyKeys.has(a.key) || streamKeys.has(a.key)) {
         let w1 = a.columns * a.frameW, h1 = a.rows * a.frameH;
         if (src.rects?.length) { w1 = 0; h1 = 0; for (const r of src.rects) { w1 = Math.max(w1, r.x + r.w); h1 = Math.max(h1, r.y + r.h); } }
         // legacy full-size pages of facing-split sprites: never drawn (resolve uses dirFrames), so no pool slot and no
         // part in slot sizing (pool -1: pageReady refuses, nothing requests them)
-        const pool = legacy.has(a.key) ? -1 : vehKeys.has(a.key) ? 1 : bldKeys.has(a.key) ? 2 : bodyKeys.has(a.key) ? 3 : 0;
+        const pool = legacy.has(a.key) ? -1 : vehKeys.has(a.key) ? 1 : bldKeys.has(a.key) ? 2 : bodyKeys.has(a.key) ? 3 : streamKeys.has(a.key) ? 4 : 0;
         lazyList.push({ key: a.key, id: a.id, source: src, img: null, emis: null, scale: 1, masks: {}, maskUrls: {}, base: 0, count: src.rects ? src.rects.length : a.columns * a.rows, fw: a.frameW, fh: a.frameH, cols: a.columns, layer: -1, px: 0, py: 0, lazy: { w1, h1, state: 0, pool } });
         return;
       }
@@ -554,13 +565,15 @@ export class AtlasManager {
     this.gen++; this.queue = []; this.pools = []; this.layoutVersion++; this.fallbackCache.clear();
     const lowMem = this.textureBudgetMB <= 256; this.sideShift = lowMem ? SIDE_SHIFT_LOWMEM : SIDE_SHIFT;
     const groups: { cls: PoolClass; lazy: AtlasRT[]; minSlots: number; cap: boolean }[] = [];
-    const wear = lazyList.filter((a) => a.lazy!.pool === 0), veh = lazyList.filter((a) => a.lazy!.pool === 1), bld = lazyList.filter((a) => a.lazy!.pool === 2), body = lazyList.filter((a) => a.lazy!.pool === 3);
+    const wear = lazyList.filter((a) => a.lazy!.pool === 0), veh = lazyList.filter((a) => a.lazy!.pool === 1), bld = lazyList.filter((a) => a.lazy!.pool === 2), body = lazyList.filter((a) => a.lazy!.pool === 3), strm = lazyList.filter((a) => a.lazy!.pool === 4);
     // building tiers first: main colour array (never the compressed tail of vehicle/wear pools)
     if (bld.length) groups.push({ cls: "bld", lazy: bld, minSlots: Math.min(bld.length, lowMem ? BLD_POOL_SLOTS_LOWMEM : BLD_POOL_SLOTS_DESKTOP), cap: true });
     // bodies: the first tail pool (compressed own array), one slot per body sheet
     if (body.length) groups.push({ cls: "body", lazy: body, minSlots: body.length, cap: true });
     // vehicles first: the wear pool's layers come last so they can live in their own (compressed) array
     if (veh.length) groups.push({ cls: "veh", lazy: veh, minSlots: Math.min(veh.length, lowMem ? VEH_POOL_SLOTS_LOWMEM : VEH_POOL_SLOTS_DESKTOP), cap: true });
+    // manifest stream sheets: visible art (kept at 1x, counted in keepVis like vehicles), a small LRU working set
+    if (strm.length) groups.push({ cls: "stream", lazy: strm, minSlots: Math.min(strm.length, lowMem ? STREAM_POOL_SLOTS_LOWMEM : STREAM_POOL_SLOTS_DESKTOP), cap: true });
     if (wear.length) groups.push({ cls: "wear", lazy: wear, minSlots: Math.min(wear.length, this.poolPolicy.minSlots ?? (lowMem ? POOL_MIN_SLOTS_LOWMEM : POOL_MIN_SLOTS_DESKTOP)), cap: false });
     // vehicles are visible art: their pool keeps a full-res (1x) working set that fitBudget never trades away; the
     // wearables pool is the streaming tier and may shrink (more paging) before any visible art is blurred
@@ -976,12 +989,42 @@ export class AtlasManager {
 
   /** Once per frame before drawing: advances the LRU clock and uploads frame-table rows patched by page-ins/evictions. */
   beginFrame(): void {
-    this.frame++;
+    this.frame++; this.streamStarts = 0;
+    if ((this.frame & 15) === 0) this.unloadIdleStream();
+    if (this.queue.length) this.pump();
     if (this.tableDirty0 < 0 || !this.frameTex) return;
     const gl = this.gl; const r0 = this.tableDirty0, n = this.tableDirty1 - r0 + 1;
     gl.bindTexture(gl.TEXTURE_2D, this.frameTex);
     gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, r0, TABLE_W * 2, n, gl.RGBA, gl.FLOAT, this.table.subarray(r0 * TABLE_W * 8, (r0 + n) * TABLE_W * 8));
     this.tableDirty0 = this.tableDirty1 = -1;
+  }
+  private streamStarts = 0;
+  /** Stream pool pages not touched for STREAM_UNLOAD_FRAMES (off-screen and outside the keep radius) are dropped. */
+  private unloadIdleStream(): void {
+    const sp = this.pools.find((p) => p.cls === "stream"); if (!sp || !sp.lru.size) return;
+    const cut = this.frame - STREAM_UNLOAD_FRAMES;
+    for (const a of this.atlases) { if (a.lazy?.state !== 2 || this.poolOfA(a) !== sp) continue; const lu = sp.lru.lastUsedOf(a.key);
+      if (lu >= 0 && lu < cut && sp.lru.refCount(a.key) === 0) { sp.lru.remove(a.key); this.vram.evict(sp.slotBytes); a.lazy!.state = 0; a.layer = -1; this.writeFrames(a, this.table, this.tintRowMap, true); } }
+  }
+  /** Stream sheets: is this resolved frame's page drawable? Non-stream atlases: always true (no request, no miss). */
+  streamPageReady(atlasIdx: number, prio = Infinity): boolean { const a = this.atlases[atlasIdx]; if (!a?.lazy || this.poolOfA(a)?.cls !== "stream") return true; return this.pageReadyA(a, prio); }
+  /** True when the sprite's (first) sheet is a manifest stream sheet. */
+  isStreamSprite(spriteId: number): boolean { const a = this.lazyOf(spriteId); return !!a && this.poolOfA(a)?.cls === "stream"; }
+  /** Near-view prefetch for stream sprites: `load` = inside the load radius (request when missing), else inside the keep
+   *  radius (touch only: keeps a resident page from timing out, never requests). No miss is counted. */
+  streamNear(spriteId: number, load: boolean, prio = Infinity): void {
+    const a = this.lazyOf(spriteId); const p = a && this.poolOfA(a); if (!a || !p || p.cls !== "stream" || !this.poolOn(p, prio)) return;
+    if (a.lazy!.state === 2) p.lru.touch(a.key, this.frame, prio); else if (load) this.request(a, prio);
+  }
+  private placeholderCache = new Map<number, number>();
+  /** Sprite drawn while a stream sheet loads: sprite.placeholder ?? atlas.placeholder (sprite key on a resident atlas);
+   *  -1 = draw nothing (null, missing, unknown, or itself streamed). */
+  placeholderOf(spriteId: number): number {
+    const c = this.placeholderCache.get(spriteId); if (c !== undefined) return c;
+    let id = -1; const reg = this.registry;
+    if (reg) { try { const s = reg.sprite(spriteId); const k = s.placeholder !== undefined ? s.placeholder : s.atlas.placeholder;
+      if (typeof k === "string") { const pid = reg.ids.sprites.tryId(k); if (pid !== undefined && !this.lazyOf(pid)) id = pid; } } catch { id = -1; } }
+    this.placeholderCache.set(spriteId, id); return id;
   }
   private lazyOf(spriteId: number, facing?: number): AtlasRT | null { const a = this.atlasAt(spriteId, facing); return a?.lazy ? a : null; }
   /** Atlas a sprite draws from at `facing` (first anim, first frame): its dirFrames page when facing-split (facing
@@ -1047,8 +1090,11 @@ export class AtlasManager {
   private enqueue(a: AtlasRT): void { const pr = a.lazy!.prio ?? Infinity; let i = this.queue.length; while (i > 0 && (this.queue[i - 1]!.lazy!.prio ?? Infinity) > pr) i--; this.queue.splice(i, 0, a); }
   private pump(): void {
     while (this.inflight < PAGE_CONCURRENCY && this.queue.length) {
-      const a = this.queue.shift()!; const g = this.gen;
+      // stream sheets: at most STREAM_UPLOADS_PER_FRAME page-in starts per frame (the rest wait in the queue)
+      const qi = this.streamStarts >= STREAM_UPLOADS_PER_FRAME ? this.queue.findIndex((q) => this.poolOfA(q)?.cls !== "stream") : 0; if (qi < 0) break;
+      const a = this.queue.splice(qi, 1)[0]!; const g = this.gen;
       const pr = a.lazy!.prio ?? Infinity; const p = this.poolOfA(a); if (!p || !this.poolOn(p, pr) || !p.lru.canAllocate(a.key, this.frame, pr)) continue;
+      if (p.cls === "stream") this.streamStarts++;
       a.lazy!.state = 1; this.inflight++;
       this.pageIn(a, g).catch((e: unknown) => { console.warn(`[render] page-in ${a.key} failed`, e); if (g === this.gen) a.lazy!.state = 0; })
         .finally(() => { this.inflight--; this.vram.pending = this.queue.length + this.inflight; this.pump(); });

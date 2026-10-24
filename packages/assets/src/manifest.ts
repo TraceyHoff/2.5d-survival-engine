@@ -41,7 +41,13 @@ export interface AtlasJson {
   ktx2?: string;
   /** Optional KTX2 (UASTC) twins of string mask paths, keyed by mask kind. */
   masksKtx2?: Partial<Record<MaskKind, string>>;
+  /** Streaming hint (optional, default "resident"): "stream" sheets page in near the camera and out when off-screen. */
+  residency?: AtlasResidency;
+  /** Sprite key drawn while a "stream" sheet loads (must live on a resident atlas); null = draw nothing. Sprites may override. */
+  placeholder?: string | null;
 }
+export const ATLAS_RESIDENCY = ["resident", "stream"] as const;
+export type AtlasResidency = (typeof ATLAS_RESIDENCY)[number];
 export interface AtlasPageJson { scale: number; image: string; /** Optional KTX2 twin of this page image. */ ktx2?: string;
   /** Optional KTX2 (UASTC) twins of this page's `<mask>@<scale>x` mask variants, keyed by mask kind (scale-1 masks use atlas.masksKtx2). */
   masksKtx2?: Partial<Record<MaskKind, string>> }
@@ -107,6 +113,8 @@ export interface SpriteJson {
   rotationArt?: RotationArt;
   sway?: SwayJson;
   tints?: Record<string, SpriteTintJson>;
+  /** Overrides the atlas placeholder while its "stream" sheet loads (sprite key on a resident atlas; null = nothing). */
+  placeholder?: string | null;
   /** decal sprites only. */
   autotile?: AutotileJson;
 }
@@ -144,7 +152,8 @@ export interface BuildingSprite { piece: string; footprint: { w: number; h: numb
 export interface SpriteDef { id: number; key: string; category: Category; atlas: Atlas; anchor: { x: number; y: number }; animations: Map<string, Animation>; animList: Animation[]; building?: BuildingSprite; sway?: SwayJson; tints: Record<string, SpriteTint>;
   autotile?: AutotileJson;
   /** Sprite-level attach points. */ attach?: AttachMap; /** Per-frame overrides by atlas frame index. */ frameAttach?: Map<number, AttachMap>;
-  /** Per-frame metadata by atlas frame index. */ frameMeta?: Map<number, FrameMeta> }
+  /** Per-frame metadata by atlas frame index. */ frameMeta?: Map<number, FrameMeta>;
+  /** Sprite-level placeholder override (key; null = nothing) while a "stream" sheet loads. */ placeholder?: string | null }
 export interface FrameRef { atlas: Atlas; frame: number; x: number; y: number; w: number; h: number; anchorX: number; anchorY: number; emissiveImage?: string; nineSlice?: NineSlice; /** draw mirrored on X (mirror rotationArt) */ flipX?: boolean;
   /** Effective attach points: sprite attach merged with this frame's override (frame wins). Unmirrored: negate x when flipX (see attachPoint). */ attach?: AttachMap;
   /** Per-frame anchors (sprite frameMeta merged with the anim's; set by frame()). Unmirrored: use AssetRegistry.anchorPoint. */ anchors?: AnchorMap;
@@ -405,6 +414,8 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
       if (![n.l, n.t, n.r, n.b].every((v) => Number.isInteger(v) && v >= 0) || n.l + n.r >= a.frameW || n.t + n.b >= a.frameH) issues.push(`${p}: nineSlice ${fs} insets invalid`);
       nine.set(f, n);
     }
+    if (a.residency !== undefined && !(ATLAS_RESIDENCY as readonly string[]).includes(a.residency)) issues.push(`${p}: residency must be "resident" | "stream"`);
+    if (a.placeholder !== undefined && a.placeholder !== null && typeof a.placeholder !== "string") issues.push(`${p}: placeholder must be a sprite key or null`);
     const IMG = /\.(png|webp)$/;
     if (a.ktx2 !== undefined && !(typeof a.ktx2 === "string" && /\.ktx2$/.test(a.ktx2))) issues.push(`${p}: ktx2 must be a .ktx2 path`);
     if (a.masksKtx2 !== undefined) for (const [k, v] of Object.entries(a.masksKtx2 ?? {})) if (!(MASK_KINDS as readonly string[]).includes(k) || typeof v !== "string" || !/\.ktx2$/.test(v)) issues.push(`${p}: masksKtx2.${k} must be a known mask kind with a .ktx2 path`);
@@ -621,6 +632,14 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
       if (v.palette !== undefined && !palKeys.has(v.palette)) issues.push(`${q}: unknown palette "${v.palette}"`);
     }
   });
+  // stream placeholders: a sprite key whose atlas is resident (it is what draws while the stream sheet loads)
+  {
+    const atOf = new Map(m.sprites.map((s) => [s.key, s.atlas])); const resOf = new Map(m.atlases.map((a) => [a.key, a.residency ?? "resident"]));
+    const chk = (q: string, ph: unknown) => { if (ph === undefined || ph === null) return; if (typeof ph !== "string") { issues.push(`${q}: placeholder must be a sprite key or null`); return; }
+      const at = atOf.get(ph); if (at === undefined) issues.push(`${q}: unknown placeholder sprite "${ph}"`); else if (resOf.get(at) === "stream") issues.push(`${q}: placeholder "${ph}" must live on a resident atlas ("${at}" is stream)`); };
+    m.atlases.forEach((a, i) => chk(`atlases[${i}](${a.key})`, a.placeholder));
+    m.sprites.forEach((s, i) => chk(`sprites[${i}](${s.key})`, s.placeholder));
+  }
   if (issues.length) throw new ManifestError(issues);
 
   // ids
@@ -643,6 +662,7 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
         stateVfx: Object.fromEntries(Object.entries(s.building.stateVfx ?? {}).map(([st, l]) => [st, l.map((e) => ({ vfx: ids.vfx.id(e.vfx), attach: e.attach }))])) } } : {}),
       ...(s.autotile ? { autotile: { neighbors: s.autotile.neighbors, ...(s.autotile.group ? { group: s.autotile.group } : {}), rules: s.autotile.rules.map((r) => ({ ...r })) } } : {}),
       ...(s.sway ? { sway: { ...s.sway } } : {}),
+      ...(s.placeholder !== undefined ? { placeholder: s.placeholder } : {}),
       ...(s.attach ? { attach: cloneAttach(s.attach) } : {}),
       ...(s.frameMeta ? { frameMeta: cloneMeta(s.frameMeta) } : {}),
       ...(s.frameAttach ? { frameAttach: new Map(Object.entries(s.frameAttach).map(([f, am]) => [Number(f), cloneAttach(am)])) } : {}),

@@ -79,6 +79,8 @@ export class PageLRU<K = string> {
   }
   touch(k: K, frame: number, prio = Infinity): boolean { const p = this.pages.get(k); if (!p) return false; p.prio = p.lastUsed === frame ? Math.min(p.prio, prio) : prio; p.lastUsed = frame; return true; }
   /** Best (lowest) priority the page was last drawn at (Infinity if not resident). */
+  /** Frame the page was last touched/allocated (-1 if not resident). */
+  lastUsedOf(k: K): number { return this.pages.get(k)?.lastUsed ?? -1; }
   prioOf(k: K): number { return this.pages.get(k)?.prio ?? Infinity; }
   /** The page that would be evicted to make room, or undefined when all pages were used in `frame` (pool full of live pages). */
   victim(frame: number, prio = Infinity): K | undefined {
