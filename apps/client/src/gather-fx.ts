@@ -68,7 +68,37 @@ export function inventoryTotals(world: World, e: Entity): Map<number, number> {
   const m = new Map<number, number>(); for (const s of listSlots(world, e)) m.set(s.item, (m.get(s.item) ?? 0) + s.count); return m;
 }
 
-interface Particle { x: number; y: number; vx: number; vy: number; life: number; age: number; color: string; size: number; leaf: boolean }
+/** ADR-128 art (nature_adr128_fx / _hpbar / _toast, manifest.nature.json). Procedural drawing stays as the fallback. */
+export const FX_CELL = 16; export const FX_COLS = 4; export const FX_FRAMES = 4; export const FX_FPS = 12;
+export const FX_SPRITE: Record<NodeBar["kind"], { key: string; first: number }> = {
+  wood: { key: "particle_wood_chip", first: 0 }, stone: { key: "particle_stone_chip", first: 4 }, plant: { key: "particle_leaf", first: 8 },
+};
+/** Source rect (in 1x atlas px; multiply by page scale) of a particle's current frame. */
+export function particleFrame(kind: NodeBar["kind"], age: number, scale = 1): { sx: number; sy: number; sw: number; sh: number } {
+  const f = FX_SPRITE[kind].first + (Math.floor(Math.max(0, age) * FX_FPS) % FX_FRAMES); const c = FX_CELL * scale;
+  return { sx: (f % FX_COLS) * c, sy: Math.floor(f / FX_COLS) * c, sw: c, sh: c };
+}
+/** ui_node_hpbar_frame: a 32x4 bar centred (rows 6..9) in a 32x16 cell; 9-slice l/r 2 px. */
+export const HPBAR = { w: 32, h: 4, y: 6, l: 2, r: 2 } as const;
+/** Horizontal 3-slice of the hp bar frame into a dest rect: [sx, sw, dx, dw] per piece (source in 1x px times scale). */
+export function hpbarSlices(dx: number, dw: number, scale = 1): Array<[number, number, number, number]> {
+  const { w, l, r } = HPBAR; const L = Math.min(l * 2, dw / 2), R = Math.min(r * 2, dw / 2); // caps drawn at 2 css px per art px
+  return [[0, l * scale, dx, L], [l * scale, (w - l - r) * scale, dx + L, Math.max(0, dw - L - R)], [(w - r) * scale, r * scale, dx + dw - R, R]];
+}
+/** ui_pickup_toast_bg: 48x32 cell, 9-slice l/r 10, t/b 12 (pill rows 4..27). */
+export const TOAST_SLICE = { l: 10, t: 12, r: 10, b: 12 } as const;
+export const ART_URLS = {
+  fx: [new URL("../../../packages/assets/pack/nature/atlases/nature_adr128_fx.png", import.meta.url).href, new URL("../../../packages/assets/pack/nature/atlases/nature_adr128_fx@2x.png", import.meta.url).href],
+  hpbar: [new URL("../../../packages/assets/pack/nature/atlases/nature_adr128_hpbar.png", import.meta.url).href, new URL("../../../packages/assets/pack/nature/atlases/nature_adr128_hpbar@2x.png", import.meta.url).href],
+  toast: [new URL("../../../packages/assets/pack/nature/atlases/nature_adr128_toast.png", import.meta.url).href, new URL("../../../packages/assets/pack/nature/atlases/nature_adr128_toast@2x.png", import.meta.url).href],
+} as const;
+const ready = (im: HTMLImageElement | undefined): im is HTMLImageElement => !!im && im.complete && im.naturalWidth > 0;
+function loadArt(urls: readonly string[], onLoad?: (im: HTMLImageElement, i: number) => void): HTMLImageElement[] {
+  if (typeof Image === "undefined") return [];
+  return urls.map((u, i) => { const im = new Image(); im.decoding = "async"; if (onLoad) im.onload = () => onLoad(im, i); im.src = u; return im; });
+}
+
+interface Particle { x: number; y: number; vx: number; vy: number; life: number; age: number; color: string; size: number; leaf: boolean; kind: NodeBar["kind"] }
 const COLORS: Record<NodeBar["kind"], string[]> = { wood: ["#C8955A", "#8B5A2B", "#5E8C3A"], stone: ["#9A9A9A", "#6E6E6E", "#C4C0B8"], plant: ["#5E8C3A", "#7FB24A", "#A3C76B"] };
 
 export interface GatherFxDeps {
@@ -80,12 +110,15 @@ const CSS = `#gather-fx{position:absolute;inset:0;z-index:3;pointer-events:none}
 #pickup-toasts[data-device=touch]{bottom:auto;top:84px;left:8px;font-size:12px}
 #pickup-toasts [data-role=toast]{display:flex;align-items:center;gap:6px;padding:3px 8px 3px 4px;border-radius:6px;background:rgba(20,16,12,.62);color:#FFFAF0;transition:opacity .3s ease,transform .3s ease;text-shadow:0 1px 1px #000}
 #pickup-toasts [data-role=toast][data-fade=true]{opacity:0;transform:translateX(-8px)}
+#pickup-toasts[data-art=true] [data-role=toast]{background:transparent;border-style:solid;border-width:6px 5px;border-image:var(--toast-bg) ${TOAST_SLICE.t} ${TOAST_SLICE.r} ${TOAST_SLICE.b} ${TOAST_SLICE.l} fill / 12px 10px / 0 round;border-radius:0;padding:0 6px 0 2px;color:#3a2a18;text-shadow:none}
 #pickup-toasts .ic{width:20px;height:20px;flex:none;background:var(--cz-icon,#6b5a45) var(--cz-ipos,center)/var(--cz-isize,contain) no-repeat;border-radius:3px}`;
 
 export function mountGatherFx(root: HTMLElement, d: GatherFxDeps): { destroy(): void } {
   const style = document.createElement("style"); style.textContent = CSS; document.head.append(style);
   const cv = document.createElement("canvas"); cv.id = "gather-fx"; root.append(cv);
   const box = document.createElement("div"); box.id = "pickup-toasts"; box.setAttribute("aria-live", "polite"); root.append(box);
+  const fx = loadArt(ART_URLS.fx), bar = loadArt(ART_URLS.hpbar);
+  loadArt(ART_URLS.toast.slice(0, 1), () => { box.style.setProperty("--toast-bg", `url("${ART_URLS.toast[0]}")`); box.dataset["art"] = "true"; }); // else the CSS pill stays
   const hits = new NodeHits(); const stack = new ToastStack(); let parts: Particle[] = []; let raf = 0; let last = performance.now(); let player: Entity | undefined; let lastInv = 0;
   const label = (item: number): { name: string; icon: string } => { const it = gameplayDefs(d.world()).items.get(item); const key = it?.spriteKey ?? ""; return { name: it?.name ?? `#${item}`, icon: d.icon ? d.icon(item, key) : key }; };
   const tick = (now: number): void => {
@@ -94,7 +127,7 @@ export function mountGatherFx(root: HTMLElement, d: GatherFxDeps): { destroy(): 
       const w = d.world(); const cam = d.camera(); const p = d.player();
       for (const b of hits.scan(w, now)) for (let i = 0; i < 7; i++) {
         const a = Math.random() * Math.PI * 2; const sp = 0.6 + Math.random() * 1.2; const cs = COLORS[b.kind];
-        parts.push({ x: b.x, y: b.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 0.45 + Math.random() * 0.35, age: 0, color: cs[i % cs.length]!, size: b.kind === "stone" ? 3 : 4, leaf: b.kind !== "stone" && i % 3 === 2 });
+        parts.push({ x: b.x, y: b.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 0.45 + Math.random() * 0.35, age: 0, color: cs[i % cs.length]!, size: b.kind === "stone" ? 3 : 4, leaf: b.kind !== "stone" && i % 3 === 2, kind: b.kind });
       }
       if (p !== player) { player = p; stack.reset(); }
       if (p !== undefined && now - lastInv > 100) { lastInv = now; stack.update(inventoryTotals(w, p), now, label); }
@@ -104,17 +137,24 @@ export function mountGatherFx(root: HTMLElement, d: GatherFxDeps): { destroy(): 
       const g = cv.getContext("2d"); if (!g) return; g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
       if (!cam || d.hidden()) { parts = []; return; }
       const z = Math.max(0.6, Math.min(2, cam.drawZoom)); const touch = d.device?.() === "touch";
+      const pi = dpr > 1 && ready(fx[1]) ? 1 : 0; const fxIm = ready(fx[pi]) ? fx[pi] : undefined; const fxS = pi + 1;
+      const bi = dpr > 1 && ready(bar[1]) ? 1 : 0; const barIm = ready(bar[bi]) ? bar[bi] : undefined; const barS = bi + 1;
+      g.imageSmoothingEnabled = false;
       for (const b of hits.bars.values()) {
         const al = nodeBarAlpha(now - b.at); if (al <= 0) continue; const s = isoToCss(cam, b.x, b.y);
         const bw = (touch ? 44 : 36) * z, bh = Math.max(4, 5 * z), x = s.x - bw / 2, y = s.y - 58 * z;
-        g.globalAlpha = al; g.fillStyle = "rgba(20,16,12,.75)"; g.fillRect(x - 1, y - 1, bw + 2, bh + 2);
-        g.fillStyle = b.frac > 0.5 ? "#7BC86C" : b.frac > 0.25 ? "#E6C47E" : "#C0584A"; g.fillRect(x, y, bw * b.frac, bh);
+        g.globalAlpha = al; const fill = b.frac > 0.5 ? "#7BC86C" : b.frac > 0.25 ? "#E6C47E" : "#C0584A";
+        if (barIm) { // art frame (3-sliced, 4 px tall crop) over a dark well + the fill inside its rim
+          g.fillStyle = "rgba(20,16,12,.55)"; g.fillRect(x, y, bw, bh); g.fillStyle = fill; const inset = Math.max(1, bh / 4); g.fillRect(x + inset, y + inset, (bw - 2 * inset) * b.frac, bh - 2 * inset);
+          for (const [sx, sw, dx, dw] of hpbarSlices(x, bw, barS)) if (dw > 0) g.drawImage(barIm, sx, HPBAR.y * barS, sw, HPBAR.h * barS, dx, y, dw, bh);
+        } else { g.fillStyle = "rgba(20,16,12,.75)"; g.fillRect(x - 1, y - 1, bw + 2, bh + 2); g.fillStyle = fill; g.fillRect(x, y, bw * b.frac, bh); }
       }
       parts = parts.filter((q) => (q.age += dt) < q.life);
       for (const q of parts) {
         q.x += q.vx * dt; q.y += q.vy * dt; const s = isoToCss(cam, q.x, q.y); const lift = (24 + 40 * q.age - 90 * q.age * q.age) * z;
         g.globalAlpha = 1 - q.age / q.life; g.fillStyle = q.color;
-        if (q.leaf) { g.beginPath(); g.ellipse(s.x, s.y - lift, q.size * z, q.size * 0.5 * z, q.age * 6, 0, Math.PI * 2); g.fill(); } else g.fillRect(s.x - q.size * z / 2, s.y - lift, q.size * z, q.size * z);
+        if (fxIm) { const r = particleFrame(q.kind, q.age, fxS); const sz = FX_CELL * 0.75 * z; g.drawImage(fxIm, r.sx, r.sy, r.sw, r.sh, s.x - sz / 2, s.y - lift - sz / 2, sz, sz); }
+        else if (q.leaf) { g.beginPath(); g.ellipse(s.x, s.y - lift, q.size * z, q.size * 0.5 * z, q.age * 6, 0, Math.PI * 2); g.fill(); } else g.fillRect(s.x - q.size * z / 2, s.y - lift, q.size * z, q.size * z);
       }
       g.globalAlpha = 1;
     } catch { /* overlays must never break a frame */ }
