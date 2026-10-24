@@ -388,6 +388,7 @@ const MANIFEST_INDEX: { name: string; url: string; optional?: boolean }[] = [
   { name: "items", url: "pack/items/manifest.items.json", optional: true },
   { name: "vehicle_items", url: "pack/vehicle_items/manifest.vehicle_items.json", optional: true },
   { name: "building", url: "pack/building/manifest.building.json", optional: true },
+  { name: "nature", url: "pack/nature/manifest.nature.json", optional: true },
 ];
 async function loadMergedManifest(art: string): Promise<ReturnType<typeof loadManifest>> {
   const get = async (u: string): Promise<unknown> => { try { const r = await fetch(u); return r.ok ? await r.json() : undefined; } catch { return undefined; } };

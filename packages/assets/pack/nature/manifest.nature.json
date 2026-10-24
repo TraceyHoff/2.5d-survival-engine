@@ -1,0 +1,481 @@
+{
+ "version": 1,
+ "name": "nature",
+ "atlases": [
+  {
+   "key": "nature_trees",
+   "image": "atlases/nature_trees.png",
+   "frameW": 96,
+   "frameH": 136,
+   "columns": 8,
+   "rows": 2,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_trees@2x.png",
+     "ktx2": "atlases/nature_trees@2x.ktx2"
+    }
+   ],
+   "masks": {
+    "sway": "atlases/nature_trees_sway.png"
+   },
+   "ktx2": "atlases/nature_trees.ktx2",
+   "masksKtx2": {
+    "sway": "atlases/nature_trees_sway.ktx2"
+   }
+  },
+  {
+   "key": "nature_bushes",
+   "image": "atlases/nature_bushes.png",
+   "frameW": 56,
+   "frameH": 56,
+   "columns": 8,
+   "rows": 2,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_bushes@2x.png",
+     "ktx2": "atlases/nature_bushes@2x.ktx2"
+    }
+   ],
+   "masks": {
+    "sway": "atlases/nature_bushes_sway.png"
+   },
+   "ktx2": "atlases/nature_bushes.ktx2",
+   "masksKtx2": {
+    "sway": "atlases/nature_bushes_sway.ktx2"
+   }
+  }
+ ],
+ "sprites": [
+  {
+   "key": "pine_tree",
+   "category": "resource",
+   "atlas": "nature_trees",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8971
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 1.6,
+    "freq": 0.25,
+    "stiffness": 0.7
+   }
+  },
+  {
+   "key": "birch_tree",
+   "category": "resource",
+   "atlas": "nature_trees",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8971
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 1.6,
+    "freq": 0.25,
+    "stiffness": 0.7
+   }
+  },
+  {
+   "key": "maple_tree",
+   "category": "resource",
+   "atlas": "nature_trees",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8971
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 1.6,
+    "freq": 0.25,
+    "stiffness": 0.7
+   }
+  },
+  {
+   "key": "willow_tree",
+   "category": "resource",
+   "atlas": "nature_trees",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8971
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 1.6,
+    "freq": 0.25,
+    "stiffness": 0.7
+   }
+  },
+  {
+   "key": "palm_tree",
+   "category": "resource",
+   "atlas": "nature_trees",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8971
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 2.0,
+    "freq": 0.3,
+    "stiffness": 0.6
+   }
+  },
+  {
+   "key": "apple_tree",
+   "category": "resource",
+   "atlas": "nature_trees",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8971
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      5
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      6
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 1.6,
+    "freq": 0.25,
+    "stiffness": 0.7
+   }
+  },
+  {
+   "key": "pear_tree",
+   "category": "resource",
+   "atlas": "nature_trees",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8971
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      7
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 1.6,
+    "freq": 0.25,
+    "stiffness": 0.7
+   }
+  },
+  {
+   "key": "cherry_tree",
+   "category": "resource",
+   "atlas": "nature_trees",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8971
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      9
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      10
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 1.6,
+    "freq": 0.25,
+    "stiffness": 0.7
+   }
+  },
+  {
+   "key": "orange_tree",
+   "category": "resource",
+   "atlas": "nature_trees",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8971
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      11
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 1.6,
+    "freq": 0.25,
+    "stiffness": 0.7
+   }
+  },
+  {
+   "key": "peach_tree",
+   "category": "resource",
+   "atlas": "nature_trees",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8971
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      13
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      14
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 1.6,
+    "freq": 0.25,
+    "stiffness": 0.7
+   }
+  },
+  {
+   "key": "raspberry_bush",
+   "category": "resource",
+   "atlas": "nature_bushes",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7679
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.7
+   }
+  },
+  {
+   "key": "blackberry_bush",
+   "category": "resource",
+   "atlas": "nature_bushes",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7679
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.7
+   }
+  },
+  {
+   "key": "strawberry_bush",
+   "category": "resource",
+   "atlas": "nature_bushes",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7679
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      5
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.7
+   }
+  },
+  {
+   "key": "fiber_bush",
+   "category": "resource",
+   "atlas": "nature_bushes",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7679
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      6
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.7
+   }
+  },
+  {
+   "key": "dry_shrub",
+   "category": "resource",
+   "atlas": "nature_bushes",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7679
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      7
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 1.2,
+    "freq": 0.7,
+    "stiffness": 0.4
+   }
+  },
+  {
+   "key": "fallen_log",
+   "category": "resource",
+   "atlas": "nature_bushes",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7679
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "mossy_log",
+   "category": "resource",
+   "atlas": "nature_bushes",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7679
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      9
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "rotten_stump",
+   "category": "resource",
+   "atlas": "nature_bushes",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7679
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      10
+     ],
+     "fps": 1
+    }
+   }
+  }
+ ]
+}

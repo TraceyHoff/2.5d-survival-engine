@@ -15,7 +15,7 @@ describe("art pack", () => {
   const { registry } = loadManifest(pack, { lock: lockFile });
   // ids.lock.json covers the merged runtime manifest (pack + sub-manifests, as apps/client/src/view.ts loads it).
   const root = fileURLToPath(new URL("../../../", import.meta.url));
-  const subs = [["ui-kit", root + "assets/ui/kit/manifest.ui.kit.json"], ["branding", root + "assets/ui/branding/manifest.branding.json"], ["customization", dir + "customization/manifest.customization.json"], ["vehicles", dir + "vehicles/manifest.vehicles.json"], ["items", dir + "items/manifest.items.json"], ["vehicle_items", dir + "vehicle_items/manifest.vehicle_items.json"], ["building", dir + "building/manifest.building.json"]];
+  const subs = [["ui-kit", root + "assets/ui/kit/manifest.ui.kit.json"], ["branding", root + "assets/ui/branding/manifest.branding.json"], ["customization", dir + "customization/manifest.customization.json"], ["vehicles", dir + "vehicles/manifest.vehicles.json"], ["items", dir + "items/manifest.items.json"], ["vehicle_items", dir + "vehicle_items/manifest.vehicle_items.json"], ["building", dir + "building/manifest.building.json"], ["nature", dir + "nature/manifest.nature.json"]];
   const merged = mergeManifests([{ name: "pack", manifest: pack as ManifestJson }, ...subs.filter(([, f]) => existsSync(f!)).map(([name, f]) => ({ name: name!, manifest: JSON.parse(readFileSync(f!, "utf8")) as ManifestJson }))]);
   const { lock } = loadManifest(merged.manifest, { lock: lockFile });
   it("sub-manifests do not duplicate pack keys", () => expect(merged.collisions).toEqual([]));
@@ -148,5 +148,26 @@ describe("building sub-manifest", () => {
       expect(b!.crackOverlay).toBe("bld_crack");
     }
     expect(bm.sprites.find((s: { key: string }) => s.key === "bld_crack").animations.stage3).toBeDefined();
+  });
+});
+
+describe("nature sub-manifest", () => {
+  const ndir = dir + "nature/";
+  const nm = JSON.parse(readFileSync(ndir + "manifest.nature.json", "utf8"));
+  const size = (f: string) => { const b = readFileSync(ndir + f); return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) }; };
+  it("pages match their grid, are 16-aligned and <= 2048 (1x and @2x), with KTX2 twins", () => {
+    for (const a of nm.atlases) {
+      const s = size(a.image); expect(s).toEqual({ w: a.frameW * a.columns, h: a.frameH * a.rows });
+      expect(s.w % 16).toBe(0); expect(s.h % 16).toBe(0);
+      for (const p of a.pages ?? []) { const q = size(p.image); expect(q).toEqual({ w: s.w * p.scale, h: s.h * p.scale }); expect(Math.max(q.w, q.h)).toBeLessThanOrEqual(2048); expect(existsSync(ndir + p.ktx2)).toBe(true); }
+      expect(existsSync(ndir + a.ktx2)).toBe(true);
+      for (const m of Object.values<string>(a.masks ?? {})) expect(size(m)).toEqual(s);
+    }
+  });
+  it("covers the ADR-110 resource keys it owns", () => {
+    const keys = new Set(nm.sprites.map((s: { key: string }) => s.key));
+    for (const k of ["pine_tree", "birch_tree", "maple_tree", "willow_tree", "palm_tree", "apple_tree", "pear_tree", "cherry_tree", "orange_tree", "peach_tree",
+      "raspberry_bush", "blackberry_bush", "strawberry_bush", "fiber_bush", "dry_shrub", "fallen_log", "mossy_log", "rotten_stump"]) expect(keys.has(k), k).toBe(true);
+    for (const s of nm.sprites.filter((x: { key: string }) => /_(tree|bush)$/.test(x.key))) expect(s.sway, s.key).toBeDefined();
   });
 });
