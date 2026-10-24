@@ -73,9 +73,12 @@ interface SpriteRT {
 }
 interface AtlasRT { key: string; id: number; source: AtlasSource; img: ImageLike | null; emis: ImageLike | null; scale: number;
   masks: Partial<Record<MaskName, ImageLike>>; maskUrls: Partial<Record<MaskName, string>>; base: number; count: number; fw: number; fh: number; cols: number; layer: number; px: number; py: number;
-  /** streamed wearable page: not loaded at rebuild (see header); w1/h1 = 1x page size */ lazy?: { w1: number; h1: number; state: 0 | 1 | 2 } }
+  /** streamed wearable page: not loaded at rebuild (see header); w1/h1 = 1x page size */ lazy?: { w1: number; h1: number; state: 0 | 1 | 2 };
+  /** budget tier: cold art is downscaled before hot art (see fitBudget) */ cold?: boolean }
 interface Pool { k: number; sw: number; sh: number; cols: number; perLayer: number; first: number; layers: number; lru: PageLRU<string>; slotBytes: number; tint: boolean }
 /** Minimum streamed pages kept resident at once (working set: ~8 wearables x a few distinct outfits on screen). */
+/** Emissive + mask arrays are stored at layerSize >> SIDE_SHIFT (same normalized UVs, 1/4 the bytes). */
+export const SIDE_SHIFT: number = 1;
 const POOL_MIN_SLOTS_DESKTOP = 48, POOL_MIN_SLOTS_LOWMEM = 24, POOL_GAP = 4, PAGE_CONCURRENCY = 6, POOL_PROTECT_FRAMES = 90;
 
 export interface SwayParams { amp: number; freq: number; stiffness: number }
@@ -140,7 +143,28 @@ export function setLevelRange(gl: WebGL2RenderingContext, target: number, levels
 /** Smallest atlas budget downscale (x0.125 below the old x0.25 floor: phones that refuse 107 MB of arrays). */
 export const MIN_ATLAS_DOWNSCALE = 0.125;
 
+export type AtlasTier = "hot" | "cold";
+/** Always hot: terrain, bodies/characters, common props, UI and fonts. */
+export const HOT_ATLAS_RE = /(^|[_/-])(tiles?|terrain|ground|characters?|bod(y|ies)|base|resources|decor|items|equipment|held|buildings?|openings|furniture|fog|ui|fonts?|sdf)([_@/-]|$)/i;
+/** Cold: rare variants, distant LODs, one-shot fx, huge set pieces. Anything matching neither stays hot. */
+export const COLD_ATLAS_RE = /(lod\d*|_far|distant|rare|_huge|_big|^fx_|death_bag|zombies_(brute|mummy|pumpkin|runner)|animals_large|critters|wear|cosmetic|hair|hats?|accessor|tops?|bottoms?|shoes|faces?|eyes)/i;
+/** Default tier: HOT_ATLAS_RE wins; atlases holding body sprites are hot; COLD_ATLAS_RE or mostly-wearable atlases are cold. */
+export function defaultAtlasTier(key: string, opts: { bodies?: boolean; wearShare?: number } = {}): AtlasTier {
+  if (opts.bodies || HOT_ATLAS_RE.test(key)) return "hot";
+  if (COLD_ATLAS_RE.test(key) || (opts.wearShare ?? 0) >= 0.5) return "cold";
+  return "hot";
+}
+
 /** Downscale every image of the list by k (colour/emissive smooth, masks pixelated); frame sizes stay in 1x px via a.scale. */
+/** Halve emissive + mask images for the half-size side arrays (no-op without createImageBitmap). */
+async function halveSide(list: AtlasRT[]): Promise<boolean> {
+  if (typeof createImageBitmap !== "function" || SIDE_SHIFT === 0) return false;
+  const k = 1 / (1 << SIDE_SHIFT);
+  const rs = (im: ImageLike, q: "high" | "pixelated") => createImageBitmap(im as ImageBitmapSource, { resizeWidth: Math.max(1, Math.floor(im.width * k)), resizeHeight: Math.max(1, Math.floor(im.height * k)), resizeQuality: q, premultiplyAlpha: "none", colorSpaceConversion: "none" } as ImageBitmapOptions);
+  await Promise.all(list.map(async (a) => { if (a.emis) a.emis = await rs(a.emis, "high"); for (const m of Object.keys(a.masks) as MaskName[]) a.masks[m] = await rs(a.masks[m]!, "pixelated"); }));
+  return true;
+}
+
 async function scaleList(list: AtlasRT[], k: number): Promise<void> {
   if (typeof createImageBitmap !== "function") return;
   const rs = (im: ImageLike, q: "high" | "pixelated") => createImageBitmap(im as ImageBitmapSource, { resizeWidth: Math.max(1, Math.floor(im.width * k)), resizeHeight: Math.max(1, Math.floor(im.height * k)), resizeQuality: q, premultiplyAlpha: "none", colorSpaceConversion: "none" } as ImageBitmapOptions);
@@ -222,6 +246,14 @@ export class AtlasManager {
   textureBudgetMB: number;
   /** Current budget downscale (1 = full res). */
   downscale = 1;
+  /** Downscale applied to cold-tier atlases (<= downscale). */
+  coldDownscale = 1;
+  /** Scale of the side (emissive/mask) images vs the colour page (1/2 when halved). */
+  private sideScale = 1;
+  /** Override the hot/cold budget tier per atlas key (default defaultAtlasTier). */
+  atlasTier?: (key: string, info: { bodies: boolean; wearShare: number }) => AtlasTier;
+  /** Atlas keys used recently (renderer marks them); always treated hot at the next rebuild. */
+  readonly recentlyUsed = new Set<string>();
   /** GL errors seen while allocating/uploading the arrays (diagnostics). */
   uploadErrors: string[] = [];
   private oomFlag = false;
@@ -278,7 +310,7 @@ export class AtlasManager {
     const s = scale >= 1.5 ? 2 : 1; if (s === this.pageScale) return false;
     this.pageScale = s;
     if (!this.registry) return false;
-    const changes = this.atlases.some((a) => !a.lazy && this.pickScale(this.registry!.atlases.get(a.key)!, a.source) !== a.scale / this.downscale);
+    const changes = this.atlases.some((a) => !a.lazy && this.pickScale(this.registry!.atlases.get(a.key)!, a.source) !== a.scale / (a.cold ? this.coldDownscale : this.downscale));
     if (!changes) return false;
     await this.rebuild(this.registry, new Map(this.atlases.map((a) => [a.key, a.source] as [string, AtlasSource])));
     return true;
@@ -338,7 +370,7 @@ export class AtlasManager {
     this.gen++; this.queue = []; this.pool = null;
     const minSlots = Math.min(lazyList.length, this.poolPolicy.minSlots ?? (this.textureBudgetMB <= 256 ? POOL_MIN_SLOTS_LOWMEM : POOL_MIN_SLOTS_DESKTOP));
     const reserve = lazyList.length ? this.poolReserveBytes(lazyList, minSlots, list) : 0;
-    await this.fitBudget(list, reserve);
+    this.registryForTier = registry; await this.fitBudget(list, reserve); this.sideScale = (await halveSide(list)) ? 1 / (1 << SIDE_SHIFT) : 1;
     const layout = (): void => { this.pack(list); this.planPool(lazyList, minSlots, list); let b = this.totalFrames; for (const a of lazyList) { a.base = b; b += a.count; } this.totalFrames = b; };
     layout();
     const all = [...list, ...lazyList];
@@ -349,7 +381,7 @@ export class AtlasManager {
       // the driver refused the arrays: halve again and re-upload (once per step)
       const msg = `atlas upload out of GPU memory at ${this.gpuMB()} MB (downscale ${this.downscale}); retrying at ${this.downscale / 2}`;
       console.warn("[render] " + msg); this.onError?.({ kind: "oom", message: msg });
-      await scaleList(list, 0.5); this.downscale /= 2; layout(); this.upload(list, this.frameTintRows(registry, all), all);
+      await scaleList(list, 0.5); this.downscale /= 2; this.coldDownscale /= 2; layout(); this.upload(list, this.frameTintRows(registry, all), all);
     }
     list.push(...lazyList);
     // sprite runtime tables
@@ -390,7 +422,7 @@ export class AtlasManager {
     return 1 + (list.some((a) => a.emis) ? 1 : 0) + (["sheen", "sway"] as const).filter((m) => list.some((a) => a.masks[m])).length + (poolTint || list.some((a) => a.masks.tintmask) ? 1 : 0);
   }
   /** Bytes of one layer across every allocated array, full mip chain included. */
-  private layerBytes(list: AtlasRT[], poolTint?: boolean): number { return rgbaBytes(this.layerSize, this.layerSize, true) * this.arrayCount(list, poolTint); }
+  private layerBytes(list: AtlasRT[], poolTint?: boolean): number { const h = Math.max(1, this.layerSize >> SIDE_SHIFT); return rgbaBytes(this.layerSize, this.layerSize, true) + rgbaBytes(h, h, true) * (this.arrayCount(list, poolTint) - 1); }
   private poolGeom(lazy: AtlasRT[], k: number): { sw: number; sh: number; cols: number; perLayer: number } {
     const S = this.layerSize; const w1 = Math.max(...lazy.map((a) => a.lazy!.w1)), h1 = Math.max(...lazy.map((a) => a.lazy!.h1));
     const sw = Math.max(1, Math.ceil(w1 * k)), sh = Math.max(1, Math.ceil(h1 * k));
@@ -439,18 +471,51 @@ export class AtlasManager {
     this.pool = pick; this.layers += pick.layers;
     for (const a of lazy) { a.scale = pick.k; a.lazy!.state = 0; a.layer = -1; }
   }
-  /** Pick the largest downscale (1, 0.5, 0.25) whose packed arrays fit textureBudgetMB; atlases larger than a layer are always shrunk. */
+  /**
+   * Hot/cold budget fit. Hot atlases (terrain, bodies, common props, UI, recently used) keep the largest scale; cold ones
+   * (rare variants, distant LODs, one-shot fx, unreferenced) are shrunk first. Tries (hot, cold) best-first: hot 1 with cold
+   * 1..MIN, then hot 0.5 with cold 0.5..MIN, ... Atlases larger than a layer are always shrunk.
+   */
   private async fitBudget(list: AtlasRT[], reserveBytes = 0): Promise<void> {
     const S = this.layerSize; const budget = this.textureBudgetMB * 1048576 - reserveBytes;
-    const tooBig = Math.max(1, ...list.map((a) => Math.max(a.img!.width, a.img!.height) / S));
-    let d = 1; while (d > 1 / tooBig) d /= 2;
-    const dims = (k: number) => list.map((a) => ({ ...a, img: { width: Math.max(1, Math.floor(a.img!.width * k)), height: Math.max(1, Math.floor(a.img!.height * k)) } as ImageLike }));
-    while (d > MIN_ATLAS_DOWNSCALE) { this.pack(dims(d)); if (this.estimate(list) <= budget) break; d /= 2; }
-    this.downscale = d;
-    if (d < 1) {
-      this.pack(dims(d)); console.warn(`[render] atlas arrays over the ${this.textureBudgetMB} MB GPU budget at full res: downscaling atlas images x${d} (~${Math.round(this.estimate(list) / 1048576)} MB)`);
-      await scaleList(list, d);
+    this.classify(list);
+    const cap = (a: AtlasRT) => { let d = 1; const t = Math.max(a.img!.width, a.img!.height) / S; while (d > 1 / Math.max(1, t)) d /= 2; return d; };
+    const caps = list.map(cap);
+    const dims = (h: number, c: number) => list.map((a, i) => { const k = Math.min(caps[i]!, a.cold ? c : h); return { ...a, img: { width: Math.max(1, Math.floor(a.img!.width * k)), height: Math.max(1, Math.floor(a.img!.height * k)) } as ImageLike }; });
+    let best: [number, number] | null = null;
+    const anyCold = list.some((a) => a.cold);
+    search: for (let h = 1; h >= MIN_ATLAS_DOWNSCALE; h /= 2) {
+      for (let c = h; c >= MIN_ATLAS_DOWNSCALE; c /= 2) {
+        this.pack(dims(h, c)); if (this.estimate(list) <= budget) { best = [h, c]; break search; }
+        if (!anyCold) break;
+      }
     }
+    const [h, c] = best ?? [MIN_ATLAS_DOWNSCALE, MIN_ATLAS_DOWNSCALE];
+    this.downscale = h; this.coldDownscale = c;
+    this.pack(dims(h, c));
+    if (h < 1 || c < 1) {
+      const nc = list.filter((a) => a.cold).length;
+      console.warn(`[render] atlas arrays over the ${this.textureBudgetMB} MB GPU budget at full res: hot x${h} (${list.length - nc} atlases), cold x${c} (${nc}) (~${Math.round(this.estimate(list) / 1048576)} MB)`);
+    }
+    await Promise.all(list.map((a, i) => { const k = Math.min(caps[i]!, a.cold ? c : h); return k < 1 ? scaleList([a], k) : undefined; }));
+  }
+  /** Tier every resident atlas (see defaultAtlasTier / atlasTier / recentlyUsed). */
+  private classify(list: AtlasRT[]): void {
+    const reg = this.registryForTier; const wear = new Map<string, [number, number]>(); const bodies = new Set<string>();
+    if (reg) {
+      const ws = wearableSpriteIds(reg);
+      for (const sp of reg.allSprites()) { const e = wear.get(sp.atlas.key) ?? [0, 0]; e[1]++; if (ws.has(sp.id)) e[0]++; wear.set(sp.atlas.key, e); if (/body|bodies/i.test(sp.key ?? "")) bodies.add(sp.atlas.key); }
+    }
+    for (const a of list) {
+      const e = wear.get(a.key); const info = { bodies: bodies.has(a.key), wearShare: e && e[1] ? e[0] / e[1] : 0 };
+      a.cold = !this.recentlyUsed.has(a.key) && (this.atlasTier ?? defaultAtlasTier)(a.key, info) === "cold";
+    }
+  }
+  private registryForTier: AssetRegistry | null = null;
+  /** Hot/cold split of the resident atlases (keys) after the last rebuild. */
+  get tiers(): { hot: string[]; cold: string[]; hotScale: number; coldScale: number } {
+    const r = this.atlases.filter((a) => !a.lazy);
+    return { hot: r.filter((a) => !a.cold).map((a) => a.key), cold: r.filter((a) => a.cold).map((a) => a.key), hotScale: this.downscale, coldScale: this.coldDownscale };
   }
 
   /** Shelf-pack whole atlas images into array layers (2px gutter). */
@@ -532,9 +597,10 @@ export class AtlasManager {
     const f = entryHint - a.base; if (f < 0 || f >= a.count) return null;
     const k = a.scale; const r = a.source.rects?.[f];
     const fx = (r ? r.x : (f % a.cols) * a.fw) * k, fy = (r ? r.y : Math.floor(f / a.cols) * a.fh) * k, fw = (r ? r.w : a.fw) * k, fh = (r ? r.h : a.fh) * k;
+    const ms = this.sideScale; // side masks are stored at half size
     for (let tries = 0; tries < 24; tries++) {
       const x = Math.floor(rnd() * fw), y = Math.floor(rnd() * fh);
-      const o = ((fy + y) * px.w + fx + x) * 4;
+      const mx = Math.min(px.w - 1, Math.floor((fx + x) * ms)), my = Math.min(px.h - 1, Math.floor((fy + y) * ms)); const o = (my * px.w + mx) * 4;
       if (px.data[o + 2]! > 127 && px.data[o + 3]! > 0) return [x / k - s.anchorX, y / k - s.anchorY];
     }
     return null;
@@ -542,9 +608,15 @@ export class AtlasManager {
 
   private upload(list: AtlasRT[], tintRows: Map<number, number> = new Map(), all: AtlasRT[] = list): void {
     this.tintRowMap = tintRows;
-    const gl = this.gl; const S = this.layerSize;
-    const mk = (): WebGLTexture => {
+    const gl = this.gl;
+    // side arrays (emissive/masks) at half size: images were halved in halveSide(); offsets shift with them
+    const sub = (im: ImageLike, a: AtlasRT) => { const x = a.px >> SIDE_SHIFT, y = a.py >> SIDE_SHIFT, H = this.layerSize >> SIDE_SHIFT;
+      const w = Math.min(im.width, H - x), h = Math.min(im.height, H - y); if (w <= 0 || h <= 0) return;
+      if (w !== im.width || h !== im.height) { this.uploadErrors.push(`side image ${a.key} ${im.width}x${im.height} clipped`); return; }
+      gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, x, y, a.layer, w, h, 1, gl.RGBA, gl.UNSIGNED_BYTE, im as TexImageSource); };
+    const mk = (side = false): WebGLTexture => {
       const t = gl.createTexture()!; gl.bindTexture(gl.TEXTURE_2D_ARRAY, t);
+      const S = side ? Math.max(1, this.layerSize >> SIDE_SHIFT) : this.layerSize;
       const levels = Math.floor(Math.log2(S)) + 1;
       gl.texStorage3D(gl.TEXTURE_2D_ARRAY, levels, gl.RGBA8, S, S, this.layers);
       const err = gl.getError(); if (err !== gl.NO_ERROR) { this.uploadErrors.push(`texStorage3D ${S}x${S}x${this.layers} levels ${levels}: 0x${err.toString(16)}`); if (err === gl.OUT_OF_MEMORY) this.oomFlag = true; }
@@ -561,12 +633,12 @@ export class AtlasManager {
     for (const a of list) gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, a.px, a.py, a.layer, a.img!.width, a.img!.height, 1, gl.RGBA, gl.UNSIGNED_BYTE, a.img as TexImageSource);
     gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
     this.hasEmissive = list.some((a) => a.emis);
-    this.emisTex = this.hasEmissive ? mk() : dummyArray(gl); // emissive is gated by a frame flag: no full array when unused
+    this.emisTex = this.hasEmissive ? mk(true) : dummyArray(gl); // emissive is gated by a frame flag: no full array when unused
     this.gpuBytes = this.estimate(list);
     const poolBytes = this.pool ? this.pool.layers * this.layerBytes(list) : 0;
     this.vram.budgetBytes = this.textureBudgetMB * 1048576; this.vram.setResident(this.gpuBytes - poolBytes, poolBytes);
     this.vram.pageSlots = this.pool ? this.pool.lru.capacity : 0; this.vram.pending = 0;
-    for (const a of list) if (a.emis) gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, a.px, a.py, a.layer, a.emis.width, a.emis.height, 1, gl.RGBA, gl.UNSIGNED_BYTE, a.emis as TexImageSource);
+    for (const a of list) if (a.emis) sub(a.emis, a);
     if (this.hasEmissive) gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
     // mask arrays: full layout only when some atlas has that mask, else a 1x1 dummy (never sampled: flag bit unset)
     const maskArray = (m: MaskName): WebGLTexture => {
@@ -577,8 +649,8 @@ export class AtlasManager {
         setLevelRange(gl, gl.TEXTURE_2D_ARRAY, 1);
         return t;
       }
-      const t = mk();
-      for (const a of list) { const im = a.masks[m]; if (im) gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, a.px, a.py, a.layer, im.width, im.height, 1, gl.RGBA, gl.UNSIGNED_BYTE, im as TexImageSource); }
+      const t = mk(true);
+      for (const a of list) { const im = a.masks[m]; if (im) sub(im, a); }
       gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
       return t;
     };
@@ -645,8 +717,8 @@ export class AtlasManager {
   }
   /** Streamed wearable atlases resident / known. */
   isStreamed(spriteId: number): boolean { return !!this.lazyOf(spriteId); }
-  get vramStats(): VramStats & { poolScale: number; layerSize: number; downscale: number } {
-    return { ...this.vram.stats(), poolScale: this.pool?.k ?? 0, layerSize: this.layerSize, downscale: this.downscale };
+  get vramStats(): VramStats & { poolScale: number; layerSize: number; downscale: number; coldDownscale: number; hotAtlases: number; coldAtlases: number } {
+    return { ...this.vram.stats(), poolScale: this.pool?.k ?? 0, layerSize: this.layerSize, downscale: this.downscale, coldDownscale: this.coldDownscale, hotAtlases: this.tiers.hot.length, coldAtlases: this.tiers.cold.length };
   }
   private request(a: AtlasRT): void {
     if (!this.pool || a.lazy!.state !== 0 || this.queue.includes(a)) return;
@@ -694,7 +766,8 @@ export class AtlasManager {
       if (!tex) return; gl.bindTexture(gl.TEXTURE_2D_ARRAY, tex);
       levels.forEach((im, l) => gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, l, px >> l, py >> l, layer, im.width, im.height, 1, gl.RGBA, gl.UNSIGNED_BYTE, im as TexImageSource));
     };
-    put(this.tex, cc); if (tc) put(this.tintMaskTex, tc);
+    put(this.tex, cc);
+    if (tc && this.tintMaskTex) { gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.tintMaskTex); tc.slice(SIDE_SHIFT).forEach((im, l) => gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, l, px >> (l + SIDE_SHIFT), py >> (l + SIDE_SHIFT), layer, im.width, im.height, 1, gl.RGBA, gl.UNSIGNED_BYTE, im as TexImageSource)); }
     for (const im of [...cc, ...(tc ?? [])]) if (im !== img && im !== tint && typeof (im as ImageBitmap).close === "function") (im as ImageBitmap).close();
     for (const im of [img, tint]) if (im && typeof (im as ImageBitmap).close === "function") (im as ImageBitmap).close();
     a.layer = layer; a.px = px; a.py = py; a.scale = p.k;
@@ -842,6 +915,18 @@ export class AtlasManager {
 }
 
 /** Atlases whose sprites are only referenced as cosmetics wearable art (not bodies, not world sprites). */
+/** Sprite ids referenced by cosmetic wearables (hair, hats, tops, ...). */
+export function wearableSpriteIds(registry: AssetRegistry): Set<number> {
+  const cat = registry.cosmetics as unknown as { bySlot?: (s: string) => unknown[]; size?: number } | undefined;
+  const wear = new Set<number>(); if (!cat?.bySlot || !cat.size) return wear;
+  const walk = (v: unknown, depth: number): void => {
+    if (!v || typeof v !== "object" || depth > 6) return;
+    for (const [k, x] of Object.entries(v as Record<string, unknown>)) { if (k === "sprite" && typeof x === "number") wear.add(x); else walk(x, depth + 1); }
+  };
+  for (const s of ["hair", "hat", "accessory", "top", "bottom", "shoes", "face", "eyes"]) for (const w of cat.bySlot(s)) walk(w, 0);
+  return wear;
+}
+
 export function wearableOnlyAtlases(registry: AssetRegistry): Set<string> {
   const cat = registry.cosmetics as unknown as { bySlot?: (s: string) => unknown[]; bodySprite?: (b: string) => { sprite: number } | undefined; size?: number } | undefined;
   const out = new Set<string>(); if (!cat?.bySlot || !cat.size) return out;
