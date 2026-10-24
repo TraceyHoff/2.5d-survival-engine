@@ -34,7 +34,7 @@ import { SpriteBatch, type GameplayBindings } from "./sprites.js";
 import { LightPass } from "./lighting.js";
 import { CompositePass } from "./composite.js";
 import { WeatherPass, WeatherState, weatherTargets } from "./weather.js";
-import { computeDayLighting, dimForWeather, type DayLighting } from "./timeOfDay.js";
+import { computeDayLighting, dimWeatherInto, newDayLighting, type DayLighting } from "./timeOfDay.js";
 import { isoZDepthFactor } from "./depth.js";
 import { assertFramebuffer, createTexture, newStats, RenderGLError, setFragmentMediump, type FrameStats } from "./gl/util.js";
 import { clampDrawingBuffer, detectCapabilities, parseGlFlags, type GlFlag, type RenderCapabilities, type RenderError } from "./gl/capabilities.js";
@@ -115,7 +115,9 @@ export class IsoRenderer implements Renderer {
   readonly chimneySmoke = new ChimneySmoke();
   style: StyleConfig;
   stats: FrameStats = newStats();
-  lighting: DayLighting = computeDayLighting(0.5);
+  lighting: DayLighting = computeDayLighting(0.5, undefined, newDayLighting());
+  private mixFog(a: readonly number[], b: readonly number[]): [number, number, number] { const o = this.fogScratch; o[0] = (a[0]! + b[0]!) / 2; o[1] = (a[1]! + b[1]!) / 2; o[2] = (a[2]! + b[2]!) / 2; return o; }
+  private ambScratch: [number, number, number] = [0, 0, 0]; private fogScratch: [number, number, number] = [0, 0, 0];
   tilemap: TileMap | undefined;
   tickHz: number;
   pieceAnchor: "center" | "front";
@@ -445,7 +447,7 @@ export class IsoRenderer implements Renderer {
     const ws = this.weatherState;
     // ADR-115: the shared light curve (sun elevation table + moon), then weather dimming; Art's grading keyframes keep
     // the LUTs/shadow tint and are folded into ambient at GRADING_AMBIENT_MIX so the curve still drives the transitions.
-    const day = (this.lighting = dimForWeather(computeDayLighting(dayFrac, readDayNumber(world)), { overcast: Math.max(ws.rain, ws.fog, ws.snow * 0.7), storm: ws.storm }));
+    const day = this.lighting; computeDayLighting(dayFrac, readDayNumber(world), day); dimWeatherInto(day, Math.max(ws.rain, ws.fog, ws.snow * 0.7), ws.storm, day); // in place: no per-frame allocation
     if (kf) { const m = GRADING_AMBIENT_MIX; for (let k = 0; k < 3; k++) day.ambient[k] = day.ambient[k]! * (1 - m) + (kf.ambient[k]! + kf.sun[k]!) * m; }
     this.sprites.shadowColor.set(kf ? kf.shadowTint : style.shadowTint);
     // wind: Weather.windDir/windSpeed when set, else the configured default (scaled by weather wind level)
@@ -533,7 +535,7 @@ export class IsoRenderer implements Renderer {
     const clearBg = this.backdrop ?? day.sky;
 
     // --- 2. light pass ---------------------------------------------------------------------
-    const amb: [number, number, number] = [day.ambient[0], day.ambient[1], day.ambient[2]]; // weather already applied (dimForWeather)
+    const amb = this.ambScratch; amb[0] = day.ambient[0]; amb[1] = day.ambient[1]; amb[2] = day.ambient[2]; // weather already applied (dimForWeather)
     this.lights.draw(this.viewU, amb, style.daylightLightScale + (1 - style.daylightLightScale) * day.glow, this.time, stats); // fires/lamps swell as it darkens
 
     pass("light");
@@ -551,7 +553,7 @@ export class IsoRenderer implements Renderer {
     else this.composite.draw(this.sceneTex!, this.emisTex!, this.lights.tex!, {
       ambient: amb, fog: this.settings.fog ? ws.fog : 0, haze: day.haze, storm: ws.storm, night, wind: ws.wind, time: this.time,
       origin: [rect.x0, rect.y1], size: [rect.x1 - rect.x0, rect.y0 - rect.y1], style,
-      fogColor: kf ? [(kf.fog[0]! + day.fog[0]) / 2, (kf.fog[1]! + day.fog[1]) / 2, (kf.fog[2]! + day.fog[2]) / 2] : day.fog,
+      fogColor: kf ? this.mixFog(kf.fog, day.fog) : day.fog,
       bloom: bloomOn ? this.bloom.output : null, bloomStrength: style.bloom.strength * (1 + (style.bloom.nightBoost - 1) * night),
       lutA, lutB, lutMix, flash: this.flash * style.lightning.flash,
       cloudOffset: [this.cloudOff[0]!, this.cloudOff[1]!], cloudAlpha: style.clouds.alpha * day.daylight * (1 + style.clouds.overcastBoost * Math.max(ws.rain, ws.storm)),

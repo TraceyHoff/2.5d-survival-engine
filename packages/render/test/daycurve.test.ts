@@ -1,6 +1,6 @@
 // ADR-115: continuous, realistic day/night light curve.
 import { describe, expect, it } from "vitest";
-import { DAY_CURVE, computeDayLighting, dayPhase, dimForWeather, moonIllumination, sunElevation } from "../src/timeOfDay.js";
+import { DAY_CURVE, computeDayLighting, dayPhase, dimForWeather, dimWeatherInto, moonIllumination, newDayLighting, sunElevation } from "../src/timeOfDay.js";
 
 const sum = (c: readonly number[]) => c[0]! + c[1]! + c[2]!;
 describe("ADR-115 day curve", () => {
@@ -39,5 +39,20 @@ describe("ADR-115 day curve", () => {
   });
   it("is cheap (< 2 us per call)", () => {
     const t0 = performance.now(); for (let i = 0; i < 20000; i++) computeDayLighting(i / 20000, i); expect((performance.now() - t0) / 20000).toBeLessThan(0.002 * 1000);
+  });
+  it("review: no moon-phase step at the midnight day roll-over; sunrise/sunset shadow flip is invisible", () => {
+    const a = computeDayLighting(1 - 1e-7, 3), b = computeDayLighting(0, 4);
+    for (let k = 0; k < 3; k++) expect(Math.abs(a.ambient[k]! - b.ambient[k]!)).toBeLessThan(1e-4);
+    for (const h of [6, 18]) { const x = computeDayLighting((h - 1e-4) / 24, 3), y = computeDayLighting((h + 1e-4) / 24, 3);
+      expect(Math.abs(x.shadowAlpha) + Math.abs(y.shadowAlpha)).toBeLessThan(1e-3); }
+  });
+  it("review: per-frame path reuses its output (no allocation) and matches the allocating API", () => {
+    const out = newDayLighting(); const amb = out.ambient, sd = out.shadowDir;
+    for (const t of [0, 0.27, 0.5, 0.74]) {
+      const r = computeDayLighting(t, 9, out); expect(r).toBe(out); expect(r.ambient).toBe(amb); expect(r.shadowDir).toBe(sd);
+      const ref = dimForWeather(computeDayLighting(t, 9), { overcast: 0.5, storm: 0.3 });
+      dimWeatherInto(out, 0.5, 0.3, out); expect(out.ambient).toEqual(ref.ambient); expect(out.glow).toBe(ref.glow); expect(out.shadowAlpha).toBe(ref.shadowAlpha);
+    }
+    const d = computeDayLighting(0.5); const before = [...d.ambient]; dimForWeather(d, { overcast: 1, storm: 1 }); expect(d.ambient).toEqual(before);
   });
 });

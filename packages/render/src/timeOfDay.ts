@@ -68,21 +68,27 @@ export function dayPhase(elev: number): DayPhase { return elev < -18 ? "night" :
 export function moonIllumination(day: number): number { const p = (((day / LUNAR_DAYS) % 1) + 1) % 1; return 0.5 - 0.5 * Math.cos(p * 2 * Math.PI); }
 
 /** Sample a curve table at `elev` (smoothstep between rows). Exposed for tests / tools. */
-export function sampleDayCurve(elev: number, curve: readonly DayCurveKey[] = DAY_CURVE): { ambient: [number, number, number]; sky: [number, number, number]; fog: [number, number, number]; glow: number } {
+export function sampleDayCurve(elev: number, curve: readonly DayCurveKey[] = DAY_CURVE,
+  out: { ambient: [number, number, number]; sky: [number, number, number]; fog: [number, number, number]; glow: number } = { ambient: [0, 0, 0], sky: [0, 0, 0], fog: [0, 0, 0], glow: 0 }): { ambient: [number, number, number]; sky: [number, number, number]; fog: [number, number, number]; glow: number } {
   let i = 1; while (i < curve.length - 1 && elev > curve[i]!.elev) i++;
   const a = curve[i - 1]!, b = curve[i]!; const s = ss((elev - a.elev) / Math.max(1e-6, b.elev - a.elev));
-  return { ambient: lerp3(a.ambient, b.ambient, s, [0, 0, 0]), sky: lerp3(a.sky, b.sky, s, [0, 0, 0]), fog: lerp3(a.fog, b.fog, s, [0, 0, 0]), glow: a.glow + (b.glow - a.glow) * s };
+  lerp3(a.ambient, b.ambient, s, out.ambient); lerp3(a.sky, b.sky, s, out.sky); lerp3(a.fog, b.fog, s, out.fog); out.glow = a.glow + (b.glow - a.glow) * s; return out;
+}
+/** A reusable DayLighting for the per-frame `out` arguments (no allocation per frame). */
+export function newDayLighting(): DayLighting {
+  return { hours: 0, ambient: [0, 0, 0], sky: [0, 0, 0], fog: [0, 0, 0], daylight: 0, shadowDir: [0, 0], shadowAlpha: 0, haze: 0, sunElevation: 0, phase: "day", glow: 0, moon: { illumination: 0, light: 0 } };
 }
 
-/** `day` (optional) selects the moon phase; omitted = a half moon. */
-export function computeDayLighting(t: number, day?: number): DayLighting {
-  const hours = (((t % 1) + 1) % 1) * 24;
+/** `day` (optional) selects the moon phase (advanced continuously by `t`, no step at midnight); omitted = a half moon.
+ *  `out` (optional) is filled and returned instead of a new object (per-frame callers). */
+export function computeDayLighting(t: number, day?: number, out: DayLighting = newDayLighting()): DayLighting {
+  const frac = ((t % 1) + 1) % 1; const hours = frac * 24;
   const elev = sunElevation(hours);
-  const c = sampleDayCurve(elev);
+  const c = sampleDayCurve(elev, DAY_CURVE, out);
   // dawn vs dusk hue, fading out away from the horizon
   const near = 1 - ss(Math.abs(elev) / 10); const tint = hours < 12 ? DAWN_TINT : DUSK_TINT;
   for (let k = 0; k < 3; k++) { const m = 1 + (tint[k]! - 1) * near; c.ambient[k]! *= m; c.sky[k]! *= m; c.fog[k]! *= m; }
-  const illum = day === undefined ? 0.5 : moonIllumination(day);
+  const illum = day === undefined ? 0.5 : moonIllumination(day + frac);
   const dark = 1 - ss((elev + 12) / 12); // moon matters from nautical twilight down
   const moonLight = illum * dark;
   for (let k = 0; k < 3; k++) c.ambient[k]! += MOON_TINT[k]! * moonLight;
@@ -92,16 +98,22 @@ export function computeDayLighting(t: number, day?: number): DayLighting {
   const arc = sunUp ? (hours - 6) / 12 : (((hours + 6) % 24) / 12); // moon arc at night
   const az = arc * Math.PI; const e = Math.max(4, sunUp ? elev : Math.abs(elev)) * Math.PI / 180;
   const len = Math.min(1.8, 0.3 + 0.32 / Math.tan(e));
-  const shadowDir: [number, number] = [-Math.cos(az) * len * 0.9, 0.18 + Math.sin(az) * 0.12 * len];
+  out.shadowDir[0] = -Math.cos(az) * len * 0.9; out.shadowDir[1] = 0.18 + Math.sin(az) * 0.12 * len;
   const sunShadow = ss(elev / 10); const moonShadow = 0.12 * moonLight;
   const shadowAlpha = 0.42 * Math.max(sunShadow * (0.55 + 0.45 * ss(elev / 20)), moonShadow);
   const haze = Math.max(0, 1 - Math.abs(elev - 1) / 9);
-  return { hours, ambient: c.ambient, sky: c.sky, fog: c.fog, daylight, shadowDir, shadowAlpha, haze, sunElevation: elev, phase: dayPhase(elev), glow: c.glow, moon: { illumination: illum, light: moonLight } };
+  out.hours = hours; out.daylight = daylight; out.shadowAlpha = shadowAlpha; out.haze = haze; out.sunElevation = elev; out.phase = dayPhase(elev);
+  out.moon.illumination = illum; out.moon.light = moonLight; return out;
 }
 
 /** Weather dimming of a lighting result (overcast/rain/fog/storm/snow 0..1), applied identically by both renderers. */
-export function dimForWeather(day: DayLighting, w: { overcast: number; storm: number }): DayLighting {
-  const d = 1 - 0.28 * w.overcast - 0.22 * w.storm; const grey = 0.35 * Math.max(w.overcast, w.storm);
-  const f = (c: [number, number, number]): [number, number, number] => { const l = (c[0] + c[1] + c[2]) / 3; return [(c[0] + (l - c[0]) * grey) * d, (c[1] + (l - c[1]) * grey) * d, (c[2] + (l - c[2]) * grey) * d * 1.02]; };
-  return { ...day, ambient: f(day.ambient), sky: f(day.sky), fog: f(day.fog), shadowAlpha: day.shadowAlpha * (1 - 0.6 * w.overcast), glow: Math.min(1, day.glow + 0.25 * Math.max(w.overcast, w.storm) * day.daylight) };
+export function dimForWeather(day: DayLighting, w: { overcast: number; storm: number }, inPlace = false): DayLighting {
+  return dimWeatherInto(day, w.overcast, w.storm, inPlace ? day : { ...day, ambient: [0, 0, 0], sky: [0, 0, 0], fog: [0, 0, 0], shadowDir: [day.shadowDir[0], day.shadowDir[1]], moon: { ...day.moon } });
+}
+const dimRgb = (c: [number, number, number], o: [number, number, number], d: number, grey: number): void => { const l = (c[0] + c[1] + c[2]) / 3; const r = (c[0] + (l - c[0]) * grey) * d, g = (c[1] + (l - c[1]) * grey) * d, b = (c[2] + (l - c[2]) * grey) * d * 1.02; o[0] = r; o[1] = g; o[2] = b; };
+/** dimForWeather writing into `out` (may be `day` itself): allocation-free for the per-frame path. */
+export function dimWeatherInto(day: DayLighting, overcast: number, storm: number, out: DayLighting): DayLighting {
+  const d = 1 - 0.28 * overcast - 0.22 * storm; const grey = 0.35 * Math.max(overcast, storm);
+  dimRgb(day.ambient, out.ambient, d, grey); dimRgb(day.sky, out.sky, d, grey); dimRgb(day.fog, out.fog, d, grey);
+  out.shadowAlpha = day.shadowAlpha * (1 - 0.6 * overcast); out.glow = Math.min(1, day.glow + 0.25 * Math.max(overcast, storm) * day.daylight); return out;
 }
