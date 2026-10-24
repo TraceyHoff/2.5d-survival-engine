@@ -311,6 +311,26 @@ export class SpriteBatch {
   private res: ResolvedFrame = newResolved();
   private statics = new Map<string, StaticChunk>();
   private staticScratch = new Map<string, number[]>();
+  // per-frame scratch reused across frames (no allocations in the gather/sort hot paths)
+  private pieceChecks = new Map<string, number>(); private pieceTmp: number[] = [];
+  private ckCache = new Map<number, string>();
+  private lateOrder = new Uint32Array(0); private lateBuf = new Float32Array(0);
+  /** Adaptive sort stats: frames where the incremental (insertion) pass sufficed vs fell back to a full sort. */
+  sortIncremental = 0; sortFull = 0;
+  /** Static chunks skipped by the chunk-grid cull this frame (kept cached, not re-gathered). */
+  culledChunks = 0;
+  /** Chunk screen bounds (any height up to 1024 px above ground) against the view rect grown by 512 px. */
+  private chunkOnScreen(cx: number, cy: number, r: Rect, hw: number, hh: number): boolean {
+    const x0 = cx * CHUNK_SIZE, y0 = cy * CHUNK_SIZE, x1 = x0 + CHUNK_SIZE, y1 = y0 + CHUNK_SIZE;
+    const sl = (x0 - y1) * hw, sr = (x1 - y0) * hw, st = (x0 + y0) * hh - 1024, sb = (x1 + y1) * hh;
+    return sr >= r.x0 - 512 && sl <= r.x1 + 512 && sb >= r.y0 - 512 && st <= r.y1 + 512;
+  }
+  private prevPerm = new Uint16Array(0); private prevN = 0; private seedBuf = new Uint32Array(0); private seedUsed = new Uint8Array(0);
+  private chunkKeyOf(cx: number, cy: number): string {
+    const n = (cx + 32768) * 65536 + (cy + 32768); let k = this.ckCache.get(n);
+    if (k === undefined) { k = chunkKey(cx, cy); if (this.ckCache.size > 65536) this.ckCache.clear(); this.ckCache.set(n, k); }
+    return k;
+  }
   private frameNo = 0;
   private xf = new Float32Array(4);
   /** Seconds for newly streamed static chunks to fade in (0 = pop). */
@@ -686,7 +706,19 @@ export class SpriteBatch {
     if (bpDef) this.gatherPieces(cx, world.store(bpDef), hasFocus, fwx, fwy, fwz);
 
     // ---- sort ----
-    const n = this.n; const sorted = this.sortKeys.subarray(0, n); sorted.sort();
+    const n = this.n; const sorted = this.sortKeys.subarray(0, n);
+    { // incremental: seed with last frame's sorted slot order (gather order is stable), then a budgeted insertion pass
+      const keys = this.sortKeys, P = this.prevPerm, pn = this.prevN; let w = 0;
+      if (this.seedBuf.length < keys.length) this.seedBuf = new Uint32Array(keys.length);
+      const S = this.seedBuf, used = this.seedUsed.length < n ? (this.seedUsed = new Uint8Array(keys.length)) : this.seedUsed; used.fill(0, 0, n);
+      for (let j = 0; j < pn; j++) { const sl = P[j]!; if (sl < n) { S[w++] = keys[sl]!; used[sl] = 1; } }
+      for (let sl = 0; sl < n; sl++) if (!used[sl]) S[w++] = keys[sl]!;
+      sorted.set(S.subarray(0, n));
+      if (insertionSortBudget(sorted, n * 4 + 64)) this.sortIncremental++; else { sorted.sort(); this.sortFull++; }
+      if (P.length < n) this.prevPerm = new Uint16Array(keys.length);
+      for (let j = 0; j < n; j++) this.prevPerm[j] = sorted[j]! & 0xffff;
+      this.prevN = n;
+    }
     const inst = this.inst, tmp = this.tmp, route = this.route;
     const ik = this.intKeys, ir = this.intRoutes, ix = this.intIdx; ik.length = ir.length = ix.length = 0;
     let m = 0;
@@ -714,9 +746,11 @@ export class SpriteBatch {
     // late (faded) batch: back-to-front by key
     const L = this.late, lc = L.length / INSTANCE_FLOATS; this.lateCount = lc;
     if (lc > 0) {
-      const order = Array.from({ length: lc }, (_, j) => j).sort((a, b) => L[a * INSTANCE_FLOATS + 2]! - L[b * INSTANCE_FLOATS + 2]!);
-      const buf = new Float32Array(L.length);
-      order.forEach((j, o) => { for (let q = 0; q < INSTANCE_FLOATS; q++) buf[o * INSTANCE_FLOATS + q] = L[j * INSTANCE_FLOATS + q]!; });
+      if (this.lateOrder.length < lc) { this.lateOrder = new Uint32Array(lc * 2); this.lateBuf = new Float32Array(lc * 2 * INSTANCE_FLOATS); }
+      const order = this.lateOrder; for (let j = 0; j < lc; j++) order[j] = j;
+      for (let a = 1; a < lc; a++) { const v = order[a]!, kv = L[v * INSTANCE_FLOATS + 2]!; let b = a - 1; while (b >= 0 && L[order[b]! * INSTANCE_FLOATS + 2]! > kv) { order[b + 1] = order[b]!; b--; } order[b + 1] = v; }
+      const buf = this.lateBuf.subarray(0, L.length);
+      for (let o = 0; o < lc; o++) { const j = order[o]!; for (let q = 0; q < INSTANCE_FLOATS; q++) buf[o * INSTANCE_FLOATS + q] = L[j * INSTANCE_FLOATS + q]!; }
       const gl = this.gl;
       if (!this.lateVbo) { this.lateVbo = gl.createBuffer()!; this.lateVao = this.makeVao(this.lateVbo); }
       gl.bindBuffer(gl.ARRAY_BUFFER, this.lateVbo); gl.bufferData(gl.ARRAY_BUFFER, buf, gl.DYNAMIC_DRAW);
@@ -733,10 +767,15 @@ export class SpriteBatch {
     const cut = hasFocus && cx.grid ? cutawayRegion(cx.grid, Math.floor(fwx), Math.floor(fwy), playerLevel, 600, (sid) => atlas.isRoof(sid)) : null;
     this.cutawayActive = !!cut;
     const scratch = this.staticScratch; for (const v of scratch.values()) v.length = 0;
-    const checksums = new Map<string, number>();
-    const tmp: number[] = []; const nightSet = cx.bindings.nightEmissive?.sprites; this.nightGate = cx.bindings.nightEmissive?.gate ?? 1;
+    const checksums = this.pieceChecks; checksums.clear(); let lastCx = NaN, lastCy = NaN, lastVis = true; this.culledChunks = 0;
+    const tmp = this.pieceTmp; const nightSet = cx.bindings.nightEmissive?.sprites; this.nightGate = cx.bindings.nightEmissive?.gate ?? 1;
     for (let k = 0; k < bp.size; k++) {
       const e = bp.dense[k]!; const i = entityIndex(e); const ts = tr.slot(i); if (ts < 0) continue;
+      { // chunk-grid cull: pieces in chunks well off screen keep their cached static buffer and skip resolve/write entirely
+        const gcx = Math.floor(tr.data.x[ts]! / CHUNK_SIZE), gcy = Math.floor(tr.data.y[ts]! / CHUNK_SIZE);
+        if (gcx !== lastCx || gcy !== lastCy) { lastCx = gcx; lastCy = gcy; lastVis = this.chunkOnScreen(gcx, gcy, rect, hw, hh); }
+        if (!lastVis) continue;
+      }
       const vis = d.visualId![k]!; const rot = d.rotation![k]! & 3; const level = d.level![k]!; const layer = d.layer![k]!;
       const ghost = d.ghost![k]!; const dmg = d.damageStage![k]!; const tints = cx.bindings.pieceTints?.(e); const tint = tints ? tints[0] : d.tint![k]! >>> 0;
       if (!atlas.resolvePiece(vis, d.variant![k]!, rot, dmg, res, cx.bindings.pieceState?.(e) ?? (d.state ? d.state[k]! - 1 : -1))) continue;
@@ -796,9 +835,9 @@ export class SpriteBatch {
         if (sx < rect.x0 - 512 || sx > rect.x1 + 512 || sy < rect.y0 - 256 || sy > rect.y1 + 1024) continue;
         for (let j = 0; j < tmp.length; j += INSTANCE_FLOATS) this.pushOcc(tmp, j, occT, cx.style.occlusion.mode);
       } else {
-        const ck = chunkKey(Math.floor(ax / CHUNK_SIZE), Math.floor(ay / CHUNK_SIZE));
+        const ck = this.chunkKeyOf(Math.floor(ax / CHUNK_SIZE), Math.floor(ay / CHUNK_SIZE));
         let list = scratch.get(ck); if (!list) scratch.set(ck, (list = []));
-        for (const v of tmp) list.push(v);
+        for (let j = 0; j < tmp.length; j++) list.push(tmp[j]!);
         let h = checksums.get(ck) ?? 0x811c9dc5;
         for (let j = 0; j < tmp.length; j++) h = Math.imul(h ^ Math.round(tmp[j]! * 64), 16777619) >>> 0;
         checksums.set(ck, h);
@@ -823,6 +862,7 @@ export class SpriteBatch {
       sc.seen = this.frameNo;
       this.staticInstances += sc.count;
     }
+    for (const sc of this.statics.values()) if (sc.seen !== this.frameNo && !this.chunkOnScreen(sc.cx, sc.cy, rect, hw, hh)) { sc.seen = this.frameNo; this.culledChunks++; }
     for (const [ck, sc] of this.statics) if (sc.seen !== this.frameNo) { this.gl.deleteBuffer(sc.vbo); this.gl.deleteVertexArray(sc.vao); this.statics.delete(ck); }
   }
 
@@ -1006,4 +1046,20 @@ export function cutawayRegion(grid: BuildingGrid, tx: number, ty: number, level:
 function footprintHits(region: Set<string>, ax: number, ay: number, fw: number, fh: number): boolean {
   for (let y = ay - 1; y <= ay + fh; y++) for (let x = ax - 1; x <= ax + fw; x++) if (region.has(`${x},${y}`)) return true;
   return false;
+}
+
+/**
+ * Incremental sort for frame-coherent keys: insertion sort that gives up after `budget` element moves (returns false; the
+ * caller falls back to a full sort). Last frame's order is mostly preserved (gather order is stable and depth keys move
+ * slowly), so this is ~O(n) in the steady state instead of O(n log n).
+ */
+export function insertionSortBudget(a: Uint32Array, budget: number): boolean {
+  let moves = 0;
+  for (let i = 1; i < a.length; i++) {
+    const v = a[i]!; let j = i - 1;
+    if (a[j]! <= v) continue;
+    while (j >= 0 && a[j]! > v) { a[j + 1] = a[j]!; j--; if (++moves > budget) { a[j + 1] = v; return false; } }
+    a[j + 1] = v;
+  }
+  return true;
 }

@@ -302,6 +302,8 @@ export class AtlasManager {
   streamBuildingTiers = true;
   /** Bumped on every rebuild (pools / sprite tables replaced): refcount holders re-retain. */
   layoutVersion = 0;
+  /** glGetError after each page-in (a CPU/GPU sync). IsoRenderer.syncPoints=false turns it off for honest profiling. */
+  syncChecks = true;
   private poolOfA(a: AtlasRT): Pool | undefined { return a.lazy ? this.pools[a.lazy.pool] : undefined; }
   /** Pool may page now (fallback step 1 stops the wearable pool only; vehicles keep their placeholder fallback). */
   /** Wearables off (ladder EvictWearables) still pages in the local player + nearby characters (prio <= PRIO_NEAR). */
@@ -978,7 +980,7 @@ export class AtlasManager {
     const layer = p.first + Math.floor(slot.slot / p.perLayer), si = slot.slot % p.perLayer;
     const px = (si % p.cols) * (p.sw + POOL_GAP), py = Math.floor(si / p.cols) * (p.sh + POOL_GAP);
     const gl = this.gl; gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false); gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-    const pre = gl.getError(); if (pre === gl.OUT_OF_MEMORY) this.onFault?.("page", `GL_OUT_OF_MEMORY pending before page-in ${a.key}`);
+    const pre = this.syncChecks ? gl.getError() : gl.NO_ERROR; if (pre === gl.OUT_OF_MEMORY) this.onFault?.("page", `GL_OUT_OF_MEMORY pending before page-in ${a.key}`);
     const maxL = this.texLevels || Math.floor(Math.log2(this.layerSize)) + 1;
     const put = (tex: WebGLTexture | null, levels: ImageLike[], cap: number) => {
       if (!tex) return; gl.bindTexture(gl.TEXTURE_2D_ARRAY, tex);
@@ -990,7 +992,7 @@ export class AtlasManager {
     if (ec && this.emisTex) { gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.emisTex); ec.slice(this.sideShift, this.sideShift + Math.max(1, maxL - this.sideShift)).forEach((im, l) => gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, l, px >> (l + this.sideShift), py >> (l + this.sideShift), layer, im.width, im.height, 1, gl.RGBA, gl.UNSIGNED_BYTE, im as TexImageSource)); }
     for (const im of [...cc, ...(tc ?? []), ...(ec ?? [])]) if (im !== img && im !== tint && im !== emi && typeof (im as ImageBitmap).close === "function") (im as ImageBitmap).close();
     for (const im of [img, tint, emi]) if (im && typeof (im as ImageBitmap).close === "function") (im as ImageBitmap).close();
-    const err = gl.getError();
+    const err = this.syncChecks ? gl.getError() : gl.NO_ERROR;
     if (err !== gl.NO_ERROR) {
       // the driver refused the upload (Mali commits pages lazily: OOM shows up here, not at texStorage3D); free the slot,
       // keep the body-only fallback and report so the renderer steps down its fallback ladder
@@ -1055,7 +1057,7 @@ export class AtlasManager {
     const layer = p.first + Math.floor(slot.slot / p.perLayer), si = slot.slot % p.perLayer;
     const px = (si % p.cols) * (p.sw + POOL_GAP), py = Math.floor(si / p.cols) * (p.sh + POOL_GAP);
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false); gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-    gl.getError();
+    if (this.syncChecks) gl.getError();
     gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.poolTex);
     if (col.kt) {
       const w4 = Math.min(this.layerSize - px, Math.ceil(col.kt.width / 4) * 4), h4 = Math.min(this.layerSize - py, Math.ceil(col.kt.height / 4) * 4);
@@ -1064,7 +1066,7 @@ export class AtlasManager {
     if (tc && this.tintMaskTex) { gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.tintMaskTex); tc.forEach((im, l) => gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, l, px >> (l + this.sideShift), py >> (l + this.sideShift), layer, im.width, im.height, 1, gl.RGBA, gl.UNSIGNED_BYTE, im as TexImageSource)); }
     if (ec && this.emisTex) { gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.emisTex); ec.forEach((im, l) => gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, l, px >> (l + this.sideShift), py >> (l + this.sideShift), layer, im.width, im.height, 1, gl.RGBA, gl.UNSIGNED_BYTE, im as TexImageSource)); }
     for (const im of [...col.levels, ...(tc ?? []), ...(ec ?? [])]) if (typeof (im as ImageBitmap).close === "function") (im as ImageBitmap).close();
-    const err = gl.getError();
+    const err = this.syncChecks ? gl.getError() : gl.NO_ERROR;
     if (err !== gl.NO_ERROR) {
       p.lru.remove(a.key); a.lazy!.state = 0; a.layer = -1; this.pageFaults++;
       const msg = `page-in ${a.key}${col.kt ? " (ktx2 " + o.target + ")" : ""}: ${err === gl.OUT_OF_MEMORY ? "OUT_OF_MEMORY" : "0x" + err.toString(16)}`;

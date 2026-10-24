@@ -185,6 +185,10 @@ export class IsoRenderer implements Renderer {
   static DRESS_CAP = 6;
   /** Frames rendered since construction (frameCount restarts on a safe-mode retry). */
   private totalFrames = 0;
+  /** GPU sync points (diag probe readbacks + watchdog readPixels). Profilers set false so frame timings stay pipelined. */
+  get syncPoints(): boolean { return this._sync; }
+  set syncPoints(v: boolean) { this._sync = v; this.atlas.syncChecks = v; }
+  private _sync = true;
   /** building_t1..t4 pages retained per tier present nearby (see updateBuildingTiers). */
   private tierStream: BuildingTierStreamer | null = null; private tierLayout = -1;
   /** Streamed building tier pages currently held (diagnostics / tests). */
@@ -539,7 +543,7 @@ export class IsoRenderer implements Renderer {
     stats.drawCalls++;
     pass("composite");
     if (probe) this.probe(stats, clearBg);
-    else if (this.watchdog.due(this.totalFrames)) this.watch(stats);
+    else if (this._sync && this.watchdog.due(this.totalFrames)) this.watch(stats);
 
     // --- 4. weather particles --------------------------------------------------------------
     if (this.settings.weather) this.weather.draw(this.w, this.h, this.camera.x * this.camera.scale, this.camera.y * this.camera.scale, this.camera.dpr, ws, this.time, amb, stats, this.quality.tier.weather);
