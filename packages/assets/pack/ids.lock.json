@@ -1595,7 +1595,8 @@
     "van_cargo_st_wrecked": 1593,
     "van_passenger_st_damaged": 1594,
     "van_passenger_st_rusty": 1595,
-    "van_passenger_st_wrecked": 1596
+    "van_passenger_st_wrecked": 1596,
+    "van_cargo_st_damaged": 1597
   },
   "sounds": {
     "amb_rain": 1,
