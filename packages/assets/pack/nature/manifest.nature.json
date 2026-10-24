@@ -45,6 +45,120 @@
    "masksKtx2": {
     "sway": "atlases/nature_bushes_sway.ktx2"
    }
+  },
+  {
+   "key": "nature_sprouts",
+   "image": "atlases/nature_sprouts.png",
+   "frameW": 40,
+   "frameH": 52,
+   "columns": 16,
+   "rows": 4,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_sprouts@2x.png",
+     "ktx2": "atlases/nature_sprouts@2x.ktx2"
+    }
+   ],
+   "masks": {
+    "sway": "atlases/nature_sprouts_sway.png"
+   },
+   "ktx2": "atlases/nature_sprouts.ktx2",
+   "masksKtx2": {
+    "sway": "atlases/nature_sprouts_sway.ktx2"
+   }
+  },
+  {
+   "key": "nature_crops",
+   "image": "atlases/nature_crops.png",
+   "frameW": 44,
+   "frameH": 64,
+   "columns": 16,
+   "rows": 6,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_crops@2x.png",
+     "ktx2": "atlases/nature_crops@2x.ktx2"
+    }
+   ],
+   "masks": {
+    "sway": "atlases/nature_crops_sway.png"
+   },
+   "ktx2": "atlases/nature_crops.ktx2",
+   "masksKtx2": {
+    "sway": "atlases/nature_crops_sway.ktx2"
+   }
+  },
+  {
+   "key": "nature_saplings",
+   "image": "atlases/nature_saplings.png",
+   "frameW": 40,
+   "frameH": 48,
+   "columns": 16,
+   "rows": 2,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_saplings@2x.png",
+     "ktx2": "atlases/nature_saplings@2x.ktx2"
+    }
+   ],
+   "masks": {
+    "sway": "atlases/nature_saplings_sway.png"
+   },
+   "ktx2": "atlases/nature_saplings.ktx2",
+   "masksKtx2": {
+    "sway": "atlases/nature_saplings_sway.ktx2"
+   }
+  },
+  {
+   "key": "nature_ground",
+   "image": "atlases/nature_ground.png",
+   "frameW": 64,
+   "frameH": 32,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_ground@2x.png",
+     "ktx2": "atlases/nature_ground@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_ground.ktx2"
+  },
+  {
+   "key": "nature_shoal",
+   "image": "atlases/nature_shoal.png",
+   "frameW": 44,
+   "frameH": 32,
+   "columns": 4,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_shoal@2x.png",
+     "ktx2": "atlases/nature_shoal@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_shoal.ktx2"
+  },
+  {
+   "key": "nature_clutter",
+   "image": "atlases/nature_clutter.png",
+   "frameW": 28,
+   "frameH": 24,
+   "columns": 8,
+   "rows": 2,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_clutter@2x.png",
+     "ktx2": "atlases/nature_clutter@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_clutter.ktx2"
   }
  ],
  "sprites": [
@@ -472,6 +586,3820 @@
     "idle": {
      "frames": [
       10
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "crop_wheat_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_wheat_1",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_corn_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_corn_1",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_potato_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_potato_1",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      5
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_carrot_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      6
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_carrot_1",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      7
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_tomato_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_tomato_1",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      9
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_pumpkin_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      10
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_pumpkin_1",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      11
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_squash_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_squash_1",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      13
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_beans_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      14
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_beans_1",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      15
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_cabbage_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_cabbage_1",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      17
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_onion_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      18
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_onion_1",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      19
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_garlic_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      20
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_garlic_1",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      21
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_cotton_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      22
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_cotton_1",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      23
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_flax_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      24
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_flax_1",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      25
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_hemp_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      26
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_hemp_1",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      27
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_herbs_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      28
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_herbs_1",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      29
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_mushroom_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      30
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_mushroom_1",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      31
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_yarrow_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      32
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_yarrow_1",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      33
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_ginseng_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      34
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_ginseng_1",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      35
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_aloe_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      36
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_aloe_1",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      37
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "sapling_blueberry_bush_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      38
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "sapling_raspberry_bush_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      39
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "sapling_blackberry_bush_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      40
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "sapling_strawberry_bush_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      41
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "sapling_oak_tree_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      42
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "sapling_pine_tree_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      43
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "sapling_birch_tree_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      44
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "sapling_maple_tree_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      45
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "sapling_willow_tree_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      46
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "sapling_palm_tree_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      47
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "sapling_apple_tree_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      48
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "sapling_pear_tree_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      49
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "sapling_cherry_tree_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      50
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "sapling_orange_tree_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      51
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "sapling_peach_tree_0",
+   "category": "resource",
+   "atlas": "nature_sprouts",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5385
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      52
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.5,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_wheat_2",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_wheat_3",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_corn_2",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_corn_3",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_potato_2",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_potato_3",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      5
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_carrot_2",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      6
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_carrot_3",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      7
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_tomato_2",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_tomato_3",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      9
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_pumpkin_2",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      10
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_pumpkin_3",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      11
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_squash_2",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_squash_3",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      13
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_beans_2",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      14
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_beans_3",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      15
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_cabbage_2",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_cabbage_3",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      17
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_onion_2",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      18
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_onion_3",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      19
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_garlic_2",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      20
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_garlic_3",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      21
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_cotton_2",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      22
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_cotton_3",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      23
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_flax_2",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      24
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_flax_3",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      25
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_hemp_2",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      26
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_hemp_3",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      27
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_herbs_2",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      28
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_herbs_3",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      29
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_mushroom_2",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      30
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_mushroom_3",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      31
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_yarrow_2",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      32
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_yarrow_3",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      33
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_ginseng_2",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      34
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_ginseng_3",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      35
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_aloe_2",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      36
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_aloe_3",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      37
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_wheat",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      38
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_corn",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      39
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_potato",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      40
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_carrot",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      41
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_tomato",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      42
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_pumpkin",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      43
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_squash",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      44
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_beans",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      45
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_cabbage",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      46
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_onion",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      47
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_garlic",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      48
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_cotton",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      49
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_flax",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      50
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_hemp",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      51
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_herbs",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      52
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_mushroom",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      53
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_yarrow",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      54
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_ginseng",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      55
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "crop_aloe",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      56
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "wild_wheat",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      57
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      58
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "wild_corn",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      59
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      60
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "wild_potato",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      61
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      62
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "wild_carrot",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      63
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      64
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "wild_tomato",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      65
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      66
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "wild_pumpkin",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      67
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      68
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "wild_squash",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      69
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      70
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "wild_beans",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      71
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      72
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "wild_cabbage",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      73
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      74
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "wild_garlic",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      75
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      76
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "wild_hemp",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      77
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      78
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "wild_mushroom",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      79
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      80
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "wild_yarrow",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      81
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      82
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "wild_ginseng",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      83
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      84
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "wild_aloe",
+   "category": "resource",
+   "atlas": "nature_crops",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      85
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      86
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.6,
+    "freq": 0.7,
+    "stiffness": 0.5
+   }
+  },
+  {
+   "key": "sapling_blueberry_bush_1",
+   "category": "resource",
+   "atlas": "nature_saplings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.6
+   }
+  },
+  {
+   "key": "sapling_blueberry_bush_2",
+   "category": "resource",
+   "atlas": "nature_saplings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.6
+   }
+  },
+  {
+   "key": "sapling_raspberry_bush_1",
+   "category": "resource",
+   "atlas": "nature_saplings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.6
+   }
+  },
+  {
+   "key": "sapling_raspberry_bush_2",
+   "category": "resource",
+   "atlas": "nature_saplings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.6
+   }
+  },
+  {
+   "key": "sapling_blackberry_bush_1",
+   "category": "resource",
+   "atlas": "nature_saplings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.6
+   }
+  },
+  {
+   "key": "sapling_blackberry_bush_2",
+   "category": "resource",
+   "atlas": "nature_saplings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      5
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.6
+   }
+  },
+  {
+   "key": "sapling_strawberry_bush_1",
+   "category": "resource",
+   "atlas": "nature_saplings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      6
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.6
+   }
+  },
+  {
+   "key": "sapling_strawberry_bush_2",
+   "category": "resource",
+   "atlas": "nature_saplings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      7
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.6
+   }
+  },
+  {
+   "key": "sapling_oak_tree_1",
+   "category": "resource",
+   "atlas": "nature_saplings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.6
+   }
+  },
+  {
+   "key": "sapling_oak_tree_2",
+   "category": "resource",
+   "atlas": "nature_saplings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      9
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.6
+   }
+  },
+  {
+   "key": "sapling_pine_tree_1",
+   "category": "resource",
+   "atlas": "nature_saplings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      10
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.6
+   }
+  },
+  {
+   "key": "sapling_pine_tree_2",
+   "category": "resource",
+   "atlas": "nature_saplings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      11
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.6
+   }
+  },
+  {
+   "key": "sapling_birch_tree_1",
+   "category": "resource",
+   "atlas": "nature_saplings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.6
+   }
+  },
+  {
+   "key": "sapling_birch_tree_2",
+   "category": "resource",
+   "atlas": "nature_saplings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      13
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.6
+   }
+  },
+  {
+   "key": "sapling_maple_tree_1",
+   "category": "resource",
+   "atlas": "nature_saplings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      14
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.6
+   }
+  },
+  {
+   "key": "sapling_maple_tree_2",
+   "category": "resource",
+   "atlas": "nature_saplings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      15
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.6
+   }
+  },
+  {
+   "key": "sapling_willow_tree_1",
+   "category": "resource",
+   "atlas": "nature_saplings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.6
+   }
+  },
+  {
+   "key": "sapling_willow_tree_2",
+   "category": "resource",
+   "atlas": "nature_saplings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      17
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.6
+   }
+  },
+  {
+   "key": "sapling_palm_tree_1",
+   "category": "resource",
+   "atlas": "nature_saplings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      18
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.6
+   }
+  },
+  {
+   "key": "sapling_palm_tree_2",
+   "category": "resource",
+   "atlas": "nature_saplings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      19
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.6
+   }
+  },
+  {
+   "key": "sapling_apple_tree_1",
+   "category": "resource",
+   "atlas": "nature_saplings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      20
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.6
+   }
+  },
+  {
+   "key": "sapling_apple_tree_2",
+   "category": "resource",
+   "atlas": "nature_saplings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      21
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.6
+   }
+  },
+  {
+   "key": "sapling_pear_tree_1",
+   "category": "resource",
+   "atlas": "nature_saplings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      22
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.6
+   }
+  },
+  {
+   "key": "sapling_pear_tree_2",
+   "category": "resource",
+   "atlas": "nature_saplings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      23
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.6
+   }
+  },
+  {
+   "key": "sapling_cherry_tree_1",
+   "category": "resource",
+   "atlas": "nature_saplings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      24
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.6
+   }
+  },
+  {
+   "key": "sapling_cherry_tree_2",
+   "category": "resource",
+   "atlas": "nature_saplings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      25
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.6
+   }
+  },
+  {
+   "key": "sapling_orange_tree_1",
+   "category": "resource",
+   "atlas": "nature_saplings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      26
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.6
+   }
+  },
+  {
+   "key": "sapling_orange_tree_2",
+   "category": "resource",
+   "atlas": "nature_saplings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      27
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.6
+   }
+  },
+  {
+   "key": "sapling_peach_tree_1",
+   "category": "resource",
+   "atlas": "nature_saplings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      28
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.6
+   }
+  },
+  {
+   "key": "sapling_peach_tree_2",
+   "category": "resource",
+   "atlas": "nature_saplings",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      29
+     ],
+     "fps": 1
+    }
+   },
+   "sway": {
+    "amp": 0.8,
+    "freq": 0.5,
+    "stiffness": 0.6
+   }
+  },
+  {
+   "key": "farm_soil",
+   "category": "resource",
+   "atlas": "nature_ground",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7812
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "fish_shoal",
+   "category": "resource",
+   "atlas": "nature_shoal",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5625
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0,
+      1,
+      2
+     ],
+     "fps": 4
+    },
+    "depleted": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "clutter_pebbles",
+   "category": "resource",
+   "atlas": "nature_clutter",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.6667
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "clutter_shell",
+   "category": "resource",
+   "atlas": "nature_clutter",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.6667
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "clutter_reeds",
+   "category": "resource",
+   "atlas": "nature_clutter",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.6667
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "clutter_driftwood",
+   "category": "resource",
+   "atlas": "nature_clutter",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.6667
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "clutter_grass_tuft_a",
+   "category": "resource",
+   "atlas": "nature_clutter",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.6667
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "clutter_grass_tuft_b",
+   "category": "resource",
+   "atlas": "nature_clutter",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.6667
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      5
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "clutter_flower_a",
+   "category": "resource",
+   "atlas": "nature_clutter",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.6667
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      6
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "clutter_flower_b",
+   "category": "resource",
+   "atlas": "nature_clutter",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.6667
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      7
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "clutter_flower_c",
+   "category": "resource",
+   "atlas": "nature_clutter",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.6667
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "clutter_twigs",
+   "category": "resource",
+   "atlas": "nature_clutter",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.6667
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      9
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "clutter_leaves",
+   "category": "resource",
+   "atlas": "nature_clutter",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.6667
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      10
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "clutter_fern",
+   "category": "resource",
+   "atlas": "nature_clutter",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.6667
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      11
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "clutter_mushroom",
+   "category": "resource",
+   "atlas": "nature_clutter",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.6667
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "clutter_moss_rock",
+   "category": "resource",
+   "atlas": "nature_clutter",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.6667
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      13
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "clutter_rock_small",
+   "category": "resource",
+   "atlas": "nature_clutter",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.6667
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      14
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "clutter_dry_grass",
+   "category": "resource",
+   "atlas": "nature_clutter",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.6667
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      15
      ],
      "fps": 1
     }

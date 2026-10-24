@@ -168,6 +168,9 @@ describe("nature sub-manifest", () => {
     const keys = new Set(nm.sprites.map((s: { key: string }) => s.key));
     for (const k of ["pine_tree", "birch_tree", "maple_tree", "willow_tree", "palm_tree", "apple_tree", "pear_tree", "cherry_tree", "orange_tree", "peach_tree",
       "raspberry_bush", "blackberry_bush", "strawberry_bush", "fiber_bush", "dry_shrub", "fallen_log", "mossy_log", "rotten_stump"]) expect(keys.has(k), k).toBe(true);
+    for (const p of ["wheat", "corn", "potato", "carrot", "tomato", "pumpkin", "squash", "beans", "cabbage", "onion", "garlic", "cotton", "flax", "hemp", "herbs", "mushroom", "yarrow", "ginseng", "aloe"])
+      for (const k of [`crop_${p}`, `crop_${p}_0`, `crop_${p}_1`, `crop_${p}_2`, `crop_${p}_3`]) expect(keys.has(k), k).toBe(true);
+    for (const k of ["farm_soil", "fish_shoal", "clutter_pebbles", "clutter_reeds", "clutter_fern", "wild_wheat", "wild_aloe", "sapling_oak_tree_0", "sapling_peach_tree_2"]) expect(keys.has(k), k).toBe(true);
     for (const s of nm.sprites.filter((x: { key: string }) => /_(tree|bush)$/.test(x.key))) expect(s.sway, s.key).toBeDefined();
   });
 });
