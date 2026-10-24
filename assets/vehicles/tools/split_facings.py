@@ -6,8 +6,12 @@ Facings are grouped by silhouette (E/W, N/S, diagonals); each group gets its own
 that group over all states + 2px gutter, 4px at @2x) and its own pages veh_art_<key>_f<g><p> (<= PAGE1 at 1x, 16-aligned,
 + @2x <= 2016, tintmask, emissive). Pixels are the exact build.py frames (cropped, not re-rendered).
 Every sprite drawing such a vehicle gets per-animation `dirFrames` ([frameIdx * directions + dir] -> {atlas, frame,
-anchor}); the legacy uniform pages (and the sprite's own atlas/frames) stay so renderers without dirFrames support keep
-drawing as before. Remove the legacy pages once the renderer resolves dirFrames (see README).
+anchor}). The renderer resolves dirFrames (render 62e770d), so the legacy uniform pages are dropped: each split sprite's
+`atlas` is pointed at its first facing page (dir 0 = E, the fh page) and the old full-size page files (+@2x, masks, ktx2)
+are deleted. `frames`/`frameAttach` keep their legacy indices (attach points are keyed by them); the assets validator
+skips their atlas-range checks when every animation has dirFrames.
+
+    python3 split_facings.py --retarget <manifest.json>   one-off: apply the retarget/delete to an already assembled manifest
 """
 import sys, json, math, pickle, numpy as np
 from PIL import Image
@@ -65,7 +69,28 @@ def main():
                 if n != 8 or (s["atlas"], an["frames"][0]) not in legacy: continue
                 an["dirFrames"] = [lookup[legacy[(s["atlas"], f0 + d * an.get("dirStride", 1))]] for f0 in an["frames"] for d in range(8)]
     part["atlases"] += new_atlases
+    retarget(part, OUT)
     txt = json.dumps(part); open(OUT + "/_vehicles_part.json", "w").write(txt)
     for r in report: print(r)
 
-if __name__ == "__main__": main()
+def retarget(m, base):
+    """Point fully-split sprites at their first facing page; drop atlases no sprite/dirFrame references anymore and their files."""
+    import os, glob
+    old = set()
+    for sp in m["sprites"]:
+        an = list(sp["animations"].values())
+        if an and all(a.get("dirFrames") for a in an):
+            old.add(sp["atlas"]); sp["atlas"] = an[0]["dirFrames"][0]["atlas"]
+    used = {sp["atlas"] for sp in m["sprites"]} | {d["atlas"] for sp in m["sprites"] for a in sp["animations"].values() for d in a.get("dirFrames", [])}
+    gone = old - used; m["atlases"] = [a for a in m["atlases"] if a["key"] not in gone]; n = 0
+    for k in gone:
+        for f in glob.glob(os.path.join(base, "atlases", glob.escape(k) + "[.@_]*")):
+            stem = os.path.basename(f).split(".")[0].split("@")[0]
+            if stem in (k, k + "_emissive"): os.remove(f); n += 1
+    print("retarget: dropped", len(gone), "legacy atlases,", n, "files"); return gone
+
+if __name__ == "__main__":
+    if sys.argv[1:2] == ["--retarget"]:
+        import os; mp = sys.argv[2]; m = json.load(open(mp)); t = open(mp).read()
+        retarget(m, os.path.dirname(mp)); open(mp, "w").write(json.dumps(m, indent=1 if "\n" in t.strip() else None) + ("\n" if t.endswith("\n") else ""))
+    else: main()

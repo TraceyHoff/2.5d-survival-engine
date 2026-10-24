@@ -20,6 +20,8 @@ describe("facing-split dirFrames (vehicles)", () => {
       }
     }
     expect(n).toBeGreaterThan(0);
+    // legacy full-size pages are gone: every veh_art_ page fits a quarter of a 2048 layer
+    for (const a of m.atlases) if (/^veh_art_/.test(a.key)) expect(Math.max(a.frameW * a.columns, a.frameH * a.rows)).toBeLessThanOrEqual(1024);
   });
   it("rejects a dirFrames entry with an unknown atlas or wrong length", () => {
     const m = veh(); const s = m.sprites.find((x: any) => Object.values<any>(x.animations).some((a) => a.dirFrames));

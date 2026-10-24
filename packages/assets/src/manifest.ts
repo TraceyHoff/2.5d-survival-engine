@@ -458,10 +458,12 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
     if (s.sway !== undefined && !(s.sway && s.sway.amp >= 0 && s.sway.freq >= 0 && s.sway.stiffness >= 0 && s.sway.stiffness <= 1)) issues.push(`${p}: sway needs amp >= 0, freq >= 0, stiffness in [0,1]`);
     const at = atlases.get(s.atlas); if (!at) issues.push(`${p}: unknown atlas "${s.atlas}"`);
     checkAttach(s.attach, `${p}.attach`, issues);
+    // fully facing-split sprites: `atlas` is just their first facing page; frames/frameAttach keep legacy indices (attach keys)
+    const allDf = Object.values(s.animations ?? {}).length > 0 && Object.values(s.animations ?? {}).every((a) => Array.isArray(a?.dirFrames));
     if (s.frameAttach !== undefined) {
       if (!s.frameAttach || typeof s.frameAttach !== "object") issues.push(`${p}: frameAttach must be an object`);
       else for (const [fs, am] of Object.entries(s.frameAttach)) {
-        const f = Number(fs); if (!(Number.isInteger(f) && f >= 0 && (!at || f < at.columns * at.rows))) issues.push(`${p}: frameAttach frame ${fs} out of atlas range`);
+        const f = Number(fs); if (!(Number.isInteger(f) && f >= 0 && (!at || allDf || f < at.columns * at.rows))) issues.push(`${p}: frameAttach frame ${fs} out of atlas range`);
         checkAttach(am, `${p}.frameAttach.${fs}`, issues);
       }
     }
