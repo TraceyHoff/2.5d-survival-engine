@@ -28,6 +28,7 @@ ANIM_START["sit"] = 8 * NF + 8 * len(EXPR_EXTRA)
 SWIM_N, PUNCH_N = 6, 4                    # 6-frame paddle loop, 4-frame one-shot jab (own extra pages via dirFrames)
 SWIM_Z = 17.0                             # world z of the waterline on the body (chest); merge sinks the frame so it sits at the pivot
 ANIM_START["swim"] = ANIM_START["sit"] + 8 * SIT_N
+NECK = 3.0                                # ADR-128 neck: body head drawn NECK 1x px higher (head layers shifted by the head anchor)
 ANIM_START["punch"] = ANIM_START["swim"] + 8 * SWIM_N
 def rows_for(slot):
     n = 8 * NF + (8 * len(EXPR_EXTRA) if slot in EXPR_SLOTS else 0)
@@ -248,8 +249,8 @@ class Ctx:
         x = c3[0] + r * math.sin(a) * math.cos(e); y = c3[1] + r * math.cos(a) * math.cos(e); z = c3[2] + r * math.sin(e)
         q = s.p((x, y, z)); return (q[0], q[1] - s.fdy), s.nv(math.sin(a) * math.cos(e), math.cos(a) * math.cos(e))
     def facev(s): return s.nv(0, 1)
-    def headmask(s):
-        hp = s.p(s.K["hc"]); hr = s.K["hr"]; rot = math.radians(s.K["tilt"] * 2.5)
+    def headmask(s, dy=0.0):
+        hp = s.p(s.K["hc"]); hp = (hp[0], hp[1] - dy); hr = s.K["hr"]; rot = math.radians(s.K["tilt"] * 2.5)
         return s.cv.mask_from(circle(hp, hr, hr * 0.96, rot=rot, wob=0.025, seed=11))
     def torso_pts(s, grow=0.0, ky=1.0):
         tp = s.p(s.K["tc"]); B = s.K["B"]

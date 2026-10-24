@@ -36,6 +36,8 @@ def render_one(key, anim, i, d):
         a = np.asarray(im).copy(); m = np.asarray(m).copy(); p = PAD * s
         if ra == "swim":
             a = swimfx.sink(a, SHIFT * s, WL * s); m = swimfx.sink(m, SHIFT * s, WL * s)
+            if key.startswith("body_"):   # bodies carry the water ripple (as swim_punch_merge)
+                b, f = swimfx.ripple(FW, FH, FW / 2, WL, 12.5, 3.6, fi, s); m[f[..., 3] > 100] = 0; a = swimfx.apply_base(a, b, f)
         for arr in (a, m): arr[:p] = 0; arr[-p:] = 0; arr[:, :p] = 0; arr[:, -p:] = 0
         m[a[..., 3] == 0] = 0; fr += [a, m]
     return fr

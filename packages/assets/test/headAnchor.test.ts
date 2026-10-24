@@ -22,11 +22,14 @@ function neckBody(): any {
 }
 
 describe("head anchor (ADR-128 neck)", () => {
-  it("current art (no head point): zero offset on every anim and facing", () => {
-    const r = load(cz()); const id = r.id("body_male");
-    for (const an of ["idle", "walk", "sit", "swim", "punch"]) for (let d = 0; d < 8; d++) {
-      const o = AssetRegistry.headOffset(r.dirFrame(id, an, (d / 8) * Math.PI * 2, 0)); expect([o.x, o.y]).toEqual([0, 0]);
-    }
+  it("shipped art: 3 px neck lifts head layers on every body, anim and facing; bandana is head-group, scarf is not", () => {
+    const r = load(cz());
+    for (const bt of ["body_male", "body_female"]) { const id = r.id(bt);
+      for (const an of ["idle", "walk", "run", "gather", "attack", "hit", "death", "sit", "swim", "punch"]) for (let d = 0; d < 8; d++) {
+        const o = AssetRegistry.headOffset(r.dirFrame(id, an, (d / 8) * Math.PI * 2, 0)); expect([o.x, o.y]).toEqual([0, -3]);
+      } }
+    const m = cz(); const k = (re: RegExp) => r.id(m.sprites.find((s: any) => re.test(s.key)).key);
+    expect(r.isHeadGroup(k(/^cz_acc_bandana/))).toBe(true); expect(r.isHeadGroup(k(/^cz_acc_scarf/))).toBe(false);
   });
   it("every facing of idle/walk/sit/swim/crouch: offset = df:<i> head - attach.head (unmirrored), handR untouched", () => {
     const r = load(neckBody()); const id = r.id("body_male"); let n = 0;

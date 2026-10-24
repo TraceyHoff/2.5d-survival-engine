@@ -231,6 +231,7 @@ def rekey_meta(s, cols):
     meta, then anim meta wins per anchor name). Must run before the anims get their new dirFrames."""
     sm = s.pop("frameMeta", {}) or {}
     for name, an in s["animations"].items():
+        if not sm and all(str(k).startswith("df:") for k in (an.get("frameMeta") or {})): continue   # already df-keyed (re-pack)
         am = an.pop("frameMeta", {}) or {}; n = an.get("directions", 1); st = an.get("dirStride", cols) if n > 1 else 0
         assert all(str(k).lstrip("-").isdigit() for k in list(sm) + list(am)), (s["key"], name)
         out = {}

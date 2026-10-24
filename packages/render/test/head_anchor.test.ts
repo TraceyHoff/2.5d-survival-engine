@@ -39,8 +39,8 @@ describe("head anchor in the 2D creator / Canvas2D paper doll", () => {
         if (HEAD.has(l.layer.slot)) expect([l.dx, l.dy], `${anim} k${k} ${l.layer.slot}`).toEqual([h.x - REF.x, h.y - REF.y]);
         else expect([l.dx, l.dy], `${anim} k${k} ${l.layer.slot}`).toEqual([0, 0]);
       }
-      // current art: identical (zero) offsets
-      for (const l of previewLayers2D(flat.registry, flat.binding, flat.look, k, 0, undefined, anim)) expect([l.dx, l.dy]).toEqual([0, 0]);
+      // shipped art (ADR-128 neck): head-group layers lifted by the 3 px neck, the rest stay put
+      for (const l of previewLayers2D(flat.registry, flat.binding, flat.look, k, 0, undefined, anim)) expect([l.dx, l.dy]).toEqual(HEAD.has(l.layer.slot) ? [0, -3] : [0, 0]);
     }
   });
   it("draw order unchanged: face/eyes above hair on E/SE/S/SW/W, hat above hair everywhere", () => {

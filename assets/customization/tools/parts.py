@@ -2,7 +2,7 @@
 set c.extra (drawn after the front-arm cut, e.g. front sleeves). 'P'/'S' ramps = tint mask R/G (neutral art)."""
 import math
 from PIL import ImageChops
-from rig import circle, hull, NEU, NEU_INK, ramp, ellipse_pts, capsule_pts
+from rig import NECK, circle, hull, NEU, NEU_INK, ramp, ellipse_pts, capsule_pts
 
 INK = ramp("ink")
 def star(c, x, y, r, rp="gold", rot=0.0):
@@ -75,11 +75,20 @@ def body(c, spec):
             cv.part(c.tube(a, b, B["arm"], B["arm"] * .9), "P", lw=1.0, shade=.25)
             cv.part(circle(c.p(b), B["hand"], B["hand"] * .95, wob=.06), "P", lw=1.0, shade=.2, hl=.15)
         c.add(d, arm)
+    def neck():   # ADR-128: skin capsule from the torso top to the (raised) skull base
+        r = B["arm"] * 1.12; a = c.p(c.off(K["tc"], 0, 0, B["try_"] * .45)); b = c.p(c.off(K["hc"], 0, 0, -K["hr"] * .55))
+        b = (b[0], b[1] - NECK)
+        cv.part(hull(circle(a, r, r * .8) + circle(b, r, r * .8)), "P", lw=1.0, shade=.32)
+    c.add(hv(c) + 1.45, neck)
     def head():
+        c.fdy = NECK
+        try: _head()
+        finally: c.fdy = 0.0
+    def _head():
         for az in (-88, 88):
             p, v = c.sph(az, -4, .98)
             if v > -.75: cv.part(circle(p, 2.5, 2.9, wob=.05), "P", lw=.9, shade=.3)
-        hm = cv.part(None, "P", mask=c.headmask(), lw=1.15, shade=.2, hl=.14)
+        hm = cv.part(None, "P", mask=c.headmask(NECK), lw=1.15, shade=.2, hl=.14)
         f = fv(c)
         if f > -.3:
             p, v = c.sph(0, -17, 1.0)
