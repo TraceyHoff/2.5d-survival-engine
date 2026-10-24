@@ -213,8 +213,10 @@ export const Hitch = defineComponent("Hitch", { towNetId: "u32", parentNetId: "u
 export const Worn = defineComponent("Worn", { slot: { type: "u8", length: 6 }, item: { type: "u16", length: 6 }, carryBonus: "f32", waterproof: "f32", armor: "f32" }, { networked: true });
 /** Main-hand ranged state: inventory slot + 1 the magazine belongs to, loaded rounds of ammoItem, reload timer, draw start (0 = not drawing). */
 export const WeaponState = defineComponent("WeaponState", { slot: "u8", loaded: "u8", ammoItem: "u16", reloadUntilTick: "u32", chargeStartTick: "u32" }, { networked: true });
-/** A thrown explosive waiting for its fuse (Transform = landing point). owner = thrower entity, ownerTribe for raid rules. */
-export const LiveExplosive = defineComponent("LiveExplosive", { item: "u16", owner: "u32", ownerTribe: "u16", detonateTick: "u32" }, { networked: true });
+/** A thrown explosive waiting for its fuse (Transform = landing point). Replicated: only what clients render (item, fuse). */
+export const LiveExplosive = defineComponent("LiveExplosive", { item: "u16", detonateTick: "u32" }, { networked: true });
+/** Server-only side component of a LiveExplosive: thrower entity (raid attribution) and tribe (own-structure immunity). Never replicated. */
+export const ExplosiveOwner = defineComponent("ExplosiveOwner", { owner: "u32", ownerTribe: "u16" }, { networked: false });
 export const GAMEPLAY_COMPONENTS = [
   Emitter, Buffs,
   Health, ResourceNode, Survival, VitalsState, Exposure, Dead,
@@ -235,4 +237,5 @@ export const GAMEPLAY_COMPONENTS = [
   ClanStatus,
   Vehicle, VehicleSeats, Driver, Hitch, // append-only (ADR-096)
   Worn, WeaponState, LiveExplosive,
+  ExplosiveOwner, // append-only (server-only)
 ] as const;

@@ -10,7 +10,7 @@
  *    own-tribe structures x pvp.explosives.ownTribeStructureMul, RaidRule hook, ignite; Exploded (reliable).
  */
 import { defineResource, entityIndex, PlayerId, Transform, type Entity, type World } from "@engine/core";
-import { BuildPiece, Container, DamageCause, ContainerViewers, Dead, Equipment, Exposure, Health, IntentAction, Inventory, LiveExplosive, LootBag, NO_SLOT, PlayerIntent, Tribe, WeaponState, Worn } from "../components.js";
+import { BuildPiece, Container, DamageCause, ContainerViewers, Dead, Equipment, Exposure, Health, ExplosiveOwner, IntentAction, Inventory, LiveExplosive, LootBag, NO_SLOT, PlayerIntent, Tribe, WeaponState, Worn } from "../components.js";
 import { gameplayDefs, isAuthority } from "../config.js";
 import { ItemCategory, secondsToTicks, WEAR_SLOTS, type ItemDef } from "../defs.js";
 import { emit, ev } from "../events.js";
@@ -173,7 +173,8 @@ export function throwExplosive(world: World, e: Entity, slot: number, item: numb
   if (!canMutate(world)) return undefined; const d = itemDef(world, item)?.explosive; if (!d) return undefined;
   if (slotItem(world, e, slot).item !== item || !takeFromSlot(world, e, slot)) return undefined;
   const live = world.create();
-  world.add(live, Transform, { x, y }).add(live, LiveExplosive, { item, owner: e, ownerTribe: world.getField(e, Tribe, "id") ?? 0, detonateTick: world.tick + Math.max(1, secondsToTicks(d.fuseSeconds, dt)) });
+  world.add(live, Transform, { x, y }).add(live, LiveExplosive, { item, detonateTick: world.tick + Math.max(1, secondsToTicks(d.fuseSeconds, dt)) })
+    .add(live, ExplosiveOwner, { owner: e, ownerTribe: world.getField(e, Tribe, "id") ?? 0 });
   return live;
 }
 export function explosivesSystem(world: World): void {
@@ -181,9 +182,10 @@ export function explosivesSystem(world: World): void {
   const tf = world.store(Transform); const cfg = PVP.explosives;
   for (const b of [...world.query([LiveExplosive, Transform])].sort((a, c) => a - c)) {
     const lx = world.get(b, LiveExplosive)!; if (world.tick < lx.detonateTick) continue;
+    const ow = world.get(b, ExplosiveOwner) ?? { owner: 0, ownerTribe: 0 };
     const d = itemDef(world, lx.item)?.explosive; const p = world.get(b, Transform)!; world.destroy(b);
     if (!d) continue;
-    const owner = lx.owner as Entity; const rule = world.getResource(RaidRuleRes)?.fn;
+    const owner = ow.owner as Entity; const rule = world.getResource(RaidRuleRes)?.fn;
     const hits: [Entity, number][] = [];
     for (const t of world.query([Transform])) {
       if (!(world.has(t, Health) || world.has(t, BuildPiece)) || world.has(t, Dead)) continue;
@@ -194,7 +196,7 @@ export function explosivesSystem(world: World): void {
     for (const [t, f] of hits) {
       if (world.has(t, BuildPiece)) {
         if (rule && !rule(owner, t)) continue;
-        const own = lx.ownerTribe !== 0 && world.getField(t, Tribe, "id") === lx.ownerTribe;
+        const own = ow.ownerTribe !== 0 && world.getField(t, Tribe, "id") === ow.ownerTribe;
         const amt = d.structureDamage * f * (own ? cfg.ownTribeStructureMul : 1);
         if (amt > 0) applyDamage(world, t, amt, owner, DamageCause.Explosion);
         if (d.ignite && f >= 1 - (1 - cfg.edgeFalloff) * cfg.igniteRadiusFrac) ignite(world, t);

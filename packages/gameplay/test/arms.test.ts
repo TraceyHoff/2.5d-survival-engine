@@ -14,7 +14,7 @@ function world() { const w = makeWorld(); installPermissions(w); return w; }
 describe("registration order", () => {
   it("arms components are appended after vehicles", () => {
     const L = G.GAMEPLAY_COMPONENTS; const i = L.indexOf(G.Hitch);
-    expect(L.slice(i + 1)).toEqual([Worn, WeaponState, G.LiveExplosive]);
+    expect(L.slice(i + 1)).toEqual([Worn, WeaponState, G.LiveExplosive, G.ExplosiveOwner]);
   });
 });
 
@@ -97,6 +97,14 @@ describe("explosives", () => {
     const n0 = hp(w, near), f0 = hp(w, far); steps(w, 20 * 3 - 2); expect(hp(w, near)).toBe(n0);
     steps(w, 4); expect(ex.length).toBe(1);
     expect(n0 - hp(w, near)).toBeGreaterThan(f0 - hp(w, far)); expect(hp(w, far)).toBeLessThan(f0);
+  });
+  it("owner/tribe live in a server-only side component; replicated LiveExplosive carries only item + fuse", () => {
+    const w = world(); const a = mk(w, 1, 0); w.add(a, Tribe, { id: 7 }); const s = hold(w, a, "grenade");
+    const live = G.throwExplosive(w, a, s, id("grenade"), 3, 0, 1 / 20)!;
+    expect(Object.keys(G.LiveExplosive.schema).sort()).toEqual(["detonateTick", "item"]);
+    expect(G.replicationOf(G.ExplosiveOwner)).toBeUndefined(); expect(G.replicationOf(G.LiveExplosive)).toBeDefined();
+    expect(G.ExplosiveOwner.networked).toBe(false); expect(G.LiveExplosive.networked).toBe(true);
+    expect(w.get(live, G.ExplosiveOwner)).toEqual({ owner: a, ownerTribe: 7 });
   });
   it("own-tribe structures are immune; raid rule can veto enemy pieces", () => {
     const w = world(); const owner = mk(w, 1, 0); w.add(owner, Tribe, { id: 7 }); const raider = mk(w, 2, 0); w.add(raider, Tribe, { id: 9 });
