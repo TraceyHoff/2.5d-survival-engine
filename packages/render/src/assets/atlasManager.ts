@@ -468,6 +468,44 @@ export class AtlasManager {
     this.loader = opts.imageLoader ?? defaultImageLoader;
     this.maxLayers = gl.getParameter(gl.MAX_ARRAY_TEXTURE_LAYERS) as number;
     assets.registerLoader<ImageLike>(AtlasManager.IMAGE_KIND, opts.imageLoader ?? defaultImageLoader);
+    const cv = (gl as { canvas?: unknown }).canvas as HTMLCanvasElement | undefined;
+    if (cv && typeof cv.addEventListener === "function") { cv.addEventListener("webglcontextlost", this.onCtxLost, false); cv.addEventListener("webglcontextrestored", this.onCtxRestored, false); this.ctxCanvas = cv; }
+  }
+
+  // ---- context loss: page-ins stop, residency is forgotten (the GL objects are gone), never reported as OOM ----------
+  private ctxCanvas: HTMLCanvasElement | undefined;
+  private ctxLost = false;
+  /** Context losses seen and lazy pages dropped by them (diag / tests). */
+  readonly ctxStats = { losses: 0, restores: 0, pagesDropped: 0, uploadsSkipped: 0 };
+  /** True between webglcontextlost and webglcontextrestored (or while the GL reports a lost context). */
+  get contextLost(): boolean { return this.ctxLost || (typeof this.gl?.isContextLost === "function" && this.gl.isContextLost()); }
+  /** After a restore every lazy page must be uploaded again into recreated arrays: setRegistry()/rebuildAfterRestore(). */
+  needsReupload = false;
+  private onCtxLost = (): void => {
+    this.ctxLost = true; this.ctxStats.losses++; this.gen++; // in-flight page-ins finish as no-ops (gen check)
+    for (const a of this.queue) if (a.lazy) a.lazy.state = 0;
+    this.queue = []; this.vram.pending = this.inflight;
+  };
+  private onCtxRestored = (): void => { this.ctxLost = false; this.ctxStats.restores++; this.resetLazyResidency(); this.needsReupload = true; };
+  /** Forget every stream / wear / vehicle / building page (state 0, fallback frames) and empty the pool LRUs. */
+  resetLazyResidency(): void {
+    for (const a of this.atlases) {
+      if (!a.lazy) continue; const p = this.poolOfA(a);
+      if (a.lazy.state === 2 || (p && p.lru.has(a.key))) { this.ctxStats.pagesDropped++; if (p) { p.lru.remove(a.key); this.vram.evict(p.slotBytes); } }
+      a.lazy.state = 0; a.lazy.prio = Infinity; a.layer = -1; this.writeFrames(a, this.table, this.tintRowMap, true);
+    }
+    for (const p of this.pools) for (const k of p.lru.keys()) { p.lru.remove(k); this.vram.evict(p.slotBytes); }
+    this.queue = []; this.vram.pending = this.inflight;
+  }
+  /** In-place recovery for embedders that keep the AtlasManager across a restore: recreate every array and table. */
+  async rebuildAfterRestore(): Promise<void> {
+    if (!this.registry || this.contextLost) return;
+    this.resetLazyResidency(); await this.rebuild(this.registry, new Map(this.atlases.map((a) => [a.key, a.source] as [string, AtlasSource]))); this.needsReupload = false;
+  }
+  /** Upload finished on a lost context: the slot holds nothing. Free it quietly (no fault, no ladder step). */
+  private droppedByLoss(a: AtlasRT, p: Pool): boolean {
+    if (!this.contextLost) return false;
+    p.lru.remove(a.key); a.lazy!.state = 0; a.layer = -1; this.ctxStats.uploadsSkipped++; return true;
   }
 
   get stats(): AtlasStats { return { layers: this.layers, layerSize: this.layerSize, downscale: this.downscale, gpuMB: Math.round(this.gpuBytes / 1048576), atlases: this.atlases.length, frames: this.totalFrames, sprites: this.sprites.filter(Boolean).length, version: this.version }; }
@@ -1008,6 +1046,7 @@ export class AtlasManager {
   private streamStarts = 0;
   /** Stream pool pages not touched for STREAM_UNLOAD_FRAMES (off-screen and outside the keep radius) are dropped. */
   private unloadIdleStream(): void {
+    if (this.ctxLost) return;
     const sp = this.pools.find((p) => p.cls === "stream"); if (!sp || !sp.lru.size) return;
     const cut = this.frame - STREAM_UNLOAD_FRAMES;
     for (const a of this.atlases) { if (a.lazy?.state !== 2 || this.poolOfA(a) !== sp) continue; const lu = sp.lru.lastUsedOf(a.key);
@@ -1087,6 +1126,7 @@ export class AtlasManager {
     return { ...this.vram.stats(), poolScale: this.pools[0]?.k ?? 0, pools: this.pools.map((p) => ({ cls: p.cls, scale: p.k, slots: p.lru.capacity, layers: p.layers, resident: p.lru.size, slotMB: +(p.slotBytes / 1048576).toFixed(1) })), layerSize: this.layerSize, downscale: this.downscale, coldDownscale: this.coldDownscale, hotAtlases: this.tiers.hot.length, coldAtlases: this.tiers.cold.length };
   }
   private request(a: AtlasRT, prio = Infinity): void {
+    if (this.ctxLost) return;
     const p = this.poolOfA(a); if (!p || !this.poolOn(p, prio) || a.lazy!.state !== 0) return;
     const qi = this.queue.indexOf(a);
     if (qi >= 0) { if (prio < (a.lazy!.prio ?? Infinity)) { a.lazy!.prio = prio; this.queue.splice(qi, 1); this.enqueue(a); } return; }
@@ -1096,6 +1136,7 @@ export class AtlasManager {
   /** Insert by priority (local player first, then by distance). */
   private enqueue(a: AtlasRT): void { const pr = a.lazy!.prio ?? Infinity; let i = this.queue.length; while (i > 0 && (this.queue[i - 1]!.lazy!.prio ?? Infinity) > pr) i--; this.queue.splice(i, 0, a); }
   private pump(): void {
+    if (this.contextLost) return;
     while (this.inflight < PAGE_CONCURRENCY && this.queue.length) {
       // stream sheets: at most STREAM_UPLOADS_PER_FRAME page-in starts per frame (the rest wait in the queue)
       const qi = this.streamStarts >= STREAM_UPLOADS_PER_FRAME ? this.queue.findIndex((q) => this.poolOfA(q)?.cls !== "stream") : 0; if (qi < 0) break;
@@ -1128,6 +1169,7 @@ export class AtlasManager {
     const [cc, tc, ec] = await Promise.all([chain(img, "high"), tint ? chain(tint, "pixelated") : Promise.resolve(null), emi ? chain(emi, "high") : Promise.resolve(null)]);
     if (g !== this.gen) return;
     if ((a.lazy!.prio ?? Infinity) > PRIO_NEAR && !this.vram.canPageIn(p.slotBytes)) { this.pageBudgetRefusals++; a.lazy!.state = 0; return; } // pages count against the budget
+    if (this.contextLost) { a.lazy!.state = 0; this.ctxStats.uploadsSkipped++; return; }
     const slot = p.lru.allocate(a.key, this.frame, a.lazy!.prio ?? Infinity);
     if (!slot) { a.lazy!.state = 0; return; } // pool full of pages drawn this frame: retried on next pageReady
     if (slot.evicted !== undefined) {
@@ -1150,6 +1192,7 @@ export class AtlasManager {
     if (ec && this.emisTex) { gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.emisTex); ec.slice(this.sideShift, this.sideShift + Math.max(1, maxL - this.sideShift)).forEach((im, l) => gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, l, px >> (l + this.sideShift), py >> (l + this.sideShift), layer, im.width, im.height, 1, gl.RGBA, gl.UNSIGNED_BYTE, im as TexImageSource)); }
     for (const im of [...cc, ...(tc ?? []), ...(ec ?? [])]) if (im !== img && im !== tint && im !== emi && typeof (im as ImageBitmap).close === "function") (im as ImageBitmap).close();
     for (const im of [img, tint, emi]) if (im && typeof (im as ImageBitmap).close === "function") (im as ImageBitmap).close();
+    if (this.droppedByLoss(a, p)) { if (this.syncChecks) gl.getError(); return; }
     const err = this.syncChecks ? gl.getError() : gl.NO_ERROR;
     if (err !== gl.NO_ERROR) {
       // the driver refused the upload (Mali commits pages lazily: OOM shows up here, not at texStorage3D); free the slot,
@@ -1207,6 +1250,7 @@ export class AtlasManager {
     if (!col.kt && !col.levels.length) { this.ktx2Stats.failed++; a.lazy!.state = 0; return; }
     if (col.kt) this.ktx2Stats.colour++; else if (src.ktx2 && this.ktx2Target) this.ktx2Stats.pngFallback++;
     if ((a.lazy!.prio ?? Infinity) > PRIO_NEAR && !this.vram.canPageIn(p.slotBytes)) { this.pageBudgetRefusals++; a.lazy!.state = 0; return; }
+    if (this.contextLost) { a.lazy!.state = 0; this.ctxStats.uploadsSkipped++; return; }
     const slot = p.lru.allocate(a.key, this.frame, a.lazy!.prio ?? Infinity);
     if (!slot) { a.lazy!.state = 0; return; }
     if (slot.evicted !== undefined) {
@@ -1232,6 +1276,7 @@ export class AtlasManager {
     if (tc && this.tintMaskTex) { gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.tintMaskTex); tc.forEach((im, l) => gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, l, px >> (l + this.sideShift), py >> (l + this.sideShift), layer, im.width, im.height, 1, gl.RGBA, gl.UNSIGNED_BYTE, im as TexImageSource)); }
     if (ec && this.emisTex) { gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.emisTex); ec.forEach((im, l) => gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, l, px >> (l + this.sideShift), py >> (l + this.sideShift), layer, im.width, im.height, 1, gl.RGBA, gl.UNSIGNED_BYTE, im as TexImageSource)); }
     for (const im of [...col.levels, ...(tc ?? []), ...(ec ?? [])]) if (typeof (im as ImageBitmap).close === "function") (im as ImageBitmap).close();
+    if (this.droppedByLoss(a, p)) { if (this.syncChecks) gl.getError(); return; }
     const err = this.syncChecks ? gl.getError() : gl.NO_ERROR;
     if (err !== gl.NO_ERROR) {
       p.lru.remove(a.key); a.lazy!.state = 0; a.layer = -1; this.pageFaults++;
@@ -1454,6 +1499,7 @@ export class AtlasManager {
   }
 
   dispose(): void {
+    if (this.ctxCanvas) { this.ctxCanvas.removeEventListener("webglcontextlost", this.onCtxLost); this.ctxCanvas.removeEventListener("webglcontextrestored", this.onCtxRestored); this.ctxCanvas = undefined; }
     for (const [k, u] of this.held) this.assets.release(k, u);
     this.held = [];
     const gl = this.gl; if (this.tex) gl.deleteTexture(this.tex); if (this.emisTex) gl.deleteTexture(this.emisTex); if (this.frameTex) gl.deleteTexture(this.frameTex);
