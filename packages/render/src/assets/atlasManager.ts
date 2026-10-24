@@ -198,12 +198,13 @@ function dummyArray(gl: WebGL2RenderingContext): WebGLTexture {
   return t;
 }
 
-/** Texture completeness: BASE/MAX_LEVEL = the levels actually allocated; a single level uses LINEAR (no mip filter). */
-export function setLevelRange(gl: WebGL2RenderingContext, target: number, levels: number): void {
+/** Texture completeness: BASE/MAX_LEVEL = the levels actually allocated; a single level uses LINEAR (no mip filter).
+ *  `magNearest`: magnify with NEAREST (pixel-art doll at an integer scale, e.g. the character preview). */
+export function setLevelRange(gl: WebGL2RenderingContext, target: number, levels: number, magNearest = false): void {
   gl.texParameteri(target, gl.TEXTURE_BASE_LEVEL, 0);
   gl.texParameteri(target, gl.TEXTURE_MAX_LEVEL, Math.max(0, levels - 1));
   gl.texParameteri(target, gl.TEXTURE_MIN_FILTER, levels > 1 ? gl.LINEAR_MIPMAP_LINEAR : gl.LINEAR);
-  gl.texParameteri(target, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(target, gl.TEXTURE_MAG_FILTER, magNearest ? gl.NEAREST : gl.LINEAR);
 }
 
 /** Smallest atlas budget downscale (x0.125 below the old x0.25 floor: phones that refuse 107 MB of arrays). */
@@ -270,6 +271,9 @@ export class AtlasManager {
    * magnified (r >= 1) -> 1x with no mip chain (levels never sampled are not allocated).
    */
   charFootprint = 1;
+  /** Magnify atlas/pool arrays with NEAREST instead of LINEAR (set before setRegistry; the character preview draws at an
+   *  integer device scale and must stay as crisp as Canvas2D's imageSmoothingEnabled = false). */
+  magNearest = false;
   setCharFootprint(r: number): void { if (r > 0 && Number.isFinite(r)) this.charFootprint = r; }
   wearScale(): number { const r = this.charFootprint; return r > 0.5 ? 1 : r > 0.25 ? 0.5 : 0.25; }
   private wearPool(): Pool | undefined { return this.pools.find((p) => p.cls === "wear"); }
@@ -1013,7 +1017,7 @@ export class AtlasManager {
       const levels = Math.floor(Math.log2(S)) + 1;
       gl.texStorage3D(gl.TEXTURE_2D_ARRAY, levels, gl.RGBA8, S, S, nLayers ?? (side ? this.layers : colourLayers)); if (!side) this.texLevels = levels;
       const err = gl.getError(); if (err !== gl.NO_ERROR) { this.uploadErrors.push(`texStorage3D ${S}x${S}x${this.layers} levels ${levels}: 0x${err.toString(16)}`); if (err === gl.OUT_OF_MEMORY) this.oomFlag = true; }
-      setLevelRange(gl, gl.TEXTURE_2D_ARRAY, levels);
+      setLevelRange(gl, gl.TEXTURE_2D_ARRAY, levels, this.magNearest);
       gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
       return t;
@@ -1028,7 +1032,7 @@ export class AtlasManager {
       const o = own.own!; const t = gl.createTexture()!; gl.bindTexture(gl.TEXTURE_2D_ARRAY, t);
       gl.texStorage3D(gl.TEXTURE_2D_ARRAY, o.levels, o.fmt ?? gl.RGBA8, this.layerSize, this.layerSize, ownLayers);
       const err = gl.getError(); if (err !== gl.NO_ERROR) { this.uploadErrors.push(`pool texStorage3D ${o.fmt ?? "RGBA8"} x${ownLayers}: 0x${err.toString(16)}`); if (err === gl.OUT_OF_MEMORY) this.oomFlag = true; }
-      setLevelRange(gl, gl.TEXTURE_2D_ARRAY, o.levels);
+      setLevelRange(gl, gl.TEXTURE_2D_ARRAY, o.levels, this.magNearest);
       gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
       this.poolTex = t; this.poolFirst = own.first;
     } else { for (const p of this.pools) delete p.own; this.poolTex = dummyArray(gl); this.poolFirst = 1 << 20; }
