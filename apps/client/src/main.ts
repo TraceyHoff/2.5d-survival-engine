@@ -31,6 +31,7 @@ import { attachContextRecovery, effectiveLevel, retryIsoAtSafe } from "./gl-reco
 import { BootUI, loadSettings } from "./menu.js";
 import { EDIT_CHAR_KEY, loadCharacter, previewModeFromQuery, saveCharacter, showCharacterCreator, type CharacterSaveKind, type StoredCharacter } from "./character-creator.js";
 import { sampleDayClock } from "./day-clock.js";
+import { AudioSystem } from "./audio/index.js";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 /** Everything (canvas, HUD, touch overlay, menu bar, modals) lives in this root; fullscreen targets it (ADR-095). */
@@ -77,6 +78,11 @@ const MENU_BAR_IDS = new Set(["inventory", "crafting", "map", "chat", "social", 
 const touchLayout = { ...DEFAULT_TOUCH_LAYOUTS.gameplay, elements: DEFAULT_TOUCH_LAYOUTS.gameplay.elements.filter((e) => !MENU_BAR_IDS.has(e.id)) };
 const browserInput = attachBrowserInput(canvas, input, { ...(matchMedia("(pointer: coarse)").matches ? { virtualLayout: touchLayout } : {}), insets: () => safeAreaInsets() });
 let menus: GameMenus | undefined;
+/** ADR-117 audio (Web Audio mixer + snapshot-driven director); low-CPU mode follows LOW_END-style detection. */
+const audio = new AudioSystem({ base: import.meta.env.BASE_URL, lowEnd: params.get("gl") === "lowend" || (navigator.hardwareConcurrency ?? 8) <= 4 || ((navigator as { deviceMemory?: number }).deviceMemory ?? 8) <= 2 });
+audio.start();
+document.addEventListener("visibilitychange", () => audio.mixer.setSuspended("hidden", document.hidden));
+wireUiSounds(audio);
 let farm: ReturnType<typeof mountFarmPrompt> | undefined;
 const safeFarmPrompt = (p: NonNullable<typeof session.player>): ReturnType<typeof farmPrompt> => { try { return farmPrompt(world, p); } catch { return undefined; } };
 if (browserInput.controls) { const c = browserInput.controls; mountTouchOverlay(root, () => c.geometry(), () => !menus || menus.nav.isOpen); }
@@ -87,7 +93,7 @@ let deleteInfo: (() => { label: string; message: string; settingsOption: boolean
 let sessionInfo: (() => { label: string; leaveLabel: string; onLeave: () => void }) | undefined;
 function startMenus(): void {
   if (menus) return;
-  menus = new GameMenus({ root, input, onQuit: quitToMenu, session: () => sessionInfo?.(), deleteProgress: () => deleteInfo?.(), setQuality: (p) => iso?.renderer.setQualityPreset(p), qualityInfo: () => (iso && "quality" in iso.renderer ? (iso.renderer as { quality: { autoLabel(): string; detected?: { name: string; klass: string; remembered: boolean } | undefined } }).quality : undefined), gameplay: { ctx: menuCtx, send: sendIntent, social, startPlacing: (sel) => buildMode.start(sel) },
+  menus = new GameMenus({ root, input, audio: audio.mixer, onQuit: quitToMenu, session: () => sessionInfo?.(), deleteProgress: () => deleteInfo?.(), setQuality: (p) => iso?.renderer.setQualityPreset(p), qualityInfo: () => (iso && "quality" in iso.renderer ? (iso.renderer as { quality: { autoLabel(): string; detected?: { name: string; klass: string; remembered: boolean } | undefined } }).quality : undefined), gameplay: { ctx: menuCtx, send: sendIntent, social, startPlacing: (sel) => buildMode.start(sel) },
     onChat: (text, channel, to) => { if (!session.client?.chat.send(channel as ChatChannel, text, to ? { to } : {})) menus?.pushChat("(not connected — message not sent)"); } });
 }
 /** Live data for the gameplay panels: the replicated world + local player; names via NetClient's NamesClient. */
@@ -172,6 +178,7 @@ let menuRefreshAt = 0;
 function render(w: World, alpha: number): void {
   wireChat();
   const dayFrac = sampleDayClock(w, session.client, alpha); // ADR-115: one clock for lighting + HUD
+  audioFrame(w, dayFrac);
   if (menus?.nav.isOpen) { const now = performance.now(); if (now >= menuRefreshAt) { menuRefreshAt = now + MENU_REFRESH_MS; menus.refresh(); } }
   iso?.syncGhost(buildMode.preview, w);
   if (iso) {
@@ -387,6 +394,23 @@ farm = mountFarmPrompt(root, {
 if (params.get("hud") !== "0" && settings.showHud) mountHud(() => world, () => session.player, { ...(num("time") !== undefined ? { hours: num("time")! } : {}), ...(wi >= 0 ? { weather: wi } : {}) });
 
 let last = performance.now();
+function audioFrame(w: World, dayFrac: number | undefined): void {
+  try {
+    audio.mixer.pollGamepadUnlock(navigator.getGamepads?.() as never);
+    const inGame = session.player !== undefined; const paused = !!menus?.nav.isOpenId("pause") && !!spStatus; // singleplayer pause: world audio stops, UI stays live
+    audio.frame(w, session.player, session.client?.tiles.tiles, dayFrac, !inGame ? "menu" : paused ? "off" : "game", performance.now() / 1000);
+  } catch { /* audio must never break a frame */ }
+}
+/** UI sounds: button clicks (touch/mouse/gamepad A all dispatch click), hover/focus, toasts. */
+function wireUiSounds(a: AudioSystem): void {
+  let hoverAt = 0; const hover = (t: EventTarget | null): void => { const now = performance.now(); if (now - hoverAt < 60 || !(t instanceof HTMLElement) || !t.closest("button,select,[role=button]")) return; hoverAt = now; a.ui("ui.hover"); };
+  document.addEventListener("click", (e) => { const b = e.target instanceof HTMLElement ? e.target.closest("button") : null; if (!b || /^(vol-|mute-|audio-)/.test(b.dataset["key"] ?? "")) return; a.ui(/back|close|cancel/i.test(b.textContent ?? "") ? "ui.back" : "ui.click"); }, true);
+  document.addEventListener("pointerover", (e) => hover(e.target), true);
+  document.addEventListener("focusin", (e) => hover(e.target), true);
+  document.addEventListener("keydown", (e) => { if (e.code === "KeyH" && !e.repeat && a.driving && !menus?.nav.isOpen && !(e.target instanceof HTMLInputElement)) a.horn(); });
+  new MutationObserver((ms) => { for (const m of ms) { const el = m.target; if (el instanceof HTMLElement && el.id === "farm-toast" && el.textContent) { if (el.dataset["kind"] !== "levelup") a.ui("ui.notify"); return; } } })
+    .observe(document.body, { childList: true, subtree: true });
+}
 function frame(now: number): void { requestAnimationFrame(frame); const dt = Math.min(now - last, 250); last = now; try { pumpLocal?.(dt); loop.advance(dt); session.poll(); } catch (e) { showRenderError("Frame error", e instanceof Error ? e.stack ?? e.message : String(e)); } }
 requestAnimationFrame(frame);
 export const buildPreview = () => buildMode.preview;

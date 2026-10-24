@@ -236,7 +236,7 @@ export class IsoView {
       if (v.has(ve, VPiece)) this.syncPieceState(net, e, ve, defs);
       if (v.has(ve, VFuel)) { const f = net.get(e, Fuel); if (f) v.set(ve, VFuel, { lit: f.lit, burnUntilTick: f.burnUntilTick }); }
     }
-    for (const [ne, ve] of this.map) if (!seen.has(ne)) { v.destroy(ve); this.map.delete(ne); this.lightOf.delete(ne); this.pieceStates.delete(ve); this.lastMove.delete(ne); this.animalHp.delete(ne); this.animalSfxAt.delete(ne); this.animalPrev.delete(ne); this.scales.delete(ve); }
+    for (const [ne, ve] of this.map) if (!seen.has(ne)) { v.destroy(ve); this.map.delete(ne); this.lightOf.delete(ne); this.pieceStates.delete(ve); this.lastMove.delete(ne); this.animalHp.delete(ne); this.animalPrev.delete(ne); this.scales.delete(ve); }
 
     this.syncClutter(tiles, ground);
     const camE = CAM_ANIMAL && this.camAnimal !== undefined ? this.camAnimal : player;
@@ -282,19 +282,11 @@ export class IsoView {
   status: ViewStatus | undefined;
   readonly camGuard = new CameraTargetGuard(CAMERA_FALLBACK, CAMERA_GRACE_FRAMES);
   private animalHp = new Map<Entity, { hp: number; hitUntil: number }>();
-  private animalSfxAt = new Map<Entity, number>(); private sfxBudgetAt = 0;
   /** Animal anim (render state ids: 0 idle, 1 walk, 2 run, 4 hit, 5 death) from Animal.state (0 idle, 1 wander, 2 flee), movement and Health. */
-  private animalAnim(net: World, e: Entity, an: { kind: number; state: number }, moving: boolean, dead: boolean, player: Entity | undefined): number {
+  private animalAnim(net: World, e: Entity, an: { kind: number; state: number }, moving: boolean, dead: boolean, _player: Entity | undefined): number {
     const now = performance.now(); const hp = net.get(e, Health)?.hp; const rec = this.animalHp.get(e) ?? { hp: hp ?? 0, hitUntil: 0 };
-    let hurt = false; if (hp !== undefined) { if (hp < rec.hp - 1e-3) { rec.hitUntil = now + 250; hurt = true; } rec.hp = hp; } this.animalHp.set(e, rec);
+    if (hp !== undefined) { if (hp < rec.hp - 1e-3) rec.hitUntil = now + 250; rec.hp = hp; } this.animalHp.set(e, rec); // ADR-117: animal sounds come from the audio director
     const st = dead || (hp !== undefined && hp <= 0) ? 5 : now < rec.hitUntil ? 4 : an.state === 2 && moving ? 2 : moving ? 1 : 0;
-    // species sound: when hurt/killed, starting to flee, or now and then when idle; only near the player, rate-limited
-    const key = animalDefs()[an.kind]?.key; const pt = player !== undefined ? net.get(player, Transform) : undefined; const t = net.get(e, Transform);
-    if (key && pt && t && Math.hypot(pt.x - t.x, pt.y - t.y) < 9) {
-      const last = this.animalSfxAt.get(e) ?? 0; const prevState = this.animalPrev.get(e);
-      const want = hurt || (st === 5 && prevState !== 5) || (an.state === 2 && prevState !== 2 && now - last > 3000) || (st === 0 && now - last > 12000 && Math.random() < 0.002);
-      if (want && now > this.sfxBudgetAt) { this.animalSfxAt.set(e, now); this.sfxBudgetAt = now + 400; playAnimalSfx(this.base, key, Math.max(0.15, 1 - Math.hypot(pt.x - t.x, pt.y - t.y) / 9)); }
-    }
     this.animalPrev.set(e, st === 5 ? 5 : an.state);
     return st;
   }
@@ -400,9 +392,6 @@ interface Spec {
 }
 
 /** Art's sfx_animal_<species> (2 variants, ogg); silently skipped if audio is unavailable or blocked before a user gesture. */
-function playAnimalSfx(base: string, species: string, vol: number): void {
-  try { const a = new Audio(`${base}art/pack/audio/sfx/animal_${species}_${1 + Math.floor(Math.random() * 2)}.ogg`); a.volume = 0.5 * vol; a.playbackRate = 0.9 + Math.random() * 0.2; void a.play().catch(() => undefined); } catch { /* no audio */ }
-}
 
 /**
  * Sub-manifests merged onto the pack manifest (ADR-081 mergeManifests, first definition wins). Overridable by an optional

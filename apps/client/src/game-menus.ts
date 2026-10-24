@@ -10,6 +10,7 @@ import { deleteConfirm } from "./delete-progress.js";
 import { UINav, type ContextStack } from "./ui-nav.js";
 import { loadSettings, saveSettings } from "./menu.js";
 import { morph } from "./ui-diff.js";
+import { audioSettingsRows, type AudioControls } from "./audio/settings-ui.js";
 import { GAMEPLAY_PANELS, gameplayBody, pageContainer, type GameplayPanel, type GameplaySource } from "./gameplay-panels.js";
 import { onlineTargets, openContainerIntent } from "@engine/gameplay";
 import { loadPreset, parsePreset, savePreset, QUALITY_PRESETS, type QualityPreset } from "@engine/render";
@@ -53,6 +54,8 @@ export const CHAT_CHANNELS: readonly [string, number][] = [["Local", 1], ["Globa
 
 export interface GameMenusOptions {
   root: HTMLElement;
+  /** ADR-117 audio mixer controls (Settings volume rows). */
+  audio?: AudioControls;
   input?: ContextStack;
   /** "Quit to main menu": caller exits fullscreen and returns to the main menu. */
   onQuit: () => void;
@@ -173,7 +176,7 @@ export class GameMenus {
     if (qi?.detected) { const d = document.createElement("small"); d.dataset["role"] = "detected-tier"; d.style.cssText = "display:block;opacity:.75";
       d.textContent = `Detected: ${qi.detected.name[0]!.toUpperCase()}${qi.detected.name.slice(1)} (${qi.detected.klass}${qi.detected.remembered ? ", remembered" : ""})`; l3.append(d); }
     const del = this.o.deleteProgress?.();
-    return this.panel("settings", "Settings", [l1, l2, l3], [...(del ? [[del.label, () => this.open("delete-progress"), "alt"] as [string, () => void, string]] : []),["Save", () => { saveSettings({ ...loadSettings(), showHud: hud.checked, fullscreen: fs.checked }); const qp = parsePreset(q.value) ?? "auto"; savePreset(qp); this.o.setQuality?.(qp); this.nav.close(); }], ["Back", () => this.nav.close(), "alt"]]);
+    return this.panel("settings", "Settings", [l1, l2, l3, ...(this.o.audio ? [audioSettingsRows(this.o.audio)] : [])], [...(del ? [[del.label, () => this.open("delete-progress"), "alt"] as [string, () => void, string]] : []),["Save", () => { saveSettings({ ...loadSettings(), showHud: hud.checked, fullscreen: fs.checked }); const qp = parsePreset(q.value) ?? "auto"; savePreset(qp); this.o.setQuality?.(qp); this.nav.close(); }], ["Back", () => this.nav.close(), "alt"]]);
   }
   private deletePanel(): HTMLElement {
     const d = this.o.deleteProgress?.();
