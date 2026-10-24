@@ -1,13 +1,14 @@
 """Encode KTX2/Basis siblings for atlas pages and record them in the manifest (optional, non-breaking fields).
   colour pages (atlas image + scale pages) -> ETC1S (basis-lz), sRGB
   masks: tintmask -> UASTC linear, emissive -> UASTC sRGB, other masks -> UASTC linear
-Fields: atlas.ktx2 (scale-1 image), pages[i].ktx2, atlas.masksKtx2.{tintmask,emissive,...}. PNG stays the source of truth.
+Fields: atlas.ktx2 (scale-1 image), pages[i].ktx2, atlas.masksKtx2.{tintmask,emissive,...}, pages[i].masksKtx2 (`<mask>@Nx`). PNG stays the source of truth.
 Mips: every file carries a full mip chain (toktx --genmipmap). Colour pages with alpha are first "dilated": transparent
 texels get the colour of the nearest opaque art (push-pull fill, alpha untouched) so box-filtered mips and bilinear
 taps don't pull black into edges (dark halos). Files are re-encoded when the PNG is newer or the KTX2 has no mips.
 Usage: python3 ktx2.py <manifest.json>... [--report out.json] [--force]   (needs KTX-Software `toktx` >= 4.3)"""
 import sys, os, json, struct, subprocess, tempfile
 import numpy as np
+import re
 from concurrent.futures import ThreadPoolExecutor
 from PIL import Image
 args = sys.argv[1:]; rep = None
@@ -56,6 +57,14 @@ for mf in args:
         for k, v in (a.get("masks") or {}).items():
             if isinstance(v, str): mk[k] = kpath(v); jobs.append((v, mk[k], "uastc", "srgb" if k == "emissive" else "linear"))
         if mk: a["masksKtx2"] = mk
+        for pg in a.get("pages", []):  # `<mask>@<scale>x` variants -> pages[i].masksKtx2 (non-breaking field)
+            pk = {}
+            for k, v in (a.get("masks") or {}).items():
+                if not isinstance(v, str): continue
+                mv = re.sub(r"(\.[a-z]+)$", f"@{pg['scale']}x\\1", v)
+                if os.path.exists(os.path.join(base, mv)): pk[k] = kpath(mv); jobs.append((mv, pk[k], "uastc", "srgb" if k == "emissive" else "linear"))
+            if pk: pg["masksKtx2"] = pk
+            else: pg.pop("masksKtx2", None)
         # VRAM: RGBA8 = 4 B/px; ETC1S->ETC2 RGBA / BC7 and UASTC->ASTC4x4 / BC7 = 1 B/px; full mip chain = x4/3
         def px(p): w, h = Image.open(os.path.join(base, p)).size; return w * h * 4 / 3
         p1 = px(a["image"]); hi = [(pg["scale"], px(pg["image"])) for pg in a.get("pages", [])]; mpx = sum(px(v) for v in (a.get("masks") or {}).values() if isinstance(v, str))

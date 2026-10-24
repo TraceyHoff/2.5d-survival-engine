@@ -42,7 +42,9 @@ export interface AtlasJson {
   /** Optional KTX2 (UASTC) twins of string mask paths, keyed by mask kind. */
   masksKtx2?: Partial<Record<MaskKind, string>>;
 }
-export interface AtlasPageJson { scale: number; image: string; /** Optional KTX2 twin of this page image. */ ktx2?: string }
+export interface AtlasPageJson { scale: number; image: string; /** Optional KTX2 twin of this page image. */ ktx2?: string;
+  /** Optional KTX2 (UASTC) twins of this page's `<mask>@<scale>x` mask variants, keyed by mask kind (scale-1 masks use atlas.masksKtx2). */
+  masksKtx2?: Partial<Record<MaskKind, string>> }
 export const MASK_KINDS = ["emissive", "sheen", "sway", "tintmask"] as const;
 export type MaskKind = (typeof MASK_KINDS)[number];
 export type AtlasMasksJson = { emissive?: string | true; sheen?: string; sway?: string; tintmask?: string };
@@ -56,7 +58,12 @@ export interface GlyphJson { sprite: string; frame?: number }
 export const GLYPH_ID = /^(kbm|gamepad|touch)(\.[a-z0-9_]+)+$/;
 export interface AnimationJson { /** Per-frame metadata keyed by atlas frame index; overrides the sprite's frameMeta for this anim. */ frameMeta?: Record<string, FrameMeta>; frames: number[]; fps: number; directions?: Directions; /** frame offset per direction row (default: atlas columns) */ dirStride?: number; loop?: boolean;
   /** Optional per-rotation frame rows for building anims: 1, 2 (rotations 2/3 = rows 0/1 mirrored) or 4 rows, each the same length as frames. Replaces the `<anim>_r1` naming hack (still honored as fallback). */
-  rotations?: number[][] }
+  rotations?: number[][];
+  /** Optional facing-split art (non-breaking): [frameIdx * directions + dir] -> the frame on its own atlas with its own
+   * anchor. Lets one facing group (E/W, N/S, diagonals) live on a tightly trimmed page. `frames`/sprite.atlas stay the
+   * legacy uniform layout for consumers that ignore this; resolve with AssetRegistry.dirFrame(). */
+  dirFrames?: DirFrameJson[] }
+export interface DirFrameJson { atlas: string; frame: number; anchor: { x: number; y: number } }
 /** Building state -> vfx spawned at a named attach point (e.g. burning: fire/ember/smoke). */
 export interface StateVfxJson { vfx: string; attach: string }
 export const STRETCH_MODES = ["none", "velocity"] as const;
@@ -123,7 +130,7 @@ export interface ManifestJson extends CosmeticsJson {
 }
 
 // ---------- resolved ----------
-export interface AtlasPage { scale: number; image: string; ktx2?: string }
+export interface AtlasPage { scale: number; image: string; ktx2?: string; masksKtx2?: Partial<Record<MaskKind, string>> }
 export type AtlasMasks = Partial<Record<MaskKind, string>>;
 export interface Atlas extends Omit<AtlasJson, "emissive" | "nineSlice" | "pages" | "masks"> {
   id: number; /** = masks.emissive (kept for compatibility) */ emissiveImage?: string; nineSlice: Map<number, NineSlice>;
@@ -131,7 +138,7 @@ export interface Atlas extends Omit<AtlasJson, "emissive" | "nineSlice" | "pages
 }
 export interface SpriteTint { color: number; strength: number; mode: TintMode; saturation: number }
 export interface GlyphDef { id: string; sprite: number; frame: number }
-export interface Animation { id: number; name: string; frames: number[]; fps: number; directions: Directions; dirStride: number; loop: boolean; rotations?: number[][]; frameMeta?: Map<number, FrameMeta> }
+export interface Animation { id: number; name: string; frames: number[]; fps: number; directions: Directions; dirStride: number; loop: boolean; rotations?: number[][]; frameMeta?: Map<number, FrameMeta>; dirFrames?: { atlas: Atlas; frame: number; anchor: { x: number; y: number } }[] }
 export interface BuildingSprite { piece: string; footprint: { w: number; h: number }; layer: number; frames: number[][]; rotationArt: RotationArt; stateNames: string[]; states: number[][][];
   /** crack overlay sprite id */ crackOverlay?: number; stateVfx: Record<string, { vfx: number; attach: string }[]> }
 export interface SpriteDef { id: number; key: string; category: Category; atlas: Atlas; anchor: { x: number; y: number }; animations: Map<string, Animation>; animList: Animation[]; building?: BuildingSprite; sway?: SwayJson; tints: Record<string, SpriteTint>;
@@ -198,6 +205,19 @@ export class AssetRegistry {
     const n = a.frames.length; let i = Math.floor(timeSec * a.fps); i = a.loop ? i % n : Math.min(i, n - 1);
     const f = a.frames[i]! + AssetRegistry.directionIndex(facing, a.directions) * a.dirStride; const ref = this.ref(s, f);
     const an = this.frameAnchors(spriteId, f, a.name); return an ? { ...ref, anchors: an } : ref;
+  }
+  /**
+   * Like frame(), but honours the anim's facing-split `dirFrames` (own atlas + anchor per facing) when present; attach
+   * points still come from the legacy frame (they are pivot-relative, so identical). Falls back to frame().
+   */
+  dirFrame(spriteId: number, anim: string, facing: number, timeSec: number): FrameRef {
+    const s = this.sprite(spriteId); const a = s.animations.get(anim) ?? s.animList[0]!; const base = this.frame(spriteId, anim, facing, timeSec);
+    if (!a.dirFrames) return base;
+    const n = a.frames.length; let i = Math.floor(timeSec * a.fps); i = a.loop ? i % n : Math.min(i, n - 1);
+    const d = a.dirFrames[i * a.directions + AssetRegistry.directionIndex(facing, a.directions)]; if (!d) return base;
+    const at = d.atlas; const f = d.frame; const { emissiveImage: _e, ...rest } = base;
+    return { ...rest, atlas: at, frame: f, x: (f % at.columns) * at.frameW, y: Math.floor(f / at.columns) * at.frameH, w: at.frameW, h: at.frameH,
+      anchorX: d.anchor.x * at.frameW, anchorY: d.anchor.y * at.frameH, pages: at.pages, masks: at.masks, ...(at.emissiveImage ? { emissiveImage: at.emissiveImage } : {}) };
   }
   /** Per-frame metadata for an atlas frame: sprite frameMeta merged with the anim's (anim anchors win by name). */
   frameMeta(spriteId: number, frame: number, anim?: string): FrameMeta | undefined {
@@ -395,7 +415,10 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
         if (!(typeof pg?.scale === "number" && pg.scale > 0 && pg.scale <= 8)) { issues.push(`${p}: page scale must be in (0, 8]`); continue; }
         if (!pg.image || !IMG.test(pg.image)) issues.push(`${p}: page image must be .png/.webp`);
         if (pg.ktx2 !== undefined && !(typeof pg.ktx2 === "string" && /\.ktx2$/.test(pg.ktx2))) issues.push(`${p}: page ktx2 must be a .ktx2 path`);
-        if (pages.some((x) => x.scale === pg.scale)) issues.push(`${p}: duplicate page scale ${pg.scale}`); else pages.push({ scale: pg.scale, image: pg.image, ...(pg.ktx2 ? { ktx2: pg.ktx2 } : {}) });
+        if (pages.some((x) => x.scale === pg.scale)) issues.push(`${p}: duplicate page scale ${pg.scale}`); else {
+          if (pg.masksKtx2 !== undefined) for (const [k, v] of Object.entries(pg.masksKtx2 ?? {})) if (!(MASK_KINDS as readonly string[]).includes(k) || typeof v !== "string" || !/\.ktx2$/.test(v)) issues.push(`${p}: pages[scale ${pg.scale}].masksKtx2.${k} must be a known mask kind with a .ktx2 path`);
+          pages.push({ scale: pg.scale, image: pg.image, ...(pg.ktx2 ? { ktx2: pg.ktx2 } : {}), ...(pg.masksKtx2 ? { masksKtx2: { ...pg.masksKtx2 } } : {}) });
+        }
       }
       pages.sort((x, y) => x.scale - y.scale);
     }
@@ -452,6 +475,13 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
       if (![1, 4, 8].includes(dirs)) issues.push(`${q}: directions must be 1, 4 or 8`);
       if (!(a.fps > 0)) issues.push(`${q}: fps must be > 0`);
       if (!Array.isArray(a.frames) || !a.frames.length) issues.push(`${q}: frames required`);
+      if (a.dirFrames !== undefined) {
+        if (!Array.isArray(a.dirFrames) || !Array.isArray(a.frames) || a.dirFrames.length !== a.frames.length * dirs) issues.push(`${q}: dirFrames must have frames.length x directions entries`);
+        else a.dirFrames.forEach((d, i) => { const da = atlases.get(d?.atlas);
+          if (!da) issues.push(`${q}.dirFrames[${i}]: unknown atlas ${d?.atlas}`);
+          else if (!(Number.isInteger(d.frame) && d.frame >= 0 && d.frame < da.columns * da.rows)) issues.push(`${q}.dirFrames[${i}]: frame ${d.frame} out of range`);
+          if (!d?.anchor || !(d.anchor.x >= 0 && d.anchor.x <= 1 && d.anchor.y >= 0 && d.anchor.y <= 1)) issues.push(`${q}.dirFrames[${i}]: anchor must be within [0,1]`); });
+      }
       else if (at) {
         const stride = a.dirStride ?? at.columns;
         for (const f of a.frames) if (!(Number.isInteger(f) && f >= 0 && f + (dirs - 1) * stride < total)) issues.push(`${q}: frame ${f} out of atlas range`);
@@ -602,7 +632,7 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
   const sprites = new Map<number, SpriteDef>();
   for (const s of m.sprites) {
     const at = atlases.get(s.atlas)!; const animList: Animation[] = [];
-    Object.entries(s.animations).forEach(([name, a], i) => animList.push({ id: i, name, frames: a.frames, fps: a.fps, directions: a.directions ?? 1, dirStride: a.dirStride ?? at.columns, loop: a.loop ?? true, ...(a.rotations ? { rotations: a.rotations.map((r) => [...r]) } : {}), ...(a.frameMeta ? { frameMeta: cloneMeta(a.frameMeta) } : {}) }));
+    Object.entries(s.animations).forEach(([name, a], i) => animList.push({ id: i, name, frames: a.frames, fps: a.fps, directions: a.directions ?? 1, dirStride: a.dirStride ?? at.columns, loop: a.loop ?? true, ...(a.rotations ? { rotations: a.rotations.map((r) => [...r]) } : {}), ...(a.frameMeta ? { frameMeta: cloneMeta(a.frameMeta) } : {}), ...(a.dirFrames ? { dirFrames: a.dirFrames.map((d) => ({ atlas: atlases.get(d.atlas)!, frame: d.frame, anchor: { ...d.anchor } })) } : {}) }));
     const id = ids.sprites.id(s.key);
     sprites.set(id, { id, key: s.key, category: s.category, atlas: at, anchor: s.anchor ?? { x: 0.5, y: 0.9 }, animations: new Map(animList.map((a) => [a.name, a])), animList,
       ...(s.building ? { building: { piece: s.building.piece, footprint: { ...s.building.footprint }, layer: s.building.layer, frames: s.building.frames.map((r) => [...r]),
@@ -674,6 +704,7 @@ export function validateAssetFiles(reg: AssetRegistry, io: AssetFileIO): string[
     for (const pg of a.pages) {
       if (!io.exists(pg.image)) issues.push(`atlas ${a.key}: missing page ${pg.image}`);
       if (pg.ktx2 && !io.exists(pg.ktx2)) issues.push(`atlas ${a.key}: missing ktx2 ${pg.ktx2}`); else if (pg.ktx2 && empty(pg.ktx2)) issues.push(`atlas ${a.key}: ktx2 ${pg.ktx2} is 0 bytes`);
+      for (const kp of Object.values(pg.masksKtx2 ?? {})) if (kp && !io.exists(kp)) issues.push(`atlas ${a.key}: missing ktx2 mask ${kp}`); else if (kp && empty(kp)) issues.push(`atlas ${a.key}: ktx2 mask ${kp} is 0 bytes`);
     }
     for (const kp of Object.values(a.masksKtx2 ?? {})) if (kp && !io.exists(kp)) issues.push(`atlas ${a.key}: missing ktx2 mask ${kp}`); else if (kp && empty(kp)) issues.push(`atlas ${a.key}: ktx2 mask ${kp} is 0 bytes`);
     const base = io.exists(a.image) ? size(a.image) : undefined;

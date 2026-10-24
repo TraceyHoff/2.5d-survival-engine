@@ -7,13 +7,16 @@
    "image": "atlases/body_male.png",
    "frameW": 44,
    "frameH": 60,
-   "columns": 24,
-   "rows": 12,
+   "columns": 20,
+   "rows": 14,
    "pages": [
     {
      "scale": 2,
      "image": "atlases/body_male@2x.png",
-     "ktx2": "atlases/body_male@2x.ktx2"
+     "ktx2": "atlases/body_male@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/body_male.tintmask@2x.ktx2"
+     }
     }
    ],
    "masks": {
@@ -29,13 +32,16 @@
    "image": "atlases/body_female.png",
    "frameW": 44,
    "frameH": 60,
-   "columns": 24,
-   "rows": 12,
+   "columns": 20,
+   "rows": 14,
    "pages": [
     {
      "scale": 2,
      "image": "atlases/body_female@2x.png",
-     "ktx2": "atlases/body_female@2x.ktx2"
+     "ktx2": "atlases/body_female@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/body_female.tintmask@2x.ktx2"
+     }
     }
    ],
    "masks": {
