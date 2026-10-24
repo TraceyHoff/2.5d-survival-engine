@@ -15,13 +15,13 @@ const BR: Branding = (typeof __BRANDING__ !== "undefined" && __BRANDING__) || { 
 export const APP_TITLE = BR.title;
 export type MenuChoice = { kind: "singleplayer" } | { kind: "multiplayer"; url: string } | { kind: "host" } | { kind: "join"; code: string };
 /** hostCap: desktop P2P host player cap incl. the host (mobile hosts are fixed at 6, see p2p.ts). */
-export interface Settings { bots: number; showHud: boolean; fullscreen: boolean; hostCap: number; /** ADR-121: new-world rules */ hordes: boolean; hordeGraceDays: number }
+export interface Settings { bots: number; showHud: boolean; fullscreen: boolean; hostCap: number; /** ADR-121: new-world rules */ hordes: boolean; hordeGraceDays: number; /** ADR-126: tool symbol near resource nodes */ toolHints: boolean }
 /** ADR-121: the world rules a NEW local / hosted world is created with (an existing save keeps its own). */
 export function newWorldRules(s: Settings = loadSettings()): { hordes: boolean; hordeGraceDays: number } { return { hordes: s.hordes !== false, hordeGraceDays: Math.max(0, Math.min(30, Number(s.hordeGraceDays) || 0)) }; }
 const SETTINGS_KEY = "engine-settings";
 export function saveSettings(s: Settings): void { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...(JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as object), ...s })); } catch { /* private mode */ } }
 export function loadSettings(): Settings {
-  try { return { bots: 3, showHud: true, fullscreen: true, hostCap: 12, hordes: true, hordeGraceDays: 3, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as Partial<Settings> }; } catch { return { bots: 3, showHud: true, fullscreen: true, hostCap: 12, hordes: true, hordeGraceDays: 3 }; }
+  try { return { bots: 3, showHud: true, fullscreen: true, hostCap: 12, hordes: true, hordeGraceDays: 3, toolHints: true, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as Partial<Settings> }; } catch { return { bots: 3, showHud: true, fullscreen: true, hostCap: 12, hordes: true, hordeGraceDays: 3, toolHints: true }; }
 }
 
 const CSS = (base: string): string => `@font-face{font-family:Fredoka;src:url(${base}art/ui/fonts/Fredoka.ttf) format("truetype");font-display:swap}
