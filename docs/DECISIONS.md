@@ -632,3 +632,13 @@ Identity is persisted in the `agents` record namespace. Gameplay supplies `refer
 - **Known gaps:**
   - Horde members and `PieceOwner` are not persisted. After a reload, bases group by a 32-tile cell.
   - There is no in-game toggle after creation.
+
+## ADR-122: Road tool and sign input across devices, styled sign editor
+
+- **Bindings** (`packages/input/profiles`, new non-consuming `Road` context, priority 12):
+  - Keyboard/mouse: `RoadTool` = **G** (cycle surfaces → off), `PlaceSign` = **N**; in Road: Enter confirm, Esc cancel/exit (`Road` is in `ESC_OWNING_CONTEXTS`, so Esc does not open the pause menu).
+  - Gamepad (incl. Xbox Elite/Edge mappings): every Gameplay button is taken, so the pad enters the tool from the Build panel. Inside `Road`: right stick moves a tile cursor (radial deadzone 0.15), **A** mark start / mark end / lay, **RT** lay, **B** cancel → exit, **Y** next surface, **X** place sign. These shadow Jump/Aim/Interact only while the tool is on.
+  - Touch: drag (or tap start, tap end) plans a line; it stays pending until **✓ Lay road** / **✕ Cancel**. Pointer downs on virtual sticks/buttons are ignored.
+- **UI:** a top-right HUD bar (44 px targets) with Road and Sign buttons and a per-device prompt; the Build panel gets a "Roads & signs" section. The preview draws exactly the server's `roadLine` walk (capped at 32 tiles).
+- **Sign editor** (`sign-editor.ts`) replaces `prompt()`: a UINav modal (Esc, gamepad B, browser back via back-history and a Back button all close it) with a live preview, per-kind counter, `sanitizeSignText`, an on-screen keyboard (pad Y toggles; opens by default on gamepad), and a scrollable panel sized with `dvh` and safe-area insets. Empty signs now show a ✎ label so they can be edited; the HUD Sign button becomes "Edit sign" near one.
+- **Gaps:** no per-world creation step for hordes/grace days (new-world rules stay in main-menu Settings, ADR-121, because singleplayer start does not know whether a save exists); no Gameplay-context gamepad hotkey for the road tool; touch places signs at the player tile.
