@@ -226,7 +226,7 @@ export const ExplosiveOwner = defineComponent("ExplosiveOwner", { owner: "u32", 
 /** Crafted-vehicle provenance + condition (vehicle_craft.ts): crafterId = PlayerId from the kit slot (0 = world spawn);
  * wear 0..0.5 = fraction of max health lost to field repairs (garage repair clears it). */
 export const VehicleCondition = defineComponent("VehicleCondition", { crafterId: "u32", wear: "f32" }, { networked: true, persistent: true });
-/** Replicated toggles on a powered vehicle (ADR-097): bit 0 engineOn, bit 1 headlights. Separate 1-byte component so it
+/** Replicated toggles on a powered vehicle (ADR-101): bit 0 engineOn, bit 1 headlights. Separate 1-byte component so it
  * only goes on the wire when toggled, not with every moving-Vehicle delta. Written only by the vehicle state commands. */
 export const VehicleState = defineComponent("VehicleState", { flags: "u8" }, { networked: true, persistent: true });
 export const VEHICLE_ENGINE_ON = 1, VEHICLE_HEADLIGHTS = 2;
@@ -252,5 +252,5 @@ export const GAMEPLAY_COMPONENTS = [
   Worn, WeaponState, LiveExplosive,
   ExplosiveOwner, // append-only (server-only)
   VehicleCondition, // vehicle crafting (DESIGN.md §31)
-  VehicleState, // append-only (ADR-097)
+  VehicleState, // append-only (ADR-101)
 ] as const;

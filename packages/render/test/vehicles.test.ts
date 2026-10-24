@@ -94,7 +94,7 @@ describe("seats", () => {
     const s = seatAnchors(def("car_sedan")); expect(s.length).toBe(4);
     expect(s[0]!.v).toBeGreaterThan(0); expect(s[1]!.v).toBeLessThan(0); expect(s[2]!.u).toBeLessThan(s[0]!.u); expect(s[0]!.cabin).toBe(true);
     expect(seatAnchors(def("bike_tandem")).every((a) => a.v === 0 && !a.cabin)).toBe(true);
-    // ADR-097: anchors come from vehicles.json (ported from the computed layout) and hitches carry anchor.x
+    // ADR-101: anchors come from vehicles.json (ported from the computed layout) and hitches carry anchor.x
     for (const d of DEFS) {
       expect(d.seatAnchors?.length).toBe(d.seats);
       const fromDefs = seatAnchors(d), computed = defaultSeatAnchors(d);

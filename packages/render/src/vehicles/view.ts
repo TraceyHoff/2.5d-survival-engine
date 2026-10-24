@@ -10,7 +10,7 @@
  * Trailers (snapshot.parent != 0) are re-posed from the SMOOTHED tow's rear hitch with their own smoothed heading, so
  * the joint never separates between snapshots. Riders are returned as RiderPlacement (seat anchor, quantized facing,
  * depth-nudged behind the segment so the body crops the legs); the caller writes them to the rider entity's
- * Transform (no PrevTransform interpolation); gameplay sets the rider's AnimState to Sit (13, ADR-097).
+ * Transform (no PrevTransform interpolation); gameplay sets the rider's AnimState to Sit (13, ADR-101).
  */
 import { Transform, type Entity, type World } from "@engine/core";
 import { LightSource, Occluder, Sprite, SpriteFlag } from "../components.js";

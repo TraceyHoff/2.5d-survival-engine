@@ -22,7 +22,7 @@ export const VEHICLE_CLASSES = ["bicycle", "car", "truck", "van", "camper", "sem
 export type VehicleClass = (typeof VEHICLE_CLASSES)[number];
 export const VEHICLE_SIZES = ["xs", "s", "m", "l", "xl"] as const;
 export type VehicleSize = (typeof VEHICLE_SIZES)[number];
-/** Vehicle-local offset (ADR-097): x along the heading (+ front), y left (+ = exit side), z up (world z units). */
+/** Vehicle-local offset (ADR-101): x along the heading (+ front), y left (+ = exit side), z up (world z units). */
 export interface VehicleAnchor { x: number; y: number; z: number }
 /** anchor.x = +offset (front) / -offset (rear); render reads it instead of recomputing (VEHICLES_RENDER.md). */
 export interface HitchPoint { at: "front" | "rear"; offset: number; accepts: VehicleClass[]; anchor: VehicleAnchor }
@@ -280,7 +280,7 @@ export const VehicleUnhitchCmd = defineCommand("gameplay.vehicleUnhitch", { targ
 /** Use interior station index (into def.interior.stations) of a parked vehicle. */
 export const VehicleStationCmd = defineCommand("gameplay.vehicleStation", { target: "u32", station: "u8" });
 export const VEHICLE_COMMANDS = [VehicleEnterCmd, VehicleExitCmd, VehicleHitchCmd, VehicleUnhitchCmd, VehicleStationCmd] as const;
-/** Vehicle toggles (ADR-097), registered after VEHICLE_CRAFT_COMMANDS (append-only). on: 0 off, 1 on, 2 toggle. Driver only. */
+/** Vehicle toggles (ADR-101), registered after VEHICLE_CRAFT_COMMANDS (append-only). on: 0 off, 1 on, 2 toggle. Driver only. */
 export const VehicleEngineCmd = defineCommand("gameplay.vehicleEngine", { target: "u32", on: "u8" });
 export const VehicleHeadlightsCmd = defineCommand("gameplay.vehicleHeadlights", { target: "u32", on: "u8" });
 export const VEHICLE_STATE_COMMANDS = [VehicleEngineCmd, VehicleHeadlightsCmd] as const;
@@ -368,7 +368,7 @@ export function unhitchVehicle(world: World, actor: Entity, trailer: Entity): st
   return undefined;
 }
 
-// ---- engine / headlights (ADR-097) -------------------------------------------------------------------
+// ---- engine / headlights (ADR-101) -------------------------------------------------------------------
 export const vehicleFlags = (world: World, v: Entity): number => world.getField(v, VehicleState, "flags") ?? 0;
 export const isEngineOn = (world: World, v: Entity): boolean => (vehicleFlags(world, v) & VEHICLE_ENGINE_ON) !== 0;
 export const headlightsOn = (world: World, v: Entity): boolean => (vehicleFlags(world, v) & VEHICLE_HEADLIGHTS) !== 0;
@@ -386,7 +386,7 @@ export function validateVehicleToggle(world: World, actor: Entity, v: Entity, bi
 }
 export function setVehicleToggle(world: World, actor: Entity, v: Entity, bit: number, on: number): string | undefined {
   const r = validateVehicleToggle(world, actor, v, bit, on); if (r) return r;
-  if (!world.has(v, VehicleState)) world.add(v, VehicleState); // vehicles from pre-ADR-097 saves
+  if (!world.has(v, VehicleState)) world.add(v, VehicleState); // vehicles from pre-ADR-101 saves
   const f = vehicleFlags(world, v); const want = on === 2 ? !(f & bit) : on === 1;
   const nf = want ? f | bit : f & ~bit; if (nf !== f) world.setField(v, VehicleState, "flags", nf);
   return undefined;

@@ -56,7 +56,7 @@ const STATE_ANIM_TABLE: Record<CoreAnimState, readonly string[]> = {
   [CoreAnimState.Eat]: ["eat", "graze", "idle"], [CoreAnimState.Graze]: ["graze", "eat", "idle"],
   // zombies: zombie_*_shamble / _crawl / _feed (pack wave 2)
   [CoreAnimState.Shamble]: ["shamble", "walk"], [CoreAnimState.Crawl]: ["crawl", "shamble", "walk"], [CoreAnimState.Feed]: ["feed", "attack", "idle"],
-  // vehicle riders (ADR-097): `sit`, else idle (the body crops the legs anyway)
+  // vehicle riders (ADR-101): `sit`, else idle (the body crops the legs anyway)
   [CoreAnimState.Sit]: ["sit", "idle"],
 };
 export const STATE_ANIMS: readonly (readonly string[])[] = ANIM_STATE_NAMES.map((_, i) => STATE_ANIM_TABLE[i as CoreAnimState] ?? ["idle"]);

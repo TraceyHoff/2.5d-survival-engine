@@ -7,7 +7,7 @@
 export interface VehicleRenderDef {
   id: string; class: string; seats: number;
   footprint: { length: number; width: number };
-  hitches: readonly { at: "front" | "rear"; offset: number; /** vehicle-local hitch point (x = u, y = v); gameplay defs carry it (ADR-097) */ anchor?: { x: number; y: number; z: number } }[];
+  hitches: readonly { at: "front" | "rear"; offset: number; /** vehicle-local hitch point (x = u, y = v); gameplay defs carry it (ADR-101) */ anchor?: { x: number; y: number; z: number } }[];
   /** Per-seat anchors from vehicles.json (x = u, y = v, z); when absent, seatAnchors() falls back to the computed layout. */
   seatAnchors?: readonly { x: number; y: number; z: number }[];
   interior: { stations: readonly string[] };

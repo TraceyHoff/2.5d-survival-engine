@@ -76,7 +76,7 @@ describe("decal autotile", () => {
   });
 });
 
-describe("vehicle category (ADR-097)", () => {
+describe("vehicle category (ADR-101)", () => {
   it("is an optional category: accepted, listed by byCategory, not required", () => {
     const m = mutate((mm) => { mm.sprites.push({ ...anySprite(mm), key: "vehicle_car_sedan_s0_d0", category: "vehicle" }); });
     const { registry } = loadManifest(m);

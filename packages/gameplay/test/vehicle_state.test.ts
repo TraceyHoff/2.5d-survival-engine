@@ -9,7 +9,7 @@ const net = (w: World, e: Entity): Entity => { w.add(e, NetId, { id: ++nid }); r
 const player = (w: World, x = 0, y = 0): Entity => net(w, G.spawnPlayer(w, { x, y, maxWeight: 0, clientId: 1 }));
 const car = (w: World, id: string, x = 0, y = 0, h = 0): Entity => net(w, G.spawnVehicle(w, id, x, y, h));
 
-describe("ADR-097 vehicle follow-ups", () => {
+describe("ADR-101 vehicle follow-ups", () => {
   it("AnimState.Sit = 13 appended; riders sit, exit restores idle", () => {
     expect(CoreAnim.Sit).toBe(13); expect(ANIM_STATE_NAMES[13]).toBe("sit"); expect(ANIM_STATE_NAMES.length).toBe(14);
     const w = makeWorld(); const p = player(w); const v = car(w, "car_sedan", 1, 0);
@@ -46,7 +46,7 @@ describe("ADR-097 vehicle follow-ups", () => {
     const r = player(w, 3, 0); G.enterVehicle(w, r, bike);
     expect(G.setVehicleToggle(w, r, bike, G.VEHICLE_ENGINE_ON, 1)).toBe("no_engine");
     expect(G.setVehicleToggle(w, r, bike, G.VEHICLE_HEADLIGHTS, 1)).toBeUndefined();
-    w.remove(v, G.VehicleState); expect(G.setVehicleToggle(w, p, v, G.VEHICLE_ENGINE_ON, 1)).toBeUndefined(); // pre-ADR-097 save: component added on demand
+    w.remove(v, G.VehicleState); expect(G.setVehicleToggle(w, p, v, G.VEHICLE_ENGINE_ON, 1)).toBeUndefined(); // pre-ADR-101 save: component added on demand
     const w2 = makeWorld(); for (let i = 0; i < 3; i++) G.spawnPlayer(w2, { x: 0, y: 0, maxWeight: 0 }); G.spawnVehicle(w2, "van_passenger", 0, 0); G.spawnVehicle(w2, "bike_basic", 0, 0);
     applySnapshot(w2, decodeSnapshot(w2, encodeSnapshot(w, { all: true })));
     expect(w2.getField(v, G.VehicleState, "flags")).toBe(1); expect(w2.getField(bike, G.VehicleState, "flags")).toBe(2);

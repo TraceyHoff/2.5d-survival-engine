@@ -80,7 +80,7 @@ export function registerGameplayCommands(reg: CommandRegistry = new CommandRegis
   for (const d of VEHICLE_COMMANDS) reg.register(d); // append-only, after ClanDecline (ADR-096)
   for (const [d] of ARMS_COMMANDS) reg.register(d); // append-only, after vehicles
   for (const d of VEHICLE_CRAFT_COMMANDS) reg.register(d); // append-only: deploy / refuel / repair (DESIGN.md §31)
-  for (const d of VEHICLE_STATE_COMMANDS) reg.register(d); // append-only: engine / headlights (ADR-097)
+  for (const d of VEHICLE_STATE_COMMANDS) reg.register(d); // append-only: engine / headlights (ADR-101)
   return reg;
 }
 
