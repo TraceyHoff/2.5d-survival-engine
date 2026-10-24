@@ -7,6 +7,7 @@ import { AppearanceServer, ChatServer, NameSync, NetServer, StallResult, StallSe
 import { createAgentStore, type AgentIdentityStore } from "./agents.js";
 import { AccountAssigned, ClaimAccount, SetName, WorldPersistence, loadSocial, tokenToHex, tokenToWords, wordsToName, wordsToToken, type WorldStore } from "@engine/persist";
 import { seedStarterCamp, giveRandomAppearance } from "./camp.js";
+import { SocialSync } from "./social_sync.js";
 import { Act, applyMoveInput, installDemoWorld, rejectReasonCode, DevBotHello, DEMO_COMMANDS, DEMO_EVENTS, GAMEPLAY_NET_COMMANDS, Ping, Pong } from "./protocol.js";
 
 export const CLAN_BLOB = "gameplay.clans";
@@ -49,7 +50,7 @@ export interface GameServerOptions {
   /** Dev load-test flag (NET_DEV_BOTS=1): accept DevBotHello-tagged connections in multiplayer. Default false. */
   devBots?: boolean;
   /** Chat (net ChatServer over core ChannelRegistry): local radius in tiles (default 48), per-player token bucket (default core 5 burst, 0.05/tick). */
-  chat?: { localRadius?: number; rate?: { capacity: number; refillPerTick: number }; maxLength?: number };
+  chat?: { localRadius?: number; rate?: { capacity: number; refillPerTick: number }; maxLength?: number; /** chat replay ring on join (default 50; 0 = off) */ historySize?: number };
 }
 /** True when the dev bot flag is set in the environment (NET_DEV_BOTS=1). */
 export const devBotsFromEnv = (env: Record<string, string | undefined>): boolean => env["NET_DEV_BOTS"] === "1";
@@ -227,6 +228,8 @@ export function createGameServer(o: GameServerOptions): GameServer {
     }),
   }) : undefined;
 
+  // Clan roster (owner-scoped, members only) + online-player directory: see social_sync.ts.
+  new SocialSync({ net, world, groups: permissions.groups, names: nameSync, claimed: function* () { for (const [c, p] of players) if (p.claimed) yield [c, p.entity] as [number, Entity]; } });
   new TileSync(net, { tiles: chunks }); // tile replication: full chunks on AOI entry + per-tick deltas (sole tileChanges() drainer)
 
   function leave(clientId: number, why: string): void {
@@ -241,7 +244,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
 
   const chat = new ChatServer(net, {
     channels: new ChannelRegistry(permissions.groups, undefined, o.chat?.rate ?? { capacity: 5, refillPerTick: 0.05 }),
-    localRadius: o.chat?.localRadius ?? 48, ...(o.chat?.maxLength ? { maxLength: o.chat.maxLength } : {}),
+    localRadius: o.chat?.localRadius ?? 48, historySize: o.chat?.historySize ?? 50, ...(o.chat?.maxLength ? { maxLength: o.chat.maxLength } : {}),
     // account PlayerId (what parties/clans are keyed by); 0 until claimed would collide, so fall back to a negative-free offset
     playerIdOf: (s) => { const p = players.get(s.clientId); const id = p ? world.getField(p.entity, PlayerId, "id") ?? 0 : 0; return id || 0x40000000 + s.clientId; },
     // parties/clans live in the core GroupRegistry keyed by account PlayerId
@@ -271,6 +274,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
     assignIdentity(p.entity); p.claimed = true;
     if (p.name) names.set(world.getField(p.entity, PlayerId, "id")!, p.name);
     net.emitEvent(AccountAssigned, { ...tokenToWords(p.account), restored }, { scope: { owner: s.clientId } });
+    chat.replay(s); // recent global + own party/clan/whisper lines (ChatServer.replay)
   });
   /** Account PlayerId (restored from the player record, else newly allocated) + Membership mirrored from the registry. */
   function assignIdentity(e: Entity): void {

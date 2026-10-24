@@ -41,6 +41,8 @@ export interface ChatServerOptions {
   playerIdOf?: (session: ClientSession) => number;
   /** Party/clan group id for a session. Default: the net group resolver (server.groups.groupOf), else 0. */
   groupOf?: (session: ClientSession, kind: "party" | "clan") => number | undefined;
+  /** Recent-history ring for replay() (global, trade, party, clan, whisper; never local/system). 0 = off (default). */
+  historySize?: number;
 }
 export interface ChatDelivered { channel: ChatChannel; /** group id (party/clan) / whisper target / 0 */ channelId: number; fromPlayer: number; fromClient: number; tick: number; text: string; mentions: number[]; emote: number }
 export const MAX_MENTIONS = 8;
@@ -50,6 +52,7 @@ export class ChatServer {
   /** Server-side observers (logging/moderation). */
   readonly log: ((m: ChatDelivered & { recipients: number[] }) => void)[] = [];
   readonly channels: ChannelRegistry;
+  private recent: { m: ChatMessage; fromClient: number; mentions: number[]; emote: number }[] = [];
   constructor(readonly server: NetServer, readonly opts: ChatServerOptions) {
     this.channels = opts.channels;
     this.channels.localRadius = opts.localRadius ?? 48;
@@ -110,9 +113,35 @@ export class ChatServer {
     w.writeVarUint(payload.length); w.writeBytes(payload); w.writeVarUint(fromClient);
     w.writeBits(mentions.length, 8); for (const x of mentions) w.writeVarUint(x); w.writeBits(emote, 16);
     const bytes = w.finish(); const sent: number[] = [];
+    const keep = this.opts.historySize ?? 0; const k = m.kind as number;
+    if (keep > 0 && k !== ChatChannel.Local && k !== ChatChannel.System) { this.recent.push({ m: { ...m }, fromClient, mentions: [...mentions], emote }); if (this.recent.length > keep) this.recent.shift(); }
     for (const c of to) if (this.server.sendRaw(c, bytes, "reliable")) sent.push(c);
     this.stats.delivered += sent.length;
     for (const f of this.log) f({ channel: m.kind as number as ChatChannel, channelId: m.channel, fromPlayer: m.from, fromClient, tick: m.tick, text: m.text, mentions: [...mentions], emote, recipients: sent });
+  }
+  /**
+   * Re-send recent history (oldest first) to one client, e.g. on join: global/trade, whispers to or from them, and
+   * party/clan lines of the group they are in NOW (other groups' lines never leak). Senders they block are skipped.
+   * Not logged or counted as deliveries. Returns the number of lines sent.
+   */
+  replay(s: ClientSession): number {
+    const me = this.playerOf(s); let n = 0;
+    const group = (k: "party" | "clan"): number => (this.opts.groupOf ? this.opts.groupOf(s, k) : this.server.groups?.groupOf(s.clientId, k)) ?? 0;
+    const party = group("party"), clan = group("clan");
+    for (const r of this.recent) {
+      const k = r.m.kind as number; let ok = false;
+      if (k === ChatChannel.Global || k === ChatChannel.Trade) ok = true;
+      else if (k === ChatChannel.Party) ok = party !== 0 && r.m.channel === party;
+      else if (k === ChatChannel.Clan) ok = clan !== 0 && r.m.channel === clan;
+      else if (k === ChatChannel.Whisper) ok = r.m.from === me || r.m.channel === me;
+      if (!ok || (r.m.from !== me && this.channels.mutes.isBlocked(me, r.m.from))) continue;
+      const payload = encodeChatMessage(r.m).finish();
+      const w = new BitWriter(); writeHeader(w, MsgType.Chat); w.writeBool(false);
+      w.writeVarUint(payload.length); w.writeBytes(payload); w.writeVarUint(r.fromClient);
+      w.writeBits(r.mentions.length, 8); for (const x of r.mentions) w.writeVarUint(x); w.writeBits(r.emote, 16);
+      if (this.server.sendRaw(s.clientId, w.finish(), "reliable")) n++;
+    }
+    return n;
   }
   /** Server/system message to everyone, or to the given clients (bypasses validation and blocks). */
   system(text: string, to?: readonly number[]): void {

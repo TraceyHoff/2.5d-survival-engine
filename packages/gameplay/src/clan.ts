@@ -31,6 +31,8 @@ export const ClanDisbandCmd = defineCommand("gameplay.clanDisband", {});
 export const ClanSetGoalCmd = defineCommand("gameplay.clanSetGoal", { goal: "u8", x: "f32", y: "f32" });
 /** Registration order = wire order. Append only. */
 export const CLAN_COMMANDS = [ClanCreateCmd, ClanInviteCmd, ClanAcceptCmd, ClanLeaveCmd, ClanPromoteCmd, ClanDemoteCmd, ClanKickCmd, ClanSetRankPermsCmd, ClanDisbandCmd, ClanSetGoalCmd] as const;
+/** Decline a pending clan invite (like PartyDeclineCmd). Kept out of CLAN_COMMANDS (wire order is fixed); registered right after it. */
+export const ClanDeclineCmd = defineCommand("gameplay.clanDecline", { clan: "u32" });
 export const CLAN_ENTITY_FIELDS: Readonly<Record<string, readonly string[]>> = { [ClanInviteCmd.name]: ["target"], [ClanPromoteCmd.name]: ["target"], [ClanDemoteCmd.name]: ["target"], [ClanKickCmd.name]: ["target"] };
 /** Appended to the server reason list after PARTY_REJECT_REASONS (shared ones like no_player/self/outranked reuse those codes). */
 export const CLAN_REJECT_REASONS = ["in_clan", "not_in_clan", "no_permission", "clan_full", "not_leader", "bad_role", "max_rank", "min_rank", "bad_goal"] as const;
@@ -199,5 +201,6 @@ export function installClanCommands(world: World, handlers: CommandHandlers): vo
   handlers.on(ClanKickCmd, h((v, a) => clanKickReject(world, a, v.target), (v, a) => clanKick(world, a, v.target)));
   handlers.on(ClanSetRankPermsCmd, h((v, a) => clanPermsReject(world, a, v.role, v.mask), (v, a) => clanSetRankPerms(world, a, v.role, v.mask)));
   handlers.on(ClanDisbandCmd, h((_v, a) => simple(world, a, true), (_v, a) => clanDisband(world, a)));
+  handlers.on(ClanDeclineCmd, { validate: (v, c) => { const me = playerOf(world, c.actor); if (!me) return "no_player"; const i = pendingClanInvite(world, me, v.clan); return i === "expired" ? "invite_expired" : i ? undefined : "no_invite"; }, handle: (v, c) => { clanDecline(world, playerOf(world, c.actor), v.clan); } });
   handlers.on(ClanSetGoalCmd, h((v, a) => clanGoalReject(world, a, v.goal, v.x, v.y), (v, a) => clanSetGoal(world, a, v.goal, v.x, v.y)));
 }

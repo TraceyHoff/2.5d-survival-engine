@@ -5,7 +5,7 @@
  * is processed in order over consecutive ticks, identically on server and predicting client).
  */
 import { PARTY_COMMANDS } from "./party.js";
-import { CLAN_COMMANDS } from "./clan.js";
+import { CLAN_COMMANDS, ClanDeclineCmd } from "./clan.js";
 import { CommandRegistry, defineActions, defineCommand, defineResource, type Command, type CommandDef, type Entity, type InputFrame, type World } from "@engine/core";
 import { IntentAction, PlayerIntent } from "./components.js";
 import { CUSTOMIZATION_COMMANDS } from "./customization.js";
@@ -66,6 +66,7 @@ export function registerGameplayCommands(reg: CommandRegistry = new CommandRegis
   for (const d of EXPRESSION_COMMANDS) reg.register(d);
   for (const d of PARTY_COMMANDS) reg.register(d);
   for (const d of CLAN_COMMANDS) reg.register(d); // append-only, after party
+  reg.register(ClanDeclineCmd);
   return reg;
 }
 

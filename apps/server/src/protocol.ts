@@ -5,7 +5,7 @@
  */
 import { Appearance, DEFAULT_TICK_HZ, defineActions, entityIndex, installPermissions, Transform, type ClaimRegistry, type Entity, type GroupRegistry, type PermissionsRes, type World } from "@engine/core";
 import { defineCommand, defineNetEvent, type CommandRejection, type InputCmd, type NetClient } from "@engine/net";
-import { COMMAND_RATES, PVP_COMMANDS, CRAFT_QUEUE_COMMANDS, CUSTOMIZATION_COMMANDS, ECONOMY_COMMAND_RATES, ECONOMY_COMMANDS, ECONOMY_ENTITY_FIELDS, installGameplay, PlayerIntent, UseCmd, PlaceCmd, EmoteCmd, PARTY_COMMANDS, PARTY_ENTITY_FIELDS, PARTY_REJECT_REASONS, CLAN_COMMANDS, CLAN_ENTITY_FIELDS, CLAN_REJECT_REASONS } from "@engine/gameplay";
+import { COMMAND_RATES, PVP_COMMANDS, CRAFT_QUEUE_COMMANDS, CUSTOMIZATION_COMMANDS, ECONOMY_COMMAND_RATES, ECONOMY_COMMANDS, ECONOMY_ENTITY_FIELDS, installGameplay, PlayerIntent, UseCmd, PlaceCmd, EmoteCmd, PARTY_COMMANDS, PARTY_ENTITY_FIELDS, PARTY_REJECT_REASONS, CLAN_COMMANDS, CLAN_ENTITY_FIELDS, CLAN_REJECT_REASONS, ClanDeclineCmd, PaintCmd } from "@engine/gameplay";
 import type { CommandDef } from "@engine/core";
 import { SESSION_COMMANDS, SESSION_EVENTS } from "@engine/persist";
 
@@ -27,13 +27,15 @@ export const Pong = defineNetEvent("demo.pong", { t: "u32" });
  * gameplay's party (and later clan) commands. Their entity fields (PARTY_ENTITY_FIELDS) still go out as NetIds.
  */
 export const CHAT_STYLE_RATE = { perSec: 1, burst: 5 } as const;
-export const SOCIAL_COMMAND_NAMES: ReadonlySet<string> = new Set(["gameplay.emote", "gameplay.partyInvite", "gameplay.partyAccept", "gameplay.partyDecline", "gameplay.partyLeave", "gameplay.partyKick", ...CLAN_COMMANDS.map((d) => d.name)]);
+export const SOCIAL_COMMAND_NAMES: ReadonlySet<string> = new Set(["gameplay.emote", "gameplay.partyInvite", "gameplay.partyAccept", "gameplay.partyDecline", "gameplay.partyLeave", "gameplay.partyKick", ...CLAN_COMMANDS.map((d) => d.name), ClanDeclineCmd.name]);
+/** NetId entity fields of bridged input-queue commands (validated under the server's entityRefs, default "aoi"). */
+export const INPUT_ENTITY_FIELDS: Readonly<Record<string, readonly string[]>> = { [PaintCmd.name]: ["target"] };
 const mirror = (d: CommandDef) => {
   if (SOCIAL_COMMAND_NAMES.has(d.name)) return defineCommand(d.name, d.schema, { entityFields: [...(ECONOMY_ENTITY_FIELDS[d.name] ?? PARTY_ENTITY_FIELDS[d.name] ?? CLAN_ENTITY_FIELDS[d.name] ?? [])], rate: { ...CHAT_STYLE_RATE } });
   const perSec = ECONOMY_COMMAND_RATES[d.name] ?? COMMAND_RATES[d.name] ?? 2;
-  return defineCommand(d.name, d.schema, { entityFields: [...(ECONOMY_ENTITY_FIELDS[d.name] ?? PARTY_ENTITY_FIELDS[d.name] ?? CLAN_ENTITY_FIELDS[d.name] ?? [])], rate: { perSec, burst: Math.max(2, Math.ceil(perSec * 2)) } });
+  return defineCommand(d.name, d.schema, { entityFields: [...(ECONOMY_ENTITY_FIELDS[d.name] ?? PARTY_ENTITY_FIELDS[d.name] ?? CLAN_ENTITY_FIELDS[d.name] ?? INPUT_ENTITY_FIELDS[d.name] ?? [])], rate: { perSec, burst: Math.max(2, Math.ceil(perSec * 2)) } });
 };
-export const GAMEPLAY_NET_COMMANDS = [...ECONOMY_COMMANDS, ...CUSTOMIZATION_COMMANDS, ...PVP_COMMANDS, ...CRAFT_QUEUE_COMMANDS, /* appended */ UseCmd, PlaceCmd, EmoteCmd, ...PARTY_COMMANDS, ...CLAN_COMMANDS].map((d) => ({ core: d as CommandDef, net: mirror(d) }));
+export const GAMEPLAY_NET_COMMANDS = [...ECONOMY_COMMANDS, ...CUSTOMIZATION_COMMANDS, ...PVP_COMMANDS, ...CRAFT_QUEUE_COMMANDS, /* appended */ UseCmd, PlaceCmd, EmoteCmd, ...PARTY_COMMANDS, ...CLAN_COMMANDS, PaintCmd, ClanDeclineCmd].map((d) => ({ core: d as CommandDef, net: mirror(d) }));
 /** Net command for a gameplay core CommandDef (clients: `client.sendCommand(gameplayNet(BuyFromStallCmd), {...})`). */
 export function gameplayNet<D extends CommandDef>(d: D): ReturnType<typeof defineCommand<D["schema"]>> {
   const m = GAMEPLAY_NET_COMMANDS.find((x) => x.core === d); if (!m) throw new Error(`not a bridged gameplay command: ${d.name}`);
@@ -45,7 +47,17 @@ export function gameplayNet<D extends CommandDef>(d: D): ReturnType<typeof defin
  */
 export const DevBotHello = defineCommand("demo.devBot", { v: "u8" }, { rate: { perSec: 1, burst: 1 } });
 export const DEMO_COMMANDS = [...SESSION_COMMANDS, Ping, ...GAMEPLAY_NET_COMMANDS.map((x) => x.net), DevBotHello] as const;
-export const DEMO_EVENTS = [...SESSION_EVENTS, Pong] as const;
+/**
+ * Owner-scoped social replication (apps/server/src/social_sync.ts). Ids are account PlayerIds; names via client.names.
+ * ClanRoster: your clan (0 = none: clear the roster), rank masks (member / officer; leader = all), member count. Sent on
+ *   joining a clan, on claim, and when masks change; a new clan id means "replace the roster".
+ * ClanRosterMember: one member row (role = GroupRole; 0 = removed; online 0/1). Deltas only.
+ * OnlinePlayer: online directory row (online 0 = went offline). Full list on claim, then deltas.
+ */
+export const ClanRoster = defineNetEvent("gameplay.clanRoster", { clan: "u32", memberMask: "u32", officerMask: "u32", size: "u8" });
+export const ClanRosterMember = defineNetEvent("gameplay.clanRosterMember", { clan: "u32", player: "u32", role: "u8", online: "u8" });
+export const OnlinePlayer = defineNetEvent("gameplay.onlinePlayer", { player: "u32", online: "u8" });
+export const DEMO_EVENTS = [...SESSION_EVENTS, Pong, /* appended */ ClanRoster, ClanRosterMember, OnlinePlayer] as const;
 
 /**
  * Wire codes for gameplay command rejections (CommandRejection.reason; the reason string also rides in `detail`).
