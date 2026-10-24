@@ -81,7 +81,7 @@ export async function openBrowserStore(dbName = "engine-local-world", timeoutMs 
 const hex32 = (s: string): string => { let h = 0x811c9dc5, out = ""; for (let k = 0; k < 4; k++) { for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i) ^ k, 0x01000193) >>> 0; out += h.toString(16).padStart(8, "0"); } return out; };
 
 const NO_COMMANDS = new CommandRegistry();
-/** Perception LOD for virtual players (ADR-104): tiles from the nearest human, and the far-bot perception period in ticks. */
+/** Perception LOD for virtual players (ADR-105): tiles from the nearest human, and the far-bot perception period in ticks. */
 export const AGENT_LOD_NEAR = 40, AGENT_LOD_EVERY = 4;
 /** Snapshot throttle for virtual players: beyond sight (12) / hearing (18) range, deltas every 4 ticks. */
 export const BOT_DISTANT_THROTTLE = { nearTiles: 24, interval: 4 } as const;
@@ -123,7 +123,7 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
     if (stopped) { client.close(); controller.remove(agent); return; }
     if (err || !ok) { controller.remove(agent); throw new Error(`virtual player failed to connect: ${String(err ?? "timeout")}`); }
     if (!game.markVirtual(client.clientId)) { controller.remove(agent); client.close(); return; } // refused (multiplayer)
-    game.net.setDistantThrottle(client.clientId, BOT_DISTANT_THROTTLE); // ADR-104: far deltas every 4 ticks (bots perceive <= 18 tiles)
+    game.net.setDistantThrottle(client.clientId, BOT_DISTANT_THROTTLE); // ADR-105: far deltas every 4 ticks (bots perceive <= 18 tiles)
     client.sendCommand(ClaimAccount, tokenToWords(hex32(identity.id))); // persistent account: inventory/stats saved like a human's
     client.sendCommand(SetName, nameToWords(identity.name));
     game.agents.put(identity.id, { ...identity }); // persisted ("agents" records); gameplay updates relationship / party / clan memory via game.agents.put
@@ -134,7 +134,7 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
     const i = bots.findIndex((b) => b.client.clientId === clientId); if (i < 0) return;
     const b = bots[i]!; byAgent.delete(b.agent); selfCache.delete(b); lodViews.delete(b); lodPhase.delete(b); loops.delete(b); flushSocialMemory([b.agent], putAgent, game.world.tick, true); controller.remove(b.agent); b.client.close(); bots.splice(i, 1);
   }
-  // Player/bot entity lookups (ADR-104): game.players already maps clientId -> server entity, and each bot's own replica
+  // Player/bot entity lookups (ADR-105): game.players already maps clientId -> server entity, and each bot's own replica
   // entity is cached and revalidated instead of scanning every Owner entity per bot per tick (was O(bots x entities)).
   const serverEntityOf = (cid: number): Entity | undefined => { const p = game.players.get(cid); return p && game.world.isAlive(p.entity) ? p.entity : undefined; };
   const selfCache = new Map<VirtualPlayer, Entity>();
@@ -146,7 +146,7 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
     return undefined;
   };
   const byAgent = new Map<Agent, VirtualPlayer>();
-  // Perception LOD (ADR-104): a bot farther than AGENT_LOD_NEAR tiles from every human player rebuilds its world view
+  // Perception LOD (ADR-105): a bot farther than AGENT_LOD_NEAR tiles from every human player rebuilds its world view
   // (the O(entities) perception scan + sensors) only every AGENT_LOD_EVERY ticks, staggered by slot; its self state
   // (position, vitals) is still fresh every tick so steering stays smooth. Near bots perceive every tick.
   const lodViews = new Map<VirtualPlayer, { world: AgentWorldView; tick: number }>();

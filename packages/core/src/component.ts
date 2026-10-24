@@ -73,7 +73,7 @@ export class ComponentStore<S extends Schema = Schema> {
     if (init) for (const f of this.fields) { const v = init[f]; if (v !== undefined) this.writeSlot(s, f, v as number | ArrayLike<number>); }
     return s;
   }
-  // Dirty word range [dirtyLo, dirtyHi) (ADR-104): clearChanged / changedIndices touch only words that can be set,
+  // Dirty word range [dirtyLo, dirtyHi) (ADR-105): clearChanged / changedIndices touch only words that can be set,
   // instead of the whole maxEntities/32 bitset of every store in every world every tick.
   private dirtyLo = 0x7fffffff; private dirtyHi = 0;
   markChanged(index: number): void {

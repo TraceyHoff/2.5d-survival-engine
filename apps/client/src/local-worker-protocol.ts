@@ -1,4 +1,4 @@
-/** Message protocol between the main thread and the singleplayer server Web Worker (ADR-104). */
+/** Message protocol between the main thread and the singleplayer server Web Worker (ADR-105). */
 import type { Channel } from "@engine/net";
 import type { CatalogSnapshot } from "./catalog-snapshot.js";
 

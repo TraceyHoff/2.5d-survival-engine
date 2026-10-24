@@ -1,4 +1,4 @@
-// ADR-104: the singleplayer server's Web Worker path, run in-process (the worker module talks to globalThis.postMessage /
+// ADR-105: the singleplayer server's Web Worker path, run in-process (the worker module talks to globalThis.postMessage /
 // onmessage; a fake Worker bridges both ways through structuredClone like the real postMessage does).
 import { describe, expect, test } from "vitest";
 import { snapshotCatalog, catalogFromSnapshot } from "../src/catalog-snapshot.js";

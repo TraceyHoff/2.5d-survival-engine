@@ -1,5 +1,5 @@
 /**
- * Main-thread side of the Web Worker singleplayer server (ADR-104): spawns local-worker.ts and exposes a small
+ * Main-thread side of the Web Worker singleplayer server (ADR-105): spawns local-worker.ts and exposes a small
  * handle (createTransport / save / stop). Falls back (returns undefined) when Worker is unavailable, `?worker=0`,
  * or the worker fails / does not come up within `timeoutMs`; the caller then runs createLocalServer in-tab as before.
  */

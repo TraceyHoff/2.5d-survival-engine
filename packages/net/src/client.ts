@@ -53,7 +53,7 @@ export interface NetClientOptions {
   /** Decoded states kept as possible delta baselines (default 64). */
   historySize?: number;
   /**
-   * false: no remote interpolation (headless replicas such as singleplayer virtual players; ADR-104). Remote entities
+   * false: no remote interpolation (headless replicas such as singleplayer virtual players; ADR-105). Remote entities
    * take the newest snapshot state directly; no interpolation buffer, no per-frame sampling.
    */
   interpolate?: boolean;
@@ -432,7 +432,7 @@ export class NetClient {
 
   /** Writes changed comps. For remote entities the interpolated comp is left to interpolate() (except on spawn). */
   private writeComps(w: World, e: Entity, es: EntityState, old: EntityState | undefined, full: boolean): void {
-    // ADR-104: direct typed-array writes via a per-component plan (same semantics as w.add/w.set: defaults on add,
+    // ADR-105: direct typed-array writes via a per-component plan (same semantics as w.add/w.set: defaults on add,
     // every field overwritten, change bit set) without the per-write decode array, init object and closures.
     const idx = entityIndex(e);
     for (const [ci, v] of es) {

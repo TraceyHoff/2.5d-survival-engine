@@ -337,7 +337,7 @@ export class NetServer {
    * Returns the capped target.
    */
   /**
-   * Per-client distantThrottle override (ADR-104), e.g. headless virtual players that only perceive ~20 tiles: changed
+   * Per-client distantThrottle override (ADR-105), e.g. headless virtual players that only perceive ~20 tiles: changed
    * entities beyond `nearTiles` of the client's owned entities get deltas every `interval` ticks. null = off for this
    * client, undefined = back to the server-wide option. Returns false for an unknown client.
    */

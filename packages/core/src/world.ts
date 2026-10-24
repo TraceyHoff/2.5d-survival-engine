@@ -244,7 +244,7 @@ export class World {
   }
   /** True if a system with this schedule runs at `tick`. */
   static scheduled(every: number, offset: number, tick: number): boolean { return every <= 1 || (tick + every - offset) % every === 0; }
-  /** Optional per-system timing hook (perf tooling; ADR-104). Undefined in production: zero overhead beyond one branch. */
+  /** Optional per-system timing hook (perf tooling; ADR-105). Undefined in production: zero overhead beyond one branch. */
   profiler: ((system: string, ms: number) => void) | undefined = undefined;
   private runEntry(s: SystemEntry, dt: number): void {
     if (!World.scheduled(s.every, s.offset, this.tick)) return;

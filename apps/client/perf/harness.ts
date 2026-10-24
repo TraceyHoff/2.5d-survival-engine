@@ -1,5 +1,5 @@
 /**
- * Headless singleplayer perf harness (ADR-104): the real in-tab local server (createLocalServer) with population,
+ * Headless singleplayer perf harness (ADR-105): the real in-tab local server (createLocalServer) with population,
  * virtual-player bots, a human ClientSession and parked/driven vehicles, stepped on a virtual clock.
  * Reports ms/tick for the server sim (per system), the bot agent loop, bot replica worlds, the player client
  * (snapshot decode + step), NetServer snapshot capture/encode, and heap/GC.

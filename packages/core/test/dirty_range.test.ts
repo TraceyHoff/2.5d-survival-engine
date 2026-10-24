@@ -1,4 +1,4 @@
-// ADR-104: ComponentStore tracks a dirty word range so clearChanged / changedIndices skip untouched words.
+// ADR-105: ComponentStore tracks a dirty word range so clearChanged / changedIndices skip untouched words.
 import { describe, expect, test } from "vitest";
 import { World, defineComponent } from "../src/index.js";
 

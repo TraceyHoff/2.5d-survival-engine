@@ -1,5 +1,5 @@
 /**
- * Structured-clone snapshot of a CosmeticCatalogLike (ADR-104): the singleplayer server in a Web Worker needs the
+ * Structured-clone snapshot of a CosmeticCatalogLike (ADR-105): the singleplayer server in a Web Worker needs the
  * catalog the main thread loaded with the asset manifest, but CosmeticCatalog is a class (methods do not survive
  * postMessage). Only what the server path uses is kept: wearables by id, body sprites/defaults, palettes and options.
  */

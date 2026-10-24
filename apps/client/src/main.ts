@@ -205,7 +205,7 @@ async function startSingleplayer(): Promise<void> {
     const dbName = `engine-local-${params.get("player") ?? "1"}`;
     await isoReady; const catalog = iso?.registry.cosmetics?.size ? iso.registry.cosmetics : undefined;
     const log = (m: string): void => console.info(`[local] ${m}`);
-    // ADR-104: run the server sim + bots in a Web Worker (keeps the main thread for render/input, big win on phones);
+    // ADR-105: run the server sim + bots in a Web Worker (keeps the main thread for render/input, big win on phones);
     // ?worker=0, no Worker support, or a worker that fails/stalls on startup falls back to the in-tab server.
     const { startWorkerServer } = await import("./local-bridge.js");
     let local: import("./local-bridge.js").LocalServerHandle | undefined = params.get("worker") === "0" ? undefined

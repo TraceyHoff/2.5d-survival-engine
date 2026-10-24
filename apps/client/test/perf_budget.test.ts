@@ -1,4 +1,4 @@
-// ADR-104 perf guard: a short headless singleplayer session (server + population + virtual-player bots + vehicles) must
+// ADR-105 perf guard: a short headless singleplayer session (server + population + virtual-player bots + vehicles) must
 // stay well inside a generous ms/tick budget. The bound is ~10x the measured cost on a dev machine so slow/shared CI
 // runners don't flake; it only trips on order-of-magnitude regressions (e.g. per-entity full rewrites, O(n^2) scans).
 import { describe, expect, test } from "vitest";

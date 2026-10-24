@@ -1,5 +1,5 @@
 /**
- * Singleplayer authoritative server inside a dedicated Web Worker (ADR-104). Runs createLocalServer (sim, population,
+ * Singleplayer authoritative server inside a dedicated Web Worker (ADR-105). Runs createLocalServer (sim, population,
  * virtual-player bots, IndexedDB persistence) off the main thread so phones keep the render/input thread free. The main
  * thread talks to it through local-bridge.ts; each main-side client transport maps to one loopback client in here.
  */
