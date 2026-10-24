@@ -730,6 +730,9 @@ export class SpriteBatch {
           // readiness of the page this frame actually lives on (a swim/punch wear page streams on its own)
           // face/eyes pages request at 1/4 of the character's distance priority: they win pool slots over farther clothing
           const lp = faceL ? prio * 0.25 : prio; const rdy = okL && (lr.atlas >= 0 ? atlas.pageReadyAt(lr.atlas, lp) : atlas.pageReady(l.sprite, lp));
+          // hot/cold tiers: a drawn layer's page is visible art like the body sheet; unmarked, hair/face/wear pages could be
+          // re-tiered to the cold (downscaled) size under a full-res body (soft hair edge -> scalp shows at the hairline)
+          if (rdy && lr.atlas >= 0) atlas.markUsedAt(lr.atlas);
           if (nearC && this.nearN < this.nearInfo.length) { const ni = this.nearInfo[this.nearN]!; if (ni.e === e) { ni.layers++; if (rdy) ni.resident++; else ni.missing.push(l.slot); const pi = atlas.pageInfo(l.sprite); ni.scale = Math.min(ni.scale, pi.scale); } }
           // ADR-123: page not resident (swim/punch wear page streaming, page evicted): draw this slot's last good frame when
           // its page is still resident instead of blanking the layer for a frame (pop in/out of hair, clothes, eyes)
