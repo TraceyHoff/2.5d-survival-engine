@@ -37,7 +37,7 @@ export const hasInterior = (d: VehicleRenderDef): boolean => d.interior.stations
 export const isPowered = (d: VehicleRenderDef): boolean => d.class !== "trailer";
 
 export interface SeatAnchor { u: number; v: number; z: number; cabin: boolean }
-/** Seat anchors from vehicles.json (ADR-097; seat 0 = driver). Verified equal to the old computed layout before it was
+/** Seat anchors from vehicles.json (ADR-101; seat 0 = driver). Verified equal to the old computed layout before it was
  * removed. z is scaled by the per-type stylized height (scale.ts) so riders sit at the right height in the taller body.
  * A def without seatAnchors yields no anchors (riders then sit at the vehicle centre). */
 export function seatAnchors(d: VehicleRenderDef, zScale = 1): SeatAnchor[] {

@@ -8,7 +8,7 @@
  *  - headlight LightSources ahead of the heading (a cone of 3 growing circles; 1 on lowend) when the engine is on and
  *    it is dark.
  * Trailers (snapshot.parent != 0) are re-posed from the SMOOTHED tow's rear hitch with their own smoothed BROADCAST
- * heading (core Vehicle.heading of the trailer, ADR-097; no client articulation solve), so
+ * heading (core Vehicle.heading of the trailer, ADR-101; no client articulation solve), so
  * the joint never separates between snapshots. Riders are returned as RiderPlacement (seat anchor, quantized facing,
  * depth-nudged behind the segment so the body crops the legs); the caller writes them to the rider entity's
  * Transform (no PrevTransform interpolation); gameplay sets the rider's AnimState to Sit (13, ADR-101).
@@ -31,7 +31,7 @@ export interface VehicleSnapshot {
   /** VehicleSeats.occupant (rider keys, 0 = empty), index = seat */ occupants?: readonly number[];
   /** Hitch.parentNetId: the tow this trailer hangs on (0 = none) */ parent?: number;
   /** engine on (driver present / ignition); default: occupied seat 0 or |speed| >= 0.25 */ on?: boolean;
-  /** core VehicleState byte (ADR-097): bit 0 engineOn, bit 1 headlights. When present it gates the headlight cone. */ state?: number;
+  /** core VehicleState byte (ADR-101): bit 0 engineOn, bit 1 headlights. When present it gates the headlight cone. */ state?: number;
 }
 export interface VehicleViewOpts {
   /** 0 (day) .. 1 (night); headlights scale with it and are off below ~0.15 */ darkness: number;
