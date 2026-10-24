@@ -13,9 +13,9 @@ Implements docs/VEHICLES.md on the render side. Procedural placeholder art is bu
 - Pixel scale: 64 px per tile across (iso 2:1), 16 px per z unit.
 
 ## Anchors (src/vehicles/layout.ts, in vehicle-local u/v tiles, u forward)
-- `seats[]` — rider position + facing; riders keep their own sprite, placed at the seat (AnimState Sit not yet in core → Idle).
+- `seats[]` — rider position + facing; riders keep their own sprite, placed at the seat (gameplay sets AnimState Sit = 13; atlas falls back sit → idle). Anchors come from vehicles.json `seatAnchors` (fallback `defaultSeatAnchors`).
 - `hitch` — rear pin for trailers; trailer heading follows the pin joint (`hitchU`, trailer heading from snapshots, fallback solver).
-- `headlamps[]` — front lamp positions; emit cone lights into the lightmap when the engine/lights are on (night/dusk).
+- `headlamps[]` — front lamp positions; emit cone lights into the lightmap when the engine/lights are on (night/dusk). Gameplay replicates `VehicleState.flags` (bit 0 engine, bit 1 headlights; `isEngineOn` / `headlightsOn`). Hitch points: vehicles.json `hitches[].anchor`.
 
 ## Sprite flags (src/ids.ts)
 - `Footprint` (128): pixels below the pivot take ground-plane depth, so long bodies don't staircase into terrain; footprint

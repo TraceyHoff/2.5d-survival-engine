@@ -7,7 +7,9 @@
 export interface VehicleRenderDef {
   id: string; class: string; seats: number;
   footprint: { length: number; width: number };
-  hitches: readonly { at: "front" | "rear"; offset: number }[];
+  hitches: readonly { at: "front" | "rear"; offset: number; /** vehicle-local hitch point (x = u, y = v); gameplay defs carry it (ADR-097) */ anchor?: { x: number; y: number; z: number } }[];
+  /** Per-seat anchors from vehicles.json (x = u, y = v, z); when absent, seatAnchors() falls back to the computed layout. */
+  seatAnchors?: readonly { x: number; y: number; z: number }[];
   interior: { stations: readonly string[] };
 }
 export const TAU = Math.PI * 2;
@@ -37,6 +39,11 @@ export const isPowered = (d: VehicleRenderDef): boolean => d.class !== "trailer"
 export interface SeatAnchor { u: number; v: number; z: number; cabin: boolean }
 /** Seat anchors (seat 0 = driver, front-left). Cars: rows of 2 from the cabin front; bicycles: in line on the frame. */
 export function seatAnchors(d: VehicleRenderDef): SeatAnchor[] {
+  if (d.seatAnchors && d.seatAnchors.length === d.seats) { const cab = hasCabin(d); return d.seatAnchors.map((a) => ({ u: a.x, v: a.y, z: a.z, cabin: cab })); }
+  return defaultSeatAnchors(d);
+}
+/** Computed fallback (the formula vehicles.json seatAnchors were generated from). */
+export function defaultSeatAnchors(d: VehicleRenderDef): SeatAnchor[] {
   const out: SeatAnchor[] = []; const L = d.footprint.length, W = d.footprint.width; const cab = hasCabin(d);
   for (let i = 0; i < d.seats; i++) {
     if (!cab) { out.push({ u: L * 0.05 - i * 0.7, v: 0, z: 0.35, cabin: false }); continue; }
@@ -63,7 +70,7 @@ export function headlightCone(d: VehicleRenderDef, lowEnd: boolean): { u: number
   if (lowEnd) return [{ u: nose + 2.4 * k, radius: 2.6 * k, intensity: 0.9 }];
   return [{ u: nose + 0.9 * k, radius: 1.3 * k, intensity: 0.9 }, { u: nose + 2.4 * k, radius: 2.1 * k, intensity: 0.75 }, { u: nose + 4.2 * k, radius: 2.8 * k, intensity: 0.55 }];
 }
-export const hitchU = (d: VehicleRenderDef, at: "front" | "rear"): number | undefined => { const h = d.hitches.find((x) => x.at === at); return h ? (at === "front" ? h.offset : -h.offset) : undefined; };
+export const hitchU = (d: VehicleRenderDef, at: "front" | "rear"): number | undefined => { const h = d.hitches.find((x) => x.at === at); return h ? (h.anchor ? h.anchor.x : at === "front" ? h.offset : -h.offset) : undefined; };
 
 /** Trailer pose that keeps the front hitch pinned to the (smoothed) tow's rear hitch; heading = the trailer's own heading. */
 export function trailerPose(tow: VehicleRenderDef, towX: number, towY: number, towH: number, tr: VehicleRenderDef, trH: number): { x: number; y: number; heading: number } | undefined {

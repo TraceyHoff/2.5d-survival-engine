@@ -37,9 +37,12 @@ livestock, tanker, camper trailer, semi box, semi flatbed). Semi trailers hitch 
 - `VehicleSeats {occupant u32[8]}`: rider NetIds (0 = empty). Networked, not persistent.
 - `Driver {vehicleNetId u32, seat u8}`: on the rider. Networked.
 - `Hitch {towNetId, parentNetId}`: NetIds. Networked and persistent.
+- `VehicleState {flags u8}` (ADR-097): bit 0 engineOn, bit 1 headlights. Powered vehicles only; networked + persistent; appended after `VehicleCondition`.
 - Storage is the existing `Container` (spawnVehicle sizes it from the def), so open, deposit, withdraw, viewers and persistence all work unchanged.
 
-World schema hash with default gameplay installed (`new World(); installGameplay(w)`): **0x7c9a353e** (was 0x524667f7).
+World schema hash with default gameplay installed (`new World(); installGameplay(w)`): **0x029aeedf** (ADR-097; was 0x23146301 before it).
+
+Defs also carry `seatAnchors[]` (one `{x, y, z}` per seat, vehicle-local: x front, y left, z up) and every hitch an `anchor {x, y, z}` (x = ±offset). Render reads them (`seatAnchors`, `hitchU`). Riders' `AnimState` is `Sit` (13) while seated; exit restores `Idle`. Toggles: `gameplay.vehicleEngine` / `gameplay.vehicleHeadlights` `{target, on: 0 off | 1 on | 2 toggle}`, driver (seat 0) only, registered after the vehicle craft commands. `localPlayerVehicle(world, playerEid)` returns the ridden vehicle NetId or null.
 
 ## Simulation (`gameplay.vehicles`, simulation phase, right after weather, every peer)
 1. Powered vehicles, in NetId order: an arcade kinematic bicycle model. Throttle and steering come from the drive

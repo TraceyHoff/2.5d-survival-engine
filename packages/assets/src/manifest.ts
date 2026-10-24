@@ -5,7 +5,8 @@ export const MANIFEST_VERSION = 1;
 export const CATEGORIES = ["character", "zombie", "item", "equipment", "resource", "building", "tile", "ui", "vfx"] as const;
 /** Optional categories: accepted by validation but not required to be present (e.g. by "covers every category" checks). */
 /** decal: ground overlays (territory edges, puddles) with optional autotile neighbor rules (ADR-078). */
-export const OPTIONAL_CATEGORIES = ["critter", "glyph", "decal"] as const;
+/** vehicle: segmented 8-dir vehicle sprites (packages/render/docs/VEHICLES_RENDER.md, ADR-097). */
+export const OPTIONAL_CATEGORIES = ["critter", "glyph", "decal", "vehicle"] as const;
 export const ALL_CATEGORIES = [...CATEGORIES, ...OPTIONAL_CATEGORIES] as const;
 export type Category = (typeof ALL_CATEGORIES)[number];
 export const ROTATION_ART = ["mirror", "unique4"] as const;

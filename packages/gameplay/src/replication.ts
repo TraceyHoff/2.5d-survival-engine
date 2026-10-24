@@ -27,6 +27,8 @@ export const GAMEPLAY_REPLICATION: readonly Replication[] = [
   r(C.Attacker, "owner"), r(C.Zombie, "all"), r(C.ZombieBrain, "server"), r(C.AnimState, "all"), r(C.NoiseLevel, "server"), r(C.Latency, "server"), r(C.PieceLink, "all"), r(C.Wetness, "all"), r(C.BodyTemp, "all"), r(C.ChunkSurface, "all", "lowRate", 1),
   r(C.GroupSummary, "all"), r(C.CombatTag, "owner"), r(C.LootBag, "all"),
   r(C.Animal, "all"), r(C.Worn, "all"), r(C.WeaponState, "owner"), r(C.LiveExplosive, "all"), r(C.StallHeader, "all"), r(C.Listings, "viewers"), r(C.StallLedger, "viewers"),
+  // vehicles (ADR-096/097): pose incl. trailer heading, seats, links and engine/headlight flags go to everyone in AOI
+  r(C.Vehicle, "all"), r(C.VehicleSeats, "all"), r(C.Driver, "all"), r(C.Hitch, "all"), r(C.VehicleState, "all"),
 ];
 export function replicationOf(def: ComponentDef): Replication | undefined { return GAMEPLAY_REPLICATION.find((x) => x.def === def); }
 

@@ -62,7 +62,7 @@ export function paintSegment(g: OffscreenCanvasRenderingContext2D, boxes: SegBox
 }
 
 /** Pure manifest entries (atlas + sprites) for a def in the shipped layout; image = `debug/veh_<id>.png`. */
-export function vehicleManifestEntries(d: VehicleRenderDef, category = "item"): { atlas: AtlasJson; sprites: SpriteJson[]; frame: ReturnType<typeof vehicleFrame>; cols: number } {
+export function vehicleManifestEntries(d: VehicleRenderDef, category = "vehicle"): { atlas: AtlasJson; sprites: SpriteJson[]; frame: ReturnType<typeof vehicleFrame>; cols: number } {
   const n = segmentCount(d), cols = n * (hasInterior(d) ? 2 : 1), f = vehicleFrame(d), key = vehicleAtlasKey(d.id);
   const sprites: SpriteJson[] = [];
   for (let col = 0; col < cols; col++) sprites.push({ key: vehicleSpriteKey(d.id, col % n, col >= n), category, atlas: key, anchor: { x: f.px / f.w, y: f.py / f.h },
@@ -73,7 +73,7 @@ export function vehicleManifestEntries(d: VehicleRenderDef, category = "item"): 
 export interface VehiclePack { patch(m: ManifestJson): ManifestJson; sources: Map<string, AtlasSource> }
 
 /** Build DEBUG atlases for the given defs. Keys already present in the manifest (Art's sheets) are left untouched. */
-export async function buildVehicleDebugPack(defs: readonly VehicleRenderDef[], category = "item"): Promise<VehiclePack> {
+export async function buildVehicleDebugPack(defs: readonly VehicleRenderDef[], category = "vehicle"): Promise<VehiclePack> {
   const atlases: AtlasJson[] = []; const sprites: SpriteJson[] = []; const sources = new Map<string, AtlasSource>();
   for (const d of defs) {
     const n = segmentCount(d), ent = vehicleManifestEntries(d, category), f = ent.frame, cols = ent.cols;

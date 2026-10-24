@@ -9,10 +9,10 @@
  *    collision against movementBlocked (or setVehicleBlocker), trailer pin-joint articulation, riders follow seats.
  *  - Camper interior: usableVehicleStations / addVehicleStationHook; stations usable only while parked.
  */
-import { defineCommand, defineResource, fnv1a, NetId, Transform, type CommandHandlers, type Entity, type World } from "@engine/core";
+import { AnimState as Anim, defineCommand, defineResource, fnv1a, NetId, Transform, type CommandHandlers, type Entity, type World } from "@engine/core";
 import raw from "../data/vehicles.json";
 import stationsRaw from "../data/stations.json";
-import { Container, CONTAINER_SLOTS, Dead, Driver, Hitch, Survival, Vehicle, VehicleSeats, VEHICLE_MAX_SEATS } from "./components.js";
+import { AnimState, Container, CONTAINER_SLOTS, Dead, Driver, Hitch, Survival, Vehicle, VehicleSeats, VehicleState, VEHICLE_ENGINE_ON, VEHICLE_HEADLIGHTS, VEHICLE_MAX_SEATS } from "./components.js";
 import { movementBlocked } from "./systems/movement.js";
 import { spendStamina } from "./systems/vitals.js";
 
@@ -20,9 +20,12 @@ export const VEHICLE_CLASSES = ["bicycle", "car", "truck", "van", "camper", "sem
 export type VehicleClass = (typeof VEHICLE_CLASSES)[number];
 export const VEHICLE_SIZES = ["xs", "s", "m", "l", "xl"] as const;
 export type VehicleSize = (typeof VEHICLE_SIZES)[number];
-export interface HitchPoint { at: "front" | "rear"; offset: number; accepts: VehicleClass[] }
+/** Vehicle-local offset (ADR-097): x along the heading (+ front), y left (+ = exit side), z up (world z units). */
+export interface VehicleAnchor { x: number; y: number; z: number }
+/** anchor.x = +offset (front) / -offset (rear); render reads it instead of recomputing (VEHICLES_RENDER.md). */
+export interface HitchPoint { at: "front" | "rear"; offset: number; accepts: VehicleClass[]; anchor: VehicleAnchor }
 export interface VehicleDef {
-  id: string; class: VehicleClass; size: VehicleSize; seats: number; mass: number;
+  id: string; class: VehicleClass; size: VehicleSize; seats: number; /** one per seat, seat 0 = driver */ seatAnchors: VehicleAnchor[]; mass: number;
   maxSpeed: number; accel: number; brake: number; turn: number; grip: number;
   fuel: { capacity: number; perSecond: number } | null; stamina: { perSecond: number } | null; health: number;
   storage: { slots: number; maxWeight: number }; hitches: HitchPoint[]; interior: { stations: string[] };
@@ -44,9 +47,12 @@ export function validateVehicleDefs(defs: readonly VehicleDef[]): string[] {
     if (!(d.mass > 0) || !(d.health > 0) || !(d.collider.radius > 0) || !(d.footprint.length > 0) || !(d.footprint.width > 0)) errs.push(`${p}: mass/health/footprint/collider`);
     if (!(d.grip >= 0 && d.grip <= 1)) errs.push(`${p}: grip`);
     if (!(d.storage.slots >= 0 && d.storage.slots <= CONTAINER_SLOTS) || !(d.storage.maxWeight >= 0)) errs.push(`${p}: storage (slots <= ${CONTAINER_SLOTS})`);
+    const fin = (a: VehicleAnchor | undefined): boolean => !!a && [a.x, a.y, a.z].every(Number.isFinite);
+    if (!Array.isArray(d.seatAnchors) || d.seatAnchors.length !== d.seats || !d.seatAnchors.every(fin)) errs.push(`${p}: seatAnchors (one {x,y,z} per seat)`);
     const ats = new Set<string>();
     for (const h of d.hitches) {
       if (ats.has(h.at)) errs.push(`${p}: duplicate ${h.at} hitch`); ats.add(h.at);
+      if (!fin(h.anchor) || Math.abs(h.anchor.x - (h.at === "front" ? h.offset : -h.offset)) > 1e-6) errs.push(`${p}: ${h.at} hitch anchor.x must be ${h.at === "front" ? "+" : "-"}offset`);
       for (const c of h.accepts) if (!VEHICLE_CLASSES.includes(c)) errs.push(`${p}: hitch accepts ${c}`);
     }
     if (d.class === "trailer" && !d.hitches.some((h) => h.at === "front")) errs.push(`${p}: trailer needs a front hitch`);
@@ -88,6 +94,7 @@ export function spawnVehicle(world: World, def: number | string, x: number, y: n
     .add(e, Container, { slotCount: cap.slots, maxWeight: cap.maxWeight });
   if (d.seats > 0) world.add(e, VehicleSeats);
   if (d.hitches.length) world.add(e, Hitch);
+  if (d.class !== "trailer") world.add(e, VehicleState);
   return e;
 }
 export const netIdOf = (world: World, e: Entity): number => world.getField(e, NetId, "id") ?? 0;
@@ -253,6 +260,7 @@ export function vehicleSystem(world: World, dt: number): void {
     const v = byNet.get(world.getField(r, Driver, "vehicleNetId")!); if (v === undefined) continue;
     const vt = world.get(v, Transform)!; const rt = world.get(r, Transform);
     if (rt && (rt.x !== vt.x || rt.y !== vt.y || rt.facing !== vt.facing)) world.set(r, Transform, { x: vt.x, y: vt.y, facing: vt.facing });
+    if (world.has(r, AnimState) && !world.has(r, Dead) && world.getField(r, AnimState, "anim") !== Anim.Sit) world.set(r, AnimState, { anim: Anim.Sit, startTick: world.tick });
   }
 }
 
@@ -266,7 +274,12 @@ export const VehicleUnhitchCmd = defineCommand("gameplay.vehicleUnhitch", { targ
 /** Use interior station index (into def.interior.stations) of a parked vehicle. */
 export const VehicleStationCmd = defineCommand("gameplay.vehicleStation", { target: "u32", station: "u8" });
 export const VEHICLE_COMMANDS = [VehicleEnterCmd, VehicleExitCmd, VehicleHitchCmd, VehicleUnhitchCmd, VehicleStationCmd] as const;
+/** Vehicle toggles (ADR-097), registered after VEHICLE_CRAFT_COMMANDS (append-only). on: 0 off, 1 on, 2 toggle. Driver only. */
+export const VehicleEngineCmd = defineCommand("gameplay.vehicleEngine", { target: "u32", on: "u8" });
+export const VehicleHeadlightsCmd = defineCommand("gameplay.vehicleHeadlights", { target: "u32", on: "u8" });
+export const VEHICLE_STATE_COMMANDS = [VehicleEngineCmd, VehicleHeadlightsCmd] as const;
 export const VEHICLE_ENTITY_FIELDS: Readonly<Record<string, readonly string[]>> = {
+  [VehicleEngineCmd.name]: ["target"], [VehicleHeadlightsCmd.name]: ["target"],
   [VehicleEnterCmd.name]: ["target"], [VehicleHitchCmd.name]: ["target", "tow"], [VehicleUnhitchCmd.name]: ["target"], [VehicleStationCmd.name]: ["target"],
 };
 
@@ -299,6 +312,7 @@ export function exitVehicle(world: World, actor: Entity): string | undefined {
   if (!world.has(actor, Driver)) return "not_riding";
   const v = ridingVehicle(world, actor); const seat = world.getField(actor, Driver, "seat")!;
   world.remove(actor, Driver); world.getResource(DriveInputs)?.delete(actor);
+  if (world.getField(actor, AnimState, "anim") === Anim.Sit) world.set(actor, AnimState, { anim: Anim.Idle, startTick: world.tick });
   if (v === undefined) return undefined;
   if (seatsOf(world, v)?.[seat] === netIdOf(world, actor)) writeSeat(world, v, seat, 0);
   const d = vehicleDefOf(world, v)!; const t = world.get(v, Transform)!; const h = world.getField(v, Vehicle, "heading")!;
@@ -340,6 +354,36 @@ export function unhitchVehicle(world: World, actor: Entity, trailer: Entity): st
   world.setField(trailer, Hitch, "parentNetId", 0); world.setField(trailer, Vehicle, "speed", 0);
   if (tow !== undefined && world.getField(tow, Hitch, "towNetId") === netIdOf(world, trailer)) world.setField(tow, Hitch, "towNetId", 0);
   return undefined;
+}
+
+// ---- engine / headlights (ADR-097) -------------------------------------------------------------------
+export const vehicleFlags = (world: World, v: Entity): number => world.getField(v, VehicleState, "flags") ?? 0;
+export const isEngineOn = (world: World, v: Entity): boolean => (vehicleFlags(world, v) & VEHICLE_ENGINE_ON) !== 0;
+export const headlightsOn = (world: World, v: Entity): boolean => (vehicleFlags(world, v) & VEHICLE_HEADLIGHTS) !== 0;
+/** Driver (seat 0) of a powered vehicle; the engine bit needs a motor (bicycles have lights but no engine). */
+export function validateVehicleToggle(world: World, actor: Entity, v: Entity, bit: number, on: number): string | undefined {
+  if (world.has(actor, Dead)) return "dead";
+  if (!world.isAlive(v) || !world.has(v, Vehicle)) return "not_vehicle";
+  if (on > 2) return "bad_value";
+  const d = vehicleDefOf(world, v); if (!d) return "not_vehicle";
+  if (d.class === "trailer") return "no_controls";
+  if (bit === VEHICLE_ENGINE_ON && !d.fuel) return "no_engine";
+  if (!netIdOf(world, actor) || world.getField(actor, Driver, "vehicleNetId") !== netIdOf(world, v) || world.getField(actor, Driver, "seat") !== 0) return "not_driver";
+  if (bit === VEHICLE_ENGINE_ON && on !== 0 && (world.getField(v, Vehicle, "health") ?? 0) <= 0) return "wrecked";
+  return undefined;
+}
+export function setVehicleToggle(world: World, actor: Entity, v: Entity, bit: number, on: number): string | undefined {
+  const r = validateVehicleToggle(world, actor, v, bit, on); if (r) return r;
+  if (!world.has(v, VehicleState)) world.add(v, VehicleState); // vehicles from pre-ADR-097 saves
+  const f = vehicleFlags(world, v); const want = on === 2 ? !(f & bit) : on === 1;
+  const nf = want ? f | bit : f & ~bit; if (nf !== f) world.setField(v, VehicleState, "flags", nf);
+  return undefined;
+}
+
+/** Client helper (render cutaway): NetId of the vehicle `playerEid` rides, or null. */
+export function localPlayerVehicle(world: World, playerEid: Entity): number | null {
+  if (!world.isAlive(playerEid) || !world.has(playerEid, Driver)) return null;
+  return world.getField(playerEid, Driver, "vehicleNetId") || null;
 }
 
 // ---- interior stations (camper hook API) ------------------------------------------------------------
@@ -389,5 +433,7 @@ export function installVehicleCommands(world: World, handlers: CommandHandlers):
   handlers.on(VehicleExitCmd, { validate: (_v, c) => (world.has(c.actor, Driver) ? undefined : "not_riding"), handle: (_v, c) => run(() => exitVehicle(world, c.actor)) });
   handlers.on(VehicleHitchCmd, { validate: (v, c) => validateHitch(world, c.actor, v.target as Entity, v.tow as Entity), handle: (v, c) => run(() => hitchVehicles(world, c.actor, v.target as Entity, v.tow as Entity)) });
   handlers.on(VehicleUnhitchCmd, { validate: (v) => (world.has(v.target as Entity, Hitch) ? undefined : "not_vehicle"), handle: (v, c) => run(() => unhitchVehicle(world, c.actor, v.target as Entity)) });
+  for (const [def, bit] of [[VehicleEngineCmd, VEHICLE_ENGINE_ON], [VehicleHeadlightsCmd, VEHICLE_HEADLIGHTS]] as const)
+    handlers.on(def, { validate: (v, c) => validateVehicleToggle(world, c.actor, v.target as Entity, bit, v.on), handle: (v, c) => run(() => setVehicleToggle(world, c.actor, v.target as Entity, bit, v.on)) });
   handlers.on(VehicleStationCmd, { validate: (v, c) => (usableVehicleStations(world, c.actor, v.target as Entity).some((s) => s.index === v.station) ? undefined : "no_station"), handle: (v, c) => run(() => useVehicleStation(world, c.actor, v.target as Entity, v.station)) });
 }

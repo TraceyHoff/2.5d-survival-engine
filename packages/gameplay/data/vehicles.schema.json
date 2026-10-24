@@ -16,6 +16,7 @@
      "class",
      "size",
      "seats",
+     "seatAnchors",
      "mass",
      "maxSpeed",
      "accel",
@@ -60,6 +61,32 @@
       "type": "integer",
       "minimum": 0,
       "maximum": 8
+     },
+     "seatAnchors": {
+      "type": "array",
+      "maxItems": 8,
+      "description": "One anchor per seat (length = seats); seat 0 = driver.",
+      "items": {
+       "type": "object",
+       "additionalProperties": false,
+       "required": [
+        "x",
+        "y",
+        "z"
+       ],
+       "properties": {
+        "x": {
+         "type": "number"
+        },
+        "y": {
+         "type": "number"
+        },
+        "z": {
+         "type": "number"
+        }
+       },
+       "description": "Vehicle-local offset: x along heading (+front), y left (+exit side), z up (world z units)."
+      }
      },
      "mass": {
       "type": "number",
@@ -158,7 +185,8 @@
        "required": [
         "at",
         "offset",
-        "accepts"
+        "accepts",
+        "anchor"
        ],
        "properties": {
         "at": {
@@ -184,6 +212,27 @@
            "trailer"
           ]
          }
+        },
+        "anchor": {
+         "type": "object",
+         "additionalProperties": false,
+         "required": [
+          "x",
+          "y",
+          "z"
+         ],
+         "properties": {
+          "x": {
+           "type": "number"
+          },
+          "y": {
+           "type": "number"
+          },
+          "z": {
+           "type": "number"
+          }
+         },
+         "description": "Hitch point, vehicle-local; x = +offset (front) or -offset (rear)."
         }
        }
       }

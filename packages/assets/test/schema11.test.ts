@@ -75,3 +75,12 @@ describe("decal autotile", () => {
     expect(bad({ neighbors: 4, rules: [{ mask: 0, care: 0, frame: 0 }] }, "vfx")).toMatch(/only decal sprites/);
   });
 });
+
+describe("vehicle category (ADR-097)", () => {
+  it("is an optional category: accepted, listed by byCategory, not required", () => {
+    const m = mutate((mm) => { mm.sprites.push({ ...anySprite(mm), key: "vehicle_car_sedan_s0_d0", category: "vehicle" }); });
+    const { registry } = loadManifest(m);
+    expect(registry.byCategory("vehicle").map((s) => s.key)).toEqual(["vehicle_car_sedan_s0_d0"]);
+    expect(issuesOf(mutate((mm) => { mm.sprites.push({ ...anySprite(mm), key: "x_bad", category: "vehicles" }); }))).toMatch(/unknown category/);
+  });
+});

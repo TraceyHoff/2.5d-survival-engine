@@ -5,7 +5,7 @@ import { World, Transform } from "@engine/core";
 import { AssetRegistry, loadManifest, mergeManifests, type ManifestJson } from "@engine/assets";
 import {
   LightSource, Occluder, Sprite, VehicleView, PoseSmoother, quantizeDir8, lerpAngleShortest, wrapAngle, trailerPose, hitchU, segmentCount, segmentU,
-  seatAnchors, toWorld, vehicleManifestEntries, vehicleSpriteKey, vehicleFrame, depthNudge, insideFootprint, type VehicleRenderDef,
+  seatAnchors, defaultSeatAnchors, toWorld, vehicleManifestEntries, vehicleSpriteKey, vehicleFrame, depthNudge, insideFootprint, type VehicleRenderDef,
 } from "../src/index.js";
 
 const raw = JSON.parse(readFileSync(join(__dirname, "../../gameplay/data/vehicles.json"), "utf8")) as { vehicles?: VehicleRenderDef[] } | VehicleRenderDef[];
@@ -94,6 +94,14 @@ describe("seats", () => {
     const s = seatAnchors(def("car_sedan")); expect(s.length).toBe(4);
     expect(s[0]!.v).toBeGreaterThan(0); expect(s[1]!.v).toBeLessThan(0); expect(s[2]!.u).toBeLessThan(s[0]!.u); expect(s[0]!.cabin).toBe(true);
     expect(seatAnchors(def("bike_tandem")).every((a) => a.v === 0 && !a.cabin)).toBe(true);
+    // ADR-097: anchors come from vehicles.json (ported from the computed layout) and hitches carry anchor.x
+    for (const d of DEFS) {
+      expect(d.seatAnchors?.length).toBe(d.seats);
+      const fromDefs = seatAnchors(d), computed = defaultSeatAnchors(d);
+      fromDefs.forEach((a, i) => { expect(a.u).toBeCloseTo(computed[i]!.u, 2); expect(a.v).toBeCloseTo(computed[i]!.v, 2); expect(a.z).toBeCloseTo(computed[i]!.z, 2); expect(a.cabin).toBe(computed[i]!.cabin); });
+      for (const h of d.hitches) expect(hitchU(d, h.at)).toBe(h.anchor!.x);
+    }
+    expect(seatAnchors({ ...def("car_sedan"), seatAnchors: [{ x: 9, y: 8, z: 7 }, { x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 0 }] })[0]).toEqual({ u: 9, v: 8, z: 7, cabin: true });
     const w = mk(); const v = new VehicleView(w, reg); const d = def("car_sedan");
     const out = v.sync([{ key: 3, def: d, x: 10, y: 10, heading: 0.1, occupants: [101, 0, 0, 104] }], 0, { darkness: 0 });
     expect(out.map((r) => [r.rider, r.seat])).toEqual([[101, 0], [104, 3]]);
