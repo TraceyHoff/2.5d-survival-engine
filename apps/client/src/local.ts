@@ -44,7 +44,6 @@ export async function openBrowserStore(dbName = "engine-local-world"): Promise<W
   return new MemoryWorldStore();
 }
 
-const AGENT_NS = "agents";
 const hex32 = (s: string): string => { let h = 0x811c9dc5, out = ""; for (let k = 0; k < 4; k++) { for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i) ^ k, 0x01000193) >>> 0; out += h.toString(16).padStart(8, "0"); } return out; };
 
 const NO_COMMANDS = new CommandRegistry();
@@ -67,7 +66,7 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
   });
 
   async function addBot(x: number, y: number, drive = true): Promise<void> {
-    const identity = (() => { const id = makeAgentIdentity(seed, slot++); const r = store?.readRecord(AGENT_NS, id.id); if (r) { try { return { ...id, ...JSON.parse(new TextDecoder().decode(r.bytes)) }; } catch { /* corrupt: regenerate */ } } return id; })();
+    const identity = (() => { const id = makeAgentIdentity(seed, slot++); return { ...id, ...(game.agents.get(id.id) ?? {}) }; })();
     const agent = makeAgent(identity, (seed ^ (slot * 0x9e3779b1)) >>> 0, DEFAULT_TICK_HZ); controller.add(agent);
     const world = new World({ seed: 1 }); installDemoWorld(world, "client");
     const vp: VirtualPlayer = { client: undefined as unknown as NetClient, world, agent, output: { moveX: 0, moveY: 0, aimX: 0, aimY: 0, sprint: false, actions: [] }, home: { x, y } };
@@ -86,7 +85,7 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
     if (!game.markVirtual(client.clientId)) { controller.remove(agent); client.close(); return; } // refused (multiplayer)
     client.sendCommand(ClaimAccount, tokenToWords(hex32(identity.id))); // persistent account: inventory/stats saved like a human's
     client.sendCommand(SetName, nameToWords(identity.name));
-    if (store) void store.write({ records: [{ ns: AGENT_NS, id: identity.id, format: 1, bytes: new TextEncoder().encode(JSON.stringify({ name: identity.name, traits: identity.traits, relationship: identity.relationship, goals: identity.goals, archetype: identity.archetype })), tick: game.world.tick, ownerKind: 0, ownerId: 0, chunk: "" }] }).catch(() => {});
+    game.agents.put(identity.id, { ...identity }); // persisted ("agents" records); gameplay updates relationship / party / clan memory via game.agents.put
     bots.push(vp);
   }
   function dropBot(clientId: number): void {

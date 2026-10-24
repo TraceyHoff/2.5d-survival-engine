@@ -4,6 +4,7 @@ import { ChunkManager, ProceduralGenerator, chunkKeyOf, type BuildingGrid, type 
 import { GAMEPLAY_COMMANDS, installPartyCommands, PartyInvitePending, installClanCommands, ClanInvitePending, syncSocialMembership, clanState, encodeClanState, decodeClanState, loadClanState, queueCommand, spawnPlayer, spawnResourceNode, gameplayDefs, setIntent, IntentAction, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installPopulation, installCustomization,
   appearanceServerHooks, applyReplication, installStallBuyHook, installViewBonus, setHitValidator, installPvp, installCraftQueue, installExpressionCommands, requestEmote, CraftQueue, CraftQueuesRes, playerNames, stallListing, listingRevision, stallOf, tillOf, StallHeader, StallOwnerKind } from "@engine/gameplay";
 import { AppearanceServer, ChatServer, NameSync, NetServer, StallResult, StallServer, TileSync, validateHit, type ClientSession, type ServerTransport, type StallHooks } from "@engine/net";
+import { createAgentStore, type AgentIdentityStore } from "./agents.js";
 import { AccountAssigned, ClaimAccount, SetName, WorldPersistence, loadSocial, tokenToHex, tokenToWords, wordsToName, wordsToToken, type WorldStore } from "@engine/persist";
 import { seedStarterCamp, giveRandomAppearance } from "./camp.js";
 import { Act, applyMoveInput, installDemoWorld, rejectReasonCode, DevBotHello, DEMO_COMMANDS, DEMO_EVENTS, GAMEPLAY_NET_COMMANDS, Ping, Pong } from "./protocol.js";
@@ -78,6 +79,8 @@ export interface GameServer {
   stalls: StallServer; appearance: AppearanceServer | undefined;
   /** Local/party/clan/global/whisper chat with mentions + emotes; players and bots (loopback clients) both go through it. */
   chat: ChatServer;
+  /** Persistent bot identities (relationship, party / clan memory): get / put / onChange; saved in the store's "agents" records. */
+  agents: AgentIdentityStore;
   /** Wall-clock ms of recent world.step calls (filled by the host loop via step()). */
   step(dt: number): void;
   tickTimes: number[];
@@ -118,6 +121,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
   const players = new Map<number, Player>();
   // Spawn points chosen by the population spawner for virtual players still connecting. Always empty in multiplayer.
   const pendingSpots: { x: number; y: number }[] = [];
+  const agents = createAgentStore(o.store, { tick: () => world.tick, log });
   let closing = false; // after shutdown() the save is final: disconnects no longer write
   const removeEntity = (e: Entity): void => { if (world.isAlive(e)) world.destroy(e); };
 
@@ -324,9 +328,10 @@ export function createGameServer(o: GameServerOptions): GameServer {
   const step = (dt: number): void => { const t0 = performance.now(); world.step(dt); tickTimes.push(performance.now() - t0); if (tickTimes.length > 4096) tickTimes.splice(0, 2048); };
   const loop = new FixedLoop({ tickHz, step });
   return {
-    world, net, chunks, persist, loop, permissions, players, mode: mode.mode, modeConfig: mode, population, markVirtual, stalls, appearance, chat, step, tickTimes,
+    world, net, chunks, persist, loop, permissions, players, mode: mode.mode, modeConfig: mode, population, markVirtual, stalls, appearance, chat, agents, step, tickTimes,
     async shutdown() {
       if (!persist || closing) return { chunks: 0, players: 0 };
+      await agents.flush();
       const r = await persist.saveAll(); closing = true; await persist.store.close(); return r;
     },
   };
