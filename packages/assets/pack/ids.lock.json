@@ -1393,7 +1393,15 @@
     "vehicle_kit_van_passenger": 1391,
     "wheel": 1392,
     "wheel_rim": 1393,
-    "windshield": 1394
+    "windshield": 1394,
+    "bread": 1395,
+    "coin": 1396,
+    "cooked_fish": 1397,
+    "egg": 1398,
+    "fish": 1399,
+    "rot": 1400,
+    "stew_bowl": 1401,
+    "wild_grain": 1402
   },
   "sounds": {
     "amb_rain": 1,
