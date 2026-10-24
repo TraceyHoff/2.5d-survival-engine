@@ -93,6 +93,8 @@ export interface ClientSession {
 }
 interface SessionState extends ClientSession {
   static: StaticSession;
+  /** Per-client distantThrottle override (setDistantThrottle); null = explicitly off. */
+  throttle?: { nearTiles: number; interval: number } | null;
   views: Map<number, WorldState>;
   /** Per netId: tick+1 it was last sent at (0 = never). Grown on demand. */
   lastSent: Int32Array;
@@ -334,6 +336,15 @@ export class NetServer {
    * server-side at viewBonus.max; raising applies on the next send, lowering after viewBonus.holdTicks. 0 clears.
    * Returns the capped target.
    */
+  /**
+   * Per-client distantThrottle override (ADR-104), e.g. headless virtual players that only perceive ~20 tiles: changed
+   * entities beyond `nearTiles` of the client's owned entities get deltas every `interval` ticks. null = off for this
+   * client, undefined = back to the server-wide option. Returns false for an unknown client.
+   */
+  setDistantThrottle(clientId: number, thr: { nearTiles: number; interval: number } | null | undefined): boolean {
+    const s = this.sessions.get(clientId) as SessionState | undefined; if (!s) return false;
+    if (thr === undefined) delete s.throttle; else s.throttle = thr; return true;
+  }
   setViewRadiusBonus(clientId: number, chunks: number): number {
     const max = Math.max(0, Math.floor(this.opts.viewBonus?.max ?? 2));
     const target = Math.min(max, Math.max(0, Math.floor(Number.isFinite(chunks) ? chunks : 0)));
@@ -683,7 +694,7 @@ export class NetServer {
         for (let k = 0; k < order.length; k++) { rest[k] = ri[order[k]!]!; restEs[k] = re[order[k]!]!; }
       }
       const budgetBits = this.budgetBytes * 8 - 2;
-      const thr = this.opts.distantThrottle; let vx: number[] | undefined, vy: number[] | undefined;
+      const thr = s.throttle === undefined ? this.opts.distantThrottle : (s.throttle ?? undefined); let vx: number[] | undefined, vy: number[] | undefined;
       if (thr && thr.interval > 1) {
         vx = []; vy = [];
         for (const id of ownedIds) { const x = this.posX[id]; if (x !== undefined && !Number.isNaN(x)) { vx.push(x); vy.push(this.posY[id]!); } }

@@ -6,8 +6,8 @@
  * PlayerId/account/inventory) driven by an AgentController that only emits the input stream a human sends.
  * mode: "multiplayer" disables human bots entirely (and ignores `bots`). No Node-only imports.
  */
-import { CommandRegistry, DEFAULT_TICK_HZ, FixedLoop, Owner, World, type CosmeticCatalogLike, type Agent, type AgentOutput, type Entity } from "@engine/core";
-import { agentOutputFrame, applyAgentEmote, buildAgentView, flushSocialMemory, makeAgent, makeAgentIdentity, survivorController } from "@engine/gameplay";
+import { CommandRegistry, DEFAULT_TICK_HZ, FixedLoop, Owner, Transform, World, type CosmeticCatalogLike, type Agent, type AgentOutput, type Entity } from "@engine/core";
+import { agentOutputFrame, applyAgentEmote, buildAgentSelf, buildAgentView, type AgentWorldView, flushSocialMemory, makeAgent, makeAgentIdentity, survivorController } from "@engine/gameplay";
 import { ChatChannel, LoopbackNetwork, MultiServerTransport, NetClient, type ClientTransport, type ServerTransport } from "@engine/net";
 import { ClaimAccount, IndexedDbWorldStore, MemoryWorldStore, SetName, nameToWords, tokenToWords, type WorldStore } from "@engine/persist";
 import { createGameServer, SPAWN, type GameMode, type GameServer } from "@engine/server/game";
@@ -81,6 +81,10 @@ export async function openBrowserStore(dbName = "engine-local-world", timeoutMs 
 const hex32 = (s: string): string => { let h = 0x811c9dc5, out = ""; for (let k = 0; k < 4; k++) { for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i) ^ k, 0x01000193) >>> 0; out += h.toString(16).padStart(8, "0"); } return out; };
 
 const NO_COMMANDS = new CommandRegistry();
+/** Perception LOD for virtual players (ADR-104): tiles from the nearest human, and the far-bot perception period in ticks. */
+export const AGENT_LOD_NEAR = 40, AGENT_LOD_EVERY = 4;
+/** Snapshot throttle for virtual players: beyond sight (12) / hearing (18) range, deltas every 4 ticks. */
+export const BOT_DISTANT_THROTTLE = { nearTiles: 24, interval: 4 } as const;
 const ACT_MASK = Act.MoveUp | Act.MoveDown | Act.MoveLeft | Act.MoveRight | Act.Sprint | Act.Gather;
 export async function createLocalServer(o: LocalServerOptions = {}): Promise<LocalServer> {
   const seed = o.seed ?? 1234; const mode: GameMode = o.mode ?? "singleplayer";
@@ -111,7 +115,7 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
       const f = agentOutputFrame(vp.output, 0, NO_COMMANDS); // gameplay intentToFrame; GameplayActions bits 0-5 == Act bits
       return { buttons: f.actions & ACT_MASK, aimX: f.aimX, aimY: f.aimY };
     };
-    const client = new NetClient({ world, transport: network.createClient(), commands: DEMO_COMMANDS, events: DEMO_EVENTS, sampleInput: sample, ...VEHICLE_CLIENT_OPTIONS, applyInput: (w, e, cmd) => applyDemoInput(w, e, cmd) });
+    const client = new NetClient({ world, transport: network.createClient(), commands: DEMO_COMMANDS, events: DEMO_EVENTS, sampleInput: sample, ...VEHICLE_CLIENT_OPTIONS, interpolate: false, applyInput: (w, e, cmd) => applyDemoInput(w, e, cmd) });
     vp.client = client;
     let ok = false, err: unknown; const conn = client.connect().then(() => { ok = true; }, (e: unknown) => { err = e; ok = true; });
     if (drive) for (let k = 0; k < 200 && !ok; k++) { network.advance(10); game.loop.advance(10); await Promise.resolve(); } // handshake on the virtual clock
@@ -119,6 +123,7 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
     if (stopped) { client.close(); controller.remove(agent); return; }
     if (err || !ok) { controller.remove(agent); throw new Error(`virtual player failed to connect: ${String(err ?? "timeout")}`); }
     if (!game.markVirtual(client.clientId)) { controller.remove(agent); client.close(); return; } // refused (multiplayer)
+    game.net.setDistantThrottle(client.clientId, BOT_DISTANT_THROTTLE); // ADR-104: far deltas every 4 ticks (bots perceive <= 18 tiles)
     client.sendCommand(ClaimAccount, tokenToWords(hex32(identity.id))); // persistent account: inventory/stats saved like a human's
     client.sendCommand(SetName, nameToWords(identity.name));
     game.agents.put(identity.id, { ...identity }); // persisted ("agents" records); gameplay updates relationship / party / clan memory via game.agents.put
@@ -127,13 +132,48 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
   const putAgent = (id: string, partial: Parameters<typeof game.agents.put>[1]): unknown => game.agents.put(id, partial);
   function dropBot(clientId: number): void {
     const i = bots.findIndex((b) => b.client.clientId === clientId); if (i < 0) return;
-    const b = bots[i]!; flushSocialMemory([b.agent], putAgent, game.world.tick, true); controller.remove(b.agent); b.client.close(); bots.splice(i, 1);
+    const b = bots[i]!; byAgent.delete(b.agent); selfCache.delete(b); lodViews.delete(b); lodPhase.delete(b); loops.delete(b); flushSocialMemory([b.agent], putAgent, game.world.tick, true); controller.remove(b.agent); b.client.close(); bots.splice(i, 1);
   }
-  const serverEntityOf = (cid: number): Entity | undefined => { for (const e of game.world.query([Owner])) if (game.world.getField(e, Owner, "clientId") === cid) return e; return undefined; };
-  const selfOf = (vp: VirtualPlayer): Entity | undefined => { for (const e of vp.world.query([Owner])) if (vp.world.getField(e, Owner, "clientId") === vp.client.clientId) return e; return undefined; };
+  // Player/bot entity lookups (ADR-104): game.players already maps clientId -> server entity, and each bot's own replica
+  // entity is cached and revalidated instead of scanning every Owner entity per bot per tick (was O(bots x entities)).
+  const serverEntityOf = (cid: number): Entity | undefined => { const p = game.players.get(cid); return p && game.world.isAlive(p.entity) ? p.entity : undefined; };
+  const selfCache = new Map<VirtualPlayer, Entity>();
+  const selfOf = (vp: VirtualPlayer): Entity | undefined => {
+    const c = selfCache.get(vp);
+    if (c !== undefined && vp.world.isAlive(c) && vp.world.getField(c, Owner, "clientId") === vp.client.clientId) return c;
+    selfCache.delete(vp);
+    for (const e of vp.world.query([Owner])) if (vp.world.getField(e, Owner, "clientId") === vp.client.clientId) { selfCache.set(vp, e); return e; }
+    return undefined;
+  };
+  const byAgent = new Map<Agent, VirtualPlayer>();
+  // Perception LOD (ADR-104): a bot farther than AGENT_LOD_NEAR tiles from every human player rebuilds its world view
+  // (the O(entities) perception scan + sensors) only every AGENT_LOD_EVERY ticks, staggered by slot; its self state
+  // (position, vitals) is still fresh every tick so steering stays smooth. Near bots perceive every tick.
+  const lodViews = new Map<VirtualPlayer, { world: AgentWorldView; tick: number }>();
+  let lodSlot = 0; const lodPhase = new Map<VirtualPlayer, number>();
+  const humanPositions = (): { x: number; y: number }[] => {
+    const out: { x: number; y: number }[] = [];
+    for (const p of game.players.values()) { if (p.bot || !game.world.isAlive(p.entity)) continue; const t = game.world.get(p.entity, Transform); if (t) out.push({ x: t.x, y: t.y }); }
+    return out;
+  };
+  const viewFor = (a: Agent, tick: number, humans: readonly { x: number; y: number }[]): ReturnType<typeof buildAgentView> => {
+    const vp = byAgent.get(a); const e = vp && selfOf(vp); if (!vp || e === undefined) return undefined;
+    const t = vp.world.get(e, Transform); if (!t) return undefined;
+    let near = humans.length === 0; // no human: everyone is "near" (headless tests keep full fidelity)
+    for (const h of humans) { const dx = h.x - t.x, dy = h.y - t.y; if (dx * dx + dy * dy <= AGENT_LOD_NEAR * AGENT_LOD_NEAR) { near = true; break; } }
+    const cached = lodViews.get(vp);
+    let ph = lodPhase.get(vp); if (ph === undefined) lodPhase.set(vp, (ph = lodSlot++ % AGENT_LOD_EVERY));
+    if (!near && cached && tick - cached.tick < AGENT_LOD_EVERY && (tick + ph) % AGENT_LOD_EVERY !== 0) {
+      const self = buildAgentSelf(vp.world, e, a); return self ? { self, world: cached.world } : undefined;
+    }
+    const v = buildAgentView(vp.world, e, a, vp.home); if (v) lodViews.set(vp, { world: v.world, tick }); else lodViews.delete(vp);
+    return v;
+  };
   const loops = new Map<VirtualPlayer, FixedLoop>();
   const agentLoop = new FixedLoop({ tickHz: DEFAULT_TICK_HZ, step: () => {
-    const outs = controller.tick(game.world.tick, (a) => { const vp = bots.find((b) => b.agent === a); const e = vp && selfOf(vp); return vp && e !== undefined ? buildAgentView(vp.world, e, a, vp.home) : undefined; });
+    const tick = game.world.tick; const humans = humanPositions();
+    if (byAgent.size !== bots.length) { byAgent.clear(); for (const b of bots) byAgent.set(b.agent, b); }
+    const outs = controller.tick(tick, (a) => viewFor(a, tick, humans));
     for (const vp of bots) { const out = outs.get(vp.agent); if (!out) continue; vp.output = out; if (out.chat) vp.client.chat.send(ChatChannel.Local, out.chat.text); if (out.emote) { const e = serverEntityOf(vp.client.clientId); if (e !== undefined) applyAgentEmote(game.world, e, out); } if (out.commands) sendAgentCommands(vp.client, out.commands); }
     flushSocialMemory(bots.map((b) => b.agent), putAgent, game.world.tick); // debounced social-memory write-through
   } });

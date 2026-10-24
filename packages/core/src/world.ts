@@ -244,7 +244,14 @@ export class World {
   }
   /** True if a system with this schedule runs at `tick`. */
   static scheduled(every: number, offset: number, tick: number): boolean { return every <= 1 || (tick + every - offset) % every === 0; }
-  private runEntry(s: SystemEntry, dt: number): void { if (World.scheduled(s.every, s.offset, this.tick)) s.fn(this, dt * s.every); }
+  /** Optional per-system timing hook (perf tooling; ADR-104). Undefined in production: zero overhead beyond one branch. */
+  profiler: ((system: string, ms: number) => void) | undefined = undefined;
+  private runEntry(s: SystemEntry, dt: number): void {
+    if (!World.scheduled(s.every, s.offset, this.tick)) return;
+    const p = this.profiler;
+    if (p === undefined) { s.fn(this, dt * s.every); return; }
+    const t0 = performance.now(); s.fn(this, dt * s.every); p(s.name, performance.now() - t0);
+  }
   /**
    * One fixed tick: snapshot PrevTransform, run every phase except renderPrep in order,
    * flush queued events, clear change bits, tick++.

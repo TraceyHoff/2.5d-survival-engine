@@ -73,13 +73,23 @@ export class ComponentStore<S extends Schema = Schema> {
     if (init) for (const f of this.fields) { const v = init[f]; if (v !== undefined) this.writeSlot(s, f, v as number | ArrayLike<number>); }
     return s;
   }
-  markChanged(index: number): void { const w = index >>> 5; this.dirty[w] = this.dirty[w]! | (1 << (index & 31)); }
+  // Dirty word range [dirtyLo, dirtyHi) (ADR-104): clearChanged / changedIndices touch only words that can be set,
+  // instead of the whole maxEntities/32 bitset of every store in every world every tick.
+  private dirtyLo = 0x7fffffff; private dirtyHi = 0;
+  markChanged(index: number): void {
+    const w = index >>> 5; this.dirty[w] = this.dirty[w]! | (1 << (index & 31));
+    if (w < this.dirtyLo) this.dirtyLo = w; if (w >= this.dirtyHi) this.dirtyHi = w + 1;
+  }
   isChanged(index: number): boolean { return (this.dirty[index >>> 5]! & (1 << (index & 31))) !== 0; }
-  clearChanged(): void { this.dirty.fill(0); this.removedThisTick.clear(); }
+  clearChanged(): void {
+    if (this.dirtyHi > this.dirtyLo) this.dirty.fill(0, this.dirtyLo, this.dirtyHi);
+    this.dirtyLo = 0x7fffffff; this.dirtyHi = 0;
+    if (this.removedThisTick.size) this.removedThisTick.clear();
+  }
   /** Entity indices whose bit is set and still have this component, ascending. */
   *changedIndices(): IterableIterator<number> {
     const d = this.dirty;
-    for (let w = 0; w < d.length; w++) {
+    for (let w = this.dirtyLo, end = Math.min(this.dirtyHi, d.length); w < end; w++) {
       let bits = d[w]!;
       while (bits !== 0) {
         const b = 31 - Math.clz32(bits & -bits); bits &= bits - 1;

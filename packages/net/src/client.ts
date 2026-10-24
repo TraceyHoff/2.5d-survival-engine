@@ -52,6 +52,11 @@ export interface NetClientOptions {
   inputRedundancy?: number;
   /** Decoded states kept as possible delta baselines (default 64). */
   historySize?: number;
+  /**
+   * false: no remote interpolation (headless replicas such as singleplayer virtual players; ADR-104). Remote entities
+   * take the newest snapshot state directly; no interpolation buffer, no per-frame sampling.
+   */
+  interpolate?: boolean;
   /** Component interpolated for remote entities (default Transform; field "facing" is angular). */
   interpolated?: ComponentDef;
   onSpawn?: (entity: Entity, netId: number, owned: boolean, world: World) => void;
@@ -98,6 +103,7 @@ export interface ReceivedEvent { tick: number; def: MessageDefBase; payload: Rec
  * prediction + reconciliation for owned entities, interpolation for remote ones.
  * Systems: input phase (sample/predict/send), network phase (apply snapshots, reconcile, interpolate).
  */
+type TypedArrayLike = { [i: number]: number };
 export class NetClient {
   readonly world: World;
   readonly schema: NetSchema;
@@ -159,7 +165,7 @@ export class NetClient {
     this.commands = new MessageRegistry(opts.commands);
     this.events = new MessageRegistry(opts.events);
     const idef: ComponentDef = opts.interpolated ?? (Transform as unknown as ComponentDef);
-    this.interpIndex = this.schema.indexOf(idef, this.world);
+    this.interpIndex = opts.interpolate === false ? undefined : this.schema.indexOf(idef, this.world);
     this.interpStore = this.world.store(idef) as unknown as ComponentStore;
     this.interp = new InterpolationBuffer(32, 1, this.interpStore.fields.map((f) => f === "facing"));
     this.statics = new StaticClient(this.schema, {
@@ -426,16 +432,23 @@ export class NetClient {
 
   /** Writes changed comps. For remote entities the interpolated comp is left to interpolate() (except on spawn). */
   private writeComps(w: World, e: Entity, es: EntityState, old: EntityState | undefined, full: boolean): void {
+    // ADR-104: direct typed-array writes via a per-component plan (same semantics as w.add/w.set: defaults on add,
+    // every field overwritten, change bit set) without the per-write decode array, init object and closures.
+    const idx = entityIndex(e);
     for (const [ci, v] of es) {
       if (old?.get(ci) === v) continue;
       if (!full && ci === this.interpIndex && old?.has(ci)) continue;
-      const st = this.schema.stores[ci]!; const vals = this.decode(ci, v);
-      const init: Record<string, number | number[]> = {};
-      this.schema.layout[ci]!.forEach(([f, el], i) => {
-        if (storeFieldLength(st, f) > 1) ((init[f] ??= []) as number[])[el] = vals[i]!; else init[f] = vals[i]!;
-      });
-      if (w.has(e, st.def)) w.set(e, st.def, init as never); else w.add(e, st.def, init as never);
+      const st = this.schema.stores[ci]!; const plan = this.writePlan(ci); const specs = this.schema.specs[ci]!;
+      if (!st.has(idx)) st.add(e, idx); else st.markChanged(idx);
+      const slot = st.slot(idx);
+      for (let i = 0; i < plan.length; i += 1) { const p = plan[i]!; (st.data[p.f] as TypedArrayLike)[slot * p.n + p.el] = fromWire(specs[i]!, v[i]!); }
     }
+  }
+  private readonly plans: ({ f: string; n: number; el: number }[] | undefined)[] = [];
+  private writePlan(ci: number): { f: string; n: number; el: number }[] {
+    let p = this.plans[ci];
+    if (!p) { const st = this.schema.stores[ci]!; p = this.plans[ci] = this.schema.layout[ci]!.map(([f, el]) => ({ f, n: storeFieldLength(st, f), el })); }
+    return p;
   }
 
   private despawn(w: World, netId: number): void {

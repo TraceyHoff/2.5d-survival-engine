@@ -31,6 +31,13 @@ export interface AgentWorldView extends AgentSensors, PartySensors, ClanSensors,
 export type GameBehavior = BehaviorDef<AgentWorldView>;
 
 /** Perception from a client-side replica: everything replicated near `self` (sight cone + range is applied to memory). */
+/** The cheap per-tick half of buildAgentView: the agent's own state only (no perception scan). */
+export function buildAgentSelf(world: World, self: Entity, a: Agent): AgentSelf | undefined {
+  const t = world.get(self, Transform); if (!t) return undefined;
+  const sv = world.get(self, Survival); const hp = world.get(self, Health);
+  const facing = a.bb.num("facing", t.facing); const tod = timeOfDay(world);
+  return { x: t.x, y: t.y, facing, hp: hp ? hp.hp / Math.max(1, hp.max) : 1, hunger: (sv?.hunger ?? 100) / 100, thirst: (sv?.thirst ?? 100) / 100, stamina: sv ? sv.stamina / Math.max(1, sv.maxStamina) : 1, tick: world.tick, dayT: tod.t, phase: currentPhaseKey(world) };
+}
 export function buildAgentView(world: World, self: Entity, a: Agent, home: { x: number; y: number }, playerName = "friend"): { self: AgentSelf; world: AgentWorldView } | undefined {
   const t = world.get(self, Transform); if (!t) return undefined;
   const sv = world.get(self, Survival); const hp = world.get(self, Health);
