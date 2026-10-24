@@ -50,7 +50,7 @@ export function sampleKeyframes(kf: readonly GradingKeyframe[], hour: number): G
 
 /** GLSL: sample a LUT strip (size N) with manual blue-slice interpolation. */
 export const GLSL_LUT = /* glsl */ `
-vec3 lutSample(sampler2D lut, vec3 c, float n) {
+vec3 lutSample(highp sampler2D lut, vec3 c, float n) {
   c = clamp(c, 0.0, 1.0);
   float b = c.b * (n - 1.0); float s0 = floor(b), s1 = min(n - 1.0, s0 + 1.0);
   vec2 inSlice = vec2(c.r * (n - 1.0) + 0.5, c.g * (n - 1.0) + 0.5);

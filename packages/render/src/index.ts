@@ -22,6 +22,7 @@ export * from "./timeOfDay.js";
 export * from "./depth.js";
 export { newStats, RenderGLError, type FrameStats } from "./gl/util.js";
 export * from "./gl/capabilities.js";
+export * from "./gl/diag.js";
 export * from "./bloom.js";
 export * from "./grading.js";
 export { TERRAIN_SPRITES, SHORE_SPRITES, isWaterTile } from "./ids.js";

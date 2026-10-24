@@ -12,7 +12,7 @@ import type { StyleConfig } from "./style.js";
 const FS = /* glsl */ `#version 300 es
 precision highp float; precision highp int;
 in vec2 vUv;
-uniform sampler2D uScene, uEmissive, uLight, uBloom, uLutA, uLutB, uShimmerTex; uniform int uHasShimmerTex;
+uniform highp sampler2D uScene, uEmissive, uLight, uBloom, uLutA, uLutB, uShimmerTex; uniform int uHasShimmerTex;
 uniform vec3 uAmbient, uFogColor, uNightTint, uLift, uGain, uFlashColor;
 uniform float uFog, uHaze, uStorm, uTime, uNight, uWind, uBands, uBandMix, uNightMin, uSat, uContrast;
 uniform float uBloomStrength, uLutSizeA, uLutSizeB, uLutMix, uLutStrength, uFlash, uCloudAlpha, uCloudScale, uShimmer, uShimmerScale, uShimmerSpeed;
@@ -78,6 +78,16 @@ void main() {
   o = vec4(clamp(col, 0.0, 1.0), 1.0);
 }`;
 
+/** `?gl=safe` composite: scene x lightmap (emissive bypass) straight to the screen; no bloom, LUT, fog or noise. */
+const SAFE_FS = /* glsl */ `#version 300 es
+precision highp float; precision highp int;
+in vec2 vUv; uniform highp sampler2D uScene, uEmissive, uLight; out vec4 o;
+void main() {
+  vec3 scene = texture(uScene, vUv).rgb; float emis = clamp(texture(uEmissive, vUv).r, 0.0, 1.0);
+  vec3 light = texture(uLight, vUv).rgb * 2.0;
+  o = vec4(clamp(mix(scene * light, scene, emis), 0.0, 1.0), 1.0);
+}`;
+
 export interface LutBinding { tex: WebGLTexture; size: number }
 export interface CompositeParams {
   ambient: readonly [number, number, number]; fog: number; haze: number; storm: number; night: number; wind: number; time: number;
@@ -100,6 +110,17 @@ export class CompositePass {
     this.vao = gl.createVertexArray()!;
     this.dummy = gl.createTexture()!; gl.bindTexture(gl.TEXTURE_2D, this.dummy);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 255]));
+    // single level: the default NEAREST_MIPMAP_LINEAR min filter would make the dummy incomplete
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAX_LEVEL, 0);
+  }
+  private safeProg: Program | null = null;
+  /** Direct scene x light composite (safe mode). */
+  drawSafe(scene: WebGLTexture, emissive: WebGLTexture, light: WebGLTexture): void {
+    const gl = this.gl; const pr = (this.safeProg ??= createProgram(gl, FULLSCREEN_VS, SAFE_FS, "composite-safe"));
+    gl.useProgram(pr.prog);
+    [scene, emissive, light].forEach((t, i) => { gl.activeTexture(gl.TEXTURE0 + i); gl.bindTexture(gl.TEXTURE_2D, t); gl.uniform1i(pr.u[["uScene", "uEmissive", "uLight"][i]!] ?? null, i); });
+    gl.bindVertexArray(this.vao); gl.drawArrays(gl.TRIANGLES, 0, 3); gl.bindVertexArray(null);
   }
   draw(scene: WebGLTexture, emissive: WebGLTexture, light: WebGLTexture, p: CompositeParams): void {
     const gl = this.gl; const { u } = this.prog; const st = p.style;

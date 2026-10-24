@@ -6,10 +6,10 @@
 import { createColorTarget, createProgram, FULLSCREEN_VS, type FrameStats, type Program } from "./gl/util.js";
 
 const EXTRACT = /* glsl */ `#version 300 es
-precision highp float; in vec2 vUv; uniform sampler2D uScene, uEmissive; out vec4 o;
+precision highp float; in vec2 vUv; uniform highp sampler2D uScene, uEmissive; out vec4 o;
 void main() { float e = clamp(texture(uEmissive, vUv).g, 0.0, 1.0); o = vec4(texture(uScene, vUv).rgb * e, 1.0); }`;
 const BLUR = /* glsl */ `#version 300 es
-precision highp float; in vec2 vUv; uniform sampler2D uSrc; uniform vec2 uStep; out vec4 o;
+precision highp float; in vec2 vUv; uniform highp sampler2D uSrc; uniform vec2 uStep; out vec4 o;
 void main() {
   const float w[5] = float[5](0.227, 0.194, 0.122, 0.054, 0.016);
   vec3 c = texture(uSrc, vUv).rgb * w[0];
@@ -26,6 +26,8 @@ export class BloomPass {
     this.blur = createProgram(gl, FULLSCREEN_VS, BLUR, "bloom-blur");
     this.vao = gl.createVertexArray()!;
   }
+  /** Framebuffers (diagnostics). */
+  get fbos(): readonly (WebGLFramebuffer | null)[] { return this.fbo; }
   /** Result texture (valid after draw). */
   get output(): WebGLTexture | null { return this.tex[0] ?? null; }
   resize(w: number, h: number): void {

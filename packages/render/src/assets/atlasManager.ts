@@ -125,8 +125,20 @@ function dummyArray(gl: WebGL2RenderingContext): WebGLTexture {
   const t = gl.createTexture()!; gl.bindTexture(gl.TEXTURE_2D_ARRAY, t);
   gl.texStorage3D(gl.TEXTURE_2D_ARRAY, 1, gl.RGBA8, 1, 1, 1);
   gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, 0, 1, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
+  setLevelRange(gl, gl.TEXTURE_2D_ARRAY, 1);
   return t;
 }
+
+/** Texture completeness: BASE/MAX_LEVEL = the levels actually allocated; a single level uses LINEAR (no mip filter). */
+export function setLevelRange(gl: WebGL2RenderingContext, target: number, levels: number): void {
+  gl.texParameteri(target, gl.TEXTURE_BASE_LEVEL, 0);
+  gl.texParameteri(target, gl.TEXTURE_MAX_LEVEL, Math.max(0, levels - 1));
+  gl.texParameteri(target, gl.TEXTURE_MIN_FILTER, levels > 1 ? gl.LINEAR_MIPMAP_LINEAR : gl.LINEAR);
+  gl.texParameteri(target, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+}
+
+/** Smallest atlas budget downscale (x0.125 below the old x0.25 floor: phones that refuse 107 MB of arrays). */
+export const MIN_ATLAS_DOWNSCALE = 0.125;
 
 /** Downscale every image of the list by k (colour/emissive smooth, masks pixelated); frame sizes stay in 1x px via a.scale. */
 async function scaleList(list: AtlasRT[], k: number): Promise<void> {
@@ -210,9 +222,23 @@ export class AtlasManager {
   textureBudgetMB: number;
   /** Current budget downscale (1 = full res). */
   downscale = 1;
+  /** GL errors seen while allocating/uploading the arrays (diagnostics). */
+  uploadErrors: string[] = [];
+  private oomFlag = false;
+  /** Layer count vs MAX_ARRAY_TEXTURE_LAYERS / size vs MAX_TEXTURE_SIZE, or null when within limits. */
+  limitProblem(): string | null {
+    const gl = this.gl; const maxL = Number(gl.getParameter(gl.MAX_ARRAY_TEXTURE_LAYERS)) || 256, maxS = Number(gl.getParameter(gl.MAX_TEXTURE_SIZE)) || 2048;
+    if (this.layers > maxL) return `atlas uses ${this.layers} array layers > MAX_ARRAY_TEXTURE_LAYERS ${maxL}`;
+    if (this.layerSize > maxS) return `atlas layer ${this.layerSize}px > MAX_TEXTURE_SIZE ${maxS}`;
+    return null;
+  }
+  /** Diagnostics: array layer count, size, downscale, completeness-relevant state, upload errors. */
+  get diagInfo(): { layers: number; layerSize: number; downscale: number; levels: number; pool: boolean; errors: string[] } {
+    return { layers: this.layers, layerSize: this.layerSize, downscale: this.downscale, levels: Math.floor(Math.log2(this.layerSize)) + 1, pool: !!this.pool, errors: [...this.uploadErrors] };
+  }
   private gpuBytes = 0;
   /** Reports GL out-of-memory on upload (the client overlay listens through IsoRenderer.onError). */
-  onError: ((e: { kind: "oom"; message: string }) => void) | null = null;
+  onError: ((e: { kind: "oom" | "limits"; message: string }) => void) | null = null;
 
   constructor(private gl: WebGL2RenderingContext, private assets: AssetManager, opts: { layerSize?: number; imageLoader?: (url: string) => Promise<ImageLike>; textureBudgetMB?: number } = {}) {
     const max = gl.getParameter(gl.MAX_TEXTURE_SIZE) as number;
@@ -317,7 +343,9 @@ export class AtlasManager {
     layout();
     const all = [...list, ...lazyList];
     this.upload(list, this.frameTintRows(registry, all), all);
-    if (this.gl.getError() === this.gl.OUT_OF_MEMORY && this.downscale > 0.25) {
+    const lim = this.limitProblem(); if (lim) { this.uploadErrors.push(lim); console.error("[render] " + lim); this.onError?.({ kind: "limits", message: lim }); }
+    if ((this.oomFlag || this.gl.getError() === this.gl.OUT_OF_MEMORY) && this.downscale > MIN_ATLAS_DOWNSCALE) {
+      this.oomFlag = false;
       // the driver refused the arrays: halve again and re-upload (once per step)
       const msg = `atlas upload out of GPU memory at ${this.gpuMB()} MB (downscale ${this.downscale}); retrying at ${this.downscale / 2}`;
       console.warn("[render] " + msg); this.onError?.({ kind: "oom", message: msg });
@@ -417,7 +445,7 @@ export class AtlasManager {
     const tooBig = Math.max(1, ...list.map((a) => Math.max(a.img!.width, a.img!.height) / S));
     let d = 1; while (d > 1 / tooBig) d /= 2;
     const dims = (k: number) => list.map((a) => ({ ...a, img: { width: Math.max(1, Math.floor(a.img!.width * k)), height: Math.max(1, Math.floor(a.img!.height * k)) } as ImageLike }));
-    while (d > 0.25) { this.pack(dims(d)); if (this.estimate(list) <= budget) break; d /= 2; }
+    while (d > MIN_ATLAS_DOWNSCALE) { this.pack(dims(d)); if (this.estimate(list) <= budget) break; d /= 2; }
     this.downscale = d;
     if (d < 1) {
       this.pack(dims(d)); console.warn(`[render] atlas arrays over the ${this.textureBudgetMB} MB GPU budget at full res: downscaling atlas images x${d} (~${Math.round(this.estimate(list) / 1048576)} MB)`);
@@ -519,8 +547,8 @@ export class AtlasManager {
       const t = gl.createTexture()!; gl.bindTexture(gl.TEXTURE_2D_ARRAY, t);
       const levels = Math.floor(Math.log2(S)) + 1;
       gl.texStorage3D(gl.TEXTURE_2D_ARRAY, levels, gl.RGBA8, S, S, this.layers);
-      gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      const err = gl.getError(); if (err !== gl.NO_ERROR) { this.uploadErrors.push(`texStorage3D ${S}x${S}x${this.layers} levels ${levels}: 0x${err.toString(16)}`); if (err === gl.OUT_OF_MEMORY) this.oomFlag = true; }
+      setLevelRange(gl, gl.TEXTURE_2D_ARRAY, levels);
       gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
       return t;
@@ -546,6 +574,7 @@ export class AtlasManager {
         const t = gl.createTexture()!; gl.bindTexture(gl.TEXTURE_2D_ARRAY, t);
         gl.texStorage3D(gl.TEXTURE_2D_ARRAY, 1, gl.RGBA8, 1, 1, 1);
         gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, 0, 1, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
+        setLevelRange(gl, gl.TEXTURE_2D_ARRAY, 1);
         return t;
       }
       const t = mk();

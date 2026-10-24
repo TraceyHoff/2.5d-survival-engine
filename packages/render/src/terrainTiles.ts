@@ -21,7 +21,7 @@ layout(location=2) in vec4 aC; // ax, ay, water, -
 ${GLSL_COMMON}
 uniform highp sampler2D uFrames;
 uniform vec3 uIso; uniform float uZFactor, uTime;
-out vec3 vUv; flat out vec4 vRect; out vec2 vLocal; out vec2 vWorld; flat out vec4 vInfo; // vInfo: w, h, skirtMask, water
+out vec3 vUvRaw; flat out int vLayer; flat out vec4 vRect; out vec2 vLocal; out vec2 vWorld; flat out vec4 vInfo; // vInfo: w, h, skirtMask, water
 void main() {
   int frames = max(1, int(aB.x + 0.5));
   int entry = int(aA.w + 0.5) + int(mod(floor(uTime * aB.y + aB.w), float(frames)));
@@ -29,7 +29,7 @@ void main() {
   vec4 uvr = texelFetch(uFrames, tc, 0); vec4 dim = texelFetch(uFrames, tc + ivec2(1, 0), 0);
   vec2 c = vec2(float(gl_VertexID & 1), float((gl_VertexID >> 1) & 1));
   vec2 px = c * dim.xy; // frame px
-  vUv = vec3(mix(uvr.xy, uvr.zw, c), dim.z); vRect = uvr; vLocal = px; vInfo = vec4(dim.xy, aB.z, aC.z);
+  vUvRaw = vec3(mix(uvr.xy, uvr.zw, c), dim.z); vLayer = int(dim.z + 0.5); vRect = uvr; vLocal = px; vInfo = vec4(dim.xy, aB.z, aC.z);
   vec2 pivot = vec2((aA.x - aA.y) * uIso.x, (aA.x + aA.y) * uIso.y - aA.z * uIso.z); // tile centre
   vec2 iso = pivot + px - aC.xy;
   // world position (for overlays) of the ground point under this pixel
@@ -40,8 +40,9 @@ void main() {
 }`;
 const FS = /* glsl */ `#version 300 es
 precision highp float; precision highp int;
-in vec3 vUv; flat in vec4 vRect; in vec2 vLocal; in vec2 vWorld; flat in vec4 vInfo;
+in vec3 vUvRaw; flat in int vLayer; flat in vec4 vRect; in vec2 vLocal; in vec2 vWorld; flat in vec4 vInfo;
 uniform highp sampler2DArray uAtlas;
+#define vUv vec3(vUvRaw.xy, float(vLayer)) // flat int array layer (no interpolated layer index)
 uniform vec3 uIso; uniform float uTime, uWet, uSnow, uPuddles, uWetDarken; uniform vec3 uSkyRefl;
 layout(location=0) out vec4 oColor; layout(location=1) out vec4 oEmissive;
 float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }

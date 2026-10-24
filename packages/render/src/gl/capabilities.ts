@@ -8,11 +8,12 @@
  * - fragment shader precision (highp when the GPU reports it, else mediump)
  * - limits (texture size, units, attribs, uniforms) and the atlas texture memory budget
  * - DPR cap (mobile 2, low-end 1) and max drawing-buffer pixels
+ * `?gl=safe`: no float targets, no bloom / LUT, direct scene-to-screen composite. `?diag=1`: readbacks + diagReport().
  * Force the fallbacks for testing with `?gl=lowend` (all fallbacks), `?gl=mediump`, `?gl=nofloat`, `?gl=lowmem`
  * (comma-separated), or `IsoRendererOptions.gl`.
  */
 
-export type GlFlag = "lowend" | "mediump" | "nofloat" | "lowmem";
+export type GlFlag = "lowend" | "mediump" | "nofloat" | "lowmem" | "safe";
 
 export interface RenderCapabilities {
   renderer: string; vendor: string; mobile: boolean; lowEnd: boolean; flags: GlFlag[];
@@ -30,15 +31,19 @@ export interface RenderCapabilities {
   fallbacks: string[];
   /** Hard problems found (limits below what the shaders need). */
   problems: string[];
+  /** `?gl=safe` (or the automatic empty-scene retry): no float targets, no bloom/LUT, direct scene x light composite. */
+  safe: boolean;
+  /** Filled under `?diag=1`: per-pass gl errors, FBO/texture status and frame-1/60 pixel readbacks (see IsoRenderer.diagReport()). */
+  diag?: import("./diag.js").RenderDiag;
 }
 
-export interface RenderError { kind: "shader" | "link" | "fbo" | "context-lost" | "context-restored" | "oom" | "limits" | "webgl2"; message: string; detail?: string }
+export interface RenderError { kind: "shader" | "link" | "fbo" | "diag" | "context-lost" | "context-restored" | "oom" | "limits" | "webgl2"; message: string; detail?: string }
 
 /** Parse `gl=` flags from a query string (e.g. location.search). */
 export function parseGlFlags(search: string | undefined): GlFlag[] {
   if (!search) return [];
   const v = new URLSearchParams(search).get("gl"); if (!v) return [];
-  const all: GlFlag[] = ["lowend", "mediump", "nofloat", "lowmem"];
+  const all: GlFlag[] = ["lowend", "mediump", "nofloat", "lowmem", "safe"];
   return v.split(",").map((s) => s.trim().toLowerCase()).filter((s): s is GlFlag => (all as string[]).includes(s));
 }
 
@@ -54,7 +59,7 @@ export function detectCapabilities(gl: WebGL2RenderingContext, opts: { flags?: G
   const vendor = String((dbg ? gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) : gl.getParameter(gl.VENDOR)) ?? "");
   const ua = opts.userAgent ?? (typeof navigator !== "undefined" ? navigator.userAgent : "");
   const mobile = MOBILE_GPU.test(renderer) || MOBILE_UA.test(ua) || (/macintosh/i.test(ua) && typeof navigator !== "undefined" && (navigator.maxTouchPoints ?? 0) > 1);
-  const nofloat = has("nofloat");
+  const nofloat = has("nofloat") || flags.includes("safe");
   const ext = {
     colorBufferFloat: !nofloat && !!gl.getExtension("EXT_color_buffer_float"),
     colorBufferHalfFloat: !nofloat && !!gl.getExtension("EXT_color_buffer_half_float"),
@@ -95,7 +100,8 @@ export function detectCapabilities(gl: WebGL2RenderingContext, opts: { flags?: G
   // GPU memory budget for the atlas arrays: phones share RAM with the GPU and Chrome's GPU process caps it;
   // a 2048^2 x 11 layer x 4 array set with mips is ~0.9 GB, which fails (OOM / context loss) on Android.
   const lowmem = has("lowmem");
-  const textureBudgetMB = lowmem ? 160 : mobile ? 256 : 768;
+  const textureBudgetMB = lowmem || flags.includes("safe") ? 160 : mobile ? 256 : 768;
+  if (flags.includes("safe")) fallbacks.push("safe mode (?gl=safe): no float targets, bloom or LUT; direct composite");
   if (lowmem || mobile) fallbacks.push(`atlas texture budget ${textureBudgetMB} MB${mobile ? " (mobile)" : ""}`);
   const maxDpr = lowEnd ? 1 : mobile ? 2 : 3;
   const maxPixels = lowEnd ? 1280 * 720 : mobile ? 2_400_000 : 3840 * 2160;
@@ -105,7 +111,7 @@ export function detectCapabilities(gl: WebGL2RenderingContext, opts: { flags?: G
     formats: { scene: "RGBA8", emissive: "RGBA8", lightmap: "RGBA8", bloom: "RGBA8", lightmapEncode: 0.5, dataTables: "RGBA32F", lut: "RGBA8-2D-strip" },
     floatFilter: ext.floatLinear ? "LINEAR" : "NEAREST",
     precision: { fragmentHighp, fragment: fragmentHighp ? "highp" : "mediump", vertex: vp && vp.precision >= 23 ? "highp" : "mediump", fragmentHighpBits },
-    limits, atlasLayerSize, textureBudgetMB, maxDpr, maxPixels, fallbacks, problems,
+    limits, atlasLayerSize, textureBudgetMB, maxDpr, maxPixels, fallbacks, problems, safe: flags.includes("safe"),
   };
 }
 

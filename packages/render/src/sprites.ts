@@ -83,7 +83,7 @@ uniform highp sampler2D uFrames;
 uniform float uZPerPx, uHH, uTime, uWind, uOutline;
 uniform int uShadowPass, uShadowMode;
 uniform vec2 uShadowDir; uniform float uBlobAspect; uniform vec2 uWindVec; // screen-x wind direction, strength 0..1
-out vec4 vFx; out vec3 vUv; out float vAlpha; flat out int vFlags; flat out vec4 vRect; out vec3 vTint; flat out vec3 vMisc; out vec2 vLocal; out vec2 vScr; flat out float vOcc; flat out ivec2 vFB; flat out vec4 vTint2; flat out float vSwayPx; flat out vec4 vLT;
+out vec4 vFx; out vec3 vUvRaw; flat out int vLayer; out float vAlpha; flat out int vFlags; flat out vec4 vRect; out vec3 vTint; flat out vec3 vMisc; out vec2 vLocal; out vec2 vScr; flat out float vOcc; flat out ivec2 vFB; flat out vec4 vTint2; flat out float vSwayPx; flat out vec4 vLT;
 void main() {
   int entry = int(aB.x + 0.5); int flags = int(aB.y + 0.5);
   ivec2 tc = ivec2((entry % 1024) * 2, entry / 1024);
@@ -101,12 +101,12 @@ void main() {
     if (uShadowMode == 0) { // blob
       float hw = dim.x * s * aE.w * 0.5;
       iso = aA.xy + uShadowDir * 6.0 + vLocal * vec2(hw, hw * uBlobAspect);
-      vUv = vec3(0.0, 0.0, dim.z);
+      vUvRaw = vec3(0.0, 0.0, dim.z); vLayer = int(dim.z + 0.5);
     } else { // projected silhouette
       float x = c.x * dim.x, y = c.y * dim.y; float flip = (flags & 1) != 0 ? -1.0 : 1.0;
       float px = (x - aC.x) * s * flip, hp = (aC.y - y) * s;
       iso = aA.xy + vec2(px, 0.0) + uShadowDir * hp;
-      vUv = vec3(mix(uvr.xy, uvr.zw, vec2(x / dim.x, y / dim.y)), dim.z);
+      vUvRaw = vec3(mix(uvr.xy, uvr.zw, vec2(x / dim.x, y / dim.y)), dim.z); vLayer = int(dim.z + 0.5);
     }
     gl_Position = vec4(isoToClip(iso), keyToNdc(key), 1.0);
     return;
@@ -126,7 +126,7 @@ void main() {
     px += uWindVec.x * uWindVec.y * aG.x * s * wgt * (0.65 + 0.35 * sin(uTime * aG.y * 6.283 + aB.z * 6.283));
   } else if ((flags & 4) != 0) px += sin(uTime * 1.6 + aB.z * 6.283) * uWind * max(hp, 0.0) * 0.05;
   if (aF.z > 0.5) px += sin(uTime * 52.0 + aB.z * 40.0) * (0.4 + 1.4 * aF.y) * s; // shiver
-  vUv = vec3(mix(uvr.xy, uvr.zw, vec2(x / dim.x, y / dim.y)), dim.z);
+  vUvRaw = vec3(mix(uvr.xy, uvr.zw, vec2(x / dim.x, y / dim.y)), dim.z); vLayer = int(dim.z + 0.5);
   vec2 off = vec2(px, -hp);
   if (aI.x != 0.0) { float cr = cos(aI.x), sr = sin(aI.x); off = vec2(cr * off.x - sr * off.y, sr * off.x + cr * off.y); }
   vec2 iso = aA.xy + off; vScr = iso;
@@ -136,8 +136,9 @@ void main() {
 
 const FS = /* glsl */ `#version 300 es
 precision highp float; precision highp int;
-in vec4 vFx; in vec3 vUv; in float vAlpha; flat in int vFlags; flat in vec4 vRect; in vec3 vTint; flat in vec3 vMisc; in vec2 vLocal; in vec2 vScr; flat in float vOcc; flat in ivec2 vFB; flat in vec4 vTint2; flat in float vSwayPx; flat in vec4 vLT;
+in vec4 vFx; in vec3 vUvRaw; flat in int vLayer; in float vAlpha; flat in int vFlags; flat in vec4 vRect; in vec3 vTint; flat in vec3 vMisc; in vec2 vLocal; in vec2 vScr; flat in float vOcc; flat in ivec2 vFB; flat in vec4 vTint2; flat in float vSwayPx; flat in vec4 vLT;
 uniform highp sampler2DArray uAtlas, uEmis, uSheenM, uSwayM, uTintM; uniform highp sampler2D uTints;
+#define vUv vec3(vUvRaw.xy, float(vLayer)) // flat int array layer (no interpolated layer index)
 uniform int uShadowPass, uShadowMode;
 uniform float uShadowAlpha, uOutline, uTexel, uTime, uEmisStrength, uAlphaMul, uNightGate;
 uniform vec4 uOutlineColor; uniform vec3 uShadowColor, uFrostColor, uFlushTint; uniform float uWetDarken, uWetSheen;

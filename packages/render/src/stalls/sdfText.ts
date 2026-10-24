@@ -106,7 +106,7 @@ void main() {
 }`;
 const FS = /* glsl */ `#version 300 es
 precision highp float;
-in vec2 vUv; in vec4 vCol; uniform sampler2D uTex; uniform int uMsdf; uniform vec3 uLight; uniform vec4 uHalo; // halo rgb + strength (mtsdf A channel)
+in vec2 vUv; in vec4 vCol; uniform highp sampler2D uTex; uniform int uMsdf; uniform vec3 uLight; uniform vec4 uHalo; // halo rgb + strength (mtsdf A channel)
 out vec4 o;
 float median(float r, float g, float b) { return max(min(r, g), min(max(r, g), b)); }
 void main() {

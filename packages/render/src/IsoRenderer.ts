@@ -41,6 +41,7 @@ import type { TransformSource } from "./transformSource.js";
 import { VfxLayer } from "./vfx.js";
 import { BurningFx } from "./burning.js";
 import type { Renderer } from "./types.js";
+import { fboStatusName, formatDiagReport, glErrorName, isEmptyScene, newDiag, parseDiagFlag, SAMPLE_POINTS, type DiagReadback, type RenderDiag, type Rgba } from "./gl/diag.js";
 
 export interface IsoRendererOptions {
   iso?: IsoConfig;
@@ -61,6 +62,8 @@ export interface IsoRendererOptions {
   gl?: GlFlag[];
   /** Runtime render errors (context loss, OOM). Construction errors are thrown as RenderGLError (`.info`). */
   onError?: (e: RenderError) => void;
+  /** `?diag=1` diagnostics (frame-1/60 readbacks, per-pass errors, diagReport()). Default: parsed from location.search. */
+  diag?: boolean;
 }
 
 export interface RenderSettings { lights: boolean; shadows: boolean; weather: boolean; fog: boolean }
@@ -151,6 +154,13 @@ export class IsoRenderer implements Renderer {
   private lastNow = -1;
   private firstFrame = true;
   private firstFrame2 = true;
+  /** Frames rendered (diagnostic readbacks on 1 and 60). */
+  frameCount = 0;
+  /** Safe mode: no float targets, bloom or LUT; direct composite (`?gl=safe`, or auto after an empty-scene readback). */
+  get safeMode(): boolean { return this.diagState.safe; }
+  private diagState: RenderDiag;
+  /** Diagnostics (also at capabilities.diag). */
+  get diag(): RenderDiag { return this.diagState; }
   /** Seconds of renderer time (animation clock for water, flicker, particles). */
   time = 0;
 
@@ -165,6 +175,7 @@ export class IsoRenderer implements Renderer {
     const flags = opts.gl ?? parseGlFlags(typeof location !== "undefined" ? location.search : undefined);
     const caps = (this.capabilities = detectCapabilities(gl, { flags, ...(opts.atlasLayerSize !== undefined ? { layerSize: opts.atlasLayerSize } : {}) }));
     setFragmentMediump(gl, !caps.precision.fragmentHighp);
+    this.diagState = caps.diag = newDiag(opts.diag ?? parseDiagFlag(typeof location !== "undefined" ? location.search : undefined), caps.safe);
     console.info(`[render] ${caps.renderer} | frag ${caps.precision.fragment} | atlas ${caps.atlasLayerSize}px budget ${caps.textureBudgetMB}MB | dpr<=${caps.maxDpr}` + (caps.fallbacks.length ? `\n  fallbacks: ${caps.fallbacks.join("; ")}` : ""));
     if (caps.problems.length) { console.error("[render] GPU limits: " + caps.problems.join("; ")); }
     canvas.addEventListener("webglcontextlost", this.onLost, false);
@@ -262,7 +273,7 @@ export class IsoRenderer implements Renderer {
     this.emisTex = createTexture(gl, w, h, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, gl.NEAREST);
     this.depthRb = gl.createRenderbuffer();
     gl.bindRenderbuffer(gl.RENDERBUFFER, this.depthRb);
-    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT24, w, h);
+    gl.renderbufferStorage(gl.RENDERBUFFER, this.diagState.safe ? gl.DEPTH_COMPONENT16 : gl.DEPTH_COMPONENT24, w, h);
     this.sceneFbo = gl.createFramebuffer();
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.sceneFbo);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.sceneTex, 0);
@@ -275,10 +286,24 @@ export class IsoRenderer implements Renderer {
       gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, this.depthRb);
       if (!this.capabilities.fallbacks.includes("scene depth DEPTH_COMPONENT16")) this.capabilities.fallbacks.push("scene depth DEPTH_COMPONENT16");
     }
+    this.diagState.fbo.scene = fboStatusName(gl.checkFramebufferStatus(gl.FRAMEBUFFER));
     assertFramebuffer(gl, "scene");
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     this.lights.resize(w, h);
     this.bloom.resize(w, h);
+    this.checkTargets();
+  }
+
+  /** checkFramebufferStatus on lightmap + bloom chain; createColorTarget already fell back to RGBA8, an incomplete one is rebuilt RGBA8 once. */
+  private checkTargets(): void {
+    const gl = this.gl; const d = this.diagState.fbo;
+    const st = (f: WebGLFramebuffer | null): string => { if (!f) return "none"; gl.bindFramebuffer(gl.FRAMEBUFFER, f); const r = fboStatusName(gl.checkFramebufferStatus(gl.FRAMEBUFFER)); gl.bindFramebuffer(gl.FRAMEBUFFER, null); return r; };
+    d.lightmap = st(this.lights.fbo); this.bloom.fbos.forEach((f, i) => { d[`bloom${i}`] = st(f); });
+    const bad = Object.entries(d).filter(([, v]) => v !== "COMPLETE" && v !== "none");
+    if (bad.length) {
+      const msg = `render targets incomplete (${bad.map(([k, v]) => `${k}=${v}`).join(", ")}): rebuilt as RGBA8`; this.diagState.messages.push(msg); this.emit({ kind: "fbo", message: msg });
+      const w = this.w, h = this.h; (this.lights as unknown as { w: number }).w = 0; (this.bloom as unknown as { w: number }).w = 0; this.lights.resize(w, h); this.bloom.resize(w, h);
+    }
   }
 
   /** Read-only: draws the world at interpolation factor alpha in [0,1). */
@@ -288,6 +313,8 @@ export class IsoRenderer implements Renderer {
     const dt = this.lastNow < 0 ? 0 : Math.min(0.1, (t0 - this.lastNow) / 1000);
     this.lastNow = t0; this.time += dt;
     const stats = (this.stats = newStats());
+    this.frameCount++; const probe = this.frameCount === 1 || this.frameCount === 60; const diag = this.diagState;
+    const pass = (name: string): void => { if (probe) { const e = gl.getError(); if (diag.enabled || e !== gl.NO_ERROR) diag.passErrors[name] = glErrorName(e); } };
     const gl = this.gl; const style = this.style;
     if (this.w === 0) this.resize(this.canvas.clientWidth || 800, this.canvas.clientHeight || 600, 1);
     this.vfx.update(this.time); this.statusDt = dt;
@@ -344,6 +371,7 @@ export class IsoRenderer implements Renderer {
       transformSource: this.transformSource, vfx: this.vfx, now: this.time, statusFx: this.statusHook, zoom: this.camera.zoom,
     });
     this.sprites.upload();
+    pass("prep");
     this.lights.prepare(world, alpha, rect, this.settings.lights, this.transformSource, { emitter: this.bindings.emitter, lit: this.bindings.lit, kinds: this.emitterKinds });
 
     // --- 1. scene pass ---------------------------------------------------------------------
@@ -353,7 +381,9 @@ export class IsoRenderer implements Renderer {
     gl.depthMask(true);
     { const bg = this.backdrop ?? day.sky; gl.clearBufferfv(gl.COLOR, 0, [bg[0], bg[1], bg[2], 1]); }
     gl.clearBufferfv(gl.COLOR, 1, [0, 0, 0, 0]);
-    gl.clearBufferfi(gl.DEPTH_STENCIL, 0, 1, 0);
+    // depth-only attachment (DEPTH_COMPONENT24/16): clear DEPTH, not DEPTH_STENCIL. Clearing DEPTH_STENCIL with no stencil
+    // left depth uncleared on some ANGLE/Mali drivers -> every terrain/sprite fragment failed LESS (only the sky clear showed)
+    gl.clearBufferfv(gl.DEPTH, 0, [1]);
     gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LESS);
     gl.disable(gl.BLEND);
     if (this.tilemap) {
@@ -377,13 +407,16 @@ export class IsoRenderer implements Renderer {
     this.sprites.drawSilhouette(this.viewU, this.depthU, this.atlas, this.time, ws.wind + 0.15, style, stats);
     this.sprites.drawLate(this.viewU, this.depthU, this.atlas, this.time, ws.wind + 0.15, style, stats);
     gl.disable(gl.BLEND); gl.disable(gl.DEPTH_TEST);
+    pass("scene");
+    const clearBg = this.backdrop ?? day.sky;
 
     // --- 2. light pass ---------------------------------------------------------------------
     const amb: [number, number, number] = [day.ambient[0] * (1 - 0.3 * ws.storm), day.ambient[1] * (1 - 0.3 * ws.storm), day.ambient[2] * (1 - 0.25 * ws.storm)];
     this.lights.draw(this.viewU, amb, 1 - (1 - style.daylightLightScale) * day.daylight, this.time, stats);
 
+    pass("light");
     // --- 3. composite ----------------------------------------------------------------------
-    const bloomOn = style.bloom.strength > 0;
+    const bloomOn = style.bloom.strength > 0 && !diag.safe;
     if (bloomOn) this.bloom.draw(this.sceneTex!, this.emisTex!, style.bloom.radiusPx, stats);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(0, 0, this.w, this.h);
@@ -391,7 +424,9 @@ export class IsoRenderer implements Renderer {
     if (kf) { const a = this.gradingKeyframes[kf.a]!.lut, b = this.gradingKeyframes[kf.b]!.lut; const la = a ? this.luts.get(a) : undefined, lb = b ? this.luts.get(b) : undefined;
       if (la && lb) { lutA = la; lutB = lb; lutMix = kf.t; } else if (la || lb) { lutA = (la ?? lb)!; } }
     const night = Math.max(0, Math.min(1, 1 - (amb[0] + amb[1] + amb[2]) / 1.6));
-    this.composite.draw(this.sceneTex!, this.emisTex!, this.lights.tex!, {
+    if (bloomOn) pass("bloom");
+    if (diag.safe) this.composite.drawSafe(this.sceneTex!, this.emisTex!, this.lights.tex!);
+    else this.composite.draw(this.sceneTex!, this.emisTex!, this.lights.tex!, {
       ambient: amb, fog: this.settings.fog ? ws.fog : 0, haze: day.haze, storm: ws.storm, night, wind: ws.wind, time: this.time,
       origin: [rect.x0, rect.y1], size: [rect.x1 - rect.x0, rect.y0 - rect.y1], style,
       ...(kf ? { fogColor: kf.fog } : {}),
@@ -401,12 +436,47 @@ export class IsoRenderer implements Renderer {
       heat: this.lights.heat, heatCount: this.lights.heatCount, shimmerTex: this.shimmerTex,
     });
     stats.drawCalls++;
+    pass("composite");
+    if (probe) this.probe(stats, clearBg);
 
     // --- 4. weather particles --------------------------------------------------------------
     if (this.settings.weather) this.weather.draw(this.w, this.h, this.camera.x * this.camera.scale, this.camera.y * this.camera.scale, this.camera.dpr, ws, this.time, amb, stats);
 
     stats.staticChunks = this.sprites.staticChunksDrawn; stats.staticInstances = this.sprites.staticInstances;
     stats.cpuMs = performance.now() - t0;
+  }
+
+  /** Frame-1/60 readback: a few pixels of the scene FBO, lightmap and final output; empty scene with draws -> onError + one safe retry. */
+  private probe(stats: FrameStats, bg: readonly number[]): void {
+    const gl = this.gl; const d = this.diagState;
+    const read = (fbo: WebGLFramebuffer | null, w: number, h: number): Rgba[] => {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fbo); if (fbo) gl.readBuffer(gl.COLOR_ATTACHMENT0);
+      const px = new Uint8Array(4);
+      const out = SAMPLE_POINTS.map(([x, y]) => { gl.readPixels(Math.min(w - 1, Math.floor(x * w)), Math.min(h - 1, Math.floor(y * h)), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); return [px[0]!, px[1]!, px[2]!, px[3]!] as Rgba; });
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null); return out;
+    };
+    const lw = (this.lights as unknown as { w: number; h: number });
+    const instances = stats.sprites + stats.staticInstances + stats.tiles;
+    const clear: Rgba = [Math.round(Math.min(1, bg[0]!) * 255), Math.round(Math.min(1, bg[1]!) * 255), Math.round(Math.min(1, bg[2]!) * 255), 255];
+    const scene = read(this.sceneFbo, this.w, this.h);
+    const r: DiagReadback = { frame: this.frameCount, scene, light: read(this.lights.fbo, lw.w, lw.h), output: read(null, this.w, this.h), clear, instances, drawCalls: stats.drawCalls, empty: isEmptyScene(scene, clear) };
+    d.passErrors.readback = glErrorName(gl.getError());
+    d.readbacks.push(r); if (d.readbacks.length > 4) d.readbacks.shift();
+    const a = this.atlas.diagInfo;
+    d.textures = { atlasLayers: a.layers, atlasLayerSize: a.layerSize, atlasLevels: a.levels, atlasDownscale: a.downscale, pool: a.pool, uploadErrors: a.errors };
+    if (d.enabled) console.info("[render] diag\n" + this.diagReport());
+    if (r.empty && instances > 0) {
+      const retry = !d.safe && d.autoSafe === 0;
+      const msg = `scene FBO empty on frame ${r.frame} (all samples = clear ${clear.slice(0, 3).join(",")}) although ${instances} instances / ${stats.drawCalls} draws were submitted` + (retry ? "; retrying in safe mode (?gl=safe)" : "");
+      d.messages.push(msg); this.emit({ kind: "diag", message: msg, detail: this.diagReport() });
+      if (retry) { d.safe = true; d.autoSafe++; this.capabilities.safe = true; this.capabilities.fallbacks.push("auto safe mode after empty scene readback"); const w = this.canvas.clientWidth || this.w, h = this.canvas.clientHeight || this.h; this.w = 0; this.h = 0; this.resize(w, h, this.camera.dpr); this.frameCount = 0; }
+    }
+  }
+
+  /** Plain-text diagnostics for the client's ?diag=1 overlay (capabilities, atlas/FBO status, per-pass errors, readbacks). */
+  diagReport(): string {
+    const c = this.capabilities; const v = this.vram;
+    return formatDiagReport(this.diagState, { renderer: c.renderer, mobile: c.mobile, precision: c.precision.fragment, budgetMB: c.textureBudgetMB, vramMB: Math.round(v.totalMB), fallbacks: c.fallbacks, problems: c.problems });
   }
 
   dispose(): void {
