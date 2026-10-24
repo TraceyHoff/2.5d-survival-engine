@@ -266,11 +266,34 @@ export class AtlasManager {
   }
   /** Diagnostics: array layer count, size, downscale, completeness-relevant state, upload errors. */
   get diagInfo(): { layers: number; layerSize: number; downscale: number; levels: number; pool: boolean; errors: string[] } {
-    return { layers: this.layers, layerSize: this.layerSize, downscale: this.downscale, levels: Math.floor(Math.log2(this.layerSize)) + 1, pool: !!this.pool, errors: [...this.uploadErrors] };
+    return { layers: this.layers, layerSize: this.layerSize, downscale: this.downscale, levels: this.texLevels || Math.floor(Math.log2(this.layerSize)) + 1, pool: !!this.pool, errors: [...this.uploadErrors] };
   }
   private gpuBytes = 0;
   /** Reports GL out-of-memory on upload (the client overlay listens through IsoRenderer.onError). */
   onError: ((e: { kind: "oom" | "limits"; message: string }) => void) | null = null;
+  /** Runtime allocation fault (GL error after an array / page allocation): IsoRenderer escalates its fallback ladder. */
+  onFault: ((source: "atlas" | "page", detail: string) => void) | null = null;
+  /** Streamed wearable pages enabled (fallback step 1 turns them off: body-only, pool slots emptied). */
+  private wearablesOn = true;
+  /** Mip levels actually allocated for the colour array (page-ins never upload past them). */
+  private texLevels = 0;
+  /** Page-ins refused by the driver / the VRAM budget (diagnostics). */
+  pageFaults = 0; pageBudgetRefusals = 0;
+  get wearablesEnabled(): boolean { return this.wearablesOn; }
+  /** Fallback step 1: drop every streamed page and stop paging (layers draw the body-only fallback). */
+  setWearables(on: boolean): void {
+    if (on === this.wearablesOn) return; this.wearablesOn = on; if (on || !this.pool) return;
+    this.gen++; this.queue = [];
+    for (const a of this.atlases) if (a.lazy && a.lazy.state !== 0) { if (a.lazy.state === 2) { this.pool.lru.remove(a.key); this.vram.evict(this.pool.slotBytes); } a.lazy.state = 0; a.layer = -1; this.writeFrames(a, this.table, this.tintRowMap, true); }
+    this.vram.pending = 0;
+  }
+  /** Fallback step 3: every resident atlas on the cold tier and half the texture budget, then rebuild (frees GPU memory). */
+  async forceLowTier(): Promise<void> {
+    this.atlasTier = () => "cold"; this.recentlyUsed.clear();
+    this.textureBudgetMB = Math.max(32, Math.floor(this.textureBudgetMB / 2));
+    if (!this.registry) return;
+    await this.rebuild(this.registry, new Map(this.atlases.map((a) => [a.key, a.source] as [string, AtlasSource])));
+  }
 
   constructor(private gl: WebGL2RenderingContext, private assets: AssetManager, opts: { layerSize?: number; imageLoader?: (url: string) => Promise<ImageLike>; textureBudgetMB?: number } = {}) {
     const max = gl.getParameter(gl.MAX_TEXTURE_SIZE) as number;
@@ -376,13 +399,14 @@ export class AtlasManager {
     const all = [...list, ...lazyList];
     this.upload(list, this.frameTintRows(registry, all), all);
     const lim = this.limitProblem(); if (lim) { this.uploadErrors.push(lim); console.error("[render] " + lim); this.onError?.({ kind: "limits", message: lim }); }
-    if ((this.oomFlag || this.gl.getError() === this.gl.OUT_OF_MEMORY) && this.downscale > MIN_ATLAS_DOWNSCALE) {
+    while ((this.oomFlag || this.gl.getError() === this.gl.OUT_OF_MEMORY) && this.downscale > MIN_ATLAS_DOWNSCALE) {
       this.oomFlag = false;
       // the driver refused the arrays: halve again and re-upload (once per step)
       const msg = `atlas upload out of GPU memory at ${this.gpuMB()} MB (downscale ${this.downscale}); retrying at ${this.downscale / 2}`;
       console.warn("[render] " + msg); this.onError?.({ kind: "oom", message: msg });
-      await scaleList(list, 0.5); this.downscale /= 2; this.coldDownscale /= 2; layout(); this.upload(list, this.frameTintRows(registry, all), all);
+      await scaleList(list, 0.5); this.downscale /= 2; this.coldDownscale = Math.max(MIN_ATLAS_DOWNSCALE / 2, this.coldDownscale / 2); layout(); this.upload(list, this.frameTintRows(registry, all), all);
     }
+    if (this.oomFlag) { this.oomFlag = false; const msg = `atlas arrays still out of GPU memory at the minimum downscale x${this.downscale}`; this.uploadErrors.push(msg); this.onFault?.("atlas", msg); }
     list.push(...lazyList);
     // sprite runtime tables
     const sprites: (SpriteRT | undefined)[] = [];
@@ -618,7 +642,7 @@ export class AtlasManager {
       const t = gl.createTexture()!; gl.bindTexture(gl.TEXTURE_2D_ARRAY, t);
       const S = side ? Math.max(1, this.layerSize >> SIDE_SHIFT) : this.layerSize;
       const levels = Math.floor(Math.log2(S)) + 1;
-      gl.texStorage3D(gl.TEXTURE_2D_ARRAY, levels, gl.RGBA8, S, S, this.layers);
+      gl.texStorage3D(gl.TEXTURE_2D_ARRAY, levels, gl.RGBA8, S, S, this.layers); if (!side) this.texLevels = levels;
       const err = gl.getError(); if (err !== gl.NO_ERROR) { this.uploadErrors.push(`texStorage3D ${S}x${S}x${this.layers} levels ${levels}: 0x${err.toString(16)}`); if (err === gl.OUT_OF_MEMORY) this.oomFlag = true; }
       setLevelRange(gl, gl.TEXTURE_2D_ARRAY, levels);
       gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -702,6 +726,7 @@ export class AtlasManager {
   /** True when the sprite's art can be drawn now. Streamed pages are touched (LRU) and requested when missing. */
   pageReady(spriteId: number): boolean {
     const a = this.lazyOf(spriteId); if (!a) return true;
+    if (!this.wearablesOn) { this.vram.misses++; return false; }
     if (a.lazy!.state === 2 && this.pool!.lru.touch(a.key, this.frame)) return true;
     this.vram.misses++; this.request(a); return false;
   }
@@ -721,7 +746,7 @@ export class AtlasManager {
     return { ...this.vram.stats(), poolScale: this.pool?.k ?? 0, layerSize: this.layerSize, downscale: this.downscale, coldDownscale: this.coldDownscale, hotAtlases: this.tiers.hot.length, coldAtlases: this.tiers.cold.length };
   }
   private request(a: AtlasRT): void {
-    if (!this.pool || a.lazy!.state !== 0 || this.queue.includes(a)) return;
+    if (!this.pool || !this.wearablesOn || a.lazy!.state !== 0 || this.queue.includes(a)) return;
     if (!this.pool.lru.canAllocate(a.key, this.frame)) return; // every slot holds a page in use: keep the fallback, retry later
     this.queue.push(a); this.vram.pending = this.queue.length + this.inflight; this.pump();
   }
@@ -752,6 +777,7 @@ export class AtlasManager {
     };
     const [cc, tc] = await Promise.all([chain(img, "high"), tint ? chain(tint, "pixelated") : Promise.resolve(null)]);
     if (g !== this.gen) return;
+    if (!this.vram.canPageIn(p.slotBytes)) { this.pageBudgetRefusals++; a.lazy!.state = 0; return; } // pages count against the budget
     const slot = p.lru.allocate(a.key, this.frame);
     if (!slot) { a.lazy!.state = 0; return; } // pool full of pages drawn this frame: retried on next pageReady
     if (slot.evicted !== undefined) {
@@ -762,14 +788,24 @@ export class AtlasManager {
     const layer = p.first + Math.floor(slot.slot / p.perLayer), si = slot.slot % p.perLayer;
     const px = (si % p.cols) * (p.sw + POOL_GAP), py = Math.floor(si / p.cols) * (p.sh + POOL_GAP);
     const gl = this.gl; gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false); gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-    const put = (tex: WebGLTexture | null, levels: ImageLike[]) => {
+    const pre = gl.getError(); if (pre === gl.OUT_OF_MEMORY) this.onFault?.("page", `GL_OUT_OF_MEMORY pending before page-in ${a.key}`);
+    const maxL = this.texLevels || Math.floor(Math.log2(this.layerSize)) + 1;
+    const put = (tex: WebGLTexture | null, levels: ImageLike[], cap: number) => {
       if (!tex) return; gl.bindTexture(gl.TEXTURE_2D_ARRAY, tex);
-      levels.forEach((im, l) => gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, l, px >> l, py >> l, layer, im.width, im.height, 1, gl.RGBA, gl.UNSIGNED_BYTE, im as TexImageSource));
+      levels.slice(0, cap).forEach((im, l) => gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, l, px >> l, py >> l, layer, im.width, im.height, 1, gl.RGBA, gl.UNSIGNED_BYTE, im as TexImageSource));
     };
-    put(this.tex, cc);
-    if (tc && this.tintMaskTex) { gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.tintMaskTex); tc.slice(SIDE_SHIFT).forEach((im, l) => gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, l, px >> (l + SIDE_SHIFT), py >> (l + SIDE_SHIFT), layer, im.width, im.height, 1, gl.RGBA, gl.UNSIGNED_BYTE, im as TexImageSource)); }
+    put(this.tex, cc, maxL);
+    if (tc && this.tintMaskTex) { gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.tintMaskTex); tc.slice(SIDE_SHIFT, SIDE_SHIFT + Math.max(1, maxL - SIDE_SHIFT)).forEach((im, l) => gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, l, px >> (l + SIDE_SHIFT), py >> (l + SIDE_SHIFT), layer, im.width, im.height, 1, gl.RGBA, gl.UNSIGNED_BYTE, im as TexImageSource)); }
     for (const im of [...cc, ...(tc ?? [])]) if (im !== img && im !== tint && typeof (im as ImageBitmap).close === "function") (im as ImageBitmap).close();
     for (const im of [img, tint]) if (im && typeof (im as ImageBitmap).close === "function") (im as ImageBitmap).close();
+    const err = gl.getError();
+    if (err !== gl.NO_ERROR) {
+      // the driver refused the upload (Mali commits pages lazily: OOM shows up here, not at texStorage3D); free the slot,
+      // keep the body-only fallback and report so the renderer steps down its fallback ladder
+      p.lru.remove(a.key); a.lazy!.state = 0; a.layer = -1; this.pageFaults++;
+      const msg = `page-in ${a.key}: ${err === gl.OUT_OF_MEMORY ? "OUT_OF_MEMORY" : "0x" + err.toString(16)}`;
+      if (this.uploadErrors.length < 32) this.uploadErrors.push(msg); this.onFault?.("page", msg); return;
+    }
     a.layer = layer; a.px = px; a.py = py; a.scale = p.k;
     a.masks = tc ? { tintmask: { width: W, height: H } as ImageLike } : {}; // flag only (CPU pixels released)
     this.writeFrames(a, this.table, this.tintRowMap);

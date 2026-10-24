@@ -21,6 +21,7 @@ import type { StyleConfig } from "./style.js";
 import type { TransformSource } from "./transformSource.js";
 import type { VfxLayer } from "./vfx.js";
 import { LayerCache, activeExpression, readAppearanceSlot, type AppearanceBinding, type CachedLayer } from "./character/layers.js";
+import { nearestCutoff } from "./gl/fallback.js";
 
 export const INSTANCE_FLOATS = 36;
 /** Depth offset of held items vs the body (must exceed depth-key precision; < the next tile row). */
@@ -316,6 +317,11 @@ export class SpriteBatch {
   characterOpts = { outline: "union" as "union" | "body", minorLayerMinZoom: 0.75 };
   /** Per-frame stats: characters with Appearance drawn, extra layer instances pushed. */
   characters = 0; layerInstances = 0;
+  /** Fallback step 2: only the nearest `maxDressed` layered characters (to the view centre) draw their wearables; the rest body-only. */
+  maxDressed = Infinity;
+  /** Characters drawn body-only by the maxDressed cap last frame. */
+  dressCapped = 0;
+  private dressD2 = new Float32Array(64); private dressN = 0; private dressCut = Infinity; private dressDrawn = 0;
   private layerRes = newResolved();
   /** Entities whose pieces are currently cut away (debug/stat). */
   cutawayActive = false;
@@ -441,6 +447,8 @@ export class SpriteBatch {
     const lodMinor = (cx.zoom ?? 1) < this.characterOpts.minorLayerMinZoom; const hitOf = cx.bindings.hitFlash;
     const outlineOn = cx.style.outline.enabled && this.characterOpts.outline === "union";
     this.characters = 0; this.layerInstances = 0;
+    // nearest-N cutoff from last frame's candidate distances (one frame lag, no per-frame sort of all sprites)
+    this.dressCut = nearestCutoff(this.dressD2, this.dressN, this.maxDressed); this.dressN = 0; this.dressDrawn = 0; this.dressCapped = 0;
     if (this.layerCache && (this.frameNo & 255) === 0) this.layerCache.prune((e) => world.isAlive(e));
     const hw = this.iso.tileW / 2, hh = this.iso.tileH / 2, zs = this.iso.zStep, zf = this.zFactor;
     const margin = 256;
@@ -563,7 +571,14 @@ export class SpriteBatch {
       if (bodyL) this.writeLayerTint(o0, bodyL);
       if (e === this.focusEntity && occ.silhouette) { this.silInst.set(o0.subarray(0, INSTANCE_FLOATS)); this.silInst[27] = 0; this.silOn = true; }
       this.pushOcc(o0, 0, occT, occ.mode);
-      if (layers && layers.length) {
+      let dress = true;
+      if (layers && layers.length && Number.isFinite(this.maxDressed)) {
+        const dx = sx - (r0x + r1x) * 0.5, dy = sy - (r0y + r1y) * 0.5, d2 = dx * dx + dy * dy;
+        if (this.dressN >= this.dressD2.length) { const g = new Float32Array(this.dressD2.length * 2); g.set(this.dressD2); this.dressD2 = g; }
+        this.dressD2[this.dressN++] = d2;
+        dress = d2 <= this.dressCut && this.dressDrawn < this.maxDressed; if (dress) this.dressDrawn++; else this.dressCapped++;
+      }
+      if (layers && layers.length && dress) {
         this.characters++;
         // copy the body instance (pivot, flip, seed -> same shiver, status fx, occlusion, flash) and swap frame + tint;
         // keys step by LAYER_BIAS in resolveLayers order so a character's layers stay contiguous; outline-only copies

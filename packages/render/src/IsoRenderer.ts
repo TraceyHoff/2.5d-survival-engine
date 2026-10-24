@@ -41,6 +41,7 @@ import type { TransformSource } from "./transformSource.js";
 import { VfxLayer } from "./vfx.js";
 import { BurningFx } from "./burning.js";
 import type { Renderer } from "./types.js";
+import { BlankWatchdog, FallbackLadder, FallbackStep, FALLBACK_STEP_NAMES } from "./gl/fallback.js";
 import { fboStatusName, formatDiagReport, glErrorName, isEmptyScene, newDiag, parseDiagFlag, SAMPLE_POINTS, type DiagReadback, type RenderDiag, type Rgba } from "./gl/diag.js";
 
 export interface IsoRendererOptions {
@@ -163,6 +164,37 @@ export class IsoRenderer implements Renderer {
   get diag(): RenderDiag { return this.diagState; }
   /** Seconds of renderer time (animation clock for water, flicker, particles). */
   time = 0;
+  /** Runtime GPU-memory fallback ladder (wearables -> dressed cap -> low atlas tier -> safe); see gl/fallback.ts. */
+  readonly fallback = new FallbackLadder();
+  /** Ongoing blank-frame watchdog (centre pixels every 60 frames for the whole session). */
+  readonly watchdog = new BlankWatchdog();
+  /** Dressed characters kept at fallback step 2 (nearest to the view centre). */
+  static DRESS_CAP = 6;
+  /** Frames rendered since construction (frameCount restarts on a safe-mode retry). */
+  private totalFrames = 0;
+  /** Report a GPU allocation / render-target fault: steps the fallback ladder down once (with cooldown). */
+  fault(source: string, detail: string): void {
+    const step = this.fallback.fault(source, detail, this.totalFrames);
+    this.diagState.messages.push(`${source}: ${detail}`); if (this.diagState.messages.length > 16) this.diagState.messages.shift();
+    if (step === null) return;
+    const msg = `GPU fallback step ${step} (${FALLBACK_STEP_NAMES[step]}) after ${source}: ${detail}`;
+    this.capabilities.fallbacks.push(`runtime fallback: ${FALLBACK_STEP_NAMES[step]}`);
+    this.applyFallback(step);
+    this.emit({ kind: "oom", message: msg, detail: this.diagReport() });
+  }
+  private applyFallback(step: number): void {
+    if (step >= FallbackStep.EvictWearables) this.atlas.setWearables(false);
+    if (step >= FallbackStep.CapDressed) this.sprites.maxDressed = IsoRenderer.DRESS_CAP;
+    if (step === FallbackStep.LowTier) {
+      this.atlas.forceLowTier().then(() => { this.w = 0; }, (e: unknown) => this.fault("atlas", `low-tier rebuild failed: ${String(e)}`));
+    }
+    if (step >= FallbackStep.Safe) this.enterSafe("fallback ladder");
+  }
+  private enterSafe(why: string): void {
+    const d = this.diagState; if (d.safe) return;
+    d.safe = true; d.autoSafe++; this.capabilities.safe = true; this.capabilities.fallbacks.push(`auto safe mode (${why})`);
+    const w = this.canvas.clientWidth || this.w, h = this.canvas.clientHeight || this.h; this.w = 0; this.h = 0; this.resize(w, h, this.camera.dpr); this.frameCount = 0;
+  }
 
   constructor(readonly canvas: HTMLCanvasElement, opts: IsoRendererOptions = {}) {
     const gl = canvas.getContext("webgl2", {
@@ -189,6 +221,8 @@ export class IsoRenderer implements Renderer {
     this.style = mergeStyle(DEFAULT_STYLE, opts.style ?? {});
     this.atlas = new AtlasManager(gl, opts.assets ?? new AssetManager(), { layerSize: caps.atlasLayerSize, textureBudgetMB: caps.textureBudgetMB });
     this.atlas.onError = (e) => this.emit(e);
+    this.atlas.onFault = (src, detail) => this.fault(src, detail);
+    if (caps.safe) this.fallback.atLeast(FallbackStep.Safe);
     this.atlas.setStatusTints(this.style.statusTints);
     this.terrain = new TilemapRenderer(gl, this.iso, this.zFactor);
     this.sprites = new SpriteBatch(gl, this.iso, this.zFactor);
@@ -286,12 +320,20 @@ export class IsoRenderer implements Renderer {
       gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, this.depthRb);
       if (!this.capabilities.fallbacks.includes("scene depth DEPTH_COMPONENT16")) this.capabilities.fallbacks.push("scene depth DEPTH_COMPONENT16");
     }
-    this.diagState.fbo.scene = fboStatusName(gl.checkFramebufferStatus(gl.FRAMEBUFFER));
-    assertFramebuffer(gl, "scene");
+    const fst = gl.checkFramebufferStatus(gl.FRAMEBUFFER); const allocErr = gl.getError();
+    this.diagState.fbo.scene = fboStatusName(fst);
+    if (fst !== gl.FRAMEBUFFER_COMPLETE || allocErr === gl.OUT_OF_MEMORY) {
+      // out of memory / incomplete after the resize: step down (frees atlas memory or drops to safe targets) and retry
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      this.fault("fbo", `scene ${w}x${h} ${fboStatusName(fst)}${allocErr ? " " + glErrorName(allocErr) : ""}`);
+      if (fst !== gl.FRAMEBUFFER_COMPLETE && this.fallback.exhausted) { gl.bindFramebuffer(gl.FRAMEBUFFER, this.sceneFbo); assertFramebuffer(gl, "scene"); }
+      if (fst !== gl.FRAMEBUFFER_COMPLETE) { this.w = 0; return; }
+    }
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     this.lights.resize(w, h);
     this.bloom.resize(w, h);
     this.checkTargets();
+    const e2 = gl.getError(); if (e2 === gl.OUT_OF_MEMORY) this.fault("fbo", `lightmap/bloom ${w}x${h} OUT_OF_MEMORY`);
   }
 
   /** checkFramebufferStatus on lightmap + bloom chain; createColorTarget already fell back to RGBA8, an incomplete one is rebuilt RGBA8 once. */
@@ -301,7 +343,7 @@ export class IsoRenderer implements Renderer {
     d.lightmap = st(this.lights.fbo); this.bloom.fbos.forEach((f, i) => { d[`bloom${i}`] = st(f); });
     const bad = Object.entries(d).filter(([, v]) => v !== "COMPLETE" && v !== "none");
     if (bad.length) {
-      const msg = `render targets incomplete (${bad.map(([k, v]) => `${k}=${v}`).join(", ")}): rebuilt as RGBA8`; this.diagState.messages.push(msg); this.emit({ kind: "fbo", message: msg });
+      const msg = `render targets incomplete (${bad.map(([k, v]) => `${k}=${v}`).join(", ")}): rebuilt as RGBA8`; this.diagState.messages.push(msg); this.emit({ kind: "fbo", message: msg }); this.fault("fbo", msg);
       const w = this.w, h = this.h; (this.lights as unknown as { w: number }).w = 0; (this.bloom as unknown as { w: number }).w = 0; this.lights.resize(w, h); this.bloom.resize(w, h);
     }
   }
@@ -313,7 +355,7 @@ export class IsoRenderer implements Renderer {
     const dt = this.lastNow < 0 ? 0 : Math.min(0.1, (t0 - this.lastNow) / 1000);
     this.lastNow = t0; this.time += dt;
     const stats = (this.stats = newStats());
-    this.frameCount++; const probe = this.frameCount === 1 || this.frameCount === 60; const diag = this.diagState;
+    this.frameCount++; this.totalFrames++; const probe = this.frameCount === 1 || this.frameCount === 60; const diag = this.diagState;
     const pass = (name: string): void => { if (probe) { const e = gl.getError(); if (diag.enabled || e !== gl.NO_ERROR) diag.passErrors[name] = glErrorName(e); } };
     const gl = this.gl; const style = this.style;
     if (this.w === 0) this.resize(this.canvas.clientWidth || 800, this.canvas.clientHeight || 600, 1);
@@ -438,6 +480,7 @@ export class IsoRenderer implements Renderer {
     stats.drawCalls++;
     pass("composite");
     if (probe) this.probe(stats, clearBg);
+    else if (this.watchdog.due(this.totalFrames)) this.watch(stats);
 
     // --- 4. weather particles --------------------------------------------------------------
     if (this.settings.weather) this.weather.draw(this.w, this.h, this.camera.x * this.camera.scale, this.camera.y * this.camera.scale, this.camera.dpr, ws, this.time, amb, stats);
@@ -446,6 +489,20 @@ export class IsoRenderer implements Renderer {
     stats.cpuMs = performance.now() - t0;
   }
 
+  private readSamples(fbo: WebGLFramebuffer | null, w: number, h: number): Rgba[] {
+    const gl = this.gl; gl.bindFramebuffer(gl.FRAMEBUFFER, fbo); if (fbo) gl.readBuffer(gl.COLOR_ATTACHMENT0);
+    const px = new Uint8Array(4);
+    const out = SAMPLE_POINTS.map(([x, y]) => { gl.readPixels(Math.min(w - 1, Math.floor(x * w)), Math.min(h - 1, Math.floor(y * h)), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); return [px[0]!, px[1]!, px[2]!, px[3]!] as Rgba; });
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null); return out;
+  }
+  /** Blank-frame watchdog check (whole session): flat scene + output while instances were drawn -> fallback step. */
+  private watch(stats: FrameStats): void {
+    const instances = stats.sprites + stats.staticInstances + stats.tiles;
+    const scene = this.readSamples(this.sceneFbo, this.w, this.h), output = this.readSamples(null, this.w, this.h);
+    const err = this.gl.getError();
+    if (err === this.gl.OUT_OF_MEMORY) this.fault("frame", "GL_OUT_OF_MEMORY during the frame");
+    if (this.watchdog.sample(this.totalFrames, scene, output, instances)) this.fault("watchdog", `flat frame ${this.watchdog.consecutive}x in a row (${instances} instances)`);
+  }
   /** Frame-1/60 readback: a few pixels of the scene FBO, lightmap and final output; empty scene with draws -> onError + one safe retry. */
   private probe(stats: FrameStats, bg: readonly number[]): void {
     const gl = this.gl; const d = this.diagState;
@@ -469,7 +526,7 @@ export class IsoRenderer implements Renderer {
       const retry = !d.safe && d.autoSafe === 0;
       const msg = `scene FBO empty on frame ${r.frame} (all samples = clear ${clear.slice(0, 3).join(",")}) although ${instances} instances / ${stats.drawCalls} draws were submitted` + (retry ? "; retrying in safe mode (?gl=safe)" : "");
       d.messages.push(msg); this.emit({ kind: "diag", message: msg, detail: this.diagReport() });
-      if (retry) { d.safe = true; d.autoSafe++; this.capabilities.safe = true; this.capabilities.fallbacks.push("auto safe mode after empty scene readback"); const w = this.canvas.clientWidth || this.w, h = this.canvas.clientHeight || this.h; this.w = 0; this.h = 0; this.resize(w, h, this.camera.dpr); this.frameCount = 0; }
+      if (retry) { this.fallback.atLeast(FallbackStep.Safe); this.applyFallback(FallbackStep.Safe); }
     }
   }
 
@@ -480,7 +537,11 @@ export class IsoRenderer implements Renderer {
     let vramMB: number | undefined; try { const t = this.vram?.totalMB; if (Number.isFinite(t)) vramMB = Math.round(t); } catch { /* atlas not ready */ }
     try {
       const r = formatDiagReport(this.diagState, { renderer: c.renderer, mobile: c.mobile, precision: c.precision.fragment, budgetMB: c.textureBudgetMB, ...(vramMB !== undefined ? { vramMB } : {}), fallbacks: c.fallbacks, problems: c.problems });
-      return this.frameCount === 0 ? r + "\n(no frame rendered yet: readbacks appear after frames 1 and 60)" : r;
+      const a = this.atlas; const sp = this.sprites;
+      const extra = [...this.fallback.report(), this.watchdog.report(),
+        `wearables: ${a.wearablesEnabled ? "on" : "OFF"}, page faults ${a.pageFaults}, budget refusals ${a.pageBudgetRefusals}; dressed cap ${Number.isFinite(sp.maxDressed) ? sp.maxDressed : "none"} (${sp.dressCapped} body-only last frame)`].join("\n");
+      const out = r + "\n" + extra;
+      return this.frameCount === 0 ? out + "\n(no frame rendered yet: readbacks appear after frames 1 and 60)" : out;
     } catch (e) { return `render diag unavailable: ${String(e)}`; }
   }
 

@@ -35,6 +35,12 @@ export class VramAccountant {
   /** GPU bytes allocated (resident arrays + reserved pool). */
   get allocatedBytes(): number { return this.residentBytes + this.reservedBytes; }
   get withinBudget(): boolean { return this.allocatedBytes <= this.budgetBytes; }
+  /**
+   * Wearable pages count against the budget: a page-in is allowed while resident arrays + pages in use + this page
+   * fit. The pool's storage is allocated up front, but on lazily-committing drivers (Mali) the pages are what
+   * actually consumes memory, and a pool forced over budget (no free layers) must not keep paging in.
+   */
+  canPageIn(bytes: number): boolean { return this.residentBytes + this.streamedBytes + bytes <= this.budgetBytes; }
   /** Bytes free for more pool storage. */
   get headroomBytes(): number { return Math.max(0, this.budgetBytes - this.allocatedBytes); }
   stats(): VramStats {
