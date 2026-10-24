@@ -506,3 +506,33 @@ Identity is persisted in the `agents` record namespace. Gameplay supplies `refer
 - **No ECS change** (schema hash stays 232cdb14).
 
 **Consequences:** every player sees the same sky, and a reconnect or tick correction never makes the light jump. A full day and night has visible golden hour, blue hour and moon phases. The WebGL creator preview still draws its own solid backdrop (that is the Renderer's area); a transparent backdrop there can come later.
+
+
+## ADR-116: Maxed-out graphics on powerful devices (probe-based tiers, Ultra, console full art)
+
+**Context:** Auto started every device on the same governor level. Desktop budgets were 768 MB and DPR 3. Consoles were capped at 256 MB and 1080p, with downscaled pages, because the Xbox had run out of memory (OOM) at 768 MB with a bad FBO format. Detection was mostly based on the UA string. The governor stepped down after 1.5 s of frames slower than 60 fps, so short hitches lowered quality on strong PCs. A context loss sent every device straight to `lowend`.
+
+**Decision:**
+- **Tiers** are low, medium, high and **ultra**. Ultra means native DPR up to 4 (capped at 4K or the canvas size), a full-resolution lightmap, bloom, full weather, particles x1.25, clutter x1.25, and maximum sprite, animation and wearable detail. The Settings presets are Auto, Low, Medium, High and Ultra. *High* now really means high (it used to map to ultra).
+- **Probe-based classification** (`render/deviceTier.ts` `classifyDevice`) uses the renderer string, MAX_TEXTURE_SIZE, hardwareConcurrency, deviceMemory, touch, and the RGBA8 FBO result. The UA is only used to detect consoles and phones.
+
+| device | class | Auto start | ceiling | atlas budget | backbuffer |
+|---|---|---|---|---|---|
+| Desktop dGPU (GeForce/RTX/GTX, Radeon RX/Pro, Arc), Apple M-series | desktop-dgpu | **ultra** | ultra | 1024 MB | DPR<=4, <=4K |
+| dGPU with <4 threads, <4 GB, or MAX_TEXTURE_SIZE <8192 | desktop-dgpu | high | ultra | 768 MB | DPR<=3, <=4K |
+| Intel UHD/Iris, AMD Radeon(TM) Graphics (iGPU) | desktop-igpu | high | high | 768 MB | DPR<=3 |
+| Masked/unknown desktop renderer | desktop-unknown | high (the bench can promote it) | ultra | 768 MB | DPR<=3 |
+| Xbox Edge (SraKmd) / console UA | console | **ultra** | ultra | 448 MB streamed, RGBA8 targets | native, <=4K |
+| iPhone/iPad, Apple GPU, Immortalis, Adreno 73x+, Xclipse | mobile-high | high | high | 128 MB | native DPR, 3.2 MP |
+| Android Mali and other phones | mobile | medium | high | 128 MB | native DPR, 3.2 MP |
+| SwiftShader/llvmpipe/Basic Render/WARP, failed RGBA8 FBO | software | low (auto lowend) | medium | 160 MB | DPR 1, 720p |
+
+- **Bench:** a median of 120 frames after 30 warm-up frames. Under 9 ms promotes an unknown or dGPU desktop one level, up to its ceiling. Over 25 ms demotes one level. It is skipped when the device has a remembered tier.
+- **Governor hysteresis:** it steps down one level only after more than 5 s with the frame-time EMA slower than 50 fps (time below 30 fps counts double). It steps up after 8 s of headroom (EMA < 14 ms, about 71 fps). Between 50 and 71 fps nothing changes. There is a 3 s cooldown after each change, a level that was stepped down from needs 4x the up time before it is retried, and the governor never goes above the device ceiling.
+- **Per-device memory:** after the Auto level has held for 30 s, it is saved in localStorage (`survivaz.render.deviceTier`) under a hash of the renderer and UA. The next start uses that level and skips the bench. A context loss clears it.
+- **Context loss ladder:** full → **high** (`?gl=high`: Ultra capped at High with the pre-ADR-116 budgets, i.e. console 256 MB / 1080p and desktop 768 MB) → lowend → safe. Debug (dots) is never chosen automatically. MAX_RELOADS is now 4.
+- **Settings:** the Auto option reads "Auto (Ultra) — adaptive", showing the current pick, and a line below it shows the detected tier and device class (and "remembered" when it applies).
+- **Bots:** on strong CPUs (>= 8 threads, not mobile or lowend), far bots in the local host perceive every tick instead of every 4th.
+- **No ECS change** (schema hash stays 232cdb14).
+
+**Consequences:** desktop PCs with a discrete GPU and consoles start fully maxed out. Phones and weak devices keep their conservative starts. Short frame drops no longer lower quality. An Xbox that runs out of memory falls back to High, which is the known-good 256 MB setup, not lowend. Clutter density follows the tier's `clutter` value on the next start, which the client view wires up later (for now it stays 1 unless lowend).

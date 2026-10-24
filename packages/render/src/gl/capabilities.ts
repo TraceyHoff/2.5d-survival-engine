@@ -14,8 +14,9 @@
  */
 
 import { isBasicAdapter, isConsole } from "./sceneTarget.js";
+import { classifyDevice, type DeviceTier } from "../deviceTier.js";
 
-export type GlFlag = "lowend" | "mediump" | "nofloat" | "lowmem" | "safe";
+export type GlFlag = "lowend" | "mediump" | "nofloat" | "lowmem" | "safe" | "high";
 
 export interface RenderCapabilities {
   renderer: string; vendor: string; mobile: boolean; lowEnd: boolean; /** software / basic / remote adapter (auto lowend) */ basicAdapter: boolean; /** console browser (Xbox): full art, 256 MB atlas budget, <=1080p */ console: boolean; flags: GlFlag[];
@@ -37,6 +38,8 @@ export interface RenderCapabilities {
   problems: string[];
   /** `?gl=safe` (or the automatic empty-scene retry): no float targets, no bloom/LUT, direct scene x light composite. */
   safe: boolean;
+  /** ADR-116 probe-based device tier (Auto start + ceiling); `?gl=high` (post-context-loss) caps it at high. */
+  device: DeviceTier;
   /** Filled under `?diag=1`: per-pass gl errors, FBO/texture status and frame-1/60 pixel readbacks (see IsoRenderer.diagReport()). */
   diag?: import("./diag.js").RenderDiag;
 }
@@ -47,7 +50,7 @@ export interface RenderError { kind: "shader" | "link" | "fbo" | "diag" | "conte
 export function parseGlFlags(search: string | undefined): GlFlag[] {
   if (!search) return [];
   const v = new URLSearchParams(search).get("gl"); if (!v) return [];
-  const all: GlFlag[] = ["lowend", "mediump", "nofloat", "lowmem", "safe"];
+  const all: GlFlag[] = ["lowend", "mediump", "nofloat", "lowmem", "safe", "high"];
   return v.split(",").map((s) => s.trim().toLowerCase()).filter((s): s is GlFlag => (all as string[]).includes(s));
 }
 
@@ -63,7 +66,7 @@ export function probeCompressedTextures(gl: { getExtension(name: string): unknow
   return { etc2: has("WEBGL_compressed_texture_etc"), astc: has("WEBGL_compressed_texture_astc"), s3tc: has("WEBGL_compressed_texture_s3tc"), bptc: has("EXT_texture_compression_bptc") };
 }
 
-export function detectCapabilities(gl: WebGL2RenderingContext, opts: { flags?: GlFlag[]; userAgent?: string; layerSize?: number } = {}): RenderCapabilities {
+export function detectCapabilities(gl: WebGL2RenderingContext, opts: { flags?: GlFlag[]; userAgent?: string; layerSize?: number; cores?: number; memoryGB?: number } = {}): RenderCapabilities {
   const flags = [...new Set(opts.flags ?? [])];
   const has = (f: GlFlag): boolean => flags.includes(f) || (f !== "lowend" && flags.includes("lowend"));
   const p = (n: number): number => Number(gl.getParameter(n)) || 0;
@@ -122,21 +125,28 @@ export function detectCapabilities(gl: WebGL2RenderingContext, opts: { flags?: G
   // under ~160 MB. Memory comes from cold tiers + eviction, not from blurring visible art (see AtlasManager.fitBudget).
   const console_ = isConsole(renderer, ua) && !basic;
   // console: ~half of the ~512 MB the browser GPU process gets; atlases fit by KTX2 + cold-tier downscale, never dropped
-  const textureBudgetMB = lowmem || flags.includes("safe") ? 160 : mobile ? 128 : console_ ? 256 : 768;
-  if (console_) fallbacks.push(`console GPU (${renderer.slice(0, 40)}): atlas budget ${textureBudgetMB} MB, RGBA8 targets, <=1080p`);
+  // ADR-116: probe-based tier. Ultra (desktop dGPU / console) gets full-res @2x pages + larger streamed budgets; ?gl=high
+  // (gl-recovery after a context loss on ultra) keeps the pre-ADR-116 budgets (desktop 768, console 256 MB / 1080p).
+  const nav = typeof navigator !== "undefined" ? navigator as Navigator & { deviceMemory?: number } : undefined;
+  const device = classifyDevice({ renderer, userAgent: ua, maxTextureSize: limits.maxTextureSize, cores: opts.cores ?? nav?.hardwareConcurrency ?? 0, memoryGB: opts.memoryGB ?? nav?.deviceMemory ?? 0, touchPoints: nav?.maxTouchPoints ?? 0 });
+  const capHigh = flags.includes("high") || lowEnd;
+  if (capHigh && device.ceiling > 2) { device.ceiling = 2; device.start = Math.min(device.start, 2); device.name = (["low", "medium", "high", "ultra"] as const)[device.start]!; device.reasons.push(lowEnd ? "lowend: capped at high" : "?gl=high (context loss): capped at high"); }
+  const ultra = device.start >= 3 && !lowmem && !flags.includes("safe");
+  const textureBudgetMB = lowmem || flags.includes("safe") ? 160 : mobile ? 128 : console_ ? (ultra ? 448 : 256) : ultra ? 1024 : 768;
+  if (console_) fallbacks.push(`console GPU (${renderer.slice(0, 40)}): atlas budget ${textureBudgetMB} MB (streamed), RGBA8 targets, ${ultra ? "native res" : "<=1080p"}`);
   if (flags.includes("safe")) fallbacks.push("safe mode (?gl=safe): no float targets, bloom or LUT; direct composite");
   if (lowmem || mobile) fallbacks.push(`atlas texture budget ${textureBudgetMB} MB${mobile ? " (mobile)" : ""}`);
   // Mobile renders at the native DPR (a 2.625 phone backed at 2x is upscaled 1.31x by the compositor = blurry); the pixel
   // budget still caps 3.5x / 1440p panels. ?gl=lowend keeps DPR 1 (explicit low-end choice).
-  const maxDpr = lowEnd ? 1 : 3;
-  const maxPixels = lowEnd ? 1280 * 720 : console_ ? 1920 * 1080 : mobile ? 3_200_000 : 3840 * 2160;
+  const maxDpr = lowEnd ? 1 : ultra ? 4 : 3;
+  const maxPixels = lowEnd ? 1280 * 720 : console_ && !ultra ? 1920 * 1080 : mobile ? 3_200_000 : 3840 * 2160;
   if (maxDpr < 3 || mobile) fallbacks.push(`DPR capped at ${maxDpr}, max ${maxPixels} px`);
   return {
     renderer, vendor, mobile, lowEnd, basicAdapter: basic, console: console_, flags, ext, compressed: probeCompressedTextures(gl, flags.includes("safe")),
     formats: { scene: "RGBA8", emissive: "RGBA8", lightmap: "RGBA8", bloom: "RGBA8", lightmapEncode: 0.5, dataTables: "RGBA32F", lut: "RGBA8-2D-strip" },
     floatFilter: ext.floatLinear ? "LINEAR" : "NEAREST",
     precision: { fragmentHighp, fragment: fragmentHighp ? "highp" : "mediump", vertex: vp && vp.precision >= 23 ? "highp" : "mediump", fragmentHighpBits },
-    limits, atlasLayerSize, textureBudgetMB, maxDpr, maxPixels, fallbacks, problems, safe: flags.includes("safe"),
+    limits, atlasLayerSize, textureBudgetMB, maxDpr, maxPixels, fallbacks, problems, safe: flags.includes("safe"), device,
   };
 }
 

@@ -33,7 +33,7 @@ import { LightTable, type LightSpec } from "./lights.js";
 const CAM_ANIMAL = typeof location !== "undefined" && new URLSearchParams(location.search).get("cam") === "animal";
 /** Max bytes for the sprite texture array (mips included) before customization layers are dropped. */
 /** ADR-110 clutter quality: lowend / safe = 0.35 density, radius 1 chunk, 400 sprites; else 1, 2 chunks, 1600. */
-const CLUTTER = (() => { const q = new URLSearchParams(globalThis.location?.search ?? ""); const low = q.get("gl") === "lowend" || q.get("safe") === "1" || effectiveLevel(globalThis.location?.search ?? "") !== "full";
+const CLUTTER = (() => { const q = new URLSearchParams(globalThis.location?.search ?? ""); const low = q.get("gl") === "lowend" || q.get("safe") === "1" || ["lowend", "safe", "debug"].includes(effectiveLevel(globalThis.location?.search ?? ""));
   return q.get("clutter") === "0" ? { density: 0, radius: 0, cap: 0 } : low ? { density: 0.35, radius: 1, cap: 400 } : { density: 1, radius: 2, cap: 1600 }; })();
 /** ?gl=lowend: characters beyond the nearest N draw body-only. */
 const DRESSED_LOWEND = 8;

@@ -87,7 +87,7 @@ let deleteInfo: (() => { label: string; message: string; settingsOption: boolean
 let sessionInfo: (() => { label: string; leaveLabel: string; onLeave: () => void }) | undefined;
 function startMenus(): void {
   if (menus) return;
-  menus = new GameMenus({ root, input, onQuit: quitToMenu, session: () => sessionInfo?.(), deleteProgress: () => deleteInfo?.(), setQuality: (p) => iso?.renderer.setQualityPreset(p), gameplay: { ctx: menuCtx, send: sendIntent, social, startPlacing: (sel) => buildMode.start(sel) },
+  menus = new GameMenus({ root, input, onQuit: quitToMenu, session: () => sessionInfo?.(), deleteProgress: () => deleteInfo?.(), setQuality: (p) => iso?.renderer.setQualityPreset(p), qualityInfo: () => (iso && "quality" in iso.renderer ? (iso.renderer as { quality: { autoLabel(): string; detected?: { name: string; klass: string; remembered: boolean } | undefined } }).quality : undefined), gameplay: { ctx: menuCtx, send: sendIntent, social, startPlacing: (sel) => buildMode.start(sel) },
     onChat: (text, channel, to) => { if (!session.client?.chat.send(channel as ChatChannel, text, to ? { to } : {})) menus?.pushChat("(not connected — message not sent)"); } });
 }
 /** Live data for the gameplay panels: the replicated world + local player; names via NetClient's NamesClient. */

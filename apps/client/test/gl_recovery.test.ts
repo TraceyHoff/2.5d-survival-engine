@@ -7,7 +7,7 @@ const kv = () => { const m = new Map<string, string>(); return { getItem: (k: st
 describe("gl recovery levels", () => {
   it("url levels", () => { const s = kv(); expect(effectiveLevel("", s)).toBe("full"); expect(effectiveLevel("?gl=lowend", s)).toBe("lowend"); expect(effectiveLevel("?safe=1", s)).toBe("safe"); expect(effectiveLevel("?renderer=debug", s)).toBe("debug"); });
   it("each loss steps down to safe (sprites kept), never auto debug/dots", () => {
-    const s = kv(); expect(stepDownAfterLoss("", s)).toBe("lowend"); expect(stepDownAfterLoss("", s)).toBe("safe"); expect(stepDownAfterLoss("", s)).toBe("safe");
+    const s = kv(); expect(stepDownAfterLoss("", s)).toBe("high"); expect(levelFlags("high")).toEqual(["high"]); expect(stepDownAfterLoss("", s)).toBe("lowend"); expect(stepDownAfterLoss("", s)).toBe("safe"); expect(stepDownAfterLoss("", s)).toBe("safe");
     expect(effectiveLevel("", s)).toBe("safe");
   });
   it("flags", () => { expect(levelFlags("full")).toBeUndefined(); expect(levelFlags("lowend")).toEqual(["lowend"]); expect(levelFlags("safe")).toEqual(["lowend", "safe"]); });
@@ -20,9 +20,9 @@ describe("attachContextRecovery", () => {
     const reload = vi.fn(), notify = vi.fn(); attachContextRecovery(canvas, { notify, reload, search: "", timeoutMs: 1000 });
     const ev = { preventDefault: vi.fn() } as unknown as Event; return { s, ls, reload, notify, ev };
   };
-  it("loss: preventDefault + lowend saved; restore reloads once", () => {
+  it("loss: preventDefault + high (not lowend) saved; restore reloads once", () => {
     const t = setup(); t.ls["webglcontextlost"]!(t.ev);
-    expect((t.ev.preventDefault as ReturnType<typeof vi.fn>)).toHaveBeenCalled(); expect(t.s.m.get(GL_LEVEL_KEY)).toBe("lowend"); expect(t.notify).toHaveBeenCalledOnce();
+    expect((t.ev.preventDefault as ReturnType<typeof vi.fn>)).toHaveBeenCalled(); expect(t.s.m.get(GL_LEVEL_KEY)).toBe("high"); expect(t.notify).toHaveBeenCalledOnce();
     t.ls["webglcontextrestored"]!(t.ev); t.ls["webglcontextrestored"]!(t.ev); expect(t.reload).toHaveBeenCalledTimes(1);
   });
   it("restore never arrives (canvas 0x0): reload after the timeout", () => {

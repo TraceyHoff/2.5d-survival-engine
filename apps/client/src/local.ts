@@ -35,6 +35,8 @@ export interface LocalServerOptions {
    * `defaultMaxBots()` = MOBILE_MAX_BOTS on phones / tablets (coarse pointer or UA mobile), DESKTOP_MAX_BOTS elsewhere.
    */
   maxBots?: number;
+  /** ADR-116: far-bot perception period override (default agentLodEvery(): 1 on strong CPUs, else AGENT_LOD_EVERY). */
+  agentLodEvery?: number;
   /** ADR-110: low-end quality (fewer animals); default from ?gl=lowend / ?safe=1. */
   lowEnd?: boolean;
   /** Unused (kept for API compatibility); bot behavior is seeded from the world seed. */
@@ -99,6 +101,8 @@ const hex32 = (s: string): string => { let h = 0x811c9dc5, out = ""; for (let k 
 const NO_COMMANDS = new CommandRegistry();
 /** Perception LOD for virtual players (ADR-105): tiles from the nearest human, and the far-bot perception period in ticks. */
 export const AGENT_LOD_NEAR = 40, AGENT_LOD_EVERY = 4;
+/** ADR-116: far bots think every tick on strong desktop/console CPUs (>= 8 threads, not mobile / lowend); else every 4. */
+export function agentLodEvery(d: DeviceHints = detectDevice(), cores = globalThis.navigator?.hardwareConcurrency ?? 0, lowEnd = lowEndQuery()): number { return !lowEnd && !isMobileHost(d) && cores >= 8 ? 1 : AGENT_LOD_EVERY; }
 /** Snapshot throttle for virtual players: beyond sight (12) / hearing (18) range, deltas every 4 ticks. */
 export const BOT_DISTANT_THROTTLE = { nearTiles: 24, interval: 4 } as const;
 const ACT_MASK = Act.MoveUp | Act.MoveDown | Act.MoveLeft | Act.MoveRight | Act.Sprint | Act.Gather;
@@ -155,6 +159,7 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
     return { buttons: f.actions & ACT_MASK, aimX: f.aimX, aimY: f.aimY };
   };
   const byAgent = new Map<Agent, VirtualPlayer>();
+  const LOD_EVERY = o.agentLodEvery ?? agentLodEvery();
   // Perception LOD (ADR-105): a bot farther than AGENT_LOD_NEAR tiles from every human player rebuilds its world view
   // (the O(entities) perception scan + sensors) only every AGENT_LOD_EVERY ticks, staggered by slot; its self state
   // (position, vitals) is still fresh every tick so steering stays smooth. Near bots perceive every tick.
@@ -171,8 +176,8 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
     let near = humans.length === 0; // no human: everyone is "near" (headless tests keep full fidelity)
     for (const h of humans) { const dx = h.x - t.x, dy = h.y - t.y; if (dx * dx + dy * dy <= AGENT_LOD_NEAR * AGENT_LOD_NEAR) { near = true; break; } }
     const cached = lodViews.get(vp);
-    let ph = lodPhase.get(vp); if (ph === undefined) lodPhase.set(vp, (ph = lodSlot++ % AGENT_LOD_EVERY));
-    if (!near && cached && tick - cached.tick < AGENT_LOD_EVERY && (tick + ph) % AGENT_LOD_EVERY !== 0) {
+    let ph = lodPhase.get(vp); if (ph === undefined) lodPhase.set(vp, (ph = lodSlot++ % LOD_EVERY));
+    if (!near && cached && tick - cached.tick < LOD_EVERY && (tick + ph) % LOD_EVERY !== 0) {
       const self = buildAgentSelf(vp.world, e, a); return self ? { self, world: cached.world } : undefined;
     }
     const v = buildAgentView(game.world, e, a, vp.home, undefined, nearby(t.x, t.y)); if (v) lodViews.set(vp, { world: v.world, tick }); else lodViews.delete(vp);

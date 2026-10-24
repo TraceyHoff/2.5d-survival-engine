@@ -68,6 +68,8 @@ export interface GameMenusOptions {
    */
   /** Settings → Graphics quality (render preset, persisted by @engine/render): apply to the live renderer. */
   setQuality?: (p: QualityPreset) => void;
+  /** ADR-116: the live renderer's quality controller (Auto label + detected tier). */
+  qualityInfo?: () => { autoLabel(): string; detected?: { name: string; klass: string; remembered: boolean } | undefined } | undefined;
   deleteProgress?: () => { label: string; message: string; settingsOption: boolean; run: (o: { resetSettings: boolean }) => Promise<string> } | undefined;
   showMenuBar?: boolean;
   getGamepads?: UINavOptions["getGamepads"];
@@ -164,9 +166,12 @@ export class GameMenus {
     const l1 = document.createElement("label"); l1.append("Show HUD (next start)", hud);
     const l2 = document.createElement("label"); l2.append("Fullscreen when playing", fs);
     const q = document.createElement("select");
-    for (const p of QUALITY_PRESETS) { const o = document.createElement("option"); o.value = p; o.textContent = p === "auto" ? "Auto (adaptive)" : p[0]!.toUpperCase() + p.slice(1); q.append(o); }
+    const qi = this.o.qualityInfo?.(); // ADR-116: Auto shows what it picked; the detected device tier is listed below
+    for (const p of QUALITY_PRESETS) { const o = document.createElement("option"); o.value = p; o.textContent = p === "auto" ? (qi ? `${qi.autoLabel()} — adaptive` : "Auto (adaptive)") : p[0]!.toUpperCase() + p.slice(1); q.append(o); }
     q.value = loadPreset();
     const l3 = document.createElement("label"); l3.append("Graphics quality", q);
+    if (qi?.detected) { const d = document.createElement("small"); d.dataset["role"] = "detected-tier"; d.style.cssText = "display:block;opacity:.75";
+      d.textContent = `Detected: ${qi.detected.name[0]!.toUpperCase()}${qi.detected.name.slice(1)} (${qi.detected.klass}${qi.detected.remembered ? ", remembered" : ""})`; l3.append(d); }
     const del = this.o.deleteProgress?.();
     return this.panel("settings", "Settings", [l1, l2, l3], [...(del ? [[del.label, () => this.open("delete-progress"), "alt"] as [string, () => void, string]] : []),["Save", () => { saveSettings({ ...loadSettings(), showHud: hud.checked, fullscreen: fs.checked }); const qp = parsePreset(q.value) ?? "auto"; savePreset(qp); this.o.setQuality?.(qp); this.nav.close(); }], ["Back", () => this.nav.close(), "alt"]]);
   }

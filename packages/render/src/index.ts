@@ -35,6 +35,7 @@ export * from "./character/preview.js";
 export * from "./character/preview2d.js";
 export * from "./vehicles/index.js";
 export * from "./quality.js";
+export * from "./deviceTier.js";
 export * from "./building/modular.js";
 export * from "./building/chimney.js";
 export * from "./gl/sceneTarget.js";

@@ -26,6 +26,8 @@ describe("render capabilities (mobile WebGL2)", () => {
     expect(c.mobile).toBe(false); expect(c.precision.fragment).toBe("highp"); expect(c.atlasLayerSize).toBe(2048); expect(c.textureBudgetMB).toBe(768); expect(c.maxDpr).toBe(3);
     expect(c.floatFilter).toBe("LINEAR"); expect(c.fallbacks).toEqual([]); expect(c.problems).toEqual([]);
     expect(c.formats).toMatchObject({ scene: "RGBA8", lightmap: "RGBA8", lightmapEncode: 0.5, dataTables: "RGBA32F", lut: "RGBA8-2D-strip" });
+    const u = detectCapabilities(mockGl({ renderer: "ANGLE (NVIDIA, NVIDIA GeForce RTX 3070 Direct3D11)" }), { userAgent: DESKTOP_UA, cores: 16, memoryGB: 8 }); // ADR-116 dGPU: Ultra
+    expect(u.device.klass).toBe("desktop-dgpu"); expect(u.device.start).toBe(3); expect(u.textureBudgetMB).toBe(1024); expect(u.maxDpr).toBe(4); expect(u.maxPixels).toBe(3840 * 2160);
   });
   it("Android Mali, no float exts, mediump-only: RGBA8/LDR, NEAREST, mediump + 1024 layer, 256 MB, DPR 2", () => {
     const c = detectCapabilities(mockGl({ renderer: "Mali-G57", ext: [], fragHighpBits: 0 }), { userAgent: ANDROID_UA });

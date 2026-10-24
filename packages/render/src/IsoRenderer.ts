@@ -46,7 +46,8 @@ import { VfxLayer } from "./vfx.js";
 import { BurningFx } from "./burning.js";
 import { ChimneySmoke } from "./building/chimney.js";
 import type { Renderer } from "./types.js";
-import { loadPreset, parsePreset, QualityController, type QualityPreset } from "./quality.js";
+import { loadPreset, parsePreset, QualityController, QUALITY_TIERS, type QualityPreset } from "./quality.js";
+import { benchAdjust, deviceSignature, rememberLevel, startLevel } from "./deviceTier.js";
 import { BlankWatchdog, FallbackLadder, FallbackStep, FALLBACK_STEP_NAMES } from "./gl/fallback.js";
 import { fboStatusName, formatDiagReport, glErrorName, isEmptyScene, newDiag, parseDiagFlag, SAMPLE_POINTS, type DiagReadback, type RenderDiag, type Rgba } from "./gl/diag.js";
 
@@ -97,7 +98,7 @@ export class IsoRenderer implements Renderer {
   /** Override the sky clear colour (linear-ish 0..1 RGB), e.g. a neutral backdrop for the character preview. */
   backdrop: [number, number, number] | null = null;
   readonly settings: RenderSettings = { lights: true, shadows: true, weather: true, fog: true };
-  /** Adaptive quality: Settings preset (Auto/Low/Medium/High, persisted) + frame-time governor (Auto). */
+  /** Adaptive quality: Settings preset (Auto/Low/Medium/High/Ultra, persisted; ADR-116 probe-based Auto start) + frame-time governor (Auto). */
   readonly quality = new QualityController(parsePreset(typeof location !== "undefined" ? new URLSearchParams(location.search).get("quality") : null) ?? loadPreset());
   /** Change the Settings preset (persisted to localStorage); re-lays out the backbuffer at the new resolution scale. */
   /** Camper interior pass input (VehicleView.interiors / interiorIds / interiorWall): floor -> occupants -> cutaway walls. */
@@ -248,6 +249,13 @@ export class IsoRenderer implements Renderer {
     this.diagState = caps.diag = newDiag(opts.diag ?? parseDiagFlag(typeof location !== "undefined" ? location.search : undefined), caps.safe);
     console.info(`[render] ${caps.renderer} | frag ${caps.precision.fragment} | atlas ${caps.atlasLayerSize}px budget ${caps.textureBudgetMB}MB | dpr<=${caps.maxDpr}` + (caps.fallbacks.length ? `\n  fallbacks: ${caps.fallbacks.join("; ")}` : ""));
     if (caps.problems.length) { console.error("[render] GPU limits: " + caps.problems.join("; ")); }
+    { // ADR-116: Auto starts at the probed (or remembered-good) tier, never above the device ceiling; bench promotes/demotes once
+      const dv = caps.device; const sig = deviceSignature({ renderer: caps.renderer, userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "" });
+      const st = startLevel(dv, sig, caps.flags.includes("high") || caps.lowEnd ? 2 : 3);
+      this.quality.configure({ klass: dv.klass, name: QUALITY_TIERS[st.level]!.name, start: st.level, ceiling: dv.ceiling, remembered: st.remembered, reasons: dv.reasons }, (m) => benchAdjust({ ...dv, start: st.level }, m));
+      this.quality.onStable = (lvl) => rememberLevel(sig, lvl);
+      console.info(`[render] device ${dv.klass}: auto ${QUALITY_TIERS[st.level]!.name}${st.remembered ? " (remembered)" : ""} (ceiling ${QUALITY_TIERS[dv.ceiling]!.name}; ${dv.reasons.join("; ")})`);
+    }
     canvas.addEventListener("webglcontextlost", this.onLost, false);
     canvas.addEventListener("webglcontextrestored", this.onRestored, false);
     this.iso = opts.iso ?? DEFAULT_ISO;
