@@ -40,13 +40,14 @@ def group_trees(_=None):
     static_atlas("nature_bushes", B, 8, canvas=(flora.PW, flora.PH, flora.PB))
 
 GROUPS = [group_trees]
-for name in ("crops", "fauna", "itemicons"):
+for name in ("crops", "fauna", "itemicons", "placeholder"):
     if os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), name + ".py")):
         mod = __import__(name); GROUPS += mod.GROUPS
 
 if __name__ == "__main__":
     for f in glob.glob(os.path.join(FRAG, "atlases/*")): os.remove(f)
     for g in GROUPS: g(sys.modules[__name__])
+    if "placeholder" in sys.modules: sys.modules["placeholder"].tag(sys.modules[__name__])
     keys = [s["key"] for s in sprites]; assert len(keys) == len(set(keys)), "duplicate sprite keys"
     man = {"version": 1, "name": "nature", "atlases": atlases, "sprites": sprites}
     json.dump(man, open(os.path.join(FRAG, "manifest.nature.json"), "w"), indent=1); open(os.path.join(FRAG, "manifest.nature.json"), "a").write("\n")

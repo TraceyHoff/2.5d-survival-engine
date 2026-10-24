@@ -2391,7 +2391,12 @@
     "dec_vase__amphora": 2389,
     "dec_vase__painted": 2390,
     "dec_vase__round": 2391,
-    "dec_vase__tall": 2392
+    "dec_vase__tall": 2392,
+    "placeholder_animal_l": 2393,
+    "placeholder_animal_m": 2394,
+    "placeholder_animal_s": 2395,
+    "placeholder_sapling": 2396,
+    "placeholder_sprout": 2397
   },
   "sounds": {
     "amb_rain": 1,

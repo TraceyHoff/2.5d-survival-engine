@@ -11,3 +11,4 @@ pnpm --filter @engine/assets lock:ids:pack
 - Iso 2:1 (64x32 tiles), pivot at the feet; every page is 16-aligned, <= 2048, 2px clear gutter per cell, 1x + `@2x`, KTX2 (ETC1S colour, UASTC masks, full mips).
 - `nature_trees` / `nature_bushes`: new trees (fruit trees carry a `depleted` frame without fruit), bushes (berry bushes: `depleted`), logs/stumps. `sway` per sprite + `masks.sway` (trunks rigid).
 - Previews: `/workspace/assets/nature/preview/*.png`.
+- Streamed residency (Renderer d72fa5a): `src/placeholder.py` adds the resident `nature_placeholder` sheet (`placeholder_sprout`, `placeholder_sapling`, `placeholder_animal_s|m|l`) and tags `nature_sprouts` / `nature_crops` (sprout), `nature_saplings` (sapling stub), `nature_clutter` (null) and every `nature_critters_*` sheet with `residency: "stream"`; animal and `sapling_*_0` sprites carry a per-sprite `placeholder` where the sheet default does not fit.
