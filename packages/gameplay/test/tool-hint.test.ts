@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { addItem, defaultDefs, Equipment, ResourceNode, spawnPlayer, spawnResourceNode, TOOL_REQ_ICONS, toolHint, toolReqIconPath } from "../src/index.js";
+import { addItem, defaultDefs, Equipment, ResourceNode, spawnPlayer, spawnResourceNode, TOOL_REQ_ICONS, toolHint, toolReqSpriteKey } from "../src/index.js";
 import { makeWorld } from "./helpers.js";
 
 const d = defaultDefs();
@@ -33,8 +33,8 @@ describe("tool requirement hint (ADR-126)", () => {
     expect(toolHint(w, p)!.node).toBe(near);
     w.set(near, ResourceNode, { amount: 0 }); expect(toolHint(w, p)).toMatchObject({ icon: "knife", have: false });
   });
-  it("icon keys follow ui/tool_req_<tool>.png and cover every resources.json tool", () => {
-    expect(TOOL_REQ_ICONS.map(toolReqIconPath)).toEqual(["hand", "axe", "pickaxe", "shovel", "hoe", "knife", "sickle"].map((t) => `ui/tool_req_${t}.png`));
+  it("sprite keys are tool_req_<tool> and cover every resources.json tool", () => {
+    expect(TOOL_REQ_ICONS.map(toolReqSpriteKey)).toEqual(["hand", "axe", "pickaxe", "shovel", "hoe", "knife", "sickle"].map((t) => `tool_req_${t}`));
     for (const r of d.resources.values()) expect(r.requiredTool).toBeLessThanOrEqual(4); // none/axe/pickaxe/shovel/knife all have icons
   });
 });

@@ -3,17 +3,32 @@
  * a hand for bare-handed nodes. Owned tool: drawn normally; missing: greyed with a red lock. Fades in / out.
  * Renderer-agnostic (a DOM canvas over #game positioned from the shared camera), so it is identical on WebGL2 and the
  * Canvas2D fallback, and passive, so it works the same on touch, gamepad and keyboard / mouse (larger on touch).
- * Art: `art/ui/tool_req_<icon>.png` (Art & Assets) replaces the canvas-drawn placeholder per icon once it exists.
+ * Art: sprite keys `tool_req_<icon>` (nature_toolicons atlas, 32px + @2x, resident) via the asset registry; the
+ * canvas-drawn vector placeholder is only a fallback (registry not loaded, key missing, image failed).
  * Settings: `toolHints` (on by default). DOM hook: `#tool-hint[data-icon][data-have][data-show]`.
  */
 import type { Entity, World } from "@engine/core";
-import { toolHint, toolReqIconPath, type ToolHint, type ToolReqIcon } from "@engine/gameplay";
+import { toolHint, toolReqSpriteKey, type ToolHint, type ToolReqIcon } from "@engine/gameplay";
+
+export interface ArtFrame { src: string; sx: number; sy: number; sw: number; sh: number }
+/** Sprite key of an icon in the nature_toolicons atlas. */
+export const toolIconKey = toolReqSpriteKey;
+interface RegistryLike { byKey(key: string): { atlas: { frameW: number; frameH: number; columns: number; pages: { scale: number; image: string }[] }; animations: Map<string, { frames: number[] }> } }
+/** Resolve `tool_req_<icon>` to an atlas page rect, preferring the page nearest `scale` (dpr x CSS size / 32). */
+export function toolIconFrame(reg: RegistryLike | undefined, icon: ToolReqIcon, scale = 1): ArtFrame | undefined {
+  try {
+    const sp = reg?.byKey(toolIconKey(icon)); if (!sp) return undefined; const a = sp.atlas; const f = sp.animations.get("idle")?.frames[0] ?? 0;
+    const page = [...a.pages].sort((x, y) => Math.abs(x.scale - scale) - Math.abs(y.scale - scale))[0]; if (!page) return undefined;
+    const k = page.scale; return { src: page.image, sx: (f % a.columns) * a.frameW * k, sy: Math.floor(f / a.columns) * a.frameH * k, sw: a.frameW * k, sh: a.frameH * k };
+  } catch { return undefined; }
+}
 import { isoToCss, type CameraLike } from "./world-tools.js";
 
 export interface ToolHintDeps {
   world(): World; player(): Entity | undefined; camera(): CameraLike | undefined;
   /** menus open / build mode */ hidden(): boolean; /** Settings toggle */ enabled(): boolean;
-  device?(): "keyboardMouse" | "gamepad" | "touch"; /** art root, e.g. `${BASE_URL}art/` (omit: placeholders only) */ artBase?: string;
+  device?(): "keyboardMouse" | "gamepad" | "touch";
+  /** Atlas frame for `tool_req_<icon>` (see toolIconFrame); undefined: placeholder. */ art?(icon: ToolReqIcon): ArtFrame | undefined;
 }
 
 type G = CanvasRenderingContext2D;
@@ -57,21 +72,20 @@ export function mountToolHint(root: HTMLElement, d: ToolHintDeps): { destroy(): 
   const style = document.createElement("style"); style.textContent = CSS; document.head.append(style);
   const el = document.createElement("div"); el.id = "tool-hint"; el.setAttribute("role", "img"); el.dataset["show"] = "false";
   const cv = document.createElement("canvas"); cv.className = "icon"; el.append(cv); root.append(el);
-  const art = new Map<ToolReqIcon, HTMLImageElement | null>(); // null = no art yet: placeholder
-  const image = (icon: ToolReqIcon): HTMLImageElement | null => {
-    if (!d.artBase) return null;
-    if (!art.has(icon)) { art.set(icon, null); const im = new Image(); im.onload = () => { art.set(icon, im); drawn = ""; }; im.src = d.artBase + toolReqIconPath(icon); }
-    return art.get(icon) ?? null;
+  const imgs = new Map<string, HTMLImageElement | null>(); // by src; null = loading / failed: placeholder
+  const image = (icon: ToolReqIcon): { im: HTMLImageElement; f: ArtFrame } | null => {
+    const f = d.art?.(icon); if (!f) return null;
+    if (!imgs.has(f.src)) { imgs.set(f.src, null); const im = new Image(); im.onload = () => { imgs.set(f.src, im); drawn = ""; }; im.src = f.src; }
+    const im = imgs.get(f.src); return im ? { im, f } : null;
   };
   let cur: ToolHint | undefined; let shown: ToolHint | undefined; let drawn = ""; let lastScan = 0; let raf = 0;
   const draw = (h: ToolHint, size: number): void => {
-    const key = `${h.icon}|${h.have}|${h.equipped}|${size}|${art.get(h.icon) ? 1 : 0}`; if (key === drawn) return; drawn = key;
+    const art = image(h.icon); const key = `${h.icon}|${h.have}|${h.equipped}|${size}|${art ? 1 : 0}`; if (key === drawn) return; drawn = key;
     const dpr = Math.min(3, globalThis.devicePixelRatio || 1); cv.width = cv.height = Math.round(size * dpr); cv.style.width = cv.style.height = `${size}px`;
     const g = cv.getContext("2d"); if (!g) return;
     const v = hintVisual(h); g.setTransform(cv.width / 32, 0, 0, cv.height / 32, 0, 0); g.clearRect(0, 0, 32, 32);
     g.fillStyle = "rgba(20,16,12,.72)"; g.strokeStyle = v.ring; g.lineWidth = 2; g.beginPath(); g.arc(16, 16, 14.5, 0, Math.PI * 2); g.fill(); g.stroke();
-    const im = image(h.icon);
-    if (im) g.drawImage(im, 5, 5, 22, 22); else { g.save(); g.translate(4, 4); g.scale(0.75, 0.75); drawToolPlaceholder(g, h.icon, v.grey ? "#B8B0A8" : "#FFFAF0"); g.restore(); }
+    if (art) { if (v.grey) g.globalAlpha = 0.55; g.drawImage(art.im, art.f.sx, art.f.sy, art.f.sw, art.f.sh, 5, 5, 22, 22); g.globalAlpha = 1; } else { g.save(); g.translate(4, 4); g.scale(0.75, 0.75); drawToolPlaceholder(g, h.icon, v.grey ? "#B8B0A8" : "#FFFAF0"); g.restore(); }
     if (v.lock) drawLock(g);
   };
   const tick = (now: number): void => {

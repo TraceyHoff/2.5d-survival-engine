@@ -12,10 +12,10 @@ import { ToolKind, type GameDefs } from "./defs.js";
 import { listSlots } from "./inventory.js";
 import { bareHandsCan } from "./systems/gathering.js";
 
-/** Icon names, also the art keys `ui/tool_req_<name>.png` (Art & Assets). hoe / sickle are reserved for future nodes. */
+/** Icon names; art sprite key `tool_req_<name>` (nature_toolicons atlas). hoe / sickle: no node needs them yet. */
 export const TOOL_REQ_ICONS = ["hand", "axe", "pickaxe", "shovel", "hoe", "knife", "sickle"] as const;
 export type ToolReqIcon = (typeof TOOL_REQ_ICONS)[number];
-export const toolReqIconPath = (icon: ToolReqIcon): string => `ui/tool_req_${icon}.png`;
+export const toolReqSpriteKey = (icon: ToolReqIcon): string => `tool_req_${icon}`;
 const KIND_ICON: Record<number, ToolReqIcon> = { [ToolKind.None]: "hand", [ToolKind.Axe]: "axe", [ToolKind.Pickaxe]: "pickaxe", [ToolKind.Shovel]: "shovel", [ToolKind.Knife]: "knife" };
 /** Default show radius in tiles. */
 export const TOOL_HINT_RADIUS = 1.5;

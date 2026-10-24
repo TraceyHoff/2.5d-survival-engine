@@ -5,7 +5,9 @@ import { TOOL_REQ_ICONS } from "@engine/gameplay";
 const hint = { node: 1, x: 0, y: 0, resource: "oak_tree", icon: "axe", minTier: 2, have: false, equipped: false, bare: false, label: "oak tree: needs axe (tier 2+)" };
 let next: typeof hint | undefined = hint;
 vi.mock("@engine/gameplay", async (orig) => ({ ...(await orig<typeof import("@engine/gameplay")>()), toolHint: () => next }));
-const { drawLock, drawToolPlaceholder, hintVisual, mountToolHint } = await import("../src/tool-hint.js");
+const { drawLock, drawToolPlaceholder, hintVisual, mountToolHint, toolIconFrame } = await import("../src/tool-hint.js");
+const { loadManifest } = await import("@engine/assets");
+const { readFileSync } = await import("node:fs");
 const { loadSettings } = await import("../src/menu.js");
 
 function fakeCtx(): { g: CanvasRenderingContext2D; calls: string[] } {
@@ -42,5 +44,15 @@ describe("tool requirement symbol (ADR-126)", () => {
     enabled = false; frame(1600); expect(el.dataset["show"]).toBe("false");
     next = undefined; enabled = true; frame(1800); expect(el.dataset["show"]).toBe("false");
     h.destroy(); expect(document.getElementById("tool-hint")).toBeNull(); vi.unstubAllGlobals();
+  });
+  it("every icon resolves to its tool_req_<icon> frame in the nature_toolicons atlas (@2x page for hi-dpi)", () => {
+    const m = JSON.parse(readFileSync(`${process.cwd()}/packages/assets/pack/nature/manifest.nature.json`, "utf8"));
+    const { registry } = loadManifest(m);
+    TOOL_REQ_ICONS.forEach((icon, i) => {
+      expect(toolIconFrame(registry, icon, 1)).toMatchObject({ sx: i * 32, sy: 0, sw: 32, sh: 32 });
+      const hi = toolIconFrame(registry, icon, 2.5)!; expect(hi.src).toContain("@2x"); expect(hi).toMatchObject({ sx: i * 64, sw: 64 });
+    });
+    expect(toolIconFrame(undefined, "axe")).toBeUndefined();
+    expect(toolIconFrame({ byKey: () => { throw new Error("missing"); } }, "axe")).toBeUndefined(); // placeholder fallback
   });
 });

@@ -8,7 +8,7 @@ import { installFullscreenRestore, exitFullscreen } from "./fullscreen.js";
 import { uiRoot, safeAreaInsets } from "./ui-root.js";
 import { GameMenus } from "./game-menus.js";
 import { BuildMode } from "./build-mode.js";
-import { mountToolHint } from "./tool-hint.js";
+import { mountToolHint, toolIconFrame } from "./tool-hint.js";
 import { mountWorldTools, type WorldToolsHandle } from "./world-tools.js";
 import { mountTouchOverlay } from "./touch-overlay.js";
 /**
@@ -424,7 +424,8 @@ worldTools = mountWorldTools(root, { world: () => world, player: () => session.p
   onControl: (x, y) => { const r = canvas.getBoundingClientRect(); return !!browserInput.controls?.geometry().some((g) => g.visible && Math.hypot(g.x - (x - r.left), g.y - (y - r.top)) <= g.r + 8); } });
 // ADR-126: tool-needed symbol over the nearest resource node (Settings toggle, live)
 mountToolHint(root, { world: () => world, player: () => session.player, camera: () => iso?.renderer.camera, hidden: () => !!menus?.nav.isOpen || buildMode.active,
-  enabled: () => loadSettings().toolHints !== false, device: promptDevice, artBase: `${import.meta.env.BASE_URL}art/` });
+  enabled: () => loadSettings().toolHints !== false, device: promptDevice,
+  art: (icon) => toolIconFrame(iso?.registry, icon, Math.min(3, devicePixelRatio || 1) * (promptDevice() === "touch" ? 44 : 34) / 32) });
 if (params.get("hud") !== "0" && settings.showHud) mountHud(() => world, () => session.player, { ...(num("time") !== undefined ? { hours: num("time")! } : {}), ...(wi >= 0 ? { weather: wi } : {}) });
 
 let last = performance.now();
