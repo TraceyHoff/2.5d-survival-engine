@@ -43,6 +43,7 @@ import { readDayFraction, readWeather, readWind } from "./env.js";
 import type { TransformSource } from "./transformSource.js";
 import { VfxLayer } from "./vfx.js";
 import { BurningFx } from "./burning.js";
+import { ChimneySmoke } from "./building/chimney.js";
 import type { Renderer } from "./types.js";
 import { loadPreset, parsePreset, QualityController, type QualityPreset } from "./quality.js";
 import { BlankWatchdog, FallbackLadder, FallbackStep, FALLBACK_STEP_NAMES } from "./gl/fallback.js";
@@ -106,6 +107,8 @@ export class IsoRenderer implements Renderer {
   readonly vfx = new VfxLayer();
   /** Burning -> fire/ember/smoke VFX (keys in burning.cfg). */
   readonly burning = new BurningFx();
+  /** roof_chimney smoke attach point -> campfire_smoke particles (building/chimney.ts). */
+  readonly chimneySmoke = new ChimneySmoke();
   style: StyleConfig;
   stats: FrameStats = newStats();
   lighting: DayLighting = computeDayLighting(0.5);
@@ -193,6 +196,10 @@ export class IsoRenderer implements Renderer {
   private tierStream: BuildingTierStreamer | null = null; private tierLayout = -1;
   /** Streamed building tier pages currently held (diagnostics / tests). */
   get buildingTiersHeld(): string[] { return this.tierStream?.heldKeys() ?? []; }
+  /** Modular building stats of the last frame: pieces drawn with streaming fallback art, crack overlays, gridless/grid cutaway active. */
+  get buildingStats(): { tierFallbacks: number; crackOverlays: number; cutaway: boolean; chimneys: number; smoke: number } {
+    return { tierFallbacks: this.sprites.tierFallbacks, crackOverlays: this.sprites.crackOverlays, cutaway: this.sprites.cutawayActive, chimneys: this.chimneySmoke.chimneys, smoke: this.chimneySmoke.spawned };
+  }
   /** Report a GPU allocation / render-target fault: steps the fallback ladder down once (with cooldown). */
   fault(source: string, detail: string): void {
     const step = this.fallback.fault(source, detail, this.totalFrames);
@@ -420,6 +427,7 @@ export class IsoRenderer implements Renderer {
     if (this.w === 0) this.resize(this.lastCss[0] || this.canvas.clientWidth || 800, this.lastCss[1] || this.canvas.clientHeight || 600, this.lastCss[2]);
     this.vfx.update(this.time); this.statusDt = dt;
     if (this.bindings.burning) this.burning.update(world, this.bindings.burning, this.bindings.buildPiece, this.atlas, this.vfx, this.time, dt);
+    if (this.chimneySmoke.cfg.rateScale > 0) this.chimneySmoke.update(world, this.bindings.buildPiece, this.atlas, this.vfx, dt, this.iso);
 
     // --- 0. prep ---------------------------------------------------------------------------
     const dayFrac = readDayFraction(world);

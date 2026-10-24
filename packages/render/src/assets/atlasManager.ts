@@ -33,6 +33,7 @@ import type { RectTable } from "./texturePacker.js";
 import { PageLRU, PRIO_NEAR, VramAccountant, rgbaBytes, type VramStats } from "../gl/vram.js";
 import { blockBytes, GL_FORMAT, ktx2Target, loadKtx2, loadKtx2Rgba, type Ktx2Target } from "./ktx2.js";
 import type { CompressedTextureSupport } from "../gl/capabilities.js";
+import { streamingFallbackKeys } from "../building/modular.js";
 
 /** Held-item hand anchor of one character frame (Art hands.json). */
 export interface HandAnchor { x: number; y: number; angle: number; len?: number; behind: boolean }
@@ -501,7 +502,7 @@ export class AtlasManager {
       list.push({ key: a.key, id: a.id, source: src, img, emis, scale, masks, maskUrls, base: 0, count: src.rects ? src.rects.length : a.columns * a.rows, fw: a.frameW, fh: a.frameH, cols: a.columns, layer: 0, px: 0, py: 0 });
     }));
     list.sort((a, b) => a.id - b.id); lazyList.sort((a, b) => a.id - b.id);
-    this.gen++; this.queue = []; this.pools = []; this.layoutVersion++;
+    this.gen++; this.queue = []; this.pools = []; this.layoutVersion++; this.fallbackCache.clear();
     const lowMem = this.textureBudgetMB <= 256; this.sideShift = lowMem ? SIDE_SHIFT_LOWMEM : SIDE_SHIFT;
     const groups: { cls: PoolClass; lazy: AtlasRT[]; minSlots: number; cap: boolean }[] = [];
     const wear = lazyList.filter((a) => a.lazy!.pool === 0), veh = lazyList.filter((a) => a.lazy!.pool === 1), bld = lazyList.filter((a) => a.lazy!.pool === 2);
@@ -1189,6 +1190,31 @@ export class AtlasManager {
     this.roofById.clear(); if (!this.registry) return;
     for (const s of this.registry.allSprites()) if ((s.building?.piece ?? s.key).startsWith("roof")) this.roofById.add(s.id);
   }
+
+  /**
+   * Sprite to draw instead of a streamed `<piece>@tier<N>` sprite whose page is not resident yet (ADR-104 lookup order
+   * reversed for streaming): bare key, another already-resident tier, then the family default. -1 = nothing drawable.
+   * Non-streamed results are cached; a resident other tier is used only while it stays resident.
+   */
+  buildingFallback(spriteId: number, prio = Infinity): number {
+    const reg = this.registry; if (!reg) return -1;
+    const c = this.fallbackCache.get(spriteId); if (c !== undefined) return c;
+    let piece: string | undefined; try { piece = reg.sprite(spriteId).building?.piece; } catch { piece = undefined; }
+    if (!piece) return -1;
+    let resident = -1;
+    for (const k of streamingFallbackKeys(piece)) {
+      const id = reg.spriteForPiece(k); if (id === undefined || id === spriteId) continue;
+      if (!this.lazyOf(id)) { this.fallbackCache.set(spriteId, id); return id; }
+      if (resident < 0 && this.lazyOf(id)!.lazy!.state === 2 && this.pageReady(id, prio)) resident = id;
+    }
+    if (resident >= 0) return resident;
+    return -1;
+  }
+  private fallbackCache = new Map<number, number>();
+  /** Crack overlay of a building sprite (manifest building.crackOverlay, e.g. bld_crack), or -1. */
+  crackOverlayOf(spriteId: number): number { const r = this.registry; if (!r) return -1; try { return r.sprite(spriteId).building?.crackOverlay ?? -1; } catch { return -1; } }
+  /** Sprite-level attach point (px from pivot, 1x, unmirrored) or undefined. */
+  attachOf(spriteId: number, name: string): { x: number; y: number } | undefined { const r = this.registry; if (!r) return undefined; try { return r.sprite(spriteId).attach?.[name]; } catch { return undefined; } }
 
   /** Footprint/layer of a building sprite (null for non-building sprites). Rotation 1/3 swaps w/h. */
   pieceInfo(spriteId: number): { fw: number; fh: number; layer: number } | null { const b = this.sprites[spriteId]?.building; return b ? { fw: b.fw, fh: b.fh, layer: b.layer } : null; }

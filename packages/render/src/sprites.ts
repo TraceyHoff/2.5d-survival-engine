@@ -23,6 +23,7 @@ import type { VfxLayer } from "./vfx.js";
 import { LayerCache, activeExpression, readAppearanceSlot, type AppearanceBinding, type CachedLayer } from "./character/layers.js";
 import { nearestCutoff } from "./gl/fallback.js";
 import { PRIO_NEAR } from "./gl/vram.js";
+import { crackAnim, PieceCoverIndex, ROT_EXACT_PIVOT } from "./building/modular.js";
 import { InteriorRoute, inInteriorRegion, interiorOrder, type InteriorRegion } from "./vehicles/interiorPass.js";
 
 export const INSTANCE_FLOATS = 36;
@@ -309,6 +310,11 @@ export class SpriteBatch {
   private n = 0;
   private depthMin = 0; private depthRange = 1;
   private res: ResolvedFrame = newResolved();
+  private crackRes: ResolvedFrame = newResolved();
+  /** Gridless cutaway (client has no BuildingGrid): cover of the pieces drawn last frame / being gathered this frame. */
+  private cover = new PieceCoverIndex(); private coverNext = new PieceCoverIndex();
+  /** Pieces drawn with streaming fallback art this frame (tier page not resident yet) / crack overlays drawn. */
+  tierFallbacks = 0; crackOverlays = 0;
   private statics = new Map<string, StaticChunk>();
   private staticScratch = new Map<string, number[]>();
   // per-frame scratch reused across frames (no allocations in the gather/sort hot paths)
@@ -764,7 +770,9 @@ export class SpriteBatch {
     const res = this.res;
     // cutaway region from BuildingGrid: tiles of the building the focus entity stands in
     const playerLevel = hasFocus ? terrainZToFloor(fwz, Math.max(0, cx.groundZAt?.(Math.floor(fwx), Math.floor(fwy)) ?? 0)) : 0;
-    const cut = hasFocus && cx.grid ? cutawayRegion(cx.grid, Math.floor(fwx), Math.floor(fwy), playerLevel, 600, (sid) => atlas.isRoof(sid)) : null;
+    const cut = !hasFocus ? null : cx.grid ? cutawayRegion(cx.grid, Math.floor(fwx), Math.floor(fwy), playerLevel, 600, (sid) => atlas.isRoof(sid))
+      : this.cover.region(Math.floor(fwx), Math.floor(fwy), playerLevel);
+    this.coverNext.clear(); this.tierFallbacks = 0; this.crackOverlays = 0;
     this.cutawayActive = !!cut;
     const scratch = this.staticScratch; for (const v of scratch.values()) v.length = 0;
     const checksums = this.pieceChecks; checksums.clear(); let lastCx = NaN, lastCy = NaN, lastVis = true; this.culledChunks = 0;
@@ -776,13 +784,17 @@ export class SpriteBatch {
         if (gcx !== lastCx || gcy !== lastCy) { lastCx = gcx; lastCy = gcy; lastVis = this.chunkOnScreen(gcx, gcy, rect, hw, hh); }
         if (!lastVis) continue;
       }
-      const vis = d.visualId![k]!; const rot = d.rotation![k]! & 3; const level = d.level![k]!; const layer = d.layer![k]!;
+      const vis = d.visualId![k]!; const rotRaw = d.rotation![k]!; const rot = rotRaw & 3; const exact = (rotRaw & ROT_EXACT_PIVOT) !== 0; const level = d.level![k]!; const layer = d.layer![k]!;
       const ghost = d.ghost![k]!; const dmg = d.damageStage![k]!; const tints = cx.bindings.pieceTints?.(e); const tint = tints ? tints[0] : d.tint![k]! >>> 0;
-      if (!atlas.resolvePiece(vis, d.variant![k]!, rot, dmg, res, cx.bindings.pieceState?.(e) ?? (d.state ? d.state[k]! - 1 : -1))) continue;
+      // tier page streaming in: draw the bare-key / other resident tier / family default art instead of nothing
+      let drawVis = vis;
+      if (atlas.streamClass(vis) === "bld" && !atlas.pageReady(vis, PRIO_NEAR)) { drawVis = atlas.buildingFallback(vis, PRIO_NEAR); if (drawVis < 0) continue; this.tierFallbacks++; }
+      if (!atlas.resolvePiece(drawVis, d.variant![k]!, rot, dmg, res, cx.bindings.pieceState?.(e) ?? (d.state ? d.state[k]! - 1 : -1))) continue;
       const info = atlas.pieceInfo(vis); const sway = atlas.swayOf(vis);
       const fw = info ? (rot & 1 ? info.fh : info.fw) : 1, fh = info ? (rot & 1 ? info.fw : info.fh) : 1;
       const ax = Math.floor(tr.data.x[ts]!), ay = Math.floor(tr.data.y[ts]!);
       const roof = atlas.isRoof(vis);
+      this.coverNext.add(ax, ay, fw, fh, level, layer === PIECE_LAYER_DECK, roof);
       // roofs are deck-layer (0) pieces placed on the level above the walls and drawn from that level's floor (= wall top)
       const z = floorToTerrainZ(level, tr.data.z[ts]!);
       const cutaway = !!cut && (level > playerLevel || (roof && level === playerLevel)) && footprintHits(cut, ax, ay, fw, fh);
@@ -801,16 +813,21 @@ export class SpriteBatch {
       // footprint far corner (fx, fy); sprite pivot = footprint centre on the ground (art guide / sample manifest)
       // or the front-most footprint corner (cx.pieceAnchor === "front")
       const fx = ax + fw, fy = ay + fh;
-      const pvx = cx.pieceAnchor === "front" ? fx : ax + fw / 2, pvy = cx.pieceAnchor === "front" ? fy : ay + fh / 2;
+      // exact pivot (triangle centroid / vertex-snapped corner): the Transform position itself
+      const pvx = exact ? tr.data.x[ts]! : cx.pieceAnchor === "front" ? fx : ax + fw / 2, pvy = exact ? tr.data.y[ts]! : cx.pieceAnchor === "front" ? fy : ay + fh / 2;
       const sx = (pvx - pvy) * hw, sy = (pvx + pvy) * hh - z * zs;
       const flat = flatLayer(layer, roof); // deck pieces (floors/foundations), never roofs
       const flags = (flat ? SpriteFlag.Flat : 0) | (res.flipX ? SpriteFlag.FlipX : 0) | (nightSet?.has(vis) ? 64 : 0);
-      const dmgOverlay = dmg > 0 && !res.hasDamageFrames ? dmg : 0;
+      // damage 1-3: Art's crack overlay sprite (building.crackOverlay = bld_crack, anim stage<N>) on top of the (baked)
+      // damage frame; the procedural shader crack only when no overlay is declared or its page is not resident
+      const crackSid = dmg > 0 ? atlas.crackOverlayOf(drawVis) : -1; const ca = crackAnim(dmg);
+      const crack = crackSid >= 0 && ca !== undefined && atlas.pageReady(crackSid, PRIO_NEAR) && atlas.resolve(crackSid, atlas.animIndex(crackSid, ca), 0, 0, 0, this.crackRes);
+      const dmgOverlay = dmg > 0 && !res.hasDamageFrames && !crack ? dmg : 0;
       const bias = roof ? 0.05 : layer * 0.01; // roofs above every other layer of the cell
       tmp.length = 0;
       // per-column slices: columns c = x - y over the footprint
       const cMin = ax - (fy - 1), cMax = (fx - 1) - ay;
-      const single = flat || cMin === cMax;
+      const single = flat || exact || cMin === cMax;
       for (let c = cMin; c <= cMax; c++) {
         // front-most tile in column c: maximise x+y with x-y=c inside footprint
         let best = -1e9;
@@ -818,7 +835,7 @@ export class SpriteBatch {
         // depth anchor: the front-most tile's centre (front-corner pivot) or its front corner (centre pivot, whose
         // pixels extend down to that corner and must not be clipped by the terrain in front of the pivot)
         const front = cx.pieceAnchor === "front" ? 1 : 1.95;
-        const key = (single ? fx + fy - 2 + front : best + front) + z * zf + bias;
+        const key = (exact ? pvx + pvy - 1 + front : single ? fx + fy - 2 + front : best + front) + z * zf + bias;
         const colCenter = c * hw - sx; // relative to pivot (px)
         const sliceL = single || c === cMin ? -OPEN : colCenter - hw / 2;
         const sliceR = single || c === cMax ? OPEN : colCenter + hw / 2;
@@ -830,6 +847,11 @@ export class SpriteBatch {
         if (tints?.[1]) writeTint2(o, tints[1]);
         for (let q = 0; q < INSTANCE_FLOATS; q++) tmp.push(o[q]!);
         if (single) break;
+      }
+      if (crack) {
+        const r = this.crackRes; const ck0 = tmp[2]!; // on top of the piece (its first instance's key + epsilon)
+        const o = this.writeOne(sx, sy, ck0 + 0.002, 1, r, flags, 0, alpha, -OPEN, OPEN, 0, 0, 0, 0, 0, 0);
+        o[27] = occT; for (let q = 0; q < INSTANCE_FLOATS; q++) tmp.push(o[q]!); this.crackOverlays++;
       }
       if (dynamic) {
         if (sx < rect.x0 - 512 || sx > rect.x1 + 512 || sy < rect.y0 - 256 || sy > rect.y1 + 1024) continue;
@@ -843,6 +865,7 @@ export class SpriteBatch {
         checksums.set(ck, h);
       }
     }
+    { const t = this.cover; this.cover = this.coverNext; this.coverNext = t; }
     // rebuild changed static chunks, drop empty ones
     for (const [ck, list] of scratch) {
       const sum = (checksums.get(ck) ?? 0) ^ list.length;

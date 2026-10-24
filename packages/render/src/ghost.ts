@@ -14,6 +14,7 @@ import { Transform, type Entity, type World } from "@engine/core";
 import type { AssetRegistry, BuildPieceVisual } from "@engine/assets";
 import { applyBuildPieceVisual } from "./buildPieces.js";
 import type { BuildPieceDefT } from "./sprites.js";
+import { pieceArtRow, ROT_EXACT_PIVOT } from "./building/modular.js";
 
 /** Subset of Survival's client-side buildPreview (exact field names). x/y = snapped Transform position of the real piece (not the footprint origin tile), rot = quarter turn 0-3. */
 export interface BuildPreview { pieceKey: string; x: number; y: number; rot: number; valid: boolean }
@@ -21,6 +22,9 @@ export interface BuildPreview { pieceKey: string; x: number; y: number; rot: num
 export interface BuildGhostOpts {
   /** world z = level * levelHeight (caller computes) */ z?: number; level?: number;
   /** material tier (preview.tier): its own art if the manifest has `<piece>@tier<N>` */ tier?: number;
+  /** gameplay rotation steps of the piece (preview.rotSteps): rot is then the raw step; 12 = triangle 30° steps mapped
+   *  exactly onto the art rows (triArtRow), others rounded to the nearest quarter turn */ rotSteps?: number;
+  /** pivot at the exact x/y (Placement.Tri centroid / Free vertex) instead of the floored tile */ exactPivot?: boolean;
   variant?: string | number; variantName?: (pieceKey: string, index: number) => string | undefined }
 
 /** Owns the single ghost entity. sync(preview) creates/updates it; sync(null|undefined) removes it. */
@@ -33,9 +37,10 @@ export class BuildGhost {
     if (this.entity === null || !w.isAlive(this.entity)) this.entity = w.create();
     const e = this.entity; const t = { x: p.x, y: p.y, z: opts.z ?? 0, facing: 0 };
     if (w.has(e, Transform)) w.set(e, Transform, t); else w.add(e, Transform, t);
-    this.last = applyBuildPieceVisual(w, e, this.def, this.registry, { type: 0, rot: p.rot & 3, tint: 0, paint: 0, level: opts.level ?? 0 }, {
+    this.last = applyBuildPieceVisual(w, e, this.def, this.registry, { type: 0, rot: opts.rotSteps ? pieceArtRow(p.rot, opts.rotSteps) : p.rot & 3, tint: 0, paint: 0, level: opts.level ?? 0 }, {
       pieceKey: () => p.pieceKey, ghost: p.valid ? 1 : 2,
       ...(opts.variant !== undefined ? { variant: opts.variant } : {}), ...(opts.variantName ? { variantName: opts.variantName } : {}), ...(opts.tier !== undefined ? { tier: opts.tier } : {}) });
+    if (opts.exactPivot && w.has(e, this.def)) { const c = w.get(e, this.def)!; w.set(e, this.def, { ...c, rotation: (c.rotation & 3) | ROT_EXACT_PIVOT }); }
     return this.last;
   }
 }

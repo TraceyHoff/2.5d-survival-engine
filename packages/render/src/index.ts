@@ -34,3 +34,5 @@ export * from "./stalls/index.js";
 export * from "./character/preview.js";
 export * from "./vehicles/index.js";
 export * from "./quality.js";
+export * from "./building/modular.js";
+export * from "./building/chimney.js";
