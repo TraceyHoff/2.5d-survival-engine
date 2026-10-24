@@ -1278,6 +1278,9 @@
   },
   "build.ghost_invalid": {
    "bus": "ui",
+   "files": [
+    "audio/ui/build_ghost_invalid_1"
+   ],
    "volume": 0.4,
    "pitchJitter": 0.02,
    "volumeJitter": 0.12,
@@ -1320,6 +1323,10 @@
   },
   "craft.complete": {
    "bus": "ui",
+   "files": [
+    "audio/ui/craft_complete_1",
+    "audio/ui/craft_complete_2"
+   ],
    "volume": 0.6,
    "pitchJitter": 0.02,
    "volumeJitter": 0.12,
@@ -3283,6 +3290,9 @@
   },
   "vehicle.headlights": {
    "bus": "ui",
+   "files": [
+    "audio/ui/vehicle_headlights_1"
+   ],
    "volume": 0.4,
    "pitchJitter": 0.02,
    "volumeJitter": 0.12,
@@ -3395,6 +3405,9 @@
   },
   "farm.grow": {
    "bus": "ui",
+   "files": [
+    "audio/ui/farm_grow_1"
+   ],
    "volume": 0.25,
    "pitchJitter": 0.02,
    "volumeJitter": 0.12,
@@ -3424,7 +3437,8 @@
   "ui.click": {
    "bus": "ui",
    "files": [
-    "audio/ui/click"
+    "audio/ui/ui_click_1",
+    "audio/ui/ui_click_2"
    ],
    "volume": 0.5,
    "pitchJitter": 0.02,
@@ -3440,6 +3454,10 @@
   },
   "ui.hover": {
    "bus": "ui",
+   "files": [
+    "audio/ui/ui_hover_1",
+    "audio/ui/ui_hover_2"
+   ],
    "volume": 0.2,
    "pitchJitter": 0.02,
    "volumeJitter": 0.12,
@@ -3454,6 +3472,9 @@
   },
   "ui.open": {
    "bus": "ui",
+   "files": [
+    "audio/ui/ui_open_1"
+   ],
    "volume": 0.4,
    "pitchJitter": 0.02,
    "volumeJitter": 0.12,
@@ -3468,6 +3489,9 @@
   },
   "ui.close": {
    "bus": "ui",
+   "files": [
+    "audio/ui/ui_close_1"
+   ],
    "volume": 0.35,
    "pitchJitter": 0.02,
    "volumeJitter": 0.12,
@@ -3482,6 +3506,9 @@
   },
   "ui.back": {
    "bus": "ui",
+   "files": [
+    "audio/ui/ui_back_1"
+   ],
    "volume": 0.4,
    "pitchJitter": 0.02,
    "volumeJitter": 0.12,
@@ -3496,6 +3523,9 @@
   },
   "ui.error": {
    "bus": "ui",
+   "files": [
+    "audio/ui/ui_error_1"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.02,
    "volumeJitter": 0.12,
@@ -3510,6 +3540,9 @@
   },
   "ui.slider": {
    "bus": "ui",
+   "files": [
+    "audio/ui/ui_slider_1"
+   ],
    "volume": 0.35,
    "pitchJitter": 0.02,
    "volumeJitter": 0.12,
@@ -3524,6 +3557,9 @@
   },
   "ui.levelup": {
    "bus": "ui",
+   "files": [
+    "audio/ui/ui_levelup_1"
+   ],
    "volume": 0.75,
    "pitchJitter": 0.02,
    "volumeJitter": 0.12,
@@ -3538,6 +3574,10 @@
   },
   "ui.notify": {
    "bus": "ui",
+   "files": [
+    "audio/ui/ui_notify_1",
+    "audio/ui/ui_notify_2"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.02,
    "volumeJitter": 0.12,
@@ -3552,6 +3592,9 @@
   },
   "ui.toast.warn": {
    "bus": "ui",
+   "files": [
+    "audio/ui/ui_toast_warn_1"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.02,
    "volumeJitter": 0.12,
@@ -3566,6 +3609,9 @@
   },
   "ui.chat": {
    "bus": "ui",
+   "files": [
+    "audio/ui/ui_chat_1"
+   ],
    "volume": 0.35,
    "pitchJitter": 0.02,
    "volumeJitter": 0.12,
@@ -3580,6 +3626,9 @@
   },
   "ui.craft_queue": {
    "bus": "ui",
+   "files": [
+    "audio/ui/ui_craft_queue_1"
+   ],
    "volume": 0.35,
    "pitchJitter": 0.02,
    "volumeJitter": 0.12,

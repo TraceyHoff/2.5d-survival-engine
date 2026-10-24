@@ -80,8 +80,8 @@ def whoosh_core(rng, dur, f, q=2.5, peak=0.45):
 
 def chime_note(rng, f, dur, tau=0.35, bright=0.4):
     n = n_(dur)
-    return S_(modal([f, f * 2, f * 3.01, f * 4.2], [tau, tau * 0.5, tau * 0.3, tau * 0.15],)
-                 [1, 0.35 * bright * 2, 0.12 * bright, 0.05 * bright], n, rng, 0.002)
+    return S_(modal([f, f * 2, f * 3.01, f * 4.2], [tau, tau * 0.5, tau * 0.3, tau * 0.15],
+                 [1, 0.35 * bright * 2, 0.12 * bright, 0.05 * bright], n, rng, 0.002) * np.minimum(1, np.arange(n) / (0.003 * SR)))
 
 
 def pop_blip(rng, f, dur=0.08, rise=2.0):
