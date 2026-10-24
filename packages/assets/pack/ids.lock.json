@@ -2648,7 +2648,14 @@
     "sign_hanging": 2646,
     "sign_metal_road": 2647,
     "sign_wall_plaque": 2648,
-    "sign_wooden_post": 2649
+    "sign_wooden_post": 2649,
+    "tool_req_axe": 2650,
+    "tool_req_hand": 2651,
+    "tool_req_hoe": 2652,
+    "tool_req_knife": 2653,
+    "tool_req_pickaxe": 2654,
+    "tool_req_shovel": 2655,
+    "tool_req_sickle": 2656
   },
   "sounds": {
     "amb_rain": 1,

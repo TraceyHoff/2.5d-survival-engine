@@ -1135,6 +1135,22 @@
    "ktx2": "atlases/nature_roadicons.ktx2"
   },
   {
+   "key": "nature_toolicons",
+   "image": "atlases/nature_toolicons.png",
+   "frameW": 32,
+   "frameH": 32,
+   "columns": 7,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_toolicons@2x.png",
+     "ktx2": "atlases/nature_toolicons@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_toolicons.ktx2"
+  },
+  {
    "key": "nature_placeholder",
    "image": "atlases/nature_placeholder.png",
    "frameW": 48,
@@ -26365,6 +26381,125 @@
     "idle": {
      "frames": [
       8
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "tool_req_hand",
+   "category": "item",
+   "atlas": "nature_toolicons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "tool_req_axe",
+   "category": "item",
+   "atlas": "nature_toolicons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "tool_req_pickaxe",
+   "category": "item",
+   "atlas": "nature_toolicons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "tool_req_shovel",
+   "category": "item",
+   "atlas": "nature_toolicons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "tool_req_hoe",
+   "category": "item",
+   "atlas": "nature_toolicons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "tool_req_knife",
+   "category": "item",
+   "atlas": "nature_toolicons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      5
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "tool_req_sickle",
+   "category": "item",
+   "atlas": "nature_toolicons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      6
      ],
      "fps": 1
     }
