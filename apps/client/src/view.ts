@@ -34,6 +34,7 @@ const ANIM_MAP: readonly number[] = [0, 1, 2, 3, 4, 5, 3, 3];
 export function nodeWiggle(ms: number): number | undefined { if (ms < 0 || ms > 360) return undefined; const k = ms / 360; return 0.09 * Math.sin(k * Math.PI * 4) * (1 - k); }
 const animMap = (a: number): number => (a >= 14 && a <= 19 ? a : a === 8 ? 8 : ANIM_MAP[a] ?? 0); // 16..19 ADR-128 harvest/chop/mine/drink, 8 eat
 import { LightTable, type LightSpec } from "./lights.js";
+import { MANIFEST_INDEX, type ManifestFragmentRef } from "./manifest-index.js";
 /** `?cam=animal`: debug camera that follows the first ambient animal instead of the player. */
 const CAM_ANIMAL = typeof location !== "undefined" && new URLSearchParams(location.search).get("cam") === "animal";
 /** Max bytes for the sprite texture array (mips included) before customization layers are dropped. */
@@ -442,25 +443,10 @@ interface Spec {
 
 /** Art's sfx_animal_<species> (2 variants, ogg); silently skipped if audio is unavailable or blocked before a user gesture. */
 
-/**
- * Sub-manifests merged onto the pack manifest (ADR-081 mergeManifests, first definition wins). Overridable by an optional
- * `<art>/manifests.index.json` ({ fragments: [{ name, url, optional? }] }, urls relative to <art>/). Missing optional
- * fragments are skipped, so Art can split branding/customization out of pack/manifest.json without a client change.
- */
-const MANIFEST_INDEX: { name: string; url: string; optional?: boolean }[] = [
-  { name: "pack", url: "pack/manifest.json" },
-  { name: "ui-kit", url: "ui/kit/manifest.ui.kit.json", optional: true },
-  { name: "branding", url: "ui/branding/manifest.branding.json", optional: true },
-  { name: "customization", url: "pack/customization/manifest.customization.json", optional: true },
-  { name: "vehicles", url: "pack/vehicles/manifest.vehicles.json", optional: true },
-  { name: "items", url: "pack/items/manifest.items.json", optional: true },
-  { name: "vehicle_items", url: "pack/vehicle_items/manifest.vehicle_items.json", optional: true },
-  { name: "building", url: "pack/building/manifest.building.json", optional: true },
-  { name: "nature", url: "pack/nature/manifest.nature.json", optional: true },
-];
+/** `<art>/manifests.index.json` (written by vite.config.ts with only the served fragments) or MANIFEST_INDEX (manifest-index.ts). */
 async function loadMergedManifest(art: string): Promise<ReturnType<typeof loadManifest>> {
   const get = async (u: string): Promise<unknown> => { try { const r = await fetch(u); return r.ok ? await r.json() : undefined; } catch { return undefined; } };
-  const idx = (await get(art + "manifests.index.json")) as { fragments?: typeof MANIFEST_INDEX } | undefined;
+  const idx = (await get(art + "manifests.index.json")) as { fragments?: ManifestFragmentRef[] } | undefined;
   const list = idx?.fragments?.length ? idx.fragments : MANIFEST_INDEX;
   const frags: ManifestFragment[] = []; const dirOf = new Map<string, string>();
   for (const f of list) {

@@ -192,6 +192,8 @@ export class IsoRenderer implements Renderer {
   get diag(): RenderDiag { return this.diagState; }
   /** Seconds of renderer time (animation clock for water, flicker, particles). */
   time = 0;
+  /** Freeze `time` (dt = 0) and adaptive quality: pixel-stable frames for screenshot diffs (character preview freeze). */
+  freezeClock = false;
   /** Runtime GPU-memory fallback ladder (wearables -> dressed cap -> low atlas tier -> safe); see gl/fallback.ts. */
   readonly fallback = new FallbackLadder();
   /** Ongoing blank-frame watchdog (centre pixels every 60 frames for the whole session). */
@@ -431,9 +433,9 @@ export class IsoRenderer implements Renderer {
   render(world: World, alpha: number): void {
     if (this.contextLost || this.gl.isContextLost()) return;
     const t0 = performance.now();
-    const dt = this.lastNow < 0 ? 0 : Math.min(0.1, (t0 - this.lastNow) / 1000);
+    const dt = this.freezeClock || this.lastNow < 0 ? 0 : Math.min(0.1, (t0 - this.lastNow) / 1000);
     this.lastNow = t0; this.time += dt;
-    if (this.quality.feed(dt * 1000) && this.lastCss[0] > 0) this.applyQuality();
+    if (!this.freezeClock && this.quality.feed(dt * 1000) && this.lastCss[0] > 0) this.applyQuality();
     this.vfx.maxActive = Math.round(2048 * this.quality.tier.particles);
     const stats = (this.stats = newStats());
     this.frameCount++; this.totalFrames++; const probe = this.frameCount === 1 || this.frameCount === 60; const diag = this.diagState;

@@ -40,8 +40,8 @@ describe("creator eye / shoe / secondary colour rows", () => {
   });
   it("?creator=shot&seed=N is deterministic and signals ready", async () => {
     expect(creatorShotFromQuery(new URLSearchParams("creator=2d"))).toBeUndefined();
-    expect(creatorShotFromQuery(new URLSearchParams("creator=shot&seed=42&facing=-1"))).toEqual({ seed: 42, facing: 7 });
-    expect(creatorShotFromQuery(new URLSearchParams("creator=shot"))).toEqual({ seed: 1, facing: 1 });
+    expect(creatorShotFromQuery(new URLSearchParams("creator=shot&seed=42&facing=-1"))).toMatchObject({ seed: 42, facing: 7 });
+    expect(creatorShotFromQuery(new URLSearchParams("creator=shot"))).toMatchObject({ seed: 1, facing: 1 });
     expect(creatorShotLook(cat, 42)).toEqual(creatorShotLook(cat, 42)); expect(creatorShotLook(cat, 42)).not.toEqual(creatorShotLook(cat, 43));
     const ready = new Promise<string>((r) => { void showCharacterCreator({ root: document.body, catalog: cat, initial: { v: 1, name: "S", appearance: creatorShotLook(cat, 42) }, pads: () => [], shot: { facing: 2, onReady: (i) => r(i.renderer) } }); });
     expect(await ready).toBe("sketch"); expect(document.querySelector<HTMLElement>("[data-boot=creator]")!.dataset["ready"]).toBe("1");

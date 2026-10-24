@@ -57,12 +57,21 @@ export function colorChoices(cat: CosmeticCatalogLike, s: WearableSlot): number[
 }
 /** Slots whose G (secondary) channel the single "Secondary colour" row drives (all 2-channel clothing in the creator). */
 export const SECONDARY_SLOTS: readonly WearableSlot[] = ["top", "bottom", "shoes"];
-export type CreatorField = "body" | "skin" | "secondary" | `${WearableSlot}` | `${WearableSlot}:color`;
+export type CreatorField = "body" | "skin" | "secondary" | `${WearableSlot}` | `${WearableSlot}:color` | `${WearableSlot}:color2`;
+/** Slots with their own "<slot> secondary colour" row: shown only once a starter wearable in the slot has a G (color2) tint channel. */
+export const COLOR2_ROW_SLOTS: readonly WearableSlot[] = ["hair", "eyes", "face"];
+/** True when any wearable in `s` (or one of its layers) tints G from the secondary palette (tintChannels 2). */
+export function slotHasColor2(cat: CosmeticCatalogLike, s: WearableSlot): boolean {
+  for (let id = 1, miss = 0; miss < 256; id++) { const w = cat.wearable(id); if (!w) { miss++; continue; } miss = 0;
+    if (w.slot === s && (w.tintChannels >= 2 || (w.layers ?? []).some((l) => l.tintChannels >= 2))) return true; }
+  return false;
+}
 
 /** Uniform random starter look (Randomize); `rnd` is injectable for tests. */
-export function randomLook(cat: CosmeticCatalogLike, rnd: () => number = Math.random): AppearanceValue {
+export function randomLook(cat: CosmeticCatalogLike, rnd: () => number = Math.random, body?: number): AppearanceValue {
   const pick = (n: number): number => Math.min(n - 1, Math.floor(rnd() * n));
-  const bodyType = pick(BODY_TYPES.length); const v = defaultAppearance(cat, bodyType); const o = creatorOptions(cat, bodyType); const p = pal(cat);
+  // `body` overrides the body roll; the roll is still consumed so the rest of a seed stream keeps its place
+  const rolled = pick(BODY_TYPES.length); const bodyType = body !== undefined && body >= 0 && body < BODY_TYPES.length ? body : rolled; const v = defaultAppearance(cat, bodyType); const o = creatorOptions(cat, bodyType); const p = pal(cat);
   v.skinTone = pick(p.skin); const hairCol = pick(p.hair);
   for (const s of CREATOR_SLOTS) { const opts = o[s]; const i = slotIndex(s); if (!opts.length) continue;
     const none = OPTIONAL.has(s) ? 1 : 0; const k = pick(opts.length + none); v.parts[i] = k < opts.length ? opts[k]!.id : 0;
@@ -74,13 +83,24 @@ export function randomLook(cat: CosmeticCatalogLike, rnd: () => number = Math.ra
 export function seededRandom(seed: number): () => number {
   let t = seed >>> 0; return () => { t = (t + 0x6d2b79f5) >>> 0; let r = Math.imul(t ^ (t >>> 15), 1 | t); r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r; return ((r ^ (r >>> 14)) >>> 0) / 4294967296; };
 }
-/** ?creator=shot&seed=N[&facing=0..7]: the fixed preset look for headless creator captures (same seed + pack = same look). */
-export interface CreatorShotParams { seed: number; facing: number }
+/**
+ * ?creator=shot&seed=N[&facing=0..7][&body=0|1|male|female][&sex=m|f][&freeze=1][&timeout=ms]: the fixed preset look for
+ * headless creator captures (same seed + pack = same look). body/sex override the seed's body roll (other rolls keep their
+ * place in the seed stream). freeze=1: no auto-turn, frozen anim/shader clock, no adaptive quality, DPR 1 (pixel-stable).
+ * timeout (default 20000 ms): window.__creatorReady = { ok:false, error:"timeout", stage } if not ready by then.
+ */
+export interface CreatorShotParams { seed: number; facing: number; body?: number; freeze: boolean; timeoutMs: number }
+export function parseBodyParam(v: string | null): number | undefined {
+  if (v === null || v === "") return undefined; const t = v.trim().toLowerCase();
+  if (/^\d+$/.test(t)) { const n = Number(t); return n < BODY_TYPES.length ? n : undefined; }
+  const k = t === "m" ? "male" : t === "f" ? "female" : t; const i = (BODY_TYPES as readonly string[]).indexOf(k); return i >= 0 ? i : undefined;
+}
 export function creatorShotFromQuery(q: URLSearchParams): CreatorShotParams | undefined {
   if (q.get("creator") !== "shot") return undefined; const n = (k: string, d: number): number => { const v = Number(q.get(k) ?? d); return Number.isFinite(v) ? Math.trunc(v) : d; };
-  return { seed: n("seed", 1), facing: ((n("facing", 1) % 8) + 8) % 8 };
+  const body = parseBodyParam(q.get("body")) ?? parseBodyParam(q.get("sex"));
+  return { seed: n("seed", 1), facing: ((n("facing", 1) % 8) + 8) % 8, ...(body !== undefined ? { body } : {}), freeze: /^(1|true|yes)$/i.test(q.get("freeze") ?? ""), timeoutMs: Math.max(1000, n("timeout", 20000)) };
 }
-export const creatorShotLook = (cat: CosmeticCatalogLike, seed: number): AppearanceValue => randomLook(cat, seededRandom(seed));
+export const creatorShotLook = (cat: CosmeticCatalogLike, seed: number, body?: number): AppearanceValue => randomLook(cat, seededRandom(seed), body);
 /** Steps one field (cycle with wrap); returns a new value. */
 export function stepLook(cat: CosmeticCatalogLike, v: AppearanceValue, field: CreatorField, d: number): AppearanceValue {
   const n: AppearanceValue = { bodyType: v.bodyType, skinTone: v.skinTone, parts: [...v.parts], primary: [...v.primary], secondary: [...v.secondary] }; const p = pal(cat);
@@ -89,6 +109,7 @@ export function stepLook(cat: CosmeticCatalogLike, v: AppearanceValue, field: Cr
     n.bodyType = b; for (const s of CREATOR_SLOTS) { const i = slotIndex(s); if (n.parts[i] && !o[s].some((w) => w.id === n.parts[i])) n.parts[i] = def.parts[i] ?? 0; } return n; }
   if (field === "skin") { n.skinTone = wrap(v.skinTone + d, p.skin); return n; }
   if (field === "secondary") { const c = wrap((v.secondary[slotIndex("top")] ?? 0) + d, p.clothing); for (const s of SECONDARY_SLOTS) n.secondary[slotIndex(s)] = c; return n; }
+  if (field.endsWith(":color2")) { const s = field.slice(0, -7) as WearableSlot; const i = slotIndex(s); const m = isHairish(s) ? p.hair : p.clothing; n.secondary[i] = wrap((v.secondary[i] ?? 0) + d, m); return n; }
   if (field.endsWith(":color")) { const s = field.slice(0, -6) as WearableSlot; const i = slotIndex(s); const ch = colorChoices(cat, s); const k = ch.indexOf(v.primary[i] ?? 0);
     n.primary[i] = ch[wrap((k < 0 ? (d > 0 ? -1 : 0) : k) + d, ch.length)] ?? 0;
     if (s === "hair") n.primary[slotIndex("face")] = n.primary[i]!; return n; } // beard follows hair colour
@@ -127,7 +148,7 @@ export interface CreatorOptions {
   /** ADR-115: Art's creator UI folder (`<base>art/ui/creator/`): preview_bg + ic_randomize / ic_rotate_left / ic_rotate_right (1x + @2x). Text glyphs when absent. */
   artBase?: string | undefined;
   /** Screenshot mode (?creator=shot): no auto-turn / animation clock, fixed facing; onReady fires once the preview has drawn. */
-  shot?: { facing?: number; onReady: (info: { renderer: PreviewDriver["kind"] }) => void } | undefined;
+  shot?: { facing?: number; /** pixel-stable WebGL2 frames (frozen clock, DPR 1) */ freeze?: boolean; onStage?: (stage: string) => void; onReady: (info: { renderer: PreviewDriver["kind"] }) => void } | undefined;
 }
 /** preview_bg.png is 160x200 with the character's feet at (80,172); centred in the PREVIEW_CSS host. */
 export const PREVIEW_BG = { w: 160, h: 200, feetX: 80, feetY: 172 } as const;
@@ -147,13 +168,13 @@ export const previewModeFromQuery = (q: URLSearchParams): CreatorPreviewMode => 
 export interface PreviewDriver { kind: "webgl2" | "canvas2d" | "sketch"; /** resolves when the initial look's art has loaded */ loaded?: Promise<void>; set(a: AppearanceValue): void; facing(k: number): void; frame(tSec: number): void; dispose(): void }
 export const PREVIEW_CSS = { w: 168, h: 216 } as const;
 /** WebGL2 (render package) -> Canvas2D sheets -> undefined (caller keeps the sketch). Mounts into `host`. */
-export async function createPreviewDriver(host: HTMLElement, src: CreatorPreviewSource, look: AppearanceValue, facing: number, backdrop = "#EAD9B8"): Promise<PreviewDriver | undefined> {
-  const doc = host.ownerDocument; const dpr = Math.min(3, doc.defaultView?.devicePixelRatio || 1); const cat = src.registry.cosmetics as unknown as CosmeticCatalogLike | undefined;
+export async function createPreviewDriver(host: HTMLElement, src: CreatorPreviewSource, look: AppearanceValue, facing: number, backdrop = "#EAD9B8", freeze = false): Promise<PreviewDriver | undefined> {
+  const doc = host.ownerDocument; const dpr = freeze ? 1 : Math.min(3, doc.defaultView?.devicePixelRatio || 1); const cat = src.registry.cosmetics as unknown as CosmeticCatalogLike | undefined;
   if (src.mode !== "canvas2d") {
     const cv = doc.createElement("canvas"); cv.dataset["role"] = "creator-preview"; cv.dataset["renderer"] = "webgl2"; cv.style.cssText = `width:${PREVIEW_CSS.w}px;height:${PREVIEW_CSS.h}px;border-radius:12px;display:block`;
     host.append(cv);
     try {
-      const pv: CharacterPreview = await (src.createGl ?? createCharacterPreview)(cv, { registry: src.registry, sources: new Map(src.sources), appearance: look, facing, anim: "idle", backdrop, pollGamepad: false });
+      const pv: CharacterPreview = await (src.createGl ?? createCharacterPreview)(cv, { registry: src.registry, sources: new Map(src.sources), appearance: look, facing, anim: "idle", backdrop, pollGamepad: false, ...(freeze ? { freeze: true } : {}) });
       pv.resize(PREVIEW_CSS.w, PREVIEW_CSS.h, dpr);
       return { kind: "webgl2", set: (a) => { void pv.setAppearance(a); }, facing: (k) => pv.setFacing(k), frame: () => undefined, dispose: () => { pv.dispose(); cv.remove(); } };
     } catch (e) { cv.remove(); if (src.mode === "webgl2") return undefined; console.info("[creator] WebGL2 preview unavailable, Canvas2D:", e); }
@@ -190,9 +211,12 @@ export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter
   { let px = 0, down = false, acc = 0; host.addEventListener("pointerdown", (ev) => { down = true; px = ev.clientX; acc = 0; auto = false; host.setPointerCapture?.(ev.pointerId); });
     host.addEventListener("pointermove", (ev) => { if (!down) return; acc += ev.clientX - px; px = ev.clientX; while (Math.abs(acc) >= 32) { const s = Math.sign(acc); turn(-s); acc -= s * 32; } });
     const up = (): void => { down = false; }; host.addEventListener("pointerup", up); host.addEventListener("pointercancel", up); }
-  const win0 = doc.defaultView; const frames = (n: number): Promise<void> => new Promise((r) => { const f = (): void => { if (n-- <= 0 || !win0?.requestAnimationFrame) r(); else win0.requestAnimationFrame(f); }; f(); });
-  const ready = (kind: PreviewDriver["kind"]): void => { if (!o.shot || disposed) return; draw(); void frames(2).then(() => { if (!disposed) { draw(); wrap.dataset["ready"] = "1"; o.shot?.onReady({ renderer: kind }); } }); };
-  if (o.preview) void createPreviewDriver(host, o.preview, look, dir, o.artBase && o.preview.mode === "canvas2d" ? "" : undefined).then(async (d) => { if (!d) { ready("sketch"); return; } if (disposed) { d.dispose(); return; } drv = d; cv.remove(); wrap.dataset["preview"] = d.kind; if (!o.shot) d.set(look); draw(); await d.loaded?.catch(() => undefined); ready(d.kind); });
+  const win0 = doc.defaultView; // rAF is paused in hidden / occluded (background headless) tabs: each wait also resolves on a 100 ms timer
+  const frames = (n: number): Promise<void> => new Promise((r) => { const f = (): void => { if (n-- <= 0 || !win0?.requestAnimationFrame) { r(); return; }
+    let done = false; const go = (): void => { if (!done) { done = true; f(); } }; win0.requestAnimationFrame(go); win0.setTimeout?.(go, 100); }; f(); });
+  const stage = (s: string): void => { o.shot?.onStage?.(s); };
+  const ready = (kind: PreviewDriver["kind"]): void => { if (!o.shot || disposed) return; stage(`frames:${kind}`); draw(); void frames(2).then(() => { if (!disposed) { draw(); wrap.dataset["ready"] = "1"; o.shot?.onReady({ renderer: kind }); } }); };
+  stage("preview"); if (o.preview) void createPreviewDriver(host, o.preview, look, dir, o.artBase && o.preview.mode === "canvas2d" ? "" : undefined, !!o.shot?.freeze).then(async (d) => { if (!d) { ready("sketch"); return; } if (disposed) { d.dispose(); return; } drv = d; cv.remove(); wrap.dataset["preview"] = d.kind; if (!o.shot) d.set(look); draw(); stage(`loading:${d.kind}`); await d.loaded?.catch(() => undefined); ready(d.kind); });
   else queueMicrotask(() => ready("sketch"));
   const right = doc.createElement("div"); right.style.cssText = "flex:2 1 240px;min-width:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 8px;align-items:center";
   const mk = (t: string, act: string, fn: () => void, cls = "alt"): HTMLButtonElement => { const b = doc.createElement("button"); b.type = "button"; b.textContent = t; b.className = cls; b.dataset["action"] = act; b.style.minHeight = "44px"; b.addEventListener("click", fn); return b; };
@@ -211,9 +235,10 @@ export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter
     const step = (d: number): void => { if (cat) { look = stepLook(cat, look, field, d); refresh(); } };
     box.append(mk("◀", `prev-${field}`, () => step(-1)), val, mk("▶", `next-${field}`, () => step(1))); right.append(l, box);
   };
-  row("Body", "body"); row("Skin", "skin"); row("Hair", "hair"); row("Hair colour", "hair:color"); row("Face / beard", "face"); row("Eyes", "eyes");
+  row("Body", "body"); row("Skin", "skin"); const c2 = (s: WearableSlot, label: string): void => { if (cat && slotHasColor2(cat, s)) row(label, `${s}:color2`); };
+  row("Hair", "hair"); row("Hair colour", "hair:color"); c2("hair", "Hair secondary colour"); row("Face / beard", "face"); c2("face", "Face secondary colour"); row("Eyes", "eyes");
   row("Top", "top"); row("Top colour", "top:color"); row("Bottom", "bottom"); row("Bottom colour", "bottom:color"); row("Shoes", "shoes"); row("Shoe colour", "shoes:color");
-  row("Secondary colour", "secondary"); row("Eye colour", "eyes:color");
+  row("Secondary colour", "secondary"); row("Eye colour", "eyes:color"); c2("eyes", "Eye secondary colour");
   const msg = doc.createElement("p"); msg.dataset["role"] = "creator-msg"; msg.style.cssText = "flex:1 1 100%;margin:0;min-height:1.2em";
   const foot = doc.createElement("div"); foot.className = "sticky-footer"; foot.style.cssText = "flex:1 1 100%;display:flex;flex-wrap:wrap;gap:8px;position:sticky;bottom:0;background:#FFF3DC;padding-top:6px";
   let done: (v: StoredCharacter | undefined) => void = () => undefined;
@@ -225,11 +250,13 @@ export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter
       if (f === "body") return (BODY_TYPES[look.bodyType] ?? "male").replace(/^./, (c) => c.toUpperCase());
       if (f === "skin") return cat?.skinTones[look.skinTone]?.key?.replace(/_/g, " ") ?? `Tone ${look.skinTone + 1}`;
       if (f === "secondary") { const i = look.secondary[slotIndex("top")] ?? 0; return cat?.clothingColors[i]?.key?.replace(/_/g, " ") ?? `Colour ${i + 1}`; }
+      if (f.endsWith(":color2")) { const s = f.slice(0, -7) as WearableSlot; const i = look.secondary[slotIndex(s)] ?? 0; const pc = isHairish(s) ? cat?.hairColors : cat?.clothingColors; return pc?.[i]?.key?.replace(/_/g, " ") ?? `Colour ${i + 1}`; }
       if (f.endsWith(":color")) { const s = f.slice(0, -6) as WearableSlot; const i = look.primary[slotIndex(s)] ?? 0; const pc = isHairish(s) ? cat?.hairColors : cat?.clothingColors; return pc?.[i]?.key?.replace(/_/g, " ") ?? `Colour ${i + 1}`; }
       return cat ? partName(cat, look.parts[slotIndex(f as WearableSlot)] ?? 0) : "—";
     };
     const swatch = (f: string): number | undefined => { if (!cat) return undefined; if (f === "skin") return cat.skinTones[look.skinTone]?.color;
       if (f === "secondary") return cat.clothingColors[look.secondary[slotIndex("top")] ?? 0]?.color;
+      if (f.endsWith(":color2")) { const s = f.slice(0, -7) as WearableSlot; return (isHairish(s) ? cat.hairColors : cat.clothingColors)[look.secondary[slotIndex(s)] ?? 0]?.color; }
       if (f.endsWith(":color")) { const s = f.slice(0, -6) as WearableSlot; return (isHairish(s) ? cat.hairColors : cat.clothingColors)[look.primary[slotIndex(s)] ?? 0]?.color; } return undefined; };
     for (const [f, el] of vals) { el.textContent = label(f); const c = swatch(f); if (c !== undefined) { el.style.borderBottom = `6px solid ${hex(c, "#000")}`; el.dataset["swatch"] = hex(c, ""); } } drv?.set(look); draw();
   }

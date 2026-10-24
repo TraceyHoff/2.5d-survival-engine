@@ -52,7 +52,7 @@ const num = (k: string): number | undefined => { const v = params.get(k); return
 const wq = params.get("weather"); const wi = wq ? WEATHERS.indexOf(wq) : -1;
 const serverParam = params.get("server");
 /** Main menu unless a URL param already picks the mode (?offline=1, ?server=, ?menu=0: tests/screenshots). */
-/** ?creator=shot&seed=N[&facing=0..7]: deterministic creator capture (no menu / world); sets window.__creatorReady. */
+/** ?creator=shot&seed=N[&facing=0..7][&body=|sex=][&freeze=1][&timeout=ms]: deterministic creator capture (no menu / world); sets window.__creatorReady (ADR-124, ADR-130). */
 const creatorShot = creatorShotFromQuery(params);
 const useMenu = !creatorShot && !serverParam && params.get("offline") !== "1" && params.get("menu") !== "0";
 const boot = useMenu ? new BootUI(import.meta.env.BASE_URL) : undefined;
@@ -230,13 +230,14 @@ function useWorld(w: World): void { world = w; loop = createGameLoop(w, { render
 
 // ---- ADR-114 character creator (after the mode choice, before entering the world) ----
 async function runCreatorShot(shot: NonNullable<typeof creatorShot>): Promise<void> {
-  const w = window as { __creatorReady?: unknown };
-  await isoReady; const catalog = iso?.registry.cosmetics?.size ? iso.registry.cosmetics : undefined;
-  if (!catalog) { w.__creatorReady = { ok: false, seed: shot.seed, error: "customization pack not loaded" }; return; }
-  const appearance = creatorShotLook(catalog, shot.seed);
+  const w = window as { __creatorReady?: unknown }; const t0 = performance.now(); let stage = "art";
+  const timer = setTimeout(() => { if (!w.__creatorReady) w.__creatorReady = { ok: false, error: "timeout", seed: shot.seed, facing: shot.facing, stage, ms: Math.round(performance.now() - t0), hidden: document.visibilityState }; }, shot.timeoutMs);
+  await isoReady; stage = "catalog"; const catalog = iso?.registry.cosmetics?.size ? iso.registry.cosmetics : undefined;
+  if (!catalog) { clearTimeout(timer); w.__creatorReady = { ok: false, seed: shot.seed, error: "customization pack not loaded" }; return; }
+  const appearance = creatorShotLook(catalog, shot.seed, shot.body); stage = "creator";
   void showCharacterCreator({ root: uiRoot(), catalog, initial: { v: 1, name: `Survivor ${shot.seed}`, appearance }, title: "Create your character", pads: () => [],
     preview: iso ? { registry: iso.registry, sources: iso.renderer.atlas.sources, mode: params.get("preview") === "2d" ? "canvas2d" : "auto" } : undefined, artBase: `${import.meta.env.BASE_URL}art/ui/creator/`,
-    shot: { facing: shot.facing, onReady: ({ renderer }) => { w.__creatorReady = { ok: true, seed: shot.seed, facing: shot.facing, renderer, appearance }; } } });
+    shot: { facing: shot.facing, freeze: shot.freeze, onStage: (s) => { stage = s; }, onReady: ({ renderer }) => { clearTimeout(timer); if (!w.__creatorReady) w.__creatorReady = { ok: true, seed: shot.seed, facing: shot.facing, body: appearance.bodyType, freeze: shot.freeze, renderer, appearance, ms: Math.round(performance.now() - t0) }; } } });
 }
 let activeChar: StoredCharacter | undefined;
 /** Stored character for this save, or the creator (also when ?editchar=1 / "Edit character" asked for it). Undefined = Back. */

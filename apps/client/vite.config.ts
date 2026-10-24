@@ -1,7 +1,8 @@
 import { defineConfig, type Plugin, type Connect } from "vite";
-import { cpSync, createReadStream, existsSync, readFileSync, mkdirSync, readdirSync, statSync } from "node:fs";
+import { cpSync, createReadStream, existsSync, readFileSync, mkdirSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { extname, join, normalize, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { servedManifestIndex } from "./src/manifest-index.js";
 
 /**
  * Art for the WebGL2 IsoRenderer, served under `<base>art/` (dev: middleware; build: copied into dist/art/):
@@ -13,7 +14,7 @@ import { fileURLToPath } from "node:url";
 const here = fileURLToPath(new URL(".", import.meta.url));
 const root = resolve(here, "../..");
 const MOUNTS: [string, string, (rel: string) => boolean][] = [
-  ["pack/", join(root, "packages/assets/pack"), (r) => /^(manifest\.json|piece_variants\.json|ids\.lock\.json|(?:customization\/)?(?:atlases|mirror)\/[^/]+\.(png|json|ktx2)|vehicles\/manifest\.vehicles\.json|vehicles\/atlases\/[^/]+\.(?:png|json|ktx2)|building\/manifest\.building\.json|building\/atlases\/[^/]+\.(?:png|json|ktx2)|customization\/strings\/en\.json|customization\/manifest\.customization\.json|audio\/(?:sfx|ambience|ui|music|voice)\/[\w-]+\.(?:ogg|opus|m4a|mp3))$/.test(r)],
+  ["pack/", join(root, "packages/assets/pack"), (r) => /^(manifest\.json|piece_variants\.json|ids\.lock\.json|(?:customization\/)?(?:atlases|mirror)\/[^/]+\.(png|json|ktx2)|(?:vehicles|building|items|nature|vehicle_items)\/(?:manifest\.\w+\.json|atlases\/[^/]+\.(?:png|json|ktx2))|customization\/strings\/en\.json|customization\/manifest\.customization\.json|audio\/(?:sfx|ambience|ui|music|voice)\/[\w-]+\.(?:ogg|opus|m4a|mp3))$/.test(r)],
   ["survival_fx/", join(root, "assets/survival_fx"), (r) => /^(render_tuning\.json|daynight_grading\.json|textures\/[^/]+\.png|lut\/[^/]+\.(png|json))$/.test(r)],
   ["ui/", join(root, "assets/ui"), (r) => /^(theme\.json|screen\.schema\.json|fonts\/(?:sdf\/)?[^/]+\.(ttf|txt|png|json)|atlas\/ui_atlas(@2x)?\.(png|json)|(?:kit|screens|strings|branding|creator|hooks\/atlas|input|input\/atlas)\/(?:[\w-]+\/)*[^/]+\.(png|webp|svg|json))$/.test(r) && !/\/frames\//.test(r)],
 ];
@@ -24,6 +25,14 @@ function walk(dir: string, rel = ""): string[] {
   return readdirSync(dir).flatMap((n) => { const p = join(dir, n), r = rel + n; return statSync(p).isDirectory() ? walk(p, r + "/") : [r]; });
 }
 
+/** Whether `<art>/<url>` is served by MOUNTS (exists and passes the mount filter). */
+export function artServed(url: string): boolean {
+  for (const [p, dir, ok] of MOUNTS) if (url.startsWith(p)) { const rel = url.slice(p.length); return ok(rel) && existsSync(join(dir, rel)); }
+  return false;
+}
+/** `<art>/manifests.index.json`: only fragments that ship, so the client requests no missing manifests. */
+const manifestIndexJson = (): string => JSON.stringify(servedManifestIndex(artServed), null, 1);
+
 function art(): Plugin {
   let base = "/", outDir = "dist", building = false;
   const serve: Connect.NextHandleFunction = (req, res, next) => {
@@ -31,6 +40,7 @@ function art(): Plugin {
     const prefix = base + "art/";
     if (!url.startsWith(prefix)) return next();
     const rest = url.slice(prefix.length);
+    if (rest === "manifests.index.json") { res.setHeader("Content-Type", "application/json"); res.end(manifestIndexJson()); return; }
     for (const [p, dir, ok] of MOUNTS) {
       if (!rest.startsWith(p)) continue;
       const rel = rest.slice(p.length); const file = normalize(join(dir, rel));
@@ -52,6 +62,7 @@ function art(): Plugin {
       for (const [p, dir, ok] of MOUNTS) for (const rel of walk(dir).filter(ok)) {
         const dst = join(outDir, "art", p, rel); mkdirSync(join(dst, ".."), { recursive: true }); cpSync(join(dir, rel), dst);
       }
+      writeFileSync(join(outDir, "art", "manifests.index.json"), manifestIndexJson());
     },
   };
 }

@@ -39,6 +39,9 @@ export interface CharacterPreviewOptions {
   transparent?: boolean;
   /** degrees per drag step (pixels per 45 deg facing step), default 48 */ dragStepPx?: number;
   pollGamepad?: boolean;
+  /** Pixel-stable frames for screenshot diffs: anim ticks stop (no idle bob/walk cycle), renderer clock frozen at 0 (no
+   *  shader time effects / particles / flicker) and no adaptive-quality changes. */
+  freeze?: boolean;
 }
 
 export interface CharacterPreview {
@@ -70,6 +73,7 @@ export async function createCharacterPreview(target: HTMLCanvasElement | HTMLEle
   IsoRenderer.registerComponents(world); world.register(Appearance); world.register(PreviewAnim);
   const renderer = new IsoRenderer(canvas, { preserveDrawingBuffer: true, transparent, style: { blobShadow: { alpha: 0.45, widthFactor: 0.6, aspect: 0.4 }, occlusion: { enabled: false } } });
   renderer.settings.weather = false; renderer.settings.fog = false;
+  if (o.freeze) { renderer.freezeClock = true; renderer.time = 0; }
   renderer.backdrop = hexRgb(backdrop);
   // one character: a small pool of sharp pages (paged in on selection) instead of the whole wardrobe at crowd scale
   renderer.atlas.poolPolicy = { coverAll: false, minSlots: 16 };
@@ -142,7 +146,7 @@ export async function createCharacterPreview(target: HTMLCanvasElement | HTMLEle
   const loop = (now: number): void => {
     if (disposed) return;
     acc += Math.min(0.25, (now - last) / 1000); last = now;
-    while (acc >= 0.05) { world.tick++; acc -= 0.05; }
+    while (acc >= 0.05) { if (!o.freeze) world.tick++; acc -= 0.05; }
     pollPad(); renderNow(); raf = requestAnimationFrame(loop);
   };
   resize(); raf = requestAnimationFrame(loop);
