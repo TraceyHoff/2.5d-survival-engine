@@ -139,7 +139,7 @@ def render_amb(key, rng, dur, f):
         y = _waves(rng, n) + _st(rng, lambda r, n: lp(pink(r, n), 600) * 0.1, n)
         return loop_xfade(y, L, n_(xf)), True
     if key == "amb.indoor":
-        y = _st(rng, lambda r, n: lp(brown(r, n), 180) * 0.5 + sine(60, n) * 0.004 + bp(pink(r, n), 200, 900) * 0.03, n)
+        y = _st(rng, lambda r, n: bp(pink(r, n), 120, 1400) * 0.3 + hp(lp(brown(r, n), 220), 90) * 0.15, n)
         for _ in range(int(dur / 3)):  # house creaks / ticks
             place(y, pan(click(rng, 0.03, rng.uniform(400, 900)) * 0.05, rng.uniform(-0.7, 0.7)), rng.uniform(0, dur))
         return loop_xfade(y, L, n_(xf)), True
