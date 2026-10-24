@@ -138,12 +138,15 @@ class Piece:
     def __init__(s, key, fp, layer, rows, cls, geom, variants, group, shadow=True):
         s.key, s.fp, s.layer, s.rows, s.cls, s.geom, s.variants, s.group, s.shadow = key, fp, layer, rows, cls, geom, variants, group, shadow
 REG = {}
-def piece(key, fp, layer, rows, variants, group, tall=False, flat_=False, shadow=None):
-    """decorator: fn(variant) -> boxes | (boxes, decor)"""
+MOUNT_Y = .155   # wall face (.15) + tolerance: back plates / frames / brackets start on the face
+def piece(key, fp, layer, rows, variants, group, tall=False, flat_=False, shadow=None, mount=False):
+    """decorator: fn(variant) -> boxes | (boxes, decor). mount=True: wall-mounted piece whose rots 1/2 face away from the
+    camera; those rows keep only the parts touching the wall face (back/mount, y0 <= MOUNT_Y) and drop ornaments."""
     def deco(fn):
         def geom(v):
             g = fn(v); return g if isinstance(g, tuple) else (g, [])
         REG[key] = Piece(key, tuple(fp), layer, rows, cls_for(fp, tall, flat_), geom, variants, group, (not flat_) if shadow is None else shadow)
+        REG[key].mount = mount
         return fn
     return deco
 
@@ -155,7 +158,9 @@ def jobs(groups):
 
 def render_job(job):
     k, v, r = job; p = REG[k]; seed = zlib.crc32(f'{k}@{v}'.encode()) % 1000
-    return job, render(p.geom(v), r, p.cls, p.fp, seed, p.shadow)
+    g = p.geom(v)
+    if getattr(p, 'mount', False) and r in (1, 2): g = ([b for b in g[0] if b.v[2] <= MOUNT_Y], [])
+    return job, render(g, r, p.cls, p.fp, seed, p.shadow)
 
 GROUP_ORDER = []   # atlas emission order (stable across commits: groups appended, never reordered)
 

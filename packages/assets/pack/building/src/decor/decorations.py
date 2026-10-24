@@ -4,6 +4,7 @@ curtains, clocks, mirrors, tabletop clutter). Wall-mounted (`edge`) pieces hang 
 from .lib import piece, B, planksH, planksV, flat, cobble, tx_tile, tx_books, tx_woven, CELLS
 from .furniture import MAT, legs, slab, panel, cushion, cabinet
 from . import toons as TN
+from .lib import ellipse_pts, capsule_pts
 WY = .15   # wall face
 
 # ------------------------------------------------------------------ kitchen & workshop
@@ -75,9 +76,16 @@ def clay_oven(v):
               B(-.3, .3, -.3, .3, 34, 40, 'brick', cobble(4), cobble(4), cobble(4)), B(-.12, .12, .38, .39, 16, 28, 'ink'), B(-.08, .08, -.08, .08, 40, 54, 'brick')]
         return bx
     bx = [B(-.44, .44, -.44, .44, 0, 12, 'stone', cobble(5), cobble(5), cobble(5))]
-    def dome(c):
-        c.part(TN.ellipse_pts(16, 20, 13, 12)[:25] + [(3, 24), (29, 24)], 'clay', shade=.35); c.part(TN.ellipse_pts(16, 21, 4, 4)[:25] + [(12, 24), (20, 24)], 'ink', outline=False, flat=True)
-        c.part(TN.ellipse_pts(16, 21, 2.6, 2), 'fire', outline=False)
+    def dome(c):   # rounded, shaded clay dome (upper half-ellipse) with arched mouth, glow and a small flue
+        import math
+        half = lambda cx, cy, rx, ry, n=24: [(cx + rx * math.cos(math.pi + math.pi * k / n), cy + ry * math.sin(math.pi + math.pi * k / n)) for k in range(n + 1)]
+        c.part(ellipse_pts(16, 23, 12.5, 3.2), 'clay', shade=.4)                                       # rim / base ring
+        c.part(half(16, 23, 12, 13) + [(4, 23.5), (28, 23.5)][::-1], 'clay', shade=.45, hl=.22)        # dome
+        c.fill(ellipse_pts(12, 14, 3.4, 4.2, rot=-.4), '#f2c9a0', alpha=110)                           # soft highlight
+        c.part(capsule_pts(21, 11.5, 21, 8, 1.8, 1.6), 'clay', shade=.35)                              # flue
+        c.fill(ellipse_pts(21, 8, 1.3, .6), '#3a2a26')
+        c.part(half(16, 23.4, 4.6, 6.4) + [(20.6, 23.4), (11.4, 23.4)], 'ink', outline=False, flat=True)  # arched mouth
+        c.fill(half(16, 23.4, 3.2, 3.6) + [(19.2, 23.4), (12.8, 23.4)], '#ff9a3c'); c.fill(ellipse_pts(16, 22.6, 2.0, .9), '#ffe08a')
     return bx, [TN.at(0, 0, 12, dome, 48)]
 
 # ------------------------------------------------------------------ statues
@@ -143,11 +151,11 @@ def barrel_storage(v):
 def plaque(rp='wood_dark', w=.2, z0=26, z1=44):
     return B(-w, w, WY, WY + .04, z0, z1, rp, flat(.1), planksV(3), planksV(3))
 
-@piece('trophy_mount', (1, 1), 3, 4, ['deer', 'elk', 'moose', 'boar', 'wolf', 'bear', 'bison', 'rabbit'], 'deco', tall=True, shadow=False)
+@piece('trophy_mount', (1, 1), 3, 4, ['deer', 'elk', 'moose', 'boar', 'wolf', 'bear', 'bison', 'rabbit'], 'deco', tall=True, shadow=False, mount=True)
 def trophy_mount(v):
     return [plaque()], [TN.at(0, WY + .06, 22, TN.head(v), 36, flip_odd=True)]
 
-@piece('sign_wall', (1, 1), 3, 4, ['plain', 'carved'], 'deco', tall=True, shadow=False)
+@piece('sign_wall', (1, 1), 3, 4, ['plain', 'carved'], 'deco', tall=True, shadow=False, mount=True)
 def sign_wall(v):
     bx = [B(-.36, .36, WY, WY + .04, 30, 44, 'wood', flat(.1), planksH(4), planksH(4))]
     if v == 'carved': bx += [B(-.38, .38, WY, WY + .05, 44, 46, 'wood_dark'), B(-.38, .38, WY, WY + .05, 28, 30, 'wood_dark'), B(-.22, .22, WY + .04, WY + .05, 34, 40, 'gold')]
@@ -175,7 +183,7 @@ def clock(v):
     return [panel(-.24, .24, -.2, .16, 0, 64, m), slab(-.28, .28, -.24, .2, 64, 68, m), B(-.18, .18, .16, .17, 46, 60, 'enamel'), B(-.01, .01, .17, .18, 52, 58, 'ink'), B(-.01, .08, .17, .18, 52, 53, 'ink'),
             B(-.12, .12, .16, .17, 10, 40, 'glass'), B(-.02, .02, .17, .18, 16, 38, 'gold'), B(-.06, .06, .17, .18, 16, 22, 'gold')]
 
-@piece('clock_wall', (1, 1), 3, 4, ['round', 'cuckoo'], 'deco', tall=True, shadow=False)
+@piece('clock_wall', (1, 1), 3, 4, ['round', 'cuckoo'], 'deco', tall=True, shadow=False, mount=True)
 def clock_wall(v):
     if v == 'cuckoo':
         return [B(-.16, .16, WY, WY + .1, 28, 46, 'wood_dark', planksH(3), planksV(3), planksV(3)), B(-.2, .2, WY, WY + .14, 46, 49, 'wood'), B(-.1, .1, WY + .1, WY + .11, 33, 43, 'enamel'),
@@ -189,7 +197,7 @@ def mirror_standing(v):
         return [B(-.2, .2, -.16, .16, 0, 3, m['w']), B(-.18, -.14, -.02, .02, 3, 40, m['w']), B(.14, .18, -.02, .02, 3, 40, m['w']), B(-.14, .14, -.03, .02, 18, 56, 'gold'), B(-.11, .11, .02, .03, 21, 53, 'glass')]
     return [B(-.24, .24, -.2, .0, 0, 64, m['w']), B(-.2, .2, .0, .01, 4, 60, 'glass'), B(-.26, .26, -.22, .02, 64, 67, 'gold')]
 
-@piece('mirror_wall', (1, 1), 3, 4, ['round', 'gilded'], 'deco', tall=True, shadow=False)
+@piece('mirror_wall', (1, 1), 3, 4, ['round', 'gilded'], 'deco', tall=True, shadow=False, mount=True)
 def mirror_wall(v):
     rp = 'gold' if v == 'gilded' else 'wood_dark'
     bx = [B(-.22, .22, WY, WY + .03, 24, 52, rp), B(-.18, .18, WY + .03, WY + .04, 27, 49, 'glass')]

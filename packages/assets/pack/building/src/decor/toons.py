@@ -80,9 +80,18 @@ def statue_fig(kind, rp):
         elif kind == 'hero':
             c.part(capsule_pts(13, 27, 13, 17, 1.8), rp); c.part(capsule_pts(19, 27, 19, 17, 1.8), rp)
             c.part([(10, 18), (22, 18), (21, 7), (11, 7)], rp); c.part(ellipse_pts(16, 4.5, 2.8, 3), rp); c.part(capsule_pts(21, 8, 26, 0, 1.2), rp)
-        elif kind == 'horse':
-            c.part(ellipse_pts(15, 15, 10, 5), rp); [c.part(capsule_pts(x, 17, x, 27, 1.4), rp) for x in (8, 11, 19, 22)]
-            c.part(capsule_pts(24, 13, 27, 5, 2.4), rp); c.part(ellipse_pts(28, 5, 3.5, 2.2, rot=.4), rp); c.part(capsule_pts(13, 10, 14, 1, 1.6), rp)
+        elif kind == 'horse':   # chibi horse, side view facing right: big head, short legs, curly tail
+            c.part(capsule_pts(7, 12, 4, 19, 1.8, .9), rp, shade=.3)                                   # tail
+            for x, dx in ((9, -.6), (12.5, 0), (17.5, 0), (21, .6)): c.part(capsule_pts(x, 16, x + dx, 22.6, 1.7, 1.5), rp, shade=.3)
+            for x in (9, 12.5, 17.5, 21): c.part(ellipse_pts(x + (x > 15) * .3, 23.2, 2.0, 1.0), 'ink', outline=False, flat=True)  # hooves
+            c.part(ellipse_pts(15, 14.5, 8.5, 5), rp, shade=.32, hl=.16)                                # body
+            c.part(capsule_pts(20, 13, 22.5, 7.5, 2.8, 2.2), rp, shade=.3)                              # neck
+            c.part(ellipse_pts(24.5, 6.5, 4.6, 3.8, rot=.25), rp, shade=.3, hl=.18)                     # head
+            c.part(ellipse_pts(28, 8.2, 2.6, 2.0, rot=.3), rp, shade=.25)                               # muzzle
+            c.part([(22, 3.6), (22.8, -.2), (24.2, 3.0)], rp, shade=.2); c.part([(24.4, 3.0), (25.6, -.4), (26.4, 3.4)], rp, shade=.2)  # ears
+            [c.part(ellipse_pts(21.6 - k * 1.1, 4.6 + k * 1.9, 1.5, 1.1, rot=-.9), 'hair_brown', shade=.2) for k in range(4)]  # mane tufts
+            c.fill(ellipse_pts(25.2, 5.9, .9, 1.1), '#2a2230'); c.fill(ellipse_pts(25.5, 5.5, .35, .35), '#ffffff')  # eye + glint
+            c.fill(ellipse_pts(29.2, 8.0, .45, .35), '#2a2230')
     return d
 
 def plant(kind):

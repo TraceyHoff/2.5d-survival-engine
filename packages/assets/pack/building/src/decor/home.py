@@ -30,7 +30,7 @@ PLM = {'wood': ('wood', planksH(3)), 'clay': ('clay', flat(.15)), 'stone': ('sto
 def herb_planter(v):
     m, t = PLM[v]
     return [B(-.4, .4, -.3, .3, 0, 14, m, t, t, t), B(-.36, .36, -.26, .26, 13, 14, 'dirt', flat(.4))], [TN.at(0, 0, 13, TN.plant('herbs'), 48)]
-@piece('window_planter', (1, 1), 3, 4, ['wood', 'clay'], 'home', tall=True, shadow=False)
+@piece('window_planter', (1, 1), 3, 4, ['wood', 'clay'], 'home', tall=True, shadow=False, mount=True)
 def window_planter(v):
     m, t = PLM[v]
     return [B(-.4, .4, WY, WY + .18, 20, 28, m, t, t, t), B(-.37, .37, WY + .02, WY + .16, 27, 28, 'dirt'), B(-.3, -.26, WY, WY + .12, 16, 20, 'iron'), B(.26, .3, WY, WY + .12, 16, 20, 'iron')], \
@@ -47,24 +47,24 @@ def picture(spec, z0=24, z1=50, w=.3, frame='gold'):
         rp, a, b = s[:3]; x0, x1 = (s[3], s[4]) if len(s) > 3 else (-w, w)
         k = len(bx); bx.append(B(x0, x1, WY + .03 + k * .001, WY + .031 + k * .001, a + (z0 - 24), b + (z0 - 24), rp, flat(.1), flat(.1), flat(.1)))
     return bx
-@piece('painting_wall', (1, 1), 3, 4, list(SCENE), 'home', tall=True, shadow=False)
+@piece('painting_wall', (1, 1), 3, 4, list(SCENE), 'home', tall=True, shadow=False, mount=True)
 def painting_wall(v): return picture(SCENE[v], frame='gold' if v in ('portrait', 'battle', 'seascape') else 'wood_dark')
 
 POST = {'wanted': ('sand', 'ink', 'skin_tan'), 'propaganda': ('cloth_red', 'ink', 'cloth_yellow'), 'band': ('ink', 'cloth_purple', 'flower_pink'), 'map': ('sand', 'grass', 'water'),
         'recruit': ('cloth_blue', 'snow', 'cloth_red'), 'travel': ('cloth_teal', 'flower_yel', 'water')}
-@piece('poster', (1, 1), 3, 4, list(POST), 'home', tall=True, shadow=False)
+@piece('poster', (1, 1), 3, 4, list(POST), 'home', tall=True, shadow=False, mount=True)
 def poster(v):
     a, b, c = POST[v]
     return [B(-.18, .18, WY, WY + .01, 24, 50, a, flat(.2)), B(-.14, .14, WY + .01, WY + .015, 44, 48, b), B(-.1, .1, WY + .01, WY + .015, 30, 42, c), B(-.14, .14, WY + .01, WY + .015, 26, 28, b)]
 
 TAP = {'hunt': [(-.2, .0, 22, 30), (.05, .2, 30, 36)], 'crest': [(-.1, .1, 26, 42)], 'forest': [(-.25, -.1, 14, 40), (.08, .24, 14, 36)], 'dragon': [(-.22, .2, 24, 32), (.1, .22, 32, 40)]}
-@piece('tapestry', (1, 1), 3, 4, list(TAP), 'home', tall=True, shadow=False)
+@piece('tapestry', (1, 1), 3, 4, list(TAP), 'home', tall=True, shadow=False, mount=True)
 def tapestry(v):
     bx = [B(-.36, .36, WY + .03, WY + .05, 52, 54, 'wood_dark'), B(-.32, .32, WY, WY + .03, 8, 52, 'paint', flat(.05), planksV(2), planksV(2))]
     bx += [B(x0, x1, WY + .03, WY + .035, a, b, 'paint2') for x0, x1, a, b in TAP[v]] + [B(-.32 + i * .08, -.29 + i * .08, WY, WY + .03, 4, 8, 'paint2') for i in range(9)]
     return bx
 
-@piece('weapon_rack', (1, 1), 3, 4, ['swords', 'spears', 'rifles', 'bows'], 'home', tall=True, shadow=False)
+@piece('weapon_rack', (1, 1), 3, 4, ['swords', 'spears', 'rifles', 'bows'], 'home', tall=True, shadow=False, mount=True)
 def weapon_rack(v):
     bx = [B(-.4, .4, WY, WY + .06, 44, 47, 'wood_dark'), B(-.4, .4, WY, WY + .06, 22, 25, 'wood_dark')]
     for x in (-.24, 0, .24):
@@ -74,7 +74,7 @@ def weapon_rack(v):
         if v == 'bows': bx += [B(x - .01, x + .03, WY + .06, WY + .08, 14, 54, 'wood'), B(x - .03, x - .02, WY + .06, WY + .07, 16, 52, 'snow')]
     return bx
 
-@piece('wall_shelf', (1, 1), 3, 4, ['plank', 'double', 'corner', 'potted'], 'home', tall=True, shadow=False)
+@piece('wall_shelf', (1, 1), 3, 4, ['plank', 'double', 'corner', 'potted'], 'home', tall=True, shadow=False, mount=True)
 def wall_shelf(v):
     sh = lambda z, w=.38, d=.16: [B(-w, w, WY, WY + d, z, z + 2, 'wood', planksH(2)), B(-w + .04, -w + .07, WY, WY + .1, z - 6, z, 'iron'), B(w - .07, w - .04, WY, WY + .1, z - 6, z, 'iron')]
     if v == 'corner': return [B(-.38, -.1, WY, WY + .28, z, z + 2, 'wood', planksH(2)) for z in (26, 38, 50)] + [B(-.12, -.09, WY, WY + .26, 26, 52, 'wood_dark'), B(-.32, -.22, WY + .05, WY + .15, 28, 34, 'clay')]
@@ -84,13 +84,13 @@ def wall_shelf(v):
     if v == 'potted': bx += pot('clay', .06, 6, 34)[:1]
     return bx if v != 'potted' else (bx, [TN.at(0, WY + .1, 40, TN.plant('ivy'), 32)])
 
-@piece('shield_mount', (1, 1), 3, 4, ['round', 'kite', 'clan'], 'home', tall=True, shadow=False)
+@piece('shield_mount', (1, 1), 3, 4, ['round', 'kite', 'clan'], 'home', tall=True, shadow=False, mount=True)
 def shield_mount(v):
     if v == 'round': return [B(-.22, .22, WY, WY + .04, 24, 46, 'wood', planksV(4), planksV(4), planksV(4)), B(-.24, .24, WY, WY + .04, 34, 36, 'iron'), B(-.05, .05, WY + .04, WY + .07, 32, 38, 'iron')]
     if v == 'kite': return [B(-.18, .18, WY, WY + .04, 32, 50, 'iron'), B(-.12, .12, WY, WY + .04, 24, 32, 'iron'), B(-.06, .06, WY, WY + .04, 18, 24, 'iron'), B(-.12, .12, WY + .04, WY + .05, 34, 46, 'cloth_red')]
     return [B(-.2, .2, WY, WY + .04, 26, 48, 'paint'), B(-.04, .04, WY + .04, WY + .05, 28, 46, 'paint2'), B(-.16, .16, WY + .04, WY + .05, 38, 42, 'paint2'), B(-.22, .22, WY, WY + .045, 46, 49, 'gold')]
 
-@piece('map_board', (1, 1), 3, 4, ['region', 'battle'], 'home', tall=True, shadow=False)
+@piece('map_board', (1, 1), 3, 4, ['region', 'battle'], 'home', tall=True, shadow=False, mount=True)
 def map_board(v):
     bx = [B(-.42, .42, WY, WY + .04, 22, 50, 'wood_dark'), B(-.38, .38, WY + .04, WY + .045, 25, 47, 'sand', flat(.3)), B(-.2, .1, WY + .045, WY + .05, 30, 42, 'grass'), B(.12, .34, WY + .045, WY + .05, 27, 34, 'water')]
     pins = [(-.1, 38), (.2, 31), (-.3, 28)] if v == 'region' else [(-.14, 36), (-.08, 33), (.02, 39), (.18, 30), (.26, 41)]
