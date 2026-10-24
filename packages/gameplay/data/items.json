@@ -4561,6 +4561,13 @@
         "health": 15
       },
       "spoilSeconds": 3600
+    },
+    {
+      "key": "animal_feed",
+      "name": "Animal Feed",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 0.2
     }
   ]
 }

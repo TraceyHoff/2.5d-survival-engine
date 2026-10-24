@@ -6,7 +6,7 @@
  */
 import { DEFAULT_TICK_HZ, Permissions, Transform, defineResource, type Entity, type World } from "@engine/core";
 import { PopulationSpawner, type BuildingGrid, type ChunkKey, type PhaseKey, type PopulationHost, type SpawnEntry, type PopulationViewpoint } from "@engine/world";
-import { Anim, AnimState, Animal, Container, ContainerViewers, Dead, Health, LootBag, Survival } from "./components.js";
+import { Anim, AnimState, Animal, Tamed, Container, ContainerViewers, Dead, Health, LootBag, Survival } from "./components.js";
 import { gameplayDefs, isAuthority } from "./config.js";
 import { indexEntity } from "./spawn.js";
 import { currentPhaseKey, PopulationZombies, spawnZombie } from "./combat/zombies.js";
@@ -87,7 +87,8 @@ export function animalAISystem(world: World, dt: number): void {
     const aggressive = !!def.attack && def.aggro.mode !== "passive" && !scared;
     const homeD = Math.hypot(t.x - a.homeX, t.y - a.homeY);
     let threat: { e: Entity; x: number; y: number; d: number } | undefined;
-    for (const p of index.queryRadius(t.x, t.y, Math.max(def.fleeRange, aggressive ? def.aggro.leashRange : 0))) {
+    const tame = world.has(e, Tamed); // ADR-113: domesticated animals neither flee nor attack
+    if (!tame) for (const p of index.queryRadius(t.x, t.y, Math.max(def.fleeRange, aggressive ? def.aggro.leashRange : 0))) {
       if (!world.has(p, Survival) || world.has(p, Dead)) continue; const pt = world.get(p, Transform)!; const d = Math.hypot(pt.x - t.x, pt.y - t.y);
       if (!threat || d < threat.d || (d === threat.d && p < threat.e)) threat = { e: p, x: pt.x, y: pt.y, d };
     }
@@ -110,7 +111,7 @@ export function animalAISystem(world: World, dt: number): void {
     else if (world.tick >= a.thinkAt || state === AnimalState.Flee || state === AnimalState.Attack) {
       const rng = world.rngFor("animal.think", e);
       if (rng.next() < 0.5) state = AnimalState.Idle;
-      else { state = AnimalState.Wander; const ang = rng.range(-Math.PI, Math.PI), r = rng.range(1, def.wanderRadius); gx = a.homeX + Math.cos(ang) * r; gy = a.homeY + Math.sin(ang) * r; }
+      else { state = AnimalState.Wander; const ang = rng.range(-Math.PI, Math.PI), r = rng.range(1, tame ? Math.min(2.5, def.wanderRadius) : def.wanderRadius); gx = a.homeX + Math.cos(ang) * r; gy = a.homeY + Math.sin(ang) * r; }
       world.setField(e, Animal, "thinkAt", world.tick + Math.round(rng.range(2, 6) * DEFAULT_TICK_HZ));
     }
     let moving = false;
@@ -180,8 +181,8 @@ export function installPopulation(world: World, o: InstallPopulationOptions): Po
       if (entry.category === "human_bot") return o.humanBots?.spawn(x, y, entry.kind) ? "pending" : undefined;
       return undefined;
     },
-    despawn: (e) => { if (world.isAlive(e)) world.destroy(e); },
-    ...(o.persistent ? { persistent: o.persistent } : {}),
+    despawn: (e) => { if (world.isAlive(e) && !world.has(e, Tamed)) world.destroy(e); }, // ADR-113: tamed animals stay
+    persistent: (e) => world.has(e, Tamed) || (o.persistent?.(e) ?? false),
     position: (e) => { if (!world.isAlive(e) || world.has(e, Dead)) return undefined; const t = world.get(e, Transform); return t ? { x: t.x, y: t.y } : undefined; },
   };
   // Human bots are despawned by their host (session leave), not by destroying the entity.

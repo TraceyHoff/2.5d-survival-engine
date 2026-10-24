@@ -8,6 +8,7 @@
 import { entityIndex, evaluate, Transform, type Entity, type World } from "@engine/core";
 import { Anim, AnimState, Buffs, Dead, Driver, EdgeSide, Inventory, PlayerIntent, Stat, Survival, Wetness } from "../components.js";
 import { gameplayDefs } from "../config.js";
+import { skillMul } from "../skills/tree.js";
 import { GameplayActions as A } from "../input.js";
 import { StructureIndexRes } from "../building/structure.js";
 import { TerrainRes } from "../world.js";
@@ -27,7 +28,7 @@ export function moveDirection(actions: number): { dx: number; dy: number } {
 export function speedMultiplier(world: World, e: Entity, sprint: boolean): number {
   const mv = gameplayDefs(world).movement; let m = 1;
   if (sprint && (world.getField(e, Survival, "stamina") ?? 0) > 0) m *= mv.sprintMul;
-  const max = world.getField(e, Inventory, "maxWeight") ?? 0; const w = world.getField(e, Inventory, "weight") ?? 0;
+  const max = (world.getField(e, Inventory, "maxWeight") ?? 0) * skillMul(world, e, "carry"); const w = world.getField(e, Inventory, "weight") ?? 0;
   if (max > 0) { const f = w / max; if (f > mv.encumberedFrom) m *= 1 - (1 - mv.encumberedMinMul) * Math.min(1, (f - mv.encumberedFrom) / (1 - mv.encumberedFrom)); }
   m *= 1 - mv.wetSlowMul * ((world.getField(e, Wetness, "level") ?? 0) / 255);
   return evaluate(world, e, Buffs, Stat.MoveSpeed, m);

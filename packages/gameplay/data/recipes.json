@@ -256,6 +256,7 @@
     {"key": "herbal_poultice_from_yarrow", "station": "none", "seconds": 2, "ingredients": [{"item": "yarrow", "count": 2}, {"item": "fiber", "count": 1}], "output": {"item": "herbal_poultice", "count": 1}},
     {"key": "antiseptic_from_aloe", "station": "workbench", "seconds": 3, "ingredients": [{"item": "aloe", "count": 2}, {"item": "ginseng", "count": 1}], "output": {"item": "antiseptic", "count": 1}},
     {"key": "tinder_from_birch_bark", "station": "none", "seconds": 1, "ingredients": [{"item": "birch_bark", "count": 2}], "output": {"item": "fiber", "count": 2}},
-    {"key": "thatch_from_palm", "station": "none", "seconds": 1, "ingredients": [{"item": "palm_frond", "count": 2}], "output": {"item": "fiber", "count": 3}}
+    {"key": "thatch_from_palm", "station": "none", "seconds": 1, "ingredients": [{"item": "palm_frond", "count": 2}], "output": {"item": "fiber", "count": 3}},
+    {"key": "animal_feed", "station": "none", "seconds": 2, "ingredients": [{"item": "fiber", "count": 2}, {"item": "berries", "count": 1}], "output": {"item": "animal_feed", "count": 3}, "skill": {"key": "husbandry", "level": 1}}
   ]
 }

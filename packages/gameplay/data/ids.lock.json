@@ -423,7 +423,8 @@
     "wool_hat": 421,
     "wool_sweater": 422,
     "yarrow": 423,
-    "yarrow_seeds": 424
+    "yarrow_seeds": 424,
+    "animal_feed": 425
   },
   "resources": {
     "fallen_branches": 1,
@@ -839,7 +840,8 @@
     "willow_tea": 325,
     "wool_cloth": 326,
     "wool_hat": 327,
-    "wool_sweater": 328
+    "wool_sweater": 328,
+    "animal_feed": 329
   },
   "pieces": {
     "anvil": 1,
@@ -1020,7 +1022,8 @@
     "wardrobe_rustic": 176,
     "weapon_rack": 177,
     "well": 178,
-    "window_planter": 179
+    "window_planter": 179,
+    "feeding_trough": 180
   },
   "zombies": {
     "zombie_brute": 1,

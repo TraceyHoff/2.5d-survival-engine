@@ -12,17 +12,25 @@ import { secondsToTicks, StationKind, type GameDefs } from "../defs.js";
 import { BuildFail, BuildFailed, emit, ev, FireToggled, FuelOut } from "../events.js";
 import { listSlots, removeItem } from "../inventory.js";
 import { resolveAttachment } from "../building/links.js";
-import { AttachKind } from "../components.js";
+import { AttachKind, Progression } from "../components.js";
+import { skillMod } from "../skills/tree.js";
 import { attachmentsOf, pieceOf } from "../building/links.js";
 
 function burnNext(world: World, fire: Entity, defs: GameDefs, dt: number): boolean {
   if (!world.has(fire, Container)) return false;
-  const mul = fuelMulOf(world, fire, defs);
+  const mul = fuelMulOf(world, fire, defs) * (1 + tenderFuelMod(world, fire));
   for (const s of listSlots(world, fire)) {
     const sec = defs.items.get(s.item)?.fuelSeconds ?? 0;
     if (sec > 0 && removeItem(world, fire, s.item, 1)) { world.setField(fire, Fuel, "burnUntilTick", world.tick + secondsToTicks(sec * mul, dt)); return true; }
   }
   return false;
+}
+/** ADR-113: best "fuel" skill mod among players within 6 tiles of the fire (fire tenders make fuel last longer). */
+export function tenderFuelMod(world: World, fire: Entity): number {
+  const t = world.get(fire, Transform) ?? (pieceOf(world, fire) !== undefined ? world.get(pieceOf(world, fire)!, Transform) : undefined); if (!t) return 0;
+  let best = 0;
+  for (const p of world.query([Progression, Transform], [Dead])) { const pt = world.get(p, Transform)!; if ((pt.x - t.x) ** 2 + (pt.y - t.y) ** 2 <= 36) best = Math.max(best, skillMod(world, p, "fuel")); }
+  return best;
 }
 /** Piece fuelMul (fireplace/wood_stove burn fuel slower); free-standing stations = 1. */
 export function fuelMulOf(world: World, fire: Entity, defs: GameDefs): number {

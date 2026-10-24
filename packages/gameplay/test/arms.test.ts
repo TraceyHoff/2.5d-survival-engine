@@ -127,7 +127,7 @@ describe("skill-gated recipes", () => {
   it("SkillTooLow when the provider reports a low level; ignored without a provider", () => {
     const w = world(); const a = mk(w, 1);
     const r = [...d.recipes.values()].find((x) => x.skill)!;
-    expect(G.meetsSkill(w, a, r)).toBe(true);
+    expect(G.meetsSkill(w, a, r)).toBe(false); // ADR-113: installProgression gates fresh players (no skill nodes)
     G.setSkillLevelProvider(w, () => 0); expect(G.meetsSkill(w, a, r)).toBe(false);
     G.setSkillLevelProvider(w, () => r.skill!.level); expect(G.meetsSkill(w, a, r)).toBe(true);
   });

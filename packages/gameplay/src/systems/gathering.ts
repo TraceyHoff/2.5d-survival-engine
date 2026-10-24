@@ -15,6 +15,7 @@ import { emit, GatherFail, GatherFailed, GatherSwing, InventoryOverflow, ItemGat
 import { makeNoise } from "./noise.js";
 import { addItem, slotItem } from "../inventory.js";
 import { spendStamina } from "./vitals.js";
+import { scaleCount, skillMul } from "../skills/tree.js";
 
 const BARE_HANDS: ToolDef = { kind: ToolKind.None, tier: 0 };
 
@@ -75,7 +76,9 @@ export function gatherSystem(world: World, dt: number): void {
       if (bare && i > 0) return; // fists: first yield only
       if (y.chance < 1 && rng.next() >= y.chance) return;
       const rolled = rng.int(y.min, y.max + 1) + (i === 0 ? bonus : 0);
-      const n = bare ? Math.max(defs.bareHands.minYield, Math.floor(rolled * defs.bareHands.yieldMul)) : rolled;
+      const n0 = bare ? Math.max(defs.bareHands.minYield, Math.floor(rolled * defs.bareHands.yieldMul)) : rolled;
+      const gm = skillMul(world, e, defs.resources.get(world.get(node, ResourceNode)!.kind)?.key.startsWith("crop_") ? "cropYield" : "gather");
+      const n = gm === 1 ? n0 : scaleCount(n0, gm, rng.next()); // ADR-113 (no extra roll without perks: rng stream unchanged)
       if (n <= 0) return;
       const added = addItem(world, e, y.item, n);
       if (added > 0) emit(world, ItemGathered, { entity: e, node, item: y.item, count: added });

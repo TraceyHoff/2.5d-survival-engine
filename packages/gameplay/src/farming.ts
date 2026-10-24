@@ -126,7 +126,7 @@ export const FARM_FAIL_TEXT: Readonly<Record<number, string>> = {
   [FarmFail.NoPrivilege]: "Inside someone else's claim", [FarmFail.BadTile]: "Can't farm on this ground", [FarmFail.Occupied]: "Too close to another plant",
   [FarmFail.NeedsSoil]: "Needs tilled soil — use a hoe first", [FarmFail.NothingToTend]: "No crops here to tend", [FarmFail.NeedsHoe]: "You need a hoe to till soil first",
 };
-export type FarmAction = "Till" | "Plant" | "Water" | "Fertilize" | "Harvest";
+export type FarmAction = "Till" | "Plant" | "Water" | "Fertilize" | "Harvest" | "Tame" | "Feed"; // Tame / Feed: ADR-113 husbandryPrompt
 export interface FarmPrompt { action: FarmAction; /** Use slot (Harvest goes through Interact / gather instead) */ slot?: number; target?: Entity; /** predicted failure (dry run) */ fail: FarmFail; label: string }
 /** Context prompt for the player's held farming item / a ripe farmed node in front (pure read; client-predicted). */
 export function farmPrompt(world: World, e: Entity): FarmPrompt | undefined {

@@ -4,7 +4,7 @@
  * a tappable button on touch. Pure decisions live in @engine/gameplay farmPrompt; this is DOM only.
  * Hooks: `#farm-prompt` (`data-action`, `data-fail`), `#farm-toast`.
  */
-import { FARM_FAIL_TEXT, FarmFail, farmPrompt, type FarmPrompt } from "@engine/gameplay";
+import { FARM_FAIL_TEXT, FarmFail, farmPrompt, husbandryPrompt, Progression, TameFail, type FarmPrompt } from "@engine/gameplay";
 import type { Entity, World } from "@engine/core";
 
 /** "key.KeyX" -> "X", "pad.b" -> "B", "mouse.left" -> "LMB". */
@@ -38,13 +38,27 @@ export function mountFarmPrompt(root: HTMLElement, d: FarmPromptDeps): { destroy
   root.append(btn, toastEl);
   let cur: FarmPrompt | undefined; let toastTimer: ReturnType<typeof setTimeout> | undefined;
   const toast = (text: string): void => { toastEl.textContent = text; toastEl.style.opacity = "1"; clearTimeout(toastTimer); toastTimer = setTimeout(() => { toastEl.style.opacity = "0"; }, 1800); };
-  const read = (): FarmPrompt | undefined => { const p = d.player(); if (p === undefined) return undefined; try { return farmPrompt(d.world(), p); } catch { return undefined; } };
+  const read = (): FarmPrompt | undefined => {
+    const p = d.player(); if (p === undefined) return undefined;
+    try {
+      const f = farmPrompt(d.world(), p); if (f) return f;
+      const h = husbandryPrompt(d.world(), p); // ADR-113 Tame / Feed with animal_feed in hand
+      return h ? { action: h.action as FarmPrompt["action"], slot: h.slot, fail: h.fail === TameFail.None ? FarmFail.None : FarmFail.NothingToTend, label: h.label } : undefined;
+    } catch { return undefined; }
+  };
+  let lastLevel = -1; // ADR-113 level-up toast (Progression replicates; polled with the prompt)
+  const levelCheck = (): void => {
+    const p = d.player(); const pr = p === undefined ? undefined : d.world().get(p, Progression); if (!pr) return;
+    if (lastLevel >= 0 && pr.level > lastLevel) { toastEl.dataset["kind"] = "levelup"; toast(`Level ${pr.level}! ${pr.points} skill point${pr.points === 1 ? "" : "s"} — open Skills (J)`); }
+    lastLevel = pr.level;
+  };
   const trigger = (): void => {
     const p = read(); if (!p) return;
-    if (p.fail !== FarmFail.None) { toast(FARM_FAIL_TEXT[p.fail] ?? "Can't do that here"); return; }
+    if (p.fail !== FarmFail.None) { toast(p.action === "Tame" || p.action === "Feed" ? p.label.replace(/^\w+: /, "") : FARM_FAIL_TEXT[p.fail] ?? "Can't do that here"); return; }
     d.use(p);
   };
   const update = (): void => {
+    levelCheck();
     cur = d.hidden() ? undefined : read();
     if (!cur) { btn.style.display = "none"; return; }
     const dev = d.device();

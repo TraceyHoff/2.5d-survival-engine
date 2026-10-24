@@ -4,7 +4,7 @@
  * shell with stable hooks for Gameplay/Art to fill: `.gm-modal[data-modal=<id>]`, `[data-role=body]`, `[data-role=close]`.
  * Touch: a top-right menu bar (`#game-menubar`, 44px buttons, inside the safe area) opens each menu.
  * Keyboard hotkeys (no text field focused): Esc pause, I/Tab inventory, C crafting, B build, K character, P party,
- * L clan, T trade, Enter or / chat, O settings. Gamepad: Start/Select pause (hub), D-pad/stick + A/B inside menus.
+ * L clan, J skills, T trade, Enter or / chat, O settings. Gamepad: Start/Select pause (hub), D-pad/stick + A/B inside menus.
  */
 import { deleteConfirm } from "./delete-progress.js";
 import { UINav, type ContextStack } from "./ui-nav.js";
@@ -25,6 +25,7 @@ export const GAME_MENUS: readonly MenuDef[] = [
   { id: "party", title: "Party", icon: "👥", hotkeys: ["KeyP"], bar: true, text: "Your party: invite, kick or leave." },
   { id: "clan", title: "Clan", icon: "🛡", hotkeys: ["KeyL"], text: "Clan members, ranks and goals." },
   { id: "trade", title: "Trade stalls", icon: "⚖", hotkeys: ["KeyT"], text: "Browse and run trade stalls." },
+  { id: "skills", title: "Skills", icon: "⭐", hotkeys: ["KeyJ"], bar: true, text: "Spend skill points from leveling up (ADR-113)." },
   { id: "camper", title: "Camper Station", icon: "🚐", hotkeys: [], text: "Craft, cook, refuel and use storage inside a parked camper." },
   { id: "chat", title: "Chat", icon: "💬", hotkeys: ["Enter", "Slash"], bar: true, text: "" },
   { id: "settings", title: "Settings", icon: "⚙", hotkeys: ["KeyO"], text: "" },

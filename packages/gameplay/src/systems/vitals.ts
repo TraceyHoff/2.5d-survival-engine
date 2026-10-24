@@ -9,6 +9,7 @@ import { gameplayDefs, isAuthority } from "../config.js";
 import { secondsToTicks } from "../defs.js";
 import { Died, emit, ItemConsumed, Vital, VitalDepleted } from "../events.js";
 import { slotFreshness, slotItem, takeFromSlot } from "../inventory.js";
+import { hasPerk, skillMul } from "../skills/tree.js";
 import { spoilStageIndex, spoilStages, takeSip } from "../food.js";
 
 const clamp = (v: number, lo: number, hi: number): number => (v < lo ? lo : v > hi ? hi : v);
@@ -30,11 +31,12 @@ export function consumeSystem(world: World, dt = 1 / 20): void {
     // freshness stage (environment.spoilage.stages) scales the benefit; sick stages make you ill
     const stage = spoilStages(defs)[spoilStageIndex(slotFreshness(world, e, slot), spoilStages(defs))]!;
     if (idef.sips === 0) takeFromSlot(world, e, slot);
-    const sv = world.get(e, Survival)!; const hp = world.get(e, Health)!; const k = stage.nutritionMul * per;
+    const sv = world.get(e, Survival)!; const hp = world.get(e, Health)!; const k = stage.nutritionMul * per * skillMul(world, e, "nutrition");
+    const iron = stage.sick && hasPerk(world, e, "iron_stomach"); // ADR-113: no sickness, flat hp cost instead
     world.set(e, Survival, { hunger: clamp(sv.hunger + food.hunger * k, 0, 100), thirst: clamp(sv.thirst + food.thirst * k, 0, 100) });
-    world.set(e, Health, { hp: clamp(hp.hp + food.health * k, 0, hp.max) });
+    world.set(e, Health, { hp: clamp(hp.hp + food.health * k * (food.health > 0 ? skillMul(world, e, "heal") : 1) - (iron ? IRON_STOMACH_HP : 0), 0, hp.max) });
     const sp = defs.environment.spoilage;
-    if (stage.sick) {
+    if (stage.sick && !iron) {
       const until = world.tick + secondsToTicks(sp.sickSeconds, dt);
       addModifier(world, e, Buffs, { stat: Stat.HealthRegen, op: ModOp.Add, value: -defs.vitals.healthRegenPerSec * 2, expiresAtTick: until });
       addModifier(world, e, Buffs, { stat: Stat.StaminaRegen, op: ModOp.Add, value: -defs.vitals.staminaRegenPerSec * 0.5, expiresAtTick: until });
@@ -42,6 +44,9 @@ export function consumeSystem(world: World, dt = 1 / 20): void {
     emit(world, ItemConsumed, { entity: e, item });
   }
 }
+
+/** Iron Stomach trade-off: spoiled food costs this much hp instead of sickness. */
+export const IRON_STOMACH_HP = 4;
 
 /** Blocks stamina regen for the configured delay (called by sprinting and by gathering). */
 export function spendStamina(world: World, e: Entity, amount: number, dt: number): boolean {

@@ -9,7 +9,7 @@ import { AccountAssigned, ClaimAccount, SetName, WorldPersistence, loadSocial, t
 import { giveRandomAppearance } from "./appearance.js";
 import { SocialSync } from "./social_sync.js";
 import { Act, applyDemoInput, installDemoWorld, rejectReasonCode, DevBotHello, DEMO_COMMANDS, DEMO_EVENTS, ExplodedEvt, GAMEPLAY_NET_COMMANDS, Ping, Pong, ReloadedEvt, VehicleStationOpenedEvt, DeleteMyProgressCmd, DELETE_PROGRESS_CONFIRM, ProgressDeleted } from "./protocol.js";
-import { forgetPlayer, sweepForgottenPlayers } from "@engine/gameplay";
+import { forgetPlayer, sweepForgottenPlayers, installSkillHandlers } from "@engine/gameplay";
 
 /** Pre-ADR-107 worlds started at 0.25 of the day and did not persist the day-clock epoch. */
 export const LEGACY_START_TIME_OF_DAY = 0.25;
@@ -215,6 +215,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
   // Watchtower sight: gameplay computes per-client chunk bonus; net caps it and applies hysteresis.
   installViewBonus(world, (c, n) => net.setViewRadiusBonus(c, n));
   if (o.catalog) installCustomization(world, { catalog: o.catalog, handlers });
+  installSkillHandlers(world, handlers); // ADR-113
   let cmdSeq = 0;
   const INPUT_QUEUE = new Set([...GAMEPLAY_COMMANDS, ...ARMS_COMMANDS].map(([d]) => d.name));
   const netDefOf = new Map<number, (typeof GAMEPLAY_NET_COMMANDS)[number]["net"]>(); // core command type -> net mirror

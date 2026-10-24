@@ -4500,6 +4500,39 @@
       "$decor": true
     },
     {
+      "key": "feeding_trough",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 120,
+      "solid": true,
+      "ground": true,
+      "category": "outdoor",
+      "rotSteps": 4,
+      "container": 6,
+      "footprint": {
+        "w": 2,
+        "h": 1
+      },
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 4
+        },
+        {
+          "resource": "nails",
+          "amount": 2
+        }
+      ],
+      "variants": 3,
+      "variantNames": [
+        "wood",
+        "stone",
+        "hay"
+      ],
+      "$decor": true
+    },
+    {
       "key": "bench_park",
       "placement": "free",
       "layer": 2,

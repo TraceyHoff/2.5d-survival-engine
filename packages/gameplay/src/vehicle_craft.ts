@@ -21,6 +21,7 @@ import { gameplayDefs } from "./config.js";
 import { lockAndIssueKey } from "./vehicle_keys.js";
 import { StationKind } from "./defs.js";
 import { emit, ev } from "./events.js";
+import { skillMul } from "./skills/tree.js";
 import { readSlots, writeSlots } from "./inventory.js";
 import { addStationProvider, stationInRange } from "./systems/crafting.js";
 import { addVehicleStationHook, isParked, nearbyVehicleStationKinds, spawnVehicle, vehicleDefId, vehicleDefOf, VEHICLE_DEFS, type VehicleClass } from "./vehicles.js";
@@ -137,7 +138,7 @@ export function refuelVehicle(world: World, actor: Entity, v: Entity, slot: numb
   const d = vehicleDefOf(world, v)!; const s = slotOf(world, actor, slot)!; const f = VEHICLE_CRAFT.fuels[keyOf(world, s.item)!]!;
   const fuel = world.getField(v, Vehicle, "fuel")!; const room = d.fuel!.capacity - fuel;
   const n = Math.max(1, Math.min(count || 1, s.count, VEHICLE_CRAFT.refuel.maxPerCommand, Math.ceil(room / f.liters)));
-  const liters = Math.min(room, n * f.liters); spend(world, actor, slot, n);
+  const liters = Math.min(room, n * f.liters * skillMul(world, actor, "vfuel")); spend(world, actor, slot, n);
   world.setField(v, Vehicle, "fuel", fuel + liters);
   emit(world, VehicleRefueled, { entity: actor, vehicle: v, item: s.item, liters, fuel: fuel + liters });
   return liters;
@@ -170,7 +171,7 @@ export function repairVehicle(world: World, actor: Entity, v: Entity, slot: numb
   if (!world.has(v, VehicleCondition)) world.add(v, VehicleCondition, { crafterId: 0, wear: 0 });
   const wear = garage ? 0 : Math.min(0.5, world.getField(v, VehicleCondition, "wear")! + VEHICLE_CRAFT.repair.wearPerField);
   world.setField(v, VehicleCondition, "wear", wear);
-  const cap = d.health * (1 - wear); const hp = Math.min(cap, Math.max(world.getField(v, Vehicle, "health")!, 0) + d.health * (garage ? r.garage : r.field));
+  const cap = d.health * (1 - wear); const hp = Math.min(cap, Math.max(world.getField(v, Vehicle, "health")!, 0) + d.health * (garage ? r.garage : r.field) * skillMul(world, actor, "repair"));
   spend(world, actor, slot, 0); world.setField(v, Vehicle, "health", hp);
   emit(world, VehicleRepaired, { entity: actor, vehicle: v, item: s.item, health: hp, atGarage: garage });
   return hp;

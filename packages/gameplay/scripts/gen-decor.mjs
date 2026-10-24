@@ -101,6 +101,7 @@ add("fence_picket", ["white", "natural", "rustic"], { ...OUT, layer: 1, solid: t
 add("fence_rail", ["split", "post"], { ...OUT, layer: 1, solid: true, blocksPath: true, rotSteps: 4, hp: 100, cost: [c("wood", 2), c("rope", 1)] }, { to: ["fence", "wall_low"], tint: "#a07850" });
 add("fence_iron", ["plain", "spiked"], { ...OUT, layer: 1, solid: true, blocksPath: true, rotSteps: 4, hp: 400, tier: 3, cost: [c("iron_ingot", 2)] }, { to: ["fence", "wall_low"], tint: "#505860" });
 add("garden_gate", ["picket", "iron", "rustic"], { ...OUT, layer: 1, solid: true, door: true, blocksPath: true, rotSteps: 4, hp: 150, cost: [c("planks", 4), c("nails", 2)] }, { to: ["gate_clan", "door_wood"], scale: 0.6 });
+add("feeding_trough", ["wood", "stone", "hay"], { ...OUT, layer: 2, solid: true, rotSteps: 4, hp: 120, container: 6, footprint: { w: 2, h: 1 }, cost: [c("planks", 4), c("nails", 2)] }, { to: ["storage_box"], tint: "#a07850" }); // ADR-113 pens
 add("bench_park", ["wood", "iron", "stone"], { ...OUT, rotSteps: 4, footprint: { w: 2, h: 1 }, hp: 150, cost: [c("planks", 4), c("iron_ingot", 1)] }, { to: ["chair"] });
 add("planter_box", ["long", "square", "raised"], { ...OUT, hp: 60, features: { planter: true }, cost: [c("planks", 4), c("clay", 1)] }, { to: ["flower_box"] });
 add("garden_bed", ["raised", "stone"], { ...OUT, layer: 1, hp: 80, footprint: { w: 2, h: 1 }, features: { planter: true }, cost: [c("planks", 6)] }, { to: ["flower_box"], scale: 1.5 });

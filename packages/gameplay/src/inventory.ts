@@ -15,6 +15,7 @@
 import { decayAt, entityIndex, type ComponentDef, type Entity, type World } from "@engine/core";
 import { Container, Inventory, type InvSchema } from "./components.js";
 import { gameplayDefs } from "./config.js";
+import { skillMul } from "./skills/tree.js";
 import type { GameDefs, ItemCount } from "./defs.js";
 
 export interface SlotView {
@@ -54,7 +55,7 @@ export function readSlots(world: World, e: Entity): ScratchSlots {
   const def = slotsDef(world, e); const st = world.store(def); const s = st.slot(entityIndex(e));
   const n = Math.min(st.data.slotCount[s]!, def.schema.items.length);
   const take = (f: "items" | "counts" | "createdTick" | "durability" | "crafterId"): number[] => Array.from(world.getArray(e, def, f)!.subarray(0, n));
-  return new ScratchSlots(n, st.data.maxWeight[s]!, take("items"), take("counts"), take("createdTick"), take("durability"), world.tick, take("crafterId"));
+  return new ScratchSlots(n, st.data.maxWeight[s]! * (def === Inventory ? skillMul(world, e, "carry") : 1), take("items"), take("counts"), take("createdTick"), take("durability"), world.tick, take("crafterId"));
 }
 export function writeSlots(world: World, e: Entity, v: ScratchSlots, defs: GameDefs): void {
   const def = slotsDef(world, e); const st = world.store(def); const idx = entityIndex(e);

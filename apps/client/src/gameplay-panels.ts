@@ -15,10 +15,11 @@ import { iconForItem,
   nearestStall, partyAcceptIntent, partyDeclineIntent, partyInviteIntent, partyKickIntent, partyLeaveIntent, partyView, queueCraftIntent, buyFromStallIntent,
   setAppearanceIntent, setStallNameIntent, priceItemChoices, listItemIntents, unstockStallIntent, type StallListDraft, setStallOpenIntent, stallView, togglePermMask, wardrobeView, placeIntent,
   type BuildSelection, type MenuCtx, type MenuIntent, camperStationView, vehicleRefuelIntent, type CamperRecipeView,
+  progressionView, unlockSkillIntent, respecSkillsIntent, SKILL_REJECT_TEXT,
 } from "@engine/gameplay";
 import { GroupRole, PlayerId, Transform, type Entity } from "@engine/core";
 
-export const GAMEPLAY_PANELS = ["inventory", "crafting", "build", "character", "party", "clan", "trade", "camper"] as const;
+export const GAMEPLAY_PANELS = ["inventory", "crafting", "build", "character", "party", "clan", "trade", "camper", "skills"] as const;
 export type GameplayPanel = (typeof GAMEPLAY_PANELS)[number];
 /** What the client wires in (main.ts): the local replica + player, and a command sender (NetId mapping + gameplayNet). */
 export interface GameplaySource {
@@ -55,6 +56,10 @@ const camperSel = { tab: "craft" as "craft" | "cook", cook: 0 };
 const dismissedClan = new Set<number>();
 /** Container panel page (ADR-098): survives re-renders; clamped by containerView. */
 let containerPage = 0;
+/** Skill tree (ADR-113): zoom + selected node survive re-renders; the viewport scroll position is kept by the diffing refresh. */
+const skillUi = { zoom: 0.6, sel: -1, branch: "" };
+export const SKILL_ZOOM = { min: 0.35, max: 1.4, step: 0.15 };
+export function zoomSkills(d: number): number { skillUi.zoom = Math.max(SKILL_ZOOM.min, Math.min(SKILL_ZOOM.max, +(skillUi.zoom + d).toFixed(2))); return skillUi.zoom; }
 /** Page the open container by `d` (PgUp/PgDn, LB/RB, ◀ ▶). Returns true if a page change applies. */
 export function pageContainer(d: number): boolean { containerPage = Math.max(0, containerPage + d); return true; }
 export function containerPageIndex(): number { return containerPage; }
@@ -177,6 +182,46 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       out.push(heading("Unlocks")); const ug = el("div", { "data-role": "unlocks" });
       for (const u of v.unlocks) { const p = kit.para(u.tag.replace(/_/g, " ")); p.dataset["role"] = "unlock"; p.dataset["key"] = u.tag; if (u.unlocked) p.dataset["unlocked"] = ""; ug.append(p); }
       out.push(ug); return out;
+    }
+    case "skills": {
+      const v = progressionView(c.world, c.player); if (!v) return [kit.para("No skills for this character.")];
+      const out: Node[] = [];
+      const head = kit.para(`Level ${v.level} · XP ${v.xp}/${v.next} · ${v.points} skill point${v.points === 1 ? "" : "s"}`); head.dataset["role"] = "skill-summary"; out.push(head);
+      const tools = grid();
+      tools.append(btn("Zoom −", "skill-zoom-out", () => { zoomSkills(-SKILL_ZOOM.step); kit.rerender(); }, { alt: true }), btn("Zoom +", "skill-zoom-in", () => { zoomSkills(SKILL_ZOOM.step); kit.rerender(); }, { alt: true }));
+      tools.append(btn(`Respec (${v.respecCost} coin)`, "skill-respec", () => send(respecSkillsIntent(), "Skills reset."), { alt: true, disabled: v.canRespec !== undefined, title: v.canRespec ? SKILL_REJECT_TEXT[v.canRespec] : "Refund all skill points" }));
+      tools.append(btn("Back", "skill-back", () => kit.close(), { alt: true }));
+      out.push(tools);
+      // Branch jump list (gamepad / keyboard friendly; tapping scrolls the tree to the branch)
+      const bg = el("div", { class: "gm-grid", "data-role": "skill-branches" });
+      for (const b of v.branches) bg.append(btn(b.name, `skill-branch-${b.key}`, () => { skillUi.branch = b.key; const n = document.querySelector(`[data-role=skill-node][data-branch="${b.key}"]`); (n as HTMLElement | null)?.scrollIntoView?.({ block: "nearest", inline: "start" }); (n as HTMLElement | null)?.focus?.(); }, { data: { icon: b.icon }, pressed: skillUi.branch === b.key }));
+      out.push(bg);
+      const z = skillUi.zoom; const vp = el("div", { "data-role": "skill-tree", class: "skill-tree" });
+      vp.setAttribute("style", "position:relative;overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y;height:min(52dvh,420px);border:2px solid #74432C;border-radius:10px;background:#EAD9B8");
+      const inner = el("div"); inner.setAttribute("style", `position:relative;width:${Math.ceil(v.width * z)}px;height:${Math.ceil(v.height * z)}px`);
+      // prerequisite lines as one SVG (cheap on mobile: no per-frame work)
+      const ns = "http://www.w3.org/2000/svg"; const svg = document.createElementNS(ns, "svg"); svg.setAttribute("width", String(Math.ceil(v.width * z))); svg.setAttribute("height", String(Math.ceil(v.height * z)));
+      svg.setAttribute("style", "position:absolute;left:0;top:0;pointer-events:none"); const W = 150, H = 56;
+      for (const n of v.nodes) for (const r of n.requires) { const p = v.nodes[r]!; const l = document.createElementNS(ns, "line");
+        l.setAttribute("x1", String((p.x + W / 2) * z)); l.setAttribute("y1", String((p.y + H) * z)); l.setAttribute("x2", String((n.x + W / 2) * z)); l.setAttribute("y2", String(n.y * z));
+        l.setAttribute("stroke", n.state === "owned" ? "#5A9A4A" : "#9C7A5A"); l.setAttribute("stroke-width", "2"); svg.append(l); }
+      inner.append(svg);
+      for (const n of v.nodes) {
+        const b = btn(`${n.name} (${n.cost})`, `skill-${n.key}`, () => {
+          if (skillUi.sel !== n.index) { skillUi.sel = n.index; kit.rerender(); return; } // first tap/A selects (shows details), second learns
+          if (n.state === "owned") return; if (n.why) { kit.status(SKILL_REJECT_TEXT[n.why]); kit.rerender(); return; }
+          send(unlockSkillIntent(n.index), `Learned ${n.name}.`);
+        }, { role: "skill-node", alt: n.state !== "owned", disabled: false, pressed: skillUi.sel === n.index, title: n.desc, data: { icon: n.icon, branch: n.branch, state: n.state, tier: String(n.tier) } });
+        b.setAttribute("style", `position:absolute;left:${Math.round(n.x * z)}px;top:${Math.round(n.y * z)}px;width:${Math.round(W * z)}px;min-height:44px;font-size:${Math.max(11, Math.round(14 * z))}px;padding:2px 4px;${n.state === "locked" ? "opacity:.55;" : ""}`);
+        inner.append(b);
+      }
+      vp.append(inner);
+      vp.addEventListener("wheel", (ev) => { if (!ev.ctrlKey) return; ev.preventDefault(); zoomSkills(ev.deltaY < 0 ? SKILL_ZOOM.step : -SKILL_ZOOM.step); kit.rerender(); }, { passive: false });
+      out.push(vp);
+      const sel = v.nodes[skillUi.sel];
+      if (sel) { const d = kit.para(`${sel.name}: ${sel.desc} — cost ${sel.cost}. ${sel.state === "owned" ? "Learned." : sel.why ? SKILL_REJECT_TEXT[sel.why] : "Tap / press again to learn."}`); d.dataset["role"] = "skill-detail"; out.push(d); }
+      out.push(kit.para("Scroll or drag to pan · Ctrl+wheel or Zoom ± to zoom · select a skill, then select again to learn."));
+      return out;
     }
     case "party": {
       const v = partyView(c); const out: Node[] = [];

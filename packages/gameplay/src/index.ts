@@ -73,5 +73,8 @@ export * from "./vehicle_net.js";
 export * from "./ui/camper.js";
 export * from "./forget.js";
 export * from "./farming.js";
+export * from "./skills/tree.js";
+export * from "./skills/progression.js";
+export * from "./skills/husbandry.js";
 export * from "./clutter.js";
 export * from "./sprite-fallback.js";

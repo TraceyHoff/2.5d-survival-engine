@@ -238,6 +238,11 @@ export const VEHICLE_ENGINE_ON = 1, VEHICLE_HEADLIGHTS = 2;
 /** ADR-110 planted crop / sapling / bush (farming.ts). kind = farming.json plantables index + 1 (0 = tilled soil, nothing planted);
  *  growth 0..1, stage = render stage; waterUntilTick = watered boost end; fertilized 0/1. Matures into a resource node. */
 export const Crop = defineComponent("Crop", { kind: "u8", stage: "u8", growth: "f32", waterUntilTick: "u32", fertilized: "u8" }, { networked: true, persistent: true });
+/** ADR-113 skill progression (skills/progression.ts): xp toward next level, unspent points, respec count, nodes = bitset of
+ * skills.json node indices (append-only order). Networked (own tree UI / toast) + persistent (saves, rejoin). */
+export const Progression = defineComponent("Progression", { xp: "u32", level: "u16", points: "u16", respecs: "u8", nodes: { type: "u32", length: 8 } }, { networked: true, persistent: true });
+/** ADR-113 domesticated animal (skills/husbandry.ts). owner = tamer PlayerId (0 = none); fedUntil / produceAt / breedAt are ticks. */
+export const Tamed = defineComponent("Tamed", { kind: "u8", owner: "u32", fedUntil: "u32", produceAt: "u32", breedAt: "u32" }, { networked: true, persistent: true });
 
 export const GAMEPLAY_COMPONENTS = [
   Emitter, Buffs,
@@ -265,4 +270,5 @@ export const GAMEPLAY_COMPONENTS = [
   Defense, // append-only (ADR-108)
   VehicleLock, // append-only (ADR-109)
   Crop, // append-only (ADR-110)
+  Progression, Tamed, // append-only (ADR-113)
 ] as const;

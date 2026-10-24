@@ -1440,6 +1440,12 @@
       "to": [
         "door_wood"
       ]
+    },
+    "feeding_trough": {
+      "to": [
+        "storage_box"
+      ],
+      "tint": "#a07850"
     }
   },
   "stages": {

@@ -17,6 +17,8 @@ import { spendStamina } from "../systems/vitals.js";
 import { checkHit, tagCombat } from "./pvp.js";
 import { installSpatialIndex } from "@engine/world";
 import { Animal } from "../components.js";
+import { damageMulFor } from "../skills/tree.js";
+import { Progression } from "../components.js";
 import { armorReduce, igniteTarget, landThrown, resolveAttack, spendRound, throwExplosive } from "./arms.js";
 
 export const FISTS: WeaponDef = { damage: 5, range: 1.0, cooldownSeconds: 0.6, staminaCost: 3, structureMul: 0.2 };
@@ -52,6 +54,10 @@ export function setAnim(world: World, e: Entity, anim: Anim): void {
 /** Creature damage is reduced by worn armor (Combat / Explosion causes; `pierce` 0..1 ignores part of it). */
 export function applyDamage(world: World, target: Entity, amount: number, source: Entity, cause: DamageCause = DamageCause.Combat, pierce = 0): void {
   if (!isAuthority(world) || world.isReplaying || amount <= 0 || !world.isAlive(target)) return;
+  if (cause === DamageCause.Combat && world.has(source, Progression)) { // ADR-113 weapon mastery / berserker
+    const eq = world.get(source, Equipment); const held = eq && eq.mainHandSlot !== NO_SLOT ? slotItem(world, source, eq.mainHandSlot) : undefined;
+    amount *= damageMulFor(world, source, held?.count ? gameplayDefs(world).items.get(held.item)?.key : undefined);
+  }
   if (world.has(target, BuildPiece)) { damagePiece(world, target, amount, source, cause); return; }
   const hp = world.getField(target, Health, "hp"); if (hp === undefined || world.has(target, Dead)) return;
   if (cause === DamageCause.Combat || cause === DamageCause.Explosion) amount = armorReduce(world, target, amount, pierce);

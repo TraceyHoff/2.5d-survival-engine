@@ -5,7 +5,7 @@
  */
 import { Appearance, DEFAULT_TICK_HZ, defineActions, entityIndex, installPermissions, Transform, type ClaimRegistry, type Entity, type GroupRegistry, type PermissionsRes, type World } from "@engine/core";
 import { defineCommand, defineNetEvent, type CommandRejection, type InputCmd, type NetClient, type NetClientOptions } from "@engine/net";
-import { COMMAND_RATES, PVP_COMMANDS, CRAFT_QUEUE_COMMANDS, CUSTOMIZATION_COMMANDS, ECONOMY_COMMAND_RATES, ECONOMY_COMMANDS, ECONOMY_ENTITY_FIELDS, installGameplay, PlayerIntent, UseCmd, PlaceCmd, EmoteCmd, PARTY_COMMANDS, PARTY_ENTITY_FIELDS, PARTY_REJECT_REASONS, CLAN_COMMANDS, CLAN_ENTITY_FIELDS, CLAN_REJECT_REASONS, ClanDeclineCmd, PaintCmd, ReloadCmd, WearCmd, VEHICLE_COMMANDS, VEHICLE_CRAFT_COMMANDS, VEHICLE_CRAFT_ENTITY_FIELDS, VEHICLE_COMMAND_RATES, VEHICLE_ENTITY_FIELDS, VEHICLE_REJECT_REASONS, Driver, driveFromBits, setDriveInput, controlledVehicles, poseTrailersInHitchFrame } from "@engine/gameplay";
+import { COMMAND_RATES, PVP_COMMANDS, CRAFT_QUEUE_COMMANDS, CUSTOMIZATION_COMMANDS, ECONOMY_COMMAND_RATES, ECONOMY_COMMANDS, ECONOMY_ENTITY_FIELDS, installGameplay, PlayerIntent, UseCmd, PlaceCmd, EmoteCmd, PARTY_COMMANDS, PARTY_ENTITY_FIELDS, PARTY_REJECT_REASONS, CLAN_COMMANDS, CLAN_ENTITY_FIELDS, CLAN_REJECT_REASONS, ClanDeclineCmd, PaintCmd, ReloadCmd, WearCmd, VEHICLE_COMMANDS, VEHICLE_CRAFT_COMMANDS, VEHICLE_CRAFT_ENTITY_FIELDS, VEHICLE_COMMAND_RATES, VEHICLE_ENTITY_FIELDS, VEHICLE_REJECT_REASONS, Driver, driveFromBits, setDriveInput, controlledVehicles, poseTrailersInHitchFrame, SKILL_COMMANDS } from "@engine/gameplay";
 import { defineCommand as defineCoreCommand, type CommandDef } from "@engine/core";
 import { SESSION_COMMANDS, SESSION_EVENTS } from "@engine/persist";
 
@@ -53,7 +53,7 @@ const mirror = (d: CommandDef) => {
   const perSec = ECONOMY_COMMAND_RATES[d.name] ?? VEHICLE_COMMAND_RATES[d.name] ?? COMMAND_RATES[d.name] ?? 2;
   return defineCommand(d.name, d.schema, { entityFields: [...(ECONOMY_ENTITY_FIELDS[d.name] ?? PARTY_ENTITY_FIELDS[d.name] ?? CLAN_ENTITY_FIELDS[d.name] ?? INPUT_ENTITY_FIELDS[d.name] ?? VEHICLE_ENTITY_FIELDS[d.name] ?? [])], rate: { perSec, burst: Math.max(2, Math.ceil(perSec * 2)) } });
 };
-export const GAMEPLAY_NET_COMMANDS = [...ECONOMY_COMMANDS, ...CUSTOMIZATION_COMMANDS, ...PVP_COMMANDS, ...CRAFT_QUEUE_COMMANDS, /* appended */ UseCmd, PlaceCmd, EmoteCmd, ...PARTY_COMMANDS, ...CLAN_COMMANDS, PaintCmd, ClanDeclineCmd, ReloadCmd, WearCmd, ...VEHICLE_COMMANDS, ...VEHICLE_CRAFT_COMMANDS, DeleteMyProgressCmd].map((d) => ({ core: d as CommandDef, net: mirror(d) }));
+export const GAMEPLAY_NET_COMMANDS = [...ECONOMY_COMMANDS, ...CUSTOMIZATION_COMMANDS, ...PVP_COMMANDS, ...CRAFT_QUEUE_COMMANDS, /* appended */ UseCmd, PlaceCmd, EmoteCmd, ...PARTY_COMMANDS, ...CLAN_COMMANDS, PaintCmd, ClanDeclineCmd, ReloadCmd, WearCmd, ...VEHICLE_COMMANDS, ...VEHICLE_CRAFT_COMMANDS, DeleteMyProgressCmd, ...SKILL_COMMANDS].map((d) => ({ core: d as CommandDef, net: mirror(d) }));
 /** Net command for a gameplay core CommandDef (clients: `client.sendCommand(gameplayNet(BuyFromStallCmd), {...})`). */
 export function gameplayNet<D extends CommandDef>(d: D): ReturnType<typeof defineCommand<D["schema"]>> {
   const m = GAMEPLAY_NET_COMMANDS.find((x) => x.core === d); if (!m) throw new Error(`not a bridged gameplay command: ${d.name}`);

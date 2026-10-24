@@ -3,6 +3,7 @@
  * Action strings: "gather" | "gather:<target>" | "attack:<target>" | "eat:<slot>" | "drink:<slot>" | "craft:<recipe>[:<count>]"
  * | "build:<piece>:<x>:<y>" | "open:<target>" | "buy:<stall>:<slot>:<qty>:<revision>:<priceItem>:<priceCount>" | "sleep" (stand still).
  */
+import { UnlockSkillCmd } from "../skills/progression.js";
 import type { AgentOutput, CommandRegistry, Entity, InputFrame, World } from "@engine/core";
 import { intentToFrame, type BotIntent } from "./bot_input.js";
 import { GameplayActions, PlaceCmd, UseCmd } from "../input.js";
@@ -66,6 +67,7 @@ export function actionCommand(action: string): AgentCommand | undefined {
   const party = partyActionCommand(action); if (party !== null) return party;
   const clan = clanActionCommand(action); if (clan !== null) return clan;
   const veh = vehicleActionCommand(action); if (veh !== null) return veh;
+  if (action.startsWith("skill:")) { const n = Number(action.slice(6)); return Number.isInteger(n) && n >= 0 ? { type: UnlockSkillCmd.name, payload: { node: n } } : undefined; } // ADR-113
   const it = actionIntent(action); if (!it) return undefined;
   switch (it.kind) {
     case "eat": return { type: UseCmd.name, payload: { slot: it.slot } };
@@ -132,7 +134,7 @@ function vehicleActionCommand(action: string): AgentCommand | undefined | null {
     default: return null;
   }
 }
-const COMMAND_ACTIONS = new Set(["venter", "vexit", "vhitch", "vunhitch", "vstation", "vrefuel", "vrepair", "vdeploy", "ccreate", "cinvite", "caccept", "cleave", "cpromote", "cdemote", "ckick", "cperms", "cgoal", "cstock", "eat", "drink", "craft", "build", "open", "buy", "pinvite", "paccept", "pdecline", "pleave", "pkick"]);
+const COMMAND_ACTIONS = new Set(["venter", "vexit", "vhitch", "vunhitch", "vstation", "vrefuel", "vrepair", "vdeploy", "ccreate", "cinvite", "caccept", "cleave", "cpromote", "cdemote", "ckick", "cperms", "cgoal", "cstock", "eat", "drink", "craft", "build", "open", "buy", "pinvite", "paccept", "pdecline", "pleave", "pkick", "skill"]);
 /**
  * Moves the command-type actions (eat, drink, craft, build, open, buy) out of out.actions and into out.commands, in order.
   Movement and gather/attack/sleep stay

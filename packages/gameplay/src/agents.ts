@@ -4,6 +4,8 @@
  * only write AgentOutput (move axes / aim / action names / chat) - the host maps that to the same InputFrame +
  * commands a human client sends. Survival Systems extends this with registerBehavior() and data/agents.json.
  */
+import { pickSkillNode } from "./skills/progression.js";
+import { Progression } from "./components.js";
 import { Agent, AgentController, BehaviorRegistry, ChatTemplates, Rng, Transform, canSee, timeOfDay, type AgentContext, type AgentIdentity, type AgentSelf, type BehaviorDef, type ScheduleSlot, type World, type Entity, type Imperfections, type PerceptionConfig } from "@engine/core";
 import raw from "../data/agents.json";
 import { Animal, Dead, Health, ResourceNode, Survival, Zombie } from "./components.js";
@@ -27,6 +29,8 @@ export interface AgentWorldView extends AgentSensors, PartySensors, ClanSensors,
   seen: SeenThing[]; home: { x: number; y: number }; playerName: string;
   /** Optional sensors (0..1 / plans) the host fills from the bot's replica; missing = neutral. */
   invSpaceFree?: number; craftRecipe?: number; buildPlan?: { piece: number; x: number; y: number };
+  /** ADR-113: best affordable skill node for this personality (undefined = no points / nothing affordable). */
+  skillPick?: number;
 }
 export type GameBehavior = BehaviorDef<AgentWorldView>;
 
@@ -58,7 +62,7 @@ export function buildAgentView(world: World, self: Entity, a: Agent, home: { x: 
     if (visible) seen.push({ id: e, kind, x: o.x, y: o.y });
   }
   const tod = timeOfDay(world);
-  const view: AgentWorldView = { seen, home, playerName }; fillAgentSensors(world, self, view, (sv?.hunger ?? 100) < 50); fillPartySensors(world, self, view); fillClanSensors(world, self, view); fillVehicleSensors(world, self, view); observeSocialMemory(world, self, a);
+  const view: AgentWorldView = { seen, home, playerName }; fillAgentSensors(world, self, view, (sv?.hunger ?? 100) < 50); fillPartySensors(world, self, view); fillClanSensors(world, self, view); if ((world.getField(self, Progression, "points") ?? 0) > 0) { const p = pickSkillNode(world, self, a.identity.traits); if (p !== undefined) view.skillPick = p; } fillVehicleSensors(world, self, view); observeSocialMemory(world, self, a);
   return {
     self: { x: t.x, y: t.y, facing, hp: hp ? hp.hp / Math.max(1, hp.max) : 1, hunger: (sv?.hunger ?? 100) / 100, thirst: (sv?.thirst ?? 100) / 100, stamina: sv ? sv.stamina / Math.max(1, sv.maxStamina) : 1, tick: world.tick, dayT: tod.t, phase: currentPhaseKey(world) },
     world: view,
@@ -126,8 +130,13 @@ export function botUtilityFactor(c: AgentContext<AgentWorldView>, behavior: stri
 }
 const withBotUtility = (b: GameBehavior): GameBehavior => (BEHAVIOR_ACTION[b.name] ? { ...b, considerations: [...b.considerations, { name: "botUtility", curve: { type: "linear", m: 1, b: 0 }, input: (c) => botUtilityFactor(c, b.name) }] } : b);
 
+/** ADR-113: spend skill points through the same UnlockSkillCmd players use ("skill:<node>"). */
+export const skillPickBehavior: GameBehavior = { name: "skill_pick", inertia: 0, considerations: [
+  { name: "points", curve: { type: "step", at: 0.5 }, input: (c) => (c.world.skillPick !== undefined && c.self.tick - c.bb.num("skillPickAt", -1e9) >= 100 ? 1 : 0) }],
+  run: (c, o) => { o.actions.push(`skill:${c.world.skillPick}`); c.bb.set("skillPickAt", c.self.tick); return false; } };
+
 export function survivorRegistry(extra: readonly GameBehavior[] = []): BehaviorRegistry<AgentWorldView> {
-  const r = new BehaviorRegistry<AgentWorldView>(); for (const b of [...referenceBehaviors(), ...survivalBehaviors(), ...partyBehaviors(), ...clanBehaviors(), ...vehicleBehaviors(), ...extra]) r.register(withBotUtility(b)); return r;
+  const r = new BehaviorRegistry<AgentWorldView>(); for (const b of [...referenceBehaviors(), ...survivalBehaviors(), ...partyBehaviors(), ...clanBehaviors(), ...vehicleBehaviors(), skillPickBehavior, ...extra]) r.register(withBotUtility(b)); return r;
 }
 /**
  * Deterministic identity for virtual player #slot of a world seed. archetype = a bots.json archetype (picked by the
