@@ -965,7 +965,32 @@
     "ui_vital_temp": 963,
     "ui_vital_thirst": 964,
     "ui_vital_thirst_low": 965,
-    "ui_vital_xp": 966
+    "ui_vital_xp": 966,
+    "bike_bmx": 967,
+    "bike_cargo": 968,
+    "bike_mountain": 969,
+    "bike_road": 970,
+    "bike_tandem": 971,
+    "camper_cook_stove": 972,
+    "camper_craft_bench": 973,
+    "camper_interior_floor": 974,
+    "camper_interior_wall": 975,
+    "camper_motorhome": 976,
+    "camper_trailer": 977,
+    "car_hatchback": 978,
+    "car_pickup": 979,
+    "car_sedan": 980,
+    "car_sports": 981,
+    "car_suv": 982,
+    "trailer_box": 983,
+    "trailer_flatbed": 984,
+    "trailer_log": 985,
+    "trailer_tanker": 986,
+    "trailer_utility": 987,
+    "truck_box": 988,
+    "truck_semi_cab": 989,
+    "van_delivery": 990,
+    "van_minivan": 991
   },
   "sounds": {
     "amb_rain": 1,
@@ -983,7 +1008,16 @@
     "sfx_animal_chicken": 13,
     "sfx_animal_deer": 14,
     "sfx_animal_rabbit": 15,
-    "sfx_animal_wolf": 16
+    "sfx_animal_wolf": 16,
+    "sfx_vehicle_bike_bell": 17,
+    "sfx_vehicle_crash": 18,
+    "sfx_vehicle_door": 19,
+    "sfx_vehicle_engine_idle": 20,
+    "sfx_vehicle_engine_idle_diesel": 21,
+    "sfx_vehicle_engine_start": 22,
+    "sfx_vehicle_hitch": 23,
+    "sfx_vehicle_horn": 24,
+    "sfx_vehicle_horn_truck": 25
   },
   "vfx": {
     "campfire_sparks": 1,
@@ -1007,7 +1041,9 @@
     "gate_breach": 19,
     "gate_breach_splinters": 20,
     "respawn_poof": 21,
-    "respawn_puffs": 22
+    "respawn_puffs": 22,
+    "vehicle_exhaust": 23,
+    "vehicle_smoke_damaged": 24
   },
   "variants": {
     "player_blue": 1,
@@ -1023,7 +1059,9 @@
     "zombie_wrapped": 11
   },
   "tints": {
-    "shirt_colors": 1
+    "shirt_colors": 1,
+    "bike_paint": 2,
+    "vehicle_paint": 3
   },
   "palettes": {
     "player_dark_hair": 1,
