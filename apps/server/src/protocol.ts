@@ -2,17 +2,14 @@ import { ROAD_COMMANDS, SIGN_COMMANDS, SIGN_ENTITY_FIELDS } from "@engine/gamepl
 /**
  * Browser-safe demo protocol shared by apps/server, the headless bots and apps/client ("@engine/server/protocol").
  * Input bits + movement (identical on server and in client prediction), and the ordered command/event lists.
- * Movement lives here because gameplay has no movement system yet; replace with gameplay's once it exists.
  */
-import { Appearance, DEFAULT_TICK_HZ, defineActions, entityIndex, installPermissions, Transform, type ClaimRegistry, type Entity, type GroupRegistry, type PermissionsRes, type World } from "@engine/core";
+import { Appearance, DEFAULT_TICK_HZ, defineActions, installPermissions, type ClaimRegistry, type Entity, type GroupRegistry, type PermissionsRes, type World } from "@engine/core";
 import { defineCommand, defineNetEvent, type CommandRejection, type InputCmd, type NetClient, type NetClientOptions } from "@engine/net";
-import { COMMAND_RATES, PVP_COMMANDS, CRAFT_QUEUE_COMMANDS, CUSTOMIZATION_COMMANDS, ECONOMY_COMMAND_RATES, ECONOMY_COMMANDS, ECONOMY_ENTITY_FIELDS, installGameplay, PlayerIntent, UseCmd, PlaceCmd, EmoteCmd, PARTY_COMMANDS, PARTY_ENTITY_FIELDS, PARTY_REJECT_REASONS, CLAN_COMMANDS, CLAN_ENTITY_FIELDS, CLAN_REJECT_REASONS, ClanDeclineCmd, PaintCmd, ReloadCmd, WearCmd, VEHICLE_COMMANDS, VEHICLE_CRAFT_COMMANDS, VEHICLE_CRAFT_ENTITY_FIELDS, VEHICLE_COMMAND_RATES, VEHICLE_ENTITY_FIELDS, VEHICLE_REJECT_REASONS, Driver, driveFromBits, setDriveInput, controlledVehicles, poseTrailersInHitchFrame, SKILL_COMMANDS } from "@engine/gameplay";
+import { COMMAND_RATES, PVP_COMMANDS, CRAFT_QUEUE_COMMANDS, CUSTOMIZATION_COMMANDS, ECONOMY_COMMAND_RATES, ECONOMY_COMMANDS, ECONOMY_ENTITY_FIELDS, installGameplay, UseCmd, PlaceCmd, EmoteCmd, PARTY_COMMANDS, PARTY_ENTITY_FIELDS, PARTY_REJECT_REASONS, CLAN_COMMANDS, CLAN_ENTITY_FIELDS, CLAN_REJECT_REASONS, ClanDeclineCmd, PaintCmd, ReloadCmd, WearCmd, VEHICLE_COMMANDS, VEHICLE_CRAFT_COMMANDS, VEHICLE_CRAFT_ENTITY_FIELDS, VEHICLE_COMMAND_RATES, VEHICLE_ENTITY_FIELDS, VEHICLE_REJECT_REASONS, Driver, driveFromBits, setDriveInput, controlledVehicles, poseTrailersInHitchFrame, SKILL_COMMANDS, applyMovementInput } from "@engine/gameplay";
 import { defineCommand as defineCoreCommand, type CommandDef } from "@engine/core";
 import { SESSION_COMMANDS, SESSION_EVENTS } from "@engine/persist";
 
 export const Act = defineActions(["MoveUp", "MoveDown", "MoveLeft", "MoveRight", "Sprint", "Gather"]);
-export const MOVE_SPEED = 4; // tiles/s
-export const SPRINT_MUL = 1.6;
 
 /** App-level ping (Netcode has no RTT measurement yet). Server answers on its next tick, so RTT includes 0..1 tick. */
 export const Ping = defineCommand("demo.ping", { t: "u32" }, { rate: { perSec: 4, burst: 4 } });
@@ -122,28 +119,13 @@ export function onGameplayRejected(client: Pick<NetClient, "onCommandRejected">,
   });
 }
 
-/** Screen-aligned iso movement from input bits: W = up-screen, etc. */
-export function moveDelta(buttons: number, dt: number): { dx: number; dy: number } {
-  const sp = MOVE_SPEED * dt * ((buttons & Act.Sprint) ? SPRINT_MUL : 1);
-  let dx = 0, dy = 0;
-  if (buttons & Act.MoveUp) { dx -= sp; dy -= sp; }
-  if (buttons & Act.MoveDown) { dx += sp; dy += sp; }
-  if (buttons & Act.MoveLeft) { dx -= sp; dy += sp; }
-  if (buttons & Act.MoveRight) { dx += sp; dy -= sp; }
-  if (dx && dy) { const k = Math.SQRT1_2; dx *= k; dy *= k; }
-  return { dx, dy };
-}
-
-/** Applies one input to a player entity (server authority and client prediction use this same function). */
+/**
+ * Applies one input to a player entity (server authority and client prediction use this same function). Delegates to
+ * gameplay's shared applyMovementInput (ADR-127): walkSpeed from movement.json x sprint/encumbrance/wetness/road/buffs,
+ * normalized so every direction (8 keys, analog stick) moves at exactly that speed x stick magnitude, with collision.
+ */
 export function applyMoveInput(world: World, e: Entity, cmd: InputCmd | null, dt = 1 / DEFAULT_TICK_HZ): void {
-  const b = cmd?.buttons ?? 0; const t = world.get(e, Transform); if (!t) return;
-  const { dx, dy } = moveDelta(b, dt);
-  if (dx || dy) world.set(e, Transform, { x: t.x + dx, y: t.y + dy, facing: Math.atan2(dy, dx) });
-  if (world.has(e, PlayerIntent)) {
-    const moving = dx || dy ? 1 : 0, sprint = moving && (b & Act.Sprint) ? 1 : 0;
-    const st = world.store(PlayerIntent); const i = entityIndex(e); const s = st.slot(i);
-    if (st.data.moving[s] !== moving || st.data.sprint[s] !== sprint) { st.data.moving[s] = moving; st.data.sprint[s] = sprint; st.markChanged(i); }
-  }
+  applyMovementInput(world, e, cmd?.buttons ?? 0, dt, cmd ? { x: cmd.moveX, y: cmd.moveY } : undefined);
 }
 
 /**

@@ -13,17 +13,27 @@ import { skillMul } from "../skills/tree.js";
 import { GameplayActions as A } from "../input.js";
 import { StructureIndexRes } from "../building/structure.js";
 import { TerrainRes } from "../world.js";
+import { INPUT } from "../input_hooks.js";
 
-/** Unit-speed iso direction from action bits (W = up-screen = -x -y), normalized on diagonals. */
-export function moveDirection(actions: number): { dx: number; dy: number } {
-  let dx = 0, dy = 0;
-  if (actions & A.MoveUp) { dx -= 1; dy -= 1; }
-  if (actions & A.MoveDown) { dx += 1; dy += 1; }
-  if (actions & A.MoveLeft) { dx -= 1; dy += 1; }
-  if (actions & A.MoveRight) { dx += 1; dy -= 1; }
-  if (dx && dy) { const k = Math.SQRT1_2; dx *= k; dy *= k; }
-  return { dx, dy };
+/**
+ * World-space (tile) move vector from screen-space input, |v| <= 1 (ADR-127). Screen axes sx (right +) / sy (down +)
+ * come from the analog stick (moveX/moveY, clamped to magnitude 1, proportional below that) when it is past the
+ * deadzone, else from the 4 digital bits (normalized, so diagonals are not faster). The screen->iso mapping is a pure
+ * 45 deg rotation (dx = (sx + sy) / sqrt2, dy = (sy - sx) / sqrt2), so it preserves length: every one of the 8 key
+ * directions is exactly 1 and a stick at magnitude m is exactly m. W = up-screen = -x -y.
+ */
+export function moveVector(actions: number, analog?: { x?: number | undefined; y?: number | undefined }): { dx: number; dy: number } {
+  let sx: number, sy: number;
+  const ax = analog?.x ?? 0, ay = analog?.y ?? 0;
+  if (analog && (analog.x !== undefined || analog.y !== undefined) && Math.hypot(ax, ay) > INPUT.moveDeadzone) { sx = ax; sy = ay; }
+  else { sx = (actions & A.MoveRight ? 1 : 0) - (actions & A.MoveLeft ? 1 : 0); sy = (actions & A.MoveDown ? 1 : 0) - (actions & A.MoveUp ? 1 : 0); }
+  const l = Math.hypot(sx, sy); if (l > 1) { sx /= l; sy /= l; }
+  if (!Number.isFinite(sx) || !Number.isFinite(sy)) return { dx: 0, dy: 0 };
+  const k = Math.SQRT1_2; const dx = (sx + sy) * k, dy = (sy - sx) * k;
+  return { dx: Math.abs(dx) < 1e-12 ? 0 : dx, dy: Math.abs(dy) < 1e-12 ? 0 : dy };
 }
+/** Unit iso direction from the 4 digital move bits (|v| = 1 in all 8 directions, 0 when idle / opposing). */
+export function moveDirection(actions: number): { dx: number; dy: number } { return moveVector(actions); }
 
 /** Current speed multiplier from sprint/encumbrance/wetness/buffs (tiles/s = walkSpeed x this). */
 export function speedMultiplier(world: World, e: Entity, sprint: boolean): number {
@@ -49,11 +59,11 @@ export function movementBlocked(world: World, x0: number, y0: number, x1: number
 }
 
 /** Applies one tick of movement input (server authority + client prediction). Writes PlayerIntent.moving/sprint. */
-export function applyMovementInput(world: World, e: Entity, actions: number, dt: number): void {
+export function applyMovementInput(world: World, e: Entity, actions: number, dt: number, analog?: { x?: number | undefined; y?: number | undefined }): void {
   const t = world.get(e, Transform); if (!t) return;
   if (world.has(e, Driver)) return; // riders move with their vehicle (gameplay.vehicles)
   const dead = world.has(e, Dead);
-  const { dx, dy } = dead ? { dx: 0, dy: 0 } : moveDirection(actions);
+  const { dx, dy } = dead ? { dx: 0, dy: 0 } : moveVector(actions, analog);
   const moving = dx || dy ? 1 : 0; const sprint = moving && actions & A.Sprint ? 1 : 0;
   if (world.has(e, PlayerIntent)) {
     const st = world.store(PlayerIntent); const i = entityIndex(e); const s = st.slot(i);

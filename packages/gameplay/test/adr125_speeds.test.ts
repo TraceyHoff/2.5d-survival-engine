@@ -23,7 +23,7 @@ describe("ADR-125 player speed tuning", () => {
   });
   it("applyMovementInput moves at the shared walk / sprint constants (server == client prediction)", () => {
     const w = makeWorld(); const p = G.spawnPlayer(w, { x: 20, y: 20 });
-    const dir = G.GameplayActions.MoveUp; const { dx, dy } = G.moveDirection(dir); const k = Math.hypot(dx, dy);
+    const dir = G.GameplayActions.MoveUp; const k = 1; // ADR-127: normalized
     const d = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(b.x - a.x, b.y - a.y);
     const a0 = { ...w.get(p, Transform)! }; G.applyMovementInput(w, p, dir, 1);
     expect(d(a0, w.get(p, Transform)!)).toBeCloseTo(k * walk * G.speedMultiplier(w, p, false), 4);
