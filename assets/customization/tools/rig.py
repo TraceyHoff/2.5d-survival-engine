@@ -2,7 +2,8 @@
 Every part (body, hair, hats, clothes, face, eyes) is rendered from the SAME pose() keypoints per
 (body type, facing, anim, frame), so layers line up frame-perfectly. Deterministic (fixed seeds, no RNG state)."""
 import sys, math, numpy as np
-sys.path.insert(0, "/workspace/assets/tools")
+import os
+sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "tools"))  # repo assets/tools (toon/palette/chars); appended so customization/tools/build_all wins
 from PIL import Image, ImageDraw, ImageFilter
 from toon import Canvas, ellipse_pts, capsule_pts, SS, downscale
 from palette import ramp, hex2rgb

@@ -12,10 +12,9 @@ keeping every existing pixel (mirrors sit_merge.py; run after build_all.py + sit
 Usage: python3 swim_punch_merge.py ENGINE_DIR [--preview KEY]"""
 import sys, os, json, subprocess
 HERE = os.path.dirname(os.path.abspath(__file__))
-# rig.py / swim_punch_merge.py live in the repo; build_all/render/parts/catalog + the shared toon tools live in the art workspace
-for p in ("/workspace/assets/tools", "/workspace/assets/customization/tools", HERE): sys.path.insert(0, p)
-import rig  # repo copy first (SWIM_N=6), before build_all/render put the workspace dir on sys.path
-sys.path.insert(0, "/workspace/assets/customization/tools")  # rig.py prepends /workspace/assets/tools (has its own build_all)
+# all helper sources (build_all/render/parts/catalog/rig + ../../tools toon/palette/chars/swimfx) live in the repo
+sys.path.insert(0, HERE); sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "tools"))
+import rig
 import build_all, swimfx
 import numpy as np
 from PIL import Image
@@ -57,6 +56,15 @@ def render_key(key):
         for ai in (0, 2): fr[ai][fr[ai][..., 3] == 0] = 0
     return key, out
 
+def anims(s, page, cells_anchor, fm=None):
+    """cells_anchor(j) -> (frame on page, anchor) for block cell j"""
+    for name, n, base, spec in (("swim", SWIM_N, 0, SWIM), ("punch", PUNCH_N, NS, PUNCH)):
+        df = []
+        for i in range(n):
+            for d in range(8):
+                f, an = cells_anchor(base + d * n + i); df.append({"atlas": page, "frame": f, "anchor": an})
+        s["animations"][name] = {"frames": list(range(n)), **spec, "dirFrames": df}
+    if fm: s["animations"]["punch"]["frameMeta"] = fm
 def load(p, mode="RGBA"): return np.asarray(Image.open(os.path.join(D, p)).convert(mode)).copy()
 def page2(a): return next(p["image"] for p in a["pages"] if p["scale"] == 2)
 NS = 8 * SWIM_N
@@ -85,15 +93,6 @@ if __name__ == "__main__":
     with Pool(int(os.environ.get("JOBS", "8"))) as pl: R = dict(pl.imap_unordered(render_key, todo))
     NB = 8 * (SWIM_N + PUNCH_N); assert all(len(R[k]) == NB for k in todo)
     print("rendered", len(R), "sprites x", NB, "frames", flush=True)
-    def anims(s, page, cells_anchor, fm=None):
-        """cells_anchor(j) -> (frame on page, anchor) for block cell j"""
-        for name, n, base, spec in (("swim", SWIM_N, 0, SWIM), ("punch", PUNCH_N, NS, PUNCH)):
-            df = []
-            for i in range(n):
-                for d in range(8):
-                    f, an = cells_anchor(base + d * n + i); df.append({"atlas": page, "frame": f, "anchor": an})
-            s["animations"][name] = {"frames": list(range(n)), **spec, "dirFrames": df}
-        if fm: s["animations"]["punch"]["frameMeta"] = fm
     def hand_meta(k):
         fm = {}
         for j in range(NS, NB):
