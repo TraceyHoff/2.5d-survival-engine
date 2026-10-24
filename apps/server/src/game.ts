@@ -8,7 +8,8 @@ import { createAgentStore, type AgentIdentityStore } from "./agents.js";
 import { AccountAssigned, ClaimAccount, SetName, WorldPersistence, loadSocial, tokenToHex, tokenToWords, wordsToName, wordsToToken, type WorldStore } from "@engine/persist";
 import { seedStarterCamp, giveRandomAppearance } from "./camp.js";
 import { SocialSync } from "./social_sync.js";
-import { Act, applyDemoInput, installDemoWorld, rejectReasonCode, DevBotHello, DEMO_COMMANDS, DEMO_EVENTS, ExplodedEvt, GAMEPLAY_NET_COMMANDS, Ping, Pong, ReloadedEvt, VehicleStationOpenedEvt } from "./protocol.js";
+import { Act, applyDemoInput, installDemoWorld, rejectReasonCode, DevBotHello, DEMO_COMMANDS, DEMO_EVENTS, ExplodedEvt, GAMEPLAY_NET_COMMANDS, Ping, Pong, ReloadedEvt, VehicleStationOpenedEvt, DeleteMyProgressCmd, DELETE_PROGRESS_CONFIRM, ProgressDeleted } from "./protocol.js";
+import { forgetPlayer, sweepForgottenPlayers } from "@engine/gameplay";
 
 export const CLAN_BLOB = "gameplay.clans";
 /** ProceduralGenerator node kinds -> gameplay resource keys (see DEFAULT_BANDS comments in @engine/world). */
@@ -65,6 +66,10 @@ export function gameModeConfig(mode: GameMode = "multiplayer", wantBots = true):
 export interface VirtualPlayerHost { connect(x: number, y: number, kind?: string): boolean; disconnect(clientId: number): void }
 
 /** claimed: ClaimAccount processed (saved record restored), so a held join-time look can no longer be overwritten by the restore. */
+/** Records namespace of deleted account PlayerIds (ADR-099). */
+export const DELETED_PLAYER_NS = "deletedPlayer";
+/** Ticks between ProgressDeleted and dropping the connection (the client reconnects itself first). */
+const DELETE_KICK_TICKS = 40;
 interface Player { entity: Entity; account: string; name: string; claimed: boolean; /** virtual player (singleplayer human bot) */ bot?: boolean }
 
 /** Alias kept for the menu/client code. */
@@ -221,6 +226,35 @@ export function createGameServer(o: GameServerOptions): GameServer {
   world.events.on(VehicleStationOpened, (ev: { entity: Entity; vehicle: Entity; station: number; kind: number }) => {
     for (const [cid, p] of players) if (p.entity === ev.entity) { net.emitEvent(VehicleStationOpenedEvt, { vehicle: ev.vehicle, station: ev.station, kind: ev.kind }, { reliable: true, scope: { owner: cid } }); break; }
   });
+  // Delete my progress (ADR-099): validated like every gameplay command (also bots' ADR-092 path, which is refused);
+  // only ever acts on the sender's own account. Forgotten PlayerIds persist as "deletedPlayer" records so stalls /
+  // buildings in chunks that stream in later are unowned too (sweep below).
+  const deleting = new Set<string>(); // accounts whose row was deleted: never saved again by this connection
+  const pendingKicks = new Map<number, number>(); // clientId -> tick to drop the connection (after ProgressDeleted flushes)
+  const forgotten = new Set<number>(o.store?.listRecords(DELETED_PLAYER_NS).map((r) => Number(r.id)).filter((n) => n > 0) ?? []);
+  handlers.on(DeleteMyProgressCmd, {
+    validate: (v, c) => {
+      const p = players.get(c.clientId); if (!p || p.entity !== c.actor) return "no_actor";
+      if (p.bot) return "not_allowed"; if (!p.claimed) return "not_claimed"; if (v.confirm !== DELETE_PROGRESS_CONFIRM) return "bad_confirm";
+      return undefined;
+    },
+    handle: (_v, c) => deleteProgress(c.clientId),
+  });
+  function deleteProgress(clientId: number): void {
+    const p = players.get(clientId); if (!p || deleting.has(p.account)) return;
+    const id = world.getField(p.entity, PlayerId, "id") ?? 0;
+    const r = forgetPlayer(world, id); if (id) forgotten.add(id);
+    deleting.add(p.account); persist?.untrackPlayer(p.account);
+    void o.store?.write({ deletePlayers: [p.account], ...(id ? { records: [{ ns: DELETED_PLAYER_NS, id: String(id), format: 1, bytes: new Uint8Array(0), tick: world.tick, ownerKind: 0, ownerId: 0, chunk: "" as const }] } : {}) })
+      .catch((e) => log(`persist: delete progress failed: ${String(e)}`));
+    net.emitEvent(ProgressDeleted, { ok: 1 }, { scope: { owner: clientId } });
+    pendingKicks.set(clientId, world.tick + DELETE_KICK_TICKS);
+    log(`delete progress: client ${clientId} account ${p.account.slice(0, 8)}… player ${id} (party ${r.party ? "left" : "-"}, clan ${r.clan ? "left" : "-"}, ${r.stalls} stalls, ${r.structures} buildings unowned)`);
+  }
+  world.addSystem("postSim", "server.deleteProgress", () => {
+    for (const [cid, t] of pendingKicks) if (world.tick >= t) leave(cid, "progress deleted");
+    if (forgotten.size && world.tick % 100 === 0) sweepForgottenPlayers(world, forgotten);
+  });
   // Gameplay rejections -> the issuing client (client.onCommandRejected / onGameplayRejected): net command + reason code + text.
   world.events.on(CommandRejected, (r) => {
     if (!net.sessions.get(r.clientId)?.conn) return;
@@ -250,7 +284,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
     // a new player has no created look, so gameplay's first-join rule passes; a returning player's restored look wins.
     entityOf: (s) => { const p = players.get(s.clientId); return p?.claimed ? p.entity : undefined; },
     ...appearanceServerHooks(world, (e) => {
-      for (const p of players.values()) if (p.entity === e && persist && !closing) { void persist.savePlayer(p.account, e, p.name).catch((x) => log(`persist: save failed ${String(x)}`)); break; }
+      for (const p of players.values()) if (p.entity === e && persist && !closing && !deleting.has(p.account)) { void persist.savePlayer(p.account, e, p.name).catch((x) => log(`persist: save failed ${String(x)}`)); break; }
     }),
   }) : undefined;
 
@@ -260,8 +294,9 @@ export function createGameServer(o: GameServerOptions): GameServer {
 
   function leave(clientId: number, why: string): void {
     const p = players.get(clientId); if (!p) return;
-    players.delete(clientId); chunks.removeSource(clientId);
-    if (persist && !closing) { void persist.savePlayer(p.account, p.entity, p.name).catch((e) => log(`persist: save failed ${String(e)}`)); persist.untrackPlayer(p.account); }
+    players.delete(clientId); chunks.removeSource(clientId); pendingKicks.delete(clientId);
+    if (deleting.delete(p.account)) persist?.untrackPlayer(p.account); // progress deleted (ADR-099): never re-save it
+    else if (persist && !closing) { void persist.savePlayer(p.account, p.entity, p.name).catch((e) => log(`persist: save failed ${String(e)}`)); persist.untrackPlayer(p.account); }
     removeEntity(p.entity);
     // Forget the net session: identity across reconnects/restarts is the persistent account (ClaimAccount).
     net.removeSession(clientId);

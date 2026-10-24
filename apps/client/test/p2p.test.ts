@@ -68,7 +68,7 @@ describe("room codes, caps, ICE", () => {
     for (let i = 0; i < 200; i++) { const c = generateRoomCode(); expect(c).toMatch(/^[2-9A-HJKMNP-Z]{6}$/); expect(normalizeRoomCode(c.toLowerCase())).toBe(c); }
     expect(ROOM_ALPHABET).not.toMatch(/[01ILO]/);
     expect(normalizeRoomCode(" abc-234 ")).toBe("ABC234"); expect(normalizeRoomCode("ABCO23")).toBeUndefined(); expect(normalizeRoomCode("ABC23")).toBeUndefined();
-    expect(roomPeerId("ABC234")).toBe("survivaz-v7-ABC234"); expect(formatRoomCode("ABC234")).toBe("ABC-234");
+    expect(roomPeerId("ABC234")).toBe("survivaz-v8-ABC234"); expect(formatRoomCode("ABC234")).toBe("ABC-234");
   });
   it("caps mobile hosts at 6 and lets desktop configure a larger cap", () => {
     expect(hostPlayerCap({ coarsePointer: true, uaMobile: undefined }, 20).cap).toBe(6);

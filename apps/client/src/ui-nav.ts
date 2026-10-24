@@ -129,6 +129,8 @@ export class UINav {
     if (typing) { if (e.key === "Enter") { this.activate(); e.preventDefault(); } return; }
     const dirs: Record<string, Dir> = { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right" };
     const d = dirs[e.key]; if (d) { this.move(d); e.preventDefault(); e.stopPropagation(); return; }
+    // hold-to-confirm buttons (data-hold, e.g. delete progress) handle their own Enter/Space press + release
+    if ((e.key === "Enter" || e.key === " ") && (e.target as HTMLElement | null)?.dataset?.["hold"] !== undefined) return;
     if (e.key === "Enter" || e.key === " ") { this.activate(); e.preventDefault(); e.stopPropagation(); return; }
     if ((e.key === "PageUp" || e.key === "PageDown") && this.o.onPage) { this.o.onPage(e.key === "PageUp" ? -1 : 1); e.preventDefault(); e.stopPropagation(); return; }
     const h = this.o.hotkeys?.[e.code]; if (h && !e.ctrlKey && !e.metaKey && !e.altKey) { h(); e.preventDefault(); e.stopPropagation(); }

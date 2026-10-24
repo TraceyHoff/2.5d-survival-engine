@@ -1,0 +1,199 @@
+/**
+ * Delete progress (ADR-099): the confirm dialog shared by the main menu (BootUI) and the in-game Settings panel
+ * (GameMenus/UINav), plus the browser-side wipes (singleplayer world DB, P2P hosted world DB, optional settings).
+ *
+ * Confirm = type DELETE and press Delete, OR hold the "Hold to delete" button for HOLD_MS (mouse/touch press, Enter/Space
+ * held, or gamepad A held while it is focused). Nothing is deleted on a single tap/click/A press.
+ */
+export const DELETE_WORD = "DELETE";
+export const HOLD_MS = 1500;
+/** localStorage keys reset only when the player opts in ("Also reset settings"). */
+export const SETTINGS_KEYS = ["engine-settings", "engine.input.bindings"] as const;
+
+type Pad = { buttons: readonly { pressed: boolean }[] } | null;
+export interface DeleteConfirmOptions {
+  message: string;
+  /** Show "Also reset settings" (unchecked = keep settings). */
+  settingsOption?: boolean;
+  onConfirm: (o: { resetSettings: boolean }) => Promise<string> | string;
+  onCancel: () => void;
+  now?: () => number;
+  getGamepads?: () => readonly Pad[];
+  /** Drive the hold timer yourself (tests): `tick()` on the handle. Default: requestAnimationFrame. */
+  manualTick?: boolean;
+}
+export interface DeleteConfirm { el: HTMLElement; tick(): void; destroy(): void; readonly done: boolean }
+
+const frame = (cb: () => void): number => (typeof (globalThis as { requestAnimationFrame?: unknown }).requestAnimationFrame === "function" ? requestAnimationFrame(cb) : setTimeout(cb, 16) as unknown as number);
+export function deleteConfirm(o: DeleteConfirmOptions): DeleteConfirm {
+  const now = o.now ?? (() => performance.now());
+  const pads = o.getGamepads ?? (() => [...(navigator.getGamepads?.() ?? [])]);
+  const el = document.createElement("div"); el.dataset["role"] = "delete-confirm"; el.style.cssText = "display:flex;flex-direction:column;gap:8px";
+  const msg = document.createElement("p"); msg.textContent = o.message;
+  const status = document.createElement("p"); status.dataset["role"] = "delete-status"; status.setAttribute("aria-live", "polite");
+  const reset = document.createElement("input"); reset.type = "checkbox"; reset.dataset["role"] = "reset-settings";
+  const rl = document.createElement("label"); rl.append(reset, " Also reset settings (HUD, bots, key bindings)");
+  const word = document.createElement("input"); word.dataset["role"] = "confirm-word"; word.placeholder = `Type ${DELETE_WORD}`; word.autocomplete = "off"; word.spellcheck = false; word.setAttribute("aria-label", `Type ${DELETE_WORD} to confirm`);
+  const del = document.createElement("button"); del.type = "button"; del.dataset["action"] = "confirm-delete"; del.dataset["role"] = "submit"; /* UINav: Enter in the text field */ del.textContent = "Delete"; del.className = "alt"; del.setAttribute("aria-disabled", "true");
+  const hold = document.createElement("button"); hold.type = "button"; hold.dataset["action"] = "hold-delete"; hold.dataset["hold"] = "1"; hold.textContent = "Hold to delete";
+  const cancel = document.createElement("button"); cancel.type = "button"; cancel.dataset["action"] = "cancel-delete"; cancel.textContent = "Cancel"; cancel.className = "alt";
+  el.append(msg, ...(o.settingsOption ? [rl] : []), word, del, hold, cancel, status);
+
+  let shown = false, done = false, busy = false, holdFrom: number | undefined, keyHeld = false, pointerHeld = false, raf = 0, destroyed = false;
+  const ok = (): boolean => word.value.trim().toUpperCase() === DELETE_WORD;
+  const sync = (): void => { del.setAttribute("aria-disabled", String(!ok())); };
+  const confirm = async (): Promise<void> => {
+    if (done || busy) return; busy = true; status.textContent = "Deleting…"; holdFrom = undefined; paint(0);
+    try { status.textContent = await o.onConfirm({ resetSettings: reset.checked }); done = true; }
+    catch (e) { status.textContent = `Couldn't delete: ${e instanceof Error ? e.message : String(e)}`; }
+    finally { busy = false; }
+  };
+  const paint = (f: number): void => { hold.style.background = f > 0 ? `linear-gradient(90deg,#d9534f ${Math.round(f * 100)}%,transparent ${Math.round(f * 100)}%)` : ""; hold.textContent = f > 0 ? `Hold… ${Math.ceil(((1 - f) * HOLD_MS) / 100) / 10}s` : "Hold to delete"; };
+  const padA = (): boolean => document.activeElement === hold && pads().some((p) => !!p?.buttons[0]?.pressed);
+  const tick = (): void => {
+    if (destroyed) return;
+    if (el.isConnected) shown = true; else if (shown) { destroyed = true; return; } // dialog closed/replaced
+    const held = keyHeld || pointerHeld || padA();
+    if (!held || done || busy) { if (holdFrom !== undefined) { holdFrom = undefined; paint(0); } }
+    else { holdFrom ??= now(); const f = Math.min(1, (now() - holdFrom) / HOLD_MS); paint(f); if (f >= 1) void confirm(); }
+    if (!o.manualTick) raf = frame(tick);
+  };
+  word.addEventListener("input", sync);
+  word.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); if (ok()) void confirm(); } });
+  del.addEventListener("click", () => { if (ok()) void confirm(); else { status.textContent = `Type ${DELETE_WORD} first, or hold the button.`; word.focus(); } });
+  hold.addEventListener("click", (e) => { e.preventDefault(); }); // a tap / single A press never deletes
+  hold.addEventListener("pointerdown", (e) => { e.preventDefault(); pointerHeld = true; hold.focus(); });
+  for (const t of ["pointerup", "pointerleave", "pointercancel"]) hold.addEventListener(t, () => { pointerHeld = false; });
+  hold.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); keyHeld = true; } });
+  hold.addEventListener("keyup", (e) => { if (e.key === "Enter" || e.key === " ") keyHeld = false; });
+  hold.addEventListener("blur", () => { keyHeld = false; pointerHeld = false; });
+  cancel.addEventListener("click", () => { if (!busy) o.onCancel(); });
+  if (!o.manualTick) raf = frame(tick);
+  return { el, tick, destroy: () => { destroyed = true; (globalThis.cancelAnimationFrame ?? clearTimeout)(raf); }, get done() { return done; } };
+}
+
+type Factory = Pick<IDBFactory, "deleteDatabase"> & { databases?: () => Promise<{ name?: string }[]> };
+/** Deletes one IndexedDB database (every version). "blocked" = another tab/connection still holds it open. */
+export function deleteIndexedDb(name: string, factory: Factory = indexedDB, blockedMs = 4000): Promise<"deleted" | "blocked"> {
+  return new Promise((resolve, reject) => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const req = factory.deleteDatabase(name);
+    req.onsuccess = () => { if (timer) clearTimeout(timer); resolve("deleted"); };
+    req.onerror = () => { if (timer) clearTimeout(timer); reject(req.error ?? new Error(`deleting ${name} failed`)); };
+    req.onblocked = () => { timer ??= setTimeout(() => resolve("blocked"), blockedMs); };
+  });
+}
+
+export interface WipeResult { ok: boolean; message: string; deleted: string[] }
+/** Singleplayer world DB name for a ?player slot (main.ts openBrowserStore). */
+export const localDbName = (slot: string): string => `engine-local-${slot}`;
+export const hostDbName = (slot: string): string => `engine-p2p-host-${slot}`;
+
+async function wipe(base: string, o: { factory?: Factory; blockedMs?: number; close?: () => Promise<void> | void }): Promise<WipeResult> {
+  const factory = o.factory ?? indexedDB;
+  await o.close?.(); // our own connection first (local server + store), else the delete is blocked by this tab
+  const names = new Set([base]);
+  try { for (const d of (await factory.databases?.()) ?? []) if (d.name && d.name.startsWith(`${base}-`)) names.add(d.name); } catch { /* databases() unsupported */ }
+  const deleted: string[] = [];
+  for (const n of names) {
+    if ((await deleteIndexedDb(n, factory, o.blockedMs)) === "blocked")
+      return { ok: false, deleted, message: "The save is still open in another tab or window of the game. Close the other tabs and try again." };
+    deleted.push(n);
+  }
+  return { ok: true, deleted, message: "" };
+}
+
+/**
+ * Singleplayer "Delete save": the world DB (chunks, your character + inventory + look, human bots' memory `game.agents`,
+ * world meta) is deleted outright. Settings stay unless `resetSettings`. The account token (shared with servers) stays.
+ */
+export async function wipeSingleplayerSave(o: { slot: string; resetSettings: boolean; factory?: Factory; storage?: Pick<Storage, "removeItem">; blockedMs?: number; close?: () => Promise<void> | void }): Promise<WipeResult> {
+  const r = await wipe(localDbName(o.slot), o);
+  if (!r.ok) return r;
+  if (o.resetSettings) { const s = o.storage ?? localStorage; for (const k of SETTINGS_KEYS) s.removeItem(k); }
+  return { ...r, message: `Singleplayer save deleted${o.resetSettings ? " and settings reset" : ""}. The next Singleplayer start is a fresh world.` };
+}
+
+/** P2P "Delete hosted world" (the world your guests played in). Refused while you are hosting it. */
+export async function wipeHostedWorld(o: { slot: string; hosting: boolean; factory?: Factory; blockedMs?: number }): Promise<WipeResult> {
+  if (o.hosting) return { ok: false, deleted: [], message: "End the hosted session first (Pause → Session → End session)." };
+  const r = await wipe(hostDbName(o.slot), o);
+  return r.ok ? { ...r, message: "Hosted world deleted. The next Host game starts a fresh world." } : r;
+}
+
+// ---- Main-menu "Delete progress" picker (ADR-099): what is stored on this device, per category ----
+export type LocalSaveKind = "singleplayer" | "hosted" | "character" | "bots" | "settings";
+export interface LocalSave { kind: LocalSaveKind; label: string; present: boolean; detail: string }
+/** Human bots' long-term memory records in the singleplayer DB (server agents.ts AGENT_NS). */
+export const AGENT_RECORDS_NS = "agents";
+/** localStorage "last played" stamps, written by main.ts when a mode starts. */
+export const lastPlayedKey = (mode: "singleplayer" | "hosted", slot: string): string => `engine.lastPlayed.${mode}.${slot}`;
+type StoreLike = { playerTokens(): string[]; listRecords(ns: string): { id: string; bytes: Uint8Array }[]; count(t: "chunks" | "players" | "records"): number;
+  write(b: { deletePlayers?: string[]; deleteRecords?: { ns: string; id: string }[] }): Promise<void>; close(): Promise<void> };
+export interface LocalSaveEnv { slot: string; factory?: Factory; storage?: Pick<Storage, "getItem" | "removeItem" | "key" | "length">; openStore?: (name: string) => Promise<StoreLike>; now?: () => number }
+const defaultOpen = async (name: string, factory: Factory): Promise<StoreLike> => {
+  const { IndexedDbWorldStore } = await import("@engine/persist");
+  return IndexedDbWorldStore.open(name, { factory: factory as never });
+};
+async function exists(name: string, factory: Factory): Promise<boolean | undefined> {
+  try { const l = await factory.databases?.(); return l ? l.some((d) => d.name === name) : undefined; } catch { return undefined; }
+}
+async function withStore<T>(env: LocalSaveEnv, name: string, fn: (s: StoreLike) => Promise<T> | T): Promise<T | undefined> {
+  const f = env.factory ?? indexedDB;
+  if ((await exists(name, f)) === false) return undefined; // never create an empty DB just to look at it
+  const s = await (env.openStore ? env.openStore(name) : defaultOpen(name, f));
+  try { return await fn(s); } finally { await s.close(); }
+}
+const ago = (t: number, now: number): string => { const d = Math.max(0, now - t) / 60000; return d < 2 ? "just now" : d < 120 ? `${Math.round(d)} min ago` : d < 2880 ? `${Math.round(d / 60)} h ago` : new Date(t).toLocaleDateString(); };
+const kb = (n: number): string => (n < 1024 ? `${n} B` : `${Math.round(n / 102.4) / 10} KB`);
+
+/** Lists the saves on this device with what's known about them (counts / size / last played). */
+export async function listLocalSaves(env: LocalSaveEnv): Promise<LocalSave[]> {
+  const st = env.storage ?? localStorage; const now = env.now?.() ?? Date.now();
+  const played = (m: "singleplayer" | "hosted"): string => { const t = Number(st.getItem(lastPlayedKey(m, env.slot))); return t > 0 ? `last played ${ago(t, now)}` : ""; };
+  const join = (...p: string[]): string => p.filter(Boolean).join(" · ");
+  const sp = await withStore(env, localDbName(env.slot), (s) => ({ chunks: s.count("chunks"), players: s.playerTokens().length, bots: s.listRecords(AGENT_RECORDS_NS) }));
+  const host = await withStore(env, hostDbName(env.slot), (s) => ({ chunks: s.count("chunks"), players: s.playerTokens().length }));
+  const settingsBytes = SETTINGS_KEYS.reduce((n, k) => n + (st.getItem(k)?.length ?? 0), 0);
+  const chars = (sp?.players ?? 0) + (host?.players ?? 0);
+  const botBytes = sp?.bots.reduce((n, r) => n + r.bytes.length, 0) ?? 0;
+  return [
+    { kind: "singleplayer", label: "Singleplayer world", present: !!sp, detail: sp ? join(`${sp.chunks} saved chunks`, played("singleplayer")) : "none" },
+    { kind: "hosted", label: "Hosted multiplayer world", present: !!host, detail: host ? join(`${host.chunks} saved chunks, ${host.players} characters`, played("hosted")) : "none" },
+    { kind: "character", label: "Character / appearance", present: chars > 0, detail: chars ? `${chars} saved character${chars === 1 ? "" : "s"} (singleplayer + hosted)` : "none" },
+    { kind: "bots", label: "Bot memories", present: (sp?.bots.length ?? 0) > 0, detail: sp?.bots.length ? `${sp.bots.length} bots · ${kb(botBytes)}` : "none" },
+    { kind: "settings", label: "Settings", present: settingsBytes > 0, detail: settingsBytes ? kb(settingsBytes) : "defaults" },
+  ];
+}
+
+/**
+ * Deletes the chosen categories. A whole world (singleplayer / hosted) is deleted as a database; "character" and
+ * "bots" alone delete just those rows inside the worlds that are kept. `everything` also forgets this slot's account
+ * token, name, server URL and last-played stamps (a new identity everywhere, including dedicated servers).
+ */
+export async function deleteLocalProgress(env: LocalSaveEnv & { kinds: ReadonlySet<LocalSaveKind>; everything?: boolean; blockedMs?: number }): Promise<WipeResult> {
+  const k = env.everything ? new Set<LocalSaveKind>(["singleplayer", "hosted", "character", "bots", "settings"]) : env.kinds;
+  if (!k.size) return { ok: false, deleted: [], message: "Pick at least one thing to delete." };
+  const st = env.storage ?? localStorage; const deleted: string[] = []; const done: string[] = [];
+  const dbOpts = { ...(env.factory ? { factory: env.factory } : {}), ...(env.blockedMs !== undefined ? { blockedMs: env.blockedMs } : {}) };
+  for (const [kind, name, mode] of [["singleplayer", localDbName(env.slot), "singleplayer"], ["hosted", hostDbName(env.slot), "hosted"]] as const) {
+    if (k.has(kind)) {
+      const r = await wipe(name, dbOpts); deleted.push(...r.deleted); if (!r.ok) return { ...r, deleted };
+      st.removeItem(lastPlayedKey(mode, env.slot)); done.push(kind === "singleplayer" ? "singleplayer world" : "hosted world");
+      continue;
+    }
+    const wantChars = k.has("character"), wantBots = kind === "singleplayer" && k.has("bots");
+    if (!wantChars && !wantBots) continue;
+    await withStore(env, name, async (s) => {
+      await s.write({ ...(wantChars ? { deletePlayers: s.playerTokens() } : {}), ...(wantBots ? { deleteRecords: s.listRecords(AGENT_RECORDS_NS).map((r) => ({ ns: AGENT_RECORDS_NS, id: r.id })) } : {}) });
+    });
+  }
+  if (k.has("character") && !(k.has("singleplayer") && k.has("hosted"))) done.push("characters");
+  if (k.has("bots") && !k.has("singleplayer")) done.push("bot memories");
+  if (k.has("settings")) { for (const key of SETTINGS_KEYS) st.removeItem(key); done.push("settings"); }
+  if (env.everything) {
+    const mine: string[] = []; for (let i = 0; i < st.length; i++) { const key = st.key(i); if (key && /^engine\.(account|name|server|lastPlayed\.[a-z]+)\./.test(key) && key.endsWith(`.${env.slot}`)) mine.push(key); }
+    for (const key of mine) st.removeItem(key); done.push("account token");
+  }
+  return { ok: true, deleted, message: `Deleted: ${done.join(", ")}.` };
+}

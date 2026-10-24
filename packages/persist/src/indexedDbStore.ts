@@ -50,7 +50,7 @@ export class IndexedDbWorldStore implements WorldStore {
   private cache = new Map<ChunkKey, StoredChunk>();
   private overlay = new Map<ChunkKey, StoredChunk | null>(); // null = pending delete
   private players = new Map<string, StoredPlayer>();
-  private overlayPlayers = new Map<string, StoredPlayer>();
+  private overlayPlayers = new Map<string, StoredPlayer | null>(); // null = pending delete
   private blobs = new Map<string, StoredBlob>();
   private overlayBlobs = new Map<string, StoredBlob>();
   private records = new RecordTable();
@@ -94,6 +94,8 @@ export class IndexedDbWorldStore implements WorldStore {
     return st;
   }
 
+  /** Account tokens with a stored character (pending deletes excluded): "Delete progress" picker (ADR-099). */
+  playerTokens(): string[] { const out = new Set(this.players.keys()); for (const [t, p] of this.overlayPlayers) { if (p) out.add(t); else out.delete(t); } return [...out]; }
   readMeta(): WorldMeta | undefined { const m = this.overlayMeta ?? this.meta; return m ? { ...m } : undefined; }
   readChunk(key: ChunkKey): StoredChunk | undefined {
     const o = this.overlay.get(key); if (o !== undefined) return o ?? undefined;
@@ -109,7 +111,7 @@ export class IndexedDbWorldStore implements WorldStore {
     return r ? { ...r, bytes: bytesOf(r.bytes) } : undefined;
   }
   hasChunk(key: ChunkKey): boolean { const o = this.overlay.get(key); return o !== undefined ? o !== null : this.chunkKeys.has(key); }
-  readPlayer(token: string): StoredPlayer | undefined { return this.overlayPlayers.get(token) ?? this.players.get(token); }
+  readPlayer(token: string): StoredPlayer | undefined { const o = this.overlayPlayers.get(token); return o === null ? undefined : o ?? this.players.get(token); }
   readBlob(key: string): StoredBlob | undefined { return this.overlayBlobs.get(key) ?? this.blobs.get(key); }
   readRecord(ns: string, id: string): StoredRecord | undefined { return this.records.get(ns, id); }
   listRecords(ns: string, q?: RecordQuery): StoredRecord[] { return this.records.list(ns, q); }
@@ -121,7 +123,7 @@ export class IndexedDbWorldStore implements WorldStore {
   evictCache(keys?: readonly ChunkKey[]): void { if (!keys) this.cache.clear(); else for (const k of keys) this.cache.delete(k); }
   count(t: "chunks" | "players" | "records"): number {
     if (t === "records") return this.records.count();
-    if (t === "players") { const s = new Set([...this.players.keys(), ...this.overlayPlayers.keys()]); return s.size; }
+    if (t === "players") { const s = new Set(this.players.keys()); for (const [k, v] of this.overlayPlayers) { if (v) s.add(k); else s.delete(k); } return s.size; }
     const s = new Set(this.chunkKeys); for (const [k, v] of this.overlay) { if (v) s.add(k); else s.delete(k); } return s.size;
   }
 
@@ -136,6 +138,7 @@ export class IndexedDbWorldStore implements WorldStore {
         rec.parts.push(part);
         for (const c of part.chunks ?? []) this.overlay.set(c.key, c);
         for (const k of part.deleteChunks ?? []) this.overlay.set(k, null);
+        for (const t of part.deletePlayers ?? []) this.overlayPlayers.set(t, null);
         for (const p of part.players ?? []) this.overlayPlayers.set(p.token, p);
         for (const b of part.blobs ?? []) this.overlayBlobs.set(b.key, b);
         this.records.stage(part);
@@ -157,6 +160,7 @@ export class IndexedDbWorldStore implements WorldStore {
         for (const part of rec.parts) {
           for (const k of part.deleteChunks ?? []) cs.delete(k);
           for (const c of part.chunks ?? []) { cs.put({ key: c.key, format: c.format, bytes: c.bytes, tick: c.tick }); bytes += c.bytes.length; chunks++; }
+          for (const t of part.deletePlayers ?? []) ps.delete(t);
           for (const p of part.players ?? []) { ps.put({ token: p.token, name: p.name, format: p.format, bytes: p.bytes, tick: p.tick }); bytes += p.bytes.length; players++; }
           for (const b of part.blobs ?? []) { bs.put({ key: b.key, format: b.format, bytes: b.bytes, tick: b.tick }); bytes += b.bytes.length; }
           for (const d of part.deleteRecords ?? []) rs.delete([d.ns, d.id]);
@@ -175,6 +179,7 @@ export class IndexedDbWorldStore implements WorldStore {
     for (const part of rec.parts) {
       for (const c of part.chunks ?? []) { if (!err) { this.chunkKeys.add(c.key); if (this.cache.has(c.key)) this.cache.set(c.key, c); } if (this.overlay.get(c.key) === c) this.overlay.delete(c.key); }
       for (const k of part.deleteChunks ?? []) { if (!err) { this.chunkKeys.delete(k); this.cache.delete(k); } if (this.overlay.get(k) === null && !this.laterTouches(k)) this.overlay.delete(k); }
+      for (const t of part.deletePlayers ?? []) { if (!err) this.players.delete(t); if (this.overlayPlayers.get(t) === null) this.overlayPlayers.delete(t); }
       for (const p of part.players ?? []) { if (!err) this.players.set(p.token, p); if (this.overlayPlayers.get(p.token) === p) this.overlayPlayers.delete(p.token); }
       for (const b of part.blobs ?? []) { if (!err) this.blobs.set(b.key, b); if (this.overlayBlobs.get(b.key) === b) this.overlayBlobs.delete(b.key); }
       this.records.settle(part, !err);

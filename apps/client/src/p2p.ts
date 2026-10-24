@@ -10,7 +10,7 @@ import { pipeFromDataChannel, type RTCDataChannelLike, type RtcPeerLink } from "
 export const ROOM_ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
 export const ROOM_CODE_LENGTH = 6;
 /** Namespaced PeerJS id prefix (shared cloud broker: keep ids from colliding with other apps; bump with the protocol). */
-export const ROOM_PEER_PREFIX = "survivaz-v7-";
+export const ROOM_PEER_PREFIX = "survivaz-v8-";
 
 export function generateRoomCode(random: () => number = Math.random): string {
   let s = ""; for (let i = 0; i < ROOM_CODE_LENGTH; i++) s += ROOM_ALPHABET[Math.floor(random() * ROOM_ALPHABET.length) % ROOM_ALPHABET.length];

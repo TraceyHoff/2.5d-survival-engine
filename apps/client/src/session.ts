@@ -2,7 +2,7 @@
 import { World, type Entity } from "@engine/core";
 import { NetClient, NetRejectedError, WebSocketClientTransport, type ClientTransport, type WebSocketCtor } from "@engine/net";
 import { AccountAssigned, ClaimAccount, SetName, nameToWords, tokenToWords, wordsToToken } from "@engine/persist";
-import { applyDemoInput, VEHICLE_CLIENT_OPTIONS, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS, Ping, Pong } from "@engine/server/protocol";
+import { applyDemoInput, VEHICLE_CLIENT_OPTIONS, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS, gameplayNet, DeleteMyProgressCmd, DELETE_PROGRESS_CONFIRM, Ping, Pong, ProgressDeleted } from "@engine/server/protocol";
 
 /** Minimal storage (localStorage in the browser, a Map in tests). */
 export interface KeyValue { getItem(k: string): string | null; setItem(k: string, v: string): void }
@@ -31,6 +31,11 @@ export class ClientSession {
   client: NetClient | undefined;
   /** Fired when the connection closes without a local disconnect() (detail = HOST_ENDED for a P2P host leaving). */
   onEnded: ((detail: string) => void) | undefined;
+  /**
+   * Fired when the server confirms "delete my progress" (ADR-099). The account token is kept (it is per slot and shared by
+   * every server you play on); this server no longer has a record for it, so reconnecting starts a fresh character.
+   */
+  onProgressDeleted: (() => void) | undefined;
   private pingTimer: ReturnType<typeof setInterval> | undefined;
   constructor(private readonly o: SessionOptions) {}
 
@@ -57,6 +62,7 @@ export class ClientSession {
     this.world = world; this.client = client; this.status = "connecting"; this.detail = url; this.rttMs = undefined; this.restored = false;
     const now = this.o.now ?? (() => performance.now());
     client.onEvent(AccountAssigned, (p) => { this.o.storage.setItem(this.key("account"), wordsToToken(p)); this.restored = p.restored === 1; });
+    client.onEvent(ProgressDeleted, () => { if (this.client === client) this.onProgressDeleted?.(); });
     client.onEvent(Pong, (p) => { this.rttMs = ((Math.round(now()) >>> 0) - p.t) >>> 0; });
     transport.onClose(() => {
       if (this.client !== client) return;
@@ -76,6 +82,11 @@ export class ClientSession {
     if (name) client.sendCommand(SetName, nameToWords(name));
     this.pingTimer = setInterval(() => { if (client.connected) client.sendCommand(Ping, { t: Math.round(now()) >>> 0 }); }, 1000);
     return world;
+  }
+  /** Asks the server to delete this account's progress there (character, inventory, look, memberships). */
+  deleteMyProgress(): boolean {
+    const c = this.client; if (!c?.connected) return false;
+    try { return c.sendCommand(gameplayNet(DeleteMyProgressCmd), { confirm: DELETE_PROGRESS_CONFIRM }) !== false; } catch { return false; }
   }
   /** Call every frame after stepping the world: delivers events (account, pong). */
   poll(): void { this.client?.pollEvents(Infinity); }

@@ -155,6 +155,8 @@ export function disbandClan(w: World, clan: number): void {
     if (p === leader && clan <= 0xffff) { if (w.has(e, Tribe)) w.setField(e, Tribe, "id", clan); else w.add(e, Tribe, { id: clan }); } }
   touchClans(w);
 }
+/** Removes `player` from their clan if any — leaving rules: leadership passes to the highest rank, a sole member disbands (ADR-099). */
+export function clanRemovePlayer(w: World, player: number): boolean { const c = clanOf(w, player); if (!c) return false; removeFromClan(w, c, player); return true; }
 function removeFromClan(w: World, clan: number, player: number): void {
   const R = groups(w); const g = R.get(clan)!; if (g.members.size <= 1) { disbandClan(w, clan); return; }
   const wasLeader = R.role(clan, player) === GroupRole.Leader; R.removeMember(clan, player); clanData(w, clan).contrib.delete(player);

@@ -16,6 +16,7 @@ db.pragma("busy_timeout = 5000");
 const putChunk = db.prepare("INSERT INTO chunks(key, cx, cy, format, data, updated_tick) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(key) DO UPDATE SET cx = excluded.cx, cy = excluded.cy, format = excluded.format, data = excluded.data, updated_tick = excluded.updated_tick");
 const delChunk = db.prepare("DELETE FROM chunks WHERE key = ?");
 const putPlayer = db.prepare("INSERT INTO players(token, name, format, data, updated_tick, updated_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(token) DO UPDATE SET name = excluded.name, format = excluded.format, data = excluded.data, updated_tick = excluded.updated_tick, updated_at = excluded.updated_at");
+const delPlayer = db.prepare("DELETE FROM players WHERE token = ?");
 const putMeta = db.prepare("INSERT INTO meta(k, v) VALUES (?, ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v");
 const putRecord = db.prepare("INSERT INTO records(ns, id, format, data, owner_kind, owner_id, chunk, updated_tick) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(ns, id) DO UPDATE SET format = excluded.format, data = excluded.data, owner_kind = excluded.owner_kind, owner_id = excluded.owner_id, chunk = excluded.chunk, updated_tick = excluded.updated_tick");
 const delRecord = db.prepare("DELETE FROM records WHERE ns = ? AND id = ?");
@@ -31,6 +32,7 @@ const apply = db.transaction((/** @type {any[]} */ parts) => {
   for (const p of parts) {
     for (const k of p.deleteChunks ?? []) delChunk.run(k);
     for (const c of p.chunks ?? []) { const [cx, cy] = coords(c.key); putChunk.run(c.key, cx, cy, c.format, buf(c.bytes), c.tick); bytes += c.bytes.byteLength; chunks++; }
+    for (const t of p.deletePlayers ?? []) delPlayer.run(t);
     for (const pl of p.players ?? []) { putPlayer.run(pl.token, pl.name, pl.format, buf(pl.bytes), pl.tick, now); bytes += pl.bytes.byteLength; players++; }
     for (const d of p.deleteRecords ?? []) delRecord.run(d.ns, d.id);
     for (const r of p.records ?? []) { putRecord.run(r.ns, r.id, r.format, buf(r.bytes), r.ownerKind, r.ownerId, r.chunk, r.tick); bytes += r.bytes.byteLength; }

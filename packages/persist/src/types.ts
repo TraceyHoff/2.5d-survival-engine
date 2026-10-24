@@ -74,6 +74,8 @@ export interface SaveBatch {
   /** Generic records (upsert by ns + id) and deletions; see StoredRecord. */
   records?: StoredRecord[];
   deleteRecords?: RecordRef[];
+  /** Player rows (account tokens) to delete, applied before `players` upserts in the same part (ADR-099 delete progress). */
+  deletePlayers?: string[];
   /** Chunk keys to delete (e.g. a world reset of an area). */
   deleteChunks?: ChunkKey[];
 }

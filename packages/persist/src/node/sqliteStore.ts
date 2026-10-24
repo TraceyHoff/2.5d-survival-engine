@@ -72,6 +72,8 @@ export class SqliteWorldStore implements WorldStore {
   private pending = new Map<number, Pending>();
   private overlayChunks = new Map<ChunkKey, StoredChunk>();
   private overlayPlayers = new Map<string, StoredPlayer>();
+  /** Pending player deletes (token → batch id) so readPlayer hides them before the commit lands. */
+  private deletedPlayers = new Map<string, number>();
   private overlayBlobs = new Map<string, StoredBlob>();
   private overlayRecords = new RecordTable(); // overlay only: committed rows live in SQLite
   private overlayMeta: WorldMeta | undefined;
@@ -127,6 +129,7 @@ export class SqliteWorldStore implements WorldStore {
 
   private settle(id: number, err: Error | undefined, m?: { ms?: number; bytes?: number; chunks?: number; players?: number }): void {
     const p = this.pending.get(id); if (!p) return; this.pending.delete(id);
+    for (const [t, b] of this.deletedPlayers) if (b === id) this.deletedPlayers.delete(t);
     // Drop overlay rows that this batch made durable (unless a newer, still pending write replaced them).
     for (const c of p.chunks) if (this.overlayChunks.get(c.key) === c) this.overlayChunks.delete(c.key);
     for (const pl of p.players) if (this.overlayPlayers.get(pl.token) === pl) this.overlayPlayers.delete(pl.token);
@@ -164,7 +167,7 @@ export class SqliteWorldStore implements WorldStore {
     const r = this.qChunk.get(key); return r ? { key, format: r.format, bytes: r.data, tick: r.updated_tick } : undefined;
   }
   readPlayer(token: string): StoredPlayer | undefined {
-    const o = this.overlayPlayers.get(token); if (o) return o;
+    const o = this.overlayPlayers.get(token); if (o) return o; if (this.deletedPlayers.has(token)) return undefined;
     const r = this.qPlayer.get(token); return r ? { token, name: r.name, format: r.format, bytes: r.data, tick: r.updated_tick } : undefined;
   }
   count(t: "chunks" | "players" | "records"): number { return this.qCount[t].get()!.n; }
@@ -179,7 +182,8 @@ export class SqliteWorldStore implements WorldStore {
       append: (part) => {
         if (rec.committed) throw new Error("batch already committed");
         for (const c of part.chunks ?? []) { this.overlayChunks.set(c.key, c); rec.chunks.push(c); }
-        for (const p of part.players ?? []) { this.overlayPlayers.set(p.token, p); rec.players.push(p); }
+        for (const t of part.deletePlayers ?? []) { this.overlayPlayers.delete(t); this.deletedPlayers.set(t, id); }
+        for (const p of part.players ?? []) { this.overlayPlayers.set(p.token, p); this.deletedPlayers.delete(p.token); rec.players.push(p); }
         for (const b of part.blobs ?? []) { this.overlayBlobs.set(b.key, b); rec.blobs.push(b); }
         if (part.records?.length || part.deleteRecords?.length) { this.overlayRecords.stage(part); rec.parts.push(part); }
         if (part.meta) this.overlayMeta = { ...part.meta };
@@ -205,6 +209,7 @@ export class SqliteWorldStore implements WorldStore {
       const pc = this.db.prepare("INSERT INTO chunks(key, cx, cy, format, data, updated_tick) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(key) DO UPDATE SET cx = excluded.cx, cy = excluded.cy, format = excluded.format, data = excluded.data, updated_tick = excluded.updated_tick");
       const dc = this.db.prepare("DELETE FROM chunks WHERE key = ?");
       const pp = this.db.prepare("INSERT INTO players(token, name, format, data, updated_tick, updated_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(token) DO UPDATE SET name = excluded.name, format = excluded.format, data = excluded.data, updated_tick = excluded.updated_tick, updated_at = excluded.updated_at");
+      const dp = this.db.prepare("DELETE FROM players WHERE token = ?");
       const pm = this.db.prepare("INSERT INTO meta(k, v) VALUES (?, ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v");
       const pr = this.db.prepare(PUT_RECORD); const dr = this.db.prepare("DELETE FROM records WHERE ns = ? AND id = ?");
       const pb = this.db.prepare("INSERT INTO blobs(key, format, data, updated_tick) VALUES (?, ?, ?, ?) ON CONFLICT(key) DO UPDATE SET format = excluded.format, data = excluded.data, updated_tick = excluded.updated_tick");
@@ -214,6 +219,7 @@ export class SqliteWorldStore implements WorldStore {
         for (const p of ps) {
           for (const k of p.deleteChunks ?? []) dc.run(k);
           for (const c of p.chunks ?? []) { const i = c.key.indexOf(","); pc.run(c.key, Number(c.key.slice(0, i)), Number(c.key.slice(i + 1)), c.format, buf(c.bytes), c.tick); bytes += c.bytes.length; chunks++; }
+          for (const t of p.deletePlayers ?? []) dp.run(t);
           for (const pl of p.players ?? []) { pp.run(pl.token, pl.name, pl.format, buf(pl.bytes), pl.tick, now); bytes += pl.bytes.length; players++; }
           for (const b of p.blobs ?? []) { pb.run(b.key, b.format, buf(b.bytes), b.tick); bytes += b.bytes.length; }
           for (const d of p.deleteRecords ?? []) dr.run(d.ns, d.id);

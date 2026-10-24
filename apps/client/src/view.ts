@@ -1,3 +1,4 @@
+import { DESKTOP_ZOOM } from "./camera-zoom.js";
 import { showRenderError, glInfo, frameIsBlack } from "./glcheck.js";
 /**
  * WebGL2 game view: @engine/render IsoRenderer + Art's pack (packages/assets/pack, served at `<base>art/pack/`).
@@ -96,7 +97,7 @@ export class IsoView {
     const look = await renderer.loadLook(tuningUrl);
     const lights = new LightTable(); lights.load(await fetch(tuningUrl).then((r) => (r.ok ? r.json() : null)).catch(() => null));
     if (look.warnings.length) console.info("render tuning:", look.warnings);
-    renderer.camera.zoom = 1.6; onProgress(1, "Ready");
+    renderer.camera.zoom = DESKTOP_ZOOM; // main.ts attachZoom then sizes it per viewport (ADR-100) onProgress(1, "Ready");
     const view = new IsoView(renderer, registry, ov, lights); view.base = base; return view;
   }
 

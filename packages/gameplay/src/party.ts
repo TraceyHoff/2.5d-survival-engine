@@ -88,6 +88,8 @@ export function partyAccept(w: World, actor: Entity, party: number): string | un
   return undefined;
 }
 /** Removes a player; the leader hands over to the highest role, then lowest PlayerId; an empty party is deleted. */
+/** Removes `player` (account PlayerId) from their party if any — same path as leaving (delete progress, ADR-099). */
+export function partyRemovePlayer(w: World, player: number): boolean { const p = partyOf(w, player); if (!p) return false; removeFromParty(w, p, player); return true; }
 function removeFromParty(w: World, p: number, player: number): void {
   const R = groups(w); const wasLeader = R.role(p, player) === GroupRole.Leader; R.removeMember(p, player);
   const g = R.get(p);

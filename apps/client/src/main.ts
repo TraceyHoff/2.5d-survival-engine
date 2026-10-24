@@ -1,3 +1,5 @@
+import { lastPlayedKey } from "./delete-progress.js";
+import { attachZoom } from "./camera-zoom.js";
 import { mountUi } from "./ui-root.js";
 import { showRenderError } from "./glcheck.js";
 import { startDiag } from "./diag.js";
@@ -46,6 +48,7 @@ const isoReady: Promise<void> = wantIso ? (async () => {
   const v = await IsoView.create(canvas, import.meta.env.BASE_URL, { ...(num("time") !== undefined ? { hours: num("time")! } : {}), ...(wi >= 0 ? { weather: wi, intensity: num("intensity") ?? 1 } : {}) });
   const onResize = (): void => v.resize(innerWidth, innerHeight, devicePixelRatio || 1); addEventListener("resize", onResize); onResize();
   canvas.addEventListener("webglcontextlost", () => showRenderError("WebGL context lost", "The GPU reset or ran out of memory; reload the page (or try ?safe=1)."));
+  attachZoom(v.renderer.camera, canvas, { enabled: () => !document.querySelector("[data-boot=menu]") });
   iso = v; (window as { __view?: unknown }).__view = { ready: true, renderer: "iso" };
 })().catch((e: unknown) => { console.warn("IsoRenderer unavailable, using debug renderer", e); showRenderError("3D renderer unavailable — showing debug view", e instanceof Error ? e.message + ((e as { info?: unknown }).info ? `\n${JSON.stringify((e as { info?: unknown }).info).slice(0, 300)}` : "") : String(e)); fallback(); }) : Promise.resolve(fallback());
 function fallback(): void {
@@ -69,10 +72,12 @@ let menus: GameMenus | undefined;
 if (browserInput.controls) { const c = browserInput.controls; mountTouchOverlay(root, () => c.geometry(), () => !menus || menus.nav.isOpen); }
 /** Set by the active mode: what "Quit to main menu" must do first (save / end the P2P session / disconnect). */
 let leaveCurrent: (() => Promise<void> | void) | undefined;
+/** Set by the active mode: Settings → "Delete my progress" (ADR-099); undefined hides the entry. */
+let deleteInfo: (() => { label: string; message: string; settingsOption: boolean; run: (o: { resetSettings: boolean }) => Promise<string> } | undefined) | undefined;
 let sessionInfo: (() => { label: string; leaveLabel: string; onLeave: () => void }) | undefined;
 function startMenus(): void {
   if (menus) return;
-  menus = new GameMenus({ root, input, onQuit: quitToMenu, session: () => sessionInfo?.(), gameplay: { ctx: menuCtx, send: sendIntent, social, startPlacing: (sel) => buildMode.start(sel) },
+  menus = new GameMenus({ root, input, onQuit: quitToMenu, session: () => sessionInfo?.(), deleteProgress: () => deleteInfo?.(), gameplay: { ctx: menuCtx, send: sendIntent, social, startPlacing: (sel) => buildMode.start(sel) },
     onChat: (text, channel, to) => { if (!session.client?.chat.send(channel as ChatChannel, text, to ? { to } : {})) menus?.pushChat("(not connected — message not sent)"); } });
 }
 /** Live data for the gameplay panels: the replicated world + local player; names via NetClient's NamesClient. */
@@ -123,7 +128,9 @@ function sampleInput(): { buttons: number; aimX: number; aimY: number } {
   const cmd = { buttons: actions, ...rest }; return cmd;
 }
 
-const session = new ClientSession({ storage: localStorage, slot: params.get("player") ?? "1", sampleInput });
+const SLOT = params.get("player") ?? "1";
+const stampPlayed = (m: "singleplayer" | "hosted"): void => { try { localStorage.setItem(lastPlayedKey(m, SLOT), String(Date.now())); } catch { /* private mode */ } };
+const session = new ClientSession({ storage: localStorage, slot: SLOT, sampleInput });
 let world = new World({ seed: 1234 }); installDemoWorld(world, "client");
 installFullscreenRestore();
 const diag = startDiag({ renderer: () => iso?.renderer, entities: () => world.entityCount, tick: () => world.tick, player: () => session.player,
@@ -194,12 +201,25 @@ async function startSingleplayer(): Promise<void> {
   try {
     const bots = Number(params.get("bots") ?? settings.bots);
     localStatus.state = "opening-store";
+    stampPlayed("singleplayer");
     const store = await openBrowserStore(`engine-local-${params.get("player") ?? "1"}`);
     localStatus.state = "starting";
     const local = await createLocalServer({ store, bots, ...(await isoReady, iso?.registry.cosmetics?.size ? { catalog: iso.registry.cosmetics } : {}), log: (m) => console.info(`[local] ${m}`) });
     pumpLocal = local.pump;
-    addEventListener("pagehide", () => { void local.game.persist?.saveAll(); });
-    leaveCurrent = async () => { await local.game.persist?.saveAll(); };
+    let wiped = false; // after "Delete save" nothing may write the slot again
+    addEventListener("pagehide", () => { if (!wiped) void local.game.persist?.saveAll(); });
+    leaveCurrent = async () => { if (!wiped) await local.game.persist?.saveAll(); };
+    deleteInfo = () => ({ label: "Delete save", settingsOption: true,
+      message: `Delete singleplayer save slot ${SLOT}: the world, your character, inventory, bots' memories and appearance. This can't be undone.`,
+      run: async ({ resetSettings }) => {
+        wiped = true; pumpLocal = undefined; session.onEnded = undefined; session.disconnect();
+        await local.stop(); // closes the IndexedDB connection so the delete isn't blocked by this tab
+        const { wipeSingleplayerSave } = await import("./delete-progress.js");
+        const r = await wipeSingleplayerSave({ slot: SLOT, resetSettings });
+        setTimeout(() => backToMenu(r.ok ? r.message : `${r.message} Then use Main menu → Manage saves.`), r.ok ? 1200 : 4000);
+        if (!r.ok) throw new Error(r.message);
+        return r.message;
+      } });
     localStatus.state = "connecting";
     useWorld(await session.connect("local", session.savedName ?? "", local.createTransport()));
     localStatus.state = "running";
@@ -225,6 +245,7 @@ async function startHost(): Promise<void> {
   const cap = hostPlayerCap(detectDevice(), settings.hostCap);
   let host: import("./host.js").P2PHost;
   try {
+    stampPlayed("hosted");
     host = await startP2PHost({ signaling: await p2pSignaling(), store: await openBrowserStore(`engine-p2p-host-${params.get("player") ?? "1"}`), cap: cap.cap, capDetail: cap.detail,
       ...(await isoReady, iso?.registry.cosmetics?.size ? { catalog: iso.registry.cosmetics } : {}), log: (m) => console.info(`[host] ${m}`) });
   } catch (e) { backToMenu(`Couldn't host: ${e instanceof Error ? e.message : String(e)}`); return; }
@@ -232,6 +253,9 @@ async function startHost(): Promise<void> {
   const { formatRoomCode } = await import("./p2p.js");
   const end = (): void => { void host.leave().finally(() => backToMenu("Session ended.")); };
   leaveCurrent = () => host.leave();
+  deleteInfo = () => ({ label: "Delete hosted world", settingsOption: false,
+    message: "The hosted world can't be deleted while you are hosting it. End the session first, then use Main menu → Manage saves → Delete hosted world.",
+    run: () => Promise.reject(new Error("End the session first (Pause → End session), then delete it from the main menu.")) });
   sessionInfo = () => ({ label: `Hosting · room code ${formatRoomCode(host.code)} · ${host.players().length}/${host.cap} players`, leaveLabel: "End session", onLeave: end });
   addEventListener("beforeunload", () => host.unload());
   addEventListener("pagehide", () => host.unload());
@@ -246,18 +270,36 @@ async function startJoin(raw: string): Promise<void> {
   if (!code) { backToMenu("That isn't a valid room code (6 letters/digits, e.g. ABC-234)."); return; }
   session.onEnded = (detail) => backToMenu(detail);
   leaveCurrent = () => { session.onEnded = undefined; session.disconnect(); };
+  deleteInfo = () => remoteDeleteInfo("this host", () => { session.onEnded = undefined; session.disconnect(); backToMenu("Your progress on that host was deleted. Join again to start fresh."); });
   sessionInfo = () => ({ label: `Joined ${formatRoomCode(code)} · ${session.status}`, leaveLabel: "Leave", onLeave: () => { session.onEnded = undefined; session.disconnect(); backToMenu("You left the session."); } });
   mountP2POverlay({ mode: "guest", code: formatRoomCode(code), status: () => `Status: ${session.status}${session.detail ? ` (${session.detail})` : ""}`, onLeave: () => { session.onEnded = undefined; session.disconnect(); backToMenu("You left the session."); } });
   try { useWorld(await session.connect(`p2p:${code}`, session.savedName ?? "", guestTransport(await p2pSignaling(), code))); }
   catch (e) { session.onEnded = undefined; backToMenu(`Couldn't join ${formatRoomCode(code)}: ${e instanceof Error ? e.message : String(e)}`); }
 }
-const connectTo = (url: string, name: string): void => { session.connect(url, name).then(useWorld, (e: unknown) => console.warn("connect failed", e)); };
+/** Remote server / P2P guest: ask the server to delete *my* character (DeleteMyProgressCmd, ADR-099); resolves on ProgressDeleted. */
+function remoteDeleteInfo(where: string, after: () => void): NonNullable<ReturnType<NonNullable<typeof deleteInfo>>> {
+  return { label: "Delete my progress", settingsOption: false,
+    message: `Delete your character on ${where}: inventory, appearance, party/clan membership (leadership passes on) and market stalls. Other players are not affected. This can't be undone.`,
+    run: () => new Promise<string>((resolve, reject) => {
+      const t = setTimeout(() => { session.onProgressDeleted = undefined; reject(new Error("No answer from the server — try again later.")); }, 10_000);
+      session.onProgressDeleted = () => { clearTimeout(t); session.onProgressDeleted = undefined; resolve("Progress deleted. Starting a new character…"); setTimeout(after, 800); };
+      if (!session.deleteMyProgress()) { clearTimeout(t); session.onProgressDeleted = undefined; reject(new Error("Not connected.")); }
+    }) };
+}
+function connectRemote(url: string): void {
+  leaveCurrent = () => session.disconnect();
+  deleteInfo = () => session.status === "connected" ? remoteDeleteInfo("this server", () => {
+    // the server kicks us shortly; reconnect with the same token = a fresh character, straight into the creator
+    session.disconnect(); session.connect(url, session.savedName ?? "").then((w) => { useWorld(w); menus?.open("character"); }, (e: unknown) => console.warn("reconnect failed", e));
+  }) : undefined;
+}
+const connectTo = (url: string, name: string): void => { connectRemote(url); session.connect(url, name).then(useWorld, (e: unknown) => console.warn("connect failed", e)); };
 const defaultUrl = serverParam ?? `${location.protocol === "https:" ? "wss" : "ws"}://${location.hostname || "localhost"}:7777`;
 if (boot) {
   void (async () => {
     await isoReady; boot.progress(1, "Ready");
     let notice: string | undefined; try { notice = sessionStorage.getItem(P2P_NOTICE_KEY) ?? undefined; sessionStorage.removeItem(P2P_NOTICE_KEY); } catch { /* ignore */ }
-    const choice = await boot.menu({ hostedStatic: import.meta.env["VITE_DEFAULT_OFFLINE"] === "1", defaultUrl, ...(notice ? { notice } : {}) });
+    const choice = await boot.menu({ slot: SLOT, hostedStatic: import.meta.env["VITE_DEFAULT_OFFLINE"] === "1", defaultUrl, ...(notice ? { notice } : {}) });
     boot.hide(); startMenus();
     if (choice.kind === "singleplayer") await startSingleplayer();
     else if (choice.kind === "host") await startHost();

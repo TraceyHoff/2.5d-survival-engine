@@ -3,6 +3,7 @@
  * with a progress bar, then the main menu (Singleplayer / Multiplayer / Settings).
  * Navigation: mouse, touch (buttons), keyboard (arrows/WASD/Tab, Enter/Space, Esc) and gamepad (d-pad/stick, A, B).
  */
+import { deleteConfirm, deleteLocalProgress, listLocalSaves, type LocalSaveKind } from "./delete-progress.js";
 import { mountUi } from "./ui-root.js";
 import { enterFullscreen } from "./fullscreen.js";
 interface Branding { title: string; tagline: string; logo: string; bg: "" | "flat" | "parallax"; plates: boolean; icons: boolean; loading: boolean; loadingAnim: boolean }
@@ -14,7 +15,7 @@ export type MenuChoice = { kind: "singleplayer" } | { kind: "multiplayer"; url: 
 /** hostCap: desktop P2P host player cap incl. the host (mobile hosts are fixed at 6, see p2p.ts). */
 export interface Settings { bots: number; showHud: boolean; fullscreen: boolean; hostCap: number }
 const SETTINGS_KEY = "engine-settings";
-export function saveSettings(s: Settings): void { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); } catch { /* private mode */ } }
+export function saveSettings(s: Settings): void { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...(JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as object), ...s })); } catch { /* private mode */ } }
 export function loadSettings(): Settings {
   try { return { bots: 3, showHud: true, fullscreen: true, hostCap: 12, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as Partial<Settings> }; } catch { return { bots: 3, showHud: true, fullscreen: true, hostCap: 12 }; }
 }
@@ -98,7 +99,8 @@ export class BootUI {
 
   /** Main menu; resolves with the player's choice. */
   /** notice: shown once on the main screen (e.g. "Host ended the session"), hook `.boot [data-role=notice]`. */
-  menu(opts: { hostedStatic: boolean; defaultUrl: string; notice?: string }): Promise<MenuChoice> {
+  /** slot: ?player slot whose browser saves "Manage saves" deletes (ADR-099). */
+  menu(opts: { hostedStatic: boolean; defaultUrl: string; notice?: string; slot?: string }): Promise<MenuChoice> {
     this.root.dataset["boot"] = "menu";
     return new Promise((resolve) => {
       let notice = opts.notice;
@@ -108,6 +110,7 @@ export class BootUI {
         this.screen([
           ["Singleplayer", () => { enterFullscreen(); resolve({ kind: "singleplayer" }); }],
           ["Multiplayer", multi],
+          ["Delete progress", saves, "alt"],
           ["Settings", settings, "alt"],
         ], undefined, `<div class="hint">Mouse / touch · arrows + Enter · gamepad D-pad + A</div>`, ...extra);
       };
@@ -141,15 +144,48 @@ export class BootUI {
         const l3 = document.createElement("label"); l3.append("Fullscreen when playing", fs);
         const cap = document.createElement("input"); cap.type = "number"; cap.min = "2"; cap.max = "32"; cap.value = String(s.hostCap); cap.style.width = "70px";
         const l4 = document.createElement("label"); l4.append("Max players when hosting (desktop)", cap);
-        const save = (): void => { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ bots: Math.max(0, Math.min(12, Number(bots.value) || 0)), showHud: hud.checked, fullscreen: fs.checked, hostCap: Math.max(2, Math.min(32, Math.round(Number(cap.value)) || 12)) })); main(); };
-        this.screen([["Save", save], ["Back", main, "alt"]], main, `<h2>Settings</h2>`, l1, l2, l3, l4);
+        const manage = document.createElement("button"); manage.className = "alt"; manage.textContent = "Delete progress…"; manage.dataset["action"] = "manage-saves"; manage.addEventListener("click", saves);
+        const save = (): void => { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...(JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as object), bots: Math.max(0, Math.min(12, Number(bots.value) || 0)), showHud: hud.checked, fullscreen: fs.checked, hostCap: Math.max(2, Math.min(32, Math.round(Number(cap.value)) || 12)) })); main(); };
+        this.screen([["Save", save], ["Back", main, "alt"]], main, `<h2>Settings</h2>`, l1, l2, l3, l4, manage);
+      };
+      // Delete progress (ADR-099): pick what to delete from this device, then type DELETE or hold to confirm.
+      const slot = opts.slot ?? "1";
+      const saves = (): void => {
+        const box = document.createElement("div"); box.dataset["role"] = "save-picker"; box.style.cssText = "display:flex;flex-direction:column;gap:6px";
+        const status = document.createElement("p"); status.textContent = "Looking for saves on this device…"; box.append(status);
+        const note = document.createElement("p"); note.className = "hint-note"; note.textContent = "Dedicated-server progress isn't stored on this device: delete it in-game from Settings → Delete my progress while connected to that server.";
+        const boxes = new Map<LocalSaveKind, HTMLInputElement>();
+        const all = document.createElement("input"); all.type = "checkbox"; all.dataset["save"] = "everything";
+        const allL = document.createElement("label"); allL.append(all, " Delete everything (also forgets this device's player identity)");
+        all.addEventListener("change", () => { for (const c of boxes.values()) c.checked = all.checked; });
+        const c = deleteConfirm({ message: "Pick what to delete above. This can't be undone.", settingsOption: false, onCancel: main,
+          onConfirm: async () => {
+            const kinds = new Set([...boxes].filter(([, b]) => b.checked).map(([k]) => k));
+            const r = await deleteLocalProgress({ slot, kinds, everything: all.checked }); if (!r.ok) throw new Error(r.message);
+            setTimeout(() => { if (this.root.dataset["boot"] === "menu") saves(); }, 1500); // refresh the list
+            return r.message;
+          } });
+        this.screen([], main, `<h2>Delete progress</h2>`, box, note, c.el);
+        this.cleanup = () => c.destroy();
+        void listLocalSaves({ slot }).then((list) => {
+          if (!box.isConnected) return;
+          const rows = list.map((s) => {
+            const cb = document.createElement("input"); cb.type = "checkbox"; cb.dataset["save"] = s.kind; boxes.set(s.kind, cb);
+            cb.addEventListener("change", () => { if (!cb.checked) all.checked = false; });
+            const l = document.createElement("label"); const d = document.createElement("small"); d.textContent = ` — ${s.detail}`;
+            l.append(cb, ` ${s.label}`, d); if (!s.present) l.style.opacity = "0.6"; return l;
+          });
+          status.remove(); box.append(...rows, allL);
+          (rows[0]?.querySelector("input") as HTMLInputElement | null)?.focus();
+        }, (e: unknown) => { status.textContent = `Couldn't read saves: ${e instanceof Error ? e.message : String(e)}`; });
       };
       main();
     });
   }
+  private cleanup: (() => void) | undefined;
 
   private screen(items: [string, () => void, string?][], back: (() => void) | undefined, html = "", ...extra: HTMLElement[]): void {
-    this.back = back;
+    this.back = back; this.cleanup?.(); this.cleanup = undefined;
     const panel = document.createElement("div"); panel.className = "panel"; panel.setAttribute("role", "menu");
     if (html) { const h = document.createElement("div"); h.style.cssText = "display:flex;flex-direction:column;gap:8px"; h.innerHTML = html; if (h.querySelector(".hint")) { h.remove(); } else panel.append(h); }
     panel.append(...extra);
@@ -161,7 +197,8 @@ export class BootUI {
     const nodes: HTMLElement[] = [panel]; if (html.includes("hint")) { const h = document.createElement("div"); h.className = "hint"; h.textContent = "Mouse / touch · arrows + Enter · gamepad D-pad + A"; nodes.push(h); }
     this.body.replaceChildren(...nodes);
     const focusables = (): HTMLElement[] => Array.from(panel.querySelectorAll<HTMLElement>("input,button"));
-    let idx = focusables().indexOf(buttons[0]!); const focus = (i: number): void => { const f = focusables(); idx = (i + f.length) % f.length; f[idx]!.focus(); };
+    let idx = focusables().indexOf(buttons[0]!); const focus = (i: number): void => { const f = focusables(); if (!f.length) return; idx = (i + f.length) % f.length; f[idx]!.focus(); };
+    panel.addEventListener("focusin", (e) => { const i = focusables().indexOf(e.target as HTMLElement); if (i >= 0) idx = i; }); // content added later (save picker)
     focus(idx);
     if (this.keyHandler) removeEventListener("keydown", this.keyHandler);
     this.keyHandler = (e: KeyboardEvent): void => {
@@ -169,7 +206,8 @@ export class BootUI {
       if (e.key === "ArrowDown" || (!typing && (e.key === "s" || e.key === "S"))) { focus(idx + 1); e.preventDefault(); }
       else if (e.key === "ArrowUp" || (!typing && (e.key === "w" || e.key === "W"))) { focus(idx - 1); e.preventDefault(); }
       else if (e.key === "Escape" && this.back) { this.back(); e.preventDefault(); }
-      else if (e.key === "Enter" && typing) { buttons[0]!.click(); e.preventDefault(); }
+      else if (e.key === "Enter" && e.target instanceof HTMLInputElement && e.target.type === "checkbox") { e.target.click(); e.preventDefault(); }
+      else if (e.key === "Enter" && typing && buttons[0]) { buttons[0].click(); e.preventDefault(); }
     };
     addEventListener("keydown", this.keyHandler);
     cancelAnimationFrame(this.padTimer);
@@ -178,7 +216,7 @@ export class BootUI {
       const gp = [...(navigator.getGamepads?.() ?? [])].find((g) => g); if (gp) {
         const ay = gp.axes[1] ?? 0; const cur = { up: !!gp.buttons[12]?.pressed || ay < -0.5, down: !!gp.buttons[13]?.pressed || ay > 0.5, a: !!gp.buttons[0]?.pressed, b: !!gp.buttons[1]?.pressed };
         if (cur.down && !prev.down) focus(idx + 1); if (cur.up && !prev.up) focus(idx - 1);
-        if (cur.a && !prev.a) { const f = focusables()[idx]; if (f instanceof HTMLInputElement && f.type === "checkbox") f.checked = !f.checked; else f?.click(); }
+        if (cur.a && !prev.a) { const f = focusables()[idx]; f?.click(); }
         if (cur.b && !prev.b) this.back?.();
         prev = cur;
       }

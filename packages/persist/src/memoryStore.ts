@@ -21,6 +21,7 @@ export class MemoryWorldStore implements WorldStore {
     // Apply to the visible maps immediately (read-your-writes); count the commit asynchronously.
     for (const c of b.chunks ?? []) this.chunks.set(c.key, c);
     for (const k of b.deleteChunks ?? []) this.chunks.delete(k);
+    for (const t of b.deletePlayers ?? []) this.players.delete(t);
     for (const p of b.players ?? []) this.players.set(p.token, p);
     for (const x of b.blobs ?? []) this.blobs.set(x.key, x);
     this.records.stage(b); this.records.settle(b, true);
@@ -36,7 +37,7 @@ export class MemoryWorldStore implements WorldStore {
   openBatch(): BatchHandle {
     const parts: SaveBatch[] = []; this.s.pendingBatches++;
     return {
-      append: (b) => { parts.push(b); for (const c of b.chunks ?? []) this.chunks.set(c.key, c); for (const p of b.players ?? []) this.players.set(p.token, p); for (const k of b.deleteChunks ?? []) this.chunks.delete(k); for (const x of b.blobs ?? []) this.blobs.set(x.key, x); this.records.stage(b); this.records.settle(b, true); if (b.meta) this.meta = { ...b.meta }; },
+      append: (b) => { parts.push(b); for (const t of b.deletePlayers ?? []) this.players.delete(t); for (const c of b.chunks ?? []) this.chunks.set(c.key, c); for (const p of b.players ?? []) this.players.set(p.token, p); for (const k of b.deleteChunks ?? []) this.chunks.delete(k); for (const x of b.blobs ?? []) this.blobs.set(x.key, x); this.records.stage(b); this.records.settle(b, true); if (b.meta) this.meta = { ...b.meta }; },
       commit: () => { this.s.pendingBatches--; return this.write({}).then(() => { this.s.committedBatches--; for (const b of parts) { this.s.committedChunks += b.chunks?.length ?? 0; this.s.committedPlayers += b.players?.length ?? 0; } this.s.committedBatches++; }); },
     };
   }

@@ -6,6 +6,7 @@
  * Keyboard hotkeys (no text field focused): Esc pause, I/Tab inventory, C crafting, B build, K character, P party,
  * L clan, T trade, Enter or / chat, O settings. Gamepad: Start/Select pause (hub), D-pad/stick + A/B inside menus.
  */
+import { deleteConfirm } from "./delete-progress.js";
 import { UINav, type ContextStack } from "./ui-nav.js";
 import { loadSettings, saveSettings } from "./menu.js";
 import { morph } from "./ui-diff.js";
@@ -59,6 +60,11 @@ export interface GameMenusOptions {
   onChat?: (text: string, channel: number, to?: number) => void;
   /** Real gameplay data + command sender for the inventory/crafting/build/character/party/clan/trade panels. */
   gameplay?: GameplaySource;
+  /**
+   * "Delete my progress" in Settings (ADR-099): what deleting means in the current mode (singleplayer save, or your
+   * character on this server). `run` returns the message to show; throw to show an error. undefined = no entry.
+   */
+  deleteProgress?: () => { label: string; message: string; settingsOption: boolean; run: (o: { resetSettings: boolean }) => Promise<string> } | undefined;
   showMenuBar?: boolean;
   getGamepads?: UINavOptions["getGamepads"];
   pollGamepads?: boolean;
@@ -103,6 +109,7 @@ export class GameMenus {
     if (id === "pause") return this.pausePanel();
     if (id === "settings") return this.settingsPanel();
     if (id === "chat") return this.chatPanel();
+    if (id === "delete-progress") return this.deletePanel();
     if (id === "session") { const s = this.o.session?.(); return this.panel("session", "Session", [this.para(s?.label ?? "Not in a shared session.")], s ? [[s.leaveLabel, () => { this.nav.closeAll(); s.onLeave(); }, "alt"]] : []); }
     const m = GAME_MENUS.find((d) => d.id === id); if (!m) throw new Error(`unknown menu ${id}`);
     if (this.o.gameplay && (GAMEPLAY_PANELS as readonly string[]).includes(id)) return this.panel(id, m.title, this.gameplayNodes(id as GameplayPanel));
@@ -152,7 +159,14 @@ export class GameMenus {
     const fs = document.createElement("input"); fs.type = "checkbox"; fs.checked = s.fullscreen;
     const l1 = document.createElement("label"); l1.append("Show HUD (next start)", hud);
     const l2 = document.createElement("label"); l2.append("Fullscreen when playing", fs);
-    return this.panel("settings", "Settings", [l1, l2], [["Save", () => { saveSettings({ ...loadSettings(), showHud: hud.checked, fullscreen: fs.checked }); this.nav.close(); }], ["Back", () => this.nav.close(), "alt"]]);
+    const del = this.o.deleteProgress?.();
+    return this.panel("settings", "Settings", [l1, l2], [...(del ? [[del.label, () => this.open("delete-progress"), "alt"] as [string, () => void, string]] : []),["Save", () => { saveSettings({ ...loadSettings(), showHud: hud.checked, fullscreen: fs.checked }); this.nav.close(); }], ["Back", () => this.nav.close(), "alt"]]);
+  }
+  private deletePanel(): HTMLElement {
+    const d = this.o.deleteProgress?.();
+    if (!d) return this.panel("delete-progress", "Delete progress", [this.para("Nothing to delete here.")]);
+    const c = deleteConfirm({ message: d.message, settingsOption: d.settingsOption, onCancel: () => this.nav.close(), onConfirm: (o) => d.run(o), ...(this.o.getGamepads ? { getGamepads: this.o.getGamepads as never } : {}) });
+    return this.panel("delete-progress", d.label, [c.el]);
   }
   private chatPanel(): HTMLElement {
     const log = document.createElement("div"); log.dataset["role"] = "chat-log"; log.style.cssText = "max-height:30vh;overflow:auto;font-size:14px";
