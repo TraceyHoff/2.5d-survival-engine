@@ -32,7 +32,7 @@ import { mountHud } from "./hud.js";
 import { controlLabel, mountFarmPrompt, quickUseFires, type PromptDevice } from "./farm-prompt.js";
 import { attachContextRecovery, effectiveLevel, retryIsoAtSafe } from "./gl-recovery.js";
 import { BootUI, loadSettings, newWorldRules } from "./menu.js";
-import { EDIT_CHAR_KEY, loadCharacter, previewModeFromQuery, saveCharacter, showCharacterCreator, type CharacterSaveKind, type StoredCharacter } from "./character-creator.js";
+import { EDIT_CHAR_KEY, creatorShotFromQuery, creatorShotLook, loadCharacter, previewModeFromQuery, saveCharacter, showCharacterCreator, type CharacterSaveKind, type StoredCharacter } from "./character-creator.js";
 import { sampleDayClock } from "./day-clock.js";
 import { AudioSystem } from "./audio/index.js";
 
@@ -49,7 +49,9 @@ const num = (k: string): number | undefined => { const v = params.get(k); return
 const wq = params.get("weather"); const wi = wq ? WEATHERS.indexOf(wq) : -1;
 const serverParam = params.get("server");
 /** Main menu unless a URL param already picks the mode (?offline=1, ?server=, ?menu=0: tests/screenshots). */
-const useMenu = !serverParam && params.get("offline") !== "1" && params.get("menu") !== "0";
+/** ?creator=shot&seed=N[&facing=0..7]: deterministic creator capture (no menu / world); sets window.__creatorReady. */
+const creatorShot = creatorShotFromQuery(params);
+const useMenu = !creatorShot && !serverParam && params.get("offline") !== "1" && params.get("menu") !== "0";
 const boot = useMenu ? new BootUI(import.meta.env.BASE_URL) : undefined;
 /** ADR-118: weighted boot stages -> the loading bar (monotonic; BootUI eases the fill and walks the zombie). */
 const loadProgress = new LoadProgress();
@@ -224,6 +226,15 @@ let loop: FixedLoop = createGameLoop(world, { render });
 function useWorld(w: World): void { world = w; loop = createGameLoop(w, { render }); sendStoredLook(); }
 
 // ---- ADR-114 character creator (after the mode choice, before entering the world) ----
+async function runCreatorShot(shot: NonNullable<typeof creatorShot>): Promise<void> {
+  const w = window as { __creatorReady?: unknown };
+  await isoReady; const catalog = iso?.registry.cosmetics?.size ? iso.registry.cosmetics : undefined;
+  if (!catalog) { w.__creatorReady = { ok: false, seed: shot.seed, error: "customization pack not loaded" }; return; }
+  const appearance = creatorShotLook(catalog, shot.seed);
+  void showCharacterCreator({ root: uiRoot(), catalog, initial: { v: 1, name: `Survivor ${shot.seed}`, appearance }, title: "Create your character", pads: () => [],
+    preview: iso ? { registry: iso.registry, sources: iso.renderer.atlas.sources, mode: params.get("preview") === "2d" ? "canvas2d" : "auto" } : undefined, artBase: `${import.meta.env.BASE_URL}art/ui/creator/`,
+    shot: { facing: shot.facing, onReady: ({ renderer }) => { w.__creatorReady = { ok: true, seed: shot.seed, facing: shot.facing, renderer, appearance }; } } });
+}
 let activeChar: StoredCharacter | undefined;
 /** Stored character for this save, or the creator (also when ?editchar=1 / "Edit character" asked for it). Undefined = Back. */
 async function ensureCharacter(kind: CharacterSaveKind): Promise<StoredCharacter | undefined> {
@@ -368,7 +379,9 @@ function connectRemote(url: string): void {
 }
 const connectTo = (url: string, name: string): void => { connectRemote(url); session.connect(url, name).then(useWorld, (e: unknown) => console.warn("connect failed", e)); };
 const defaultUrl = serverParam ?? `${location.protocol === "https:" ? "wss" : "ws"}://${location.hostname || "localhost"}:7777`;
-if (boot) {
+if (creatorShot) {
+  runCreatorShot(creatorShot).catch((e: unknown) => { (window as { __creatorReady?: unknown }).__creatorReady = { ok: false, seed: creatorShot.seed, error: String(e) }; });
+} else if (boot) {
   void (async () => {
     await isoReady; loadProgress.complete(); await boot.finish("Ready");
     let notice: string | undefined; try { notice = sessionStorage.getItem(P2P_NOTICE_KEY) ?? undefined; sessionStorage.removeItem(P2P_NOTICE_KEY); } catch { /* ignore */ }

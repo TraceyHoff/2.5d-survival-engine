@@ -11,9 +11,9 @@ HAIR = [("black", "#2e2630"), ("espresso", "#4a3228"), ("chestnut", "#7a4a2c"), 
         ("tangerine", "#ff9a3c"), ("cherry", "#d8344a"), ("moss", "#6e9a44"), ("midnight", "#3a4a8c"), ("sunflower", "#f4d03a")]
 CLOTH = [("white", "#f4f0e8"), ("cream", "#efe0bc"), ("charcoal", "#4a4250"), ("slate", "#7a7f94"), ("tomato", "#d9503e"),
          ("brick", "#a8432e"), ("berry", "#b8346a"), ("rose", "#ee8aa0"), ("blush", "#f6c2c2"), ("tangerine", "#f08a34"),
-         ("mustard", "#e0b43a"), ("butter", "#f6e08a"), ("lime", "#a8d05a"), ("forest", "#3f7a46"), ("sage", "#9cb88c"),
+         ("mustard", "#b98a1e"), ("butter", "#f6e08a"), ("lime", "#a8d05a"), ("forest", "#3f7a46"), ("sage", "#9cb88c"),
          ("teal", "#2f8f8a"), ("sky", "#86c0ea"), ("denim", "#4e6fa6"), ("navy", "#2e3e6e"), ("lavender", "#b8a4e0"),
-         ("plum", "#7a3f7a"), ("cocoa", "#7a5038"), ("tan", "#c49a6c"), ("olive", "#8a8a42"), ("gold", "#e8b84a"), ("black", "#2a2430")]
+         ("plum", "#7a3f7a"), ("cocoa", "#7a5038"), ("tan", "#c49a6c"), ("olive", "#8a8a42"), ("gold", "#f7cc2e"), ("black", "#2a2430")]
 
 W = []   # (key, slot, spec, extra-manifest)
 def add(key, slot, spec, **kw): W.append((key, slot, spec, kw))
