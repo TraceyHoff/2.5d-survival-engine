@@ -41,7 +41,7 @@ for k, v in BOTS.items(): add("bottom_" + k, "bottom", v, tint=2)
 SHOES = {
     "sneakers": dict(style="sneakers", swoosh=True, laces=True), "boots": dict(style="boots", shaft=.32, laces=True, soleS=True),
     "sandals": dict(style="sandals"), "rain_boots": dict(style="rain", shaft=.5, flare=1.6, soleS=True, cuffS=True),
-    "clogs": dict(style="clogs", w=3.1, len=4.4, band=True, soleS=True), "bunny_slippers": dict(style="bunny", w=3.1, len=4.2, sole=False),
+    "clogs": dict(style="clogs", w=3.1, len=4.4, band=True, soleS=True, soleLow=True), "bunny_slippers": dict(style="bunny", w=3.1, len=4.2, sole=False),
     "hiking_boots": dict(style="hiking", shaft=.28, laces=True, cuffS=True), "flats": dict(style="flats", bow=True, soleS=True),
     "hightops": dict(style="hightops", shaft=.26, laces=True, cuffS=True), "mushroom_shoes": dict(style="mush", w=3.2, len=4.2, soleS=True),
 }

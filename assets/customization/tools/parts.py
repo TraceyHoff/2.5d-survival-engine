@@ -539,9 +539,11 @@ def draw_shoes(c, spec):
                 q = c.p(c.off(ft, 0, .2 + t * 2.2, -.4)); cv.part(circle(q, W + .4, .9), "P", lw=.6, shade=.2, hl=0)
             return
         top = c.solid([(c.off(ft, 0, .8, -1.6), W + .2), (c.off(ft, 0, .2, .8), W * .9), (c.off(ft, 0, 1.0 + L * .4, -1.0), W * .75)])
-        cv.part(hull(sole + top), "P", lw=1.0, shade=.25, hl=.15)
+        if S.get("soleLow"):   # clogs: thin wooden base under a dominant primary upper
+            cv.part(hull(sole), "S", lw=.7, shade=.2, hl=0); cv.part(hull(top + c.solid([(c.off(ft, 0, 1.0 + L * .35, -1.2), W * .85)])), "P", lw=1.0, shade=.25, hl=.15)
+        else: cv.part(hull(sole + top), "P", lw=1.0, shade=.25, hl=.15)
         q = c.p(c.off(ft, 0, 1.2, -2.0))
-        if S.get("sole", True):
+        if S.get("sole", True) and not S.get("soleLow"):
             cv.part(hull(sole + c.solid([(c.off(ft, 0, 1.0, -1.0), W + .1)])), "S" if S.get("soleS") else "cloth_cream" if st != "hiking" else "wood_dark", lw=.7, shade=.2, hl=0)
         if S.get("laces") and not shaft and c.nv(0, 1) > -.3:
             q = c.p(c.off(ft, 0, 2.0, .2)); cv.line([(q[0] - 1.2, q[1]), (q[0] + 1.2, q[1])], "S1", .6)
