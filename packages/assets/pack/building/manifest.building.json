@@ -694,6 +694,141 @@
    "masksKtx2": {
     "tintmask": "atlases/decor_home_r6.tintmask.ktx2"
    }
+  },
+  {
+   "key": "decor_yard_s",
+   "image": "atlases/decor_yard_s.png",
+   "frameW": 64,
+   "frameH": 88,
+   "columns": 16,
+   "rows": 2,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/decor_yard_s@2x.png",
+     "ktx2": "atlases/decor_yard_s@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/decor_yard_s.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/decor_yard_s.tintmask.png"
+   },
+   "residency": "stream",
+   "placeholder": null,
+   "ktx2": "atlases/decor_yard_s.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/decor_yard_s.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "decor_yard_t",
+   "image": "atlases/decor_yard_t.png",
+   "frameW": 72,
+   "frameH": 120,
+   "columns": 14,
+   "rows": 2,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/decor_yard_t@2x.png",
+     "ktx2": "atlases/decor_yard_t@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/decor_yard_t.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/decor_yard_t.tintmask.png"
+   },
+   "residency": "stream",
+   "placeholder": null,
+   "ktx2": "atlases/decor_yard_t.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/decor_yard_t.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "decor_yard_w",
+   "image": "atlases/decor_yard_w.png",
+   "frameW": 104,
+   "frameH": 120,
+   "columns": 9,
+   "rows": 2,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/decor_yard_w@2x.png",
+     "ktx2": "atlases/decor_yard_w@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/decor_yard_w.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/decor_yard_w.tintmask.png"
+   },
+   "residency": "stream",
+   "placeholder": null,
+   "ktx2": "atlases/decor_yard_w.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/decor_yard_w.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "decor_yard_l",
+   "image": "atlases/decor_yard_l.png",
+   "frameW": 136,
+   "frameH": 152,
+   "columns": 5,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/decor_yard_l@2x.png",
+     "ktx2": "atlases/decor_yard_l@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/decor_yard_l.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/decor_yard_l.tintmask.png"
+   },
+   "residency": "stream",
+   "placeholder": null,
+   "ktx2": "atlases/decor_yard_l.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/decor_yard_l.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "decor_yard_r1",
+   "image": "atlases/decor_yard_r1.png",
+   "frameW": 72,
+   "frameH": 40,
+   "columns": 7,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/decor_yard_r1@2x.png",
+     "ktx2": "atlases/decor_yard_r1@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/decor_yard_r1.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/decor_yard_r1.tintmask.png"
+   },
+   "residency": "stream",
+   "placeholder": null,
+   "ktx2": "atlases/decor_yard_r1.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/decor_yard_r1.tintmask.ktx2"
+   }
   }
  ],
  "sprites": [
@@ -25534,6 +25669,2430 @@
       7,
       7,
       7
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_fence_picket",
+   "category": "building",
+   "atlas": "decor_yard_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "fence_picket",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_fence_picket__white",
+   "category": "building",
+   "atlas": "decor_yard_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "fence_picket@white",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_fence_picket__natural",
+   "category": "building",
+   "atlas": "decor_yard_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "fence_picket@natural",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      2,
+      2,
+      2,
+      2
+     ],
+     [
+      3,
+      3,
+      3,
+      3
+     ],
+     [
+      2,
+      2,
+      2,
+      2
+     ],
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_fence_picket__rustic",
+   "category": "building",
+   "atlas": "decor_yard_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "fence_picket@rustic",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      4,
+      4,
+      4,
+      4
+     ],
+     [
+      5,
+      5,
+      5,
+      5
+     ],
+     [
+      4,
+      4,
+      4,
+      4
+     ],
+     [
+      5,
+      5,
+      5,
+      5
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_fence_rail",
+   "category": "building",
+   "atlas": "decor_yard_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      6
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "fence_rail",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      6,
+      6,
+      6,
+      6
+     ],
+     [
+      7,
+      7,
+      7,
+      7
+     ],
+     [
+      6,
+      6,
+      6,
+      6
+     ],
+     [
+      7,
+      7,
+      7,
+      7
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_fence_rail__split",
+   "category": "building",
+   "atlas": "decor_yard_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      6
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "fence_rail@split",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      6,
+      6,
+      6,
+      6
+     ],
+     [
+      7,
+      7,
+      7,
+      7
+     ],
+     [
+      6,
+      6,
+      6,
+      6
+     ],
+     [
+      7,
+      7,
+      7,
+      7
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_fence_rail__post",
+   "category": "building",
+   "atlas": "decor_yard_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "fence_rail@post",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      8,
+      8,
+      8,
+      8
+     ],
+     [
+      9,
+      9,
+      9,
+      9
+     ],
+     [
+      8,
+      8,
+      8,
+      8
+     ],
+     [
+      9,
+      9,
+      9,
+      9
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_planter_box",
+   "category": "building",
+   "atlas": "decor_yard_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      10
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "planter_box",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      10,
+      10,
+      10,
+      10
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_planter_box__long",
+   "category": "building",
+   "atlas": "decor_yard_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      10
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "planter_box@long",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      10,
+      10,
+      10,
+      10
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_planter_box__square",
+   "category": "building",
+   "atlas": "decor_yard_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      11
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "planter_box@square",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      11,
+      11,
+      11,
+      11
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_planter_box__raised",
+   "category": "building",
+   "atlas": "decor_yard_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "planter_box@raised",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      12,
+      12,
+      12,
+      12
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_birdbath",
+   "category": "building",
+   "atlas": "decor_yard_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      13
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "birdbath",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      13,
+      13,
+      13,
+      13
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_birdbath__stone",
+   "category": "building",
+   "atlas": "decor_yard_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      13
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "birdbath@stone",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      13,
+      13,
+      13,
+      13
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_birdbath__copper",
+   "category": "building",
+   "atlas": "decor_yard_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      14
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "birdbath@copper",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      14,
+      14,
+      14,
+      14
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_sundial",
+   "category": "building",
+   "atlas": "decor_yard_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      15
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "sundial",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      15,
+      15,
+      15,
+      15
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_sundial__stone",
+   "category": "building",
+   "atlas": "decor_yard_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      15
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "sundial@stone",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      15,
+      15,
+      15,
+      15
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_sundial__bronze",
+   "category": "building",
+   "atlas": "decor_yard_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "sundial@bronze",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      16,
+      16,
+      16,
+      16
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_fence_iron",
+   "category": "building",
+   "atlas": "decor_yard_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "fence_iron",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_fence_iron__plain",
+   "category": "building",
+   "atlas": "decor_yard_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "fence_iron@plain",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_fence_iron__spiked",
+   "category": "building",
+   "atlas": "decor_yard_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "fence_iron@spiked",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      2,
+      2,
+      2,
+      2
+     ],
+     [
+      3,
+      3,
+      3,
+      3
+     ],
+     [
+      2,
+      2,
+      2,
+      2
+     ],
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_garden_gate",
+   "category": "building",
+   "atlas": "decor_yard_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "garden_gate",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      4,
+      4,
+      4,
+      4
+     ],
+     [
+      5,
+      5,
+      5,
+      5
+     ],
+     [
+      4,
+      4,
+      4,
+      4
+     ],
+     [
+      5,
+      5,
+      5,
+      5
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_garden_gate__picket",
+   "category": "building",
+   "atlas": "decor_yard_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "garden_gate@picket",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      4,
+      4,
+      4,
+      4
+     ],
+     [
+      5,
+      5,
+      5,
+      5
+     ],
+     [
+      4,
+      4,
+      4,
+      4
+     ],
+     [
+      5,
+      5,
+      5,
+      5
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_garden_gate__iron",
+   "category": "building",
+   "atlas": "decor_yard_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      6
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "garden_gate@iron",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      6,
+      6,
+      6,
+      6
+     ],
+     [
+      7,
+      7,
+      7,
+      7
+     ],
+     [
+      6,
+      6,
+      6,
+      6
+     ],
+     [
+      7,
+      7,
+      7,
+      7
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_garden_gate__rustic",
+   "category": "building",
+   "atlas": "decor_yard_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "garden_gate@rustic",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      8,
+      8,
+      8,
+      8
+     ],
+     [
+      9,
+      9,
+      9,
+      9
+     ],
+     [
+      8,
+      8,
+      8,
+      8
+     ],
+     [
+      9,
+      9,
+      9,
+      9
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_scarecrow",
+   "category": "building",
+   "atlas": "decor_yard_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      10
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "scarecrow",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      10,
+      10,
+      10,
+      10
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_scarecrow__classic",
+   "category": "building",
+   "atlas": "decor_yard_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      10
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "scarecrow@classic",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      10,
+      10,
+      10,
+      10
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_scarecrow__pumpkin",
+   "category": "building",
+   "atlas": "decor_yard_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      11
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "scarecrow@pumpkin",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      11,
+      11,
+      11,
+      11
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_scarecrow__tattered",
+   "category": "building",
+   "atlas": "decor_yard_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "scarecrow@tattered",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      12,
+      12,
+      12,
+      12
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_hedge",
+   "category": "building",
+   "atlas": "decor_yard_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      13
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "hedge",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      13,
+      13,
+      13,
+      13
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_hedge__box",
+   "category": "building",
+   "atlas": "decor_yard_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      13
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "hedge@box",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      13,
+      13,
+      13,
+      13
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_hedge__round",
+   "category": "building",
+   "atlas": "decor_yard_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      14
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "hedge@round",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      14,
+      14,
+      14,
+      14
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_hedge__tall",
+   "category": "building",
+   "atlas": "decor_yard_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      15
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "hedge@tall",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      15,
+      15,
+      15,
+      15
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_flower_bed",
+   "category": "building",
+   "atlas": "decor_yard_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "flower_bed",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      16,
+      16,
+      16,
+      16
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_flower_bed__red",
+   "category": "building",
+   "atlas": "decor_yard_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "flower_bed@red",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      16,
+      16,
+      16,
+      16
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_flower_bed__yellow",
+   "category": "building",
+   "atlas": "decor_yard_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      17
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "flower_bed@yellow",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      17,
+      17,
+      17,
+      17
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_flower_bed__mixed",
+   "category": "building",
+   "atlas": "decor_yard_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      18
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "flower_bed@mixed",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      18,
+      18,
+      18,
+      18
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_flower_bed__wild",
+   "category": "building",
+   "atlas": "decor_yard_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      19
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "flower_bed@wild",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      19,
+      19,
+      19,
+      19
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_bench_park",
+   "category": "building",
+   "atlas": "decor_yard_w",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bench_park",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      2,
+      2,
+      2,
+      2
+     ],
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bench_park__wood",
+   "category": "building",
+   "atlas": "decor_yard_w",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bench_park@wood",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      2,
+      2,
+      2,
+      2
+     ],
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bench_park__iron",
+   "category": "building",
+   "atlas": "decor_yard_w",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bench_park@iron",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      4,
+      4,
+      4,
+      4
+     ],
+     [
+      5,
+      5,
+      5,
+      5
+     ],
+     [
+      6,
+      6,
+      6,
+      6
+     ],
+     [
+      7,
+      7,
+      7,
+      7
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bench_park__stone",
+   "category": "building",
+   "atlas": "decor_yard_w",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bench_park@stone",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      8,
+      8,
+      8,
+      8
+     ],
+     [
+      9,
+      9,
+      9,
+      9
+     ],
+     [
+      10,
+      10,
+      10,
+      10
+     ],
+     [
+      11,
+      11,
+      11,
+      11
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_garden_bed",
+   "category": "building",
+   "atlas": "decor_yard_w",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "garden_bed",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      12,
+      12,
+      12,
+      12
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_garden_bed__raised",
+   "category": "building",
+   "atlas": "decor_yard_w",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "garden_bed@raised",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      12,
+      12,
+      12,
+      12
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_garden_bed__stone",
+   "category": "building",
+   "atlas": "decor_yard_w",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      13
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "garden_bed@stone",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      13,
+      13,
+      13,
+      13
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_fountain",
+   "category": "building",
+   "atlas": "decor_yard_l",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7631578947368421
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "fountain",
+    "footprint": {
+     "w": 2,
+     "h": 2
+    },
+    "layer": 2,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_fountain__tiered",
+   "category": "building",
+   "atlas": "decor_yard_l",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7631578947368421
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "fountain@tiered",
+    "footprint": {
+     "w": 2,
+     "h": 2
+    },
+    "layer": 2,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_fountain__round",
+   "category": "building",
+   "atlas": "decor_yard_l",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7631578947368421
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "fountain@round",
+    "footprint": {
+     "w": 2,
+     "h": 2
+    },
+    "layer": 2,
+    "frames": [
+     [
+      1,
+      1,
+      1,
+      1
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_fountain__lion",
+   "category": "building",
+   "atlas": "decor_yard_l",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7631578947368421
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "fountain@lion",
+    "footprint": {
+     "w": 2,
+     "h": 2
+    },
+    "layer": 2,
+    "frames": [
+     [
+      2,
+      2,
+      2,
+      2
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_well",
+   "category": "building",
+   "atlas": "decor_yard_l",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7631578947368421
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "well",
+    "footprint": {
+     "w": 2,
+     "h": 2
+    },
+    "layer": 2,
+    "frames": [
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_well__stone",
+   "category": "building",
+   "atlas": "decor_yard_l",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7631578947368421
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "well@stone",
+    "footprint": {
+     "w": 2,
+     "h": 2
+    },
+    "layer": 2,
+    "frames": [
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_well__roofed",
+   "category": "building",
+   "atlas": "decor_yard_l",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7631578947368421
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "well@roofed",
+    "footprint": {
+     "w": 2,
+     "h": 2
+    },
+    "layer": 2,
+    "frames": [
+     [
+      4,
+      4,
+      4,
+      4
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_path_stone",
+   "category": "building",
+   "atlas": "decor_yard_r1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "path_stone",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_path_stone__cobble",
+   "category": "building",
+   "atlas": "decor_yard_r1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "path_stone@cobble",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_path_stone__flagstone",
+   "category": "building",
+   "atlas": "decor_yard_r1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "path_stone@flagstone",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      1,
+      1,
+      1,
+      1
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_path_stone__gravel",
+   "category": "building",
+   "atlas": "decor_yard_r1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "path_stone@gravel",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      2,
+      2,
+      2,
+      2
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_path_stone__brick",
+   "category": "building",
+   "atlas": "decor_yard_r1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "path_stone@brick",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_path_stone__plank",
+   "category": "building",
+   "atlas": "decor_yard_r1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "path_stone@plank",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      4,
+      4,
+      4,
+      4
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_stepping_stone",
+   "category": "building",
+   "atlas": "decor_yard_r1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      5
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "stepping_stone",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      5,
+      5,
+      5,
+      5
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_stepping_stone__round",
+   "category": "building",
+   "atlas": "decor_yard_r1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      5
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "stepping_stone@round",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      5,
+      5,
+      5,
+      5
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_stepping_stone__slate",
+   "category": "building",
+   "atlas": "decor_yard_r1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      6
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "stepping_stone@slate",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      6,
+      6,
+      6,
+      6
      ]
     ],
     "crackOverlay": "bld_crack"

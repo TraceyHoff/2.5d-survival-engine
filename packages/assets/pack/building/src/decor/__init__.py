@@ -4,4 +4,5 @@ from . import farm  # noqa: F401  (ADR-113 feeding_trough)
 from . import furniture, lights  # noqa: F401  (ADR-112 commit 2)
 from . import decorations  # noqa: F401  (ADR-112 commit 3)
 from . import home  # noqa: F401  (ADR-112 commit 4)
-GROUPS = ['farm', 'furn', 'light', 'deco', 'home']  # emission order; append new groups, never reorder
+from . import outdoor  # noqa: F401  (ADR-112 commit 5)
+GROUPS = ['farm', 'furn', 'light', 'deco', 'home', 'yard']  # emission order; append new groups, never reorder
