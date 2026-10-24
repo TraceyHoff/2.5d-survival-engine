@@ -21,8 +21,12 @@ export interface DeleteConfirmOptions {
   getGamepads?: () => readonly Pad[];
   /** Drive the hold timer yourself (tests): `tick()` on the handle. Default: requestAnimationFrame. */
   manualTick?: boolean;
+  /** Main-menu picker: false while nothing is selected (Delete + Hold are disabled). Call `refresh()` when it changes. */
+  canConfirm?: () => boolean;
+  /** Put the Delete / Hold buttons here (a sticky footer next to Back) instead of inside the dialog body. */
+  actions?: HTMLElement;
 }
-export interface DeleteConfirm { el: HTMLElement; tick(): void; destroy(): void; readonly done: boolean }
+export interface DeleteConfirm { el: HTMLElement; tick(): void; refresh(): void; destroy(): void; readonly done: boolean }
 
 const frame = (cb: () => void): number => (typeof (globalThis as { requestAnimationFrame?: unknown }).requestAnimationFrame === "function" ? requestAnimationFrame(cb) : setTimeout(cb, 16) as unknown as number);
 export function deleteConfirm(o: DeleteConfirmOptions): DeleteConfirm {
@@ -37,11 +41,13 @@ export function deleteConfirm(o: DeleteConfirmOptions): DeleteConfirm {
   const del = document.createElement("button"); del.type = "button"; del.dataset["action"] = "confirm-delete"; del.dataset["role"] = "submit"; /* UINav: Enter in the text field */ del.textContent = "Delete"; del.className = "alt"; del.setAttribute("aria-disabled", "true");
   const hold = document.createElement("button"); hold.type = "button"; hold.dataset["action"] = "hold-delete"; hold.dataset["hold"] = "1"; hold.textContent = "Hold to delete";
   const cancel = document.createElement("button"); cancel.type = "button"; cancel.dataset["action"] = "cancel-delete"; cancel.textContent = "Cancel"; cancel.className = "alt";
-  el.append(msg, ...(o.settingsOption ? [rl] : []), word, del, hold, cancel, status);
+  if (o.actions) { o.actions.append(del, hold); el.append(msg, ...(o.settingsOption ? [rl] : []), word, status); }
+  else el.append(msg, ...(o.settingsOption ? [rl] : []), word, del, hold, cancel, status);
 
   let shown = false, done = false, busy = false, holdFrom: number | undefined, keyHeld = false, pointerHeld = false, raf = 0, destroyed = false;
-  const ok = (): boolean => word.value.trim().toUpperCase() === DELETE_WORD;
-  const sync = (): void => { del.setAttribute("aria-disabled", String(!ok())); };
+  const can = (): boolean => o.canConfirm?.() ?? true;
+  const ok = (): boolean => can() && word.value.trim().toUpperCase() === DELETE_WORD;
+  const sync = (): void => { const c = can(); del.disabled = !c; hold.disabled = !c; del.setAttribute("aria-disabled", String(!ok())); if (!c) { keyHeld = false; pointerHeld = false; } };
   const confirm = async (): Promise<void> => {
     if (done || busy) return; busy = true; status.textContent = "Deleting…"; holdFrom = undefined; paint(0);
     try { status.textContent = await o.onConfirm({ resetSettings: reset.checked }); done = true; }
@@ -54,7 +60,7 @@ export function deleteConfirm(o: DeleteConfirmOptions): DeleteConfirm {
     if (destroyed) return;
     if (el.isConnected) shown = true; else if (shown) { destroyed = true; return; } // dialog closed/replaced
     const held = keyHeld || pointerHeld || padA();
-    if (!held || done || busy) { if (holdFrom !== undefined) { holdFrom = undefined; paint(0); } }
+    if (!held || done || busy || !can()) { if (holdFrom !== undefined) { holdFrom = undefined; paint(0); } }
     else { holdFrom ??= now(); const f = Math.min(1, (now() - holdFrom) / HOLD_MS); paint(f); if (f >= 1) void confirm(); }
     if (!o.manualTick) raf = frame(tick);
   };
@@ -68,8 +74,9 @@ export function deleteConfirm(o: DeleteConfirmOptions): DeleteConfirm {
   hold.addEventListener("keyup", (e) => { if (e.key === "Enter" || e.key === " ") keyHeld = false; });
   hold.addEventListener("blur", () => { keyHeld = false; pointerHeld = false; });
   cancel.addEventListener("click", () => { if (!busy) o.onCancel(); });
+  sync();
   if (!o.manualTick) raf = frame(tick);
-  return { el, tick, destroy: () => { destroyed = true; (globalThis.cancelAnimationFrame ?? clearTimeout)(raf); }, get done() { return done; } };
+  return { el, tick, refresh: sync, destroy: () => { destroyed = true; (globalThis.cancelAnimationFrame ?? clearTimeout)(raf); }, get done() { return done; } };
 }
 
 type Factory = Pick<IDBFactory, "deleteDatabase"> & { databases?: () => Promise<{ name?: string }[]> };

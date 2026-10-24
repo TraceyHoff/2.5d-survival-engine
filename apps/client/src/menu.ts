@@ -38,6 +38,9 @@ box-shadow:0 4px 0 #432C24,0 10px 24px rgba(0,0,0,.45);min-width:min(320px,86vw)
 max-height:calc(100vh - 24px);max-height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 24px);overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;flex-shrink:0}
 .boot button{font:700 20px Fredoka,system-ui,sans-serif;color:#FFFAF0;background:#5A9A4A;border:3px solid #3B2433;border-radius:14px;padding:10px 18px;
 box-shadow:0 4px 0 #2D5A2E;cursor:pointer;touch-action:manipulation;text-shadow:0 2px 0 #2D5A2E;min-height:48px}
+.boot .panel.has-footer{max-height:calc(100dvh - var(--sat,0px) - var(--sab,0px) - 16px);overflow-y:auto;padding-bottom:0}
+.boot .sticky-footer{position:sticky;bottom:0;z-index:1;display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;background:#F6EAD2;border-top:2px solid #74432C;padding:10px 0 14px;margin-top:4px}
+.boot .sticky-footer button{flex:1 1 auto;min-height:44px}.boot button:disabled{opacity:.45;cursor:not-allowed}
 .boot button.alt{background:#C98A4B;box-shadow:0 4px 0 #74432C;text-shadow:0 2px 0 #74432C}
 .boot button:focus,.boot button.sel{outline:3px solid #FFD45A;outline-offset:2px;transform:translateY(-1px)}
 .boot button:active{transform:translateY(2px);box-shadow:0 2px 0 #2D5A2E}
@@ -161,21 +164,25 @@ export class BootUI {
         const boxes = new Map<LocalSaveKind, HTMLInputElement>();
         const all = document.createElement("input"); all.type = "checkbox"; all.dataset["save"] = "everything";
         const allL = document.createElement("label"); allL.append(all, " Delete everything (also forgets this device's player identity)");
-        all.addEventListener("change", () => { for (const c of boxes.values()) c.checked = all.checked; });
-        const c = deleteConfirm({ message: "Pick what to delete above. This can't be undone.", settingsOption: false, onCancel: main,
+        all.addEventListener("change", () => { for (const b of boxes.values()) b.checked = all.checked; c.refresh(); });
+        // Sticky footer (always visible while the picker scrolls): Back + Delete + Hold to delete.
+        const footer = document.createElement("div"); footer.dataset["role"] = "sticky-footer"; footer.className = "sticky-footer";
+        const picked = (): boolean => all.checked || [...boxes.values()].some((b) => b.checked);
+        const c = deleteConfirm({ message: "Pick what to delete above. This can't be undone.", settingsOption: false, onCancel: main, actions: footer, canConfirm: picked,
           onConfirm: async () => {
             const kinds = new Set([...boxes].filter(([, b]) => b.checked).map(([k]) => k));
             const r = await deleteLocalProgress({ slot, kinds, everything: all.checked }); if (!r.ok) throw new Error(r.message);
             setTimeout(() => { if (this.root.dataset["boot"] === "menu") saves(); }, 1500); // refresh the list
             return r.message;
           } });
-        this.screen([["Back", main, "alt"]], main, `<h2>Delete progress</h2>`, box, note, c.el);
+        c.el.style.maxHeight = "none"; c.el.style.overflow = "visible"; // the panel scrolls, not a nested box
+        this.screen([["Back", main, "alt"]], main, `<h2>Delete progress</h2>`, box, note, c.el, footer);
         this.cleanup = () => c.destroy();
         void listLocalSaves({ slot }).then((list) => {
           if (!box.isConnected) return;
           const rows = list.map((s) => {
             const cb = document.createElement("input"); cb.type = "checkbox"; cb.dataset["save"] = s.kind; boxes.set(s.kind, cb);
-            cb.addEventListener("change", () => { if (!cb.checked) all.checked = false; });
+            cb.addEventListener("change", () => { if (!cb.checked) all.checked = false; c.refresh(); });
             const l = document.createElement("label"); const d = document.createElement("small"); d.textContent = ` — ${s.detail}`;
             l.append(cb, ` ${s.label}`, d); if (!s.present) l.style.opacity = "0.6"; return l;
           });
@@ -198,10 +205,11 @@ export class BootUI {
       const k = KEYS[t]; if (BR.plates && k) { b.classList.add(`k-${k}`); if (!extra.length && !html.includes("<h2")) panel.classList.add("art"); }
       if (BR.icons && k && (t === "Singleplayer" || t === "Multiplayer" || t === "Settings")) { const ic = new Image(); ic.src = `${this.base}art/ui/branding/buttons/icons/ic_menu_${k}.png`; ic.alt = ""; b.append(ic); }
       b.append(t); b.addEventListener("click", fn); return b; });
-    panel.append(...buttons);
+    const footer = extra.find((e) => e.dataset["role"] === "sticky-footer");
+    if (footer) { footer.prepend(...buttons); panel.classList.add("ui-scroll", "has-footer"); } else panel.append(...buttons);
     const nodes: HTMLElement[] = [panel]; if (html.includes("hint")) { const h = document.createElement("div"); h.className = "hint"; h.textContent = "Mouse / touch · arrows + Enter · gamepad D-pad + A"; nodes.push(h); }
     this.body.replaceChildren(...nodes);
-    const focusables = (): HTMLElement[] => Array.from(panel.querySelectorAll<HTMLElement>("input,button"));
+    const focusables = (): HTMLElement[] => Array.from(panel.querySelectorAll<HTMLElement>("input:not(:disabled),button:not(:disabled)"));
     let idx = focusables().indexOf(buttons[0]!); const focus = (i: number): void => { const f = focusables(); if (!f.length) return; idx = (i + f.length) % f.length; focusVisible(f[idx]); };
     panel.addEventListener("focusin", (e) => { const i = focusables().indexOf(e.target as HTMLElement); if (i >= 0) idx = i; }); // content added later (save picker)
     focus(idx);
