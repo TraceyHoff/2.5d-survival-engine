@@ -326,6 +326,8 @@ export class AtlasManager {
   private held: [string, string][] = []; // (kind,url) pairs held in AssetManager
   private themes = new Map<string, Record<string, AtlasSource>>();
   private baseSources = new Map<string, AtlasSource>();
+  /** Image sources passed to setRegistry (e.g. for a second renderer / the creator preview). */
+  get sources(): ReadonlyMap<string, AtlasSource> { return this.baseSources; }
   private layers = 0; private maxLayers = 256;
   private totalFrames = 0;
   private hasEmissive = false;

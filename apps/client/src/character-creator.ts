@@ -5,8 +5,14 @@
  * normal SetAppearance command, so the server's checkAppearance (catalog + unlock + first-join gate) validates it.
  * A stored character skips the screen (Edit character on the main-menu flow / ?editchar=1 re-opens it).
  * Input: touch / mouse (buttons, ≥44px), keyboard (Tab / arrows, Enter, Esc = Back), gamepad (d-pad / stick, A, B = Back).
+ * Preview: the real paper-doll (body + wear sprites, idle anim, 8 facings, live) through @engine/render's WebGL2
+ * createCharacterPreview (same layer resolve / anchors / tint as in-game), else the Canvas2D compositor from the PNG sheets
+ * (CharacterPreview2D; force with ?creator=2d), else the sketch below when no art registry is loaded. Drag to turn (touch /
+ * mouse), ⟲/⟳, LB/RB on a gamepad. Rendered at the device DPR (integer pixel scale in 2D: no blur).
  * The panel scrolls (overflow:auto, touch pan) and fits fullscreen phones (dvh units).
  */
+import type { AssetRegistry } from "@engine/assets";
+import { CharacterPreview2D, coreAppearanceBinding, createCharacterPreview, type AtlasSource, type CharacterPreview } from "@engine/render";
 import { BODY_TYPES, SLOT_COUNT, WEARABLE_SLOTS, defaultAppearance, slotIndex, type AppearanceValue, type CosmeticCatalogLike, type WearableDef, type WearableSlot } from "@engine/core";
 
 export type CharacterSaveKind = "singleplayer" | "hosted" | "remote";
@@ -91,25 +97,64 @@ export function drawPreview(g: CanvasRenderingContext2D, cat: CosmeticCatalogLik
 export interface CreatorOptions {
   root: HTMLElement; catalog: CosmeticCatalogLike | undefined; initial?: StoredCharacter | undefined; title?: string;
   /** Gamepad poll (tests pass a stub); default navigator.getGamepads. */ pads?: () => readonly (Gamepad | null)[];
+  /** Real sprite preview (the loaded art registry + atlas sources). mode: auto = WebGL2 then Canvas2D; "canvas2d" forces 2D. */
+  preview?: CreatorPreviewSource | undefined;
+}
+export interface CreatorPreviewSource { registry: AssetRegistry; sources: ReadonlyMap<string, AtlasSource>; mode?: CreatorPreviewMode;
+  /** test hooks */ createGl?: typeof createCharacterPreview; create2d?: (cv: HTMLCanvasElement, o: ConstructorParameters<typeof CharacterPreview2D>[1]) => Pick<CharacterPreview2D, "setAppearance" | "setFacing" | "resize" | "renderNow" | "facing"> }
+export type CreatorPreviewMode = "auto" | "webgl2" | "canvas2d";
+/** ?creator=2d (or ?creator=canvas2d) forces the Canvas2D preview. */
+export const previewModeFromQuery = (q: URLSearchParams): CreatorPreviewMode => (/^(2d|canvas2d)$/.test(q.get("creator") ?? "") ? "canvas2d" : "auto");
+/** One preview backend: the creator only talks to this. */
+export interface PreviewDriver { kind: "webgl2" | "canvas2d" | "sketch"; set(a: AppearanceValue): void; facing(k: number): void; frame(tSec: number): void; dispose(): void }
+export const PREVIEW_CSS = { w: 168, h: 216 } as const;
+/** WebGL2 (render package) -> Canvas2D sheets -> undefined (caller keeps the sketch). Mounts into `host`. */
+export async function createPreviewDriver(host: HTMLElement, src: CreatorPreviewSource, look: AppearanceValue, facing: number, backdrop = "#EAD9B8"): Promise<PreviewDriver | undefined> {
+  const doc = host.ownerDocument; const dpr = Math.min(3, doc.defaultView?.devicePixelRatio || 1); const cat = src.registry.cosmetics as unknown as CosmeticCatalogLike | undefined;
+  if (src.mode !== "canvas2d") {
+    const cv = doc.createElement("canvas"); cv.dataset["role"] = "creator-preview"; cv.dataset["renderer"] = "webgl2"; cv.style.cssText = `width:${PREVIEW_CSS.w}px;height:${PREVIEW_CSS.h}px;border-radius:12px;display:block`;
+    host.append(cv);
+    try {
+      const pv: CharacterPreview = await (src.createGl ?? createCharacterPreview)(cv, { registry: src.registry, sources: new Map(src.sources), appearance: look, facing, anim: "idle", backdrop, pollGamepad: false });
+      pv.resize(PREVIEW_CSS.w, PREVIEW_CSS.h, dpr);
+      return { kind: "webgl2", set: (a) => { void pv.setAppearance(a); }, facing: (k) => pv.setFacing(k), frame: () => undefined, dispose: () => { pv.dispose(); cv.remove(); } };
+    } catch (e) { cv.remove(); if (src.mode === "webgl2") return undefined; console.info("[creator] WebGL2 preview unavailable, Canvas2D:", e); }
+  }
+  if (!cat) return undefined;
+  const cv = doc.createElement("canvas"); cv.dataset["role"] = "creator-preview"; cv.dataset["renderer"] = "canvas2d"; cv.style.cssText = "border-radius:12px;display:block;image-rendering:pixelated;touch-action:none";
+  try {
+    const o = { registry: src.registry, binding: coreAppearanceBinding(cat), appearance: look, sources: src.sources, facing, backdrop };
+    const pv = src.create2d ? src.create2d(cv, o) : new CharacterPreview2D(cv, o); pv.resize(PREVIEW_CSS.w, PREVIEW_CSS.h, dpr); host.append(cv);
+    let cur = look; void pv.setAppearance(look);
+    return { kind: "canvas2d", set: (a) => { cur = a; void pv.setAppearance(cur); }, facing: (k) => pv.setFacing(k), frame: (t) => pv.renderNow(t), dispose: () => cv.remove() };
+  } catch (e) { console.warn("[creator] Canvas2D preview failed:", e); cv.remove(); return undefined; }
 }
 /** Opens the creator; resolves with the character, or undefined on Back. */
 export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter | undefined> {
   const cat = o.catalog; const doc = o.root.ownerDocument;
   let look: AppearanceValue = o.initial?.appearance ?? (cat ? randomLook(cat) : defaultAppearance(undefined, 0));
-  let name = o.initial?.name ?? ""; let dir = 1, auto = true;
+  let name = o.initial?.name ?? ""; let dir = 1, auto = true; let drv: PreviewDriver | undefined; let disposed = false;
   const wrap = doc.createElement("div"); wrap.dataset["boot"] = "creator"; wrap.className = "boot creator"; wrap.setAttribute("role", "dialog"); wrap.setAttribute("aria-label", "Create your character");
   wrap.setAttribute("style", "position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(30,20,28,.72);padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)");
   const panel = doc.createElement("div"); panel.className = "panel ui-scroll";
   panel.setAttribute("style", "max-height:calc(100dvh - 24px);max-width:min(760px,96vw);overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;display:flex;flex-wrap:wrap;gap:12px;background:#FFF3DC;border:3px solid #3B2433;border-radius:16px;padding:14px");
   const h = doc.createElement("h2"); h.textContent = o.title ?? (o.initial ? "Edit character" : "Create your character"); h.style.cssText = "flex:1 1 100%;margin:0";
   const left = doc.createElement("div"); left.style.cssText = "flex:1 1 220px;display:flex;flex-direction:column;align-items:center;gap:6px";
-  const cv = doc.createElement("canvas"); cv.width = 160; cv.height = 200; cv.dataset["role"] = "creator-preview"; cv.style.cssText = "width:160px;height:200px;background:#EAD9B8;border-radius:12px";
-  let g: CanvasRenderingContext2D | null = null; try { g = cv.getContext("2d"); } catch { /* no 2D canvas (tests) */ } const draw = (): void => { if (g && cat) drawPreview(g, cat, look, dir); };
+  // preview host: sketch canvas until the sprite preview (WebGL2 / Canvas2D) is up; drag on it turns the character
+  const host = doc.createElement("div"); host.dataset["role"] = "creator-preview-host"; host.style.cssText = `position:relative;width:${PREVIEW_CSS.w}px;height:${PREVIEW_CSS.h}px;background:#EAD9B8;border-radius:12px;touch-action:none;user-select:none`;
+  const cv = doc.createElement("canvas"); cv.width = 160; cv.height = 200; cv.dataset["role"] = "creator-preview"; cv.dataset["renderer"] = "sketch"; cv.style.cssText = `width:${PREVIEW_CSS.w}px;height:${PREVIEW_CSS.h}px;border-radius:12px`; host.append(cv);
+  let g: CanvasRenderingContext2D | null = null; try { g = cv.getContext("2d"); } catch { /* no 2D canvas (tests) */ }
+  const t0 = Date.now(); const draw = (): void => { if (drv) { drv.facing(dir); drv.frame((Date.now() - t0) / 1000); } else if (g && cat) drawPreview(g, cat, look, ([0, 1, 1, 2, 2, 3, 3, 0] as const)[dir]!); };
+  const turn = (d: number): void => { dir = (dir + d + 8) % 8; draw(); };
+  { let px = 0, down = false, acc = 0; host.addEventListener("pointerdown", (ev) => { down = true; px = ev.clientX; acc = 0; auto = false; host.setPointerCapture?.(ev.pointerId); });
+    host.addEventListener("pointermove", (ev) => { if (!down) return; acc += ev.clientX - px; px = ev.clientX; while (Math.abs(acc) >= 32) { const s = Math.sign(acc); turn(-s); acc -= s * 32; } });
+    const up = (): void => { down = false; }; host.addEventListener("pointerup", up); host.addEventListener("pointercancel", up); }
+  if (o.preview) void createPreviewDriver(host, o.preview, look, dir).then((d) => { if (!d) return; if (disposed) { d.dispose(); return; } drv = d; cv.remove(); wrap.dataset["preview"] = d.kind; d.set(look); draw(); });
   const right = doc.createElement("div"); right.style.cssText = "flex:2 1 300px;display:grid;grid-template-columns:auto 1fr;gap:6px 8px;align-items:center";
   const mk = (t: string, act: string, fn: () => void, cls = "alt"): HTMLButtonElement => { const b = doc.createElement("button"); b.type = "button"; b.textContent = t; b.className = cls; b.dataset["action"] = act; b.style.minHeight = "44px"; b.addEventListener("click", fn); return b; };
   const rot = doc.createElement("div"); rot.style.cssText = "display:flex;gap:6px";
-  rot.append(mk("⟲", "rotate-left", () => { auto = false; dir = (dir + 3) % 4; draw(); }), mk("⟳", "rotate-right", () => { auto = false; dir = (dir + 1) % 4; draw(); }));
-  left.append(cv, rot, mk("🎲 Randomize", "randomize", () => { if (cat) { look = randomLook(cat); refresh(); } }));
+  rot.append(mk("⟲", "rotate-left", () => { auto = false; turn(-1); }), mk("⟳", "rotate-right", () => { auto = false; turn(1); }));
+  left.append(host, rot, mk("🎲 Randomize", "randomize", () => { if (cat) { look = randomLook(cat); refresh(); } }));
   const nameIn = doc.createElement("input"); nameIn.type = "text"; nameIn.maxLength = NAME_MAX; nameIn.placeholder = "Survivor name"; nameIn.value = name; nameIn.dataset["role"] = "creator-name"; nameIn.setAttribute("autocomplete", "nickname");
   nameIn.style.cssText = "min-height:44px;font:600 18px system-ui;padding:4px 8px"; nameIn.addEventListener("input", () => { name = nameIn.value; });
   const nl = doc.createElement("label"); nl.textContent = "Name"; right.append(nl, nameIn);
@@ -135,7 +180,7 @@ export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter
       if (f.endsWith(":color")) { const s = f.slice(0, -6) as WearableSlot; const i = look.primary[slotIndex(s)] ?? 0; const pc = isHairish(s) ? cat?.hairColors : cat?.clothingColors; return pc?.[i]?.key?.replace(/_/g, " ") ?? `Colour ${i + 1}`; }
       return cat ? partName(cat, look.parts[slotIndex(f as WearableSlot)] ?? 0) : "—";
     };
-    for (const [f, el] of vals) el.textContent = label(f); draw();
+    for (const [f, el] of vals) el.textContent = label(f); drv?.set(look); draw();
   }
   refresh();
   // keyboard / gamepad focus navigation over the dialog's controls
@@ -151,12 +196,13 @@ export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter
   };
   doc.addEventListener("keydown", onKey);
   const pads = o.pads ?? (() => (typeof navigator !== "undefined" && navigator.getGamepads ? navigator.getGamepads() : []));
-  let prev = { up: false, down: false, left: false, right: false, a: false, b: false, y: false }; let raf = 0, last = 0; const win = doc.defaultView;
+  let prev = { up: false, down: false, left: false, right: false, a: false, b: false, y: false, lb: false, rb: false }; let raf = 0, last = 0; const win = doc.defaultView;
   const tick = (t: number): void => {
-    if (auto && t - last > 900) { last = t; dir = (dir + 1) % 4; draw(); }
+    if (auto && t - last > 900) { last = t; turn(1); } else if (drv?.kind === "canvas2d") draw(); // 2D: idle anim frames
     const gp = Array.from(pads()).find((p) => p) ?? undefined;
     if (gp) { const ax = gp.axes[0] ?? 0, ay = gp.axes[1] ?? 0, B = (i: number): boolean => !!gp.buttons[i]?.pressed;
-      const cur = { up: B(12) || ay < -0.5, down: B(13) || ay > 0.5, left: B(14) || ax < -0.5, right: B(15) || ax > 0.5, a: B(0), b: B(1), y: B(3) };
+      const cur = { up: B(12) || ay < -0.5, down: B(13) || ay > 0.5, left: B(14) || ax < -0.5, right: B(15) || ax > 0.5, a: B(0), b: B(1), y: B(3), lb: B(4), rb: B(5) };
+      if (cur.lb && !prev.lb) { auto = false; turn(-1); } if (cur.rb && !prev.rb) { auto = false; turn(1); }
       if (cur.down && !prev.down) move(1); if (cur.up && !prev.up) move(-1);
       // left/right on a ◀ ▶ row steps the value directly
       const a = doc.activeElement as HTMLElement | null; const rowBox = a?.parentElement;
@@ -167,5 +213,5 @@ export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter
   };
   raf = win?.requestAnimationFrame?.(tick) ?? 0;
   o.root.append(wrap); (o.initial ? ok : nameIn).focus();
-  return new Promise((resolve) => { done = (v) => { doc.removeEventListener("keydown", onKey); if (raf) win?.cancelAnimationFrame?.(raf); wrap.remove(); resolve(v); }; });
+  return new Promise((resolve) => { done = (v) => { disposed = true; drv?.dispose(); drv = undefined; doc.removeEventListener("keydown", onKey); if (raf) win?.cancelAnimationFrame?.(raf); wrap.remove(); resolve(v); }; });
 }

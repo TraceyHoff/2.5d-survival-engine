@@ -29,7 +29,7 @@ import { mountHud } from "./hud.js";
 import { controlLabel, mountFarmPrompt, quickUseFires, type PromptDevice } from "./farm-prompt.js";
 import { attachContextRecovery, effectiveLevel, retryIsoAtSafe } from "./gl-recovery.js";
 import { BootUI, loadSettings } from "./menu.js";
-import { EDIT_CHAR_KEY, loadCharacter, saveCharacter, showCharacterCreator, type CharacterSaveKind, type StoredCharacter } from "./character-creator.js";
+import { EDIT_CHAR_KEY, loadCharacter, previewModeFromQuery, saveCharacter, showCharacterCreator, type CharacterSaveKind, type StoredCharacter } from "./character-creator.js";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 /** Everything (canvas, HUD, touch overlay, menu bar, modals) lives in this root; fullscreen targets it (ADR-095). */
@@ -211,7 +211,7 @@ async function ensureCharacter(kind: CharacterSaveKind): Promise<StoredCharacter
   if (stored && !edit) return stored;
   await isoReady; const catalog = iso?.registry.cosmetics?.size ? iso.registry.cosmetics : undefined;
   const seed: StoredCharacter | undefined = stored ?? (session.savedName ? { v: 1, name: session.savedName, appearance: undefined as never } : undefined);
-  const c = await showCharacterCreator({ root: document.body, catalog, initial: seed?.appearance ? seed : undefined });
+  const c = await showCharacterCreator({ root: uiRoot(), catalog, initial: seed?.appearance ? seed : undefined, preview: iso && catalog ? { registry: iso.registry, sources: iso.renderer.atlas.sources, mode: previewModeFromQuery(params) } : undefined });
   if (c) saveCharacter(kind, SLOT, c); return c;
 }
 const playerName = (): string => activeChar?.name ?? session.savedName ?? "";
