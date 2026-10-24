@@ -46,6 +46,10 @@ export function paperDollDepth(key: number, frameH: number, anchorY: number, sca
 }
 /** Render-internal instance flag (above the u8 SpriteFlag range): draw only the outline ring of this frame. */
 export const OUTLINE_ONLY = 256;
+/** Render-internal instance flag: face/eyes paper-doll layer (mip bias, small contrast lift, partial darkness bypass; see characterOpts.face*). */
+export const FACE_LAYER = 512;
+/** Paper-doll slots that carry the character's face: never crowd-LOD'd or dress-capped, drawn with FACE_LAYER. */
+export const FACE_SLOTS: readonly string[] = ["face", "eyes"];
 
 /** Gameplay-owned components the renderer reads (schemas as agreed with Survival Systems). */
 export type BuildPieceDefT = ComponentDef<{ visualId: "u16"; variant: "u8"; tint: "u32"; damageStage: "u8"; rotation: "u8"; level: "u8"; layer: "u8"; ghost: "u8" }>;
@@ -167,7 +171,7 @@ in vec4 vFx; in vec3 vUvRaw; flat in int vLayer; in float vAlpha; flat in int vF
 uniform highp sampler2DArray uAtlas, uPoolTex, uEmis, uSheenM, uSwayM, uTintM; uniform highp sampler2D uTints;
 #define vUv vec3(vUvRaw.xy, float(vLayer)) // flat int array layer (no interpolated layer index)
 uniform int uShadowPass, uShadowMode;
-uniform float uShadowAlpha, uOutline, uTexel, uTime, uEmisStrength, uAlphaMul, uNightGate;
+uniform float uShadowAlpha, uOutline, uTexel, uTime, uEmisStrength, uAlphaMul, uNightGate, uFaceBias, uFaceContrast, uFaceUnlit;
 uniform vec4 uOutlineColor; uniform vec3 uShadowColor, uFrostColor, uFlushTint; uniform float uWetDarken, uWetSheen;
 uniform int uOccMode, uSilhouette; uniform float uOccAlpha, uOccRadius; uniform vec2 uFocusScr; uniform vec4 uSilColor;
 const float BAYER[16] = float[16](0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0);
@@ -176,6 +180,8 @@ layout(location=1) out vec4 oEmissive;
 float inRect(vec2 uv) { return step(vRect.x, uv.x) * step(uv.x, vRect.z) * step(vRect.y, uv.y) * step(uv.y, vRect.w); }
 uniform int uPoolFirst;
 vec4 atlasAt(vec3 uv) { int l = int(uv.z + 0.5); return l >= uPoolFirst ? texture(uPoolTex, vec3(uv.xy, float(l - uPoolFirst))) : texture(uAtlas, uv); }
+// face/eyes layers: negative LOD bias so 1-3 px pupils/lashes are not averaged away in the minified mips
+vec4 atlasAtBias(vec3 uv, float b) { int l = int(uv.z + 0.5); return l >= uPoolFirst ? texture(uPoolTex, vec3(uv.xy, float(l - uPoolFirst)), b) : texture(uAtlas, uv, b); }
 float alphaAt(vec2 uv) { return atlasAt(vec3(uv, vUv.z)).a * inRect(uv); }
 // status tint row (AtlasManager tint table: per sprite SpriteDef.tints, row 0 = render_tuning globals)
 vec3 statusTint(vec3 c, int idx, float amount) {
@@ -219,7 +225,7 @@ void main() {
   if ((vFB.x & 4) != 0 && vSwayPx != 0.0) { // sway mask (R = weight): sample the source shifted against the wind
     float w = texture(uSwayM, vUv).r; uv.x -= vSwayPx * w; // vSwayPx is in uv units
   }
-  vec4 t = atlasAt(uv) * inRect(uv.xy);
+  vec4 t = ((vFlags & 512) != 0 ? atlasAtBias(uv, uFaceBias) : atlasAt(uv)) * inRect(uv.xy);
   if (uSilhouette == 1) { // focus drawn through occluders (depth GREATER)
     if (t.a < 0.35) discard;
     oColor = uSilColor; oEmissive = vec4(0.8, 0.0, 0.0, uSilColor.a); return;
@@ -279,12 +285,15 @@ void main() {
     vec3 gc = ghost == 1 ? vec3(0.35, 1.0, 0.45) : vec3(1.0, 0.3, 0.3);
     col = mix(col, gc, 0.55); alpha *= 0.5 + 0.06 * sin(uTime * 4.0); // ~0.5 alpha, subtle pulse
   }
+  if ((vFlags & 512) != 0) col = clamp((col - 0.5) * uFaceContrast + 0.5, 0.0, 1.0); // face/eyes: small contrast lift (after tint + status)
   float e = (vFlags & 2) != 0 ? 1.0 : 0.0;
   if (vMisc.z > 0.5) { vec4 em = texture(uEmis, vUv); e = max(e, max(em.r, max(em.g, em.b)) * em.a * ((vFlags & 64) != 0 ? uNightGate : 1.0)); } // 64: night-only emissive
   oColor = vec4(col, alpha);
   // r: darkness bypass (emissive); g: bloom source (emissive pixels + light-source sprites)
   // ghosts (build preview) bypass the lightmap (r) so they stay readable at night, but never feed bloom (g)
+  // face/eyes: partial darkness bypass (r only, never bloom) so eyes stay readable at night / in fog
   oEmissive = vec4(ghost > 0 ? 1.0 : e * uEmisStrength, (vFlags & 32) != 0 ? max(e, 0.6) : e, 0.0, alpha);
+  if ((vFlags & 512) != 0) oEmissive.r = max(oEmissive.r, uFaceUnlit);
 }`;
 
 /** Secondary tint (RGBA8 packed) into instance floats 28..30 (0 = reuse primary). */
@@ -370,7 +379,9 @@ export class SpriteBatch {
   /** Character layer cache (per entity; re-resolved on Appearance change or facing bucket change). */
   layerCache: LayerCache | null = null;
   /** Character layers: outline mode ("union" = one outline around body+layers, "body" = body only); crowd LOD zoom. */
-  characterOpts = { outline: "union" as "union" | "body", minorLayerMinZoom: 0.75 };
+  characterOpts = { outline: "union" as "union" | "body", minorLayerMinZoom: 0.75,
+    /** face/eyes layers (FACE_LAYER): LOD bias (negative = sharper when minified), contrast around mid-grey, darkness bypass 0..1 */
+    faceMipBias: -0.75, faceContrast: 1.12, faceUnlit: 0.3 };
   /** Per-frame stats: characters with Appearance drawn, extra layer instances pushed. */
   characters = 0; layerInstances = 0;
   /** ?diag: local player + characters within PRIO_NEAR this frame (layer count, resident pages, worst pool scale). */
@@ -378,6 +389,8 @@ export class SpriteBatch {
   nearN = 0;
   /** Fallback step 2: only the nearest `maxDressed` layered characters (to the view centre) draw their wearables; the rest body-only. */
   maxDressed = Infinity;
+  /** Dress-capped characters still draw their face/eyes layers (small pages; a faceless body reads as a mannequin). */
+  dressFaces = true;
   /** Characters drawn body-only by the maxDressed cap last frame. */
   dressCapped = 0;
   private dressD2 = new Float32Array(64); private dressN = 0; private dressCut = Infinity; private dressDrawn = 0;
@@ -684,8 +697,8 @@ export class SpriteBatch {
         this.dressD2[this.dressN++] = d2;
         dress = d2 <= this.dressCut && this.dressDrawn < this.maxDressed; if (dress) this.dressDrawn++; else this.dressCapped++;
       }
-      if (layers && layers.length && dress) {
-        this.characters++;
+      if (layers && layers.length && (dress || this.dressFaces)) {
+        if (dress) this.characters++;
         if (nearC && this.nearN < this.nearInfo.length) { const ni = this.nearInfo[this.nearN]!; ni.e = e; ni.d = Math.sqrt(prio); ni.layers = 0; ni.resident = 0; ni.scale = 1; ni.missing.length = 0; }
         // copy the body instance (pivot, flip, seed -> same shiver, status fx, occlusion, flash) and swap frame + tint;
         // keys step by LAYER_BIAS in resolveLayers order so a character's layers stay contiguous; outline-only copies
@@ -694,13 +707,16 @@ export class SpriteBatch {
         const lr = this.layerRes; let j = 0;
         for (const l of layers) {
           if (l === bodyL) continue; j++;
-          if (lodMinor && l.minor && !nearC) continue;
+          const faceL = FACE_SLOTS.includes(l.slot);
+          if (!dress && !faceL) continue; // dress-capped: body + face only (eyes keep the character readable)
+          if (lodMinor && l.minor && !nearC && !faceL) continue;
           // the body's shared anim when this layer has it (same frame index + facing -> aligned, whichever page holds it),
           // else the layer's own state anim (face/eyes expression layers)
           const lai = st >= 0 ? (dollAnim ? atlas.findAnim(l.sprite, dollAnim) : -1) : -1;
           const okL = st >= 0 ? atlas.resolve(l.sprite, lai >= 0 ? lai : atlas.stateAnim(l.sprite, st), f, t, 0, lr) : atlas.resolve(l.sprite, atlas.animIndex(l.sprite, l.animName), f, 0, sp.data.frameId[k]!, lr);
           // readiness of the page this frame actually lives on (a swim/punch wear page streams on its own)
-          const rdy = okL && (lr.atlas >= 0 ? atlas.pageReadyAt(lr.atlas, prio) : atlas.pageReady(l.sprite, prio));
+          // face/eyes pages request at 1/4 of the character's distance priority: they win pool slots over farther clothing
+          const lp = faceL ? prio * 0.25 : prio; const rdy = okL && (lr.atlas >= 0 ? atlas.pageReadyAt(lr.atlas, lp) : atlas.pageReady(l.sprite, lp));
           if (nearC && this.nearN < this.nearInfo.length) { const ni = this.nearInfo[this.nearN]!; if (ni.e === e) { ni.layers++; if (rdy) ni.resident++; else ni.missing.push(l.slot); const pi = atlas.pageInfo(l.sprite); ni.scale = Math.min(ni.scale, pi.scale); } }
           if (!rdy) continue; // streamed page not resident yet: body-only fallback
           o0.set(base); o0[4] = lr.entry; o0[8] = lr.ax; o0[9] = lr.ay; o0[16] = 0;
@@ -708,7 +724,7 @@ export class SpriteBatch {
             o0[2] = dkey - LAYER_BIAS * 0.5; o0[5] = (base[5]! & ~SpriteFlag.NoOutline) | OUTLINE_ONLY;
             this.pushOcc(o0, 0, occT, occ.mode); this.layerInstances++;
           }
-          o0[2] = dkey + j * LAYER_BIAS; o0[5] = base[5]! | SpriteFlag.NoOutline;
+          o0[2] = dkey + j * LAYER_BIAS; o0[5] = base[5]! | SpriteFlag.NoOutline | (faceL ? FACE_LAYER : 0);
           this.writeLayerTint(o0, l);
           this.pushOcc(o0, 0, occT, occ.mode); this.layerInstances++;
         }
@@ -979,6 +995,7 @@ export class SpriteBatch {
     gl.uniform1i(u.uOccMode!, oc.mode === "dither" ? 1 : 0); gl.uniform1f(u.uOccAlpha!, oc.alpha); gl.uniform1f(u.uOccRadius!, oc.radiusPx);
     gl.uniform2f(u.uFocusScr!, this.focusScr[0], this.focusScr[1]); gl.uniform1i(u.uSilhouette!, 0); gl.uniform4fv(u.uSilColor!, oc.silhouetteColor);
     gl.uniform1f(u.uAlphaMul!, 1); gl.uniform1f(u.uTexel!, 1 / atlas.layerSize); gl.uniform1f(u.uEmisStrength!, style.emissiveStrength); gl.uniform1f(u.uNightGate!, this.nightGate);
+    gl.uniform1f(u.uFaceBias!, this.characterOpts.faceMipBias); gl.uniform1f(u.uFaceContrast!, this.characterOpts.faceContrast); gl.uniform1f(u.uFaceUnlit!, this.characterOpts.faceUnlit);
     gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D_ARRAY, atlas.tex); gl.uniform1i(u.uAtlas!, 0);
     gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, atlas.frameTex); gl.uniform1i(u.uFrames!, 1);
     gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D_ARRAY, atlas.emisTex); gl.uniform1i(u.uEmis!, 2);

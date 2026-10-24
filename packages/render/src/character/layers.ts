@@ -41,7 +41,7 @@ export interface AppearanceBinding {
   resolve: ResolveLayersFn;
   /** Per-slot render tint defaults applied when a layer does not carry its own (e.g. { hair: { mode: "lerp" } }). */
   slotTint?: Partial<Record<string, { mode?: TintMode; strength?: number; saturation?: number }>>;
-  /** Slots dropped by the crowd LOD (default accessory, shoes, face, eyes). */
+  /** Slots dropped by the crowd LOD (default accessory, shoes; face/eyes are never dropped). */
   minorSlots?: readonly string[];
   /**
    * Broadcast gameplay `Expression {id, untilTick}` (networked; optional). While world.tick < untilTick, name(id) is
@@ -69,7 +69,8 @@ export interface CachedLayer {
   minor: boolean; /** participates in the character outline pass */ outline: boolean;
 }
 
-const DEFAULT_MINOR = ["accessory", "shoes", "face", "eyes"];
+// face/eyes are not minor: they are what makes a character read at crowd zoom (cute/cartoony art direction)
+const DEFAULT_MINOR = ["accessory", "shoes"];
 export const FACING_BUCKETS = 8;
 /** resolveLayers varies by core's 8-way direction (8-entry layerByDir, ADR-082), so that is the cache's facing key. */
 export function facingBucket(f: number): number { return directionIndex8(f); }
@@ -123,8 +124,9 @@ export class LayerCache {
  * Binding over core's contract (81cdf46): `Appearance` + `resolveLayers(catalog, appearance, facing)` (which already
  * applies hidesSlots, hatHair and layerByDir). `catalog` is the @engine/assets CosmeticCatalog.
  */
-export function coreAppearanceBinding(catalog: CosmeticCatalogLike, opts: Omit<AppearanceBinding, "def" | "resolve"> = {}): AppearanceBinding {
-  return { def: Appearance as unknown as ComponentDef, resolve: (a, facing, o) => resolveLayers(catalog, a as AppearanceValue, facing, o), ...opts };
+export function coreAppearanceBinding(catalog: CosmeticCatalogLike, opts: Omit<AppearanceBinding, "def" | "resolve"> & { faceOverHair?: boolean } = {}): AppearanceBinding {
+  const { faceOverHair = true, ...rest } = opts;
+  return { def: Appearance as unknown as ComponentDef, resolve: (a, facing, o) => { const l = resolveLayers(catalog, a as AppearanceValue, facing, o); return faceOverHair ? liftFaceOverHair(l, facing) : l; }, ...rest };
 }
 
 /**
@@ -140,4 +142,21 @@ export function layerTintRef(base: [number, number, number], color: [number, num
   let r = base.map((c, i) => cl(mode === 0 ? c * mix(1, tc[i]!, k) : mode === 1 ? mix(c, c + tc[i]!, k) : mode === 2 ? mix(c, 1 - (1 - c) * (1 - tc[i]!), k) : mix(c, tc[i]! * L, k)));
   if (saturation !== 1) { const l2 = lum(r); const s = mix(1, saturation, k); r = r.map((c) => cl(mix(l2, c, s))); }
   return r as [number, number, number];
+}
+
+/** Facings (directionIndex8: E, SE, S, SW, W) that show the face; back facings keep the authored order (hair over face). */
+const FACE_VISIBLE_DIRS = [true, true, true, true, true, false, false, false];
+/**
+ * Face/eyes drawn just above hair on facings that show the face. Art authors face 32 / eyes 34 under hair 40, so fringes
+ * and bobs covered brows, mouth and eyes (bob: 2/3 of the face pixels hidden); hats/accessories above hair stay in front.
+ * Stable: the moved layers keep their relative order and sit right after the last hair layer.
+ */
+export function liftFaceOverHair<L extends { slot: string }>(list: readonly L[], facing: number): readonly L[] {
+  if (!FACE_VISIBLE_DIRS[directionIndex8(facing)]) return list;
+  let lastHair = -1, firstFace = -1;
+  for (let i = 0; i < list.length; i++) { const s = list[i]!.slot; if (s === "hair") lastHair = i; else if ((s === "face" || s === "eyes") && firstFace < 0) firstFace = i; }
+  if (lastHair < 0 || firstFace < 0 || firstFace > lastHair) return list;
+  const face = list.filter((l) => l.slot === "face" || l.slot === "eyes"), rest = list.filter((l) => l.slot !== "face" && l.slot !== "eyes");
+  const at = rest.lastIndexOf(list[lastHair]!) + 1;
+  return [...rest.slice(0, at), ...face, ...rest.slice(at)];
 }
