@@ -14,7 +14,7 @@
  * Transform (no PrevTransform interpolation); gameplay sets the rider's AnimState to Sit (13, ADR-101).
  */
 import { Transform, type Entity, type World } from "@engine/core";
-import { LightSource, Occluder, Sprite, SpriteFlag } from "../components.js";
+import { LightSource, Occluder, Shadow, Sprite, SpriteFlag } from "../components.js";
 import type { AssetRegistry } from "@engine/assets";
 import {
   PoseSmoother, RIDER_DK_CABIN, RIDER_DK_OPEN, dirAngle, hasInterior, headlightCone, insideFootprint, isPowered, quantizeDir8,
@@ -39,6 +39,7 @@ export interface VehicleViewOpts {
   /** rider key of the local player (cutaway when seated in an interior vehicle) */ localRider?: number;
   /** local player's world position (cutaway when standing inside a parked interior vehicle) */ localPos?: { x: number; y: number };
   /** localPlayerVehicle(world, eid) from gameplay (net id of the vehicle the local player drives, or null): cutaway it */ localVehicle?: number | null;
+  /** rider keys are entities of this view world: suppress their ground Shadow while seated (default true; Art 64357f1) */ riderShadows?: boolean;
   /** drift yaw added to the drawn heading (fraction of Vehicle.drift) */ driftYaw?: number;
 }
 export interface VehicleSpatial { insert(e: Entity, x: number, y: number): void; remove(e: Entity): void }
@@ -55,6 +56,8 @@ export class VehicleView {
   readonly recs = new Map<number, Rec>();
   private readonly art: boolean | VehicleArtTable | undefined; private readonly pages: VehiclePages | undefined;
   private frame = 0;
+  /** seated rider entity -> its Shadow alpha before seating (restored on exit) */
+  private readonly hiddenShadow = new Map<number, number>();
   private readonly iso: { tileH: number; zStep: number }; private readonly zf: number; private readonly spatial: VehicleSpatial | undefined;
   /** spatial: the renderer's chunked index when setSpatialIndex is used (proxies must be in it to be drawn). */
   constructor(private readonly world: World, private readonly registry: AssetRegistry, o: { iso?: { tileH: number; zStep: number }; zFactor?: number; spatial?: VehicleSpatial; art?: boolean | VehicleArtTable; pages?: VehiclePages } = {}) {
@@ -126,6 +129,11 @@ export class VehicleView {
       }
     }
     for (const [k, r] of this.recs) if (r.seen !== this.frame) { this.drop(r); this.recs.delete(k); }
+    if (o.riderShadows !== false) {
+      const now = new Set(out.map((p) => p.rider));
+      for (const rid of now) { const e = rid as Entity; if (this.hiddenShadow.has(rid) || !w.isAlive(e)) continue; const sh = shadowOf(w, e); if (sh) { this.hiddenShadow.set(rid, sh.alpha); if (sh.alpha !== 0) w.set(e, Shadow, { ...sh, alpha: 0 }); } }
+      for (const [rid, a] of this.hiddenShadow) if (!now.has(rid)) { const e = rid as Entity; this.hiddenShadow.delete(rid); const sh = w.isAlive(e) ? shadowOf(w, e) : undefined; if (sh) w.set(e, Shadow, { ...sh, alpha: a }); }
+    }
     return out;
   }
 
@@ -148,3 +156,5 @@ export class VehicleView {
   dispose(): void { for (const r of this.recs.values()) this.drop(r); this.recs.clear(); }
 }
 function depthOf(s: VehicleSnapshot, m: Map<number, VehicleSnapshot>): number { let d = 0, c = s; while (c.parent && d < 8) { const p = m.get(c.parent); if (!p) break; c = p; d++; } return d; }
+
+function shadowOf(w: World, e: Entity): { alpha: number; length: number } | undefined { try { return w.get(e, Shadow) as { alpha: number; length: number } | undefined; } catch { return undefined; } }

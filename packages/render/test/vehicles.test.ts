@@ -1,3 +1,4 @@
+import { Shadow } from "../src/components.js";
 import { modelZScale, targetHeightPx, PLAYER_HEIGHT_PX, modelHeight, VEHICLE_STATE_HEADLIGHTS, VEHICLE_STATE_ENGINE_ON } from "../src/index.js";
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
@@ -157,5 +158,14 @@ describe("per-type scale (steering: vehicles read taller than players)", () => {
     const w = mk(); const v = new VehicleView(w, reg); const d = def("car_sedan");
     const lights = (state: number) => { v.sync([{ key: 1, def: d, x: 0, y: 0, heading: 0, state }], 0, { darkness: 1 }); return v.recs.get(1)!.lights.length; };
     expect(lights(VEHICLE_STATE_ENGINE_ON)).toBe(0); expect(lights(VEHICLE_STATE_ENGINE_ON | VEHICLE_STATE_HEADLIGHTS)).toBeGreaterThan(0);
+  });
+});
+
+describe("seated riders", () => {
+  it("ground shadow suppressed while seated, restored on exit", () => {
+    const w = mk(); w.register(Shadow); const v = new VehicleView(w, reg); const d = def("car_sedan"); const r = w.create();
+    w.add(r, Transform, { x: 0, y: 0, z: 0, facing: 0 }); w.add(r, Shadow, { alpha: 0.8, length: 1 });
+    v.sync([{ key: 1, def: d, x: 0, y: 0, heading: 0, occupants: [r, 0, 0, 0] }], 0, { darkness: 0 }); expect(w.get(r, Shadow)!.alpha).toBe(0);
+    v.sync([{ key: 1, def: d, x: 0, y: 0, heading: 0, occupants: [0, 0, 0, 0] }], 0, { darkness: 0 }); expect(w.get(r, Shadow)!.alpha).toBeCloseTo(0.8);
   });
 });
