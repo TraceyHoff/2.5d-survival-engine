@@ -106,6 +106,7 @@ export const COMMAND_REJECT_REASONS = [
   /* appended: vehicle crafting (gameplay DESIGN §31) */
   "empty_slot", "not_kit", "no_tank", "not_fuel", "wrong_fuel", "not_repair_item", "wrong_part", "needs_garage",
   /* appended (ADR-099) */ "bad_confirm", "not_claimed",
+  /* appended (ADR-109) */ "no_key",
 ] as const;
 export type CommandRejectReason = (typeof COMMAND_REJECT_REASONS)[number];
 export function rejectReasonCode(reason: string): number { const i = (COMMAND_REJECT_REASONS as readonly string[]).indexOf(reason); return i < 0 ? 0 : i + 1; }

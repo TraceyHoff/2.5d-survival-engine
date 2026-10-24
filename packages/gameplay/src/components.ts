@@ -101,6 +101,8 @@ export const DoorState = defineComponent("DoorState", { open: "u8", lockTribe: "
 /** ADR-108 turret / trap state on a placed defense piece: readyTick = next shot or re-arm tick, owner = builder PlayerId
  *  (never targeted, nor their party/clan), target = current turret target (render aim). Ammo lives in the piece's Container. */
 export const Defense = defineComponent("Defense", { readyTick: "u32", owner: "u32", target: "u32" }, { networked: true, persistent: true });
+/** ADR-109 vehicle keys (append-only): keyId = stable lock id a vehicle_key slot carries in crafterId (0 = open, no key); owner = PlayerId the key was issued to; issued = key handed out. */
+export const VehicleLock = defineComponent("VehicleLock", { keyId: "u32", owner: "u32", issued: "u8" }, { networked: true, persistent: true });
 export const Fuel = defineComponent("Fuel", { burnUntilTick: "u32", lit: "u8" }, { networked: true, persistent: true });
 export const Container = defineComponent("Container", {
   slotCount: { type: "u8", default: 12 }, maxWeight: "f32", weight: "f32", spoilMul: { type: "f32", default: 1 },
@@ -257,4 +259,5 @@ export const GAMEPLAY_COMPONENTS = [
   VehicleCondition, // vehicle crafting (DESIGN.md §31)
   VehicleState, // append-only (ADR-101)
   Defense, // append-only (ADR-108)
+  VehicleLock, // append-only (ADR-109)
 ] as const;

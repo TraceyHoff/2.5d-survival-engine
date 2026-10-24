@@ -3552,6 +3552,14 @@
         "fuseSeconds": 5,
         "throwRange": 4
       }
+    },
+    {
+      "key": "vehicle_key",
+      "name": "Vehicle Key",
+      "category": "resource",
+      "maxStack": 1,
+      "weight": 0.05,
+      "tradeable": true
     }
   ]
 }

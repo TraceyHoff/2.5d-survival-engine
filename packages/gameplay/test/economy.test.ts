@@ -48,7 +48,7 @@ describe("economy data", () => {
     const gathered = new Set<number>();
     for (const r of d.resources.values()) for (const y of (r as unknown as { yields?: { item: number }[] }).yields ?? []) gathered.add(y.item);
     const raw = JSON.stringify(DEFAULT_RAW_DEFS.resources);
-    const missing = [...d.items.values()].filter((it) => !crafted.has(it.id) && !gathered.has(it.id) && !raw.includes(`"${it.key}"`) && it.key !== d.items.get(d.spoiledItem)?.key);
+    const missing = [...d.items.values()].filter((it) => !crafted.has(it.id) && !gathered.has(it.id) && !raw.includes(`"${it.key}"`) && it.key !== d.items.get(d.spoiledItem)?.key && it.key !== mod.KEY_ITEM); // keys are issued on vehicle deploy (ADR-109)
     expect(missing.map((m) => m.key)).toEqual([]);
   });
   it("coin is crafted at the anvil; stall pieces carry listing counts", () => {

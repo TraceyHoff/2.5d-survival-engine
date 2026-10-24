@@ -43,6 +43,7 @@ export * from "./economy/stall.js";
 export * from "./combat/pvp_pieces.js";
 export * from "./combat/defenses.js";
 export * from "./systems/lights.js";
+export * from "./vehicle_keys.js";
 export * from "./combat/pvp.js";
 export * from "./spawn_points.js";
 export * from "./combat/arms.js";

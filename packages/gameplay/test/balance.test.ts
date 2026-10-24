@@ -36,7 +36,7 @@ const power = (it: ReturnType<typeof d.items.get> & object): number =>
 describe("content balance", () => {
   it("every item is obtainable (reachability fixpoint from gather/loot)", () => {
     const r = reachable();
-    expect([...d.items.values()].filter((i) => !r.has(i.id)).map((i) => i.key)).toEqual([]);
+    expect([...d.items.values()].filter((i) => !r.has(i.id) && i.key !== "vehicle_key").map((i) => i.key)).toEqual([]);
   });
   it("no free items: every recipe has ingredients, none outputs more of an input than it consumes", () => {
     for (const r of recipes) {

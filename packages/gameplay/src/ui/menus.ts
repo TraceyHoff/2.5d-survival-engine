@@ -16,6 +16,8 @@ import { pieceCost } from "../building/place.js";
 import { DepositCmd, PaintCmd, PlaceCmd, ToggleFireCmd, WithdrawCmd } from "../input.js";
 import { Fuel } from "../components.js";
 import { fuelSecondsLeft } from "../systems/fuel.js";
+import { KEY_ITEM, keyTooltip } from "../vehicle_keys.js";
+const itemDefKey = (w: World, item: number): string => gameplayDefs(w).items.get(item)?.key ?? "";
 import { COSMETICS, EquipCosmeticCmd, SetAppearanceCmd, canEditAppearance, hasCreatedLook, nearWardrobe, unlocksOf } from "../customization.js";
 import { PartyAcceptCmd, PartyDeclineCmd, PartyInviteCmd, PartyKickCmd, PartyLeaveCmd, PARTY_RULES } from "../party.js";
 import { ClanAcceptCmd, ClanDeclineCmd, ClanCreateCmd, ClanDemoteCmd, ClanDisbandCmd, ClanInviteCmd, ClanKickCmd, ClanLeaveCmd, ClanPromoteCmd, ClanSetGoalCmd, ClanSetRankPermsCmd } from "../clan.js";
@@ -40,7 +42,7 @@ export function inventoryView(c: MenuCtx): InventorySlotView[] {
     const info = itemInfo(w, c.player, s.slot, c.names ?? { get: () => undefined });
     const crafterName = info?.crafterName || nameOf(c, s.crafterId);
     const name = itemName(w, s.item);
-    const tip = [`${name} ×${s.count}`, s.durability && gameplayDefs(w).items.get(s.item)?.maxDurability ? `Durability ${s.durability}/${gameplayDefs(w).items.get(s.item)!.maxDurability}` : "", crafterName ? `Crafted by ${crafterName}` : ""].filter(Boolean).join("\n");
+    const tip = [`${name} ×${s.count}`, s.durability && gameplayDefs(w).items.get(s.item)?.maxDurability ? `Durability ${s.durability}/${gameplayDefs(w).items.get(s.item)!.maxDurability}` : "", itemDefKey(w, s.item) === KEY_ITEM ? keyTooltip(w, s.crafterId) : crafterName ? `Crafted by ${crafterName}` : ""].filter(Boolean).join("\n");
     out.push({ slot: s.slot, item: s.item, icon: gameplayDefs(w).items.get(s.item)?.spriteKey ?? "", name, count: s.count, durability: s.durability, crafterId: s.crafterId, crafterName, tooltip: tip });
   }
   return out;

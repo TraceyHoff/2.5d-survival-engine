@@ -17,6 +17,8 @@ import { AnimState, Container, CONTAINER_MAX_SLOTS, Dead, Driver, Hitch, Surviva
 import { movementBlocked } from "./systems/movement.js";
 import { spendStamina } from "./systems/vitals.js";
 import { netIdEntity } from "./vehicle_net.js";
+import { hasKeyFor, keyIssueSystem } from "./vehicle_keys.js";
+import { VehicleLock } from "./components.js";
 
 export const VEHICLE_CLASSES = ["bicycle", "car", "truck", "van", "camper", "semi", "trailer"] as const;
 export type VehicleClass = (typeof VEHICLE_CLASSES)[number];
@@ -243,6 +245,7 @@ function stepTrailer(world: World, tr: Entity, d: VehicleDef, tow: Entity): void
 
 /** gameplay.vehicles: drive powered vehicles, then trailers in chain order, then seat riders. Deterministic on every peer. */
 export function vehicleSystem(world: World, dt: number): void {
+  if (world.tick % 20 === 0 && world.isRegistered(VehicleLock)) keyIssueSystem(world); // ADR-109 legacy migration + owed keys
   const vs = [...world.query([Vehicle, Transform])]; if (vs.length === 0) return;
   const inputs = world.getResource(DriveInputs); const riders = new Map<number, Entity>();
   for (const r of world.query([Driver, NetId])) riders.set(world.getField(r, NetId, "id")!, r);
@@ -302,14 +305,16 @@ export function validateEnter(world: World, actor: Entity, v: Entity, seat: numb
   if (dist(world, actor, v) > reachOf(d)) return "too_far";
   if (Math.abs(world.getField(v, Vehicle, "speed") ?? 0) > 1) return "moving";
   const occ = seatsOf(world, v)!;
-  if (seat === 255) { for (let i = 0; i < d.seats; i++) if (!occ[i]) return undefined; return "full"; }
+  const key = hasKeyFor(world, actor, v); // ADR-109: the driver seat needs the matching key; passengers don't
+  if (seat === 255) { for (let i = key ? 0 : 1; i < d.seats; i++) if (!occ[i]) return undefined; return key || d.seats > 1 ? "full" : "no_key"; }
   if (seat >= d.seats) return "bad_seat";
+  if (seat === 0 && !key) return "no_key";
   return occ[seat] ? "seat_taken" : undefined;
 }
 export function enterVehicle(world: World, actor: Entity, v: Entity, seat = 255): string | undefined {
   const r = validateEnter(world, actor, v, seat); if (r) return r;
   const d = vehicleDefOf(world, v)!; const occ = seatsOf(world, v)!;
-  if (seat === 255) for (seat = 0; seat < d.seats && occ[seat]; seat++);
+  if (seat === 255) for (seat = hasKeyFor(world, actor, v) ? 0 : 1; seat < d.seats && occ[seat]; seat++);
   writeSeat(world, v, seat, netIdOf(world, actor));
   world.add(actor, Driver, { vehicleNetId: netIdOf(world, v), seat });
   return undefined;
@@ -382,6 +387,7 @@ export function validateVehicleToggle(world: World, actor: Entity, v: Entity, bi
   if (bit === VEHICLE_ENGINE_ON && !d.fuel) return "no_engine";
   if (!netIdOf(world, actor) || world.getField(actor, Driver, "vehicleNetId") !== netIdOf(world, v) || world.getField(actor, Driver, "seat") !== 0) return "not_driver";
   if (bit === VEHICLE_ENGINE_ON && on !== 0 && (world.getField(v, Vehicle, "health") ?? 0) <= 0) return "wrecked";
+  if (bit === VEHICLE_ENGINE_ON && on !== 0 && !hasKeyFor(world, actor, v)) return "no_key";
   return undefined;
 }
 export function setVehicleToggle(world: World, actor: Entity, v: Entity, bit: number, on: number): string | undefined {

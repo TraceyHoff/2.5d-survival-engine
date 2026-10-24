@@ -14,10 +14,11 @@
  *    VehicleStationOpened so UI opens the craft menu filtered to that station.
  * All handlers are validate/handle commands (ADR-092): players and bots use the same path.
  */
-import { defineCommand, fnv1a, Transform, type CommandHandlers, type Entity, type World } from "@engine/core";
+import { defineCommand, fnv1a, PlayerId, Transform, type CommandHandlers, type Entity, type World } from "@engine/core";
 import raw from "../data/vehicle_crafting.json";
 import { Dead, Vehicle, VehicleCondition } from "./components.js";
 import { gameplayDefs } from "./config.js";
+import { lockAndIssueKey } from "./vehicle_keys.js";
 import { StationKind } from "./defs.js";
 import { emit, ev } from "./events.js";
 import { readSlots, writeSlots } from "./inventory.js";
@@ -105,6 +106,7 @@ export function deployVehicleKit(world: World, actor: Entity, slot: number, x: n
   const v = spawnVehicle(world, defKey, x, y, heading); const d = vehicleDefOf(world, v)!;
   if (d.fuel) world.setField(v, Vehicle, "fuel", d.fuel.capacity * VEHICLE_CRAFT.deploy.startFuel);
   world.add(v, VehicleCondition, { crafterId: s.crafter, wear: 0 });
+  if (d.seats > 0 && d.class !== "trailer") lockAndIssueKey(world, v, actor, s.crafter || (world.isRegistered(PlayerId) ? world.getField(actor, PlayerId, "id") ?? 0 : 0)); // ADR-109
   emit(world, VehicleDeployed, { entity: actor, vehicle: v, defId: vehicleDefId(defKey), crafterId: s.crafter });
   return v;
 }
