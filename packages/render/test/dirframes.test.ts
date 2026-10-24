@@ -67,7 +67,7 @@ describe("body pages 20x14 (Art 64a18d2)", () => {
     const dims = new Set<string>();
     for (const a of reg.atlases.values()) { if (!/^body_/.test(a.key)) continue; n++;
       // Art 118: rect-packed body pages (one per body type, same size so they share the body pool slot), <= 1016 px
-      const w = a.columns * a.frameW, h = a.rows * a.frameH; dims.add(`${w}x${h}`); expect(Math.max(w, h)).toBeLessThanOrEqual(1016); expect(w * h).toBeLessThanOrEqual(880 * 840);
+      const w = a.columns * a.frameW, h = a.rows * a.frameH; dims.add(`${w}x${h}`); expect(Math.max(w, h)).toBeLessThanOrEqual(1016); expect(w * h).toBeLessThanOrEqual(1016 * 1016); // ADR-128 gather anims: still one @2x page per 2048 layer
       const p2 = src.get(a.key)!.pages!.find((p) => p.scale === 2)!; expect(p2.ktx2).toMatch(/@2x\.ktx2$/); expect(p2.masksKtx2?.tintmask).toMatch(/tintmask@2x\.ktx2$/); }
     expect(n).toBe(2); expect(dims.size).toBe(1);
   });

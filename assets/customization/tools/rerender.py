@@ -25,7 +25,7 @@ def rigframe(anim, i):
     if anim == "blink": return "idle", [0, 3, 0][i], 4
     if anim == "hurt": return "hit", i, 2
     if anim in rig.EXPR_EXTRA: return anim, 0, 1
-    return anim, i, {"sit": SIT_N, "swim": SWIM_N, "punch": PUNCH_N}[anim]
+    return anim, i, {"sit": SIT_N, "swim": SWIM_N, "punch": PUNCH_N, **rig.GATHER_N}[anim]
 
 def render_one(key, anim, i, d):
     import render

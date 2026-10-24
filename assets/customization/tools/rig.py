@@ -30,6 +30,11 @@ SWIM_Z = 17.0                             # world z of the waterline on the body
 ANIM_START["swim"] = ANIM_START["sit"] + 8 * SIT_N
 NECK = 3.0                                # ADR-128 neck: body head drawn NECK 1x px higher (head layers shifted by the head anchor)
 ANIM_START["punch"] = ANIM_START["swim"] + 8 * SWIM_N
+# ADR-128 gathering / consume (AnimState harvest 16, chop 17, mine 18, drink 19, eat 14): own blocks, dirFrames only
+GATHER = [("harvest", 6, 10, True), ("chop", 6, 12, True), ("mine", 6, 12, True), ("drink", 5, 8, False), ("eat", 5, 8, False)]
+GATHER_N = {g[0]: g[1] for g in GATHER}
+_s, _n = ANIM_START["punch"], PUNCH_N
+for _g in GATHER: _s += 8 * _n; ANIM_START[_g[0]] = _s; _n = _g[1]
 def rows_for(slot):
     n = 8 * NF + (8 * len(EXPR_EXTRA) if slot in EXPR_SLOTS else 0)
     return -(-n // COLS)
@@ -70,7 +75,12 @@ def pose(bt, d, anim, fi, n):
         bob = math.sin(ph) * .6; lean = 1.2; sw = 2.0
         legs = [(math.sin(ph) * sw, 1.5 + math.cos(ph)), (-math.sin(ph) * sw, 1.5 - math.cos(ph))]
     elif anim == "punch": crouch = [0, .4, .2, 0][fi % 4]; lean = [.5, -.4, 2.6, 1.0][fi % 4]; expr = ["focus", "focus", "yell", "focus"][fi % 4]
-    elif anim == "sit": bob = [0, .35, .7, .35][fi % 4]    # seated rider: subtle breathing bob, legs bent, hands on the wheel
+    elif anim == "sit": bob = [0, .35, .7, .35][fi % 4]
+    elif anim == "harvest": crouch = [1, 3, 4.5, 4.5, 3, 1.5][fi % 6]; lean = [1, 2, 3, 3, 2, 1][fi % 6]; expr = "focus"
+    elif anim == "chop": crouch = [0, -.5, -.5, 1.5, 1, .3][fi % 6]; lean = [-.6, -1, 0, 2.6, 2.2, .8][fi % 6]; expr = ["focus", "focus", "yell", "yell", "focus", "focus"][fi % 6]
+    elif anim == "mine": crouch = [0, -.3, 0, 2, 1.6, .5][fi % 6]; lean = [-.4, -.8, .5, 3, 2.6, 1][fi % 6]; expr = ["focus", "focus", "yell", "yell", "focus", "focus"][fi % 6]
+    elif anim == "drink": back = [0, 0, -.4, -.6, -.2][fi % 5]; bob = [0, .2, .4, .4, .2][fi % 5]
+    elif anim == "eat": bob = [0, .2, .4, .2, .4][fi % 5]    # seated rider: subtle breathing bob, legs bent, hands on the wheel
     elif anim == "death":
         crouch = [1, 4, 8, 12, 12.5][fi]; back = [-3, -2, -1, -3.5, -4.5][fi]; tilt = [-3, 4, -5, 7, 10][fi]
         ffwd = [0, 1, 3, 6.5, 7][fi]; expr = ["ouch", "dizzy", "dizzy", "dead", "dead"][fi]
@@ -112,6 +122,17 @@ def pose(bt, d, anim, fi, n):
         elif anim == "punch":  # fists up in guard; right jab winds back, extends, recovers
             if side == 1: hand3 = [(shw - 2.5, 5, bz + 7), (shw - 1, 1, bz + 7.5), (shw - 3.5, 14, bz + 7), (shw - 2, 8, bz + 6.5)][fi % 4]
             else: hand3 = (side * (shw - 2.5), 6, bz + 7.5)       # both hands forward on the steering wheel
+        elif anim == "harvest":   # crouch, reach forward-down, pull the right hand back up
+            if side == 1: hand3 = [(5, 7, bz - 4), (5, 10, bz - 8), (4.5, 12, bz - 11), (4.5, 11, bz - 10), (5, 8, bz - 6), (shw, 4, bz - 3)][fi % 6]
+            else: hand3 = (-4.5, 8, bz - 6 - [0, 1, 1.5, 1.5, 1, 0][fi % 6])
+        elif anim in ("chop", "mine"):   # two-handed tool grip (right above left): wind up overhead, strike (impact = frame 4), recover
+            g = ([(1, -4, bz + 15), (1, -2, bz + 17), (1, 4, bz + 15), (1, 11, bz + 1), (1, 10, bz - 1), (1, 6, bz + 5)] if anim == "chop" else
+                 [(1, -3, bz + 14), (1, -1, bz + 16), (1, 5, bz + 13), (1, 11, bz - 4), (1, 10, bz - 5), (1, 6, bz + 3)])[fi % 6]
+            hand3 = (g[0] + 1.2, g[1] + .5, g[2] + 1.2) if side == 1 else (g[0] - 1.6, g[1], g[2] - 1.2)
+        elif anim in ("drink", "eat"):   # right hand (canteen / food) up to the mouth, left resting
+            if side == 1: hand3 = ([(shw + 1, 1, bz - 3), (6, 6, bz + 5), (3, 11.5, bz + 13), (2.5, 12, bz + 13.5), (5, 8, bz + 7)] if anim == "drink" else
+                                   [(shw + 1, 1, bz - 3), (5, 8, bz + 6), (2.5, 12, bz + 13), (2.5, 11.5, bz + 12.5), (2.5, 12, bz + 13)])[fi % 5]
+            else: hand3 = (side * (shw + 1.0), 2, bz - 3)
         else: hand3 = (side * (shw + 1.2), .5, bz - 3.5 + bob * .3)
         K["sh"][side] = sh3; K["hand"][side] = hand3
     K["hc"] = (tilt * 0.5, lean + back * 0.6, 37 + by - (1.5 if expr == "dead" else 0))
@@ -133,6 +154,10 @@ def pose(bt, d, anim, fi, n):
     elif anim == "punch": dv = (0.0, 0.95, 0.3)
     elif anim == "swim": dv = (0.15, 0.35, 0.92)
     elif anim in ("hit", "death"): dv = (0.4, -0.3, 0.85)
+    elif anim == "harvest": dv = (0.0, 0.85, -0.5)
+    elif anim == "chop": dv = [(0, -.7, .7), (0, -.4, .9), (0, .6, .8), (0, .95, -.3), (0, .9, -.4), (0, .8, .6)][fi % 6]
+    elif anim == "mine": dv = [(0, -.6, .8), (0, -.3, .95), (0, .7, .7), (0, .9, -.45), (0, .85, -.5), (0, .8, .6)][fi % 6]
+    elif anim in ("drink", "eat"): dv = (0.0, 0.2, 1.0)
     else: dv = (0.15, 0.35, 0.92)
     nn = math.sqrt(sum(v * v for v in dv)); dv = tuple(v / nn for v in dv)
     (a2, _), (b2, _) = P(*h), P(h[0] + dv[0] * 10, h[1] + dv[1] * 10, h[2] + dv[2] * 10)

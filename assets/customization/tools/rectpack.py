@@ -132,10 +132,22 @@ def main(eng, slots=None, dry=False, tight=(), bodies=False):
         if k in BODY: continue
         ws = sorted(by[sig[k]])
         if len(ws) > 1: units.setdefault(f"{ws[0]}_{variant_of(k)}_shared", []).append(k)
+    def ents(gk):   # "key" or "key|anim,anim" (a sprite split over several pages when it does not fit one)
+        if "|" not in gk: return ENT[gk]
+        k, an = gk.split("|"); return {n: ENT[k][n] for n in an.split(",")}
+    def split(keys):   # greedy: pack each sprite's anims (in manifest order) into as few pages as fit
+        out = []
+        for k in sorted(keys):
+            cur = []
+            for n in ENT[k]:
+                if cur and layout([f"{k}|{','.join(cur + [n])}"]) is None: out.append(f"{k}|{','.join(cur)}"); cur = []
+                cur.append(n)
+            out.append(f"{k}|{','.join(cur)}")
+        return out
     def layout(keys, wfix=None, hmin=0):
         items, seen = [], set()
         for k in keys:
-            for ks in ENT[k].values():
+            for ks in ents(k).values():
                 for h in ks:
                     if h not in seen: seen.add(h); items.append(h)
         sizes = [(1, 1) if h == "blank" else (CROP[h][0].shape[1], CROP[h][0].shape[0]) for h in items]
@@ -163,16 +175,19 @@ def main(eng, slots=None, dry=False, tight=(), bodies=False):
             if any(l is None for l in L): continue
             sc = (len(L), sum(l[0] * l[1] for l in L))
             if bestp is None or sc < bestp[0]: bestp = (sc, part, L)
-        assert bestp, name
+        if not bestp:
+            part = [[g] for g in split(keys)]; L = [layout(g) for g in part]; assert all(L), name; bestp = (None, part, L)
+            print(f"{name}: split over {len(part)} pages")
         _, part, L = bestp
         for g, l in zip(part, L):
-            bs = {body_of(k) for k in g}; vs = {variant_of(k) for k in g}; lab = []
+            bs = {body_of(k.split("|")[0]) for k in g}; vs = {variant_of(k.split("|")[0]) for k in g}; lab = []
+            if any("|" in k for k in g): lab.append(f"p{part.index(g)}")
             if len(part) > 1:
                 if len(bs) == 1: lab.append(next(iter(bs)))
                 if len(vs) == 1 and vs != {"base"} and not name.endswith("_shared"): lab.append(next(iter(vs)))
             plan.append(((name if name in BODY else PFX + name) + "".join("_" + x for x in lab if x), g, l))
     # bodies share one body-pool slot geometry (max w x max h of the body pages): give every body page the same size
-    bi = [j for j, (pk, g, l) in enumerate(plan) if g[0] in BODY]
+    bi = [j for j, (pk, g, l) in enumerate(plan) if g[0].split("|")[0] in BODY]
     if len(bi) > 1:
         best = None
         for Wd in range(64, MAXP8 + 1, 8):
@@ -204,12 +219,12 @@ def main(eng, slots=None, dry=False, tight=(), bodies=False):
             x, y, w, hh = pos[h]
             if h == "blank": return {"atlas": pk, "rect": {"x": x, "y": y, "w": 1, "h": 1}, "anchor": {"x": 0, "y": 0}}
             pv = PIV[h]; return {"atlas": pk, "rect": {"x": x, "y": y, "w": w, "h": hh}, "anchor": {"x": round(pv[0] / w, 6), "y": round(pv[1] / hh, 6)}}
-        for k in g:
-            s = S[k]
-            if k in BODY: rekey_meta(s, A[s["atlas"]]["columns"])
-            s["atlas"] = pk; s["anchor"] = {"x": 0.5, "y": 1.0}
-            for name, an in s["animations"].items():
-                an["dirFrames"] = [df(h) for h in ENT[k][name]]
+        for gk in g:
+            k = gk.split("|")[0]; s = S[k]; first = "|" not in gk or "idle" in ents(gk)
+            if k in BODY and first: rekey_meta(s, A[s["atlas"]]["columns"])
+            if first: s["atlas"] = pk; s["anchor"] = {"x": 0.5, "y": 1.0}
+            for name in ents(gk):
+                s["animations"][name]["dirFrames"] = [df(h) for h in ENT[k][name]]
     # old pages no sprite references any more -> drop (entry + files)
     refs = {s["atlas"] for s in m["sprites"]} | {d["atlas"] for s in m["sprites"] for an in s["animations"].values() for d in an.get("dirFrames", [])}
     newkeys = {a["key"] for a in newA}; drop = sorted(a for a in old_used if a not in refs and a not in newkeys)
