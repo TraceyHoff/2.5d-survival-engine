@@ -2,12 +2,14 @@
  * Canvas2DRenderer: sprite fallback when WebGL2 cannot be created (console browsers after a GPU reset, WebGL blocked for
  * the origin, software-only devices). Draws the REAL sprite art from the same manifest + atlas PNGs and the same view
  * World IsoView fills for IsoRenderer: terrain diamonds, depth-sorted sprites (Transform + Sprite + AnimState), and a
- * day/night ambient overlay with additive light glows. No bloom, lightmap, masks, wearables or building piece visuals.
+ * day/night ambient overlay with additive light glows, and paper-doll wearables (tinted on the CPU, ADR-128 head offset).
+ * No bloom, lightmap, masks or building piece visuals.
  *
  * Presents the subset of the IsoRenderer surface the client uses (camera, capabilities, atlas.setRegistry, bindGameplay,
  * loadLook, resize, render, tilemap, setFocusEntity, diagReport) so IsoView can drive either one.
  */
-import { Transform, PrevTransform, type World, type Entity } from "@engine/core";
+import { Transform, PrevTransform, getAppearance, type World, type Entity } from "@engine/core";
+import { previewLayers2D, tintPixels, type PreviewLayer2D } from "./character/preview2d.js";
 import { worldToScreen, DEFAULT_ISO, CHUNK_SIZE, type TileMap } from "@engine/world";
 import type { AssetRegistry } from "@engine/assets";
 import { IsoCamera } from "./camera.js";
@@ -81,6 +83,26 @@ export class Canvas2DRenderer {
     return null;
   }
 
+  /** Image by URL (tint masks), loaded on first use; null while loading / failed. */
+  private urlImage(url: string): HTMLImageElement | ImageBitmap | null {
+    const k = `url:${url}`; if (this.images.has(k)) return this.images.get(k)!;
+    this.images.set(k, null); this.loadImage(url).then((i) => this.images.set(k, i), () => undefined); return null;
+  }
+  private tinted = new Map<string, CanvasImageSource>();
+  /** A paper-doll layer's frame, tinted through its tintmask (cached); the raw sheet when untinted or no DOM canvas. */
+  private layerImage(p: PreviewLayer2D): { img: CanvasImageSource; x: number; y: number } | null {
+    const img = this.image(p.ref.atlas.key); if (!img) return null; const r = p.ref, l = p.layer;
+    if ((l.tintR === undefined && l.tintG === undefined) || typeof document === "undefined") return { img, x: r.x, y: r.y };
+    const key = `${r.atlas.key}|${r.x},${r.y},${r.w},${r.h}|${l.tintR}|${l.tintG}|${l.tintMode}|${l.tintStrength}`; const c0 = this.tinted.get(key); if (c0) return { img: c0, x: 0, y: 0 };
+    const mi = p.maskUrl ? this.urlImage(p.maskUrl) : null; if (p.maskUrl && !mi) return { img, x: r.x, y: r.y };
+    const c = document.createElement("canvas"); c.width = r.w; c.height = r.h; const g = c.getContext("2d", { willReadFrequently: true }); if (!g) return { img, x: r.x, y: r.y };
+    g.drawImage(img, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
+    try { const d = g.getImageData(0, 0, r.w, r.h); let mask: Uint8ClampedArray | undefined;
+      if (mi) { const mc = document.createElement("canvas"); mc.width = r.w; mc.height = r.h; const mg = mc.getContext("2d", { willReadFrequently: true })!; mg.drawImage(mi, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h); mask = mg.getImageData(0, 0, r.w, r.h).data; }
+      tintPixels(d.data, mask, l); g.putImageData(d, 0, 0); } catch { /* tainted: untinted */ }
+    if (this.tinted.size > 512) this.tinted.clear(); this.tinted.set(key, c); return { img: c, x: 0, y: 0 };
+  }
+
   render(world: World, alpha: number): void {
     const g = this.ctx, cam = this.camera, s = cam.scale; const stats = (this.stats = newStats());
     const time = (performance.now() - this.t0) / 1000; const wr = readWeather(world), wt = weatherTargets(wr.kind, wr.intensity); // ADR-115: same curve + weather dimming as WebGL2 (no smoothing state: cheap)
@@ -113,9 +135,21 @@ export class Canvas2DRenderer {
       const fa = frameAnim(sp.frameId); if (fa >= 0) { try { anim = reg!.sprite(sp.spriteId).animList[fa]?.name ?? "idle"; } catch { /* unknown sprite */ } tAnim = 0; }
       if (an && world.has(it.e, an)) { const a = world.get(it.e, an)!; const names = STATE_ANIMS[a.state] ?? ["idle"]; let def; try { def = reg!.sprite(sp.spriteId); } catch { def = undefined; }
         anim = names.find((n) => def?.animations.has(n)) ?? "idle"; tAnim = Math.max(0, (tick - a.startTick) / 20) * (this.bindings.animRate?.(it.e, a.state) ?? 1); }
-      let f; try { f = reg!.dirFrame(sp.spriteId, anim, world.get(it.e, Transform)!.facing, tAnim); } catch { continue; }
+      const facing = world.get(it.e, Transform)!.facing; const k = sp.scale || 1;
+      // paper doll (same layer list + per-frame anchors as the creator's 2D preview; head layers follow the body's head anchor)
+      const apB = this.bindings.appearance; const look = apB && world.has(it.e, apB.def) ? getAppearance(world, it.e) : undefined;
+      if (look && apB) {
+        let ls: PreviewLayer2D[] = []; try { ls = previewLayers2D(reg!, apB, look, 0, tAnim, this.sources, anim, facing); } catch { ls = []; }
+        if (ls.length) {
+          for (const p of ls) { const li = this.layerImage(p); if (!li) continue; const r = p.ref;
+            g.save(); g.translate(it.sx, it.sy); if (r.flipX) g.scale(-1, 1);
+            g.drawImage(li.img, li.x, li.y, r.w, r.h, (p.dx - r.anchorX) * k, (p.dy - r.anchorY) * k, r.w * k, r.h * k); g.restore(); stats.drawCalls++; }
+          stats.sprites++; continue;
+        }
+      }
+      let f; try { f = reg!.dirFrame(sp.spriteId, anim, facing, tAnim); } catch { continue; }
       const img = this.image(f.atlas.key); if (!img) continue;
-      const k = sp.scale || 1; const dw = f.w * k, dh = f.h * k;
+      const dw = f.w * k, dh = f.h * k;
       g.save(); g.translate(it.sx, it.sy); if (f.flipX) g.scale(-1, 1);
       g.drawImage(img, f.x, f.y, f.w, f.h, -f.anchorX * k, -f.anchorY * k, dw, dh); g.restore(); stats.sprites++; stats.drawCalls++;
     }
