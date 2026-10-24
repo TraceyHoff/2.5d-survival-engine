@@ -553,3 +553,7 @@ Known gaps: `PaintCmd` is not net-bridged; clan roster/perms only cover replicat
 - Build-mode conflicts are resolved by input contexts: "Building" (priority 10) binds mouse.left/KeyR/Escape to Build.PlaceConfirm/RotateCW/Cancel,
   shadowing Gameplay's Primary/Reload on the same controls; UINav leaves Esc to the input system while Building is active (no pause).
 - Placed pieces and the ghost pass `rotSteps` (rotationSteps) and `tier` to the renderer (nearest quarter turn; `<piece>@tier<N>` art).
+- Social net (Netcode 8b42a5a): `SocialDirectory` is fed by client.onEvent(ClanRoster / ClanRosterMember (role 1 Member, 2 Officer,
+  3 Leader, 0 removed) / OnlinePlayer); `clanRosterRows` drives the clan Members list (actions need the member replicated),
+  `onlineTargets` fills party/clan invite lists and the chat Whisper picker. Clan "Dismiss" sends `clanDeclineIntent`.
+  Build panel "Paint nearest piece" sends PaintCmd {target: paintTarget(), paint: selected tint}.

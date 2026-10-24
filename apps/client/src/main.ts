@@ -17,9 +17,9 @@ import { createGameLoop, World, Transform, PrevTransform, lerp, entityIndex, Inp
 import { TileMap, worldToScreen, screenToWorld, DEFAULT_ISO } from "@engine/world";
 import { InputSystem, AimResolver, DEFAULT_ACTIONS, DEFAULT_CONTEXTS, DEFAULT_PROFILES, DEFAULT_TOUCH_LAYOUTS, type FrameMapping } from "@engine/input";
 import { attachBrowserInput } from "@engine/input/browser";
-import { Act, gameplayNet, installDemoWorld } from "@engine/server/protocol";
+import { Act, ClanRoster, ClanRosterMember, OnlinePlayer, gameplayNet, installDemoWorld } from "@engine/server/protocol";
 import { netIdOf, ChatChannel, type ChatDelivered } from "@engine/net";
-import { interactPanel, type MenuCtx, type MenuIntent } from "@engine/gameplay";
+import { SocialDirectory, interactPanel, type MenuCtx, type MenuIntent } from "@engine/gameplay";
 import { ClientSession } from "./session.js";
 import { mountConnectOverlay } from "./connect.js";
 import { IsoView } from "./view.js";
@@ -30,6 +30,8 @@ const canvas = document.getElementById("game") as HTMLCanvasElement;
 /** Everything (canvas, HUD, touch overlay, menu bar, modals) lives in this root; fullscreen targets it (ADR-095). */
 const root = uiRoot();
 const params = new URLSearchParams(location.search);
+/** Clan roster + online directory from the server (reset per client). */
+const social = new SocialDirectory();
 let ctx: CanvasRenderingContext2D | null = null;
 let iso: IsoView | undefined;
 const WEATHERS = ["clear", "rain", "storm", "snow", "fog"];
@@ -70,8 +72,8 @@ let leaveCurrent: (() => Promise<void> | void) | undefined;
 let sessionInfo: (() => { label: string; leaveLabel: string; onLeave: () => void }) | undefined;
 function startMenus(): void {
   if (menus) return;
-  menus = new GameMenus({ root, input, onQuit: quitToMenu, session: () => sessionInfo?.(), gameplay: { ctx: menuCtx, send: sendIntent, startPlacing: (sel) => buildMode.start(sel) },
-    onChat: (text, channel) => { if (!session.client?.chat.send(channel as ChatChannel, text)) menus?.pushChat("(not connected — message not sent)"); } });
+  menus = new GameMenus({ root, input, onQuit: quitToMenu, session: () => sessionInfo?.(), gameplay: { ctx: menuCtx, send: sendIntent, social, startPlacing: (sel) => buildMode.start(sel) },
+    onChat: (text, channel, to) => { if (!session.client?.chat.send(channel as ChatChannel, text, to ? { to } : {})) menus?.pushChat("(not connected — message not sent)"); } });
 }
 /** Live data for the gameplay panels: the replicated world + local player; names via NetClient's NamesClient. */
 function menuCtx(): MenuCtx | undefined {
@@ -90,8 +92,10 @@ const CHAT_TAG = ["Global", "Local", "Party", "Clan", "Trade", "Whisper", "Syste
 let chatWired: unknown;
 /** Hook NetClient.chat (core ChatServer, already run by the server) into the chat panel once per client. */
 function wireChat(): void {
-  const c = session.client; if (!c || chatWired === c || !menus) return; chatWired = c;
+  const c = session.client; if (!c || chatWired === c || !menus) return; chatWired = c; social.reset();
   c.chat.on((m: ChatDelivered) => { const who = m.fromPlayer ? c.names.display(m.fromPlayer) : ""; menus?.pushChat(`[${CHAT_TAG[m.channel] ?? "?"}] ${who ? `${who}: ` : ""}${m.text}`); });
+  // owner-scoped social replication (Netcode SocialSync) → clan roster, invite lists, whisper picker
+  c.onEvent(ClanRoster, (e) => social.onRoster(e)); c.onEvent(ClanRosterMember, (e) => social.onMember(e)); c.onEvent(OnlinePlayer, (e) => social.onOnline(e));
   c.chat.onReject((ch, reason) => menus?.pushChat(`(${CHAT_TAG[ch] ?? "?"} message rejected: ${reason})`));
 }
 /** Pause menu "Quit to main menu": leave fullscreen, end the session, back to the main menu. */

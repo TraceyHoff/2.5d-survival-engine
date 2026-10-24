@@ -5,7 +5,7 @@
  * and the sender maps them to NetIds. Server handlers re-validate everything; reasons here are only hints.
  */
 import { Appearance, GroupRole, Membership, PlayerId, Transform, WEARABLE_SLOTS, getAppearance, type CommandDef, type CosmeticCatalogLike, type Entity, type World } from "@engine/core";
-import { ClanInvitePending, ClanStatus, CraftQueue, PartyInvitePending, StallHeader, Wardrobe } from "../components.js";
+import { BuildPiece, ClanInvitePending, ClanStatus, CraftQueue, PartyInvitePending, StallHeader, Wardrobe } from "../components.js";
 import { gameplayDefs } from "../config.js";
 import type { ItemCount } from "../defs.js";
 import { countItem, listSlots } from "../inventory.js";
@@ -16,7 +16,7 @@ import { pieceCost } from "../building/place.js";
 import { PaintCmd, PlaceCmd } from "../input.js";
 import { COSMETICS, EquipCosmeticCmd, SetAppearanceCmd, canEditAppearance, hasCreatedLook, nearWardrobe, unlocksOf } from "../customization.js";
 import { PartyAcceptCmd, PartyDeclineCmd, PartyInviteCmd, PartyKickCmd, PartyLeaveCmd, PARTY_RULES } from "../party.js";
-import { ClanAcceptCmd, ClanCreateCmd, ClanDemoteCmd, ClanDisbandCmd, ClanInviteCmd, ClanKickCmd, ClanLeaveCmd, ClanPromoteCmd, ClanSetGoalCmd, ClanSetRankPermsCmd } from "../clan.js";
+import { ClanAcceptCmd, ClanDeclineCmd, ClanCreateCmd, ClanDemoteCmd, ClanDisbandCmd, ClanInviteCmd, ClanKickCmd, ClanLeaveCmd, ClanPromoteCmd, ClanSetGoalCmd, ClanSetRankPermsCmd } from "../clan.js";
 import { CLAN_GOAL_COUNT, CLAN_PERMS, clanPermBit, clanState, defaultRankMasks, type ClanPerm } from "../clan_state.js";
 
 export const TICKS_PER_SECOND = 20;
@@ -226,4 +226,53 @@ export function interactPanel(c: MenuCtx): { panel: "trade"; stall: Entity } | {
   const s = nearestStall(c, STALL_INTERACT_RANGE); if (s !== undefined) return { panel: "trade", stall: s };
   if (nearWardrobe(c.world, c.player)) return { panel: "character" };
   return undefined;
+}
+
+// ---- social directory (owner-scoped net events: gameplay.clanRoster / clanRosterMember / onlinePlayer) ----------
+export const clanDeclineIntent = (clan: number): MenuIntent => intent(ClanDeclineCmd, { clan });
+export const ROLE_NAMES = ["", "Member", "Officer", "Leader"] as const;
+/** Client-side store fed by client.onEvent(ClanRoster | ClanRosterMember | OnlinePlayer). Ids are account PlayerIds. */
+export class SocialDirectory {
+  clan = 0; memberMask = 0; officerMask = 0; size = 0;
+  readonly roster = new Map<number, { role: number; online: boolean }>();
+  readonly online = new Set<number>();
+  /** Bumped on every change (cheap "did it change" for panels). */
+  version = 0;
+  reset(): void { this.clan = this.memberMask = this.officerMask = this.size = 0; this.roster.clear(); this.online.clear(); this.version++; }
+  onRoster(e: { clan: number; memberMask: number; officerMask: number; size: number }): void {
+    if (e.clan !== this.clan || !e.clan) this.roster.clear();
+    this.clan = e.clan; this.memberMask = e.memberMask; this.officerMask = e.officerMask; this.size = e.size; this.version++;
+  }
+  /** role 1 Member, 2 Officer, 3 Leader; 0 = removed. */
+  onMember(e: { clan: number; player: number; role: number; online: number }): void {
+    if (!e.clan || e.clan !== this.clan) return;
+    if (!e.role) this.roster.delete(e.player); else this.roster.set(e.player, { role: e.role, online: e.online === 1 }); this.version++;
+  }
+  onOnline(e: { player: number; online: number }): void { if (e.online) this.online.add(e.player); else this.online.delete(e.player); this.version++; }
+}
+const entityOfPlayer = (w: World, playerId: number): Entity | undefined => { for (const e of w.query([PlayerId])) if (pidOf(w, e) === playerId) return e; return undefined; };
+export interface RosterRow { playerId: number; name: string; role: number; roleName: string; online: boolean; entity: Entity | undefined }
+/** Clan members from the replicated roster (works beyond AOI; entity only when that player is replicated). */
+export function clanRosterRows(c: MenuCtx, dir: SocialDirectory | undefined, clan: number): RosterRow[] | undefined {
+  if (!dir || !clan || dir.clan !== clan || !dir.roster.size) return undefined;
+  return [...dir.roster].map(([pid, r]) => ({ playerId: pid, name: nameOf(c, pid), role: r.role, roleName: ROLE_NAMES[r.role] ?? "Member", online: r.online, entity: entityOfPlayer(c.world, pid) }))
+    .sort((a, b) => b.role - a.role || Number(b.online) - Number(a.online) || a.name.localeCompare(b.name));
+}
+export interface InviteTarget { playerId: number; name: string; entity: Entity | undefined; distance: number | undefined }
+/** Invite / whisper candidates: online directory (plus nearby replicated players), minus me and `exclude`; replicated ones first by distance. */
+export function onlineTargets(c: MenuCtx, dir: SocialDirectory | undefined, exclude: ReadonlySet<number> = new Set()): InviteTarget[] {
+  const me = pidOf(c.world, c.player); const out = new Map<number, InviteTarget>();
+  for (const p of nearbyPlayers(c)) if (!exclude.has(p.playerId)) out.set(p.playerId, { playerId: p.playerId, name: p.name, entity: p.entity, distance: p.distance });
+  for (const pid of dir?.online ?? []) if (pid !== me && !exclude.has(pid) && !out.has(pid)) out.set(pid, { playerId: pid, name: nameOf(c, pid), entity: entityOfPlayer(c.world, pid), distance: undefined });
+  return [...out.values()].sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity) || a.name.localeCompare(b.name));
+}
+/** Nearest paintable build piece within build reach (Build panel "Paint" target). */
+export function paintTarget(c: MenuCtx): Entity | undefined {
+  const w = c.world; const d = gameplayDefs(w); const me = w.get(c.player, Transform); if (!me) return undefined;
+  let best: Entity | undefined; let bd = d.building.buildReach;
+  for (const e of w.query([BuildPiece, Transform])) {
+    if (!d.pieces.get(w.get(e, BuildPiece)!.type)?.paintable) continue;
+    const t = w.get(e, Transform)!; const dist = Math.hypot(t.x - me.x, t.y - me.y); if (dist <= bd) { bd = dist; best = e; }
+  }
+  return best;
 }

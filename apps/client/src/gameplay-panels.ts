@@ -6,13 +6,13 @@
  * Data hooks for Art: `[data-role=slot|recipe|job|owed|piece|listing|member|invite|perm|unlock]`, `[data-key]`.
  */
 import {
-  buildView, cancelQueuedCraftIntent, clanAcceptIntent, clanCreateIntent, clanDemoteIntent, clanDisbandIntent, clanInviteIntent, clanKickIntent, clanLeaveIntent,
+  buildView, cancelQueuedCraftIntent, clanAcceptIntent, clanDeclineIntent, clanRosterRows, onlineTargets, paintIntent, paintTarget, type SocialDirectory, clanCreateIntent, clanDemoteIntent, clanDisbandIntent, clanInviteIntent, clanKickIntent, clanLeaveIntent,
   clanPromoteIntent, clanSetGoalIntent, clanSetRankPermsIntent, clanView, collectTillIntent, craftingView, equipCosmeticIntent, inventoryView, JOB_STATE_LABEL,
   nearestStall, partyAcceptIntent, partyDeclineIntent, partyInviteIntent, partyKickIntent, partyLeaveIntent, partyView, queueCraftIntent, buyFromStallIntent,
   setAppearanceIntent, setStallNameIntent, priceItemChoices, listItemIntents, unstockStallIntent, type StallListDraft, setStallOpenIntent, stallView, togglePermMask, wardrobeView, placeIntent,
   type BuildSelection, type MenuCtx, type MenuIntent,
 } from "@engine/gameplay";
-import { GroupRole, Transform, type Entity } from "@engine/core";
+import { GroupRole, PlayerId, Transform, type Entity } from "@engine/core";
 
 export const GAMEPLAY_PANELS = ["inventory", "crafting", "build", "character", "party", "clan", "trade"] as const;
 export type GameplayPanel = (typeof GAMEPLAY_PANELS)[number];
@@ -27,6 +27,8 @@ export interface GameplaySource {
   startPlacing?(s: BuildSelection): void;
   /** Stall the trade panel shows (set by interacting with a stall); falls back to the nearest stall. */
   stall?(): Entity | undefined;
+  /** Owner-scoped clan roster + online directory (net events gameplay.clanRoster / clanRosterMember / onlinePlayer). */
+  social?: SocialDirectory;
 }
 export interface PanelKit { para(t: string): HTMLElement; rerender(): void; status(t: string): void; close(): void }
 
@@ -79,7 +81,8 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       if (sel) {
         if (sel.tiers.length > 1) { out.push(heading("Tier")); const tg = grid(); for (const t of sel.tiers) tg.append(btn(t.key, `tier-${t.tier}`, () => { buildSel.tier = t.tier; src.onBuildSelect?.({ ...buildSel }); kit.rerender(); }, { pressed: t.tier === buildSel.tier, alt: t.tier !== buildSel.tier, title: t.cost.map((x) => `${x.name} ${x.have}/${x.count}`).join(", ") })); out.push(tg); }
         if (sel.variants.length > 1) { out.push(heading("Variant")); const vg = grid(); sel.variants.forEach((n, i) => vg.append(btn(n, `variant-${i}`, () => { buildSel.variant = i; src.onBuildSelect?.({ ...buildSel }); kit.rerender(); }, { pressed: i === buildSel.variant, alt: i !== buildSel.variant }))); out.push(vg); }
-        if (sel.paintable) { out.push(heading("Tint")); const pg = grid(); for (let i = 0; i < 6; i++) pg.append(btn(i ? `Tint ${i}` : "Clan / none", `tint-${i}`, () => { buildSel.paint = i; src.onBuildSelect?.({ ...buildSel }); kit.rerender(); }, { pressed: i === buildSel.paint, alt: i !== buildSel.paint })); out.push(pg); }
+        if (sel.paintable) { out.push(heading("Tint")); const pg = grid(); for (let i = 0; i < 6; i++) pg.append(btn(i ? `Tint ${i}` : "Clan / none", `tint-${i}`, () => { buildSel.paint = i; src.onBuildSelect?.({ ...buildSel }); kit.rerender(); }, { pressed: i === buildSel.paint, alt: i !== buildSel.paint }));
+          const tgt = paintTarget(c); pg.append(btn("Paint nearest piece", "paint-apply", () => { if (tgt !== undefined) send(paintIntent(tgt, buildSel.paint), "Painted."); }, { disabled: tgt === undefined, title: "Applies the selected tint to the nearest paintable piece in reach" })); out.push(pg); }
         const t = sel.tiers.find((x) => x.tier === buildSel.tier) ?? sel.tiers[0]!;
         out.push(kit.para(`Cost: ${t.cost.map((x) => `${x.name} ${x.have}/${x.count}`).join(", ") || "free"}`));
         const a = grid(); a.append(btn("Place (aim to position · R / RB / ⟳ rotate)", "place", () => { if (!src.startPlacing) { kit.status("Placement unavailable."); return; } src.startPlacing({ ...buildSel }); kit.close(); }, { disabled: !t.affordable || !src.startPlacing })); out.push(a);
@@ -106,22 +109,28 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       if (v.invite) { const inv = v.invite; out.push(kit.para(`${inv.fromName} invited you (${inv.secondsLeft}s).`)); const g = grid(); g.append(btn("Accept", "party-accept", () => send(partyAcceptIntent(inv.party), "Joined party.")), btn("Decline", "party-decline", () => send(partyDeclineIntent(inv.party), "Declined."), { alt: true })); out.push(g); }
       out.push(heading(v.party ? `Party (${v.members.length}/${v.maxSize})` : "Not in a party"));
       if (v.party) { const g = grid(); for (const m of v.members) g.append(m.entity === c.player ? kit.para(`${m.name} (you)`) : btn(`Kick ${m.name}`, `kick-${m.playerId}`, () => send(partyKickIntent(m.entity), `Kicked ${m.name}.`), { alt: true, role: "member" })); out.push(g); const l = grid(); l.append(btn("Leave party", "party-leave", () => send(partyLeaveIntent(), "Left party."), { alt: true })); out.push(l); }
-      out.push(heading("Invite nearby")); if (!v.candidates.length) out.push(kit.para("Nobody nearby."));
-      const ig = grid(); for (const p of v.candidates.slice(0, 12)) ig.append(btn(`Invite ${p.name}`, `invite-${p.playerId}`, () => send(partyInviteIntent(p.entity), `Invited ${p.name}.`), { title: `${Math.round(p.distance)} m` })); out.push(ig);
+      const pc = onlineTargets(c, src.social, new Set(v.members.map((m) => m.playerId)));
+      out.push(heading("Invite")); if (!pc.length) out.push(kit.para("Nobody online nearby."));
+      const ig = grid(); for (const p of pc.slice(0, 16)) { const e = p.entity; ig.append(btn(`Invite ${p.name}`, `invite-${p.playerId}`, () => { if (e !== undefined) send(partyInviteIntent(e), `Invited ${p.name}.`); }, { disabled: e === undefined, title: p.distance !== undefined ? `${Math.round(p.distance)} m` : "online, not nearby" })); } out.push(ig);
       return out;
     }
     case "clan": {
       const v = clanView(c); const out: Node[] = [];
-      if (v.invite && !dismissedClan.has(v.invite.clan)) { const inv = v.invite; out.push(kit.para(`${inv.fromName} invited you to a clan (${inv.secondsLeft}s).`)); const g = grid(); g.append(btn("Accept", "clan-accept", () => send(clanAcceptIntent(inv.clan), "Joined clan.")), btn("Dismiss", "clan-dismiss", () => { dismissedClan.add(inv.clan); kit.rerender(); }, { alt: true })); out.push(g); }
+      if (v.invite && !dismissedClan.has(v.invite.clan)) { const inv = v.invite; out.push(kit.para(`${inv.fromName} invited you to a clan (${inv.secondsLeft}s).`)); const g = grid(); g.append(btn("Accept", "clan-accept", () => send(clanAcceptIntent(inv.clan), "Joined clan.")), btn("Dismiss", "clan-dismiss", () => { dismissedClan.add(inv.clan); send(clanDeclineIntent(inv.clan), "Declined."); }, { alt: true })); out.push(g); }
       if (!v.clan) { const g = grid(); g.append(btn("Create clan", "clan-create", () => send(clanCreateIntent(), "Clan created."))); out.push(kit.para("Not in a clan."), g); return out; }
       const lead = v.role === GroupRole.Leader; const officer = v.role >= GroupRole.Officer;
       out.push(kit.para(`${v.roleName} · goal: ${v.goalName} · your contribution: ${v.contrib}`));
       out.push(heading("Goal")); const gg = grid(); v.goals.forEach((n, i) => gg.append(btn(n, `goal-${i}`, () => { const t = c.world.get(c.player, Transform); send(clanSetGoalIntent(i, t?.x ?? 0, t?.y ?? 0), `Goal: ${n}.`); }, { pressed: i === v.goal, alt: i !== v.goal, disabled: !officer, title: "Goal point = where you stand" }))); out.push(gg);
       out.push(heading("Members")); const mg = grid();
-      for (const m of v.members) { if (m.entity === c.player) continue; const r = el("div", { "data-role": "member", "data-key": String(m.playerId) }); r.append(kit.para(`${m.name} · ${m.role === 3 ? "Leader" : m.role === 2 ? "Officer" : "Member"}`));
+      const roster = clanRosterRows(c, src.social, v.clan); const myPid = c.world.getField(c.player, PlayerId, "id") ?? 0;
+      if (roster) for (const m of roster) { if (m.playerId === myPid) continue; const e = m.entity; const r = el("div", { "data-role": "member", "data-key": String(m.playerId) }); r.append(kit.para(`${m.online ? "●" : "○"} ${m.name} · ${m.roleName}`));
+        const far = e === undefined ? " (not nearby)" : "";
+        r.append(btn("Promote", `promote-${m.playerId}`, () => { if (e !== undefined) send(clanPromoteIntent(e), `Promoted ${m.name}.`); }, { disabled: !lead || e === undefined, title: far }), btn("Demote", `demote-${m.playerId}`, () => { if (e !== undefined) send(clanDemoteIntent(e), `Demoted ${m.name}.`); }, { alt: true, disabled: !lead || e === undefined, title: far }), btn("Kick", `ckick-${m.playerId}`, () => { if (e !== undefined) send(clanKickIntent(e), `Kicked ${m.name}.`); }, { alt: true, disabled: !officer || e === undefined, title: far })); mg.append(r); }
+      else for (const m of v.members) { if (m.entity === c.player) continue; const r = el("div", { "data-role": "member", "data-key": String(m.playerId) }); r.append(kit.para(`${m.name} · ${m.role === 3 ? "Leader" : m.role === 2 ? "Officer" : "Member"}`));
         r.append(btn("Promote", `promote-${m.playerId}`, () => send(clanPromoteIntent(m.entity), `Promoted ${m.name}.`), { disabled: !lead }), btn("Demote", `demote-${m.playerId}`, () => send(clanDemoteIntent(m.entity), `Demoted ${m.name}.`), { alt: true, disabled: !lead }), btn("Kick", `ckick-${m.playerId}`, () => send(clanKickIntent(m.entity), `Kicked ${m.name}.`), { alt: true, disabled: !officer })); mg.append(r); }
       out.push(mg);
-      out.push(heading("Invite nearby")); const ig = grid(); for (const p of v.candidates.slice(0, 12)) ig.append(btn(`Invite ${p.name}`, `cinvite-${p.playerId}`, () => send(clanInviteIntent(p.entity), `Invited ${p.name}.`), { disabled: !officer })); out.push(ig);
+      const cc = onlineTargets(c, src.social, new Set([...(roster ?? []).map((m) => m.playerId), ...v.members.map((m) => m.playerId)]));
+      out.push(heading("Invite")); const ig = grid(); for (const p of cc.slice(0, 16)) { const e = p.entity; ig.append(btn(`Invite ${p.name}`, `cinvite-${p.playerId}`, () => { if (e !== undefined) send(clanInviteIntent(e), `Invited ${p.name}.`); }, { disabled: !officer || e === undefined, title: e === undefined ? "online, not nearby" : "" })); } out.push(ig);
       out.push(heading("Rank permissions"));
       for (const r of v.perms) { const pg = grid(); pg.dataset["role"] = "perm"; pg.dataset["key"] = String(r.role); for (const p of r.perms) pg.append(btn(`${r.roleName}: ${p.perm} ${p.on ? "✓" : "✕"}`, `perm-${r.role}-${p.perm}`, () => send(clanSetRankPermsIntent(r.role, togglePermMask(r.mask, p.perm)), "Permissions updated."), { pressed: p.on, alt: !p.on, disabled: !lead })); out.push(pg); }
       const a = grid(); a.append(btn("Leave clan", "clan-leave", () => send(clanLeaveIntent(), "Left clan."), { alt: true }));

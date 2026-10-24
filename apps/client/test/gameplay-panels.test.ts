@@ -8,12 +8,12 @@ import { GAMEPLAY_PANELS } from "../src/gameplay-panels.js";
 const key = (k: string, code = k): void => { (document.activeElement ?? document.body).dispatchEvent(new KeyboardEvent("keydown", { key: k, code, bubbles: true, cancelable: true })); };
 const d = G.defaultDefs(); const id = (k: string): number => d.itemId(k);
 
-function setup() {
+function setup(social?: G.SocialDirectory) {
   const w = new World({ seed: 1, maxEntities: 1 << 12 }); G.installGameplay(w, {}); installPermissions(w); G.installEconomy(w); G.installCraftQueue(w);
   const names = G.playerNames(w);
   const mk = (pid: number, name: string, x = 0): Entity => { const p = G.spawnPlayer(w, { x, y: 0, maxWeight: 0, clientId: pid }); w.add(p, PlayerId, { id: pid }).add(p, Membership, { partyId: 0, clanId: 0 }); names.set(pid, name); return p; };
   const me = mk(7, "Ada"); const sent: G.MenuIntent[] = [];
-  const menus = new GameMenus({ root: document.getElementById("game-root")!, onQuit: () => {}, pollGamepads: false, gameplay: { ctx: () => ({ world: w, player: me, names }), send: (i) => { sent.push(i); return true; } } });
+  const menus = new GameMenus({ root: document.getElementById("game-root")!, onQuit: () => {}, pollGamepads: false, gameplay: { ctx: () => ({ world: w, player: me, names }), send: (i) => { sent.push(i); return true; }, ...(social ? { social } : {}) } });
   return { w, me, mk, sent, menus };
 }
 const q = (sel: string): HTMLElement => { const e = document.querySelector<HTMLElement>(sel); if (!e) throw new Error(`missing ${sel}`); return e; };
@@ -73,5 +73,35 @@ describe("gameplay panels (ADR-095 shell)", () => {
     q("[data-menu=trade] [data-key=draft-list]").click();
     const cmds = sent.map((x) => x.cmd); expect(cmds).toContain(G.StockStallCmd); expect(cmds).toContain(G.SetListingCmd);
     menus.destroy();
+  });
+  test("social directory: roster events drive clan members, online players fill invites + whisper picker; Dismiss declines; paint", () => {
+    const dir = new G.SocialDirectory(); const { w, me, mk, sent, menus } = setup(dir);
+    mk(9, "Bo", 2); // replicated + nearby
+    dir.onOnline({ player: 7, online: 1 }); dir.onOnline({ player: 9, online: 1 }); dir.onOnline({ player: 11, online: 1 }); // 11 = far away
+    menus.open("party"); expect(q("[data-key=invite-9]")).toBeTruthy(); expect((q("[data-key=invite-11]") as HTMLButtonElement).disabled).toBe(true);
+    expect(document.querySelector("[data-key=invite-7]")).toBeNull(); menus.nav.closeAll();
+    dir.onOnline({ player: 11, online: 0 }); expect(dir.online.has(11)).toBe(false);
+    // roster: clan 5, Bo officer, 12 leader offline; then 12 removed (role 0)
+    dir.onRoster({ clan: 5, memberMask: 0, officerMask: 0, size: 3 }); dir.onMember({ clan: 5, player: 9, role: 2, online: 1 }); dir.onMember({ clan: 5, player: 12, role: 3, online: 0 });
+    const rows = G.clanRosterRows({ world: w, player: me, names: new Map() }, dir, 5)!; expect(rows.map((r) => [r.playerId, r.roleName])).toEqual([[12, "Leader"], [9, "Officer"]]);
+    expect(rows[1]!.entity).toBeDefined(); expect(rows[0]!.entity).toBeUndefined();
+    dir.onMember({ clan: 5, player: 12, role: 0, online: 0 }); expect(dir.roster.has(12)).toBe(false);
+    dir.onRoster({ clan: 0, memberMask: 0, officerMask: 0, size: 0 }); expect(dir.roster.size).toBe(0);
+    expect(G.clanDeclineIntent(5)).toMatchObject({ cmd: G.ClanDeclineCmd, args: { clan: 5 } });
+    // whisper picker
+    menus.open("chat"); q("[data-key=chan-5]").click(); q("[data-key=whisper-9]").click();
+    expect(q("[data-key=whisper-9]").getAttribute("aria-pressed")).toBe("true"); menus.nav.closeAll();
+    // paint: nearest paintable piece in reach
+    const piece = [...d.pieces.values()].find((x) => x.paintable)!;
+    const sn = G.snapPlacement(w, { piece: piece.id, x: 1, y: 0, level: 0, rot: 0, tier: 0, variant: 0 }); if (typeof sn === "number") throw new Error("snap");
+    const pe = G.placePiece(w, me, sn, { pay: false }); expect(G.paintTarget({ world: w, player: me, names: new Map() })).toBe(pe);
+    expect(G.paintIntent(pe, 2)).toMatchObject({ cmd: G.PaintCmd, args: { target: pe, paint: 2 }, entities: ["target"] });
+    void sent; menus.destroy();
+  });
+  test("clan Dismiss sends clanDecline", () => {
+    const { w, me, mk, sent, menus } = setup(); const lead = mk(9, "Bo", 1);
+    expect(G.clanCreate(w, lead)).toBeUndefined(); expect(G.clanInvite(w, lead, me)).toBeUndefined();
+    expect(G.clanView({ world: w, player: me, names: new Map() }).invite).toBeTruthy();
+    menus.open("clan"); q("[data-key=clan-dismiss]").click(); expect(sent.at(-1)?.cmd).toBe(G.ClanDeclineCmd); menus.destroy();
   });
 });
