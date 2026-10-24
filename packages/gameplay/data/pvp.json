@@ -8,5 +8,17 @@
   "respawnThirst": 60,
   "combatTagSeconds": 30,
   "hitConeDeg": 140,
-  "spawnPoints": [{ "x": 0, "y": 0 }]
+  "spawnPoints": [
+    {
+      "x": 0,
+      "y": 0
+    }
+  ],
+  "explosives": {
+    "ownTribeStructureMul": 0,
+    "playerDamageMul": 1,
+    "edgeFalloff": 0.25,
+    "igniteRadiusFrac": 0.5
+  },
+  "thrownBagSeconds": 300
 }

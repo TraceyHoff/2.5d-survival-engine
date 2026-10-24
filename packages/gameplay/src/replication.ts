@@ -26,7 +26,7 @@ export const GAMEPLAY_REPLICATION: readonly Replication[] = [
   r(C.ContainerViewers, "server"), r(C.Viewing, "server"), r(C.BuildGhost, "local"),
   r(C.Attacker, "owner"), r(C.Zombie, "all"), r(C.ZombieBrain, "server"), r(C.AnimState, "all"), r(C.NoiseLevel, "server"), r(C.Latency, "server"), r(C.PieceLink, "all"), r(C.Wetness, "all"), r(C.BodyTemp, "all"), r(C.ChunkSurface, "all", "lowRate", 1),
   r(C.GroupSummary, "all"), r(C.CombatTag, "owner"), r(C.LootBag, "all"),
-  r(C.Animal, "all"), r(C.StallHeader, "all"), r(C.Listings, "viewers"), r(C.StallLedger, "viewers"),
+  r(C.Animal, "all"), r(C.Worn, "all"), r(C.WeaponState, "owner"), r(C.LiveExplosive, "all"), r(C.StallHeader, "all"), r(C.Listings, "viewers"), r(C.StallLedger, "viewers"),
 ];
 export function replicationOf(def: ComponentDef): Replication | undefined { return GAMEPLAY_REPLICATION.find((x) => x.def === def); }
 

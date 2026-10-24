@@ -32,6 +32,18 @@
      "min": 1,
      "max": 2,
      "chance": 0.6
+    },
+    {
+     "item": "bone",
+     "min": 0,
+     "max": 1,
+     "chance": 0.3
+    },
+    {
+     "item": "scrap_metal",
+     "min": 0,
+     "max": 1,
+     "chance": 0.25
     }
    ]
   },
@@ -66,6 +78,18 @@
      "min": 1,
      "max": 3,
      "chance": 0.2
+    },
+    {
+     "item": "scrap_metal",
+     "min": 0,
+     "max": 1,
+     "chance": 0.3
+    },
+    {
+     "item": "thread",
+     "min": 1,
+     "max": 2,
+     "chance": 0.2
     }
    ]
   },
@@ -97,6 +121,18 @@
     },
     {
      "item": "leather",
+     "min": 1,
+     "max": 2,
+     "chance": 0.5
+    },
+    {
+     "item": "scrap_metal",
+     "min": 1,
+     "max": 3,
+     "chance": 0.7
+    },
+    {
+     "item": "bone",
      "min": 1,
      "max": 2,
      "chance": 0.5
@@ -141,6 +177,18 @@
      "min": 0,
      "max": 1,
      "chance": 0.5
+    },
+    {
+     "item": "fur",
+     "min": 1,
+     "max": 1,
+     "chance": 0.7
+    },
+    {
+     "item": "bone",
+     "min": 0,
+     "max": 1,
+     "chance": 0.5
     }
    ]
   },
@@ -182,6 +230,24 @@
      "min": 1,
      "max": 2,
      "chance": 1
+    },
+    {
+     "item": "bone",
+     "min": 1,
+     "max": 2,
+     "chance": 1
+    },
+    {
+     "item": "sinew",
+     "min": 1,
+     "max": 2,
+     "chance": 0.9
+    },
+    {
+     "item": "animal_fat",
+     "min": 0,
+     "max": 1,
+     "chance": 0.6
     }
    ]
   },
@@ -227,6 +293,24 @@
      "min": 1,
      "max": 2,
      "chance": 0.8
+    },
+    {
+     "item": "bone",
+     "min": 1,
+     "max": 2,
+     "chance": 1
+    },
+    {
+     "item": "animal_fat",
+     "min": 1,
+     "max": 2,
+     "chance": 0.9
+    },
+    {
+     "item": "sinew",
+     "min": 0,
+     "max": 1,
+     "chance": 0.5
     }
    ]
   },
@@ -272,6 +356,24 @@
      "min": 1,
      "max": 2,
      "chance": 1
+    },
+    {
+     "item": "fur",
+     "min": 1,
+     "max": 2,
+     "chance": 1
+    },
+    {
+     "item": "bone",
+     "min": 1,
+     "max": 2,
+     "chance": 0.8
+    },
+    {
+     "item": "sinew",
+     "min": 1,
+     "max": 1,
+     "chance": 0.7
     }
    ]
   },
@@ -538,6 +640,12 @@
      "min": 0,
      "max": 1,
      "chance": 0.4
+    },
+    {
+     "item": "feather",
+     "min": 2,
+     "max": 5,
+     "chance": 1
     }
    ]
   }

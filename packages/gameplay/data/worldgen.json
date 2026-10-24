@@ -14,7 +14,10 @@
       "tile": 2,
       "nodes": [
         "loose_rocks",
-        "sand_dune"
+        "sand_dune",
+        "salt_flat",
+        "reed_bed",
+        "oil_seep"
       ],
       "nodeChance": 0.02,
       "temp": 22,
@@ -28,7 +31,13 @@
         "fiber_grass",
         "berry_bush",
         "clay_deposit",
-        "animal_carcass"
+        "animal_carcass",
+        "flax_patch",
+        "cotton_bush",
+        "herb_patch",
+        "wild_garden",
+        "reed_bed",
+        "rubble_pile"
       ],
       "nodeChance": 0.035,
       "temp": 18,
@@ -41,7 +50,10 @@
         "tree",
         "tree",
         "oak_tree",
-        "fallen_branches"
+        "fallen_branches",
+        "resin_tree",
+        "beehive",
+        "herb_patch"
       ],
       "nodeChance": 0.08,
       "temp": 15,
@@ -56,7 +68,12 @@
         "copper_vein",
         "tin_vein",
         "iron_vein",
-        "coal_seam"
+        "coal_seam",
+        "saltpeter_deposit",
+        "sulfur_vent",
+        "galena_vein",
+        "chromite_vein",
+        "rubble_pile"
       ],
       "nodeChance": 0.05,
       "temp": 8,

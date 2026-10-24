@@ -16,6 +16,7 @@ import { secondsToTicks, WeatherKind, type EnvironmentTuning, type WeatherDef } 
 import { DayPhase, DayPhaseChanged, emit, WeatherChanged } from "../events.js";
 import { EmitterKind, isRaining } from "../realism.js";
 import { shelterAt } from "../building/shelter.js";
+import { waterproofOf } from "../combat/arms.js";
 
 export const EXPOSURE_EVERY = 4;
 export const SURFACE_EVERY = 20;
@@ -114,7 +115,7 @@ export function exposureSystem(world: World, dt: number): void {
     const heat = heatAt(world, x, y, z);
     const sh = shelterAt(world, x, y, z, w.windDir);
     let wet = ex.data.wetness[s]!;
-    if (wdef.wetnessPerSec > 0 && sh.exposure > 0) wet += wdef.wetnessPerSec * w.intensity * sh.exposure * dt;
+    if (wdef.wetnessPerSec > 0 && sh.exposure > 0) wet += wdef.wetnessPerSec * w.intensity * sh.exposure * (1 - waterproofOf(world, e)) * dt;
     else wet -= env.dryPerSec * (heat > 0 ? env.heatDryMul : 1) * dt;
     wet = Math.min(1, Math.max(0, wet));
     const ambient = ambientTemperature(world, x, y);

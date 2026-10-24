@@ -24,7 +24,7 @@ export const Survival = defineComponent("Survival", {
   staminaDelayTicks: "u16", // remaining regen delay (replicates as u16 ticks, per Netcode)
 }, { networked: true });
 
-export const enum DamageCause { None = 0, Starvation = 1, Dehydration = 2, Hypothermia = 3, Hyperthermia = 4, Combat = 5, Sunlight = 6, Fire = 7, Contact = 8 }
+export const enum DamageCause { None = 0, Starvation = 1, Dehydration = 2, Hypothermia = 3, Hyperthermia = 4, Combat = 5, Sunlight = 6, Fire = 7, Contact = 8, Explosion = 9 }
 export const VitalsState = defineComponent("VitalsState", { lastDamageCause: "u8" });
 /** Buff/debuff stat ids (core modifier stacks; 1..255, append only). */
 export const enum Stat { HungerRate = 1, ThirstRate = 2, StaminaRegen = 3, HealthRegen = 4, Insulation = 5, MoveSpeed = 6 }
@@ -66,12 +66,14 @@ export const enum IntentAction {
   None = 0, Gather = 1, Craft = 2, Use = 3, CancelCraft = 4, Equip = 5,
   Place = 10, Upgrade = 11, Repair = 12, Demolish = 13, Paint = 14,
   ToggleDoor = 20, LockDoor = 21, OpenContainer = 22, CloseContainer = 23, Deposit = 24, Withdraw = 25, ToggleFire = 26,
-  Attack = 30,
+  Attack = 30, Reload = 31, Wear = 32,
 }
 /** Per-tick intent, written in the input phase by applyGameplayInput (sim-local; rebuilt from inputs). */
 export const PlayerIntent = defineComponent("PlayerIntent", {
   moving: "u8", sprint: "u8", action: "u8", target: "u32", recipe: "u16", slot: "u8",
   piece: "u16", x: "f32", y: "f32", level: "u8", rot: "u8", tier: "u8", variant: "u8", paint: "u8", item: "u16", count: "u16",
+  /** Charge hold bit this tick (bows / crossbow draw); set by applyGameplayInput. */
+  charge: "u8",
 });
 
 // ---- building ----------------------------------------------------------------------------------
@@ -207,6 +209,12 @@ export const VehicleSeats = defineComponent("VehicleSeats", { occupant: { type: 
 export const Driver = defineComponent("Driver", { vehicleNetId: "u32", seat: "u8" }, { networked: true });
 /** Hitch links (NetIds, 0 = none): towNetId = what this entity tows at its rear; parentNetId = what tows this entity. */
 export const Hitch = defineComponent("Hitch", { towNetId: "u32", parentNetId: "u32" }, { networked: true, persistent: true });
+/** Worn clothing/armor: per WearSlot the inventory slot + 1 (0 = empty) and the item (broadcast for render). carryBonus applied to Inventory.maxWeight. */
+export const Worn = defineComponent("Worn", { slot: { type: "u8", length: 6 }, item: { type: "u16", length: 6 }, carryBonus: "f32", waterproof: "f32", armor: "f32" }, { networked: true });
+/** Main-hand ranged state: inventory slot + 1 the magazine belongs to, loaded rounds of ammoItem, reload timer, draw start (0 = not drawing). */
+export const WeaponState = defineComponent("WeaponState", { slot: "u8", loaded: "u8", ammoItem: "u16", reloadUntilTick: "u32", chargeStartTick: "u32" }, { networked: true });
+/** A thrown explosive waiting for its fuse (Transform = landing point). owner = thrower entity, ownerTribe for raid rules. */
+export const LiveExplosive = defineComponent("LiveExplosive", { item: "u16", owner: "u32", ownerTribe: "u16", detonateTick: "u32" }, { networked: true });
 export const GAMEPLAY_COMPONENTS = [
   Emitter, Buffs,
   Health, ResourceNode, Survival, VitalsState, Exposure, Dead,
@@ -226,4 +234,5 @@ export const GAMEPLAY_COMPONENTS = [
   ClanInvitePending,
   ClanStatus,
   Vehicle, VehicleSeats, Driver, Hitch, // append-only (ADR-096)
+  Worn, WeaponState, LiveExplosive,
 ] as const;

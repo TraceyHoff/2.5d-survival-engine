@@ -6,7 +6,7 @@
  * up-front and there is never anything to refund.
  * Deterministic and RNG-free: the client predicts it fully and reconciles.
  */
-import { entityIndex, Transform, type Entity, type World } from "@engine/core";
+import { defineResource, entityIndex, Transform, type Entity, type World } from "@engine/core";
 import { installSpatialIndex } from "@engine/world";
 import { CraftingStation, Crafter, Dead, Fuel, IntentAction, Inventory, PlayerIntent } from "../components.js";
 import { gameplayDefs, isAuthority } from "../config.js";
@@ -38,7 +38,15 @@ export function stationInRange(world: World, e: Entity, kind: StationKind): bool
 /** Fired station is lit (Fuel.lit). */
 export function isLit(world: World, e: Entity): boolean { return (world.getField(e, Fuel, "lit") ?? 0) !== 0; }
 
+/** Skill level source (e.g. a future progression system); absent = recipe skill requirements are not enforced. */
+export type SkillLevelFn = (e: Entity, skill: string) => number;
+export const SkillLevelRes = defineResource<{ fn: SkillLevelFn | undefined }>("gameplay.SkillLevel");
+export function setSkillLevelProvider(world: World, fn: SkillLevelFn | undefined): void { world.setResource(SkillLevelRes, { fn }); }
+export function meetsSkill(world: World, e: Entity, r: RecipeDef): boolean {
+  const fn = world.getResource(SkillLevelRes)?.fn; return !r.skill || !fn || fn(e, r.skill.key) >= r.skill.level;
+}
 function checkRecipe(world: World, e: Entity, r: RecipeDef): CraftFail | 0 {
+  if (!meetsSkill(world, e, r)) return CraftFail.SkillTooLow;
   if (!stationInRange(world, e, r.station)) return CraftFail.NoStation;
   if (!exchangeItems(world, e, r.ingredients, [], true)) return CraftFail.MissingIngredients;
   if (!exchangeItems(world, e, r.ingredients, [r.output], true, crafterIdFor(world, e, r.output.item))) return CraftFail.InventoryFull;

@@ -15,7 +15,7 @@ export function emit<T>(world: World, type: GEvent<T>, payload: T): void {
 }
 
 export const enum GatherFail { Cooldown = 1, InvalidTarget = 2, Depleted = 3, OutOfRange = 4, WrongTool = 5, Exhausted = 6 }
-export const enum CraftFail { Busy = 1, UnknownRecipe = 2, NoStation = 3, MissingIngredients = 4, InventoryFull = 5, Cancelled = 6 }
+export const enum CraftFail { Busy = 1, UnknownRecipe = 2, NoStation = 3, MissingIngredients = 4, InventoryFull = 5, Cancelled = 6, SkillTooLow = 7 }
 export const enum Vital { Hunger = 1, Thirst = 2, Stamina = 3 }
 export const enum DayPhase { Night = 0, Dawn = 1, Day = 2, Dusk = 3 }
 export const enum BuildFail {

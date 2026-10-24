@@ -2,7 +2,7 @@
 import { DEFAULT_TICK_HZ, entityIndex, Owner, Transform, type Entity, type SchemaInit, type World } from "@engine/core";
 import { Falloff, installSpatialIndex } from "@engine/world";
 import {
-  Attacker, Buffs, Container, CraftingStation, Crafter, Emitter, Equipment, Exposure, Fuel, Gatherer, Health,
+  Attacker, Worn, WeaponState, Buffs, Container, CraftingStation, Crafter, Emitter, Equipment, Exposure, Fuel, Gatherer, Health,
   Inventory, PlayerIntent, ResourceNode, Survival, Tribe, VitalsState,
 } from "./components.js";
 import { gameplayDefs } from "./config.js";
@@ -25,7 +25,7 @@ export function spawnPlayer(world: World, p: PlayerSpawn): Entity {
     .add(e, VitalsState).add(e, Exposure).add(e, Buffs)
     .add(e, Inventory, { ...(p.slots !== undefined && { slotCount: p.slots }), ...(p.maxWeight !== undefined && { maxWeight: p.maxWeight }) })
     .add(e, Equipment).add(e, Gatherer, { ...(p.reach !== undefined && { reach: p.reach }) })
-    .add(e, Crafter).add(e, PlayerIntent).add(e, Attacker);
+    .add(e, Crafter).add(e, PlayerIntent).add(e, Attacker).add(e, Worn).add(e, WeaponState);
   if (p.clientId !== undefined) world.add(e, Owner, { clientId: p.clientId });
   if (p.tribe !== undefined) world.add(e, Tribe, { id: p.tribe });
   indexEntity(world, e);

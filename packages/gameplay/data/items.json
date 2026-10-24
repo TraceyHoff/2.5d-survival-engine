@@ -313,7 +313,10 @@
         "cooldownSeconds": 0.9,
         "staminaCost": 6,
         "structureMul": 1.0
-      }
+      },
+      "tier": 1,
+      "family": "axe",
+      "durability": 150
     },
     {
       "key": "stone_pickaxe",
@@ -331,7 +334,10 @@
         "cooldownSeconds": 1.0,
         "staminaCost": 6,
         "structureMul": 1.5
-      }
+      },
+      "tier": 1,
+      "family": "pickaxe",
+      "durability": 150
     },
     {
       "key": "stone_shovel",
@@ -342,7 +348,10 @@
       "tool": {
         "kind": "shovel",
         "tier": 1
-      }
+      },
+      "tier": 1,
+      "family": "shovel",
+      "durability": 150
     },
     {
       "key": "stone_knife",
@@ -360,7 +369,10 @@
         "cooldownSeconds": 0.5,
         "staminaCost": 3,
         "structureMul": 0.3
-      }
+      },
+      "tier": 1,
+      "family": "knife",
+      "durability": 150
     },
     {
       "key": "bronze_axe",
@@ -378,7 +390,10 @@
         "cooldownSeconds": 0.85,
         "staminaCost": 6,
         "structureMul": 1.0
-      }
+      },
+      "tier": 2,
+      "family": "axe",
+      "durability": 250
     },
     {
       "key": "bronze_pickaxe",
@@ -396,7 +411,10 @@
         "cooldownSeconds": 1.0,
         "staminaCost": 6,
         "structureMul": 1.5
-      }
+      },
+      "tier": 2,
+      "family": "pickaxe",
+      "durability": 250
     },
     {
       "key": "iron_axe",
@@ -414,7 +432,10 @@
         "cooldownSeconds": 0.8,
         "staminaCost": 6,
         "structureMul": 1.0
-      }
+      },
+      "tier": 3,
+      "family": "axe",
+      "durability": 400
     },
     {
       "key": "iron_pickaxe",
@@ -432,7 +453,10 @@
         "cooldownSeconds": 1.0,
         "staminaCost": 6,
         "structureMul": 1.5
-      }
+      },
+      "tier": 3,
+      "family": "pickaxe",
+      "durability": 400
     },
     {
       "key": "wooden_club",
@@ -446,7 +470,10 @@
         "cooldownSeconds": 0.8,
         "staminaCost": 5,
         "structureMul": 0.5
-      }
+      },
+      "tier": 1,
+      "family": "mace",
+      "durability": 150
     },
     {
       "key": "stone_spear",
@@ -460,6 +487,13 @@
         "cooldownSeconds": 1.0,
         "staminaCost": 6,
         "structureMul": 0.3
+      },
+      "tier": 1,
+      "family": "spear",
+      "durability": 150,
+      "thrown": {
+        "damage": 22,
+        "range": 9
       }
     },
     {
@@ -474,7 +508,10 @@
         "cooldownSeconds": 0.7,
         "staminaCost": 5,
         "structureMul": 0.4
-      }
+      },
+      "tier": 2,
+      "family": "sword",
+      "durability": 250
     },
     {
       "key": "iron_sword",
@@ -488,7 +525,10 @@
         "cooldownSeconds": 0.65,
         "staminaCost": 5,
         "structureMul": 0.4
-      }
+      },
+      "tier": 3,
+      "family": "sword",
+      "durability": 400
     },
     {
       "key": "rot",
@@ -614,6 +654,2901 @@
         "health": 0
       },
       "spoilSeconds": 1500
+    },
+    {
+      "key": "reeds",
+      "name": "Reeds",
+      "category": "resource",
+      "maxStack": 99,
+      "weight": 0.1
+    },
+    {
+      "key": "flax",
+      "name": "Flax",
+      "category": "resource",
+      "maxStack": 99,
+      "weight": 0.1
+    },
+    {
+      "key": "cotton",
+      "name": "Cotton",
+      "category": "resource",
+      "maxStack": 99,
+      "weight": 0.05
+    },
+    {
+      "key": "herbs",
+      "name": "Medicinal Herbs",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.05
+    },
+    {
+      "key": "beeswax",
+      "name": "Beeswax",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.2
+    },
+    {
+      "key": "resin",
+      "name": "Tree Resin",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.2
+    },
+    {
+      "key": "salt",
+      "name": "Salt",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.2
+    },
+    {
+      "key": "scrap_metal",
+      "name": "Scrap Metal",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.8
+    },
+    {
+      "key": "saltpeter",
+      "name": "Saltpeter",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.5
+    },
+    {
+      "key": "sulfur",
+      "name": "Sulfur",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.5
+    },
+    {
+      "key": "lead_ore",
+      "name": "Galena (Lead Ore)",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 2.0
+    },
+    {
+      "key": "crude_oil",
+      "name": "Crude Oil",
+      "category": "resource",
+      "maxStack": 20,
+      "weight": 1.0
+    },
+    {
+      "key": "chromite_ore",
+      "name": "Chromite Ore",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 2.2
+    },
+    {
+      "key": "bone",
+      "name": "Bone",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.3
+    },
+    {
+      "key": "sinew",
+      "name": "Sinew",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.1
+    },
+    {
+      "key": "animal_fat",
+      "name": "Animal Fat",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 0.3
+    },
+    {
+      "key": "feather",
+      "name": "Feather",
+      "category": "resource",
+      "maxStack": 99,
+      "weight": 0.01
+    },
+    {
+      "key": "fur",
+      "name": "Fur",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 0.3
+    },
+    {
+      "key": "honey",
+      "name": "Honey",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.3,
+      "food": {
+        "hunger": 8,
+        "thirst": 2,
+        "health": 2
+      }
+    },
+    {
+      "key": "potato",
+      "name": "Potato",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.2,
+      "food": {
+        "hunger": 6,
+        "thirst": 1,
+        "health": -2
+      },
+      "spoilSeconds": 3600
+    },
+    {
+      "key": "corn",
+      "name": "Corn",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.2,
+      "food": {
+        "hunger": 7,
+        "thirst": 2,
+        "health": 0
+      },
+      "spoilSeconds": 2400
+    },
+    {
+      "key": "wild_onion",
+      "name": "Wild Onion",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.05,
+      "food": {
+        "hunger": 4,
+        "thirst": 2,
+        "health": 0
+      },
+      "spoilSeconds": 2400
+    },
+    {
+      "key": "thread",
+      "name": "Thread",
+      "category": "resource",
+      "maxStack": 99,
+      "weight": 0.02
+    },
+    {
+      "key": "linen",
+      "name": "Linen",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 0.2
+    },
+    {
+      "key": "padded_cloth",
+      "name": "Padded Cloth",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 0.4
+    },
+    {
+      "key": "waxed_cloth",
+      "name": "Waxed Cloth",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 0.3
+    },
+    {
+      "key": "hardened_leather",
+      "name": "Hardened Leather",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 0.5
+    },
+    {
+      "key": "fur_pelt",
+      "name": "Fur Pelt",
+      "category": "resource",
+      "maxStack": 20,
+      "weight": 0.6
+    },
+    {
+      "key": "bowstring",
+      "name": "Bowstring",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 0.02
+    },
+    {
+      "key": "glue",
+      "name": "Hide Glue",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.1
+    },
+    {
+      "key": "flour",
+      "name": "Flour",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.1
+    },
+    {
+      "key": "gunpowder",
+      "name": "Gunpowder",
+      "category": "resource",
+      "maxStack": 99,
+      "weight": 0.05
+    },
+    {
+      "key": "fuse",
+      "name": "Fuse",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.02
+    },
+    {
+      "key": "lead_ingot",
+      "name": "Lead Ingot",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 1.8
+    },
+    {
+      "key": "casings",
+      "name": "Brass Casings",
+      "category": "resource",
+      "maxStack": 99,
+      "weight": 0.02
+    },
+    {
+      "key": "iron_pipe",
+      "name": "Iron Pipe",
+      "category": "resource",
+      "maxStack": 20,
+      "weight": 1.2
+    },
+    {
+      "key": "gun_barrel",
+      "name": "Gun Barrel",
+      "category": "resource",
+      "maxStack": 10,
+      "weight": 1.4
+    },
+    {
+      "key": "spring",
+      "name": "Steel Spring",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.05
+    },
+    {
+      "key": "mechanism",
+      "name": "Mechanism",
+      "category": "resource",
+      "maxStack": 20,
+      "weight": 0.4
+    },
+    {
+      "key": "chain_rings",
+      "name": "Chain Rings",
+      "category": "resource",
+      "maxStack": 99,
+      "weight": 0.05
+    },
+    {
+      "key": "glass_bottle",
+      "name": "Glass Bottle",
+      "category": "resource",
+      "maxStack": 20,
+      "weight": 0.3
+    },
+    {
+      "key": "tin_can",
+      "name": "Tin Can",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 0.1
+    },
+    {
+      "key": "lamp_oil",
+      "name": "Lamp Oil",
+      "category": "resource",
+      "maxStack": 20,
+      "weight": 0.5,
+      "fuelSeconds": 90
+    },
+    {
+      "key": "polymer_sheet",
+      "name": "Polymer Sheet",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 0.4
+    },
+    {
+      "key": "aramid_weave",
+      "name": "Aramid Weave",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 0.3
+    },
+    {
+      "key": "ceramic_plate",
+      "name": "Ceramic Plate",
+      "category": "resource",
+      "maxStack": 20,
+      "weight": 1.2
+    },
+    {
+      "key": "alloy_ingot",
+      "name": "Chrome Alloy Ingot",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 1.6
+    },
+    {
+      "key": "alloy_plate",
+      "name": "Alloy Plate",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 1.6
+    },
+    {
+      "key": "salvaged_parts",
+      "name": "Salvaged Parts",
+      "category": "resource",
+      "maxStack": 30,
+      "weight": 0.3
+    },
+    {
+      "key": "jerky",
+      "name": "Jerky",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.15,
+      "food": {
+        "hunger": 22,
+        "thirst": -4,
+        "health": 2
+      },
+      "spoilSeconds": 14400
+    },
+    {
+      "key": "baked_potato",
+      "name": "Baked Potato",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.2,
+      "food": {
+        "hunger": 20,
+        "thirst": 0,
+        "health": 2
+      },
+      "spoilSeconds": 2400
+    },
+    {
+      "key": "roasted_corn",
+      "name": "Roasted Corn",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.2,
+      "food": {
+        "hunger": 18,
+        "thirst": 2,
+        "health": 1
+      },
+      "spoilSeconds": 2400
+    },
+    {
+      "key": "roasted_mushroom",
+      "name": "Roasted Mushroom",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.05,
+      "food": {
+        "hunger": 12,
+        "thirst": 0,
+        "health": 2
+      },
+      "spoilSeconds": 1800
+    },
+    {
+      "key": "fried_egg",
+      "name": "Fried Egg",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.1,
+      "food": {
+        "hunger": 16,
+        "thirst": 0,
+        "health": 2
+      },
+      "spoilSeconds": 1500
+    },
+    {
+      "key": "omelette",
+      "name": "Omelette",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.2,
+      "food": {
+        "hunger": 30,
+        "thirst": 0,
+        "health": 4
+      },
+      "spoilSeconds": 1800
+    },
+    {
+      "key": "salted_fish",
+      "name": "Salted Fish",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.2,
+      "food": {
+        "hunger": 20,
+        "thirst": -6,
+        "health": 2
+      },
+      "spoilSeconds": 14400
+    },
+    {
+      "key": "berry_pie",
+      "name": "Berry Pie",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.5,
+      "food": {
+        "hunger": 40,
+        "thirst": 4,
+        "health": 4
+      },
+      "spoilSeconds": 3600
+    },
+    {
+      "key": "meat_pie",
+      "name": "Meat Pie",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.6,
+      "food": {
+        "hunger": 55,
+        "thirst": 0,
+        "health": 8
+      },
+      "spoilSeconds": 3600
+    },
+    {
+      "key": "cornbread",
+      "name": "Cornbread",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.3,
+      "food": {
+        "hunger": 32,
+        "thirst": -2,
+        "health": 2
+      },
+      "spoilSeconds": 5400
+    },
+    {
+      "key": "honey_cake",
+      "name": "Honey Cake",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.3,
+      "food": {
+        "hunger": 35,
+        "thirst": 0,
+        "health": 6
+      },
+      "spoilSeconds": 7200
+    },
+    {
+      "key": "potato_soup",
+      "name": "Potato Soup",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.8,
+      "food": {
+        "hunger": 40,
+        "thirst": 25,
+        "health": 6
+      },
+      "spoilSeconds": 1800
+    },
+    {
+      "key": "fish_stew",
+      "name": "Fish Stew",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.8,
+      "food": {
+        "hunger": 50,
+        "thirst": 22,
+        "health": 8
+      },
+      "spoilSeconds": 1800
+    },
+    {
+      "key": "trail_mix",
+      "name": "Trail Mix",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.1,
+      "food": {
+        "hunger": 18,
+        "thirst": -2,
+        "health": 2
+      },
+      "spoilSeconds": 28800
+    },
+    {
+      "key": "canned_stew",
+      "name": "Canned Stew",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.6,
+      "food": {
+        "hunger": 45,
+        "thirst": 15,
+        "health": 6
+      }
+    },
+    {
+      "key": "canned_fish",
+      "name": "Canned Fish",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.4,
+      "food": {
+        "hunger": 30,
+        "thirst": 5,
+        "health": 4
+      }
+    },
+    {
+      "key": "canned_corn",
+      "name": "Canned Corn",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.4,
+      "food": {
+        "hunger": 25,
+        "thirst": 10,
+        "health": 2
+      }
+    },
+    {
+      "key": "herbal_tea",
+      "name": "Herbal Tea",
+      "category": "food",
+      "maxStack": 10,
+      "weight": 0.4,
+      "food": {
+        "hunger": 0,
+        "thirst": 30,
+        "health": 8
+      },
+      "spoilSeconds": 3600
+    },
+    {
+      "key": "herbal_poultice",
+      "name": "Herbal Poultice",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.1,
+      "food": {
+        "hunger": 0,
+        "thirst": 0,
+        "health": 20
+      },
+      "spoilSeconds": 2400
+    },
+    {
+      "key": "antiseptic",
+      "name": "Antiseptic",
+      "category": "food",
+      "maxStack": 10,
+      "weight": 0.3,
+      "food": {
+        "hunger": 0,
+        "thirst": -5,
+        "health": 30
+      }
+    },
+    {
+      "key": "medkit",
+      "name": "Medkit",
+      "category": "food",
+      "maxStack": 10,
+      "weight": 0.6,
+      "food": {
+        "hunger": 0,
+        "thirst": 0,
+        "health": 65
+      }
+    },
+    {
+      "key": "bronze_shovel",
+      "name": "Bronze Shovel",
+      "category": "tool",
+      "maxStack": 1,
+      "weight": 2.5,
+      "tool": {
+        "kind": "shovel",
+        "tier": 2
+      },
+      "tier": 2,
+      "family": "shovel",
+      "durability": 250
+    },
+    {
+      "key": "bronze_knife",
+      "name": "Bronze Knife",
+      "category": "tool",
+      "maxStack": 1,
+      "weight": 0.6,
+      "tool": {
+        "kind": "knife",
+        "tier": 2
+      },
+      "tier": 2,
+      "family": "knife",
+      "durability": 250,
+      "weapon": {
+        "damage": 13,
+        "range": 1.0,
+        "cooldownSeconds": 0.45,
+        "staminaCost": 2,
+        "structureMul": 0.1
+      }
+    },
+    {
+      "key": "iron_shovel",
+      "name": "Iron Shovel",
+      "category": "tool",
+      "maxStack": 1,
+      "weight": 3.0,
+      "tool": {
+        "kind": "shovel",
+        "tier": 3
+      },
+      "tier": 3,
+      "family": "shovel",
+      "durability": 400
+    },
+    {
+      "key": "iron_knife",
+      "name": "Iron Knife",
+      "category": "tool",
+      "maxStack": 1,
+      "weight": 0.6,
+      "tool": {
+        "kind": "knife",
+        "tier": 3
+      },
+      "tier": 3,
+      "family": "knife",
+      "durability": 400,
+      "weapon": {
+        "damage": 17,
+        "range": 1.0,
+        "cooldownSeconds": 0.45,
+        "staminaCost": 2,
+        "structureMul": 0.1
+      }
+    },
+    {
+      "key": "steel_axe",
+      "name": "Steel Axe",
+      "category": "tool",
+      "maxStack": 1,
+      "weight": 3.0,
+      "tool": {
+        "kind": "axe",
+        "tier": 4
+      },
+      "tier": 4,
+      "family": "axe",
+      "durability": 600,
+      "weapon": {
+        "damage": 25,
+        "range": 1.5,
+        "cooldownSeconds": 0.75,
+        "staminaCost": 6,
+        "structureMul": 1.1
+      }
+    },
+    {
+      "key": "steel_pickaxe",
+      "name": "Steel Pickaxe",
+      "category": "tool",
+      "maxStack": 1,
+      "weight": 3.5,
+      "tool": {
+        "kind": "pickaxe",
+        "tier": 4
+      },
+      "tier": 4,
+      "family": "pickaxe",
+      "durability": 600,
+      "weapon": {
+        "damage": 20,
+        "range": 1.5,
+        "cooldownSeconds": 0.9,
+        "staminaCost": 6,
+        "structureMul": 0.8
+      }
+    },
+    {
+      "key": "steel_shovel",
+      "name": "Steel Shovel",
+      "category": "tool",
+      "maxStack": 1,
+      "weight": 3.0,
+      "tool": {
+        "kind": "shovel",
+        "tier": 4
+      },
+      "tier": 4,
+      "family": "shovel",
+      "durability": 600
+    },
+    {
+      "key": "steel_knife",
+      "name": "Steel Knife",
+      "category": "tool",
+      "maxStack": 1,
+      "weight": 0.5,
+      "tool": {
+        "kind": "knife",
+        "tier": 4
+      },
+      "tier": 4,
+      "family": "knife",
+      "durability": 600,
+      "weapon": {
+        "damage": 22,
+        "range": 1.0,
+        "cooldownSeconds": 0.4,
+        "staminaCost": 2,
+        "structureMul": 0.1
+      }
+    },
+    {
+      "key": "alloy_axe",
+      "name": "Chrome Alloy Axe",
+      "category": "tool",
+      "maxStack": 1,
+      "weight": 3.0,
+      "tool": {
+        "kind": "axe",
+        "tier": 5
+      },
+      "tier": 5,
+      "family": "axe",
+      "durability": 850,
+      "weapon": {
+        "damage": 31,
+        "range": 1.5,
+        "cooldownSeconds": 0.75,
+        "staminaCost": 6,
+        "structureMul": 1.2
+      }
+    },
+    {
+      "key": "alloy_pickaxe",
+      "name": "Chrome Alloy Pickaxe",
+      "category": "tool",
+      "maxStack": 1,
+      "weight": 3.5,
+      "tool": {
+        "kind": "pickaxe",
+        "tier": 5
+      },
+      "tier": 5,
+      "family": "pickaxe",
+      "durability": 850,
+      "weapon": {
+        "damage": 25,
+        "range": 1.5,
+        "cooldownSeconds": 0.9,
+        "staminaCost": 6,
+        "structureMul": 0.8
+      }
+    },
+    {
+      "key": "alloy_shovel",
+      "name": "Chrome Alloy Shovel",
+      "category": "tool",
+      "maxStack": 1,
+      "weight": 3.0,
+      "tool": {
+        "kind": "shovel",
+        "tier": 5
+      },
+      "tier": 5,
+      "family": "shovel",
+      "durability": 850
+    },
+    {
+      "key": "alloy_knife",
+      "name": "Chrome Alloy Knife",
+      "category": "tool",
+      "maxStack": 1,
+      "weight": 0.5,
+      "tool": {
+        "kind": "knife",
+        "tier": 5
+      },
+      "tier": 5,
+      "family": "knife",
+      "durability": 850,
+      "weapon": {
+        "damage": 28,
+        "range": 1.0,
+        "cooldownSeconds": 0.4,
+        "staminaCost": 2,
+        "structureMul": 0.1
+      }
+    },
+    {
+      "key": "straw_hat",
+      "name": "Straw Hat",
+      "category": "clothing",
+      "maxStack": 1,
+      "weight": 0.2,
+      "tier": 1,
+      "family": "hat",
+      "wear": {
+        "slot": "head",
+        "insulation": 0.5,
+        "waterproof": 0.15
+      }
+    },
+    {
+      "key": "linen_cap",
+      "name": "Linen Cap",
+      "category": "clothing",
+      "maxStack": 1,
+      "weight": 0.1,
+      "tier": 1,
+      "family": "cap",
+      "wear": {
+        "slot": "head",
+        "insulation": 1,
+        "waterproof": 0
+      }
+    },
+    {
+      "key": "rain_hood",
+      "name": "Rain Hood",
+      "category": "clothing",
+      "maxStack": 1,
+      "weight": 0.3,
+      "tier": 2,
+      "family": "hood",
+      "wear": {
+        "slot": "head",
+        "insulation": 1,
+        "waterproof": 0.8
+      }
+    },
+    {
+      "key": "fur_hat",
+      "name": "Fur Hat",
+      "category": "clothing",
+      "maxStack": 1,
+      "weight": 0.4,
+      "tier": 2,
+      "family": "furhat",
+      "wear": {
+        "slot": "head",
+        "insulation": 3,
+        "waterproof": 0.2
+      }
+    },
+    {
+      "key": "linen_shirt",
+      "name": "Linen Shirt",
+      "category": "clothing",
+      "maxStack": 1,
+      "weight": 0.3,
+      "tier": 1,
+      "family": "shirt",
+      "wear": {
+        "slot": "torso",
+        "insulation": 2,
+        "waterproof": 0
+      }
+    },
+    {
+      "key": "padded_jacket",
+      "name": "Padded Jacket",
+      "category": "clothing",
+      "maxStack": 1,
+      "weight": 1.0,
+      "tier": 2,
+      "family": "jacket",
+      "wear": {
+        "slot": "torso",
+        "insulation": 4,
+        "waterproof": 0.1,
+        "armor": 2
+      }
+    },
+    {
+      "key": "fur_coat",
+      "name": "Fur Coat",
+      "category": "clothing",
+      "maxStack": 1,
+      "weight": 2.0,
+      "tier": 3,
+      "family": "coat",
+      "wear": {
+        "slot": "torso",
+        "insulation": 7,
+        "waterproof": 0.25,
+        "armor": 3
+      }
+    },
+    {
+      "key": "raincoat",
+      "name": "Raincoat",
+      "category": "clothing",
+      "maxStack": 1,
+      "weight": 0.8,
+      "tier": 2,
+      "family": "raincoat",
+      "wear": {
+        "slot": "torso",
+        "insulation": 1.5,
+        "waterproof": 0.9
+      }
+    },
+    {
+      "key": "oilskin_coat",
+      "name": "Oilskin Coat",
+      "category": "clothing",
+      "maxStack": 1,
+      "weight": 1.2,
+      "tier": 5,
+      "family": "parka",
+      "wear": {
+        "slot": "torso",
+        "insulation": 5,
+        "waterproof": 1.0,
+        "armor": 2
+      }
+    },
+    {
+      "key": "linen_trousers",
+      "name": "Linen Trousers",
+      "category": "clothing",
+      "maxStack": 1,
+      "weight": 0.3,
+      "tier": 1,
+      "family": "trousers",
+      "wear": {
+        "slot": "legs",
+        "insulation": 1.5,
+        "waterproof": 0
+      }
+    },
+    {
+      "key": "padded_trousers",
+      "name": "Padded Trousers",
+      "category": "clothing",
+      "maxStack": 1,
+      "weight": 0.8,
+      "tier": 2,
+      "family": "padded_legs",
+      "wear": {
+        "slot": "legs",
+        "insulation": 3,
+        "waterproof": 0.1,
+        "armor": 1
+      }
+    },
+    {
+      "key": "fur_leggings",
+      "name": "Fur Leggings",
+      "category": "clothing",
+      "maxStack": 1,
+      "weight": 1.4,
+      "tier": 3,
+      "family": "fur_legs",
+      "wear": {
+        "slot": "legs",
+        "insulation": 5,
+        "waterproof": 0.2,
+        "armor": 2
+      }
+    },
+    {
+      "key": "waxed_trousers",
+      "name": "Waxed Trousers",
+      "category": "clothing",
+      "maxStack": 1,
+      "weight": 0.6,
+      "tier": 2,
+      "family": "waxed_legs",
+      "wear": {
+        "slot": "legs",
+        "insulation": 1,
+        "waterproof": 0.8
+      }
+    },
+    {
+      "key": "reed_sandals",
+      "name": "Reed Sandals",
+      "category": "clothing",
+      "maxStack": 1,
+      "weight": 0.2,
+      "tier": 1,
+      "family": "sandals",
+      "wear": {
+        "slot": "feet",
+        "insulation": 0.3,
+        "waterproof": 0
+      }
+    },
+    {
+      "key": "leather_boots",
+      "name": "Leather Boots",
+      "category": "clothing",
+      "maxStack": 1,
+      "weight": 0.8,
+      "tier": 2,
+      "family": "boots",
+      "wear": {
+        "slot": "feet",
+        "insulation": 1.5,
+        "waterproof": 0.4,
+        "armor": 1
+      }
+    },
+    {
+      "key": "fur_boots",
+      "name": "Fur Boots",
+      "category": "clothing",
+      "maxStack": 1,
+      "weight": 1.0,
+      "tier": 3,
+      "family": "fur_boots",
+      "wear": {
+        "slot": "feet",
+        "insulation": 3,
+        "waterproof": 0.3,
+        "armor": 1
+      }
+    },
+    {
+      "key": "rubber_boots",
+      "name": "Rubber Boots",
+      "category": "clothing",
+      "maxStack": 1,
+      "weight": 1.0,
+      "tier": 5,
+      "family": "rubber_boots",
+      "wear": {
+        "slot": "feet",
+        "insulation": 1.5,
+        "waterproof": 1.0
+      }
+    },
+    {
+      "key": "cloth_gloves",
+      "name": "Cloth Gloves",
+      "category": "clothing",
+      "maxStack": 1,
+      "weight": 0.1,
+      "tier": 1,
+      "family": "gloves",
+      "wear": {
+        "slot": "hands",
+        "insulation": 0.5,
+        "waterproof": 0
+      }
+    },
+    {
+      "key": "leather_gloves",
+      "name": "Leather Gloves",
+      "category": "clothing",
+      "maxStack": 1,
+      "weight": 0.2,
+      "tier": 2,
+      "family": "leather_gloves",
+      "wear": {
+        "slot": "hands",
+        "insulation": 1,
+        "waterproof": 0.3,
+        "armor": 1
+      }
+    },
+    {
+      "key": "fur_mittens",
+      "name": "Fur Mittens",
+      "category": "clothing",
+      "maxStack": 1,
+      "weight": 0.3,
+      "tier": 3,
+      "family": "mittens",
+      "wear": {
+        "slot": "hands",
+        "insulation": 2.5,
+        "waterproof": 0.2
+      }
+    },
+    {
+      "key": "fur_cloak",
+      "name": "Fur Cloak",
+      "category": "clothing",
+      "maxStack": 1,
+      "weight": 1.2,
+      "tier": 3,
+      "family": "cloak",
+      "wear": {
+        "slot": "back",
+        "insulation": 3,
+        "waterproof": 0.3
+      }
+    },
+    {
+      "key": "reed_satchel",
+      "name": "Reed Satchel",
+      "category": "clothing",
+      "maxStack": 1,
+      "weight": 0.4,
+      "tier": 1,
+      "family": "backpack",
+      "wear": {
+        "slot": "back",
+        "insulation": 0,
+        "waterproof": 0,
+        "carryBonus": 8
+      }
+    },
+    {
+      "key": "leather_backpack",
+      "name": "Leather Backpack",
+      "category": "clothing",
+      "maxStack": 1,
+      "weight": 1.0,
+      "tier": 2,
+      "family": "backpack",
+      "wear": {
+        "slot": "back",
+        "insulation": 0.5,
+        "waterproof": 0.3,
+        "carryBonus": 18
+      }
+    },
+    {
+      "key": "frame_pack",
+      "name": "Frame Pack",
+      "category": "clothing",
+      "maxStack": 1,
+      "weight": 2.0,
+      "tier": 3,
+      "family": "backpack",
+      "wear": {
+        "slot": "back",
+        "insulation": 0.5,
+        "waterproof": 0.5,
+        "carryBonus": 30
+      }
+    },
+    {
+      "key": "tactical_pack",
+      "name": "Tactical Pack",
+      "category": "clothing",
+      "maxStack": 1,
+      "weight": 1.8,
+      "tier": 5,
+      "family": "backpack",
+      "wear": {
+        "slot": "back",
+        "insulation": 0.5,
+        "waterproof": 0.9,
+        "carryBonus": 45
+      }
+    },
+    {
+      "key": "bone_helmet",
+      "name": "Bone Helmet",
+      "category": "armor",
+      "maxStack": 1,
+      "weight": 0.9,
+      "tier": 1,
+      "family": "armor_head",
+      "wear": {
+        "slot": "head",
+        "insulation": 0.3,
+        "waterproof": 0.1,
+        "armor": 3.6
+      }
+    },
+    {
+      "key": "bone_cuirass",
+      "name": "Bone Cuirass",
+      "category": "armor",
+      "maxStack": 1,
+      "weight": 2.4,
+      "tier": 1,
+      "family": "armor_torso",
+      "wear": {
+        "slot": "torso",
+        "insulation": 0.5,
+        "waterproof": 0.1,
+        "armor": 7.6
+      }
+    },
+    {
+      "key": "bone_greaves",
+      "name": "Bone Greaves",
+      "category": "armor",
+      "maxStack": 1,
+      "weight": 1.5,
+      "tier": 1,
+      "family": "armor_legs",
+      "wear": {
+        "slot": "legs",
+        "insulation": 0.5,
+        "waterproof": 0.1,
+        "armor": 4.0
+      }
+    },
+    {
+      "key": "bone_boots",
+      "name": "Bone Boots",
+      "category": "armor",
+      "maxStack": 1,
+      "weight": 0.6,
+      "tier": 1,
+      "family": "armor_feet",
+      "wear": {
+        "slot": "feet",
+        "insulation": 0.5,
+        "waterproof": 0.1,
+        "armor": 1.4
+      }
+    },
+    {
+      "key": "bone_gauntlets",
+      "name": "Bone Gauntlets",
+      "category": "armor",
+      "maxStack": 1,
+      "weight": 0.6,
+      "tier": 1,
+      "family": "armor_hands",
+      "wear": {
+        "slot": "hands",
+        "insulation": 0.5,
+        "waterproof": 0.1,
+        "armor": 1.4
+      }
+    },
+    {
+      "key": "bronze_helmet",
+      "name": "Bronze Helmet",
+      "category": "armor",
+      "maxStack": 1,
+      "weight": 1.8,
+      "tier": 2,
+      "family": "armor_head",
+      "wear": {
+        "slot": "head",
+        "insulation": 0.3,
+        "waterproof": 0.1,
+        "armor": 7.2
+      }
+    },
+    {
+      "key": "bronze_cuirass",
+      "name": "Bronze Cuirass",
+      "category": "armor",
+      "maxStack": 1,
+      "weight": 4.8,
+      "tier": 2,
+      "family": "armor_torso",
+      "wear": {
+        "slot": "torso",
+        "insulation": 0.5,
+        "waterproof": 0.1,
+        "armor": 15.1
+      }
+    },
+    {
+      "key": "bronze_greaves",
+      "name": "Bronze Greaves",
+      "category": "armor",
+      "maxStack": 1,
+      "weight": 3.0,
+      "tier": 2,
+      "family": "armor_legs",
+      "wear": {
+        "slot": "legs",
+        "insulation": 0.5,
+        "waterproof": 0.1,
+        "armor": 7.9
+      }
+    },
+    {
+      "key": "bronze_boots",
+      "name": "Bronze Boots",
+      "category": "armor",
+      "maxStack": 1,
+      "weight": 1.2,
+      "tier": 2,
+      "family": "armor_feet",
+      "wear": {
+        "slot": "feet",
+        "insulation": 0.5,
+        "waterproof": 0.1,
+        "armor": 2.9
+      }
+    },
+    {
+      "key": "bronze_gauntlets",
+      "name": "Bronze Gauntlets",
+      "category": "armor",
+      "maxStack": 1,
+      "weight": 1.2,
+      "tier": 2,
+      "family": "armor_hands",
+      "wear": {
+        "slot": "hands",
+        "insulation": 0.5,
+        "waterproof": 0.1,
+        "armor": 2.9
+      }
+    },
+    {
+      "key": "iron_helmet",
+      "name": "Iron Chain Helmet",
+      "category": "armor",
+      "maxStack": 1,
+      "weight": 2.4,
+      "tier": 3,
+      "family": "armor_head",
+      "wear": {
+        "slot": "head",
+        "insulation": 0.3,
+        "waterproof": 0.2,
+        "armor": 12.0
+      }
+    },
+    {
+      "key": "iron_cuirass",
+      "name": "Iron Chain Cuirass",
+      "category": "armor",
+      "maxStack": 1,
+      "weight": 6.4,
+      "tier": 3,
+      "family": "armor_torso",
+      "wear": {
+        "slot": "torso",
+        "insulation": 0.5,
+        "waterproof": 0.2,
+        "armor": 25.2
+      }
+    },
+    {
+      "key": "iron_greaves",
+      "name": "Iron Chain Greaves",
+      "category": "armor",
+      "maxStack": 1,
+      "weight": 4.0,
+      "tier": 3,
+      "family": "armor_legs",
+      "wear": {
+        "slot": "legs",
+        "insulation": 0.5,
+        "waterproof": 0.2,
+        "armor": 13.2
+      }
+    },
+    {
+      "key": "iron_boots",
+      "name": "Iron Chain Boots",
+      "category": "armor",
+      "maxStack": 1,
+      "weight": 1.6,
+      "tier": 3,
+      "family": "armor_feet",
+      "wear": {
+        "slot": "feet",
+        "insulation": 0.5,
+        "waterproof": 0.2,
+        "armor": 4.8
+      }
+    },
+    {
+      "key": "iron_gauntlets",
+      "name": "Iron Chain Gauntlets",
+      "category": "armor",
+      "maxStack": 1,
+      "weight": 1.6,
+      "tier": 3,
+      "family": "armor_hands",
+      "wear": {
+        "slot": "hands",
+        "insulation": 0.5,
+        "waterproof": 0.2,
+        "armor": 4.8
+      }
+    },
+    {
+      "key": "steel_helmet",
+      "name": "Steel Helmet",
+      "category": "armor",
+      "maxStack": 1,
+      "weight": 2.7,
+      "tier": 4,
+      "family": "armor_head",
+      "wear": {
+        "slot": "head",
+        "insulation": 0.3,
+        "waterproof": 0.2,
+        "armor": 18.0
+      }
+    },
+    {
+      "key": "steel_cuirass",
+      "name": "Steel Cuirass",
+      "category": "armor",
+      "maxStack": 1,
+      "weight": 7.2,
+      "tier": 4,
+      "family": "armor_torso",
+      "wear": {
+        "slot": "torso",
+        "insulation": 0.5,
+        "waterproof": 0.2,
+        "armor": 37.8
+      }
+    },
+    {
+      "key": "steel_greaves",
+      "name": "Steel Greaves",
+      "category": "armor",
+      "maxStack": 1,
+      "weight": 4.5,
+      "tier": 4,
+      "family": "armor_legs",
+      "wear": {
+        "slot": "legs",
+        "insulation": 0.5,
+        "waterproof": 0.2,
+        "armor": 19.8
+      }
+    },
+    {
+      "key": "steel_boots",
+      "name": "Steel Boots",
+      "category": "armor",
+      "maxStack": 1,
+      "weight": 1.8,
+      "tier": 4,
+      "family": "armor_feet",
+      "wear": {
+        "slot": "feet",
+        "insulation": 0.5,
+        "waterproof": 0.2,
+        "armor": 7.2
+      }
+    },
+    {
+      "key": "steel_gauntlets",
+      "name": "Steel Gauntlets",
+      "category": "armor",
+      "maxStack": 1,
+      "weight": 1.8,
+      "tier": 4,
+      "family": "armor_hands",
+      "wear": {
+        "slot": "hands",
+        "insulation": 0.5,
+        "waterproof": 0.2,
+        "armor": 7.2
+      }
+    },
+    {
+      "key": "composite_helmet",
+      "name": "Composite Helmet",
+      "category": "armor",
+      "maxStack": 1,
+      "weight": 2.1,
+      "tier": 5,
+      "family": "armor_head",
+      "wear": {
+        "slot": "head",
+        "insulation": 0.3,
+        "waterproof": 0.2,
+        "armor": 25.0
+      }
+    },
+    {
+      "key": "composite_cuirass",
+      "name": "Composite Cuirass",
+      "category": "armor",
+      "maxStack": 1,
+      "weight": 5.6,
+      "tier": 5,
+      "family": "armor_torso",
+      "wear": {
+        "slot": "torso",
+        "insulation": 0.5,
+        "waterproof": 0.2,
+        "armor": 52.5
+      }
+    },
+    {
+      "key": "composite_greaves",
+      "name": "Composite Greaves",
+      "category": "armor",
+      "maxStack": 1,
+      "weight": 3.5,
+      "tier": 5,
+      "family": "armor_legs",
+      "wear": {
+        "slot": "legs",
+        "insulation": 0.5,
+        "waterproof": 0.2,
+        "armor": 27.5
+      }
+    },
+    {
+      "key": "composite_boots",
+      "name": "Composite Boots",
+      "category": "armor",
+      "maxStack": 1,
+      "weight": 1.4,
+      "tier": 5,
+      "family": "armor_feet",
+      "wear": {
+        "slot": "feet",
+        "insulation": 0.5,
+        "waterproof": 0.2,
+        "armor": 10.0
+      }
+    },
+    {
+      "key": "composite_gauntlets",
+      "name": "Composite Gauntlets",
+      "category": "armor",
+      "maxStack": 1,
+      "weight": 1.4,
+      "tier": 5,
+      "family": "armor_hands",
+      "wear": {
+        "slot": "hands",
+        "insulation": 0.5,
+        "waterproof": 0.2,
+        "armor": 10.0
+      }
+    },
+    {
+      "key": "bronze_mace",
+      "name": "Bronze Mace",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 2.6,
+      "tier": 2,
+      "family": "mace",
+      "durability": 250,
+      "weapon": {
+        "damage": 22,
+        "range": 1.4,
+        "cooldownSeconds": 0.9,
+        "staminaCost": 7,
+        "structureMul": 0.6
+      }
+    },
+    {
+      "key": "iron_mace",
+      "name": "Iron Mace",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 3.0,
+      "tier": 3,
+      "family": "mace",
+      "durability": 400,
+      "weapon": {
+        "damage": 30,
+        "range": 1.4,
+        "cooldownSeconds": 0.9,
+        "staminaCost": 7,
+        "structureMul": 0.7
+      }
+    },
+    {
+      "key": "steel_mace",
+      "name": "Steel Mace",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 3.2,
+      "tier": 4,
+      "family": "mace",
+      "durability": 600,
+      "weapon": {
+        "damage": 40,
+        "range": 1.4,
+        "cooldownSeconds": 0.9,
+        "staminaCost": 7,
+        "structureMul": 0.8
+      }
+    },
+    {
+      "key": "alloy_warhammer",
+      "name": "Alloy Warhammer",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 3.6,
+      "tier": 5,
+      "family": "mace",
+      "durability": 850,
+      "weapon": {
+        "damage": 52,
+        "range": 1.5,
+        "cooldownSeconds": 1.0,
+        "staminaCost": 8,
+        "structureMul": 1.0
+      }
+    },
+    {
+      "key": "steel_sword",
+      "name": "Steel Sword",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 2.3,
+      "tier": 4,
+      "family": "sword",
+      "durability": 600,
+      "weapon": {
+        "damage": 44,
+        "range": 1.7,
+        "cooldownSeconds": 0.65,
+        "staminaCost": 5,
+        "structureMul": 0.4
+      }
+    },
+    {
+      "key": "alloy_sword",
+      "name": "Alloy Sword",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 2.4,
+      "tier": 5,
+      "family": "sword",
+      "durability": 850,
+      "weapon": {
+        "damage": 56,
+        "range": 1.8,
+        "cooldownSeconds": 0.65,
+        "staminaCost": 5,
+        "structureMul": 0.45
+      }
+    },
+    {
+      "key": "bone_dagger",
+      "name": "Bone Dagger",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 0.4,
+      "tier": 1,
+      "family": "dagger",
+      "durability": 150,
+      "weapon": {
+        "damage": 11,
+        "range": 0.9,
+        "cooldownSeconds": 0.4,
+        "staminaCost": 2,
+        "structureMul": 0.1
+      }
+    },
+    {
+      "key": "bronze_dagger",
+      "name": "Bronze Dagger",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 0.5,
+      "tier": 2,
+      "family": "dagger",
+      "durability": 250,
+      "weapon": {
+        "damage": 17,
+        "range": 0.9,
+        "cooldownSeconds": 0.4,
+        "staminaCost": 2,
+        "structureMul": 0.1
+      }
+    },
+    {
+      "key": "iron_dagger",
+      "name": "Iron Dagger",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 0.5,
+      "tier": 3,
+      "family": "dagger",
+      "durability": 400,
+      "weapon": {
+        "damage": 23,
+        "range": 0.9,
+        "cooldownSeconds": 0.4,
+        "staminaCost": 2,
+        "structureMul": 0.1
+      }
+    },
+    {
+      "key": "steel_dagger",
+      "name": "Steel Dagger",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 0.5,
+      "tier": 4,
+      "family": "dagger",
+      "durability": 600,
+      "weapon": {
+        "damage": 30,
+        "range": 0.9,
+        "cooldownSeconds": 0.4,
+        "staminaCost": 2,
+        "structureMul": 0.1
+      }
+    },
+    {
+      "key": "iron_machete",
+      "name": "Iron Machete",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 1.2,
+      "tier": 3,
+      "family": "machete",
+      "durability": 400,
+      "weapon": {
+        "damage": 28,
+        "range": 1.4,
+        "cooldownSeconds": 0.55,
+        "staminaCost": 4,
+        "structureMul": 0.3
+      }
+    },
+    {
+      "key": "steel_machete",
+      "name": "Steel Machete",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 1.2,
+      "tier": 4,
+      "family": "machete",
+      "durability": 600,
+      "weapon": {
+        "damage": 37,
+        "range": 1.4,
+        "cooldownSeconds": 0.55,
+        "staminaCost": 4,
+        "structureMul": 0.3
+      }
+    },
+    {
+      "key": "stone_maul",
+      "name": "Stone Maul",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 4.0,
+      "tier": 1,
+      "family": "maul",
+      "durability": 150,
+      "weapon": {
+        "damage": 16,
+        "range": 1.5,
+        "cooldownSeconds": 1.3,
+        "staminaCost": 9,
+        "structureMul": 1.2
+      }
+    },
+    {
+      "key": "iron_sledgehammer",
+      "name": "Iron Sledgehammer",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 5.0,
+      "tier": 3,
+      "family": "maul",
+      "durability": 400,
+      "weapon": {
+        "damage": 28,
+        "range": 1.6,
+        "cooldownSeconds": 1.3,
+        "staminaCost": 10,
+        "structureMul": 1.6
+      }
+    },
+    {
+      "key": "steel_sledgehammer",
+      "name": "Steel Sledgehammer",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 5.2,
+      "tier": 4,
+      "family": "maul",
+      "durability": 600,
+      "weapon": {
+        "damage": 36,
+        "range": 1.6,
+        "cooldownSeconds": 1.3,
+        "staminaCost": 10,
+        "structureMul": 2.0
+      }
+    },
+    {
+      "key": "nail_bat",
+      "name": "Nail Bat",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 1.8,
+      "tier": 3,
+      "family": "bat",
+      "durability": 400,
+      "weapon": {
+        "damage": 24,
+        "range": 1.5,
+        "cooldownSeconds": 0.8,
+        "staminaCost": 5,
+        "structureMul": 0.4
+      }
+    },
+    {
+      "key": "sling_stone",
+      "name": "Sling Stone",
+      "category": "ammo",
+      "maxStack": 50,
+      "weight": 0.1,
+      "tier": 1,
+      "family": "sling_stone",
+      "ammo": {
+        "damageMul": 1.0,
+        "structureMul": 1
+      }
+    },
+    {
+      "key": "flint_arrow",
+      "name": "Flint Arrow",
+      "category": "ammo",
+      "maxStack": 50,
+      "weight": 0.05,
+      "tier": 1,
+      "family": "arrow",
+      "ammo": {
+        "damageMul": 1.0,
+        "structureMul": 1
+      }
+    },
+    {
+      "key": "iron_arrow",
+      "name": "Iron Arrow",
+      "category": "ammo",
+      "maxStack": 50,
+      "weight": 0.06,
+      "tier": 3,
+      "family": "arrow",
+      "ammo": {
+        "damageMul": 1.2,
+        "structureMul": 1,
+        "armorPierce": 0.2
+      }
+    },
+    {
+      "key": "fire_arrow",
+      "name": "Fire Arrow",
+      "category": "ammo",
+      "maxStack": 30,
+      "weight": 0.07,
+      "tier": 2,
+      "family": "fire_arrow",
+      "ammo": {
+        "damageMul": 0.8,
+        "structureMul": 2,
+        "ignite": true
+      }
+    },
+    {
+      "key": "iron_bolt",
+      "name": "Iron Bolt",
+      "category": "ammo",
+      "maxStack": 40,
+      "weight": 0.08,
+      "tier": 2,
+      "family": "bolt",
+      "ammo": {
+        "damageMul": 1.0,
+        "structureMul": 1
+      }
+    },
+    {
+      "key": "steel_bolt",
+      "name": "Steel Bolt",
+      "category": "ammo",
+      "maxStack": 40,
+      "weight": 0.09,
+      "tier": 4,
+      "family": "bolt",
+      "ammo": {
+        "damageMul": 1.15,
+        "structureMul": 1,
+        "armorPierce": 0.4
+      }
+    },
+    {
+      "key": "musket_ball",
+      "name": "Musket Ball",
+      "category": "ammo",
+      "maxStack": 40,
+      "weight": 0.05,
+      "tier": 3,
+      "family": "musket_ball",
+      "ammo": {
+        "damageMul": 1.0,
+        "structureMul": 1
+      }
+    },
+    {
+      "key": "pistol_round",
+      "name": "Pistol Round",
+      "category": "ammo",
+      "maxStack": 60,
+      "weight": 0.02,
+      "tier": 4,
+      "family": "pistol_round",
+      "ammo": {
+        "damageMul": 1.0,
+        "structureMul": 1
+      }
+    },
+    {
+      "key": "rifle_round",
+      "name": "Rifle Round",
+      "category": "ammo",
+      "maxStack": 60,
+      "weight": 0.03,
+      "tier": 4,
+      "family": "rifle_round",
+      "ammo": {
+        "damageMul": 1.0,
+        "structureMul": 1
+      }
+    },
+    {
+      "key": "ap_rifle_round",
+      "name": "AP Rifle Round",
+      "category": "ammo",
+      "maxStack": 60,
+      "weight": 0.03,
+      "tier": 5,
+      "family": "rifle_round",
+      "ammo": {
+        "damageMul": 1.1,
+        "structureMul": 1.2,
+        "armorPierce": 0.5
+      }
+    },
+    {
+      "key": "shotgun_shell",
+      "name": "Shotgun Shell",
+      "category": "ammo",
+      "maxStack": 40,
+      "weight": 0.04,
+      "tier": 3,
+      "family": "shotgun_shell",
+      "ammo": {
+        "damageMul": 1.0,
+        "structureMul": 1
+      }
+    },
+    {
+      "key": "slug_shell",
+      "name": "Slug Shell",
+      "category": "ammo",
+      "maxStack": 40,
+      "weight": 0.05,
+      "tier": 4,
+      "family": "shotgun_shell",
+      "ammo": {
+        "damageMul": 1.15,
+        "structureMul": 1.5,
+        "armorPierce": 0.2
+      }
+    },
+    {
+      "key": "incendiary_shell",
+      "name": "Incendiary Shell",
+      "category": "ammo",
+      "maxStack": 30,
+      "weight": 0.05,
+      "tier": 4,
+      "family": "incendiary_shell",
+      "ammo": {
+        "damageMul": 0.8,
+        "structureMul": 2,
+        "ignite": true
+      }
+    },
+    {
+      "key": "sling",
+      "name": "Sling",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 0.2,
+      "tier": 1,
+      "family": "sling",
+      "durability": 150,
+      "weapon": {
+        "damage": 7,
+        "range": 1.0,
+        "cooldownSeconds": 0.9,
+        "staminaCost": 4,
+        "structureMul": 0.1
+      },
+      "ranged": {
+        "ammo": [
+          "sling_stone"
+        ],
+        "damage": 12,
+        "range": 10,
+        "magazine": 1,
+        "reloadSeconds": 0.6,
+        "cooldownSeconds": 0.8,
+        "staminaCost": 2,
+        "structureMul": 0.1
+      }
+    },
+    {
+      "key": "short_bow",
+      "name": "Short Bow",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 0.8,
+      "tier": 1,
+      "family": "bow",
+      "durability": 150,
+      "weapon": {
+        "damage": 7,
+        "range": 1.0,
+        "cooldownSeconds": 0.9,
+        "staminaCost": 4,
+        "structureMul": 0.1
+      },
+      "ranged": {
+        "ammo": [
+          "flint_arrow",
+          "iron_arrow",
+          "fire_arrow"
+        ],
+        "damage": 22,
+        "range": 14,
+        "magazine": 1,
+        "reloadSeconds": 0.5,
+        "cooldownSeconds": 0.6,
+        "staminaCost": 3,
+        "structureMul": 0.1,
+        "chargeSeconds": 0.8,
+        "minChargeMul": 0.3
+      }
+    },
+    {
+      "key": "recurve_bow",
+      "name": "Recurve Bow",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 0.9,
+      "tier": 2,
+      "family": "bow",
+      "durability": 250,
+      "weapon": {
+        "damage": 9,
+        "range": 1.0,
+        "cooldownSeconds": 0.9,
+        "staminaCost": 4,
+        "structureMul": 0.1
+      },
+      "ranged": {
+        "ammo": [
+          "flint_arrow",
+          "iron_arrow",
+          "fire_arrow"
+        ],
+        "damage": 30,
+        "range": 17,
+        "magazine": 1,
+        "reloadSeconds": 0.5,
+        "cooldownSeconds": 0.6,
+        "staminaCost": 3,
+        "structureMul": 0.1,
+        "chargeSeconds": 0.9,
+        "minChargeMul": 0.3
+      }
+    },
+    {
+      "key": "longbow",
+      "name": "Longbow",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 1.2,
+      "tier": 3,
+      "family": "bow",
+      "durability": 400,
+      "weapon": {
+        "damage": 11,
+        "range": 1.0,
+        "cooldownSeconds": 0.9,
+        "staminaCost": 4,
+        "structureMul": 0.1
+      },
+      "ranged": {
+        "ammo": [
+          "flint_arrow",
+          "iron_arrow",
+          "fire_arrow"
+        ],
+        "damage": 40,
+        "range": 20,
+        "magazine": 1,
+        "reloadSeconds": 0.6,
+        "cooldownSeconds": 0.7,
+        "staminaCost": 4,
+        "structureMul": 0.1,
+        "chargeSeconds": 1.2,
+        "minChargeMul": 0.3
+      }
+    },
+    {
+      "key": "laminated_bow",
+      "name": "Laminated Bow",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 1.2,
+      "tier": 4,
+      "family": "bow",
+      "durability": 600,
+      "weapon": {
+        "damage": 13,
+        "range": 1.0,
+        "cooldownSeconds": 0.9,
+        "staminaCost": 4,
+        "structureMul": 0.1
+      },
+      "ranged": {
+        "ammo": [
+          "flint_arrow",
+          "iron_arrow",
+          "fire_arrow"
+        ],
+        "damage": 48,
+        "range": 22,
+        "magazine": 1,
+        "reloadSeconds": 0.6,
+        "cooldownSeconds": 0.7,
+        "staminaCost": 4,
+        "structureMul": 0.1,
+        "chargeSeconds": 1.1,
+        "minChargeMul": 0.3
+      }
+    },
+    {
+      "key": "compound_bow",
+      "name": "Compound Bow",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 1.4,
+      "tier": 5,
+      "family": "bow",
+      "durability": 850,
+      "weapon": {
+        "damage": 15,
+        "range": 1.0,
+        "cooldownSeconds": 0.9,
+        "staminaCost": 4,
+        "structureMul": 0.1
+      },
+      "ranged": {
+        "ammo": [
+          "flint_arrow",
+          "iron_arrow",
+          "fire_arrow"
+        ],
+        "damage": 58,
+        "range": 24,
+        "magazine": 1,
+        "reloadSeconds": 0.6,
+        "cooldownSeconds": 0.6,
+        "staminaCost": 3,
+        "structureMul": 0.1,
+        "chargeSeconds": 0.9,
+        "minChargeMul": 0.35
+      }
+    },
+    {
+      "key": "light_crossbow",
+      "name": "Light Crossbow",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 2.0,
+      "tier": 2,
+      "family": "crossbow",
+      "durability": 250,
+      "weapon": {
+        "damage": 9,
+        "range": 1.0,
+        "cooldownSeconds": 0.9,
+        "staminaCost": 4,
+        "structureMul": 0.1
+      },
+      "ranged": {
+        "ammo": [
+          "iron_bolt",
+          "steel_bolt"
+        ],
+        "damage": 34,
+        "range": 18,
+        "magazine": 1,
+        "reloadSeconds": 2.2,
+        "cooldownSeconds": 0.4,
+        "staminaCost": 2,
+        "structureMul": 0.1
+      }
+    },
+    {
+      "key": "crossbow",
+      "name": "Crossbow",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 2.6,
+      "tier": 3,
+      "family": "crossbow",
+      "durability": 400,
+      "weapon": {
+        "damage": 11,
+        "range": 1.0,
+        "cooldownSeconds": 0.9,
+        "staminaCost": 4,
+        "structureMul": 0.1
+      },
+      "ranged": {
+        "ammo": [
+          "iron_bolt",
+          "steel_bolt"
+        ],
+        "damage": 46,
+        "range": 20,
+        "magazine": 1,
+        "reloadSeconds": 2.5,
+        "cooldownSeconds": 0.4,
+        "staminaCost": 2,
+        "structureMul": 0.1
+      }
+    },
+    {
+      "key": "steel_crossbow",
+      "name": "Steel Crossbow",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 3.0,
+      "tier": 4,
+      "family": "crossbow",
+      "durability": 600,
+      "weapon": {
+        "damage": 13,
+        "range": 1.0,
+        "cooldownSeconds": 0.9,
+        "staminaCost": 4,
+        "structureMul": 0.1
+      },
+      "ranged": {
+        "ammo": [
+          "iron_bolt",
+          "steel_bolt"
+        ],
+        "damage": 58,
+        "range": 22,
+        "magazine": 1,
+        "reloadSeconds": 2.8,
+        "cooldownSeconds": 0.4,
+        "staminaCost": 2,
+        "structureMul": 0.1
+      }
+    },
+    {
+      "key": "flintlock_pistol",
+      "name": "Flintlock Pistol",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 1.2,
+      "tier": 3,
+      "family": "pistol",
+      "durability": 400,
+      "weapon": {
+        "damage": 11,
+        "range": 1.0,
+        "cooldownSeconds": 0.9,
+        "staminaCost": 4,
+        "structureMul": 0.1
+      },
+      "ranged": {
+        "ammo": [
+          "musket_ball"
+        ],
+        "damage": 40,
+        "range": 14,
+        "magazine": 1,
+        "reloadSeconds": 3.0,
+        "cooldownSeconds": 0.5,
+        "staminaCost": 2,
+        "structureMul": 0.1
+      }
+    },
+    {
+      "key": "revolver",
+      "name": "Revolver",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 1.1,
+      "tier": 4,
+      "family": "pistol",
+      "durability": 600,
+      "weapon": {
+        "damage": 13,
+        "range": 1.0,
+        "cooldownSeconds": 0.9,
+        "staminaCost": 4,
+        "structureMul": 0.1
+      },
+      "ranged": {
+        "ammo": [
+          "pistol_round"
+        ],
+        "damage": 45,
+        "range": 16,
+        "magazine": 6,
+        "reloadSeconds": 3.5,
+        "cooldownSeconds": 0.45,
+        "staminaCost": 2,
+        "structureMul": 0.1
+      }
+    },
+    {
+      "key": "semi_auto_pistol",
+      "name": "Semi-Auto Pistol",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 0.9,
+      "tier": 5,
+      "family": "pistol",
+      "durability": 850,
+      "weapon": {
+        "damage": 15,
+        "range": 1.0,
+        "cooldownSeconds": 0.9,
+        "staminaCost": 4,
+        "structureMul": 0.1
+      },
+      "ranged": {
+        "ammo": [
+          "pistol_round"
+        ],
+        "damage": 50,
+        "range": 18,
+        "magazine": 12,
+        "reloadSeconds": 2.0,
+        "cooldownSeconds": 0.3,
+        "staminaCost": 2,
+        "structureMul": 0.1
+      }
+    },
+    {
+      "key": "pipe_shotgun",
+      "name": "Pipe Shotgun",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 3.0,
+      "tier": 3,
+      "family": "shotgun",
+      "durability": 400,
+      "weapon": {
+        "damage": 11,
+        "range": 1.0,
+        "cooldownSeconds": 0.9,
+        "staminaCost": 4,
+        "structureMul": 0.1
+      },
+      "ranged": {
+        "ammo": [
+          "shotgun_shell",
+          "slug_shell",
+          "incendiary_shell"
+        ],
+        "damage": 60,
+        "range": 7,
+        "magazine": 1,
+        "reloadSeconds": 2.5,
+        "cooldownSeconds": 1.0,
+        "staminaCost": 2,
+        "structureMul": 0.2
+      }
+    },
+    {
+      "key": "pump_shotgun",
+      "name": "Pump Shotgun",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 3.4,
+      "tier": 4,
+      "family": "shotgun",
+      "durability": 600,
+      "weapon": {
+        "damage": 13,
+        "range": 1.0,
+        "cooldownSeconds": 0.9,
+        "staminaCost": 4,
+        "structureMul": 0.1
+      },
+      "ranged": {
+        "ammo": [
+          "shotgun_shell",
+          "slug_shell",
+          "incendiary_shell"
+        ],
+        "damage": 70,
+        "range": 8,
+        "magazine": 5,
+        "reloadSeconds": 4.0,
+        "cooldownSeconds": 0.9,
+        "staminaCost": 2,
+        "structureMul": 0.2
+      }
+    },
+    {
+      "key": "hunting_rifle",
+      "name": "Hunting Rifle",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 3.6,
+      "tier": 4,
+      "family": "rifle",
+      "durability": 600,
+      "weapon": {
+        "damage": 13,
+        "range": 1.0,
+        "cooldownSeconds": 0.9,
+        "staminaCost": 4,
+        "structureMul": 0.1
+      },
+      "ranged": {
+        "ammo": [
+          "rifle_round",
+          "ap_rifle_round"
+        ],
+        "damage": 70,
+        "range": 30,
+        "magazine": 5,
+        "reloadSeconds": 3.5,
+        "cooldownSeconds": 1.2,
+        "staminaCost": 2,
+        "structureMul": 0.15
+      }
+    },
+    {
+      "key": "marksman_rifle",
+      "name": "Marksman Rifle",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 4.0,
+      "tier": 5,
+      "family": "rifle",
+      "durability": 850,
+      "weapon": {
+        "damage": 15,
+        "range": 1.0,
+        "cooldownSeconds": 0.9,
+        "staminaCost": 4,
+        "structureMul": 0.1
+      },
+      "ranged": {
+        "ammo": [
+          "rifle_round",
+          "ap_rifle_round"
+        ],
+        "damage": 95,
+        "range": 36,
+        "magazine": 10,
+        "reloadSeconds": 3.0,
+        "cooldownSeconds": 1.0,
+        "staminaCost": 2,
+        "structureMul": 0.15
+      }
+    },
+    {
+      "key": "auto_rifle",
+      "name": "Automatic Rifle",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 3.8,
+      "tier": 5,
+      "family": "autorifle",
+      "durability": 850,
+      "weapon": {
+        "damage": 15,
+        "range": 1.0,
+        "cooldownSeconds": 0.9,
+        "staminaCost": 4,
+        "structureMul": 0.1
+      },
+      "ranged": {
+        "ammo": [
+          "rifle_round",
+          "ap_rifle_round"
+        ],
+        "damage": 34,
+        "range": 26,
+        "magazine": 30,
+        "reloadSeconds": 3.0,
+        "cooldownSeconds": 0.15,
+        "staminaCost": 1,
+        "structureMul": 0.12
+      }
+    },
+    {
+      "key": "bronze_spear",
+      "name": "Bronze Spear",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 2.0,
+      "tier": 2,
+      "family": "spear",
+      "durability": 250,
+      "weapon": {
+        "damage": 25,
+        "range": 2.2,
+        "cooldownSeconds": 1.0,
+        "staminaCost": 6,
+        "structureMul": 0.3
+      },
+      "thrown": {
+        "damage": 30,
+        "range": 10
+      }
+    },
+    {
+      "key": "iron_spear",
+      "name": "Iron Spear",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 2.2,
+      "tier": 3,
+      "family": "spear",
+      "durability": 400,
+      "weapon": {
+        "damage": 32,
+        "range": 2.3,
+        "cooldownSeconds": 1.0,
+        "staminaCost": 6,
+        "structureMul": 0.35
+      },
+      "thrown": {
+        "damage": 40,
+        "range": 11
+      }
+    },
+    {
+      "key": "steel_spear",
+      "name": "Steel Spear",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 2.2,
+      "tier": 4,
+      "family": "spear",
+      "durability": 600,
+      "weapon": {
+        "damage": 41,
+        "range": 2.3,
+        "cooldownSeconds": 1.0,
+        "staminaCost": 6,
+        "structureMul": 0.4
+      },
+      "thrown": {
+        "damage": 50,
+        "range": 12
+      }
+    },
+    {
+      "key": "bronze_throwing_axe",
+      "name": "Bronze Throwing Axe",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 1.0,
+      "tier": 2,
+      "family": "throwing_axe",
+      "durability": 250,
+      "weapon": {
+        "damage": 18,
+        "range": 1.2,
+        "cooldownSeconds": 0.7,
+        "staminaCost": 4,
+        "structureMul": 0.5
+      },
+      "thrown": {
+        "damage": 28,
+        "range": 8
+      }
+    },
+    {
+      "key": "iron_throwing_axe",
+      "name": "Iron Throwing Axe",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 1.0,
+      "tier": 3,
+      "family": "throwing_axe",
+      "durability": 400,
+      "weapon": {
+        "damage": 24,
+        "range": 1.2,
+        "cooldownSeconds": 0.7,
+        "staminaCost": 4,
+        "structureMul": 0.6
+      },
+      "thrown": {
+        "damage": 36,
+        "range": 9
+      }
+    },
+    {
+      "key": "steel_throwing_axe",
+      "name": "Steel Throwing Axe",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 1.0,
+      "tier": 4,
+      "family": "throwing_axe",
+      "durability": 600,
+      "weapon": {
+        "damage": 31,
+        "range": 1.2,
+        "cooldownSeconds": 0.7,
+        "staminaCost": 4,
+        "structureMul": 0.7
+      },
+      "thrown": {
+        "damage": 45,
+        "range": 10
+      }
+    },
+    {
+      "key": "bayonet_musket",
+      "name": "Bayonet Musket",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 4.2,
+      "tier": 3,
+      "family": "bayonet",
+      "durability": 400,
+      "weapon": {
+        "damage": 28,
+        "range": 2.1,
+        "cooldownSeconds": 0.9,
+        "staminaCost": 6,
+        "structureMul": 0.3
+      },
+      "ranged": {
+        "ammo": [
+          "musket_ball"
+        ],
+        "damage": 50,
+        "range": 18,
+        "magazine": 1,
+        "reloadSeconds": 4.0,
+        "cooldownSeconds": 0.6,
+        "staminaCost": 2,
+        "structureMul": 0.15
+      }
+    },
+    {
+      "key": "bayonet_rifle",
+      "name": "Bayonet Rifle",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 4.2,
+      "tier": 4,
+      "family": "bayonet",
+      "durability": 600,
+      "weapon": {
+        "damage": 36,
+        "range": 2.1,
+        "cooldownSeconds": 0.85,
+        "staminaCost": 6,
+        "structureMul": 0.35
+      },
+      "ranged": {
+        "ammo": [
+          "rifle_round",
+          "ap_rifle_round"
+        ],
+        "damage": 72,
+        "range": 30,
+        "magazine": 5,
+        "reloadSeconds": 3.5,
+        "cooldownSeconds": 1.2,
+        "staminaCost": 2,
+        "structureMul": 0.15
+      }
+    },
+    {
+      "key": "bayonet_carbine",
+      "name": "Bayonet Carbine",
+      "category": "weapon",
+      "maxStack": 1,
+      "weight": 3.8,
+      "tier": 5,
+      "family": "bayonet",
+      "durability": 850,
+      "weapon": {
+        "damage": 44,
+        "range": 2.0,
+        "cooldownSeconds": 0.8,
+        "staminaCost": 5,
+        "structureMul": 0.4
+      },
+      "ranged": {
+        "ammo": [
+          "rifle_round",
+          "ap_rifle_round"
+        ],
+        "damage": 74,
+        "range": 26,
+        "magazine": 10,
+        "reloadSeconds": 2.5,
+        "cooldownSeconds": 0.5,
+        "staminaCost": 2,
+        "structureMul": 0.15
+      }
+    },
+    {
+      "key": "molotov",
+      "name": "Molotov Cocktail",
+      "category": "explosive",
+      "maxStack": 5,
+      "weight": 0.6,
+      "tier": 2,
+      "family": "firebomb",
+      "explosive": {
+        "damage": 20,
+        "radius": 2.5,
+        "structureDamage": 60,
+        "fuseSeconds": 0.5,
+        "throwRange": 10,
+        "ignite": true
+      }
+    },
+    {
+      "key": "incendiary_grenade",
+      "name": "Incendiary Grenade",
+      "category": "explosive",
+      "maxStack": 5,
+      "weight": 0.6,
+      "tier": 4,
+      "family": "firebomb",
+      "explosive": {
+        "damage": 35,
+        "radius": 3.5,
+        "structureDamage": 120,
+        "fuseSeconds": 2.5,
+        "throwRange": 12,
+        "ignite": true
+      }
+    },
+    {
+      "key": "black_powder_bomb",
+      "name": "Black Powder Bomb",
+      "category": "explosive",
+      "maxStack": 5,
+      "weight": 1.2,
+      "tier": 3,
+      "family": "bomb",
+      "explosive": {
+        "damage": 60,
+        "radius": 3,
+        "structureDamage": 200,
+        "fuseSeconds": 3,
+        "throwRange": 8
+      }
+    },
+    {
+      "key": "pipe_bomb",
+      "name": "Pipe Bomb",
+      "category": "explosive",
+      "maxStack": 5,
+      "weight": 1.0,
+      "tier": 3,
+      "family": "pipe_bomb",
+      "explosive": {
+        "damage": 80,
+        "radius": 3,
+        "structureDamage": 300,
+        "fuseSeconds": 3,
+        "throwRange": 9
+      }
+    },
+    {
+      "key": "grenade",
+      "name": "Frag Grenade",
+      "category": "explosive",
+      "maxStack": 5,
+      "weight": 0.5,
+      "tier": 4,
+      "family": "bomb",
+      "explosive": {
+        "damage": 100,
+        "radius": 4,
+        "structureDamage": 250,
+        "fuseSeconds": 3,
+        "throwRange": 14
+      }
+    },
+    {
+      "key": "satchel_charge",
+      "name": "Satchel Charge",
+      "category": "explosive",
+      "maxStack": 3,
+      "weight": 3.0,
+      "tier": 4,
+      "family": "charge",
+      "explosive": {
+        "damage": 120,
+        "radius": 3,
+        "structureDamage": 800,
+        "fuseSeconds": 6,
+        "throwRange": 5
+      }
+    },
+    {
+      "key": "breaching_charge",
+      "name": "Breaching Charge",
+      "category": "explosive",
+      "maxStack": 3,
+      "weight": 2.0,
+      "tier": 5,
+      "family": "charge",
+      "explosive": {
+        "damage": 80,
+        "radius": 2,
+        "structureDamage": 1500,
+        "fuseSeconds": 5,
+        "throwRange": 4
+      }
     }
   ]
 }

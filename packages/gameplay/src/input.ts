@@ -13,7 +13,7 @@ import { PVP_COMMANDS } from "./combat/pvp.js";
 import { CancelQueuedCraftCmd, CRAFT_QUEUE_COMMANDS, QueueCraftCmd } from "./systems/craft_queue.js";
 import { EXPRESSION_COMMANDS } from "./expression.js";
 import { driveFromBits, setDriveInput, VEHICLE_COMMANDS, VEHICLE_ENTITY_FIELDS } from "./vehicles.js";
-import { analogMoving, hotbarSlotFromEdges, runInputHooks } from "./input_hooks.js";
+import { analogMoving, GameplayEdgeBits, GameplayHoldBits, hotbarSlotFromEdges, runInputHooks } from "./input_hooks.js";
 import { ECONOMY_COMMAND_RATES, ECONOMY_COMMANDS, ECONOMY_ENTITY_FIELDS } from "./economy/stall.js";
 
 export const GameplayActions = defineActions(["MoveUp", "MoveDown", "MoveLeft", "MoveRight", "Sprint", "Primary", "Secondary", "Interact", "Build"] as const);
@@ -39,6 +39,12 @@ export const DepositCmd = defineCommand("gameplay.deposit", { target: "u32", ite
 export const WithdrawCmd = defineCommand("gameplay.withdraw", { target: "u32", item: "u16", count: "u16" });
 export const ToggleFireCmd = defineCommand("gameplay.toggleFire", T);
 export const AttackCmd = defineCommand("gameplay.attack", T);
+/** Reload the main-hand ranged weapon from inventory ammo (also queued by the Reload edge). */
+export const ReloadCmd = defineCommand("gameplay.reload", {});
+/** Wear / take off the clothing or armor in an inventory slot (toggle). */
+export const WearCmd = defineCommand("gameplay.wear", { slot: "u8" });
+/** Registered after ClanDeclineCmd (append-only ids); queued like GAMEPLAY_COMMANDS. */
+export const ARMS_COMMANDS: readonly [CommandDef, IntentAction][] = [[ReloadCmd, IntentAction.Reload], [WearCmd, IntentAction.Wear]];
 
 /** Registration order = command ids (same list on both peers). Append only. */
 export const GAMEPLAY_COMMANDS: readonly [CommandDef, IntentAction][] = [
@@ -56,7 +62,7 @@ export const COMMAND_ENTITY_FIELDS: Readonly<Record<string, readonly string[]>> 
 };
 /** Suggested per-command rate limits (per second) for net's limiter; gameplay still enforces cooldowns. */
 export const COMMAND_RATES: Readonly<Record<string, number>> = {
-  ...Object.fromEntries(GAMEPLAY_COMMANDS.map(([d]) => [d.name, d === PlaceCmd ? 8 : 20])), ...ECONOMY_COMMAND_RATES,
+  ...Object.fromEntries([...GAMEPLAY_COMMANDS, ...ARMS_COMMANDS].map(([d]) => [d.name, d === PlaceCmd ? 8 : 20])), ...ECONOMY_COMMAND_RATES,
 };
 
 export function registerGameplayCommands(reg: CommandRegistry = new CommandRegistry()): CommandRegistry {
@@ -70,6 +76,7 @@ export function registerGameplayCommands(reg: CommandRegistry = new CommandRegis
   for (const d of CLAN_COMMANDS) reg.register(d); // append-only, after party
   reg.register(ClanDeclineCmd);
   for (const d of VEHICLE_COMMANDS) reg.register(d); // append-only, after ClanDecline (ADR-096)
+  for (const [d] of ARMS_COMMANDS) reg.register(d); // append-only, after vehicles
   return reg;
 }
 
@@ -84,16 +91,17 @@ export function applyGameplayInput(world: World, e: Entity, frame: InputFrame | 
   if (world.has(e, Driver)) { // riders steer their vehicle with the same move axes; Sprint = boost (ADR-096)
     const b = driveFromBits(actions); const analog = analogMoving(frame);
     setDriveInput(world, e, analog ? frame!.moveX! : b.x, analog ? frame!.moveY! : b.y, (actions & GameplayActions.Sprint) !== 0);
-    world.set(e, PlayerIntent, { moving: 0, sprint: 0 });
-  } else world.set(e, PlayerIntent, { moving: actions & MOVE || analogMoving(frame) ? 1 : 0, sprint: actions & GameplayActions.Sprint ? 1 : 0 });
+    world.set(e, PlayerIntent, { moving: 0, sprint: 0, charge: 0 });
+  } else world.set(e, PlayerIntent, { moving: actions & MOVE || analogMoving(frame) ? 1 : 0, sprint: actions & GameplayActions.Sprint ? 1 : 0, charge: actions & GameplayHoldBits.Charge ? 1 : 0 });
   for (const c of frame?.commands ?? []) queueCommand(world, e, reg, c);
   if (!frame) return;
   const slot = hotbarSlotFromEdges(frame.edges ?? 0);
   if (slot >= 0) { try { queueCommand(world, e, reg, reg.make(EquipCmd, { slot })); } catch { /* EquipCmd not in this registry */ } }
+  if ((frame.edges ?? 0) & GameplayEdgeBits.Reload) { try { queueCommand(world, e, reg, reg.make(ReloadCmd, {})); } catch { /* not registered */ } }
   runInputHooks(world, e, frame, reg);
 }
 export function queueCommand(world: World, e: Entity, reg: CommandRegistry, c: Command): boolean {
-  const def = reg.def(c.type); const entry = def && GAMEPLAY_COMMANDS.find(([d]) => d.name === def.name);
+  const def = reg.def(c.type); const entry = def && (GAMEPLAY_COMMANDS.find(([d]) => d.name === def.name) ?? ARMS_COMMANDS.find(([d]) => d.name === def.name));
   if (!entry) return false;
   let qs = world.getResource(CommandQueues); if (!qs) world.setResource(CommandQueues, (qs = new Map()));
   let q = qs.get(e); if (!q) qs.set(e, (q = []));

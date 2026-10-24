@@ -22,6 +22,8 @@ import { indexEntity } from "../spawn.js";
 export interface PvpTuning {
   bagSlots: number; bagDespawnSeconds: number; bagOwnerOnlySeconds: number; respawnSeconds: number; respawnHealthFrac: number;
   respawnHunger: number; respawnThirst: number; combatTagSeconds: number; hitConeDeg: number; spawnPoints: { x: number; y: number }[];
+  /** Explosive raid rules: own-tribe structure damage multiplier, player damage multiplier, falloff at the edge. */
+  explosives: { ownTribeStructureMul: number; playerDamageMul: number; edgeFalloff: number; igniteRadiusFrac: number }; thrownBagSeconds: number;
 }
 export const PVP: Readonly<PvpTuning> = Object.freeze(raw as PvpTuning);
 if (!PVP.spawnPoints.length) throw new Error("pvp.json: spawnPoints must not be empty");

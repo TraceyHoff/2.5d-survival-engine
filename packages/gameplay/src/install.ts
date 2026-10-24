@@ -1,3 +1,4 @@
+import { wearSystem } from "./combat/arms.js";
 import { DEFAULT_TICK_HZ, pruneModifiers, setTimeOfDay, StallDisplay, TimeOfDay, Weather, type World } from "@engine/core";
 import { installSpatialIndex, setClimateModel, ClimateRes } from "@engine/world";
 import { Buffs, Equipment, GAMEPLAY_COMPONENTS, IntentAction, Inventory, NO_SLOT, PlayerIntent } from "./components.js";
@@ -42,6 +43,7 @@ export const GAMEPLAY_SYSTEM_ORDER: readonly (readonly [Phase, string, number?])
   ["simulation", "gameplay.weather"],
   ["simulation", "gameplay.vehicles"],
   ...BUILDING_SYSTEMS.pre,
+  ["simulation", "gameplay.wear"],
   ["simulation", "gameplay.exposure", EXPOSURE_EVERY],
   ["simulation", "gameplay.fuel"],
   ["simulation", "gameplay.respawn"],
@@ -88,7 +90,7 @@ export function installGameplay(world: World, options: GameplayOptions | number 
 
   const sys: Record<string, (w: World, dt: number) => void> = {
     "gameplay.commands": commandIntentSystem, "gameplay.clock": clockSystem, "gameplay.weather": weatherSystem,
-    "gameplay.exposure": exposureSystem, "gameplay.fuel": fuelSystem, "gameplay.respawn": respawnSystem, "gameplay.gather": gatherSystem,
+    "gameplay.wear": wearSystem, "gameplay.exposure": exposureSystem, "gameplay.fuel": fuelSystem, "gameplay.respawn": respawnSystem, "gameplay.gather": gatherSystem,
     "gameplay.craft": craftingSystem, "gameplay.consume": consumeSystem, "gameplay.vitals": vitalsSystem, "gameplay.death": deathSystem,
     "gameplay.spoilage": spoilageSystem, "gameplay.chunkSurface": chunkSurfaceSystem,
     "gameplay.clearIntents": clearIntentsSystem, "gameplay.equipmentSync": equipmentSyncSystem, "gameplay.noiseDecay": noiseDecaySystem,

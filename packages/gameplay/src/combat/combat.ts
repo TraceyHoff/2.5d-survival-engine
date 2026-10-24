@@ -15,6 +15,7 @@ import { makeNoise } from "../systems/noise.js";
 import { distance } from "../systems/fuel.js";
 import { spendStamina } from "../systems/vitals.js";
 import { checkHit, tagCombat } from "./pvp.js";
+import { armorReduce, igniteTarget, landThrown, resolveAttack, spendRound, throwExplosive } from "./arms.js";
 
 export const FISTS: WeaponDef = { damage: 5, range: 1.0, cooldownSeconds: 0.6, staminaCost: 3, structureMul: 0.2 };
 export function heldWeapon(world: World, e: Entity): WeaponDef {
@@ -30,14 +31,16 @@ export function setAnim(world: World, e: Entity, anim: Anim): void {
 }
 
 /** Applies damage (authority): creatures lose hp now; structures get batched damage. */
-export function applyDamage(world: World, target: Entity, amount: number, source: Entity, cause: DamageCause = DamageCause.Combat): void {
+/** Creature damage is reduced by worn armor (Combat / Explosion causes; `pierce` 0..1 ignores part of it). */
+export function applyDamage(world: World, target: Entity, amount: number, source: Entity, cause: DamageCause = DamageCause.Combat, pierce = 0): void {
   if (!isAuthority(world) || world.isReplaying || amount <= 0 || !world.isAlive(target)) return;
   if (world.has(target, BuildPiece)) { damagePiece(world, target, amount, source); return; }
   const hp = world.getField(target, Health, "hp"); if (hp === undefined || world.has(target, Dead)) return;
+  if (cause === DamageCause.Combat || cause === DamageCause.Explosion) amount = armorReduce(world, target, amount, pierce);
   world.setField(target, Health, "hp", Math.max(0, hp - amount));
   if (world.has(target, VitalsState)) world.setField(target, VitalsState, "lastDamageCause", cause);
   emit(world, Damaged, { target, source, amount, cause });
-  if (cause === DamageCause.Combat) tagCombat(world, source, target);
+  if (cause === DamageCause.Combat || cause === DamageCause.Explosion) tagCombat(world, source, target);
   if (world.has(target, AnimState) && hp - amount > 0) setAnim(world, target, Anim.Hurt);
 }
 
@@ -48,16 +51,29 @@ export function combatSystem(world: World, dt: number): void {
     const target = it.data.target[s]!;
     if (world.tick < world.getField(e, Attacker, "cooldownUntilTick")!) continue;
     if (!world.isAlive(target) || !(world.has(target, Health) || world.has(target, BuildPiece)) || world.has(target, Dead)) continue;
-    const w = heldWeapon(world, e);
-    const reach = w.range + (world.has(target, BuildPiece) ? 0.6 : 0.4) + rangeSlack(world, e);
-    if (distance(world, e, target) > reach) continue;
-    if (world.has(e, Survival) && !spendStamina(world, e, w.staminaCost, dt)) continue;
-    world.setField(e, Attacker, "cooldownUntilTick", world.tick + secondsToTicks(w.cooldownSeconds, dt));
+    const w = heldWeapon(world, e); const slack = rangeSlack(world, e); const piece = world.has(target, BuildPiece);
+    const melee = w.range + (piece ? 0.6 : 0.4) + slack; const dist = distance(world, e, target);
+    const mode = resolveAttack(world, e, dist, melee, slack, dt);
+    const reach = mode.kind === "melee" ? melee : mode.reach;
+    if (dist > reach) continue;
+    const stamina = mode.kind === "ranged" ? mode.staminaCost : w.staminaCost;
+    if (world.has(e, Survival) && !spendStamina(world, e, stamina, dt)) continue;
+    world.setField(e, Attacker, "cooldownUntilTick", world.tick + secondsToTicks(mode.kind === "ranged" ? mode.cooldownSeconds : w.cooldownSeconds, dt));
     if (world.has(e, AnimState)) setAnim(world, e, Anim.Attack);
     emit(world, AttackSwing, { entity: e, target });
     if (!authority) continue;
+    if (mode.kind === "explosive") { // lands at the target's position; no hit check (area effect resolves later)
+      const t = world.get(target, Transform)!; throwExplosive(world, e, mode.slot, mode.item, t.x, t.y, dt); makeNoise(world, e, noise.attack); continue;
+    }
+    if (mode.kind === "ranged") spendRound(world, e); // the round is spent even on a rejected hit
     if (!checkHit(world, e, target, reach)) continue;
-    applyDamage(world, target, world.has(target, BuildPiece) ? w.damage * w.structureMul : w.damage, e);
+    if (mode.kind === "ranged") {
+      applyDamage(world, target, piece ? mode.damage * mode.structureMul : mode.damage, e, DamageCause.Combat, mode.pierce);
+      if (mode.ignite) igniteTarget(world, target);
+      makeNoise(world, e, noise.attack * 3); continue;
+    }
+    if (mode.kind === "thrown") { applyDamage(world, target, piece ? mode.damage * w.structureMul : mode.damage, e); landThrown(world, e, mode.slot, target); makeNoise(world, e, noise.attack); continue; }
+    applyDamage(world, target, piece ? w.damage * w.structureMul : w.damage, e);
     makeNoise(world, e, noise.attack);
   }
 }

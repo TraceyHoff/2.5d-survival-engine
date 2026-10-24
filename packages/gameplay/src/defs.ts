@@ -13,14 +13,18 @@ import { loadBuildPieces, type BuildPieceDef, type BuildPieceRegistry, type RawB
 /** Weather kind ids (u8 in core Weather.kind). Owned by gameplay; append-only. */
 export const enum WeatherKind { Clear = 0, Rain = 1, Storm = 2, Snow = 3, Fog = 4 }
 
-export const enum ItemCategory { Resource = 0, Food = 1, Tool = 2, Placeable = 3, Weapon = 4 }
+export const enum ItemCategory { Resource = 0, Food = 1, Tool = 2, Placeable = 3, Weapon = 4, Clothing = 5, Armor = 6, Ammo = 7, Explosive = 8 }
+/** Worn slots (Worn component index). Append only. */
+export const enum WearSlot { Head = 0, Torso = 1, Legs = 2, Feet = 3, Hands = 4, Back = 5 }
+export const WEAR_SLOTS = 6;
 export const enum ToolKind { None = 0, Axe = 1, Pickaxe = 2, Shovel = 3, Knife = 4 }
 export const enum StationKind { None = 0, Campfire = 1, Workbench = 2, Furnace = 3, Anvil = 4 }
 export const enum Placement { Cell = 0, Edge = 1, Opening = 2, Free = 3 }
 /** BuildingGrid socket kinds. */
 export const enum SocketKind { Edge = 1, Door = 2, Window = 3, Hatch = 4 }
 
-const CATEGORY: Record<string, ItemCategory> = { resource: ItemCategory.Resource, food: ItemCategory.Food, tool: ItemCategory.Tool, placeable: ItemCategory.Placeable, weapon: ItemCategory.Weapon };
+const CATEGORY: Record<string, ItemCategory> = { resource: ItemCategory.Resource, food: ItemCategory.Food, tool: ItemCategory.Tool, placeable: ItemCategory.Placeable, weapon: ItemCategory.Weapon, clothing: ItemCategory.Clothing, armor: ItemCategory.Armor, ammo: ItemCategory.Ammo, explosive: ItemCategory.Explosive };
+const WEAR: Record<string, WearSlot> = { head: WearSlot.Head, torso: WearSlot.Torso, legs: WearSlot.Legs, feet: WearSlot.Feet, hands: WearSlot.Hands, back: WearSlot.Back };
 const TOOL: Record<string, ToolKind> = { none: ToolKind.None, axe: ToolKind.Axe, pickaxe: ToolKind.Pickaxe, shovel: ToolKind.Shovel, knife: ToolKind.Knife };
 const STATION: Record<string, StationKind> = { none: StationKind.None, campfire: StationKind.Campfire, workbench: StationKind.Workbench, furnace: StationKind.Furnace, anvil: StationKind.Anvil };
 const WEATHER: Record<string, WeatherKind> = { clear: WeatherKind.Clear, rain: WeatherKind.Rain, storm: WeatherKind.Storm, snow: WeatherKind.Snow, fog: WeatherKind.Fog };
@@ -32,6 +36,16 @@ const OPENING: Record<string, SocketKind> = { door: SocketKind.Door, window: Soc
 export interface FoodDef { readonly hunger: number; readonly thirst: number; readonly health: number }
 export interface ToolDef { readonly kind: ToolKind; readonly tier: number }
 export interface WeaponDef { readonly damage: number; readonly range: number; readonly cooldownSeconds: number; readonly staminaCost: number; readonly structureMul: number }
+/** Wearable (clothing / armor): insulation in deg C added to felt temperature, waterproof 0..1 (fraction of rain
+ * wetting blocked; worn slots average), armor points (combat/explosion damage x 100/(100+armor)), carryBonus kg. */
+export interface WearDef { readonly slot: WearSlot; readonly insulation: number; readonly waterproof: number; readonly armor: number; readonly carryBonus: number }
+/** Ranged mode: shots need loaded ammo (Reload), chargeSeconds > 0 = draw weapon (Charge hold scales damage minChargeMul..1). */
+export interface RangedDef { readonly ammo: readonly number[]; readonly damage: number; readonly range: number; readonly magazine: number; readonly reloadSeconds: number; readonly cooldownSeconds: number; readonly staminaCost: number; readonly chargeSeconds: number; readonly minChargeMul: number; readonly structureMul: number }
+/** Throwable weapon (spears, axes): Attack beyond melee reach throws it; it lands in a loot bag at the target. */
+export interface ThrownDef { readonly damage: number; readonly range: number }
+export interface AmmoDef { readonly damageMul: number; readonly structureMul: number; readonly armorPierce: number; readonly ignite: boolean }
+/** Thrown charge: detonates fuseSeconds after the throw; linear falloff to 25% at radius. */
+export interface ExplosiveDef { readonly damage: number; readonly radius: number; readonly structureDamage: number; readonly fuseSeconds: number; readonly throwRange: number; readonly ignite: boolean }
 export interface Visual { readonly spriteKey: string; readonly visualId: number }
 export interface ItemDef extends Visual {
   readonly id: number; readonly key: string; readonly name: string; readonly category: ItemCategory;
@@ -45,10 +59,13 @@ export interface ItemDef extends Visual {
   readonly tradeable: boolean;
   /** Liquid container (water_flask): sips when full; current fill lives in the slot's durability (0..sips). 0 = n/a. */
   readonly sips: number;
+  /** Progression tier (1 primitive, 2 bronze, 3 iron, 4 steel, 5 advanced; 0 = untiered) and balance family. */
+  readonly tier: number; readonly family: string;
+  readonly wear: WearDef | null; readonly ranged: RangedDef | null; readonly thrown: ThrownDef | null; readonly ammo: AmmoDef | null; readonly explosive: ExplosiveDef | null;
 }
 export interface SpoilStage { readonly key: string; readonly minFresh: number; readonly nutritionMul: number; readonly sick: boolean }
 export interface ItemCount { readonly item: number; readonly count: number }
-export interface RecipeDef { readonly id: number; readonly key: string; readonly station: StationKind; readonly seconds: number; readonly ingredients: readonly ItemCount[]; readonly output: ItemCount }
+export interface RecipeDef { readonly id: number; readonly key: string; readonly station: StationKind; readonly seconds: number; readonly ingredients: readonly ItemCount[]; readonly output: ItemCount; readonly skill: { readonly key: string; readonly level: number } | null }
 export interface YieldDef { readonly item: number; readonly min: number; readonly max: number; readonly chance: number }
 export interface ResourceDef extends Visual {
   readonly id: number; readonly key: string; readonly requiredTool: ToolKind; readonly minTier: number; readonly capacity: number;
@@ -164,8 +181,11 @@ export interface GameDefs {
 // ---- raw JSON shapes ----------------------------------------------------------------------------
 
 interface RawVisual { sprite?: string }
-export interface RawItem extends RawVisual { key: string; name: string; category: string; maxStack: number; weight: number; food?: FoodDef; tool?: { kind: string; tier: number }; weapon?: WeaponDef; fuelSeconds?: number; spoilSeconds?: number; durability?: number; tradeable?: boolean; sips?: number }
-export interface RawRecipe { key: string; station: string; seconds: number; ingredients: { item: string; count: number }[]; output: { item: string; count: number } }
+export interface RawItem extends RawVisual { key: string; name: string; category: string; maxStack: number; weight: number; food?: FoodDef; tool?: { kind: string; tier: number }; weapon?: WeaponDef; fuelSeconds?: number; spoilSeconds?: number; durability?: number; tradeable?: boolean; sips?: number;
+  tier?: number; family?: string; wear?: { slot: string; insulation?: number; waterproof?: number; armor?: number; carryBonus?: number };
+  ranged?: Omit<RangedDef, "ammo" | "chargeSeconds" | "minChargeMul" | "staminaCost" | "structureMul"> & { ammo: string[]; chargeSeconds?: number; minChargeMul?: number; staminaCost?: number; structureMul?: number };
+  thrown?: ThrownDef; ammo?: { damageMul: number; structureMul?: number; armorPierce?: number; ignite?: boolean }; explosive?: Omit<ExplosiveDef, "ignite"> & { ignite?: boolean } }
+export interface RawRecipe { key: string; station: string; seconds: number; ingredients: { item: string; count: number }[]; output: { item: string; count: number }; skill?: { key: string; level: number } }
 export interface RawResource extends RawVisual { key: string; requiredTool: string; minTier: number; capacity: number; respawnSeconds: number; cooldownSeconds: number; staminaCost: number; bonusPerTier: number; yields: { item: string; min: number; max: number; chance: number }[] }
 export interface RawWeather { kind: string; weight: number; durationSeconds: number[]; intensity: number[]; tempOffset: number; wetnessPerSec: number; thirstMul: number; staminaRegenMul: number; windSpeed?: number[] }
 export interface RawPiece extends RawVisual {
@@ -238,14 +258,32 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
     if (category === ItemCategory.Weapon && !r.weapon) err(`${where}: weapon item needs "weapon"`);
     if (r.sips && (r.maxStack !== 1 || r.durability !== r.sips)) err(`${where}: liquid containers need maxStack 1 and durability = sips`);
     if ((r.tool || r.weapon) && r.maxStack !== 1) err(`${where}: tools/weapons are non-stackable (maxStack 1)`);
+    const isWear = category === ItemCategory.Clothing || category === ItemCategory.Armor;
+    if (isWear !== !!r.wear) err(`${where}: clothing/armor items (only) need "wear"`);
+    if ((category === ItemCategory.Ammo) !== !!r.ammo) err(`${where}: ammo items (only) need "ammo"`);
+    if ((category === ItemCategory.Explosive) !== !!r.explosive) err(`${where}: explosive items (only) need "explosive"`);
+    if ((r.ranged || r.thrown) && !r.weapon) err(`${where}: ranged/thrown weapons also need melee "weapon" stats`);
+    if (isWear && r.maxStack !== 1) err(`${where}: wearables are non-stackable`);
+    if (r.tier !== undefined && !(Number.isInteger(r.tier) && r.tier >= 0 && r.tier <= 5)) err(`${where}.tier must be 0..5`);
+    if (r.wear && !((r.wear.waterproof ?? 0) >= 0 && (r.wear.waterproof ?? 0) <= 1)) err(`${where}.wear.waterproof must be 0..1`);
+    if (r.ranged) { posInt(r.ranged.magazine, `${where}.ranged.magazine`); if (r.ranged.magazine > 255) err(`${where}.ranged.magazine > 255`); if (!r.ranged.ammo.length) err(`${where}.ranged.ammo empty`); }
+    if (r.explosive && !(r.explosive.radius > 0 && r.explosive.fuseSeconds >= 0)) err(`${where}.explosive: radius > 0, fuseSeconds >= 0`);
     const id = itemsR.reg.tryId(r.key) ?? 0;
+    const rg = r.ranged;
     items.set(id, {
       id, key: r.key, name: r.name, category, maxStack: r.maxStack, weight: r.weight, ...visual(r.key, r.sprite),
       food: r.food ? { ...r.food } : null, tool: r.tool ? { kind: enumOf(TOOL, r.tool.kind, `${where}.tool.kind`), tier: r.tool.tier } : null,
       weapon: r.weapon ? { ...r.weapon } : null, fuelSeconds: r.fuelSeconds ?? 0, spoilSeconds: r.spoilSeconds ?? 0, maxDurability: r.durability ?? (r.tool || r.weapon ? 200 : 0), tradeable: r.tradeable ?? true, sips: r.sips ?? 0,
+      tier: r.tier ?? 0, family: r.family ?? "",
+      wear: r.wear ? { slot: enumOf(WEAR, r.wear.slot, `${where}.wear.slot`), insulation: r.wear.insulation ?? 0, waterproof: r.wear.waterproof ?? 0, armor: r.wear.armor ?? 0, carryBonus: r.wear.carryBonus ?? 0 } : null,
+      ranged: rg ? { ammo: rg.ammo.map((k, i) => itemRef(k, `${where}.ranged.ammo[${i}]`)), damage: rg.damage, range: rg.range, magazine: rg.magazine, reloadSeconds: rg.reloadSeconds, cooldownSeconds: rg.cooldownSeconds, staminaCost: rg.staminaCost ?? 0, chargeSeconds: rg.chargeSeconds ?? 0, minChargeMul: rg.minChargeMul ?? 1, structureMul: rg.structureMul ?? 0.1 } : null,
+      thrown: r.thrown ? { ...r.thrown } : null,
+      ammo: r.ammo ? { damageMul: r.ammo.damageMul, structureMul: r.ammo.structureMul ?? 1, armorPierce: r.ammo.armorPierce ?? 0, ignite: r.ammo.ignite ?? false } : null,
+      explosive: r.explosive ? { ...r.explosive, ignite: r.explosive.ignite ?? false } : null,
     });
   }
 
+  for (const d of items.values()) for (const a of d.ranged?.ammo ?? []) if (a && items.get(a)?.category !== ItemCategory.Ammo) err(`item ${d.key}.ranged.ammo: ${items.get(a)?.key} is not ammo`);
   const recipes = new Map<number, RecipeDef>();
   for (const r of raw.recipes.recipes) {
     const where = `recipe ${r.key}`;
@@ -253,8 +291,9 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
     if (r.ingredients.length === 0) err(`${where}: needs at least one ingredient`);
     const ingredients = r.ingredients.map((g, i) => { posInt(g.count, `${where}.ingredients[${i}].count`); return { item: itemRef(g.item, `${where}.ingredients[${i}]`), count: g.count }; });
     posInt(r.output.count, `${where}.output.count`);
+    if (r.skill && !(KEY.test(r.skill.key) && Number.isInteger(r.skill.level) && r.skill.level >= 1)) err(`${where}.skill needs a key and level >= 1`);
     const id = recR.reg.tryId(r.key) ?? 0;
-    recipes.set(id, { id, key: r.key, station: enumOf(STATION, r.station, `${where}.station`), seconds: r.seconds, ingredients, output: { item: itemRef(r.output.item, `${where}.output`), count: r.output.count } });
+    recipes.set(id, { id, key: r.key, station: enumOf(STATION, r.station, `${where}.station`), seconds: r.seconds, ingredients, output: { item: itemRef(r.output.item, `${where}.output`), count: r.output.count }, skill: r.skill ? { ...r.skill } : null });
   }
 
   const resources = new Map<number, ResourceDef>();
