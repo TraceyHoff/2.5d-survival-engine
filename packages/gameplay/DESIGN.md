@@ -519,3 +519,7 @@ Lives on the bot's AgentIdentity record in `game.agents` under `social` (`ai/soc
   `writeDebounceTicks` (put persists immediately, so the debounce is ours); `force` on bot removal / shutdown.
 - Loads: nothing extra; addBot already merges `game.agents.get(id)` into the identity, `socialMemoryOf` validates it.
 - The store's save path is unchanged. Wiring the flush call into the local.ts agent loop is Engine Architect's.
+
+- Bot stall buys (stall_trade) now buy one lot (`qty` in StallDisplay is the lot size, not a lot count; buying `qty` lots
+  was rejected sold_out). Covered end-to-end in apps/server/test/bot_stall_buy_e2e.test.ts: replica sensors -> stall_trade ->
+  emitAgentCommands -> openStall + buyFromStall on the real server.

@@ -89,7 +89,7 @@ export function survivalBehaviors(): GameBehavior[] {
         if (toward(o, c.self.x, c.self.y, s.x, s.y, 0.8) > 1.8) return;
         o.moveX = 0; o.moveY = 0;
         if (s.revision === undefined) { if (c.self.tick - c.bb.num("openedAt", -1e9) > 40) { o.actions.push(`open:${s.id}`); c.bb.set("openedAt", c.self.tick); } return; }
-        o.actions.push(`buy:${s.id}:${s.slot}:${s.qty}:${s.revision}:${s.priceItem}:${s.priceCount}`); c.bb.set("tradedAt", c.self.tick); return false;
+        o.actions.push(`buy:${s.id}:${s.slot}:1:${s.revision}:${s.priceItem}:${s.priceCount}`); c.bb.set("tradedAt", c.self.tick); return false;
       } },
     { name: "party", traits: { sociability: 1 }, inertia: 0.2, considerations: [
         { name: "mateAway", curve: { type: "logistic", k: 10, mid: 0.3 }, input: (c) => { const m = nearestMate(c.world, c.self.x, c.self.y); return m ? Math.min(1, m.d / 12) : 0; } }],
