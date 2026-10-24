@@ -63,6 +63,9 @@ export interface IsoRendererOptions {
   tickHz?: number;
   /** Keep the drawing buffer (needed for toDataURL/readPixels screenshots). */
   preserveDrawingBuffer?: boolean;
+  /** Transparent canvas (premultiplied alpha): clears to (0,0,0,0) and composites with the scene's coverage alpha, so
+   *  page content behind the canvas (e.g. the creator's preview_bg) shows through. Default false (opaque, sky clear). */
+  transparent?: boolean;
   style?: StylePatch;
   /** Building sprite pivot convention: footprint centre (default; art guide + @engine/assets sample) or front-most corner. */
   pieceAnchor?: "center" | "front";
@@ -97,6 +100,8 @@ export class IsoRenderer implements Renderer {
   private emit(e: RenderError): void { console.warn(`[render] ${e.kind}: ${e.message}`); this.onError?.(e); }
   /** Override the sky clear colour (linear-ish 0..1 RGB), e.g. a neutral backdrop for the character preview. */
   backdrop: [number, number, number] | null = null;
+  /** IsoRendererOptions.transparent (fixed at construction: it is a context attribute). */
+  readonly transparent: boolean;
   readonly settings: RenderSettings = { lights: true, shadows: true, weather: true, fog: true };
   /** Adaptive quality: Settings preset (Auto/Low/Medium/High/Ultra, persisted; ADR-116 probe-based Auto start) + frame-time governor (Auto). */
   readonly quality = new QualityController(parsePreset(typeof location !== "undefined" ? new URLSearchParams(location.search).get("quality") : null) ?? loadPreset());
@@ -117,6 +122,7 @@ export class IsoRenderer implements Renderer {
   stats: FrameStats = newStats();
   lighting: DayLighting = computeDayLighting(0.5, undefined, newDayLighting());
   private mixFog(a: readonly number[], b: readonly number[]): [number, number, number] { const o = this.fogScratch; o[0] = (a[0]! + b[0]!) / 2; o[1] = (a[1]! + b[1]!) / 2; o[2] = (a[2]! + b[2]!) / 2; return o; }
+  private clearScratch = new Float32Array(4);
   private ambScratch: [number, number, number] = [0, 0, 0]; private fogScratch: [number, number, number] = [0, 0, 0];
   tilemap: TileMap | undefined;
   tickHz: number;
@@ -240,7 +246,8 @@ export class IsoRenderer implements Renderer {
   constructor(readonly canvas: HTMLCanvasElement, opts: IsoRendererOptions = {}) {
     // no failIfMajorPerformanceCaveat (software/console adapters must still get a context); retry with the default
     // power preference — some ANGLE/D3D11 adapters (Xbox Edge) refuse "high-performance" after a GPU reset
-    const ctxOpts = { antialias: false, alpha: false, depth: false, stencil: false, preserveDrawingBuffer: opts.preserveDrawingBuffer ?? false };
+    this.transparent = opts.transparent ?? false;
+    const ctxOpts = { antialias: false, alpha: this.transparent, premultipliedAlpha: true, depth: false, stencil: false, preserveDrawingBuffer: opts.preserveDrawingBuffer ?? false };
     const gl = canvas.getContext("webgl2", { ...ctxOpts, powerPreference: "high-performance" }) ?? canvas.getContext("webgl2", { ...ctxOpts, powerPreference: "default" });
     if (!gl) throw new RenderGLError({ kind: "webgl2", message: "WebGL2 is not available in this browser/GPU" });
     this.gl = gl;
@@ -503,7 +510,7 @@ export class IsoRenderer implements Renderer {
     gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]);
     gl.viewport(0, 0, this.w, this.h);
     gl.depthMask(true);
-    { const bg = this.backdrop ?? day.sky; gl.clearBufferfv(gl.COLOR, 0, [bg[0], bg[1], bg[2], 1]); }
+    { const bg = this.backdrop ?? day.sky; const c = this.clearScratch; if (this.transparent) { c[0] = c[1] = c[2] = c[3] = 0; } else { c[0] = bg[0]; c[1] = bg[1]; c[2] = bg[2]; c[3] = 1; } gl.clearBufferfv(gl.COLOR, 0, c); }
     gl.clearBufferfv(gl.COLOR, 1, [0, 0, 0, 0]);
     // depth-only attachment (DEPTH_COMPONENT24/16): clear DEPTH, not DEPTH_STENCIL. Clearing DEPTH_STENCIL with no stencil
     // left depth uncleared on some ANGLE/Mali drivers -> every terrain/sprite fragment failed LESS (only the sky clear showed)
@@ -549,13 +556,13 @@ export class IsoRenderer implements Renderer {
       if (la && lb) { lutA = la; lutB = lb; lutMix = kf.t; } else if (la || lb) { lutA = (la ?? lb)!; } }
     const night = Math.max(0, Math.min(1, Math.max(day.glow, 1 - (amb[0] + amb[1] + amb[2]) / 1.6)));
     if (bloomOn) pass("bloom");
-    if (diag.safe) this.composite.drawSafe(this.sceneTex!, this.emisTex!, this.lights.tex!);
+    if (diag.safe) this.composite.drawSafe(this.sceneTex!, this.emisTex!, this.lights.tex!, this.transparent);
     else this.composite.draw(this.sceneTex!, this.emisTex!, this.lights.tex!, {
       ambient: amb, fog: this.settings.fog ? ws.fog : 0, haze: day.haze, storm: ws.storm, night, wind: ws.wind, time: this.time,
       origin: [rect.x0, rect.y1], size: [rect.x1 - rect.x0, rect.y0 - rect.y1], style,
       fogColor: kf ? this.mixFog(kf.fog, day.fog) : day.fog,
       bloom: bloomOn ? this.bloom.output : null, bloomStrength: style.bloom.strength * (1 + (style.bloom.nightBoost - 1) * night),
-      lutA, lutB, lutMix, flash: this.flash * style.lightning.flash,
+      lutA, lutB, lutMix, transparent: this.transparent, flash: this.flash * style.lightning.flash,
       cloudOffset: [this.cloudOff[0]!, this.cloudOff[1]!], cloudAlpha: style.clouds.alpha * day.daylight * (1 + style.clouds.overcastBoost * Math.max(ws.rain, ws.storm)),
       heat: this.lights.heat, heatCount: this.lights.heatCount, shimmerTex: this.shimmerTex,
     });

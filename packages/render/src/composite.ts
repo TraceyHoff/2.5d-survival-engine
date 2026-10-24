@@ -17,7 +17,7 @@ uniform vec3 uAmbient, uFogColor, uNightTint, uLift, uGain, uFlashColor;
 uniform float uFog, uHaze, uStorm, uTime, uNight, uWind, uBands, uBandMix, uNightMin, uSat, uContrast;
 uniform float uBloomStrength, uLutSizeA, uLutSizeB, uLutMix, uLutStrength, uFlash, uCloudAlpha, uCloudScale, uShimmer, uShimmerScale, uShimmerSpeed;
 uniform vec2 uWorldOrigin, uWorldSize, uWindDir, uCloudOffset;
-uniform vec4 uHeat[${MAX_HEAT}]; uniform int uHeatCount;
+uniform vec4 uHeat[${MAX_HEAT}]; uniform int uHeatCount; uniform int uTransparent;
 out vec4 o;
 float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float vnoise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
@@ -41,7 +41,9 @@ void main() {
       uv += off * amt * uShimmer * 6.0 / uWorldSize * vec2(1.0, -1.0);
     }
   }
-  vec3 scene = texture(uScene, uv).rgb;
+  vec4 scene4 = texture(uScene, uv); vec3 scene = scene4.rgb;
+  // transparent canvas: the scene is premultiplied over (0,0,0,0); grade the straight colour, re-premultiply at the end
+  float alpha = 1.0; if (uTransparent == 1) { alpha = scene4.a; scene = alpha > 0.0 ? scene / alpha : vec3(0.0); }
   float emis = clamp(texture(uEmissive, uv).r, 0.0, 1.0);
   vec3 light = texture(uLight, uv).rgb * 2.0;
   float ll = dot(light, vec3(0.299, 0.587, 0.114));
@@ -75,17 +77,18 @@ void main() {
   col = col * uGain + uLift;
   vec2 d = vUv - 0.5;
   col *= 1.0 - dot(d, d) * (0.25 + 0.5 * uNight);
-  o = vec4(clamp(col, 0.0, 1.0), 1.0);
+  o = vec4(clamp(col, 0.0, 1.0) * alpha, alpha);
 }`;
 
 /** `?gl=safe` composite: scene x lightmap (emissive bypass) straight to the screen; no bloom, LUT, fog or noise. */
 const SAFE_FS = /* glsl */ `#version 300 es
 precision highp float; precision highp int;
-in vec2 vUv; uniform highp sampler2D uScene, uEmissive, uLight; out vec4 o;
+in vec2 vUv; uniform highp sampler2D uScene, uEmissive, uLight; uniform int uTransparent; out vec4 o;
 void main() {
-  vec3 scene = texture(uScene, vUv).rgb; float emis = clamp(texture(uEmissive, vUv).r, 0.0, 1.0);
+  vec4 s4 = texture(uScene, vUv); vec3 scene = s4.rgb; float a = uTransparent == 1 ? s4.a : 1.0; float emis = clamp(texture(uEmissive, vUv).r, 0.0, 1.0);
   vec3 light = texture(uLight, vUv).rgb * 2.0;
-  o = vec4(clamp(mix(scene * light, scene, emis), 0.0, 1.0), 1.0);
+  // premultiplied scene stays premultiplied: scene*light <= a*light, clamp to a
+  o = vec4(min(mix(scene * light, scene, emis), vec3(a)), a);
 }`;
 
 export interface LutBinding { tex: WebGLTexture; size: number }
@@ -99,6 +102,8 @@ export interface CompositeParams {
   heat?: Float32Array; heatCount?: number;
   /** Tileable RG offset noise (Art's heat_shimmer_rg); procedural noise when absent. */
   shimmerTex?: WebGLTexture | null;
+  /** Premultiplied-alpha output with the scene's coverage alpha (IsoRendererOptions.transparent). */
+  transparent?: boolean;
 }
 
 export class CompositePass {
@@ -116,10 +121,11 @@ export class CompositePass {
   }
   private safeProg: Program | null = null;
   /** Direct scene x light composite (safe mode). */
-  drawSafe(scene: WebGLTexture, emissive: WebGLTexture, light: WebGLTexture): void {
+  drawSafe(scene: WebGLTexture, emissive: WebGLTexture, light: WebGLTexture, transparent = false): void {
     const gl = this.gl; const pr = (this.safeProg ??= createProgram(gl, FULLSCREEN_VS, SAFE_FS, "composite-safe"));
     gl.useProgram(pr.prog);
     [scene, emissive, light].forEach((t, i) => { gl.activeTexture(gl.TEXTURE0 + i); gl.bindTexture(gl.TEXTURE_2D, t); gl.uniform1i(pr.u[["uScene", "uEmissive", "uLight"][i]!] ?? null, i); });
+    gl.uniform1i(pr.u.uTransparent ?? null, transparent ? 1 : 0);
     gl.bindVertexArray(this.vao); gl.drawArrays(gl.TRIANGLES, 0, 3); gl.bindVertexArray(null);
   }
   draw(scene: WebGLTexture, emissive: WebGLTexture, light: WebGLTexture, p: CompositeParams): void {
@@ -140,7 +146,7 @@ export class CompositePass {
     f("uFlash", p.flash ?? 0); f("uCloudAlpha", p.cloudAlpha ?? 0); f("uCloudScale", Math.max(64, st.clouds.scalePx));
     gl.uniform2f(u.uCloudOffset ?? null, p.cloudOffset?.[0] ?? 0, p.cloudOffset?.[1] ?? 0);
     f("uShimmer", st.shimmer.strength); f("uShimmerScale", st.shimmer.scale); f("uShimmerSpeed", st.shimmer.speed);
-    gl.uniform1i(u.uHeatCount ?? null, p.heatCount ?? 0);
+    gl.uniform1i(u.uHeatCount ?? null, p.heatCount ?? 0); gl.uniform1i(u.uTransparent ?? null, p.transparent ? 1 : 0);
     if (p.heat && (p.heatCount ?? 0) > 0) gl.uniform4fv(u.uHeat ?? null, p.heat);
     gl.uniform2f(u.uWorldOrigin ?? null, p.origin[0], p.origin[1]); gl.uniform2f(u.uWorldSize ?? null, p.size[0], p.size[1]);
     gl.bindVertexArray(this.vao);

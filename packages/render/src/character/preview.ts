@@ -34,7 +34,9 @@ export interface CharacterPreviewOptions {
   /** user zoom multiplier on top of fit-to-height (default 1, clamped 0.5..3) */ zoom?: number | undefined;
   anim?: PreviewAnimName | undefined;
   /** custom binding (default: core Appearance + resolveLayers over registry.cosmetics) */ binding?: AppearanceBinding;
-  /** backdrop colour (CSS hex) */ backdrop?: string;
+  /** backdrop colour (CSS hex); only used when `transparent` is false */ backdrop?: string;
+  /** Transparent canvas (default true): no opaque clear, so the page behind (Art's ui/creator/preview_bg) shows through. */
+  transparent?: boolean;
   /** degrees per drag step (pixels per 45 deg facing step), default 48 */ dragStepPx?: number;
   pollGamepad?: boolean;
 }
@@ -62,10 +64,11 @@ export async function createCharacterPreview(target: HTMLCanvasElement | HTMLEle
   const backdrop = o.backdrop ?? "#8a8f98";
   if (own) { canvas.style.cssText = "display:block;width:100%;height:100%;touch-action:none"; (target as HTMLElement).appendChild(canvas); }
   else canvas.style.touchAction = "none";
-  canvas.style.background = backdrop;
+  const transparent = o.transparent ?? true;
+  canvas.style.background = transparent ? "transparent" : backdrop;
   const world = new World({ seed: 1 });
   IsoRenderer.registerComponents(world); world.register(Appearance); world.register(PreviewAnim);
-  const renderer = new IsoRenderer(canvas, { preserveDrawingBuffer: true, style: { blobShadow: { alpha: 0.45, widthFactor: 0.6, aspect: 0.4 }, occlusion: { enabled: false } } });
+  const renderer = new IsoRenderer(canvas, { preserveDrawingBuffer: true, transparent, style: { blobShadow: { alpha: 0.45, widthFactor: 0.6, aspect: 0.4 }, occlusion: { enabled: false } } });
   renderer.settings.weather = false; renderer.settings.fog = false;
   renderer.backdrop = hexRgb(backdrop);
   // one character: a small pool of sharp pages (paged in on selection) instead of the whole wardrobe at crowd scale
