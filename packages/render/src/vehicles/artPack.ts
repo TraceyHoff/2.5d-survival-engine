@@ -17,6 +17,7 @@ import type { AssetRegistry } from "@engine/assets";
 import type { VehicleRenderDef } from "./layout.js";
 
 /** Gameplay vehicle id -> Art sprite key. Ids not listed use their own id when Art has that key. */
+import { artScaleFor } from "./scale.js";
 export const VEHICLE_ART_ALIASES: Readonly<Record<string, string>> = {
   camper_rv: "camper_motorhome", trailer_camper: "camper_trailer", semi_tractor: "truck_semi_cab",
   truck_pickup: "car_pickup", trailer_utility_small: "trailer_utility", trailer_flatbed_large: "trailer_flatbed",
@@ -28,7 +29,7 @@ export const VEHICLE_ART_ALIASES: Readonly<Record<string, string>> = {
 export const ART_DIR_OFFSET = 1;
 export const ART_FACING_OFFSET = (ART_DIR_OFFSET * Math.PI) / 4;
 /** Art interior pieces (building sprites, 1x1 tile, single rotation row). */
-export const ART_INTERIOR = { floor: "camper_interior_floor", wall: "camper_interior_wall", stations: { craft_bench: "camper_interior_craft_bench", cook_stove: "camper_interior_cook_stove" } as Record<string, string> };
+export const ART_INTERIOR = { floor: "camper_interior_floor", wall: "camper_interior_wall", stations: { craft_bench: "camper_craft_bench", cook_stove: "camper_cook_stove" } as Record<string, string> };
 
 export const artKeyFor = (id: string): string => VEHICLE_ART_ALIASES[id] ?? id;
 
@@ -51,8 +52,8 @@ export function resolveVehicleArt(reg: AssetRegistry, def: VehicleRenderDef, met
   const key = artKeyFor(def.id);
   let s, id: number; try { s = reg.byKey(key); id = reg.id(key); } catch { return null; }
   const a0 = s.animList[0]; if (!a0 || a0.directions !== 8) return null;
-  const m = meta?.get(key); const L = m?.footprintTiles?.[0];
-  const scale = L && L > 0 ? Math.min(4, Math.max(0.5, def.footprint.length / L)) : 1;
+  // per-type stylized height (scale.ts): roof = heightX * player; unknown art keys fall back to 0.8 * pivot height
+  void meta; const scale = artScaleFor(def, key, 0.8 * s.anchor.y * s.atlas.frameH);
   return { mode: "art", key, spriteId: id, facingOffset: ART_FACING_OFFSET, scale, atlas: s.atlas.key };
 }
 

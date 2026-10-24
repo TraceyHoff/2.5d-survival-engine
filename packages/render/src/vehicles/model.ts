@@ -2,6 +2,7 @@
  * Procedural placeholder vehicle model (pure): a list of local boxes per def, used by the DEBUG atlas painter and as the
  * reference silhouette for Art (docs/VEHICLES_RENDER.md). u along the heading (+ front), v left, z up (world z units).
  */
+import { targetHeightZ } from "./scale.js";
 import { hasInterior, segmentCount, segmentU, type VehicleRenderDef } from "./layout.js";
 
 export type BoxKind = "solid" | "glass" | "wheel" | "lamp" | "station";
@@ -12,10 +13,20 @@ const hash = (s: string): number => { let h = 2166136261; for (let i = 0; i < s.
 export const paintColor = (d: VehicleRenderDef): number => PAINT[hash(d.id) % PAINT.length]!;
 const STATION_COLOR: Record<string, number> = { campfire: 0x9a9da3, workbench: 0x8a5a2b, furnace: 0x5a5d63 };
 
-/** Max model height (z units) - used for the atlas frame size. */
+/** Max model height (z units, stylized - see scale.ts) - used for the atlas frame size. */
 export function modelHeight(d: VehicleRenderDef): number { return Math.max(...vehicleModel(d, false).map((b) => b.z1)); }
+/** Roof height of the literal (1 z = 1 m) model - what vehicles.json seat z values were authored against. */
+export function literalModelHeight(d: VehicleRenderDef): number { return Math.max(...literalModel(d, false).map((b) => b.z1)); }
+/** Vertical stretch literal -> stylized (targetHeightZ / literal roof). */
+export function modelZScale(d: VehicleRenderDef): number { const h = literalModelHeight(d); return h > 0 ? targetHeightZ(d) / h : 1; }
 
+/** Placeholder boxes, z stretched so the roof matches the per-type target height (taller body + ground clearance). */
 export function vehicleModel(d: VehicleRenderDef, interior: boolean): Box[] {
+  const k = modelZScale(d);
+  return literalModel(d, interior).map((b) => ({ ...b, z0: b.z0 * k, z1: b.z1 * k }));
+}
+
+function literalModel(d: VehicleRenderDef, interior: boolean): Box[] {
   const L = d.footprint.length, W = d.footprint.width, hl = L / 2, hw = W / 2, col = paintColor(d);
   const out: Box[] = []; const B = (u0: number, u1: number, v0: number, v1: number, z0: number, z1: number, kind: BoxKind, color = col): void => { out.push({ u0, u1, v0, v1, z0, z1, kind, color }); };
   const wheels = (us: number[], r: number, wv = 0.22): void => { for (const u of us) for (const s of [1, -1]) B(u - r, u + r, s * hw - (s > 0 ? wv : 0), s * hw + (s < 0 ? wv : 0), 0, r * 1.6, "wheel", 0x1d1d1f); };
@@ -83,7 +94,7 @@ export function vehicleModel(d: VehicleRenderDef, interior: boolean): Box[] {
   }
   return out;
 }
-const hitchFront = (d: VehicleRenderDef): number => Math.min(d.footprint.length / 2 + 0.9, d.hitches.find((h) => h.at === "front")?.offset ?? d.footprint.length / 2);
+const hitchFront = (d: VehicleRenderDef): number => Math.min(d.footprint.length / 2 + 0.9, d.hitches.find((h) => h.at === "front")?.anchor?.x ?? d.footprint.length / 2);
 
 /** Boxes clipped to segment i (u-range), re-centred on the segment centre; `cut` marks faces created by the clip. */
 export interface SegBox extends Box { cutFront: boolean; cutRear: boolean }

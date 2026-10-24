@@ -87,7 +87,7 @@ async function main(): Promise<void> {
   }
   // ?vehicles=1|camper: procedural vehicle lot (VehicleView), camper = local player inside the RV (interior cutaway)
   const vehQ = q.get("vehicles");
-  const veh = vehQ ? setupVehicleDemo(world, content.registry, { x: scene.base.x + scene.base.w + 4, y: scene.base.y - 6, players: scene.players, player: scene.player, camper: vehQ === "camper", index: scene.index, lowEnd: renderer.capabilities.lowEnd }) : null;
+  const veh = vehQ ? setupVehicleDemo(world, content.registry, { x: scene.base.x + scene.base.w + 4, y: scene.base.y - 6, players: scene.players, player: scene.player, camper: vehQ === "camper", lineup: vehQ === "lineup", index: scene.index, lowEnd: renderer.capabilities.lowEnd, pages: renderer.atlas }) : null;
   let vehLast = performance.now();
   const camQ = q.get("cam"); const pl = world.get(scene.player, Transform)!;
   if (camQ === "fire") cam.lookAt(scene.base.x + 3.5, scene.base.y + scene.base.h + 2, 1); else if (camQ === "burn") cam.lookAt(scene.base.x + 10, scene.base.y + 5.5, 1); else if (camQ === "chars" && chars?.entities.length) { const t0 = world.get(chars.entities[0]!, Transform)!, t1 = world.get(chars.entities[chars.entities.length - 1]!, Transform)!; cam.lookAt((t0.x + t1.x) / 2, (t0.y + t1.y) / 2, t0.z); } else if (camQ === "players") cam.lookAt(pl.x + 1, pl.y, 1); else if (veh) cam.lookAt(veh.focus.x, veh.focus.y, 0.5); else cam.lookAt(scene.base.x + 4, scene.base.y + 4, 1);

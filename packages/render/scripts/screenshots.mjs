@@ -16,7 +16,7 @@ const chrome = process.env.CHROME ?? ["/usr/bin/google-chrome", "/usr/bin/chromi
 const viteBin = join(dirname(createRequire(join(root, "package.json")).resolve("vite/package.json")), "bin", "vite.js");
 const server = spawn(process.execPath, [viteBin, "preview", "--port", String(PORT), "--strictPort"], { cwd: root, stdio: ["ignore", "pipe", "inherit"] });
 const stop = () => { try { server.kill("SIGTERM"); } catch {} };
-process.on("exit", stop); process.on("uncaughtException", (e) => { console.error(e); stop(); process.exit(1); });
+process.on("exit", stop); process.on("uncaughtException", (e) => { console.error(e); if (globalThis.__errs?.length) console.error("page errors:", globalThis.__errs.slice(0, 10)); stop(); process.exit(1); });
 await new Promise((res, rej) => {
   const t = setTimeout(() => rej(new Error("preview server timeout")), 20000);
   server.on("exit", (c) => rej(new Error("preview server exited " + c)));
@@ -28,7 +28,7 @@ const browser = await chromium.launch({
   args: ["--use-angle=swiftshader", "--use-gl=angle", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--enable-webgl"],
 });
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
-const errors = [];
+const errors = []; globalThis.__errs = errors;
 page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
 page.on("pageerror", (e) => errors.push(String(e)));
 
@@ -52,6 +52,10 @@ const SHOTS = {
   vehicles_day: "time=11&weather=clear&vehicles=1&zombies=0&ui=0&zoom=1.3&shot=1",
   vehicles_night: "time=22&weather=clear&vehicles=1&zombies=0&ui=0&zoom=1.3&gl=lowend&shot=1",
   camper_interior: "time=15&weather=clear&vehicles=camper&zombies=0&ui=0&zoom=2.6&gl=safe&shot=1",
+  vehicles_art_day: "time=11&weather=clear&vehicles=1&zombies=0&ui=0&zoom=1.3&shot=1",
+  vehicles_art_night: "time=22&weather=clear&vehicles=1&zombies=0&ui=0&zoom=1.3&gl=lowend&shot=1",
+  camper_interior_fixed: "time=15&weather=clear&vehicles=camper&zombies=0&ui=0&zoom=2.6&gl=safe&shot=1",
+  vehicles_scale_lineup: "time=11&weather=clear&vehicles=lineup&zombies=0&ui=0&zoom=0.85&shot=1",
   day: "time=10&weather=clear&shot=1",
   night: "time=22&weather=clear&shot=1",
   rain: "time=15&weather=rain&shot=1",

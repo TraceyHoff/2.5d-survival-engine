@@ -8,7 +8,7 @@ export interface VehicleRenderDef {
   id: string; class: string; seats: number;
   footprint: { length: number; width: number };
   hitches: readonly { at: "front" | "rear"; offset: number; /** vehicle-local hitch point (x = u, y = v); gameplay defs carry it (ADR-101) */ anchor?: { x: number; y: number; z: number } }[];
-  /** Per-seat anchors from vehicles.json (x = u, y = v, z); when absent, seatAnchors() falls back to the computed layout. */
+  /** Per-seat anchors from vehicles.json (x = u, y = v, z). Required for riders (ADR-101). */
   seatAnchors?: readonly { x: number; y: number; z: number }[];
   interior: { stations: readonly string[] };
 }
@@ -37,20 +37,11 @@ export const hasInterior = (d: VehicleRenderDef): boolean => d.interior.stations
 export const isPowered = (d: VehicleRenderDef): boolean => d.class !== "trailer";
 
 export interface SeatAnchor { u: number; v: number; z: number; cabin: boolean }
-/** Seat anchors (seat 0 = driver, front-left). Cars: rows of 2 from the cabin front; bicycles: in line on the frame. */
-export function seatAnchors(d: VehicleRenderDef): SeatAnchor[] {
-  if (d.seatAnchors && d.seatAnchors.length === d.seats) { const cab = hasCabin(d); return d.seatAnchors.map((a) => ({ u: a.x, v: a.y, z: a.z, cabin: cab })); }
-  return defaultSeatAnchors(d);
-}
-/** Computed fallback (the formula vehicles.json seatAnchors were generated from). */
-export function defaultSeatAnchors(d: VehicleRenderDef): SeatAnchor[] {
-  const out: SeatAnchor[] = []; const L = d.footprint.length, W = d.footprint.width; const cab = hasCabin(d);
-  for (let i = 0; i < d.seats; i++) {
-    if (!cab) { out.push({ u: L * 0.05 - i * 0.7, v: 0, z: 0.35, cabin: false }); continue; }
-    const row = i >> 1, col = i & 1; const front = L / 2 - Math.min(1.1, 0.3 * L);
-    out.push({ u: front - row * 0.85, v: d.seats === 1 ? 0 : (col === 0 ? 1 : -1) * W * 0.24, z: SEAT_SINK, cabin: true });
-  }
-  return out;
+/** Seat anchors from vehicles.json (ADR-097; seat 0 = driver). Verified equal to the old computed layout before it was
+ * removed. z is scaled by the per-type stylized height (scale.ts) so riders sit at the right height in the taller body.
+ * A def without seatAnchors yields no anchors (riders then sit at the vehicle centre). */
+export function seatAnchors(d: VehicleRenderDef, zScale = 1): SeatAnchor[] {
+  const cab = hasCabin(d); return (d.seatAnchors ?? []).slice(0, d.seats).map((a) => ({ u: a.x, v: a.y, z: a.z * zScale, cabin: cab }));
 }
 /** Seat height (z units, feet) for cabin seats; the rider is depth-nudged just behind its segment so the opaque door
  * panel below the beltline crops the legs while the glass cabin shows the torso and head. */
@@ -70,7 +61,7 @@ export function headlightCone(d: VehicleRenderDef, lowEnd: boolean): { u: number
   if (lowEnd) return [{ u: nose + 2.4 * k, radius: 2.6 * k, intensity: 0.9 }];
   return [{ u: nose + 0.9 * k, radius: 1.3 * k, intensity: 0.9 }, { u: nose + 2.4 * k, radius: 2.1 * k, intensity: 0.75 }, { u: nose + 4.2 * k, radius: 2.8 * k, intensity: 0.55 }];
 }
-export const hitchU = (d: VehicleRenderDef, at: "front" | "rear"): number | undefined => { const h = d.hitches.find((x) => x.at === at); return h ? (h.anchor ? h.anchor.x : at === "front" ? h.offset : -h.offset) : undefined; };
+export const hitchU = (d: VehicleRenderDef, at: "front" | "rear"): number | undefined => { const h = d.hitches.find((x) => x.at === at); return h?.anchor ? h.anchor.x : undefined; };
 
 /** Trailer pose that keeps the front hitch pinned to the (smoothed) tow's rear hitch; heading = the trailer's own heading. */
 export function trailerPose(tow: VehicleRenderDef, towX: number, towY: number, towH: number, tr: VehicleRenderDef, trH: number): { x: number; y: number; heading: number } | undefined {

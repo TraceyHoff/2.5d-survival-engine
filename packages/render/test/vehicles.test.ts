@@ -1,3 +1,4 @@
+import { modelZScale, targetHeightPx, PLAYER_HEIGHT_PX, modelHeight, VEHICLE_STATE_HEADLIGHTS, VEHICLE_STATE_ENGINE_ON } from "../src/index.js";
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -5,7 +6,7 @@ import { World, Transform } from "@engine/core";
 import { AssetRegistry, loadManifest, mergeManifests, type ManifestJson } from "@engine/assets";
 import {
   LightSource, Occluder, Sprite, VehicleView, PoseSmoother, quantizeDir8, lerpAngleShortest, wrapAngle, trailerPose, hitchU, segmentCount, segmentU,
-  seatAnchors, defaultSeatAnchors, toWorld, vehicleManifestEntries, vehicleSpriteKey, vehicleFrame, depthNudge, insideFootprint, type VehicleRenderDef,
+  seatAnchors, toWorld, vehicleManifestEntries, vehicleSpriteKey, vehicleFrame, depthNudge, insideFootprint, type VehicleRenderDef,
 } from "../src/index.js";
 
 const raw = JSON.parse(readFileSync(join(__dirname, "../../gameplay/data/vehicles.json"), "utf8")) as { vehicles?: VehicleRenderDef[] } | VehicleRenderDef[];
@@ -97,8 +98,7 @@ describe("seats", () => {
     // ADR-101: anchors come from vehicles.json (ported from the computed layout) and hitches carry anchor.x
     for (const d of DEFS) {
       expect(d.seatAnchors?.length).toBe(d.seats);
-      const fromDefs = seatAnchors(d), computed = defaultSeatAnchors(d);
-      fromDefs.forEach((a, i) => { expect(a.u).toBeCloseTo(computed[i]!.u, 2); expect(a.v).toBeCloseTo(computed[i]!.v, 2); expect(a.z).toBeCloseTo(computed[i]!.z, 2); expect(a.cabin).toBe(computed[i]!.cabin); });
+      const k = modelZScale(d); seatAnchors(d, k).forEach((a, i) => { expect(a.u).toBe(d.seatAnchors![i]!.x); expect(a.z).toBeCloseTo(d.seatAnchors![i]!.z * k, 5); });
       for (const h of d.hitches) expect(hitchU(d, h.at)).toBe(h.anchor!.x);
     }
     expect(seatAnchors({ ...def("car_sedan"), seatAnchors: [{ x: 9, y: 8, z: 7 }, { x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 0 }] })[0]).toEqual({ u: 9, v: 8, z: 7, cabin: true });
@@ -109,7 +109,7 @@ describe("seats", () => {
     const seg = w.get(v.recs.get(3)!.segs[0]!, Transform)!, seg1 = w.get(v.recs.get(3)!.segs[1]!, Transform)!;
     expect(key(r0)).toBeLessThan(Math.max(key(seg), key(seg1)));
     // screen position = seat anchor (depth nudge only slides along the view ray)
-    const a = seatAnchors(d)[0]!, [ax, ay] = toWorld(10, 10, 0, a.u, a.v);
+    const a = seatAnchors(d, modelZScale(d))[0]!, [ax, ay] = toWorld(10, 10, 0, a.u, a.v);
     expect((r0.x - r0.y) * 32).toBeCloseTo((ax - ay) * 32); expect((r0.x + r0.y) * 16 - r0.z * 16).toBeCloseTo((ax + ay) * 16 - a.z * 16);
     const bike = v.sync([{ key: 4, def: def("bike_basic"), x: 0, y: 0, heading: 0, occupants: [9] }], 0, { darkness: 0 })[0]!;
     expect(bike.cropped).toBe(false);
@@ -141,5 +141,21 @@ describe("camper interior", () => {
     v.sync([{ key: 2, def: def("car_sedan"), x: 0, y: 0, heading: 0, occupants: [77] }], 0, { darkness: 0, localRider: 77 });
     expect(v.pose(2)!.interior).toBe(false); expect(v.recs.has(1)).toBe(false); // camper gone -> entities dropped
     expect(insideFootprint(d, 0, 0, Math.PI / 2, 0, 2.5)).toBe(true);
+  });
+});
+
+describe("per-type scale (steering: vehicles read taller than players)", () => {
+  it("car roof 1.2-1.5x player, semi 2-2.5x, ordering bike < car < pickup < van/camper < semi", () => {
+    const h = (id: string) => targetHeightPx(def(id)) / PLAYER_HEIGHT_PX;
+    expect(h("car_sedan")).toBeGreaterThanOrEqual(1.2); expect(h("car_sedan")).toBeLessThanOrEqual(1.5);
+    expect(h("semi_tractor")).toBeGreaterThanOrEqual(2); expect(h("semi_tractor")).toBeLessThanOrEqual(2.5);
+    expect(h("bike_basic")).toBeLessThan(h("car_sedan")); expect(h("car_sedan")).toBeLessThan(h("truck_pickup"));
+    expect(h("truck_pickup")).toBeLessThan(h("van_cargo")); expect(h("van_cargo")).toBeLessThan(h("camper_rv")); expect(h("camper_rv")).toBeLessThan(h("semi_tractor"));
+    for (const d of DEFS) expect(modelHeight(d)).toBeCloseTo(targetHeightPx(d) / 16, 3);
+  });
+  it("headlights follow the VehicleState byte", () => {
+    const w = mk(); const v = new VehicleView(w, reg); const d = def("car_sedan");
+    const lights = (state: number) => { v.sync([{ key: 1, def: d, x: 0, y: 0, heading: 0, state }], 0, { darkness: 1 }); return v.recs.get(1)!.lights.length; };
+    expect(lights(VEHICLE_STATE_ENGINE_ON)).toBe(0); expect(lights(VEHICLE_STATE_ENGINE_ON | VEHICLE_STATE_HEADLIGHTS)).toBeGreaterThan(0);
   });
 });
