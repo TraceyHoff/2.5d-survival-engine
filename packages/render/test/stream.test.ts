@@ -62,7 +62,7 @@ describe("stream pool: placeholders, near-view load/keep, upload budget, idle un
     expect(am.started.length).toBe(STREAM_UPLOADS_PER_FRAME);
     for (let f = 0; f < 4; f++) { am.beginFrame(); await flush(); }
     expect(am.started.length).toBe(6);
-    const ia = am.sprites[crops[0]].atlasIdx; expect(am.streamPageReady(ia, 4)).toBe(true);
+    const ia = am.sprites[crops[0]!].atlasIdx; expect(am.streamPageReady(ia, 4)).toBe(true);
     expect(am.streamPageReady(am.sprites[id(reg, "ph_sprout")].atlasIdx)).toBe(true); // resident: always ready, no miss
   });
   it("hysteresis: a page touched inside the keep radius stays; off-screen for STREAM_UNLOAD_FRAMES it is dropped", async () => {
