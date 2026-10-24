@@ -48,6 +48,18 @@ export const TintSecondary = defineComponent("TintSecondary", {
   tint: "u32",
 });
 
-export const RENDER_COMPONENTS = [Sprite, LightSource, Shadow, Occluder, TintSecondary] as const;
+/**
+ * Piece of a vehicle interior (camper) drawn by the interior pass (SpriteBatch.drawInterior) instead of the depth-sorted
+ * sprite pass: floor (role 1) at ground level with no depth test (never clipped by terrain), then far walls, the
+ * occupants (dynamic sprites standing inside a floor's footprint), then near walls faded/cut. The footprint (centre,
+ * heading, length, width in tiles) is carried by the floor pieces; it decides who is an occupant and which walls are near.
+ */
+export const InteriorPart = defineComponent("InteriorPart", {
+  role: "u8", // InteriorRole
+  cx: "f32", cy: "f32", heading: "f32", length: "f32", width: "f32",
+});
+export const InteriorRole = { Floor: 1, Wall: 2 } as const;
+
+export const RENDER_COMPONENTS = [Sprite, LightSource, Shadow, Occluder, TintSecondary, InteriorPart] as const;
 
 export { SpriteFlag, TileId } from "./ids.js";
