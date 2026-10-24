@@ -12,18 +12,19 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@engine/assets": "workspace:*",
     "@engine/core": "workspace:*",
-    "@engine/world": "workspace:*",
-    "@engine/render": "workspace:*",
-    "@engine/net": "workspace:*",
     "@engine/gameplay": "workspace:*",
-    "@engine/persist": "workspace:*",
-    "@engine/server": "workspace:*",
     "@engine/input": "workspace:*",
-    "@engine/assets": "workspace:*"
+    "@engine/net": "workspace:*",
+    "@engine/persist": "workspace:*",
+    "@engine/render": "workspace:*",
+    "@engine/server": "workspace:*",
+    "@engine/world": "workspace:*",
+    "peerjs": "^1.5.5"
   },
   "devDependencies": {
-    "ws": "^8.22.0",
-    "@types/ws": "^8.18.2"
+    "@types/ws": "^8.18.2",
+    "ws": "^8.22.0"
   }
 }

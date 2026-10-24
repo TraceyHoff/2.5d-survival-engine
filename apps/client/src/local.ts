@@ -8,7 +8,7 @@
  */
 import { CommandRegistry, DEFAULT_TICK_HZ, FixedLoop, Owner, World, type CosmeticCatalogLike, type Agent, type AgentOutput, type Entity } from "@engine/core";
 import { agentOutputFrame, applyAgentEmote, buildAgentView, flushSocialMemory, makeAgent, makeAgentIdentity, survivorController } from "@engine/gameplay";
-import { ChatChannel, LoopbackNetwork, NetClient, type ClientTransport } from "@engine/net";
+import { ChatChannel, LoopbackNetwork, MultiServerTransport, NetClient, type ClientTransport, type ServerTransport } from "@engine/net";
 import { ClaimAccount, IndexedDbWorldStore, MemoryWorldStore, SetName, nameToWords, tokenToWords, type WorldStore } from "@engine/persist";
 import { createGameServer, SPAWN, type GameMode, type GameServer } from "@engine/server/game";
 import { Act, applyMoveInput, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS } from "@engine/server/protocol";
@@ -25,6 +25,10 @@ export interface LocalServerOptions {
   rng?: () => number; log?: (s: string) => void;
   /** Cosmetics catalog: enables customization + random placeholder appearances (players and bots). */
   catalog?: CosmeticCatalogLike;
+  /** P2P host: extra server transports (e.g. RtcServerTransport for WebRTC guests) served by the same NetServer. */
+  extraTransports?: ServerTransport[];
+  /** Player cap incl. the host's own client; extra joins are rejected (ServerFull + serverFullDetail). */
+  maxClients?: number; serverFullDetail?: string;
 }
 export interface VirtualPlayer { client: NetClient; world: World; agent: Agent; output: AgentOutput; home: { x: number; y: number } }
 export interface LocalServer {
@@ -52,6 +56,7 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
   const seed = o.seed ?? 1234; const mode: GameMode = o.mode ?? "singleplayer";
   const network = new LoopbackNetwork(seed);
   const transport = network.createServer();
+  const serverTransport: ServerTransport = o.extraTransports?.length ? new MultiServerTransport([transport, ...o.extraTransports]) : transport;
   const bots: VirtualPlayer[] = [];
   const controller = survivorController({ seed });
   let slot = 0, stopped = false; const connecting: Promise<void>[] = [];
@@ -60,7 +65,8 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
   const queued: { x: number; y: number }[] = [];
   const connectBot = (x: number, y: number): boolean => { queued.push({ x, y }); return true; };
   const game = createGameServer({
-    transport, ...(store ? { store } : {}), seed, mode, ...(o.log ? { log: o.log } : {}), ...(o.catalog ? { catalog: o.catalog, randomAppearance: true } : {}),
+    transport: serverTransport, ...(store ? { store } : {}), seed, mode,
+    ...(o.maxClients !== undefined ? { maxClients: o.maxClients } : {}), ...(o.serverFullDetail ? { serverFullDetail: o.serverFullDetail } : {}), ...(o.log ? { log: o.log } : {}), ...(o.catalog ? { catalog: o.catalog, randomAppearance: true } : {}),
     ...(o.population === false ? { population: false } : {}),
     ...(mode === "singleplayer" ? { virtualPlayers: { connect: connectBot, disconnect: (cid: number) => dropBot(cid) } } : {}),
   });
@@ -114,7 +120,7 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
   const server: LocalServer = {
     game, network, bots, pump,
     createTransport: () => network.createClient(),
-    async stop() { stopped = true; await Promise.allSettled(connecting); flushSocialMemory(bots.map((b) => b.agent), putAgent, game.world.tick, true); for (const b of bots) b.client.close(); await game.shutdown(); transport.close(); },
+    async stop() { stopped = true; await Promise.allSettled(connecting); flushSocialMemory(bots.map((b) => b.agent), putAgent, game.world.tick, true); for (const b of bots) b.client.close(); await game.shutdown(); serverTransport.close(); },
   };
   if (mode === "singleplayer") for (let i = 0; i < (o.bots ?? 0); i++) await addBot(SPAWN.x + i, SPAWN.y + 2);
   return server;

@@ -6,6 +6,8 @@ import { applyMoveInput, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS, Ping, Pon
 
 /** Minimal storage (localStorage in the browser, a Map in tests). */
 export interface KeyValue { getItem(k: string): string | null; setItem(k: string, v: string): void }
+/** Session detail when a P2P host leaves (tab close or Leave). */
+export const HOST_ENDED = "Host ended the session";
 export type SessionStatus = "idle" | "connecting" | "connected" | "disconnected" | "error";
 
 export interface SessionOptions {
@@ -27,6 +29,8 @@ export class ClientSession {
   restored = false;
   world: World | undefined;
   client: NetClient | undefined;
+  /** Fired when the connection closes without a local disconnect() (detail = HOST_ENDED for a P2P host leaving). */
+  onEnded: ((detail: string) => void) | undefined;
   private pingTimer: ReturnType<typeof setInterval> | undefined;
   constructor(private readonly o: SessionOptions) {}
 
@@ -54,7 +58,12 @@ export class ClientSession {
     const now = this.o.now ?? (() => performance.now());
     client.onEvent(AccountAssigned, (p) => { this.o.storage.setItem(this.key("account"), wordsToToken(p)); this.restored = p.restored === 1; });
     client.onEvent(Pong, (p) => { this.rttMs = ((Math.round(now()) >>> 0) - p.t) >>> 0; });
-    transport.onClose(() => { if (this.client === client) { this.status = "disconnected"; this.detail = "connection closed"; this.stopPing(); } });
+    transport.onClose(() => {
+      if (this.client !== client) return;
+      const reason = (transport as { closeReason?: string }).closeReason; // RtcClientTransport (P2P)
+      this.status = "disconnected"; this.detail = reason === "host-ended" ? HOST_ENDED : reason === "connection-lost" ? "lost connection to the host" : "connection closed"; this.stopPing();
+      this.onEnded?.(this.detail);
+    });
     try {
       await client.connect();
     } catch (e) {
