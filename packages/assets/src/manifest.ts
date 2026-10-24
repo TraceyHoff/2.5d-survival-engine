@@ -105,7 +105,10 @@ export type AttachMap = Record<string, AttachPoint>;
 /** Per-frame anchor (ADR-082): an AttachPoint plus optional held-item hints. angle = deg clockwise from up, len = px per unit item length, behind = draw held item behind the body. flipX mirrors x and angle. */
 export interface AnchorPoint extends AttachPoint { angle?: number; len?: number; behind?: boolean }
 export type AnchorMap = Record<string, AnchorPoint>;
-/** Per-frame metadata keyed by atlas frame index (handR, handL, head, ...). */
+/** Per-frame metadata (handR, handL, head, ...). Keys: an atlas frame index ("12", legacy), or for facing-split
+ *  (dirFrames) art, stable keys that survive repacking: "df:<i>" (entry i of the anim's dirFrames; anim-level only) or
+ *  "rect:<atlas>/<x>,<y>,<w>,<h>" (a dirFrames rect, shared by every entry drawing that rect). Lookup order for a
+ *  dirFrames entry: df -> rect -> its frame index (anim-level beats sprite-level per anchor name). */
 export interface FrameMeta { anchors?: AnchorMap }
 export interface SpriteJson {
   /** Sprite-level attach points (see AttachPoint). */
@@ -155,13 +158,13 @@ export interface Atlas extends Omit<AtlasJson, "emissive" | "nineSlice" | "pages
 }
 export interface SpriteTint { color: number; strength: number; mode: TintMode; saturation: number }
 export interface GlyphDef { id: string; sprite: number; frame: number }
-export interface Animation { id: number; name: string; frames: number[]; fps: number; directions: Directions; dirStride: number; loop: boolean; rotations?: number[][]; frameMeta?: Map<number, FrameMeta>; dirFrames?: { atlas: Atlas; frame: number; rect?: DirFrameRect; anchor: { x: number; y: number } }[] }
+export interface Animation { id: number; name: string; frames: number[]; fps: number; directions: Directions; dirStride: number; loop: boolean; rotations?: number[][]; frameMeta?: Map<number, FrameMeta>; /** "df:i" / "rect:..." keyed frameMeta */ frameMetaKeyed?: Map<string, FrameMeta>; dirFrames?: { atlas: Atlas; frame: number; rect?: DirFrameRect; anchor: { x: number; y: number } }[] }
 export interface BuildingSprite { piece: string; footprint: { w: number; h: number }; layer: number; frames: number[][]; rotationArt: RotationArt; stateNames: string[]; states: number[][][];
   /** crack overlay sprite id */ crackOverlay?: number; stateVfx: Record<string, { vfx: number; attach: string }[]> }
 export interface SpriteDef { id: number; key: string; category: Category; atlas: Atlas; anchor: { x: number; y: number }; animations: Map<string, Animation>; animList: Animation[]; building?: BuildingSprite; sway?: SwayJson; tints: Record<string, SpriteTint>;
   autotile?: AutotileJson;
   /** Sprite-level attach points. */ attach?: AttachMap; /** Per-frame overrides by atlas frame index. */ frameAttach?: Map<number, AttachMap>;
-  /** Per-frame metadata by atlas frame index. */ frameMeta?: Map<number, FrameMeta>;
+  /** Per-frame metadata by atlas frame index. */ frameMeta?: Map<number, FrameMeta>; /** "rect:..." keyed frameMeta */ frameMetaKeyed?: Map<string, FrameMeta>;
   /** Sprite-level placeholder override (key; null = nothing) while a "stream" sheet loads. */ placeholder?: string | null }
 export interface FrameRef { atlas: Atlas; frame: number; x: number; y: number; w: number; h: number; anchorX: number; anchorY: number; emissiveImage?: string; nineSlice?: NineSlice; /** draw mirrored on X (mirror rotationArt) */ flipX?: boolean;
   /** Effective attach points: sprite attach merged with this frame's override (frame wins). Unmirrored: negate x when flipX (see attachPoint). */ attach?: AttachMap;
@@ -232,11 +235,11 @@ export class AssetRegistry {
     const s = this.sprite(spriteId); const a = s.animations.get(anim) ?? s.animList[0]!; const base = this.frame(spriteId, anim, facing, timeSec);
     if (!a.dirFrames) return base;
     const n = a.frames.length; let i = Math.floor(timeSec * a.fps); i = a.loop ? i % n : Math.min(i, n - 1);
-    const d = a.dirFrames[i * a.directions + AssetRegistry.directionIndex(facing, a.directions)]; if (!d) return base;
-    const at = d.atlas; const f = d.frame; const { emissiveImage: _e, ...rest } = base;
+    const di = i * a.directions + AssetRegistry.directionIndex(facing, a.directions); const d = a.dirFrames[di]; if (!d) return base;
+    const at = d.atlas; const f = d.frame; const { emissiveImage: _e, anchors: _an, ...rest } = base; const an = this.dirFrameAnchors(spriteId, a.name, di, base.frame);
     const r = d.rect; const w = r ? r.w : at.frameW, h = r ? r.h : at.frameH;
     return { ...rest, atlas: at, frame: f, x: r ? r.x : (f % at.columns) * at.frameW, y: r ? r.y : Math.floor(f / at.columns) * at.frameH, w, h,
-      anchorX: d.anchor.x * w, anchorY: d.anchor.y * h, pages: at.pages, masks: at.masks, ...(at.emissiveImage ? { emissiveImage: at.emissiveImage } : {}) };
+      anchorX: d.anchor.x * w, anchorY: d.anchor.y * h, pages: at.pages, masks: at.masks, ...(at.emissiveImage ? { emissiveImage: at.emissiveImage } : {}), ...(an ? { anchors: an } : {}) };
   }
   /** Per-frame metadata for an atlas frame: sprite frameMeta merged with the anim's (anim anchors win by name). */
   frameMeta(spriteId: number, frame: number, anim?: string): FrameMeta | undefined {
@@ -244,6 +247,22 @@ export class AssetRegistry {
     if (!sm && !am) return undefined; if (!am) return sm; if (!sm) return am;
     return { anchors: { ...(sm.anchors ?? {}), ...(am.anchors ?? {}) } };
   }
+  /**
+   * frameMeta of entry `dirIndex` of `anim`'s dirFrames (frame * directions + dir): per source (sprite, then anim, anim
+   * wins per anchor name) the first of "df:<i>", "rect:<atlas>/x,y,w,h", then frame index `legacyFrame` (default: the
+   * entry's page frame) so existing index-keyed metadata keeps working.
+   */
+  dirFrameMeta(spriteId: number, anim: string, dirIndex: number, legacyFrame?: number): FrameMeta | undefined {
+    const s = this.sprite(spriteId); const a = s.animations.get(anim); const d = a?.dirFrames?.[dirIndex];
+    if (!a || !d) return undefined;
+    const rk = d.rect ? rectMetaKey(d.atlas.key, d.rect) : undefined;
+    const pick = (keyed: Map<string, FrameMeta> | undefined, byFrame: Map<number, FrameMeta> | undefined, df: boolean): FrameMeta | undefined =>
+      (df ? keyed?.get(`df:${dirIndex}`) : undefined) ?? (rk ? keyed?.get(rk) : undefined) ?? byFrame?.get(legacyFrame ?? d.frame);
+    const sm = pick(s.frameMetaKeyed, s.frameMeta, false), am = pick(a.frameMetaKeyed, a.frameMeta, true);
+    if (!sm && !am) return undefined; if (!am) return sm; if (!sm) return am;
+    return { anchors: { ...(sm.anchors ?? {}), ...(am.anchors ?? {}) } };
+  }
+  dirFrameAnchors(spriteId: number, anim: string, dirIndex: number, legacyFrame?: number): AnchorMap | undefined { return this.dirFrameMeta(spriteId, anim, dirIndex, legacyFrame)?.anchors; }
   /** Anchors of a frame (see frameMeta), or undefined. */
   frameAnchors(spriteId: number, frame: number, anim?: string): AnchorMap | undefined { return this.frameMeta(spriteId, frame, anim)?.anchors; }
   /** Anchor `name` of a resolved frame (frame().anchors), x and angle mirrored when ref.flipX (same rule as attachPoint). */
@@ -379,11 +398,16 @@ export function checkAttach(m: unknown, where: string, issues: string[], names: 
 }
 
 /** Validates frameMeta (anchor names [A-Za-z0-9_.]+): frame keys are atlas frame indices in range; anchors are attach maps + optional angle/len (finite) and behind (boolean). */
-export function checkFrameMeta(m: unknown, where: string, total: number | undefined, issues: string[]): void {
+export const FRAME_META_DF = /^df:(\d+)$/, FRAME_META_RECT = /^rect:([^/]+)\/(\d+),(\d+),(\d+),(\d+)$/;
+/** frameMeta key of a dirFrames rect */
+export const rectMetaKey = (atlas: string, r: DirFrameRect): string => `rect:${atlas}/${r.x},${r.y},${r.w},${r.h}`;
+export function checkFrameMeta(m: unknown, where: string, total: number | undefined, issues: string[], dirFrameCount?: number): void {
   if (m === undefined) return;
   if (!m || typeof m !== "object" || Array.isArray(m)) { issues.push(`${where} must be an object`); return; }
   for (const [fs, fm] of Object.entries(m as Record<string, FrameMeta>)) {
-    const f = Number(fs); if (!(Number.isInteger(f) && f >= 0 && (total === undefined || f < total))) issues.push(`${where}: frame ${fs} out of atlas range`);
+    const df = FRAME_META_DF.exec(fs);
+    if (df) { if (dirFrameCount === undefined) issues.push(`${where}: "${fs}" needs an anim with dirFrames (anim-level frameMeta)`); else if (Number(df[1]) >= dirFrameCount) issues.push(`${where}: ${fs} out of dirFrames range`); }
+    else if (!FRAME_META_RECT.test(fs)) { const f = Number(fs); if (!(fs !== "" && Number.isInteger(f) && f >= 0 && (total === undefined || f < total))) issues.push(`${where}: frame ${fs} out of atlas range`); }
     if (!fm || typeof fm !== "object") { issues.push(`${where}.${fs} must be an object`); continue; }
     for (const k of Object.keys(fm)) if (k !== "anchors") issues.push(`${where}.${fs}: unknown key "${k}"`);
     checkAttach(fm.anchors, `${where}.${fs}.anchors`, issues, /^[A-Za-z0-9_.]+$/); // camelCase allowed (handR, handL)
@@ -393,8 +417,14 @@ export function checkFrameMeta(m: unknown, where: string, total: number | undefi
     }
   }
 }
+const cloneFm = (fm: FrameMeta): FrameMeta => fm.anchors ? { anchors: Object.fromEntries(Object.entries(fm.anchors).map(([k, v]) => [k, { ...v }])) } : {};
+const isKeyed = (k: string): boolean => FRAME_META_DF.test(k) || FRAME_META_RECT.test(k);
 const cloneMeta = (m: Record<string, FrameMeta>): Map<number, FrameMeta> =>
-  new Map(Object.entries(m).map(([f, fm]) => [Number(f), fm.anchors ? { anchors: Object.fromEntries(Object.entries(fm.anchors).map(([k, v]) => [k, { ...v }])) } : {}]));
+  new Map(Object.entries(m).filter(([f]) => !isKeyed(f)).map(([f, fm]) => [Number(f), cloneFm(fm)]));
+/** spread: { frameMetaKeyed } when the JSON has df:/rect: keys */
+const keyedMeta = (m: Record<string, FrameMeta> | undefined): { frameMetaKeyed?: Map<string, FrameMeta> } => {
+  const e = Object.entries(m ?? {}).filter(([f]) => isKeyed(f)); return e.length ? { frameMetaKeyed: new Map(e.map(([f, fm]) => [f, cloneFm(fm)])) } : {};
+};
 
 export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<string, number> } = {}): { registry: AssetRegistry; lock: Required<IdLock> & { wearables?: Record<string, number> }; warnings: string[] } {
   const issues: string[] = []; let m = json as ManifestJson;
@@ -489,7 +519,7 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
       }
     }
     checkFrameMeta(s.frameMeta, `${p}.frameMeta`, at ? at.columns * at.rows : undefined, issues);
-    for (const [an, aj] of Object.entries(s.animations ?? {})) checkFrameMeta(aj?.frameMeta, `${p}.${an}.frameMeta`, at ? at.columns * at.rows : undefined, issues);
+    for (const [an, aj] of Object.entries(s.animations ?? {})) checkFrameMeta(aj?.frameMeta, `${p}.${an}.frameMeta`, at ? at.columns * at.rows : undefined, issues, Array.isArray(aj?.dirFrames) ? aj!.dirFrames!.length : undefined);
     const total = at ? at.columns * at.rows : 0;
     if (s.anchor && !(s.anchor.x >= 0 && s.anchor.x <= 1 && s.anchor.y >= 0 && s.anchor.y <= 1)) issues.push(`${p}: anchor must be within [0,1]`);
     const anims = Object.entries(s.animations ?? {}); if (!anims.length) issues.push(`${p}: needs at least one animation`);
@@ -665,7 +695,7 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
   const sprites = new Map<number, SpriteDef>();
   for (const s of m.sprites) {
     const at = atlases.get(s.atlas)!; const animList: Animation[] = [];
-    Object.entries(s.animations).forEach(([name, a], i) => animList.push({ id: i, name, frames: a.frames, fps: a.fps, directions: a.directions ?? 1, dirStride: a.dirStride ?? at.columns, loop: a.loop ?? true, ...(a.rotations ? { rotations: a.rotations.map((r) => [...r]) } : {}), ...(a.frameMeta ? { frameMeta: cloneMeta(a.frameMeta) } : {}), ...(a.dirFrames ? { dirFrames: a.dirFrames.map((d) => ({ atlas: atlases.get(d.atlas)!, frame: d.frame ?? 0, ...(d.rect ? { rect: { x: d.rect.x, y: d.rect.y, w: d.rect.w, h: d.rect.h } } : {}), anchor: { ...d.anchor } })) } : {}) }));
+    Object.entries(s.animations).forEach(([name, a], i) => animList.push({ id: i, name, frames: a.frames, fps: a.fps, directions: a.directions ?? 1, dirStride: a.dirStride ?? at.columns, loop: a.loop ?? true, ...(a.rotations ? { rotations: a.rotations.map((r) => [...r]) } : {}), ...(a.frameMeta ? { frameMeta: cloneMeta(a.frameMeta), ...keyedMeta(a.frameMeta) } : {}), ...(a.dirFrames ? { dirFrames: a.dirFrames.map((d) => ({ atlas: atlases.get(d.atlas)!, frame: d.frame ?? 0, ...(d.rect ? { rect: { x: d.rect.x, y: d.rect.y, w: d.rect.w, h: d.rect.h } } : {}), anchor: { ...d.anchor } })) } : {}) }));
     const id = ids.sprites.id(s.key);
     sprites.set(id, { id, key: s.key, category: s.category, atlas: at, anchor: s.anchor ?? { x: 0.5, y: 0.9 }, animations: new Map(animList.map((a) => [a.name, a])), animList,
       ...(s.building ? { building: { piece: s.building.piece, footprint: { ...s.building.footprint }, layer: s.building.layer, frames: s.building.frames.map((r) => [...r]),
@@ -676,7 +706,7 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
       ...(s.sway ? { sway: { ...s.sway } } : {}),
       ...(s.placeholder !== undefined ? { placeholder: s.placeholder } : {}),
       ...(s.attach ? { attach: cloneAttach(s.attach) } : {}),
-      ...(s.frameMeta ? { frameMeta: cloneMeta(s.frameMeta) } : {}),
+      ...(s.frameMeta ? { frameMeta: cloneMeta(s.frameMeta), ...keyedMeta(s.frameMeta) } : {}),
       ...(s.frameAttach ? { frameAttach: new Map(Object.entries(s.frameAttach).map(([f, am]) => [Number(f), cloneAttach(am)])) } : {}),
       tints: Object.fromEntries(Object.entries(s.tints ?? {}).map(([n, t]) => [n, { color: parseColor(t.color), strength: t.strength, mode: t.mode ?? "multiply", saturation: t.saturation ?? 1 }])) });
   }

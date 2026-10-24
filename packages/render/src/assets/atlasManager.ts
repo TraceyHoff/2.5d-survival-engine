@@ -1375,7 +1375,7 @@ export class AtlasManager {
         const da = this.atlases[ia]!; const fz = s.dirF?.[ai]; const fi = fz ? fz[di]! : d.frame; this.fill(da, fi, s, out);
         if (d.rect) { out.w = d.rect.w; out.h = d.rect.h; out.ax = d.anchor.x * d.rect.w; out.ay = d.anchor.y * d.rect.h; }
         else if (!da.source.rects?.[fi]) { out.ax = d.anchor.x * da.fw; out.ay = d.anchor.y * da.fh; }
-        out.sprite = spriteId; out.frame = fi; out.anim = an.name ?? ""; out.atlas = ia; return true;
+        out.sprite = spriteId; out.frame = fi; out.anim = an.name ?? ""; out.atlas = ia; out.dfi = di; return true;
       }
     }
     let f = an.frames[i]!;
@@ -1440,7 +1440,7 @@ export class AtlasManager {
   handOf(r: ResolvedFrame, name = "handR"): HandAnchor | undefined {
     const reg = this.registry;
     if (reg && r.sprite >= 0) {
-      const anchors = reg.frameAnchors(r.sprite, r.frame, r.anim || undefined);
+      const anchors = r.dfi >= 0 && r.anim ? reg.dirFrameAnchors(r.sprite, r.anim, r.dfi, r.frame) : reg.frameAnchors(r.sprite, r.frame, r.anim || undefined);
       const a = anchors ? AssetRegistry.anchorPoint({ anchors } as FrameRef, name) : undefined;
       if (a) return { x: r.ax + a.x, y: r.ay + a.y, angle: a.angle ?? 0, ...(a.len !== undefined ? { len: a.len } : {}), behind: a.behind ?? false };
     }
@@ -1531,7 +1531,7 @@ export class AtlasManager {
     out.entry = a.base + fi;
     if (r) { out.w = r.w; out.h = r.h; out.ax = r.ax; out.ay = r.ay; }
     else { out.w = a.fw; out.h = a.fh; out.ax = s.anchorX * a.fw; out.ay = s.anchorY * a.fh; }
-    out.hasDamageFrames = false; out.flipX = false; out.sprite = -1; out.frame = -1; out.anim = ""; out.atlas = -1;
+    out.hasDamageFrames = false; out.flipX = false; out.sprite = -1; out.frame = -1; out.anim = ""; out.atlas = -1; out.dfi = -1;
   }
 
   /** For galleries/tools: every atlas with its frame count and loaded image. */
@@ -1612,5 +1612,6 @@ export function wearableOnlyAtlases(registry: AssetRegistry): Set<string> {
 }
 
 export interface ResolvedFrame { /** atlas table index the frame was read from (multi-page sprites: the dirFrames page; -1 outside resolve()) */ atlas: number; entry: number; w: number; h: number; ax: number; ay: number; hasDamageFrames: boolean; /** draw mirrored (mirror rotationArt) */ flipX: boolean;
-  /** source sprite id / atlas frame index / anim name (resolve() only; -1 / "" otherwise): frameMeta anchor lookup */ sprite: number; frame: number; anim: string }
-export const newResolved = (): ResolvedFrame => ({ atlas: -1, entry: 0, w: 0, h: 0, ax: 0, ay: 0, hasDamageFrames: false, flipX: false, sprite: -1, frame: -1, anim: "" });
+  /** source sprite id / atlas frame index / anim name (resolve() only; -1 / "" otherwise): frameMeta anchor lookup */ sprite: number; frame: number; anim: string;
+  /** dirFrames entry index (frame * directions + dir) when resolved from facing-split art, else -1: frameMeta "df:"/"rect:" lookup */ dfi: number }
+export const newResolved = (): ResolvedFrame => ({ atlas: -1, entry: 0, w: 0, h: 0, ax: 0, ay: 0, hasDamageFrames: false, flipX: false, sprite: -1, frame: -1, anim: "", dfi: -1 });

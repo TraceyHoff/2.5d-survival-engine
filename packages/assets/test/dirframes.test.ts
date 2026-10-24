@@ -41,4 +41,20 @@ describe("facing-split dirFrames (vehicles)", () => {
     a.dirFrames[0].anchor = { x: 0.5, y: Number.NaN }; expect(load).toThrow(/anchor must be finite/);
     a.dirFrames[0].anchor = { x: 0.5, y: 12 }; expect(load).toThrow(/anchor must be finite/);
   });
+  it("frameMeta keyed by dirFrames entry (df:i) or rect, with legacy frame-index fallback", () => {
+    const m = veh(); const s = m.sprites.find((x: any) => Object.values<any>(x.animations).some((a) => a.dirFrames));
+    const [name, a]: any = Object.entries<any>(s.animations).find(([, a]) => a.dirFrames);
+    const pack = JSON.parse(readFileSync(PACK_DIR + "manifest.json", "utf8"));
+    const load = () => loadManifest(mergeManifests([{ name: "pack", manifest: pack }, { name: "vehicles", manifest: m }] as never).manifest);
+    const d0 = a.dirFrames[0]; const hand = (x: number) => ({ anchors: { handR: { x, y: -1 } } });
+    a.frameMeta = { "df:0": hand(1) };
+    s.frameMeta = { ...(d0.rect ? { [`rect:${d0.atlas}/${d0.rect.x},${d0.rect.y},${d0.rect.w},${d0.rect.h}`]: hand(2) } : {}), "0": hand(3) };
+    let { registry } = load(); const id = registry.id(s.key);
+    expect(registry.dirFrameAnchors(id, name, 0)?.handR?.x).toBe(1); // anim df wins
+    expect(registry.dirFrame(id, name, 0, 0).anchors?.handR?.x).toBe(1);
+    delete a.frameMeta; ({ registry } = load());
+    expect(registry.dirFrameAnchors(id, name, 0, 0)?.handR?.x).toBe(d0.rect ? 2 : 3); // rect, else legacy index
+    a.frameMeta = { [`df:${a.dirFrames.length}`]: hand(1) }; expect(load).toThrow(/out of dirFrames range/);
+    delete a.frameMeta; s.frameMeta = { "df:0": hand(1) }; expect(load).toThrow(/needs an anim with dirFrames/);
+  });
 });
