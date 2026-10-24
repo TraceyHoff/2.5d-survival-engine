@@ -11,6 +11,13 @@ import { SocialSync } from "./social_sync.js";
 import { Act, applyDemoInput, installDemoWorld, rejectReasonCode, DevBotHello, DEMO_COMMANDS, DEMO_EVENTS, ExplodedEvt, GAMEPLAY_NET_COMMANDS, Ping, Pong, ReloadedEvt, VehicleStationOpenedEvt, DeleteMyProgressCmd, DELETE_PROGRESS_CONFIRM, ProgressDeleted } from "./protocol.js";
 import { forgetPlayer, sweepForgottenPlayers } from "@engine/gameplay";
 
+/** Pre-ADR-107 worlds started at 0.25 of the day and did not persist the day-clock epoch. */
+export const LEGACY_START_TIME_OF_DAY = 0.25;
+/** Restore TimeOfDay.epochTick from save meta (ADR-107): the saved epoch, else the legacy 0.25 start. */
+export function restoreDayClock(world: World, meta: { dayEpochTick?: number }): void {
+  const tod = world.env(TimeOfDay);
+  tod.epochTick = meta.dayEpochTick !== undefined && Number.isFinite(meta.dayEpochTick) ? meta.dayEpochTick : -Math.round(LEGACY_START_TIME_OF_DAY * tod.dayLengthTicks);
+}
 export const CLAN_BLOB = "gameplay.clans";
 /** ProceduralGenerator node kinds -> gameplay resource keys (see DEFAULT_BANDS comments in @engine/world). */
 const NODE_RESOURCES: Record<number, string> = { 1: "fallen_branches", 2: "fiber_grass", 3: "berry_bush", 4: "loose_rocks", 5: "tree", 6: "boulder", 7: "iron_vein" };
@@ -102,16 +109,14 @@ export interface GameServer {
 
 export function createGameServer(o: GameServerOptions): GameServer {
   const log = o.log ?? (() => {});
-  const LEGACY_START_TIME_OF_DAY = 0.25;
   const tickHz = o.tickHz ?? DEFAULT_TICK_HZ;
   const meta = o.store?.readMeta();
   const seed = meta?.seed ?? o.seed ?? 1234;
   const world = new World({ seed, maxEntities: 1 << 18 });
   // Saved parties/clans/claims (throws on a corrupt record rather than starting empty and overwriting it).
   const permissions = installDemoWorld(world, "server", { tickHz, ...(o.store ? { social: loadSocial(o.store) } : {}) });
-  // ADR-107: new worlds start just after dawn (environment.startTimeOfDay 0.3 = 07:12). Saves made before ADR-107 were created at
-  // 0.25 (06:00) and never stored the epoch, so re-derive their clock from that legacy start: existing worlds keep their time.
-  if (meta) { const tod = world.env(TimeOfDay); tod.epochTick = -Math.round(LEGACY_START_TIME_OF_DAY * tod.dayLengthTicks); }
+  // ADR-107: restore the saved day clock (meta.dayEpochTick); pre-ADR-107 saves fall back to their 0.25 start.
+  if (meta) restoreDayClock(world, meta);
   if (meta) { world.tick = meta.tick; if (meta.schemaHash !== world.getSchemaHash()) log(`persist: save schema ${meta.schemaHash.toString(16)} != build ${world.getSchemaHash().toString(16)}; chunks with changed persistent components load read-only`); }
   // Clan rank masks / goals / contributions (gameplay ClanState) persist as the world blob "gameplay.clans", written on change.
   { const b = o.store?.readBlob(CLAN_BLOB); if (b) { try { loadClanState(world, decodeClanState(b.bytes)); } catch (e) { log(`persist: clan state unreadable: ${String(e)}`); } } }

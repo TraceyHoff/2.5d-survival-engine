@@ -62,7 +62,9 @@ export class RecordTable {
 }
 
 /** World-level metadata (meta table). */
-export interface WorldMeta { seed: number; tick: number; schemaHash: number; createdAt?: number; /** Next account PlayerId to hand out. */ nextPlayerId?: number }
+export interface WorldMeta { seed: number; tick: number; schemaHash: number; createdAt?: number; /** Next account PlayerId to hand out. */ nextPlayerId?: number;
+  /** TimeOfDay.epochTick (ADR-107): the day clock is derived from tick - epoch. Absent in pre-ADR-107 saves (they started at 0.25 of the day). */
+  dayEpochTick?: number }
 
 /** Everything written in one transaction. Either all of it becomes durable or none of it does. */
 export interface SaveBatch {
