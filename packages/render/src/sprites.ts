@@ -350,7 +350,7 @@ export class SpriteBatch {
   culledChunks = 0;
   /** Sprites drawn as their placeholder this frame because their stream sheet was still loading. */
   streamPlaceholders = 0;
-  /** ADR-122: per (entity, layer slot) last resolved frame, drawn while the current one is not resident */
+  /** ADR-123: per (entity, layer slot) last resolved frame, drawn while the current one is not resident */
   private lastGood = new Map<string, { sprite: number; atlas: number; entry: number; ax: number; ay: number }>();
   lastGoodHits = 0;
   /** Chunk screen bounds (any height up to 1024 px above ground) against the view rect grown by 512 px. */
@@ -721,7 +721,7 @@ export class SpriteBatch {
           // face/eyes pages request at 1/4 of the character's distance priority: they win pool slots over farther clothing
           const lp = faceL ? prio * 0.25 : prio; const rdy = okL && (lr.atlas >= 0 ? atlas.pageReadyAt(lr.atlas, lp) : atlas.pageReady(l.sprite, lp));
           if (nearC && this.nearN < this.nearInfo.length) { const ni = this.nearInfo[this.nearN]!; if (ni.e === e) { ni.layers++; if (rdy) ni.resident++; else ni.missing.push(l.slot); const pi = atlas.pageInfo(l.sprite); ni.scale = Math.min(ni.scale, pi.scale); } }
-          // ADR-122: page not resident (swim/punch wear page streaming, page evicted): draw this slot's last good frame when
+          // ADR-123: page not resident (swim/punch wear page streaming, page evicted): draw this slot's last good frame when
           // its page is still resident instead of blanking the layer for a frame (pop in/out of hair, clothes, eyes)
           const lgk = `${e}|${l.slot}`;
           if (rdy) { const g = this.lastGood.get(lgk); if (g) { g.sprite = l.sprite; g.atlas = lr.atlas; g.entry = lr.entry; g.ax = lr.ax; g.ay = lr.ay; }

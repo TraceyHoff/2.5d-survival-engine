@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { PageLRU, PRIO_NEAR } from "../src/gl/vram.js";
 
-describe("ADR-122: visible characters' wear/face pages are pinned", () => {
+describe("ADR-123: visible characters' wear/face pages are pinned", () => {
   it("a farther-than-near request cannot steal a live retained page (no dressed<->body flicker between crowds)", () => {
     const l = new PageLRU<string>(1, 90); l.retain("wearA"); l.allocate("wearA", 100, 400);
     expect(l.allocate("wearB", 101, 100)).toBeNull();

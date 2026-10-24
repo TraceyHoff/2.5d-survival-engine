@@ -37,7 +37,7 @@ export const DEFAULT_ACTIONS: readonly ActionDef[] = [
 export const DEFAULT_CONTEXTS: readonly ContextDef[] = [
   { name: "Gameplay", priority: 0 },
   { name: "Building", priority: 10 },
-  /** ADR-122 road tool: non-consuming like Building (walk while laying); gamepad RS moves the tile cursor. */
+  /** ADR-123 road tool: non-consuming like Building (walk while laying); gamepad RS moves the tile cursor. */
   { name: "Road", priority: 12 },
   { name: "Inventory", priority: 20, consume: true },
   { name: "Crafting", priority: 20, consume: true },
