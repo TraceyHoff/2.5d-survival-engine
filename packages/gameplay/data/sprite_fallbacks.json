@@ -1651,16 +1651,7 @@
     "fruit_salad": "stew_bowl",
     "baked_beans": "stew_bowl",
     "roasted_garlic": "baked_potato",
-    "willow_tea": "herbal_tea",
-    "gravel": "stone",
-    "cement": "stone",
-    "asphalt": "crude_oil",
-    "sign_wooden_post": "planks",
-    "sign_hanging": "planks",
-    "sign_wall_plaque": "planks",
-    "sign_billboard": "planks",
-    "sign_metal_road": "scrap_metal",
-    "sign_arrow": "planks"
+    "willow_tea": "herbal_tea"
   },
   "categoryIcons": {
     "resource": "fiber",
