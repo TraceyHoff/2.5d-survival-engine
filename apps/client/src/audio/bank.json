@@ -14,7 +14,9 @@
     "audio/sfx/footstep_1",
     "audio/sfx/footstep_2",
     "audio/sfx/footstep_3",
-    "audio/sfx/footstep_4"
+    "audio/sfx/footstep_4",
+    "audio/sfx/footstep_5",
+    "audio/sfx/footstep_6"
    ],
    "volume": 0.45,
    "pitchJitter": 0.08,
@@ -30,6 +32,14 @@
   },
   "footstep.grass": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/footstep_grass_1",
+    "audio/sfx/footstep_grass_2",
+    "audio/sfx/footstep_grass_3",
+    "audio/sfx/footstep_grass_4",
+    "audio/sfx/footstep_grass_5",
+    "audio/sfx/footstep_grass_6"
+   ],
    "volume": 0.4,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -44,6 +54,14 @@
   },
   "footstep.sand": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/footstep_sand_1",
+    "audio/sfx/footstep_sand_2",
+    "audio/sfx/footstep_sand_3",
+    "audio/sfx/footstep_sand_4",
+    "audio/sfx/footstep_sand_5",
+    "audio/sfx/footstep_sand_6"
+   ],
    "volume": 0.4,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -58,6 +76,14 @@
   },
   "footstep.wood": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/footstep_wood_1",
+    "audio/sfx/footstep_wood_2",
+    "audio/sfx/footstep_wood_3",
+    "audio/sfx/footstep_wood_4",
+    "audio/sfx/footstep_wood_5",
+    "audio/sfx/footstep_wood_6"
+   ],
    "volume": 0.55,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -72,6 +98,14 @@
   },
   "footstep.stone": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/footstep_stone_1",
+    "audio/sfx/footstep_stone_2",
+    "audio/sfx/footstep_stone_3",
+    "audio/sfx/footstep_stone_4",
+    "audio/sfx/footstep_stone_5",
+    "audio/sfx/footstep_stone_6"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -86,6 +120,14 @@
   },
   "footstep.dirt": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/footstep_dirt_1",
+    "audio/sfx/footstep_dirt_2",
+    "audio/sfx/footstep_dirt_3",
+    "audio/sfx/footstep_dirt_4",
+    "audio/sfx/footstep_dirt_5",
+    "audio/sfx/footstep_dirt_6"
+   ],
    "volume": 0.42,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -100,6 +142,14 @@
   },
   "footstep.water": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/footstep_water_1",
+    "audio/sfx/footstep_water_2",
+    "audio/sfx/footstep_water_3",
+    "audio/sfx/footstep_water_4",
+    "audio/sfx/footstep_water_5",
+    "audio/sfx/footstep_water_6"
+   ],
    "volume": 0.45,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -114,6 +164,12 @@
   },
   "footstep.swim": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/footstep_swim_1",
+    "audio/sfx/footstep_swim_2",
+    "audio/sfx/footstep_swim_3",
+    "audio/sfx/footstep_swim_4"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -128,6 +184,12 @@
   },
   "footstep.zombie": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/footstep_zombie_1",
+    "audio/sfx/footstep_zombie_2",
+    "audio/sfx/footstep_zombie_3",
+    "audio/sfx/footstep_zombie_4"
+   ],
    "volume": 0.35,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -142,6 +204,12 @@
   },
   "footstep.animal": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/footstep_animal_1",
+    "audio/sfx/footstep_animal_2",
+    "audio/sfx/footstep_animal_3",
+    "audio/sfx/footstep_animal_4"
+   ],
    "volume": 0.25,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
