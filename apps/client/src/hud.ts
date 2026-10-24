@@ -46,7 +46,7 @@ border:2px solid #74432C;border-radius:10px;box-shadow:0 2px 0 #432C24;padding:4
 #hud .row{display:flex;align-items:center;gap:4px;margin:2px 0}#hud .bar{flex:1;height:6px;background:#E6C47E;border:1px solid #4A2F3D;border-radius:4px;overflow:hidden}
 #hud .lab{display:flex;width:14px;font-size:10px;justify-content:center}
 #hud .fill{height:100%;border-radius:3px;transition:width .2s}#hud .clock{display:flex;justify-content:space-between;margin-bottom:2px;color:#61402E;font-size:10px}
-@media (max-height:420px){#hud{width:112px;padding:3px 5px}#hud .bar{height:5px}#hud .row{margin:1px 0}}`;
+@media (max-height:420px){#hud{width:100px;padding:2px 4px;opacity:.9}#hud .bar{height:5px}#hud .row{margin:1px 0}}`;
   document.head.append(style);
   const root = document.createElement("div"); root.id = "hud";
   const clock = document.createElement("div"); clock.className = "clock"; root.append(clock);

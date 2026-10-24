@@ -83,6 +83,12 @@ export function armorReduce(world: World, target: Entity, amount: number, pierce
 }
 
 // ---- ranged weapons ---------------------------------------------------------------------------------------
+/** True when `e`'s main hand holds a ranged weapon (networked Equipment.mainHandItem): gates the touch Reload button (ADR-133). */
+export function holdsRangedWeapon(world: World, e: Entity | undefined): boolean {
+  if (e === undefined || !world.isRegistered(Equipment) || !world.has(e, Equipment)) return false;
+  const item = world.getField(e, Equipment, "mainHandItem"); if (!item) return false;
+  try { return !!itemDef(world, item)?.ranged; } catch { return false; }
+}
 function heldDef(world: World, e: Entity): { slot: number; item: number; def: ItemDef | undefined } {
   const slot = world.getField(e, Equipment, "mainHandSlot");
   if (slot === undefined || slot === NO_SLOT || !world.has(e, Inventory)) return { slot: NO_SLOT, item: 0, def: undefined };

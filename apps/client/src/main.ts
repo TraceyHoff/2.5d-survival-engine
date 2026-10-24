@@ -10,7 +10,7 @@ import { GameMenus } from "./game-menus.js";
 import { BuildMode } from "./build-mode.js";
 import { mountToolHint, toolIconFrame } from "./tool-hint.js";
 import { mountWorldTools, type WorldToolsHandle } from "./world-tools.js";
-import { mountTouchOverlay } from "./touch-overlay.js";
+import { mountTouchOverlay, syncTouchHidden } from "./touch-overlay.js";
 /**
  * Client bootstrap: fixed-step loop + WebGL2 IsoRenderer view (./view.ts, Art's pack) + network session.
  * Falls back to the Canvas2D debug draw with ?renderer=debug or when WebGL2 / the art fails to load.
@@ -24,7 +24,7 @@ import { InputSystem, AimResolver, DEFAULT_ACTIONS, DEFAULT_CONTEXTS, DEFAULT_PR
 import { attachBrowserInput } from "@engine/input/browser";
 import { Act, ClanRoster, ClanRosterMember, OnlinePlayer, VehicleStationOpenedEvt, gameplayNet, installDemoWorld } from "@engine/server/protocol";
 import { netIdOf, ChatChannel, type ChatDelivered } from "@engine/net";
-import { WorldRules, worldRules, ROADS } from "@engine/gameplay";
+import { WorldRules, worldRules, ROADS, holdsRangedWeapon } from "@engine/gameplay";
 import { SocialDirectory, hasCreatedLook, setAppearanceIntent, interactPanel, UseCmd, GatherCmd, farmPrompt, WaterProbeRes, type MenuCtx, type MenuIntent } from "@engine/gameplay";
 import { ClientSession } from "./session.js";
 import { mountConnectOverlay } from "./connect.js";
@@ -98,7 +98,9 @@ document.addEventListener("visibilitychange", () => audio.mixer.setSuspended("hi
 wireUiSounds(audio);
 let farm: ReturnType<typeof mountFarmPrompt> | undefined;
 const safeFarmPrompt = (p: NonNullable<typeof session.player>): ReturnType<typeof farmPrompt> => { try { return farmPrompt(world, p); } catch { return undefined; } };
-if (browserInput.controls) { const c = browserInput.controls; mountTouchOverlay(root, () => c.geometry(), () => !menus || menus.nav.isOpen); }
+/** ADR-133: context-only touch controls (Reload only with a ranged weapon in hand). */
+const touchContext = (): { reload: boolean } => { const p = session.player; try { return { reload: holdsRangedWeapon(world, p) }; } catch { return { reload: false }; } };
+if (browserInput.controls) { const c = browserInput.controls; mountTouchOverlay(root, () => { syncTouchHidden(c.hidden, touchContext()); return c.geometry(); }, () => !menus || menus.nav.isOpen); }
 /** Set by the active mode: what "Quit to main menu" must do first (save / end the P2P session / disconnect). */
 let leaveCurrent: (() => Promise<void> | void) | undefined;
 /** Set by the active mode: Settings → "Delete my progress" (ADR-099); undefined hides the entry. */

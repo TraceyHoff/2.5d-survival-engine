@@ -17,3 +17,13 @@ describe("world tools (ADR-119..121)", () => {
     expect(isoToCss(cam, 0, 0)).toEqual({ x: 400, y: 300 });
   });
 });
+
+describe("ADR-133 mode-gated Road / Sign buttons", async () => {
+  const { worldToolBarState } = await import("../src/world-tools.js");
+  it("nothing shows outside road mode unless a sign is in reach", () => {
+    expect(worldToolBarState({ active: false, nearSign: false, hidden: false })).toEqual({ bar: false, road: false, sign: false });
+    expect(worldToolBarState({ active: true, nearSign: false, hidden: false })).toEqual({ bar: true, road: true, sign: true });
+    expect(worldToolBarState({ active: false, nearSign: true, hidden: false })).toEqual({ bar: true, road: false, sign: true });
+    expect(worldToolBarState({ active: true, nearSign: true, hidden: true })).toEqual({ bar: false, road: false, sign: false });
+  });
+});

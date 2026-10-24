@@ -47,7 +47,12 @@ padding:12px 14px;display:flex;flex-direction:column;gap:10px;font:600 15px Fred
 #game-menubar{position:absolute;top:calc(6px + var(--sat,0px));right:calc(6px + var(--sar,0px));z-index:12;display:flex;gap:6px;pointer-events:auto}
 #game-menubar button{width:44px;height:44px;border-radius:12px;border:2px solid #3B2433;background:rgba(246,234,210,.9);font:20px system-ui,sans-serif;padding:0;touch-action:manipulation;cursor:pointer}
 #game-menubar button:focus-visible{outline:3px solid #FFD45A}
-@media (max-height:420px){#game-menubar button{width:40px;height:40px;font-size:18px}}`;
+#game-menubar .gm-more{display:none}
+/* ADR-133: on phones (coarse pointer, short landscape) only the primary menus + "More" + Menu show; the rest fold behind More */
+@media (pointer:coarse) and (max-height:500px),(max-width:700px){#game-menubar{gap:4px}#game-menubar button{width:44px;height:44px;font-size:18px;background:rgba(246,234,210,.72)}
+#game-menubar .gm-more{display:block}#game-menubar:not([data-expanded=true]) .gm-secondary{display:none}}`;
+/** Menu bar entries that stay visible on phones; the rest fold behind "More" (ADR-133). */
+export const PRIMARY_BAR_MENUS: ReadonlySet<string> = new Set(["inventory", "build"]);
 
 /** Sendable ChatChannel ids (@engine/net ChatChannel: Global 0, Local 1, Party 2, Clan 3, Trade 4). */
 export const CHAT_CHANNELS: readonly [string, number][] = [["Local", 1], ["Global", 0], ["Party", 2], ["Clan", 3], ["Trade", 4], ["Whisper", 5]];
@@ -92,7 +97,9 @@ export class GameMenus {
     if (o.showMenuBar !== false) {
       const bar = document.createElement("nav"); bar.id = "game-menubar"; bar.setAttribute("aria-label", "Game menus");
       const add = (id: string, icon: string, title: string, fn: () => void): void => { const b = document.createElement("button"); b.type = "button"; b.dataset["open"] = id; b.dataset["tip"] = title; b.setAttribute("aria-label", title); b.textContent = icon; b.addEventListener("click", (e) => { e.stopPropagation(); fn(); }); bar.append(b); };
-      for (const m of GAME_MENUS) if (m.bar) add(m.id, m.icon, m.title, () => this.toggle(m.id));
+      for (const m of GAME_MENUS) if (m.bar) { add(m.id, m.icon, m.title, () => { bar.dataset["expanded"] = "false"; this.toggle(m.id); }); if (!PRIMARY_BAR_MENUS.has(m.id)) bar.lastElementChild!.classList.add("gm-secondary"); }
+      add("more", "⋯", "More menus", () => { const on = bar.dataset["expanded"] !== "true"; bar.dataset["expanded"] = String(on); (bar.querySelector('[data-open="more"]') as HTMLElement).setAttribute("aria-expanded", String(on)); });
+      const more = bar.lastElementChild as HTMLElement; more.classList.add("gm-more"); more.setAttribute("aria-expanded", "false"); bar.insertBefore(more, bar.firstChild);
       add("pause", "☰", "Menu", () => this.pause());
       o.root.append(bar); this.bar = bar;
     }

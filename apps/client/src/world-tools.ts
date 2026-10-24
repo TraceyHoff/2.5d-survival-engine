@@ -35,6 +35,14 @@ export interface WorldToolsDeps {
   onControl?(x: number, y: number): boolean;
 }
 /** Button prompt line for the road tool per device. */
+/**
+ * ADR-133: the Road / Sign HUD buttons are context-only. Road shows while the road tool is on (it cycles the surface /
+ * turns the tool off); Sign shows in road mode or when a sign is in reach (edit). Entering the tool is the Build panel's
+ * "Roads & signs" row, G or N, so nothing sits on screen when it does nothing.
+ */
+export function worldToolBarState(s: { active: boolean; nearSign: boolean; hidden: boolean }): { bar: boolean; road: boolean; sign: boolean } {
+  const road = !s.hidden && s.active, sign = !s.hidden && (s.active || s.nearSign); return { bar: road || sign, road, sign };
+}
 export function roadPrompt(device: RoadDevice, state: { start: boolean; pending: boolean }): string {
   if (device === "gamepad") return state.pending ? "Ⓐ / RT lay road · Ⓑ cancel" : state.start ? "Ⓐ mark end · RT lay · Ⓑ cancel · 🕹R move" : "🕹R move cursor · Ⓐ mark start · Ⓨ surface · Ⓧ sign · Ⓑ exit";
   if (device === "touch") return state.pending ? "Confirm ✓ or Cancel ✕" : "Drag (or tap start, tap end) to plan a road";
@@ -47,7 +55,7 @@ font:600 12px Fredoka,system-ui,sans-serif;color:#3B2433;background:#F6EAD2;bord
 #world-labels .sign-label[data-kind="5"]{background:#2f6b3a;color:#fff;border-color:#e8f0e8}
 #settlement-label,#road-tool{position:absolute;left:50%;transform:translateX(-50%);z-index:5;font:600 13px Fredoka,system-ui,sans-serif;color:#FFFAF0;background:rgba(59,36,51,.75);border-radius:10px;padding:2px 10px;pointer-events:none}
 #settlement-label{top:calc(6px + var(--sat,0px))}#road-tool{bottom:calc(90px + var(--sab,0px))}
-#world-tool-bar{position:absolute;right:calc(8px + var(--sar,0px));top:calc(44px + var(--sat,0px));z-index:6;display:flex;flex-direction:column;gap:6px}
+#world-tool-bar{position:absolute;right:calc(8px + var(--sar,0px));top:calc(58px + var(--sat,0px));z-index:6;display:flex;flex-direction:column;gap:6px}
 #world-tool-bar button,#road-confirm button{min-width:52px;min-height:44px;font:600 13px Fredoka,system-ui,sans-serif;color:#3B2433;background:#F6EAD2;border:2px solid #74432C;border-radius:10px;box-shadow:0 2px 0 #432C24;cursor:pointer;touch-action:manipulation}
 #world-tool-bar button[aria-pressed=true]{background:#ffd45a}#world-tool-bar button:disabled{opacity:.5}
 #road-confirm{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(124px + var(--sab,0px));z-index:6;display:flex;gap:10px}
@@ -183,7 +191,8 @@ export function mountWorldTools(root: HTMLElement, d: WorldToolsDeps): WorldTool
     raf = requestAnimationFrame(frame);
     try {
       const w = d.world(), p = d.player(), cam = d.camera(); const hide = d.hidden() || p === undefined || !cam;
-      layer.style.display = hide ? "none" : ""; bar.style.display = hide ? "none" : "";
+      layer.style.display = hide ? "none" : "";
+      { const vis = worldToolBarState({ active: rt.active, nearSign: !hide && nearestSign() !== undefined, hidden: hide }); bar.style.display = vis.bar ? "" : "none"; roadBtn.style.display = vis.road ? "" : "none"; signBtn.style.display = vis.sign ? "" : "none"; }
       const dev = device();
       roadBtn.setAttribute("aria-pressed", String(rt.active)); roadBtn.textContent = rt.active ? `🛣 ${ROADS.surfaces[rt.surface - 1]!.name.split(" ")[0]}` : "🛣 Road";
       tool.style.display = rt.active && !hide ? "" : "none";

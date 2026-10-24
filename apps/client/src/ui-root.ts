@@ -15,7 +15,22 @@ touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callou
 #${ROOT_ID} [data-modal]>*,#${ROOT_ID} .gm-panel,#${ROOT_ID} [data-role=delete-confirm],#p2p-overlay,.ui-scroll{max-height:calc(100vh - 16px);max-height:calc(100dvh - var(--sat,0px) - var(--sab,0px) - 16px);
 overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;box-sizing:border-box}
 #${ROOT_ID} [data-modal]{touch-action:pan-y}
-#${ROOT_ID} button,#${ROOT_ID} input,#${ROOT_ID} select,#${ROOT_ID} textarea{touch-action:manipulation;user-select:auto;-webkit-user-select:auto}`;
+html,body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#${ROOT_ID} *{-webkit-touch-callout:none}
+#${ROOT_ID} button,#${ROOT_ID} input,#${ROOT_ID} select,#${ROOT_ID} textarea{touch-action:manipulation}
+#${ROOT_ID} button{user-select:none;-webkit-user-select:none}
+#${ROOT_ID} input,#${ROOT_ID} select,#${ROOT_ID} textarea,#${ROOT_ID} [contenteditable]{user-select:text;-webkit-user-select:text;-webkit-touch-callout:default}`;
+
+/** True for targets where text selection / the long-press menu is wanted (text fields). */
+export function isEditable(t: EventTarget | null): boolean {
+  const el = t as HTMLElement | null; if (!el || typeof el.closest !== "function") return false;
+  return !!el.closest("input,textarea,select,[contenteditable]:not([contenteditable=false])");
+}
+/** ADR-133: no browser Copy / Select all / Web search popup on long-press anywhere in the game (text fields excepted). */
+export function blockLongPressMenus(target: Document | HTMLElement): void {
+  const stop = (e: Event): void => { if (!isEditable(e.target)) e.preventDefault(); };
+  target.addEventListener("contextmenu", stop); target.addEventListener("selectstart", stop);
+}
 
 /** The root container (created around `#game` if index.html doesn't have it). */
 export function uiRoot(doc: Document = document): HTMLElement {
@@ -25,7 +40,7 @@ export function uiRoot(doc: Document = document): HTMLElement {
     const c = doc.getElementById("game");
     if (c?.parentElement) { c.parentElement.insertBefore(r, c); r.append(c); } else doc.body.append(r);
   }
-  if (!doc.getElementById(STYLE_ID)) { const st = doc.createElement("style"); st.id = STYLE_ID; st.textContent = CSS; doc.head.append(st); }
+  if (!doc.getElementById(STYLE_ID)) { const st = doc.createElement("style"); st.id = STYLE_ID; st.textContent = CSS; doc.head.append(st); blockLongPressMenus(doc); }
   return r;
 }
 /** Mount UI (HUD, overlays, modals) inside the root so it is visible and tappable in fullscreen. */

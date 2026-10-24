@@ -78,7 +78,12 @@ describe("focus navigation", () => {
   });
   test("touch: menu bar opens each menu; every pause entry is reachable; Quit to main menu", () => {
     const bar = document.getElementById("game-menubar")!;
-    for (const b of Array.from(bar.querySelectorAll<HTMLButtonElement>("button"))) { b.click(); expect(menus.nav.top).toBe(b.dataset["open"]); menus.nav.closeAll(); }
+    for (const b of Array.from(bar.querySelectorAll<HTMLButtonElement>("button"))) { if (b.dataset["open"] === "more") continue; b.click(); expect(menus.nav.top).toBe(b.dataset["open"]); menus.nav.closeAll(); }
+    // ADR-133: secondary menus fold behind "More" on phones; More toggles them and opening a menu folds them again
+    const more = bar.querySelector<HTMLButtonElement>('[data-open="more"]')!; expect(bar.firstElementChild).toBe(more);
+    expect(bar.querySelector('[data-open="inventory"]')!.classList.contains("gm-secondary")).toBe(false); expect(bar.querySelector('[data-open="skills"]')!.classList.contains("gm-secondary")).toBe(true);
+    more.click(); expect(bar.dataset["expanded"]).toBe("true"); expect(more.getAttribute("aria-expanded")).toBe("true");
+    bar.querySelector<HTMLButtonElement>('[data-open="skills"]')!.click(); expect(bar.dataset["expanded"]).toBe("false"); menus.nav.closeAll();
     menus.pause(); const labels = menus.nav.focusables().map((e) => e.textContent ?? "");
     for (const m of ["Inventory", "Crafting", "Build", "Character", "Party", "Clan", "Trade stalls", "Chat", "Settings", "Quit to main menu"]) expect(labels.some((l) => l.includes(m))).toBe(true);
     Array.from(document.querySelectorAll<HTMLButtonElement>("[data-modal=pause] button")).find((b) => b.textContent === "Quit to main menu")!.click();

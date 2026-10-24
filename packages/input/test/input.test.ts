@@ -108,7 +108,7 @@ describe("touch", () => {
     const ctxBtn = vc.geometry().find((g) => g.id === "context")!; let canceled = false; sys.on("Interact", (e) => { if (e.phase === "canceled") canceled = true; });
     vc.pointerDown(3, ctxBtn.x, ctxBtn.y); tick(); vc.pointerMove(3, ctxBtn.x, ctxBtn.y - 300); tick(); vc.pointerUp(3); tick(); expect(sys.pressed("Interact")).toBe(false); expect(canceled).toBe(true);
     const hb = vc.geometry().find((g) => g.id === "hotbar")!; vc.pointerDown(4, hb.x, hb.y); vc.pointerMove(4, hb.x + 50, hb.y + 5); vc.pointerUp(4); tick(); expect(sys.pressed("Hotbar3")).toBe(true);
-    vc.leftHanded = true; expect(vc.geometry().find((g) => g.id === "attack")!.x).toBeLessThan(400); vc.resize({ w: 1688, h: 780 }); expect(vc.scale).toBe(2);
+    vc.leftHanded = true; expect(vc.geometry().find((g) => g.id === "attack")!.x).toBeLessThan(400); vc.resize({ w: 1688, h: 780 }); expect(vc.scale).toBe(1.15); vc.resize({ w: 600, h: 300 }); expect(vc.scale).toBe(1); // ADR-133 clamp
     const sp = new VirtualControls(DEFAULT_TOUCH_LAYOUTS.gameplay, touch); sp.resize({ w: 844, h: 390 }); const sprint = sp.geometry().find((g) => g.id === "sprint")!;
     sp.pointerDown(5, sprint.x, sprint.y); tick(); sp.pointerUp(5); tick(); expect(sys.down("Sprint")).toBe(true); // toggle on touch
   });

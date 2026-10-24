@@ -18,15 +18,18 @@ export interface ElementGeometry { id: string; kind: VirtualElement["kind"]; x: 
  * Pointers that hit nothing are returned false so the caller can route them to a GestureRecognizer.
  */
 export class VirtualControls {
-  leftHanded = false; private screen: Screen = { w: 1, h: 1 };
+  leftHanded = false;
+  /** Element ids hidden right now (context-only controls, ADR-133): not drawn (visible=false) and not hit-tested. */
+  hidden = new Set<string>();
+  private screen: Screen = { w: 1, h: 1 };
   private owners = new Map<number, { el: VirtualElement; cx: number; cy: number; sel?: number }>();
   private pressed = new Set<string>();
   private knobs = new Map<string, { x: number; y: number; cx: number; cy: number }>();
   private radialSel = new Map<string, number>();
   constructor(public layout: VirtualLayout, readonly device: MapDevice) {}
   resize(s: Screen): void { this.screen = s; }
-  /** Scale from reference dp to screen px: fit-min, clamped to [0.75, 2] so controls stay thumb-sized. */
-  get scale(): number { const s = this.screen; return Math.max(0.75, Math.min(2, Math.min(s.w / this.layout.reference.w, s.h / this.layout.reference.h))); }
+  /** Scale from reference dp to screen px: fit-min, clamped to [1, 1.15]: thumb-sized (44-64 px) on every phone, never bloated on tablets (ADR-133). */
+  get scale(): number { const s = this.screen; return Math.max(1, Math.min(1.15, Math.min(s.w / this.layout.reference.w, s.h / this.layout.reference.h))); }
   private place(el: VirtualElement): { x: number; y: number; r: number } {
     const s = this.screen, i = s.insets ?? { top: 0, right: 0, bottom: 0, left: 0 };
     const ax = this.leftHanded ? 1 - el.anchor.x : el.anchor.x; const w = s.w - i.left - i.right, h = s.h - i.top - i.bottom;
@@ -35,14 +38,14 @@ export class VirtualControls {
   geometry(): ElementGeometry[] {
     return this.layout.elements.map((el) => {
       const p = this.place(el); const k = this.knobs.get(el.id);
-      const g: ElementGeometry = { id: el.id, kind: el.kind, x: k?.cx ?? p.x, y: k?.cy ?? p.y, r: p.r, pressed: this.pressed.has(el.id), visible: el.kind !== "joystick" || el.mode === "fixed" || !!k };
+      const g: ElementGeometry = { id: el.id, kind: el.kind, x: k?.cx ?? p.x, y: k?.cy ?? p.y, r: p.r, pressed: this.pressed.has(el.id), visible: !this.hidden.has(el.id) && (el.kind !== "joystick" || el.mode === "fixed" || !!k) };
       if (k) g.knob = { x: k.x, y: k.y }; const sel = this.radialSel.get(el.id); if (sel !== undefined) g.highlighted = sel; return g;
     });
   }
   private hit(x: number, y: number): VirtualElement | undefined {
     const els = [...this.layout.elements].sort((a, b) => Number(a.kind === "joystick" && a.mode === "floating") - Number(b.kind === "joystick" && b.mode === "floating"));
     for (const el of els) {
-      const p = this.place(el);
+      if (this.hidden.has(el.id)) continue; const p = this.place(el);
       if (el.kind === "joystick" && el.mode === "floating") {
         const z = el.zone ?? { x: 0, y: 0.4, w: 0.5, h: 0.6 }; const zx = this.leftHanded ? 1 - z.x - z.w : z.x;
         if (x >= zx * this.screen.w && x <= (zx + z.w) * this.screen.w && y >= z.y * this.screen.h && y <= (z.y + z.h) * this.screen.h) return el;
