@@ -349,7 +349,7 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
     if (placement === Placement.Opening && !p.fits) err(`${where}: opening piece needs "fits"`);
     if (!p.tiered && p.tier === undefined) err(`${where}: needs "tiered" or a fixed "tier"`);
     if (p.tier !== undefined && !(p.tier >= 0 && p.tier < tiers.length)) err(`${where}.tier out of range`);
-    if ((p.container ?? 0) > 24) err(`${where}.container exceeds 24 slots`);
+    if ((p.container ?? 0) > 96) err(`${where}.container exceeds 96 slots (CONTAINER_MAX_SLOTS)`);
     if (p.variantNames && p.variantNames.length !== Math.max(1, p.variants ?? 1)) err(`${where}.variantNames must have one name per variant`);
     pieces.set(base.id, {
       ...base, ...visual(p.key, p.sprite), placement, tiered: p.tiered ?? false, costScale: p.costScale ?? 1, fixedTier: p.tier ?? 1,

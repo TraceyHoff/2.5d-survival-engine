@@ -5,15 +5,15 @@
  * and the sender maps them to NetIds. Server handlers re-validate everything; reasons here are only hints.
  */
 import { Appearance, GroupRole, Membership, PlayerId, Transform, WEARABLE_SLOTS, getAppearance, type CommandDef, type CosmeticCatalogLike, type Entity, type World } from "@engine/core";
-import { BuildPiece, ClanInvitePending, ClanStatus, CraftQueue, PartyInvitePending, StallHeader, Wardrobe } from "../components.js";
+import { BuildPiece, Container, ClanInvitePending, ClanStatus, CraftQueue, PartyInvitePending, StallHeader, Wardrobe } from "../components.js";
 import { gameplayDefs } from "../config.js";
 import type { ItemCount } from "../defs.js";
-import { countItem, listSlots } from "../inventory.js";
+import { countItem, listSlots, readSlots } from "../inventory.js";
 import { itemInfo, type NameLookup } from "../economy/provenance.js";
 import { BuyFromStallCmd, CollectTillCmd, SetListingCmd, SetStallNameCmd, SetStallOpenCmd, StockStallCmd, UnstockStallCmd, listingRevision, stallListings, stallName, tillOf } from "../economy/stall.js";
 import { CancelQueuedCraftCmd, MAX_CRAFT_COUNT, QueueCraftCmd, craftQueueReason, owedOf } from "../systems/craft_queue.js";
 import { pieceCost } from "../building/place.js";
-import { PaintCmd, PlaceCmd } from "../input.js";
+import { DepositCmd, PaintCmd, PlaceCmd, WithdrawCmd } from "../input.js";
 import { COSMETICS, EquipCosmeticCmd, SetAppearanceCmd, canEditAppearance, hasCreatedLook, nearWardrobe, unlocksOf } from "../customization.js";
 import { PartyAcceptCmd, PartyDeclineCmd, PartyInviteCmd, PartyKickCmd, PartyLeaveCmd, PARTY_RULES } from "../party.js";
 import { ClanAcceptCmd, ClanDeclineCmd, ClanCreateCmd, ClanDemoteCmd, ClanDisbandCmd, ClanInviteCmd, ClanKickCmd, ClanLeaveCmd, ClanPromoteCmd, ClanSetGoalCmd, ClanSetRankPermsCmd } from "../clan.js";
@@ -49,6 +49,36 @@ export interface RecipeView { id: number; key: string; name: string; seconds: nu
 export interface QueueJobView { slot: number; recipe: number; name: string; count: number; state: number; progress: number; secondsLeft: number }
 export interface OwedView { item: number; name: string; count: number; crafterName: string }
 export interface CraftingView { recipes: RecipeView[]; queue: QueueJobView[]; owed: OwedView[]; maxCount: number }
+// ---- container panel (ADR-098: up to 96 slots, paged) ------------------------------------------------
+/** Slots per page in the container panel (one page = the old 24-slot box). */
+export const CONTAINER_PAGE_SIZE = 24;
+export interface ContainerSlotView { slot: number; item: number; icon: string; name: string; count: number; tooltip: string }
+export interface ContainerView { entity: Entity; slotCount: number; page: number; pages: number; first: number; slots: ContainerSlotView[]; weight: number; maxWeight: number }
+/** The container the player has open on this replica: Container replicates only to viewers (containerViewersScope),
+ *  so on a client the nearest non-player Container within reach is the open one. */
+export function openContainer(c: MenuCtx): Entity | undefined {
+  const w = c.world; const p = w.get(c.player, Transform); if (!p) return undefined;
+  const reach = gameplayDefs(w).building.containerReach + 1; let best: Entity | undefined; let bd = reach * reach;
+  for (const e of w.query([Container, Transform])) {
+    if (e === c.player) continue; const t = w.get(e, Transform)!; const d = (t.x - p.x) ** 2 + (t.y - p.y) ** 2;
+    if (d <= bd) { bd = d; best = e; }
+  }
+  return best;
+}
+/** One page of a container (every slot in the page, empties included, so focus positions stay stable). `page` is clamped. */
+export function containerView(c: MenuCtx, e: Entity, page = 0, pageSize = CONTAINER_PAGE_SIZE): ContainerView | undefined {
+  const w = c.world; const box = w.get(e, Container); if (!box) return undefined;
+  const v = readSlots(w, e); const n = v.slotCount; const pages = Math.max(1, Math.ceil(n / pageSize));
+  const pg = Math.max(0, Math.min(pages - 1, page | 0)); const first = pg * pageSize; const slots: ContainerSlotView[] = [];
+  for (let i = first; i < Math.min(n, first + pageSize); i++) {
+    const item = v.item(i), count = v.count(i); const name = item ? itemName(w, item) : "";
+    slots.push({ slot: i, item, count, name, icon: item ? gameplayDefs(w).items.get(item)?.spriteKey ?? "" : "", tooltip: item ? `${name} ×${count} · slot ${i + 1}/${n}` : `Empty · slot ${i + 1}/${n}` });
+  }
+  return { entity: e, slotCount: n, page: pg, pages, first, slots, weight: box.weight, maxWeight: box.maxWeight };
+}
+export const withdrawIntent = (target: Entity, item: number, count: number): MenuIntent => intent(WithdrawCmd, { target, item, count }, ["target"]);
+export const depositIntent = (target: Entity, item: number, count: number): MenuIntent => intent(DepositCmd, { target, item, count }, ["target"]);
+
 export function craftingView(c: MenuCtx): CraftingView {
   const w = c.world; const defs = gameplayDefs(w);
   const recipes = [...defs.recipes.values()].map((r): RecipeView => ({ id: r.id, key: r.key, name: itemName(w, r.output.item), seconds: r.seconds, station: r.station,

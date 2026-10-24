@@ -19,7 +19,7 @@ Classes: `bicycle`, `car`, `truck`, `van`, `camper`, `semi`, `trailer`. Sizes: `
 | `fuel` | `{capacity, perSecond}` at full throttle, or `null`. Required for motor classes, forbidden on bicycles. |
 | `stamina` | `{perSecond}` (bicycles): drains the rider's Survival.stamina. At 0 the bike runs at 35% throttle. |
 | `health` | vehicle HP. At 0 the vehicle is wrecked: no throttle and no entering. |
-| `storage` | `{slots, maxWeight}` → `Container` on the vehicle. Slots are capped at `CONTAINER_SLOTS` (24), so weight is the main way capacity scales. |
+| `storage` | `{slots, maxWeight}` → `Container` on the vehicle. Base slots; the Container gets `storageCapacity` = base x class scale, clamped to the class max in `data/vehicle_storage.json` (<= 96, ADR-098). maxWeight is used as is. |
 | `hitches` | `[{at: front|rear, offset, accepts: [class…]}]`. Towing needs the trailer's front hitch to accept the tow's class AND the tow's rear hitch to accept the trailer's class. |
 | `interior.stations` | station keys from `stations.json` (campers and camper trailers). |
 | `footprint` | `{length, width}` in tiles. Collision tests its 4 corners and centre. |

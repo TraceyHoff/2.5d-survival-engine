@@ -532,7 +532,7 @@ Builds on the Engine Architect vehicle core (docs/VEHICLES.md, ADR-096), which i
   rest at the new **garage** station (StationKind 5, piece `garage`). Costs (parts -> kit) scale with size and power; every recipe
   has `seconds`; the crafter is recorded on the kit slot (crafterId) and copied to the vehicle's `VehicleCondition.crafterId`
   on `gameplay.vehicleDeploy {slot,x,y,heading}` (reach 4, starts with 10% fuel).
-- **Storage** = core `storageCapacity` (slots by size, capped at 24 = CONTAINER_SLOTS). More slots is an Engine Architect ask.
+- **Storage** = `storageCapacity`: vehicles.json slots x class scale, clamped per class (`data/vehicle_storage.json`, bike <= 6 ... semi trailer 96; ADR-098). Weight limits unchanged.
 - **Fuel:** crude_oil (items.json, oil_seep node; also furnace-from-coal) -> gasoline / diesel; plant_oil -> biofuel (workbench). 1 item = 1 L. Gasoline vehicles take
   gasoline/biofuel, diesel ones (flatbed, box truck, semi) take diesel/biofuel. `gameplay.vehicleRefuel {target,slot,count}`
   needs a parked vehicle in reach 3, pours whole items up to 20 and never overfills. Consumption is the core's; bikes use stamina.
@@ -592,3 +592,10 @@ Known gaps: `PaintCmd` is not net-bridged; clan roster/perms only cover replicat
 - **Balance** (`test/balance.test.ts`): every item is reachable from node yields, loot and spoilage (fixpoint); no free recipes; every crafted item has a positive raw cost; per family, power and durability never decrease with tier; no recipe uses a part above its output's tier.
 - **Not implemented:** weapon durability wear-out on hit (combat never had it); vehicles (Engine Architect).
 - Art keys: `docs/ART_KEYS_ITEMS.md`.
+
+## 32. Container capacity up to 96 slots (ADR-098)
+- `Container` arrays are `CONTAINER_MAX_SLOTS` = 96 wide; capacity is per-instance `slotCount` from the def (piece `container` <= 96, bag sizes, vehicle `storageCapacity`). Slots >= slotCount stay empty; every inventory helper already iterates to slotCount.
+- Vehicle slots by class (`data/vehicle_storage.json`, Gameplay-owned; vehicles.json untouched): slots = clamp(round(base x scale), 1, max). Scale/max: bicycle 1/6, car 1.5/18, van 2/40, truck 2.5/48, camper 2/48, semi 2/16, trailer 4/96. maxWeight unchanged.
+- Replication: unchanged net element deltas; one changed slot = 19 B (test `apps/server/test/container_bandwidth.test.ts`). Spawn (open) ~1.4 KB: Netcode ask.
+- Persist: `CONTAINER_96_MIGRATIONS` (grown 24 -> 96, with/without crafterId) for chunk rows and player records (`packages/persist/test/container96.test.ts`).
+- UI: `openContainer` / `containerView(c, e, page)` / `withdrawIntent` / `depositIntent` (`src/ui/menus.ts`); the client inventory panel pages 24 slots at a time (◀ ▶, PgUp/PgDn, LB/RB). Tapping a pack slot while a box is open deposits the stack; tapping a box slot takes it.

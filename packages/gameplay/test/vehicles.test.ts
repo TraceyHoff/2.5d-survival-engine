@@ -28,6 +28,21 @@ describe("vehicle defs", () => {
     expect(w.get(s, G.Container)!.slotCount).toBeLessThanOrEqual(G.CONTAINER_SLOTS);
     expect(rank("xl")).toBe(4);
   });
+  it("ADR-098: slots scale by class from bike to semi trailer (96), weight limits unchanged, over-cap spills refused", () => {
+    const cap = (id: string) => G.storageCapacity(G.VEHICLE_DEFS.find((d) => d.id === id)!);
+    const maxBy = (c: G.VehicleClass) => Math.max(...G.VEHICLE_DEFS.filter((d) => d.class === c).map((d) => G.storageCapacity(d).slots));
+    expect(maxBy("bicycle")).toBeLessThanOrEqual(6);
+    expect(maxBy("bicycle")).toBeLessThan(maxBy("car")); expect(maxBy("car")).toBeLessThan(maxBy("truck")); expect(maxBy("truck")).toBeLessThan(maxBy("trailer"));
+    expect(cap("semi_trailer_box").slots).toBe(G.CONTAINER_MAX_SLOTS);
+    for (const d of G.VEHICLE_DEFS) {
+      const c = G.storageCapacity(d);
+      expect(c.maxWeight).toBe(d.storage.maxWeight);
+      expect(c.slots).toBeLessThanOrEqual(G.VEHICLE_STORAGE.max[d.class]); expect(c.slots >= 1 || d.storage.slots === 0).toBe(true);
+    }
+    const w = makeWorld(); const t = G.spawnVehicle(w, "semi_trailer_box", 0, 0);
+    expect(w.get(t, G.Container)!.slotCount).toBe(96); expect(w.get(t, G.Container)!.maxWeight).toBe(cap("semi_trailer_box").maxWeight);
+    expect(G.validateVehicleDefs([{ ...G.VEHICLE_DEFS[0]!, storage: { slots: 97, maxWeight: 1 } }]).join()).toMatch(/slots <= 96/);
+  });
 });
 
 describe("vehicle components", () => {

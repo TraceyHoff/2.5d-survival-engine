@@ -12,7 +12,8 @@
 import { AnimState as Anim, defineCommand, defineResource, fnv1a, NetId, Transform, type CommandHandlers, type Entity, type World } from "@engine/core";
 import raw from "../data/vehicles.json";
 import stationsRaw from "../data/stations.json";
-import { AnimState, Container, CONTAINER_SLOTS, Dead, Driver, Hitch, Survival, Vehicle, VehicleSeats, VehicleState, VEHICLE_ENGINE_ON, VEHICLE_HEADLIGHTS, VEHICLE_MAX_SEATS } from "./components.js";
+import storageRaw from "../data/vehicle_storage.json";
+import { AnimState, Container, CONTAINER_MAX_SLOTS, Dead, Driver, Hitch, Survival, Vehicle, VehicleSeats, VehicleState, VEHICLE_ENGINE_ON, VEHICLE_HEADLIGHTS, VEHICLE_MAX_SEATS } from "./components.js";
 import { movementBlocked } from "./systems/movement.js";
 import { spendStamina } from "./systems/vitals.js";
 import { netIdEntity } from "./vehicle_net.js";
@@ -47,7 +48,7 @@ export function validateVehicleDefs(defs: readonly VehicleDef[]): string[] {
     if (d.class !== "bicycle" && d.class !== "trailer" && !d.fuel) errs.push(`${p}: motor vehicles need fuel`);
     if (!(d.mass > 0) || !(d.health > 0) || !(d.collider.radius > 0) || !(d.footprint.length > 0) || !(d.footprint.width > 0)) errs.push(`${p}: mass/health/footprint/collider`);
     if (!(d.grip >= 0 && d.grip <= 1)) errs.push(`${p}: grip`);
-    if (!(d.storage.slots >= 0 && d.storage.slots <= CONTAINER_SLOTS) || !(d.storage.maxWeight >= 0)) errs.push(`${p}: storage (slots <= ${CONTAINER_SLOTS})`);
+    if (!(d.storage.slots >= 0 && d.storage.slots <= CONTAINER_MAX_SLOTS) || !(d.storage.maxWeight >= 0)) errs.push(`${p}: storage (slots <= ${CONTAINER_MAX_SLOTS})`);
     const fin = (a: VehicleAnchor | undefined): boolean => !!a && [a.x, a.y, a.z].every(Number.isFinite);
     if (!Array.isArray(d.seatAnchors) || d.seatAnchors.length !== d.seats || !d.seatAnchors.every(fin)) errs.push(`${p}: seatAnchors (one {x,y,z} per seat)`);
     const ats = new Set<string>();
@@ -73,8 +74,18 @@ export const VEHICLE_DEFS_HASH: number = fnv1a(JSON.stringify(VEHICLE_DEFS)) >>>
 export const vehicleDefId = (id: string): number => VEHICLE_DEFS.findIndex((d) => d.id === id) + 1;
 export const vehicleDef = (defId: number): VehicleDef | undefined => VEHICLE_DEFS[defId - 1];
 export const vehicleDefOf = (world: World, e: Entity): VehicleDef | undefined => vehicleDef(world.getField(e, Vehicle, "defId") ?? 0);
-/** Container capacity for a def (scales with size; hard-capped by CONTAINER_SLOTS). */
-export const storageCapacity = (d: VehicleDef): { slots: number; maxWeight: number } => ({ slots: Math.min(CONTAINER_SLOTS, d.storage.slots), maxWeight: d.storage.maxWeight });
+/** ADR-098 class scaling (data/vehicle_storage.json): bike (<= 6) ... semi trailer (96). */
+export const VEHICLE_STORAGE = storageRaw as { scale: Record<VehicleClass, number>; max: Record<VehicleClass, number> };
+for (const c of VEHICLE_CLASSES) {
+  const sc = VEHICLE_STORAGE.scale[c], mx = VEHICLE_STORAGE.max[c];
+  if (!(sc > 0) || !(mx >= 1 && mx <= CONTAINER_MAX_SLOTS && Number.isInteger(mx))) throw new Error(`vehicle_storage.json: bad ${c}`);
+}
+/** Container capacity for a def: base slots scaled by class, clamped to the class max (<= CONTAINER_MAX_SLOTS). Weight unchanged. */
+export const storageCapacity = (d: VehicleDef): { slots: number; maxWeight: number } => {
+  if (d.storage.slots <= 0) return { slots: 0, maxWeight: d.storage.maxWeight };
+  const slots = Math.max(1, Math.min(VEHICLE_STORAGE.max[d.class], CONTAINER_MAX_SLOTS, Math.round(d.storage.slots * VEHICLE_STORAGE.scale[d.class])));
+  return { slots, maxWeight: d.storage.maxWeight };
+};
 
 // ---- tuning ---------------------------------------------------------------------------------------
 export const VEHICLE_TUNING = {

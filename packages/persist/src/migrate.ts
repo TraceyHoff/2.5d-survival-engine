@@ -7,7 +7,12 @@ import { CHUNK_AREA } from "@engine/world";
  * layout and fills the added fields with 0 (every element). Field order is the schema's key order, so added
  * fields may sit anywhere; the rest must keep their order and types.
  */
-export interface AddedFields { component: string; fields: readonly string[] }
+export interface AddedFields {
+  component: string; fields: readonly string[];
+  /** Array fields that were NARROWER in the old layout: name -> old element count (ADR-098). Old elements are copied
+   *  in order and the tail is zero-filled. May be combined with `fields` (a save that predates both). */
+  grown?: Readonly<Record<string, number>>;
+}
 /** core Slot.crafterId on gameplay's slot containers (4b8b28d): 0 = no crafter. */
 export const CRAFTER_ID_MIGRATIONS: readonly AddedFields[] = [
   { component: "Inventory", fields: ["crafterId"] },
@@ -15,28 +20,43 @@ export const CRAFTER_ID_MIGRATIONS: readonly AddedFields[] = [
 ];
 /** core Appearance.version (a287243): saves from 81cdf46 lack it; 0 = first version. */
 export const APPEARANCE_VERSION_MIGRATION: AddedFields = { component: "Appearance", fields: ["version"] };
-export const DEFAULT_MIGRATIONS: readonly AddedFields[] = [...CRAFTER_ID_MIGRATIONS, APPEARANCE_VERSION_MIGRATION];
+/** ADR-098: Container arrays grew 24 -> 96 slots (slotCount stays per-instance). Old rows zero-pad the tail. */
+const C24 = { items: 24, counts: 24, createdTick: 24, durability: 24, crafterId: 24 } as const;
+export const CONTAINER_96_MIGRATIONS: readonly AddedFields[] = [
+  { component: "Container", fields: [], grown: C24 },
+  { component: "Container", fields: ["crafterId"], grown: C24 },
+];
+export const DEFAULT_MIGRATIONS: readonly AddedFields[] = [...CRAFTER_ID_MIGRATIONS, APPEARANCE_VERSION_MIGRATION, ...CONTAINER_96_MIGRATIONS];
 
 const BYTES: Record<FieldType, number> = { f32: 4, f64: 8, i8: 1, u8: 1, i16: 2, u16: 2, i32: 4, u32: 4 };
-export const oldSchemaOf = (s: Schema, added: readonly string[]): Schema =>
-  Object.fromEntries(Object.entries(s).filter(([k]) => !added.includes(k))) as Schema;
-/** Per field of the CURRENT schema: [byteSize, isAdded]. */
-export interface FieldPlan { fields: { bytes: number; added: boolean }[]; oldSize: number; newSize: number }
+export const oldSchemaOf = (s: Schema, added: readonly string[], grown: Readonly<Record<string, number>> = {}): Schema =>
+  Object.fromEntries(Object.entries(s).filter(([k]) => !added.includes(k)).map(([k, v]) => [k, k in grown && typeof v === "object" ? { ...v, length: grown[k]! } : v])) as Schema;
+/** Per field of the CURRENT schema: byte size now, byte size in the old record (0 = added), and whether it is added. */
+export interface FieldPlan { fields: { bytes: number; oldBytes: number; added: boolean }[]; oldSize: number; newSize: number }
 /** The migration that explains stored hash `h` for `store`, if any. */
 export function planFor(store: ComponentStore, h: number, migrations: readonly AddedFields[]): FieldPlan | undefined {
   for (const m of migrations) {
-    if (m.component !== store.def.name || !m.fields.some((f) => f in store.def.schema)) continue;
-    if (schemaHash(oldSchemaOf(store.def.schema, m.fields)) !== h) continue;
-    const fields = store.fields.map((f) => { const spec = store.def.schema[f]!; return { bytes: BYTES[fieldType(spec)] * fieldLength(spec), added: m.fields.includes(f) }; });
-    let oldSize = 0, newSize = 0; for (const f of fields) { newSize += f.bytes; if (!f.added) oldSize += f.bytes; }
+    const grown = m.grown ?? {}; const gk = Object.keys(grown);
+    if (m.component !== store.def.name) continue;
+    if (!m.fields.some((f) => f in store.def.schema) && !gk.some((f) => f in store.def.schema)) continue;
+    if (gk.some((f) => !(f in store.def.schema) || fieldLength(store.def.schema[f]!) < grown[f]!)) continue;
+    if (schemaHash(oldSchemaOf(store.def.schema, m.fields, grown)) !== h) continue;
+    const fields = store.fields.map((f) => {
+      const spec = store.def.schema[f]!; const added = m.fields.includes(f); const el = BYTES[fieldType(spec)];
+      return { bytes: el * fieldLength(spec), oldBytes: added ? 0 : el * (grown[f] ?? fieldLength(spec)), added };
+    });
+    let oldSize = 0, newSize = 0; for (const f of fields) { newSize += f.bytes; oldSize += f.oldBytes; }
     return { fields, oldSize, newSize };
   }
   return undefined;
 }
-/** Old-layout record bytes -> current-layout bytes (added fields zero). */
+/** Old-layout record bytes -> current-layout bytes (added fields and grown array tails zero). */
 export function upgradeRecord(plan: FieldPlan, src: Uint8Array, at: number, out: Uint8Array, to: number): void {
   let i = at, o = to;
-  for (const f of plan.fields) { if (!f.added) out.set(src.subarray(i, i + f.bytes), o), (i += f.bytes); o += f.bytes; }
+  for (const f of plan.fields) {
+    if (f.oldBytes) out.set(src.subarray(i, i + f.oldBytes), o);
+    out.fill(0, o + f.oldBytes, o + f.bytes); i += f.oldBytes; o += f.bytes;
+  }
 }
 
 /**

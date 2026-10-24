@@ -49,7 +49,13 @@ export type InvSchema = {
   crafterId: { type: FieldType; length: number };
 };
 export const INVENTORY_SLOTS = 16;
-export const CONTAINER_SLOTS = 24;
+/** Container array width (ADR-098): the hard per-instance cap. Real capacity is per-instance `slotCount`, set from the def
+ *  (piece `container`, vehicle class storage, bag size); slots >= slotCount are always empty. */
+export const CONTAINER_MAX_SLOTS = 96;
+/** Array width before ADR-098 (persist migration: old rows are zero-padded from 24 to CONTAINER_MAX_SLOTS). */
+export const CONTAINER_LEGACY_SLOTS = 24;
+/** @deprecated alias of CONTAINER_MAX_SLOTS (kept so existing imports compile). */
+export const CONTAINER_SLOTS = CONTAINER_MAX_SLOTS;
 export const Inventory = defineComponent("Inventory", {
   slotCount: { type: "u8", default: INVENTORY_SLOTS }, maxWeight: { type: "f32", default: 60 }, weight: "f32", spoilMul: { type: "f32", default: 1 },
   items: { type: "u16", length: INVENTORY_SLOTS }, counts: { type: "u16", length: INVENTORY_SLOTS }, createdTick: { type: "u32", length: INVENTORY_SLOTS }, durability: { type: "u16", length: INVENTORY_SLOTS }, crafterId: { type: "u32", length: INVENTORY_SLOTS },

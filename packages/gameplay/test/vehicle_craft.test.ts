@@ -23,7 +23,7 @@ describe("vehicle crafting data", () => {
     }
     const avg = (s: G.VehicleSize) => { const xs = G.VEHICLE_DEFS.filter((v) => v.size === s); return xs.reduce((a, v) => a + cost.get(v.id)!, 0) / xs.length; };
     for (let i = 1; i < G.VEHICLE_SIZES.length; i++) expect(avg(G.VEHICLE_SIZES[i]!)).toBeGreaterThan(avg(G.VEHICLE_SIZES[i - 1]!));
-    for (const v of G.VEHICLE_DEFS) expect(G.storageCapacity(v).slots).toBeLessThanOrEqual(24);
+    for (const v of G.VEHICLE_DEFS) expect(G.storageCapacity(v).slots).toBeLessThanOrEqual(G.CONTAINER_MAX_SLOTS);
     for (const f of ["gasoline", "diesel", "biofuel"]) expect([...d.recipes.values()].some((r) => d.items.get(r.output.item)?.key === f)).toBe(true);
   });
 });

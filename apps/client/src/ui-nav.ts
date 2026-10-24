@@ -24,13 +24,15 @@ export interface UINavOptions {
   input?: ContextStack;
   /** code (KeyboardEvent.code) -> handler, active when no text field has focus. */
   hotkeys?: Record<string, () => void>;
+  /** Page the open menu (PgUp/PgDn, gamepad LB/RB) while a modal is open; e.g. the paged container grid (ADR-098). */
+  onPage?: (dir: -1 | 1) => void;
   getGamepads?: () => readonly (GamepadLikeNav | null)[];
   /** default true: poll gamepads every animation frame */
   pollGamepads?: boolean;
   now?: () => number;
 }
 export interface GamepadLikeNav { buttons: readonly { pressed: boolean }[]; axes: readonly number[] }
-export const PAD = { A: 0, B: 1, SELECT: 8, START: 9, UP: 12, DOWN: 13, LEFT: 14, RIGHT: 15 } as const;
+export const PAD = { A: 0, B: 1, LB: 4, RB: 5, SELECT: 8, START: 9, UP: 12, DOWN: 13, LEFT: 14, RIGHT: 15 } as const;
 const FOCUSABLE = "button,input,select,textarea,a[href],[tabindex]:not([tabindex='-1'])";
 const isText = (el: Element | null): boolean => (el instanceof HTMLInputElement && !["checkbox", "radio", "button", "submit", "range"].includes(el.type)) || el instanceof HTMLTextAreaElement || (el instanceof HTMLElement && el.isContentEditable);
 
@@ -121,6 +123,7 @@ export class UINav {
     const dirs: Record<string, Dir> = { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right" };
     const d = dirs[e.key]; if (d) { this.move(d); e.preventDefault(); e.stopPropagation(); return; }
     if (e.key === "Enter" || e.key === " ") { this.activate(); e.preventDefault(); e.stopPropagation(); return; }
+    if ((e.key === "PageUp" || e.key === "PageDown") && this.o.onPage) { this.o.onPage(e.key === "PageUp" ? -1 : 1); e.preventDefault(); e.stopPropagation(); return; }
     const h = this.o.hotkeys?.[e.code]; if (h && !e.ctrlKey && !e.metaKey && !e.altKey) { h(); e.preventDefault(); e.stopPropagation(); }
   }
 
@@ -139,6 +142,8 @@ export class UINav {
     if (!this.isOpen) { if (select) this.pause(); this.held = dir; return; }
     if (dir !== this.held) { this.held = dir; if (dir) { this.move(dir); this.nextAt = now + 400; } }
     else if (dir && now >= this.nextAt) { this.move(dir); this.nextAt = now + 110; }
+    const lb = edge("lb", b(PAD.LB)), rb = edge("rb", b(PAD.RB));
+    if (lb || rb) this.o.onPage?.(lb ? -1 : 1);
     if (a) this.activate();
     if (bb) this.close();
   }

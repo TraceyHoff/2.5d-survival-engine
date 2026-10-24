@@ -11,7 +11,7 @@
 import "./gameplay-panels.css";
 import {
   buildView, cancelQueuedCraftIntent, clanAcceptIntent, clanDeclineIntent, clanRosterRows, onlineTargets, paintIntent, paintTarget, type SocialDirectory, clanCreateIntent, clanDemoteIntent, clanDisbandIntent, clanInviteIntent, clanKickIntent, clanLeaveIntent,
-  clanPromoteIntent, clanSetGoalIntent, clanSetRankPermsIntent, clanView, collectTillIntent, craftingView, equipCosmeticIntent, inventoryView, JOB_STATE_LABEL,
+  clanPromoteIntent, clanSetGoalIntent, clanSetRankPermsIntent, clanView, collectTillIntent, containerView, CONTAINER_PAGE_SIZE, craftingView, depositIntent, openContainer, withdrawIntent, equipCosmeticIntent, inventoryView, JOB_STATE_LABEL,
   nearestStall, partyAcceptIntent, partyDeclineIntent, partyInviteIntent, partyKickIntent, partyLeaveIntent, partyView, queueCraftIntent, buyFromStallIntent,
   setAppearanceIntent, setStallNameIntent, priceItemChoices, listItemIntents, unstockStallIntent, type StallListDraft, setStallOpenIntent, stallView, togglePermMask, wardrobeView, placeIntent,
   type BuildSelection, type MenuCtx, type MenuIntent,
@@ -48,6 +48,11 @@ const buildSel: BuildSelection = { piece: 0, tier: 0, variant: 0, paint: 0 };
 const castSel = { recipe: 0, count: 1 };
 let wardrobeSlot = 0;
 const dismissedClan = new Set<number>();
+/** Container panel page (ADR-098): survives re-renders; clamped by containerView. */
+let containerPage = 0;
+/** Page the open container by `d` (PgUp/PgDn, LB/RB, ◀ ▶). Returns true if a page change applies. */
+export function pageContainer(d: number): boolean { containerPage = Math.max(0, containerPage + d); return true; }
+export function containerPageIndex(): number { return containerPage; }
 const draft: StallListDraft = { listing: 0, invSlot: -1, count: 1, priceItem: 0, priceCount: 1, qty: 1 };
 
 export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelKit): Node[] {
@@ -63,9 +68,32 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
   const send = (i: MenuIntent, ok: string): void => { kit.status(src.send(i) ? ok : "Not connected."); kit.rerender(); };
   switch (id) {
     case "inventory": {
-      const v = inventoryView(c); if (!v.length) return [kit.para("Your pack is empty.")];
-      const g = grid(); for (const s of v) g.append(btn(`${s.name} ×${s.count}`, `slot-${s.slot}`, () => kit.status(s.tooltip.replace(/\n/g, " · ")), { title: s.tooltip, role: "slot", data: { item: String(s.item), icon: s.icon } }));
-      return [g];
+      const v = inventoryView(c); const box = openContainer(c); const cv = box !== undefined ? containerView(c, box, containerPage) : undefined;
+      if (cv) containerPage = cv.page;
+      const out: Node[] = [];
+      if (!v.length && !cv) return [kit.para("Your pack is empty.")];
+      if (cv) out.push(heading("Your pack"));
+      if (!v.length) out.push(kit.para("Your pack is empty."));
+      else { const g = grid(); for (const s of v) g.append(btn(`${s.name} ×${s.count}`, `slot-${s.slot}`, () => cv ? send(depositIntent(cv.entity, s.item, s.count), `Stored ${s.name} ×${s.count}.`) : kit.status(s.tooltip.replace(/\n/g, " · ")), { title: cv ? `${s.tooltip}\nStore in container` : s.tooltip, role: "slot", data: { item: String(s.item), icon: s.icon } })); out.push(g); }
+      if (cv) {
+        // ADR-098: paged container grid (CONTAINER_PAGE_SIZE per page). Every slot is a focusable button so the D-pad /
+        // arrows walk the grid; ◀ ▶ (touch), PgUp/PgDn (keyboard) and LB/RB (gamepad) change pages. Keys are slot-stable,
+        // so the morph refresh only patches the slots that changed.
+        out.push(heading(`Storage · ${cv.slotCount} slots · ${Math.round(cv.weight)}/${Math.round(cv.maxWeight)} kg`));
+        const g = grid(); g.dataset["role"] = "container-grid"; g.dataset["page"] = String(cv.page);
+        for (const s of cv.slots) g.append(s.item
+          ? btn(`${s.name} ×${s.count}`, `cslot-${s.slot}`, () => send(withdrawIntent(cv.entity, s.item, s.count), `Took ${s.name} ×${s.count}.`), { title: `${s.tooltip}\nTake`, role: "cslot", data: { item: String(s.item), icon: s.icon, slot: String(s.slot) } })
+          : btn("·", `cslot-${s.slot}`, () => kit.status(s.tooltip), { alt: true, title: s.tooltip, role: "cslot", data: { item: "0", slot: String(s.slot) } }));
+        out.push(g);
+        if (cv.pages > 1) {
+          const pg = grid(); pg.dataset["role"] = "container-pager";
+          pg.append(btn("◀ Prev", "page-prev", () => { pageContainer(-1); kit.rerender(); }, { alt: true, disabled: cv.page === 0, title: "Previous page (PgUp / LB)" }));
+          const label = kit.para(`Page ${cv.page + 1}/${cv.pages} · slots ${cv.first + 1}-${Math.min(cv.slotCount, cv.first + CONTAINER_PAGE_SIZE)}`); label.dataset["role"] = "page-label"; pg.append(label);
+          pg.append(btn("Next ▶", "page-next", () => { pageContainer(1); kit.rerender(); }, { alt: true, disabled: cv.page >= cv.pages - 1, title: "Next page (PgDn / RB)" }));
+          out.push(pg);
+        }
+      }
+      return out;
     }
     case "crafting": {
       const v = craftingView(c); const out: Node[] = [];

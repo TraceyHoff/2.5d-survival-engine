@@ -9,7 +9,7 @@
 import { UINav, type ContextStack } from "./ui-nav.js";
 import { loadSettings, saveSettings } from "./menu.js";
 import { morph } from "./ui-diff.js";
-import { GAMEPLAY_PANELS, gameplayBody, type GameplayPanel, type GameplaySource } from "./gameplay-panels.js";
+import { GAMEPLAY_PANELS, gameplayBody, pageContainer, type GameplayPanel, type GameplaySource } from "./gameplay-panels.js";
 import { onlineTargets } from "@engine/gameplay";
 
 /** `data-chan` value per @engine/net ChatChannel number (Global 0 … System 6); omitted/unknown = "system". */
@@ -70,7 +70,7 @@ export class GameMenus {
     if (!document.getElementById("gm-style")) { const st = document.createElement("style"); st.id = "gm-style"; st.textContent = CSS; document.head.append(st); }
     const hotkeys: Record<string, () => void> = {};
     for (const m of GAME_MENUS) for (const k of m.hotkeys) hotkeys[k] = () => this.toggle(m.id);
-    this.nav = new UINav({ root: o.root, onPause: () => this.pause(), ...(o.input ? { input: o.input } : {}), hotkeys, ...(o.getGamepads ? { getGamepads: o.getGamepads } : {}), ...(o.pollGamepads !== undefined ? { pollGamepads: o.pollGamepads } : {}) });
+    this.nav = new UINav({ root: o.root, onPause: () => this.pause(), onPage: (d) => { if (this.nav.top === "inventory" && pageContainer(d)) this.refresh(); }, ...(o.input ? { input: o.input } : {}), hotkeys, ...(o.getGamepads ? { getGamepads: o.getGamepads } : {}), ...(o.pollGamepads !== undefined ? { pollGamepads: o.pollGamepads } : {}) });
     if (o.showMenuBar !== false) {
       const bar = document.createElement("nav"); bar.id = "game-menubar"; bar.setAttribute("aria-label", "Game menus");
       const add = (id: string, icon: string, title: string, fn: () => void): void => { const b = document.createElement("button"); b.type = "button"; b.dataset["open"] = id; b.dataset["tip"] = title; b.setAttribute("aria-label", title); b.textContent = icon; b.addEventListener("click", (e) => { e.stopPropagation(); fn(); }); bar.append(b); };
