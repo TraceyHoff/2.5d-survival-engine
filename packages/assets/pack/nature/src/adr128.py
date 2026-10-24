@@ -1,5 +1,5 @@
 # ADR-128 art (docs/ART_LIST_ADR128.md): 18 cooked-food icons + canteen / water_bottle (nature_adr128, 32px cells, 2px inset,
-# 1x + @2x), wood / stone / leaf chip particles (nature_adr128_fx, 4 frames each, 8x8 art in 12px cells = 2px gutter),
+# 1x + @2x), wood / stone / leaf chip particles (nature_adr128_fx, 4 frames each, 8x8 art centred in 16px cells (pages must be 16-aligned)),
 # node health bar frame (nature_adr128_hpbar, 9-slice 32x4) and pickup toast background (nature_adr128_toast, 9-slice).
 # Replaces the ADR-128 alias sprites (4856b051) in pack/manifest.json + nature/manifest.nature.json; lives in the nature pack because the sprite_fallbacks icon test wants base|nature (keys move, never duplicate).
 # Run from repo root: python3 packages/assets/pack/nature/src/adr128.py [preview dir]
@@ -127,13 +127,13 @@ ICON.update(baked_apple=baked_apple, baked_pear=baked_pear, baked_orange=baked_o
 # ---------- FX: 8x8 art in a 12px cell (2px gutter), 4 tumble frames each
 FX = {'particle_wood_chip': '#c08040', 'particle_stone_chip': '#a4a4b0', 'particle_leaf': '#6fbf4e'}
 def fx_frame(k, i, scale):
-    c = C(12, 24 * scale // 2 if False else 16); col = FX[k]; a = i * math.pi / 4
-    def R(pts): return [(6 + (x * math.cos(a) - y * math.sin(a)), 6 + (x * math.sin(a) + y * math.cos(a))) for x, y in pts]
+    c = C(16, 16); col = FX[k]; a = i * math.pi / 4
+    def R(pts): return [(8 + (x * math.cos(a) - y * math.sin(a)), 8 + (x * math.sin(a) + y * math.cos(a))) for x, y in pts]
     c.ow = .45
     if k == 'particle_wood_chip': c.poly(R([(-3.3, -1.2), (3.3, -1.8), (3, 1.4), (-3, 1.6)]), col, shade=.35); c.line(R([(-2.4, 0), (2.4, -.3)]), .35, dk(col, .4), 200)
     elif k == 'particle_stone_chip': c.poly(R([(-2.6, -1.6), (.5, -3), (3, -.6), (1.8, 2.4), (-2, 2.2)]), col, shade=.4); c.dot(*R([(-.8, -.9)])[0], .5, (255, 255, 255), 170)
     else: c.poly(R([(-3.4, 0), (-1.5, -2), (1.6, -1.6), (3.4, 0), (1.6, 1.6), (-1.5, 2)]), col, shade=.35); c.line(R([(-3.4, 0), (3, 0)]), .3, dk(col, .4), 210)
-    return c.out(12 * scale)
+    return c.out(16 * scale)
 def hpbar(scale):  # 32x4 frame: dark rounded rim, transparent interior (fill drawn by the engine)
     w, h = 32 * scale, 4 * scale; im = Image.new('RGBA', (w * 8, h * 8), (0, 0, 0, 0)); d = ImageDraw.Draw(im); S = 8 * scale
     d.rounded_rectangle([0, 0, w * 8 - 1, h * 8 - 1], radius=2 * S, fill=(58, 34, 40, 255))
@@ -147,6 +147,7 @@ def toast(scale):  # 48x24 parchment pill, 9-slice 10/8/10/8
     d.rounded_rectangle([1.5 * S, 1.5 * S, w * 8 - 3.5 * S, h * 8 - 4.5 * S], radius=7.5 * S, fill=(250, 238, 208, 245))
     d.rounded_rectangle([3 * S, 3 * S, w * 8 - 5 * S, 7 * S], radius=3 * S, fill=(255, 250, 232, 160))  # top gloss
     return im.resize((w, h), Image.LANCZOS)
+def padto(im, w, h): o = Image.new('RGBA', (w, h), (0, 0, 0, 0)); o.paste(im, ((w - im.width) // 2, (h - im.height) // 2)); return o
 def sheet(frames, cw, ch, cols):
     rows = (len(frames) + cols - 1) // cols; im = Image.new('RGBA', (cw * cols, ch * rows), (0, 0, 0, 0))
     for i, f in enumerate(frames): im.paste(f, ((i % cols) * cw, (i // cols) * ch))
@@ -165,11 +166,11 @@ if __name__ == '__main__':
     big = atlas('nature_adr128', [x[1] for x in ic], [x[0] for x in ic], 32, 32, 16)
     for i, k in enumerate(keys): man['sprites'].append({"key": k, "category": "item", "atlas": "nature_adr128", "anchor": {"x": 0.5, "y": 0.5}, "animations": {"idle": {"frames": [i], "fps": 1}}})
     fk = list(FX); f1 = [fx_frame(k, i, 1) for k in fk for i in range(4)]; f2 = [fx_frame(k, i, 2) for k in fk for i in range(4)]
-    fxa = atlas('nature_adr128_fx', f1, f2, 12, 12, 4)
+    fxa = atlas('nature_adr128_fx', f1, f2, 16, 16, 4)
     for j, k in enumerate(fk): man['sprites'].append({"key": k, "category": "vfx", "atlas": "nature_adr128_fx", "anchor": {"x": 0.5, "y": 0.5}, "animations": {"idle": {"frames": [4 * j + i for i in range(4)], "fps": 12, "loop": True}}})
-    atlas('nature_adr128_hpbar', [hpbar(1)], [hpbar(2)], 32, 4, 1, {"nineSlice": {"0": {"l": 2, "t": 1, "r": 2, "b": 1}}})
+    atlas('nature_adr128_hpbar', [padto(hpbar(1), 32, 16)], [padto(hpbar(2), 64, 32)], 32, 16, 1, {"nineSlice": {"0": {"l": 2, "t": 7, "r": 2, "b": 7}}})  # 32x4 bar centred in a 32x16 cell (rows 6..9)
     man['sprites'].append({"key": "ui_node_hpbar_frame", "category": "ui", "atlas": "nature_adr128_hpbar", "anchor": {"x": 0.5, "y": 0.5}, "animations": {"idle": {"frames": [0], "fps": 1}}})
-    atlas('nature_adr128_toast', [toast(1)], [toast(2)], 48, 24, 1, {"nineSlice": {"0": {"l": 10, "t": 8, "r": 10, "b": 8}}})
+    atlas('nature_adr128_toast', [padto(toast(1), 48, 32)], [padto(toast(2), 96, 64)], 48, 32, 1, {"nineSlice": {"0": {"l": 10, "t": 12, "r": 10, "b": 12}}})  # 48x24 pill centred in a 48x32 cell
     man['sprites'].append({"key": "ui_pickup_toast_bg", "category": "ui", "atlas": "nature_adr128_toast", "anchor": {"x": 0.5, "y": 0.5}, "animations": {"idle": {"frames": [0], "fps": 1}}})
         # drop the 4856b051 alias sprites (same keys now live here)
     gone = set(keys) | set(fk)

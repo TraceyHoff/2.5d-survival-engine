@@ -1186,8 +1186,8 @@
   {
    "key": "nature_adr128_fx",
    "image": "atlases/nature_adr128_fx.png",
-   "frameW": 12,
-   "frameH": 12,
+   "frameW": 16,
+   "frameH": 16,
    "columns": 4,
    "rows": 3,
    "residency": "resident",
@@ -1204,16 +1204,16 @@
    "key": "nature_adr128_hpbar",
    "image": "atlases/nature_adr128_hpbar.png",
    "frameW": 32,
-   "frameH": 4,
+   "frameH": 16,
    "columns": 1,
    "rows": 1,
    "residency": "resident",
    "nineSlice": {
     "0": {
      "l": 2,
-     "t": 1,
+     "t": 7,
      "r": 2,
-     "b": 1
+     "b": 7
     }
    },
    "pages": [
@@ -1229,16 +1229,16 @@
    "key": "nature_adr128_toast",
    "image": "atlases/nature_adr128_toast.png",
    "frameW": 48,
-   "frameH": 24,
+   "frameH": 32,
    "columns": 1,
    "rows": 1,
    "residency": "resident",
    "nineSlice": {
     "0": {
      "l": 10,
-     "t": 8,
+     "t": 12,
      "r": 10,
-     "b": 8
+     "b": 12
     }
    },
    "pages": [
