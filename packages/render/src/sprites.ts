@@ -131,7 +131,10 @@ void main() {
   vec2 off = vec2(px, -hp);
   if (aI.x != 0.0) { float cr = cos(aI.x), sr = sin(aI.x); off = vec2(cr * off.x - sr * off.y, sr * off.x + cr * off.y); }
   vec2 iso = aA.xy + off; vScr = iso;
-  float key = (flags & 8) != 0 ? aA.z + 0.01 - hp / uHH : aA.z + 0.02 + max(hp + aD.w, 0.0) * uZPerPx;
+  float hpd = hp + aD.w; // Footprint (128): pixels below the pivot are ground-level box faces nearer the camera
+  float key = (flags & 8) != 0 ? aA.z + 0.01 - hp / uHH
+    : (flags & 192) == 192 ? aA.z + 0.62 + max(-hpd, 0.0) / uHH // Footprint|Cutaway: open interior, no height term (low walls/floor never out-rank occupants drawn upright)
+    : aA.z + 0.02 + max(hpd, 0.0) * uZPerPx + ((flags & 128) != 0 ? max(-hpd, 0.0) / uHH + 0.6 : 0.0); // Footprint: near walls beat terrain skirts
   gl_Position = vec4(isoToClip(iso), keyToNdc(key), 1.0);
 }`;
 
@@ -547,7 +550,7 @@ export class SpriteBatch {
         // characters / animated actors never auto-occlude (only tall static props); an explicit Occluder still opts in
         const actor = aps >= 0 || as >= 0;
         let hit = false;
-        if ((os >= 0 || (hgt >= occ.minHeightPx && !actor)) && key > fk + 0.05) {
+        if ((os >= 0 || (hgt >= occ.minHeightPx && !actor && !(sp.data.flags[k]! & SpriteFlag.Footprint))) && key > fk + 0.05) { // Footprint (vehicles) only via explicit Occluder
           const left = sx - res.ax * scale, top = sy - res.ay * scale;
           hit = overlapsFocus(left, left + res.w * scale, top, sy);
         }

@@ -49,6 +49,9 @@ const ONLY = process.env.ONLY ? new Set(process.env.ONLY.split(",")) : null;
 const SHOTS = {
   ghost_valid: "time=22&weather=clear&ghost=valid&gl=lowend&zoom=2.4&shot=1",
   ghost_invalid: "time=22&weather=clear&ghost=invalid&ghostrot=2&gl=safe&zoom=2.4&shot=1",
+  vehicles_day: "time=11&weather=clear&vehicles=1&zombies=0&ui=0&zoom=1.3&shot=1",
+  vehicles_night: "time=22&weather=clear&vehicles=1&zombies=0&ui=0&zoom=1.3&gl=lowend&shot=1",
+  camper_interior: "time=15&weather=clear&vehicles=camper&zombies=0&ui=0&zoom=2.6&gl=safe&shot=1",
   day: "time=10&weather=clear&shot=1",
   night: "time=22&weather=clear&shot=1",
   rain: "time=15&weather=rain&shot=1",

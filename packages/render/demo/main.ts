@@ -13,6 +13,7 @@ import { installDemoSystems } from "./systems.js";
 import { DebugUI, WEATHER_NAMES } from "./ui.js";
 import { BuildPiece, AnimState, Wetness, BodyTemp, Emitter, Fuel, Burning, Equipment } from "./mockGameplay.js";
 import { loadContent, makeDebugTheme, ASSETS_BASE } from "./content.js";
+import { setupVehicleDemo, vehicleManifestPatch } from "./vehicles.js";
 import { showGallery } from "./gallery.js";
 import { initTime, setWeather } from "./time.js";
 
@@ -24,7 +25,7 @@ let lookInfo: { warnings: string[]; loaded: string[] } = { warnings: [], loaded:
 
 async function main(): Promise<void> {
   const canvas = document.getElementById("game") as HTMLCanvasElement;
-  const content = await loadContent({ content: q.get("content") === "sample" ? "sample" : "pack", debugCharacters: !!q.get("chars") });
+  const content = await loadContent({ content: q.get("content") === "sample" ? "sample" : "pack", debugCharacters: !!q.get("chars"), ...(q.get("vehicles") ? { patch: vehicleManifestPatch } : {}) });
   if (content.issues.length) console.warn("content issues", content.issues);
   const world = new World({ seed: num("seed", 7) });
   IsoRenderer.registerComponents(world);
@@ -84,8 +85,12 @@ async function main(): Promise<void> {
     const gz = world.get(scene.player, Transform)!.z;
     new BuildGhost(world, BuildPiece as never, content.registry).sync({ pieceKey: "wall", x: scene.base.x + 7, y: scene.base.y + 3, rot: Number(q.get("ghostrot") ?? 0), valid: ghostQ === "valid" }, { z: gz });
   }
+  // ?vehicles=1|camper: procedural vehicle lot (VehicleView), camper = local player inside the RV (interior cutaway)
+  const vehQ = q.get("vehicles");
+  const veh = vehQ ? setupVehicleDemo(world, content.registry, { x: scene.base.x + scene.base.w + 4, y: scene.base.y - 6, players: scene.players, player: scene.player, camper: vehQ === "camper", index: scene.index, lowEnd: renderer.capabilities.lowEnd }) : null;
+  let vehLast = performance.now();
   const camQ = q.get("cam"); const pl = world.get(scene.player, Transform)!;
-  if (camQ === "fire") cam.lookAt(scene.base.x + 3.5, scene.base.y + scene.base.h + 2, 1); else if (camQ === "burn") cam.lookAt(scene.base.x + 10, scene.base.y + 5.5, 1); else if (camQ === "chars" && chars?.entities.length) { const t0 = world.get(chars.entities[0]!, Transform)!, t1 = world.get(chars.entities[chars.entities.length - 1]!, Transform)!; cam.lookAt((t0.x + t1.x) / 2, (t0.y + t1.y) / 2, t0.z); } else if (camQ === "players") cam.lookAt(pl.x + 1, pl.y, 1); else cam.lookAt(scene.base.x + 4, scene.base.y + 4, 1);
+  if (camQ === "fire") cam.lookAt(scene.base.x + 3.5, scene.base.y + scene.base.h + 2, 1); else if (camQ === "burn") cam.lookAt(scene.base.x + 10, scene.base.y + 5.5, 1); else if (camQ === "chars" && chars?.entities.length) { const t0 = world.get(chars.entities[0]!, Transform)!, t1 = world.get(chars.entities[chars.entities.length - 1]!, Transform)!; cam.lookAt((t0.x + t1.x) / 2, (t0.y + t1.y) / 2, t0.z); } else if (camQ === "players") cam.lookAt(pl.x + 1, pl.y, 1); else if (veh) cam.lookAt(veh.focus.x, veh.focus.y, 0.5); else cam.lookAt(scene.base.x + 4, scene.base.y + 4, 1);
   cam.zoom = num("zoom", 1.6);
 
   const input = new InputState();
@@ -125,6 +130,7 @@ async function main(): Promise<void> {
         const s = tr.slot(i), p = pv.slot(i);
         if (s >= 0) { const a = p >= 0 ? alpha : 1; const l = (f: "x" | "y" | "z"): number => p >= 0 ? pv.data[f][p]! + (tr.data[f][s]! - pv.data[f][p]!) * a : tr.data[f][s]!; cam.lookAt(l("x"), l("y"), l("z")); }
       }
+      if (veh) { const n = performance.now(); veh.frame(1 - (renderer.lighting?.daylight ?? 1), Math.min(0.1, (n - vehLast) / 1000)); vehLast = n; }
       renderer.render(w, ui && !ui.interpolate ? 1 : alpha);
     },
   });

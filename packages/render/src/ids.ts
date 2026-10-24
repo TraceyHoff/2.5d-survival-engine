@@ -28,6 +28,8 @@ export const SpriteFlag = {
   Flat: 8,        // ground decal: ground-plane depth instead of billboard depth
   NoOutline: 16,  // skip the shader outline
   BloomSource: 32,// set by the renderer for LightSource sprites (bloom mask only)
+  Cutaway: 64,    // with Footprint only: open-roof interior, depth ignores sprite height (64 alone = night-only emissive on build pieces)
+  Footprint: 128, // long-footprint billboard (vehicles): pixels below the pivot take ground-plane depth so near-side walls beat the terrain
 } as const;
 export type SpriteFlag = (typeof SpriteFlag)[keyof typeof SpriteFlag];
 
