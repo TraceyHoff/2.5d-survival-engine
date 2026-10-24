@@ -524,6 +524,39 @@
         }
       ],
       "ktx2": "atlases/fx_splinter.ktx2"
+    },
+    {
+      "key": "zombies_snuffer",
+      "image": "atlases/zombies_snuffer.png",
+      "frameW": 48,
+      "frameH": 64,
+      "columns": 17,
+      "rows": 16,
+      "ktx2": "atlases/zombies_snuffer.ktx2"
+    },
+    {
+      "key": "defenses",
+      "image": "atlases/defenses.png",
+      "frameW": 128,
+      "frameH": 128,
+      "columns": 12,
+      "rows": 8,
+      "ktx2": "atlases/defenses.ktx2"
+    },
+    {
+      "key": "defenses_glow",
+      "image": "atlases/defenses_glow.png",
+      "frameW": 96,
+      "frameH": 96,
+      "columns": 8,
+      "rows": 3,
+      "masks": {
+        "emissive": "atlases/defenses_glow_emissive.png"
+      },
+      "ktx2": "atlases/defenses_glow.ktx2",
+      "masksKtx2": {
+        "emissive": "atlases/defenses_glow_emissive.ktx2"
+      }
     }
   ],
   "sprites": [
@@ -10724,6 +10757,464 @@
             3
           ],
           "fps": 8,
+          "loop": true
+        }
+      }
+    },
+    {
+      "key": "zombie_snuffer",
+      "category": "zombie",
+      "atlas": "zombies_snuffer",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9219
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "fps": 4,
+          "directions": 8,
+          "dirStride": 34
+        },
+        "walk": {
+          "frames": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "fps": 7,
+          "directions": 8,
+          "dirStride": 34
+        },
+        "run": {
+          "frames": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "fps": 12,
+          "directions": 8,
+          "dirStride": 34
+        },
+        "attack": {
+          "frames": [
+            16,
+            17,
+            18,
+            19
+          ],
+          "fps": 10,
+          "directions": 8,
+          "dirStride": 34,
+          "loop": false
+        },
+        "hurt": {
+          "frames": [
+            20,
+            21
+          ],
+          "fps": 10,
+          "directions": 8,
+          "dirStride": 34,
+          "loop": false
+        },
+        "death": {
+          "frames": [
+            22,
+            23,
+            24,
+            25,
+            26,
+            27
+          ],
+          "fps": 10,
+          "directions": 8,
+          "dirStride": 34,
+          "loop": false
+        },
+        "swim": {
+          "frames": [
+            28,
+            29,
+            30,
+            31,
+            32,
+            33
+          ],
+          "fps": 6,
+          "directions": 8,
+          "dirStride": 34
+        },
+        "shamble": {
+          "frames": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "fps": 7,
+          "directions": 8,
+          "dirStride": 34
+        }
+      },
+      "tints": {
+        "wet": {
+          "color": "#ccd9f7",
+          "strength": 0.9,
+          "mode": "multiply"
+        },
+        "frost": {
+          "color": "#cfe8ff",
+          "strength": 0.35,
+          "mode": "screen"
+        },
+        "flush": {
+          "color": "#ff8a7a",
+          "strength": 0.15,
+          "mode": "lerp"
+        },
+        "exhausted": {
+          "color": "#b8b4c8",
+          "strength": 0.22,
+          "mode": "lerp"
+        }
+      }
+    },
+    {
+      "key": "barbed_wire",
+      "category": "building",
+      "atlas": "defenses",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "barbed_wire",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 1,
+        "frames": [
+          [
+            0,
+            1,
+            2,
+            3
+          ]
+        ]
+      },
+      "rotationArt": "mirror"
+    },
+    {
+      "key": "spike_trap",
+      "category": "building",
+      "atlas": "defenses",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            4
+          ],
+          "fps": 1
+        },
+        "sprung": {
+          "frames": [
+            8
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "spike_trap",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 1,
+        "frames": [
+          [
+            4,
+            5,
+            6,
+            7
+          ]
+        ],
+        "states": {
+          "armed": [
+            [
+              4,
+              5,
+              6,
+              7
+            ]
+          ],
+          "sprung": [
+            [
+              8,
+              9,
+              10,
+              11
+            ]
+          ]
+        }
+      },
+      "rotationArt": "mirror"
+    },
+    {
+      "key": "bear_trap",
+      "category": "building",
+      "atlas": "defenses",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            12
+          ],
+          "fps": 1
+        },
+        "sprung": {
+          "frames": [
+            16
+          ],
+          "fps": 1
+        },
+        "snap": {
+          "frames": [
+            20,
+            16
+          ],
+          "fps": 12,
+          "loop": false
+        }
+      },
+      "building": {
+        "piece": "bear_trap",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 1,
+        "frames": [
+          [
+            12,
+            13,
+            14,
+            15
+          ]
+        ],
+        "states": {
+          "armed": [
+            [
+              12,
+              13,
+              14,
+              15
+            ]
+          ],
+          "sprung": [
+            [
+              16,
+              17,
+              18,
+              19
+            ]
+          ]
+        }
+      },
+      "rotationArt": "mirror"
+    },
+    {
+      "key": "arrow_turret",
+      "category": "building",
+      "atlas": "defenses",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            21
+          ],
+          "fps": 1
+        },
+        "aim": {
+          "frames": [
+            21
+          ],
+          "fps": 1,
+          "directions": 8,
+          "dirStride": 1
+        },
+        "fire": {
+          "frames": [
+            32,
+            33
+          ],
+          "fps": 10,
+          "directions": 8,
+          "dirStride": 2,
+          "loop": false
+        }
+      },
+      "building": {
+        "piece": "arrow_turret",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 2,
+        "frames": [
+          [
+            21,
+            29,
+            30,
+            31
+          ]
+        ]
+      },
+      "rotationArt": "mirror"
+    },
+    {
+      "key": "bolt_turret",
+      "category": "building",
+      "atlas": "defenses",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            48
+          ],
+          "fps": 1
+        },
+        "aim": {
+          "frames": [
+            48
+          ],
+          "fps": 1,
+          "directions": 8,
+          "dirStride": 1
+        },
+        "fire": {
+          "frames": [
+            59,
+            60
+          ],
+          "fps": 10,
+          "directions": 8,
+          "dirStride": 2,
+          "loop": false
+        }
+      },
+      "building": {
+        "piece": "bolt_turret",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 2,
+        "frames": [
+          [
+            48,
+            56,
+            57,
+            58
+          ]
+        ]
+      },
+      "rotationArt": "mirror"
+    },
+    {
+      "key": "flame_turret",
+      "category": "building",
+      "atlas": "defenses",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            75
+          ],
+          "fps": 1
+        },
+        "aim": {
+          "frames": [
+            75
+          ],
+          "fps": 1,
+          "directions": 8,
+          "dirStride": 1
+        }
+      },
+      "building": {
+        "piece": "flame_turret",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 2,
+        "frames": [
+          [
+            75,
+            83,
+            84,
+            85
+          ]
+        ]
+      },
+      "rotationArt": "mirror"
+    },
+    {
+      "key": "flame_turret_fire",
+      "category": "vfx",
+      "atlas": "defenses_glow",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "fire": {
+          "frames": [
+            0,
+            1,
+            2
+          ],
+          "fps": 12,
+          "directions": 8,
+          "dirStride": 3,
           "loop": true
         }
       }

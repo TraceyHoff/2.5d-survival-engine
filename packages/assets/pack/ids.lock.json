@@ -1596,7 +1596,16 @@
     "van_passenger_st_damaged": 1594,
     "van_passenger_st_rusty": 1595,
     "van_passenger_st_wrecked": 1596,
-    "van_cargo_st_damaged": 1597
+    "van_cargo_st_damaged": 1597,
+    "arrow_turret": 1598,
+    "barbed_wire": 1599,
+    "bear_trap": 1600,
+    "bolt_turret": 1601,
+    "flame_turret": 1602,
+    "flame_turret_fire": 1603,
+    "spike_trap": 1604,
+    "vehicle_key": 1605,
+    "zombie_snuffer": 1606
   },
   "sounds": {
     "amb_rain": 1,
