@@ -32,7 +32,9 @@ export interface UINavOptions {
   now?: () => number;
 }
 export interface GamepadLikeNav { buttons: readonly { pressed: boolean }[]; axes: readonly number[] }
-export const PAD = { A: 0, B: 1, LB: 4, RB: 5, SELECT: 8, START: 9, UP: 12, DOWN: 13, LEFT: 14, RIGHT: 15 } as const;
+export const PAD = { A: 0, B: 1, X: 2, Y: 3, LB: 4, RB: 5, SELECT: 8, START: 9, UP: 12, DOWN: 13, LEFT: 14, RIGHT: 15 } as const;
+/** Face/shoulder shortcuts inside an open modal: clicks its enabled `[data-pad=<name>]` control (e.g. camper Y = add fuel, LB/RB = tabs). */
+export const PAD_SHORTCUTS = ["X", "Y", "LB", "RB"] as const;
 const FOCUSABLE = "button,input,select,textarea,a[href],[tabindex]:not([tabindex='-1'])";
 const isText = (el: Element | null): boolean => (el instanceof HTMLInputElement && !["checkbox", "radio", "button", "submit", "range"].includes(el.type)) || el instanceof HTMLTextAreaElement || (el instanceof HTMLElement && el.isContentEditable);
 
@@ -105,6 +107,11 @@ export class UINav {
     if (isText(f)) { f.focus(); const submit = f.closest("[data-modal]")?.querySelector<HTMLElement>("[data-role=submit]"); if (submit && document.activeElement === f && (f as HTMLInputElement).value) submit.click(); return; }
     f.click();
   }
+  /** Click the open modal's enabled `[data-pad=name]` control (gamepad X/Y/LB/RB). Returns whether one fired. */
+  padShortcut(name: string): boolean {
+    const t = this.stack.at(-1)?.el;
+    const c = t?.querySelector<HTMLButtonElement>(`[data-pad="${name}"]`); if (!c || c.disabled || c.closest("[hidden]")) return false; c.click(); return true;
+  }
   private pause(): void { this.o.onPause?.(); }
 
   private key(e: KeyboardEvent): void {
@@ -145,6 +152,7 @@ export class UINav {
     const lb = edge("lb", b(PAD.LB)), rb = edge("rb", b(PAD.RB));
     if (lb || rb) this.o.onPage?.(lb ? -1 : 1);
     if (a) this.activate();
-    if (bb) this.close();
+    if (bb) { this.close(); return; }
+    for (const n of PAD_SHORTCUTS) if (edge(n, b(PAD[n]))) this.padShortcut(n);
   }
 }

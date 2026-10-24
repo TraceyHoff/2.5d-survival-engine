@@ -10,7 +10,7 @@ import { UINav, type ContextStack } from "./ui-nav.js";
 import { loadSettings, saveSettings } from "./menu.js";
 import { morph } from "./ui-diff.js";
 import { GAMEPLAY_PANELS, gameplayBody, pageContainer, type GameplayPanel, type GameplaySource } from "./gameplay-panels.js";
-import { onlineTargets } from "@engine/gameplay";
+import { onlineTargets, openContainerIntent } from "@engine/gameplay";
 
 /** `data-chan` value per @engine/net ChatChannel number (Global 0 … System 6); omitted/unknown = "system". */
 export const CHAT_CHAN_NAMES: Readonly<Record<number, string>> = { 0: "global", 1: "local", 2: "party", 3: "clan", 4: "trade", 5: "whisper", 6: "system" };
@@ -23,6 +23,7 @@ export const GAME_MENUS: readonly MenuDef[] = [
   { id: "party", title: "Party", icon: "👥", hotkeys: ["KeyP"], bar: true, text: "Your party: invite, kick or leave." },
   { id: "clan", title: "Clan", icon: "🛡", hotkeys: ["KeyL"], text: "Clan members, ranks and goals." },
   { id: "trade", title: "Trade stalls", icon: "⚖", hotkeys: ["KeyT"], text: "Browse and run trade stalls." },
+  { id: "camper", title: "Camper Station", icon: "🚐", hotkeys: [], text: "Craft, cook, refuel and use storage inside a parked camper." },
   { id: "chat", title: "Chat", icon: "💬", hotkeys: ["Enter", "Slash"], bar: true, text: "" },
   { id: "settings", title: "Settings", icon: "⚙", hotkeys: ["KeyO"], text: "" },
 ];
@@ -85,10 +86,11 @@ export class GameMenus {
     const m = document.createElement("div"); m.className = "gm-modal";
     m.addEventListener("pointerdown", (e) => { if (e.target === m) this.nav.close(); }); // tap outside closes
     const p = document.createElement("div"); p.className = "gm-panel"; p.setAttribute("aria-label", title);
-    const h = document.createElement("header"); const h2 = document.createElement("h2"); h2.textContent = title;
-    const x = document.createElement("button"); x.type = "button"; x.className = "alt"; x.dataset["role"] = "close"; x.setAttribute("aria-label", `Close ${title}`); x.textContent = "✕"; x.addEventListener("click", () => this.nav.close());
+    const camper = id === "camper"; if (camper) { p.dataset["panel"] = "camper-station"; p.dataset["key"] = String(this.camperTarget ?? 0); }
+    const h = document.createElement("header"); if (camper) h.dataset["role"] = "title"; const h2 = document.createElement("h2"); h2.textContent = title;
+    const x = document.createElement("button"); x.type = "button"; x.className = "alt"; x.dataset["role"] = "close"; x.setAttribute("aria-label", `Close ${title}`); x.dataset["tip"] = "Close (B)"; if (camper) x.dataset["key"] = "close"; x.textContent = "✕"; x.addEventListener("click", () => this.nav.close());
     h.append(h2, x);
-    const b = document.createElement("div"); b.dataset["role"] = "body"; b.style.cssText = "display:flex;flex-direction:column;gap:8px"; b.append(...body);
+    const b = document.createElement("div"); b.dataset["role"] = "body"; if (!camper) b.style.cssText = "display:flex;flex-direction:column;gap:8px"; /* camper: grid areas from gameplay-panels.css */ b.append(...body);
     const actions = document.createElement("div"); actions.className = "gm-grid";
     for (const [t, fn, cls] of buttons) { const bt = document.createElement("button"); bt.type = "button"; bt.textContent = t; if (cls) bt.className = cls; bt.dataset["action"] = t; bt.addEventListener("click", fn); actions.append(bt); }
     p.append(h, b); if (buttons.length) p.append(actions);
@@ -108,7 +110,7 @@ export class GameMenus {
   }
   private gameplayNodes(id: GameplayPanel): Node[] {
     const status = this.para(this.statusLine); status.dataset["role"] = "status"; status.setAttribute("aria-live", "polite");
-    return [status, ...gameplayBody(id, { ...this.o.gameplay!, stall: () => this.stallTarget ?? this.o.gameplay!.stall?.() }, { para: (t) => this.para(t), rerender: () => this.refresh(), status: (t) => { this.statusLine = t; }, close: () => this.nav.closeAll() })];
+    return [status, ...gameplayBody(id, { ...this.o.gameplay!, stall: () => this.stallTarget ?? this.o.gameplay!.stall?.(), camper: () => this.camperTarget }, { para: (t) => this.para(t), rerender: () => this.refresh(), status: (t) => { this.statusLine = t; }, close: () => this.nav.closeAll() })];
   }
   /** Re-render the open gameplay panel from live world state by diffing (only changed nodes are touched, focus kept).
    *  No-op when no gameplay panel is open. Returns the number of DOM mutations. */
@@ -121,11 +123,17 @@ export class GameMenus {
   /** Open the trade panel on a specific stall (interact). */
   openStall(stall: number): void { this.stallTarget = stall; if (this.nav.top === "trade") this.refresh(); else this.nav.open("trade", this.build("trade")); }
   stallTarget: number | undefined;
+  /** Open the camper station panel on a vehicle (gameplay.vehicleStationOpened event); asks the server to open its storage. */
+  openCamper(vehicle: number): void {
+    this.camperTarget = vehicle; this.o.gameplay?.send(openContainerIntent(vehicle));
+    if (this.nav.top === "camper") { this.o.root.querySelector<HTMLElement>("[data-panel=camper-station]")?.setAttribute("data-key", String(vehicle)); this.refresh(); } else this.nav.open("camper", this.build("camper"));
+  }
+  camperTarget: number | undefined;
   /** Append an incoming chat line (from NetClient.chat). */
   /** `channel`: ChatChannel number (1 global … 5 whisper) or omitted for client/system lines -> `data-chan`. */
   pushChat(line: string, channel?: number): void {
     this.chatLog.push({ text: line, chan: (channel === undefined ? undefined : CHAT_CHAN_NAMES[channel]) ?? "system" }); if (this.chatLog.length > 200) this.chatLog.splice(0, this.chatLog.length - 200);
-    const log = this.o.root.querySelector<HTMLElement>("[data-menu=chat] [data-role=chat-log]"); if (log) { log.append(this.para(line)); log.scrollTop = log.scrollHeight; }
+    const log = this.o.root.querySelector<HTMLElement>("[data-menu=chat] [data-role=chat-log]"); if (log) { const lp = this.para(line); lp.dataset["chan"] = this.chatLog.at(-1)!.chan; log.append(lp); log.scrollTop = log.scrollHeight; }
   }
   toggle(id: string): void { if (id === "trade") this.stallTarget = undefined; this.nav.toggle(id, () => this.build(id)); }
   open(id: string): void { this.nav.open(id, this.build(id)); }

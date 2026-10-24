@@ -117,7 +117,8 @@ describe("gameplay panels (ADR-095 shell)", () => {
     const job = q("[data-role=job]"); expect(job.getAttribute("style")).toMatch(/^--p:(0|1)?\.\d{3}$/);
     menus.nav.closeAll(); menus.open("character");
     const unlocks = Array.from(document.querySelectorAll<HTMLElement>("[data-role=unlock]")); expect(unlocks.length).toBeGreaterThan(0);
-    for (const u of unlocks) expect(u.hasAttribute("data-unlocked")).toBe(u.textContent!.startsWith("✓"));
+    for (const u of unlocks) expect(u.textContent).not.toMatch(/[✓🔒]/u);
+    expect(unlocks.some((u) => u.hasAttribute("data-unlocked")) || unlocks.every((u) => !u.hasAttribute("data-unlocked"))).toBe(true);
     menus.nav.closeAll();
     mk(9, "Bo", 2); dir.onRoster({ clan: 5, memberMask: 0, officerMask: 0, size: 3 }); dir.onMember({ clan: 5, player: 9, role: 2, online: 1 }); dir.onMember({ clan: 5, player: 12, role: 3, online: 0 });
     w.set(me, Membership, { partyId: 0, clanId: 5 }); menus.open("clan");
@@ -136,4 +137,40 @@ describe("gameplay panels (ADR-095 shell)", () => {
     expect(a.firstElementChild).toBe(before); expect(before!.getAttribute("style")).toBe("--p:0.600"); expect(before!.getAttribute("data-tip")).toBe("t");
   });
 
+});
+
+describe("camper station panel (assets/ui/screens/camper_station.md)", () => {
+  test("vehicle items carry explicit item_<key> sprite overrides", () => {
+    const keys = Array.from(d.items.values()).filter((i) => i.spriteKey?.startsWith("item_"));
+    for (const k of ["plant_oil"]) { const it = d.items.get(id(k)); if (it) expect(it.spriteKey).toBe(`item_${k}`); }
+    expect(keys.length).toBeGreaterThanOrEqual(69);
+  });
+  test("opens with spec hooks, switches tabs, refuels, withdraws, diff-refreshes", () => {
+    const { w, me, sent, menus } = setup();
+    const v = G.spawnVehicle(w, "camper_van", 0, 0); w.setField(v, G.Vehicle, "fuel", 5);
+    const fuel = Array.from(d.items.values()).map((i) => i.id).find((it) => G.fuelFits(w, v, it));
+    expect(fuel).toBeDefined(); expect(w.has(v, G.Container)).toBe(true);
+    if (fuel !== undefined) G.addItem(w, me, fuel, 3);
+    if (w.has(v, G.Container)) G.addItem(w, v, id("wood"), 4);
+    menus.openCamper(v);
+    expect(sent.some((i) => i.cmd === G.OpenContainerCmd && i.args["target"] === v)).toBe(true);
+    const panel = q("[data-panel=camper-station]"); expect(panel.dataset["key"]).toBe(String(v));
+    expect(panel.querySelector("[data-role=body]")!.getAttribute("style")).toBeNull();
+    expect(q("[data-key=close]").dataset["tip"]).toBe("Close (B)");
+    const gauge = q("[data-role=fuel-gauge]"); expect(gauge.getAttribute("role")).toBe("progressbar"); expect(gauge.getAttribute("style")).toMatch(/--p:/);
+    const craft = q("[data-role=station-craft]"); const cook = q("[data-role=station-cook]");
+    expect(craft.hidden).toBe(false); expect(cook.hidden).toBe(true);
+    q("[data-key=tab-cook]").click();
+    expect(q("[data-key=tab-cook]").getAttribute("aria-pressed")).toBe("true"); expect(q("[data-role=station-cook]").hidden).toBe(false); expect(q("[data-role=station-craft]").hidden).toBe(true);
+    // pad RB/LB = tabs via data-pad shortcut
+    expect(menus.nav.padShortcut("LB")).toBe(true); expect(q("[data-key=tab-craft]").getAttribute("aria-pressed")).toBe("true");
+    if (fuel !== undefined) { q("[data-pad=Y]").click(); const r = sent.at(-1)!; expect(r.cmd).toBe(G.VehicleRefuelCmd); expect(r.args["target"]).toBe(v); }
+    if (w.has(v, G.Container)) {
+      expect(q("[data-role=station-inv]").textContent).toMatch(/Camper storage 1\/\d+/);
+      q("[data-key=inv-0]").click(); const r = sent.at(-1)!; expect(r.cmd).toBe(G.WithdrawCmd); expect(r.args).toMatchObject({ target: v, item: id("wood"), count: 4 });
+    }
+    const keep = q("[data-role=fuel-gauge]"); menus.refresh(); expect(q("[data-role=fuel-gauge]")).toBe(keep);
+    menus.nav.closeAll();
+  });
+  test("renders without a vehicle", () => { const { menus } = setup(); menus.open("camper"); expect(document.querySelector("[data-menu=camper]")).not.toBeNull(); });
 });

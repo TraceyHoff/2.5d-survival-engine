@@ -10,15 +10,15 @@
  */
 import "./gameplay-panels.css";
 import {
-  buildView, cancelQueuedCraftIntent, clanAcceptIntent, clanDeclineIntent, clanRosterRows, onlineTargets, paintIntent, paintTarget, type SocialDirectory, clanCreateIntent, clanDemoteIntent, clanDisbandIntent, clanInviteIntent, clanKickIntent, clanLeaveIntent,
+  buildView, gameplayDefs, cancelQueuedCraftIntent, clanAcceptIntent, clanDeclineIntent, clanRosterRows, onlineTargets, paintIntent, paintTarget, type SocialDirectory, clanCreateIntent, clanDemoteIntent, clanDisbandIntent, clanInviteIntent, clanKickIntent, clanLeaveIntent,
   clanPromoteIntent, clanSetGoalIntent, clanSetRankPermsIntent, clanView, collectTillIntent, containerView, CONTAINER_PAGE_SIZE, craftingView, depositIntent, openContainer, withdrawIntent, equipCosmeticIntent, inventoryView, JOB_STATE_LABEL,
   nearestStall, partyAcceptIntent, partyDeclineIntent, partyInviteIntent, partyKickIntent, partyLeaveIntent, partyView, queueCraftIntent, buyFromStallIntent,
   setAppearanceIntent, setStallNameIntent, priceItemChoices, listItemIntents, unstockStallIntent, type StallListDraft, setStallOpenIntent, stallView, togglePermMask, wardrobeView, placeIntent,
-  type BuildSelection, type MenuCtx, type MenuIntent,
+  type BuildSelection, type MenuCtx, type MenuIntent, camperStationView, vehicleRefuelIntent, type CamperRecipeView,
 } from "@engine/gameplay";
 import { GroupRole, PlayerId, Transform, type Entity } from "@engine/core";
 
-export const GAMEPLAY_PANELS = ["inventory", "crafting", "build", "character", "party", "clan", "trade"] as const;
+export const GAMEPLAY_PANELS = ["inventory", "crafting", "build", "character", "party", "clan", "trade", "camper"] as const;
 export type GameplayPanel = (typeof GAMEPLAY_PANELS)[number];
 /** What the client wires in (main.ts): the local replica + player, and a command sender (NetId mapping + gameplayNet). */
 export interface GameplaySource {
@@ -33,6 +33,8 @@ export interface GameplaySource {
   stall?(): Entity | undefined;
   /** Owner-scoped clan roster + online directory (net events gameplay.clanRoster / clanRosterMember / onlinePlayer). */
   social?: SocialDirectory;
+  /** Camper whose station panel is open (set from the vehicleStationOpened event, GameMenus.openCamper). */
+  camper?(): Entity | undefined;
 }
 export interface PanelKit { para(t: string): HTMLElement; rerender(): void; status(t: string): void; close(): void }
 
@@ -47,12 +49,15 @@ const heading = (t: string): HTMLElement => { const h = el("p", { "data-role": "
 const buildSel: BuildSelection = { piece: 0, tier: 0, variant: 0, paint: 0 };
 const castSel = { recipe: 0, count: 1 };
 let wardrobeSlot = 0;
+/** Camper station: active tab + selected cook recipe survive re-renders. */
+const camperSel = { tab: "craft" as "craft" | "cook", cook: 0 };
 const dismissedClan = new Set<number>();
 /** Container panel page (ADR-098): survives re-renders; clamped by containerView. */
 let containerPage = 0;
 /** Page the open container by `d` (PgUp/PgDn, LB/RB, ◀ ▶). Returns true if a page change applies. */
 export function pageContainer(d: number): boolean { containerPage = Math.max(0, containerPage + d); return true; }
 export function containerPageIndex(): number { return containerPage; }
+const gameplayDefsIcon = (c: MenuCtx, item: number): string => gameplayDefs(c.world).items.get(item)?.spriteKey ?? "";
 const draft: StallListDraft = { listing: 0, invSlot: -1, count: 1, priceItem: 0, priceCount: 1, qty: 1 };
 
 export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelKit): Node[] {
@@ -136,7 +141,7 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       out.push(heading(`${cur.key}: colour`), cg);
       if (v.palettes.skin) { const kg = grid(); for (let i = 0; i < Math.min(v.palettes.skin, 8); i++) kg.append(btn(`Skin ${i + 1}`, `skin-${i}`, () => { const a = v.slots; send(setAppearanceIntent({ bodyType: 0, skinTone: i, parts: a.map((s) => s.equipped), primary: a.map((s) => s.primary), secondary: a.map((s) => s.secondary) }), "Look saved."); }, { disabled: !v.canEdit })); out.push(heading("Skin tone"), kg); }
       out.push(heading("Unlocks")); const ug = el("div", { "data-role": "unlocks" });
-      for (const u of v.unlocks) { const p = kit.para(`${u.unlocked ? "✓" : "🔒"} ${u.tag.replace(/_/g, " ")}`); p.dataset["role"] = "unlock"; p.dataset["key"] = u.tag; if (u.unlocked) p.dataset["unlocked"] = ""; ug.append(p); }
+      for (const u of v.unlocks) { const p = kit.para(u.tag.replace(/_/g, " ")); p.dataset["role"] = "unlock"; p.dataset["key"] = u.tag; if (u.unlocked) p.dataset["unlocked"] = ""; ug.append(p); }
       out.push(ug); return out;
     }
     case "party": {
@@ -210,6 +215,45 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
         out.push(lgo);
       }
       return out;
+    }
+    case "camper": {
+      const ve = src.camper?.(); const v = ve === undefined ? undefined : camperStationView(c, ve);
+      if (!v) return [kit.para("Open a camper's station (interact inside a parked camper).")];
+      const slotData = (s: { item: number; icon: string; count: number } | undefined): Record<string, string> => s && s.item ? { item: String(s.item), icon: s.icon, count: String(s.count) } : {};
+      const fuel = el("section", { "data-role": "station-fuel" }); const fi = v.fuelItem;
+      const need = Math.max(1, Math.ceil(v.fuel.capacity - v.fuel.liters));
+      fuel.append(btn(fi ? `${fi.name} ×${fi.count}` : "No fuel", "fuel-slot", () => { if (fi) send(vehicleRefuelIntent(v.vehicle, fi.slot, Math.min(255, fi.count, need)), `Added ${fi.name}.`); },
+        { role: "slot", disabled: !fi || !v.fuel.uses || v.fuel.fraction >= 1, title: fi ? `${fi.name} ×${fi.count} · Y to add` : v.fuel.uses ? "Carry fuel that fits this tank" : "No fuel tank", data: { ...slotData(fi), pad: "Y" } }));
+      const pct = Math.round(v.fuel.fraction * 100);
+      const gauge = el("div", { "data-role": "fuel-gauge", role: "progressbar", "aria-valuemin": "0", "aria-valuemax": "100", "aria-valuenow": String(pct), style: `--p:${v.fuel.fraction.toFixed(3)}` }); if (v.fuel.low) gauge.setAttribute("data-low", "");
+      const secs = Math.round(v.fuel.seconds); fuel.append(gauge, el("p", { "data-role": "fuel-time" }, v.fuel.uses ? `${pct}% · ${Math.floor(secs / 60)}m ${String(secs % 60).padStart(2, "0")}s` : "No fuel tank"));
+      const tabs = el("nav", { "data-role": "station-tabs" });
+      tabs.append(btn("Craft", "tab-craft", () => { camperSel.tab = "craft"; kit.rerender(); }, { pressed: camperSel.tab === "craft", data: { pad: "LB" } }), btn("Cook", "tab-cook", () => { camperSel.tab = "cook"; kit.rerender(); }, { pressed: camperSel.tab === "cook", data: { pad: "RB" } }));
+      const tip = (r: CamperRecipeView): string => `${r.output.name}${r.output.count > 1 ? ` ×${r.output.count}` : ""} · ${r.ingredients.map((i) => `${i.count} ${i.name}`).join(" + ")}${r.reason ? ` · ${r.reason.replace(/_/g, " ")}` : ""}`;
+      const jobBtn = (j: { slot: number; name: string; count: number; progress: number; secondsLeft: number; icon: string; recipe: number }, key: string): HTMLButtonElement => btn(`${j.name} · ${Math.ceil(j.secondsLeft)}s`, key, () => send(cancelQueuedCraftIntent(j.slot), `Cancelled ${j.name}.`),
+        { role: "job", p: j.progress, title: `${j.name} ×${j.count} · ${Math.ceil(j.secondsLeft)}s left · cancel refunds unfinished units`, data: { item: String(gameplayDefs(c.world).recipes.get(j.recipe)?.output.item ?? 0), icon: j.icon } });
+      const craft = el("section", { "data-role": "station-craft" }); const cg = grid();
+      for (const r of v.craft) { const b = btn(r.output.name, `recipe-${r.key}`, () => send(queueCraftIntent(r.id, 1), `Queued ${r.output.name}.`), { role: "recipe", alt: !!r.reason, title: tip(r), data: { item: String(r.output.item), icon: r.icon } }); cg.append(b); }
+      if (!v.craft.length) cg.append(kit.para("No crafting station in this camper."));
+      craft.append(cg); for (const j of v.craftJobs) craft.append(jobBtn(j, `job-${j.slot}`));
+      const cook = el("section", { "data-role": "station-cook" });
+      const sel = v.cook.find((r) => r.id === camperSel.cook) ?? v.cook[0];
+      const row = el("div", { "data-role": "cook-row" }); const ins = el("div", { "data-role": "cook-inputs" });
+      for (let i = 0; i < 3; i++) { const ing = sel?.ingredients[i]; const icon = ing ? gameplayDefsIcon(c, ing.item) : "";
+        ins.append(btn(ing ? `${ing.name} ${ing.have}/${ing.count}` : "—", `cook-in-${i}`, () => kit.status(ing ? `${ing.name}: have ${ing.have}, need ${ing.count}` : "Empty input"), { role: "slot", title: ing ? `${ing.name} · have ${ing.have} / need ${ing.count}` : "Empty input", data: ing ? { item: String(ing.item), icon, count: String(ing.have) } : {} })); }
+      const cj = v.cookJobs[0];
+      const cookJob = cj ? jobBtn(cj, "cook-job") : btn(sel ? `Cook ${sel.output.name}` : "Nothing to cook", "cook-job", () => { if (sel) send(queueCraftIntent(sel.id, 1), `Cooking ${sel.output.name}.`); }, { role: "job", p: 0, disabled: !sel, title: sel ? tip(sel) : "No cooking station", data: sel ? { item: String(sel.output.item), icon: sel.icon } : {} });
+      row.append(ins, cookJob, btn(sel ? `${sel.output.name} ×${sel.output.count}` : "—", "cook-out", () => kit.status(sel ? tip(sel) : ""), { role: "slot", title: sel ? tip(sel) : "Output", data: sel ? { item: String(sel.output.item), icon: sel.icon, count: String(sel.output.count) } : {} }));
+      const kg = grid(); for (const r of v.cook) kg.append(btn(r.output.name, `cook-${r.key}`, () => { if (sel?.id !== r.id) { camperSel.cook = r.id; kit.rerender(); } else send(queueCraftIntent(r.id, 1), `Cooking ${r.output.name}.`); },
+        { role: "recipe", alt: !!r.reason, pressed: sel?.id === r.id, title: `${tip(r)} · select, then A again to cook`, data: { item: String(r.output.item), icon: r.icon } }));
+      if (!v.cook.length) kg.append(kit.para("No campfire in this camper."));
+      cook.append(row, kg);
+      if (camperSel.tab === "craft") cook.hidden = true; else craft.hidden = true; // CSS hides it too; `hidden` keeps UINav/Tab off the inactive tab
+      const inv = el("section", { "data-role": "station-inv" }); inv.append(el("p", { "data-role": "section" }, `Camper storage ${v.storage.used}/${v.storage.total}`));
+      const ig = grid(); for (const s of v.storage.slots) ig.append("name" in s ? btn(`${s.name} ×${s.count}`, `inv-${s.slot}`, () => send(withdrawIntent(v.vehicle, s.item, s.count), `Took ${s.name} ×${s.count}.`), { role: "slot", title: `${s.name} ×${s.count} · A to take`, data: slotData(s) })
+        : btn("", `inv-${s.slot}`, () => kit.status("Empty slot"), { role: "slot", title: "Empty slot" }));
+      inv.append(ig);
+      return [fuel, tabs, craft, cook, inv];
     }
   }
 }

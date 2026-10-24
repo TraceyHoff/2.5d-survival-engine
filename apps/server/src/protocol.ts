@@ -74,7 +74,9 @@ export const OnlinePlayer = defineNetEvent("gameplay.onlinePlayer", { player: "u
  */
 export const ExplodedEvt = defineNetEvent("gameplay.exploded", { entity: "u32", item: "u32", owner: "u32", x: "f32", y: "f32", radius: "f32" }, { entityFields: ["entity", "owner"] });
 export const ReloadedEvt = defineNetEvent("gameplay.reloaded", { entity: "u32", item: "u32", ammo: "u32", rounds: "u16" }, { entityFields: ["entity"] });
-export const DEMO_EVENTS = [...SESSION_EVENTS, Pong, /* appended */ ClanRoster, ClanRosterMember, OnlinePlayer, ExplodedEvt, ReloadedEvt] as const;
+/** gameplay.VehicleStationOpened mirror (owner only): the client opens the camper station panel (vehicle = the camper). */
+export const VehicleStationOpenedEvt = defineNetEvent("gameplay.vehicleStationOpened", { vehicle: "u32", station: "u8", kind: "u8" }, { entityFields: ["vehicle"] });
+export const DEMO_EVENTS = [...SESSION_EVENTS, Pong, /* appended */ ClanRoster, ClanRosterMember, OnlinePlayer, ExplodedEvt, ReloadedEvt, VehicleStationOpenedEvt] as const;
 
 /**
  * Wire codes for gameplay command rejections (CommandRejection.reason; the reason string also rides in `detail`).

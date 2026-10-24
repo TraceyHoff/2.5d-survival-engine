@@ -17,7 +17,7 @@ import { createGameLoop, World, Transform, PrevTransform, lerp, entityIndex, Inp
 import { TileMap, worldToScreen, screenToWorld, DEFAULT_ISO } from "@engine/world";
 import { InputSystem, AimResolver, DEFAULT_ACTIONS, DEFAULT_CONTEXTS, DEFAULT_PROFILES, DEFAULT_TOUCH_LAYOUTS, type FrameMapping } from "@engine/input";
 import { attachBrowserInput } from "@engine/input/browser";
-import { Act, ClanRoster, ClanRosterMember, OnlinePlayer, gameplayNet, installDemoWorld } from "@engine/server/protocol";
+import { Act, ClanRoster, ClanRosterMember, OnlinePlayer, VehicleStationOpenedEvt, gameplayNet, installDemoWorld } from "@engine/server/protocol";
 import { netIdOf, ChatChannel, type ChatDelivered } from "@engine/net";
 import { SocialDirectory, interactPanel, type MenuCtx, type MenuIntent } from "@engine/gameplay";
 import { ClientSession } from "./session.js";
@@ -96,6 +96,8 @@ function wireChat(): void {
   c.chat.on((m: ChatDelivered) => { const who = m.fromPlayer ? c.names.display(m.fromPlayer) : ""; menus?.pushChat(`[${CHAT_TAG[m.channel] ?? "?"}] ${who ? `${who}: ` : ""}${m.text}`, m.channel); });
   // owner-scoped social replication (Netcode SocialSync) → clan roster, invite lists, whisper picker
   c.onEvent(ClanRoster, (e) => social.onRoster(e)); c.onEvent(ClanRosterMember, (e) => social.onMember(e)); c.onEvent(OnlinePlayer, (e) => social.onOnline(e));
+  // camper interior station used (server VehicleStationOpened, owner only) → camper station panel
+  c.onEvent(VehicleStationOpenedEvt, (e) => { if (e.vehicle) menus?.openCamper(e.vehicle); });
   c.chat.onReject((ch, reason) => menus?.pushChat(`(${CHAT_TAG[ch] ?? "?"} message rejected: ${reason})`));
 }
 /** Pause menu "Quit to main menu": leave fullscreen, end the session, back to the main menu. */

@@ -1,14 +1,14 @@
 /** Authoritative game server: world + gameplay + streaming chunks + persistence + NetServer sessions. */
 import { ChannelRegistry, CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, type CosmeticCatalogLike, Membership, Owner, PlayerId, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
 import { CHUNK_SIZE, ChunkManager, ProceduralGenerator, chunkKeyOf, type BuildingGrid, type PopulationSpawner } from "@engine/world";
-import { GAMEPLAY_COMMANDS, ARMS_COMMANDS, ARMS_EVENT_RELIABILITY, Exploded, Reloaded, installPartyCommands, PartyInvitePending, installClanCommands, ClanInvitePending, ClanStatus, syncSocialMembership, clanState, encodeClanState, decodeClanState, loadClanState, queueCommand, spawnPlayer, spawnResourceNode, gameplayDefs, setIntent, IntentAction, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installPopulation, installCustomization,
+import { GAMEPLAY_COMMANDS, ARMS_COMMANDS, ARMS_EVENT_RELIABILITY, Exploded, Reloaded, VehicleStationOpened, installPartyCommands, PartyInvitePending, installClanCommands, ClanInvitePending, ClanStatus, syncSocialMembership, clanState, encodeClanState, decodeClanState, loadClanState, queueCommand, spawnPlayer, spawnResourceNode, gameplayDefs, setIntent, IntentAction, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installPopulation, installCustomization,
   appearanceServerHooks, applyReplication, installStallBuyHook, installViewBonus, setHitValidator, installPvp, installCraftQueue, installExpressionCommands, installVehicleCommands, installVehicleCraftCommands, installVehicleGuard, requestEmote, CraftQueue, CraftQueuesRes, playerNames, stallListing, listingRevision, stallOf, tillOf, StallHeader, StallOwnerKind } from "@engine/gameplay";
 import { AppearanceServer, ChatServer, NameSync, NetServer, StallResult, StallServer, TileSync, validateHit, type ClientSession, type ServerTransport, type StallHooks } from "@engine/net";
 import { createAgentStore, type AgentIdentityStore } from "./agents.js";
 import { AccountAssigned, ClaimAccount, SetName, WorldPersistence, loadSocial, tokenToHex, tokenToWords, wordsToName, wordsToToken, type WorldStore } from "@engine/persist";
 import { seedStarterCamp, giveRandomAppearance } from "./camp.js";
 import { SocialSync } from "./social_sync.js";
-import { Act, applyDemoInput, installDemoWorld, rejectReasonCode, DevBotHello, DEMO_COMMANDS, DEMO_EVENTS, ExplodedEvt, GAMEPLAY_NET_COMMANDS, Ping, Pong, ReloadedEvt } from "./protocol.js";
+import { Act, applyDemoInput, installDemoWorld, rejectReasonCode, DevBotHello, DEMO_COMMANDS, DEMO_EVENTS, ExplodedEvt, GAMEPLAY_NET_COMMANDS, Ping, Pong, ReloadedEvt, VehicleStationOpenedEvt } from "./protocol.js";
 
 export const CLAN_BLOB = "gameplay.clans";
 /** ProceduralGenerator node kinds -> gameplay resource keys (see DEFAULT_BANDS comments in @engine/world). */
@@ -217,6 +217,9 @@ export function createGameServer(o: GameServerOptions): GameServer {
   });
   world.events.on(Reloaded, (ev: { entity: Entity; item: number; ammo: number; rounds: number }) => {
     for (const [cid, p] of players) if (p.entity === ev.entity) { net.emitEvent(ReloadedEvt, { entity: ev.entity, item: ev.item, ammo: ev.ammo, rounds: ev.rounds }, { reliable: (ARMS_EVENT_RELIABILITY["gameplay.Reloaded"] as string) === "reliable", scope: { owner: cid } }); break; }
+  });
+  world.events.on(VehicleStationOpened, (ev: { entity: Entity; vehicle: Entity; station: number; kind: number }) => {
+    for (const [cid, p] of players) if (p.entity === ev.entity) { net.emitEvent(VehicleStationOpenedEvt, { vehicle: ev.vehicle, station: ev.station, kind: ev.kind }, { reliable: true, scope: { owner: cid } }); break; }
   });
   // Gameplay rejections -> the issuing client (client.onCommandRejected / onGameplayRejected): net command + reason code + text.
   world.events.on(CommandRejected, (r) => {

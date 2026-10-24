@@ -3,6 +3,7 @@
   "items": [
     {
       "key": "plant_oil",
+      "sprite": "item_plant_oil",
       "name": "Plant Oil",
       "category": "resource",
       "maxStack": 20,
@@ -10,6 +11,7 @@
     },
     {
       "key": "gasoline",
+      "sprite": "item_gasoline",
       "name": "Gasoline (1 L)",
       "category": "resource",
       "maxStack": 20,
@@ -17,6 +19,7 @@
     },
     {
       "key": "diesel",
+      "sprite": "item_diesel",
       "name": "Diesel (1 L)",
       "category": "resource",
       "maxStack": 20,
@@ -24,6 +27,7 @@
     },
     {
       "key": "biofuel",
+      "sprite": "item_biofuel",
       "name": "Biofuel (1 L)",
       "category": "resource",
       "maxStack": 20,
@@ -31,6 +35,7 @@
     },
     {
       "key": "rubber",
+      "sprite": "item_rubber",
       "name": "Rubber",
       "category": "resource",
       "maxStack": 50,
@@ -38,6 +43,7 @@
     },
     {
       "key": "copper_wire",
+      "sprite": "item_copper_wire",
       "name": "Copper Wire",
       "category": "resource",
       "maxStack": 50,
@@ -45,6 +51,7 @@
     },
     {
       "key": "sulfuric_acid",
+      "sprite": "item_sulfuric_acid",
       "name": "Battery Acid",
       "category": "resource",
       "maxStack": 10,
@@ -52,6 +59,7 @@
     },
     {
       "key": "bike_frame",
+      "sprite": "item_bike_frame",
       "name": "Bicycle Frame",
       "category": "resource",
       "maxStack": 2,
@@ -59,6 +67,7 @@
     },
     {
       "key": "bike_tire",
+      "sprite": "item_bike_tire",
       "name": "Bicycle Tire",
       "category": "resource",
       "maxStack": 10,
@@ -66,6 +75,7 @@
     },
     {
       "key": "bike_wheel",
+      "sprite": "item_bike_wheel",
       "name": "Bicycle Wheel",
       "category": "resource",
       "maxStack": 10,
@@ -73,6 +83,7 @@
     },
     {
       "key": "bike_chain",
+      "sprite": "item_bike_chain",
       "name": "Bicycle Chain",
       "category": "resource",
       "maxStack": 10,
@@ -80,6 +91,7 @@
     },
     {
       "key": "saddle",
+      "sprite": "item_saddle",
       "name": "Saddle",
       "category": "resource",
       "maxStack": 10,
@@ -87,6 +99,7 @@
     },
     {
       "key": "tire",
+      "sprite": "item_tire",
       "name": "Tire",
       "category": "resource",
       "maxStack": 8,
@@ -94,6 +107,7 @@
     },
     {
       "key": "wheel_rim",
+      "sprite": "item_wheel_rim",
       "name": "Wheel Rim",
       "category": "resource",
       "maxStack": 8,
@@ -101,6 +115,7 @@
     },
     {
       "key": "wheel",
+      "sprite": "item_wheel",
       "name": "Wheel",
       "category": "resource",
       "maxStack": 8,
@@ -108,6 +123,7 @@
     },
     {
       "key": "axle",
+      "sprite": "item_axle",
       "name": "Axle",
       "category": "resource",
       "maxStack": 4,
@@ -115,6 +131,7 @@
     },
     {
       "key": "steering_column",
+      "sprite": "item_steering_column",
       "name": "Steering Column",
       "category": "resource",
       "maxStack": 4,
@@ -122,6 +139,7 @@
     },
     {
       "key": "chassis_small",
+      "sprite": "item_chassis_small",
       "name": "Small Chassis",
       "category": "resource",
       "maxStack": 1,
@@ -129,6 +147,7 @@
     },
     {
       "key": "chassis_medium",
+      "sprite": "item_chassis_medium",
       "name": "Medium Chassis",
       "category": "resource",
       "maxStack": 1,
@@ -136,6 +155,7 @@
     },
     {
       "key": "chassis_large",
+      "sprite": "item_chassis_large",
       "name": "Large Chassis",
       "category": "resource",
       "maxStack": 1,
@@ -143,6 +163,7 @@
     },
     {
       "key": "chassis_heavy",
+      "sprite": "item_chassis_heavy",
       "name": "Heavy Chassis",
       "category": "resource",
       "maxStack": 1,
@@ -150,6 +171,7 @@
     },
     {
       "key": "trailer_frame",
+      "sprite": "item_trailer_frame",
       "name": "Trailer Frame",
       "category": "resource",
       "maxStack": 2,
@@ -157,6 +179,7 @@
     },
     {
       "key": "hitch_coupler",
+      "sprite": "item_hitch_coupler",
       "name": "Hitch Coupler",
       "category": "resource",
       "maxStack": 4,
@@ -164,6 +187,7 @@
     },
     {
       "key": "body_panel",
+      "sprite": "item_body_panel",
       "name": "Body Panel",
       "category": "resource",
       "maxStack": 20,
@@ -171,6 +195,7 @@
     },
     {
       "key": "windshield",
+      "sprite": "item_windshield",
       "name": "Windshield",
       "category": "resource",
       "maxStack": 4,
@@ -178,6 +203,7 @@
     },
     {
       "key": "headlight",
+      "sprite": "item_headlight",
       "name": "Headlight",
       "category": "resource",
       "maxStack": 10,
@@ -185,6 +211,7 @@
     },
     {
       "key": "seat",
+      "sprite": "item_seat",
       "name": "Vehicle Seat",
       "category": "resource",
       "maxStack": 8,
@@ -192,6 +219,7 @@
     },
     {
       "key": "fuel_tank",
+      "sprite": "item_fuel_tank",
       "name": "Fuel Tank",
       "category": "resource",
       "maxStack": 4,
@@ -199,6 +227,7 @@
     },
     {
       "key": "battery",
+      "sprite": "item_battery",
       "name": "Battery",
       "category": "resource",
       "maxStack": 4,
@@ -206,6 +235,7 @@
     },
     {
       "key": "radiator",
+      "sprite": "item_radiator",
       "name": "Radiator",
       "category": "resource",
       "maxStack": 4,
@@ -213,6 +243,7 @@
     },
     {
       "key": "gearbox",
+      "sprite": "item_gearbox",
       "name": "Gearbox",
       "category": "resource",
       "maxStack": 4,
@@ -220,6 +251,7 @@
     },
     {
       "key": "engine_small",
+      "sprite": "item_engine_small",
       "name": "Small Engine",
       "category": "resource",
       "maxStack": 2,
@@ -227,6 +259,7 @@
     },
     {
       "key": "engine_medium",
+      "sprite": "item_engine_medium",
       "name": "V6 Engine",
       "category": "resource",
       "maxStack": 2,
@@ -234,6 +267,7 @@
     },
     {
       "key": "engine_large",
+      "sprite": "item_engine_large",
       "name": "V8 Engine",
       "category": "resource",
       "maxStack": 1,
@@ -241,6 +275,7 @@
     },
     {
       "key": "engine_diesel",
+      "sprite": "item_engine_diesel",
       "name": "Diesel Engine",
       "category": "resource",
       "maxStack": 1,
@@ -248,6 +283,7 @@
     },
     {
       "key": "camper_interior",
+      "sprite": "item_camper_interior",
       "name": "Camper Interior Kit",
       "category": "resource",
       "maxStack": 2,
@@ -255,6 +291,7 @@
     },
     {
       "key": "tank_shell",
+      "sprite": "item_tank_shell",
       "name": "Tanker Shell",
       "category": "resource",
       "maxStack": 1,
@@ -262,6 +299,7 @@
     },
     {
       "key": "patch_kit",
+      "sprite": "item_patch_kit",
       "name": "Tire Patch Kit",
       "category": "tool",
       "maxStack": 1,
@@ -274,6 +312,7 @@
     },
     {
       "key": "repair_kit",
+      "sprite": "item_repair_kit",
       "name": "Vehicle Repair Kit",
       "category": "tool",
       "maxStack": 1,
@@ -286,6 +325,7 @@
     },
     {
       "key": "vehicle_kit_bike_basic",
+      "sprite": "item_vehicle_kit_bike_basic",
       "name": "Bike Basic Kit",
       "category": "placeable",
       "maxStack": 1,
@@ -294,6 +334,7 @@
     },
     {
       "key": "vehicle_kit_bike_road",
+      "sprite": "item_vehicle_kit_bike_road",
       "name": "Bike Road Kit",
       "category": "placeable",
       "maxStack": 1,
@@ -302,6 +343,7 @@
     },
     {
       "key": "vehicle_kit_bike_mountain",
+      "sprite": "item_vehicle_kit_bike_mountain",
       "name": "Bike Mountain Kit",
       "category": "placeable",
       "maxStack": 1,
@@ -310,6 +352,7 @@
     },
     {
       "key": "vehicle_kit_bike_bmx",
+      "sprite": "item_vehicle_kit_bike_bmx",
       "name": "Bike Bmx Kit",
       "category": "placeable",
       "maxStack": 1,
@@ -318,6 +361,7 @@
     },
     {
       "key": "vehicle_kit_bike_fat_tire",
+      "sprite": "item_vehicle_kit_bike_fat_tire",
       "name": "Bike Fat Tire Kit",
       "category": "placeable",
       "maxStack": 1,
@@ -326,6 +370,7 @@
     },
     {
       "key": "vehicle_kit_bike_cruiser",
+      "sprite": "item_vehicle_kit_bike_cruiser",
       "name": "Bike Cruiser Kit",
       "category": "placeable",
       "maxStack": 1,
@@ -334,6 +379,7 @@
     },
     {
       "key": "vehicle_kit_bike_tandem",
+      "sprite": "item_vehicle_kit_bike_tandem",
       "name": "Bike Tandem Kit",
       "category": "placeable",
       "maxStack": 1,
@@ -342,6 +388,7 @@
     },
     {
       "key": "vehicle_kit_bike_cargo",
+      "sprite": "item_vehicle_kit_bike_cargo",
       "name": "Bike Cargo Kit",
       "category": "placeable",
       "maxStack": 1,
@@ -350,6 +397,7 @@
     },
     {
       "key": "vehicle_kit_bike_trike",
+      "sprite": "item_vehicle_kit_bike_trike",
       "name": "Bike Trike Kit",
       "category": "placeable",
       "maxStack": 1,
@@ -358,6 +406,7 @@
     },
     {
       "key": "vehicle_kit_car_compact",
+      "sprite": "item_vehicle_kit_car_compact",
       "name": "Car Compact Kit",
       "category": "placeable",
       "maxStack": 1,
@@ -366,6 +415,7 @@
     },
     {
       "key": "vehicle_kit_car_sedan",
+      "sprite": "item_vehicle_kit_car_sedan",
       "name": "Car Sedan Kit",
       "category": "placeable",
       "maxStack": 1,
@@ -374,6 +424,7 @@
     },
     {
       "key": "vehicle_kit_car_muscle",
+      "sprite": "item_vehicle_kit_car_muscle",
       "name": "Car Muscle Kit",
       "category": "placeable",
       "maxStack": 1,
@@ -382,6 +433,7 @@
     },
     {
       "key": "vehicle_kit_car_offroad",
+      "sprite": "item_vehicle_kit_car_offroad",
       "name": "Car Offroad Kit",
       "category": "placeable",
       "maxStack": 1,
@@ -390,6 +442,7 @@
     },
     {
       "key": "vehicle_kit_car_wagon",
+      "sprite": "item_vehicle_kit_car_wagon",
       "name": "Car Wagon Kit",
       "category": "placeable",
       "maxStack": 1,
@@ -398,6 +451,7 @@
     },
     {
       "key": "vehicle_kit_truck_pickup",
+      "sprite": "item_vehicle_kit_truck_pickup",
       "name": "Truck Pickup Kit",
       "category": "placeable",
       "maxStack": 1,
@@ -406,6 +460,7 @@
     },
     {
       "key": "vehicle_kit_truck_flatbed",
+      "sprite": "item_vehicle_kit_truck_flatbed",
       "name": "Truck Flatbed Kit",
       "category": "placeable",
       "maxStack": 1,
@@ -414,6 +469,7 @@
     },
     {
       "key": "vehicle_kit_truck_box",
+      "sprite": "item_vehicle_kit_truck_box",
       "name": "Truck Box Kit",
       "category": "placeable",
       "maxStack": 1,
@@ -422,6 +478,7 @@
     },
     {
       "key": "vehicle_kit_van_cargo",
+      "sprite": "item_vehicle_kit_van_cargo",
       "name": "Van Cargo Kit",
       "category": "placeable",
       "maxStack": 1,
@@ -430,6 +487,7 @@
     },
     {
       "key": "vehicle_kit_van_passenger",
+      "sprite": "item_vehicle_kit_van_passenger",
       "name": "Van Passenger Kit",
       "category": "placeable",
       "maxStack": 1,
@@ -438,6 +496,7 @@
     },
     {
       "key": "vehicle_kit_camper_van",
+      "sprite": "item_vehicle_kit_camper_van",
       "name": "Camper Van Kit",
       "category": "placeable",
       "maxStack": 1,
@@ -446,6 +505,7 @@
     },
     {
       "key": "vehicle_kit_camper_rv",
+      "sprite": "item_vehicle_kit_camper_rv",
       "name": "Camper Rv Kit",
       "category": "placeable",
       "maxStack": 1,
@@ -454,6 +514,7 @@
     },
     {
       "key": "vehicle_kit_semi_tractor",
+      "sprite": "item_vehicle_kit_semi_tractor",
       "name": "Semi Tractor Kit",
       "category": "placeable",
       "maxStack": 1,
@@ -462,6 +523,7 @@
     },
     {
       "key": "vehicle_kit_trailer_utility_small",
+      "sprite": "item_vehicle_kit_trailer_utility_small",
       "name": "Trailer Utility Small Kit",
       "category": "placeable",
       "maxStack": 1,
@@ -470,6 +532,7 @@
     },
     {
       "key": "vehicle_kit_trailer_cargo_medium",
+      "sprite": "item_vehicle_kit_trailer_cargo_medium",
       "name": "Trailer Cargo Medium Kit",
       "category": "placeable",
       "maxStack": 1,
@@ -478,6 +541,7 @@
     },
     {
       "key": "vehicle_kit_trailer_flatbed_large",
+      "sprite": "item_vehicle_kit_trailer_flatbed_large",
       "name": "Trailer Flatbed Large Kit",
       "category": "placeable",
       "maxStack": 1,
@@ -486,6 +550,7 @@
     },
     {
       "key": "vehicle_kit_trailer_livestock",
+      "sprite": "item_vehicle_kit_trailer_livestock",
       "name": "Trailer Livestock Kit",
       "category": "placeable",
       "maxStack": 1,
@@ -494,6 +559,7 @@
     },
     {
       "key": "vehicle_kit_trailer_tanker",
+      "sprite": "item_vehicle_kit_trailer_tanker",
       "name": "Trailer Tanker Kit",
       "category": "placeable",
       "maxStack": 1,
@@ -502,6 +568,7 @@
     },
     {
       "key": "vehicle_kit_trailer_camper",
+      "sprite": "item_vehicle_kit_trailer_camper",
       "name": "Trailer Camper Kit",
       "category": "placeable",
       "maxStack": 1,
@@ -510,6 +577,7 @@
     },
     {
       "key": "vehicle_kit_semi_trailer_box",
+      "sprite": "item_vehicle_kit_semi_trailer_box",
       "name": "Semi Trailer Box Kit",
       "category": "placeable",
       "maxStack": 1,
@@ -518,6 +586,7 @@
     },
     {
       "key": "vehicle_kit_semi_trailer_flatbed",
+      "sprite": "item_vehicle_kit_semi_trailer_flatbed",
       "name": "Semi Trailer Flatbed Kit",
       "category": "placeable",
       "maxStack": 1,
