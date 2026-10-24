@@ -42,8 +42,12 @@ describe("facing-split vehicle art (dirFrames, Art 62e55cf/64a18d2)", () => {
 
   it("legacy pages = the old full-size sheets: referenced by nothing that draws", () => {
     const legacy = legacyDirFrameAtlases(reg);
-    expect([...legacy].sort()).toEqual([...new Set(split.map((s) => s.atlas.key))].sort());
-    expect(legacy.has("veh_art_truck_box")).toBe(true);
+    // Art 36528cf repoints split sprites' `atlas` at a facing page (old full-size sheets deleted): the legacy set is then
+    // empty. Until that manifest lands, the pre-split shape (legacy = the split sprites' sheets) is still accepted.
+    if (legacy.size === 0 || !legacy.has("veh_art_truck_box")) {
+      expect(legacy.size).toBe(0);
+      for (const s of split) expect(s.atlas.key).toMatch(/_f[hvd]\d+$/);
+    } else expect([...legacy].sort()).toEqual([...new Set(split.map((s) => s.atlas.key))].sort());
     for (const s of reg.allSprites()) { if (!s.animList.some((a) => a.dirFrames)) expect(legacy.has(s.atlas.key)).toBe(false);
       for (const a of s.animList) for (const d of a.dirFrames ?? []) expect(legacy.has(d.atlas.key)).toBe(false); }
     // pool slots are sized by the facing pages only: all <= 1008px at 1x (4 per 2048 layer)
