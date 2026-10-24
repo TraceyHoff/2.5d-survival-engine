@@ -1,0 +1,126 @@
+/**
+ * In-game menus on the shared focus layer (./ui-nav.ts): pause (hub of every menu + "Quit to main menu"), inventory,
+ * crafting, build, character (wardrobe), party, clan, trade stalls, chat, settings and session (P2P). Each is a modal
+ * shell with stable hooks for Gameplay/Art to fill: `.gm-modal[data-modal=<id>]`, `[data-role=body]`, `[data-role=close]`.
+ * Touch: a top-right menu bar (`#game-menubar`, 44px buttons, inside the safe area) opens each menu.
+ * Keyboard hotkeys (no text field focused): Esc pause, I/Tab inventory, C crafting, B build, K character, P party,
+ * L clan, T trade, Enter or / chat, O settings. Gamepad: Start/Select pause (hub), D-pad/stick + A/B inside menus.
+ */
+import { UINav, type ContextStack } from "./ui-nav.js";
+import { loadSettings, saveSettings } from "./menu.js";
+
+export interface MenuDef { id: string; title: string; icon: string; hotkeys: string[]; bar?: boolean; text: string }
+export const GAME_MENUS: readonly MenuDef[] = [
+  { id: "inventory", title: "Inventory", icon: "🎒", hotkeys: ["KeyI", "Tab"], bar: true, text: "Your items and equipment." },
+  { id: "crafting", title: "Crafting", icon: "🔨", hotkeys: ["KeyC"], bar: true, text: "Recipes you can craft with what you carry or at a nearby station." },
+  { id: "build", title: "Build", icon: "🏗", hotkeys: ["KeyB"], bar: true, text: "Pick a piece to place." },
+  { id: "character", title: "Character", icon: "👕", hotkeys: ["KeyK"], text: "Wardrobe and character creator." },
+  { id: "party", title: "Party", icon: "👥", hotkeys: ["KeyP"], bar: true, text: "Your party: invite, kick or leave." },
+  { id: "clan", title: "Clan", icon: "🛡", hotkeys: ["KeyL"], text: "Clan members, ranks and goals." },
+  { id: "trade", title: "Trade stalls", icon: "⚖", hotkeys: ["KeyT"], text: "Browse and run trade stalls." },
+  { id: "chat", title: "Chat", icon: "💬", hotkeys: ["Enter", "Slash"], bar: true, text: "" },
+  { id: "settings", title: "Settings", icon: "⚙", hotkeys: ["KeyO"], text: "" },
+];
+const CSS = `.gm-modal{position:absolute;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:rgba(10,8,6,.55);
+padding:calc(8px + var(--sat,0px)) calc(8px + var(--sar,0px)) calc(8px + var(--sab,0px)) calc(8px + var(--sal,0px));box-sizing:border-box;pointer-events:auto;touch-action:manipulation}
+.gm-panel{background:#F6EAD2;color:#3B2433;border:3px solid #74432C;border-radius:14px;box-shadow:0 4px 0 #432C24;max-width:min(560px,94vw);max-height:100%;overflow:auto;
+padding:12px 14px;display:flex;flex-direction:column;gap:10px;font:600 15px Fredoka,system-ui,sans-serif;box-sizing:border-box;min-width:min(300px,90vw)}
+.gm-panel header{display:flex;align-items:center;justify-content:space-between;gap:8px}.gm-panel h2{margin:0;font-size:20px;color:#74432C}
+.gm-panel p{margin:0;font-size:14px}.gm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.gm-panel button,.gm-panel input,.gm-panel select{font:700 16px Fredoka,system-ui,sans-serif;min-height:44px;min-width:44px;border-radius:10px;box-sizing:border-box}
+.gm-panel button{color:#FFFAF0;background:#5A9A4A;border:3px solid #3B2433;box-shadow:0 3px 0 #2D5A2E;padding:6px 12px;cursor:pointer}
+.gm-panel button.alt{background:#C98A4B;box-shadow:0 3px 0 #74432C}
+.gm-panel input{border:3px solid #4A2F3D;background:#FFFAF0;color:#3B2433;padding:6px 10px}.gm-panel input[type=checkbox]{min-height:28px;min-width:28px}
+.gm-panel label{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:15px}
+.gm-panel :focus-visible,.gm-panel button:focus{outline:3px solid #FFD45A;outline-offset:2px}
+.gm-panel .hint{font-size:12px;color:#61402E}
+#game-menubar{position:absolute;top:calc(6px + var(--sat,0px));right:calc(6px + var(--sar,0px));z-index:12;display:flex;gap:6px;pointer-events:auto}
+#game-menubar button{width:44px;height:44px;border-radius:12px;border:2px solid #3B2433;background:rgba(246,234,210,.9);font:20px system-ui,sans-serif;padding:0;touch-action:manipulation;cursor:pointer}
+#game-menubar button:focus-visible{outline:3px solid #FFD45A}
+@media (max-height:420px){#game-menubar button{width:40px;height:40px;font-size:18px}}`;
+
+export interface GameMenusOptions {
+  root: HTMLElement;
+  input?: ContextStack;
+  /** "Quit to main menu": caller exits fullscreen and returns to the main menu. */
+  onQuit: () => void;
+  /** Session entry (P2P / dedicated): shown in the pause menu when set. */
+  session?: () => { label: string; leaveLabel: string; onLeave: () => void } | undefined;
+  /** Chat send hook (no-op placeholder until chat is wired). */
+  onChat?: (text: string) => void;
+  showMenuBar?: boolean;
+  getGamepads?: UINavOptions["getGamepads"];
+  pollGamepads?: boolean;
+}
+type UINavOptions = ConstructorParameters<typeof UINav>[0];
+
+export class GameMenus {
+  readonly nav: UINav; readonly bar: HTMLElement | undefined; private chatLog: string[] = [];
+  constructor(private readonly o: GameMenusOptions) {
+    if (!document.getElementById("gm-style")) { const st = document.createElement("style"); st.id = "gm-style"; st.textContent = CSS; document.head.append(st); }
+    const hotkeys: Record<string, () => void> = {};
+    for (const m of GAME_MENUS) for (const k of m.hotkeys) hotkeys[k] = () => this.toggle(m.id);
+    this.nav = new UINav({ root: o.root, onPause: () => this.pause(), ...(o.input ? { input: o.input } : {}), hotkeys, ...(o.getGamepads ? { getGamepads: o.getGamepads } : {}), ...(o.pollGamepads !== undefined ? { pollGamepads: o.pollGamepads } : {}) });
+    if (o.showMenuBar !== false) {
+      const bar = document.createElement("nav"); bar.id = "game-menubar"; bar.setAttribute("aria-label", "Game menus");
+      const add = (id: string, icon: string, title: string, fn: () => void): void => { const b = document.createElement("button"); b.type = "button"; b.dataset["open"] = id; b.title = title; b.setAttribute("aria-label", title); b.textContent = icon; b.addEventListener("click", (e) => { e.stopPropagation(); fn(); }); bar.append(b); };
+      for (const m of GAME_MENUS) if (m.bar) add(m.id, m.icon, m.title, () => this.toggle(m.id));
+      add("pause", "☰", "Menu", () => this.pause());
+      o.root.append(bar); this.bar = bar;
+    }
+  }
+  destroy(): void { this.nav.destroy(); this.bar?.remove(); }
+
+  private panel(id: string, title: string, body: Node[], buttons: [string, () => void, string?][] = []): HTMLElement {
+    const m = document.createElement("div"); m.className = "gm-modal";
+    m.addEventListener("pointerdown", (e) => { if (e.target === m) this.nav.close(); }); // tap outside closes
+    const p = document.createElement("div"); p.className = "gm-panel"; p.setAttribute("aria-label", title);
+    const h = document.createElement("header"); const h2 = document.createElement("h2"); h2.textContent = title;
+    const x = document.createElement("button"); x.type = "button"; x.className = "alt"; x.dataset["role"] = "close"; x.setAttribute("aria-label", `Close ${title}`); x.textContent = "✕"; x.addEventListener("click", () => this.nav.close());
+    h.append(h2, x);
+    const b = document.createElement("div"); b.dataset["role"] = "body"; b.style.cssText = "display:flex;flex-direction:column;gap:8px"; b.append(...body);
+    const actions = document.createElement("div"); actions.className = "gm-grid";
+    for (const [t, fn, cls] of buttons) { const bt = document.createElement("button"); bt.type = "button"; bt.textContent = t; if (cls) bt.className = cls; bt.dataset["action"] = t; bt.addEventListener("click", fn); actions.append(bt); }
+    p.append(h, b); if (buttons.length) p.append(actions);
+    const hint = document.createElement("div"); hint.className = "hint"; hint.textContent = "Tap · Tab/arrows + Enter, Esc back · D-pad + A, B back"; p.append(hint);
+    m.append(p); m.dataset["menu"] = id; return m;
+  }
+  private para(t: string): HTMLElement { const p = document.createElement("p"); p.textContent = t; return p; }
+
+  build(id: string): HTMLElement {
+    if (id === "pause") return this.pausePanel();
+    if (id === "settings") return this.settingsPanel();
+    if (id === "chat") return this.chatPanel();
+    if (id === "session") { const s = this.o.session?.(); return this.panel("session", "Session", [this.para(s?.label ?? "Not in a shared session.")], s ? [[s.leaveLabel, () => { this.nav.closeAll(); s.onLeave(); }, "alt"]] : []); }
+    const m = GAME_MENUS.find((d) => d.id === id); if (!m) throw new Error(`unknown menu ${id}`);
+    return this.panel(id, m.title, [this.para(m.text)]);
+  }
+  toggle(id: string): void { this.nav.toggle(id, () => this.build(id)); }
+  open(id: string): void { this.nav.open(id, this.build(id)); }
+  pause(): void { if (this.nav.top === "pause") return; this.nav.open("pause", this.build("pause")); }
+
+  private pausePanel(): HTMLElement {
+    const items: [string, () => void, string?][] = [["Resume", () => this.nav.close()]];
+    for (const m of GAME_MENUS) items.push([`${m.icon} ${m.title}`, () => this.open(m.id)]);
+    if (this.o.session?.()) items.push(["Session", () => this.open("session")]);
+    items.push(["Quit to main menu", () => { this.nav.closeAll(); this.o.onQuit(); }, "alt"]);
+    return this.panel("pause", "Paused", [], items);
+  }
+  private settingsPanel(): HTMLElement {
+    const s = loadSettings();
+    const hud = document.createElement("input"); hud.type = "checkbox"; hud.checked = s.showHud;
+    const fs = document.createElement("input"); fs.type = "checkbox"; fs.checked = s.fullscreen;
+    const l1 = document.createElement("label"); l1.append("Show HUD (next start)", hud);
+    const l2 = document.createElement("label"); l2.append("Fullscreen when playing", fs);
+    return this.panel("settings", "Settings", [l1, l2], [["Save", () => { saveSettings({ ...loadSettings(), showHud: hud.checked, fullscreen: fs.checked }); this.nav.close(); }], ["Back", () => this.nav.close(), "alt"]]);
+  }
+  private chatPanel(): HTMLElement {
+    const log = document.createElement("div"); log.dataset["role"] = "chat-log"; log.style.cssText = "max-height:30vh;overflow:auto;font-size:14px";
+    for (const l of this.chatLog.slice(-50)) log.append(this.para(l));
+    const input = document.createElement("input"); input.dataset["role"] = "chat-input"; input.placeholder = "Say something…"; input.maxLength = 200; input.setAttribute("aria-label", "Chat message"); input.autofocus = true;
+    const send = (): void => { const t = input.value.trim(); if (!t) return; this.chatLog.push(t); this.o.onChat?.(t); log.append(this.para(t)); input.value = ""; };
+    const m = this.panel("chat", "Chat", [log, input], [["Send", send], ["Close", () => this.nav.close(), "alt"]]);
+    m.querySelector<HTMLElement>("[data-action=Send]")!.dataset["role"] = "submit";
+    return m;
+  }
+}

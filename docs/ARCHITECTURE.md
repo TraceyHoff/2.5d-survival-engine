@@ -567,3 +567,19 @@ See docs/CHARACTER_CUSTOMIZATION.md for the team contract and ADR-080 for the ra
   - Viewpoints are non-bot players only.
 - **Animals:** the `Animal` component is replicated to all clients and driven by `animalAISystem` (wander, flee, close-range attack, loot on death). Defs come from ai.json; kinds are the art keys animal_rabbit/deer/boar/wolf/chicken.
 - **Agents:** see docs/AI_AGENTS.md.
+
+## Client UI, fullscreen and menu navigation (ADR-095)
+
+- **Root**: everything renders inside `#game-root` (`ui-root.ts`, `mountUi()`); fullscreen targets that root so the HUD, touch controls and modals stay visible and interactive.
+- **Layout**: HUD top-left, P2P chip top-centre, menu bar top-right (all safe-area aware); joystick/action buttons own the bottom of the screen.
+- **Controls in menus** (`ui-nav.ts`, `game-menus.ts`):
+
+| Action | Keyboard / mouse | Gamepad | Touch |
+|---|---|---|---|
+| Move focus | Tab / Shift+Tab, arrows | D-pad, left stick | tap |
+| Confirm | Enter / Space / click | A | tap |
+| Back / close | Esc | B | ✕ or tap outside |
+| Pause | Esc (nothing open) | Start / Select | ☰ |
+| Menus | I/Tab inventory, C crafting, B build, K character, P party, L clan, T trade, Enter or / chat, O settings | via pause menu | menu bar / pause menu |
+
+Pause → **Quit to main menu** exits fullscreen, saves / leaves the session and returns to the main menu.

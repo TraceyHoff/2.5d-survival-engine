@@ -3,6 +3,7 @@
  * with a progress bar, then the main menu (Singleplayer / Multiplayer / Settings).
  * Navigation: mouse, touch (buttons), keyboard (arrows/WASD/Tab, Enter/Space, Esc) and gamepad (d-pad/stick, A, B).
  */
+import { mountUi } from "./ui-root.js";
 import { enterFullscreen } from "./fullscreen.js";
 interface Branding { title: string; tagline: string; logo: string; bg: "" | "flat" | "parallax"; plates: boolean; icons: boolean; loading: boolean; loadingAnim: boolean }
 declare const __BRANDING__: Branding | undefined;
@@ -13,6 +14,7 @@ export type MenuChoice = { kind: "singleplayer" } | { kind: "multiplayer"; url: 
 /** hostCap: desktop P2P host player cap incl. the host (mobile hosts are fixed at 6, see p2p.ts). */
 export interface Settings { bots: number; showHud: boolean; fullscreen: boolean; hostCap: number }
 const SETTINGS_KEY = "engine-settings";
+export function saveSettings(s: Settings): void { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); } catch { /* private mode */ } }
 export function loadSettings(): Settings {
   try { return { bots: 3, showHud: true, fullscreen: true, hostCap: 12, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as Partial<Settings> }; } catch { return { bots: 3, showHud: true, fullscreen: true, hostCap: 12 }; }
 }
@@ -84,7 +86,7 @@ export class BootUI {
     const track = document.createElement("div"); track.className = "track"; this.fill.className = "fill"; track.append(this.fill);
     if (BR.loadingAnim) { this.zw.className = "zw"; const cf = document.createElement("div"); cf.className = "cf"; track.append(this.zw, cf); }
     this.lbl.className = "lbl"; this.body.append(track, this.lbl);
-    this.root.append(this.header, this.body); document.body.append(this.root);
+    this.root.append(this.header, this.body); mountUi(this.root);
     void this.loadLogo();
   }
   /** Art's logo (assets/ui/branding/logo.png|webp|svg) replaces the text title when it exists. */

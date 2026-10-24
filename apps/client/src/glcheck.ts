@@ -1,11 +1,12 @@
 /** Never silently black: on-screen overlay for renderer exceptions, lost contexts and all-black frames, with GPU diagnostics. */
+import { mountUi } from "./ui-root.js";
 let box: HTMLDivElement | undefined; const seen = new Set<string>();
 export function showRenderError(title: string, detail: string): void {
   const k = title + detail; if (seen.has(k)) return; seen.add(k);
   if (!box) {
     box = document.createElement("div"); box.id = "render-error";
     box.style.cssText = "position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:50;max-width:min(92vw,640px);background:#2a1d17ee;color:#ffe9c9;font:13px/1.4 system-ui,sans-serif;padding:12px 14px;border:2px solid #e8833a;border-radius:10px;white-space:pre-wrap;word-break:break-word";
-    document.body.append(box);
+    mountUi(box);
   }
   box.textContent += `${box.textContent ? "\n\n" : ""}⚠ ${title}\n${detail}\nTry ?renderer=debug or ?safe=1 — please report this text.`;
   console.error("[render]", title, detail);

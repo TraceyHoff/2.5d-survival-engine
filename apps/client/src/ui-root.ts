@@ -1,0 +1,36 @@
+/**
+ * The game's single UI root (`#game-root`): it holds the canvas, the HUD, the touch overlay/menu bar and every
+ * modal. Fullscreen targets this element (./fullscreen.ts), so everything the player needs stays inside the
+ * fullscreen subtree: an element outside it is not rendered in fullscreen and can't receive taps.
+ * Exposes the safe-area insets as `--sat/--sar/--sab/--sal` for HUD/menu placement.
+ */
+export const ROOT_ID = "game-root";
+const STYLE_ID = "game-root-style";
+const CSS = `#${ROOT_ID}{position:fixed;inset:0;overflow:hidden;background:#111;
+--sat:env(safe-area-inset-top,0px);--sar:env(safe-area-inset-right,0px);--sab:env(safe-area-inset-bottom,0px);--sal:env(safe-area-inset-left,0px);
+touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+#${ROOT_ID}:fullscreen{width:100%;height:100%}
+#${ROOT_ID} canvas{display:block;width:100%;height:100%;touch-action:none}
+#${ROOT_ID} button,#${ROOT_ID} input,#${ROOT_ID} select,#${ROOT_ID} textarea{touch-action:manipulation;user-select:auto;-webkit-user-select:auto}`;
+
+/** The root container (created around `#game` if index.html doesn't have it). */
+export function uiRoot(doc: Document = document): HTMLElement {
+  let r = doc.getElementById(ROOT_ID);
+  if (!r) {
+    r = doc.createElement("div"); r.id = ROOT_ID;
+    const c = doc.getElementById("game");
+    if (c?.parentElement) { c.parentElement.insertBefore(r, c); r.append(c); } else doc.body.append(r);
+  }
+  if (!doc.getElementById(STYLE_ID)) { const st = doc.createElement("style"); st.id = STYLE_ID; st.textContent = CSS; doc.head.append(st); }
+  return r;
+}
+/** Mount UI (HUD, overlays, modals) inside the root so it is visible and tappable in fullscreen. */
+export function mountUi<T extends Node>(node: T, doc: Document = document): T { uiRoot(doc).append(node); return node; }
+
+/** Safe-area insets in px, measured with a probe (custom properties holding env() don't resolve in getComputedStyle). */
+export function safeAreaInsets(doc: Document = document): { top: number; right: number; bottom: number; left: number } {
+  const p = doc.createElement("div");
+  p.style.cssText = "position:fixed;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)";
+  doc.body.append(p); const cs = getComputedStyle(p); const n = (v: string): number => parseFloat(v) || 0;
+  const r = { top: n(cs.paddingTop), right: n(cs.paddingRight), bottom: n(cs.paddingBottom), left: n(cs.paddingLeft) }; p.remove(); return r;
+}

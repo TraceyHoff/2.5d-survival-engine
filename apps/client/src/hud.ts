@@ -1,7 +1,10 @@
 /**
  * Survival HUD in Art's "cozy-camp" UI theme (assets/ui/theme.json palette + Fredoka, served at `<base>art/ui/`):
  * health / hunger / thirst / stamina bars, clock and weather. Plain DOM, hooks: `#hud`, `[data-stat=...]`.
+ * Compact and anchored top-left inside the safe area (`--sat/--sal` from ./ui-root.ts), click-through (pointer-events:none)
+ * so it never eats taps meant for the touch controls, which live in the lower half / right edge.
  */
+import { mountUi } from "./ui-root.js";
 import { Weather, timeOfDay, type Entity, type World } from "@engine/core";
 import { Health, Survival } from "@engine/gameplay";
 
@@ -37,10 +40,12 @@ export function mountHud(world: () => World, player: () => Entity | undefined, o
   const base = import.meta.env.BASE_URL;
   const style = document.createElement("style");
   style.textContent = `@font-face{font-family:Fredoka;src:url(${base}art/ui/fonts/Fredoka.ttf) format("truetype");font-display:swap}
-#hud{position:fixed;left:12px;bottom:12px;z-index:5;font:600 13px Fredoka,system-ui,sans-serif;color:#3B2433;background:#F6EAD2;
-border:3px solid #74432C;border-radius:14px;box-shadow:0 3px 0 #432C24,0 6px 14px rgba(0,0,0,.35);padding:8px 10px;min-width:190px;user-select:none}
-#hud .row{display:flex;align-items:center;gap:6px;margin:3px 0}#hud .bar{flex:1;height:10px;background:#E6C47E;border:2px solid #4A2F3D;border-radius:6px;overflow:hidden}
-#hud .fill{height:100%;border-radius:4px;transition:width .2s}#hud .clock{display:flex;justify-content:space-between;margin-bottom:4px;color:#61402E}`;
+#hud{position:absolute;left:calc(6px + var(--sal,0px));top:calc(6px + var(--sat,0px));z-index:5;font:600 11px/1.1 Fredoka,system-ui,sans-serif;color:#3B2433;background:rgba(246,234,210,.88);
+border:2px solid #74432C;border-radius:10px;box-shadow:0 2px 0 #432C24;padding:4px 6px;width:clamp(112px,18vw,150px);box-sizing:border-box;user-select:none;pointer-events:none}
+#hud .row{display:flex;align-items:center;gap:4px;margin:2px 0}#hud .bar{flex:1;height:6px;background:#E6C47E;border:1px solid #4A2F3D;border-radius:4px;overflow:hidden}
+#hud .lab{display:flex;width:14px;font-size:10px;justify-content:center}
+#hud .fill{height:100%;border-radius:3px;transition:width .2s}#hud .clock{display:flex;justify-content:space-between;margin-bottom:2px;color:#61402E;font-size:10px}
+@media (max-height:420px){#hud{width:112px;padding:3px 5px}#hud .bar{height:5px}#hud .row{margin:1px 0}}`;
   document.head.append(style);
   const root = document.createElement("div"); root.id = "hud";
   const clock = document.createElement("div"); clock.className = "clock"; root.append(clock);
@@ -55,16 +60,16 @@ border:3px solid #74432C;border-radius:14px;box-shadow:0 3px 0 #432C24,0 6px 14p
     const l = document.createElement("span"); l.className = "lab"; l.textContent = s.label; const ic = document.createElement("img"); ic.className = "ic"; ic.alt = s.key; ic.style.display = "none"; icons.push(ic); l.prepend(ic); const bar = document.createElement("div"); bar.className = "bar";
     const f = document.createElement("div"); f.className = "fill"; f.style.background = s.color; bar.append(f); row.append(l, bar); root.append(row); return f;
   });
-  document.body.append(root);
+  mountUi(root);
   // Art's UI kit: panel_hud plaque, bar_track / bar_fill_* nine-slices, vital_* icons (falls back to the CSS look)
   void uiSprites(base).then((u) => {
     ui = u; const css: string[] = [];
     const nine = (sel: string, k: string, extra = ""): void => { const url = u.url(k), f = u.frame(k); if (!url || !f?.nineSlice) return; const n = f.nineSlice;
       css.push(`${sel}{border-style:solid;border-width:${n.t / 2}px ${n.r / 2}px ${n.b / 2}px ${n.l / 2}px;border-image:url(${url}) ${n.t} ${n.r} ${n.b} ${n.l} fill stretch;background:none;${extra}}`); };
-    nine("#hud", "panel_hud", "border-radius:0;box-shadow:none;color:#FFFAF0;padding:4px 6px;text-shadow:0 1px 0 #3B2433");
-    nine("#hud .bar", "bar_track", "border-radius:0;height:6px");
+    nine("#hud", "panel_hud", "border-radius:0;box-shadow:none;color:#FFFAF0;padding:2px 4px;text-shadow:0 1px 0 #3B2433");
+    nine("#hud .bar", "bar_track", "border-radius:0;height:5px");
     SPRITE_KEYS.forEach((k, i) => nine(`#hud .row[data-stat="${STATS[i]!.key}"] .fill`, `bar_fill_${k}`, "border-radius:0;height:0;margin:-1px 0;box-sizing:border-box;min-width:7px"));
-    css.push("#hud .clock{color:#FFE7A8}#hud .ic{width:18px;height:18px;vertical-align:middle;image-rendering:auto}#hud .l{display:flex;align-items:center;gap:4px}#hud .lab{display:flex;width:20px}");
+    css.push("#hud .clock{color:#FFE7A8}#hud .ic{width:13px;height:13px;vertical-align:middle;image-rendering:auto}#hud .l{display:flex;align-items:center;gap:3px}#hud .lab{display:flex;width:14px}");
     const st = document.createElement("style"); st.textContent = css.join("\n"); style.after(st);
     icons.forEach((ic, i) => { const url = u.url(`vital_${SPRITE_KEYS[i]}`); if (url) { ic.src = url; ic.style.display = ""; ic.nextSibling?.remove(); } });
     update();

@@ -2,11 +2,12 @@
  * Thin browser adapter (the only DOM-touching module). Wires keyboard, pointer events (mouse + touch + pen), wheel,
  * gamepad polling in rAF, blur/visibility release, pointer lock and default-prevention into an InputSystem.
  * CSS guidance: give the game element `touch-action: none; user-select: none; -webkit-touch-callout: none;`
- * so the browser doesn't pan/zoom/select during play.
+ * so the browser doesn't pan/zoom/select during play (attach sets touch-action/user-select itself; without it Chrome
+ * Android fires pointercancel as soon as a drag starts, which kills the joystick).
  */
 import { GamepadDevice, KeyboardMouseDevice, TouchDevice, type GamepadLike } from "./devices.js";
 import type { StorageAdapter, InputSystem } from "./system.js";
-import { GestureRecognizer, VirtualControls, type Gesture, type VirtualLayout } from "./touch.js";
+import { GestureRecognizer, VirtualControls, type Gesture, type Insets, type VirtualLayout } from "./touch.js";
 
 export interface BrowserInputOptions {
   /** Keys whose default is prevented while the element is focused/active (Tab, Space, arrows...). */
@@ -18,6 +19,8 @@ export interface BrowserInputOptions {
   pointerLock?: boolean;
   /** Persist binding overrides (default: localStorage under "engine.input.bindings"). Pass null to disable. */
   storage?: StorageAdapter | null;
+  /** Safe-area insets in px for the virtual layout (default: `--sat/--sar/--sab/--sal` px values on :root). */
+  insets?: () => Insets;
 }
 export interface BrowserInput { kbm: KeyboardMouseDevice; touch: TouchDevice; pads: Map<number, GamepadDevice>; controls?: VirtualControls; gestures: GestureRecognizer; detach(): void }
 
@@ -29,15 +32,19 @@ const isTextTarget = (t: EventTarget | null) => t instanceof HTMLInputElement ||
 export function attachBrowserInput(el: HTMLElement, input: InputSystem, opts: BrowserInputOptions = {}): BrowserInput {
   const kbm = new KeyboardMouseDevice(); const touch = new TouchDevice(); const pads = new Map<number, GamepadDevice>();
   input.addDevice(kbm); input.addDevice(touch);
+  el.style.touchAction = "none"; el.style.userSelect = "none";
   if (opts.storage !== null) input.useStorage(opts.storage ?? localStorageAdapter());
   const prevent = new Set(opts.preventKeys ?? ["Tab", "Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Slash", "Quote"]);
   const controls = opts.virtualLayout ? new VirtualControls(opts.virtualLayout, touch) : undefined;
   if (controls) { controls.leftHanded = !!opts.leftHanded; }
   const gestures = new GestureRecognizer((g) => opts.onGesture?.(g), {}, touch);
   const offs: (() => void)[] = []; const on = <K extends keyof WindowEventMap>(t: EventTarget, type: K | string, fn: (e: never) => void, o?: AddEventListenerOptions) => { t.addEventListener(type, fn as EventListener, o); offs.push(() => t.removeEventListener(type, fn as EventListener, o)); };
-  const resize = () => { const r = el.getBoundingClientRect(); const cs = getComputedStyle(document.documentElement); const px = (v: string) => parseFloat(cs.getPropertyValue(v)) || 0;
-    controls?.resize({ w: r.width, h: r.height, dpr: devicePixelRatio, insets: { top: px("--sat"), right: px("--sar"), bottom: px("--sab"), left: px("--sal") } }); };
-  resize(); on(window, "resize", resize);
+  const cssInsets = (): Insets => { const cs = getComputedStyle(document.documentElement); const px = (v: string) => parseFloat(cs.getPropertyValue(v)) || 0; return { top: px("--sat"), right: px("--sar"), bottom: px("--sab"), left: px("--sal") }; };
+  const resize = () => { const r = el.getBoundingClientRect();
+    controls?.resize({ w: r.width, h: r.height, dpr: devicePixelRatio, insets: (opts.insets ?? cssInsets)() }); };
+  // fullscreen enter/exit and rotation change the element's size without always firing a window resize first
+  resize(); on(window, "resize", resize); on(document, "fullscreenchange", () => { controls?.reset(); resize(); }); on(document, "webkitfullscreenchange", resize);
+  on(window, "orientationchange", () => { controls?.reset(); resize(); });
   on(window, "keydown", (e: KeyboardEvent) => { if (isTextTarget(e.target)) return; kbm.press(`key.${e.code}`); if (prevent.has(e.code)) e.preventDefault(); });
   on(window, "keyup", (e: KeyboardEvent) => kbm.release(`key.${e.code}`));
   const btn = ["mouse.left", "mouse.middle", "mouse.right", "mouse.back", "mouse.forward"];

@@ -4,6 +4,7 @@
  * `[data-role=...]` on every control. Only `position: fixed` and a plain background are set so it is usable
  * over the canvas. Logic lives in ./session.ts; this module only renders and forwards clicks.
  */
+import { mountUi } from "./ui-root.js";
 import type { ClientSession } from "./session.js";
 
 export interface ConnectOverlay { root: HTMLElement; update(): void; destroy(): void }
@@ -11,7 +12,7 @@ export interface ConnectOverlay { root: HTMLElement; update(): void; destroy(): 
 export function mountConnectOverlay(session: ClientSession, opts: { defaultUrl: string; onConnect: (url: string, name: string) => void; onDisconnect: () => void }): ConnectOverlay {
   const root = document.createElement("div");
   root.id = "connect-overlay";
-  root.style.cssText = "position:fixed;top:8px;left:8px;background:#fff;padding:6px;font:12px sans-serif";
+  root.style.cssText = "position:absolute;top:calc(4px + var(--sat,0px));left:50%;transform:translateX(-50%);z-index:10;background:#fff;padding:6px;font:12px sans-serif";
   const field = (label: string, role: string, value: string): HTMLInputElement => {
     const l = document.createElement("label"); l.textContent = `${label} `;
     const i = document.createElement("input"); i.dataset["role"] = role; i.value = value; l.append(i);
@@ -37,7 +38,7 @@ export function mountConnectOverlay(session: ClientSession, opts: { defaultUrl: 
     const a = session.account;
     account.textContent = a ? `Account: ${a.slice(0, 8)}…${session.restored ? " (restored)" : ""}` : "Account: new";
   };
-  document.body.append(root); update();
+  mountUi(root); update();
   const timer = setInterval(update, 250);
   return { root, update, destroy: () => { clearInterval(timer); root.remove(); } };
 }

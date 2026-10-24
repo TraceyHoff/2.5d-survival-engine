@@ -1,6 +1,10 @@
+import { mountUi } from "./ui-root.js";
 import { showRenderError } from "./glcheck.js";
 import { startDiag } from "./diag.js";
-import { installFullscreenRestore } from "./fullscreen.js";
+import { installFullscreenRestore, exitFullscreen } from "./fullscreen.js";
+import { uiRoot, safeAreaInsets } from "./ui-root.js";
+import { GameMenus } from "./game-menus.js";
+import { mountTouchOverlay } from "./touch-overlay.js";
 /**
  * Client bootstrap: fixed-step loop + WebGL2 IsoRenderer view (./view.ts, Art's pack) + network session.
  * Falls back to the Canvas2D debug draw with ?renderer=debug or when WebGL2 / the art fails to load.
@@ -20,6 +24,8 @@ import { mountHud } from "./hud.js";
 import { BootUI, loadSettings } from "./menu.js";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
+/** Everything (canvas, HUD, touch overlay, menu bar, modals) lives in this root; fullscreen targets it (ADR-095). */
+const root = uiRoot();
 const params = new URLSearchParams(location.search);
 let ctx: CanvasRenderingContext2D | null = null;
 let iso: IsoView | undefined;
@@ -40,7 +46,7 @@ const isoReady: Promise<void> = wantIso ? (async () => {
 function fallback(): void {
   // a WebGL context may already own #game: draw Canvas2D on an overlay (input stays bound to #game)
   const c = document.createElement("canvas"); c.id = "game-debug"; c.style.cssText = "position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none";
-  document.body.append(c); debugCanvas = c; ctx = c.getContext("2d");
+  mountUi(c); debugCanvas = c; ctx = c.getContext("2d");
   (window as { __view?: unknown }).__view = { ready: true, renderer: "debug" };
 }
 let debugCanvas = canvas;
@@ -49,7 +55,29 @@ void isoReady;
 // Input (@engine/input, see packages/input/README.md): keyboard/mouse, gamepad and touch -> one InputFrame per tick.
 const input = new InputSystem(performance, { actions: DEFAULT_ACTIONS, contexts: DEFAULT_CONTEXTS, profiles: DEFAULT_PROFILES });
 input.push("Gameplay");
-attachBrowserInput(canvas, input, { ...(matchMedia("(pointer: coarse)").matches ? { virtualLayout: DEFAULT_TOUCH_LAYOUTS.gameplay } : {}) });
+/** The layout's top-row menu buttons (inventory/crafting/map/chat/social/build/back) are replaced by the DOM menu bar
+ * (./game-menus.ts): real, visible, focusable buttons that also work for mouse; the HUD sits where chat/social were. */
+const MENU_BAR_IDS = new Set(["inventory", "crafting", "map", "chat", "social", "build", "back"]);
+const touchLayout = { ...DEFAULT_TOUCH_LAYOUTS.gameplay, elements: DEFAULT_TOUCH_LAYOUTS.gameplay.elements.filter((e) => !MENU_BAR_IDS.has(e.id)) };
+const browserInput = attachBrowserInput(canvas, input, { ...(matchMedia("(pointer: coarse)").matches ? { virtualLayout: touchLayout } : {}), insets: () => safeAreaInsets() });
+let menus: GameMenus | undefined;
+if (browserInput.controls) { const c = browserInput.controls; mountTouchOverlay(root, () => c.geometry(), () => !menus || menus.nav.isOpen); }
+/** Set by the active mode: what "Quit to main menu" must do first (save / end the P2P session / disconnect). */
+let leaveCurrent: (() => Promise<void> | void) | undefined;
+let sessionInfo: (() => { label: string; leaveLabel: string; onLeave: () => void }) | undefined;
+function startMenus(): void {
+  if (menus) return;
+  menus = new GameMenus({ root, input, onQuit: quitToMenu, session: () => sessionInfo?.() });
+}
+/** Pause menu "Quit to main menu": leave fullscreen, end the session, back to the main menu. */
+function quitToMenu(): void {
+  exitFullscreen();
+  void Promise.resolve().then(() => leaveCurrent?.()).catch(() => {}).finally(() => {
+    if (useMenu) { backToMenu(""); return; }
+    const q = new URLSearchParams(location.search); for (const k of ["offline", "menu", "server", "autoconnect"]) q.delete(k);
+    location.assign(`${location.pathname}${q.size ? `?${q}` : ""}`);
+  });
+}
 let cam = { sx: 0, sy: 0 }; // camera offset from render(), for mouse aim
 const aim = new AimResolver(input, { screenToWorld: (x, y) => iso ? iso.renderer.camera.cssToWorld(x, y) : screenToWorld(x - innerWidth / 2 + cam.sx, y - innerHeight / 2 + cam.sy) });
 /** Input actions -> the demo's action bits (server protocol `Act`); analog move/aim/edges ride along as InputFrame v2 fields. */
@@ -111,6 +139,7 @@ async function startSingleplayer(): Promise<void> {
   const local = await createLocalServer({ store: await openBrowserStore(`engine-local-${params.get("player") ?? "1"}`), bots, ...(await isoReady, iso?.registry.cosmetics?.size ? { catalog: iso.registry.cosmetics } : {}), log: (m) => console.info(`[local] ${m}`) });
   pumpLocal = local.pump;
   addEventListener("pagehide", () => { void local.game.persist?.saveAll(); });
+  leaveCurrent = async () => { await local.game.persist?.saveAll(); };
   useWorld(await session.connect("local", session.savedName ?? "", local.createTransport()));
 }
 /** P2P: return to the main menu with a one-shot notice (the menu flow is one-shot, so reload). */
@@ -135,6 +164,8 @@ async function startHost(): Promise<void> {
   pumpLocal = host.local.pump;
   const { formatRoomCode } = await import("./p2p.js");
   const end = (): void => { void host.leave().finally(() => backToMenu("Session ended.")); };
+  leaveCurrent = () => host.leave();
+  sessionInfo = () => ({ label: `Hosting · room code ${formatRoomCode(host.code)} · ${host.players().length}/${host.cap} players`, leaveLabel: "End session", onLeave: end });
   addEventListener("beforeunload", () => host.unload());
   addEventListener("pagehide", () => host.unload());
   mountP2POverlay({ mode: "host", code: formatRoomCode(host.code), cap: host.cap, players: () => host.players(), status: () => `Hosting${cap.mobile ? " (mobile)" : ""} · keep this tab open`, onLeave: end });
@@ -147,6 +178,8 @@ async function startJoin(raw: string): Promise<void> {
   const code = normalizeRoomCode(raw);
   if (!code) { backToMenu("That isn't a valid room code (6 letters/digits, e.g. ABC-234)."); return; }
   session.onEnded = (detail) => backToMenu(detail);
+  leaveCurrent = () => { session.onEnded = undefined; session.disconnect(); };
+  sessionInfo = () => ({ label: `Joined ${formatRoomCode(code)} · ${session.status}`, leaveLabel: "Leave", onLeave: () => { session.onEnded = undefined; session.disconnect(); backToMenu("You left the session."); } });
   mountP2POverlay({ mode: "guest", code: formatRoomCode(code), status: () => `Status: ${session.status}${session.detail ? ` (${session.detail})` : ""}`, onLeave: () => { session.onEnded = undefined; session.disconnect(); backToMenu("You left the session."); } });
   try { useWorld(await session.connect(`p2p:${code}`, session.savedName ?? "", guestTransport(await p2pSignaling(), code))); }
   catch (e) { session.onEnded = undefined; backToMenu(`Couldn't join ${formatRoomCode(code)}: ${e instanceof Error ? e.message : String(e)}`); }
@@ -158,18 +191,20 @@ if (boot) {
     await isoReady; boot.progress(1, "Ready");
     let notice: string | undefined; try { notice = sessionStorage.getItem(P2P_NOTICE_KEY) ?? undefined; sessionStorage.removeItem(P2P_NOTICE_KEY); } catch { /* ignore */ }
     const choice = await boot.menu({ hostedStatic: import.meta.env["VITE_DEFAULT_OFFLINE"] === "1", defaultUrl, ...(notice ? { notice } : {}) });
-    boot.hide();
+    boot.hide(); startMenus();
     if (choice.kind === "singleplayer") await startSingleplayer();
     else if (choice.kind === "host") await startHost();
     else if (choice.kind === "join") await startJoin(choice.code);
     else { // multiplayer: remote server, no local human bots
       mountConnectOverlay(session, { defaultUrl: choice.url, onConnect: connectTo, onDisconnect: () => session.disconnect() });
+      leaveCurrent = () => session.disconnect();
       connectTo(choice.url, session.savedName ?? "");
     }
   })().catch((e: unknown) => console.error("start failed", e));
 } else if (!serverParam && (params.get("offline") === "1" || (params.get("menu") === "0" && import.meta.env["VITE_DEFAULT_OFFLINE"] === "1"))) {
-  startSingleplayer().catch((e: unknown) => console.error("local server failed", e));
+  startMenus(); startSingleplayer().catch((e: unknown) => console.error("local server failed", e));
 } else {
+  startMenus(); leaveCurrent = () => session.disconnect();
   mountConnectOverlay(session, { defaultUrl, onConnect: connectTo, onDisconnect: () => session.disconnect() });
   // Reload = reconnect as the same player (account token in localStorage).
   if (session.account && session.savedUrl && params.get("autoconnect") !== "0") connectTo(serverParam ?? session.savedUrl, session.savedName ?? "");

@@ -3,6 +3,7 @@
  * GL caps/limits, atlas layers/size/downscale vs MAX_ARRAY_TEXTURE_LAYERS, VRAM, frame draw calls/sprites, entity count,
  * snapshot-received, sim tick rate, gl.getError, a centre-pixel readback, and the last error.
  */
+import { mountUi } from "./ui-root.js";
 import type { IsoRenderer } from "@engine/render";
 
 export interface DiagSources { renderer(): IsoRenderer | undefined; entities(): number; tick(): number; snapshot(): { received: boolean; latestTick: number; snapshots: number } | undefined; player(): unknown }
@@ -18,7 +19,7 @@ export function startDiag(src: DiagSources): { afterRender(): void } | undefined
   console.warn = (...a: unknown[]) => { const t = a.map(String).join(" "); if (/\[render\]|oom|exceed|incomplete/i.test(t)) lastError = "warn: " + t.slice(0, 240); cw(...a); };
   const el = document.createElement("pre"); el.id = "diag";
   el.style.cssText = "position:fixed;left:4px;top:4px;z-index:9999;margin:0;padding:6px 8px;max-width:min(96vw,560px);white-space:pre-wrap;font:11px/1.35 ui-monospace,monospace;color:#cfe;background:rgba(0,0,0,.72);border-radius:6px;pointer-events:none";
-  document.body.append(el);
+  mountUi(el);
   let t0 = performance.now(), k0 = src.tick(), rate = 0, pixel = "?", glErr = 0, want = true;
   setInterval(() => {
     const now = performance.now(), k = src.tick(); rate = ((k - k0) * 1000) / (now - t0); t0 = now; k0 = k; want = true;
