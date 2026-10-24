@@ -155,5 +155,5 @@ export const VEHICLE_REJECT_REASONS = ["dead", "already_riding", "not_vehicle", 
   "not_riding", "actor_too_far", "already_hitched", "cycle", "incompatible", "no_hitch", "not_hitched", "tow_busy", "no_station"] as const;
 /** Per-second rate limits of the vehicle commands on the wire (burst = 2x). */
 export const VEHICLE_COMMAND_RATES: Readonly<Record<string, number>> = {
-  "gameplay.vehicleEnter": 2, "gameplay.vehicleExit": 2, "gameplay.vehicleHitch": 1, "gameplay.vehicleUnhitch": 1, "gameplay.vehicleStation": 2,
+  "gameplay.vehicleEnter": 4, "gameplay.vehicleExit": 4, "gameplay.vehicleHitch": 4, "gameplay.vehicleUnhitch": 4, "gameplay.vehicleStation": 4,
 };

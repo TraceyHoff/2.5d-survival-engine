@@ -163,10 +163,10 @@ describe("vehicle command validation over the wire", () => {
     const forged = A.c.world.create(); (A.c as unknown as { netOf: Map<number, number> }).netOf.set(forged, far.id);
     expect(A.c.sendCommand(gameplayNet(VehicleEnterCmd), { target: forged, seat: 255 })).toBe(true); s.tick(4);
     expect(A.anomalies).toContain("badEntityRef"); expect(A.rej).toEqual([]); expect(s.w.has(A.e, Driver)).toBe(false);
-    for (let i = 0; i < 8; i++) A.c.sendCommand(gameplayNet(VehicleExitCmd), {} as never);
+    for (let i = 0; i < 16; i++) A.c.sendCommand(gameplayNet(VehicleExitCmd), {} as never);
     s.tick(4);
     expect(A.anomalies).toContain("rateLimited");
-    expect(A.rej.length).toBeGreaterThan(0); expect(A.rej.length).toBeLessThan(8);
+    expect(A.rej.length).toBeGreaterThan(0); expect(A.rej.length).toBeLessThan(16);
   });
   it("speed/teleport guard reverts an impossible vehicle move and reports the driver", async () => {
     const s = await setup(); const A = await s.connect();
