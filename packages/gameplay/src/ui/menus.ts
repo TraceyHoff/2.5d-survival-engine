@@ -14,7 +14,7 @@ import { BuyFromStallCmd, CollectTillCmd, SetListingCmd, SetStallNameCmd, SetSta
 import { CancelQueuedCraftCmd, MAX_CRAFT_COUNT, QueueCraftCmd, craftQueueReason, owedOf } from "../systems/craft_queue.js";
 import { pieceCost } from "../building/place.js";
 import { PaintCmd, PlaceCmd } from "../input.js";
-import { COSMETICS, EquipCosmeticCmd, SetAppearanceCmd, canEditAppearance, hasCreatedLook, unlocksOf } from "../customization.js";
+import { COSMETICS, EquipCosmeticCmd, SetAppearanceCmd, canEditAppearance, hasCreatedLook, nearWardrobe, unlocksOf } from "../customization.js";
 import { PartyAcceptCmd, PartyDeclineCmd, PartyInviteCmd, PartyKickCmd, PartyLeaveCmd, PARTY_RULES } from "../party.js";
 import { ClanAcceptCmd, ClanCreateCmd, ClanDemoteCmd, ClanDisbandCmd, ClanInviteCmd, ClanKickCmd, ClanLeaveCmd, ClanPromoteCmd, ClanSetGoalCmd, ClanSetRankPermsCmd } from "../clan.js";
 import { CLAN_GOAL_COUNT, CLAN_PERMS, clanPermBit, clanState, defaultRankMasks, type ClanPerm } from "../clan_state.js";
@@ -199,4 +199,31 @@ export const setStallOpenIntent = (stall: Entity, open: boolean): MenuIntent => 
 export function setStallNameIntent(stall: Entity, raw: string): MenuIntent {
   const bytes = Array.from(raw.replace(/[^\x20-\x7e]/g, "").slice(0, 24), (ch) => ch.charCodeAt(0));
   return intent(SetStallNameCmd, { stall, len: bytes.length, name: [...bytes, ...new Array<number>(24 - bytes.length).fill(0)] }, ["stall"]);
+}
+
+// ---- stall owner: stock + price ---------------------------------------------------------------------
+/** Owner's "list an item" form state. */
+export interface StallListDraft { listing: number; invSlot: number; count: number; priceItem: number; priceCount: number; qty: number }
+/** Price currencies offered in the owner UI: coin first, then every distinct item in the owner's pack. */
+export function priceItemChoices(c: MenuCtx): { item: number; name: string }[] {
+  const d = gameplayDefs(c.world); let coin = 0; try { coin = d.itemId("coin"); } catch { /* no coin item */ }
+  const out = coin ? [{ item: coin, name: itemName(c.world, coin) }] : [];
+  for (const s of inventoryView(c)) if (!out.some((o) => o.item === s.item)) out.push({ item: s.item, name: s.name });
+  return out;
+}
+/** Stock `count` from `invSlot` into the listing, then set its price/qty and enable it (two commands, in order). */
+export function listItemIntents(stall: Entity, d: StallListDraft): MenuIntent[] {
+  const out: MenuIntent[] = [];
+  if (d.invSlot >= 0 && d.count > 0) out.push(stockStallIntent(stall, d.listing, d.invSlot, d.count));
+  out.push(setListingIntent(stall, d.listing, d.priceItem, Math.max(1, d.priceCount), Math.max(1, d.qty), true));
+  return out;
+}
+
+// ---- interact → panel -------------------------------------------------------------------------------
+export const STALL_INTERACT_RANGE = 2.5;
+/** What the Interact action should open: a nearby stall's trade panel, else the wardrobe (character panel). */
+export function interactPanel(c: MenuCtx): { panel: "trade"; stall: Entity } | { panel: "character" } | undefined {
+  const s = nearestStall(c, STALL_INTERACT_RANGE); if (s !== undefined) return { panel: "trade", stall: s };
+  if (nearWardrobe(c.world, c.player)) return { panel: "character" };
+  return undefined;
 }

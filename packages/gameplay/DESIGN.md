@@ -536,3 +536,17 @@ build (`buildView` tier costs/affordability, variants, paintable; `placeIntent`,
 clan (`clanView` ClanStatus + ClanInvitePending + rank perms from ClanState or `defaultRankMasks`; 10 intents),
 trade stall (`nearestStall`, `stallView` listings/stock/till; buy/collect/setListing/stock/unstock/open/setStallName).
 Known gaps: `PaintCmd` is not net-bridged; clan roster/perms only cover replicated (AOI) entities until clan state syncs.
+
+## Build placement (aim point) & panel interact (slice 2)
+- `ui/placement.ts` owns placement logic + validity (pure): `buildPreviewFor(world, player, sel, rot, aim, level)` →
+  `BuildPreview { pieceKey, piece, tier, variant, paint, x, y, z, level, rot, rotSteps, valid, reason, request{x,y,rot} }`.
+  Target = aim world point (AimMode.WorldPoint) clamped to `building.buildReach`, else aim/last-move direction × min(PLACE_AHEAD=2, reach);
+  then `snapPlacement` + `validatePlacement` (reason = BuildFail, 0 = valid). `x/y/z` = snapped Transform of the piece-to-be (same as
+  a placed piece's replicated Transform), `pieceKey` = defs piece key (= manifest `building.piece` key). `rot` units = 1/`rotSteps` turn:
+  rotSteps 4 for Cell/Edge/Opening, `building.freeRotSteps` (16) for Free. No Transform facing field. `placePreviewIntent` sends PlaceCmd with `request`.
+- Client `BuildMode` (apps/client/src/build-mode.ts) pushes the "Building" input context: Build.RotateCW (R / pad RB / touch rotate),
+  RotateCCW (Q / LB), PlaceConfirm, Cancel. Existing actions; EDGE_ACTIONS unchanged (rotation is client-local). The Renderer's
+  `BuildGhost.sync` is fed every frame by `IsoView.syncGhost` (free rot quantised to quarter turns; variant passed by name).
+- `interactPanel(ctx)`: Interact near a stall (≤2.5) opens that stall's trade panel, near a wardrobe opens Character.
+- Owner stall UI: `priceItemChoices`, `listItemIntents(stall, draft)` = stockStall then setListing(enabled).
+- Panels refresh by DOM diff (`ui-diff.morph`, focus/input preserved), only while open, every 250ms (500ms low-end).

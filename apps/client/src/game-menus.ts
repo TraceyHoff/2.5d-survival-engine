@@ -8,6 +8,7 @@
  */
 import { UINav, type ContextStack } from "./ui-nav.js";
 import { loadSettings, saveSettings } from "./menu.js";
+import { morph } from "./ui-diff.js";
 import { GAMEPLAY_PANELS, gameplayBody, type GameplayPanel, type GameplaySource } from "./gameplay-panels.js";
 
 export interface MenuDef { id: string; title: string; icon: string; hotkeys: string[]; bar?: boolean; text: string }
@@ -42,7 +43,6 @@ padding:12px 14px;display:flex;flex-direction:column;gap:10px;font:600 15px Fred
 
 /** Sendable ChatChannel ids (@engine/net ChatChannel: Global 0, Local 1, Party 2, Clan 3, Trade 4). */
 export const CHAT_CHANNELS: readonly [string, number][] = [["Local", 1], ["Global", 0], ["Party", 2], ["Clan", 3], ["Trade", 4]];
-const CSS_ESCAPE = (s: string): string => s.replace(/["\\]/g, "\\$&");
 
 export interface GameMenusOptions {
   root: HTMLElement;
@@ -105,23 +105,25 @@ export class GameMenus {
   }
   private gameplayNodes(id: GameplayPanel): Node[] {
     const status = this.para(this.statusLine); status.dataset["role"] = "status"; status.setAttribute("aria-live", "polite");
-    return [status, ...gameplayBody(id, this.o.gameplay!, { para: (t) => this.para(t), rerender: () => this.refresh(), status: (t) => { this.statusLine = t; } })];
+    return [status, ...gameplayBody(id, { ...this.o.gameplay!, stall: () => this.stallTarget ?? this.o.gameplay!.stall?.() }, { para: (t) => this.para(t), rerender: () => this.refresh(), status: (t) => { this.statusLine = t; }, close: () => this.nav.closeAll() })];
   }
-  /** Re-render the open gameplay panel from live world state (after an action, or per frame/tick for craft progress), keeping focus. */
-  refresh(): void {
-    const id = this.nav.top; if (!id || !this.o.gameplay || !(GAMEPLAY_PANELS as readonly string[]).includes(id)) return;
-    const body = this.o.root.querySelector<HTMLElement>(`[data-menu="${id}"] [data-role=body]`); if (!body) return;
-    if (document.activeElement instanceof HTMLInputElement && body.contains(document.activeElement)) return; // do not wipe typing
-    const key = (document.activeElement as HTMLElement | null)?.dataset?.["key"];
-    body.replaceChildren(...this.gameplayNodes(id as GameplayPanel));
-    if (key) body.querySelector<HTMLElement>(`[data-key="${CSS_ESCAPE(key)}"]`)?.focus();
+  /** Re-render the open gameplay panel from live world state by diffing (only changed nodes are touched, focus kept).
+   *  No-op when no gameplay panel is open. Returns the number of DOM mutations. */
+  refresh(): number {
+    const id = this.nav.top; if (!id || !this.o.gameplay || !(GAMEPLAY_PANELS as readonly string[]).includes(id)) return 0;
+    const body = this.o.root.querySelector<HTMLElement>(`[data-menu="${id}"] [data-role=body]`); if (!body) return 0;
+    const next = body.cloneNode(false) as HTMLElement; next.append(...this.gameplayNodes(id as GameplayPanel));
+    return morph(body, next);
   }
+  /** Open the trade panel on a specific stall (interact). */
+  openStall(stall: number): void { this.stallTarget = stall; if (this.nav.top === "trade") this.refresh(); else this.nav.open("trade", this.build("trade")); }
+  stallTarget: number | undefined;
   /** Append an incoming chat line (from NetClient.chat). */
   pushChat(line: string): void {
     this.chatLog.push(line); if (this.chatLog.length > 200) this.chatLog.splice(0, this.chatLog.length - 200);
     const log = this.o.root.querySelector<HTMLElement>("[data-menu=chat] [data-role=chat-log]"); if (log) { log.append(this.para(line)); log.scrollTop = log.scrollHeight; }
   }
-  toggle(id: string): void { this.nav.toggle(id, () => this.build(id)); }
+  toggle(id: string): void { if (id === "trade") this.stallTarget = undefined; this.nav.toggle(id, () => this.build(id)); }
   open(id: string): void { this.nav.open(id, this.build(id)); }
   pause(): void { if (this.nav.top === "pause") return; this.nav.open("pause", this.build("pause")); }
 

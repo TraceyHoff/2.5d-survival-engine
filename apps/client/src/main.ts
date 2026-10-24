@@ -4,6 +4,7 @@ import { startDiag } from "./diag.js";
 import { installFullscreenRestore, exitFullscreen } from "./fullscreen.js";
 import { uiRoot, safeAreaInsets } from "./ui-root.js";
 import { GameMenus } from "./game-menus.js";
+import { BuildMode } from "./build-mode.js";
 import { mountTouchOverlay } from "./touch-overlay.js";
 /**
  * Client bootstrap: fixed-step loop + WebGL2 IsoRenderer view (./view.ts, Art's pack) + network session.
@@ -18,7 +19,7 @@ import { InputSystem, AimResolver, DEFAULT_ACTIONS, DEFAULT_CONTEXTS, DEFAULT_PR
 import { attachBrowserInput } from "@engine/input/browser";
 import { Act, gameplayNet, installDemoWorld } from "@engine/server/protocol";
 import { netIdOf, ChatChannel, type ChatDelivered } from "@engine/net";
-import type { MenuCtx, MenuIntent } from "@engine/gameplay";
+import { interactPanel, type MenuCtx, type MenuIntent } from "@engine/gameplay";
 import { ClientSession } from "./session.js";
 import { mountConnectOverlay } from "./connect.js";
 import { IsoView } from "./view.js";
@@ -69,7 +70,7 @@ let leaveCurrent: (() => Promise<void> | void) | undefined;
 let sessionInfo: (() => { label: string; leaveLabel: string; onLeave: () => void }) | undefined;
 function startMenus(): void {
   if (menus) return;
-  menus = new GameMenus({ root, input, onQuit: quitToMenu, session: () => sessionInfo?.(), gameplay: { ctx: menuCtx, send: sendIntent },
+  menus = new GameMenus({ root, input, onQuit: quitToMenu, session: () => sessionInfo?.(), gameplay: { ctx: menuCtx, send: sendIntent, startPlacing: (sel) => buildMode.start(sel) },
     onChat: (text, channel) => { if (!session.client?.chat.send(channel as ChatChannel, text)) menus?.pushChat("(not connected — message not sent)"); } });
 }
 /** Live data for the gameplay panels: the replicated world + local player; names via NetClient's NamesClient. */
@@ -109,7 +110,8 @@ const FRAME_MAPPING: FrameMapping = { holdBits: { Sprint: Act.Sprint, Interact: 
 const inputState = new InputState();
 function sampleInput(): { buttons: number; aimX: number; aimY: number } {
   const p = session.player; const pt = p !== undefined ? world.get(p, Transform) : undefined;
-  input.update(); input.writeFrame(inputState, FRAME_MAPPING, p !== undefined && pt ? aim.resolve(world, p, pt) : undefined);
+  input.update(); onUiFrame();
+  input.writeFrame(inputState, FRAME_MAPPING, p !== undefined && pt ? aim.resolve(world, p, pt) : undefined);
   const { tick: _t, commands: _c, actions, ...rest } = inputState.sample(world.tick);
   // Every frame field goes to NetClient (spread into its InputCmd); net encodes the v2 fields once its InputCmd carries them.
   const cmd = { buttons: actions, ...rest }; return cmd;
@@ -126,10 +128,25 @@ const placeholder = new TileMap();
 for (let y = -64; y < 96; y++) for (let x = -64; x < 96; x++) placeholder.setTile(x, y, 1 + ((x * 7 + y * 13) & 3) % 3);
 
 const colors = ["#000", "#3a5", "#495", "#874"];
+/** Build mode (aim-point placement); `buildMode.preview` is the Renderer's buildPreview. */
+const buildMode = new BuildMode({ input, ctx: () => menuCtx(), send: (i) => sendIntent(i),
+  aim: () => { const p = session.player; const pt = p !== undefined ? world.get(p, Transform) : undefined; return p !== undefined && pt ? aim.resolve(world, p, pt) : undefined; },
+  onActiveChange: (on) => { const c = browserInput.controls; if (c) c.layout = on ? buildTouchLayout : touchLayout; } });
+const buildTouchLayout = { ...DEFAULT_TOUCH_LAYOUTS.building, elements: DEFAULT_TOUCH_LAYOUTS.building.elements.filter((e) => !MENU_BAR_IDS.has(e.id)) };
+/** Per input update: build mode, and the shared Interact action (E / pad X / touch interact) opening stall / wardrobe panels. */
+function onUiFrame(): void {
+  if (menus?.nav.isOpen) { buildMode.stop(); return; }
+  if (buildMode.active) { buildMode.update(); return; }
+  if (input.pressed("Interact")) { const c = menuCtx(); const t = c && interactPanel(c); if (t?.panel === "trade") menus?.openStall(t.stall); else if (t) menus?.open("character"); }
+}
+/** Panel refresh cadence: 250ms, 500ms on low-end devices (few cores / little memory / ?gl=lowend). */
+const LOW_END = params.get("gl") === "lowend" || (navigator.hardwareConcurrency ?? 8) <= 4 || ((navigator as { deviceMemory?: number }).deviceMemory ?? 8) <= 2;
+export const MENU_REFRESH_MS = LOW_END ? 500 : 250;
 let menuRefreshAt = 0;
 function render(w: World, alpha: number): void {
   wireChat();
-  if (menus?.nav.isOpen) { const now = performance.now(); if (now >= menuRefreshAt) { menuRefreshAt = now + 250; menus.refresh(); } }
+  if (menus?.nav.isOpen) { const now = performance.now(); if (now >= menuRefreshAt) { menuRefreshAt = now + MENU_REFRESH_MS; menus.refresh(); } }
+  iso?.syncGhost(buildMode.preview, w);
   if (iso) { iso.render(w, session.client?.tiles.tiles, session.player, alpha); diag?.afterRender(); return; }
   if (!ctx) return;
   const canvas = debugCanvas;
@@ -242,3 +259,4 @@ if (params.get("hud") !== "0" && settings.showHud) mountHud(() => world, () => s
 let last = performance.now();
 function frame(now: number): void { requestAnimationFrame(frame); const dt = Math.min(now - last, 250); last = now; try { pumpLocal?.(dt); loop.advance(dt); session.poll(); } catch (e) { showRenderError("Frame error", e instanceof Error ? e.stack ?? e.message : String(e)); } }
 requestAnimationFrame(frame);
+export const buildPreview = () => buildMode.preview;

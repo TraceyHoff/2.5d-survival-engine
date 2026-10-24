@@ -9,10 +9,10 @@ import {
   buildView, cancelQueuedCraftIntent, clanAcceptIntent, clanCreateIntent, clanDemoteIntent, clanDisbandIntent, clanInviteIntent, clanKickIntent, clanLeaveIntent,
   clanPromoteIntent, clanSetGoalIntent, clanSetRankPermsIntent, clanView, collectTillIntent, craftingView, equipCosmeticIntent, inventoryView, JOB_STATE_LABEL,
   nearestStall, partyAcceptIntent, partyDeclineIntent, partyInviteIntent, partyKickIntent, partyLeaveIntent, partyView, queueCraftIntent, buyFromStallIntent,
-  setAppearanceIntent, setStallNameIntent, setStallOpenIntent, stallView, togglePermMask, wardrobeView, placeIntent,
+  setAppearanceIntent, setStallNameIntent, priceItemChoices, listItemIntents, unstockStallIntent, type StallListDraft, setStallOpenIntent, stallView, togglePermMask, wardrobeView, placeIntent,
   type BuildSelection, type MenuCtx, type MenuIntent,
 } from "@engine/gameplay";
-import { GroupRole, Transform } from "@engine/core";
+import { GroupRole, Transform, type Entity } from "@engine/core";
 
 export const GAMEPLAY_PANELS = ["inventory", "crafting", "build", "character", "party", "clan", "trade"] as const;
 export type GameplayPanel = (typeof GAMEPLAY_PANELS)[number];
@@ -21,10 +21,14 @@ export interface GameplaySource {
   ctx(): MenuCtx | undefined;
   /** Send a command intent; returns false when not connected / not bridged. */
   send(i: MenuIntent): boolean;
-  /** Build selection changed (placement ghost / place action can read it). */
+  /** Build selection changed. */
   onBuildSelect?(s: BuildSelection): void;
+  /** Enter build mode with this selection (aim-point placement, see build-mode.ts). */
+  startPlacing?(s: BuildSelection): void;
+  /** Stall the trade panel shows (set by interacting with a stall); falls back to the nearest stall. */
+  stall?(): Entity | undefined;
 }
-export interface PanelKit { para(t: string): HTMLElement; rerender(): void; status(t: string): void }
+export interface PanelKit { para(t: string): HTMLElement; rerender(): void; status(t: string): void; close(): void }
 
 const el = <K extends keyof HTMLElementTagNameMap>(tag: K, attrs: Record<string, string> = {}, text?: string): HTMLElementTagNameMap[K] => {
   const e = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) { if (k.startsWith("data-")) e.dataset[k.slice(5).replace(/-(\w)/g, (_, c: string) => c.toUpperCase())] = v; else e.setAttribute(k, v); }
@@ -38,13 +42,14 @@ const buildSel: BuildSelection = { piece: 0, tier: 0, variant: 0, paint: 0 };
 const castSel = { recipe: 0, count: 1 };
 let wardrobeSlot = 0;
 const dismissedClan = new Set<number>();
+const draft: StallListDraft = { listing: 0, invSlot: -1, count: 1, priceItem: 0, priceCount: 1, qty: 1 };
 
 export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelKit): Node[] {
   const c = src.ctx(); if (!c) return [kit.para("Join a game to use this menu.")];
   const btn = (label: string, key: string, fn: () => void, opts: { alt?: boolean; disabled?: boolean; title?: string; role?: string; pressed?: boolean } = {}): HTMLButtonElement => {
     const b = el("button", { type: "button", "data-key": key }, label); if (opts.alt) b.className = "alt"; if (opts.disabled) b.disabled = true; if (opts.title) { b.title = opts.title; b.setAttribute("aria-label", `${label}. ${opts.title}`); }
     if (opts.role) b.dataset["role"] = opts.role; if (opts.pressed !== undefined) b.setAttribute("aria-pressed", String(opts.pressed));
-    b.addEventListener("click", fn); return b;
+    b.onclick = fn; return b; // property (not listener) so the diffing refresh can swap in fresh closures
   };
   const send = (i: MenuIntent, ok: string): void => { kit.status(src.send(i) ? ok : "Not connected."); kit.rerender(); };
   switch (id) {
@@ -77,7 +82,7 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
         if (sel.paintable) { out.push(heading("Tint")); const pg = grid(); for (let i = 0; i < 6; i++) pg.append(btn(i ? `Tint ${i}` : "Clan / none", `tint-${i}`, () => { buildSel.paint = i; src.onBuildSelect?.({ ...buildSel }); kit.rerender(); }, { pressed: i === buildSel.paint, alt: i !== buildSel.paint })); out.push(pg); }
         const t = sel.tiers.find((x) => x.tier === buildSel.tier) ?? sel.tiers[0]!;
         out.push(kit.para(`Cost: ${t.cost.map((x) => `${x.name} ${x.have}/${x.count}`).join(", ") || "free"}`));
-        const a = grid(); a.append(btn("Place in front of me", "place", () => { const tr = c.world.get(c.player, Transform); if (!tr) return; const f = (tr as { facing?: number }).facing ?? 0; send(placeIntent(buildSel, { x: tr.x + Math.cos(f) * 1.5, y: tr.y + Math.sin(f) * 1.5 }), "Placing…"); }, { disabled: !t.affordable })); out.push(a);
+        const a = grid(); a.append(btn("Place (aim to position · R / RB / ⟳ rotate)", "place", () => { if (!src.startPlacing) { kit.status("Placement unavailable."); return; } src.startPlacing({ ...buildSel }); kit.close(); }, { disabled: !t.affordable || !src.startPlacing })); out.push(a);
       }
       return out;
     }
@@ -124,7 +129,7 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       out.push(a); return out;
     }
     case "trade": {
-      const s = nearestStall(c); const v = s !== undefined ? stallView(c, s) : undefined; if (!v) return [kit.para("Walk up to a trade stall to browse it.")];
+      const s = src.stall?.() ?? nearestStall(c); const v = s !== undefined ? stallView(c, s) : undefined; if (!v) return [kit.para("Walk up to a trade stall to browse it.")];
       const out: Node[] = [kit.para(`${v.name || "Trade stall"} · ${v.open ? "open" : "closed"}`)]; const g = grid();
       for (const l of v.listings) { if (!l.stockItem && !v.mine) continue; const label = l.stockItem ? `${l.stockName} ×${l.qty || 1} — ${l.priceCount} ${l.priceName} (stock ${l.stock})` : `Empty listing ${l.slot + 1}`;
         g.append(btn(label, `listing-${l.slot}`, () => send(buyFromStallIntent(v, l, 1), `Bought ${l.stockName}.`), { role: "listing", disabled: v.mine || !v.open || !l.enabled || !l.stockItem || l.stock < Math.max(1, l.qty), alt: !l.canAfford, title: l.canAfford ? "Buy" : `Need ${l.priceCount} ${l.priceName}` })); }
@@ -134,8 +139,31 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
         const name = el("input", { "data-role": "stall-name", maxlength: "24", "aria-label": "Stall name", placeholder: "Stall name" }); name.value = v.name;
         const a = grid(); a.append(btn("Collect till", "collect", () => send(collectTillIntent(v.stall), "Collected."), { disabled: !v.till.length }),
           btn(v.open ? "Close stall" : "Open stall", "open", () => send(setStallOpenIntent(v.stall, !v.open), v.open ? "Closed." : "Opened."), { alt: true }),
-          btn("Rename", "rename", () => send(setStallNameIntent(v.stall, name.value), "Renamed.")));
+          btn("Rename", "rename", () => { const live = document.querySelector<HTMLInputElement>("[data-role=stall-name]") ?? name; send(setStallNameIntent(v.stall, live.value), "Renamed."); }));
         out.push(name, a);
+        // ---- stock + price a listing: pick listing, pick an inventory slot, set price / qty / count, List it ----
+        const inv = inventoryView(c); const prices = priceItemChoices(c);
+        if (draft.listing >= v.listings.length) draft.listing = 0;
+        if (!prices.some((p) => p.item === draft.priceItem)) draft.priceItem = prices[0]?.item ?? 0;
+        const slot = inv.find((x) => x.slot === draft.invSlot); if (!slot) draft.invSlot = -1; draft.count = Math.max(1, Math.min(draft.count, slot?.count ?? 1));
+        const cur = v.listings[draft.listing];
+        out.push(heading("Stock & price"));
+        const lg = grid(); for (const l of v.listings) lg.append(btn(`Listing ${l.slot + 1}${l.stockItem ? `: ${l.stockName}` : ""}`, `draft-listing-${l.slot}`, () => { draft.listing = l.slot; if (l.priceItem) { draft.priceItem = l.priceItem; draft.priceCount = l.priceCount; draft.qty = Math.max(1, l.qty); } kit.rerender(); }, { pressed: l.slot === draft.listing, alt: l.slot !== draft.listing }));
+        out.push(lg, kit.para("Item to stock:"));
+        const ig = grid(); for (const x of inv) ig.append(btn(`${x.name} ×${x.count}`, `draft-slot-${x.slot}`, () => { draft.invSlot = x.slot; draft.count = x.count; kit.rerender(); }, { pressed: x.slot === draft.invSlot, alt: x.slot !== draft.invSlot, title: x.tooltip }));
+        if (!inv.length) out.push(kit.para("Nothing in your pack to stock.")); else out.push(ig);
+        const priceName = prices.find((p) => p.item === draft.priceItem)?.name ?? "—";
+        const step = (k: "count" | "priceCount" | "qty", d: number, max = 9999): void => { draft[k] = Math.max(1, Math.min(max, draft[k] + d)); kit.rerender(); };
+        const fg = grid();
+        fg.append(btn(`Price in: ${priceName}`, "draft-price-item", () => { const i = prices.findIndex((p) => p.item === draft.priceItem); draft.priceItem = prices[(i + 1) % Math.max(1, prices.length)]?.item ?? 0; kit.rerender(); }, { disabled: prices.length < 2, title: "Cycle currency" }),
+          btn("Price −", "draft-price-dec", () => step("priceCount", -1)), btn(`Price ${draft.priceCount}`, "draft-price", () => step("priceCount", 10), { alt: true, title: "+10" }), btn("Price +", "draft-price-inc", () => step("priceCount", 1)),
+          btn("Per sale −", "draft-qty-dec", () => step("qty", -1)), btn(`Per sale ${draft.qty}`, "draft-qty", () => step("qty", 1), { alt: true }), btn("Per sale +", "draft-qty-inc", () => step("qty", 1)),
+          btn("Stock −", "draft-count-dec", () => step("count", -1, slot?.count ?? 1), { disabled: !slot }), btn(`Stock ${slot ? draft.count : 0}`, "draft-count", () => { draft.count = slot?.count ?? 1; kit.rerender(); }, { alt: true, disabled: !slot, title: "All" }), btn("Stock +", "draft-count-inc", () => step("count", 1, slot?.count ?? 1), { disabled: !slot }));
+        out.push(fg);
+        const lgo = grid();
+        lgo.append(btn(slot ? `List ${draft.count} ${slot.name} for ${draft.priceCount} ${priceName} / ${draft.qty}` : `Update price: ${draft.priceCount} ${priceName} / ${draft.qty}`, "draft-list", () => { let ok = true; for (const i of listItemIntents(v.stall, draft)) ok = src.send(i) && ok; draft.invSlot = -1; kit.status(ok ? "Listed." : "Not connected."); kit.rerender(); }, { disabled: !draft.priceItem || (!slot && !cur?.stockItem) }),
+          btn("Unstock listing", "draft-unstock", () => send(unstockStallIntent(v.stall, draft.listing, cur?.stock ?? 0), "Unstocked."), { alt: true, disabled: !cur?.stock }));
+        out.push(lgo);
       }
       return out;
     }

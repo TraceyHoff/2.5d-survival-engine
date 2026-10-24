@@ -11,7 +11,7 @@ import { showRenderError, glInfo, frameIsBlack } from "./glcheck.js";
 import { World, Transform, PrevTransform, TimeOfDay, Weather, Appearance, PlayerId, defineComponent, entityIndex, type Entity } from "@engine/core";
 import { CHUNK_SIZE, tileToChunk, tileToLocal, type TileMap } from "@engine/world";
 import { loadManifest, mergeManifests, buildPieceVisual, type AssetRegistry, type ManifestFragment, type ManifestJson } from "@engine/assets";
-import { IsoRenderer, Sprite, Shadow, LightSource, Occluder, SpriteFlag, sourcesFromManifest, coreAppearanceBinding } from "@engine/render";
+import { BuildGhost, IsoRenderer, Sprite, Shadow, LightSource, Occluder, SpriteFlag, sourcesFromManifest, coreAppearanceBinding } from "@engine/render";
 import { gameplayDefs, animalDefs, Animal, Health, Survival, Zombie, ResourceNode, CraftingStation, Fuel, AnimState as GAnim, BuildPiece as GPiece, Dead, Wetness, BodyTemp, Emitter, PieceLink } from "@engine/gameplay";
 
 /** Render-side schemas the renderer's bindings expect (view World only). */
@@ -96,6 +96,17 @@ export class IsoView {
     const view = new IsoView(renderer, registry, ov, lights); view.base = base; return view;
   }
 
+  private ghost: BuildGhost | undefined;
+  /** Build-placement ghost from the client's buildMode.preview (call every frame; undefined removes it). Free-rotation
+   *  pieces (rotSteps 16) are shown at the nearest quarter turn; variant goes by name (defs variantNames). */
+  syncGhost(p: import("@engine/gameplay").BuildPreview | undefined, net: World): void {
+    if (!p && !this.ghost) return;
+    this.ghost ??= new BuildGhost(this.view, VPiece as never, this.registry);
+    if (!p) { this.ghost.sync(null); return; }
+    const names = gameplayDefs(net).pieces.get(p.piece)?.variantNames ?? [];
+    const rot = p.rotSteps === 4 ? p.rot & 3 : Math.round((p.rot * 4) / p.rotSteps) & 3;
+    this.ghost.sync({ pieceKey: p.pieceKey, x: p.x, y: p.y, rot, valid: p.valid }, { z: p.z, level: p.level, ...(names[p.variant] ? { variant: names[p.variant]! } : { variant: p.variant }) });
+  }
   resize(w: number, h: number, dpr: number): void {
     const safe = new URLSearchParams(location.search).get("safe") === "1";
     try { this.renderer.resize(w, h, safe ? 1 : Math.min(2, dpr)); } catch (e) { showRenderError("Resize failed", `${e instanceof Error ? e.message : String(e)}\n${glInfo(this.renderer.gl)}`); }

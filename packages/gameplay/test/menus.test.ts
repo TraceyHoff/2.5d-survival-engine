@@ -79,3 +79,22 @@ describe("menu view-models", () => {
     expect(G.collectTillIntent(stall).cmd).toBe(G.CollectTillCmd);
   });
 });
+
+describe("build placement preview", () => {
+  it("clamps world-point aim to reach, snaps, validates, rotates and builds the PlaceCmd", () => {
+    const { w, mk } = setup(); const a = mk(7, "Ada"); const reach = G.gameplayDefs(w).building.buildReach;
+    const p = [...d.pieces.values()].find((x) => x.placement === G.Placement.Cell)!;
+    const sel = { piece: p.id, tier: 0, variant: 0, paint: 0 };
+    const far = G.buildPreviewFor(w, a, sel, 0, { x: 50, y: 0, mode: 1 })!;
+    expect(far.pieceKey).toBe(p.key); expect(far.request.x).toBeCloseTo(reach); expect(far.rotSteps).toBe(4);
+    expect(far.valid).toBe(far.reason === 0);
+    const dir = G.buildPreviewFor(w, a, sel, 1, { x: 0, y: -1, mode: 0 })!;
+    expect(dir.request).toMatchObject({ x: 0, y: -G.PLACE_AHEAD, rot: 1 });
+    expect(G.rotateStep(w, p.id, 3, 1)).toBe(0); expect(G.rotateStep(w, p.id, 0, -1)).toBe(3);
+    expect(G.placePreviewIntent(dir)).toMatchObject({ cmd: G.PlaceCmd, args: { piece: p.id, x: 0, y: -G.PLACE_AHEAD, rot: 1 } });
+    // unaffordable tiered piece is invalid with a BuildFail reason
+    const tiered = [...d.pieces.values()].find((x) => x.tiered)!;
+    const bad = G.buildPreviewFor(w, a, { piece: tiered.id, tier: 1, variant: 0, paint: 0 }, 0, { x: 1, y: 0, mode: 1 })!;
+    expect(bad.valid).toBe(false); expect(bad.reason).not.toBe(0);
+  });
+});

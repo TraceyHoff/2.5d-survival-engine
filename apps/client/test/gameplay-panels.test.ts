@@ -63,4 +63,15 @@ describe("gameplay panels (ADR-095 shell)", () => {
     expect(got).toEqual([["hi party", 2]]);
     menus.pushChat("[Party] Bob: yo"); expect(q("[data-role=chat-log]").textContent).toContain("Bob: yo"); menus.destroy();
   });
+  test("interact opens a stall's trade panel; owner stock & price UI sends stockStall + setListing", () => {
+    const { w, me, sent, menus } = setup(); G.addItem(w, me, id("wood"), 5, 7);
+    const sn = G.snapPlacement(w, { piece: d.pieceId("stall_booth"), x: 1, y: 1, level: 0, rot: 0, tier: 0, variant: 0 });
+    if (typeof sn === "number") throw new Error("snap"); const stall = G.stallOf(w, G.placePiece(w, me, sn, { pay: false }))!;
+    const t = G.interactPanel({ world: w, player: me, names: new Map() }); expect(t).toEqual({ panel: "trade", stall });
+    menus.openStall(stall); const modal = q("[data-menu=trade]"); expect(menus.nav.isOpen).toBe(true);
+    const slot = modal.querySelector<HTMLButtonElement>("[data-key^=draft-slot-]"); expect(slot).toBeTruthy(); slot!.click();
+    q("[data-menu=trade] [data-key=draft-list]").click();
+    const cmds = sent.map((x) => x.cmd); expect(cmds).toContain(G.StockStallCmd); expect(cmds).toContain(G.SetListingCmd);
+    menus.destroy();
+  });
 });
