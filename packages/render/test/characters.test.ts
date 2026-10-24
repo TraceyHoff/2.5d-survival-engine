@@ -122,3 +122,19 @@ describe("ADR-082 layer tint contract", () => {
     expect(cache.resolves).toBe(3); expect(seen[2]).toEqual({ anim: "hurt", expression: "smile" });
   });
 });
+
+describe("paperDollDepth (53806f7 lift)", () => {
+  // the sprite VS depth for a non-footprint sprite: key + 0.02 + max(hp + footDy, 0) * zPerPx
+  const vs = (key: number, footDy: number, hp: number, z: number) => key + 0.02 + Math.max(hp + footDy, 0) * z;
+  it("keeps the pivot / above-pivot depth of the unlifted sprite and stays linear (no clamp) below the pivot", async () => {
+    const { paperDollDepth } = await import("../src/sprites.js");
+    const z = (1 / 3) / 16, key = 7.25; const d = paperDollDepth(key, 60, 54, 1.5, z);
+    expect(d.footDy).toBeCloseTo((6 + 24) * 1.5);
+    for (const hp of [0, 1, 30, 90]) expect(vs(d.key, d.footDy, hp, z)).toBeCloseTo(vs(key, 0, hp, z), 9);
+    // below the pivot (down to the lifted extent) the slope continues: two quads with different extents share one plane
+    const slope = (a: number, b: number) => (vs(d.key, d.footDy, a, z) - vs(d.key, d.footDy, b, z)) / (a - b);
+    expect(slope(-9, 40)).toBeCloseTo(z, 9); expect(slope(-30, 10)).toBeCloseTo(z, 9);
+    // the uncompensated lift (53806f7 as pushed) moved the whole character forward by footDy x zPerPx (~0.9 tile here)
+    expect(vs(key, d.footDy, 0, z) - vs(key, 0, 0, z)).toBeGreaterThan(0.5);
+  });
+});

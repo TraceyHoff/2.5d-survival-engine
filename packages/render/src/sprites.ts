@@ -34,6 +34,14 @@ const OPEN = 1e5;
 export const LAYER_BIAS = 0.001;
 /** Frame px of slack below the body cell for wear cells / outline that reach lower than the body (see paper-doll depth). */
 const CHAR_DEPTH_MARGIN = 24;
+/**
+ * Paper-doll depth for a dressed character: footDy (sliceFootDy, o[15]) lifts every vertex above the below-pivot extent
+ * so the shader's per-vertex max(hp + footDy, 0) never clamps (body / trimmed wear / held quads share one depth slope),
+ * and the drawn key drops by footDy x zPerPx so the depth at and above the pivot equals the unlifted max(hp, 0) one.
+ */
+export function paperDollDepth(key: number, frameH: number, anchorY: number, scale: number, zPerPx: number): { footDy: number; key: number } {
+  const footDy = (Math.max(0, frameH - anchorY) + CHAR_DEPTH_MARGIN) * scale; return { footDy, key: key - footDy * zPerPx };
+}
 /** Render-internal instance flag (above the u8 SpriteFlag range): draw only the outline ring of this frame. */
 export const OUTLINE_ONLY = 256;
 
@@ -636,7 +644,9 @@ export class SpriteBatch {
       // pivot gets a flatter interpolated depth slope than one that doesn't. Body and wear quads have different extents
       // (trimmed wear cells), so their slopes crossed and the body won below a straight line through the hat. Lift the whole
       // character by its below-pivot extent (same sliceFootDy channel held items use) so no vertex clamps: identical slope.
-      if (bodyL) o0[15] = (Math.max(0, res.h - res.ay) + CHAR_DEPTH_MARGIN) * scale;
+      // ...and the drawn key drops by the same lift x uZPerPx (paperDollDepth): pivot depth unchanged, so dressed characters
+      // do not sort ahead of walls/props they stand behind. `key` (occlusion tests) is not changed.
+      let dkey = key; if (bodyL) { const pd = paperDollDepth(key, res.h, res.ay, scale, this.zFactor / this.iso.zStep); o0[15] = pd.footDy; o0[2] = dkey = pd.key; }
       if (e === this.focusEntity && occ.silhouette) { this.silInst.set(o0.subarray(0, INSTANCE_FLOATS)); this.silInst[27] = 0; this.silOn = true; }
       this.pushOcc(o0, 0, occT, occ.mode);
       let dress = true;
@@ -668,17 +678,17 @@ export class SpriteBatch {
           if (!okL) continue;
           o0.set(base); o0[4] = lr.entry; o0[8] = lr.ax; o0[9] = lr.ay; o0[16] = 0;
           if (outlineOn && l.outline && !(sp.data.flags[k]! & SpriteFlag.NoOutline)) {
-            o0[2] = key - LAYER_BIAS * 0.5; o0[5] = (base[5]! & ~SpriteFlag.NoOutline) | OUTLINE_ONLY;
+            o0[2] = dkey - LAYER_BIAS * 0.5; o0[5] = (base[5]! & ~SpriteFlag.NoOutline) | OUTLINE_ONLY;
             this.pushOcc(o0, 0, occT, occ.mode); this.layerInstances++;
           }
-          o0[2] = key + j * LAYER_BIAS; o0[5] = base[5]! | SpriteFlag.NoOutline;
+          o0[2] = dkey + j * LAYER_BIAS; o0[5] = base[5]! | SpriteFlag.NoOutline;
           this.writeLayerTint(o0, l);
           this.pushOcc(o0, 0, occT, occ.mode); this.layerInstances++;
         }
         o0.set(base);
         if (nearC && this.nearN < this.nearInfo.length) this.nearN++;
       }
-      if (eq && heldOf) { const s2 = eq.slot(i); if (s2 >= 0) this.emitHeld(atlas, heldOf, eq.data.mainHandItem[s2]!, res, sx, sy, key, scale, f, (sp.data.flags[k]! & SpriteFlag.FlipX) !== 0, fade, occT, occ.mode, bodyL ? o0[15]! : 0); }
+      if (eq && heldOf) { const s2 = eq.slot(i); if (s2 >= 0) this.emitHeld(atlas, heldOf, eq.data.mainHandItem[s2]!, res, sx, sy, dkey, scale, f, (sp.data.flags[k]! & SpriteFlag.FlipX) !== 0, fade, occT, occ.mode, bodyL ? o0[15]! : 0); }
     };
     if (cx.spatial) {
       // chunk-level culling through the shared spatial index
