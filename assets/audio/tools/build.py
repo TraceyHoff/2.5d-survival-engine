@@ -205,12 +205,14 @@ def render_sfx(r, rng):
         return S.splash(rng, dur, f, "pour")
     if key in ("farm.plant", "farm.fertilize"):
         return S.rustle(rng, dur, f, "plant" if key == "farm.plant" else "")
-    if p[0] == "ui":
+    if p[0] in ("ui", "horde"):
         return render_ui(key, rng, dur, f)
     raise KeyError(key)
 
 
 def render_ui(key, rng, dur, f):
+    if key.startswith("horde."):
+        return S.horde(rng, dur, f if f > 200 else 523.25, key.split(".")[1])
     k = key[3:]
     if k == "click":
         return S.pop_blip(rng, f * rng.uniform(0.6, 0.7), dur, 1.5) * 0.7 + S.click(rng, dur, f) * 0.4

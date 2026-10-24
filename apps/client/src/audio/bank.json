@@ -4123,6 +4123,10 @@
   },
   "horde.warning": {
    "bus": "ui",
+   "files": [
+    "audio/ui/horde_warning_1",
+    "audio/ui/horde_warning_2"
+   ],
    "volume": 0.75,
    "pitchJitter": 0.02,
    "volumeJitter": 0.12,
@@ -4137,6 +4141,10 @@
   },
   "horde.spawn": {
    "bus": "ui",
+   "files": [
+    "audio/ui/horde_spawn_1",
+    "audio/ui/horde_spawn_2"
+   ],
    "volume": 0.8,
    "pitchJitter": 0.02,
    "volumeJitter": 0.12,
@@ -4151,6 +4159,9 @@
   },
   "horde.defeated": {
    "bus": "ui",
+   "files": [
+    "audio/ui/horde_defeated_1"
+   ],
    "volume": 0.6,
    "pitchJitter": 0.02,
    "volumeJitter": 0.12,

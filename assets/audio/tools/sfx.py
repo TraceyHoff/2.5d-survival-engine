@@ -721,3 +721,36 @@ def bell(rng, dur, f):
     for at in (0.0, rng.uniform(0.12, 0.18)):
         place(y, modal([f, f * 1.48, f * 2.1, f * 2.76], [0.25, 0.18, 0.12, 0.08], [1, 0.6, 0.35, 0.2], n, rng, 0.003), at)
     return S_(y)
+
+
+def horde(rng, dur, f, kind="warning"):
+    """Horde event cues: goofy-ominous groan choir + horn, silly burst, cheerful victory flourish."""
+    n = n_(dur)
+    y = np.zeros(n)
+    if kind == "warning":
+        # a chorus of wobbly zombie groans swelling in from the distance (lowpass opens as they approach)
+        for _ in range(6):
+            g = zombie(rng, dur * rng.uniform(0.7, 0.95), rng.uniform(85, 150), "idle")
+            place(y, fade(g, 0.02, 0.15) * rng.uniform(0.25, 0.4), rng.uniform(0, dur * 0.25))
+        y = sweep_lp(y, np.geomspace(500, 4000, n)) * np.linspace(0.3, 1, n)
+        # silly-ominous horn: low two-note "bwaa-BWAAH" on a rising minor third
+        for at, ff, L in [(0.15, 110, 0.8), (1.05, 131, 1.5)]:
+            m = n_(L)
+            ph = phase(ff * (1 + 0.01 * np.sin(2 * np.pi * 5 * np.arange(m) / SR)))
+            s = sum(a * np.sin(k * ph) for k, a in enumerate([1, 0.7, 0.5, 0.35, 0.2, 0.1], 1))
+            place(y, fade(lp(s, 1400) * env_ad(m, 0.06, L, 0.4), 0.01, 0.08) * 0.5, at)
+        y = reverb(y, rng, 0.5, 0.3)
+    elif kind == "spawn":
+        # silly burst: puff of dirt, a few comic pops, then a squabbling clump of groans
+        place(y, boom(rng, 0.6, 70) * 0.3, 0.0)
+        for i in range(5):
+            place(y, pop_blip(rng, rng.uniform(250, 600), 0.09, 1.6) * 0.5, 0.05 + i * rng.uniform(0.05, 0.09))
+        for _ in range(5):
+            g = zombie(rng, rng.uniform(0.8, 1.5), rng.uniform(95, 170), str(rng.choice(["chase", "idle"])))
+            place(y, fade(g, 0.02, 0.15) * rng.uniform(0.5, 0.7), rng.uniform(0.25, 0.8))
+        y = reverb(y, rng, 0.3, 0.2)
+    else:  # defeated: cheerful major flourish with a sparkle and a tiny 'ta-da'
+        place(y, fade(fanfare(rng, dur * 0.8, f), 0.002, 0.35), 0.0)
+        for i, r in enumerate([2.0, 2.5]):
+            place(y, fade(chime_note(rng, f * r * 2, 0.6, 0.25, 0.4), 0.001, 0.2) * 0.35, 0.55 + 0.12 * i)
+    return S_(fade(y[:n], 0.002, 0.35 if kind == "defeated" else 0.15))
