@@ -79,5 +79,10 @@ if __name__ == '__main__':
     man["atlases"].append({"key": "building_fx", "image": "atlases/building_fx.png", "frameW": CW, "frameH": CH, "columns": 3, "rows": 1})
     man["sprites"].insert(0, {"key": "bld_crack", "category": "vfx", "atlas": "building_fx", "anchor": anchor,
                               "animations": {f"stage{s}": {"frames": [s - 1], "fps": 1} for s in (1, 2, 3)}})
+    # ADR-112/113 decor: own pages (1x + @2x + tintmask), one per group x cell class; see decor/lib.py
+    import decor
+    st, dclip = decor.emit(man, OUT, decor.GROUPS, prev=os.environ.get('DECOR_PREVIEW'))
+    for a in st: print(*a)
+    print('decor clipped:', dclip)
     p = f'{OUT}/manifest.building.json'; json.dump(man, open(p, 'w'), indent=1); open(p, 'a').write('\n')
     import pickle; pickle.dump({k: [im for im, _ in v] for k, v in R.items()}, open('/tmp/bld_frames.pkl', 'wb'))

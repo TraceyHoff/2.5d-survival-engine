@@ -81,6 +81,22 @@
     }
    ],
    "ktx2": "atlases/items_held_c.ktx2"
+  },
+  {
+   "key": "items_skills",
+   "image": "atlases/items_skills.png",
+   "frameW": 32,
+   "frameH": 32,
+   "columns": 16,
+   "rows": 9,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/items_skills@2x.png",
+     "ktx2": "atlases/items_skills@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/items_skills.ktx2"
   }
  ],
  "sprites": [
@@ -4833,6 +4849,23 @@
    }
   },
   {
+   "key": "animal_feed",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      200
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
    "key": "held_bone_knife",
    "category": "equipment",
    "atlas": "items_held_c",
@@ -4886,6 +4919,2267 @@
      "fps": 1,
      "directions": 8,
      "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "skill_branch_survival",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_branch_combat",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_branch_crafting",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_branch_farming",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_branch_husbandry",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_branch_cooking",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      5
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_branch_medicine",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      6
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_branch_building",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      7
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_branch_vehicles",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_branch_stealth",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      9
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_branch_leadership",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      10
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_forager",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      11
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_pack_mule",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_firekeeper",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      13
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_iron_stomach",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      14
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_scavenger",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      15
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_beast_of_burden",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_ember_saver",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      17
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_hardy",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      18
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_lumberjack",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      19
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_wilderness_master",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      20
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_brawler",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      21
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_battle_hardened",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      22
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_blade_training",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      23
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_blade_expert",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      24
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_blade_mastery",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      25
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_blunt_training",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      26
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_blunt_expert",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      27
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_blunt_mastery",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      28
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_axe_training",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      29
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_axe_expert",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      30
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_axe_mastery",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      31
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_spear_training",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      32
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_spear_expert",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      33
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_spear_mastery",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      34
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_bow_training",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      35
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_bow_expert",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      36
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_bow_mastery",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      37
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_crossbow_training",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      38
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_crossbow_expert",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      39
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_crossbow_mastery",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      40
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_firearm_training",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      41
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_firearm_expert",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      42
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_firearm_mastery",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      43
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_berserker",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      44
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_deadeye",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      45
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_tinkerer",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      46
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_smithing_1",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      47
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_smithing_2",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      48
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_smithing_3",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      49
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_armorsmithing_1",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      50
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_armorsmithing_2",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      51
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_armorsmithing_3",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      52
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_tailoring_1",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      53
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_tailoring_2",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      54
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_tailoring_3",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      55
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_chemistry_1",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      56
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_chemistry_2",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      57
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_demolitions_1",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      58
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_demolitions_2",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      59
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_demolitions_3",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      60
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_bowyery_1",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      61
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_bowyery_2",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      62
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_bowyery_3",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      63
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_gunsmithing_1",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      64
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_gunsmithing_2",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      65
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_gunsmithing_3",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      66
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_gunsmithing_4",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      67
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_green_thumb",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      68
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_composter",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      69
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_seed_saver",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      70
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_irrigator",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      71
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_orchardist",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      72
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_herbalist",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      73
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_master_farmer",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      74
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_monoculture",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      75
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_husbandry_1",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      76
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_husbandry_pens",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      77
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_husbandry_gentle",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      78
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_husbandry_dairy",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      79
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_husbandry_breeding",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      80
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_husbandry_whisperer",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      81
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_husbandry_rancher",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      82
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_husbandry_butcher",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      83
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_camp_cook",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      84
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_seasoning",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      85
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_preserver",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      86
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_baker",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      87
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_brewer",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      88
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_butcher_block",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      89
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_gourmet",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      90
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_glutton",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      91
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_master_chef",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      92
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_first_aid",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      93
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_field_medic",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      94
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_apothecary",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      95
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_triage",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      96
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_antiseptics",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      97
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_surgeon",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      98
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_pharmacologist",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      99
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_doctor",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      100
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_carpenter",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      101
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_mason",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      102
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_joiner",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      103
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_architect",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      104
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_fortifier",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      105
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_interior_designer",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      106
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_hearth_builder",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      107
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_master_builder",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      108
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_grease_monkey",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      109
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_mechanic_2",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      110
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_hauler",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      111
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_fuel_economist",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      112
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_mechanic_3",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      113
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_road_warrior",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      114
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_mechanic_4",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      115
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_salvager",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      116
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_light_step",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      117
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_shadow",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      118
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_backstabber",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      119
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_silent_hunter",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      120
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_assassin",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      121
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_ghost",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      122
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_phantom",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      123
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_light_pack",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      124
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_rally",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      125
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_mentor",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      126
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_quartermaster",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      127
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_diplomat",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      128
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_warlord",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      129
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_commander",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      130
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_chieftain",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      131
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_tactician",
+   "category": "ui",
+   "atlas": "items_skills",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      132
+     ],
+     "fps": 1
     }
    }
   }

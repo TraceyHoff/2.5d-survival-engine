@@ -46,6 +46,32 @@
    "columns": 3,
    "rows": 1,
    "ktx2": "atlases/building_fx.ktx2"
+  },
+  {
+   "key": "decor_farm_w",
+   "image": "atlases/decor_farm_w.png",
+   "frameW": 104,
+   "frameH": 120,
+   "columns": 6,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/decor_farm_w@2x.png",
+     "ktx2": "atlases/decor_farm_w@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/decor_farm_w.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/decor_farm_w.tintmask.png"
+   },
+   "residency": "stream",
+   "ktx2": "atlases/decor_farm_w.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/decor_farm_w.tintmask.ktx2"
+   }
   }
  ],
  "sprites": [
@@ -6150,6 +6176,218 @@
       217,
       218,
       219
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_feeding_trough",
+   "category": "building",
+   "atlas": "decor_farm_w",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "feeding_trough",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_feeding_trough__wood",
+   "category": "building",
+   "atlas": "decor_farm_w",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "feeding_trough@wood",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_feeding_trough__stone",
+   "category": "building",
+   "atlas": "decor_farm_w",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "feeding_trough@stone",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      2,
+      2,
+      2,
+      2
+     ],
+     [
+      3,
+      3,
+      3,
+      3
+     ],
+     [
+      2,
+      2,
+      2,
+      2
+     ],
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_feeding_trough__hay",
+   "category": "building",
+   "atlas": "decor_farm_w",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "feeding_trough@hay",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      4,
+      4,
+      4,
+      4
+     ],
+     [
+      5,
+      5,
+      5,
+      5
+     ],
+     [
+      4,
+      4,
+      4,
+      4
+     ],
+     [
+      5,
+      5,
+      5,
+      5
      ]
     ],
     "crackOverlay": "bld_crack"

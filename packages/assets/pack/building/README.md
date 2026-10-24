@@ -9,3 +9,11 @@ then `python3 ../../../../assets/tools/ktx2.py manifest.building.json` (in pack/
 - Rotation rows: symmetric pieces 1 row (`mirror`), axis pieces (walls, ceilings with an axis, gable) 2 drawn rows as `[r0,r1,r0,r1]` `unique4`, asymmetric pieces 4 rows.
 - Cells cropped from the 128x128 render cell at (22,24) to 84x96; pivot (42,72). Pages 2016x1056, one per tier, 1x only.
 - `roof_chimney` has a `smoke` attach point.
+
+## Decor (ADR-112 / ADR-113)
+
+`src/decor/` (called from `build.py`) renders `$decor` pieces from `gameplay/data/pieces.json` onto their own pages
+`decor_<group>_<cell>` (1x + `@2x`, each with a `tintmask` R = paint / G = secondary-pattern). Sprites: `dec_<key>`
+(bare key, first variant) and `dec_<key>__<variant>` (`building.piece = "<key>@<variant>"`). Same rotation-row rules as
+above; `residency: "stream"`; one baked damage stage (`[f,f,f,f]`) plus `bld_crack`. Groups are appended in `decor/__init__.py` `GROUPS`, never
+reordered, so earlier pages stay byte-identical. Previews: `DECOR_PREVIEW=<dir> python3 build.py ..`.
