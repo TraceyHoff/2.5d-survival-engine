@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 // fake-indexeddb is a dev dependency of @engine/persist (not re-declared here to avoid an install in this app).
+// @ts-expect-error untyped relative path into persist's dev dependency
 import { IDBFactory } from "../../../packages/persist/node_modules/fake-indexeddb/build/esm/index.js";
 import { IndexedDbWorldStore } from "@engine/persist";
 import { createLocalServer } from "../src/local.js";
