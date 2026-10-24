@@ -7,7 +7,7 @@
 import { DEFAULT_TICK_HZ, Transform, Weather, entityIndex, type Entity, type World } from "@engine/core";
 import { installSpatialIndex } from "@engine/world";
 import raw from "../data/farming.json";
-import { Crop, Dead, Equipment, IntentAction, PlayerIntent, ResourceNode } from "./components.js";
+import { BuildPiece, Crop, Dead, Equipment, IntentAction, PlayerIntent, ResourceNode } from "./components.js";
 import { gameplayDefs, isAuthority } from "./config.js";
 import { countItem, slotItem, takeFromSlot } from "./inventory.js";
 import { emit, FarmFailed } from "./events.js";
@@ -42,6 +42,11 @@ function near(world: World, x: number, y: number, r: number): Entity[] {
 }
 const tileOk = (world: World, x: number, y: number, tiles: readonly number[]): boolean => { const t = populationTile(world, Math.floor(x), Math.floor(y)); return t === 0 || tiles.includes(t); };
 
+/** ADR-112: a planter piece (features.planter) within half a tile: its soil accepts crops on any terrain / deck. */
+export function inPlanter(world: World, x: number, y: number): boolean {
+  if (!world.isRegistered(BuildPiece)) return false; const defs = gameplayDefs(world);
+  return near(world, x, y, 0.75).some((o) => { const t = world.getField(o, BuildPiece, "type"); return t !== undefined && !!defs.pieces.get(t)?.features.planter; });
+}
 export function spawnCrop(world: World, x: number, y: number, kind = 0): Entity {
   const e = world.create(); world.add(e, Transform, { x, y }).add(e, Crop, { kind, stage: 0, growth: 0, waterUntilTick: 0, fertilized: 0 }); indexEntity(world, e); return e;
 }
@@ -57,8 +62,8 @@ const hasForeignZone = (world: World, e: Entity, x: number, y: number): boolean 
 export function plant(world: World, e: Entity, seed: string, x: number, y: number, dryRun = false): FarmFail {
   const kind = plantableBySeed(seed); const p = plantableOf(kind); if (!p) return FarmFail.BadTile;
   if (hasForeignZone(world, e, x, y)) return FarmFail.NoPrivilege;
-  if (!tileOk(world, x, y, p.tiles)) return FarmFail.BadTile;
   const around = near(world, x, y, FARMING.minSpacing);
+  if (!(p.type === "crop" && inPlanter(world, x, y)) && !tileOk(world, x, y, p.tiles)) return FarmFail.BadTile;
   if (p.type === "crop") {
     const soil = around.find((o) => world.get(o, Crop)?.kind === 0); if (soil === undefined) return hasHoe(world, e) ? FarmFail.NeedsSoil : FarmFail.NeedsHoe;
     if (!dryRun) world.set(soil, Crop, { kind, stage: 0, growth: 0 }); return FarmFail.None;

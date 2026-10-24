@@ -8,6 +8,7 @@
  */
 import { entityIndex, Membership, Transform, type Entity, type World } from "@engine/core";
 /** BuildPiece.tint for a clan: 1..255 index into assets clanPalettes (ADR-077). */
+import { spawnCrop } from "../farming.js";
 export const clanTintIndex = (clanId: number): number => clanId ? 1 + ((clanId - 1) % 255) : 0;
 import { installSpatialIndex, SUBTILE } from "@engine/world";
 import {
@@ -74,7 +75,7 @@ export function snapPlacement(world: World, req: PlaceRequest): Snapped | BuildF
       const rot = req.rot % (def.rotSteps || defs.building.freeRotSteps); const [tx, ty] = anchorFor(def, px, py, gridRot(def, rot));
       slot = { tx, ty, z, side: EdgeSide.None, rot }; break;
     }
-    case Placement.Edge: { const e = snapEdge(idx, req.x, req.y, z); slot = { ...e, z, rot: (e.side === EdgeSide.West ? 1 : 0) | (req.rot & 2) }; break; }
+    case Placement.Edge: { const e = snapEdge(idx, req.x, req.y, z); slot = { ...e, z, rot: (e.side === EdgeSide.West ? 1 : 0) | (req.rot & 2) }; if (def.features.mount) parent = idx.edge(e.tx, e.ty, z, e.side); break; }
     case Placement.Opening: {
       if (def.fits === SocketKind.Hatch) {
         const tx = Math.floor(req.x), ty = Math.floor(req.y); slot = { tx, ty, z, side: EdgeSide.None, rot: 0 };
@@ -180,7 +181,10 @@ export function validatePlacement(world: World, builder: Entity, sn: Snapped, op
     if (hi - lo > (def.maxSlope >= 0 ? def.maxSlope : b.maxSlope)) return BuildFail.Terrain;
   }
   // occupancy
-  if (def.placement === Placement.Edge) { if (idx.edge(slot.tx, slot.ty, slot.z, slot.side)) return BuildFail.Occupied; }
+  if (def.placement === Placement.Edge && def.features.mount) { // ADR-112: hung on a wall face
+    const w = sn.parent ? idx.def(sn.parent) : undefined; if (!w || w.placement !== Placement.Edge || w.features.mount || !w.blocksPath) return BuildFail.NoSocket;
+    if (idx.mount(slot.tx, slot.ty, slot.z, slot.side, slot.rot)) return BuildFail.Occupied;
+  } else if (def.placement === Placement.Edge) { if (idx.edge(slot.tx, slot.ty, slot.z, slot.side)) return BuildFail.Occupied; }
   else if (def.placement === Placement.Tri) {
     if (idx.triAt(slot.fx!, slot.fy!, slot.z) || idx.deck(slot.tx, slot.ty, slot.z)) return BuildFail.Occupied;
   } else if (def.placement === Placement.Opening) {
@@ -233,6 +237,7 @@ export function placePiece(world: World, builder: Entity | 0, sn: Snapped, opts:
     spawnAttachments(world, e, def, sn);
     if (def.stall && builder) assignStallOwner(world, e, builder);
     initDefense(world, e, def, builder);
+    if (def.features.planter) spawnCrop(world, sn.pos.x, sn.pos.y, 0); // ADR-112 planter soil
   }
   return e;
 }

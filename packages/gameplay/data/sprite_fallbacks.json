@@ -1,898 +1,1605 @@
 {
- "$comment": "ADR-110 sprite/icon fallbacks. A key is drawn as itself whenever the art pack has it (real art takes over automatically); otherwise the first resolvable `to` candidate is used (recursively), with `tint` (multiply #rrggbb) and `scale` applied. stages: crop_<plant>_<n> / sapling_<key>_<n> derive from the plant sprite scaled per stage. icons: per-item icon fallbacks, then per-category generic icons. Keys with no resolvable candidate are skipped (clutter only).",
- "sprites": {
-  "oak_tree": {
-   "to": [
-    "tree"
-   ]
-  },
-  "pine_tree": {
-   "to": [
-    "tree_pine",
-    "oak_tree"
-   ]
-  },
-  "birch_tree": {
-   "to": [
-    "oak_tree"
-   ],
-   "tint": "#e4ecd0"
-  },
-  "maple_tree": {
-   "to": [
-    "tree_autumn",
-    "oak_tree"
-   ],
-   "tint": "#ffb090"
-  },
-  "willow_tree": {
-   "to": [
-    "tree_twisty",
-    "oak_tree"
-   ],
-   "tint": "#c0e0a0"
-  },
-  "palm_tree": {
-   "to": [
-    "tree_twisty",
-    "oak_tree"
-   ],
-   "tint": "#e0e8a0",
-   "scale": 1.1
-  },
-  "apple_tree": {
-   "to": [
-    "tree_apple",
-    "oak_tree"
-   ]
-  },
-  "pear_tree": {
-   "to": [
-    "tree_apple",
-    "oak_tree"
-   ],
-   "tint": "#e8f0a8"
-  },
-  "cherry_tree": {
-   "to": [
-    "tree_apple",
-    "oak_tree"
-   ],
-   "tint": "#ffc0c8"
-  },
-  "orange_tree": {
-   "to": [
-    "tree_apple",
-    "oak_tree"
-   ],
-   "tint": "#ffd090"
-  },
-  "peach_tree": {
-   "to": [
-    "tree_apple",
-    "oak_tree"
-   ],
-   "tint": "#ffd0b0"
-  },
-  "blueberry_bush": {
-   "to": [
-    "berry_bush"
-   ],
-   "tint": "#a0a8ff"
-  },
-  "raspberry_bush": {
-   "to": [
-    "berry_bush"
-   ],
-   "tint": "#ffa0a0"
-  },
-  "blackberry_bush": {
-   "to": [
-    "berry_bush"
-   ],
-   "tint": "#a890c8"
-  },
-  "strawberry_bush": {
-   "to": [
-    "berry_bush"
-   ],
-   "tint": "#ff9090",
-   "scale": 0.8
-  },
-  "berry_bush": {
-   "to": [
-    "bush"
-   ]
-  },
-  "fiber_bush": {
-   "to": [
-    "fiber_grass",
-    "bush"
-   ]
-  },
-  "dry_shrub": {
-   "to": [
-    "bush"
-   ],
-   "tint": "#d0b888",
-   "scale": 0.8
-  },
-  "fallen_log": {
-   "to": [
-    "fallen_branches",
-    "tree_stump"
-   ],
-   "scale": 1.3
-  },
-  "mossy_log": {
-   "to": [
-    "fallen_log"
-   ],
-   "tint": "#a0d090"
-  },
-  "tree_stump": {
-   "to": [
-    "fallen_branches"
-   ]
-  },
-  "rotten_stump": {
-   "to": [
-    "tree_stump"
-   ],
-   "tint": "#b0a080",
-   "scale": 0.9
-  },
-  "fish_shoal": {
-   "to": [
-    "reeds"
-   ],
-   "tint": "#90b0ff"
-  },
-  "wild_wheat": {
-   "to": [
-    "flax",
-    "wild_herbs",
-    "bush"
-   ]
-  },
-  "crop_wheat": {
-   "to": [
-    "wild_wheat",
-    "flax"
-   ]
-  },
-  "wild_corn": {
-   "to": [
-    "flax",
-    "wild_herbs",
-    "bush"
-   ],
-   "tint": "#f0e080"
-  },
-  "crop_corn": {
-   "to": [
-    "wild_corn",
-    "flax"
-   ]
-  },
-  "wild_potato": {
-   "to": [
-    "carrot_patch",
-    "wild_herbs",
-    "bush"
-   ],
-   "tint": "#d0c090"
-  },
-  "crop_potato": {
-   "to": [
-    "wild_potato",
-    "carrot_patch"
-   ]
-  },
-  "wild_carrot": {
-   "to": [
-    "carrot_patch",
-    "wild_herbs",
-    "bush"
-   ]
-  },
-  "crop_carrot": {
-   "to": [
-    "wild_carrot",
-    "carrot_patch"
-   ]
-  },
-  "wild_tomato": {
-   "to": [
-    "wild_herbs",
-    "wild_herbs",
-    "bush"
-   ],
-   "tint": "#ffa090"
-  },
-  "crop_tomato": {
-   "to": [
-    "wild_tomato",
-    "wild_herbs"
-   ]
-  },
-  "wild_pumpkin": {
-   "to": [
-    "pumpkin_patch",
-    "wild_herbs",
-    "bush"
-   ]
-  },
-  "crop_pumpkin": {
-   "to": [
-    "wild_pumpkin",
-    "pumpkin_patch"
-   ]
-  },
-  "wild_squash": {
-   "to": [
-    "pumpkin_patch",
-    "wild_herbs",
-    "bush"
-   ],
-   "tint": "#f0f090"
-  },
-  "crop_squash": {
-   "to": [
-    "wild_squash",
-    "pumpkin_patch"
-   ]
-  },
-  "wild_beans": {
-   "to": [
-    "wild_herbs",
-    "wild_herbs",
-    "bush"
-   ],
-   "tint": "#a0e080"
-  },
-  "crop_beans": {
-   "to": [
-    "wild_beans",
-    "wild_herbs"
-   ]
-  },
-  "wild_cabbage": {
-   "to": [
-    "carrot_patch",
-    "wild_herbs",
-    "bush"
-   ],
-   "tint": "#b0f0b0"
-  },
-  "crop_cabbage": {
-   "to": [
-    "wild_cabbage",
-    "carrot_patch"
-   ]
-  },
-  "wild_onion": {
-   "to": [
-    "carrot_patch",
-    "wild_herbs",
-    "bush"
-   ],
-   "tint": "#f0e0c0"
-  },
-  "crop_onion": {
-   "to": [
-    "wild_onion",
-    "carrot_patch"
-   ]
-  },
-  "wild_garlic": {
-   "to": [
-    "carrot_patch",
-    "wild_herbs",
-    "bush"
-   ],
-   "tint": "#f8f0e0"
-  },
-  "crop_garlic": {
-   "to": [
-    "wild_garlic",
-    "carrot_patch"
-   ]
-  },
-  "wild_hemp": {
-   "to": [
-    "flax",
-    "wild_herbs",
-    "bush"
-   ],
-   "tint": "#a0d080"
-  },
-  "crop_hemp": {
-   "to": [
-    "wild_hemp",
-    "flax"
-   ]
-  },
-  "wild_mushroom": {
-   "to": [
-    "mushrooms",
-    "wild_herbs",
-    "bush"
-   ]
-  },
-  "crop_mushroom": {
-   "to": [
-    "wild_mushroom",
-    "mushrooms"
-   ]
-  },
-  "wild_yarrow": {
-   "to": [
-    "wild_herbs",
-    "wild_herbs",
-    "bush"
-   ],
-   "tint": "#fff0f0"
-  },
-  "crop_yarrow": {
-   "to": [
-    "wild_yarrow",
-    "wild_herbs"
-   ]
-  },
-  "wild_ginseng": {
-   "to": [
-    "wild_herbs",
-    "wild_herbs",
-    "bush"
-   ],
-   "tint": "#e0c090"
-  },
-  "crop_ginseng": {
-   "to": [
-    "wild_ginseng",
-    "wild_herbs"
-   ]
-  },
-  "wild_aloe": {
-   "to": [
-    "wild_herbs",
-    "wild_herbs",
-    "bush"
-   ],
-   "tint": "#90d0a0"
-  },
-  "crop_aloe": {
-   "to": [
-    "wild_aloe",
-    "wild_herbs"
-   ]
-  },
-  "wild_cotton": {
-   "to": [
-    "cotton_bush",
-    "wild_herbs",
-    "bush"
-   ],
-   "tint": "#ffffff"
-  },
-  "crop_cotton": {
-   "to": [
-    "wild_cotton",
-    "cotton_bush"
-   ]
-  },
-  "wild_flax": {
-   "to": [
-    "flax",
-    "wild_herbs",
-    "bush"
-   ]
-  },
-  "crop_flax": {
-   "to": [
-    "wild_flax",
-    "flax"
-   ]
-  },
-  "wild_herbs": {
-   "to": [
-    "wild_herbs",
-    "wild_herbs",
-    "bush"
-   ]
-  },
-  "crop_herbs": {
-   "to": [
-    "wild_herbs",
-    "wild_herbs"
-   ]
-  },
-  "carrot_patch": {
-   "to": [
-    "wild_herbs"
-   ]
-  },
-  "pumpkin_patch": {
-   "to": [
-    "wild_herbs"
-   ]
-  },
-  "cotton_bush": {
-   "to": [
-    "bush"
-   ]
-  },
-  "farm_soil": {
-   "to": [
-    "loose_rocks"
-   ],
-   "tint": "#806048",
-   "scale": 0.8
-  },
-  "animal_stag": {
-   "to": [
-    "animal_deer"
-   ],
-   "scale": 1.15
-  },
-  "animal_red_deer": {
-   "to": [
-    "animal_deer"
-   ],
-   "tint": "#e0a080",
-   "scale": 1.05
-  },
-  "animal_elk": {
-   "to": [
-    "animal_deer"
-   ],
-   "tint": "#c09070",
-   "scale": 1.3
-  },
-  "animal_moose": {
-   "to": [
-    "animal_deer"
-   ],
-   "tint": "#806050",
-   "scale": 1.5
-  },
-  "animal_bear": {
-   "to": [
-    "animal_boar"
-   ],
-   "tint": "#705038",
-   "scale": 1.5
-  },
-  "animal_fox": {
-   "to": [
-    "animal_wolf"
-   ],
-   "tint": "#ff9050",
-   "scale": 0.7
-  },
-  "animal_hare": {
-   "to": [
-    "animal_rabbit"
-   ],
-   "tint": "#e0d0b0",
-   "scale": 1.2
-  },
-  "animal_squirrel": {
-   "to": [
-    "animal_rabbit"
-   ],
-   "tint": "#c07040",
-   "scale": 0.75
-  },
-  "animal_turkey": {
-   "to": [
-    "animal_chicken"
-   ],
-   "tint": "#a07050",
-   "scale": 1.4
-  },
-  "animal_duck": {
-   "to": [
-    "animal_chicken"
-   ],
-   "tint": "#a0c090",
-   "scale": 0.9
-  },
-  "animal_goose": {
-   "to": [
-    "animal_chicken"
-   ],
-   "scale": 1.2
-  },
-  "animal_goat": {
-   "to": [
-    "animal_deer"
-   ],
-   "tint": "#e0d8c8",
-   "scale": 0.8
-  },
-  "animal_sheep": {
-   "to": [
-    "animal_boar"
-   ],
-   "tint": "#f0f0e8",
-   "scale": 0.9
-  },
-  "animal_cow": {
-   "to": [
-    "animal_boar"
-   ],
-   "tint": "#b09070",
-   "scale": 1.5
-  },
-  "animal_bison": {
-   "to": [
-    "animal_boar"
-   ],
-   "tint": "#604028",
-   "scale": 1.6
-  },
-  "animal_snake": {
-   "to": [
-    "animal_rabbit"
-   ],
-   "tint": "#80a050",
-   "scale": 0.6
-  },
-  "animal_rabbit": {
-   "to": [
-    "critter_bunny"
-   ]
-  },
-  "animal_chicken": {
-   "to": [
-    "critter_chick"
-   ]
-  },
-  "animal_deer": {
-   "to": [
-    "animal_boar"
-   ]
-  },
-  "animal_wolf": {
-   "to": [
-    "animal_boar"
-   ],
-   "tint": "#a0a0a0"
-  },
-  "clutter_grass_tuft_a": {
-   "to": [
-    "fiber_grass"
-   ],
-   "scale": 0.45
-  },
-  "clutter_grass_tuft_b": {
-   "to": [
-    "fiber_grass"
-   ],
-   "tint": "#c0e090",
-   "scale": 0.35
-  },
-  "clutter_flower_a": {
-   "to": [
-    "flowers"
-   ],
-   "scale": 0.5
-  },
-  "clutter_flower_b": {
-   "to": [
-    "flowers"
-   ],
-   "tint": "#ffc0f0",
-   "scale": 0.45
-  },
-  "clutter_flower_c": {
-   "to": [
-    "flowers"
-   ],
-   "tint": "#ffffa0",
-   "scale": 0.4
-  },
-  "clutter_pebbles": {
-   "to": [
-    "loose_rocks",
-    "rock_small"
-   ],
-   "scale": 0.5
-  },
-  "clutter_rock_small": {
-   "to": [
-    "rock_small",
-    "loose_rocks"
-   ],
-   "scale": 0.6
-  },
-  "clutter_moss_rock": {
-   "to": [
-    "rock_small"
-   ],
-   "tint": "#a0d0a0",
-   "scale": 0.6
-  },
-  "clutter_twigs": {
-   "to": [
-    "fallen_branches"
-   ],
-   "scale": 0.4
-  },
-  "clutter_driftwood": {
-   "to": [
-    "fallen_branches"
-   ],
-   "tint": "#d0c0a0",
-   "scale": 0.5
-  },
-  "clutter_fern": {
-   "to": [
-    "fiber_grass"
-   ],
-   "tint": "#70b060",
-   "scale": 0.5
-  },
-  "clutter_mushroom": {
-   "to": [
-    "mushrooms"
-   ],
-   "scale": 0.5
-  },
-  "clutter_reeds": {
-   "to": [
-    "reeds"
-   ],
-   "scale": 0.6
-  },
-  "clutter_dry_grass": {
-   "to": [
-    "fiber_grass"
-   ],
-   "tint": "#d0b870",
-   "scale": 0.45
-  },
-  "reed_bed": {
-   "to": [
-    "reeds"
-   ]
-  },
-  "flax_patch": {
-   "to": [
-    "flax"
-   ]
-  },
-  "herb_patch": {
-   "to": [
-    "wild_herbs"
-   ]
-  },
-  "wild_garden": {
-   "to": [
-    "flowers",
-    "wild_herbs"
-   ]
-  },
-  "beehive": {
-   "to": [
-    "tree_stump"
-   ],
-   "tint": "#e0b040"
-  },
-  "resin_tree": {
-   "to": [
-    "tree_pine",
-    "oak_tree"
-   ],
-   "tint": "#c09060"
-  },
-  "salt_flat": {
-   "to": [
-    "loose_rocks"
-   ],
-   "tint": "#f0f0f0"
-  },
-  "rubble_pile": {
-   "to": [
-    "loose_rocks",
-    "rock_small"
-   ]
-  },
-  "saltpeter_deposit": {
-   "to": [
-    "boulder",
-    "rock_small"
-   ],
-   "tint": "#e8e0d0"
-  },
-  "sulfur_vent": {
-   "to": [
-    "boulder",
-    "rock_small"
-   ],
-   "tint": "#e0d050"
-  },
-  "galena_vein": {
-   "to": [
-    "boulder",
-    "rock_small"
-   ],
-   "tint": "#9098a8"
-  },
-  "oil_seep": {
-   "to": [
-    "loose_rocks"
-   ],
-   "tint": "#404040"
-  },
-  "chromite_vein": {
-   "to": [
-    "boulder",
-    "rock_small"
-   ],
-   "tint": "#708070"
+  "$comment": "ADR-110 sprite/icon fallbacks. A key is drawn as itself whenever the art pack has it (real art takes over automatically); otherwise the first resolvable `to` candidate is used (recursively), with `tint` (multiply #rrggbb) and `scale` applied. stages: crop_<plant>_<n> / sapling_<key>_<n> derive from the plant sprite scaled per stage. icons: per-item icon fallbacks, then per-category generic icons. Keys with no resolvable candidate are skipped (clutter only).",
+  "sprites": {
+    "oak_tree": {
+      "to": [
+        "tree"
+      ]
+    },
+    "pine_tree": {
+      "to": [
+        "tree_pine",
+        "oak_tree"
+      ]
+    },
+    "birch_tree": {
+      "to": [
+        "oak_tree"
+      ],
+      "tint": "#e4ecd0"
+    },
+    "maple_tree": {
+      "to": [
+        "tree_autumn",
+        "oak_tree"
+      ],
+      "tint": "#ffb090"
+    },
+    "willow_tree": {
+      "to": [
+        "tree_twisty",
+        "oak_tree"
+      ],
+      "tint": "#c0e0a0"
+    },
+    "palm_tree": {
+      "to": [
+        "tree_twisty",
+        "oak_tree"
+      ],
+      "tint": "#e0e8a0",
+      "scale": 1.1
+    },
+    "apple_tree": {
+      "to": [
+        "tree_apple",
+        "oak_tree"
+      ]
+    },
+    "pear_tree": {
+      "to": [
+        "tree_apple",
+        "oak_tree"
+      ],
+      "tint": "#e8f0a8"
+    },
+    "cherry_tree": {
+      "to": [
+        "tree_apple",
+        "oak_tree"
+      ],
+      "tint": "#ffc0c8"
+    },
+    "orange_tree": {
+      "to": [
+        "tree_apple",
+        "oak_tree"
+      ],
+      "tint": "#ffd090"
+    },
+    "peach_tree": {
+      "to": [
+        "tree_apple",
+        "oak_tree"
+      ],
+      "tint": "#ffd0b0"
+    },
+    "blueberry_bush": {
+      "to": [
+        "berry_bush"
+      ],
+      "tint": "#a0a8ff"
+    },
+    "raspberry_bush": {
+      "to": [
+        "berry_bush"
+      ],
+      "tint": "#ffa0a0"
+    },
+    "blackberry_bush": {
+      "to": [
+        "berry_bush"
+      ],
+      "tint": "#a890c8"
+    },
+    "strawberry_bush": {
+      "to": [
+        "berry_bush"
+      ],
+      "tint": "#ff9090",
+      "scale": 0.8
+    },
+    "berry_bush": {
+      "to": [
+        "bush"
+      ]
+    },
+    "fiber_bush": {
+      "to": [
+        "fiber_grass",
+        "bush"
+      ]
+    },
+    "dry_shrub": {
+      "to": [
+        "bush"
+      ],
+      "tint": "#d0b888",
+      "scale": 0.8
+    },
+    "fallen_log": {
+      "to": [
+        "fallen_branches",
+        "tree_stump"
+      ],
+      "scale": 1.3
+    },
+    "mossy_log": {
+      "to": [
+        "fallen_log"
+      ],
+      "tint": "#a0d090"
+    },
+    "tree_stump": {
+      "to": [
+        "fallen_branches"
+      ]
+    },
+    "rotten_stump": {
+      "to": [
+        "tree_stump"
+      ],
+      "tint": "#b0a080",
+      "scale": 0.9
+    },
+    "fish_shoal": {
+      "to": [
+        "reeds"
+      ],
+      "tint": "#90b0ff"
+    },
+    "wild_wheat": {
+      "to": [
+        "flax",
+        "wild_herbs",
+        "bush"
+      ]
+    },
+    "crop_wheat": {
+      "to": [
+        "wild_wheat",
+        "flax"
+      ]
+    },
+    "wild_corn": {
+      "to": [
+        "flax",
+        "wild_herbs",
+        "bush"
+      ],
+      "tint": "#f0e080"
+    },
+    "crop_corn": {
+      "to": [
+        "wild_corn",
+        "flax"
+      ]
+    },
+    "wild_potato": {
+      "to": [
+        "carrot_patch",
+        "wild_herbs",
+        "bush"
+      ],
+      "tint": "#d0c090"
+    },
+    "crop_potato": {
+      "to": [
+        "wild_potato",
+        "carrot_patch"
+      ]
+    },
+    "wild_carrot": {
+      "to": [
+        "carrot_patch",
+        "wild_herbs",
+        "bush"
+      ]
+    },
+    "crop_carrot": {
+      "to": [
+        "wild_carrot",
+        "carrot_patch"
+      ]
+    },
+    "wild_tomato": {
+      "to": [
+        "wild_herbs",
+        "wild_herbs",
+        "bush"
+      ],
+      "tint": "#ffa090"
+    },
+    "crop_tomato": {
+      "to": [
+        "wild_tomato",
+        "wild_herbs"
+      ]
+    },
+    "wild_pumpkin": {
+      "to": [
+        "pumpkin_patch",
+        "wild_herbs",
+        "bush"
+      ]
+    },
+    "crop_pumpkin": {
+      "to": [
+        "wild_pumpkin",
+        "pumpkin_patch"
+      ]
+    },
+    "wild_squash": {
+      "to": [
+        "pumpkin_patch",
+        "wild_herbs",
+        "bush"
+      ],
+      "tint": "#f0f090"
+    },
+    "crop_squash": {
+      "to": [
+        "wild_squash",
+        "pumpkin_patch"
+      ]
+    },
+    "wild_beans": {
+      "to": [
+        "wild_herbs",
+        "wild_herbs",
+        "bush"
+      ],
+      "tint": "#a0e080"
+    },
+    "crop_beans": {
+      "to": [
+        "wild_beans",
+        "wild_herbs"
+      ]
+    },
+    "wild_cabbage": {
+      "to": [
+        "carrot_patch",
+        "wild_herbs",
+        "bush"
+      ],
+      "tint": "#b0f0b0"
+    },
+    "crop_cabbage": {
+      "to": [
+        "wild_cabbage",
+        "carrot_patch"
+      ]
+    },
+    "wild_onion": {
+      "to": [
+        "carrot_patch",
+        "wild_herbs",
+        "bush"
+      ],
+      "tint": "#f0e0c0"
+    },
+    "crop_onion": {
+      "to": [
+        "wild_onion",
+        "carrot_patch"
+      ]
+    },
+    "wild_garlic": {
+      "to": [
+        "carrot_patch",
+        "wild_herbs",
+        "bush"
+      ],
+      "tint": "#f8f0e0"
+    },
+    "crop_garlic": {
+      "to": [
+        "wild_garlic",
+        "carrot_patch"
+      ]
+    },
+    "wild_hemp": {
+      "to": [
+        "flax",
+        "wild_herbs",
+        "bush"
+      ],
+      "tint": "#a0d080"
+    },
+    "crop_hemp": {
+      "to": [
+        "wild_hemp",
+        "flax"
+      ]
+    },
+    "wild_mushroom": {
+      "to": [
+        "mushrooms",
+        "wild_herbs",
+        "bush"
+      ]
+    },
+    "crop_mushroom": {
+      "to": [
+        "wild_mushroom",
+        "mushrooms"
+      ]
+    },
+    "wild_yarrow": {
+      "to": [
+        "wild_herbs",
+        "wild_herbs",
+        "bush"
+      ],
+      "tint": "#fff0f0"
+    },
+    "crop_yarrow": {
+      "to": [
+        "wild_yarrow",
+        "wild_herbs"
+      ]
+    },
+    "wild_ginseng": {
+      "to": [
+        "wild_herbs",
+        "wild_herbs",
+        "bush"
+      ],
+      "tint": "#e0c090"
+    },
+    "crop_ginseng": {
+      "to": [
+        "wild_ginseng",
+        "wild_herbs"
+      ]
+    },
+    "wild_aloe": {
+      "to": [
+        "wild_herbs",
+        "wild_herbs",
+        "bush"
+      ],
+      "tint": "#90d0a0"
+    },
+    "crop_aloe": {
+      "to": [
+        "wild_aloe",
+        "wild_herbs"
+      ]
+    },
+    "wild_cotton": {
+      "to": [
+        "cotton_bush",
+        "wild_herbs",
+        "bush"
+      ],
+      "tint": "#ffffff"
+    },
+    "crop_cotton": {
+      "to": [
+        "wild_cotton",
+        "cotton_bush"
+      ]
+    },
+    "wild_flax": {
+      "to": [
+        "flax",
+        "wild_herbs",
+        "bush"
+      ]
+    },
+    "crop_flax": {
+      "to": [
+        "wild_flax",
+        "flax"
+      ]
+    },
+    "wild_herbs": {
+      "to": [
+        "wild_herbs",
+        "wild_herbs",
+        "bush"
+      ]
+    },
+    "crop_herbs": {
+      "to": [
+        "wild_herbs",
+        "wild_herbs"
+      ]
+    },
+    "carrot_patch": {
+      "to": [
+        "wild_herbs"
+      ]
+    },
+    "pumpkin_patch": {
+      "to": [
+        "wild_herbs"
+      ]
+    },
+    "cotton_bush": {
+      "to": [
+        "bush"
+      ]
+    },
+    "farm_soil": {
+      "to": [
+        "loose_rocks"
+      ],
+      "tint": "#806048",
+      "scale": 0.8
+    },
+    "animal_stag": {
+      "to": [
+        "animal_deer"
+      ],
+      "scale": 1.15
+    },
+    "animal_red_deer": {
+      "to": [
+        "animal_deer"
+      ],
+      "tint": "#e0a080",
+      "scale": 1.05
+    },
+    "animal_elk": {
+      "to": [
+        "animal_deer"
+      ],
+      "tint": "#c09070",
+      "scale": 1.3
+    },
+    "animal_moose": {
+      "to": [
+        "animal_deer"
+      ],
+      "tint": "#806050",
+      "scale": 1.5
+    },
+    "animal_bear": {
+      "to": [
+        "animal_boar"
+      ],
+      "tint": "#705038",
+      "scale": 1.5
+    },
+    "animal_fox": {
+      "to": [
+        "animal_wolf"
+      ],
+      "tint": "#ff9050",
+      "scale": 0.7
+    },
+    "animal_hare": {
+      "to": [
+        "animal_rabbit"
+      ],
+      "tint": "#e0d0b0",
+      "scale": 1.2
+    },
+    "animal_squirrel": {
+      "to": [
+        "animal_rabbit"
+      ],
+      "tint": "#c07040",
+      "scale": 0.75
+    },
+    "animal_turkey": {
+      "to": [
+        "animal_chicken"
+      ],
+      "tint": "#a07050",
+      "scale": 1.4
+    },
+    "animal_duck": {
+      "to": [
+        "animal_chicken"
+      ],
+      "tint": "#a0c090",
+      "scale": 0.9
+    },
+    "animal_goose": {
+      "to": [
+        "animal_chicken"
+      ],
+      "scale": 1.2
+    },
+    "animal_goat": {
+      "to": [
+        "animal_deer"
+      ],
+      "tint": "#e0d8c8",
+      "scale": 0.8
+    },
+    "animal_sheep": {
+      "to": [
+        "animal_boar"
+      ],
+      "tint": "#f0f0e8",
+      "scale": 0.9
+    },
+    "animal_cow": {
+      "to": [
+        "animal_boar"
+      ],
+      "tint": "#b09070",
+      "scale": 1.5
+    },
+    "animal_bison": {
+      "to": [
+        "animal_boar"
+      ],
+      "tint": "#604028",
+      "scale": 1.6
+    },
+    "animal_snake": {
+      "to": [
+        "animal_rabbit"
+      ],
+      "tint": "#80a050",
+      "scale": 0.6
+    },
+    "animal_rabbit": {
+      "to": [
+        "critter_bunny"
+      ]
+    },
+    "animal_chicken": {
+      "to": [
+        "critter_chick"
+      ]
+    },
+    "animal_deer": {
+      "to": [
+        "animal_boar"
+      ]
+    },
+    "animal_wolf": {
+      "to": [
+        "animal_boar"
+      ],
+      "tint": "#a0a0a0"
+    },
+    "clutter_grass_tuft_a": {
+      "to": [
+        "fiber_grass"
+      ],
+      "scale": 0.45
+    },
+    "clutter_grass_tuft_b": {
+      "to": [
+        "fiber_grass"
+      ],
+      "tint": "#c0e090",
+      "scale": 0.35
+    },
+    "clutter_flower_a": {
+      "to": [
+        "flowers"
+      ],
+      "scale": 0.5
+    },
+    "clutter_flower_b": {
+      "to": [
+        "flowers"
+      ],
+      "tint": "#ffc0f0",
+      "scale": 0.45
+    },
+    "clutter_flower_c": {
+      "to": [
+        "flowers"
+      ],
+      "tint": "#ffffa0",
+      "scale": 0.4
+    },
+    "clutter_pebbles": {
+      "to": [
+        "loose_rocks",
+        "rock_small"
+      ],
+      "scale": 0.5
+    },
+    "clutter_rock_small": {
+      "to": [
+        "rock_small",
+        "loose_rocks"
+      ],
+      "scale": 0.6
+    },
+    "clutter_moss_rock": {
+      "to": [
+        "rock_small"
+      ],
+      "tint": "#a0d0a0",
+      "scale": 0.6
+    },
+    "clutter_twigs": {
+      "to": [
+        "fallen_branches"
+      ],
+      "scale": 0.4
+    },
+    "clutter_driftwood": {
+      "to": [
+        "fallen_branches"
+      ],
+      "tint": "#d0c0a0",
+      "scale": 0.5
+    },
+    "clutter_fern": {
+      "to": [
+        "fiber_grass"
+      ],
+      "tint": "#70b060",
+      "scale": 0.5
+    },
+    "clutter_mushroom": {
+      "to": [
+        "mushrooms"
+      ],
+      "scale": 0.5
+    },
+    "clutter_reeds": {
+      "to": [
+        "reeds"
+      ],
+      "scale": 0.6
+    },
+    "clutter_dry_grass": {
+      "to": [
+        "fiber_grass"
+      ],
+      "tint": "#d0b870",
+      "scale": 0.45
+    },
+    "reed_bed": {
+      "to": [
+        "reeds"
+      ]
+    },
+    "flax_patch": {
+      "to": [
+        "flax"
+      ]
+    },
+    "herb_patch": {
+      "to": [
+        "wild_herbs"
+      ]
+    },
+    "wild_garden": {
+      "to": [
+        "flowers",
+        "wild_herbs"
+      ]
+    },
+    "beehive": {
+      "to": [
+        "tree_stump"
+      ],
+      "tint": "#e0b040"
+    },
+    "resin_tree": {
+      "to": [
+        "tree_pine",
+        "oak_tree"
+      ],
+      "tint": "#c09060"
+    },
+    "salt_flat": {
+      "to": [
+        "loose_rocks"
+      ],
+      "tint": "#f0f0f0"
+    },
+    "rubble_pile": {
+      "to": [
+        "loose_rocks",
+        "rock_small"
+      ]
+    },
+    "saltpeter_deposit": {
+      "to": [
+        "boulder",
+        "rock_small"
+      ],
+      "tint": "#e8e0d0"
+    },
+    "sulfur_vent": {
+      "to": [
+        "boulder",
+        "rock_small"
+      ],
+      "tint": "#e0d050"
+    },
+    "galena_vein": {
+      "to": [
+        "boulder",
+        "rock_small"
+      ],
+      "tint": "#9098a8"
+    },
+    "oil_seep": {
+      "to": [
+        "loose_rocks"
+      ],
+      "tint": "#404040"
+    },
+    "chromite_vein": {
+      "to": [
+        "boulder",
+        "rock_small"
+      ],
+      "tint": "#708070"
+    },
+    "chair_rustic": {
+      "to": [
+        "chair"
+      ]
+    },
+    "chair_fine": {
+      "to": [
+        "chair"
+      ]
+    },
+    "chair_luxury": {
+      "to": [
+        "chair"
+      ]
+    },
+    "stool_rustic": {
+      "to": [
+        "chair"
+      ],
+      "scale": 0.8
+    },
+    "stool_fine": {
+      "to": [
+        "chair"
+      ],
+      "scale": 0.8
+    },
+    "bench_rustic": {
+      "to": [
+        "chair"
+      ]
+    },
+    "bench_fine": {
+      "to": [
+        "chair"
+      ]
+    },
+    "sofa_fine": {
+      "to": [
+        "bed",
+        "chair"
+      ],
+      "tint": "#b08060"
+    },
+    "sofa_luxury": {
+      "to": [
+        "bed",
+        "chair"
+      ],
+      "tint": "#b08060"
+    },
+    "bed_double_rustic": {
+      "to": [
+        "bed"
+      ]
+    },
+    "bed_double_fine": {
+      "to": [
+        "bed"
+      ]
+    },
+    "bed_double_luxury": {
+      "to": [
+        "bed"
+      ]
+    },
+    "bunk_bed": {
+      "to": [
+        "bed"
+      ],
+      "tint": "#c8a070"
+    },
+    "table_dining_rustic": {
+      "to": [
+        "table"
+      ]
+    },
+    "table_dining_fine": {
+      "to": [
+        "table"
+      ]
+    },
+    "table_dining_luxury": {
+      "to": [
+        "table"
+      ]
+    },
+    "table_coffee_rustic": {
+      "to": [
+        "table"
+      ],
+      "scale": 0.8
+    },
+    "table_coffee_fine": {
+      "to": [
+        "table"
+      ],
+      "scale": 0.8
+    },
+    "table_side_rustic": {
+      "to": [
+        "table"
+      ],
+      "scale": 0.7
+    },
+    "table_side_fine": {
+      "to": [
+        "table"
+      ],
+      "scale": 0.7
+    },
+    "desk_rustic": {
+      "to": [
+        "table"
+      ],
+      "tint": "#a07850"
+    },
+    "desk_fine": {
+      "to": [
+        "table"
+      ],
+      "tint": "#a07850"
+    },
+    "shelf_rustic": {
+      "to": [
+        "shelf",
+        "storage_box"
+      ]
+    },
+    "shelf_fine": {
+      "to": [
+        "shelf",
+        "storage_box"
+      ]
+    },
+    "bookcase_rustic": {
+      "to": [
+        "shelf",
+        "storage_box"
+      ],
+      "tint": "#8a6040"
+    },
+    "bookcase_fine": {
+      "to": [
+        "shelf",
+        "storage_box"
+      ],
+      "tint": "#8a6040"
+    },
+    "cabinet_rustic": {
+      "to": [
+        "storage_box"
+      ]
+    },
+    "cabinet_fine": {
+      "to": [
+        "storage_box"
+      ]
+    },
+    "wardrobe_rustic": {
+      "to": [
+        "large_chest",
+        "storage_box"
+      ]
+    },
+    "wardrobe_fine": {
+      "to": [
+        "large_chest",
+        "storage_box"
+      ]
+    },
+    "wardrobe_luxury": {
+      "to": [
+        "large_chest",
+        "storage_box"
+      ]
+    },
+    "dresser_rustic": {
+      "to": [
+        "large_chest",
+        "storage_box"
+      ],
+      "tint": "#b89070"
+    },
+    "dresser_fine": {
+      "to": [
+        "large_chest",
+        "storage_box"
+      ],
+      "tint": "#b89070"
+    },
+    "counter_rustic": {
+      "to": [
+        "market_counter",
+        "table"
+      ]
+    },
+    "counter_fine": {
+      "to": [
+        "market_counter",
+        "table"
+      ]
+    },
+    "kitchen_sink": {
+      "to": [
+        "market_counter",
+        "table"
+      ],
+      "tint": "#a0a8b0"
+    },
+    "kitchen_cupboard": {
+      "to": [
+        "storage_box"
+      ]
+    },
+    "pantry": {
+      "to": [
+        "large_chest",
+        "storage_box"
+      ],
+      "tint": "#c0a880"
+    },
+    "tool_bench": {
+      "to": [
+        "workbench"
+      ]
+    },
+    "stove_iron": {
+      "to": [
+        "wood_stove"
+      ]
+    },
+    "cook_range": {
+      "to": [
+        "wood_stove",
+        "fireplace"
+      ]
+    },
+    "clay_oven": {
+      "to": [
+        "fireplace",
+        "campfire"
+      ]
+    },
+    "candle": {
+      "to": [
+        "lantern"
+      ],
+      "scale": 0.5
+    },
+    "candelabra": {
+      "to": [
+        "lantern"
+      ],
+      "scale": 0.8
+    },
+    "floor_lamp": {
+      "to": [
+        "torch_stand",
+        "lantern"
+      ]
+    },
+    "table_lamp": {
+      "to": [
+        "lantern"
+      ],
+      "scale": 0.7
+    },
+    "chandelier": {
+      "to": [
+        "lantern"
+      ],
+      "scale": 1.4
+    },
+    "lantern_hanging": {
+      "to": [
+        "lantern"
+      ]
+    },
+    "wall_sconce": {
+      "to": [
+        "lantern",
+        "torch_stand"
+      ],
+      "scale": 0.7
+    },
+    "lamp_post": {
+      "to": [
+        "torch_stand"
+      ],
+      "scale": 1.3
+    },
+    "statue": {
+      "to": [
+        "pillar",
+        "trophy_skull"
+      ],
+      "tint": "#c8c8c0"
+    },
+    "statue_large": {
+      "to": [
+        "pillar"
+      ],
+      "tint": "#c8c8c0",
+      "scale": 1.6
+    },
+    "vase": {
+      "to": [
+        "potted_plant"
+      ],
+      "tint": "#c87850",
+      "scale": 0.8
+    },
+    "crate_decor": {
+      "to": [
+        "storage_box"
+      ],
+      "tint": "#c8a060"
+    },
+    "barrel_decor": {
+      "to": [
+        "storage_box"
+      ],
+      "tint": "#906040"
+    },
+    "barrel_storage": {
+      "to": [
+        "storage_box"
+      ],
+      "tint": "#906040"
+    },
+    "trophy_mount": {
+      "to": [
+        "trophy_skull"
+      ]
+    },
+    "clan_flag": {
+      "to": [
+        "banner"
+      ]
+    },
+    "sign": {
+      "to": [
+        "windsock",
+        "banner"
+      ],
+      "tint": "#b08850"
+    },
+    "sign_wall": {
+      "to": [
+        "banner_wall"
+      ],
+      "tint": "#b08850"
+    },
+    "curtains": {
+      "to": [
+        "banner_wall"
+      ]
+    },
+    "clock": {
+      "to": [
+        "pillar",
+        "mirror"
+      ],
+      "tint": "#7a5030"
+    },
+    "clock_wall": {
+      "to": [
+        "painting",
+        "banner_wall"
+      ]
+    },
+    "mirror_standing": {
+      "to": [
+        "mirror"
+      ]
+    },
+    "mirror_wall": {
+      "to": [
+        "mirror",
+        "painting"
+      ]
+    },
+    "pottery": {
+      "to": [
+        "potted_plant"
+      ],
+      "tint": "#b86840",
+      "scale": 0.6
+    },
+    "books": {
+      "to": [
+        "storage_box"
+      ],
+      "tint": "#803030",
+      "scale": 0.4
+    },
+    "dishes": {
+      "to": [
+        "potted_plant"
+      ],
+      "tint": "#e8e8e0",
+      "scale": 0.4
+    },
+    "basket": {
+      "to": [
+        "storage_box"
+      ],
+      "tint": "#d0b070",
+      "scale": 0.6
+    },
+    "plant_floor": {
+      "to": [
+        "potted_plant"
+      ],
+      "scale": 1.2
+    },
+    "fern": {
+      "to": [
+        "potted_plant"
+      ],
+      "tint": "#70c070"
+    },
+    "cactus": {
+      "to": [
+        "potted_plant"
+      ],
+      "tint": "#90b060"
+    },
+    "flowers_pot": {
+      "to": [
+        "flower_box",
+        "potted_plant"
+      ],
+      "scale": 0.7
+    },
+    "hanging_plant": {
+      "to": [
+        "potted_plant"
+      ],
+      "scale": 0.8
+    },
+    "bonsai": {
+      "to": [
+        "potted_plant"
+      ],
+      "tint": "#609050",
+      "scale": 0.6
+    },
+    "herb_planter": {
+      "to": [
+        "flower_box"
+      ]
+    },
+    "window_planter": {
+      "to": [
+        "flower_box"
+      ]
+    },
+    "painting_wall": {
+      "to": [
+        "painting"
+      ]
+    },
+    "poster": {
+      "to": [
+        "painting"
+      ],
+      "scale": 0.8
+    },
+    "tapestry": {
+      "to": [
+        "banner_wall"
+      ]
+    },
+    "weapon_rack": {
+      "to": [
+        "banner_wall",
+        "painting"
+      ],
+      "tint": "#906040"
+    },
+    "wall_shelf": {
+      "to": [
+        "painting"
+      ],
+      "tint": "#b08850"
+    },
+    "shield_mount": {
+      "to": [
+        "banner_wall"
+      ]
+    },
+    "map_board": {
+      "to": [
+        "painting"
+      ]
+    },
+    "rug_1x1": {
+      "to": [
+        "rug"
+      ],
+      "scale": 1
+    },
+    "rug_2x1": {
+      "to": [
+        "rug"
+      ],
+      "scale": 2
+    },
+    "rug_2x2": {
+      "to": [
+        "rug"
+      ],
+      "scale": 2
+    },
+    "rug_3x2": {
+      "to": [
+        "rug"
+      ],
+      "scale": 3
+    },
+    "rug_round": {
+      "to": [
+        "rug"
+      ],
+      "scale": 2
+    },
+    "rug_runner": {
+      "to": [
+        "rug"
+      ],
+      "scale": 3
+    },
+    "fence_picket": {
+      "to": [
+        "fence",
+        "wall_low"
+      ],
+      "tint": "#e8e0d0"
+    },
+    "fence_rail": {
+      "to": [
+        "fence",
+        "wall_low"
+      ],
+      "tint": "#a07850"
+    },
+    "fence_iron": {
+      "to": [
+        "fence",
+        "wall_low"
+      ],
+      "tint": "#505860"
+    },
+    "garden_gate": {
+      "to": [
+        "gate_clan",
+        "door_wood"
+      ],
+      "scale": 0.6
+    },
+    "bench_park": {
+      "to": [
+        "chair"
+      ]
+    },
+    "planter_box": {
+      "to": [
+        "flower_box"
+      ]
+    },
+    "garden_bed": {
+      "to": [
+        "flower_box"
+      ],
+      "scale": 1.5
+    },
+    "fountain": {
+      "to": [
+        "campfire",
+        "pillar"
+      ],
+      "tint": "#a0c0e0",
+      "scale": 1.6
+    },
+    "well": {
+      "to": [
+        "campfire",
+        "pillar"
+      ],
+      "tint": "#909090",
+      "scale": 1.5
+    },
+    "scarecrow": {
+      "to": [
+        "windsock",
+        "banner"
+      ],
+      "tint": "#d0b070"
+    },
+    "path_stone": {
+      "to": [
+        "rug"
+      ],
+      "tint": "#a09890"
+    },
+    "stepping_stone": {
+      "to": [
+        "rug"
+      ],
+      "tint": "#908880",
+      "scale": 0.6
+    },
+    "hedge": {
+      "to": [
+        "potted_plant"
+      ],
+      "tint": "#408040",
+      "scale": 1.5
+    },
+    "flower_bed": {
+      "to": [
+        "flower_box"
+      ],
+      "scale": 1.2
+    },
+    "birdbath": {
+      "to": [
+        "pillar"
+      ],
+      "tint": "#b0b8c0",
+      "scale": 0.7
+    },
+    "sundial": {
+      "to": [
+        "pillar"
+      ],
+      "tint": "#c0a060",
+      "scale": 0.6
+    },
+    "lantern": {
+      "to": [
+        "bonfire"
+      ],
+      "tint": "#ffd890",
+      "scale": 0.4
+    },
+    "torch_stand": {
+      "to": [
+        "bonfire"
+      ],
+      "scale": 0.6
+    },
+    "banner": {
+      "to": [
+        "painting"
+      ],
+      "tint": "#c04040"
+    },
+    "banner_wall": {
+      "to": [
+        "painting"
+      ],
+      "tint": "#c04040"
+    },
+    "windsock": {
+      "to": [
+        "pillar"
+      ],
+      "tint": "#d0d0d0",
+      "scale": 0.8
+    },
+    "mirror": {
+      "to": [
+        "painting"
+      ],
+      "tint": "#d0e0f0"
+    },
+    "wood_stove": {
+      "to": [
+        "furnace"
+      ],
+      "scale": 0.8
+    },
+    "fireplace": {
+      "to": [
+        "furnace"
+      ],
+      "tint": "#c09080"
+    },
+    "campfire": {
+      "to": [
+        "bonfire"
+      ]
+    },
+    "market_counter": {
+      "to": [
+        "table"
+      ],
+      "tint": "#b08850"
+    },
+    "gate_clan": {
+      "to": [
+        "door_wood"
+      ]
+    }
+  },
+  "stages": {
+    "crop": {
+      "scale": [
+        0.35,
+        0.55,
+        0.8,
+        1
+      ]
+    },
+    "sapling": {
+      "tree": [
+        [
+          "tree_sapling"
+        ],
+        [
+          "tree_sapling"
+        ],
+        [
+          "tree_young",
+          "tree_sapling"
+        ]
+      ],
+      "pineTree": [
+        [
+          "pine_sapling",
+          "tree_sapling"
+        ],
+        [
+          "pine_sapling",
+          "tree_sapling"
+        ],
+        [
+          "pine_young",
+          "tree_young"
+        ]
+      ],
+      "scale": [
+        0.7,
+        1,
+        1
+      ],
+      "bushScale": [
+        0.4,
+        0.6,
+        0.85
+      ]
+    }
+  },
+  "icons": {
+    "raw_venison": "raw_meat",
+    "cooked_venison": "cooked_meat",
+    "raw_poultry": "raw_meat",
+    "cooked_poultry": "cooked_meat",
+    "raw_small_game": "raw_meat",
+    "cooked_small_game": "cooked_meat",
+    "raw_prime_cut": "raw_meat",
+    "cooked_prime_cut": "cooked_meat",
+    "wheat_seeds": "wild_grain",
+    "corn_seeds": "wild_grain",
+    "seed_potato": "wild_grain",
+    "carrot_seeds": "wild_grain",
+    "tomato_seeds": "wild_grain",
+    "pumpkin_seeds": "wild_grain",
+    "squash_seeds": "wild_grain",
+    "beans_seeds": "wild_grain",
+    "cabbage_seeds": "wild_grain",
+    "onion_seeds": "wild_grain",
+    "garlic_clove": "wild_grain",
+    "cotton_seeds": "wild_grain",
+    "flax_seeds": "wild_grain",
+    "hemp_seeds": "wild_grain",
+    "herbs_seeds": "wild_grain",
+    "mushroom_spores": "wild_grain",
+    "yarrow_seeds": "wild_grain",
+    "ginseng_seeds": "wild_grain",
+    "aloe_seeds": "wild_grain",
+    "blueberry_seeds": "wild_grain",
+    "raspberry_seeds": "wild_grain",
+    "blackberry_seeds": "wild_grain",
+    "strawberry_seeds": "wild_grain",
+    "oak_sapling": "sticks",
+    "pine_sapling": "sticks",
+    "birch_sapling": "sticks",
+    "maple_sapling": "sticks",
+    "willow_sapling": "sticks",
+    "palm_sapling": "sticks",
+    "apple_sapling": "sticks",
+    "pear_sapling": "sticks",
+    "cherry_sapling": "sticks",
+    "orange_sapling": "sticks",
+    "peach_sapling": "sticks",
+    "milk": "water_flask",
+    "tallow": "animal_fat",
+    "antler": "bone",
+    "wool": "cotton",
+    "snake_skin": "hide",
+    "bone_meal": "flour",
+    "tallow_candle": "torch",
+    "bone_needle": "bone",
+    "bone_knife": "bone_dagger",
+    "bone_axe": "stone_axe",
+    "antler_pickaxe": "stone_pickaxe",
+    "bone_arrow": "flint_arrow",
+    "wool_cloth": "cloth",
+    "leather_cap": "linen_cap",
+    "leather_jacket": "armor_leather",
+    "leather_trousers": "padded_trousers",
+    "wool_sweater": "linen_shirt",
+    "wool_hat": "fur_hat",
+    "fur_vest": "fur_coat",
+    "snakeskin_boots": "leather_boots",
+    "hoe": "stone_shovel",
+    "watering_can": "water_flask",
+    "fertilizer": "dye",
+    "wheat": "wild_grain",
+    "tomato": "apple",
+    "pumpkin": "pumpkin",
+    "squash": "pumpkin",
+    "beans": "wild_grain",
+    "cabbage": "herbs",
+    "onion": "wild_onion",
+    "garlic": "wild_onion",
+    "hemp": "fiber",
+    "yarrow": "herbs",
+    "ginseng": "herbs",
+    "aloe": "herbs",
+    "blueberry": "blueberries",
+    "raspberry": "berries",
+    "blackberry": "berries",
+    "strawberry": "berries",
+    "pear": "apple",
+    "cherry": "berries",
+    "orange": "apple",
+    "peach": "apple",
+    "birch_bark": "wood",
+    "maple_sap": "resin",
+    "willow_bark": "wood",
+    "palm_frond": "fiber",
+    "coconut": "apple",
+    "maple_syrup": "honey",
+    "pine_cone": "sticks",
+    "vegetable_stew": "stew_bowl",
+    "pumpkin_pie": "berry_pie",
+    "fruit_salad": "stew_bowl",
+    "baked_beans": "stew_bowl",
+    "roasted_garlic": "baked_potato",
+    "willow_tea": "herbal_tea"
+  },
+  "categoryIcons": {
+    "resource": "fiber",
+    "food": "berries",
+    "weapon": "sword",
+    "clothing": "linen_shirt",
+    "armor": "armor_leather",
+    "tool": "stone_axe",
+    "ammo": "arrow",
+    "explosive": "molotov",
+    "default": "fiber",
+    "placeable": "fiber"
   }
- },
- "stages": {
-  "crop": {
-   "scale": [
-    0.35,
-    0.55,
-    0.8,
-    1.0
-   ]
-  },
-  "sapling": {
-   "tree": [
-    [
-     "tree_sapling"
-    ],
-    [
-     "tree_sapling"
-    ],
-    [
-     "tree_young",
-     "tree_sapling"
-    ]
-   ],
-   "pineTree": [
-    [
-     "pine_sapling",
-     "tree_sapling"
-    ],
-    [
-     "pine_sapling",
-     "tree_sapling"
-    ],
-    [
-     "pine_young",
-     "tree_young"
-    ]
-   ],
-   "scale": [
-    0.7,
-    1.0,
-    1.0
-   ],
-   "bushScale": [
-    0.4,
-    0.6,
-    0.85
-   ]
-  }
- },
- "icons": {
-  "raw_venison": "raw_meat",
-  "cooked_venison": "cooked_meat",
-  "raw_poultry": "raw_meat",
-  "cooked_poultry": "cooked_meat",
-  "raw_small_game": "raw_meat",
-  "cooked_small_game": "cooked_meat",
-  "raw_prime_cut": "raw_meat",
-  "cooked_prime_cut": "cooked_meat",
-  "wheat_seeds": "wild_grain",
-  "corn_seeds": "wild_grain",
-  "seed_potato": "wild_grain",
-  "carrot_seeds": "wild_grain",
-  "tomato_seeds": "wild_grain",
-  "pumpkin_seeds": "wild_grain",
-  "squash_seeds": "wild_grain",
-  "beans_seeds": "wild_grain",
-  "cabbage_seeds": "wild_grain",
-  "onion_seeds": "wild_grain",
-  "garlic_clove": "wild_grain",
-  "cotton_seeds": "wild_grain",
-  "flax_seeds": "wild_grain",
-  "hemp_seeds": "wild_grain",
-  "herbs_seeds": "wild_grain",
-  "mushroom_spores": "wild_grain",
-  "yarrow_seeds": "wild_grain",
-  "ginseng_seeds": "wild_grain",
-  "aloe_seeds": "wild_grain",
-  "blueberry_seeds": "wild_grain",
-  "raspberry_seeds": "wild_grain",
-  "blackberry_seeds": "wild_grain",
-  "strawberry_seeds": "wild_grain",
-  "oak_sapling": "sticks",
-  "pine_sapling": "sticks",
-  "birch_sapling": "sticks",
-  "maple_sapling": "sticks",
-  "willow_sapling": "sticks",
-  "palm_sapling": "sticks",
-  "apple_sapling": "sticks",
-  "pear_sapling": "sticks",
-  "cherry_sapling": "sticks",
-  "orange_sapling": "sticks",
-  "peach_sapling": "sticks",
-  "milk": "water_flask",
-  "tallow": "animal_fat",
-  "antler": "bone",
-  "wool": "cotton",
-  "snake_skin": "hide",
-  "bone_meal": "flour",
-  "tallow_candle": "torch",
-  "bone_needle": "bone",
-  "bone_knife": "bone_dagger",
-  "bone_axe": "stone_axe",
-  "antler_pickaxe": "stone_pickaxe",
-  "bone_arrow": "flint_arrow",
-  "wool_cloth": "cloth",
-  "leather_cap": "linen_cap",
-  "leather_jacket": "armor_leather",
-  "leather_trousers": "padded_trousers",
-  "wool_sweater": "linen_shirt",
-  "wool_hat": "fur_hat",
-  "fur_vest": "fur_coat",
-  "snakeskin_boots": "leather_boots",
-  "hoe": "stone_shovel",
-  "watering_can": "water_flask",
-  "fertilizer": "dye",
-  "wheat": "wild_grain",
-  "tomato": "apple",
-  "pumpkin": "pumpkin",
-  "squash": "pumpkin",
-  "beans": "wild_grain",
-  "cabbage": "herbs",
-  "onion": "wild_onion",
-  "garlic": "wild_onion",
-  "hemp": "fiber",
-  "yarrow": "herbs",
-  "ginseng": "herbs",
-  "aloe": "herbs",
-  "blueberry": "blueberries",
-  "raspberry": "berries",
-  "blackberry": "berries",
-  "strawberry": "berries",
-  "pear": "apple",
-  "cherry": "berries",
-  "orange": "apple",
-  "peach": "apple",
-  "birch_bark": "wood",
-  "maple_sap": "resin",
-  "willow_bark": "wood",
-  "palm_frond": "fiber",
-  "coconut": "apple",
-  "maple_syrup": "honey",
-  "pine_cone": "sticks",
-  "vegetable_stew": "stew_bowl",
-  "pumpkin_pie": "berry_pie",
-  "fruit_salad": "stew_bowl",
-  "baked_beans": "stew_bowl",
-  "roasted_garlic": "baked_potato",
-  "willow_tea": "herbal_tea"
- },
- "categoryIcons": {
-  "resource": "fiber",
-  "food": "berries",
-  "weapon": "sword",
-  "clothing": "linen_shirt",
-  "armor": "armor_leather",
-  "tool": "stone_axe",
-  "ammo": "arrow",
-  "explosive": "molotov",
-  "default": "fiber",
-  "placeable": "fiber"
- }
 }

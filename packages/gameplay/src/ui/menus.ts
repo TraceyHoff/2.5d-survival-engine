@@ -111,7 +111,7 @@ export const queueCraftIntent = (recipe: number, count = 1): MenuIntent => inten
 export const cancelQueuedCraftIntent = (slot: number): MenuIntent => intent(CancelQueuedCraftCmd, { slot });
 
 // ---- build ------------------------------------------------------------------------------------------
-export interface BuildPieceView { id: number; key: string; tiers: { tier: number; key: string; cost: { item: number; name: string; count: number; have: number }[]; affordable: boolean }[]; variants: string[]; paintable: boolean }
+export interface BuildPieceView { id: number; key: string; tiers: { tier: number; key: string; cost: { item: number; name: string; count: number; have: number }[]; affordable: boolean }[]; variants: string[]; paintable: boolean; category: string }
 export interface BuildSelection { piece: number; tier: number; variant: number; paint: number }
 export function buildView(c: MenuCtx): BuildPieceView[] {
   const w = c.world; const defs = gameplayDefs(w);
@@ -119,7 +119,7 @@ export function buildView(c: MenuCtx): BuildPieceView[] {
     const tierIds = p.tiered ? defs.tiers.map((t) => t.id) : [p.fixedTier];
     const tiers = tierIds.map((t) => { const cost = withNames(w, pieceCost(defs, p, t), c.player); return { tier: t, key: defs.tiers.find((d) => d.id === t)?.key ?? String(t), cost, affordable: cost.every((x) => x.have >= x.count) }; });
     const variants = Array.from({ length: Math.max(1, p.variants) }, (_, i) => p.variantNames[i] || `Variant ${i + 1}`);
-    return { id: p.id, key: (p as { key?: string }).key ?? String(p.id), tiers, variants, paintable: p.paintable };
+    return { id: p.id, key: (p as { key?: string }).key ?? String(p.id), tiers, variants, paintable: p.paintable, category: p.category };
   });
 }
 /** Placement intent at a world point (the placement ghost / aim supplies x, y, level, rot). */

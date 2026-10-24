@@ -48,6 +48,7 @@ const heading = (t: string): HTMLElement => { const h = el("p", { "data-role": "
 /** Build-panel selection survives re-renders. */
 const buildSel: BuildSelection = { piece: 0, tier: 0, variant: 0, paint: 0 };
 const castSel = { recipe: 0, count: 1 };
+let buildCat = "";
 let wardrobeSlot = 0;
 /** Camper station: active tab + selected cook recipe survive re-renders. */
 const camperSel = { tab: "craft" as "craft" | "cook", cook: 0 };
@@ -142,8 +143,13 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       out.push(g); return out;
     }
     case "build": {
-      const v = buildView(c); if (!buildSel.piece && v[0]) buildSel.piece = v[0].id;
-      const sel = v.find((p) => p.id === buildSel.piece); const out: Node[] = [heading("Pieces")]; const g = grid();
+      const all = buildView(c); if (!buildSel.piece && all[0]) buildSel.piece = all[0].id;
+      // ADR-112: category tabs keep the 170+ piece catalog scannable (focusable buttons: touch, D-pad, keys)
+      const cats = [...new Set(all.map((p) => p.category))]; if (!cats.includes(buildCat)) buildCat = all.find((p) => p.id === buildSel.piece)?.category ?? cats[0] ?? "structure";
+      const v = all.filter((p) => p.category === buildCat);
+      const sel = all.find((p) => p.id === buildSel.piece); const out: Node[] = [heading("Category")]; const cg0 = grid(); cg0.dataset["role"] = "build-cats";
+      for (const k of cats) cg0.append(btn(k, `bcat-${k}`, () => { buildCat = k; kit.rerender(); }, { pressed: k === buildCat, alt: k !== buildCat }));
+      out.push(cg0, heading("Pieces")); const g = grid();
       for (const p of v) { const t = p.tiers.find((x) => x.tier === buildSel.tier) ?? p.tiers[0]!; g.append(btn(p.key.replace(/_/g, " "), `piece-${p.id}`, () => { buildSel.piece = p.id; buildSel.variant = 0; if (!p.tiers.some((x) => x.tier === buildSel.tier)) buildSel.tier = p.tiers[0]!.tier; src.onBuildSelect?.({ ...buildSel }); kit.rerender(); }, { role: "piece", pressed: p.id === buildSel.piece, alt: !t.affordable, title: t.cost.map((x) => `${x.name} ${x.have}/${x.count}`).join(", ") || "free" })); }
       out.push(g);
       if (sel) {

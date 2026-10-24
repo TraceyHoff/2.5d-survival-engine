@@ -117,6 +117,8 @@ export interface PieceDef extends BuildPieceDef, Visual {
   readonly privilegeRadius: number; readonly paintable: boolean; readonly variants: number; readonly spoilMul: number;
   /** Art skin name per variant index (`<piece>@<name>` sprite lookup); empty = unnamed. */
   readonly variantNames: readonly string[];
+  /** ADR-112 build-menu category (structure|crafting|defense|furniture|lighting|decor|plants|wall|rugs|outdoor). */
+  readonly category: string;
   /** Fuel efficiency: each fuel item burns fuelSeconds x fuelMul here (1 = campfire). */
   readonly fuelMul: number;
   /** Trade stall: listing slots (= stock Container slots) and whether only a clan may own it. null = not a stall. */
@@ -140,6 +142,10 @@ export interface PieceFeatures {
   readonly windsock?: boolean; readonly clanTint?: boolean; readonly clanLock?: boolean; readonly breachAt?: number; readonly sightBonus?: number;
   /** Mirror / wardrobe: players in range may re-edit their look (data/cosmetics.json wardrobeRange). */
   readonly wardrobe?: boolean;
+  /** ADR-112 wall mount: Edge piece hung on one face (rot & 2) of an existing wall; supported by (and destroyed with) it. */
+  readonly mount?: boolean;
+  /** ADR-112 planter: placing spawns tilled soil (Crop kind 0) on the piece; crops planted there ignore the terrain tile rule. */
+  readonly planter?: boolean;
   readonly contact?: { readonly dps: number; readonly radius: number; readonly slowMul: number; readonly slowSeconds: number };
   readonly alarm?: { readonly radius: number; readonly cooldownSeconds: number };
   /** ADR-108 auto turret: shoots the nearest hostile in range every cooldownSeconds, using one `ammo` item (any listed key)
@@ -230,7 +236,7 @@ export interface RawPiece extends RawVisual {
   fired?: boolean; heat?: number; heatRadius?: number; light?: boolean; container?: number; privilegeRadius?: number; paintable?: boolean; variants?: number; variantNames?: string[]; spoilMul?: number; fuelMul?: number;
   stall?: { listings: number; clanOnly?: boolean };
   features?: PieceFeatures;
-  rotSteps?: number; snap?: "vertex"; maxSlope?: number; minTier?: number; extraCost?: { item: string; count: number; fromTier?: number }[]; family?: string;
+  rotSteps?: number; category?: string; snap?: "vertex"; maxSlope?: number; minTier?: number; extraCost?: { item: string; count: number; fromTier?: number }[]; family?: string;
 }
 export interface RawZombie extends RawVisual { key: string; hp: number; speed: number; damage: number; structureDamage: number; attackRange: number; attackCooldownSeconds: number; sightRange: number; hearingMul: number; variants: number; tint?: [number, number, number]; light?: ZombieLightDef }
 export interface RawDefs {
@@ -393,7 +399,7 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
       supportsAbove: p.supportsAbove ?? false, roof: p.roof ?? false, blocksPath: p.blocksPath ?? false,
       opening: p.opening ? enumOf(OPENING, p.opening, `${where}.opening`) : 0, fits: p.fits ? enumOf(OPENING, p.fits, `${where}.fits`) : 0,
       door: p.door ?? false, station, fired: p.fired ?? false, heat: p.heat ?? 0, heatRadius: p.heatRadius ?? 0, light: p.light ?? false,
-      container: p.container ?? 0, privilegeRadius: p.privilegeRadius ?? 0, paintable: p.paintable ?? false, variants: Math.max(1, p.variants ?? 1), variantNames: p.variantNames ?? [], spoilMul: p.spoilMul ?? 1, fuelMul: p.fuelMul ?? 1,
+      container: p.container ?? 0, privilegeRadius: p.privilegeRadius ?? 0, paintable: p.paintable ?? false, variants: Math.max(1, p.variants ?? 1), variantNames: p.variantNames ?? [], category: p.category ?? defaultPieceCategory(p), spoilMul: p.spoilMul ?? 1, fuelMul: p.fuelMul ?? 1,
       stall: p.stall ? { listings: p.stall.listings, clanOnly: p.stall.clanOnly ?? false } : null, features: p.features ?? {},
       rotSteps: p.rotSteps ?? 0, snap: p.snap ?? "", maxSlope: p.maxSlope ?? -1, minTier: p.minTier ?? 0, family: p.family ?? "",
       extraCost: (p.extraCost ?? []).map((c) => ({ item: itemRef(c.item, where), count: c.count, fromTier: c.fromTier ?? 0 })),
@@ -453,4 +459,11 @@ export const secondsToTicks = (seconds: number, dt: number): number => Math.max(
 export function manifestKeys(defs: GameDefs): { items: string[]; resources: string[]; pieces: string[]; zombies: string[] } {
   const k = <T extends Visual>(m: ReadonlyMap<number, T>) => [...m.values()].map((d) => d.spriteKey);
   return { items: k(defs.items), resources: k(defs.resources), pieces: k(defs.pieces), zombies: k(defs.zombies) };
+}
+
+/** ADR-112: build-menu category when pieces.json omits one. */
+export function defaultPieceCategory(p: { layer?: number; station?: string; placement?: string; fired?: boolean; light?: boolean }): string {
+  if (p.station) return "crafting";
+  if ((p.layer ?? 1) >= 2) return p.light ? "lighting" : (p.layer ?? 0) >= 3 ? "decor" : "furniture";
+  return "structure";
 }

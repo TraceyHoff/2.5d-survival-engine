@@ -126,7 +126,7 @@ export class IsoView {
     if (!p) { this.ghost.sync(null); return; }
     const names = gameplayDefs(net).pieces.get(p.piece)?.variantNames ?? [];
     const def = gameplayDefs(net).pieces.get(p.piece);
-    this.ghost.sync({ pieceKey: p.pieceKey, x: p.x, y: p.y, rot: p.rot, valid: p.valid }, { z: p.z, level: p.level, tier: p.tier, rotSteps: p.rotSteps, exactPivot: exactPivot(def), ...(names[p.variant] ? { variant: names[p.variant]! } : { variant: p.variant }) });
+    this.ghost.sync({ pieceKey: this.pk(p.pieceKey) ?? p.pieceKey, x: p.x, y: p.y, rot: p.rot, valid: p.valid }, { z: p.z, level: p.level, tier: p.tier, rotSteps: p.rotSteps, exactPivot: exactPivot(def), ...(names[p.variant] ? { variant: names[p.variant]! } : { variant: p.variant }) });
   }
   resize(w: number, h: number, dpr: number): void {
     const safe = new URLSearchParams(location.search).get("safe") === "1" || this.renderer.capabilities.safe || this.renderer.capabilities.lowEnd;
@@ -142,6 +142,13 @@ export class IsoView {
     return r ?? undefined;
   }
 
+  /** ADR-112: build-piece art fallback (sprite_fallbacks.json `to` chain over piece keys the pack has). */
+  private pkCache = new Map<string, string>();
+  private pk(key: string | undefined): string | undefined {
+    if (!key) return key; let r = this.pkCache.get(key);
+    if (r === undefined) { r = resolveSprite(key, (k) => this.registry.spriteForPiece(k) !== undefined)?.key ?? key; this.pkCache.set(key, r); }
+    return r;
+  }
   /** Mirror `net` into the view World and draw. */
   render(net: World, tiles: TileMap | undefined, player: Entity | undefined, alpha: number): void {
     const v = this.view, r = this.renderer;
@@ -312,7 +319,7 @@ export class IsoView {
     if ((net.tick + entityIndex(e)) % 15 !== 0 && this.pieceStates.has(ve)) return; // cheap: lit flips are rare
     const fire = this.siblings(net, e).find((o) => net.has(o, Fuel)); const lit = fire !== undefined && net.get(fire, Fuel)!.lit === 1;
     const p = net.get(e, GPiece)!;
-    const vis = buildPieceVisual(this.registry, { type: p.type, ...artRot(p.rot, rotationSteps(net, p.type)), tint: p.tint, paint: p.paint, state: lit ? "idle" : "unlit" }, { pieceKey: (t) => defs?.pieces.get(t)?.key });
+    const vis = buildPieceVisual(this.registry, { type: p.type, ...artRot(p.rot, rotationSteps(net, p.type)), tint: p.tint, paint: p.paint, state: lit ? "idle" : "unlit" }, { pieceKey: (t) => this.pk(defs?.pieces.get(t)?.key) });
     this.pieceStates.set(ve, vis.stateIndex);
   }
   private baseScale(ve: Entity): number { return this.scales.get(ve) ?? 1; }
@@ -362,7 +369,7 @@ export class IsoView {
     }
     if (net.has(e, GPiece) && defs) {
       const p = net.get(e, GPiece)!; const def = defs.pieces.get(p.type);
-      const vis = buildPieceVisual(this.registry, { type: p.type, ...artRot(p.rot, rotationSteps(net, p.type)), tint: p.tint, paint: p.paint, damageStage: p.damageStage }, { tier: p.tier, pieceKey: (t) => defs.pieces.get(t)?.key });
+      const vis = buildPieceVisual(this.registry, { type: p.type, ...artRot(p.rot, rotationSteps(net, p.type)), tint: p.tint, paint: p.paint, damageStage: p.damageStage }, { tier: p.tier, pieceKey: (t) => this.pk(defs.pieces.get(t)?.key) });
       if (!vis.visualId) return undefined;
       const lh = (defs as unknown as { building?: { levelHeight?: number } }).building?.levelHeight ?? 1;
       const z = net.get(e, Transform)!.z; const level = Math.max(0, Math.round(z / (lh || 1)));

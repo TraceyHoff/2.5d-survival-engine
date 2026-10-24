@@ -39,7 +39,7 @@
       "placement": "cell",
       "layer": 0,
       "tiered": true,
-      "costScale": 1.0,
+      "costScale": 1,
       "hp": 250,
       "minLevel": 1,
       "sockets": [
@@ -111,7 +111,7 @@
       "placement": "cell",
       "layer": 0,
       "tiered": true,
-      "costScale": 1.0,
+      "costScale": 1,
       "hp": 250,
       "minLevel": 1,
       "roof": true,
@@ -157,7 +157,7 @@
       "placement": "edge",
       "layer": 1,
       "tiered": true,
-      "costScale": 1.0,
+      "costScale": 1,
       "hp": 250,
       "blocksPath": true,
       "variants": 4,
@@ -418,7 +418,7 @@
           "amount": 8
         }
       ],
-      "spoilMul": 1.0
+      "spoilMul": 1
     },
     {
       "key": "large_chest",
@@ -441,7 +441,7 @@
           "amount": 4
         }
       ],
-      "spoilMul": 1.0
+      "spoilMul": 1
     },
     {
       "key": "bed",
@@ -889,7 +889,7 @@
           "amount": 4
         }
       ],
-      "fuelMul": 2.0
+      "fuelMul": 2
     },
     {
       "key": "windsock",
@@ -1153,7 +1153,7 @@
       "placement": "cell",
       "layer": 0,
       "tiered": true,
-      "costScale": 2.0,
+      "costScale": 2,
       "hp": 450,
       "groundOnly": true,
       "maxSlope": 4,
@@ -1207,7 +1207,7 @@
       "placement": "cell",
       "layer": 1,
       "tiered": true,
-      "costScale": 1.0,
+      "costScale": 1,
       "hp": 300,
       "needsDeck": true,
       "minTier": 1,
@@ -1554,7 +1554,7 @@
         "turret": {
           "range": 16,
           "damage": 30,
-          "cooldownSeconds": 2.0,
+          "cooldownSeconds": 2,
           "ammo": [
             "iron_bolt",
             "steel_bolt"
@@ -1618,6 +1618,3228 @@
           "amount": 2
         }
       ]
+    },
+    {
+      "key": "chair_rustic",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 80,
+      "solid": false,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 3
+        }
+      ],
+      "category": "furniture",
+      "rotSteps": 4,
+      "variants": 4,
+      "variantNames": [
+        "plain",
+        "slat",
+        "padded",
+        "armchair"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "chair_fine",
+      "placement": "free",
+      "layer": 2,
+      "tier": 2,
+      "hp": 80,
+      "solid": false,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "hardwood_planks",
+          "amount": 3
+        },
+        {
+          "resource": "nails",
+          "amount": 1
+        }
+      ],
+      "category": "furniture",
+      "rotSteps": 4,
+      "variants": 4,
+      "variantNames": [
+        "plain",
+        "slat",
+        "padded",
+        "armchair"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "chair_luxury",
+      "placement": "free",
+      "layer": 2,
+      "tier": 3,
+      "hp": 80,
+      "solid": false,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "hardwood_planks",
+          "amount": 3
+        },
+        {
+          "resource": "cloth",
+          "amount": 2
+        },
+        {
+          "resource": "bronze_ingot",
+          "amount": 1
+        }
+      ],
+      "category": "furniture",
+      "rotSteps": 4,
+      "variants": 4,
+      "variantNames": [
+        "plain",
+        "slat",
+        "padded",
+        "armchair"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "stool_rustic",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 80,
+      "solid": false,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 2
+        }
+      ],
+      "category": "furniture",
+      "variants": 3,
+      "variantNames": [
+        "round",
+        "square",
+        "tall"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "stool_fine",
+      "placement": "free",
+      "layer": 2,
+      "tier": 2,
+      "hp": 80,
+      "solid": false,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "hardwood_planks",
+          "amount": 2
+        },
+        {
+          "resource": "nails",
+          "amount": 1
+        }
+      ],
+      "category": "furniture",
+      "variants": 3,
+      "variantNames": [
+        "round",
+        "square",
+        "tall"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "bench_rustic",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 80,
+      "solid": false,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 4
+        }
+      ],
+      "category": "furniture",
+      "rotSteps": 4,
+      "footprint": {
+        "w": 2,
+        "h": 1
+      },
+      "variants": 3,
+      "variantNames": [
+        "plain",
+        "backed",
+        "carved"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "bench_fine",
+      "placement": "free",
+      "layer": 2,
+      "tier": 2,
+      "hp": 80,
+      "solid": false,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "hardwood_planks",
+          "amount": 4
+        },
+        {
+          "resource": "nails",
+          "amount": 2
+        }
+      ],
+      "category": "furniture",
+      "rotSteps": 4,
+      "footprint": {
+        "w": 2,
+        "h": 1
+      },
+      "variants": 3,
+      "variantNames": [
+        "plain",
+        "backed",
+        "carved"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "sofa_fine",
+      "placement": "free",
+      "layer": 2,
+      "tier": 2,
+      "hp": 150,
+      "solid": false,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "hardwood_planks",
+          "amount": 6
+        },
+        {
+          "resource": "nails",
+          "amount": 2
+        }
+      ],
+      "category": "furniture",
+      "rotSteps": 4,
+      "footprint": {
+        "w": 2,
+        "h": 1
+      },
+      "variants": 3,
+      "variantNames": [
+        "plain",
+        "tufted",
+        "leather"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "sofa_luxury",
+      "placement": "free",
+      "layer": 2,
+      "tier": 3,
+      "hp": 150,
+      "solid": false,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "hardwood_planks",
+          "amount": 6
+        },
+        {
+          "resource": "cloth",
+          "amount": 3
+        },
+        {
+          "resource": "bronze_ingot",
+          "amount": 1
+        }
+      ],
+      "category": "furniture",
+      "rotSteps": 4,
+      "footprint": {
+        "w": 2,
+        "h": 1
+      },
+      "variants": 3,
+      "variantNames": [
+        "plain",
+        "tufted",
+        "leather"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "bed_double_rustic",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 200,
+      "solid": false,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 8
+        }
+      ],
+      "category": "furniture",
+      "rotSteps": 4,
+      "footprint": {
+        "w": 2,
+        "h": 2
+      },
+      "variants": 4,
+      "variantNames": [
+        "plain",
+        "canopy",
+        "quilted",
+        "fur"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "bed_double_fine",
+      "placement": "free",
+      "layer": 2,
+      "tier": 2,
+      "hp": 200,
+      "solid": false,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "hardwood_planks",
+          "amount": 8
+        },
+        {
+          "resource": "nails",
+          "amount": 3
+        }
+      ],
+      "category": "furniture",
+      "rotSteps": 4,
+      "footprint": {
+        "w": 2,
+        "h": 2
+      },
+      "variants": 4,
+      "variantNames": [
+        "plain",
+        "canopy",
+        "quilted",
+        "fur"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "bed_double_luxury",
+      "placement": "free",
+      "layer": 2,
+      "tier": 3,
+      "hp": 200,
+      "solid": false,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "hardwood_planks",
+          "amount": 8
+        },
+        {
+          "resource": "cloth",
+          "amount": 4
+        },
+        {
+          "resource": "bronze_ingot",
+          "amount": 1
+        }
+      ],
+      "category": "furniture",
+      "rotSteps": 4,
+      "footprint": {
+        "w": 2,
+        "h": 2
+      },
+      "variants": 4,
+      "variantNames": [
+        "plain",
+        "canopy",
+        "quilted",
+        "fur"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "bunk_bed",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 180,
+      "solid": false,
+      "ground": true,
+      "category": "furniture",
+      "rotSteps": 4,
+      "footprint": {
+        "w": 1,
+        "h": 2
+      },
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 10
+        },
+        {
+          "resource": "cloth",
+          "amount": 6
+        }
+      ],
+      "variants": 3,
+      "variantNames": [
+        "plain",
+        "rail",
+        "ladder"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "table_dining_rustic",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 150,
+      "solid": true,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 6
+        }
+      ],
+      "category": "furniture",
+      "rotSteps": 4,
+      "footprint": {
+        "w": 2,
+        "h": 1
+      },
+      "variants": 3,
+      "variantNames": [
+        "plain",
+        "carved",
+        "clothed"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "table_dining_fine",
+      "placement": "free",
+      "layer": 2,
+      "tier": 2,
+      "hp": 150,
+      "solid": true,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "hardwood_planks",
+          "amount": 6
+        },
+        {
+          "resource": "nails",
+          "amount": 2
+        }
+      ],
+      "category": "furniture",
+      "rotSteps": 4,
+      "footprint": {
+        "w": 2,
+        "h": 1
+      },
+      "variants": 3,
+      "variantNames": [
+        "plain",
+        "carved",
+        "clothed"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "table_dining_luxury",
+      "placement": "free",
+      "layer": 2,
+      "tier": 3,
+      "hp": 150,
+      "solid": true,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "hardwood_planks",
+          "amount": 6
+        },
+        {
+          "resource": "cloth",
+          "amount": 3
+        },
+        {
+          "resource": "bronze_ingot",
+          "amount": 1
+        }
+      ],
+      "category": "furniture",
+      "rotSteps": 4,
+      "footprint": {
+        "w": 2,
+        "h": 1
+      },
+      "variants": 3,
+      "variantNames": [
+        "plain",
+        "carved",
+        "clothed"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "table_coffee_rustic",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 80,
+      "solid": true,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 3
+        }
+      ],
+      "category": "furniture",
+      "variants": 3,
+      "variantNames": [
+        "round",
+        "square",
+        "glass_top"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "table_coffee_fine",
+      "placement": "free",
+      "layer": 2,
+      "tier": 2,
+      "hp": 80,
+      "solid": true,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "hardwood_planks",
+          "amount": 3
+        },
+        {
+          "resource": "nails",
+          "amount": 1
+        }
+      ],
+      "category": "furniture",
+      "variants": 3,
+      "variantNames": [
+        "round",
+        "square",
+        "glass_top"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "table_side_rustic",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 80,
+      "solid": false,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 2
+        }
+      ],
+      "category": "furniture",
+      "variants": 3,
+      "variantNames": [
+        "round",
+        "square",
+        "drawer"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "table_side_fine",
+      "placement": "free",
+      "layer": 2,
+      "tier": 2,
+      "hp": 80,
+      "solid": false,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "hardwood_planks",
+          "amount": 2
+        },
+        {
+          "resource": "nails",
+          "amount": 1
+        }
+      ],
+      "category": "furniture",
+      "variants": 3,
+      "variantNames": [
+        "round",
+        "square",
+        "drawer"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "desk_rustic",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 80,
+      "solid": true,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 6
+        }
+      ],
+      "category": "furniture",
+      "rotSteps": 4,
+      "footprint": {
+        "w": 2,
+        "h": 1
+      },
+      "variants": 3,
+      "variantNames": [
+        "plain",
+        "writing",
+        "drafting"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "desk_fine",
+      "placement": "free",
+      "layer": 2,
+      "tier": 2,
+      "hp": 80,
+      "solid": true,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "hardwood_planks",
+          "amount": 6
+        },
+        {
+          "resource": "nails",
+          "amount": 2
+        }
+      ],
+      "category": "furniture",
+      "rotSteps": 4,
+      "footprint": {
+        "w": 2,
+        "h": 1
+      },
+      "variants": 3,
+      "variantNames": [
+        "plain",
+        "writing",
+        "drafting"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "shelf_rustic",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 80,
+      "solid": true,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 4
+        }
+      ],
+      "category": "furniture",
+      "rotSteps": 4,
+      "container": 4,
+      "variants": 3,
+      "variantNames": [
+        "low",
+        "tall",
+        "corner"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "shelf_fine",
+      "placement": "free",
+      "layer": 2,
+      "tier": 2,
+      "hp": 80,
+      "solid": true,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "hardwood_planks",
+          "amount": 4
+        },
+        {
+          "resource": "nails",
+          "amount": 2
+        }
+      ],
+      "category": "furniture",
+      "rotSteps": 4,
+      "container": 4,
+      "variants": 3,
+      "variantNames": [
+        "low",
+        "tall",
+        "corner"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "bookcase_rustic",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 80,
+      "solid": true,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 6
+        }
+      ],
+      "category": "furniture",
+      "rotSteps": 4,
+      "container": 6,
+      "variants": 4,
+      "variantNames": [
+        "empty",
+        "half",
+        "full",
+        "ladder"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "bookcase_fine",
+      "placement": "free",
+      "layer": 2,
+      "tier": 2,
+      "hp": 80,
+      "solid": true,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "hardwood_planks",
+          "amount": 6
+        },
+        {
+          "resource": "nails",
+          "amount": 2
+        }
+      ],
+      "category": "furniture",
+      "rotSteps": 4,
+      "container": 6,
+      "variants": 4,
+      "variantNames": [
+        "empty",
+        "half",
+        "full",
+        "ladder"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "cabinet_rustic",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 80,
+      "solid": true,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 6
+        }
+      ],
+      "category": "furniture",
+      "rotSteps": 4,
+      "container": 8,
+      "paintable": true,
+      "spoilMul": 1,
+      "variants": 3,
+      "variantNames": [
+        "plain",
+        "glass",
+        "painted"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "cabinet_fine",
+      "placement": "free",
+      "layer": 2,
+      "tier": 2,
+      "hp": 80,
+      "solid": true,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "hardwood_planks",
+          "amount": 6
+        },
+        {
+          "resource": "nails",
+          "amount": 2
+        }
+      ],
+      "category": "furniture",
+      "rotSteps": 4,
+      "container": 8,
+      "paintable": true,
+      "spoilMul": 1,
+      "variants": 3,
+      "variantNames": [
+        "plain",
+        "glass",
+        "painted"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "wardrobe_rustic",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 200,
+      "solid": true,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 10
+        }
+      ],
+      "category": "furniture",
+      "rotSteps": 4,
+      "container": 10,
+      "footprint": {
+        "w": 2,
+        "h": 1
+      },
+      "features": {
+        "wardrobe": true
+      },
+      "variants": 3,
+      "variantNames": [
+        "plain",
+        "mirrored",
+        "carved"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "wardrobe_fine",
+      "placement": "free",
+      "layer": 2,
+      "tier": 2,
+      "hp": 200,
+      "solid": true,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "hardwood_planks",
+          "amount": 10
+        },
+        {
+          "resource": "nails",
+          "amount": 4
+        }
+      ],
+      "category": "furniture",
+      "rotSteps": 4,
+      "container": 10,
+      "footprint": {
+        "w": 2,
+        "h": 1
+      },
+      "features": {
+        "wardrobe": true
+      },
+      "variants": 3,
+      "variantNames": [
+        "plain",
+        "mirrored",
+        "carved"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "wardrobe_luxury",
+      "placement": "free",
+      "layer": 2,
+      "tier": 3,
+      "hp": 200,
+      "solid": true,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "hardwood_planks",
+          "amount": 10
+        },
+        {
+          "resource": "cloth",
+          "amount": 5
+        },
+        {
+          "resource": "bronze_ingot",
+          "amount": 1
+        }
+      ],
+      "category": "furniture",
+      "rotSteps": 4,
+      "container": 10,
+      "footprint": {
+        "w": 2,
+        "h": 1
+      },
+      "features": {
+        "wardrobe": true
+      },
+      "variants": 3,
+      "variantNames": [
+        "plain",
+        "mirrored",
+        "carved"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "dresser_rustic",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 80,
+      "solid": true,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 8
+        }
+      ],
+      "category": "furniture",
+      "rotSteps": 4,
+      "container": 8,
+      "footprint": {
+        "w": 2,
+        "h": 1
+      },
+      "variants": 3,
+      "variantNames": [
+        "plain",
+        "mirror_top",
+        "painted"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "dresser_fine",
+      "placement": "free",
+      "layer": 2,
+      "tier": 2,
+      "hp": 80,
+      "solid": true,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "hardwood_planks",
+          "amount": 8
+        },
+        {
+          "resource": "nails",
+          "amount": 3
+        }
+      ],
+      "category": "furniture",
+      "rotSteps": 4,
+      "container": 8,
+      "footprint": {
+        "w": 2,
+        "h": 1
+      },
+      "variants": 3,
+      "variantNames": [
+        "plain",
+        "mirror_top",
+        "painted"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "counter_rustic",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 80,
+      "solid": true,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 5
+        }
+      ],
+      "category": "furniture",
+      "rotSteps": 4,
+      "container": 4,
+      "variants": 3,
+      "variantNames": [
+        "plain",
+        "tiled",
+        "butcher_block"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "counter_fine",
+      "placement": "free",
+      "layer": 2,
+      "tier": 2,
+      "hp": 80,
+      "solid": true,
+      "ground": true,
+      "cost": [
+        {
+          "resource": "hardwood_planks",
+          "amount": 5
+        },
+        {
+          "resource": "nails",
+          "amount": 2
+        }
+      ],
+      "category": "furniture",
+      "rotSteps": 4,
+      "container": 4,
+      "variants": 3,
+      "variantNames": [
+        "plain",
+        "tiled",
+        "butcher_block"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "kitchen_sink",
+      "placement": "free",
+      "layer": 2,
+      "tier": 2,
+      "hp": 80,
+      "solid": true,
+      "ground": true,
+      "category": "furniture",
+      "rotSteps": 4,
+      "cost": [
+        {
+          "resource": "stone_brick",
+          "amount": 4
+        },
+        {
+          "resource": "iron_pipe",
+          "amount": 1
+        }
+      ],
+      "variants": 2,
+      "variantNames": [
+        "stone",
+        "metal"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "kitchen_cupboard",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 80,
+      "solid": true,
+      "ground": true,
+      "category": "furniture",
+      "rotSteps": 4,
+      "container": 6,
+      "paintable": true,
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 6
+        },
+        {
+          "resource": "nails",
+          "amount": 2
+        }
+      ],
+      "variants": 3,
+      "variantNames": [
+        "plain",
+        "glass",
+        "painted"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "pantry",
+      "placement": "free",
+      "layer": 2,
+      "tier": 2,
+      "hp": 80,
+      "solid": true,
+      "ground": true,
+      "category": "furniture",
+      "rotSteps": 4,
+      "container": 12,
+      "spoilMul": 0.75,
+      "cost": [
+        {
+          "resource": "hardwood_planks",
+          "amount": 8
+        },
+        {
+          "resource": "salt",
+          "amount": 2
+        }
+      ],
+      "variants": 2,
+      "variantNames": [
+        "plain",
+        "slatted"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "tool_bench",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 80,
+      "solid": true,
+      "ground": true,
+      "category": "furniture",
+      "rotSteps": 4,
+      "footprint": {
+        "w": 2,
+        "h": 1
+      },
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 6
+        },
+        {
+          "resource": "scrap_metal",
+          "amount": 2
+        }
+      ],
+      "variants": 3,
+      "variantNames": [
+        "vise",
+        "saw",
+        "clutter"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "stove_iron",
+      "placement": "free",
+      "layer": 2,
+      "tier": 3,
+      "hp": 400,
+      "solid": true,
+      "ground": true,
+      "category": "furniture",
+      "rotSteps": 4,
+      "station": "campfire",
+      "fired": true,
+      "heat": 12,
+      "heatRadius": 3,
+      "light": true,
+      "container": 4,
+      "fuelMul": 1.5,
+      "cost": [
+        {
+          "resource": "iron_plate",
+          "amount": 4
+        },
+        {
+          "resource": "nails",
+          "amount": 2
+        }
+      ],
+      "variants": 3,
+      "variantNames": [
+        "black",
+        "enamel",
+        "rustic"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "cook_range",
+      "placement": "free",
+      "layer": 2,
+      "tier": 3,
+      "hp": 500,
+      "solid": true,
+      "ground": true,
+      "category": "furniture",
+      "rotSteps": 4,
+      "footprint": {
+        "w": 2,
+        "h": 1
+      },
+      "station": "campfire",
+      "fired": true,
+      "heat": 14,
+      "heatRadius": 3,
+      "light": true,
+      "container": 6,
+      "fuelMul": 1.75,
+      "cost": [
+        {
+          "resource": "iron_plate",
+          "amount": 6
+        },
+        {
+          "resource": "stone_brick",
+          "amount": 4
+        }
+      ],
+      "variants": 2,
+      "variantNames": [
+        "plain",
+        "tiled"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "clay_oven",
+      "placement": "free",
+      "layer": 2,
+      "tier": 2,
+      "hp": 400,
+      "solid": true,
+      "ground": true,
+      "category": "furniture",
+      "station": "campfire",
+      "fired": true,
+      "heat": 10,
+      "heatRadius": 2.5,
+      "light": true,
+      "container": 4,
+      "fuelMul": 1.25,
+      "cost": [
+        {
+          "resource": "clay_brick",
+          "amount": 10
+        },
+        {
+          "resource": "mortar",
+          "amount": 2
+        }
+      ],
+      "variants": 2,
+      "variantNames": [
+        "dome",
+        "brick"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "candle",
+      "placement": "free",
+      "layer": 3,
+      "tier": 1,
+      "hp": 10,
+      "solid": false,
+      "ground": true,
+      "light": true,
+      "fired": true,
+      "container": 1,
+      "category": "lighting",
+      "fuelMul": 0.5,
+      "cost": [
+        {
+          "resource": "beeswax",
+          "amount": 1
+        },
+        {
+          "resource": "thread",
+          "amount": 1
+        }
+      ],
+      "variants": 3,
+      "variantNames": [
+        "single",
+        "trio",
+        "tall"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "candelabra",
+      "placement": "free",
+      "layer": 3,
+      "tier": 2,
+      "hp": 30,
+      "solid": false,
+      "ground": true,
+      "light": true,
+      "fired": true,
+      "container": 1,
+      "category": "lighting",
+      "cost": [
+        {
+          "resource": "bronze_ingot",
+          "amount": 1
+        },
+        {
+          "resource": "beeswax",
+          "amount": 2
+        }
+      ],
+      "variants": 3,
+      "variantNames": [
+        "brass",
+        "iron",
+        "silver"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "floor_lamp",
+      "placement": "free",
+      "layer": 3,
+      "tier": 2,
+      "hp": 40,
+      "solid": false,
+      "ground": true,
+      "light": true,
+      "fired": true,
+      "container": 1,
+      "category": "lighting",
+      "cost": [
+        {
+          "resource": "glass",
+          "amount": 1
+        },
+        {
+          "resource": "iron_ingot",
+          "amount": 1
+        },
+        {
+          "resource": "cloth",
+          "amount": 1
+        }
+      ],
+      "variants": 3,
+      "variantNames": [
+        "shade",
+        "oil",
+        "brass"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "table_lamp",
+      "placement": "free",
+      "layer": 3,
+      "tier": 2,
+      "hp": 20,
+      "solid": false,
+      "ground": true,
+      "light": true,
+      "fired": true,
+      "container": 1,
+      "category": "lighting",
+      "cost": [
+        {
+          "resource": "glass",
+          "amount": 1
+        },
+        {
+          "resource": "copper_ingot",
+          "amount": 1
+        }
+      ],
+      "variants": 2,
+      "variantNames": [
+        "shade",
+        "oil"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "chandelier",
+      "placement": "free",
+      "layer": 3,
+      "tier": 3,
+      "hp": 60,
+      "solid": false,
+      "ground": false,
+      "light": true,
+      "fired": true,
+      "container": 1,
+      "category": "lighting",
+      "footprint": {
+        "w": 2,
+        "h": 2
+      },
+      "fuelMul": 0.75,
+      "cost": [
+        {
+          "resource": "iron_ingot",
+          "amount": 3
+        },
+        {
+          "resource": "glass",
+          "amount": 2
+        },
+        {
+          "resource": "beeswax",
+          "amount": 4
+        }
+      ],
+      "variants": 3,
+      "variantNames": [
+        "wood",
+        "iron",
+        "crystal"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "lantern_hanging",
+      "placement": "free",
+      "layer": 3,
+      "tier": 2,
+      "hp": 30,
+      "solid": false,
+      "ground": true,
+      "light": true,
+      "fired": true,
+      "container": 1,
+      "category": "lighting",
+      "cost": [
+        {
+          "resource": "glass",
+          "amount": 1
+        },
+        {
+          "resource": "iron_ingot",
+          "amount": 1
+        },
+        {
+          "resource": "chain_rings",
+          "amount": 1
+        }
+      ],
+      "variants": 3,
+      "variantNames": [
+        "iron",
+        "paper",
+        "brass"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "wall_sconce",
+      "placement": "edge",
+      "layer": 3,
+      "tier": 1,
+      "hp": 30,
+      "solid": false,
+      "rotSteps": 4,
+      "features": {
+        "mount": true
+      },
+      "category": "lighting",
+      "light": true,
+      "fired": true,
+      "container": 1,
+      "cost": [
+        {
+          "resource": "iron_ingot",
+          "amount": 1
+        },
+        {
+          "resource": "sticks",
+          "amount": 1
+        }
+      ],
+      "variants": 3,
+      "variantNames": [
+        "torch",
+        "candle",
+        "oil"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "lamp_post",
+      "placement": "free",
+      "layer": 2,
+      "tier": 2,
+      "hp": 120,
+      "solid": true,
+      "ground": true,
+      "light": true,
+      "fired": true,
+      "container": 1,
+      "category": "outdoor",
+      "cost": [
+        {
+          "resource": "iron_pipe",
+          "amount": 2
+        },
+        {
+          "resource": "glass",
+          "amount": 1
+        },
+        {
+          "resource": "lamp_oil",
+          "amount": 1
+        }
+      ],
+      "variants": 3,
+      "variantNames": [
+        "iron",
+        "wood",
+        "double"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "statue",
+      "placement": "free",
+      "layer": 2,
+      "tier": 2,
+      "hp": 300,
+      "solid": true,
+      "ground": true,
+      "category": "decor",
+      "rotSteps": 4,
+      "cost": [
+        {
+          "resource": "stone_brick",
+          "amount": 6
+        },
+        {
+          "resource": "mortar",
+          "amount": 1
+        }
+      ],
+      "variants": 6,
+      "variantNames": [
+        "bust",
+        "warrior",
+        "angel",
+        "deer",
+        "bear",
+        "abstract"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "statue_large",
+      "placement": "free",
+      "layer": 2,
+      "tier": 3,
+      "hp": 800,
+      "solid": true,
+      "ground": true,
+      "category": "decor",
+      "rotSteps": 4,
+      "footprint": {
+        "w": 2,
+        "h": 2
+      },
+      "cost": [
+        {
+          "resource": "stone_brick",
+          "amount": 20
+        },
+        {
+          "resource": "mortar",
+          "amount": 4
+        }
+      ],
+      "variants": 3,
+      "variantNames": [
+        "hero",
+        "horse",
+        "obelisk"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "vase",
+      "placement": "free",
+      "layer": 3,
+      "tier": 1,
+      "hp": 15,
+      "solid": false,
+      "ground": true,
+      "category": "decor",
+      "paintable": true,
+      "cost": [
+        {
+          "resource": "clay",
+          "amount": 2
+        }
+      ],
+      "variants": 4,
+      "variantNames": [
+        "tall",
+        "round",
+        "painted",
+        "amphora"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "crate_decor",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 80,
+      "solid": true,
+      "ground": true,
+      "category": "decor",
+      "rotSteps": 4,
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 3
+        }
+      ],
+      "variants": 3,
+      "variantNames": [
+        "single",
+        "stack",
+        "open"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "barrel_decor",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 80,
+      "solid": true,
+      "ground": true,
+      "category": "decor",
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 4
+        },
+        {
+          "resource": "iron_ingot",
+          "amount": 1
+        }
+      ],
+      "variants": 3,
+      "variantNames": [
+        "upright",
+        "side",
+        "water"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "barrel_storage",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 80,
+      "solid": true,
+      "ground": true,
+      "category": "decor",
+      "container": 8,
+      "spoilMul": 0.9,
+      "cost": [
+        {
+          "resource": "hardwood_planks",
+          "amount": 5
+        },
+        {
+          "resource": "iron_ingot",
+          "amount": 1
+        }
+      ],
+      "variants": 2,
+      "variantNames": [
+        "oak",
+        "iron_band"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "trophy_mount",
+      "placement": "edge",
+      "layer": 3,
+      "tier": 1,
+      "hp": 40,
+      "solid": false,
+      "rotSteps": 4,
+      "features": {
+        "mount": true
+      },
+      "category": "decor",
+      "cost": [
+        {
+          "resource": "hide",
+          "amount": 2
+        },
+        {
+          "resource": "planks",
+          "amount": 1
+        },
+        {
+          "resource": "bone",
+          "amount": 1
+        }
+      ],
+      "variants": 8,
+      "variantNames": [
+        "deer",
+        "elk",
+        "moose",
+        "boar",
+        "wolf",
+        "bear",
+        "bison",
+        "rabbit"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "clan_flag",
+      "placement": "free",
+      "layer": 3,
+      "tier": 1,
+      "hp": 50,
+      "solid": false,
+      "ground": true,
+      "category": "decor",
+      "paintable": true,
+      "features": {
+        "clanTint": true
+      },
+      "cost": [
+        {
+          "resource": "cloth",
+          "amount": 3
+        },
+        {
+          "resource": "sticks",
+          "amount": 3
+        },
+        {
+          "resource": "dye",
+          "amount": 1
+        }
+      ],
+      "variants": 3,
+      "variantNames": [
+        "pole",
+        "crossed",
+        "tall"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "sign",
+      "placement": "free",
+      "layer": 3,
+      "tier": 1,
+      "hp": 40,
+      "solid": false,
+      "ground": true,
+      "category": "decor",
+      "rotSteps": 4,
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 2
+        },
+        {
+          "resource": "sticks",
+          "amount": 1
+        }
+      ],
+      "variants": 4,
+      "variantNames": [
+        "post",
+        "hanging",
+        "arrow",
+        "board"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "sign_wall",
+      "placement": "edge",
+      "layer": 3,
+      "tier": 1,
+      "hp": 30,
+      "solid": false,
+      "rotSteps": 4,
+      "features": {
+        "mount": true
+      },
+      "category": "decor",
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 2
+        }
+      ],
+      "variants": 2,
+      "variantNames": [
+        "plain",
+        "carved"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "curtains",
+      "placement": "edge",
+      "layer": 3,
+      "tier": 1,
+      "hp": 20,
+      "solid": false,
+      "rotSteps": 4,
+      "features": {
+        "mount": true
+      },
+      "category": "decor",
+      "paintable": true,
+      "cost": [
+        {
+          "resource": "cloth",
+          "amount": 3
+        },
+        {
+          "resource": "sticks",
+          "amount": 1
+        }
+      ],
+      "variants": 4,
+      "variantNames": [
+        "short",
+        "long",
+        "sheer",
+        "heavy"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "clock",
+      "placement": "free",
+      "layer": 2,
+      "tier": 3,
+      "hp": 80,
+      "solid": true,
+      "ground": true,
+      "category": "decor",
+      "rotSteps": 4,
+      "cost": [
+        {
+          "resource": "hardwood_planks",
+          "amount": 4
+        },
+        {
+          "resource": "mechanism",
+          "amount": 1
+        },
+        {
+          "resource": "glass",
+          "amount": 1
+        }
+      ],
+      "variants": 2,
+      "variantNames": [
+        "grandfather",
+        "mantel"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "clock_wall",
+      "placement": "edge",
+      "layer": 3,
+      "tier": 3,
+      "hp": 30,
+      "solid": false,
+      "rotSteps": 4,
+      "features": {
+        "mount": true
+      },
+      "category": "decor",
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 2
+        },
+        {
+          "resource": "mechanism",
+          "amount": 1
+        }
+      ],
+      "variants": 2,
+      "variantNames": [
+        "round",
+        "cuckoo"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "mirror_standing",
+      "placement": "free",
+      "layer": 2,
+      "tier": 2,
+      "hp": 60,
+      "solid": true,
+      "ground": true,
+      "category": "decor",
+      "rotSteps": 4,
+      "features": {
+        "wardrobe": true
+      },
+      "cost": [
+        {
+          "resource": "hardwood_planks",
+          "amount": 3
+        },
+        {
+          "resource": "glass",
+          "amount": 2
+        }
+      ],
+      "variants": 2,
+      "variantNames": [
+        "oval",
+        "tall"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "mirror_wall",
+      "placement": "edge",
+      "layer": 3,
+      "tier": 2,
+      "hp": 30,
+      "solid": false,
+      "rotSteps": 4,
+      "features": {
+        "mount": true,
+        "wardrobe": true
+      },
+      "category": "decor",
+      "cost": [
+        {
+          "resource": "glass",
+          "amount": 2
+        },
+        {
+          "resource": "planks",
+          "amount": 1
+        }
+      ],
+      "variants": 2,
+      "variantNames": [
+        "round",
+        "gilded"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "pottery",
+      "placement": "free",
+      "layer": 3,
+      "tier": 1,
+      "hp": 15,
+      "solid": false,
+      "ground": true,
+      "category": "decor",
+      "paintable": true,
+      "cost": [
+        {
+          "resource": "clay",
+          "amount": 2
+        }
+      ],
+      "variants": 4,
+      "variantNames": [
+        "jug",
+        "bowl_stack",
+        "urn",
+        "pitcher"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "books",
+      "placement": "free",
+      "layer": 3,
+      "tier": 1,
+      "hp": 10,
+      "solid": false,
+      "ground": true,
+      "category": "decor",
+      "cost": [
+        {
+          "resource": "cloth",
+          "amount": 1
+        },
+        {
+          "resource": "leather",
+          "amount": 1
+        }
+      ],
+      "variants": 3,
+      "variantNames": [
+        "stack",
+        "open",
+        "row"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "dishes",
+      "placement": "free",
+      "layer": 3,
+      "tier": 1,
+      "hp": 10,
+      "solid": false,
+      "ground": true,
+      "category": "decor",
+      "cost": [
+        {
+          "resource": "clay",
+          "amount": 1
+        }
+      ],
+      "variants": 4,
+      "variantNames": [
+        "plates",
+        "cups",
+        "set",
+        "cutlery"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "basket",
+      "placement": "free",
+      "layer": 3,
+      "tier": 1,
+      "hp": 15,
+      "solid": false,
+      "ground": true,
+      "category": "decor",
+      "container": 2,
+      "cost": [
+        {
+          "resource": "reeds",
+          "amount": 4
+        }
+      ],
+      "variants": 3,
+      "variantNames": [
+        "wicker",
+        "laundry",
+        "fruit"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "plant_floor",
+      "placement": "free",
+      "layer": 3,
+      "tier": 1,
+      "hp": 20,
+      "solid": false,
+      "ground": true,
+      "category": "plants",
+      "cost": [
+        {
+          "resource": "clay",
+          "amount": 2
+        },
+        {
+          "resource": "fiber",
+          "amount": 2
+        }
+      ],
+      "variants": 5,
+      "variantNames": [
+        "fern",
+        "palm",
+        "ficus",
+        "monstera",
+        "snake_plant"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "fern",
+      "placement": "free",
+      "layer": 3,
+      "tier": 1,
+      "hp": 15,
+      "solid": false,
+      "ground": true,
+      "category": "plants",
+      "cost": [
+        {
+          "resource": "clay",
+          "amount": 1
+        },
+        {
+          "resource": "fiber",
+          "amount": 2
+        }
+      ],
+      "variants": 2,
+      "variantNames": [
+        "boston",
+        "maidenhair"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "cactus",
+      "placement": "free",
+      "layer": 3,
+      "tier": 1,
+      "hp": 25,
+      "solid": false,
+      "ground": true,
+      "category": "plants",
+      "cost": [
+        {
+          "resource": "clay",
+          "amount": 1
+        },
+        {
+          "resource": "sand",
+          "amount": 2
+        }
+      ],
+      "variants": 4,
+      "variantNames": [
+        "barrel",
+        "saguaro",
+        "prickly",
+        "flowering"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "flowers_pot",
+      "placement": "free",
+      "layer": 3,
+      "tier": 1,
+      "hp": 15,
+      "solid": false,
+      "ground": true,
+      "category": "plants",
+      "cost": [
+        {
+          "resource": "clay",
+          "amount": 1
+        },
+        {
+          "resource": "fiber",
+          "amount": 1
+        },
+        {
+          "resource": "dye",
+          "amount": 1
+        }
+      ],
+      "variants": 5,
+      "variantNames": [
+        "rose",
+        "tulip",
+        "daisy",
+        "lavender",
+        "sunflower"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "hanging_plant",
+      "placement": "free",
+      "layer": 3,
+      "tier": 1,
+      "hp": 10,
+      "solid": false,
+      "ground": false,
+      "category": "plants",
+      "cost": [
+        {
+          "resource": "clay",
+          "amount": 1
+        },
+        {
+          "resource": "rope",
+          "amount": 1
+        },
+        {
+          "resource": "fiber",
+          "amount": 1
+        }
+      ],
+      "variants": 3,
+      "variantNames": [
+        "ivy",
+        "spider",
+        "pearls"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "bonsai",
+      "placement": "free",
+      "layer": 3,
+      "tier": 2,
+      "hp": 15,
+      "solid": false,
+      "ground": true,
+      "category": "plants",
+      "cost": [
+        {
+          "resource": "clay",
+          "amount": 2
+        },
+        {
+          "resource": "fiber",
+          "amount": 1
+        }
+      ],
+      "variants": 2,
+      "variantNames": [
+        "pine",
+        "maple"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "herb_planter",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 60,
+      "solid": false,
+      "ground": true,
+      "category": "plants",
+      "features": {
+        "planter": true
+      },
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 3
+        },
+        {
+          "resource": "clay",
+          "amount": 2
+        }
+      ],
+      "variants": 3,
+      "variantNames": [
+        "wood",
+        "clay",
+        "stone"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "window_planter",
+      "placement": "edge",
+      "layer": 3,
+      "tier": 1,
+      "hp": 30,
+      "solid": false,
+      "rotSteps": 4,
+      "features": {
+        "mount": true,
+        "planter": true
+      },
+      "category": "plants",
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 2
+        },
+        {
+          "resource": "clay",
+          "amount": 1
+        }
+      ],
+      "variants": 2,
+      "variantNames": [
+        "wood",
+        "clay"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "painting_wall",
+      "placement": "edge",
+      "layer": 3,
+      "tier": 1,
+      "hp": 20,
+      "solid": false,
+      "rotSteps": 4,
+      "features": {
+        "mount": true
+      },
+      "category": "wall",
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 1
+        },
+        {
+          "resource": "cloth",
+          "amount": 1
+        },
+        {
+          "resource": "dye",
+          "amount": 2
+        }
+      ],
+      "variants": 8,
+      "variantNames": [
+        "landscape",
+        "portrait",
+        "still_life",
+        "abstract",
+        "seascape",
+        "battle",
+        "map",
+        "hunt"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "poster",
+      "placement": "edge",
+      "layer": 3,
+      "tier": 1,
+      "hp": 5,
+      "solid": false,
+      "rotSteps": 4,
+      "features": {
+        "mount": true
+      },
+      "category": "wall",
+      "cost": [
+        {
+          "resource": "fiber",
+          "amount": 2
+        },
+        {
+          "resource": "dye",
+          "amount": 1
+        }
+      ],
+      "variants": 6,
+      "variantNames": [
+        "wanted",
+        "propaganda",
+        "band",
+        "map",
+        "recruit",
+        "travel"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "tapestry",
+      "placement": "edge",
+      "layer": 3,
+      "tier": 1,
+      "hp": 30,
+      "solid": false,
+      "rotSteps": 4,
+      "features": {
+        "mount": true
+      },
+      "category": "wall",
+      "paintable": true,
+      "cost": [
+        {
+          "resource": "cloth",
+          "amount": 4
+        },
+        {
+          "resource": "dye",
+          "amount": 2
+        }
+      ],
+      "variants": 4,
+      "variantNames": [
+        "hunt",
+        "crest",
+        "forest",
+        "dragon"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "weapon_rack",
+      "placement": "edge",
+      "layer": 3,
+      "tier": 1,
+      "hp": 60,
+      "solid": false,
+      "rotSteps": 4,
+      "features": {
+        "mount": true
+      },
+      "category": "wall",
+      "container": 4,
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 4
+        },
+        {
+          "resource": "nails",
+          "amount": 2
+        }
+      ],
+      "variants": 4,
+      "variantNames": [
+        "swords",
+        "spears",
+        "rifles",
+        "bows"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "wall_shelf",
+      "placement": "edge",
+      "layer": 3,
+      "tier": 1,
+      "hp": 40,
+      "solid": false,
+      "rotSteps": 4,
+      "features": {
+        "mount": true
+      },
+      "category": "wall",
+      "container": 2,
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 2
+        },
+        {
+          "resource": "nails",
+          "amount": 1
+        }
+      ],
+      "variants": 4,
+      "variantNames": [
+        "plank",
+        "double",
+        "corner",
+        "potted"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "shield_mount",
+      "placement": "edge",
+      "layer": 3,
+      "tier": 1,
+      "hp": 50,
+      "solid": false,
+      "rotSteps": 4,
+      "features": {
+        "mount": true,
+        "clanTint": true
+      },
+      "category": "wall",
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 2
+        },
+        {
+          "resource": "iron_ingot",
+          "amount": 1
+        }
+      ],
+      "variants": 3,
+      "variantNames": [
+        "round",
+        "kite",
+        "clan"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "map_board",
+      "placement": "edge",
+      "layer": 3,
+      "tier": 1,
+      "hp": 20,
+      "solid": false,
+      "rotSteps": 4,
+      "features": {
+        "mount": true
+      },
+      "category": "wall",
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 2
+        },
+        {
+          "resource": "cloth",
+          "amount": 1
+        }
+      ],
+      "variants": 2,
+      "variantNames": [
+        "region",
+        "battle"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "rug_1x1",
+      "placement": "free",
+      "layer": 1,
+      "tier": 1,
+      "hp": 30,
+      "solid": false,
+      "ground": true,
+      "category": "rugs",
+      "rotSteps": 4,
+      "paintable": true,
+      "footprint": {
+        "w": 1,
+        "h": 1
+      },
+      "cost": [
+        {
+          "resource": "cloth",
+          "amount": 2
+        },
+        {
+          "resource": "dye",
+          "amount": 1
+        }
+      ],
+      "variants": 8,
+      "variantNames": [
+        "plain",
+        "striped",
+        "checker",
+        "diamond",
+        "floral",
+        "border",
+        "tribal",
+        "braided"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "rug_2x1",
+      "placement": "free",
+      "layer": 1,
+      "tier": 1,
+      "hp": 30,
+      "solid": false,
+      "ground": true,
+      "category": "rugs",
+      "rotSteps": 4,
+      "paintable": true,
+      "footprint": {
+        "w": 2,
+        "h": 1
+      },
+      "cost": [
+        {
+          "resource": "cloth",
+          "amount": 3
+        },
+        {
+          "resource": "dye",
+          "amount": 1
+        }
+      ],
+      "variants": 8,
+      "variantNames": [
+        "plain",
+        "striped",
+        "checker",
+        "diamond",
+        "floral",
+        "border",
+        "tribal",
+        "braided"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "rug_2x2",
+      "placement": "free",
+      "layer": 1,
+      "tier": 1,
+      "hp": 30,
+      "solid": false,
+      "ground": true,
+      "category": "rugs",
+      "rotSteps": 4,
+      "paintable": true,
+      "footprint": {
+        "w": 2,
+        "h": 2
+      },
+      "cost": [
+        {
+          "resource": "cloth",
+          "amount": 5
+        },
+        {
+          "resource": "dye",
+          "amount": 1
+        }
+      ],
+      "variants": 8,
+      "variantNames": [
+        "plain",
+        "striped",
+        "checker",
+        "diamond",
+        "floral",
+        "border",
+        "tribal",
+        "braided"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "rug_3x2",
+      "placement": "free",
+      "layer": 1,
+      "tier": 1,
+      "hp": 30,
+      "solid": false,
+      "ground": true,
+      "category": "rugs",
+      "rotSteps": 4,
+      "paintable": true,
+      "footprint": {
+        "w": 3,
+        "h": 2
+      },
+      "cost": [
+        {
+          "resource": "cloth",
+          "amount": 7
+        },
+        {
+          "resource": "dye",
+          "amount": 1
+        }
+      ],
+      "variants": 8,
+      "variantNames": [
+        "plain",
+        "striped",
+        "checker",
+        "diamond",
+        "floral",
+        "border",
+        "tribal",
+        "braided"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "rug_round",
+      "placement": "free",
+      "layer": 1,
+      "tier": 1,
+      "hp": 30,
+      "solid": false,
+      "ground": true,
+      "category": "rugs",
+      "rotSteps": 4,
+      "paintable": true,
+      "footprint": {
+        "w": 2,
+        "h": 2
+      },
+      "cost": [
+        {
+          "resource": "cloth",
+          "amount": 5
+        },
+        {
+          "resource": "dye",
+          "amount": 1
+        }
+      ],
+      "variants": 8,
+      "variantNames": [
+        "plain",
+        "striped",
+        "checker",
+        "diamond",
+        "floral",
+        "border",
+        "tribal",
+        "braided"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "rug_runner",
+      "placement": "free",
+      "layer": 1,
+      "tier": 1,
+      "hp": 30,
+      "solid": false,
+      "ground": true,
+      "category": "rugs",
+      "rotSteps": 4,
+      "paintable": true,
+      "footprint": {
+        "w": 3,
+        "h": 1
+      },
+      "cost": [
+        {
+          "resource": "cloth",
+          "amount": 4
+        },
+        {
+          "resource": "dye",
+          "amount": 1
+        }
+      ],
+      "variants": 8,
+      "variantNames": [
+        "plain",
+        "striped",
+        "checker",
+        "diamond",
+        "floral",
+        "border",
+        "tribal",
+        "braided"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "fence_picket",
+      "placement": "free",
+      "layer": 1,
+      "tier": 1,
+      "hp": 120,
+      "solid": true,
+      "ground": true,
+      "category": "outdoor",
+      "blocksPath": true,
+      "rotSteps": 4,
+      "paintable": true,
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 2
+        },
+        {
+          "resource": "nails",
+          "amount": 1
+        }
+      ],
+      "variants": 3,
+      "variantNames": [
+        "white",
+        "natural",
+        "rustic"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "fence_rail",
+      "placement": "free",
+      "layer": 1,
+      "tier": 1,
+      "hp": 100,
+      "solid": true,
+      "ground": true,
+      "category": "outdoor",
+      "blocksPath": true,
+      "rotSteps": 4,
+      "cost": [
+        {
+          "resource": "wood",
+          "amount": 2
+        },
+        {
+          "resource": "rope",
+          "amount": 1
+        }
+      ],
+      "variants": 2,
+      "variantNames": [
+        "split",
+        "post"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "fence_iron",
+      "placement": "free",
+      "layer": 1,
+      "tier": 3,
+      "hp": 400,
+      "solid": true,
+      "ground": true,
+      "category": "outdoor",
+      "blocksPath": true,
+      "rotSteps": 4,
+      "cost": [
+        {
+          "resource": "iron_ingot",
+          "amount": 2
+        }
+      ],
+      "variants": 2,
+      "variantNames": [
+        "plain",
+        "spiked"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "garden_gate",
+      "placement": "free",
+      "layer": 1,
+      "tier": 1,
+      "hp": 150,
+      "solid": true,
+      "ground": true,
+      "category": "outdoor",
+      "door": true,
+      "blocksPath": true,
+      "rotSteps": 4,
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 4
+        },
+        {
+          "resource": "nails",
+          "amount": 2
+        }
+      ],
+      "variants": 3,
+      "variantNames": [
+        "picket",
+        "iron",
+        "rustic"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "bench_park",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 150,
+      "solid": false,
+      "ground": true,
+      "category": "outdoor",
+      "rotSteps": 4,
+      "footprint": {
+        "w": 2,
+        "h": 1
+      },
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 4
+        },
+        {
+          "resource": "iron_ingot",
+          "amount": 1
+        }
+      ],
+      "variants": 3,
+      "variantNames": [
+        "wood",
+        "iron",
+        "stone"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "planter_box",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 60,
+      "solid": false,
+      "ground": true,
+      "category": "outdoor",
+      "features": {
+        "planter": true
+      },
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 4
+        },
+        {
+          "resource": "clay",
+          "amount": 1
+        }
+      ],
+      "variants": 3,
+      "variantNames": [
+        "long",
+        "square",
+        "raised"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "garden_bed",
+      "placement": "free",
+      "layer": 1,
+      "tier": 1,
+      "hp": 80,
+      "solid": false,
+      "ground": true,
+      "category": "outdoor",
+      "footprint": {
+        "w": 2,
+        "h": 1
+      },
+      "features": {
+        "planter": true
+      },
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 6
+        }
+      ],
+      "variants": 2,
+      "variantNames": [
+        "raised",
+        "stone"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "fountain",
+      "placement": "free",
+      "layer": 2,
+      "tier": 3,
+      "hp": 600,
+      "solid": true,
+      "ground": true,
+      "category": "outdoor",
+      "footprint": {
+        "w": 2,
+        "h": 2
+      },
+      "cost": [
+        {
+          "resource": "stone_brick",
+          "amount": 16
+        },
+        {
+          "resource": "mortar",
+          "amount": 4
+        },
+        {
+          "resource": "iron_pipe",
+          "amount": 2
+        }
+      ],
+      "variants": 3,
+      "variantNames": [
+        "tiered",
+        "round",
+        "lion"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "well",
+      "placement": "free",
+      "layer": 2,
+      "tier": 2,
+      "hp": 500,
+      "solid": true,
+      "ground": true,
+      "category": "outdoor",
+      "footprint": {
+        "w": 2,
+        "h": 2
+      },
+      "cost": [
+        {
+          "resource": "stone_brick",
+          "amount": 12
+        },
+        {
+          "resource": "rope",
+          "amount": 2
+        },
+        {
+          "resource": "planks",
+          "amount": 4
+        }
+      ],
+      "variants": 2,
+      "variantNames": [
+        "stone",
+        "roofed"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "scarecrow",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 60,
+      "solid": false,
+      "ground": true,
+      "category": "outdoor",
+      "cost": [
+        {
+          "resource": "sticks",
+          "amount": 4
+        },
+        {
+          "resource": "cloth",
+          "amount": 2
+        },
+        {
+          "resource": "fiber",
+          "amount": 4
+        }
+      ],
+      "variants": 3,
+      "variantNames": [
+        "classic",
+        "pumpkin",
+        "tattered"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "path_stone",
+      "placement": "free",
+      "layer": 1,
+      "tier": 1,
+      "hp": 200,
+      "solid": false,
+      "ground": true,
+      "category": "outdoor",
+      "cost": [
+        {
+          "resource": "stone",
+          "amount": 2
+        }
+      ],
+      "variants": 5,
+      "variantNames": [
+        "cobble",
+        "flagstone",
+        "gravel",
+        "brick",
+        "plank"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "stepping_stone",
+      "placement": "free",
+      "layer": 1,
+      "tier": 1,
+      "hp": 200,
+      "solid": false,
+      "ground": true,
+      "category": "outdoor",
+      "cost": [
+        {
+          "resource": "stone",
+          "amount": 1
+        }
+      ],
+      "variants": 2,
+      "variantNames": [
+        "round",
+        "slate"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "hedge",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 120,
+      "solid": true,
+      "ground": true,
+      "category": "outdoor",
+      "blocksPath": true,
+      "cost": [
+        {
+          "resource": "fiber",
+          "amount": 6
+        },
+        {
+          "resource": "sticks",
+          "amount": 2
+        }
+      ],
+      "variants": 3,
+      "variantNames": [
+        "box",
+        "round",
+        "tall"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "flower_bed",
+      "placement": "free",
+      "layer": 1,
+      "tier": 1,
+      "hp": 30,
+      "solid": false,
+      "ground": true,
+      "category": "outdoor",
+      "cost": [
+        {
+          "resource": "fiber",
+          "amount": 3
+        },
+        {
+          "resource": "clay",
+          "amount": 1
+        }
+      ],
+      "variants": 4,
+      "variantNames": [
+        "red",
+        "yellow",
+        "mixed",
+        "wild"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "birdbath",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 150,
+      "solid": false,
+      "ground": true,
+      "category": "outdoor",
+      "cost": [
+        {
+          "resource": "stone_brick",
+          "amount": 3
+        }
+      ],
+      "variants": 2,
+      "variantNames": [
+        "stone",
+        "copper"
+      ],
+      "$decor": true
+    },
+    {
+      "key": "sundial",
+      "placement": "free",
+      "layer": 2,
+      "tier": 2,
+      "hp": 150,
+      "solid": false,
+      "ground": true,
+      "category": "outdoor",
+      "cost": [
+        {
+          "resource": "stone_brick",
+          "amount": 2
+        },
+        {
+          "resource": "bronze_ingot",
+          "amount": 1
+        }
+      ],
+      "variants": 2,
+      "variantNames": [
+        "stone",
+        "bronze"
+      ],
+      "$decor": true
     }
   ]
 }

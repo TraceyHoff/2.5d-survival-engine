@@ -14,6 +14,7 @@ import { spillStall } from "../economy/stall.js";
 import { onPieceDamaged } from "../combat/pvp_pieces.js";
 import { type Entity, type World } from "@engine/core";
 import { raidScaled } from "./modular.js";
+import { Placement } from "../defs.js";
 import { AttachKind, BuildPiece, type DamageCause, ContainerViewers, PieceStability, Viewing } from "../components.js";
 import { gameplayDefs, isAuthority } from "../config.js";
 import { DestroyCause, emit, PieceDamaged, PieceDestroyed } from "../events.js";
@@ -96,6 +97,7 @@ export function destroyPiece(world: World, e: Entity, cause: DestroyCause): void
   const idx = structures(world); if (!idx.info.has(e)) return;
   const type = world.getField(e, BuildPiece, "type") ?? 0;
   const op = idx.opening(e); if (op) destroyPiece(world, op, cause);
+  { const d = idx.def(e); const s = idx.info.get(e)?.slot; if (d && s && d.placement === Placement.Edge && !d.features.mount) for (const m of idx.mountsOn(s.tx, s.ty, s.z, s.side)) destroyPiece(world, m, cause); }
   const sc: [Entity, number][] = [];
   for (const [n] of idx.supports(e, sc).list) idx.removedNeighbors.add(n);
   for (const n of idx.dependents(e)) idx.removedNeighbors.add(n);

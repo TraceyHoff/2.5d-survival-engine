@@ -81,6 +81,11 @@ export class StructureIndex {
   cell(tx: number, ty: number, z: number, layer: number): Entity | 0 { const id = this.grid.at(tx, ty, z, layer); return id ? this.byGrid.get(id) ?? 0 : 0; }
   edge(tx: number, ty: number, z: number, side: EdgeSide): Entity | 0 { return this.edges.get(edgeKey(tx, ty, z, side)) ?? 0; }
   opening(parent: Entity): Entity | 0 { return this.openings.get(parent) ?? 0; }
+  /** ADR-112 wall mounts: (edge, face) -> mounted piece; face = rot & 2. */
+  readonly mounts = new Map<string, Entity>();
+  mount(tx: number, ty: number, z: number, side: EdgeSide, face: number): Entity | 0 { return this.mounts.get(`${edgeKey(tx, ty, z, side)}:${face & 2}`) ?? 0; }
+  /** Mounted pieces hung on the wall at this edge (both faces). */
+  mountsOn(tx: number, ty: number, z: number, side: EdgeSide): Entity[] { const out: Entity[] = []; for (const f of [0, 2]) { const m = this.mount(tx, ty, z, side, f); if (m) out.push(m); } return out; }
   /** Triangle whose centroid is within 0.1 of (x,y) at level z. */
   triAt(x: number, y: number, z: number): Entity | 0 {
     for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
@@ -128,6 +133,9 @@ export class StructureIndex {
     if (def.placement === Placement.Opening) {
       if (!parent || this.openings.has(parent)) return false;
       this.openings.set(parent, e);
+    } else if (def.placement === Placement.Edge && def.features.mount) {
+      const k = `${edgeKey(slot.tx, slot.ty, slot.z, slot.side)}:${slot.rot & 2}`; if (this.mounts.has(k)) return false;
+      this.mounts.set(k, e);
     } else if (def.placement === Placement.Edge) {
       const k = edgeKey(slot.tx, slot.ty, slot.z, slot.side); if (this.edges.has(k)) return false;
       this.edges.set(k, e);
@@ -154,6 +162,7 @@ export class StructureIndex {
     this.info.delete(e);
     const { slot: s, def } = inf;
     if (inf.parent && this.openings.get(inf.parent) === e) this.openings.delete(inf.parent);
+    else if (def.placement === Placement.Edge && def.features.mount) { const k = `${edgeKey(s.tx, s.ty, s.z, s.side)}:${s.rot & 2}`; if (this.mounts.get(k) === e) this.mounts.delete(k); }
     else if (def.placement === Placement.Edge) { const k = edgeKey(s.tx, s.ty, s.z, s.side); if (this.edges.get(k) === e) this.edges.delete(k); }
     this.openings.delete(e);
     if (def.placement === Placement.Tri) {
@@ -221,7 +230,7 @@ export class StructureIndex {
   /** Same for a hypothetical placement (validation / ghost). `self` is excluded from results. */
   supportsAt(def: PieceDef, s: Slot, parent: Entity | 0, self: Entity | 0 = 0, out: [Entity, number][] = []): { root: boolean; list: [Entity, number][] } {
     out.length = 0; const z = s.z;
-    if (def.placement === Placement.Opening) { if (parent) out.push([parent, 0]); return { root: false, list: out }; }
+    if (def.placement === Placement.Opening || def.features.mount) { if (parent) out.push([parent, 0]); return { root: false, list: out }; }
     if (def.placement === Placement.Edge) {
       for (const [x, y] of StructureIndex.edgeTiles(s.tx, s.ty, s.side)) { const d = this.deck(x, y, z); if (this.isDeck(d)) out.push([d, 1]); }
       if (z > 0) { const below = this.edge(s.tx, s.ty, z - 1, s.side); if (below) out.push([below, 1]); }
@@ -269,6 +278,7 @@ export class StructureIndex {
     const z = s.z; const add = (x: Entity | 0): void => { if (x && x !== e && !out.includes(x)) out.push(x); };
     const op = this.openings.get(e); if (op) add(op);
     if (def.placement === Placement.Edge) {
+      if (!def.features.mount) for (const m of this.mountsOn(s.tx, s.ty, z, s.side)) add(m);
       for (const [x, y] of StructureIndex.edgeTiles(s.tx, s.ty, s.side)) add(this.deck(x, y, z + 1));
       add(this.edge(s.tx, s.ty, z + 1, s.side));
       for (const t of this.edgeTris(s.tx, s.ty, z + 1, s.side)) add(t);
