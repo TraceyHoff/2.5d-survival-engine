@@ -683,6 +683,8 @@ export class AtlasManager {
   private estimate(list: AtlasRT[]): number {
     return this.layerBytes(list) * this.layers;
   }
+  /** Planner estimate: like estimate() but charging the shelf layer count (see shelfLayers). */
+  private planEstimate(list: AtlasRT[]): number { return this.layerBytes(list) * this.planLayers; }
   /** Arrays allocated for a list (colour + emissive + masks present; pool pages add a tint mask array). */
   private arrayCount(list: AtlasRT[], poolTint = this.pools.some((p) => p.tint), poolEmis = this.pools.some((p) => p.emis)): number {
     return 1 + (poolEmis || list.some((a) => a.emis) ? 1 : 0) + (["sheen", "sway"] as const).filter((m) => list.some((a) => a.masks[m])).length + (poolTint || list.some((a) => a.masks.tintmask) ? 1 : 0);
@@ -739,7 +741,8 @@ export class AtlasManager {
     const per = this.layerBytes(resident, anyTint, anyEmis); const budget = this.textureBudgetMB * 1048576;
     // resident layers at RGBA8 cost, pool layers (earlier pools and this one) at their compressed cost
     const pper = this.poolLayerBytes(resident, anyTint, anyEmis); const poolL = this.pools.reduce((t, p) => t + p.layers, 0);
-    const freeLayers = Math.max(0, Math.min(this.maxLayers - this.layers, Math.floor((budget - per * (this.layers - poolL) - pper * poolL) / pper)));
+    const resL = this.planLayers + (this.layers - poolL - this.packedLayers); // planner: shelf count for the packed atlases
+    const freeLayers = Math.max(0, Math.min(this.maxLayers - this.layers, Math.floor((budget - per * resL - pper * poolL) / pper)));
     const sh = this.sideShift; const slotBytes = (g: { sw: number; sh: number }) => rgbaBytes(g.sw, g.sh, true) + rgbaBytes(Math.max(1, g.sw >> sh), Math.max(1, g.sh >> sh), true) * ((tint ? 1 : 0) + (emis ? 1 : 0)); // side arrays at layerSize >> sideShift
     const mk = (k: number, g: ReturnType<AtlasManager["poolGeom"]>, layers: number): Pool => ({ k, ...g, first: this.layers, layers, lru: new PageLRU<string>(layers * g.perLayer, POOL_PROTECT_FRAMES), slotBytes: slotBytes(g), tint, emis, cls });
     let pick: Pool | null = null;
@@ -794,7 +797,7 @@ export class AtlasManager {
     const dims = (h: number, c: number) => list.map((a, i) => { const k = Math.min(caps[i]!, a.cold ? c : h); return { ...a, img: { width: Math.max(1, Math.floor(a.img!.width * k)), height: Math.max(1, Math.floor(a.img!.height * k)) } as ImageLike }; });
     const fits = (h: number, budget: number): number | null => {
       const anyCold = list.some((a) => a.cold);
-      for (let c = h; c >= MIN_ATLAS_DOWNSCALE; c /= 2) { this.pack(dims(h, c)); if (this.estimate(list) <= budget) return c; if (!anyCold) break; }
+      for (let c = h; c >= MIN_ATLAS_DOWNSCALE; c /= 2) { this.pack(dims(h, c)); if (this.planEstimate(list) <= budget) return c; if (!anyCold) break; }
       return null;
     };
     // Blur-safe order: visible (hot) art keeps full res. Memory comes from (1) shrinking cold atlases, (2) a smaller
@@ -842,8 +845,9 @@ export class AtlasManager {
     return { hot: r.filter((a) => !a.cold).map((a) => a.key), cold: r.filter((a) => a.cold).map((a) => a.key), hotScale: this.downscale, coldScale: this.coldDownscale };
   }
 
-  /** Shelf-pack whole atlas images into array layers (2px gutter). */
-  private pack(list: AtlasRT[]): void {
+  /** Layer count the old shelf packer needs for `list` (budget planning only: tier scales and pool sizes are chosen
+   *  against it, so the tighter MaxRects placement lowers the total instead of being refilled with more/larger pages). */
+  private shelfLayers(list: AtlasRT[]): number {
     const S = this.layerSize, GAP = 2;
     const order = [...list].sort((a, b) => (b.img ? b.img.height : 0) - (a.img ? a.img.height : 0));
     let layer = 0, x = 0, y = 0, rowH = 0;
@@ -852,9 +856,46 @@ export class AtlasManager {
       if (w > S || h > S) throw new Error(`atlas ${a.key} (${w}x${h}) exceeds layer size ${S}`);
       if (x + w > S) { x = 0; y += rowH + GAP; rowH = 0; }
       if (y + h > S) { layer++; x = 0; y = 0; rowH = 0; }
-      a.layer = layer; a.px = x; a.py = y; x += w + GAP; rowH = Math.max(rowH, h);
+      x += w + GAP; rowH = Math.max(rowH, h);
     }
-    this.layers = layer + 1;
+    return layer + 1;
+  }
+  /** Resident layers the budget planner charges for (shelf count of the last pack; >= the real MaxRects count). */
+  private planLayers = 0; private packedLayers = 0;
+  /**
+   * Pack whole atlas images into array layers: MaxRects (best short side fit) across layers, largest first, rects
+   * padded by a 2px gutter and rounded to 4px so side arrays (>> sideShift <= 2) stay texel-exact. Only placement
+   * changed (layer/px/py); side arrays keep one layer per colour layer (no sparse side map).
+   */
+  private pack(list: AtlasRT[]): void {
+    const S = this.layerSize, GAP = 2; const al = (v: number) => (v + 3) & ~3;
+    const order = [...list].sort((a, b) => Math.max(b.img!.width, b.img!.height) - Math.max(a.img!.width, a.img!.height) || b.img!.width * b.img!.height - a.img!.width * a.img!.height || a.id - b.id);
+    type R = { x: number; y: number; w: number; h: number };
+    const free: R[][] = [];
+    const place = (fr: R[], w: number, h: number): R | null => { let best: R | null = null, bs = Infinity, bl = Infinity;
+      for (const f of fr) if (w <= f.w && h <= f.h) { const ss = Math.min(f.w - w, f.h - h), ls = Math.max(f.w - w, f.h - h); if (ss < bs || (ss === bs && ls < bl)) { bs = ss; bl = ls; best = { x: f.x, y: f.y, w, h }; } }
+      return best; };
+    const split = (fr: R[], u: R): R[] => { const out: R[] = [];
+      for (const f of fr) {
+        if (u.x >= f.x + f.w || u.x + u.w <= f.x || u.y >= f.y + f.h || u.y + u.h <= f.y) { out.push(f); continue; }
+        if (u.x > f.x) out.push({ x: f.x, y: f.y, w: u.x - f.x, h: f.h });
+        if (u.x + u.w < f.x + f.w) out.push({ x: u.x + u.w, y: f.y, w: f.x + f.w - u.x - u.w, h: f.h });
+        if (u.y > f.y) out.push({ x: f.x, y: f.y, w: f.w, h: u.y - f.y });
+        if (u.y + u.h < f.y + f.h) out.push({ x: f.x, y: u.y + u.h, w: f.w, h: f.y + f.h - u.y - u.h });
+      }
+      return out.filter((r, i) => !out.some((o, j) => j !== i && o.x <= r.x && o.y <= r.y && o.x + o.w >= r.x + r.w && o.y + o.h >= r.y + r.h && (j < i || o.w !== r.w || o.h !== r.h || o.x !== r.x || o.y !== r.y))); };
+    for (const a of order) {
+      const w = a.img!.width, h = a.img!.height;
+      if (w > S || h > S) throw new Error(`atlas ${a.key} (${w}x${h}) exceeds layer size ${S}`);
+      const pw = Math.min(S, al(w + GAP)), ph = Math.min(S, al(h + GAP));
+      let l = 0, r: R | null = null;
+      for (; l < free.length; l++) if ((r = place(free[l]!, pw, ph))) break;
+      if (!r) { free.push([{ x: 0, y: 0, w: S, h: S }]); l = free.length - 1; r = place(free[l]!, pw, ph)!; }
+      free[l] = split(free[l]!, r);
+      a.layer = l; a.px = r.x; a.py = r.y;
+    }
+    this.layers = Math.max(1, free.length); this.packedLayers = this.layers;
+    this.planLayers = Math.max(this.layers, list.length ? this.shelfLayers(list) : 1);
     let base = 0; for (const a of list) { a.base = base; base += a.count; }
     this.totalFrames = base;
   }
