@@ -523,3 +523,16 @@ Lives on the bot's AgentIdentity record in `game.agents` under `social` (`ai/soc
 - Bot stall buys (stall_trade) now buy one lot (`qty` in StallDisplay is the lot size, not a lot count; buying `qty` lots
   was rejected sold_out). Covered end-to-end in apps/server/test/bot_stall_buy_e2e.test.ts: replica sensors -> stall_trade ->
   emitAgentCommands -> openStall + buyFromStall on the real server.
+
+## Menu view-models (`src/ui/menus.ts`)
+
+Pure, browser-safe read models + command intents behind the ADR-095 menu shell (`apps/client/src/game-menus.ts` →
+`gameplay-panels.ts`). Views read only the local replica (`MenuCtx {world, player, names}`); intents are
+`{cmd, args, entities?}` with the core `CommandDef` — the client maps `entities` args to NetIds and sends through
+`gameplayNet(cmd)`. Panels: inventory (`inventoryView`, crafter in tooltip), crafting (`craftingView` recipes with
+have/need + `craftQueueReason`, CraftQueue jobs with progress, CraftOwed; `queueCraftIntent`/`cancelQueuedCraftIntent`),
+build (`buildView` tier costs/affordability, variants, paintable; `placeIntent`, `paintIntent`), wardrobe
+(`wardrobeView`; `equipCosmeticIntent`, `setAppearanceIntent`), party (`partyView` + PartyInvitePending; 5 intents),
+clan (`clanView` ClanStatus + ClanInvitePending + rank perms from ClanState or `defaultRankMasks`; 10 intents),
+trade stall (`nearestStall`, `stallView` listings/stock/till; buy/collect/setListing/stock/unstock/open/setStallName).
+Known gaps: `PaintCmd` is not net-bridged; clan roster/perms only cover replicated (AOI) entities until clan state syncs.

@@ -1,0 +1,202 @@
+/**
+ * Menu view-models + command builders for the client's in-game menus (apps/client game-menus.ts, ADR-095 shell).
+ * Pure reads over a World (client replica or server world) and plain {cmd, args} intents; no DOM, browser-safe.
+ * The client sends intents through its net bridge (`gameplayNet(cmd)`); entity args (target/stall) are Entities here
+ * and the sender maps them to NetIds. Server handlers re-validate everything; reasons here are only hints.
+ */
+import { Appearance, GroupRole, Membership, PlayerId, Transform, WEARABLE_SLOTS, getAppearance, type CommandDef, type CosmeticCatalogLike, type Entity, type World } from "@engine/core";
+import { ClanInvitePending, ClanStatus, CraftQueue, PartyInvitePending, StallHeader, Wardrobe } from "../components.js";
+import { gameplayDefs } from "../config.js";
+import type { ItemCount } from "../defs.js";
+import { countItem, listSlots } from "../inventory.js";
+import { itemInfo, type NameLookup } from "../economy/provenance.js";
+import { BuyFromStallCmd, CollectTillCmd, SetListingCmd, SetStallNameCmd, SetStallOpenCmd, StockStallCmd, UnstockStallCmd, listingRevision, stallListings, stallName, tillOf } from "../economy/stall.js";
+import { CancelQueuedCraftCmd, MAX_CRAFT_COUNT, QueueCraftCmd, craftQueueReason, owedOf } from "../systems/craft_queue.js";
+import { pieceCost } from "../building/place.js";
+import { PaintCmd, PlaceCmd } from "../input.js";
+import { COSMETICS, EquipCosmeticCmd, SetAppearanceCmd, canEditAppearance, hasCreatedLook, unlocksOf } from "../customization.js";
+import { PartyAcceptCmd, PartyDeclineCmd, PartyInviteCmd, PartyKickCmd, PartyLeaveCmd, PARTY_RULES } from "../party.js";
+import { ClanAcceptCmd, ClanCreateCmd, ClanDemoteCmd, ClanDisbandCmd, ClanInviteCmd, ClanKickCmd, ClanLeaveCmd, ClanPromoteCmd, ClanSetGoalCmd, ClanSetRankPermsCmd } from "../clan.js";
+import { CLAN_GOAL_COUNT, CLAN_PERMS, clanPermBit, clanState, defaultRankMasks, type ClanPerm } from "../clan_state.js";
+
+export const TICKS_PER_SECOND = 20;
+/** One command intent for the client to send (`client.sendCommand(gameplayNet(cmd), args)` after NetId mapping). */
+export interface MenuIntent { cmd: CommandDef; args: Record<string, number | number[]>; /** arg names holding Entities (sender maps to NetIds) */ entities?: readonly string[] }
+export interface MenuCtx { world: World; player: Entity; names?: NameLookup; catalog?: CosmeticCatalogLike }
+const intent = (cmd: CommandDef, args: MenuIntent["args"], entities?: readonly string[]): MenuIntent => (entities ? { cmd, args, entities } : { cmd, args });
+const itemName = (w: World, item: number): string => gameplayDefs(w).items.get(item)?.name ?? (item ? `#${item}` : "");
+const pidOf = (w: World, e: Entity): number => w.getField(e, PlayerId, "id") ?? 0;
+const nameOf = (c: MenuCtx, playerId: number): string => (playerId ? c.names?.get(playerId) ?? `Player ${playerId}` : "");
+const withNames = (w: World, l: readonly ItemCount[], who?: Entity) => l.map((i) => ({ item: i.item, name: itemName(w, i.item), count: i.count, have: who !== undefined ? countItem(w, who, i.item) : 0 }));
+
+// ---- inventory --------------------------------------------------------------------------------------
+export interface InventorySlotView { slot: number; item: number; name: string; count: number; durability: number; crafterId: number; crafterName: string; tooltip: string }
+export function inventoryView(c: MenuCtx): InventorySlotView[] {
+  const w = c.world; const out: InventorySlotView[] = [];
+  for (const s of listSlots(w, c.player)) {
+    if (!s.item || !s.count) continue;
+    const info = itemInfo(w, c.player, s.slot, c.names ?? { get: () => undefined });
+    const crafterName = info?.crafterName || nameOf(c, s.crafterId);
+    const name = itemName(w, s.item);
+    const tip = [`${name} ×${s.count}`, s.durability && gameplayDefs(w).items.get(s.item)?.maxDurability ? `Durability ${s.durability}/${gameplayDefs(w).items.get(s.item)!.maxDurability}` : "", crafterName ? `Crafted by ${crafterName}` : ""].filter(Boolean).join("\n");
+    out.push({ slot: s.slot, item: s.item, name, count: s.count, durability: s.durability, crafterId: s.crafterId, crafterName, tooltip: tip });
+  }
+  return out;
+}
+
+// ---- crafting ---------------------------------------------------------------------------------------
+export interface RecipeView { id: number; key: string; name: string; seconds: number; station: number; output: { item: number; name: string; count: number }; ingredients: { item: number; name: string; count: number; have: number }[]; reason: string | undefined }
+export interface QueueJobView { slot: number; recipe: number; name: string; count: number; state: number; progress: number; secondsLeft: number }
+export interface OwedView { item: number; name: string; count: number; crafterName: string }
+export interface CraftingView { recipes: RecipeView[]; queue: QueueJobView[]; owed: OwedView[]; maxCount: number }
+export function craftingView(c: MenuCtx): CraftingView {
+  const w = c.world; const defs = gameplayDefs(w);
+  const recipes = [...defs.recipes.values()].map((r): RecipeView => ({ id: r.id, key: r.key, name: itemName(w, r.output.item), seconds: r.seconds, station: r.station,
+    output: { item: r.output.item, name: itemName(w, r.output.item), count: r.output.count }, ingredients: withNames(w, r.ingredients, c.player), reason: craftQueueReason(w, c.player, r.id, 1) }));
+  const queue: QueueJobView[] = []; const q = w.get(c.player, CraftQueue);
+  if (q) for (let i = 0; i < q.state.length; i++) {
+    const st = q.state[i]!; if (!st) continue; const r = defs.recipes.get(q.recipeId[i]!);
+    const s0 = q.startTick[i]!, s1 = q.endTick[i]!; const running = st === 2 && s1 > s0;
+    const progress = running ? Math.min(1, Math.max(0, (w.tick - s0) / (s1 - s0))) : 0;
+    queue.push({ slot: i, recipe: q.recipeId[i]!, name: r ? itemName(w, r.output.item) : `#${q.recipeId[i]}`, count: q.count[i]!, state: st, progress, secondsLeft: running ? Math.max(0, (s1 - w.tick) / TICKS_PER_SECOND) : (r?.seconds ?? 0) });
+  }
+  const owed = owedOf(w, c.player).map((o) => ({ item: o.item, name: itemName(w, o.item), count: o.count, crafterName: nameOf(c, o.crafterId) }));
+  return { recipes, queue, owed, maxCount: MAX_CRAFT_COUNT };
+}
+export const JOB_STATE_LABEL = ["", "Queued", "Crafting", "Paused", "Done"] as const;
+export const queueCraftIntent = (recipe: number, count = 1): MenuIntent => intent(QueueCraftCmd, { recipe, count: Math.max(1, Math.min(MAX_CRAFT_COUNT, count | 0)) });
+export const cancelQueuedCraftIntent = (slot: number): MenuIntent => intent(CancelQueuedCraftCmd, { slot });
+
+// ---- build ------------------------------------------------------------------------------------------
+export interface BuildPieceView { id: number; key: string; tiers: { tier: number; key: string; cost: { item: number; name: string; count: number; have: number }[]; affordable: boolean }[]; variants: string[]; paintable: boolean }
+export interface BuildSelection { piece: number; tier: number; variant: number; paint: number }
+export function buildView(c: MenuCtx): BuildPieceView[] {
+  const w = c.world; const defs = gameplayDefs(w);
+  return [...defs.pieces.values()].map((p) => {
+    const tierIds = p.tiered ? defs.tiers.map((t) => t.id) : [p.fixedTier];
+    const tiers = tierIds.map((t) => { const cost = withNames(w, pieceCost(defs, p, t), c.player); return { tier: t, key: defs.tiers.find((d) => d.id === t)?.key ?? String(t), cost, affordable: cost.every((x) => x.have >= x.count) }; });
+    const variants = Array.from({ length: Math.max(1, p.variants) }, (_, i) => p.variantNames[i] || `Variant ${i + 1}`);
+    return { id: p.id, key: (p as { key?: string }).key ?? String(p.id), tiers, variants, paintable: p.paintable };
+  });
+}
+/** Placement intent at a world point (the placement ghost / aim supplies x, y, level, rot). */
+export const placeIntent = (s: BuildSelection, at: { x: number; y: number; level?: number; rot?: number }): MenuIntent =>
+  intent(PlaceCmd, { piece: s.piece, x: at.x, y: at.y, level: at.level ?? 0, rot: at.rot ?? 0, tier: s.tier, variant: s.variant });
+/** Tint an existing piece (PaintCmd; needs the net bridge, see DESIGN.md asks). */
+export const paintIntent = (target: Entity, paint: number): MenuIntent => intent(PaintCmd, { target, paint }, ["target"]);
+
+// ---- character / wardrobe ---------------------------------------------------------------------------
+export interface WardrobeSlotView { slot: number; key: string; equipped: number; primary: number; secondary: number }
+export interface WardrobeView { canEdit: boolean; created: boolean; slots: WardrobeSlotView[]; unlocks: { tag: string; unlocked: boolean }[]; palettes: { skin: number; hair: number; clothing: number } }
+export function wardrobeView(c: MenuCtx): WardrobeView {
+  const w = c.world; const created = w.has(c.player, Wardrobe) ? hasCreatedLook(w, c.player) : false;
+  const a = w.isRegistered(Appearance) ? getAppearance(w, c.player) : undefined;
+  const have = unlocksOf(w, c.player);
+  return { canEdit: canEditAppearance(w, c.player, !created), created,
+    slots: WEARABLE_SLOTS.map((k, i) => ({ slot: i, key: k, equipped: a?.parts[i] ?? 0, primary: a?.primary[i] ?? 0, secondary: a?.secondary[i] ?? 0 })),
+    unlocks: COSMETICS.unlockTags.map((t) => ({ tag: t, unlocked: have.has(t) })),
+    palettes: { skin: c.catalog?.skinTones.length ?? 0, hair: c.catalog?.hairColors.length ?? 0, clothing: c.catalog?.clothingColors.length ?? 0 } };
+}
+export const equipCosmeticIntent = (slot: number, wearable: number, primary = 0, secondary = 0): MenuIntent => intent(EquipCosmeticCmd, { slot, wearable, primary, secondary });
+export const setAppearanceIntent = (v: { bodyType: number; skinTone: number; parts: number[]; primary: number[]; secondary: number[] }): MenuIntent =>
+  intent(SetAppearanceCmd, { bodyType: v.bodyType, skinTone: v.skinTone, parts: [...v.parts], primary: [...v.primary], secondary: [...v.secondary] });
+
+// ---- social helpers -------------------------------------------------------------------------------------
+export interface PlayerRef { entity: Entity; playerId: number; name: string; distance: number }
+/** Replicated players near me (invite / kick targets), nearest first. */
+export function nearbyPlayers(c: MenuCtx, radius = 32): PlayerRef[] {
+  const w = c.world; const me = w.get(c.player, Transform); const out: PlayerRef[] = [];
+  for (const e of w.query([PlayerId, Transform])) {
+    if (e === c.player) continue; const t = w.get(e, Transform)!; const d = me ? Math.hypot(t.x - me.x, t.y - me.y) : 0;
+    if (d <= radius) out.push({ entity: e, playerId: pidOf(w, e), name: nameOf(c, pidOf(w, e)), distance: d });
+  }
+  return out.sort((a, b) => a.distance - b.distance);
+}
+const groupMembers = (c: MenuCtx, field: "partyId" | "clanId", id: number): PlayerRef[] => {
+  if (!id) return []; const w = c.world; const me = w.get(c.player, Transform); const out: PlayerRef[] = [];
+  for (const e of w.query([PlayerId, Membership])) if (w.getField(e, Membership, field) === id) { const t = w.get(e, Transform); out.push({ entity: e, playerId: pidOf(w, e), name: nameOf(c, pidOf(w, e)), distance: me && t ? Math.hypot(t.x - me.x, t.y - me.y) : 0 }); }
+  return out;
+};
+const pending = (w: World, e: Entity, def: typeof PartyInvitePending | typeof ClanInvitePending) => {
+  const p = w.get(e, def as typeof PartyInvitePending) as unknown as { from: number; expiresTick: number; party?: number; clan?: number } | undefined;
+  return p && p.expiresTick > w.tick && (p.party ?? p.clan) ? p : undefined;
+};
+
+// ---- party ------------------------------------------------------------------------------------------
+export interface PartyView { party: number; members: PlayerRef[]; maxSize: number; invite: { party: number; from: number; fromName: string; secondsLeft: number } | undefined; candidates: PlayerRef[] }
+export function partyView(c: MenuCtx): PartyView {
+  const w = c.world; const party = w.getField(c.player, Membership, "partyId") ?? 0; const members = groupMembers(c, "partyId", party);
+  const p = pending(w, c.player, PartyInvitePending);
+  return { party, members, maxSize: PARTY_RULES.maxSize,
+    invite: p ? { party: p.party!, from: p.from, fromName: nameOf(c, p.from), secondsLeft: Math.ceil((p.expiresTick - w.tick) / TICKS_PER_SECOND) } : undefined,
+    candidates: nearbyPlayers(c).filter((x) => !members.some((m) => m.entity === x.entity)) };
+}
+export const partyInviteIntent = (target: Entity): MenuIntent => intent(PartyInviteCmd, { target }, ["target"]);
+export const partyAcceptIntent = (party: number): MenuIntent => intent(PartyAcceptCmd, { party });
+export const partyDeclineIntent = (party: number): MenuIntent => intent(PartyDeclineCmd, { party });
+export const partyLeaveIntent = (): MenuIntent => intent(PartyLeaveCmd, {});
+export const partyKickIntent = (target: Entity): MenuIntent => intent(PartyKickCmd, { target }, ["target"]);
+
+// ---- clan -------------------------------------------------------------------------------------------
+export const CLAN_GOAL_NAMES = ["None", "Build base", "Stock stalls", "Defend", "Raid"] as const;
+export const CLAN_ROLE_NAMES: Readonly<Record<number, string>> = { [GroupRole.Member]: "Member", [GroupRole.Officer]: "Officer", [GroupRole.Leader]: "Leader" };
+export interface ClanView {
+  clan: number; role: number; roleName: string; goal: number; goalName: string; goalX: number; goalY: number; contrib: number; members: (PlayerRef & { role: number })[];
+  invite: { clan: number; from: number; fromName: string; secondsLeft: number } | undefined; candidates: PlayerRef[];
+  /** Rank perm masks [member, officer] (authoritative when the world holds ClanState, else the defaults). */
+  perms: { role: number; roleName: string; mask: number; perms: { perm: ClanPerm; on: boolean }[] }[]; goals: readonly string[];
+}
+export function clanView(c: MenuCtx): ClanView {
+  const w = c.world; const st = w.get(c.player, ClanStatus); const clan = st?.clan || (w.getField(c.player, Membership, "clanId") ?? 0);
+  const members = groupMembers(c, "clanId", clan).map((m) => ({ ...m, role: w.get(m.entity, ClanStatus)?.role ?? GroupRole.Member }));
+  const known = clan ? clanState(w).clans.get(clan) : undefined; const [dm, dof] = defaultRankMasks();
+  const masks: [number, number] = known ? [known.member, known.officer] : [dm, dof];
+  const p = pending(w, c.player, ClanInvitePending); const goal = st?.goal ?? 0;
+  return { clan, role: st?.role ?? 0, roleName: CLAN_ROLE_NAMES[st?.role ?? 0] ?? "", goal, goalName: CLAN_GOAL_NAMES[goal] ?? "", goalX: st?.goalX ?? 0, goalY: st?.goalY ?? 0, contrib: st?.contrib ?? 0, members,
+    invite: p ? { clan: p.clan!, from: p.from, fromName: nameOf(c, p.from), secondsLeft: Math.ceil((p.expiresTick - w.tick) / TICKS_PER_SECOND) } : undefined,
+    candidates: nearbyPlayers(c).filter((x) => !members.some((m) => m.entity === x.entity)),
+    perms: [GroupRole.Member, GroupRole.Officer].map((role, i) => ({ role, roleName: CLAN_ROLE_NAMES[role]!, mask: masks[i]!, perms: CLAN_PERMS.map((perm) => ({ perm, on: (masks[i]! & clanPermBit(perm)) !== 0 })) })),
+    goals: CLAN_GOAL_NAMES.slice(0, CLAN_GOAL_COUNT) };
+}
+export const togglePermMask = (mask: number, perm: ClanPerm): number => (mask ^ clanPermBit(perm)) >>> 0;
+export const clanCreateIntent = (): MenuIntent => intent(ClanCreateCmd, {});
+export const clanInviteIntent = (target: Entity): MenuIntent => intent(ClanInviteCmd, { target }, ["target"]);
+export const clanAcceptIntent = (clan: number): MenuIntent => intent(ClanAcceptCmd, { clan });
+export const clanLeaveIntent = (): MenuIntent => intent(ClanLeaveCmd, {});
+export const clanPromoteIntent = (target: Entity): MenuIntent => intent(ClanPromoteCmd, { target }, ["target"]);
+export const clanDemoteIntent = (target: Entity): MenuIntent => intent(ClanDemoteCmd, { target }, ["target"]);
+export const clanKickIntent = (target: Entity): MenuIntent => intent(ClanKickCmd, { target }, ["target"]);
+export const clanSetRankPermsIntent = (role: number, mask: number): MenuIntent => intent(ClanSetRankPermsCmd, { role, mask });
+export const clanSetGoalIntent = (goal: number, x = 0, y = 0): MenuIntent => intent(ClanSetGoalCmd, { goal, x, y });
+export const clanDisbandIntent = (): MenuIntent => intent(ClanDisbandCmd, {});
+
+// ---- trade stall ------------------------------------------------------------------------------------
+export interface StallListingView { slot: number; enabled: boolean; stockItem: number; stockName: string; stock: number; qty: number; priceItem: number; priceName: string; priceCount: number; canAfford: boolean }
+export interface StallView { stall: Entity; name: string; open: boolean; mine: boolean; revision: number; listings: StallListingView[]; till: { item: number; name: string; count: number }[] }
+/** Nearest replicated stall within `radius` tiles (the one the panel shows). */
+export function nearestStall(c: MenuCtx, radius = 6): Entity | undefined {
+  const w = c.world; const me = w.get(c.player, Transform); if (!me) return undefined; let best: Entity | undefined; let bd = radius;
+  for (const e of w.query([StallHeader, Transform])) { const t = w.get(e, Transform)!; const d = Math.hypot(t.x - me.x, t.y - me.y); if (d <= bd) { bd = d; best = e; } }
+  return best;
+}
+export function stallView(c: MenuCtx, stall: Entity): StallView | undefined {
+  const w = c.world; const h = w.get(stall, StallHeader); if (!h) return undefined;
+  const me = pidOf(w, c.player); const clan = w.getField(c.player, Membership, "clanId") ?? 0;
+  const mine = (h.ownerKind === 1 && h.ownerId === me && me !== 0) || (h.ownerKind === 2 && h.ownerId === clan && clan !== 0);
+  const listings = stallListings(w, stall).map((l) => ({ slot: l.slot, enabled: l.enabled, stockItem: l.stockItem, stockName: itemName(w, l.stockItem), stock: l.stock, qty: l.qty,
+    priceItem: l.priceItem, priceName: itemName(w, l.priceItem), priceCount: l.priceCount, canAfford: l.priceItem ? countItem(w, c.player, l.priceItem) >= l.priceCount : false }));
+  const t = tillOf(w, stall); const till = t !== undefined ? listSlots(w, t).filter((s) => s.item && s.count).map((s) => ({ item: s.item, name: itemName(w, s.item), count: s.count })) : [];
+  return { stall, name: stallName(w, stall), open: h.open === 1, mine, revision: listingRevision(w, stall), listings, till };
+}
+export const buyFromStallIntent = (v: StallView, l: StallListingView, qty = 1): MenuIntent =>
+  intent(BuyFromStallCmd, { stall: v.stall, listingSlot: l.slot, qty, expectedRevision: v.revision, expectedPriceItem: l.priceItem, expectedPriceCount: l.priceCount }, ["stall"]);
+export const collectTillIntent = (stall: Entity): MenuIntent => intent(CollectTillCmd, { stall }, ["stall"]);
+export const setListingIntent = (stall: Entity, slot: number, priceItem: number, priceCount: number, qty: number, enabled: boolean): MenuIntent =>
+  intent(SetListingCmd, { stall, listingSlot: slot, priceItem, priceCount, qty, enabled: enabled ? 1 : 0 }, ["stall"]);
+export const stockStallIntent = (stall: Entity, listingSlot: number, invSlot: number, count: number): MenuIntent => intent(StockStallCmd, { stall, listingSlot, invSlot, count }, ["stall"]);
+export const unstockStallIntent = (stall: Entity, listingSlot: number, count: number): MenuIntent => intent(UnstockStallCmd, { stall, listingSlot, count }, ["stall"]);
+export const setStallOpenIntent = (stall: Entity, open: boolean): MenuIntent => intent(SetStallOpenCmd, { stall, open: open ? 1 : 0 }, ["stall"]);
+export function setStallNameIntent(stall: Entity, raw: string): MenuIntent {
+  const bytes = Array.from(raw.replace(/[^\x20-\x7e]/g, "").slice(0, 24), (ch) => ch.charCodeAt(0));
+  return intent(SetStallNameCmd, { stall, len: bytes.length, name: [...bytes, ...new Array<number>(24 - bytes.length).fill(0)] }, ["stall"]);
+}

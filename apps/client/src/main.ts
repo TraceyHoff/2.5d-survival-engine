@@ -16,7 +16,9 @@ import { createGameLoop, World, Transform, PrevTransform, lerp, entityIndex, Inp
 import { TileMap, worldToScreen, screenToWorld, DEFAULT_ISO } from "@engine/world";
 import { InputSystem, AimResolver, DEFAULT_ACTIONS, DEFAULT_CONTEXTS, DEFAULT_PROFILES, DEFAULT_TOUCH_LAYOUTS, type FrameMapping } from "@engine/input";
 import { attachBrowserInput } from "@engine/input/browser";
-import { Act, installDemoWorld } from "@engine/server/protocol";
+import { Act, gameplayNet, installDemoWorld } from "@engine/server/protocol";
+import { netIdOf, ChatChannel, type ChatDelivered } from "@engine/net";
+import type { MenuCtx, MenuIntent } from "@engine/gameplay";
 import { ClientSession } from "./session.js";
 import { mountConnectOverlay } from "./connect.js";
 import { IsoView } from "./view.js";
@@ -67,7 +69,29 @@ let leaveCurrent: (() => Promise<void> | void) | undefined;
 let sessionInfo: (() => { label: string; leaveLabel: string; onLeave: () => void }) | undefined;
 function startMenus(): void {
   if (menus) return;
-  menus = new GameMenus({ root, input, onQuit: quitToMenu, session: () => sessionInfo?.() });
+  menus = new GameMenus({ root, input, onQuit: quitToMenu, session: () => sessionInfo?.(), gameplay: { ctx: menuCtx, send: sendIntent },
+    onChat: (text, channel) => { if (!session.client?.chat.send(channel as ChatChannel, text)) menus?.pushChat("(not connected — message not sent)"); } });
+}
+/** Live data for the gameplay panels: the replicated world + local player; names via NetClient's NamesClient. */
+function menuCtx(): MenuCtx | undefined {
+  const p = session.player; const c = session.client; if (p === undefined || !c) return undefined;
+  const names = { get: (id: number): string | undefined => { const n = c.names.get(id); if (n === undefined && id) c.names.want([id]); return n; } };
+  return { world, player: p, names };
+}
+/** Panel intent -> bridged gameplay net command; Entity args become NetIds (unbridged commands such as PaintCmd return false). */
+function sendIntent(i: MenuIntent): boolean {
+  const c = session.client; if (!c) return false;
+  const args: Record<string, number | number[]> = { ...i.args };
+  for (const k of i.entities ?? []) { const id = netIdOf(world, args[k] as number); if (id === undefined) return false; args[k] = id; }
+  try { return c.sendCommand(gameplayNet(i.cmd), args as never) !== false; } catch { return false; }
+}
+const CHAT_TAG = ["Global", "Local", "Party", "Clan", "Trade", "Whisper", "System"];
+let chatWired: unknown;
+/** Hook NetClient.chat (core ChatServer, already run by the server) into the chat panel once per client. */
+function wireChat(): void {
+  const c = session.client; if (!c || chatWired === c || !menus) return; chatWired = c;
+  c.chat.on((m: ChatDelivered) => { const who = m.fromPlayer ? c.names.display(m.fromPlayer) : ""; menus?.pushChat(`[${CHAT_TAG[m.channel] ?? "?"}] ${who ? `${who}: ` : ""}${m.text}`); });
+  c.chat.onReject((ch, reason) => menus?.pushChat(`(${CHAT_TAG[ch] ?? "?"} message rejected: ${reason})`));
 }
 /** Pause menu "Quit to main menu": leave fullscreen, end the session, back to the main menu. */
 function quitToMenu(): void {
@@ -102,7 +126,10 @@ const placeholder = new TileMap();
 for (let y = -64; y < 96; y++) for (let x = -64; x < 96; x++) placeholder.setTile(x, y, 1 + ((x * 7 + y * 13) & 3) % 3);
 
 const colors = ["#000", "#3a5", "#495", "#874"];
+let menuRefreshAt = 0;
 function render(w: World, alpha: number): void {
+  wireChat();
+  if (menus?.nav.isOpen) { const now = performance.now(); if (now >= menuRefreshAt) { menuRefreshAt = now + 250; menus.refresh(); } }
   if (iso) { iso.render(w, session.client?.tiles.tiles, session.player, alpha); diag?.afterRender(); return; }
   if (!ctx) return;
   const canvas = debugCanvas;

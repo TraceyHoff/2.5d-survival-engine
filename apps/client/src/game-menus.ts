@@ -8,6 +8,7 @@
  */
 import { UINav, type ContextStack } from "./ui-nav.js";
 import { loadSettings, saveSettings } from "./menu.js";
+import { GAMEPLAY_PANELS, gameplayBody, type GameplayPanel, type GameplaySource } from "./gameplay-panels.js";
 
 export interface MenuDef { id: string; title: string; icon: string; hotkeys: string[]; bar?: boolean; text: string }
 export const GAME_MENUS: readonly MenuDef[] = [
@@ -39,6 +40,10 @@ padding:12px 14px;display:flex;flex-direction:column;gap:10px;font:600 15px Fred
 #game-menubar button:focus-visible{outline:3px solid #FFD45A}
 @media (max-height:420px){#game-menubar button{width:40px;height:40px;font-size:18px}}`;
 
+/** Sendable ChatChannel ids (@engine/net ChatChannel: Global 0, Local 1, Party 2, Clan 3, Trade 4). */
+export const CHAT_CHANNELS: readonly [string, number][] = [["Local", 1], ["Global", 0], ["Party", 2], ["Clan", 3], ["Trade", 4]];
+const CSS_ESCAPE = (s: string): string => s.replace(/["\\]/g, "\\$&");
+
 export interface GameMenusOptions {
   root: HTMLElement;
   input?: ContextStack;
@@ -46,8 +51,10 @@ export interface GameMenusOptions {
   onQuit: () => void;
   /** Session entry (P2P / dedicated): shown in the pause menu when set. */
   session?: () => { label: string; leaveLabel: string; onLeave: () => void } | undefined;
-  /** Chat send hook (no-op placeholder until chat is wired). */
-  onChat?: (text: string) => void;
+  /** Chat send hook: main.ts wires it to NetClient.chat (core ChatServer). `channel` is a ChatChannel id. */
+  onChat?: (text: string, channel: number) => void;
+  /** Real gameplay data + command sender for the inventory/crafting/build/character/party/clan/trade panels. */
+  gameplay?: GameplaySource;
   showMenuBar?: boolean;
   getGamepads?: UINavOptions["getGamepads"];
   pollGamepads?: boolean;
@@ -55,7 +62,7 @@ export interface GameMenusOptions {
 type UINavOptions = ConstructorParameters<typeof UINav>[0];
 
 export class GameMenus {
-  readonly nav: UINav; readonly bar: HTMLElement | undefined; private chatLog: string[] = [];
+  readonly nav: UINav; readonly bar: HTMLElement | undefined; private chatLog: string[] = []; private chatChannel = 1; private statusLine = "";
   constructor(private readonly o: GameMenusOptions) {
     if (!document.getElementById("gm-style")) { const st = document.createElement("style"); st.id = "gm-style"; st.textContent = CSS; document.head.append(st); }
     const hotkeys: Record<string, () => void> = {};
@@ -93,7 +100,26 @@ export class GameMenus {
     if (id === "chat") return this.chatPanel();
     if (id === "session") { const s = this.o.session?.(); return this.panel("session", "Session", [this.para(s?.label ?? "Not in a shared session.")], s ? [[s.leaveLabel, () => { this.nav.closeAll(); s.onLeave(); }, "alt"]] : []); }
     const m = GAME_MENUS.find((d) => d.id === id); if (!m) throw new Error(`unknown menu ${id}`);
+    if (this.o.gameplay && (GAMEPLAY_PANELS as readonly string[]).includes(id)) return this.panel(id, m.title, this.gameplayNodes(id as GameplayPanel));
     return this.panel(id, m.title, [this.para(m.text)]);
+  }
+  private gameplayNodes(id: GameplayPanel): Node[] {
+    const status = this.para(this.statusLine); status.dataset["role"] = "status"; status.setAttribute("aria-live", "polite");
+    return [status, ...gameplayBody(id, this.o.gameplay!, { para: (t) => this.para(t), rerender: () => this.refresh(), status: (t) => { this.statusLine = t; } })];
+  }
+  /** Re-render the open gameplay panel from live world state (after an action, or per frame/tick for craft progress), keeping focus. */
+  refresh(): void {
+    const id = this.nav.top; if (!id || !this.o.gameplay || !(GAMEPLAY_PANELS as readonly string[]).includes(id)) return;
+    const body = this.o.root.querySelector<HTMLElement>(`[data-menu="${id}"] [data-role=body]`); if (!body) return;
+    if (document.activeElement instanceof HTMLInputElement && body.contains(document.activeElement)) return; // do not wipe typing
+    const key = (document.activeElement as HTMLElement | null)?.dataset?.["key"];
+    body.replaceChildren(...this.gameplayNodes(id as GameplayPanel));
+    if (key) body.querySelector<HTMLElement>(`[data-key="${CSS_ESCAPE(key)}"]`)?.focus();
+  }
+  /** Append an incoming chat line (from NetClient.chat). */
+  pushChat(line: string): void {
+    this.chatLog.push(line); if (this.chatLog.length > 200) this.chatLog.splice(0, this.chatLog.length - 200);
+    const log = this.o.root.querySelector<HTMLElement>("[data-menu=chat] [data-role=chat-log]"); if (log) { log.append(this.para(line)); log.scrollTop = log.scrollHeight; }
   }
   toggle(id: string): void { this.nav.toggle(id, () => this.build(id)); }
   open(id: string): void { this.nav.open(id, this.build(id)); }
@@ -118,8 +144,11 @@ export class GameMenus {
     const log = document.createElement("div"); log.dataset["role"] = "chat-log"; log.style.cssText = "max-height:30vh;overflow:auto;font-size:14px";
     for (const l of this.chatLog.slice(-50)) log.append(this.para(l));
     const input = document.createElement("input"); input.dataset["role"] = "chat-input"; input.placeholder = "Say something…"; input.maxLength = 200; input.setAttribute("aria-label", "Chat message"); input.autofocus = true;
-    const send = (): void => { const t = input.value.trim(); if (!t) return; this.chatLog.push(t); this.o.onChat?.(t); log.append(this.para(t)); input.value = ""; };
-    const m = this.panel("chat", "Chat", [log, input], [["Send", send], ["Close", () => this.nav.close(), "alt"]]);
+    const send = (): void => { const t = input.value.trim(); if (!t) return; if (this.o.onChat) this.o.onChat(t, this.chatChannel); else this.pushChat(t); input.value = ""; };
+    const chans = document.createElement("div"); chans.className = "gm-grid"; chans.dataset["role"] = "chat-channels";
+    for (const [n, c] of CHAT_CHANNELS) { const b = document.createElement("button"); b.type = "button"; b.className = c === this.chatChannel ? "" : "alt"; b.textContent = n; b.dataset["key"] = `chan-${c}`; b.setAttribute("aria-pressed", String(c === this.chatChannel));
+      b.addEventListener("click", () => { this.chatChannel = c; for (const o of Array.from(chans.children)) { const on = o === b; (o as HTMLElement).className = on ? "" : "alt"; o.setAttribute("aria-pressed", String(on)); } }); chans.append(b); }
+    const m = this.panel("chat", "Chat", [log, chans, input], [["Send", send], ["Close", () => this.nav.close(), "alt"]]);
     m.querySelector<HTMLElement>("[data-action=Send]")!.dataset["role"] = "submit";
     return m;
   }
