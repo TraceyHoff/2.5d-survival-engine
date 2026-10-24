@@ -1548,7 +1548,17 @@
     "truck_flatbed": 1546,
     "truck_pickup": 1547,
     "van_cargo": 1548,
-    "van_passenger": 1549
+    "van_passenger": 1549,
+    "bld_floor_triangle": 1550,
+    "bld_floor_triangle_t1": 1551,
+    "bld_floor_triangle_t2": 1552,
+    "bld_floor_triangle_t3": 1553,
+    "bld_floor_triangle_t4": 1554,
+    "bld_foundation_ramp": 1555,
+    "bld_foundation_ramp_t1": 1556,
+    "bld_foundation_ramp_t2": 1557,
+    "bld_foundation_ramp_t3": 1558,
+    "bld_foundation_ramp_t4": 1559
   },
   "sounds": {
     "amb_rain": 1,

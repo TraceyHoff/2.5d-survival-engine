@@ -2,7 +2,7 @@
 
 Status: art landed (4 tier pages). Survival: adopt these **piece keys** (`BuildPieceDef.key`); the renderer resolves
 `building.piece` = `<pieceKey>@tier<N>` from `BuildPiece.tier` (render 9b50b7d) and falls back to the bare `<pieceKey>` sprite.
-If `packages/gameplay/docs/ART_KEYS_BUILDING.md` lands, that doc wins and this file will be aligned to it.
+`packages/gameplay/docs/ART_KEYS_BUILDING.md` (d86a464) is the source of truth; this file matches it.
 
 ## Tiers (gameplay `tiers.json` index)
 | tier | material | look |
@@ -21,26 +21,29 @@ New keys (bare key = tier1 art + `@tier1..4`):
 
 | group | keys | placement | rotation art |
 |---|---|---|---|
-| foundations | `foundation_triangle`, `foundation_steps`, `foundation_stilt` | cell | triangle/steps unique4, stilt symmetric |
+| foundations | `foundation_triangle`, `foundation_ramp`, `foundation_steps`, `foundation_stilt` | triangle: tri (unit equilateral, pivot = centroid); others cell | triangle/ramp/steps unique4, stilt symmetric |
 | walls | `wall_arched`, `wall_fortified` | edge | 2 drawn rows (axis), rows reused for rot 2/3 |
-| ceilings | `floor_stairwell`, `floor_skylight` | cell, level >= 1 | stairwell 2 rows, skylight symmetric |
-| corners | `wall_corner_outer`, `wall_corner_inner`, `wall_corner_angled` | cell (corner post) | unique4 |
+| ceilings | `floor_stairwell`, `floor_skylight`, `floor_triangle` | cell / tri (centroid), level >= 1 | stairwell 2 rows, skylight symmetric, triangle unique4 |
+| corners | `wall_corner_outer`, `wall_corner_inner`, `wall_corner_angled` | vertex (pivot = corner post on the tile corner) | unique4 |
 | roofs | `roof_gable`, `roof_chimney` | cell, roof | gable 2 rows, chimney symmetric |
 
 ## Damage
 `BuildPiece.damageStage` 0 intact, 1 scuffed, 2 cracked/chipped, 3 wrecked (frames baked per rotation).
-Every sprite declares `crackOverlay: "bld_crack"` (anims `stage1..3`).
+Damage is not in the key. Every sprite declares `crackOverlay: "bld_crack"` (anims `stage1..3`).
 
 ## Attach points
 `roof_chimney*`: `smoke` (chimney mouth, pivot-relative px) for a smoke VFX.
 
 ## Grid
-1 cell = 1 iso tile 64x32, pivot = cell centre on the ground, wall height 48 px (1 floor); ceilings and roofs are drawn
-from their own level's floor (z = level * floor height), so they sit on wall tops.
+1 cell = 1 iso tile 64x32. Pivot = cell centre (cell/edge pieces), tile corner (vertex corners) or centroid (triangles).
+1 floor = FLOOR_HEIGHT_LEVELS (3) terrain levels x zStep 16 px = 48 px = wall height; ceilings and roofs are drawn from
+their own level's floor (z = level * 3 terrain levels), so they sit on wall tops.
+Triangles: unit equilateral, rot 0 = edge 0 facing +x; renderer shows 30-degree rots at the nearest quarter (4 rows).
+Corner stubs are 0.22 tile (edge walls already run vertex to vertex); angled = post + 45-degree half-diagonal to the tile centre.
 
 ## Sprite keys (manifest)
 `bld_<piece>_t<N>` -> `building.piece` `<piece>@tier<N>`; new pieces also have `bld_<piece>` -> bare `<piece>` (tier1 art).
 `wall_corner@tierN` / `roof_ridge@tierN` reuse the `wall_corner_outer` / `roof_gable` frames. Crack overlay sprite: `bld_crack`.
 
 ## Atlas
-One page per tier, `building_t1..t4`: 2016x960, 84x96 cells, pivot (42,72) = anchor (0.5, 0.75), 1x only, ~7.7 MB RGBA each.
+One page per tier, `building_t1..t4`: 2016x1056, 84x96 cells, pivot (42,72) = anchor (0.5, 0.75), 1x only; ~8.1 MiB RGBA8 each (32.5 MiB all), KTX2 ETC1S twins ~2 MiB each (8.1 MiB all) via assets/tools/ktx2.py.

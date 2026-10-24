@@ -8,7 +8,7 @@
    "frameW": 84,
    "frameH": 96,
    "columns": 24,
-   "rows": 10,
+   "rows": 11,
    "ktx2": "atlases/building_t1.ktx2"
   },
   {
@@ -17,7 +17,7 @@
    "frameW": 84,
    "frameH": 96,
    "columns": 24,
-   "rows": 10,
+   "rows": 11,
    "ktx2": "atlases/building_t2.ktx2"
   },
   {
@@ -26,7 +26,7 @@
    "frameW": 84,
    "frameH": 96,
    "columns": 24,
-   "rows": 10,
+   "rows": 11,
    "ktx2": "atlases/building_t3.ktx2"
   },
   {
@@ -35,7 +35,7 @@
    "frameW": 84,
    "frameH": 96,
    "columns": 24,
-   "rows": 10,
+   "rows": 11,
    "ktx2": "atlases/building_t4.ktx2"
   }
  ],
@@ -51,19 +51,19 @@
    "animations": {
     "stage1": {
      "frames": [
-      224
+      256
      ],
      "fps": 1
     },
     "stage2": {
      "frames": [
-      225
+      257
      ],
      "fps": 1
     },
     "stage3": {
      "frames": [
-      226
+      258
      ],
      "fps": 1
     }
@@ -387,7 +387,7 @@
    "rotationArt": "mirror"
   },
   {
-   "key": "bld_wall_t1",
+   "key": "bld_foundation_ramp_t1",
    "category": "building",
    "atlas": "building_t1",
    "anchor": {
@@ -403,7 +403,7 @@
     }
    },
    "building": {
-    "piece": "wall@tier1",
+    "piece": "foundation_ramp@tier1",
     "footprint": {
      "w": 1,
      "h": 1
@@ -423,6 +423,47 @@
       47
      ],
      [
+      48,
+      49,
+      50,
+      51
+     ],
+     [
+      52,
+      53,
+      54,
+      55
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_foundation_ramp",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      40
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "foundation_ramp",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
       40,
       41,
       42,
@@ -433,6 +474,71 @@
       45,
       46,
       47
+     ],
+     [
+      48,
+      49,
+      50,
+      51
+     ],
+     [
+      52,
+      53,
+      54,
+      55
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_t1",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      56
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall@tier1",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      56,
+      57,
+      58,
+      59
+     ],
+     [
+      60,
+      61,
+      62,
+      63
+     ],
+     [
+      56,
+      57,
+      58,
+      59
+     ],
+     [
+      60,
+      61,
+      62,
+      63
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -450,7 +556,7 @@
    "animations": {
     "idle": {
      "frames": [
-      48
+      64
      ],
      "fps": 1
     }
@@ -464,28 +570,28 @@
     "layer": 1,
     "frames": [
      [
-      48,
-      49,
-      50,
-      51
+      64,
+      65,
+      66,
+      67
      ],
      [
-      52,
-      53,
-      54,
-      55
+      68,
+      69,
+      70,
+      71
      ],
      [
-      48,
-      49,
-      50,
-      51
+      64,
+      65,
+      66,
+      67
      ],
      [
-      52,
-      53,
-      54,
-      55
+      68,
+      69,
+      70,
+      71
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -503,7 +609,7 @@
    "animations": {
     "idle": {
      "frames": [
-      56
+      72
      ],
      "fps": 1
     }
@@ -517,28 +623,28 @@
     "layer": 1,
     "frames": [
      [
-      56,
-      57,
-      58,
-      59
+      72,
+      73,
+      74,
+      75
      ],
      [
-      60,
-      61,
-      62,
-      63
+      76,
+      77,
+      78,
+      79
      ],
      [
-      56,
-      57,
-      58,
-      59
+      72,
+      73,
+      74,
+      75
      ],
      [
-      60,
-      61,
-      62,
-      63
+      76,
+      77,
+      78,
+      79
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -556,7 +662,7 @@
    "animations": {
     "idle": {
      "frames": [
-      64
+      80
      ],
      "fps": 1
     }
@@ -570,28 +676,28 @@
     "layer": 1,
     "frames": [
      [
-      64,
-      65,
-      66,
-      67
+      80,
+      81,
+      82,
+      83
      ],
      [
-      68,
-      69,
-      70,
-      71
+      84,
+      85,
+      86,
+      87
      ],
      [
-      64,
-      65,
-      66,
-      67
+      80,
+      81,
+      82,
+      83
      ],
      [
-      68,
-      69,
-      70,
-      71
+      84,
+      85,
+      86,
+      87
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -609,7 +715,7 @@
    "animations": {
     "idle": {
      "frames": [
-      72
+      88
      ],
      "fps": 1
     }
@@ -623,28 +729,28 @@
     "layer": 1,
     "frames": [
      [
-      72,
-      73,
-      74,
-      75
+      88,
+      89,
+      90,
+      91
      ],
      [
-      76,
-      77,
-      78,
-      79
+      92,
+      93,
+      94,
+      95
      ],
      [
-      72,
-      73,
-      74,
-      75
+      88,
+      89,
+      90,
+      91
      ],
      [
-      76,
-      77,
-      78,
-      79
+      92,
+      93,
+      94,
+      95
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -662,7 +768,7 @@
    "animations": {
     "idle": {
      "frames": [
-      72
+      88
      ],
      "fps": 1
     }
@@ -676,28 +782,28 @@
     "layer": 1,
     "frames": [
      [
-      72,
-      73,
-      74,
-      75
+      88,
+      89,
+      90,
+      91
      ],
      [
-      76,
-      77,
-      78,
-      79
+      92,
+      93,
+      94,
+      95
      ],
      [
-      72,
-      73,
-      74,
-      75
+      88,
+      89,
+      90,
+      91
      ],
      [
-      76,
-      77,
-      78,
-      79
+      92,
+      93,
+      94,
+      95
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -715,7 +821,7 @@
    "animations": {
     "idle": {
      "frames": [
-      80
+      96
      ],
      "fps": 1
     }
@@ -729,28 +835,28 @@
     "layer": 1,
     "frames": [
      [
-      80,
-      81,
-      82,
-      83
+      96,
+      97,
+      98,
+      99
      ],
      [
-      84,
-      85,
-      86,
-      87
+      100,
+      101,
+      102,
+      103
      ],
      [
-      80,
-      81,
-      82,
-      83
+      96,
+      97,
+      98,
+      99
      ],
      [
-      84,
-      85,
-      86,
-      87
+      100,
+      101,
+      102,
+      103
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -768,7 +874,7 @@
    "animations": {
     "idle": {
      "frames": [
-      80
+      96
      ],
      "fps": 1
     }
@@ -782,28 +888,28 @@
     "layer": 1,
     "frames": [
      [
-      80,
-      81,
-      82,
-      83
+      96,
+      97,
+      98,
+      99
      ],
      [
-      84,
-      85,
-      86,
-      87
+      100,
+      101,
+      102,
+      103
      ],
      [
-      80,
-      81,
-      82,
-      83
+      96,
+      97,
+      98,
+      99
      ],
      [
-      84,
-      85,
-      86,
-      87
+      100,
+      101,
+      102,
+      103
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -821,7 +927,7 @@
    "animations": {
     "idle": {
      "frames": [
-      88
+      104
      ],
      "fps": 1
     }
@@ -835,10 +941,10 @@
     "layer": 0,
     "frames": [
      [
-      88,
-      89,
-      90,
-      91
+      104,
+      105,
+      106,
+      107
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -856,7 +962,7 @@
    "animations": {
     "idle": {
      "frames": [
-      92
+      108
      ],
      "fps": 1
     }
@@ -870,10 +976,10 @@
     "layer": 0,
     "frames": [
      [
-      92,
-      93,
-      94,
-      95
+      108,
+      109,
+      110,
+      111
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -891,7 +997,7 @@
    "animations": {
     "idle": {
      "frames": [
-      96
+      112
      ],
      "fps": 1
     }
@@ -905,28 +1011,28 @@
     "layer": 0,
     "frames": [
      [
-      96,
-      97,
-      98,
-      99
+      112,
+      113,
+      114,
+      115
      ],
      [
-      100,
-      101,
-      102,
-      103
+      116,
+      117,
+      118,
+      119
      ],
      [
-      96,
-      97,
-      98,
-      99
+      112,
+      113,
+      114,
+      115
      ],
      [
-      100,
-      101,
-      102,
-      103
+      116,
+      117,
+      118,
+      119
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -944,7 +1050,7 @@
    "animations": {
     "idle": {
      "frames": [
-      96
+      112
      ],
      "fps": 1
     }
@@ -958,28 +1064,28 @@
     "layer": 0,
     "frames": [
      [
-      96,
-      97,
-      98,
-      99
+      112,
+      113,
+      114,
+      115
      ],
      [
-      100,
-      101,
-      102,
-      103
+      116,
+      117,
+      118,
+      119
      ],
      [
-      96,
-      97,
-      98,
-      99
+      112,
+      113,
+      114,
+      115
      ],
      [
-      100,
-      101,
-      102,
-      103
+      116,
+      117,
+      118,
+      119
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -997,7 +1103,7 @@
    "animations": {
     "idle": {
      "frames": [
-      104
+      120
      ],
      "fps": 1
     }
@@ -1011,10 +1117,10 @@
     "layer": 0,
     "frames": [
      [
-      104,
-      105,
-      106,
-      107
+      120,
+      121,
+      122,
+      123
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -1032,7 +1138,7 @@
    "animations": {
     "idle": {
      "frames": [
-      104
+      120
      ],
      "fps": 1
     }
@@ -1046,15 +1152,121 @@
     "layer": 0,
     "frames": [
      [
-      104,
-      105,
-      106,
-      107
+      120,
+      121,
+      122,
+      123
      ]
     ],
     "crackOverlay": "bld_crack"
    },
    "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_floor_triangle_t1",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      124
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor_triangle@tier1",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      124,
+      125,
+      126,
+      127
+     ],
+     [
+      128,
+      129,
+      130,
+      131
+     ],
+     [
+      132,
+      133,
+      134,
+      135
+     ],
+     [
+      136,
+      137,
+      138,
+      139
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_floor_triangle",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      124
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor_triangle",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      124,
+      125,
+      126,
+      127
+     ],
+     [
+      128,
+      129,
+      130,
+      131
+     ],
+     [
+      132,
+      133,
+      134,
+      135
+     ],
+     [
+      136,
+      137,
+      138,
+      139
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
   },
   {
    "key": "bld_wall_corner_outer_t1",
@@ -1067,7 +1279,7 @@
    "animations": {
     "idle": {
      "frames": [
-      108
+      140
      ],
      "fps": 1
     }
@@ -1081,28 +1293,28 @@
     "layer": 1,
     "frames": [
      [
-      108,
-      109,
-      110,
-      111
+      140,
+      141,
+      142,
+      143
      ],
      [
-      112,
-      113,
-      114,
-      115
+      144,
+      145,
+      146,
+      147
      ],
      [
-      116,
-      117,
-      118,
-      119
+      148,
+      149,
+      150,
+      151
      ],
      [
-      120,
-      121,
-      122,
-      123
+      152,
+      153,
+      154,
+      155
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -1120,7 +1332,7 @@
    "animations": {
     "idle": {
      "frames": [
-      108
+      140
      ],
      "fps": 1
     }
@@ -1134,28 +1346,28 @@
     "layer": 1,
     "frames": [
      [
-      108,
-      109,
-      110,
-      111
+      140,
+      141,
+      142,
+      143
      ],
      [
-      112,
-      113,
-      114,
-      115
+      144,
+      145,
+      146,
+      147
      ],
      [
-      116,
-      117,
-      118,
-      119
+      148,
+      149,
+      150,
+      151
      ],
      [
-      120,
-      121,
-      122,
-      123
+      152,
+      153,
+      154,
+      155
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -1173,7 +1385,7 @@
    "animations": {
     "idle": {
      "frames": [
-      124
+      156
      ],
      "fps": 1
     }
@@ -1187,28 +1399,28 @@
     "layer": 1,
     "frames": [
      [
-      124,
-      125,
-      126,
-      127
+      156,
+      157,
+      158,
+      159
      ],
      [
-      128,
-      129,
-      130,
-      131
+      160,
+      161,
+      162,
+      163
      ],
      [
-      132,
-      133,
-      134,
-      135
+      164,
+      165,
+      166,
+      167
      ],
      [
-      136,
-      137,
-      138,
-      139
+      168,
+      169,
+      170,
+      171
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -1226,7 +1438,7 @@
    "animations": {
     "idle": {
      "frames": [
-      124
+      156
      ],
      "fps": 1
     }
@@ -1240,28 +1452,28 @@
     "layer": 1,
     "frames": [
      [
-      124,
-      125,
-      126,
-      127
+      156,
+      157,
+      158,
+      159
      ],
      [
-      128,
-      129,
-      130,
-      131
+      160,
+      161,
+      162,
+      163
      ],
      [
-      132,
-      133,
-      134,
-      135
+      164,
+      165,
+      166,
+      167
      ],
      [
-      136,
-      137,
-      138,
-      139
+      168,
+      169,
+      170,
+      171
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -1279,7 +1491,7 @@
    "animations": {
     "idle": {
      "frames": [
-      140
+      172
      ],
      "fps": 1
     }
@@ -1293,10 +1505,10 @@
     "layer": 1,
     "frames": [
      [
-      140,
-      141,
-      142,
-      143
+      172,
+      173,
+      174,
+      175
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -1314,7 +1526,7 @@
    "animations": {
     "idle": {
      "frames": [
-      144
+      176
      ],
      "fps": 1
     }
@@ -1328,28 +1540,28 @@
     "layer": 1,
     "frames": [
      [
-      144,
-      145,
-      146,
-      147
+      176,
+      177,
+      178,
+      179
      ],
      [
-      148,
-      149,
-      150,
-      151
+      180,
+      181,
+      182,
+      183
      ],
      [
-      152,
-      153,
-      154,
-      155
+      184,
+      185,
+      186,
+      187
      ],
      [
-      156,
-      157,
-      158,
-      159
+      188,
+      189,
+      190,
+      191
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -1367,7 +1579,7 @@
    "animations": {
     "idle": {
      "frames": [
-      144
+      176
      ],
      "fps": 1
     }
@@ -1381,28 +1593,28 @@
     "layer": 1,
     "frames": [
      [
-      144,
-      145,
-      146,
-      147
+      176,
+      177,
+      178,
+      179
      ],
      [
-      148,
-      149,
-      150,
-      151
+      180,
+      181,
+      182,
+      183
      ],
      [
-      152,
-      153,
-      154,
-      155
+      184,
+      185,
+      186,
+      187
      ],
      [
-      156,
-      157,
-      158,
-      159
+      188,
+      189,
+      190,
+      191
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -1420,7 +1632,7 @@
    "animations": {
     "idle": {
      "frames": [
-      160
+      192
      ],
      "fps": 1
     }
@@ -1434,10 +1646,10 @@
     "layer": 0,
     "frames": [
      [
-      160,
-      161,
-      162,
-      163
+      192,
+      193,
+      194,
+      195
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -1455,7 +1667,7 @@
    "animations": {
     "idle": {
      "frames": [
-      164
+      196
      ],
      "fps": 1
     }
@@ -1469,28 +1681,28 @@
     "layer": 0,
     "frames": [
      [
-      164,
-      165,
-      166,
-      167
+      196,
+      197,
+      198,
+      199
      ],
      [
-      168,
-      169,
-      170,
-      171
+      200,
+      201,
+      202,
+      203
      ],
      [
-      172,
-      173,
-      174,
-      175
+      204,
+      205,
+      206,
+      207
      ],
      [
-      176,
-      177,
-      178,
-      179
+      208,
+      209,
+      210,
+      211
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -1508,7 +1720,7 @@
    "animations": {
     "idle": {
      "frames": [
-      180
+      212
      ],
      "fps": 1
     }
@@ -1522,175 +1734,16 @@
     "layer": 0,
     "frames": [
      [
-      180,
-      181,
-      182,
-      183
+      212,
+      213,
+      214,
+      215
      ],
      [
-      184,
-      185,
-      186,
-      187
-     ],
-     [
-      180,
-      181,
-      182,
-      183
-     ],
-     [
-      184,
-      185,
-      186,
-      187
-     ]
-    ],
-    "crackOverlay": "bld_crack"
-   },
-   "rotationArt": "unique4"
-  },
-  {
-   "key": "bld_roof_gable",
-   "category": "building",
-   "atlas": "building_t1",
-   "anchor": {
-    "x": 0.5,
-    "y": 0.75
-   },
-   "animations": {
-    "idle": {
-     "frames": [
-      180
-     ],
-     "fps": 1
-    }
-   },
-   "building": {
-    "piece": "roof_gable",
-    "footprint": {
-     "w": 1,
-     "h": 1
-    },
-    "layer": 0,
-    "frames": [
-     [
-      180,
-      181,
-      182,
-      183
-     ],
-     [
-      184,
-      185,
-      186,
-      187
-     ],
-     [
-      180,
-      181,
-      182,
-      183
-     ],
-     [
-      184,
-      185,
-      186,
-      187
-     ]
-    ],
-    "crackOverlay": "bld_crack"
-   },
-   "rotationArt": "unique4"
-  },
-  {
-   "key": "bld_roof_hip_t1",
-   "category": "building",
-   "atlas": "building_t1",
-   "anchor": {
-    "x": 0.5,
-    "y": 0.75
-   },
-   "animations": {
-    "idle": {
-     "frames": [
-      188
-     ],
-     "fps": 1
-    }
-   },
-   "building": {
-    "piece": "roof_hip@tier1",
-    "footprint": {
-     "w": 1,
-     "h": 1
-    },
-    "layer": 0,
-    "frames": [
-     [
-      188,
-      189,
-      190,
-      191
-     ],
-     [
-      192,
-      193,
-      194,
-      195
-     ],
-     [
-      196,
-      197,
-      198,
-      199
-     ],
-     [
-      200,
-      201,
-      202,
-      203
-     ]
-    ],
-    "crackOverlay": "bld_crack"
-   },
-   "rotationArt": "unique4"
-  },
-  {
-   "key": "bld_roof_corner_t1",
-   "category": "building",
-   "atlas": "building_t1",
-   "anchor": {
-    "x": 0.5,
-    "y": 0.75
-   },
-   "animations": {
-    "idle": {
-     "frames": [
-      204
-     ],
-     "fps": 1
-    }
-   },
-   "building": {
-    "piece": "roof_corner@tier1",
-    "footprint": {
-     "w": 1,
-     "h": 1
-    },
-    "layer": 0,
-    "frames": [
-     [
-      204,
-      205,
-      206,
-      207
-     ],
-     [
-      208,
-      209,
-      210,
-      211
+      216,
+      217,
+      218,
+      219
      ],
      [
       212,
@@ -1710,7 +1763,60 @@
    "rotationArt": "unique4"
   },
   {
-   "key": "bld_roof_chimney_t1",
+   "key": "bld_roof_gable",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      212
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_gable",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      212,
+      213,
+      214,
+      215
+     ],
+     [
+      216,
+      217,
+      218,
+      219
+     ],
+     [
+      212,
+      213,
+      214,
+      215
+     ],
+     [
+      216,
+      217,
+      218,
+      219
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_hip_t1",
    "category": "building",
    "atlas": "building_t1",
    "anchor": {
@@ -1726,7 +1832,7 @@
     }
    },
    "building": {
-    "piece": "roof_chimney@tier1",
+    "piece": "roof_hip@tier1",
     "footprint": {
      "w": 1,
      "h": 1
@@ -1738,6 +1844,112 @@
       221,
       222,
       223
+     ],
+     [
+      224,
+      225,
+      226,
+      227
+     ],
+     [
+      228,
+      229,
+      230,
+      231
+     ],
+     [
+      232,
+      233,
+      234,
+      235
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_corner_t1",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      236
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_corner@tier1",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      236,
+      237,
+      238,
+      239
+     ],
+     [
+      240,
+      241,
+      242,
+      243
+     ],
+     [
+      244,
+      245,
+      246,
+      247
+     ],
+     [
+      248,
+      249,
+      250,
+      251
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_chimney_t1",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      252
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_chimney@tier1",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      252,
+      253,
+      254,
+      255
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -1761,7 +1973,7 @@
    "animations": {
     "idle": {
      "frames": [
-      220
+      252
      ],
      "fps": 1
     }
@@ -1775,10 +1987,10 @@
     "layer": 0,
     "frames": [
      [
-      220,
-      221,
-      222,
-      223
+      252,
+      253,
+      254,
+      255
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -1802,7 +2014,7 @@
    "animations": {
     "idle": {
      "frames": [
-      108
+      140
      ],
      "fps": 1
     }
@@ -1816,28 +2028,28 @@
     "layer": 1,
     "frames": [
      [
-      108,
-      109,
-      110,
-      111
+      140,
+      141,
+      142,
+      143
      ],
      [
-      112,
-      113,
-      114,
-      115
+      144,
+      145,
+      146,
+      147
      ],
      [
-      116,
-      117,
-      118,
-      119
+      148,
+      149,
+      150,
+      151
      ],
      [
-      120,
-      121,
-      122,
-      123
+      152,
+      153,
+      154,
+      155
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -1855,7 +2067,7 @@
    "animations": {
     "idle": {
      "frames": [
-      180
+      212
      ],
      "fps": 1
     }
@@ -1869,28 +2081,28 @@
     "layer": 0,
     "frames": [
      [
-      180,
-      181,
-      182,
-      183
+      212,
+      213,
+      214,
+      215
      ],
      [
-      184,
-      185,
-      186,
-      187
+      216,
+      217,
+      218,
+      219
      ],
      [
-      180,
-      181,
-      182,
-      183
+      212,
+      213,
+      214,
+      215
      ],
      [
-      184,
-      185,
-      186,
-      187
+      216,
+      217,
+      218,
+      219
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -2074,7 +2286,7 @@
    "rotationArt": "mirror"
   },
   {
-   "key": "bld_wall_t2",
+   "key": "bld_foundation_ramp_t2",
    "category": "building",
    "atlas": "building_t2",
    "anchor": {
@@ -2090,7 +2302,7 @@
     }
    },
    "building": {
-    "piece": "wall@tier2",
+    "piece": "foundation_ramp@tier2",
     "footprint": {
      "w": 1,
      "h": 1
@@ -2110,16 +2322,69 @@
       47
      ],
      [
-      40,
-      41,
-      42,
-      43
+      48,
+      49,
+      50,
+      51
      ],
      [
-      44,
-      45,
-      46,
-      47
+      52,
+      53,
+      54,
+      55
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      56
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      56,
+      57,
+      58,
+      59
+     ],
+     [
+      60,
+      61,
+      62,
+      63
+     ],
+     [
+      56,
+      57,
+      58,
+      59
+     ],
+     [
+      60,
+      61,
+      62,
+      63
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -2137,7 +2402,7 @@
    "animations": {
     "idle": {
      "frames": [
-      48
+      64
      ],
      "fps": 1
     }
@@ -2151,28 +2416,28 @@
     "layer": 1,
     "frames": [
      [
-      48,
-      49,
-      50,
-      51
+      64,
+      65,
+      66,
+      67
      ],
      [
-      52,
-      53,
-      54,
-      55
+      68,
+      69,
+      70,
+      71
      ],
      [
-      48,
-      49,
-      50,
-      51
+      64,
+      65,
+      66,
+      67
      ],
      [
-      52,
-      53,
-      54,
-      55
+      68,
+      69,
+      70,
+      71
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -2190,7 +2455,7 @@
    "animations": {
     "idle": {
      "frames": [
-      56
+      72
      ],
      "fps": 1
     }
@@ -2204,28 +2469,28 @@
     "layer": 1,
     "frames": [
      [
-      56,
-      57,
-      58,
-      59
+      72,
+      73,
+      74,
+      75
      ],
      [
-      60,
-      61,
-      62,
-      63
+      76,
+      77,
+      78,
+      79
      ],
      [
-      56,
-      57,
-      58,
-      59
+      72,
+      73,
+      74,
+      75
      ],
      [
-      60,
-      61,
-      62,
-      63
+      76,
+      77,
+      78,
+      79
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -2243,7 +2508,7 @@
    "animations": {
     "idle": {
      "frames": [
-      64
+      80
      ],
      "fps": 1
     }
@@ -2257,28 +2522,28 @@
     "layer": 1,
     "frames": [
      [
-      64,
-      65,
-      66,
-      67
+      80,
+      81,
+      82,
+      83
      ],
      [
-      68,
-      69,
-      70,
-      71
+      84,
+      85,
+      86,
+      87
      ],
      [
-      64,
-      65,
-      66,
-      67
+      80,
+      81,
+      82,
+      83
      ],
      [
-      68,
-      69,
-      70,
-      71
+      84,
+      85,
+      86,
+      87
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -2296,7 +2561,7 @@
    "animations": {
     "idle": {
      "frames": [
-      72
+      88
      ],
      "fps": 1
     }
@@ -2310,28 +2575,28 @@
     "layer": 1,
     "frames": [
      [
-      72,
-      73,
-      74,
-      75
+      88,
+      89,
+      90,
+      91
      ],
      [
-      76,
-      77,
-      78,
-      79
+      92,
+      93,
+      94,
+      95
      ],
      [
-      72,
-      73,
-      74,
-      75
+      88,
+      89,
+      90,
+      91
      ],
      [
-      76,
-      77,
-      78,
-      79
+      92,
+      93,
+      94,
+      95
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -2349,7 +2614,7 @@
    "animations": {
     "idle": {
      "frames": [
-      80
+      96
      ],
      "fps": 1
     }
@@ -2363,28 +2628,28 @@
     "layer": 1,
     "frames": [
      [
-      80,
-      81,
-      82,
-      83
+      96,
+      97,
+      98,
+      99
      ],
      [
-      84,
-      85,
-      86,
-      87
+      100,
+      101,
+      102,
+      103
      ],
      [
-      80,
-      81,
-      82,
-      83
+      96,
+      97,
+      98,
+      99
      ],
      [
-      84,
-      85,
-      86,
-      87
+      100,
+      101,
+      102,
+      103
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -2402,136 +2667,13 @@
    "animations": {
     "idle": {
      "frames": [
-      88
-     ],
-     "fps": 1
-    }
-   },
-   "building": {
-    "piece": "floor@tier2",
-    "footprint": {
-     "w": 1,
-     "h": 1
-    },
-    "layer": 0,
-    "frames": [
-     [
-      88,
-      89,
-      90,
-      91
-     ]
-    ],
-    "crackOverlay": "bld_crack"
-   },
-   "rotationArt": "mirror"
-  },
-  {
-   "key": "bld_floor_hatch_frame_t2",
-   "category": "building",
-   "atlas": "building_t2",
-   "anchor": {
-    "x": 0.5,
-    "y": 0.75
-   },
-   "animations": {
-    "idle": {
-     "frames": [
-      92
-     ],
-     "fps": 1
-    }
-   },
-   "building": {
-    "piece": "floor_hatch_frame@tier2",
-    "footprint": {
-     "w": 1,
-     "h": 1
-    },
-    "layer": 0,
-    "frames": [
-     [
-      92,
-      93,
-      94,
-      95
-     ]
-    ],
-    "crackOverlay": "bld_crack"
-   },
-   "rotationArt": "mirror"
-  },
-  {
-   "key": "bld_floor_stairwell_t2",
-   "category": "building",
-   "atlas": "building_t2",
-   "anchor": {
-    "x": 0.5,
-    "y": 0.75
-   },
-   "animations": {
-    "idle": {
-     "frames": [
-      96
-     ],
-     "fps": 1
-    }
-   },
-   "building": {
-    "piece": "floor_stairwell@tier2",
-    "footprint": {
-     "w": 1,
-     "h": 1
-    },
-    "layer": 0,
-    "frames": [
-     [
-      96,
-      97,
-      98,
-      99
-     ],
-     [
-      100,
-      101,
-      102,
-      103
-     ],
-     [
-      96,
-      97,
-      98,
-      99
-     ],
-     [
-      100,
-      101,
-      102,
-      103
-     ]
-    ],
-    "crackOverlay": "bld_crack"
-   },
-   "rotationArt": "unique4"
-  },
-  {
-   "key": "bld_floor_skylight_t2",
-   "category": "building",
-   "atlas": "building_t2",
-   "anchor": {
-    "x": 0.5,
-    "y": 0.75
-   },
-   "animations": {
-    "idle": {
-     "frames": [
       104
      ],
      "fps": 1
     }
    },
    "building": {
-    "piece": "floor_skylight@tier2",
+    "piece": "floor@tier2",
     "footprint": {
      "w": 1,
      "h": 1
@@ -2550,7 +2692,7 @@
    "rotationArt": "mirror"
   },
   {
-   "key": "bld_wall_corner_outer_t2",
+   "key": "bld_floor_hatch_frame_t2",
    "category": "building",
    "atlas": "building_t2",
    "anchor": {
@@ -2566,19 +2708,48 @@
     }
    },
    "building": {
-    "piece": "wall_corner_outer@tier2",
+    "piece": "floor_hatch_frame@tier2",
     "footprint": {
      "w": 1,
      "h": 1
     },
-    "layer": 1,
+    "layer": 0,
     "frames": [
      [
       108,
       109,
       110,
       111
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_floor_stairwell_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      112
      ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor_stairwell@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
      [
       112,
       113,
@@ -2592,6 +2763,47 @@
       119
      ],
      [
+      112,
+      113,
+      114,
+      115
+     ],
+     [
+      116,
+      117,
+      118,
+      119
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_floor_skylight_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      120
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor_skylight@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
       120,
       121,
       122,
@@ -2600,10 +2812,10 @@
     ],
     "crackOverlay": "bld_crack"
    },
-   "rotationArt": "unique4"
+   "rotationArt": "mirror"
   },
   {
-   "key": "bld_wall_corner_inner_t2",
+   "key": "bld_floor_triangle_t2",
    "category": "building",
    "atlas": "building_t2",
    "anchor": {
@@ -2619,12 +2831,12 @@
     }
    },
    "building": {
-    "piece": "wall_corner_inner@tier2",
+    "piece": "floor_triangle@tier2",
     "footprint": {
      "w": 1,
      "h": 1
     },
-    "layer": 1,
+    "layer": 0,
     "frames": [
      [
       124,
@@ -2656,7 +2868,7 @@
    "rotationArt": "unique4"
   },
   {
-   "key": "bld_pillar_t2",
+   "key": "bld_wall_corner_outer_t2",
    "category": "building",
    "atlas": "building_t2",
    "anchor": {
@@ -2672,7 +2884,7 @@
     }
    },
    "building": {
-    "piece": "pillar@tier2",
+    "piece": "wall_corner_outer@tier2",
     "footprint": {
      "w": 1,
      "h": 1
@@ -2684,36 +2896,7 @@
       141,
       142,
       143
-     ]
-    ],
-    "crackOverlay": "bld_crack"
-   },
-   "rotationArt": "mirror"
-  },
-  {
-   "key": "bld_wall_corner_angled_t2",
-   "category": "building",
-   "atlas": "building_t2",
-   "anchor": {
-    "x": 0.5,
-    "y": 0.75
-   },
-   "animations": {
-    "idle": {
-     "frames": [
-      144
      ],
-     "fps": 1
-    }
-   },
-   "building": {
-    "piece": "wall_corner_angled@tier2",
-    "footprint": {
-     "w": 1,
-     "h": 1
-    },
-    "layer": 1,
-    "frames": [
      [
       144,
       145,
@@ -2731,12 +2914,147 @@
       153,
       154,
       155
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_corner_inner_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      156
      ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_corner_inner@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
      [
       156,
       157,
       158,
       159
+     ],
+     [
+      160,
+      161,
+      162,
+      163
+     ],
+     [
+      164,
+      165,
+      166,
+      167
+     ],
+     [
+      168,
+      169,
+      170,
+      171
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_pillar_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      172
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "pillar@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      172,
+      173,
+      174,
+      175
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_wall_corner_angled_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      176
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_corner_angled@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      176,
+      177,
+      178,
+      179
+     ],
+     [
+      180,
+      181,
+      182,
+      183
+     ],
+     [
+      184,
+      185,
+      186,
+      187
+     ],
+     [
+      188,
+      189,
+      190,
+      191
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -2754,7 +3072,7 @@
    "animations": {
     "idle": {
      "frames": [
-      160
+      192
      ],
      "fps": 1
     }
@@ -2768,10 +3086,10 @@
     "layer": 0,
     "frames": [
      [
-      160,
-      161,
-      162,
-      163
+      192,
+      193,
+      194,
+      195
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -2789,7 +3107,7 @@
    "animations": {
     "idle": {
      "frames": [
-      164
+      196
      ],
      "fps": 1
     }
@@ -2803,28 +3121,28 @@
     "layer": 0,
     "frames": [
      [
-      164,
-      165,
-      166,
-      167
+      196,
+      197,
+      198,
+      199
      ],
      [
-      168,
-      169,
-      170,
-      171
+      200,
+      201,
+      202,
+      203
      ],
      [
-      172,
-      173,
-      174,
-      175
+      204,
+      205,
+      206,
+      207
      ],
      [
-      176,
-      177,
-      178,
-      179
+      208,
+      209,
+      210,
+      211
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -2842,7 +3160,7 @@
    "animations": {
     "idle": {
      "frames": [
-      180
+      212
      ],
      "fps": 1
     }
@@ -2856,122 +3174,16 @@
     "layer": 0,
     "frames": [
      [
-      180,
-      181,
-      182,
-      183
+      212,
+      213,
+      214,
+      215
      ],
      [
-      184,
-      185,
-      186,
-      187
-     ],
-     [
-      180,
-      181,
-      182,
-      183
-     ],
-     [
-      184,
-      185,
-      186,
-      187
-     ]
-    ],
-    "crackOverlay": "bld_crack"
-   },
-   "rotationArt": "unique4"
-  },
-  {
-   "key": "bld_roof_hip_t2",
-   "category": "building",
-   "atlas": "building_t2",
-   "anchor": {
-    "x": 0.5,
-    "y": 0.75
-   },
-   "animations": {
-    "idle": {
-     "frames": [
-      188
-     ],
-     "fps": 1
-    }
-   },
-   "building": {
-    "piece": "roof_hip@tier2",
-    "footprint": {
-     "w": 1,
-     "h": 1
-    },
-    "layer": 0,
-    "frames": [
-     [
-      188,
-      189,
-      190,
-      191
-     ],
-     [
-      192,
-      193,
-      194,
-      195
-     ],
-     [
-      196,
-      197,
-      198,
-      199
-     ],
-     [
-      200,
-      201,
-      202,
-      203
-     ]
-    ],
-    "crackOverlay": "bld_crack"
-   },
-   "rotationArt": "unique4"
-  },
-  {
-   "key": "bld_roof_corner_t2",
-   "category": "building",
-   "atlas": "building_t2",
-   "anchor": {
-    "x": 0.5,
-    "y": 0.75
-   },
-   "animations": {
-    "idle": {
-     "frames": [
-      204
-     ],
-     "fps": 1
-    }
-   },
-   "building": {
-    "piece": "roof_corner@tier2",
-    "footprint": {
-     "w": 1,
-     "h": 1
-    },
-    "layer": 0,
-    "frames": [
-     [
-      204,
-      205,
-      206,
-      207
-     ],
-     [
-      208,
-      209,
-      210,
-      211
+      216,
+      217,
+      218,
+      219
      ],
      [
       212,
@@ -2991,7 +3203,7 @@
    "rotationArt": "unique4"
   },
   {
-   "key": "bld_roof_chimney_t2",
+   "key": "bld_roof_hip_t2",
    "category": "building",
    "atlas": "building_t2",
    "anchor": {
@@ -3007,7 +3219,7 @@
     }
    },
    "building": {
-    "piece": "roof_chimney@tier2",
+    "piece": "roof_hip@tier2",
     "footprint": {
      "w": 1,
      "h": 1
@@ -3019,6 +3231,112 @@
       221,
       222,
       223
+     ],
+     [
+      224,
+      225,
+      226,
+      227
+     ],
+     [
+      228,
+      229,
+      230,
+      231
+     ],
+     [
+      232,
+      233,
+      234,
+      235
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_corner_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      236
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_corner@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      236,
+      237,
+      238,
+      239
+     ],
+     [
+      240,
+      241,
+      242,
+      243
+     ],
+     [
+      244,
+      245,
+      246,
+      247
+     ],
+     [
+      248,
+      249,
+      250,
+      251
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_chimney_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      252
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_chimney@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      252,
+      253,
+      254,
+      255
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -3042,7 +3360,7 @@
    "animations": {
     "idle": {
      "frames": [
-      108
+      140
      ],
      "fps": 1
     }
@@ -3056,28 +3374,28 @@
     "layer": 1,
     "frames": [
      [
-      108,
-      109,
-      110,
-      111
+      140,
+      141,
+      142,
+      143
      ],
      [
-      112,
-      113,
-      114,
-      115
+      144,
+      145,
+      146,
+      147
      ],
      [
-      116,
-      117,
-      118,
-      119
+      148,
+      149,
+      150,
+      151
      ],
      [
-      120,
-      121,
-      122,
-      123
+      152,
+      153,
+      154,
+      155
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -3095,7 +3413,7 @@
    "animations": {
     "idle": {
      "frames": [
-      180
+      212
      ],
      "fps": 1
     }
@@ -3109,28 +3427,28 @@
     "layer": 0,
     "frames": [
      [
-      180,
-      181,
-      182,
-      183
+      212,
+      213,
+      214,
+      215
      ],
      [
-      184,
-      185,
-      186,
-      187
+      216,
+      217,
+      218,
+      219
      ],
      [
-      180,
-      181,
-      182,
-      183
+      212,
+      213,
+      214,
+      215
      ],
      [
-      184,
-      185,
-      186,
-      187
+      216,
+      217,
+      218,
+      219
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -3314,7 +3632,7 @@
    "rotationArt": "mirror"
   },
   {
-   "key": "bld_wall_t3",
+   "key": "bld_foundation_ramp_t3",
    "category": "building",
    "atlas": "building_t3",
    "anchor": {
@@ -3330,7 +3648,7 @@
     }
    },
    "building": {
-    "piece": "wall@tier3",
+    "piece": "foundation_ramp@tier3",
     "footprint": {
      "w": 1,
      "h": 1
@@ -3350,16 +3668,69 @@
       47
      ],
      [
-      40,
-      41,
-      42,
-      43
+      48,
+      49,
+      50,
+      51
      ],
      [
-      44,
-      45,
-      46,
-      47
+      52,
+      53,
+      54,
+      55
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      56
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      56,
+      57,
+      58,
+      59
+     ],
+     [
+      60,
+      61,
+      62,
+      63
+     ],
+     [
+      56,
+      57,
+      58,
+      59
+     ],
+     [
+      60,
+      61,
+      62,
+      63
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -3377,7 +3748,7 @@
    "animations": {
     "idle": {
      "frames": [
-      48
+      64
      ],
      "fps": 1
     }
@@ -3391,28 +3762,28 @@
     "layer": 1,
     "frames": [
      [
-      48,
-      49,
-      50,
-      51
+      64,
+      65,
+      66,
+      67
      ],
      [
-      52,
-      53,
-      54,
-      55
+      68,
+      69,
+      70,
+      71
      ],
      [
-      48,
-      49,
-      50,
-      51
+      64,
+      65,
+      66,
+      67
      ],
      [
-      52,
-      53,
-      54,
-      55
+      68,
+      69,
+      70,
+      71
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -3430,7 +3801,7 @@
    "animations": {
     "idle": {
      "frames": [
-      56
+      72
      ],
      "fps": 1
     }
@@ -3444,28 +3815,28 @@
     "layer": 1,
     "frames": [
      [
-      56,
-      57,
-      58,
-      59
+      72,
+      73,
+      74,
+      75
      ],
      [
-      60,
-      61,
-      62,
-      63
+      76,
+      77,
+      78,
+      79
      ],
      [
-      56,
-      57,
-      58,
-      59
+      72,
+      73,
+      74,
+      75
      ],
      [
-      60,
-      61,
-      62,
-      63
+      76,
+      77,
+      78,
+      79
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -3483,7 +3854,7 @@
    "animations": {
     "idle": {
      "frames": [
-      64
+      80
      ],
      "fps": 1
     }
@@ -3497,28 +3868,28 @@
     "layer": 1,
     "frames": [
      [
-      64,
-      65,
-      66,
-      67
+      80,
+      81,
+      82,
+      83
      ],
      [
-      68,
-      69,
-      70,
-      71
+      84,
+      85,
+      86,
+      87
      ],
      [
-      64,
-      65,
-      66,
-      67
+      80,
+      81,
+      82,
+      83
      ],
      [
-      68,
-      69,
-      70,
-      71
+      84,
+      85,
+      86,
+      87
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -3536,7 +3907,7 @@
    "animations": {
     "idle": {
      "frames": [
-      72
+      88
      ],
      "fps": 1
     }
@@ -3550,28 +3921,28 @@
     "layer": 1,
     "frames": [
      [
-      72,
-      73,
-      74,
-      75
+      88,
+      89,
+      90,
+      91
      ],
      [
-      76,
-      77,
-      78,
-      79
+      92,
+      93,
+      94,
+      95
      ],
      [
-      72,
-      73,
-      74,
-      75
+      88,
+      89,
+      90,
+      91
      ],
      [
-      76,
-      77,
-      78,
-      79
+      92,
+      93,
+      94,
+      95
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -3589,7 +3960,7 @@
    "animations": {
     "idle": {
      "frames": [
-      80
+      96
      ],
      "fps": 1
     }
@@ -3603,28 +3974,28 @@
     "layer": 1,
     "frames": [
      [
-      80,
-      81,
-      82,
-      83
+      96,
+      97,
+      98,
+      99
      ],
      [
-      84,
-      85,
-      86,
-      87
+      100,
+      101,
+      102,
+      103
      ],
      [
-      80,
-      81,
-      82,
-      83
+      96,
+      97,
+      98,
+      99
      ],
      [
-      84,
-      85,
-      86,
-      87
+      100,
+      101,
+      102,
+      103
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -3642,136 +4013,13 @@
    "animations": {
     "idle": {
      "frames": [
-      88
-     ],
-     "fps": 1
-    }
-   },
-   "building": {
-    "piece": "floor@tier3",
-    "footprint": {
-     "w": 1,
-     "h": 1
-    },
-    "layer": 0,
-    "frames": [
-     [
-      88,
-      89,
-      90,
-      91
-     ]
-    ],
-    "crackOverlay": "bld_crack"
-   },
-   "rotationArt": "mirror"
-  },
-  {
-   "key": "bld_floor_hatch_frame_t3",
-   "category": "building",
-   "atlas": "building_t3",
-   "anchor": {
-    "x": 0.5,
-    "y": 0.75
-   },
-   "animations": {
-    "idle": {
-     "frames": [
-      92
-     ],
-     "fps": 1
-    }
-   },
-   "building": {
-    "piece": "floor_hatch_frame@tier3",
-    "footprint": {
-     "w": 1,
-     "h": 1
-    },
-    "layer": 0,
-    "frames": [
-     [
-      92,
-      93,
-      94,
-      95
-     ]
-    ],
-    "crackOverlay": "bld_crack"
-   },
-   "rotationArt": "mirror"
-  },
-  {
-   "key": "bld_floor_stairwell_t3",
-   "category": "building",
-   "atlas": "building_t3",
-   "anchor": {
-    "x": 0.5,
-    "y": 0.75
-   },
-   "animations": {
-    "idle": {
-     "frames": [
-      96
-     ],
-     "fps": 1
-    }
-   },
-   "building": {
-    "piece": "floor_stairwell@tier3",
-    "footprint": {
-     "w": 1,
-     "h": 1
-    },
-    "layer": 0,
-    "frames": [
-     [
-      96,
-      97,
-      98,
-      99
-     ],
-     [
-      100,
-      101,
-      102,
-      103
-     ],
-     [
-      96,
-      97,
-      98,
-      99
-     ],
-     [
-      100,
-      101,
-      102,
-      103
-     ]
-    ],
-    "crackOverlay": "bld_crack"
-   },
-   "rotationArt": "unique4"
-  },
-  {
-   "key": "bld_floor_skylight_t3",
-   "category": "building",
-   "atlas": "building_t3",
-   "anchor": {
-    "x": 0.5,
-    "y": 0.75
-   },
-   "animations": {
-    "idle": {
-     "frames": [
       104
      ],
      "fps": 1
     }
    },
    "building": {
-    "piece": "floor_skylight@tier3",
+    "piece": "floor@tier3",
     "footprint": {
      "w": 1,
      "h": 1
@@ -3790,7 +4038,7 @@
    "rotationArt": "mirror"
   },
   {
-   "key": "bld_wall_corner_outer_t3",
+   "key": "bld_floor_hatch_frame_t3",
    "category": "building",
    "atlas": "building_t3",
    "anchor": {
@@ -3806,19 +4054,48 @@
     }
    },
    "building": {
-    "piece": "wall_corner_outer@tier3",
+    "piece": "floor_hatch_frame@tier3",
     "footprint": {
      "w": 1,
      "h": 1
     },
-    "layer": 1,
+    "layer": 0,
     "frames": [
      [
       108,
       109,
       110,
       111
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_floor_stairwell_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      112
      ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor_stairwell@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
      [
       112,
       113,
@@ -3832,6 +4109,47 @@
       119
      ],
      [
+      112,
+      113,
+      114,
+      115
+     ],
+     [
+      116,
+      117,
+      118,
+      119
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_floor_skylight_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      120
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor_skylight@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
       120,
       121,
       122,
@@ -3840,10 +4158,10 @@
     ],
     "crackOverlay": "bld_crack"
    },
-   "rotationArt": "unique4"
+   "rotationArt": "mirror"
   },
   {
-   "key": "bld_wall_corner_inner_t3",
+   "key": "bld_floor_triangle_t3",
    "category": "building",
    "atlas": "building_t3",
    "anchor": {
@@ -3859,12 +4177,12 @@
     }
    },
    "building": {
-    "piece": "wall_corner_inner@tier3",
+    "piece": "floor_triangle@tier3",
     "footprint": {
      "w": 1,
      "h": 1
     },
-    "layer": 1,
+    "layer": 0,
     "frames": [
      [
       124,
@@ -3896,7 +4214,7 @@
    "rotationArt": "unique4"
   },
   {
-   "key": "bld_pillar_t3",
+   "key": "bld_wall_corner_outer_t3",
    "category": "building",
    "atlas": "building_t3",
    "anchor": {
@@ -3912,7 +4230,7 @@
     }
    },
    "building": {
-    "piece": "pillar@tier3",
+    "piece": "wall_corner_outer@tier3",
     "footprint": {
      "w": 1,
      "h": 1
@@ -3924,36 +4242,7 @@
       141,
       142,
       143
-     ]
-    ],
-    "crackOverlay": "bld_crack"
-   },
-   "rotationArt": "mirror"
-  },
-  {
-   "key": "bld_wall_corner_angled_t3",
-   "category": "building",
-   "atlas": "building_t3",
-   "anchor": {
-    "x": 0.5,
-    "y": 0.75
-   },
-   "animations": {
-    "idle": {
-     "frames": [
-      144
      ],
-     "fps": 1
-    }
-   },
-   "building": {
-    "piece": "wall_corner_angled@tier3",
-    "footprint": {
-     "w": 1,
-     "h": 1
-    },
-    "layer": 1,
-    "frames": [
      [
       144,
       145,
@@ -3971,12 +4260,147 @@
       153,
       154,
       155
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_corner_inner_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      156
      ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_corner_inner@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
      [
       156,
       157,
       158,
       159
+     ],
+     [
+      160,
+      161,
+      162,
+      163
+     ],
+     [
+      164,
+      165,
+      166,
+      167
+     ],
+     [
+      168,
+      169,
+      170,
+      171
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_pillar_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      172
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "pillar@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      172,
+      173,
+      174,
+      175
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_wall_corner_angled_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      176
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_corner_angled@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      176,
+      177,
+      178,
+      179
+     ],
+     [
+      180,
+      181,
+      182,
+      183
+     ],
+     [
+      184,
+      185,
+      186,
+      187
+     ],
+     [
+      188,
+      189,
+      190,
+      191
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -3994,7 +4418,7 @@
    "animations": {
     "idle": {
      "frames": [
-      160
+      192
      ],
      "fps": 1
     }
@@ -4008,10 +4432,10 @@
     "layer": 0,
     "frames": [
      [
-      160,
-      161,
-      162,
-      163
+      192,
+      193,
+      194,
+      195
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -4029,7 +4453,7 @@
    "animations": {
     "idle": {
      "frames": [
-      164
+      196
      ],
      "fps": 1
     }
@@ -4043,28 +4467,28 @@
     "layer": 0,
     "frames": [
      [
-      164,
-      165,
-      166,
-      167
+      196,
+      197,
+      198,
+      199
      ],
      [
-      168,
-      169,
-      170,
-      171
+      200,
+      201,
+      202,
+      203
      ],
      [
-      172,
-      173,
-      174,
-      175
+      204,
+      205,
+      206,
+      207
      ],
      [
-      176,
-      177,
-      178,
-      179
+      208,
+      209,
+      210,
+      211
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -4082,7 +4506,7 @@
    "animations": {
     "idle": {
      "frames": [
-      180
+      212
      ],
      "fps": 1
     }
@@ -4096,122 +4520,16 @@
     "layer": 0,
     "frames": [
      [
-      180,
-      181,
-      182,
-      183
+      212,
+      213,
+      214,
+      215
      ],
      [
-      184,
-      185,
-      186,
-      187
-     ],
-     [
-      180,
-      181,
-      182,
-      183
-     ],
-     [
-      184,
-      185,
-      186,
-      187
-     ]
-    ],
-    "crackOverlay": "bld_crack"
-   },
-   "rotationArt": "unique4"
-  },
-  {
-   "key": "bld_roof_hip_t3",
-   "category": "building",
-   "atlas": "building_t3",
-   "anchor": {
-    "x": 0.5,
-    "y": 0.75
-   },
-   "animations": {
-    "idle": {
-     "frames": [
-      188
-     ],
-     "fps": 1
-    }
-   },
-   "building": {
-    "piece": "roof_hip@tier3",
-    "footprint": {
-     "w": 1,
-     "h": 1
-    },
-    "layer": 0,
-    "frames": [
-     [
-      188,
-      189,
-      190,
-      191
-     ],
-     [
-      192,
-      193,
-      194,
-      195
-     ],
-     [
-      196,
-      197,
-      198,
-      199
-     ],
-     [
-      200,
-      201,
-      202,
-      203
-     ]
-    ],
-    "crackOverlay": "bld_crack"
-   },
-   "rotationArt": "unique4"
-  },
-  {
-   "key": "bld_roof_corner_t3",
-   "category": "building",
-   "atlas": "building_t3",
-   "anchor": {
-    "x": 0.5,
-    "y": 0.75
-   },
-   "animations": {
-    "idle": {
-     "frames": [
-      204
-     ],
-     "fps": 1
-    }
-   },
-   "building": {
-    "piece": "roof_corner@tier3",
-    "footprint": {
-     "w": 1,
-     "h": 1
-    },
-    "layer": 0,
-    "frames": [
-     [
-      204,
-      205,
-      206,
-      207
-     ],
-     [
-      208,
-      209,
-      210,
-      211
+      216,
+      217,
+      218,
+      219
      ],
      [
       212,
@@ -4231,7 +4549,7 @@
    "rotationArt": "unique4"
   },
   {
-   "key": "bld_roof_chimney_t3",
+   "key": "bld_roof_hip_t3",
    "category": "building",
    "atlas": "building_t3",
    "anchor": {
@@ -4247,7 +4565,7 @@
     }
    },
    "building": {
-    "piece": "roof_chimney@tier3",
+    "piece": "roof_hip@tier3",
     "footprint": {
      "w": 1,
      "h": 1
@@ -4259,6 +4577,112 @@
       221,
       222,
       223
+     ],
+     [
+      224,
+      225,
+      226,
+      227
+     ],
+     [
+      228,
+      229,
+      230,
+      231
+     ],
+     [
+      232,
+      233,
+      234,
+      235
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_corner_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      236
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_corner@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      236,
+      237,
+      238,
+      239
+     ],
+     [
+      240,
+      241,
+      242,
+      243
+     ],
+     [
+      244,
+      245,
+      246,
+      247
+     ],
+     [
+      248,
+      249,
+      250,
+      251
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_chimney_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      252
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_chimney@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      252,
+      253,
+      254,
+      255
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -4282,7 +4706,7 @@
    "animations": {
     "idle": {
      "frames": [
-      108
+      140
      ],
      "fps": 1
     }
@@ -4296,28 +4720,28 @@
     "layer": 1,
     "frames": [
      [
-      108,
-      109,
-      110,
-      111
+      140,
+      141,
+      142,
+      143
      ],
      [
-      112,
-      113,
-      114,
-      115
+      144,
+      145,
+      146,
+      147
      ],
      [
-      116,
-      117,
-      118,
-      119
+      148,
+      149,
+      150,
+      151
      ],
      [
-      120,
-      121,
-      122,
-      123
+      152,
+      153,
+      154,
+      155
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -4335,7 +4759,7 @@
    "animations": {
     "idle": {
      "frames": [
-      180
+      212
      ],
      "fps": 1
     }
@@ -4349,28 +4773,28 @@
     "layer": 0,
     "frames": [
      [
-      180,
-      181,
-      182,
-      183
+      212,
+      213,
+      214,
+      215
      ],
      [
-      184,
-      185,
-      186,
-      187
+      216,
+      217,
+      218,
+      219
      ],
      [
-      180,
-      181,
-      182,
-      183
+      212,
+      213,
+      214,
+      215
      ],
      [
-      184,
-      185,
-      186,
-      187
+      216,
+      217,
+      218,
+      219
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -4554,7 +4978,7 @@
    "rotationArt": "mirror"
   },
   {
-   "key": "bld_wall_t4",
+   "key": "bld_foundation_ramp_t4",
    "category": "building",
    "atlas": "building_t4",
    "anchor": {
@@ -4570,7 +4994,7 @@
     }
    },
    "building": {
-    "piece": "wall@tier4",
+    "piece": "foundation_ramp@tier4",
     "footprint": {
      "w": 1,
      "h": 1
@@ -4590,16 +5014,69 @@
       47
      ],
      [
-      40,
-      41,
-      42,
-      43
+      48,
+      49,
+      50,
+      51
      ],
      [
-      44,
-      45,
-      46,
-      47
+      52,
+      53,
+      54,
+      55
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      56
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      56,
+      57,
+      58,
+      59
+     ],
+     [
+      60,
+      61,
+      62,
+      63
+     ],
+     [
+      56,
+      57,
+      58,
+      59
+     ],
+     [
+      60,
+      61,
+      62,
+      63
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -4617,7 +5094,7 @@
    "animations": {
     "idle": {
      "frames": [
-      48
+      64
      ],
      "fps": 1
     }
@@ -4631,28 +5108,28 @@
     "layer": 1,
     "frames": [
      [
-      48,
-      49,
-      50,
-      51
+      64,
+      65,
+      66,
+      67
      ],
      [
-      52,
-      53,
-      54,
-      55
+      68,
+      69,
+      70,
+      71
      ],
      [
-      48,
-      49,
-      50,
-      51
+      64,
+      65,
+      66,
+      67
      ],
      [
-      52,
-      53,
-      54,
-      55
+      68,
+      69,
+      70,
+      71
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -4670,7 +5147,7 @@
    "animations": {
     "idle": {
      "frames": [
-      56
+      72
      ],
      "fps": 1
     }
@@ -4684,28 +5161,28 @@
     "layer": 1,
     "frames": [
      [
-      56,
-      57,
-      58,
-      59
+      72,
+      73,
+      74,
+      75
      ],
      [
-      60,
-      61,
-      62,
-      63
+      76,
+      77,
+      78,
+      79
      ],
      [
-      56,
-      57,
-      58,
-      59
+      72,
+      73,
+      74,
+      75
      ],
      [
-      60,
-      61,
-      62,
-      63
+      76,
+      77,
+      78,
+      79
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -4723,7 +5200,7 @@
    "animations": {
     "idle": {
      "frames": [
-      64
+      80
      ],
      "fps": 1
     }
@@ -4737,28 +5214,28 @@
     "layer": 1,
     "frames": [
      [
-      64,
-      65,
-      66,
-      67
+      80,
+      81,
+      82,
+      83
      ],
      [
-      68,
-      69,
-      70,
-      71
+      84,
+      85,
+      86,
+      87
      ],
      [
-      64,
-      65,
-      66,
-      67
+      80,
+      81,
+      82,
+      83
      ],
      [
-      68,
-      69,
-      70,
-      71
+      84,
+      85,
+      86,
+      87
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -4776,7 +5253,7 @@
    "animations": {
     "idle": {
      "frames": [
-      72
+      88
      ],
      "fps": 1
     }
@@ -4790,28 +5267,28 @@
     "layer": 1,
     "frames": [
      [
-      72,
-      73,
-      74,
-      75
+      88,
+      89,
+      90,
+      91
      ],
      [
-      76,
-      77,
-      78,
-      79
+      92,
+      93,
+      94,
+      95
      ],
      [
-      72,
-      73,
-      74,
-      75
+      88,
+      89,
+      90,
+      91
      ],
      [
-      76,
-      77,
-      78,
-      79
+      92,
+      93,
+      94,
+      95
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -4829,7 +5306,7 @@
    "animations": {
     "idle": {
      "frames": [
-      80
+      96
      ],
      "fps": 1
     }
@@ -4843,28 +5320,28 @@
     "layer": 1,
     "frames": [
      [
-      80,
-      81,
-      82,
-      83
+      96,
+      97,
+      98,
+      99
      ],
      [
-      84,
-      85,
-      86,
-      87
+      100,
+      101,
+      102,
+      103
      ],
      [
-      80,
-      81,
-      82,
-      83
+      96,
+      97,
+      98,
+      99
      ],
      [
-      84,
-      85,
-      86,
-      87
+      100,
+      101,
+      102,
+      103
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -4882,136 +5359,13 @@
    "animations": {
     "idle": {
      "frames": [
-      88
-     ],
-     "fps": 1
-    }
-   },
-   "building": {
-    "piece": "floor@tier4",
-    "footprint": {
-     "w": 1,
-     "h": 1
-    },
-    "layer": 0,
-    "frames": [
-     [
-      88,
-      89,
-      90,
-      91
-     ]
-    ],
-    "crackOverlay": "bld_crack"
-   },
-   "rotationArt": "mirror"
-  },
-  {
-   "key": "bld_floor_hatch_frame_t4",
-   "category": "building",
-   "atlas": "building_t4",
-   "anchor": {
-    "x": 0.5,
-    "y": 0.75
-   },
-   "animations": {
-    "idle": {
-     "frames": [
-      92
-     ],
-     "fps": 1
-    }
-   },
-   "building": {
-    "piece": "floor_hatch_frame@tier4",
-    "footprint": {
-     "w": 1,
-     "h": 1
-    },
-    "layer": 0,
-    "frames": [
-     [
-      92,
-      93,
-      94,
-      95
-     ]
-    ],
-    "crackOverlay": "bld_crack"
-   },
-   "rotationArt": "mirror"
-  },
-  {
-   "key": "bld_floor_stairwell_t4",
-   "category": "building",
-   "atlas": "building_t4",
-   "anchor": {
-    "x": 0.5,
-    "y": 0.75
-   },
-   "animations": {
-    "idle": {
-     "frames": [
-      96
-     ],
-     "fps": 1
-    }
-   },
-   "building": {
-    "piece": "floor_stairwell@tier4",
-    "footprint": {
-     "w": 1,
-     "h": 1
-    },
-    "layer": 0,
-    "frames": [
-     [
-      96,
-      97,
-      98,
-      99
-     ],
-     [
-      100,
-      101,
-      102,
-      103
-     ],
-     [
-      96,
-      97,
-      98,
-      99
-     ],
-     [
-      100,
-      101,
-      102,
-      103
-     ]
-    ],
-    "crackOverlay": "bld_crack"
-   },
-   "rotationArt": "unique4"
-  },
-  {
-   "key": "bld_floor_skylight_t4",
-   "category": "building",
-   "atlas": "building_t4",
-   "anchor": {
-    "x": 0.5,
-    "y": 0.75
-   },
-   "animations": {
-    "idle": {
-     "frames": [
       104
      ],
      "fps": 1
     }
    },
    "building": {
-    "piece": "floor_skylight@tier4",
+    "piece": "floor@tier4",
     "footprint": {
      "w": 1,
      "h": 1
@@ -5030,7 +5384,7 @@
    "rotationArt": "mirror"
   },
   {
-   "key": "bld_wall_corner_outer_t4",
+   "key": "bld_floor_hatch_frame_t4",
    "category": "building",
    "atlas": "building_t4",
    "anchor": {
@@ -5046,19 +5400,48 @@
     }
    },
    "building": {
-    "piece": "wall_corner_outer@tier4",
+    "piece": "floor_hatch_frame@tier4",
     "footprint": {
      "w": 1,
      "h": 1
     },
-    "layer": 1,
+    "layer": 0,
     "frames": [
      [
       108,
       109,
       110,
       111
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_floor_stairwell_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      112
      ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor_stairwell@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
      [
       112,
       113,
@@ -5072,6 +5455,47 @@
       119
      ],
      [
+      112,
+      113,
+      114,
+      115
+     ],
+     [
+      116,
+      117,
+      118,
+      119
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_floor_skylight_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      120
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor_skylight@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
       120,
       121,
       122,
@@ -5080,10 +5504,10 @@
     ],
     "crackOverlay": "bld_crack"
    },
-   "rotationArt": "unique4"
+   "rotationArt": "mirror"
   },
   {
-   "key": "bld_wall_corner_inner_t4",
+   "key": "bld_floor_triangle_t4",
    "category": "building",
    "atlas": "building_t4",
    "anchor": {
@@ -5099,12 +5523,12 @@
     }
    },
    "building": {
-    "piece": "wall_corner_inner@tier4",
+    "piece": "floor_triangle@tier4",
     "footprint": {
      "w": 1,
      "h": 1
     },
-    "layer": 1,
+    "layer": 0,
     "frames": [
      [
       124,
@@ -5136,7 +5560,7 @@
    "rotationArt": "unique4"
   },
   {
-   "key": "bld_pillar_t4",
+   "key": "bld_wall_corner_outer_t4",
    "category": "building",
    "atlas": "building_t4",
    "anchor": {
@@ -5152,7 +5576,7 @@
     }
    },
    "building": {
-    "piece": "pillar@tier4",
+    "piece": "wall_corner_outer@tier4",
     "footprint": {
      "w": 1,
      "h": 1
@@ -5164,36 +5588,7 @@
       141,
       142,
       143
-     ]
-    ],
-    "crackOverlay": "bld_crack"
-   },
-   "rotationArt": "mirror"
-  },
-  {
-   "key": "bld_wall_corner_angled_t4",
-   "category": "building",
-   "atlas": "building_t4",
-   "anchor": {
-    "x": 0.5,
-    "y": 0.75
-   },
-   "animations": {
-    "idle": {
-     "frames": [
-      144
      ],
-     "fps": 1
-    }
-   },
-   "building": {
-    "piece": "wall_corner_angled@tier4",
-    "footprint": {
-     "w": 1,
-     "h": 1
-    },
-    "layer": 1,
-    "frames": [
      [
       144,
       145,
@@ -5211,12 +5606,147 @@
       153,
       154,
       155
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_corner_inner_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      156
      ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_corner_inner@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
      [
       156,
       157,
       158,
       159
+     ],
+     [
+      160,
+      161,
+      162,
+      163
+     ],
+     [
+      164,
+      165,
+      166,
+      167
+     ],
+     [
+      168,
+      169,
+      170,
+      171
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_pillar_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      172
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "pillar@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      172,
+      173,
+      174,
+      175
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_wall_corner_angled_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      176
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_corner_angled@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      176,
+      177,
+      178,
+      179
+     ],
+     [
+      180,
+      181,
+      182,
+      183
+     ],
+     [
+      184,
+      185,
+      186,
+      187
+     ],
+     [
+      188,
+      189,
+      190,
+      191
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -5234,7 +5764,7 @@
    "animations": {
     "idle": {
      "frames": [
-      160
+      192
      ],
      "fps": 1
     }
@@ -5248,10 +5778,10 @@
     "layer": 0,
     "frames": [
      [
-      160,
-      161,
-      162,
-      163
+      192,
+      193,
+      194,
+      195
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -5269,7 +5799,7 @@
    "animations": {
     "idle": {
      "frames": [
-      164
+      196
      ],
      "fps": 1
     }
@@ -5283,28 +5813,28 @@
     "layer": 0,
     "frames": [
      [
-      164,
-      165,
-      166,
-      167
+      196,
+      197,
+      198,
+      199
      ],
      [
-      168,
-      169,
-      170,
-      171
+      200,
+      201,
+      202,
+      203
      ],
      [
-      172,
-      173,
-      174,
-      175
+      204,
+      205,
+      206,
+      207
      ],
      [
-      176,
-      177,
-      178,
-      179
+      208,
+      209,
+      210,
+      211
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -5322,7 +5852,7 @@
    "animations": {
     "idle": {
      "frames": [
-      180
+      212
      ],
      "fps": 1
     }
@@ -5336,122 +5866,16 @@
     "layer": 0,
     "frames": [
      [
-      180,
-      181,
-      182,
-      183
+      212,
+      213,
+      214,
+      215
      ],
      [
-      184,
-      185,
-      186,
-      187
-     ],
-     [
-      180,
-      181,
-      182,
-      183
-     ],
-     [
-      184,
-      185,
-      186,
-      187
-     ]
-    ],
-    "crackOverlay": "bld_crack"
-   },
-   "rotationArt": "unique4"
-  },
-  {
-   "key": "bld_roof_hip_t4",
-   "category": "building",
-   "atlas": "building_t4",
-   "anchor": {
-    "x": 0.5,
-    "y": 0.75
-   },
-   "animations": {
-    "idle": {
-     "frames": [
-      188
-     ],
-     "fps": 1
-    }
-   },
-   "building": {
-    "piece": "roof_hip@tier4",
-    "footprint": {
-     "w": 1,
-     "h": 1
-    },
-    "layer": 0,
-    "frames": [
-     [
-      188,
-      189,
-      190,
-      191
-     ],
-     [
-      192,
-      193,
-      194,
-      195
-     ],
-     [
-      196,
-      197,
-      198,
-      199
-     ],
-     [
-      200,
-      201,
-      202,
-      203
-     ]
-    ],
-    "crackOverlay": "bld_crack"
-   },
-   "rotationArt": "unique4"
-  },
-  {
-   "key": "bld_roof_corner_t4",
-   "category": "building",
-   "atlas": "building_t4",
-   "anchor": {
-    "x": 0.5,
-    "y": 0.75
-   },
-   "animations": {
-    "idle": {
-     "frames": [
-      204
-     ],
-     "fps": 1
-    }
-   },
-   "building": {
-    "piece": "roof_corner@tier4",
-    "footprint": {
-     "w": 1,
-     "h": 1
-    },
-    "layer": 0,
-    "frames": [
-     [
-      204,
-      205,
-      206,
-      207
-     ],
-     [
-      208,
-      209,
-      210,
-      211
+      216,
+      217,
+      218,
+      219
      ],
      [
       212,
@@ -5471,7 +5895,7 @@
    "rotationArt": "unique4"
   },
   {
-   "key": "bld_roof_chimney_t4",
+   "key": "bld_roof_hip_t4",
    "category": "building",
    "atlas": "building_t4",
    "anchor": {
@@ -5487,7 +5911,7 @@
     }
    },
    "building": {
-    "piece": "roof_chimney@tier4",
+    "piece": "roof_hip@tier4",
     "footprint": {
      "w": 1,
      "h": 1
@@ -5499,6 +5923,112 @@
       221,
       222,
       223
+     ],
+     [
+      224,
+      225,
+      226,
+      227
+     ],
+     [
+      228,
+      229,
+      230,
+      231
+     ],
+     [
+      232,
+      233,
+      234,
+      235
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_corner_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      236
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_corner@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      236,
+      237,
+      238,
+      239
+     ],
+     [
+      240,
+      241,
+      242,
+      243
+     ],
+     [
+      244,
+      245,
+      246,
+      247
+     ],
+     [
+      248,
+      249,
+      250,
+      251
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_chimney_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      252
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_chimney@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      252,
+      253,
+      254,
+      255
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -5522,7 +6052,7 @@
    "animations": {
     "idle": {
      "frames": [
-      108
+      140
      ],
      "fps": 1
     }
@@ -5536,28 +6066,28 @@
     "layer": 1,
     "frames": [
      [
-      108,
-      109,
-      110,
-      111
+      140,
+      141,
+      142,
+      143
      ],
      [
-      112,
-      113,
-      114,
-      115
+      144,
+      145,
+      146,
+      147
      ],
      [
-      116,
-      117,
-      118,
-      119
+      148,
+      149,
+      150,
+      151
      ],
      [
-      120,
-      121,
-      122,
-      123
+      152,
+      153,
+      154,
+      155
      ]
     ],
     "crackOverlay": "bld_crack"
@@ -5575,7 +6105,7 @@
    "animations": {
     "idle": {
      "frames": [
-      180
+      212
      ],
      "fps": 1
     }
@@ -5589,28 +6119,28 @@
     "layer": 0,
     "frames": [
      [
-      180,
-      181,
-      182,
-      183
+      212,
+      213,
+      214,
+      215
      ],
      [
-      184,
-      185,
-      186,
-      187
+      216,
+      217,
+      218,
+      219
      ],
      [
-      180,
-      181,
-      182,
-      183
+      212,
+      213,
+      214,
+      215
      ],
      [
-      184,
-      185,
-      186,
-      187
+      216,
+      217,
+      218,
+      219
      ]
     ],
     "crackOverlay": "bld_crack"

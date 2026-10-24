@@ -20,13 +20,18 @@ def house(t, rot, roof=True):
     walls = [((-.5, -1), 0, 'wall'), ((.5, -1), 0, 'wall_window'), ((-.5, 1), 0, 'wall_doorway'), ((.5, 1), 0, 'wall_arched'),
              ((-1, -.5), 1, 'wall_fortified'), ((-1, .5), 1, 'wall'), ((1, -.5), 1, 'wall_window'), ((1, .5), 1, 'wall')]
     for p, ax, k in walls: items.append((p, 0, k, ax, 0))
-    for i, p in enumerate([(-1, -1), (1, -1), (1, 1), (-1, 1)]): items.append((p, 0, 'wall_corner_outer', i, 0))
+    # corners are vertex-snapped: post on the tile corner; outer row 0 has stubs toward -x/-y, i.e. sits on the (+1,+1) vertex
+    for i, p in enumerate([(1, 1), (-1, 1), (-1, -1), (1, -1)]): items.append((p, 0, 'wall_corner_outer', i, 2))
+    items.append(((-.5, 1.5), 0, 'foundation_ramp', 0, -1))   # ramp up to the doorway (high edge toward -y)
+    TX, TY = 1 + 1 / (2 * 3 ** .5), .5   # equilateral foundation_triangle on the east edge (rot 0: edge 0 faces +x, so flip -> row 2)
+    items.append(((TX, TY), 0, 'foundation_triangle', 2, -1))
+    if not roof: items.append(((TX, TY), WALL, 'floor_triangle', 2, -1))
     ceil = ['floor', 'floor_skylight', 'floor_hatch_frame', 'floor']
     for c, k in zip(cells, ceil if not roof else ['floor'] * 4): items.append((c, WALL, k, 0, -1))
     if roof:
         for i, c in enumerate([(-.5, -.5), (.5, -.5), (.5, .5), (-.5, .5)]): items.append((c, WALL, 'roof_hip', i, 1))
         items.append(((.5, -.5), WALL + 1, 'roof_chimney', 0, 2))
-    W, H = 420, 330; img = Image.new('RGBA', (W, H), (236, 228, 205, 255)); ox, oy = W // 2, 200
+    W, H = 460, 330; img = Image.new('RGBA', (W, H), (236, 228, 205, 255)); ox, oy = W // 2, 200
     dr = ImageDraw.Draw(img)
     for gx in range(-3, 4):
         for gy in range(-3, 4):
@@ -45,9 +50,9 @@ def house(t, rot, roof=True):
         img.alpha_composite(im, (int(ox + (X - Y) * 32 - PX), int(oy + (X + Y) * 16 - z - PY)))
     return img
 for t in range(1, 5):
-    sheet = Image.new('RGBA', (420 * 4, 330 * 2), (255, 255, 255, 255))
+    sheet = Image.new('RGBA', (460 * 4, 330 * 2), (255, 255, 255, 255))
     for r in range(4):
-        sheet.paste(house(t, r, True), (420 * r, 0)); sheet.paste(house(t, r, False), (420 * r, 330))
+        sheet.paste(house(t, r, True), (460 * r, 0)); sheet.paste(house(t, r, False), (460 * r, 330))
     sheet.save(f'{OUT}/house_tier{t}_{PC.TIER_NAMES[t]}.png')
     keys = list(PC.PIECES); cols = 6; rows = math.ceil(len(keys) / cols)
     dm = Image.new('RGBA', (cols * 4 * 84, rows * 96), (236, 228, 205, 255))

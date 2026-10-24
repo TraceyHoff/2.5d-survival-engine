@@ -1,4 +1,4 @@
-# Builds the building sub-manifest: 24 base-building pieces x tiers 1-4 (wood/stone/metal/reinforced), 4 damage stages,
+# Builds the building sub-manifest: 26 base-building pieces x tiers 1-4 (wood/stone/metal/reinforced), 4 damage stages,
 # rotation rows 1 (symmetric) / 2 (axis) / 4 (unique), shared crack overlay, smoke attach on chimneys.
 # One 1x page per tier (cells trimmed to 84x96, pivot (42,72) = main-pack (64,96)); 2x would exceed 2048 so 1x only,
 # like the main pack's buildings_* pages. Usage: cd src && python3 build.py .. <preview dir>

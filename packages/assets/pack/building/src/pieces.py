@@ -61,11 +61,41 @@ def wall_fortified(tier):
         bx.append(B(x - 0.09, x + 0.09, -t2 - 0.05, t2 + 0.05, WALL_H, WALL_H + 7, frp, top=flat(), left=tx(ftx), right=tx(ftx)))
     return bx, []
 
+R3 = 1 / np.sqrt(3)   # circumradius of a unit equilateral triangle
+TRI = [(R3 * np.cos(np.radians(a)), R3 * np.sin(np.radians(a))) for a in (60, 180, 300)]   # gameplay rot 0: edge 0 normal +x, centroid = pivot
+
+def _strips(poly, n, mk):
+    """fill a convex polygon with n thin x-strips (sub-pixel wide, so the diagonals read smooth); mk(x0, x1, y0, y1) -> B"""
+    xs = [p[0] for p in poly]; xa, xb = min(xs), max(xs); out = []
+    for k in range(n):
+        x0 = xa + (xb - xa) * k / n; x1 = xa + (xb - xa) * (k + 1) / n; xc = (x0 + x1) / 2; ys = []
+        for (ax, ay), (bx_, by) in zip(poly, poly[1:] + poly[:1]):
+            if (ax - xc) * (bx_ - xc) <= 0 and ax != bx_: ys.append(ay + (by - ay) * (xc - ax) / (bx_ - ax))
+        if len(ys) >= 2 and max(ys) - min(ys) > 1e-3: out.append(mk(x0, x1, min(ys), max(ys)))
+    return out
+def _shrink(poly, f):
+    return [(x * f, y * f) for x, y in poly]
+
 def foundation_triangle(tier):
-    M = TIERS[tier]; rp, t = M["found"]; frp, ft = M["floor"]; n = 12; bx = []
-    for k in range(n):   # right triangle: legs along -x and -y edges, hypotenuse x + y = 0 (stepped strips, ink-smoothed)
-        y0 = -0.5 + k / n; y1 = y0 + 1 / n; xm = -(y0 + y1) / 2
-        bx += [B(-0.5, xm, y0, y1, 0, 9, rp, top=tx(t), left=tx(t), right=tx(t), edge=False), B(-0.47, xm - 0.03, y0 + 0.0, y1, 9, 12, frp, top=tx(ft), left=tx("flat"), right=tx("flat"), edge=False)]
+    """unit equilateral triangle on its centroid (gameplay placement "tri"); slab z 0..9, deck 9..12"""
+    M = TIERS[tier]; rp, t = M["found"]; frp, ft = M["floor"]
+    bx = _strips(TRI, 48, lambda a, b, c, d: B(a, b, c, d, 0, 9, rp, top=tx(t), left=tx(t), right=tx(t), edge=False))
+    bx += _strips(_shrink(TRI, 0.92), 48, lambda a, b, c, d: B(a, b, c, d, 9, 12, frp, top=tx(ft), left=tx("flat"), right=tx("flat"), edge=False))
+    return bx, []
+
+def floor_triangle(tier):
+    """triangle ceiling/floor deck (z 0..4) that tops foundation_triangle"""
+    M = TIERS[tier]; rp, t = M["floor"]; trim = M["trim"]
+    bx = _strips(TRI, 48, lambda a, b, c, d: B(a, b, c, d, 0, 4, rp, top=tx(t), left=tx("flat"), right=tx("flat"), edge=False))
+    return bx, []
+
+def foundation_ramp(tier):
+    """sloped foundation: deck height 12 at the -y edge down to grade at +y (smooth 24-step slope), side cheeks"""
+    M = TIERS[tier]; rp, t = M["found"]; frp, ft = M["floor"]; n = 24; bx = []
+    for k in range(n):
+        y0 = -0.5 + k / n; y1 = y0 + 1 / n; z = 12 * (1 - (k + 0.5) / n) + 0.5
+        bx.append(B(-0.44, 0.44, y0, y1, 0, z, frp, top=tx(ft), left=tx("flat"), right=tx("flat"), edge=False))
+        for sx in (-1, 1): bx.append(B(sx * 0.5 - (0.06 if sx > 0 else 0), sx * 0.5 + (0.06 if sx < 0 else 0), y0, y1, 0, z + 1.5, rp, top=tx(t), left=tx(t), right=tx(t), edge=False))
     return bx, []
 
 def foundation_steps(tier):
@@ -101,30 +131,39 @@ def floor_skylight(tier):
            B(-h - 0.04, h + 0.04, -h - 0.04, -h, 4, 5, trim), B(-h - 0.04, h + 0.04, h, h + 0.04, 4, 5, trim), B(-h - 0.04, -h, -h, h, 4, 5, trim), B(h, h + 0.04, -h, h, 4, 5, trim)]
     return bx, []
 
-def wall_corner_outer(tier):
-    bx, d = b2.wall_corner(tier); M = TIERS[tier]; frp, ftx = M["frame"]
-    for z in range(0, WALL_H - 6, 12):   # quoins on the outer corner
-        bx.append(B(-T - 0.08, T + 0.08, -T - 0.08, T + 0.08, z, z + 6, frp, top=flat(), left=tx(ftx), right=tx(ftx)))
-    return bx, d
-
-def wall_corner_inner(tier):
-    M = TIERS[tier]; W = _W(M); wrp, wtx = M["wall"]; frp, ftx = M["frame"]; bx = []; z0 = 0
+ARM = 0.22   # corner stub length (tiles); edge walls already span vertex to vertex
+def _corner(M, arms, extra=()):
+    """vertex-snapped corner: post on the pivot (= tile corner) + short wall stubs along `arms` [(dx, dy)]"""
+    wrp, wtx = M["wall"]; frp, ftx = M["frame"]; bx = []; z0 = 0; P = T + 0.06
+    def arm(dx, dy, za, zb, rp, th, **kw):
+        x0, x1 = sorted((0, dx * ARM)) if dx else (-th, th); y0, y1 = sorted((0, dy * ARM)) if dy else (-th, th); return B(x0, x1, y0, y1, za, zb, rp, **kw)
     if M["base"]:
         brp, btx = M["base"]; z0 = 7
-        bx += [B(-T, 0.5, -T - 0.03, T + 0.03, 0, 7, brp, top=tx(btx), left=tx(btx), right=tx(btx)), B(-T - 0.03, T + 0.03, -T, 0.5, 0, 7, brp, top=tx(btx), left=tx(btx), right=tx(btx))]
-    bx += [B(T, 0.5, -T, T, z0, WALL_H - 5, wrp, left=tx(wtx), right=tx(wtx), top=flat()), B(-T, T, T, 0.5, z0, WALL_H - 5, wrp, left=tx(wtx), right=tx(wtx), top=flat()),
-           B(-T, T, -T, T, 0, WALL_H, frp, left=tx(ftx), right=tx(ftx)),
-           B(-T, 0.5, -T - 0.05, T + 0.05, WALL_H - 5, WALL_H, frp, top=flat()), B(-T - 0.05, T + 0.05, -T, 0.5, WALL_H - 5, WALL_H, frp, top=flat()),
-           B(T, T + 0.06, T, T + 0.06, z0, WALL_H - 5, M["trim"])]   # cove trim in the concave angle
+        bx += [arm(dx, dy, 0, 7, brp, T + 0.03, top=tx(btx), left=tx(btx), right=tx(btx)) for dx, dy in arms]
+    bx += [arm(dx, dy, z0, WALL_H - 5, wrp, T, left=tx(wtx), right=tx(wtx), top=flat()) for dx, dy in arms]
+    bx += [arm(dx, dy, WALL_H - 5, WALL_H, frp, T + 0.05, top=flat()) for dx, dy in arms]
+    bx.append(B(-P, P, -P, P, 0, WALL_H + 1, frp, left=tx(ftx), right=tx(ftx), top=flat()))
+    return bx + list(extra)
+
+def wall_corner_outer(tier):
+    M = TIERS[tier]; frp, ftx = M["frame"]; bx = _corner(M, [(-1, 0), (0, -1)])
+    for z in range(0, WALL_H - 6, 12):   # quoins wrapping the post
+        bx.append(B(-T - 0.1, T + 0.1, -T - 0.1, T + 0.1, z, z + 6, frp, top=flat(), left=tx(ftx), right=tx(ftx)))
+    return bx, []
+
+def wall_corner_inner(tier):
+    M = TIERS[tier]; bx = _corner(M, [(1, 0), (0, 1)])
+    bx.append(B(T + 0.06, T + 0.12, T + 0.06, T + 0.12, 7 if M["base"] else 0, WALL_H - 5, M["trim"]))   # cove trim in the concave angle
     return bx, []
 
 def wall_corner_angled(tier):
-    M = TIERS[tier]; wrp, wtx = M["wall"]; frp, ftx = M["frame"]; bx = []; n = 9
-    for k in range(n):   # 45-degree wall from (-0.5, 0) to (0, -0.5), stepped strips
-        f0, f1 = k / n, (k + 1) / n; x0, x1 = -0.5 + f0 * 0.5, -0.5 + f1 * 0.5; yc = -(x0 + x1) / 2 - 0.5
+    """45-degree wall from the vertex post (pivot) to the tile centre direction (0.5,-0.5); a pair spans a tile diagonal"""
+    M = TIERS[tier]; wrp, wtx = M["wall"]; frp, ftx = M["frame"]; n = 40; bx = []; P = T + 0.06; e = 0.48
+    for k in range(n):
+        x0, x1 = e * k / n, e * (k + 1) / n; yc = -(x0 + x1) / 2
         bx.append(B(x0, x1, yc - T, yc + T, 0, WALL_H - 5, wrp, left=tx(wtx), right=tx(wtx), top=flat(), edge=False))
         bx.append(B(x0, x1, yc - T - 0.03, yc + T + 0.03, WALL_H - 5, WALL_H, frp, top=flat(), edge=False))
-    for (x, y) in ((-0.5, 0.0), (0.0, -0.5)): bx.append(B(x - 0.08, x + 0.08, y - 0.08, y + 0.08, 0, WALL_H + 1, frp, left=tx(ftx), right=tx(ftx)))
+    bx.append(B(-P, P, -P, P, 0, WALL_H + 1, frp, left=tx(ftx), right=tx(ftx), top=flat()))
     return bx, []
 
 def roof_chimney(tier):
@@ -144,6 +183,7 @@ PIECES = {
   "foundation_triangle": ("boxes", foundation_triangle, 0, 4, False, False),
   "foundation_steps":    ("boxes", foundation_steps, 0, 4, False, False),
   "foundation_stilt":    ("boxes", foundation_stilt, 0, 1, False, False),
+  "foundation_ramp":     ("boxes", foundation_ramp, 1, 4, False, False),
   "wall":                ("boxes", W("plain"), 1, 2, True, True),
   "wall_window":         ("boxes", W("window"), 1, 2, True, True),
   "wall_doorway":        ("boxes", W("doorway"), 1, 2, True, True),
@@ -154,6 +194,7 @@ PIECES = {
   "floor_hatch_frame":   ("boxes", b2.hatch_frame, 0, 1, False, True),
   "floor_stairwell":     ("boxes", floor_stairwell, 0, 2, False, False),
   "floor_skylight":      ("boxes", floor_skylight, 0, 1, False, False),
+  "floor_triangle":      ("boxes", floor_triangle, 0, 4, False, False),
   "wall_corner_outer":   ("boxes", wall_corner_outer, 1, 4, True, False),
   "wall_corner_inner":   ("boxes", wall_corner_inner, 1, 4, True, False),
   "pillar":              ("boxes", b2.pillar, 1, 1, True, True),

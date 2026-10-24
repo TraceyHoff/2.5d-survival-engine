@@ -130,14 +130,17 @@ describe("building sub-manifest", () => {
   it("tier pages match their grid and are <= 2048", () => {
     for (const a of bm.atlases) { const s = size(a.image); expect(s).toEqual({ w: a.frameW * a.columns, h: a.frameH * a.rows }); expect(Math.max(s.w, s.h)).toBeLessThanOrEqual(2048); }
   });
-  it("every KEYS.md piece has per-tier art with 4 damage stages, mirror or 4 unique rows, and the crack overlay", () => {
+  it("every ART_KEYS_BUILDING.md key (and KEYS.md piece) has per-tier art with 4 damage stages, mirror or 4 unique rows, and the crack overlay", () => {
     const doc = readFileSync(fileURLToPath(new URL("../../../assets/building/KEYS.md", import.meta.url)), "utf8");
+    const gdoc = readFileSync(fileURLToPath(new URL("../../gameplay/docs/ART_KEYS_BUILDING.md", import.meta.url)), "utf8");
     type B = { piece: string; frames: number[][]; crackOverlay: string; rotationArt?: string | undefined };
     const pieces = new Map<string, B>((bm.sprites as { building?: B; rotationArt?: string }[]).filter((s) => s.building).map((s): [string, B] => [s.building!.piece, { ...s.building!, rotationArt: s.rotationArt }]));
     const sec = doc.slice(doc.indexOf("## Piece keys"), doc.indexOf("## Damage"));
     const bare = [...new Set([...sec.matchAll(/`([a-z_]+)`/g)].map((m) => m[1]!))];
-    expect(bare.length).toBeGreaterThanOrEqual(24);
-    const keys = bare.flatMap((k) => [1, 2, 3, 4].map((t) => `${k}@tier${t}`));
+    const gkeys = [...new Set([...gdoc.matchAll(/`([a-z_]+@tier[1-4])`/g)].map((m) => m[1]!))];
+    expect(gkeys.length).toBeGreaterThanOrEqual(104);
+    const keys = [...new Set([...gkeys, ...bare.flatMap((k) => [1, 2, 3, 4].map((t) => `${k}@tier${t}`))])];
+    for (const k of ["foundation_ramp", "floor_triangle"]) expect(pieces.has(k), k).toBe(true);
     for (const k of keys) {
       const b = pieces.get(k); expect(b, k).toBeDefined();
       expect(b!.frames.length).toBe(b!.rotationArt === "mirror" ? 1 : 4); for (const r of b!.frames) expect(r.length).toBe(4);
