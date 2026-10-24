@@ -11,13 +11,15 @@ export function showRenderError(title: string, detail: string): void {
   box.textContent += `${box.textContent ? "\n\n" : ""}⚠ ${title}\n${detail}\nTry ?renderer=debug or ?safe=1 — please report this text.`;
   console.error("[render]", title, detail);
 }
-export function glInfo(gl: WebGL2RenderingContext): string {
+export function glInfo(gl: WebGL2RenderingContext | undefined): string {
+  if (!gl) return "renderer: Canvas2D sprites (no WebGL2)";
   const dbg = gl.getExtension("WEBGL_debug_renderer_info");
   const r = dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
   return `GPU: ${String(r)} | maxTex ${gl.getParameter(gl.MAX_TEXTURE_SIZE)} | maxRB ${gl.getParameter(gl.MAX_RENDERBUFFER_SIZE)} | canvas ${gl.drawingBufferWidth}x${gl.drawingBufferHeight} | dpr ${devicePixelRatio} | glError 0x${gl.getError().toString(16)}`;
 }
 /** Samples a 5x5 grid of the just-drawn default framebuffer (same task, so it is still valid). */
-export function frameIsBlack(gl: WebGL2RenderingContext): boolean {
+export function frameIsBlack(gl: WebGL2RenderingContext | undefined): boolean {
+  if (!gl) return false;
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   const w = gl.drawingBufferWidth, h = gl.drawingBufferHeight, px = new Uint8Array(4);
   for (let i = 1; i <= 5; i++) for (let j = 1; j <= 5; j++) {

@@ -13,7 +13,7 @@ import { showRenderError, glInfo, frameIsBlack } from "./glcheck.js";
 import { World, Transform, PrevTransform, TimeOfDay, Weather, Appearance, PlayerId, defineComponent, entityIndex, type Entity } from "@engine/core";
 import { CHUNK_SIZE, tileToChunk, tileToLocal, type TileMap } from "@engine/world";
 import { loadManifest, mergeManifests, buildPieceVisual, type AssetRegistry, type ManifestFragment, type ManifestJson } from "@engine/assets";
-import { BuildGhost, pieceArtRow, ROT_EXACT_PIVOT, IsoRenderer, Sprite, Shadow, LightSource, Occluder, SpriteFlag, sourcesFromManifest, coreAppearanceBinding, CameraTargetGuard } from "@engine/render";
+import { BuildGhost, pieceArtRow, ROT_EXACT_PIVOT, IsoRenderer, Canvas2DRenderer, chooseRenderer, Sprite, Shadow, LightSource, Occluder, SpriteFlag, sourcesFromManifest, coreAppearanceBinding, CameraTargetGuard } from "@engine/render";
 import { gameplayDefs, rotationSteps, animalDefs, Animal, Health, Survival, Zombie, ResourceNode, CraftingStation, Fuel, AnimState as GAnim, BuildPiece as GPiece, Dead, Wetness, BodyTemp, Emitter, PieceLink, Crop, cropSpriteKey, clutterForChunk, resolveSprite, type ResolvedSprite } from "@engine/gameplay";
 
 /** Render-side schemas the renderer's bindings expect (view World only). */
@@ -68,11 +68,19 @@ export class IsoView {
   static async create(canvas: HTMLCanvasElement, base: string, ov: ViewOverrides = {}, onProgress: (f: number, label: string) => void = () => {}): Promise<IsoView> {
     onProgress(0.05, "Loading art manifest");
     const q0 = new URLSearchParams(location.search);
-    const renderer = new IsoRenderer(canvas, { preserveDrawingBuffer: q0.has("shot"),
+    // WebGL2 -> Canvas2D sprites -> (main.ts) debug. Probe a FRESH canvas: a lost/blocked context on #game must not decide.
+    const probe = (k: "webgl2" | "2d"): unknown => document.createElement("canvas").getContext(k, k === "webgl2" ? { powerPreference: "default" } : undefined);
+    const kind = chooseRenderer(probe, { forceCanvas: q0.get("renderer") === "canvas" });
+    const make2d = (): IsoRenderer => { console.warn("[view] WebGL2 unavailable: Canvas2D sprite renderer"); return new Canvas2DRenderer(canvas) as unknown as IsoRenderer; };
+    let renderer: IsoRenderer;
+    if (kind === "canvas2d") renderer = make2d();
+    else if (kind === "debug") throw new Error("no WebGL2 and no Canvas2D");
+    else try { renderer = new IsoRenderer(canvas, { preserveDrawingBuffer: q0.has("shot"),
       // ?safe=1 implies ?gl=lowend (mediump, no float targets, low texture memory)
       // after a context loss gl-recovery.ts steps the level down (sessionStorage) so a reload starts lower and never loops
       ...(levelFlags(effectiveLevel(location.search)) ? { gl: levelFlags(effectiveLevel(location.search))! } : q0.get("safe") === "1" && !q0.get("gl") ? { gl: ["lowend" as const] } : {}),
       onError: (e) => { if (e.kind !== "context-restored") showRenderError(`Renderer: ${e.kind}`, `${e.message}${e.detail ? `\n${e.detail.slice(0, 300)}` : ""}\nTry ?gl=lowend or ?safe=1 — please report this text.`); } });
+    } catch (e) { console.warn("[view] IsoRenderer failed", e); renderer = make2d(); }
     { const c = renderer.capabilities; console.info(`[view] gl ${c.renderer} mobile=${c.mobile} lowEnd=${c.lowEnd} flags=${c.flags.join(",")} fallbacks=${c.fallbacks.join("; ")}`); (globalThis as { __renderCaps?: unknown }).__renderCaps = c; }
     const packBase = `${base}art/pack/`;
     const { registry } = await loadMergedManifest(`${base}art/`);

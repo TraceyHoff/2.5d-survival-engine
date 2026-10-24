@@ -233,10 +233,10 @@ export class IsoRenderer implements Renderer {
   }
 
   constructor(readonly canvas: HTMLCanvasElement, opts: IsoRendererOptions = {}) {
-    const gl = canvas.getContext("webgl2", {
-      antialias: false, alpha: false, depth: false, stencil: false, powerPreference: "high-performance",
-      preserveDrawingBuffer: opts.preserveDrawingBuffer ?? false,
-    });
+    // no failIfMajorPerformanceCaveat (software/console adapters must still get a context); retry with the default
+    // power preference — some ANGLE/D3D11 adapters (Xbox Edge) refuse "high-performance" after a GPU reset
+    const ctxOpts = { antialias: false, alpha: false, depth: false, stencil: false, preserveDrawingBuffer: opts.preserveDrawingBuffer ?? false };
+    const gl = canvas.getContext("webgl2", { ...ctxOpts, powerPreference: "high-performance" }) ?? canvas.getContext("webgl2", { ...ctxOpts, powerPreference: "default" });
     if (!gl) throw new RenderGLError({ kind: "webgl2", message: "WebGL2 is not available in this browser/GPU" });
     this.gl = gl;
     if (opts.onError) this.onError = opts.onError;

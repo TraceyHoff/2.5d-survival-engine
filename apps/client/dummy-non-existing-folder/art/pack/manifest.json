@@ -8,9 +8,13 @@
       "frameW": 48,
       "frameH": 64,
       "columns": 24,
-      "rows": 8,
+      "rows": 12,
       "masks": {
         "sheen": "atlases/characters_sheen.png"
+      },
+      "ktx2": "atlases/characters.ktx2",
+      "masksKtx2": {
+        "sheen": "atlases/characters_sheen.ktx2"
       }
     },
     {
@@ -19,9 +23,13 @@
       "frameW": 48,
       "frameH": 64,
       "columns": 24,
-      "rows": 8,
+      "rows": 12,
       "masks": {
         "sheen": "atlases/characters_b_sheen.png"
+      },
+      "ktx2": "atlases/characters_b.ktx2",
+      "masksKtx2": {
+        "sheen": "atlases/characters_b_sheen.ktx2"
       }
     },
     {
@@ -30,9 +38,13 @@
       "frameW": 48,
       "frameH": 64,
       "columns": 24,
-      "rows": 8,
+      "rows": 12,
       "masks": {
         "sheen": "atlases/characters_c_sheen.png"
+      },
+      "ktx2": "atlases/characters_c.ktx2",
+      "masksKtx2": {
+        "sheen": "atlases/characters_c_sheen.ktx2"
       }
     },
     {
@@ -41,10 +53,14 @@
       "frameW": 48,
       "frameH": 64,
       "columns": 19,
-      "rows": 16,
+      "rows": 19,
       "masks": {
         "emissive": true,
         "sheen": "atlases/zombies_sheen.png"
+      },
+      "ktx2": "atlases/zombies.ktx2",
+      "masksKtx2": {
+        "sheen": "atlases/zombies_sheen.ktx2"
       }
     },
     {
@@ -53,10 +69,14 @@
       "frameW": 64,
       "frameH": 80,
       "columns": 19,
-      "rows": 16,
+      "rows": 19,
       "masks": {
         "emissive": true,
         "sheen": "atlases/zombies_brute_sheen.png"
+      },
+      "ktx2": "atlases/zombies_brute.ktx2",
+      "masksKtx2": {
+        "sheen": "atlases/zombies_brute_sheen.ktx2"
       }
     },
     {
@@ -65,10 +85,14 @@
       "frameW": 48,
       "frameH": 64,
       "columns": 19,
-      "rows": 16,
+      "rows": 19,
       "masks": {
         "emissive": true,
         "sheen": "atlases/zombies_runner_sheen.png"
+      },
+      "ktx2": "atlases/zombies_runner.ktx2",
+      "masksKtx2": {
+        "sheen": "atlases/zombies_runner_sheen.ktx2"
       }
     },
     {
@@ -77,10 +101,14 @@
       "frameW": 48,
       "frameH": 64,
       "columns": 19,
-      "rows": 16,
+      "rows": 19,
       "masks": {
         "emissive": true,
         "sheen": "atlases/zombies_mummy_sheen.png"
+      },
+      "ktx2": "atlases/zombies_mummy.ktx2",
+      "masksKtx2": {
+        "sheen": "atlases/zombies_mummy_sheen.ktx2"
       }
     },
     {
@@ -89,10 +117,14 @@
       "frameW": 48,
       "frameH": 64,
       "columns": 19,
-      "rows": 16,
+      "rows": 19,
       "masks": {
         "emissive": true,
         "sheen": "atlases/zombies_pumpkin_sheen.png"
+      },
+      "ktx2": "atlases/zombies_pumpkin.ktx2",
+      "masksKtx2": {
+        "sheen": "atlases/zombies_pumpkin_sheen.ktx2"
       }
     },
     {
@@ -104,7 +136,8 @@
       "rows": 15,
       "masks": {
         "emissive": true
-      }
+      },
+      "ktx2": "atlases/held.ktx2"
     },
     {
       "key": "critters",
@@ -112,9 +145,13 @@
       "frameW": 32,
       "frameH": 32,
       "columns": 8,
-      "rows": 16,
+      "rows": 24,
       "masks": {
         "sheen": "atlases/critters_sheen.png"
+      },
+      "ktx2": "atlases/critters.ktx2",
+      "masksKtx2": {
+        "sheen": "atlases/critters_sheen.ktx2"
       }
     },
     {
@@ -123,7 +160,8 @@
       "frameW": 64,
       "frameH": 48,
       "columns": 8,
-      "rows": 6
+      "rows": 6,
+      "ktx2": "atlases/tiles.ktx2"
     },
     {
       "key": "resources_tall",
@@ -135,6 +173,10 @@
       "masks": {
         "emissive": true,
         "sway": "atlases/resources_tall_sway.png"
+      },
+      "ktx2": "atlases/resources_tall.ktx2",
+      "masksKtx2": {
+        "sway": "atlases/resources_tall_sway.ktx2"
       }
     },
     {
@@ -147,6 +189,10 @@
       "masks": {
         "emissive": true,
         "sway": "atlases/resources_sway.png"
+      },
+      "ktx2": "atlases/resources.ktx2",
+      "masksKtx2": {
+        "sway": "atlases/resources_sway.ktx2"
       }
     },
     {
@@ -159,6 +205,10 @@
       "masks": {
         "emissive": true,
         "sway": "atlases/resources_huge_sway.png"
+      },
+      "ktx2": "atlases/resources_huge.ktx2",
+      "masksKtx2": {
+        "sway": "atlases/resources_huge_sway.ktx2"
       }
     },
     {
@@ -167,7 +217,8 @@
       "frameW": 32,
       "frameH": 32,
       "columns": 8,
-      "rows": 7
+      "rows": 7,
+      "ktx2": "atlases/items.ktx2"
     },
     {
       "key": "equipment",
@@ -175,7 +226,8 @@
       "frameW": 32,
       "frameH": 32,
       "columns": 8,
-      "rows": 3
+      "rows": 3,
+      "ktx2": "atlases/equipment.ktx2"
     },
     {
       "key": "buildings_twig",
@@ -183,7 +235,8 @@
       "frameW": 128,
       "frameH": 128,
       "columns": 16,
-      "rows": 10
+      "rows": 10,
+      "ktx2": "atlases/buildings_twig.ktx2"
     },
     {
       "key": "buildings",
@@ -191,7 +244,8 @@
       "frameW": 128,
       "frameH": 128,
       "columns": 16,
-      "rows": 11
+      "rows": 11,
+      "ktx2": "atlases/buildings.ktx2"
     },
     {
       "key": "buildings_stone",
@@ -199,7 +253,8 @@
       "frameW": 128,
       "frameH": 128,
       "columns": 16,
-      "rows": 10
+      "rows": 10,
+      "ktx2": "atlases/buildings_stone.ktx2"
     },
     {
       "key": "buildings_metal",
@@ -207,7 +262,8 @@
       "frameW": 128,
       "frameH": 128,
       "columns": 16,
-      "rows": 10
+      "rows": 10,
+      "ktx2": "atlases/buildings_metal.ktx2"
     },
     {
       "key": "openings",
@@ -215,7 +271,8 @@
       "frameW": 128,
       "frameH": 128,
       "columns": 16,
-      "rows": 8
+      "rows": 8,
+      "ktx2": "atlases/openings.ktx2"
     },
     {
       "key": "furniture",
@@ -226,7 +283,8 @@
       "rows": 13,
       "masks": {
         "emissive": true
-      }
+      },
+      "ktx2": "atlases/furniture.ktx2"
     },
     {
       "key": "decor",
@@ -237,7 +295,8 @@
       "rows": 12,
       "masks": {
         "emissive": true
-      }
+      },
+      "ktx2": "atlases/decor.ktx2"
     },
     {
       "key": "vfx",
@@ -245,7 +304,8 @@
       "frameW": 32,
       "frameH": 32,
       "columns": 8,
-      "rows": 8
+      "rows": 8,
+      "ktx2": "atlases/vfx.ktx2"
     },
     {
       "key": "vfx_fire_big",
@@ -256,7 +316,8 @@
       "rows": 1,
       "masks": {
         "emissive": true
-      }
+      },
+      "ktx2": "atlases/vfx_fire_big.ktx2"
     },
     {
       "key": "vfx_fire_huge",
@@ -267,7 +328,8 @@
       "rows": 1,
       "masks": {
         "emissive": true
-      }
+      },
+      "ktx2": "atlases/vfx_fire_huge.ktx2"
     },
     {
       "key": "fog",
@@ -275,7 +337,8 @@
       "frameW": 256,
       "frameH": 256,
       "columns": 2,
-      "rows": 1
+      "rows": 1,
+      "ktx2": "atlases/fog.ktx2"
     },
     {
       "key": "ui",
@@ -297,7 +360,8 @@
           "r": 6,
           "b": 6
         }
-      }
+      },
+      "ktx2": "atlases/ui.ktx2"
     },
     {
       "key": "animals_small",
@@ -305,15 +369,20 @@
       "frameW": 32,
       "frameH": 32,
       "columns": 32,
-      "rows": 14,
+      "rows": 17,
       "pages": [
         {
           "scale": 2,
-          "image": "atlases/animals_small@2x.png"
+          "image": "atlases/animals_small@2x.png",
+          "ktx2": "atlases/animals_small@2x.ktx2"
         }
       ],
       "masks": {
         "sheen": "atlases/animals_small_sheen.png"
+      },
+      "ktx2": "atlases/animals_small.ktx2",
+      "masksKtx2": {
+        "sheen": "atlases/animals_small_sheen.ktx2"
       }
     },
     {
@@ -326,11 +395,38 @@
       "pages": [
         {
           "scale": 2,
-          "image": "atlases/animals_medium@2x.png"
+          "image": "atlases/animals_medium@2x.png",
+          "ktx2": "atlases/animals_medium@2x.ktx2"
         }
       ],
       "masks": {
         "sheen": "atlases/animals_medium_sheen.png"
+      },
+      "ktx2": "atlases/animals_medium.ktx2",
+      "masksKtx2": {
+        "sheen": "atlases/animals_medium_sheen.ktx2"
+      }
+    },
+    {
+      "key": "animals_medium_sp",
+      "image": "atlases/animals_medium_sp.png",
+      "frameW": 48,
+      "frameH": 48,
+      "columns": 16,
+      "rows": 6,
+      "pages": [
+        {
+          "scale": 2,
+          "image": "atlases/animals_medium_sp@2x.png",
+          "ktx2": "atlases/animals_medium_sp@2x.ktx2"
+        }
+      ],
+      "masks": {
+        "sheen": "atlases/animals_medium_sp_sheen.png"
+      },
+      "ktx2": "atlases/animals_medium_sp.ktx2",
+      "masksKtx2": {
+        "sheen": "atlases/animals_medium_sp_sheen.ktx2"
       }
     },
     {
@@ -343,11 +439,38 @@
       "pages": [
         {
           "scale": 2,
-          "image": "atlases/animals_large@2x.png"
+          "image": "atlases/animals_large@2x.png",
+          "ktx2": "atlases/animals_large@2x.ktx2"
         }
       ],
       "masks": {
         "sheen": "atlases/animals_large_sheen.png"
+      },
+      "ktx2": "atlases/animals_large.ktx2",
+      "masksKtx2": {
+        "sheen": "atlases/animals_large_sheen.ktx2"
+      }
+    },
+    {
+      "key": "animals_large_sp",
+      "image": "atlases/animals_large_sp.png",
+      "frameW": 64,
+      "frameH": 64,
+      "columns": 12,
+      "rows": 4,
+      "pages": [
+        {
+          "scale": 2,
+          "image": "atlases/animals_large_sp@2x.png",
+          "ktx2": "atlases/animals_large_sp@2x.ktx2"
+        }
+      ],
+      "masks": {
+        "sheen": "atlases/animals_large_sp_sheen.png"
+      },
+      "ktx2": "atlases/animals_large_sp.ktx2",
+      "masksKtx2": {
+        "sheen": "atlases/animals_large_sp_sheen.ktx2"
       }
     },
     {
@@ -360,9 +483,11 @@
       "pages": [
         {
           "scale": 2,
-          "image": "atlases/death_bag@2x.png"
+          "image": "atlases/death_bag@2x.png",
+          "ktx2": "atlases/death_bag@2x.ktx2"
         }
-      ]
+      ],
+      "ktx2": "atlases/death_bag.ktx2"
     },
     {
       "key": "se_fx_deathbag_drop",
@@ -374,9 +499,11 @@
       "pages": [
         {
           "scale": 2,
-          "image": "atlases/fx_deathbag_drop@2x.png"
+          "image": "atlases/fx_deathbag_drop@2x.png",
+          "ktx2": "atlases/fx_deathbag_drop@2x.ktx2"
         }
-      ]
+      ],
+      "ktx2": "atlases/fx_deathbag_drop.ktx2"
     },
     {
       "key": "se_fx_gate_breach",
@@ -388,9 +515,11 @@
       "pages": [
         {
           "scale": 2,
-          "image": "atlases/fx_gate_breach@2x.png"
+          "image": "atlases/fx_gate_breach@2x.png",
+          "ktx2": "atlases/fx_gate_breach@2x.ktx2"
         }
-      ]
+      ],
+      "ktx2": "atlases/fx_gate_breach.ktx2"
     },
     {
       "key": "se_fx_puff",
@@ -402,9 +531,11 @@
       "pages": [
         {
           "scale": 2,
-          "image": "atlases/fx_puff@2x.png"
+          "image": "atlases/fx_puff@2x.png",
+          "ktx2": "atlases/fx_puff@2x.ktx2"
         }
-      ]
+      ],
+      "ktx2": "atlases/fx_puff.ktx2"
     },
     {
       "key": "se_fx_respawn_poof",
@@ -416,9 +547,11 @@
       "pages": [
         {
           "scale": 2,
-          "image": "atlases/fx_respawn_poof@2x.png"
+          "image": "atlases/fx_respawn_poof@2x.png",
+          "ktx2": "atlases/fx_respawn_poof@2x.ktx2"
         }
-      ]
+      ],
+      "ktx2": "atlases/fx_respawn_poof.ktx2"
     },
     {
       "key": "se_fx_splinter",
@@ -430,9 +563,44 @@
       "pages": [
         {
           "scale": 2,
-          "image": "atlases/fx_splinter@2x.png"
+          "image": "atlases/fx_splinter@2x.png",
+          "ktx2": "atlases/fx_splinter@2x.ktx2"
         }
-      ]
+      ],
+      "ktx2": "atlases/fx_splinter.ktx2"
+    },
+    {
+      "key": "zombies_snuffer",
+      "image": "atlases/zombies_snuffer.png",
+      "frameW": 48,
+      "frameH": 64,
+      "columns": 17,
+      "rows": 16,
+      "ktx2": "atlases/zombies_snuffer.ktx2"
+    },
+    {
+      "key": "defenses",
+      "image": "atlases/defenses.png",
+      "frameW": 128,
+      "frameH": 128,
+      "columns": 12,
+      "rows": 8,
+      "ktx2": "atlases/defenses.ktx2"
+    },
+    {
+      "key": "defenses_glow",
+      "image": "atlases/defenses_glow.png",
+      "frameW": 96,
+      "frameH": 96,
+      "columns": 8,
+      "rows": 3,
+      "masks": {
+        "emissive": "atlases/defenses_glow_emissive.png"
+      },
+      "ktx2": "atlases/defenses_glow.ktx2",
+      "masksKtx2": {
+        "emissive": "atlases/defenses_glow_emissive.ktx2"
+      }
     }
   ],
   "sprites": [
@@ -499,6 +667,31 @@
           ],
           "fps": 14,
           "directions": 8
+        },
+        "swim": {
+          "frames": [
+            192,
+            193,
+            194,
+            195,
+            196,
+            197
+          ],
+          "fps": 6,
+          "directions": 8,
+          "dirStride": 6
+        },
+        "punch": {
+          "frames": [
+            240,
+            241,
+            242,
+            243
+          ],
+          "fps": 12,
+          "directions": 8,
+          "dirStride": 4,
+          "loop": false
         }
       },
       "tints": {
@@ -587,6 +780,31 @@
           ],
           "fps": 14,
           "directions": 8
+        },
+        "swim": {
+          "frames": [
+            192,
+            193,
+            194,
+            195,
+            196,
+            197
+          ],
+          "fps": 6,
+          "directions": 8,
+          "dirStride": 6
+        },
+        "punch": {
+          "frames": [
+            240,
+            241,
+            242,
+            243
+          ],
+          "fps": 12,
+          "directions": 8,
+          "dirStride": 4,
+          "loop": false
         }
       },
       "tints": {
@@ -675,6 +893,31 @@
           ],
           "fps": 14,
           "directions": 8
+        },
+        "swim": {
+          "frames": [
+            192,
+            193,
+            194,
+            195,
+            196,
+            197
+          ],
+          "fps": 6,
+          "directions": 8,
+          "dirStride": 6
+        },
+        "punch": {
+          "frames": [
+            240,
+            241,
+            242,
+            243
+          ],
+          "fps": 12,
+          "directions": 8,
+          "dirStride": 4,
+          "loop": false
         }
       },
       "tints": {
@@ -818,6 +1061,19 @@
           "fps": 7,
           "directions": 8,
           "dirStride": 38
+        },
+        "swim": {
+          "frames": [
+            304,
+            305,
+            306,
+            307,
+            308,
+            309
+          ],
+          "fps": 6,
+          "directions": 8,
+          "dirStride": 6
         }
       },
       "tints": {
@@ -961,6 +1217,19 @@
           "fps": 7,
           "directions": 8,
           "dirStride": 38
+        },
+        "swim": {
+          "frames": [
+            304,
+            305,
+            306,
+            307,
+            308,
+            309
+          ],
+          "fps": 6,
+          "directions": 8,
+          "dirStride": 6
         }
       },
       "tints": {
@@ -1104,6 +1373,19 @@
           "fps": 7,
           "directions": 8,
           "dirStride": 38
+        },
+        "swim": {
+          "frames": [
+            304,
+            305,
+            306,
+            307,
+            308,
+            309
+          ],
+          "fps": 6,
+          "directions": 8,
+          "dirStride": 6
         }
       },
       "tints": {
@@ -1247,6 +1529,19 @@
           "fps": 7,
           "directions": 8,
           "dirStride": 38
+        },
+        "swim": {
+          "frames": [
+            304,
+            305,
+            306,
+            307,
+            308,
+            309
+          ],
+          "fps": 6,
+          "directions": 8,
+          "dirStride": 6
         }
       },
       "tints": {
@@ -1390,6 +1685,19 @@
           "fps": 7,
           "directions": 8,
           "dirStride": 38
+        },
+        "swim": {
+          "frames": [
+            304,
+            305,
+            306,
+            307,
+            308,
+            309
+          ],
+          "fps": 6,
+          "directions": 8,
+          "dirStride": 6
         }
       },
       "tints": {
@@ -1684,6 +1992,17 @@
           ],
           "fps": 10,
           "directions": 4
+        },
+        "swim": {
+          "frames": [
+            128,
+            129,
+            130,
+            131
+          ],
+          "fps": 6,
+          "directions": 4,
+          "dirStride": 4
         }
       }
     },
@@ -1715,6 +2034,17 @@
           ],
           "fps": 10,
           "directions": 4
+        },
+        "swim": {
+          "frames": [
+            144,
+            145,
+            146,
+            147
+          ],
+          "fps": 6,
+          "directions": 4,
+          "dirStride": 4
         }
       }
     },
@@ -1756,6 +2086,17 @@
           ],
           "fps": 9,
           "directions": 4
+        },
+        "swim": {
+          "frames": [
+            160,
+            161,
+            162,
+            163
+          ],
+          "fps": 6,
+          "directions": 4,
+          "dirStride": 4
         }
       }
     },
@@ -1787,6 +2128,17 @@
           ],
           "fps": 8,
           "directions": 4
+        },
+        "swim": {
+          "frames": [
+            176,
+            177,
+            178,
+            179
+          ],
+          "fps": 6,
+          "directions": 4,
+          "dirStride": 4
         }
       }
     },
@@ -9798,6 +10150,19 @@
           "directions": 8,
           "dirStride": 27,
           "loop": false
+        },
+        "swim": {
+          "frames": [
+            448,
+            449,
+            450,
+            451,
+            452,
+            453
+          ],
+          "fps": 6,
+          "directions": 8,
+          "dirStride": 6
         }
       }
     },
@@ -9914,6 +10279,19 @@
           "directions": 8,
           "dirStride": 27,
           "loop": false
+        },
+        "swim": {
+          "frames": [
+            496,
+            497,
+            498,
+            499,
+            500,
+            501
+          ],
+          "fps": 6,
+          "directions": 8,
+          "dirStride": 6
         }
       }
     },
@@ -10030,6 +10408,406 @@
           "directions": 8,
           "dirStride": 27,
           "loop": false
+        },
+        "swim": {
+          "frames": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "fps": 6,
+          "directions": 8,
+          "dirStride": 27,
+          "loop": true,
+          "dirFrames": [
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 0,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 6,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 12,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 18,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 24,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 30,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 36,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 42,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 1,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 7,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 13,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 19,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 25,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 31,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 37,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 43,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 2,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 8,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 14,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 20,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 26,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 32,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 38,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 44,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 3,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 9,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 15,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 21,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 27,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 33,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 39,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 45,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 4,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 10,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 16,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 22,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 28,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 34,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 40,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 46,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 5,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 11,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 17,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 23,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 29,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 35,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 41,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 47,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            }
+          ]
         }
       }
     },
@@ -10146,6 +10924,406 @@
           "directions": 8,
           "dirStride": 27,
           "loop": false
+        },
+        "swim": {
+          "frames": [
+            220,
+            221,
+            222,
+            223,
+            224,
+            225
+          ],
+          "fps": 6,
+          "directions": 8,
+          "dirStride": 27,
+          "loop": true,
+          "dirFrames": [
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 48,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 54,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 60,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 66,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 72,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 78,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 84,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 90,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 49,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 55,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 61,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 67,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 73,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 79,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 85,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 91,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 50,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 56,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 62,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 68,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 74,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 80,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 86,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 92,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 51,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 57,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 63,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 69,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 75,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 81,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 87,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 93,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 52,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 58,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 64,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 70,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 76,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 82,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 88,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 94,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 53,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 59,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 65,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 71,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 77,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 83,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 89,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 95,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            }
+          ]
         }
       }
     },
@@ -10262,6 +11440,406 @@
           "directions": 8,
           "dirStride": 27,
           "loop": false
+        },
+        "swim": {
+          "frames": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "fps": 6,
+          "directions": 8,
+          "dirStride": 27,
+          "loop": true,
+          "dirFrames": [
+            {
+              "atlas": "animals_large_sp",
+              "frame": 0,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 6,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 12,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 18,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 24,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 30,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 36,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 42,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 1,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 7,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 13,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 19,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 25,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 31,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 37,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 43,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 2,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 8,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 14,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 20,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 26,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 32,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 38,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 44,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 3,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 9,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 15,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 21,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 27,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 33,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 39,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 45,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 4,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 10,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 16,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 22,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 28,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 34,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 40,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 46,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 5,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 11,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 17,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 23,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 29,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 35,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 41,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 47,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            }
+          ]
         }
       }
     },
@@ -10423,6 +12001,464 @@
             3
           ],
           "fps": 8,
+          "loop": true
+        }
+      }
+    },
+    {
+      "key": "zombie_snuffer",
+      "category": "zombie",
+      "atlas": "zombies_snuffer",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9219
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "fps": 4,
+          "directions": 8,
+          "dirStride": 34
+        },
+        "walk": {
+          "frames": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "fps": 7,
+          "directions": 8,
+          "dirStride": 34
+        },
+        "run": {
+          "frames": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "fps": 12,
+          "directions": 8,
+          "dirStride": 34
+        },
+        "attack": {
+          "frames": [
+            16,
+            17,
+            18,
+            19
+          ],
+          "fps": 10,
+          "directions": 8,
+          "dirStride": 34,
+          "loop": false
+        },
+        "hurt": {
+          "frames": [
+            20,
+            21
+          ],
+          "fps": 10,
+          "directions": 8,
+          "dirStride": 34,
+          "loop": false
+        },
+        "death": {
+          "frames": [
+            22,
+            23,
+            24,
+            25,
+            26,
+            27
+          ],
+          "fps": 10,
+          "directions": 8,
+          "dirStride": 34,
+          "loop": false
+        },
+        "swim": {
+          "frames": [
+            28,
+            29,
+            30,
+            31,
+            32,
+            33
+          ],
+          "fps": 6,
+          "directions": 8,
+          "dirStride": 34
+        },
+        "shamble": {
+          "frames": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "fps": 7,
+          "directions": 8,
+          "dirStride": 34
+        }
+      },
+      "tints": {
+        "wet": {
+          "color": "#ccd9f7",
+          "strength": 0.9,
+          "mode": "multiply"
+        },
+        "frost": {
+          "color": "#cfe8ff",
+          "strength": 0.35,
+          "mode": "screen"
+        },
+        "flush": {
+          "color": "#ff8a7a",
+          "strength": 0.15,
+          "mode": "lerp"
+        },
+        "exhausted": {
+          "color": "#b8b4c8",
+          "strength": 0.22,
+          "mode": "lerp"
+        }
+      }
+    },
+    {
+      "key": "barbed_wire",
+      "category": "building",
+      "atlas": "defenses",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "barbed_wire",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 1,
+        "frames": [
+          [
+            0,
+            1,
+            2,
+            3
+          ]
+        ]
+      },
+      "rotationArt": "mirror"
+    },
+    {
+      "key": "spike_trap",
+      "category": "building",
+      "atlas": "defenses",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            4
+          ],
+          "fps": 1
+        },
+        "sprung": {
+          "frames": [
+            8
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "spike_trap",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 1,
+        "frames": [
+          [
+            4,
+            5,
+            6,
+            7
+          ]
+        ],
+        "states": {
+          "armed": [
+            [
+              4,
+              5,
+              6,
+              7
+            ]
+          ],
+          "sprung": [
+            [
+              8,
+              9,
+              10,
+              11
+            ]
+          ]
+        }
+      },
+      "rotationArt": "mirror"
+    },
+    {
+      "key": "bear_trap",
+      "category": "building",
+      "atlas": "defenses",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            12
+          ],
+          "fps": 1
+        },
+        "sprung": {
+          "frames": [
+            16
+          ],
+          "fps": 1
+        },
+        "snap": {
+          "frames": [
+            20,
+            16
+          ],
+          "fps": 12,
+          "loop": false
+        }
+      },
+      "building": {
+        "piece": "bear_trap",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 1,
+        "frames": [
+          [
+            12,
+            13,
+            14,
+            15
+          ]
+        ],
+        "states": {
+          "armed": [
+            [
+              12,
+              13,
+              14,
+              15
+            ]
+          ],
+          "sprung": [
+            [
+              16,
+              17,
+              18,
+              19
+            ]
+          ]
+        }
+      },
+      "rotationArt": "mirror"
+    },
+    {
+      "key": "arrow_turret",
+      "category": "building",
+      "atlas": "defenses",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            21
+          ],
+          "fps": 1
+        },
+        "aim": {
+          "frames": [
+            21
+          ],
+          "fps": 1,
+          "directions": 8,
+          "dirStride": 1
+        },
+        "fire": {
+          "frames": [
+            32,
+            33
+          ],
+          "fps": 10,
+          "directions": 8,
+          "dirStride": 2,
+          "loop": false
+        }
+      },
+      "building": {
+        "piece": "arrow_turret",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 2,
+        "frames": [
+          [
+            21,
+            29,
+            30,
+            31
+          ]
+        ]
+      },
+      "rotationArt": "mirror"
+    },
+    {
+      "key": "bolt_turret",
+      "category": "building",
+      "atlas": "defenses",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            48
+          ],
+          "fps": 1
+        },
+        "aim": {
+          "frames": [
+            48
+          ],
+          "fps": 1,
+          "directions": 8,
+          "dirStride": 1
+        },
+        "fire": {
+          "frames": [
+            59,
+            60
+          ],
+          "fps": 10,
+          "directions": 8,
+          "dirStride": 2,
+          "loop": false
+        }
+      },
+      "building": {
+        "piece": "bolt_turret",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 2,
+        "frames": [
+          [
+            48,
+            56,
+            57,
+            58
+          ]
+        ]
+      },
+      "rotationArt": "mirror"
+    },
+    {
+      "key": "flame_turret",
+      "category": "building",
+      "atlas": "defenses",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            75
+          ],
+          "fps": 1
+        },
+        "aim": {
+          "frames": [
+            75
+          ],
+          "fps": 1,
+          "directions": 8,
+          "dirStride": 1
+        }
+      },
+      "building": {
+        "piece": "flame_turret",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 2,
+        "frames": [
+          [
+            75,
+            83,
+            84,
+            85
+          ]
+        ]
+      },
+      "rotationArt": "mirror"
+    },
+    {
+      "key": "flame_turret_fire",
+      "category": "vfx",
+      "atlas": "defenses_glow",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "fire": {
+          "frames": [
+            0,
+            1,
+            2
+          ],
+          "fps": 12,
+          "directions": 8,
+          "dirStride": 3,
           "loop": true
         }
       }

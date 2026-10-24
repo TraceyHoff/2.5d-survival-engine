@@ -1,0 +1,6160 @@
+{
+ "version": 1,
+ "name": "building",
+ "atlases": [
+  {
+   "key": "building_t1",
+   "image": "atlases/building_t1.png",
+   "frameW": 84,
+   "frameH": 96,
+   "columns": 24,
+   "rows": 11,
+   "ktx2": "atlases/building_t1.ktx2"
+  },
+  {
+   "key": "building_t2",
+   "image": "atlases/building_t2.png",
+   "frameW": 84,
+   "frameH": 96,
+   "columns": 24,
+   "rows": 11,
+   "ktx2": "atlases/building_t2.ktx2"
+  },
+  {
+   "key": "building_t3",
+   "image": "atlases/building_t3.png",
+   "frameW": 84,
+   "frameH": 96,
+   "columns": 24,
+   "rows": 11,
+   "ktx2": "atlases/building_t3.ktx2"
+  },
+  {
+   "key": "building_t4",
+   "image": "atlases/building_t4.png",
+   "frameW": 84,
+   "frameH": 96,
+   "columns": 24,
+   "rows": 11,
+   "ktx2": "atlases/building_t4.ktx2"
+  },
+  {
+   "key": "building_fx",
+   "image": "atlases/building_fx.png",
+   "frameW": 84,
+   "frameH": 96,
+   "columns": 3,
+   "rows": 1,
+   "ktx2": "atlases/building_fx.ktx2"
+  }
+ ],
+ "sprites": [
+  {
+   "key": "bld_crack",
+   "category": "vfx",
+   "atlas": "building_fx",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "stage1": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    },
+    "stage2": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    },
+    "stage3": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bld_foundation_t1",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "foundation@tier1",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      0,
+      1,
+      2,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_foundation_triangle_t1",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "foundation_triangle@tier1",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      4,
+      5,
+      6,
+      7
+     ],
+     [
+      8,
+      9,
+      10,
+      11
+     ],
+     [
+      12,
+      13,
+      14,
+      15
+     ],
+     [
+      16,
+      17,
+      18,
+      19
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_foundation_triangle",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "foundation_triangle",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      4,
+      5,
+      6,
+      7
+     ],
+     [
+      8,
+      9,
+      10,
+      11
+     ],
+     [
+      12,
+      13,
+      14,
+      15
+     ],
+     [
+      16,
+      17,
+      18,
+      19
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_foundation_steps_t1",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      20
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "foundation_steps@tier1",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      20,
+      21,
+      22,
+      23
+     ],
+     [
+      24,
+      25,
+      26,
+      27
+     ],
+     [
+      28,
+      29,
+      30,
+      31
+     ],
+     [
+      32,
+      33,
+      34,
+      35
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_foundation_steps",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      20
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "foundation_steps",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      20,
+      21,
+      22,
+      23
+     ],
+     [
+      24,
+      25,
+      26,
+      27
+     ],
+     [
+      28,
+      29,
+      30,
+      31
+     ],
+     [
+      32,
+      33,
+      34,
+      35
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_foundation_stilt_t1",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      36
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "foundation_stilt@tier1",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      36,
+      37,
+      38,
+      39
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_foundation_stilt",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      36
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "foundation_stilt",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      36,
+      37,
+      38,
+      39
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_foundation_ramp_t1",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      40
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "foundation_ramp@tier1",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      40,
+      41,
+      42,
+      43
+     ],
+     [
+      44,
+      45,
+      46,
+      47
+     ],
+     [
+      48,
+      49,
+      50,
+      51
+     ],
+     [
+      52,
+      53,
+      54,
+      55
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_foundation_ramp",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      40
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "foundation_ramp",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      40,
+      41,
+      42,
+      43
+     ],
+     [
+      44,
+      45,
+      46,
+      47
+     ],
+     [
+      48,
+      49,
+      50,
+      51
+     ],
+     [
+      52,
+      53,
+      54,
+      55
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_t1",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      56
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall@tier1",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      56,
+      57,
+      58,
+      59
+     ],
+     [
+      60,
+      61,
+      62,
+      63
+     ],
+     [
+      56,
+      57,
+      58,
+      59
+     ],
+     [
+      60,
+      61,
+      62,
+      63
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_window_t1",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      64
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_window@tier1",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      64,
+      65,
+      66,
+      67
+     ],
+     [
+      68,
+      69,
+      70,
+      71
+     ],
+     [
+      64,
+      65,
+      66,
+      67
+     ],
+     [
+      68,
+      69,
+      70,
+      71
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_doorway_t1",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      72
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_doorway@tier1",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      72,
+      73,
+      74,
+      75
+     ],
+     [
+      76,
+      77,
+      78,
+      79
+     ],
+     [
+      72,
+      73,
+      74,
+      75
+     ],
+     [
+      76,
+      77,
+      78,
+      79
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_low_t1",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      80
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_low@tier1",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      80,
+      81,
+      82,
+      83
+     ],
+     [
+      84,
+      85,
+      86,
+      87
+     ],
+     [
+      80,
+      81,
+      82,
+      83
+     ],
+     [
+      84,
+      85,
+      86,
+      87
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_arched_t1",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      88
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_arched@tier1",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      88,
+      89,
+      90,
+      91
+     ],
+     [
+      92,
+      93,
+      94,
+      95
+     ],
+     [
+      88,
+      89,
+      90,
+      91
+     ],
+     [
+      92,
+      93,
+      94,
+      95
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_arched",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      88
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_arched",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      88,
+      89,
+      90,
+      91
+     ],
+     [
+      92,
+      93,
+      94,
+      95
+     ],
+     [
+      88,
+      89,
+      90,
+      91
+     ],
+     [
+      92,
+      93,
+      94,
+      95
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_fortified_t1",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      96
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_fortified@tier1",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      96,
+      97,
+      98,
+      99
+     ],
+     [
+      100,
+      101,
+      102,
+      103
+     ],
+     [
+      96,
+      97,
+      98,
+      99
+     ],
+     [
+      100,
+      101,
+      102,
+      103
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_fortified",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      96
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_fortified",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      96,
+      97,
+      98,
+      99
+     ],
+     [
+      100,
+      101,
+      102,
+      103
+     ],
+     [
+      96,
+      97,
+      98,
+      99
+     ],
+     [
+      100,
+      101,
+      102,
+      103
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_floor_t1",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      104
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor@tier1",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      104,
+      105,
+      106,
+      107
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_floor_hatch_frame_t1",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      108
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor_hatch_frame@tier1",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      108,
+      109,
+      110,
+      111
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_floor_stairwell_t1",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      112
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor_stairwell@tier1",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      112,
+      113,
+      114,
+      115
+     ],
+     [
+      116,
+      117,
+      118,
+      119
+     ],
+     [
+      112,
+      113,
+      114,
+      115
+     ],
+     [
+      116,
+      117,
+      118,
+      119
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_floor_stairwell",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      112
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor_stairwell",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      112,
+      113,
+      114,
+      115
+     ],
+     [
+      116,
+      117,
+      118,
+      119
+     ],
+     [
+      112,
+      113,
+      114,
+      115
+     ],
+     [
+      116,
+      117,
+      118,
+      119
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_floor_skylight_t1",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      120
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor_skylight@tier1",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      120,
+      121,
+      122,
+      123
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_floor_skylight",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      120
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor_skylight",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      120,
+      121,
+      122,
+      123
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_floor_triangle_t1",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      124
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor_triangle@tier1",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      124,
+      125,
+      126,
+      127
+     ],
+     [
+      128,
+      129,
+      130,
+      131
+     ],
+     [
+      132,
+      133,
+      134,
+      135
+     ],
+     [
+      136,
+      137,
+      138,
+      139
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_floor_triangle",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      124
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor_triangle",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      124,
+      125,
+      126,
+      127
+     ],
+     [
+      128,
+      129,
+      130,
+      131
+     ],
+     [
+      132,
+      133,
+      134,
+      135
+     ],
+     [
+      136,
+      137,
+      138,
+      139
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_corner_outer_t1",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      140
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_corner_outer@tier1",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      140,
+      141,
+      142,
+      143
+     ],
+     [
+      144,
+      145,
+      146,
+      147
+     ],
+     [
+      148,
+      149,
+      150,
+      151
+     ],
+     [
+      152,
+      153,
+      154,
+      155
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_corner_outer",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      140
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_corner_outer",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      140,
+      141,
+      142,
+      143
+     ],
+     [
+      144,
+      145,
+      146,
+      147
+     ],
+     [
+      148,
+      149,
+      150,
+      151
+     ],
+     [
+      152,
+      153,
+      154,
+      155
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_corner_inner_t1",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      156
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_corner_inner@tier1",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      156,
+      157,
+      158,
+      159
+     ],
+     [
+      160,
+      161,
+      162,
+      163
+     ],
+     [
+      164,
+      165,
+      166,
+      167
+     ],
+     [
+      168,
+      169,
+      170,
+      171
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_corner_inner",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      156
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_corner_inner",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      156,
+      157,
+      158,
+      159
+     ],
+     [
+      160,
+      161,
+      162,
+      163
+     ],
+     [
+      164,
+      165,
+      166,
+      167
+     ],
+     [
+      168,
+      169,
+      170,
+      171
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_pillar_t1",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      172
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "pillar@tier1",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      172,
+      173,
+      174,
+      175
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_wall_corner_angled_t1",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      176
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_corner_angled@tier1",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      176,
+      177,
+      178,
+      179
+     ],
+     [
+      180,
+      181,
+      182,
+      183
+     ],
+     [
+      184,
+      185,
+      186,
+      187
+     ],
+     [
+      188,
+      189,
+      190,
+      191
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_corner_angled",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      176
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_corner_angled",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      176,
+      177,
+      178,
+      179
+     ],
+     [
+      180,
+      181,
+      182,
+      183
+     ],
+     [
+      184,
+      185,
+      186,
+      187
+     ],
+     [
+      188,
+      189,
+      190,
+      191
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_flat_t1",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      192
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_flat@tier1",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      192,
+      193,
+      194,
+      195
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_roof_slope_t1",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      196
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_slope@tier1",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      196,
+      197,
+      198,
+      199
+     ],
+     [
+      200,
+      201,
+      202,
+      203
+     ],
+     [
+      204,
+      205,
+      206,
+      207
+     ],
+     [
+      208,
+      209,
+      210,
+      211
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_gable_t1",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      212
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_gable@tier1",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      212,
+      213,
+      214,
+      215
+     ],
+     [
+      216,
+      217,
+      218,
+      219
+     ],
+     [
+      212,
+      213,
+      214,
+      215
+     ],
+     [
+      216,
+      217,
+      218,
+      219
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_gable",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      212
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_gable",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      212,
+      213,
+      214,
+      215
+     ],
+     [
+      216,
+      217,
+      218,
+      219
+     ],
+     [
+      212,
+      213,
+      214,
+      215
+     ],
+     [
+      216,
+      217,
+      218,
+      219
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_hip_t1",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      220
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_hip@tier1",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      220,
+      221,
+      222,
+      223
+     ],
+     [
+      224,
+      225,
+      226,
+      227
+     ],
+     [
+      228,
+      229,
+      230,
+      231
+     ],
+     [
+      232,
+      233,
+      234,
+      235
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_corner_t1",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      236
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_corner@tier1",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      236,
+      237,
+      238,
+      239
+     ],
+     [
+      240,
+      241,
+      242,
+      243
+     ],
+     [
+      244,
+      245,
+      246,
+      247
+     ],
+     [
+      248,
+      249,
+      250,
+      251
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_chimney_t1",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      252
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_chimney@tier1",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      252,
+      253,
+      254,
+      255
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror",
+   "attach": {
+    "smoke": {
+     "x": 0.0,
+     "y": -46.0
+    }
+   }
+  },
+  {
+   "key": "bld_roof_chimney",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      252
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_chimney",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      252,
+      253,
+      254,
+      255
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror",
+   "attach": {
+    "smoke": {
+     "x": 0.0,
+     "y": -46.0
+    }
+   }
+  },
+  {
+   "key": "bld_wall_corner_t1",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      140
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_corner@tier1",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      140,
+      141,
+      142,
+      143
+     ],
+     [
+      144,
+      145,
+      146,
+      147
+     ],
+     [
+      148,
+      149,
+      150,
+      151
+     ],
+     [
+      152,
+      153,
+      154,
+      155
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_ridge_t1",
+   "category": "building",
+   "atlas": "building_t1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      212
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_ridge@tier1",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      212,
+      213,
+      214,
+      215
+     ],
+     [
+      216,
+      217,
+      218,
+      219
+     ],
+     [
+      212,
+      213,
+      214,
+      215
+     ],
+     [
+      216,
+      217,
+      218,
+      219
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_foundation_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "foundation@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      0,
+      1,
+      2,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_foundation_triangle_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "foundation_triangle@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      4,
+      5,
+      6,
+      7
+     ],
+     [
+      8,
+      9,
+      10,
+      11
+     ],
+     [
+      12,
+      13,
+      14,
+      15
+     ],
+     [
+      16,
+      17,
+      18,
+      19
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_foundation_steps_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      20
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "foundation_steps@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      20,
+      21,
+      22,
+      23
+     ],
+     [
+      24,
+      25,
+      26,
+      27
+     ],
+     [
+      28,
+      29,
+      30,
+      31
+     ],
+     [
+      32,
+      33,
+      34,
+      35
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_foundation_stilt_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      36
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "foundation_stilt@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      36,
+      37,
+      38,
+      39
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_foundation_ramp_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      40
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "foundation_ramp@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      40,
+      41,
+      42,
+      43
+     ],
+     [
+      44,
+      45,
+      46,
+      47
+     ],
+     [
+      48,
+      49,
+      50,
+      51
+     ],
+     [
+      52,
+      53,
+      54,
+      55
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      56
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      56,
+      57,
+      58,
+      59
+     ],
+     [
+      60,
+      61,
+      62,
+      63
+     ],
+     [
+      56,
+      57,
+      58,
+      59
+     ],
+     [
+      60,
+      61,
+      62,
+      63
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_window_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      64
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_window@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      64,
+      65,
+      66,
+      67
+     ],
+     [
+      68,
+      69,
+      70,
+      71
+     ],
+     [
+      64,
+      65,
+      66,
+      67
+     ],
+     [
+      68,
+      69,
+      70,
+      71
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_doorway_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      72
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_doorway@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      72,
+      73,
+      74,
+      75
+     ],
+     [
+      76,
+      77,
+      78,
+      79
+     ],
+     [
+      72,
+      73,
+      74,
+      75
+     ],
+     [
+      76,
+      77,
+      78,
+      79
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_low_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      80
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_low@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      80,
+      81,
+      82,
+      83
+     ],
+     [
+      84,
+      85,
+      86,
+      87
+     ],
+     [
+      80,
+      81,
+      82,
+      83
+     ],
+     [
+      84,
+      85,
+      86,
+      87
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_arched_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      88
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_arched@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      88,
+      89,
+      90,
+      91
+     ],
+     [
+      92,
+      93,
+      94,
+      95
+     ],
+     [
+      88,
+      89,
+      90,
+      91
+     ],
+     [
+      92,
+      93,
+      94,
+      95
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_fortified_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      96
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_fortified@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      96,
+      97,
+      98,
+      99
+     ],
+     [
+      100,
+      101,
+      102,
+      103
+     ],
+     [
+      96,
+      97,
+      98,
+      99
+     ],
+     [
+      100,
+      101,
+      102,
+      103
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_floor_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      104
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      104,
+      105,
+      106,
+      107
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_floor_hatch_frame_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      108
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor_hatch_frame@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      108,
+      109,
+      110,
+      111
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_floor_stairwell_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      112
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor_stairwell@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      112,
+      113,
+      114,
+      115
+     ],
+     [
+      116,
+      117,
+      118,
+      119
+     ],
+     [
+      112,
+      113,
+      114,
+      115
+     ],
+     [
+      116,
+      117,
+      118,
+      119
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_floor_skylight_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      120
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor_skylight@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      120,
+      121,
+      122,
+      123
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_floor_triangle_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      124
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor_triangle@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      124,
+      125,
+      126,
+      127
+     ],
+     [
+      128,
+      129,
+      130,
+      131
+     ],
+     [
+      132,
+      133,
+      134,
+      135
+     ],
+     [
+      136,
+      137,
+      138,
+      139
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_corner_outer_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      140
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_corner_outer@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      140,
+      141,
+      142,
+      143
+     ],
+     [
+      144,
+      145,
+      146,
+      147
+     ],
+     [
+      148,
+      149,
+      150,
+      151
+     ],
+     [
+      152,
+      153,
+      154,
+      155
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_corner_inner_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      156
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_corner_inner@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      156,
+      157,
+      158,
+      159
+     ],
+     [
+      160,
+      161,
+      162,
+      163
+     ],
+     [
+      164,
+      165,
+      166,
+      167
+     ],
+     [
+      168,
+      169,
+      170,
+      171
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_pillar_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      172
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "pillar@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      172,
+      173,
+      174,
+      175
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_wall_corner_angled_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      176
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_corner_angled@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      176,
+      177,
+      178,
+      179
+     ],
+     [
+      180,
+      181,
+      182,
+      183
+     ],
+     [
+      184,
+      185,
+      186,
+      187
+     ],
+     [
+      188,
+      189,
+      190,
+      191
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_flat_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      192
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_flat@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      192,
+      193,
+      194,
+      195
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_roof_slope_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      196
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_slope@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      196,
+      197,
+      198,
+      199
+     ],
+     [
+      200,
+      201,
+      202,
+      203
+     ],
+     [
+      204,
+      205,
+      206,
+      207
+     ],
+     [
+      208,
+      209,
+      210,
+      211
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_gable_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      212
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_gable@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      212,
+      213,
+      214,
+      215
+     ],
+     [
+      216,
+      217,
+      218,
+      219
+     ],
+     [
+      212,
+      213,
+      214,
+      215
+     ],
+     [
+      216,
+      217,
+      218,
+      219
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_hip_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      220
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_hip@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      220,
+      221,
+      222,
+      223
+     ],
+     [
+      224,
+      225,
+      226,
+      227
+     ],
+     [
+      228,
+      229,
+      230,
+      231
+     ],
+     [
+      232,
+      233,
+      234,
+      235
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_corner_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      236
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_corner@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      236,
+      237,
+      238,
+      239
+     ],
+     [
+      240,
+      241,
+      242,
+      243
+     ],
+     [
+      244,
+      245,
+      246,
+      247
+     ],
+     [
+      248,
+      249,
+      250,
+      251
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_chimney_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      252
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_chimney@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      252,
+      253,
+      254,
+      255
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror",
+   "attach": {
+    "smoke": {
+     "x": 0.0,
+     "y": -46.0
+    }
+   }
+  },
+  {
+   "key": "bld_wall_corner_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      140
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_corner@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      140,
+      141,
+      142,
+      143
+     ],
+     [
+      144,
+      145,
+      146,
+      147
+     ],
+     [
+      148,
+      149,
+      150,
+      151
+     ],
+     [
+      152,
+      153,
+      154,
+      155
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_ridge_t2",
+   "category": "building",
+   "atlas": "building_t2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      212
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_ridge@tier2",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      212,
+      213,
+      214,
+      215
+     ],
+     [
+      216,
+      217,
+      218,
+      219
+     ],
+     [
+      212,
+      213,
+      214,
+      215
+     ],
+     [
+      216,
+      217,
+      218,
+      219
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_foundation_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "foundation@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      0,
+      1,
+      2,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_foundation_triangle_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "foundation_triangle@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      4,
+      5,
+      6,
+      7
+     ],
+     [
+      8,
+      9,
+      10,
+      11
+     ],
+     [
+      12,
+      13,
+      14,
+      15
+     ],
+     [
+      16,
+      17,
+      18,
+      19
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_foundation_steps_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      20
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "foundation_steps@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      20,
+      21,
+      22,
+      23
+     ],
+     [
+      24,
+      25,
+      26,
+      27
+     ],
+     [
+      28,
+      29,
+      30,
+      31
+     ],
+     [
+      32,
+      33,
+      34,
+      35
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_foundation_stilt_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      36
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "foundation_stilt@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      36,
+      37,
+      38,
+      39
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_foundation_ramp_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      40
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "foundation_ramp@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      40,
+      41,
+      42,
+      43
+     ],
+     [
+      44,
+      45,
+      46,
+      47
+     ],
+     [
+      48,
+      49,
+      50,
+      51
+     ],
+     [
+      52,
+      53,
+      54,
+      55
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      56
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      56,
+      57,
+      58,
+      59
+     ],
+     [
+      60,
+      61,
+      62,
+      63
+     ],
+     [
+      56,
+      57,
+      58,
+      59
+     ],
+     [
+      60,
+      61,
+      62,
+      63
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_window_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      64
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_window@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      64,
+      65,
+      66,
+      67
+     ],
+     [
+      68,
+      69,
+      70,
+      71
+     ],
+     [
+      64,
+      65,
+      66,
+      67
+     ],
+     [
+      68,
+      69,
+      70,
+      71
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_doorway_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      72
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_doorway@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      72,
+      73,
+      74,
+      75
+     ],
+     [
+      76,
+      77,
+      78,
+      79
+     ],
+     [
+      72,
+      73,
+      74,
+      75
+     ],
+     [
+      76,
+      77,
+      78,
+      79
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_low_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      80
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_low@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      80,
+      81,
+      82,
+      83
+     ],
+     [
+      84,
+      85,
+      86,
+      87
+     ],
+     [
+      80,
+      81,
+      82,
+      83
+     ],
+     [
+      84,
+      85,
+      86,
+      87
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_arched_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      88
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_arched@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      88,
+      89,
+      90,
+      91
+     ],
+     [
+      92,
+      93,
+      94,
+      95
+     ],
+     [
+      88,
+      89,
+      90,
+      91
+     ],
+     [
+      92,
+      93,
+      94,
+      95
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_fortified_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      96
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_fortified@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      96,
+      97,
+      98,
+      99
+     ],
+     [
+      100,
+      101,
+      102,
+      103
+     ],
+     [
+      96,
+      97,
+      98,
+      99
+     ],
+     [
+      100,
+      101,
+      102,
+      103
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_floor_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      104
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      104,
+      105,
+      106,
+      107
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_floor_hatch_frame_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      108
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor_hatch_frame@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      108,
+      109,
+      110,
+      111
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_floor_stairwell_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      112
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor_stairwell@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      112,
+      113,
+      114,
+      115
+     ],
+     [
+      116,
+      117,
+      118,
+      119
+     ],
+     [
+      112,
+      113,
+      114,
+      115
+     ],
+     [
+      116,
+      117,
+      118,
+      119
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_floor_skylight_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      120
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor_skylight@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      120,
+      121,
+      122,
+      123
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_floor_triangle_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      124
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor_triangle@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      124,
+      125,
+      126,
+      127
+     ],
+     [
+      128,
+      129,
+      130,
+      131
+     ],
+     [
+      132,
+      133,
+      134,
+      135
+     ],
+     [
+      136,
+      137,
+      138,
+      139
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_corner_outer_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      140
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_corner_outer@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      140,
+      141,
+      142,
+      143
+     ],
+     [
+      144,
+      145,
+      146,
+      147
+     ],
+     [
+      148,
+      149,
+      150,
+      151
+     ],
+     [
+      152,
+      153,
+      154,
+      155
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_corner_inner_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      156
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_corner_inner@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      156,
+      157,
+      158,
+      159
+     ],
+     [
+      160,
+      161,
+      162,
+      163
+     ],
+     [
+      164,
+      165,
+      166,
+      167
+     ],
+     [
+      168,
+      169,
+      170,
+      171
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_pillar_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      172
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "pillar@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      172,
+      173,
+      174,
+      175
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_wall_corner_angled_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      176
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_corner_angled@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      176,
+      177,
+      178,
+      179
+     ],
+     [
+      180,
+      181,
+      182,
+      183
+     ],
+     [
+      184,
+      185,
+      186,
+      187
+     ],
+     [
+      188,
+      189,
+      190,
+      191
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_flat_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      192
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_flat@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      192,
+      193,
+      194,
+      195
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_roof_slope_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      196
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_slope@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      196,
+      197,
+      198,
+      199
+     ],
+     [
+      200,
+      201,
+      202,
+      203
+     ],
+     [
+      204,
+      205,
+      206,
+      207
+     ],
+     [
+      208,
+      209,
+      210,
+      211
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_gable_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      212
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_gable@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      212,
+      213,
+      214,
+      215
+     ],
+     [
+      216,
+      217,
+      218,
+      219
+     ],
+     [
+      212,
+      213,
+      214,
+      215
+     ],
+     [
+      216,
+      217,
+      218,
+      219
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_hip_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      220
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_hip@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      220,
+      221,
+      222,
+      223
+     ],
+     [
+      224,
+      225,
+      226,
+      227
+     ],
+     [
+      228,
+      229,
+      230,
+      231
+     ],
+     [
+      232,
+      233,
+      234,
+      235
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_corner_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      236
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_corner@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      236,
+      237,
+      238,
+      239
+     ],
+     [
+      240,
+      241,
+      242,
+      243
+     ],
+     [
+      244,
+      245,
+      246,
+      247
+     ],
+     [
+      248,
+      249,
+      250,
+      251
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_chimney_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      252
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_chimney@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      252,
+      253,
+      254,
+      255
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror",
+   "attach": {
+    "smoke": {
+     "x": 0.0,
+     "y": -46.0
+    }
+   }
+  },
+  {
+   "key": "bld_wall_corner_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      140
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_corner@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      140,
+      141,
+      142,
+      143
+     ],
+     [
+      144,
+      145,
+      146,
+      147
+     ],
+     [
+      148,
+      149,
+      150,
+      151
+     ],
+     [
+      152,
+      153,
+      154,
+      155
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_ridge_t3",
+   "category": "building",
+   "atlas": "building_t3",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      212
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_ridge@tier3",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      212,
+      213,
+      214,
+      215
+     ],
+     [
+      216,
+      217,
+      218,
+      219
+     ],
+     [
+      212,
+      213,
+      214,
+      215
+     ],
+     [
+      216,
+      217,
+      218,
+      219
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_foundation_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "foundation@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      0,
+      1,
+      2,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_foundation_triangle_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "foundation_triangle@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      4,
+      5,
+      6,
+      7
+     ],
+     [
+      8,
+      9,
+      10,
+      11
+     ],
+     [
+      12,
+      13,
+      14,
+      15
+     ],
+     [
+      16,
+      17,
+      18,
+      19
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_foundation_steps_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      20
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "foundation_steps@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      20,
+      21,
+      22,
+      23
+     ],
+     [
+      24,
+      25,
+      26,
+      27
+     ],
+     [
+      28,
+      29,
+      30,
+      31
+     ],
+     [
+      32,
+      33,
+      34,
+      35
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_foundation_stilt_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      36
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "foundation_stilt@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      36,
+      37,
+      38,
+      39
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_foundation_ramp_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      40
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "foundation_ramp@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      40,
+      41,
+      42,
+      43
+     ],
+     [
+      44,
+      45,
+      46,
+      47
+     ],
+     [
+      48,
+      49,
+      50,
+      51
+     ],
+     [
+      52,
+      53,
+      54,
+      55
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      56
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      56,
+      57,
+      58,
+      59
+     ],
+     [
+      60,
+      61,
+      62,
+      63
+     ],
+     [
+      56,
+      57,
+      58,
+      59
+     ],
+     [
+      60,
+      61,
+      62,
+      63
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_window_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      64
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_window@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      64,
+      65,
+      66,
+      67
+     ],
+     [
+      68,
+      69,
+      70,
+      71
+     ],
+     [
+      64,
+      65,
+      66,
+      67
+     ],
+     [
+      68,
+      69,
+      70,
+      71
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_doorway_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      72
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_doorway@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      72,
+      73,
+      74,
+      75
+     ],
+     [
+      76,
+      77,
+      78,
+      79
+     ],
+     [
+      72,
+      73,
+      74,
+      75
+     ],
+     [
+      76,
+      77,
+      78,
+      79
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_low_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      80
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_low@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      80,
+      81,
+      82,
+      83
+     ],
+     [
+      84,
+      85,
+      86,
+      87
+     ],
+     [
+      80,
+      81,
+      82,
+      83
+     ],
+     [
+      84,
+      85,
+      86,
+      87
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_arched_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      88
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_arched@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      88,
+      89,
+      90,
+      91
+     ],
+     [
+      92,
+      93,
+      94,
+      95
+     ],
+     [
+      88,
+      89,
+      90,
+      91
+     ],
+     [
+      92,
+      93,
+      94,
+      95
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_fortified_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      96
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_fortified@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      96,
+      97,
+      98,
+      99
+     ],
+     [
+      100,
+      101,
+      102,
+      103
+     ],
+     [
+      96,
+      97,
+      98,
+      99
+     ],
+     [
+      100,
+      101,
+      102,
+      103
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_floor_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      104
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      104,
+      105,
+      106,
+      107
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_floor_hatch_frame_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      108
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor_hatch_frame@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      108,
+      109,
+      110,
+      111
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_floor_stairwell_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      112
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor_stairwell@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      112,
+      113,
+      114,
+      115
+     ],
+     [
+      116,
+      117,
+      118,
+      119
+     ],
+     [
+      112,
+      113,
+      114,
+      115
+     ],
+     [
+      116,
+      117,
+      118,
+      119
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_floor_skylight_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      120
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor_skylight@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      120,
+      121,
+      122,
+      123
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_floor_triangle_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      124
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor_triangle@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      124,
+      125,
+      126,
+      127
+     ],
+     [
+      128,
+      129,
+      130,
+      131
+     ],
+     [
+      132,
+      133,
+      134,
+      135
+     ],
+     [
+      136,
+      137,
+      138,
+      139
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_corner_outer_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      140
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_corner_outer@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      140,
+      141,
+      142,
+      143
+     ],
+     [
+      144,
+      145,
+      146,
+      147
+     ],
+     [
+      148,
+      149,
+      150,
+      151
+     ],
+     [
+      152,
+      153,
+      154,
+      155
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_wall_corner_inner_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      156
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_corner_inner@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      156,
+      157,
+      158,
+      159
+     ],
+     [
+      160,
+      161,
+      162,
+      163
+     ],
+     [
+      164,
+      165,
+      166,
+      167
+     ],
+     [
+      168,
+      169,
+      170,
+      171
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_pillar_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      172
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "pillar@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      172,
+      173,
+      174,
+      175
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_wall_corner_angled_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      176
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_corner_angled@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      176,
+      177,
+      178,
+      179
+     ],
+     [
+      180,
+      181,
+      182,
+      183
+     ],
+     [
+      184,
+      185,
+      186,
+      187
+     ],
+     [
+      188,
+      189,
+      190,
+      191
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_flat_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      192
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_flat@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      192,
+      193,
+      194,
+      195
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "bld_roof_slope_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      196
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_slope@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      196,
+      197,
+      198,
+      199
+     ],
+     [
+      200,
+      201,
+      202,
+      203
+     ],
+     [
+      204,
+      205,
+      206,
+      207
+     ],
+     [
+      208,
+      209,
+      210,
+      211
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_gable_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      212
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_gable@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      212,
+      213,
+      214,
+      215
+     ],
+     [
+      216,
+      217,
+      218,
+      219
+     ],
+     [
+      212,
+      213,
+      214,
+      215
+     ],
+     [
+      216,
+      217,
+      218,
+      219
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_hip_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      220
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_hip@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      220,
+      221,
+      222,
+      223
+     ],
+     [
+      224,
+      225,
+      226,
+      227
+     ],
+     [
+      228,
+      229,
+      230,
+      231
+     ],
+     [
+      232,
+      233,
+      234,
+      235
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_corner_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      236
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_corner@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      236,
+      237,
+      238,
+      239
+     ],
+     [
+      240,
+      241,
+      242,
+      243
+     ],
+     [
+      244,
+      245,
+      246,
+      247
+     ],
+     [
+      248,
+      249,
+      250,
+      251
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_chimney_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      252
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_chimney@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      252,
+      253,
+      254,
+      255
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror",
+   "attach": {
+    "smoke": {
+     "x": 0.0,
+     "y": -46.0
+    }
+   }
+  },
+  {
+   "key": "bld_wall_corner_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      140
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_corner@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 1,
+    "frames": [
+     [
+      140,
+      141,
+      142,
+      143
+     ],
+     [
+      144,
+      145,
+      146,
+      147
+     ],
+     [
+      148,
+      149,
+      150,
+      151
+     ],
+     [
+      152,
+      153,
+      154,
+      155
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "bld_roof_ridge_t4",
+   "category": "building",
+   "atlas": "building_t4",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      212
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "roof_ridge@tier4",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 0,
+    "frames": [
+     [
+      212,
+      213,
+      214,
+      215
+     ],
+     [
+      216,
+      217,
+      218,
+      219
+     ],
+     [
+      212,
+      213,
+      214,
+      215
+     ],
+     [
+      216,
+      217,
+      218,
+      219
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  }
+ ]
+}
