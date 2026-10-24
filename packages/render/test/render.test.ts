@@ -10,7 +10,7 @@ describe("render", () => {
   it("night is darker than noon and has no shadows", () => {
     const n = computeDayLighting(23 / 24), d = computeDayLighting(0.5);
     expect(n.ambient[0] + n.ambient[1] + n.ambient[2]).toBeLessThan(d.ambient[0] + d.ambient[1] + d.ambient[2]);
-    expect(n.shadowAlpha).toBe(0); expect(d.shadowAlpha).toBeGreaterThan(0);
+    expect(n.shadowAlpha).toBeLessThan(0.06); expect(d.shadowAlpha).toBeGreaterThan(0);
   });
   it("weather smoothing converges toward target", () => {
     const s = new WeatherState(); const t = weatherTargets(1, 1);

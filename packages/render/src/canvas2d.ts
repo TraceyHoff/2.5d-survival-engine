@@ -13,8 +13,9 @@ import type { AssetRegistry } from "@engine/assets";
 import { IsoCamera } from "./camera.js";
 import { Sprite, LightSource } from "./components.js";
 import { STATE_ANIMS, type AtlasSource } from "./assets/atlasManager.js";
-import { computeDayLighting } from "./timeOfDay.js";
-import { readDayFraction } from "./env.js";
+import { computeDayLighting, dimForWeather } from "./timeOfDay.js";
+import { weatherTargets } from "./weather.js";
+import { readDayFraction, readDayNumber, readWeather } from "./env.js";
 import { newStats, type FrameStats } from "./gl/util.js";
 import type { GameplayBindings } from "./sprites.js";
 
@@ -80,7 +81,8 @@ export class Canvas2DRenderer {
 
   render(world: World, alpha: number): void {
     const g = this.ctx, cam = this.camera, s = cam.scale; const stats = (this.stats = newStats());
-    const time = (performance.now() - this.t0) / 1000; const day = computeDayLighting(readDayFraction(world));
+    const time = (performance.now() - this.t0) / 1000; const wr = readWeather(world), wt = weatherTargets(wr.kind, wr.intensity); // ADR-115: same curve + weather dimming as WebGL2 (no smoothing state: cheap)
+    const day = dimForWeather(computeDayLighting(readDayFraction(world), readDayNumber(world)), { overcast: Math.max(wt.rain, wt.fog, wt.snow * 0.7), storm: wt.storm });
     g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = "source-over"; g.globalAlpha = 1;
     g.fillStyle = rgb(day.sky); g.fillRect(0, 0, this.w, this.h);
     g.setTransform(s, 0, 0, s, this.w / 2 - cam.x * s, this.h / 2 - cam.y * s); g.imageSmoothingEnabled = s < 1;

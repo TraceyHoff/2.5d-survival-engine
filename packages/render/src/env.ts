@@ -19,6 +19,12 @@ export function readDayFraction(world: World): number {
   return timeOfDay(world).t;
 }
 
+/** Whole days since the epoch (moon phase); 0 without a time source. */
+export function readDayNumber(world: World): number {
+  if (!hasEnv(world, TimeOfDay) || !(world.env(TimeOfDay).dayLengthTicks > 0)) return 0;
+  return timeOfDay(world).day;
+}
+
 /** Weather kind (gameplay-defined u8) + intensity 0..1; clear when absent. */
 export function readWeather(world: World): { kind: number; intensity: number } {
   if (!hasEnv(world, Weather)) return { kind: 0, intensity: 0 };
