@@ -34,9 +34,10 @@ export const CLAN_COMMANDS = [ClanCreateCmd, ClanInviteCmd, ClanAcceptCmd, ClanL
 export const CLAN_ENTITY_FIELDS: Readonly<Record<string, readonly string[]>> = { [ClanInviteCmd.name]: ["target"], [ClanPromoteCmd.name]: ["target"], [ClanDemoteCmd.name]: ["target"], [ClanKickCmd.name]: ["target"] };
 /** Appended to the server reason list after PARTY_REJECT_REASONS (shared ones like no_player/self/outranked reuse those codes). */
 export const CLAN_REJECT_REASONS = ["in_clan", "not_in_clan", "no_permission", "clan_full", "not_leader", "bad_role", "max_rank", "min_rank", "bad_goal"] as const;
-/** goalBound: |x|,|y| limit for clan goal coordinates (the procedural world has no edge; this is the playable range). */
-export const CLAN_RULES = { maxSize: 20, inviteTicks: 20 * 120, goalBound: 32768 };
-export const clanGoalCoordOk = (v: number): boolean => Number.isFinite(v) && Math.abs(v) <= CLAN_RULES.goalBound;
+export const CLAN_RULES = { maxSize: 20, inviteTicks: 20 * 120 };
+const F32_MAX = 3.4028234663852886e38;
+/** Goal coordinates: any finite f32 (the wire type); NaN / Infinity are rejected. */
+export const clanGoalCoordOk = (v: number): boolean => Number.isFinite(v) && Math.abs(v) <= F32_MAX;
 
 export interface ClanInvite { clan: number; from: number; expiresTick: number }
 export const ClanInvites = defineResource<Map<number, ClanInvite[]>>("gameplay.ClanInvites");

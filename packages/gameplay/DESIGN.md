@@ -486,7 +486,7 @@ Gameplay owns data, not loops: there is **no spawn loop and no controller** here
 - Base permissions: `syncSocialMembership` sets `Tribe = clan id` when the rank has `base`, so building privileges and door locks use the clan. It only clears a Tribe it set itself.
 - **Disband rule (approved):** clan stalls and tills go to the leader (Player owner) and **close**. `OwnedBy.groupId=clan` becomes `playerId=leader`. Claims owned by the clan are removed. Pending invites are dropped. The leader keeps the Tribe.
 - Networked state: `ClanStatus{clan,role,goal,goalX,goalY,contrib}` (scoped: only the owner and same-clan viewers receive it, since it carries the goal and raid target) and `ClanInvitePending` (owner scope), so bots on replicas can read them. Contribution counts items stocked into clan stalls.
-- Persistence: the groups persist through core `social`. Rank masks, goals and contribution go in the server blob `gameplay.clans` (format 1), written on change. Goal coordinates must be finite and within `CLAN_RULES.goalBound` (32768), else `bad_goal`. `apps/server/test/clan_persist.test.ts` checks that clan and party membership, the goal and ClanStatus survive a save and reload.
+- Persistence: the groups persist through core `social`. Rank masks, goals and contribution go in the server blob `gameplay.clans` (format 1), written on change. Goal coordinates must be finite f32 values (NaN / Infinity give `bad_goal`); there is no range limit. `apps/server/test/clan_persist.test.ts` checks that clan and party membership, the goal and ClanStatus survive a save and reload.
 
 ## 29. Clan behaviors (`src/ai/clan_behaviors.ts`)
 
