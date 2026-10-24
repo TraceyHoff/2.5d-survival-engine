@@ -49,3 +49,30 @@ export function decayAt(createdTick: number, rate: number, tick: number, opts: {
 export function decayReachesAt(createdTick: number, rate: number, threshold = 0, initial = 1): number {
   return rate <= 0 ? Infinity : createdTick + Math.ceil((initial - threshold) / rate);
 }
+
+// ---- ADR-115: shared, smoothed day clock ------------------------------------------------------------------
+/** Day fraction [0,1) at a (fractional) authoritative server tick. Pure: same inputs give the same answer on every peer. */
+export function dayFractionAt(serverTick: number, epochTick: number, dayLengthTicks: number): number {
+  if (!(dayLengthTicks > 0)) return 0.5;
+  const f = (serverTick - epochTick) / dayLengthTicks; return f - Math.floor(f);
+}
+/**
+ * Client-side smoother for the day fraction. Targets dayFractionAt(serverTickEstimate + frame alpha) each frame,
+ * advances at the natural day rate between samples (extrapolation), and folds any error (wrap-aware) in over
+ * `blendSec` instead of snapping (reconnect, epoch changes from sleep/admin). The very first sample is taken as-is:
+ * nothing was shown before it, so join never visibly jumps. Keep one instance across reconnects.
+ */
+export class DayClock {
+  private t: number | undefined;
+  constructor(readonly blendSec = 2) {}
+  get value(): number | undefined { return this.t; }
+  update(target: number, dtSec: number, dayLengthSec: number): number {
+    if (this.t === undefined || !Number.isFinite(this.t)) return (this.t = target);
+    const dt = Math.max(0, Math.min(1, dtSec));
+    let t = this.t + (dayLengthSec > 0 ? dt / dayLengthSec : 0);
+    let err = target - t; err -= Math.round(err); // shortest way round the wrap
+    t += Math.abs(err) < 1e-7 ? err : err * Math.min(1, dt / this.blendSec * 3); // ~95% in blendSec
+    return (this.t = t - Math.floor(t));
+  }
+  reset(): void { this.t = undefined; }
+}

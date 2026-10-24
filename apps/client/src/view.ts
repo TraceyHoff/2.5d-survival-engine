@@ -12,6 +12,8 @@ import { showRenderError, glInfo, frameIsBlack } from "./glcheck.js";
  */
 import { World, Transform, PrevTransform, TimeOfDay, Weather, Appearance, PlayerId, defineComponent, entityIndex, type Entity } from "@engine/core";
 import { CHUNK_SIZE, tileToChunk, tileToLocal, type TileMap } from "@engine/world";
+import { setDayFraction } from "@engine/render";
+import { pieceVariantOpts } from "./piece-variant.js";
 import { loadManifest, mergeManifests, buildPieceVisual, type AssetRegistry, type ManifestFragment, type ManifestJson } from "@engine/assets";
 import { BuildGhost, pieceArtRow, ROT_EXACT_PIVOT, IsoRenderer, Canvas2DRenderer, chooseRenderer, Sprite, Shadow, LightSource, Occluder, SpriteFlag, sourcesFromManifest, coreAppearanceBinding, CameraTargetGuard } from "@engine/render";
 import { gameplayDefs, rotationSteps, animalDefs, Animal, Health, Survival, Zombie, ResourceNode, CraftingStation, Fuel, AnimState as GAnim, BuildPiece as GPiece, Dead, Wetness, BodyTemp, Emitter, PieceLink, Crop, cropSpriteKey, clutterForChunk, resolveSprite, type ResolvedSprite } from "@engine/gameplay";
@@ -150,12 +152,16 @@ export class IsoView {
     return r;
   }
   /** Mirror `net` into the view World and draw. */
-  render(net: World, tiles: TileMap | undefined, player: Entity | undefined, alpha: number): void {
+  /** `dayFrac`: the shared smoothed day clock (day-clock.ts, server-tick driven); falls back to net's tick-derived time. */
+  render(net: World, tiles: TileMap | undefined, player: Entity | undefined, alpha: number, dayFrac?: number): void {
     const v = this.view, r = this.renderer;
     r.tilemap = tiles;
     v.tick = net.tick;
-    const td = v.env(TimeOfDay), nt = net.env(TimeOfDay); td.dayLengthTicks = nt.dayLengthTicks || 72000; // fallback = 3600 s day @ 20 Hz (ADR-106) td.epochTick = nt.epochTick;
-    if (this.ov.hours !== undefined) td.epochTick = Math.round(v.tick - (this.ov.hours / 24) * td.dayLengthTicks);
+    const td = v.env(TimeOfDay), nt = net.env(TimeOfDay); td.dayLengthTicks = nt.dayLengthTicks || 72000; // fallback = 3600 s day @ 20 Hz (ADR-106)
+    // ADR-115: never re-derive time from the view's own tick (that desynced peers); draw the shared server-tick clock.
+    const frac = this.ov.hours !== undefined ? this.ov.hours / 24 : dayFrac;
+    td.epochTick = frac !== undefined ? Math.round(v.tick - frac * td.dayLengthTicks) : nt.epochTick;
+    setDayFraction(v, frac);
     const w = v.env(Weather), nw = net.env(Weather) as unknown as Record<string, number>;
     for (const k of Object.keys(w)) (w as unknown as Record<string, number>)[k] = nw[k] ?? 0;
     if (this.ov.weather !== undefined) { w.kind = this.ov.weather; w.intensity = this.ov.intensity ?? 1; }
@@ -319,7 +325,7 @@ export class IsoView {
     if ((net.tick + entityIndex(e)) % 15 !== 0 && this.pieceStates.has(ve)) return; // cheap: lit flips are rare
     const fire = this.siblings(net, e).find((o) => net.has(o, Fuel)); const lit = fire !== undefined && net.get(fire, Fuel)!.lit === 1;
     const p = net.get(e, GPiece)!;
-    const vis = buildPieceVisual(this.registry, { type: p.type, ...artRot(p.rot, rotationSteps(net, p.type)), tint: p.tint, paint: p.paint, state: lit ? "idle" : "unlit" }, { pieceKey: (t) => this.pk(defs?.pieces.get(t)?.key) });
+    const vis = buildPieceVisual(this.registry, { type: p.type, ...artRot(p.rot, rotationSteps(net, p.type)), tint: p.tint, paint: p.paint, state: lit ? "idle" : "unlit" }, { pieceKey: (t) => this.pk(defs?.pieces.get(t)?.key), ...pieceVariantOpts(defs?.pieces.get(p.type)?.variantNames, p.variant) });
     this.pieceStates.set(ve, vis.stateIndex);
   }
   private baseScale(ve: Entity): number { return this.scales.get(ve) ?? 1; }
@@ -369,7 +375,7 @@ export class IsoView {
     }
     if (net.has(e, GPiece) && defs) {
       const p = net.get(e, GPiece)!; const def = defs.pieces.get(p.type);
-      const vis = buildPieceVisual(this.registry, { type: p.type, ...artRot(p.rot, rotationSteps(net, p.type)), tint: p.tint, paint: p.paint, damageStage: p.damageStage }, { tier: p.tier, pieceKey: (t) => this.pk(defs.pieces.get(t)?.key) });
+      const vis = buildPieceVisual(this.registry, { type: p.type, ...artRot(p.rot, rotationSteps(net, p.type)), tint: p.tint, paint: p.paint, damageStage: p.damageStage }, { tier: p.tier, pieceKey: (t) => this.pk(defs.pieces.get(t)?.key), ...pieceVariantOpts(def?.variantNames, p.variant) });
       if (!vis.visualId) return undefined;
       const lh = (defs as unknown as { building?: { levelHeight?: number } }).building?.levelHeight ?? 1;
       const z = net.get(e, Transform)!.z; const level = Math.max(0, Math.round(z / (lh || 1)));

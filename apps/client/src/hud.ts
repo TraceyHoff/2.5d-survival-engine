@@ -5,7 +5,8 @@
  * so it never eats taps meant for the touch controls, which live in the lower half / right edge.
  */
 import { mountUi } from "./ui-root.js";
-import { Weather, timeOfDay, type Entity, type World } from "@engine/core";
+import { Weather, type Entity, type World } from "@engine/core";
+import { dayHours } from "./day-clock.js";
 import { Health, Survival } from "@engine/gameplay";
 
 const WEATHER_LABEL = ["Clear", "Rain", "Storm", "Snow", "Fog"];
@@ -77,7 +78,7 @@ border:2px solid #74432C;border-radius:10px;box-shadow:0 2px 0 #432C24;padding:4
   const update = (): void => {
     const w = world(); const p = player();
     try {
-      const h = ov.hours ?? timeOfDay(w).hours; const hh = Math.floor(h), mm = Math.floor((h - hh) * 60);
+      const h = ov.hours ?? dayHours(); const hh = Math.floor(h), mm = Math.floor((h - hh) * 60);
       const wk = ov.weather ?? w.env(Weather).kind;
       clockText.textContent = `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}${ov.hours !== undefined ? "*" : ""}`;
       weatherText.textContent = `${WEATHER_LABEL[wk] ?? "?"}${ov.weather !== undefined ? "*" : ""}`;

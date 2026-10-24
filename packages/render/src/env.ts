@@ -9,8 +9,12 @@ function hasEnv(world: World, def: ComponentDef): boolean {
   return world.isAlive(world.environment) && world.has(world.environment, def);
 }
 
+/** ADR-115: a host-supplied smoothed day fraction (client DayClock on the server tick) wins over the tick-derived one. */
+const dayOverride = new WeakMap<World, number>();
+export function setDayFraction(world: World, t: number | undefined): void { if (t === undefined) dayOverride.delete(world); else dayOverride.set(world, t - Math.floor(t)); }
 /** Fraction of day in [0,1); 0.5 (noon) when the world has no (initialised) time source. */
 export function readDayFraction(world: World): number {
+  const o = dayOverride.get(world); if (o !== undefined) return o;
   if (!hasEnv(world, TimeOfDay) || !(world.env(TimeOfDay).dayLengthTicks > 0)) return 0.5;
   return timeOfDay(world).t;
 }

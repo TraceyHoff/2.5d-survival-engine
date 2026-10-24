@@ -30,6 +30,7 @@ import { controlLabel, mountFarmPrompt, quickUseFires, type PromptDevice } from 
 import { attachContextRecovery, effectiveLevel, retryIsoAtSafe } from "./gl-recovery.js";
 import { BootUI, loadSettings } from "./menu.js";
 import { EDIT_CHAR_KEY, loadCharacter, previewModeFromQuery, saveCharacter, showCharacterCreator, type CharacterSaveKind, type StoredCharacter } from "./character-creator.js";
+import { sampleDayClock } from "./day-clock.js";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 /** Everything (canvas, HUD, touch overlay, menu bar, modals) lives in this root; fullscreen targets it (ADR-095). */
@@ -170,11 +171,12 @@ export const MENU_REFRESH_MS = LOW_END ? 500 : 250;
 let menuRefreshAt = 0;
 function render(w: World, alpha: number): void {
   wireChat();
+  const dayFrac = sampleDayClock(w, session.client, alpha); // ADR-115: one clock for lighting + HUD
   if (menus?.nav.isOpen) { const now = performance.now(); if (now >= menuRefreshAt) { menuRefreshAt = now + MENU_REFRESH_MS; menus.refresh(); } }
   iso?.syncGhost(buildMode.preview, w);
   if (iso) {
     iso.status = { localServer: spStatus?.state ?? (session.client ? "n/a (remote)" : "idle"), snapshots: session.client?.stats.snapshots ?? 0, ...(spStatus?.error ? { error: spStatus.error } : {}) };
-    iso.render(w, session.client?.tiles.tiles, session.player, alpha); diag?.afterRender(); return;
+    iso.render(w, session.client?.tiles.tiles, session.player, alpha, dayFrac); diag?.afterRender(); return;
   }
   if (!ctx) return;
   const canvas = debugCanvas;
