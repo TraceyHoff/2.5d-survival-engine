@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
  */
 const here = fileURLToPath(new URL(".", import.meta.url));
 const MOUNTS: Record<string, string> = { "/@assets/": join(here, "../assets"), "/@art/": process.env.ART_DIR ?? join(here, "../../assets") };
-const TYPES: Record<string, string> = { ".json": "application/json", ".png": "image/png", ".webp": "image/webp" };
+const TYPES: Record<string, string> = { ".json": "application/json", ".png": "image/png", ".webp": "image/webp", ".ktx2": "image/ktx2" };
 const serve: Connect.NextHandleFunction = (req, res, next) => {
   const url = decodeURIComponent((req.url ?? "").split("?")[0]!);
   for (const [prefix, dir] of Object.entries(MOUNTS)) {

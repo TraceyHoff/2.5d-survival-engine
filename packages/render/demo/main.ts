@@ -132,6 +132,7 @@ async function main(): Promise<void> {
       }
       if (veh) { const n = performance.now(); const vr = renderer.camera.visibleRect(96); const iso = renderer.camera.iso; const hw = iso.tileW / 2, hh = iso.tileH / 2;
         veh.frame(1 - (renderer.lighting?.daylight ?? 1), Math.min(0.1, (n - vehLast) / 1000), (x, y) => { const sx = (x - y) * hw, sy = (x + y) * hh; return sx >= vr.x0 && sx <= vr.x1 && sy >= vr.y0 && sy <= vr.y1; }); vehLast = n; }
+      if (veh) renderer.setInterior(veh.view.interiors, veh.view.interiorIds, veh.view.interiorWall);
       renderer.render(w, ui && !ui.interpolate ? 1 : alpha);
     },
   });

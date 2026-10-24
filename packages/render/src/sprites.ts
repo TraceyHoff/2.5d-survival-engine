@@ -23,6 +23,7 @@ import type { VfxLayer } from "./vfx.js";
 import { LayerCache, activeExpression, readAppearanceSlot, type AppearanceBinding, type CachedLayer } from "./character/layers.js";
 import { nearestCutoff } from "./gl/fallback.js";
 import { PRIO_NEAR } from "./gl/vram.js";
+import { InteriorRoute, inInteriorRegion, interiorOrder, type InteriorRegion } from "./vehicles/interiorPass.js";
 
 export const INSTANCE_FLOATS = 36;
 /** Depth offset of held items vs the body (must exceed depth-key precision; < the next tile row). */
@@ -366,6 +367,7 @@ export class SpriteBatch {
     const tmp = new Float32Array(c * INSTANCE_FLOATS); tmp.set(this.tmp.subarray(0, Math.min(this.tmp.length, tmp.length)));
     const keys = new Uint32Array(c); keys.set(this.sortKeys.subarray(0, Math.min(this.sortKeys.length, c)));
     this.capacity = c; this.tmp = tmp; this.sortKeys = keys; this.inst = new Float32Array(c * INSTANCE_FLOATS);
+    const rt = new Uint8Array(c); rt.set(this.route.subarray(0, Math.min(this.route.length, c))); this.route = rt;
   }
 
   /** Append one dynamic instance. */
@@ -373,6 +375,18 @@ export class SpriteBatch {
    * Faded occluders (fade mode, occlusion > 0.5) go to a separate late batch drawn after the focus silhouette with
    * depth writes off, so the silhouette only shows behind occluders that are still opaque.
    */
+  // ---- camper interior pass (interiorPass.ts): floor -> occupants -> cutaway walls, drawn after the world, depth test off ----
+  /** Interior regions active this frame (vehicles whose cutaway is open for the local player); set by the renderer. */
+  interiorRegions: InteriorRegion[] = [];
+  /** Sprite ids routed as interior floor (the vehicle's _int cutaway segments). */
+  interiorFloorIds = new Set<number>();
+  /** Art wall piece (camper_interior_wall) placed along the long sides; -1 = none. */
+  interiorWallSprite = -1;
+  /** Near walls dropped instead of faded. */
+  interiorCut = false;
+  private route = new Uint8Array(0); private curRoute = 0;
+  private intBuf = new Float32Array(0); private intCount = 0; private intVbo: WebGLBuffer | null = null; private intVao: WebGLVertexArrayObject | null = null;
+  private intKeys: number[] = []; private intRoutes: number[] = []; private intIdx: number[] = [];
   private late: number[] = []; private lateVbo: WebGLBuffer | null = null; private lateVao: WebGLVertexArrayObject | null = null; private lateCount = 0;
   private pushOcc(o: Float32Array | number[], src: number, occT: number, mode: "fade" | "dither"): void {
     if (mode === "fade" && occT > 0.5) { for (let q = 0; q < INSTANCE_FLOATS; q++) this.late.push(o[src + q]!); }
@@ -385,6 +399,7 @@ export class SpriteBatch {
     const key = t[d + 2]!;
     const qd = Math.max(0, Math.min(65535, ((key - this.depthMin) / this.depthRange) * 65535)) | 0;
     this.sortKeys[this.n] = ((qd << 16) | this.n) >>> 0;
+    this.route[this.n] = this.curRoute;
     this.n++;
   }
 
@@ -525,6 +540,8 @@ export class SpriteBatch {
       const sx = (x - y) * hw, sy = (x + y) * hh - z * zs;
       if (sx < r0x || sx > r1x || sy < r0y || sy > r1y) return;
       let sid = sp.data.spriteId[k]!;
+      this.curRoute = 0;
+      for (const rg of this.interiorRegions) if (inInteriorRegion(rg, x, y)) { this.curRoute = this.interiorFloorIds.has(sid) ? InteriorRoute.Floor : InteriorRoute.Occupant; break; }
       atlas.markUsed(sid); // hot/cold tiers: drawn-near-camera atlases stay (or are re-tiered) full res
       // character customization: resolved paper-doll layers (cached); the "body" layer replaces Sprite.spriteId
       let layers: CachedLayer[] | null = null; let bodyL: CachedLayer | null = null;
@@ -638,6 +655,20 @@ export class SpriteBatch {
         for (const e of cx.spatial.index.entitiesInChunk(ck)) { const s = sp.slot(entityIndex(e)); if (s >= 0) emitSprite(s); }
       }
     } else for (let k = 0; k < sp.size; k++) emitSprite(k);
+    this.curRoute = 0;
+    // interior cutaway walls: Art wall pieces along both long sides of each open interior
+    if (this.interiorWallSprite >= 0 && this.interiorRegions.length && atlas.resolve(this.interiorWallSprite, -1, 0, 0, 0, res)) {
+      this.curRoute = InteriorRoute.Wall;
+      for (const rg of this.interiorRegions) {
+        const c = Math.cos(rg.heading), sn = Math.sin(rg.heading), nSeg = Math.max(1, Math.round(rg.length));
+        for (const side of [-1, 1]) for (let j = 0; j < nSeg; j++) {
+          const u = -rg.length / 2 + (j + 0.5) * (rg.length / nSeg), v = side * rg.width / 2;
+          const x = rg.cx + u * c - v * sn, y = rg.cy + u * sn + v * c;
+          this.push(this.writeOne((x - y) * hw, (x + y) * hh, x + y, 1, res, SpriteFlag.NoOutline | (side > 0 ? SpriteFlag.FlipX : 0), 0, 1, -OPEN, OPEN, 0, 0, 0, 0, 0, 0), 0);
+        }
+      }
+      this.curRoute = 0;
+    }
 
     // ---- VFX (render-side, short-lived) ----
     if (cx.vfx) for (const v of cx.vfx.active) {
@@ -656,12 +687,30 @@ export class SpriteBatch {
 
     // ---- sort ----
     const n = this.n; const sorted = this.sortKeys.subarray(0, n); sorted.sort();
-    const inst = this.inst, tmp = this.tmp;
+    const inst = this.inst, tmp = this.tmp, route = this.route;
+    const ik = this.intKeys, ir = this.intRoutes, ix = this.intIdx; ik.length = ir.length = ix.length = 0;
+    let m = 0;
     for (let j = 0; j < n; j++) {
-      const src = (sorted[j]! & 0xffff) * INSTANCE_FLOATS, dst = j * INSTANCE_FLOATS;
+      const si = sorted[j]! & 0xffff, src = si * INSTANCE_FLOATS;
+      if (route[si]) { ix.push(si); ik.push(tmp[src + 2]!); ir.push(route[si]!); continue; }
+      const dst = m * INSTANCE_FLOATS; m++;
       for (let q = 0; q < INSTANCE_FLOATS; q++) inst[dst + q] = tmp[src + q]!;
     }
-    this.visible = n;
+    this.visible = m;
+    // interior pass: floor -> occupants -> walls (near walls faded/cut), drawn after the world so terrain never clips the floor
+    this.intCount = 0;
+    if (ix.length) {
+      const rg = this.interiorRegions[0]; const centre = rg ? rg.cx + rg.cy : -Infinity;
+      const { order, alpha } = interiorOrder(ir, ik, ix.length, this.interiorCut, centre);
+      if (this.intBuf.length < order.length * INSTANCE_FLOATS) this.intBuf = new Float32Array(Math.max(1024, order.length * 2) * INSTANCE_FLOATS);
+      const B = this.intBuf;
+      for (let o = 0; o < order.length; o++) {
+        const k2 = order[o]!, src = ix[k2]! * INSTANCE_FLOATS, dst = o * INSTANCE_FLOATS;
+        for (let q = 0; q < INSTANCE_FLOATS; q++) B[dst + q] = tmp[src + q]!;
+        B[dst + 7] = B[dst + 7]! * alpha[k2]!;
+      }
+      this.intCount = order.length;
+    }
     // late (faded) batch: back-to-front by key
     const L = this.late, lc = L.length / INSTANCE_FLOATS; this.lateCount = lc;
     if (lc > 0) {
@@ -778,6 +827,11 @@ export class SpriteBatch {
   }
 
   upload(): void {
+    if (this.intCount > 0) {
+      const gl = this.gl;
+      if (!this.intVbo) { this.intVbo = gl.createBuffer()!; this.intVao = this.makeVao(this.intVbo); }
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.intVbo); gl.bufferData(gl.ARRAY_BUFFER, this.intBuf.subarray(0, this.intCount * INSTANCE_FLOATS), gl.DYNAMIC_DRAW);
+    }
     if (this.visible === 0) return;
     const gl = this.gl; const bytes = this.visible * INSTANCE_FLOATS * 4;
     gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
@@ -850,15 +904,23 @@ export class SpriteBatch {
 
   draw(pass: "shadow" | "sprite", view: Float32Array, depth: Float32Array, atlas: AtlasManager, time: number, wind: number,
     shadowDir: readonly [number, number], shadowAlpha: number, style: StyleConfig, stats: FrameStats): void {
-    if (this.visible === 0 || !atlas.tex) return;
+    if ((this.visible === 0 && this.intCount === 0) || !atlas.tex) return;
     if (pass === "shadow" && (shadowAlpha <= 0 || style.shadowMode === "none")) return;
     const gl = this.gl; const { u } = this.prog;
     this.setup(pass, u, view, depth, atlas, time, wind, shadowDir, shadowAlpha, style);
-    gl.bindVertexArray(this.vao);
-    gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, this.visible);
+    if (this.visible > 0) {
+      gl.bindVertexArray(this.vao);
+      gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, this.visible);
+      stats.drawCalls++;
+    }
+    if (this.intCount > 0 && this.intVao) {
+      // interior pass in painter's order (floor, occupants, cutaway walls): no depth test so the floor is never clipped
+      const dt = gl.isEnabled(gl.DEPTH_TEST); if (pass === "sprite") gl.disable(gl.DEPTH_TEST);
+      gl.bindVertexArray(this.intVao); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, this.intCount);
+      if (dt) gl.enable(gl.DEPTH_TEST); stats.drawCalls++;
+    }
     gl.bindVertexArray(null);
-    stats.drawCalls++;
-    if (pass === "sprite") stats.sprites = this.visible + this.staticInstances;
+    if (pass === "sprite") stats.sprites = this.visible + this.intCount + this.staticInstances;
   }
 
   /** Faded occluders (late batch): depth-tested, no depth write. Call after drawSilhouette. */

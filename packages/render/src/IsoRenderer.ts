@@ -95,6 +95,10 @@ export class IsoRenderer implements Renderer {
   /** Adaptive quality: Settings preset (Auto/Low/Medium/High, persisted) + frame-time governor (Auto). */
   readonly quality = new QualityController(parsePreset(typeof location !== "undefined" ? new URLSearchParams(location.search).get("quality") : null) ?? loadPreset());
   /** Change the Settings preset (persisted to localStorage); re-lays out the backbuffer at the new resolution scale. */
+  /** Camper interior pass input (VehicleView.interiors / interiorIds / interiorWall): floor -> occupants -> cutaway walls. */
+  setInterior(regions: readonly import("./vehicles/interiorPass.js").InteriorRegion[], floorIds: ReadonlySet<number>, wallSprite = -1, cut = false): void {
+    const s = this.sprites; s.interiorRegions = regions as never; s.interiorFloorIds = floorIds as Set<number>; s.interiorWallSprite = wallSprite; s.interiorCut = cut;
+  }
   setQualityPreset(p: QualityPreset): void { this.quality.setPreset(p); this.applyQuality(); }
   private applyQuality(): void { this.resize(this.lastCss[0], this.lastCss[1], this.lastCss[2]); }
   readonly weatherState = new WeatherState();

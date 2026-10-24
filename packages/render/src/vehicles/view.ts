@@ -21,7 +21,8 @@ import {
   seatAnchors, segmentCount, segmentU, toWorld, trailerPose, depthNudge, type VehicleRenderDef,
 } from "./layout.js";
 import { modelHeight, modelZScale } from "./model.js";
-import { resolveVehicleArt, type VehicleArtBinding, type VehicleArtTable } from "./artPack.js";
+import type { InteriorRegion } from "./interiorPass.js";
+import { ART_INTERIOR, resolveVehicleArt, type VehicleArtBinding, type VehicleArtTable } from "./artPack.js";
 import { PLAYER_HEIGHT_Z } from "./scale.js";
 import { vehicleSpriteKey } from "./atlas.js";
 
@@ -57,6 +58,12 @@ export const VEHICLE_STATE_ENGINE_ON = 1, VEHICLE_STATE_HEADLIGHTS = 2;
 
 export class VehicleView {
   readonly recs = new Map<number, Rec>();
+  /** Open interiors this frame (local player inside) for the sprite interior pass: IsoRenderer.setInterior(view.interiors, view.interiorIds, view.interiorWall). */
+  readonly interiors: InteriorRegion[] = [];
+  /** _int cutaway segment sprite ids (routed as interior floor). */
+  readonly interiorIds = new Set<number>();
+  /** Art camper_interior_wall sprite id (-1 = not in the pack; -2 = not looked up yet). */
+  interiorWall = -2;
   private readonly art: boolean | VehicleArtTable | undefined; private readonly pages: VehiclePages | undefined;
   private frame = 0;
   /** seated rider entity -> its Shadow alpha before seating (restored on exit) */
@@ -72,6 +79,8 @@ export class VehicleView {
 
   sync(list: readonly VehicleSnapshot[], dt: number, o: VehicleViewOpts): RiderPlacement[] {
     const w = this.world; this.frame++; const out: RiderPlacement[] = [];
+    this.interiors.length = 0; this.interiorIds.clear();
+    if (this.interiorWall === -2) this.interiorWall = this.sid(ART_INTERIOR.wall);
     const byKey = new Map(list.map((s) => [s.key, s]));
     // tows first so trailers read the smoothed tow pose (chains: trailer of trailer)
     const order = [...list].sort((a, b) => depthOf(a, byKey) - depthOf(b, byKey));
@@ -87,6 +96,7 @@ export class VehicleView {
       const occ = s.occupants ?? [];
       const inside = hasInterior(s.def) && ((o.localVehicle != null && o.localVehicle === s.key) || (o.localRider !== undefined && o.localRider !== 0 && occ.includes(o.localRider)) || (!!o.localPos && insideFootprint(s.def, x, y, h, o.localPos.x, o.localPos.y, -0.1)));
       r.pose = { x, y, z, heading: h, dir, interior: inside };
+      if (inside) { this.interiors.push({ cx: x, cy: y, heading: dirAngle(dir), length: s.def.footprint.length, width: s.def.footprint.width }); for (const id of r.intIds) if (id >= 0) this.interiorIds.add(id); }
       // segments: positions on the QUANTIZED heading so the pieces line up with the art row
       const n = r.segs.length;
       // Art body: one billboard (8-dir row = heading + art offset), shown once its streamed page is resident; the
