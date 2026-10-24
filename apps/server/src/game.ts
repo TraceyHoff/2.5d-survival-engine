@@ -1,14 +1,14 @@
 /** Authoritative game server: world + gameplay + streaming chunks + persistence + NetServer sessions. */
 import { ChannelRegistry, CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, type CosmeticCatalogLike, Membership, Owner, PlayerId, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
-import { ChunkManager, ProceduralGenerator, chunkKeyOf, type BuildingGrid, type PopulationSpawner } from "@engine/world";
-import { GAMEPLAY_COMMANDS, installPartyCommands, PartyInvitePending, installClanCommands, ClanInvitePending, ClanStatus, syncSocialMembership, clanState, encodeClanState, decodeClanState, loadClanState, queueCommand, spawnPlayer, spawnResourceNode, gameplayDefs, setIntent, IntentAction, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installPopulation, installCustomization,
+import { CHUNK_SIZE, ChunkManager, ProceduralGenerator, chunkKeyOf, type BuildingGrid, type PopulationSpawner } from "@engine/world";
+import { GAMEPLAY_COMMANDS, ARMS_COMMANDS, ARMS_EVENT_RELIABILITY, Exploded, Reloaded, installPartyCommands, PartyInvitePending, installClanCommands, ClanInvitePending, ClanStatus, syncSocialMembership, clanState, encodeClanState, decodeClanState, loadClanState, queueCommand, spawnPlayer, spawnResourceNode, gameplayDefs, setIntent, IntentAction, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installPopulation, installCustomization,
   appearanceServerHooks, applyReplication, installStallBuyHook, installViewBonus, setHitValidator, installPvp, installCraftQueue, installExpressionCommands, installVehicleCommands, requestEmote, CraftQueue, CraftQueuesRes, playerNames, stallListing, listingRevision, stallOf, tillOf, StallHeader, StallOwnerKind } from "@engine/gameplay";
 import { AppearanceServer, ChatServer, NameSync, NetServer, StallResult, StallServer, TileSync, validateHit, type ClientSession, type ServerTransport, type StallHooks } from "@engine/net";
 import { createAgentStore, type AgentIdentityStore } from "./agents.js";
 import { AccountAssigned, ClaimAccount, SetName, WorldPersistence, loadSocial, tokenToHex, tokenToWords, wordsToName, wordsToToken, type WorldStore } from "@engine/persist";
 import { seedStarterCamp, giveRandomAppearance } from "./camp.js";
 import { SocialSync } from "./social_sync.js";
-import { Act, applyMoveInput, installDemoWorld, rejectReasonCode, DevBotHello, DEMO_COMMANDS, DEMO_EVENTS, GAMEPLAY_NET_COMMANDS, Ping, Pong } from "./protocol.js";
+import { Act, applyMoveInput, installDemoWorld, rejectReasonCode, DevBotHello, DEMO_COMMANDS, DEMO_EVENTS, ExplodedEvt, GAMEPLAY_NET_COMMANDS, Ping, Pong, ReloadedEvt } from "./protocol.js";
 
 export const CLAN_BLOB = "gameplay.clans";
 /** ProceduralGenerator node kinds -> gameplay resource keys (see DEFAULT_BANDS comments in @engine/world). */
@@ -184,7 +184,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
   installViewBonus(world, (c, n) => net.setViewRadiusBonus(c, n));
   if (o.catalog) installCustomization(world, { catalog: o.catalog, handlers });
   let cmdSeq = 0;
-  const INPUT_QUEUE = new Set(GAMEPLAY_COMMANDS.map(([d]) => d.name));
+  const INPUT_QUEUE = new Set([...GAMEPLAY_COMMANDS, ...ARMS_COMMANDS].map(([d]) => d.name));
   const netDefOf = new Map<number, (typeof GAMEPLAY_NET_COMMANDS)[number]["net"]>(); // core command type -> net mirror
   for (const { core, net: def } of GAMEPLAY_NET_COMMANDS) {
     if (!o.catalog && (core.name === "gameplay.setAppearance" || core.name === "gameplay.equipCosmetic")) continue; // no catalog: unhandled
@@ -196,6 +196,19 @@ export function createGameServer(o: GameServerOptions): GameServer {
       handlers.enqueue(p.entity, s.clientId, cmdSeq++, { type, values: payload as never });
     });
   }
+  // Arms events -> clients. Exploded: every client whose AOI covers a chunk the blast circle touches. Reloaded: owner only.
+  world.events.on(Exploded, (ev: { entity: Entity; item: number; owner: Entity; x: number; y: number; radius: number }) => {
+    const rel = (ARMS_EVENT_RELIABILITY["gameplay.Exploded"] as string) === "reliable"; const payload = { entity: ev.entity, item: ev.item, owner: ev.owner, x: ev.x, y: ev.y, radius: ev.radius };
+    const clients: number[] = [];
+    for (const cid of net.sessions.keys()) {
+      const chunks = net.relevantChunks(cid); if (!chunks) { clients.push(cid); continue; }
+      if (circleTouches(chunks, ev.x, ev.y, ev.radius)) clients.push(cid);
+    }
+    if (clients.length) net.emitEvent(ExplodedEvt, payload, { reliable: rel, scope: { clients } });
+  });
+  world.events.on(Reloaded, (ev: { entity: Entity; item: number; ammo: number; rounds: number }) => {
+    for (const [cid, p] of players) if (p.entity === ev.entity) { net.emitEvent(ReloadedEvt, { entity: ev.entity, item: ev.item, ammo: ev.ammo, rounds: ev.rounds }, { reliable: (ARMS_EVENT_RELIABILITY["gameplay.Reloaded"] as string) === "reliable", scope: { owner: cid } }); break; }
+  });
   // Gameplay rejections -> the issuing client (client.onCommandRejected / onGameplayRejected): net command + reason code + text.
   world.events.on(CommandRejected, (r) => {
     if (!net.sessions.get(r.clientId)?.conn) return;
@@ -352,3 +365,13 @@ export function createGameServer(o: GameServerOptions): GameServer {
   };
 }
 export type { ClientSession };
+
+/** Does the circle (x, y, r) intersect any of these "cx,cy" chunk squares? Exact circle-vs-rect test per chunk. */
+function circleTouches(chunks: ReadonlySet<string>, x: number, y: number, r: number): boolean {
+  for (const k of chunks) {
+    const c = k.indexOf(","); const x0 = Number(k.slice(0, c)) * CHUNK_SIZE, y0 = Number(k.slice(c + 1)) * CHUNK_SIZE;
+    const dx = x - Math.max(x0, Math.min(x, x0 + CHUNK_SIZE)), dy = y - Math.max(y0, Math.min(y, y0 + CHUNK_SIZE));
+    if (dx * dx + dy * dy <= r * r) return true;
+  }
+  return false;
+}
