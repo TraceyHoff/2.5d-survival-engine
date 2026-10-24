@@ -85,9 +85,13 @@ interface AtlasRT { key: string; id: number; source: AtlasSource; img: ImageLike
 interface Pool { k: number; sw: number; sh: number; cols: number; perLayer: number; first: number; layers: number; lru: PageLRU<string>; slotBytes: number; tint: boolean; emis: boolean; cls: PoolClass;
   /** wear pool: its own colour array (poolTex), KTX2-compressed (`fmt` = GL internal format) or RGBA8 (fmt null), `levels` mips only */
   own?: { fmt: number | null; target: Ktx2Target | null; levels: number } }
-export type PoolClass = "wear" | "veh";
+export type PoolClass = "wear" | "veh" | "bld";
 /** Vehicle art pages kept resident at once (one page = one grouped Art sheet, ~1024^2 at 1x): desktop / low memory. */
 const VEH_POOL_SLOTS_DESKTOP = 8, VEH_POOL_SLOTS_LOWMEM = 6;
+/** Building tier pages (building_t1..t4) resident at once: every tier on desktop; 2 on <=256 MB budgets (a base mixes ~2 tiers). */
+const BLD_POOL_SLOTS_DESKTOP = 4, BLD_POOL_SLOTS_LOWMEM = 2;
+/** Building tier sheets streamed per tier present nearby (BuildingTierStreamer): `building_t<N>` atlases from files. */
+export function isStreamedBuildingAtlas(key: string, url: string): boolean { return /^building_t\d+$/.test(key) && !/^(blob|data):/.test(url); }
 /** Art vehicle sheets: `veh_*` atlases loaded from files (the procedural placeholders are blob: URLs and stay resident). */
 export function isStreamedVehicleAtlas(key: string, url: string): boolean { return /^veh_/.test(key) && !/^(blob|data):/.test(url); }
 /** Minimum streamed pages kept resident at once (working set: ~8 wearables x a few distinct outfits on screen). */
@@ -294,6 +298,10 @@ export class AtlasManager {
   private pools: Pool[] = [];
   /** Stream Art vehicle sheets per vehicle (refcounted by VehicleView through retainSprite/releaseSprite). */
   streamVehicles = true;
+  /** Stream building_t1..t4 per tier present nearby (refcounted by IsoRenderer's BuildingTierStreamer). */
+  streamBuildingTiers = true;
+  /** Bumped on every rebuild (pools / sprite tables replaced): refcount holders re-retain. */
+  layoutVersion = 0;
   private poolOfA(a: AtlasRT): Pool | undefined { return a.lazy ? this.pools[a.lazy.pool] : undefined; }
   /** Pool may page now (fallback step 1 stops the wearable pool only; vehicles keep their placeholder fallback). */
   /** Wearables off (ladder EvictWearables) still pages in the local player + nearby characters (prio <= PRIO_NEAR). */
@@ -382,7 +390,7 @@ export class AtlasManager {
   }
   /** True when an atlas drawn near the camera is stored downscaled (cold tier): a re-tier would make it crisp again. */
   get needsRetier(): boolean {
-    const wp = this.wearPool(); if (wp && wp.k <= 1 && wp.k !== this.wearScale() && this.poolScales(this.atlases.filter((a) => a.lazy?.pool === 0)).includes(this.wearScale())) return true; // zoom changed the crisp wear scale
+    const wp = this.wearPool(); if (wp && wp.k <= 1 && wp.k !== this.wearScale() && this.poolScales(this.atlases.filter((a) => a.lazy && this.poolOfA(a)?.cls === "wear")).includes(this.wearScale())) return true; // zoom changed the crisp wear scale
     if (this.coldDownscale >= 1 && this.downscale >= 1) return false;
     return this.atlases.some((a) => !a.lazy && this.recentlyUsed.has(a.key) && !this.retiered.has(a.key) && (a.cold ? this.coldDownscale : this.downscale) < 1);
   }
@@ -470,12 +478,13 @@ export class AtlasManager {
     const list: AtlasRT[] = []; const lazyList: AtlasRT[] = [];
     const lazyKeys = this.streamWearables ? wearableOnlyAtlases(registry) : new Set<string>();
     const vehKeys = new Set<string>(); if (this.streamVehicles) for (const a of registry.atlases.values()) { const src = sources.get(a.key); if (src && !lazyKeys.has(a.key) && isStreamedVehicleAtlas(a.key, src.url)) vehKeys.add(a.key); }
+    const bldKeys = new Set<string>(); if (this.streamBuildingTiers) for (const a of registry.atlases.values()) { const src = sources.get(a.key); if (src && !lazyKeys.has(a.key) && !vehKeys.has(a.key) && isStreamedBuildingAtlas(a.key, src.url)) bldKeys.add(a.key); }
     await Promise.all([...registry.atlases.values()].map(async (a) => {
       const src = sources.get(a.key); if (!src) throw new Error(`no image source for atlas "${a.key}"`);
-      if (lazyKeys.has(a.key) || vehKeys.has(a.key)) {
+      if (lazyKeys.has(a.key) || vehKeys.has(a.key) || bldKeys.has(a.key)) {
         let w1 = a.columns * a.frameW, h1 = a.rows * a.frameH;
         if (src.rects?.length) { w1 = 0; h1 = 0; for (const r of src.rects) { w1 = Math.max(w1, r.x + r.w); h1 = Math.max(h1, r.y + r.h); } }
-        lazyList.push({ key: a.key, id: a.id, source: src, img: null, emis: null, scale: 1, masks: {}, maskUrls: {}, base: 0, count: src.rects ? src.rects.length : a.columns * a.rows, fw: a.frameW, fh: a.frameH, cols: a.columns, layer: -1, px: 0, py: 0, lazy: { w1, h1, state: 0, pool: vehKeys.has(a.key) ? 1 : 0 } });
+        lazyList.push({ key: a.key, id: a.id, source: src, img: null, emis: null, scale: 1, masks: {}, maskUrls: {}, base: 0, count: src.rects ? src.rects.length : a.columns * a.rows, fw: a.frameW, fh: a.frameH, cols: a.columns, layer: -1, px: 0, py: 0, lazy: { w1, h1, state: 0, pool: vehKeys.has(a.key) ? 1 : bldKeys.has(a.key) ? 2 : 0 } });
         return;
       }
       let scale = this.pickScale(a, src);
@@ -490,17 +499,19 @@ export class AtlasManager {
       list.push({ key: a.key, id: a.id, source: src, img, emis, scale, masks, maskUrls, base: 0, count: src.rects ? src.rects.length : a.columns * a.rows, fw: a.frameW, fh: a.frameH, cols: a.columns, layer: 0, px: 0, py: 0 });
     }));
     list.sort((a, b) => a.id - b.id); lazyList.sort((a, b) => a.id - b.id);
-    this.gen++; this.queue = []; this.pools = [];
+    this.gen++; this.queue = []; this.pools = []; this.layoutVersion++;
     const lowMem = this.textureBudgetMB <= 256; this.sideShift = lowMem ? SIDE_SHIFT_LOWMEM : SIDE_SHIFT;
     const groups: { cls: PoolClass; lazy: AtlasRT[]; minSlots: number; cap: boolean }[] = [];
-    const wear = lazyList.filter((a) => a.lazy!.pool === 0), veh = lazyList.filter((a) => a.lazy!.pool === 1);
+    const wear = lazyList.filter((a) => a.lazy!.pool === 0), veh = lazyList.filter((a) => a.lazy!.pool === 1), bld = lazyList.filter((a) => a.lazy!.pool === 2);
+    // building tiers first: main colour array (never the compressed tail of vehicle/wear pools)
+    if (bld.length) groups.push({ cls: "bld", lazy: bld, minSlots: Math.min(bld.length, lowMem ? BLD_POOL_SLOTS_LOWMEM : BLD_POOL_SLOTS_DESKTOP), cap: true });
     // vehicles first: the wear pool's layers come last so they can live in their own (compressed) array
     if (veh.length) groups.push({ cls: "veh", lazy: veh, minSlots: Math.min(veh.length, lowMem ? VEH_POOL_SLOTS_LOWMEM : VEH_POOL_SLOTS_DESKTOP), cap: true });
     if (wear.length) groups.push({ cls: "wear", lazy: wear, minSlots: Math.min(wear.length, this.poolPolicy.minSlots ?? (lowMem ? POOL_MIN_SLOTS_LOWMEM : POOL_MIN_SLOTS_DESKTOP)), cap: false });
     // vehicles are visible art: their pool keeps a full-res (1x) working set that fitBudget never trades away; the
     // wearables pool is the streaming tier and may shrink (more paging) before any visible art is blurred
-    const vehG = groups.find((g) => g.cls === "veh"); const keep = vehG ? this.poolReserveBytes(vehG.lazy, vehG.minSlots, list, 1) : 0;
-    const reserve = keep + groups.filter((g) => g.cls !== "veh").reduce((t, g) => t + this.poolReserveBytes(g.lazy, g.minSlots, list), 0);
+    const keep = groups.filter((g) => g.cls !== "wear").reduce((t, g) => t + this.poolReserveBytes(g.lazy, g.minSlots, list, 1), 0);
+    const reserve = keep + groups.filter((g) => g.cls === "wear").reduce((t, g) => t + this.poolReserveBytes(g.lazy, g.minSlots, list), 0);
     this.registryForTier = registry; await this.fitBudget(list, reserve, keep); this.sideScale = (await halveSide(list, this.sideShift)) ? 1 / (1 << this.sideShift) : 1;
     const layout = (): void => { this.pack(list); this.pools = []; for (const g of groups) this.planPool(g.lazy, g.minSlots, list, g.cls, g.cap); let b = this.totalFrames; for (const a of lazyList) { a.base = b; b += a.count; } this.totalFrames = b; };
     layout();
@@ -580,7 +591,7 @@ export class AtlasManager {
    */
   private planPool(lazy: AtlasRT[], minSlots: number, resident: AtlasRT[], cls: PoolClass = "wear", cap = false): void {
     if (!lazy.length) return;
-    const tint = lazy.some((a) => a.source.masks?.tintmask), emis = cls === "veh" && lazy.some((a) => a.source.emissiveUrl);
+    const tint = lazy.some((a) => a.source.masks?.tintmask), emis = cls !== "wear" && lazy.some((a) => a.source.emissiveUrl);
     const anyTint = tint || this.pools.some((p) => p.tint), anyEmis = emis || this.pools.some((p) => p.emis);
     const per = this.layerBytes(resident, anyTint, anyEmis); const budget = this.textureBudgetMB * 1048576;
     const freeLayers = Math.max(0, Math.min(this.maxLayers - this.layers, Math.floor((budget - per * this.layers) / per)));
@@ -911,6 +922,8 @@ export class AtlasManager {
     const g = this.gen;
     for (let i = 0; i < 600 && g === this.gen && want.some((a) => a.lazy!.state === 1 || this.queue.includes(a)); i++) await new Promise((r) => setTimeout(r, 16));
   }
+  /** Atlas key of a sprite's streamed page (null when resident / not streamed). */
+  pageKey(spriteId: number): string | null { return this.lazyOf(spriteId)?.key ?? null; }
   /** Streamed wearable atlases resident / known. */
   isStreamed(spriteId: number): boolean { return !!this.lazyOf(spriteId); }
   get vramStats(): VramStats & { pools: { cls: PoolClass; scale: number; slots: number; layers: number; resident: number; slotMB: number }[]; poolScale: number; layerSize: number; downscale: number; coldDownscale: number; hotAtlases: number; coldAtlases: number } {

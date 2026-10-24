@@ -14,7 +14,7 @@
  *   4. weather     -> canvas: instanced rain streaks, splashes, snow (<= 3 draws)
  */
 import { formatSceneDiag, type SceneDiag } from "./sceneDiag.js";
-import { AssetManager, type World } from "@engine/core";
+import { AssetManager, entityIndex, Transform, type World } from "@engine/core";
 import { DEFAULT_ISO, type BuildingGrid, type ChunkedSpatialIndex, type IsoConfig, type TileMap } from "@engine/world";
 import { IsoCamera, type Rect } from "./camera.js";
 import { BloomPass } from "./bloom.js";
@@ -26,6 +26,7 @@ import { loadRenderTuning } from "./style.js";
 import type { SurfaceProvider } from "./tilemap.js";
 import type { LutBinding } from "./composite.js";
 import { AtlasManager } from "./assets/atlasManager.js";
+import { BuildingTierStreamer } from "./assets/buildingTiers.js";
 import { basisTranscoder, setKtx2Transcoder } from "./assets/ktx2.js";
 import { TilemapRenderer } from "./tilemap.js";
 import { SpriteBatch, type GameplayBindings } from "./sprites.js";
@@ -184,6 +185,10 @@ export class IsoRenderer implements Renderer {
   static DRESS_CAP = 6;
   /** Frames rendered since construction (frameCount restarts on a safe-mode retry). */
   private totalFrames = 0;
+  /** building_t1..t4 pages retained per tier present nearby (see updateBuildingTiers). */
+  private tierStream: BuildingTierStreamer | null = null; private tierLayout = -1;
+  /** Streamed building tier pages currently held (diagnostics / tests). */
+  get buildingTiersHeld(): string[] { return this.tierStream?.heldKeys() ?? []; }
   /** Report a GPU allocation / render-target fault: steps the fallback ladder down once (with cooldown). */
   fault(source: string, detail: string): void {
     const step = this.fallback.fault(source, detail, this.totalFrames);
@@ -257,6 +262,25 @@ export class IsoRenderer implements Renderer {
   }
 
   /** Make sure the render components exist on this world (idempotent). */
+  /**
+   * Building tier streaming: every 15 frames, count BuildPiece sprites whose pivot is within the visible rect grown by
+   * half a screen per side ("nearby") per streamed tier page; tiers present are retained, absent ones released.
+   */
+  private updateBuildingTiers(world: World, rect: { x0: number; y0: number; x1: number; y1: number }): void {
+    const bpDef = this.bindings.buildPiece; if (!bpDef || !this.atlas.streamBuildingTiers) return;
+    if (this.tierLayout !== this.atlas.layoutVersion) { this.tierStream = new BuildingTierStreamer(this.atlas); this.tierLayout = this.atlas.layoutVersion; }
+    else if (this.totalFrames % 15 !== 1) return;
+    const ts = this.tierStream!; const bp = world.store(bpDef); const tr = world.store(Transform); const vis = (bp.data as Record<string, ArrayLike<number>>).visualId!;
+    const hw = this.iso.tileW / 2, hh = this.iso.tileH / 2; const mx = (rect.x1 - rect.x0) / 2, my = (rect.y1 - rect.y0) / 2;
+    const x0 = rect.x0 - mx, x1 = rect.x1 + mx, y0 = rect.y0 - my, y1 = rect.y1 + my * 3; // + tall pieces below the bottom edge
+    ts.begin();
+    for (let k = 0; k < bp.size; k++) {
+      const t = tr.slot(entityIndex(bp.dense[k]!)); if (t < 0) continue;
+      const x = tr.data.x[t]!, y = tr.data.y[t]!; const sx = (x - y) * hw, sy = (x + y) * hh;
+      if (sx >= x0 && sx <= x1 && sy >= y0 && sy <= y1) ts.add(vis[k]!);
+    }
+    ts.end();
+  }
   static registerComponents(world: World): void { for (const c of RENDER_COMPONENTS) world.register(c); }
 
   /** Entity (the local player) used for Occluder fading and roof/upper-floor cutaways. */
@@ -441,6 +465,7 @@ export class IsoRenderer implements Renderer {
     const hh = this.iso.tileH / 2;
     const minKey = rect.y0 / hh - 64, maxKey = (rect.y1 + 2048) / hh + 64;
     this.depthU[0] = minKey; this.depthU[1] = 1 / (maxKey - minKey);
+    this.updateBuildingTiers(world, rect);
     this.sprites.prepare({
       world, alpha, rect, atlas: this.atlas, depthMin: minKey, depthRange: maxKey - minKey, tickHz: this.tickHz, style,
       bindings: this.bindings, spatial: this.spatial, activeKeys: this.activeKeys, grid: this.grid, groundZAt: this.tilemap ? (x: number, y: number) => tileHeight(this.tilemap!, x, y) : undefined, pieceAnchor: this.pieceAnchor,
