@@ -75,7 +75,8 @@ for mf in args:
     with ThreadPoolExecutor(os.cpu_count()) as ex: list(ex.map(enc, jobs))
     st["pages"] = len(jobs); st["png_bytes"] = sum(os.path.getsize(s) for s, *_ in jobs); st["ktx2_bytes"] = sum(os.path.getsize(d) for _, d, *_ in jobs)
     pretty = open(mf).read(3).startswith("{\n")  # keep each manifest's existing formatting
-    with open(mf, "w") as fh: json.dump(m, fh, indent=1) if pretty else json.dump(m, fh, separators=(",", ":"))
+    ind = (len(open(mf).read(64).split("\n")[1]) - len(open(mf).read(64).split("\n")[1].lstrip(" "))) or 1 if pretty else 1
+    with open(mf, "w") as fh: json.dump(m, fh, indent=ind) if pretty else json.dump(m, fh, separators=(",", ":"))
     if pretty: open(mf, "a").write("\n") if open(mf).read()[-1:] != "\n" and orig_nl.get(mf) else None
     stats[mf] = st
     for k in st:

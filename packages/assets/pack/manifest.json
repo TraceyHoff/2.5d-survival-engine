@@ -11,6 +11,10 @@
       "rows": 12,
       "masks": {
         "sheen": "atlases/characters_sheen.png"
+      },
+      "ktx2": "atlases/characters.ktx2",
+      "masksKtx2": {
+        "sheen": "atlases/characters_sheen.ktx2"
       }
     },
     {
@@ -22,6 +26,10 @@
       "rows": 12,
       "masks": {
         "sheen": "atlases/characters_b_sheen.png"
+      },
+      "ktx2": "atlases/characters_b.ktx2",
+      "masksKtx2": {
+        "sheen": "atlases/characters_b_sheen.ktx2"
       }
     },
     {
@@ -33,6 +41,10 @@
       "rows": 12,
       "masks": {
         "sheen": "atlases/characters_c_sheen.png"
+      },
+      "ktx2": "atlases/characters_c.ktx2",
+      "masksKtx2": {
+        "sheen": "atlases/characters_c_sheen.ktx2"
       }
     },
     {
@@ -45,6 +57,10 @@
       "masks": {
         "emissive": true,
         "sheen": "atlases/zombies_sheen.png"
+      },
+      "ktx2": "atlases/zombies.ktx2",
+      "masksKtx2": {
+        "sheen": "atlases/zombies_sheen.ktx2"
       }
     },
     {
@@ -57,6 +73,10 @@
       "masks": {
         "emissive": true,
         "sheen": "atlases/zombies_brute_sheen.png"
+      },
+      "ktx2": "atlases/zombies_brute.ktx2",
+      "masksKtx2": {
+        "sheen": "atlases/zombies_brute_sheen.ktx2"
       }
     },
     {
@@ -69,6 +89,10 @@
       "masks": {
         "emissive": true,
         "sheen": "atlases/zombies_runner_sheen.png"
+      },
+      "ktx2": "atlases/zombies_runner.ktx2",
+      "masksKtx2": {
+        "sheen": "atlases/zombies_runner_sheen.ktx2"
       }
     },
     {
@@ -81,6 +105,10 @@
       "masks": {
         "emissive": true,
         "sheen": "atlases/zombies_mummy_sheen.png"
+      },
+      "ktx2": "atlases/zombies_mummy.ktx2",
+      "masksKtx2": {
+        "sheen": "atlases/zombies_mummy_sheen.ktx2"
       }
     },
     {
@@ -93,6 +121,10 @@
       "masks": {
         "emissive": true,
         "sheen": "atlases/zombies_pumpkin_sheen.png"
+      },
+      "ktx2": "atlases/zombies_pumpkin.ktx2",
+      "masksKtx2": {
+        "sheen": "atlases/zombies_pumpkin_sheen.ktx2"
       }
     },
     {
@@ -104,7 +136,8 @@
       "rows": 15,
       "masks": {
         "emissive": true
-      }
+      },
+      "ktx2": "atlases/held.ktx2"
     },
     {
       "key": "critters",
@@ -115,6 +148,10 @@
       "rows": 24,
       "masks": {
         "sheen": "atlases/critters_sheen.png"
+      },
+      "ktx2": "atlases/critters.ktx2",
+      "masksKtx2": {
+        "sheen": "atlases/critters_sheen.ktx2"
       }
     },
     {
@@ -123,7 +160,8 @@
       "frameW": 64,
       "frameH": 48,
       "columns": 8,
-      "rows": 6
+      "rows": 6,
+      "ktx2": "atlases/tiles.ktx2"
     },
     {
       "key": "resources_tall",
@@ -135,6 +173,10 @@
       "masks": {
         "emissive": true,
         "sway": "atlases/resources_tall_sway.png"
+      },
+      "ktx2": "atlases/resources_tall.ktx2",
+      "masksKtx2": {
+        "sway": "atlases/resources_tall_sway.ktx2"
       }
     },
     {
@@ -147,6 +189,10 @@
       "masks": {
         "emissive": true,
         "sway": "atlases/resources_sway.png"
+      },
+      "ktx2": "atlases/resources.ktx2",
+      "masksKtx2": {
+        "sway": "atlases/resources_sway.ktx2"
       }
     },
     {
@@ -159,6 +205,10 @@
       "masks": {
         "emissive": true,
         "sway": "atlases/resources_huge_sway.png"
+      },
+      "ktx2": "atlases/resources_huge.ktx2",
+      "masksKtx2": {
+        "sway": "atlases/resources_huge_sway.ktx2"
       }
     },
     {
@@ -167,7 +217,8 @@
       "frameW": 32,
       "frameH": 32,
       "columns": 8,
-      "rows": 7
+      "rows": 7,
+      "ktx2": "atlases/items.ktx2"
     },
     {
       "key": "equipment",
@@ -175,7 +226,8 @@
       "frameW": 32,
       "frameH": 32,
       "columns": 8,
-      "rows": 3
+      "rows": 3,
+      "ktx2": "atlases/equipment.ktx2"
     },
     {
       "key": "buildings_twig",
@@ -183,7 +235,8 @@
       "frameW": 128,
       "frameH": 128,
       "columns": 16,
-      "rows": 10
+      "rows": 10,
+      "ktx2": "atlases/buildings_twig.ktx2"
     },
     {
       "key": "buildings",
@@ -191,7 +244,8 @@
       "frameW": 128,
       "frameH": 128,
       "columns": 16,
-      "rows": 11
+      "rows": 11,
+      "ktx2": "atlases/buildings.ktx2"
     },
     {
       "key": "buildings_stone",
@@ -199,7 +253,8 @@
       "frameW": 128,
       "frameH": 128,
       "columns": 16,
-      "rows": 10
+      "rows": 10,
+      "ktx2": "atlases/buildings_stone.ktx2"
     },
     {
       "key": "buildings_metal",
@@ -207,7 +262,8 @@
       "frameW": 128,
       "frameH": 128,
       "columns": 16,
-      "rows": 10
+      "rows": 10,
+      "ktx2": "atlases/buildings_metal.ktx2"
     },
     {
       "key": "openings",
@@ -215,7 +271,8 @@
       "frameW": 128,
       "frameH": 128,
       "columns": 16,
-      "rows": 8
+      "rows": 8,
+      "ktx2": "atlases/openings.ktx2"
     },
     {
       "key": "furniture",
@@ -226,7 +283,8 @@
       "rows": 13,
       "masks": {
         "emissive": true
-      }
+      },
+      "ktx2": "atlases/furniture.ktx2"
     },
     {
       "key": "decor",
@@ -237,7 +295,8 @@
       "rows": 12,
       "masks": {
         "emissive": true
-      }
+      },
+      "ktx2": "atlases/decor.ktx2"
     },
     {
       "key": "vfx",
@@ -245,7 +304,8 @@
       "frameW": 32,
       "frameH": 32,
       "columns": 8,
-      "rows": 8
+      "rows": 8,
+      "ktx2": "atlases/vfx.ktx2"
     },
     {
       "key": "vfx_fire_big",
@@ -256,7 +316,8 @@
       "rows": 1,
       "masks": {
         "emissive": true
-      }
+      },
+      "ktx2": "atlases/vfx_fire_big.ktx2"
     },
     {
       "key": "vfx_fire_huge",
@@ -267,7 +328,8 @@
       "rows": 1,
       "masks": {
         "emissive": true
-      }
+      },
+      "ktx2": "atlases/vfx_fire_huge.ktx2"
     },
     {
       "key": "fog",
@@ -275,7 +337,8 @@
       "frameW": 256,
       "frameH": 256,
       "columns": 2,
-      "rows": 1
+      "rows": 1,
+      "ktx2": "atlases/fog.ktx2"
     },
     {
       "key": "ui",
@@ -297,7 +360,8 @@
           "r": 6,
           "b": 6
         }
-      }
+      },
+      "ktx2": "atlases/ui.ktx2"
     },
     {
       "key": "animals_small",
@@ -309,11 +373,16 @@
       "pages": [
         {
           "scale": 2,
-          "image": "atlases/animals_small@2x.png"
+          "image": "atlases/animals_small@2x.png",
+          "ktx2": "atlases/animals_small@2x.ktx2"
         }
       ],
       "masks": {
         "sheen": "atlases/animals_small_sheen.png"
+      },
+      "ktx2": "atlases/animals_small.ktx2",
+      "masksKtx2": {
+        "sheen": "atlases/animals_small_sheen.ktx2"
       }
     },
     {
@@ -326,11 +395,16 @@
       "pages": [
         {
           "scale": 2,
-          "image": "atlases/animals_medium@2x.png"
+          "image": "atlases/animals_medium@2x.png",
+          "ktx2": "atlases/animals_medium@2x.ktx2"
         }
       ],
       "masks": {
         "sheen": "atlases/animals_medium_sheen.png"
+      },
+      "ktx2": "atlases/animals_medium.ktx2",
+      "masksKtx2": {
+        "sheen": "atlases/animals_medium_sheen.ktx2"
       }
     },
     {
@@ -343,11 +417,16 @@
       "pages": [
         {
           "scale": 2,
-          "image": "atlases/animals_large@2x.png"
+          "image": "atlases/animals_large@2x.png",
+          "ktx2": "atlases/animals_large@2x.ktx2"
         }
       ],
       "masks": {
         "sheen": "atlases/animals_large_sheen.png"
+      },
+      "ktx2": "atlases/animals_large.ktx2",
+      "masksKtx2": {
+        "sheen": "atlases/animals_large_sheen.ktx2"
       }
     },
     {
@@ -360,9 +439,11 @@
       "pages": [
         {
           "scale": 2,
-          "image": "atlases/death_bag@2x.png"
+          "image": "atlases/death_bag@2x.png",
+          "ktx2": "atlases/death_bag@2x.ktx2"
         }
-      ]
+      ],
+      "ktx2": "atlases/death_bag.ktx2"
     },
     {
       "key": "se_fx_deathbag_drop",
@@ -374,9 +455,11 @@
       "pages": [
         {
           "scale": 2,
-          "image": "atlases/fx_deathbag_drop@2x.png"
+          "image": "atlases/fx_deathbag_drop@2x.png",
+          "ktx2": "atlases/fx_deathbag_drop@2x.ktx2"
         }
-      ]
+      ],
+      "ktx2": "atlases/fx_deathbag_drop.ktx2"
     },
     {
       "key": "se_fx_gate_breach",
@@ -388,9 +471,11 @@
       "pages": [
         {
           "scale": 2,
-          "image": "atlases/fx_gate_breach@2x.png"
+          "image": "atlases/fx_gate_breach@2x.png",
+          "ktx2": "atlases/fx_gate_breach@2x.ktx2"
         }
-      ]
+      ],
+      "ktx2": "atlases/fx_gate_breach.ktx2"
     },
     {
       "key": "se_fx_puff",
@@ -402,9 +487,11 @@
       "pages": [
         {
           "scale": 2,
-          "image": "atlases/fx_puff@2x.png"
+          "image": "atlases/fx_puff@2x.png",
+          "ktx2": "atlases/fx_puff@2x.ktx2"
         }
-      ]
+      ],
+      "ktx2": "atlases/fx_puff.ktx2"
     },
     {
       "key": "se_fx_respawn_poof",
@@ -416,9 +503,11 @@
       "pages": [
         {
           "scale": 2,
-          "image": "atlases/fx_respawn_poof@2x.png"
+          "image": "atlases/fx_respawn_poof@2x.png",
+          "ktx2": "atlases/fx_respawn_poof@2x.ktx2"
         }
-      ]
+      ],
+      "ktx2": "atlases/fx_respawn_poof.ktx2"
     },
     {
       "key": "se_fx_splinter",
@@ -430,9 +519,11 @@
       "pages": [
         {
           "scale": 2,
-          "image": "atlases/fx_splinter@2x.png"
+          "image": "atlases/fx_splinter@2x.png",
+          "ktx2": "atlases/fx_splinter@2x.ktx2"
         }
-      ]
+      ],
+      "ktx2": "atlases/fx_splinter.ktx2"
     }
   ],
   "sprites": [
