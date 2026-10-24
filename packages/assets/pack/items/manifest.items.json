@@ -8,7 +8,7 @@
    "frameW": 32,
    "frameH": 32,
    "columns": 16,
-   "rows": 12,
+   "rows": 13,
    "pages": [
     {
      "scale": 2,
@@ -4652,6 +4652,142 @@
      "fps": 1,
      "directions": 8,
      "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "rot",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      191
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "coin",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      192
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "fish",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      193
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "cooked_fish",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      194
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "wild_grain",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      195
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bread",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      196
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "stew_bowl",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      197
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "egg",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      198
+     ],
+     "fps": 1
     }
    }
   }
