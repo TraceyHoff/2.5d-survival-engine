@@ -222,7 +222,7 @@ export class IsoView {
         if (spec.animated) { v.add(ve, VAnim, { state: 0, startTick: 0 }); v.add(ve, VWet, { level: 0 }); v.add(ve, VTemp, { cold: 0, heat: 0, shivering: 0 }); }
         if (spec.fuel) v.add(ve, VFuel, { burnUntilTick: 0, lit: 1 });
         if (spec.onCreate) this.scales.set(ve, spec.onCreate);
-        if (e === player) r.setFocusEntity(ve);
+        if (e === player) { r.setFocusEntity(ve); this.focusVe = ve; }
         if (CAM_ANIMAL && net.has(e, Animal) && (this.camAnimal === undefined || !this.map.has(this.camAnimal))) this.camAnimal = e;
       }
       seen.add(e);
@@ -269,7 +269,7 @@ export class IsoView {
       if (v.has(ve, VPiece)) this.syncPieceState(net, e, ve, defs);
       if (v.has(ve, VFuel)) { const f = net.get(e, Fuel); if (f) v.set(ve, VFuel, { lit: f.lit, burnUntilTick: f.burnUntilTick }); }
     }
-    for (const [ne, ve] of this.map) if (!seen.has(ne)) { v.destroy(ve); this.map.delete(ne); this.characters.delete(ve); this.lightOf.delete(ne); this.pieceStates.delete(ve); this.lastMove.delete(ne); this.nodeAmt.delete(ne); this.nodeHit.delete(ne); this.animalHp.delete(ne); this.animalPrev.delete(ne); this.scales.delete(ve); }
+    for (const [ne, ve] of this.map) if (!seen.has(ne)) { if (ve === this.focusVe) { r.setFocusEntity(-1); this.focusVe = -1; } v.destroy(ve); this.map.delete(ne); this.characters.delete(ve); this.lightOf.delete(ne); this.pieceStates.delete(ve); this.lastMove.delete(ne); this.nodeAmt.delete(ne); this.nodeHit.delete(ne); this.animalHp.delete(ne); this.animalPrev.delete(ne); this.scales.delete(ve); }
 
     this.syncClutter(tiles, ground);
     const camE = CAM_ANIMAL && this.camAnimal !== undefined ? this.camAnimal : player;
@@ -290,6 +290,8 @@ export class IsoView {
     }
   }
   private checks = 0; private blackFrames = 0;
+  /** View entity currently given to setFocusEntity; cleared when destroyed so a recycled id (a remote player) never inherits the focus silhouette. */
+  private focusVe = -1;
   /** ADR-110 render-only ground clutter: view-World sprites for chunks around the camera (never networked). Density 1,
    *  ~0.35 under ?gl=lowend / ?safe=1; hard cap on live sprites; ?clutter=0 disables. Missing clutter_* art = nothing. */
   private clutter = new Map<string, Entity[]>(); private clutterFrame = 0; private clutterCount = 0;
