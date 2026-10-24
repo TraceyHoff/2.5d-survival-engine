@@ -172,5 +172,10 @@ describe("nature sub-manifest", () => {
       for (const k of [`crop_${p}`, `crop_${p}_0`, `crop_${p}_1`, `crop_${p}_2`, `crop_${p}_3`]) expect(keys.has(k), k).toBe(true);
     for (const k of ["farm_soil", "fish_shoal", "clutter_pebbles", "clutter_reeds", "clutter_fern", "wild_wheat", "wild_aloe", "sapling_oak_tree_0", "sapling_peach_tree_2"]) expect(keys.has(k), k).toBe(true);
     for (const s of nm.sprites.filter((x: { key: string }) => /_(tree|bush)$/.test(x.key))) expect(s.sway, s.key).toBeDefined();
+    for (const k of ["stag", "red_deer", "fox", "hare", "cow", "sheep", "goat", "duck", "turkey", "goose"]) {
+      const sp = nm.sprites.find((x: { key: string }) => x.key === `animal_${k}`); expect(sp, k).toBeDefined();
+      for (const an of ["idle", "walk", "run", "attack", "hit", "death", "swim"]) { expect(sp.animations[an]?.dirFrames?.length, `${k}.${an}`).toBe(sp.animations[an].frames.length * 8);
+        for (const f of sp.animations[an].dirFrames) { expect(f.anchor.x).toBeGreaterThanOrEqual(0); expect(f.anchor.y).toBeLessThanOrEqual(1); } }
+    }
   });
 });

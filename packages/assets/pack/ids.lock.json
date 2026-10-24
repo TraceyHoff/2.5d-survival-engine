@@ -1796,7 +1796,17 @@
     "wild_squash": 1794,
     "wild_tomato": 1795,
     "wild_wheat": 1796,
-    "wild_yarrow": 1797
+    "wild_yarrow": 1797,
+    "animal_cow": 1798,
+    "animal_duck": 1799,
+    "animal_fox": 1800,
+    "animal_goat": 1801,
+    "animal_goose": 1802,
+    "animal_hare": 1803,
+    "animal_red_deer": 1804,
+    "animal_sheep": 1805,
+    "animal_stag": 1806,
+    "animal_turkey": 1807
   },
   "sounds": {
     "amb_rain": 1,
