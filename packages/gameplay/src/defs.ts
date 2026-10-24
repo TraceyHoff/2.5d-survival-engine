@@ -19,7 +19,7 @@ export const enum WearSlot { Head = 0, Torso = 1, Legs = 2, Feet = 3, Hands = 4,
 export const WEAR_SLOTS = 6;
 export const enum ToolKind { None = 0, Axe = 1, Pickaxe = 2, Shovel = 3, Knife = 4 }
 export const enum StationKind { None = 0, Campfire = 1, Workbench = 2, Furnace = 3, Anvil = 4, Garage = 5 }
-export const enum Placement { Cell = 0, Edge = 1, Opening = 2, Free = 3 }
+export const enum Placement { Cell = 0, Edge = 1, Opening = 2, Free = 3, Tri = 4 }
 /** BuildingGrid socket kinds. */
 export const enum SocketKind { Edge = 1, Door = 2, Window = 3, Hatch = 4 }
 
@@ -28,7 +28,7 @@ const WEAR: Record<string, WearSlot> = { head: WearSlot.Head, torso: WearSlot.To
 const TOOL: Record<string, ToolKind> = { none: ToolKind.None, axe: ToolKind.Axe, pickaxe: ToolKind.Pickaxe, shovel: ToolKind.Shovel, knife: ToolKind.Knife };
 const STATION: Record<string, StationKind> = { none: StationKind.None, campfire: StationKind.Campfire, workbench: StationKind.Workbench, furnace: StationKind.Furnace, anvil: StationKind.Anvil, garage: StationKind.Garage };
 const WEATHER: Record<string, WeatherKind> = { clear: WeatherKind.Clear, rain: WeatherKind.Rain, storm: WeatherKind.Storm, snow: WeatherKind.Snow, fog: WeatherKind.Fog };
-const PLACEMENT: Record<string, Placement> = { cell: Placement.Cell, edge: Placement.Edge, opening: Placement.Opening, free: Placement.Free };
+const PLACEMENT: Record<string, Placement> = { cell: Placement.Cell, edge: Placement.Edge, opening: Placement.Opening, free: Placement.Free, tri: Placement.Tri };
 const OPENING: Record<string, SocketKind> = { door: SocketKind.Door, window: SocketKind.Window, hatch: SocketKind.Hatch };
 
 // ---- resolved definitions -------------------------------------------------------------------------
@@ -97,7 +97,10 @@ export interface EnvironmentTuning {
     /** Four freshness stages, descending minFresh (fresh, stale, spoiling, rotten). */
     readonly stages?: readonly SpoilStage[] };
 }
-export interface TierDef { readonly id: number; readonly key: string; readonly hpMul: number; readonly vertLoss: number; readonly horizLoss: number; readonly repairMul: number; readonly cost: readonly ItemCount[] }
+export interface TierDef { readonly id: number; readonly key: string; readonly hpMul: number; readonly vertLoss: number; readonly horizLoss: number; readonly repairMul: number; readonly cost: readonly ItemCount[];
+  /** Raid damage multipliers for player-caused damage to pieces of this tier (ADR-104); 1 when omitted. */
+  readonly raid: RaidMuls }
+export interface RaidMuls { readonly melee: number; readonly explosive: number; readonly fire: number }
 export interface BuildingTuning {
   readonly buildReach: number; readonly playerMaxSpeed: number; readonly levelHeight: number; readonly maxLevel: number;
   readonly minStability: number; readonly groundStability: number; readonly maxPiecesPerZone: number; readonly repairBlockedSeconds: number;
@@ -120,6 +123,18 @@ export interface PieceDef extends BuildPieceDef, Visual {
   readonly stall: { readonly listings: number; readonly clanOnly: boolean } | null;
   /** Feature data (windsock, contact damage, alarm, gate breach, clan lock, sight bonus); {} when none. */
   readonly features: PieceFeatures;
+  /** Modular set (ADR-104). rotSteps: rotation steps (0 = placement default: 4, free freeRotSteps, tri 12). */
+  readonly rotSteps: number;
+  /** Snap hint for free pieces: "" (sub-tile grid) or "vertex" (tile corners, corner pieces). */
+  readonly snap: "" | "vertex";
+  /** Ground slope tolerance override (raised/stilted foundations); -1 = building.maxSlope. */
+  readonly maxSlope: number;
+  /** Lowest material tier allowed (new modular pieces: 1 = wood, no twig). */
+  readonly minTier: number;
+  /** Extra per-piece ingredients on top of the tier cost (only from fromTier up), e.g. glass for windows. */
+  readonly extraCost: readonly (ItemCount & { readonly fromTier: number })[];
+  /** Modular family for art/menus ("foundation" | "wall" | "floor" | "corner" | "roof" | ""). */
+  readonly family: string;
 }
 export interface PieceFeatures {
   readonly windsock?: boolean; readonly clanTint?: boolean; readonly clanLock?: boolean; readonly breachAt?: number; readonly sightBonus?: number;
@@ -196,6 +211,7 @@ export interface RawPiece extends RawVisual {
   fired?: boolean; heat?: number; heatRadius?: number; light?: boolean; container?: number; privilegeRadius?: number; paintable?: boolean; variants?: number; variantNames?: string[]; spoilMul?: number; fuelMul?: number;
   stall?: { listings: number; clanOnly?: boolean };
   features?: PieceFeatures;
+  rotSteps?: number; snap?: "vertex"; maxSlope?: number; minTier?: number; extraCost?: { item: string; count: number; fromTier?: number }[]; family?: string;
 }
 export interface RawZombie extends RawVisual { key: string; hp: number; speed: number; damage: number; structureDamage: number; attackRange: number; attackCooldownSeconds: number; sightRange: number; hearingMul: number; variants: number }
 export interface RawDefs {
@@ -205,7 +221,7 @@ export interface RawDefs {
   vitals: VitalsTuning & { $comment?: string };
   environment: Omit<EnvironmentTuning, "weather"> & { weather: RawWeather[]; $comment?: string };
   pieces: { pieces: RawPiece[] };
-  tiers: { tiers: (Omit<TierDef, "id" | "cost"> & { cost: { item: string; count: number }[] })[]; building: BuildingTuning };
+  tiers: { tiers: (Omit<TierDef, "id" | "cost" | "raid"> & { cost: { item: string; count: number }[]; raid?: Partial<RaidMuls> })[]; building: BuildingTuning };
   zombies: { zombies: RawZombie[]; spawning: SpawnTuning; ai: AiTuning; noise: NoiseTuning };
   movement: MovementTuning & { $comment?: string };
   worldgen: { bands: { max: number; tile: number; nodes: string[]; nodeChance: number; temp?: number; humidity?: number }[]; unbuildableTiles: number[]; unwalkableTiles: number[] };
@@ -323,7 +339,8 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
   if (!weather.some((w) => w.weight > 0)) err("environment.weather: at least one entry needs weight > 0");
 
   // tiers
-  const tiers: TierDef[] = raw.tiers.tiers.map((t, i) => ({ id: i, key: t.key, hpMul: t.hpMul, vertLoss: t.vertLoss, horizLoss: t.horizLoss, repairMul: t.repairMul, cost: t.cost.map((c) => ({ item: itemRef(c.item, `tier ${t.key}`), count: c.count })) }));
+  const tiers: TierDef[] = raw.tiers.tiers.map((t, i) => ({ id: i, key: t.key, hpMul: t.hpMul, vertLoss: t.vertLoss, horizLoss: t.horizLoss, repairMul: t.repairMul, cost: t.cost.map((c) => ({ item: itemRef(c.item, `tier ${t.key}`), count: c.count })),
+    raid: { melee: t.raid?.melee ?? 1, explosive: t.raid?.explosive ?? 1, fire: t.raid?.fire ?? 1 } }));
   if (tiers.length === 0 || tiers.length > 8) err("tiers: need 1..8 tiers");
 
   // pieces: engine validation + gameplay extras
@@ -359,7 +376,12 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
       door: p.door ?? false, station, fired: p.fired ?? false, heat: p.heat ?? 0, heatRadius: p.heatRadius ?? 0, light: p.light ?? false,
       container: p.container ?? 0, privilegeRadius: p.privilegeRadius ?? 0, paintable: p.paintable ?? false, variants: Math.max(1, p.variants ?? 1), variantNames: p.variantNames ?? [], spoilMul: p.spoilMul ?? 1, fuelMul: p.fuelMul ?? 1,
       stall: p.stall ? { listings: p.stall.listings, clanOnly: p.stall.clanOnly ?? false } : null, features: p.features ?? {},
+      rotSteps: p.rotSteps ?? 0, snap: p.snap ?? "", maxSlope: p.maxSlope ?? -1, minTier: p.minTier ?? 0, family: p.family ?? "",
+      extraCost: (p.extraCost ?? []).map((c) => ({ item: itemRef(c.item, where), count: c.count, fromTier: c.fromTier ?? 0 })),
     });
+    if (placement === Placement.Tri && (p.footprint && (p.footprint.w !== 1 || p.footprint.h !== 1))) err(`${where}: tri pieces are 1x1`);
+    if (p.rotSteps !== undefined && !(Number.isInteger(p.rotSteps) && p.rotSteps >= 1 && p.rotSteps <= 16)) err(`${where}.rotSteps must be 1..16`);
+    if (p.minTier !== undefined && !(p.minTier >= 0 && p.minTier < tiers.length)) err(`${where}.minTier out of range`);
     if (p.stall && (p.stall.listings !== (p.container ?? 0))) err(`${where}.stall.listings must equal container`);
   }
 

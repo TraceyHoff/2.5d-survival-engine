@@ -36,7 +36,5 @@ export function truncatedStallTiers(pieces: readonly { key: string; stall?: { li
   return pieces.filter((p) => p.stall && p.stall.listings > rows).map((p) => ({ key: p.key, listings: p.stall!.listings, rows }));
 }
 
-/** Sprite lookup key for a placed piece variant: `<piece>@<variantName>`, or the bare key when the variant is unnamed. */
-export function pieceVariantKey(def: { key: string; variantNames: readonly string[] }, variant: number): string {
-  const n = def.variantNames[variant]; return n ? `${def.key}@${n}` : def.key;
-}
+/** Moved to building/modular.ts (ADR-104): one overloaded `pieceVariantKey` for named variants and tier/damage art. */
+export { pieceVariantKey } from "../building/modular.js";

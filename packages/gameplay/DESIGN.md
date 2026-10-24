@@ -414,7 +414,7 @@ Gameplay owns data, not loops: there is **no spawn loop and no controller** here
 - The row count is `fieldLength(StallDisplay.schema.item)` (core STALL_DISPLAY_ROWS = 24 since 3aecd3c). `truncatedStallTiers` lists pieces whose `stall.listings` exceed it. The list is now empty: booth (12) and pavilion (24) fit.
 
 ## 20. Stall variants (`data/pieces.json` `variants` + `variantNames`)
-- A piece may list `variantNames` (one per variant, validated). The BuildPiece.variant index selects one, and `pieceVariantKey(def, v)` returns `<piece>@<name>` for the Renderer's buildPieceVisual `variant` lookup, or the bare key when the variant is unnamed. The Renderer falls back to the default sprite.
+- A piece may list `variantNames` (one per variant, validated). The BuildPiece.variant index selects one, and `pieceVariantKey(def, v)` returns `<piece>@<name>` for the Renderer's buildPieceVisual `variant` lookup, or the bare key when the variant is unnamed (now an overload in building/modular.ts; the `(defs, piece)` form returns the tier key, ADR-104). The Renderer falls back to the default sprite.
 - Order matches assets/stalls manifest skins: stall_blanket patch, gingham, picnic; stall_cart pine_red, dark_teal, sunny; stall_booth thatch, redroof, bluecloth. clan_pavilion has a single sprite, so it has no variants.
 
 ## 21. Expression (`src/expression.ts`, `data/expressions.json`)
@@ -599,3 +599,35 @@ Known gaps: `PaintCmd` is not net-bridged; clan roster/perms only cover replicat
 - Replication: unchanged net element deltas; one changed slot = 19 B (test `apps/server/test/container_bandwidth.test.ts`). Spawn (open) ~1.4 KB: Netcode ask.
 - Persist: `CONTAINER_96_MIGRATIONS` (grown 24 -> 96, with/without crafterId) for chunk rows and player records (`packages/persist/test/container96.test.ts`).
 - UI: `openContainer` / `containerView(c, e, page)` / `withdrawIntent` / `depositIntent` (`src/ui/menus.ts`); the client inventory panel pages 24 slots at a time (◀ ▶, PgUp/PgDn, LB/RB). Tapping a pack slot while a box is open deposits the stack; tapping a box slot takes it.
+
+## 33. Modular building (ADR-104, `src/building/modular.ts`)
+
+### Placement and data
+- **Triangles.** Triangle foundations and floors use `Placement.Tri`. They sit at their exact centroid (`Slot.fx/fy`) and rotate in 30° steps.
+  - They snap to deck or triangle edges, with ties broken by distance then key order.
+  - `StructureIndex.tris`/`triAt` handle occupancy and support. A triangle supports walls only on axis-aligned edges.
+- **Corner walls** are free pieces that snap to tile vertices.
+- **Piece fields:**
+  - `family` groups pieces in the build menu.
+  - `minTier` is enforced at placement.
+  - `extraCost` adds to the tier cost: glass for the skylight, hardwood for stilts, clay_brick and stone for the chimney.
+  - `maxSlope` overrides the default (stilts allow 4).
+- **Floor height.** `building.levelHeight` = `FLOOR_HEIGHT_LEVELS` = 3, from @engine/world. This is asserted in a test.
+
+### Raid damage
+`TierDef.raid {melee, explosive, fire}` scales piece damage. `raidScaled` applies it to players and fire.
+
+| tier | melee | explosive | fire |
+|---|---|---|---|
+| twig | 1.5 | 2 | 2 |
+| wood | 1 | 1 | 1.5 |
+| stone | 0.5 | 1 | 0.25 |
+| metal | 0.25 | 0.8 | 0 |
+| reinforced | 0.1 | 0.6 | 0 |
+
+### Art keys
+- The sprite key is `<piece>@tier<N>`, with damage drawn as the `bld_crack` stage overlay. See docs/ART_KEYS_BUILDING.md.
+- `pieceVariantKey` also takes `(def, variant)` for stall variants.
+
+### Saves
+STRC v4 stores triangle x and y.

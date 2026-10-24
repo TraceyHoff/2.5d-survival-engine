@@ -13,7 +13,8 @@
 import { spillStall } from "../economy/stall.js";
 import { onPieceDamaged } from "../combat/pvp_pieces.js";
 import { type Entity, type World } from "@engine/core";
-import { AttachKind, BuildPiece, ContainerViewers, PieceStability, Viewing } from "../components.js";
+import { raidScaled } from "./modular.js";
+import { AttachKind, BuildPiece, type DamageCause, ContainerViewers, PieceStability, Viewing } from "../components.js";
 import { gameplayDefs, isAuthority } from "../config.js";
 import { DestroyCause, emit, PieceDamaged, PieceDestroyed } from "../events.js";
 import { unlinkPiece } from "./links.js";
@@ -112,8 +113,10 @@ export function destroyPiece(world: World, e: Entity, cause: DestroyCause): void
 }
 
 /** Queue hp damage on a piece; applied once per tick by structureDamageSystem. */
-export function damagePiece(world: World, e: Entity, amount: number, attacker?: Entity): void {
+/** `cause` selects the tier raid multiplier (ADR-104): melee (Combat), explosive (Explosion), fire. */
+export function damagePiece(world: World, e: Entity, amount: number, attacker?: Entity, cause?: DamageCause): void {
   if (!isAuthority(world) || world.isReplaying || amount <= 0 || !world.has(e, BuildPiece)) return;
+  amount = raidScaled(world, gameplayDefs(world), e, amount, attacker, cause); if (amount <= 0) return;
   const idx = structures(world); idx.pendingDamage.set(e, (idx.pendingDamage.get(e) ?? 0) + amount);
   if (attacker !== undefined && attacker !== e) pieceAttackers(world).set(e, attacker); // last attacker this tick wins
 }

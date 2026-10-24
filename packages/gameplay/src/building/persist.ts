@@ -5,7 +5,8 @@
  * Layout v1 (little endian, core BinaryWriter):
  *   header: u8 'S','T','R','C' | u16 version | i32 cx | i32 cy | u32 pieceHash | u32 itemHash | u32 count
  *   record: u16 type | u8 tier | u8 rot | u8 variant | u8 paint | u16 hp | u8 level | i16 qx | i16 qy (quarter tiles
- *           relative to the chunk origin) | u16 tribe | u8 flags (1 door, 2 fire, 4 storage)
+ *           relative to the chunk origin) | u16 tribe | u8 flags (1 door, 2 fire, 4 storage, 16 tri (v4))
+ *           [tri (flag 16, v4): f64 x, f64 y exact world centroid — ADR-104]
  *           [door: u8 open, u16 lockTribe] [fire: u8 lit, u32 burnRemainingTicks]
  *           [container (fire or storage): u8 slotCount, u8 n, n x (u8 slot, u16 item, u16 count, u32 ageTicks, u16 durability, u32 crafterId (v2))]
  *           [stall (flag 8, v2): u8 ownerKind, u32 ownerId, u8 open, u32 revision, u8 L, L x (u16 priceItem, u16 priceCount, u16 qty, u8 enabled),
@@ -28,7 +29,7 @@ import { openingParent, slotFromPos, slotTransform, structures, unmarkLinked, ty
 import { setEmittersLit } from "../systems/fuel.js";
 import { setStallOwnership } from "../economy/stall.js";
 
-export const STRC_VERSION = 3;
+export const STRC_VERSION = 4;
 const MAGIC = [0x53, 0x54, 0x52, 0x43];
 export class StructureCodecError extends Error {}
 
@@ -57,7 +58,8 @@ export function encodeStructures(world: World, cx: number, cy: number): Uint8Arr
     const door = atts.find((a) => world.has(a, DoorState)); const fire = atts.find((a) => world.has(a, Fuel));
     const store = atts.find((a) => world.has(a, Container) && !world.has(a, Fuel));
     const stall = store !== undefined && world.has(store, StallHeader) ? store : undefined;
-    w.write("u8", (door !== undefined ? 1 : 0) | (fire !== undefined ? 2 : 0) | (store !== undefined ? 4 : 0) | (stall !== undefined ? 8 : 0));
+    w.write("u8", (door !== undefined ? 1 : 0) | (fire !== undefined ? 2 : 0) | (store !== undefined ? 4 : 0) | (stall !== undefined ? 8 : 0) | (r.def.placement === Placement.Tri ? 16 : 0));
+    if (r.def.placement === Placement.Tri) { const s = idx.slotOf(r.e); const t = world.get(r.e, Transform)!; w.write("f64", s?.fx ?? t.x); w.write("f64", s?.fy ?? t.y); }
     if (door !== undefined) { const d = world.get(door, DoorState)!; w.write("u8", d.open); w.write("u16", d.lockTribe); }
     if (fire !== undefined) { const f = world.get(fire, Fuel)!; w.write("u8", f.lit); w.write("u32", Math.max(0, f.burnUntilTick - world.tick)); }
     for (const c of [fire, store]) if (c !== undefined) writeContainer(world, w, c);
@@ -119,7 +121,7 @@ export interface DecodedStructures { cx: number; cy: number; pieces: Entity[]; h
 export function decodeStructures(world: World, bytes: Uint8Array, opts: { strictHashes?: boolean } = {}): DecodedStructures {
   const defs = gameplayDefs(world); const idx = structures(world); const r = new BinaryReader(bytes); const lh = defs.building.levelHeight;
   for (const m of MAGIC) if (r.read("u8") !== m) throw new StructureCodecError("not a structure blob (bad magic)");
-  const version = r.read("u16"); if (version !== STRC_VERSION && version !== 1 && version !== 2) throw new StructureCodecError(`unsupported structure blob version ${version} (expected ${STRC_VERSION})`);
+  const version = r.read("u16"); if (version !== STRC_VERSION && version !== 1 && version !== 2 && version !== 3) throw new StructureCodecError(`unsupported structure blob version ${version} (expected ${STRC_VERSION})`);
   const cx = r.read("i32"), cy = r.read("i32"); const ph = r.read("u32"), ih = r.read("u32");
   const hashMismatch = ph !== defs.hashes.pieces || ih !== defs.hashes.items;
   if (hashMismatch && opts.strictHashes) throw new StructureCodecError("structure blob was written with different piece/item ids");
@@ -127,10 +129,11 @@ export function decodeStructures(world: World, bytes: Uint8Array, opts: { strict
   for (let k = 0; k < count; k++) {
     const type = r.read("u16"), tier = r.read("u8"), rot = r.read("u8"), variant = r.read("u8"), paint = r.read("u8"), hp = r.read("u16");
     const level = r.read("u8"), qx = r.read("i16"), qy = r.read("i16"), tribe = r.read("u16"), flags = r.read("u8");
+    const triPos = flags & 16 ? { x: r.read("f64"), y: r.read("f64") } : undefined;
     const door = flags & 1 ? { open: r.read("u8"), lockTribe: r.read("u16") } : undefined;
     const fire = flags & 2 ? { lit: r.read("u8"), rem: r.read("u32") } : undefined;
     const def = defs.pieces.get(type);
-    const x = cx * CHUNK_SIZE + qx / 4, y = cy * CHUNK_SIZE + qy / 4;
+    const x = triPos?.x ?? cx * CHUNK_SIZE + qx / 4, y = triPos?.y ?? cy * CHUNK_SIZE + qy / 4;
     let e: Entity | undefined;
     if (def) {
       const slot = slotFromPos(def, x, y, level, rot);

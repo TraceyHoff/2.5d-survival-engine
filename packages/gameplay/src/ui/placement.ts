@@ -24,6 +24,8 @@ export interface BuildPreview {
   rot: number; rotSteps: number;
   /** Placement would pass client validation; `reason` is the BuildFail code (0 when valid). */
   valid: boolean; reason: number;
+  /** Touch snap assist (ADR-104) moved the request to a nearby valid snap; `request` holds the moved point. */
+  assisted?: boolean;
   /** Unsnapped request (reach-clamped aim point + requested rot) that placePreviewIntent sends. */
   request: { x: number; y: number; rot: number };
 }
@@ -32,7 +34,7 @@ export const PLACE_AHEAD = 2;
 
 export function rotationSteps(world: World, piece: number): number {
   const d = gameplayDefs(world); const def = d.pieces.get(piece);
-  return def?.placement === Placement.Free ? d.building.freeRotSteps : 4;
+  return def?.placement === Placement.Tri ? 12 : def?.placement === Placement.Free ? def.rotSteps || d.building.freeRotSteps : 4;
 }
 export const rotateStep = (world: World, piece: number, rot: number, dir: 1 | -1): number => { const n = rotationSteps(world, piece); return (((rot + dir) % n) + n) % n; };
 
@@ -44,7 +46,23 @@ export function placementTarget(world: World, player: Entity, aim: PlacementAim 
   const n = Math.hypot(aim.x, aim.y) || 1; const a = Math.min(PLACE_AHEAD, reach); return { x: t.x + (aim.x / n) * a, y: t.y + (aim.y / n) * a };
 }
 
-export function buildPreviewFor(world: World, player: Entity, sel: BuildSelection, rot: number, aim: PlacementAim | undefined, level = 0): BuildPreview | undefined {
+/** Snap-assist probe ring (tiles): 8 directions at 0.5 then 1.0 tiles, fixed order (deterministic). */
+export const SNAP_ASSIST_RING: readonly (readonly [number, number])[] = [0.5, 1].flatMap((r) => [0, 1, 2, 3, 4, 5, 6, 7].map((k) => [Math.round(Math.cos((k * Math.PI) / 4) * r * 1e6) / 1e6, Math.round(Math.sin((k * Math.PI) / 4) * r * 1e6) / 1e6] as const));
+/**
+ * Preview with touch snap assist: when the direct aim is invalid and assist is on (default for stick/touch aim,
+ * mode 0; `assist` overrides), the first valid preview from SNAP_ASSIST_RING around the aim is returned instead.
+ */
+export function buildPreviewFor(world: World, player: Entity, sel: BuildSelection, rot: number, aim: PlacementAim | undefined, level = 0, assist?: boolean): BuildPreview | undefined {
+  const p = rawPreview(world, player, sel, rot, aim, level);
+  if (!p || p.valid || !(assist ?? (aim !== undefined && aim.mode !== 1))) return p;
+  const at = placementTarget(world, player, aim)!;
+  for (const [dx, dy] of SNAP_ASSIST_RING) {
+    const q = rawPreview(world, player, sel, rot, { mode: 1, x: at.x + dx, y: at.y + dy }, level);
+    if (q?.valid) return { ...q, assisted: true };
+  }
+  return p;
+}
+function rawPreview(world: World, player: Entity, sel: BuildSelection, rot: number, aim: PlacementAim | undefined, level: number): BuildPreview | undefined {
   const d = gameplayDefs(world); const def = d.pieces.get(sel.piece); const at = placementTarget(world, player, aim); if (!def || !at) return undefined;
   const sn = snapPlacement(world, { piece: sel.piece, x: at.x, y: at.y, level, rot, tier: sel.tier, variant: sel.variant });
   const base = { pieceKey: def.key, piece: def.id, tier: sel.tier, variant: sel.variant, paint: sel.paint, level, rotSteps: rotationSteps(world, sel.piece), request: { x: at.x, y: at.y, rot } };

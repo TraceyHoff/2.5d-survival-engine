@@ -31,7 +31,8 @@
           "kind": 1
         }
       ],
-      "solid": false
+      "solid": false,
+      "family": "foundation"
     },
     {
       "key": "floor",
@@ -63,7 +64,8 @@
           "kind": 1
         }
       ],
-      "solid": false
+      "solid": false,
+      "family": "floor"
     },
     {
       "key": "floor_hatch_frame",
@@ -101,7 +103,8 @@
           "kind": 4
         }
       ],
-      "solid": false
+      "solid": false,
+      "family": "floor"
     },
     {
       "key": "roof_flat",
@@ -112,7 +115,8 @@
       "hp": 250,
       "minLevel": 1,
       "roof": true,
-      "solid": false
+      "solid": false,
+      "family": "roof"
     },
     {
       "key": "roof_slope",
@@ -123,7 +127,8 @@
       "hp": 250,
       "minLevel": 1,
       "roof": true,
-      "solid": false
+      "solid": false,
+      "family": "roof"
     },
     {
       "key": "stairs",
@@ -144,7 +149,8 @@
       "hp": 300,
       "needsDeck": true,
       "supportsAbove": true,
-      "solid": true
+      "solid": true,
+      "family": "corner"
     },
     {
       "key": "wall",
@@ -155,7 +161,8 @@
       "hp": 250,
       "blocksPath": true,
       "variants": 4,
-      "$variants": "0 plain, 1 wall_clan_wood, 2 wall_clan_stone, 3 wall_clan_palisade (art only; stats per material tier)"
+      "$variants": "0 plain, 1 wall_clan_wood, 2 wall_clan_stone, 3 wall_clan_palisade (art only; stats per material tier)",
+      "family": "wall"
     },
     {
       "key": "wall_low",
@@ -164,7 +171,8 @@
       "tiered": true,
       "costScale": 0.5,
       "hp": 150,
-      "blocksPath": true
+      "blocksPath": true,
+      "family": "wall"
     },
     {
       "key": "wall_window",
@@ -181,7 +189,8 @@
           "y": 0,
           "kind": 3
         }
-      ]
+      ],
+      "family": "wall"
     },
     {
       "key": "wall_doorway",
@@ -198,7 +207,8 @@
           "y": 0,
           "kind": 2
         }
-      ]
+      ],
+      "family": "wall"
     },
     {
       "key": "door_wood",
@@ -1121,6 +1131,292 @@
         {
           "resource": "hardwood_planks",
           "amount": 10
+        }
+      ]
+    },
+    {
+      "key": "foundation_triangle",
+      "placement": "tri",
+      "layer": 0,
+      "tiered": true,
+      "costScale": 0.8,
+      "hp": 400,
+      "groundOnly": true,
+      "minTier": 1,
+      "family": "foundation",
+      "solid": false
+    },
+    {
+      "key": "foundation_stilt",
+      "placement": "cell",
+      "layer": 0,
+      "tiered": true,
+      "costScale": 2.0,
+      "hp": 450,
+      "groundOnly": true,
+      "maxSlope": 4,
+      "minTier": 1,
+      "family": "foundation",
+      "sockets": [
+        {
+          "x": 2,
+          "y": 0,
+          "kind": 1
+        },
+        {
+          "x": 4,
+          "y": 2,
+          "kind": 1
+        },
+        {
+          "x": 2,
+          "y": 4,
+          "kind": 1
+        },
+        {
+          "x": 0,
+          "y": 2,
+          "kind": 1
+        }
+      ],
+      "solid": false,
+      "extraCost": [
+        {
+          "item": "hardwood",
+          "count": 2,
+          "fromTier": 1
+        }
+      ]
+    },
+    {
+      "key": "foundation_ramp",
+      "placement": "cell",
+      "layer": 1,
+      "tiered": true,
+      "costScale": 1.2,
+      "hp": 300,
+      "needsDeck": true,
+      "minTier": 1,
+      "family": "foundation",
+      "solid": false
+    },
+    {
+      "key": "foundation_steps",
+      "placement": "cell",
+      "layer": 1,
+      "tiered": true,
+      "costScale": 1.0,
+      "hp": 300,
+      "needsDeck": true,
+      "minTier": 1,
+      "family": "foundation",
+      "solid": false
+    },
+    {
+      "key": "wall_arched",
+      "placement": "edge",
+      "layer": 1,
+      "tiered": true,
+      "costScale": 0.9,
+      "hp": 230,
+      "minTier": 1,
+      "family": "wall",
+      "extraCost": [
+        {
+          "item": "mortar",
+          "count": 1,
+          "fromTier": 2
+        }
+      ]
+    },
+    {
+      "key": "wall_fortified",
+      "placement": "edge",
+      "layer": 1,
+      "tiered": true,
+      "costScale": 1.6,
+      "hp": 400,
+      "blocksPath": true,
+      "minTier": 1,
+      "family": "wall",
+      "extraCost": [
+        {
+          "item": "nails",
+          "count": 4,
+          "fromTier": 1
+        },
+        {
+          "item": "steel_plate",
+          "count": 1,
+          "fromTier": 4
+        }
+      ]
+    },
+    {
+      "key": "floor_stairwell",
+      "placement": "cell",
+      "layer": 0,
+      "tiered": true,
+      "costScale": 0.8,
+      "hp": 220,
+      "minLevel": 1,
+      "minTier": 1,
+      "family": "floor",
+      "solid": false
+    },
+    {
+      "key": "floor_skylight",
+      "placement": "cell",
+      "layer": 0,
+      "tiered": true,
+      "costScale": 0.6,
+      "hp": 180,
+      "minLevel": 1,
+      "minTier": 1,
+      "family": "floor",
+      "sockets": [
+        {
+          "x": 2,
+          "y": 0,
+          "kind": 1
+        },
+        {
+          "x": 4,
+          "y": 2,
+          "kind": 1
+        },
+        {
+          "x": 2,
+          "y": 4,
+          "kind": 1
+        },
+        {
+          "x": 0,
+          "y": 2,
+          "kind": 1
+        }
+      ],
+      "solid": false,
+      "extraCost": [
+        {
+          "item": "glass",
+          "count": 3,
+          "fromTier": 1
+        }
+      ]
+    },
+    {
+      "key": "floor_triangle",
+      "placement": "tri",
+      "layer": 0,
+      "tiered": true,
+      "costScale": 0.6,
+      "hp": 250,
+      "minLevel": 1,
+      "minTier": 1,
+      "family": "floor",
+      "solid": false
+    },
+    {
+      "key": "wall_corner_inner",
+      "placement": "free",
+      "layer": 3,
+      "tiered": true,
+      "costScale": 0.4,
+      "hp": 250,
+      "snap": "vertex",
+      "rotSteps": 4,
+      "minTier": 1,
+      "family": "corner",
+      "solid": true
+    },
+    {
+      "key": "wall_corner_outer",
+      "placement": "free",
+      "layer": 3,
+      "tiered": true,
+      "costScale": 0.4,
+      "hp": 250,
+      "snap": "vertex",
+      "rotSteps": 4,
+      "minTier": 1,
+      "family": "corner",
+      "solid": true
+    },
+    {
+      "key": "wall_corner_angled",
+      "placement": "free",
+      "layer": 3,
+      "tiered": true,
+      "costScale": 0.4,
+      "hp": 250,
+      "snap": "vertex",
+      "rotSteps": 8,
+      "minTier": 1,
+      "family": "corner",
+      "solid": true
+    },
+    {
+      "key": "roof_gable",
+      "placement": "cell",
+      "layer": 0,
+      "tiered": true,
+      "costScale": 1.2,
+      "hp": 250,
+      "minLevel": 1,
+      "roof": true,
+      "minTier": 1,
+      "family": "roof",
+      "solid": false
+    },
+    {
+      "key": "roof_corner",
+      "placement": "cell",
+      "layer": 0,
+      "tiered": true,
+      "costScale": 1.2,
+      "hp": 250,
+      "minLevel": 1,
+      "roof": true,
+      "minTier": 1,
+      "family": "roof",
+      "solid": false
+    },
+    {
+      "key": "roof_hip",
+      "placement": "cell",
+      "layer": 0,
+      "tiered": true,
+      "costScale": 1.3,
+      "hp": 250,
+      "minLevel": 1,
+      "roof": true,
+      "minTier": 1,
+      "family": "roof",
+      "solid": false
+    },
+    {
+      "key": "roof_chimney",
+      "placement": "cell",
+      "layer": 0,
+      "tiered": true,
+      "costScale": 1.4,
+      "hp": 280,
+      "minLevel": 1,
+      "roof": true,
+      "minTier": 1,
+      "family": "roof",
+      "solid": false,
+      "extraCost": [
+        {
+          "item": "clay_brick",
+          "count": 4,
+          "fromTier": 1
+        },
+        {
+          "item": "stone",
+          "count": 2,
+          "fromTier": 1
         }
       ]
     }

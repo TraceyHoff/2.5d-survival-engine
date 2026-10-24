@@ -80,7 +80,7 @@ export function burningSystem(world: World, dt: number): void {
     const b = world.get(e, Burning)!; if (!b.lit) continue;
     const isPiece = world.has(e, BuildPiece);
     const dmg = FIRE.dps * FIRE.checkSeconds * (b.intensity / 255);
-    if (isPiece) damagePiece(world, e, dmg); else applyDamage(world, e, dmg, e, DamageCause.Fire);
+    if (isPiece) damagePiece(world, e, dmg, undefined, DamageCause.Fire); else applyDamage(world, e, dmg, e, DamageCause.Fire);
     let next = b.intensity + (isPiece ? FIRE.growPerCheck : -FIRE.growPerCheck) - (wet ? FIRE.rainQuench : 0);
     if (world.has(e, Dead)) next = 0;
     next = Math.max(0, Math.min(255, next));

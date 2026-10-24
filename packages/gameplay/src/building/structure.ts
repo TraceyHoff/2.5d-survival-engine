@@ -13,13 +13,15 @@ import { BuildPiece, EdgeSide, PieceLink, PieceSlot, PieceStability, type Attach
 import { gameplayDefs } from "../config.js";
 import { Placement, type GameDefs, type PieceDef } from "../defs.js";
 import { linkAttachment } from "./links.js";
+import { TRI_INRADIUS, triEdges, triGridEdge, triKey } from "./modular.js";
 
 /** Canonical piece layer ids (PieceLink.layer / BuildingGrid layer); render imports these from here only. */
 export const LAYER_DECK = 0, LAYER_STRUCT = 1, LAYER_FURNITURE = 2, LAYER_DECOR = 3, LAYER_OPENING = 4;
 const OFF = 1 << 20;
 export const edgeKey = (tx: number, ty: number, z: number, side: EdgeSide): number => ((tx + OFF) * 2 ** 21 + (ty + OFF)) * 32 + z * 2 + (side - 1);
 
-export interface Slot { tx: number; ty: number; z: number; side: EdgeSide; rot: number }
+/** fx/fy: exact centroid of tri pieces (tx/ty = the tile containing it). */
+export interface Slot { tx: number; ty: number; z: number; side: EdgeSide; rot: number; fx?: number; fy?: number }
 
 /** Geometry of a piece def at a slot: Transform center + facing. */
 export function slotTransform(def: PieceDef, slot: Slot, levelHeight: number, x?: number, y?: number): { x: number; y: number; z: number; facing: number } {
@@ -28,14 +30,15 @@ export function slotTransform(def: PieceDef, slot: Slot, levelHeight: number, x?
     const flip = (slot.rot & 2) ? Math.PI : 0;
     return slot.side === EdgeSide.North ? { x: slot.tx + 0.5, y: slot.ty, z, facing: norm(flip) } : { x: slot.tx, y: slot.ty + 0.5, z, facing: norm(Math.PI / 2 + flip) };
   }
-  if (def.placement === Placement.Free) return { x: x ?? slot.tx + 0.5, y: y ?? slot.ty + 0.5, z, facing: norm((slot.rot * 2 * Math.PI) / 16) };
+  if (def.placement === Placement.Free) return { x: x ?? slot.tx + 0.5, y: y ?? slot.ty + 0.5, z, facing: norm((slot.rot * 2 * Math.PI) / (def.rotSteps || 16)) };
+  if (def.placement === Placement.Tri) return { x: slot.fx ?? x ?? slot.tx + 0.5, y: slot.fy ?? y ?? slot.ty + 0.5, z, facing: norm((slot.rot * Math.PI) / 6) };
   const [w, h] = rotatedSize(def, slot.rot & 3);
   return { x: slot.tx + w / 2, y: slot.ty + h / 2, z, facing: norm((slot.rot & 3) * Math.PI / 2) };
 }
 const norm = (a: number): number => { let r = a; while (r > Math.PI) r -= 2 * Math.PI; while (r < -Math.PI) r += 2 * Math.PI; return r; };
 export const rotatedSize = (def: PieceDef, rot4: number): [number, number] => (rot4 & 1 ? [def.footprint.h, def.footprint.w] : [def.footprint.w, def.footprint.h]);
 /** Grid rotation (0..3) used for occupancy: cells use rot directly, free pieces round their 16-step rot. */
-export const gridRot = (def: PieceDef, rot: number): number => (def.placement === Placement.Free ? Math.round(rot / 4) & 3 : rot & 3);
+export const gridRot = (def: PieceDef, rot: number): number => (def.placement === Placement.Free ? Math.round(rot / ((def.rotSteps || 16) / 4)) & 3 : def.placement === Placement.Tri ? 0 : rot & 3);
 /** Anchor tile of a cell/free footprint centred near (x,y). */
 export function anchorFor(def: PieceDef, x: number, y: number, rot4: number): [number, number] {
   const [w, h] = rotatedSize(def, rot4); return [Math.floor(x - w / 2 + 0.5), Math.floor(y - h / 2 + 0.5)];
@@ -47,6 +50,9 @@ export class StructureIndex {
   readonly edges = new Map<number, Entity>();
   /** parent piece -> opening piece. */
   readonly openings = new Map<Entity, Entity>();
+  /** Triangle pieces (placement tri, ADR-104): quantized centroid key -> entity; tile key -> tris centred in it. */
+  readonly tris = new Map<number, Entity>();
+  readonly tileTris = new Map<number, Set<Entity>>();
   readonly chunkPieces = new Map<ChunkKey, Set<Entity>>();
   readonly chunkVersions = new Map<ChunkKey, number>();
   /** privilege zone (claim piece) -> piece count; piece -> zone. */
@@ -65,7 +71,9 @@ export class StructureIndex {
   slotOf(e: Entity): Slot & { gridId: number; parent: number } | undefined {
     const st = this.world.store(PieceSlot); const s = st.slot(entityIndex(e)); if (s < 0) return undefined;
     const d = st.data;
-    return { tx: d.tx[s]!, ty: d.ty[s]!, z: d.z[s]!, side: d.side[s]! as EdgeSide, rot: this.world.getField(e, BuildPiece, "rot") ?? 0, gridId: d.gridId[s]!, parent: d.parent[s]! };
+    const out: Slot & { gridId: number; parent: number } = { tx: d.tx[s]!, ty: d.ty[s]!, z: d.z[s]!, side: d.side[s]! as EdgeSide, rot: this.world.getField(e, BuildPiece, "rot") ?? 0, gridId: d.gridId[s]!, parent: d.parent[s]! };
+    const inf = this.info.get(e); if (inf && inf.slot.fx !== undefined) { out.fx = inf.slot.fx; out.fy = inf.slot.fy!; }
+    return out;
   }
 
   // ---- lookups ----
@@ -73,6 +81,20 @@ export class StructureIndex {
   cell(tx: number, ty: number, z: number, layer: number): Entity | 0 { const id = this.grid.at(tx, ty, z, layer); return id ? this.byGrid.get(id) ?? 0 : 0; }
   edge(tx: number, ty: number, z: number, side: EdgeSide): Entity | 0 { return this.edges.get(edgeKey(tx, ty, z, side)) ?? 0; }
   opening(parent: Entity): Entity | 0 { return this.openings.get(parent) ?? 0; }
+  /** Triangle whose centroid is within 0.1 of (x,y) at level z. */
+  triAt(x: number, y: number, z: number): Entity | 0 {
+    for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+      const e = this.tris.get(triKey(x + dx / 16, y + dy / 16, z)); if (e === undefined) continue;
+      const i = this.info.get(e); if (i && Math.hypot((i.slot.fx ?? 0) - x, (i.slot.fy ?? 0) - y) < 0.1) return e;
+    }
+    return 0;
+  }
+  /** Triangles centred in tile (tx,ty) at z. */
+  trisInTile(tx: number, ty: number, z: number): readonly Entity[] { const s = this.tileTris.get(edgeKey(tx, ty, z, EdgeSide.North)); return s ? [...s].sort((a, b) => a - b) : []; }
+  /** Deck-like piece (square deck or tri) across a grid edge from point (x,y) along normal (nx,ny). */
+  private across(mx: number, my: number, nx: number, ny: number, z: number, out: (e: Entity | 0) => void): void {
+    out(this.triAt(mx + nx * TRI_INRADIUS, my + ny * TRI_INRADIUS, z));
+  }
   /** Four edges of a tile: N, S, W, E as (tx, ty, side). */
   static tileEdges(tx: number, ty: number): [number, number, EdgeSide][] {
     return [[tx, ty, EdgeSide.North], [tx, ty + 1, EdgeSide.North], [tx, ty, EdgeSide.West], [tx + 1, ty, EdgeSide.West]];
@@ -84,6 +106,7 @@ export class StructureIndex {
   tilesOf(e: Entity): [number, number][] {
     const d = this.def(e); const s = this.slotOf(e); if (!d || !s) return [];
     if (s.side !== EdgeSide.None) return [];
+    if (d.placement === Placement.Tri) return [[s.tx, s.ty]];
     return this.grid.footprintTiles(d.id, s.tx, s.ty, gridRot(d, s.rot));
   }
   /** Piece at a PieceLink-style slot key. layer 4 = opening hosted by the piece at that slot. */
@@ -108,6 +131,11 @@ export class StructureIndex {
     } else if (def.placement === Placement.Edge) {
       const k = edgeKey(slot.tx, slot.ty, slot.z, slot.side); if (this.edges.has(k)) return false;
       this.edges.set(k, e);
+    } else if (def.placement === Placement.Tri) {
+      const fx = slot.fx ?? slot.tx + 0.5, fy = slot.fy ?? slot.ty + 0.5;
+      if (this.triAt(fx, fy, slot.z)) return false;
+      this.tris.set(triKey(fx, fy, slot.z), e);
+      const tk = edgeKey(slot.tx, slot.ty, slot.z, EdgeSide.North); let ts = this.tileTris.get(tk); if (!ts) this.tileTris.set(tk, (ts = new Set())); ts.add(e);
     } else {
       gridId = this.grid.place(def.id, slot.tx, slot.ty, slot.z, gridRot(def, slot.rot));
       if (!gridId) return false;
@@ -128,6 +156,10 @@ export class StructureIndex {
     if (inf.parent && this.openings.get(inf.parent) === e) this.openings.delete(inf.parent);
     else if (def.placement === Placement.Edge) { const k = edgeKey(s.tx, s.ty, s.z, s.side); if (this.edges.get(k) === e) this.edges.delete(k); }
     this.openings.delete(e);
+    if (def.placement === Placement.Tri) {
+      const k = triKey(s.fx ?? s.tx + 0.5, s.fy ?? s.ty + 0.5, s.z); if (this.tris.get(k) === e) this.tris.delete(k);
+      const tk = edgeKey(s.tx, s.ty, s.z, EdgeSide.North); const ts = this.tileTris.get(tk); if (ts) { ts.delete(e); if (!ts.size) this.tileTris.delete(tk); }
+    }
     if (inf.gridId) { this.grid.remove(inf.gridId); this.byGrid.delete(inf.gridId); }
     const set = this.chunkPieces.get(inf.ck); if (set?.delete(e)) { this.bump(inf.ck); if (!set.size) this.chunkPieces.delete(inf.ck); }
     const z = this.zoneOf.get(e); if (z !== undefined) { this.zoneOf.delete(e); this.zoneCounts.set(z, (this.zoneCounts.get(z) ?? 1) - 1); }
@@ -170,6 +202,13 @@ export class StructureIndex {
     if (!open) for (const k of seen) this.encCache.set(k, r); else this.encCache.set(key, r);
     return r;
   }
+  /** Tris on either side of a grid edge at z. */
+  edgeTris(tx: number, ty: number, z: number, side: EdgeSide): Entity[] {
+    if (!this.tris.size) return [];
+    const [mx, my, nx, ny] = side === EdgeSide.North ? [tx + 0.5, ty, 0, 1] : [tx, ty + 0.5, 1, 0];
+    const out: Entity[] = []; for (const sg of [1, -1]) { const t = this.triAt(mx + sg * nx * TRI_INRADIUS, my + sg * ny * TRI_INRADIUS, z); if (t) out.push(t); }
+    return out;
+  }
   get count(): number { let n = 0; for (const s of this.chunkPieces.values()) n += s.size; return n; }
 
   // ---- support graph (server stability; also used for client-side "has any support" ghost checks) ----
@@ -186,6 +225,18 @@ export class StructureIndex {
     if (def.placement === Placement.Edge) {
       for (const [x, y] of StructureIndex.edgeTiles(s.tx, s.ty, s.side)) { const d = this.deck(x, y, z); if (this.isDeck(d)) out.push([d, 1]); }
       if (z > 0) { const below = this.edge(s.tx, s.ty, z - 1, s.side); if (below) out.push([below, 1]); }
+      for (const t of this.edgeTris(s.tx, s.ty, z, s.side)) if (this.isDeck(t)) out.push([t, 1]);
+      return { root: false, list: out };
+    }
+    if (def.placement === Placement.Tri) {
+      if (z === 0 && def.groundOnly) return { root: true, list: out };
+      const seen = new Set<Entity>(); const push = (x: Entity | 0, k: number): void => { if (x && x !== self && !seen.has(x)) { seen.add(x); out.push([x, k]); } };
+      for (const e of triEdges(s.fx ?? s.tx + 0.5, s.fy ?? s.ty + 0.5, s.rot)) {
+        this.across(e.mx, e.my, e.nx, e.ny, z, (x) => push(x, 2));
+        const g = triGridEdge(e); if (!g) continue;
+        const d = this.deck(Math.floor(e.mx + e.nx * 0.25), Math.floor(e.my + e.ny * 0.25), z); if (this.isDeck(d)) push(d, 2);
+        if (z > 0) { const w = this.edge(g.tx, g.ty, z - 1, g.side); if (w && this.def(w)?.placement === Placement.Edge) push(w, 1); }
+      }
       return { root: false, list: out };
     }
     const tiles = this.grid.footprintTiles(def.id, s.tx, s.ty, gridRot(def, s.rot));
@@ -197,6 +248,7 @@ export class StructureIndex {
         for (const [ex, ey, side] of StructureIndex.tileEdges(x, y)) { const w = this.edge(ex, ey, z - 1, side); if (w && this.def(w)?.placement === Placement.Edge) push(w, 1); }
         const p = this.cell(x, y, z - 1, LAYER_STRUCT); if (p && this.def(p)?.supportsAbove) push(p, 1);
         for (const [dx, dy] of NEIGH) push(this.deck(x + dx, y + dy, z), 2);
+        if (this.tris.size) for (const [mx, my, nx, ny] of tileEdgeNormals(x, y)) this.across(mx, my, nx, ny, z, (t) => push(t, 2));
       }
       return { root: false, list: out };
     }
@@ -204,6 +256,7 @@ export class StructureIndex {
       let onDeck = false; for (const [x, y] of tiles) if (this.isDeck(this.deck(x, y, 0))) { onDeck = true; break; }
       if (!onDeck) return { root: true, list: out };
     }
+    if (def.snap === "vertex") { for (const [x, y] of [[s.tx, s.ty], [s.tx - 1, s.ty], [s.tx, s.ty - 1], [s.tx - 1, s.ty - 1]] as const) { const d = this.deck(x, y, z); if (this.isDeck(d)) push(d, 0); } return { root: false, list: out }; }
     for (const [x, y] of tiles) {
       const d = this.deck(x, y, z); if (this.isDeck(d)) push(d, def.placement === Placement.Free ? 0 : 1);
       if (def.layer === LAYER_STRUCT && z > 0) { const p = this.cell(x, y, z - 1, LAYER_STRUCT); if (p && this.def(p)?.supportsAbove) push(p, 1); }
@@ -218,6 +271,16 @@ export class StructureIndex {
     if (def.placement === Placement.Edge) {
       for (const [x, y] of StructureIndex.edgeTiles(s.tx, s.ty, s.side)) add(this.deck(x, y, z + 1));
       add(this.edge(s.tx, s.ty, z + 1, s.side));
+      for (const t of this.edgeTris(s.tx, s.ty, z + 1, s.side)) add(t);
+      return out;
+    }
+    if (def.placement === Placement.Tri) {
+      for (const e2 of triEdges(s.fx ?? s.tx + 0.5, s.fy ?? s.ty + 0.5, s.rot)) {
+        this.across(e2.mx, e2.my, e2.nx, e2.ny, z, add);
+        const g = triGridEdge(e2); if (!g) continue;
+        add(this.deck(Math.floor(e2.mx + e2.nx * 0.25), Math.floor(e2.my + e2.ny * 0.25), z)); add(this.edge(g.tx, g.ty, z, g.side));
+      }
+      for (let la = 1; la < 4; la++) add(this.cell(s.tx, s.ty, z, la));
       return out;
     }
     if (def.placement !== Placement.Cell) return out;
@@ -226,13 +289,17 @@ export class StructureIndex {
       if (def.layer === LAYER_DECK) {
         for (const [ex, ey, side] of StructureIndex.tileEdges(x, y)) add(this.edge(ex, ey, z, side));
         for (let la = 1; la < 4; la++) add(this.cell(x, y, z, la));
+        for (const [vx, vy] of [[x + 1, y], [x, y + 1], [x + 1, y + 1]] as const) { const c = this.cell(vx, vy, z, LAYER_DECOR); if (c && this.def(c)?.snap === "vertex") add(c); }
         for (const [dx, dy] of NEIGH) add(this.deck(x + dx, y + dy, z));
+        if (this.tris.size) for (const [mx, my, nx, ny] of tileEdgeNormals(x, y)) this.across(mx, my, nx, ny, z, add);
       } else if (def.supportsAbove) { add(this.deck(x, y, z + 1)); add(this.cell(x, y, z + 1, LAYER_STRUCT)); }
     }
     return out;
   }
 }
 const NEIGH = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const;
+/** Tile edges as (midpoint, outward normal): N, S, W, E. */
+const tileEdgeNormals = (x: number, y: number): [number, number, number, number][] => [[x + 0.5, y, 0, -1], [x + 0.5, y + 1, 0, 1], [x, y + 0.5, -1, 0], [x + 1, y + 0.5, 1, 0]];
 
 export const StructureIndexRes = defineResource<StructureIndex>("gameplay.StructureIndex");
 export function structures(world: World): StructureIndex {
@@ -249,6 +316,7 @@ export function slotFromPos(def: PieceDef, x: number, y: number, z: number, rot:
     return side === EdgeSide.North ? { tx: Math.floor(x), ty: Math.round(y), z, side, rot } : { tx: Math.round(x), ty: Math.floor(y), z, side, rot };
   }
   if (def.placement === Placement.Opening) return { tx: Math.floor(x), ty: Math.floor(y), z, side: EdgeSide.None, rot };
+  if (def.placement === Placement.Tri) return { tx: Math.floor(x), ty: Math.floor(y), z, side: EdgeSide.None, rot, fx: x, fy: y };
   const [tx, ty] = anchorFor(def, x, y, gridRot(def, rot));
   return { tx, ty, z, side: EdgeSide.None, rot };
 }

@@ -34,7 +34,7 @@ export function setAnim(world: World, e: Entity, anim: Anim): void {
 /** Creature damage is reduced by worn armor (Combat / Explosion causes; `pierce` 0..1 ignores part of it). */
 export function applyDamage(world: World, target: Entity, amount: number, source: Entity, cause: DamageCause = DamageCause.Combat, pierce = 0): void {
   if (!isAuthority(world) || world.isReplaying || amount <= 0 || !world.isAlive(target)) return;
-  if (world.has(target, BuildPiece)) { damagePiece(world, target, amount, source); return; }
+  if (world.has(target, BuildPiece)) { damagePiece(world, target, amount, source, cause); return; }
   const hp = world.getField(target, Health, "hp"); if (hp === undefined || world.has(target, Dead)) return;
   if (cause === DamageCause.Combat || cause === DamageCause.Explosion) amount = armorReduce(world, target, amount, pierce);
   world.setField(target, Health, "hp", Math.max(0, hp - amount));

@@ -22,7 +22,8 @@ import { emitterSpecs } from "../realism.js";
 import { makeNoise } from "../systems/noise.js";
 import { TerrainRes } from "../world.js";
 import { linkAttachment } from "./links.js";
-import { anchorFor, gridRot, LAYER_OPENING, markLinked, slotTransform, structures, type Slot, type StructureIndex } from "./structure.js";
+import { TRI_INRADIUS, triEdges } from "./modular.js";
+import { anchorFor, gridRot, LAYER_DECK, LAYER_OPENING, markLinked, slotTransform, structures, type Slot, type StructureIndex } from "./structure.js";
 import { Falloff } from "@engine/world";
 import { indexEntity } from "../spawn.js";
 import { tillSlots } from "../economy/config.js";
@@ -38,6 +39,8 @@ export function maxHp(defs: GameDefs, def: PieceDef, tier: number): number {
 /** Build cost: tier cost x costScale (tiered) or the piece's own cost. */
 export function pieceCost(defs: GameDefs, def: PieceDef, tier: number, scale = 1): ItemCount[] {
   const base = def.tiered ? (defs.tiers[tier]?.cost ?? []).map((c) => ({ item: c.item, count: c.count * def.costScale })) : def.cost.map((c) => ({ item: c.resource, count: c.amount }));
+  // modular extras (ADR-104): merged by item, appended after the tier cost (order stable for exchangeItems)
+  for (const x of def.extraCost) if (tier >= x.fromTier) { const h = base.find((c) => c.item === x.item); if (h) h.count += x.count; else base.push({ item: x.item, count: x.count }); }
   return base.map((c) => ({ item: c.item, count: Math.ceil(c.count * scale - 1e-9) })).filter((c) => c.count > 0);
 }
 
@@ -58,15 +61,16 @@ export function snapPlacement(world: World, req: PlaceRequest): Snapped | BuildF
   const defs = gameplayDefs(world); const def = defs.pieces.get(req.piece);
   if (!def) return BuildFail.UnknownPiece;
   const tier = def.tiered ? req.tier : def.fixedTier;
-  if (def.tiered && !(tier >= 0 && tier < defs.tiers.length)) return BuildFail.BadTier;
+  if (def.tiered && !(tier >= def.minTier && tier < defs.tiers.length)) return BuildFail.BadTier;
   const variant = req.variant < def.variants ? req.variant : 0;
   const idx = structures(world); const z = req.level; const lh = defs.building.levelHeight;
   let slot: Slot; let parent: Entity | 0 = 0; let px: number | undefined, py: number | undefined;
   switch (def.placement) {
     case Placement.Cell: { const r = req.rot & 3; const [tx, ty] = anchorFor(def, req.x, req.y, r); slot = { tx, ty, z, side: EdgeSide.None, rot: r }; break; }
+    case Placement.Tri: { slot = snapTri(idx, req.x, req.y, z, req.rot); break; }
     case Placement.Free: {
-      const step = defs.building.freeSnapSubtiles / SUBTILE; px = Math.round(req.x / step) * step; py = Math.round(req.y / step) * step;
-      const rot = req.rot % defs.building.freeRotSteps; const [tx, ty] = anchorFor(def, px, py, gridRot(def, rot));
+      const step = def.snap === "vertex" ? 1 : defs.building.freeSnapSubtiles / SUBTILE; px = Math.round(req.x / step) * step; py = Math.round(req.y / step) * step;
+      const rot = req.rot % (def.rotSteps || defs.building.freeRotSteps); const [tx, ty] = anchorFor(def, px, py, gridRot(def, rot));
       slot = { tx, ty, z, side: EdgeSide.None, rot }; break;
     }
     case Placement.Edge: { const e = snapEdge(idx, req.x, req.y, z); slot = { ...e, z, rot: (e.side === EdgeSide.West ? 1 : 0) | (req.rot & 2) }; break; }
@@ -86,6 +90,37 @@ export function snapPlacement(world: World, req: PlaceRequest): Snapped | BuildF
   if (def.placement === Placement.Opening && def.fits === SocketKind.Hatch) { pos.x = slot.tx + 0.5; pos.y = slot.ty + 0.5; }
   return { def, slot, parent, pos, tier, variant };
 }
+
+/**
+ * Triangle snap (ADR-104): candidates are the free outward faces of square decks and triangles at level z within
+ * the 3x3 tiles around the aim; nearest candidate centroid wins (ties: x, then y, then rot). No candidate: the
+ * triangle stands alone at the aim (quarter-tile grid) with rot = req.rot % 12 (valid only as a ground root).
+ */
+export function triCandidates(idx: StructureIndex, x: number, y: number, z: number): Slot[] {
+  const out: Slot[] = []; const tx0 = Math.floor(x), ty0 = Math.floor(y);
+  const free = (cx: number, cy: number): boolean => !idx.triAt(cx, cy, z) && !idx.deck(Math.floor(cx), Math.floor(cy), z);
+  const add = (cx: number, cy: number, rot: number): void => { if (free(cx, cy)) out.push({ tx: Math.floor(cx), ty: Math.floor(cy), z, side: EdgeSide.None, rot: ((rot % 12) + 12) % 12, fx: cx, fy: cy }); };
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+    const tx = tx0 + dx, ty = ty0 + dy;
+    if (idx.isDeck(idx.deck(tx, ty, z))) for (const [mx, my, nx, ny, step] of [[tx + 0.5, ty, 0, -1, 3], [tx + 0.5, ty + 1, 0, 1, 9], [tx, ty + 0.5, -1, 0, 0], [tx + 1, ty + 0.5, 1, 0, 6]] as const)
+      add(mx + nx * TRI_INRADIUS, my + ny * TRI_INRADIUS, step); // edge 0 faces back toward the deck
+    for (const t of idx.trisInTile(tx, ty, z)) {
+      const s = idx.slotOf(t); if (!s || s.fx === undefined) continue;
+      for (const e of triEdges(s.fx, s.fy!, s.rot)) add(e.mx + e.nx * TRI_INRADIUS, e.my + e.ny * TRI_INRADIUS, e.dirStep + 6);
+    }
+  }
+  return out;
+}
+export function snapTri(idx: StructureIndex, x: number, y: number, z: number, rot: number): Slot {
+  const c = triCandidates(idx, x, y, z);
+  const d = (s: Slot): number => Math.hypot(s.fx! - x, s.fy! - y);
+  c.sort((a, b) => d(a) - d(b) || a.fx! - b.fx! || a.fy! - b.fy! || a.rot - b.rot);
+  if (c[0] && d(c[0]) <= 1) return c[0];
+  const fx = Math.round(x * 4) / 4, fy = Math.round(y * 4) / 4;
+  return { tx: Math.floor(fx), ty: Math.floor(fy), z, side: EdgeSide.None, rot: ((rot % 12) + 12) % 12, fx, fy };
+}
+/** Tiles around a vertex-snapped corner piece (any one with a deck supports it). */
+export const vertexTiles = (tx: number, ty: number): [number, number][] => [[tx, ty], [tx - 1, ty], [tx, ty - 1], [tx - 1, ty - 1]];
 
 export const tribeOf = (world: World, e: Entity): number => world.getField(e, Tribe, "id") ?? 0;
 export const MAX_PRIVILEGE_RADIUS = 16;
@@ -132,25 +167,29 @@ export function validatePlacement(world: World, builder: Entity, sn: Snapped, op
   const own = zonesAt(world, sn.pos.x, sn.pos.y)[0];
   if (own !== undefined && (idx.zoneCounts.get(own) ?? 0) >= b.maxPiecesPerZone) return BuildFail.ZoneFull;
   // terrain for ground-level pieces
-  const tiles = def.placement === Placement.Cell || def.placement === Placement.Free ? idx.grid.footprintTiles(def.id, slot.tx, slot.ty, gridRot(def, slot.rot)) : [];
+  const tiles = def.placement === Placement.Cell || def.placement === Placement.Free ? idx.grid.footprintTiles(def.id, slot.tx, slot.ty, gridRot(def, slot.rot)) : def.placement === Placement.Tri ? [[slot.tx, slot.ty] as [number, number]] : [];
   const terrain = world.getResource(TerrainRes);
-  const onGround = slot.z === 0 && (def.groundOnly || (def.ground && !tiles.some(([x, y]) => idx.isDeck(idx.deck(x, y, 0)))));
+  const onGround = slot.z === 0 && def.snap !== "vertex" && (def.groundOnly || (def.ground && !tiles.some(([x, y]) => idx.isDeck(idx.deck(x, y, 0)))));
   if (terrain && onGround) {
     let lo = Infinity, hi = -Infinity;
     for (const [x, y] of tiles) {
       if (defs.worldgen.unbuildableTiles.has(terrain.tileAt(x, y))) return BuildFail.Terrain;
       const h = terrain.heightAt(x, y); lo = Math.min(lo, h); hi = Math.max(hi, h);
     }
-    if (hi - lo > b.maxSlope) return BuildFail.Terrain;
+    if (hi - lo > (def.maxSlope >= 0 ? def.maxSlope : b.maxSlope)) return BuildFail.Terrain;
   }
   // occupancy
   if (def.placement === Placement.Edge) { if (idx.edge(slot.tx, slot.ty, slot.z, slot.side)) return BuildFail.Occupied; }
-  else if (def.placement === Placement.Opening) {
+  else if (def.placement === Placement.Tri) {
+    if (idx.triAt(slot.fx!, slot.fy!, slot.z) || idx.deck(slot.tx, slot.ty, slot.z)) return BuildFail.Occupied;
+  } else if (def.placement === Placement.Opening) {
     if (!sn.parent || idx.def(sn.parent)?.opening !== def.fits) return BuildFail.NoSocket;
     if (idx.opening(sn.parent)) return BuildFail.Occupied;
   } else if (!idx.grid.canPlace(def.id, slot.tx, slot.ty, slot.z, gridRot(def, slot.rot)).ok) return BuildFail.Occupied;
+  else if (def.layer === LAYER_DECK && def.placement === Placement.Cell && idx.tris.size && tiles.some(([x, y]) => idx.trisInTile(x, y, slot.z).length > 0)) return BuildFail.Occupied;
   // furniture/decor on decks need a deck under every tile
-  if (def.placement === Placement.Free && !onGround && !tiles.every(([x, y]) => idx.isDeck(idx.deck(x, y, slot.z)))) return BuildFail.NoSupport;
+  if (def.snap === "vertex") { if (!vertexTiles(slot.tx, slot.ty).some(([x, y]) => idx.isDeck(idx.deck(x, y, slot.z)))) return BuildFail.NoSupport; }
+  else if (def.placement === Placement.Free && !onGround && !tiles.every(([x, y]) => idx.isDeck(idx.deck(x, y, slot.z)))) return BuildFail.NoSupport;
   if (def.placement === Placement.Cell && def.needsDeck && !tiles.every(([x, y]) => idx.isDeck(idx.deck(x, y, slot.z)))) return BuildFail.NoSupport;
   // creatures in the way of solid pieces
   if (def.solid && slot.z === 0) {

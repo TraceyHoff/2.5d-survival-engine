@@ -1,16 +1,16 @@
 {
-  "$comment": "Material tiers for tiered pieces. cost per costScale 1.0 (rounded up). hpMul scales the piece's base (wood) hp. Stability loss per support step: vertical (stacked) and horizontal (cantilever). repairMul = fraction of tier cost for a full repair.",
+  "$comment": "Material tiers for tiered pieces. cost per costScale 1.0 (rounded up). hpMul scales the piece's base (wood) hp. Stability loss per support step: vertical (stacked) and horizontal (cantilever). repairMul = fraction of tier cost for a full repair. raid (ADR-104) = player damage multipliers: melee (Combat), explosive (Explosion; 0 = immune), fire.",
   "tiers": [
-    { "key": "twig",       "hpMul": 0.2, "vertLoss": 20, "horizLoss": 45, "repairMul": 0.3, "cost": [{ "item": "sticks", "count": 4 }] },
-    { "key": "wood",       "hpMul": 1.0, "vertLoss": 10, "horizLoss": 30, "repairMul": 0.3, "cost": [{ "item": "planks", "count": 6 }, { "item": "rope", "count": 1 }] },
-    { "key": "stone",      "hpMul": 2.5, "vertLoss": 6,  "horizLoss": 22, "repairMul": 0.3, "cost": [{ "item": "stone_brick", "count": 6 }, { "item": "mortar", "count": 2 }] },
-    { "key": "metal",      "hpMul": 5.0, "vertLoss": 4,  "horizLoss": 16, "repairMul": 0.3, "cost": [{ "item": "iron_plate", "count": 3 }, { "item": "nails", "count": 6 }] },
-    { "key": "reinforced", "hpMul": 8.0, "vertLoss": 3,  "horizLoss": 12, "repairMul": 0.3, "cost": [{ "item": "steel_plate", "count": 3 }, { "item": "nails", "count": 6 }, { "item": "clay_brick", "count": 2 }] }
+    { "key": "twig",       "hpMul": 0.2, "vertLoss": 20, "horizLoss": 45, "repairMul": 0.3, "cost": [{ "item": "sticks", "count": 4 }], "raid": { "melee": 1.5, "explosive": 2, "fire": 2 } },
+    { "key": "wood",       "hpMul": 1.0, "vertLoss": 10, "horizLoss": 30, "repairMul": 0.3, "cost": [{ "item": "planks", "count": 6 }, { "item": "rope", "count": 1 }], "raid": { "melee": 1, "explosive": 1, "fire": 1.5 } },
+    { "key": "stone",      "hpMul": 2.5, "vertLoss": 6,  "horizLoss": 22, "repairMul": 0.3, "cost": [{ "item": "stone_brick", "count": 6 }, { "item": "mortar", "count": 2 }], "raid": { "melee": 0.5, "explosive": 1, "fire": 0.25 } },
+    { "key": "metal",      "hpMul": 5.0, "vertLoss": 4,  "horizLoss": 16, "repairMul": 0.3, "cost": [{ "item": "iron_plate", "count": 3 }, { "item": "nails", "count": 6 }], "raid": { "melee": 0.25, "explosive": 0.8, "fire": 0 } },
+    { "key": "reinforced", "hpMul": 8.0, "vertLoss": 3,  "horizLoss": 12, "repairMul": 0.3, "cost": [{ "item": "steel_plate", "count": 3 }, { "item": "nails", "count": 6 }, { "item": "clay_brick", "count": 2 }], "raid": { "melee": 0.1, "explosive": 0.6, "fire": 0 } }
   ],
   "building": {
     "buildReach": 4,
     "playerMaxSpeed": 5,
-    "levelHeight": 2,
+    "levelHeight": 3,
     "maxLevel": 7,
     "minStability": 5,
     "groundStability": 100,

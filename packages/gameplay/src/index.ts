@@ -33,6 +33,7 @@ export * from "./building/actions.js";
 export * from "./building/ghost.js";
 export * from "./building/shelter.js";
 export * from "./building/persist.js";
+export * from "./building/modular.js";
 export * from "./combat/combat.js";
 export * from "./combat/path.js";
 export * from "./combat/zombies.js";
