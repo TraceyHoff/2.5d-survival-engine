@@ -18,6 +18,7 @@ describe("ADR-112/113 decor sprites", () => {
   const drawn = pieces.filter((p) => byKey.has(`dec_${p.key}`));
   it("feeding_trough and the common furniture are drawn", () => { for (const k of ["feeding_trough", "chair_rustic", "bed_double_luxury", "table_dining_fine", "bookcase_rustic", "wardrobe_luxury", "chandelier"]) expect(drawn.map((p) => p.key)).toContain(k); });
   it("kitchen pieces and decorations are drawn", () => { for (const k of ["counter_rustic", "kitchen_sink", "cook_range", "clay_oven", "statue", "statue_large", "vase", "trophy_mount", "clan_flag", "curtains", "clock_wall", "mirror_standing", "pottery", "books", "basket"]) expect(drawn.map((p) => p.key)).toContain(k); });
+  it("plants, wall hangings and rugs are drawn", () => { for (const k of ["plant_floor", "fern", "cactus", "flowers_pot", "hanging_plant", "bonsai", "herb_planter", "window_planter", "painting_wall", "poster", "tapestry", "weapon_rack", "wall_shelf", "shield_mount", "map_board", "rug_1x1", "rug_2x1", "rug_2x2", "rug_3x2", "rug_round", "rug_runner"]) expect(drawn.map((p) => p.key)).toContain(k); });
   it("every drawn decor piece has a sprite per variant matching footprint and layer", () => {
     for (const p of drawn) {
       const fp = p.footprint ?? { w: 1, h: 1 };

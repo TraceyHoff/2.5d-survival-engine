@@ -4,11 +4,16 @@ import math
 from .lib import Canvas, ellipse_pts, capsule_pts, toon_at, SS
 
 def at(x, y, z, draw, size=32, role=None, flip_odd=False):
-    """decor entry drawn after all boxes; flip_odd mirrors the drawing on rot 1/3 (side-facing art follows the wall)."""
+    """decor entry drawn after all boxes. Drawings are authored on a 32-unit canvas (ground point (16, 24)) and scaled
+    to `size` px; flip_odd mirrors the drawing on rot 1/3 (side-facing art follows the wall)."""
+    from PIL import Image
+    from buildings import lw_fn
     def fn(cv, r, m):
-        if flip_odd and r % 2:
-            toon_at(cv, x, y, z, r, m, lambda c: (draw(c), setattr(c, 'img', c.img.transpose(0))), size)
-        else: toon_at(cv, x, y, z, r, m, draw, size)
+        c = Canvas(32, 32, seed=int(abs(x * 100 + y * 10)) + 1); draw(c); img = c.img
+        if flip_odd and r % 2: img = img.transpose(0)
+        if size != 32: img = img.resize((round(img.width * size / 32), round(img.height * size / 32)), Image.LANCZOS)
+        wx, wy = lw_fn(r, m)(x, y); px, py = cv.P(wx, wy, z)
+        cv.paste_sprite(img, px - size * SS / 2, py - size * 0.75 * SS)
     return (-1, fn, role)
 
 def vessel(profile, rp, band=None, band_rp=None, handles=False):
