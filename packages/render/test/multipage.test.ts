@@ -29,7 +29,7 @@ function multiPage(opts: { wearSwim: boolean } = { wearSwim: true }): { reg: Ass
     cz.atlases.push({ key: `${wat.key}_p1`, image: `atlases/${wat.key}_p1.png`, frameW: wat.frameW, frameH: wat.frameH, columns: 10, rows: 8 });
     ws.animations.swim = { frames: [0, 1, 2, 3, 4, 5], fps: 6, directions: 8, loop: true, dirFrames: df(`${wat.key}_p1`, 0, SWIM) };
     ws.animations.punch = { frames: [0, 1, 2, 3], fps: 10, directions: 8, loop: false, dirFrames: df(`${wat.key}_p1`, SWIM * D, PUNCH) };
-  }
+  } else { delete ws.animations.swim; delete ws.animations.punch; } // Art 5f11024 gives the real top_tee swim/punch
   const merged = mergeManifests([{ name: "pack", manifest: json("manifest.json") }, { name: "customization", manifest: cz }] as never).manifest;
   return { reg: loadManifest(merged).registry, cz, wearKey };
 }
@@ -88,7 +88,9 @@ describe("multi-page dirFrames for bodies, wear and animals (ADR-107 swim/punch)
     expect(am.animName(body, am.sharedStateAnim(body, [], AnimState.Swim))).toBe("swim");
   });
   it("sprites without swim/punch fall back as before (swim -> walk, punch -> attack)", () => {
-    const reg = loadManifest(json("customization/manifest.customization.json")).registry; const am = tables(reg, () => false); const b = idOf(reg, "body_female");
+    const cz = json("customization/manifest.customization.json"); const bf = cz.sprites.find((s: any) => s.key === "body_female");
+    delete bf.animations.swim; delete bf.animations.punch; // strip them once Art ships body swim/punch (5f11024)
+    const reg = loadManifest(cz).registry; const am = tables(reg, () => false); const b = idOf(reg, "body_female");
     expect(am.animName(b, am.sharedStateAnim(b, [], AnimState.Swim))).toBe("walk"); expect(am.animName(b, am.sharedStateAnim(b, [], AnimState.Punch))).toBe("attack");
   });
   it("pageReadyAt() streams the page the frame lives on, not the sprite's first page", () => {
@@ -115,5 +117,22 @@ describe("multi-page dirFrames for bodies, wear and animals (ADR-107 swim/punch)
     expect(legacyDirFrameAtlases(reg).has(at.key)).toBe(false);
     expect(am.resolve(id, am.sharedStateAnim(id, [], AnimState.Swim), 1, 0.3, 0, r)).toBe(true); expect(am.atlases[r.atlas].key).toBe(`${at.key}_swim`);
     expect(am.resolve(id, am.findAnim(id, Object.keys(boar.animations)[0]), 1, 0.3, 0, r)).toBe(true); expect(am.atlases[r.atlas].key).toBe(at.key);
+  });
+});
+
+describe("wear pool under many swimming outfits (5 layers each, swim pages on top of walk pages)", () => {
+  it("evicts by distance and refuses overflow (body-only fallback) instead of growing past the allocated slots", async () => {
+    const { PageLRU } = await import("../src/gl/vram.js");
+    const lru = new PageLRU<string>(20, 90); let frame = 1000; let refused = 0;
+    // 8 dolls x 5 wear layers x (walk page + swim page) = 80 pages for 20 slots; doll d is at squared distance d*d*4
+    for (let f = 0; f < 5; f++, frame++) for (let d = 0; d < 8; d++) for (let l = 0; l < 5; l++) for (const pg of ["walk", "swim"]) {
+      const k = `doll${d}_l${l}_${pg}`; const prio = d * d * 4;
+      if (!lru.touch(k, frame, prio) && !lru.allocate(k, frame, prio)) refused++;
+      expect(lru.size).toBeLessThanOrEqual(20);
+    }
+    expect(refused).toBeGreaterThan(0);
+    // the nearest two dolls (player + neighbour) stay fully dressed; the farthest drop to the fallback
+    for (let d = 0; d < 2; d++) for (let l = 0; l < 5; l++) for (const pg of ["walk", "swim"]) expect(lru.has(`doll${d}_l${l}_${pg}`)).toBe(true);
+    expect(lru.keys().some((k) => k.startsWith("doll7_"))).toBe(false);
   });
 });

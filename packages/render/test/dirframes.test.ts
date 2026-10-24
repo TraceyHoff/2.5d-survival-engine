@@ -20,6 +20,8 @@ const out = () => ({ entry: 0, w: 0, h: 0, ax: 0, ay: 0, hasDamageFrames: false,
 describe("facing-split vehicle art (dirFrames, Art 62e55cf/64a18d2)", () => {
   const reg = merged(["pack", "manifest.json"], ["vehicles", "vehicles/manifest.vehicles.json"]);
   const split = [...reg.allSprites()].filter((s) => s.animList.some((a) => a.dirFrames));
+  // vehicles split every anim by facing; animals (boar/wolf/deer) split only swim, so the facing-page checks are veh_-only
+  const vsplit = split.filter((s) => s.animList.some((a) => /^veh_/.test(a.dirFrames?.[0]?.atlas.key ?? "")));
 
   it("resolve() matches AssetRegistry.dirFrame() for every facing (page, frame, anchor) and frame() without dirFrames", () => {
     const am = tables(reg); expect(split.length).toBeGreaterThan(0); let n = 0;
@@ -35,7 +37,8 @@ describe("facing-split vehicle art (dirFrames, Art 62e55cf/64a18d2)", () => {
 
   it("streams and refcounts the facing's page, never the legacy full-size page", () => {
     const am = tables(reg); const legacy = legacyDirFrameAtlases(reg);
-    for (const s of split) { const keys = new Set<string>();
+    expect(vsplit.length).toBeGreaterThan(0);
+    for (const s of vsplit) { const keys = new Set<string>();
       for (let d = 0; d < 8; d++) { const f = (d / 8) * Math.PI * 2; const k = am.pageKeyAt(s.id, f)!; expect(k).toBe(reg.dirFrame(s.id, s.animList[0]!.name, f, 0).atlas.key); expect(legacy.has(k)).toBe(false); keys.add(k); }
       expect(am.pageKeyAt(s.id)).toBe(am.pageKeyAt(s.id, 0)); expect(keys.size).toBeGreaterThan(1); }
   });
@@ -46,8 +49,8 @@ describe("facing-split vehicle art (dirFrames, Art 62e55cf/64a18d2)", () => {
     // empty. Until that manifest lands, the pre-split shape (legacy = the split sprites' sheets) is still accepted.
     if (legacy.size === 0 || !legacy.has("veh_art_truck_box")) {
       expect(legacy.size).toBe(0);
-      for (const s of split) expect(s.atlas.key).toMatch(/_f[hvd]\d+$/);
-    } else expect([...legacy].sort()).toEqual([...new Set(split.map((s) => s.atlas.key))].sort());
+      for (const s of vsplit) expect(s.atlas.key).toMatch(/_f[hvd]\d+$/);
+    } else expect([...legacy].sort()).toEqual([...new Set(vsplit.map((s) => s.atlas.key))].sort());
     for (const s of reg.allSprites()) { if (!s.animList.some((a) => a.dirFrames)) expect(legacy.has(s.atlas.key)).toBe(false);
       for (const a of s.animList) for (const d of a.dirFrames ?? []) expect(legacy.has(d.atlas.key)).toBe(false); }
     // pool slots are sized by the facing pages only: all <= 1008px at 1x (4 per 2048 layer)
