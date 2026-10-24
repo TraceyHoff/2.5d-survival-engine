@@ -8,7 +8,7 @@ import { installFullscreenRestore, exitFullscreen } from "./fullscreen.js";
 import { uiRoot, safeAreaInsets } from "./ui-root.js";
 import { GameMenus } from "./game-menus.js";
 import { BuildMode } from "./build-mode.js";
-import { mountWorldTools } from "./world-tools.js";
+import { mountWorldTools, type WorldToolsHandle } from "./world-tools.js";
 import { mountTouchOverlay } from "./touch-overlay.js";
 /**
  * Client bootstrap: fixed-step loop + WebGL2 IsoRenderer view (./view.ts, Art's pack) + network session.
@@ -23,7 +23,7 @@ import { InputSystem, AimResolver, DEFAULT_ACTIONS, DEFAULT_CONTEXTS, DEFAULT_PR
 import { attachBrowserInput } from "@engine/input/browser";
 import { Act, ClanRoster, ClanRosterMember, OnlinePlayer, VehicleStationOpenedEvt, gameplayNet, installDemoWorld } from "@engine/server/protocol";
 import { netIdOf, ChatChannel, type ChatDelivered } from "@engine/net";
-import { WorldRules, worldRules } from "@engine/gameplay";
+import { WorldRules, worldRules, ROADS } from "@engine/gameplay";
 import { SocialDirectory, hasCreatedLook, setAppearanceIntent, interactPanel, UseCmd, GatherCmd, farmPrompt, type MenuCtx, type MenuIntent } from "@engine/gameplay";
 import { ClientSession } from "./session.js";
 import { mountConnectOverlay } from "./connect.js";
@@ -101,7 +101,7 @@ let deleteInfo: (() => { label: string; message: string; settingsOption: boolean
 let sessionInfo: (() => { label: string; leaveLabel: string; onLeave: () => void }) | undefined;
 function startMenus(): void {
   if (menus) return;
-  menus = new GameMenus({ root, input, audio: audio.mixer, worldRules: () => (world.isRegistered(WorldRules) && world.has(world.environment, WorldRules) ? worldRules(world) : undefined), onQuit: quitToMenu, session: () => sessionInfo?.(), deleteProgress: () => deleteInfo?.(), setQuality: (p) => iso?.renderer.setQualityPreset(p), qualityInfo: () => (iso && "quality" in iso.renderer ? (iso.renderer as { quality: { autoLabel(): string; detected?: { name: string; klass: string; remembered: boolean } | undefined } }).quality : undefined), gameplay: { ctx: menuCtx, send: sendIntent, social, startPlacing: (sel) => buildMode.start(sel) },
+  menus = new GameMenus({ root, input, audio: audio.mixer, worldRules: () => (world.isRegistered(WorldRules) && world.has(world.environment, WorldRules) ? worldRules(world) : undefined), onQuit: quitToMenu, session: () => sessionInfo?.(), deleteProgress: () => deleteInfo?.(), setQuality: (p) => iso?.renderer.setQualityPreset(p), qualityInfo: () => (iso && "quality" in iso.renderer ? (iso.renderer as { quality: { autoLabel(): string; detected?: { name: string; klass: string; remembered: boolean } | undefined } }).quality : undefined), gameplay: { ctx: menuCtx, send: sendIntent, social, startPlacing: (sel) => buildMode.start(sel), worldTools: worldToolsApi },
     onChat: (text, channel, to) => { if (!session.client?.chat.send(channel as ChatChannel, text, to ? { to } : {})) menus?.pushChat("(not connected — message not sent)"); } });
 }
 /** Live data for the gameplay panels: the replicated world + local player; names via NetClient's NamesClient. */
@@ -167,6 +167,9 @@ const placeholder = new TileMap();
 for (let y = -64; y < 96; y++) for (let x = -64; x < 96; x++) placeholder.setTile(x, y, 1 + ((x * 7 + y * 13) & 3) % 3);
 
 const colors = ["#000", "#3a5", "#495", "#874"];
+/** ADR-122 road / sign tools (world-tools.ts), mounted after the menus; the Build panel reaches them through this. */
+let worldTools: WorldToolsHandle | undefined;
+const worldToolsApi = { road: (n: number) => worldTools?.road(n), roadSurface: () => worldTools?.roadSurface() ?? 0, placeSign: () => worldTools?.placeSign() ?? false, editNearestSign: () => worldTools?.editNearestSign() ?? false, surfaces: ROADS.surfaces.map((x) => x.name) };
 /** Build mode (aim-point placement); `buildMode.preview` is the Renderer's buildPreview. */
 const buildMode = new BuildMode({ input, ctx: () => menuCtx(), send: (i) => sendIntent(i),
   aim: () => { const p = session.player; const pt = p !== undefined ? world.get(p, Transform) : undefined; return p !== undefined && pt ? aim.resolve(world, p, pt) : undefined; },
@@ -175,7 +178,8 @@ const buildTouchLayout = { ...DEFAULT_TOUCH_LAYOUTS.building, elements: DEFAULT_
 /** Per input update: build mode, and the shared Interact action (E / pad X / touch interact) opening stall / wardrobe panels. */
 function onUiFrame(): void {
   if (menus?.nav.isOpen) { buildMode.stop(); return; }
-  if (buildMode.active) { buildMode.update(); return; }
+  if (buildMode.active) { worldTools?.road(0); buildMode.update(); return; }
+  worldTools?.update(); if (worldTools?.tool.active) return; // ADR-122: the Road context owns A/B/X/Y/RS while laying
   if (input.pressed("QuickUse") && farm) { const p = session.player; if (p !== undefined && quickUseFires(safeFarmPrompt(p))) farm.trigger(); }
   if (input.pressed("Interact")) { const c = menuCtx(); const t = c && interactPanel(c); if (t?.panel === "trade") menus?.openStall(t.stall); else if (t) menus?.open("character"); }
 }
@@ -400,7 +404,10 @@ farm = mountFarmPrompt(root, {
   use: (p) => { if (p.action === "Harvest") { if (p.target !== undefined) sendIntent({ cmd: GatherCmd, args: { target: p.target }, entities: ["target"] }); } else if (p.slot !== undefined) sendIntent({ cmd: UseCmd, args: { slot: p.slot } }); },
 });
 // ADR-119..121: sign labels, road drag tool (G), sign placing (N), settlement label, horde toasts + cues
-mountWorldTools(root, { world: () => world, player: () => session.player, camera: () => iso?.renderer.camera, send: (i) => sendIntent(i), hidden: () => !!menus?.nav.isOpen || buildMode.active, sound: (k) => audio.mixer.play(k) });
+worldTools = mountWorldTools(root, { world: () => world, player: () => session.player, camera: () => iso?.renderer.camera, send: (i) => sendIntent(i), hidden: () => !!menus?.nav.isOpen || buildMode.active, sound: (k) => audio.mixer.play(k),
+  input, device: promptDevice, canvas,
+  openModal: (id, el, onClose) => menus ? menus.nav.open(id, el, onClose) : (root.append(el), { close: () => el.remove() }),
+  onControl: (x, y) => { const r = canvas.getBoundingClientRect(); return !!browserInput.controls?.geometry().some((g) => g.visible && Math.hypot(g.x - (x - r.left), g.y - (y - r.top)) <= g.r + 8); } });
 if (params.get("hud") !== "0" && settings.showHud) mountHud(() => world, () => session.player, { ...(num("time") !== undefined ? { hours: num("time")! } : {}), ...(wi >= 0 ? { weather: wi } : {}) });
 
 let last = performance.now();

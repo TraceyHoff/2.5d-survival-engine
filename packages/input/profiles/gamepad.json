@@ -604,6 +604,41 @@
     "action": "Dialog.Cancel",
     "control": "pad.b"
    }
+  ],
+  "Road": [
+   {
+    "action": "Road.Cursor",
+    "composite": {
+     "x": "pad.rx",
+     "y": "pad.ry"
+    },
+    "processors": [
+     {
+      "type": "deadzoneRadial",
+      "min": 0.15
+     }
+    ]
+   },
+   {
+    "action": "Road.Mark",
+    "control": "pad.a"
+   },
+   {
+    "action": "Road.Confirm",
+    "control": "pad.rt"
+   },
+   {
+    "action": "Road.Cancel",
+    "control": "pad.b"
+   },
+   {
+    "action": "Road.Next",
+    "control": "pad.y"
+   },
+   {
+    "action": "PlaceSign",
+    "control": "pad.x"
+   }
   ]
  }
 }

@@ -388,6 +388,16 @@
     "action": "Dialog.Cancel",
     "control": "touch.btn.no"
    }
+  ],
+  "Road": [
+   {
+    "action": "Road.Confirm",
+    "control": "touch.btn.confirm"
+   },
+   {
+    "action": "Road.Cancel",
+    "control": "touch.btn.cancel"
+   }
   ]
  }
 }

@@ -21,7 +21,8 @@ export const DefaultEdgeBits = defineActions(EDGE_ACTIONS);
 const btn = (name: string): ActionDef => ({ name, type: "button" });
 export const DEFAULT_ACTIONS: readonly ActionDef[] = [
   { name: "Move", type: "axis2D" }, { name: "Aim", type: "axis2D" }, { name: "Camera.Zoom", type: "axis1D" },
-  ...["Sprint", "Primary", "Secondary", "Crouch", "Interact", "ContextRadial", "Charge", ...EDGE_ACTIONS, "ToggleBuild"].map(btn),
+  ...["Sprint", "Primary", "Secondary", "Crouch", "Interact", "ContextRadial", "Charge", ...EDGE_ACTIONS, "ToggleBuild", "RoadTool", "PlaceSign"].map(btn),
+  ...["Mark", "Confirm", "Cancel", "Next"].map((n) => btn(`Road.${n}`)), { name: "Road.Cursor", type: "axis2D" },
   ...["PlaceConfirm", "Cancel", "RotateCW", "RotateCCW", "PieceNext", "PiecePrev", "TierNext", "TierPrev", "ToggleSnap", "LevelUp", "LevelDown", "DemolishMode", "UpgradeMode", "RepairMode"].map((n) => btn(`Build.${n}`)),
   { name: "Build.Nudge", type: "axis2D" },
   { name: "UI.Navigate", type: "axis2D" }, ...["Submit", "Back", "TabNext", "TabPrev"].map((n) => btn(`UI.${n}`)),
@@ -36,6 +37,8 @@ export const DEFAULT_ACTIONS: readonly ActionDef[] = [
 export const DEFAULT_CONTEXTS: readonly ContextDef[] = [
   { name: "Gameplay", priority: 0 },
   { name: "Building", priority: 10 },
+  /** ADR-122 road tool: non-consuming like Building (walk while laying); gamepad RS moves the tile cursor. */
+  { name: "Road", priority: 12 },
   { name: "Inventory", priority: 20, consume: true },
   { name: "Crafting", priority: 20, consume: true },
   { name: "Trade", priority: 25, consume: true },

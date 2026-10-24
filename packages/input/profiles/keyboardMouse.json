@@ -175,6 +175,14 @@
      "negative": "key.Minus",
      "positive": "key.Equal"
     }
+   },
+   {
+    "action": "RoadTool",
+    "control": "key.KeyG"
+   },
+   {
+    "action": "PlaceSign",
+    "control": "key.KeyN"
    }
   ],
   "Building": [
@@ -539,6 +547,24 @@
    },
    {
     "action": "Dialog.Cancel",
+    "control": "key.KeyN"
+   }
+  ],
+  "Road": [
+   {
+    "action": "Road.Next",
+    "control": "key.KeyG"
+   },
+   {
+    "action": "Road.Confirm",
+    "control": "key.Enter"
+   },
+   {
+    "action": "Road.Cancel",
+    "control": "key.Escape"
+   },
+   {
+    "action": "PlaceSign",
     "control": "key.KeyN"
    }
   ]

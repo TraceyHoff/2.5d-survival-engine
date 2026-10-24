@@ -14,8 +14,8 @@ import { FocusManager, type Dir } from "@engine/input";
 import { BackHistory, focusVisible } from "./back-history.js";
 
 export interface ContextStack { push(name: string): void; pop(name?: string): void; isActive?(name: string): boolean }
-/** Input contexts in which Esc belongs to the game (Build.Cancel), not the pause menu. */
-export const ESC_OWNING_CONTEXTS = ["Building"] as const;
+/** Input contexts in which Esc belongs to the game (Build.Cancel / Road.Cancel, ADR-122), not the pause menu. */
+export const ESC_OWNING_CONTEXTS = ["Building", "Road"] as const;
 export interface ModalHandle { id: string; el: HTMLElement; close(): void }
 export interface UINavOptions {
   root: HTMLElement;

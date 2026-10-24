@@ -31,6 +31,8 @@ export interface GameplaySource {
   onBuildSelect?(s: BuildSelection): void;
   /** Enter build mode with this selection (aim-point placement, see build-mode.ts). */
   startPlacing?(s: BuildSelection): void;
+  /** ADR-122 road / sign tools (world-tools.ts): Build panel buttons so gamepad and touch reach them. */
+  worldTools?: { road(surface: number): void; roadSurface(): number; placeSign(): boolean; editNearestSign(): boolean; surfaces: readonly string[] };
   /** Stall the trade panel shows (set by interacting with a stall); falls back to the nearest stall. */
   stall?(): Entity | undefined;
   /** Owner-scoped clan roster + online directory (net events gameplay.clanRoster / clanRosterMember / onlinePlayer). */
@@ -166,6 +168,15 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
         const t = sel.tiers.find((x) => x.tier === buildSel.tier) ?? sel.tiers[0]!;
         out.push(kit.para(`Cost: ${t.cost.map((x) => `${x.name} ${x.have}/${x.count}`).join(", ") || "free"}`));
         const a = grid(); a.append(btn("Place (aim to position · R / RB / ⟳ rotate)", "place", () => { if (!src.startPlacing) { kit.status("Placement unavailable."); return; } src.startPlacing({ ...buildSel }); kit.close(); }, { disabled: !t.affordable || !src.startPlacing })); out.push(a);
+      }
+      const wt = src.worldTools;
+      if (wt) {
+        out.push(heading("Roads & signs")); const rg = grid(); rg.dataset["role"] = "world-tools";
+        wt.surfaces.forEach((name, i) => rg.append(btn(`Lay ${name.toLowerCase()} (G)`, `road-${i + 1}`, () => { wt.road(i + 1); kit.close(); }, { pressed: wt.roadSurface() === i + 1, alt: wt.roadSurface() !== i + 1, title: "Drag (mouse) · drag then ✓ (touch) · right stick + A (gamepad)" })));
+        if (wt.roadSurface()) rg.append(btn("Road tool off", "road-0", () => { wt.road(0); kit.rerender(); }, { alt: true }));
+        rg.append(btn("Place sign (N)", "sign-place", () => { if (wt.placeSign()) { kit.status("Sign placed — choose Edit nearest sign to write on it."); } else kit.status("You need a sign item (craft one first)."); }));
+        rg.append(btn("Edit nearest sign", "sign-edit", () => { kit.close(); if (!wt.editNearestSign()) kit.status("No sign within reach."); }));
+        out.push(rg);
       }
       return out;
     }
