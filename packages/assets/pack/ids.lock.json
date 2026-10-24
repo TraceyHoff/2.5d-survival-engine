@@ -1908,7 +1908,10 @@
     "wool_hat": 1906,
     "wool_sweater": 1907,
     "yarrow": 1908,
-    "yarrow_seeds": 1909
+    "yarrow_seeds": 1909,
+    "held_antler_pickaxe": 1910,
+    "held_bone_axe": 1911,
+    "held_bone_knife": 1912
   },
   "sounds": {
     "amb_rain": 1,

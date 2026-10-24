@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { loadManifest, mergeManifests, CATEGORIES, type ManifestJson } from "../src/index.js";
 
@@ -184,5 +184,38 @@ describe("nature sub-manifest", () => {
       for (const an of ["idle", "walk", "run", "attack", "hit", "death", "swim"]) { expect(sp.animations[an]?.dirFrames?.length, `${k}.${an}`).toBe(sp.animations[an].frames.length * 8);
         for (const f of sp.animations[an].dirFrames) { expect(f.anchor.x).toBeGreaterThanOrEqual(0); expect(f.anchor.y).toBeLessThanOrEqual(1); } }
     }
+  });
+});
+
+// The Canvas2D fallback renderer (237d6b3) reads atlas PNGs from the manifest; the GPU path reads the KTX2 twins.
+describe("atlas PNG + KTX2 pairs in every pack manifest", () => {
+  const manifests: string[] = [];
+  const walk = (rel: string): void => {
+    for (const e of readdirSync(dir + rel, { withFileTypes: true })) {
+      if (e.isDirectory()) { if (e.name !== "src" && e.name !== "node_modules") walk(rel + e.name + "/"); }
+      else if (/^manifest.*\.json$/.test(e.name)) manifests.push(rel + e.name);
+    }
+  };
+  walk("");
+  it("finds the sub-manifests", () => { for (const p of ["items", "nature", "customization", "vehicles", "building"]) expect(manifests.some((m) => m.startsWith(p + "/"))).toBe(true); });
+  for (const m of manifests) it(m, () => {
+    const base = dir + m.slice(0, m.lastIndexOf("/") + 1);
+    const atlases = (JSON.parse(readFileSync(dir + m, "utf8")).atlases ?? []) as { key: string; image: string; ktx2?: string; pages?: { image: string; ktx2?: string }[] }[];
+    for (const a of atlases) for (const e of [a, ...(a.pages ?? [])]) {
+      const tag = `${m} ${a.key} ${e.image}`;
+      expect(e.image, tag).toMatch(/\.png$/);
+      expect(existsSync(base + e.image), tag).toBe(true);
+      expect(e.ktx2, tag).toBe(e.image.replace(/\.png$/, ".ktx2"));
+      expect(existsSync(base + e.ktx2!), tag).toBe(true);
+    }
+  });
+});
+
+describe("bone/antler in-hand sprites", () => {
+  const im = JSON.parse(readFileSync(dir + "items/manifest.items.json", "utf8")) as ManifestJson;
+  it.each(["held_bone_knife", "held_bone_axe", "held_antler_pickaxe"])("%s", (k) => {
+    const s = (im.sprites as any[]).find((x) => x.key === k);
+    expect(s).toBeTruthy(); expect(s.category).toBe("equipment"); expect(s.anchor).toEqual({ x: 0.5, y: 0.75 });
+    expect(s.animations.idle.directions).toBe(8); expect(s.animations.idle.dirStride).toBe(1);
   });
 });

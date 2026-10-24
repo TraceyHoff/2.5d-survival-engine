@@ -11,6 +11,7 @@ _spec = importlib.util.spec_from_file_location("items_icons", os.path.join(ITEMS
 M, sh = I.M, I.sh
 from PIL import Image
 from common import FRAG
+from bonetools import pick_antler   # shared with the items build (held_antler_pickaxe)
 
 # ---------------- meat
 def steak(c, col, fat, cooked=False, bone=False, marble=False):
@@ -202,10 +203,6 @@ def needle(c):
     sh(c, 8); col = M['bone']
     c.poly([(6, 27), (24.5, 5.5), (26.5, 7.5)], col, shade=.3); c.ell(23.8, 7.8, 1.0, 1.6, '#c9b590', ol=False)
     c.stroke([(24, 7), (20, 14), (24, 19), (18, 25)], .5, '#e6d8a8', owf=.4)
-def pick_antler(c):
-    sh(c); I.handle_diag(c, (7, 27), (21, 9), 2.6, M['wood']); col = '#e8d8b8'
-    c.stroke([(8, 10), (14, 6), (21, 6), (27, 10), (28.5, 15)], 2.2, col, shade=.3); c.rect(19, 6, 23.5, 11, '#8a6a3a', r=1)
-    c.line([(18, 5), (24, 11)], .5, M['reed'], 220); c.line([(23.5, 5), (19, 11)], .5, M['reed'], 220)
 def hoe(c):
     sh(c); I.handle_diag(c, (6, 27), (22, 9), 2.4, M['wood'])
     c.poly([(19, 6), (22, 9), (26, 6), (28.5, 9.5), (26, 13), (22, 11.5)], M['iron'], shade=.4); c.poly([(25, 6), (28.5, 9.5), (29.5, 14), (27, 15)], M['iron'], shade=.4); I.gloss(c, M['iron'], 26.5, 8)

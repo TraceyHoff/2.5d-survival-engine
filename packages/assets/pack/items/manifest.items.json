@@ -65,6 +65,22 @@
     }
    ],
    "ktx2": "atlases/items_held_b.ktx2"
+  },
+  {
+   "key": "items_held_c",
+   "image": "atlases/items_held_c.png",
+   "frameW": 48,
+   "frameH": 48,
+   "columns": 16,
+   "rows": 2,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/items_held_c@2x.png",
+     "ktx2": "atlases/items_held_c@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/items_held_c.ktx2"
   }
  ],
  "sprites": [
@@ -4813,6 +4829,63 @@
       199
      ],
      "fps": 1
+    }
+   }
+  },
+  {
+   "key": "held_bone_knife",
+   "category": "equipment",
+   "atlas": "items_held_c",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_bone_axe",
+   "category": "equipment",
+   "atlas": "items_held_c",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_antler_pickaxe",
+   "category": "equipment",
+   "atlas": "items_held_c",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
     }
    }
   }

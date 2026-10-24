@@ -4,6 +4,8 @@ from concurrent.futures import ProcessPoolExecutor
 from PIL import Image, ImageDraw, ImageFont
 from draw import C
 from table import T, HELD
+from bonetools import BONE
+HELD_C = list(BONE)  # held-only keys (icons live in the nature pack)
 from nodes import N, SWAY
 OUT = sys.argv[1]; PREV = sys.argv[2]
 os.makedirs(OUT+'/atlases', exist_ok=True); os.makedirs(PREV, exist_ok=True)
@@ -13,7 +15,7 @@ def icon(k):
 TILT = [0, -22, -38, -22, 0, 22, 38, 22]; SQ = [.62, .85, 1, .85, .62, .85, 1, .85]; DIM = [1, 1, 1, .9, .82, .9, 1, 1]
 def held(k):
     import icons; icons.NOSHADOW[0] = True
-    c = C(32, 8); T[k](c); icons.NOSHADOW[0] = False
+    c = C(32, 8); (T.get(k) or BONE[k])(c); icons.NOSHADOW[0] = False
     src = Image.new('RGBA', (768, 768), (0, 0, 0, 0)); src.paste(c.img, (256, 256))  # padded so tilted rotations never clip
     gx, gy = 256+7.5*8, 256+24.5*8; res = []
     for scale, cell in ((2, 96), (1, 48)):
@@ -45,7 +47,7 @@ def paste_safe(dst, im, xy): dst.alpha_composite(im, xy)
 if __name__ == '__main__':
     # fix negative paste offsets in held(): Image.alpha_composite requires dest>=0, so pad source instead
     with ProcessPoolExecutor(8) as ex:
-        ic = list(ex.map(icon, ICONS)); hd = list(ex.map(held, HELD)); nd = list(ex.map(node, NODES))
+        ic = list(ex.map(icon, ICONS)); hd = list(ex.map(held, HELD)); hc = list(ex.map(held, HELD_C)); nd = list(ex.map(node, NODES))
     man = {"version": 1, "name": "items", "atlases": [], "sprites": []}
     def atlas(key, f1, f2, cell, cols):
         a1, rows = sheet(f1, cell, cols); a2, _ = sheet(f2, cell*2, cols)
@@ -66,6 +68,9 @@ if __name__ == '__main__':
         key = f'items_held_{part}'; atlas(key, [f for h in hs for f in h[1]], [f for h in hs for f in h[0]], 48, 16)
         for i, k in enumerate(ks):
             man["sprites"].append({"key": f"held_{k}", "category": "equipment", "atlas": key, "anchor": {"x": 0.5, "y": 0.75}, "animations": {"idle": {"frames": [8*i], "fps": 1, "directions": 8, "dirStride": 1}}})
+    atlas('items_held_c', [f for h in hc for f in h[1]], [f for h in hc for f in h[0]], 48, 16)
+    for i, k in enumerate(HELD_C):
+        man["sprites"].append({"key": f"held_{k}", "category": "equipment", "atlas": 'items_held_c', "anchor": {"x": 0.5, "y": 0.75}, "animations": {"idle": {"frames": [8*i], "fps": 1, "directions": 8, "dirStride": 1}}})
     json.dump(man, open(f'{OUT}/manifest.items.json', 'w'), indent=1); open(f'{OUT}/manifest.items.json', 'a').write('\n')
     # contact sheets
     font = ImageFont.load_default()
@@ -77,5 +82,5 @@ if __name__ == '__main__':
         im.convert('RGB').save(f'{PREV}/{name}.png')
     contact('items_icons_2x', [(k, x[0]) for k, x in zip(ICONS, ic)], 64, 16)
     contact('items_nodes_2x', [(k+(' (dep)' if d else ''), n[d][0]) for k, n in zip(NODES, nd) for d in (0, 1)], 128, 8)
-    contact('items_held_2x', [(k, h[0][d]) for k, h in zip(HELD, hd) for d in (0, 2, 4, 6)], 96, 16)
+    contact('items_held_2x', [(k, h[0][d]) for k, h in zip(HELD + HELD_C, hd + hc) for d in (0, 2, 4, 6)], 96, 16)
     print(len(ICONS), len(NODES), len(HELD))
