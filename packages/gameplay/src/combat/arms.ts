@@ -22,7 +22,7 @@ import { ignite } from "./pvp_pieces.js";
 
 export const Exploded = ev<{ entity: Entity; item: number; owner: Entity; x: number; y: number; radius: number }>("gameplay.Exploded");
 export const Reloaded = ev<{ entity: Entity; item: number; ammo: number; rounds: number }>("gameplay.Reloaded");
-export const ARMS_EVENT_RELIABILITY = { "gameplay.Exploded": "reliable", "gameplay.Reloaded": "unreliable" } as const;
+export const ARMS_EVENT_RELIABILITY = { "gameplay.Exploded": "reliable", "gameplay.Reloaded": "reliable" } as const;
 
 /** Optional raid-window rule (server): false = this explosion may not damage that piece. Absent = allowed. */
 export type RaidRule = (attacker: Entity, piece: Entity) => boolean;

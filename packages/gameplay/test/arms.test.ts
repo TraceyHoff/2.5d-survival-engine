@@ -105,6 +105,11 @@ describe("explosives", () => {
     expect(G.replicationOf(G.ExplosiveOwner)).toBeUndefined(); expect(G.replicationOf(G.LiveExplosive)).toBeDefined();
     expect(G.ExplosiveOwner.networked).toBe(false); expect(G.LiveExplosive.networked).toBe(true);
     expect(w.get(live, G.ExplosiveOwner)).toEqual({ owner: a, ownerTribe: 7 });
+    const ex = collect(w, G.Exploded); steps(w, 20 * 4);
+    expect(ex.length).toBe(1); expect(ex[0]!.owner).toBe(a); expect(ex[0]!.entity).toBe(live);
+  });
+  it("arms events are reliable", () => {
+    expect(G.ARMS_EVENT_RELIABILITY).toEqual({ "gameplay.Exploded": "reliable", "gameplay.Reloaded": "reliable" });
   });
   it("own-tribe structures are immune; raid rule can veto enemy pieces", () => {
     const w = world(); const owner = mk(w, 1, 0); w.add(owner, Tribe, { id: 7 }); const raider = mk(w, 2, 0); w.add(raider, Tribe, { id: 9 });
