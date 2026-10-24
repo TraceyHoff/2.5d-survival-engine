@@ -12462,6 +12462,108 @@
           "loop": true
         }
       }
+    },
+    {
+      "key": "stewed_berries",
+      "category": "item",
+      "atlas": "items",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            6
+          ],
+          "fps": 1
+        }
+      }
+    },
+    {
+      "key": "baked_apple",
+      "category": "item",
+      "atlas": "items",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            10
+          ],
+          "fps": 1
+        }
+      }
+    },
+    {
+      "key": "roasted_carrot",
+      "category": "item",
+      "atlas": "items",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            11
+          ],
+          "fps": 1
+        }
+      }
+    },
+    {
+      "key": "roasted_pumpkin",
+      "category": "item",
+      "atlas": "items",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            45
+          ],
+          "fps": 1
+        }
+      }
+    },
+    {
+      "key": "canteen",
+      "category": "item",
+      "atlas": "items",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            7
+          ],
+          "fps": 1
+        }
+      }
+    },
+    {
+      "key": "water_bottle",
+      "category": "item",
+      "atlas": "items",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            7
+          ],
+          "fps": 1
+        }
+      }
     }
   ],
   "sounds": [

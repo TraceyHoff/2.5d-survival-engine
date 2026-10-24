@@ -15,7 +15,7 @@ Everything below already renders via fallbacks; these are the frames/icons to au
 Cooked: stewed_berries, stewed_blueberry, stewed_raspberry, stewed_blackberry, stewed_strawberry, stewed_cherry,
 baked_apple, baked_pear, baked_orange, baked_peach, baked_coconut,
 roasted_carrot, roasted_tomato, roasted_pumpkin, roasted_squash, roasted_cabbage, roasted_onion, roasted_wild_onion
-(fallback: the raw item's icon).
+(fallback: the raw item's icon via alias sprites; roasted_wild_onion uses onion).
 Containers: canteen, water_bottle (fallback: water_flask). Optional "empty" variants: canteen_empty, water_bottle_empty.
 
 ## FX sprites (optional; procedural shapes drawn today)

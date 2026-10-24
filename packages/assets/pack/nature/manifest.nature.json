@@ -26589,6 +26589,244 @@
      "fps": 1
     }
    }
+  },
+  {
+   "key": "stewed_blueberry",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      75
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "stewed_raspberry",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      76
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "stewed_blackberry",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      77
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "stewed_strawberry",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      78
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "stewed_cherry",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      80
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "baked_pear",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      79
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "baked_orange",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      81
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "baked_peach",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      82
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "baked_coconut",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      87
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "roasted_tomato",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      65
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "roasted_squash",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      66
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "roasted_cabbage",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      68
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "roasted_onion",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      69
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "roasted_wild_onion",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      69
+     ],
+     "fps": 1
+    }
+   }
   }
  ]
 }
