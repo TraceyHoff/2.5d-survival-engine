@@ -1,0 +1,925 @@
+{
+  "$comment": "Vehicle part, fuel, repair and kit recipes (DESIGN.md §31). station: none|campfire|workbench|furnace|anvil|garage. Merged into recipes by data.ts.",
+  "recipes": [
+    {
+      "key": "crude_oil",
+      "station": "furnace",
+      "seconds": 8,
+      "ingredients": [
+        { "item": "coal", "count": 4 }
+      ],
+      "output": { "item": "crude_oil", "count": 1 }
+    },
+    {
+      "key": "plant_oil",
+      "station": "workbench",
+      "seconds": 6,
+      "ingredients": [
+        { "item": "berries", "count": 6 },
+        { "item": "wild_grain", "count": 2 }
+      ],
+      "output": { "item": "plant_oil", "count": 1 }
+    },
+    {
+      "key": "gasoline",
+      "station": "furnace",
+      "seconds": 6,
+      "ingredients": [
+        { "item": "crude_oil", "count": 1 }
+      ],
+      "output": { "item": "gasoline", "count": 3 }
+    },
+    {
+      "key": "diesel",
+      "station": "furnace",
+      "seconds": 6,
+      "ingredients": [
+        { "item": "crude_oil", "count": 1 }
+      ],
+      "output": { "item": "diesel", "count": 4 }
+    },
+    {
+      "key": "biofuel",
+      "station": "workbench",
+      "seconds": 8,
+      "ingredients": [
+        { "item": "plant_oil", "count": 2 },
+        { "item": "charcoal", "count": 1 }
+      ],
+      "output": { "item": "biofuel", "count": 3 }
+    },
+    {
+      "key": "rubber",
+      "station": "furnace",
+      "seconds": 5,
+      "ingredients": [
+        { "item": "crude_oil", "count": 1 },
+        { "item": "charcoal", "count": 1 }
+      ],
+      "output": { "item": "rubber", "count": 3 }
+    },
+    {
+      "key": "copper_wire",
+      "station": "anvil",
+      "seconds": 2,
+      "ingredients": [
+        { "item": "copper_ingot", "count": 1 }
+      ],
+      "output": { "item": "copper_wire", "count": 4 }
+    },
+    {
+      "key": "sulfuric_acid",
+      "station": "furnace",
+      "seconds": 6,
+      "ingredients": [
+        { "item": "coal", "count": 2 },
+        { "item": "water_flask", "count": 1 }
+      ],
+      "output": { "item": "sulfuric_acid", "count": 1 }
+    },
+    {
+      "key": "bike_frame",
+      "station": "anvil",
+      "seconds": 8,
+      "ingredients": [
+        { "item": "iron_ingot", "count": 4 },
+        { "item": "nails", "count": 4 }
+      ],
+      "output": { "item": "bike_frame", "count": 1 }
+    },
+    {
+      "key": "bike_tire",
+      "station": "workbench",
+      "seconds": 4,
+      "ingredients": [
+        { "item": "rubber", "count": 2 }
+      ],
+      "output": { "item": "bike_tire", "count": 1 }
+    },
+    {
+      "key": "bike_wheel",
+      "station": "workbench",
+      "seconds": 5,
+      "ingredients": [
+        { "item": "iron_ingot", "count": 1 },
+        { "item": "bike_tire", "count": 1 },
+        { "item": "nails", "count": 2 }
+      ],
+      "output": { "item": "bike_wheel", "count": 1 }
+    },
+    {
+      "key": "bike_chain",
+      "station": "anvil",
+      "seconds": 4,
+      "ingredients": [
+        { "item": "iron_ingot", "count": 1 }
+      ],
+      "output": { "item": "bike_chain", "count": 1 }
+    },
+    {
+      "key": "saddle",
+      "station": "workbench",
+      "seconds": 3,
+      "ingredients": [
+        { "item": "leather", "count": 1 },
+        { "item": "planks", "count": 1 }
+      ],
+      "output": { "item": "saddle", "count": 1 }
+    },
+    {
+      "key": "tire",
+      "station": "workbench",
+      "seconds": 6,
+      "ingredients": [
+        { "item": "rubber", "count": 6 },
+        { "item": "steel_ingot", "count": 1 }
+      ],
+      "output": { "item": "tire", "count": 1 }
+    },
+    {
+      "key": "wheel_rim",
+      "station": "anvil",
+      "seconds": 6,
+      "ingredients": [
+        { "item": "steel_ingot", "count": 2 }
+      ],
+      "output": { "item": "wheel_rim", "count": 1 }
+    },
+    {
+      "key": "wheel",
+      "station": "garage",
+      "seconds": 4,
+      "ingredients": [
+        { "item": "wheel_rim", "count": 1 },
+        { "item": "tire", "count": 1 }
+      ],
+      "output": { "item": "wheel", "count": 1 }
+    },
+    {
+      "key": "axle",
+      "station": "anvil",
+      "seconds": 8,
+      "ingredients": [
+        { "item": "steel_ingot", "count": 3 }
+      ],
+      "output": { "item": "axle", "count": 1 }
+    },
+    {
+      "key": "steering_column",
+      "station": "anvil",
+      "seconds": 6,
+      "ingredients": [
+        { "item": "steel_ingot", "count": 1 },
+        { "item": "iron_ingot", "count": 1 },
+        { "item": "leather", "count": 1 }
+      ],
+      "output": { "item": "steering_column", "count": 1 }
+    },
+    {
+      "key": "chassis_small",
+      "station": "garage",
+      "seconds": 20,
+      "ingredients": [
+        { "item": "steel_plate", "count": 6 },
+        { "item": "steel_ingot", "count": 4 },
+        { "item": "nails", "count": 12 }
+      ],
+      "output": { "item": "chassis_small", "count": 1 }
+    },
+    {
+      "key": "chassis_medium",
+      "station": "garage",
+      "seconds": 30,
+      "ingredients": [
+        { "item": "steel_plate", "count": 10 },
+        { "item": "steel_ingot", "count": 6 },
+        { "item": "nails", "count": 20 }
+      ],
+      "output": { "item": "chassis_medium", "count": 1 }
+    },
+    {
+      "key": "chassis_large",
+      "station": "garage",
+      "seconds": 45,
+      "ingredients": [
+        { "item": "steel_plate", "count": 16 },
+        { "item": "steel_ingot", "count": 10 },
+        { "item": "nails", "count": 30 }
+      ],
+      "output": { "item": "chassis_large", "count": 1 }
+    },
+    {
+      "key": "chassis_heavy",
+      "station": "garage",
+      "seconds": 60,
+      "ingredients": [
+        { "item": "steel_plate", "count": 26 },
+        { "item": "steel_ingot", "count": 16 },
+        { "item": "nails", "count": 40 }
+      ],
+      "output": { "item": "chassis_heavy", "count": 1 }
+    },
+    {
+      "key": "trailer_frame",
+      "station": "anvil",
+      "seconds": 15,
+      "ingredients": [
+        { "item": "steel_ingot", "count": 4 },
+        { "item": "iron_plate", "count": 2 }
+      ],
+      "output": { "item": "trailer_frame", "count": 1 }
+    },
+    {
+      "key": "hitch_coupler",
+      "station": "anvil",
+      "seconds": 5,
+      "ingredients": [
+        { "item": "steel_ingot", "count": 2 }
+      ],
+      "output": { "item": "hitch_coupler", "count": 1 }
+    },
+    {
+      "key": "body_panel",
+      "station": "anvil",
+      "seconds": 5,
+      "ingredients": [
+        { "item": "steel_plate", "count": 1 },
+        { "item": "nails", "count": 2 }
+      ],
+      "output": { "item": "body_panel", "count": 1 }
+    },
+    {
+      "key": "windshield",
+      "station": "workbench",
+      "seconds": 6,
+      "ingredients": [
+        { "item": "glass", "count": 3 },
+        { "item": "rubber", "count": 1 }
+      ],
+      "output": { "item": "windshield", "count": 1 }
+    },
+    {
+      "key": "headlight",
+      "station": "workbench",
+      "seconds": 4,
+      "ingredients": [
+        { "item": "glass", "count": 1 },
+        { "item": "copper_wire", "count": 2 }
+      ],
+      "output": { "item": "headlight", "count": 1 }
+    },
+    {
+      "key": "seat",
+      "station": "workbench",
+      "seconds": 6,
+      "ingredients": [
+        { "item": "cloth", "count": 2 },
+        { "item": "leather", "count": 1 },
+        { "item": "iron_ingot", "count": 1 }
+      ],
+      "output": { "item": "seat", "count": 1 }
+    },
+    {
+      "key": "fuel_tank",
+      "station": "anvil",
+      "seconds": 8,
+      "ingredients": [
+        { "item": "steel_plate", "count": 2 },
+        { "item": "rubber", "count": 1 }
+      ],
+      "output": { "item": "fuel_tank", "count": 1 }
+    },
+    {
+      "key": "battery",
+      "station": "workbench",
+      "seconds": 8,
+      "ingredients": [
+        { "item": "copper_wire", "count": 4 },
+        { "item": "iron_plate", "count": 1 },
+        { "item": "sulfuric_acid", "count": 1 }
+      ],
+      "output": { "item": "battery", "count": 1 }
+    },
+    {
+      "key": "radiator",
+      "station": "anvil",
+      "seconds": 6,
+      "ingredients": [
+        { "item": "copper_ingot", "count": 3 },
+        { "item": "iron_plate", "count": 1 }
+      ],
+      "output": { "item": "radiator", "count": 1 }
+    },
+    {
+      "key": "gearbox",
+      "station": "garage",
+      "seconds": 15,
+      "ingredients": [
+        { "item": "steel_ingot", "count": 5 },
+        { "item": "iron_ingot", "count": 2 }
+      ],
+      "output": { "item": "gearbox", "count": 1 }
+    },
+    {
+      "key": "engine_small",
+      "station": "garage",
+      "seconds": 30,
+      "ingredients": [
+        { "item": "steel_ingot", "count": 6 },
+        { "item": "iron_ingot", "count": 4 },
+        { "item": "copper_wire", "count": 4 },
+        { "item": "rubber", "count": 2 }
+      ],
+      "output": { "item": "engine_small", "count": 1 }
+    },
+    {
+      "key": "engine_medium",
+      "station": "garage",
+      "seconds": 45,
+      "ingredients": [
+        { "item": "steel_ingot", "count": 10 },
+        { "item": "iron_ingot", "count": 6 },
+        { "item": "copper_wire", "count": 6 },
+        { "item": "rubber", "count": 3 }
+      ],
+      "output": { "item": "engine_medium", "count": 1 }
+    },
+    {
+      "key": "engine_large",
+      "station": "garage",
+      "seconds": 60,
+      "ingredients": [
+        { "item": "steel_ingot", "count": 14 },
+        { "item": "iron_ingot", "count": 8 },
+        { "item": "copper_wire", "count": 8 },
+        { "item": "rubber", "count": 4 }
+      ],
+      "output": { "item": "engine_large", "count": 1 }
+    },
+    {
+      "key": "engine_diesel",
+      "station": "garage",
+      "seconds": 90,
+      "ingredients": [
+        { "item": "steel_ingot", "count": 24 },
+        { "item": "iron_ingot", "count": 12 },
+        { "item": "copper_wire", "count": 10 },
+        { "item": "rubber", "count": 6 }
+      ],
+      "output": { "item": "engine_diesel", "count": 1 }
+    },
+    {
+      "key": "camper_interior",
+      "station": "workbench",
+      "seconds": 20,
+      "ingredients": [
+        { "item": "planks", "count": 10 },
+        { "item": "cloth", "count": 4 },
+        { "item": "iron_plate", "count": 2 },
+        { "item": "stone_brick", "count": 2 }
+      ],
+      "output": { "item": "camper_interior", "count": 1 }
+    },
+    {
+      "key": "tank_shell",
+      "station": "garage",
+      "seconds": 40,
+      "ingredients": [
+        { "item": "steel_plate", "count": 20 },
+        { "item": "rubber", "count": 4 }
+      ],
+      "output": { "item": "tank_shell", "count": 1 }
+    },
+    {
+      "key": "patch_kit",
+      "station": "workbench",
+      "seconds": 4,
+      "ingredients": [
+        { "item": "rubber", "count": 1 },
+        { "item": "cloth", "count": 1 }
+      ],
+      "output": { "item": "patch_kit", "count": 1 }
+    },
+    {
+      "key": "repair_kit",
+      "station": "workbench",
+      "seconds": 10,
+      "ingredients": [
+        { "item": "nails", "count": 6 },
+        { "item": "iron_plate", "count": 1 },
+        { "item": "rubber", "count": 1 },
+        { "item": "copper_wire", "count": 2 },
+        { "item": "rope", "count": 1 }
+      ],
+      "output": { "item": "repair_kit", "count": 1 }
+    },
+    {
+      "key": "vehicle_kit_bike_basic",
+      "station": "workbench",
+      "seconds": 30,
+      "ingredients": [
+        { "item": "bike_frame", "count": 1 },
+        { "item": "bike_wheel", "count": 2 },
+        { "item": "bike_chain", "count": 1 },
+        { "item": "saddle", "count": 1 }
+      ],
+      "output": { "item": "vehicle_kit_bike_basic", "count": 1 }
+    },
+    {
+      "key": "vehicle_kit_bike_road",
+      "station": "workbench",
+      "seconds": 30,
+      "ingredients": [
+        { "item": "bike_frame", "count": 1 },
+        { "item": "bike_wheel", "count": 2 },
+        { "item": "bike_chain", "count": 1 },
+        { "item": "saddle", "count": 1 }
+      ],
+      "output": { "item": "vehicle_kit_bike_road", "count": 1 }
+    },
+    {
+      "key": "vehicle_kit_bike_mountain",
+      "station": "workbench",
+      "seconds": 30,
+      "ingredients": [
+        { "item": "bike_frame", "count": 1 },
+        { "item": "bike_wheel", "count": 2 },
+        { "item": "bike_chain", "count": 1 },
+        { "item": "saddle", "count": 1 }
+      ],
+      "output": { "item": "vehicle_kit_bike_mountain", "count": 1 }
+    },
+    {
+      "key": "vehicle_kit_bike_bmx",
+      "station": "workbench",
+      "seconds": 30,
+      "ingredients": [
+        { "item": "bike_frame", "count": 1 },
+        { "item": "bike_wheel", "count": 2 },
+        { "item": "bike_chain", "count": 1 },
+        { "item": "saddle", "count": 1 }
+      ],
+      "output": { "item": "vehicle_kit_bike_bmx", "count": 1 }
+    },
+    {
+      "key": "vehicle_kit_bike_fat_tire",
+      "station": "workbench",
+      "seconds": 30,
+      "ingredients": [
+        { "item": "bike_frame", "count": 1 },
+        { "item": "bike_wheel", "count": 2 },
+        { "item": "bike_chain", "count": 1 },
+        { "item": "saddle", "count": 1 },
+        { "item": "planks", "count": 3 },
+        { "item": "bike_tire", "count": 2 }
+      ],
+      "output": { "item": "vehicle_kit_bike_fat_tire", "count": 1 }
+    },
+    {
+      "key": "vehicle_kit_bike_cruiser",
+      "station": "workbench",
+      "seconds": 30,
+      "ingredients": [
+        { "item": "bike_frame", "count": 1 },
+        { "item": "bike_wheel", "count": 2 },
+        { "item": "bike_chain", "count": 1 },
+        { "item": "saddle", "count": 1 },
+        { "item": "planks", "count": 3 }
+      ],
+      "output": { "item": "vehicle_kit_bike_cruiser", "count": 1 }
+    },
+    {
+      "key": "vehicle_kit_bike_tandem",
+      "station": "workbench",
+      "seconds": 40,
+      "ingredients": [
+        { "item": "bike_frame", "count": 2 },
+        { "item": "bike_wheel", "count": 2 },
+        { "item": "bike_chain", "count": 2 },
+        { "item": "saddle", "count": 2 }
+      ],
+      "output": { "item": "vehicle_kit_bike_tandem", "count": 1 }
+    },
+    {
+      "key": "vehicle_kit_bike_cargo",
+      "station": "workbench",
+      "seconds": 40,
+      "ingredients": [
+        { "item": "bike_frame", "count": 2 },
+        { "item": "bike_wheel", "count": 2 },
+        { "item": "bike_chain", "count": 1 },
+        { "item": "saddle", "count": 1 },
+        { "item": "planks", "count": 6 }
+      ],
+      "output": { "item": "vehicle_kit_bike_cargo", "count": 1 }
+    },
+    {
+      "key": "vehicle_kit_bike_trike",
+      "station": "workbench",
+      "seconds": 40,
+      "ingredients": [
+        { "item": "bike_frame", "count": 1 },
+        { "item": "bike_wheel", "count": 3 },
+        { "item": "bike_chain", "count": 1 },
+        { "item": "saddle", "count": 1 },
+        { "item": "planks", "count": 5 }
+      ],
+      "output": { "item": "vehicle_kit_bike_trike", "count": 1 }
+    },
+    {
+      "key": "vehicle_kit_car_compact",
+      "station": "garage",
+      "seconds": 146,
+      "ingredients": [
+        { "item": "chassis_small", "count": 1 },
+        { "item": "engine_small", "count": 1 },
+        { "item": "gearbox", "count": 1 },
+        { "item": "wheel", "count": 4 },
+        { "item": "axle", "count": 2 },
+        { "item": "steering_column", "count": 1 },
+        { "item": "seat", "count": 2 },
+        { "item": "fuel_tank", "count": 1 },
+        { "item": "battery", "count": 1 },
+        { "item": "radiator", "count": 1 },
+        { "item": "headlight", "count": 2 },
+        { "item": "windshield", "count": 1 },
+        { "item": "body_panel", "count": 10 }
+      ],
+      "output": { "item": "vehicle_kit_car_compact", "count": 1 }
+    },
+    {
+      "key": "vehicle_kit_car_sedan",
+      "station": "garage",
+      "seconds": 180,
+      "ingredients": [
+        { "item": "chassis_medium", "count": 1 },
+        { "item": "engine_medium", "count": 1 },
+        { "item": "gearbox", "count": 1 },
+        { "item": "wheel", "count": 4 },
+        { "item": "axle", "count": 2 },
+        { "item": "steering_column", "count": 1 },
+        { "item": "seat", "count": 4 },
+        { "item": "fuel_tank", "count": 1 },
+        { "item": "battery", "count": 1 },
+        { "item": "radiator", "count": 1 },
+        { "item": "headlight", "count": 2 },
+        { "item": "windshield", "count": 1 },
+        { "item": "body_panel", "count": 13 }
+      ],
+      "output": { "item": "vehicle_kit_car_sedan", "count": 1 }
+    },
+    {
+      "key": "vehicle_kit_car_muscle",
+      "station": "garage",
+      "seconds": 186,
+      "ingredients": [
+        { "item": "chassis_medium", "count": 1 },
+        { "item": "engine_large", "count": 1 },
+        { "item": "gearbox", "count": 1 },
+        { "item": "wheel", "count": 4 },
+        { "item": "axle", "count": 2 },
+        { "item": "steering_column", "count": 1 },
+        { "item": "seat", "count": 2 },
+        { "item": "fuel_tank", "count": 1 },
+        { "item": "battery", "count": 1 },
+        { "item": "radiator", "count": 1 },
+        { "item": "headlight", "count": 2 },
+        { "item": "windshield", "count": 1 },
+        { "item": "body_panel", "count": 12 }
+      ],
+      "output": { "item": "vehicle_kit_car_muscle", "count": 1 }
+    },
+    {
+      "key": "vehicle_kit_car_offroad",
+      "station": "garage",
+      "seconds": 176,
+      "ingredients": [
+        { "item": "chassis_medium", "count": 1 },
+        { "item": "engine_medium", "count": 1 },
+        { "item": "gearbox", "count": 1 },
+        { "item": "wheel", "count": 4 },
+        { "item": "axle", "count": 2 },
+        { "item": "steering_column", "count": 1 },
+        { "item": "seat", "count": 4 },
+        { "item": "fuel_tank", "count": 1 },
+        { "item": "battery", "count": 1 },
+        { "item": "radiator", "count": 1 },
+        { "item": "headlight", "count": 2 },
+        { "item": "windshield", "count": 1 },
+        { "item": "body_panel", "count": 13 },
+        { "item": "hitch_coupler", "count": 1 }
+      ],
+      "output": { "item": "vehicle_kit_car_offroad", "count": 1 }
+    },
+    {
+      "key": "vehicle_kit_car_wagon",
+      "station": "garage",
+      "seconds": 178,
+      "ingredients": [
+        { "item": "chassis_medium", "count": 1 },
+        { "item": "engine_medium", "count": 1 },
+        { "item": "gearbox", "count": 1 },
+        { "item": "wheel", "count": 4 },
+        { "item": "axle", "count": 2 },
+        { "item": "steering_column", "count": 1 },
+        { "item": "seat", "count": 5 },
+        { "item": "fuel_tank", "count": 1 },
+        { "item": "battery", "count": 1 },
+        { "item": "radiator", "count": 1 },
+        { "item": "headlight", "count": 2 },
+        { "item": "windshield", "count": 1 },
+        { "item": "body_panel", "count": 14 },
+        { "item": "hitch_coupler", "count": 1 }
+      ],
+      "output": { "item": "vehicle_kit_car_wagon", "count": 1 }
+    },
+    {
+      "key": "vehicle_kit_truck_pickup",
+      "station": "garage",
+      "seconds": 208,
+      "ingredients": [
+        { "item": "chassis_large", "count": 1 },
+        { "item": "engine_large", "count": 1 },
+        { "item": "gearbox", "count": 1 },
+        { "item": "wheel", "count": 4 },
+        { "item": "axle", "count": 2 },
+        { "item": "steering_column", "count": 1 },
+        { "item": "seat", "count": 3 },
+        { "item": "fuel_tank", "count": 1 },
+        { "item": "battery", "count": 1 },
+        { "item": "radiator", "count": 1 },
+        { "item": "headlight", "count": 2 },
+        { "item": "windshield", "count": 1 },
+        { "item": "body_panel", "count": 17 },
+        { "item": "hitch_coupler", "count": 1 }
+      ],
+      "output": { "item": "vehicle_kit_truck_pickup", "count": 1 }
+    },
+    {
+      "key": "vehicle_kit_truck_flatbed",
+      "station": "garage",
+      "seconds": 204,
+      "ingredients": [
+        { "item": "chassis_large", "count": 1 },
+        { "item": "engine_diesel", "count": 1 },
+        { "item": "gearbox", "count": 1 },
+        { "item": "wheel", "count": 4 },
+        { "item": "axle", "count": 2 },
+        { "item": "steering_column", "count": 1 },
+        { "item": "seat", "count": 2 },
+        { "item": "fuel_tank", "count": 1 },
+        { "item": "battery", "count": 1 },
+        { "item": "radiator", "count": 1 },
+        { "item": "headlight", "count": 2 },
+        { "item": "windshield", "count": 1 },
+        { "item": "body_panel", "count": 18 },
+        { "item": "hitch_coupler", "count": 1 }
+      ],
+      "output": { "item": "vehicle_kit_truck_flatbed", "count": 1 }
+    },
+    {
+      "key": "vehicle_kit_truck_box",
+      "station": "garage",
+      "seconds": 202,
+      "ingredients": [
+        { "item": "chassis_large", "count": 1 },
+        { "item": "engine_diesel", "count": 1 },
+        { "item": "gearbox", "count": 1 },
+        { "item": "wheel", "count": 4 },
+        { "item": "axle", "count": 2 },
+        { "item": "steering_column", "count": 1 },
+        { "item": "seat", "count": 2 },
+        { "item": "fuel_tank", "count": 1 },
+        { "item": "battery", "count": 1 },
+        { "item": "radiator", "count": 1 },
+        { "item": "headlight", "count": 2 },
+        { "item": "windshield", "count": 1 },
+        { "item": "body_panel", "count": 19 },
+        { "item": "hitch_coupler", "count": 1 }
+      ],
+      "output": { "item": "vehicle_kit_truck_box", "count": 1 }
+    },
+    {
+      "key": "vehicle_kit_van_cargo",
+      "station": "garage",
+      "seconds": 206,
+      "ingredients": [
+        { "item": "chassis_large", "count": 1 },
+        { "item": "engine_medium", "count": 1 },
+        { "item": "gearbox", "count": 1 },
+        { "item": "wheel", "count": 4 },
+        { "item": "axle", "count": 2 },
+        { "item": "steering_column", "count": 1 },
+        { "item": "seat", "count": 2 },
+        { "item": "fuel_tank", "count": 1 },
+        { "item": "battery", "count": 1 },
+        { "item": "radiator", "count": 1 },
+        { "item": "headlight", "count": 2 },
+        { "item": "windshield", "count": 1 },
+        { "item": "body_panel", "count": 18 },
+        { "item": "hitch_coupler", "count": 1 }
+      ],
+      "output": { "item": "vehicle_kit_van_cargo", "count": 1 }
+    },
+    {
+      "key": "vehicle_kit_van_passenger",
+      "station": "garage",
+      "seconds": 206,
+      "ingredients": [
+        { "item": "chassis_large", "count": 1 },
+        { "item": "engine_medium", "count": 1 },
+        { "item": "gearbox", "count": 1 },
+        { "item": "wheel", "count": 4 },
+        { "item": "axle", "count": 2 },
+        { "item": "steering_column", "count": 1 },
+        { "item": "seat", "count": 8 },
+        { "item": "fuel_tank", "count": 1 },
+        { "item": "battery", "count": 1 },
+        { "item": "radiator", "count": 1 },
+        { "item": "headlight", "count": 2 },
+        { "item": "windshield", "count": 1 },
+        { "item": "body_panel", "count": 15 },
+        { "item": "hitch_coupler", "count": 1 }
+      ],
+      "output": { "item": "vehicle_kit_van_passenger", "count": 1 }
+    },
+    {
+      "key": "vehicle_kit_camper_van",
+      "station": "garage",
+      "seconds": 204,
+      "ingredients": [
+        { "item": "chassis_large", "count": 1 },
+        { "item": "engine_medium", "count": 1 },
+        { "item": "gearbox", "count": 1 },
+        { "item": "wheel", "count": 4 },
+        { "item": "axle", "count": 2 },
+        { "item": "steering_column", "count": 1 },
+        { "item": "seat", "count": 4 },
+        { "item": "fuel_tank", "count": 1 },
+        { "item": "battery", "count": 1 },
+        { "item": "radiator", "count": 1 },
+        { "item": "headlight", "count": 2 },
+        { "item": "windshield", "count": 1 },
+        { "item": "body_panel", "count": 17 },
+        { "item": "hitch_coupler", "count": 1 },
+        { "item": "camper_interior", "count": 1 }
+      ],
+      "output": { "item": "vehicle_kit_camper_van", "count": 1 }
+    },
+    {
+      "key": "vehicle_kit_camper_rv",
+      "station": "garage",
+      "seconds": 260,
+      "ingredients": [
+        { "item": "chassis_heavy", "count": 1 },
+        { "item": "engine_large", "count": 1 },
+        { "item": "gearbox", "count": 1 },
+        { "item": "wheel", "count": 6 },
+        { "item": "axle", "count": 3 },
+        { "item": "steering_column", "count": 1 },
+        { "item": "seat", "count": 6 },
+        { "item": "fuel_tank", "count": 2 },
+        { "item": "battery", "count": 1 },
+        { "item": "radiator", "count": 1 },
+        { "item": "headlight", "count": 2 },
+        { "item": "windshield", "count": 1 },
+        { "item": "body_panel", "count": 24 },
+        { "item": "hitch_coupler", "count": 1 },
+        { "item": "camper_interior", "count": 2 }
+      ],
+      "output": { "item": "vehicle_kit_camper_rv", "count": 1 }
+    },
+    {
+      "key": "vehicle_kit_semi_tractor",
+      "station": "garage",
+      "seconds": 264,
+      "ingredients": [
+        { "item": "chassis_heavy", "count": 1 },
+        { "item": "engine_diesel", "count": 1 },
+        { "item": "gearbox", "count": 1 },
+        { "item": "wheel", "count": 10 },
+        { "item": "axle", "count": 5 },
+        { "item": "steering_column", "count": 1 },
+        { "item": "seat", "count": 2 },
+        { "item": "fuel_tank", "count": 3 },
+        { "item": "battery", "count": 1 },
+        { "item": "radiator", "count": 1 },
+        { "item": "headlight", "count": 2 },
+        { "item": "windshield", "count": 1 },
+        { "item": "body_panel", "count": 19 },
+        { "item": "hitch_coupler", "count": 1 }
+      ],
+      "output": { "item": "vehicle_kit_semi_tractor", "count": 1 }
+    },
+    {
+      "key": "vehicle_kit_trailer_utility_small",
+      "station": "workbench",
+      "seconds": 70,
+      "ingredients": [
+        { "item": "trailer_frame", "count": 1 },
+        { "item": "hitch_coupler", "count": 1 },
+        { "item": "tire", "count": 2 },
+        { "item": "axle", "count": 1 },
+        { "item": "body_panel", "count": 4 },
+        { "item": "steel_ingot", "count": 4 }
+      ],
+      "output": { "item": "vehicle_kit_trailer_utility_small", "count": 1 }
+    },
+    {
+      "key": "vehicle_kit_trailer_cargo_medium",
+      "station": "workbench",
+      "seconds": 90,
+      "ingredients": [
+        { "item": "trailer_frame", "count": 1 },
+        { "item": "hitch_coupler", "count": 1 },
+        { "item": "tire", "count": 2 },
+        { "item": "axle", "count": 1 },
+        { "item": "body_panel", "count": 7 },
+        { "item": "steel_ingot", "count": 6 }
+      ],
+      "output": { "item": "vehicle_kit_trailer_cargo_medium", "count": 1 }
+    },
+    {
+      "key": "vehicle_kit_trailer_flatbed_large",
+      "station": "garage",
+      "seconds": 110,
+      "ingredients": [
+        { "item": "trailer_frame", "count": 2 },
+        { "item": "hitch_coupler", "count": 1 },
+        { "item": "wheel", "count": 4 },
+        { "item": "axle", "count": 2 },
+        { "item": "body_panel", "count": 9 }
+      ],
+      "output": { "item": "vehicle_kit_trailer_flatbed_large", "count": 1 }
+    },
+    {
+      "key": "vehicle_kit_trailer_livestock",
+      "station": "garage",
+      "seconds": 110,
+      "ingredients": [
+        { "item": "trailer_frame", "count": 2 },
+        { "item": "hitch_coupler", "count": 1 },
+        { "item": "wheel", "count": 4 },
+        { "item": "axle", "count": 2 },
+        { "item": "body_panel", "count": 8 },
+        { "item": "planks", "count": 20 }
+      ],
+      "output": { "item": "vehicle_kit_trailer_livestock", "count": 1 }
+    },
+    {
+      "key": "vehicle_kit_trailer_tanker",
+      "station": "garage",
+      "seconds": 110,
+      "ingredients": [
+        { "item": "trailer_frame", "count": 2 },
+        { "item": "hitch_coupler", "count": 1 },
+        { "item": "wheel", "count": 4 },
+        { "item": "axle", "count": 2 },
+        { "item": "body_panel", "count": 3 },
+        { "item": "tank_shell", "count": 1 }
+      ],
+      "output": { "item": "vehicle_kit_trailer_tanker", "count": 1 }
+    },
+    {
+      "key": "vehicle_kit_trailer_camper",
+      "station": "garage",
+      "seconds": 110,
+      "ingredients": [
+        { "item": "trailer_frame", "count": 2 },
+        { "item": "hitch_coupler", "count": 1 },
+        { "item": "wheel", "count": 4 },
+        { "item": "axle", "count": 2 },
+        { "item": "body_panel", "count": 6 },
+        { "item": "camper_interior", "count": 1 },
+        { "item": "seat", "count": 1 }
+      ],
+      "output": { "item": "vehicle_kit_trailer_camper", "count": 1 }
+    },
+    {
+      "key": "vehicle_kit_semi_trailer_box",
+      "station": "garage",
+      "seconds": 150,
+      "ingredients": [
+        { "item": "trailer_frame", "count": 3 },
+        { "item": "hitch_coupler", "count": 1 },
+        { "item": "wheel", "count": 8 },
+        { "item": "axle", "count": 4 },
+        { "item": "body_panel", "count": 12 }
+      ],
+      "output": { "item": "vehicle_kit_semi_trailer_box", "count": 1 }
+    },
+    {
+      "key": "vehicle_kit_semi_trailer_flatbed",
+      "station": "garage",
+      "seconds": 150,
+      "ingredients": [
+        { "item": "trailer_frame", "count": 3 },
+        { "item": "hitch_coupler", "count": 1 },
+        { "item": "wheel", "count": 8 },
+        { "item": "axle", "count": 4 },
+        { "item": "body_panel", "count": 12 }
+      ],
+      "output": { "item": "vehicle_kit_semi_trailer_flatbed", "count": 1 }
+    }
+  ]
+}

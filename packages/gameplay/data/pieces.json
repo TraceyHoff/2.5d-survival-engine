@@ -1096,6 +1096,33 @@
           "amount": 2
         }
       ]
+    },
+    {
+      "key": "garage",
+      "placement": "free",
+      "layer": 2,
+      "tier": 3,
+      "hp": 900,
+      "ground": true,
+      "station": "garage",
+      "footprint": {
+        "w": 3,
+        "h": 2
+      },
+      "cost": [
+        {
+          "resource": "steel_plate",
+          "amount": 6
+        },
+        {
+          "resource": "iron_ingot",
+          "amount": 8
+        },
+        {
+          "resource": "hardwood_planks",
+          "amount": 10
+        }
+      ]
     }
   ]
 }

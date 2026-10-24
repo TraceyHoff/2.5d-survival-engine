@@ -12,6 +12,7 @@ import { CUSTOMIZATION_COMMANDS } from "./customization.js";
 import { PVP_COMMANDS } from "./combat/pvp.js";
 import { CancelQueuedCraftCmd, CRAFT_QUEUE_COMMANDS, QueueCraftCmd } from "./systems/craft_queue.js";
 import { EXPRESSION_COMMANDS } from "./expression.js";
+import { VEHICLE_CRAFT_COMMANDS, VEHICLE_CRAFT_ENTITY_FIELDS } from "./vehicle_craft.js";
 import { driveFromBits, setDriveInput, VEHICLE_COMMANDS, VEHICLE_ENTITY_FIELDS } from "./vehicles.js";
 import { analogMoving, GameplayEdgeBits, GameplayHoldBits, hotbarSlotFromEdges, runInputHooks } from "./input_hooks.js";
 import { ECONOMY_COMMAND_RATES, ECONOMY_COMMANDS, ECONOMY_ENTITY_FIELDS } from "./economy/stall.js";
@@ -59,6 +60,7 @@ export const COMMAND_ENTITY_FIELDS: Readonly<Record<string, readonly string[]>> 
   ...Object.fromEntries(GAMEPLAY_COMMANDS.filter(([d]) => "target" in d.schema).map(([d]) => [d.name, ["target"]])),
   ...ECONOMY_ENTITY_FIELDS,
   ...VEHICLE_ENTITY_FIELDS,
+  ...VEHICLE_CRAFT_ENTITY_FIELDS,
 };
 /** Suggested per-command rate limits (per second) for net's limiter; gameplay still enforces cooldowns. */
 export const COMMAND_RATES: Readonly<Record<string, number>> = {
@@ -77,6 +79,7 @@ export function registerGameplayCommands(reg: CommandRegistry = new CommandRegis
   reg.register(ClanDeclineCmd);
   for (const d of VEHICLE_COMMANDS) reg.register(d); // append-only, after ClanDecline (ADR-096)
   for (const [d] of ARMS_COMMANDS) reg.register(d); // append-only, after vehicles
+  for (const d of VEHICLE_CRAFT_COMMANDS) reg.register(d); // append-only: deploy / refuel / repair (DESIGN.md §31)
   return reg;
 }
 

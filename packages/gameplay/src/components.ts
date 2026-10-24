@@ -217,6 +217,9 @@ export const WeaponState = defineComponent("WeaponState", { slot: "u8", loaded: 
 export const LiveExplosive = defineComponent("LiveExplosive", { item: "u16", detonateTick: "u32" }, { networked: true });
 /** Server-only side component of a LiveExplosive: thrower entity (raid attribution) and tribe (own-structure immunity). Never replicated. */
 export const ExplosiveOwner = defineComponent("ExplosiveOwner", { owner: "u32", ownerTribe: "u16" }, { networked: false });
+/** Crafted-vehicle provenance + condition (vehicle_craft.ts): crafterId = PlayerId from the kit slot (0 = world spawn);
+ * wear 0..0.5 = fraction of max health lost to field repairs (garage repair clears it). */
+export const VehicleCondition = defineComponent("VehicleCondition", { crafterId: "u32", wear: "f32" }, { networked: true, persistent: true });
 export const GAMEPLAY_COMPONENTS = [
   Emitter, Buffs,
   Health, ResourceNode, Survival, VitalsState, Exposure, Dead,
@@ -238,4 +241,5 @@ export const GAMEPLAY_COMPONENTS = [
   Vehicle, VehicleSeats, Driver, Hitch, // append-only (ADR-096)
   Worn, WeaponState, LiveExplosive,
   ExplosiveOwner, // append-only (server-only)
+  VehicleCondition, // vehicle crafting (DESIGN.md §31)
 ] as const;

@@ -524,6 +524,30 @@ Lives on the bot's AgentIdentity record in `game.agents` under `social` (`ai/soc
   was rejected sold_out). Covered end-to-end in apps/server/test/bot_stall_buy_e2e.test.ts: replica sensors -> stall_trade ->
   emitAgentCommands -> openStall + buyFromStall on the real server.
 
+## 31. Vehicle crafting, fuel, repair and bot driving (`src/vehicle_craft.ts`, `src/ai/vehicle_behaviors.ts`)
+
+Builds on the Engine Architect vehicle core (docs/VEHICLES.md, ADR-096), which is unchanged. Rules: data/vehicle_crafting.json
+(salted as `gameplay.vehicleCraft`); items/recipes: data/vehicle_items.json + data/vehicle_recipes.json (merged in data.ts; ids append-only).
+- **Spawn = placeable kits.** Each of the 30 vehicles has `vehicle_kit_<id>`; bikes and s/m trailers craft at the workbench, the
+  rest at the new **garage** station (StationKind 5, piece `garage`). Costs (parts -> kit) scale with size and power; every recipe
+  has `seconds`; the crafter is recorded on the kit slot (crafterId) and copied to the vehicle's `VehicleCondition.crafterId`
+  on `gameplay.vehicleDeploy {slot,x,y,heading}` (reach 4, starts with 10% fuel).
+- **Storage** = core `storageCapacity` (slots by size, capped at 24 = CONTAINER_SLOTS). More slots is an Engine Architect ask.
+- **Fuel:** crude_oil (items.json, oil_seep node; also furnace-from-coal) -> gasoline / diesel; plant_oil -> biofuel (workbench). 1 item = 1 L. Gasoline vehicles take
+  gasoline/biofuel, diesel ones (flatbed, box truck, semi) take diesel/biofuel. `gameplay.vehicleRefuel {target,slot,count}`
+  needs a parked vehicle in reach 3, pours whole items up to 20 and never overfills. Consumption is the core's; bikes use stamina.
+- **Repair:** `gameplay.vehicleRepair {target,slot}`; patch_kit/repair_kit (durability uses) and parts restore a health
+  fraction. Field repairs add 5% wear (max 50%) that lowers effective max health; a repair within 6 of a garage restores
+  full health and clears wear. Wrecked vehicles (health 0) need a `wreckOk` part at a garage.
+- **Camper stations:** `addStationProvider` (crafting.ts) lets parked camper interiors satisfy station checks
+  (campfire/workbench/furnace) for existing crafting and cooking; `addVehicleStationHook("survival.stations")` emits
+  `VehicleStationOpened` for the UI.
+- **Bots:** `fillVehicleSensors` (replica only) + behaviors `drive`, `vehicle_service`, `hitch`, `deploy_vehicle`. Actions
+  `venter/vexit/vhitch/vunhitch/vstation/vrefuel/vrepair/vdeploy` become AgentOutput.commands. Gates: bravery >= 0.25 to drive,
+  industriousness >= 0.5 to hitch. Goal = clan goal, else home; drive when farther than 25, stop within 6. No rng/clock.
+- **Persistence/replication:** VehicleCondition {crafterId, wear} is networked + persistent (appended after the arms components Worn/WeaponState/LiveExplosive/ExplosiveOwner);
+  everything else uses the core's flags.
+
 ## Menu view-models (`src/ui/menus.ts`)
 
 Pure, browser-safe read models + command intents behind the ADR-095 menu shell (`apps/client/src/game-menus.ts` →

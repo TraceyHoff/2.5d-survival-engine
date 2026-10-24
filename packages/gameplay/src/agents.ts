@@ -12,6 +12,7 @@ import { populationData, rollTraits, scoreUtilities } from "./ai/population.js";
 import { fillAgentSensors, survivalBehaviors, type AgentSensors } from "./ai/survivor_behaviors.js";
 import { fillPartySensors, partyBehaviors, type PartySensors } from "./ai/party_behaviors.js";
 import { observeSocialMemory } from "./ai/social_memory.js";
+import { fillVehicleSensors, vehicleBehaviors, type VehicleSensors } from "./ai/vehicle_behaviors.js";
 import { clanBehaviors, fillClanSensors, type ClanSensors } from "./ai/clan_behaviors.js";
 import { emitAgentCommands } from "./ai/agent_output.js";
 
@@ -22,7 +23,7 @@ export interface AgentsData {
 export const AGENTS_DATA: AgentsData = raw as unknown as AgentsData;
 
 export interface SeenThing { id: number; kind: "zombie" | "player" | "node" | "animal"; x: number; y: number }
-export interface AgentWorldView extends AgentSensors, PartySensors, ClanSensors {
+export interface AgentWorldView extends AgentSensors, PartySensors, ClanSensors, VehicleSensors {
   seen: SeenThing[]; home: { x: number; y: number }; playerName: string;
   /** Optional sensors (0..1 / plans) the host fills from the bot's replica; missing = neutral. */
   invSpaceFree?: number; craftRecipe?: number; buildPlan?: { piece: number; x: number; y: number };
@@ -46,7 +47,7 @@ export function buildAgentView(world: World, self: Entity, a: Agent, home: { x: 
     if (visible) seen.push({ id: e, kind, x: o.x, y: o.y });
   }
   const tod = timeOfDay(world);
-  const view: AgentWorldView = { seen, home, playerName }; fillAgentSensors(world, self, view, (sv?.hunger ?? 100) < 50); fillPartySensors(world, self, view); fillClanSensors(world, self, view); observeSocialMemory(world, self, a);
+  const view: AgentWorldView = { seen, home, playerName }; fillAgentSensors(world, self, view, (sv?.hunger ?? 100) < 50); fillPartySensors(world, self, view); fillClanSensors(world, self, view); fillVehicleSensors(world, self, view); observeSocialMemory(world, self, a);
   return {
     self: { x: t.x, y: t.y, facing, hp: hp ? hp.hp / Math.max(1, hp.max) : 1, hunger: (sv?.hunger ?? 100) / 100, thirst: (sv?.thirst ?? 100) / 100, stamina: sv ? sv.stamina / Math.max(1, sv.maxStamina) : 1, tick: world.tick, dayT: tod.t, phase: currentPhaseKey(world) },
     world: view,
@@ -115,7 +116,7 @@ export function botUtilityFactor(c: AgentContext<AgentWorldView>, behavior: stri
 const withBotUtility = (b: GameBehavior): GameBehavior => (BEHAVIOR_ACTION[b.name] ? { ...b, considerations: [...b.considerations, { name: "botUtility", curve: { type: "linear", m: 1, b: 0 }, input: (c) => botUtilityFactor(c, b.name) }] } : b);
 
 export function survivorRegistry(extra: readonly GameBehavior[] = []): BehaviorRegistry<AgentWorldView> {
-  const r = new BehaviorRegistry<AgentWorldView>(); for (const b of [...referenceBehaviors(), ...survivalBehaviors(), ...partyBehaviors(), ...clanBehaviors(), ...extra]) r.register(withBotUtility(b)); return r;
+  const r = new BehaviorRegistry<AgentWorldView>(); for (const b of [...referenceBehaviors(), ...survivalBehaviors(), ...partyBehaviors(), ...clanBehaviors(), ...vehicleBehaviors(), ...extra]) r.register(withBotUtility(b)); return r;
 }
 /**
  * Deterministic identity for virtual player #slot of a world seed. archetype = a bots.json archetype (picked by the

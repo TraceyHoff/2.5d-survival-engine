@@ -1,4 +1,5 @@
 import { wearSystem } from "./combat/arms.js";
+import { installVehicleCraft, VEHICLE_CRAFT_HASH } from "./vehicle_craft.js";
 import { DEFAULT_TICK_HZ, pruneModifiers, setTimeOfDay, StallDisplay, TimeOfDay, Weather, type World } from "@engine/core";
 import { installSpatialIndex, setClimateModel, ClimateRes } from "@engine/world";
 import { Buffs, Equipment, GAMEPLAY_COMPONENTS, IntentAction, Inventory, NO_SLOT, PlayerIntent } from "./components.js";
@@ -77,6 +78,7 @@ export function installGameplay(world: World, options: GameplayOptions | number 
   if (!world.isRegistered(StallDisplay)) world.register(StallDisplay); // core broadcast mirror, fed by gameplay.stallDisplay
   world.addSchemaSalt("gameplay.defs", defs.hashes.all);
   world.addSchemaSalt("gameplay.vehicles", VEHICLE_DEFS_HASH);
+  world.addSchemaSalt("gameplay.vehicleCraft", VEHICLE_CRAFT_HASH);
   const role = opts.role ?? "standalone";
   world.setResource(GameplayConfig, { defs, role });
   const dayLengthTicks = opts.dayLengthTicks ?? Math.round(env.dayLengthSeconds * (opts.tickHz ?? DEFAULT_TICK_HZ));
@@ -85,6 +87,7 @@ export function installGameplay(world: World, options: GameplayOptions | number 
   world.set(world.environment, Weather, { kind: WeatherKind.Clear });
   installSpatialIndex(world);
   installGameplayContainers(world);
+  installVehicleCraft(world);
   if (world.getResource(ClimateRes)) setClimateModel(world, gameplayClimateModel(env));
   if (opts.net && role === "server") applyReplication(opts.net);
 

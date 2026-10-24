@@ -33,7 +33,7 @@ describe("vehicle defs", () => {
 describe("vehicle components", () => {
   it("appended at the end of the component order", () => {
     const L = G.GAMEPLAY_COMPONENTS; const i = L.indexOf(G.ClanStatus);
-    expect([L[i + 1], L[i + 2], L[i + 3], L[i + 4]]).toEqual([G.Vehicle, G.VehicleSeats, G.Driver, G.Hitch]); expect(L.length).toBeGreaterThanOrEqual(i + 5); // later slices append after vehicles
+    expect([L[i + 1], L[i + 2], L[i + 3], L[i + 4]]).toEqual([G.Vehicle, G.VehicleSeats, G.Driver, G.Hitch]); expect(L.length).toBeGreaterThanOrEqual(i + 5); expect(L.indexOf(G.VehicleCondition)).toBeGreaterThan(L.indexOf(G.ExplosiveOwner)); // later slices append after vehicles
   });
   it("serialization round trip", () => {
     const w = makeWorld(); const p = player(w); const v = car(w, "truck_pickup", 1, 0); const t = car(w, "trailer_cargo_medium", -3.5, 0);

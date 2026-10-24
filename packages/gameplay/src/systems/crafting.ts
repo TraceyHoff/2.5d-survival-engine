@@ -20,9 +20,21 @@ export const MAX_STATION_RANGE = 4;
 const FIRED = new Set<StationKind>([StationKind.Campfire, StationKind.Furnace]);
 const near: Entity[] = [];
 
-/** A station of `kind` within its range of e. Fired stations (campfire, furnace) must be lit. */
+/** Extra station sources (e.g. parked camper interiors, vehicle_craft.ts): has(e, kind) = usable by e now. */
+export interface StationProvider { readonly name: string; has(world: World, e: Entity, kind: StationKind): boolean }
+export const StationProvidersRes = defineResource<StationProvider[]>("gameplay.StationProviders");
+export function addStationProvider(world: World, p: StationProvider): void {
+  let ps = world.getResource(StationProvidersRes); if (!ps) world.setResource(StationProvidersRes, (ps = []));
+  if (!ps.some((x) => x.name === p.name)) ps.push(p);
+}
+/** A station of `kind` within its range of e (placed piece or a StationProvider). Fired pieces (campfire, furnace) must be lit. */
 export function stationInRange(world: World, e: Entity, kind: StationKind): boolean {
   if (kind === StationKind.None) return true;
+  if (pieceStationInRange(world, e, kind)) return true;
+  for (const p of world.getResource(StationProvidersRes) ?? []) if (p.has(world, e, kind)) return true;
+  return false;
+}
+function pieceStationInRange(world: World, e: Entity, kind: StationKind): boolean {
   const tf = world.store(Transform); const cs = world.store(CraftingStation);
   const a = tf.slot(entityIndex(e)); const x = tf.data.x[a]!, y = tf.data.y[a]!;
   near.length = 0;

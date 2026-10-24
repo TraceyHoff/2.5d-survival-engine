@@ -1,0 +1,528 @@
+{
+  "$comment": "Vehicle parts, fuels, repair kits and vehicle kits (SurVivaZ vehicles, packages/gameplay/DESIGN.md §31). Merged into items by data.ts; ids from ids.lock.json (append-only, `pnpm --filter @engine/gameplay lock:ids`). Fuels: 1 item = 1 liter. weight in kg.",
+  "items": [
+    {
+      "key": "plant_oil",
+      "name": "Plant Oil",
+      "category": "resource",
+      "maxStack": 20,
+      "weight": 0.9
+    },
+    {
+      "key": "gasoline",
+      "name": "Gasoline (1 L)",
+      "category": "resource",
+      "maxStack": 20,
+      "weight": 0.75
+    },
+    {
+      "key": "diesel",
+      "name": "Diesel (1 L)",
+      "category": "resource",
+      "maxStack": 20,
+      "weight": 0.85
+    },
+    {
+      "key": "biofuel",
+      "name": "Biofuel (1 L)",
+      "category": "resource",
+      "maxStack": 20,
+      "weight": 0.88
+    },
+    {
+      "key": "rubber",
+      "name": "Rubber",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.4
+    },
+    {
+      "key": "copper_wire",
+      "name": "Copper Wire",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.1
+    },
+    {
+      "key": "sulfuric_acid",
+      "name": "Battery Acid",
+      "category": "resource",
+      "maxStack": 10,
+      "weight": 1.2
+    },
+    {
+      "key": "bike_frame",
+      "name": "Bicycle Frame",
+      "category": "resource",
+      "maxStack": 2,
+      "weight": 6
+    },
+    {
+      "key": "bike_tire",
+      "name": "Bicycle Tire",
+      "category": "resource",
+      "maxStack": 10,
+      "weight": 0.6
+    },
+    {
+      "key": "bike_wheel",
+      "name": "Bicycle Wheel",
+      "category": "resource",
+      "maxStack": 10,
+      "weight": 1.5
+    },
+    {
+      "key": "bike_chain",
+      "name": "Bicycle Chain",
+      "category": "resource",
+      "maxStack": 10,
+      "weight": 0.4
+    },
+    {
+      "key": "saddle",
+      "name": "Saddle",
+      "category": "resource",
+      "maxStack": 10,
+      "weight": 0.5
+    },
+    {
+      "key": "tire",
+      "name": "Tire",
+      "category": "resource",
+      "maxStack": 8,
+      "weight": 9
+    },
+    {
+      "key": "wheel_rim",
+      "name": "Wheel Rim",
+      "category": "resource",
+      "maxStack": 8,
+      "weight": 8
+    },
+    {
+      "key": "wheel",
+      "name": "Wheel",
+      "category": "resource",
+      "maxStack": 8,
+      "weight": 17
+    },
+    {
+      "key": "axle",
+      "name": "Axle",
+      "category": "resource",
+      "maxStack": 4,
+      "weight": 25
+    },
+    {
+      "key": "steering_column",
+      "name": "Steering Column",
+      "category": "resource",
+      "maxStack": 4,
+      "weight": 6
+    },
+    {
+      "key": "chassis_small",
+      "name": "Small Chassis",
+      "category": "resource",
+      "maxStack": 1,
+      "weight": 120
+    },
+    {
+      "key": "chassis_medium",
+      "name": "Medium Chassis",
+      "category": "resource",
+      "maxStack": 1,
+      "weight": 220
+    },
+    {
+      "key": "chassis_large",
+      "name": "Large Chassis",
+      "category": "resource",
+      "maxStack": 1,
+      "weight": 380
+    },
+    {
+      "key": "chassis_heavy",
+      "name": "Heavy Chassis",
+      "category": "resource",
+      "maxStack": 1,
+      "weight": 700
+    },
+    {
+      "key": "trailer_frame",
+      "name": "Trailer Frame",
+      "category": "resource",
+      "maxStack": 2,
+      "weight": 90
+    },
+    {
+      "key": "hitch_coupler",
+      "name": "Hitch Coupler",
+      "category": "resource",
+      "maxStack": 4,
+      "weight": 8
+    },
+    {
+      "key": "body_panel",
+      "name": "Body Panel",
+      "category": "resource",
+      "maxStack": 20,
+      "weight": 10
+    },
+    {
+      "key": "windshield",
+      "name": "Windshield",
+      "category": "resource",
+      "maxStack": 4,
+      "weight": 12
+    },
+    {
+      "key": "headlight",
+      "name": "Headlight",
+      "category": "resource",
+      "maxStack": 10,
+      "weight": 1
+    },
+    {
+      "key": "seat",
+      "name": "Vehicle Seat",
+      "category": "resource",
+      "maxStack": 8,
+      "weight": 12
+    },
+    {
+      "key": "fuel_tank",
+      "name": "Fuel Tank",
+      "category": "resource",
+      "maxStack": 4,
+      "weight": 10
+    },
+    {
+      "key": "battery",
+      "name": "Battery",
+      "category": "resource",
+      "maxStack": 4,
+      "weight": 15
+    },
+    {
+      "key": "radiator",
+      "name": "Radiator",
+      "category": "resource",
+      "maxStack": 4,
+      "weight": 7
+    },
+    {
+      "key": "gearbox",
+      "name": "Gearbox",
+      "category": "resource",
+      "maxStack": 4,
+      "weight": 40
+    },
+    {
+      "key": "engine_small",
+      "name": "Small Engine",
+      "category": "resource",
+      "maxStack": 2,
+      "weight": 70
+    },
+    {
+      "key": "engine_medium",
+      "name": "V6 Engine",
+      "category": "resource",
+      "maxStack": 2,
+      "weight": 140
+    },
+    {
+      "key": "engine_large",
+      "name": "V8 Engine",
+      "category": "resource",
+      "maxStack": 1,
+      "weight": 210
+    },
+    {
+      "key": "engine_diesel",
+      "name": "Diesel Engine",
+      "category": "resource",
+      "maxStack": 1,
+      "weight": 450
+    },
+    {
+      "key": "camper_interior",
+      "name": "Camper Interior Kit",
+      "category": "resource",
+      "maxStack": 2,
+      "weight": 60
+    },
+    {
+      "key": "tank_shell",
+      "name": "Tanker Shell",
+      "category": "resource",
+      "maxStack": 1,
+      "weight": 400
+    },
+    {
+      "key": "patch_kit",
+      "name": "Tire Patch Kit",
+      "category": "tool",
+      "maxStack": 1,
+      "weight": 0.3,
+      "durability": 3,
+      "tool": {
+        "kind": "none",
+        "tier": 1
+      }
+    },
+    {
+      "key": "repair_kit",
+      "name": "Vehicle Repair Kit",
+      "category": "tool",
+      "maxStack": 1,
+      "weight": 4,
+      "durability": 4,
+      "tool": {
+        "kind": "none",
+        "tier": 2
+      }
+    },
+    {
+      "key": "vehicle_kit_bike_basic",
+      "name": "Bike Basic Kit",
+      "category": "placeable",
+      "maxStack": 1,
+      "weight": 2,
+      "tradeable": true
+    },
+    {
+      "key": "vehicle_kit_bike_road",
+      "name": "Bike Road Kit",
+      "category": "placeable",
+      "maxStack": 1,
+      "weight": 1,
+      "tradeable": true
+    },
+    {
+      "key": "vehicle_kit_bike_mountain",
+      "name": "Bike Mountain Kit",
+      "category": "placeable",
+      "maxStack": 1,
+      "weight": 1,
+      "tradeable": true
+    },
+    {
+      "key": "vehicle_kit_bike_bmx",
+      "name": "Bike Bmx Kit",
+      "category": "placeable",
+      "maxStack": 1,
+      "weight": 1,
+      "tradeable": true
+    },
+    {
+      "key": "vehicle_kit_bike_fat_tire",
+      "name": "Bike Fat Tire Kit",
+      "category": "placeable",
+      "maxStack": 1,
+      "weight": 2,
+      "tradeable": true
+    },
+    {
+      "key": "vehicle_kit_bike_cruiser",
+      "name": "Bike Cruiser Kit",
+      "category": "placeable",
+      "maxStack": 1,
+      "weight": 2,
+      "tradeable": true
+    },
+    {
+      "key": "vehicle_kit_bike_tandem",
+      "name": "Bike Tandem Kit",
+      "category": "placeable",
+      "maxStack": 1,
+      "weight": 2,
+      "tradeable": true
+    },
+    {
+      "key": "vehicle_kit_bike_cargo",
+      "name": "Bike Cargo Kit",
+      "category": "placeable",
+      "maxStack": 1,
+      "weight": 3,
+      "tradeable": true
+    },
+    {
+      "key": "vehicle_kit_bike_trike",
+      "name": "Bike Trike Kit",
+      "category": "placeable",
+      "maxStack": 1,
+      "weight": 3,
+      "tradeable": true
+    },
+    {
+      "key": "vehicle_kit_car_compact",
+      "name": "Car Compact Kit",
+      "category": "placeable",
+      "maxStack": 1,
+      "weight": 90,
+      "tradeable": true
+    },
+    {
+      "key": "vehicle_kit_car_sedan",
+      "name": "Car Sedan Kit",
+      "category": "placeable",
+      "maxStack": 1,
+      "weight": 130,
+      "tradeable": true
+    },
+    {
+      "key": "vehicle_kit_car_muscle",
+      "name": "Car Muscle Kit",
+      "category": "placeable",
+      "maxStack": 1,
+      "weight": 150,
+      "tradeable": true
+    },
+    {
+      "key": "vehicle_kit_car_offroad",
+      "name": "Car Offroad Kit",
+      "category": "placeable",
+      "maxStack": 1,
+      "weight": 170,
+      "tradeable": true
+    },
+    {
+      "key": "vehicle_kit_car_wagon",
+      "name": "Car Wagon Kit",
+      "category": "placeable",
+      "maxStack": 1,
+      "weight": 145,
+      "tradeable": true
+    },
+    {
+      "key": "vehicle_kit_truck_pickup",
+      "name": "Truck Pickup Kit",
+      "category": "placeable",
+      "maxStack": 1,
+      "weight": 220,
+      "tradeable": true
+    },
+    {
+      "key": "vehicle_kit_truck_flatbed",
+      "name": "Truck Flatbed Kit",
+      "category": "placeable",
+      "maxStack": 1,
+      "weight": 350,
+      "tradeable": true
+    },
+    {
+      "key": "vehicle_kit_truck_box",
+      "name": "Truck Box Kit",
+      "category": "placeable",
+      "maxStack": 1,
+      "weight": 450,
+      "tradeable": true
+    },
+    {
+      "key": "vehicle_kit_van_cargo",
+      "name": "Van Cargo Kit",
+      "category": "placeable",
+      "maxStack": 1,
+      "weight": 200,
+      "tradeable": true
+    },
+    {
+      "key": "vehicle_kit_van_passenger",
+      "name": "Van Passenger Kit",
+      "category": "placeable",
+      "maxStack": 1,
+      "weight": 210,
+      "tradeable": true
+    },
+    {
+      "key": "vehicle_kit_camper_van",
+      "name": "Camper Van Kit",
+      "category": "placeable",
+      "maxStack": 1,
+      "weight": 280,
+      "tradeable": true
+    },
+    {
+      "key": "vehicle_kit_camper_rv",
+      "name": "Camper Rv Kit",
+      "category": "placeable",
+      "maxStack": 1,
+      "weight": 650,
+      "tradeable": true
+    },
+    {
+      "key": "vehicle_kit_semi_tractor",
+      "name": "Semi Tractor Kit",
+      "category": "placeable",
+      "maxStack": 1,
+      "weight": 800,
+      "tradeable": true
+    },
+    {
+      "key": "vehicle_kit_trailer_utility_small",
+      "name": "Trailer Utility Small Kit",
+      "category": "placeable",
+      "maxStack": 1,
+      "weight": 25,
+      "tradeable": true
+    },
+    {
+      "key": "vehicle_kit_trailer_cargo_medium",
+      "name": "Trailer Cargo Medium Kit",
+      "category": "placeable",
+      "maxStack": 1,
+      "weight": 60,
+      "tradeable": true
+    },
+    {
+      "key": "vehicle_kit_trailer_flatbed_large",
+      "name": "Trailer Flatbed Large Kit",
+      "category": "placeable",
+      "maxStack": 1,
+      "weight": 120,
+      "tradeable": true
+    },
+    {
+      "key": "vehicle_kit_trailer_livestock",
+      "name": "Trailer Livestock Kit",
+      "category": "placeable",
+      "maxStack": 1,
+      "weight": 110,
+      "tradeable": true
+    },
+    {
+      "key": "vehicle_kit_trailer_tanker",
+      "name": "Trailer Tanker Kit",
+      "category": "placeable",
+      "maxStack": 1,
+      "weight": 150,
+      "tradeable": true
+    },
+    {
+      "key": "vehicle_kit_trailer_camper",
+      "name": "Trailer Camper Kit",
+      "category": "placeable",
+      "maxStack": 1,
+      "weight": 140,
+      "tradeable": true
+    },
+    {
+      "key": "vehicle_kit_semi_trailer_box",
+      "name": "Semi Trailer Box Kit",
+      "category": "placeable",
+      "maxStack": 1,
+      "weight": 600,
+      "tradeable": true
+    },
+    {
+      "key": "vehicle_kit_semi_trailer_flatbed",
+      "name": "Semi Trailer Flatbed Kit",
+      "category": "placeable",
+      "maxStack": 1,
+      "weight": 500,
+      "tradeable": true
+    }
+  ]
+}

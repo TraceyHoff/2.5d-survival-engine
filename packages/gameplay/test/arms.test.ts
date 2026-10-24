@@ -14,7 +14,7 @@ function world() { const w = makeWorld(); installPermissions(w); return w; }
 describe("registration order", () => {
   it("arms components are appended after vehicles", () => {
     const L = G.GAMEPLAY_COMPONENTS; const i = L.indexOf(G.Hitch);
-    expect(L.slice(i + 1)).toEqual([Worn, WeaponState, G.LiveExplosive, G.ExplosiveOwner]);
+    expect(L.slice(i + 1, i + 5)).toEqual([Worn, WeaponState, G.LiveExplosive, G.ExplosiveOwner]); // later slices (VehicleCondition) append after arms
   });
 });
 

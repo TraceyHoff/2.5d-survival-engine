@@ -1,0 +1,273 @@
+{
+  "$comment": "Vehicle craft/fuel/repair rules (DESIGN.md \u00a731). vehicles: def id -> kit item + fuel class (none = stamina/towed). fuels: item -> fuel classes it fills (liters per item). repair: item -> fraction of max health restored per use in the field / at a garage; wreckOk = can revive a wrecked (health 0) vehicle; classes limits use (empty = all). deploy: reach in tiles, fuel fraction a freshly deployed vehicle starts with. bots: SP AI human driving gates (traits 0..1) and distances in tiles.",
+  "deploy": {
+    "reach": 4,
+    "startFuel": 0.1
+  },
+  "refuel": {
+    "reach": 3,
+    "maxPerCommand": 20
+  },
+  "fuels": {
+    "gasoline": {
+      "classes": [
+        "gasoline"
+      ],
+      "liters": 1
+    },
+    "diesel": {
+      "classes": [
+        "diesel"
+      ],
+      "liters": 1
+    },
+    "biofuel": {
+      "classes": [
+        "gasoline",
+        "diesel"
+      ],
+      "liters": 1
+    }
+  },
+  "repair": {
+    "reach": 3,
+    "garageRange": 6,
+    "items": {
+      "patch_kit": {
+        "field": 0.5,
+        "garage": 1,
+        "classes": [
+          "bicycle"
+        ],
+        "wreckOk": false
+      },
+      "repair_kit": {
+        "field": 0.25,
+        "garage": 0.6,
+        "classes": [],
+        "wreckOk": false
+      },
+      "body_panel": {
+        "field": 0.05,
+        "garage": 0.12,
+        "classes": [
+          "car",
+          "truck",
+          "van",
+          "camper",
+          "semi",
+          "trailer"
+        ],
+        "wreckOk": false
+      },
+      "tire": {
+        "field": 0.08,
+        "garage": 0.15,
+        "classes": [
+          "car",
+          "truck",
+          "van",
+          "camper",
+          "semi",
+          "trailer"
+        ],
+        "wreckOk": false
+      },
+      "bike_wheel": {
+        "field": 0.4,
+        "garage": 0.6,
+        "classes": [
+          "bicycle"
+        ],
+        "wreckOk": true
+      },
+      "engine_small": {
+        "field": 0,
+        "garage": 0.5,
+        "classes": [
+          "car",
+          "van",
+          "camper",
+          "truck",
+          "semi"
+        ],
+        "wreckOk": true
+      },
+      "engine_medium": {
+        "field": 0,
+        "garage": 0.7,
+        "classes": [
+          "car",
+          "van",
+          "camper",
+          "truck",
+          "semi"
+        ],
+        "wreckOk": true
+      },
+      "engine_large": {
+        "field": 0,
+        "garage": 0.8,
+        "classes": [
+          "car",
+          "van",
+          "camper",
+          "truck",
+          "semi"
+        ],
+        "wreckOk": true
+      },
+      "engine_diesel": {
+        "field": 0,
+        "garage": 1,
+        "classes": [
+          "truck",
+          "semi",
+          "camper"
+        ],
+        "wreckOk": true
+      },
+      "trailer_frame": {
+        "field": 0,
+        "garage": 0.6,
+        "classes": [
+          "trailer"
+        ],
+        "wreckOk": true
+      }
+    },
+    "wearPerField": 0.05
+  },
+  "vehicles": {
+    "bike_basic": {
+      "kit": "vehicle_kit_bike_basic",
+      "fuel": "none"
+    },
+    "bike_road": {
+      "kit": "vehicle_kit_bike_road",
+      "fuel": "none"
+    },
+    "bike_mountain": {
+      "kit": "vehicle_kit_bike_mountain",
+      "fuel": "none"
+    },
+    "bike_bmx": {
+      "kit": "vehicle_kit_bike_bmx",
+      "fuel": "none"
+    },
+    "bike_fat_tire": {
+      "kit": "vehicle_kit_bike_fat_tire",
+      "fuel": "none"
+    },
+    "bike_cruiser": {
+      "kit": "vehicle_kit_bike_cruiser",
+      "fuel": "none"
+    },
+    "bike_tandem": {
+      "kit": "vehicle_kit_bike_tandem",
+      "fuel": "none"
+    },
+    "bike_cargo": {
+      "kit": "vehicle_kit_bike_cargo",
+      "fuel": "none"
+    },
+    "bike_trike": {
+      "kit": "vehicle_kit_bike_trike",
+      "fuel": "none"
+    },
+    "car_compact": {
+      "kit": "vehicle_kit_car_compact",
+      "fuel": "gasoline"
+    },
+    "car_sedan": {
+      "kit": "vehicle_kit_car_sedan",
+      "fuel": "gasoline"
+    },
+    "car_muscle": {
+      "kit": "vehicle_kit_car_muscle",
+      "fuel": "gasoline"
+    },
+    "car_offroad": {
+      "kit": "vehicle_kit_car_offroad",
+      "fuel": "gasoline"
+    },
+    "car_wagon": {
+      "kit": "vehicle_kit_car_wagon",
+      "fuel": "gasoline"
+    },
+    "truck_pickup": {
+      "kit": "vehicle_kit_truck_pickup",
+      "fuel": "gasoline"
+    },
+    "truck_flatbed": {
+      "kit": "vehicle_kit_truck_flatbed",
+      "fuel": "diesel"
+    },
+    "truck_box": {
+      "kit": "vehicle_kit_truck_box",
+      "fuel": "diesel"
+    },
+    "van_cargo": {
+      "kit": "vehicle_kit_van_cargo",
+      "fuel": "gasoline"
+    },
+    "van_passenger": {
+      "kit": "vehicle_kit_van_passenger",
+      "fuel": "gasoline"
+    },
+    "camper_van": {
+      "kit": "vehicle_kit_camper_van",
+      "fuel": "gasoline"
+    },
+    "camper_rv": {
+      "kit": "vehicle_kit_camper_rv",
+      "fuel": "gasoline"
+    },
+    "semi_tractor": {
+      "kit": "vehicle_kit_semi_tractor",
+      "fuel": "diesel"
+    },
+    "trailer_utility_small": {
+      "kit": "vehicle_kit_trailer_utility_small",
+      "fuel": "none"
+    },
+    "trailer_cargo_medium": {
+      "kit": "vehicle_kit_trailer_cargo_medium",
+      "fuel": "none"
+    },
+    "trailer_flatbed_large": {
+      "kit": "vehicle_kit_trailer_flatbed_large",
+      "fuel": "none"
+    },
+    "trailer_livestock": {
+      "kit": "vehicle_kit_trailer_livestock",
+      "fuel": "none"
+    },
+    "trailer_tanker": {
+      "kit": "vehicle_kit_trailer_tanker",
+      "fuel": "none"
+    },
+    "trailer_camper": {
+      "kit": "vehicle_kit_trailer_camper",
+      "fuel": "none"
+    },
+    "semi_trailer_box": {
+      "kit": "vehicle_kit_semi_trailer_box",
+      "fuel": "none"
+    },
+    "semi_trailer_flatbed": {
+      "kit": "vehicle_kit_semi_trailer_flatbed",
+      "fuel": "none"
+    }
+  },
+  "bots": {
+    "minBraveryToDrive": 0.25,
+    "minIndustriousnessToHitch": 0.5,
+    "driveMinDistance": 25,
+    "arriveDistance": 6,
+    "seekRadius": 30,
+    "refuelBelow": 0.25,
+    "repairBelow": 0.5,
+    "hitchWhenInvFreeBelow": 0.2
+  }
+}

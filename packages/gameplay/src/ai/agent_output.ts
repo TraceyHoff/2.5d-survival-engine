@@ -12,6 +12,8 @@ import { PartyAcceptCmd, PartyDeclineCmd, PartyInviteCmd, PartyKickCmd, PartyLea
 import { ClanAcceptCmd, ClanCreateCmd, ClanDemoteCmd, ClanInviteCmd, ClanKickCmd, ClanLeaveCmd, ClanPromoteCmd, ClanSetGoalCmd, ClanSetRankPermsCmd } from "../clan.js";
 import { StockStallCmd } from "../economy/stall.js";
 import { requestEmote } from "../expression.js";
+import { VehicleEnterCmd, VehicleExitCmd, VehicleHitchCmd, VehicleStationCmd, VehicleUnhitchCmd } from "../vehicles.js";
+import { VehicleDeployCmd, VehicleRefuelCmd, VehicleRepairCmd } from "../vehicle_craft.js";
 
 export function actionIntent(action: string): BotIntent | undefined {
   const [k, ...rest] = action.split(":"); const n = rest.map(Number); if (n.some((v) => !Number.isFinite(v))) return undefined;
@@ -63,6 +65,7 @@ export type AgentOutputWithCommands = AgentOutput & { commands?: AgentCommand[] 
 export function actionCommand(action: string): AgentCommand | undefined {
   const party = partyActionCommand(action); if (party !== null) return party;
   const clan = clanActionCommand(action); if (clan !== null) return clan;
+  const veh = vehicleActionCommand(action); if (veh !== null) return veh;
   const it = actionIntent(action); if (!it) return undefined;
   switch (it.kind) {
     case "eat": return { type: UseCmd.name, payload: { slot: it.slot } };
@@ -110,7 +113,26 @@ function clanActionCommand(action: string): AgentCommand | undefined | null {
     default: return null;
   }
 }
-const COMMAND_ACTIONS = new Set(["ccreate", "cinvite", "caccept", "cleave", "cpromote", "cdemote", "ckick", "cperms", "cgoal", "cstock", "eat", "drink", "craft", "build", "open", "buy", "pinvite", "paccept", "pdecline", "pleave", "pkick"]);
+/**
+ * Vehicle action strings (DESIGN.md §31): "venter:<vehicle>[:<seat>]" | "vexit" | "vhitch:<trailer>:<tow>" | "vunhitch:<trailer>"
+ * | "vstation:<vehicle>:<index>" | "vrefuel:<vehicle>:<slot>[:<count>]" | "vrepair:<vehicle>:<slot>" | "vdeploy:<slot>:<x>:<y>[:<heading>]".
+ * Driving itself is moveX/moveY (+sprint = boost) while seated, exactly like a human. null = not a vehicle action.
+ */
+function vehicleActionCommand(action: string): AgentCommand | undefined | null {
+  const [k, ...rest] = action.split(":"); const n = rest.map(Number); const ok = (c: number) => n.length >= c && n.every(Number.isFinite);
+  switch (k) {
+    case "venter": return ok(1) ? { type: VehicleEnterCmd.name, payload: { target: n[0]!, seat: n[1] ?? 255 } } : undefined;
+    case "vexit": return { type: VehicleExitCmd.name, payload: {} };
+    case "vhitch": return ok(2) ? { type: VehicleHitchCmd.name, payload: { target: n[0]!, tow: n[1]! } } : undefined;
+    case "vunhitch": return ok(1) ? { type: VehicleUnhitchCmd.name, payload: { target: n[0]! } } : undefined;
+    case "vstation": return ok(2) ? { type: VehicleStationCmd.name, payload: { target: n[0]!, station: n[1]! } } : undefined;
+    case "vrefuel": return ok(2) ? { type: VehicleRefuelCmd.name, payload: { target: n[0]!, slot: n[1]!, count: Math.max(1, Math.min(255, n[2] ?? 1)) } } : undefined;
+    case "vrepair": return ok(2) ? { type: VehicleRepairCmd.name, payload: { target: n[0]!, slot: n[1]! } } : undefined;
+    case "vdeploy": return ok(3) ? { type: VehicleDeployCmd.name, payload: { slot: n[0]!, x: n[1]!, y: n[2]!, heading: n[3] ?? 0 } } : undefined;
+    default: return null;
+  }
+}
+const COMMAND_ACTIONS = new Set(["venter", "vexit", "vhitch", "vunhitch", "vstation", "vrefuel", "vrepair", "vdeploy", "ccreate", "cinvite", "caccept", "cleave", "cpromote", "cdemote", "ckick", "cperms", "cgoal", "cstock", "eat", "drink", "craft", "build", "open", "buy", "pinvite", "paccept", "pdecline", "pleave", "pkick"]);
 /**
  * Moves the command-type actions (eat, drink, craft, build, open, buy) out of out.actions and into out.commands, in order.
   Movement and gather/attack/sleep stay
