@@ -1165,6 +1165,90 @@
     }
    ],
    "ktx2": "atlases/nature_placeholder.ktx2"
+  },
+  {
+   "key": "nature_adr128",
+   "image": "atlases/nature_adr128.png",
+   "frameW": 32,
+   "frameH": 32,
+   "columns": 16,
+   "rows": 2,
+   "residency": "resident",
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_adr128@2x.png",
+     "ktx2": "atlases/nature_adr128@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_adr128.ktx2"
+  },
+  {
+   "key": "nature_adr128_fx",
+   "image": "atlases/nature_adr128_fx.png",
+   "frameW": 12,
+   "frameH": 12,
+   "columns": 4,
+   "rows": 3,
+   "residency": "resident",
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_adr128_fx@2x.png",
+     "ktx2": "atlases/nature_adr128_fx@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_adr128_fx.ktx2"
+  },
+  {
+   "key": "nature_adr128_hpbar",
+   "image": "atlases/nature_adr128_hpbar.png",
+   "frameW": 32,
+   "frameH": 4,
+   "columns": 1,
+   "rows": 1,
+   "residency": "resident",
+   "nineSlice": {
+    "0": {
+     "l": 2,
+     "t": 1,
+     "r": 2,
+     "b": 1
+    }
+   },
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_adr128_hpbar@2x.png",
+     "ktx2": "atlases/nature_adr128_hpbar@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_adr128_hpbar.ktx2"
+  },
+  {
+   "key": "nature_adr128_toast",
+   "image": "atlases/nature_adr128_toast.png",
+   "frameW": 48,
+   "frameH": 24,
+   "columns": 1,
+   "rows": 1,
+   "residency": "resident",
+   "nineSlice": {
+    "0": {
+     "l": 10,
+     "t": 8,
+     "r": 10,
+     "b": 8
+    }
+   },
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_adr128_toast@2x.png",
+     "ktx2": "atlases/nature_adr128_toast@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_adr128_toast.ktx2"
   }
  ],
  "sprites": [
@@ -26591,9 +26675,9 @@
    }
   },
   {
-   "key": "stewed_blueberry",
+   "key": "stewed_berries",
    "category": "item",
-   "atlas": "nature_icons",
+   "atlas": "nature_adr128",
    "anchor": {
     "x": 0.5,
     "y": 0.5
@@ -26601,7 +26685,24 @@
    "animations": {
     "idle": {
      "frames": [
-      75
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "stewed_blueberry",
+   "category": "item",
+   "atlas": "nature_adr128",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
      ],
      "fps": 1
     }
@@ -26610,7 +26711,7 @@
   {
    "key": "stewed_raspberry",
    "category": "item",
-   "atlas": "nature_icons",
+   "atlas": "nature_adr128",
    "anchor": {
     "x": 0.5,
     "y": 0.5
@@ -26618,7 +26719,7 @@
    "animations": {
     "idle": {
      "frames": [
-      76
+      2
      ],
      "fps": 1
     }
@@ -26627,7 +26728,7 @@
   {
    "key": "stewed_blackberry",
    "category": "item",
-   "atlas": "nature_icons",
+   "atlas": "nature_adr128",
    "anchor": {
     "x": 0.5,
     "y": 0.5
@@ -26635,7 +26736,7 @@
    "animations": {
     "idle": {
      "frames": [
-      77
+      3
      ],
      "fps": 1
     }
@@ -26644,7 +26745,7 @@
   {
    "key": "stewed_strawberry",
    "category": "item",
-   "atlas": "nature_icons",
+   "atlas": "nature_adr128",
    "anchor": {
     "x": 0.5,
     "y": 0.5
@@ -26652,7 +26753,7 @@
    "animations": {
     "idle": {
      "frames": [
-      78
+      4
      ],
      "fps": 1
     }
@@ -26661,7 +26762,7 @@
   {
    "key": "stewed_cherry",
    "category": "item",
-   "atlas": "nature_icons",
+   "atlas": "nature_adr128",
    "anchor": {
     "x": 0.5,
     "y": 0.5
@@ -26669,7 +26770,24 @@
    "animations": {
     "idle": {
      "frames": [
-      80
+      5
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "baked_apple",
+   "category": "item",
+   "atlas": "nature_adr128",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      6
      ],
      "fps": 1
     }
@@ -26678,7 +26796,7 @@
   {
    "key": "baked_pear",
    "category": "item",
-   "atlas": "nature_icons",
+   "atlas": "nature_adr128",
    "anchor": {
     "x": 0.5,
     "y": 0.5
@@ -26686,7 +26804,7 @@
    "animations": {
     "idle": {
      "frames": [
-      79
+      7
      ],
      "fps": 1
     }
@@ -26695,7 +26813,7 @@
   {
    "key": "baked_orange",
    "category": "item",
-   "atlas": "nature_icons",
+   "atlas": "nature_adr128",
    "anchor": {
     "x": 0.5,
     "y": 0.5
@@ -26703,7 +26821,7 @@
    "animations": {
     "idle": {
      "frames": [
-      81
+      8
      ],
      "fps": 1
     }
@@ -26712,7 +26830,7 @@
   {
    "key": "baked_peach",
    "category": "item",
-   "atlas": "nature_icons",
+   "atlas": "nature_adr128",
    "anchor": {
     "x": 0.5,
     "y": 0.5
@@ -26720,7 +26838,7 @@
    "animations": {
     "idle": {
      "frames": [
-      82
+      9
      ],
      "fps": 1
     }
@@ -26729,7 +26847,7 @@
   {
    "key": "baked_coconut",
    "category": "item",
-   "atlas": "nature_icons",
+   "atlas": "nature_adr128",
    "anchor": {
     "x": 0.5,
     "y": 0.5
@@ -26737,7 +26855,24 @@
    "animations": {
     "idle": {
      "frames": [
-      87
+      10
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "roasted_carrot",
+   "category": "item",
+   "atlas": "nature_adr128",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      11
      ],
      "fps": 1
     }
@@ -26746,7 +26881,7 @@
   {
    "key": "roasted_tomato",
    "category": "item",
-   "atlas": "nature_icons",
+   "atlas": "nature_adr128",
    "anchor": {
     "x": 0.5,
     "y": 0.5
@@ -26754,7 +26889,24 @@
    "animations": {
     "idle": {
      "frames": [
-      65
+      12
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "roasted_pumpkin",
+   "category": "item",
+   "atlas": "nature_adr128",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      13
      ],
      "fps": 1
     }
@@ -26763,7 +26915,7 @@
   {
    "key": "roasted_squash",
    "category": "item",
-   "atlas": "nature_icons",
+   "atlas": "nature_adr128",
    "anchor": {
     "x": 0.5,
     "y": 0.5
@@ -26771,7 +26923,7 @@
    "animations": {
     "idle": {
      "frames": [
-      66
+      14
      ],
      "fps": 1
     }
@@ -26780,7 +26932,7 @@
   {
    "key": "roasted_cabbage",
    "category": "item",
-   "atlas": "nature_icons",
+   "atlas": "nature_adr128",
    "anchor": {
     "x": 0.5,
     "y": 0.5
@@ -26788,7 +26940,7 @@
    "animations": {
     "idle": {
      "frames": [
-      68
+      15
      ],
      "fps": 1
     }
@@ -26797,7 +26949,7 @@
   {
    "key": "roasted_onion",
    "category": "item",
-   "atlas": "nature_icons",
+   "atlas": "nature_adr128",
    "anchor": {
     "x": 0.5,
     "y": 0.5
@@ -26805,7 +26957,7 @@
    "animations": {
     "idle": {
      "frames": [
-      69
+      16
      ],
      "fps": 1
     }
@@ -26814,7 +26966,7 @@
   {
    "key": "roasted_wild_onion",
    "category": "item",
-   "atlas": "nature_icons",
+   "atlas": "nature_adr128",
    "anchor": {
     "x": 0.5,
     "y": 0.5
@@ -26822,7 +26974,138 @@
    "animations": {
     "idle": {
      "frames": [
-      69
+      17
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "canteen",
+   "category": "item",
+   "atlas": "nature_adr128",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      18
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "water_bottle",
+   "category": "item",
+   "atlas": "nature_adr128",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      19
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "particle_wood_chip",
+   "category": "vfx",
+   "atlas": "nature_adr128_fx",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 12,
+     "loop": true
+    }
+   }
+  },
+  {
+   "key": "particle_stone_chip",
+   "category": "vfx",
+   "atlas": "nature_adr128_fx",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4,
+      5,
+      6,
+      7
+     ],
+     "fps": 12,
+     "loop": true
+    }
+   }
+  },
+  {
+   "key": "particle_leaf",
+   "category": "vfx",
+   "atlas": "nature_adr128_fx",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8,
+      9,
+      10,
+      11
+     ],
+     "fps": 12,
+     "loop": true
+    }
+   }
+  },
+  {
+   "key": "ui_node_hpbar_frame",
+   "category": "ui",
+   "atlas": "nature_adr128_hpbar",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_pickup_toast_bg",
+   "category": "ui",
+   "atlas": "nature_adr128_toast",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
      ],
      "fps": 1
     }

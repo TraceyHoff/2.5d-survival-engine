@@ -2675,7 +2675,12 @@
     "stewed_cherry": 2673,
     "stewed_raspberry": 2674,
     "stewed_strawberry": 2675,
-    "water_bottle": 2676
+    "water_bottle": 2676,
+    "particle_leaf": 2677,
+    "particle_stone_chip": 2678,
+    "particle_wood_chip": 2679,
+    "ui_node_hpbar_frame": 2680,
+    "ui_pickup_toast_bg": 2681
   },
   "sounds": {
     "amb_rain": 1,
