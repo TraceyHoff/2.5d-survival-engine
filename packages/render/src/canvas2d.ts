@@ -12,6 +12,8 @@ import { worldToScreen, DEFAULT_ISO, CHUNK_SIZE, type TileMap } from "@engine/wo
 import type { AssetRegistry } from "@engine/assets";
 import { IsoCamera } from "./camera.js";
 import { Sprite, LightSource } from "./components.js";
+import { frameAnim } from "./frame-select.js";
+import { SpriteFlag } from "./ids.js";
 import { STATE_ANIMS, type AtlasSource } from "./assets/atlasManager.js";
 import { computeDayLighting, dimForWeather } from "./timeOfDay.js";
 import { weatherTargets } from "./weather.js";
@@ -100,13 +102,15 @@ export class Canvas2DRenderer {
     if (reg && world.isRegistered(Sprite)) for (const e of world.query([Transform, Sprite])) {
       const cur = world.get(e, Transform)!; const prev = world.get(e, PrevTransform) ?? cur;
       const x = prev.x + (cur.x - prev.x) * alpha, y = prev.y + (cur.y - prev.y) * alpha, z = prev.z + (cur.z - prev.z) * alpha;
-      const p = worldToScreen(x, y, z, iso); items.push({ e, sx: p.sx, sy: p.sy, depth: x + y });
+      const p = worldToScreen(x, y, z, iso); const flat = (world.get(e, Sprite)!.flags & SpriteFlag.Flat) !== 0;
+      items.push({ e, sx: p.sx, sy: p.sy, depth: flatSortDepth(x + y, flat) });
     }
-    items.sort((a, b) => a.depth - b.depth);
+    items.sort((a, b) => a.depth - b.depth); // Flat ground decals (roads) first: always under feet and entities
     const an = this.bindings.animState; const tick = world.tick;
     for (const it of items) {
       const sp = world.get(it.e, Sprite)!; if (sp.scale > 0 && sp.scale < 0.01) continue;
       let anim = "idle"; let tAnim = time;
+      const fa = frameAnim(sp.frameId); if (fa >= 0) { try { anim = reg!.sprite(sp.spriteId).animList[fa]?.name ?? "idle"; } catch { /* unknown sprite */ } tAnim = 0; }
       if (an && world.has(it.e, an)) { const a = world.get(it.e, an)!; const names = STATE_ANIMS[a.state] ?? ["idle"]; let def; try { def = reg!.sprite(sp.spriteId); } catch { def = undefined; }
         anim = names.find((n) => def?.animations.has(n)) ?? "idle"; tAnim = Math.max(0, (tick - a.startTick) / 20) * (this.bindings.animRate?.(it.e, a.state) ?? 1); }
       let f; try { f = reg!.dirFrame(sp.spriteId, anim, world.get(it.e, Transform)!.facing, tAnim); } catch { continue; }
@@ -131,3 +135,6 @@ export class Canvas2DRenderer {
   }
 }
 const rgb = (c: readonly number[]): string => `rgb(${Math.round(Math.min(1, c[0]!) * 255)},${Math.round(Math.min(1, c[1]!) * 255)},${Math.round(Math.min(1, c[2]!) * 255)})`;
+
+/** Canvas2D sort key: Flat ground decals (roads, ADR-119) draw in a layer below every upright sprite, in iso order. */
+export const flatSortDepth = (isoDepth: number, flat: boolean): number => (flat ? isoDepth - 1e7 : isoDepth);

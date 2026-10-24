@@ -26,6 +26,7 @@
  *   numeric ids), so ECS data is untouched. Old images are released (ref-counted) after the swap.
  */
 import { AnimState as CoreAnimState, ANIM_STATE_NAMES } from "@engine/core";
+import { FRAME_ANIM } from "../frame-select.js";
 import { AssetRegistry, type Animation, type Atlas, type DirFrameRect, type FrameRef } from "@engine/assets";
 import { STATUS_TINTS, TINT_MODE_INDEX, type StatusTint, type StatusTintName } from "../style.js";
 import type { AssetManager } from "@engine/core";
@@ -1377,6 +1378,7 @@ export class AtlasManager {
    */
   resolve(spriteId: number, anim: number, facing: number, timeSec: number, frame: number, out: ResolvedFrame): boolean {
     const s = this.sprites[spriteId]; if (!s) return false;
+    if (anim < 0 && (frame & FRAME_ANIM) !== 0) { anim = frame & 0x7fff; timeSec = 0; frame = 0; } // frame-select.ts: named anim, first frame
     const a = this.atlases[s.atlasIdx]!;
     const ai = anim < 0 ? 0 : s.anims[anim] ? anim : 0; const an = s.anims[ai]; if (!an) return false;
     let i: number; const n = an.frames.length;

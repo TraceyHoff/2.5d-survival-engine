@@ -17,6 +17,7 @@ import { pieceVariantOpts } from "./piece-variant.js";
 import { loadManifest, mergeManifests, buildPieceVisual, type AssetRegistry, type ManifestFragment, type ManifestJson } from "@engine/assets";
 import { BuildGhost, pieceArtRow, ROT_EXACT_PIVOT, IsoRenderer, Canvas2DRenderer, chooseRenderer, Sprite, Shadow, LightSource, Occluder, SpriteFlag, sourcesFromManifest, coreAppearanceBinding, CameraTargetGuard } from "@engine/render";
 import { countFraction } from "./load-progress.js";
+import { roadSpriteKeys, ROAD_FLAGS, signFrameId } from "./road-sign-view.js";
 import { Road, Sign, surfaceDef, signDef, walkAnimRate } from "@engine/gameplay";
 import { gameplayDefs, rotationSteps, animalDefs, Animal, Health, Survival, Zombie, ResourceNode, CraftingStation, Fuel, AnimState as GAnim, BuildPiece as GPiece, Dead, Wetness, BodyTemp, Emitter, PieceLink, Crop, cropSpriteKey, clutterForChunk, resolveSprite, type ResolvedSprite } from "@engine/gameplay";
 
@@ -254,6 +255,8 @@ export class IsoView {
         if (a && (!va || va.version !== a.version)) { const init = { bodyType: a.bodyType, skinTone: a.skinTone, version: a.version, parts: [...a.parts], primary: [...a.primary], secondary: [...a.secondary] }; if (va) v.set(ve, Appearance, init); else v.add(ve, Appearance, init); }
       }
       if (v.has(ve, Sprite) && net.has(e, Crop)) { const c = net.get(e, Crop)!; const r = this.rs(cropSpriteKey(c.kind, c.stage)); if (r && (v.get(ve, Sprite)!.spriteId !== r.id || v.get(ve, Sprite)!.scale !== r.scale)) { v.set(ve, Sprite, { spriteId: r.id, scale: r.scale, tint: r.tint }); this.scales.set(ve, r.scale); } }
+      if (v.has(ve, Sprite) && net.has(e, Road)) { const r0 = net.get(e, Road)!; const r = this.roadSprite(r0.surface, r0.mask); if (r && v.get(ve, Sprite)!.spriteId !== r.id) v.set(ve, Sprite, { spriteId: r.id }); } // neighbours placed / removed
+      if (v.has(ve, Sprite) && net.has(e, Sign)) { const sp = v.get(ve, Sprite)!; const fid = this.signFrame(sp.spriteId, net.get(e, Sign)!.rot); if (sp.frameId !== fid) v.set(ve, Sprite, { frameId: fid }); } // rotated
       if (v.has(ve, VPiece)) this.syncPieceState(net, e, ve, defs);
       if (v.has(ve, VFuel)) { const f = net.get(e, Fuel); if (f) v.set(ve, VFuel, { lit: f.lit, burnUntilTick: f.burnUntilTick }); }
     }
@@ -341,6 +344,15 @@ export class IsoView {
     const vis = buildPieceVisual(this.registry, { type: p.type, ...artRot(p.rot, rotationSteps(net, p.type)), tint: p.tint, paint: p.paint, state: lit ? "idle" : "unlit" }, { pieceKey: (t) => this.pk(defs?.pieces.get(t)?.key), ...pieceVariantOpts(defs?.pieces.get(p.type)?.variantNames, p.variant) });
     this.pieceStates.set(ve, vis.stateIndex);
   }
+  /** ADR-119: autotile variant for the replicated mask, else the plain surface tile (with sprite_fallbacks). */
+  private roadSprite(surface: number, mask: number): (ResolvedSprite & { id: number }) | undefined {
+    const [m, base] = roadSpriteKeys(surfaceDef(surface)?.key, mask); const exact = this.sid(m);
+    return exact !== undefined ? { key: m, id: exact, scale: 1, tint: 0 } as ResolvedSprite & { id: number } : this.rs(base);
+  }
+  private signFrame(sid: number, rot: number): number {
+    let names: string[] = []; try { names = this.registry.sprite(sid).animList.map((a) => a.name ?? ""); } catch { /* unknown sprite */ }
+    return signFrameId(names, rot);
+  }
   private baseScale(ve: Entity): number { return this.scales.get(ve) ?? 1; }
 
   private classify(net: World, e: Entity, defs: ReturnType<typeof gameplayDefs> | undefined, own: boolean): Spec | undefined {
@@ -368,14 +380,13 @@ export class IsoView {
       const scale = (tall ? 1.1 + (h % 50) / 100 : 1) * r.scale;
       return { sprite: s, ...(r.tint ? { tint: r.tint } : {}), flags: (h & 1 ? SpriteFlag.FlipX : 0) | (tall || !!key?.endsWith("_bush") ? SpriteFlag.Sway : 0), scale, shadow: 0.9, occluder: !!tall, onCreate: scale };
     }
-    if (net.has(e, Road)) { // ADR-119: road_<surface>_m<mask> (auto-connected art) -> road_<surface> -> sprite_fallbacks chain
-      const r0 = net.get(e, Road)!; const base = `road_${surfaceDef(r0.surface)?.key ?? "path"}`;
-      const exact = this.sid(`${base}_m${r0.mask}`); if (exact !== undefined) return { sprite: exact, } as Spec;
-      const r = this.rs(base); return r ? { sprite: r.id, ...(r.tint ? { tint: r.tint } : {}), ...(r.scale !== 1 ? { scale: r.scale, onCreate: r.scale } : {}) } : undefined;
+    if (net.has(e, Road)) { // ADR-119: flat road_<surface>_m<mask> autotile -> road_<surface> -> sprite_fallbacks chain
+      const r0 = net.get(e, Road)!; const r = this.roadSprite(r0.surface, r0.mask); if (!r) return undefined;
+      return { sprite: r.id, flags: ROAD_FLAGS, ...(r.tint ? { tint: r.tint } : {}), ...(r.scale !== 1 ? { scale: r.scale, onCreate: r.scale } : {}) };
     }
-    if (net.has(e, Sign)) { // ADR-120: the sign post art; its text is a DOM world label (world-labels.ts)
+    if (net.has(e, Sign)) { // ADR-120: the sign post art at its facing (idle / idle_r1..r3); its text is a DOM world label (world-labels.ts)
       const s0 = net.get(e, Sign)!; const r = this.rs(signDef(s0.kind)?.key ?? "sign_wooden_post");
-      return r ? { sprite: r.id, shadow: 0.6, ...(r.tint ? { tint: r.tint } : {}), ...(r.scale !== 1 ? { scale: r.scale, onCreate: r.scale } : {}) } : undefined;
+      return r ? { sprite: r.id, frame: this.signFrame(r.id, s0.rot), shadow: 0.6, ...(r.tint ? { tint: r.tint } : {}), ...(r.scale !== 1 ? { scale: r.scale, onCreate: r.scale } : {}) } : undefined;
     }
     if (net.has(e, Crop)) { // ADR-110: farm_soil / crop_<plant>_<stage> / sapling_<tree|bush>_<stage> (stage synced per frame)
       const c = net.get(e, Crop)!; const r = this.rs(cropSpriteKey(c.kind, c.stage)); if (!r) return undefined;

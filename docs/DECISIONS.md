@@ -582,6 +582,7 @@ Identity is persisted in the `agents` record namespace. Gameplay supplies `refer
   - Upgrading replaces the surface in place.
   - `mask` is a 4-bit N/E/S/W neighbour mask, recomputed for the tile and its neighbours on place and remove, so edges auto-connect.
   - The client draws `road_<surface>_m<mask>`, falling back to `road_<surface>`.
+  - **Render gap fixed (art 2b92a0ee):** roads are drawn as `Flat` ground decals (sorted under feet, entities and shadows) in both WebGL2 and Canvas2D. The `_m0.._m15` variant comes from the replicated `mask`, which counts neighbouring roads of any surface (the art's arms run to the tile edge, so mixed surfaces still join). The view re-picks the variant when neighbours change (`apps/client/src/road-sign-view.ts`). The `gravel`, `cement` and `asphalt` item icons resolve from `nature_roadicons`.
 - **Placement:** a road may go anywhere, including outside privilege zones, except inside someone else's zone (`no_privilege`).
   - `PlaceRoadCmd` lays a 4-connected Bresenham line from a drag; the line is capped at `maxDragTiles` (32), and the command stops at the first tile the player can't afford.
   - `RemoveRoadCmd` is owner only.
@@ -607,6 +608,7 @@ Identity is persisted in the `agents` record namespace. Gameplay supplies `refer
   - Signs show as DOM world labels within 22 tiles, at most 40 at a time.
   - Clicking a label edits its text through `prompt()`.
   - N places the first sign the player is carrying.
+  - **Render gap fixed (art 2b92a0ee):** the sign sprite shows `idle` for `Sign.rot` 0 and `idle_r1..r3` otherwise, instead of always frame 0, in both WebGL2 and Canvas2D. A rotation updates the live sprite. `Sprite.frameId` with the high bit set (`frame-select.ts`) selects a named animation. The `icon_sign_*` item icons resolve.
 
 ## ADR-121: Roaming zombie hordes and world rules
 
