@@ -118,6 +118,9 @@ export interface SpriteJson {
   /** Per-frame metadata keyed by atlas frame index (anim-level frameMeta wins per anchor name). */
   frameMeta?: Record<string, FrameMeta>;
   key: string; category: Category; atlas: string;
+  /** Draw group of a paper-doll layer. "head": the layer follows the body frame's `head` anchor (ADR-128 neck). Untagged
+   *  face_*, eyes_*, hair_*, hat_* / headwear_* keys default to "head" (see headGroupOf). */
+  group?: string;
   /** Pivot in [0,1] of the frame; feet for characters (default 0.5, 0.9). */
   anchor?: { x: number; y: number };
   animations: Record<string, AnimationJson>;
@@ -165,7 +168,8 @@ export interface SpriteDef { id: number; key: string; category: Category; atlas:
   autotile?: AutotileJson;
   /** Sprite-level attach points. */ attach?: AttachMap; /** Per-frame overrides by atlas frame index. */ frameAttach?: Map<number, AttachMap>;
   /** Per-frame metadata by atlas frame index. */ frameMeta?: Map<number, FrameMeta>; /** "rect:..." keyed frameMeta */ frameMetaKeyed?: Map<string, FrameMeta>;
-  /** Sprite-level placeholder override (key; null = nothing) while a "stream" sheet loads. */ placeholder?: string | null }
+  /** Sprite-level placeholder override (key; null = nothing) while a "stream" sheet loads. */ placeholder?: string | null;
+  /** Draw group (SpriteJson.group, or the key default: "head" for face/eyes/hair/hat/headwear) */ group?: string }
 export interface FrameRef { atlas: Atlas; frame: number; x: number; y: number; w: number; h: number; anchorX: number; anchorY: number; emissiveImage?: string; nineSlice?: NineSlice; /** draw mirrored on X (mirror rotationArt) */ flipX?: boolean;
   /** Effective attach points: sprite attach merged with this frame's override (frame wins). Unmirrored: negate x when flipX (see attachPoint). */ attach?: AttachMap;
   /** Per-frame anchors (sprite frameMeta merged with the anim's; set by frame()). Unmirrored: use AssetRegistry.anchorPoint. */ anchors?: AnchorMap;
@@ -263,6 +267,18 @@ export class AssetRegistry {
     return { anchors: { ...(sm.anchors ?? {}), ...(am.anchors ?? {}) } };
   }
   dirFrameAnchors(spriteId: number, anim: string, dirIndex: number, legacyFrame?: number): AnchorMap | undefined { return this.dirFrameMeta(spriteId, anim, dirIndex, legacyFrame)?.anchors; }
+  /** True when the sprite draws in the "head" group (ADR-128: follows the body's head anchor). */
+  isHeadGroup(spriteId: number): boolean { try { return this.sprite(spriteId).group === "head"; } catch { return false; } }
+  /**
+   * ADR-128 neck: offset (unmirrored 1x px, +y down) to add to head-group layers drawn over body frame `body` =
+   * frame anchor `head` - reference head point. The reference is the body's attach point `head` (sprite attach, or a
+   * frameAttach override), i.e. where the current head art was drawn; without either point the offset is 0, so art
+   * without head metadata draws exactly as before.
+   */
+  static headOffset(body: Pick<FrameRef, "anchors" | "attach">): { x: number; y: number } {
+    const h = body.anchors?.[HEAD_ANCHOR], r = body.attach?.[HEAD_ANCHOR];
+    return h && r ? { x: h.x - r.x, y: h.y - r.y } : { x: 0, y: 0 };
+  }
   /** Anchors of a frame (see frameMeta), or undefined. */
   frameAnchors(spriteId: number, frame: number, anim?: string): AnchorMap | undefined { return this.frameMeta(spriteId, frame, anim)?.anchors; }
   /** Anchor `name` of a resolved frame (frame().anchors), x and angle mirrored when ref.flipX (same rule as attachPoint). */
@@ -383,6 +399,14 @@ export function applyLegacySurvival(src: ManifestJson, warnings: string[]): Mani
   return m;
 }
 
+/** Key-based default draw group (ADR-128): face_*, eyes_*, hair_*, hat_*, headwear_* (any prefix, e.g. cz_hair_bob_female)
+ *  and the head-worn accessories (glasses, sunglasses, eyepatch, earrings, flower) -> "head". Tag others explicitly. */
+export const HEAD_GROUP_KEY = /(^|_)(face|eyes|hair|hat|headwear|glasses|sunglasses|eyepatch|earrings|flower)_/;
+export const defaultGroupOf = (key: string): string | undefined => HEAD_GROUP_KEY.test(key) ? "head" : undefined;
+/** Body frameMeta anchor naming the top of the neck (pivot-relative 1x px, like handR). */
+export const HEAD_ANCHOR = "head";
+/** A head anchor may lie this many px outside its frame rect (pivot-relative bounds). */
+export const HEAD_RECT_SLACK_PX = 16;
 const cloneAttach = (m: AttachMap): AttachMap => Object.fromEntries(Object.entries(m).map(([k, v]) => [k, { ...v }]));
 /** Validates an attach map: names match [a-z0-9_.]+, x/y finite, z finite, w/h > 0. */
 export function checkAttach(m: unknown, where: string, issues: string[], names: RegExp = /^[a-z0-9_.]+$/): void {
@@ -509,6 +533,7 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
     if (s.sway !== undefined && !(s.sway && s.sway.amp >= 0 && s.sway.freq >= 0 && s.sway.stiffness >= 0 && s.sway.stiffness <= 1)) issues.push(`${p}: sway needs amp >= 0, freq >= 0, stiffness in [0,1]`);
     const at = atlases.get(s.atlas); if (!at) issues.push(`${p}: unknown atlas "${s.atlas}"`);
     checkAttach(s.attach, `${p}.attach`, issues);
+    if (s.group !== undefined && !(typeof s.group === "string" && KEY.test(s.group))) issues.push(`${p}: group must be a lowercase key`);
     // fully facing-split sprites: `atlas` is just their first facing page; frames/frameAttach keep legacy indices (attach keys)
     const allDf = Object.values(s.animations ?? {}).length > 0 && Object.values(s.animations ?? {}).every((a) => Array.isArray(a?.dirFrames));
     if (s.frameAttach !== undefined) {
@@ -520,6 +545,19 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
     }
     checkFrameMeta(s.frameMeta, `${p}.frameMeta`, at ? at.columns * at.rows : undefined, issues);
     for (const [an, aj] of Object.entries(s.animations ?? {})) checkFrameMeta(aj?.frameMeta, `${p}.${an}.frameMeta`, at ? at.columns * at.rows : undefined, issues, Array.isArray(aj?.dirFrames) ? aj!.dirFrames!.length : undefined);
+    // head anchors (ADR-128) must lie near their frame: pivot-relative bounds of the frame rect +- HEAD_RECT_SLACK_PX
+    if (at) { const sa = s.anchor ?? { x: 0.5, y: 0.9 };
+      const near = (hp: AnchorPoint | undefined, w: number, h: number, ax: number, ay: number, where: string): void => {
+        if (!hp || typeof hp.x !== "number" || typeof hp.y !== "number") return; const S = HEAD_RECT_SLACK_PX;
+        if (!(hp.x >= -ax * w - S && hp.x <= (1 - ax) * w + S && hp.y >= -ay * h - S && hp.y <= (1 - ay) * h + S)) issues.push(`${where}.anchors.head: must lie within ${S}px of the frame rect`);
+      };
+      for (const [fs, fm] of Object.entries(s.frameMeta ?? {})) if (!FRAME_META_DF.test(fs)) { const r = FRAME_META_RECT.exec(fs); near(fm?.anchors?.head, r ? +r[4]! : at.frameW, r ? +r[5]! : at.frameH, sa.x, sa.y, `${p}.frameMeta.${fs}`); }
+      for (const [an, aj] of Object.entries(s.animations ?? {})) for (const [fs, fm] of Object.entries(aj?.frameMeta ?? {})) {
+        const df = FRAME_META_DF.exec(fs), r = FRAME_META_RECT.exec(fs); const d = df ? aj!.dirFrames?.[+df[1]!] : undefined;
+        const dat = d ? atlases.get(d.atlas) : undefined; const w = d ? (d.rect?.w ?? dat?.frameW ?? at.frameW) : r ? +r[4]! : at.frameW, h = d ? (d.rect?.h ?? dat?.frameH ?? at.frameH) : r ? +r[5]! : at.frameH;
+        near(fm?.anchors?.head, w, h, d?.anchor?.x ?? sa.x, d?.anchor?.y ?? sa.y, `${p}.${an}.frameMeta.${fs}`);
+      } }
+
     const total = at ? at.columns * at.rows : 0;
     if (s.anchor && !(s.anchor.x >= 0 && s.anchor.x <= 1 && s.anchor.y >= 0 && s.anchor.y <= 1)) issues.push(`${p}: anchor must be within [0,1]`);
     const anims = Object.entries(s.animations ?? {}); if (!anims.length) issues.push(`${p}: needs at least one animation`);
@@ -705,6 +743,7 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
       ...(s.autotile ? { autotile: { neighbors: s.autotile.neighbors, ...(s.autotile.group ? { group: s.autotile.group } : {}), rules: s.autotile.rules.map((r) => ({ ...r })) } } : {}),
       ...(s.sway ? { sway: { ...s.sway } } : {}),
       ...(s.placeholder !== undefined ? { placeholder: s.placeholder } : {}),
+      ...((s.group ?? defaultGroupOf(s.key)) ? { group: s.group ?? defaultGroupOf(s.key)! } : {}),
       ...(s.attach ? { attach: cloneAttach(s.attach) } : {}),
       ...(s.frameMeta ? { frameMeta: cloneMeta(s.frameMeta), ...keyedMeta(s.frameMeta) } : {}),
       ...(s.frameAttach ? { frameAttach: new Map(Object.entries(s.frameAttach).map(([f, am]) => [Number(f), cloneAttach(am)])) } : {}),
