@@ -202,18 +202,31 @@ async function startSingleplayer(): Promise<void> {
     const bots = Number(params.get("bots") ?? settings.bots);
     localStatus.state = "opening-store";
     stampPlayed("singleplayer");
-    const store = await openBrowserStore(`engine-local-${params.get("player") ?? "1"}`);
-    localStatus.state = "starting";
-    const local = await createLocalServer({ store, bots, ...(await isoReady, iso?.registry.cosmetics?.size ? { catalog: iso.registry.cosmetics } : {}), log: (m) => console.info(`[local] ${m}`) });
-    pumpLocal = local.pump;
+    const dbName = `engine-local-${params.get("player") ?? "1"}`;
+    await isoReady; const catalog = iso?.registry.cosmetics?.size ? iso.registry.cosmetics : undefined;
+    const log = (m: string): void => console.info(`[local] ${m}`);
+    // ADR-104: run the server sim + bots in a Web Worker (keeps the main thread for render/input, big win on phones);
+    // ?worker=0, no Worker support, or a worker that fails/stalls on startup falls back to the in-tab server.
+    const { startWorkerServer } = await import("./local-bridge.js");
+    let local: import("./local-bridge.js").LocalServerHandle | undefined = params.get("worker") === "0" ? undefined
+      : await startWorkerServer({ dbName, bots, catalog, status: localStatus, log, timeoutMs: 15000 });
+    if (!local) {
+      const store = await openBrowserStore(dbName);
+      localStatus.state = "starting";
+      const inTab = await createLocalServer({ store, bots, ...(catalog ? { catalog } : {}), log });
+      pumpLocal = inTab.pump;
+      local = { inWorker: false, createTransport: () => inTab.createTransport(), save: async () => { await inTab.game.persist?.saveAll(); }, stop: () => inTab.stop() };
+    }
+    log(local.inWorker ? "server running in Web Worker" : "server running in tab");
+    const srv = local;
     let wiped = false; // after "Delete save" nothing may write the slot again
-    addEventListener("pagehide", () => { if (!wiped) void local.game.persist?.saveAll(); });
-    leaveCurrent = async () => { if (!wiped) await local.game.persist?.saveAll(); };
+    addEventListener("pagehide", () => { if (!wiped) void srv.save(); });
+    leaveCurrent = async () => { if (!wiped) await srv.save(); };
     deleteInfo = () => ({ label: "Delete save", settingsOption: true,
       message: `Delete singleplayer save slot ${SLOT}: the world, your character, inventory, bots' memories and appearance. This can't be undone.`,
       run: async ({ resetSettings }) => {
         wiped = true; pumpLocal = undefined; session.onEnded = undefined; session.disconnect();
-        await local.stop(); // closes the IndexedDB connection so the delete isn't blocked by this tab
+        await srv.stop(); // closes the IndexedDB connection so the delete isn't blocked by this tab
         const { wipeSingleplayerSave } = await import("./delete-progress.js");
         const r = await wipeSingleplayerSave({ slot: SLOT, resetSettings });
         setTimeout(() => backToMenu(r.ok ? r.message : `${r.message} Then use Main menu → Manage saves.`), r.ok ? 1200 : 4000);
@@ -221,7 +234,7 @@ async function startSingleplayer(): Promise<void> {
         return r.message;
       } });
     localStatus.state = "connecting";
-    useWorld(await session.connect("local", session.savedName ?? "", local.createTransport()));
+    useWorld(await session.connect("local", session.savedName ?? "", srv.createTransport()));
     localStatus.state = "running";
   } catch (e) {
     localStatus.state = "failed"; localStatus.error = e instanceof Error ? e.message : String(e);
