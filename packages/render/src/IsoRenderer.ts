@@ -81,6 +81,13 @@ export interface RenderSettings { lights: boolean; shadows: boolean; weather: bo
 
 /** ADR-115: weight of Art's daynight_grading ambient vs the DAY_CURVE ambient. */
 const GRADING_AMBIENT_MIX = 0.35;
+/** Longest an atlas rebuild may hold the last frame before drawing resumes regardless (ms). */
+export const SETTLE_HOLD_MS = 1500;
+/** Holds drawing while the atlas settles after a rebuild, at most SETTLE_HOLD_MS per rebuild. */
+export class SettleHold { private since = -1; hold(settling: boolean, now: number): boolean { if (!settling) { this.since = -1; return false; } if (this.since < 0) this.since = now; return now - this.since < SETTLE_HOLD_MS; } }
+/** Atlas texel footprint (device px per texel) for tiering: zoom x device DPR, independent of the quality tier's resScale,
+ *  so an adaptive-quality step never changes wear scale / mip range and never triggers an atlas re-tier. */
+export function atlasFootprint(zoom: number, deviceDpr: number): number { return zoom * deviceDpr; }
 export class IsoRenderer implements Renderer {
   readonly gl: WebGL2RenderingContext;
   readonly camera: IsoCamera;
@@ -111,6 +118,9 @@ export class IsoRenderer implements Renderer {
     const s = this.sprites; s.interiorRegions = regions as never; s.interiorFloorIds = floorIds as Set<number>; s.interiorWallSprite = wallSprite; s.interiorCut = cut;
   }
   setQualityPreset(p: QualityPreset): void { this.quality.setPreset(p); this.applyQuality(); }
+  private readonly settleHold = new SettleHold();
+  /** Frames skipped while an atlas rebuild settled (diag / tests). */
+  heldFrames = 0;
   private applyQuality(): void { this.resize(this.lastCss[0], this.lastCss[1], this.lastCss[2]); }
   readonly weatherState = new WeatherState();
   readonly vfx = new VfxLayer();
@@ -433,6 +443,9 @@ export class IsoRenderer implements Renderer {
   render(world: World, alpha: number): void {
     if (this.contextLost || this.gl.isContextLost()) return;
     const t0 = performance.now();
+    // atlas rebuild in flight (re-tier): hold the last presented frame until resident pages are back (bounded) instead of
+    // drawing frames with the player's body / clothes / streamed art missing
+    if (this.totalFrames > 0 && this.settleHold.hold(this.atlas.settling, t0)) { this.heldFrames++; return; }
     const dt = this.freezeClock || this.lastNow < 0 ? 0 : Math.min(0.1, (t0 - this.lastNow) / 1000);
     this.lastNow = t0; this.time += dt;
     if (!this.freezeClock && this.quality.feed(dt * 1000) && this.lastCss[0] > 0) this.applyQuality();
@@ -488,7 +501,8 @@ export class IsoRenderer implements Renderer {
     }
 
     { const up = this.fallback.recover(this.totalFrames); if (up !== null) this.recoverFallback(up); }
-    this.atlas.setCharFootprint(this.camera.scale);
+    // texel footprint from zoom x device DPR, not the governor's resScale: a quality tier change must never trigger an atlas re-tier
+    this.atlas.setCharFootprint(atlasFootprint(this.camera.zoom, this.lastCss[2] || this.camera.dpr));
     if (this.totalFrames >= 30 && this.totalFrames % 30 === 0) void this.atlas.retier(this.totalFrames).then((r) => { if (r) { this.w = 0; console.info(`[render] re-tiered atlases: ${this.atlas.tiers.hot.length} hot x${this.atlas.tiers.hotScale}`); } }, () => undefined);
     if (this.tilemap) this.terrain.sync(this.tilemap);
     this.camera.viewUniform(this.viewU);

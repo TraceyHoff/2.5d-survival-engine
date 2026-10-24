@@ -461,8 +461,8 @@ export class AtlasManager {
   }
   /** True when an atlas drawn near the camera is stored downscaled (cold tier): a re-tier would make it crisp again. */
   get needsRetier(): boolean {
-    const own = this.tailPools().find((p) => p.own)?.own; if (own && own.levels !== this.ownLevelsFor(this.tailPools())) return true; // zoom changed the sampled mip range
-    const wp = this.wearPool(); if (wp && wp.k <= 1 && wp.k !== this.wearScale() && this.poolScales(this.atlases.filter((a) => a.lazy && this.poolOfA(a)?.cls === "wear")).includes(this.wearScale())) return true; // zoom changed the crisp wear scale
+    const own = this.tailPools().find((p) => p.own)?.own; if (own && own.levels < this.ownLevelsFor(this.tailPools())) return true; // zoomed out past the sampled mip range (more levels needed; fewer is never worth a rebuild)
+    const wp = this.wearPool(); if (wp && wp.k <= 1 && wp.k < this.wearScale() && this.poolScales(this.atlases.filter((a) => a.lazy && this.poolOfA(a)?.cls === "wear")).includes(this.wearScale())) return true; // zoomed in: wear needs a crisper scale (a smaller one never triggers a rebuild)
     if (this.coldDownscale >= 1 && this.downscale >= 1) return false;
     return this.atlases.some((a) => !a.lazy && this.recentlyUsed.has(a.key) && !this.retiered.has(a.key) && (a.cold ? this.coldDownscale : this.downscale) < 1);
   }
@@ -576,6 +576,9 @@ export class AtlasManager {
 
   private async rebuild(registry: AssetRegistry, sources: Map<string, AtlasSource>): Promise<void> {
     const prevHeld = this.held; const held: [string, string][] = [];
+    // seamless rebuild (re-tier / zoom): remember the lazy pages resident now (local player, nearby characters, visible
+    // stream/building art) so the new layout pages them back in before the renderer draws again (see `settling`)
+    const wasResident = new Map<string, number>(); for (const a of this.atlases) if (a.lazy?.state === 2) { const p = this.poolOfA(a); wasResident.set(a.key, p?.lru.has(a.key) ? p.lru.prioOf(a.key) : (a.lazy.prio ?? Infinity)); }
     const load = async (url: string): Promise<ImageLike> => { held.push([AtlasManager.IMAGE_KIND, url]); return this.assets.load<ImageLike>(AtlasManager.IMAGE_KIND, url); };
     const loadOpt = async (url: string | null | undefined): Promise<ImageLike | null> => {
       if (!url) return null;
@@ -658,6 +661,8 @@ export class AtlasManager {
     const layout = (): void => { this.pack(list); this.pools = []; for (const g of groups) this.planPool(g.lazy, g.minSlots, list, g.cls, g.cap, g.share); let b = this.totalFrames; for (const a of lazyList) { a.base = b; b += a.count; } this.totalFrames = b; };
     layout();
     const all = [...list, ...lazyList];
+    this.settling = true; // from the first new texture until the old residency is restored: the renderer holds its last frame
+    try {
     this.upload(list, this.frameTintRows(registry, all), all);
     const lim = this.limitProblem(); if (lim) { this.uploadErrors.push(lim); console.error("[render] " + lim); this.onError?.({ kind: "limits", message: lim }); }
     while ((this.oomFlag || this.gl.getError() === this.gl.OUT_OF_MEMORY) && this.downscale > MIN_ATLAS_DOWNSCALE) {
@@ -698,9 +703,16 @@ export class AtlasManager {
     // body pages: resident from the first frame (prio 0: no budget refusal; one slot each, so never evicted)
     const g0 = this.gen; const bodies = list.filter((a) => a.lazy && this.poolOfA(a)?.cls === "body");
     await Promise.all(bodies.map(async (a) => { a.lazy!.prio = 0; a.lazy!.state = 1; try { await this.pageIn(a, g0); } catch (e) { console.warn(`[render] body page ${a.key} failed`, e); } if ((a.lazy!.state as number) !== 2) { a.lazy!.state = 0; const m = `body page ${a.key} not resident`; if (this.uploadErrors.length < 32) this.uploadErrors.push(m); } }));
+    // previously resident pages (closest first) back in before drawing resumes: no undressed / missing-art frames
+    const back = list.filter((a) => a.lazy && a.lazy.state === 0 && wasResident.has(a.key) && this.poolOfA(a)).sort((x, y) => wasResident.get(x.key)! - wasResident.get(y.key)!);
+    await Promise.all(back.map(async (a) => { const pr = wasResident.get(a.key)!; a.lazy!.prio = pr; if (!this.poolOn(this.poolOfA(a)!, pr)) return; a.lazy!.state = 1; try { await this.pageIn(a, g0); } catch { /* re-requested by pageReady */ } if ((a.lazy!.state as number) !== 2) a.lazy!.state = 0; }));
     this.held = held; this.version++;
     for (const [k, u] of prevHeld) this.assets.release(k, u);
+    } finally { this.settling = false; }
   }
+  /** True while a rebuild has replaced the GPU arrays but not yet restored the pages that were resident before it
+   *  (IsoRenderer skips drawing, so the last presented frame stays on screen instead of a flash of missing art). */
+  settling = false;
 
   private gpuMB(): number { return Math.round(this.gpuBytes / 1048576); }
   /** Estimated bytes of the atlas arrays for a packing (colour + emissive + present masks, full mip chains). */
