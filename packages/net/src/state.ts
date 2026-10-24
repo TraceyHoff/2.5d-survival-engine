@@ -1,5 +1,5 @@
 import { dequantize, entityIndex, fieldQuant, fieldType, NetId, quantize, type ComponentDef, type ComponentStore, type FieldSpec, type World } from "@engine/core";
-import type { BitReader, BitWriter } from "./bits.js";
+import { BitWriter, type BitReader } from "./bits.js";
 
 /** Wire values (quantized ints / f32-rounded floats) of one component: fields in core's sorted order, array fields expanded per element. */
 export type CompValues = readonly number[];
@@ -96,7 +96,9 @@ export const RecordKind = { End: 0, Spawn: 1, Despawn: 2, Change: 3 } as const;
 
 /**
  * Snapshot body = sequence of records, each `kind:2 bits` then payload, terminated by End:
- *   Spawn   varuint netId, compMask[nComp], all elements of each present comp
+ *   Spawn   varuint netId, compMask[nComp], per present comp: compBody
+ *           compBody = comps with > 8 elements: bit sparse ? (varuint k, k x (varuint gap, value)) of the non-zero
+ *           elements (others decode as 0) : all elements; comps with <= 8 elements: all elements (protocol v8)
  *   Despawn varuint netId
  *   Change  varuint netId, changedMask[nComp], removedMask[nComp],
  *           per changed comp: bit full ? all elements : elementMask + changed elements
@@ -109,7 +111,7 @@ export function writeEntityRecord(w: BitWriter, schema: NetSchema, netId: number
   if (!old) {
     w.writeBits(RecordKind.Spawn, 2); w.writeVarUint(netId);
     for (let ci = 0; ci < n; ci++) w.writeBool(es.has(ci));
-    for (let ci = 0; ci < n; ci++) { const v = es.get(ci); if (v) schema.specs[ci]!.forEach((s, i) => writeWire(w, s, v[i]!)); }
+    for (let ci = 0; ci < n; ci++) { const v = es.get(ci); if (v) writeSpawnComp(w, schema.specs[ci]!, v); }
     return true;
   }
   if (old === es) return false;
@@ -137,6 +139,21 @@ export function writeEntityRecord(w: BitWriter, schema: NetSchema, netId: number
     for (const i of idx) writeWire(w, specs[i]!, v[i]!);
   }
   return true;
+}
+/** Spawn body of one component: dense, or (wide components, mostly zero) a zero-run/sparse list, whichever is smaller. */
+function writeSpawnComp(w: BitWriter, specs: readonly FieldSpec[], v: CompValues): void {
+  if (specs.length <= 8) { specs.forEach((s, i) => writeWire(w, s, v[i]!)); return; }
+  const nz: number[] = []; for (let i = 0; i < specs.length; i++) if (!Object.is(v[i], 0)) nz.push(i);
+  const sp = new BitWriter(); sp.writeVarUint(nz.length); let q = -1; for (const i of nz) { sp.writeVarUint(i - q - 1); q = i; writeWire(sp, specs[i]!, v[i]!); }
+  const dn = new BitWriter(); specs.forEach((s, i) => writeWire(dn, s, v[i]!));
+  const sparse = sp.bitLength < dn.bitLength; const src = (sparse ? sp : dn).snapshotBits();
+  w.writeBool(sparse); w.appendBits(src.bytes, src.bits);
+}
+function readSpawnComp(r: BitReader, specs: readonly FieldSpec[]): number[] {
+  if (specs.length <= 8 || !r.readBool()) return specs.map((s) => readWire(r, s));
+  const v = new Array<number>(specs.length).fill(0); const k = r.readVarUint(); let q = -1;
+  for (let j = 0; j < k; j++) { q += r.readVarUint() + 1; if (q >= specs.length) throw new Error("sparse index out of range"); v[q] = readWire(r, specs[q]!); }
+  return v;
 }
 export function writeEnd(w: BitWriter): void { w.writeBits(RecordKind.End, 2); }
 
@@ -173,7 +190,7 @@ export function decodeDelta(r: BitReader, schema: NetSchema, base: WorldState | 
     if (kind === RecordKind.Spawn) {
       const present: number[] = [];
       for (let ci = 0; ci < n; ci++) if (r.readBool()) present.push(ci);
-      const es = new Map<number, CompValues>(); for (const ci of present) es.set(ci, readAll(ci));
+      const es = new Map<number, CompValues>(); for (const ci of present) es.set(ci, readSpawnComp(r, schema.specs[ci]!));
       state.set(netId, es); spawned.push(netId); continue;
     }
     const ch: number[] = []; const rm: number[] = [];

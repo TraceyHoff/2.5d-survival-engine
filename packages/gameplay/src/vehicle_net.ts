@@ -1,5 +1,5 @@
 /**
- * Vehicle netcode helpers (ADR-097, docs/ARCHITECTURE.md "Vehicles on the wire"). Pure gameplay, no @engine/net:
+ * Vehicle netcode helpers (ADR-102, docs/ARCHITECTURE.md "Vehicles on the wire"). Pure gameplay, no @engine/net:
  *  - netIdEntity: O(1) NetId -> Entity lookup (cached map, kept in sync through world.onSpawn/onDespawn + lazy
  *    validation), used by vehicleByNetId / ridingVehicle / hitch chains instead of query scans.
  *  - controlledVehicles: the vehicle a locally-owned rider drives (seat 0) + its hitched trailer chain. The client feeds
