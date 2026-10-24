@@ -72,6 +72,266 @@
    "masksKtx2": {
     "tintmask": "atlases/decor_farm_w.tintmask.ktx2"
    }
+  },
+  {
+   "key": "decor_furn_s",
+   "image": "atlases/decor_furn_s.png",
+   "frameW": 64,
+   "frameH": 88,
+   "columns": 16,
+   "rows": 5,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/decor_furn_s@2x.png",
+     "ktx2": "atlases/decor_furn_s@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/decor_furn_s.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/decor_furn_s.tintmask.png"
+   },
+   "residency": "stream",
+   "ktx2": "atlases/decor_furn_s.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/decor_furn_s.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "decor_furn_t",
+   "image": "atlases/decor_furn_t.png",
+   "frameW": 72,
+   "frameH": 120,
+   "columns": 14,
+   "rows": 6,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/decor_furn_t@2x.png",
+     "ktx2": "atlases/decor_furn_t@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/decor_furn_t.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/decor_furn_t.tintmask.png"
+   },
+   "residency": "stream",
+   "ktx2": "atlases/decor_furn_t.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/decor_furn_t.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "decor_furn_w_1",
+   "image": "atlases/decor_furn_w_1.png",
+   "frameW": 104,
+   "frameH": 120,
+   "columns": 9,
+   "rows": 8,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/decor_furn_w_1@2x.png",
+     "ktx2": "atlases/decor_furn_w_1@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/decor_furn_w_1.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/decor_furn_w_1.tintmask.png"
+   },
+   "residency": "stream",
+   "ktx2": "atlases/decor_furn_w_1.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/decor_furn_w_1.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "decor_furn_w_2",
+   "image": "atlases/decor_furn_w_2.png",
+   "frameW": 104,
+   "frameH": 120,
+   "columns": 9,
+   "rows": 6,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/decor_furn_w_2@2x.png",
+     "ktx2": "atlases/decor_furn_w_2@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/decor_furn_w_2.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/decor_furn_w_2.tintmask.png"
+   },
+   "residency": "stream",
+   "ktx2": "atlases/decor_furn_w_2.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/decor_furn_w_2.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "decor_furn_wt",
+   "image": "atlases/decor_furn_wt.png",
+   "frameW": 104,
+   "frameH": 144,
+   "columns": 9,
+   "rows": 4,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/decor_furn_wt@2x.png",
+     "ktx2": "atlases/decor_furn_wt@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/decor_furn_wt.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/decor_furn_wt.tintmask.png"
+   },
+   "residency": "stream",
+   "ktx2": "atlases/decor_furn_wt.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/decor_furn_wt.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "decor_furn_l_1",
+   "image": "atlases/decor_furn_l_1.png",
+   "frameW": 136,
+   "frameH": 152,
+   "columns": 7,
+   "rows": 5,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/decor_furn_l_1@2x.png",
+     "ktx2": "atlases/decor_furn_l_1@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/decor_furn_l_1.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/decor_furn_l_1.tintmask.png"
+   },
+   "residency": "stream",
+   "ktx2": "atlases/decor_furn_l_1.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/decor_furn_l_1.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "decor_furn_l_2",
+   "image": "atlases/decor_furn_l_2.png",
+   "frameW": 136,
+   "frameH": 152,
+   "columns": 7,
+   "rows": 3,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/decor_furn_l_2@2x.png",
+     "ktx2": "atlases/decor_furn_l_2@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/decor_furn_l_2.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/decor_furn_l_2.tintmask.png"
+   },
+   "residency": "stream",
+   "ktx2": "atlases/decor_furn_l_2.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/decor_furn_l_2.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "decor_light_s",
+   "image": "atlases/decor_light_s.png",
+   "frameW": 64,
+   "frameH": 88,
+   "columns": 5,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/decor_light_s@2x.png",
+     "ktx2": "atlases/decor_light_s@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/decor_light_s.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/decor_light_s.tintmask.png"
+   },
+   "residency": "stream",
+   "ktx2": "atlases/decor_light_s.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/decor_light_s.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "decor_light_t",
+   "image": "atlases/decor_light_t.png",
+   "frameW": 72,
+   "frameH": 120,
+   "columns": 14,
+   "rows": 2,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/decor_light_t@2x.png",
+     "ktx2": "atlases/decor_light_t@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/decor_light_t.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/decor_light_t.tintmask.png"
+   },
+   "residency": "stream",
+   "ktx2": "atlases/decor_light_t.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/decor_light_t.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "decor_light_l",
+   "image": "atlases/decor_light_l.png",
+   "frameW": 136,
+   "frameH": 152,
+   "columns": 3,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/decor_light_l@2x.png",
+     "ktx2": "atlases/decor_light_l@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/decor_light_l.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/decor_light_l.tintmask.png"
+   },
+   "residency": "stream",
+   "ktx2": "atlases/decor_light_l.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/decor_light_l.tintmask.ktx2"
+   }
   }
  ],
  "sprites": [
@@ -6393,6 +6653,8151 @@
     "crackOverlay": "bld_crack"
    },
    "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_chair_rustic",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "chair_rustic",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      2,
+      2,
+      2,
+      2
+     ],
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_chair_rustic__plain",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "chair_rustic@plain",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      2,
+      2,
+      2,
+      2
+     ],
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_chair_rustic__slat",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "chair_rustic@slat",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      4,
+      4,
+      4,
+      4
+     ],
+     [
+      5,
+      5,
+      5,
+      5
+     ],
+     [
+      6,
+      6,
+      6,
+      6
+     ],
+     [
+      7,
+      7,
+      7,
+      7
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_chair_rustic__padded",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "chair_rustic@padded",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      8,
+      8,
+      8,
+      8
+     ],
+     [
+      9,
+      9,
+      9,
+      9
+     ],
+     [
+      10,
+      10,
+      10,
+      10
+     ],
+     [
+      11,
+      11,
+      11,
+      11
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_chair_rustic__armchair",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "chair_rustic@armchair",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      12,
+      12,
+      12,
+      12
+     ],
+     [
+      13,
+      13,
+      13,
+      13
+     ],
+     [
+      14,
+      14,
+      14,
+      14
+     ],
+     [
+      15,
+      15,
+      15,
+      15
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_chair_fine",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "chair_fine",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      16,
+      16,
+      16,
+      16
+     ],
+     [
+      17,
+      17,
+      17,
+      17
+     ],
+     [
+      18,
+      18,
+      18,
+      18
+     ],
+     [
+      19,
+      19,
+      19,
+      19
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_chair_fine__plain",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "chair_fine@plain",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      16,
+      16,
+      16,
+      16
+     ],
+     [
+      17,
+      17,
+      17,
+      17
+     ],
+     [
+      18,
+      18,
+      18,
+      18
+     ],
+     [
+      19,
+      19,
+      19,
+      19
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_chair_fine__slat",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      20
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "chair_fine@slat",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      20,
+      20,
+      20,
+      20
+     ],
+     [
+      21,
+      21,
+      21,
+      21
+     ],
+     [
+      22,
+      22,
+      22,
+      22
+     ],
+     [
+      23,
+      23,
+      23,
+      23
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_chair_fine__padded",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      24
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "chair_fine@padded",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      24,
+      24,
+      24,
+      24
+     ],
+     [
+      25,
+      25,
+      25,
+      25
+     ],
+     [
+      26,
+      26,
+      26,
+      26
+     ],
+     [
+      27,
+      27,
+      27,
+      27
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_chair_fine__armchair",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      28
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "chair_fine@armchair",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      28,
+      28,
+      28,
+      28
+     ],
+     [
+      29,
+      29,
+      29,
+      29
+     ],
+     [
+      30,
+      30,
+      30,
+      30
+     ],
+     [
+      31,
+      31,
+      31,
+      31
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_chair_luxury",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      32
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "chair_luxury",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      32,
+      32,
+      32,
+      32
+     ],
+     [
+      33,
+      33,
+      33,
+      33
+     ],
+     [
+      34,
+      34,
+      34,
+      34
+     ],
+     [
+      35,
+      35,
+      35,
+      35
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_chair_luxury__plain",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      32
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "chair_luxury@plain",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      32,
+      32,
+      32,
+      32
+     ],
+     [
+      33,
+      33,
+      33,
+      33
+     ],
+     [
+      34,
+      34,
+      34,
+      34
+     ],
+     [
+      35,
+      35,
+      35,
+      35
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_chair_luxury__slat",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      36
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "chair_luxury@slat",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      36,
+      36,
+      36,
+      36
+     ],
+     [
+      37,
+      37,
+      37,
+      37
+     ],
+     [
+      38,
+      38,
+      38,
+      38
+     ],
+     [
+      39,
+      39,
+      39,
+      39
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_chair_luxury__padded",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      40
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "chair_luxury@padded",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      40,
+      40,
+      40,
+      40
+     ],
+     [
+      41,
+      41,
+      41,
+      41
+     ],
+     [
+      42,
+      42,
+      42,
+      42
+     ],
+     [
+      43,
+      43,
+      43,
+      43
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_chair_luxury__armchair",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      44
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "chair_luxury@armchair",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      44,
+      44,
+      44,
+      44
+     ],
+     [
+      45,
+      45,
+      45,
+      45
+     ],
+     [
+      46,
+      46,
+      46,
+      46
+     ],
+     [
+      47,
+      47,
+      47,
+      47
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_stool_rustic",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      48
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "stool_rustic",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      48,
+      48,
+      48,
+      48
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_stool_rustic__round",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      48
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "stool_rustic@round",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      48,
+      48,
+      48,
+      48
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_stool_rustic__square",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      49
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "stool_rustic@square",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      49,
+      49,
+      49,
+      49
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_stool_rustic__tall",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      50
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "stool_rustic@tall",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      50,
+      50,
+      50,
+      50
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_stool_fine",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      51
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "stool_fine",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      51,
+      51,
+      51,
+      51
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_stool_fine__round",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      51
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "stool_fine@round",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      51,
+      51,
+      51,
+      51
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_stool_fine__square",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      52
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "stool_fine@square",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      52,
+      52,
+      52,
+      52
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_stool_fine__tall",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      53
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "stool_fine@tall",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      53,
+      53,
+      53,
+      53
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_table_coffee_rustic",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      54
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "table_coffee_rustic",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      54,
+      54,
+      54,
+      54
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_table_coffee_rustic__round",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      54
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "table_coffee_rustic@round",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      54,
+      54,
+      54,
+      54
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_table_coffee_rustic__square",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      55
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "table_coffee_rustic@square",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      55,
+      55,
+      55,
+      55
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_table_coffee_rustic__glass_top",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      56
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "table_coffee_rustic@glass_top",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      56,
+      56,
+      56,
+      56
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_table_side_rustic",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      57
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "table_side_rustic",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      57,
+      57,
+      57,
+      57
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_table_side_rustic__round",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      57
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "table_side_rustic@round",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      57,
+      57,
+      57,
+      57
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_table_side_rustic__square",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      58
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "table_side_rustic@square",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      58,
+      58,
+      58,
+      58
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_table_side_rustic__drawer",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      59
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "table_side_rustic@drawer",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      59,
+      59,
+      59,
+      59
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_table_coffee_fine",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      60
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "table_coffee_fine",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      60,
+      60,
+      60,
+      60
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_table_coffee_fine__round",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      60
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "table_coffee_fine@round",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      60,
+      60,
+      60,
+      60
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_table_coffee_fine__square",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      61
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "table_coffee_fine@square",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      61,
+      61,
+      61,
+      61
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_table_coffee_fine__glass_top",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      62
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "table_coffee_fine@glass_top",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      62,
+      62,
+      62,
+      62
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_table_side_fine",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      63
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "table_side_fine",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      63,
+      63,
+      63,
+      63
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_table_side_fine__round",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      63
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "table_side_fine@round",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      63,
+      63,
+      63,
+      63
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_table_side_fine__square",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      64
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "table_side_fine@square",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      64,
+      64,
+      64,
+      64
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_table_side_fine__drawer",
+   "category": "building",
+   "atlas": "decor_furn_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      65
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "table_side_fine@drawer",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      65,
+      65,
+      65,
+      65
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_shelf_rustic",
+   "category": "building",
+   "atlas": "decor_furn_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "shelf_rustic",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      2,
+      2,
+      2,
+      2
+     ],
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_shelf_rustic__low",
+   "category": "building",
+   "atlas": "decor_furn_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "shelf_rustic@low",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      2,
+      2,
+      2,
+      2
+     ],
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_shelf_rustic__tall",
+   "category": "building",
+   "atlas": "decor_furn_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "shelf_rustic@tall",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      4,
+      4,
+      4,
+      4
+     ],
+     [
+      5,
+      5,
+      5,
+      5
+     ],
+     [
+      6,
+      6,
+      6,
+      6
+     ],
+     [
+      7,
+      7,
+      7,
+      7
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_shelf_rustic__corner",
+   "category": "building",
+   "atlas": "decor_furn_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "shelf_rustic@corner",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      8,
+      8,
+      8,
+      8
+     ],
+     [
+      9,
+      9,
+      9,
+      9
+     ],
+     [
+      10,
+      10,
+      10,
+      10
+     ],
+     [
+      11,
+      11,
+      11,
+      11
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_shelf_fine",
+   "category": "building",
+   "atlas": "decor_furn_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "shelf_fine",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      12,
+      12,
+      12,
+      12
+     ],
+     [
+      13,
+      13,
+      13,
+      13
+     ],
+     [
+      14,
+      14,
+      14,
+      14
+     ],
+     [
+      15,
+      15,
+      15,
+      15
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_shelf_fine__low",
+   "category": "building",
+   "atlas": "decor_furn_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "shelf_fine@low",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      12,
+      12,
+      12,
+      12
+     ],
+     [
+      13,
+      13,
+      13,
+      13
+     ],
+     [
+      14,
+      14,
+      14,
+      14
+     ],
+     [
+      15,
+      15,
+      15,
+      15
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_shelf_fine__tall",
+   "category": "building",
+   "atlas": "decor_furn_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "shelf_fine@tall",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      16,
+      16,
+      16,
+      16
+     ],
+     [
+      17,
+      17,
+      17,
+      17
+     ],
+     [
+      18,
+      18,
+      18,
+      18
+     ],
+     [
+      19,
+      19,
+      19,
+      19
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_shelf_fine__corner",
+   "category": "building",
+   "atlas": "decor_furn_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      20
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "shelf_fine@corner",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      20,
+      20,
+      20,
+      20
+     ],
+     [
+      21,
+      21,
+      21,
+      21
+     ],
+     [
+      22,
+      22,
+      22,
+      22
+     ],
+     [
+      23,
+      23,
+      23,
+      23
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bookcase_rustic",
+   "category": "building",
+   "atlas": "decor_furn_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      24
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bookcase_rustic",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      24,
+      24,
+      24,
+      24
+     ],
+     [
+      25,
+      25,
+      25,
+      25
+     ],
+     [
+      26,
+      26,
+      26,
+      26
+     ],
+     [
+      27,
+      27,
+      27,
+      27
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bookcase_rustic__empty",
+   "category": "building",
+   "atlas": "decor_furn_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      24
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bookcase_rustic@empty",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      24,
+      24,
+      24,
+      24
+     ],
+     [
+      25,
+      25,
+      25,
+      25
+     ],
+     [
+      26,
+      26,
+      26,
+      26
+     ],
+     [
+      27,
+      27,
+      27,
+      27
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bookcase_rustic__half",
+   "category": "building",
+   "atlas": "decor_furn_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      28
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bookcase_rustic@half",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      28,
+      28,
+      28,
+      28
+     ],
+     [
+      29,
+      29,
+      29,
+      29
+     ],
+     [
+      30,
+      30,
+      30,
+      30
+     ],
+     [
+      31,
+      31,
+      31,
+      31
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bookcase_rustic__full",
+   "category": "building",
+   "atlas": "decor_furn_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      32
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bookcase_rustic@full",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      32,
+      32,
+      32,
+      32
+     ],
+     [
+      33,
+      33,
+      33,
+      33
+     ],
+     [
+      34,
+      34,
+      34,
+      34
+     ],
+     [
+      35,
+      35,
+      35,
+      35
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bookcase_rustic__ladder",
+   "category": "building",
+   "atlas": "decor_furn_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      36
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bookcase_rustic@ladder",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      36,
+      36,
+      36,
+      36
+     ],
+     [
+      37,
+      37,
+      37,
+      37
+     ],
+     [
+      38,
+      38,
+      38,
+      38
+     ],
+     [
+      39,
+      39,
+      39,
+      39
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bookcase_fine",
+   "category": "building",
+   "atlas": "decor_furn_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      40
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bookcase_fine",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      40,
+      40,
+      40,
+      40
+     ],
+     [
+      41,
+      41,
+      41,
+      41
+     ],
+     [
+      42,
+      42,
+      42,
+      42
+     ],
+     [
+      43,
+      43,
+      43,
+      43
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bookcase_fine__empty",
+   "category": "building",
+   "atlas": "decor_furn_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      40
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bookcase_fine@empty",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      40,
+      40,
+      40,
+      40
+     ],
+     [
+      41,
+      41,
+      41,
+      41
+     ],
+     [
+      42,
+      42,
+      42,
+      42
+     ],
+     [
+      43,
+      43,
+      43,
+      43
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bookcase_fine__half",
+   "category": "building",
+   "atlas": "decor_furn_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      44
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bookcase_fine@half",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      44,
+      44,
+      44,
+      44
+     ],
+     [
+      45,
+      45,
+      45,
+      45
+     ],
+     [
+      46,
+      46,
+      46,
+      46
+     ],
+     [
+      47,
+      47,
+      47,
+      47
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bookcase_fine__full",
+   "category": "building",
+   "atlas": "decor_furn_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      48
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bookcase_fine@full",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      48,
+      48,
+      48,
+      48
+     ],
+     [
+      49,
+      49,
+      49,
+      49
+     ],
+     [
+      50,
+      50,
+      50,
+      50
+     ],
+     [
+      51,
+      51,
+      51,
+      51
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bookcase_fine__ladder",
+   "category": "building",
+   "atlas": "decor_furn_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      52
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bookcase_fine@ladder",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      52,
+      52,
+      52,
+      52
+     ],
+     [
+      53,
+      53,
+      53,
+      53
+     ],
+     [
+      54,
+      54,
+      54,
+      54
+     ],
+     [
+      55,
+      55,
+      55,
+      55
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_cabinet_rustic",
+   "category": "building",
+   "atlas": "decor_furn_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      56
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "cabinet_rustic",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      56,
+      56,
+      56,
+      56
+     ],
+     [
+      57,
+      57,
+      57,
+      57
+     ],
+     [
+      58,
+      58,
+      58,
+      58
+     ],
+     [
+      59,
+      59,
+      59,
+      59
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_cabinet_rustic__plain",
+   "category": "building",
+   "atlas": "decor_furn_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      56
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "cabinet_rustic@plain",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      56,
+      56,
+      56,
+      56
+     ],
+     [
+      57,
+      57,
+      57,
+      57
+     ],
+     [
+      58,
+      58,
+      58,
+      58
+     ],
+     [
+      59,
+      59,
+      59,
+      59
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_cabinet_rustic__glass",
+   "category": "building",
+   "atlas": "decor_furn_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      60
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "cabinet_rustic@glass",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      60,
+      60,
+      60,
+      60
+     ],
+     [
+      61,
+      61,
+      61,
+      61
+     ],
+     [
+      62,
+      62,
+      62,
+      62
+     ],
+     [
+      63,
+      63,
+      63,
+      63
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_cabinet_rustic__painted",
+   "category": "building",
+   "atlas": "decor_furn_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      64
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "cabinet_rustic@painted",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      64,
+      64,
+      64,
+      64
+     ],
+     [
+      65,
+      65,
+      65,
+      65
+     ],
+     [
+      66,
+      66,
+      66,
+      66
+     ],
+     [
+      67,
+      67,
+      67,
+      67
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_cabinet_fine",
+   "category": "building",
+   "atlas": "decor_furn_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      68
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "cabinet_fine",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      68,
+      68,
+      68,
+      68
+     ],
+     [
+      69,
+      69,
+      69,
+      69
+     ],
+     [
+      70,
+      70,
+      70,
+      70
+     ],
+     [
+      71,
+      71,
+      71,
+      71
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_cabinet_fine__plain",
+   "category": "building",
+   "atlas": "decor_furn_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      68
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "cabinet_fine@plain",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      68,
+      68,
+      68,
+      68
+     ],
+     [
+      69,
+      69,
+      69,
+      69
+     ],
+     [
+      70,
+      70,
+      70,
+      70
+     ],
+     [
+      71,
+      71,
+      71,
+      71
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_cabinet_fine__glass",
+   "category": "building",
+   "atlas": "decor_furn_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      72
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "cabinet_fine@glass",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      72,
+      72,
+      72,
+      72
+     ],
+     [
+      73,
+      73,
+      73,
+      73
+     ],
+     [
+      74,
+      74,
+      74,
+      74
+     ],
+     [
+      75,
+      75,
+      75,
+      75
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_cabinet_fine__painted",
+   "category": "building",
+   "atlas": "decor_furn_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      76
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "cabinet_fine@painted",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      76,
+      76,
+      76,
+      76
+     ],
+     [
+      77,
+      77,
+      77,
+      77
+     ],
+     [
+      78,
+      78,
+      78,
+      78
+     ],
+     [
+      79,
+      79,
+      79,
+      79
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bench_rustic",
+   "category": "building",
+   "atlas": "decor_furn_w_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bench_rustic",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      2,
+      2,
+      2,
+      2
+     ],
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bench_rustic__plain",
+   "category": "building",
+   "atlas": "decor_furn_w_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bench_rustic@plain",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      2,
+      2,
+      2,
+      2
+     ],
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bench_rustic__backed",
+   "category": "building",
+   "atlas": "decor_furn_w_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bench_rustic@backed",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      4,
+      4,
+      4,
+      4
+     ],
+     [
+      5,
+      5,
+      5,
+      5
+     ],
+     [
+      6,
+      6,
+      6,
+      6
+     ],
+     [
+      7,
+      7,
+      7,
+      7
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bench_rustic__carved",
+   "category": "building",
+   "atlas": "decor_furn_w_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bench_rustic@carved",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      8,
+      8,
+      8,
+      8
+     ],
+     [
+      9,
+      9,
+      9,
+      9
+     ],
+     [
+      10,
+      10,
+      10,
+      10
+     ],
+     [
+      11,
+      11,
+      11,
+      11
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bench_fine",
+   "category": "building",
+   "atlas": "decor_furn_w_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bench_fine",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      12,
+      12,
+      12,
+      12
+     ],
+     [
+      13,
+      13,
+      13,
+      13
+     ],
+     [
+      14,
+      14,
+      14,
+      14
+     ],
+     [
+      15,
+      15,
+      15,
+      15
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bench_fine__plain",
+   "category": "building",
+   "atlas": "decor_furn_w_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bench_fine@plain",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      12,
+      12,
+      12,
+      12
+     ],
+     [
+      13,
+      13,
+      13,
+      13
+     ],
+     [
+      14,
+      14,
+      14,
+      14
+     ],
+     [
+      15,
+      15,
+      15,
+      15
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bench_fine__backed",
+   "category": "building",
+   "atlas": "decor_furn_w_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bench_fine@backed",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      16,
+      16,
+      16,
+      16
+     ],
+     [
+      17,
+      17,
+      17,
+      17
+     ],
+     [
+      18,
+      18,
+      18,
+      18
+     ],
+     [
+      19,
+      19,
+      19,
+      19
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bench_fine__carved",
+   "category": "building",
+   "atlas": "decor_furn_w_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      20
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bench_fine@carved",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      20,
+      20,
+      20,
+      20
+     ],
+     [
+      21,
+      21,
+      21,
+      21
+     ],
+     [
+      22,
+      22,
+      22,
+      22
+     ],
+     [
+      23,
+      23,
+      23,
+      23
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_sofa_fine",
+   "category": "building",
+   "atlas": "decor_furn_w_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      24
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "sofa_fine",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      24,
+      24,
+      24,
+      24
+     ],
+     [
+      25,
+      25,
+      25,
+      25
+     ],
+     [
+      26,
+      26,
+      26,
+      26
+     ],
+     [
+      27,
+      27,
+      27,
+      27
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_sofa_fine__plain",
+   "category": "building",
+   "atlas": "decor_furn_w_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      24
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "sofa_fine@plain",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      24,
+      24,
+      24,
+      24
+     ],
+     [
+      25,
+      25,
+      25,
+      25
+     ],
+     [
+      26,
+      26,
+      26,
+      26
+     ],
+     [
+      27,
+      27,
+      27,
+      27
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_sofa_fine__tufted",
+   "category": "building",
+   "atlas": "decor_furn_w_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      28
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "sofa_fine@tufted",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      28,
+      28,
+      28,
+      28
+     ],
+     [
+      29,
+      29,
+      29,
+      29
+     ],
+     [
+      30,
+      30,
+      30,
+      30
+     ],
+     [
+      31,
+      31,
+      31,
+      31
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_sofa_fine__leather",
+   "category": "building",
+   "atlas": "decor_furn_w_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      32
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "sofa_fine@leather",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      32,
+      32,
+      32,
+      32
+     ],
+     [
+      33,
+      33,
+      33,
+      33
+     ],
+     [
+      34,
+      34,
+      34,
+      34
+     ],
+     [
+      35,
+      35,
+      35,
+      35
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_sofa_luxury",
+   "category": "building",
+   "atlas": "decor_furn_w_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      36
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "sofa_luxury",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      36,
+      36,
+      36,
+      36
+     ],
+     [
+      37,
+      37,
+      37,
+      37
+     ],
+     [
+      38,
+      38,
+      38,
+      38
+     ],
+     [
+      39,
+      39,
+      39,
+      39
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_sofa_luxury__plain",
+   "category": "building",
+   "atlas": "decor_furn_w_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      36
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "sofa_luxury@plain",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      36,
+      36,
+      36,
+      36
+     ],
+     [
+      37,
+      37,
+      37,
+      37
+     ],
+     [
+      38,
+      38,
+      38,
+      38
+     ],
+     [
+      39,
+      39,
+      39,
+      39
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_sofa_luxury__tufted",
+   "category": "building",
+   "atlas": "decor_furn_w_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      40
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "sofa_luxury@tufted",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      40,
+      40,
+      40,
+      40
+     ],
+     [
+      41,
+      41,
+      41,
+      41
+     ],
+     [
+      42,
+      42,
+      42,
+      42
+     ],
+     [
+      43,
+      43,
+      43,
+      43
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_sofa_luxury__leather",
+   "category": "building",
+   "atlas": "decor_furn_w_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      44
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "sofa_luxury@leather",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      44,
+      44,
+      44,
+      44
+     ],
+     [
+      45,
+      45,
+      45,
+      45
+     ],
+     [
+      46,
+      46,
+      46,
+      46
+     ],
+     [
+      47,
+      47,
+      47,
+      47
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bunk_bed",
+   "category": "building",
+   "atlas": "decor_furn_w_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      48
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bunk_bed",
+    "footprint": {
+     "w": 1,
+     "h": 2
+    },
+    "layer": 2,
+    "frames": [
+     [
+      48,
+      48,
+      48,
+      48
+     ],
+     [
+      49,
+      49,
+      49,
+      49
+     ],
+     [
+      50,
+      50,
+      50,
+      50
+     ],
+     [
+      51,
+      51,
+      51,
+      51
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bunk_bed__plain",
+   "category": "building",
+   "atlas": "decor_furn_w_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      48
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bunk_bed@plain",
+    "footprint": {
+     "w": 1,
+     "h": 2
+    },
+    "layer": 2,
+    "frames": [
+     [
+      48,
+      48,
+      48,
+      48
+     ],
+     [
+      49,
+      49,
+      49,
+      49
+     ],
+     [
+      50,
+      50,
+      50,
+      50
+     ],
+     [
+      51,
+      51,
+      51,
+      51
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bunk_bed__rail",
+   "category": "building",
+   "atlas": "decor_furn_w_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      52
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bunk_bed@rail",
+    "footprint": {
+     "w": 1,
+     "h": 2
+    },
+    "layer": 2,
+    "frames": [
+     [
+      52,
+      52,
+      52,
+      52
+     ],
+     [
+      53,
+      53,
+      53,
+      53
+     ],
+     [
+      54,
+      54,
+      54,
+      54
+     ],
+     [
+      55,
+      55,
+      55,
+      55
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bunk_bed__ladder",
+   "category": "building",
+   "atlas": "decor_furn_w_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      56
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bunk_bed@ladder",
+    "footprint": {
+     "w": 1,
+     "h": 2
+    },
+    "layer": 2,
+    "frames": [
+     [
+      56,
+      56,
+      56,
+      56
+     ],
+     [
+      57,
+      57,
+      57,
+      57
+     ],
+     [
+      58,
+      58,
+      58,
+      58
+     ],
+     [
+      59,
+      59,
+      59,
+      59
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_table_dining_rustic",
+   "category": "building",
+   "atlas": "decor_furn_w_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      60
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "table_dining_rustic",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      60,
+      60,
+      60,
+      60
+     ],
+     [
+      61,
+      61,
+      61,
+      61
+     ],
+     [
+      60,
+      60,
+      60,
+      60
+     ],
+     [
+      61,
+      61,
+      61,
+      61
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_table_dining_rustic__plain",
+   "category": "building",
+   "atlas": "decor_furn_w_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      60
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "table_dining_rustic@plain",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      60,
+      60,
+      60,
+      60
+     ],
+     [
+      61,
+      61,
+      61,
+      61
+     ],
+     [
+      60,
+      60,
+      60,
+      60
+     ],
+     [
+      61,
+      61,
+      61,
+      61
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_table_dining_rustic__carved",
+   "category": "building",
+   "atlas": "decor_furn_w_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      62
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "table_dining_rustic@carved",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      62,
+      62,
+      62,
+      62
+     ],
+     [
+      63,
+      63,
+      63,
+      63
+     ],
+     [
+      62,
+      62,
+      62,
+      62
+     ],
+     [
+      63,
+      63,
+      63,
+      63
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_table_dining_rustic__clothed",
+   "category": "building",
+   "atlas": "decor_furn_w_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      64
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "table_dining_rustic@clothed",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      64,
+      64,
+      64,
+      64
+     ],
+     [
+      65,
+      65,
+      65,
+      65
+     ],
+     [
+      64,
+      64,
+      64,
+      64
+     ],
+     [
+      65,
+      65,
+      65,
+      65
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_table_dining_fine",
+   "category": "building",
+   "atlas": "decor_furn_w_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      66
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "table_dining_fine",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      66,
+      66,
+      66,
+      66
+     ],
+     [
+      67,
+      67,
+      67,
+      67
+     ],
+     [
+      66,
+      66,
+      66,
+      66
+     ],
+     [
+      67,
+      67,
+      67,
+      67
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_table_dining_fine__plain",
+   "category": "building",
+   "atlas": "decor_furn_w_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      66
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "table_dining_fine@plain",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      66,
+      66,
+      66,
+      66
+     ],
+     [
+      67,
+      67,
+      67,
+      67
+     ],
+     [
+      66,
+      66,
+      66,
+      66
+     ],
+     [
+      67,
+      67,
+      67,
+      67
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_table_dining_fine__carved",
+   "category": "building",
+   "atlas": "decor_furn_w_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      68
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "table_dining_fine@carved",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      68,
+      68,
+      68,
+      68
+     ],
+     [
+      69,
+      69,
+      69,
+      69
+     ],
+     [
+      68,
+      68,
+      68,
+      68
+     ],
+     [
+      69,
+      69,
+      69,
+      69
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_table_dining_fine__clothed",
+   "category": "building",
+   "atlas": "decor_furn_w_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      70
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "table_dining_fine@clothed",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      70,
+      70,
+      70,
+      70
+     ],
+     [
+      71,
+      71,
+      71,
+      71
+     ],
+     [
+      70,
+      70,
+      70,
+      70
+     ],
+     [
+      71,
+      71,
+      71,
+      71
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_table_dining_luxury",
+   "category": "building",
+   "atlas": "decor_furn_w_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "table_dining_luxury",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_table_dining_luxury__plain",
+   "category": "building",
+   "atlas": "decor_furn_w_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "table_dining_luxury@plain",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_table_dining_luxury__carved",
+   "category": "building",
+   "atlas": "decor_furn_w_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "table_dining_luxury@carved",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      2,
+      2,
+      2,
+      2
+     ],
+     [
+      3,
+      3,
+      3,
+      3
+     ],
+     [
+      2,
+      2,
+      2,
+      2
+     ],
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_table_dining_luxury__clothed",
+   "category": "building",
+   "atlas": "decor_furn_w_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "table_dining_luxury@clothed",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      4,
+      4,
+      4,
+      4
+     ],
+     [
+      5,
+      5,
+      5,
+      5
+     ],
+     [
+      4,
+      4,
+      4,
+      4
+     ],
+     [
+      5,
+      5,
+      5,
+      5
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_desk_rustic",
+   "category": "building",
+   "atlas": "decor_furn_w_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      6
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "desk_rustic",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      6,
+      6,
+      6,
+      6
+     ],
+     [
+      7,
+      7,
+      7,
+      7
+     ],
+     [
+      8,
+      8,
+      8,
+      8
+     ],
+     [
+      9,
+      9,
+      9,
+      9
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_desk_rustic__plain",
+   "category": "building",
+   "atlas": "decor_furn_w_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      6
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "desk_rustic@plain",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      6,
+      6,
+      6,
+      6
+     ],
+     [
+      7,
+      7,
+      7,
+      7
+     ],
+     [
+      8,
+      8,
+      8,
+      8
+     ],
+     [
+      9,
+      9,
+      9,
+      9
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_desk_rustic__writing",
+   "category": "building",
+   "atlas": "decor_furn_w_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      10
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "desk_rustic@writing",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      10,
+      10,
+      10,
+      10
+     ],
+     [
+      11,
+      11,
+      11,
+      11
+     ],
+     [
+      12,
+      12,
+      12,
+      12
+     ],
+     [
+      13,
+      13,
+      13,
+      13
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_desk_rustic__drafting",
+   "category": "building",
+   "atlas": "decor_furn_w_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      14
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "desk_rustic@drafting",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      14,
+      14,
+      14,
+      14
+     ],
+     [
+      15,
+      15,
+      15,
+      15
+     ],
+     [
+      16,
+      16,
+      16,
+      16
+     ],
+     [
+      17,
+      17,
+      17,
+      17
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_desk_fine",
+   "category": "building",
+   "atlas": "decor_furn_w_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      18
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "desk_fine",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      18,
+      18,
+      18,
+      18
+     ],
+     [
+      19,
+      19,
+      19,
+      19
+     ],
+     [
+      20,
+      20,
+      20,
+      20
+     ],
+     [
+      21,
+      21,
+      21,
+      21
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_desk_fine__plain",
+   "category": "building",
+   "atlas": "decor_furn_w_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      18
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "desk_fine@plain",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      18,
+      18,
+      18,
+      18
+     ],
+     [
+      19,
+      19,
+      19,
+      19
+     ],
+     [
+      20,
+      20,
+      20,
+      20
+     ],
+     [
+      21,
+      21,
+      21,
+      21
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_desk_fine__writing",
+   "category": "building",
+   "atlas": "decor_furn_w_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      22
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "desk_fine@writing",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      22,
+      22,
+      22,
+      22
+     ],
+     [
+      23,
+      23,
+      23,
+      23
+     ],
+     [
+      24,
+      24,
+      24,
+      24
+     ],
+     [
+      25,
+      25,
+      25,
+      25
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_desk_fine__drafting",
+   "category": "building",
+   "atlas": "decor_furn_w_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      26
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "desk_fine@drafting",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      26,
+      26,
+      26,
+      26
+     ],
+     [
+      27,
+      27,
+      27,
+      27
+     ],
+     [
+      28,
+      28,
+      28,
+      28
+     ],
+     [
+      29,
+      29,
+      29,
+      29
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_dresser_rustic",
+   "category": "building",
+   "atlas": "decor_furn_w_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      30
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "dresser_rustic",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      30,
+      30,
+      30,
+      30
+     ],
+     [
+      31,
+      31,
+      31,
+      31
+     ],
+     [
+      32,
+      32,
+      32,
+      32
+     ],
+     [
+      33,
+      33,
+      33,
+      33
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_dresser_rustic__plain",
+   "category": "building",
+   "atlas": "decor_furn_w_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      30
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "dresser_rustic@plain",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      30,
+      30,
+      30,
+      30
+     ],
+     [
+      31,
+      31,
+      31,
+      31
+     ],
+     [
+      32,
+      32,
+      32,
+      32
+     ],
+     [
+      33,
+      33,
+      33,
+      33
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_dresser_rustic__mirror_top",
+   "category": "building",
+   "atlas": "decor_furn_w_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      34
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "dresser_rustic@mirror_top",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      34,
+      34,
+      34,
+      34
+     ],
+     [
+      35,
+      35,
+      35,
+      35
+     ],
+     [
+      36,
+      36,
+      36,
+      36
+     ],
+     [
+      37,
+      37,
+      37,
+      37
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_dresser_rustic__painted",
+   "category": "building",
+   "atlas": "decor_furn_w_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      38
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "dresser_rustic@painted",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      38,
+      38,
+      38,
+      38
+     ],
+     [
+      39,
+      39,
+      39,
+      39
+     ],
+     [
+      40,
+      40,
+      40,
+      40
+     ],
+     [
+      41,
+      41,
+      41,
+      41
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_dresser_fine",
+   "category": "building",
+   "atlas": "decor_furn_w_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      42
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "dresser_fine",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      42,
+      42,
+      42,
+      42
+     ],
+     [
+      43,
+      43,
+      43,
+      43
+     ],
+     [
+      44,
+      44,
+      44,
+      44
+     ],
+     [
+      45,
+      45,
+      45,
+      45
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_dresser_fine__plain",
+   "category": "building",
+   "atlas": "decor_furn_w_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      42
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "dresser_fine@plain",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      42,
+      42,
+      42,
+      42
+     ],
+     [
+      43,
+      43,
+      43,
+      43
+     ],
+     [
+      44,
+      44,
+      44,
+      44
+     ],
+     [
+      45,
+      45,
+      45,
+      45
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_dresser_fine__mirror_top",
+   "category": "building",
+   "atlas": "decor_furn_w_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      46
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "dresser_fine@mirror_top",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      46,
+      46,
+      46,
+      46
+     ],
+     [
+      47,
+      47,
+      47,
+      47
+     ],
+     [
+      48,
+      48,
+      48,
+      48
+     ],
+     [
+      49,
+      49,
+      49,
+      49
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_dresser_fine__painted",
+   "category": "building",
+   "atlas": "decor_furn_w_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      50
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "dresser_fine@painted",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      50,
+      50,
+      50,
+      50
+     ],
+     [
+      51,
+      51,
+      51,
+      51
+     ],
+     [
+      52,
+      52,
+      52,
+      52
+     ],
+     [
+      53,
+      53,
+      53,
+      53
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_wardrobe_rustic",
+   "category": "building",
+   "atlas": "decor_furn_wt",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8194444444444444
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wardrobe_rustic",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      2,
+      2,
+      2,
+      2
+     ],
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_wardrobe_rustic__plain",
+   "category": "building",
+   "atlas": "decor_furn_wt",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8194444444444444
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wardrobe_rustic@plain",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      2,
+      2,
+      2,
+      2
+     ],
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_wardrobe_rustic__mirrored",
+   "category": "building",
+   "atlas": "decor_furn_wt",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8194444444444444
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wardrobe_rustic@mirrored",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      4,
+      4,
+      4,
+      4
+     ],
+     [
+      5,
+      5,
+      5,
+      5
+     ],
+     [
+      6,
+      6,
+      6,
+      6
+     ],
+     [
+      7,
+      7,
+      7,
+      7
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_wardrobe_rustic__carved",
+   "category": "building",
+   "atlas": "decor_furn_wt",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8194444444444444
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wardrobe_rustic@carved",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      8,
+      8,
+      8,
+      8
+     ],
+     [
+      9,
+      9,
+      9,
+      9
+     ],
+     [
+      10,
+      10,
+      10,
+      10
+     ],
+     [
+      11,
+      11,
+      11,
+      11
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_wardrobe_fine",
+   "category": "building",
+   "atlas": "decor_furn_wt",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8194444444444444
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wardrobe_fine",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      12,
+      12,
+      12,
+      12
+     ],
+     [
+      13,
+      13,
+      13,
+      13
+     ],
+     [
+      14,
+      14,
+      14,
+      14
+     ],
+     [
+      15,
+      15,
+      15,
+      15
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_wardrobe_fine__plain",
+   "category": "building",
+   "atlas": "decor_furn_wt",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8194444444444444
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wardrobe_fine@plain",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      12,
+      12,
+      12,
+      12
+     ],
+     [
+      13,
+      13,
+      13,
+      13
+     ],
+     [
+      14,
+      14,
+      14,
+      14
+     ],
+     [
+      15,
+      15,
+      15,
+      15
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_wardrobe_fine__mirrored",
+   "category": "building",
+   "atlas": "decor_furn_wt",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8194444444444444
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wardrobe_fine@mirrored",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      16,
+      16,
+      16,
+      16
+     ],
+     [
+      17,
+      17,
+      17,
+      17
+     ],
+     [
+      18,
+      18,
+      18,
+      18
+     ],
+     [
+      19,
+      19,
+      19,
+      19
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_wardrobe_fine__carved",
+   "category": "building",
+   "atlas": "decor_furn_wt",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8194444444444444
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      20
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wardrobe_fine@carved",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      20,
+      20,
+      20,
+      20
+     ],
+     [
+      21,
+      21,
+      21,
+      21
+     ],
+     [
+      22,
+      22,
+      22,
+      22
+     ],
+     [
+      23,
+      23,
+      23,
+      23
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_wardrobe_luxury",
+   "category": "building",
+   "atlas": "decor_furn_wt",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8194444444444444
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      24
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wardrobe_luxury",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      24,
+      24,
+      24,
+      24
+     ],
+     [
+      25,
+      25,
+      25,
+      25
+     ],
+     [
+      26,
+      26,
+      26,
+      26
+     ],
+     [
+      27,
+      27,
+      27,
+      27
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_wardrobe_luxury__plain",
+   "category": "building",
+   "atlas": "decor_furn_wt",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8194444444444444
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      24
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wardrobe_luxury@plain",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      24,
+      24,
+      24,
+      24
+     ],
+     [
+      25,
+      25,
+      25,
+      25
+     ],
+     [
+      26,
+      26,
+      26,
+      26
+     ],
+     [
+      27,
+      27,
+      27,
+      27
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_wardrobe_luxury__mirrored",
+   "category": "building",
+   "atlas": "decor_furn_wt",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8194444444444444
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      28
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wardrobe_luxury@mirrored",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      28,
+      28,
+      28,
+      28
+     ],
+     [
+      29,
+      29,
+      29,
+      29
+     ],
+     [
+      30,
+      30,
+      30,
+      30
+     ],
+     [
+      31,
+      31,
+      31,
+      31
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_wardrobe_luxury__carved",
+   "category": "building",
+   "atlas": "decor_furn_wt",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8194444444444444
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      32
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wardrobe_luxury@carved",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      32,
+      32,
+      32,
+      32
+     ],
+     [
+      33,
+      33,
+      33,
+      33
+     ],
+     [
+      34,
+      34,
+      34,
+      34
+     ],
+     [
+      35,
+      35,
+      35,
+      35
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bed_double_rustic",
+   "category": "building",
+   "atlas": "decor_furn_l_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7631578947368421
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bed_double_rustic",
+    "footprint": {
+     "w": 2,
+     "h": 2
+    },
+    "layer": 2,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      2,
+      2,
+      2,
+      2
+     ],
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bed_double_rustic__plain",
+   "category": "building",
+   "atlas": "decor_furn_l_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7631578947368421
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bed_double_rustic@plain",
+    "footprint": {
+     "w": 2,
+     "h": 2
+    },
+    "layer": 2,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      2,
+      2,
+      2,
+      2
+     ],
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bed_double_rustic__canopy",
+   "category": "building",
+   "atlas": "decor_furn_l_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7631578947368421
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bed_double_rustic@canopy",
+    "footprint": {
+     "w": 2,
+     "h": 2
+    },
+    "layer": 2,
+    "frames": [
+     [
+      4,
+      4,
+      4,
+      4
+     ],
+     [
+      5,
+      5,
+      5,
+      5
+     ],
+     [
+      6,
+      6,
+      6,
+      6
+     ],
+     [
+      7,
+      7,
+      7,
+      7
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bed_double_rustic__quilted",
+   "category": "building",
+   "atlas": "decor_furn_l_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7631578947368421
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bed_double_rustic@quilted",
+    "footprint": {
+     "w": 2,
+     "h": 2
+    },
+    "layer": 2,
+    "frames": [
+     [
+      8,
+      8,
+      8,
+      8
+     ],
+     [
+      9,
+      9,
+      9,
+      9
+     ],
+     [
+      10,
+      10,
+      10,
+      10
+     ],
+     [
+      11,
+      11,
+      11,
+      11
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bed_double_rustic__fur",
+   "category": "building",
+   "atlas": "decor_furn_l_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7631578947368421
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bed_double_rustic@fur",
+    "footprint": {
+     "w": 2,
+     "h": 2
+    },
+    "layer": 2,
+    "frames": [
+     [
+      12,
+      12,
+      12,
+      12
+     ],
+     [
+      13,
+      13,
+      13,
+      13
+     ],
+     [
+      14,
+      14,
+      14,
+      14
+     ],
+     [
+      15,
+      15,
+      15,
+      15
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bed_double_fine",
+   "category": "building",
+   "atlas": "decor_furn_l_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7631578947368421
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bed_double_fine",
+    "footprint": {
+     "w": 2,
+     "h": 2
+    },
+    "layer": 2,
+    "frames": [
+     [
+      16,
+      16,
+      16,
+      16
+     ],
+     [
+      17,
+      17,
+      17,
+      17
+     ],
+     [
+      18,
+      18,
+      18,
+      18
+     ],
+     [
+      19,
+      19,
+      19,
+      19
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bed_double_fine__plain",
+   "category": "building",
+   "atlas": "decor_furn_l_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7631578947368421
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bed_double_fine@plain",
+    "footprint": {
+     "w": 2,
+     "h": 2
+    },
+    "layer": 2,
+    "frames": [
+     [
+      16,
+      16,
+      16,
+      16
+     ],
+     [
+      17,
+      17,
+      17,
+      17
+     ],
+     [
+      18,
+      18,
+      18,
+      18
+     ],
+     [
+      19,
+      19,
+      19,
+      19
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bed_double_fine__canopy",
+   "category": "building",
+   "atlas": "decor_furn_l_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7631578947368421
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      20
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bed_double_fine@canopy",
+    "footprint": {
+     "w": 2,
+     "h": 2
+    },
+    "layer": 2,
+    "frames": [
+     [
+      20,
+      20,
+      20,
+      20
+     ],
+     [
+      21,
+      21,
+      21,
+      21
+     ],
+     [
+      22,
+      22,
+      22,
+      22
+     ],
+     [
+      23,
+      23,
+      23,
+      23
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bed_double_fine__quilted",
+   "category": "building",
+   "atlas": "decor_furn_l_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7631578947368421
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      24
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bed_double_fine@quilted",
+    "footprint": {
+     "w": 2,
+     "h": 2
+    },
+    "layer": 2,
+    "frames": [
+     [
+      24,
+      24,
+      24,
+      24
+     ],
+     [
+      25,
+      25,
+      25,
+      25
+     ],
+     [
+      26,
+      26,
+      26,
+      26
+     ],
+     [
+      27,
+      27,
+      27,
+      27
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bed_double_fine__fur",
+   "category": "building",
+   "atlas": "decor_furn_l_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7631578947368421
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      28
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bed_double_fine@fur",
+    "footprint": {
+     "w": 2,
+     "h": 2
+    },
+    "layer": 2,
+    "frames": [
+     [
+      28,
+      28,
+      28,
+      28
+     ],
+     [
+      29,
+      29,
+      29,
+      29
+     ],
+     [
+      30,
+      30,
+      30,
+      30
+     ],
+     [
+      31,
+      31,
+      31,
+      31
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bed_double_luxury",
+   "category": "building",
+   "atlas": "decor_furn_l_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7631578947368421
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bed_double_luxury",
+    "footprint": {
+     "w": 2,
+     "h": 2
+    },
+    "layer": 2,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      2,
+      2,
+      2,
+      2
+     ],
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bed_double_luxury__plain",
+   "category": "building",
+   "atlas": "decor_furn_l_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7631578947368421
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bed_double_luxury@plain",
+    "footprint": {
+     "w": 2,
+     "h": 2
+    },
+    "layer": 2,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      2,
+      2,
+      2,
+      2
+     ],
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bed_double_luxury__canopy",
+   "category": "building",
+   "atlas": "decor_furn_l_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7631578947368421
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bed_double_luxury@canopy",
+    "footprint": {
+     "w": 2,
+     "h": 2
+    },
+    "layer": 2,
+    "frames": [
+     [
+      4,
+      4,
+      4,
+      4
+     ],
+     [
+      5,
+      5,
+      5,
+      5
+     ],
+     [
+      6,
+      6,
+      6,
+      6
+     ],
+     [
+      7,
+      7,
+      7,
+      7
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bed_double_luxury__quilted",
+   "category": "building",
+   "atlas": "decor_furn_l_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7631578947368421
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bed_double_luxury@quilted",
+    "footprint": {
+     "w": 2,
+     "h": 2
+    },
+    "layer": 2,
+    "frames": [
+     [
+      8,
+      8,
+      8,
+      8
+     ],
+     [
+      9,
+      9,
+      9,
+      9
+     ],
+     [
+      10,
+      10,
+      10,
+      10
+     ],
+     [
+      11,
+      11,
+      11,
+      11
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_bed_double_luxury__fur",
+   "category": "building",
+   "atlas": "decor_furn_l_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7631578947368421
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "bed_double_luxury@fur",
+    "footprint": {
+     "w": 2,
+     "h": 2
+    },
+    "layer": 2,
+    "frames": [
+     [
+      12,
+      12,
+      12,
+      12
+     ],
+     [
+      13,
+      13,
+      13,
+      13
+     ],
+     [
+      14,
+      14,
+      14,
+      14
+     ],
+     [
+      15,
+      15,
+      15,
+      15
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_candle",
+   "category": "building",
+   "atlas": "decor_light_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "candle",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_candle__single",
+   "category": "building",
+   "atlas": "decor_light_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "candle@single",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_candle__trio",
+   "category": "building",
+   "atlas": "decor_light_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "candle@trio",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      1,
+      1,
+      1,
+      1
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_candle__tall",
+   "category": "building",
+   "atlas": "decor_light_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "candle@tall",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      2,
+      2,
+      2,
+      2
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_table_lamp",
+   "category": "building",
+   "atlas": "decor_light_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "table_lamp",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_table_lamp__shade",
+   "category": "building",
+   "atlas": "decor_light_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "table_lamp@shade",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_table_lamp__oil",
+   "category": "building",
+   "atlas": "decor_light_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "table_lamp@oil",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      4,
+      4,
+      4,
+      4
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_candelabra",
+   "category": "building",
+   "atlas": "decor_light_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "candelabra",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_candelabra__brass",
+   "category": "building",
+   "atlas": "decor_light_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "candelabra@brass",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_candelabra__iron",
+   "category": "building",
+   "atlas": "decor_light_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "candelabra@iron",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      1,
+      1,
+      1,
+      1
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_candelabra__silver",
+   "category": "building",
+   "atlas": "decor_light_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "candelabra@silver",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      2,
+      2,
+      2,
+      2
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_floor_lamp",
+   "category": "building",
+   "atlas": "decor_light_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor_lamp",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_floor_lamp__shade",
+   "category": "building",
+   "atlas": "decor_light_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor_lamp@shade",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_floor_lamp__oil",
+   "category": "building",
+   "atlas": "decor_light_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor_lamp@oil",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      4,
+      4,
+      4,
+      4
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_floor_lamp__brass",
+   "category": "building",
+   "atlas": "decor_light_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      5
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "floor_lamp@brass",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      5,
+      5,
+      5,
+      5
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_lantern_hanging",
+   "category": "building",
+   "atlas": "decor_light_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      6
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "lantern_hanging",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      6,
+      6,
+      6,
+      6
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_lantern_hanging__iron",
+   "category": "building",
+   "atlas": "decor_light_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      6
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "lantern_hanging@iron",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      6,
+      6,
+      6,
+      6
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_lantern_hanging__paper",
+   "category": "building",
+   "atlas": "decor_light_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      7
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "lantern_hanging@paper",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      7,
+      7,
+      7,
+      7
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_lantern_hanging__brass",
+   "category": "building",
+   "atlas": "decor_light_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "lantern_hanging@brass",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      8,
+      8,
+      8,
+      8
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_wall_sconce",
+   "category": "building",
+   "atlas": "decor_light_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      9
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_sconce",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      9,
+      9,
+      9,
+      9
+     ],
+     [
+      10,
+      10,
+      10,
+      10
+     ],
+     [
+      11,
+      11,
+      11,
+      11
+     ],
+     [
+      12,
+      12,
+      12,
+      12
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_wall_sconce__torch",
+   "category": "building",
+   "atlas": "decor_light_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      9
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_sconce@torch",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      9,
+      9,
+      9,
+      9
+     ],
+     [
+      10,
+      10,
+      10,
+      10
+     ],
+     [
+      11,
+      11,
+      11,
+      11
+     ],
+     [
+      12,
+      12,
+      12,
+      12
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_wall_sconce__candle",
+   "category": "building",
+   "atlas": "decor_light_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      13
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_sconce@candle",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      13,
+      13,
+      13,
+      13
+     ],
+     [
+      14,
+      14,
+      14,
+      14
+     ],
+     [
+      15,
+      15,
+      15,
+      15
+     ],
+     [
+      16,
+      16,
+      16,
+      16
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_wall_sconce__oil",
+   "category": "building",
+   "atlas": "decor_light_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      17
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "wall_sconce@oil",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      17,
+      17,
+      17,
+      17
+     ],
+     [
+      18,
+      18,
+      18,
+      18
+     ],
+     [
+      19,
+      19,
+      19,
+      19
+     ],
+     [
+      20,
+      20,
+      20,
+      20
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_lamp_post",
+   "category": "building",
+   "atlas": "decor_light_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      21
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "lamp_post",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      21,
+      21,
+      21,
+      21
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_lamp_post__iron",
+   "category": "building",
+   "atlas": "decor_light_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      21
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "lamp_post@iron",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      21,
+      21,
+      21,
+      21
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_lamp_post__wood",
+   "category": "building",
+   "atlas": "decor_light_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      22
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "lamp_post@wood",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      22,
+      22,
+      22,
+      22
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_lamp_post__double",
+   "category": "building",
+   "atlas": "decor_light_t",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      23
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "lamp_post@double",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      23,
+      23,
+      23,
+      23
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_chandelier",
+   "category": "building",
+   "atlas": "decor_light_l",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7631578947368421
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "chandelier",
+    "footprint": {
+     "w": 2,
+     "h": 2
+    },
+    "layer": 3,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_chandelier__wood",
+   "category": "building",
+   "atlas": "decor_light_l",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7631578947368421
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "chandelier@wood",
+    "footprint": {
+     "w": 2,
+     "h": 2
+    },
+    "layer": 3,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_chandelier__iron",
+   "category": "building",
+   "atlas": "decor_light_l",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7631578947368421
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "chandelier@iron",
+    "footprint": {
+     "w": 2,
+     "h": 2
+    },
+    "layer": 3,
+    "frames": [
+     [
+      1,
+      1,
+      1,
+      1
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_chandelier__crystal",
+   "category": "building",
+   "atlas": "decor_light_l",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7631578947368421
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "chandelier@crystal",
+    "footprint": {
+     "w": 2,
+     "h": 2
+    },
+    "layer": 3,
+    "frames": [
+     [
+      2,
+      2,
+      2,
+      2
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
   }
  ]
 }

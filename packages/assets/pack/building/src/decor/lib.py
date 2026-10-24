@@ -41,6 +41,7 @@ iso.ramp_color = lambda rp, t: _mask_ramp(rp, t) if MASK[0] else _ramp_color(rp,
 CELLS = {'S': (64, 88, 32, 70),      # 1x1 small/low (chairs, stools, tabletop decor)
          'T': (72, 120, 36, 102),    # 1x1 tall (bookcases, clocks, lamps, wall mounts)
          'W': (104, 120, 52, 94),    # 2x1 / 1x2
+         'WT': (104, 144, 52, 118),  # 2x1 / 1x2 tall (wardrobes)
          'L': (136, 152, 68, 116),   # 2x2
          'R1': (72, 40, 36, 20), 'R2': (104, 56, 52, 28), 'R4': (136, 72, 68, 36), 'R6': (168, 88, 84, 44)}  # flat (rugs, paths)
 
@@ -48,7 +49,7 @@ def cls_for(fp, tall=False, flat_=False):
     w, h = fp
     if flat_: return {(1, 1): 'R1', (2, 1): 'R2', (1, 2): 'R2', (2, 2): 'R4', (3, 1): 'R4', (3, 2): 'R6'}[(w, h)]
     if (w, h) == (1, 1): return 'T' if tall else 'S'
-    if w * h == 2: return 'W'
+    if w * h == 2: return 'WT' if tall else 'W'
     return 'L'
 
 def wrap_decor(dec):
@@ -68,6 +69,8 @@ def wrap_decor(dec):
 def render(geom, rot, cls, fp, seed, shadow=True):
     """geom: (boxes, decor). -> ((col1x, col2x), (mask1x, mask2x), clipped)"""
     bx, dec = geom; w, h, ox, oy = CELLS[cls]
+    for b in bx:   # thin facings (doors, drawers, trims) get no ink edges: the toolkit inks every edge, so they would show through bodies from behind
+        if min(b.v[1] - b.v[0], b.v[3] - b.v[2]) < .035: b.edge = False
     fw, fh = (fp[1], fp[0]) if rot % 2 else fp
     res = []
     for mask in (False, True):
@@ -169,8 +172,12 @@ def emit(man, out, groups, prev=None, workers=None):
             ks = [k for k in keys if REG[k].cls == cls]
             if not ks: continue
             w, h, ox, oy = CELLS[cls]; cols = 2048 // (2 * w); maxrows = 2048 // (2 * h)
-            frames = [(k, v, r) for k in ks for v in REG[k].variants for r in range(REG[k].rows)]
-            per = cols * maxrows; pages = [frames[i:i + per] for i in range(0, len(frames), per)]
+            per = cols * maxrows; pages = [[]]   # whole pieces per page (a sprite's frames must share one atlas)
+            for k in ks:
+                fk = [(k, v, r) for v in REG[k].variants for r in range(REG[k].rows)]
+                assert len(fk) <= per, k
+                if len(pages[-1]) + len(fk) > per: pages.append([])
+                pages[-1] += fk
             for n, fr in enumerate(pages):
                 akey = f'decor_{g}_{cls.lower()}' + (f'_{n + 1}' if len(pages) > 1 else '')
                 rows = (len(fr) + cols - 1) // cols; cols_used = min(cols, len(fr))

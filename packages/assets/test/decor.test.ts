@@ -16,7 +16,7 @@ const skills = read(data + "skills.json") as { branches: unknown; nodes: unknown
 describe("ADR-112/113 decor sprites", () => {
   const byKey = new Map(bld.sprites.map((s) => [s.key, s]));
   const drawn = pieces.filter((p) => byKey.has(`dec_${p.key}`));
-  it("feeding_trough is drawn", () => expect(drawn.map((p) => p.key)).toContain("feeding_trough"));
+  it("feeding_trough and the common furniture are drawn", () => { for (const k of ["feeding_trough", "chair_rustic", "bed_double_luxury", "table_dining_fine", "bookcase_rustic", "wardrobe_luxury", "chandelier"]) expect(drawn.map((p) => p.key)).toContain(k); });
   it("every drawn decor piece has a sprite per variant matching footprint and layer", () => {
     for (const p of drawn) {
       const fp = p.footprint ?? { w: 1, h: 1 };
