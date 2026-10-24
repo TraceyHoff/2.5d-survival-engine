@@ -37,6 +37,8 @@ async function shot(name, query, settleMs = 2500) {
   await page.goto(`http://localhost:${PORT}${path}?${q}`);
   if (path !== "/") { await page.waitForFunction(() => window.__ready === true, null, { timeout: 120000 }); await page.waitForTimeout(settleMs); await page.screenshot({ path: join(shots, `${name}.png`) }); console.log(name, JSON.stringify(await page.evaluate(() => window.__pv?.renderer.characterStats))); return {}; }
   await page.waitForFunction(() => window.__iso?.ready === true, null, { timeout: 120000 });
+  // vehicle shots: wait (soft, 45 s) until every visible Art vehicle's streamed page is resident (no placeholders)
+  await page.waitForFunction(() => !window.__iso?.vehArtPending, null, { timeout: 45000 }).catch(() => console.warn(name, "vehicle Art still pending:", "placeholders in shot"));
   await page.waitForTimeout(settleMs);
   await page.screenshot({ path: join(shots, `${name}.png`), fullPage: name === "gallery" });
   const info = await page.evaluate(() => window.__iso);

@@ -23,6 +23,7 @@ const USED = ["camper_rv", "truck_pickup", "trailer_camper", "car_sedan", "semi_
 export async function vehicleDemoPack(): Promise<VehiclePack> { return buildVehicleDebugPack(USED.map(def)); }
 export type ManifestPatch = (m: ManifestJson) => Promise<{ manifest: ManifestJson; sources: Map<string, AtlasSource> }>;
 /** Merge Art's vehicle manifest (pack/vehicles/manifest.vehicles.json; images relative to it) into the pack manifest. */
+let artVehicles: unknown = undefined;
 export async function mergeArtVehicles(m: ManifestJson, base = "/@assets/pack/"): Promise<ManifestJson> {
   let v: any; try { const r = await fetch(base + "vehicles/manifest.vehicles.json"); if (!r.ok) return m; v = await r.json(); } catch { return m; }
   const pre = (u: string): string => "vehicles/" + u; const mm = m as any; const have = new Set((mm.sprites ?? []).map((s: any) => s.key));
@@ -30,6 +31,7 @@ export async function mergeArtVehicles(m: ManifestJson, base = "/@assets/pack/")
     ...(a.masks ? { masks: Object.fromEntries(Object.entries(a.masks).map(([k, u]) => [k, pre(u as string)])) } : {}) }));
   const vk = new Set(Array.isArray(v.vehicles) ? v.vehicles.map((x: any) => x.key) : Object.keys(v.vehicles ?? {}));
   const sprites = (v.sprites ?? []).filter((s: any) => !have.has(s.key)).map((s: any) => (vk.has(s.key) ? { ...s, category: "vehicle" } : s));
+  artVehicles = v.vehicles;
   return { ...mm, atlases: [...mm.atlases, ...atlases], sprites: [...mm.sprites, ...sprites], vehicles: v.vehicles } as ManifestJson;
 }
 export const vehicleManifestPatch: ManifestPatch = async (m) => {
@@ -45,7 +47,7 @@ export function setupVehicleDemo(world: World, reg: AssetRegistry, o: { x: numbe
     for (let k = 0; k < sp.size; k++) { const e = sp.dense[k]! as Entity; if (keep.has(e)) continue; const t = world.get(e, Transform); if (t && t.x > o.x - 6 && t.x < o.x + 22 && t.y > o.y - 5 && t.y < o.y + 27) kill.push(e); }
     for (const e of kill) { o.index?.remove(e); world.destroy(e); } }
   const art = new URLSearchParams(location.search).get("vehart") !== "0";
-  const view = new VehicleView(world, reg, { ...(o.index ? { spatial: o.index } : {}), ...(art ? { art: o.manifest ? vehicleArtTable(o.manifest) : true } : {}), ...(o.pages ? { pages: o.pages } : {}) });
+  const view = new VehicleView(world, reg, { ...(o.index ? { spatial: o.index } : {}), ...(art ? { art: o.manifest ? vehicleArtTable(o.manifest) : artVehicles ? vehicleArtTable({ vehicles: artVehicles }) : true } : {}), ...(o.pages ? { pages: o.pages } : {}) });
   const { x, y } = o; const riders = o.players.slice(1);
   const rv: VehicleSnapshot = { key: 1, def: def("camper_rv"), x: x + 1, y: y + 3, heading: Math.PI / 2, occupants: [0, 0, 0, 0, 0, 0], on: false };
   const semi: VehicleSnapshot = { key: 2, def: def("semi_tractor"), x: x + 9, y: y + 1, heading: Math.PI / 4, on: true };

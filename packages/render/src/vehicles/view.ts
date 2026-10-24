@@ -66,6 +66,8 @@ export class VehicleView {
   interiorWall = -2;
   private readonly art: boolean | VehicleArtTable | undefined; private readonly pages: VehiclePages | undefined;
   private frame = 0;
+  /** Visible vehicles with an Art binding whose streamed page is not resident yet (placeholder shown); 0 = all Art. */
+  artPending = 0;
   /** seated rider entity -> its Shadow alpha before seating (restored on exit) */
   private readonly hiddenShadow = new Map<number, number>();
   private readonly iso: { tileH: number; zStep: number }; private readonly zf: number; private readonly spatial: VehicleSpatial | undefined;
@@ -79,7 +81,7 @@ export class VehicleView {
 
   sync(list: readonly VehicleSnapshot[], dt: number, o: VehicleViewOpts): RiderPlacement[] {
     const w = this.world; this.frame++; const out: RiderPlacement[] = [];
-    this.interiors.length = 0; this.interiorIds.clear();
+    this.interiors.length = 0; this.interiorIds.clear(); this.artPending = 0;
     if (this.interiorWall === -2) this.interiorWall = this.sid(ART_INTERIOR.wall);
     const byKey = new Map(list.map((s) => [s.key, s]));
     // tows first so trailers read the smoothed tow pose (chains: trailer of trailer)
@@ -103,6 +105,7 @@ export class VehicleView {
       // placeholder segments stay visible meanwhile (and in the interior cutaway - Art has no per-segment _int pieces).
       const vis = !o.inView || o.inView(x, y);
       const artOn = !!r.art && r.body !== undefined && !inside && vis && (!this.pages || this.pages.pageReady(r.art.spriteId));
+      if (r.art && r.body !== undefined && !inside && vis && !artOn) this.artPending++;
       if (r.body !== undefined) {
         const b = r.body; w.set(b, Transform, { x, y, z, facing: hq + r.art!.facingOffset });
         const sp = w.get(b, Sprite)!; const sc = r.art!.scale;

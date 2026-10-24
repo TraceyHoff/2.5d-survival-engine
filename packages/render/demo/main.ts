@@ -164,7 +164,7 @@ async function main(): Promise<void> {
       if (now - bench.start >= bench.durationMs) bench.done = true;
     }
     window.__iso = { capabilities: renderer.capabilities, atlasStats: renderer.atlas.stats, vram: renderer.vram, held: renderer.heldStats, chars: renderer.characterStats,
-      ready: world.tick > 2, frameMs: lastFrameMs, fps: fpsAvg, stats: { ...st }, totalSprites: scene.spriteCount, pieces: scene.pieceCount, origin: content.origin, look: lookInfo, surface: { ...renderer.surface },
+      ready: world.tick > 2, vehArtPending: veh?.view.artPending ?? 0, frameMs: lastFrameMs, fps: fpsAvg, stats: { ...st }, totalSprites: scene.spriteCount, pieces: scene.pieceCount, origin: content.origin, look: lookInfo, surface: { ...renderer.surface },
       bench: bench.done ? { frames: bench.frames, avgFps: (bench.frames * 1000) / bench.sumMs, avgFrameMs: bench.sumMs / bench.frames, maxFrameMs: bench.maxMs, visibleSprites: bench.sprites, drawCalls: bench.drawCalls } : null,
     };
     requestAnimationFrame(frame);
