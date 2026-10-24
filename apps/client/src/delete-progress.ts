@@ -195,6 +195,7 @@ export async function deleteLocalProgress(env: LocalSaveEnv & { kinds: ReadonlyS
       await s.write({ ...(wantChars ? { deletePlayers: s.playerTokens() } : {}), ...(wantBots ? { deleteRecords: s.listRecords(AGENT_RECORDS_NS).map((r) => ({ ns: AGENT_RECORDS_NS, id: r.id })) } : {}) });
     });
   }
+  if (k.has("character") || (k.has("singleplayer") && k.has("hosted"))) for (const ck of ["singleplayer", "hosted", "remote"] as const) st.removeItem(`survivaz.character.${ck}.${env.slot}`); // ADR-114 creator choices
   if (k.has("character") && !(k.has("singleplayer") && k.has("hosted"))) done.push("characters");
   if (k.has("bots") && !k.has("singleplayer")) done.push("bot memories");
   if (k.has("settings")) { for (const key of SETTINGS_KEYS) st.removeItem(key); done.push("settings"); }

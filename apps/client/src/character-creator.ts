@@ -1,0 +1,171 @@
+/**
+ * ADR-114 character creator: shown after the main-menu mode choice and before entering the world.
+ * Fields: name, body, skin, hair (+colour), face / beard, eyes, clothes (top / bottom / shoes, + colours); a rotating
+ * preview (auto-turn + ⟲/⟳) and Randomize. The result is stored per save (mode + slot) and sent on join as the
+ * normal SetAppearance command, so the server's checkAppearance (catalog + unlock + first-join gate) validates it.
+ * A stored character skips the screen (Edit character on the main-menu flow / ?editchar=1 re-opens it).
+ * Input: touch / mouse (buttons, ≥44px), keyboard (Tab / arrows, Enter, Esc = Back), gamepad (d-pad / stick, A, B = Back).
+ * The panel scrolls (overflow:auto, touch pan) and fits fullscreen phones (dvh units).
+ */
+import { BODY_TYPES, SLOT_COUNT, WEARABLE_SLOTS, defaultAppearance, slotIndex, type AppearanceValue, type CosmeticCatalogLike, type WearableDef, type WearableSlot } from "@engine/core";
+
+export type CharacterSaveKind = "singleplayer" | "hosted" | "remote";
+export interface StoredCharacter { v: 1; name: string; appearance: AppearanceValue }
+export const characterKey = (kind: CharacterSaveKind, slot: string): string => `survivaz.character.${kind}.${slot}`;
+export const NAME_MAX = 20;
+export const EDIT_CHAR_KEY = "survivaz.editchar";
+/** Character panel → "Edit character": the creator opens on the next world entry (name always applies; a look change
+ * on an already-created character is still subject to the server's wardrobe gate). */
+export function requestCharacterEdit(): void { try { sessionStorage.setItem(EDIT_CHAR_KEY, "1"); } catch { /* ignore */ } }
+/** Same rule the server applies to hello names (printable, trimmed, ≤ NAME_MAX). */
+export function cleanName(s: string): string { return s.replace(/[\u0000-\u001f\u007f<>]/g, "").replace(/\s+/g, " ").trim().slice(0, NAME_MAX); }
+
+type Store = Pick<Storage, "getItem" | "setItem" | "removeItem">;
+const defStore = (): Store | undefined => { try { return localStorage; } catch { return undefined; } };
+export function loadCharacter(kind: CharacterSaveKind, slot: string, st: Store | undefined = defStore()): StoredCharacter | undefined {
+  try { const r = JSON.parse(st?.getItem(characterKey(kind, slot)) ?? "null") as StoredCharacter | null;
+    return r && r.v === 1 && typeof r.name === "string" && Array.isArray(r.appearance?.parts) && r.appearance.parts.length === SLOT_COUNT ? r : undefined; } catch { return undefined; }
+}
+export function saveCharacter(kind: CharacterSaveKind, slot: string, c: StoredCharacter, st: Store | undefined = defStore()): void { try { st?.setItem(characterKey(kind, slot), JSON.stringify(c)); } catch { /* private mode */ } }
+export function deleteCharacter(kind: CharacterSaveKind, slot: string, st: Store | undefined = defStore()): void { try { st?.removeItem(characterKey(kind, slot)); } catch { /* ignore */ } }
+
+/** Creator-visible slots (hat/accessory are wardrobe unlocks, not starter choices). */
+export const CREATOR_SLOTS: readonly WearableSlot[] = ["hair", "face", "eyes", "top", "bottom", "shoes"];
+const OPTIONAL: ReadonlySet<WearableSlot> = new Set(["hair", "face"]); // bald / clean-shaven allowed
+/** Starter wearables per slot for a body: compatible and not unlock-gated (the server would reject those). */
+export function creatorOptions(cat: CosmeticCatalogLike, bodyType: number): Record<WearableSlot, WearableDef[]> {
+  const body = BODY_TYPES[bodyType] ?? "male"; const out = Object.fromEntries(WEARABLE_SLOTS.map((s) => [s, [] as WearableDef[]])) as Record<WearableSlot, WearableDef[]>;
+  for (let id = 1, miss = 0; miss < 256; id++) { const w = cat.wearable(id); if (!w) { miss++; continue; } miss = 0; if (w.bodies[body] && !w.unlockTags.length) out[w.slot].push(w); }
+  return out;
+}
+export interface CreatorPalettes { skin: number; hair: number; clothing: number }
+const pal = (cat: CosmeticCatalogLike): CreatorPalettes => ({ skin: Math.max(1, cat.skinTones.length), hair: Math.max(1, cat.hairColors.length), clothing: Math.max(1, cat.clothingColors.length) });
+const isHairish = (s: WearableSlot): boolean => s === "hair" || s === "face";
+
+/** Uniform random starter look (Randomize); `rnd` is injectable for tests. */
+export function randomLook(cat: CosmeticCatalogLike, rnd: () => number = Math.random): AppearanceValue {
+  const pick = (n: number): number => Math.min(n - 1, Math.floor(rnd() * n));
+  const bodyType = pick(BODY_TYPES.length); const v = defaultAppearance(cat, bodyType); const o = creatorOptions(cat, bodyType); const p = pal(cat);
+  v.skinTone = pick(p.skin); const hairCol = pick(p.hair);
+  for (const s of CREATOR_SLOTS) { const opts = o[s]; const i = slotIndex(s); if (!opts.length) continue;
+    const none = OPTIONAL.has(s) ? 1 : 0; const k = pick(opts.length + none); v.parts[i] = k < opts.length ? opts[k]!.id : 0;
+    v.primary[i] = isHairish(s) ? hairCol : pick(p.clothing); v.secondary[i] = pick(p.clothing); }
+  return v;
+}
+/** Steps one field (cycle with wrap); returns a new value. */
+export function stepLook(cat: CosmeticCatalogLike, v: AppearanceValue, field: "body" | "skin" | `${WearableSlot}` | `${WearableSlot}:color`, d: number): AppearanceValue {
+  const n: AppearanceValue = { bodyType: v.bodyType, skinTone: v.skinTone, parts: [...v.parts], primary: [...v.primary], secondary: [...v.secondary] }; const p = pal(cat);
+  const wrap = (x: number, m: number): number => ((x % m) + m) % m;
+  if (field === "body") { const b = wrap(v.bodyType + d, BODY_TYPES.length); const o = creatorOptions(cat, b); const def = defaultAppearance(cat, b);
+    n.bodyType = b; for (const s of CREATOR_SLOTS) { const i = slotIndex(s); if (n.parts[i] && !o[s].some((w) => w.id === n.parts[i])) n.parts[i] = def.parts[i] ?? 0; } return n; }
+  if (field === "skin") { n.skinTone = wrap(v.skinTone + d, p.skin); return n; }
+  if (field.endsWith(":color")) { const s = field.slice(0, -6) as WearableSlot; const i = slotIndex(s); n.primary[i] = wrap((v.primary[i] ?? 0) + d, isHairish(s) ? p.hair : p.clothing);
+    if (s === "hair") n.primary[slotIndex("face")] = n.primary[i]!; return n; } // beard follows hair colour
+  const s = field as WearableSlot; const i = slotIndex(s); const ids = [...(OPTIONAL.has(s) ? [0] : []), ...creatorOptions(cat, v.bodyType)[s].map((w) => w.id)];
+  if (ids.length) n.parts[i] = ids[wrap(ids.indexOf(v.parts[i] ?? 0) + d, ids.length)] ?? 0; return n;
+}
+const partName = (cat: CosmeticCatalogLike, id: number): string => { if (!id) return "None"; const w = cat.wearable(id); return w ? (w.displayName ?? w.key.replace(/^[a-z]+_/, "").replace(/_/g, " ")) : `#${id}`; };
+const hex = (c: number | undefined, f: string): string => c === undefined ? f : `#${(c & 0xffffff).toString(16).padStart(6, "0")}`;
+
+/**
+ * Preview (sprite fallback): a paper-doll drawn with Canvas2D in the chosen palette colours, turning through the four
+ * facings (E,S,W,N). When the real layered character sprites ship, `drawLayers` can swap in resolveLayers output.
+ */
+export function drawPreview(g: CanvasRenderingContext2D, cat: CosmeticCatalogLike, v: AppearanceValue, dir: number): void {
+  const W = g.canvas.width, H = g.canvas.height; g.clearRect(0, 0, W, H);
+  const skin = hex(cat.skinTones[v.skinTone]?.color, "#E0B08A"); const col = (s: WearableSlot, f: string): string => { const i = slotIndex(s); if (!v.parts[i]) return ""; const pc = isHairish(s) ? cat.hairColors : cat.clothingColors; return hex(pc[v.primary[i] ?? 0]?.color, f); };
+  const top = col("top", "#5A7AB0") || skin, bottom = col("bottom", "#4A4A5A") || skin, shoes = col("shoes", "#3B2433") || skin, hair = col("hair", "#5A3A22"), beard = col("face", "#5A3A22");
+  const side = dir === 0 || dir === 2, back = dir === 3, flip = dir === 2 ? -1 : 1, cx = W / 2, s = H / 200, fem = v.bodyType === 1;
+  g.save(); g.translate(cx, 0); g.scale(flip, 1);
+  const r = (x: number, y: number, w: number, h: number, c: string): void => { g.fillStyle = c; g.fillRect(x * s, y * s, w * s, h * s); };
+  g.fillStyle = "rgba(0,0,0,.18)"; g.beginPath(); g.ellipse(0, 190 * s, 40 * s, 8 * s, 0, 0, Math.PI * 2); g.fill();
+  const bw = side ? 26 : fem ? 40 : 46;
+  r(-bw / 2, 150, bw / 2 - 2, 36, bottom); r(2, 150, bw / 2 - 2, 36, bottom); r(-bw / 2 - 2, 182, bw / 2 + 2, 8, shoes); r(0, 182, bw / 2 + 2, 8, shoes);
+  r(-bw / 2, 90, bw, 64, top); if (!side) { r(-bw / 2 - 10, 94, 10, 50, top); r(bw / 2, 94, 10, 50, top); r(-bw / 2 - 10, 142, 10, 8, skin); r(bw / 2, 142, 10, 8, skin); } else r(-5, 96, 12, 48, top);
+  r(-18, 46, 36, 44, skin);
+  if (hair) { r(-20, 38, 40, 14, hair); if (back) r(-20, 46, 40, fem ? 40 : 26, hair); else if (side) r(-20, 46, 14, fem ? 34 : 18, hair); else if (fem) { r(-22, 46, 8, 36, hair); r(14, 46, 8, 36, hair); } }
+  if (!back) { const ex = side ? [8] : [-9, 9]; for (const x of ex) r(x - 2, 62, 5, 5, "#3B2433"); if (beard) r(side ? 0 : -14, 76, side ? 18 : 28, 14, beard); }
+  g.restore();
+}
+
+export interface CreatorOptions {
+  root: HTMLElement; catalog: CosmeticCatalogLike | undefined; initial?: StoredCharacter | undefined; title?: string;
+  /** Gamepad poll (tests pass a stub); default navigator.getGamepads. */ pads?: () => readonly (Gamepad | null)[];
+}
+/** Opens the creator; resolves with the character, or undefined on Back. */
+export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter | undefined> {
+  const cat = o.catalog; const doc = o.root.ownerDocument;
+  let look: AppearanceValue = o.initial?.appearance ?? (cat ? randomLook(cat) : defaultAppearance(undefined, 0));
+  let name = o.initial?.name ?? ""; let dir = 1, auto = true;
+  const wrap = doc.createElement("div"); wrap.dataset["boot"] = "creator"; wrap.className = "boot creator"; wrap.setAttribute("role", "dialog"); wrap.setAttribute("aria-label", "Create your character");
+  wrap.setAttribute("style", "position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(30,20,28,.72);padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)");
+  const panel = doc.createElement("div"); panel.className = "panel ui-scroll";
+  panel.setAttribute("style", "max-height:calc(100dvh - 24px);max-width:min(760px,96vw);overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;display:flex;flex-wrap:wrap;gap:12px;background:#FFF3DC;border:3px solid #3B2433;border-radius:16px;padding:14px");
+  const h = doc.createElement("h2"); h.textContent = o.title ?? (o.initial ? "Edit character" : "Create your character"); h.style.cssText = "flex:1 1 100%;margin:0";
+  const left = doc.createElement("div"); left.style.cssText = "flex:1 1 220px;display:flex;flex-direction:column;align-items:center;gap:6px";
+  const cv = doc.createElement("canvas"); cv.width = 160; cv.height = 200; cv.dataset["role"] = "creator-preview"; cv.style.cssText = "width:160px;height:200px;background:#EAD9B8;border-radius:12px";
+  let g: CanvasRenderingContext2D | null = null; try { g = cv.getContext("2d"); } catch { /* no 2D canvas (tests) */ } const draw = (): void => { if (g && cat) drawPreview(g, cat, look, dir); };
+  const right = doc.createElement("div"); right.style.cssText = "flex:2 1 300px;display:grid;grid-template-columns:auto 1fr;gap:6px 8px;align-items:center";
+  const mk = (t: string, act: string, fn: () => void, cls = "alt"): HTMLButtonElement => { const b = doc.createElement("button"); b.type = "button"; b.textContent = t; b.className = cls; b.dataset["action"] = act; b.style.minHeight = "44px"; b.addEventListener("click", fn); return b; };
+  const rot = doc.createElement("div"); rot.style.cssText = "display:flex;gap:6px";
+  rot.append(mk("⟲", "rotate-left", () => { auto = false; dir = (dir + 3) % 4; draw(); }), mk("⟳", "rotate-right", () => { auto = false; dir = (dir + 1) % 4; draw(); }));
+  left.append(cv, rot, mk("🎲 Randomize", "randomize", () => { if (cat) { look = randomLook(cat); refresh(); } }));
+  const nameIn = doc.createElement("input"); nameIn.type = "text"; nameIn.maxLength = NAME_MAX; nameIn.placeholder = "Survivor name"; nameIn.value = name; nameIn.dataset["role"] = "creator-name"; nameIn.setAttribute("autocomplete", "nickname");
+  nameIn.style.cssText = "min-height:44px;font:600 18px system-ui;padding:4px 8px"; nameIn.addEventListener("input", () => { name = nameIn.value; });
+  const nl = doc.createElement("label"); nl.textContent = "Name"; right.append(nl, nameIn);
+  const vals = new Map<string, HTMLElement>();
+  const row = (label: string, field: Parameters<typeof stepLook>[2]): void => {
+    const l = doc.createElement("span"); l.textContent = label; const box = doc.createElement("div"); box.style.cssText = "display:flex;gap:6px;align-items:center";
+    const val = doc.createElement("span"); val.dataset["role"] = `creator-${field}`; val.style.cssText = "flex:1;text-align:center;min-width:6em"; vals.set(field, val);
+    const step = (d: number): void => { if (cat) { look = stepLook(cat, look, field, d); refresh(); } };
+    box.append(mk("◀", `prev-${field}`, () => step(-1)), val, mk("▶", `next-${field}`, () => step(1))); right.append(l, box);
+  };
+  row("Body", "body"); row("Skin", "skin"); row("Hair", "hair"); row("Hair colour", "hair:color"); row("Face / beard", "face"); row("Eyes", "eyes");
+  row("Top", "top"); row("Top colour", "top:color"); row("Bottom", "bottom"); row("Bottom colour", "bottom:color"); row("Shoes", "shoes");
+  const msg = doc.createElement("p"); msg.dataset["role"] = "creator-msg"; msg.style.cssText = "flex:1 1 100%;margin:0;min-height:1.2em";
+  const foot = doc.createElement("div"); foot.className = "sticky-footer"; foot.style.cssText = "flex:1 1 100%;display:flex;gap:8px;position:sticky;bottom:0;background:#FFF3DC;padding-top:6px";
+  let done: (v: StoredCharacter | undefined) => void = () => undefined;
+  const ok = mk("Enter world", "creator-done", () => { const n = cleanName(name); if (!n) { msg.textContent = "Pick a name for your survivor."; nameIn.focus(); return; } done({ v: 1, name: n, appearance: look }); }, "");
+  foot.append(mk("Back", "creator-back", () => done(undefined)), ok);
+  panel.append(h, left, right, msg, foot); wrap.append(panel);
+  function refresh(): void {
+    const label = (f: string): string => {
+      if (f === "body") return (BODY_TYPES[look.bodyType] ?? "male").replace(/^./, (c) => c.toUpperCase());
+      if (f === "skin") return cat?.skinTones[look.skinTone]?.key?.replace(/_/g, " ") ?? `Tone ${look.skinTone + 1}`;
+      if (f.endsWith(":color")) { const s = f.slice(0, -6) as WearableSlot; const i = look.primary[slotIndex(s)] ?? 0; const pc = isHairish(s) ? cat?.hairColors : cat?.clothingColors; return pc?.[i]?.key?.replace(/_/g, " ") ?? `Colour ${i + 1}`; }
+      return cat ? partName(cat, look.parts[slotIndex(f as WearableSlot)] ?? 0) : "—";
+    };
+    for (const [f, el] of vals) el.textContent = label(f); draw();
+  }
+  refresh();
+  // keyboard / gamepad focus navigation over the dialog's controls
+  const focusables = (): HTMLElement[] => Array.from(panel.querySelectorAll<HTMLElement>("input,button:not(:disabled)"));
+  const move = (d: number): void => { const f = focusables(); const i = f.indexOf(doc.activeElement as HTMLElement); const n = f[(i + d + f.length) % f.length]; n?.focus(); n?.scrollIntoView?.({ block: "nearest" }); };
+  const onKey = (e: KeyboardEvent): void => {
+    const typing = doc.activeElement === nameIn;
+    if (!typing && (e.key === "ArrowLeft" || e.key === "ArrowRight")) { const bs = (doc.activeElement as HTMLElement | null)?.parentElement?.querySelectorAll<HTMLButtonElement>("button"); if (bs && bs.length === 2) { bs[e.key === "ArrowLeft" ? 0 : 1]!.click(); e.preventDefault(); return; } }
+    if (e.key === "Escape") { done(undefined); e.preventDefault(); }
+    else if (e.key === "ArrowDown") { move(1); e.preventDefault(); }
+    else if (e.key === "ArrowUp") { move(-1); e.preventDefault(); }
+    else if (e.key === "Enter" && typing) { ok.click(); e.preventDefault(); }
+  };
+  doc.addEventListener("keydown", onKey);
+  const pads = o.pads ?? (() => (typeof navigator !== "undefined" && navigator.getGamepads ? navigator.getGamepads() : []));
+  let prev = { up: false, down: false, left: false, right: false, a: false, b: false, y: false }; let raf = 0, last = 0; const win = doc.defaultView;
+  const tick = (t: number): void => {
+    if (auto && t - last > 900) { last = t; dir = (dir + 1) % 4; draw(); }
+    const gp = Array.from(pads()).find((p) => p) ?? undefined;
+    if (gp) { const ax = gp.axes[0] ?? 0, ay = gp.axes[1] ?? 0, B = (i: number): boolean => !!gp.buttons[i]?.pressed;
+      const cur = { up: B(12) || ay < -0.5, down: B(13) || ay > 0.5, left: B(14) || ax < -0.5, right: B(15) || ax > 0.5, a: B(0), b: B(1), y: B(3) };
+      if (cur.down && !prev.down) move(1); if (cur.up && !prev.up) move(-1);
+      // left/right on a ◀ ▶ row steps the value directly
+      const a = doc.activeElement as HTMLElement | null; const rowBox = a?.parentElement;
+      if ((cur.left && !prev.left) || (cur.right && !prev.right)) { const bs = rowBox?.querySelectorAll<HTMLButtonElement>("button"); if (bs && bs.length === 2) bs[cur.left ? 0 : 1]!.click(); }
+      if (cur.a && !prev.a && a && a !== nameIn) a.click(); if (cur.b && !prev.b) done(undefined); if (cur.y && !prev.y && cat) { look = randomLook(cat); refresh(); }
+      prev = cur; }
+    raf = win?.requestAnimationFrame?.(tick) ?? 0;
+  };
+  raf = win?.requestAnimationFrame?.(tick) ?? 0;
+  o.root.append(wrap); (o.initial ? ok : nameIn).focus();
+  return new Promise((resolve) => { done = (v) => { doc.removeEventListener("keydown", onKey); if (raf) win?.cancelAnimationFrame?.(raf); wrap.remove(); resolve(v); }; });
+}

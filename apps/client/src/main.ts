@@ -21,7 +21,7 @@ import { InputSystem, AimResolver, DEFAULT_ACTIONS, DEFAULT_CONTEXTS, DEFAULT_PR
 import { attachBrowserInput } from "@engine/input/browser";
 import { Act, ClanRoster, ClanRosterMember, OnlinePlayer, VehicleStationOpenedEvt, gameplayNet, installDemoWorld } from "@engine/server/protocol";
 import { netIdOf, ChatChannel, type ChatDelivered } from "@engine/net";
-import { SocialDirectory, interactPanel, UseCmd, GatherCmd, farmPrompt, type MenuCtx, type MenuIntent } from "@engine/gameplay";
+import { SocialDirectory, hasCreatedLook, setAppearanceIntent, interactPanel, UseCmd, GatherCmd, farmPrompt, type MenuCtx, type MenuIntent } from "@engine/gameplay";
 import { ClientSession } from "./session.js";
 import { mountConnectOverlay } from "./connect.js";
 import { IsoView } from "./view.js";
@@ -29,6 +29,7 @@ import { mountHud } from "./hud.js";
 import { controlLabel, mountFarmPrompt, quickUseFires, type PromptDevice } from "./farm-prompt.js";
 import { attachContextRecovery, effectiveLevel, retryIsoAtSafe } from "./gl-recovery.js";
 import { BootUI, loadSettings } from "./menu.js";
+import { EDIT_CHAR_KEY, loadCharacter, saveCharacter, showCharacterCreator, type CharacterSaveKind, type StoredCharacter } from "./character-creator.js";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 /** Everything (canvas, HUD, touch overlay, menu bar, modals) lives in this root; fullscreen targets it (ADR-095). */
@@ -199,7 +200,34 @@ function render(w: World, alpha: number): void {
 }
 
 let loop: FixedLoop = createGameLoop(world, { render });
-function useWorld(w: World): void { world = w; loop = createGameLoop(w, { render }); }
+function useWorld(w: World): void { world = w; loop = createGameLoop(w, { render }); sendStoredLook(); }
+
+// ---- ADR-114 character creator (after the mode choice, before entering the world) ----
+let activeChar: StoredCharacter | undefined;
+/** Stored character for this save, or the creator (also when ?editchar=1 / "Edit character" asked for it). Undefined = Back. */
+async function ensureCharacter(kind: CharacterSaveKind): Promise<StoredCharacter | undefined> {
+  const stored = loadCharacter(kind, SLOT); let edit = params.get("editchar") === "1";
+  try { if (sessionStorage.getItem(EDIT_CHAR_KEY)) { edit = true; sessionStorage.removeItem(EDIT_CHAR_KEY); } } catch { /* private mode */ }
+  if (stored && !edit) return stored;
+  await isoReady; const catalog = iso?.registry.cosmetics?.size ? iso.registry.cosmetics : undefined;
+  const seed: StoredCharacter | undefined = stored ?? (session.savedName ? { v: 1, name: session.savedName, appearance: undefined as never } : undefined);
+  const c = await showCharacterCreator({ root: document.body, catalog, initial: seed?.appearance ? seed : undefined });
+  if (c) saveCharacter(kind, SLOT, c); return c;
+}
+const playerName = (): string => activeChar?.name ?? session.savedName ?? "";
+/** On join: send the stored look as SetAppearance (server validates: catalog, unlocks, first-join gate). Existing
+ * characters (Wardrobe.created) keep their server look unless the creator was just used to edit it. */
+let lookSent: World | undefined, lookEdited = false;
+function sendStoredLook(): void {
+  const c = activeChar; if (!c) return; const w = world; let tries = 0;
+  const t = setInterval(() => {
+    if (world !== w || lookSent === w || ++tries > 100) { clearInterval(t); return; }
+    const p = session.player; if (p === undefined) return;
+    clearInterval(t); lookSent = w;
+    if (hasCreatedLook(w, p) && !lookEdited) return;
+    if (!sendIntent(setAppearanceIntent(c.appearance))) console.warn("appearance not sent");
+  }, 100);
+}
 
 let pumpLocal: ((ms: number) => void) | undefined;
 /** Singleplayer local-server status (./local.ts localStatus) once singleplayer starts; diag + camera fallback. */
@@ -245,7 +273,7 @@ async function startSingleplayer(): Promise<void> {
         return r.message;
       } });
     localStatus.state = "connecting";
-    useWorld(await session.connect("local", session.savedName ?? "", srv.createTransport()));
+    useWorld(await session.connect("local", playerName(), srv.createTransport()));
     localStatus.state = "running";
   } catch (e) {
     localStatus.state = "failed"; localStatus.error = e instanceof Error ? e.message : String(e);
@@ -284,7 +312,7 @@ async function startHost(): Promise<void> {
   addEventListener("beforeunload", () => host.unload());
   addEventListener("pagehide", () => host.unload());
   mountP2POverlay({ mode: "host", code: formatRoomCode(host.code), cap: host.cap, players: () => host.players(), status: () => `Hosting${cap.mobile ? " (mobile)" : ""} · keep this tab open`, onLeave: end });
-  useWorld(await session.connect("p2p-host", session.savedName ?? "", host.hostTransport));
+  useWorld(await session.connect("p2p-host", playerName(), host.hostTransport));
   host.hostClientId = session.client?.clientId;
 }
 /** Join with code: guest over WebRTC; "Host ended the session" (or a lost link) returns to the menu. */
@@ -297,7 +325,7 @@ async function startJoin(raw: string): Promise<void> {
   deleteInfo = () => remoteDeleteInfo("this host", () => { session.onEnded = undefined; session.disconnect(); backToMenu("Your progress on that host was deleted. Join again to start fresh."); });
   sessionInfo = () => ({ label: `Joined ${formatRoomCode(code)} · ${session.status}`, leaveLabel: "Leave", onLeave: () => { session.onEnded = undefined; session.disconnect(); backToMenu("You left the session."); } });
   mountP2POverlay({ mode: "guest", code: formatRoomCode(code), status: () => `Status: ${session.status}${session.detail ? ` (${session.detail})` : ""}`, onLeave: () => { session.onEnded = undefined; session.disconnect(); backToMenu("You left the session."); } });
-  try { useWorld(await session.connect(`p2p:${code}`, session.savedName ?? "", guestTransport(await p2pSignaling(), code))); }
+  try { useWorld(await session.connect(`p2p:${code}`, playerName(), guestTransport(await p2pSignaling(), code))); }
   catch (e) { session.onEnded = undefined; backToMenu(`Couldn't join ${formatRoomCode(code)}: ${e instanceof Error ? e.message : String(e)}`); }
 }
 /** Remote server / P2P guest: ask the server to delete *my* character (DeleteMyProgressCmd, ADR-099); resolves on ProgressDeleted. */
@@ -324,14 +352,19 @@ if (boot) {
     await isoReady; boot.progress(1, "Ready");
     let notice: string | undefined; try { notice = sessionStorage.getItem(P2P_NOTICE_KEY) ?? undefined; sessionStorage.removeItem(P2P_NOTICE_KEY); } catch { /* ignore */ }
     const choice = await boot.menu({ slot: SLOT, hostedStatic: import.meta.env["VITE_DEFAULT_OFFLINE"] === "1", defaultUrl, ...(notice ? { notice } : {}) });
-    boot.hide(); startMenus();
+    boot.hide();
+    const kind: CharacterSaveKind = choice.kind === "singleplayer" ? "singleplayer" : choice.kind === "host" ? "hosted" : "remote";
+    const before = loadCharacter(kind, SLOT); activeChar = await ensureCharacter(kind);
+    if (!activeChar) { backToMenu(""); return; }
+    lookEdited = !before || JSON.stringify(before) !== JSON.stringify(activeChar);
+    startMenus();
     if (choice.kind === "singleplayer") await startSingleplayer();
     else if (choice.kind === "host") await startHost();
     else if (choice.kind === "join") await startJoin(choice.code);
     else { // multiplayer: remote server, no local human bots
       mountConnectOverlay(session, { defaultUrl: choice.url, onConnect: connectTo, onDisconnect: () => session.disconnect() });
       leaveCurrent = () => session.disconnect();
-      connectTo(choice.url, session.savedName ?? "");
+      connectTo(choice.url, playerName());
     }
   })().catch((e: unknown) => console.error("start failed", e));
 } else if (!serverParam && (params.get("offline") === "1" || (params.get("menu") === "0" && import.meta.env["VITE_DEFAULT_OFFLINE"] === "1"))) {

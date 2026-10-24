@@ -17,6 +17,7 @@ import { iconForItem,
   type BuildSelection, type MenuCtx, type MenuIntent, camperStationView, vehicleRefuelIntent, type CamperRecipeView,
   progressionView, unlockSkillIntent, respecSkillsIntent, SKILL_REJECT_TEXT,
 } from "@engine/gameplay";
+import { requestCharacterEdit } from "./character-creator.js";
 import { GroupRole, PlayerId, Transform, type Entity } from "@engine/core";
 
 export const GAMEPLAY_PANELS = ["inventory", "crafting", "build", "character", "party", "clan", "trade", "camper", "skills"] as const;
@@ -181,7 +182,9 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       if (v.palettes.skin) { const kg = grid(); for (let i = 0; i < Math.min(v.palettes.skin, 8); i++) kg.append(btn(`Skin ${i + 1}`, `skin-${i}`, () => { const a = v.slots; send(setAppearanceIntent({ bodyType: 0, skinTone: i, parts: a.map((s) => s.equipped), primary: a.map((s) => s.primary), secondary: a.map((s) => s.secondary) }), "Look saved."); }, { disabled: !v.canEdit })); out.push(heading("Skin tone"), kg); }
       out.push(heading("Unlocks")); const ug = el("div", { "data-role": "unlocks" });
       for (const u of v.unlocks) { const p = kit.para(u.tag.replace(/_/g, " ")); p.dataset["role"] = "unlock"; p.dataset["key"] = u.tag; if (u.unlocked) p.dataset["unlocked"] = ""; ug.append(p); }
-      out.push(ug); return out;
+      out.push(ug);
+      const eg = grid(); eg.append(btn("Edit character (next start)", "edit-character", () => { requestCharacterEdit(); kit.status("The character creator opens next time you enter a world."); }, { alt: true })); out.push(eg);
+      return out;
     }
     case "skills": {
       const v = progressionView(c.world, c.player); if (!v) return [kit.para("No skills for this character.")];

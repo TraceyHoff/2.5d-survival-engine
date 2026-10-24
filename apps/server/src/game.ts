@@ -364,7 +364,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
   }
   net.onCommand(SetName, (s, payload) => {
     const p = players.get(s.clientId); if (!p) return;
-    p.name = wordsToName(payload); persist?.trackPlayer(p.account, p.entity, p.name);
+    p.name = wordsToName(payload).replace(/[<>\u007f]/g, "").replace(/\s+/g, " ").trim().slice(0, 20); persist?.trackPlayer(p.account, p.entity, p.name);
     const id = world.getField(p.entity, PlayerId, "id"); if (id) names.set(id, p.name);
   });
   net.onCommand(Ping, (s, payload) => net.emitEvent(Pong, { t: payload.t }, { scope: { owner: s.clientId } }));
