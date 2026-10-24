@@ -11,6 +11,7 @@ import { currentPhaseKey } from "./combat/zombies.js";
 import { populationData, rollTraits, scoreUtilities } from "./ai/population.js";
 import { fillAgentSensors, survivalBehaviors, type AgentSensors } from "./ai/survivor_behaviors.js";
 import { fillPartySensors, partyBehaviors, type PartySensors } from "./ai/party_behaviors.js";
+import { observeSocialMemory } from "./ai/social_memory.js";
 import { clanBehaviors, fillClanSensors, type ClanSensors } from "./ai/clan_behaviors.js";
 import { emitAgentCommands } from "./ai/agent_output.js";
 
@@ -45,7 +46,7 @@ export function buildAgentView(world: World, self: Entity, a: Agent, home: { x: 
     if (visible) seen.push({ id: e, kind, x: o.x, y: o.y });
   }
   const tod = timeOfDay(world);
-  const view: AgentWorldView = { seen, home, playerName }; fillAgentSensors(world, self, view, (sv?.hunger ?? 100) < 50); fillPartySensors(world, self, view); fillClanSensors(world, self, view);
+  const view: AgentWorldView = { seen, home, playerName }; fillAgentSensors(world, self, view, (sv?.hunger ?? 100) < 50); fillPartySensors(world, self, view); fillClanSensors(world, self, view); observeSocialMemory(world, self, a);
   return {
     self: { x: t.x, y: t.y, facing, hp: hp ? hp.hp / Math.max(1, hp.max) : 1, hunger: (sv?.hunger ?? 100) / 100, thirst: (sv?.thirst ?? 100) / 100, stamina: sv ? sv.stamina / Math.max(1, sv.maxStamina) : 1, tick: world.tick, dayT: tod.t, phase: currentPhaseKey(world) },
     world: view,

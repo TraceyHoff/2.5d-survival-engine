@@ -505,3 +505,17 @@ Gameplay owns data, not loops: there is **no spawn loop and no controller** here
 - Action strings go through `emitAgentCommands` (`ccreate, cinvite, caccept, cleave, cpromote, cdemote, ckick, cperms, cgoal, cstock`) to the same `gameplay.clan*` / `gameplay.stockStall` commands humans use.
 - Chat lines: `social.clan.{found,invite,accept,decline,promote,kick,goal,contribute,defend,raid}.N` in en.json.
 - Limit: `clanStock` reads `StallDisplay`, so it only sees listings that are enabled and already stocked.
+
+## 30. Bot social memory (relationships, party, clan)
+
+Lives on the bot's AgentIdentity record in `game.agents` under `social` (`ai/social_memory.ts`, pure / browser-safe):
+`{ relationships: { [persistentPlayerId]: { trust, affinity, lastSeen, notableEvents[{tick, kind}] } }, party: {id, since} | null, clan: {id, role, since} | null }`.
+- `observeSocialMemory` runs inside `buildAgentView`: party / clan joins and leaves add `partied` / `clanmate` / `left` events
+  for the others in the group; `lastSeen` refreshes (throttled) for known players in view. `noteSocialEvent` applies the
+  `SOCIAL_EVENTS` deltas (clamped -1..1); logs are capped at `maxEvents`, the table at `maxRelations` (stalest forgotten).
+- `trustOf(agent, playerId)` feeds party_decide / clan_decide accept chances; unknown players fall back to the legacy scalar
+  `identity.relationship`.
+- Writes: `flushSocialMemory(agents, game.agents.put, tick, force?)` writes a dirty bot once it has been dirty for
+  `writeDebounceTicks` (put persists immediately, so the debounce is ours); `force` on bot removal / shutdown.
+- Loads: nothing extra; addBot already merges `game.agents.get(id)` into the identity, `socialMemoryOf` validates it.
+- The store's save path is unchanged. Wiring the flush call into the local.ts agent loop is Engine Architect's.

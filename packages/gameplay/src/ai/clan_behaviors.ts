@@ -6,6 +6,7 @@
  * raid when brave + greedy); members walk to the goal and stock clan stalls. Every decision has a cooldown.
  */
 import { Membership, PlayerId, StallDisplay, Transform, type Entity, type Traits, type World } from "@engine/core";
+import { trustOf } from "./social_memory.js";
 import type { AgentWorldView, GameBehavior } from "../agents.js";
 import { ClanInvitePending, ClanStatus, Health, StallHeader, StallOwnerKind } from "../components.js";
 import { ClanGoal, clanPermBit } from "../clan_state.js";
@@ -99,7 +100,7 @@ export function clanBehaviors(): GameBehavior[] {
         { name: "invite", curve: { type: "step", at: 0.5 }, input: (c) => (c.world.clanInvite && !c.world.clan && since(c, "clanDecidedAt", CLAN_AI.decideDelay) ? 1 : 0) }],
       run: (c, o) => {
         const inv = c.world.clanInvite; if (!inv || c.world.clan) return false; c.bb.set("clanDecidedAt", c.self.tick);
-        const yes = c.rng.next() < clanAcceptChance(c.traits, c.agent.identity.relationship);
+        const yes = c.rng.next() < clanAcceptChance(c.traits, trustOf(c.agent, inv.from));
         if (yes) { o.actions.push(`caccept:${inv.clan}`); o.emote = "wave"; } else c.bb.set("clanDecidedAt", inv.expiresTick); // ignore until it expires
         const l = clanLine(yes ? "accept" : "decline", () => c.rng.next()); if (l) o.chat = l; return false;
       } },

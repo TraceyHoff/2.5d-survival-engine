@@ -4,6 +4,7 @@
  * -1..1, the bot's memory of the player), bravery and need weigh the accept roll; every decision has a cooldown.
  */
 import { Membership, PlayerId, Transform, type Entity, type Traits, type World } from "@engine/core";
+import { trustOf } from "./social_memory.js";
 import type { AgentWorldView, GameBehavior } from "../agents.js";
 import { Health, PartyInvitePending } from "../components.js";
 import en from "../../data/locale/en.json";
@@ -54,7 +55,7 @@ export function partyBehaviors(): GameBehavior[] {
       run: (c, o) => {
         const inv = c.world.partyInvite; if (!inv || c.world.partyId) return false;
         const need = Math.max(0, Math.min(1, Math.max(1 - c.self.hp, 1 - c.self.hunger)));
-        const yes = c.rng.next() < partyAcceptChance(c.traits, c.agent.identity.relationship, need);
+        const yes = c.rng.next() < partyAcceptChance(c.traits, trustOf(c.agent, inv.from), need);
         o.actions.push(`${yes ? "paccept" : "pdecline"}:${inv.party}`); c.bb.set("partyDecidedAt", c.self.tick);
         const line = partyLine(yes ? "accept" : "decline", () => c.rng.next()); if (line) o.chat = line; if (yes) o.emote = "wave";
         return false;

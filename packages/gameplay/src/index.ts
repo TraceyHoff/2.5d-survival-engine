@@ -55,5 +55,6 @@ export * from "./expression.js";
 export * from "./party.js";
 export * from "./ai/party_behaviors.js";
 export * from "./ai/clan_behaviors.js";
+export * from "./ai/social_memory.js";
 export * from "./clan_state.js";
 export * from "./clan.js";
