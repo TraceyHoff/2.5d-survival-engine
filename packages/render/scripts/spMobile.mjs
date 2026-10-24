@@ -3,6 +3,9 @@
 // no float colour buffers, and a driver memory cap: any texStorage/texImage/renderbufferStorage allocation that would
 // push live GPU bytes past GPU_CAP_MB is refused with GL_OUT_OF_MEMORY (the texture stays unallocated/incomplete).
 // Usage: node scripts/spMobile.mjs [tag]   (env: PORT=5341 GPU_CAP_MB=200 MODES=sp,host BOTS=6)
+// Device conditions: BLOCK_IDB=1 holds an old-version connection to the singleplayer DB (engine-local-<player>) so the
+// app's IndexedDB open is blocked (an older tab / PWA on the phone; the SP flat-brown-screen root cause); NOFEAT=1 removes
+// structuredClone, crypto.randomUUID, SharedArrayBuffer, OffscreenCanvas and module Workers; PLAYER=<slot> fixes the slot.
 // "host" = ?offline=1&bots=0 (no human bots: the P2P host's multiplayer mode has none); "sp" = singleplayer with bots.
 import { spawn } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -56,13 +59,16 @@ for (const mode of MODES) {
     const dt = P.deleteTexture; P.deleteTexture = function (x) { if (x) { W.__gpu.live -= sizes.get(x) ?? 0; sizes.delete(x); } return dt.call(this, x); };
     const dr = P.deleteRenderbuffer; P.deleteRenderbuffer = function (x) { if (x) { W.__gpu.live -= sizes.get(x) ?? 0; sizes.delete(x); } return dr.call(this, x); };
   }, [CAP, process.env.LAZY === "1"]);
+  const player = process.env.PLAYER ?? `${mode}${Date.now()}`;
+  if (process.env.BLOCK_IDB === "1") await ctx.addInitScript((db) => { const r = indexedDB.open(db, 1); r.onupgradeneeded = () => r.result.createObjectStore("chunks", { keyPath: "key" }); r.onsuccess = () => { window.__heldDb = r.result; }; }, `engine-local-${player}`);
+  if (process.env.NOFEAT === "1") await ctx.addInitScript(() => { delete window.structuredClone; delete window.SharedArrayBuffer; delete window.OffscreenCanvas; try { Object.defineProperty(crypto, "randomUUID", { value: undefined }); } catch {} const W = window.Worker; window.Worker = function (u, o) { if (o?.type === "module") throw new TypeError("module workers unsupported"); return new W(u, o); }; });
   const page = await ctx.newPage(); const logs = [];
   page.on("console", (m) => logs.push(`${m.type()}: ${m.text()}`)); page.on("pageerror", (e) => logs.push(`pageerror: ${e}`));
   const q = mode === "host" ? "offline=1&bots=0" : `offline=1&bots=${BOTS}`;
-  await page.goto(`http://127.0.0.1:${PORT}/?${q}&diag=1&shot=1&time=12&weather=clear&player=${mode}${Date.now()}`);
+  await page.goto(`http://127.0.0.1:${PORT}/?${q}${process.env.NODIAG === "1" ? "" : "&diag=1"}&shot=1&time=12&weather=clear&player=${player}`);
   await page.waitForFunction(() => window.__view?.ready === true, null, { timeout: 180000 }).catch(() => logs.push("view never ready"));
   await page.waitForTimeout(Number(process.env.WAIT_MS ?? 25000));
-  const file = join(shots, `sp_mobile_${tag}_${mode}.png`); await page.screenshot({ path: file });
+  const file = join(shots, process.env.SHOT ? process.env.SHOT : `sp_mobile_${tag}_${mode}.png`); await page.screenshot({ path: file });
   const r = await page.evaluate(() => {
     const c = document.querySelector("canvas"); const t = document.createElement("canvas"); t.width = 64; t.height = 64; const g = t.getContext("2d"); g.drawImage(c, 0, 0, 64, 64);
     const d = g.getImageData(0, 0, 64, 64).data; const cols = new Map(); let sum = 0;

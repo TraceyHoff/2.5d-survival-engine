@@ -42,9 +42,37 @@ export interface LocalServer {
   stop(): Promise<void>;
 }
 
-/** Opens a browser-safe store: IndexedDB if present, else in-memory. */
-export async function openBrowserStore(dbName = "engine-local-world"): Promise<WorldStore> {
-  try { if ((globalThis as { indexedDB?: unknown }).indexedDB) return await IndexedDbWorldStore.open(dbName); } catch { /* fall back */ }
+/**
+ * Singleplayer local-server lifecycle, for the ?diag=1 overlay and the camera fallback. `store` names the backend actually
+ * used; `error` is the last startup problem (also set when the store fell back to memory).
+ */
+export const localStatus: { state: "idle" | "opening-store" | "starting" | "connecting" | "running" | "failed"; store: string; error: string | undefined } = { state: "idle", store: "", error: undefined };
+
+type IdbFactory = NonNullable<NonNullable<Parameters<typeof IndexedDbWorldStore.open>[1]>["factory"]>;
+/**
+ * Opens a browser-safe store: IndexedDB if present, else in-memory. Never hangs: an IndexedDB open that is blocked
+ * (an older tab / installed PWA still holds the DB during a schema upgrade, onblocked) or simply never answers
+ * (seen on Android) falls back to an in-memory world after `timeoutMs`, with `localStatus.error` set. Before this,
+ * a stuck open left singleplayer waiting forever: no server, no player, an empty (clear-colour) scene.
+ */
+export async function openBrowserStore(dbName = "engine-local-world", timeoutMs = 4000): Promise<WorldStore> {
+  const idb = (globalThis as { indexedDB?: IdbFactory }).indexedDB;
+  if (!idb) { localStatus.store = "memory (no IndexedDB)"; return new MemoryWorldStore(); }
+  let blocked = false;
+  const factory: IdbFactory = { deleteDatabase: (n) => idb.deleteDatabase(n), open: (n, v) => { const r = idb.open(n, v); (r as { onblocked?: unknown }).onblocked = () => { blocked = true; }; return r; } };
+  const opening = IndexedDbWorldStore.open(dbName, { factory });
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<"timeout">((res) => { timer = setTimeout(() => res("timeout"), timeoutMs); });
+  try {
+    const r = await Promise.race([opening, timeout]);
+    if (r !== "timeout") { localStatus.store = `indexeddb ${dbName}`; return r; }
+    localStatus.error = `IndexedDB "${dbName}" ${blocked ? "upgrade blocked (another tab or app still has the game open)" : "did not open"} within ${timeoutMs} ms; this session is not saved`;
+    void opening.then((s) => s.close(), () => undefined); // a late open must not keep the DB locked
+  } catch (e) {
+    localStatus.error = `IndexedDB "${dbName}" failed: ${e instanceof Error ? e.message : String(e)}; this session is not saved`;
+  } finally { clearTimeout(timer); }
+  console.warn(`[local] ${localStatus.error}`);
+  localStatus.store = "memory (fallback)";
   return new MemoryWorldStore();
 }
 

@@ -13,6 +13,7 @@
  *   3. composite   -> canvas: scene x light (emissive bypass), banding/night floor, fog, grading (1 draw)
  *   4. weather     -> canvas: instanced rain streaks, splashes, snow (<= 3 draws)
  */
+import { formatSceneDiag, type SceneDiag } from "./sceneDiag.js";
 import { AssetManager, type World } from "@engine/core";
 import { DEFAULT_ISO, type BuildingGrid, type ChunkedSpatialIndex, type IsoConfig, type TileMap } from "@engine/world";
 import { IsoCamera, type Rect } from "./camera.js";
@@ -532,6 +533,8 @@ export class IsoRenderer implements Renderer {
 
   /** Plain-text diagnostics for the client's ?diag=1 overlay (capabilities, atlas/FBO status, per-pass errors, readbacks). */
   /** Plain-text diagnostics; safe to call at any time, including before frame 1 (no readbacks yet). */
+  /** Client-fed scene info (entities, player, camera target, local server, snapshots, last error) for diagReport(). */
+  sceneDiag: SceneDiag | undefined;
   diagReport(): string {
     const c = this.capabilities;
     let vramMB: number | undefined; try { const t = this.vram?.totalMB; if (Number.isFinite(t)) vramMB = Math.round(t); } catch { /* atlas not ready */ }
@@ -540,7 +543,8 @@ export class IsoRenderer implements Renderer {
       const a = this.atlas; const sp = this.sprites;
       const extra = [...this.fallback.report(), this.watchdog.report(),
         `wearables: ${a.wearablesEnabled ? "on" : "OFF"}, page faults ${a.pageFaults}, budget refusals ${a.pageBudgetRefusals}; dressed cap ${Number.isFinite(sp.maxDressed) ? sp.maxDressed : "none"} (${sp.dressCapped} body-only last frame)`].join("\n");
-      const out = r + "\n" + extra;
+      const sc = this.sceneDiag; const hint = sc && sc.entities === 0 ? "\n! no entities replicated: nothing to draw (GPU is fine; check localServer/snapshots/lastError)" : "";
+      const out = r + "\n" + extra + "\n" + formatSceneDiag(sc) + hint;
       return this.frameCount === 0 ? out + "\n(no frame rendered yet: readbacks appear after frames 1 and 60)" : out;
     } catch (e) { return `render diag unavailable: ${String(e)}`; }
   }

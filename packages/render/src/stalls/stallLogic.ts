@@ -4,6 +4,7 @@
  * on the stall's STOCK attachment (Container = stock, Listings), not on the BuildPiece; BuildPiece.tint is a u8 clan palette
  * index (0 = untinted, clanTintIndex = 1..255) and BuildPiece.paint overrides it when != 0.
  */
+import { cloneData } from "../style.js";
 import { AssetRegistry, type AttachPoint, type ClanPalette, type FrameRef } from "@engine/assets";
 import { computeDayLighting } from "../timeOfDay.js";
 
@@ -36,7 +37,7 @@ export const DEFAULT_STALL_TUNING: StallTuning = {
 };
 /** Merge render_tuning.stalls.json over the defaults (unknown keys ignored; `$comment`/notes dropped). */
 export function parseStallTuning(json: unknown): { tuning: StallTuning; warnings: string[] } {
-  const warnings: string[] = []; const t = structuredClone(DEFAULT_STALL_TUNING) as unknown as Record<string, Record<string, unknown>>;
+  const warnings: string[] = []; const t = cloneData(DEFAULT_STALL_TUNING) as unknown as Record<string, Record<string, unknown>>;
   if (!json || typeof json !== "object") return { tuning: t as unknown as StallTuning, warnings: ["render_tuning.stalls: not an object"] };
   for (const [k, v] of Object.entries(json as Record<string, unknown>)) {
     if (k.startsWith("$") || k === "attach") continue; // attach: informational (box-centre convention, tagMin)

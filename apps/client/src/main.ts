@@ -151,7 +151,10 @@ function render(w: World, alpha: number): void {
   wireChat();
   if (menus?.nav.isOpen) { const now = performance.now(); if (now >= menuRefreshAt) { menuRefreshAt = now + MENU_REFRESH_MS; menus.refresh(); } }
   iso?.syncGhost(buildMode.preview, w);
-  if (iso) { iso.render(w, session.client?.tiles.tiles, session.player, alpha); diag?.afterRender(); return; }
+  if (iso) {
+    iso.status = { localServer: spStatus?.state ?? (session.client ? "n/a (remote)" : "idle"), snapshots: session.client?.stats.snapshots ?? 0, ...(spStatus?.error ? { error: spStatus.error } : {}) };
+    iso.render(w, session.client?.tiles.tiles, session.player, alpha); diag?.afterRender(); return;
+  }
   if (!ctx) return;
   const canvas = debugCanvas;
   const dpr = devicePixelRatio || 1;
@@ -179,16 +182,30 @@ let loop: FixedLoop = createGameLoop(world, { render });
 function useWorld(w: World): void { world = w; loop = createGameLoop(w, { render }); }
 
 let pumpLocal: ((ms: number) => void) | undefined;
+/** Singleplayer local-server status (./local.ts localStatus) once singleplayer starts; diag + camera fallback. */
+let spStatus: { state: string; error: string | undefined } | undefined;
 const settings = loadSettings();
 /** Singleplayer: in-browser authoritative server (lazy chunk) in "singleplayer" mode; human bots spawn automatically. */
 async function startSingleplayer(): Promise<void> {
-  const { createLocalServer, openBrowserStore } = await import("./local.js");
-  const bots = Number(params.get("bots") ?? settings.bots);
-  const local = await createLocalServer({ store: await openBrowserStore(`engine-local-${params.get("player") ?? "1"}`), bots, ...(await isoReady, iso?.registry.cosmetics?.size ? { catalog: iso.registry.cosmetics } : {}), log: (m) => console.info(`[local] ${m}`) });
-  pumpLocal = local.pump;
-  addEventListener("pagehide", () => { void local.game.persist?.saveAll(); });
-  leaveCurrent = async () => { await local.game.persist?.saveAll(); };
-  useWorld(await session.connect("local", session.savedName ?? "", local.createTransport()));
+  const { createLocalServer, openBrowserStore, localStatus } = await import("./local.js");
+  spStatus = localStatus;
+  try {
+    const bots = Number(params.get("bots") ?? settings.bots);
+    localStatus.state = "opening-store";
+    const store = await openBrowserStore(`engine-local-${params.get("player") ?? "1"}`);
+    localStatus.state = "starting";
+    const local = await createLocalServer({ store, bots, ...(await isoReady, iso?.registry.cosmetics?.size ? { catalog: iso.registry.cosmetics } : {}), log: (m) => console.info(`[local] ${m}`) });
+    pumpLocal = local.pump;
+    addEventListener("pagehide", () => { void local.game.persist?.saveAll(); });
+    leaveCurrent = async () => { await local.game.persist?.saveAll(); };
+    localStatus.state = "connecting";
+    useWorld(await session.connect("local", session.savedName ?? "", local.createTransport()));
+    localStatus.state = "running";
+  } catch (e) {
+    localStatus.state = "failed"; localStatus.error = e instanceof Error ? e.message : String(e);
+    showRenderError("Singleplayer failed to start", `${localStatus.error}\nReload, or close other tabs of the game — please report this text.`);
+    throw e;
+  }
 }
 /** P2P: return to the main menu with a one-shot notice (the menu flow is one-shot, so reload). */
 const P2P_NOTICE_KEY = "engine-p2p-notice";

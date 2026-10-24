@@ -43,6 +43,7 @@ export function startDiag(src: DiagSources): { afterRender(): void } | undefined
       } catch (e) { L.push(`report error: ${String(e)}`); }
     } else L.push("renderer: not created (debug view)");
     const s = src.snapshot();
+    const sd = r?.sceneDiag; if (sd) L.push(`view entities ${sd.entities} player eid ${sd.playerEid ?? "none"} cam target ${sd.cameraTarget ? `${sd.cameraTarget.kind} ${sd.cameraTarget.x.toFixed(1)},${sd.cameraTarget.y.toFixed(1)}` : "none"} local server ${sd.localServer ?? "?"} snapshots ${sd.snapshots ?? "?"}${sd.lastError ? ` scene error: ${sd.lastError}` : ""}`);
     L.push(`entities ${src.entities()} player ${src.player() !== undefined ? "yes" : "no"} snapshot ${s ? `${s.received ? "yes" : "NO"} tick ${s.latestTick} n=${s.snapshots}` : "no session"}`);
     L.push(`sim tick ${src.tick()} @ ${rate.toFixed(1)}/s`);
     L.push(`last error: ${lastError || "none"}`);

@@ -11,7 +11,7 @@ import { showRenderError, glInfo, frameIsBlack } from "./glcheck.js";
 import { World, Transform, PrevTransform, TimeOfDay, Weather, Appearance, PlayerId, defineComponent, entityIndex, type Entity } from "@engine/core";
 import { CHUNK_SIZE, tileToChunk, tileToLocal, type TileMap } from "@engine/world";
 import { loadManifest, mergeManifests, buildPieceVisual, quarterTurn, type AssetRegistry, type ManifestFragment, type ManifestJson } from "@engine/assets";
-import { BuildGhost, IsoRenderer, Sprite, Shadow, LightSource, Occluder, SpriteFlag, sourcesFromManifest, coreAppearanceBinding } from "@engine/render";
+import { BuildGhost, IsoRenderer, Sprite, Shadow, LightSource, Occluder, SpriteFlag, sourcesFromManifest, coreAppearanceBinding, CameraTargetGuard } from "@engine/render";
 import { gameplayDefs, rotationSteps, animalDefs, Animal, Health, Survival, Zombie, ResourceNode, CraftingStation, Fuel, AnimState as GAnim, BuildPiece as GPiece, Dead, Wetness, BodyTemp, Emitter, PieceLink } from "@engine/gameplay";
 
 /** Render-side schemas the renderer's bindings expect (view World only). */
@@ -33,6 +33,10 @@ let lowendDress = false;
 let noCosmetics = false;
 const PLAYER_KEYS = ["player", "player_b", "player_c"];
 
+/** Camera fallback when no player is replicated for CAMERA_GRACE_FRAMES: the world spawn (server SPAWN, camp nearby). */
+export const CAMERA_FALLBACK = { x: 16, y: 16, z: 0 };
+const CAMERA_GRACE_FRAMES = 300;
+export interface ViewStatus { localServer: string; snapshots: number; error?: string }
 export interface ViewOverrides { hours?: number; weather?: number; intensity?: number }
 
 export class IsoView {
@@ -196,10 +200,14 @@ export class IsoView {
 
     const camE = CAM_ANIMAL && this.camAnimal !== undefined ? this.camAnimal : player;
     const pv = camE !== undefined ? this.map.get(camE) : undefined;
-    if (pv !== undefined) {
-      const t = v.get(pv, Transform)!, p = v.get(pv, PrevTransform) ?? t;
-      r.camera.lookAt(p.x + (t.x - p.x) * alpha, p.y + (t.y - p.y) * alpha, p.z + (t.z - p.z) * alpha);
-    } else r.camera.lookAt(16, 16, 1);
+    let want: { x: number; y: number; z: number } | undefined;
+    if (pv !== undefined) { const t = v.get(pv, Transform)!, p = v.get(pv, PrevTransform) ?? t; want = { x: p.x + (t.x - p.x) * alpha, y: p.y + (t.y - p.y) * alpha, z: p.z + (t.z - p.z) * alpha }; }
+    const st = this.status;
+    const why = player === undefined ? `no player entity (entities ${this.map.size}, local server ${st?.localServer ?? "?"}, snapshots ${st?.snapshots ?? 0}${st?.error ? `: ${st.error}` : ""})` : "player not mirrored into the view";
+    const hadErr = this.camGuard.error; const tgt = this.camGuard.resolve(want, camE !== player ? "follow" : "player", why);
+    if (this.camGuard.error && !hadErr) console.warn(`[render] ${this.camGuard.error}`);
+    r.camera.lookAt(tgt.x, tgt.y, tgt.z);
+    r.sceneDiag = { entities: this.map.size, playerEid: player, cameraTarget: tgt, localServer: st?.localServer, snapshots: st?.snapshots, lastError: st?.error ?? this.camGuard.error };
     v.runPhase("renderPrep", 0);
     try { r.render(v, alpha); } catch (e) { showRenderError("Renderer exception", `${e instanceof Error ? e.stack ?? e.message : String(e)}\n${glInfo(r.gl)}`); return; }
     // all-black self-check over the first frames (daytime only, where black means a broken pass)
@@ -208,6 +216,9 @@ export class IsoView {
     }
   }
   private checks = 0; private blackFrames = 0;
+  /** Set by the app each frame (local-server state, snapshots received, startup error) for diag + the camera fallback. */
+  status: ViewStatus | undefined;
+  readonly camGuard = new CameraTargetGuard(CAMERA_FALLBACK, CAMERA_GRACE_FRAMES);
   private animalHp = new Map<Entity, { hp: number; hitUntil: number }>();
   private animalSfxAt = new Map<Entity, number>(); private sfxBudgetAt = 0;
   /** Animal anim (render state ids: 0 idle, 1 walk, 2 run, 4 hit, 5 death) from Animal.state (0 idle, 1 wander, 2 flee), movement and Health. */

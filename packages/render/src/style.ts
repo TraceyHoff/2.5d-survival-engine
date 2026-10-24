@@ -102,7 +102,7 @@ function deepMerge(base: Record<string, unknown>, patch: Record<string, unknown>
   return out;
 }
 export function mergeStyle(base: StyleConfig, patch: StylePatch): StyleConfig {
-  return deepMerge(structuredClone(base) as unknown as Record<string, unknown>, patch as Record<string, unknown>) as unknown as StyleConfig;
+  return deepMerge(cloneData(base) as unknown as Record<string, unknown>, patch as Record<string, unknown>) as unknown as StyleConfig;
 }
 
 /**
@@ -190,4 +190,16 @@ export function survivalTuningToStyle(t: Record<string, unknown>): { patch: Styl
   const extras: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(t)) if (!consumed.has(k)) extras[k] = v;
   return { patch, warnings, extras };
+}
+
+/** structuredClone for plain config data, with a fallback for browsers / WebViews without it (old Android WebViews). */
+export function cloneData<T>(v: T): T {
+  if (typeof structuredClone === "function") return structuredClone(v);
+  const c = (x: unknown): unknown => {
+    if (x === null || typeof x !== "object") return x;
+    if (ArrayBuffer.isView(x)) return (x as unknown as { slice(): unknown }).slice();
+    if (Array.isArray(x)) return x.map(c);
+    const o: Record<string, unknown> = {}; for (const [k, y] of Object.entries(x)) o[k] = c(y); return o;
+  };
+  return c(v) as T;
 }
