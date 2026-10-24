@@ -27,6 +27,7 @@ import { anchorFor, gridRot, LAYER_DECK, LAYER_OPENING, markLinked, slotTransfor
 import { Falloff } from "@engine/world";
 import { indexEntity } from "../spawn.js";
 import { tillSlots } from "../economy/config.js";
+import { initDefense } from "../combat/defenses.js";
 import { assignStallOwner, canPlaceStall } from "../economy/stall.js";
 import { Listings, StallHeader, StallLedger, StallSign } from "../components.js";
 
@@ -231,6 +232,7 @@ export function placePiece(world: World, builder: Entity | 0, sn: Snapped, opts:
     idx.dirty.add(e);
     spawnAttachments(world, e, def, sn);
     if (def.stall && builder) assignStallOwner(world, e, builder);
+    initDefense(world, e, def, builder);
   }
   return e;
 }

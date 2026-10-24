@@ -24,7 +24,7 @@ export const Survival = defineComponent("Survival", {
   staminaDelayTicks: "u16", // remaining regen delay (replicates as u16 ticks, per Netcode)
 }, { networked: true });
 
-export const enum DamageCause { None = 0, Starvation = 1, Dehydration = 2, Hypothermia = 3, Hyperthermia = 4, Combat = 5, Sunlight = 6, Fire = 7, Contact = 8, Explosion = 9 }
+export const enum DamageCause { None = 0, Starvation = 1, Dehydration = 2, Hypothermia = 3, Hyperthermia = 4, Combat = 5, Sunlight = 6, Fire = 7, Contact = 8, Explosion = 9, Turret = 10, Trap = 11 }
 export const VitalsState = defineComponent("VitalsState", { lastDamageCause: "u8" });
 /** Buff/debuff stat ids (core modifier stacks; 1..255, append only). */
 export const enum Stat { HungerRate = 1, ThirstRate = 2, StaminaRegen = 3, HealthRegen = 4, Insulation = 5, MoveSpeed = 6 }
@@ -98,6 +98,9 @@ export const Tribe = defineComponent("Tribe", { id: "u16" }, { networked: true, 
 export const PrivilegeZone = defineComponent("PrivilegeZone", { radius: "f32", tribe: "u16" }, { networked: true, persistent: true });
 export const DoorState = defineComponent("DoorState", { open: "u8", lockTribe: "u16" }, { networked: true, persistent: true });
 /** burnUntilTick is absolute so burning causes no per-tick writes (low-rate replication). */
+/** ADR-108 turret / trap state on a placed defense piece: readyTick = next shot or re-arm tick, owner = builder PlayerId
+ *  (never targeted, nor their party/clan), target = current turret target (render aim). Ammo lives in the piece's Container. */
+export const Defense = defineComponent("Defense", { readyTick: "u32", owner: "u32", target: "u32" }, { networked: true, persistent: true });
 export const Fuel = defineComponent("Fuel", { burnUntilTick: "u32", lit: "u8" }, { networked: true, persistent: true });
 export const Container = defineComponent("Container", {
   slotCount: { type: "u8", default: 12 }, maxWeight: "f32", weight: "f32", spoilMul: { type: "f32", default: 1 },
@@ -253,4 +256,5 @@ export const GAMEPLAY_COMPONENTS = [
   ExplosiveOwner, // append-only (server-only)
   VehicleCondition, // vehicle crafting (DESIGN.md §31)
   VehicleState, // append-only (ADR-101)
+  Defense, // append-only (ADR-108)
 ] as const;

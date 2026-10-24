@@ -102,6 +102,31 @@
      "sp": true,
      "mp": true
     }
+   },
+   {
+    "kind": "zombie_snuffer",
+    "category": "zombie",
+    "fromZombies": true,
+    "density": 0.04,
+    "biomeWeights": {
+     "grass": 1,
+     "forest": 1,
+     "stone": 0.5
+    },
+    "minPlayerDistance": 18,
+    "maxPlayerDistance": 40,
+    "perChunkCap": 1,
+    "globalCap": 4,
+    "despawnDistance": 60,
+    "group": [
+     1,
+     1
+    ],
+    "groupSpread": 0,
+    "modes": {
+     "sp": true,
+     "mp": true
+    }
    }
   ],
   "animals": [

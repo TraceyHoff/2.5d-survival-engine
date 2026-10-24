@@ -607,6 +607,8 @@
       "hp": 40,
       "solid": false,
       "light": true,
+      "fired": true,
+      "container": 1,
       "cost": [
         {
           "resource": "glass",
@@ -1417,6 +1419,203 @@
           "item": "stone",
           "count": 2,
           "fromTier": 1
+        }
+      ]
+    },
+    {
+      "key": "barbed_wire",
+      "placement": "free",
+      "layer": 1,
+      "tier": 1,
+      "hp": 180,
+      "ground": true,
+      "solid": false,
+      "features": {
+        "contact": {
+          "dps": 3,
+          "radius": 0.8,
+          "slowMul": 0.35,
+          "slowSeconds": 2
+        }
+      },
+      "cost": [
+        {
+          "resource": "scrap_metal",
+          "amount": 3
+        },
+        {
+          "resource": "sticks",
+          "amount": 2
+        }
+      ]
+    },
+    {
+      "key": "spike_trap",
+      "placement": "free",
+      "layer": 1,
+      "tier": 1,
+      "hp": 120,
+      "ground": true,
+      "solid": false,
+      "features": {
+        "contact": {
+          "dps": 12,
+          "radius": 0.6,
+          "slowMul": 0.7,
+          "slowSeconds": 0.75
+        }
+      },
+      "cost": [
+        {
+          "resource": "sticks",
+          "amount": 8
+        },
+        {
+          "resource": "wood",
+          "amount": 4
+        }
+      ]
+    },
+    {
+      "key": "bear_trap",
+      "placement": "free",
+      "layer": 1,
+      "tier": 2,
+      "hp": 150,
+      "ground": true,
+      "solid": false,
+      "features": {
+        "trap": {
+          "radius": 0.6,
+          "damage": 35,
+          "rootSeconds": 3,
+          "rearmSeconds": 8
+        }
+      },
+      "cost": [
+        {
+          "resource": "iron_ingot",
+          "amount": 2
+        },
+        {
+          "resource": "spring",
+          "amount": 1
+        },
+        {
+          "resource": "nails",
+          "amount": 2
+        }
+      ]
+    },
+    {
+      "key": "arrow_turret",
+      "placement": "free",
+      "layer": 2,
+      "tier": 2,
+      "hp": 400,
+      "ground": true,
+      "container": 4,
+      "features": {
+        "turret": {
+          "range": 12,
+          "damage": 14,
+          "cooldownSeconds": 1.2,
+          "ammo": [
+            "flint_arrow",
+            "iron_arrow",
+            "fire_arrow"
+          ]
+        }
+      },
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 10
+        },
+        {
+          "resource": "rope",
+          "amount": 3
+        },
+        {
+          "resource": "spring",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "key": "bolt_turret",
+      "placement": "free",
+      "layer": 2,
+      "tier": 3,
+      "hp": 700,
+      "ground": true,
+      "container": 4,
+      "features": {
+        "turret": {
+          "range": 16,
+          "damage": 30,
+          "cooldownSeconds": 2.0,
+          "ammo": [
+            "iron_bolt",
+            "steel_bolt"
+          ]
+        }
+      },
+      "cost": [
+        {
+          "resource": "iron_ingot",
+          "amount": 6
+        },
+        {
+          "resource": "spring",
+          "amount": 2
+        },
+        {
+          "resource": "nails",
+          "amount": 6
+        },
+        {
+          "resource": "rope",
+          "amount": 2
+        }
+      ]
+    },
+    {
+      "key": "flame_turret",
+      "placement": "free",
+      "layer": 2,
+      "tier": 3,
+      "hp": 600,
+      "ground": true,
+      "container": 4,
+      "features": {
+        "turret": {
+          "range": 6,
+          "damage": 8,
+          "cooldownSeconds": 1.5,
+          "ammo": [
+            "crude_oil",
+            "lamp_oil"
+          ],
+          "igniteChance": 0.6
+        }
+      },
+      "cost": [
+        {
+          "resource": "iron_ingot",
+          "amount": 8
+        },
+        {
+          "resource": "scrap_metal",
+          "amount": 6
+        },
+        {
+          "resource": "spring",
+          "amount": 1
+        },
+        {
+          "resource": "crude_oil",
+          "amount": 2
         }
       ]
     }

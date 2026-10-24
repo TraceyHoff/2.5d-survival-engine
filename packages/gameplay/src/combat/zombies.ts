@@ -28,6 +28,11 @@ import { TerrainRes } from "../world.js";
 import { swimSpeedMulAt } from "../systems/movement.js";
 import { applyDamage, setAnim } from "./combat.js";
 import { findPath, pieceHp } from "./path.js";
+import { lightAt, lightGrid, nearestLight, type ActiveLight } from "../systems/lights.js";
+import { snuffFire } from "../systems/fuel.js";
+import { attachmentsOf, pieceOf } from "../building/links.js";
+import { damagePiece } from "../building/integrity.js";
+import { BuildPiece, Fuel } from "../components.js";
 
 const PHASE_KEY = { [DayPhase.Night]: "night", [DayPhase.Dawn]: "dawn", [DayPhase.Day]: "day", [DayPhase.Dusk]: "dusk" } as const;
 export const currentPhaseKey = (world: World): "night" | "dawn" | "day" | "dusk" => PHASE_KEY[dayPhase(timeOfDay(world).t)];
@@ -97,10 +102,20 @@ function acquire(world: World, x: number, y: number, def: ZombieDef): { e: Entit
   return best && { e: best.e, seen: best.seen };
 }
 
+/** ADR-108 Snuffer targets: zombie -> light entity it is going for (sim-local, server). */
+const snuffs = new WeakMap<World, Map<Entity, Entity>>();
+const snuffsOf = (w: World): Map<Entity, Entity> => { let m = snuffs.get(w); if (!m) snuffs.set(w, (m = new Map())); return m; };
+/** Light-shy zombies are active in lightAvoid.phases (night, dusk by default). */
+export const lightAvoidActive = (world: World): boolean => gameplayDefs(world).lightAvoid.phases.includes(currentPhaseKey(world));
+/** The Snuffer a zombie entity is chasing a light for, if any (render / tests). */
+export const snuffTargetOf = (world: World, z: Entity): Entity | undefined => snuffs.get(world)?.get(z);
+
 export function zombieAISystem(world: World, dt: number): void {
   if (!isAuthority(world)) return;
   const defs = gameplayDefs(world); const ai = defs.ai; const tf = world.store(Transform); const br = world.store(ZombieBrain);
-  const ps = pathsOf(world); const isDay = currentPhaseKey(world) === "day";
+  const ps = pathsOf(world); const phase = currentPhaseKey(world); const isDay = phase === "day";
+  const avoid = defs.lightAvoid.phases.includes(phase); const sn = snuffsOf(world);
+  if (avoid) lightGrid(world);
   const breakTicks = (piece: Entity): number => pieceHp(world, piece) / 10;
   for (const z of world.query([Zombie, ZombieBrain, Transform, Health], [Dead])) {
     const idx = entityIndex(z); const s = br.slot(idx); const ts = tf.slot(idx);
@@ -130,6 +145,12 @@ export function zombieAISystem(world: World, dt: number): void {
       } else if (state === ZState.Investigate && world.tick > br.data.stateTick[s]! + secondsToTicks(ai.investigateSeconds, dt)) {
         setState(world, z, ZState.Wander);
       }
+      // ADR-108 Snuffer: at night go for the nearest active light unless a player is already in reach
+      if (def.light?.targetsLights && avoid && !(tgt?.seen && br.data.state[s] === ZState.AttackPlayer)) {
+        const nl = nearestLight(world, x, y, def.light.seekRange);
+        if (nl) { sn.set(z, nl.e); br.data.goalX[s] = nl.x; br.data.goalY[s] = nl.y; if (br.data.state[s] !== ZState.AttackStructure) setState(world, z, ZState.Chase); }
+        else sn.delete(z);
+      } else sn.delete(z);
       const st2 = br.data.state[s]! as ZState;
       if (st2 === ZState.Wander && (!ps.has(z) || world.tick >= br.data.repathAt[s]!)) {
         const rng = world.rngFor("zwander", world.getField(z, NetId, "id") ?? z);
@@ -151,13 +172,27 @@ export function zombieAISystem(world: World, dt: number): void {
     }
     const state = br.data.state[s]! as ZState;
     // act
+    const lt = sn.get(z);
+    if (lt !== undefined && state !== ZState.AttackStructure) {
+      const L = lightGrid(world).lights.find((l) => l.e === lt);
+      if (!L) { sn.delete(z); br.data.repathAt[s] = 0; }
+      else if (dist(x, y, L.x, L.y) <= def.attackRange + 0.7) {
+        if (world.tick >= br.data.attackAt[s]!) {
+          br.data.attackAt[s] = world.tick + secondsToTicks(def.attackCooldownSeconds, dt); br.markChanged(idx);
+          setAnim(world, z, Anim.Attack); snuffLight(world, z, L, def);
+        }
+        continue;
+      }
+    }
     if (state === ZState.AttackPlayer || state === ZState.AttackStructure) {
       const tgt = state === ZState.AttackPlayer ? br.data.target[s]! : br.data.blockPiece[s]!;
       if (!world.isAlive(tgt) || world.has(tgt, Dead)) { setState(world, z, ZState.Chase); br.data.repathAt[s] = 0; continue; }
       const tt = world.get(tgt, Transform)!; const reach = def.attackRange + (state === ZState.AttackStructure ? 0.7 : 0.3);
       if (dist(x, y, tt.x, tt.y) > reach) {
         if (state === ZState.AttackPlayer) { setState(world, z, ZState.Chase); continue; }
-        moveToward(world, z, tt.x, tt.y, def.speed * swimSpeedMulAt(world, x, y) * dt, ts);
+        const step0 = def.speed * swimSpeedMulAt(world, x, y) * dt;
+        const g0 = avoid && !def.light?.ignoresLight ? shyGoal(world, z, x, y, tt.x, tt.y, step0) : undefined;
+        moveToward(world, z, g0 ? g0[0] : tt.x, g0 ? g0[1] : tt.y, step0, ts);
         continue;
       }
       if (world.tick >= br.data.attackAt[s]!) {
@@ -176,11 +211,44 @@ export function zombieAISystem(world: World, dt: number): void {
       const blocked = structures(world).count ? stepBlockerCached(world, cx, cy, px, py) : 0;
       if (blocked) { br.data.blockPiece[s] = blocked; setState(world, z, ZState.AttackStructure); continue; }
       const step = def.speed * (state === ZState.Wander ? 0.5 : 1) * swimSpeedMulAt(world, x, y) * dt;
+      const shy = avoid && !def.light?.ignoresLight ? shyGoal(world, z, x, y, gx, gy, step) : undefined;
+      if (shy) { moveToward(world, z, shy[0], shy[1], step, ts); setAnim(world, z, Anim.Walk); continue; }
       if (moveToward(world, z, gx, gy, step, ts)) path.i++;
       setAnim(world, z, state === ZState.Wander ? Anim.Walk : Anim.Run);
-    } else setAnim(world, z, Anim.Idle);
+    } else {
+      const shy = avoid && !def.light?.ignoresLight ? shyGoal(world, z, x, y, x, y, def.speed * dt) : undefined;
+      if (shy) { moveToward(world, z, shy[0], shy[1], def.speed * dt, ts); setAnim(world, z, Anim.Walk); } else setAnim(world, z, Anim.Idle);
+    }
   }
   for (const z of [...ps.keys()]) if (!world.isAlive(z) || world.has(z, Dead)) ps.delete(z);
+  for (const z of [...sn.keys()]) if (!world.isAlive(z) || world.has(z, Dead)) sn.delete(z);
+}
+
+/**
+ * ADR-108 light avoidance: undefined = the move is fine. Inside a lit radius -> head straight out to its edge; about to
+ * step into one -> pace along the dark edge (tangent; direction flips every lightAvoid.paceSeconds, staggered per zombie).
+ */
+export function shyGoal(world: World, z: Entity, x: number, y: number, gx: number, gy: number, step: number): [number, number] | undefined {
+  const la = gameplayDefs(world).lightAvoid; const m = la.edgeMargin;
+  const inside = lightAt(world, x, y, 0);
+  if (inside) { const d = Math.hypot(x - inside.x, y - inside.y) || 1e-3; const R = inside.r + m + 0.05; return [inside.x + ((x - inside.x) / d) * R, inside.y + ((y - inside.y) / d) * R]; }
+  const dx = gx - x, dy = gy - y; const d = Math.hypot(dx, dy); const look = Math.max(step, 0.5);
+  const nx = d > 1e-6 ? x + (dx / d) * Math.min(look, d) : x, ny = d > 1e-6 ? y + (dy / d) * Math.min(look, d) : y;
+  const L = lightAt(world, nx, ny, m); if (!L) return undefined;
+  if (d > 1e-6 && Math.hypot(nx - L.x, ny - L.y) >= Math.hypot(x - L.x, y - L.y)) return undefined; // moving away: fine
+  const period = Math.max(1, secondsToTicks(la.paceSeconds, 1 / 20));
+  const dir = Math.floor((world.tick + (entityIndex(z) * 37)) / period) % 2 ? 1 : -1;
+  const R = L.r + m + 0.05; const a = Math.atan2(y - L.y, x - L.x) + dir * Math.max(step, 0.05) * 4 / R;
+  return [L.x + Math.cos(a) * R, L.y + Math.sin(a) * R];
+}
+
+/** Snuffer hit on a light: extinguish (extinguishChance) or damage the light's piece / vehicle. */
+function snuffLight(world: World, z: Entity, L: ActiveLight, def: ZombieDef): void {
+  const lt = def.light!; const piece = L.vehicle ? undefined : pieceOf(world, L.e) ?? (world.has(L.e, BuildPiece) ? L.e : undefined);
+  const fire = piece !== undefined ? attachmentsOf(world, piece).find((a) => world.has(a, Fuel)) : world.has(L.e, Fuel) ? L.e : undefined;
+  if (fire !== undefined && world.rngFor("snuffer", z).next() < lt.extinguishChance && snuffFire(world, fire, z)) return;
+  if (piece !== undefined) damagePiece(world, piece, lt.snuffDamage, z);
+  else if (world.has(L.e, Health)) applyDamage(world, L.e, lt.snuffDamage, z);
 }
 import { stepBlocker } from "./path.js";
 import { StructureIndexRes } from "../building/structure.js";

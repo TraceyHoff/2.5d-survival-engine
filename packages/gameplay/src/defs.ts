@@ -142,11 +142,23 @@ export interface PieceFeatures {
   readonly wardrobe?: boolean;
   readonly contact?: { readonly dps: number; readonly radius: number; readonly slowMul: number; readonly slowSeconds: number };
   readonly alarm?: { readonly radius: number; readonly cooldownSeconds: number };
+  /** ADR-108 auto turret: shoots the nearest hostile in range every cooldownSeconds, using one `ammo` item (any listed key)
+   *  from its Container per shot. igniteChance > 0 = flame turret (ignites the target). */
+  readonly turret?: { readonly range: number; readonly damage: number; readonly cooldownSeconds: number; readonly ammo: readonly string[]; readonly igniteChance?: number };
+  /** ADR-108 one-shot trap (bear trap): springs on the first hostile within radius, damage + root (MoveSpeed x0) for rootSeconds, re-arms after rearmSeconds. */
+  readonly trap?: { readonly radius: number; readonly damage: number; readonly rootSeconds: number; readonly rearmSeconds: number };
 }
+/** ADR-108 light behaviour of a zombie kind (zombies.json `light`). Absent = avoids lit areas at night. */
+export interface ZombieLightDef { readonly ignoresLight: boolean; readonly targetsLights: boolean; readonly seekRange: number; readonly snuffDamage: number; readonly extinguishChance: number }
+/** ADR-108 night light avoidance tuning (zombies.json `lightAvoid`). */
+export interface LightAvoidTuning { readonly phases: readonly ("night" | "dawn" | "day" | "dusk")[]; readonly gridCell: number; readonly rebuildTicks: number; readonly edgeMargin: number; readonly paceSeconds: number; readonly headlightRadius: number; readonly minRadius: number }
 export interface ZombieDef extends Visual {
   readonly id: number; readonly key: string; readonly hp: number; readonly speed: number; readonly damage: number; readonly structureDamage: number;
   readonly attackRange: number; readonly attackCooldownSeconds: number; readonly sightRange: number; readonly hearingMul: number; readonly variants: number;
+  /** ADR-108: render tint (rgb 0..1) for visually distinct kinds; light behaviour (absent = light-shy). */
+  readonly tint?: readonly [number, number, number]; readonly light?: ZombieLightDef;
 }
+export const DEFAULT_LIGHT_AVOID: LightAvoidTuning = { phases: ["night", "dusk"], gridCell: 8, rebuildTicks: 10, edgeMargin: 0.75, paceSeconds: 3, headlightRadius: 9, minRadius: 2 };
 export type PhaseTable<T> = { readonly night: T; readonly dawn: T; readonly day: T; readonly dusk: T };
 export interface SpawnTuning {
   readonly checkSeconds: number; readonly ratePerMinute: PhaseTable<number>; readonly cap: PhaseTable<number>; readonly capRadius: number;
@@ -184,6 +196,7 @@ export interface GameDefs {
   readonly spawning: SpawnTuning;
   readonly ai: AiTuning;
   readonly noise: NoiseTuning;
+  /** ADR-108 night light avoidance. */ readonly lightAvoid: LightAvoidTuning;
   readonly vitals: VitalsTuning;
   readonly environment: EnvironmentTuning;
   readonly movement: MovementTuning;
@@ -219,7 +232,7 @@ export interface RawPiece extends RawVisual {
   features?: PieceFeatures;
   rotSteps?: number; snap?: "vertex"; maxSlope?: number; minTier?: number; extraCost?: { item: string; count: number; fromTier?: number }[]; family?: string;
 }
-export interface RawZombie extends RawVisual { key: string; hp: number; speed: number; damage: number; structureDamage: number; attackRange: number; attackCooldownSeconds: number; sightRange: number; hearingMul: number; variants: number }
+export interface RawZombie extends RawVisual { key: string; hp: number; speed: number; damage: number; structureDamage: number; attackRange: number; attackCooldownSeconds: number; sightRange: number; hearingMul: number; variants: number; tint?: [number, number, number]; light?: ZombieLightDef }
 export interface RawDefs {
   items: { items: RawItem[] };
   recipes: { recipes: RawRecipe[] };
@@ -228,7 +241,7 @@ export interface RawDefs {
   environment: Omit<EnvironmentTuning, "weather"> & { weather: RawWeather[]; $comment?: string };
   pieces: { pieces: RawPiece[] };
   tiers: { tiers: (Omit<TierDef, "id" | "cost" | "raid"> & { cost: { item: string; count: number }[]; raid?: Partial<RaidMuls> })[]; building: BuildingTuning };
-  zombies: { zombies: RawZombie[]; spawning: SpawnTuning; ai: AiTuning; noise: NoiseTuning };
+  zombies: { zombies: RawZombie[]; spawning: SpawnTuning; ai: AiTuning; noise: NoiseTuning; lightAvoid?: LightAvoidTuning };
   movement: Omit<MovementTuning, "swimTiles" | "swimSpeedMul"> & { $comment?: string; swimTiles?: number[]; swimSpeedMul?: number };
   worldgen: { bands: { max: number; tile: number; nodes: string[]; nodeChance: number; temp?: number; humidity?: number }[]; unbuildableTiles: number[]; unwalkableTiles: number[] };
 }
@@ -389,6 +402,8 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
     if (p.rotSteps !== undefined && !(Number.isInteger(p.rotSteps) && p.rotSteps >= 1 && p.rotSteps <= 16)) err(`${where}.rotSteps must be 1..16`);
     if (p.minTier !== undefined && !(p.minTier >= 0 && p.minTier < tiers.length)) err(`${where}.minTier out of range`);
     if (p.stall && (p.stall.listings !== (p.container ?? 0))) err(`${where}.stall.listings must equal container`);
+    for (const a of p.features?.turret?.ammo ?? []) itemRef(a, `${where}.features.turret.ammo`);
+    if (p.features?.turret && !(p.container ?? 0)) err(`${where}.features.turret needs a container (ammo)`);
   }
 
   const zombies = new Map<number, ZombieDef>();
@@ -421,7 +436,7 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
   return {
     items, recipes, resources, pieces, pieceRegistry: pieceRegistry!, tiers, building: { ...raw.tiers.building }, zombies,
     zombieKinds: raw.zombies.zombies.map((z) => zomR.reg.id(z.key)), spoiledItem: spoiledItem ?? 0,
-    spawning: raw.zombies.spawning, ai: raw.zombies.ai, noise: raw.zombies.noise,
+    spawning: raw.zombies.spawning, ai: raw.zombies.ai, noise: raw.zombies.noise, lightAvoid: raw.zombies.lightAvoid ?? DEFAULT_LIGHT_AVOID,
     vitals: strip(raw.vitals), environment: { ...envRest, weather }, movement: { ...strip(raw.movement), swimTiles: new Set(raw.movement.swimTiles ?? []), swimSpeedMul: raw.movement.swimSpeedMul ?? 1 },
     worldgen: { bands, unbuildableTiles: new Set(raw.worldgen.unbuildableTiles), unwalkableTiles: new Set(raw.worldgen.unwalkableTiles) },
     lock, hashes: { items: itemsR.reg.hash, pieces: pieceHash, all }, bareHands,

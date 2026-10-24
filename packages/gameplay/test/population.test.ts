@@ -14,7 +14,7 @@ describe("population data", () => {
     expect(validateAiData(ai)).toEqual([]); expect(validateSpawnData(spawns, ai)).toEqual([]); expect(validateBotData(bots, ai)).toEqual([]);
   });
   it("covers zombies, the five animals (art keys) and five human archetypes", () => {
-    expect(spawns.tables.zombies.map((e) => e.kind)).toEqual(["zombie_walker", "zombie_runner", "zombie_brute"]);
+    expect(spawns.tables.zombies.map((e) => e.kind)).toEqual(["zombie_walker", "zombie_runner", "zombie_brute", "zombie_snuffer"]);
     expect(spawns.tables.animals.map((e) => e.kind)).toEqual(["animal_rabbit", "animal_deer", "animal_boar", "animal_wolf", "animal_chicken"]);
     expect(Object.values(bots.archetypes).map((b) => b.role)).toEqual(["gatherer", "builder", "trader", "raider", "loner"]);
   });

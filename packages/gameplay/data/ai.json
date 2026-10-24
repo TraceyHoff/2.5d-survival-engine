@@ -139,6 +139,40 @@
     }
    ]
   },
+  "zombie_snuffer": {
+   "kind": "zombie",
+   "fromZombies": true,
+   "aggro": {
+    "mode": "hostile",
+    "range": 12,
+    "leashRange": 24
+   },
+   "flee": {
+    "hpFrac": 0,
+    "range": 0
+   },
+   "wander": {
+    "radius": 8,
+    "idleSeconds": [
+     2,
+     5
+    ]
+   },
+   "loot": [
+    {
+     "item": "crude_oil",
+     "min": 1,
+     "max": 2,
+     "chance": 0.5
+    },
+    {
+     "item": "bone",
+     "min": 1,
+     "max": 2,
+     "chance": 0.4
+    }
+   ]
+  },
   "animal_rabbit": {
    "kind": "animal",
    "hp": 10,

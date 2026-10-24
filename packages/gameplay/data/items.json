@@ -739,7 +739,8 @@
       "name": "Crude Oil",
       "category": "resource",
       "maxStack": 20,
-      "weight": 1.0
+      "weight": 1.0,
+      "fuelSeconds": 120
     },
     {
       "key": "chromite_ore",

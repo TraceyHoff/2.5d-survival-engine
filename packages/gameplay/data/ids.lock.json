@@ -713,11 +713,18 @@
     "wall_corner_angled": 64,
     "wall_corner_inner": 65,
     "wall_corner_outer": 66,
-    "wall_fortified": 67
+    "wall_fortified": 67,
+    "arrow_turret": 68,
+    "barbed_wire": 69,
+    "bear_trap": 70,
+    "bolt_turret": 71,
+    "flame_turret": 72,
+    "spike_trap": 73
   },
   "zombies": {
     "zombie_brute": 1,
     "zombie_runner": 2,
-    "zombie_walker": 3
+    "zombie_walker": 3,
+    "zombie_snuffer": 4
   }
 }

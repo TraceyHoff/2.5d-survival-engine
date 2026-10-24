@@ -11,7 +11,7 @@
 import "./gameplay-panels.css";
 import {
   buildView, gameplayDefs, cancelQueuedCraftIntent, clanAcceptIntent, clanDeclineIntent, clanRosterRows, onlineTargets, paintIntent, paintTarget, type SocialDirectory, clanCreateIntent, clanDemoteIntent, clanDisbandIntent, clanInviteIntent, clanKickIntent, clanLeaveIntent,
-  clanPromoteIntent, clanSetGoalIntent, clanSetRankPermsIntent, clanView, collectTillIntent, containerView, CONTAINER_PAGE_SIZE, craftingView, depositIntent, openContainer, withdrawIntent, equipCosmeticIntent, inventoryView, JOB_STATE_LABEL,
+  clanPromoteIntent, clanSetGoalIntent, clanSetRankPermsIntent, clanView, collectTillIntent, containerView, CONTAINER_PAGE_SIZE, craftingView, depositIntent, fuelView, toggleFireIntent, openContainer, withdrawIntent, equipCosmeticIntent, inventoryView, JOB_STATE_LABEL,
   nearestStall, partyAcceptIntent, partyDeclineIntent, partyInviteIntent, partyKickIntent, partyLeaveIntent, partyView, queueCraftIntent, buyFromStallIntent,
   setAppearanceIntent, setStallNameIntent, priceItemChoices, listItemIntents, unstockStallIntent, type StallListDraft, setStallOpenIntent, stallView, togglePermMask, wardrobeView, placeIntent,
   type BuildSelection, type MenuCtx, type MenuIntent, camperStationView, vehicleRefuelIntent, type CamperRecipeView,
@@ -77,6 +77,19 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       if (cv) containerPage = cv.page;
       const out: Node[] = [];
       if (!v.length && !cv) return [kit.para("Your pack is empty.")];
+      // ADR-108: fired stations / lights show a fuel section — status, Light/Put out toggle (X on pad), and one button
+      // per fuel item in the pack (adds the whole stack). All plain focusable buttons: touch, D-pad and keys work alike.
+      const fv = cv ? fuelView(c, cv.entity) : undefined;
+      if (cv && fv) {
+        const fs = el("section", { "data-role": "station-fuel" }); const secs = Math.round(fv.secondsLeft);
+        fs.append(el("p", { "data-role": "fuel-time" }, `${fv.lit ? "Lit" : "Out"} · fuel ${Math.floor(secs / 60)}m ${String(secs % 60).padStart(2, "0")}s`));
+        fs.append(btn(fv.lit ? "Put out" : "Light", "fire-toggle", () => send(toggleFireIntent(cv.entity), fv.lit ? "Put out." : "Lit."), { role: "toggle", pressed: fv.lit, disabled: !fv.lit && secs <= 0, title: fv.lit ? "Extinguish (X)" : secs > 0 ? "Light (X)" : "Add fuel first", data: { pad: "X" } }));
+        const g = grid(); g.dataset["role"] = "fuel-slots";
+        for (const f of fv.fuels) g.append(btn(`${f.name} ×${f.count}`, `fuel-${f.item}`, () => send(depositIntent(cv.entity, f.item, f.count), `Added ${f.name} ×${f.count}.`), { role: "slot", title: `${f.seconds}s each · add as fuel`, data: { item: String(f.item), icon: f.key } }));
+        if (!fv.fuels.length) fs.append(kit.para("Carry wood, coal or crude oil to fuel this."));
+        else fs.append(g);
+        out.push(heading("Fuel"), fs);
+      }
       if (cv) out.push(heading("Your pack"));
       if (!v.length) out.push(kit.para("Your pack is empty."));
       else { const g = grid(); for (const s of v) g.append(btn(`${s.name} ×${s.count}`, `slot-${s.slot}`, () => cv ? send(depositIntent(cv.entity, s.item, s.count), `Stored ${s.name} ×${s.count}.`) : kit.status(s.tooltip.replace(/\n/g, " · ")), { title: cv ? `${s.tooltip}\nStore in container` : s.tooltip, role: "slot", data: { item: String(s.item), icon: s.icon } })); out.push(g); }

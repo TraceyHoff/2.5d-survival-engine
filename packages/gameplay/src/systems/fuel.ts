@@ -9,7 +9,7 @@ import { BuildPiece, Container, CraftingStation, Dead, Emitter, Fuel, IntentActi
 import { emitterSpecs, EmitterKind } from "../realism.js";
 import { gameplayDefs, isAuthority, rangeSlack } from "../config.js";
 import { secondsToTicks, StationKind, type GameDefs } from "../defs.js";
-import { BuildFail, BuildFailed, emit, FireToggled, FuelOut } from "../events.js";
+import { BuildFail, BuildFailed, emit, ev, FireToggled, FuelOut } from "../events.js";
 import { listSlots, removeItem } from "../inventory.js";
 import { resolveAttachment } from "../building/links.js";
 import { AttachKind } from "../components.js";
@@ -28,6 +28,19 @@ function burnNext(world: World, fire: Entity, defs: GameDefs, dt: number): boole
 export function fuelMulOf(world: World, fire: Entity, defs: GameDefs): number {
   const piece = pieceOf(world, fire); const t = piece === undefined ? undefined : world.getField(piece, BuildPiece, "type");
   return (t === undefined ? undefined : defs.pieces.get(t)?.fuelMul) ?? 1;
+}
+/** ADR-108: a Snuffer (or anything) puts a lit fire / light out. Returns true if it was lit. */
+export function snuffFire(world: World, fire: Entity, by: Entity = 0 as Entity): boolean {
+  if (!world.has(fire, Fuel) || !world.getField(fire, Fuel, "lit")) return false;
+  setLit(world, fire, 0); emit(world, LightSnuffed, { entity: fire, by }); return true;
+}
+export const LightSnuffed = ev<{ entity: Entity; by: Entity }>("gameplay.LightSnuffed");
+/** Seconds of burn left on a fire: current item + every fuel item still in its Container (x fuelMul). */
+export function fuelSecondsLeft(world: World, fire: Entity, dt = 1 / 20): number {
+  const defs = gameplayDefs(world); const mul = fuelMulOf(world, fire, defs);
+  let s = Math.max(0, (world.getField(fire, Fuel, "burnUntilTick") ?? 0) - world.tick) * dt;
+  if (world.has(fire, Container)) for (const x of listSlots(world, fire)) s += (defs.items.get(x.item)?.fuelSeconds ?? 0) * x.count * mul;
+  return s;
 }
 function setLit(world: World, fire: Entity, lit: number): void {
   world.setField(fire, Fuel, "lit", lit);

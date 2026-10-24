@@ -13,7 +13,9 @@ import { itemInfo, type NameLookup } from "../economy/provenance.js";
 import { BuyFromStallCmd, CollectTillCmd, SetListingCmd, SetStallNameCmd, SetStallOpenCmd, StockStallCmd, UnstockStallCmd, listingRevision, stallListings, stallName, tillOf } from "../economy/stall.js";
 import { CancelQueuedCraftCmd, MAX_CRAFT_COUNT, QueueCraftCmd, craftQueueReason, owedOf } from "../systems/craft_queue.js";
 import { pieceCost } from "../building/place.js";
-import { DepositCmd, PaintCmd, PlaceCmd, WithdrawCmd } from "../input.js";
+import { DepositCmd, PaintCmd, PlaceCmd, ToggleFireCmd, WithdrawCmd } from "../input.js";
+import { Fuel } from "../components.js";
+import { fuelSecondsLeft } from "../systems/fuel.js";
 import { COSMETICS, EquipCosmeticCmd, SetAppearanceCmd, canEditAppearance, hasCreatedLook, nearWardrobe, unlocksOf } from "../customization.js";
 import { PartyAcceptCmd, PartyDeclineCmd, PartyInviteCmd, PartyKickCmd, PartyLeaveCmd, PARTY_RULES } from "../party.js";
 import { ClanAcceptCmd, ClanDeclineCmd, ClanCreateCmd, ClanDemoteCmd, ClanDisbandCmd, ClanInviteCmd, ClanKickCmd, ClanLeaveCmd, ClanPromoteCmd, ClanSetGoalCmd, ClanSetRankPermsCmd } from "../clan.js";
@@ -77,6 +79,15 @@ export function containerView(c: MenuCtx, e: Entity, page = 0, pageSize = CONTAI
   return { entity: e, slotCount: n, page: pg, pages, first, slots, weight: box.weight, maxWeight: box.maxWeight };
 }
 export const withdrawIntent = (target: Entity, item: number, count: number): MenuIntent => intent(WithdrawCmd, { target, item, count }, ["target"]);
+/** ADR-108 station fuel panel: lit state, burn time left, and the fuel items the player can drop in. */
+export interface FuelView { lit: boolean; secondsLeft: number; fuels: { item: number; key: string; name: string; count: number; seconds: number }[] }
+export function fuelView(c: MenuCtx, fire: Entity): FuelView | undefined {
+  const w = c.world; if (!w.has(fire, Fuel)) return undefined; const defs = gameplayDefs(w);
+  const fuels: FuelView["fuels"] = [];
+  for (const x of listSlots(w, c.player)) { const it = defs.items.get(x.item); if (!it || !it.fuelSeconds) continue; const f = fuels.find((y) => y.item === x.item); if (f) f.count += x.count; else fuels.push({ item: x.item, key: it.key, name: it.name, count: x.count, seconds: it.fuelSeconds }); }
+  return { lit: (w.getField(fire, Fuel, "lit") ?? 0) > 0, secondsLeft: fuelSecondsLeft(w, fire), fuels };
+}
+export const toggleFireIntent = (target: Entity): MenuIntent => intent(ToggleFireCmd, { target }, ["target"]);
 export const depositIntent = (target: Entity, item: number, count: number): MenuIntent => intent(DepositCmd, { target, item, count }, ["target"]);
 
 export function craftingView(c: MenuCtx): CraftingView {
