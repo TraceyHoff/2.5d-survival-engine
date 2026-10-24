@@ -168,8 +168,41 @@ class MCanvas(Canvas):
             tm = (1, 0) if rp == "P" else (0, 1); rp = NEU; kw.setdefault("ink", NEU_INK)
         elif tm is None: tm = (0, 0)
         m_im = Canvas.part(s, polys, rp, **kw)
-        if m_im is not None and m_im.getbbox(): s._upd(m_im, tm, ring=kw.get("outline", True))
+        if m_im is not None and m_im.getbbox():
+            s._upd(m_im, tm, ring=kw.get("outline", True))
+            if s.detail and tuple(tm) != (0, 0): s._wear_detail(m_im, tuple(tm))
         return m_im
+    detail = None   # slot name while drawing hair/wearables: surface detail pass (wear_detail, mostly visible at @2x)
+    def _wear_detail(s, m_im, tm):
+        """Deterministic surface detail inside a tinted part, in part-local coords (stable across frames). Periods of
+        2-4 supersample px = 1-2 @2x px: twill/strands resolve at @2x and average out at 1x (1x px = 4 SS px)."""
+        bb = m_im.getbbox(); x0, y0, x1, y1 = bb
+        if x1 - x0 < 3 * SS or y1 - y0 < 3 * SS: return
+        m = np.asarray(m_im.crop(bb), np.float32) / 255
+        er = np.asarray(m_im.crop(bb).filter(ImageFilter.MinFilter(2 * SS - 1)), np.float32) / 255     # interior (~1 1x px in)
+        er2 = np.asarray(m_im.crop(bb).filter(ImageFilter.MinFilter(3 * SS - 1)), np.float32) / 255
+        h, w = m.shape; yy, xx = np.mgrid[0:h, 0:w].astype(np.float32); u = xx / max(w, 1); v = yy / max(h, 1)
+        k = np.ones((h, w), np.float32)
+        if s.detail == "hair":
+            ph = xx / (1.6 * SS) + 1.3 * np.sin(v * 5.0 + u * 2.0)                       # strand clusters (wavy vertical)
+            st = (np.sin(ph * 2 * np.pi) + 1) / 2
+            k -= .13 * (st > .78) * er                                                    # dark strand gaps
+            k += .10 * ((st < .12) & (v < .55)) * er                                      # highlight strands, upper half
+            k -= .06 * np.clip(v - .55, 0, 1) * 2 * er                                    # shading toward the ends
+            clu = (np.sin(xx / (5 * SS) * 2 * np.pi + v * 3) > .92)
+            k -= .08 * clu * er                                                           # cluster partings
+        else:
+            tw = (((xx + yy) // 2) % 4 < 2)                                               # twill weave (2 SS px = 1 @2x px)
+            k -= .045 * tw * er
+            cr = np.abs(np.sin((u * 1.6 + v * .7) * np.pi * 2.2)) < .07                   # soft fold creases
+            k -= .10 * cr * er2
+            ring = (er > .5) & (er2 < .5)                                                 # seam line just inside the edge
+            dash = ((xx + yy) // (2 * SS)) % 2 == 0                                       # stitch dashes
+            k += .16 * (ring & dash)
+            if tm == (0, 1): k -= .16 * ((m > .5) & (er < .5))                            # darker trim edge: clear color2 separation
+        a = np.asarray(s.img).copy(); reg = a[y0:y1, x0:x1].astype(np.float32)
+        wgt = m[..., None]; reg[..., :3] = reg[..., :3] * (1 - wgt + wgt * k[..., None])
+        a[y0:y1, x0:x1] = np.clip(reg + .5, 0, 255).astype(np.uint8); s.img = Image.fromarray(a, "RGBA")
     def _detail(s, m, tm):
         if tm is not None: s._upd(m, tm, ring=False)
     def fill(s, polys, color, alpha=255, clip=None, blur_r=0, tm=None):

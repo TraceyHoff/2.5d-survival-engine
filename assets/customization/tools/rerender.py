@@ -72,25 +72,30 @@ def main(eng, prefixes, slots, tight, jobs):
     assert keys and all(k in JOBS for k in keys), [k for k in keys if k not in JOBS]
     S = {s["key"]: s for s in m["sprites"]}
     work = [(k, [(a, len(an["frames"]) * an.get("directions", 1), an.get("directions", 1)) for a, an in S[k]["animations"].items()]) for k in keys]
-    with Pool(jobs) as P: res = dict(P.imap_unordered(render_sprite, work))
-    for k in keys:
-        out = res[k]; n = len(out); rows = -(-n // COLS); pk = "cz_tmp_" + k[3:]
-        o1 = np.zeros((rows * FH, COLS * FW, 4), np.uint8); ot = np.zeros((rows * FH, COLS * FW, 3), np.uint8); o2 = np.zeros((2 * rows * FH, 2 * COLS * FW, 4), np.uint8)
-        for c, fr in enumerate(out):
-            x, y = c % COLS * FW, c // COLS * FH
-            o1[y:y + FH, x:x + FW] = fr[0]; ot[y:y + FH, x:x + FW] = fr[1][..., :3]; o2[2 * y:2 * y + 2 * FH, 2 * x:2 * x + 2 * FW] = fr[2]
-        for arr, p, mode in ((o1, f"atlases/{pk}.png", "RGBA"), (o2, f"atlases/{pk}@2x.png", "RGBA"), (ot, f"atlases/{pk}.tintmask.png", "RGB")):
-            Image.fromarray(arr, mode).save(os.path.join(D, p))
-        m["atlases"].append({"key": pk, "image": f"atlases/{pk}.png", "frameW": FW, "frameH": FH, "columns": COLS, "rows": rows,
-                             "pages": [{"scale": 2, "image": f"atlases/{pk}@2x.png"}], "masks": {"tintmask": f"atlases/{pk}.tintmask.png"}})
-        c = 0
-        for a, an in S[k]["animations"].items():
-            df = []
-            for _ in range(len(an["frames"]) * an.get("directions", 1)):
-                df.append({"atlas": pk, "rect": {"x": c % COLS * FW, "y": c // COLS * FH, "w": FW, "h": FH}, "anchor": {"x": 0.5, "y": FEET / FH}}); c += 1
-            an["dirFrames"] = df
+    body = any(k.startswith("body_") for k in keys)
+    with Pool(jobs) as P:     # stream: write each sprite's temp page as soon as it is rendered (bounded memory)
+        for k, out in P.imap_unordered(render_sprite, work):
+            n = len(out); rows = -(-n // COLS); pk = "cz_tmp_" + k.replace("cz_", "", 1)
+            o1 = np.zeros((rows * FH, COLS * FW, 4), np.uint8); ot = np.zeros((rows * FH, COLS * FW, 3), np.uint8)
+            o2 = np.zeros((2 * rows * FH, 2 * COLS * FW, 4), np.uint8); t2 = np.zeros((2 * rows * FH, 2 * COLS * FW, 3), np.uint8)
+            for c, fr in enumerate(out):
+                x, y = c % COLS * FW, c // COLS * FH
+                o1[y:y + FH, x:x + FW] = fr[0]; ot[y:y + FH, x:x + FW] = fr[1][..., :3]; o2[2 * y:2 * y + 2 * FH, 2 * x:2 * x + 2 * FW] = fr[2]
+                t2[2 * y:2 * y + 2 * FH, 2 * x:2 * x + 2 * FW] = fr[3][..., :3]
+            del out
+            pages = [(o1, f"atlases/{pk}.png", "RGBA"), (o2, f"atlases/{pk}@2x.png", "RGBA"), (ot, f"atlases/{pk}.tintmask.png", "RGB")]
+            if k.startswith("body_"): pages.append((t2, f"atlases/{pk}.tintmask@2x.png", "RGB"))   # bodies keep tintmask@2x
+            for arr, p, mode in pages: Image.fromarray(arr, mode).save(os.path.join(D, p))
+            m["atlases"].append({"key": pk, "image": f"atlases/{pk}.png", "frameW": FW, "frameH": FH, "columns": COLS, "rows": rows,
+                                 "pages": [{"scale": 2, "image": f"atlases/{pk}@2x.png"}], "masks": {"tintmask": f"atlases/{pk}.tintmask.png"}})
+            c = 0
+            for a, an in S[k]["animations"].items():
+                df = []
+                for _ in range(len(an["frames"]) * an.get("directions", 1)):
+                    df.append({"atlas": pk, "rect": {"x": c % COLS * FW, "y": c // COLS * FH, "w": FW, "h": FH}, "anchor": {"x": 0.5, "y": FEET / FH}}); c += 1
+                an["dirFrames"] = df
     json.dump(m, open(MP, "w"), indent=1); open(MP, "a").write("\n")
-    rectpack.main(eng, slots, False, tight)
+    rectpack.main(eng, slots, False, tight, body)
 
 if __name__ == "__main__":
     a = sys.argv; arg = lambda f, d=None: a[a.index(f) + 1] if f in a else d

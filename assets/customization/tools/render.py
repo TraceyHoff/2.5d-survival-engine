@@ -3,6 +3,7 @@ sys.path.insert(0, os.path.dirname(__file__)); sys.path.append(os.path.join(os.p
 from PIL import Image
 from rig import pose, Ctx, frame_list, rows_for, FW, FH, COLS, PAD
 import parts
+DETAIL_SLOTS = ("hair", "hat", "top", "bottom", "shoes")   # wear detail pass (rig.MCanvas._wear_detail)
 
 def draw(c, slot, spec, hat=False):
     if slot == "body": parts.body(c, spec)
@@ -17,6 +18,7 @@ def draw(c, slot, spec, hat=False):
 
 def render_frame(bt, slot, spec, d, anim, fi, n, hat=False, part=None):
     K = pose(bt, d, anim, fi, n); c = Ctx(K); c.extra = None
+    c.cv.detail = slot if slot in DETAIL_SLOTS else None
     draw(c, slot, spec, hat)
     if part == "sleeves": c.items = []; c.run(armcut=False, extra=c.extra)
     elif part == "main": c.run(armcut=True, extra=None)
