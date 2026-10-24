@@ -6,8 +6,11 @@ let branchIdx = -1, branchKey = "";
 const branches = [];
 function branch(key, name, icon) { branchIdx++; branchKey = key; branches.push({ key, name, icon }); }
 /** n(key, name, tier, lane, requires, effects, desc, cost) */
+let override = "";
+/** ADR-132: place one node in another branch WITHOUT moving it in the (append-only) node order. */
+function inBranch(key, f) { const prev = override; override = key; f(); override = prev; }
 function n(key, name, tier, lane, requires, effects, desc, cost = tier >= 4 ? 3 : tier >= 2 ? 2 : 1) {
-  nodes.push({ key, name, branch: branchKey, tier, x: branchIdx * 260 + lane * 80, y: tier * 110, cost, requires, effects, desc, icon: `skill_${key}` });
+  nodes.push({ key, name, branch: override || branchKey, tier, x: (override ? 0 : branchIdx * 260) + lane * 80, y: tier * 110, cost, requires, effects, desc, icon: `skill_${key}` });
 }
 const m = (o) => ({ mods: o });
 const sk = (key, level, extra = {}) => ({ skill: { key, level }, ...extra });
@@ -16,11 +19,11 @@ branch("survival", "Survival", "skill_branch_survival");
 n("forager", "Forager", 0, 1, [], m({ gather: 0.1 }), "+10% gathering yield.");
 n("pack_mule", "Pack Mule", 1, 0, ["forager"], m({ carry: 0.15 }), "+15% carry weight.");
 n("firekeeper", "Firekeeper", 1, 2, ["forager"], m({ fuel: 0.15 }), "Fires you tend burn fuel 15% slower.");
-n("iron_stomach", "Iron Stomach", 2, 1, ["forager"], { perk: "iron_stomach" }, "Eat spoiled/rotten food without getting sick, but each such meal costs 4 health.");
+inBranch("perks", () => n("iron_stomach", "Iron Stomach", 0, 1, [], { perk: "iron_stomach" }, "Eat spoiled/rotten food without getting sick, but each such meal costs 4 health.", 2));
 n("scavenger", "Scavenger", 2, 0, ["pack_mule"], m({ gather: 0.1 }), "+10% gathering yield.");
 n("beast_of_burden", "Beast of Burden", 3, 0, ["scavenger"], m({ carry: 0.25, noise: 0.1 }), "+25% carry weight; your gear rattles (+10% noise).");
 n("ember_saver", "Ember Saver", 3, 2, ["firekeeper"], m({ fuel: 0.2 }), "Fires you tend burn fuel 20% slower.");
-n("hardy", "Hardy", 3, 1, ["iron_stomach"], m({ nutrition: 0.1 }), "+10% nutrition from all food.");
+n("hardy", "Hardy", 3, 1, ["forager"], m({ nutrition: 0.1 }), "+10% nutrition from all food.");
 n("lumberjack", "Lumberjack", 4, 0, ["beast_of_burden"], m({ gather: 0.2 }), "+20% gathering yield.");
 n("wilderness_master", "Wilderness Master", 5, 1, ["lumberjack", "hardy", "ember_saver"], m({ gather: 0.1, carry: 0.1, xp: 0.1 }), "Capstone: +10% yield, carry and XP.");
 
@@ -69,7 +72,7 @@ n("irrigator", "Irrigator", 2, 1, ["composter"], m({ cropYield: 0.15 }), "+15% c
 n("orchardist", "Orchardist", 3, 0, ["irrigator"], m({ cropYield: 0.15 }), "+15% crop harvest yield.");
 n("herbalist", "Herbalist", 3, 2, ["irrigator", "seed_saver"], m({ heal: 0.1 }), "+10% healing from medicine and food.");
 n("master_farmer", "Master Farmer", 4, 1, ["orchardist", "herbalist"], m({ cropYield: 0.25, xp: 0.05 }), "Capstone: +25% crop yield, +5% XP.");
-n("monoculture", "Monoculture", 5, 1, ["master_farmer"], m({ cropYield: 0.3, gather: -0.1 }), "+30% crop yield but -10% wild gathering.");
+inBranch("perks", () => n("monoculture", "Monoculture", 1, 0, ["iron_stomach"], m({ cropYield: 0.3, gather: -0.1 }), "+30% crop yield but -10% wild gathering.", 3));
 
 branch("husbandry", "Animal Husbandry", "skill_branch_husbandry");
 n("husbandry_1", "Animal Handler", 0, 1, [], sk("husbandry", 1), "Craft animal feed; tame passive animals by using feed next to them.");
@@ -99,7 +102,7 @@ n("apothecary", "Apothecary", 1, 2, ["first_aid"], m({ heal: 0.1 }), "+10% heali
 n("triage", "Triage", 2, 0, ["field_medic"], m({ heal: 0.15 }), "+15% healing.");
 n("antiseptics", "Antiseptics", 2, 2, ["apothecary"], m({ heal: 0.1, nutrition: 0.05 }), "+10% healing, +5% nutrition.");
 n("surgeon", "Surgeon", 3, 1, ["triage", "antiseptics"], m({ heal: 0.25 }), "+25% healing.");
-n("pharmacologist", "Pharmacologist", 4, 2, ["surgeon", "chemistry_1"], m({ heal: 0.15 }), "+15% healing.");
+n("pharmacologist", "Pharmacologist", 4, 2, ["surgeon"], m({ heal: 0.15 }), "+15% healing.");
 n("doctor", "Doctor", 5, 1, ["pharmacologist"], m({ heal: 0.25, xp: 0.05 }), "Capstone: +25% healing, +5% XP.");
 
 branch("building", "Building", "skill_branch_building");
@@ -109,7 +112,7 @@ n("joiner", "Joiner", 1, 2, ["carpenter"], m({ carry: 0.05 }), "+5% carry weight
 n("architect", "Architect", 2, 1, ["mason", "joiner"], m({ xp: 0.05 }), "+5% XP.");
 n("fortifier", "Fortifier", 3, 0, ["architect"], m({ gather: 0.05 }), "+5% gathering yield.");
 n("interior_designer", "Interior Designer", 3, 2, ["architect"], m({ xp: 0.05 }), "+5% XP (decorating counts as building).");
-n("hearth_builder", "Hearth Builder", 4, 2, ["interior_designer", "firekeeper"], m({ fuel: 0.15 }), "Fires you tend burn 15% slower.");
+n("hearth_builder", "Hearth Builder", 4, 2, ["interior_designer"], m({ fuel: 0.15 }), "Fires you tend burn 15% slower.");
 n("master_builder", "Master Builder", 5, 1, ["fortifier", "hearth_builder"], m({ carry: 0.1, xp: 0.05 }), "Capstone: +10% carry, +5% XP.");
 
 branch("vehicles", "Vehicles & Mechanics", "skill_branch_vehicles");
@@ -130,7 +133,7 @@ n("silent_hunter", "Silent Hunter", 2, 0, ["shadow"], m({ noise: -0.1, dmg_bow: 
 n("assassin", "Assassin", 3, 2, ["backstabber", "silent_hunter"], m({ dmg_blade: 0.2, carry: -0.05 }), "+20% blade damage but travel light (-5% carry).");
 n("ghost", "Ghost", 3, 0, ["silent_hunter"], m({ noise: -0.2 }), "-20% noise.");
 n("phantom", "Phantom", 4, 1, ["ghost", "assassin"], m({ noise: -0.15, xp: 0.05 }), "Capstone: -15% noise, +5% XP.");
-n("light_pack", "Light Pack", 5, 1, ["phantom"], m({ noise: -0.1, carry: -0.1 }), "-10% noise but -10% carry.");
+inBranch("perks", () => n("light_pack", "Light Pack", 1, 2, ["iron_stomach"], m({ noise: -0.1, carry: -0.1 }), "-10% noise but -10% carry.", 3));
 
 branch("leadership", "Leadership & Clan", "skill_branch_leadership");
 n("rally", "Rally", 0, 1, [], m({ share: 0.1 }), "Clanmates/partymates within 20 tiles get 10% of your XP.");
@@ -157,7 +160,18 @@ const data = {
     breedSeconds: 1200, maxPerTrough: 6,
     animals: { animal_chicken: { produce: "egg", seconds: 300 }, animal_duck: { produce: "egg", seconds: 360 }, animal_goose: { produce: "egg", seconds: 420 }, animal_turkey: { produce: "egg", seconds: 420 }, animal_cow: { produce: "milk", seconds: 420 }, animal_goat: { produce: "milk", seconds: 360 }, animal_sheep: { produce: "wool", seconds: 480 } },
   },
-  branches, nodes,
+  branches: [...branches, { key: "perks", name: "Trade-off Perks", icon: "skill_iron_stomach" /* placeholder until Art ships skill_branch_perks */ }],
+  // ADR-132: each category is its own tree (own tab); prerequisites never cross categories (enforced by tests).
+  categories: [
+    { key: "perks", name: "Buffs & Perks", icon: "skill_iron_stomach", branches: ["perks", "leadership"] },
+    { key: "survival", name: "Survival & Gathering", icon: "skill_branch_survival", branches: ["survival"] },
+    { key: "homestead", name: "Farming, Animals & Cooking", icon: "skill_branch_farming", branches: ["farming", "husbandry", "cooking"] },
+    { key: "medicine", name: "Medicine", icon: "skill_branch_medicine", branches: ["medicine"] },
+    { key: "crafting", name: "Crafting & Building", icon: "skill_branch_crafting", branches: ["crafting", "building"] },
+    { key: "combat", name: "Combat & Weapon Mastery", icon: "skill_branch_combat", branches: ["combat", "stealth"] },
+    { key: "vehicles", name: "Vehicles & Mechanics", icon: "skill_branch_vehicles", branches: ["vehicles"] },
+  ],
+  nodes,
 };
 writeFileSync(new URL("../data/skills.json", import.meta.url), JSON.stringify(data, null, 1) + "\n");
 console.log(`skills: ${branches.length} branches, ${nodes.length} nodes`);

@@ -162,6 +162,74 @@
    "key": "leadership",
    "name": "Leadership & Clan",
    "icon": "skill_branch_leadership"
+  },
+  {
+   "key": "perks",
+   "name": "Trade-off Perks",
+   "icon": "skill_iron_stomach"
+  }
+ ],
+ "categories": [
+  {
+   "key": "perks",
+   "name": "Buffs & Perks",
+   "icon": "skill_iron_stomach",
+   "branches": [
+    "perks",
+    "leadership"
+   ]
+  },
+  {
+   "key": "survival",
+   "name": "Survival & Gathering",
+   "icon": "skill_branch_survival",
+   "branches": [
+    "survival"
+   ]
+  },
+  {
+   "key": "homestead",
+   "name": "Farming, Animals & Cooking",
+   "icon": "skill_branch_farming",
+   "branches": [
+    "farming",
+    "husbandry",
+    "cooking"
+   ]
+  },
+  {
+   "key": "medicine",
+   "name": "Medicine",
+   "icon": "skill_branch_medicine",
+   "branches": [
+    "medicine"
+   ]
+  },
+  {
+   "key": "crafting",
+   "name": "Crafting & Building",
+   "icon": "skill_branch_crafting",
+   "branches": [
+    "crafting",
+    "building"
+   ]
+  },
+  {
+   "key": "combat",
+   "name": "Combat & Weapon Mastery",
+   "icon": "skill_branch_combat",
+   "branches": [
+    "combat",
+    "stealth"
+   ]
+  },
+  {
+   "key": "vehicles",
+   "name": "Vehicles & Mechanics",
+   "icon": "skill_branch_vehicles",
+   "branches": [
+    "vehicles"
+   ]
   }
  ],
  "nodes": [
@@ -223,14 +291,12 @@
   {
    "key": "iron_stomach",
    "name": "Iron Stomach",
-   "branch": "survival",
-   "tier": 2,
+   "branch": "perks",
+   "tier": 0,
    "x": 80,
-   "y": 220,
+   "y": 0,
    "cost": 2,
-   "requires": [
-    "forager"
-   ],
+   "requires": [],
    "effects": {
     "perk": "iron_stomach"
    },
@@ -304,7 +370,7 @@
    "y": 330,
    "cost": 2,
    "requires": [
-    "iron_stomach"
+    "forager"
    ],
    "effects": {
     "mods": {
@@ -1414,13 +1480,13 @@
   {
    "key": "monoculture",
    "name": "Monoculture",
-   "branch": "farming",
-   "tier": 5,
-   "x": 860,
-   "y": 550,
+   "branch": "perks",
+   "tier": 1,
+   "x": 0,
+   "y": 110,
    "cost": 3,
    "requires": [
-    "master_farmer"
+    "iron_stomach"
    ],
    "effects": {
     "mods": {
@@ -1880,8 +1946,7 @@
    "y": 440,
    "cost": 3,
    "requires": [
-    "surgeon",
-    "chemistry_1"
+    "surgeon"
    ],
    "effects": {
     "mods": {
@@ -2033,8 +2098,7 @@
    "y": 440,
    "cost": 3,
    "requires": [
-    "interior_designer",
-    "firekeeper"
+    "interior_designer"
    ],
    "effects": {
     "mods": {
@@ -2372,13 +2436,13 @@
   {
    "key": "light_pack",
    "name": "Light Pack",
-   "branch": "stealth",
-   "tier": 5,
-   "x": 2420,
-   "y": 550,
+   "branch": "perks",
+   "tier": 1,
+   "x": 160,
+   "y": 110,
    "cost": 3,
    "requires": [
-    "phantom"
+    "iron_stomach"
    ],
    "effects": {
     "mods": {

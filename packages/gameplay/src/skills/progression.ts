@@ -10,7 +10,7 @@ import { CraftCompleted, Damaged, emit, ev, ItemConsumed, ItemGathered, PiecePla
 import { countItem, removeItem } from "../inventory.js";
 import { setSkillLevelProvider } from "../systems/crafting.js";
 import { VehicleRepaired } from "../vehicle_craft.js";
-import { nodeWords, ownedNodes, pointsForLevel, SKILL_NODE_WORDS, SKILL_REQS, SKILLS, skillLevelOf, skillMod, skillNode, wordsHas, xpToNext, type XpSource } from "./tree.js";
+import { nodeWords, ownedNodes, pointsForLevel, SKILL_NODE_CATEGORY, SKILL_NODE_WORDS, SKILL_REQS, SKILLS, skillLevelOf, skillMod, skillNode, wordsHas, xpToNext, type XpSource } from "./tree.js";
 
 export const LevelUp = ev<{ entity: Entity; level: number; points: number }>("gameplay.LevelUp");
 export const SkillUnlocked = ev<{ entity: Entity; node: number }>("gameplay.SkillUnlocked");
@@ -89,7 +89,7 @@ const BRANCH_TRAITS: Record<string, (t: Traits) => number> = {
   survival: (t) => 0.6 + 0.4 * t.greed, combat: (t) => 0.3 + 1.2 * t.bravery, crafting: (t) => 0.4 + t.industriousness, farming: (t) => 0.3 + 0.8 * t.industriousness,
   husbandry: (t) => 0.2 + 0.6 * t.industriousness + 0.3 * t.greed, cooking: (t) => 0.3 + 0.6 * t.sociability, medicine: (t) => 0.3 + 0.5 * t.sociability + 0.3 * (1 - t.bravery),
   building: (t) => 0.3 + 0.9 * t.industriousness, vehicles: (t) => 0.2 + 0.5 * t.greed + 0.3 * t.bravery, stealth: (t) => 0.2 + 0.9 * (1 - t.bravery),
-  leadership: (t) => 0.1 + 0.7 * t.sociability + 0.4 * t.chattiness,
+  perks: (t) => 0.1 + 0.4 * t.greed, leadership: (t) => 0.1 + 0.7 * t.sociability + 0.4 * t.chattiness,
 };
 /** Best affordable node for a personality (deterministic: ties -> lower index). undefined when nothing is affordable. */
 export function pickSkillNode(world: World, e: Entity, traits: Traits): number | undefined {
@@ -143,16 +143,31 @@ export const PROGRESSION_WORDS = SKILL_NODE_WORDS;
 
 // ---- view model (client skill-tree panel) ---------------------------------------------------------------
 export type SkillNodeState = "owned" | "available" | "locked";
-export interface SkillNodeView { index: number; key: string; name: string; branch: string; tier: number; x: number; y: number; cost: number; desc: string; icon: string; state: SkillNodeState; why?: SkillReject | undefined; requires: number[] }
-export interface ProgressionView { level: number; xp: number; next: number; points: number; respecCost: number; canRespec: SkillReject | undefined; branches: { key: string; name: string; icon: string }[]; nodes: SkillNodeView[]; width: number; height: number }
+export interface SkillNodeView { index: number; key: string; name: string; branch: string; category: string; cx: number; cy: number; tier: number; x: number; y: number; cost: number; desc: string; icon: string; state: SkillNodeState; why?: SkillReject | undefined; requires: number[] }
+/** ADR-132: one tab per category; node coordinates (cx, cy) are laid out per category tree, branches side by side. */
+/** Lanes are 80 apart in skills.json but nodes draw 150 wide: spread them so siblings never overlap. */
+export const LANE_SPREAD = 2.1;
+export interface SkillCategoryView { key: string; name: string; icon: string; branches: string[]; nodes: number[]; owned: number; available: number; width: number; height: number }
+export interface ProgressionView { categories: SkillCategoryView[]; level: number; xp: number; next: number; points: number; respecCost: number; canRespec: SkillReject | undefined; branches: { key: string; name: string; icon: string }[]; nodes: SkillNodeView[]; width: number; height: number }
 export function progressionView(world: World, e: Entity): ProgressionView | undefined {
   const p = world.get(e, Progression); if (!p) return undefined; const w = nodeWords(world, e)!;
   const nodes = SKILLS.nodes.map((n, i): SkillNodeView => {
     const why = wordsHas(w, i) ? undefined : canUnlock(world, e, i);
-    return { index: i, key: n.key, name: n.name, branch: n.branch, tier: n.tier, x: n.x, y: n.y, cost: n.cost, desc: n.desc, icon: n.icon,
+    return { index: i, key: n.key, name: n.name, branch: n.branch, category: SKILL_NODE_CATEGORY[i]!, cx: 0, cy: n.y, tier: n.tier, x: n.x, y: n.y, cost: n.cost, desc: n.desc, icon: n.icon,
       state: wordsHas(w, i) ? "owned" : why === undefined || why === "points" ? "available" : "locked", why, requires: SKILL_REQS[i]! as number[] };
   });
-  return { level: p.level, xp: p.xp, next: xpToNext(p.level), points: p.points, respecCost: respecCost(world, e), canRespec: canRespec(world, e),
+  const categories = SKILLS.categories.map((c): SkillCategoryView => {
+    let cursor = 0; const idx: number[] = [];
+    for (const b of c.branches) {
+      const bn = nodes.filter((n) => n.branch === b); if (!bn.length) continue; const minX = Math.min(...bn.map((n) => n.x));
+      for (const n of bn) { n.cx = cursor + (n.x - minX) * LANE_SPREAD; idx.push(n.index); }
+      cursor += (Math.max(...bn.map((n) => n.x)) - minX) * LANE_SPREAD + 200;
+    }
+    const cn = idx.map((i) => nodes[i]!);
+    return { key: c.key, name: c.name, icon: c.icon, branches: [...c.branches], nodes: idx, owned: cn.filter((n) => n.state === "owned").length,
+      available: cn.filter((n) => n.state === "available" && n.why === undefined).length, width: Math.max(0, cursor - 200) + 240, height: Math.max(0, ...cn.map((n) => n.cy)) + 120 };
+  });
+  return { categories, level: p.level, xp: p.xp, next: xpToNext(p.level), points: p.points, respecCost: respecCost(world, e), canRespec: canRespec(world, e),
     branches: SKILLS.branches.map((b) => ({ ...b })), nodes, width: Math.max(...nodes.map((n) => n.x)) + 240, height: Math.max(...nodes.map((n) => n.y)) + 120 };
 }
 export const SKILL_REJECT_TEXT: Readonly<Record<SkillReject, string>> = {

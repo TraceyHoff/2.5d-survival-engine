@@ -16,6 +16,7 @@ import { iconForItem,
   setAppearanceIntent, setStallNameIntent, priceItemChoices, listItemIntents, unstockStallIntent, type StallListDraft, setStallOpenIntent, stallView, togglePermMask, wardrobeView, placeIntent,
   type BuildSelection, type MenuCtx, type MenuIntent, camperStationView, vehicleRefuelIntent, type CamperRecipeView,
   progressionView, unlockSkillIntent, respecSkillsIntent, SKILL_REJECT_TEXT, useIntent, drinkWaterIntent, nearWater,
+  SKILLS,
 } from "@engine/gameplay";
 import { requestCharacterEdit } from "./character-creator.js";
 import { GroupRole, PlayerId, Transform, type Entity } from "@engine/core";
@@ -60,7 +61,12 @@ const dismissedClan = new Set<number>();
 /** Container panel page (ADR-098): survives re-renders; clamped by containerView. */
 let containerPage = 0;
 /** Skill tree (ADR-113): zoom + selected node survive re-renders; the viewport scroll position is kept by the diffing refresh. */
-const skillUi = { zoom: 0.6, sel: -1, branch: "" };
+const skillUi = { zoom: 0.6, sel: -1, branch: "", cat: "" };
+/** ADR-132: active skill category tab (one tree per tab); ◀ ▶ / tab buttons (touch, mouse, Tab+Enter, gamepad focus+A), PgUp/PgDn and gamepad LB/RB. */
+export function selectSkillCategory(key: string): void { if (skillUi.cat !== key) { skillUi.cat = key; skillUi.sel = -1; } }
+export const skillCategory = (): string => skillUi.cat;
+/** ADR-132: cycle the skill tree tab (PgUp/PgDn, gamepad LB/RB, ◀ ▶). */
+export function pageSkillCategory(d: number): void { const cs = SKILLS.categories; const i = Math.max(0, cs.findIndex((c) => c.key === skillUi.cat)); selectSkillCategory(cs[(i + d + cs.length) % cs.length]!.key); }
 export const SKILL_ZOOM = { min: 0.35, max: 1.4, step: 0.15 };
 export function zoomSkills(d: number): number { skillUi.zoom = Math.max(SKILL_ZOOM.min, Math.min(SKILL_ZOOM.max, +(skillUi.zoom + d).toFixed(2))); return skillUi.zoom; }
 /** Page the open container by `d` (PgUp/PgDn, LB/RB, ◀ ▶). Returns true if a page change applies. */
@@ -215,33 +221,39 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
     case "skills": {
       const v = progressionView(c.world, c.player); if (!v) return [kit.para("No skills for this character.")];
       const out: Node[] = [];
-      const head = kit.para(`Level ${v.level} · XP ${v.xp}/${v.next} · ${v.points} skill point${v.points === 1 ? "" : "s"}`); head.dataset["role"] = "skill-summary"; out.push(head);
+      const head = kit.para(`Level ${v.level} · XP ${v.xp}/${v.next} · ${v.points} skill point${v.points === 1 ? "" : "s"} (shared by all trees)`); head.dataset["role"] = "skill-summary"; out.push(head);
       const tools = grid();
       tools.append(btn("Zoom −", "skill-zoom-out", () => { zoomSkills(-SKILL_ZOOM.step); kit.rerender(); }, { alt: true }), btn("Zoom +", "skill-zoom-in", () => { zoomSkills(SKILL_ZOOM.step); kit.rerender(); }, { alt: true }));
       tools.append(btn(`Respec (${v.respecCost} coin)`, "skill-respec", () => send(respecSkillsIntent(), "Skills reset."), { alt: true, disabled: v.canRespec !== undefined, title: v.canRespec ? SKILL_REJECT_TEXT[v.canRespec] : "Refund all skill points" }));
       tools.append(btn("Back", "skill-back", () => kit.close(), { alt: true }));
       out.push(tools);
-      // Branch jump list (gamepad / keyboard friendly; tapping scrolls the tree to the branch)
-      const bg = el("div", { class: "gm-grid", "data-role": "skill-branches" });
-      for (const b of v.branches) bg.append(btn(b.name, `skill-branch-${b.key}`, () => { skillUi.branch = b.key; const n = document.querySelector(`[data-role=skill-node][data-branch="${b.key}"]`); (n as HTMLElement | null)?.scrollIntoView?.({ block: "nearest", inline: "start" }); (n as HTMLElement | null)?.focus?.(); }, { data: { icon: b.icon }, pressed: skillUi.branch === b.key }));
-      out.push(bg);
-      const z = skillUi.zoom; const vp = el("div", { "data-role": "skill-tree", class: "skill-tree" });
+      // ADR-132 category tabs: one tree per tab, shared point pool shown above. Buttons = touch / keyboard (Tab/Enter) / gamepad (focus+A).
+      const cats = v.categories; const ci = Math.max(0, cats.findIndex((c) => c.key === skillUi.cat)); const cat = cats[ci]!; skillUi.cat = cat.key;
+      const go = (d: number): void => { pageSkillCategory(d); kit.rerender(); };
+      const tabs = el("div", { class: "gm-grid", "data-role": "skill-tabs", role: "tablist" });
+      tabs.append(btn("◀", "skill-tab-prev", () => go(-1), { alt: true, title: "Previous tree (PgUp / LB)" }));
+      for (const c of cats) { const t = btn(`${c.name} ${c.owned}/${c.nodes.length}${c.available ? ` · ${c.available}✦` : ""}`, `skill-tab-${c.key}`, () => { selectSkillCategory(c.key); kit.rerender(); }, { alt: c.key !== cat.key, pressed: c.key === cat.key, data: { icon: c.icon, category: c.key } }); t.setAttribute("role", "tab"); t.setAttribute("aria-selected", String(c.key === cat.key)); t.style.minHeight = "44px"; tabs.append(t); }
+      tabs.append(btn("▶", "skill-tab-next", () => go(1), { alt: true, title: "Next tree (PgDn / RB)" }));
+      tabs.setAttribute("style", "display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;-webkit-overflow-scrolling:touch;touch-action:pan-x");
+      for (const t of Array.from(tabs.children) as HTMLElement[]) t.style.flex = "0 0 auto";
+      out.push(tabs); queueMicrotask(() => (tabs.querySelector("[aria-selected=true]") as HTMLElement | null)?.scrollIntoView?.({ block: "nearest", inline: "nearest" }));
+      const z = skillUi.zoom; const vp = el("div", { "data-role": "skill-tree", class: "skill-tree", "data-category": cat.key });
       vp.setAttribute("style", "position:relative;overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y;height:min(52dvh,420px);border:2px solid #74432C;border-radius:10px;background:#EAD9B8");
-      const inner = el("div"); inner.setAttribute("style", `position:relative;width:${Math.ceil(v.width * z)}px;height:${Math.ceil(v.height * z)}px`);
-      // prerequisite lines as one SVG (cheap on mobile: no per-frame work)
-      const ns = "http://www.w3.org/2000/svg"; const svg = document.createElementNS(ns, "svg"); svg.setAttribute("width", String(Math.ceil(v.width * z))); svg.setAttribute("height", String(Math.ceil(v.height * z)));
+      const inner = el("div"); inner.setAttribute("style", `position:relative;width:${Math.ceil(cat.width * z)}px;height:${Math.ceil(cat.height * z)}px`);
+      const ns = "http://www.w3.org/2000/svg"; const svg = document.createElementNS(ns, "svg"); svg.setAttribute("width", String(Math.ceil(cat.width * z))); svg.setAttribute("height", String(Math.ceil(cat.height * z)));
       svg.setAttribute("style", "position:absolute;left:0;top:0;pointer-events:none"); const W = 150, H = 56;
-      for (const n of v.nodes) for (const r of n.requires) { const p = v.nodes[r]!; const l = document.createElementNS(ns, "line");
-        l.setAttribute("x1", String((p.x + W / 2) * z)); l.setAttribute("y1", String((p.y + H) * z)); l.setAttribute("x2", String((n.x + W / 2) * z)); l.setAttribute("y2", String(n.y * z));
+      const shown = cat.nodes.map((i) => v.nodes[i]!);
+      for (const n of shown) for (const r of n.requires) { const p = v.nodes[r]!; const l = document.createElementNS(ns, "line");
+        l.setAttribute("x1", String((p.cx + W / 2) * z)); l.setAttribute("y1", String((p.cy + H) * z)); l.setAttribute("x2", String((n.cx + W / 2) * z)); l.setAttribute("y2", String(n.cy * z));
         l.setAttribute("stroke", n.state === "owned" ? "#5A9A4A" : "#9C7A5A"); l.setAttribute("stroke-width", "2"); svg.append(l); }
       inner.append(svg);
-      for (const n of v.nodes) {
+      for (const n of shown) {
         const b = btn(`${n.name} (${n.cost})`, `skill-${n.key}`, () => {
           if (skillUi.sel !== n.index) { skillUi.sel = n.index; kit.rerender(); return; } // first tap/A selects (shows details), second learns
           if (n.state === "owned") return; if (n.why) { kit.status(SKILL_REJECT_TEXT[n.why]); kit.rerender(); return; }
           send(unlockSkillIntent(n.index), `Learned ${n.name}.`);
-        }, { role: "skill-node", alt: n.state !== "owned", disabled: false, pressed: skillUi.sel === n.index, title: n.desc, data: { icon: n.icon, branch: n.branch, state: n.state, tier: String(n.tier) } });
-        b.setAttribute("style", `position:absolute;left:${Math.round(n.x * z)}px;top:${Math.round(n.y * z)}px;width:${Math.round(W * z)}px;min-height:44px;font-size:${Math.max(11, Math.round(14 * z))}px;padding:2px 4px;${n.state === "locked" ? "opacity:.55;" : ""}`);
+        }, { role: "skill-node", alt: n.state !== "owned", disabled: false, pressed: skillUi.sel === n.index, title: n.desc, data: { icon: n.icon, branch: n.branch, category: n.category, state: n.state, tier: String(n.tier) } });
+        b.setAttribute("style", `position:absolute;left:${Math.round(n.cx * z)}px;top:${Math.round(n.cy * z)}px;width:${Math.round(W * z)}px;min-height:44px;font-size:${Math.max(11, Math.round(14 * z))}px;padding:2px 4px;${n.state === "locked" ? "opacity:.55;" : ""}`);
         inner.append(b);
       }
       vp.append(inner);
@@ -249,7 +261,7 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       out.push(vp);
       const sel = v.nodes[skillUi.sel];
       if (sel) { const d = kit.para(`${sel.name}: ${sel.desc} — cost ${sel.cost}. ${sel.state === "owned" ? "Learned." : sel.why ? SKILL_REJECT_TEXT[sel.why] : "Tap / press again to learn."}`); d.dataset["role"] = "skill-detail"; out.push(d); }
-      out.push(kit.para("Scroll or drag to pan · Ctrl+wheel or Zoom ± to zoom · select a skill, then select again to learn."));
+      out.push(kit.para("Pick a tree tab (◀ ▶, PgUp/PgDn or LB/RB) · scroll or drag to pan · Ctrl+wheel or Zoom ± to zoom · select a skill, then select again to learn. Points are shared across all trees."));
       return out;
     }
     case "party": {

@@ -174,3 +174,20 @@ describe("camper station panel (assets/ui/screens/camper_station.md)", () => {
   });
   test("renders without a vehicle", () => { const { menus } = setup(); menus.open("camper"); expect(document.querySelector("[data-menu=camper]")).not.toBeNull(); });
 });
+
+describe("ADR-132 skill category tabs", () => {
+  test("tabs show one tree at a time; ◀ ▶ and PgDn switch; points shown globally", () => {
+    const { w, me, sent, menus } = setup(); w.set(me, G.Progression, { points: 3 }); menus.open("skills");
+    const tabs = Array.from(document.querySelectorAll<HTMLElement>("[data-role=skill-tabs] [role=tab]")); expect(tabs.length).toBe(G.SKILLS.categories.length);
+    expect(q("[data-role=skill-summary]").textContent).toContain("3 skill points");
+    const cat0 = q("[data-role=skill-tree]").dataset["category"]!;
+    for (const b of Array.from(document.querySelectorAll<HTMLElement>("[data-role=skill-node]"))) expect(b.dataset["category"]).toBe(cat0);
+    q("[data-key=skill-tab-next]").click(); expect(q("[data-role=skill-tree]").dataset["category"]).toBe(G.SKILLS.categories[1]!.key);
+    q("[data-key=skill-tab-combat]").click(); expect(q("[data-role=skill-tree]").dataset["category"]).toBe("combat");
+    expect(document.querySelector("[data-key=skill-blade_mastery]")).not.toBeNull(); expect(document.querySelector("[data-key=skill-forager]")).toBeNull();
+    q("[data-key=skill-tab-combat]").focus(); key("PageDown"); expect(q("[data-role=skill-tree]").dataset["category"]).toBe(G.SKILLS.categories[(G.SKILLS.categories.findIndex((c) => c.key === "combat") + 1) % G.SKILLS.categories.length]!.key);
+    q("[data-key=skill-tab-perks]").click(); const b = q("[data-key=skill-iron_stomach]"); b.click(); q("[data-key=skill-iron_stomach]").click();
+    expect(sent.at(-1)).toMatchObject({ cmd: G.UnlockSkillCmd, args: { node: G.skillNodeIndex("iron_stomach") } });
+    menus.destroy();
+  });
+});

@@ -12,8 +12,8 @@ const give = (w: World, e: Entity, pts: number) => w.set(e, G.Progression, { poi
 const traits = (o: Partial<Record<"bravery" | "sociability" | "greed" | "industriousness" | "chattiness", number>>) => ({ bravery: 0.5, sociability: 0.5, greed: 0.5, industriousness: 0.5, chattiness: 0.5, ...o });
 
 describe("ADR-113 skill tree data", () => {
-  it("has 11 branches, 100+ nodes, valid prereqs (earlier, acyclic) and art keys", () => {
-    expect(G.SKILLS.branches.length).toBe(11); expect(G.SKILLS.nodes.length).toBeGreaterThanOrEqual(100);
+  it("has 12 branches (incl. perks), 7 category trees, 100+ nodes, valid prereqs (earlier, acyclic) and art keys", () => {
+    expect(G.SKILLS.branches.length).toBe(12); expect(G.SKILLS.nodes.length).toBeGreaterThanOrEqual(100);
     expect(G.SKILLS.nodes.length).toBeLessThanOrEqual(G.SKILL_NODE_WORDS * 32);
     const keys = new Set<string>();
     G.SKILLS.nodes.forEach((n, i) => {
@@ -61,7 +61,7 @@ describe("ADR-113 progression", () => {
     expect(countItem(w, a, id("coin"))).toBe(c0 * 2); expect(G.respecCost(w, a)).toBeGreaterThan(c0);
   });
   it("iron stomach: spoiled food no longer makes you sick but costs hp", () => {
-    const w = world(); const a = mk(w, 1); give(w, a, 5); G.unlockSkill(w, a, node("forager")); G.unlockSkill(w, a, node("iron_stomach"));
+    const w = world(); const a = mk(w, 1); give(w, a, 5); G.unlockSkill(w, a, node("iron_stomach"));
     expect(G.hasPerk(w, a, "iron_stomach")).toBe(true); expect(G.IRON_STOMACH_HP).toBeGreaterThan(0);
   });
   it("weapon mastery scales combat damage multiplier per class", () => {
@@ -99,5 +99,38 @@ describe("ADR-113 husbandry", () => {
   it("a wolf cannot be domesticated", () => {
     const w = world(); const a = mk(w, 1); G.spawnAnimal(w, "animal_wolf", 1, 0); give(w, a, 5); G.unlockSkill(w, a, node("husbandry_1"));
     expect(G.feedAnimal(w, a, true).fail).toBe(G.TameFail.NotDomestic);
+  });
+});
+
+describe("ADR-132 category skill trees", () => {
+  it("every node is in exactly one category; prereqs stay inside it; each tree has a root", () => {
+    const counts = new Map<string, number>();
+    G.SKILLS.nodes.forEach((n, i) => {
+      const c = G.skillCategoryOf(i)!; expect(c).toBeDefined(); counts.set(c, (counts.get(c) ?? 0) + 1);
+      for (const r of n.requires) expect(G.skillCategoryOf(G.skillNodeIndex(r))).toBe(c);
+    });
+    expect([...counts.keys()].sort()).toEqual(G.SKILLS.categories.map((c) => c.key).sort());
+    for (const c of G.SKILLS.categories) expect(G.SKILLS.nodes.some((n, i) => G.skillCategoryOf(i) === c.key && n.requires.length === 0)).toBe(true);
+    expect([...counts.values()].reduce((a, b) => a + b, 0)).toBe(G.SKILLS.nodes.length);
+    expect(G.skillCategoryOf(node("iron_stomach"))).toBe("perks"); expect(G.skillCategoryOf(node("husbandry_1"))).toBe("homestead");
+    expect(G.skillCategoryOf(node("blade_mastery"))).toBe("combat");
+  });
+  it("node ids (= save bit indices) are unchanged: saved unlocks map to the same skills", () => {
+    // Pinned indices from before ADR-132; Progression.nodes stores these bits, so they must never move.
+    const pinned: Record<string, number> = { forager: 0, iron_stomach: 3, hardy: 7, brawler: 10, monoculture: 64, husbandry_1: 65, light_pack: 113, tactician: 121 };
+    for (const [k, i] of Object.entries(pinned)) expect(node(k)).toBe(i);
+    const w = world(); const a = mk(w, 1);
+    const words = new Array(G.SKILL_NODE_WORDS).fill(0); for (const i of [0, 3, 64, 113]) words[i >>> 5] |= 1 << (i & 31);
+    w.set(a, G.Progression, { points: 4 }); const arr = w.getArray(a, G.Progression, "nodes")!; words.forEach((v, j) => { arr[j] = v >>> 0; });
+    expect(G.ownedNodes(w, a)).toEqual([0, 3, 64, 113]); expect(G.hasPerk(w, a, "iron_stomach")).toBe(true);
+    expect(G.skillMod(w, a, "cropYield")).toBeCloseTo(0.3); expect(w.get(a, G.Progression)!.points).toBe(4);
+  });
+  it("view: one shared point pool, per-category trees with their own layout", () => {
+    const w = world(); const a = mk(w, 1); give(w, a, 3); G.unlockSkill(w, a, node("iron_stomach"));
+    const v = G.progressionView(w, a)!; expect(v.points).toBe(1); expect(v.categories.length).toBe(G.SKILLS.categories.length);
+    const perks = v.categories.find((c) => c.key === "perks")!; expect(perks.owned).toBe(1);
+    expect(perks.nodes.map((i) => v.nodes[i]!.key)).toContain("light_pack");
+    for (const c of v.categories) { expect(Math.min(...c.nodes.map((i) => v.nodes[i]!.cx))).toBe(0); for (const i of c.nodes) expect(v.nodes[i]!.cx).toBeLessThan(c.width); }
+    expect(G.canUnlock(w, a, node("light_pack"))).toBe("points"); // prereq (iron_stomach) satisfied within the perks tree
   });
 });

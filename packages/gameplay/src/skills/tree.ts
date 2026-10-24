@@ -19,6 +19,8 @@ export interface SkillsData {
   weaponClasses: Record<string, string[]>;
   husbandry: { feed: string; trough: string; reach: number; troughRange: number; penRadius: number; fedSeconds: number; tameBase: number; breedSeconds: number; maxPerTrough: number; animals: Record<string, { produce: string; seconds: number }> };
   branches: { key: string; name: string; icon: string }[];
+  /** ADR-132: category trees (one UI tab each); every branch belongs to exactly one, prerequisites stay inside it. */
+  categories: { key: string; name: string; icon: string; branches: string[] }[];
   nodes: SkillNodeDef[];
 }
 export const SKILLS: SkillsData = raw as unknown as SkillsData;
@@ -29,6 +31,12 @@ export const skillNodeIndex = (key: string): number => byKey.get(key) ?? -1;
 export const skillNode = (i: number): SkillNodeDef | undefined => SKILLS.nodes[i];
 /** Prerequisite indices per node. */
 export const SKILL_REQS: readonly number[][] = SKILLS.nodes.map((n) => n.requires.map((r) => { const i = byKey.get(r); if (i === undefined) throw new Error(`skills.json: ${n.key} requires unknown ${r}`); return i; }));
+
+/** ADR-132: category key per branch / node index. */
+const catOfBranch = new Map<string, string>(); for (const c of SKILLS.categories) for (const b of c.branches) catOfBranch.set(b, c.key);
+export const SKILL_NODE_CATEGORY: readonly string[] = SKILLS.nodes.map((n) => { const c = catOfBranch.get(n.branch); if (!c) throw new Error(`skills.json: branch ${n.branch} has no category`); return c; });
+SKILLS.nodes.forEach((n, i) => { for (const r of SKILL_REQS[i]!) if (SKILL_NODE_CATEGORY[r] !== SKILL_NODE_CATEGORY[i]) throw new Error(`skills.json: ${n.key} requires ${SKILLS.nodes[r]!.key} from another category`); });
+export const skillCategoryOf = (i: number): string | undefined => SKILL_NODE_CATEGORY[i];
 
 /** Weapon class of an item key ("unarmed" for none). */
 export function weaponClassOf(itemKey: string | undefined): string {
