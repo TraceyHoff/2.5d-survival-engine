@@ -144,8 +144,12 @@ export function layerTintRef(base: [number, number, number], color: [number, num
   return r as [number, number, number];
 }
 
-/** Facings (directionIndex8: E, SE, S, SW, W) that show the face; back facings keep the authored order (hair over face). */
-const FACE_VISIBLE_DIRS = [true, true, true, true, true, false, false, false];
+/**
+ * directionIndex8 facings whose face/eyes art has pixels (Art's cz_face_* / cz_eyes_* dirFrames: 0, 1, 2 front three-quarter/front,
+ * 3 and 7 the two profiles; 4, 5, 6 are back views with empty face frames). Was 0..4, which left hair over the eyes on the
+ * profile 7 (screen-right) and lifted nothing on 4. Back facings keep the authored order (hair over face).
+ */
+export const FACE_VISIBLE_DIRS: readonly boolean[] = [true, true, true, true, false, false, false, true];
 /**
  * Face/eyes drawn just above hair on facings that show the face. Art authors face 32 / eyes 34 under hair 40, so fringes
  * and bobs covered brows, mouth and eyes (bob: 2/3 of the face pixels hidden); hats/accessories above hair stay in front.
