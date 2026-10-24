@@ -11,8 +11,8 @@ import { showRenderError, glInfo, frameIsBlack } from "./glcheck.js";
  */
 import { World, Transform, PrevTransform, TimeOfDay, Weather, Appearance, PlayerId, defineComponent, entityIndex, type Entity } from "@engine/core";
 import { CHUNK_SIZE, tileToChunk, tileToLocal, type TileMap } from "@engine/world";
-import { loadManifest, mergeManifests, buildPieceVisual, quarterTurn, type AssetRegistry, type ManifestFragment, type ManifestJson } from "@engine/assets";
-import { BuildGhost, IsoRenderer, Sprite, Shadow, LightSource, Occluder, SpriteFlag, sourcesFromManifest, coreAppearanceBinding, CameraTargetGuard } from "@engine/render";
+import { loadManifest, mergeManifests, buildPieceVisual, type AssetRegistry, type ManifestFragment, type ManifestJson } from "@engine/assets";
+import { BuildGhost, pieceArtRow, ROT_EXACT_PIVOT, IsoRenderer, Sprite, Shadow, LightSource, Occluder, SpriteFlag, sourcesFromManifest, coreAppearanceBinding, CameraTargetGuard } from "@engine/render";
 import { gameplayDefs, rotationSteps, animalDefs, Animal, Health, Survival, Zombie, ResourceNode, CraftingStation, Fuel, AnimState as GAnim, BuildPiece as GPiece, Dead, Wetness, BodyTemp, Emitter, PieceLink } from "@engine/gameplay";
 
 /** Render-side schemas the renderer's bindings expect (view World only). */
@@ -103,14 +103,15 @@ export class IsoView {
 
   private ghost: BuildGhost | undefined;
   /** Build-placement ghost from the client's buildMode.preview (call every frame; undefined removes it). Free-rotation
-   *  pieces (rotSteps 16) are shown at the nearest quarter turn; variant goes by name (defs variantNames). */
+   *  pieces (rotSteps 16) are shown at the nearest quarter turn, triangles (12) on their exact art row (pieceArtRow); Tri/Free
+   *  pieces pivot at the exact snapped x/y; variant goes by name (defs variantNames). */
   syncGhost(p: import("@engine/gameplay").BuildPreview | undefined, net: World): void {
     if (!p && !this.ghost) return;
     this.ghost ??= new BuildGhost(this.view, VPiece as never, this.registry);
     if (!p) { this.ghost.sync(null); return; }
     const names = gameplayDefs(net).pieces.get(p.piece)?.variantNames ?? [];
-    const rot = quarterTurn(p.rot, p.rotSteps);
-    this.ghost.sync({ pieceKey: p.pieceKey, x: p.x, y: p.y, rot, valid: p.valid }, { z: p.z, level: p.level, tier: p.tier, ...(names[p.variant] ? { variant: names[p.variant]! } : { variant: p.variant }) });
+    const def = gameplayDefs(net).pieces.get(p.piece);
+    this.ghost.sync({ pieceKey: p.pieceKey, x: p.x, y: p.y, rot: p.rot, valid: p.valid }, { z: p.z, level: p.level, tier: p.tier, rotSteps: p.rotSteps, exactPivot: exactPivot(def), ...(names[p.variant] ? { variant: names[p.variant]! } : { variant: p.variant }) });
   }
   resize(w: number, h: number, dpr: number): void {
     const safe = new URLSearchParams(location.search).get("safe") === "1";
@@ -264,7 +265,7 @@ export class IsoView {
     if ((net.tick + entityIndex(e)) % 15 !== 0 && this.pieceStates.has(ve)) return; // cheap: lit flips are rare
     const fire = this.siblings(net, e).find((o) => net.has(o, Fuel)); const lit = fire !== undefined && net.get(fire, Fuel)!.lit === 1;
     const p = net.get(e, GPiece)!;
-    const vis = buildPieceVisual(this.registry, { type: p.type, rot: p.rot, rotSteps: rotationSteps(net, p.type), tint: p.tint, paint: p.paint, state: lit ? "idle" : "unlit" }, { pieceKey: (t) => defs?.pieces.get(t)?.key });
+    const vis = buildPieceVisual(this.registry, { type: p.type, ...artRot(p.rot, rotationSteps(net, p.type)), tint: p.tint, paint: p.paint, state: lit ? "idle" : "unlit" }, { pieceKey: (t) => defs?.pieces.get(t)?.key });
     this.pieceStates.set(ve, vis.stateIndex);
   }
   private baseScale(ve: Entity): number { return this.scales.get(ve) ?? 1; }
@@ -310,16 +311,22 @@ export class IsoView {
     }
     if (net.has(e, GPiece) && defs) {
       const p = net.get(e, GPiece)!; const def = defs.pieces.get(p.type);
-      const vis = buildPieceVisual(this.registry, { type: p.type, rot: p.rot, rotSteps: rotationSteps(net, p.type), tint: p.tint, paint: p.paint, damageStage: p.damageStage }, { tier: p.tier, pieceKey: (t) => defs.pieces.get(t)?.key });
+      const vis = buildPieceVisual(this.registry, { type: p.type, ...artRot(p.rot, rotationSteps(net, p.type)), tint: p.tint, paint: p.paint, damageStage: p.damageStage }, { tier: p.tier, pieceKey: (t) => defs.pieces.get(t)?.key });
       if (!vis.visualId) return undefined;
       const lh = (defs as unknown as { building?: { levelHeight?: number } }).building?.levelHeight ?? 1;
       const z = net.get(e, Transform)!.z; const level = Math.max(0, Math.round(z / (lh || 1)));
-      return { pieceVisual: vis.visualId, variant: p.variant, rot: vis.rotation, tint: 0, damage: vis.damageStage, level, layer: vis.layer, pieceKey: def?.key };
+      return { pieceVisual: vis.visualId, variant: p.variant, rot: vis.rotation | (exactPivot(def) ? ROT_EXACT_PIVOT : 0), tint: 0, damage: vis.damageStage, level, layer: vis.layer, pieceKey: def?.key };
     }
     // emissive sprites (e.g. glow mushrooms) carry a light when the table knows their key
     return undefined;
   }
 }
+
+/** gameplay Placement.Tri (4) and the vertex-snapped Free (3) corner walls (ADR-104): drawn at the exact Transform x/y
+ *  (centroid / vertex), not the floored tile. Other Free pieces keep the tile-centre pivot. */
+const exactPivot = (def: { placement?: number; key?: string } | undefined): boolean => def?.placement === 4 || (def?.placement === 3 && !!def.key?.startsWith("wall_corner"));
+/** rot/rotSteps for buildPieceVisual: triangles (12 steps of 30°) map exactly onto an art row (pieceArtRow), no quarter-turn snap. */
+const artRot = (rot: number, steps: number): { rot: number; rotSteps: number } => (steps === 12 ? { rot: pieceArtRow(rot, 12), rotSteps: 4 } : { rot, rotSteps: steps });
 
 interface Spec {
   sprite?: number; frame?: number; flags?: number; scale?: number; shadow?: number; occluder?: boolean; animated?: boolean; fuel?: boolean;
