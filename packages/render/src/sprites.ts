@@ -606,10 +606,13 @@ export class SpriteBatch {
       if (bodyL) atlas.markUsed(sid); // the paper-doll body sheet is visible art too: keep it in the hot (full-res) tier
       let ok: boolean;
       const as = an ? an.slot(i) : -1;
-      let st = -1, t = 0;
+      let st = -1, t = 0; let dollAnim = "";
       if (as >= 0 && an) {
         st = an.data.state[as]!; t = (tickTime - an.data.startTick[as]!) / cx.tickHz;
-        ok = atlas.resolve(sid, atlas.stateAnim(sid, st), f, t, 0, res);
+        // paper doll: body + wear play one shared anim (frame-aligned across multi-page sheets, e.g. swim/punch pages)
+        const bai = bodyL && layers ? atlas.sharedStateAnim(sid, layers, st) : atlas.stateAnim(sid, st);
+        ok = atlas.resolve(sid, bai, f, t, 0, res);
+        if (bodyL) { dollAnim = res.anim; if (ok && res.atlas >= 0) atlas.markUsedAt(res.atlas); }
       } else ok = atlas.resolve(sid, bodyL ? atlas.animIndex(sid, bodyL.animName) : -1, f, 0, sp.data.frameId[k]!, res);
       if (!ok) return;
       const scale = sp.data.scale[k]! || 1;
@@ -644,7 +647,7 @@ export class SpriteBatch {
       o0[27] = occT;
       if (hitOf) { const hf = hitOf(e); if (hf > 0) o0[18] = -Math.min(1, hf); }
       // ADR-107 swim fallback: no "swim" frames on this sprite -> walk frames, lower body clipped at the waterline + bob
-      if (st === CoreAnimState.Swim && atlas.animName(sid, atlas.stateAnim(sid, st)) !== "swim") { o0[36] = res.ay * SWIM_CLIP; o0[37] = SWIM_BOB_PX; }
+      if (st === CoreAnimState.Swim && res.anim !== "swim") { o0[36] = res.ay * SWIM_CLIP; o0[37] = SWIM_BOB_PX; }
       if (bodyL) this.writeLayerTint(o0, bodyL);
       // paper-doll depth: the vertex shader clamps the height term per vertex (max(hp, 0)), so a quad reaching below the
       // pivot gets a flatter interpolated depth slope than one that doesn't. Body and wear quads have different extents
@@ -677,11 +680,14 @@ export class SpriteBatch {
         for (const l of layers) {
           if (l === bodyL) continue; j++;
           if (lodMinor && l.minor && !nearC) continue;
-          const rdy = atlas.pageReady(l.sprite, prio);
+          // the body's shared anim when this layer has it (same frame index + facing -> aligned, whichever page holds it),
+          // else the layer's own state anim (face/eyes expression layers)
+          const lai = st >= 0 ? (dollAnim ? atlas.findAnim(l.sprite, dollAnim) : -1) : -1;
+          const okL = st >= 0 ? atlas.resolve(l.sprite, lai >= 0 ? lai : atlas.stateAnim(l.sprite, st), f, t, 0, lr) : atlas.resolve(l.sprite, atlas.animIndex(l.sprite, l.animName), f, 0, sp.data.frameId[k]!, lr);
+          // readiness of the page this frame actually lives on (a swim/punch wear page streams on its own)
+          const rdy = okL && (lr.atlas >= 0 ? atlas.pageReadyAt(lr.atlas, prio) : atlas.pageReady(l.sprite, prio));
           if (nearC && this.nearN < this.nearInfo.length) { const ni = this.nearInfo[this.nearN]!; if (ni.e === e) { ni.layers++; if (rdy) ni.resident++; else ni.missing.push(l.slot); const pi = atlas.pageInfo(l.sprite); ni.scale = Math.min(ni.scale, pi.scale); } }
           if (!rdy) continue; // streamed page not resident yet: body-only fallback
-          const okL = st >= 0 ? atlas.resolve(l.sprite, atlas.stateAnim(l.sprite, st), f, t, 0, lr) : atlas.resolve(l.sprite, atlas.animIndex(l.sprite, l.animName), f, 0, sp.data.frameId[k]!, lr);
-          if (!okL) continue;
           o0.set(base); o0[4] = lr.entry; o0[8] = lr.ax; o0[9] = lr.ay; o0[16] = 0;
           if (outlineOn && l.outline && !(sp.data.flags[k]! & SpriteFlag.NoOutline)) {
             o0[2] = dkey - LAYER_BIAS * 0.5; o0[5] = (base[5]! & ~SpriteFlag.NoOutline) | OUTLINE_ONLY;

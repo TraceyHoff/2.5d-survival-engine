@@ -102,6 +102,15 @@ const BLD_POOL_SLOTS_DESKTOP = 4, BLD_POOL_SLOTS_LOWMEM = 2;
 export function isStreamedBuildingAtlas(key: string, url: string): boolean { return /^building_t\d+$/.test(key) && !/^(blob|data):/.test(url); }
 /** Character body sheets (`body_*`): with a KTX2 target they live compressed in the tail array (body pool), not RGBA8. */
 export function isBodyAtlasKey(key: string): boolean { return /^body_/.test(key); }
+/** Every page character bodies draw from (sprite.atlas + multi-page dirFrames pages, e.g. a swim/punch page), whatever its key. */
+export function bodyAtlasKeys(registry: AssetRegistry): Set<string> {
+  const cat = registry.cosmetics as unknown as { bodySprite?: (b: string) => { sprite: number } | undefined } | undefined;
+  const out = new Set<string>(); const ids = new Set<number>();
+  for (const s of registry.allSprites()) if (isBodyAtlasKey(s.atlas.key)) ids.add(s.id);
+  try { for (const b of ["male", "female"]) { const x = cat?.bodySprite?.(b); if (x) ids.add(x.sprite); } } catch { /* catalog shape differs: key rule only */ }
+  for (const s of registry.allSprites()) if (ids.has(s.id)) { out.add(s.atlas.key); for (const a of s.animList) for (const d of a.dirFrames ?? []) out.add(d.atlas.key); }
+  return out;
+}
 /** Art vehicle sheets: `veh_*` atlases loaded from files (the procedural placeholders are blob: URLs and stay resident). */
 export function isStreamedVehicleAtlas(key: string, url: string): boolean { return /^veh_/.test(key) && !/^(blob|data):/.test(url); }
 /** Minimum streamed pages kept resident at once (working set: ~8 wearables x a few distinct outfits on screen). */
@@ -326,6 +335,8 @@ export class AtlasManager {
   /** VRAM accountant (bytes resident / budget / page-ins / evictions); see vramStats. */
   readonly vram: VramAccountant;
   private pools: Pool[] = [];
+  /** bodyAtlasKeys() of the current registry (body pool membership + scale rule). */
+  private bodyPageKeys = new Set<string>();
   /** Stream Art vehicle sheets per vehicle (refcounted by VehicleView through retainSprite/releaseSprite). */
   streamVehicles = true;
   /** Stream building_t1..t4 per tier present nearby (refcounted by IsoRenderer's BuildingTierStreamer). */
@@ -513,9 +524,10 @@ export class AtlasManager {
     const legacy = this.streamVehicles ? legacyDirFrameAtlases(registry) : new Set<string>();
     const vehKeys = new Set<string>(); if (this.streamVehicles) for (const a of registry.atlases.values()) { const src = sources.get(a.key); if (src && !lazyKeys.has(a.key) && !legacy.has(a.key) && isStreamedVehicleAtlas(a.key, src.url)) vehKeys.add(a.key); }
     const bldKeys = new Set<string>(); if (this.streamBuildingTiers) for (const a of registry.atlases.values()) { const src = sources.get(a.key); if (src && !lazyKeys.has(a.key) && !vehKeys.has(a.key) && isStreamedBuildingAtlas(a.key, src.url)) bldKeys.add(a.key); }
-    // bodies (20x14 cells, 880x840 at 1x, 1760x1680 @2x) go compressed when KTX2 is available: KTX2 colour + tint mask KTX2
+    // bodies (page geometry from the manifest: columns x rows x frame size per page, any number of pages) go compressed when KTX2 is available: KTX2 colour + tint mask KTX2
     // (@2x: pages[].ktx2 + pages[].masksKtx2.tintmask) at the scale poolScales picks; paged in eagerly at rebuild, never evicted
-    const bodyKeys = new Set<string>(); if (this.ktx2Target && this.streamWearables) for (const a of registry.atlases.values()) { const src = sources.get(a.key); if (src?.ktx2 && isBodyAtlasKey(a.key) && !lazyKeys.has(a.key) && !vehKeys.has(a.key) && !bldKeys.has(a.key) && !/^(blob|data):/.test(src.url)) bodyKeys.add(a.key); }
+    const bodyPages = bodyAtlasKeys(registry); this.bodyPageKeys = bodyPages;
+    const bodyKeys = new Set<string>(); if (this.ktx2Target && this.streamWearables) for (const a of registry.atlases.values()) { const src = sources.get(a.key); if (src?.ktx2 && bodyPages.has(a.key) && !lazyKeys.has(a.key) && !vehKeys.has(a.key) && !bldKeys.has(a.key) && !/^(blob|data):/.test(src.url)) bodyKeys.add(a.key); }
     await Promise.all([...registry.atlases.values()].map(async (a) => {
       const src = sources.get(a.key); if (!src) throw new Error(`no image source for atlas "${a.key}"`);
       if (lazyKeys.has(a.key) || vehKeys.has(a.key) || legacy.has(a.key) || bldKeys.has(a.key) || bodyKeys.has(a.key)) {
@@ -641,7 +653,7 @@ export class AtlasManager {
   private poolScales(lazy: AtlasRT[]): number[] {
     // bodies: resident (see rebuild); @2x when the quality tier asks for it and every body has the @2x colour + tint mask
     // KTX2 (1760x1680 fits a layer; planPool's cap rule takes 2x only when it leaves half the free layers), else 1x
-    if (lazy.length && isBodyAtlasKey(lazy[0]!.key)) {
+    if (lazy.length && (this.bodyPageKeys?.has(lazy[0]!.key) || isBodyAtlasKey(lazy[0]!.key))) {
       const b2 = this.pageScale >= 2 && lazy.every((a) => { const p2 = a.source.pages?.find((q) => q.scale === 2); return !!p2?.ktx2 && !!p2.masksKtx2?.tintmask; });
       return (b2 ? [2, 1] : [1]).filter((k) => this.poolGeom(lazy, k).perLayer > 0);
     }
@@ -982,8 +994,12 @@ export class AtlasManager {
   /** Page key a sprite streams at `facing` (facing-split sprites: that facing's page), or null when resident. */
   pageKeyAt(spriteId: number, facing?: number): string | null { return this.lazyOf(spriteId, facing)?.key ?? null; }
   /** True when the sprite's art can be drawn now. Streamed pages are touched (LRU) and requested when missing. */
-  pageReady(spriteId: number, prio = Infinity, facing?: number): boolean {
-    const a = this.lazyOf(spriteId, facing); if (!a) return true;
+  pageReady(spriteId: number, prio = Infinity, facing?: number): boolean { return this.pageReadyA(this.lazyOf(spriteId, facing), prio); }
+  /** pageReady() for the page a resolve() actually read (`ResolvedFrame.atlas`): multi-page sprites (swim/punch on a
+   *  second body/wear page via dirFrames) stream the page of the drawn anim + facing, not the sprite's first page. */
+  pageReadyAt(atlasIdx: number, prio = Infinity): boolean { const a = this.atlases[atlasIdx]; return this.pageReadyA(a?.lazy ? a : null, prio); }
+  private pageReadyA(a: AtlasRT | null, prio: number): boolean {
+    if (!a) return true;
     const p = this.poolOfA(a); if (!p || !this.poolOn(p, prio)) { this.vram.misses++; return false; }
     if (a.lazy!.state === 2 && p.lru.touch(a.key, this.frame, prio)) return true;
     this.vram.misses++; this.request(a, prio); return false;
@@ -1000,6 +1016,8 @@ export class AtlasManager {
   retainSprite(spriteId: number, facing?: number): void { const a = this.lazyOf(spriteId, facing); const p = a && this.poolOfA(a); if (!a || !p) return; p.lru.retain(a.key); this.request(a); }
   releaseSprite(spriteId: number, facing?: number): void { const a = this.lazyOf(spriteId, facing); const p = a && this.poolOfA(a); if (a && p) p.lru.release(a.key); }
   /** Mark a drawn sprite's atlas as recently used: it is classified hot at the next rebuild (budget / fallback refit). */
+  /** markUsed() for a resolved page (multi-page sprites: the anim's own page is hot too). */
+  markUsedAt(atlasIdx: number): void { const a = this.atlases[atlasIdx]; if (a && !a.lazy && this.usedMark[atlasIdx] !== 1) { this.usedMark[atlasIdx] = 1; this.recentlyUsed.add(a.key); } }
   markUsed(spriteId: number): void { const s = this.sprites[spriteId]; if (!s) return; const a = this.atlases[s.atlasIdx]; if (a && !a.lazy && this.usedMark[s.atlasIdx] !== 1) { this.usedMark[s.atlasIdx] = 1; this.recentlyUsed.add(a.key); } }
   private usedMark = new Uint8Array(0);
   /** Pool class of a sprite's streamed page ("wear" | "veh"), or null when resident. */
@@ -1217,12 +1235,12 @@ export class AtlasManager {
       if (d && ia !== undefined && ia >= 0) {
         const da = this.atlases[ia]!; this.fill(da, d.frame, s, out);
         if (!da.source.rects?.[d.frame]) { out.ax = d.anchor.x * da.fw; out.ay = d.anchor.y * da.fh; }
-        out.sprite = spriteId; out.frame = d.frame; out.anim = an.name ?? ""; return true;
+        out.sprite = spriteId; out.frame = d.frame; out.anim = an.name ?? ""; out.atlas = ia; return true;
       }
     }
     let f = an.frames[i]!;
     f += AssetRegistry.directionIndex(facing, an.directions) * (an.directions > 1 ? an.dirStride : 0);
-    this.fill(a, f, s, out); out.sprite = spriteId; out.frame = f; out.anim = an.name ?? "";
+    this.fill(a, f, s, out); out.sprite = spriteId; out.frame = f; out.anim = an.name ?? ""; out.atlas = s.atlasIdx;
     return true;
   }
 
@@ -1343,6 +1361,27 @@ export class AtlasManager {
 
   /** Animation index of `name` on a sprite (-1 = unknown; resolve() then uses the first animation's frame list). */
   animIndex(spriteId: number, name: string): number { const s = this.sprites[spriteId]; if (!s) return -1; const i = s.anims.findIndex((a) => a.name === name); return i < 0 ? 0 : i; }
+  /** Animation index of `name`, or -1 when the sprite has no such anim (animIndex() falls back to 0). */
+  findAnim(spriteId: number, name: string): number { const s = this.sprites[spriteId]; if (!s) return -1; for (let i = 0; i < s.anims.length; i++) if (s.anims[i]!.name === name) return i; return -1; }
+  /**
+   * Paper-doll frame alignment: the first anim of `state`'s fallback chain (STATE_ANIMS) the body has that every wear
+   * layer can follow. A layer follows when it has that anim, or has none of the chain (face/eyes expression layers
+   * keep their own anims). So when the body has swim/punch frames (possibly on a second page) but a worn item does
+   * not, the whole character drops to the next shared anim (walk + swim clip-and-bob, attack) instead of the item
+   * playing other frames than the body. Returns the body's anim index (stateAnim() when nothing is shared). Allocation-free.
+   */
+  sharedStateAnim(body: number, layers: readonly { sprite: number }[], state: number): number {
+    const chain = STATE_ANIMS[state] ?? STATE_ANIMS[CoreAnimState.Idle]!;
+    for (const name of chain) {
+      const bi = this.findAnim(body, name); if (bi < 0) continue;
+      let ok = true;
+      for (const l of layers) { if (l.sprite === body || this.findAnim(l.sprite, name) >= 0) continue;
+        let any = false; for (const n2 of chain) if (this.findAnim(l.sprite, n2) >= 0) { any = true; break; }
+        if (any) { ok = false; break; } }
+      if (ok) return bi;
+    }
+    return this.stateAnim(body, state);
+  }
   animName(spriteId: number, anim: number): string | undefined { return this.sprites[spriteId]?.anims[anim]?.name; }
   stateAnim(spriteId: number, state: number): number { const s = this.sprites[spriteId]; return s ? s.stateAnim[state] ?? s.stateAnim[CoreAnimState.Idle] ?? 0 : 0; }
 
@@ -1352,7 +1391,7 @@ export class AtlasManager {
     out.entry = a.base + fi;
     if (r) { out.w = r.w; out.h = r.h; out.ax = r.ax; out.ay = r.ay; }
     else { out.w = a.fw; out.h = a.fh; out.ax = s.anchorX * a.fw; out.ay = s.anchorY * a.fh; }
-    out.hasDamageFrames = false; out.flipX = false; out.sprite = -1; out.frame = -1; out.anim = "";
+    out.hasDamageFrames = false; out.flipX = false; out.sprite = -1; out.frame = -1; out.anim = ""; out.atlas = -1;
   }
 
   /** For galleries/tools: every atlas with its frame count and loaded image. */
@@ -1374,7 +1413,9 @@ export class AtlasManager {
 export function legacyDirFrameAtlases(registry: AssetRegistry): Set<string> {
   const old = new Set<string>(), used = new Set<string>();
   for (const s of registry.allSprites()) {
-    const split = s.animList.some((a) => a.dirFrames);
+    // fully facing-split sprites only (vehicles): multi-page sprites (body/wear/animals with swim/punch on an extra
+    // page via dirFrames on just those anims) still draw their other anims from sprite.atlas
+    const split = s.animList.length > 0 && s.animList.every((a) => a.dirFrames);
     if (split) old.add(s.atlas.key); else used.add(s.atlas.key);
     for (const a of s.animList) for (const d of a.dirFrames ?? []) used.add(d.atlas.key);
   }
@@ -1400,13 +1441,14 @@ export function wearableOnlyAtlases(registry: AssetRegistry): Set<string> {
     for (const [k, x] of Object.entries(v as Record<string, unknown>)) { if (k === "sprite" && typeof x === "number") wear.add(x); else walk(x, depth + 1); }
   };
   for (const s of ["hair", "hat", "accessory", "top", "bottom", "shoes", "face", "eyes"]) for (const w of cat.bySlot(s)) walk(w, 0);
-  const atlasOf = new Map<number, string>(); for (const s of registry.allSprites()) atlasOf.set(s.id, s.atlas.key);
-  for (const id of wear) { const k = atlasOf.get(id); if (k) out.add(k); }
+  // every page a sprite draws from: sprite.atlas plus multi-page anims' dirFrames pages (swim/punch wear pages)
+  const pagesOf = (s: { atlas: { key: string }; animList: { dirFrames?: { atlas: { key: string } }[] }[] }): string[] => { const k = new Set([s.atlas.key]); for (const a of s.animList) for (const d of a.dirFrames ?? []) k.add(d.atlas.key); return [...k]; };
+  for (const s of registry.allSprites()) if (wear.has(s.id)) for (const k of pagesOf(s)) out.add(k);
   // an atlas shared with anything else (bodies, mirrors, world props) stays resident
-  for (const s of registry.allSprites()) if (!wear.has(s.id)) out.delete(s.atlas.key);
+  for (const s of registry.allSprites()) if (!wear.has(s.id)) for (const k of pagesOf(s)) out.delete(k);
   return out;
 }
 
-export interface ResolvedFrame { entry: number; w: number; h: number; ax: number; ay: number; hasDamageFrames: boolean; /** draw mirrored (mirror rotationArt) */ flipX: boolean;
+export interface ResolvedFrame { /** atlas table index the frame was read from (multi-page sprites: the dirFrames page; -1 outside resolve()) */ atlas: number; entry: number; w: number; h: number; ax: number; ay: number; hasDamageFrames: boolean; /** draw mirrored (mirror rotationArt) */ flipX: boolean;
   /** source sprite id / atlas frame index / anim name (resolve() only; -1 / "" otherwise): frameMeta anchor lookup */ sprite: number; frame: number; anim: string }
-export const newResolved = (): ResolvedFrame => ({ entry: 0, w: 0, h: 0, ax: 0, ay: 0, hasDamageFrames: false, flipX: false, sprite: -1, frame: -1, anim: "" });
+export const newResolved = (): ResolvedFrame => ({ atlas: -1, entry: 0, w: 0, h: 0, ax: 0, ay: 0, hasDamageFrames: false, flipX: false, sprite: -1, frame: -1, anim: "" });
