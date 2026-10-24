@@ -13,7 +13,7 @@ import { World, Transform, PrevTransform, TimeOfDay, Weather, Appearance, Player
 import { CHUNK_SIZE, tileToChunk, tileToLocal, type TileMap } from "@engine/world";
 import { loadManifest, mergeManifests, buildPieceVisual, type AssetRegistry, type ManifestFragment, type ManifestJson } from "@engine/assets";
 import { BuildGhost, pieceArtRow, ROT_EXACT_PIVOT, IsoRenderer, Sprite, Shadow, LightSource, Occluder, SpriteFlag, sourcesFromManifest, coreAppearanceBinding, CameraTargetGuard } from "@engine/render";
-import { gameplayDefs, rotationSteps, animalDefs, Animal, Health, Survival, Zombie, ResourceNode, CraftingStation, Fuel, AnimState as GAnim, BuildPiece as GPiece, Dead, Wetness, BodyTemp, Emitter, PieceLink, Crop, cropSpriteKey, clutterForChunk } from "@engine/gameplay";
+import { gameplayDefs, rotationSteps, animalDefs, Animal, Health, Survival, Zombie, ResourceNode, CraftingStation, Fuel, AnimState as GAnim, BuildPiece as GPiece, Dead, Wetness, BodyTemp, Emitter, PieceLink, Crop, cropSpriteKey, clutterForChunk, resolveSprite, type ResolvedSprite } from "@engine/gameplay";
 
 /** Render-side schemas the renderer's bindings expect (view World only). */
 const VAnim = defineComponent("ViewAnimState", { state: "u8", startTick: "u32" });
@@ -124,6 +124,13 @@ export class IsoView {
   }
 
   private sid(key: string | undefined): number | undefined { return key ? this.registry.ids.sprites.tryId(key) : undefined; }
+  /** ADR-110: sprite with data-driven fallback (sprite_fallbacks.json); real art wins whenever the pack has the key. */
+  private rsCache = new Map<string, (ResolvedSprite & { id: number }) | null>();
+  private rs(key: string | undefined): (ResolvedSprite & { id: number }) | undefined {
+    if (!key) return undefined; let r = this.rsCache.get(key);
+    if (r === undefined) { const x = resolveSprite(key, (k) => this.sid(k) !== undefined); r = x ? { ...x, id: this.sid(x.key)! } : null; this.rsCache.set(key, r); }
+    return r ?? undefined;
+  }
 
   /** Mirror `net` into the view World and draw. */
   render(net: World, tiles: TileMap | undefined, player: Entity | undefined, alpha: number): void {
@@ -159,7 +166,7 @@ export class IsoView {
         ve = v.create(); this.map.set(e, ve);
         v.add(ve, Transform, { x: cur.x, y: cur.y, z: ground(cur.x, cur.y, cur.z), facing: cur.facing }).add(ve, PrevTransform, { x: prev.x, y: prev.y, z: ground(prev.x, prev.y, prev.z), facing: prev.facing });
         if (spec.pieceVisual !== undefined) v.add(ve, VPiece, { visualId: spec.pieceVisual, variant: spec.variant ?? 0, tint: spec.tint ?? 0, damageStage: spec.damage ?? 0, rotation: spec.rot ?? 0, level: spec.level ?? 0, layer: spec.layer ?? 1, ghost: 0 });
-        else if (spec.sprite !== undefined) v.add(ve, Sprite, { spriteId: spec.sprite!, frameId: spec.frame ?? 0, flags: spec.flags ?? 0, scale: spec.scale ?? 1, tint: 0 });
+        else if (spec.sprite !== undefined) v.add(ve, Sprite, { spriteId: spec.sprite!, frameId: spec.frame ?? 0, flags: spec.flags ?? 0, scale: spec.scale ?? 1, tint: spec.tint ?? 0 });
         if (spec.shadow) v.add(ve, Shadow, { alpha: spec.shadow, length: 1 });
         if (spec.occluder) v.add(ve, Occluder, { fade: 0.35 });
         if (spec.light) { v.add(ve, LightSource, { ...spec.light, intensity: 0 }); this.lightOf.set(e, { spec: spec.light, ...(spec.fuelOf !== undefined ? { fuel: spec.fuelOf } : {}) }); }
@@ -202,7 +209,7 @@ export class IsoView {
         if (!a && v.has(ve, Appearance)) v.remove(ve, Appearance); const va = a ? v.get(ve, Appearance) : undefined;
         if (a && (!va || va.version !== a.version)) { const init = { bodyType: a.bodyType, skinTone: a.skinTone, version: a.version, parts: [...a.parts], primary: [...a.primary], secondary: [...a.secondary] }; if (va) v.set(ve, Appearance, init); else v.add(ve, Appearance, init); }
       }
-      if (v.has(ve, Sprite) && net.has(e, Crop)) { const c = net.get(e, Crop)!; const s = this.sid(cropSpriteKey(c.kind, c.stage)); if (s !== undefined && v.get(ve, Sprite)!.spriteId !== s) v.set(ve, Sprite, { spriteId: s }); }
+      if (v.has(ve, Sprite) && net.has(e, Crop)) { const c = net.get(e, Crop)!; const r = this.rs(cropSpriteKey(c.kind, c.stage)); if (r && (v.get(ve, Sprite)!.spriteId !== r.id || v.get(ve, Sprite)!.scale !== r.scale)) { v.set(ve, Sprite, { spriteId: r.id, scale: r.scale, tint: r.tint }); this.scales.set(ve, r.scale); } }
       if (v.has(ve, VPiece)) this.syncPieceState(net, e, ve, defs);
       if (v.has(ve, VFuel)) { const f = net.get(e, Fuel); if (f) v.set(ve, VFuel, { lit: f.lit, burnUntilTick: f.burnUntilTick }); }
     }
@@ -240,9 +247,9 @@ export class IsoView {
       const list: Entity[] = [];
       for (const it of clutterForChunk(0x5eed, cx, cy, CHUNK_SIZE, (tx, ty) => tiles.getTile(tx, ty), CLUTTER.density)) {
         if (this.clutterCount + list.length >= CLUTTER.cap) break;
-        const s = this.sid(it.key); if (s === undefined) continue;
+        const r = this.rs(it.key); if (!r) continue; // no art and no fallback: skipped
         const ve = v.create(); const z = ground(it.x, it.y, 0);
-        v.add(ve, Transform, { x: it.x, y: it.y, z, facing: 0 }).add(ve, PrevTransform, { x: it.x, y: it.y, z, facing: 0 }).add(ve, Sprite, { spriteId: s, frameId: 0, flags: it.flip ? SpriteFlag.FlipX : 0, scale: it.scale, tint: 0 });
+        v.add(ve, Transform, { x: it.x, y: it.y, z, facing: 0 }).add(ve, PrevTransform, { x: it.x, y: it.y, z, facing: 0 }).add(ve, Sprite, { spriteId: r.id, frameId: 0, flags: it.flip ? SpriteFlag.FlipX : 0, scale: it.scale * r.scale, tint: r.tint });
         list.push(ve);
       }
       this.clutter.set(k, list); this.clutterCount += list.length;
@@ -304,8 +311,8 @@ export class IsoView {
     const h = (entityIndex(e) * 2654435761) >>> 0;
     // characters: own player (Survival is owner-only) + other players and human bots (PlayerId / Appearance / Health+AnimState)
     if (net.has(e, Animal)) {
-      const k = animalDefs()[net.get(e, Animal)!.kind]; const s = this.sid(k?.spriteKey);
-      if (s !== undefined) return { sprite: s, animated: true, shadow: 0.8 };
+      const k = animalDefs()[net.get(e, Animal)!.kind]; const r = this.rs(k?.spriteKey);
+      if (r) return { sprite: r.id, animated: true, shadow: 0.8, ...(r.tint ? { tint: r.tint } : {}), ...(r.scale !== 1 ? { scale: r.scale, onCreate: r.scale } : {}) };
       const ph = this.sid(`animal_${k?.key ?? ""}`) ?? this.sid("player"); // species key fallback; base sprite only if the pack lacks animal art
       return ph === undefined ? undefined : { sprite: ph, animated: true, shadow: 0.6, ...(this.sid(`animal_${k?.key ?? ""}`) === undefined ? { scale: 0.55, onCreate: 0.55 } : {}) };
     }
@@ -320,14 +327,14 @@ export class IsoView {
     }
     if (net.has(e, ResourceNode)) {
       const n = net.get(e, ResourceNode)!; const key = defs?.resources.get(n.kind)?.spriteKey;
-      const s = this.sid(key); if (s === undefined) return undefined;
+      const r = this.rs(key); if (!r) return undefined; const s = r.id;
       const tall = key === "tree" || !!key?.startsWith("tree_") || !!key?.endsWith("_tree"); // ADR-110 species: <x>_tree
-      const scale = tall ? 1.1 + (h % 50) / 100 : 1;
-      return { sprite: s, flags: (h & 1 ? SpriteFlag.FlipX : 0) | (tall || !!key?.endsWith("_bush") ? SpriteFlag.Sway : 0), scale, shadow: 0.9, occluder: !!tall, onCreate: scale };
+      const scale = (tall ? 1.1 + (h % 50) / 100 : 1) * r.scale;
+      return { sprite: s, ...(r.tint ? { tint: r.tint } : {}), flags: (h & 1 ? SpriteFlag.FlipX : 0) | (tall || !!key?.endsWith("_bush") ? SpriteFlag.Sway : 0), scale, shadow: 0.9, occluder: !!tall, onCreate: scale };
     }
     if (net.has(e, Crop)) { // ADR-110: farm_soil / crop_<plant>_<stage> / sapling_<tree|bush>_<stage> (stage synced per frame)
-      const c = net.get(e, Crop)!; const s = this.sid(cropSpriteKey(c.kind, c.stage)) ?? this.sid(cropSpriteKey(c.kind, 0)); if (s === undefined) return undefined;
-      return { sprite: s, flags: (h & 1 ? SpriteFlag.FlipX : 0) | (c.kind > 0 ? SpriteFlag.Sway : 0), shadow: c.kind > 0 ? 0.5 : 0 };
+      const c = net.get(e, Crop)!; const r = this.rs(cropSpriteKey(c.kind, c.stage)); if (!r) return undefined;
+      return { sprite: r.id, scale: r.scale, onCreate: r.scale, ...(r.tint ? { tint: r.tint } : {}), flags: (h & 1 ? SpriteFlag.FlipX : 0) | (c.kind > 0 ? SpriteFlag.Sway : 0), shadow: c.kind > 0 ? 0.5 : 0 };
     }
     // Piece attachments (fire/fuel, light, door, storage) share the piece's position: no sprite of their own, but a
     // light Emitter (kind 2) or a fired attachment becomes a renderer light keyed by the owning piece.

@@ -74,3 +74,4 @@ export * from "./ui/camper.js";
 export * from "./forget.js";
 export * from "./farming.js";
 export * from "./clutter.js";
+export * from "./sprite-fallback.js";

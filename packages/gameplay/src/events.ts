@@ -43,6 +43,7 @@ export const FuelOut = ev<{ entity: Entity }>("gameplay.FuelOut");
 export const FireToggled = ev<{ entity: Entity; lit: number }>("gameplay.FireToggled");
 // building
 export const PiecePlaced = ev<{ piece: Entity; type: number; builder: Entity }>("gameplay.PiecePlaced");
+export const FarmFailed = ev<{ entity: Entity; reason: number }>("gameplay.FarmFailed");
 export const BuildFailed = ev<{ entity: Entity; action: number; reason: BuildFail }>("gameplay.BuildFailed");
 export const PieceDamaged = ev<{ piece: Entity; hp: number; amount: number; attacker: Entity }>("gameplay.PieceDamaged");
 export const PieceDestroyed = ev<{ piece: Entity; type: number; cause: DestroyCause }>("gameplay.PieceDestroyed");
@@ -65,7 +66,7 @@ export const ZombieStateChanged = ev<{ zombie: Entity; state: ZState }>("gamepla
 export const EVENT_RELIABILITY: Readonly<Record<string, "reliable" | "unreliable">> = {
   "gameplay.PiecePlaced": "reliable", "gameplay.PieceDestroyed": "reliable", "gameplay.PieceUpgraded": "reliable", "gameplay.Died": "reliable",
   "gameplay.CraftCompleted": "reliable", "gameplay.ItemGathered": "reliable", "gameplay.ContainerOpened": "reliable", "gameplay.ContainerClosed": "reliable",
-  "gameplay.BuildFailed": "reliable", "gameplay.ZombieSpawned": "reliable", "gameplay.RaidAlarm": "reliable",
+  "gameplay.BuildFailed": "reliable", "gameplay.FarmFailed": "reliable", "gameplay.ZombieSpawned": "reliable", "gameplay.RaidAlarm": "reliable",
   "gameplay.Ignited": "unreliable", "gameplay.Extinguished": "unreliable",
   "gameplay.GatherSwing": "unreliable", "gameplay.AttackSwing": "unreliable", "gameplay.PieceDamaged": "unreliable", "gameplay.DoorToggled": "unreliable",
   "gameplay.ZombieStateChanged": "unreliable", "gameplay.Damaged": "unreliable",

@@ -21,11 +21,12 @@ import { InputSystem, AimResolver, DEFAULT_ACTIONS, DEFAULT_CONTEXTS, DEFAULT_PR
 import { attachBrowserInput } from "@engine/input/browser";
 import { Act, ClanRoster, ClanRosterMember, OnlinePlayer, VehicleStationOpenedEvt, gameplayNet, installDemoWorld } from "@engine/server/protocol";
 import { netIdOf, ChatChannel, type ChatDelivered } from "@engine/net";
-import { SocialDirectory, interactPanel, type MenuCtx, type MenuIntent } from "@engine/gameplay";
+import { SocialDirectory, interactPanel, UseCmd, GatherCmd, farmPrompt, type MenuCtx, type MenuIntent } from "@engine/gameplay";
 import { ClientSession } from "./session.js";
 import { mountConnectOverlay } from "./connect.js";
 import { IsoView } from "./view.js";
 import { mountHud } from "./hud.js";
+import { controlLabel, mountFarmPrompt, quickUseFires, type PromptDevice } from "./farm-prompt.js";
 import { BootUI, loadSettings } from "./menu.js";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
@@ -69,6 +70,8 @@ const MENU_BAR_IDS = new Set(["inventory", "crafting", "map", "chat", "social", 
 const touchLayout = { ...DEFAULT_TOUCH_LAYOUTS.gameplay, elements: DEFAULT_TOUCH_LAYOUTS.gameplay.elements.filter((e) => !MENU_BAR_IDS.has(e.id)) };
 const browserInput = attachBrowserInput(canvas, input, { ...(matchMedia("(pointer: coarse)").matches ? { virtualLayout: touchLayout } : {}), insets: () => safeAreaInsets() });
 let menus: GameMenus | undefined;
+let farm: ReturnType<typeof mountFarmPrompt> | undefined;
+const safeFarmPrompt = (p: NonNullable<typeof session.player>): ReturnType<typeof farmPrompt> => { try { return farmPrompt(world, p); } catch { return undefined; } };
 if (browserInput.controls) { const c = browserInput.controls; mountTouchOverlay(root, () => c.geometry(), () => !menus || menus.nav.isOpen); }
 /** Set by the active mode: what "Quit to main menu" must do first (save / end the P2P session / disconnect). */
 let leaveCurrent: (() => Promise<void> | void) | undefined;
@@ -152,6 +155,7 @@ const buildTouchLayout = { ...DEFAULT_TOUCH_LAYOUTS.building, elements: DEFAULT_
 function onUiFrame(): void {
   if (menus?.nav.isOpen) { buildMode.stop(); return; }
   if (buildMode.active) { buildMode.update(); return; }
+  if (input.pressed("QuickUse") && farm) { const p = session.player; if (p !== undefined && quickUseFires(safeFarmPrompt(p))) farm.trigger(); }
   if (input.pressed("Interact")) { const c = menuCtx(); const t = c && interactPanel(c); if (t?.panel === "trade") menus?.openStall(t.stall); else if (t) menus?.open("character"); }
 }
 /** Panel refresh cadence: 250ms, 500ms on low-end devices (few cores / little memory / ?gl=lowend). */
@@ -334,6 +338,12 @@ if (boot) {
   if (session.account && session.savedUrl && params.get("autoconnect") !== "0") connectTo(serverParam ?? session.savedUrl, session.savedName ?? "");
 }
 
+const promptDevice = (): PromptDevice => { const c = input.activeDevice?.deviceClass; return c === "gamepad" || c === "touch" ? c : "keyboardMouse"; };
+farm = mountFarmPrompt(root, {
+  world: () => world, player: () => session.player, device: promptDevice, hidden: () => !!menus?.nav.isOpen || buildMode.active,
+  key: (action) => controlLabel(input.bindings(promptDevice(), "Gameplay").find((b) => b.binding.action === action)?.binding.control),
+  use: (p) => { if (p.action === "Harvest") { if (p.target !== undefined) sendIntent({ cmd: GatherCmd, args: { target: p.target }, entities: ["target"] }); } else if (p.slot !== undefined) sendIntent({ cmd: UseCmd, args: { slot: p.slot } }); },
+});
 if (params.get("hud") !== "0" && settings.showHud) mountHud(() => world, () => session.player, { ...(num("time") !== undefined ? { hours: num("time")! } : {}), ...(wi >= 0 ? { weather: wi } : {}) });
 
 let last = performance.now();

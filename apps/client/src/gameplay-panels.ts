@@ -9,7 +9,7 @@
  * Chat log lines (game-menus.ts) carry `[data-chan=global|local|party|clan|trade|whisper|system]`.
  */
 import "./gameplay-panels.css";
-import {
+import { iconForItem,
   buildView, gameplayDefs, cancelQueuedCraftIntent, clanAcceptIntent, clanDeclineIntent, clanRosterRows, onlineTargets, paintIntent, paintTarget, type SocialDirectory, clanCreateIntent, clanDemoteIntent, clanDisbandIntent, clanInviteIntent, clanKickIntent, clanLeaveIntent,
   clanPromoteIntent, clanSetGoalIntent, clanSetRankPermsIntent, clanView, collectTillIntent, containerView, CONTAINER_PAGE_SIZE, craftingView, depositIntent, fuelView, toggleFireIntent, openContainer, withdrawIntent, equipCosmeticIntent, inventoryView, JOB_STATE_LABEL,
   nearestStall, partyAcceptIntent, partyDeclineIntent, partyInviteIntent, partyKickIntent, partyLeaveIntent, partyView, queueCraftIntent, buyFromStallIntent,
@@ -60,12 +60,27 @@ export function containerPageIndex(): number { return containerPage; }
 const gameplayDefsIcon = (c: MenuCtx, item: number): string => gameplayDefs(c.world).items.get(item)?.spriteKey ?? "";
 const draft: StallListDraft = { listing: 0, invSlot: -1, count: 1, priceItem: 0, priceCount: 1, qty: 1 };
 
+/** ADR-110: icon keys the stylesheet has art for ([data-icon="x"] rules; Art's generated block), scanned once. */
+let knownIcons: Set<string> | undefined;
+export function iconKeysFromCss(cssTexts: Iterable<string>): Set<string> {
+  const out = new Set<string>(); for (const t of cssTexts) for (const m of t.matchAll(/\[data-icon="([^"]+)"\]/g)) out.add(m[1]!); return out;
+}
+function hasIcon(k: string): boolean {
+  if (!knownIcons) { const texts: string[] = []; try { for (const sh of Array.from(document.styleSheets)) { try { for (const r of Array.from(sh.cssRules)) texts.push(r.cssText); } catch { /* cross-origin sheet */ } } } catch { /* no DOM */ } knownIcons = iconKeysFromCss(texts); }
+  return knownIcons.size === 0 || knownIcons.has(k); // no stylesheet info (tests / headless): keep keys as-is
+}
+/** Real icon when Art has it, else the item's mapped fallback, else its category's generic icon. */
+function panelIcon(world: Parameters<typeof gameplayDefs>[0], icon: string, item: string | undefined): string {
+  if (!icon || hasIcon(icon)) return icon;
+  const it = item ? gameplayDefs(world).items.get(Number(item)) : undefined;
+  return it ? iconForItem(it, hasIcon) : icon;
+}
 export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelKit): Node[] {
   const c = src.ctx(); if (!c) return [kit.para("Join a game to use this menu.")];
   const rankOf = (role: number): string => role === 3 ? "leader" : role === 2 ? "officer" : "member";
   const btn = (label: string, key: string, fn: () => void, opts: { alt?: boolean; disabled?: boolean; title?: string; role?: string; pressed?: boolean; data?: Record<string, string>; p?: number } = {}): HTMLButtonElement => {
     const b = el("button", { type: "button", "data-key": key }, label); if (opts.alt) b.className = "alt"; if (opts.disabled) b.disabled = true; if (opts.title) { b.dataset["tip"] = opts.title; b.setAttribute("aria-label", `${label}. ${opts.title}`); }
-    if (opts.data) for (const [k, v] of Object.entries(opts.data)) b.setAttribute(`data-${k}`, v);
+    if (opts.data) for (const [k, v] of Object.entries(opts.data)) b.setAttribute(`data-${k}`, k === "icon" ? panelIcon(c.world, v, opts.data["item"]) : v);
     if (opts.p !== undefined) b.setAttribute("style", `--p:${Math.max(0, Math.min(1, opts.p)).toFixed(3)}`);
     if (opts.role) b.dataset["role"] = opts.role; if (opts.pressed !== undefined) b.setAttribute("aria-pressed", String(opts.pressed));
     b.onclick = fn; return b; // property (not listener) so the diffing refresh can swap in fresh closures

@@ -7,9 +7,10 @@
 import { DEFAULT_TICK_HZ, Transform, Weather, entityIndex, type Entity, type World } from "@engine/core";
 import { installSpatialIndex } from "@engine/world";
 import raw from "../data/farming.json";
-import { Crop, Dead, IntentAction, PlayerIntent, ResourceNode } from "./components.js";
+import { Crop, Dead, Equipment, IntentAction, PlayerIntent, ResourceNode } from "./components.js";
 import { gameplayDefs, isAuthority } from "./config.js";
-import { slotItem, takeFromSlot } from "./inventory.js";
+import { countItem, slotItem, takeFromSlot } from "./inventory.js";
+import { emit, FarmFailed } from "./events.js";
 import { indexEntity, spawnResourceNode } from "./spawn.js";
 import { hasPrivilege } from "./building/place.js";
 import { populationTile } from "./population.js";
@@ -29,7 +30,7 @@ export function cropSpriteKey(kind: number, stage: number): string {
   return p.type === "crop" ? `crop_${p.key}_${stage}` : `sapling_${p.key}_${stage}`;
 }
 
-export const enum FarmFail { None = 0, NoPrivilege = 1, BadTile = 2, Occupied = 3, NeedsSoil = 4, NothingToTend = 5 }
+export const enum FarmFail { None = 0, NoPrivilege = 1, BadTile = 2, Occupied = 3, NeedsSoil = 4, NothingToTend = 5, /** crop seed with no soil and no hoe to till it */ NeedsHoe = 6 }
 
 /** Planting spot: one tile in front of the player, snapped to the tile centre. */
 export function plantSpot(world: World, e: Entity): { x: number; y: number } {
@@ -45,31 +46,33 @@ export function spawnCrop(world: World, x: number, y: number, kind = 0): Entity 
   const e = world.create(); world.add(e, Transform, { x, y }).add(e, Crop, { kind, stage: 0, growth: 0, waterUntilTick: 0, fertilized: 0 }); indexEntity(world, e); return e;
 }
 /** Till the spot (hoe). */
-export function till(world: World, e: Entity, x: number, y: number): FarmFail {
+export function till(world: World, e: Entity, x: number, y: number, dryRun = false): FarmFail {
   if (hasForeignZone(world, e, x, y)) return FarmFail.NoPrivilege;
   if (!tileOk(world, x, y, [3, 4])) return FarmFail.BadTile;
   if (near(world, x, y, FARMING.minSpacing).some((o) => world.has(o, Crop) || world.has(o, ResourceNode))) return FarmFail.Occupied;
-  spawnCrop(world, x, y, 0); return FarmFail.None;
+  if (!dryRun) spawnCrop(world, x, y, 0); return FarmFail.None;
 }
 const hasForeignZone = (world: World, e: Entity, x: number, y: number): boolean => !hasPrivilege(world, e, x, y);
 /** Plant `seed` (item key) at x,y. Crops need tilled soil there; trees / bushes need a free spot. */
-export function plant(world: World, e: Entity, seed: string, x: number, y: number): FarmFail {
+export function plant(world: World, e: Entity, seed: string, x: number, y: number, dryRun = false): FarmFail {
   const kind = plantableBySeed(seed); const p = plantableOf(kind); if (!p) return FarmFail.BadTile;
   if (hasForeignZone(world, e, x, y)) return FarmFail.NoPrivilege;
   if (!tileOk(world, x, y, p.tiles)) return FarmFail.BadTile;
   const around = near(world, x, y, FARMING.minSpacing);
   if (p.type === "crop") {
-    const soil = around.find((o) => world.get(o, Crop)?.kind === 0); if (soil === undefined) return FarmFail.NeedsSoil;
-    world.set(soil, Crop, { kind, stage: 0, growth: 0 }); return FarmFail.None;
+    const soil = around.find((o) => world.get(o, Crop)?.kind === 0); if (soil === undefined) return hasHoe(world, e) ? FarmFail.NeedsSoil : FarmFail.NeedsHoe;
+    if (!dryRun) world.set(soil, Crop, { kind, stage: 0, growth: 0 }); return FarmFail.None;
   }
   if (around.some((o) => world.has(o, Crop) || world.has(o, ResourceNode))) return FarmFail.Occupied;
-  spawnCrop(world, x, y, kind); return FarmFail.None;
+  if (!dryRun) spawnCrop(world, x, y, kind); return FarmFail.None;
 }
 export function water(world: World, x: number, y: number): number {
   const until = world.tick + Math.round(FARMING.wateredSeconds * DEFAULT_TICK_HZ); let n = 0;
   for (const o of near(world, x, y, FARMING.waterRadius)) if ((world.get(o, Crop)?.kind ?? 0) > 0) { world.set(o, Crop, { waterUntilTick: until }); n++; }
   return n;
 }
+const hasHoe = (world: World, e: Entity): boolean => { const id = [...gameplayDefs(world).items.values()].find((d) => d.key === FARM_TOOL.hoe)?.id; return !!id && countItem(world, e, id) > 0; };
+const crops = (world: World, x: number, y: number, r: number): Entity[] => near(world, x, y, r).filter((o) => (world.get(o, Crop)?.kind ?? 0) > 0);
 export function fertilize(world: World, x: number, y: number): boolean {
   const c = near(world, x, y, FARMING.fertilizeRadius).find((o) => { const k = world.get(o, Crop); return !!k && k.kind > 0 && k.fertilized === 0; });
   if (c === undefined) return false; world.set(c, Crop, { fertilized: 1 }); return true;
@@ -84,10 +87,13 @@ export function farmUseSystem(world: World): void {
     const slot = intent.data.slot[s]!; const { item, count } = slotItem(world, e, slot); if (!count) continue;
     const key = defs.items.get(item)?.key; if (!key) continue;
     const at = plantSpot(world, e); const me = world.get(e, Transform)!;
-    if (key === FARM_TOOL.hoe) till(world, e, at.x, at.y);
-    else if (key === FARM_TOOL.wateringCan) water(world, me.x, me.y);
-    else if (key === FARM_TOOL.fertilizer) { if (fertilize(world, at.x, at.y) || fertilize(world, me.x, me.y)) takeFromSlot(world, e, slot); }
-    else if (plantableBySeed(key) > 0) { if (plant(world, e, key, at.x, at.y) === FarmFail.None) takeFromSlot(world, e, slot); }
+    let r = FarmFail.None;
+    if (key === FARM_TOOL.hoe) r = till(world, e, at.x, at.y);
+    else if (key === FARM_TOOL.wateringCan) { if (!water(world, me.x, me.y)) r = FarmFail.NothingToTend; }
+    else if (key === FARM_TOOL.fertilizer) { if (fertilize(world, at.x, at.y) || fertilize(world, me.x, me.y)) takeFromSlot(world, e, slot); else r = FarmFail.NothingToTend; }
+    else if (plantableBySeed(key) > 0) { r = plant(world, e, key, at.x, at.y); if (r === FarmFail.None) takeFromSlot(world, e, slot); }
+    else continue;
+    if (r !== FarmFail.None) emit(world, FarmFailed, { entity: e, reason: r });
   }
 }
 
@@ -108,4 +114,29 @@ export function cropGrowthSystem(world: World): void {
     const stage = Math.min(p.stages - 1, Math.floor(growth * p.stages));
     world.set(e, Crop, stage !== c.stage ? { growth, stage } : { growth });
   }
+}
+
+/** Short toast text per failure (ADR-110 follow-up). */
+export const FARM_FAIL_TEXT: Readonly<Record<number, string>> = {
+  [FarmFail.NoPrivilege]: "Inside someone else's claim", [FarmFail.BadTile]: "Can't farm on this ground", [FarmFail.Occupied]: "Too close to another plant",
+  [FarmFail.NeedsSoil]: "Needs tilled soil — use a hoe first", [FarmFail.NothingToTend]: "No crops here to tend", [FarmFail.NeedsHoe]: "You need a hoe to till soil first",
+};
+export type FarmAction = "Till" | "Plant" | "Water" | "Fertilize" | "Harvest";
+export interface FarmPrompt { action: FarmAction; /** Use slot (Harvest goes through Interact / gather instead) */ slot?: number; target?: Entity; /** predicted failure (dry run) */ fail: FarmFail; label: string }
+/** Context prompt for the player's held farming item / a ripe farmed node in front (pure read; client-predicted). */
+export function farmPrompt(world: World, e: Entity): FarmPrompt | undefined {
+  if (!world.has(e, Transform)) return undefined;
+  const defs = gameplayDefs(world); const at = plantSpot(world, e); const me = world.get(e, Transform)!;
+  const slot = world.get(e, Equipment)?.mainHandSlot ?? 255;
+  const { item, count } = slot !== 255 ? slotItem(world, e, slot) : { item: 0, count: 0 };
+  const key = count ? defs.items.get(item)?.key : undefined;
+  const mk = (action: FarmAction, fail: FarmFail, extra: Partial<FarmPrompt> = {}): FarmPrompt => ({ action, slot, fail, label: fail ? `${action}: ${FARM_FAIL_TEXT[fail]}` : action, ...extra });
+  if (key === FARM_TOOL.hoe) return mk("Till", till(world, e, at.x, at.y, true));
+  if (key === FARM_TOOL.wateringCan) return mk("Water", crops(world, me.x, me.y, FARMING.waterRadius).length ? FarmFail.None : FarmFail.NothingToTend);
+  if (key === FARM_TOOL.fertilizer) return mk("Fertilize", crops(world, at.x, at.y, FARMING.fertilizeRadius).length || crops(world, me.x, me.y, FARMING.fertilizeRadius).length ? FarmFail.None : FarmFail.NothingToTend);
+  if (key && plantableBySeed(key) > 0) return mk("Plant", plant(world, e, key, at.x, at.y, true));
+  const ripe = new Set(FARMING.plantables.map((p) => p.becomes));
+  const node = near(world, at.x, at.y, 1).find((o) => { const n = world.get(o, ResourceNode); return !!n && ripe.has(defs.resources.get(n.kind)?.key ?? ""); });
+  if (node !== undefined) { const { slot: _s, ...p } = mk("Harvest", FarmFail.None, { target: node }); return p; }
+  return undefined;
 }

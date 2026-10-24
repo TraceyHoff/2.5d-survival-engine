@@ -19,7 +19,7 @@ describe("ADR-110 wildlife, farming, flora, clutter", () => {
   });
   it("till -> plant -> water/fertilize -> grows through stages -> mature oneShot node; harvest removes it", () => {
     const w = makeWorld(); const p = spawnPlayer(w, { x: 10.5, y: 10.5 });
-    expect(plant(w, p, "wheat_seeds", 11.5, 10.5)).toBe(4); // needs soil
+    expect(plant(w, p, "wheat_seeds", 11.5, 10.5)).toBe(6); // no hoe (NeedsHoe); with a hoe it is NeedsSoil (4) — needs soil
     expect(till(w, p, 11.5, 10.5)).toBe(0); expect(till(w, p, 11.5, 10.5)).toBe(3);
     expect(plant(w, p, "wheat_seeds", 11.5, 10.5)).toBe(0);
     const crop = [...w.query([Crop])][0]!; expect(w.get(crop, Crop)!.kind).toBeGreaterThan(0);

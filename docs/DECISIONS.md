@@ -452,3 +452,8 @@ Identity is persisted in the `agents` record namespace. Gameplay supplies `refer
 - **Rendering.** `*_tree` nodes are drawn tall, act as occluders and sway. `*_bush` nodes sway. Crops are drawn with `farm_soil`, `crop_<plant>_<stage>` or `sapling_<key>_<stage>`.
 
 **Consequences.** The schema hash is now b39d3a19 (was 9230b2f4). Existing worlds keep their animal and item ids, since `ids.lock.json` was regenerated with the new ids appended.
+
+## ADR-111: Art fallbacks, farming toasts and context prompt (ADR-110 follow-up)
+- `packages/gameplay/data/sprite_fallbacks.json` + `resolveSprite(key, has)`: a key the art pack has is drawn as itself (new art takes over automatically); otherwise it resolves through candidate keys (recursive, tint multiplied, scale composed). New trees fall back to tree_* / oak_tree (tinted), bushes to the closest bush, animals to deer/boar/wolf/rabbit/chicken (scaled and tinted), crop/sapling stages to plant or bush sprites scaled by stage, clutter to small sprites (or is skipped). The view (`View.rs`) uses it for animals, resources, crops and clutter.
+- Icons: `resolveIcon` / `iconForItem` give the item's own icon, then a mapped icon, then a per-category generic icon; panels check against the `[data-icon]` rules in the stylesheet.
+- Farming: `FarmFail.NeedsHoe` added; a failed Use emits the reliable `gameplay.FarmFailed {entity, reason}`. `farmPrompt(world, player)` dry-runs till/plant and returns Till/Plant/Water/Fertilize/Harvest plus the predicted failure. The client shows `#farm-prompt` with the QuickUse binding (keyboard X / pad B; Harvest uses Interact). On touch the prompt is a tap button. A predicted failure shows a short `#farm-toast` (FARM_FAIL_TEXT) and sends nothing. No ECS schema change.
