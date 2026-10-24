@@ -408,6 +408,28 @@
       }
     },
     {
+      "key": "animals_medium_sp",
+      "image": "atlases/animals_medium_sp.png",
+      "frameW": 48,
+      "frameH": 48,
+      "columns": 16,
+      "rows": 6,
+      "pages": [
+        {
+          "scale": 2,
+          "image": "atlases/animals_medium_sp@2x.png",
+          "ktx2": "atlases/animals_medium_sp@2x.ktx2"
+        }
+      ],
+      "masks": {
+        "sheen": "atlases/animals_medium_sp_sheen.png"
+      },
+      "ktx2": "atlases/animals_medium_sp.ktx2",
+      "masksKtx2": {
+        "sheen": "atlases/animals_medium_sp_sheen.ktx2"
+      }
+    },
+    {
       "key": "animals_large",
       "image": "atlases/animals_large.png",
       "frameW": 64,
@@ -427,6 +449,28 @@
       "ktx2": "atlases/animals_large.ktx2",
       "masksKtx2": {
         "sheen": "atlases/animals_large_sheen.ktx2"
+      }
+    },
+    {
+      "key": "animals_large_sp",
+      "image": "atlases/animals_large_sp.png",
+      "frameW": 64,
+      "frameH": 64,
+      "columns": 12,
+      "rows": 4,
+      "pages": [
+        {
+          "scale": 2,
+          "image": "atlases/animals_large_sp@2x.png",
+          "ktx2": "atlases/animals_large_sp@2x.ktx2"
+        }
+      ],
+      "masks": {
+        "sheen": "atlases/animals_large_sp_sheen.png"
+      },
+      "ktx2": "atlases/animals_large_sp.ktx2",
+      "masksKtx2": {
+        "sheen": "atlases/animals_large_sp_sheen.ktx2"
       }
     },
     {
@@ -10364,6 +10408,406 @@
           "directions": 8,
           "dirStride": 27,
           "loop": false
+        },
+        "swim": {
+          "frames": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "fps": 6,
+          "directions": 8,
+          "dirStride": 27,
+          "loop": true,
+          "dirFrames": [
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 0,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 6,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 12,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 18,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 24,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 30,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 36,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 42,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 1,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 7,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 13,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 19,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 25,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 31,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 37,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 43,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 2,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 8,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 14,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 20,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 26,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 32,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 38,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 44,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 3,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 9,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 15,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 21,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 27,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 33,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 39,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 45,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 4,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 10,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 16,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 22,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 28,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 34,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 40,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 46,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 5,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 11,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 17,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 23,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 29,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 35,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 41,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 47,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            }
+          ]
         }
       }
     },
@@ -10480,6 +10924,406 @@
           "directions": 8,
           "dirStride": 27,
           "loop": false
+        },
+        "swim": {
+          "frames": [
+            220,
+            221,
+            222,
+            223,
+            224,
+            225
+          ],
+          "fps": 6,
+          "directions": 8,
+          "dirStride": 27,
+          "loop": true,
+          "dirFrames": [
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 48,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 54,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 60,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 66,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 72,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 78,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 84,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 90,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 49,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 55,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 61,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 67,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 73,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 79,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 85,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 91,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 50,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 56,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 62,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 68,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 74,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 80,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 86,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 92,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 51,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 57,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 63,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 69,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 75,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 81,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 87,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 93,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 52,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 58,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 64,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 70,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 76,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 82,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 88,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 94,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 53,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 59,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 65,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 71,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 77,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 83,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 89,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_medium_sp",
+              "frame": 95,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            }
+          ]
         }
       }
     },
@@ -10596,6 +11440,406 @@
           "directions": 8,
           "dirStride": 27,
           "loop": false
+        },
+        "swim": {
+          "frames": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "fps": 6,
+          "directions": 8,
+          "dirStride": 27,
+          "loop": true,
+          "dirFrames": [
+            {
+              "atlas": "animals_large_sp",
+              "frame": 0,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 6,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 12,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 18,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 24,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 30,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 36,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 42,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 1,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 7,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 13,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 19,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 25,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 31,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 37,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 43,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 2,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 8,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 14,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 20,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 26,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 32,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 38,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 44,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 3,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 9,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 15,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 21,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 27,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 33,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 39,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 45,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 4,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 10,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 16,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 22,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 28,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 34,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 40,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 46,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 5,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 11,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 17,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 23,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 29,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 35,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 41,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            },
+            {
+              "atlas": "animals_large_sp",
+              "frame": 47,
+              "anchor": {
+                "x": 0.5,
+                "y": 0.875
+              }
+            }
+          ]
         }
       }
     },
