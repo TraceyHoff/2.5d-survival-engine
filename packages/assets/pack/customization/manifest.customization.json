@@ -1371579,7 +1371579,7 @@
      "sprite": "cz_shoes_sneakers_female"
     }
    },
-   "layer": 15,
+   "layer": 19,
    "z": 0,
    "tintChannels": 2,
    "hidesSlots": [],
@@ -1371600,7 +1371600,7 @@
      "sprite": "cz_shoes_boots_female"
     }
    },
-   "layer": 15,
+   "layer": 19,
    "z": 0,
    "tintChannels": 2,
    "hidesSlots": [],
@@ -1371621,7 +1371621,7 @@
      "sprite": "cz_shoes_sandals_female"
     }
    },
-   "layer": 15,
+   "layer": 19,
    "z": 0,
    "tintChannels": 2,
    "hidesSlots": [],
@@ -1371642,7 +1371642,7 @@
      "sprite": "cz_shoes_rain_boots_female"
     }
    },
-   "layer": 15,
+   "layer": 19,
    "z": 0,
    "tintChannels": 2,
    "hidesSlots": [],
@@ -1371663,7 +1371663,7 @@
      "sprite": "cz_shoes_clogs_female"
     }
    },
-   "layer": 15,
+   "layer": 19,
    "z": 0,
    "tintChannels": 2,
    "hidesSlots": [],
@@ -1371684,7 +1371684,7 @@
      "sprite": "cz_shoes_bunny_slippers_female"
     }
    },
-   "layer": 15,
+   "layer": 19,
    "z": 0,
    "tintChannels": 2,
    "hidesSlots": [],
@@ -1371705,7 +1371705,7 @@
      "sprite": "cz_shoes_hiking_boots_female"
     }
    },
-   "layer": 15,
+   "layer": 19,
    "z": 0,
    "tintChannels": 2,
    "hidesSlots": [],
@@ -1371728,7 +1371728,7 @@
      "sprite": "cz_shoes_flats_female"
     }
    },
-   "layer": 15,
+   "layer": 19,
    "z": 0,
    "tintChannels": 2,
    "hidesSlots": [],
@@ -1371749,7 +1371749,7 @@
      "sprite": "cz_shoes_hightops_female"
     }
    },
-   "layer": 15,
+   "layer": 19,
    "z": 0,
    "tintChannels": 2,
    "hidesSlots": [],
@@ -1371770,7 +1371770,7 @@
      "sprite": "cz_shoes_mushroom_shoes_female"
     }
    },
-   "layer": 15,
+   "layer": 19,
    "z": 0,
    "tintChannels": 2,
    "hidesSlots": [],
@@ -1372993,7 +1372993,7 @@
      "sprite": "cz_shoes_loafers_female"
     }
    },
-   "layer": 15,
+   "layer": 19,
    "z": 0,
    "tintChannels": 2,
    "hidesSlots": [],
@@ -1373014,7 +1373014,7 @@
      "sprite": "cz_shoes_slip_ons_female"
     }
    },
-   "layer": 15,
+   "layer": 19,
    "z": 0,
    "tintChannels": 2,
    "hidesSlots": [],
@@ -1373035,7 +1373035,7 @@
      "sprite": "cz_shoes_moccasins_female"
     }
    },
-   "layer": 15,
+   "layer": 19,
    "z": 0,
    "tintChannels": 2,
    "hidesSlots": [],
@@ -1373056,7 +1373056,7 @@
      "sprite": "cz_shoes_trail_runners_female"
     }
    },
-   "layer": 15,
+   "layer": 19,
    "z": 0,
    "tintChannels": 2,
    "hidesSlots": [],
