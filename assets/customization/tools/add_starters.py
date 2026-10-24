@@ -11,14 +11,13 @@ Usage: python3 add_starters.py ENGINE_DIR"""
 import sys, os, json
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 import swim_punch_merge as spm      # also sets up sys.path (repo assets/tools appended)
-import build_all, catalog
+import build_all, catalog, wearpack
 import numpy as np
 from PIL import Image
 from multiprocessing import Pool
 from rig import FW, FH, FEET, PAD, SIT_N, SWIM_N, PUNCH_N, frame_list
 ENG = sys.argv[1]; D = os.path.join(ENG, "packages/assets/pack/customization"); MP = os.path.join(D, "manifest.customization.json")
-MAXP = 1020; PFX = "cz_st114_"
-MAXP8 = MAXP // 8 * 8  # pages are padded to multiples of 8
+PFX = "cz_st114_"
 
 def neutral(out):   # tools/neutral.py contract (K=0.13), same median rule as the base sheets
     allA = np.concatenate([f[0].reshape(-1, 4) for f in out]).astype(np.float32); allM = np.concatenate([f[1].reshape(-1, 3) for f in out]).astype(np.float32) / 255
@@ -56,48 +55,19 @@ if __name__ == "__main__":
     slot_of = {j[0]: j[2] for j in J}; todo = sorted(slot_of)
     print("new wearables", len(new), "sprites", len(todo), flush=True)
     with Pool(int(os.environ.get("JOBS", "8"))) as pl: R = dict(pl.imap_unordered(render_key, todo))
-    BB = {}
-    for k in todo:
-        al = np.zeros((FH, FW), bool)
-        for fr in R[k][1]: al |= fr[0][..., 3] > 0
-        ys, xs = np.nonzero(al)
-        x0 = min(int(xs.min()), FW // 2 - 1) - 1; y0 = min(int(ys.min()), FEET - 1) - 1
-        x1 = max(int(xs.max()) + 1, FW // 2 + 1) + 1; y1 = max(int(ys.max()) + 1, FEET + 1) + 1
-        x0, y0, x1, y1 = max(0, x0), max(0, y0), min(FW, x1), min(FH, y1); BB[k] = (x0, y0, x1 - x0, y1 - y0)
-    def fits(g):
-        cw = max(BB[k][2] for k in g); ch = max(BB[k][3] for k in g); C = MAXP8 // cw
-        return -(-sum(len(R[k][1]) for k in g) // C) * ch <= MAXP8
-    pages = []
-    for sl in ("hair", "face", "top", "bottom", "shoes", "hat", "accessory", "eyes"):
-        cur = []
-        for k in sorted([k for k in todo if slot_of[k] == sl], key=lambda k: (BB[k][3], BB[k][2], k)):
-            if cur and not fits(cur + [k]): pages.append((sl, cur)); cur = []
-            assert fits([k]), (k, BB[k]); cur.append(k)
-        if cur: pages.append((sl, cur))
-    cnt = {}; newA = []; newS = []
-    for sl, g in pages:
-        cnt[sl] = cnt.get(sl, 0) + 1; pk = f"{PFX}{sl}_{cnt[sl]}"
-        cw = max(BB[k][2] for k in g); ch = max(BB[k][3] for k in g); C = MAXP8 // cw; N = sum(len(R[k][1]) for k in g); Rw = -(-N // C)
-        W1, H1 = spm.r8(C * cw), spm.r8(Rw * ch)
-        o1 = np.zeros((H1, W1, 4), np.uint8); ot = np.zeros((H1, W1, 3), np.uint8); o2 = np.zeros((H1 * 2, W1 * 2, 4), np.uint8); at = 0
-        for k in g:
-            x0, y0, w, h = BB[k]; nb, frs = R[k]
-            for j, fr in enumerate(frs):
-                c = at + j; X, Y = (c % C) * cw, (c // C) * ch
-                o1[Y:Y + h, X:X + w] = fr[0][y0:y0 + h, x0:x0 + w]; ot[Y:Y + h, X:X + w] = fr[1][y0:y0 + h, x0:x0 + w]
-                o2[Y * 2:(Y + h) * 2, X * 2:(X + w) * 2] = fr[2][y0 * 2:(y0 + h) * 2, x0 * 2:(x0 + w) * 2]
-            anc = {"x": round((FW / 2 - x0) / cw, 6), "y": round((FEET - y0) / ch, 6)}
-            s = {"key": k, "category": "character", "atlas": pk, "anchor": anc, "animations": {}}
-            for n, an in FS[k]["animations"].items():
-                s["animations"][n] = dict(an, frames=[f + at for f in an["frames"]])
-            s["animations"]["sit"] = {"frames": list(range(at + nb, at + nb + SIT_N)), "fps": 4, "directions": 8, "dirStride": SIT_N, "loop": True}
-            o = at + nb + 8 * SIT_N
-            spm.anims(s, pk, lambda jj, o=o, anc=anc: (o + jj, anc))
-            newS.append(s); at += len(frs)
-        spm.D = D; spm.save(o1, f"atlases/{pk}.png", "RGBA"); spm.save(o2, f"atlases/{pk}@2x.png", "RGBA"); spm.save(ot, f"atlases/{pk}.tintmask.png", "RGB")
-        newA.append({"key": pk, "image": f"atlases/{pk}.png", "frameW": cw, "frameH": ch, "columns": C, "rows": Rw,
-                     "pages": [{"scale": 2, "image": f"atlases/{pk}@2x.png"}], "masks": {"tintmask": f"atlases/{pk}.tintmask.png"}})
-        print(f"page {pk}: {len(g)} sprites cell {cw}x{ch} grid {C}x{Rw} -> {W1}x{H1} (@2x {W1*2}x{H1*2})", flush=True)
+    newS = {}
+    for k in todo:   # sprite entries index the sprite's own block (0..n-1); wearpack remaps them onto the packed pages
+        nb = R[k][0]; s = {"key": k, "category": "character", "atlas": None, "anchor": None, "animations": {}}
+        for n, an in FS[k]["animations"].items(): s["animations"][n] = dict(an, frames=list(an["frames"]))
+        s["animations"]["sit"] = {"frames": list(range(nb, nb + SIT_N)), "fps": 4, "directions": 8, "dirStride": SIT_N, "loop": True}
+        o = nb + 8 * SIT_N; spm.anims(s, None, lambda jj, o=o: (o + jj, None)); newS[k] = s
+    F = {k: (R[k][1], wearpack.rigid_ranges(newS[k])) for k in todo}
+    newA = []
+    for name, l in wearpack.plan(F, wearpack.units_for([w for w in frag["wearables"] if w["key"] in newk], F)):
+        pk = PFX + name; A, rem, nc = wearpack.write(D, pk, l); newA.append(A)
+        for k, (rm, anc) in rem.items(): wearpack.apply(newS[k], pk, rm, anc)
+        print(f"page {pk}: {len(rem)} sprites {nc} unique cells, cell {A['frameW']}x{A['frameH']} grid {A['columns']}x{A['rows']} -> {l[5]}x{l[6]}", flush=True)
+    newS = [newS[k] for k in todo]
     m["atlases"] += newA; m["sprites"] += newS
     m["wearables"] += [w for w in frag["wearables"] if w["key"] in newk]
     assert all(not w["unlockTags"] for w in m["wearables"] if w["key"] in newk)
