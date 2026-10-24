@@ -14,3 +14,4 @@ logs/
 __pycache__/
 *.pyc
 .DS_Store
+apps/client/dummy-non-existing-folder/

@@ -137,9 +137,9 @@ export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter
   const wrap = doc.createElement("div"); wrap.dataset["boot"] = "creator"; wrap.className = "boot creator"; wrap.setAttribute("role", "dialog"); wrap.setAttribute("aria-label", "Create your character");
   wrap.setAttribute("style", "position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(30,20,28,.72);padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)");
   const panel = doc.createElement("div"); panel.className = "panel ui-scroll";
-  panel.setAttribute("style", "max-height:calc(100dvh - 24px);max-width:min(760px,96vw);overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;display:flex;flex-wrap:wrap;gap:12px;background:#FFF3DC;border:3px solid #3B2433;border-radius:16px;padding:14px");
+  panel.setAttribute("style", "max-height:calc(100dvh - 24px);box-sizing:border-box;width:min(760px,calc(100vw - 16px));max-width:100%;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;display:flex;flex-wrap:wrap;gap:12px;background:#FFF3DC;border:3px solid #3B2433;border-radius:16px;padding:14px");
   const h = doc.createElement("h2"); h.textContent = o.title ?? (o.initial ? "Edit character" : "Create your character"); h.style.cssText = "flex:1 1 100%;margin:0";
-  const left = doc.createElement("div"); left.style.cssText = "flex:1 1 220px;display:flex;flex-direction:column;align-items:center;gap:6px";
+  const left = doc.createElement("div"); left.style.cssText = "flex:1 1 220px;min-width:0;display:flex;flex-direction:column;align-items:center;gap:6px";
   // preview host: sketch canvas until the sprite preview (WebGL2 / Canvas2D) is up; drag on it turns the character
   const host = doc.createElement("div"); host.dataset["role"] = "creator-preview-host"; host.style.cssText = `position:relative;width:${PREVIEW_CSS.w}px;height:${PREVIEW_CSS.h}px;background:#EAD9B8;border-radius:12px;touch-action:none;user-select:none`;
   const cv = doc.createElement("canvas"); cv.width = 160; cv.height = 200; cv.dataset["role"] = "creator-preview"; cv.dataset["renderer"] = "sketch"; cv.style.cssText = `width:${PREVIEW_CSS.w}px;height:${PREVIEW_CSS.h}px;border-radius:12px`; host.append(cv);
@@ -150,25 +150,25 @@ export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter
     host.addEventListener("pointermove", (ev) => { if (!down) return; acc += ev.clientX - px; px = ev.clientX; while (Math.abs(acc) >= 32) { const s = Math.sign(acc); turn(-s); acc -= s * 32; } });
     const up = (): void => { down = false; }; host.addEventListener("pointerup", up); host.addEventListener("pointercancel", up); }
   if (o.preview) void createPreviewDriver(host, o.preview, look, dir).then((d) => { if (!d) return; if (disposed) { d.dispose(); return; } drv = d; cv.remove(); wrap.dataset["preview"] = d.kind; d.set(look); draw(); });
-  const right = doc.createElement("div"); right.style.cssText = "flex:2 1 300px;display:grid;grid-template-columns:auto 1fr;gap:6px 8px;align-items:center";
+  const right = doc.createElement("div"); right.style.cssText = "flex:2 1 240px;min-width:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 8px;align-items:center";
   const mk = (t: string, act: string, fn: () => void, cls = "alt"): HTMLButtonElement => { const b = doc.createElement("button"); b.type = "button"; b.textContent = t; b.className = cls; b.dataset["action"] = act; b.style.minHeight = "44px"; b.addEventListener("click", fn); return b; };
   const rot = doc.createElement("div"); rot.style.cssText = "display:flex;gap:6px";
   rot.append(mk("⟲", "rotate-left", () => { auto = false; turn(-1); }), mk("⟳", "rotate-right", () => { auto = false; turn(1); }));
   left.append(host, rot, mk("🎲 Randomize", "randomize", () => { if (cat) { look = randomLook(cat); refresh(); } }));
   const nameIn = doc.createElement("input"); nameIn.type = "text"; nameIn.maxLength = NAME_MAX; nameIn.placeholder = "Survivor name"; nameIn.value = name; nameIn.dataset["role"] = "creator-name"; nameIn.setAttribute("autocomplete", "nickname");
-  nameIn.style.cssText = "min-height:44px;font:600 18px system-ui;padding:4px 8px"; nameIn.addEventListener("input", () => { name = nameIn.value; });
+  nameIn.style.cssText = "min-height:44px;font:600 18px system-ui;padding:4px 8px;box-sizing:border-box;width:100%;min-width:0"; nameIn.addEventListener("input", () => { name = nameIn.value; });
   const nl = doc.createElement("label"); nl.textContent = "Name"; right.append(nl, nameIn);
   const vals = new Map<string, HTMLElement>();
   const row = (label: string, field: Parameters<typeof stepLook>[2]): void => {
-    const l = doc.createElement("span"); l.textContent = label; const box = doc.createElement("div"); box.style.cssText = "display:flex;gap:6px;align-items:center";
-    const val = doc.createElement("span"); val.dataset["role"] = `creator-${field}`; val.style.cssText = "flex:1;text-align:center;min-width:6em"; vals.set(field, val);
+    const l = doc.createElement("span"); l.textContent = label; const box = doc.createElement("div"); box.style.cssText = "display:flex;gap:6px;align-items:center;min-width:0";
+    const val = doc.createElement("span"); val.dataset["role"] = `creator-${field}`; val.style.cssText = "flex:1;text-align:center;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"; vals.set(field, val);
     const step = (d: number): void => { if (cat) { look = stepLook(cat, look, field, d); refresh(); } };
     box.append(mk("◀", `prev-${field}`, () => step(-1)), val, mk("▶", `next-${field}`, () => step(1))); right.append(l, box);
   };
   row("Body", "body"); row("Skin", "skin"); row("Hair", "hair"); row("Hair colour", "hair:color"); row("Face / beard", "face"); row("Eyes", "eyes");
   row("Top", "top"); row("Top colour", "top:color"); row("Bottom", "bottom"); row("Bottom colour", "bottom:color"); row("Shoes", "shoes");
   const msg = doc.createElement("p"); msg.dataset["role"] = "creator-msg"; msg.style.cssText = "flex:1 1 100%;margin:0;min-height:1.2em";
-  const foot = doc.createElement("div"); foot.className = "sticky-footer"; foot.style.cssText = "flex:1 1 100%;display:flex;gap:8px;position:sticky;bottom:0;background:#FFF3DC;padding-top:6px";
+  const foot = doc.createElement("div"); foot.className = "sticky-footer"; foot.style.cssText = "flex:1 1 100%;display:flex;flex-wrap:wrap;gap:8px;position:sticky;bottom:0;background:#FFF3DC;padding-top:6px";
   let done: (v: StoredCharacter | undefined) => void = () => undefined;
   const ok = mk("Enter world", "creator-done", () => { const n = cleanName(name); if (!n) { msg.textContent = "Pick a name for your survivor."; nameIn.focus(); return; } done({ v: 1, name: n, appearance: look }); }, "");
   foot.append(mk("Back", "creator-back", () => done(undefined)), ok);

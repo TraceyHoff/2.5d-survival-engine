@@ -7,7 +7,7 @@ import { chunkKeyOf, tileToChunk, tileToLocal, type ChunkKey, type ChunkManager,
 import { ResourceNode } from "./components.js";
 import { gameplayDefs, isAuthority } from "./config.js";
 import type { GameDefs } from "./defs.js";
-import { spawnResourceNode } from "./install.js";
+import { spawnResourceNode } from "./spawn.js"; // not ./install.js: that edge made an ESM cycle (CROP_EVERY TDZ, ADR-115)
 
 /** Bands for `new ProceduralGenerator({ seed, bands: worldgenBands(defs) })` (node kinds = resource ids). */
 export function worldgenBands(defs: GameDefs): NonNullable<ProceduralOptions["bands"]> {

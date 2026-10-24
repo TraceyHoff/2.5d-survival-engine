@@ -25,7 +25,7 @@ function walk(dir: string, rel = ""): string[] {
 }
 
 function art(): Plugin {
-  let base = "/", outDir = "dist";
+  let base = "/", outDir = "dist", building = false;
   const serve: Connect.NextHandleFunction = (req, res, next) => {
     const url = decodeURIComponent((req.url ?? "").split("?")[0]!);
     const prefix = base + "art/";
@@ -42,10 +42,13 @@ function art(): Plugin {
   };
   return {
     name: "client-art",
-    configResolved(c) { base = c.base; outDir = resolve(c.root, c.build.outDir); },
+    // vitest resolves this config with build.outDir "dummy-non-existing-folder" and may run closeBundle: only copy art
+    // for a real `vite build` (otherwise 658 MB of art landed in apps/client/dummy-non-existing-folder).
+    configResolved(c) { base = c.base; outDir = resolve(c.root, c.build.outDir); building = c.command === "build" && !process.env["VITEST"] && !/dummy-non-existing-folder/.test(outDir); },
     configureServer(s) { s.middlewares.use(serve); },
     configurePreviewServer(s) { s.middlewares.use(serve); },
     closeBundle() {
+      if (!building) return;
       for (const [p, dir, ok] of MOUNTS) for (const rel of walk(dir).filter(ok)) {
         const dst = join(outDir, "art", p, rel); mkdirSync(join(dst, ".."), { recursive: true }); cpSync(join(dir, rel), dst);
       }
