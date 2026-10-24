@@ -68,6 +68,7 @@
     "tintmask": "atlases/decor_farm_w.tintmask.png"
    },
    "residency": "stream",
+   "placeholder": null,
    "ktx2": "atlases/decor_farm_w.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/decor_farm_w.tintmask.ktx2"
@@ -94,6 +95,7 @@
     "tintmask": "atlases/decor_furn_s.tintmask.png"
    },
    "residency": "stream",
+   "placeholder": null,
    "ktx2": "atlases/decor_furn_s.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/decor_furn_s.tintmask.ktx2"
@@ -120,6 +122,7 @@
     "tintmask": "atlases/decor_furn_t.tintmask.png"
    },
    "residency": "stream",
+   "placeholder": null,
    "ktx2": "atlases/decor_furn_t.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/decor_furn_t.tintmask.ktx2"
@@ -146,6 +149,7 @@
     "tintmask": "atlases/decor_furn_w_1.tintmask.png"
    },
    "residency": "stream",
+   "placeholder": null,
    "ktx2": "atlases/decor_furn_w_1.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/decor_furn_w_1.tintmask.ktx2"
@@ -172,6 +176,7 @@
     "tintmask": "atlases/decor_furn_w_2.tintmask.png"
    },
    "residency": "stream",
+   "placeholder": null,
    "ktx2": "atlases/decor_furn_w_2.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/decor_furn_w_2.tintmask.ktx2"
@@ -198,6 +203,7 @@
     "tintmask": "atlases/decor_furn_wt.tintmask.png"
    },
    "residency": "stream",
+   "placeholder": null,
    "ktx2": "atlases/decor_furn_wt.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/decor_furn_wt.tintmask.ktx2"
@@ -224,6 +230,7 @@
     "tintmask": "atlases/decor_furn_l_1.tintmask.png"
    },
    "residency": "stream",
+   "placeholder": null,
    "ktx2": "atlases/decor_furn_l_1.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/decor_furn_l_1.tintmask.ktx2"
@@ -250,6 +257,7 @@
     "tintmask": "atlases/decor_furn_l_2.tintmask.png"
    },
    "residency": "stream",
+   "placeholder": null,
    "ktx2": "atlases/decor_furn_l_2.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/decor_furn_l_2.tintmask.ktx2"
@@ -276,6 +284,7 @@
     "tintmask": "atlases/decor_light_s.tintmask.png"
    },
    "residency": "stream",
+   "placeholder": null,
    "ktx2": "atlases/decor_light_s.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/decor_light_s.tintmask.ktx2"
@@ -302,6 +311,7 @@
     "tintmask": "atlases/decor_light_t.tintmask.png"
    },
    "residency": "stream",
+   "placeholder": null,
    "ktx2": "atlases/decor_light_t.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/decor_light_t.tintmask.ktx2"
@@ -328,9 +338,172 @@
     "tintmask": "atlases/decor_light_l.tintmask.png"
    },
    "residency": "stream",
+   "placeholder": null,
    "ktx2": "atlases/decor_light_l.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/decor_light_l.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "decor_deco_s",
+   "image": "atlases/decor_deco_s.png",
+   "frameW": 64,
+   "frameH": 88,
+   "columns": 16,
+   "rows": 3,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/decor_deco_s@2x.png",
+     "ktx2": "atlases/decor_deco_s@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/decor_deco_s.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/decor_deco_s.tintmask.png"
+   },
+   "residency": "stream",
+   "placeholder": null,
+   "ktx2": "atlases/decor_deco_s.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/decor_deco_s.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "decor_deco_t_1",
+   "image": "atlases/decor_deco_t_1.png",
+   "frameW": 72,
+   "frameH": 120,
+   "columns": 14,
+   "rows": 8,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/decor_deco_t_1@2x.png",
+     "ktx2": "atlases/decor_deco_t_1@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/decor_deco_t_1.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/decor_deco_t_1.tintmask.png"
+   },
+   "residency": "stream",
+   "placeholder": null,
+   "ktx2": "atlases/decor_deco_t_1.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/decor_deco_t_1.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "decor_deco_t_2",
+   "image": "atlases/decor_deco_t_2.png",
+   "frameW": 72,
+   "frameH": 120,
+   "columns": 14,
+   "rows": 5,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/decor_deco_t_2@2x.png",
+     "ktx2": "atlases/decor_deco_t_2@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/decor_deco_t_2.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/decor_deco_t_2.tintmask.png"
+   },
+   "residency": "stream",
+   "placeholder": null,
+   "ktx2": "atlases/decor_deco_t_2.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/decor_deco_t_2.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "decor_deco_w",
+   "image": "atlases/decor_deco_w.png",
+   "frameW": 104,
+   "frameH": 120,
+   "columns": 9,
+   "rows": 2,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/decor_deco_w@2x.png",
+     "ktx2": "atlases/decor_deco_w@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/decor_deco_w.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/decor_deco_w.tintmask.png"
+   },
+   "residency": "stream",
+   "placeholder": null,
+   "ktx2": "atlases/decor_deco_w.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/decor_deco_w.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "decor_deco_wt",
+   "image": "atlases/decor_deco_wt.png",
+   "frameW": 104,
+   "frameH": 144,
+   "columns": 8,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/decor_deco_wt@2x.png",
+     "ktx2": "atlases/decor_deco_wt@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/decor_deco_wt.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/decor_deco_wt.tintmask.png"
+   },
+   "residency": "stream",
+   "placeholder": null,
+   "ktx2": "atlases/decor_deco_wt.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/decor_deco_wt.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "decor_deco_l",
+   "image": "atlases/decor_deco_l.png",
+   "frameW": 136,
+   "frameH": 152,
+   "columns": 3,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/decor_deco_l@2x.png",
+     "ktx2": "atlases/decor_deco_l@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/decor_deco_l.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/decor_deco_l.tintmask.png"
+   },
+   "residency": "stream",
+   "placeholder": null,
+   "ktx2": "atlases/decor_deco_l.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/decor_deco_l.tintmask.ktx2"
    }
   }
  ],
@@ -14787,6 +14960,5237 @@
      "h": 2
     },
     "layer": 3,
+    "frames": [
+     [
+      2,
+      2,
+      2,
+      2
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_vase",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "vase",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_vase__tall",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "vase@tall",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_vase__round",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "vase@round",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      1,
+      1,
+      1,
+      1
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_vase__painted",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "vase@painted",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      2,
+      2,
+      2,
+      2
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_vase__amphora",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "vase@amphora",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_pottery",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "pottery",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      4,
+      4,
+      4,
+      4
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_pottery__jug",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "pottery@jug",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      4,
+      4,
+      4,
+      4
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_pottery__bowl_stack",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      5
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "pottery@bowl_stack",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      5,
+      5,
+      5,
+      5
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_pottery__urn",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      6
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "pottery@urn",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      6,
+      6,
+      6,
+      6
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_pottery__pitcher",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      7
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "pottery@pitcher",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      7,
+      7,
+      7,
+      7
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_crate_decor",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "crate_decor",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      8,
+      8,
+      8,
+      8
+     ],
+     [
+      9,
+      9,
+      9,
+      9
+     ],
+     [
+      10,
+      10,
+      10,
+      10
+     ],
+     [
+      11,
+      11,
+      11,
+      11
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_crate_decor__single",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "crate_decor@single",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      8,
+      8,
+      8,
+      8
+     ],
+     [
+      9,
+      9,
+      9,
+      9
+     ],
+     [
+      10,
+      10,
+      10,
+      10
+     ],
+     [
+      11,
+      11,
+      11,
+      11
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_crate_decor__stack",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "crate_decor@stack",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      12,
+      12,
+      12,
+      12
+     ],
+     [
+      13,
+      13,
+      13,
+      13
+     ],
+     [
+      14,
+      14,
+      14,
+      14
+     ],
+     [
+      15,
+      15,
+      15,
+      15
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_crate_decor__open",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "crate_decor@open",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      16,
+      16,
+      16,
+      16
+     ],
+     [
+      17,
+      17,
+      17,
+      17
+     ],
+     [
+      18,
+      18,
+      18,
+      18
+     ],
+     [
+      19,
+      19,
+      19,
+      19
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_barrel_decor",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      20
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "barrel_decor",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      20,
+      20,
+      20,
+      20
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_barrel_decor__upright",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      20
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "barrel_decor@upright",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      20,
+      20,
+      20,
+      20
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_barrel_decor__side",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      21
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "barrel_decor@side",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      21,
+      21,
+      21,
+      21
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_barrel_decor__water",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      22
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "barrel_decor@water",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      22,
+      22,
+      22,
+      22
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_barrel_storage",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      23
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "barrel_storage",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      23,
+      23,
+      23,
+      23
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_barrel_storage__oak",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      23
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "barrel_storage@oak",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      23,
+      23,
+      23,
+      23
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_barrel_storage__iron_band",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      24
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "barrel_storage@iron_band",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      24,
+      24,
+      24,
+      24
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_books",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      25
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "books",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      25,
+      25,
+      25,
+      25
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_books__stack",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      25
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "books@stack",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      25,
+      25,
+      25,
+      25
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_books__open",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      26
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "books@open",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      26,
+      26,
+      26,
+      26
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_books__row",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      27
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "books@row",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      27,
+      27,
+      27,
+      27
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_dishes",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      28
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "dishes",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      28,
+      28,
+      28,
+      28
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_dishes__plates",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      28
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "dishes@plates",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      28,
+      28,
+      28,
+      28
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_dishes__cups",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      29
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "dishes@cups",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      29,
+      29,
+      29,
+      29
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_dishes__set",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      30
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "dishes@set",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      30,
+      30,
+      30,
+      30
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_dishes__cutlery",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      31
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "dishes@cutlery",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      31,
+      31,
+      31,
+      31
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_basket",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      32
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "basket",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      32,
+      32,
+      32,
+      32
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_basket__wicker",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      32
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "basket@wicker",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      32,
+      32,
+      32,
+      32
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_basket__laundry",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      33
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "basket@laundry",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      33,
+      33,
+      33,
+      33
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_basket__fruit",
+   "category": "building",
+   "atlas": "decor_deco_s",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7954545454545454
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      34
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "basket@fruit",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      34,
+      34,
+      34,
+      34
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_counter_rustic",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "counter_rustic",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      2,
+      2,
+      2,
+      2
+     ],
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_counter_rustic__plain",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "counter_rustic@plain",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      2,
+      2,
+      2,
+      2
+     ],
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_counter_rustic__tiled",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "counter_rustic@tiled",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      4,
+      4,
+      4,
+      4
+     ],
+     [
+      5,
+      5,
+      5,
+      5
+     ],
+     [
+      6,
+      6,
+      6,
+      6
+     ],
+     [
+      7,
+      7,
+      7,
+      7
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_counter_rustic__butcher_block",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "counter_rustic@butcher_block",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      8,
+      8,
+      8,
+      8
+     ],
+     [
+      9,
+      9,
+      9,
+      9
+     ],
+     [
+      10,
+      10,
+      10,
+      10
+     ],
+     [
+      11,
+      11,
+      11,
+      11
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_counter_fine",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "counter_fine",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      12,
+      12,
+      12,
+      12
+     ],
+     [
+      13,
+      13,
+      13,
+      13
+     ],
+     [
+      14,
+      14,
+      14,
+      14
+     ],
+     [
+      15,
+      15,
+      15,
+      15
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_counter_fine__plain",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "counter_fine@plain",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      12,
+      12,
+      12,
+      12
+     ],
+     [
+      13,
+      13,
+      13,
+      13
+     ],
+     [
+      14,
+      14,
+      14,
+      14
+     ],
+     [
+      15,
+      15,
+      15,
+      15
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_counter_fine__tiled",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "counter_fine@tiled",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      16,
+      16,
+      16,
+      16
+     ],
+     [
+      17,
+      17,
+      17,
+      17
+     ],
+     [
+      18,
+      18,
+      18,
+      18
+     ],
+     [
+      19,
+      19,
+      19,
+      19
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_counter_fine__butcher_block",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      20
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "counter_fine@butcher_block",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      20,
+      20,
+      20,
+      20
+     ],
+     [
+      21,
+      21,
+      21,
+      21
+     ],
+     [
+      22,
+      22,
+      22,
+      22
+     ],
+     [
+      23,
+      23,
+      23,
+      23
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_kitchen_sink",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      24
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "kitchen_sink",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      24,
+      24,
+      24,
+      24
+     ],
+     [
+      25,
+      25,
+      25,
+      25
+     ],
+     [
+      26,
+      26,
+      26,
+      26
+     ],
+     [
+      27,
+      27,
+      27,
+      27
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_kitchen_sink__stone",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      24
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "kitchen_sink@stone",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      24,
+      24,
+      24,
+      24
+     ],
+     [
+      25,
+      25,
+      25,
+      25
+     ],
+     [
+      26,
+      26,
+      26,
+      26
+     ],
+     [
+      27,
+      27,
+      27,
+      27
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_kitchen_sink__metal",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      28
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "kitchen_sink@metal",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      28,
+      28,
+      28,
+      28
+     ],
+     [
+      29,
+      29,
+      29,
+      29
+     ],
+     [
+      30,
+      30,
+      30,
+      30
+     ],
+     [
+      31,
+      31,
+      31,
+      31
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_kitchen_cupboard",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      32
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "kitchen_cupboard",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      32,
+      32,
+      32,
+      32
+     ],
+     [
+      33,
+      33,
+      33,
+      33
+     ],
+     [
+      34,
+      34,
+      34,
+      34
+     ],
+     [
+      35,
+      35,
+      35,
+      35
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_kitchen_cupboard__plain",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      32
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "kitchen_cupboard@plain",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      32,
+      32,
+      32,
+      32
+     ],
+     [
+      33,
+      33,
+      33,
+      33
+     ],
+     [
+      34,
+      34,
+      34,
+      34
+     ],
+     [
+      35,
+      35,
+      35,
+      35
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_kitchen_cupboard__glass",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      36
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "kitchen_cupboard@glass",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      36,
+      36,
+      36,
+      36
+     ],
+     [
+      37,
+      37,
+      37,
+      37
+     ],
+     [
+      38,
+      38,
+      38,
+      38
+     ],
+     [
+      39,
+      39,
+      39,
+      39
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_kitchen_cupboard__painted",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      40
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "kitchen_cupboard@painted",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      40,
+      40,
+      40,
+      40
+     ],
+     [
+      41,
+      41,
+      41,
+      41
+     ],
+     [
+      42,
+      42,
+      42,
+      42
+     ],
+     [
+      43,
+      43,
+      43,
+      43
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_pantry",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      44
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "pantry",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      44,
+      44,
+      44,
+      44
+     ],
+     [
+      45,
+      45,
+      45,
+      45
+     ],
+     [
+      46,
+      46,
+      46,
+      46
+     ],
+     [
+      47,
+      47,
+      47,
+      47
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_pantry__plain",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      44
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "pantry@plain",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      44,
+      44,
+      44,
+      44
+     ],
+     [
+      45,
+      45,
+      45,
+      45
+     ],
+     [
+      46,
+      46,
+      46,
+      46
+     ],
+     [
+      47,
+      47,
+      47,
+      47
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_pantry__slatted",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      48
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "pantry@slatted",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      48,
+      48,
+      48,
+      48
+     ],
+     [
+      49,
+      49,
+      49,
+      49
+     ],
+     [
+      50,
+      50,
+      50,
+      50
+     ],
+     [
+      51,
+      51,
+      51,
+      51
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_stove_iron",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      52
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "stove_iron",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      52,
+      52,
+      52,
+      52
+     ],
+     [
+      53,
+      53,
+      53,
+      53
+     ],
+     [
+      54,
+      54,
+      54,
+      54
+     ],
+     [
+      55,
+      55,
+      55,
+      55
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_stove_iron__black",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      52
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "stove_iron@black",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      52,
+      52,
+      52,
+      52
+     ],
+     [
+      53,
+      53,
+      53,
+      53
+     ],
+     [
+      54,
+      54,
+      54,
+      54
+     ],
+     [
+      55,
+      55,
+      55,
+      55
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_stove_iron__enamel",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      56
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "stove_iron@enamel",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      56,
+      56,
+      56,
+      56
+     ],
+     [
+      57,
+      57,
+      57,
+      57
+     ],
+     [
+      58,
+      58,
+      58,
+      58
+     ],
+     [
+      59,
+      59,
+      59,
+      59
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_stove_iron__rustic",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      60
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "stove_iron@rustic",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      60,
+      60,
+      60,
+      60
+     ],
+     [
+      61,
+      61,
+      61,
+      61
+     ],
+     [
+      62,
+      62,
+      62,
+      62
+     ],
+     [
+      63,
+      63,
+      63,
+      63
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_clay_oven",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      64
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "clay_oven",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      64,
+      64,
+      64,
+      64
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_clay_oven__dome",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      64
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "clay_oven@dome",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      64,
+      64,
+      64,
+      64
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_clay_oven__brick",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      65
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "clay_oven@brick",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      65,
+      65,
+      65,
+      65
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_statue",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      66
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "statue",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      66,
+      66,
+      66,
+      66
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_statue__bust",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      66
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "statue@bust",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      66,
+      66,
+      66,
+      66
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_statue__warrior",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      67
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "statue@warrior",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      67,
+      67,
+      67,
+      67
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_statue__angel",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      68
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "statue@angel",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      68,
+      68,
+      68,
+      68
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_statue__deer",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      69
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "statue@deer",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      69,
+      69,
+      69,
+      69
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_statue__bear",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      70
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "statue@bear",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      70,
+      70,
+      70,
+      70
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_statue__abstract",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      71
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "statue@abstract",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      71,
+      71,
+      71,
+      71
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_trophy_mount",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      72
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "trophy_mount",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      72,
+      72,
+      72,
+      72
+     ],
+     [
+      73,
+      73,
+      73,
+      73
+     ],
+     [
+      74,
+      74,
+      74,
+      74
+     ],
+     [
+      75,
+      75,
+      75,
+      75
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_trophy_mount__deer",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      72
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "trophy_mount@deer",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      72,
+      72,
+      72,
+      72
+     ],
+     [
+      73,
+      73,
+      73,
+      73
+     ],
+     [
+      74,
+      74,
+      74,
+      74
+     ],
+     [
+      75,
+      75,
+      75,
+      75
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_trophy_mount__elk",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      76
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "trophy_mount@elk",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      76,
+      76,
+      76,
+      76
+     ],
+     [
+      77,
+      77,
+      77,
+      77
+     ],
+     [
+      78,
+      78,
+      78,
+      78
+     ],
+     [
+      79,
+      79,
+      79,
+      79
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_trophy_mount__moose",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      80
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "trophy_mount@moose",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      80,
+      80,
+      80,
+      80
+     ],
+     [
+      81,
+      81,
+      81,
+      81
+     ],
+     [
+      82,
+      82,
+      82,
+      82
+     ],
+     [
+      83,
+      83,
+      83,
+      83
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_trophy_mount__boar",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      84
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "trophy_mount@boar",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      84,
+      84,
+      84,
+      84
+     ],
+     [
+      85,
+      85,
+      85,
+      85
+     ],
+     [
+      86,
+      86,
+      86,
+      86
+     ],
+     [
+      87,
+      87,
+      87,
+      87
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_trophy_mount__wolf",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      88
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "trophy_mount@wolf",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      88,
+      88,
+      88,
+      88
+     ],
+     [
+      89,
+      89,
+      89,
+      89
+     ],
+     [
+      90,
+      90,
+      90,
+      90
+     ],
+     [
+      91,
+      91,
+      91,
+      91
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_trophy_mount__bear",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      92
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "trophy_mount@bear",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      92,
+      92,
+      92,
+      92
+     ],
+     [
+      93,
+      93,
+      93,
+      93
+     ],
+     [
+      94,
+      94,
+      94,
+      94
+     ],
+     [
+      95,
+      95,
+      95,
+      95
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_trophy_mount__bison",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      96
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "trophy_mount@bison",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      96,
+      96,
+      96,
+      96
+     ],
+     [
+      97,
+      97,
+      97,
+      97
+     ],
+     [
+      98,
+      98,
+      98,
+      98
+     ],
+     [
+      99,
+      99,
+      99,
+      99
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_trophy_mount__rabbit",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      100
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "trophy_mount@rabbit",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      100,
+      100,
+      100,
+      100
+     ],
+     [
+      101,
+      101,
+      101,
+      101
+     ],
+     [
+      102,
+      102,
+      102,
+      102
+     ],
+     [
+      103,
+      103,
+      103,
+      103
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_sign_wall",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      104
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "sign_wall",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      104,
+      104,
+      104,
+      104
+     ],
+     [
+      105,
+      105,
+      105,
+      105
+     ],
+     [
+      106,
+      106,
+      106,
+      106
+     ],
+     [
+      107,
+      107,
+      107,
+      107
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_sign_wall__plain",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      104
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "sign_wall@plain",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      104,
+      104,
+      104,
+      104
+     ],
+     [
+      105,
+      105,
+      105,
+      105
+     ],
+     [
+      106,
+      106,
+      106,
+      106
+     ],
+     [
+      107,
+      107,
+      107,
+      107
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_sign_wall__carved",
+   "category": "building",
+   "atlas": "decor_deco_t_1",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      108
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "sign_wall@carved",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      108,
+      108,
+      108,
+      108
+     ],
+     [
+      109,
+      109,
+      109,
+      109
+     ],
+     [
+      110,
+      110,
+      110,
+      110
+     ],
+     [
+      111,
+      111,
+      111,
+      111
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_curtains",
+   "category": "building",
+   "atlas": "decor_deco_t_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "curtains",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      2,
+      2,
+      2,
+      2
+     ],
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_curtains__short",
+   "category": "building",
+   "atlas": "decor_deco_t_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "curtains@short",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      2,
+      2,
+      2,
+      2
+     ],
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_curtains__long",
+   "category": "building",
+   "atlas": "decor_deco_t_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "curtains@long",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      4,
+      4,
+      4,
+      4
+     ],
+     [
+      5,
+      5,
+      5,
+      5
+     ],
+     [
+      6,
+      6,
+      6,
+      6
+     ],
+     [
+      7,
+      7,
+      7,
+      7
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_curtains__sheer",
+   "category": "building",
+   "atlas": "decor_deco_t_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "curtains@sheer",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      8,
+      8,
+      8,
+      8
+     ],
+     [
+      9,
+      9,
+      9,
+      9
+     ],
+     [
+      10,
+      10,
+      10,
+      10
+     ],
+     [
+      11,
+      11,
+      11,
+      11
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_curtains__heavy",
+   "category": "building",
+   "atlas": "decor_deco_t_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "curtains@heavy",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      12,
+      12,
+      12,
+      12
+     ],
+     [
+      13,
+      13,
+      13,
+      13
+     ],
+     [
+      14,
+      14,
+      14,
+      14
+     ],
+     [
+      15,
+      15,
+      15,
+      15
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_clock",
+   "category": "building",
+   "atlas": "decor_deco_t_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "clock",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      16,
+      16,
+      16,
+      16
+     ],
+     [
+      17,
+      17,
+      17,
+      17
+     ],
+     [
+      18,
+      18,
+      18,
+      18
+     ],
+     [
+      19,
+      19,
+      19,
+      19
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_clock__grandfather",
+   "category": "building",
+   "atlas": "decor_deco_t_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "clock@grandfather",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      16,
+      16,
+      16,
+      16
+     ],
+     [
+      17,
+      17,
+      17,
+      17
+     ],
+     [
+      18,
+      18,
+      18,
+      18
+     ],
+     [
+      19,
+      19,
+      19,
+      19
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_clock__mantel",
+   "category": "building",
+   "atlas": "decor_deco_t_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      20
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "clock@mantel",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      20,
+      20,
+      20,
+      20
+     ],
+     [
+      21,
+      21,
+      21,
+      21
+     ],
+     [
+      22,
+      22,
+      22,
+      22
+     ],
+     [
+      23,
+      23,
+      23,
+      23
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_clock_wall",
+   "category": "building",
+   "atlas": "decor_deco_t_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      24
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "clock_wall",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      24,
+      24,
+      24,
+      24
+     ],
+     [
+      25,
+      25,
+      25,
+      25
+     ],
+     [
+      26,
+      26,
+      26,
+      26
+     ],
+     [
+      27,
+      27,
+      27,
+      27
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_clock_wall__round",
+   "category": "building",
+   "atlas": "decor_deco_t_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      24
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "clock_wall@round",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      24,
+      24,
+      24,
+      24
+     ],
+     [
+      25,
+      25,
+      25,
+      25
+     ],
+     [
+      26,
+      26,
+      26,
+      26
+     ],
+     [
+      27,
+      27,
+      27,
+      27
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_clock_wall__cuckoo",
+   "category": "building",
+   "atlas": "decor_deco_t_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      28
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "clock_wall@cuckoo",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      28,
+      28,
+      28,
+      28
+     ],
+     [
+      29,
+      29,
+      29,
+      29
+     ],
+     [
+      30,
+      30,
+      30,
+      30
+     ],
+     [
+      31,
+      31,
+      31,
+      31
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_mirror_standing",
+   "category": "building",
+   "atlas": "decor_deco_t_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      32
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "mirror_standing",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      32,
+      32,
+      32,
+      32
+     ],
+     [
+      33,
+      33,
+      33,
+      33
+     ],
+     [
+      34,
+      34,
+      34,
+      34
+     ],
+     [
+      35,
+      35,
+      35,
+      35
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_mirror_standing__oval",
+   "category": "building",
+   "atlas": "decor_deco_t_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      32
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "mirror_standing@oval",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      32,
+      32,
+      32,
+      32
+     ],
+     [
+      33,
+      33,
+      33,
+      33
+     ],
+     [
+      34,
+      34,
+      34,
+      34
+     ],
+     [
+      35,
+      35,
+      35,
+      35
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_mirror_standing__tall",
+   "category": "building",
+   "atlas": "decor_deco_t_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      36
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "mirror_standing@tall",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      36,
+      36,
+      36,
+      36
+     ],
+     [
+      37,
+      37,
+      37,
+      37
+     ],
+     [
+      38,
+      38,
+      38,
+      38
+     ],
+     [
+      39,
+      39,
+      39,
+      39
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_mirror_wall",
+   "category": "building",
+   "atlas": "decor_deco_t_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      40
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "mirror_wall",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      40,
+      40,
+      40,
+      40
+     ],
+     [
+      41,
+      41,
+      41,
+      41
+     ],
+     [
+      42,
+      42,
+      42,
+      42
+     ],
+     [
+      43,
+      43,
+      43,
+      43
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_mirror_wall__round",
+   "category": "building",
+   "atlas": "decor_deco_t_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      40
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "mirror_wall@round",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      40,
+      40,
+      40,
+      40
+     ],
+     [
+      41,
+      41,
+      41,
+      41
+     ],
+     [
+      42,
+      42,
+      42,
+      42
+     ],
+     [
+      43,
+      43,
+      43,
+      43
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_mirror_wall__gilded",
+   "category": "building",
+   "atlas": "decor_deco_t_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      44
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "mirror_wall@gilded",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      44,
+      44,
+      44,
+      44
+     ],
+     [
+      45,
+      45,
+      45,
+      45
+     ],
+     [
+      46,
+      46,
+      46,
+      46
+     ],
+     [
+      47,
+      47,
+      47,
+      47
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_clan_flag",
+   "category": "building",
+   "atlas": "decor_deco_t_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      48
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "clan_flag",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      48,
+      48,
+      48,
+      48
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_clan_flag__pole",
+   "category": "building",
+   "atlas": "decor_deco_t_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      48
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "clan_flag@pole",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      48,
+      48,
+      48,
+      48
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_clan_flag__crossed",
+   "category": "building",
+   "atlas": "decor_deco_t_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      49
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "clan_flag@crossed",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      49,
+      49,
+      49,
+      49
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_clan_flag__tall",
+   "category": "building",
+   "atlas": "decor_deco_t_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      50
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "clan_flag@tall",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      50,
+      50,
+      50,
+      50
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_sign",
+   "category": "building",
+   "atlas": "decor_deco_t_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      51
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "sign",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      51,
+      51,
+      51,
+      51
+     ],
+     [
+      52,
+      52,
+      52,
+      52
+     ],
+     [
+      53,
+      53,
+      53,
+      53
+     ],
+     [
+      54,
+      54,
+      54,
+      54
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_sign__post",
+   "category": "building",
+   "atlas": "decor_deco_t_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      51
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "sign@post",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      51,
+      51,
+      51,
+      51
+     ],
+     [
+      52,
+      52,
+      52,
+      52
+     ],
+     [
+      53,
+      53,
+      53,
+      53
+     ],
+     [
+      54,
+      54,
+      54,
+      54
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_sign__hanging",
+   "category": "building",
+   "atlas": "decor_deco_t_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      55
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "sign@hanging",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      55,
+      55,
+      55,
+      55
+     ],
+     [
+      56,
+      56,
+      56,
+      56
+     ],
+     [
+      57,
+      57,
+      57,
+      57
+     ],
+     [
+      58,
+      58,
+      58,
+      58
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_sign__arrow",
+   "category": "building",
+   "atlas": "decor_deco_t_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      59
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "sign@arrow",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      59,
+      59,
+      59,
+      59
+     ],
+     [
+      60,
+      60,
+      60,
+      60
+     ],
+     [
+      61,
+      61,
+      61,
+      61
+     ],
+     [
+      62,
+      62,
+      62,
+      62
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_sign__board",
+   "category": "building",
+   "atlas": "decor_deco_t_2",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.85
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      63
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "sign@board",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 3,
+    "frames": [
+     [
+      63,
+      63,
+      63,
+      63
+     ],
+     [
+      64,
+      64,
+      64,
+      64
+     ],
+     [
+      65,
+      65,
+      65,
+      65
+     ],
+     [
+      66,
+      66,
+      66,
+      66
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_tool_bench",
+   "category": "building",
+   "atlas": "decor_deco_w",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "tool_bench",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      2,
+      2,
+      2,
+      2
+     ],
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_tool_bench__vise",
+   "category": "building",
+   "atlas": "decor_deco_w",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "tool_bench@vise",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      2,
+      2,
+      2,
+      2
+     ],
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_tool_bench__saw",
+   "category": "building",
+   "atlas": "decor_deco_w",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "tool_bench@saw",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      4,
+      4,
+      4,
+      4
+     ],
+     [
+      5,
+      5,
+      5,
+      5
+     ],
+     [
+      6,
+      6,
+      6,
+      6
+     ],
+     [
+      7,
+      7,
+      7,
+      7
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_tool_bench__clutter",
+   "category": "building",
+   "atlas": "decor_deco_w",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7833333333333333
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "tool_bench@clutter",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      8,
+      8,
+      8,
+      8
+     ],
+     [
+      9,
+      9,
+      9,
+      9
+     ],
+     [
+      10,
+      10,
+      10,
+      10
+     ],
+     [
+      11,
+      11,
+      11,
+      11
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_cook_range",
+   "category": "building",
+   "atlas": "decor_deco_wt",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8194444444444444
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "cook_range",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      2,
+      2,
+      2,
+      2
+     ],
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_cook_range__plain",
+   "category": "building",
+   "atlas": "decor_deco_wt",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8194444444444444
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "cook_range@plain",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      2,
+      2,
+      2,
+      2
+     ],
+     [
+      3,
+      3,
+      3,
+      3
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_cook_range__tiled",
+   "category": "building",
+   "atlas": "decor_deco_wt",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8194444444444444
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "cook_range@tiled",
+    "footprint": {
+     "w": 2,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      4,
+      4,
+      4,
+      4
+     ],
+     [
+      5,
+      5,
+      5,
+      5
+     ],
+     [
+      6,
+      6,
+      6,
+      6
+     ],
+     [
+      7,
+      7,
+      7,
+      7
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "dec_statue_large",
+   "category": "building",
+   "atlas": "decor_deco_l",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7631578947368421
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "statue_large",
+    "footprint": {
+     "w": 2,
+     "h": 2
+    },
+    "layer": 2,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_statue_large__hero",
+   "category": "building",
+   "atlas": "decor_deco_l",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7631578947368421
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "statue_large@hero",
+    "footprint": {
+     "w": 2,
+     "h": 2
+    },
+    "layer": 2,
+    "frames": [
+     [
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_statue_large__horse",
+   "category": "building",
+   "atlas": "decor_deco_l",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7631578947368421
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "statue_large@horse",
+    "footprint": {
+     "w": 2,
+     "h": 2
+    },
+    "layer": 2,
+    "frames": [
+     [
+      1,
+      1,
+      1,
+      1
+     ]
+    ],
+    "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "mirror"
+  },
+  {
+   "key": "dec_statue_large__obelisk",
+   "category": "building",
+   "atlas": "decor_deco_l",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.7631578947368421
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "statue_large@obelisk",
+    "footprint": {
+     "w": 2,
+     "h": 2
+    },
+    "layer": 2,
     "frames": [
      [
       2,

@@ -188,7 +188,7 @@ def emit(man, out, groups, prev=None, workers=None):
                     ims[0].paste(c1, (x * w, y * h)); ims[1].paste(m1, (x * w, y * h)); ims[2].paste(c2, (x * w * 2, y * h * 2)); ims[3].paste(m2, (x * w * 2, y * h * 2))
                 for im, suf in zip(ims, ('', '.tintmask', '@2x', '.tintmask@2x')): im.save(f'{out}/atlases/{akey}{suf}.png', optimize=True)
                 man['atlases'].append({"key": akey, "image": f"atlases/{akey}.png", "frameW": w, "frameH": h, "columns": cols_used, "rows": rows,
-                                       "pages": [{"scale": 2, "image": f"atlases/{akey}@2x.png"}], "masks": {"tintmask": f"atlases/{akey}.tintmask.png"}, "residency": "stream"})
+                                       "pages": [{"scale": 2, "image": f"atlases/{akey}@2x.png"}], "masks": {"tintmask": f"atlases/{akey}.tintmask.png"}, "residency": "stream", "placeholder": None})
                 stats.append((akey, ims[0].size, len(fr)))
                 anchor = {"x": ox / w, "y": oy / h}
                 for k in dict.fromkeys(k for k, _, _ in fr):

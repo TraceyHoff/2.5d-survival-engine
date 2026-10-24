@@ -2,4 +2,5 @@
 from .lib import REG, emit, CELLS
 from . import farm  # noqa: F401  (ADR-113 feeding_trough)
 from . import furniture, lights  # noqa: F401  (ADR-112 commit 2)
-GROUPS = ['farm', 'furn', 'light']  # emission order; append new groups, never reorder
+from . import decorations  # noqa: F401  (ADR-112 commit 3)
+GROUPS = ['farm', 'furn', 'light', 'deco']  # emission order; append new groups, never reorder
