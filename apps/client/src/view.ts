@@ -1,3 +1,4 @@
+import { effectiveLevel, levelFlags } from "./gl-recovery.js";
 import { DESKTOP_ZOOM } from "./camera-zoom.js";
 import { showRenderError, glInfo, frameIsBlack } from "./glcheck.js";
 /**
@@ -30,7 +31,7 @@ import { LightTable, type LightSpec } from "./lights.js";
 const CAM_ANIMAL = typeof location !== "undefined" && new URLSearchParams(location.search).get("cam") === "animal";
 /** Max bytes for the sprite texture array (mips included) before customization layers are dropped. */
 /** ADR-110 clutter quality: lowend / safe = 0.35 density, radius 1 chunk, 400 sprites; else 1, 2 chunks, 1600. */
-const CLUTTER = (() => { const q = new URLSearchParams(globalThis.location?.search ?? ""); const low = q.get("gl") === "lowend" || q.get("safe") === "1";
+const CLUTTER = (() => { const q = new URLSearchParams(globalThis.location?.search ?? ""); const low = q.get("gl") === "lowend" || q.get("safe") === "1" || effectiveLevel(globalThis.location?.search ?? "") !== "full";
   return q.get("clutter") === "0" ? { density: 0, radius: 0, cap: 0 } : low ? { density: 0.35, radius: 1, cap: 400 } : { density: 1, radius: 2, cap: 1600 }; })();
 /** ?gl=lowend: characters beyond the nearest N draw body-only. */
 const DRESSED_LOWEND = 8;
@@ -69,7 +70,8 @@ export class IsoView {
     const q0 = new URLSearchParams(location.search);
     const renderer = new IsoRenderer(canvas, { preserveDrawingBuffer: q0.has("shot"),
       // ?safe=1 implies ?gl=lowend (mediump, no float targets, low texture memory)
-      ...(q0.get("safe") === "1" && !q0.get("gl") ? { gl: ["lowend" as const] } : {}),
+      // after a context loss gl-recovery.ts steps the level down (sessionStorage) so a reload starts lower and never loops
+      ...(levelFlags(effectiveLevel(location.search)) ? { gl: levelFlags(effectiveLevel(location.search))! } : q0.get("safe") === "1" && !q0.get("gl") ? { gl: ["lowend" as const] } : {}),
       onError: (e) => { if (e.kind !== "context-restored") showRenderError(`Renderer: ${e.kind}`, `${e.message}${e.detail ? `\n${e.detail.slice(0, 300)}` : ""}\nTry ?gl=lowend or ?safe=1 — please report this text.`); } });
     { const c = renderer.capabilities; console.info(`[view] gl ${c.renderer} mobile=${c.mobile} lowEnd=${c.lowEnd} flags=${c.flags.join(",")} fallbacks=${c.fallbacks.join("; ")}`); (globalThis as { __renderCaps?: unknown }).__renderCaps = c; }
     const packBase = `${base}art/pack/`;
@@ -119,7 +121,7 @@ export class IsoView {
     this.ghost.sync({ pieceKey: p.pieceKey, x: p.x, y: p.y, rot: p.rot, valid: p.valid }, { z: p.z, level: p.level, tier: p.tier, rotSteps: p.rotSteps, exactPivot: exactPivot(def), ...(names[p.variant] ? { variant: names[p.variant]! } : { variant: p.variant }) });
   }
   resize(w: number, h: number, dpr: number): void {
-    const safe = new URLSearchParams(location.search).get("safe") === "1";
+    const safe = new URLSearchParams(location.search).get("safe") === "1" || this.renderer.capabilities.safe || this.renderer.capabilities.lowEnd;
     try { this.renderer.resize(w, h, safe ? 1 : dpr); } catch (e) { showRenderError("Resize failed", `${e instanceof Error ? e.message : String(e)}\n${glInfo(this.renderer.gl)}`); }
   }
 

@@ -27,6 +27,7 @@ import { mountConnectOverlay } from "./connect.js";
 import { IsoView } from "./view.js";
 import { mountHud } from "./hud.js";
 import { controlLabel, mountFarmPrompt, quickUseFires, type PromptDevice } from "./farm-prompt.js";
+import { attachContextRecovery, effectiveLevel } from "./gl-recovery.js";
 import { BootUI, loadSettings } from "./menu.js";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
@@ -44,11 +45,12 @@ const serverParam = params.get("server");
 /** Main menu unless a URL param already picks the mode (?offline=1, ?server=, ?menu=0: tests/screenshots). */
 const useMenu = !serverParam && params.get("offline") !== "1" && params.get("menu") !== "0";
 const boot = useMenu ? new BootUI(import.meta.env.BASE_URL) : undefined;
-const wantIso = params.get("renderer") !== "debug" && typeof WebGL2RenderingContext !== "undefined";
+const glLevel = effectiveLevel(location.search);
+const wantIso = glLevel !== "debug" && typeof WebGL2RenderingContext !== "undefined";
 const isoReady: Promise<void> = wantIso ? (async () => {
   const v = await IsoView.create(canvas, import.meta.env.BASE_URL, { ...(num("time") !== undefined ? { hours: num("time")! } : {}), ...(wi >= 0 ? { weather: wi, intensity: num("intensity") ?? 1 } : {}) });
   const onResize = (): void => v.resize(innerWidth, innerHeight, devicePixelRatio || 1); addEventListener("resize", onResize); onResize();
-  canvas.addEventListener("webglcontextlost", () => showRenderError("WebGL context lost", "The GPU reset or ran out of memory; reload the page (or try ?safe=1)."));
+  attachContextRecovery(canvas, { notify: showRenderError });
   attachZoom(v.renderer.camera, canvas, { enabled: () => !document.querySelector("[data-boot=menu]") });
   iso = v; (window as { __view?: unknown }).__view = { ready: true, renderer: "iso", iso: v };
 })().catch((e: unknown) => { console.warn("IsoRenderer unavailable, using debug renderer", e); showRenderError("3D renderer unavailable — showing debug view", e instanceof Error ? e.message + ((e as { info?: unknown }).info ? `\n${JSON.stringify((e as { info?: unknown }).info).slice(0, 300)}` : "") : String(e)); fallback(); }) : Promise.resolve(fallback());

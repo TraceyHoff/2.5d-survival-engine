@@ -13,6 +13,7 @@
  *   3. composite   -> canvas: scene x light (emissive bypass), banding/night floor, fog, grading (1 draw)
  *   4. weather     -> canvas: instanced rain streaks, splashes, snow (<= 3 draws)
  */
+import { buildSceneTarget, type SceneDepth } from "./gl/sceneTarget.js";
 import { formatSceneDiag, type SceneDiag } from "./sceneDiag.js";
 import { AssetManager, entityIndex, Transform, type World } from "@engine/core";
 import { DEFAULT_ISO, type BuildingGrid, type ChunkedSpatialIndex, type IsoConfig, type TileMap } from "@engine/world";
@@ -89,7 +90,7 @@ export class IsoRenderer implements Renderer {
   /** True between webglcontextlost and webglcontextrestored; render() is a no-op meanwhile. */
   contextLost = false;
   private onLost = (ev: Event): void => { ev.preventDefault(); this.contextLost = true; this.emit({ kind: "context-lost", message: "WebGL context lost (GPU reset or out of memory); waiting for restore" }); };
-  private onRestored = (): void => { this.contextLost = false; this.emit({ kind: "context-restored", message: "WebGL context restored: recreate the renderer to re-upload GPU resources" }); };
+  private onRestored = (): void => { this.contextLost = false; this.w = 0; this.h = 0; this.emit({ kind: "context-restored", message: "WebGL context restored: recreate the renderer to re-upload GPU resources" }); };
   private emit(e: RenderError): void { console.warn(`[render] ${e.kind}: ${e.message}`); this.onError?.(e); }
   /** Override the sky clear colour (linear-ish 0..1 RGB), e.g. a neutral backdrop for the character preview. */
   backdrop: [number, number, number] | null = null;
@@ -351,9 +352,13 @@ export class IsoRenderer implements Renderer {
     return { warnings, loaded };
   }
 
+  /** Depth format the scene FBO ended up with ("none" = painter order only). */
+  sceneDepth: SceneDepth = "DEPTH_COMPONENT24";
   private lastCss: [number, number, number] = [0, 0, 1];
   private lightDs = 0;
   resize(cssW: number, cssH: number, dprIn: number): void {
+    // lost context / hidden canvas: every GL call is a no-op and clientWidth may be 0 -> never size targets to 0x0
+    if (this.contextLost || this.gl.isContextLost() || !(cssW > 0) || !(cssH > 0)) return;
     this.lastCss = [cssW, cssH, dprIn]; this.lights.downscale = this.quality.tier.lightDownscale;
     // DPR / pixel budget caps + MAX_TEXTURE/RENDERBUFFER/VIEWPORT clamp (an oversized scene FBO is incomplete -> black world) (mobile 2, low-end 1): phones report DPR 2.6-3.5
     const { w, h, dpr } = clampDrawingBuffer(cssW, cssH, dprIn * this.quality.tier.resScale, this.capabilities);
@@ -368,20 +373,12 @@ export class IsoRenderer implements Renderer {
     if (this.depthRb) gl.deleteRenderbuffer(this.depthRb); if (this.sceneFbo) gl.deleteFramebuffer(this.sceneFbo);
     this.sceneTex = createTexture(gl, w, h, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, gl.NEAREST);
     this.emisTex = createTexture(gl, w, h, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, gl.NEAREST);
-    this.depthRb = gl.createRenderbuffer();
-    gl.bindRenderbuffer(gl.RENDERBUFFER, this.depthRb);
-    gl.renderbufferStorage(gl.RENDERBUFFER, this.diagState.safe ? gl.DEPTH_COMPONENT16 : gl.DEPTH_COMPONENT24, w, h);
-    this.sceneFbo = gl.createFramebuffer();
+    const tgt = buildSceneTarget(gl, this.sceneTex, this.emisTex, w, h, this.diagState.safe);
+    this.sceneFbo = tgt.fbo; this.depthRb = tgt.depthRb; this.sceneDepth = tgt.depth;
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.sceneFbo);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.sceneTex, 0);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, this.emisTex, 0);
-    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, this.depthRb);
-    if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
-      // fallback: drop to DEPTH_COMPONENT16 (some PowerVR / older Mali drivers)
-      console.warn("[render] scene FBO incomplete with DEPTH_COMPONENT24, retrying DEPTH_COMPONENT16");
-      gl.bindRenderbuffer(gl.RENDERBUFFER, this.depthRb); gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, w, h);
-      gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, this.depthRb);
-      if (!this.capabilities.fallbacks.includes("scene depth DEPTH_COMPONENT16")) this.capabilities.fallbacks.push("scene depth DEPTH_COMPONENT16");
+    if (tgt.depth !== (this.diagState.safe ? "DEPTH_COMPONENT16" : "DEPTH_COMPONENT24")) {
+      const f = `scene depth ${tgt.depth} (tried ${tgt.tried.join(", ")})`;
+      console.warn(`[render] ${f}`); if (!this.capabilities.fallbacks.includes(f)) this.capabilities.fallbacks.push(f);
     }
     const fst = gl.checkFramebufferStatus(gl.FRAMEBUFFER); const allocErr = gl.getError();
     this.diagState.fbo.scene = fboStatusName(fst);

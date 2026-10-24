@@ -36,3 +36,4 @@ export * from "./vehicles/index.js";
 export * from "./quality.js";
 export * from "./building/modular.js";
 export * from "./building/chimney.js";
+export * from "./gl/sceneTarget.js";

@@ -13,10 +13,12 @@
  * (comma-separated), or `IsoRendererOptions.gl`.
  */
 
+import { isBasicAdapter } from "./sceneTarget.js";
+
 export type GlFlag = "lowend" | "mediump" | "nofloat" | "lowmem" | "safe";
 
 export interface RenderCapabilities {
-  renderer: string; vendor: string; mobile: boolean; lowEnd: boolean; flags: GlFlag[];
+  renderer: string; vendor: string; mobile: boolean; lowEnd: boolean; /** software / basic / remote adapter (auto lowend) */ basicAdapter: boolean; flags: GlFlag[];
   /** GPU-compressed texture families (KTX2 transcode targets); all false = PNG/RGBA8 path. */
   compressed: CompressedTextureSupport;
   ext: { colorBufferFloat: boolean; colorBufferHalfFloat: boolean; floatLinear: boolean; debugRendererInfo: boolean };
@@ -69,6 +71,10 @@ export function detectCapabilities(gl: WebGL2RenderingContext, opts: { flags?: G
   const renderer = String((dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)) ?? "");
   const vendor = String((dbg ? gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) : gl.getParameter(gl.VENDOR)) ?? "");
   const ua = opts.userAgent ?? (typeof navigator !== "undefined" ? navigator.userAgent : "");
+  // software / basic / remote adapters (SwiftShader, llvmpipe, Microsoft Basic Render, SraKmd, WARP): small or shared
+  // VRAM and partial format support -> start on the low-end path (lowmem budget, DPR 1) unless ?gl= already chose
+  const basic = isBasicAdapter(renderer);
+  if (basic && !flags.includes("lowend") && !flags.includes("safe")) flags.push("lowend");
   const mobile = MOBILE_GPU.test(renderer) || MOBILE_UA.test(ua) || (/macintosh/i.test(ua) && typeof navigator !== "undefined" && (navigator.maxTouchPoints ?? 0) > 1);
   const nofloat = has("nofloat") || flags.includes("safe");
   const ext = {
@@ -90,6 +96,7 @@ export function detectCapabilities(gl: WebGL2RenderingContext, opts: { flags?: G
     maxDrawBuffers: p(gl.MAX_DRAW_BUFFERS), maxColorAttachments: p(gl.MAX_COLOR_ATTACHMENTS),
   };
   const fallbacks: string[] = []; const problems: string[] = [];
+  if (basic) fallbacks.push(`basic/software GPU adapter (${renderer.slice(0, 60)}): auto lowend`);
   const lowEnd = flags.includes("lowend");
   // Render targets stay LDR RGBA8 everywhere (renderable + linear-filterable on every WebGL2 device); the
   // lightmap stores light * 0.5 so [0,2] fits. Float targets would only be an optional upgrade.
@@ -122,7 +129,7 @@ export function detectCapabilities(gl: WebGL2RenderingContext, opts: { flags?: G
   const maxPixels = lowEnd ? 1280 * 720 : mobile ? 3_200_000 : 3840 * 2160;
   if (maxDpr < 3 || mobile) fallbacks.push(`DPR capped at ${maxDpr}, max ${maxPixels} px`);
   return {
-    renderer, vendor, mobile, lowEnd, flags, ext, compressed: probeCompressedTextures(gl, flags.includes("safe")),
+    renderer, vendor, mobile, lowEnd, basicAdapter: basic, flags, ext, compressed: probeCompressedTextures(gl, flags.includes("safe")),
     formats: { scene: "RGBA8", emissive: "RGBA8", lightmap: "RGBA8", bloom: "RGBA8", lightmapEncode: 0.5, dataTables: "RGBA32F", lut: "RGBA8-2D-strip" },
     floatFilter: ext.floatLinear ? "LINEAR" : "NEAREST",
     precision: { fragmentHighp, fragment: fragmentHighp ? "highp" : "mediump", vertex: vp && vp.precision >= 23 ? "highp" : "mediump", fragmentHighpBits },
