@@ -224,6 +224,12 @@
   },
   "combat.swing.fists": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/combat_swing_fists_1",
+    "audio/sfx/combat_swing_fists_2",
+    "audio/sfx/combat_swing_fists_3",
+    "audio/sfx/combat_swing_fists_4"
+   ],
    "volume": 0.6,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -238,6 +244,12 @@
   },
   "combat.swing.blade": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/combat_swing_blade_1",
+    "audio/sfx/combat_swing_blade_2",
+    "audio/sfx/combat_swing_blade_3",
+    "audio/sfx/combat_swing_blade_4"
+   ],
    "volume": 0.6,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -252,6 +264,12 @@
   },
   "combat.swing.blunt": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/combat_swing_blunt_1",
+    "audio/sfx/combat_swing_blunt_2",
+    "audio/sfx/combat_swing_blunt_3",
+    "audio/sfx/combat_swing_blunt_4"
+   ],
    "volume": 0.6,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -266,6 +284,12 @@
   },
   "combat.swing.axe": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/combat_swing_axe_1",
+    "audio/sfx/combat_swing_axe_2",
+    "audio/sfx/combat_swing_axe_3",
+    "audio/sfx/combat_swing_axe_4"
+   ],
    "volume": 0.6,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -280,6 +304,12 @@
   },
   "combat.swing.pickaxe": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/combat_swing_pickaxe_1",
+    "audio/sfx/combat_swing_pickaxe_2",
+    "audio/sfx/combat_swing_pickaxe_3",
+    "audio/sfx/combat_swing_pickaxe_4"
+   ],
    "volume": 0.6,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -294,6 +324,12 @@
   },
   "combat.swing.spear": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/combat_swing_spear_1",
+    "audio/sfx/combat_swing_spear_2",
+    "audio/sfx/combat_swing_spear_3",
+    "audio/sfx/combat_swing_spear_4"
+   ],
    "volume": 0.6,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -308,6 +344,12 @@
   },
   "combat.swing.shovel": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/combat_swing_shovel_1",
+    "audio/sfx/combat_swing_shovel_2",
+    "audio/sfx/combat_swing_shovel_3",
+    "audio/sfx/combat_swing_shovel_4"
+   ],
    "volume": 0.6,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -322,6 +364,12 @@
   },
   "combat.punch.hit": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/combat_punch_hit_1",
+    "audio/sfx/combat_punch_hit_2",
+    "audio/sfx/combat_punch_hit_3",
+    "audio/sfx/combat_punch_hit_4"
+   ],
    "volume": 0.75,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -337,8 +385,10 @@
   "combat.hit": {
    "bus": "sfx",
    "files": [
-    "audio/sfx/hit_1",
-    "audio/sfx/hit_2"
+    "audio/sfx/combat_hit_1",
+    "audio/sfx/combat_hit_2",
+    "audio/sfx/combat_hit_3",
+    "audio/sfx/combat_hit_4"
    ],
    "volume": 0.8,
    "pitchJitter": 0.08,
@@ -354,6 +404,12 @@
   },
   "combat.hit.blade": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/combat_hit_blade_1",
+    "audio/sfx/combat_hit_blade_2",
+    "audio/sfx/combat_hit_blade_3",
+    "audio/sfx/combat_hit_blade_4"
+   ],
    "volume": 0.8,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -368,6 +424,12 @@
   },
   "combat.hit.blunt": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/combat_hit_blunt_1",
+    "audio/sfx/combat_hit_blunt_2",
+    "audio/sfx/combat_hit_blunt_3",
+    "audio/sfx/combat_hit_blunt_4"
+   ],
    "volume": 0.8,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -382,6 +444,12 @@
   },
   "combat.hit.axe": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/combat_hit_axe_1",
+    "audio/sfx/combat_hit_axe_2",
+    "audio/sfx/combat_hit_axe_3",
+    "audio/sfx/combat_hit_axe_4"
+   ],
    "volume": 0.8,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -396,6 +464,12 @@
   },
   "combat.hit.pickaxe": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/combat_hit_pickaxe_1",
+    "audio/sfx/combat_hit_pickaxe_2",
+    "audio/sfx/combat_hit_pickaxe_3",
+    "audio/sfx/combat_hit_pickaxe_4"
+   ],
    "volume": 0.8,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -410,6 +484,12 @@
   },
   "combat.hit.spear": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/combat_hit_spear_1",
+    "audio/sfx/combat_hit_spear_2",
+    "audio/sfx/combat_hit_spear_3",
+    "audio/sfx/combat_hit_spear_4"
+   ],
    "volume": 0.8,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -424,6 +504,12 @@
   },
   "combat.hit.shovel": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/combat_hit_shovel_1",
+    "audio/sfx/combat_hit_shovel_2",
+    "audio/sfx/combat_hit_shovel_3",
+    "audio/sfx/combat_hit_shovel_4"
+   ],
    "volume": 0.8,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -438,6 +524,12 @@
   },
   "combat.hit.arrow": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/combat_hit_arrow_1",
+    "audio/sfx/combat_hit_arrow_2",
+    "audio/sfx/combat_hit_arrow_3",
+    "audio/sfx/combat_hit_arrow_4"
+   ],
    "volume": 0.8,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -452,6 +544,12 @@
   },
   "combat.hit.bullet": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/combat_hit_bullet_1",
+    "audio/sfx/combat_hit_bullet_2",
+    "audio/sfx/combat_hit_bullet_3",
+    "audio/sfx/combat_hit_bullet_4"
+   ],
    "volume": 0.8,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -466,6 +564,12 @@
   },
   "combat.hit.structure": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/combat_hit_structure_1",
+    "audio/sfx/combat_hit_structure_2",
+    "audio/sfx/combat_hit_structure_3",
+    "audio/sfx/combat_hit_structure_4"
+   ],
    "volume": 0.7,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -480,6 +584,11 @@
   },
   "weapon.fire.bow": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/weapon_fire_bow_1",
+    "audio/sfx/weapon_fire_bow_2",
+    "audio/sfx/weapon_fire_bow_3"
+   ],
    "volume": 0.7,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -494,6 +603,11 @@
   },
   "weapon.fire.crossbow": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/weapon_fire_crossbow_1",
+    "audio/sfx/weapon_fire_crossbow_2",
+    "audio/sfx/weapon_fire_crossbow_3"
+   ],
    "volume": 0.8,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -508,6 +622,11 @@
   },
   "weapon.fire.sling": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/weapon_fire_sling_1",
+    "audio/sfx/weapon_fire_sling_2",
+    "audio/sfx/weapon_fire_sling_3"
+   ],
    "volume": 0.6,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -522,6 +641,11 @@
   },
   "weapon.fire.pistol": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/weapon_fire_pistol_1",
+    "audio/sfx/weapon_fire_pistol_2",
+    "audio/sfx/weapon_fire_pistol_3"
+   ],
    "volume": 0.9,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -536,6 +660,11 @@
   },
   "weapon.fire.rifle": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/weapon_fire_rifle_1",
+    "audio/sfx/weapon_fire_rifle_2",
+    "audio/sfx/weapon_fire_rifle_3"
+   ],
    "volume": 1,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -550,6 +679,11 @@
   },
   "weapon.fire.autorifle": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/weapon_fire_autorifle_1",
+    "audio/sfx/weapon_fire_autorifle_2",
+    "audio/sfx/weapon_fire_autorifle_3"
+   ],
    "volume": 0.95,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -564,6 +698,11 @@
   },
   "weapon.fire.shotgun": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/weapon_fire_shotgun_1",
+    "audio/sfx/weapon_fire_shotgun_2",
+    "audio/sfx/weapon_fire_shotgun_3"
+   ],
    "volume": 1,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -578,6 +717,11 @@
   },
   "weapon.fire.musket": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/weapon_fire_musket_1",
+    "audio/sfx/weapon_fire_musket_2",
+    "audio/sfx/weapon_fire_musket_3"
+   ],
    "volume": 1,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -592,6 +736,10 @@
   },
   "weapon.draw.bow": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/weapon_draw_bow_1",
+    "audio/sfx/weapon_draw_bow_2"
+   ],
    "volume": 0.4,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -606,6 +754,10 @@
   },
   "weapon.reload.bow": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/weapon_reload_bow_1",
+    "audio/sfx/weapon_reload_bow_2"
+   ],
    "volume": 0.55,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -620,6 +772,10 @@
   },
   "weapon.reload.crossbow": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/weapon_reload_crossbow_1",
+    "audio/sfx/weapon_reload_crossbow_2"
+   ],
    "volume": 0.55,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -634,6 +790,10 @@
   },
   "weapon.reload.pistol": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/weapon_reload_pistol_1",
+    "audio/sfx/weapon_reload_pistol_2"
+   ],
    "volume": 0.55,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -648,6 +808,10 @@
   },
   "weapon.reload.rifle": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/weapon_reload_rifle_1",
+    "audio/sfx/weapon_reload_rifle_2"
+   ],
    "volume": 0.55,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -662,6 +826,10 @@
   },
   "weapon.reload.autorifle": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/weapon_reload_autorifle_1",
+    "audio/sfx/weapon_reload_autorifle_2"
+   ],
    "volume": 0.55,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -676,6 +844,10 @@
   },
   "weapon.reload.shotgun": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/weapon_reload_shotgun_1",
+    "audio/sfx/weapon_reload_shotgun_2"
+   ],
    "volume": 0.55,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -690,6 +862,10 @@
   },
   "weapon.reload.musket": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/weapon_reload_musket_1",
+    "audio/sfx/weapon_reload_musket_2"
+   ],
    "volume": 0.55,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -704,6 +880,10 @@
   },
   "weapon.reload.sling": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/weapon_reload_sling_1",
+    "audio/sfx/weapon_reload_sling_2"
+   ],
    "volume": 0.55,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -718,6 +898,10 @@
   },
   "weapon.dry": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/weapon_dry_1",
+    "audio/sfx/weapon_dry_2"
+   ],
    "volume": 0.5,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -732,6 +916,11 @@
   },
   "weapon.throw": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/weapon_throw_1",
+    "audio/sfx/weapon_throw_2",
+    "audio/sfx/weapon_throw_3"
+   ],
    "volume": 0.55,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -746,6 +935,11 @@
   },
   "explosion": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/explosion_1",
+    "audio/sfx/explosion_2",
+    "audio/sfx/explosion_3"
+   ],
    "volume": 1,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -760,6 +954,11 @@
   },
   "explosion.fire": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/explosion_fire_1",
+    "audio/sfx/explosion_fire_2",
+    "audio/sfx/explosion_fire_3"
+   ],
    "volume": 1,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -774,6 +973,11 @@
   },
   "explosion.debris": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/explosion_debris_1",
+    "audio/sfx/explosion_debris_2",
+    "audio/sfx/explosion_debris_3"
+   ],
    "volume": 0.6,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -788,6 +992,9 @@
   },
   "explosive.fuse": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/explosive_fuse_1"
+   ],
    "volume": 0.4,
    "pitchJitter": 0.03,
    "volumeJitter": 0,

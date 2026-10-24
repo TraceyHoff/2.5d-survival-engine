@@ -300,6 +300,15 @@ def job(args):
     wav = os.path.join(MASTERS, d, name + ".wav")
     wavfile.write(wav, SR, y.astype(np.float32))
     encode(wav, os.path.join(OUT, d, name), kind)
+    if kind != "music":  # opus can overshoot a little: pull gain down until the *decoded* peak is <= -1 dBFS
+        for _ in range(4):
+            raw = subprocess.run(["ffmpeg", "-v", "error", "-i", os.path.join(OUT, d, name) + ".ogg", "-f", "f32le", "-"], capture_output=True).stdout
+            pk = 20 * np.log10(np.abs(np.frombuffer(raw, np.float32)).max() + 1e-12)
+            if pk <= -1.0:
+                break
+            y = y * 10 ** ((-1.3 - pk) / 20)
+            wavfile.write(wav, SR, y.astype(np.float32))
+            encode(wav, os.path.join(OUT, d, name), kind)
     return f"{d}/{name}"
 
 

@@ -199,7 +199,7 @@ def clank(rng, dur, f, kind=""):
 
 def twang(rng, dur, f, kind="bow"):
     n = n_(dur)
-    s = ks_pluck(f * rng.uniform(0.95, 1.05), n, rng, bright=0.3, decay=0.993)
+    s = lp(ks_pluck(f * rng.uniform(0.95, 1.05), n, rng, bright=0.25, decay=0.99), 4000) * env_exp(n, 0.09)
     y = s * 0.7
     w = whoosh_core(rng, dur * 0.6, 2500, 2, 0.3)
     y[:len(w)] += w * 0.8
