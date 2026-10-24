@@ -25,3 +25,10 @@ describe("render diagnostics", () => {
   });
   it("allows a budget downscale below x0.25", () => { expect(MIN_ATLAS_DOWNSCALE).toBe(0.125); });
 });
+
+describe("diagReport before frame 1", () => {
+  it("formats a fresh diag as plain text", () => {
+    const r = formatDiagReport(newDiag(true, false), { renderer: "X", mobile: true, precision: "highp", budgetMB: 256, fallbacks: [], problems: [] });
+    expect(typeof r).toBe("string"); expect(r).toContain("render diag  X"); expect(r).not.toContain("undefined");
+  });
+});

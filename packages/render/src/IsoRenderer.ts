@@ -474,9 +474,14 @@ export class IsoRenderer implements Renderer {
   }
 
   /** Plain-text diagnostics for the client's ?diag=1 overlay (capabilities, atlas/FBO status, per-pass errors, readbacks). */
+  /** Plain-text diagnostics; safe to call at any time, including before frame 1 (no readbacks yet). */
   diagReport(): string {
-    const c = this.capabilities; const v = this.vram;
-    return formatDiagReport(this.diagState, { renderer: c.renderer, mobile: c.mobile, precision: c.precision.fragment, budgetMB: c.textureBudgetMB, vramMB: Math.round(v.totalMB), fallbacks: c.fallbacks, problems: c.problems });
+    const c = this.capabilities;
+    let vramMB: number | undefined; try { const t = this.vram?.totalMB; if (Number.isFinite(t)) vramMB = Math.round(t); } catch { /* atlas not ready */ }
+    try {
+      const r = formatDiagReport(this.diagState, { renderer: c.renderer, mobile: c.mobile, precision: c.precision.fragment, budgetMB: c.textureBudgetMB, ...(vramMB !== undefined ? { vramMB } : {}), fallbacks: c.fallbacks, problems: c.problems });
+      return this.frameCount === 0 ? r + "\n(no frame rendered yet: readbacks appear after frames 1 and 60)" : r;
+    } catch (e) { return `render diag unavailable: ${String(e)}`; }
   }
 
   dispose(): void {
