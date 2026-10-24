@@ -426,7 +426,11 @@ export function createGameServer(o: GameServerOptions): GameServer {
   };
   // keep the spawn points warm (source ids -1..-4 never collide with client ids)
   worldSpawnPoints(world).forEach((p, i) => chunks.setSource({ id: -1 - i, x: p.x, y: p.y, radius: 1 }));
-  do chunks.update(); while (chunks.pendingLoads > 0); // load the spawn area before the first tick
+  // Load the spawn area before the first tick. Only spin on *queued* loads: an async provider (IndexedDB save) returns
+  // Promises that settle on a later microtask, so waiting for in-flight loads here would never end (the "continue a
+  // saved game -> blank light-blue world" hang: the worker/tab locked up in this loop). Those chunks install on their
+  // own when the reads resolve (ChunkManager .then -> install); the tick loop's chunks.update() keeps streaming.
+  for (let guard = 0; guard < 10_000; guard++) { chunks.update(); if (chunks.pendingLoads - chunks.inflightLoads <= 0) break; }
   rearmCrafts();
 
   const tickTimes: number[] = [];
