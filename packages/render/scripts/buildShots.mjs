@@ -1,5 +1,3 @@
-import { mkdtempSync } from "node:fs";
-import { tmpdir } from "node:os";
 // Modular building shots + tier-streaming check in the real client (apps/client, ?offline=1).
 // Injects a two-storey house (foundations, walls, corner walls, upper floor, triangle foundations, gable/chimney roof,
 // tiers 1-4, damage stages) into the client's replicated world next to the local player, then:
@@ -11,18 +9,13 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
+import { startClientVite } from "./clientVite.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const client = resolve(root, "../../apps/client");
 const out = process.argv[2] ?? join(root, "shots"); mkdirSync(out, { recursive: true });
 const PORT = Number(process.env.PORT ?? 5341); if (PORT === 5199) throw new Error("port 5199 is reserved");
-// peerjs is not installed in this checkout (p2p.ts dynamic-imports it); alias it to a stub so local.ts loads.
-const shotDir = mkdtempSync(join(tmpdir(), "bshots-"));
-writeFileSync(join(shotDir, "peerjs-stub.mjs"), "export class Peer { constructor() { throw new Error('peerjs stub'); } }\n");
-writeFileSync(join(shotDir, "vite.shots.config.mts"), `import base from ${JSON.stringify(resolve(client, "vite.config.ts"))};\nexport default async (env: any) => { const c: any = typeof base === "function" ? await (base as any)(env) : base; return { ...c, root: ${JSON.stringify(client)}, resolve: { ...(c.resolve ?? {}), alias: { ...(c.resolve?.alias ?? {}), peerjs: ${JSON.stringify(join(shotDir, "peerjs-stub.mjs"))} } } }; };\n`);
-const vite = spawn(process.execPath, [resolve(root, "../../node_modules/vite/bin/vite.js"), "--config", join(shotDir, "vite.shots.config.mts"), "--port", String(PORT), "--strictPort", "--host", "127.0.0.1"], { cwd: client, stdio: ["ignore", "pipe", "pipe"] });
-process.on("exit", () => { try { vite.kill("SIGTERM"); } catch {} });
-await new Promise((res, rej) => { const t = setTimeout(() => rej(new Error("vite timeout")), 30000); vite.stdout.on("data", (d) => { if (String(d).includes(String(PORT))) { clearTimeout(t); res(); } }); });
+const vite = await startClientVite(PORT);
 const browser = await chromium.launch({ executablePath: process.env.CHROME ?? "/usr/bin/google-chrome", args: ["--use-angle=swiftshader", "--use-gl=angle", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
 const page = await browser.newPage({ viewport: { width: 1280, height: 800 } }); const logs = [];
 page.on("console", (m) => logs.push(`${m.type()}: ${m.text()}`)); page.on("pageerror", (e) => logs.push(`pageerror: ${e}`));

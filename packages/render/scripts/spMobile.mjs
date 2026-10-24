@@ -12,6 +12,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
+import { startClientVite } from "./clientVite.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const client = resolve(root, "../../apps/client");
@@ -21,9 +22,7 @@ const PORT = Number(process.env.PORT ?? 5341);
 const CAP = Number(process.env.GPU_CAP_MB ?? 200);
 const MODES = (process.env.MODES ?? "sp,host").split(",");
 const BOTS = Number(process.env.BOTS ?? 6);
-const vite = spawn(process.execPath, [resolve(root, "../../node_modules/vite/bin/vite.js"), "--port", String(PORT), "--strictPort", "--host", "127.0.0.1"], { cwd: client, stdio: ["ignore", "pipe", "pipe"] });
-process.on("exit", () => { try { vite.kill("SIGTERM"); } catch {} });
-await new Promise((res, rej) => { const t = setTimeout(() => rej(new Error("vite timeout")), 30000); vite.stdout.on("data", (d) => { if (String(d).includes(String(PORT))) { clearTimeout(t); res(); } }); vite.stderr.on("data", (d) => process.stderr.write(d)); });
+const vite = await startClientVite(PORT);
 
 const browser = await chromium.launch({ executablePath: process.env.CHROME ?? "/usr/bin/google-chrome", args: ["--use-angle=swiftshader", "--use-gl=angle", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
 const out = {};
@@ -74,10 +73,11 @@ for (const mode of MODES) {
     const d = g.getImageData(0, 0, 64, 64).data; const cols = new Map(); let sum = 0;
     for (let i = 0; i < d.length; i += 4) { sum += 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]; const k = ((d[i] >> 4) << 8) | ((d[i + 1] >> 4) << 4) | (d[i + 2] >> 4); cols.set(k, (cols.get(k) ?? 0) + 1); }
     const top = Math.max(...cols.values()) / (d.length / 4);
-    return { meanLuma: +(sum / (d.length / 4)).toFixed(1), dominantShare: +top.toFixed(3), colours: cols.size, gpu: { ...window.__gpu, liveMB: Math.round(window.__gpu.live / 1048576), peakMB: Math.round(window.__gpu.peak / 1048576), refused: window.__gpu.refused.slice(0, 12) }, diag: document.getElementById("diag")?.textContent ?? null, error: document.getElementById("render-error")?.textContent ?? null };
+    return { meanLuma: +(sum / (d.length / 4)).toFixed(1), dominantShare: +top.toFixed(3), colours: cols.size, gpu: { ...window.__gpu, liveMB: Math.round(window.__gpu.live / 1048576), peakMB: Math.round(window.__gpu.peak / 1048576), refused: window.__gpu.refused.slice(0, 12) }, diag: document.getElementById("diag")?.textContent ?? null, vram: window.__view?.iso?.renderer?.vram ?? null, wear: window.__view?.iso?.renderer?.atlas?.wearPoolInfo ?? null, breakdown: (window.__view?.iso?.renderer?.atlas?.vramBreakdown ?? []).slice(0, 40), error: document.getElementById("render-error")?.textContent ?? null };
   });
   r.flat = r.dominantShare > 0.9 || r.colours < 6;
   out[mode] = { file, ...r, logs: logs.filter((l) => /render|view|error|warn/i.test(l)).slice(-60) };
+  console.log(`   vram ${JSON.stringify(r.vram)}\n   ${r.wear}\n   top: ${(r.breakdown ?? []).slice(0, 15).map((e) => `${e.name} ${e.mb}`).join(", ")}`);
   console.log(`== ${mode}: flat=${r.flat} luma=${r.meanLuma} dominant=${r.dominantShare} colours=${r.colours} gpu live=${r.gpu.liveMB}MB peak=${r.gpu.peakMB}MB oom=${r.gpu.oom} bufPeak=${r.gpu.bufPeak} bufCalls=${r.gpu.bufCalls}`);
   await ctx.close();
 }

@@ -1084,6 +1084,26 @@ export class AtlasManager {
   /** Wear pool storage for ?diag. */
   get wearPoolInfo(): string { const p = this.wearPool(); if (!p) return "none"; const o = p.own; const v = this.pools.find((q) => q.cls === "veh"); return `${v ? `veh x${v.k} ${v.lru.capacity} slots ${(v.slotBytes / 1048576).toFixed(1)}MB/slot; ` : ""}wear x${p.k} ${p.lru.capacity} slots ${(p.slotBytes / 1048576).toFixed(1)}MB/slot, ${o ? (o.fmt !== null ? `KTX2->${o.target}` : "RGBA8") + ` ${o.levels} lvl` : "shared RGBA8"}; ktx2 target ${this.ktx2Target ?? "none"}; ktx2 pages ${this.ktx2Stats.colour}, masks ${this.ktx2Stats.masks}, png fallback ${this.ktx2Stats.pngFallback}, failed ${this.ktx2Stats.failed}; footprint ${this.charFootprint.toFixed(2)} px/texel`; }
 
+  /**
+   * VRAM consumers (MB, diag / spMobile): every allocated array split into resident atlases (colour share by packed
+   * area incl. mips, side arrays by the same share), unused resident layer space, and each streamed pool. Sorted desc.
+   */
+  get vramBreakdown(): { name: string; mb: number }[] {
+    const S = this.layerSize, sh = this.sideShift, out: { name: string; mb: number }[] = [];
+    const resident = this.atlases.filter((a) => !a.lazy && a.img); const firstPool = this.pools.length ? Math.min(...this.pools.map((p) => p.first)) : this.layers;
+    const sides = this.arrayCount(resident) - 1; const sideLayer = rgbaBytes(Math.max(1, S >> sh), Math.max(1, S >> sh), true);
+    // side arrays sized for the resident layers (sheen/sway/emissive w/o pool emis) or every layer (tint mask, pool emis)
+    const perResLayer = rgbaBytes(S, S, true) + sideLayer * sides; let used = 0;
+    for (const a of resident) { const share = (a.img!.width * a.img!.height) / (S * S); used += share; out.push({ name: a.key, mb: share * perResLayer }); }
+    out.push({ name: "(resident layer slack)", mb: Math.max(0, firstPool - used) * perResLayer });
+    const sideFor = (p: Pool) => (p.tint ? 1 : 0) + (p.emis ? 1 : 0);
+    for (const p of this.pools) {
+      const colour = p.own ? this.ownLayerBytes(p.own) : rgbaBytes(S, S, true);
+      out.push({ name: `pool:${p.cls} x${p.k} ${p.layers}L ${p.lru.capacity} slots${p.own?.fmt != null ? " ktx2" : ""} ${p.own ? p.own.levels + "lvl" : ""}`.trim(), mb: p.layers * (colour + sideLayer * sideFor(p)) });
+    }
+    return out.map((e) => ({ name: e.name, mb: Math.round((e.mb / 1048576) * 10) / 10 })).sort((x, y) => y.mb - x.mb);
+  }
+
   get anyEmissive(): boolean { return this.hasEmissive; }
 
   /**
