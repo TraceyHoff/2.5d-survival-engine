@@ -651,3 +651,18 @@ Identity is persisted in the `agents` record namespace. Gameplay supplies `refer
 - **Decision:** `interestLinger` (default on; `{ leaveChunks: 1, minTicks: 2 s }`; `false` = old behaviour): a replicated entity stays while it is within radius+hysteresis+1 chunks of a viewpoint, and at least 2 s after it leaves. Retained pages can only be stolen by `PRIO_NEAR` requests (the local player and adjacent characters). The sprite batcher keeps a per-(entity, slot) last-good frame and draws it while the current page is unavailable, provided the old page is still resident. Chunk culling uses the margin rect.
 - **Tests:** `net/test/aoi.test.ts` (linger and oscillation), `net/test/appearance_aoi.test.ts` (two clients: appearance survives leave/re-enter, no spawn without Appearance), `render/test/charPin.test.ts`.
 - **Gaps:** the OOM ladder's `EvictWearables` still strips far characters (by design under memory pressure). The last-good frame cannot help once the page itself is evicted. Body-only fallback remains for the very first load.
+
+## ADR-124: Creator eye, shoe and secondary colour rows; creator screenshot hook
+- **Context:** The renderer already tints eyes (R), shoes (R + G) and 2-channel clothing (G = secondary). The ADR-114 creator only exposed hair, top and bottom colours.
+- **Data:** No new fields. `Appearance.primary[eyes]`, `primary[shoes]` and `secondary[slot]` already exist, are networked and persisted, and are checked by `validateAppearance` against `SLOT_PALETTE`. The component schema and its hash are unchanged.
+- **Rows:**
+  - **Shoe colour:** `shoes:color` cycles `clothingColors`.
+  - **Secondary colour:** one row that sets `secondary` on top, bottom and shoes (`SECONDARY_SLOTS`) together.
+  - **Eye colour:** `eyes:color` cycles a curated `EYE_COLOR_KEYS` subset of `clothingColors` (browns, hazels, greens, blues, greys, then a few fun ones). The server range check is unchanged.
+  - Each colour row shows a swatch. The rows use the same 44 px ◀ ▶ buttons, so touch, mouse, keyboard (arrows) and gamepad (d-pad) work, and the panel scrolls on mobile.
+- **Palette:** `mustard` was #e0b43a and `gold` was #e8b84a, which were nearly identical. They are now `mustard` #b98a1e (dark, muted) and `gold` #f7cc2e (bright). A test keeps every clothing colour more than 25 RGB units from the others, and mustard/gold more than 60 apart.
+- **Screenshot hook:**
+  - `?creator=shot&seed=N[&facing=0..7][&preview=2d]` skips the menu and world. It loads the art and customization pack, then opens the creator with `randomLook(cat, mulberry32(seed))`.
+  - In this mode there is no auto-turn and the animation clock is fixed at t = 0.
+  - Once the preview's art has loaded and two frames have drawn, it sets `window.__creatorReady = { ok, seed, facing, renderer, appearance }` and `[data-boot=creator][data-ready=1]`.
+  - It sets `{ ok: false, error }` if the pack did not load.
