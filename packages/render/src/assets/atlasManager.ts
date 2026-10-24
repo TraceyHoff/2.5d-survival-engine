@@ -44,7 +44,7 @@ export const FrameBits = { Emissive: 1, Sheen: 2, Sway: 4, TintMask: 8 } as cons
  * Where an atlas' images live. `pages` = extra scale pages (1x = url). `masks`: one URL or candidate URLs tried in
  * order (explicit manifest path, then sibling `<atlas>_<mask>.png`, then a fallback folder); missing ones are skipped.
  */
-export interface AtlasSource { url: string; emissiveUrl?: string | null; rects?: RectTable; pages?: { scale: number; url: string; /** KTX2 twin of this page */ ktx2?: string }[]; masks?: Partial<Record<MaskName, string | string[]>>;
+export interface AtlasSource { url: string; emissiveUrl?: string | null; rects?: RectTable; pages?: { scale: number; url: string; /** KTX2 twin of this page */ ktx2?: string; /** KTX2 twins of this page's masks (Art 64a18d2: body tintmask@2x) */ masksKtx2?: Partial<Record<MaskName, string>> }[]; masks?: Partial<Record<MaskName, string | string[]>>;
   /** KTX2 twins (Art 211785f): colour page (ETC1S) and masks (UASTC). Used for the streamed wearable pool when a transcode target exists. */
   ktx2?: string; masksKtx2?: Partial<Record<MaskName, string>> }
 export type ImageLike = ImageBitmap | HTMLImageElement | HTMLCanvasElement | OffscreenCanvas;
@@ -71,6 +71,8 @@ export { CoreAnimState as AnimStateId };
 interface SpriteRT {
   atlasIdx: number; anchorX: number; anchorY: number;
   anims: Animation[];
+  /** per anim: atlas index of each dirFrames entry (facing-split pages, Art 62e55cf), or null (legacy layout via frame()) */
+  dirAt: (Int32Array | null)[];
   /** state -> index into anims */
   stateAnim: Int16Array;
   /** "damaged"/"damage1.." frames for build pieces: list of frame indices per stage (stage 0 = idle). */
@@ -141,7 +143,9 @@ export function sourcesFromManifest(registry: AssetRegistry, manifestUrl: string
     const r = rects[a.key];
     // KTX2 twins sit beside the image: resolve them like the image (the client rewrites image paths of merged packs)
     const img = resolve(a.image); const sib = (p: string): string => (/^(\/|[a-z]+:)/i.test(p) ? p : img.replace(/[^/]*$/, "") + p.replace(/^.*\//, ""));
-    const pages = (a.pages ?? []).filter((p) => p.scale !== 1).map((p) => { const k2 = (p as { ktx2?: unknown }).ktx2; return { scale: p.scale, url: resolve(p.image), ...(typeof k2 === "string" ? { ktx2: sib(k2) } : {}) }; });
+    const pages = (a.pages ?? []).filter((p) => p.scale !== 1).map((p) => { const k2 = (p as { ktx2?: unknown }).ktx2; const pm: Partial<Record<MaskName, string>> = {};
+      for (const [m, v] of Object.entries((p as { masksKtx2?: Record<string, unknown> }).masksKtx2 ?? {})) if (typeof v === "string") pm[m as MaskName] = sib(v);
+      return { scale: p.scale, url: resolve(p.image), ...(typeof k2 === "string" ? { ktx2: sib(k2) } : {}), ...(Object.keys(pm).length ? { masksKtx2: pm } : {}) }; });
     const masks: Partial<Record<MaskName, string[]>> = {};
     for (const m of ["sheen", "sway", "tintmask"] as const) {
       const c: string[] = []; const explicit = a.masks?.[m];
@@ -505,17 +509,21 @@ export class AtlasManager {
     };
     const list: AtlasRT[] = []; const lazyList: AtlasRT[] = [];
     const lazyKeys = this.streamWearables ? wearableOnlyAtlases(registry) : new Set<string>();
-    const vehKeys = new Set<string>(); if (this.streamVehicles) for (const a of registry.atlases.values()) { const src = sources.get(a.key); if (src && !lazyKeys.has(a.key) && isStreamedVehicleAtlas(a.key, src.url)) vehKeys.add(a.key); }
+    const legacy = this.streamVehicles ? legacyDirFrameAtlases(registry) : new Set<string>();
+    const vehKeys = new Set<string>(); if (this.streamVehicles) for (const a of registry.atlases.values()) { const src = sources.get(a.key); if (src && !lazyKeys.has(a.key) && !legacy.has(a.key) && isStreamedVehicleAtlas(a.key, src.url)) vehKeys.add(a.key); }
     const bldKeys = new Set<string>(); if (this.streamBuildingTiers) for (const a of registry.atlases.values()) { const src = sources.get(a.key); if (src && !lazyKeys.has(a.key) && !vehKeys.has(a.key) && isStreamedBuildingAtlas(a.key, src.url)) bldKeys.add(a.key); }
-    // bodies (44x60 cells, 1056x720 at 1x) go compressed when KTX2 is available: 1x KTX2 colour + 1x tint mask KTX2 (the
-    // @2x page is 2112px, over a 2048 layer, and has no @2x tint mask KTX2); paged in eagerly at rebuild, never evicted
+    // bodies (20x14 cells, 880x840 at 1x, 1760x1680 @2x) go compressed when KTX2 is available: KTX2 colour + tint mask KTX2
+    // (@2x: pages[].ktx2 + pages[].masksKtx2.tintmask) at the scale poolScales picks; paged in eagerly at rebuild, never evicted
     const bodyKeys = new Set<string>(); if (this.ktx2Target && this.streamWearables) for (const a of registry.atlases.values()) { const src = sources.get(a.key); if (src?.ktx2 && isBodyAtlasKey(a.key) && !lazyKeys.has(a.key) && !vehKeys.has(a.key) && !bldKeys.has(a.key) && !/^(blob|data):/.test(src.url)) bodyKeys.add(a.key); }
     await Promise.all([...registry.atlases.values()].map(async (a) => {
       const src = sources.get(a.key); if (!src) throw new Error(`no image source for atlas "${a.key}"`);
-      if (lazyKeys.has(a.key) || vehKeys.has(a.key) || bldKeys.has(a.key) || bodyKeys.has(a.key)) {
+      if (lazyKeys.has(a.key) || vehKeys.has(a.key) || legacy.has(a.key) || bldKeys.has(a.key) || bodyKeys.has(a.key)) {
         let w1 = a.columns * a.frameW, h1 = a.rows * a.frameH;
         if (src.rects?.length) { w1 = 0; h1 = 0; for (const r of src.rects) { w1 = Math.max(w1, r.x + r.w); h1 = Math.max(h1, r.y + r.h); } }
-        lazyList.push({ key: a.key, id: a.id, source: src, img: null, emis: null, scale: 1, masks: {}, maskUrls: {}, base: 0, count: src.rects ? src.rects.length : a.columns * a.rows, fw: a.frameW, fh: a.frameH, cols: a.columns, layer: -1, px: 0, py: 0, lazy: { w1, h1, state: 0, pool: vehKeys.has(a.key) ? 1 : bldKeys.has(a.key) ? 2 : bodyKeys.has(a.key) ? 3 : 0 } });
+        // legacy full-size pages of facing-split sprites: never drawn (resolve uses dirFrames), so no pool slot and no
+        // part in slot sizing (pool -1: pageReady refuses, nothing requests them)
+        const pool = legacy.has(a.key) ? -1 : vehKeys.has(a.key) ? 1 : bldKeys.has(a.key) ? 2 : bodyKeys.has(a.key) ? 3 : 0;
+        lazyList.push({ key: a.key, id: a.id, source: src, img: null, emis: null, scale: 1, masks: {}, maskUrls: {}, base: 0, count: src.rects ? src.rects.length : a.columns * a.rows, fw: a.frameW, fh: a.frameH, cols: a.columns, layer: -1, px: 0, py: 0, lazy: { w1, h1, state: 0, pool } });
         return;
       }
       let scale = this.pickScale(a, src);
@@ -543,8 +551,15 @@ export class AtlasManager {
     if (wear.length) groups.push({ cls: "wear", lazy: wear, minSlots: Math.min(wear.length, this.poolPolicy.minSlots ?? (lowMem ? POOL_MIN_SLOTS_LOWMEM : POOL_MIN_SLOTS_DESKTOP)), cap: false });
     // vehicles are visible art: their pool keeps a full-res (1x) working set that fitBudget never trades away; the
     // wearables pool is the streaming tier and may shrink (more paging) before any visible art is blurred
-    const keep = groups.filter((g) => g.cls !== "wear").reduce((t, g) => t + this.poolReserveBytes(g.lazy, g.minSlots, list, 1), 0);
-    const reserve = keep + groups.filter((g) => g.cls === "wear").reduce((t, g) => t + this.poolReserveBytes(g.lazy, g.minSlots, list), 0);
+    // wear is never planned below wearScale and always keeps its 1x working set (planPool forces it even over budget), so
+    // that floor belongs to `keep` too: reserving it at 0.5x left resident art at full res and the forced wear layers then
+    // overshot the budget (mobile: 140 MB at 128)
+    const w1x = lowMem ? WEAR_1X_SLOTS_LOWMEM : WEAR_1X_SLOTS_DESKTOP; const wk = this.wearScale();
+    const wearG = groups.filter((g) => g.cls === "wear");
+    const keepWear = wearG.reduce((t, g) => t + this.poolReserveBytes(g.lazy, Math.min(g.minSlots, w1x), list, wk), 0);
+    const wantWear = wearG.reduce((t, g) => t + this.poolReserveBytes(g.lazy, g.minSlots, list, wk), 0);
+    const keepVis = groups.filter((g) => g.cls !== "wear").reduce((t, g) => t + this.poolReserveBytes(g.lazy, g.minSlots, list, 1), 0);
+    const keep = keepVis + Math.min(keepWear, wantWear) / 2, reserve = keepVis + Math.max(keepWear, wantWear);
     this.registryForTier = registry; await this.fitBudget(list, reserve, keep); this.sideScale = (await halveSide(list, this.sideShift)) ? 1 / (1 << this.sideShift) : 1;
     const layout = (): void => { this.pack(list); this.pools = []; for (const g of groups) this.planPool(g.lazy, g.minSlots, list, g.cls, g.cap); let b = this.totalFrames; for (const a of lazyList) { a.base = b; b += a.count; } this.totalFrames = b; };
     layout();
@@ -578,7 +593,8 @@ export class AtlasManager {
         else if (dmgAnim) damage[st] = dmgAnim.frames[Math.min(st - 1, dmgAnim.frames.length - 1)]!;
       }
       const b = s.building;
-      sprites[id] = { atlasIdx: list.indexOf(at), anchorX: s.anchor.x, anchorY: s.anchor.y, anims: s.animList, stateAnim, damage,
+      const dirAt = s.animList.map((an) => an.dirFrames ? Int32Array.from(an.dirFrames, (d) => list.findIndex((x) => x.id === d.atlas.id)) : null);
+      sprites[id] = { atlasIdx: list.indexOf(at), anchorX: s.anchor.x, anchorY: s.anchor.y, anims: s.animList, dirAt, stateAnim, damage,
         ...(b ? { building: { fw: b.footprint.w, fh: b.footprint.h, layer: b.layer, frames: b.frames } } : {}) };
     }
     this.usedMark = new Uint8Array(list.length); this.atlases = list; this.atlasById = new Map(list.map((a) => [a.id, a])); this.sprites = sprites; this.registry = registry; this.resolveSway(); this.resolveVariants(); this.resolveRoofs(); this.resolveHands();
@@ -622,7 +638,12 @@ export class AtlasManager {
   }
   /** Pool scales to try, best first: the 2x page (when the quality tier asks for it), 1x, 0.5, 0.25 (low-end layer size shrinks these too). */
   private poolScales(lazy: AtlasRT[]): number[] {
-    if (lazy.length && isBodyAtlasKey(lazy[0]!.key)) return [1]; // bodies: 1x, resident (see rebuild)
+    // bodies: resident (see rebuild); @2x when the quality tier asks for it and every body has the @2x colour + tint mask
+    // KTX2 (1760x1680 fits a layer; planPool's cap rule takes 2x only when it leaves half the free layers), else 1x
+    if (lazy.length && isBodyAtlasKey(lazy[0]!.key)) {
+      const b2 = this.pageScale >= 2 && lazy.every((a) => { const p2 = a.source.pages?.find((q) => q.scale === 2); return !!p2?.ktx2 && !!p2.masksKtx2?.tintmask; });
+      return (b2 ? [2, 1] : [1]).filter((k) => this.poolGeom(lazy, k).perLayer > 0);
+    }
     // vehicles: 2x when any sheet has a 2x page (1x-only sheets are stored at 1x in their 2x slot, a.scale = 1)
     const two = (a: AtlasRT) => a.source.pages?.some((p) => p.scale === 2);
     const has2 = this.pageScale >= 2 && (lazy.length && /^veh_/.test(lazy[0]!.key) ? lazy.some(two) : lazy.every(two));
@@ -949,10 +970,19 @@ export class AtlasManager {
     gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, r0, TABLE_W * 2, n, gl.RGBA, gl.FLOAT, this.table.subarray(r0 * TABLE_W * 8, (r0 + n) * TABLE_W * 8));
     this.tableDirty0 = this.tableDirty1 = -1;
   }
-  private lazyOf(spriteId: number): AtlasRT | null { const s = this.sprites[spriteId]; if (!s) return null; const a = this.atlases[s.atlasIdx]; return a?.lazy ? a : null; }
+  private lazyOf(spriteId: number, facing?: number): AtlasRT | null { const a = this.atlasAt(spriteId, facing); return a?.lazy ? a : null; }
+  /** Atlas a sprite draws from at `facing` (first anim, first frame): its dirFrames page when facing-split (facing
+   *  undefined = facing 0), else sprite.atlas. */
+  private atlasAt(spriteId: number, facing?: number): AtlasRT | undefined {
+    const s = this.sprites[spriteId]; if (!s) return undefined; const d = s.dirAt[0]; const an = s.anims[0];
+    if (d && an) { const i = d[AssetRegistry.directionIndex(facing ?? 0, an.directions)]; if (i !== undefined && i >= 0) return this.atlases[i]; }
+    return this.atlases[s.atlasIdx];
+  }
+  /** Page key a sprite streams at `facing` (facing-split sprites: that facing's page), or null when resident. */
+  pageKeyAt(spriteId: number, facing?: number): string | null { return this.lazyOf(spriteId, facing)?.key ?? null; }
   /** True when the sprite's art can be drawn now. Streamed pages are touched (LRU) and requested when missing. */
-  pageReady(spriteId: number, prio = Infinity): boolean {
-    const a = this.lazyOf(spriteId); if (!a) return true;
+  pageReady(spriteId: number, prio = Infinity, facing?: number): boolean {
+    const a = this.lazyOf(spriteId, facing); if (!a) return true;
     const p = this.poolOfA(a); if (!p || !this.poolOn(p, prio)) { this.vram.misses++; return false; }
     if (a.lazy!.state === 2 && p.lru.touch(a.key, this.frame, prio)) return true;
     this.vram.misses++; this.request(a, prio); return false;
@@ -964,8 +994,10 @@ export class AtlasManager {
     const p = this.poolOfA(a); return { state: a.lazy!.state === 2 ? "resident" : a.lazy!.state === 1 ? "loading" : "missing", scale: p?.k ?? 0, streamed: true };
   }
   /** Page refcount (+1) for a sprite's atlas; held pages are evicted only after unreferenced ones. Prefetches. */
-  retainSprite(spriteId: number): void { const a = this.lazyOf(spriteId); const p = a && this.poolOfA(a); if (!a || !p) return; p.lru.retain(a.key); this.request(a); }
-  releaseSprite(spriteId: number): void { const a = this.lazyOf(spriteId); const p = a && this.poolOfA(a); if (a && p) p.lru.release(a.key); }
+  /** Facing-split sprites (dirFrames) are refcounted per facing page: pass the facing (undefined = facing 0); a holder
+   *  that turns retains the new facing before releasing the old one. */
+  retainSprite(spriteId: number, facing?: number): void { const a = this.lazyOf(spriteId, facing); const p = a && this.poolOfA(a); if (!a || !p) return; p.lru.retain(a.key); this.request(a); }
+  releaseSprite(spriteId: number, facing?: number): void { const a = this.lazyOf(spriteId, facing); const p = a && this.poolOfA(a); if (a && p) p.lru.release(a.key); }
   /** Mark a drawn sprite's atlas as recently used: it is classified hot at the next rebuild (budget / fallback refit). */
   markUsed(spriteId: number): void { const s = this.sprites[spriteId]; if (!s) return; const a = this.atlases[s.atlasIdx]; if (a && !a.lazy && this.usedMark[s.atlasIdx] !== 1) { this.usedMark[s.atlasIdx] = 1; this.recentlyUsed.add(a.key); } }
   private usedMark = new Uint8Array(0);
@@ -1085,7 +1117,7 @@ export class AtlasManager {
     const tintP = (async (): Promise<ImageLike[] | null> => {
       if (!p.tint) return null;
       let base: ImageLike | null = null;
-      const k2 = src.masksKtx2?.tintmask; if (k2) { const r = await loadKtx2Rgba(k2); if (r) { base = await bmp(new ImageData(new Uint8ClampedArray(r.data), r.width, r.height), sideW, sideH, "pixelated"); this.ktx2Stats.masks++; } }
+      const k2 = os.scale >= 2 ? (p2 as { masksKtx2?: Partial<Record<MaskName, string>> } | undefined)?.masksKtx2?.tintmask ?? src.masksKtx2?.tintmask : src.masksKtx2?.tintmask; if (k2) { const r = await loadKtx2Rgba(k2); if (r) { base = await bmp(new ImageData(new Uint8ClampedArray(r.data), r.width, r.height), sideW, sideH, "pixelated"); this.ktx2Stats.masks++; } }
       if (!base) for (const u of tintUrls) { try { base = await this.loader(u); break; } catch { /* next */ } }
       if (!base) return null;
       const out: ImageLike[] = []; let w = sideW, h = sideH, cur = base; const n = Math.floor(Math.log2(Math.max(1, this.layerSize >> this.sideShift))) + 1;
@@ -1173,13 +1205,21 @@ export class AtlasManager {
   resolve(spriteId: number, anim: number, facing: number, timeSec: number, frame: number, out: ResolvedFrame): boolean {
     const s = this.sprites[spriteId]; if (!s) return false;
     const a = this.atlases[s.atlasIdx]!;
-    const an = s.anims[anim < 0 ? 0 : anim] ?? s.anims[0]; if (!an) return false;
-    let f: number;
-    if (anim < 0) f = an.frames[frame % an.frames.length]!;
-    else {
-      const n = an.frames.length; let i = Math.floor(timeSec * an.fps); i = an.loop ? ((i % n) + n) % n : Math.min(Math.max(0, i), n - 1);
-      f = an.frames[i]!;
+    const ai = anim < 0 ? 0 : s.anims[anim] ? anim : 0; const an = s.anims[ai]; if (!an) return false;
+    let i: number; const n = an.frames.length;
+    if (anim < 0) i = frame % n;
+    else { i = Math.floor(timeSec * an.fps); i = an.loop ? ((i % n) + n) % n : Math.min(Math.max(0, i), n - 1); }
+    // facing-split sprites: AssetRegistry.dirFrame() semantics (own page, frame and anchor per facing), allocation-free
+    const dz = s.dirAt[ai]; const dirs = an.dirFrames;
+    if (dz && dirs) {
+      const di = i * an.directions + AssetRegistry.directionIndex(facing, an.directions); const d = dirs[di]; const ia = dz[di];
+      if (d && ia !== undefined && ia >= 0) {
+        const da = this.atlases[ia]!; this.fill(da, d.frame, s, out);
+        if (!da.source.rects?.[d.frame]) { out.ax = d.anchor.x * da.fw; out.ay = d.anchor.y * da.fh; }
+        out.sprite = spriteId; out.frame = d.frame; out.anim = an.name ?? ""; return true;
+      }
     }
+    let f = an.frames[i]!;
     f += AssetRegistry.directionIndex(facing, an.directions) * (an.directions > 1 ? an.dirStride : 0);
     this.fill(a, f, s, out); out.sprite = spriteId; out.frame = f; out.anim = an.name ?? "";
     return true;
@@ -1328,6 +1368,17 @@ export class AtlasManager {
 
 /** Atlases whose sprites are only referenced as cosmetics wearable art (not bodies, not world sprites). */
 /** Sprite ids referenced by cosmetic wearables (hair, hats, tops, ...). */
+/** Atlases only the legacy full-size layout of facing-split sprites (anims with dirFrames) uses: sprite.atlas of such
+ *  sprites, unless a sprite without dirFrames or any dirFrames entry also uses it. Art may delete these pages. */
+export function legacyDirFrameAtlases(registry: AssetRegistry): Set<string> {
+  const old = new Set<string>(), used = new Set<string>();
+  for (const s of registry.allSprites()) {
+    const split = s.animList.some((a) => a.dirFrames);
+    if (split) old.add(s.atlas.key); else used.add(s.atlas.key);
+    for (const a of s.animList) for (const d of a.dirFrames ?? []) used.add(d.atlas.key);
+  }
+  for (const k of used) old.delete(k); return old;
+}
 export function wearableSpriteIds(registry: AssetRegistry): Set<number> {
   const cat = registry.cosmetics as unknown as { bySlot?: (s: string) => unknown[]; size?: number } | undefined;
   const wear = new Set<number>(); if (!cat?.bySlot || !cat.size) return wear;

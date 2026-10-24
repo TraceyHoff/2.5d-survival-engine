@@ -51,9 +51,10 @@ export interface RiderPlacement { rider: number; vehicle: number; seat: number; 
 export interface VehiclePose { x: number; y: number; z: number; heading: number; dir: number; interior: boolean }
 
 interface Rec { smooth: PoseSmoother; segs: Entity[]; segIds: number[]; intIds: number[]; lights: Entity[]; def: VehicleRenderDef; pose: VehiclePose; seen: number;
-  art: VehicleArtBinding | null; body: Entity | undefined; zk: number }
-/** Streaming hooks (AtlasManager): Art vehicle sheets are retained per live vehicle and released when it leaves. */
-export interface VehiclePages { retainSprite(id: number): void; releaseSprite(id: number): void; pageReady(id: number): boolean }
+  art: VehicleArtBinding | null; body: Entity | undefined; zk: number; /** facing whose art page this rec holds a refcount on */ artFacing?: number }
+/** Streaming hooks (AtlasManager): Art vehicle sheets are retained per live vehicle and released when it leaves; facing-split
+ *  art (dirFrames) streams one page per facing group, so the refcount follows the drawn `facing`. */
+export interface VehiclePages { retainSprite(id: number, facing?: number): void; releaseSprite(id: number, facing?: number): void; pageReady(id: number, prio?: number, facing?: number): boolean }
 export const VEHICLE_STATE_ENGINE_ON = 1, VEHICLE_STATE_HEADLIGHTS = 2;
 
 export class VehicleView {
@@ -104,7 +105,10 @@ export class VehicleView {
       // Art body: one billboard (8-dir row = heading + art offset), shown once its streamed page is resident; the
       // placeholder segments stay visible meanwhile (and in the interior cutaway - Art has no per-segment _int pieces).
       const vis = !o.inView || o.inView(x, y);
-      const artOn = !!r.art && r.body !== undefined && !inside && vis && (!this.pages || this.pages.pageReady(r.art.spriteId));
+      // facing page refcount: retain the new facing before releasing the old (same page -> no churn)
+      const af = r.art ? hq + r.art.facingOffset : 0;
+      if (r.art && r.body !== undefined && r.artFacing !== af) { this.pages?.retainSprite(r.art.spriteId, af); if (r.artFacing !== undefined) this.pages?.releaseSprite(r.art.spriteId, r.artFacing); r.artFacing = af; }
+      const artOn = !!r.art && r.body !== undefined && !inside && vis && (!this.pages || this.pages.pageReady(r.art.spriteId, Infinity, af));
       if (r.art && r.body !== undefined && !inside && vis && !artOn) this.artPending++;
       if (r.body !== undefined) {
         const b = r.body; w.set(b, Transform, { x, y, z, facing: hq + r.art!.facingOffset });
@@ -163,11 +167,11 @@ export class VehicleView {
       segs.push(e); segIds.push(id); intIds.push(this.sid(vehicleSpriteKey(def.id, i, true)));
     }
     const art = this.art ? resolveVehicleArt(this.registry, def, this.art === true ? undefined : this.art) : null; let body: Entity | undefined;
-    if (art) { body = w.create(); w.add(body, Transform, { x: 0, y: 0, z: 0, facing: 0 }); w.add(body, Sprite, { spriteId: art.spriteId, frameId: 0, flags: SpriteFlag.Footprint, scale: art.scale, tint: 0 }); this.pages?.retainSprite(art.spriteId); }
+    if (art) { body = w.create(); w.add(body, Transform, { x: 0, y: 0, z: 0, facing: 0 }); w.add(body, Sprite, { spriteId: art.spriteId, frameId: 0, flags: SpriteFlag.Footprint, scale: art.scale, tint: 0 }); }
     return { smooth: new PoseSmoother(), segs, segIds, intIds, lights: [], def, pose: { x: 0, y: 0, z: 0, heading: 0, dir: 0, interior: false }, seen: 0, art, body, zk: modelZScale(def) };
   }
   private drop(r: Rec): void {
-    if (r.art && r.body !== undefined) this.pages?.releaseSprite(r.art.spriteId);
+    if (r.art && r.body !== undefined && r.artFacing !== undefined) this.pages?.releaseSprite(r.art.spriteId, r.artFacing); delete r.artFacing;
     for (const e of [...r.segs, ...r.lights, ...(r.body !== undefined ? [r.body] : [])]) { this.spatial?.remove(e); if (this.world.isAlive(e)) this.world.destroy(e); } r.segs = []; r.lights = []; r.body = undefined;
   }
   dispose(): void { for (const r of this.recs.values()) this.drop(r); this.recs.clear(); }
