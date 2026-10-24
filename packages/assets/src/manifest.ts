@@ -37,8 +37,12 @@ export interface AtlasJson {
   pages?: AtlasPageJson[];
   /** Same-layout mask pages (sampled by UV, so they work with every scale page). `emissive: true` = derived `<image>_emissive.<ext>`. */
   masks?: AtlasMasksJson;
+  /** Optional GPU-compressed (KTX2/Basis, ETC1S) twin of `image`; PNG stays the fallback. */
+  ktx2?: string;
+  /** Optional KTX2 (UASTC) twins of string mask paths, keyed by mask kind. */
+  masksKtx2?: Partial<Record<MaskKind, string>>;
 }
-export interface AtlasPageJson { scale: number; image: string }
+export interface AtlasPageJson { scale: number; image: string; /** Optional KTX2 twin of this page image. */ ktx2?: string }
 export const MASK_KINDS = ["emissive", "sheen", "sway", "tintmask"] as const;
 export type MaskKind = (typeof MASK_KINDS)[number];
 export type AtlasMasksJson = { emissive?: string | true; sheen?: string; sway?: string; tintmask?: string };
@@ -119,7 +123,7 @@ export interface ManifestJson extends CosmeticsJson {
 }
 
 // ---------- resolved ----------
-export interface AtlasPage { scale: number; image: string }
+export interface AtlasPage { scale: number; image: string; ktx2?: string }
 export type AtlasMasks = Partial<Record<MaskKind, string>>;
 export interface Atlas extends Omit<AtlasJson, "emissive" | "nineSlice" | "pages" | "masks"> {
   id: number; /** = masks.emissive (kept for compatibility) */ emissiveImage?: string; nineSlice: Map<number, NineSlice>;
@@ -382,13 +386,16 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
       nine.set(f, n);
     }
     const IMG = /\.(png|webp)$/;
-    const pages: AtlasPage[] = [{ scale: 1, image: a.image }];
+    if (a.ktx2 !== undefined && !(typeof a.ktx2 === "string" && /\.ktx2$/.test(a.ktx2))) issues.push(`${p}: ktx2 must be a .ktx2 path`);
+    if (a.masksKtx2 !== undefined) for (const [k, v] of Object.entries(a.masksKtx2 ?? {})) if (!(MASK_KINDS as readonly string[]).includes(k) || typeof v !== "string" || !/\.ktx2$/.test(v)) issues.push(`${p}: masksKtx2.${k} must be a known mask kind with a .ktx2 path`);
+    const pages: AtlasPage[] = [{ scale: 1, image: a.image, ...(a.ktx2 ? { ktx2: a.ktx2 } : {}) }];
     if (a.pages !== undefined) {
       if (!Array.isArray(a.pages)) issues.push(`${p}: pages must be an array`);
       else for (const pg of a.pages) {
         if (!(typeof pg?.scale === "number" && pg.scale > 0 && pg.scale <= 8)) { issues.push(`${p}: page scale must be in (0, 8]`); continue; }
         if (!pg.image || !IMG.test(pg.image)) issues.push(`${p}: page image must be .png/.webp`);
-        if (pages.some((x) => x.scale === pg.scale)) issues.push(`${p}: duplicate page scale ${pg.scale}`); else pages.push({ scale: pg.scale, image: pg.image });
+        if (pg.ktx2 !== undefined && !(typeof pg.ktx2 === "string" && /\.ktx2$/.test(pg.ktx2))) issues.push(`${p}: page ktx2 must be a .ktx2 path`);
+        if (pages.some((x) => x.scale === pg.scale)) issues.push(`${p}: duplicate page scale ${pg.scale}`); else pages.push({ scale: pg.scale, image: pg.image, ...(pg.ktx2 ? { ktx2: pg.ktx2 } : {}) });
       }
       pages.sort((x, y) => x.scale - y.scale);
     }
@@ -659,7 +666,8 @@ export function validateAssetFiles(reg: AssetRegistry, io: AssetFileIO): string[
   const size = (p: string) => { if (!atSize.has(p)) atSize.set(p, io.imageSize(p)); return atSize.get(p); };
   const at2x = (p: string, k: number) => p.replace(/(\.[a-z]+)$/, `@${k}x$1`);
   for (const a of reg.atlases.values()) {
-    for (const pg of a.pages) if (!io.exists(pg.image)) issues.push(`atlas ${a.key}: missing page ${pg.image}`);
+    for (const pg of a.pages) { if (!io.exists(pg.image)) issues.push(`atlas ${a.key}: missing page ${pg.image}`); if (pg.ktx2 && !io.exists(pg.ktx2)) issues.push(`atlas ${a.key}: missing ktx2 ${pg.ktx2}`); }
+    for (const kp of Object.values(a.masksKtx2 ?? {})) if (kp && !io.exists(kp)) issues.push(`atlas ${a.key}: missing ktx2 mask ${kp}`);
     const base = io.exists(a.image) ? size(a.image) : undefined;
     for (const [kind, path] of Object.entries(a.masks) as [MaskKind, string][]) {
       if (!io.exists(path)) { issues.push(`atlas ${a.key}: missing ${kind} mask ${path}`); continue; }

@@ -85,6 +85,7 @@ def wheel(x, y, r, w, tyre="#3b3440", rim="#d8d4cc", n=18, bias=0.0, flat=0.0):
     p = cyl((x, y, cz), r, w / 2, "y", M_TYRE, hexc(tyre), n=n, bias=bias, hub=(0.55, hexc(rim), M_METAL))
     if flat:
         for v, *_ in p.polys: v[:, 2] = np.maximum(v[:, 2], 0.0)
+    p.name = "wheel"; p.center = np.array([x, y, r], float)  # kept round under anisotropic fit scaling
     return p
 
 def bike_wheel(x, y, r, tyre_px, color="#3b3440", rim="#c9c2b8", spokes=8, n=20, z=None):

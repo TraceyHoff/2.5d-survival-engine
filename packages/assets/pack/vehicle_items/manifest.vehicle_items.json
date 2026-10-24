@@ -12,9 +12,11 @@
    "pages": [
     {
      "scale": 2,
-     "image": "atlases/vitems_icons@2x.png"
+     "image": "atlases/vitems_icons@2x.png",
+     "ktx2": "atlases/vitems_icons@2x.ktx2"
     }
-   ]
+   ],
+   "ktx2": "atlases/vitems_icons.ktx2"
   },
   {
    "key": "vitems_garage",
@@ -26,9 +28,11 @@
    "pages": [
     {
      "scale": 2,
-     "image": "atlases/vitems_garage@2x.png"
+     "image": "atlases/vitems_garage@2x.png",
+     "ktx2": "atlases/vitems_garage@2x.ktx2"
     }
-   ]
+   ],
+   "ktx2": "atlases/vitems_garage.ktx2"
   },
   {
    "key": "vitems_garage_t2",
@@ -40,9 +44,11 @@
    "pages": [
     {
      "scale": 2,
-     "image": "atlases/vitems_garage_t2@2x.png"
+     "image": "atlases/vitems_garage_t2@2x.png",
+     "ktx2": "atlases/vitems_garage_t2@2x.ktx2"
     }
-   ]
+   ],
+   "ktx2": "atlases/vitems_garage_t2.ktx2"
   },
   {
    "key": "vitems_garage_t3",
@@ -54,9 +60,11 @@
    "pages": [
     {
      "scale": 2,
-     "image": "atlases/vitems_garage_t3@2x.png"
+     "image": "atlases/vitems_garage_t3@2x.png",
+     "ktx2": "atlases/vitems_garage_t3@2x.ktx2"
     }
-   ]
+   ],
+   "ktx2": "atlases/vitems_garage_t3.ktx2"
   }
  ],
  "sprites": [

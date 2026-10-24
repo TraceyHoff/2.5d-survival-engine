@@ -46,7 +46,9 @@ def car(kind, state):
         sports=dict(L=2.2, W=1.16, r=0.23, zb=0.46, c0=-0.5, c1=0.32, ta=0.22, tb=0.3, zr=0.8, wb=1.42),
         pickup=dict(L=2.4, W=1.16, r=0.27, zb=0.68, c0=0.02, c1=0.66, ta=0.02, tb=0.18, zr=1.18, wb=1.56),
         suv=dict(L=2.3, W=1.2, r=0.28, zb=0.72, c0=-1.0, c1=0.5, ta=0.03, tb=0.2, zr=1.32, wb=1.46),
-        minivan=dict(L=2.4, W=1.2, r=0.24, zb=0.62, c0=-1.12, c1=0.72, ta=0.04, tb=0.4, zr=1.36, wb=1.6))[kind]
+        minivan=dict(L=2.4, W=1.2, r=0.24, zb=0.62, c0=-1.12, c1=0.72, ta=0.04, tb=0.4, zr=1.36, wb=1.6),
+        wagon=dict(L=2.3, W=1.1, r=0.22, zb=0.56, c0=-1.06, c1=0.44, ta=0.22, tb=0.05, zr=1.02, wb=1.46),
+        flatbed=dict(L=2.7, W=1.18, r=0.28, zb=0.7, c0=0.3, c1=0.86, ta=0.02, tb=0.14, zr=1.24, wb=1.8))[kind]
     L, W, r, zb, c0, c1, ta, tb, zr, wb = (S[k] for k in "L W r zb c0 c1 ta tb zr wb".split())
     wrecked = state == "wrecked"
     if wrecked: m.xf = tilt(pitch=-0.07, roll=0.06, dz=-0.04); zr_eff = zb + (zr - zb) * 0.72
@@ -71,6 +73,19 @@ def car(kind, state):
             yt = math.copysign(ty, y)
             m.add(rods([((c0 + 0.02, y, zb), (c0 + tb, yt, zr_eff - 0.05)), (((c0 + c1) / 2, y, zb), ((c0 + tb + c1 - ta) / 2, yt, zr_eff - 0.05))], 1.1, M_PAINT, P))
     m.attach["roof"] = ((c0 + c1) / 2, 0, zr_eff + 0.02)
+    if kind == "flatbed":  # wooden stake deck
+        bx0, bx1 = -L / 2 - 0.04, c0 - 0.05; zd = zb - 0.06
+        m.add(box(bx0, bx1, -h - 0.03, h + 0.03, zd - 0.06, zd, M_TRIM, DARK))
+        m.add(box(bx0, bx1, -h - 0.03, h + 0.03, zd, zd + 0.06, M_WOOD, WOOD))
+        for i in range(7): x = bx0 + 0.08 + i * (bx1 - bx0 - 0.16) / 6; m.add(box(x - 0.008, x + 0.008, -h - 0.03, h + 0.03, zd + 0.06, zd + 0.064, M_TRIM, hexc("#8d5f3a"), bias=0.01))
+        for x in (bx0 + 0.06, (bx0 + bx1) / 2, bx1 - 0.06):
+            for y in (-h - 0.01, h + 0.01): m.add(box(x - 0.025, x + 0.025, y - 0.02, y + 0.02, zd + 0.06, zd + 0.3, M_PAINT, P, bias=0.02))
+        m.add(box(bx1 - 0.05, bx1, -h, h, zd + 0.06, zr - 0.1, M_TRIM, DARK, bias=0.01))  # headache rack
+        m.attach["cargo"] = ((bx0 + bx1) / 2, 0, zd + 0.07)
+    if kind == "wagon":
+        for y in (-h + 0.12, h - 0.12): m.add(box(c0 + 0.1, c1 - 0.3, y - 0.02, y + 0.02, zr - 0.0, zr + 0.05, M_TRIM, DARK, bias=0.02))
+        m.add(box(-L / 2 + 0.04, c0 + 0.6, -h - 0.004, -h + 0.0, zb - 0.22, zb - 0.1, M_WOOD, WOOD, bias=0.01))
+        m.add(box(-L / 2 + 0.04, c0 + 0.6, h - 0.0, h + 0.004, zb - 0.22, zb - 0.1, M_WOOD, WOOD, bias=0.01))
     if kind == "pickup":  # bed
         bx0, bx1 = -L / 2 + 0.02, c0 - 0.03
         m.add(box(bx0, bx1, -h + 0.02, h - 0.02, zb - 0.02, zb, M_TRIM, DARK))
@@ -92,12 +107,12 @@ def car(kind, state):
         m.light("head_r", "headlight", (L / 2 - nose * 0.5 + 0.01, h - 0.17, zl), (1, 0, 0))
         m.light("tail_l", "taillight", (-L / 2 - 0.0, -h + 0.14, zl), (-1, 0, 0), size=(0.03, 0.14, 0.08))
         m.light("tail_r", "taillight", (-L / 2 - 0.0, h - 0.14, zl), (-1, 0, 0), size=(0.03, 0.14, 0.08))
-        xb = c0 + tb - 0.02 if kind not in ("pickup",) else c0 - 0.0
-        m.light("brake", "brake", (xb, 0, zr_eff - 0.08 if kind != "pickup" else zr_eff - 0.1), (-1, 0, 0.3), size=(0.025, 0.2, 0.035))
+        xb = c0 + tb - 0.02 if kind not in ("pickup", "flatbed") else c0 - 0.0
+        m.light("brake", "brake", (xb, 0, zr_eff - 0.08 if kind not in ("pickup", "flatbed") else zr_eff - 0.1), (-1, 0, 0.3), size=(0.025, 0.2, 0.035))
     wheels4(m, (wb / 2, -wb / 2), W + 0.04, r, 0.2, state, missing=("fr",) if wrecked else ())
-    m.attach["driver"] = (c1 - 0.42 if kind != "pickup" else c1 - 0.38, -0.22, zb + 0.02)
+    m.attach["driver"] = (c1 - 0.42 if kind not in ("pickup", "flatbed") else c1 - 0.3, -0.22, zb + 0.02)
     m.attach["seat_passenger"] = (m.attach["driver"][0], 0.22, zb + 0.02)
-    if kind in ("sedan", "hatchback", "suv", "minivan"):
+    if kind in ("sedan", "hatchback", "suv", "minivan", "wagon"):
         m.attach["seat_rear_l"] = (m.attach["driver"][0] - 0.5, -0.22, zb + 0.02); m.attach["seat_rear_r"] = (m.attach["driver"][0] - 0.5, 0.22, zb + 0.02)
     m.attach["door_driver"] = (m.attach["driver"][0], -h - 0.18, 0.3)
     m.attach["exhaust"] = (-L / 2 - 0.08, -0.3, z0 + 0.02)
@@ -206,29 +221,41 @@ def camper(kind, state):
         m.attach["hitch"] = (tongue + 0.03, 0, 0.33)
         wheels4(m, (xa,), W + 0.06, r, 0.18, state, missing=("fl",) if wrecked else ())
         zl = 0.42; tail_x = -L / 2 - 0.01; zdoor = (z0 + 0.04, 1.2); ztop = zt
-    else:  # motorhome (class C)
-        L, W, r = 3.3, 1.36, 0.28; h = W / 2; z0 = 0.26
-        m.add(prism((0.95, L / 2, -h + 0.06, h - 0.06), (0.95, L / 2 - 0.12, -h + 0.1, h - 0.1), z0, 0.82, M_PAINT, P))
-        m.add(prism((1.0, L / 2 - 0.12, -h + 0.1, h - 0.1), (1.0, 1.32, -h + 0.16, h - 0.16), 0.82, 1.3, M_GLASS, GLASS))
-        zt = 2.0 if not wrecked else 1.8
-        m.add(box(-L / 2, 1.02, -h, h, 0.36, zt, M_LIGHTBODY, CREAM, inset=0.03))
-        m.add(prism((1.0, 1.55, -h + 0.02, h - 0.02), (1.0, 1.4, -h + 0.05, h - 0.05), 1.34, zt - 0.02, M_LIGHTBODY, CREAM))
-        for y in (-h - 0.006, h - 0.004): m.add(box(-L / 2 + 0.02, 1.0, y, y + 0.01, 0.5, 0.75, M_PAINT, P, bias=0.01))  # swoosh band
-        m.add(box(-L / 2 + 0.02, 1.0, -h - 0.007, -h + 0.0, 1.55, 1.64, M_PAINT, P, bias=0.01))
-        m.add(box(-1.2, -0.3, -h - 0.01, -h + 0.0, 1.05, 1.45, M_GLASS, GLASS, bias=0.003))
-        m.add(box(-1.4, -0.7, h - 0.0, h + 0.01, 1.05, 1.4, M_GLASS, GLASS, bias=0.003))
-        m.add(box(-0.6, -0.1, -0.3, 0.3, zt, zt + 0.16, M_TRIM, WHITE, inset=0.03))  # AC unit
-        m.add(box(-1.2, 0.8, h + 0.0, h + 0.08, 1.7, 1.82, M_TRIM, hexc("#7aa59a")))  # awning roll
-        m.add(rods([((-L / 2 - 0.03, 0.3, 0.5), (-L / 2 - 0.03, 0.3, zt)), ((-L / 2 - 0.03, 0.5, 0.5), (-L / 2 - 0.03, 0.5, zt))], 0.9, M_METAL, CHROME))
-        door = (-0.05, 0.45); zl = 0.45; tail_x = -L / 2 - 0.01; zdoor = (0.4, 1.7); ztop = zt
+    else:  # motorhome (class C) / camper_van (pop-top campervan)
+        cv = kind == "camper_van"
+        L, W, r = (2.7, 1.24, 0.25) if cv else (3.3, 1.36, 0.28); h = W / 2; z0 = 0.24 if cv else 0.26
+        xh = 0.72 if cv else 0.95  # hood start
+        m.add(prism((xh, L / 2, -h + 0.06, h - 0.06), (xh, L / 2 - 0.12, -h + 0.1, h - 0.1), z0, 0.78 if cv else 0.82, M_PAINT, P))
+        m.add(prism((xh + 0.05, L / 2 - 0.12, -h + 0.1, h - 0.1), (xh + 0.05, xh + 0.34, -h + 0.16, h - 0.16), 0.78 if cv else 0.82, 1.3, M_GLASS, GLASS))
+        zt = (1.62 if not wrecked else 1.45) if cv else (2.0 if not wrecked else 1.8)
+        m.add(box(-L / 2, xh + 0.07, -h, h, 0.34 if cv else 0.36, zt, M_LIGHTBODY, CREAM, inset=0.03))
+        if cv:
+            m.add(box(-L / 2 + 0.01, xh + 0.06, -h - 0.004, h + 0.004, 0.34, 0.8, M_PAINT, P, bias=0.004))  # two-tone lower half
+            m.add(prism((-L / 2 + 0.12, xh - 0.05, -h + 0.08, h - 0.08), (-L / 2 + 0.3, xh - 0.25, -h + 0.14, h - 0.14), zt, zt + 0.2, M_PAINT, P, bias=0.02))  # pop-top
+            m.add(box(-1.0, -0.2, -h - 0.01, -h + 0.0, 1.0, 1.4, M_GLASS, GLASS, bias=0.003))
+            m.add(box(-1.15, -0.55, h - 0.0, h + 0.01, 1.0, 1.4, M_GLASS, GLASS, bias=0.003))
+            m.add(cyl((-L / 2 - 0.06, 0.0, 0.85), 0.2, 0.05, "x", M_TYRE, hexc(TYRE), hub=(0.55, CHROME, M_METAL)))  # spare wheel
+            door = (-0.1, 0.42); zl = 0.48; tail_x = -L / 2 - 0.01; zdoor = (0.38, 1.5); ztop = zt + 0.2
+        else:
+            m.add(prism((1.0, 1.55, -h + 0.02, h - 0.02), (1.0, 1.4, -h + 0.05, h - 0.05), 1.34, zt - 0.02, M_LIGHTBODY, CREAM))
+            for y in (-h - 0.006, h - 0.004): m.add(box(-L / 2 + 0.02, 1.0, y, y + 0.01, 0.5, 0.75, M_PAINT, P, bias=0.01))  # swoosh band
+            m.add(box(-L / 2 + 0.02, 1.0, -h - 0.007, -h + 0.0, 1.55, 1.64, M_PAINT, P, bias=0.01))
+            m.add(box(-1.2, -0.3, -h - 0.01, -h + 0.0, 1.05, 1.45, M_GLASS, GLASS, bias=0.003))
+            m.add(box(-1.4, -0.7, h - 0.0, h + 0.01, 1.05, 1.4, M_GLASS, GLASS, bias=0.003))
+            m.add(box(-0.6, -0.1, -0.3, 0.3, zt, zt + 0.16, M_TRIM, WHITE, inset=0.03))  # AC unit
+            m.add(box(-1.2, 0.8, h + 0.0, h + 0.08, 1.7, 1.82, M_TRIM, hexc("#7aa59a")))  # awning roll
+            m.add(rods([((-L / 2 - 0.03, 0.3, 0.5), (-L / 2 - 0.03, 0.3, zt)), ((-L / 2 - 0.03, 0.5, 0.5), (-L / 2 - 0.03, 0.5, zt))], 0.9, M_METAL, CHROME))
+            door = (-0.05, 0.45); zl = 0.45; tail_x = -L / 2 - 0.01; zdoor = (0.4, 1.7); ztop = zt
         m.add(box(L / 2 - 0.03, L / 2 + 0.05, -h + 0.06, h - 0.06, z0, z0 + 0.12, M_TRIM, TRIM))
         m.light("head_l", "headlight", (L / 2 - 0.05, -h + 0.2, 0.6), (1, 0, 0)); m.light("head_r", "headlight", (L / 2 - 0.05, h - 0.2, 0.6), (1, 0, 0))
         m.light("brake", "brake", (-L / 2 - 0.02, 0, zt - 0.08), (-1, 0, 0), size=(0.025, 0.26, 0.035))
-        wheels4(m, (1.2, -0.9), W + 0.04, r, 0.24, state, missing=("rr",) if wrecked else ())
-        m.attach["driver"] = (0.95, -0.25, 0.8); m.attach["seat_passenger"] = (0.95, 0.25, 0.8); m.attach["door_driver"] = (1.1, -h - 0.2, 0.3)
+        wheels4(m, (0.95, -0.85) if cv else (1.2, -0.9), W + 0.04, r, 0.24, state, missing=("rr",) if wrecked else ())
+        xd = xh - 0.05 if cv else 0.95
+        m.attach["driver"] = (xd, -0.25, 0.8); m.attach["seat_passenger"] = (xd, 0.25, 0.8); m.attach["door_driver"] = (xd + 0.1, -h - 0.2, 0.3)
+        if cv: m.attach["seat_rear_l"] = (xd - 0.6, -0.25, 0.8); m.attach["seat_rear_r"] = (xd - 0.6, 0.25, 0.8)
         m.attach["exhaust"] = (-L / 2 + 0.2, -h + 0.15, 0.22); m.add(cyl((-L / 2 + 0.2, -h + 0.15, 0.22), 0.04, 0.1, "x", M_METAL, CHROME))
         m.attach["tow_hitch"] = (-L / 2 - 0.15, 0, 0.32); m.add(box(-L / 2 - 0.17, -L / 2, -0.03, 0.03, 0.27, 0.33, M_METAL, CHROME))
-        m.attach["engine"] = (1.4, 0, 0.84)
+        m.attach["engine"] = (L / 2 - 0.25, 0, 0.84)
     # door on right side (+y)
     d0, d1 = door; yy = h
     if door_open:
@@ -246,9 +273,6 @@ def camper(kind, state):
     m.attach["roof"] = (0, 0, ztop); m.attach["craft_station"] = (-0.45 if kind == "trailer_camper" else -1.0, -0.25, 0.4)
     m.attach["cook_station"] = (0.55 if kind == "trailer_camper" else 0.4, -0.3, 0.4)
     m.foot = (L, W)
-    if kind == "motorhome":  # cartoon-scale the big camper so its 40 frames fit one 2048 page at 2x
-        k = 0.84; inner = m.xf
-        m.xf = (lambda p, inner=inner: (inner(p) if inner else np.asarray(p, float)) * k); m.foot = (L * k, W * k)
     return m
 
 def trailer(kind, state):
@@ -256,11 +280,13 @@ def trailer(kind, state):
     if state == "rusty": m.xf = tilt(roll=0.02, dz=-0.04)
     if state == "damaged": m.xf = tilt(roll=-0.03)
     spec = dict(flatbed=(3.2, 1.3, 0.2, (0.45, -0.45)), box=(3.4, 1.3, 0.22, (0.4, -0.05)), tanker=(3.4, 1.3, 0.22, (0.42, -0.02)),
-                log=(3.2, 1.3, 0.2, (0.45, -0.45)), utility=(1.25, 1.0, 0.18, (0.0,)))[kind]
-    L, W, r, axl = spec; h = W / 2
+                log=(3.2, 1.3, 0.2, (0.45, -0.45)), utility=(1.25, 1.0, 0.18, (0.0,)), livestock=(3.2, 1.3, 0.2, (0.45, -0.45)),
+                semi_box=(5.2, 1.0, 0.16, ()), semi_flatbed=(5.2, 1.0, 0.16, ()))[kind]
+    L, W, r, axl = spec; h = W / 2; semi_ = kind.startswith("semi_"); kind = kind[5:] if semi_ else kind
     xs = [-L / 2 + 0.55 + a for a in axl] if kind != "utility" else [-0.05]
     if kind in ("box", "tanker"): xs = [-L / 2 + 0.55, -L / 2 + 0.98]
     zd = r * 2 + 0.06
+    if semi_: xs = [-L / 2 + 0.3, -L / 2 + 0.66]; zd = r * 2 + 0.2
     m.add(box(-L / 2, L / 2, -h + 0.08, h - 0.08, zd - 0.12, zd - 0.02, M_TRIM, DARK))
     if kind == "flatbed":
         m.add(box(-L / 2, L / 2, -h, h, zd - 0.02, zd + 0.06, M_WOOD, WOOD))
@@ -272,6 +298,19 @@ def trailer(kind, state):
         m.add(box(-L / 2, L / 2, -h, h, zd - 0.02, zt, M_LIGHTBODY, WHITE, inset=0.02))
         for y in (-h - 0.005, h - 0.005): m.add(box(-L / 2 + 0.06, L / 2 - 0.06, y, y + 0.01, zd + 0.2, zt - 0.2, M_PAINT, P, bias=0.01))
         for i in range(2): m.add(box(-L / 2 - 0.012, -L / 2, -0.01 + (i - 0.5) * 0.02, 0.01 + (i - 0.5) * 0.02, zd + 0.05, zt - 0.05, M_METAL, CHROME, bias=0.004))
+        m.attach["cargo"] = (0, 0, zd); m.attach["cargo_door"] = (-L / 2 - 0.25, 0, 0.0)
+    elif kind == "livestock":
+        zt = 1.75 if state != "wrecked" else 1.55; DK = hexc("#4a3a40")
+        m.add(box(-L / 2 + 0.04, L / 2 - 0.04, -h + 0.04, h - 0.04, zd - 0.02, zt - 0.06, M_INTERIOR, DK))  # dark hold seen through slats
+        m.add(box(-L / 2, L / 2, -h, h, zd - 0.02, zd + 0.08, M_PAINT, P))
+        for i in range(5):
+            z = zd + 0.22 + i * (zt - zd - 0.4) / 4
+            for y0, y1 in ((-h - 0.01, -h + 0.03), (h - 0.03, h + 0.01)): m.add(box(-L / 2, L / 2, y0, y1, z, z + 0.1, M_PAINT if i % 2 == 0 else M_LIGHTBODY, P if i % 2 == 0 else CREAM, bias=0.01))
+        for x in [-L / 2 + 0.02 + k * (L - 0.04) / 5 for k in range(6)]:
+            for y in (-h - 0.012, h + 0.012): m.add(box(x - 0.03, x + 0.03, y - 0.02, y + 0.02, zd, zt, M_TRIM, TRIM, bias=0.02))
+        m.add(box(L / 2 - 0.04, L / 2, -h, h, zd, zt, M_PAINT, P, bias=0.01))  # solid front wall
+        m.add(box(-L / 2, -L / 2 + 0.04, -h, h, zd, zt, M_WOOD, WOOD, bias=0.01))  # rear ramp gate
+        m.add(box(-L / 2 - 0.02, L / 2 + 0.02, -h - 0.02, h + 0.02, zt - 0.06, zt, M_LIGHTBODY, WHITE, inset=0.02))  # roof
         m.attach["cargo"] = (0, 0, zd); m.attach["cargo_door"] = (-L / 2 - 0.25, 0, 0.0)
     elif kind == "tanker":
         m.add(cyl((0.05, 0, zd + 0.48), 0.56, L / 2 - 0.08, "x", M_PAINT, P, cap_color=P, n=22))
@@ -295,10 +334,17 @@ def trailer(kind, state):
         m.add(rods([((-L / 2, -h, zd + 0.36), (L / 2, -h, zd + 0.36)), ((-L / 2, h, zd + 0.36), (L / 2, h, zd + 0.36))], 0.9, M_TRIM, DARK, bias=0.1))
         for y in (-h - 0.1, h + 0.1): m.add(prism((xs[0] - 0.26, xs[0] + 0.26, y - 0.06, y + 0.06), (xs[0] - 0.18, xs[0] + 0.18, y - 0.06, y + 0.06), zd - 0.02, zd + 0.1, M_TRIM, DARK, bias=0.03))
         m.attach["cargo"] = (0, 0, zd + 0.05)
+    if semi_:  # kingpin + landing gear instead of an A-frame tongue
+        m.add(box(L / 2 - 0.5, L / 2, -0.3, 0.3, zd - 0.2, zd - 0.12, M_METAL, hexc("#6b6470")))
+        m.attach["hitch"] = (L / 2 - 0.3, 0, zd - 0.18)
+        for y in (-h + 0.1, h - 0.1):
+            m.add(rods([((L / 2 - 1.0, y, zd - 0.12), (L / 2 - 1.0, y, 0.05))], 2.2, M_METAL, hexc("#8a8290")))
+            m.add(box(L / 2 - 1.06, L / 2 - 0.94, y - 0.05, y + 0.05, 0.0, 0.03, M_METAL, hexc("#6b6470")))
+        m.add(box(-L / 2 - 0.02, -L / 2 + 0.02, -h + 0.04, h - 0.04, 0.2, 0.3, M_TRIM, TRIM))  # under-ride guard
     tongue = L / 2 + (0.7 if kind != "utility" else 0.6)
-    m.add(rods([((L / 2 - 0.1, -0.4, zd - 0.08), (tongue, 0, 0.32)), ((L / 2 - 0.1, 0.4, zd - 0.08), (tongue, 0, 0.32))], 1.6, M_TRIM, DARK))
-    m.add(box(tongue - 0.12, tongue + 0.05, -0.05, 0.05, 0.27, 0.37, M_METAL, CHROME)); m.attach["hitch"] = (tongue + 0.03, 0, 0.32)
-    if kind != "utility": m.add(rods([((L / 2 + 0.25, 0.12, zd - 0.1), (L / 2 + 0.25, 0.12, 0.02))], 1.3, M_METAL, CHROME))
+    if not semi_: m.add(rods([((L / 2 - 0.1, -0.4, zd - 0.08), (tongue, 0, 0.32)), ((L / 2 - 0.1, 0.4, zd - 0.08), (tongue, 0, 0.32))], 1.6, M_TRIM, DARK))
+    if not semi_: m.add(box(tongue - 0.12, tongue + 0.05, -0.05, 0.05, 0.27, 0.37, M_METAL, CHROME)); m.attach["hitch"] = (tongue + 0.03, 0, 0.32)
+    if kind != "utility" and not semi_: m.add(rods([((L / 2 + 0.25, 0.12, zd - 0.1), (L / 2 + 0.25, 0.12, 0.02))], 1.3, M_METAL, CHROME))
     wheels4(m, xs, W + 0.06, r, 0.18, state, missing=("fl",) if wrecked else ())
     zl = zd - 0.08
     m.light("tail_l", "taillight", (-L / 2 - 0.02, -h + 0.08, zl), (-1, 0, 0), size=(0.03, 0.1, 0.06))
@@ -309,13 +355,21 @@ def bike(kind, state):
     m = Model(); wrecked = state == "wrecked"
     if wrecked: m.xf = tilt(roll=1.25, dz=0.03)
     F = P  # paint
-    S = dict(road=(0.3, 1.02, 1.6), mountain=(0.3, 1.0, 2.6), bmx=(0.22, 0.8, 2.2), cargo=(0.28, 1.7, 1.9), tandem=(0.3, 1.75, 1.6))[kind]
+    S = dict(road=(0.3, 1.02, 1.6), mountain=(0.3, 1.0, 2.6), bmx=(0.22, 0.8, 2.2), cargo=(0.28, 1.7, 1.9), tandem=(0.3, 1.75, 1.6),
+             basic=(0.3, 1.02, 1.8), fat_tire=(0.32, 1.04, 2.6), cruiser=(0.3, 1.12, 1.9), trike=(0.26, 1.1, 1.9))[kind]
     r, wbase, tube = S; xr, xf_ = -wbase / 2, wbase / 2
-    tyre_px = {"mountain": 2.4, "bmx": 2.0}.get(kind, 1.5)
+    tyre_px = {"mountain": 2.4, "bmx": 2.0, "fat_tire": 4.4, "cruiser": 2.0}.get(kind, 1.5)
     if kind == "cargo": xf_ = wbase / 2; r_f = 0.2
     else: r_f = r
     wf = bike_wheel(xf_, 0, r_f, tyre_px) if not wrecked else []
-    m.add(bike_wheel(xr, 0, r, tyre_px), wf)
+    if kind == "trike":  # twin rear wheels on an axle + rear basket
+        m.add(bike_wheel(xr, -0.3, r, tyre_px), bike_wheel(xr, 0.3, r, tyre_px), wf)
+        m.add(rods([((xr, -0.3, r), (xr, 0.3, r))], 1.6, M_METAL, CHROME))
+        m.add(box(xr - 0.2, xr + 0.16, -0.24, 0.24, r + 0.12, r + 0.15, M_WOOD, hexc("#a87446")))
+        for (x0, x1, y0, y1) in ((xr - 0.2, xr + 0.16, -0.24, -0.21), (xr - 0.2, xr + 0.16, 0.21, 0.24), (xr - 0.2, xr - 0.17, -0.24, 0.24), (xr + 0.13, xr + 0.16, -0.24, 0.24)):
+            m.add(box(x0, x1, y0, y1, r + 0.15, r + 0.34, M_WOOD, WOOD, bias=0.01))
+        m.attach["cargo"] = (xr, 0, r + 0.16)
+    else: m.add(bike_wheel(xr, 0, r, tyre_px), wf)
     m.attach["wheel_r"] = (xr, 0, r); m.attach["wheel_f"] = (xf_, 0, r_f)
     bb = (xr + 0.38 if kind != "bmx" else xr + 0.33, 0, r * 0.95)
     seat = (bb[0] - 0.1, 0, bb[2] + (0.5 if kind != "bmx" else 0.28))
@@ -346,7 +400,8 @@ def bike(kind, state):
     if kind == "road":
         bars = [((hb[0], -0.16, hb[2]), (hb[0], 0.16, hb[2])), ((hb[0], -0.16, hb[2]), (hb[0] + 0.07, -0.16, hb[2] - 0.1)), ((hb[0], 0.16, hb[2]), (hb[0] + 0.07, 0.16, hb[2] - 0.1))]
     else:
-        w = 0.26 if kind == "mountain" else 0.2
+        w = {"mountain": 0.26, "fat_tire": 0.28, "cruiser": 0.3}.get(kind, 0.2)
+        if kind == "cruiser": hb = (hb[0] - 0.08, 0, hb[2] + 0.06)
         bars = [((hb[0], -w, hb[2] + 0.03), (hb[0], w, hb[2] + 0.03)), ((hb[0], 0, hb[2] - 0.03), (hb[0], 0, hb[2] + 0.03))]
     if kind == "tandem": bars += [((seat[0] + 0.25, -0.14, seat[2] + 0.06), (seat[0] + 0.25, 0.14, seat[2] + 0.06))]
     m.add(rods(bars, 1.0, M_TRIM, DARK))
@@ -361,19 +416,53 @@ def bike(kind, state):
     m.light("tail", "taillight", (seat_main[0] - 0.14 if kind != "tandem" else seat[0] - 0.14, 0, seat[2] - 0.08), (-1, 0, 0), size=(0.03, 0.05, 0.05))
     m.attach["handlebar"] = hb; m.attach["bell"] = (hb[0], 0.12, hb[2] + 0.03)
     m.add(cyl((hb[0], 0.12, hb[2] + 0.04), 0.025, 0.02, "z", M_METAL, hexc("#f1c84b"), n=8, bias=0.04))
-    m.foot = (wbase + 2 * r, 0.4)
+    m.foot = (wbase + 2 * r, 0.4 if kind != "trike" else 0.8)
     if wrecked: m.foot = (wbase + 2 * r, 0.7); m.foot_c = (0.0, -0.4); m.shadow_flat = True  # lying on its side
     return m
 
 FAMILIES = {
-    "bikes": [("bike_road", lambda s: bike("road", s)), ("bike_mountain", lambda s: bike("mountain", s)), ("bike_bmx", lambda s: bike("bmx", s)),
+    "bikes": [("bike_basic", lambda s: bike("basic", s)), ("bike_fat_tire", lambda s: bike("fat_tire", s)), ("bike_cruiser", lambda s: bike("cruiser", s)),
+              ("bike_trike", lambda s: bike("trike", s)), ("bike_road", lambda s: bike("road", s)), ("bike_mountain", lambda s: bike("mountain", s)), ("bike_bmx", lambda s: bike("bmx", s)),
               ("bike_cargo", lambda s: bike("cargo", s)), ("bike_tandem", lambda s: bike("tandem", s))],
-    "cars": [(f"car_{k}", (lambda k: lambda s: car(k, s))(k)) for k in ("sedan", "hatchback", "sports", "pickup", "suv")],
+    "cars": [(f"car_{k}", (lambda k: lambda s: car(k, s))(k)) for k in ("sedan", "hatchback", "sports", "pickup", "suv", "wagon", "flatbed")],
     "vans": [("van_minivan", lambda s: car("minivan", s)), ("van_delivery", lambda s: van("delivery_van", s)), ("truck_box", lambda s: van("box_truck", s)),
              ("truck_semi_cab", lambda s: semi(s))],
-    "campers": [("camper_trailer", lambda s: camper("trailer_camper", s)), ("camper_motorhome", lambda s: camper("motorhome", s))],
-    "trailers": [(f"trailer_{k}", (lambda k: lambda s: trailer(k, s))(k)) for k in ("flatbed", "box", "tanker", "log")],
+    "campers": [("camper_trailer", lambda s: camper("trailer_camper", s)), ("camper_motorhome", lambda s: camper("motorhome", s)), ("camper_van", lambda s: camper("camper_van", s))],
+    "trailers": [(f"trailer_{k}", (lambda k: lambda s: trailer(k, s))(k)) for k in ("flatbed", "box", "tanker", "log", "livestock", "semi_box", "semi_flatbed")],
     "trailers_small": [("trailer_utility", lambda s: trailer("utility", s))],
 }
 STATES = {"bikes": ["intact", "wrecked", "rusty"], "cars": ["intact", "damaged", "wrecked", "rusty"], "vans": ["intact", "damaged", "wrecked", "rusty"],
           "campers": ["intact", "door_open", "damaged", "wrecked", "rusty"], "trailers": ["intact", "damaged", "rusty"], "trailers_small": ["intact", "damaged", "rusty"]}
+
+# ---------------------------------------------------------------- true-size fit (docs/VEHICLES_RENDER.md targets)
+SEAT_NAMES = ("driver", "seat", "seat_passenger", "seat_rear", "seat_rear_l", "seat_rear_r")
+
+def model_extent(m):
+    pts = [v for pr in m.prims for v, *_ in pr.polys] + [np.stack([a, b]) for pr in m.prims for a, b, *_ in pr.rods]
+    P_ = np.concatenate(pts); return P_.min(0), P_.max(0)
+
+def fit_factors(m, Lpx, Hpx, Wt):
+    """(sx, sy, sz) so the intact model's bumper-to-bumper length = Lpx (E view, U px/tile), roof = Hpx, body width = Wt tiles."""
+    mn, mx = model_extent(m)
+    sx = Lpx / U / max(1e-6, mx[0] - mn[0]); sz = Hpx / ZK / max(1e-6, mx[2]); sy = Wt / max(1e-6, m.foot[1])
+    return sx, sy, sz
+
+def apply_fit(m, f, seat_px=None):
+    sx, sy, sz = f; S = np.array([sx, sy, sz]); kw = sz  # wheels stay round: radius follows the vertical scale
+    rk = math.sqrt(sx * sz)
+    for pr in m.prims:
+        c = getattr(pr, "center", None)
+        for v, *_ in pr.polys:
+            if c is not None:
+                d = v - c; v[:] = c * S + d * np.array([kw, sy, kw])
+            else: v *= S
+        pr.rods = [(a * S, b * S, rp * rk, mt, col) for a, b, rp, mt, col in pr.rods]
+        if c is not None: pr.center = c * S
+    m.attach = {n: tuple(np.array(p) * S) for n, p in m.attach.items()}
+    if seat_px is not None:
+        for n in SEAT_NAMES:
+            if n in m.attach: x, y, _ = m.attach[n]; m.attach[n] = (x, y, seat_px / ZK)
+    m.lights = [(n, k, tuple(np.array(p) * S), nr) for n, k, p, nr in m.lights]
+    m.foot = (m.foot[0] * sx, m.foot[1] * sy)
+    if hasattr(m, "foot_c"): m.foot_c = (m.foot_c[0] * sx, m.foot_c[1] * sy)
+    return m

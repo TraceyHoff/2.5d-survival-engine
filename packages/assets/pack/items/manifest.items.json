@@ -12,9 +12,11 @@
    "pages": [
     {
      "scale": 2,
-     "image": "atlases/items_icons@2x.png"
+     "image": "atlases/items_icons@2x.png",
+     "ktx2": "atlases/items_icons@2x.ktx2"
     }
-   ]
+   ],
+   "ktx2": "atlases/items_icons.ktx2"
   },
   {
    "key": "items_nodes",
@@ -26,9 +28,11 @@
    "pages": [
     {
      "scale": 2,
-     "image": "atlases/items_nodes@2x.png"
+     "image": "atlases/items_nodes@2x.png",
+     "ktx2": "atlases/items_nodes@2x.ktx2"
     }
-   ]
+   ],
+   "ktx2": "atlases/items_nodes.ktx2"
   },
   {
    "key": "items_held_a",
@@ -40,9 +44,11 @@
    "pages": [
     {
      "scale": 2,
-     "image": "atlases/items_held_a@2x.png"
+     "image": "atlases/items_held_a@2x.png",
+     "ktx2": "atlases/items_held_a@2x.ktx2"
     }
-   ]
+   ],
+   "ktx2": "atlases/items_held_a.ktx2"
   },
   {
    "key": "items_held_b",
@@ -54,9 +60,11 @@
    "pages": [
     {
      "scale": 2,
-     "image": "atlases/items_held_b@2x.png"
+     "image": "atlases/items_held_b@2x.png",
+     "ktx2": "atlases/items_held_b@2x.ktx2"
     }
-   ]
+   ],
+   "ktx2": "atlases/items_held_b.ktx2"
   }
  ],
  "sprites": [

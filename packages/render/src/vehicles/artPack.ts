@@ -34,7 +34,7 @@ export const ART_INTERIOR = { floor: "camper_interior_floor", wall: "camper_inte
 export const artKeyFor = (id: string): string => VEHICLE_ART_ALIASES[id] ?? id;
 
 /** Per-key metadata from the sub-manifest's `vehicles` section (footprintTiles is what the scale fit needs). */
-export interface VehicleArtMeta { key: string; atlas: string; footprintTiles: [number, number]; seats?: string[]; states?: string[] }
+export interface VehicleArtMeta { key: string; atlas: string; footprintTiles: [number, number]; seats?: string[]; states?: string[]; /** "native" = drawn at true target size (VEHICLES_RENDER.md), no fit scale. */ scaleMode?: string; aliasOf?: string }
 export type VehicleArtTable = ReadonlyMap<string, VehicleArtMeta>;
 export function vehicleArtTable(m: { vehicles?: unknown }): Map<string, VehicleArtMeta> {
   const out = new Map<string, VehicleArtMeta>(); const v = m.vehicles;
@@ -49,11 +49,13 @@ export interface VehicleArtBinding { mode: "art"; key: string; spriteId: number;
  * Art's footprint length to the gameplay one (1 without meta); clamped to [0.5, 4].
  */
 export function resolveVehicleArt(reg: AssetRegistry, def: VehicleRenderDef, meta?: VehicleArtTable): VehicleArtBinding | null {
-  const key = artKeyFor(def.id);
-  let s, id: number; try { s = reg.byKey(key); id = reg.id(key); } catch { return null; }
+  // exact doc id first (native-size art), then the legacy alias
+  let key = def.id; let s, id: number;
+  try { s = reg.byKey(key); id = reg.id(key); } catch { key = artKeyFor(def.id); try { s = reg.byKey(key); id = reg.id(key); } catch { return null; } }
   const a0 = s.animList[0]; if (!a0 || a0.directions !== 8) return null;
   // per-type stylized height (scale.ts): roof = heightX * player; unknown art keys fall back to 0.8 * pivot height
-  void meta; const scale = artScaleFor(def, key, 0.8 * s.anchor.y * s.atlas.frameH);
+  const native = meta?.get(key)?.scaleMode === "native";
+  const scale = native ? 1 : artScaleFor(def, key, 0.8 * s.anchor.y * s.atlas.frameH);
   return { mode: "art", key, spriteId: id, facingOffset: ART_FACING_OFFSET, scale, atlas: s.atlas.key };
 }
 

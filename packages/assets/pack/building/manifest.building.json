@@ -8,7 +8,8 @@
    "frameW": 84,
    "frameH": 96,
    "columns": 24,
-   "rows": 10
+   "rows": 10,
+   "ktx2": "atlases/building_t1.ktx2"
   },
   {
    "key": "building_t2",
@@ -16,7 +17,8 @@
    "frameW": 84,
    "frameH": 96,
    "columns": 24,
-   "rows": 10
+   "rows": 10,
+   "ktx2": "atlases/building_t2.ktx2"
   },
   {
    "key": "building_t3",
@@ -24,7 +26,8 @@
    "frameW": 84,
    "frameH": 96,
    "columns": 24,
-   "rows": 10
+   "rows": 10,
+   "ktx2": "atlases/building_t3.ktx2"
   },
   {
    "key": "building_t4",
@@ -32,7 +35,8 @@
    "frameW": 84,
    "frameH": 96,
    "columns": 24,
-   "rows": 10
+   "rows": 10,
+   "ktx2": "atlases/building_t4.ktx2"
   }
  ],
  "sprites": [
