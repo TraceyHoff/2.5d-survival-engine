@@ -6,7 +6,7 @@
  *             chars=lineup|facings|crowd n=COUNT cam=chars layers=0 (body only) lod=MINZOOM (drop minor layers below)
  */
 import { World, InputState, Action, createGameLoop, Transform, entityIndex, PrevTransform, Weather } from "@engine/core";
-import { IsoRenderer, coreAppearanceBinding } from "../src/index.js";
+import { IsoRenderer, BuildGhost, coreAppearanceBinding } from "../src/index.js";
 import { spawnCharacters } from "./characters.js";
 import { buildScene, DEMO_COMPONENTS, DEMO_HELD } from "./scene.js";
 import { installDemoSystems } from "./systems.js";
@@ -78,6 +78,12 @@ async function main(): Promise<void> {
   if (q.get("lights") === "0") renderer.settings.lights = false;
   if (q.get("shadows") === "0") renderer.settings.shadows = false;
   const cam = renderer.camera;
+  // ?ghost=valid|invalid: drive the build-placement ghost through BuildGhost (Survival's buildPreview shape)
+  const ghostQ = q.get("ghost");
+  if (ghostQ === "valid" || ghostQ === "invalid") {
+    const gz = world.get(scene.player, Transform)!.z;
+    new BuildGhost(world, BuildPiece as never, content.registry).sync({ pieceKey: "wall", x: scene.base.x + 7, y: scene.base.y + 3, rot: Number(q.get("ghostrot") ?? 0), valid: ghostQ === "valid" }, { z: gz });
+  }
   const camQ = q.get("cam"); const pl = world.get(scene.player, Transform)!;
   if (camQ === "fire") cam.lookAt(scene.base.x + 3.5, scene.base.y + scene.base.h + 2, 1); else if (camQ === "burn") cam.lookAt(scene.base.x + 10, scene.base.y + 5.5, 1); else if (camQ === "chars" && chars?.entities.length) { const t0 = world.get(chars.entities[0]!, Transform)!, t1 = world.get(chars.entities[chars.entities.length - 1]!, Transform)!; cam.lookAt((t0.x + t1.x) / 2, (t0.y + t1.y) / 2, t0.z); } else if (camQ === "players") cam.lookAt(pl.x + 1, pl.y, 1); else cam.lookAt(scene.base.x + 4, scene.base.y + 4, 1);
   cam.zoom = num("zoom", 1.6);

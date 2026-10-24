@@ -249,13 +249,14 @@ void main() {
   int ghost = int(vMisc.x + 0.5);
   if (ghost > 0) {
     vec3 gc = ghost == 1 ? vec3(0.35, 1.0, 0.45) : vec3(1.0, 0.3, 0.3);
-    col = mix(col, gc, 0.55); alpha *= 0.5 + 0.18 * sin(uTime * 6.0);
+    col = mix(col, gc, 0.55); alpha *= 0.5 + 0.06 * sin(uTime * 4.0); // ~0.5 alpha, subtle pulse
   }
   float e = (vFlags & 2) != 0 ? 1.0 : 0.0;
   if (vMisc.z > 0.5) { vec4 em = texture(uEmis, vUv); e = max(e, max(em.r, max(em.g, em.b)) * em.a * ((vFlags & 64) != 0 ? uNightGate : 1.0)); } // 64: night-only emissive
   oColor = vec4(col, alpha);
   // r: darkness bypass (emissive); g: bloom source (emissive pixels + light-source sprites)
-  oEmissive = vec4(e * uEmisStrength, (vFlags & 32) != 0 ? max(e, 0.6) : e, 0.0, alpha);
+  // ghosts (build preview) bypass the lightmap (r) so they stay readable at night, but never feed bloom (g)
+  oEmissive = vec4(ghost > 0 ? 1.0 : e * uEmisStrength, (vFlags & 32) != 0 ? max(e, 0.6) : e, 0.0, alpha);
 }`;
 
 /** Secondary tint (RGBA8 packed) into instance floats 28..30 (0 = reuse primary). */
