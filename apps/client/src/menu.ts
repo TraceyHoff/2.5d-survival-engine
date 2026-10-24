@@ -9,11 +9,12 @@ declare const __BRANDING__: Branding | undefined;
 const BR: Branding = (typeof __BRANDING__ !== "undefined" && __BRANDING__) || { title: "Cozy Wild", tagline: "survival", logo: "", bg: "", plates: false, icons: false, loading: false, loadingAnim: false };
 /** {app.title}: Art's branding.json title (placeholder until the game is named). */
 export const APP_TITLE = BR.title;
-export type MenuChoice = { kind: "singleplayer" } | { kind: "multiplayer"; url: string };
-export interface Settings { bots: number; showHud: boolean; fullscreen: boolean }
+export type MenuChoice = { kind: "singleplayer" } | { kind: "multiplayer"; url: string } | { kind: "host" } | { kind: "join"; code: string };
+/** hostCap: desktop P2P host player cap incl. the host (mobile hosts are fixed at 6, see p2p.ts). */
+export interface Settings { bots: number; showHud: boolean; fullscreen: boolean; hostCap: number }
 const SETTINGS_KEY = "engine-settings";
 export function loadSettings(): Settings {
-  try { return { bots: 3, showHud: true, fullscreen: true, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as Partial<Settings> }; } catch { return { bots: 3, showHud: true, fullscreen: true }; }
+  try { return { bots: 3, showHud: true, fullscreen: true, hostCap: 12, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as Partial<Settings> }; } catch { return { bots: 3, showHud: true, fullscreen: true, hostCap: 12 }; }
 }
 
 const CSS = (base: string): string => `@font-face{font-family:Fredoka;src:url(${base}art/ui/fonts/Fredoka.ttf) format("truetype");font-display:swap}
@@ -36,11 +37,12 @@ box-shadow:0 4px 0 #2D5A2E;cursor:pointer;touch-action:manipulation;text-shadow:
 .boot button:active{transform:translateY(2px);box-shadow:0 2px 0 #2D5A2E}
 .boot input{font:600 16px Fredoka,system-ui,sans-serif;padding:8px 10px;border:3px solid #4A2F3D;border-radius:10px;background:#FFFAF0;color:#3B2433}
 .boot p{margin:0;font-size:14px;line-height:1.35;color:#4A2F3D;max-width:360px}
+.boot [data-role=notice]{font-weight:700;color:#A0302A}
 .boot h2{margin:0;font-size:22px;color:#74432C}
 .boot label{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:15px}
 .boot .hint{font-size:12px;color:#E6C47E}
 ${artCss(base)}`;
-const KEYS: Record<string, string> = { Singleplayer: "singleplayer", Multiplayer: "multiplayer", Settings: "settings", Connect: "multiplayer", Save: "settings", Back: "quit" };
+const KEYS: Record<string, string> = { Singleplayer: "singleplayer", Multiplayer: "multiplayer", Settings: "settings", Connect: "multiplayer", "Host game": "multiplayer", "Join with code": "multiplayer", Join: "multiplayer", "Dedicated server": "multiplayer", Save: "settings", Back: "quit" };
 function artCss(base: string): string {
   const u = (f: string): string => `url(${base}art/ui/branding/${f})`; let c = "";
   if (BR.bg === "parallax") c += `.boot{background:#1b1622}.boot .px{position:absolute;inset:-4%;background-size:cover;background-position:center;pointer-events:none;z-index:-1;animation:bootdrift 30s ease-in-out infinite alternate}
@@ -93,21 +95,39 @@ export class BootUI {
   progress(f: number, label: string): void { const pc = `${Math.round(Math.max(0, Math.min(1, f)) * 100)}%`; this.fill.style.width = pc; this.zw.style.left = pc; this.lbl.textContent = label; }
 
   /** Main menu; resolves with the player's choice. */
-  menu(opts: { hostedStatic: boolean; defaultUrl: string }): Promise<MenuChoice> {
+  /** notice: shown once on the main screen (e.g. "Host ended the session"), hook `.boot [data-role=notice]`. */
+  menu(opts: { hostedStatic: boolean; defaultUrl: string; notice?: string }): Promise<MenuChoice> {
     this.root.dataset["boot"] = "menu";
     return new Promise((resolve) => {
-      const main = (): void => this.screen([
-        ["Singleplayer", () => { enterFullscreen(); resolve({ kind: "singleplayer" }); }],
-        ["Multiplayer", multi],
-        ["Settings", settings, "alt"],
-      ], undefined, `<div class="hint">Mouse / touch · arrows + Enter · gamepad D-pad + A</div>`);
-      const multi = (): void => {
+      let notice = opts.notice;
+      const main = (): void => {
+        const extra: HTMLElement[] = [];
+        if (notice) { const n = document.createElement("p"); n.dataset["role"] = "notice"; n.setAttribute("role", "status"); n.textContent = notice; extra.push(n); notice = undefined; }
+        this.screen([
+          ["Singleplayer", () => { enterFullscreen(); resolve({ kind: "singleplayer" }); }],
+          ["Multiplayer", multi],
+          ["Settings", settings, "alt"],
+        ], undefined, `<div class="hint">Mouse / touch · arrows + Enter · gamepad D-pad + A</div>`, ...extra);
+      };
+      // Multiplayer: browser-hosted P2P (Host game / Join with code) or a dedicated server.
+      const multi = (): void => this.screen([
+        ["Host game", () => { enterFullscreen(); resolve({ kind: "host" }); }],
+        ["Join with code", join],
+        ["Dedicated server", dedicated, "alt"],
+        ["Back", main, "alt"],
+      ], main, `<h2>Multiplayer</h2><p>Host a game in this browser and share the code, or join a friend's code. Human bots are off in multiplayer.</p>`);
+      const join = (): void => {
+        const input = document.createElement("input"); input.dataset["role"] = "room-code"; input.placeholder = "ABC-234"; input.maxLength = 7; input.autocapitalize = "characters"; input.autocomplete = "off"; input.spellcheck = false; input.setAttribute("aria-label", "Room code");
+        this.screen([["Join", () => { const code = input.value.trim(); if (!code) return; enterFullscreen(); resolve({ kind: "join", code }); }], ["Back", multi, "alt"]],
+          multi, `<h2>Join with code</h2><p>Enter the 6-character code shown on the host's screen.</p>`, input);
+      };
+      const dedicated = (): void => {
         const input = document.createElement("input"); input.value = localStorage.getItem("engine-server-url") ?? opts.defaultUrl; input.placeholder = "wss://your-server:7777"; input.setAttribute("aria-label", "Server URL");
         const note = opts.hostedStatic
-          ? `<p><b>Multiplayer needs a hosted game server.</b> This GitHub Pages build is static and can't host one: run <code>pnpm --filter @engine/server start</code> on a machine and enter its <code>ws://</code> / <code>wss://</code> address (https pages need <code>wss://</code>). Human bots are off in multiplayer.</p>`
+          ? `<p><b>Dedicated server.</b> This GitHub Pages build can't run one (use Host game for a browser-hosted session): run <code>pnpm --filter @engine/server start</code> on a machine and enter its <code>ws://</code> / <code>wss://</code> address (https pages need <code>wss://</code>). Human bots are off in multiplayer.</p>`
           : `<p>Enter the game server address. Human bots are off in multiplayer.</p>`;
-        this.screen([["Connect", () => { const url = input.value.trim(); if (!url) return; localStorage.setItem("engine-server-url", url); enterFullscreen(); resolve({ kind: "multiplayer", url }); }], ["Back", main, "alt"]],
-          main, `<h2>Multiplayer</h2>${note}`, input);
+        this.screen([["Connect", () => { const url = input.value.trim(); if (!url) return; localStorage.setItem("engine-server-url", url); enterFullscreen(); resolve({ kind: "multiplayer", url }); }], ["Back", multi, "alt"]],
+          multi, `<h2>Dedicated server</h2>${note}`, input);
       };
       const settings = (): void => {
         const s = loadSettings();
@@ -117,8 +137,10 @@ export class BootUI {
         const l2 = document.createElement("label"); l2.append("Show HUD", hud);
         const fs = document.createElement("input"); fs.type = "checkbox"; fs.checked = s.fullscreen;
         const l3 = document.createElement("label"); l3.append("Fullscreen when playing", fs);
-        const save = (): void => { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ bots: Math.max(0, Math.min(12, Number(bots.value) || 0)), showHud: hud.checked, fullscreen: fs.checked })); main(); };
-        this.screen([["Save", save], ["Back", main, "alt"]], main, `<h2>Settings</h2>`, l1, l2, l3);
+        const cap = document.createElement("input"); cap.type = "number"; cap.min = "2"; cap.max = "32"; cap.value = String(s.hostCap); cap.style.width = "70px";
+        const l4 = document.createElement("label"); l4.append("Max players when hosting (desktop)", cap);
+        const save = (): void => { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ bots: Math.max(0, Math.min(12, Number(bots.value) || 0)), showHud: hud.checked, fullscreen: fs.checked, hostCap: Math.max(2, Math.min(32, Math.round(Number(cap.value)) || 12)) })); main(); };
+        this.screen([["Save", save], ["Back", main, "alt"]], main, `<h2>Settings</h2>`, l1, l2, l3, l4);
       };
       main();
     });

@@ -6,7 +6,7 @@ import { installFullscreenRestore } from "./fullscreen.js";
  * Falls back to the Canvas2D debug draw with ?renderer=debug or when WebGL2 / the art fails to load.
  * URL params: ?server=ws://host:7777 (default: same host, port 7777), ?player=N (separate saved account per N),
  *             ?offline=1 (skip the menu: singleplayer), ?menu=0 (skip the menu: legacy connect overlay), ?bots=N,
- *             ?renderer=debug, ?time=0..24 / ?weather=clear|rain|storm|snow|fog &intensity=0..1 (view-only overrides), ?hud=0.
+ *             ?ice=<JSON RTCIceServer[]> (P2P STUN/TURN override, also VITE_ICE_SERVERS), ?renderer=debug, ?time=0..24 / ?weather=clear|rain|storm|snow|fog &intensity=0..1 (view-only overrides), ?hud=0.
  */
 import { createGameLoop, World, Transform, PrevTransform, lerp, entityIndex, InputState, type FixedLoop } from "@engine/core";
 import { TileMap, worldToScreen, screenToWorld, DEFAULT_ISO } from "@engine/world";
@@ -113,14 +113,55 @@ async function startSingleplayer(): Promise<void> {
   addEventListener("pagehide", () => { void local.game.persist?.saveAll(); });
   useWorld(await session.connect("local", session.savedName ?? "", local.createTransport()));
 }
+/** P2P: return to the main menu with a one-shot notice (the menu flow is one-shot, so reload). */
+const P2P_NOTICE_KEY = "engine-p2p-notice";
+function backToMenu(notice: string): void {
+  try { sessionStorage.setItem(P2P_NOTICE_KEY, notice); } catch { /* private mode */ }
+  location.reload();
+}
+async function p2pSignaling(): Promise<import("./p2p.js").Signaling> {
+  const { PeerJsSignaling, resolveIceServers } = await import("./p2p.js");
+  return new PeerJsSignaling({ iceServers: resolveIceServers(params.get("ice") ?? import.meta.env["VITE_ICE_SERVERS"]) });
+}
+/** Host game: authoritative server in this tab (mode "multiplayer"), guests over WebRTC, room code via signaling. */
+async function startHost(): Promise<void> {
+  const [{ startP2PHost }, { openBrowserStore }, { hostPlayerCap, detectDevice }, { mountP2POverlay }] = await Promise.all([import("./host.js"), import("./local.js"), import("./p2p.js"), import("./p2p-overlay.js")]);
+  const cap = hostPlayerCap(detectDevice(), settings.hostCap);
+  let host: import("./host.js").P2PHost;
+  try {
+    host = await startP2PHost({ signaling: await p2pSignaling(), store: await openBrowserStore(`engine-p2p-host-${params.get("player") ?? "1"}`), cap: cap.cap, capDetail: cap.detail,
+      ...(await isoReady, iso?.registry.cosmetics?.size ? { catalog: iso.registry.cosmetics } : {}), log: (m) => console.info(`[host] ${m}`) });
+  } catch (e) { backToMenu(`Couldn't host: ${e instanceof Error ? e.message : String(e)}`); return; }
+  pumpLocal = host.local.pump;
+  const { formatRoomCode } = await import("./p2p.js");
+  const end = (): void => { void host.leave().finally(() => backToMenu("Session ended.")); };
+  addEventListener("beforeunload", () => host.unload());
+  addEventListener("pagehide", () => host.unload());
+  mountP2POverlay({ mode: "host", code: formatRoomCode(host.code), cap: host.cap, players: () => host.players(), status: () => `Hosting${cap.mobile ? " (mobile)" : ""} · keep this tab open`, onLeave: end });
+  useWorld(await session.connect("p2p-host", session.savedName ?? "", host.hostTransport));
+  host.hostClientId = session.client?.clientId;
+}
+/** Join with code: guest over WebRTC; "Host ended the session" (or a lost link) returns to the menu. */
+async function startJoin(raw: string): Promise<void> {
+  const [{ guestTransport }, { normalizeRoomCode, formatRoomCode }, { mountP2POverlay }] = await Promise.all([import("./host.js"), import("./p2p.js"), import("./p2p-overlay.js")]);
+  const code = normalizeRoomCode(raw);
+  if (!code) { backToMenu("That isn't a valid room code (6 letters/digits, e.g. ABC-234)."); return; }
+  session.onEnded = (detail) => backToMenu(detail);
+  mountP2POverlay({ mode: "guest", code: formatRoomCode(code), status: () => `Status: ${session.status}${session.detail ? ` (${session.detail})` : ""}`, onLeave: () => { session.onEnded = undefined; session.disconnect(); backToMenu("You left the session."); } });
+  try { useWorld(await session.connect(`p2p:${code}`, session.savedName ?? "", guestTransport(await p2pSignaling(), code))); }
+  catch (e) { session.onEnded = undefined; backToMenu(`Couldn't join ${formatRoomCode(code)}: ${e instanceof Error ? e.message : String(e)}`); }
+}
 const connectTo = (url: string, name: string): void => { session.connect(url, name).then(useWorld, (e: unknown) => console.warn("connect failed", e)); };
 const defaultUrl = serverParam ?? `${location.protocol === "https:" ? "wss" : "ws"}://${location.hostname || "localhost"}:7777`;
 if (boot) {
   void (async () => {
     await isoReady; boot.progress(1, "Ready");
-    const choice = await boot.menu({ hostedStatic: import.meta.env["VITE_DEFAULT_OFFLINE"] === "1", defaultUrl });
+    let notice: string | undefined; try { notice = sessionStorage.getItem(P2P_NOTICE_KEY) ?? undefined; sessionStorage.removeItem(P2P_NOTICE_KEY); } catch { /* ignore */ }
+    const choice = await boot.menu({ hostedStatic: import.meta.env["VITE_DEFAULT_OFFLINE"] === "1", defaultUrl, ...(notice ? { notice } : {}) });
     boot.hide();
     if (choice.kind === "singleplayer") await startSingleplayer();
+    else if (choice.kind === "host") await startHost();
+    else if (choice.kind === "join") await startJoin(choice.code);
     else { // multiplayer: remote server, no local human bots
       mountConnectOverlay(session, { defaultUrl: choice.url, onConnect: connectTo, onDisconnect: () => session.disconnect() });
       connectTo(choice.url, session.savedName ?? "");
