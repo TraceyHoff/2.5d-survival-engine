@@ -24,7 +24,7 @@ HATS = [("straw", 1), ("beanie", 2), ("cap", 2), ("cowboy", 2), ("top_hat", 2), 
 for s, t in HATS:
     add("hat_" + s, "hat", {"style": s}, tint=(1 if s == "straw" else t), hides=(["hair"] if s == "frog_hood" else []), hatHairFlag=(s != "frog_hood"))
 TOPS = {
-    "tee": dict(sleeve="short", collar="round"), "tank": dict(sleeve="none", tank=True), "sweater": dict(sleeve="long", style="stripes", cuff=True, collar="round"),
+    "tee": dict(sleeve="short", collar="round", sleevehem=True), "tank": dict(sleeve="none", tank=True), "sweater": dict(sleeve="long", style="stripes", cuff=True, collar="round"),
     "hoodie": dict(sleeve="long", hood=True, pocket=True, strings=True, cuff=True, grow=1.2), "flannel": dict(sleeve="long", style="plaid", buttons=True, cuff=True),
     "vest": dict(sleeve="short", open=True, buttons=False, grow=1.1), "raincoat": dict(sleeve="long", hem=(5, 9.5), buttons=True, collar="v", grow=1.3, sleeve_grow=1.5),
     "tunic": dict(sleeve="short", hem=(4, 9), belt=True, collar="v"), "puffer": dict(sleeve="long", style="quilt", quilt=True, grow=2.2, sleeve_grow=2.2, cuff=True),

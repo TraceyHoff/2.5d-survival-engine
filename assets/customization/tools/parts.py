@@ -387,9 +387,11 @@ def draw_top(c, spec):
         cv.part(c.tube(c.off(a, 0, 0, .8), e, sr + .4, sr), "P", lw=1.0, shade=.25, hl=.12)
         if S.get("cuff"):
             cp = c.lerp3(a, b, tl - .02); q = c.p(cp); cv.part(circle(q, sr + .3, sr * .7), "S", lw=.8)
+        if S.get("sleevehem") and not S.get("cuff"):
+            q = c.p(c.lerp3(a, b, tl - .03)); cv.part(circle(q, sr + .35, sr * .55), "S", lw=.7, shade=.15, hl=0)
         if S.get("quilt"):
             for t in (.3, .6):
-                q = c.p(c.lerp3(a, e, t)); cv.line([(q[0] - sr, q[1]), (q[0] + sr, q[1] + .5)], "P3", .5, alpha=200)
+                q = c.p(c.lerp3(a, e, t)); cv.line([(q[0] - sr, q[1]), (q[0] + sr, q[1] + .5)], "S3", .7, alpha=220, tm=(0, 1))
     def torso():
         polys = [c.torso_pts(grow)]
         if hem:
@@ -414,10 +416,10 @@ def draw_top(c, spec):
                 if v > -.2: cv.line([a, b], "S3", .8, clip=m, alpha=200)
         if st == "quilt":
             for z in (-5, -1, 3):
-                pts = c.disc(c.off(K["tc"], 0, 0, z), B["trx"] + grow, 40); cv.line(pts[0:20] if True else pts, "P3", .55, clip=m, alpha=210)
+                pts = c.disc(c.off(K["tc"], 0, 0, z), B["trx"] + grow, 40); cv.line(pts[0:20], "S3", .75, clip=m, alpha=225, tm=(0, 1))
         if f > -.25:
             if S.get("collar") == "round":
-                p, _ = tsurf(c, 0, 6.8, .55); cv.line([(p[0] - 3.2, p[1] - 1.0), (p[0], p[1] + .7), (p[0] + 3.2, p[1] - 1.0)], "S1", 1.1, clip=m)
+                p, _ = tsurf(c, 0, 6.8, .55); cv.line([(p[0] - 3.2, p[1] - 1.0), (p[0], p[1] + .7), (p[0] + 3.2, p[1] - 1.0)], "S1", 1.4, clip=m, tm=(0, 1))
             if S.get("collar") == "v":
                 p, _ = tsurf(c, 0, 4, .9); q, _ = tsurf(c, 0, 8, .5)
                 cv.part([(q[0] - 3.4, q[1] - 1), (p[0], p[1]), (q[0] + 3.4, q[1] - 1)], "S", clip=m, lw=.6, shade=.2, hl=0)
@@ -431,6 +433,8 @@ def draw_top(c, spec):
                 p, _ = tsurf(c, 0, 7.5, .9); q, _ = tsurf(c, 0, -8, .95)
                 cv.part([(p[0] - 2.8, p[1]), (p[0] + 2.8, p[1]), (q[0] + 2.2, q[1]), (q[0] - 2.2, q[1])], "S", clip=m, lw=.8, shade=.2, hl=.05)
             if S.get("buttons"):
+                p0, _ = tsurf(c, 0, 6.2, .97); p1, _ = tsurf(c, 0, -5.5, .98)
+                cv.line([p0, p1], "S1", 1.6, clip=m, alpha=230, tm=(0, 1))
                 for z in (3.5, -.5, -4.5):
                     p, v = tsurf(c, 0, z, .98)
                     cv.fill(circle(p, .85), "S2", clip=m, tm=(0, 1))
@@ -444,7 +448,7 @@ def draw_top(c, spec):
                 p, _ = tsurf(c, 0, 5.5, .95); q, _ = tsurf(c, 0, -6, 1.0)
                 cv.part([(p[0] - 4, p[1]), (p[0] + 4, p[1]), (q[0] + 5, q[1]), (q[0] - 5, q[1])], "S", clip=m, lw=.7, shade=.2, hl=.1)
             if S.get("tank"):
-                p, _ = tsurf(c, 0, 7.5, .6); cv.line([(p[0] - 3.5, p[1] - 1.2), (p[0], p[1] + 1.4), (p[0] + 3.5, p[1] - 1.2)], "S1", 1.0, clip=m)
+                p, _ = tsurf(c, 0, 7.5, .6); cv.line([(p[0] - 3.5, p[1] - 1.2), (p[0], p[1] + 1.4), (p[0] + 3.5, p[1] - 1.2)], "S1", 1.4, clip=m, tm=(0, 1))
         if S.get("belt"):
             pts = hull(c.disc(c.off(K["tc"], 0, 0, -5.2), B["trx"] + grow + .4, 30) + c.disc(c.off(K["tc"], 0, 0, -3.2), B["trx"] + grow + .4, 30))
             cv.part(pts, "S", clip=m, lw=.7, shade=.25, hl=.1)
