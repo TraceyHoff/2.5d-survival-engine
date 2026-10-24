@@ -114,6 +114,8 @@ export interface NetServerOptions {
   historySize?: number;
   maxInputQueue?: number;
   maxClients?: number;
+  /** Human-readable detail sent with a ServerFull reject (e.g. "host cap 6 players (mobile host)"). */
+  serverFullDetail?: string;
   applyInput?: ApplyInput;
   onClientJoin?: (session: ClientSession, world: World) => void;
   onClientLeave?: (session: ClientSession, world: World) => void;
@@ -403,7 +405,7 @@ export class NetServer {
     if (hello.token.some((b) => b !== 0)) {
       s = this.byToken.get(tokenKey(hello.token));
       if (!s && this.opts.resumeToken?.(hello.token, this.world)) {
-        if (this.opts.maxClients !== undefined && this.sessions.size >= this.opts.maxClients) { this.reject(conn, RejectReason.ServerFull); return; }
+        if (this.opts.maxClients !== undefined && this.sessions.size >= this.opts.maxClients) { this.reject(conn, RejectReason.ServerFull, this.opts.serverFullDetail ?? ""); return; }
         s = this.newSession(conn, hello.token.slice(), true);
       } else {
         if (!s) { this.reject(conn, RejectReason.BadToken); return; }
@@ -411,7 +413,7 @@ export class NetServer {
         s.conn = conn; s.lastAckTick = -1; s.views.clear(); s.static = new StaticSession();
       }
     } else {
-      if (this.opts.maxClients !== undefined && this.sessions.size >= this.opts.maxClients) { this.reject(conn, RejectReason.ServerFull); return; }
+      if (this.opts.maxClients !== undefined && this.sessions.size >= this.opts.maxClients) { this.reject(conn, RejectReason.ServerFull, this.opts.serverFullDetail ?? ""); return; }
       s = this.newSession(conn, (this.opts.randomToken ?? defaultToken)(), false);
     }
     this.byConn.set(conn, s);

@@ -23,3 +23,6 @@ export * from "./names.js";
 export * from "./stalls.js";
 export * from "./appearance.js";
 export * from "./netid.js";
+export * from "./transport/rtc.js";
+export * from "./transport/multi.js";
+export * from "./transport/fake-channel.js";

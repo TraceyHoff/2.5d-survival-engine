@@ -43,6 +43,9 @@ export interface GameServerOptions {
   virtualPlayers?: VirtualPlayerHost;
   /** Ambient population (zombies, animals, bots via PopulationSpawner). Default true. */
   population?: boolean;
+  /** Player cap (all sessions, incl. a P2P host's own client); extra joins get RejectReason.ServerFull + serverFullDetail. */
+  maxClients?: number;
+  serverFullDetail?: string;
   /** Dev load-test flag (NET_DEV_BOTS=1): accept DevBotHello-tagged connections in multiplayer. Default false. */
   devBots?: boolean;
   /** Chat (net ChatServer over core ChannelRegistry): local radius in tiles (default 48), per-player token bucket (default core 5 burst, 0.05/tick). */
@@ -127,6 +130,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
 
   const net: NetServer = new NetServer({
     world, tickHz, transport: o.transport,
+    ...(o.maxClients !== undefined ? { maxClients: o.maxClients } : {}), ...(o.serverFullDetail ? { serverFullDetail: o.serverFullDetail } : {}),
     commands: DEMO_COMMANDS, events: DEMO_EVENTS,
     forwardCoreRejections: false, // forwarded below with the net command def + a reason code (protocol.ts)
     applyInput: (w, e, cmd, clientId) => {
