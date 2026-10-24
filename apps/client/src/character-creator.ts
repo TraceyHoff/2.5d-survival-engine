@@ -99,6 +99,17 @@ export interface CreatorOptions {
   /** Gamepad poll (tests pass a stub); default navigator.getGamepads. */ pads?: () => readonly (Gamepad | null)[];
   /** Real sprite preview (the loaded art registry + atlas sources). mode: auto = WebGL2 then Canvas2D; "canvas2d" forces 2D. */
   preview?: CreatorPreviewSource | undefined;
+  /** ADR-115: Art's creator UI folder (`<base>art/ui/creator/`): preview_bg + ic_randomize / ic_rotate_left / ic_rotate_right (1x + @2x). Text glyphs when absent. */
+  artBase?: string | undefined;
+}
+/** preview_bg.png is 160x200 with the character's feet at (80,172); centred in the PREVIEW_CSS host. */
+export const PREVIEW_BG = { w: 160, h: 200, feetX: 80, feetY: 172 } as const;
+/** Glyph-only icon button art (like ic_menu_*): 40px + @2x; falls back to the text glyph on error. */
+function iconInto(b: HTMLButtonElement, base: string | undefined, name: string, label: string): void {
+  b.setAttribute("aria-label", label); b.title = label; if (!base) return;
+  const doc = b.ownerDocument; const img = doc.createElement("img"); img.alt = ""; img.width = 40; img.height = 40; img.dataset["icon"] = name;
+  img.src = `${base}${name}.png`; img.srcset = `${base}${name}.png 1x, ${base}${name}@2x.png 2x`; img.style.cssText = "width:40px;height:40px;display:block;pointer-events:none";
+  const text = b.textContent; b.textContent = ""; b.append(img); img.addEventListener("error", () => { img.remove(); b.textContent = text; });
 }
 export interface CreatorPreviewSource { registry: AssetRegistry; sources: ReadonlyMap<string, AtlasSource>; mode?: CreatorPreviewMode;
   /** test hooks */ createGl?: typeof createCharacterPreview; create2d?: (cv: HTMLCanvasElement, o: ConstructorParameters<typeof CharacterPreview2D>[1]) => Pick<CharacterPreview2D, "setAppearance" | "setFacing" | "resize" | "renderNow" | "facing"> }
@@ -142,6 +153,9 @@ export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter
   const left = doc.createElement("div"); left.style.cssText = "flex:1 1 220px;min-width:0;display:flex;flex-direction:column;align-items:center;gap:6px";
   // preview host: sketch canvas until the sprite preview (WebGL2 / Canvas2D) is up; drag on it turns the character
   const host = doc.createElement("div"); host.dataset["role"] = "creator-preview-host"; host.style.cssText = `position:relative;width:${PREVIEW_CSS.w}px;height:${PREVIEW_CSS.h}px;background:#EAD9B8;border-radius:12px;touch-action:none;user-select:none`;
+  if (o.artBase) { const b = o.artBase; host.dataset["bg"] = "preview_bg"; // 1x/2x by DPR; centred so the feet anchor sits mid-host
+    host.style.backgroundImage = `image-set(url("${b}preview_bg.png") 1x, url("${b}preview_bg@2x.png") 2x)`; if (!host.style.backgroundImage) host.style.backgroundImage = `url("${b}preview_bg.png")`;
+    host.style.backgroundSize = `${PREVIEW_BG.w}px ${PREVIEW_BG.h}px`; host.style.backgroundPosition = "center"; host.style.backgroundRepeat = "no-repeat"; }
   const cv = doc.createElement("canvas"); cv.width = 160; cv.height = 200; cv.dataset["role"] = "creator-preview"; cv.dataset["renderer"] = "sketch"; cv.style.cssText = `width:${PREVIEW_CSS.w}px;height:${PREVIEW_CSS.h}px;border-radius:12px`; host.append(cv);
   let g: CanvasRenderingContext2D | null = null; try { g = cv.getContext("2d"); } catch { /* no 2D canvas (tests) */ }
   const t0 = Date.now(); const draw = (): void => { if (drv) { drv.facing(dir); drv.frame((Date.now() - t0) / 1000); } else if (g && cat) drawPreview(g, cat, look, ([0, 1, 1, 2, 2, 3, 3, 0] as const)[dir]!); };
@@ -149,12 +163,14 @@ export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter
   { let px = 0, down = false, acc = 0; host.addEventListener("pointerdown", (ev) => { down = true; px = ev.clientX; acc = 0; auto = false; host.setPointerCapture?.(ev.pointerId); });
     host.addEventListener("pointermove", (ev) => { if (!down) return; acc += ev.clientX - px; px = ev.clientX; while (Math.abs(acc) >= 32) { const s = Math.sign(acc); turn(-s); acc -= s * 32; } });
     const up = (): void => { down = false; }; host.addEventListener("pointerup", up); host.addEventListener("pointercancel", up); }
-  if (o.preview) void createPreviewDriver(host, o.preview, look, dir).then((d) => { if (!d) return; if (disposed) { d.dispose(); return; } drv = d; cv.remove(); wrap.dataset["preview"] = d.kind; d.set(look); draw(); });
+  if (o.preview) void createPreviewDriver(host, o.preview, look, dir, o.artBase && o.preview.mode === "canvas2d" ? "" : undefined).then((d) => { if (!d) return; if (disposed) { d.dispose(); return; } drv = d; cv.remove(); wrap.dataset["preview"] = d.kind; d.set(look); draw(); });
   const right = doc.createElement("div"); right.style.cssText = "flex:2 1 240px;min-width:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 8px;align-items:center";
   const mk = (t: string, act: string, fn: () => void, cls = "alt"): HTMLButtonElement => { const b = doc.createElement("button"); b.type = "button"; b.textContent = t; b.className = cls; b.dataset["action"] = act; b.style.minHeight = "44px"; b.addEventListener("click", fn); return b; };
   const rot = doc.createElement("div"); rot.style.cssText = "display:flex;gap:6px";
-  rot.append(mk("⟲", "rotate-left", () => { auto = false; turn(-1); }), mk("⟳", "rotate-right", () => { auto = false; turn(1); }));
-  left.append(host, rot, mk("🎲 Randomize", "randomize", () => { if (cat) { look = randomLook(cat); refresh(); } }));
+  const rl = mk("⟲", "rotate-left", () => { auto = false; turn(-1); }), rr = mk("⟳", "rotate-right", () => { auto = false; turn(1); });
+  const rnd = mk("🎲", "randomize", () => { if (cat) { look = randomLook(cat); refresh(); } });
+  iconInto(rl, o.artBase, "ic_rotate_left", "Rotate left"); iconInto(rr, o.artBase, "ic_rotate_right", "Rotate right"); iconInto(rnd, o.artBase, "ic_randomize", "Randomize");
+  rot.append(rl, rnd, rr); left.append(host, rot);
   const nameIn = doc.createElement("input"); nameIn.type = "text"; nameIn.maxLength = NAME_MAX; nameIn.placeholder = "Survivor name"; nameIn.value = name; nameIn.dataset["role"] = "creator-name"; nameIn.setAttribute("autocomplete", "nickname");
   nameIn.style.cssText = "min-height:44px;font:600 18px system-ui;padding:4px 8px;box-sizing:border-box;width:100%;min-width:0"; nameIn.addEventListener("input", () => { name = nameIn.value; });
   const nl = doc.createElement("label"); nl.textContent = "Name"; right.append(nl, nameIn);

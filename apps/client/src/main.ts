@@ -213,7 +213,7 @@ async function ensureCharacter(kind: CharacterSaveKind): Promise<StoredCharacter
   if (stored && !edit) return stored;
   await isoReady; const catalog = iso?.registry.cosmetics?.size ? iso.registry.cosmetics : undefined;
   const seed: StoredCharacter | undefined = stored ?? (session.savedName ? { v: 1, name: session.savedName, appearance: undefined as never } : undefined);
-  const c = await showCharacterCreator({ root: uiRoot(), catalog, initial: seed?.appearance ? seed : undefined, preview: iso && catalog ? { registry: iso.registry, sources: iso.renderer.atlas.sources, mode: previewModeFromQuery(params) } : undefined });
+  const c = await showCharacterCreator({ root: uiRoot(), catalog, initial: seed?.appearance ? seed : undefined, preview: iso && catalog ? { registry: iso.registry, sources: iso.renderer.atlas.sources, mode: previewModeFromQuery(params) } : undefined, artBase: `${import.meta.env.BASE_URL}art/ui/creator/` });
   if (c) saveCharacter(kind, SLOT, c); return c;
 }
 const playerName = (): string => activeChar?.name ?? session.savedName ?? "";
