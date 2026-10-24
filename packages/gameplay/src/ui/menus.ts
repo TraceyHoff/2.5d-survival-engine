@@ -13,7 +13,8 @@ import { itemInfo, type NameLookup } from "../economy/provenance.js";
 import { BuyFromStallCmd, CollectTillCmd, SetListingCmd, SetStallNameCmd, SetStallOpenCmd, StockStallCmd, UnstockStallCmd, listingRevision, stallListings, stallName, tillOf } from "../economy/stall.js";
 import { CancelQueuedCraftCmd, MAX_CRAFT_COUNT, QueueCraftCmd, craftQueueReason, owedOf } from "../systems/craft_queue.js";
 import { pieceCost } from "../building/place.js";
-import { DepositCmd, PaintCmd, PlaceCmd, ToggleFireCmd, WithdrawCmd } from "../input.js";
+import { DepositCmd, PaintCmd, PlaceCmd, ToggleFireCmd, UseCmd, WithdrawCmd } from "../input.js";
+import { NO_SLOT } from "../components.js";
 import { Fuel } from "../components.js";
 import { fuelSecondsLeft } from "../systems/fuel.js";
 import { KEY_ITEM, keyTooltip } from "../vehicle_keys.js";
@@ -34,16 +35,33 @@ const nameOf = (c: MenuCtx, playerId: number): string => (playerId ? c.names?.ge
 const withNames = (w: World, l: readonly ItemCount[], who?: Entity) => l.map((i) => ({ item: i.item, name: itemName(w, i.item), count: i.count, have: who !== undefined ? countItem(w, who, i.item) : 0 }));
 
 // ---- inventory --------------------------------------------------------------------------------------
-export interface InventorySlotView { slot: number; item: number; /** manifest icon key (ItemDef.spriteKey: `sprite` override, else item key) */ icon: string; name: string; count: number; durability: number; crafterId: number; crafterName: string; tooltip: string }
+export interface InventorySlotView { slot: number; item: number; /** manifest icon key (ItemDef.spriteKey: `sprite` override, else item key) */ icon: string; name: string; count: number; durability: number; crafterId: number; crafterName: string; tooltip: string; /** ADR-128: context action for consumables ("eat" | "drink"), else undefined */ consume?: "eat" | "drink" }
+/** ADR-128: "eat" / "drink" for consumables (liquid containers and thirst-only food drink), undefined otherwise. */
+export function consumeKind(w: World, item: number): "eat" | "drink" | undefined {
+  const d = gameplayDefs(w).items.get(item); if (!d?.food) return undefined;
+  return d.sips > 0 || (d.food.thirst > 0 && d.food.hunger <= 0) ? "drink" : "eat";
+}
+/** ADR-128: tooltip line(s) with food/water values ("Food +24 · Water +2 · Health +3"; containers add "Water 3/6 sips"). */
+export function foodTooltip(w: World, item: number, durability = 0): string {
+  const d = gameplayDefs(w).items.get(item); const f = d?.food; if (!f) return "";
+  const per = d.sips > 0 ? 1 / d.sips : 1; const r = (v: number): string => `${v > 0 ? "+" : ""}${Math.round(v * per * 10) / 10}`;
+  const parts = [f.hunger ? `Food ${r(f.hunger)}` : "", f.thirst ? `Water ${r(f.thirst)}` : "", f.health ? `Health ${r(f.health)}` : ""].filter(Boolean);
+  const line = parts.join(" · ") + (d.sips > 0 ? " per sip" : "");
+  return d.sips > 0 ? `${line}\n${durability > 0 ? `Water ${durability}/${d.sips} sips` : "Empty: use next to water to refill"}` : line;
+}
+/** ADR-128: eat/drink the item in `slot` (server validates cooldown, rot, refill-at-water). */
+export function useIntent(slot: number): MenuIntent { return intent(UseCmd, { slot }); }
+/** ADR-128: drink straight from an adjacent water tile (UseCmd with NO_SLOT). */
+export function drinkWaterIntent(): MenuIntent { return intent(UseCmd, { slot: NO_SLOT }); }
 export function inventoryView(c: MenuCtx): InventorySlotView[] {
   const w = c.world; const out: InventorySlotView[] = [];
   for (const s of listSlots(w, c.player)) {
     if (!s.item || !s.count) continue;
     const info = itemInfo(w, c.player, s.slot, c.names ?? { get: () => undefined });
     const crafterName = info?.crafterName || nameOf(c, s.crafterId);
-    const name = itemName(w, s.item);
-    const tip = [`${name} ×${s.count}`, s.durability && gameplayDefs(w).items.get(s.item)?.maxDurability ? `Durability ${s.durability}/${gameplayDefs(w).items.get(s.item)!.maxDurability}` : "", itemDefKey(w, s.item) === KEY_ITEM ? keyTooltip(w, s.crafterId) : crafterName ? `Crafted by ${crafterName}` : ""].filter(Boolean).join("\n");
-    out.push({ slot: s.slot, item: s.item, icon: gameplayDefs(w).items.get(s.item)?.spriteKey ?? "", name, count: s.count, durability: s.durability, crafterId: s.crafterId, crafterName, tooltip: tip });
+    const name = itemName(w, s.item); const ck = consumeKind(w, s.item);
+    const tip = [`${name} ×${s.count}`, s.durability && !gameplayDefs(w).items.get(s.item)?.sips && gameplayDefs(w).items.get(s.item)?.maxDurability ? `Durability ${s.durability}/${gameplayDefs(w).items.get(s.item)!.maxDurability}` : "", foodTooltip(w, s.item, s.durability), itemDefKey(w, s.item) === KEY_ITEM ? keyTooltip(w, s.crafterId) : crafterName ? `Crafted by ${crafterName}` : ""].filter(Boolean).join("\n");
+    out.push({ slot: s.slot, item: s.item, icon: gameplayDefs(w).items.get(s.item)?.spriteKey ?? "", name, count: s.count, durability: s.durability, crafterId: s.crafterId, crafterName, tooltip: tip, ...(ck ? { consume: ck } : {}) });
   }
   return out;
 }

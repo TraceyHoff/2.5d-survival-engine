@@ -35,6 +35,11 @@ export const CraftStarted = ev<{ entity: Entity; recipe: number; totalTicks: num
 export const CraftCompleted = ev<{ entity: Entity; recipe: number; item: number; count: number }>("gameplay.CraftCompleted");
 export const CraftFailed = ev<{ entity: Entity; recipe: number; reason: CraftFail }>("gameplay.CraftFailed");
 export const ItemConsumed = ev<{ entity: Entity; item: number }>("gameplay.ItemConsumed");
+/** ADR-128: why a Use (eat/drink) was refused. */
+export const enum ConsumeFail { Cooldown = 1, Rotten = 2, Empty = 3, NotConsumable = 4 }
+export const ConsumeFailed = ev<{ entity: Entity; item: number; reason: ConsumeFail }>("gameplay.ConsumeFailed");
+/** ADR-128: a liquid container was refilled at a water tile (sips added) or the player drank from the tile (item 0). */
+export const WaterDrunk = ev<{ entity: Entity; item: number; sips: number }>("gameplay.WaterDrunk");
 export const VitalDepleted = ev<{ entity: Entity; vital: Vital }>("gameplay.VitalDepleted");
 export const Died = ev<{ entity: Entity; cause: DamageCause }>("gameplay.Died");
 export const WeatherChanged = ev<{ from: WeatherKind; to: WeatherKind; intensity: number; ticks: number }>("gameplay.WeatherChanged");
@@ -70,5 +75,6 @@ export const EVENT_RELIABILITY: Readonly<Record<string, "reliable" | "unreliable
   "gameplay.Ignited": "unreliable", "gameplay.Extinguished": "unreliable",
   "gameplay.GatherSwing": "unreliable", "gameplay.AttackSwing": "unreliable", "gameplay.PieceDamaged": "unreliable", "gameplay.DoorToggled": "unreliable",
   "gameplay.ZombieStateChanged": "unreliable", "gameplay.Damaged": "unreliable",
+  "gameplay.ConsumeFailed": "unreliable", "gameplay.WaterDrunk": "unreliable",
   "gameplay.DeathBagDropped": "reliable", "gameplay.Respawned": "reliable", "gameplay.HitRejected": "unreliable", "gameplay.GateBreached": "reliable",
 };

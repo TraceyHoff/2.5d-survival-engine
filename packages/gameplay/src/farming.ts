@@ -14,6 +14,7 @@ import { emit, FarmFailed } from "./events.js";
 import { indexEntity, spawnResourceNode } from "./spawn.js";
 import { hasPrivilege } from "./building/place.js";
 import { populationTile } from "./population.js";
+import { nearWater } from "./systems/vitals.js";
 import { isRaining } from "./realism.js";
 
 export type PlantType = "crop" | "bush" | "tree";
@@ -126,7 +127,7 @@ export const FARM_FAIL_TEXT: Readonly<Record<number, string>> = {
   [FarmFail.NoPrivilege]: "Inside someone else's claim", [FarmFail.BadTile]: "Can't farm on this ground", [FarmFail.Occupied]: "Too close to another plant",
   [FarmFail.NeedsSoil]: "Needs tilled soil — use a hoe first", [FarmFail.NothingToTend]: "No crops here to tend", [FarmFail.NeedsHoe]: "You need a hoe to till soil first",
 };
-export type FarmAction = "Till" | "Plant" | "Water" | "Fertilize" | "Harvest" | "Tame" | "Feed"; // Tame / Feed: ADR-113 husbandryPrompt
+export type FarmAction = "Till" | "Plant" | "Water" | "Fertilize" | "Harvest" | "Tame" | "Feed" | "Eat" | "Drink"; // Eat / Drink: ADR-128 quick-use consume; Tame / Feed: ADR-113 husbandryPrompt
 export interface FarmPrompt { action: FarmAction; /** Use slot (Harvest goes through Interact / gather instead) */ slot?: number; target?: Entity; /** predicted failure (dry run) */ fail: FarmFail; label: string }
 /** Context prompt for the player's held farming item / a ripe farmed node in front (pure read; client-predicted). */
 export function farmPrompt(world: World, e: Entity): FarmPrompt | undefined {
@@ -143,5 +144,9 @@ export function farmPrompt(world: World, e: Entity): FarmPrompt | undefined {
   const ripe = new Set(FARMING.plantables.map((p) => p.becomes));
   const node = near(world, at.x, at.y, 1).find((o) => { const n = world.get(o, ResourceNode); return !!n && ripe.has(defs.resources.get(n.kind)?.key ?? ""); });
   if (node !== undefined) { const { slot: _s, ...p } = mk("Harvest", FarmFail.None, { target: node }); return p; }
+  // ADR-128: quick-use eats/drinks the held consumable; empty hands next to water drink from the tile (slot NO_SLOT)
+  const food = key ? defs.items.get(item) : undefined;
+  if (food?.food) return mk(food.sips > 0 || (food.food.thirst > 0 && food.food.hunger <= 0) ? "Drink" : "Eat", FarmFail.None);
+  if (!key && nearWater(world, me.x, me.y)) return { action: "Drink", slot: 255, fail: FarmFail.None, label: "Drink water" };
   return undefined;
 }

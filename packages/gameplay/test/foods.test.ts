@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  addItem, countItem, defaultDefs, fillContainer, freshnessStage, IntentAction, itemInfo, setIntent, spawnPlayer, spoilStages, Survival,
+  addItem, countItem, defaultDefs, fillContainer, freshnessStage, IntentAction, itemInfo, setIntent, spawnPlayer, spoilStages, Survival, CONSUME_COOLDOWN_TICKS,
 } from "../src/index.js";
 import { makeWorld } from "./helpers.js";
 
@@ -18,7 +18,7 @@ describe("foods, spoilage stages, water flask", () => {
     const w = makeWorld(); const p = spawnPlayer(w, { x: 0, y: 0 }); const flask = d.itemId("water_flask");
     const def = d.items.get(flask)!; expect(def.sips).toBe(4);
     addItem(w, p, flask, 1); expect(itemInfo(w, p, 0)!.fill).toBe(1);
-    for (let i = 0; i < 5; i++) { w.set(p, Survival, { thirst: 10 }); setIntent(w, p, { action: IntentAction.Use, slot: 0 }); w.step(1 / 20); setIntent(w, p, { action: IntentAction.None }); w.step(1 / 20); }
+    for (let i = 0; i < 5; i++) { w.set(p, Survival, { thirst: 10 }); setIntent(w, p, { action: IntentAction.Use, slot: 0 }); w.step(1 / 20); setIntent(w, p, { action: IntentAction.None }); for (let k = 0; k < CONSUME_COOLDOWN_TICKS; k++) w.step(1 / 20); } // ADR-128 cooldown
     expect(countItem(w, p, flask)).toBe(1); expect(itemInfo(w, p, 0)!.fill).toBe(0);
     expect(w.get(p, Survival)!.thirst).toBeLessThan(11); // empty flask: no drink
     expect(fillContainer(w, p, 0)).toBe(4); expect(itemInfo(w, p, 0)!.fill).toBe(1);

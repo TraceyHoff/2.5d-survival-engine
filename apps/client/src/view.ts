@@ -30,7 +30,9 @@ const VFuel = defineComponent("ViewFuel", { burnUntilTick: "u32", lit: "u8" });
 /** gameplay Anim (Idle Walk Run Attack Hurt Die Gather Build) -> render AnimStateId (Idle Walk Run Attack Hit Death ...). */
 const ANIM_MAP: readonly number[] = [0, 1, 2, 3, 4, 5, 3, 3];
 /** ADR-107: Swim (14) / Punch (15) pass straight through (atlas fallbacks: swim->walk, punch->attack). */
-const animMap = (a: number): number => (a === 14 || a === 15 ? a : ANIM_MAP[a] ?? 0);
+/** ADR-128: node hit wiggle offset (tiles) `ms` after a hit: damped sine away from the player, undefined when done. */
+export function nodeWiggle(ms: number): number | undefined { if (ms < 0 || ms > 360) return undefined; const k = ms / 360; return 0.09 * Math.sin(k * Math.PI * 4) * (1 - k); }
+const animMap = (a: number): number => (a >= 14 && a <= 19 ? a : a === 8 ? 8 : ANIM_MAP[a] ?? 0); // 16..19 ADR-128 harvest/chop/mine/drink, 8 eat
 import { LightTable, type LightSpec } from "./lights.js";
 /** `?cam=animal`: debug camera that follows the first ambient animal instead of the player. */
 const CAM_ANIMAL = typeof location !== "undefined" && new URLSearchParams(location.search).get("cam") === "animal";
@@ -64,6 +66,7 @@ export class IsoView {
   readonly view = new World({ seed: 1 });
   private map = new Map<Entity, Entity>();
   private lastMove = new Map<Entity, number>();
+  private nodeAmt = new Map<Entity, number>(); private nodeHit = new Map<Entity, { at: number; dx: number; dy: number }>(); // ADR-128 wiggle
   private seen = new Set<Entity>();
   /** Light emitters (net entity -> table spec), re-evaluated every frame from replicated Fuel.lit / Emitter.strength. */
   private lightOf = new Map<Entity, { spec: LightSpec; fuel?: Entity }>();
@@ -240,7 +243,12 @@ export class IsoView {
         const bt = net.get(e, BodyTemp); if (bt) v.set(ve, VTemp, { cold: bt.cold, heat: bt.heat, shivering: bt.shivering });
       }
       if (net.has(e, ResourceNode) && v.has(ve, Sprite)) { // depleted nodes fade out
-        const empty = (net.get(e, ResourceNode)!.amount === 0);
+        const amt = net.get(e, ResourceNode)!.amount; const empty = amt === 0;
+        // ADR-128: replicated node hp dropped -> short damped wiggle away from the local player (every client sees it)
+        const was = this.nodeAmt.get(e); this.nodeAmt.set(e, amt);
+        if (was !== undefined && amt < was) { const pt = player !== undefined ? net.get(player, Transform) : undefined; const ang = pt ? Math.atan2(cur.y - pt.y, cur.x - pt.x) : 0; this.nodeHit.set(e, { at: performance.now(), dx: Math.cos(ang), dy: Math.sin(ang) }); }
+        const hit = this.nodeHit.get(e);
+        if (hit) { const o = nodeWiggle(performance.now() - hit.at); if (o === undefined) this.nodeHit.delete(e); else v.set(ve, Transform, { x: cur.x + hit.dx * o, y: cur.y + hit.dy * o }); }
         const sp = v.get(ve, Sprite)!; const want = empty ? 0.0001 : this.baseScale(ve); if (sp.scale !== want) v.set(ve, Sprite, { scale: want });
       }
       const lo = this.lightOf.get(e);
@@ -260,7 +268,7 @@ export class IsoView {
       if (v.has(ve, VPiece)) this.syncPieceState(net, e, ve, defs);
       if (v.has(ve, VFuel)) { const f = net.get(e, Fuel); if (f) v.set(ve, VFuel, { lit: f.lit, burnUntilTick: f.burnUntilTick }); }
     }
-    for (const [ne, ve] of this.map) if (!seen.has(ne)) { v.destroy(ve); this.map.delete(ne); this.characters.delete(ve); this.lightOf.delete(ne); this.pieceStates.delete(ve); this.lastMove.delete(ne); this.animalHp.delete(ne); this.animalPrev.delete(ne); this.scales.delete(ve); }
+    for (const [ne, ve] of this.map) if (!seen.has(ne)) { v.destroy(ve); this.map.delete(ne); this.characters.delete(ve); this.lightOf.delete(ne); this.pieceStates.delete(ve); this.lastMove.delete(ne); this.nodeAmt.delete(ne); this.nodeHit.delete(ne); this.animalHp.delete(ne); this.animalPrev.delete(ne); this.scales.delete(ve); }
 
     this.syncClutter(tiles, ground);
     const camE = CAM_ANIMAL && this.camAnimal !== undefined ? this.camAnimal : player;

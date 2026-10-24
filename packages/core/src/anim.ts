@@ -7,8 +7,12 @@ export const enum AnimState {
   Eat = 8, Graze = 9, Shamble = 10, Crawl = 11, Feed = 12, Sit = 13,
   /** ADR-107 (append-only): in deep water; renderer falls back to walk + bob + clipped lower body. */ Swim = 14,
   /** ADR-107: unarmed melee (fists); falls back to attack. */ Punch = 15,
+  /** ADR-128 (append-only): hand-harvest (pick/pull) from bushes, crops, plants; falls back to gather/punch. */ Harvest = 16,
+  /** ADR-128: chopping a tree/log with an axe; falls back to attack. */ Chop = 17,
+  /** ADR-128: mining a rock/ore with a pickaxe; falls back to attack. */ Mine = 18,
+  /** ADR-128: drinking (container or water tile); falls back to eat. */ Drink = 19,
   Hit = Hurt, Death = Die,
 }
 /** Canonical name per AnimState value (index = value). Append in step with the enum. */
-export const ANIM_STATE_NAMES: readonly string[] = Object.freeze(["idle", "walk", "run", "attack", "hurt", "die", "gather", "build", "eat", "graze", "shamble", "crawl", "feed", "sit", "swim", "punch"]);
+export const ANIM_STATE_NAMES: readonly string[] = Object.freeze(["idle", "walk", "run", "attack", "hurt", "die", "gather", "build", "eat", "graze", "shamble", "crawl", "feed", "sit", "swim", "punch", "harvest", "chop", "mine", "drink"]);
 export const animStateName = (s: number): string | undefined => ANIM_STATE_NAMES[s];

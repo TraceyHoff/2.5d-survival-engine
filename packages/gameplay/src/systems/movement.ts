@@ -94,7 +94,7 @@ export function swimSpeedMulAt(world: World, x: number, y: number): number { ret
 const SWIM_OVER: ReadonlySet<number> = new Set([Anim.Idle, Anim.Walk, Anim.Run, Anim.Shamble, Anim.Crawl, Anim.Graze, Anim.Sit]);
 /** One-shot anims on players (Punch/Attack/Hurt/Gather/Build) settle back to Idle after this many ticks (players have no AI to reset them). */
 export const PLAYER_ONE_SHOT_TICKS = 8;
-const ONE_SHOT: ReadonlySet<number> = new Set([Anim.Attack, Anim.Punch, Anim.Hurt, Anim.Gather, Anim.Build]);
+const ONE_SHOT: ReadonlySet<number> = new Set([Anim.Attack, Anim.Punch, Anim.Hurt, Anim.Gather, Anim.Build, Anim.Eat, Anim.Harvest, Anim.Chop, Anim.Mine, Anim.Drink]);
 /**
  * gameplay.animSettle (authority, ADR-107): locomotion anims become Swim on a swim tile at ground level and Swim reverts
  * to Idle on land; players' one-shot anims revert to Idle after PLAYER_ONE_SHOT_TICKS.

@@ -3,36 +3,86 @@
  * Order (simulation phase): vitals.consume -> vitals.tick -> vitals.death.
  * Deterministic and RNG-free, so the client predicts it for its own entity.
  */
-import { addModifier, entityIndex, evaluate, ModOp, type Entity, type World } from "@engine/core";
-import { BodyTemp, Buffs, DamageCause, Dead, Exposure, Health, IntentAction, PlayerIntent, Stat, Survival, VitalsState } from "../components.js";
+import { addModifier, defineResource, entityIndex, evaluate, ModOp, Transform, type Entity, type World } from "@engine/core";
+import { Anim, AnimState, BodyTemp, NO_SLOT, Buffs, DamageCause, Dead, Exposure, Health, IntentAction, PlayerIntent, Stat, Survival, VitalsState } from "../components.js";
 import { gameplayDefs, isAuthority } from "../config.js";
 import { secondsToTicks } from "../defs.js";
-import { Died, emit, ItemConsumed, Vital, VitalDepleted } from "../events.js";
-import { slotFreshness, slotItem, takeFromSlot } from "../inventory.js";
+import { ConsumeFail, ConsumeFailed, Died, emit, ItemConsumed, WaterDrunk, Vital, VitalDepleted } from "../events.js";
+import { readSlots, slotFreshness, slotItem, takeFromSlot } from "../inventory.js";
 import { hasPerk, skillMul } from "../skills/tree.js";
-import { spoilStageIndex, spoilStages, takeSip } from "../food.js";
+import { fillContainer, spoilStageIndex, spoilStages, takeSip } from "../food.js";
+import { inWater } from "./movement.js";
+import { TerrainRes } from "../world.js";
 
 const clamp = (v: number, lo: number, hi: number): number => (v < lo ? lo : v > hi ? hi : v);
 
-/** IntentAction.Use on a food slot: eat/drink one unit. */
+/** ADR-128: minimum ticks between two eats/drinks (server-validated; the client predicts the same). */
+export const CONSUME_COOLDOWN_TICKS = 10;
+/** ADR-128: thirst restored by one gulp straight from a water tile (Use with NO_SLOT while standing in/next to water). */
+export const WATER_TILE_THIRST = 12;
+const nextUse = new WeakMap<World, Map<Entity, number>>();
+/** Tick at which `e` may eat/drink again (0 = now). */
+export function consumeReadyTick(world: World, e: Entity): number { return nextUse.get(world)?.get(e) ?? 0; }
+/** ADR-128: client replicas without TerrainRes register a tile lookup (replicated tiles) so UI can offer "Drink water". */
+export const WaterProbeRes = defineResource<{ tileAt(tx: number, ty: number): number }>("gameplay.WaterProbe");
+/** True when (x, y) is a water tile or touches one (drink from / refill at the tile). */
+export function nearWater(world: World, x: number, y: number): boolean {
+  const probe = world.getResource(TerrainRes) ? undefined : world.getResource(WaterProbeRes); const swim = gameplayDefs(world).movement.swimTiles;
+  const wet = (px: number, py: number): boolean => (probe ? swim.has(probe.tileAt(Math.floor(px), Math.floor(py))) : inWater(world, px, py));
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (wet(x + dx * 0.75, y + dy * 0.75)) return true;
+  return false;
+}
+function setAnimOf(world: World, e: Entity, anim: Anim): void {
+  const cur = world.getField(e, AnimState, "anim");
+  if (cur === undefined) world.add(e, AnimState, { anim, startTick: world.tick });
+  else world.set(e, AnimState, { anim, startTick: world.tick });
+}
+
+/**
+ * IntentAction.Use on a food slot: eat/drink one unit (ADR-128: CONSUME_COOLDOWN_TICKS between uses, rotten food refused
+ * unless iron_stomach, Eat/Drink anim). Use on an EMPTY liquid container next to water refills it; Use with NO_SLOT next
+ * to water drinks from the tile.
+ */
 export function consumeSystem(world: World, dt = 1 / 20): void {
   const defs = gameplayDefs(world);
   const intent = world.store(PlayerIntent);
+  let ready = nextUse.get(world); if (!ready) nextUse.set(world, (ready = new Map()));
   for (const e of world.query([PlayerIntent, Survival, Health], [Dead])) {
     const s = intent.slot(entityIndex(e));
     if (intent.data.action[s] !== IntentAction.Use) continue;
-    const { item } = slotItem(world, e, intent.data.slot[s]!);
+    const slot = intent.data.slot[s]!;
+    const tf = world.get(e, Transform); const wet = !!tf && nearWater(world, tf.x, tf.y);
+    const anim = (a: Anim): void => { if (isAuthority(world) || world.has(e, AnimState)) setAnimOf(world, e, a); };
+    if (slot === NO_SLOT) {
+      if (!wet) continue;
+      if (world.tick < (ready.get(e) ?? 0)) { emit(world, ConsumeFailed, { entity: e, item: 0, reason: ConsumeFail.Cooldown }); continue; }
+      ready.set(e, world.tick + CONSUME_COOLDOWN_TICKS);
+      const sv = world.get(e, Survival)!; world.setField(e, Survival, "thirst", clamp(sv.thirst + WATER_TILE_THIRST, 0, 100));
+      anim(Anim.Drink); emit(world, WaterDrunk, { entity: e, item: 0, sips: 0 });
+      continue;
+    }
+    const { item } = slotItem(world, e, slot);
     const food = defs.items.get(item)?.food; if (!food) continue;
-    // freshness scales the benefit; stale food (below staleFreshness) makes you sick
-    const slot = intent.data.slot[s]!; const idef = defs.items.get(item)!;
-    // liquid containers (water_flask): one sip of food/sips per use, the container stays; empty = no-op
+    const idef = defs.items.get(item)!;
+    if (world.tick < (ready.get(e) ?? 0)) { emit(world, ConsumeFailed, { entity: e, item, reason: ConsumeFail.Cooldown }); continue; }
+    // liquid containers (water_flask, canteen): one sip of food/sips per use, the container stays; empty -> refill at water
     const per = idef.sips > 0 ? 1 / idef.sips : 1;
+    if (idef.sips > 0 && readSlots(world, e).durability(slot) <= 0) {
+      const added = wet && isAuthority(world) ? fillContainer(world, e, slot) : 0;
+      if (wet) { ready.set(e, world.tick + CONSUME_COOLDOWN_TICKS); anim(Anim.Drink); if (added) emit(world, WaterDrunk, { entity: e, item, sips: added }); }
+      else emit(world, ConsumeFailed, { entity: e, item, reason: ConsumeFail.Empty });
+      continue;
+    }
+    // freshness stage (environment.spoilage.stages) scales the benefit; sick stages make you ill; the last (rotten) is refused
+    const stages = spoilStages(defs); const si = spoilStageIndex(slotFreshness(world, e, slot), stages); const stage = stages[si]!;
+    const ironPerk = hasPerk(world, e, "iron_stomach");
+    if (si === stages.length - 1 && stage.sick && !ironPerk && idef.sips === 0) { emit(world, ConsumeFailed, { entity: e, item, reason: ConsumeFail.Rotten }); continue; }
     if (idef.sips > 0 && !takeSip(world, e, slot)) continue;
-    // freshness stage (environment.spoilage.stages) scales the benefit; sick stages make you ill
-    const stage = spoilStages(defs)[spoilStageIndex(slotFreshness(world, e, slot), spoilStages(defs))]!;
     if (idef.sips === 0) takeFromSlot(world, e, slot);
+    ready.set(e, world.tick + CONSUME_COOLDOWN_TICKS);
+    anim(idef.sips > 0 || (food.thirst > 0 && food.hunger <= 0) ? Anim.Drink : Anim.Eat);
     const sv = world.get(e, Survival)!; const hp = world.get(e, Health)!; const k = stage.nutritionMul * per * skillMul(world, e, "nutrition");
-    const iron = stage.sick && hasPerk(world, e, "iron_stomach"); // ADR-113: no sickness, flat hp cost instead
+    const iron = stage.sick && ironPerk; // ADR-113: no sickness, flat hp cost instead
     world.set(e, Survival, { hunger: clamp(sv.hunger + food.hunger * k, 0, 100), thirst: clamp(sv.thirst + food.thirst * k, 0, 100) });
     world.set(e, Health, { hp: clamp(hp.hp + food.health * k * (food.health > 0 ? skillMul(world, e, "heal") : 1) - (iron ? IRON_STOMACH_HP : 0), 0, hp.max) });
     const sp = defs.environment.spoilage;

@@ -65,6 +65,9 @@ const STATE_ANIM_TABLE: Record<CoreAnimState, readonly string[]> = {
   // vehicle riders (ADR-101): `sit`, else idle (the body crops the legs anyway)
   [CoreAnimState.Sit]: ["sit", "idle"],
   [CoreAnimState.Swim]: ["swim", "walk", "idle"], [CoreAnimState.Punch]: ["punch", "attack", "idle"],
+  // ADR-128 gathering/consume: dedicated frames when the pack has them, else the swing/eat they read as
+  [CoreAnimState.Harvest]: ["harvest", "gather", "punch", "attack", "idle"], [CoreAnimState.Chop]: ["chop", "attack", "punch", "idle"],
+  [CoreAnimState.Mine]: ["mine", "attack", "punch", "idle"], [CoreAnimState.Drink]: ["drink", "eat", "idle"],
 };
 export const STATE_ANIMS: readonly (readonly string[])[] = ANIM_STATE_NAMES.map((_, i) => STATE_ANIM_TABLE[i as CoreAnimState] ?? ["idle"]);
 /** @deprecated use core `AnimState` (ADR-093); kept as an alias so render callers read one numbering. */

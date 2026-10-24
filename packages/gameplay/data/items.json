@@ -4530,7 +4530,7 @@
       "maxStack": 10,
       "weight": 0.3,
       "food": {
-        "hunger": 22,
+        "hunger": 32,
         "thirst": 0,
         "health": 3
       },
@@ -4631,6 +4631,268 @@
       "category": "resource",
       "maxStack": 10,
       "weight": 1.5
+    },
+    {
+      "key": "stewed_berries",
+      "name": "Stewed Berries",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.1,
+      "food": {
+        "hunger": 24,
+        "thirst": 4,
+        "health": 2
+      },
+      "spoilSeconds": 1800
+    },
+    {
+      "key": "stewed_blueberry",
+      "name": "Stewed Blueberries",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.1,
+      "food": {
+        "hunger": 20,
+        "thirst": 5,
+        "health": 3
+      },
+      "spoilSeconds": 1800
+    },
+    {
+      "key": "stewed_raspberry",
+      "name": "Stewed Raspberries",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.1,
+      "food": {
+        "hunger": 20,
+        "thirst": 5,
+        "health": 2
+      },
+      "spoilSeconds": 1800
+    },
+    {
+      "key": "stewed_blackberry",
+      "name": "Stewed Blackberries",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.1,
+      "food": {
+        "hunger": 22,
+        "thirst": 5,
+        "health": 2
+      },
+      "spoilSeconds": 1800
+    },
+    {
+      "key": "stewed_strawberry",
+      "name": "Stewed Strawberries",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.1,
+      "food": {
+        "hunger": 18,
+        "thirst": 6,
+        "health": 3
+      },
+      "spoilSeconds": 1800
+    },
+    {
+      "key": "stewed_cherry",
+      "name": "Stewed Cherries",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.15,
+      "food": {
+        "hunger": 16,
+        "thirst": 5,
+        "health": 2
+      },
+      "spoilSeconds": 3600
+    },
+    {
+      "key": "baked_apple",
+      "name": "Baked Apple",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.15,
+      "food": {
+        "hunger": 20,
+        "thirst": 6,
+        "health": 2
+      },
+      "spoilSeconds": 3600
+    },
+    {
+      "key": "baked_pear",
+      "name": "Baked Pear",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.15,
+      "food": {
+        "hunger": 20,
+        "thirst": 7,
+        "health": 2
+      },
+      "spoilSeconds": 3600
+    },
+    {
+      "key": "baked_orange",
+      "name": "Baked Orange",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.15,
+      "food": {
+        "hunger": 18,
+        "thirst": 10,
+        "health": 3
+      },
+      "spoilSeconds": 3600
+    },
+    {
+      "key": "baked_peach",
+      "name": "Baked Peach",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.15,
+      "food": {
+        "hunger": 20,
+        "thirst": 8,
+        "health": 2
+      },
+      "spoilSeconds": 3600
+    },
+    {
+      "key": "baked_coconut",
+      "name": "Baked Coconut",
+      "category": "food",
+      "maxStack": 10,
+      "weight": 0.8,
+      "food": {
+        "hunger": 16,
+        "thirst": 14,
+        "health": 2
+      },
+      "spoilSeconds": 10800
+    },
+    {
+      "key": "roasted_carrot",
+      "name": "Roasted Carrot",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.1,
+      "food": {
+        "hunger": 16,
+        "thirst": 3,
+        "health": 2
+      },
+      "spoilSeconds": 2700
+    },
+    {
+      "key": "roasted_tomato",
+      "name": "Roasted Tomato",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.15,
+      "food": {
+        "hunger": 12,
+        "thirst": 8,
+        "health": 2
+      },
+      "spoilSeconds": 2100
+    },
+    {
+      "key": "roasted_pumpkin",
+      "name": "Roasted Pumpkin",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.15,
+      "food": {
+        "hunger": 28,
+        "thirst": 6,
+        "health": 2
+      },
+      "spoilSeconds": 7200
+    },
+    {
+      "key": "roasted_squash",
+      "name": "Roasted Squash",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.15,
+      "food": {
+        "hunger": 20,
+        "thirst": 5,
+        "health": 2
+      },
+      "spoilSeconds": 5400
+    },
+    {
+      "key": "roasted_cabbage",
+      "name": "Roasted Cabbage",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.15,
+      "food": {
+        "hunger": 16,
+        "thirst": 6,
+        "health": 3
+      },
+      "spoilSeconds": 3600
+    },
+    {
+      "key": "roasted_onion",
+      "name": "Roasted Onion",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.15,
+      "food": {
+        "hunger": 8,
+        "thirst": 2,
+        "health": 2
+      },
+      "spoilSeconds": 7200
+    },
+    {
+      "key": "roasted_wild_onion",
+      "name": "Roasted Wild Onion",
+      "category": "food",
+      "maxStack": 20,
+      "weight": 0.05,
+      "food": {
+        "hunger": 8,
+        "thirst": 2,
+        "health": 2
+      },
+      "spoilSeconds": 3600
+    },
+    {
+      "key": "canteen",
+      "name": "Canteen",
+      "category": "food",
+      "maxStack": 1,
+      "weight": 0.8,
+      "food": {
+        "hunger": 0,
+        "thirst": 48,
+        "health": 0
+      },
+      "sips": 6,
+      "durability": 6
+    },
+    {
+      "key": "water_bottle",
+      "name": "Water Bottle",
+      "category": "food",
+      "maxStack": 1,
+      "weight": 0.4,
+      "food": {
+        "hunger": 0,
+        "thirst": 20,
+        "health": 0
+      },
+      "sips": 2,
+      "durability": 2
     }
   ]
 }

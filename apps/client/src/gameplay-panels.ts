@@ -15,7 +15,7 @@ import { iconForItem,
   nearestStall, partyAcceptIntent, partyDeclineIntent, partyInviteIntent, partyKickIntent, partyLeaveIntent, partyView, queueCraftIntent, buyFromStallIntent,
   setAppearanceIntent, setStallNameIntent, priceItemChoices, listItemIntents, unstockStallIntent, type StallListDraft, setStallOpenIntent, stallView, togglePermMask, wardrobeView, placeIntent,
   type BuildSelection, type MenuCtx, type MenuIntent, camperStationView, vehicleRefuelIntent, type CamperRecipeView,
-  progressionView, unlockSkillIntent, respecSkillsIntent, SKILL_REJECT_TEXT,
+  progressionView, unlockSkillIntent, respecSkillsIntent, SKILL_REJECT_TEXT, useIntent, drinkWaterIntent, nearWater,
 } from "@engine/gameplay";
 import { requestCharacterEdit } from "./character-creator.js";
 import { GroupRole, PlayerId, Transform, type Entity } from "@engine/core";
@@ -79,7 +79,7 @@ function hasIcon(k: string): boolean {
   return knownIcons.size === 0 || knownIcons.has(k); // no stylesheet info (tests / headless): keep keys as-is
 }
 /** Real icon when Art has it, else the item's mapped fallback, else its category's generic icon. */
-function panelIcon(world: Parameters<typeof gameplayDefs>[0], icon: string, item: string | undefined): string {
+export function panelIcon(world: Parameters<typeof gameplayDefs>[0], icon: string, item: string | undefined): string {
   if (!icon || hasIcon(icon)) return icon;
   const it = item ? gameplayDefs(world).items.get(Number(item)) : undefined;
   return it ? iconForItem(it, hasIcon) : icon;
@@ -117,6 +117,21 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       if (cv) out.push(heading("Your pack"));
       if (!v.length) out.push(kit.para("Your pack is empty."));
       else { const g = grid(); for (const s of v) g.append(btn(`${s.name} ×${s.count}`, `slot-${s.slot}`, () => cv ? send(depositIntent(cv.entity, s.item, s.count), `Stored ${s.name} ×${s.count}.`) : kit.status(s.tooltip.replace(/\n/g, " · ")), { title: cv ? `${s.tooltip}\nStore in container` : s.tooltip, role: "slot", data: { item: String(s.item), icon: s.icon } })); out.push(g); }
+      // ADR-128: Eat / Drink context actions (focusable buttons: tap, click, D-pad + A all work); server validates
+      // cooldown, rotten food (iron_stomach) and refills empty containers next to water.
+      if (!cv) {
+        const me = c.world.get(c.player, Transform); const wet = !!me && nearWater(c.world, me.x, me.y);
+        const eats = v.filter((s) => s.consume);
+        if (eats.length || wet) {
+          const g = grid(); g.dataset["role"] = "consume";
+          for (const s of eats) {
+            const empty = s.consume === "drink" && /Empty:/.test(s.tooltip); const verb = empty ? (wet ? "Refill" : "Empty") : s.consume === "drink" ? "Drink" : "Eat";
+            g.append(btn(`${verb} ${s.name}`, `use-${s.slot}`, () => send(useIntent(s.slot), `${verb === "Refill" ? "Refilled" : verb === "Drink" ? "Drank" : "Ate"} ${s.name}.`), { role: "use", disabled: empty && !wet, title: s.tooltip, data: { item: String(s.item), icon: s.icon, use: s.consume ?? "" } }));
+          }
+          if (wet) g.append(btn("Drink water", "use-water", () => send(drinkWaterIntent(), "You drink from the water."), { role: "use", title: "Drink straight from the water", data: { use: "drink" } }));
+          out.push(heading("Eat & drink"), g);
+        }
+      }
       if (cv) {
         // ADR-098: paged container grid (CONTAINER_PAGE_SIZE per page). Every slot is a focusable button so the D-pad /
         // arrows walk the grid; ◀ ▶ (touch), PgUp/PgDn (keyboard) and LB/RB (gamepad) change pages. Keys are slot-stable,

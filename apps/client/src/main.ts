@@ -25,11 +25,13 @@ import { attachBrowserInput } from "@engine/input/browser";
 import { Act, ClanRoster, ClanRosterMember, OnlinePlayer, VehicleStationOpenedEvt, gameplayNet, installDemoWorld } from "@engine/server/protocol";
 import { netIdOf, ChatChannel, type ChatDelivered } from "@engine/net";
 import { WorldRules, worldRules, ROADS } from "@engine/gameplay";
-import { SocialDirectory, hasCreatedLook, setAppearanceIntent, interactPanel, UseCmd, GatherCmd, farmPrompt, type MenuCtx, type MenuIntent } from "@engine/gameplay";
+import { SocialDirectory, hasCreatedLook, setAppearanceIntent, interactPanel, UseCmd, GatherCmd, farmPrompt, WaterProbeRes, type MenuCtx, type MenuIntent } from "@engine/gameplay";
 import { ClientSession } from "./session.js";
 import { mountConnectOverlay } from "./connect.js";
 import { IsoView } from "./view.js";
 import { mountHud } from "./hud.js";
+import { mountGatherFx } from "./gather-fx.js";
+import { panelIcon } from "./gameplay-panels.js";
 import { controlLabel, mountFarmPrompt, quickUseFires, type PromptDevice } from "./farm-prompt.js";
 import { attachContextRecovery, effectiveLevel, retryIsoAtSafe } from "./gl-recovery.js";
 import { BootUI, loadSettings, newWorldRules } from "./menu.js";
@@ -422,6 +424,9 @@ worldTools = mountWorldTools(root, { world: () => world, player: () => session.p
   input, device: promptDevice, canvas,
   openModal: (id, el, onClose) => menus ? menus.nav.open(id, el, onClose) : (root.append(el), { close: () => el.remove() }),
   onControl: (x, y) => { const r = canvas.getBoundingClientRect(); return !!browserInput.controls?.geometry().some((g) => g.visible && Math.hypot(g.x - (x - r.left), g.y - (y - r.top)) <= g.r + 8); } });
+// ADR-128: node health bars + hit particles + "+3 Wood" pickup toasts
+mountGatherFx(root, { world: () => world, player: () => session.player, camera: () => iso?.renderer.camera, hidden: () => !!menus?.nav.isOpen || buildMode.active, device: promptDevice,
+  icon: (item, key) => panelIcon(world, key, String(item)) });
 // ADR-126: tool-needed symbol over the nearest resource node (Settings toggle, live)
 mountToolHint(root, { world: () => world, player: () => session.player, camera: () => iso?.renderer.camera, hidden: () => !!menus?.nav.isOpen || buildMode.active,
   enabled: () => loadSettings().toolHints !== false, device: promptDevice,
@@ -446,6 +451,8 @@ function wireUiSounds(a: AudioSystem): void {
   new MutationObserver((ms) => { for (const m of ms) { const el = m.target; if (el instanceof HTMLElement && el.id === "farm-toast" && el.textContent) { if (el.dataset["kind"] !== "levelup") a.ui("ui.notify"); return; } } })
     .observe(document.body, { childList: true, subtree: true });
 }
-function frame(now: number): void { requestAnimationFrame(frame); const dt = Math.min(now - last, 250); last = now; try { pumpLocal?.(dt); loop.advance(dt); session.poll(); } catch (e) { showRenderError("Frame error", e instanceof Error ? e.stack ?? e.message : String(e)); } }
+// ADR-128: the replica has no TerrainRes; let gameplay UI probe replicated tiles for "Drink water" / refills.
+const waterProbe = { tileAt: (x: number, y: number): number => session.client?.tiles.tiles.getTile(x, y) ?? 0 };
+function frame(now: number): void { requestAnimationFrame(frame); const dt = Math.min(now - last, 250); last = now; try { if (!world.getResource(WaterProbeRes)) world.setResource(WaterProbeRes, waterProbe); pumpLocal?.(dt); loop.advance(dt); session.poll(); } catch (e) { showRenderError("Frame error", e instanceof Error ? e.stack ?? e.message : String(e)); } }
 requestAnimationFrame(frame);
 export const buildPreview = () => buildMode.preview;

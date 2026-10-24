@@ -8,7 +8,7 @@
  * world state arrive by replication).
  */
 import { entityIndex, NetId, Transform, type Entity, type World } from "@engine/core";
-import { Dead, Equipment, Gatherer, IntentAction, Inventory, NO_SLOT, PlayerIntent, ResourceNode, Survival } from "../components.js";
+import { Anim, AnimState, Dead, Equipment, Gatherer, IntentAction, Inventory, NO_SLOT, PlayerIntent, ResourceNode, Survival } from "../components.js";
 import { gameplayDefs, isAuthority, rangeSlack } from "../config.js";
 import { secondsToTicks, ToolKind, type GameDefs, type ToolDef } from "../defs.js";
 import { emit, GatherFail, GatherFailed, GatherSwing, InventoryOverflow, ItemGathered, NodeDepleted, NodeRespawned } from "../events.js";
@@ -28,6 +28,25 @@ export function heldTool(world: World, e: Entity, defs: GameDefs): ToolDef {
 /** Fists can work this tool node (resources.json bareHands, ADR-107): low tier and a listed tool kind. */
 export function bareHandsCan(defs: GameDefs, def: { requiredTool: ToolKind; minTier: number }): boolean {
   return def.requiredTool === ToolKind.None || (def.minTier <= defs.bareHands.maxMinTier && defs.bareHands.tools.has(def.requiredTool));
+}
+
+/**
+ * ADR-128: the swing animation for working `def` with `tool`: matching axe -> Chop, matching pickaxe -> Mine,
+ * toolless nodes (bushes, crops, plants) or shovel/knife work -> Harvest (hand pick/pull), fists on a tool node -> Punch.
+ */
+export function gatherAnimFor(def: { requiredTool: ToolKind }, tool: ToolDef): Anim {
+  if (def.requiredTool === ToolKind.None) return Anim.Harvest;
+  if (tool.kind !== def.requiredTool) return Anim.Punch;
+  if (def.requiredTool === ToolKind.Axe) return Anim.Chop;
+  if (def.requiredTool === ToolKind.Pickaxe) return Anim.Mine;
+  return Anim.Harvest;
+}
+
+function setAnimOf(world: World, e: Entity, anim: Anim): void {
+  const cur = world.getField(e, AnimState, "anim");
+  if (cur === undefined) world.add(e, AnimState, { anim, startTick: world.tick });
+  else if (cur !== anim) world.set(e, AnimState, { anim, startTick: world.tick });
+  else world.setField(e, AnimState, "startTick", world.tick); // restart the one-shot on repeated swings
 }
 
 export function respawnSystem(world: World): void {
@@ -66,6 +85,7 @@ export function gatherSystem(world: World, dt: number): void {
 
     world.setField(e, Gatherer, "cooldownUntilTick", world.tick + secondsToTicks(def.cooldownSeconds * (bare ? defs.bareHands.cooldownMul : 1), dt));
     emit(world, GatherSwing, { entity: e, node });
+    if (authority || world.has(e, AnimState)) setAnimOf(world, e, gatherAnimFor(def, tool)); // replicated (AnimState scope "all")
     if (!authority || world.isReplaying) continue;
     makeNoise(world, e, defs.noise.gather);
     // Per-node deterministic stream keyed by the node's NetId (same on every peer), not the shared world.rng.

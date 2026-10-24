@@ -22,7 +22,7 @@ export interface SoundEvent { key: string; pos?: Vec2; indoors?: boolean; gain?:
 export interface LoopSpec { id: string; key: string; pos?: Vec2; indoors?: boolean; gain: number; pitch?: number }
 
 /** Anim ids (core AnimState, wire-stable). */
-export const A = { Idle: 0, Walk: 1, Run: 2, Attack: 3, Hurt: 4, Die: 5, Gather: 6, Build: 7, Eat: 8, Swim: 14, Punch: 15 } as const;
+export const A = { Idle: 0, Walk: 1, Run: 2, Attack: 3, Hurt: 4, Die: 5, Gather: 6, Build: 7, Eat: 8, Swim: 14, Punch: 15, Harvest: 16, Chop: 17, Mine: 18, Drink: 19 } as const;
 const RANGED = new Set(["bow", "crossbow", "sling", "pistol", "rifle", "autorifle", "shotgun", "musket"]);
 const FAMILY_CLASS: Record<string, string> = { sword: "blade", knife: "blade", dagger: "blade", machete: "blade", bayonet: "blade", bat: "blunt", mace: "blunt", maul: "blunt",
   axe: "axe", throwing_axe: "axe", pickaxe: "pickaxe", spear: "spear", shovel: "shovel", bow: "bow", crossbow: "crossbow", sling: "sling", pistol: "pistol", rifle: "rifle", autorifle: "autorifle", shotgun: "shotgun", musket: "musket" };
@@ -89,8 +89,9 @@ export class AudioDirector {
       } else if (now - mem.lastAttackAt < 0.7) attackers.push(e);
       if (!audible) { continue; }
       // ---- gather / build / eat anims ----
-      if (animStarted && e.anim === A.Gather) { const node = nearest(cur, e, "node", 2.5); at(e, node ? `gather.${node.sub}` : "gather.harvest"); }
+      if (animStarted && (e.anim === A.Gather || e.anim === A.Harvest || e.anim === A.Chop || e.anim === A.Mine)) { const node = nearest(cur, e, "node", 2.5); at(e, node ? `gather.${node.sub}` : "gather.harvest"); }
       if (animStarted && e.anim === A.Eat && e.kind === "player" && !e.local) at(e, "consume.eat");
+      if (animStarted && e.anim === A.Drink && e.kind === "player" && !e.local) at(e, "consume.drink");
       if (e.local && p) {
         if (e.hunger !== undefined && p.hunger !== undefined && e.hunger - p.hunger >= 2) at(e, "consume.eat");
         if (e.thirst !== undefined && p.thirst !== undefined && e.thirst - p.thirst >= 2) at(e, "consume.drink");
