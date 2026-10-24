@@ -102,6 +102,8 @@ interface SessionState extends ClientSession {
   commands: { def: MessageDefBase; payload: Record<string, number> }[];
   events: { reliable: boolean; def: MessageDefBase; payload: Record<string, number> }[];
   pingAt: number; pingNonce: number; lastPingSent?: number;
+  /** In-process direct client (setDirect): no snapshots / statics / events / pings; entity refs checked against its AOI. */
+  direct?: boolean;
 }
 
 export type AnomalyKind = "rateLimited" | "unknownCommand" | "malformed" | "inputFlood" | "badEntityRef" | "commandRejected" | "chatRateLimited" | "speed" | "teleport" | (string & {});
@@ -345,6 +347,17 @@ export class NetServer {
     const s = this.sessions.get(clientId) as SessionState | undefined; if (!s) return false;
     if (thr === undefined) delete s.throttle; else s.throttle = thr; return true;
   }
+  /**
+   * Mark a session as an in-process direct client (ADR-105): it reads the authoritative world itself, so the server
+   * skips its snapshot encode, static chunk stream, events and pings. Inputs, commands and raw messages still arrive
+   * through onMessage (same decoding, rate limits and handlers). Entity refs in its commands must be alive and inside
+   * its interest AOI (or global), instead of "in a snapshot it holds". Returns false for an unknown client.
+   */
+  setDirect(clientId: number, direct = true): boolean {
+    const s = this.sessions.get(clientId) as SessionState | undefined; if (!s) return false;
+    if (direct) s.direct = true; else delete s.direct; if (direct) { s.views.clear(); s.events.length = 0; } return true;
+  }
+  isDirect(clientId: number): boolean { return (this.sessions.get(clientId) as SessionState | undefined)?.direct === true; }
   setViewRadiusBonus(clientId: number, chunks: number): number {
     const max = Math.max(0, Math.floor(this.opts.viewBonus?.max ?? 2));
     const target = Math.min(max, Math.max(0, Math.floor(Number.isFinite(chunks) ? chunks : 0)));
@@ -392,6 +405,7 @@ export class NetServer {
         if (groupClients && !groupClients.has(s.clientId)) continue;
         if (near && this.interest && !this.interest.covers(s.clientId, near.x, near.y)) continue;
       }
+      if (s.direct) continue;
       s.events.push({ reliable: opts.reliable ?? true, def: d, payload: p });
     }
   }
@@ -460,6 +474,7 @@ export class NetServer {
     const iv = this.opts.pingIntervalMs ?? 1000; if (iv <= 0) return;
     const t = this.clock();
     for (const s of this.byConn.values()) {
+      if (s.direct) continue;
       if (s.pingAt && t - s.pingAt < iv * 4) continue; // outstanding
       if (s.lastPingSent !== undefined && t - s.lastPingSent < iv) continue;
       s.pingNonce = (s.pingNonce + 1) >>> 0; s.pingAt = t; s.lastPingSent = t;
@@ -528,6 +543,11 @@ export class NetServer {
   /** Whether `netId` is in what this client currently holds (any retained snapshot view, or a synced static chunk). */
   clientHolds(session: ClientSession, netId: number): boolean {
     const s = session as SessionState;
+    if (s.direct) {
+      const e = this.netIds.entityOf(netId); if (e === undefined || !this.world.isAlive(e)) return false;
+      const t = this.world.get(e, Transform); if (!t || this.globals.has(e) || !this.interest) return true;
+      return this.interest.covers(s.clientId, t.x, t.y);
+    }
     for (const v of s.views.values()) if (v.has(netId)) return true;
     return this.statics?.knownTo(s.static, netId) ?? false;
   }
@@ -651,6 +671,7 @@ export class NetServer {
     if (this.statics) for (const id of this.statics.ids) curArr[id] = undefined; // static channel, not snapshots
     const stamp = this.stamp;
     for (const s of this.byConn.values()) {
+      if (s.direct) continue; // ADR-105: reads the authoritative world in-process
       const seq = ++this.stampSeq;
       const base = s.lastAckTick >= 0 ? s.views.get(s.lastAckTick) : undefined;
       if (!base) s.fullSnapshots++;

@@ -38,13 +38,17 @@ export function buildAgentSelf(world: World, self: Entity, a: Agent): AgentSelf 
   const facing = a.bb.num("facing", t.facing); const tod = timeOfDay(world);
   return { x: t.x, y: t.y, facing, hp: hp ? hp.hp / Math.max(1, hp.max) : 1, hunger: (sv?.hunger ?? 100) / 100, thirst: (sv?.thirst ?? 100) / 100, stamina: sv ? sv.stamina / Math.max(1, sv.maxStamina) : 1, tick: world.tick, dayT: tod.t, phase: currentPhaseKey(world) };
 }
-export function buildAgentView(world: World, self: Entity, a: Agent, home: { x: number; y: number }, playerName = "friend"): { self: AgentSelf; world: AgentWorldView } | undefined {
+/**
+ * `candidates` (optional, ADR-105): entities to consider instead of every Transform entity (e.g. a spatial-hash lookup
+ * around `self` covering at least sight / hearing range); Dead and kind filtering still apply.
+ */
+export function buildAgentView(world: World, self: Entity, a: Agent, home: { x: number; y: number }, playerName = "friend", candidates?: Iterable<Entity>): { self: AgentSelf; world: AgentWorldView } | undefined {
   const t = world.get(self, Transform); if (!t) return undefined;
   const sv = world.get(self, Survival); const hp = world.get(self, Health);
   const facing = a.bb.num("facing", t.facing);
   const seen: SeenThing[] = [];
-  for (const e of world.query([Transform], [Dead])) {
-    if (e === self) continue; const o = world.get(e, Transform)!;
+  for (const e of candidates ?? world.query([Transform], [Dead])) {
+    if (e === self) continue; if (candidates && world.has(e, Dead)) continue; const o = world.get(e, Transform); if (!o) continue;
     const kind = world.has(e, Zombie) ? "zombie" : world.has(e, ResourceNode) ? "node" : world.has(e, Animal) ? "animal" : world.has(e, Health) ? "player" : undefined;
     if (!kind) continue; if (kind === "node" && world.getField(e, ResourceNode, "amount") === 0) continue;
     const d = Math.hypot(o.x - t.x, o.y - t.y);
