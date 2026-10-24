@@ -574,22 +574,22 @@ Identity is persisted in the `agents` record namespace. Gameplay supplies `refer
 ## ADR-119: Roads (path, gravel, paved) and settlement classification
 
 - **Data:** `packages/gameplay/data/roads.json` has three surfaces.
-  - **Path:** needs a shovel or hoe tool and costs nothing; walk ×1.15, vehicle ×1.10.
-  - **Gravel:** 2 `gravel`; walk ×1.25, vehicle ×1.30.
-  - **Paved:** 1 `cement` or 1 `asphalt` + 1 `crude_oil`; walk ×1.35, vehicle ×1.60.
-  - New recipes: `gravel` (stone), `cement` (stone + gravel), `asphalt` (gravel + crude_oil).
+  - **Path:** needs a shovel or hoe and costs nothing; walk ×1.10, vehicle ×1.15.
+  - **Gravel:** 2 `gravel`; walk ×1.20, vehicle ×1.35.
+  - **Paved:** 1 `stone` + 1 `cement`, or 1 `asphalt` + 1 `crude_oil`; walk ×1.30, vehicle ×1.60.
+  - New recipes: `gravel` (2 stone → 3, no station), `cement` (3 stone + 1 clay → 2, furnace), `asphalt` (2 gravel + 1 crude_oil → 2, furnace).
 - **ECS:** a `Road` component (`surface`, `mask`, `tx`, `ty`, `owner`) on a lightweight replicated entity per tile.
   - Upgrading replaces the surface in place.
   - `mask` is a 4-bit N/E/S/W neighbour mask, recomputed for the tile and its neighbours on place and remove, so edges auto-connect.
   - The client draws `road_<surface>_m<mask>`, falling back to `road_<surface>`.
 - **Placement:** a road may go anywhere, including outside privilege zones, except inside someone else's zone (`no_privilege`).
-  - `PlaceRoadCmd` lays a 4-connected Bresenham line from a drag; the line is capped at `maxDragTiles`, and the command stops at the first tile the player can't afford.
+  - `PlaceRoadCmd` lays a 4-connected Bresenham line from a drag; the line is capped at `maxDragTiles` (32), and the command stops at the first tile the player can't afford.
   - `RemoveRoadCmd` is owner only.
   - Roads persist through the normal entity save.
 - **Speed:** `movement.ts` multiplies walk speed by `roadSpeedMul`, and `vehicles.ts` multiplies vehicle speed by `roadVehicleMul`.
-- **Settlements:** `classifySettlements` takes homestead points (one per owned base) and single-link clusters them within 48 tiles.
-  - A cluster with 2 or more members of the same clan is a **clan city**.
-  - Otherwise, a cluster with 2 or more players is a **village**.
+- **Settlements:** `classifySettlements` takes homestead points (one per owned base) and single-link clusters them within 24 tiles.
+  - A cluster containing any clan base is a **clan city**.
+  - Otherwise, a cluster with 2 or more clanless players is a **village**.
   - A lone player is a **house**.
   - The HUD shows the settlement at the player's position in `#settlement-label`.
 - **Client:** G cycles the road tool (off → path → gravel → paved), and a drag places the road.
@@ -618,7 +618,7 @@ Identity is persisted in the `agents` record namespace. Gameplay supplies `refer
   - The grace period doubles while the highest player level is below 3 (`graceFor`).
   - It rolls at dusk or night, at most once per in-game day.
   - A target is a base: `PieceOwner` pieces grouped by clan, or by solo player.
-  - It announces a warning (`HordeStatus.phase = Warning`, 30 s), then spawns tagged `HordeMember` zombies on a ring 28–40 tiles out.
+  - It announces a warning (`HordeStatus.phase = Warning`, 30 s), then spawns tagged `HordeMember` zombies on a ring 36–48 tiles out.
   - They steer to the base and attack structures; the existing fire-light, snuffer and defence systems apply to them normally.
   - The horde is **defeated** when every member is dead.
 - **Size:**
