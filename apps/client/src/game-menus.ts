@@ -12,6 +12,7 @@ import { loadSettings, saveSettings } from "./menu.js";
 import { morph } from "./ui-diff.js";
 import { GAMEPLAY_PANELS, gameplayBody, pageContainer, type GameplayPanel, type GameplaySource } from "./gameplay-panels.js";
 import { onlineTargets, openContainerIntent } from "@engine/gameplay";
+import { loadPreset, parsePreset, savePreset, QUALITY_PRESETS, type QualityPreset } from "@engine/render";
 
 /** `data-chan` value per @engine/net ChatChannel number (Global 0 … System 6); omitted/unknown = "system". */
 export const CHAT_CHAN_NAMES: Readonly<Record<number, string>> = { 0: "global", 1: "local", 2: "party", 3: "clan", 4: "trade", 5: "whisper", 6: "system" };
@@ -64,6 +65,8 @@ export interface GameMenusOptions {
    * "Delete my progress" in Settings (ADR-099): what deleting means in the current mode (singleplayer save, or your
    * character on this server). `run` returns the message to show; throw to show an error. undefined = no entry.
    */
+  /** Settings → Graphics quality (render preset, persisted by @engine/render): apply to the live renderer. */
+  setQuality?: (p: QualityPreset) => void;
   deleteProgress?: () => { label: string; message: string; settingsOption: boolean; run: (o: { resetSettings: boolean }) => Promise<string> } | undefined;
   showMenuBar?: boolean;
   getGamepads?: UINavOptions["getGamepads"];
@@ -159,8 +162,12 @@ export class GameMenus {
     const fs = document.createElement("input"); fs.type = "checkbox"; fs.checked = s.fullscreen;
     const l1 = document.createElement("label"); l1.append("Show HUD (next start)", hud);
     const l2 = document.createElement("label"); l2.append("Fullscreen when playing", fs);
+    const q = document.createElement("select");
+    for (const p of QUALITY_PRESETS) { const o = document.createElement("option"); o.value = p; o.textContent = p === "auto" ? "Auto (adaptive)" : p[0]!.toUpperCase() + p.slice(1); q.append(o); }
+    q.value = loadPreset();
+    const l3 = document.createElement("label"); l3.append("Graphics quality", q);
     const del = this.o.deleteProgress?.();
-    return this.panel("settings", "Settings", [l1, l2], [...(del ? [[del.label, () => this.open("delete-progress"), "alt"] as [string, () => void, string]] : []),["Save", () => { saveSettings({ ...loadSettings(), showHud: hud.checked, fullscreen: fs.checked }); this.nav.close(); }], ["Back", () => this.nav.close(), "alt"]]);
+    return this.panel("settings", "Settings", [l1, l2, l3], [...(del ? [[del.label, () => this.open("delete-progress"), "alt"] as [string, () => void, string]] : []),["Save", () => { saveSettings({ ...loadSettings(), showHud: hud.checked, fullscreen: fs.checked }); const qp = parsePreset(q.value) ?? "auto"; savePreset(qp); this.o.setQuality?.(qp); this.nav.close(); }], ["Back", () => this.nav.close(), "alt"]]);
   }
   private deletePanel(): HTMLElement {
     const d = this.o.deleteProgress?.();

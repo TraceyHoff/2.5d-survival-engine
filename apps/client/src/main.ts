@@ -49,7 +49,7 @@ const isoReady: Promise<void> = wantIso ? (async () => {
   const onResize = (): void => v.resize(innerWidth, innerHeight, devicePixelRatio || 1); addEventListener("resize", onResize); onResize();
   canvas.addEventListener("webglcontextlost", () => showRenderError("WebGL context lost", "The GPU reset or ran out of memory; reload the page (or try ?safe=1)."));
   attachZoom(v.renderer.camera, canvas, { enabled: () => !document.querySelector("[data-boot=menu]") });
-  iso = v; (window as { __view?: unknown }).__view = { ready: true, renderer: "iso" };
+  iso = v; (window as { __view?: unknown }).__view = { ready: true, renderer: "iso", iso: v };
 })().catch((e: unknown) => { console.warn("IsoRenderer unavailable, using debug renderer", e); showRenderError("3D renderer unavailable — showing debug view", e instanceof Error ? e.message + ((e as { info?: unknown }).info ? `\n${JSON.stringify((e as { info?: unknown }).info).slice(0, 300)}` : "") : String(e)); fallback(); }) : Promise.resolve(fallback());
 function fallback(): void {
   // a WebGL context may already own #game: draw Canvas2D on an overlay (input stays bound to #game)
@@ -77,7 +77,7 @@ let deleteInfo: (() => { label: string; message: string; settingsOption: boolean
 let sessionInfo: (() => { label: string; leaveLabel: string; onLeave: () => void }) | undefined;
 function startMenus(): void {
   if (menus) return;
-  menus = new GameMenus({ root, input, onQuit: quitToMenu, session: () => sessionInfo?.(), deleteProgress: () => deleteInfo?.(), gameplay: { ctx: menuCtx, send: sendIntent, social, startPlacing: (sel) => buildMode.start(sel) },
+  menus = new GameMenus({ root, input, onQuit: quitToMenu, session: () => sessionInfo?.(), deleteProgress: () => deleteInfo?.(), setQuality: (p) => iso?.renderer.setQualityPreset(p), gameplay: { ctx: menuCtx, send: sendIntent, social, startPlacing: (sel) => buildMode.start(sel) },
     onChat: (text, channel, to) => { if (!session.client?.chat.send(channel as ChatChannel, text, to ? { to } : {})) menus?.pushChat("(not connected — message not sent)"); } });
 }
 /** Live data for the gameplay panels: the replicated world + local player; names via NetClient's NamesClient. */

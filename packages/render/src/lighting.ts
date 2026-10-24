@@ -63,7 +63,8 @@ export class LightPass {
   count = 0;
   private xf = new Float32Array(4);
   /** Lightmap resolution divisor (2 = half res). */
-  readonly downscale = 2;
+  /** lightmap downscale (2 = half-res, 4 = quarter-res on low quality tiers) */
+  downscale = 2;
 
   constructor(private gl: WebGL2RenderingContext, private iso: IsoConfig) {
     this.prog = createProgram(gl, VS, FS, "lights");

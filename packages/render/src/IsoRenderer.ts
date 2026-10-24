@@ -43,6 +43,7 @@ import type { TransformSource } from "./transformSource.js";
 import { VfxLayer } from "./vfx.js";
 import { BurningFx } from "./burning.js";
 import type { Renderer } from "./types.js";
+import { loadPreset, parsePreset, QualityController, type QualityPreset } from "./quality.js";
 import { BlankWatchdog, FallbackLadder, FallbackStep, FALLBACK_STEP_NAMES } from "./gl/fallback.js";
 import { fboStatusName, formatDiagReport, glErrorName, isEmptyScene, newDiag, parseDiagFlag, SAMPLE_POINTS, type DiagReadback, type RenderDiag, type Rgba } from "./gl/diag.js";
 
@@ -91,6 +92,11 @@ export class IsoRenderer implements Renderer {
   /** Override the sky clear colour (linear-ish 0..1 RGB), e.g. a neutral backdrop for the character preview. */
   backdrop: [number, number, number] | null = null;
   readonly settings: RenderSettings = { lights: true, shadows: true, weather: true, fog: true };
+  /** Adaptive quality: Settings preset (Auto/Low/Medium/High, persisted) + frame-time governor (Auto). */
+  readonly quality = new QualityController(parsePreset(typeof location !== "undefined" ? new URLSearchParams(location.search).get("quality") : null) ?? loadPreset());
+  /** Change the Settings preset (persisted to localStorage); re-lays out the backbuffer at the new resolution scale. */
+  setQualityPreset(p: QualityPreset): void { this.quality.setPreset(p); this.applyQuality(); }
+  private applyQuality(): void { this.resize(this.lastCss[0], this.lastCss[1], this.lastCss[2]); }
   readonly weatherState = new WeatherState();
   readonly vfx = new VfxLayer();
   /** Burning -> fire/ember/smoke VFX (keys in burning.cfg). */
@@ -307,13 +313,16 @@ export class IsoRenderer implements Renderer {
   }
 
   private lastCss: [number, number, number] = [0, 0, 1];
+  private lightDs = 0;
   resize(cssW: number, cssH: number, dprIn: number): void {
-    this.lastCss = [cssW, cssH, dprIn];
+    this.lastCss = [cssW, cssH, dprIn]; this.lights.downscale = this.quality.tier.lightDownscale;
     // DPR / pixel budget caps + MAX_TEXTURE/RENDERBUFFER/VIEWPORT clamp (an oversized scene FBO is incomplete -> black world) (mobile 2, low-end 1): phones report DPR 2.6-3.5
-    const { w, h, dpr } = clampDrawingBuffer(cssW, cssH, dprIn, this.capabilities);
+    const { w, h, dpr } = clampDrawingBuffer(cssW, cssH, dprIn * this.quality.tier.resScale, this.capabilities);
     this.canvas.width = w; this.canvas.height = h;
     this.camera.setViewport(w, h, dpr);
-    if (w === this.w && h === this.h) return;
+    if (w === this.w && h === this.h && this.lights.downscale === this.lightDs) return;
+    this.lightDs = this.lights.downscale;
+    if (w === this.w && h === this.h) { this.lights.resize(w, h); return; }
     this.w = w; this.h = h;
     const gl = this.gl;
     if (this.sceneTex) gl.deleteTexture(this.sceneTex); if (this.emisTex) gl.deleteTexture(this.emisTex);
@@ -369,6 +378,8 @@ export class IsoRenderer implements Renderer {
     const t0 = performance.now();
     const dt = this.lastNow < 0 ? 0 : Math.min(0.1, (t0 - this.lastNow) / 1000);
     this.lastNow = t0; this.time += dt;
+    if (this.quality.feed(dt * 1000) && this.lastCss[0] > 0) this.applyQuality();
+    this.vfx.maxActive = Math.round(2048 * this.quality.tier.particles);
     const stats = (this.stats = newStats());
     this.frameCount++; this.totalFrames++; const probe = this.frameCount === 1 || this.frameCount === 60; const diag = this.diagState;
     const pass = (name: string): void => { if (probe) { const e = gl.getError(); if (diag.enabled || e !== gl.NO_ERROR) diag.passErrors[name] = glErrorName(e); } };
@@ -477,7 +488,7 @@ export class IsoRenderer implements Renderer {
 
     pass("light");
     // --- 3. composite ----------------------------------------------------------------------
-    const bloomOn = style.bloom.strength > 0 && !diag.safe;
+    const bloomOn = style.bloom.strength > 0 && !diag.safe && this.quality.tier.bloom;
     if (bloomOn) this.bloom.draw(this.sceneTex!, this.emisTex!, style.bloom.radiusPx, stats);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(0, 0, this.w, this.h);
@@ -502,7 +513,7 @@ export class IsoRenderer implements Renderer {
     else if (this.watchdog.due(this.totalFrames)) this.watch(stats);
 
     // --- 4. weather particles --------------------------------------------------------------
-    if (this.settings.weather) this.weather.draw(this.w, this.h, this.camera.x * this.camera.scale, this.camera.y * this.camera.scale, this.camera.dpr, ws, this.time, amb, stats);
+    if (this.settings.weather) this.weather.draw(this.w, this.h, this.camera.x * this.camera.scale, this.camera.y * this.camera.scale, this.camera.dpr, ws, this.time, amb, stats, this.quality.tier.weather);
 
     stats.staticChunks = this.sprites.staticChunksDrawn; stats.staticInstances = this.sprites.staticInstances;
     stats.cpuMs = performance.now() - t0;
@@ -561,7 +572,7 @@ export class IsoRenderer implements Renderer {
       const a = this.atlas; const sp = this.sprites;
       const t = a.tiers; const fi = a.fitInfo;
       const tierLine = `tiers: hot x${t.hotScale} (${t.hot.length}), cold x${t.coldScale} (${t.cold.length}), side arrays x1/${1 << a.sideShift}, page @${a.currentPageScale}x; pool reserve ${fi.reserveMB}/${fi.reserveWantedMB} MB, demoted ${fi.demoted}${a.needsRetier ? ", RETIER pending" : ""}; ladder step ${this.fallback.step} (${this.fallback.name}); backbuffer ${this.w}x${this.h} @dpr ${this.camera.dpr.toFixed(3)} scale ${this.camera.scale.toFixed(3)}`;
-      const extra = [tierLine, `wear pool: ${a.wearPoolInfo}`, ...this.fallback.report(), this.watchdog.report(),
+      const extra = [this.quality.describe(), tierLine, `wear pool: ${a.wearPoolInfo}`, ...this.fallback.report(), this.watchdog.report(),
         `wearables: ${a.wearablesEnabled ? "on" : "OFF"}, page faults ${a.pageFaults}, budget refusals ${a.pageBudgetRefusals}; dressed cap ${Number.isFinite(sp.maxDressed) ? sp.maxDressed : "none"} (${sp.dressCapped} body-only last frame)`,
         ...sp.nearInfo.slice(0, sp.nearN).map((n) => `char ${n.d === 0 ? "LOCAL" : "near"} e${n.e} d=${n.d.toFixed(1)}t: tier x${n.scale} (dress-cap/ladder exempt), layers ${n.resident}/${n.layers} resident${n.missing.length ? ` missing [${n.missing.join(",")}]` : ""}`)].join("\n");
       const sc = this.sceneDiag; const hint = sc && sc.entities === 0 ? "\n! no entities replicated: nothing to draw (GPU is fine; check localServer/snapshots/lastError)" : "";

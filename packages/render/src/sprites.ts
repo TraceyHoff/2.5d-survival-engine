@@ -785,10 +785,21 @@ export class SpriteBatch {
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.inst, 0, this.visible * INSTANCE_FLOATS);
   }
 
+  private setupFrame = -1; private setupTex: WebGLTexture | null = null;
+  private static readonly ZERO2: readonly [number, number] = [0, 0];
   private setup(pass: "shadow" | "sprite", u: Program["u"], view: Float32Array, depth: Float32Array, atlas: AtlasManager, time: number, wind: number,
     shadowDir: readonly [number, number], shadowAlpha: number, style: StyleConfig): void {
     const gl = this.gl;
     gl.useProgram(this.prog.prog);
+    // first sprite pass of the frame uploads everything; later passes (shadow / sprite / silhouette / late) only the
+    // per-pass uniforms: textures + frame constants stay bound (nothing else draws in between). ~110 fewer GL calls/frame.
+    if (this.setupFrame === this.frameNo && this.setupTex === atlas.tex) {
+      gl.uniform1f(u.uWind!, wind); gl.uniform1i(u.uShadowPass!, pass === "shadow" ? 1 : 0);
+      gl.uniform2f(u.uShadowDir!, shadowDir[0], shadowDir[1]); gl.uniform1f(u.uShadowAlpha!, shadowAlpha);
+      gl.uniform1i(u.uSilhouette!, 0); gl.uniform1f(u.uAlphaMul!, 1); gl.uniform1f(u.uOutline!, style.outline.enabled ? style.outline.widthPx : 0);
+      return;
+    }
+    this.setupFrame = this.frameNo; this.setupTex = atlas.tex;
     gl.uniform4fv(u.uView!, view); gl.uniform2fv(u.uDepth!, depth); gl.uniform2f(u.uViewPx!, gl.drawingBufferWidth, gl.drawingBufferHeight);
     gl.uniform1f(u.uZPerPx!, this.zFactor / this.iso.zStep); gl.uniform1f(u.uHH!, this.iso.tileH / 2);
     gl.uniform1f(u.uTime!, time); gl.uniform1f(u.uWind!, wind);
@@ -820,7 +831,7 @@ export class SpriteBatch {
   drawStatic(view: Float32Array, depth: Float32Array, atlas: AtlasManager, time: number, now: number, rect: Rect, activeKeys: ReadonlySet<string> | undefined, style: StyleConfig, stats: FrameStats): void {
     if (!atlas.tex || this.statics.size === 0) { this.staticChunksDrawn = 0; return; }
     const gl = this.gl; const { u } = this.prog;
-    this.setup("sprite", u, view, depth, atlas, time, 0, [0, 0], 0, style);
+    this.setup("sprite", u, view, depth, atlas, time, 0, SpriteBatch.ZERO2, 0, style);
     const hw = this.iso.tileW / 2, hh = this.iso.tileH / 2, S = CHUNK_SIZE; let drawn = 0;
     for (const [ck, sc] of this.statics) {
       if (activeKeys && !activeKeys.has(ck)) continue;
@@ -854,7 +865,7 @@ export class SpriteBatch {
   drawLate(view: Float32Array, depth: Float32Array, atlas: AtlasManager, time: number, wind: number, style: StyleConfig, stats: FrameStats): void {
     if (this.lateCount === 0 || !atlas.tex || !this.lateVao) return;
     const gl = this.gl; const { u } = this.prog;
-    this.setup("sprite", u, view, depth, atlas, time, wind, [0, 0], 0, style);
+    this.setup("sprite", u, view, depth, atlas, time, wind, SpriteBatch.ZERO2, 0, style);
     gl.depthMask(false);
     gl.bindVertexArray(this.lateVao); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, this.lateCount); gl.bindVertexArray(null);
     gl.depthMask(true);
@@ -867,7 +878,7 @@ export class SpriteBatch {
     const gl = this.gl; const { u } = this.prog;
     if (!this.silVbo) { this.silVbo = gl.createBuffer()!; this.silVao = this.makeVao(this.silVbo); }
     gl.bindBuffer(gl.ARRAY_BUFFER, this.silVbo); gl.bufferData(gl.ARRAY_BUFFER, this.silInst, gl.DYNAMIC_DRAW);
-    this.setup("sprite", u, view, depth, atlas, time, wind, [0, 0], 0, style);
+    this.setup("sprite", u, view, depth, atlas, time, wind, SpriteBatch.ZERO2, 0, style);
     gl.uniform1i(u.uSilhouette!, 1); gl.uniform1f(u.uOutline!, 0);
     gl.depthFunc(gl.GREATER); gl.depthMask(false);
     gl.bindVertexArray(this.silVao); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, 1); gl.bindVertexArray(null);

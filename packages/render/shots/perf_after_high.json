@@ -1,0 +1,88 @@
+{
+ "frames": 29,
+ "frameP50": 683.3,
+ "frameP95": 1666.6,
+ "fps": 1.4,
+ "drawCalls": 20,
+ "stateChanges": 116.37,
+ "uniforms": 145,
+ "instances": 17949.8,
+ "overdraw": -1,
+ "renderCpuP50": 3.2,
+ "renderCpuP95": 193.1,
+ "cullSortP50": 1.5,
+ "syncP50": 12.2,
+ "syncP95": 25.6,
+ "allocKBPerFrame": 10717.7,
+ "heapDrops": 7,
+ "backbuffer": "1082x2402",
+ "quality": {
+  "level": 3,
+  "name": "ultra",
+  "resScale": 1,
+  "lightDownscale": 2,
+  "bloom": true,
+  "weather": 1,
+  "particles": 1,
+  "hist": [
+   3
+  ]
+ },
+ "diag": [
+  "vram budgetMB=128 residentMB=106.7 streamedMB=36.9 reservedMB=96 totalMB=202.7 pagesResident=7 pageSlots=18 pageIns=15 evictions=0 pending=0 misses=167 withinBudget=false poolScale=1 layerSize=2048 downscale=1 coldDownscale=0.25 hotAtlases=62 coldAtlases=22",
+  "frame draws 20 sprites 32 cpu 3.2ms",
+  "atlas: 22 layers @ 2048px, 12 mips, downscale x0.5, pool=true, budget 128 MB, vram 203 MB",
+  "frame 1: instances=0 draws=4 clear=#0a0c1e SCENE EMPTY",
+  "quality: preset high -> ultra: res x1, light 1/2, bloom on, weather x1, particles x1",
+  "wearables: on, page faults 0, budget refusals 2; dressed cap none (0 body-only last frame)"
+ ],
+ "profileMsPerSec": {
+  "readPixels": 240.9,
+  "pkg/render": 168.4,
+  "getError": 159.3,
+  "createImageBitmap": 145.8,
+  "pkg/net": 116.1,
+  "native": 98.9,
+  "other": 83.1,
+  "(program)": 79.3,
+  "pkg/core": 26.7,
+  "(garbage collector)": 9.3,
+  "pkg/input": 2.9,
+  "compressedTexSubImage3D": 2.6,
+  "texSubImage3D": 2.5,
+  "pkg/world": 1.3
+ },
+ "simTopFns": [
+  "applyState src/client.ts:427 26ms/s",
+  "despawn src/client.ts:523 18.8ms/s",
+  "decodeDelta src/state.ts:232 17.4ms/s",
+  "writeComps src/client.ts:497 16ms/s",
+  "readSpawnComp src/state.ts:199 14.9ms/s",
+  "add src/component.ts:76 9.6ms/s",
+  "set src/world.ts:167 8ms/s",
+  "networkSystem src/client.ts:359 7.5ms/s",
+  "readBits src/bits.ts:133 5.9ms/s",
+  "get src/world.ts:163 4.1ms/s"
+ ],
+ "passMs": {
+  "lightmap": 0,
+  "bloom": 0,
+  "composite": 0,
+  "weather": 0,
+  "statics": 0,
+  "sprites": 0,
+  "terrain": 0.1,
+  "tiles": 0.3
+ },
+ "throttle": 4,
+ "query": "quality=high",
+ "errors": [
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "info: [render] diag\nrender diag  ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)  mobile=true  frag=highp  safe=false\natlas: 22 layers @ 2048px, 12 mips, downscale x0.5, pool=true, budget 128 MB, vram 203 MB\nfbo: scene=COMPLETE lightmap=COMPLETE bloom0=COMPLETE bloom1=COMPLETE\ngl errors: prep=NO_ERROR scene=NO_ERROR light=NO_ERROR bloom=NO_ERROR composite=NO_ERROR readback=NO_ERROR\nframe 1: instances=0 draws=4 clear=#0a0c1e SCENE EMPTY\n  scene  #0a0c1e #0a0c1e #0a0c1e #0a0c1e #0a0c1e #0a0c1e\n  light  #141429 #141429 #141429 #141429 #141429 #141429\n  output #16181f #14151c #14151c #13141b #14161c #15161d\nfallbacks: atlas texture budget 128 MB (mobile); DPR capped at 3, max 3200000 px\nquality: preset high -> ultra: res x1, light 1/2, bloom on, weather x1, particles x1\ntiers: hot x0.5 (74), cold x0.125 (10), side arrays x1/4, page @1x; pool reserve 0/320 MB, demoted 0; ladder step 0 (full); backbuffer 1082x2402 @dpr 2.625 scale 4.000\nwear pool: wear x1 18 slots 5.3MB/slot, KTX2->astc 1 lvl; ktx2 target astc; ktx2 pages 0, masks 0, png fallback 0, failed 0; footprint 4.00 px/texel\nfallback: step 0 (full)\nwatchdog: every 60f, 0 checks, 0 blank, 0 trips\nwearables: on, page faults 0, budget refusals 0; dressed cap none (0 body-only last frame)\nscene: entities=0 player=none camTarget=fallback@16.0,16.0,0.0 localServer=opening-store snapshots=0 lastError=none\n! no entities replicated: nothing to draw (GPU is fine; check localServer/snapshots/lastError)",
+  "info: [render] diag\nrender diag  ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)  mobile=true  frag=highp  safe=false\natlas: 22 layers @ 2048px, 12 mips, downscale x1, pool=true, budget 128 MB, vram 203 MB\nfbo: scene=COMPLETE lightmap=COMPLETE bloom0=COMPLETE bloom1=COMPLETE\ngl errors: prep=NO_ERROR scene=NO_ERROR light=NO_ERROR bloom=NO_ERROR composite=NO_ERROR readback=NO_ERROR\nframe 1: instances=0 draws=4 clear=#0a0c1e SCENE EMPTY\n  scene  #0a0c1e #0a0c1e #0a0c1e #0a0c1e #0a0c1e #0a0c1e\n  light  #141429 #141429 #141429 #141429 #141429 #141429\n  output #16181f #14151c #14151c #13141b #14161c #15161d\nframe 60: instances=5160 draws=18 clear=#0a0c1e scene ok\n  scene  #b6969a #a72e4d #789484 #6fa147 #6c9e46 #6c9d45\n  light  #141429 #141429 #141429 #141429 #141429 #141429\n  output #29273a #251a27 #1f2331 #202626 #212727 #202626\nfallbacks: atlas texture budget 128 MB (mobile); DPR capped at 3, max 3200000 px\nquality: preset high -> ultra: res x1, light 1/2, bloom on, weather x1, particles x1\ntiers: hot x1 (62), cold x0.25 (22), side arrays x1/4, page @1x; pool reserve 0/320 MB, demoted 13; ladder step 0 (full); backbuffer 1082x2402 @dpr 2.625 scale 4.000\nwear pool: wear x1 18 slots 5.3MB/slot, KTX2->astc 1 lvl; ktx2 target astc; ktx2 pages 17, masks 17, png fallback 0, failed 0; footprint 4.00 px/texel\nfallback: step 0 (full)\nwatchdog: every 60f, 0 checks, 0 blank, 0 trips\nwearables: on, page faults 0, budget refusals 2; dressed cap none (0 body-only last frame)\nchar LOCAL e583 d=0.0t: tier x1 (dress-cap/ladder exempt), layers 7/7 resident\nscene: entities=478 player=1 camTarget=player@143.8,-141.9,1.0 localServer=running snapshots=777 lastError=none"
+ ]
+}

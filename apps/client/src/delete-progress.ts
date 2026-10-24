@@ -8,7 +8,7 @@
 export const DELETE_WORD = "DELETE";
 export const HOLD_MS = 1500;
 /** localStorage keys reset only when the player opts in ("Also reset settings"). */
-export const SETTINGS_KEYS = ["engine-settings", "engine.input.bindings"] as const;
+export const SETTINGS_KEYS = ["engine-settings", "engine.input.bindings", "survivaz.render.quality"] as const;
 
 type Pad = { buttons: readonly { pressed: boolean }[] } | null;
 export interface DeleteConfirmOptions {

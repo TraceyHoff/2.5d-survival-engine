@@ -118,13 +118,14 @@ export class WeatherPass {
 
   /** Drawn on top of the composited image (screen space). */
   draw(w: number, h: number, camX: number, camY: number, scale: number, levels: WeatherLevels, time: number,
-    ambient: readonly [number, number, number], stats: FrameStats): void {
+    ambient: readonly [number, number, number], stats: FrameStats, density = 1): void {
     if (levels.rain < 0.01 && levels.snow < 0.01) return;
     const gl = this.gl; const { u } = this.prog;
     gl.useProgram(this.prog.prog);
     gl.bindVertexArray(this.vao);
     gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-    const areaScale = Math.min(2, (w * h) / (1600 * 900));
+    // density: quality-tier particle budget (governor); count is relative to CSS area so a lower res scale keeps the look
+    const areaScale = Math.min(2, (w * h) / (1600 * 900)) * density;
     gl.uniform2f(u.uRes!, w, h); gl.uniform2f(u.uCam!, camX, camY);
     gl.uniform1f(u.uTime!, time); gl.uniform1f(u.uWind!, levels.wind); gl.uniform1f(u.uScale!, Math.max(1, scale));
     // precipitation is lit by ambient, never fully black
