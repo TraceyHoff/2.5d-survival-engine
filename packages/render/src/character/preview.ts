@@ -17,6 +17,22 @@ import { IsoRenderer } from "../IsoRenderer.js";
 import { LightSource, Shadow, Sprite } from "../components.js";
 import type { AtlasSource } from "../assets/atlasManager.js";
 import { coreAppearanceBinding, type AppearanceBinding } from "./layers.js";
+import { worldToScreen } from "@engine/world";
+
+/** Frame height (px) the fit-to-height scale is based on (same as CharacterPreview2D). */
+export const PREVIEW_FRAME_H = 64;
+/**
+ * Doll placement shared with CharacterPreview2D: integer device scale floor(H * 0.62 / 64) (x user zoom), foot pivot at
+ * device pixel (round(W/2), round(H*0.81)). Returns the camera centre offset (iso px, relative to the pivot's iso
+ * position) that lands the pivot on that pixel after IsoCamera.viewUniform's snapping (centre on the 1/scale grid, +half
+ * a pixel on odd-sized buffers).
+ */
+export function previewPlacement(devW: number, devH: number, zoom = 1): { scale: number; pivotX: number; pivotY: number; camDx: number; camDy: number } {
+  const raw = (devH * 0.62) / PREVIEW_FRAME_H * zoom; const scale = raw >= 1 ? Math.floor(raw) : Math.max(0.25, raw);
+  const pivotX = Math.round(devW / 2), pivotY = Math.round(devH * 0.81);
+  const camDx = (devW / 2 - pivotX - ((devW & 1) ? 0.5 : 0)) / scale, camDy = (devH / 2 - pivotY - ((devH & 1) ? 0.5 : 0)) / scale;
+  return { scale, pivotX, pivotY, camDx, camDy };
+}
 
 /** Preview-local anim driver (same schema as gameplay AnimState; the renderer only needs {state, startTick}). */
 export const PreviewAnim = defineComponent("PreviewAnimState", { state: "u8", startTick: "u32" });
@@ -77,6 +93,13 @@ export async function createCharacterPreview(target: HTMLCanvasElement | HTMLEle
   renderer.backdrop = hexRgb(backdrop);
   // one character: a small pool of sharp pages (paged in on selection) instead of the whole wardrobe at crowd scale
   renderer.atlas.poolPolicy = { coverAll: false, minSlots: 16 };
+  // the doll is the only thing on screen: character art (bodies + wearables) stays on the hot x1 tier, everything else
+  // in the registry goes cold first, so a low GPU budget shrinks scenery we never draw instead of blurring the doll
+  renderer.atlas.magNearest = true;
+  renderer.atlas.atlasTier = (_k, i) => (i.bodies || i.wearShare > 0 ? "hot" : "cold");
+  // pin full resolution without touching the persisted Settings preset (setPreset would save it); the game's adaptive
+  // resScale (x0.6 on low) would otherwise shrink the backing store and the browser upscales it -> blur
+  renderer.quality.preset = "ultra";
   await renderer.atlas.setRegistry(o.registry, o.sources ?? new Map());
   const cat = o.registry.cosmetics as unknown as CosmeticCatalogLike | undefined;
   const binding = o.binding ?? (cat ? coreAppearanceBinding(cat) : undefined);
@@ -103,11 +126,18 @@ export async function createCharacterPreview(target: HTMLCanvasElement | HTMLEle
   const rim = world.create(); world.add(rim, Transform, { x: -1.4, y: -1.2, z: 1.5, facing: 0 }); world.add(rim, LightSource, { r: 0.7, g: 0.8, b: 1, radius: 3, intensity: 0.35, flicker: 0 });
 
   let facing = ((o.facing ?? FRONT_FACING) % 8 + 8) % 8, zoom = Math.min(3, Math.max(0.5, o.zoom ?? 1)), cssH = 1, disposed = false;
-  const frameH = 64;
-  const applyCam = (): void => { renderer.camera.zoom = Math.max(0.25, (cssH * 0.62) / frameH) * zoom; renderer.camera.lookAt(0, 0, 0); renderer.camera.y -= frameH * 0.38; };
+  let devW = 1, devH = 1;
+  const applyCam = (): void => {
+    const p = previewPlacement(devW, devH, zoom), c = renderer.camera, o = worldToScreen(0, 0, 0, c.iso);
+    c.zoom = p.scale / c.dpr; c.x = o.sx + p.camDx; c.y = o.sy + p.camDy;
+  };
   const resize = (w?: number, h?: number, dpr?: number): void => {
     const cw = w ?? (own ? (target as HTMLElement).clientWidth : canvas.clientWidth) ?? 0, ch = h ?? (own ? (target as HTMLElement).clientHeight : canvas.clientHeight) ?? 0;
-    cssH = Math.max(1, ch); renderer.resize(Math.max(1, cw), cssH, Math.min(3, dpr ?? (globalThis.devicePixelRatio || 1))); applyCam();
+    const d = Math.min(3, dpr ?? (globalThis.devicePixelRatio || 1));
+    // size the backing store in device px exactly like CharacterPreview2D (round(css * dpr)); passing device px at dpr 1
+    // keeps the renderer's low-end DPR cap (meant for the full game view) from dropping the doll to CSS resolution
+    cssH = Math.max(1, ch); renderer.resize(Math.max(1, Math.round(Math.max(1, cw) * d)), Math.max(1, Math.round(cssH * d)), 1);
+    devW = canvas.width; devH = canvas.height; applyCam();
   };
   const setFacing = (k: number): void => { facing = ((Math.round(k) % 8) + 8) % 8; world.set(e, Transform, { facing: facingAngle(facing) }); };
   const setZoom = (z: number): void => { zoom = Math.min(3, Math.max(0.5, z)); applyCam(); };
