@@ -228,7 +228,7 @@ def voice(f0, n, rng, vowels, fry=0.0, vib=(5.0, 0.0), breath=0.05, bright=1.0):
                 zi = signal.lfilter_zi(b, a) * 0
             y[i:i + blk], zi = signal.lfilter(b, a, src[i:i + blk], zi=zi)
         out += gains[fi] * y
-    return S_(out)
+    return S_(out / (np.max(np.abs(out)) + 1e-9))
 
 
 VOW = {"u": (300, 870, 2240), "o": (450, 800, 2600), "a": (750, 1150, 2600), "e": (500, 1750, 2500),

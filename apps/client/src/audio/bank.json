@@ -1618,9 +1618,12 @@
   "zombie.walker.idle": {
    "bus": "sfx",
    "files": [
-    "audio/sfx/zombie_groan_1",
-    "audio/sfx/zombie_groan_2",
-    "audio/sfx/zombie_groan_3"
+    "audio/sfx/zombie_walker_idle_1",
+    "audio/sfx/zombie_walker_idle_2",
+    "audio/sfx/zombie_walker_idle_3",
+    "audio/sfx/zombie_walker_idle_4",
+    "audio/sfx/zombie_walker_idle_5",
+    "audio/sfx/zombie_walker_idle_6"
    ],
    "volume": 0.55,
    "pitchJitter": 0.08,
@@ -1636,6 +1639,12 @@
   },
   "zombie.walker.chase": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/zombie_walker_chase_1",
+    "audio/sfx/zombie_walker_chase_2",
+    "audio/sfx/zombie_walker_chase_3",
+    "audio/sfx/zombie_walker_chase_4"
+   ],
    "volume": 0.65,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1650,6 +1659,12 @@
   },
   "zombie.walker.attack": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/zombie_walker_attack_1",
+    "audio/sfx/zombie_walker_attack_2",
+    "audio/sfx/zombie_walker_attack_3",
+    "audio/sfx/zombie_walker_attack_4"
+   ],
    "volume": 0.75,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1664,6 +1679,12 @@
   },
   "zombie.walker.hurt": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/zombie_walker_hurt_1",
+    "audio/sfx/zombie_walker_hurt_2",
+    "audio/sfx/zombie_walker_hurt_3",
+    "audio/sfx/zombie_walker_hurt_4"
+   ],
    "volume": 0.7,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1678,6 +1699,11 @@
   },
   "zombie.walker.death": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/zombie_walker_death_1",
+    "audio/sfx/zombie_walker_death_2",
+    "audio/sfx/zombie_walker_death_3"
+   ],
    "volume": 0.8,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1692,6 +1718,14 @@
   },
   "zombie.runner.idle": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/zombie_runner_idle_1",
+    "audio/sfx/zombie_runner_idle_2",
+    "audio/sfx/zombie_runner_idle_3",
+    "audio/sfx/zombie_runner_idle_4",
+    "audio/sfx/zombie_runner_idle_5",
+    "audio/sfx/zombie_runner_idle_6"
+   ],
    "volume": 0.55,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1706,6 +1740,12 @@
   },
   "zombie.runner.chase": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/zombie_runner_chase_1",
+    "audio/sfx/zombie_runner_chase_2",
+    "audio/sfx/zombie_runner_chase_3",
+    "audio/sfx/zombie_runner_chase_4"
+   ],
    "volume": 0.65,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1720,6 +1760,12 @@
   },
   "zombie.runner.attack": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/zombie_runner_attack_1",
+    "audio/sfx/zombie_runner_attack_2",
+    "audio/sfx/zombie_runner_attack_3",
+    "audio/sfx/zombie_runner_attack_4"
+   ],
    "volume": 0.75,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1734,6 +1780,12 @@
   },
   "zombie.runner.hurt": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/zombie_runner_hurt_1",
+    "audio/sfx/zombie_runner_hurt_2",
+    "audio/sfx/zombie_runner_hurt_3",
+    "audio/sfx/zombie_runner_hurt_4"
+   ],
    "volume": 0.7,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1748,6 +1800,11 @@
   },
   "zombie.runner.death": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/zombie_runner_death_1",
+    "audio/sfx/zombie_runner_death_2",
+    "audio/sfx/zombie_runner_death_3"
+   ],
    "volume": 0.8,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1762,6 +1819,14 @@
   },
   "zombie.brute.idle": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/zombie_brute_idle_1",
+    "audio/sfx/zombie_brute_idle_2",
+    "audio/sfx/zombie_brute_idle_3",
+    "audio/sfx/zombie_brute_idle_4",
+    "audio/sfx/zombie_brute_idle_5",
+    "audio/sfx/zombie_brute_idle_6"
+   ],
    "volume": 0.55,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1776,6 +1841,12 @@
   },
   "zombie.brute.chase": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/zombie_brute_chase_1",
+    "audio/sfx/zombie_brute_chase_2",
+    "audio/sfx/zombie_brute_chase_3",
+    "audio/sfx/zombie_brute_chase_4"
+   ],
    "volume": 0.65,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1790,6 +1861,12 @@
   },
   "zombie.brute.attack": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/zombie_brute_attack_1",
+    "audio/sfx/zombie_brute_attack_2",
+    "audio/sfx/zombie_brute_attack_3",
+    "audio/sfx/zombie_brute_attack_4"
+   ],
    "volume": 0.75,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1804,6 +1881,12 @@
   },
   "zombie.brute.hurt": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/zombie_brute_hurt_1",
+    "audio/sfx/zombie_brute_hurt_2",
+    "audio/sfx/zombie_brute_hurt_3",
+    "audio/sfx/zombie_brute_hurt_4"
+   ],
    "volume": 0.7,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1818,6 +1901,11 @@
   },
   "zombie.brute.death": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/zombie_brute_death_1",
+    "audio/sfx/zombie_brute_death_2",
+    "audio/sfx/zombie_brute_death_3"
+   ],
    "volume": 0.8,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1832,6 +1920,12 @@
   },
   "zombie.snuffer.idle": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/zombie_snuffer_idle_1",
+    "audio/sfx/zombie_snuffer_idle_2",
+    "audio/sfx/zombie_snuffer_idle_3",
+    "audio/sfx/zombie_snuffer_idle_4"
+   ],
    "volume": 0.6,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1846,6 +1940,11 @@
   },
   "zombie.snuffer.chase": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/zombie_snuffer_chase_1",
+    "audio/sfx/zombie_snuffer_chase_2",
+    "audio/sfx/zombie_snuffer_chase_3"
+   ],
    "volume": 0.7,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1860,6 +1959,11 @@
   },
   "zombie.snuffer.attack": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/zombie_snuffer_attack_1",
+    "audio/sfx/zombie_snuffer_attack_2",
+    "audio/sfx/zombie_snuffer_attack_3"
+   ],
    "volume": 0.8,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1874,6 +1978,11 @@
   },
   "zombie.snuffer.hurt": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/zombie_snuffer_hurt_1",
+    "audio/sfx/zombie_snuffer_hurt_2",
+    "audio/sfx/zombie_snuffer_hurt_3"
+   ],
    "volume": 0.7,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1888,6 +1997,10 @@
   },
   "zombie.snuffer.death": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/zombie_snuffer_death_1",
+    "audio/sfx/zombie_snuffer_death_2"
+   ],
    "volume": 0.85,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
@@ -1902,6 +2015,10 @@
   },
   "zombie.snuffer.snuff": {
    "bus": "sfx",
+   "files": [
+    "audio/sfx/zombie_snuffer_snuff_1",
+    "audio/sfx/zombie_snuffer_snuff_2"
+   ],
    "volume": 0.8,
    "pitchJitter": 0.08,
    "volumeJitter": 0.12,
