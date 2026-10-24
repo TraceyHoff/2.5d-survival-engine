@@ -23,10 +23,39 @@ from PIL import Image
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 from wearpack import body_of, variant_of, partitions, r8
 MAXP8 = 1016; PFX = "cz_wr_"
+# VRAM pass: every wearable slot packs tight, pivot-free crops (anchor per entry) with shared 1 px gutters
+ALL_TIGHT = ("accessory", "bottom", "eyes", "face", "hair", "hat", "shoes", "top")
 
 def dir_index(d, n): return d  # entry slot d == AssetRegistry.directionIndex result d (arithmetic used d*dirStride)
 
 SLACK = 8 - 0.05   # manifest DIRFRAME_ANCHOR_SLACK (8) minus rounding margin
+
+def skyline(sizes, order, Wd):
+    """Skyline bottom-left packing (deterministic): -> (height, {i: (x, y)}) or None if a frame is wider than Wd."""
+    sky = [(0, Wd, 0)]   # segments (x, w, y)
+    pos = {}; top = 0
+    for i in order:
+        w, h = sizes[i]; bi = None
+        for j in range(len(sky)):
+            x = sky[j][0]
+            if x + w > Wd: break
+            y = 0; k = j; rem = w
+            while rem > 0: y = max(y, sky[k][2]); rem -= sky[k][1]; k += 1
+            if bi is None or (y + h, x) < (bi[0] + h, bi[1]): bi = (y, x, j)
+        if bi is None: return None
+        y, x, j = bi; pos[i] = (x, y); top = max(top, y + h)
+        ns = [(x, w, y + h)]; e = x + w; out = sky[:j]
+        for (sx, sw, sy) in sky[j:]:
+            if sx + sw <= e: continue
+            if sx < e: sw -= e - sx; sx = e
+            ns.append((sx, sw, sy))
+        sky = out + ns
+        m = [sky[0]]
+        for seg in sky[1:]:
+            if seg[2] == m[-1][2]: m[-1] = (m[-1][0], m[-1][1] + seg[1], seg[2])
+            else: m.append(seg)
+        sky = m
+    return top, pos
 
 def mask2x(p): return re.sub(r"(\.[a-z]+)$", r"@2x\1", p)
 
@@ -92,9 +121,10 @@ def main(eng, slots=None, dry=False, tight=(), bodies=False):
                 while pv > hi + SLACK * (hi - lo): hi += 1
                 while pv < lo - SLACK * (hi - lo): lo -= 1
                 return lo, hi
-            x0, x1 = fit(x0, x1, iax); y0, y1 = fit(y0, y1, iay)
+            g0 = (x0, x1, y0, y1); x0, x1 = fit(x0, x1, iax); y0, y1 = fit(y0, y1, iay); grown = (x0, x1, y0, y1) != g0
         else:
             x0 = min(x0, int(np.floor(iax)) - 0) - 1; y0 = min(y0, int(np.floor(iay))) - 1; x1 = max(x1, int(np.ceil(iax))) + 1; y1 = max(y1, int(np.ceil(iay))) + 1
+            grown = True
         cw, ch = x1 - x0, y1 - y0
         n1 = np.zeros((ch, cw, 4), np.uint8); nt = np.zeros((ch, cw, 3), np.uint8); n2 = np.zeros((2 * ch, 2 * cw, 4), np.uint8)
         sx0, sy0, sx1, sy1 = max(x0, 0), max(y0, 0), min(x1, w), min(y1, h)
@@ -105,17 +135,19 @@ def main(eng, slots=None, dry=False, tight=(), bodies=False):
             n4 = np.zeros((2 * ch, 2 * cw, 3), np.uint8)
             n4[2 * (sy0 - y0):2 * (sy1 - y0), 2 * (sx0 - x0):2 * (sx1 - x0)] = t2[2 * y:2 * (y + h), 2 * x:2 * (x + w)][2 * sy0:2 * sy1, 2 * sx0:2 * sx1]
         pv = (iax - x0, iay - y0)
-        k = hashlib.sha1(n1.tobytes() + nt.tobytes() + n2.tobytes() + (n4.tobytes() if n4 is not None else b"") + repr((cw, ch, pv)).encode()).hexdigest()
+        # tight crops are pivot-free (the anchor is per dirFrames entry), so frames that differ only in where the feet are
+        # (rigid hair/hats/eyes over head-bob) share one rect; crops grown toward the pivot keep it in the key
+        k = hashlib.sha1(n1.tobytes() + nt.tobytes() + n2.tobytes() + (n4.tobytes() if n4 is not None else b"") + repr((cw, ch) + ((pv,) if grown else ())).encode()).hexdigest()
         return (k, (n1, nt, n2, n4), pv)
     # ---- read every selected sprite (unique crops + per-entry keys)
-    CROP, PIV, ENT = {}, {}, {}
+    CROP, EPV, ENT = {}, {}, {}
     for k in sel:
         E = {}
         for name, L in src_entries(S[k]).items():
             ks = []
             for ak, R, piv in L:
-                h, c, pv = grab(ak, R, piv, k in TIGHT); ks.append(h)
-                if c is not None and h not in CROP: CROP[h] = c; PIV[h] = pv
+                h, c, pv = grab(ak, R, piv, k in TIGHT); ks.append(h); EPV[(k, name, len(ks) - 1)] = pv
+                if c is not None and h not in CROP: CROP[h] = c
             E[name] = ks
         ENT[k] = E
     # ---- units: per wearable; sprites identical across wearables form a shared unit
@@ -150,23 +182,33 @@ def main(eng, slots=None, dry=False, tight=(), bodies=False):
             for ks in ents(k).values():
                 for h in ks:
                     if h not in seen: seen.add(h); items.append(h)
-        sizes = [(1, 1) if h == "blank" else (CROP[h][0].shape[1], CROP[h][0].shape[0]) for h in items]
+        real = [(1, 1) if h == "blank" else (CROP[h][0].shape[1], CROP[h][0].shape[0]) for h in items]
+        # every crop carries a >= 1 px clear border: neighbours overlap by that border (shared gutter, still 1 px @1x /
+        # 2 px @2x of transparent texels between any two frames), so pack (w-1, h-1) in (Wd-1, H-1)
+        sizes = [(1, 1) if h == "blank" else (w - 1, hh - 1) for h, (w, hh) in zip(items, real)]
         order = sorted(range(len(items)), key=lambda i: (-sizes[i][1], -sizes[i][0], i))
         best = None
         for Wd in ([wfix] if wfix else range(64, MAXP8 + 1, 8)):
-            if max(s[0] for s in sizes) > Wd: continue
+            Wd1 = Wd - 1
+            if max(s[0] for s in sizes) > Wd1: continue
             pos = {}; x = y = sh = 0
             for i in order:
                 w, h = sizes[i]
-                if x + w > Wd: y += sh; x = 0; sh = 0
+                if x + w > Wd1: y += sh; x = 0; sh = 0
                 pos[i] = (x, y); x += w; sh = max(sh, h)
-            H = max(r8(y + sh), hmin)
-            if H > MAXP8: continue
-            sc = (Wd * H, max(Wd, H))
-            if best is None or sc < best[0]: best = (sc, Wd, H, pos)
+            H = max(r8(y + sh + 1), hmin)
+            if H <= MAXP8:
+                sc = (Wd * H, max(Wd, H))
+                if best is None or sc < best[0]: best = (sc, Wd, H, pos)
+            sk = skyline(sizes, order, Wd1)   # skyline bottom-left: fills the shelf gaps under short frames
+            if sk is not None:
+                H = max(r8(sk[0] + 1), hmin)
+                if H <= MAXP8:
+                    sc = (Wd * H, max(Wd, H))
+                    if best is None or sc < best[0]: best = (sc, Wd, H, sk[1])
         if best is None: return None
         _, Wd, H, pos = best
-        return Wd, H, {items[i]: (pos[i][0], pos[i][1], sizes[i][0], sizes[i][1]) for i in pos}
+        return Wd, H, {items[i]: (pos[i][0], pos[i][1], real[i][0], real[i][1]) for i in pos}
     plan = []
     for name, keys in sorted(units.items()):
         bestp = None
@@ -215,16 +257,17 @@ def main(eng, slots=None, dry=False, tight=(), bodies=False):
         for arr, p, mode in outs: Image.fromarray(arr, mode).save(os.path.join(D, p), optimize=True)
         newA.append({"key": pk, "image": f"atlases/{pk}.png", "frameW": Wd, "frameH": H, "columns": 1, "rows": 1,
                      "pages": [{"scale": 2, "image": f"atlases/{pk}@2x.png"}], "masks": {"tintmask": f"atlases/{pk}.tintmask.png"}})
-        def df(h):
+        def df(h, pv):
             x, y, w, hh = pos[h]
             if h == "blank": return {"atlas": pk, "rect": {"x": x, "y": y, "w": 1, "h": 1}, "anchor": {"x": 0, "y": 0}}
-            pv = PIV[h]; return {"atlas": pk, "rect": {"x": x, "y": y, "w": w, "h": hh}, "anchor": {"x": round(pv[0] / w, 6), "y": round(pv[1] / hh, 6)}}
+            assert -SLACK * w <= pv[0] <= (1 + SLACK) * w and -SLACK * hh <= pv[1] <= (1 + SLACK) * hh, (pk, h, pv)
+            return {"atlas": pk, "rect": {"x": x, "y": y, "w": w, "h": hh}, "anchor": {"x": round(pv[0] / w, 6), "y": round(pv[1] / hh, 6)}}
         for gk in g:
             k = gk.split("|")[0]; s = S[k]; first = "|" not in gk or "idle" in ents(gk)
             if k in BODY and first: rekey_meta(s, A[s["atlas"]]["columns"])
             if first: s["atlas"] = pk; s["anchor"] = {"x": 0.5, "y": 1.0}
             for name in ents(gk):
-                s["animations"][name]["dirFrames"] = [df(h) for h in ENT[k][name]]
+                s["animations"][name]["dirFrames"] = [df(h, EPV[(k, name, i)]) for i, h in enumerate(ENT[k][name])]
     # old pages no sprite references any more -> drop (entry + files)
     refs = {s["atlas"] for s in m["sprites"]} | {d["atlas"] for s in m["sprites"] for an in s["animations"].values() for d in an.get("dirFrames", [])}
     newkeys = {a["key"] for a in newA}; drop = sorted(a for a in old_used if a not in refs and a not in newkeys)
@@ -260,5 +303,5 @@ def rekey_meta(s, cols):
 
 if __name__ == "__main__":
     a = sys.argv; sl = a[a.index("--slots") + 1].split(",") if "--slots" in a else None
-    tg = a[a.index("--tight") + 1].split(",") if "--tight" in a else ()
+    tg = a[a.index("--tight") + 1].split(",") if "--tight" in a else ALL_TIGHT
     main(a[1], sl, "--dry" in a, tg, "--bodies" in a)

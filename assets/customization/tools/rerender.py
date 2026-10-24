@@ -101,4 +101,4 @@ def main(eng, prefixes, slots, tight, jobs):
 
 if __name__ == "__main__":
     a = sys.argv; arg = lambda f, d=None: a[a.index(f) + 1] if f in a else d
-    main(a[1], arg("--keys").split(","), arg("--slots").split(","), tuple((arg("--tight") or "").split(",")) if arg("--tight") else (), int(arg("--jobs", "8")))
+    main(a[1], arg("--keys").split(","), arg("--slots").split(","), tuple((arg("--tight") or "").split(",")) if arg("--tight") else rectpack.ALL_TIGHT, int(arg("--jobs", "8")))
