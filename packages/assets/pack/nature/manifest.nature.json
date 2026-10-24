@@ -479,6 +479,486 @@
     }
    ],
    "ktx2": "atlases/nature_critters_a_48x48.ktx2"
+  },
+  {
+   "key": "nature_critters_b_16x32",
+   "image": "atlases/nature_critters_b_16x32.png",
+   "frameW": 16,
+   "frameH": 32,
+   "columns": 5,
+   "rows": 2,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_critters_b_16x32@2x.png",
+     "ktx2": "atlases/nature_critters_b_16x32@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_critters_b_16x32.ktx2"
+  },
+  {
+   "key": "nature_critters_b_16x40",
+   "image": "atlases/nature_critters_b_16x40.png",
+   "frameW": 16,
+   "frameH": 40,
+   "columns": 2,
+   "rows": 2,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_critters_b_16x40@2x.png",
+     "ktx2": "atlases/nature_critters_b_16x40@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_critters_b_16x40.ktx2"
+  },
+  {
+   "key": "nature_critters_b_24x24",
+   "image": "atlases/nature_critters_b_24x24.png",
+   "frameW": 24,
+   "frameH": 24,
+   "columns": 4,
+   "rows": 4,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_critters_b_24x24@2x.png",
+     "ktx2": "atlases/nature_critters_b_24x24@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_critters_b_24x24.ktx2"
+  },
+  {
+   "key": "nature_critters_b_24x32",
+   "image": "atlases/nature_critters_b_24x32.png",
+   "frameW": 24,
+   "frameH": 32,
+   "columns": 10,
+   "rows": 6,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_critters_b_24x32@2x.png",
+     "ktx2": "atlases/nature_critters_b_24x32@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_critters_b_24x32.ktx2"
+  },
+  {
+   "key": "nature_critters_b_24x40",
+   "image": "atlases/nature_critters_b_24x40.png",
+   "frameW": 24,
+   "frameH": 40,
+   "columns": 4,
+   "rows": 2,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_critters_b_24x40@2x.png",
+     "ktx2": "atlases/nature_critters_b_24x40@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_critters_b_24x40.ktx2"
+  },
+  {
+   "key": "nature_critters_b_32x16",
+   "image": "atlases/nature_critters_b_32x16.png",
+   "frameW": 32,
+   "frameH": 16,
+   "columns": 2,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_critters_b_32x16@2x.png",
+     "ktx2": "atlases/nature_critters_b_32x16@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_critters_b_32x16.ktx2"
+  },
+  {
+   "key": "nature_critters_b_32x24",
+   "image": "atlases/nature_critters_b_32x24.png",
+   "frameW": 32,
+   "frameH": 24,
+   "columns": 6,
+   "rows": 6,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_critters_b_32x24@2x.png",
+     "ktx2": "atlases/nature_critters_b_32x24@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_critters_b_32x24.ktx2"
+  },
+  {
+   "key": "nature_critters_b_32x32",
+   "image": "atlases/nature_critters_b_32x32.png",
+   "frameW": 32,
+   "frameH": 32,
+   "columns": 6,
+   "rows": 5,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_critters_b_32x32@2x.png",
+     "ktx2": "atlases/nature_critters_b_32x32@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_critters_b_32x32.ktx2"
+  },
+  {
+   "key": "nature_critters_b_32x40",
+   "image": "atlases/nature_critters_b_32x40.png",
+   "frameW": 32,
+   "frameH": 40,
+   "columns": 8,
+   "rows": 6,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_critters_b_32x40@2x.png",
+     "ktx2": "atlases/nature_critters_b_32x40@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_critters_b_32x40.ktx2"
+  },
+  {
+   "key": "nature_critters_b_32x48",
+   "image": "atlases/nature_critters_b_32x48.png",
+   "frameW": 32,
+   "frameH": 48,
+   "columns": 2,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_critters_b_32x48@2x.png",
+     "ktx2": "atlases/nature_critters_b_32x48@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_critters_b_32x48.ktx2"
+  },
+  {
+   "key": "nature_critters_b_32x56",
+   "image": "atlases/nature_critters_b_32x56.png",
+   "frameW": 32,
+   "frameH": 56,
+   "columns": 4,
+   "rows": 2,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_critters_b_32x56@2x.png",
+     "ktx2": "atlases/nature_critters_b_32x56@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_critters_b_32x56.ktx2"
+  },
+  {
+   "key": "nature_critters_b_32x64",
+   "image": "atlases/nature_critters_b_32x64.png",
+   "frameW": 32,
+   "frameH": 64,
+   "columns": 5,
+   "rows": 2,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_critters_b_32x64@2x.png",
+     "ktx2": "atlases/nature_critters_b_32x64@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_critters_b_32x64.ktx2"
+  },
+  {
+   "key": "nature_critters_b_40x16",
+   "image": "atlases/nature_critters_b_40x16.png",
+   "frameW": 40,
+   "frameH": 16,
+   "columns": 2,
+   "rows": 4,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_critters_b_40x16@2x.png",
+     "ktx2": "atlases/nature_critters_b_40x16@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_critters_b_40x16.ktx2"
+  },
+  {
+   "key": "nature_critters_b_40x24",
+   "image": "atlases/nature_critters_b_40x24.png",
+   "frameW": 40,
+   "frameH": 24,
+   "columns": 6,
+   "rows": 6,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_critters_b_40x24@2x.png",
+     "ktx2": "atlases/nature_critters_b_40x24@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_critters_b_40x24.ktx2"
+  },
+  {
+   "key": "nature_critters_b_40x40",
+   "image": "atlases/nature_critters_b_40x40.png",
+   "frameW": 40,
+   "frameH": 40,
+   "columns": 10,
+   "rows": 8,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_critters_b_40x40@2x.png",
+     "ktx2": "atlases/nature_critters_b_40x40@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_critters_b_40x40.ktx2"
+  },
+  {
+   "key": "nature_critters_b_40x48",
+   "image": "atlases/nature_critters_b_40x48.png",
+   "frameW": 40,
+   "frameH": 48,
+   "columns": 4,
+   "rows": 3,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_critters_b_40x48@2x.png",
+     "ktx2": "atlases/nature_critters_b_40x48@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_critters_b_40x48.ktx2"
+  },
+  {
+   "key": "nature_critters_b_40x56",
+   "image": "atlases/nature_critters_b_40x56.png",
+   "frameW": 40,
+   "frameH": 56,
+   "columns": 6,
+   "rows": 4,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_critters_b_40x56@2x.png",
+     "ktx2": "atlases/nature_critters_b_40x56@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_critters_b_40x56.ktx2"
+  },
+  {
+   "key": "nature_critters_b_40x64",
+   "image": "atlases/nature_critters_b_40x64.png",
+   "frameW": 40,
+   "frameH": 64,
+   "columns": 8,
+   "rows": 4,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_critters_b_40x64@2x.png",
+     "ktx2": "atlases/nature_critters_b_40x64@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_critters_b_40x64.ktx2"
+  },
+  {
+   "key": "nature_critters_b_40x72",
+   "image": "atlases/nature_critters_b_40x72.png",
+   "frameW": 40,
+   "frameH": 72,
+   "columns": 4,
+   "rows": 2,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_critters_b_40x72@2x.png",
+     "ktx2": "atlases/nature_critters_b_40x72@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_critters_b_40x72.ktx2"
+  },
+  {
+   "key": "nature_critters_b_48x24",
+   "image": "atlases/nature_critters_b_48x24.png",
+   "frameW": 48,
+   "frameH": 24,
+   "columns": 2,
+   "rows": 2,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_critters_b_48x24@2x.png",
+     "ktx2": "atlases/nature_critters_b_48x24@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_critters_b_48x24.ktx2"
+  },
+  {
+   "key": "nature_critters_b_48x32",
+   "image": "atlases/nature_critters_b_48x32.png",
+   "frameW": 48,
+   "frameH": 32,
+   "columns": 2,
+   "rows": 2,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_critters_b_48x32@2x.png",
+     "ktx2": "atlases/nature_critters_b_48x32@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_critters_b_48x32.ktx2"
+  },
+  {
+   "key": "nature_critters_b_48x40",
+   "image": "atlases/nature_critters_b_48x40.png",
+   "frameW": 48,
+   "frameH": 40,
+   "columns": 8,
+   "rows": 8,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_critters_b_48x40@2x.png",
+     "ktx2": "atlases/nature_critters_b_48x40@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_critters_b_48x40.ktx2"
+  },
+  {
+   "key": "nature_critters_b_48x48",
+   "image": "atlases/nature_critters_b_48x48.png",
+   "frameW": 48,
+   "frameH": 48,
+   "columns": 5,
+   "rows": 4,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_critters_b_48x48@2x.png",
+     "ktx2": "atlases/nature_critters_b_48x48@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_critters_b_48x48.ktx2"
+  },
+  {
+   "key": "nature_critters_b_48x56",
+   "image": "atlases/nature_critters_b_48x56.png",
+   "frameW": 48,
+   "frameH": 56,
+   "columns": 7,
+   "rows": 6,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_critters_b_48x56@2x.png",
+     "ktx2": "atlases/nature_critters_b_48x56@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_critters_b_48x56.ktx2"
+  },
+  {
+   "key": "nature_critters_b_48x64",
+   "image": "atlases/nature_critters_b_48x64.png",
+   "frameW": 48,
+   "frameH": 64,
+   "columns": 8,
+   "rows": 6,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_critters_b_48x64@2x.png",
+     "ktx2": "atlases/nature_critters_b_48x64@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_critters_b_48x64.ktx2"
+  },
+  {
+   "key": "nature_critters_b_48x72",
+   "image": "atlases/nature_critters_b_48x72.png",
+   "frameW": 48,
+   "frameH": 72,
+   "columns": 4,
+   "rows": 4,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_critters_b_48x72@2x.png",
+     "ktx2": "atlases/nature_critters_b_48x72@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_critters_b_48x72.ktx2"
+  },
+  {
+   "key": "nature_critters_b_56x40",
+   "image": "atlases/nature_critters_b_56x40.png",
+   "frameW": 56,
+   "frameH": 40,
+   "columns": 2,
+   "rows": 2,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_critters_b_56x40@2x.png",
+     "ktx2": "atlases/nature_critters_b_56x40@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_critters_b_56x40.ktx2"
+  },
+  {
+   "key": "nature_critters_b_56x48",
+   "image": "atlases/nature_critters_b_56x48.png",
+   "frameW": 56,
+   "frameH": 48,
+   "columns": 2,
+   "rows": 2,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_critters_b_56x48@2x.png",
+     "ktx2": "atlases/nature_critters_b_56x48@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_critters_b_56x48.ktx2"
+  },
+  {
+   "key": "nature_critters_b_56x64",
+   "image": "atlases/nature_critters_b_56x64.png",
+   "frameW": 56,
+   "frameH": 64,
+   "columns": 4,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_critters_b_56x64@2x.png",
+     "ktx2": "atlases/nature_critters_b_56x64@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_critters_b_56x64.ktx2"
+  },
+  {
+   "key": "nature_icons",
+   "image": "atlases/nature_icons.png",
+   "frameW": 32,
+   "frameH": 32,
+   "columns": 16,
+   "rows": 6,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_icons@2x.png",
+     "ktx2": "atlases/nature_icons@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/nature_icons.ktx2"
   }
  ],
  "sprites": [
@@ -15892,6 +16372,8340 @@
        }
       }
      ]
+    }
+   }
+  },
+  {
+   "key": "animal_elk",
+   "category": "critter",
+   "atlas": "nature_critters_b_40x64",
+   "anchor": {
+    "x": 0.425,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 2,
+     "directions": 8,
+     "dirStride": 1,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 0,
+       "anchor": {
+        "x": 0.425,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x56",
+       "frame": 0,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.82143
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 1,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 2,
+       "anchor": {
+        "x": 0.575,
+        "y": 0.85938
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 3,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.85938
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x64",
+       "frame": 0,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.85938
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 4,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.85938
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 0,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.85938
+       }
+      }
+     ]
+    },
+    "walk": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 8,
+     "directions": 8,
+     "dirStride": 1,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 5,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x56",
+       "frame": 1,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.83929
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x56",
+       "frame": 0,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 6,
+       "anchor": {
+        "x": 0.575,
+        "y": 0.85938
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 7,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.85938
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x64",
+       "frame": 1,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.85938
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 8,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 1,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.85938
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x56",
+       "frame": 1,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x56",
+       "frame": 2,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.82143
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 9,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 2,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.85938
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x72",
+       "frame": 0,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.81944
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x64",
+       "frame": 2,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.84375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 10,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 3,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.85938
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x56",
+       "frame": 2,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x56",
+       "frame": 3,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.82143
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 11,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 4,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.85938
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 12,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.85938
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x64",
+       "frame": 3,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.85938
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 13,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.85938
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 5,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.85938
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 14,
+       "anchor": {
+        "x": 0.425,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x56",
+       "frame": 4,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.82143
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x56",
+       "frame": 3,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 15,
+       "anchor": {
+        "x": 0.575,
+        "y": 0.85938
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 16,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x64",
+       "frame": 4,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.84375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x72",
+       "frame": 1,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.81944
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 6,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.85938
+       }
+      }
+     ]
+    },
+    "attack": {
+     "frames": [
+      0,
+      1
+     ],
+     "fps": 8,
+     "directions": 8,
+     "dirStride": 1,
+     "loop": false,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_40x56",
+       "frame": 4,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x56",
+       "frame": 5,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.85714
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x56",
+       "frame": 5,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 17,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.84375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 18,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.85938
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x64",
+       "frame": 5,
+       "anchor": {
+        "x": 0.46875,
+        "y": 0.84375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 19,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.85938
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 7,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.84375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x56",
+       "frame": 6,
+       "anchor": {
+        "x": 0.375,
+        "y": 0.83929
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x56",
+       "frame": 6,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.78571
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 20,
+       "anchor": {
+        "x": 0.6,
+        "y": 0.78125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 8,
+       "anchor": {
+        "x": 0.625,
+        "y": 0.84375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 21,
+       "anchor": {
+        "x": 0.6,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x64",
+       "frame": 6,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 22,
+       "anchor": {
+        "x": 0.375,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 9,
+       "anchor": {
+        "x": 0.35417,
+        "y": 0.84375
+       }
+      }
+     ]
+    },
+    "hit": {
+     "frames": [
+      0
+     ],
+     "fps": 8,
+     "directions": 8,
+     "dirStride": 1,
+     "loop": false,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_40x56",
+       "frame": 7,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.83929
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x56",
+       "frame": 7,
+       "anchor": {
+        "x": 0.46875,
+        "y": 0.82143
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x56",
+       "frame": 8,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.83929
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 10,
+       "anchor": {
+        "x": 0.52083,
+        "y": 0.82812
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 23,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.82812
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x64",
+       "frame": 7,
+       "anchor": {
+        "x": 0.46875,
+        "y": 0.82812
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 24,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.82812
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 11,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.82812
+       }
+      }
+     ]
+    },
+    "death": {
+     "frames": [
+      0,
+      1
+     ],
+     "fps": 4,
+     "directions": 8,
+     "dirStride": 1,
+     "loop": false,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 25,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.85938
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x64",
+       "frame": 8,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.82812
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 26,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.85938
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 12,
+       "anchor": {
+        "x": 0.54167,
+        "y": 0.89062
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x72",
+       "frame": 2,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.84722
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x64",
+       "frame": 9,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.89062
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x72",
+       "frame": 3,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.84722
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 13,
+       "anchor": {
+        "x": 0.4375,
+        "y": 0.89062
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 0,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.675
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x32",
+       "frame": 0,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.65625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 1,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.675
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x48",
+       "frame": 0,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.6875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x48",
+       "frame": 1,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.70833
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 2,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x48",
+       "frame": 2,
+       "anchor": {
+        "x": 0.47917,
+        "y": 0.70833
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x48",
+       "frame": 3,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.6875
+       }
+      }
+     ]
+    },
+    "swim": {
+     "frames": [
+      0,
+      1
+     ],
+     "fps": 4,
+     "directions": 8,
+     "dirStride": 1,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 14,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.78125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 15,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 16,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.78125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x72",
+       "frame": 0,
+       "anchor": {
+        "x": 0.52083,
+        "y": 0.77778
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x72",
+       "frame": 1,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.79167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x72",
+       "frame": 2,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.79167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x72",
+       "frame": 3,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.79167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x72",
+       "frame": 4,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.77778
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 17,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.78125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 18,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 19,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.78125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x72",
+       "frame": 5,
+       "anchor": {
+        "x": 0.52083,
+        "y": 0.77778
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x72",
+       "frame": 6,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.79167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x72",
+       "frame": 7,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.79167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x72",
+       "frame": 8,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.79167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x72",
+       "frame": 9,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.77778
+       }
+      }
+     ]
+    },
+    "run": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 12,
+     "directions": 8,
+     "dirStride": 1,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 5,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x56",
+       "frame": 1,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.83929
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x56",
+       "frame": 0,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 6,
+       "anchor": {
+        "x": 0.575,
+        "y": 0.85938
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 7,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.85938
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x64",
+       "frame": 1,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.85938
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 8,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 1,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.85938
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x56",
+       "frame": 1,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x56",
+       "frame": 2,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.82143
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 9,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 2,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.85938
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x72",
+       "frame": 0,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.81944
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x64",
+       "frame": 2,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.84375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 10,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 3,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.85938
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x56",
+       "frame": 2,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x56",
+       "frame": 3,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.82143
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 11,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 4,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.85938
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 12,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.85938
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x64",
+       "frame": 3,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.85938
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 13,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.85938
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 5,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.85938
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 14,
+       "anchor": {
+        "x": 0.425,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x56",
+       "frame": 4,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.82143
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x56",
+       "frame": 3,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 15,
+       "anchor": {
+        "x": 0.575,
+        "y": 0.85938
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 16,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x64",
+       "frame": 4,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.84375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x72",
+       "frame": 1,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.81944
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 6,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.85938
+       }
+      }
+     ]
+    }
+   }
+  },
+  {
+   "key": "animal_moose",
+   "category": "critter",
+   "atlas": "nature_critters_b_48x56",
+   "anchor": {
+    "x": 0.41667,
+    "y": 0.80357
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 2,
+     "directions": 8,
+     "dirStride": 1,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 0,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.80357
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x48",
+       "frame": 0,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 1,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.80357
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 2,
+       "anchor": {
+        "x": 0.58333,
+        "y": 0.85714
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 20,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x56",
+       "frame": 9,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.85714
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 21,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.82812
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 3,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.85714
+       }
+      }
+     ]
+    },
+    "walk": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 8,
+     "directions": 8,
+     "dirStride": 1,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 4,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.80357
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x48",
+       "frame": 1,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 5,
+       "anchor": {
+        "x": 0.58333,
+        "y": 0.80357
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 6,
+       "anchor": {
+        "x": 0.58333,
+        "y": 0.85714
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 22,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.82812
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x56",
+       "frame": 10,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.85714
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 23,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.82812
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 7,
+       "anchor": {
+        "x": 0.39583,
+        "y": 0.85714
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 8,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.82143
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x56",
+       "frame": 11,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 9,
+       "anchor": {
+        "x": 0.58333,
+        "y": 0.80357
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 24,
+       "anchor": {
+        "x": 0.58333,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 25,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 27,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.79688
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 26,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.82812
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 10,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.85714
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 11,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.80357
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x48",
+       "frame": 2,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 12,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.80357
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 13,
+       "anchor": {
+        "x": 0.58333,
+        "y": 0.85714
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 27,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.82812
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x56",
+       "frame": 12,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.85714
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 28,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 14,
+       "anchor": {
+        "x": 0.39583,
+        "y": 0.85714
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 15,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.80357
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x56",
+       "frame": 13,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 16,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.82143
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 29,
+       "anchor": {
+        "x": 0.58333,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 30,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.84375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 28,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.79688
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 31,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 17,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.85714
+       }
+      }
+     ]
+    },
+    "attack": {
+     "frames": [
+      0,
+      1
+     ],
+     "fps": 8,
+     "directions": 8,
+     "dirStride": 1,
+     "loop": false,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 18,
+       "anchor": {
+        "x": 0.4375,
+        "y": 0.80357
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x48",
+       "frame": 3,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.83333
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 19,
+       "anchor": {
+        "x": 0.54167,
+        "y": 0.80357
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 20,
+       "anchor": {
+        "x": 0.54167,
+        "y": 0.85714
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 32,
+       "anchor": {
+        "x": 0.54167,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x56",
+       "frame": 14,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.83929
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 33,
+       "anchor": {
+        "x": 0.4375,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 21,
+       "anchor": {
+        "x": 0.4375,
+        "y": 0.85714
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 22,
+       "anchor": {
+        "x": 0.35417,
+        "y": 0.76786
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x48",
+       "frame": 4,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.77083
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 23,
+       "anchor": {
+        "x": 0.625,
+        "y": 0.76786
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 24,
+       "anchor": {
+        "x": 0.64583,
+        "y": 0.85714
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 34,
+       "anchor": {
+        "x": 0.625,
+        "y": 0.82812
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 29,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.82812
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 35,
+       "anchor": {
+        "x": 0.35417,
+        "y": 0.82812
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 25,
+       "anchor": {
+        "x": 0.33333,
+        "y": 0.85714
+       }
+      }
+     ]
+    },
+    "hit": {
+     "frames": [
+      0
+     ],
+     "fps": 8,
+     "directions": 8,
+     "dirStride": 1,
+     "loop": false,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 26,
+       "anchor": {
+        "x": 0.4375,
+        "y": 0.78571
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x48",
+       "frame": 5,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.79167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 27,
+       "anchor": {
+        "x": 0.54167,
+        "y": 0.78571
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 28,
+       "anchor": {
+        "x": 0.54167,
+        "y": 0.83929
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 29,
+       "anchor": {
+        "x": 0.54167,
+        "y": 0.82143
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x56",
+       "frame": 15,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.80357
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 30,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.82143
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 31,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.82143
+       }
+      }
+     ]
+    },
+    "death": {
+     "frames": [
+      0,
+      1
+     ],
+     "fps": 4,
+     "directions": 8,
+     "dirStride": 1,
+     "loop": false,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 32,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.83929
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x56",
+       "frame": 16,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.82143
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 33,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.83929
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 36,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.84375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 30,
+       "anchor": {
+        "x": 0.575,
+        "y": 0.84375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 31,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.84375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 37,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.84375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 38,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.84375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 3,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.65
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 4,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 5,
+       "anchor": {
+        "x": 0.54167,
+        "y": 0.65
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 6,
+       "anchor": {
+        "x": 0.58333,
+        "y": 0.675
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x48",
+       "frame": 4,
+       "anchor": {
+        "x": 0.52083,
+        "y": 0.66667
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 7,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x48",
+       "frame": 5,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.66667
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 8,
+       "anchor": {
+        "x": 0.39583,
+        "y": 0.675
+       }
+      }
+     ]
+    },
+    "swim": {
+     "frames": [
+      0,
+      1
+     ],
+     "fps": 4,
+     "directions": 8,
+     "dirStride": 1,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 34,
+       "anchor": {
+        "x": 0.47917,
+        "y": 0.76786
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 35,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.71429
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 36,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.76786
+       }
+      },
+      {
+       "atlas": "nature_critters_b_56x64",
+       "frame": 0,
+       "anchor": {
+        "x": 0.53571,
+        "y": 0.76562
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 39,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.78125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 40,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.76562
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 41,
+       "anchor": {
+        "x": 0.47917,
+        "y": 0.78125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_56x64",
+       "frame": 1,
+       "anchor": {
+        "x": 0.46429,
+        "y": 0.76562
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 37,
+       "anchor": {
+        "x": 0.47917,
+        "y": 0.76786
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 38,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.73214
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 39,
+       "anchor": {
+        "x": 0.52083,
+        "y": 0.76786
+       }
+      },
+      {
+       "atlas": "nature_critters_b_56x64",
+       "frame": 2,
+       "anchor": {
+        "x": 0.53571,
+        "y": 0.76562
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 42,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.78125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 43,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.76562
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 44,
+       "anchor": {
+        "x": 0.47917,
+        "y": 0.78125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_56x64",
+       "frame": 3,
+       "anchor": {
+        "x": 0.46429,
+        "y": 0.76562
+       }
+      }
+     ]
+    },
+    "run": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 12,
+     "directions": 8,
+     "dirStride": 1,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 4,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.80357
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x48",
+       "frame": 1,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 5,
+       "anchor": {
+        "x": 0.58333,
+        "y": 0.80357
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 6,
+       "anchor": {
+        "x": 0.58333,
+        "y": 0.85714
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 22,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.82812
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x56",
+       "frame": 10,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.85714
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 23,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.82812
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 7,
+       "anchor": {
+        "x": 0.39583,
+        "y": 0.85714
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 8,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.82143
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x56",
+       "frame": 11,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 9,
+       "anchor": {
+        "x": 0.58333,
+        "y": 0.80357
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 24,
+       "anchor": {
+        "x": 0.58333,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 25,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 27,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.79688
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 26,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.82812
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 10,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.85714
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 11,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.80357
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x48",
+       "frame": 2,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 12,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.80357
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 13,
+       "anchor": {
+        "x": 0.58333,
+        "y": 0.85714
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 27,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.82812
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x56",
+       "frame": 12,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.85714
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 28,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 14,
+       "anchor": {
+        "x": 0.39583,
+        "y": 0.85714
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 15,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.80357
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x56",
+       "frame": 13,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 16,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.82143
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 29,
+       "anchor": {
+        "x": 0.58333,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 30,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.84375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x64",
+       "frame": 28,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.79688
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x64",
+       "frame": 31,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x56",
+       "frame": 17,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.85714
+       }
+      }
+     ]
+    }
+   }
+  },
+  {
+   "key": "animal_bear",
+   "category": "critter",
+   "atlas": "nature_critters_b_40x40",
+   "anchor": {
+    "x": 0.45,
+    "y": 0.7
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 2,
+     "directions": 8,
+     "dirStride": 1,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 0,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.7
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 0,
+       "anchor": {
+        "x": 0.46875,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 1,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 9,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 2,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 1,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 3,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 10,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.75
+       }
+      }
+     ]
+    },
+    "walk": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 8,
+     "directions": 8,
+     "dirStride": 1,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 4,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 2,
+       "anchor": {
+        "x": 0.46875,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 5,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 11,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 6,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 3,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 7,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 12,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 8,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 4,
+       "anchor": {
+        "x": 0.46875,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 9,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 13,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 10,
+       "anchor": {
+        "x": 0.55,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 5,
+       "anchor": {
+        "x": 0.46875,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 11,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 14,
+       "anchor": {
+        "x": 0.4375,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 12,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 6,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 13,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.7
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 15,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 14,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 7,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 15,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 16,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 16,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 8,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 17,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 17,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 18,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 9,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 19,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 18,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.75
+       }
+      }
+     ]
+    },
+    "attack": {
+     "frames": [
+      0,
+      1
+     ],
+     "fps": 8,
+     "directions": 8,
+     "dirStride": 1,
+     "loop": false,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 20,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 10,
+       "anchor": {
+        "x": 0.46875,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 21,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 19,
+       "anchor": {
+        "x": 0.52083,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 22,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 11,
+       "anchor": {
+        "x": 0.46875,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 23,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 20,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 24,
+       "anchor": {
+        "x": 0.375,
+        "y": 0.7
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 12,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.7
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 25,
+       "anchor": {
+        "x": 0.6,
+        "y": 0.7
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 21,
+       "anchor": {
+        "x": 0.64583,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 26,
+       "anchor": {
+        "x": 0.6,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 13,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 27,
+       "anchor": {
+        "x": 0.4,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 22,
+       "anchor": {
+        "x": 0.35417,
+        "y": 0.75
+       }
+      }
+     ]
+    },
+    "hit": {
+     "frames": [
+      0
+     ],
+     "fps": 8,
+     "directions": 8,
+     "dirStride": 1,
+     "loop": false,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 28,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 14,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 29,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 23,
+       "anchor": {
+        "x": 0.52083,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 30,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 15,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 31,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 24,
+       "anchor": {
+        "x": 0.47917,
+        "y": 0.725
+       }
+      }
+     ]
+    },
+    "death": {
+     "frames": [
+      0,
+      1
+     ],
+     "fps": 4,
+     "directions": 8,
+     "dirStride": 1,
+     "loop": false,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 32,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 16,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 33,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 25,
+       "anchor": {
+        "x": 0.54167,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x48",
+       "frame": 6,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x48",
+       "frame": 0,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x48",
+       "frame": 7,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 26,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 34,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.675
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 17,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.65
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 35,
+       "anchor": {
+        "x": 0.55,
+        "y": 0.675
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 27,
+       "anchor": {
+        "x": 0.58333,
+        "y": 0.675
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 36,
+       "anchor": {
+        "x": 0.55,
+        "y": 0.7
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 18,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.7
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 37,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.7
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 28,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.675
+       }
+      }
+     ]
+    },
+    "swim": {
+     "frames": [
+      0,
+      1
+     ],
+     "fps": 4,
+     "directions": 8,
+     "dirStride": 1,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 29,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.65
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x32",
+       "frame": 1,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.65625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 30,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.65
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 31,
+       "anchor": {
+        "x": 0.52083,
+        "y": 0.7
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x48",
+       "frame": 6,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.70833
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x48",
+       "frame": 7,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.6875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x48",
+       "frame": 8,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.6875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 32,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.7
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 33,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.65
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x32",
+       "frame": 2,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.65625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 34,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.65
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 35,
+       "anchor": {
+        "x": 0.52083,
+        "y": 0.7
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x48",
+       "frame": 9,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.70833
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x48",
+       "frame": 10,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.70833
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x48",
+       "frame": 11,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.6875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 36,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.7
+       }
+      }
+     ]
+    },
+    "run": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 12,
+     "directions": 8,
+     "dirStride": 1,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 4,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 2,
+       "anchor": {
+        "x": 0.46875,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 5,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 11,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 6,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 3,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 7,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 12,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 8,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 4,
+       "anchor": {
+        "x": 0.46875,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 9,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 13,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 10,
+       "anchor": {
+        "x": 0.55,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 5,
+       "anchor": {
+        "x": 0.46875,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 11,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 14,
+       "anchor": {
+        "x": 0.4375,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 12,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 6,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 13,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.7
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 15,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 14,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 7,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 15,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 16,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 16,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 8,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 17,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 17,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 18,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 9,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 19,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 18,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.75
+       }
+      }
+     ]
+    }
+   }
+  },
+  {
+   "key": "animal_bison",
+   "category": "critter",
+   "atlas": "nature_critters_b_40x40",
+   "anchor": {
+    "x": 0.45,
+    "y": 0.725
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 2,
+     "directions": 8,
+     "dirStride": 1,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 38,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 19,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 39,
+       "anchor": {
+        "x": 0.55,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 37,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 40,
+       "anchor": {
+        "x": 0.55,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 20,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 41,
+       "anchor": {
+        "x": 0.425,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 38,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.75
+       }
+      }
+     ]
+    },
+    "walk": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 8,
+     "directions": 8,
+     "dirStride": 1,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 42,
+       "anchor": {
+        "x": 0.425,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 21,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 43,
+       "anchor": {
+        "x": 0.55,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 39,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 44,
+       "anchor": {
+        "x": 0.55,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 22,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 45,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 40,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 46,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 23,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 47,
+       "anchor": {
+        "x": 0.55,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 41,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x48",
+       "frame": 8,
+       "anchor": {
+        "x": 0.55,
+        "y": 0.72917
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 24,
+       "anchor": {
+        "x": 0.46875,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 48,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.8
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 42,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 49,
+       "anchor": {
+        "x": 0.425,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 25,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 50,
+       "anchor": {
+        "x": 0.55,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 43,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 51,
+       "anchor": {
+        "x": 0.55,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 26,
+       "anchor": {
+        "x": 0.46875,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 52,
+       "anchor": {
+        "x": 0.425,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 44,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 53,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 27,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 54,
+       "anchor": {
+        "x": 0.55,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 45,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 55,
+       "anchor": {
+        "x": 0.55,
+        "y": 0.8
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 28,
+       "anchor": {
+        "x": 0.46875,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x48",
+       "frame": 9,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.72917
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 46,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.775
+       }
+      }
+     ]
+    },
+    "attack": {
+     "frames": [
+      0,
+      1
+     ],
+     "fps": 8,
+     "directions": 8,
+     "dirStride": 1,
+     "loop": false,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 56,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 29,
+       "anchor": {
+        "x": 0.46875,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 57,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 47,
+       "anchor": {
+        "x": 0.52083,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 58,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 30,
+       "anchor": {
+        "x": 0.46875,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 59,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 48,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 60,
+       "anchor": {
+        "x": 0.375,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 31,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.7
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 61,
+       "anchor": {
+        "x": 0.6,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_56x40",
+       "frame": 0,
+       "anchor": {
+        "x": 0.60714,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 62,
+       "anchor": {
+        "x": 0.6,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 32,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.8
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 63,
+       "anchor": {
+        "x": 0.375,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_56x40",
+       "frame": 1,
+       "anchor": {
+        "x": 0.375,
+        "y": 0.75
+       }
+      }
+     ]
+    },
+    "hit": {
+     "frames": [
+      0
+     ],
+     "fps": 8,
+     "directions": 8,
+     "dirStride": 1,
+     "loop": false,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 64,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 33,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 65,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 49,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 66,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 34,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 67,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 50,
+       "anchor": {
+        "x": 0.47917,
+        "y": 0.75
+       }
+      }
+     ]
+    },
+    "death": {
+     "frames": [
+      0,
+      1
+     ],
+     "fps": 4,
+     "directions": 8,
+     "dirStride": 1,
+     "loop": false,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 68,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 35,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.8
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 69,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 51,
+       "anchor": {
+        "x": 0.54167,
+        "y": 0.8
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x48",
+       "frame": 10,
+       "anchor": {
+        "x": 0.525,
+        "y": 0.77083
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x48",
+       "frame": 1,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x48",
+       "frame": 11,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.77083
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 52,
+       "anchor": {
+        "x": 0.4375,
+        "y": 0.8
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 70,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.65
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 71,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 53,
+       "anchor": {
+        "x": 0.54167,
+        "y": 0.65
+       }
+      },
+      {
+       "atlas": "nature_critters_b_56x40",
+       "frame": 2,
+       "anchor": {
+        "x": 0.55357,
+        "y": 0.7
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 54,
+       "anchor": {
+        "x": 0.54167,
+        "y": 0.7
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 72,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.7
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 73,
+       "anchor": {
+        "x": 0.425,
+        "y": 0.7
+       }
+      },
+      {
+       "atlas": "nature_critters_b_56x40",
+       "frame": 3,
+       "anchor": {
+        "x": 0.42857,
+        "y": 0.7
+       }
+      }
+     ]
+    },
+    "swim": {
+     "frames": [
+      0,
+      1
+     ],
+     "fps": 4,
+     "directions": 8,
+     "dirStride": 1,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 55,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 56,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.575
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 57,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_56x48",
+       "frame": 0,
+       "anchor": {
+        "x": 0.53571,
+        "y": 0.64583
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x48",
+       "frame": 12,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.6875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x48",
+       "frame": 13,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.66667
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x48",
+       "frame": 14,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.6875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_56x48",
+       "frame": 1,
+       "anchor": {
+        "x": 0.46429,
+        "y": 0.64583
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 58,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 59,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.6
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 60,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_56x48",
+       "frame": 2,
+       "anchor": {
+        "x": 0.51786,
+        "y": 0.64583
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x48",
+       "frame": 15,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.6875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x48",
+       "frame": 16,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.66667
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x48",
+       "frame": 17,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.6875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_56x48",
+       "frame": 3,
+       "anchor": {
+        "x": 0.46429,
+        "y": 0.64583
+       }
+      }
+     ]
+    },
+    "run": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 12,
+     "directions": 8,
+     "dirStride": 1,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 42,
+       "anchor": {
+        "x": 0.425,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 21,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 43,
+       "anchor": {
+        "x": 0.55,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 39,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 44,
+       "anchor": {
+        "x": 0.55,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 22,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 45,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 40,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 46,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 23,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 47,
+       "anchor": {
+        "x": 0.55,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 41,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x48",
+       "frame": 8,
+       "anchor": {
+        "x": 0.55,
+        "y": 0.72917
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 24,
+       "anchor": {
+        "x": 0.46875,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 48,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.8
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 42,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 49,
+       "anchor": {
+        "x": 0.425,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 25,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 50,
+       "anchor": {
+        "x": 0.55,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 43,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 51,
+       "anchor": {
+        "x": 0.55,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 26,
+       "anchor": {
+        "x": 0.46875,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 52,
+       "anchor": {
+        "x": 0.425,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 44,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 53,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 27,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 54,
+       "anchor": {
+        "x": 0.55,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 45,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x40",
+       "frame": 55,
+       "anchor": {
+        "x": 0.55,
+        "y": 0.8
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 28,
+       "anchor": {
+        "x": 0.46875,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x48",
+       "frame": 9,
+       "anchor": {
+        "x": 0.45,
+        "y": 0.72917
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x40",
+       "frame": 46,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.775
+       }
+      }
+     ]
+    }
+   }
+  },
+  {
+   "key": "animal_squirrel",
+   "category": "critter",
+   "atlas": "nature_critters_b_24x32",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8125
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 2,
+     "directions": 8,
+     "dirStride": 1,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 0,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 1,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 2,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 0,
+       "anchor": {
+        "x": 0.46875,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 3,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 4,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.78125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 5,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 1,
+       "anchor": {
+        "x": 0.53125,
+        "y": 0.78125
+       }
+      }
+     ]
+    },
+    "walk": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 8,
+     "directions": 8,
+     "dirStride": 1,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 6,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 7,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 8,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 2,
+       "anchor": {
+        "x": 0.4375,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 9,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.78125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 10,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.78125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 11,
+       "anchor": {
+        "x": 0.54167,
+        "y": 0.78125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 3,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.78125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 12,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.84375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_16x40",
+       "frame": 0,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 13,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.84375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 4,
+       "anchor": {
+        "x": 0.46875,
+        "y": 0.84375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 14,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_16x32",
+       "frame": 0,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 15,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 5,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.84375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 16,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.90625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_16x32",
+       "frame": 1,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.90625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 17,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.90625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 6,
+       "anchor": {
+        "x": 0.46875,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 18,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_16x32",
+       "frame": 2,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 19,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 7,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 20,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.90625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_16x32",
+       "frame": 3,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.9375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x40",
+       "frame": 0,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.825
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 8,
+       "anchor": {
+        "x": 0.46875,
+        "y": 0.90625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 21,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_16x32",
+       "frame": 4,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.90625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 22,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 9,
+       "anchor": {
+        "x": 0.53125,
+        "y": 0.90625
+       }
+      }
+     ]
+    },
+    "attack": {
+     "frames": [
+      0,
+      1
+     ],
+     "fps": 8,
+     "directions": 8,
+     "dirStride": 1,
+     "loop": false,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 23,
+       "anchor": {
+        "x": 0.58333,
+        "y": 0.84375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 24,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.84375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 25,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.84375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 10,
+       "anchor": {
+        "x": 0.40625,
+        "y": 0.78125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 26,
+       "anchor": {
+        "x": 0.375,
+        "y": 0.78125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 27,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 28,
+       "anchor": {
+        "x": 0.58333,
+        "y": 0.78125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 11,
+       "anchor": {
+        "x": 0.59375,
+        "y": 0.78125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 29,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.78125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_16x32",
+       "frame": 5,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.78125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 12,
+       "anchor": {
+        "x": 0.53125,
+        "y": 0.78125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 13,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.78125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 14,
+       "anchor": {
+        "x": 0.53125,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_16x32",
+       "frame": 6,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 30,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 15,
+       "anchor": {
+        "x": 0.40625,
+        "y": 0.8125
+       }
+      }
+     ]
+    },
+    "hit": {
+     "frames": [
+      0
+     ],
+     "fps": 8,
+     "directions": 8,
+     "dirStride": 1,
+     "loop": false,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 31,
+       "anchor": {
+        "x": 0.58333,
+        "y": 0.84375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 32,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.84375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 33,
+       "anchor": {
+        "x": 0.375,
+        "y": 0.84375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 16,
+       "anchor": {
+        "x": 0.375,
+        "y": 0.78125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 34,
+       "anchor": {
+        "x": 0.375,
+        "y": 0.78125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 35,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 36,
+       "anchor": {
+        "x": 0.58333,
+        "y": 0.78125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 17,
+       "anchor": {
+        "x": 0.59375,
+        "y": 0.8125
+       }
+      }
+     ]
+    },
+    "death": {
+     "frames": [
+      0,
+      1
+     ],
+     "fps": 4,
+     "directions": 8,
+     "dirStride": 1,
+     "loop": false,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 37,
+       "anchor": {
+        "x": 0.54167,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_16x32",
+       "frame": 7,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.90625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 38,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 18,
+       "anchor": {
+        "x": 0.40625,
+        "y": 0.84375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 39,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_16x32",
+       "frame": 8,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.84375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 40,
+       "anchor": {
+        "x": 0.54167,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 19,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.84375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 36,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x40",
+       "frame": 1,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 37,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.725
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 20,
+       "anchor": {
+        "x": 0.46875,
+        "y": 0.78125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 21,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.78125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 41,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.78125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 22,
+       "anchor": {
+        "x": 0.46875,
+        "y": 0.78125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 23,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.8125
+       }
+      }
+     ]
+    },
+    "swim": {
+     "frames": [
+      0,
+      1
+     ],
+     "fps": 4,
+     "directions": 8,
+     "dirStride": 1,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_24x40",
+       "frame": 2,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.7
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x40",
+       "frame": 3,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.7
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 38,
+       "anchor": {
+        "x": 0.46875,
+        "y": 0.7
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 39,
+       "anchor": {
+        "x": 0.4375,
+        "y": 0.675
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 24,
+       "anchor": {
+        "x": 0.46875,
+        "y": 0.71875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 42,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.71875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 43,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.71875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x40",
+       "frame": 40,
+       "anchor": {
+        "x": 0.53125,
+        "y": 0.675
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 44,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.71875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 45,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.75
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 46,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.71875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 25,
+       "anchor": {
+        "x": 0.46875,
+        "y": 0.71875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 47,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.71875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 48,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.71875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 49,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.71875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 26,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.71875
+       }
+      }
+     ]
+    },
+    "run": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 12,
+     "directions": 8,
+     "dirStride": 1,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 6,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 7,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 8,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 2,
+       "anchor": {
+        "x": 0.4375,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 9,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.78125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 10,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.78125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 11,
+       "anchor": {
+        "x": 0.54167,
+        "y": 0.78125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 3,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.78125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 12,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.84375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_16x40",
+       "frame": 0,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.775
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 13,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.84375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 4,
+       "anchor": {
+        "x": 0.46875,
+        "y": 0.84375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 14,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_16x32",
+       "frame": 0,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 15,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.8125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 5,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.84375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 16,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.90625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_16x32",
+       "frame": 1,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.90625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 17,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.90625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 6,
+       "anchor": {
+        "x": 0.46875,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 18,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_16x32",
+       "frame": 2,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 19,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 7,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 20,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.90625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_16x32",
+       "frame": 3,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.9375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x40",
+       "frame": 0,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.825
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 8,
+       "anchor": {
+        "x": 0.46875,
+        "y": 0.90625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 21,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_16x32",
+       "frame": 4,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.90625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 22,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 9,
+       "anchor": {
+        "x": 0.53125,
+        "y": 0.90625
+       }
+      }
+     ]
+    }
+   }
+  },
+  {
+   "key": "animal_snake",
+   "category": "critter",
+   "atlas": "nature_critters_b_32x24",
+   "anchor": {
+    "x": 0.59375,
+    "y": 0.625
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 2,
+     "directions": 8,
+     "dirStride": 1,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 0,
+       "anchor": {
+        "x": 0.59375,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x24",
+       "frame": 0,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.66667
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 1,
+       "anchor": {
+        "x": 0.4375,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x24",
+       "frame": 0,
+       "anchor": {
+        "x": 0.4,
+        "y": 0.58333
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 2,
+       "anchor": {
+        "x": 0.375,
+        "y": 0.58333
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 50,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.53125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 3,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.54167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x24",
+       "frame": 1,
+       "anchor": {
+        "x": 0.6,
+        "y": 0.58333
+       }
+      }
+     ]
+    },
+    "walk": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 8,
+     "directions": 8,
+     "dirStride": 1,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 4,
+       "anchor": {
+        "x": 0.59375,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x24",
+       "frame": 1,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 5,
+       "anchor": {
+        "x": 0.4375,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x24",
+       "frame": 2,
+       "anchor": {
+        "x": 0.4,
+        "y": 0.54167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 6,
+       "anchor": {
+        "x": 0.40625,
+        "y": 0.54167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x24",
+       "frame": 2,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.5
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 7,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.54167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x16",
+       "frame": 0,
+       "anchor": {
+        "x": 0.6,
+        "y": 0.5625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 8,
+       "anchor": {
+        "x": 0.59375,
+        "y": 0.58333
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x24",
+       "frame": 3,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.66667
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 9,
+       "anchor": {
+        "x": 0.4375,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x16",
+       "frame": 1,
+       "anchor": {
+        "x": 0.4,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 10,
+       "anchor": {
+        "x": 0.375,
+        "y": 0.54167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x24",
+       "frame": 4,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.54167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 11,
+       "anchor": {
+        "x": 0.53125,
+        "y": 0.54167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x16",
+       "frame": 2,
+       "anchor": {
+        "x": 0.6,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 12,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x24",
+       "frame": 5,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 13,
+       "anchor": {
+        "x": 0.375,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x16",
+       "frame": 3,
+       "anchor": {
+        "x": 0.4,
+        "y": 0.5625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 14,
+       "anchor": {
+        "x": 0.4375,
+        "y": 0.5
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x24",
+       "frame": 6,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.5
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 15,
+       "anchor": {
+        "x": 0.59375,
+        "y": 0.54167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x24",
+       "frame": 3,
+       "anchor": {
+        "x": 0.6,
+        "y": 0.54167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 16,
+       "anchor": {
+        "x": 0.53125,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x24",
+       "frame": 7,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.66667
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 17,
+       "anchor": {
+        "x": 0.375,
+        "y": 0.58333
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x16",
+       "frame": 4,
+       "anchor": {
+        "x": 0.4,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 18,
+       "anchor": {
+        "x": 0.40625,
+        "y": 0.54167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x24",
+       "frame": 8,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.5
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 19,
+       "anchor": {
+        "x": 0.59375,
+        "y": 0.54167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x16",
+       "frame": 5,
+       "anchor": {
+        "x": 0.6,
+        "y": 0.5625
+       }
+      }
+     ]
+    },
+    "attack": {
+     "frames": [
+      0,
+      1
+     ],
+     "fps": 8,
+     "directions": 8,
+     "dirStride": 1,
+     "loop": false,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 20,
+       "anchor": {
+        "x": 0.59375,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x24",
+       "frame": 9,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.66667
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 21,
+       "anchor": {
+        "x": 0.40625,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x24",
+       "frame": 4,
+       "anchor": {
+        "x": 0.4,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 22,
+       "anchor": {
+        "x": 0.375,
+        "y": 0.58333
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 51,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.53125
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 23,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.54167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x24",
+       "frame": 5,
+       "anchor": {
+        "x": 0.6,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 24,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x24",
+       "frame": 10,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.66667
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x24",
+       "frame": 6,
+       "anchor": {
+        "x": 0.475,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x24",
+       "frame": 0,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.66667
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 27,
+       "anchor": {
+        "x": 0.4375,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 52,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.59375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x32",
+       "frame": 28,
+       "anchor": {
+        "x": 0.53125,
+        "y": 0.59375
+       }
+      },
+      {
+       "atlas": "nature_critters_b_48x24",
+       "frame": 1,
+       "anchor": {
+        "x": 0.52083,
+        "y": 0.66667
+       }
+      }
+     ]
+    },
+    "hit": {
+     "frames": [
+      0
+     ],
+     "fps": 8,
+     "directions": 8,
+     "dirStride": 1,
+     "loop": false,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_32x16",
+       "frame": 0,
+       "anchor": {
+        "x": 0.59375,
+        "y": 0.6875
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x24",
+       "frame": 11,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.66667
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 25,
+       "anchor": {
+        "x": 0.4375,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x24",
+       "frame": 7,
+       "anchor": {
+        "x": 0.4,
+        "y": 0.58333
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 26,
+       "anchor": {
+        "x": 0.375,
+        "y": 0.58333
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x24",
+       "frame": 12,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.54167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 27,
+       "anchor": {
+        "x": 0.53125,
+        "y": 0.54167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x16",
+       "frame": 6,
+       "anchor": {
+        "x": 0.6,
+        "y": 0.625
+       }
+      }
+     ]
+    },
+    "death": {
+     "frames": [
+      0,
+      1
+     ],
+     "fps": 4,
+     "directions": 8,
+     "dirStride": 1,
+     "loop": false,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 28,
+       "anchor": {
+        "x": 0.59375,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x24",
+       "frame": 13,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.66667
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 29,
+       "anchor": {
+        "x": 0.4375,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x24",
+       "frame": 8,
+       "anchor": {
+        "x": 0.375,
+        "y": 0.54167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 30,
+       "anchor": {
+        "x": 0.40625,
+        "y": 0.54167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x24",
+       "frame": 14,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.5
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 31,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.5
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x16",
+       "frame": 7,
+       "anchor": {
+        "x": 0.6,
+        "y": 0.5625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 32,
+       "anchor": {
+        "x": 0.53125,
+        "y": 0.58333
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x24",
+       "frame": 15,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 33,
+       "anchor": {
+        "x": 0.40625,
+        "y": 0.58333
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x24",
+       "frame": 9,
+       "anchor": {
+        "x": 0.4,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 34,
+       "anchor": {
+        "x": 0.40625,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x32",
+       "frame": 53,
+       "anchor": {
+        "x": 0.41667,
+        "y": 0.5625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 35,
+       "anchor": {
+        "x": 0.53125,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x24",
+       "frame": 10,
+       "anchor": {
+        "x": 0.575,
+        "y": 0.625
+       }
+      }
+     ]
+    },
+    "swim": {
+     "frames": [
+      0,
+      1
+     ],
+     "fps": 4,
+     "directions": 8,
+     "dirStride": 1,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_40x24",
+       "frame": 11,
+       "anchor": {
+        "x": 0.575,
+        "y": 0.5
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x24",
+       "frame": 12,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.58333
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x24",
+       "frame": 13,
+       "anchor": {
+        "x": 0.425,
+        "y": 0.5
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x24",
+       "frame": 14,
+       "anchor": {
+        "x": 0.4,
+        "y": 0.5
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x24",
+       "frame": 15,
+       "anchor": {
+        "x": 0.425,
+        "y": 0.5
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x24",
+       "frame": 16,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.5
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x24",
+       "frame": 17,
+       "anchor": {
+        "x": 0.575,
+        "y": 0.5
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x24",
+       "frame": 18,
+       "anchor": {
+        "x": 0.6,
+        "y": 0.5
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x24",
+       "frame": 19,
+       "anchor": {
+        "x": 0.575,
+        "y": 0.5
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x24",
+       "frame": 20,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.54167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x24",
+       "frame": 21,
+       "anchor": {
+        "x": 0.425,
+        "y": 0.5
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x24",
+       "frame": 22,
+       "anchor": {
+        "x": 0.4,
+        "y": 0.5
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x24",
+       "frame": 23,
+       "anchor": {
+        "x": 0.425,
+        "y": 0.5
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x24",
+       "frame": 24,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.5
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x24",
+       "frame": 25,
+       "anchor": {
+        "x": 0.575,
+        "y": 0.5
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x24",
+       "frame": 26,
+       "anchor": {
+        "x": 0.6,
+        "y": 0.5
+       }
+      }
+     ]
+    },
+    "run": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 12,
+     "directions": 8,
+     "dirStride": 1,
+     "dirFrames": [
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 4,
+       "anchor": {
+        "x": 0.59375,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x24",
+       "frame": 1,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 5,
+       "anchor": {
+        "x": 0.4375,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x24",
+       "frame": 2,
+       "anchor": {
+        "x": 0.4,
+        "y": 0.54167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 6,
+       "anchor": {
+        "x": 0.40625,
+        "y": 0.54167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x24",
+       "frame": 2,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.5
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 7,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.54167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x16",
+       "frame": 0,
+       "anchor": {
+        "x": 0.6,
+        "y": 0.5625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 8,
+       "anchor": {
+        "x": 0.59375,
+        "y": 0.58333
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x24",
+       "frame": 3,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.66667
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 9,
+       "anchor": {
+        "x": 0.4375,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x16",
+       "frame": 1,
+       "anchor": {
+        "x": 0.4,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 10,
+       "anchor": {
+        "x": 0.375,
+        "y": 0.54167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x24",
+       "frame": 4,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.54167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 11,
+       "anchor": {
+        "x": 0.53125,
+        "y": 0.54167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x16",
+       "frame": 2,
+       "anchor": {
+        "x": 0.6,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 12,
+       "anchor": {
+        "x": 0.5625,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x24",
+       "frame": 5,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 13,
+       "anchor": {
+        "x": 0.375,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x16",
+       "frame": 3,
+       "anchor": {
+        "x": 0.4,
+        "y": 0.5625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 14,
+       "anchor": {
+        "x": 0.4375,
+        "y": 0.5
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x24",
+       "frame": 6,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.5
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 15,
+       "anchor": {
+        "x": 0.59375,
+        "y": 0.54167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x24",
+       "frame": 3,
+       "anchor": {
+        "x": 0.6,
+        "y": 0.54167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 16,
+       "anchor": {
+        "x": 0.53125,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x24",
+       "frame": 7,
+       "anchor": {
+        "x": 0.5,
+        "y": 0.66667
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 17,
+       "anchor": {
+        "x": 0.375,
+        "y": 0.58333
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x16",
+       "frame": 4,
+       "anchor": {
+        "x": 0.4,
+        "y": 0.625
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 18,
+       "anchor": {
+        "x": 0.40625,
+        "y": 0.54167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_24x24",
+       "frame": 8,
+       "anchor": {
+        "x": 0.45833,
+        "y": 0.5
+       }
+      },
+      {
+       "atlas": "nature_critters_b_32x24",
+       "frame": 19,
+       "anchor": {
+        "x": 0.59375,
+        "y": 0.54167
+       }
+      },
+      {
+       "atlas": "nature_critters_b_40x16",
+       "frame": 5,
+       "anchor": {
+        "x": 0.6,
+        "y": 0.5625
+       }
+      }
+     ]
+    }
+   }
+  },
+  {
+   "key": "raw_venison",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "cooked_venison",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "raw_poultry",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "cooked_poultry",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "raw_small_game",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "cooked_small_game",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      5
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "raw_prime_cut",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      6
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "cooked_prime_cut",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      7
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "wheat_seeds",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "corn_seeds",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      9
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "carrot_seeds",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      10
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "tomato_seeds",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      11
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "pumpkin_seeds",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "squash_seeds",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      13
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "beans_seeds",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      14
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "cabbage_seeds",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      15
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "onion_seeds",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "cotton_seeds",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      17
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "flax_seeds",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      18
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "hemp_seeds",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      19
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "herbs_seeds",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      20
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "yarrow_seeds",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      21
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ginseng_seeds",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      22
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "aloe_seeds",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      23
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "blueberry_seeds",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      24
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "raspberry_seeds",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      25
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "blackberry_seeds",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      26
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "strawberry_seeds",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      27
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "seed_potato",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      28
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "garlic_clove",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      29
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "mushroom_spores",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      30
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "oak_sapling",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      31
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "birch_sapling",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      32
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "maple_sapling",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      33
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "willow_sapling",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      34
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "palm_sapling",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      35
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "apple_sapling",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      36
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "pear_sapling",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      37
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "cherry_sapling",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      38
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "orange_sapling",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      39
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "peach_sapling",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      40
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "milk",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      41
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "tallow",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      42
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "antler",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      43
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "wool",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      44
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "snake_skin",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      45
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bone_meal",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      46
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "tallow_candle",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      47
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bone_needle",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      48
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bone_knife",
+   "category": "equipment",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      49
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bone_axe",
+   "category": "equipment",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      50
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "antler_pickaxe",
+   "category": "equipment",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      51
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bone_arrow",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      52
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "wool_cloth",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      53
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "leather_cap",
+   "category": "equipment",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      54
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "leather_jacket",
+   "category": "equipment",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      55
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "leather_trousers",
+   "category": "equipment",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      56
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "wool_sweater",
+   "category": "equipment",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      57
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "wool_hat",
+   "category": "equipment",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      58
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "fur_vest",
+   "category": "equipment",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      59
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "snakeskin_boots",
+   "category": "equipment",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      60
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "hoe",
+   "category": "equipment",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      61
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "watering_can",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      62
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "fertilizer",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      63
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "wheat",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      64
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "tomato",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      65
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "squash",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      66
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "beans",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      67
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "cabbage",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      68
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "onion",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      69
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "garlic",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      70
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "hemp",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      71
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "yarrow",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      72
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ginseng",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      73
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "aloe",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      74
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "blueberry",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      75
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "raspberry",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      76
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "blackberry",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      77
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "strawberry",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      78
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "pear",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      79
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "cherry",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      80
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "orange",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      81
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "peach",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      82
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "birch_bark",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      83
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "maple_sap",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      84
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "willow_bark",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      85
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "palm_frond",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      86
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "coconut",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      87
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "maple_syrup",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      88
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "pine_cone",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      89
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "vegetable_stew",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      90
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "pumpkin_pie",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      91
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "fruit_salad",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      92
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "baked_beans",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      93
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "roasted_garlic",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      94
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "willow_tea",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      95
+     ],
+     "fps": 1
     }
    }
   }

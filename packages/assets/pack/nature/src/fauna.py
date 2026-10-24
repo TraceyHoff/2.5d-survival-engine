@@ -117,7 +117,7 @@ def snake(key, d, anim, fi):
     cv = Canvas(W, H, seed=301 + fi * 3 + d * 17 + ord(anim[0])); rig = Rig(cv, DIR8_PHI[d], W / 2, feet, 1.0)
     ph = {"idle": 0, "walk": fi * math.pi / 2, "attack": 0, "hit": 0.5, "death": 0, "swim": fi * math.pi}[anim]
     flat = anim == "death" and fi == 1; n = 14; Lb = 22.0
-    raise_ = {"attack": [3.5, 5.5][fi], "idle": 3.0, "hit": 2.0}.get(anim, 1.2 if not flat else 0.6)
+    raise_ = {"attack": [3.5, 5.5][min(fi, 1)], "idle": 3.0, "hit": 2.0}.get(anim, 1.2 if not flat else 0.6)
     lunge = 3.5 if anim == "attack" and fi == 1 else (-1.5 if anim == "attack" else 0)
     pts = []
     for i in range(n):
