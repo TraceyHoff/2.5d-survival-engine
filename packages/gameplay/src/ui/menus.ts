@@ -30,7 +30,7 @@ const nameOf = (c: MenuCtx, playerId: number): string => (playerId ? c.names?.ge
 const withNames = (w: World, l: readonly ItemCount[], who?: Entity) => l.map((i) => ({ item: i.item, name: itemName(w, i.item), count: i.count, have: who !== undefined ? countItem(w, who, i.item) : 0 }));
 
 // ---- inventory --------------------------------------------------------------------------------------
-export interface InventorySlotView { slot: number; item: number; name: string; count: number; durability: number; crafterId: number; crafterName: string; tooltip: string }
+export interface InventorySlotView { slot: number; item: number; /** manifest icon key (ItemDef.spriteKey: `sprite` override, else item key) */ icon: string; name: string; count: number; durability: number; crafterId: number; crafterName: string; tooltip: string }
 export function inventoryView(c: MenuCtx): InventorySlotView[] {
   const w = c.world; const out: InventorySlotView[] = [];
   for (const s of listSlots(w, c.player)) {
@@ -39,7 +39,7 @@ export function inventoryView(c: MenuCtx): InventorySlotView[] {
     const crafterName = info?.crafterName || nameOf(c, s.crafterId);
     const name = itemName(w, s.item);
     const tip = [`${name} ×${s.count}`, s.durability && gameplayDefs(w).items.get(s.item)?.maxDurability ? `Durability ${s.durability}/${gameplayDefs(w).items.get(s.item)!.maxDurability}` : "", crafterName ? `Crafted by ${crafterName}` : ""].filter(Boolean).join("\n");
-    out.push({ slot: s.slot, item: s.item, name, count: s.count, durability: s.durability, crafterId: s.crafterId, crafterName, tooltip: tip });
+    out.push({ slot: s.slot, item: s.item, icon: gameplayDefs(w).items.get(s.item)?.spriteKey ?? "", name, count: s.count, durability: s.durability, crafterId: s.crafterId, crafterName, tooltip: tip });
   }
   return out;
 }

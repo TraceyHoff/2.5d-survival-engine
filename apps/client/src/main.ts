@@ -93,7 +93,7 @@ let chatWired: unknown;
 /** Hook NetClient.chat (core ChatServer, already run by the server) into the chat panel once per client. */
 function wireChat(): void {
   const c = session.client; if (!c || chatWired === c || !menus) return; chatWired = c; social.reset();
-  c.chat.on((m: ChatDelivered) => { const who = m.fromPlayer ? c.names.display(m.fromPlayer) : ""; menus?.pushChat(`[${CHAT_TAG[m.channel] ?? "?"}] ${who ? `${who}: ` : ""}${m.text}`); });
+  c.chat.on((m: ChatDelivered) => { const who = m.fromPlayer ? c.names.display(m.fromPlayer) : ""; menus?.pushChat(`[${CHAT_TAG[m.channel] ?? "?"}] ${who ? `${who}: ` : ""}${m.text}`, m.channel); });
   // owner-scoped social replication (Netcode SocialSync) → clan roster, invite lists, whisper picker
   c.onEvent(ClanRoster, (e) => social.onRoster(e)); c.onEvent(ClanRosterMember, (e) => social.onMember(e)); c.onEvent(OnlinePlayer, (e) => social.onOnline(e));
   c.chat.onReject((ch, reason) => menus?.pushChat(`(${CHAT_TAG[ch] ?? "?"} message rejected: ${reason})`));

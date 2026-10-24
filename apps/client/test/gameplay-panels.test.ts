@@ -4,6 +4,7 @@ import { installPermissions, Membership, PlayerId, World, type Entity } from "@e
 import * as G from "@engine/gameplay";
 import { GameMenus } from "../src/game-menus.js";
 import { GAMEPLAY_PANELS } from "../src/gameplay-panels.js";
+import { morph } from "../src/ui-diff.js";
 
 const key = (k: string, code = k): void => { (document.activeElement ?? document.body).dispatchEvent(new KeyboardEvent("keydown", { key: k, code, bubbles: true, cancelable: true })); };
 const d = G.defaultDefs(); const id = (k: string): number => d.itemId(k);
@@ -35,7 +36,7 @@ describe("gameplay panels (ADR-095 shell)", () => {
   });
   test("inventory tooltip names the crafter", () => {
     const { w, me, menus } = setup(); G.addItem(w, me, id("wood"), 5, 7); menus.open("inventory");
-    expect(q("[data-role=slot]").title).toContain("Crafted by Ada"); menus.destroy();
+    expect(q("[data-role=slot]").dataset["tip"]).toContain("Crafted by Ada"); menus.destroy();
   });
   test("crafting: Enter on a recipe sends queueCraft with the chosen count; queue jobs cancel", () => {
     const { w, me, sent, menus } = setup(); G.addItem(w, me, id("wood"), 20); G.addItem(w, me, id("stone"), 10); G.addItem(w, me, id("fiber"), 10);
@@ -104,4 +105,35 @@ describe("gameplay panels (ADR-095 shell)", () => {
     expect(G.clanView({ world: w, player: me, names: new Map() }).invite).toBeTruthy();
     menus.open("clan"); q("[data-key=clan-dismiss]").click(); expect(sent.at(-1)?.cmd).toBe(G.ClanDeclineCmd); menus.destroy();
   });
+  test("styling hooks: data-item/data-icon, job --p, data-unlocked, data-rank, data-chan, data-tip (no title=)", () => {
+    const dir = new G.SocialDirectory(); const { w, me, mk, menus } = setup(dir);
+    G.addItem(w, me, id("wood"), 5, 7); G.addItem(w, me, id("reeds"), 3); G.addItem(w, me, id("stone"), 10); G.addItem(w, me, id("fiber"), 10);
+    menus.open("inventory");
+    const slots = Array.from(document.querySelectorAll<HTMLElement>("[data-role=slot]"));
+    const reeds = slots.find((s) => s.dataset["item"] === String(id("reeds")))!; expect(reeds.dataset["icon"]).toBe("item_reeds");
+    expect(slots.find((s) => s.dataset["item"] === String(id("wood")))!.dataset["icon"]).toBe("wood");
+    menus.nav.closeAll();
+    G.addItem(w, me, id("wood"), 20); G.enqueueCraft(w, me, d.recipeId("stone_axe"), 1); menus.open("crafting");
+    const job = q("[data-role=job]"); expect(job.getAttribute("style")).toMatch(/^--p:(0|1)?\.\d{3}$/);
+    menus.nav.closeAll(); menus.open("character");
+    const unlocks = Array.from(document.querySelectorAll<HTMLElement>("[data-role=unlock]")); expect(unlocks.length).toBeGreaterThan(0);
+    for (const u of unlocks) expect(u.hasAttribute("data-unlocked")).toBe(u.textContent!.startsWith("✓"));
+    menus.nav.closeAll();
+    mk(9, "Bo", 2); dir.onRoster({ clan: 5, memberMask: 0, officerMask: 0, size: 3 }); dir.onMember({ clan: 5, player: 9, role: 2, online: 1 }); dir.onMember({ clan: 5, player: 12, role: 3, online: 0 });
+    w.set(me, Membership, { partyId: 0, clanId: 5 }); menus.open("clan");
+    expect(q("[data-role=member][data-key='9']").dataset["rank"]).toBe("officer"); expect(q("[data-role=member][data-key='12']").dataset["rank"]).toBe("leader");
+    menus.nav.closeAll();
+    for (const p of GAMEPLAY_PANELS) { menus.open(p); expect(document.querySelectorAll("[title]").length, p).toBe(0); menus.nav.closeAll(); }
+    expect(document.querySelectorAll("[data-tip]").length).toBeGreaterThan(0);
+    menus.pushChat("[Clan] Bo: hi", 3); menus.pushChat("(local note)"); menus.open("chat");
+    const lines = Array.from(q("[data-role=chat-log]").children) as HTMLElement[]; expect(lines.map((l) => l.dataset["chan"])).toEqual(["clan", "system"]);
+    menus.destroy();
+  });
+  test("morph keeps the node and updates the job --p style + data hooks", () => {
+    const a = document.createElement("div"); a.innerHTML = `<button data-key="job-0" data-role="job" style="--p:0.100">x</button>`;
+    const b = document.createElement("div"); b.innerHTML = `<button data-key="job-0" data-role="job" style="--p:0.600" data-tip="t">x</button>`;
+    const before = a.firstElementChild; morph(a, b);
+    expect(a.firstElementChild).toBe(before); expect(before!.getAttribute("style")).toBe("--p:0.600"); expect(before!.getAttribute("data-tip")).toBe("t");
+  });
+
 });

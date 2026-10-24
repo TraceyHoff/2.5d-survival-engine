@@ -12,6 +12,8 @@ import { morph } from "./ui-diff.js";
 import { GAMEPLAY_PANELS, gameplayBody, type GameplayPanel, type GameplaySource } from "./gameplay-panels.js";
 import { onlineTargets } from "@engine/gameplay";
 
+/** `data-chan` value per @engine/net ChatChannel number (Global 0 … System 6); omitted/unknown = "system". */
+export const CHAT_CHAN_NAMES: Readonly<Record<number, string>> = { 0: "global", 1: "local", 2: "party", 3: "clan", 4: "trade", 5: "whisper", 6: "system" };
 export interface MenuDef { id: string; title: string; icon: string; hotkeys: string[]; bar?: boolean; text: string }
 export const GAME_MENUS: readonly MenuDef[] = [
   { id: "inventory", title: "Inventory", icon: "🎒", hotkeys: ["KeyI", "Tab"], bar: true, text: "Your items and equipment." },
@@ -63,7 +65,7 @@ export interface GameMenusOptions {
 type UINavOptions = ConstructorParameters<typeof UINav>[0];
 
 export class GameMenus {
-  readonly nav: UINav; readonly bar: HTMLElement | undefined; private chatLog: string[] = []; private chatChannel = 1; private whisperTo = 0; private statusLine = "";
+  readonly nav: UINav; readonly bar: HTMLElement | undefined; private chatLog: { text: string; chan: string }[] = []; private chatChannel = 1; private whisperTo = 0; private statusLine = "";
   constructor(private readonly o: GameMenusOptions) {
     if (!document.getElementById("gm-style")) { const st = document.createElement("style"); st.id = "gm-style"; st.textContent = CSS; document.head.append(st); }
     const hotkeys: Record<string, () => void> = {};
@@ -71,7 +73,7 @@ export class GameMenus {
     this.nav = new UINav({ root: o.root, onPause: () => this.pause(), ...(o.input ? { input: o.input } : {}), hotkeys, ...(o.getGamepads ? { getGamepads: o.getGamepads } : {}), ...(o.pollGamepads !== undefined ? { pollGamepads: o.pollGamepads } : {}) });
     if (o.showMenuBar !== false) {
       const bar = document.createElement("nav"); bar.id = "game-menubar"; bar.setAttribute("aria-label", "Game menus");
-      const add = (id: string, icon: string, title: string, fn: () => void): void => { const b = document.createElement("button"); b.type = "button"; b.dataset["open"] = id; b.title = title; b.setAttribute("aria-label", title); b.textContent = icon; b.addEventListener("click", (e) => { e.stopPropagation(); fn(); }); bar.append(b); };
+      const add = (id: string, icon: string, title: string, fn: () => void): void => { const b = document.createElement("button"); b.type = "button"; b.dataset["open"] = id; b.dataset["tip"] = title; b.setAttribute("aria-label", title); b.textContent = icon; b.addEventListener("click", (e) => { e.stopPropagation(); fn(); }); bar.append(b); };
       for (const m of GAME_MENUS) if (m.bar) add(m.id, m.icon, m.title, () => this.toggle(m.id));
       add("pause", "☰", "Menu", () => this.pause());
       o.root.append(bar); this.bar = bar;
@@ -120,8 +122,9 @@ export class GameMenus {
   openStall(stall: number): void { this.stallTarget = stall; if (this.nav.top === "trade") this.refresh(); else this.nav.open("trade", this.build("trade")); }
   stallTarget: number | undefined;
   /** Append an incoming chat line (from NetClient.chat). */
-  pushChat(line: string): void {
-    this.chatLog.push(line); if (this.chatLog.length > 200) this.chatLog.splice(0, this.chatLog.length - 200);
+  /** `channel`: ChatChannel number (1 global … 5 whisper) or omitted for client/system lines -> `data-chan`. */
+  pushChat(line: string, channel?: number): void {
+    this.chatLog.push({ text: line, chan: (channel === undefined ? undefined : CHAT_CHAN_NAMES[channel]) ?? "system" }); if (this.chatLog.length > 200) this.chatLog.splice(0, this.chatLog.length - 200);
     const log = this.o.root.querySelector<HTMLElement>("[data-menu=chat] [data-role=chat-log]"); if (log) { log.append(this.para(line)); log.scrollTop = log.scrollHeight; }
   }
   toggle(id: string): void { if (id === "trade") this.stallTarget = undefined; this.nav.toggle(id, () => this.build(id)); }
@@ -145,10 +148,10 @@ export class GameMenus {
   }
   private chatPanel(): HTMLElement {
     const log = document.createElement("div"); log.dataset["role"] = "chat-log"; log.style.cssText = "max-height:30vh;overflow:auto;font-size:14px";
-    for (const l of this.chatLog.slice(-50)) log.append(this.para(l));
+    for (const l of this.chatLog.slice(-50)) { const p = this.para(l.text); p.dataset["chan"] = l.chan; log.append(p); }
     const input = document.createElement("input"); input.dataset["role"] = "chat-input"; input.placeholder = "Say something…"; input.maxLength = 200; input.setAttribute("aria-label", "Chat message"); input.autofocus = true;
     const send = (): void => { const t = input.value.trim(); if (!t) return; if (this.chatChannel === 5 && !this.whisperTo) { this.pushChat("(pick who to whisper)"); return; }
-      if (this.o.onChat) this.o.onChat(t, this.chatChannel, this.chatChannel === 5 ? this.whisperTo : undefined); else this.pushChat(t); input.value = ""; };
+      if (this.o.onChat) this.o.onChat(t, this.chatChannel, this.chatChannel === 5 ? this.whisperTo : undefined); else this.pushChat(t, this.chatChannel); input.value = ""; };
     /** Whisper picker: online directory (gameplay.onlinePlayer) + nearby players. */
     const picker = document.createElement("div"); picker.className = "gm-grid"; picker.dataset["role"] = "whisper-picker";
     const fillPicker = (): void => {

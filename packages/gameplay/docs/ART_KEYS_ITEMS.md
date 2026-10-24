@@ -1,13 +1,13 @@
 # SurVivaZ — art keys for the content expansion
 
-Every new item icon, gatherable and resource-node key added by the content expansion. The manifest key is the data key (Art & Assets owns the sprites; no art is defined in gameplay data). Each line has a one-line brief for the artist.
+Every new item icon, gatherable and resource-node key added by the content expansion. The manifest key is the data key unless the item sets a `sprite` override (ItemDef.spriteKey; used where an item key collides with a resource-node key: `reeds` → `item_reeds`, `flax` → `item_flax`; item ids/keys unchanged) (Art & Assets owns the sprites; no art is defined in gameplay data). Each line has a one-line brief for the artist.
 
 ## Raw Resource (18)
 
 | key | kind | artist brief |
 |---|---|---|
-| `reeds` | item icon | bundle of green river reeds |
-| `flax` | item icon | stalks of blue-flowered flax |
+| `item_reeds` | item icon (item `reeds`; `sprite` override, the bare key is the resource node) | bundle of green river reeds |
+| `item_flax` | item icon (item `flax`; `sprite` override, the bare key is the resource node) | stalks of blue-flowered flax |
 | `cotton` | item icon | fluffy white cotton bolls |
 | `herbs` | item icon | sprigs of green healing herbs |
 | `beeswax` | item icon | yellow block of beeswax |

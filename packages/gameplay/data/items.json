@@ -657,6 +657,7 @@
     },
     {
       "key": "reeds",
+      "sprite": "item_reeds",
       "name": "Reeds",
       "category": "resource",
       "maxStack": 99,
@@ -664,6 +665,7 @@
     },
     {
       "key": "flax",
+      "sprite": "item_flax",
       "name": "Flax",
       "category": "resource",
       "maxStack": 99,
