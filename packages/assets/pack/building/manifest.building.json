@@ -37,13 +37,22 @@
    "columns": 24,
    "rows": 11,
    "ktx2": "atlases/building_t4.ktx2"
+  },
+  {
+   "key": "building_fx",
+   "image": "atlases/building_fx.png",
+   "frameW": 84,
+   "frameH": 96,
+   "columns": 3,
+   "rows": 1,
+   "ktx2": "atlases/building_fx.ktx2"
   }
  ],
  "sprites": [
   {
    "key": "bld_crack",
    "category": "vfx",
-   "atlas": "building_t1",
+   "atlas": "building_fx",
    "anchor": {
     "x": 0.5,
     "y": 0.75
@@ -51,19 +60,19 @@
    "animations": {
     "stage1": {
      "frames": [
-      256
+      0
      ],
      "fps": 1
     },
     "stage2": {
      "frames": [
-      257
+      1
      ],
      "fps": 1
     },
     "stage3": {
      "frames": [
-      258
+      2
      ],
      "fps": 1
     }

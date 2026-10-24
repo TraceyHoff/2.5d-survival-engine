@@ -8,13 +8,13 @@ import { fileURLToPath } from "node:url";
 const m = JSON.parse(readFileSync(fileURLToPath(new URL("../../assets/pack/customization/manifest.customization.json", import.meta.url)), "utf8"));
 const A = new Map<string, { frameW: number; frameH: number }>(m.atlases.map((a: { key: string; frameW: number; frameH: number }) => [a.key, a]));
 describe("trimmed character cells", () => {
-  it("pivots land on whole pixels inside every cell; bodies are 42x58 with feet at y=53", () => {
+  it("pivots land on whole pixels inside every cell; bodies are 44x60 (4px-aligned, ART_body_4px_packing.md) with feet at y=54", () => {
     for (const s of m.sprites as { key: string; atlas: string; anchor: { x: number; y: number } }[]) {
       const a = A.get(s.atlas)!; const ax = s.anchor.x * a.frameW, ay = s.anchor.y * a.frameH;
       expect(Math.abs(ax - Math.round(ax)), s.key).toBeLessThan(0.01); expect(Math.abs(ay - Math.round(ay)), s.key).toBeLessThan(0.01);
       expect(ay, s.key).toBeLessThanOrEqual(a.frameH); expect(ax, s.key).toBeLessThanOrEqual(a.frameW);
     }
     for (const k of ["body_male", "body_female"]) { const s = m.sprites.find((x: { key: string }) => x.key === k); const a = A.get(s.atlas)!;
-      expect([a.frameW, a.frameH]).toEqual([42, 58]); expect(Math.round(s.anchor.y * a.frameH)).toBe(53); expect(s.animations.sit).toBeTruthy(); }
+      expect([a.frameW, a.frameH]).toEqual([44, 60]); expect(Math.round(s.anchor.y * a.frameH)).toBe(54); expect(s.animations.sit).toBeTruthy(); }
   });
 });

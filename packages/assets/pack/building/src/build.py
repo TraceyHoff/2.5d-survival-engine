@@ -52,15 +52,11 @@ if __name__ == '__main__':
         for k, v in PC.PIECES.items():
             for r in range(v[3]):
                 idx[(k, r)] = len(frames); frames += [im for im, _ in R[(t, k, r)]]
-        if t == 1: cbase = len(frames); frames += [crack(s) for s in (1, 2, 3)]
         rows = (len(frames) + COLS - 1) // COLS; page = Image.new('RGBA', (CW * COLS, CH * rows), (0, 0, 0, 0))
         for i, f in enumerate(frames): page.paste(f, ((i % COLS) * CW, (i // COLS) * CH))
         assert max(page.size) <= 2048
         akey = f'building_t{t}'; page.save(f'{OUT}/atlases/{akey}.png', optimize=True)
         man["atlases"].append({"key": akey, "image": f"atlases/{akey}.png", "frameW": CW, "frameH": CH, "columns": COLS, "rows": rows})
-        if t == 1:
-            man["sprites"].append({"key": "bld_crack", "category": "vfx", "atlas": akey, "anchor": anchor,
-                                   "animations": {f"stage{s}": {"frames": [cbase + s - 1], "fps": 1} for s in (1, 2, 3)}})
         def sprite(skey, piece, k):
             kind, fn, layer, nrows, tall, _ = PC.PIECES[k]
             rr = [[idx[(k, r)] + s for s in range(4)] for r in range(nrows)]
@@ -75,5 +71,13 @@ if __name__ == '__main__':
             if t == 1 and not v[5]: sprite(f"bld_{k}", k, k)       # new piece: bare key -> tier1 art
         for a, k in PC.ALIAS.items(): sprite(f"bld_{a}_t{t}", f"{a}@tier{t}", k)
         print(akey, page.size, len(frames), 'frames')
+    # Crack overlay on its own tiny always-resident page: building_t<N> pages are streamed per tier nearby (renderer
+    # isStreamedBuildingAtlas = /^building_t\d+$/), so the overlay must not live on one of them.
+    cp = Image.new('RGBA', (CW * 3, CH), (0, 0, 0, 0))
+    for i, s in enumerate((1, 2, 3)): cp.paste(crack(s), (i * CW, 0))
+    cp.save(f'{OUT}/atlases/building_fx.png', optimize=True)
+    man["atlases"].append({"key": "building_fx", "image": "atlases/building_fx.png", "frameW": CW, "frameH": CH, "columns": 3, "rows": 1})
+    man["sprites"].insert(0, {"key": "bld_crack", "category": "vfx", "atlas": "building_fx", "anchor": anchor,
+                              "animations": {f"stage{s}": {"frames": [s - 1], "fps": 1} for s in (1, 2, 3)}})
     p = f'{OUT}/manifest.building.json'; json.dump(man, open(p, 'w'), indent=1); open(p, 'a').write('\n')
     import pickle; pickle.dump({k: [im for im, _ in v] for k, v in R.items()}, open('/tmp/bld_frames.pkl', 'wb'))

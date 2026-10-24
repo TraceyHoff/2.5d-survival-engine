@@ -44,7 +44,7 @@ for k in slot:
     # keep the anchor inside the trimmed cell so it stays normalised within [0,1]
     ax = s["anchor"]["x"] * a["frameW"]; ay = s["anchor"]["y"] * a["frameH"]
     bb = [min(bb[0], math.floor(ax)), min(bb[1], math.floor(ay)), max(bb[2], math.ceil(ax)), max(bb[3], math.ceil(ay))]
-    info[k] = dict(bb=bb, n=max(U) + 1, a=a)
+    info[k] = dict(bb=bb, n=max(U) - min(U) + 1, lo=min(U), a=a)  # lo: re-runs over packed pages start mid-page
 def cap(bb):
     fw = bb[2] - bb[0] + 2 * PAD; fh = bb[3] - bb[1] + 2 * PAD
     return (MAX // fw) * (MAX // fh), fw, fh
@@ -74,6 +74,12 @@ for sl in sorted(groups):
         if len(b) < len(best): best = b
     out += [(sorted(mb), bb) for mb, bb in best]
 old = {info[k]["a"]["key"] for k in slot}
+# re-runnable over its own output (cz_pack_* in, cz_pack_* out): load every source layer before any page is overwritten
+for k in slot:
+    a = info[k]["a"]; img(a["image"])
+    for p in a.get("pages", []): img(p["image"])
+    if "tintmask" in a.get("masks", {}): img(a["masks"]["tintmask"])
+for im in cache.values(): im.load()
 newA = []; idx = collections.Counter()
 try:
     import oxipng
@@ -104,7 +110,7 @@ for members, ub in out:
         for k in members:
             a = info[k]["a"]; si = img(src(a))
             for f in used(S[k]):
-                x, y, _, _ = cell(a, f, sc); g = base + f
+                x, y, _, _ = cell(a, f, sc); g = base + f - info[k]["lo"]
                 piece = si.crop((x + wx0 * sc, y + wy0 * sc, x + (wx0 + fw) * sc, y + (wy0 + fh) * sc))  # out-of-cell area is transparent margin
                 # zero any pixels pulled from neighbouring cells (window may exceed the 48x80 cell by PAD)
                 m0 = Image.new("L", piece.size, 0); ox, oy = max(0, -wx0 * sc), max(0, -wy0 * sc)
@@ -122,12 +128,12 @@ for members, ub in out:
         ax = s["anchor"]["x"] * a["frameW"] - wx0; ay = s["anchor"]["y"] * a["frameH"] - wy0
         s["anchor"] = {"x": round(ax / fw, 6), "y": round(ay / fh, 6)}; s["atlas"] = key
         for an in s["animations"].values():
-            an.setdefault("dirStride", a["columns"]); an["frames"] = [f + base for f in an["frames"]]
+            an.setdefault("dirStride", a["columns"]); an["frames"] = [f - info[k]["lo"] + base for f in an["frames"]]
         base += info[k]["n"]
 m["atlases"] = [a for a in m["atlases"] if a["key"] not in old] + newA
 json.dump(m, open(mp, "w"), indent=1); open(mp, "a").write("\n")
 for o in old:
     for f in os.listdir(os.path.join(D, "atlases")):
-        if f.startswith(o + ".") or f.startswith(o + "@"): os.remove(os.path.join(D, "atlases", f))
+        if (f.startswith(o + ".") or f.startswith(o + "@")) and o not in {a["key"] for a in newA}: os.remove(os.path.join(D, "atlases", f))
 print(f"{len(old)} wearable atlases -> {len(newA)} packed atlases")
 for a in newA: print(" ", a["key"], f'{a["frameW"]}x{a["frameH"]}', f'{a["columns"]*a["frameW"]}x{a["rows"]*a["frameH"]}')
