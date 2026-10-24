@@ -1,0 +1,4659 @@
+{
+ "version": 1,
+ "name": "items",
+ "atlases": [
+  {
+   "key": "items_icons",
+   "image": "atlases/items_icons.png",
+   "frameW": 32,
+   "frameH": 32,
+   "columns": 16,
+   "rows": 12,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/items_icons@2x.png"
+    }
+   ]
+  },
+  {
+   "key": "items_nodes",
+   "image": "atlases/items_nodes.png",
+   "frameW": 64,
+   "frameH": 64,
+   "columns": 8,
+   "rows": 4,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/items_nodes@2x.png"
+    }
+   ]
+  },
+  {
+   "key": "items_held_a",
+   "image": "atlases/items_held_a.png",
+   "frameW": 48,
+   "frameH": 48,
+   "columns": 16,
+   "rows": 14,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/items_held_a@2x.png"
+    }
+   ]
+  },
+  {
+   "key": "items_held_b",
+   "image": "atlases/items_held_b.png",
+   "frameW": 48,
+   "frameH": 48,
+   "columns": 16,
+   "rows": 14,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/items_held_b@2x.png"
+    }
+   ]
+  }
+ ],
+ "sprites": [
+  {
+   "key": "cotton",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "beeswax",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "resin",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "salt",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "scrap_metal",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "saltpeter",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      5
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "sulfur",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      6
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "lead_ore",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      7
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "crude_oil",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "chromite_ore",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      9
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bone",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      10
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "sinew",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      11
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "animal_fat",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "feather",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      13
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "fur",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      14
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "honey",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      15
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "potato",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "corn",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      17
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "wild_onion",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      18
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "jerky",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      19
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "baked_potato",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      20
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "roasted_corn",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      21
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "roasted_mushroom",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      22
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "fried_egg",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      23
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "omelette",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      24
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "salted_fish",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      25
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "berry_pie",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      26
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "meat_pie",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      27
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "cornbread",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      28
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "honey_cake",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      29
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "potato_soup",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      30
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "fish_stew",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      31
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "trail_mix",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      32
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "canned_stew",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      33
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "canned_fish",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      34
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "canned_corn",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      35
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "herbal_tea",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      36
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "herbal_poultice",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      37
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "antiseptic",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      38
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "medkit",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      39
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "thread",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      40
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "linen",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      41
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "padded_cloth",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      42
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "waxed_cloth",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      43
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "hardened_leather",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      44
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "fur_pelt",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      45
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bowstring",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      46
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "glue",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      47
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "flour",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      48
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "gunpowder",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      49
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "fuse",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      50
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "lead_ingot",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      51
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "casings",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      52
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "iron_pipe",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      53
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "gun_barrel",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      54
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "spring",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      55
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "mechanism",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      56
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "chain_rings",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      57
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "glass_bottle",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      58
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "tin_can",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      59
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "lamp_oil",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      60
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "polymer_sheet",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      61
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "aramid_weave",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      62
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ceramic_plate",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      63
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "alloy_ingot",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      64
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "alloy_plate",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      65
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "salvaged_parts",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      66
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bronze_shovel",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      67
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bronze_knife",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      68
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "iron_shovel",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      69
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "iron_knife",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      70
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "steel_axe",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      71
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "steel_pickaxe",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      72
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "steel_shovel",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      73
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "steel_knife",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      74
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "alloy_axe",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      75
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "alloy_pickaxe",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      76
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "alloy_shovel",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      77
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "alloy_knife",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      78
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "straw_hat",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      79
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "linen_cap",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      80
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "rain_hood",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      81
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "fur_hat",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      82
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "linen_shirt",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      83
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "padded_jacket",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      84
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "fur_coat",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      85
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "raincoat",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      86
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "oilskin_coat",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      87
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "linen_trousers",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      88
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "padded_trousers",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      89
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "fur_leggings",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      90
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "waxed_trousers",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      91
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "reed_sandals",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      92
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "leather_boots",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      93
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "fur_boots",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      94
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "rubber_boots",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      95
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "cloth_gloves",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      96
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "leather_gloves",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      97
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "fur_mittens",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      98
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "fur_cloak",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      99
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "reed_satchel",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      100
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "leather_backpack",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      101
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "frame_pack",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      102
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "tactical_pack",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      103
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bone_helmet",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      104
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bone_cuirass",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      105
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bone_greaves",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      106
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bone_boots",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      107
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bone_gauntlets",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      108
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bronze_helmet",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      109
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bronze_cuirass",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      110
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bronze_greaves",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      111
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bronze_boots",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      112
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bronze_gauntlets",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      113
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "iron_helmet",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      114
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "iron_cuirass",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      115
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "iron_greaves",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      116
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "iron_boots",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      117
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "iron_gauntlets",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      118
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "steel_helmet",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      119
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "steel_cuirass",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      120
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "steel_greaves",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      121
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "steel_boots",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      122
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "steel_gauntlets",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      123
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "composite_helmet",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      124
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "composite_cuirass",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      125
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "composite_greaves",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      126
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "composite_boots",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      127
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "composite_gauntlets",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      128
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bronze_mace",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      129
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "iron_mace",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      130
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "steel_mace",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      131
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "alloy_warhammer",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      132
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "steel_sword",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      133
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "alloy_sword",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      134
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bone_dagger",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      135
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bronze_dagger",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      136
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "iron_dagger",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      137
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "steel_dagger",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      138
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "iron_machete",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      139
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "steel_machete",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      140
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "stone_maul",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      141
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "iron_sledgehammer",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      142
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "steel_sledgehammer",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      143
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "nail_bat",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      144
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "sling_stone",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      145
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "flint_arrow",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      146
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "iron_arrow",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      147
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "fire_arrow",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      148
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "iron_bolt",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      149
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "steel_bolt",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      150
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "musket_ball",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      151
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "pistol_round",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      152
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "rifle_round",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      153
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ap_rifle_round",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      154
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "shotgun_shell",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      155
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "slug_shell",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      156
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "incendiary_shell",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      157
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "sling",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      158
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "short_bow",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      159
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "recurve_bow",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      160
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "longbow",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      161
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "laminated_bow",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      162
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "compound_bow",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      163
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "light_crossbow",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      164
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "crossbow",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      165
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "steel_crossbow",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      166
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "flintlock_pistol",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      167
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "revolver",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      168
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "semi_auto_pistol",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      169
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "pipe_shotgun",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      170
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "pump_shotgun",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      171
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "hunting_rifle",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      172
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "marksman_rifle",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      173
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "auto_rifle",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      174
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bronze_spear",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      175
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "iron_spear",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      176
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "steel_spear",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      177
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bronze_throwing_axe",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      178
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "iron_throwing_axe",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      179
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "steel_throwing_axe",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      180
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bayonet_musket",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      181
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bayonet_rifle",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      182
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "bayonet_carbine",
+   "category": "equipment",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      183
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "molotov",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      184
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "incendiary_grenade",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      185
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "black_powder_bomb",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      186
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "pipe_bomb",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      187
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "grenade",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      188
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "satchel_charge",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      189
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "breaching_charge",
+   "category": "item",
+   "atlas": "items_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      190
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "reed_bed",
+   "category": "resource",
+   "atlas": "items_nodes",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "flax_patch",
+   "category": "resource",
+   "atlas": "items_nodes",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "cotton_bush",
+   "category": "resource",
+   "atlas": "items_nodes",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      5
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "herb_patch",
+   "category": "resource",
+   "atlas": "items_nodes",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      6
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      7
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "wild_garden",
+   "category": "resource",
+   "atlas": "items_nodes",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      9
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "beehive",
+   "category": "resource",
+   "atlas": "items_nodes",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      10
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      11
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "resin_tree",
+   "category": "resource",
+   "atlas": "items_nodes",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      12
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      13
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "salt_flat",
+   "category": "resource",
+   "atlas": "items_nodes",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      14
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      15
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "rubble_pile",
+   "category": "resource",
+   "atlas": "items_nodes",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      17
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "saltpeter_deposit",
+   "category": "resource",
+   "atlas": "items_nodes",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      18
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      19
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "sulfur_vent",
+   "category": "resource",
+   "atlas": "items_nodes",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      20
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      21
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "galena_vein",
+   "category": "resource",
+   "atlas": "items_nodes",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      22
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      23
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "oil_seep",
+   "category": "resource",
+   "atlas": "items_nodes",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      24
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      25
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "chromite_vein",
+   "category": "resource",
+   "atlas": "items_nodes",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      26
+     ],
+     "fps": 1
+    },
+    "depleted": {
+     "frames": [
+      27
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "held_bronze_shovel",
+   "category": "equipment",
+   "atlas": "items_held_a",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_bronze_knife",
+   "category": "equipment",
+   "atlas": "items_held_a",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_iron_shovel",
+   "category": "equipment",
+   "atlas": "items_held_a",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_iron_knife",
+   "category": "equipment",
+   "atlas": "items_held_a",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      24
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_steel_axe",
+   "category": "equipment",
+   "atlas": "items_held_a",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      32
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_steel_pickaxe",
+   "category": "equipment",
+   "atlas": "items_held_a",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      40
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_steel_shovel",
+   "category": "equipment",
+   "atlas": "items_held_a",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      48
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_steel_knife",
+   "category": "equipment",
+   "atlas": "items_held_a",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      56
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_alloy_axe",
+   "category": "equipment",
+   "atlas": "items_held_a",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      64
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_alloy_pickaxe",
+   "category": "equipment",
+   "atlas": "items_held_a",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      72
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_alloy_shovel",
+   "category": "equipment",
+   "atlas": "items_held_a",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      80
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_alloy_knife",
+   "category": "equipment",
+   "atlas": "items_held_a",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      88
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_bronze_mace",
+   "category": "equipment",
+   "atlas": "items_held_a",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      96
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_iron_mace",
+   "category": "equipment",
+   "atlas": "items_held_a",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      104
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_steel_mace",
+   "category": "equipment",
+   "atlas": "items_held_a",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      112
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_alloy_warhammer",
+   "category": "equipment",
+   "atlas": "items_held_a",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      120
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_steel_sword",
+   "category": "equipment",
+   "atlas": "items_held_a",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      128
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_alloy_sword",
+   "category": "equipment",
+   "atlas": "items_held_a",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      136
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_bone_dagger",
+   "category": "equipment",
+   "atlas": "items_held_a",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      144
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_bronze_dagger",
+   "category": "equipment",
+   "atlas": "items_held_a",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      152
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_iron_dagger",
+   "category": "equipment",
+   "atlas": "items_held_a",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      160
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_steel_dagger",
+   "category": "equipment",
+   "atlas": "items_held_a",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      168
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_iron_machete",
+   "category": "equipment",
+   "atlas": "items_held_a",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      176
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_steel_machete",
+   "category": "equipment",
+   "atlas": "items_held_a",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      184
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_stone_maul",
+   "category": "equipment",
+   "atlas": "items_held_a",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      192
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_iron_sledgehammer",
+   "category": "equipment",
+   "atlas": "items_held_a",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      200
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_steel_sledgehammer",
+   "category": "equipment",
+   "atlas": "items_held_a",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      208
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_nail_bat",
+   "category": "equipment",
+   "atlas": "items_held_b",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_sling",
+   "category": "equipment",
+   "atlas": "items_held_b",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_short_bow",
+   "category": "equipment",
+   "atlas": "items_held_b",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_recurve_bow",
+   "category": "equipment",
+   "atlas": "items_held_b",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      24
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_longbow",
+   "category": "equipment",
+   "atlas": "items_held_b",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      32
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_laminated_bow",
+   "category": "equipment",
+   "atlas": "items_held_b",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      40
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_compound_bow",
+   "category": "equipment",
+   "atlas": "items_held_b",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      48
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_light_crossbow",
+   "category": "equipment",
+   "atlas": "items_held_b",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      56
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_crossbow",
+   "category": "equipment",
+   "atlas": "items_held_b",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      64
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_steel_crossbow",
+   "category": "equipment",
+   "atlas": "items_held_b",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      72
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_flintlock_pistol",
+   "category": "equipment",
+   "atlas": "items_held_b",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      80
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_revolver",
+   "category": "equipment",
+   "atlas": "items_held_b",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      88
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_semi_auto_pistol",
+   "category": "equipment",
+   "atlas": "items_held_b",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      96
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_pipe_shotgun",
+   "category": "equipment",
+   "atlas": "items_held_b",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      104
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_pump_shotgun",
+   "category": "equipment",
+   "atlas": "items_held_b",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      112
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_hunting_rifle",
+   "category": "equipment",
+   "atlas": "items_held_b",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      120
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_marksman_rifle",
+   "category": "equipment",
+   "atlas": "items_held_b",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      128
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_auto_rifle",
+   "category": "equipment",
+   "atlas": "items_held_b",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      136
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_bronze_spear",
+   "category": "equipment",
+   "atlas": "items_held_b",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      144
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_iron_spear",
+   "category": "equipment",
+   "atlas": "items_held_b",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      152
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_steel_spear",
+   "category": "equipment",
+   "atlas": "items_held_b",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      160
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_bronze_throwing_axe",
+   "category": "equipment",
+   "atlas": "items_held_b",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      168
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_iron_throwing_axe",
+   "category": "equipment",
+   "atlas": "items_held_b",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      176
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_steel_throwing_axe",
+   "category": "equipment",
+   "atlas": "items_held_b",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      184
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_bayonet_musket",
+   "category": "equipment",
+   "atlas": "items_held_b",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      192
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_bayonet_rifle",
+   "category": "equipment",
+   "atlas": "items_held_b",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      200
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_bayonet_carbine",
+   "category": "equipment",
+   "atlas": "items_held_b",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      208
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  }
+ ]
+}
