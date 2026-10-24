@@ -15,10 +15,12 @@ async function setup(seed = 77) {
     const client = new NetClient({ world, transport: net.createClient(), commands: DEMO_COMMANDS, events: DEMO_EVENTS, sampleInput: () => ({ buttons: 0, aimX: 0, aimY: 0 }), applyInput: (w, e, cmd) => applyMoveInput(w, e, cmd) });
     const p = client.connect(); await new Promise((r) => setTimeout(r, 0)); net.advance(100); await p; clients.push(client); return client;
   };
-  return { gs, tick, connect };
+  // Long runs yield to the event loop between chunks so the vitest worker can keep answering its RPC (onTaskUpdate) heartbeats.
+  const tickAsync = async (n: number, chunk = 50): Promise<void> => { for (let done = 0; done < n; done += chunk) { tick(Math.min(chunk, n - done)); await new Promise((r) => setTimeout(r, 0)); } };
+  return { gs, tick, tickAsync, connect };
 }
 
-describe("world start (ADR-106)", () => {
+describe("world start (ADR-106)", { timeout: 30_000 }, () => {
   it("is a blank slate: no starter camp pieces", async () => {
     const { gs, tick } = await setup(); tick(5);
     expect([...gs.world.query([BuildPiece])]).toHaveLength(0);
@@ -36,12 +38,12 @@ describe("world start (ADR-106)", () => {
     expect(near.size).toBe(4);
   });
   it("one in-game day lasts one real hour of fixed ticks", async () => {
-    const { gs, tick, connect } = await setup(); const c = await connect(); tick(5);
+    const { gs, tick, tickAsync, connect } = await setup(); const c = await connect(); tick(5);
     expect(gs.world.env(TimeOfDay).dayLengthTicks).toBe(3600 * 20);
-    const h0 = timeOfDay(gs.world).hours; tick(20 * 150); // 150 s sim time = 1 in-game hour
+    const h0 = timeOfDay(gs.world).hours; await tickAsync(20 * 150); // 150 s sim time = 1 in-game hour
     expect(timeOfDay(gs.world).hours - h0).toBeCloseTo(1, 5);
     // the HUD clock reads timeOfDay(client world): the replicated day length + epoch keep it in step with the server
     expect(c.world.env(TimeOfDay).dayLengthTicks).toBe(3600 * 20);
     expect(Math.abs(timeOfDay(c.world, gs.world.tick).hours - timeOfDay(gs.world).hours)).toBeLessThan(1e-6);
-  });
+  }, 180_000);
 });
