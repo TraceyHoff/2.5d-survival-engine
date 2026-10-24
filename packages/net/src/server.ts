@@ -5,6 +5,7 @@ import { BitReader, BitWriter } from "./bits.js";
 import { writeUtf8 } from "./utf8.js";
 import { StaticServer, StaticSession, readChunkKey, type ReplicationClass } from "./static.js";
 import { NetInterest, type InterestOptions, type Viewpoint } from "./interest.js";
+import { CHUNK_SIZE as CHUNK } from "@engine/world";
 import { PositionHistory } from "./lagcomp.js";
 import { DEFAULT_COMMAND_RATE, MessageRegistry, TokenBucket, readPayload, writePayload, type MessageDef, type MessageDefBase, type Payload } from "./messages.js";
 import {
@@ -85,7 +86,7 @@ export interface ClientSession {
   readonly inputQueue: InputCmd[];
   lastSnapshotBytes: number;
   fullSnapshots: number;
-  stats: { commands: number; droppedCommands: number; rateLimited: number; deferred: number; bytesSent: number; lateEdges: number; throttled: number };
+  stats: { commands: number; droppedCommands: number; rateLimited: number; deferred: number; bytesSent: number; lateEdges: number; throttled: number; /** entity-records kept alive by AOI leave hysteresis (interestLinger) */ lingered: number };
   /** Smoothed round-trip time in ms from transport-level ping/pong (-1 until measured). */
   rttMs: number;
   /** Session was created from a stored token via `resumeToken` (e.g. after a server restart). */
@@ -98,6 +99,8 @@ interface SessionState extends ClientSession {
   views: Map<number, WorldState>;
   /** Per netId: tick+1 it was last sent at (0 = never). Grown on demand. */
   lastSent: Int32Array;
+  /** ADR: entity-level AOI leave hysteresis: netId -> tick until which an entity that dropped out of the AOI chunks keeps replicating. */
+  linger: Map<number, number>;
   buckets: Map<number, TokenBucket>;
   commands: { def: MessageDefBase; payload: Record<string, number> }[];
   events: { reliable: boolean; def: MessageDefBase; payload: Record<string, number> }[];
@@ -131,6 +134,13 @@ export interface NetServerOptions {
   hashes?: NamedHashes;
   /** Chunk area-of-interest; false = every entity is relevant to every client. */
   interest?: InterestOptions | false;
+  /**
+   * Entity-level AOI leave hysteresis (characters must not pop at the AOI edge). An entity the client already holds
+   * that drops out of its relevant chunks keeps replicating while it is within `leaveChunks` extra chunks beyond the
+   * chunk leave radius (radius + hysteresis) of any viewpoint, or for `minTicks` after it left (default: 1 chunk,
+   * 2 s at tickHz). Despawns therefore happen only well outside view; `false` = despawn on chunk leave (old behaviour).
+   */
+  interestLinger?: { leaveChunks?: number; minTicks?: number } | false;
   /**
    * Per-client AOI radius bonus (setViewRadiusBonus): `max` chunks cap (default 2); a lowered bonus only takes
    * effect after it stayed lower for `holdTicks` (default 60) so stepping off a tower briefly doesn't thrash chunks.
@@ -455,8 +465,8 @@ export class NetServer {
     const s: SessionState = {
       clientId: this.nextClientId++, token, conn, lastAckTick: -1, lastReceivedSeq: -1, lastProcessedSeq: -1, lastEdgeSeq: -1, pendingEdges: 0, lastViewTick: -1,
       inputQueue: [], lastSnapshotBytes: 0, fullSnapshots: 0, rttMs: -1, resumed,
-      stats: { commands: 0, droppedCommands: 0, rateLimited: 0, deferred: 0, bytesSent: 0, lateEdges: 0, throttled: 0 },
-      views: new Map(), lastSent: new Int32Array(256), static: new StaticSession(), buckets: new Map(), commands: [], events: [],
+      stats: { commands: 0, droppedCommands: 0, rateLimited: 0, deferred: 0, bytesSent: 0, lateEdges: 0, throttled: 0, lingered: 0 },
+      views: new Map(), lastSent: new Int32Array(256), linger: new Map(), static: new StaticSession(), buckets: new Map(), commands: [], events: [],
       pingAt: 0, pingNonce: 0,
     };
     this.sessions.set(s.clientId, s); this.byToken.set(tokenKey(token), s);
@@ -697,6 +707,21 @@ export class NetServer {
             chunkIds.set(key, ids);
           }
           for (let i = 0; i < ids.length; i++) consider(ids[i]!, false);
+        }
+        // entity-level leave hysteresis: held entities just outside the AOI chunks linger instead of despawning
+        if (base && this.opts.interestLinger !== false) {
+          const lo = this.opts.interestLinger ?? {}; const extra = lo.leaveChunks ?? 1; const minT = lo.minTicks ?? Math.round(this.tickHz * 2);
+          const vps = viewsOf.get(s.clientId) ?? []; const R0 = grid.grid.radius + grid.grid.hysteresis + extra;
+          for (const id of base.keys()) {
+            if (stamp[id] === seq) { s.linger.delete(id); continue; }
+            if (!curArr[id]) { s.linger.delete(id); continue; }
+            const x = this.posX[id]!, y = this.posY[id]!; let keep = false;
+            if (x === x) { const cx = Math.floor(x / CHUNK), cy = Math.floor(y / CHUNK);
+              for (const v of vps) { const r = (v.r ?? grid.grid.radius) - grid.grid.radius + R0; if (Math.abs(cx - Math.floor(v.x / CHUNK)) <= r && Math.abs(cy - Math.floor(v.y / CHUNK)) <= r) { keep = true; break; } } }
+            let until = s.linger.get(id); if (until === undefined) s.linger.set(id, (until = tick + minT));
+            if (keep || tick < until) { consider(id, false); s.stats.lingered++; } // expired: entry kept until the despawn is acked (cleanup below), so a lagging ack can't restart it
+          }
+          for (const id of s.linger.keys()) if (!base.has(id)) s.linger.delete(id);
         }
       } else for (const id of cur.keys()) consider(id, false);
       // ---- encode against acked view ----

@@ -350,6 +350,9 @@ export class SpriteBatch {
   culledChunks = 0;
   /** Sprites drawn as their placeholder this frame because their stream sheet was still loading. */
   streamPlaceholders = 0;
+  /** ADR-122: per (entity, layer slot) last resolved frame, drawn while the current one is not resident */
+  private lastGood = new Map<string, { sprite: number; atlas: number; entry: number; ax: number; ay: number }>();
+  lastGoodHits = 0;
   /** Chunk screen bounds (any height up to 1024 px above ground) against the view rect grown by 512 px. */
   private chunkOnScreen(cx: number, cy: number, r: Rect, hw: number, hh: number): boolean {
     const x0 = cx * CHUNK_SIZE, y0 = cy * CHUNK_SIZE, x1 = x0 + CHUNK_SIZE, y1 = y0 + CHUNK_SIZE;
@@ -718,7 +721,14 @@ export class SpriteBatch {
           // face/eyes pages request at 1/4 of the character's distance priority: they win pool slots over farther clothing
           const lp = faceL ? prio * 0.25 : prio; const rdy = okL && (lr.atlas >= 0 ? atlas.pageReadyAt(lr.atlas, lp) : atlas.pageReady(l.sprite, lp));
           if (nearC && this.nearN < this.nearInfo.length) { const ni = this.nearInfo[this.nearN]!; if (ni.e === e) { ni.layers++; if (rdy) ni.resident++; else ni.missing.push(l.slot); const pi = atlas.pageInfo(l.sprite); ni.scale = Math.min(ni.scale, pi.scale); } }
-          if (!rdy) continue; // streamed page not resident yet: body-only fallback
+          // ADR-122: page not resident (swim/punch wear page streaming, page evicted): draw this slot's last good frame when
+          // its page is still resident instead of blanking the layer for a frame (pop in/out of hair, clothes, eyes)
+          const lgk = `${e}|${l.slot}`;
+          if (rdy) { const g = this.lastGood.get(lgk); if (g) { g.sprite = l.sprite; g.atlas = lr.atlas; g.entry = lr.entry; g.ax = lr.ax; g.ay = lr.ay; }
+            else { if (this.lastGood.size > 8192) this.lastGood.clear(); this.lastGood.set(lgk, { sprite: l.sprite, atlas: lr.atlas, entry: lr.entry, ax: lr.ax, ay: lr.ay }); } }
+          else { const g = this.lastGood.get(lgk);
+            if (!g || g.sprite !== l.sprite || !(g.atlas >= 0 ? atlas.pageReadyAt(g.atlas, lp) : atlas.pageReady(l.sprite, lp))) continue; // body-only fallback
+            lr.entry = g.entry; lr.ax = g.ax; lr.ay = g.ay; this.lastGoodHits++; }
           o0.set(base); o0[4] = lr.entry; o0[8] = lr.ax; o0[9] = lr.ay; o0[16] = 0;
           if (outlineOn && l.outline && !(sp.data.flags[k]! & SpriteFlag.NoOutline)) {
             o0[2] = dkey - LAYER_BIAS * 0.5; o0[5] = (base[5]! & ~SpriteFlag.NoOutline) | OUTLINE_ONLY;
@@ -735,7 +745,8 @@ export class SpriteBatch {
     };
     if (cx.spatial) {
       // chunk-level culling through the shared spatial index
-      const keys = visibleChunkKeys(rect, hw, hh, zs, 16);
+      // culled with the sprite margin too: a character standing just past a chunk's diamond edge was dropped with its chunk
+      const keys = visibleChunkKeys({ x0: r0x, y0: r0y, x1: r1x, y1: r1y }, hw, hh, zs, 16);
       for (const ck of keys) {
         if (cx.spatial.activeKeys && !cx.spatial.activeKeys.has(ck)) continue;
         for (const e of cx.spatial.index.entitiesInChunk(ck)) { const s = sp.slot(entityIndex(e)); if (s >= 0) emitSprite(s); }

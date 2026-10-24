@@ -90,8 +90,11 @@ export class PageLRU<K = string> {
       if (!bp || (p.refs > 0 ? 1 : 0) < (bp.refs > 0 ? 1 : 0) || ((p.refs > 0) === (bp.refs > 0) && p.lastUsed < bp.lastUsed)) { best = k; bp = p; }
     }
     if (best !== undefined || !Number.isFinite(prio)) return best;
-    // every page is live: a nearer request takes the farthest live page (that character drops to its fallback)
-    for (const [k, p] of this.pages) if (p.prio > prio && (!bp || p.prio > bp.prio)) { best = k; bp = p; }
+    // every page is live: a nearer request takes the farthest live page (that character drops to its fallback).
+    // Pinned pages (retained by a visible character's layer set) are only taken by PRIO_NEAR requests (local player /
+    // characters right next to them): otherwise two crowds on screen stole each other's wear/face pages every few
+    // frames and characters flickered between dressed and body-only.
+    for (const [k, p] of this.pages) if (p.prio > prio && (p.refs === 0 || prio <= PRIO_NEAR) && (!bp || p.prio > bp.prio)) { best = k; bp = p; }
     return best;
   }
   /**

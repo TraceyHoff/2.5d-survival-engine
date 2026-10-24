@@ -21,7 +21,7 @@ import { Buff, frames, join, makeWorld } from "./fixture.js";
       expect(seen()).toBeDefined();
       expect(A.entityOf(server.netIds.netIdOf(global)!)).toBeDefined();
       expect(A.entityOf(1)).toBe(A.world.environment);
-      sw.setField(mob, Transform, "x", 4 * CHUNK_SIZE); step(5); // 4 chunks away > r+h
+      sw.setField(mob, Transform, "x", 6 * CHUNK_SIZE); step(server.tickHz * 2 + 5); // 6 chunks away > r+h+linger, past the linger time
       expect(seen()).toBeUndefined();
       sw.setField(mob, Buff, "kind", 2); // changes while out of AOI
       sw.setField(mob, Transform, "x", 20); step(5);
@@ -46,7 +46,7 @@ describe("multi-viewpoint AOI", () => {
     expect(sees(nearA)).toBe(true); expect(sees(nearB)).toBe(true); expect(sees(cam)).toBe(false);
     server.setViewpoints(1, [{ x: 20 * CHUNK_SIZE, y: 1, r: 0 }]); frames(net, [sw, A.world], 5);
     expect(sees(cam)).toBe(true);
-    server.setViewpoints(1, []); frames(net, [sw, A.world], 5);
+    server.setViewpoints(1, []); frames(net, [sw, A.world], server.tickHz * 2 + 5); // past the leave-hysteresis linger
     expect(sees(cam)).toBe(false); expect(sees(nearB)).toBe(true);
   });
 });
@@ -85,5 +85,35 @@ describe("@engine/testkit harness on net loopback", () => {
     for (const c of h.clients) { expect(c.client.owned.size).toBe(1); expect(c.client.entities.size).toBe(3); }
     const a = h.clients[0]!.client; const self = a.entityOf([...a.owned][0]!)!;
     expect(h.clients[0]!.world.getField(self, Transform, "x")!).toBeGreaterThan(3 + 2);
+  });
+});
+
+describe("AOI leave hysteresis (entity linger)", () => {
+  it("an entity oscillating across the AOI edge is never despawned; it despawns once well outside", async () => {
+    const net = new LoopbackNetwork(7); const sw = makeWorld();
+    const server = new NetServer({ world: sw, transport: net.createServer(), interest: { radius: 1, hysteresis: 1 },
+      onClientJoin: (s, w) => { const e = w.create(); w.add(e, Transform, { x: 1, y: 1 }).add(e, Owner, { clientId: s.clientId }); } });
+    const A = new NetClient({ world: makeWorld(), transport: net.createClient({ latencyMs: 10 }) });
+    let despawns = 0; (A as unknown as { opts: { onDespawn?: () => void } }).opts.onDespawn = () => { despawns++; };
+    await join(net, A);
+    const mob = sw.create(); sw.add(mob, Transform, { x: 10, y: 10 }).add(mob, Buff, { power: 3, kind: 1 });
+    const step = (n: number) => frames(net, [sw, A.world], n);
+    step(5); const id = server.netIds.netIdOf(mob)!; const first = A.entityOf(id); expect(first).toBeDefined();
+    // straddle the chunk leave boundary (r + h = 2 chunks): 2.9 <-> 3.1 chunks
+    for (let k = 0; k < 20; k++) { sw.setField(mob, Transform, "x", (k & 1 ? 3.1 : 2.9) * CHUNK_SIZE); step(3); expect(A.entityOf(id)).toBe(first); }
+    expect(despawns).toBe(0);
+    sw.setField(mob, Transform, "x", 8 * CHUNK_SIZE); step(server.tickHz * 2 + 5);
+    expect(A.entityOf(id)).toBeUndefined();
+  });
+  it("interestLinger: false restores despawn-on-chunk-leave", async () => {
+    const net = new LoopbackNetwork(8); const sw = makeWorld();
+    const server = new NetServer({ world: sw, transport: net.createServer(), interest: { radius: 1, hysteresis: 1 }, interestLinger: false,
+      onClientJoin: (s, w) => { const e = w.create(); w.add(e, Transform, { x: 1, y: 1 }).add(e, Owner, { clientId: s.clientId }); } });
+    const A = new NetClient({ world: makeWorld(), transport: net.createClient({ latencyMs: 10 }) });
+    await join(net, A);
+    const mob = sw.create(); sw.add(mob, Transform, { x: 10, y: 10 }).add(mob, Buff, { power: 3, kind: 1 });
+    frames(net, [sw, A.world], 5); const id = server.netIds.netIdOf(mob)!; expect(A.entityOf(id)).toBeDefined();
+    sw.setField(mob, Transform, "x", 4 * CHUNK_SIZE); frames(net, [sw, A.world], 5);
+    expect(A.entityOf(id)).toBeUndefined();
   });
 });
