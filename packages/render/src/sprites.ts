@@ -32,6 +32,8 @@ export const HELD_BIAS = 0.05;
 const OPEN = 1e5;
 /** Depth-key step between a character's paper-doll layers (10 layers < HELD_BIAS; far below one tile = 1.0). */
 export const LAYER_BIAS = 0.001;
+/** Frame px of slack below the body cell for wear cells / outline that reach lower than the body (see paper-doll depth). */
+const CHAR_DEPTH_MARGIN = 24;
 /** Render-internal instance flag (above the u8 SpriteFlag range): draw only the outline ring of this frame. */
 export const OUTLINE_ONLY = 256;
 
@@ -465,7 +467,7 @@ export class SpriteBatch {
    * behind / in front of the character, mirrored with the character's flipX. No anchor for the frame = not drawn.
    */
   private emitHeld(atlas: AtlasManager, heldOf: (item: number) => number | undefined, item: number, body: ResolvedFrame, sx: number, sy: number, key: number,
-    scale: number, facing: number, flip: boolean, fade: number, occT: number, mode: "fade" | "dither"): void {
+    scale: number, facing: number, flip: boolean, fade: number, occT: number, mode: "fade" | "dither", lift = 0): void {
     if (!item) return; const hid = heldOf(item); if (hid === undefined) return; this.heldStats[0]++;
     const h = atlas.handOf(body); if (!h) return; this.heldStats[1]++;
     const r = this.heldRes; if (!atlas.resolve(hid, 0, facing, 0, 0, r)) return; this.heldStats[2]++;
@@ -473,7 +475,7 @@ export class SpriteBatch {
     const hx = sx + (h.x - body.ax) * scale * m, hy = sy + (h.y - body.ay) * scale;
     const o = this.writeOne(hx, hy, key + (h.behind ? -HELD_BIAS : HELD_BIAS), scale, r, (flip ? SpriteFlag.FlipX : 0) | SpriteFlag.NoOutline, 0, fade, -OPEN, OPEN, 0, 0, 0, 0, 0, 0);
     // anchor (pivot) height above the body pivot keeps the item's depth on the body's column
-    o[15] = (body.ay - h.y) * scale; o[32] = (h.angle * Math.PI / 180) * m; o[27] = occT;
+    o[15] = (body.ay - h.y) * scale + lift; o[32] = (h.angle * Math.PI / 180) * m; o[27] = occT;
     this.pushOcc(o, 0, occT, mode);
   }
 
@@ -630,6 +632,11 @@ export class SpriteBatch {
       o0[27] = occT;
       if (hitOf) { const hf = hitOf(e); if (hf > 0) o0[18] = -Math.min(1, hf); }
       if (bodyL) this.writeLayerTint(o0, bodyL);
+      // paper-doll depth: the vertex shader clamps the height term per vertex (max(hp, 0)), so a quad reaching below the
+      // pivot gets a flatter interpolated depth slope than one that doesn't. Body and wear quads have different extents
+      // (trimmed wear cells), so their slopes crossed and the body won below a straight line through the hat. Lift the whole
+      // character by its below-pivot extent (same sliceFootDy channel held items use) so no vertex clamps: identical slope.
+      if (bodyL) o0[15] = (Math.max(0, res.h - res.ay) + CHAR_DEPTH_MARGIN) * scale;
       if (e === this.focusEntity && occ.silhouette) { this.silInst.set(o0.subarray(0, INSTANCE_FLOATS)); this.silInst[27] = 0; this.silOn = true; }
       this.pushOcc(o0, 0, occT, occ.mode);
       let dress = true;
@@ -671,7 +678,7 @@ export class SpriteBatch {
         o0.set(base);
         if (nearC && this.nearN < this.nearInfo.length) this.nearN++;
       }
-      if (eq && heldOf) { const s2 = eq.slot(i); if (s2 >= 0) this.emitHeld(atlas, heldOf, eq.data.mainHandItem[s2]!, res, sx, sy, key, scale, f, (sp.data.flags[k]! & SpriteFlag.FlipX) !== 0, fade, occT, occ.mode); }
+      if (eq && heldOf) { const s2 = eq.slot(i); if (s2 >= 0) this.emitHeld(atlas, heldOf, eq.data.mainHandItem[s2]!, res, sx, sy, key, scale, f, (sp.data.flags[k]! & SpriteFlag.FlipX) !== 0, fade, occT, occ.mode, bodyL ? o0[15]! : 0); }
     };
     if (cx.spatial) {
       // chunk-level culling through the shared spatial index

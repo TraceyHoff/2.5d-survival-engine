@@ -571,7 +571,9 @@ export class AtlasManager {
   private layerBytes(list: AtlasRT[], poolTint?: boolean, poolEmis?: boolean): number { const h = Math.max(1, this.layerSize >> this.sideShift); return rgbaBytes(this.layerSize, this.layerSize, true) + rgbaBytes(h, h, true) * (this.arrayCount(list, poolTint, poolEmis) - 1); }
   private poolGeom(lazy: AtlasRT[], k: number): { sw: number; sh: number; cols: number; perLayer: number } {
     const S = this.layerSize; const w1 = Math.max(...lazy.map((a) => a.lazy!.w1)), h1 = Math.max(...lazy.map((a) => a.lazy!.h1));
-    const sw = Math.max(1, Math.ceil(w1 * k)), sh = Math.max(1, Math.ceil(h1 * k));
+    // slots on 4px boundaries: compressed (KTX2 4x4-block) page uploads need block-aligned offsets once a layer holds >1 page
+    const al4 = (v: number) => Math.ceil(v / 4) * 4;
+    const sw = al4(Math.max(1, Math.ceil(w1 * k))), sh = al4(Math.max(1, Math.ceil(h1 * k)));
     const cols = Math.floor((S + POOL_GAP) / (sw + POOL_GAP)), rows = Math.floor((S + POOL_GAP) / (sh + POOL_GAP));
     return { sw, sh, cols, perLayer: cols * rows };
   }
