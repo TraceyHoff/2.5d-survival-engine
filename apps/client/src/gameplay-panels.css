@@ -1,0 +1,159 @@
+/* SurVivaZ gameplay menu skin (Cozy Camp kit). CSS-only over gameplay-panels.ts hooks: [data-role], [data-key], aria-pressed.
+ * Kit frames are cropped from assets/ui/kit atlases by assets/ui/kit/css/extract.py; palettes mirror
+ * packages/assets/pack/customization (skinTones 12, hairColors 20, clothingColors 26) and assets/pvp_clan clanPalettes. */
+.gm-modal .gm-panel{--cz-ink:#3B2433;--cz-bark:#74432C;--cz-cream:#FFFAF0;--cz-parch:#F6EAD2;--cz-gold:#FFD45A;--cz-leaf:#5A9A4A;--cz-berry:#E8475F;--cz-hit:48px}
+@media (pointer:coarse){.gm-modal .gm-panel{--cz-hit:56px}}
+/* ---- shared: hit targets, hover, gamepad/keyboard focus, pressed/selected ---- */
+.gm-modal .gm-panel [data-role=body] button{min-height:var(--cz-hit);min-width:var(--cz-hit);position:relative;touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+  transition:transform .08s ease-out,filter .08s ease-out,box-shadow .08s ease-out;line-height:1.15}
+@media (hover:hover){.gm-modal .gm-panel [data-role=body] button:not(:disabled):hover{filter:brightness(1.08) saturate(1.05);transform:translateY(-1px)}}
+.gm-modal .gm-panel [data-role=body] button:not(:disabled):active{transform:translateY(2px);box-shadow:0 1px 0 var(--cz-bark);filter:brightness(.96)}
+.gm-modal .gm-panel button:focus:not(:focus-visible){outline:none}
+.gm-modal .gm-panel button:focus-visible,.gm-modal .gm-panel input:focus-visible{outline:3px solid var(--cz-gold);outline-offset:3px;box-shadow:0 0 0 7px rgba(59,36,51,.55);z-index:2}
+.gm-modal .gm-panel [data-role=body] button:disabled{filter:grayscale(.65) brightness(.95);opacity:.62;cursor:not-allowed}
+.gm-modal .gm-panel [data-role=body] button[aria-pressed=true],.gm-modal .gm-panel [data-role=chat-channels] button[aria-pressed=true],.gm-modal .gm-panel [data-role=whisper-picker] button[aria-pressed=true]{color:var(--cz-ink);text-shadow:0 1px 0 rgba(255,250,240,.7);
+  background:none;box-shadow:none;border-style:solid;border-width:14px 16px 18px 16px;border-image:image-set(url("../../../assets/ui/kit/css/ui_btn_gold_normal.png") 1x, url("../../../assets/ui/kit/css/ui_btn_gold_normal@2x.png") 2x) 29.167% 33.333% 37.500% 33.333% fill / 14px 16px 18px 16px stretch;padding:0 4px}
+@media (hover:hover){.gm-modal .gm-panel button[aria-pressed=true]:not(:disabled):hover{border-image-source:image-set(url("../../../assets/ui/kit/css/ui_btn_gold_hover.png") 1x, url("../../../assets/ui/kit/css/ui_btn_gold_hover@2x.png") 2x)}}
+.gm-modal .gm-panel [data-role=body] button[aria-pressed=true]::after{content:"";position:absolute;top:-8px;right:-8px;width:22px;height:22px;background:image-set(url("../../../assets/ui/kit/css/ui_ic_check.png") 1x, url("../../../assets/ui/kit/css/ui_ic_check@2x.png") 2x) center/contain no-repeat;pointer-events:none}
+.gm-modal .gm-panel [data-role=body] button[aria-pressed=false]{opacity:.92}
+/* section headings */
+.gm-modal .gm-panel [data-role=section]{display:flex;align-items:center;gap:8px;color:var(--cz-bark);font-size:15px;letter-spacing:.02em;margin-top:4px}
+.gm-modal .gm-panel [data-role=section]::after{content:"";flex:1;height:14px;border-style:solid;border-width:0 18px;border-image:image-set(url("../../../assets/ui/kit/css/ui_bar_track.png") 1x, url("../../../assets/ui/kit/css/ui_bar_track@2x.png") 2x) 45% 15.625% fill / 0 18px;opacity:.35}
+/* ---- tooltips (title) : hover (mouse) + focus-visible (pad/keys) ---- */
+.gm-modal .gm-panel [data-role=body] button[title]:not([title=""])::before{content:attr(title);position:absolute;left:50%;bottom:calc(100% + 8px);transform:translate(-50%,4px);z-index:5;
+  width:max-content;max-width:min(260px,70vw);white-space:pre-line;text-align:left;font:600 13px/1.3 Fredoka,system-ui,sans-serif;color:var(--cz-ink);
+  border-style:solid;border-width:14px 14px 16px 14px;border-image:image-set(url("../../../assets/ui/kit/css/ui_panel_tooltip.png") 1x, url("../../../assets/ui/kit/css/ui_panel_tooltip@2x.png") 2x) 29.167% 29.167% 33.333% 29.167% fill / 14px 14px 16px 14px stretch;padding:0 2px;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .12s,transform .12s;filter:drop-shadow(0 3px 0 rgba(67,44,36,.35))}
+@media (hover:hover){.gm-modal .gm-panel [data-role=body] button[title]:hover::before{opacity:1;visibility:visible;transform:translate(-50%,0);transition-delay:.25s}}
+.gm-modal .gm-panel [data-role=body] button[title]:focus-visible::before{opacity:1;visibility:visible;transform:translate(-50%,0)}
+.gm-modal .gm-panel [data-role=body] .gm-grid > button[title]:first-child::before{left:0;transform:none}
+/* ---- item slots: kit slot frame + icon well ---- */
+.gm-modal .gm-panel [data-role=body] button[data-role=slot],.gm-modal .gm-panel [data-role=body] button[data-role=recipe],.gm-modal .gm-panel [data-role=body] button[data-key^=draft-slot-]{color:var(--cz-ink);text-shadow:none;background:none;box-shadow:none;
+  border-style:solid;border-width:14px 14px 14px 14px;border-image:image-set(url("../../../assets/ui/kit/css/ui_slot_empty.png") 1x, url("../../../assets/ui/kit/css/ui_slot_empty@2x.png") 2x) 29.167% 29.167% 29.167% 29.167% fill / 14px 14px 14px 14px stretch;min-height:64px;padding:0 2px 0 44px;text-align:left;font-size:14px}
+.gm-modal .gm-panel [data-role=body] button[data-role=slot]::after,.gm-modal .gm-panel [data-role=body] button[data-role=recipe]::after,.gm-modal .gm-panel [data-role=body] button[data-key^=draft-slot-]:not([aria-pressed=true])::after{content:"";position:absolute;left:-4px;top:50%;width:36px;height:36px;margin-top:-18px;
+  background:image-set(url("../../../assets/ui/kit/css/ui_ic_bag.png") 1x, url("../../../assets/ui/kit/css/ui_ic_bag@2x.png") 2x) center/contain no-repeat;pointer-events:none}
+.gm-modal .gm-panel [data-role=body] button[data-role=recipe]::after{background-image:image-set(url("../../../assets/ui/kit/css/ui_ic_craft.png") 1x, url("../../../assets/ui/kit/css/ui_ic_craft@2x.png") 2x)}
+@media (hover:hover){.gm-modal .gm-panel [data-role=body] button[data-role=slot]:hover,.gm-modal .gm-panel [data-role=body] button[data-role=recipe]:not(.alt):hover,.gm-modal .gm-panel [data-role=body] button[data-key^=draft-slot-]:hover{border-image-source:image-set(url("../../../assets/ui/kit/css/ui_slot_hover.png") 1x, url("../../../assets/ui/kit/css/ui_slot_hover@2x.png") 2x)}}
+.gm-modal .gm-panel [data-role=body] button[data-role=slot]:focus-visible,.gm-modal .gm-panel [data-role=body] button[data-role=recipe]:focus-visible,.gm-modal .gm-panel [data-role=body] button[data-key^=draft-slot-][aria-pressed=true]{border-image-source:image-set(url("../../../assets/ui/kit/css/ui_slot_selected.png") 1x, url("../../../assets/ui/kit/css/ui_slot_selected@2x.png") 2x)}
+.gm-modal .gm-panel [data-role=body] button[data-role=recipe].alt{border-image-source:image-set(url("../../../assets/ui/kit/css/ui_slot_locked.png") 1x, url("../../../assets/ui/kit/css/ui_slot_locked@2x.png") 2x);color:#61402E}
+.gm-modal .gm-panel [data-role=body] .gm-grid:has(> button[data-role=slot]){grid-template-columns:repeat(auto-fill,minmax(148px,1fr))}
+/* ---- craft queue job: progress track + animated fill ---- */
+.gm-modal .gm-panel [data-role=body] button[data-role=job]{padding-bottom:22px;text-align:left}
+.gm-modal .gm-panel [data-role=body] button[data-role=job]::after{content:"";position:absolute;left:10px;right:10px;bottom:7px;height:12px;border-radius:6px;
+  background:repeating-linear-gradient(115deg,rgba(255,250,240,.35) 0 6px,transparent 6px 14px) 0 0/28px 100%,linear-gradient(#9FD86A,#5A9A4A);
+  box-shadow:inset 0 0 0 2px var(--cz-ink),0 2px 0 rgba(67,44,36,.5);animation:cz-job 1.1s linear infinite}
+@keyframes cz-job{to{background-position:28px 0,0 0}}
+@media (prefers-reduced-motion:reduce){.gm-modal .gm-panel [data-role=body] button[data-role=job]::after{animation:none}}
+.gm-modal .gm-panel [data-role=owed]{border-style:solid;border-width:14px 14px 14px 14px;border-image:image-set(url("../../../assets/ui/kit/css/ui_panel_inset.png") 1x, url("../../../assets/ui/kit/css/ui_panel_inset@2x.png") 2x) 29.167% 29.167% 29.167% 29.167% fill / 14px 14px 14px 14px stretch;padding:0 4px;color:var(--cz-ink)}
+/* ---- build pieces ---- */
+.gm-modal .gm-panel [data-role=body] button[data-role=piece]{text-transform:capitalize}
+.gm-modal .gm-panel [data-role=body] button[data-key=paint-apply],.gm-modal .gm-panel [data-role=body] button[data-key=place],.gm-modal .gm-panel [data-role=body] button[data-key=draft-list]{grid-column:1/-1}
+/* ---- swatches: tint-N (clan palettes), color-N (hair / clothing), skin-N ---- */
+.gm-modal .gm-panel [data-role=body] .gm-grid:has(> button[data-key^=tint-]),.gm-modal .gm-panel [data-role=body] .gm-grid:has(> button[data-key^=color-]),.gm-modal .gm-panel [data-role=body] .gm-grid:has(> button[data-key^=skin-]){grid-template-columns:repeat(auto-fill,minmax(var(--cz-hit),1fr))}
+.gm-modal .gm-panel [data-role=body] button[data-key^=tint-]:not([data-key=tint-0]),.gm-modal .gm-panel [data-role=body] button[data-key^=color-],.gm-modal .gm-panel [data-role=body] button[data-key^=skin-]{font-size:0;color:transparent;text-shadow:none;padding:0;
+  aspect-ratio:1;background:var(--cz-sw,#ccc);border:3px solid var(--cz-ink);border-radius:50%;box-shadow:inset 0 -5px 0 rgba(0,0,0,.16),inset 0 4px 0 rgba(255,255,255,.35),0 3px 0 var(--cz-bark)}
+.gm-modal .gm-panel [data-role=body] button[data-key^=tint-]:not([data-key=tint-0]){background:linear-gradient(135deg,var(--cz-sw) 0 58%,var(--cz-sw2) 58%)}
+.gm-modal .gm-panel [data-role=body] button[data-key^=tint-][aria-pressed=true]:not([data-key=tint-0]),.gm-modal .gm-panel [data-role=body] button[data-key^=color-][aria-pressed=true],.gm-modal .gm-panel [data-role=body] button[data-key^=skin-][aria-pressed=true]{border:3px solid var(--cz-ink);border-image:none;
+  box-shadow:0 0 0 3px var(--cz-gold),0 0 0 6px var(--cz-ink),inset 0 4px 0 rgba(255,255,255,.35)}
+.gm-modal .gm-panel [data-role=body] button[data-key=tint-0],.gm-modal .gm-panel [data-role=body] button[data-key=unequip]{grid-column:span 2;font-size:14px}
+.gm-modal .gm-panel [data-role=body] button[data-key=paint-apply]{font-size:15px}
+.gm-modal .gm-panel [data-key=tint-1]{--cz-sw:#E8475F;--cz-sw2:#F6EAD2}
+.gm-modal .gm-panel [data-key=tint-2]{--cz-sw:#4F8FD6;--cz-sw2:#FFD45A}
+.gm-modal .gm-panel [data-key=tint-3]{--cz-sw:#72C45C;--cz-sw2:#FFFAF0}
+.gm-modal .gm-panel [data-key=tint-4]{--cz-sw:#9B72D6;--cz-sw2:#FFD45A}
+.gm-modal .gm-panel [data-key=tint-5]{--cz-sw:#F4A74A;--cz-sw2:#87563A}
+/* clothing palette is the default; hair palette when the hair (wslot-0) or face (wslot-6) slot is selected (gameplay: hair|face -> palettes.hair) */
+.gm-modal .gm-panel [data-key=color-0]{--cz-sw:#f4f0e8}
+.gm-modal .gm-panel [data-key=color-1]{--cz-sw:#efe0bc}
+.gm-modal .gm-panel [data-key=color-2]{--cz-sw:#4a4250}
+.gm-modal .gm-panel [data-key=color-3]{--cz-sw:#7a7f94}
+.gm-modal .gm-panel [data-key=color-4]{--cz-sw:#d9503e}
+.gm-modal .gm-panel [data-key=color-5]{--cz-sw:#a8432e}
+.gm-modal .gm-panel [data-key=color-6]{--cz-sw:#b8346a}
+.gm-modal .gm-panel [data-key=color-7]{--cz-sw:#ee8aa0}
+.gm-modal .gm-panel [data-key=color-8]{--cz-sw:#f6c2c2}
+.gm-modal .gm-panel [data-key=color-9]{--cz-sw:#f08a34}
+.gm-modal .gm-panel [data-key=color-10]{--cz-sw:#e0b43a}
+.gm-modal .gm-panel [data-key=color-11]{--cz-sw:#f6e08a}
+.gm-modal .gm-panel [data-key=color-12]{--cz-sw:#a8d05a}
+.gm-modal .gm-panel [data-key=color-13]{--cz-sw:#3f7a46}
+.gm-modal .gm-panel [data-key=color-14]{--cz-sw:#9cb88c}
+.gm-modal .gm-panel [data-key=color-15]{--cz-sw:#2f8f8a}
+.gm-modal .gm-panel [data-key=color-16]{--cz-sw:#86c0ea}
+.gm-modal .gm-panel [data-key=color-17]{--cz-sw:#4e6fa6}
+.gm-modal .gm-panel [data-key=color-18]{--cz-sw:#2e3e6e}
+.gm-modal .gm-panel [data-key=color-19]{--cz-sw:#b8a4e0}
+.gm-modal .gm-panel [data-key=color-20]{--cz-sw:#7a3f7a}
+.gm-modal .gm-panel [data-key=color-21]{--cz-sw:#7a5038}
+.gm-modal .gm-panel [data-key=color-22]{--cz-sw:#c49a6c}
+.gm-modal .gm-panel [data-key=color-23]{--cz-sw:#8a8a42}
+.gm-modal .gm-panel [data-key=color-24]{--cz-sw:#e8b84a}
+.gm-modal .gm-panel [data-key=color-25]{--cz-sw:#2a2430}
+.gm-modal .gm-panel [data-role=body]:has([data-key=wslot-0][aria-pressed=true],[data-key=wslot-6][aria-pressed=true]) [data-key=color-0]{--cz-sw:#2e2630}
+.gm-modal .gm-panel [data-role=body]:has([data-key=wslot-0][aria-pressed=true],[data-key=wslot-6][aria-pressed=true]) [data-key=color-1]{--cz-sw:#4a3228}
+.gm-modal .gm-panel [data-role=body]:has([data-key=wslot-0][aria-pressed=true],[data-key=wslot-6][aria-pressed=true]) [data-key=color-2]{--cz-sw:#7a4a2c}
+.gm-modal .gm-panel [data-role=body]:has([data-key=wslot-0][aria-pressed=true],[data-key=wslot-6][aria-pressed=true]) [data-key=color-3]{--cz-sw:#9a4426}
+.gm-modal .gm-panel [data-role=body]:has([data-key=wslot-0][aria-pressed=true],[data-key=wslot-6][aria-pressed=true]) [data-key=color-4]{--cz-sw:#d0702e}
+.gm-modal .gm-panel [data-role=body]:has([data-key=wslot-0][aria-pressed=true],[data-key=wslot-6][aria-pressed=true]) [data-key=color-5]{--cz-sw:#e09a6a}
+.gm-modal .gm-panel [data-role=body]:has([data-key=wslot-0][aria-pressed=true],[data-key=wslot-6][aria-pressed=true]) [data-key=color-6]{--cz-sw:#e2b464}
+.gm-modal .gm-panel [data-role=body]:has([data-key=wslot-0][aria-pressed=true],[data-key=wslot-6][aria-pressed=true]) [data-key=color-7]{--cz-sw:#f2e6c4}
+.gm-modal .gm-panel [data-role=body]:has([data-key=wslot-0][aria-pressed=true],[data-key=wslot-6][aria-pressed=true]) [data-key=color-8]{--cz-sw:#a89a94}
+.gm-modal .gm-panel [data-role=body]:has([data-key=wslot-0][aria-pressed=true],[data-key=wslot-6][aria-pressed=true]) [data-key=color-9]{--cz-sw:#d6d2dc}
+.gm-modal .gm-panel [data-role=body]:has([data-key=wslot-0][aria-pressed=true],[data-key=wslot-6][aria-pressed=true]) [data-key=color-10]{--cz-sw:#f48cb8}
+.gm-modal .gm-panel [data-role=body]:has([data-key=wslot-0][aria-pressed=true],[data-key=wslot-6][aria-pressed=true]) [data-key=color-11]{--cz-sw:#8fe0c0}
+.gm-modal .gm-panel [data-role=body]:has([data-key=wslot-0][aria-pressed=true],[data-key=wslot-6][aria-pressed=true]) [data-key=color-12]{--cz-sw:#b89ae6}
+.gm-modal .gm-panel [data-role=body]:has([data-key=wslot-0][aria-pressed=true],[data-key=wslot-6][aria-pressed=true]) [data-key=color-13]{--cz-sw:#7cb8f0}
+.gm-modal .gm-panel [data-role=body]:has([data-key=wslot-0][aria-pressed=true],[data-key=wslot-6][aria-pressed=true]) [data-key=color-14]{--cz-sw:#3aa6a0}
+.gm-modal .gm-panel [data-role=body]:has([data-key=wslot-0][aria-pressed=true],[data-key=wslot-6][aria-pressed=true]) [data-key=color-15]{--cz-sw:#ff9a3c}
+.gm-modal .gm-panel [data-role=body]:has([data-key=wslot-0][aria-pressed=true],[data-key=wslot-6][aria-pressed=true]) [data-key=color-16]{--cz-sw:#d8344a}
+.gm-modal .gm-panel [data-role=body]:has([data-key=wslot-0][aria-pressed=true],[data-key=wslot-6][aria-pressed=true]) [data-key=color-17]{--cz-sw:#6e9a44}
+.gm-modal .gm-panel [data-role=body]:has([data-key=wslot-0][aria-pressed=true],[data-key=wslot-6][aria-pressed=true]) [data-key=color-18]{--cz-sw:#3a4a8c}
+.gm-modal .gm-panel [data-role=body]:has([data-key=wslot-0][aria-pressed=true],[data-key=wslot-6][aria-pressed=true]) [data-key=color-19]{--cz-sw:#f4d03a}
+.gm-modal .gm-panel [data-key=skin-0]{--cz-sw:#fbe3d2}
+.gm-modal .gm-panel [data-key=skin-1]{--cz-sw:#f6cfb0}
+.gm-modal .gm-panel [data-key=skin-2]{--cz-sw:#eebfa4}
+.gm-modal .gm-panel [data-key=skin-3]{--cz-sw:#e2a878}
+.gm-modal .gm-panel [data-key=skin-4]{--cz-sw:#c98d5e}
+.gm-modal .gm-panel [data-key=skin-5]{--cz-sw:#b0744a}
+.gm-modal .gm-panel [data-key=skin-6]{--cz-sw:#94603c}
+.gm-modal .gm-panel [data-key=skin-7]{--cz-sw:#774a2e}
+.gm-modal .gm-panel [data-key=skin-8]{--cz-sw:#5e3a26}
+.gm-modal .gm-panel [data-key=skin-9]{--cz-sw:#46291c}
+.gm-modal .gm-panel [data-key=skin-10]{--cz-sw:#c6a27a}
+.gm-modal .gm-panel [data-key=skin-11]{--cz-sw:#a8c98a}
+/* ---- unlocks: badge chips (state is only in the text glyph; see report) ---- */
+.gm-modal .gm-panel [data-role=unlocks]{display:flex;flex-wrap:wrap;gap:6px}
+.gm-modal .gm-panel [data-role=unlock]{display:inline-flex;align-items:center;gap:4px;min-height:32px;text-transform:capitalize;color:var(--cz-ink);border-style:solid;border-width:14px 14px 14px 14px;border-image:image-set(url("../../../assets/ui/kit/css/ui_panel_inset.png") 1x, url("../../../assets/ui/kit/css/ui_panel_inset@2x.png") 2x) 29.167% 29.167% 29.167% 29.167% fill / 14px 14px 14px 14px stretch;padding:0 4px;font-size:13px}
+/* ---- party / clan: member rows, rank badges, rank-permission rows ---- */
+.gm-modal .gm-panel [data-role=member]{display:flex;flex-wrap:wrap;align-items:center;gap:6px;border-style:solid;border-width:14px 14px 14px 14px;border-image:image-set(url("../../../assets/ui/kit/css/ui_panel_inset.png") 1x, url("../../../assets/ui/kit/css/ui_panel_inset@2x.png") 2x) 29.167% 29.167% 29.167% 29.167% fill / 14px 14px 14px 14px stretch;padding:0 2px;grid-column:1/-1}
+.gm-modal .gm-panel div[data-role=member] > p{flex:1 1 100%;display:flex;align-items:center;gap:6px;color:var(--cz-ink)}
+.gm-modal .gm-panel div[data-role=member] > p::before{content:"";width:24px;height:24px;flex:none;background:image-set(url("../../../assets/ui/kit/css/ui_ic_person.png") 1x, url("../../../assets/ui/kit/css/ui_ic_person@2x.png") 2x) center/contain no-repeat}
+.gm-modal .gm-panel div[data-role=member] > button{flex:1 1 0;min-width:var(--cz-hit)}
+.gm-modal .gm-panel button[data-role=member]{grid-column:auto;padding-left:34px;color:var(--cz-ink);background:none;box-shadow:none}
+.gm-modal .gm-panel button[data-role=member]::after{content:"";position:absolute;left:-2px;top:50%;margin-top:-12px;width:24px;height:24px;background:image-set(url("../../../assets/ui/kit/css/ui_ic_person.png") 1x, url("../../../assets/ui/kit/css/ui_ic_person@2x.png") 2x) center/contain no-repeat}
+.gm-modal .gm-panel [data-role=body] [data-role=perm]{position:relative;padding-left:40px;border-left:6px solid var(--cz-rank,#9a8f7a);border-radius:10px}
+.gm-modal .gm-panel [data-role=body] [data-role=perm]::before{content:"";position:absolute;left:4px;top:50%;margin-top:-14px;width:28px;height:28px;background:var(--cz-rank-ic) center/contain no-repeat}
+.gm-modal .gm-panel [data-role=perm][data-key="3"]{--cz-rank:#F7C844;--cz-rank-ic:image-set(url("../../../assets/ui/kit/css/ui_ic_crown.png") 1x, url("../../../assets/ui/kit/css/ui_ic_crown@2x.png") 2x)}
+.gm-modal .gm-panel [data-role=perm][data-key="2"]{--cz-rank:#4F8FD6;--cz-rank-ic:image-set(url("../../../assets/ui/kit/css/ui_ic_star.png") 1x, url("../../../assets/ui/kit/css/ui_ic_star@2x.png") 2x)}
+.gm-modal .gm-panel [data-role=perm][data-key="1"],.gm-modal .gm-panel [data-role=perm][data-key="0"]{--cz-rank:#72C45C;--cz-rank-ic:image-set(url("../../../assets/ui/kit/css/ui_ic_person.png") 1x, url("../../../assets/ui/kit/css/ui_ic_person@2x.png") 2x)}
+.gm-modal .gm-panel [data-role=perm] button[aria-pressed=false]::after{content:"";position:absolute;top:-6px;right:-6px;width:18px;height:18px;background:image-set(url("../../../assets/ui/kit/css/ui_ic_cross.png") 1x, url("../../../assets/ui/kit/css/ui_ic_cross@2x.png") 2x) center/contain no-repeat}
+.gm-modal .gm-panel [data-role=body] button[data-key^=goal-]{text-transform:capitalize}
+/* ---- trade: listing cards + coin glyph ---- */
+.gm-modal .gm-panel [data-role=body] .gm-grid:has(> button[data-role=listing]){grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+.gm-modal .gm-panel [data-role=body] button[data-role=listing]{color:var(--cz-ink);text-shadow:none;background:none;box-shadow:0 3px 0 rgba(67,44,36,.25);border-style:solid;border-width:14px 14px 14px 14px;border-image:image-set(url("../../../assets/ui/kit/css/ui_panel_inset.png") 1x, url("../../../assets/ui/kit/css/ui_panel_inset@2x.png") 2x) 29.167% 29.167% 29.167% 29.167% fill / 14px 14px 14px 14px stretch;
+  min-height:88px;padding:0 2px 0 30px;text-align:left;font-size:14px;border-radius:0}
+.gm-modal .gm-panel [data-role=body] button[data-role=listing]::after,.gm-modal .gm-panel [data-role=body] button[data-key^=draft-price]:not([data-key$=-dec]):not([data-key$=-inc])::after{content:"";position:absolute;left:-4px;top:50%;margin-top:-12px;width:24px;height:24px;border-radius:50%;
+  background:radial-gradient(circle at 38% 34%,#FFF3B8 0 18%,transparent 19%),radial-gradient(circle,#FFD45A 0 48%,#E9A72E 49% 60%,#FFD45A 61% 66%,#B8741E 67%);box-shadow:0 0 0 2px var(--cz-ink),0 2px 0 2px rgba(59,36,51,.45)}
+.gm-modal .gm-panel [data-role=body] button[data-key^=draft-price]:not([data-key$=-dec]):not([data-key$=-inc]){padding-left:34px}
+.gm-modal .gm-panel [data-role=body] button[data-key^=draft-price]:not([data-key$=-dec]):not([data-key$=-inc])::after{left:8px}
+.gm-modal .gm-panel [data-role=body] button[data-role=listing].alt{color:#A0302A}
+@media (hover:hover){.gm-modal .gm-panel [data-role=body] button[data-role=listing]:not(:disabled):hover{border-image-source:image-set(url("../../../assets/ui/kit/css/ui_slot_hover.png") 1x, url("../../../assets/ui/kit/css/ui_slot_hover@2x.png") 2x)}}
+.gm-modal .gm-panel [data-role=body] button[data-role=listing]:focus-visible{border-image-source:image-set(url("../../../assets/ui/kit/css/ui_slot_selected.png") 1x, url("../../../assets/ui/kit/css/ui_slot_selected@2x.png") 2x)}
+.gm-modal .gm-panel [data-role=body] input[data-role=stall-name]{width:100%;min-height:var(--cz-hit);border-style:solid;border-width:14px 14px 14px 14px;border-image:image-set(url("../../../assets/ui/kit/css/ui_panel_inset.png") 1x, url("../../../assets/ui/kit/css/ui_panel_inset@2x.png") 2x) 29.167% 29.167% 29.167% 29.167% fill / 14px 14px 14px 14px stretch;padding:0 4px;background:none}
+.gm-modal .gm-panel [data-role=body] button[data-key=collect]::after{content:"";position:absolute;right:6px;top:50%;margin-top:-9px;width:18px;height:18px;border-radius:50%;background:radial-gradient(circle,#FFD45A 0 55%,#B8741E 56%);box-shadow:0 0 0 2px var(--cz-ink)}
+/* ---- chat: channel colours (buttons; log lines carry no channel hook) ---- */
+.gm-modal .gm-panel [data-role=chat-channels] button{--cz-ch:#9a8f7a;border-color:var(--cz-ink);box-shadow:inset 0 -6px 0 var(--cz-ch),0 3px 0 var(--cz-bark);min-height:var(--cz-hit)}
+.gm-modal .gm-panel [data-role=chat-channels] button[aria-pressed=true]{background:var(--cz-ch);border-image:none;border:3px solid var(--cz-ink);color:var(--cz-cream);text-shadow:0 2px 0 rgba(59,36,51,.6);box-shadow:0 0 0 3px var(--cz-gold),0 3px 0 var(--cz-bark)}
+.gm-modal .gm-panel [data-key=chan-0]{--cz-ch:#4F8FD6} .gm-modal .gm-panel [data-key=chan-1]{--cz-ch:#5A9A4A} .gm-modal .gm-panel [data-key=chan-2]{--cz-ch:#3FB3A6}
+.gm-modal .gm-panel [data-key=chan-3]{--cz-ch:#9B72D6} .gm-modal .gm-panel [data-key=chan-4]{--cz-ch:#E9A72E} .gm-modal .gm-panel [data-key=chan-5]{--cz-ch:#E86FA8}
+.gm-modal .gm-panel [data-role=whisper-picker] button{box-shadow:inset 0 -6px 0 #E86FA8,0 3px 0 var(--cz-bark)}
+.gm-modal .gm-panel [data-role=chat-log]{border-style:solid;border-width:14px 14px 14px 14px;border-image:image-set(url("../../../assets/ui/kit/css/ui_panel_inset.png") 1x, url("../../../assets/ui/kit/css/ui_panel_inset@2x.png") 2x) 29.167% 29.167% 29.167% 29.167% fill / 14px 14px 14px 14px stretch;padding:0 4px;color:var(--cz-ink)}

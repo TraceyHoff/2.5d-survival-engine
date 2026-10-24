@@ -5,6 +5,7 @@
  * and every action is a gameplay command intent sent through `GameplaySource.send`. No art: styling is the shell's.
  * Data hooks for Art: `[data-role=slot|recipe|job|owed|piece|listing|member|invite|perm|unlock]`, `[data-key]`.
  */
+import "./gameplay-panels.css";
 import {
   buildView, cancelQueuedCraftIntent, clanAcceptIntent, clanDeclineIntent, clanRosterRows, onlineTargets, paintIntent, paintTarget, type SocialDirectory, clanCreateIntent, clanDemoteIntent, clanDisbandIntent, clanInviteIntent, clanKickIntent, clanLeaveIntent,
   clanPromoteIntent, clanSetGoalIntent, clanSetRankPermsIntent, clanView, collectTillIntent, craftingView, equipCosmeticIntent, inventoryView, JOB_STATE_LABEL,
