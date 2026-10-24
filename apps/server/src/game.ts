@@ -1,3 +1,4 @@
+import { installRoadCommands, installSignCommands, setWorldRules, worldRules, type WorldRulesOpts } from "@engine/gameplay";
 /** Authoritative game server: world + gameplay + streaming chunks + persistence + NetServer sessions. */
 import { ChannelRegistry, CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, type CosmeticCatalogLike, Membership, Owner, PlayerId, TimeOfDay, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
 import { CHUNK_SIZE, ChunkManager, ProceduralGenerator, computeSpawnPoints, chunkKeyOf, type BuildingGrid, type PopulationSpawner } from "@engine/world";
@@ -61,6 +62,8 @@ export interface GameServerOptions {
   /** Throttle deltas for entities far from all of a client's owned entities (P2P mobile host bandwidth; ADR-102). */
   distantThrottle?: { nearTiles: number; interval: number };
   /** Chat (net ChatServer over core ChannelRegistry): local radius in tiles (default 48), per-player token bucket (default core 5 burst, 0.05/tick). */
+  /** ADR-121 world rules for a NEW world (roaming hordes on/off, grace days); a save keeps its own. */
+  worldRules?: WorldRulesOpts;
   chat?: { localRadius?: number; rate?: { capacity: number; refillPerTick: number }; maxLength?: number; /** chat replay ring on join (default 50; 0 = off) */ historySize?: number };
 }
 /** True when the dev bot flag is set in the environment (NET_DEV_BOTS=1). */
@@ -119,6 +122,8 @@ export function createGameServer(o: GameServerOptions): GameServer {
   const permissions = installDemoWorld(world, "server", { tickHz, ...(o.store ? { social: loadSocial(o.store) } : {}) });
   // ADR-107: restore the saved day clock (meta.dayEpochTick); pre-ADR-107 saves fall back to their 0.25 start.
   if (meta) restoreDayClock(world, meta);
+  // ADR-121: world rules - a save keeps its own (meta), a new world takes the creation options.
+  setWorldRules(world, { ...o.worldRules, ...(meta?.hordes !== undefined ? { hordes: meta.hordes === 1 } : {}), ...(meta?.hordeGraceDays !== undefined ? { hordeGraceDays: meta.hordeGraceDays } : {}) });
   if (meta) { world.tick = meta.tick; if (meta.schemaHash !== world.getSchemaHash()) log(`persist: save schema ${meta.schemaHash.toString(16)} != build ${world.getSchemaHash().toString(16)}; chunks with changed persistent components load read-only`); }
   // Clan rank masks / goals / contributions (gameplay ClanState) persist as the world blob "gameplay.clans", written on change.
   { const b = o.store?.readBlob(CLAN_BLOB); if (b) { try { loadClanState(world, decodeClanState(b.bytes)); } catch (e) { log(`persist: clan state unreadable: ${String(e)}`); } } }
@@ -132,6 +137,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
     autosaveSeconds: o.autosaveSeconds ?? 30, playerSaveSeconds: o.playerSaveSeconds ?? 60,
     player: { exclude: [PlayerIntent] },
     social: permissions,
+    extraMeta: () => { const r = worldRules(world); return { hordes: r.hordes ? 1 : 0, hordeGraceDays: r.hordeGraceDays }; },
     ...(o.catalog ? { appearance: { catalog: o.catalog } } : {}),
   }) : undefined;
   let localPlayerIds = 1; // no store: ids only need to be unique for this run
@@ -196,7 +202,9 @@ export function createGameServer(o: GameServerOptions): GameServer {
   installCraftQueue(world, handlers); // gameplay.queueCraft / cancelQueuedCraft (server-only timers)
   installExpressionCommands(world, handlers); // gameplay.emote -> Expression
   installVehicleCommands(world, handlers); // gameplay.vehicle* (enter/exit/hitch/unhitch/station), ADR-096
-  installVehicleCraftCommands(world, handlers); // gameplay.vehicleDeploy / vehicleRefuel / vehicleRepair (gameplay DESIGN.md §31)
+  installVehicleCraftCommands(world, handlers);
+  installRoadCommands(world, handlers); // gameplay.placeRoad / removeRoad (ADR-119)
+  installSignCommands(world, handlers); // gameplay.placeSign / setSignText / removeSign (ADR-120) // gameplay.vehicleDeploy / vehicleRefuel / vehicleRepair (gameplay DESIGN.md §31)
   // ADR-102: server vehicle speed/teleport sanity (reverts the step) -> anomaly on the driver's session (AntiCheat scores it)
   installVehicleGuard(world, (v) => {
     const cid = v.driver !== undefined ? world.getField(v.driver, Owner, "clientId") : undefined; if (cid === undefined) return;

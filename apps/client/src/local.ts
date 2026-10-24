@@ -24,6 +24,8 @@ export function defaultMaxBots(d: DeviceHints = detectDevice()): number { return
 
 export interface LocalServerOptions {
   store?: WorldStore; seed?: number;
+  /** ADR-121: world rules for a new world (hordes on/off, grace days). */
+  worldRules?: { hordes?: boolean; hordeGraceDays?: number };
   /** Default "singleplayer". "multiplayer" = no human bots at all (bots ignored). */
   mode?: GameMode;
   /** Dev: connect this many virtual players immediately at spawn (in addition to natural spawns; singleplayer only). */
@@ -122,7 +124,7 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
   const connectBot = (x: number, y: number): boolean => { if (bots.length + queued.length + inflight >= maxBots) return false; queued.push({ x, y }); return true; };
   const game = createGameServer({
     animalCapMul: animalCapMulFor(maxBots, o.lowEnd ?? lowEndQuery()),
-    transport: serverTransport, ...(store ? { store } : {}), seed, mode,
+    transport: serverTransport, ...(store ? { store } : {}), seed, mode, ...(o.worldRules ? { worldRules: o.worldRules } : {}),
     ...(o.maxClients !== undefined ? { maxClients: o.maxClients } : {}), ...(o.serverFullDetail ? { serverFullDetail: o.serverFullDetail } : {}), ...(o.log ? { log: o.log } : {}), ...(o.catalog ? { catalog: o.catalog, randomAppearance: true } : {}),
     ...(o.population === false ? { population: false } : {}), ...(o.distantThrottle ? { distantThrottle: o.distantThrottle } : {}),
     ...(mode === "singleplayer" ? { virtualPlayers: { connect: connectBot, disconnect: (cid: number) => dropBot(cid) } } : {}),

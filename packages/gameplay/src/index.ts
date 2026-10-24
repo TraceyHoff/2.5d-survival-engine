@@ -78,3 +78,6 @@ export * from "./skills/progression.js";
 export * from "./skills/husbandry.js";
 export * from "./clutter.js";
 export * from "./sprite-fallback.js";
+export * from "./roads.js";
+export * from "./signs.js";
+export * from "./hordes.js";

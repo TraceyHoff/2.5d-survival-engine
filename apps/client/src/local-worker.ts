@@ -51,7 +51,7 @@ async function init(i: Parameters<typeof handle>[0] extends infer T ? T extends 
     localStatus.state = "opening-store"; status();
     const store = await openBrowserStore(i.dbName); status();
     localStatus.state = "starting"; status();
-    local = await createLocalServer({ store, bots: i.bots, ...(i.catalog && i.catalog.size ? { catalog: catalogFromSnapshot(i.catalog) } : {}), log: (msg) => post({ t: "log", msg }) });
+    local = await createLocalServer({ store, bots: i.bots, ...(i.worldRules ? { worldRules: i.worldRules } : {}), ...(i.catalog && i.catalog.size ? { catalog: catalogFromSnapshot(i.catalog) } : {}), log: (msg) => post({ t: "log", msg }) });
     last = performance.now(); loop();
     post({ t: "ready" }); status();
     for (const m of pending.splice(0)) handle(m);

@@ -9,6 +9,7 @@
  *    collision against movementBlocked (or setVehicleBlocker), trailer pin-joint articulation, riders follow seats.
  *  - Camper interior: usableVehicleStations / addVehicleStationHook; stations usable only while parked.
  */
+import { roadVehicleMul } from "./roads.js";
 import { AnimState as Anim, defineCommand, defineResource, fnv1a, NetId, Transform, type CommandHandlers, type Entity, type World } from "@engine/core";
 import raw from "../data/vehicles.json";
 import stationsRaw from "../data/stations.json";
@@ -167,13 +168,13 @@ export function hitchPoint(d: VehicleDef, at: "front" | "rear", x: number, y: nu
 }
 
 /** One tick of a powered vehicle (pure state step; exported for tests/tools). */
-export function stepVehicleKinematics(d: VehicleDef, s: { x: number; y: number; speed: number; heading: number; drift: number; steer: number }, inp: DriveInput, throttleCap: number, dt: number): void {
+export function stepVehicleKinematics(d: VehicleDef, s: { x: number; y: number; speed: number; heading: number; drift: number; steer: number }, inp: DriveInput, throttleCap: number, dt: number, surfaceMul = 1): void {
   const T = VEHICLE_TUNING; const mag = Math.min(1, Math.hypot(inp.x, inp.y));
   let target = 0, steerTarget = 0;
   if (mag > 1e-3) {
     const want = Math.atan2(inp.y, inp.x); const diff = wrap(want - s.heading);
     const reverse = Math.abs(diff) > 2.4 && s.speed <= 0.5; // pull back -> reverse
-    target = (reverse ? -T.reverseMul : 1) * mag * Math.min(1, throttleCap) * d.maxSpeed * (inp.boost ? T.boostMul : 1);
+    target = (reverse ? -T.reverseMul : 1) * mag * Math.min(1, throttleCap) * d.maxSpeed * surfaceMul * (inp.boost ? T.boostMul : 1);
     steerTarget = clamp(reverse ? wrap(diff + Math.PI) * -1 : diff, -0.6, 0.6);
     if (!reverse && Math.abs(diff) > Math.PI / 2 && s.speed > 1) target = 0; // braking into a U-turn
   }
@@ -207,7 +208,7 @@ function stepPowered(world: World, v: Entity, d: VehicleDef, dt: number, inputs:
   if (st.health <= 0) cap = 0;
   const s = { x: t.x, y: t.y, speed: st.speed, heading: st.heading, drift: st.drift, steer: st.steer };
   if (mag === 0 && s.speed === 0 && s.steer === 0 && s.drift === 0) return; // at rest: no writes
-  stepVehicleKinematics(d, s, inp, cap, dt);
+  stepVehicleKinematics(d, s, inp, cap, dt, roadVehicleMul(world, t.x, t.y)); // ADR-119 road bonus
   let health = st.health;
   if (poseBlocked(world, d, t.x, t.y, st.heading, s.x, s.y, s.heading)) {
     // per-axis slide (keeps the free component); if the slide keeps < half the step it is an impact: stop, bounce, damage

@@ -5,6 +5,7 @@
  * MoveSpeed buffs. Sprint stamina drain happens in vitalsSystem from PlayerIntent.moving/sprint. Movement is blocked
  * by edge walls/closed doors, solid cell pieces at the player's level and unwalkable terrain (per-axis slide).
  */
+import { roadSpeedMul } from "../roads.js";
 import { entityIndex, evaluate, Transform, type Entity, type World } from "@engine/core";
 import { Anim, AnimState, Buffs, Dead, Driver, EdgeSide, Inventory, PlayerIntent, Stat, Survival, Wetness } from "../components.js";
 import { gameplayDefs } from "../config.js";
@@ -31,6 +32,7 @@ export function speedMultiplier(world: World, e: Entity, sprint: boolean): numbe
   const max = (world.getField(e, Inventory, "maxWeight") ?? 0) * skillMul(world, e, "carry"); const w = world.getField(e, Inventory, "weight") ?? 0;
   if (max > 0) { const f = w / max; if (f > mv.encumberedFrom) m *= 1 - (1 - mv.encumberedMinMul) * Math.min(1, (f - mv.encumberedFrom) / (1 - mv.encumberedFrom)); }
   m *= 1 - mv.wetSlowMul * ((world.getField(e, Wetness, "level") ?? 0) / 255);
+  const t = world.get(e, Transform); if (t) m *= roadSpeedMul(world, t.x, t.y); // ADR-119 road surface bonus
   return evaluate(world, e, Buffs, Stat.MoveSpeed, m);
 }
 

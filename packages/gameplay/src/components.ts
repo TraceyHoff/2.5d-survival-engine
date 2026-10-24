@@ -244,6 +244,25 @@ export const Progression = defineComponent("Progression", { xp: "u32", level: "u
 /** ADR-113 domesticated animal (skills/husbandry.ts). owner = tamer PlayerId (0 = none); fedUntil / produceAt / breedAt are ticks. */
 export const Tamed = defineComponent("Tamed", { kind: "u8", owner: "u32", fedUntil: "u32", produceAt: "u32", breedAt: "u32" }, { networked: true, persistent: true });
 
+/** ADR-119 road tile (roads.ts). Standalone entity at tile centre. surface = RoadSurface; mask = auto-connect bits
+ *  (1 N, 2 E, 4 S, 8 W) recomputed on place/remove; owner = placer PlayerId. Networked + persistent (chunk codec, like Crop). */
+export const Road = defineComponent("Road", { surface: "u8", mask: "u8", owner: "u32" }, { networked: true, persistent: true });
+export const enum RoadSurface { None = 0, Path = 1, Gravel = 2, Paved = 3 }
+export const SIGN_TEXT_MAX = 48;
+/** ADR-120 sign (signs.ts). kind = signs.json index + 1; rot = quarter turns; owner = PlayerId, clan = owner's clan at
+ *  placement (edit rights); text = sanitized ASCII bytes, len used. Networked (rendered as a world label) + persistent. */
+export const Sign = defineComponent("Sign", { kind: "u8", rot: "u8", owner: "u32", clan: "u32", len: "u8", text: { type: "u8", length: SIGN_TEXT_MAX } }, { networked: true, persistent: true });
+/** ADR-121 roaming horde member (hordes.ts): horde id, target piece entity + target centroid (retarget if destroyed). Server-only. */
+export const HordeMember = defineComponent("HordeMember", { horde: "u16", target: "u32", tx: "f32", ty: "f32" });
+/** ADR-121 world rules on the environment singleton (replicated so clients show them): hordes 0/1, grace in in-game days. */
+export const WorldRules = defineComponent("WorldRules", { hordes: "u8", hordeGraceDays: "f32" }, { networked: true });
+export const enum HordePhase { Idle = 0, Warning = 1, Active = 2 }
+/** ADR-121 horde director status on the environment singleton: drives client toasts + audio (snapshot diffs).
+ *  seq bumps per horde; kind 1 solo / 2 clan; alive/size members; x,y = target centroid; owner = clan id or PlayerId. */
+export const HordeStatus = defineComponent("HordeStatus", { phase: "u8", seq: "u16", kind: "u8", size: "u16", alive: "u16", x: "f32", y: "f32", owner: "u32", nextTick: "u32" }, { networked: true });
+/** ADR-119 server-only runtime builder of a piece (PlayerId), for settlement classification + solo horde owners. */
+export const PieceOwner = defineComponent("PieceOwner", { player: "u32" });
+
 export const GAMEPLAY_COMPONENTS = [
   Emitter, Buffs,
   Health, ResourceNode, Survival, VitalsState, Exposure, Dead,
@@ -271,4 +290,5 @@ export const GAMEPLAY_COMPONENTS = [
   VehicleLock, // append-only (ADR-109)
   Crop, // append-only (ADR-110)
   Progression, Tamed, // append-only (ADR-113)
+  Road, Sign, HordeMember, WorldRules, HordeStatus, PieceOwner, // append-only (ADR-119..121)
 ] as const;

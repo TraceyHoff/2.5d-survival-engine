@@ -424,7 +424,16 @@
     "wool_sweater": 422,
     "yarrow": 423,
     "yarrow_seeds": 424,
-    "animal_feed": 425
+    "animal_feed": 425,
+    "asphalt": 426,
+    "cement": 427,
+    "gravel": 428,
+    "sign_arrow": 429,
+    "sign_billboard": 430,
+    "sign_hanging": 431,
+    "sign_metal_road": 432,
+    "sign_wall_plaque": 433,
+    "sign_wooden_post": 434
   },
   "resources": {
     "fallen_branches": 1,
@@ -841,7 +850,16 @@
     "wool_cloth": 326,
     "wool_hat": 327,
     "wool_sweater": 328,
-    "animal_feed": 329
+    "animal_feed": 329,
+    "asphalt": 330,
+    "cement": 331,
+    "gravel": 332,
+    "sign_arrow": 333,
+    "sign_billboard": 334,
+    "sign_hanging": 335,
+    "sign_metal_road": 336,
+    "sign_wall_plaque": 337,
+    "sign_wooden_post": 338
   },
   "pieces": {
     "anvil": 1,

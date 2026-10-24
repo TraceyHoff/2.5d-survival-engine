@@ -15,11 +15,13 @@ const BR: Branding = (typeof __BRANDING__ !== "undefined" && __BRANDING__) || { 
 export const APP_TITLE = BR.title;
 export type MenuChoice = { kind: "singleplayer" } | { kind: "multiplayer"; url: string } | { kind: "host" } | { kind: "join"; code: string };
 /** hostCap: desktop P2P host player cap incl. the host (mobile hosts are fixed at 6, see p2p.ts). */
-export interface Settings { bots: number; showHud: boolean; fullscreen: boolean; hostCap: number }
+export interface Settings { bots: number; showHud: boolean; fullscreen: boolean; hostCap: number; /** ADR-121: new-world rules */ hordes: boolean; hordeGraceDays: number }
+/** ADR-121: the world rules a NEW local / hosted world is created with (an existing save keeps its own). */
+export function newWorldRules(s: Settings = loadSettings()): { hordes: boolean; hordeGraceDays: number } { return { hordes: s.hordes !== false, hordeGraceDays: Math.max(0, Math.min(30, Number(s.hordeGraceDays) || 0)) }; }
 const SETTINGS_KEY = "engine-settings";
 export function saveSettings(s: Settings): void { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...(JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as object), ...s })); } catch { /* private mode */ } }
 export function loadSettings(): Settings {
-  try { return { bots: 3, showHud: true, fullscreen: true, hostCap: 12, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as Partial<Settings> }; } catch { return { bots: 3, showHud: true, fullscreen: true, hostCap: 12 }; }
+  try { return { bots: 3, showHud: true, fullscreen: true, hostCap: 12, hordes: true, hordeGraceDays: 3, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as Partial<Settings> }; } catch { return { bots: 3, showHud: true, fullscreen: true, hostCap: 12, hordes: true, hordeGraceDays: 3 }; }
 }
 
 const CSS = (base: string): string => `@font-face{font-family:Fredoka;src:url(${base}art/ui/fonts/Fredoka.ttf) format("truetype");font-display:swap}
@@ -190,9 +192,13 @@ export class BootUI {
         const l3 = document.createElement("label"); l3.append("Fullscreen when playing", fs);
         const cap = document.createElement("input"); cap.type = "number"; cap.min = "2"; cap.max = "32"; cap.value = String(s.hostCap); cap.style.width = "70px";
         const l4 = document.createElement("label"); l4.append("Max players when hosting (desktop)", cap);
+        const hz = document.createElement("input"); hz.type = "checkbox"; hz.checked = s.hordes !== false; hz.dataset["setting"] = "hordes";
+        const l5 = document.createElement("label"); l5.append("Roaming zombie hordes (new worlds)", hz);
+        const gd = document.createElement("input"); gd.type = "number"; gd.min = "0"; gd.max = "30"; gd.step = "0.5"; gd.value = String(s.hordeGraceDays ?? 3); gd.style.width = "70px"; gd.dataset["setting"] = "hordeGraceDays";
+        const l6 = document.createElement("label"); l6.append("Horde grace period (in-game days)", gd);
         const manage = document.createElement("button"); manage.className = "alt"; manage.textContent = "Delete progress…"; manage.dataset["action"] = "manage-saves"; manage.addEventListener("click", saves);
-        const save = (): void => { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...(JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as object), bots: Math.max(0, Math.min(12, Number(bots.value) || 0)), showHud: hud.checked, fullscreen: fs.checked, hostCap: Math.max(2, Math.min(32, Math.round(Number(cap.value)) || 12)) })); main(); };
-        this.screen([["Save", save], ["Back", main, "alt"]], main, `<h2>Settings</h2>`, l1, l2, l3, l4, manage);
+        const save = (): void => { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...(JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as object), bots: Math.max(0, Math.min(12, Number(bots.value) || 0)), showHud: hud.checked, fullscreen: fs.checked, hordes: hz.checked, hordeGraceDays: Math.max(0, Math.min(30, Number(gd.value) || 0)), hostCap: Math.max(2, Math.min(32, Math.round(Number(cap.value)) || 12)) })); main(); };
+        this.screen([["Save", save], ["Back", main, "alt"]], main, `<h2>Settings</h2>`, l1, l2, l3, l4, l5, l6, manage);
       };
       // Delete progress (ADR-099): pick what to delete from this device, then type DELETE or hold to confirm.
       const slot = opts.slot ?? "1";

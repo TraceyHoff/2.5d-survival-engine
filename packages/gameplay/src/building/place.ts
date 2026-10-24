@@ -30,7 +30,8 @@ import { indexEntity } from "../spawn.js";
 import { tillSlots } from "../economy/config.js";
 import { initDefense } from "../combat/defenses.js";
 import { assignStallOwner, canPlaceStall } from "../economy/stall.js";
-import { Listings, StallHeader, StallLedger, StallSign } from "../components.js";
+import { Listings, PieceOwner, StallHeader, StallLedger, StallSign } from "../components.js";
+import { PlayerId } from "@engine/core";
 
 export interface PlaceRequest { piece: number; x: number; y: number; level: number; rot: number; tier: number; variant: number }
 export interface Snapped { def: PieceDef; slot: Slot; parent: Entity | 0; pos: { x: number; y: number; z: number; facing: number }; tier: number; variant: number }
@@ -220,6 +221,8 @@ export function placePiece(world: World, builder: Entity | 0, sn: Snapped, opts:
   world.add(e, Transform, sn.pos)
     .add(e, BuildPiece, { type: def.id, rot: slot.rot, variant: sn.variant, tier: sn.tier, hp: opts.hp ?? maxHp(defs, def, sn.tier), damageStage: 0, paint: opts.paint ?? 0 });
   if (tribe) world.add(e, Tribe, { id: tribe });
+  const builderId = builder && world.isRegistered(PlayerId) ? world.getField(builder, PlayerId, "id") ?? 0 : 0;
+  if (builderId && isAuthority(world)) world.add(e, PieceOwner, { player: builderId }); // ADR-119 settlements / ADR-121 solo hordes
   // clan tint: u8 index into the assets manifest clanPalettes (0 = no clan; render wraps by palette count)
   const clan = builder && world.isRegistered(Membership) ? world.getField(builder, Membership, "clanId") ?? 0 : 0;
   if (clan) world.setField(e, BuildPiece, "tint", clanTintIndex(clan));

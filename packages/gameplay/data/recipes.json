@@ -257,6 +257,15 @@
     {"key": "antiseptic_from_aloe", "station": "workbench", "seconds": 3, "ingredients": [{"item": "aloe", "count": 2}, {"item": "ginseng", "count": 1}], "output": {"item": "antiseptic", "count": 1}},
     {"key": "tinder_from_birch_bark", "station": "none", "seconds": 1, "ingredients": [{"item": "birch_bark", "count": 2}], "output": {"item": "fiber", "count": 2}},
     {"key": "thatch_from_palm", "station": "none", "seconds": 1, "ingredients": [{"item": "palm_frond", "count": 2}], "output": {"item": "fiber", "count": 3}},
-    {"key": "animal_feed", "station": "none", "seconds": 2, "ingredients": [{"item": "fiber", "count": 2}, {"item": "berries", "count": 1}], "output": {"item": "animal_feed", "count": 3}, "skill": {"key": "husbandry", "level": 1}}
+    {"key": "animal_feed", "station": "none", "seconds": 2, "ingredients": [{"item": "fiber", "count": 2}, {"item": "berries", "count": 1}], "output": {"item": "animal_feed", "count": 3}, "skill": {"key": "husbandry", "level": 1}},
+    {"key": "gravel", "station": "none", "seconds": 2, "ingredients": [{"item": "stone", "count": 2}], "output": {"item": "gravel", "count": 3}},
+    {"key": "cement", "station": "furnace", "seconds": 6, "ingredients": [{"item": "stone", "count": 3}, {"item": "clay", "count": 1}], "output": {"item": "cement", "count": 2}},
+    {"key": "asphalt", "station": "furnace", "seconds": 6, "ingredients": [{"item": "gravel", "count": 2}, {"item": "crude_oil", "count": 1}], "output": {"item": "asphalt", "count": 2}},
+    {"key": "sign_wooden_post", "station": "workbench", "seconds": 3, "ingredients": [{"item": "planks", "count": 2}, {"item": "wood", "count": 1}], "output": {"item": "sign_wooden_post", "count": 1}},
+    {"key": "sign_hanging", "station": "workbench", "seconds": 3, "ingredients": [{"item": "planks", "count": 2}, {"item": "rope", "count": 1}], "output": {"item": "sign_hanging", "count": 1}},
+    {"key": "sign_wall_plaque", "station": "workbench", "seconds": 3, "ingredients": [{"item": "planks", "count": 1}, {"item": "nails", "count": 2}], "output": {"item": "sign_wall_plaque", "count": 1}},
+    {"key": "sign_billboard", "station": "workbench", "seconds": 8, "ingredients": [{"item": "planks", "count": 8}, {"item": "wood", "count": 4}, {"item": "nails", "count": 6}], "output": {"item": "sign_billboard", "count": 1}},
+    {"key": "sign_metal_road", "station": "anvil", "seconds": 6, "ingredients": [{"item": "scrap_metal", "count": 4}, {"item": "nails", "count": 2}], "output": {"item": "sign_metal_road", "count": 1}},
+    {"key": "sign_arrow", "station": "workbench", "seconds": 3, "ingredients": [{"item": "planks", "count": 2}, {"item": "nails", "count": 1}], "output": {"item": "sign_arrow", "count": 1}}
   ]
 }

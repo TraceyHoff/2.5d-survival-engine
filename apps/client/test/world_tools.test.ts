@@ -1,0 +1,19 @@
+import { describe, it, expect } from "vitest";
+import { HordePhase } from "@engine/gameplay";
+import { hordeCue, isoToCss } from "../src/world-tools.js";
+
+describe("world tools (ADR-119..121)", () => {
+  it("horde cue state machine: warning -> active -> defeated, new warning per seq", () => {
+    const I = HordePhase.Idle, W = HordePhase.Warning, A = HordePhase.Active;
+    expect(hordeCue(undefined, { phase: W, seq: 1 })).toBeUndefined();
+    expect(hordeCue({ phase: I, seq: 0 }, { phase: W, seq: 1 })).toBe("warning");
+    expect(hordeCue({ phase: W, seq: 1 }, { phase: W, seq: 1 })).toBeUndefined();
+    expect(hordeCue({ phase: W, seq: 1 }, { phase: A, seq: 1 })).toBe("active");
+    expect(hordeCue({ phase: A, seq: 1 }, { phase: I, seq: 1 })).toBe("defeated");
+    expect(hordeCue({ phase: A, seq: 1 }, { phase: W, seq: 2 })).toBe("warning");
+  });
+  it("isoToCss centres the camera target", () => {
+    const cam = { x: 0, y: 0, viewW: 800, viewH: 600, dpr: 1, drawZoom: 1, cssToWorld: () => ({ x: 0, y: 0 }) };
+    expect(isoToCss(cam, 0, 0)).toEqual({ x: 400, y: 300 });
+  });
+});

@@ -1,3 +1,4 @@
+import { ROAD_COMMANDS, SIGN_COMMANDS, SIGN_ENTITY_FIELDS } from "@engine/gameplay";
 /**
  * Browser-safe demo protocol shared by apps/server, the headless bots and apps/client ("@engine/server/protocol").
  * Input bits + movement (identical on server and in client prediction), and the ordered command/event lists.
@@ -29,7 +30,7 @@ export const Pong = defineNetEvent("demo.pong", { t: "u32" });
 export const CHAT_STYLE_RATE = { perSec: 1, burst: 5 } as const;
 export const SOCIAL_COMMAND_NAMES: ReadonlySet<string> = new Set(["gameplay.emote", "gameplay.partyInvite", "gameplay.partyAccept", "gameplay.partyDecline", "gameplay.partyLeave", "gameplay.partyKick", ...CLAN_COMMANDS.map((d) => d.name), ClanDeclineCmd.name]);
 /** NetId entity fields of bridged input-queue commands (validated under the server's entityRefs, default "aoi"). */
-export const INPUT_ENTITY_FIELDS: Readonly<Record<string, readonly string[]>> = { [PaintCmd.name]: ["target"], ...VEHICLE_ENTITY_FIELDS, ...VEHICLE_CRAFT_ENTITY_FIELDS };
+export const INPUT_ENTITY_FIELDS: Readonly<Record<string, readonly string[]>> = { [PaintCmd.name]: ["target"], ...VEHICLE_ENTITY_FIELDS, ...VEHICLE_CRAFT_ENTITY_FIELDS, ...SIGN_ENTITY_FIELDS };
 /** Vehicle wire rates (ADR-102): seat/hitch/station 4/s burst 8; deploy/refuel/repair 2/s burst 4. Dispatch: handlers.enqueue only (not INPUT_QUEUE). */
 export const VEHICLE_NET_RATES: Readonly<Record<string, { perSec: number; burst: number }>> = Object.fromEntries([
   ...VEHICLE_COMMANDS.map((d) => [d.name, { perSec: 4, burst: 8 }] as const),
@@ -53,7 +54,7 @@ const mirror = (d: CommandDef) => {
   const perSec = ECONOMY_COMMAND_RATES[d.name] ?? VEHICLE_COMMAND_RATES[d.name] ?? COMMAND_RATES[d.name] ?? 2;
   return defineCommand(d.name, d.schema, { entityFields: [...(ECONOMY_ENTITY_FIELDS[d.name] ?? PARTY_ENTITY_FIELDS[d.name] ?? CLAN_ENTITY_FIELDS[d.name] ?? INPUT_ENTITY_FIELDS[d.name] ?? VEHICLE_ENTITY_FIELDS[d.name] ?? [])], rate: { perSec, burst: Math.max(2, Math.ceil(perSec * 2)) } });
 };
-export const GAMEPLAY_NET_COMMANDS = [...ECONOMY_COMMANDS, ...CUSTOMIZATION_COMMANDS, ...PVP_COMMANDS, ...CRAFT_QUEUE_COMMANDS, /* appended */ UseCmd, PlaceCmd, EmoteCmd, ...PARTY_COMMANDS, ...CLAN_COMMANDS, PaintCmd, ClanDeclineCmd, ReloadCmd, WearCmd, ...VEHICLE_COMMANDS, ...VEHICLE_CRAFT_COMMANDS, DeleteMyProgressCmd, ...SKILL_COMMANDS].map((d) => ({ core: d as CommandDef, net: mirror(d) }));
+export const GAMEPLAY_NET_COMMANDS = [...ECONOMY_COMMANDS, ...CUSTOMIZATION_COMMANDS, ...PVP_COMMANDS, ...CRAFT_QUEUE_COMMANDS, /* appended */ UseCmd, PlaceCmd, EmoteCmd, ...PARTY_COMMANDS, ...CLAN_COMMANDS, PaintCmd, ClanDeclineCmd, ReloadCmd, WearCmd, ...VEHICLE_COMMANDS, ...VEHICLE_CRAFT_COMMANDS, DeleteMyProgressCmd, ...SKILL_COMMANDS, ...ROAD_COMMANDS, ...SIGN_COMMANDS].map((d) => ({ core: d as CommandDef, net: mirror(d) }));
 /** Net command for a gameplay core CommandDef (clients: `client.sendCommand(gameplayNet(BuyFromStallCmd), {...})`). */
 export function gameplayNet<D extends CommandDef>(d: D): ReturnType<typeof defineCommand<D["schema"]>> {
   const m = GAMEPLAY_NET_COMMANDS.find((x) => x.core === d); if (!m) throw new Error(`not a bridged gameplay command: ${d.name}`);
@@ -107,6 +108,7 @@ export const COMMAND_REJECT_REASONS = [
   "empty_slot", "not_kit", "no_tank", "not_fuel", "wrong_fuel", "not_repair_item", "wrong_part", "needs_garage",
   /* appended (ADR-099) */ "bad_confirm", "not_claimed",
   /* appended (ADR-109) */ "no_key",
+  /* appended (ADR-119/120): roads + signs */ "bad_surface", "no_privilege", "occupied", "cannot_afford", "no_tool", "not_found", "too_far", "bad_kind", "no_item", "not_owner",
 ] as const;
 export type CommandRejectReason = (typeof COMMAND_REJECT_REASONS)[number];
 export function rejectReasonCode(reason: string): number { const i = (COMMAND_REJECT_REASONS as readonly string[]).indexOf(reason); return i < 0 ? 0 : i + 1; }

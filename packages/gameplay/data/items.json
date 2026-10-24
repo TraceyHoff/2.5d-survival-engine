@@ -4568,6 +4568,69 @@
       "category": "resource",
       "maxStack": 30,
       "weight": 0.2
+    },
+    {
+      "key": "gravel",
+      "name": "Gravel",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.6
+    },
+    {
+      "key": "cement",
+      "name": "Cement",
+      "category": "resource",
+      "maxStack": 40,
+      "weight": 0.8
+    },
+    {
+      "key": "asphalt",
+      "name": "Asphalt",
+      "category": "resource",
+      "maxStack": 40,
+      "weight": 0.9
+    },
+    {
+      "key": "sign_wooden_post",
+      "name": "Wooden Post Sign",
+      "category": "resource",
+      "maxStack": 10,
+      "weight": 1.5
+    },
+    {
+      "key": "sign_hanging",
+      "name": "Hanging Sign",
+      "category": "resource",
+      "maxStack": 10,
+      "weight": 1.5
+    },
+    {
+      "key": "sign_wall_plaque",
+      "name": "Wall Plaque",
+      "category": "resource",
+      "maxStack": 10,
+      "weight": 1.5
+    },
+    {
+      "key": "sign_billboard",
+      "name": "Billboard",
+      "category": "resource",
+      "maxStack": 10,
+      "weight": 1.5
+    },
+    {
+      "key": "sign_metal_road",
+      "name": "Metal Road Sign",
+      "category": "resource",
+      "maxStack": 10,
+      "weight": 1.5
+    },
+    {
+      "key": "sign_arrow",
+      "name": "Direction Arrow Sign",
+      "category": "resource",
+      "maxStack": 10,
+      "weight": 1.5
     }
   ]
 }

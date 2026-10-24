@@ -90,6 +90,8 @@ const rows = [
   ["ui.back", "ui", 0, 1, 0.15, "tick", 900, 0.4, 80, 2], ["ui.error", "ui", 0, 1, 0.3, "tick", 160, 0.5, 85, 2],
   ["ui.slider", "ui", 0, 1, 0.05, "tick", 2200, 0.35, 70, 2], ["ui.levelup", "ui", 0, 1, 2.5, "fanfare", 523, 0.75, 95, 1],
   ["ui.notify", "ui", 0, 2, 0.6, "chime", 990, 0.5, 85, 2], ["ui.toast.warn", "ui", 0, 1, 0.5, "chime", 440, 0.5, 85, 2],
+  // roaming hordes (ADR-121): HUD cues from HordeStatus (warning -> spawn -> defeated)
+  ["horde.warning", "ui", 0, 2, 3, "howl", 180, 0.75, 90, 1], ["horde.spawn", "ui", 0, 2, 2.5, "growl", 90, 0.8, 90, 1], ["horde.defeated", "ui", 0, 1, 1.5, "chime", 660, 0.6, 85, 1],
   ["ui.chat", "ui", 0, 1, 0.2, "pop", 1500, 0.35, 60, 2], ["ui.craft_queue", "ui", 0, 1, 0.2, "pop", 1100, 0.35, 50, 1],
   // weather / ambience
   ["weather.rain", "ambient", 1, 2, 12, "rain", 0, 0.5, 30, 1, ["audio/ambience/rain_loop"]], ["weather.rain.indoor", "ambient", 1, 1, 12, "rain", 0, 0.35, 30, 1],

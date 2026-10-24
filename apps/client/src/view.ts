@@ -17,6 +17,7 @@ import { pieceVariantOpts } from "./piece-variant.js";
 import { loadManifest, mergeManifests, buildPieceVisual, type AssetRegistry, type ManifestFragment, type ManifestJson } from "@engine/assets";
 import { BuildGhost, pieceArtRow, ROT_EXACT_PIVOT, IsoRenderer, Canvas2DRenderer, chooseRenderer, Sprite, Shadow, LightSource, Occluder, SpriteFlag, sourcesFromManifest, coreAppearanceBinding, CameraTargetGuard } from "@engine/render";
 import { countFraction } from "./load-progress.js";
+import { Road, Sign, surfaceDef, signDef } from "@engine/gameplay";
 import { gameplayDefs, rotationSteps, animalDefs, Animal, Health, Survival, Zombie, ResourceNode, CraftingStation, Fuel, AnimState as GAnim, BuildPiece as GPiece, Dead, Wetness, BodyTemp, Emitter, PieceLink, Crop, cropSpriteKey, clutterForChunk, resolveSprite, type ResolvedSprite } from "@engine/gameplay";
 
 /** Render-side schemas the renderer's bindings expect (view World only). */
@@ -362,6 +363,15 @@ export class IsoView {
       const tall = key === "tree" || !!key?.startsWith("tree_") || !!key?.endsWith("_tree"); // ADR-110 species: <x>_tree
       const scale = (tall ? 1.1 + (h % 50) / 100 : 1) * r.scale;
       return { sprite: s, ...(r.tint ? { tint: r.tint } : {}), flags: (h & 1 ? SpriteFlag.FlipX : 0) | (tall || !!key?.endsWith("_bush") ? SpriteFlag.Sway : 0), scale, shadow: 0.9, occluder: !!tall, onCreate: scale };
+    }
+    if (net.has(e, Road)) { // ADR-119: road_<surface>_m<mask> (auto-connected art) -> road_<surface> -> sprite_fallbacks chain
+      const r0 = net.get(e, Road)!; const base = `road_${surfaceDef(r0.surface)?.key ?? "path"}`;
+      const exact = this.sid(`${base}_m${r0.mask}`); if (exact !== undefined) return { sprite: exact, } as Spec;
+      const r = this.rs(base); return r ? { sprite: r.id, ...(r.tint ? { tint: r.tint } : {}), ...(r.scale !== 1 ? { scale: r.scale, onCreate: r.scale } : {}) } : undefined;
+    }
+    if (net.has(e, Sign)) { // ADR-120: the sign post art; its text is a DOM world label (world-labels.ts)
+      const s0 = net.get(e, Sign)!; const r = this.rs(signDef(s0.kind)?.key ?? "sign_wooden_post");
+      return r ? { sprite: r.id, shadow: 0.6, ...(r.tint ? { tint: r.tint } : {}), ...(r.scale !== 1 ? { scale: r.scale, onCreate: r.scale } : {}) } : undefined;
     }
     if (net.has(e, Crop)) { // ADR-110: farm_soil / crop_<plant>_<stage> / sapling_<tree|bush>_<stage> (stage synced per frame)
       const c = net.get(e, Crop)!; const r = this.rs(cropSpriteKey(c.kind, c.stage)); if (!r) return undefined;

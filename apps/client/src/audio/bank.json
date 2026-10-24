@@ -4121,6 +4121,48 @@
     "len": 0.5
    }
   },
+  "horde.warning": {
+   "bus": "ui",
+   "volume": 0.75,
+   "pitchJitter": 0.02,
+   "volumeJitter": 0.12,
+   "loop": false,
+   "priority": 90,
+   "maxVoices": 1,
+   "synth": {
+    "r": "howl",
+    "f": 180,
+    "len": 3
+   }
+  },
+  "horde.spawn": {
+   "bus": "ui",
+   "volume": 0.8,
+   "pitchJitter": 0.02,
+   "volumeJitter": 0.12,
+   "loop": false,
+   "priority": 90,
+   "maxVoices": 1,
+   "synth": {
+    "r": "growl",
+    "f": 90,
+    "len": 2.5
+   }
+  },
+  "horde.defeated": {
+   "bus": "ui",
+   "volume": 0.6,
+   "pitchJitter": 0.02,
+   "volumeJitter": 0.12,
+   "loop": false,
+   "priority": 85,
+   "maxVoices": 1,
+   "synth": {
+    "r": "chime",
+    "f": 660,
+    "len": 1.5
+   }
+  },
   "ui.chat": {
    "bus": "ui",
    "files": [

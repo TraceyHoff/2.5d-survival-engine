@@ -2,7 +2,7 @@
 import type { Channel } from "@engine/net";
 import type { CatalogSnapshot } from "./catalog-snapshot.js";
 
-export interface WorkerInit { dbName: string; bots: number; catalog?: CatalogSnapshot }
+export interface WorkerInit { dbName: string; bots: number; catalog?: CatalogSnapshot; worldRules?: { hordes: boolean; hordeGraceDays: number } }
 export type ToWorker =
   | { t: "init"; init: WorkerInit }
   | { t: "connect"; cid: number }

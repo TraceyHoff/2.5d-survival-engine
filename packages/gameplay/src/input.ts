@@ -4,6 +4,8 @@
  * input phase. Gameplay queues commands per entity and turns ONE per tick into PlayerIntent (so a burst of commands
  * is processed in order over consecutive ticks, identically on server and predicting client).
  */
+import { ROAD_COMMANDS } from "./roads.js";
+import { SIGN_COMMANDS } from "./signs.js";
 import { PARTY_COMMANDS } from "./party.js";
 import { CLAN_COMMANDS, ClanDeclineCmd } from "./clan.js";
 import { CommandRegistry, defineActions, defineCommand, defineResource, type Command, type CommandDef, type Entity, type InputFrame, type World } from "@engine/core";
@@ -83,6 +85,8 @@ export function registerGameplayCommands(reg: CommandRegistry = new CommandRegis
   for (const d of VEHICLE_CRAFT_COMMANDS) reg.register(d); // append-only: deploy / refuel / repair (DESIGN.md §31)
   for (const d of VEHICLE_STATE_COMMANDS) reg.register(d); // append-only: engine / headlights (ADR-101)
   for (const d of SKILL_COMMANDS) reg.register(d); // append-only: unlock / respec (ADR-113)
+  for (const d of ROAD_COMMANDS) reg.register(d); // append-only: roads (ADR-119)
+  for (const d of SIGN_COMMANDS) reg.register(d); // append-only: signs (ADR-120)
   return reg;
 }
 

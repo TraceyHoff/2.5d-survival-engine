@@ -1,0 +1,41 @@
+{
+  "$comment": "ADR-119/120/121 roads, signage and roaming hordes. Surface order = RoadSurface - 1, sign order = Sign.kind - 1 (append-only).",
+  "roads": {
+    "maxDragTiles": 32,
+    "surfaces": [
+      { "key": "path", "name": "Dirt Path", "speedMul": 1.1, "vehicleMul": 1.15, "cost": [], "tools": ["stone_shovel", "bronze_shovel", "iron_shovel", "steel_shovel", "alloy_shovel", "hoe"] },
+      { "key": "gravel", "name": "Gravel Road", "speedMul": 1.2, "vehicleMul": 1.35, "cost": [{ "item": "gravel", "count": 2 }], "tools": [] },
+      { "key": "paved", "name": "Paved Road", "speedMul": 1.3, "vehicleMul": 1.6, "cost": [{ "item": "stone", "count": 1 }, { "item": "cement", "count": 1 }], "alt": [{ "item": "asphalt", "count": 1 }, { "item": "crude_oil", "count": 1 }], "tools": [] }
+    ]
+  },
+  "settlements": { "radius": 24, "clanMinPieces": 1 },
+  "signs": [
+    { "key": "sign_wooden_post", "name": "Wooden Post Sign", "item": "sign_wooden_post", "maxLen": 32, "wall": false },
+    { "key": "sign_hanging", "name": "Hanging Sign", "item": "sign_hanging", "maxLen": 24, "wall": false },
+    { "key": "sign_wall_plaque", "name": "Wall Plaque", "item": "sign_wall_plaque", "maxLen": 32, "wall": true },
+    { "key": "sign_billboard", "name": "Billboard", "item": "sign_billboard", "maxLen": 48, "wall": false },
+    { "key": "sign_metal_road", "name": "Metal Road Sign", "item": "sign_metal_road", "maxLen": 24, "wall": false },
+    { "key": "sign_arrow", "name": "Direction Arrow", "item": "sign_arrow", "maxLen": 20, "wall": false }
+  ],
+  "hordes": {
+    "enabledDefault": true,
+    "graceDaysDefault": 3,
+    "lowLevelGraceMul": 2,
+    "minTargetLevel": 3,
+    "intervalDays": 1,
+    "warnSeconds": 30,
+    "phases": ["dusk", "night"],
+    "solo": { "base": 4, "cap": 14 },
+    "clan": { "base": 12, "perMember": 4, "cap": 64 },
+    "levelScalePerLevel": 0.05,
+    "dayScalePerDay": 0.03,
+    "scaleCap": 2.5,
+    "maxActiveHordes": 3,
+    "maxHordeZombies": 120,
+    "spawnRingMin": 36,
+    "spawnRingMax": 48,
+    "targetRadius": 16,
+    "composition": { "zombie_walker": 6, "zombie_runner": 2, "zombie_brute": 1, "zombie_snuffer": 1 },
+    "minPiecesPerTarget": 1
+  }
+}

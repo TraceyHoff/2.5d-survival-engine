@@ -1446,6 +1446,63 @@
         "storage_box"
       ],
       "tint": "#a07850"
+    },
+    "road_path": {
+      "to": [
+        "farm_soil"
+      ],
+      "tint": "#a88c64",
+      "scale": 0.9
+    },
+    "road_gravel": {
+      "to": [
+        "clutter_rock_small",
+        "loose_rocks"
+      ],
+      "tint": "#a49e92",
+      "scale": 0.9
+    },
+    "road_paved": {
+      "to": [
+        "loose_rocks"
+      ],
+      "tint": "#5a5c62",
+      "scale": 0.9
+    },
+    "sign_wooden_post": {
+      "to": [
+        "sign"
+      ]
+    },
+    "sign_hanging": {
+      "to": [
+        "sign"
+      ],
+      "tint": "#9a7444"
+    },
+    "sign_wall_plaque": {
+      "to": [
+        "sign_wall",
+        "sign"
+      ]
+    },
+    "sign_billboard": {
+      "to": [
+        "sign"
+      ],
+      "scale": 1.6
+    },
+    "sign_metal_road": {
+      "to": [
+        "sign"
+      ],
+      "tint": "#8a9aa8"
+    },
+    "sign_arrow": {
+      "to": [
+        "sign"
+      ],
+      "scale": 0.8
     }
   },
   "stages": {
@@ -1594,7 +1651,16 @@
     "fruit_salad": "stew_bowl",
     "baked_beans": "stew_bowl",
     "roasted_garlic": "baked_potato",
-    "willow_tea": "herbal_tea"
+    "willow_tea": "herbal_tea",
+    "gravel": "stone",
+    "cement": "stone",
+    "asphalt": "crude_oil",
+    "sign_wooden_post": "planks",
+    "sign_hanging": "planks",
+    "sign_wall_plaque": "planks",
+    "sign_billboard": "planks",
+    "sign_metal_road": "scrap_metal",
+    "sign_arrow": "planks"
   },
   "categoryIcons": {
     "resource": "fiber",

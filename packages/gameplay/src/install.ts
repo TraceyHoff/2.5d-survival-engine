@@ -28,6 +28,7 @@ import { VEHICLE_DEFS_HASH, vehicleSystem } from "./vehicles.js";
 import { vehicleGuardSystem } from "./vehicle_net.js";
 import { expressionSystem, EXPRESSION_EVERY } from "./expression.js";
 import { stallDisplaySystem, STALL_DISPLAY_EVERY } from "./systems/stall_display.js";
+import { hordeDirectorSystem, HORDES_EVERY, setWorldRules, type WorldRulesOpts } from "./hordes.js";
 
 export * from "./spawn.js";
 
@@ -39,6 +40,8 @@ export interface GameplayOptions {
   tickHz?: number;
   /** Server role: the NetServer (structurally) - BuildPiece is registered as static class and scopes applied. Call before clients join. */
   net?: NetReplicationHooks;
+  /** ADR-121 world rules (hordes on/off, grace days); defaults from roads.json hordes. */
+  worldRules?: WorldRulesOpts;
 }
 
 type Phase = "input" | "simulation" | "postSim";
@@ -63,6 +66,7 @@ export const GAMEPLAY_SYSTEM_ORDER: readonly (readonly [Phase, string, number?])
   ["simulation", "gameplay.crops", CROP_EVERY], // ADR-110
   ["simulation", "gameplay.husbandryUse"], // ADR-113
   ["simulation", "gameplay.husbandry", HUSBANDRY_EVERY], // ADR-113
+  ["simulation", "gameplay.hordes", HORDES_EVERY], // ADR-121 server director (no-op on clients / when disabled)
   ["simulation", "gameplay.vitals"],
   ["simulation", "gameplay.death"],
   ["simulation", "gameplay.deathBags"],
@@ -96,6 +100,7 @@ export function installGameplay(world: World, options: GameplayOptions | number 
   // Environment singleton is created by core; initialise TimeOfDay once (dayLengthTicks 0 = uninitialised).
   if (world.env(TimeOfDay).dayLengthTicks === 0) { world.env(TimeOfDay).dayLengthTicks = dayLengthTicks; setTimeOfDay(world, env.startTimeOfDay * 24, 0); }
   world.set(world.environment, Weather, { kind: WeatherKind.Clear });
+  if (role !== "client") setWorldRules(world, opts.worldRules ?? {});
   installSpatialIndex(world);
   installGameplayContainers(world);
   installVehicleCraft(world);
@@ -109,6 +114,7 @@ export function installGameplay(world: World, options: GameplayOptions | number 
     "gameplay.spoilage": spoilageSystem, "gameplay.chunkSurface": chunkSurfaceSystem,
     "gameplay.clearIntents": clearIntentsSystem, "gameplay.equipmentSync": equipmentSyncSystem, "gameplay.noiseDecay": noiseDecaySystem,
     "gameplay.pruneBuffs": (w) => pruneModifiers(w, Buffs), "gameplay.stallDisplay": stallDisplaySystem, "gameplay.expression": expressionSystem, "gameplay.vehicles": vehicleSystem, "gameplay.vehicleGuard": vehicleGuardSystem, "gameplay.animSettle": animSettleSystem, "gameplay.farmUse": farmUseSystem, "gameplay.crops": cropGrowthSystem, "gameplay.husbandryUse": husbandryUseSystem, "gameplay.husbandry": husbandrySystem,
+    "gameplay.hordes": hordeDirectorSystem,
     ...installBuildingSystems(world), ...installCombatSystems(world),
   };
   installProgression(world);

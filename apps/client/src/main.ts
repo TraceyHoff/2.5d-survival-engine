@@ -8,6 +8,7 @@ import { installFullscreenRestore, exitFullscreen } from "./fullscreen.js";
 import { uiRoot, safeAreaInsets } from "./ui-root.js";
 import { GameMenus } from "./game-menus.js";
 import { BuildMode } from "./build-mode.js";
+import { mountWorldTools } from "./world-tools.js";
 import { mountTouchOverlay } from "./touch-overlay.js";
 /**
  * Client bootstrap: fixed-step loop + WebGL2 IsoRenderer view (./view.ts, Art's pack) + network session.
@@ -22,6 +23,7 @@ import { InputSystem, AimResolver, DEFAULT_ACTIONS, DEFAULT_CONTEXTS, DEFAULT_PR
 import { attachBrowserInput } from "@engine/input/browser";
 import { Act, ClanRoster, ClanRosterMember, OnlinePlayer, VehicleStationOpenedEvt, gameplayNet, installDemoWorld } from "@engine/server/protocol";
 import { netIdOf, ChatChannel, type ChatDelivered } from "@engine/net";
+import { WorldRules, worldRules } from "@engine/gameplay";
 import { SocialDirectory, hasCreatedLook, setAppearanceIntent, interactPanel, UseCmd, GatherCmd, farmPrompt, type MenuCtx, type MenuIntent } from "@engine/gameplay";
 import { ClientSession } from "./session.js";
 import { mountConnectOverlay } from "./connect.js";
@@ -29,7 +31,7 @@ import { IsoView } from "./view.js";
 import { mountHud } from "./hud.js";
 import { controlLabel, mountFarmPrompt, quickUseFires, type PromptDevice } from "./farm-prompt.js";
 import { attachContextRecovery, effectiveLevel, retryIsoAtSafe } from "./gl-recovery.js";
-import { BootUI, loadSettings } from "./menu.js";
+import { BootUI, loadSettings, newWorldRules } from "./menu.js";
 import { EDIT_CHAR_KEY, loadCharacter, previewModeFromQuery, saveCharacter, showCharacterCreator, type CharacterSaveKind, type StoredCharacter } from "./character-creator.js";
 import { sampleDayClock } from "./day-clock.js";
 import { AudioSystem } from "./audio/index.js";
@@ -99,7 +101,7 @@ let deleteInfo: (() => { label: string; message: string; settingsOption: boolean
 let sessionInfo: (() => { label: string; leaveLabel: string; onLeave: () => void }) | undefined;
 function startMenus(): void {
   if (menus) return;
-  menus = new GameMenus({ root, input, audio: audio.mixer, onQuit: quitToMenu, session: () => sessionInfo?.(), deleteProgress: () => deleteInfo?.(), setQuality: (p) => iso?.renderer.setQualityPreset(p), qualityInfo: () => (iso && "quality" in iso.renderer ? (iso.renderer as { quality: { autoLabel(): string; detected?: { name: string; klass: string; remembered: boolean } | undefined } }).quality : undefined), gameplay: { ctx: menuCtx, send: sendIntent, social, startPlacing: (sel) => buildMode.start(sel) },
+  menus = new GameMenus({ root, input, audio: audio.mixer, worldRules: () => (world.isRegistered(WorldRules) && world.has(world.environment, WorldRules) ? worldRules(world) : undefined), onQuit: quitToMenu, session: () => sessionInfo?.(), deleteProgress: () => deleteInfo?.(), setQuality: (p) => iso?.renderer.setQualityPreset(p), qualityInfo: () => (iso && "quality" in iso.renderer ? (iso.renderer as { quality: { autoLabel(): string; detected?: { name: string; klass: string; remembered: boolean } | undefined } }).quality : undefined), gameplay: { ctx: menuCtx, send: sendIntent, social, startPlacing: (sel) => buildMode.start(sel) },
     onChat: (text, channel, to) => { if (!session.client?.chat.send(channel as ChatChannel, text, to ? { to } : {})) menus?.pushChat("(not connected — message not sent)"); } });
 }
 /** Live data for the gameplay panels: the replicated world + local player; names via NetClient's NamesClient. */
@@ -263,11 +265,11 @@ async function startSingleplayer(): Promise<void> {
     // ?worker=0, no Worker support, or a worker that fails/stalls on startup falls back to the in-tab server.
     const { startWorkerServer } = await import("./local-bridge.js");
     let local: import("./local-bridge.js").LocalServerHandle | undefined = params.get("worker") === "0" ? undefined
-      : await startWorkerServer({ dbName, bots, catalog, status: localStatus, log, timeoutMs: 15000 });
+      : await startWorkerServer({ dbName, bots, worldRules: newWorldRules(settings), catalog, status: localStatus, log, timeoutMs: 15000 });
     if (!local) {
       const store = await openBrowserStore(dbName);
       localStatus.state = "starting";
-      const inTab = await createLocalServer({ store, bots, ...(catalog ? { catalog } : {}), log });
+      const inTab = await createLocalServer({ store, bots, worldRules: newWorldRules(settings), ...(catalog ? { catalog } : {}), log });
       pumpLocal = inTab.pump;
       local = { inWorker: false, createTransport: () => inTab.createTransport(), save: async () => { await inTab.game.persist?.saveAll(); }, stop: () => inTab.stop() };
     }
@@ -313,7 +315,7 @@ async function startHost(): Promise<void> {
   let host: import("./host.js").P2PHost;
   try {
     stampPlayed("hosted");
-    host = await startP2PHost({ signaling: await p2pSignaling(), store: await openBrowserStore(`engine-p2p-host-${params.get("player") ?? "1"}`), cap: cap.cap, capDetail: cap.detail,
+    host = await startP2PHost({ worldRules: newWorldRules(), signaling: await p2pSignaling(), store: await openBrowserStore(`engine-p2p-host-${params.get("player") ?? "1"}`), cap: cap.cap, capDetail: cap.detail,
       ...(await isoReady, iso?.registry.cosmetics?.size ? { catalog: iso.registry.cosmetics } : {}), log: (m) => console.info(`[host] ${m}`) });
   } catch (e) { backToMenu(`Couldn't host: ${e instanceof Error ? e.message : String(e)}`); return; }
   pumpLocal = host.local.pump;
@@ -397,6 +399,8 @@ farm = mountFarmPrompt(root, {
   key: (action) => controlLabel(input.bindings(promptDevice(), "Gameplay").find((b) => b.binding.action === action)?.binding.control),
   use: (p) => { if (p.action === "Harvest") { if (p.target !== undefined) sendIntent({ cmd: GatherCmd, args: { target: p.target }, entities: ["target"] }); } else if (p.slot !== undefined) sendIntent({ cmd: UseCmd, args: { slot: p.slot } }); },
 });
+// ADR-119..121: sign labels, road drag tool (G), sign placing (N), settlement label, horde toasts + cues
+mountWorldTools(root, { world: () => world, player: () => session.player, camera: () => iso?.renderer.camera, send: (i) => sendIntent(i), hidden: () => !!menus?.nav.isOpen || buildMode.active, sound: (k) => audio.mixer.play(k) });
 if (params.get("hud") !== "0" && settings.showHud) mountHud(() => world, () => session.player, { ...(num("time") !== undefined ? { hours: num("time")! } : {}), ...(wi >= 0 ? { weather: wi } : {}) });
 
 let last = performance.now();

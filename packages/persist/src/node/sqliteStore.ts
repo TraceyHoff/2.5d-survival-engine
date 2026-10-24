@@ -146,7 +146,7 @@ export class SqliteWorldStore implements WorldStore {
     if (this.overlayMeta) return { ...this.overlayMeta };
     const rows = this.qMeta.all(); if (!rows.length) return undefined;
     const m = Object.fromEntries(rows.map((r) => [r.k, Number(r.v)]));
-    return { seed: m["seed"] ?? 0, tick: m["tick"] ?? 0, schemaHash: m["schemaHash"] ?? 0, ...(m["createdAt"] !== undefined ? { createdAt: m["createdAt"] } : {}), ...(m["nextPlayerId"] !== undefined ? { nextPlayerId: m["nextPlayerId"] } : {}), ...(m["dayEpochTick"] !== undefined ? { dayEpochTick: m["dayEpochTick"] } : {}) };
+    return { seed: m["seed"] ?? 0, tick: m["tick"] ?? 0, schemaHash: m["schemaHash"] ?? 0, ...(m["createdAt"] !== undefined ? { createdAt: m["createdAt"] } : {}), ...(m["nextPlayerId"] !== undefined ? { nextPlayerId: m["nextPlayerId"] } : {}), ...(m["dayEpochTick"] !== undefined ? { dayEpochTick: m["dayEpochTick"] } : {}), ...(m["hordes"] !== undefined ? { hordes: m["hordes"] } : {}), ...(m["hordeGraceDays"] !== undefined ? { hordeGraceDays: m["hordeGraceDays"] } : {}) };
   }
   readRecord(ns: string, id: string): StoredRecord | undefined {
     const o = this.overlayRecords.overlay.get(recordKey(ns, id)); if (o !== undefined) return o ?? undefined;

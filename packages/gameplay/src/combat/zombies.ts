@@ -32,7 +32,7 @@ import { lightAt, lightGrid, nearestLight, type ActiveLight } from "../systems/l
 import { snuffFire } from "../systems/fuel.js";
 import { attachmentsOf, pieceOf } from "../building/links.js";
 import { damagePiece } from "../building/integrity.js";
-import { BuildPiece, Fuel } from "../components.js";
+import { BuildPiece, Fuel, HordeMember } from "../components.js";
 
 const PHASE_KEY = { [DayPhase.Night]: "night", [DayPhase.Dawn]: "dawn", [DayPhase.Day]: "day", [DayPhase.Dusk]: "dusk" } as const;
 export const currentPhaseKey = (world: World): "night" | "dawn" | "day" | "dusk" => PHASE_KEY[dayPhase(timeOfDay(world).t)];
@@ -130,7 +130,8 @@ export function zombieAISystem(world: World, dt: number): void {
       }
       // despawn when no player is near
       let anyNear = false; for (const p of installSpatialIndex(world).queryRadius(x, y, ai.despawnDistance)) if (world.has(p, Survival)) { anyNear = true; break; }
-      if (!anyNear && !world.isReplaying) { ps.delete(z); world.destroy(z); continue; }
+      const horde = world.has(z, HordeMember); // ADR-121: horde members roam far from players
+      if (!anyNear && !horde && !world.isReplaying) { ps.delete(z); world.destroy(z); continue; }
       const state = br.data.state[s]! as ZState; const target = br.data.target[s]!;
       const tgt = acquire(world, x, y, def);
       if (tgt) {
@@ -145,6 +146,8 @@ export function zombieAISystem(world: World, dt: number): void {
       } else if (state === ZState.Investigate && world.tick > br.data.stateTick[s]! + secondsToTicks(ai.investigateSeconds, dt)) {
         setState(world, z, ZState.Wander);
       }
+      // ADR-121 horde: with no player in sight, march on the target structure (retarget nearby pieces when it falls)
+      if (horde && !tgt?.seen) hordeSteer(world, z, x, y, s, def);
       // ADR-108 Snuffer: at night go for the nearest active light unless a player is already in reach
       if (def.light?.targetsLights && avoid && !(tgt?.seen && br.data.state[s] === ZState.AttackPlayer)) {
         const nl = nearestLight(world, x, y, def.light.seekRange);
@@ -260,4 +263,24 @@ function moveToward(world: World, e: Entity, gx: number, gy: number, step: numbe
   if (d <= step || d === 0) { tf.data.x[ts] = gx; tf.data.y[ts] = gy; tf.markChanged(entityIndex(e)); return true; }
   tf.data.x[ts] = x + (dx / d) * step; tf.data.y[ts] = y + (dy / d) * step; tf.data.facing[ts] = Math.atan2(dy, dx); tf.markChanged(entityIndex(e));
   return false;
+}
+
+/** ADR-121: drive a horde member toward / onto its target piece; disband (plain zombie) when nothing is left there. */
+function hordeSteer(world: World, z: Entity, x: number, y: number, s: number, def: ZombieDef): void {
+  const br = world.store(ZombieBrain); const hm = world.get(z, HordeMember)!;
+  let target = hm.target as Entity;
+  if (!world.isAlive(target) || !world.has(target, BuildPiece) || world.has(target, Dead)) {
+    let best: Entity | 0 = 0, bd = 16;
+    for (const e of installSpatialIndex(world).queryRadius(hm.tx, hm.ty, 16)) {
+      if (!world.has(e, BuildPiece) || world.has(e, Dead)) continue;
+      const t = world.get(e, Transform)!; const d = dist(x, y, t.x, t.y); if (d < bd) { bd = d; best = e; }
+    }
+    if (!best) { world.remove(z, HordeMember); return; }
+    target = best; world.setField(z, HordeMember, "target", best);
+  }
+  const tt = world.get(target, Transform)!; const state = br.data.state[s]! as ZState;
+  if (state === ZState.AttackStructure && world.isAlive(br.data.blockPiece[s]! as Entity)) return;
+  br.data.goalX[s] = tt.x; br.data.goalY[s] = tt.y;
+  if (dist(x, y, tt.x, tt.y) <= def.attackRange + 1.2) { br.data.blockPiece[s] = target; setState(world, z, ZState.AttackStructure); }
+  else if (state === ZState.Wander || state === ZState.Investigate) { setState(world, z, ZState.Chase); br.data.target[s] = target; br.data.repathAt[s] = 0; }
 }

@@ -570,3 +570,65 @@ Identity is persisted in the `agents` record namespace. Gameplay supplies `refer
 - `LoadProgress.value` is monotonic; `EasedBar` eases the shown fill exponentially toward it (never backwards, dt clamped for background tabs). `BootUI.finish()` eases to 100% then hands off to the menu (1.2 s cap). `BootUI.fail()` turns the bar red with a message (e.g. the safe-quality reload); a renderer fallback shows a notice and still completes.
 - The zombie sits on a `.lane` above the track at `left = fill%`, with a 6-frame walk + bob while the fill moves (Art's `loading_zombie_walk.png` when branding provides it, otherwise an inline pixel SVG). `prefers-reduced-motion` snaps the fill, freezes frame/bob and stops the campfire animation. The track has `role=progressbar` + `aria-valuenow`.
 - Not covered: the audio bank (decoding needs an unlocked AudioContext, so it is not on the boot path), and world join after the menu (not part of the boot screen).
+
+## ADR-119: Roads (path, gravel, paved) and settlement classification
+
+- **Data:** `packages/gameplay/data/roads.json` has three surfaces.
+  - **Path:** needs a shovel or hoe tool and costs nothing; walk ×1.15, vehicle ×1.10.
+  - **Gravel:** 2 `gravel`; walk ×1.25, vehicle ×1.30.
+  - **Paved:** 1 `cement` or 1 `asphalt` + 1 `crude_oil`; walk ×1.35, vehicle ×1.60.
+  - New recipes: `gravel` (stone), `cement` (stone + gravel), `asphalt` (gravel + crude_oil).
+- **ECS:** a `Road` component (`surface`, `mask`, `tx`, `ty`, `owner`) on a lightweight replicated entity per tile.
+  - Upgrading replaces the surface in place.
+  - `mask` is a 4-bit N/E/S/W neighbour mask, recomputed for the tile and its neighbours on place and remove, so edges auto-connect.
+  - The client draws `road_<surface>_m<mask>`, falling back to `road_<surface>`.
+- **Placement:** a road may go anywhere, including outside privilege zones, except inside someone else's zone (`no_privilege`).
+  - `PlaceRoadCmd` lays a 4-connected Bresenham line from a drag; the line is capped at `maxDragTiles`, and the command stops at the first tile the player can't afford.
+  - `RemoveRoadCmd` is owner only.
+  - Roads persist through the normal entity save.
+- **Speed:** `movement.ts` multiplies walk speed by `roadSpeedMul`, and `vehicles.ts` multiplies vehicle speed by `roadVehicleMul`.
+- **Settlements:** `classifySettlements` takes homestead points (one per owned base) and single-link clusters them within 48 tiles.
+  - A cluster with 2 or more members of the same clan is a **clan city**.
+  - Otherwise, a cluster with 2 or more players is a **village**.
+  - A lone player is a **house**.
+  - The HUD shows the settlement at the player's position in `#settlement-label`.
+- **Client:** G cycles the road tool (off → path → gravel → paved), and a drag places the road.
+- **Schema:** GAMEPLAY_COMPONENTS appends Road, Sign, HordeMember, WorldRules, HordeStatus and PieceOwner. The new schema hash (server role) is **a70d288c**, replacing b585c117.
+
+## ADR-120: Craftable signage
+
+- **Six kinds**, each an item, a recipe and a placeable: `sign_wooden_post`, `sign_hanging`, `sign_wall_plaque`, `sign_billboard` (longer text), `sign_metal_road` and `sign_arrow` (rotatable).
+- **Text** is stored in the `Sign` component, which is replicated and persisted.
+  - `sanitizeSignText` strips control characters, collapses whitespace and trims, then limits length to `SIGN_TEXT_MAX`, or a per-kind limit.
+  - `maskProfanity` masks whole words, including leetspeak forms, with `*`. Substrings inside clean words are not matched (no Scunthorpe problem).
+- **Editing:** `setSignText` is allowed for the sign's owner, or a member of the sign's clan. `removeSign` refunds the item.
+- **Commands:** `PlaceSignCmd`, `SetSignTextCmd` and `RemoveSignCmd`; reject reasons `no_item` and `not_owner`.
+- **Client:**
+  - Signs show as DOM world labels within 22 tiles, at most 40 at a time.
+  - Clicking a label edits its text through `prompt()`.
+  - N places the first sign the player is carrying.
+
+## ADR-121: Roaming zombie hordes and world rules
+
+- **World rules:** a `WorldRules` env component with `hordes` (default **on**) and `hordeGraceDays` (default **3** in-game days, clamped 0–30).
+  - They are set from the main-menu Settings for **new** worlds, saved in the save meta (`hordes`, `hordeGraceDays`), and the save wins on reload.
+  - The pause menu shows the current world's rules, read only.
+- **Director:** server only, in `hordes.ts`.
+  - It never runs while hordes are disabled, or before the grace period ends.
+  - The grace period doubles while the highest player level is below 3 (`graceFor`).
+  - It rolls at dusk or night, at most once per in-game day.
+  - A target is a base: `PieceOwner` pieces grouped by clan, or by solo player.
+  - It announces a warning (`HordeStatus.phase = Warning`, 30 s), then spawns tagged `HordeMember` zombies on a ring 28–40 tiles out.
+  - They steer to the base and attack structures; the existing fire-light, snuffer and defence systems apply to them normally.
+  - The horde is **defeated** when every member is dead.
+- **Size:**
+  - `scale = min(2.5, 1 + 0.05·(level−1) + 0.03·daysPastGrace)`
+  - **Solo** = `min(14, round(4·scale))`
+  - **Clan** = `min(64, round((12 + 4·members)·scale))`
+  - Totals are clipped to `maxHordeZombies` 120 and `maxActiveHordes` 3.
+  - Solo is therefore always smaller than any clan horde, and a clan horde grows with member count.
+- **Client:**
+  - `#horde-toast` with sounds `horde.warning`, `horde.spawn` and `horde.defeated` (placeholders in the generated bank; listed in AUDIO_ASSETS.md).
+- **Known gaps:**
+  - Horde members and `PieceOwner` are not persisted. After a reload, bases group by a 32-tile cell.
+  - There is no in-game toggle after creation.
