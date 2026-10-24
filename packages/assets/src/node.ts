@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { loadManifest, validateAssetFiles, type AssetRegistry, type IdLock } from "./manifest.js";
 import { DEFAULT_MANIFEST, FIXTURE_MANIFEST } from "./paths.js";
@@ -35,5 +35,5 @@ export function imageSizeOf(path: string): { w: number; h: number } | undefined 
 /** validateAssetFiles against the filesystem; manifest paths resolve relative to baseDir. */
 export function validateAssetFilesOnDisk(reg: AssetRegistry, baseDir: string): string[] {
   const abs = (p: string) => (p.startsWith("/") ? p : baseDir.replace(/\/?$/, "/") + p);
-  return validateAssetFiles(reg, { exists: (p) => existsSync(abs(p)), imageSize: (p) => imageSizeOf(abs(p)) });
+  return validateAssetFiles(reg, { exists: (p) => existsSync(abs(p)), imageSize: (p) => imageSizeOf(abs(p)), fileSize: (p) => (existsSync(abs(p)) ? statSync(abs(p)).size : undefined) });
 }

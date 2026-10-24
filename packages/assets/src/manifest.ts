@@ -655,7 +655,11 @@ export function loadManifest(json: unknown, opts: { lock?: IdLock | Record<strin
 }
 
 /** File IO for validateAssetFiles: exists + image pixel size (undefined if unreadable). Paths are manifest paths. */
-export interface AssetFileIO { exists(path: string): boolean; imageSize(path: string): { w: number; h: number } | undefined }
+export interface AssetFileIO {
+  exists(path: string): boolean; imageSize(path: string): { w: number; h: number } | undefined;
+  /** Optional byte size; when given, 0-byte .ktx2 files are reported (an empty KTX2 fails to upload at runtime). */
+  fileSize?(path: string): number | undefined;
+}
 /**
  * Checks atlas images, scale pages and mask pages (emissive, sheen, sway, tintmask) exist and that every mask matches its
  * atlas page size (scale-1 mask = atlas image size; `<mask>@Nx` variants, when present, = page N size). Sprite
@@ -666,8 +670,12 @@ export function validateAssetFiles(reg: AssetRegistry, io: AssetFileIO): string[
   const size = (p: string) => { if (!atSize.has(p)) atSize.set(p, io.imageSize(p)); return atSize.get(p); };
   const at2x = (p: string, k: number) => p.replace(/(\.[a-z]+)$/, `@${k}x$1`);
   for (const a of reg.atlases.values()) {
-    for (const pg of a.pages) { if (!io.exists(pg.image)) issues.push(`atlas ${a.key}: missing page ${pg.image}`); if (pg.ktx2 && !io.exists(pg.ktx2)) issues.push(`atlas ${a.key}: missing ktx2 ${pg.ktx2}`); }
-    for (const kp of Object.values(a.masksKtx2 ?? {})) if (kp && !io.exists(kp)) issues.push(`atlas ${a.key}: missing ktx2 mask ${kp}`);
+    const empty = (k: string) => io.fileSize?.(k) === 0;
+    for (const pg of a.pages) {
+      if (!io.exists(pg.image)) issues.push(`atlas ${a.key}: missing page ${pg.image}`);
+      if (pg.ktx2 && !io.exists(pg.ktx2)) issues.push(`atlas ${a.key}: missing ktx2 ${pg.ktx2}`); else if (pg.ktx2 && empty(pg.ktx2)) issues.push(`atlas ${a.key}: ktx2 ${pg.ktx2} is 0 bytes`);
+    }
+    for (const kp of Object.values(a.masksKtx2 ?? {})) if (kp && !io.exists(kp)) issues.push(`atlas ${a.key}: missing ktx2 mask ${kp}`); else if (kp && empty(kp)) issues.push(`atlas ${a.key}: ktx2 mask ${kp} is 0 bytes`);
     const base = io.exists(a.image) ? size(a.image) : undefined;
     for (const [kind, path] of Object.entries(a.masks) as [MaskKind, string][]) {
       if (!io.exists(path)) { issues.push(`atlas ${a.key}: missing ${kind} mask ${path}`); continue; }
