@@ -31,6 +31,23 @@ describe("clan commands over the net + persistence", () => {
     a.c.sendCommand(gameplayNet(CLAN_COMMANDS[3]!), {}); tick(3); // clanLeave
     expect(got).toEqual([rejectReasonCode("not_in_clan")]); expect(got[0]).toBeGreaterThan(0);
   });
+  it("ClanStatus reaches only the owner and clanmates; goal coordinates must be finite and in the world", async () => {
+    const { gs, tick, join } = await boot(new MemoryWorldStore()); const a = await join(), b = await join(), x = await join();
+    const rj: string[] = []; gs.world.events.on(CommandRejected, (r) => { rj.push(`${r.command}:${r.reason}`); });
+    a.c.sendCommand(gameplayNet(ClanCreateCmd), {}); tick(3);
+    a.c.sendCommand(gameplayNet(ClanInviteCmd), { target: a.c.entities.get(netIdOf(gs, b.e()))! }); tick(3);
+    const clan = gs.world.getField(a.e(), Membership, "clanId")!; b.c.sendCommand(gameplayNet(ClanAcceptCmd), { clan }); tick(3);
+    a.c.sendCommand(gameplayNet(ClanSetGoalCmd), { goal: ClanGoal.Raid, x: 7, y: 8 }); tick(5);
+    expect(rj).toEqual([]);
+    const seen = (c: NetClient, owner: Entity): boolean => { const l = c.entities.get(netIdOf(gs, owner)); return l !== undefined && c.world.has(l, ClanStatus); };
+    expect(seen(a.c, a.e())).toBe(true); expect(seen(b.c, a.e())).toBe(true); expect(seen(a.c, b.e())).toBe(true);
+    expect(x.c.entities.get(netIdOf(gs, a.e()))).toBeDefined(); // the non-member sees the player...
+    expect(seen(x.c, a.e())).toBe(false); expect(seen(x.c, b.e())).toBe(false); // ...but not the clan goal / raid target
+    for (const [px, py] of [[NaN, 0], [0, Infinity], [-Infinity, 0], [1e9, 0], [0, -40000]] as const) { a.c.sendCommand(gameplayNet(ClanSetGoalCmd), { goal: ClanGoal.Raid, x: px, y: py }); tick(40); }
+    tick(5);
+    expect(rj).toEqual(Array(5).fill("gameplay.clanSetGoal:bad_goal"));
+    expect(clanData(gs.world, clan)).toMatchObject({ goal: ClanGoal.Raid, goalX: 7, goalY: 8 });
+  });
   it("clan + party membership, clan goal and the base tribe survive a save and reload", async () => {
     const store = new MemoryWorldStore();
     const r1 = await boot(store); const a = await r1.join(), b = await r1.join();

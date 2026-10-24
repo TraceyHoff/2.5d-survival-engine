@@ -34,7 +34,9 @@ export const CLAN_COMMANDS = [ClanCreateCmd, ClanInviteCmd, ClanAcceptCmd, ClanL
 export const CLAN_ENTITY_FIELDS: Readonly<Record<string, readonly string[]>> = { [ClanInviteCmd.name]: ["target"], [ClanPromoteCmd.name]: ["target"], [ClanDemoteCmd.name]: ["target"], [ClanKickCmd.name]: ["target"] };
 /** Appended to the server reason list after PARTY_REJECT_REASONS (shared ones like no_player/self/outranked reuse those codes). */
 export const CLAN_REJECT_REASONS = ["in_clan", "not_in_clan", "no_permission", "clan_full", "not_leader", "bad_role", "max_rank", "min_rank", "bad_goal"] as const;
-export const CLAN_RULES = { maxSize: 20, inviteTicks: 20 * 120 };
+/** goalBound: |x|,|y| limit for clan goal coordinates (the procedural world has no edge; this is the playable range). */
+export const CLAN_RULES = { maxSize: 20, inviteTicks: 20 * 120, goalBound: 32768 };
+export const clanGoalCoordOk = (v: number): boolean => Number.isFinite(v) && Math.abs(v) <= CLAN_RULES.goalBound;
 
 export interface ClanInvite { clan: number; from: number; expiresTick: number }
 export const ClanInvites = defineResource<Map<number, ClanInvite[]>>("gameplay.ClanInvites");
@@ -111,9 +113,9 @@ export function clanPermsReject(w: World, actor: Entity, role: number, mask: num
   const c = actorCtx(w, actor); if (typeof c === "string") return c; if (!c.clan) return "not_in_clan"; if (c.role !== GroupRole.Leader) return "not_leader";
   return (role === GroupRole.Member || role === GroupRole.Officer) && (mask & ~CLAN_PERM_ALL) === 0 ? undefined : "bad_role";
 }
-export function clanGoalReject(w: World, actor: Entity, goal: number): string | undefined {
+export function clanGoalReject(w: World, actor: Entity, goal: number, x = 0, y = 0): string | undefined {
   const c = actorCtx(w, actor); if (typeof c === "string") return c; if (!c.clan) return "not_in_clan";
-  if (!hasClanPerm(w, c.clan, c.role, "goal")) return "no_permission"; return goal < CLAN_GOAL_COUNT ? undefined : "bad_goal";
+  if (!hasClanPerm(w, c.clan, c.role, "goal")) return "no_permission"; return goal < CLAN_GOAL_COUNT && clanGoalCoordOk(x) && clanGoalCoordOk(y) ? undefined : "bad_goal";
 }
 const simple = (w: World, actor: Entity, leader: boolean): string | undefined => { const c = actorCtx(w, actor); if (typeof c === "string") return c; if (!c.clan) return "not_in_clan"; return leader && c.role !== GroupRole.Leader ? "not_leader" : undefined; };
 
@@ -175,8 +177,8 @@ export function clanSetRankPerms(w: World, actor: Entity, role: number, mask: nu
   if (role === GroupRole.Member) d.member = mask >>> 0; else d.officer = mask >>> 0; syncClan(w, clan); touchClans(w); return undefined;
 }
 export function clanSetGoal(w: World, actor: Entity, goal: number, x: number, y: number): string | undefined {
-  const r = clanGoalReject(w, actor, goal); if (r) return r; const clan = clanOf(w, playerOf(w, actor)); const d = clanData(w, clan);
-  d.goal = goal; d.goalX = Number.isFinite(x) ? x : 0; d.goalY = Number.isFinite(y) ? y : 0; syncClan(w, clan); touchClans(w); return undefined;
+  const r = clanGoalReject(w, actor, goal, x, y); if (r) return r; const clan = clanOf(w, playerOf(w, actor)); const d = clanData(w, clan);
+  d.goal = goal; d.goalX = x; d.goalY = y; syncClan(w, clan); touchClans(w); return undefined;
 }
 export function clanDisband(w: World, actor: Entity): string | undefined { const r = simple(w, actor, true); if (r) return r; disbandClan(w, clanOf(w, playerOf(w, actor))); return undefined; }
 /** Stall hook: a member stocked a stall owned by their clan (counts toward contribution; leaders promote active members). */
@@ -196,5 +198,5 @@ export function installClanCommands(world: World, handlers: CommandHandlers): vo
   handlers.on(ClanKickCmd, h((v, a) => clanKickReject(world, a, v.target), (v, a) => clanKick(world, a, v.target)));
   handlers.on(ClanSetRankPermsCmd, h((v, a) => clanPermsReject(world, a, v.role, v.mask), (v, a) => clanSetRankPerms(world, a, v.role, v.mask)));
   handlers.on(ClanDisbandCmd, h((_v, a) => simple(world, a, true), (_v, a) => clanDisband(world, a)));
-  handlers.on(ClanSetGoalCmd, h((v, a) => clanGoalReject(world, a, v.goal), (v, a) => clanSetGoal(world, a, v.goal, v.x, v.y)));
+  handlers.on(ClanSetGoalCmd, h((v, a) => clanGoalReject(world, a, v.goal, v.x, v.y), (v, a) => clanSetGoal(world, a, v.goal, v.x, v.y)));
 }

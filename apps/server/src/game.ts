@@ -1,7 +1,7 @@
 /** Authoritative game server: world + gameplay + streaming chunks + persistence + NetServer sessions. */
-import { ChannelRegistry, CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, type CosmeticCatalogLike, Membership, PlayerId, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
+import { ChannelRegistry, CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, type CosmeticCatalogLike, Membership, Owner, PlayerId, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
 import { ChunkManager, ProceduralGenerator, chunkKeyOf, type BuildingGrid, type PopulationSpawner } from "@engine/world";
-import { GAMEPLAY_COMMANDS, installPartyCommands, PartyInvitePending, installClanCommands, ClanInvitePending, syncSocialMembership, clanState, encodeClanState, decodeClanState, loadClanState, queueCommand, spawnPlayer, spawnResourceNode, gameplayDefs, setIntent, IntentAction, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installPopulation, installCustomization,
+import { GAMEPLAY_COMMANDS, installPartyCommands, PartyInvitePending, installClanCommands, ClanInvitePending, ClanStatus, syncSocialMembership, clanState, encodeClanState, decodeClanState, loadClanState, queueCommand, spawnPlayer, spawnResourceNode, gameplayDefs, setIntent, IntentAction, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installPopulation, installCustomization,
   appearanceServerHooks, applyReplication, installStallBuyHook, installViewBonus, setHitValidator, installPvp, installCraftQueue, installExpressionCommands, requestEmote, CraftQueue, CraftQueuesRes, playerNames, stallListing, listingRevision, stallOf, tillOf, StallHeader, StallOwnerKind } from "@engine/gameplay";
 import { AppearanceServer, ChatServer, NameSync, NetServer, StallResult, StallServer, TileSync, validateHit, type ClientSession, type ServerTransport, type StallHooks } from "@engine/net";
 import { createAgentStore, type AgentIdentityStore } from "./agents.js";
@@ -150,6 +150,12 @@ export function createGameServer(o: GameServerOptions): GameServer {
 
   applyReplication(net);
   net.setScope(PartyInvitePending, "owner"); // pending party invite: only the invitee sees it
+  // ClanStatus carries the goal / raid target: only the owner and same-clan viewers receive it (Netcode review of 2897f2b)
+  net.setScope(ClanStatus, (w, e, clientId) => {
+    if (w.getField(e, Owner, "clientId") === clientId) return true;
+    const clan = w.getField(e, ClanStatus, "clan") ?? 0; const viewer = players.get(clientId)?.entity;
+    return clan !== 0 && viewer !== undefined && w.has(viewer, ClanStatus) && w.getField(viewer, ClanStatus, "clan") === clan;
+  });
   net.setScope(ClanInvitePending, "owner"); // pending clan invite: only the invitee sees it
   net.setScope(CraftQueue, "owner"); // queued crafting: networked + persistent, progress only to its owner
   // Gameplay commands: core handlers (economy + customization) fed by the net mirrors from protocol.ts.

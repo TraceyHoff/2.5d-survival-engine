@@ -57,6 +57,7 @@ describe("net copies of gameplay Use / Place / Emote", () => {
   it("social commands use the chat-style rate; party/kick names are pre-registered", () => {
     expect(gameplayNet(EmoteCmd).rate).toEqual(CHAT_STYLE_RATE);
     for (const n of ["gameplay.partyInvite", "gameplay.partyAccept", "gameplay.partyDecline", "gameplay.partyLeave", "gameplay.partyKick"]) expect(SOCIAL_COMMAND_NAMES.has(n)).toBe(true);
+    for (const n of ["gameplay.clanCreate", "gameplay.clanInvite", "gameplay.clanAccept", "gameplay.clanLeave", "gameplay.clanPromote", "gameplay.clanDemote", "gameplay.clanKick", "gameplay.clanSetRankPerms", "gameplay.clanDisband", "gameplay.clanSetGoal"]) expect(SOCIAL_COMMAND_NAMES.has(n), n).toBe(true);
   });
 });
 
@@ -104,6 +105,13 @@ describe("party rates and single-path Use/Place/Emote", () => {
       const m = GAMEPLAY_NET_COMMANDS.filter((c) => c.core.name === n);
       expect(m.length, n).toBe(1);
       expect(m[0]!.net.rate, n).toEqual(CHAT_STYLE_RATE);
+    }
+  });
+  it("all ten gameplay.clan* commands are registered once with CHAT_STYLE_RATE", async () => {
+    const { GAMEPLAY_NET_COMMANDS } = await import("../src/protocol.js");
+    for (const n of ["gameplay.clanCreate", "gameplay.clanInvite", "gameplay.clanAccept", "gameplay.clanLeave", "gameplay.clanPromote", "gameplay.clanDemote", "gameplay.clanKick", "gameplay.clanSetRankPerms", "gameplay.clanDisband", "gameplay.clanSetGoal"]) {
+      const m = GAMEPLAY_NET_COMMANDS.filter((c) => c.core.name === n);
+      expect(m.length, n).toBe(1); expect(m[0]!.net.rate, n).toEqual(CHAT_STYLE_RATE);
     }
   });
   it("Use/Place/Emote are registered once and a single send runs once", async () => {
