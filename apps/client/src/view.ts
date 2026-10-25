@@ -1,5 +1,5 @@
 import { effectiveLevel, levelFlags } from "./gl-recovery.js";
-import { isFreeStandingStation } from "./station-view.js";
+import { isFreeStandingStation, stationFireFrame } from "./station-view.js";
 import { DESKTOP_ZOOM } from "./camera-zoom.js";
 import { showRenderError, glInfo, frameIsBlack } from "./glcheck.js";
 /**
@@ -324,7 +324,7 @@ export class IsoView {
       if (v.has(ve, Sprite) && net.has(e, Road)) { const r0 = net.get(e, Road)!; const r = this.roadSprite(r0.surface, r0.mask); if (r && v.get(ve, Sprite)!.spriteId !== r.id) v.set(ve, Sprite, { spriteId: r.id }); } // neighbours placed / removed
       if (v.has(ve, Sprite) && net.has(e, Sign)) { const sp = v.get(ve, Sprite)!; const fid = this.signFrame(sp.spriteId, net.get(e, Sign)!.rot); if (sp.frameId !== fid) v.set(ve, Sprite, { frameId: fid }); } // rotated
       if (v.has(ve, VPiece)) this.syncPieceState(net, e, ve, defs);
-      if (v.has(ve, VFuel)) { const f = net.get(e, Fuel); if (f) v.set(ve, VFuel, { lit: f.lit, burnUntilTick: f.burnUntilTick }); }
+      if (v.has(ve, VFuel)) { const f = net.get(e, Fuel); if (f) { v.set(ve, VFuel, { lit: f.lit, burnUntilTick: f.burnUntilTick }); if (v.has(ve, Sprite)) { const sp = v.get(ve, Sprite)!; const fid = this.fireFrame(sp.spriteId, f.lit !== 0); if (sp.frameId !== fid) v.set(ve, Sprite, { frameId: fid }); } } }
     }
     for (const [ne, ve] of this.map) if (!seen.has(ne)) { if (ve === this.focusVe) { r.setFocusEntity(-1); this.focusVe = -1; } v.destroy(ve); this.map.delete(ne); this.characters.delete(ve); this.lightOf.delete(ne); this.pieceStates.delete(ve); this.lastMove.delete(ne); this.nodeAmt.delete(ne); this.nodeHit.delete(ne); this.animalHp.delete(ne); this.animalPrev.delete(ne); this.scales.delete(ve); this.hitSeen.delete(ne); this.hitPoseOf.delete(ve); this.gearOf.delete(ve); }
 
@@ -433,6 +433,10 @@ export class IsoView {
     const [m, base] = roadSpriteKeys(surfaceDef(surface)?.key, mask); const exact = this.sid(m);
     return exact !== undefined ? { key: m, id: exact, scale: 1, tint: 0 } as ResolvedSprite & { id: number } : this.rs(base);
   }
+  private fireFrame(sid: number, lit: boolean): number {
+    let names: string[] = []; try { names = this.registry.sprite(sid).animList.map((a) => a.name ?? ""); } catch { /* unknown sprite */ }
+    return stationFireFrame(names, lit);
+  }
   private signFrame(sid: number, rot: number): number {
     let names: string[] = []; try { names = this.registry.sprite(sid).animList.map((a) => a.name ?? ""); } catch { /* unknown sprite */ }
     return signFrameId(names, rot);
@@ -493,7 +497,7 @@ export class IsoView {
     if (isFreeStandingStation(net.has(e, CraftingStation), net.has(e, GPiece))) { // free-standing station (spawnStation): bonfire sprite + light following Fuel.lit
       const s = this.sid("bonfire") ?? this.sid("campfire_lit") ?? this.sid("fx_fire"); if (s === undefined) return undefined;
       const fired = net.has(e, Fuel); const spec = fired ? this.lights.get("bonfire") : undefined;
-      return { sprite: s, shadow: 0.6, fuel: fired, ...(spec ? { light: spec } : {}) };
+      return { sprite: s, frame: fired ? this.fireFrame(s, (net.getField(e, Fuel, "lit") ?? 0) !== 0) : 0, shadow: 0.6, fuel: fired, ...(spec ? { light: spec } : {}) };
     }
     if (net.has(e, GPiece) && defs) {
       const p = net.get(e, GPiece)!; const def = defs.pieces.get(p.type);
