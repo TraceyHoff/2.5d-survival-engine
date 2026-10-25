@@ -274,18 +274,19 @@ export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter
   };
   doc.addEventListener("keydown", onKey);
   const pads = o.pads ?? (() => (typeof navigator !== "undefined" && navigator.getGamepads ? navigator.getGamepads() : []));
-  let prev = { up: false, down: false, left: false, right: false, a: false, b: false, y: false, lb: false, rb: false }; let raf = 0, last = 0; const win = doc.defaultView;
+  let prev = { up: false, down: false, left: false, right: false, a: false, b: false, y: false, lb: false, rb: false, start: false }; let raf = 0, last = 0; const win = doc.defaultView;
   const tick = (t: number): void => {
     if (auto && t - last > 900) { last = t; turn(1); } else if (drv?.kind === "canvas2d") draw(); // 2D: idle anim frames
     const gp = Array.from(pads()).find((p) => p) ?? undefined;
     if (gp) { const ax = gp.axes[0] ?? 0, ay = gp.axes[1] ?? 0, B = (i: number): boolean => !!gp.buttons[i]?.pressed;
-      const cur = { up: B(12) || ay < -0.5, down: B(13) || ay > 0.5, left: B(14) || ax < -0.5, right: B(15) || ax > 0.5, a: B(0), b: B(1), y: B(3), lb: B(4), rb: B(5) };
+      const cur = { up: B(12) || ay < -0.5, down: B(13) || ay > 0.5, left: B(14) || ax < -0.5, right: B(15) || ax > 0.5, a: B(0), b: B(1), y: B(3), lb: B(4), rb: B(5), start: B(9) };
       if (cur.lb && !prev.lb) { auto = false; turn(-1); } if (cur.rb && !prev.rb) { auto = false; turn(1); }
       if (cur.down && !prev.down) move(1); if (cur.up && !prev.up) move(-1);
       // left/right on a ◀ ▶ row steps the value directly
       const a = doc.activeElement as HTMLElement | null; const rowBox = a?.parentElement;
       if ((cur.left && !prev.left) || (cur.right && !prev.right)) { const bs = rowBox?.querySelectorAll<HTMLButtonElement>("button"); if (bs && bs.length === 2) bs[cur.left ? 0 : 1]!.click(); }
       if (cur.a && !prev.a && a && a !== nameIn) a.click(); if (cur.b && !prev.b) done(undefined); if (cur.y && !prev.y && cat) { look = randomLook(cat); refresh(); }
+      if (cur.start && !prev.start) ok.click(); // TV: Start = Enter world without D-padding past ~30 rows
       prev = cur; }
     raf = win?.requestAnimationFrame?.(tick) ?? 0;
   };

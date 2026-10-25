@@ -42,8 +42,11 @@ describe("ADR-114 creator preview (render package sprites)", () => {
     for (let i = 0; i < 8; i++) { rr.click(); seen.add(f()); } expect(seen.size).toBe(8);
     const before = f(); root.querySelector<HTMLButtonElement>("[data-action=rotate-left]")!.click(); expect(f()).toBe((before + 7) % 8);
     // gamepad RB -> next facing (edge triggered by the creator's rAF poll)
-    const btn = (i: number) => ({ buttons: Array.from({ length: 16 }, (_, k) => ({ pressed: k === i, value: k === i ? 1 : 0, touched: false })), axes: [0, 0, 0, 0] }) as unknown as Gamepad;
+    const btn = (i: number) => ({ buttons: Array.from({ length: 17 }, (_, k) => ({ pressed: k === i, value: k === i ? 1 : 0, touched: false })), axes: [0, 0, 0, 0] }) as unknown as Gamepad;
     const b0 = f(); pad = btn(5); await new Promise((r) => setTimeout(r, 60)); expect(f()).toBe((b0 + 1) % 8); pad = null; await new Promise((r) => setTimeout(r, 40));
+    // gamepad Start = Enter world (asks for a name when blank instead of entering)
+    pad = btn(9); await new Promise((r) => setTimeout(r, 60)); pad = null; await new Promise((r) => setTimeout(r, 40));
+    expect(root.querySelector("[data-role=creator-msg]")!.textContent).toMatch(/name/);
     // touch / mouse drag on the preview turns it
     const host = root.querySelector<HTMLElement>("[data-role=creator-preview-host]")!; const d0 = f();
     const ev = (t: string, x: number) => { const e = new Event(t) as PointerEvent; Object.assign(e, { clientX: x, pointerId: 1 }); host.dispatchEvent(e); };
