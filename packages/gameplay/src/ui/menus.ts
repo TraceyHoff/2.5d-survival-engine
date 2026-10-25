@@ -148,12 +148,12 @@ export const paintIntent = (target: Entity, paint: number): MenuIntent => intent
 
 // ---- character / wardrobe ---------------------------------------------------------------------------
 export interface WardrobeSlotView { slot: number; key: string; equipped: number; primary: number; secondary: number }
-export interface WardrobeView { canEdit: boolean; created: boolean; slots: WardrobeSlotView[]; unlocks: { tag: string; unlocked: boolean }[]; palettes: { skin: number; hair: number; clothing: number } }
+export interface WardrobeView { canEdit: boolean; created: boolean; /** current body / skin (0 if none): whole-look writes (skin) must keep them */ bodyType: number; skinTone: number; slots: WardrobeSlotView[]; unlocks: { tag: string; unlocked: boolean }[]; palettes: { skin: number; hair: number; clothing: number } }
 export function wardrobeView(c: MenuCtx): WardrobeView {
   const w = c.world; const created = w.has(c.player, Wardrobe) ? hasCreatedLook(w, c.player) : false;
   const a = w.isRegistered(Appearance) ? getAppearance(w, c.player) : undefined;
   const have = unlocksOf(w, c.player);
-  return { canEdit: canEditAppearance(w, c.player, !created), created,
+  return { canEdit: canEditAppearance(w, c.player, !created), created, bodyType: a?.bodyType ?? 0, skinTone: a?.skinTone ?? 0,
     slots: WEARABLE_SLOTS.map((k, i) => ({ slot: i, key: k, equipped: a?.parts[i] ?? 0, primary: a?.primary[i] ?? 0, secondary: a?.secondary[i] ?? 0 })),
     unlocks: COSMETICS.unlockTags.map((t) => ({ tag: t, unlocked: have.has(t) })),
     palettes: { skin: c.catalog?.skinTones.length ?? 0, hair: c.catalog?.hairColors.length ?? 0, clothing: c.catalog?.clothingColors.length ?? 0 } };

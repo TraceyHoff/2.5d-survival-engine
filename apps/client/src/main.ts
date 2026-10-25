@@ -115,7 +115,8 @@ function startMenus(): void {
 function menuCtx(): MenuCtx | undefined {
   const p = session.player; const c = session.client; if (p === undefined || !c) return undefined;
   const names = { get: (id: number): string | undefined => { const n = c.names.get(id); if (n === undefined && id) c.names.want([id]); return n; } };
-  return { world, player: p, names };
+  const catalog = iso?.registry.cosmetics?.size ? iso.registry.cosmetics : undefined; // wardrobe palettes / eye list / secondary rows
+  return { world, player: p, names, ...(catalog ? { catalog } : {}) };
 }
 /** Panel intent -> bridged gameplay net command; Entity args become NetIds (unbridged commands such as PaintCmd return false). */
 function sendIntent(i: MenuIntent): boolean {

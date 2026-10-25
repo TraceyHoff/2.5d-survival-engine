@@ -18,8 +18,8 @@ import { iconForItem,
   progressionView, unlockSkillIntent, respecSkillsIntent, SKILL_REJECT_TEXT, useIntent, drinkWaterIntent, nearWater,
   SKILLS,
 } from "@engine/gameplay";
-import { requestCharacterEdit } from "./character-creator.js";
-import { GroupRole, PlayerId, Transform, type Entity } from "@engine/core";
+import { colorChoices, requestCharacterEdit } from "./character-creator.js";
+import { GroupRole, PlayerId, SLOT_PALETTE, Transform, type Entity, type WearableSlot } from "@engine/core";
 
 export const GAMEPLAY_PANELS = ["inventory", "crafting", "build", "character", "party", "clan", "trade", "camper", "skills"] as const;
 export type GameplayPanel = (typeof GAMEPLAY_PANELS)[number];
@@ -207,11 +207,20 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       const sg = grid(); for (const s of v.slots) sg.append(btn(`${s.key}${s.equipped ? "" : " (none)"}`, `wslot-${s.slot}`, () => { wardrobeSlot = s.slot; kit.rerender(); }, { pressed: s.slot === wardrobeSlot, alt: s.slot !== wardrobeSlot }));
       out.push(heading("Slot"), sg);
       const cur = v.slots[wardrobeSlot]!; const cg = grid();
-      const pal = cur.key === "hair" || cur.key === "face" ? v.palettes.hair : v.palettes.clothing;
+      const cat = c.catalog; const slotKey = cur.key as WearableSlot;
+      // eyes offer the creator's curated eye list (clothingColors indices); other slots the whole slot palette
+      const choices = cat ? colorChoices(cat, slotKey) : Array.from({ length: cur.key === "hair" || cur.key === "face" ? v.palettes.hair : v.palettes.clothing }, (_, i) => i);
       cg.append(btn("Remove", "unequip", () => send(equipCosmeticIntent(cur.slot, 0), "Removed."), { alt: true, disabled: !v.canEdit || !cur.equipped }));
-      for (let i = 0; i < Math.min(pal, 8); i++) cg.append(btn(`Colour ${i + 1}`, `color-${i}`, () => send(equipCosmeticIntent(cur.slot, cur.equipped, i, cur.secondary), "Colour set."), { disabled: !v.canEdit || !cur.equipped, pressed: cur.primary === i }));
+      for (const i of choices) cg.append(btn(`Colour ${i + 1}`, `color-${i}`, () => send(equipCosmeticIntent(cur.slot, cur.equipped, i, cur.secondary), "Colour set."), { disabled: !v.canEdit || !cur.equipped, pressed: cur.primary === i }));
       out.push(heading(`${cur.key}: colour`), cg);
-      if (v.palettes.skin) { const kg = grid(); for (let i = 0; i < Math.min(v.palettes.skin, 8); i++) kg.append(btn(`Skin ${i + 1}`, `skin-${i}`, () => { const a = v.slots; send(setAppearanceIntent({ bodyType: 0, skinTone: i, parts: a.map((s) => s.equipped), primary: a.map((s) => s.primary), secondary: a.map((s) => s.secondary) }), "Look saved."); }, { disabled: !v.canEdit })); out.push(heading("Skin tone"), kg); }
+      const w2 = cur.equipped && cat ? cat.wearable(cur.equipped) : undefined; // G (secondary) row only when the worn piece tints G (tintChannels 2)
+      if (w2 && (w2.tintChannels >= 2 || (w2.layers ?? []).some((l) => l.tintChannels >= 2))) {
+        const pal2 = SLOT_PALETTE[slotKey] === "hairColors" ? cat!.hairColors : cat!.clothingColors; const g2 = grid();
+        pal2.forEach((pc, i) => { const b = btn(`Secondary ${i + 1}`, `color2-${i}`, () => send(equipCosmeticIntent(cur.slot, cur.equipped, cur.primary, i), "Colour set."), { disabled: !v.canEdit, pressed: cur.secondary === i, alt: cur.secondary !== i, data: { swatch: `#${(pc.color & 0xffffff).toString(16).padStart(6, "0")}` } }); b.style.setProperty("--cz-sw", b.dataset["swatch"]!); g2.append(b); });
+        out.push(heading(`${cur.key}: secondary colour`), g2);
+      }
+      // skin keeps the current body type (a hard-coded male body made female looks fail validation / swap body)
+      if (v.palettes.skin) { const kg = grid(); for (let i = 0; i < v.palettes.skin; i++) kg.append(btn(`Skin ${i + 1}`, `skin-${i}`, () => { const a = v.slots; send(setAppearanceIntent({ bodyType: v.bodyType, skinTone: i, parts: a.map((s) => s.equipped), primary: a.map((s) => s.primary), secondary: a.map((s) => s.secondary) }), "Look saved."); }, { disabled: !v.canEdit, pressed: v.skinTone === i })); out.push(heading("Skin tone"), kg); }
       out.push(heading("Unlocks")); const ug = el("div", { "data-role": "unlocks" });
       for (const u of v.unlocks) { const p = kit.para(u.tag.replace(/_/g, " ")); p.dataset["role"] = "unlock"; p.dataset["key"] = u.tag; if (u.unlocked) p.dataset["unlocked"] = ""; ug.append(p); }
       out.push(ug);

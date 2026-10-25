@@ -721,3 +721,8 @@
 [data-icon="tool_req_knife"]{--cz-ipos:83.33% 0%}
 [data-icon="tool_req_sickle"]{--cz-ipos:100% 0%}
 /* ICONS:END */
+
+/* secondary (G mask) row: swatch colour comes inline from the catalog (data-swatch) */
+.gm-modal .gm-panel [data-role=body] button[data-key^=color2-]{font-size:0;aspect-ratio:1;background:var(--cz-sw,#ccc);border:3px solid var(--cz-ink);border-radius:50%}
+.gm-modal .gm-panel [data-role=body] button[data-key^=color2-][aria-pressed=true]{box-shadow:0 0 0 3px var(--cz-gold),0 0 0 6px var(--cz-ink)}
+.gm-modal .gm-panel [data-role=body] .gm-grid:has(> button[data-key^=color2-]){grid-template-columns:repeat(auto-fill,minmax(var(--cz-hit),1fr))}
