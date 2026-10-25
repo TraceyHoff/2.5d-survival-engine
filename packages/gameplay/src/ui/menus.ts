@@ -6,7 +6,7 @@ import { DropItemCmd, encodePetName, nearestPet, petName, PetResult, PetCommandC
  * and the sender maps them to NetIds. Server handlers re-validate everything; reasons here are only hints.
  */
 import { Appearance, GroupRole, Membership, PlayerId, Transform, WEARABLE_SLOTS, getAppearance, type CommandDef, type CosmeticCatalogLike, type Entity, type World } from "@engine/core";
-import { BuildPiece, CraftingStation, Dead, Container, ClanInvitePending, ClanStatus, CraftQueue, PartyInvitePending, PartyRank, StallHeader, Wardrobe } from "../components.js";
+import { BuildPiece, CraftingStation, Dead, Container, LootBag, ClanInvitePending, ClanStatus, CraftQueue, PartyInvitePending, PartyRank, StallHeader, Wardrobe } from "../components.js";
 import { gameplayDefs } from "../config.js";
 import type { ItemCount } from "../defs.js";
 import { countItem, listSlots, readSlots } from "../inventory.js";
@@ -326,9 +326,18 @@ export function interactPanel(c: MenuCtx): { panel: "trade"; stall: Entity } | {
   const s = nearestStall(c, STALL_INTERACT_RANGE); if (s !== undefined) return { panel: "trade", stall: s };
   if (nearWardrobe(c.world, c.player)) return { panel: "character" };
   const st = nearestStation(c); const pet = nearestPet(c.world, c.player); // ADR-145: the pet / tameable animal wins when it is closer than the station
-  if (pet && (!st || pet.d < stationDistance(c, st.station))) return { panel: "pet", pet: pet.entity };
+  // a loot bag / container (e.g. the sandbox pet-corner crate) closer than the pet keeps Interact: the server opens it
+  if (pet && (!st || pet.d < stationDistance(c, st.station)) && !(nearestOpenable(c, pet.d) < pet.d)) return { panel: "pet", pet: pet.entity };
   if (st) return { panel: "station", ...st };
   return undefined;
+}
+/** Distance to the nearest non-pet, non-station LootBag / Container within `r` (Infinity if none). */
+function nearestOpenable(c: MenuCtx, r: number): number {
+  const w = c.world; const me = w.get(c.player, Transform); if (!me) return Infinity; let bd = Infinity;
+  for (const q of [[LootBag, Transform], [Container, Transform]] as const) for (const e of w.query([...q], [Dead])) {
+    if (e === c.player || w.has(e, PlayerId) || w.has(e, Pet) || w.has(e, CraftingStation)) continue; const t = w.get(e, Transform)!; const d = Math.hypot(t.x - me.x, t.y - me.y); if (d <= r && d < bd) bd = d;
+  }
+  return bd;
 }
 const stationDistance = (c: MenuCtx, e: Entity): number => { const a = c.world.get(c.player, Transform), b = c.world.get(e, Transform); return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : Infinity; };
 export const petOfferIntent = (target: Entity, item: number): MenuIntent => intent(PetOfferCmd, { target, item }, ["target"]);

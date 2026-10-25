@@ -19,6 +19,13 @@ describe("pets (ADR-145)", () => {
     expect(G.tameChance(G.petSpeciesOfKey("dog_dachshund"), "dog_biscuit")).toBeGreaterThan(G.tameChance(G.petSpeciesOfKey("dog_dachshund"), "veggie_bites"));
     expect(G.tameChance(G.petSpeciesOfKey("parrot"), "meaty_chew")).toBe(0);
   });
+  it("Interact: a loot bag / crate closer than a wild animal opens the crate, not the pet panel", () => {
+    const { w, p } = setup(); const a = G.spawnAnimal(w, "animal_dog_dachshund", 1.5, 1.5); const c = { world: w, player: p, names: new Map() };
+    expect(G.interactPanel(c)).toEqual({ panel: "pet", pet: a });
+    const crate = w.create(); w.add(crate, Transform, { x: 0.8, y: 0 }).add(crate, G.LootBag, { owner: 0, despawnAtTick: 0xffffffff });
+    expect(G.interactPanel(c)).toBeUndefined();
+    w.set(crate, Transform, { x: -2.5, y: 0 }); expect(G.interactPanel(c)).toEqual({ panel: "pet", pet: a });
+  });
   it("hated treat is refused and kept; a loved treat tames (owner, 6-slot bag, follow)", () => {
     const { w, p, id } = setup(); const a = G.spawnAnimal(w, "animal_dog_dachshund", 1, 0);
     G.addItem(w, p, id("seed_mix"), 1); expect(G.offerTreat(w, p, a, id("seed_mix")).result).toBe(G.PetResult.Refused); expect(G.countItem(w, p, id("seed_mix"))).toBe(1);
