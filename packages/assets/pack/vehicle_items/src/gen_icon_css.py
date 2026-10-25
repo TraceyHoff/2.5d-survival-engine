@@ -2,9 +2,9 @@
 Run from repo root: python3 packages/assets/pack/vehicle_items/src/gen_icon_css.py  (rewrites between the ICONS markers)."""
 import json, os
 R = 'packages/assets/pack/'
-SRC = [('manifest.json', {'items', 'equipment'}), ('items/manifest.items.json', {'items_icons', 'items_skill_tabs'}), ('vehicle_items/manifest.vehicle_items.json', {'vitems_icons'}), ('nature/manifest.nature.json', {'nature_roadicons', 'nature_toolicons', 'nature_adr128'})]
+SRC = [('manifest.json', {'items', 'equipment'}), ('items/manifest.items.json', {'items_icons', 'items_skills', 'items_skill_tabs'}), ('vehicle_items/manifest.vehicle_items.json', {'vitems_icons'}), ('nature/manifest.nature.json', {'nature_roadicons', 'nature_toolicons', 'nature_adr128'})]
 rel = '../../../packages/assets/pack/'
-UI_OK = {'items_skill_tabs'}  # ui-category atlases emitted too (ADR-132 skill tree tab icons)
+UI_OK = {'items_skills', 'items_skill_tabs'}  # ui-category atlases emitted too (ADR-113 skill icons, ADR-132 tab icons)
 out, keys, seen = [], {}, set()
 for f, atl in SRC:
     m = json.load(open(R + f)); base = os.path.dirname(f)
