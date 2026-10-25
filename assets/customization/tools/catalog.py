@@ -65,3 +65,8 @@ for k, v in {"capris": dict(len=.66, seam=True, cuff=True), "joggers": dict(len=
 for k, v in {"loafers": dict(style="loafers", band=True, soleS=True, len=4.0), "slip_ons": dict(style="slip_ons", band=True),
              "moccasins": dict(style="moccasins", w=2.9, laces=True, sole=False), "trail_runners": dict(style="trail", swoosh=True, laces=True, soleS=True)}.items():
     add("shoes_" + k, "shoes", v, tint=2)
+# ---- ADR-135 gameplay gear (append-only; unlockTags ["gear"] -> not in the creator; mapped by data/wear_cosmetics.json)
+GEAR = []
+def gear(key, slot, spec, **kw): GEAR.append(key); add(key, slot, spec, **kw)
+for k in ["cloth_gloves", "leather_gloves", "fur_mittens", "gauntlets"]: gear("acc_" + k, "accessory", {"style": k, "noarmcut": True}, tint=(1 if k == "gauntlets" else 2), layer=30)
+GEAR_PH = {}   # gear key -> resident placeholder wearable (same slot) drawn while its stream page loads

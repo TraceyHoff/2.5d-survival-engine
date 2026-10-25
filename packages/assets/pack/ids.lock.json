@@ -2709,7 +2709,15 @@
     "offhand_steel_knife": 2707,
     "offhand_stone_knife": 2708,
     "icon_xp": 2709,
-    "ui_xp_chip_frame": 2710
+    "ui_xp_chip_frame": 2710,
+    "cz_acc_cloth_gloves_female": 2711,
+    "cz_acc_cloth_gloves_male": 2712,
+    "cz_acc_fur_mittens_female": 2713,
+    "cz_acc_fur_mittens_male": 2714,
+    "cz_acc_gauntlets_female": 2715,
+    "cz_acc_gauntlets_male": 2716,
+    "cz_acc_leather_gloves_female": 2717,
+    "cz_acc_leather_gloves_male": 2718
   },
   "sounds": {
     "amb_rain": 1,
@@ -2890,6 +2898,10 @@
     "top_cardigan": 101,
     "top_henley": 102,
     "top_polo": 103,
-    "top_striped_tee": 104
+    "top_striped_tee": 104,
+    "acc_cloth_gloves": 105,
+    "acc_fur_mittens": 106,
+    "acc_gauntlets": 107,
+    "acc_leather_gloves": 108
   }
 }

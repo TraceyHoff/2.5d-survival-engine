@@ -22,7 +22,7 @@ def render_frame(bt, slot, spec, d, anim, fi, n, hat=False, part=None):
     draw(c, slot, spec, hat)
     if part == "sleeves": c.items = []; c.run(armcut=False, extra=c.extra)
     elif part == "main": c.run(armcut=True, extra=None)
-    else: c.run(armcut=(slot != "body"), extra=c.extra)
+    else: c.run(armcut=(slot != "body" and not spec.get("noarmcut")), extra=c.extra)
     return c.out(), K
 
 def clean(im, x0, y0, w, h):

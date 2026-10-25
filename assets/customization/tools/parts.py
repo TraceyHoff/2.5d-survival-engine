@@ -613,8 +613,31 @@ def draw_shoes(c, spec):
         c.add(d + .02, lambda side=side: shoe(side))
 
 # ============================================================ ACCESSORIES
+GLOVES = {   # ADR-135 hands gear: (main ramp, cuff ramp, cuff length t along forearm, cuff radius +, hand radius +, extras)
+    "cloth_gloves": ("P", "S", .22, .35, .35, ()), "leather_gloves": ("leather", "P", .26, .55, .4, ("stitch",)),
+    "fur_mittens": ("P", "fur_brown", .3, 1.1, .75, ("mitt",)), "gauntlets": ("iron", "P", .42, 1.0, .55, ("plates",)),
+}
+def draw_gloves(c, st):
+    K = c.K; B = K["B"]; cv = c.cv; main, cuff, t, cr, hr, ex = GLOVES[st]
+    def glove(side):
+        a, b = K["sh"][side], K["hand"][side]; w = c.lerp3(b, a, t); hp = c.p(b)
+        cv.part(c.tube(w, b, B["arm"] + cr * .55, B["arm"] + .15), main if "plates" in ex else cuff, lw=.9, shade=.25, hl=.15)
+        if "plates" in ex:   # flared cuff plate at the forearm + knuckle ridge
+            cv.part(circle(c.p(w), B["arm"] + cr + .6, (B["arm"] + cr) * .7), cuff, lw=.8, shade=.25, hl=.1)
+        cv.part(circle(hp, B["hand"] + hr, (B["hand"] + hr) * .95, wob=.05), main, lw=1.0, shade=.24, hl=.2 if main == "iron" else .12)
+        if "plates" in ex: cv.line([(hp[0] - 1.2, hp[1] - .3), (hp[0] + 1.2, hp[1] - .3)], INK[3], .5)
+        if "stitch" in ex: cv.line([(hp[0] - .9, hp[1] + .5), (hp[0] + .9, hp[1] + .5)], "S1", .45, tm=(0, 1))
+        if "mitt" in ex: cv.part(circle((hp[0] + .9 * side, hp[1] - .6), .9, .8), main, lw=.6, shade=.2, hl=.1)   # thumb
+        if not K["front"][side]: cv.erase(cv.mask_from([c.torso_pts(.4), circle(c.p(K["hc"]), K["hr"] + .4, (K["hr"] + .4) * .96)]))
+    for side in (-1, 1):
+        a, b = K["sh"][side], K["hand"][side]; d = max(c.P(a)[1], c.P(b)[1]) - .5 + (.3 if side == 1 else 0)
+        if K["front"][side]: d = max(d, K["tv"] + .01)
+        else: d = -1e3 + side   # behind hands first so the torso cut only removes them
+        c.add(d + .03, lambda side=side: glove(side))
+
 def draw_acc(c, spec):
     K = c.K; B = K["B"]; cv = c.cv; st = spec["style"]; f = fv(c)
+    if st in GLOVES: draw_gloves(c, st); return
     if st in ("round_glasses", "sunglasses", "eyepatch"):
         def g():
             if f < -.2: 

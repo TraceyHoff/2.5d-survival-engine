@@ -88,7 +88,7 @@ def fragment(J):
 # tags from engine packages/gameplay/data/cosmetics.json (DESIGN §10); untagged = free for everyone
 UNLOCKS = {"founder": {"hat_top_hat", "acc_cape", "eyes_sparkle"}, "chef": {"hat_chef", "top_pinafore"},
            "smith": {"top_vest", "shoes_hiking_boots"}, "merchant": {"acc_satchel", "hat_wizard", "hat_mushroom_cap", "shoes_mushroom_shoes"},
-           "raider": {"hat_viking", "acc_eyepatch", "bottom_kilt"}}
+           "raider": {"hat_viking", "acc_eyepatch", "bottom_kilt"}, "gear": set(catalog.GEAR)}
 STARTER = {"hair_buzz", "hair_bob", "hair_ponytail", "hair_long", "top_tee", "top_tank", "bottom_shorts", "bottom_jeans", "bottom_skirt",
            "shoes_sneakers", "shoes_sandals", "face_smile", "face_freckles", "face_stubble", "eyes_round", "eyes_happy", "eyes_lashes", "hat_straw"}
 
