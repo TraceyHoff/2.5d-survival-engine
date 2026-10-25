@@ -16,6 +16,9 @@ import numpy as np
 from PIL import Image
 from multiprocessing import Pool
 from rig import FW, FH, FEET, PAD, SIT_N, SWIM_N, PUNCH_N, frame_list
+import importlib.util as _iu, os as _os  # ADR-138: manifest may be a v2 shard index
+_spec = _iu.spec_from_file_location("cz_manifest", _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "../../../packages/assets/scripts/cz_manifest.py"))
+czm = _iu.module_from_spec(_spec); _spec.loader.exec_module(czm)
 ENG = sys.argv[1]; D = os.path.join(ENG, "packages/assets/pack/customization"); MP = os.path.join(D, "manifest.customization.json")
 PFX = "cz_st114_"
 
@@ -48,7 +51,7 @@ def render_key(key):
     return key, (len(fl) - 8 * SIT_N, out + [f for f, _ in sp])
 
 if __name__ == "__main__":
-    m = json.load(open(MP)); have = {w["key"] for w in m["wearables"]}; S0 = {s["key"] for s in m["sprites"]}
+    m = czm.load(MP); have = {w["key"] for w in m["wearables"]}; S0 = {s["key"] for s in m["sprites"]}
     new = [w for w in catalog.W if w[0] not in have]; newk = {w[0] for w in new}
     J = [j for j in build_all.jobs() if j[0].startswith("cz_") and any(j[0].startswith(f"cz_{k}_") for k in newk) and j[0] not in S0]
     frag = build_all.fragment(build_all.jobs()); FS = {s["key"]: s for s in frag["sprites"]}
@@ -71,7 +74,7 @@ if __name__ == "__main__":
     m["atlases"] += newA; m["sprites"] += newS
     m["wearables"] += [w for w in frag["wearables"] if w["key"] in newk]
     assert all(not w["unlockTags"] for w in m["wearables"] if w["key"] in newk)
-    json.dump(m, open(MP, "w"), indent=1); open(MP, "a").write("\n")
+    czm.save(MP, m)
     sp = os.path.join(D, "strings", "en.json"); st = json.load(open(sp))
     for w in new: st[f"cosmetic.{w[0]}"] = build_all.STR[f"cosmetic.{w[0]}"]
     json.dump(dict(sorted(st.items())), open(sp, "w"), indent=1)

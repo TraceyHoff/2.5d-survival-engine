@@ -7,6 +7,9 @@ Usage: python3 add_gear.py ENGINE_DIR [--jobs 8]   then: assets/tools/ktx2.py <m
 import sys, os, json, copy
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 import build_all, catalog, rerender, rectpack
+import importlib.util as _iu, os as _os  # ADR-138: manifest may be a v2 shard index
+_spec = _iu.spec_from_file_location("cz_manifest", _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "../../../packages/assets/scripts/cz_manifest.py"))
+czm = _iu.module_from_spec(_spec); _spec.loader.exec_module(czm)
 TEMPLATE = {"accessory": "acc_satchel", "hands": "acc_cloth_gloves", "hat": "hat_viking", "top": "top_vest", "bottom": "bottom_cargo", "shoes": "shoes_boots"}
 PLACEHOLDER = {"acc_cloth_gloves": None, "acc_leather_gloves": None, "acc_fur_mittens": None, "acc_gauntlets": None}   # gloves: nothing while loading
 def placeholder(key):
@@ -29,7 +32,7 @@ def stream_pages(m, keys):
     return n
 def main(eng, jobs):
     D = os.path.join(eng, "packages/assets/pack/customization"); MP = os.path.join(D, "manifest.customization.json")
-    m = json.load(open(MP)); have = {w["key"] for w in m["wearables"]}
+    m = czm.load(MP); have = {w["key"] for w in m["wearables"]}
     new = [w for w in catalog.W if w[0] in catalog.GEAR and w[0] not in have]
     if new:
         frag = build_all.fragment(build_all.jobs()); FW = {w["key"]: w for w in frag["wearables"]}; S = {s["key"]: s for s in m["sprites"]}
@@ -43,11 +46,11 @@ def main(eng, jobs):
         sp = os.path.join(D, "strings", "en.json"); st = json.load(open(sp))
         for w in new: st[f"cosmetic.{w[0]}"] = build_all.STR[f"cosmetic.{w[0]}"]
         json.dump(dict(sorted(st.items())), open(sp, "w"), indent=1)
-        json.dump(m, open(MP, "w"), indent=1); open(MP, "a").write("\n")
+        czm.save(MP, m)
         slots = sorted({w[1] for w in new})
         rerender.main(eng, [f"cz_{w[0]}_" for w in new], slots, rectpack.ALL_TIGHT, jobs)
-        m = json.load(open(MP))
+        m = czm.load(MP)
     n = stream_pages(m, [k for k in catalog.GEAR])
-    json.dump(m, open(MP, "w"), indent=1); open(MP, "a").write("\n"); print("gear wearables added", len(new), "stream pages", n, flush=True)
+    czm.save(MP, m); print("gear wearables added", len(new), "stream pages", n, flush=True)
 if __name__ == "__main__":
     a = sys.argv; main(a[1], int(a[a.index("--jobs") + 1]) if "--jobs" in a else 8)

@@ -4,9 +4,10 @@ import { AssetRegistry, loadManifest, mergeManifests } from "@engine/assets";
 import { PACK_DIR } from "@engine/assets/node";
 import { slotIndex, type AppearanceValue } from "@engine/core";
 import { coreAppearanceBinding, previewLayers2D, facingAngle } from "../src/index.js";
+import { readManifestJson } from "@engine/assets/node";
 
 // ADR-128 neck: head-group layers (face/eyes/hair/hat) follow the body's per-frame `head` point; body/top/shoes do not
-const json = (p: string) => JSON.parse(readFileSync(PACK_DIR + p, "utf8"));
+const json = (p: string) => readManifestJson(PACK_DIR + p);
 const REF = { x: 0, y: -40 };
 const headAt = (i: number) => ({ x: (i % 8) - 3, y: REF.y - 2 - (i % 2) });
 function setup(neck: boolean) {

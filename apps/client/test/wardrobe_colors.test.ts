@@ -7,11 +7,12 @@ import { Appearance, installPermissions, Membership, PlayerId, setAppearance, sl
 import * as G from "@engine/gameplay";
 import { GameMenus } from "../src/game-menus.js";
 import { colorChoices } from "../src/character-creator.js";
+import { readManifestJson } from "@engine/assets/read-manifest";
 
 const W = (id: number, key: string, slot: WearableDef["slot"], tc = 2): WearableDef =>
   ({ id, key, slot, bodies: { male: { sprite: 1, anim: "idle" }, female: { sprite: 1, anim: "idle" } }, hidesSlots: [], hatHair: false, unlockTags: [], layer: 0, z: 0, tintChannels: tc }) as unknown as WearableDef;
 const parts = [W(1, "hair_long", "hair"), W(4, "top_tee", "top", 1), W(8, "eyes_round", "eyes")];
-const manifest = JSON.parse(readFileSync("packages/assets/pack/customization/manifest.customization.json", "utf8")) as Record<string, { key: string; color: string }[]>;
+const manifest = readManifestJson("packages/assets/pack/customization/manifest.customization.json") as Record<string, { key: string; color: string }[]>;
 const pal = (k: string) => manifest[k]!.map((c, index) => ({ index, key: c.key, color: parseInt(c.color.slice(1), 16) }));
 const cat = { wearable: (id: number) => parts.find((p) => p.id === id), bodySprite: () => ({ sprite: 1, anim: "idle" }), skinTones: pal("skinTones"), hairColors: pal("hairColors"), clothingColors: pal("clothingColors"), defaults: {} } as unknown as CosmeticCatalogLike;
 

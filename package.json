@@ -15,7 +15,9 @@
     "bench": "PERF=1 vitest run --no-file-parallelism packages/net/test/bench.test.ts packages/persist/test/bench.test.ts",
     "demo": "node scripts/demo.mjs",
     "demo:bots": "node scripts/demo.mjs --headless",
-    "test:net": "vitest run packages/net packages/testkit apps/server apps/client"
+    "test:net": "vitest run packages/net packages/testkit apps/server apps/client",
+    "art:shard-manifest": "tsx packages/assets/scripts/shard-manifest.ts",
+    "art:check-manifest-size": "tsx packages/assets/scripts/check-manifest-size.ts"
   },
   "devDependencies": {
     "@types/jsdom": "^30.0.0",

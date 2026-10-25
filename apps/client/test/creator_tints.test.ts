@@ -3,11 +3,12 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { slotIndex, validateAppearance, type CosmeticCatalogLike, type WearableDef } from "@engine/core";
 import { EYE_COLOR_KEYS, SECONDARY_SLOTS, colorChoices, creatorShotFromQuery, creatorShotLook, loadCharacter, randomLook, saveCharacter, showCharacterCreator, stepLook } from "../src/character-creator.js";
+import { readManifestJson } from "@engine/assets/read-manifest";
 
 const W = (id: number, key: string, slot: WearableDef["slot"]): WearableDef =>
   ({ id, key, slot, bodies: { male: { sprite: 1, anim: "idle" }, female: { sprite: 1, anim: "idle" } }, hidesSlots: [], hatHair: false, unlockTags: [], layer: 0, z: 0, tintChannels: 2 }) as unknown as WearableDef;
 const parts = [W(1, "hair_short", "hair"), W(4, "top_tee", "top"), W(6, "bottom_jeans", "bottom"), W(7, "shoes_boots", "shoes"), W(8, "eyes_round", "eyes")];
-const manifest = JSON.parse(readFileSync("packages/assets/pack/customization/manifest.customization.json", "utf8")) as Record<string, { key: string; color: string }[]>;
+const manifest = readManifestJson("packages/assets/pack/customization/manifest.customization.json") as Record<string, { key: string; color: string }[]>;
 const pal = (k: string) => manifest[k]!.map((c, index) => ({ index, key: c.key, color: parseInt(c.color.slice(1), 16) }));
 const cat: CosmeticCatalogLike = { wearable: (id) => parts.find((p) => p.id === id), bodySprite: () => ({ sprite: 1, anim: "idle" }), skinTones: pal("skinTones"), hairColors: pal("hairColors"), clothingColors: pal("clothingColors"), defaults: { top: 4, bottom: 6, shoes: 7, eyes: 8 } };
 const rgb = (c: number) => [(c >> 16) & 255, (c >> 8) & 255, c & 255] as const;

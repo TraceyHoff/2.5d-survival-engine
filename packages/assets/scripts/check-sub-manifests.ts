@@ -1,9 +1,10 @@
 // Merges pack + sub-manifests exactly like apps/client/src/view.ts and reports duplicate keys (must be 0).
 import { readFileSync, existsSync, statSync, readdirSync } from "node:fs"; import { join } from "node:path";
 import { mergeManifests } from "../src/merge.js";
+import { readManifestJson } from "../src/node.js";
 const root = join(import.meta.dirname, "../../..");
 const frags = [["pack", "packages/assets/pack/manifest.json"], ["ui-kit", "assets/ui/kit/manifest.ui.kit.json"], ["branding", "assets/ui/branding/manifest.branding.json"], ["customization", "packages/assets/pack/customization/manifest.customization.json"], ["vehicles", "packages/assets/pack/vehicles/manifest.vehicles.json"], ["items", "packages/assets/pack/items/manifest.items.json"], ["vehicle_items", "packages/assets/pack/vehicle_items/manifest.vehicle_items.json"], ["building", "packages/assets/pack/building/manifest.building.json"], ["nature", "packages/assets/pack/nature/manifest.nature.json"]]
-  .filter(([, p]) => existsSync(join(root, p))).map(([name, p]) => ({ name, manifest: JSON.parse(readFileSync(join(root, p), "utf8")) }));
+  .filter(([, p]) => existsSync(join(root, p))).map(([name, p]) => ({ name, manifest: readManifestJson(join(root, p)) }));
 const r = mergeManifests(frags as never);
 console.log(`fragments ${frags.length}, duplicates ${r.collisions.length}`); for (const c of r.collisions.slice(0, 20)) console.log(` ${c.section}:${c.key} ${c.fragments.join(",")}`);
 // Every .ktx2 under the pack must be non-empty with a full mip chain (levelCount u32 @ byte 40).

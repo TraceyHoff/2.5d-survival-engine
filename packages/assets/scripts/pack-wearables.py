@@ -8,10 +8,13 @@ Optional: `pip install pyoxipng` for smaller PNGs.
 Usage: python3 packages/assets/scripts/pack-wearables.py [pack/customization dir] [MAX=2048]"""
 import json, os, sys, collections, math
 from PIL import Image
+import importlib.util as _iu, os as _os  # ADR-138: manifest may be a v2 shard index
+_spec = _iu.spec_from_file_location("cz_manifest", _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "cz_manifest.py"))
+czm = _iu.module_from_spec(_spec); _spec.loader.exec_module(czm)
 D = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(__file__), "../pack/customization")
 MAX = int(sys.argv[2]) if len(sys.argv) > 2 else 2048
 PAD = 1  # per side -> 2px between cells
-mp = os.path.join(D, "manifest.customization.json"); m = json.load(open(mp))
+mp = os.path.join(D, "manifest.customization.json"); m = czm.load(mp)
 A = {a["key"]: a for a in m["atlases"]}; S = {s["key"]: s for s in m["sprites"]}
 slot = {}
 def walk(o, sl):
@@ -131,7 +134,7 @@ for members, ub in out:
             an.setdefault("dirStride", a["columns"]); an["frames"] = [f - info[k]["lo"] + base for f in an["frames"]]
         base += info[k]["n"]
 m["atlases"] = [a for a in m["atlases"] if a["key"] not in old] + newA
-json.dump(m, open(mp, "w"), indent=1); open(mp, "a").write("\n")
+czm.save(mp, m)
 for o in old:
     for f in os.listdir(os.path.join(D, "atlases")):
         if (f.startswith(o + ".") or f.startswith(o + "@")) and o not in {a["key"] for a in newA}: os.remove(os.path.join(D, "atlases", f))

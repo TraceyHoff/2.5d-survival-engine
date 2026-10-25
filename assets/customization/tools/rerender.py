@@ -16,6 +16,9 @@ from PIL import Image
 from multiprocessing import Pool
 import rig, build_all, catalog, swimfx, rectpack
 from rig import FW, FH, FEET, PAD, SWIM_N, PUNCH_N, SIT_N, SWIM_Z
+import importlib.util as _iu, os as _os  # ADR-138: manifest may be a v2 shard index
+_spec = _iu.spec_from_file_location("cz_manifest", _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "../../../packages/assets/scripts/cz_manifest.py"))
+czm = _iu.module_from_spec(_spec); _spec.loader.exec_module(czm)
 WL = FEET - 2; SHIFT = WL - round(FEET - SWIM_Z); COLS = 32
 JOBS = {j[0]: j for j in build_all.jobs()}
 NA = {a[0]: a[1] for a in rig.ANIMS}
@@ -70,7 +73,7 @@ def sync_wearables(m):
 
 def main(eng, prefixes, slots, tight, jobs):
     D = os.path.join(eng, "packages/assets/pack/customization"); MP = os.path.join(D, "manifest.customization.json")
-    m = json.load(open(MP)); sync_wearables(m)
+    m = czm.load(MP); sync_wearables(m)
     keys = sorted(s["key"] for s in m["sprites"] if any(s["key"].startswith(p) for p in prefixes))
     assert keys and all(k in JOBS for k in keys), [k for k in keys if k not in JOBS]
     S = {s["key"]: s for s in m["sprites"]}
@@ -97,7 +100,7 @@ def main(eng, prefixes, slots, tight, jobs):
                 for _ in range(len(an["frames"]) * an.get("directions", 1)):
                     df.append({"atlas": pk, "rect": {"x": c % COLS * FW, "y": c // COLS * FH, "w": FW, "h": FH}, "anchor": {"x": 0.5, "y": FEET / FH}}); c += 1
                 an["dirFrames"] = df
-    json.dump(m, open(MP, "w"), indent=1); open(MP, "a").write("\n")
+    czm.save(MP, m)
     rectpack.main(eng, slots, False, tight, body)
 
 if __name__ == "__main__":

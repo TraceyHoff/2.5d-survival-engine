@@ -3,9 +3,12 @@
 columns = facings; each frame resolved from the manifests (dirFrames honoured), 3x nearest. Usage: swim_preview.py ENGINE OUT.png"""
 import sys, os, json
 from PIL import Image, ImageDraw
+import importlib.util as _iu, os as _os  # ADR-138: manifest may be a v2 shard index
+_spec = _iu.spec_from_file_location("cz_manifest", _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "../../packages/assets/scripts/cz_manifest.py"))
+czm = _iu.module_from_spec(_spec); _spec.loader.exec_module(czm)
 ENG, OUT = sys.argv[1], sys.argv[2]; P = os.path.join(ENG, "packages/assets/pack")
 def man(rel):
-    m = json.load(open(os.path.join(P, rel))); base = os.path.dirname(os.path.join(P, rel)); return m, {a["key"]: a for a in m["atlases"]}, {s["key"]: s for s in m["sprites"]}, base
+    m = czm.load(os.path.join(P, rel)); base = os.path.dirname(os.path.join(P, rel)); return m, {a["key"]: a for a in m["atlases"]}, {s["key"]: s for s in m["sprites"]}, base
 MM, MA, MS, MB = man("manifest.json"); CM, CA, CS, CB = man("customization/manifest.customization.json")
 cache = {}
 def img(base, rel):

@@ -17,10 +17,13 @@ import numpy as np
 from PIL import Image
 import wearpack
 from rig import FW, FH, FEET
+import importlib.util as _iu, os as _os  # ADR-138: manifest may be a v2 shard index
+_spec = _iu.spec_from_file_location("cz_manifest", _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "../../../packages/assets/scripts/cz_manifest.py"))
+czm = _iu.module_from_spec(_spec); _spec.loader.exec_module(czm)
 
 def main(eng, rx, pfx, dry=False):
     D = os.path.join(eng, "packages/assets/pack/customization"); MP = os.path.join(D, "manifest.customization.json")
-    m = json.load(open(MP)); A = {a["key"]: a for a in m["atlases"]}; sel = {k for k in A if re.search(rx, k)}
+    m = czm.load(MP); A = {a["key"]: a for a in m["atlases"]}; sel = {k for k in A if re.search(rx, k)}
     wear = set()
     def walk(o):
         if isinstance(o, dict):
@@ -98,6 +101,6 @@ def main(eng, rx, pfx, dry=False):
         for an in s["animations"].values(): assert all(d["atlas"] is not None for d in an.get("dirFrames", [])), s["key"]
     i = min(j for j, a in enumerate(m["atlases"]) if a["key"] in sel)
     rest = [a for a in m["atlases"] if a["key"] not in sel]; m["atlases"] = rest[:i] + newA + rest[i:]
-    json.dump(m, open(MP, "w"), indent=1); open(MP, "a").write("\n")
+    czm.save(MP, m)
 
 if __name__ == "__main__": main(sys.argv[1], sys.argv[2], sys.argv[3], "--dry" in sys.argv)

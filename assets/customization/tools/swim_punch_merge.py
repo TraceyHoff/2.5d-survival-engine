@@ -20,6 +20,9 @@ import numpy as np
 from PIL import Image
 from multiprocessing import Pool
 from rig import FW, FH, FEET, PAD, SWIM_N, PUNCH_N, SWIM_Z
+import importlib.util as _iu, os as _os  # ADR-138: manifest may be a v2 shard index
+_spec = _iu.spec_from_file_location("cz_manifest", _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "../../../packages/assets/scripts/cz_manifest.py"))
+czm = _iu.module_from_spec(_spec); _spec.loader.exec_module(czm)
 ENG = sys.argv[1]; D = os.path.join(ENG, "packages/assets/pack/customization"); MP = os.path.join(D, "manifest.customization.json")
 JOBS = {j[0]: j for j in build_all.jobs()}
 WL = FEET - 2                                  # waterline row (1x) in the 48x80 rig frame
@@ -77,7 +80,7 @@ if __name__ == "__main__":
         k = sys.argv[sys.argv.index("--preview") + 1]; _, out = render_key(k)
         im = np.concatenate([np.concatenate([out[r * 8 + c][0][2] for c in range(8)], 1) for r in range(len(out) // 8)], 0)
         Image.fromarray(im).save("/tmp/sp_" + k + ".png"); sys.exit()
-    m = json.load(open(MP)); A = {a["key"]: a for a in m["atlases"]}; S = {s["key"]: s for s in m["sprites"]}
+    m = czm.load(MP); A = {a["key"]: a for a in m["atlases"]}; S = {s["key"]: s for s in m["sprites"]}
     bodies = [b["sprite"] for b in m["bodyTypes"].values()]
     wear = set()
     def walk(o):
@@ -157,5 +160,5 @@ if __name__ == "__main__":
                  "pages": [{"scale": 2, "image": f"atlases/{pk}@2x.png"}], "masks": {"tintmask": f"atlases/{pk}.tintmask.png"}}
         newp.append(pk); print(f"page {pk}: {len(g)} sprites cell {cw}x{ch} grid {C}x{Rw} -> {W1}x{H1} (@2x {W1*2}x{H1*2})", flush=True)
     m["atlases"] = m["atlases"] + [A["cz_sp_" + k] for k in bodies] + [A[k] for k in newp]
-    json.dump(m, open(MP, "w"), indent=1); open(MP, "a").write("\n")
+    czm.save(MP, m)
     print("wear pages:", len(newp), "wear sprites:", len(wear), flush=True)

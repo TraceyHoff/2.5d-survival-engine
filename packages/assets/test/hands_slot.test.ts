@@ -3,10 +3,11 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { defaultAppearance, resolveLayers, slotIndex, validateAppearance } from "@engine/core";
 import { loadManifest, mergeManifests, type ManifestJson } from "../src/index.js";
+import { readManifestJson } from "../src/node.js";
 
 // ADR-137: gloves live on the dedicated "hands" cosmetic slot, drawn over hands + front sleeves, never on the accessory layer.
 const dir = fileURLToPath(new URL("../pack/", import.meta.url));
-const read = (f: string) => JSON.parse(readFileSync(f, "utf8")) as ManifestJson;
+const read = (f: string) => readManifestJson(f) as ManifestJson;
 const merged = mergeManifests([{ name: "pack", manifest: read(dir + "manifest.json") }, { name: "customization", manifest: read(dir + "customization/manifest.customization.json") }]);
 const { registry } = loadManifest(merged.manifest, { lock: JSON.parse(readFileSync(dir + "ids.lock.json", "utf8")) });
 const cat = registry.cosmetics!;

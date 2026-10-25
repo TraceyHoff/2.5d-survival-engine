@@ -3,9 +3,10 @@ import { readFileSync } from "node:fs";
 import { AssetRegistry, loadManifest, mergeManifests } from "@engine/assets";
 import { PACK_DIR } from "@engine/assets/node";
 import { AtlasManager, addDirFrameRects, dirFrameIndex, newResolved } from "../src/assets/atlasManager.js";
+import { readManifestJson } from "@engine/assets/node";
 
 /** Explicit per-frame (page, rect) dirFrames for any anim (body + wear), duplicates shared; arithmetic stays the fallback. */
-const json = (p: string) => JSON.parse(readFileSync(PACK_DIR + p, "utf8"));
+const json = (p: string) => readManifestJson(PACK_DIR + p);
 const D = 8;
 // "wave": 3 frames x 8 facings; frame 2 reuses frame 0's rect (a held pose), and facings 4..7 reuse facings 0..3 (shared rects)
 const rectFor = (i: number, d: number) => { const fi = i === 2 ? 0 : i, dd = d % 4; return { x: fi * 64, y: dd * 96, w: 60 + fi, h: 90 + dd }; };

@@ -4,8 +4,9 @@ import { loadManifest, type AssetRegistry } from "@engine/assets";
 import { PACK_DIR } from "@engine/assets/node";
 import { mergeManifests } from "@engine/assets";
 import { AtlasManager, legacyDirFrameAtlases, sourcesFromManifest } from "../src/assets/atlasManager.js";
+import { readManifestJson } from "@engine/assets/node";
 
-const json = (p: string) => JSON.parse(readFileSync(PACK_DIR + p, "utf8"));
+const json = (p: string) => readManifestJson(PACK_DIR + p);
 const merged = (...packs: [string, string][]): AssetRegistry => loadManifest(mergeManifests(packs.map(([name, p]) => ({ name, manifest: json(p) })) as never).manifest).registry;
 
 /** AtlasManager without GL: just the sprite/atlas tables resolve() and the page lookups read. */

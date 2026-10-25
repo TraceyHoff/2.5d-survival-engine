@@ -11,11 +11,14 @@ import numpy as np
 from PIL import Image
 import wearpack
 from rig import FW, FH, FEET
+import importlib.util as _iu, os as _os  # ADR-138: manifest may be a v2 shard index
+_spec = _iu.spec_from_file_location("cz_manifest", _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "../../../packages/assets/scripts/cz_manifest.py"))
+czm = _iu.module_from_spec(_spec); _spec.loader.exec_module(czm)
 PFX = "cz_st114_"
 
 def main(eng):
     D = os.path.join(eng, "packages/assets/pack/customization"); MP = os.path.join(D, "manifest.customization.json")
-    m = json.load(open(MP)); A = {a["key"]: a for a in m["atlases"]}
+    m = czm.load(MP); A = {a["key"]: a for a in m["atlases"]}
     S = [s for s in m["sprites"] if s["atlas"].startswith(PFX)]; img = {}
     def page(a):
         if a["key"] not in img:
@@ -57,7 +60,7 @@ def main(eng):
         print(f"page {pk}: {len(rem)} sprites {nc} cells, cell {at['frameW']}x{at['frameH']} grid {at['columns']}x{at['rows']} -> {l[5]}x{l[6]}", flush=True)
     i = min(j for j, a in enumerate(m["atlases"]) if a["key"].startswith(PFX))
     rest = [a for a in m["atlases"] if not a["key"].startswith(PFX)]; m["atlases"] = rest[:i] + newA + rest[i:]
-    json.dump(m, open(MP, "w"), indent=1); open(MP, "a").write("\n")
+    czm.save(MP, m)
     print(f"{len(old)} pages -> {len(newA)} pages")
 
 if __name__ == "__main__": main(sys.argv[1])

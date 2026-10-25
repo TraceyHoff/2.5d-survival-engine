@@ -3,6 +3,7 @@
 // The first run seeds the lock from sample/ids.lock.json so ids shared with the placeholder sample stay identical.
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { loadManifest, mergeManifests, type ManifestJson } from "../src/index.js";
+import { readManifestJson } from "../src/node.js";
 const here = new URL("../", import.meta.url).pathname;
 const dir = (process.argv[2] ?? here + "pack").replace(/\/?$/, "/");
 const lockPath = dir + "ids.lock.json";
@@ -11,7 +12,7 @@ const prev = existsSync(lockPath) ? JSON.parse(readFileSync(lockPath, "utf8")) :
 const root = here + "../../";
 const SUBS: [string, string][] = [["ui-kit", root + "assets/ui/kit/manifest.ui.kit.json"], ["branding", root + "assets/ui/branding/manifest.branding.json"], ["customization", dir + "customization/manifest.customization.json"], ["vehicles", dir + "vehicles/manifest.vehicles.json"], ["items", dir + "items/manifest.items.json"], ["vehicle_items", dir + "vehicle_items/manifest.vehicle_items.json"], ["building", dir + "building/manifest.building.json"], ["nature", dir + "nature/manifest.nature.json"]];
 const frags = [{ name: "pack", manifest: JSON.parse(readFileSync(dir + "manifest.json", "utf8")) as ManifestJson },
-  ...SUBS.filter(([, f]) => existsSync(f)).map(([name, f]) => ({ name, manifest: JSON.parse(readFileSync(f, "utf8")) as ManifestJson }))];
+  ...SUBS.filter(([, f]) => existsSync(f)).map(([name, f]) => ({ name, manifest: readManifestJson(f) as ManifestJson }))];
 const merged = mergeManifests(frags);
 if (merged.collisions.length) { console.error(`${merged.collisions.length} duplicate keys across sub-manifests`, merged.collisions.slice(0, 10)); process.exit(1); }
 const { lock } = loadManifest(merged.manifest, { lock: prev });

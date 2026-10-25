@@ -14,7 +14,7 @@ import { World, Transform, PrevTransform, TimeOfDay, Weather, Appearance, Player
 import { CHUNK_SIZE, tileToChunk, tileToLocal, type TileMap } from "@engine/world";
 import { setDayFraction, resolveOffHandSprite } from "@engine/render";
 import { pieceVariantOpts } from "./piece-variant.js";
-import { loadManifest, mergeManifests, buildPieceVisual, type AssetRegistry, type ManifestFragment, type ManifestJson } from "@engine/assets";
+import { loadManifest, mergeManifests, resolveManifestShards, buildPieceVisual, type AssetRegistry, type ManifestFragment, type ManifestJson } from "@engine/assets";
 import { BuildGhost, pieceArtRow, ROT_EXACT_PIVOT, IsoRenderer, Canvas2DRenderer, chooseRenderer, Sprite, Shadow, LightSource, Occluder, SpriteFlag, sourcesFromManifest, coreAppearanceBinding, CameraTargetGuard } from "@engine/render";
 import { countFraction } from "./load-progress.js";
 import { roadSpriteKeys, ROAD_FLAGS, signFrameId } from "./road-sign-view.js";
@@ -529,8 +529,10 @@ async function loadMergedManifest(art: string): Promise<ReturnType<typeof loadMa
   const list = idx?.fragments?.length ? idx.fragments : MANIFEST_INDEX;
   const frags: ManifestFragment[] = []; const dirOf = new Map<string, string>();
   for (const f of list) {
-    const url = new URL(f.url, new URL(art, location.href)).href; const m = await get(url);
+    const url = new URL(f.url, new URL(art, location.href)).href; let m = await get(url);
     if (m === undefined) { if (f.optional) continue; throw new Error(`manifest fetch failed: ${url}`); }
+    // ADR-138: a v2 shard index fetches its shards in parallel and merges them (duplicate keys across shards throw)
+    m = await resolveManifestShards(m, async (file) => get(new URL(file, url).href));
     frags.push({ name: f.name, manifest: m as ManifestJson }); dirOf.set(f.name, url.replace(/[^/]*$/, ""));
   }
   // atlas paths become absolute per fragment, so sourcesFromManifest (pack base) loads each PNG from its one source

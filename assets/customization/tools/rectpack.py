@@ -22,6 +22,9 @@ import numpy as np
 from PIL import Image
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 from wearpack import body_of, variant_of, partitions, r8
+import importlib.util as _iu, os as _os  # ADR-138: manifest may be a v2 shard index
+_spec = _iu.spec_from_file_location("cz_manifest", _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "../../../packages/assets/scripts/cz_manifest.py"))
+czm = _iu.module_from_spec(_spec); _spec.loader.exec_module(czm)
 MAXP8 = 1016; PFX = "cz_wr_"
 # VRAM pass: every wearable slot packs tight, pivot-free crops (anchor per entry) with shared 1 px gutters
 ALL_TIGHT = ("accessory", "bottom", "eyes", "face", "hair", "hands", "hat", "shoes", "top")
@@ -61,7 +64,7 @@ def mask2x(p): return re.sub(r"(\.[a-z]+)$", r"@2x\1", p)
 
 def main(eng, slots=None, dry=False, tight=(), bodies=False):
     D = os.path.join(eng, "packages/assets/pack/customization"); MP = os.path.join(D, "manifest.customization.json")
-    m = json.load(open(MP)); A = {a["key"]: a for a in m["atlases"]}; S = {s["key"]: s for s in m["sprites"]}
+    m = czm.load(MP); A = {a["key"]: a for a in m["atlases"]}; S = {s["key"]: s for s in m["sprites"]}
     def walk(o, acc):
         if isinstance(o, dict):
             for k, v in o.items():
@@ -282,7 +285,7 @@ def main(eng, slots=None, dry=False, tight=(), bodies=False):
         if a in old_used and not any(CROP[h][3] is not None for pk, g, (Wd, H, pos) in plan if pk == a for h in pos if h != "blank"):
             for p in glob.glob(os.path.join(D, "atlases", a + ".tintmask@2x.*")): os.remove(p)
     print("dropped pages:", len(drop), "kept (still used by unselected sprites):", sorted(a for a in old_used if a in refs and a not in newkeys))
-    json.dump(m, open(MP, "w"), indent=1); open(MP, "a").write("\n")
+    czm.save(MP, m)
 
 def rekey_meta(s, cols):
     """Index-keyed frameMeta -> anim-level "df:<i>" (AssetRegistry.dirFrameMeta with the legacy arithmetic frame: sprite

@@ -4,13 +4,14 @@ import { loadManifest, mergeManifests, type AssetRegistry } from "@engine/assets
 import { PACK_DIR } from "@engine/assets/node";
 import { AnimState } from "@engine/core";
 import { AtlasManager, bodyAtlasKeys, legacyDirFrameAtlases, wearableOnlyAtlases, newResolved } from "../src/assets/atlasManager.js";
+import { readManifestJson } from "@engine/assets/node";
 
 /**
  * Multi-page dirFrames for non-vehicle sprites (ADR-107 swim/punch): the paper-doll body, its wear layers and animals
  * keep their legacy page for the old anims and put swim (AnimState 14) / punch (15) on an extra page through the
  * existing per-anim `dirFrames` schema (no schema change). Page geometry comes from each page's atlas entry.
  */
-const json = (p: string) => JSON.parse(readFileSync(PACK_DIR + p, "utf8"));
+const json = (p: string) => readManifestJson(PACK_DIR + p);
 const D = 8, SWIM = 6, PUNCH = 4;
 /** dirFrames for an anim of `n` frames x 8 facings laid out row-major on `atlas` from cell `at` (rig.py order: facing-major). */
 const df = (atlas: string, at: number, n: number) => { const out = []; for (let i = 0; i < n; i++) for (let d = 0; d < D; d++) out.push({ atlas, frame: at + d * n + i, anchor: { x: 0.5, y: 0.9 } }); return out; };

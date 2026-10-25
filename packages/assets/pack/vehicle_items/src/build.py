@@ -6,6 +6,9 @@ from concurrent.futures import ProcessPoolExecutor
 from PIL import Image, ImageDraw, ImageFont
 from draw import C
 import vicons, kits, garage
+import importlib.util as _iu, os as _os  # ADR-138: manifest may be a v2 shard index
+_spec = _iu.spec_from_file_location("cz_manifest", _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "../../../scripts/cz_manifest.py"))
+czm = _iu.module_from_spec(_spec); _spec.loader.exec_module(czm)
 OUT, PREV = sys.argv[1], sys.argv[2]; os.makedirs(OUT+'/atlases', exist_ok=True); os.makedirs(PREV, exist_ok=True)
 ICONS = list(vicons.T) + [f'item_vehicle_kit_{k}' for k in kits.KITS]
 def icon(k):
@@ -34,7 +37,7 @@ if __name__ == '__main__':
     # ART_KEYS_VEHICLES.md lists item_<key>. Emit both: item_<key> plus a bare-key alias wherever the bare key is free in the merge.
     taken = set()
     for f in ('../../manifest.json', '../../items/manifest.items.json', '../../vehicles/manifest.vehicles.json', '../../customization/manifest.customization.json', '../../../../../assets/ui/kit/manifest.ui.kit.json', '../../../../../assets/ui/branding/manifest.branding.json'):
-        if os.path.exists(f): taken |= {x['key'] for x in json.load(open(f)).get('sprites', [])}
+        if os.path.exists(f): taken |= {x['key'] for x in czm.load(f).get('sprites', [])}
     ALIASED = []
     for i, k in enumerate(ICONS):
         b = k[5:]

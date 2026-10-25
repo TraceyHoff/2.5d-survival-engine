@@ -3,10 +3,11 @@ import { readFileSync } from "node:fs";
 import { AssetRegistry, HEAD_RECT_SLACK_PX, defaultGroupOf, loadManifest } from "../src/index.js";
 import { PACK_DIR } from "../src/node.js";
 import { mergeManifests } from "../src/merge.js";
+import { readManifestJson } from "../src/node.js";
 
 // ADR-128 neck: body frameMeta `head` (top of the neck) moves head-group layers by head - attach.head (reference)
 const pack = () => JSON.parse(readFileSync(PACK_DIR + "manifest.json", "utf8"));
-const cz = () => JSON.parse(readFileSync(PACK_DIR + "customization/manifest.customization.json", "utf8"));
+const cz = () => readManifestJson(PACK_DIR + "customization/manifest.customization.json");
 const load = (m: any) => loadManifest(mergeManifests([{ name: "pack", manifest: pack() }, { name: "customization", manifest: m }] as never).manifest).registry;
 const ANIMS = ["idle", "walk", "sit", "swim", "crouch"] as const;
 const REF = { x: 0, y: -40 };
