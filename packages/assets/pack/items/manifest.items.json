@@ -170,6 +170,22 @@
     }
    ],
    "ktx2": "atlases/items_xp_chip.ktx2"
+  },
+  {
+   "key": "items_pets",
+   "image": "atlases/items_pets.png",
+   "frameW": 32,
+   "frameH": 32,
+   "columns": 6,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/items_pets@2x.png",
+     "ktx2": "atlases/items_pets@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/items_pets.ktx2"
   }
  ],
  "sprites": [
@@ -7554,6 +7570,108 @@
     "idle": {
      "frames": [
       0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "dog_biscuit",
+   "category": "item",
+   "atlas": "items_pets",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "meaty_chew",
+   "category": "item",
+   "atlas": "items_pets",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "fish_treat",
+   "category": "item",
+   "atlas": "items_pets",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "egg_crunch",
+   "category": "item",
+   "atlas": "items_pets",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "seed_mix",
+   "category": "item",
+   "atlas": "items_pets",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "veggie_bites",
+   "category": "item",
+   "atlas": "items_pets",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      5
      ],
      "fps": 1
     }
