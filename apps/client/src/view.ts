@@ -1,4 +1,5 @@
 import { effectiveLevel, levelFlags } from "./gl-recovery.js";
+import { isFreeStandingStation } from "./station-view.js";
 import { DESKTOP_ZOOM } from "./camera-zoom.js";
 import { showRenderError, glInfo, frameIsBlack } from "./glcheck.js";
 /**
@@ -489,7 +490,7 @@ export class IsoView {
       const spec = isLight ? this.lights.get(key) ?? this.lights.get("campfire") : undefined;
       return spec ? { light: spec, ...(em?.kind === 2 ? { fuelOf: this.fuelSibling(net, e) } : {}) } : undefined;
     }
-    if (net.has(e, CraftingStation)) { // free-standing station (spawnStation): bonfire sprite + light following Fuel.lit
+    if (isFreeStandingStation(net.has(e, CraftingStation), net.has(e, GPiece))) { // free-standing station (spawnStation): bonfire sprite + light following Fuel.lit
       const s = this.sid("bonfire") ?? this.sid("campfire_lit") ?? this.sid("fx_fire"); if (s === undefined) return undefined;
       const fired = net.has(e, Fuel); const spec = fired ? this.lights.get("bonfire") : undefined;
       return { sprite: s, shadow: 0.6, fuel: fired, ...(spec ? { light: spec } : {}) };
