@@ -28,3 +28,11 @@ describe("survivor agents use bots.json", () => {
     expect(G.survivorRegistry().get("gather")!.considerations.some((x) => x.name === "botUtility")).toBe(true);
   });
 });
+
+import { makeAgentIdentity as mkId } from "../src/agents.js";
+import { describe as d2, expect as e2, test as t2 } from "vitest";
+d2("bot names", () => {
+  t2("the first 20 bots of a world all have different names", () => {
+    for (const seed of [1, 7, 1234, 99999]) { const names = Array.from({ length: 20 }, (_, i) => mkId(seed, i).name); e2(new Set(names).size).toBe(20); }
+  });
+});

@@ -145,7 +145,10 @@ export function survivorRegistry(extra: readonly GameBehavior[] = []): BehaviorR
 export function makeAgentIdentity(seed: number, slot: number, archetype?: string): AgentIdentity {
   const rng = new Rng((seed * 2654435761 + slot * 40503) >>> 0); const bots = populationData().bots; const keys = Object.keys(bots.archetypes);
   const arch = archetype ?? keys[rng.int(0, keys.length)]!; const b = bots.archetypes[arch]; if (!b) throw new Error(`unknown bot archetype ${arch}`);
-  const name = AGENTS_DATA.names[(slot + rng.int(0, AGENTS_DATA.names.length)) % AGENTS_DATA.names.length]!;
+  // unique per world for the first names.length slots: a per-seed offset, then one name per slot (the rng draw is kept so
+  // trait rolls stay identical); the old per-slot random pick gave several "Ash" bots in one world
+  const N = AGENTS_DATA.names.length; rng.int(0, N); const off = ((seed * 2246822519) >>> 0) % N;
+  const name = AGENTS_DATA.names[(off + slot) % N]!;
   const goals = Object.entries(b.goals).sort((x, y) => y[1] - x[1]).map(([g]) => ({ name: g, progress: 0 }));
   return { id: `bot-${seed}-${slot}`, name, relationship: 0, traits: rollTraits(arch, () => rng.next()), archetype: arch, goals };
 }
