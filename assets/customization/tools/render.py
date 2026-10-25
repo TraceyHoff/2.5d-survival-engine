@@ -19,7 +19,7 @@ def draw(c, slot, spec, hat=False):
 def render_frame(bt, slot, spec, d, anim, fi, n, hat=False, part=None):
     K = pose(bt, d, anim, fi, n); c = Ctx(K); c.extra = None
     c.cv.detail = slot if slot in DETAIL_SLOTS else None
-    draw(c, slot, spec, hat)
+    parts.gear_parts.apply_remap(c, spec); draw(c, slot, spec, hat)
     if part == "sleeves": c.items = []; c.run(armcut=False, extra=c.extra)
     elif part == "main": c.run(armcut=True, extra=None)
     else: c.run(armcut=(slot != "body" and not spec.get("noarmcut")), extra=c.extra)

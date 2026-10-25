@@ -68,7 +68,7 @@ describe("ADR-135 equipment", () => {
   it("worn gear maps to paper-doll wearables", () => {
     const w = world(); const a = mk(w, 1); G.addItem(w, a, id("iron_helmet"), 1); G.addItem(w, a, id("leather_backpack"), 1);
     G.wearSlot(w, a, slotOf(w, a, id("iron_helmet"))); G.wearSlot(w, a, slotOf(w, a, id("leather_backpack")));
-    expect(Object.fromEntries(G.wornCosmetics(w, a))).toMatchObject({ hat: "hat_helmet", accessory: "acc_backpack" });
+    expect(Object.fromEntries(G.wornCosmetics(w, a))).toMatchObject({ hat: "hat_gear_iron_helmet", accessory: "acc_backpack" });
   });
   it("ADR-137: gloves draw on the dedicated hands slot and never displace a back item", () => {
     const w = world(); const a = mk(w, 1);
@@ -84,13 +84,13 @@ describe("ADR-135 equipment", () => {
     expect(G.wearableKeyFor("steel_helmet", "armor_head", (k) => k === "hat_viking", t)).toBe("hat_viking");
     expect(G.wearableKeyFor("x", undefined, undefined, t)).toBeUndefined();
   });
-  it("ADR-137: wear_cosmetics items cover every worn armor/gear item; placeholders = family wearable; art keys unique", () => {
+  it("ADR-137: wear_cosmetics items cover every worn armor/gear item; items = family placeholder or landed art; art keys unique", () => {
     const T = G.WEAR_COSMETICS_TABLE; const defs = G.gameplayDefs(world());
     const worn = [...defs.items.values()].filter((d) => d.wear && d.wear.slot !== 6 /* OffHand */ && d.family && T.families[d.family]);
     expect(worn.length).toBeGreaterThan(40);
     for (const d of worn) {
-      expect(T.items?.[d.key], d.key).toBe(T.families[d.family!]);
       const art = T.artTodo?.[d.key]; expect(art, d.key).toBeDefined();
+      expect([T.families[d.family!], art], d.key).toContain(T.items?.[d.key]);   // placeholder until the art lands, then the art key
       const slot = d.wear!.slot === 4 /* Hands */ ? "hands" : G.wearableSlotOfKey(T.families[d.family!]!);
       expect(G.wearableSlotOfKey(art!), d.key).toBe(slot);
     }

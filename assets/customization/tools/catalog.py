@@ -75,3 +75,18 @@ GEAR_PH = {}   # gear key -> resident placeholder wearable (same slot) drawn whi
 for s, hh, hd in [("helmet", False, ["hair"]), ("fur_hat", True, []), ("leather_cap", True, []), ("hood", False, ["hair"])]:
     gear("hat_" + s, "hat", {"style": s}, tint=2, hides=hd, hatHairFlag=hh)
 GEAR_PH.update(hat_helmet="hat_viking", hat_fur_hat="hat_beanie", hat_leather_cap="hat_cap", hat_hood="hat_frog_hood")
+# ---- ADR-137 exact per-item gear keys (<slotprefix>_gear_<item>; data/wear_cosmetics.json items/artTodo). Tier order bone..composite.
+import json as _json, os as _os
+_WC = _json.load(open(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "../../../packages/gameplay/data/wear_cosmetics.json")))
+def _res_ph(k):   # resident placeholder: follow gear (streamed) placeholders back to a resident wearable; None = nothing
+    seen = set()
+    while k in GEAR_PH and k not in seen: seen.add(k); k = GEAR_PH[k]
+    return None if (k is None or k in GEAR) else k
+def gear137(key, slot, spec, **kw):
+    item = next((i for i, w in _WC["artTodo"].items() if w == key), None); gear(key, slot, spec, **kw)
+    GEAR_PH[key] = _res_ph(_WC["items"].get(item)) if item else None
+TIERS = ("bone", "bronze", "iron", "steel", "composite")
+for k, st, hd, hh, kw in [("straw_hat", "gear_straw", [], True, {"tint": 1}), ("linen_cap", "linen_cap", [], True, {"remap": {"P": "cloth_cream"}}),
+                         ("rain_hood", "rain_hood", ["hair"], False, {}), ("fur_hat", "gear_fur_hat", [], True, {}), ("leather_cap", "gear_leather_cap", [], True, {}),
+                         ("wool_hat", "wool_hat", [], True, {})] + [(f"{t}_helmet", f"{t}_helmet", ["hair"], False, {}) for t in TIERS]:
+    gear137("hat_gear_" + k, "hat", dict({"style": st}, **({"remap": kw["remap"]} if "remap" in kw else {})), tint=kw.get("tint", 2), hides=hd, hatHairFlag=hh)
