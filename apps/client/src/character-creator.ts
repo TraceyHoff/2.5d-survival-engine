@@ -196,7 +196,7 @@ export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter
   const wrap = doc.createElement("div"); wrap.dataset["boot"] = "creator"; wrap.className = "boot creator"; wrap.setAttribute("role", "dialog"); wrap.setAttribute("aria-label", "Create your character");
   wrap.setAttribute("style", "position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(30,20,28,.72);padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)");
   const panel = doc.createElement("div"); panel.className = "panel ui-scroll";
-  panel.setAttribute("style", "max-height:calc(100dvh - 24px);box-sizing:border-box;width:min(760px,calc(100vw - 16px));max-width:100%;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;display:flex;flex-wrap:wrap;gap:12px;background:#FFF3DC;border:3px solid #3B2433;border-radius:16px;padding:14px");
+  panel.setAttribute("style", "max-height:calc(100dvh - 24px);box-sizing:border-box;width:min(760px,calc(100vw - 16px));max-width:100%;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;display:flex;flex-direction:row;flex-wrap:wrap;align-content:flex-start;gap:12px;background:#FFF3DC;border:3px solid #3B2433;border-radius:16px;padding:14px");
   const h = doc.createElement("h2"); h.textContent = o.title ?? (o.initial ? "Edit character" : "Create your character"); h.style.cssText = "flex:1 1 100%;margin:0";
   const left = doc.createElement("div"); left.style.cssText = "flex:1 1 220px;min-width:0;display:flex;flex-direction:column;align-items:center;gap:6px";
   // preview host: sketch canvas until the sprite preview (WebGL2 / Canvas2D) is up; drag on it turns the character
@@ -240,7 +240,7 @@ export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter
   row("Top", "top"); row("Top colour", "top:color"); row("Bottom", "bottom"); row("Bottom colour", "bottom:color"); row("Shoes", "shoes"); row("Shoe colour", "shoes:color");
   row("Secondary colour", "secondary"); row("Eye colour", "eyes:color"); c2("eyes", "Eye secondary colour");
   const msg = doc.createElement("p"); msg.dataset["role"] = "creator-msg"; msg.style.cssText = "flex:1 1 100%;margin:0;min-height:1.2em";
-  const foot = doc.createElement("div"); foot.className = "sticky-footer"; foot.style.cssText = "flex:1 1 100%;display:flex;flex-wrap:wrap;gap:8px;position:sticky;bottom:0;background:#FFF3DC;padding-top:6px";
+  const foot = doc.createElement("div"); foot.className = "sticky-footer"; foot.style.cssText = "flex:1 1 100%;display:flex;flex-wrap:wrap;gap:8px;position:sticky;bottom:-14px;margin-bottom:-14px;padding-bottom:14px;background:#FFF3DC;padding-top:6px";
   let done: (v: StoredCharacter | undefined) => void = () => undefined;
   const ok = mk("Enter world", "creator-done", () => { const n = cleanName(name); if (!n) { msg.textContent = "Pick a name for your survivor."; nameIn.focus(); return; } done({ v: 1, name: n, appearance: look }); }, "");
   foot.append(mk("Back", "creator-back", () => done(undefined)), ok);

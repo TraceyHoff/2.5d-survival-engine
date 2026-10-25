@@ -31,6 +31,12 @@ describe("ADR-114 character creator", () => {
     saveCharacter("singleplayer", "1", { v: 1, name: "Ann", appearance: randomLook(cat) }, st);
     expect(loadCharacter("singleplayer", "1", st)?.name).toBe("Ann"); expect(loadCharacter("hosted", "1", st)).toBeUndefined(); expect(loadCharacter("singleplayer", "2", st)).toBeUndefined();
   });
+  it("panel lays out as wrapping rows, not columns, under the boot .panel rule (phone: Enter world stays on screen)", async () => {
+    const st = document.createElement("style"); st.textContent = ".boot .panel{display:flex;flex-direction:column}"; document.head.append(st);
+    const p = showCharacterCreator({ root: document.body, catalog: cat, pads: () => [] });
+    const panel = document.querySelector<HTMLElement>("[data-boot=creator] .panel")!; expect(getComputedStyle(panel).flexDirection).toBe("row"); expect(panel.style.flexWrap).toBe("wrap");
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" })); await p; st.remove();
+  });
   it("dialog: requires a name, Randomize, keyboard step, Enter world, and Back / Esc", async () => {
     const p = showCharacterCreator({ root: document.body, catalog: cat, pads: () => [] });
     const q = (a: string) => document.querySelector<HTMLButtonElement>(`[data-action="${a}"]`)!;
