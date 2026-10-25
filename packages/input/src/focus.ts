@@ -18,6 +18,8 @@ export interface FocusHooks {
  * Framework-agnostic focus graph: spatial navigation by rects (explicit neighbors win), groups with wrap, groups as tabs,
  * per-screen focus memory and modal traps. UI frameworks register nodes; drive it with UI.* actions via attach().
  */
+/** Cross-axis distance: 0 when the spans overlap, else the gap between them (plus a tiny centre tie-break). */
+const gap = (a: number, aw: number, b: number, bw: number, dc: number): number => Math.max(0, Math.max(a, b) - Math.min(a + aw, b + bw)) + Math.abs(dc) * 0.01;
 export class FocusManager {
   private nodes = new Map<string, FocusNode>(); private groups = new Map<string, FocusGroup>();
   private screens: { id: string; modal: boolean; nodes: Set<string>; memory?: string }[] = [];
@@ -51,7 +53,9 @@ export class FocusManager {
     for (const n of pool) {
       const p = center(n.rect); const dx = p.x - c.x, dy = p.y - c.y;
       const primary = dir === "left" ? -dx : dir === "right" ? dx : dir === "up" ? -dy : dy; if (primary <= 0.5) continue;
-      const secondary = dir === "left" || dir === "right" ? Math.abs(dy) : Math.abs(dx); const score = primary + secondary * 2;
+      // ADR-142: cross-axis gap between the rects (0 when they overlap), not centre distance; a wide button (Build "Place")
+      // spanning both grid columns lost to a same-column button further down and was unreachable by D-pad.
+      const secondary = dir === "left" || dir === "right" ? gap(cur.rect.y, cur.rect.h, n.rect.y, n.rect.h, dy) : gap(cur.rect.x, cur.rect.w, n.rect.x, n.rect.w, dx); const score = primary + secondary * 2;
       if (score < bestScore) { bestScore = score; best = n; }
     }
     if (!best && cur.group && this.groups.get(cur.group)?.wrap) { // wrap to the far side within the group

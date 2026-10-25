@@ -20,3 +20,19 @@ describe("ADR-142 input: tap latch + mouse activity", () => {
     d.endFrame(); expect(d.moved()).toBe(false);
   });
 });
+
+import { FocusManager } from "../src/index.js";
+describe("ADR-142 spatial focus: wide buttons are reachable", () => {
+  it("down from a right-column button picks the overlapping wide button before a same-column button further down", () => {
+    const fm = new FocusManager(); fm.pushScreen("m", true);
+    fm.add({ id: "metal", rect: { x: 520, y: 100, w: 120, h: 40 } });
+    fm.add({ id: "place", rect: { x: 380, y: 170, w: 260, h: 48 } });
+    fm.add({ id: "road", rect: { x: 520, y: 240, w: 120, h: 40 } });
+    fm.setFocus("metal"); expect(fm.navigate("down")).toBe("place");
+  });
+  it("two-column grid: down stays in its column", () => {
+    const fm = new FocusManager(); fm.pushScreen("m", true);
+    for (const [id, x, y] of [["a", 0, 0], ["b", 130, 0], ["c", 0, 50], ["d", 130, 50]] as const) fm.add({ id, rect: { x, y, w: 120, h: 40 } });
+    fm.setFocus("b"); expect(fm.navigate("down")).toBe("d"); fm.setFocus("a"); expect(fm.navigate("right")).toBe("b");
+  });
+});
