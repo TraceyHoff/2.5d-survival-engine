@@ -2688,7 +2688,19 @@
     "skill_tab_medicine": 2686,
     "skill_tab_perks": 2687,
     "skill_tab_survival": 2688,
-    "skill_tab_vehicles": 2689
+    "skill_tab_vehicles": 2689,
+    "apple_tree_stump": 2690,
+    "birch_tree_stump": 2691,
+    "cherry_tree_stump": 2692,
+    "maple_tree_stump": 2693,
+    "oak_tree_stump": 2694,
+    "orange_tree_stump": 2695,
+    "palm_tree_stump": 2696,
+    "peach_tree_stump": 2697,
+    "pear_tree_stump": 2698,
+    "pine_tree_stump": 2699,
+    "ui_creature_hpbar_frame": 2700,
+    "willow_tree_stump": 2701
   },
   "sounds": {
     "amb_rain": 1,
