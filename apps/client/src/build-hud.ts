@@ -22,6 +22,12 @@ export function onTouchControl(layout: { reference?: { w: number; h: number }; e
     : Math.hypot(x - e.anchor.x * w, y - e.anchor.y * h) <= ((e.radius ?? 24) + 8) * k);
 }
 export const TOUCH_LIFT_PX = 48;
+/** QA2: why the ghost is red (BuildFail codes from @engine/gameplay events; unknown codes fall back to "Can't place here"). */
+export const BUILD_FAIL_TEXT: Readonly<Record<number, string>> = {
+  1: "Unknown piece", 2: "Tier not allowed", 3: "Too far away", 4: "Too high", 5: "Not your land", 6: "Area full", 7: "Bad ground",
+  8: "Spot taken", 9: "Blocked", 10: "Needs a socket", 11: "Needs support", 12: "Not enough materials",
+};
+export const buildFailText = (reason: number | undefined): string => (reason && BUILD_FAIL_TEXT[reason]) || "Can't place here";
 const esc = (s: string): string => s.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);
 const label = (k: string): string => k.replace(/_/g, " ").replace(/^\w/, (m) => m.toUpperCase());
 
@@ -30,6 +36,7 @@ export function renderBuildHud(bm: BuildMode, device: BuildDevice): string {
   const p = bm.preview; const ctx = bm.context;
   const chip = `<div class="bh-chip" role="status"><span data-role="bh-piece">${esc(label(p?.pieceKey ?? "piece"))}</span>`
     + `<span class="bh-dot ${p?.valid ? "ok" : "bad"}" data-role="bh-valid">${p?.valid ? "✓" : "✕"}</span>`
+    + (p && !p.valid ? `<span class="bh-why" data-role="bh-why">${esc(buildFailText(p.reason))}</span>` : "")
     + `<span data-role="bh-level">Floor ${bm.level}</span>`
     + `<button data-bh="level-down" aria-label="Floor down">▼</button><button data-bh="level-up" aria-label="Floor up">▲</button></div>`;
   const strip = ctx ? `<div class="bh-ctx" role="menu" aria-label="${esc(ctx.title)}"><div class="bh-title">${esc(ctx.title)}</div>`
@@ -46,7 +53,7 @@ export function mountBuildHud(root: HTMLElement, o: BuildHudOptions): { update()
 .build-hud .bh-chip,.build-hud .bh-ctx{display:flex;gap:6px;align-items:center;background:rgba(15,18,22,.82);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:4px 8px;pointer-events:auto}
 .build-hud button{min-width:36px;min-height:32px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:#2a3038;color:#eee;font:inherit;cursor:pointer}
 .build-hud button:disabled{opacity:.45}.build-hud button.armed{background:#8a2020}.build-hud kbd{font-size:11px;opacity:.75;margin-left:4px}
-.build-hud .bh-title{opacity:.85;margin-right:4px}.bh-dot.ok{color:#6d6}.bh-dot.bad{color:#e66}.bh-hint,.bh-toast{background:rgba(15,18,22,.7);border-radius:8px;padding:2px 8px}`;
+.build-hud .bh-title{opacity:.85;margin-right:4px}.bh-dot.ok{color:#6d6}.bh-dot.bad{color:#e66}.bh-why{color:#f99;font-size:12px}.bh-hint,.bh-toast{background:rgba(15,18,22,.7);border-radius:8px;padding:2px 8px}`;
   root.append(style);
   let last = "";
   el.addEventListener("click", (e) => {

@@ -5,7 +5,7 @@ import { installPermissions, Transform, World, type Entity } from "@engine/core"
 import * as G from "@engine/gameplay";
 import { InputSystem, KeyboardMouseDevice, GamepadDevice, DEFAULT_ACTIONS, DEFAULT_CONTEXTS, DEFAULT_PROFILES } from "@engine/input";
 import { BuildMode, type BuildDevice } from "../src/build-mode.js";
-import { renderBuildHud, onTouchControl, mountBuildHud } from "../src/build-hud.js";
+import { renderBuildHud, onTouchControl, mountBuildHud, buildFailText } from "../src/build-hud.js";
 
 function setup(device: BuildDevice, aimAt = { x: 2, y: 0, mode: 1 }) {
   const w = new World({ seed: 1, maxEntities: 1 << 12 }); G.installGameplay(w, {}); installPermissions(w);
@@ -106,5 +106,12 @@ describe("touch (Android)", () => {
     const s = setup("touch"); const b = s.sys.bindings("touch", "Building").map((x) => x.binding.action);
     for (const a of ["Build.PlaceConfirm", "Build.Cancel", "Build.RotateCW"]) expect(b).toContain(a);
     s.bm.start({ piece: s.foundation, tier: 0, variant: 0, paint: 0 }); expect(renderBuildHud(s.bm, "touch")).not.toContain("<kbd>");
+  });
+  test("QA2: a red ghost says why (out of range / spot taken / materials)", () => {
+    expect(buildFailText(3)).toBe("Too far away"); expect(buildFailText(12)).toBe("Not enough materials"); expect(buildFailText(99)).toBe("Can't place here");
+    const s = setup("keyboardMouse"); s.bm.start({ piece: s.foundation, tier: 0, variant: 0, paint: 0 }); s.tick();
+    expect(s.bm.preview?.valid).toBe(true); expect(renderBuildHud(s.bm, "keyboardMouse")).not.toContain("bh-why");
+    s.placeAt(2, 0); s.tick(); expect(s.bm.preview?.valid).toBe(false);
+    expect(renderBuildHud(s.bm, "keyboardMouse")).toContain(`data-role="bh-why">${buildFailText(s.bm.preview!.reason)}<`);
   });
 });
