@@ -5,7 +5,7 @@
  * and the sender maps them to NetIds. Server handlers re-validate everything; reasons here are only hints.
  */
 import { Appearance, GroupRole, Membership, PlayerId, Transform, WEARABLE_SLOTS, getAppearance, type CommandDef, type CosmeticCatalogLike, type Entity, type World } from "@engine/core";
-import { BuildPiece, CraftingStation, Dead, Container, ClanInvitePending, ClanStatus, CraftQueue, PartyInvitePending, StallHeader, Wardrobe } from "../components.js";
+import { BuildPiece, CraftingStation, Dead, Container, ClanInvitePending, ClanStatus, CraftQueue, PartyInvitePending, PartyRank, StallHeader, Wardrobe } from "../components.js";
 import { gameplayDefs } from "../config.js";
 import type { ItemCount } from "../defs.js";
 import { countItem, listSlots, readSlots } from "../inventory.js";
@@ -212,11 +212,13 @@ const pending = (w: World, e: Entity, def: typeof PartyInvitePending | typeof Cl
 };
 
 // ---- party ------------------------------------------------------------------------------------------
-export interface PartyView { party: number; members: PlayerRef[]; maxSize: number; invite: { party: number; from: number; fromName: string; secondsLeft: number } | undefined; candidates: PlayerRef[] }
+export interface PartyView { party: number; members: PlayerRef[]; maxSize: number; invite: { party: number; from: number; fromName: string; secondsLeft: number } | undefined; candidates: PlayerRef[]; /** my PartyRank role (0 = none) */ myRole: number; canInvite: boolean; /** kick allowed by rank (PARTY_RULES; the server still validates) */ canKick: (m: PlayerRef) => boolean }
 export function partyView(c: MenuCtx): PartyView {
   const w = c.world; const party = w.getField(c.player, Membership, "partyId") ?? 0; const members = groupMembers(c, "partyId", party);
   const p = pending(w, c.player, PartyInvitePending);
-  return { party, members, maxSize: PARTY_RULES.maxSize,
+  const rank = (e: Entity): number => w.getField(e, PartyRank, "role") ?? 0; const myRole = party ? rank(c.player) : 0;
+  return { party, members, maxSize: PARTY_RULES.maxSize, myRole, canInvite: !party || myRole >= PARTY_RULES.minInviteRole,
+    canKick: (m) => m.entity !== c.player && myRole >= PARTY_RULES.minKickRole && myRole > rank(m.entity),
     invite: p ? { party: p.party!, from: p.from, fromName: nameOf(c, p.from), secondsLeft: Math.ceil((p.expiresTick - w.tick) / TICKS_PER_SECOND) } : undefined,
     candidates: nearbyPlayers(c).filter((x) => !members.some((m) => m.entity === x.entity)) };
 }

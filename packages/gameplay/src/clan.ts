@@ -13,7 +13,7 @@
  *   everyone else loses that Tribe.
  * - Clan state and invites are dropped.
  */
-import { ClanInvitePending, ClanStatus, StallHeader, StallOwnerKind, Tribe } from "./components.js";
+import { ClanInvitePending, ClanStatus, PartyRank, StallHeader, StallOwnerKind, Tribe } from "./components.js";
 import { clanData, clanState, hasClanPerm, touchClans, CLAN_PERM_ALL, CLAN_GOAL_COUNT } from "./clan_state.js";
 import { bumpStall, setStallOwnership, tillOf } from "./economy/stall.js";
 import { defineCommand, defineResource, GroupKind, GroupRole, Membership, OwnedBy, Permissions, PlayerId, playerOf, type CommandHandlers, type Entity, type GroupRegistry, type World } from "@engine/core";
@@ -59,6 +59,8 @@ export function syncSocialMembership(w: World, e: Entity): void {
   const player = playerOf(w, e); if (!player) return; const R = groups(w);
   const party = R.groupsOf(player, GroupKind.Party)[0]?.id ?? 0, clan = clanOf(w, player);
   if (w.has(e, Membership)) { w.setField(e, Membership, "partyId", party); w.setField(e, Membership, "clanId", clan); } else w.add(e, Membership, { partyId: party, clanId: clan });
+  const prole = party ? R.role(party, player) : 0;
+  if (!prole) { if (w.has(e, PartyRank)) w.remove(e, PartyRank); } else if (w.has(e, PartyRank)) w.setField(e, PartyRank, "role", prole); else w.add(e, PartyRank, { role: prole });
   const prev = w.getField(e, ClanStatus, "clan") ?? 0;
   if (clan) {
     const d = clanData(w, clan); const role = R.role(clan, player);

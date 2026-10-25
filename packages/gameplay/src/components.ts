@@ -202,6 +202,8 @@ export const CraftOwed = defineComponent("CraftOwed", {
 /** Face expression (id = data/expressions.json index + 1, 0 = none) shown until untilTick. Broadcast, not persisted, kept off Appearance. */
 export const Expression = defineComponent("Expression", { id: "u8", untilTick: "u32" }, { networked: true });
 /** Latest pending party invite for this player (owner-scoped mirror of PartyInvites; server writes it in party handlers only). */
+/** Mirror of the player's party role (GroupRole; 0 = none) so the client can hide leader-only buttons (ADR-141). */
+export const PartyRank = defineComponent("PartyRank", { role: "u8" }, { networked: true });
 export const PartyInvitePending = defineComponent("PartyInvitePending", { party: "u32", from: "u32", expiresTick: "u32" }, { networked: true });
 /** Latest pending clan invite (owner-scoped mirror of ClanInvites; written in clan handlers only). */
 export const ClanInvitePending = defineComponent("ClanInvitePending", { clan: "u32", from: "u32", expiresTick: "u32" }, { networked: true });
@@ -305,4 +307,5 @@ export const GAMEPLAY_COMPONENTS = [
   Progression, Tamed, // append-only (ADR-113)
   Road, Sign, HordeMember, WorldRules, HordeStatus, PieceOwner, // append-only (ADR-119..121)
   HitReact, NodeRegrow, // append-only (ADR-134)
+  PartyRank, // append-only (ADR-141)
 ] as const;

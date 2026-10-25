@@ -4,7 +4,7 @@
  * registry is only changed in command handlers. Netcode handles rate limiting and group replication.
  * Membership.partyId on each online member entity mirrors the registry.
  */
-import { PartyInvitePending } from "./components.js";
+import { PartyInvitePending, PartyRank } from "./components.js";
 import { defineCommand, defineResource, GroupKind, GroupRole, Membership, Permissions, PlayerId, playerOf, type CommandHandlers, type Entity, type GroupRegistry, type World } from "@engine/core";
 
 export const PartyInviteCmd = defineCommand("gameplay.partyInvite", { target: "u32" });
@@ -33,6 +33,8 @@ function syncMembership(w: World, player: number): void {
   const e = entityOfPlayer(w, player); if (e === undefined) return;
   const p = partyOf(w, player);
   if (w.has(e, Membership)) w.setField(e, Membership, "partyId", p); else w.add(e, Membership, { partyId: p, clanId: 0 });
+  const role = p ? groups(w).role(p, player) : 0;
+  if (!role) { if (w.has(e, PartyRank)) w.remove(e, PartyRank); } else if (w.has(e, PartyRank)) w.setField(e, PartyRank, "role", role); else w.add(e, PartyRank, { role });
 }
 /** Mirrors the newest unexpired invite onto the invitee entity (PartyInvitePending), or removes it. */
 function syncInvite(w: World, player: number): void {
@@ -95,7 +97,7 @@ function removeFromParty(w: World, p: number, player: number): void {
   const g = R.get(p);
   if (!g || g.members.size === 0) { R.delete(p); for (const l of invites(w).values()) for (let i = l.length - 1; i >= 0; i--) if (l[i]!.party === p) l.splice(i, 1); }
   else if (wasLeader) { const next = [...g.members].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0]!; R.setRole(p, next[0], GroupRole.Leader); }
-  syncMembership(w, player);
+  syncMembership(w, player); if (g) for (const m of g.members.keys()) syncMembership(w, m);
 }
 /** Declines (drops) a pending invite; an expired one reports invite_expired. */
 export function partyDecline(w: World, actor: Entity, party: number): string | undefined {
