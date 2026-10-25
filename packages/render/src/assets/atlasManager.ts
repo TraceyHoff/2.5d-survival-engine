@@ -1481,7 +1481,7 @@ export class AtlasManager {
       const a = anchors ? AssetRegistry.anchorPoint({ anchors } as FrameRef, name) : undefined;
       if (a) return { x: r.ax + a.x, y: r.ay + a.y, angle: a.angle ?? 0, ...(a.len !== undefined ? { len: a.len } : {}), behind: a.behind ?? false };
     }
-    return this.handByEntry.get(r.entry);
+    return name === "handR" ? this.handByEntry.get(r.entry) : undefined; // legacy hands.json only carries the main hand
   }
   /**
    * ADR-128 neck: offset (unmirrored 1x frame px, +y down) of head-group layers over body frame `r`: the frame's `head`

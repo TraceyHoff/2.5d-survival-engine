@@ -173,6 +173,8 @@ export class IsoRenderer implements Renderer {
   private sprites: SpriteBatch;
   /** debug counters of held-item drawing: [with item, with hand anchor, drawn] */
   get heldStats(): readonly number[] { return this.sprites.heldStats; }
+  /** ADR-135 off-hand draws [with item, with anchor, drawn, on mirrored-handR fallback]. */
+  get offHandStats(): readonly number[] { return this.sprites.offHandStats; }
   /** layered characters drawn last frame, extra layer instances, and total resolveLayers calls (cache misses) */
   get characterStats(): { characters: number; layerInstances: number; resolves: number; cached: number } {
     const s = this.sprites; return { characters: s.characters, layerInstances: s.layerInstances, resolves: s.layerCache?.resolves ?? 0, cached: s.layerCache?.size ?? 0 };

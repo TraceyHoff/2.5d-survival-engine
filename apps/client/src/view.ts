@@ -12,14 +12,14 @@ import { showRenderError, glInfo, frameIsBlack } from "./glcheck.js";
  */
 import { World, Transform, PrevTransform, TimeOfDay, Weather, Appearance, PlayerId, defineComponent, slotIndex, type WearableSlot, entityIndex, type Entity } from "@engine/core";
 import { CHUNK_SIZE, tileToChunk, tileToLocal, type TileMap } from "@engine/world";
-import { setDayFraction } from "@engine/render";
+import { setDayFraction, resolveOffHandSprite } from "@engine/render";
 import { pieceVariantOpts } from "./piece-variant.js";
 import { loadManifest, mergeManifests, buildPieceVisual, type AssetRegistry, type ManifestFragment, type ManifestJson } from "@engine/assets";
 import { BuildGhost, pieceArtRow, ROT_EXACT_PIVOT, IsoRenderer, Canvas2DRenderer, chooseRenderer, Sprite, Shadow, LightSource, Occluder, SpriteFlag, sourcesFromManifest, coreAppearanceBinding, CameraTargetGuard } from "@engine/render";
 import { countFraction } from "./load-progress.js";
 import { roadSpriteKeys, ROAD_FLAGS, signFrameId } from "./road-sign-view.js";
 import { Road, Sign, surfaceDef, signDef, walkAnimRate } from "@engine/gameplay";
-import { HitReact, NodeRegrow, hitDirRad, Equipment, wornCosmetics } from "@engine/gameplay";
+import { HitReact, NodeRegrow, hitDirRad, Equipment, Worn, wornCosmetics } from "@engine/gameplay";
 import { gameplayDefs, rotationSteps, animalDefs, Animal, Health, Survival, Zombie, ResourceNode, CraftingStation, Fuel, AnimState as GAnim, BuildPiece as GPiece, Dead, Wetness, BodyTemp, Emitter, PieceLink, Crop, cropSpriteKey, clutterForChunk, resolveSprite, type ResolvedSprite } from "@engine/gameplay";
 
 /** Render-side schemas the renderer's bindings expect (view World only). */
@@ -30,6 +30,9 @@ const VTemp = defineComponent("ViewBodyTemp", { cold: "u8", heat: "u8", shiverin
 const VFuel = defineComponent("ViewFuel", { burnUntilTick: "u32", lit: "u8" });
 /** ADR-135: replicated main-hand item (held sprite at the hand anchor). */
 const VEquip = defineComponent("ViewEquipment", { mainHandItem: "u16" });
+/** ADR-135: replicated off-hand worn slot (Worn.item[WearSlot.OffHand]) -> offhand_<key> / held_<key> at handL. */
+const VOffHand = defineComponent("ViewOffHand", { offHandItem: "u16" });
+const OFFHAND_SLOT = 6; /* WearSlot.OffHand */
 /** gameplay Anim (Idle Walk Run Attack Hurt Die Gather Build) -> render AnimStateId (Idle Walk Run Attack Hit Death ...). */
 const ANIM_MAP: readonly number[] = [0, 1, 2, 3, 4, 5, 3, 3];
 /** ADR-107: Swim (14) / Punch (15) pass straight through (atlas fallbacks: swim->walk, punch->attack). */
@@ -95,13 +98,13 @@ export class IsoView {
   private characters = new Set<number>(); private walkRate = 1;
   private constructor(readonly renderer: IsoRenderer, readonly registry: AssetRegistry, private readonly ov: ViewOverrides, readonly lights: LightTable) {
     IsoRenderer.registerComponents(this.view);
-    for (const c of [VAnim, VPiece, VWet, VTemp, VFuel, VEquip]) this.view.register(c);
+    for (const c of [VAnim, VPiece, VWet, VTemp, VFuel, VEquip, VOffHand]) this.view.register(c);
     const cat = noCosmetics ? undefined : registry.cosmetics;
     if (cat?.size) this.view.register(Appearance);
     renderer.bindGameplay({ animState: VAnim, buildPiece: VPiece, wetness: VWet, bodyTemp: VTemp, lit: VFuel, pieceState: (e) => this.pieceStates.get(e),
       hitFlash: (e) => this.hitPoseOf.get(e)?.flash ?? 0, hitTilt: (e) => this.hitPoseOf.get(e)?.tilt ?? 0,
       animRate: (e, st) => (st === 1 && this.characters.has(e) ? this.walkRate : undefined),
-      equipment: VEquip, heldSprite: (item) => this.heldSpriteOf(item),
+      equipment: VEquip, heldSprite: (item) => this.heldSpriteOf(item), offHand: VOffHand, offHandSprite: (item) => this.offHandSpriteOf(item),
       ...(cat?.size ? { appearance: { ...coreAppearanceBinding(cat), override: (_w: unknown, ve: number) => this.gearOf.get(ve) ?? null } } : {}) });
   }
   /** ADR-135: view entity -> worn-gear paper-doll overrides (salt = hash of the worn items). */
@@ -111,6 +114,12 @@ export class IsoView {
     if (this.heldCache.has(item)) return this.heldCache.get(item);
     const key = this.netRef ? gameplayDefs(this.netRef).items.get(item)?.key : undefined; if (!key) return undefined;
     const id = this.registry.ids.sprites.tryId(`held_${key}`); this.heldCache.set(item, id); return id;
+  }
+  private offCache = new Map<number, number | undefined>();
+  private offHandSpriteOf(item: number): number | undefined {
+    if (this.offCache.has(item)) return this.offCache.get(item);
+    const key = this.netRef ? gameplayDefs(this.netRef).items.get(item)?.key : undefined; if (!key) return undefined;
+    const id = resolveOffHandSprite(key, (k) => this.registry.ids.sprites.tryId(k)); this.offCache.set(item, id); return id;
   }
   private netRef: World | null = null;
   get appearanceEnabled(): boolean { return this.view.isRegistered(Appearance); }
@@ -304,6 +313,11 @@ export class IsoView {
         if (gear.length && cat) { let salt = 7; const parts: Array<[number, number]> = []; for (const [s, k] of gear) { const id = cat.byKey(k)?.id; if (id === undefined) continue; parts.push([slotIndex(s as WearableSlot), id]); salt = (salt * 31 + id * 8 + slotIndex(s as WearableSlot)) % 32749; }
           if (parts.length) this.gearOf.set(ve, { salt: salt + 1, parts }); else this.gearOf.delete(ve); }
         else this.gearOf.delete(ve);
+      }
+      if (net.isRegistered(Worn)) { // ADR-135 off-hand worn slot
+        const oh = net.has(e, Worn) ? (net.get(e, Worn)?.item[OFFHAND_SLOT] ?? 0) : 0;
+        if (oh) { this.netRef = net; if (!v.has(ve, VOffHand)) v.add(ve, VOffHand, { offHandItem: oh }); else if (v.getField(ve, VOffHand, "offHandItem") !== oh) v.set(ve, VOffHand, { offHandItem: oh }); }
+        else if (v.has(ve, VOffHand)) v.remove(ve, VOffHand);
       }
       if (v.has(ve, Sprite) && net.has(e, Crop)) { const c = net.get(e, Crop)!; const r = this.rs(cropSpriteKey(c.kind, c.stage)); if (r && (v.get(ve, Sprite)!.spriteId !== r.id || v.get(ve, Sprite)!.scale !== r.scale)) { v.set(ve, Sprite, { spriteId: r.id, scale: r.scale, tint: r.tint }); this.scales.set(ve, r.scale); } }
       if (v.has(ve, Sprite) && net.has(e, Road)) { const r0 = net.get(e, Road)!; const r = this.roadSprite(r0.surface, r0.mask); if (r && v.get(ve, Sprite)!.spriteId !== r.id) v.set(ve, Sprite, { spriteId: r.id }); } // neighbours placed / removed

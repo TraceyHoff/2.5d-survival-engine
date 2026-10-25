@@ -15,7 +15,8 @@ import { AnimState as CoreAnimState, entityIndex, lerpAngle, PrevTransform, Tran
 import { CHUNK_SIZE, chunkKey, floorToTerrainZ, terrainZToFloor, type BuildingGrid, type ChunkedSpatialIndex, type IsoConfig } from "@engine/world";
 import { createProgram, GLSL_COMMON, type FrameStats, type Program } from "./gl/util.js";
 import { Sprite, Shadow, Occluder, SpriteFlag, LightSource, TintSecondary } from "./components.js";
-import { newResolved, STREAM_MARGIN_PX, STREAM_MARGIN_ANIMAL_PX, STREAM_KEEP_FACTOR, type AtlasManager, type ResolvedFrame } from "./assets/atlasManager.js";
+import { newResolved, STREAM_MARGIN_PX, STREAM_MARGIN_ANIMAL_PX, STREAM_KEEP_FACTOR, type AtlasManager, type ResolvedFrame, type HandAnchor } from "./assets/atlasManager.js";
+import { offHandAnchor, offHandBehind } from "./character/offhand.js";
 import type { Rect } from "./camera.js";
 import type { StyleConfig } from "./style.js";
 import type { TransformSource } from "./transformSource.js";
@@ -77,6 +78,10 @@ export interface GameplayBindings {
   equipment?: ComponentDef<{ mainHandItem: "u16" }>;
   /** Item id -> held sprite id (`held_<item key>` in the `held` atlas); undefined = draw nothing. */
   heldSprite?: (itemId: number) => number | undefined;
+  /** ADR-135 replicated off-hand worn slot {offHandItem u16 (0 = empty)}: drawn at the frame's handL anchor (handR mirrored while Art lacks handL). */
+  offHand?: ComponentDef<{ offHandItem: "u16" }>;
+  /** Item id -> off-hand sprite id (`offhand_<key>`, falling back to `held_<key>`; see character/offhand.ts); undefined = draw nothing. */
+  offHandSprite?: (itemId: number) => number | undefined;
   /** Exhaustion {level u8 0..255}: drives the `exhausted` status tint (SpriteDef.tints / render_tuning). */
   exhausted?: ComponentDef<{ level: "u8" }>;
   /** core Emitter {kind, radius, strength, falloff} (kinds mapped by the emitter table). */
@@ -502,18 +507,23 @@ export class SpriteBatch {
   private heldRes = newResolved();
   /** debug: held items [with item, with hand anchor, drawn] since start */
   readonly heldStats: [number, number, number] = [0, 0, 0];
+  /** debug: off-hand items [with item, with anchor, drawn, drawn on the mirrored-handR fallback (no handL art)] since start */
+  readonly offHandStats: [number, number, number, number] = [0, 0, 0, 0];
   /**
    * Held item: pivot (grip) at the hand anchor of the character's current frame, rotated by the anchor angle, sorted just
    * behind / in front of the character, mirrored with the character's flipX. No anchor for the frame = not drawn.
    */
   private emitHeld(atlas: AtlasManager, heldOf: (item: number) => number | undefined, item: number, body: ResolvedFrame, sx: number, sy: number, key: number,
-    scale: number, facing: number, flip: boolean, fade: number, occT: number, mode: "fade" | "dither", lift = 0): void {
-    if (!item) return; const hid = heldOf(item); if (hid === undefined) return; this.heldStats[0]++;
-    const h = atlas.handOf(body); if (!h) return; this.heldStats[1]++;
-    const r = this.heldRes; if (!atlas.resolve(hid, 0, facing, 0, 0, r)) return; this.heldStats[2]++;
+    scale: number, facing: number, flip: boolean, fade: number, occT: number, mode: "fade" | "dither", lift = 0, off = false): void {
+    if (!item) return; const hid = heldOf(item); if (hid === undefined) return; const st = off ? this.offHandStats : this.heldStats; st[0]++;
+    let h: HandAnchor | undefined; let behind: boolean;
+    if (off) { const a = offHandAnchor((b: ResolvedFrame, n?: string) => atlas.handOf(b, n), body); if (!a) return; h = a.anchor; behind = offHandBehind(facing, h.behind); if (a.fallback) this.offHandStats[3]++; }
+    else { h = atlas.handOf(body); if (!h) return; behind = h.behind; }
+    st[1]++;
+    const r = this.heldRes; if (!atlas.resolve(hid, 0, facing, 0, 0, r)) return; st[2]++;
     const m = flip ? -1 : 1;
     const hx = sx + (h.x - body.ax) * scale * m, hy = sy + (h.y - body.ay) * scale;
-    const o = this.writeOne(hx, hy, key + (h.behind ? -HELD_BIAS : HELD_BIAS), scale, r, (flip ? SpriteFlag.FlipX : 0) | SpriteFlag.NoOutline, 0, fade, -OPEN, OPEN, 0, 0, 0, 0, 0, 0);
+    const o = this.writeOne(hx, hy, key + (behind ? -HELD_BIAS : HELD_BIAS), scale, r, (flip ? SpriteFlag.FlipX : 0) | SpriteFlag.NoOutline, 0, fade, -OPEN, OPEN, 0, 0, 0, 0, 0, 0);
     // anchor (pivot) height above the body pivot keeps the item's depth on the body's column
     o[15] = (body.ay - h.y) * scale + lift; o[32] = (h.angle * Math.PI / 180) * m; o[27] = occT;
     this.pushOcc(o, 0, occT, mode);
@@ -532,6 +542,7 @@ export class SpriteBatch {
     const bt = cx.bindings.bodyTemp ? world.store(cx.bindings.bodyTemp) : null;
     const exh = cx.bindings.exhausted ? world.store(cx.bindings.exhausted) : null;
     const eq = cx.bindings.equipment ? world.store(cx.bindings.equipment) : null; const heldOf = cx.bindings.heldSprite;
+    const oh = cx.bindings.offHand ? world.store(cx.bindings.offHand) : null; const offOf = cx.bindings.offHandSprite ?? heldOf;
     const t2s = world.isRegistered(TintSecondary) ? world.store(TintSecondary) : null;
     const apB = cx.bindings.appearance; const ap0 = apB && world.isRegistered(apB.def) ? world.store(apB.def) : null; const ap = ap0 && (ap0.data as Record<string, unknown>).version ? ap0 : null;
     atlas.beginFrame();
@@ -760,6 +771,7 @@ export class SpriteBatch {
         if (nearC && this.nearN < this.nearInfo.length) this.nearN++;
       }
       if (eq && heldOf) { const s2 = eq.slot(i); if (s2 >= 0) this.emitHeld(atlas, heldOf, eq.data.mainHandItem[s2]!, res, sx, sy, dkey, scale, f, (sp.data.flags[k]! & SpriteFlag.FlipX) !== 0, fade, occT, occ.mode, bodyL ? o0[15]! : 0); }
+      if (oh && offOf) { const s3 = oh.slot(i); if (s3 >= 0) this.emitHeld(atlas, offOf, oh.data.offHandItem[s3]!, res, sx, sy, dkey, scale, f, (sp.data.flags[k]! & SpriteFlag.FlipX) !== 0, fade, occT, occ.mode, bodyL ? o0[15]! : 0, true); }
     };
     if (cx.spatial) {
       // chunk-level culling through the shared spatial index
