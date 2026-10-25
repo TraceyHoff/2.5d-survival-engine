@@ -199,6 +199,7 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       }
       if (v.queue.length) { out.push(heading("Queue")); const g = grid(); for (const j of v.queue) g.append(btn(`✕ ${j.name} ×${j.count} · ${JOB_STATE_LABEL[j.state] ?? ""} ${Math.round(j.progress * 100)}%`, `job-${j.slot}`, () => send(cancelQueuedCraftIntent(j.slot), `Cancelled ${j.name}.`), { alt: true, role: "job", p: j.progress, title: `${Math.ceil(j.secondsLeft)}s left. Cancel refunds unfinished units.` })); out.push(g); }
       if (v.owed.length) { out.push(heading("Owed (delivered when you have space)")); for (const o of v.owed) { const p = kit.para(`${o.name} ×${o.count}${o.crafterName ? ` · crafted by ${o.crafterName}` : ""}`); p.dataset["role"] = "owed"; out.push(p); } }
+      if (!st) { const n = v.elsewhere.reduce((a, e) => a + e.count, 0); if (n) { const h = kit.para(`More recipes at stations (${n}): ${v.elsewhere.map((e) => `${e.name} ${e.count}`).join(" · ")}`); h.dataset["role"] = "station-hint"; out.push(h); } }
       out.push(heading("Recipes"));
       const counts = grid(); for (const n of [1, 5, 10]) counts.append(btn(`×${n}`, `count-${n}`, () => { castSel.count = n; kit.rerender(); }, { alt: castSel.count !== n, pressed: castSel.count === n })); out.push(counts);
       const g = grid();
@@ -207,7 +208,6 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
         g.append(btn(`${r.output.name} ×${r.output.count}`, `recipe-${r.id}`, () => send(queueCraftIntent(r.id, castSel.count), `Queued ${r.output.name} ×${castSel.count}.`), { role: "recipe", title: `${need} · ${r.seconds}s${r.reason ? ` · ${r.reason === "no_station" && st ? "light it / move closer" : r.reason.replace(/_/g, " ")}` : ""}`, alt: !!r.reason }));
       }
       out.push(g);
-      if (!st) { const n = v.elsewhere.reduce((a, e) => a + e.count, 0); if (n) { const h = kit.para(`More recipes at stations (${n}): ${v.elsewhere.map((e) => `${e.name} ${e.count}`).join(" · ")}`); h.dataset["role"] = "station-hint"; out.push(h); } }
       return out;
     }
     case "build": {
