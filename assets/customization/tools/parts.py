@@ -764,6 +764,12 @@ def draw_acc(c, spec):
                 m = cv.part(c.solid([(c.off(pc, 0, 0, -6), 5.8), (c.off(pc, 0, 0, 5), 5.4), (c.off(pc, 0, 0, 6.5), 4.2)]), "P", lw=1.05, shade=.25, hl=.14)
                 cv.part(c.solid([(c.off(pc, 0, -2.6, -5), 3.6), (c.off(pc, 0, -2.6, -1), 3.6)]), "S", lw=.8, shade=.2, hl=.1)
                 cv.part(c.solid([(c.off(pc, 0, 0, 4.5), 5.6), (c.off(pc, 0, 0, 6.5), 4.4)]), "S", lw=.8, clip=m, outline=False)
+                if spec.get("frame"):   # ADR-137 frame pack: wooden poles + crossbar
+                    for s in (-1, 1): cv.part(c.tube(c.off(pc, s * 5.2, -.5, -8), c.off(pc, s * 5.2, -.5, 9), .9, .9), "wood_dark", lw=.6, shade=.2, hl=.1)
+                    a3 = c.off(pc, -5.2, -.5, 8); b3 = c.off(pc, 5.2, -.5, 8); cv.part(c.tube(a3, b3, .8, .8), "wood_dark", lw=.6, shade=.2, hl=.1)
+                if spec.get("pouches"):   # ADR-137 tactical pack: side pouches + accent stripe
+                    for s in (-1, 1): cv.part(c.solid([(c.off(pc, s * 5.6, .5, -4), 2.2), (c.off(pc, s * 5.6, .5, 0), 2.2)]), "S", lw=.7, shade=.2, hl=.1)
+                    gear_parts.marks(c, "composite", c.p(c.off(pc, 0, -2, 1)), 3.0, m, vertical=True)
             c.add(pv, pk, back=pv < K["tv"])
             def straps():
                 if f > -.2:
@@ -778,6 +784,8 @@ def draw_acc(c, spec):
                 m = cv.part(pts, "P", lw=1.1, shade=.25, hl=.12)
                 cv.part(hull(c.disc(c.off(K["hipc"], 0, -3.5 + K["back"], -8.5), 10.4, 30) + c.disc(c.off(K["hipc"], 0, -3.5 + K["back"], -7), 10, 30)), "S", clip=m, outline=False, shade=.1, hl=0)
             c.add(pv, cp, back=True)
+            if spec.get("furcollar"):   # ADR-137 fur cloak: chunky fur mantle over the shoulders
+                c.add(K["tv"] + .22, lambda: cv.part(c.solid([(c.off(K["tc"], 0, -.5, 6), B["trx"] + 3.2), (c.off(K["tc"], 0, -.5, 8.5), B["trx"] * .7 + 2)]), "fur_brown", lw=.9, shade=.22, hl=.1))
             def clasp():
                 if f > -.2:
                     p, _ = tsurf(c, 0, 7.2, .6); cv.part(circle(p, 1.6, 1.4), "gold", lw=.6)

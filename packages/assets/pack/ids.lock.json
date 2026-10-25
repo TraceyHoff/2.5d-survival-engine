@@ -2837,7 +2837,23 @@
     "cz_shoes_gear_snakeskin_boots_female": 2835,
     "cz_shoes_gear_snakeskin_boots_male": 2836,
     "cz_shoes_gear_steel_boots_female": 2837,
-    "cz_shoes_gear_steel_boots_male": 2838
+    "cz_shoes_gear_steel_boots_male": 2838,
+    "cz_hands_gear_bone_gauntlets_female": 2839,
+    "cz_hands_gear_bone_gauntlets_male": 2840,
+    "cz_hands_gear_bronze_gauntlets_female": 2841,
+    "cz_hands_gear_bronze_gauntlets_male": 2842,
+    "cz_hands_gear_cloth_gloves_female": 2843,
+    "cz_hands_gear_cloth_gloves_male": 2844,
+    "cz_hands_gear_composite_gauntlets_female": 2845,
+    "cz_hands_gear_composite_gauntlets_male": 2846,
+    "cz_hands_gear_fur_mittens_female": 2847,
+    "cz_hands_gear_fur_mittens_male": 2848,
+    "cz_hands_gear_iron_gauntlets_female": 2849,
+    "cz_hands_gear_iron_gauntlets_male": 2850,
+    "cz_hands_gear_leather_gloves_female": 2851,
+    "cz_hands_gear_leather_gloves_male": 2852,
+    "cz_hands_gear_steel_gauntlets_female": 2853,
+    "cz_hands_gear_steel_gauntlets_male": 2854
   },
   "sounds": {
     "amb_rain": 1,
@@ -3070,6 +3086,14 @@
     "shoes_gear_reed_sandals": 153,
     "shoes_gear_rubber_boots": 154,
     "shoes_gear_snakeskin_boots": 155,
-    "shoes_gear_steel_boots": 156
+    "shoes_gear_steel_boots": 156,
+    "hands_gear_bone_gauntlets": 157,
+    "hands_gear_bronze_gauntlets": 158,
+    "hands_gear_cloth_gloves": 159,
+    "hands_gear_composite_gauntlets": 160,
+    "hands_gear_fur_mittens": 161,
+    "hands_gear_iron_gauntlets": 162,
+    "hands_gear_leather_gloves": 163,
+    "hands_gear_steel_gauntlets": 164
   }
 }

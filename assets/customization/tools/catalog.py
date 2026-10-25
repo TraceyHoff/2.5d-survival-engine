@@ -117,3 +117,6 @@ for k, ph, sp in [("reed_sandals", "shoes_sandals", dict(style="sandals", remap=
                   ("snakeskin_boots", "shoes_boots", dict(style="boots", shaft=.36, soleS=True, cuffS=True, scales=True, remap={"P": "snake"}))] + \
                  [(f"{t}_boots", "shoes_hiking_boots", dict(style="boots", shaft=.34, w=3.0, soleS=True, plated=t, remap={"P": t})) for t in TIERS]:
     gear137("shoes_gear_" + k, "shoes", sp, ph, tint=2)
+# hands (hands_gear_*): re-keyed ADR-135 gloves + tier gauntlets on the dedicated hands layer; nothing while streaming
+for k in ["cloth_gloves", "leather_gloves", "fur_mittens"] + [f"{t}_gauntlets" for t in TIERS]:
+    gear137("hands_gear_" + k, "hands", {"style": k, "noarmcut": True}, None, tint=2, layer=33, layerByDir=HANDS_BY_DIR)
