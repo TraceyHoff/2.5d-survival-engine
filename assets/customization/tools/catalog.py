@@ -101,3 +101,11 @@ for k, ph, sp in [("linen_shirt", "top_tee", dict(sleeve="long", collar="v", but
                   ("fur_vest", "top_vest", dict(sleeve="none", open=True, grow=1.6, pm="fur_brown", furtrim=True))] + \
                  [(f"{t}_cuirass", "top_vest", dict(sleeve="short", plates=True, pm=t, sm="S", pauldron=t, grow=1.4, tier=t)) for t in TIERS]:
     gear137("top_gear_" + k, "top", sp, ph, tint=2)
+# legs (bottom_gear_*): remap P -> untinted material, S stays the tinted trim
+for k, ph, sp in [("linen_trousers", "bottom_jeans", dict(len=.9, seam=True, cuff=True, waist=True, remap={"P": "cloth_cream"})),
+                  ("padded_trousers", "bottom_cargo", dict(len=.9, cargo=True, waist=True, grow=1.7, cuff=True)),
+                  ("fur_leggings", "bottom_leggings", dict(len=.95, grow=1.3, waist=True, cuff=True, remap={"P": "fur_brown"})),
+                  ("waxed_trousers", "bottom_cargo", dict(len=.92, seam=True, waist=True, grow=1.2, cuff=True, remap={"P": "oilskin"})),
+                  ("leather_trousers", "bottom_jeans", dict(len=.93, seam=True, waist=True, grow=1.1, remap={"P": "leather"}))] + \
+                 [(f"{t}_greaves", "bottom_cargo", dict(len=.9, waist=True, grow=1.1, greaves=t)) for t in TIERS]:
+    gear137("bottom_gear_" + k, "bottom", sp, ph, tint=2)

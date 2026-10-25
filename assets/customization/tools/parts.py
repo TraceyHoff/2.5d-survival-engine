@@ -591,6 +591,11 @@ def draw_bottom(c, spec):
             cv.line([c.p(c.off(q3, side * lr * .7, 0, 0)) for q3 in [hip] + seg[1:]], "S1", .45, clip=m, alpha=220)
         if S.get("frill_leg"):
             q = c.p(e); cv.part(circle(q, lr + 1.2, 1.4, wob=.2), "S", lw=.7)
+        if S.get("greaves"):   # ADR-137 tier greaves: chunky shin plate + knee cop + tier mark
+            t = S["greaves"]; a3, b3 = along(c, lp, .58), along(c, lp, L - .02)
+            g = cv.part(c.tube(a3, b3, lr + 1.1, lr + .8), t, lw=.95, shade=.25, hl=.16)
+            k = c.p(along(c, lp, .5)); cv.part(circle(k, lr + 1.5, lr + 1.1, wob=.04), t, lw=.9, shade=.25, hl=.15)
+            gear_parts.marks(c, t, c.p(along(c, lp, .74)), 2.2, g, vertical=True)
     if not skirt:
         for side in (-1, 1):
             hip, ft = K["hips"][side], K["feet"][side]; d = (c.P(hip)[1] + c.P(ft)[1]) / 2 - 2

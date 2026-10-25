@@ -2797,7 +2797,27 @@
     "cz_top_gear_wool_sweater_female": 2795,
     "cz_top_gear_wool_sweater_female_sleeves": 2796,
     "cz_top_gear_wool_sweater_male": 2797,
-    "cz_top_gear_wool_sweater_male_sleeves": 2798
+    "cz_top_gear_wool_sweater_male_sleeves": 2798,
+    "cz_bottom_gear_bone_greaves_female": 2799,
+    "cz_bottom_gear_bone_greaves_male": 2800,
+    "cz_bottom_gear_bronze_greaves_female": 2801,
+    "cz_bottom_gear_bronze_greaves_male": 2802,
+    "cz_bottom_gear_composite_greaves_female": 2803,
+    "cz_bottom_gear_composite_greaves_male": 2804,
+    "cz_bottom_gear_fur_leggings_female": 2805,
+    "cz_bottom_gear_fur_leggings_male": 2806,
+    "cz_bottom_gear_iron_greaves_female": 2807,
+    "cz_bottom_gear_iron_greaves_male": 2808,
+    "cz_bottom_gear_leather_trousers_female": 2809,
+    "cz_bottom_gear_leather_trousers_male": 2810,
+    "cz_bottom_gear_linen_trousers_female": 2811,
+    "cz_bottom_gear_linen_trousers_male": 2812,
+    "cz_bottom_gear_padded_trousers_female": 2813,
+    "cz_bottom_gear_padded_trousers_male": 2814,
+    "cz_bottom_gear_steel_greaves_female": 2815,
+    "cz_bottom_gear_steel_greaves_male": 2816,
+    "cz_bottom_gear_waxed_trousers_female": 2817,
+    "cz_bottom_gear_waxed_trousers_male": 2818
   },
   "sounds": {
     "amb_rain": 1,
@@ -3010,6 +3030,16 @@
     "top_gear_padded_jacket": 133,
     "top_gear_raincoat": 134,
     "top_gear_steel_cuirass": 135,
-    "top_gear_wool_sweater": 136
+    "top_gear_wool_sweater": 136,
+    "bottom_gear_bone_greaves": 137,
+    "bottom_gear_bronze_greaves": 138,
+    "bottom_gear_composite_greaves": 139,
+    "bottom_gear_fur_leggings": 140,
+    "bottom_gear_iron_greaves": 141,
+    "bottom_gear_leather_trousers": 142,
+    "bottom_gear_linen_trousers": 143,
+    "bottom_gear_padded_trousers": 144,
+    "bottom_gear_steel_greaves": 145,
+    "bottom_gear_waxed_trousers": 146
   }
 }
