@@ -162,7 +162,8 @@ export class UINav {
       : Math.max(Math.abs(ax), Math.abs(ay)) < 0.5 ? undefined : Math.abs(ax) > Math.abs(ay) ? (ax < 0 ? "left" : "right") : ay < 0 ? "up" : "down";
     const now = this.o.now?.() ?? performance.now();
     if (start) { if (this.top === "pause") this.close(); else this.pause(); return; }
-    if (!this.isOpen) { if (select) this.pause(); this.held = dir; return; }
+    if (!this.isOpen) { this.held = dir; return; } // Select is the inventory action in gameplay (ADR-139), not pause
+    if (select && this.top === "inventory") { this.close(); return; }
     if (dir !== this.held) { this.held = dir; if (dir) { this.move(dir); this.nextAt = now + 400; } }
     else if (dir && now >= this.nextAt) { this.move(dir); this.nextAt = now + 110; }
     const lb = edge("lb", b(PAD.LB)), rb = edge("rb", b(PAD.RB));

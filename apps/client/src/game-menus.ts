@@ -229,3 +229,8 @@ export class GameMenus {
     return m;
   }
 }
+
+/** ADR-139: gamepad menu actions from the gamepad profile; modifier combos win over plain Select. */
+export function padMenuAction(i: { pressed(a: string): boolean }): "crafting" | "chat" | "inventory" | undefined {
+  return i.pressed("ToggleCrafting") ? "crafting" : i.pressed("OpenChat") ? "chat" : i.pressed("ToggleInventory") ? "inventory" : undefined;
+}

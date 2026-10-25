@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { uiRoot, mountUi, ROOT_ID } from "../src/ui-root.js";
 import { enterFullscreen, fullscreenTarget } from "../src/fullscreen.js";
-import { GameMenus } from "../src/game-menus.js";
+import { padMenuAction, GameMenus } from "../src/game-menus.js";
 import { mountP2POverlay } from "../src/p2p-overlay.js";
 import { mountTouchOverlay } from "../src/touch-overlay.js";
 import { PAD } from "../src/ui-nav.js";
@@ -67,6 +67,13 @@ describe("focus navigation", () => {
     input.value = "hi"; key("c", "KeyC"); expect(menus.nav.top).toBe("chat");
     key("Enter"); expect(document.querySelector("[data-role=chat-log]")!.textContent).toContain("hi");
   });
+  test("ADR-139 gamepad: Select no longer pauses (it is the inventory action); Select closes an open inventory", () => {
+    poll((p) => { p.buttons[PAD.SELECT]!.pressed = true; }); expect(menus.nav.isOpen).toBe(false);
+    menus.open("inventory"); poll((p) => { p.buttons[PAD.SELECT]!.pressed = true; }); expect(menus.nav.isOpen).toBe(false);
+    const act = (on: string[]) => padMenuAction({ pressed: (a) => on.includes(a) });
+    expect(act(["ToggleInventory"])).toBe("inventory"); expect(act(["ToggleCrafting", "ToggleInventory"])).toBe("crafting");
+    expect(act(["OpenChat"])).toBe("chat"); expect(act([])).toBeUndefined();
+  });
   test("gamepad: Start pauses, D-pad/stick move, A confirms, B backs out, Start resumes", () => {
     poll((p) => { p.buttons[PAD.START]!.pressed = true; }); expect(menus.nav.top).toBe("pause");
     poll((p) => { p.buttons[PAD.DOWN]!.pressed = true; }); expect(active()).toBe("Resume");
@@ -74,7 +81,7 @@ describe("focus navigation", () => {
     poll((p) => { p.buttons[PAD.A]!.pressed = true; }); expect(menus.nav.top).toBe("inventory");
     poll((p) => { p.buttons[PAD.B]!.pressed = true; }); expect(menus.nav.top).toBe("pause");
     poll((p) => { p.buttons[PAD.START]!.pressed = true; }); expect(menus.nav.isOpen).toBe(false);
-    poll((p) => { p.buttons[PAD.SELECT]!.pressed = true; }); expect(menus.nav.top).toBe("pause");
+    poll((p) => { p.buttons[PAD.SELECT]!.pressed = true; }); expect(menus.nav.isOpen).toBe(false); // ADR-139: Select = inventory (gameplay action), not pause
   });
   test("touch: menu bar opens each menu; every pause entry is reachable; Quit to main menu", () => {
     const bar = document.getElementById("game-menubar")!;
