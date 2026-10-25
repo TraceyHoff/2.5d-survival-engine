@@ -789,3 +789,13 @@ Accepted 2026-10-24. Context: the ADR-113 tree showed all 122 nodes on one giant
 - **Pause menu** no longer lists context-only menus (`station`, `camper`); those open only from interacting with the station. **Chat** has a single close control (the header ✕).
 - **Bot names** are unique per world: the seeded offset is followed by the slot index. The RNG draw is kept, so trait rolls do not change.
 **Not changed:** party invites need the invitee to be nearby ("online, not nearby"). That is by design.
+
+## ADR-140: Dev sandbox and second QA pass fixes
+
+- **Status:** accepted (2026-10-25)
+- **Decision:** `?dev=sandbox` (singleplayer) and `DEV_SANDBOX=1` (server) spawn players with `SANDBOX_KIT`, which is sized to fit the 16-slot, weight-capped inventory. It is off by default and has no effect in production builds or on servers without the env var.
+- `EquipCmd` is appended to `GAMEPLAY_NET_COMMANDS`, which is append-only. Tapping a weapon or tool now equips it online instead of showing "Not connected."
+- Client `sendIntent` no longer converts entity args to NetIds itself, because `NetClient.sendCommand` already maps `def.entityFields`. Doing it twice broke party and clan invites and kicks online. See `intentPayload`.
+- An invalid build ghost now shows a reason (`buildFailText`).
+- The canvas, HUD, touch overlay and build HUD get `-webkit-touch-callout:none` and `user-select:none`.
+- Chat and provenance show "Unknown survivor" for senders who have no name, instead of `#id`.
