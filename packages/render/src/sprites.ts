@@ -93,6 +93,8 @@ export interface GameplayBindings {
   appearance?: AppearanceBinding;
   /** Hit flash 0..1 per entity (white flash on the body and all its layers); undefined/0 = none. */
   hitFlash?: (entity: number) => number;
+  /** ADR-134 flinch tilt in radians about the sprite's foot (Canvas2D only; WebGL shows flash + scale pulse). */
+  hitTilt?: (entity: number) => number;
 }
 
 const VS = /* glsl */ `#version 300 es

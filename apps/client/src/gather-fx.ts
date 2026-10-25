@@ -7,11 +7,15 @@
  *  - pickup toasts: "+3 Wood" with the item icon for every rise in the local player's inventory (gather, harvest,
  *    loot, pickup, crafting output), merged per item while it is still on screen; a short stack bottom-left, smaller
  *    and higher on touch so it never covers the sticks.
- * Pure state machines (NodeHits, ToastStack) are exported and tested; the DOM layer only draws them.
+ *  - ADR-134 creature bars: players, AI humans, animals and zombies show a compact hp bar (same ADR-128 frame art) when
+ *    their replicated hp drops or a HitReact arrives, fading CREATURE_BAR_MS after the last hit; the local player's
+ *    current combat targets (it hit them in the last COMBAT_TARGET_MS, or is attacking them now) keep theirs up.
+ *    Party / clan mates of the local player draw blue.
+ * Pure state machines (NodeHits, ToastStack, CreatureBars) are exported and tested; the DOM layer only draws them.
  * DOM hooks: `#gather-fx` (canvas), `#pickup-toasts > [data-role=toast][data-item]`.
  */
-import { Transform, type Entity, type World } from "@engine/core";
-import { gameplayDefs, listSlots, ResourceNode } from "@engine/gameplay";
+import { NetId, Transform, type Entity, type World } from "@engine/core";
+import { Animal, Dead, gameplayDefs, GroupSummary, Health, HitReact, IntentAction, listSlots, PlayerIntent, ResourceNode, Survival, Zombie } from "@engine/gameplay";
 import { isoToCss, type CameraLike } from "./world-tools.js";
 
 export const NODE_BAR_MS = 3000;
@@ -41,6 +45,51 @@ export class NodeHits {
     return hits;
   }
 }
+
+export const CREATURE_BAR_MS = 4000;
+export const CREATURE_BAR_FADE_MS = 800;
+export const COMBAT_TARGET_MS = 8000;
+export type CreatureKind = "human" | "animal" | "zombie";
+export interface CreatureBar { e: Entity; x: number; y: number; frac: number; at: number; kind: CreatureKind; ally: boolean; target: boolean }
+export const creatureBarAlpha = (ms: number, target: boolean): number =>
+  target ? 1 : ms < 0 ? 0 : ms <= CREATURE_BAR_MS - CREATURE_BAR_FADE_MS ? 1 : ms >= CREATURE_BAR_MS ? 0 : (CREATURE_BAR_MS - ms) / CREATURE_BAR_FADE_MS;
+/** Bar fill colour: allies blue, else by remaining hp. */
+export const barFill = (frac: number, ally = false): string => (ally ? "#6CA8E6" : frac > 0.5 ? "#7BC86C" : frac > 0.25 ? "#E6C47E" : "#C0584A");
+
+/** ADR-134: which creatures show an hp bar this frame (replica-only: Health, HitReact, GroupSummary, local intent). */
+export class CreatureBars {
+  private hp = new Map<Entity, number>(); private hitTick = new Map<Entity, number>(); private mine = new Map<Entity, number>();
+  readonly bars = new Map<Entity, CreatureBar>();
+  scan(world: World, now: number, me: Entity | undefined): CreatureBar[] {
+    const seen = new Set<Entity>(); const myId = me !== undefined ? world.getField(me, NetId, "id") ?? 0 : 0;
+    const myG = me !== undefined ? world.get(me, GroupSummary) : undefined;
+    const it = me !== undefined ? world.get(me, PlayerIntent) : undefined; const attacking = it && it.action === IntentAction.Attack ? it.target : undefined;
+    for (const e of world.query([Health, Transform], [Dead])) {
+      if (e === me) continue;
+      const kind: CreatureKind | undefined = world.has(e, Zombie) ? "zombie" : world.has(e, Animal) ? "animal" : world.has(e, Survival) || world.has(e, GroupSummary) ? "human" : undefined;
+      if (!kind) continue;
+      seen.add(e); const h = world.get(e, Health)!; const t = world.get(e, Transform)!;
+      const was = this.hp.get(e); this.hp.set(e, h.hp);
+      const hr = world.get(e, HitReact); const lastHit = this.hitTick.get(e);
+      if (hr) this.hitTick.set(e, hr.startTick);
+      const hitNow = (was !== undefined && h.hp < was - 1e-3) || (hr !== undefined && lastHit !== undefined && hr.startTick !== lastHit);
+      if (hitNow && hr && myId && hr.src === myId) this.mine.set(e, now);
+      const target = attacking === e || now - (this.mine.get(e) ?? -Infinity) < COMBAT_TARGET_MS;
+      let b = this.bars.get(e);
+      if (!b && !hitNow && !target) continue;
+      const g = world.get(e, GroupSummary);
+      const ally = !!(myG && g && ((myG.partyId && g.partyId === myG.partyId) || (myG.clanId && g.clanId === myG.clanId)));
+      const frac = h.max > 0 ? Math.max(0, Math.min(1, h.hp / h.max)) : 0;
+      if (!b) { b = { e, x: t.x, y: t.y, frac, at: now, kind, ally, target }; this.bars.set(e, b); }
+      Object.assign(b, { x: t.x, y: t.y, frac, kind, ally, target }); if (hitNow) b.at = now;
+    }
+    for (const e of [...this.hp.keys()]) if (!seen.has(e)) { this.hp.delete(e); this.hitTick.delete(e); this.mine.delete(e); this.bars.delete(e); }
+    for (const [e, b] of this.bars) if (creatureBarAlpha(now - b.at, b.target) <= 0) this.bars.delete(e);
+    return [...this.bars.values()];
+  }
+}
+/** Screen lift (css px at zoom 1) of a creature bar above its feet. */
+export const CREATURE_BAR_LIFT: Record<CreatureKind, number> = { human: 74, zombie: 74, animal: 46 };
 
 export const TOAST_MS = 2200;
 export const TOAST_MAX = 4;
@@ -119,7 +168,7 @@ export function mountGatherFx(root: HTMLElement, d: GatherFxDeps): { destroy(): 
   const box = document.createElement("div"); box.id = "pickup-toasts"; box.setAttribute("aria-live", "polite"); root.append(box);
   const fx = loadArt(ART_URLS.fx), bar = loadArt(ART_URLS.hpbar);
   loadArt(ART_URLS.toast.slice(0, 1), () => { box.style.setProperty("--toast-bg", `url("${ART_URLS.toast[0]}")`); box.dataset["art"] = "true"; }); // else the CSS pill stays
-  const hits = new NodeHits(); const stack = new ToastStack(); let parts: Particle[] = []; let raf = 0; let last = performance.now(); let player: Entity | undefined; let lastInv = 0;
+  const hits = new NodeHits(); const creatures = new CreatureBars(); const stack = new ToastStack(); let parts: Particle[] = []; let raf = 0; let last = performance.now(); let player: Entity | undefined; let lastInv = 0;
   const label = (item: number): { name: string; icon: string } => { const it = gameplayDefs(d.world()).items.get(item); const key = it?.spriteKey ?? ""; return { name: it?.name ?? `#${item}`, icon: d.icon ? d.icon(item, key) : key }; };
   const tick = (now: number): void => {
     raf = requestAnimationFrame(tick); const dt = Math.min(0.05, (now - last) / 1000); last = now;
@@ -140,14 +189,20 @@ export function mountGatherFx(root: HTMLElement, d: GatherFxDeps): { destroy(): 
       const pi = dpr > 1 && ready(fx[1]) ? 1 : 0; const fxIm = ready(fx[pi]) ? fx[pi] : undefined; const fxS = pi + 1;
       const bi = dpr > 1 && ready(bar[1]) ? 1 : 0; const barIm = ready(bar[bi]) ? bar[bi] : undefined; const barS = bi + 1;
       g.imageSmoothingEnabled = false;
+      const drawBar = (cx: number, top: number, bw: number, bh: number, frac: number, fill: string, al: number): void => {
+        const x = cx - bw / 2, y = top; g.globalAlpha = al;
+        if (barIm) { // art frame (3-sliced, 4 px tall crop) over a dark well + the fill inside its rim
+          g.fillStyle = "rgba(20,16,12,.55)"; g.fillRect(x, y, bw, bh); g.fillStyle = fill; const inset = Math.max(1, bh / 4); g.fillRect(x + inset, y + inset, (bw - 2 * inset) * frac, bh - 2 * inset);
+          for (const [sx, sw, dx, dw] of hpbarSlices(x, bw, barS)) if (dw > 0) g.drawImage(barIm, sx, HPBAR.y * barS, sw, HPBAR.h * barS, dx, y, dw, bh);
+        } else { g.fillStyle = "rgba(20,16,12,.75)"; g.fillRect(x - 1, y - 1, bw + 2, bh + 2); g.fillStyle = fill; g.fillRect(x, y, bw * frac, bh); }
+      };
       for (const b of hits.bars.values()) {
         const al = nodeBarAlpha(now - b.at); if (al <= 0) continue; const s = isoToCss(cam, b.x, b.y);
-        const bw = (touch ? 44 : 36) * z, bh = Math.max(4, 5 * z), x = s.x - bw / 2, y = s.y - 58 * z;
-        g.globalAlpha = al; const fill = b.frac > 0.5 ? "#7BC86C" : b.frac > 0.25 ? "#E6C47E" : "#C0584A";
-        if (barIm) { // art frame (3-sliced, 4 px tall crop) over a dark well + the fill inside its rim
-          g.fillStyle = "rgba(20,16,12,.55)"; g.fillRect(x, y, bw, bh); g.fillStyle = fill; const inset = Math.max(1, bh / 4); g.fillRect(x + inset, y + inset, (bw - 2 * inset) * b.frac, bh - 2 * inset);
-          for (const [sx, sw, dx, dw] of hpbarSlices(x, bw, barS)) if (dw > 0) g.drawImage(barIm, sx, HPBAR.y * barS, sw, HPBAR.h * barS, dx, y, dw, bh);
-        } else { g.fillStyle = "rgba(20,16,12,.75)"; g.fillRect(x - 1, y - 1, bw + 2, bh + 2); g.fillStyle = fill; g.fillRect(x, y, bw * b.frac, bh); }
+        drawBar(s.x, s.y - 58 * z, (touch ? 44 : 36) * z, Math.max(4, 5 * z), b.frac, barFill(b.frac), al);
+      }
+      for (const b of creatures.scan(w, now, p)) { // ADR-134 creature bars: compact, a touch smaller than node bars
+        const al = creatureBarAlpha(now - b.at, b.target); if (al <= 0) continue; const s = isoToCss(cam, b.x, b.y);
+        drawBar(s.x, s.y - CREATURE_BAR_LIFT[b.kind] * z, (b.kind === "animal" ? 26 : 30) * z * (touch ? 1.2 : 1), Math.max(3, 4 * z), b.frac, barFill(b.frac, b.ally), al);
       }
       parts = parts.filter((q) => (q.age += dt) < q.life);
       for (const q of parts) {

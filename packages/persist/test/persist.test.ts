@@ -16,6 +16,19 @@ const tmp = (): string => { const d = mkdtempSync(join(tmpdir(), "persist-")); d
 afterEach(() => { for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true }); });
 
 describe("chunk round trip", () => {
+  it("regenerateNodes predicate: stored chunks holding their own entities skip generator nodes (ADR-134)", async () => {
+    const store = new MemoryWorldStore();
+    const a = makeWorld(store, { loadRadius: 0, regenerateNodes: (w, ents) => !ents.some((e) => w.has(e, Crate)) });
+    const seen = new Map<string, number>(); a.chunks.onLoad((c, nodes) => { seen.set(c.key, nodes.length); });
+    a.chunks.setSource({ id: 1, x: 16, y: 16 }); step(a.world);
+    const fresh = seen.get("0,0") ?? 0; expect(fresh).toBeGreaterThan(0);
+    spawnCrate(a.world, 3, 3, 1); a.chunks.setTile(40, 2, 77);
+    a.chunks.setSource({ id: 1, x: 5000, y: 5000 }); step(a.world); await store.flush();
+    seen.clear(); a.chunks.setSource({ id: 1, x: 16, y: 16 }); step(a.world);
+    expect([...a.world.query([Crate])]).toHaveLength(1);
+    expect(seen.get("0,0")).toBe(0); // the saved chunk keeps its own (depleted / relocated) nodes
+  });
+
   it("saves and reloads a chunk with a 3000-piece base, tiles and persistent entities (SQLite, worker writer)", async () => {
     const path = tmp();
     const s1 = await SqliteWorldStore.open(path);

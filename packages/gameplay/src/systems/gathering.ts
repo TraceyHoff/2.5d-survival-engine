@@ -8,7 +8,11 @@
  * world state arrive by replication).
  */
 import { entityIndex, NetId, Transform, type Entity, type World } from "@engine/core";
-import { Anim, AnimState, Dead, Equipment, Gatherer, IntentAction, Inventory, NO_SLOT, PlayerIntent, ResourceNode, Survival } from "../components.js";
+import { Anim, AnimState, BuildPiece, Dead, Equipment, Gatherer, IntentAction, Inventory, NO_SLOT, NodeRegrow, PieceLink, PlayerIntent, ResourceNode, Road, Survival } from "../components.js";
+import { spawnResourceNode } from "../spawn.js";
+import { ChunkNodes } from "../world.js";
+import { populationTile, PopulationTiles } from "../population.js";
+import { TerrainRes } from "../world.js";
 import { gameplayDefs, isAuthority, rangeSlack } from "../config.js";
 import { secondsToTicks, ToolKind, type GameDefs, type ToolDef } from "../defs.js";
 import { emit, GatherFail, GatherFailed, GatherSwing, InventoryOverflow, ItemGathered, NodeDepleted, NodeRespawned } from "../events.js";
@@ -49,16 +53,72 @@ function setAnimOf(world: World, e: Entity, anim: Anim): void {
   else world.setField(e, AnimState, "startTick", world.tick); // restart the one-shot on repeated swings
 }
 
-export function respawnSystem(world: World): void {
-  if (!isAuthority(world)) return;
-  const defs = gameplayDefs(world); const rn = world.store(ResourceNode);
-  for (const node of world.query([ResourceNode])) {
-    const idx = entityIndex(node); const s = rn.slot(idx);
-    if (rn.data.amount[s] !== 0 || world.tick < rn.data.respawnAtTick[s]!) continue;
-    const def = defs.resources.get(rn.data.kind[s]!); if (!def) continue;
-    rn.data.amount[s] = def.capacity; rn.data.respawnAtTick[s] = 0; rn.markChanged(idx);
-    emit(world, NodeRespawned, { node, kind: def.id });
+/**
+ * ADR-134 respawn: a depleted (non-crop) node is removed from the world and replaced by a NodeRegrow marker.
+ * When its timer (resources.json respawnSeconds x depletion.respawnMul) runs out a fresh node spawns at a new valid
+ * spot near the old one (same terrain tile = same biome; clear of structures, roads, players and other nodes), so the
+ * node count per region stays stable. No valid spot -> retry later (depletion.retrySeconds), up to maxTries, then
+ * fall back to the original spot. Legacy saves with amount-0 nodes are converted on sight.
+ */
+export function respawnSystem(world: World, dt = 1 / 20): void {
+  if (!isAuthority(world) || world.isReplaying) return;
+  const defs = gameplayDefs(world); const cfg = defs.depletion; const rn = world.store(ResourceNode);
+  for (const node of [...world.query([ResourceNode])]) { // legacy amount-0 nodes (pre-ADR-134 saves)
+    const s = rn.slot(entityIndex(node)); if (rn.data.amount[s] !== 0) continue;
+    const def = defs.resources.get(rn.data.kind[s]!); if (!def || def.oneShot) continue;
+    depleteNode(world, node, def.id, Math.max(world.tick, rn.data.respawnAtTick[s]!), 0);
   }
+  for (const g of [...world.query([NodeRegrow, Transform])]) {
+    const r = world.get(g, NodeRegrow)!; if (world.tick < r.respawnAtTick) continue;
+    const def = defs.resources.get(r.kind); if (!def) { world.destroy(g); continue; }
+    const t = world.get(g, Transform)!;
+    let spot = findRegrowSpot(world, t.x, t.y, world.rngFor("regrow", world.getField(g, NetId, "id") ?? g));
+    if (!spot) {
+      if (r.tries + 1 < cfg.maxTries) { world.set(g, NodeRegrow, { ...r, tries: r.tries + 1, respawnAtTick: world.tick + secondsToTicks(cfg.retrySeconds, dt) }); continue; }
+      spot = { x: t.x, y: t.y };
+    }
+    const n = spawnResourceNode(world, def.id, spot.x, spot.y);
+    swapChunkNode(world, g, n); world.destroy(g);
+    emit(world, NodeRespawned, { node: n, kind: def.id });
+  }
+}
+
+/** Remove a depleted node, leaving a NodeRegrow (trees: a stump for depletion.stumpSeconds). Returns the marker. */
+export function depleteNode(world: World, node: Entity, kind: number, respawnAtTick: number, stumpTicks: number): Entity {
+  const t = world.get(node, Transform) ?? { x: 0, y: 0 };
+  const g = world.create();
+  world.add(g, Transform, { x: t.x, y: t.y }).add(g, NodeRegrow, { kind, respawnAtTick, stumpUntilTick: stumpTicks > 0 ? world.tick + stumpTicks : 0, tries: 0 });
+  swapChunkNode(world, node, g); world.destroy(node);
+  return g;
+}
+
+/** Keep client/standalone chunk streaming lists pointing at the live entity (unload despawns it). */
+function swapChunkNode(world: World, from: Entity, to: Entity): void {
+  const m = world.getResource(ChunkNodes); if (!m) return;
+  for (const l of m.values()) { const i = l.indexOf(from); if (i >= 0) { l[i] = to; return; } }
+}
+
+const SWIM_OR_VOID = (tile: number): boolean => tile === 0 || tile === 1; // void / water (generator tile ids)
+
+/** A valid regrow spot within depletion.min..maxRadius of (x, y), or undefined. Deterministic for a given rng. */
+export function findRegrowSpot(world: World, x: number, y: number, rng: { next(): number }): { x: number; y: number } | undefined {
+  const cfg = gameplayDefs(world).depletion;
+  const hasTiles = !!(world.getResource(TerrainRes) || world.getResource(PopulationTiles));
+  const tileOf = (px: number, py: number): number => populationTile(world, Math.floor(px), Math.floor(py));
+  const biome = hasTiles ? tileOf(x, y) : -1;
+  const blockers: { x: number; y: number; r: number }[] = [];
+  const add = (q: Iterable<Entity>, r: number): void => { for (const e of q) { const p = world.get(e, Transform); if (p && Math.abs(p.x - x) < cfg.maxRadius + r && Math.abs(p.y - y) < cfg.maxRadius + r) blockers.push({ x: p.x, y: p.y, r }); } };
+  add(world.query([BuildPiece, Transform]), cfg.clearStructures); add(world.query([PieceLink, Transform]), cfg.clearStructures);
+  add(world.query([Road, Transform]), cfg.clearRoads); add(world.query([Survival, Transform], [Dead]), cfg.clearPlayers);
+  add(world.query([ResourceNode, Transform]), cfg.clearNodes); add(world.query([NodeRegrow, Transform]), cfg.clearNodes);
+  for (let i = 0; i < cfg.attempts; i++) {
+    const a = rng.next() * Math.PI * 2; const d = cfg.minRadius + rng.next() * (cfg.maxRadius - cfg.minRadius);
+    const px = Math.floor(x + Math.cos(a) * d) + 0.5, py = Math.floor(y + Math.sin(a) * d) + 0.5;
+    if (hasTiles) { const tile = tileOf(px, py); if (tile !== biome || SWIM_OR_VOID(tile)) continue; }
+    if (blockers.some((b) => (b.x - px) ** 2 + (b.y - py) ** 2 < b.r * b.r)) continue;
+    return { x: px, y: py };
+  }
+  return undefined;
 }
 
 export function gatherSystem(world: World, dt: number): void {
@@ -106,11 +166,14 @@ export function gatherSystem(world: World, dt: number): void {
     });
     const left = rn.data.amount[ns]! - 1;
     rn.data.amount[ns] = left;
-    if (left === 0) {
-      rn.data.respawnAtTick[ns] = world.tick + secondsToTicks(def.respawnSeconds, dt);
-      emit(world, NodeDepleted, { node, kind: def.id });
-    }
     rn.markChanged(nIdx);
-    if (left === 0 && def.oneShot) world.destroy(node); // ADR-110: harvested crop
+    if (left === 0) {
+      emit(world, NodeDepleted, { node, kind: def.id });
+      if (def.oneShot) world.destroy(node); // ADR-110: harvested crop
+      else { // ADR-134: gone from the world; regrows elsewhere
+        const dep = defs.depletion;
+        depleteNode(world, node, def.id, world.tick + secondsToTicks(def.respawnSeconds * dep.respawnMul, dt), def.requiredTool === ToolKind.Axe ? secondsToTicks(dep.stumpSeconds, dt) : 0);
+      }
+    }
   }
 }

@@ -1,4 +1,4 @@
-import { installRoadCommands, installSignCommands, setWorldRules, worldRules, type WorldRulesOpts } from "@engine/gameplay";
+import { installRoadCommands, NodeRegrow, installSignCommands, setWorldRules, worldRules, type WorldRulesOpts } from "@engine/gameplay";
 /** Authoritative game server: world + gameplay + streaming chunks + persistence + NetServer sessions. */
 import { ChannelRegistry, CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, type CosmeticCatalogLike, Membership, Owner, PlayerId, TimeOfDay, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
 import { CHUNK_SIZE, ChunkManager, ProceduralGenerator, computeSpawnPoints, chunkKeyOf, type BuildingGrid, type PopulationSpawner } from "@engine/world";
@@ -136,6 +136,8 @@ export function createGameServer(o: GameServerOptions): GameServer {
     ...(o.buildings ? { buildings: o.buildings } : {}),
     autosaveSeconds: o.autosaveSeconds ?? 30, playerSaveSeconds: o.playerSaveSeconds ?? 60,
     player: { exclude: [PlayerIntent] },
+    // ADR-134: stored chunks keep their own (possibly depleted/relocated) nodes; only pre-persistence rows regenerate.
+    regenerateNodes: (w, ents) => !ents.some((e) => w.has(e, ResourceNode) || w.has(e, NodeRegrow)),
     social: permissions,
     extraMeta: () => { const r = worldRules(world); return { hordes: r.hordes ? 1 : 0, hordeGraceDays: r.hordeGraceDays }; },
     ...(o.catalog ? { appearance: { catalog: o.catalog } } : {}),

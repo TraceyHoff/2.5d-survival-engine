@@ -6,10 +6,10 @@
  */
 import { defineCommand, defineResource, DEFAULT_TICK_HZ, type CommandHandlers, type Entity, type World } from "@engine/core";
 import raw from "../data/expressions.json";
-import { Animal, Dead, Expression, Health, Survival } from "./components.js";
+import { Animal, Dead, Expression, Health, HitReact, Survival } from "./components.js";
 import { isAuthority } from "./config.js";
 
-export type MoodSensor = "lowHealth" | "fleeing" | "hungry" | "thirsty" | "tired";
+export type MoodSensor = "hitRecently" | "lowHealth" | "fleeing" | "hungry" | "thirsty" | "tired";
 export interface MoodRule { when: MoodSensor; below?: number; expression: string; holdSeconds: number }
 export interface ExpressionData { expressions: string[]; moods: MoodRule[]; emotes: Record<string, { expression: string; seconds: number }> }
 export const EXPRESSION_DATA: ExpressionData = raw as unknown as ExpressionData;
@@ -44,8 +44,10 @@ export function installExpressionCommands(world: World, handlers: CommandHandler
 
 function mood(world: World, e: Entity): MoodRule | undefined {
   const h = world.get(e, Health), s = world.get(e, Survival), a = world.get(e, Animal);
+  const hitAt = world.getField(e, HitReact, "startTick");
   for (const m of EXPRESSION_DATA.moods) {
     const b = m.below ?? 0;
+    if (m.when === "hitRecently" && hitAt !== undefined && world.tick - hitAt < Math.max(1, Math.round(b * DEFAULT_TICK_HZ))) return m; // ADR-134: below = seconds
     if (m.when === "lowHealth" && h && h.max > 0 && h.hp / h.max < b) return m;
     if (m.when === "fleeing" && a && a.state === FLEE_STATE) return m;
     if (m.when === "hungry" && s && s.hunger < b) return m;
@@ -62,7 +64,7 @@ export function expressionSystem(world: World): void {
   if (!isAuthority(world)) return;
   const tick = world.tick; const req = requests(world); const emotes = emoteNames();
   let emoteUntil = world.getResource(EmoteUntil); if (!emoteUntil) { emoteUntil = new Map(); world.setResource(EmoteUntil, emoteUntil); }
-  const ents = new Set<Entity>([...world.query([Survival], [Dead]), ...world.query([Animal], [Dead]), ...world.query([Expression])]);
+  const ents = new Set<Entity>([...world.query([Survival], [Dead]), ...world.query([Animal], [Dead]), ...world.query([HitReact], [Dead]), ...world.query([Expression])]);
   for (const e of [...ents].sort((a, b) => a - b)) {
     if (!world.isAlive(e)) { emoteUntil.delete(e); continue; }
     const cur = world.get(e, Expression); const r = req.get(e);

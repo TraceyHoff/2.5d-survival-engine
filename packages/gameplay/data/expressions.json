@@ -1,7 +1,8 @@
 {
-  "$comment": "SurVivaZ face expressions (Expression component; id = index + 1, 0 = none). moods: checked in order, first match wins; holdSeconds = untilTick lifetime, refreshed while the mood holds. emotes: emote name -> expression + seconds; an emote beats moods until it expires. Render passes the key as resolveLayers' expression option.",
+  "$comment": "SurVivaZ face expressions (Expression component; id = index + 1, 0 = none). moods: checked in order, first match wins (hitRecently: below = seconds since the last HitReact, ADR-134); holdSeconds = untilTick lifetime, refreshed while the mood holds. emotes: emote name -> expression + seconds; an emote beats moods until it expires. Render passes the key as resolveLayers' expression option.",
   "expressions": ["happy", "sad", "angry", "scared", "hurt", "hungry", "thirsty", "sleepy", "surprised", "laugh", "wink"],
   "moods": [
+    { "when": "hitRecently", "below": 0.6, "expression": "hurt", "holdSeconds": 0.6 },
     { "when": "lowHealth", "below": 0.3, "expression": "hurt", "holdSeconds": 1 },
     { "when": "fleeing", "expression": "scared", "holdSeconds": 1 },
     { "when": "hungry", "below": 20, "expression": "hungry", "holdSeconds": 1 },

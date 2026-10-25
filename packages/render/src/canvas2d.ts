@@ -138,13 +138,16 @@ export class Canvas2DRenderer {
       if (an && world.has(it.e, an)) { const a = world.get(it.e, an)!; const names = STATE_ANIMS[a.state] ?? ["idle"]; let def; try { def = reg!.sprite(sp.spriteId); } catch { def = undefined; }
         anim = names.find((n) => def?.animations.has(n)) ?? "idle"; tAnim = Math.max(0, (tick - a.startTick) / 20) * (this.bindings.animRate?.(it.e, a.state) ?? 1); }
       const facing = world.get(it.e, Transform)!.facing; const k = sp.scale || 1;
+      // ADR-134 flinch: brief brightness flash + tilt about the foot (same bindings as WebGL's hitFlash)
+      const hf = this.bindings.hitFlash?.(it.e) ?? 0; const tilt = this.bindings.hitTilt?.(it.e) ?? 0;
+      const fx = (): void => { if (tilt) g.rotate(tilt); if (hf > 0) g.filter = `brightness(${(1 + 2.5 * Math.min(1, hf)).toFixed(2)})`; };
       // paper doll (same layer list + per-frame anchors as the creator's 2D preview; head layers follow the body's head anchor)
       const apB = this.bindings.appearance; const look = apB && world.has(it.e, apB.def) ? getAppearance(world, it.e) : undefined;
       if (look && apB) {
         let ls: PreviewLayer2D[] = []; try { ls = previewLayers2D(reg!, apB, look, 0, tAnim, this.sources, anim, facing); } catch { ls = []; }
         if (ls.length) {
           for (const p of ls) { const li = this.layerImage(p); if (!li) continue; const r = p.ref;
-            g.save(); g.translate(it.sx, it.sy); if (r.flipX) g.scale(-1, 1);
+            g.save(); g.translate(it.sx, it.sy); fx(); if (r.flipX) g.scale(-1, 1);
             g.drawImage(li.img, li.x, li.y, r.w, r.h, (p.dx - r.anchorX) * k, (p.dy - r.anchorY) * k, r.w * k, r.h * k); g.restore(); stats.drawCalls++; }
           stats.sprites++; continue;
         }
@@ -152,7 +155,7 @@ export class Canvas2DRenderer {
       let f; try { f = reg!.dirFrame(sp.spriteId, anim, facing, tAnim); } catch { continue; }
       const img = this.image(f.atlas.key); if (!img) continue;
       const dw = f.w * k, dh = f.h * k;
-      g.save(); g.translate(it.sx, it.sy); if (f.flipX) g.scale(-1, 1);
+      g.save(); g.translate(it.sx, it.sy); fx(); if (f.flipX) g.scale(-1, 1);
       g.drawImage(img, f.x, f.y, f.w, f.h, -f.anchorX * k, -f.anchorY * k, dw, dh); g.restore(); stats.sprites++; stats.drawCalls++;
     }
     // ambient (multiply) + lights (additive glows)

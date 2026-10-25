@@ -191,6 +191,8 @@ export interface GameDefs {
   readonly resources: ReadonlyMap<number, ResourceDef>;
   /** Unarmed gathering of low-tier tool nodes (resources.json bareHands, ADR-107). */
   readonly bareHands: BareHandsDef;
+  /** ADR-134 depletion/regrow tuning (resources.json `depletion`). */
+  readonly depletion: DepletionDef;
   readonly pieces: ReadonlyMap<number, PieceDef>;
   readonly pieceRegistry: BuildPieceRegistry;
   readonly tiers: readonly TierDef[];
@@ -216,6 +218,9 @@ export interface GameDefs {
   piece(key: string): PieceDef;
 }
 
+/** resources.json `depletion` (ADR-134): respawn delay multiplier, tree stump time, and relocation rules (tiles). */
+export interface DepletionDef { respawnMul: number; stumpSeconds: number; minRadius: number; maxRadius: number; attempts: number; retrySeconds: number; maxTries: number; clearStructures: number; clearRoads: number; clearPlayers: number; clearNodes: number }
+export const DEFAULT_DEPLETION: DepletionDef = { respawnMul: 1, stumpSeconds: 45, minRadius: 3, maxRadius: 12, attempts: 24, retrySeconds: 30, maxTries: 10, clearStructures: 6, clearRoads: 2, clearPlayers: 10, clearNodes: 1.5 };
 /** resources.json `bareHands`: which tool nodes fists can work, and how poorly (ADR-107). */
 export interface BareHandsDef { readonly maxMinTier: number; readonly tools: ReadonlySet<ToolKind>; readonly yieldMul: number; readonly minYield: number; readonly cooldownMul: number }
 
@@ -243,7 +248,7 @@ export interface RawZombie extends RawVisual { key: string; hp: number; speed: n
 export interface RawDefs {
   items: { items: RawItem[] };
   recipes: { recipes: RawRecipe[] };
-  resources: { resources: RawResource[]; bareHands?: { maxMinTier: number; tools: string[]; yieldMul: number; minYield: number; cooldownMul: number } };
+  resources: { resources: RawResource[]; bareHands?: { maxMinTier: number; tools: string[]; yieldMul: number; minYield: number; cooldownMul: number }; depletion?: Partial<DepletionDef> & { $comment?: string } };
   vitals: VitalsTuning & { $comment?: string };
   environment: Omit<EnvironmentTuning, "weather"> & { weather: RawWeather[]; $comment?: string };
   pieces: { pieces: RawPiece[] };
@@ -433,6 +438,8 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
   const bh = raw.resources.bareHands;
   const bareHands: BareHandsDef = bh ? { maxMinTier: bh.maxMinTier, tools: new Set(bh.tools.map((t, i) => enumOf(TOOL, t, `resources.bareHands.tools[${i}]`))), yieldMul: bh.yieldMul, minYield: bh.minYield, cooldownMul: bh.cooldownMul }
     : { maxMinTier: -1, tools: new Set(), yieldMul: 0, minYield: 0, cooldownMul: 1 };
+  const { $comment: _dc, ...depRaw } = raw.resources.depletion ?? {}; const depletion: DepletionDef = { ...DEFAULT_DEPLETION, ...depRaw };
+  if (!(depletion.respawnMul > 0) || !(depletion.stumpSeconds >= 0) || !(depletion.maxRadius > depletion.minRadius) || !(depletion.minRadius >= 0) || !(depletion.attempts >= 1) || !(depletion.maxTries >= 1)) err("resources.depletion: bad values");
   if (!(bareHands.yieldMul >= 0 && bareHands.yieldMul <= 1) || !(bareHands.cooldownMul >= 1)) err("resources.bareHands: yieldMul must be 0..1 and cooldownMul >= 1");
   const strip = <T extends { $comment?: string }>(o: T): Omit<T, "$comment"> => { const { $comment: _c, ...rest } = o; return rest; };
   const { weather: _w, ...envRest } = strip(env);
@@ -446,7 +453,7 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
     spawning: raw.zombies.spawning, ai: raw.zombies.ai, noise: raw.zombies.noise, lightAvoid: raw.zombies.lightAvoid ?? DEFAULT_LIGHT_AVOID,
     vitals: strip(raw.vitals), environment: { ...envRest, weather }, movement: { ...strip(raw.movement), swimTiles: new Set(raw.movement.swimTiles ?? []), swimSpeedMul: raw.movement.swimSpeedMul ?? 1, walkAnimRefSpeed: raw.movement.walkAnimRefSpeed ?? raw.movement.walkSpeed },
     worldgen: { bands, unbuildableTiles: new Set(raw.worldgen.unbuildableTiles), unwalkableTiles: new Set(raw.worldgen.unwalkableTiles) },
-    lock, hashes: { items: itemsR.reg.hash, pieces: pieceHash, all }, bareHands,
+    lock, hashes: { items: itemsR.reg.hash, pieces: pieceHash, all }, bareHands, depletion,
     itemId: lookup(itemsR.reg), recipeId: lookup(recR.reg), resourceId: lookup(resR.reg), zombieId: lookup(zomR.reg),
     pieceId: (key) => pieceRegistry!.byKey(key).id,
     piece: (key) => pieces.get(pieceRegistry!.byKey(key).id)!,

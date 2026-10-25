@@ -263,6 +263,19 @@ export const HordeStatus = defineComponent("HordeStatus", { phase: "u8", seq: "u
 /** ADR-119 server-only runtime builder of a piece (PlayerId), for settlement classification + solo horde owners. */
 export const PieceOwner = defineComponent("PieceOwner", { player: "u32" });
 
+/**
+ * ADR-134 hit reaction (authority writes on creature damage; broadcast, NOT persisted). startTick = tick of the hit,
+ * dir = hit direction (attacker -> target) quantised to 0..255 over 2*pi, src = attacker NetId (0 = none), amount = damage (clamped u8).
+ * Clients render a short flinch/knockback nudge + flash from it; health bars use src to spot their own combat targets.
+ */
+export const HitReact = defineComponent("HitReact", { startTick: "u32", dir: "u8", src: "u32", amount: "u8" }, { networked: true });
+/**
+ * ADR-134 depleted resource node waiting to regrow (authority; networked + persistent so it survives restarts).
+ * Sits at the old node's position (a tree leaves a stump until stumpUntilTick); at respawnAtTick a fresh node of `kind`
+ * spawns at a new valid spot near it (same tile/biome, clear of structures, roads and players) and this entity is removed.
+ */
+export const NodeRegrow = defineComponent("NodeRegrow", { kind: "u16", respawnAtTick: "u32", stumpUntilTick: "u32", tries: "u8" }, { networked: true, persistent: true });
+
 export const GAMEPLAY_COMPONENTS = [
   Emitter, Buffs,
   Health, ResourceNode, Survival, VitalsState, Exposure, Dead,
@@ -291,4 +304,5 @@ export const GAMEPLAY_COMPONENTS = [
   Crop, // append-only (ADR-110)
   Progression, Tamed, // append-only (ADR-113)
   Road, Sign, HordeMember, WorldRules, HordeStatus, PieceOwner, // append-only (ADR-119..121)
+  HitReact, NodeRegrow, // append-only (ADR-134)
 ] as const;

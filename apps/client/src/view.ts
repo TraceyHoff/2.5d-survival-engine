@@ -19,6 +19,7 @@ import { BuildGhost, pieceArtRow, ROT_EXACT_PIVOT, IsoRenderer, Canvas2DRenderer
 import { countFraction } from "./load-progress.js";
 import { roadSpriteKeys, ROAD_FLAGS, signFrameId } from "./road-sign-view.js";
 import { Road, Sign, surfaceDef, signDef, walkAnimRate } from "@engine/gameplay";
+import { HitReact, NodeRegrow, hitDirRad } from "@engine/gameplay";
 import { gameplayDefs, rotationSteps, animalDefs, Animal, Health, Survival, Zombie, ResourceNode, CraftingStation, Fuel, AnimState as GAnim, BuildPiece as GPiece, Dead, Wetness, BodyTemp, Emitter, PieceLink, Crop, cropSpriteKey, clutterForChunk, resolveSprite, type ResolvedSprite } from "@engine/gameplay";
 
 /** Render-side schemas the renderer's bindings expect (view World only). */
@@ -32,6 +33,18 @@ const ANIM_MAP: readonly number[] = [0, 1, 2, 3, 4, 5, 3, 3];
 /** ADR-107: Swim (14) / Punch (15) pass straight through (atlas fallbacks: swim->walk, punch->attack). */
 /** ADR-128: node hit wiggle offset (tiles) `ms` after a hit: damped sine away from the player, undefined when done. */
 export function nodeWiggle(ms: number): number | undefined { if (ms < 0 || ms > 360) return undefined; const k = ms / 360; return 0.09 * Math.sin(k * Math.PI * 4) * (1 - k); }
+/**
+ * ADR-134 flinch pose `ms` after a HitReact (dir = radians, away from the attacker): knockback nudge (tiles, out fast
+ * then back), uniform squash pulse, tilt (rad, Canvas2D) and white flash 0..1. undefined once the 320 ms flinch is over.
+ */
+export const HIT_REACT_MS = 320;
+export function hitPose(ms: number, dir: number): { dx: number; dy: number; scale: number; tilt: number; flash: number } | undefined {
+  if (!(ms >= 0) || ms > HIT_REACT_MS) return undefined;
+  const k = ms / HIT_REACT_MS, f = 1 - k;
+  const push = 0.16 * Math.sin(Math.min(1, ms / 70) * Math.PI / 2) * f * f;
+  const side = Math.sign(Math.cos(dir) - Math.sin(dir)) || 1; // iso screen x ~ (x - y): lean away from the hit
+  return { dx: Math.cos(dir) * push, dy: Math.sin(dir) * push, scale: 1 - 0.07 * Math.sin(k * Math.PI * 2) * f, tilt: 0.2 * side * Math.sin(k * Math.PI) * f, flash: ms < 120 ? 1 - ms / 120 : 0 };
+}
 const animMap = (a: number): number => (a >= 14 && a <= 19 ? a : a === 8 ? 8 : ANIM_MAP[a] ?? 0); // 16..19 ADR-128 harvest/chop/mine/drink, 8 eat
 import { LightTable, type LightSpec } from "./lights.js";
 import { MANIFEST_INDEX, type ManifestFragmentRef } from "./manifest-index.js";
@@ -69,6 +82,8 @@ export class IsoView {
   private lastMove = new Map<Entity, number>();
   private nodeAmt = new Map<Entity, number>(); private nodeHit = new Map<Entity, { at: number; dx: number; dy: number }>(); // ADR-128 wiggle
   private seen = new Set<Entity>();
+  /** ADR-134: net entity -> last seen HitReact.startTick + local receive time; view entity -> current flinch pose. */
+  private hitSeen = new Map<Entity, { tick: number; at: number; dir: number }>(); private hitPoseOf = new Map<Entity, { scale: number; tilt: number; flash: number; base: number }>();
   /** Light emitters (net entity -> table spec), re-evaluated every frame from replicated Fuel.lit / Emitter.strength. */
   private lightOf = new Map<Entity, { spec: LightSpec; fuel?: Entity }>();
   /** Piece view entity -> building state index (e.g. "unlit") for the renderer's pieceState binding. */
@@ -81,6 +96,7 @@ export class IsoView {
     const cat = noCosmetics ? undefined : registry.cosmetics;
     if (cat?.size) this.view.register(Appearance);
     renderer.bindGameplay({ animState: VAnim, buildPiece: VPiece, wetness: VWet, bodyTemp: VTemp, lit: VFuel, pieceState: (e) => this.pieceStates.get(e),
+      hitFlash: (e) => this.hitPoseOf.get(e)?.flash ?? 0, hitTilt: (e) => this.hitPoseOf.get(e)?.tilt ?? 0,
       animRate: (e, st) => (st === 1 && this.characters.has(e) ? this.walkRate : undefined),
       ...(cat?.size ? { appearance: coreAppearanceBinding(cat) } : {}) });
   }
@@ -252,6 +268,11 @@ export class IsoView {
         if (hit) { const o = nodeWiggle(performance.now() - hit.at); if (o === undefined) this.nodeHit.delete(e); else v.set(ve, Transform, { x: cur.x + hit.dx * o, y: cur.y + hit.dy * o }); }
         const sp = v.get(ve, Sprite)!; const want = empty ? 0.0001 : this.baseScale(ve); if (sp.scale !== want) v.set(ve, Sprite, { scale: want });
       }
+      this.syncHitReact(net, e, ve, cur);
+      if (v.has(ve, Sprite) && net.has(e, NodeRegrow)) { // ADR-134: stump while it lasts, then invisible until regrown elsewhere
+        const g = net.get(e, NodeRegrow)!; const want = g.stumpUntilTick > net.tick ? this.baseScale(ve) : 0.0001;
+        if (v.get(ve, Sprite)!.scale !== want) v.set(ve, Sprite, { scale: want });
+      }
       const lo = this.lightOf.get(e);
       if (lo) { // light follows the replicated lit state every frame (fires go out / get relit)
         const em = net.get(e, Emitter); const fu = net.get(lo.fuel ?? e, Fuel);
@@ -269,7 +290,7 @@ export class IsoView {
       if (v.has(ve, VPiece)) this.syncPieceState(net, e, ve, defs);
       if (v.has(ve, VFuel)) { const f = net.get(e, Fuel); if (f) v.set(ve, VFuel, { lit: f.lit, burnUntilTick: f.burnUntilTick }); }
     }
-    for (const [ne, ve] of this.map) if (!seen.has(ne)) { if (ve === this.focusVe) { r.setFocusEntity(-1); this.focusVe = -1; } v.destroy(ve); this.map.delete(ne); this.characters.delete(ve); this.lightOf.delete(ne); this.pieceStates.delete(ve); this.lastMove.delete(ne); this.nodeAmt.delete(ne); this.nodeHit.delete(ne); this.animalHp.delete(ne); this.animalPrev.delete(ne); this.scales.delete(ve); }
+    for (const [ne, ve] of this.map) if (!seen.has(ne)) { if (ve === this.focusVe) { r.setFocusEntity(-1); this.focusVe = -1; } v.destroy(ve); this.map.delete(ne); this.characters.delete(ve); this.lightOf.delete(ne); this.pieceStates.delete(ve); this.lastMove.delete(ne); this.nodeAmt.delete(ne); this.nodeHit.delete(ne); this.animalHp.delete(ne); this.animalPrev.delete(ne); this.scales.delete(ve); this.hitSeen.delete(ne); this.hitPoseOf.delete(ve); }
 
     this.syncClutter(tiles, ground);
     const camE = CAM_ANIMAL && this.camAnimal !== undefined ? this.camAnimal : player;
@@ -313,6 +334,22 @@ export class IsoView {
       this.clutter.set(k, list); this.clutterCount += list.length;
     }
   }
+  /** ADR-134: replicated HitReact -> flinch (knockback nudge on the view Transform, squash on Sprite.scale, flash/tilt bindings). */
+  private syncHitReact(net: World, e: Entity, ve: Entity, cur: { x: number; y: number }): void {
+    const h = net.get(e, HitReact); const v = this.view; const now = performance.now();
+    if (h) { const s = this.hitSeen.get(e);
+      if (!s) this.hitSeen.set(e, { tick: h.startTick, at: net.tick - h.startTick <= 6 ? now : -1e9, dir: hitDirRad(h.dir) }); // late joiners skip stale hits
+      else if (s.tick !== h.startTick) { s.tick = h.startTick; s.at = now; s.dir = hitDirRad(h.dir); } }
+    const s = this.hitSeen.get(e); const pose = s ? hitPose(now - s.at, s.dir) : undefined;
+    const had = this.hitPoseOf.get(ve);
+    if (!pose) { if (had) { this.hitPoseOf.delete(ve); if (v.has(ve, Sprite)) v.set(ve, Sprite, { scale: had.base }); } return; }
+    const base = had?.base ?? v.get(ve, Sprite)?.scale ?? 1;
+    this.hitPoseOf.set(ve, { ...pose, base });
+    const t = v.get(ve, Transform)!; v.set(ve, Transform, { x: cur.x + pose.dx, y: cur.y + pose.dy, z: t.z, facing: t.facing });
+    if (v.has(ve, Sprite)) v.set(ve, Sprite, { scale: base * pose.scale });
+  }
+  /** ADR-134 test/diag hook: current flinch pose of a net entity's view, if any. */
+  hitPoseFor(netEntity: Entity): { scale: number; tilt: number; flash: number } | undefined { const ve = this.map.get(netEntity); return ve === undefined ? undefined : this.hitPoseOf.get(ve); }
   /** Set by the app each frame (local-server state, snapshots received, startup error) for diag + the camera fallback. */
   status: ViewStatus | undefined;
   readonly camGuard = new CameraTargetGuard(CAMERA_FALLBACK, CAMERA_GRACE_FRAMES);
@@ -383,6 +420,11 @@ export class IsoView {
       const z = net.get(e, Zombie)!; const key = defs?.zombies.get(z.kind)?.spriteKey;
       const s = this.sid(key) ?? this.sid("zombie_walker");
       return s === undefined ? undefined : { sprite: s, animated: true, shadow: 1, frame: z.variant };
+    }
+    if (net.has(e, NodeRegrow)) { // ADR-134: depleted tree -> stump (tree_stump) until stumpUntilTick; other kinds draw nothing
+      const g = net.get(e, NodeRegrow)!; if (g.stumpUntilTick <= net.tick) return undefined;
+      const r = this.rs("tree_stump"); if (!r) return undefined;
+      return { sprite: r.id, flags: h & 1 ? SpriteFlag.FlipX : 0, scale: r.scale, shadow: 0.6, onCreate: r.scale, ...(r.tint ? { tint: r.tint } : {}) };
     }
     if (net.has(e, ResourceNode)) {
       const n = net.get(e, ResourceNode)!; const key = defs?.resources.get(n.kind)?.spriteKey;

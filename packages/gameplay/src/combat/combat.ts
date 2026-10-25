@@ -4,8 +4,8 @@
  * Death is handled by vitals deathSystem (hp <= 0 -> Dead); zombie corpses are removed after corpseSeconds.
  * The owning client may predict the swing (cooldown/stamina/AnimState) but never damage.
  */
-import { entityIndex, Transform, type Entity, type World } from "@engine/core";
-import { Anim, AnimState, Attacker, BuildPiece, DamageCause, Dead, Equipment, Health, IntentAction, Inventory, NO_SLOT, PlayerIntent, Survival, VitalsState, Zombie } from "../components.js";
+import { entityIndex, NetId, Transform, type Entity, type World } from "@engine/core";
+import { Anim, AnimState, Attacker, BuildPiece, DamageCause, Dead, Equipment, Health, HitReact, IntentAction, Inventory, NO_SLOT, PlayerIntent, Survival, VitalsState, Zombie } from "../components.js";
 import { gameplayDefs, isAuthority, rangeSlack } from "../config.js";
 import { secondsToTicks, type WeaponDef } from "../defs.js";
 import { AttackSwing, Damaged, emit } from "../events.js";
@@ -66,7 +66,24 @@ export function applyDamage(world: World, target: Entity, amount: number, source
   emit(world, Damaged, { target, source, amount, cause });
   if (cause === DamageCause.Combat || cause === DamageCause.Explosion) tagCombat(world, source, target);
   if (world.has(target, AnimState) && hp - amount > 0) setAnim(world, target, Anim.Hurt);
+  if (hp - amount > 0) markHit(world, target, source, amount);
 }
+
+/**
+ * ADR-134: stamp a broadcast HitReact on a damaged creature/player (flinch direction from the attacker, attacker NetId).
+ * Cosmetic + targeting only: no stun or forced movement, so PvP stays fair; clients turn it into a ~0.3 s flinch.
+ */
+export function markHit(world: World, target: Entity, source: Entity, amount: number): void {
+  const tt = world.get(target, Transform); if (!tt) return;
+  const st = world.isAlive(source) && source !== target ? world.get(source, Transform) : undefined;
+  let dir = 0;
+  if (st) { const a = Math.atan2(tt.y - st.y, tt.x - st.x); dir = Math.round(((a / (2 * Math.PI)) + 1) * 256) & 255; }
+  const src = st ? world.getField(source, NetId, "id") ?? 0 : 0;
+  const v = { startTick: world.tick, dir, src, amount: Math.min(255, Math.max(1, Math.round(amount))) };
+  if (world.has(target, HitReact)) world.set(target, HitReact, v); else world.add(target, HitReact, v);
+}
+/** Radians of a HitReact.dir byte. */
+export const hitDirRad = (dir: number): number => (dir / 256) * 2 * Math.PI;
 
 export function combatSystem(world: World, dt: number): void {
   const it = world.store(PlayerIntent); const authority = isAuthority(world); const noise = gameplayDefs(world).noise;

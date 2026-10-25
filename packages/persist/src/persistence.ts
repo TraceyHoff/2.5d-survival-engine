@@ -61,8 +61,10 @@ export interface WorldPersistenceOptions {
   /**
    * When a chunk comes from storage, still hand the generator's resource-node placements to onLoad (default true).
    * Needed while gameplay's ResourceNode is not a persistent component; nodes then respawn full after reload.
+   * A function decides per stored chunk from its decoded entities (ADR-134: the server regenerates only chunks
+   * saved before nodes were persisted, i.e. with no node/regrow entity, so depletion survives restarts).
    */
-  regenerateNodes?: boolean;
+  regenerateNodes?: boolean | ((world: World, entities: readonly Entity[]) => boolean);
   player?: PlayerCodecOptions;
   /**
    * Component schema migrations applied to stored chunk rows (and, unless `player.migrations` is set, player records)
@@ -288,7 +290,9 @@ export class WorldPersistence {
         for (const e of d.entities) { this.fresh.add(e); this.persisted.add(e); }
         this.savedVersion.set(d.chunk.key, d.chunk.version); this.stats.chunksLoadedFromStore++;
         this.loadSidecars(cx, cy, d.chunk.key, d.entities);
-        const nodes = this.opts.regenerateNodes === false ? [] : gen.load(cx, cy)?.nodes ?? [];
+        const rg = this.opts.regenerateNodes;
+        const regen = typeof rg === "function" ? rg(this.world, d.entities) : rg !== false;
+        const nodes = regen ? gen.load(cx, cy)?.nodes ?? [] : [];
         return { chunk: d.chunk, nodes };
       } catch (err) {
         this.stats.decodeErrors++; this.readOnly.add(rec.key);
