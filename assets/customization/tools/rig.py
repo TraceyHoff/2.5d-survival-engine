@@ -33,6 +33,7 @@ ANIM_START["punch"] = ANIM_START["swim"] + 8 * SWIM_N
 # ADR-128 gathering / consume (AnimState harvest 16, chop 17, mine 18, drink 19, eat 14): own blocks, dirFrames only
 GATHER = [("harvest", 6, 10, True), ("chop", 6, 12, True), ("mine", 6, 12, True), ("drink", 5, 8, False), ("eat", 5, 8, False)]
 GATHER_N = {g[0]: g[1] for g in GATHER}
+HIT_N = 3                                 # ADR-134 hurt (AnimState.Hurt -> "hit"): 3 frames, dirFrames only (legacy grid block keeps 2)
 _s, _n = ANIM_START["punch"], PUNCH_N
 for _g in GATHER: _s += 8 * _n; ANIM_START[_g[0]] = _s; _n = _g[1]
 def rows_for(slot):
@@ -69,6 +70,8 @@ def pose(bt, d, anim, fi, n):
         legs = [(math.sin(ph) * sw, max(0, math.cos(ph)) * 5.2), (-math.sin(ph) * sw, max(0, -math.cos(ph)) * 5.2)]
     elif anim == "gather": crouch = [2, 3.5, 3, 3.5][fi]; lean = 1.5; expr = "focus"
     elif anim == "attack": crouch = [0, -1, 2, .5][fi]; expr = ["focus", "yell", "yell", "focus"][fi]
+    elif anim == "hit" and n == 3:   # ADR-134 hurt: impact snap back, peak recoil (head whips), recover
+        back = [-3.5, -2.6, -.9][fi]; tilt = [-2.4, -3.8, -1.2][fi]; crouch = [1.4, 1.0, .4][fi]; lean = [0, -.8, .2][fi]; expr = "ouch"
     elif anim == "hit": back = [-3, -1.5][fi]; tilt = [-3, -1.5][fi]; crouch = [1, .5][fi]; expr = "ouch"
     elif anim in EXPR_EXTRA: expr = anim
     elif anim == "swim":    # doggy paddle: gentle bob, legs kicking (hidden below the waterline by the merge step)
