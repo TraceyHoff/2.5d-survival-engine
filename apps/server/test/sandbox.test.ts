@@ -30,3 +30,12 @@ describe("ADR-140 dev sandbox", { timeout: 30_000 }, () => {
     const p0 = [...off.gs.players.values()][0]!; expect(countItem(off.gs.world, p0.entity, planks)).toBe(0);
   });
 });
+
+describe("ADR-142 sandbox kit covers the QA stations", () => {
+  it("has the cost of an anvil and a blanket market stall", async () => {
+    const { readFileSync } = await import("node:fs");
+    const raw = JSON.parse(readFileSync(new URL("../../../packages/gameplay/data/pieces.json", import.meta.url), "utf8")) as { pieces: { key: string; cost?: { resource: string; amount: number }[] }[] };
+    const kit = new Map(SANDBOX_KIT);
+    for (const k of ["anvil", "stall_blanket", "campfire", "workbench"]) for (const c of raw.pieces.find((p) => p.key === k)!.cost ?? []) expect([k, c.resource, (kit.get(c.resource) ?? 0) >= c.amount]).toEqual([k, c.resource, true]);
+  });
+});

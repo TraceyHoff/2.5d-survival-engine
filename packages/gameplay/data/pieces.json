@@ -684,6 +684,7 @@
     {
       "key": "stall_blanket",
       "placement": "free",
+      "ground": true,
       "layer": 2,
       "tier": 1,
       "hp": 60,
@@ -715,6 +716,7 @@
     {
       "key": "stall_cart",
       "placement": "free",
+      "ground": true,
       "layer": 2,
       "tier": 1,
       "hp": 180,
@@ -746,6 +748,7 @@
     {
       "key": "stall_booth",
       "placement": "free",
+      "ground": true,
       "layer": 2,
       "tier": 1,
       "hp": 320,
@@ -781,6 +784,7 @@
     {
       "key": "clan_pavilion",
       "placement": "free",
+      "ground": true,
       "layer": 2,
       "tier": 1,
       "hp": 600,
@@ -811,6 +815,7 @@
     {
       "key": "market_counter",
       "placement": "free",
+      "ground": true,
       "layer": 2,
       "tier": 2,
       "hp": 400,

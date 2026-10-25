@@ -61,3 +61,12 @@ describe("market_counter, sign text, soldOut", () => {
     unstockStall(w, A, s2, 0, 2); expect(stallSoldOut(w, s2)).toBe(true);
   });
 });
+
+describe("ADR-142 market stalls stand on bare ground", () => {
+  it("every stall piece validates with no foundation (was NoSupport = 11)", () => {
+    const { w, mk } = setup(); const A = mk(7);
+    for (const key of ["stall_blanket", "stall_cart", "stall_booth"]) {
+      expect([key, validatePlacement(w, A, snap(w, key, 1, 1), { ignoreCost: true })]).toEqual([key, 0]);
+    }
+  });
+});
