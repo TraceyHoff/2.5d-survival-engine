@@ -194,8 +194,7 @@ function onUiFrame(): void {
   buildHud.update();
   worldTools?.update(); if (worldTools?.tool.active) return; // ADR-122: the Road context owns A/B/X/Y/RS while laying
   if (input.pressed("ToggleBuild") && promptDevice() === "gamepad") { menus?.open("build"); return; } // ADR-136: pad LB+Y (KBM B is a UINav hotkey)
-  if (promptDevice() === "gamepad") { // ADR-139: pad Select = inventory, LB+Select = crafting, RB+Select = chat (KBM uses UINav hotkeys)
-    const id = padMenuAction(input); if (id) { menus?.open(id); return; } }
+  { const id = padMenuAction(input); if (id) { menus?.open(id); return; } } // ADR-139: pad-only bindings: Select = inventory, LB+Select = crafting, RB+Select = chat
   if (input.pressed("QuickUse") && farm) { const p = session.player; if (p !== undefined && quickUseFires(safeFarmPrompt(p))) farm.trigger(); }
   if (input.pressed("Interact")) { const c = menuCtx(); const t = c && interactPanel(c); if (t?.panel === "trade") menus?.openStall(t.stall); else if (t?.panel === "station") menus?.openStation(t.station, t.kind); else if (t) menus?.open("character"); }
 }

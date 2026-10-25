@@ -74,6 +74,18 @@ describe("focus navigation", () => {
     expect(act(["ToggleInventory"])).toBe("inventory"); expect(act(["ToggleCrafting", "ToggleInventory"])).toBe("crafting");
     expect(act(["OpenChat"])).toBe("chat"); expect(act([])).toBeUndefined();
   });
+  test("ADR-139 gamepad: Start pressed in the character creator does not pause the game it enters", () => {
+    const boot = document.createElement("div"); boot.dataset["boot"] = "creator"; document.body.append(boot);
+    pads[0] = pad(); menus.nav.pollGamepad(); boot.remove();
+    const held = pad(); held.buttons[PAD.START]!.pressed = true; pads[0] = held; menus.nav.pollGamepad(); expect(menus.nav.isOpen).toBe(false);
+    pads[0] = pad(); menus.nav.pollGamepad(); poll((p) => { p.buttons[PAD.START]!.pressed = true; }); expect(menus.nav.top).toBe("pause");
+  });
+  test("ADR-139 gamepad: menus created while Start is still held (entering the world) ignore it until released", () => {
+    menus.destroy(); const held = pad(); held.buttons[PAD.START]!.pressed = true; pads[0] = held;
+    menus = new GameMenus({ root: uiRoot(), onQuit: () => {}, pollGamepads: false, getGamepads: () => pads });
+    menus.nav.pollGamepad(); menus.nav.pollGamepad(); expect(menus.nav.isOpen).toBe(false);
+    pads[0] = pad(); menus.nav.pollGamepad(); poll((p) => { p.buttons[PAD.START]!.pressed = true; }); expect(menus.nav.top).toBe("pause");
+  });
   test("gamepad: Start pauses, D-pad/stick move, A confirms, B backs out, Start resumes", () => {
     poll((p) => { p.buttons[PAD.START]!.pressed = true; }); expect(menus.nav.top).toBe("pause");
     poll((p) => { p.buttons[PAD.DOWN]!.pressed = true; }); expect(active()).toBe("Resume");
