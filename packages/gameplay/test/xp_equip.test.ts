@@ -68,7 +68,7 @@ describe("ADR-135 equipment", () => {
   it("worn gear maps to paper-doll wearables", () => {
     const w = world(); const a = mk(w, 1); G.addItem(w, a, id("iron_helmet"), 1); G.addItem(w, a, id("leather_backpack"), 1);
     G.wearSlot(w, a, slotOf(w, a, id("iron_helmet"))); G.wearSlot(w, a, slotOf(w, a, id("leather_backpack")));
-    expect(Object.fromEntries(G.wornCosmetics(w, a))).toMatchObject({ hat: "hat_viking", accessory: "acc_backpack" });
+    expect(Object.fromEntries(G.wornCosmetics(w, a))).toMatchObject({ hat: "hat_helmet", accessory: "acc_backpack" });
   });
 });
 

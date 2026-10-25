@@ -407,7 +407,46 @@ def h_chef(c):
     for i, (x, y, z, r) in enumerate(pts):
         c.cv.part(circle(c.p(hz(c, x, y, z)), r, r * .85, wob=.08, seed=i), "P", lw=1.0, shade=.22, hl=.18)
 
-HATS = dict(straw=h_straw, beanie=h_beanie, cap=h_cap, cowboy=h_cowboy, top_hat=h_top, bucket=h_bucket, wizard=h_wizard,
+def h_helmet(c):   # ADR-135 armor_head: iron dome, brow band, rivets, nasal guard, cheek plates
+    K = c.K; cv = c.cv
+    for sd in (-1, 1):
+        p, v = c.sph(sd * 70, -25, 1.12)
+        if v > -.6: cv.part(circle(p, 3.6, 5.2, wob=.04), "iron", lw=.9, shade=.25, hl=.12)
+    m = crown(c, [((0, -.3, 1.2), 13.0), ((0, -.3, 7), 11.4), ((0, -.3, 11), 7.8), ((0, -.3, 13.5), 3.4)], "iron")
+    band(c, m, 1.2, 3.8, 13.2, "S"); band(c, m, 1.2, 14, 1.4, "iron")
+    for k in range(-3, 4):
+        p, v = c.sph(k * 30 + (0 if fv(c) > 0 else 180), 9, 1.14)
+        if v > 0: cv.fill(circle(p, .55), ramp("iron")[0], clip=m)
+    if fv(c) > -.2:
+        p, _ = c.sph(0, 8, 1.14); q, _ = c.sph(0, -14, 1.1)
+        cv.part(c.tube(c.hoff(0, 12.5, -1.5 + HAT_DZ * 0), c.hoff(0, 12.8, -8), .9, .7) if False else [(p[0] - 1, p[1]), (p[0] + 1, p[1]), (q[0] + .7, q[1]), (q[0] - .7, q[1])], "iron", lw=.7, shade=.2, hl=.15)
+def h_fur_hat(c):   # furhat: fur ushanka with ear flaps, tinted crown cloth
+    cv = c.cv
+    for sd in (-1, 1):
+        p, v = c.sph(sd * 80, -18, 1.15)
+        if v > -.7: cv.part(circle(p, 3.8, 5.6, wob=.12, seed=sd + 3), "fur_brown", lw=.9, shade=.22, hl=.1)
+    crown(c, [((0, -.5, 4), 12.2), ((0, -.5, 10), 10.6), ((0, -.5, 13.5), 7)])
+    cv.part(c.solid([(hz(c, 0, -.5, 1), 13.3), (hz(c, 0, -.5, 5), 13.5)]), "fur_brown", lw=1.0, shade=.22, hl=.12)
+def h_leather_cap(c):   # leathercap: close coif with seams + chin strap
+    cv = c.cv
+    m = crown(c, [((0, -.5, 1.2), 12.8), ((0, -.5, 7), 11.2), ((0, -.5, 11), 7.8), ((0, -.5, 13), 3.4)], "leather")
+    band(c, m, 1.2, 2.6, 12.9, "P")
+    for k in (-1, 1):
+        a, _ = c.sph(k * 30 + (0 if fv(c) > 0 else 180), 15, 1.12); b, v = c.sph(k * 20 + (0 if fv(c) > 0 else 180), 75, 1.1)
+        if v > -.3: cv.line([a, b], "S1", .45, clip=m)
+def h_hood(c):   # hood: cloth hood (hides hair), face opening, drape
+    K = c.K; cv = c.cv; hr = K["hr"]
+    hp = c.p(c.hoff(0, -1, 1.5)); capm = cv.mask_from(circle(hp, hr * 1.2, hr * 1.17, wob=.05, seed=7))
+    capm = ImageChops.add(capm, cv.mask_from(c.solid([(c.hoff(0, -1.5, -10), 12), (c.hoff(0, -1, -4), 13.5)])))
+    if fv(c) > -.35:
+        fc, _ = c.sph(0, -8, .6); capm = ImageChops.subtract(capm, cv.mask_from(circle(fc, hr * .92, hr * .9)))
+    m = cv.part(None, "P", mask=capm, lw=1.15, shade=.24, hl=.12)
+    if fv(c) > -.35:
+        fc, _ = c.sph(0, -8, .6); cv.line(circle(fc, hr * .93, hr * .91)[2:-2] if False else circle(fc, hr * .93, hr * .91), "S1", .8, clip=m, tm=(0, 1))
+    else:
+        p, _ = c.sph(180, 30, 1.18); q, _ = c.sph(180, -40, 1.15); cv.line([p, q], "P3", .5, clip=m)
+
+HATS = dict(helmet=h_helmet, fur_hat=h_fur_hat, leather_cap=h_leather_cap, hood=h_hood, straw=h_straw, beanie=h_beanie, cap=h_cap, cowboy=h_cowboy, top_hat=h_top, bucket=h_bucket, wizard=h_wizard,
             frog_hood=h_frog, viking=h_viking, mushroom_cap=h_mush, chef=h_chef)
 def draw_hat(c, spec):
     c.add(hv(c) + 3, lambda: HATS[spec["style"]](c))

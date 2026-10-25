@@ -2717,7 +2717,15 @@
     "cz_acc_gauntlets_female": 2715,
     "cz_acc_gauntlets_male": 2716,
     "cz_acc_leather_gloves_female": 2717,
-    "cz_acc_leather_gloves_male": 2718
+    "cz_acc_leather_gloves_male": 2718,
+    "cz_hat_fur_hat_female": 2719,
+    "cz_hat_fur_hat_male": 2720,
+    "cz_hat_helmet_female": 2721,
+    "cz_hat_helmet_male": 2722,
+    "cz_hat_hood_female": 2723,
+    "cz_hat_hood_male": 2724,
+    "cz_hat_leather_cap_female": 2725,
+    "cz_hat_leather_cap_male": 2726
   },
   "sounds": {
     "amb_rain": 1,
@@ -2902,6 +2910,10 @@
     "acc_cloth_gloves": 105,
     "acc_fur_mittens": 106,
     "acc_gauntlets": 107,
-    "acc_leather_gloves": 108
+    "acc_leather_gloves": 108,
+    "hat_fur_hat": 109,
+    "hat_helmet": 110,
+    "hat_hood": 111,
+    "hat_leather_cap": 112
   }
 }

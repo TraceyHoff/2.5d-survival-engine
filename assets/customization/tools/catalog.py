@@ -70,3 +70,6 @@ GEAR = []
 def gear(key, slot, spec, **kw): GEAR.append(key); add(key, slot, spec, **kw)
 for k in ["cloth_gloves", "leather_gloves", "fur_mittens", "gauntlets"]: gear("acc_" + k, "accessory", {"style": k, "noarmcut": True}, tint=(1 if k == "gauntlets" else 2), layer=30)
 GEAR_PH = {}   # gear key -> resident placeholder wearable (same slot) drawn while its stream page loads
+for s, hh, hd in [("helmet", False, ["hair"]), ("fur_hat", True, []), ("leather_cap", True, []), ("hood", False, ["hair"])]:
+    gear("hat_" + s, "hat", {"style": s}, tint=2, hides=hd, hatHairFlag=hh)
+GEAR_PH.update(hat_helmet="hat_viking", hat_fur_hat="hat_beanie", hat_leather_cap="hat_cap", hat_hood="hat_frog_hood")
