@@ -23,7 +23,7 @@ describe("ADR-134 hit reactions", () => {
 
   it("components are appended, broadcast, HitReact not persisted, NodeRegrow persisted", () => {
     const names = GAMEPLAY_COMPONENTS.map((c) => c.name);
-    expect(names.slice(-2)).toEqual(["HitReact", "NodeRegrow"]);
+    expect(names.indexOf("NodeRegrow")).toBe(names.indexOf("HitReact") + 1); // appended in order (later ADRs may append more)
     expect(HitReact.persistent).toBeFalsy(); expect(NodeRegrow.persistent).toBe(true);
     const scope = (n: string) => GAMEPLAY_REPLICATION.find((r) => r.def.name === n)?.scope;
     expect(scope("HitReact")).toBe("all"); expect(scope("NodeRegrow")).toBe("all");
