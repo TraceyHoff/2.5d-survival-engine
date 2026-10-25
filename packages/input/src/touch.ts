@@ -17,6 +17,8 @@ export interface ElementGeometry { id: string; kind: VirtualElement["kind"]; x: 
  * (joystick: `${control}.x|y`, buttons: control 0/1 with hold-cancel when the finger leaves, radial: pulses).
  * Pointers that hit nothing are returned false so the caller can route them to a GestureRecognizer.
  */
+/** Min gap (px) between a touch control's edge and the screen/safe-area edge. */
+export const TOUCH_EDGE_MARGIN = 4;
 export class VirtualControls {
   leftHanded = false;
   /** Element ids hidden right now (context-only controls, ADR-133): not drawn (visible=false) and not hit-tested. */
@@ -33,7 +35,9 @@ export class VirtualControls {
   private place(el: VirtualElement): { x: number; y: number; r: number } {
     const s = this.screen, i = s.insets ?? { top: 0, right: 0, bottom: 0, left: 0 };
     const ax = this.leftHanded ? 1 - el.anchor.x : el.anchor.x; const w = s.w - i.left - i.right, h = s.h - i.top - i.bottom;
-    return { x: i.left + ax * w, y: i.top + el.anchor.y * h, r: el.radius * this.scale };
+    // ADR-142: fractional anchors put edge buttons (Run at x=0.05) partly off a 390 px-wide phone; keep every control fully on screen
+    const r = el.radius * this.scale, m = el.kind === "joystick" ? 0 : r + TOUCH_EDGE_MARGIN, cl = (v: number, lo: number, hi: number) => (lo > hi ? (lo + hi) / 2 : Math.min(hi, Math.max(lo, v)));
+    return { x: cl(i.left + ax * w, i.left + m, s.w - i.right - m), y: cl(i.top + el.anchor.y * h, i.top + m, s.h - i.bottom - m), r };
   }
   geometry(): ElementGeometry[] {
     return this.layout.elements.map((el) => {

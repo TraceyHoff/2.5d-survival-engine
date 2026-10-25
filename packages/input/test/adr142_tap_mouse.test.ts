@@ -36,3 +36,13 @@ describe("ADR-142 spatial focus: wide buttons are reachable", () => {
     fm.setFocus("b"); expect(fm.navigate("down")).toBe("d"); fm.setFocus("a"); expect(fm.navigate("right")).toBe("b");
   });
 });
+
+import { VirtualControls, MapDevice, DEFAULT_TOUCH_LAYOUTS, TOUCH_EDGE_MARGIN } from "../src/index.js";
+describe("ADR-142 touch controls stay on screen", () => {
+  for (const [w, h] of [[390, 844], [915, 412], [320, 568]] as const) it(`${w}x${h}: every button fully inside the screen`, () => {
+    for (const layout of [DEFAULT_TOUCH_LAYOUTS.gameplay, DEFAULT_TOUCH_LAYOUTS.building]) {
+      const vc = new VirtualControls(layout, new MapDevice("t", "touch")); vc.resize({ w, h });
+      for (const g of vc.geometry()) if (g.kind !== "joystick") { expect(g.x - g.r, g.id).toBeGreaterThanOrEqual(TOUCH_EDGE_MARGIN - 0.01); expect(g.x + g.r, g.id).toBeLessThanOrEqual(w - TOUCH_EDGE_MARGIN + 0.01); expect(g.y - g.r).toBeGreaterThanOrEqual(0); expect(g.y + g.r).toBeLessThanOrEqual(h); }
+    }
+  });
+});
