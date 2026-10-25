@@ -818,3 +818,11 @@ Accepted 2026-10-24. Context: the ADR-113 tree showed all 122 nodes on one giant
 - **Opening a stall on a replica client no longer crashes.** Listings, till, and stock are viewer-scoped, so the stall view and menus tolerate them being missing.
 - Verified with two clients: sign text and road tiles replicate. Pressing E at the anvil opens the forge recipes.
 - Not verified: a second client buying from a stall, movement speed in the browser (headless runs at about 6 fps), and gathering and crafting with a gamepad.
+
+## ADR-143: Stall browsing must register the viewer; owners view the till
+
+- Context: QA pass 5 found that a second client within 2.5 tiles could open a stall's panel but saw no listings. The client's `openStall()` never sent `OpenStallCmd`, so the buyer never joined the viewer-scoped `Listings`/`Container` replication. The till was also never viewed, so the owner's till always looked empty and "Collect till" stayed disabled.
+- Decision: The client now sends `openStallIntent(stall)` when it opens a stall. The server's `openStall` adds a viewer only once. If the actor may `collect`, it also adds them as a viewer of the till container, creating `ContainerViewers` when needed. `closeStall` and switching stalls drop the till viewer (`leaveStallTill`).
+- Verified over two live clients: the buyer saw the listing and bought it (Stone +1, Sticks −1), the owner's till showed the payment, and Collect moved it to the owner's inventory. With the gamepad stub, RT-hold gathers, LB+Select opens crafting, the D-pad moves focus, A queues a craft (inputs consumed) and B closes the menu.
+- Note: Select-tap (inventory) uses a 250 ms tap window. Below about 6 fps (headless swiftshader), a 3-frame press goes over that window. This comes from the test environment and is not a bug.
+- Tests: apps/client/test/adr143_stall_open.test.ts and the ADR-143 case in packages/gameplay/test/economy.test.ts.
