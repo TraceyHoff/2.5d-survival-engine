@@ -2,9 +2,10 @@
 Run from repo root: python3 packages/assets/pack/vehicle_items/src/gen_icon_css.py  (rewrites between the ICONS markers)."""
 import json, os
 R = 'packages/assets/pack/'
-SRC = [('manifest.json', {'items', 'equipment'}), ('items/manifest.items.json', {'items_icons', 'items_skills', 'items_skill_tabs'}), ('vehicle_items/manifest.vehicle_items.json', {'vitems_icons'}), ('nature/manifest.nature.json', {'nature_roadicons', 'nature_toolicons', 'nature_adr128'})]
+SRC = [('manifest.json', {'items', 'equipment'}), ('items/manifest.items.json', {'items_icons', 'items_skills', 'items_skill_tabs', 'items_xp'}), ('vehicle_items/manifest.vehicle_items.json', {'vitems_icons'}), ('nature/manifest.nature.json', {'nature_roadicons', 'nature_toolicons', 'nature_adr128'})]
 rel = '../../../packages/assets/pack/'
-UI_OK = {'items_skills', 'items_skill_tabs'}  # ui-category atlases emitted too (ADR-113 skill icons, ADR-132 tab icons)
+ALIAS = {'icon_xp': ['xp']}  # ADR-135: the XP toast uses data-icon="xp" (gather-fx ToastStack.addXp)
+UI_OK = {'items_skills', 'items_skill_tabs', 'items_xp'}  # ui-category atlases emitted too (ADR-113 skill icons, ADR-132 tab icons)
 out, keys, seen = [], {}, set()
 for f, atl in SRC:
     m = json.load(open(R + f)); base = os.path.dirname(f)
@@ -18,7 +19,7 @@ for f, atl in SRC:
             if s.get('atlas') != ak or (s['category'] not in ('item', 'equipment') and not (ak in UI_OK and s['category'] == 'ui')) or s['key'] in seen: continue
             seen.add(s['key']); fr = s['animations']['idle']['frames'][0]; c, r = fr % a['columns'], fr // a['columns']
             px = 0 if a['columns'] == 1 else c * 100 / (a['columns'] - 1); py = 0 if a['rows'] == 1 else r * 100 / (a['rows'] - 1)
-            ks.append(s['key']); out.append(f'[data-icon="{s["key"]}"]{{--cz-ipos:{px:.4g}% {py:.4g}%}}')
+            for k2 in [s['key']] + ALIAS.get(s['key'], []): ks.append(k2); out.append(f'[data-icon="{k2}"]{{--cz-ipos:{px:.4g}% {py:.4g}%}}')
         if ks:
             sel = ','.join(f'[data-icon="{k}"]' for k in ks)
             out.insert(len(out) - len(ks), f'{sel}{{--cz-icon:{src};--cz-isize:{a["columns"] * 100}% {a["rows"] * 100}%}}')

@@ -2707,7 +2707,9 @@
     "offhand_bronze_knife": 2705,
     "offhand_iron_knife": 2706,
     "offhand_steel_knife": 2707,
-    "offhand_stone_knife": 2708
+    "offhand_stone_knife": 2708,
+    "icon_xp": 2709,
+    "ui_xp_chip_frame": 2710
   },
   "sounds": {
     "amb_rain": 1,

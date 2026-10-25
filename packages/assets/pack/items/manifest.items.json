@@ -130,6 +130,46 @@
     }
    ],
    "ktx2": "atlases/items_held_d.ktx2"
+  },
+  {
+   "key": "items_xp",
+   "image": "atlases/items_xp.png",
+   "frameW": 32,
+   "frameH": 32,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/items_xp@2x.png",
+     "ktx2": "atlases/items_xp@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/items_xp.ktx2"
+  },
+  {
+   "key": "items_xp_chip",
+   "image": "atlases/items_xp_chip.png",
+   "frameW": 40,
+   "frameH": 20,
+   "columns": 1,
+   "rows": 1,
+   "nineSlice": {
+    "0": {
+     "l": 10,
+     "t": 9,
+     "r": 10,
+     "b": 9
+    }
+   },
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/items_xp_chip@2x.png",
+     "ktx2": "atlases/items_xp_chip@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/items_xp_chip.ktx2"
   }
  ],
  "sprites": [
@@ -7482,6 +7522,40 @@
      "fps": 1,
      "directions": 8,
      "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "icon_xp",
+   "category": "ui",
+   "atlas": "items_xp",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "ui_xp_chip_frame",
+   "category": "ui",
+   "atlas": "items_xp_chip",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
     }
    }
   }
