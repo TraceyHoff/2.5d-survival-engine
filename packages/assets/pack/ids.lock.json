@@ -2853,7 +2853,17 @@
     "cz_hands_gear_leather_gloves_female": 2851,
     "cz_hands_gear_leather_gloves_male": 2852,
     "cz_hands_gear_steel_gauntlets_female": 2853,
-    "cz_hands_gear_steel_gauntlets_male": 2854
+    "cz_hands_gear_steel_gauntlets_male": 2854,
+    "cz_acc_gear_frame_pack_female": 2855,
+    "cz_acc_gear_frame_pack_male": 2856,
+    "cz_acc_gear_fur_cloak_female": 2857,
+    "cz_acc_gear_fur_cloak_male": 2858,
+    "cz_acc_gear_leather_backpack_female": 2859,
+    "cz_acc_gear_leather_backpack_male": 2860,
+    "cz_acc_gear_reed_satchel_female": 2861,
+    "cz_acc_gear_reed_satchel_male": 2862,
+    "cz_acc_gear_tactical_pack_female": 2863,
+    "cz_acc_gear_tactical_pack_male": 2864
   },
   "sounds": {
     "amb_rain": 1,
@@ -3094,6 +3104,11 @@
     "hands_gear_fur_mittens": 161,
     "hands_gear_iron_gauntlets": 162,
     "hands_gear_leather_gloves": 163,
-    "hands_gear_steel_gauntlets": 164
+    "hands_gear_steel_gauntlets": 164,
+    "acc_gear_frame_pack": 165,
+    "acc_gear_fur_cloak": 166,
+    "acc_gear_leather_backpack": 167,
+    "acc_gear_reed_satchel": 168,
+    "acc_gear_tactical_pack": 169
   }
 }

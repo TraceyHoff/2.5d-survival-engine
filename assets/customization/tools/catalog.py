@@ -120,3 +120,10 @@ for k, ph, sp in [("reed_sandals", "shoes_sandals", dict(style="sandals", remap=
 # hands (hands_gear_*): re-keyed ADR-135 gloves + tier gauntlets on the dedicated hands layer; nothing while streaming
 for k in ["cloth_gloves", "leather_gloves", "fur_mittens"] + [f"{t}_gauntlets" for t in TIERS]:
     gear137("hands_gear_" + k, "hands", {"style": k, "noarmcut": True}, None, tint=2, layer=33, layerByDir=HANDS_BY_DIR)
+# back (acc_gear_*): ADR-137 back items on the accessory layer; resident cape/backpack/satchel placeholders while streaming
+for k, st, ph, sp in [("fur_cloak", "cape", "acc_cape", {"remap": {"P": "fur_brown", "S": "leather"}, "furcollar": True}),
+                      ("reed_satchel", "satchel", "acc_satchel", {"remap": {"P": "reed", "S": "leather"}}),
+                      ("leather_backpack", "backpack", "acc_backpack", {"remap": {"P": "leather", "S": "hide"}}),
+                      ("frame_pack", "backpack", "acc_backpack", {"remap": {"P": "oilskin", "S": "leather"}, "frame": True}),
+                      ("tactical_pack", "backpack", "acc_backpack", {"remap": {"P": "composite", "S": "slate"}, "pouches": True})]:
+    gear137("acc_gear_" + k, "accessory", dict(sp, style=st), ph, tint=2, layer=30)

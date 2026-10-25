@@ -68,14 +68,14 @@ describe("ADR-135 equipment", () => {
   it("worn gear maps to paper-doll wearables", () => {
     const w = world(); const a = mk(w, 1); G.addItem(w, a, id("iron_helmet"), 1); G.addItem(w, a, id("leather_backpack"), 1);
     G.wearSlot(w, a, slotOf(w, a, id("iron_helmet"))); G.wearSlot(w, a, slotOf(w, a, id("leather_backpack")));
-    expect(Object.fromEntries(G.wornCosmetics(w, a))).toMatchObject({ hat: "hat_gear_iron_helmet", accessory: "acc_backpack" });
+    expect(Object.fromEntries(G.wornCosmetics(w, a))).toMatchObject({ hat: "hat_gear_iron_helmet", accessory: "acc_gear_leather_backpack" });
   });
   it("ADR-137: gloves draw on the dedicated hands slot and never displace a back item", () => {
     const w = world(); const a = mk(w, 1);
     for (const k of ["leather_gloves", "fur_cloak"]) { G.addItem(w, a, id(k), 1); G.wearSlot(w, a, slotOf(w, a, id(k))); }
-    expect(Object.fromEntries(G.wornCosmetics(w, a))).toEqual({ hands: "hands_gear_leather_gloves", accessory: "acc_cape" });
+    expect(Object.fromEntries(G.wornCosmetics(w, a))).toEqual({ hands: "hands_gear_leather_gloves", accessory: "acc_gear_fur_cloak" });
     const b = mk(w, 2); for (const k of ["iron_gauntlets", "leather_backpack"]) { G.addItem(w, b, id(k), 1); G.wearSlot(w, b, slotOf(w, b, id(k))); }
-    expect(Object.fromEntries(G.wornCosmetics(w, b))).toEqual({ hands: "hands_gear_iron_gauntlets", accessory: "acc_backpack" });
+    expect(Object.fromEntries(G.wornCosmetics(w, b))).toEqual({ hands: "hands_gear_iron_gauntlets", accessory: "acc_gear_leather_backpack" });
   });
   it("ADR-137: exact item mapping beats the family, falls back to the family when absent or not in the catalog", () => {
     const t = { families: { armor_head: "hat_viking" }, items: { steel_helmet: "hat_gear_steel_helmet" } };
