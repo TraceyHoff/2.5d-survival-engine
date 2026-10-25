@@ -864,17 +864,18 @@ def draw_eyes(c, spec):
                 cv.line([(x - 2.0 * sq, y - .9), (x + 2.0 * sq, y - .7)], INK[3], .5); continue
             if e == "happy" and st != "button":
                 cv.line([(x - 2.2 * sq, y + .8), (x, y - 1.1), (x + 2.2 * sq, y + .8)], INK[3], 1.0)
-                if st == "happy": cv.line([(x - 1.5 * sq, y + 1.1), (x, y + .0), (x + 1.5 * sq, y + 1.1)], "P2", .8, tm=(1, 0))
+                if st == "happy": cv.line([(x - 1.5 * sq, y + 1.1), (x, y + .0), (x + 1.5 * sq, y + 1.1)], "P2", .8, tm=(1, 0)); cv.line([(x - 1.9 * sq, y + 1.9), (x, y + .9), (x + 1.9 * sq, y + 1.9)], "P2", .55, tm=(0, 1))  # outer crescent -> G (eyes:color2)
                 continue
             if e == "blink" or (st == "wink" and idx == 1 and e != "yell") or st == "happy":
                 cv.line([(x - 2.2 * sq, y + (.3 if st != "happy" else .8)), (x, y + (1.2 if st != "happy" else -.9)), (x + 2.2 * sq, y + (.3 if st != "happy" else .8))], INK[3], .9)
                 if st == "happy":  # tinted crescent under the closed arc (eye colour)
-                    cv.line([(x - 1.5 * sq, y + 1.1), (x, y + .0), (x + 1.5 * sq, y + 1.1)], "P2", .8, tm=(1, 0))
+                    cv.line([(x - 1.5 * sq, y + 1.1), (x, y + .0), (x + 1.5 * sq, y + 1.1)], "P2", .8, tm=(1, 0)); cv.line([(x - 1.9 * sq, y + 1.9), (x, y + .9), (x + 1.9 * sq, y + 1.9)], "P2", .55, tm=(0, 1))  # outer crescent -> G (eyes:color2)
                 if st == "lashes" or (st == "wink"): cv.line([(x + 2.2 * sq * (1 if az > 0 else -1), y + .3), (x + 3.0 * sq * (1 if az > 0 else -1), y - .4)], INK[3], .6)
                 continue
             rx, ry = {"round": (2.4, 3.1), "sparkle": (2.7, 3.4), "sleepy": (2.4, 2.9), "cat": (2.5, 3.0), "button": (1.3, 1.4), "lashes": (2.4, 3.1), "wide": (2.9, 3.3), "wink": (2.4, 3.1)}[st]
             if st == "button":
                 cv.part(circle(p, rx * sq + .7, ry + .5), [NEU[2], NEU[3], NEU[3], NEU[3]], tm=(1, 0), lw=.45, flat=True, ink=INK[3])  # tinted ring
+                iris_ring(cv, p, rx * sq + .7, ry + .5)   # outer rim of the button -> G (eyes:color2)
                 cv.fill(circle(p, rx * sq * .62 + .1, ry * .62 + .1), INK[3], tm=(0, 0)); cv.fill(circle((x - .4, y - .5), .45), (255, 255, 255), tm=(0, 0)); continue
             if st == "wide":
                 cv.part(circle(p, rx * sq, ry, wob=.02), "cloth_cream", lw=.6, shade=.15, hl=0, ink=INK[3])
