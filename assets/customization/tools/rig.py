@@ -198,6 +198,7 @@ class MCanvas(Canvas):
             s._upd(m_im, tm, ring=kw.get("outline", True))
             if s.detail and tuple(tm) != (0, 0): s._wear_detail(m_im, tuple(tm))
         return m_im
+    no_g = False    # True while drawing parts that must stay primary-only (scalp cover)
     detail = None   # slot name while drawing hair/wearables: surface detail pass (wear_detail, mostly visible at @2x)
     def _wear_detail(s, m_im, tm):
         """Deterministic surface detail inside a tinted part, in part-local coords (stable across frames). Periods of
@@ -217,6 +218,11 @@ class MCanvas(Canvas):
             k -= .06 * np.clip(v - .55, 0, 1) * 2 * er                                    # shading toward the ends
             clu = (np.sin(xx / (5 * SS) * 2 * np.pi + v * 3) > .92)
             k -= .08 * clu * er                                                           # cluster partings
+            if tm == (1, 0) and not s.no_g and h >= 4 * SS:                               # two-tone: tint G (secondary hair colour)
+                tip = np.clip((v - .70) / .10, 0, 1)                                      # tips: lower ~25% of each lock/part
+                stk = ((np.sin(xx / (6.5 * SS) * 2 * np.pi + 1.1) > .88) & (v > .12)).astype(np.float32)  # thin streaks
+                g = np.maximum(tip, stk) * m; sub = s.tm[y0:y1, x0:x1]
+                sub[:] = sub * (1 - g)[..., None] + np.array((0, 1), np.float32) * g[..., None]
         else:
             tw = (((xx + yy) // 2) % 4 < 2)                                               # twill weave (2 SS px = 1 @2x px)
             k -= .045 * tw * er

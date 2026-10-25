@@ -2,7 +2,7 @@
 set c.extra (drawn after the front-arm cut, e.g. front sleeves). 'P'/'S' ramps = tint mask R/G (neutral art)."""
 import math
 import numpy as np
-from PIL import ImageChops
+from PIL import Image, ImageChops
 from rig import NECK, circle, hull, NEU, NEU_INK, ramp, ellipse_pts, capsule_pts
 
 INK = ramp("ink")
@@ -278,7 +278,7 @@ def scalp_cover(c, rk=1.035):
             e = math.radians(el); vis = math.cos(e) * (math.sin(math.radians(az)) * sd + fr * vf) + math.sin(e) * .55
             if vis < -.02: continue
             p, _ = c.sph(az, el, rk); pts.append(circle(p, 1.2))
-    if pts: cv.part(None, "P", mask=cv.mask_from(pts), lw=1.0, shade=.2, hl=.1)
+    if pts: cv.no_g = True; cv.part(None, "P", mask=cv.mask_from(pts), lw=1.0, shade=.2, hl=.1); cv.no_g = False
 def eye_clear(c):
     """bangs/fringe never cover the eyes on front and 3/4 facings: cut the hair layer above the eye line, inked rim"""
     if fv(c) < -.3: return
@@ -836,6 +836,11 @@ def draw_face(c, spec):
     c.add(hv(c) + 2.5, lifted(c, f))
 
 # ============================================================ EYES  tint R = clothingColors (iris)
+def iris_ring(cv, p, rx, ry):
+    """Outer iris ring -> tint G (secondary eye colour, ADR-130 eyes:color2); inner iris stays R."""
+    o = np.asarray(cv.mask_from(circle(p, rx, ry)), np.float32); i = np.asarray(cv.mask_from(circle(p, rx * .62, ry * .66)), np.float32)
+    cv._upd(Image.fromarray(np.clip(o - i, 0, 255).astype(np.uint8)), (0, 1), ring=False)
+
 def draw_eyes(c, spec):
     st = spec["style"]; cv = c.cv
     def f():
@@ -874,10 +879,12 @@ def draw_eyes(c, spec):
             if st == "wide":
                 cv.part(circle(p, rx * sq, ry, wob=.02), "cloth_cream", lw=.6, shade=.15, hl=0, ink=INK[3])
                 cv.part(circle((x + .2 * sq, y + .3), 1.6 * sq, 2.0), "P", lw=.4, ink=INK[3], shade=.3, hl=0)
+                iris_ring(cv, (x + .2 * sq, y + .3), 1.6 * sq, 2.0)
                 cv.fill(circle((x + .2 * sq, y + .4), .8 * sq, 1.0), INK[3]); cv.fill(circle((x - .5 * sq, y - .6), .5), (255, 255, 255))
                 continue
             # iris (tinted) + pupil + shine
             cv.part(circle(p, rx * sq, ry, wob=0), [NEU[2], NEU[3], NEU[3], NEU[3]], tm=(1, 0), lw=.5, flat=True, ink=INK[3])
+            iris_ring(cv, p, rx * sq, ry)
             if st == "cat":
                 cv.fill(circle((x, y + .1), .55 * sq, ry * .8), INK[3])
             else:

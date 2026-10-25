@@ -18,7 +18,7 @@ CLOTH = [("white", "#f4f0e8"), ("cream", "#efe0bc"), ("charcoal", "#4a4250"), ("
 W = []   # (key, slot, spec, extra-manifest)
 def add(key, slot, spec, **kw): W.append((key, slot, spec, kw))
 for s in ["buzz", "pixie", "bob", "long", "ponytail", "pigtails", "bun", "afro", "spiky", "mohawk", "braid", "curtains", "curly", "sidepart"]:
-    add("hair_" + s, "hair", {"style": s}, tint=1, hatHair=True)
+    add("hair_" + s, "hair", {"style": s}, tint=2, hatHair=True)
 HATS = [("straw", 1), ("beanie", 2), ("cap", 2), ("cowboy", 2), ("top_hat", 2), ("bucket", 2), ("wizard", 2), ("frog_hood", 2),
         ("viking", 2), ("mushroom_cap", 2), ("chef", 2)]
 for s, t in HATS:
@@ -51,10 +51,10 @@ ACC = [("round_glasses", 1, 36), ("sunglasses", 1, 36), ("eyepatch", 1, 36), ("s
 for k, t, l in ACC: add("acc_" + k, "accessory", {"style": k}, tint=t, layer=l)
 for k in ["smile", "grin", "freckles", "moustache", "beard", "cat", "bushy", "tongue", "stubble"]: add("face_" + k, "face", {"style": k}, tint=1)
 for k in ["round", "sparkle", "sleepy", "happy", "cat", "button", "lashes", "wide", "wink"]:
-    add("eyes_" + k, "eyes", {"style": k}, tint=1)
+    add("eyes_" + k, "eyes", {"style": k}, tint=2)
 LAYER = dict(shoes=19, bottom=18, top=20, accessory=30, face=32, eyes=34, hair=40, hat=50)
 # ---- ADR-114 starter wearables (append-only; no unlock tags -> listed in the creator for everyone)
-for s in ["wavy", "topknot", "space_buns", "shag"]: add("hair_" + s, "hair", {"style": s}, tint=1, hatHair=True)
+for s in ["wavy", "topknot", "space_buns", "shag"]: add("hair_" + s, "hair", {"style": s}, tint=2, hatHair=True)
 for k in ["goatee", "long_beard", "chops", "rosy"]: add("face_" + k, "face", {"style": k}, tint=1)
 for k, v in {"henley": dict(sleeve="long", collar="round", buttons=True, cuff=True), "striped_tee": dict(sleeve="short", style="stripes", collar="round"),
              "polo": dict(sleeve="short", collar="v", buttons=True), "cardigan": dict(sleeve="long", open=True, buttons=True, cuff=True, grow=1.2)}.items():

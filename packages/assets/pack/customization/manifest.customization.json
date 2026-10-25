@@ -798,292 +798,6 @@
    }
   },
   {
-   "key": "cz_wr_face_beard",
-   "image": "atlases/cz_wr_face_beard.png",
-   "frameW": 704,
-   "frameH": 472,
-   "columns": 1,
-   "rows": 1,
-   "pages": [
-    {
-     "scale": 2,
-     "image": "atlases/cz_wr_face_beard@2x.png",
-     "ktx2": "atlases/cz_wr_face_beard@2x.ktx2"
-    }
-   ],
-   "masks": {
-    "tintmask": "atlases/cz_wr_face_beard.tintmask.png"
-   },
-   "ktx2": "atlases/cz_wr_face_beard.ktx2",
-   "masksKtx2": {
-    "tintmask": "atlases/cz_wr_face_beard.tintmask.ktx2"
-   }
-  },
-  {
-   "key": "cz_wr_face_bushy",
-   "image": "atlases/cz_wr_face_bushy.png",
-   "frameW": 200,
-   "frameH": 272,
-   "columns": 1,
-   "rows": 1,
-   "pages": [
-    {
-     "scale": 2,
-     "image": "atlases/cz_wr_face_bushy@2x.png",
-     "ktx2": "atlases/cz_wr_face_bushy@2x.ktx2"
-    }
-   ],
-   "masks": {
-    "tintmask": "atlases/cz_wr_face_bushy.tintmask.png"
-   },
-   "ktx2": "atlases/cz_wr_face_bushy.ktx2",
-   "masksKtx2": {
-    "tintmask": "atlases/cz_wr_face_bushy.tintmask.ktx2"
-   }
-  },
-  {
-   "key": "cz_wr_face_cat",
-   "image": "atlases/cz_wr_face_cat.png",
-   "frameW": 136,
-   "frameH": 440,
-   "columns": 1,
-   "rows": 1,
-   "pages": [
-    {
-     "scale": 2,
-     "image": "atlases/cz_wr_face_cat@2x.png",
-     "ktx2": "atlases/cz_wr_face_cat@2x.ktx2"
-    }
-   ],
-   "masks": {
-    "tintmask": "atlases/cz_wr_face_cat.tintmask.png"
-   },
-   "ktx2": "atlases/cz_wr_face_cat.ktx2",
-   "masksKtx2": {
-    "tintmask": "atlases/cz_wr_face_cat.tintmask.ktx2"
-   }
-  },
-  {
-   "key": "cz_wr_face_chops",
-   "image": "atlases/cz_wr_face_chops.png",
-   "frameW": 728,
-   "frameH": 312,
-   "columns": 1,
-   "rows": 1,
-   "pages": [
-    {
-     "scale": 2,
-     "image": "atlases/cz_wr_face_chops@2x.png",
-     "ktx2": "atlases/cz_wr_face_chops@2x.ktx2"
-    }
-   ],
-   "masks": {
-    "tintmask": "atlases/cz_wr_face_chops.tintmask.png"
-   },
-   "ktx2": "atlases/cz_wr_face_chops.ktx2",
-   "masksKtx2": {
-    "tintmask": "atlases/cz_wr_face_chops.tintmask.ktx2"
-   }
-  },
-  {
-   "key": "cz_wr_face_freckles",
-   "image": "atlases/cz_wr_face_freckles.png",
-   "frameW": 328,
-   "frameH": 192,
-   "columns": 1,
-   "rows": 1,
-   "pages": [
-    {
-     "scale": 2,
-     "image": "atlases/cz_wr_face_freckles@2x.png",
-     "ktx2": "atlases/cz_wr_face_freckles@2x.ktx2"
-    }
-   ],
-   "masks": {
-    "tintmask": "atlases/cz_wr_face_freckles.tintmask.png"
-   },
-   "ktx2": "atlases/cz_wr_face_freckles.ktx2",
-   "masksKtx2": {
-    "tintmask": "atlases/cz_wr_face_freckles.tintmask.ktx2"
-   }
-  },
-  {
-   "key": "cz_wr_face_goatee",
-   "image": "atlases/cz_wr_face_goatee.png",
-   "frameW": 608,
-   "frameH": 224,
-   "columns": 1,
-   "rows": 1,
-   "pages": [
-    {
-     "scale": 2,
-     "image": "atlases/cz_wr_face_goatee@2x.png",
-     "ktx2": "atlases/cz_wr_face_goatee@2x.ktx2"
-    }
-   ],
-   "masks": {
-    "tintmask": "atlases/cz_wr_face_goatee.tintmask.png"
-   },
-   "ktx2": "atlases/cz_wr_face_goatee.ktx2",
-   "masksKtx2": {
-    "tintmask": "atlases/cz_wr_face_goatee.tintmask.ktx2"
-   }
-  },
-  {
-   "key": "cz_wr_face_grin",
-   "image": "atlases/cz_wr_face_grin.png",
-   "frameW": 608,
-   "frameH": 112,
-   "columns": 1,
-   "rows": 1,
-   "pages": [
-    {
-     "scale": 2,
-     "image": "atlases/cz_wr_face_grin@2x.png",
-     "ktx2": "atlases/cz_wr_face_grin@2x.ktx2"
-    }
-   ],
-   "masks": {
-    "tintmask": "atlases/cz_wr_face_grin.tintmask.png"
-   },
-   "ktx2": "atlases/cz_wr_face_grin.ktx2",
-   "masksKtx2": {
-    "tintmask": "atlases/cz_wr_face_grin.tintmask.ktx2"
-   }
-  },
-  {
-   "key": "cz_wr_face_long_beard",
-   "image": "atlases/cz_wr_face_long_beard.png",
-   "frameW": 520,
-   "frameH": 432,
-   "columns": 1,
-   "rows": 1,
-   "pages": [
-    {
-     "scale": 2,
-     "image": "atlases/cz_wr_face_long_beard@2x.png",
-     "ktx2": "atlases/cz_wr_face_long_beard@2x.ktx2"
-    }
-   ],
-   "masks": {
-    "tintmask": "atlases/cz_wr_face_long_beard.tintmask.png"
-   },
-   "ktx2": "atlases/cz_wr_face_long_beard.ktx2",
-   "masksKtx2": {
-    "tintmask": "atlases/cz_wr_face_long_beard.tintmask.ktx2"
-   }
-  },
-  {
-   "key": "cz_wr_face_moustache",
-   "image": "atlases/cz_wr_face_moustache.png",
-   "frameW": 224,
-   "frameH": 384,
-   "columns": 1,
-   "rows": 1,
-   "pages": [
-    {
-     "scale": 2,
-     "image": "atlases/cz_wr_face_moustache@2x.png",
-     "ktx2": "atlases/cz_wr_face_moustache@2x.ktx2"
-    }
-   ],
-   "masks": {
-    "tintmask": "atlases/cz_wr_face_moustache.tintmask.png"
-   },
-   "ktx2": "atlases/cz_wr_face_moustache.ktx2",
-   "masksKtx2": {
-    "tintmask": "atlases/cz_wr_face_moustache.tintmask.ktx2"
-   }
-  },
-  {
-   "key": "cz_wr_face_rosy",
-   "image": "atlases/cz_wr_face_rosy.png",
-   "frameW": 736,
-   "frameH": 80,
-   "columns": 1,
-   "rows": 1,
-   "pages": [
-    {
-     "scale": 2,
-     "image": "atlases/cz_wr_face_rosy@2x.png",
-     "ktx2": "atlases/cz_wr_face_rosy@2x.ktx2"
-    }
-   ],
-   "masks": {
-    "tintmask": "atlases/cz_wr_face_rosy.tintmask.png"
-   },
-   "ktx2": "atlases/cz_wr_face_rosy.ktx2",
-   "masksKtx2": {
-    "tintmask": "atlases/cz_wr_face_rosy.tintmask.ktx2"
-   }
-  },
-  {
-   "key": "cz_wr_face_smile",
-   "image": "atlases/cz_wr_face_smile.png",
-   "frameW": 584,
-   "frameH": 72,
-   "columns": 1,
-   "rows": 1,
-   "pages": [
-    {
-     "scale": 2,
-     "image": "atlases/cz_wr_face_smile@2x.png",
-     "ktx2": "atlases/cz_wr_face_smile@2x.ktx2"
-    }
-   ],
-   "masks": {
-    "tintmask": "atlases/cz_wr_face_smile.tintmask.png"
-   },
-   "ktx2": "atlases/cz_wr_face_smile.ktx2",
-   "masksKtx2": {
-    "tintmask": "atlases/cz_wr_face_smile.tintmask.ktx2"
-   }
-  },
-  {
-   "key": "cz_wr_face_stubble",
-   "image": "atlases/cz_wr_face_stubble.png",
-   "frameW": 296,
-   "frameH": 360,
-   "columns": 1,
-   "rows": 1,
-   "pages": [
-    {
-     "scale": 2,
-     "image": "atlases/cz_wr_face_stubble@2x.png",
-     "ktx2": "atlases/cz_wr_face_stubble@2x.ktx2"
-    }
-   ],
-   "masks": {
-    "tintmask": "atlases/cz_wr_face_stubble.tintmask.png"
-   },
-   "ktx2": "atlases/cz_wr_face_stubble.ktx2",
-   "masksKtx2": {
-    "tintmask": "atlases/cz_wr_face_stubble.tintmask.ktx2"
-   }
-  },
-  {
-   "key": "cz_wr_face_tongue",
-   "image": "atlases/cz_wr_face_tongue.png",
-   "frameW": 640,
-   "frameH": 112,
-   "columns": 1,
-   "rows": 1,
-   "pages": [
-    {
-     "scale": 2,
-     "image": "atlases/cz_wr_face_tongue@2x.png",
-     "ktx2": "atlases/cz_wr_face_tongue@2x.ktx2"
-    }
-   ],
-   "masks": {
-    "tintmask": "atlases/cz_wr_face_tongue.tintmask.png"
-   },
-   "ktx2": "atlases/cz_wr_face_tongue.ktx2",
-   "masksKtx2": {
-    "tintmask": "atlases/cz_wr_face_tongue.tintmask.ktx2"
-   }
-  },
-  {
    "key": "cz_wr_hair_afro_female",
    "image": "atlases/cz_wr_hair_afro_female.png",
    "frameW": 928,
@@ -1851,6 +1565,292 @@
    "ktx2": "atlases/cz_wr_hair_wavy_male.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_hair_wavy_male.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "cz_wr_face_beard",
+   "image": "atlases/cz_wr_face_beard.png",
+   "frameW": 704,
+   "frameH": 472,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/cz_wr_face_beard@2x.png",
+     "ktx2": "atlases/cz_wr_face_beard@2x.ktx2"
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/cz_wr_face_beard.tintmask.png"
+   },
+   "ktx2": "atlases/cz_wr_face_beard.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/cz_wr_face_beard.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "cz_wr_face_bushy",
+   "image": "atlases/cz_wr_face_bushy.png",
+   "frameW": 200,
+   "frameH": 272,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/cz_wr_face_bushy@2x.png",
+     "ktx2": "atlases/cz_wr_face_bushy@2x.ktx2"
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/cz_wr_face_bushy.tintmask.png"
+   },
+   "ktx2": "atlases/cz_wr_face_bushy.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/cz_wr_face_bushy.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "cz_wr_face_cat",
+   "image": "atlases/cz_wr_face_cat.png",
+   "frameW": 136,
+   "frameH": 440,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/cz_wr_face_cat@2x.png",
+     "ktx2": "atlases/cz_wr_face_cat@2x.ktx2"
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/cz_wr_face_cat.tintmask.png"
+   },
+   "ktx2": "atlases/cz_wr_face_cat.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/cz_wr_face_cat.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "cz_wr_face_chops",
+   "image": "atlases/cz_wr_face_chops.png",
+   "frameW": 728,
+   "frameH": 312,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/cz_wr_face_chops@2x.png",
+     "ktx2": "atlases/cz_wr_face_chops@2x.ktx2"
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/cz_wr_face_chops.tintmask.png"
+   },
+   "ktx2": "atlases/cz_wr_face_chops.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/cz_wr_face_chops.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "cz_wr_face_freckles",
+   "image": "atlases/cz_wr_face_freckles.png",
+   "frameW": 328,
+   "frameH": 192,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/cz_wr_face_freckles@2x.png",
+     "ktx2": "atlases/cz_wr_face_freckles@2x.ktx2"
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/cz_wr_face_freckles.tintmask.png"
+   },
+   "ktx2": "atlases/cz_wr_face_freckles.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/cz_wr_face_freckles.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "cz_wr_face_goatee",
+   "image": "atlases/cz_wr_face_goatee.png",
+   "frameW": 608,
+   "frameH": 224,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/cz_wr_face_goatee@2x.png",
+     "ktx2": "atlases/cz_wr_face_goatee@2x.ktx2"
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/cz_wr_face_goatee.tintmask.png"
+   },
+   "ktx2": "atlases/cz_wr_face_goatee.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/cz_wr_face_goatee.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "cz_wr_face_grin",
+   "image": "atlases/cz_wr_face_grin.png",
+   "frameW": 608,
+   "frameH": 112,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/cz_wr_face_grin@2x.png",
+     "ktx2": "atlases/cz_wr_face_grin@2x.ktx2"
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/cz_wr_face_grin.tintmask.png"
+   },
+   "ktx2": "atlases/cz_wr_face_grin.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/cz_wr_face_grin.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "cz_wr_face_long_beard",
+   "image": "atlases/cz_wr_face_long_beard.png",
+   "frameW": 520,
+   "frameH": 432,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/cz_wr_face_long_beard@2x.png",
+     "ktx2": "atlases/cz_wr_face_long_beard@2x.ktx2"
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/cz_wr_face_long_beard.tintmask.png"
+   },
+   "ktx2": "atlases/cz_wr_face_long_beard.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/cz_wr_face_long_beard.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "cz_wr_face_moustache",
+   "image": "atlases/cz_wr_face_moustache.png",
+   "frameW": 224,
+   "frameH": 384,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/cz_wr_face_moustache@2x.png",
+     "ktx2": "atlases/cz_wr_face_moustache@2x.ktx2"
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/cz_wr_face_moustache.tintmask.png"
+   },
+   "ktx2": "atlases/cz_wr_face_moustache.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/cz_wr_face_moustache.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "cz_wr_face_rosy",
+   "image": "atlases/cz_wr_face_rosy.png",
+   "frameW": 736,
+   "frameH": 80,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/cz_wr_face_rosy@2x.png",
+     "ktx2": "atlases/cz_wr_face_rosy@2x.ktx2"
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/cz_wr_face_rosy.tintmask.png"
+   },
+   "ktx2": "atlases/cz_wr_face_rosy.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/cz_wr_face_rosy.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "cz_wr_face_smile",
+   "image": "atlases/cz_wr_face_smile.png",
+   "frameW": 584,
+   "frameH": 72,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/cz_wr_face_smile@2x.png",
+     "ktx2": "atlases/cz_wr_face_smile@2x.ktx2"
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/cz_wr_face_smile.tintmask.png"
+   },
+   "ktx2": "atlases/cz_wr_face_smile.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/cz_wr_face_smile.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "cz_wr_face_stubble",
+   "image": "atlases/cz_wr_face_stubble.png",
+   "frameW": 296,
+   "frameH": 360,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/cz_wr_face_stubble@2x.png",
+     "ktx2": "atlases/cz_wr_face_stubble@2x.ktx2"
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/cz_wr_face_stubble.tintmask.png"
+   },
+   "ktx2": "atlases/cz_wr_face_stubble.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/cz_wr_face_stubble.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "cz_wr_face_tongue",
+   "image": "atlases/cz_wr_face_tongue.png",
+   "frameW": 640,
+   "frameH": 112,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/cz_wr_face_tongue@2x.png",
+     "ktx2": "atlases/cz_wr_face_tongue@2x.ktx2"
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/cz_wr_face_tongue.tintmask.png"
+   },
+   "ktx2": "atlases/cz_wr_face_tongue.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/cz_wr_face_tongue.tintmask.ktx2"
    }
   },
   {
@@ -2198991,7 +2198991,7 @@
    },
    "layer": 40,
    "z": 0,
-   "tintChannels": 1,
+   "tintChannels": 2,
    "hidesSlots": [],
    "hatHair": false,
    "unlockTags": [],
@@ -2199018,7 +2199018,7 @@
    },
    "layer": 40,
    "z": 0,
-   "tintChannels": 1,
+   "tintChannels": 2,
    "hidesSlots": [],
    "hatHair": false,
    "unlockTags": [],
@@ -2199045,7 +2199045,7 @@
    },
    "layer": 40,
    "z": 0,
-   "tintChannels": 1,
+   "tintChannels": 2,
    "hidesSlots": [],
    "hatHair": false,
    "unlockTags": [],
@@ -2199072,7 +2199072,7 @@
    },
    "layer": 40,
    "z": 0,
-   "tintChannels": 1,
+   "tintChannels": 2,
    "hidesSlots": [],
    "hatHair": false,
    "unlockTags": [],
@@ -2199099,7 +2199099,7 @@
    },
    "layer": 40,
    "z": 0,
-   "tintChannels": 1,
+   "tintChannels": 2,
    "hidesSlots": [],
    "hatHair": false,
    "unlockTags": [],
@@ -2199126,7 +2199126,7 @@
    },
    "layer": 40,
    "z": 0,
-   "tintChannels": 1,
+   "tintChannels": 2,
    "hidesSlots": [],
    "hatHair": false,
    "unlockTags": [],
@@ -2199153,7 +2199153,7 @@
    },
    "layer": 40,
    "z": 0,
-   "tintChannels": 1,
+   "tintChannels": 2,
    "hidesSlots": [],
    "hatHair": false,
    "unlockTags": [],
@@ -2199180,7 +2199180,7 @@
    },
    "layer": 40,
    "z": 0,
-   "tintChannels": 1,
+   "tintChannels": 2,
    "hidesSlots": [],
    "hatHair": false,
    "unlockTags": [],
@@ -2199207,7 +2199207,7 @@
    },
    "layer": 40,
    "z": 0,
-   "tintChannels": 1,
+   "tintChannels": 2,
    "hidesSlots": [],
    "hatHair": false,
    "unlockTags": [],
@@ -2199234,7 +2199234,7 @@
    },
    "layer": 40,
    "z": 0,
-   "tintChannels": 1,
+   "tintChannels": 2,
    "hidesSlots": [],
    "hatHair": false,
    "unlockTags": [],
@@ -2199261,7 +2199261,7 @@
    },
    "layer": 40,
    "z": 0,
-   "tintChannels": 1,
+   "tintChannels": 2,
    "hidesSlots": [],
    "hatHair": false,
    "unlockTags": [],
@@ -2199288,7 +2199288,7 @@
    },
    "layer": 40,
    "z": 0,
-   "tintChannels": 1,
+   "tintChannels": 2,
    "hidesSlots": [],
    "hatHair": false,
    "unlockTags": [],
@@ -2199315,7 +2199315,7 @@
    },
    "layer": 40,
    "z": 0,
-   "tintChannels": 1,
+   "tintChannels": 2,
    "hidesSlots": [],
    "hatHair": false,
    "unlockTags": [],
@@ -2199342,7 +2199342,7 @@
    },
    "layer": 40,
    "z": 0,
-   "tintChannels": 1,
+   "tintChannels": 2,
    "hidesSlots": [],
    "hatHair": false,
    "unlockTags": [],
@@ -2201006,7 +2201006,7 @@
    },
    "layer": 34,
    "z": 0,
-   "tintChannels": 1,
+   "tintChannels": 2,
    "hidesSlots": [],
    "hatHair": false,
    "unlockTags": [],
@@ -2201033,7 +2201033,7 @@
    },
    "layer": 34,
    "z": 0,
-   "tintChannels": 1,
+   "tintChannels": 2,
    "hidesSlots": [],
    "hatHair": false,
    "unlockTags": [
@@ -2201062,7 +2201062,7 @@
    },
    "layer": 34,
    "z": 0,
-   "tintChannels": 1,
+   "tintChannels": 2,
    "hidesSlots": [],
    "hatHair": false,
    "unlockTags": [],
@@ -2201089,7 +2201089,7 @@
    },
    "layer": 34,
    "z": 0,
-   "tintChannels": 1,
+   "tintChannels": 2,
    "hidesSlots": [],
    "hatHair": false,
    "unlockTags": [],
@@ -2201116,7 +2201116,7 @@
    },
    "layer": 34,
    "z": 0,
-   "tintChannels": 1,
+   "tintChannels": 2,
    "hidesSlots": [],
    "hatHair": false,
    "unlockTags": [],
@@ -2201143,7 +2201143,7 @@
    },
    "layer": 34,
    "z": 0,
-   "tintChannels": 1,
+   "tintChannels": 2,
    "hidesSlots": [],
    "hatHair": false,
    "unlockTags": [],
@@ -2201170,7 +2201170,7 @@
    },
    "layer": 34,
    "z": 0,
-   "tintChannels": 1,
+   "tintChannels": 2,
    "hidesSlots": [],
    "hatHair": false,
    "unlockTags": [],
@@ -2201197,7 +2201197,7 @@
    },
    "layer": 34,
    "z": 0,
-   "tintChannels": 1,
+   "tintChannels": 2,
    "hidesSlots": [],
    "hatHair": false,
    "unlockTags": [],
@@ -2201224,7 +2201224,7 @@
    },
    "layer": 34,
    "z": 0,
-   "tintChannels": 1,
+   "tintChannels": 2,
    "hidesSlots": [],
    "hatHair": false,
    "unlockTags": [],
@@ -2201257,7 +2201257,7 @@
    },
    "layer": 40,
    "z": 0,
-   "tintChannels": 1,
+   "tintChannels": 2,
    "hidesSlots": [],
    "hatHair": false,
    "unlockTags": [],
@@ -2201284,7 +2201284,7 @@
    },
    "layer": 40,
    "z": 0,
-   "tintChannels": 1,
+   "tintChannels": 2,
    "hidesSlots": [],
    "hatHair": false,
    "unlockTags": [],
@@ -2201311,7 +2201311,7 @@
    },
    "layer": 40,
    "z": 0,
-   "tintChannels": 1,
+   "tintChannels": 2,
    "hidesSlots": [],
    "hatHair": false,
    "unlockTags": [],
@@ -2201338,7 +2201338,7 @@
    },
    "layer": 40,
    "z": 0,
-   "tintChannels": 1,
+   "tintChannels": 2,
    "hidesSlots": [],
    "hatHair": false,
    "unlockTags": [],
