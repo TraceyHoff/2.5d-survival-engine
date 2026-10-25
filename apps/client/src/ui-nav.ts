@@ -11,7 +11,7 @@
  * Spatial moves use @engine/input's FocusManager over element rects; with no layout (all rects empty) they fall back to DOM order.
  */
 import { FocusManager, type Dir } from "@engine/input";
-import { BackHistory, focusVisible } from "./back-history.js";
+import { BackHistory, focusVisible, markNavFocus } from "./back-history.js";
 
 export interface ContextStack { push(name: string): void; pop(name?: string): void; isActive?(name: string): boolean }
 /** Input contexts in which Esc belongs to the game (Build.Cancel / Road.Cancel, ADR-122), not the pause menu. */
@@ -102,11 +102,13 @@ export class UINav {
 
   /** Linear (Tab order) move, wrapping inside the top modal. */
   step(delta: number): HTMLElement | undefined {
+    markNavFocus();
     const f = this.focusables(); if (!f.length) return undefined;
     const i = this.focused ? f.indexOf(this.focused) : -1; const n = f[i < 0 ? (delta > 0 ? 0 : f.length - 1) : (i + delta + f.length) % f.length]!; focusVisible(n); return n;
   }
   /** Spatial move (arrows / D-pad / stick). */
   move(dir: Dir): HTMLElement | undefined {
+    markNavFocus();
     const f = this.focusables(); if (!f.length) return undefined;
     const cur = this.focused; if (!cur) { focusVisible(f[0]); return f[0]; }
     const rects = f.map((e) => e.getBoundingClientRect());

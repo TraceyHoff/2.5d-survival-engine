@@ -16,6 +16,8 @@ export interface BuildHudOptions {
 }
 interface LayoutEl { kind: string; anchor: { x: number; y: number }; radius?: number; zone?: { x: number; y: number; w: number; h: number } }
 /** Hit test against a touch layout (normalised anchors/zones; radii in reference px scaled to the viewport). */
+/** Build strip top on narrow screens: below the vitals panel (≈98 px) and the menu bar. */
+export const NARROW_TOP_PX = 106;
 export function onTouchControl(layout: { reference?: { w: number; h: number }; elements: readonly LayoutEl[] }, x: number, y: number, w: number, h: number): boolean {
   const ref = layout.reference ?? { w: 844, h: 390 }; const k = Math.min(w / ref.w, h / ref.h);
   return layout.elements.some((e) => e.zone ? x >= e.zone.x * w && x <= (e.zone.x + e.zone.w) * w && y >= e.zone.y * h && y <= (e.zone.y + e.zone.h) * h
@@ -49,11 +51,14 @@ export function renderBuildHud(bm: BuildMode, device: BuildDevice): string {
 export function mountBuildHud(root: HTMLElement, o: BuildHudOptions): { update(): void; destroy(): void; el: HTMLElement } {
   const el = document.createElement("div"); el.className = "build-hud"; el.hidden = true; root.append(el);
   const style = document.createElement("style");
+  // ADR-142: on phones (≤640 px wide) the top centre is taken by the vitals panel + menu bar: drop the strip below them
   style.textContent = `.build-hud{position:absolute;left:50%;top:calc(8px + env(safe-area-inset-top));transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;z-index:30;font:13px system-ui,sans-serif;color:#eee;pointer-events:none}
 .build-hud .bh-chip,.build-hud .bh-ctx{display:flex;gap:6px;align-items:center;background:rgba(15,18,22,.82);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:4px 8px;pointer-events:auto}
 .build-hud button{min-width:36px;min-height:32px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:#2a3038;color:#eee;font:inherit;cursor:pointer}
 .build-hud button:disabled{opacity:.45}.build-hud button.armed{background:#8a2020}.build-hud kbd{font-size:11px;opacity:.75;margin-left:4px}
-.build-hud .bh-title{opacity:.85;margin-right:4px}.bh-dot.ok{color:#6d6}.bh-dot.bad{color:#e66}.bh-why{color:#f99;font-size:12px}.bh-hint,.bh-toast{background:rgba(15,18,22,.7);border-radius:8px;padding:2px 8px}`;
+.build-hud .bh-title{opacity:.85;margin-right:4px}.bh-dot.ok{color:#6d6}.bh-dot.bad{color:#e66}.bh-why{color:#f99;font-size:12px}.bh-hint,.bh-toast{background:rgba(15,18,22,.7);border-radius:8px;padding:2px 8px}
+.build-hud .bh-chip,.build-hud .bh-ctx{max-width:calc(100vw - 16px);flex-wrap:wrap;justify-content:center}
+@media (max-width:640px){.build-hud{top:calc(${NARROW_TOP_PX}px + env(safe-area-inset-top))}}`;
   root.append(style);
   let last = "";
   el.addEventListener("click", (e) => {

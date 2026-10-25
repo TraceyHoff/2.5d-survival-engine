@@ -1,3 +1,4 @@
+import { markNavFocus } from "./back-history.js";
 import { lastPlayedKey } from "./delete-progress.js";
 import { CHAT_TAG, chatLine, chatSender } from "./chat-line.js";
 import { intentPayload } from "./send-intent.js";
@@ -189,8 +190,11 @@ const buildHud = mountBuildHud(root, { buildMode, device: () => promptDevice(), 
   screenToWorld: (x, y) => iso ? iso.renderer.camera.cssToWorld(x, y) : screenToWorld(x - innerWidth / 2 + cam.sx, y - innerHeight / 2 + cam.sy),
   blocked: (x, y) => onTouchControl(buildTouchLayout, x, y, innerWidth, innerHeight) });
 const buildTouchLayout = { ...DEFAULT_TOUCH_LAYOUTS.building, elements: DEFAULT_TOUCH_LAYOUTS.building.elements.filter((e) => !MENU_BAR_IDS.has(e.id)) };
+/** ADR-142: ?dev=sandbox exposes read-only QA handles (build preview, world, player) for automated browser tests. */
+if (params.get("dev") === "sandbox") (window as { __qa?: unknown }).__qa = { buildMode, world: () => world, player: () => session.player, menus: () => menus, pos: () => { const p = session.player; const t = p !== undefined ? world.get(p, Transform) : undefined; return t ? { x: t.x, y: t.y } : undefined; } };
 /** Per input update: build mode, and the shared Interact action (E / pad X / touch interact) opening stall / wardrobe panels. */
 function onUiFrame(): void {
+  if (promptDevice() === "gamepad") markNavFocus(); // ADR-142: pad users get a visible menu focus ring
   if (menus?.nav.isOpen) { buildMode.stop(); return; }
   if (buildMode.active) { worldTools?.road(0); buildMode.update(); buildHud.update(); return; }
   buildHud.update();
