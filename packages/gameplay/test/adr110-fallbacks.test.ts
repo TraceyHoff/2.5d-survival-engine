@@ -5,7 +5,8 @@ import { addItem, animalDefs, CLUTTER_KEYS, cropSpriteKey, FARMING, FarmFailed, 
 import { makeWorld } from "./helpers.js";
 
 const pack = JSON.parse(readFileSync(new URL("../../assets/pack/manifest.json", import.meta.url), "utf8")) as { sprites: Record<string, unknown> | { key: string }[] };
-const PACK = new Set(Array.isArray(pack.sprites) ? pack.sprites.map((s) => s.key) : Object.keys(pack.sprites));
+const nature = JSON.parse(readFileSync(new URL("../../assets/pack/nature/manifest.nature.json", import.meta.url), "utf8")) as { sprites: { key: string }[] }; // ADR-145/146: real animal/pet art lives in the nature sub-pack
+const PACK = new Set([...(Array.isArray(pack.sprites) ? pack.sprites.map((s) => s.key) : Object.keys(pack.sprites)), ...nature.sprites.map((s) => s.key)]);
 const has = (k: string): boolean => PACK.has(k);
 
 describe("ADR-110 sprite / icon fallbacks", () => {
@@ -22,10 +23,11 @@ describe("ADR-110 sprite / icon fallbacks", () => {
   });
   it("real art wins; fallbacks tint / scale; stages scale up", () => {
     expect(resolveSprite("oak_tree", has)).toEqual({ key: "oak_tree", tint: 0, scale: 1 });
-    const bear = resolveSprite("animal_bear", has)!; expect(bear.key).toBe("animal_boar"); expect(bear.scale).toBeGreaterThan(1); expect(bear.tint).not.toBe(0);
+    const bear = resolveSprite("animal_bear", (k) => k !== "animal_bear" && has(k))!; expect(bear.key).toBe("animal_boar"); expect(bear.scale).toBeGreaterThan(1); expect(bear.tint).not.toBe(0);
     expect(resolveSprite("animal_bear", (k) => k === "animal_bear" || has(k))).toEqual({ key: "animal_bear", tint: 0, scale: 1 });
     const kind = FARMING.plantables.findIndex((p) => p.type === "crop") + 1;
-    const s0 = resolveSprite(cropSpriteKey(kind, 0), has)!, s3 = resolveSprite(cropSpriteKey(kind, 3), has)!;
+    const noArt = (k: string): boolean => k !== cropSpriteKey(kind, 0) && k !== cropSpriteKey(kind, 3) && has(k); // fallback path even where nature now has real stage art
+    const s0 = resolveSprite(cropSpriteKey(kind, 0), noArt)!, s3 = resolveSprite(cropSpriteKey(kind, 3), noArt)!;
     expect(s0.scale).toBeLessThan(s3.scale);
     expect(mulTint(0xff0000ff, 0x80ffffff) >>> 0).toBe(0x800000ff);
     expect(resolveSprite("no_such_thing", has)).toBeUndefined();

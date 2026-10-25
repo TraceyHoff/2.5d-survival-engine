@@ -26,6 +26,12 @@ describe("pets (ADR-145)", () => {
     expect(G.interactPanel(c)).toBeUndefined();
     w.set(crate, Transform, { x: -2.5, y: 0 }); expect(G.interactPanel(c)).toEqual({ panel: "pet", pet: a });
   });
+  it("ADR-146: a pet on Stay sits (AnimState Sit) when idle; Follow does not", () => {
+    const { w, p, id } = setup(); const a = G.spawnAnimal(w, "animal_dog_dachshund", 1, 0); tame(w, p, a, id("dog_biscuit")); expect(w.has(a, G.Pet)).toBe(true);
+    expect(G.petSits(w, a)).toBe(false); expect(G.setPetCommand(w, p, a, 1)).toBe(G.PetFail.None); expect(G.petSits(w, a)).toBe(true);
+    steps(w, 40); expect(w.getField(a, G.AnimState, "anim")).toBe(G.Anim.Sit);
+    G.setPetCommand(w, p, a, 0); steps(w, 40); expect(w.getField(a, G.AnimState, "anim")).not.toBe(G.Anim.Sit);
+  });
   it("hated treat is refused and kept; a loved treat tames (owner, 6-slot bag, follow)", () => {
     const { w, p, id } = setup(); const a = G.spawnAnimal(w, "animal_dog_dachshund", 1, 0);
     G.addItem(w, p, id("seed_mix"), 1); expect(G.offerTreat(w, p, a, id("seed_mix")).result).toBe(G.PetResult.Refused); expect(G.countItem(w, p, id("seed_mix"))).toBe(1);

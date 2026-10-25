@@ -125,6 +125,20 @@ describe("vehicle_items sub-manifest", () => {
   });
 });
 
+describe("nature sub-manifest: pets (ADR-145/146)", () => {
+  const nm = JSON.parse(readFileSync(dir + "nature/manifest.nature.json", "utf8"));
+  const sp = (k: string) => nm.sprites.find((x: { key: string }) => x.key === k);
+  it("pet_trough has a local crack overlay with stage1..3 on a 3-frame atlas matching the trough frame size", () => {
+    const t = sp("pet_trough"); expect(t.building.crackOverlay).toBe("pet_trough_crack");
+    const c = sp("pet_trough_crack"); for (const st of ["stage1", "stage2", "stage3"]) expect(c.animations[st].frames.length).toBe(1);
+    const a = nm.atlases.find((x: { key: string }) => x.key === c.atlas); const ta = nm.atlases.find((x: { key: string }) => x.key === t.atlas);
+    expect([a.frameW, a.frameH, a.columns * a.rows]).toEqual([ta.frameW, ta.frameH, 3]);
+  });
+  it("the unused animals_small main-pack atlas is gone", () => {
+    expect(JSON.parse(readFileSync(dir + "manifest.json", "utf8")).atlases.some((a: { key: string }) => a.key === "animals_small")).toBe(false);
+  });
+});
+
 describe("building sub-manifest", () => {
   const bdir = dir + "building/";
   const bm = JSON.parse(readFileSync(bdir + "manifest.building.json", "utf8"));

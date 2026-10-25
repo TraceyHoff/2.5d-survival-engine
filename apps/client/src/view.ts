@@ -19,7 +19,7 @@ import { loadManifest, mergeManifests, resolveManifestShards, buildPieceVisual, 
 import { BuildGhost, pieceArtRow, ROT_EXACT_PIVOT, IsoRenderer, Canvas2DRenderer, chooseRenderer, Sprite, Shadow, LightSource, Occluder, SpriteFlag, sourcesFromManifest, coreAppearanceBinding, CameraTargetGuard } from "@engine/render";
 import { countFraction } from "./load-progress.js";
 import { roadSpriteKeys, ROAD_FLAGS, signFrameId } from "./road-sign-view.js";
-import { Road, Sign, surfaceDef, signDef, walkAnimRate } from "@engine/gameplay";
+import { Road, Sign, surfaceDef, signDef, walkAnimRate, petSits } from "@engine/gameplay";
 import { HitReact, NodeRegrow, hitDirRad, Equipment, Worn, wornCosmetics } from "@engine/gameplay";
 import { gameplayDefs, rotationSteps, animalDefs, Animal, Health, Survival, Zombie, ResourceNode, CraftingStation, Fuel, AnimState as GAnim, BuildPiece as GPiece, Dead, Wetness, BodyTemp, Emitter, PieceLink, Crop, cropSpriteKey, clutterForChunk, resolveSprite, type ResolvedSprite } from "@engine/gameplay";
 
@@ -398,7 +398,7 @@ export class IsoView {
   private animalAnim(net: World, e: Entity, an: { kind: number; state: number }, moving: boolean, dead: boolean, _player: Entity | undefined): number {
     const now = performance.now(); const hp = net.get(e, Health)?.hp; const rec = this.animalHp.get(e) ?? { hp: hp ?? 0, hitUntil: 0 };
     if (hp !== undefined) { if (hp < rec.hp - 1e-3) rec.hitUntil = now + 250; rec.hp = hp; } this.animalHp.set(e, rec); // ADR-117: animal sounds come from the audio director
-    const st = dead || (hp !== undefined && hp <= 0) ? 5 : now < rec.hitUntil ? 4 : an.state === 2 && moving ? 2 : moving ? 1 : 0;
+    const st = dead || (hp !== undefined && hp <= 0) ? 5 : now < rec.hitUntil ? 4 : an.state === 2 && moving ? 2 : moving ? 1 : petSits(net, e) ? 13 : 0; // ADR-146: Stay -> sit
     this.animalPrev.set(e, st === 5 ? 5 : an.state);
     return st;
   }

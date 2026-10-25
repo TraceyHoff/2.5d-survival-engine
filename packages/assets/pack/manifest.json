@@ -364,28 +364,6 @@
       "ktx2": "atlases/ui.ktx2"
     },
     {
-      "key": "animals_small",
-      "image": "atlases/animals_small.png",
-      "frameW": 32,
-      "frameH": 32,
-      "columns": 32,
-      "rows": 17,
-      "pages": [
-        {
-          "scale": 2,
-          "image": "atlases/animals_small@2x.png",
-          "ktx2": "atlases/animals_small@2x.ktx2"
-        }
-      ],
-      "masks": {
-        "sheen": "atlases/animals_small_sheen.png"
-      },
-      "ktx2": "atlases/animals_small.ktx2",
-      "masksKtx2": {
-        "sheen": "atlases/animals_small_sheen.ktx2"
-      }
-    },
-    {
       "key": "animals_medium",
       "image": "atlases/animals_medium.png",
       "frameW": 48,

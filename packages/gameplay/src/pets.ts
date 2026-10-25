@@ -286,6 +286,8 @@ function step(world: World, e: Entity, gx: number, gy: number, speed: number, dt
   }
   world.set(e, Transform, { x: nx, y: ny, facing: Math.atan2(dy, dx) }); return true;
 }
+/** ADR-146: a pet on Stay sits when idle (render: AnimState Sit = 13 -> the pet atlas's `sit` animation). Client-safe (replicated Pet.cmd). */
+export function petSits(world: World, e: Entity): boolean { return world.isRegistered(Pet) && world.has(e, Pet) && world.getField(e, Pet, "cmd") === PetCmd.Stay; }
 const animAt = (world: World, e: Entity, anim: Anim): void => {
   const cur = world.getField(e, AnimState, "anim"); if (cur === Anim.Hurt || ((cur === Anim.Attack || cur === Anim.Eat) && world.tick - (world.getField(e, AnimState, "startTick") ?? 0) < sec(0.5))) return; setAnim(world, e, anim);
 };
@@ -375,7 +377,7 @@ export function petSystem(world: World, dt: number): void {
       else if (stay && d > 0.4) moved = step(world, e, ax, ay, st.walk, dt, 0.2);
     }
     world.set(e, Animal, { homeX: ax, homeY: ay, state: moved ? (run ? 2 : 1) : 0 });
-    animAt(world, e, moved ? (run ? Anim.Run : Anim.Walk) : Anim.Idle);
+    animAt(world, e, moved ? (run ? Anim.Run : Anim.Walk) : !busy && stay ? Anim.Sit : Anim.Idle);
   }
   void defs; void Survival; void Inventory; void addItem; void takeFromSlot;
 }

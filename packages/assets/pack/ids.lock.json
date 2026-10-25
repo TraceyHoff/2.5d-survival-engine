@@ -2881,7 +2881,8 @@
     "meaty_chew": 2879,
     "pet_trough": 2880,
     "seed_mix": 2881,
-    "veggie_bites": 2882
+    "veggie_bites": 2882,
+    "pet_trough_crack": 2883
   },
   "sounds": {
     "amb_rain": 1,

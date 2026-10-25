@@ -1559,6 +1559,23 @@
    ],
    "residency": "resident",
    "ktx2": "atlases/pets_trough.ktx2"
+  },
+  {
+   "key": "pets_trough_crack",
+   "image": "atlases/pets_trough_crack.png",
+   "frameW": 64,
+   "frameH": 96,
+   "columns": 3,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/pets_trough_crack@2x.png",
+     "ktx2": "atlases/pets_trough_crack@2x.ktx2"
+    }
+   ],
+   "residency": "resident",
+   "ktx2": "atlases/pets_trough_crack.ktx2"
   }
  ],
  "sprites": [
@@ -80943,9 +80960,39 @@
       1,
       1
      ]
-    ]
+    ],
+    "crackOverlay": "pet_trough_crack"
    },
    "rotationArt": "unique4"
+  },
+  {
+   "key": "pet_trough_crack",
+   "category": "vfx",
+   "atlas": "pets_trough_crack",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.72917
+   },
+   "animations": {
+    "stage1": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    },
+    "stage2": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    },
+    "stage3": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   }
   }
  ]
 }
