@@ -208,6 +208,7 @@ if __name__ == '__main__':
     ns = [s for s in nm['sprites'] if s['category'] == 'critter' and s['key'].startswith('animal_')]
     ma, mn, mp, mit = build_hurt(mm, R, 'adr134_hurt', ms, False, 'atlases/')
     na, nn, npg, nit = build_hurt(nm, NAT, 'nature_adr134_hurt', ns, True, 'atlases/')
+    for a in ma: a.pop('residency')  # main pack: no residency field (= resident; stream.test asserts the main pack stays schema-v1)
     mm['atlases'] += ma; nm['atlases'] += na
     # stumps
     sk = list(STUMP); cols = 6; rows = -(-len(sk) // cols); s1 = Image.new('RGBA', (32 * cols, 32 * rows)); s2 = Image.new('RGBA', (64 * cols, 64 * rows))
