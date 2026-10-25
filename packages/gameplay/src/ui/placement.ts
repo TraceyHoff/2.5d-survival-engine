@@ -50,6 +50,18 @@ export function placementTarget(world: World, player: Entity, aim: PlacementAim 
   const n = Math.hypot(aim.x, aim.y) || 1; const a = Math.min(PLACE_AHEAD, reach); return { x: t.x + (aim.x / n) * a, y: t.y + (aim.y / n) * a };
 }
 
+/** Max distance a snap moves a piece's centre from the aim point (half a tile diagonal, rounded up). */
+export const SNAP_REACH_MARGIN = 0.75;
+/** ADR-142: an aim clamped to the very edge of reach snapped outward and read "Too far away" (the ghost flipped red at the
+ *  rim, e.g. after rotating). Pull the request in by SNAP_REACH_MARGIN so whatever it snaps to stays in reach. */
+function withinSnapReach(world: World, player: Entity, at: { x: number; y: number }): { x: number; y: number } {
+  const t = world.get(player, Transform); return t ? clampToSnapReach(t, at, gameplayDefs(world).building.buildReach) : at;
+}
+/** Pure core of withinSnapReach: `at` pulled toward `from` to at most reach − SNAP_REACH_MARGIN. */
+export function clampToSnapReach(from: { x: number; y: number }, at: { x: number; y: number }, reach: number): { x: number; y: number } {
+  const lim = reach - SNAP_REACH_MARGIN; const dx = at.x - from.x, dy = at.y - from.y, dd = Math.hypot(dx, dy); if (dd <= lim || lim <= 0) return at;
+  return { x: from.x + (dx * lim) / dd, y: from.y + (dy * lim) / dd };
+}
 /** Snap-assist probe ring (tiles): 8 directions at 0.5 then 1.0 tiles, fixed order (deterministic). */
 export const SNAP_ASSIST_RING: readonly (readonly [number, number])[] = [0.5, 1].flatMap((r) => [0, 1, 2, 3, 4, 5, 6, 7].map((k) => [Math.round(Math.cos((k * Math.PI) / 4) * r * 1e6) / 1e6, Math.round(Math.sin((k * Math.PI) / 4) * r * 1e6) / 1e6] as const));
 /**
@@ -67,7 +79,8 @@ export function buildPreviewFor(world: World, player: Entity, sel: BuildSelectio
   return p;
 }
 function rawPreview(world: World, player: Entity, sel: BuildSelection, rot: number, aim: PlacementAim | undefined, level: number): BuildPreview | undefined {
-  const d = gameplayDefs(world); const def = d.pieces.get(sel.piece); const at = placementTarget(world, player, aim); if (!def || !at) return undefined;
+  const d = gameplayDefs(world); const def = d.pieces.get(sel.piece); const at0 = placementTarget(world, player, aim); if (!def || !at0) return undefined;
+  const at = withinSnapReach(world, player, at0);
   const sn = snapPlacement(world, { piece: sel.piece, x: at.x, y: at.y, level, rot, tier: sel.tier, variant: sel.variant });
   const base = { pieceKey: def.key, piece: def.id, tier: sel.tier, variant: sel.variant, paint: sel.paint, level, rotSteps: rotationSteps(world, sel.piece), request: { x: at.x, y: at.y, rot } };
   if (typeof sn === "number") return { ...base, x: at.x, y: at.y, z: level * d.building.levelHeight, rot, valid: false, reason: sn };
