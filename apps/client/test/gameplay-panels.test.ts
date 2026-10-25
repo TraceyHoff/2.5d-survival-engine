@@ -35,6 +35,13 @@ describe("gameplay panels (ADR-095 shell)", () => {
     }
     menus.destroy();
   });
+  test("ADR-145: the Drop items… section opens on click and stays open across panel re-renders", () => {
+    const { w, me, menus } = setup(); G.addItem(w, me, id("wood"), 5); menus.open("inventory");
+    const det = (): HTMLDetailsElement => q("[data-role=drop-section]") as HTMLDetailsElement;
+    expect(det().open).toBe(false); q("[data-role=drop-section] summary").click(); expect(det().open).toBe(true);
+    G.addItem(w, me, id("stone"), 2); menus.refresh(); expect(det().open).toBe(true);
+    q("[data-role=drop-section] summary").click(); menus.refresh(); expect(det().open).toBe(false); menus.destroy();
+  });
   test("inventory tooltip names the crafter", () => {
     const { w, me, menus } = setup(); G.addItem(w, me, id("wood"), 5, 7); menus.open("inventory");
     expect(q("[data-role=slot]").dataset["tip"]).toContain("Crafted by Ada"); menus.destroy();

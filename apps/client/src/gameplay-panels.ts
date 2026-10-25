@@ -70,6 +70,8 @@ const camperSel = { tab: "craft" as "craft" | "cook", cook: 0 };
 const dismissedClan = new Set<number>();
 /** Container panel page (ADR-098): survives re-renders; clamped by containerView. */
 let containerPage = 0;
+/** ADR-145: inventory "Drop items…" section open state (survives panel re-renders). */
+export const dropUi = { open: false };
 /** Skill tree (ADR-113): zoom + selected node survive re-renders; the viewport scroll position is kept by the diffing refresh. */
 const skillUi = { zoom: 0.6, sel: -1, branch: "", cat: "" };
 /** ADR-132: active skill category tab (one tree per tab); ◀ ▶ / tab buttons (touch, mouse, Tab+Enter, gamepad focus+A), PgUp/PgDn and gamepad LB/RB. */
@@ -178,7 +180,12 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
         // ADR-145: drop a stack on the ground (a following pet fetches it into its bag)
         const dg = grid(); dg.dataset["role"] = "drop";
         for (const s of v) if (!s.equipped) dg.append(btn(`Drop ${s.name}`, `drop-${s.slot}`, () => send(dropItemIntent(s.item, s.count), `Dropped ${s.name} ×${s.count}.`), { alt: true, role: "drop", title: "Drop on the ground (your pet fetches it)", data: { item: String(s.item), icon: s.icon } }));
-        if (dg.childElementCount) { const det = el("details", { "data-role": "drop-section" }); det.append(el("summary", {}, "Drop items…"), dg); out.push(det); }
+        if (dg.childElementCount) {
+          // the panel re-renders on every inventory / tick change, so keep the open state outside the DOM (a native toggle was lost)
+          const det = el("details", { "data-role": "drop-section" }); det.open = dropUi.open; const sum = el("summary", {}, "Drop items…");
+          sum.addEventListener("click", (ev) => { ev.preventDefault(); dropUi.open = !dropUi.open; det.open = dropUi.open; });
+          det.append(sum, dg); out.push(det);
+        }
       }
       if (cv) {
         // ADR-098: paged container grid (CONTAINER_PAGE_SIZE per page). Every slot is a focusable button so the D-pad /
