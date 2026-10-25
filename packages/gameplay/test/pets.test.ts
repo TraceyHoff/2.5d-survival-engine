@@ -92,4 +92,11 @@ describe("pets (ADR-145)", () => {
     const q = G.spawnPlayer(w, { x: 1, y: 1, maxWeight: 0, clientId: 8 }); pid(w, q, 8); const fails = collect(w, G.BuildFailed);
     cmd(q, G.OpenContainerCmd, { target: a }); expect(w.has(q, G.Viewing)).toBe(false); expect(fails.some((f) => f.reason === G.BuildFail.Locked)).toBe(true);
   });
+  it("primary-button auto-target never picks a pet (a gathering bot / player does not swing at it), wild animals still", () => {
+    const { w, p, id } = setup(); const a = G.spawnAnimal(w, "animal_dog_dachshund", 0.8, 0);
+    expect(G.nearestMeleeTarget(w, p)).toBe(a);
+    tame(w, p, a, id("dog_biscuit")); expect(w.has(a, G.Pet)).toBe(true);
+    w.set(a, Transform, { x: 0.8, y: 0 }); expect(G.nearestMeleeTarget(w, p)).toBeUndefined();
+    const other = G.spawnPlayer(w, { x: 0.5, y: 0.3, maxWeight: 0, clientId: 9 }); pid(w, other, 9); expect(G.nearestMeleeTarget(w, other)).toBeUndefined();
+  });
 });

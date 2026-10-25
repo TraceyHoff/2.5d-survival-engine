@@ -16,7 +16,7 @@ import { distance } from "../systems/fuel.js";
 import { spendStamina } from "../systems/vitals.js";
 import { checkHit, tagCombat } from "./pvp.js";
 import { installSpatialIndex } from "@engine/world";
-import { Animal } from "../components.js";
+import { Animal, Pet } from "../components.js";
 import { damageMulFor } from "../skills/tree.js";
 import { Progression } from "../components.js";
 import { armorReduce, igniteTarget, landThrown, resolveAttack, spendRound, throwExplosive } from "./arms.js";
@@ -30,15 +30,15 @@ export function heldWeapon(world: World, e: Entity): WeaponDef {
 
 /**
  * Primary-button melee target for a human (ADR-107): the nearest live zombie or animal within the held weapon's
- * melee reach (+0.4 + slack, the same reach combatSystem checks). Players and structures are never auto-targeted
- * (PvP / demolition stay explicit). undefined -> the button falls back to gathering.
+ * melee reach (+0.4 + slack, the same reach combatSystem checks). Players, structures and pets (ADR-145) are never
+ * auto-targeted (PvP / demolition / hurting a pet stay explicit), so a gathering bot or player does not swing at a pet. undefined -> the button falls back to gathering.
  */
 export function nearestMeleeTarget(world: World, e: Entity): Entity | undefined {
   const t = world.get(e, Transform); if (!t) return undefined;
   const reach = heldWeapon(world, e).range + 0.4 + rangeSlack(world, e);
   let best: Entity | undefined; let bd = Infinity;
   for (const o of installSpatialIndex(world).queryRadius(t.x, t.y, reach)) {
-    if (o === e || !world.isAlive(o) || !world.has(o, Health) || world.has(o, Dead) || !(world.has(o, Zombie) || world.has(o, Animal))) continue;
+    if (o === e || !world.isAlive(o) || !world.has(o, Health) || world.has(o, Dead) || !(world.has(o, Zombie) || world.has(o, Animal)) || world.has(o, Pet)) continue;
     const d = distance(world, e, o); if (d <= reach && d < bd) { bd = d; best = o; }
   }
   return best;
