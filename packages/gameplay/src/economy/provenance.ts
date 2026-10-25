@@ -60,7 +60,7 @@ export function itemInfo(world: World, e: Entity, slot: number, names: NameLooku
   const fresh = freshness(defs, item, world.getArray(e, def, "createdTick")![slot]!, spoilMulOf(world, e), world.tick, 1 / 20);
   const info: ItemInfo = {
     itemKey: defs.items.get(item)?.key ?? "", count: world.getArray(e, def, "counts")![slot]!, durability: world.getArray(e, def, "durability")![slot]!,
-    freshnessStage: freshnessStage(fresh, spoilStages(defs)), crafterId, crafterName: crafterId ? names.get(crafterId) ?? `#${crafterId}` : "",
+    freshnessStage: freshnessStage(fresh, spoilStages(defs)), crafterId, crafterName: crafterId ? names.get(crafterId) ?? "Unknown survivor" : "",
   };
   const fill = fillLevel(defs, item, world.getArray(e, def, "durability")![slot]!);
   if (fill !== undefined) info.fill = fill;

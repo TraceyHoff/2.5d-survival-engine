@@ -17,6 +17,8 @@ overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-b
 #${ROOT_ID} [data-modal]{touch-action:pan-y}
 html,body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 #${ROOT_ID} *{-webkit-touch-callout:none}
+/* QA2: game canvas + HUD never select or show the long-press callout, even when mounted outside the root */
+canvas,#hud,#hud *,#touch-overlay,#touch-overlay *,.build-hud,.build-hud *{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
 #${ROOT_ID} button,#${ROOT_ID} input,#${ROOT_ID} select,#${ROOT_ID} textarea{touch-action:manipulation}
 #${ROOT_ID} button{user-select:none;-webkit-user-select:none}
 #${ROOT_ID} input,#${ROOT_ID} select,#${ROOT_ID} textarea,#${ROOT_ID} [contenteditable]{user-select:text;-webkit-user-select:text;-webkit-touch-callout:default}`;

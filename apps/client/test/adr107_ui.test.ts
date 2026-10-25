@@ -11,6 +11,12 @@ describe("ADR-107 menus: scroll, Back button, Android back", () => {
     uiRoot(); const css = document.getElementById("game-root-style")!.textContent!;
     expect(css).toContain("100dvh"); expect(css).toContain("var(--sab"); expect(css).toContain("overflow-y:auto"); expect(css).toContain("touch-action:pan-y"); expect(css).toContain("-webkit-overflow-scrolling:touch");
   });
+  test("QA2: game canvas + HUD set -webkit-touch-callout:none and user-select:none", () => {
+    uiRoot(); const css = document.getElementById("game-root-style")!.textContent!;
+    const rule = css.split("\n").find((l) => l.startsWith("canvas,#hud"))!; expect(rule).toBeTruthy();
+    for (const d of ["-webkit-touch-callout:none", "user-select:none", "-webkit-user-select:none"]) expect(rule).toContain(d);
+    expect(rule).toContain("#touch-overlay");
+  });
   test("a modal without its own close gets a visible Back button; focus moves scroll into view", () => {
     const root = uiRoot(); const nav = new UINav({ root, pollGamepads: false, history: false });
     const seen: Element[] = []; (HTMLElement.prototype as unknown as { scrollIntoView: () => void }).scrollIntoView = function (this: Element) { seen.push(this); };

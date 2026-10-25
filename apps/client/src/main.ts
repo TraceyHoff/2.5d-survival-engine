@@ -1,4 +1,5 @@
 import { lastPlayedKey } from "./delete-progress.js";
+import { CHAT_TAG, chatLine, chatSender } from "./chat-line.js";
 import { LoadProgress } from "./load-progress.js";
 import { attachZoom } from "./camera-zoom.js";
 import { mountUi } from "./ui-root.js";
@@ -126,12 +127,11 @@ function sendIntent(i: MenuIntent): boolean {
   for (const k of i.entities ?? []) { const id = netIdOf(world, args[k] as number); if (id === undefined) return false; args[k] = id; }
   try { return c.sendCommand(gameplayNet(i.cmd), args as never) !== false; } catch { return false; }
 }
-const CHAT_TAG = ["Global", "Local", "Party", "Clan", "Trade", "Whisper", "System"];
 let chatWired: unknown;
 /** Hook NetClient.chat (core ChatServer, already run by the server) into the chat panel once per client. */
 function wireChat(): void {
   const c = session.client; if (!c || chatWired === c || !menus) return; chatWired = c; social.reset();
-  c.chat.on((m: ChatDelivered) => { const who = m.fromPlayer ? c.names.display(m.fromPlayer) : ""; menus?.pushChat(`[${CHAT_TAG[m.channel] ?? "?"}] ${who ? `${who}: ` : ""}${m.text}`, m.channel); });
+  c.chat.on((m: ChatDelivered) => { menus?.pushChat(chatLine(m.channel, chatSender(m.fromPlayer, (id) => c.names.get(id)), m.text), m.channel); });
   // owner-scoped social replication (Netcode SocialSync) → clan roster, invite lists, whisper picker
   c.onEvent(ClanRoster, (e) => social.onRoster(e)); c.onEvent(ClanRosterMember, (e) => social.onMember(e)); c.onEvent(OnlinePlayer, (e) => social.onOnline(e));
   // camper interior station used (server VehicleStationOpened, owner only) → camper station panel
