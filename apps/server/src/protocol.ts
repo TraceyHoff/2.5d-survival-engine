@@ -63,7 +63,9 @@ export function gameplayNet<D extends CommandDef>(d: D): ReturnType<typeof defin
  * connections unless started with the dev flag (NET_DEV_BOTS=1 / devBots). Human bots are a singleplayer/offline thing.
  */
 export const DevBotHello = defineCommand("demo.devBot", { v: "u8" }, { rate: { perSec: 1, burst: 1 } });
-export const DEMO_COMMANDS = [...SESSION_COMMANDS, Ping, ...GAMEPLAY_NET_COMMANDS.map((x) => x.net), DevBotHello] as const;
+/** ADR-145 QA: sandbox-only pet kit (dog treats + a dachshund next to the sender); ignored unless the server runs DEV_SANDBOX. */
+export const DevPetKit = defineCommand("demo.devPetKit", { v: "u8" }, { rate: { perSec: 1, burst: 2 } });
+export const DEMO_COMMANDS = [...SESSION_COMMANDS, Ping, ...GAMEPLAY_NET_COMMANDS.map((x) => x.net), DevBotHello, DevPetKit] as const;
 /**
  * Owner-scoped social replication (apps/server/src/social_sync.ts). Ids are account PlayerIds; names via client.names.
  * ClanRoster: your clan (0 = none: clear the roster), rank masks (member / officer; leader = all), member count. Sent on

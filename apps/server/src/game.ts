@@ -1,4 +1,4 @@
-import { giveSandboxKit, sandboxPetCorner, sandboxSpawn } from "./sandbox.js";
+import { giveSandboxKit, sandboxPetKit, sandboxPetCorner, sandboxSpawn } from "./sandbox.js";
 import { installRoadCommands, NodeRegrow, installSignCommands, installPetCommands, PetEvent, setWorldRules, worldRules, type WorldRulesOpts } from "@engine/gameplay";
 /** Authoritative game server: world + gameplay + streaming chunks + persistence + NetServer sessions. */
 import { ChannelRegistry, CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, type CosmeticCatalogLike, Membership, Owner, PlayerId, TimeOfDay, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
@@ -10,7 +10,7 @@ import { createAgentStore, type AgentIdentityStore } from "./agents.js";
 import { AccountAssigned, ClaimAccount, SetName, WorldPersistence, loadSocial, tokenToHex, tokenToWords, wordsToName, wordsToToken, type WorldStore } from "@engine/persist";
 import { giveRandomAppearance } from "./appearance.js";
 import { SocialSync } from "./social_sync.js";
-import { Act, applyDemoInput, installDemoWorld, rejectReasonCode, DevBotHello, DEMO_COMMANDS, DEMO_EVENTS, ExplodedEvt, GAMEPLAY_NET_COMMANDS, Ping, Pong, ReloadedEvt, VehicleStationOpenedEvt, PetEventEvt, DeleteMyProgressCmd, DELETE_PROGRESS_CONFIRM, ProgressDeleted } from "./protocol.js";
+import { Act, applyDemoInput, installDemoWorld, rejectReasonCode, DevBotHello, DevPetKit, DEMO_COMMANDS, DEMO_EVENTS, ExplodedEvt, GAMEPLAY_NET_COMMANDS, Ping, Pong, ReloadedEvt, VehicleStationOpenedEvt, PetEventEvt, DeleteMyProgressCmd, DELETE_PROGRESS_CONFIRM, ProgressDeleted } from "./protocol.js";
 import { forgetPlayer, sweepForgottenPlayers, installSkillHandlers, setAiHumanPredicate } from "@engine/gameplay";
 
 /** Pre-ADR-107 worlds started at 0.25 of the day and did not persist the day-clock epoch. */
@@ -353,6 +353,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
   });
   // Chat emotes drive the face like EmoteCmd: ChatDelivered.emote = emoteNames() index + 1 (requestEmote range-checks it).
   chat.log.push((d) => { if (!d.emote) return; const p = players.get(d.fromClient); if (p && world.isAlive(p.entity)) requestEmote(world, p.entity, d.emote); });
+  net.onCommand(DevPetKit, (s) => { const p = players.get(s.clientId); if (o.devSandbox && p && world.isAlive(p.entity)) sandboxPetKit(world, p.entity); });
   net.onCommand(DevBotHello, (s) => {
     const p = players.get(s.clientId); if (!p) return;
     if (mode.mode === "multiplayer" && !o.devBots) { leave(s.clientId, "bot connection rejected: multiplayer server without NET_DEV_BOTS=1"); return; }

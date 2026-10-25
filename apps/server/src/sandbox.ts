@@ -40,3 +40,12 @@ export function sandboxPetCorner(world: World, base: { x: number; y: number }): 
   SANDBOX_PETS.forEach((k, i) => spawnAnimal(world, k, x + 1.5 + i * 1.2, y + 1.5));
   return crate;
 }
+
+/** ADR-145 QA pet kit (sandbox only, DevPetKit / `__qa.petKit()`): 5 dog biscuits + 5 meaty chews (the kit leaves exactly 2 free slots, ADR-144) and a dachshund 1 tile
+ * east of the player, so online pet tests need no crate. Returns the dog. */
+export const SANDBOX_PET_KIT = ["dog_biscuit", "meaty_chew"] as const;
+export function sandboxPetKit(world: World, e: Entity): Entity | undefined {
+  const t = world.get(e, Transform); if (!t) return undefined;
+  for (const k of SANDBOX_PET_KIT) { const id = itemIdSafe(world, k); if (id !== undefined) addItem(world, e, id, 5); }
+  return spawnAnimal(world, "animal_dog_dachshund", t.x + 1, t.y);
+}

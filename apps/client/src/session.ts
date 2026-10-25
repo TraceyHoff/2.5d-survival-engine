@@ -2,7 +2,7 @@
 import { World, type Entity } from "@engine/core";
 import { NetClient, NetRejectedError, WebSocketClientTransport, type ClientTransport, type WebSocketCtor } from "@engine/net";
 import { AccountAssigned, ClaimAccount, SetName, nameToWords, tokenToWords, wordsToToken } from "@engine/persist";
-import { applyDemoInput, VEHICLE_CLIENT_OPTIONS, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS, gameplayNet, DeleteMyProgressCmd, DELETE_PROGRESS_CONFIRM, Ping, Pong, ProgressDeleted } from "@engine/server/protocol";
+import { applyDemoInput, VEHICLE_CLIENT_OPTIONS, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS, gameplayNet, DevPetKit, DeleteMyProgressCmd, DELETE_PROGRESS_CONFIRM, Ping, Pong, ProgressDeleted } from "@engine/server/protocol";
 
 /** Minimal storage (localStorage in the browser, a Map in tests). */
 export interface KeyValue { getItem(k: string): string | null; setItem(k: string, v: string): void }
@@ -88,6 +88,8 @@ export class ClientSession {
     const c = this.client; if (!c?.connected) return false;
     try { return c.sendCommand(gameplayNet(DeleteMyProgressCmd), { confirm: DELETE_PROGRESS_CONFIRM }) !== false; } catch { return false; }
   }
+  /** ADR-145 QA (`?dev=sandbox`): ask a DEV_SANDBOX server for the pet kit (treats + a dachshund next to me). */
+  devPetKit(): boolean { const c = this.client; if (!c?.connected) return false; try { return c.sendCommand(DevPetKit, { v: 1 }) !== false; } catch { return false; } }
   /** Call every frame after stepping the world: delivers events (account, pong). */
   poll(): void { this.client?.pollEvents(Infinity); }
   disconnect(): void {

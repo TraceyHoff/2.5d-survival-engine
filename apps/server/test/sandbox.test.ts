@@ -1,9 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { Transform, World } from "@engine/core";
-import { countItem, itemIdSafe } from "@engine/gameplay";
+import { countItem, itemIdSafe, Animal, speciesOfAnimal, petSpeciesOfKey } from "@engine/gameplay";
 import { LoopbackNetwork, NetClient } from "@engine/net";
-import { SANDBOX_KIT } from "../src/sandbox.js";
+import { SANDBOX_KIT, SANDBOX_PET_KIT } from "../src/sandbox.js";
 import { createGameServer, applyMoveInput, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS } from "../src/main.js";
+import { DevPetKit } from "../src/protocol.js";
 
 async function setup(devSandbox: boolean) {
   const net = new LoopbackNetwork(3);
@@ -15,7 +16,7 @@ async function setup(devSandbox: boolean) {
     const client = new NetClient({ world, transport: net.createClient(), commands: DEMO_COMMANDS, events: DEMO_EVENTS, sampleInput: () => ({ buttons: 0, aimX: 0, aimY: 0 }), applyInput: (w, e, cmd) => applyMoveInput(w, e, cmd, 1 / 20) });
     const p = client.connect(); await new Promise((r) => setTimeout(r, 0)); net.advance(100); await p; clients.push(client);
   };
-  return { gs, tick, connect };
+  return { gs, tick, connect, clients };
 }
 
 describe("ADR-140 dev sandbox", { timeout: 30_000 }, () => {
@@ -28,6 +29,17 @@ describe("ADR-140 dev sandbox", { timeout: 30_000 }, () => {
     const [a, b] = ps.map((p) => gs.world.get(p.entity, Transform)!); expect(Math.hypot(a!.x - b!.x, a!.y - b!.y)).toBeLessThan(4);
     const off = await setup(false); await off.connect(); off.tick(2);
     const p0 = [...off.gs.players.values()][0]!; expect(countItem(off.gs.world, p0.entity, planks)).toBe(0);
+  });
+});
+
+describe("ADR-145 sandbox pet kit (DevPetKit)", { timeout: 30_000 }, () => {
+  const dogsNear = (w: World, at: { x: number; y: number }): number => [...w.query([Animal, Transform])].filter((e) => speciesOfAnimal(w, e) === petSpeciesOfKey("dog_dachshund") && Math.hypot(w.get(e, Transform)!.x - at.x, w.get(e, Transform)!.y - at.y) < 1.6).length;
+  for (const on of [true, false]) it(on ? "grants treats + a dachshund next to the sender" : "is ignored without DEV_SANDBOX", async () => {
+    const { gs, tick, connect, clients } = await setup(on); await connect(); tick(2);
+    const p = [...gs.players.values()][0]!; const at = { ...gs.world.get(p.entity, Transform)! }; const before = dogsNear(gs.world, at);
+    clients[0]!.sendCommand(DevPetKit, { v: 1 }); tick(3);
+    for (const k of SANDBOX_PET_KIT) expect([k, countItem(gs.world, p.entity, itemIdSafe(gs.world, k)!)]).toEqual([k, on ? 5 : 0]);
+    expect(dogsNear(gs.world, at) - before).toBe(on ? 1 : 0);
   });
 });
 
