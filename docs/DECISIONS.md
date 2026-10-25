@@ -799,3 +799,12 @@ Accepted 2026-10-24. Context: the ADR-113 tree showed all 122 nodes on one giant
 - An invalid build ghost now shows a reason (`buildFailText`).
 - The canvas, HUD, touch overlay and build HUD get `-webkit-touch-callout:none` and `user-select:none`.
 - Chat and provenance show "Unknown survivor" for senders who have no name, instead of `#id`.
+
+## ADR-141: QA pass 3 — context-only party/clan actions, station rendering, unlit campfire
+
+- **Party roles are networked** (`PartyRank`), so the client shows Kick/Invite only to the leader. Members see only "Leave party".
+- **Clan roster buttons are context-only** (`clanMemberActions`). Promote and Demote are leader-only. Kick needs the leader rank, or the rank's `kick` permission plus a higher rank than the target. Invite and goal follow the rank's permissions. Buttons are hidden, not shown disabled.
+- **A free-standing placed station is drawn by its own kind** (`isFreeStandingStation`). Before this, a placed workbench or anvil was drawn as a bonfire, so E near it seemed to open nothing.
+- **Clients rebuild the spatial index before the crafting view**, so a station shows its own recipes instead of greyed-out ones.
+- **An out campfire draws unlit logs.** The bonfire building gained an `unlit` state, and spawned fires pick the `unlit` frame.
+- **Workbench "wouldn't place":** not a bug. The failure reason showed the spot was occupied.
