@@ -20,4 +20,13 @@ export class BackHistory {
   destroy(): void { this.win?.removeEventListener("popstate", this.pop); }
 }
 /** Focus and keep it visible inside a scrolling panel (ADR-107). */
-export function focusVisible(el: HTMLElement | undefined): void { if (!el) return; el.focus(); el.scrollIntoView?.({ block: "nearest", inline: "nearest" }); }
+/** ADR-142: focus moved by pad/keyboard navigation must show a ring. Programmatic focus after a gamepad press is not
+ *  :focus-visible in Chrome (and `.gm-panel button:focus:not(:focus-visible)` hid it), so the pad user saw no cursor.
+ *  Ask for a visible ring and flag the document (`html[data-nav-focus]`) until the next pointer press. */
+export function focusVisible(el: HTMLElement | undefined): void { if (!el) return; markNavFocus(); el.focus({ focusVisible: true } as FocusOptions); el.scrollIntoView?.({ block: "nearest", inline: "nearest" }); }
+
+let navFocusHooked = false;
+export function markNavFocus(doc: Document | undefined = typeof document !== "undefined" ? document : undefined): void {
+  if (!doc) return; doc.documentElement.dataset.navFocus = "1";
+  if (!navFocusHooked) { navFocusHooked = true; doc.addEventListener("pointerdown", () => { delete doc.documentElement.dataset.navFocus; }, true); }
+}

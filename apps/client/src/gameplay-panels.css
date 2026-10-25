@@ -9,6 +9,7 @@
 @media (hover:hover){.gm-modal .gm-panel [data-role=body] button:not(:disabled):hover{filter:brightness(1.08) saturate(1.05);transform:translateY(-1px)}}
 .gm-modal .gm-panel [data-role=body] button:not(:disabled):active{transform:translateY(2px);box-shadow:0 1px 0 var(--cz-bark);filter:brightness(.96)}
 .gm-modal .gm-panel button:focus:not(:focus-visible){outline:none}
+html[data-nav-focus] .gm-modal .gm-panel button:focus,html[data-nav-focus] .gm-modal .gm-panel input:focus{outline:3px solid var(--cz-gold);outline-offset:3px;box-shadow:0 0 0 7px rgba(59,36,51,.55);z-index:2}
 .gm-modal .gm-panel button:focus-visible,.gm-modal .gm-panel input:focus-visible{outline:3px solid var(--cz-gold);outline-offset:3px;box-shadow:0 0 0 7px rgba(59,36,51,.55);z-index:2}
 .gm-modal .gm-panel [data-role=body] button:disabled{filter:grayscale(.65) brightness(.95);opacity:.62;cursor:not-allowed}
 .gm-modal .gm-panel [data-role=body] button[aria-pressed=true],.gm-modal .gm-panel [data-role=chat-channels] button[aria-pressed=true],.gm-modal .gm-panel [data-role=whisper-picker] button[aria-pressed=true]{color:var(--cz-ink);text-shadow:0 1px 0 rgba(255,250,240,.7);
