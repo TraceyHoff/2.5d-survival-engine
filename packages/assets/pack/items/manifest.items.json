@@ -114,6 +114,22 @@
     }
    ],
    "ktx2": "atlases/items_skill_tabs.ktx2"
+  },
+  {
+   "key": "items_held_d",
+   "image": "atlases/items_held_d.png",
+   "frameW": 48,
+   "frameH": 48,
+   "columns": 16,
+   "rows": 4,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/items_held_d@2x.png",
+     "ktx2": "atlases/items_held_d@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/items_held_d.ktx2"
   }
  ],
  "sprites": [
@@ -7333,6 +7349,139 @@
       7
      ],
      "fps": 1
+    }
+   }
+  },
+  {
+   "key": "held_stone_knife",
+   "category": "equipment",
+   "atlas": "items_held_d",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "offhand_stone_knife",
+   "category": "equipment",
+   "atlas": "items_held_d",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.25
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "offhand_bronze_knife",
+   "category": "equipment",
+   "atlas": "items_held_d",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.25
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "offhand_iron_knife",
+   "category": "equipment",
+   "atlas": "items_held_d",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.25
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      24
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "offhand_steel_knife",
+   "category": "equipment",
+   "atlas": "items_held_d",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.25
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      32
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "offhand_alloy_knife",
+   "category": "equipment",
+   "atlas": "items_held_d",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.25
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      40
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "offhand_bone_knife",
+   "category": "equipment",
+   "atlas": "items_held_d",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.25
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      48
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
     }
    }
   }

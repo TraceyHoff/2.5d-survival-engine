@@ -2700,7 +2700,14 @@
     "pear_tree_stump": 2698,
     "pine_tree_stump": 2699,
     "ui_creature_hpbar_frame": 2700,
-    "willow_tree_stump": 2701
+    "willow_tree_stump": 2701,
+    "held_stone_knife": 2702,
+    "offhand_alloy_knife": 2703,
+    "offhand_bone_knife": 2704,
+    "offhand_bronze_knife": 2705,
+    "offhand_iron_knife": 2706,
+    "offhand_steel_knife": 2707,
+    "offhand_stone_knife": 2708
   },
   "sounds": {
     "amb_rain": 1,
