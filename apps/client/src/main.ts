@@ -287,18 +287,19 @@ async function startSingleplayer(): Promise<void> {
     const bots = Number(params.get("bots") ?? settings.bots);
     localStatus.state = "opening-store";
     stampPlayed("singleplayer");
-    const dbName = `engine-local-${params.get("player") ?? "1"}`;
+    const devSandbox = params.get("dev") === "sandbox"; // ADR-140: QA sandbox, own throwaway save slot
+    const dbName = devSandbox ? "engine-sandbox" : `engine-local-${params.get("player") ?? "1"}`;
     await isoReady; const catalog = iso?.registry.cosmetics?.size ? iso.registry.cosmetics : undefined;
     const log = (m: string): void => console.info(`[local] ${m}`);
     // ADR-105: run the server sim + bots in a Web Worker (keeps the main thread for render/input, big win on phones);
     // ?worker=0, no Worker support, or a worker that fails/stalls on startup falls back to the in-tab server.
     const { startWorkerServer } = await import("./local-bridge.js");
     let local: import("./local-bridge.js").LocalServerHandle | undefined = params.get("worker") === "0" ? undefined
-      : await startWorkerServer({ dbName, bots, worldRules: newWorldRules(settings), catalog, status: localStatus, log, timeoutMs: 15000 });
+      : await startWorkerServer({ dbName, bots, devSandbox, worldRules: newWorldRules(settings), catalog, status: localStatus, log, timeoutMs: 15000 });
     if (!local) {
       const store = await openBrowserStore(dbName);
       localStatus.state = "starting";
-      const inTab = await createLocalServer({ store, bots, worldRules: newWorldRules(settings), ...(catalog ? { catalog } : {}), log });
+      const inTab = await createLocalServer({ store, bots, devSandbox, worldRules: newWorldRules(settings), ...(catalog ? { catalog } : {}), log });
       pumpLocal = inTab.pump;
       local = { inWorker: false, createTransport: () => inTab.createTransport(), save: async () => { await inTab.game.persist?.saveAll(); }, stop: () => inTab.stop() };
     }

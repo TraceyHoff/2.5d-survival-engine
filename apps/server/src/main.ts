@@ -64,7 +64,7 @@ async function main(): Promise<void> {
   let catalog: import("@engine/core").CosmeticCatalogLike | undefined;
   try { const { loadDefaultManifest } = await import("@engine/assets/node"); catalog = loadDefaultManifest().registry.cosmetics; } catch (e) { console.log(`assets: no cosmetics catalog (${String(e)})`); }
   if (!catalog) console.log("assets: customization disabled (no cosmetics in the pack manifest)");
-  const gs = createGameServer({ transport, ...(store ? { store } : {}), ...(catalog ? { catalog, randomAppearance: true } : {}), seed: args.seed, mode: args.mode, devBots: devBotsFromEnv(process.env), log: (m) => console.log(m) });
+  const gs = createGameServer({ transport, ...(store ? { store } : {}), ...(catalog ? { catalog, randomAppearance: true } : {}), seed: args.seed, mode: args.mode, ...(process.env["DEV_SANDBOX"] === "1" ? { devSandbox: true } : {}), devBots: devBotsFromEnv(process.env), log: (m) => console.log(m) });
   console.log(`server: mode ${gs.mode} (human bots ${gs.modeConfig.humanBots ? "on" : "off"})`);
   console.log(`server: listening ws://${args.host}:${port} protocol v${PROTOCOL_VERSION}, ${1000 / gs.loop.dtMs}Hz, seed ${gs.world.seed}, schema ${gs.world.getSchemaHash().toString(16)}`);
   let last = performance.now(); // wall clock lives OUTSIDE the sim

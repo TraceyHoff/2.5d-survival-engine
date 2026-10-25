@@ -1,8 +1,9 @@
+import { giveSandboxKit, sandboxSpawn } from "./sandbox.js";
 import { installRoadCommands, NodeRegrow, installSignCommands, setWorldRules, worldRules, type WorldRulesOpts } from "@engine/gameplay";
 /** Authoritative game server: world + gameplay + streaming chunks + persistence + NetServer sessions. */
 import { ChannelRegistry, CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, type CosmeticCatalogLike, Membership, Owner, PlayerId, TimeOfDay, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
 import { CHUNK_SIZE, ChunkManager, ProceduralGenerator, computeSpawnPoints, chunkKeyOf, type BuildingGrid, type PopulationSpawner } from "@engine/world";
-import { GAMEPLAY_COMMANDS, ARMS_COMMANDS, ARMS_EVENT_RELIABILITY, Exploded, Reloaded, VehicleStationOpened, installPartyCommands, PartyInvitePending, installClanCommands, ClanInvitePending, ClanStatus, syncSocialMembership, clanState, encodeClanState, decodeClanState, loadClanState, queueCommand, spawnPlayer, spawnResourceNode, setSpawnPoints, spawnPoints as worldSpawnPoints, pickSpawnPoint, gameplayDefs, setIntent, IntentAction, nearestMeleeTarget, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installPopulation, installCustomization,
+import { spawnPoints, GAMEPLAY_COMMANDS, ARMS_COMMANDS, ARMS_EVENT_RELIABILITY, Exploded, Reloaded, VehicleStationOpened, installPartyCommands, PartyInvitePending, installClanCommands, ClanInvitePending, ClanStatus, syncSocialMembership, clanState, encodeClanState, decodeClanState, loadClanState, queueCommand, spawnPlayer, spawnResourceNode, setSpawnPoints, spawnPoints as worldSpawnPoints, pickSpawnPoint, gameplayDefs, setIntent, IntentAction, nearestMeleeTarget, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installPopulation, installCustomization,
   appearanceServerHooks, applyReplication, installStallBuyHook, installViewBonus, setHitValidator, installPvp, installCraftQueue, installExpressionCommands, installVehicleCommands, installVehicleCraftCommands, installVehicleGuard, requestEmote, CraftQueue, CraftQueuesRes, playerNames, stallListing, listingRevision, stallOf, tillOf, StallHeader, StallOwnerKind } from "@engine/gameplay";
 import { AppearanceServer, ChatServer, NameSync, NetServer, StallResult, StallServer, TileSync, validateHit, type ClientSession, type ServerTransport, type StallHooks } from "@engine/net";
 import { createAgentStore, type AgentIdentityStore } from "./agents.js";
@@ -26,6 +27,8 @@ const NODE_RESOURCES: Record<number, string> = { 1: "fallen_branches", 2: "fiber
 export const SPAWN = { x: 16, y: 16 };
 
 export interface GameServerOptions {
+  /** ADR-140 dev/QA sandbox: kit + shared spawn for every joiner (never on in normal play). */
+  devSandbox?: boolean;
   transport: ServerTransport;
   /** Persistent store; omit for an in-memory, non-persistent world. */
   store?: WorldStore;
@@ -174,8 +177,10 @@ export function createGameServer(o: GameServerOptions): GameServer {
       }
     },
     onClientJoin: (s, w) => {
-      const at = pickSpawnPoint(w, "join", s.clientId); // least crowded of the 4 (+ jitter)
+      const at0 = pickSpawnPoint(w, "join", s.clientId); // least crowded of the 4 (+ jitter)
+      const at = o.devSandbox ? sandboxSpawn(spawnPoints(w)[0] ?? at0, s.clientId) : at0;
       const e = spawnPlayer(w, { x: at.x, y: at.y, clientId: s.clientId });
+      if (o.devSandbox) log(`sandbox kit: ${giveSandboxKit(w, e).length} items`);
       net.netIds.assign(e);
       // random valid look (replicates; a restored player record or the client's own setAppearance replaces it)
       if (o.catalog && o.randomAppearance) giveRandomAppearance(w, e, o.catalog, Math.random);

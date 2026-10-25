@@ -30,6 +30,8 @@ export interface LocalServerOptions {
   mode?: GameMode;
   /** Dev: connect this many virtual players immediately at spawn (in addition to natural spawns; singleplayer only). */
   bots?: number;
+  /** ADR-140 dev/QA sandbox (?dev=sandbox): starter kit + shared spawn. */
+  devSandbox?: boolean;
   /** Ambient population spawner (zombies, animals, bots). Default true. */
   population?: boolean;
   /**
@@ -124,7 +126,7 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
   const connectBot = (x: number, y: number): boolean => { if (bots.length + queued.length + inflight >= maxBots) return false; queued.push({ x, y }); return true; };
   const game = createGameServer({
     animalCapMul: animalCapMulFor(maxBots, o.lowEnd ?? lowEndQuery()),
-    transport: serverTransport, ...(store ? { store } : {}), seed, mode, ...(o.worldRules ? { worldRules: o.worldRules } : {}),
+    transport: serverTransport, ...(store ? { store } : {}), seed, mode, ...(o.devSandbox ? { devSandbox: true } : {}), ...(o.worldRules ? { worldRules: o.worldRules } : {}),
     ...(o.maxClients !== undefined ? { maxClients: o.maxClients } : {}), ...(o.serverFullDetail ? { serverFullDetail: o.serverFullDetail } : {}), ...(o.log ? { log: o.log } : {}), ...(o.catalog ? { catalog: o.catalog, randomAppearance: true } : {}),
     ...(o.population === false ? { population: false } : {}), ...(o.distantThrottle ? { distantThrottle: o.distantThrottle } : {}),
     ...(mode === "singleplayer" ? { virtualPlayers: { connect: connectBot, disconnect: (cid: number) => dropBot(cid) } } : {}),

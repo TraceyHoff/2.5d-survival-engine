@@ -31,7 +31,7 @@ class WorkerClientTransport implements ClientTransport {
   /** @internal */ closed(): void { if (!this.open) return; this.open = false; for (const f of this.closeFns) f(); }
 }
 
-export async function startWorkerServer(o: { dbName: string; bots: number; worldRules?: { hordes: boolean; hordeGraceDays: number }; catalog?: CosmeticCatalogLike | undefined; status: WorkerStatusSink; log?: (s: string) => void; timeoutMs?: number; makeWorker?: () => Worker }): Promise<LocalServerHandle | undefined> {
+export async function startWorkerServer(o: { dbName: string; bots: number; devSandbox?: boolean; worldRules?: { hordes: boolean; hordeGraceDays: number }; catalog?: CosmeticCatalogLike | undefined; status: WorkerStatusSink; log?: (s: string) => void; timeoutMs?: number; makeWorker?: () => Worker }): Promise<LocalServerHandle | undefined> {
   if (!o.makeWorker && typeof Worker === "undefined") return undefined;
   let worker: Worker;
   try { worker = o.makeWorker ? o.makeWorker() : new Worker(new URL("./local-worker.ts", import.meta.url), { type: "module" }); } catch (e) { o.log?.(`worker unavailable: ${String(e)}`); return undefined; }
@@ -59,7 +59,7 @@ export async function startWorkerServer(o: { dbName: string; bots: number; world
     settle = (good, err) => { clearTimeout(to); settle = undefined; if (!good && err) o.log?.(`worker failed: ${err}`); resolve(good); };
     let catalog;
     try { catalog = o.catalog ? snapshotCatalog(o.catalog) : undefined; } catch (e) { o.log?.(`catalog snapshot failed: ${String(e)}`); }
-    post({ t: "init", init: { dbName: o.dbName, bots: o.bots, ...(o.worldRules ? { worldRules: o.worldRules } : {}), ...(catalog ? { catalog } : {}) } });
+    post({ t: "init", init: { dbName: o.dbName, bots: o.bots, ...(o.devSandbox ? { devSandbox: true } : {}), ...(o.worldRules ? { worldRules: o.worldRules } : {}), ...(catalog ? { catalog } : {}) } });
   });
   if (!ok) { worker.terminate(); return undefined; }
   return {
