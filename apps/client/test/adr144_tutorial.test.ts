@@ -98,8 +98,8 @@ describe("ADR-144 overlay placement", () => {
   test("Pause + Settings offer the guide", () => {
     document.body.innerHTML = `<div id="game-root"></div>`; let replays = 0;
     const m = new GameMenus({ root: document.getElementById("game-root")!, onQuit: () => {}, pollGamepads: false, tutorial: { active: () => false, replay: () => { replays++; }, next: () => {}, skip: () => {} } });
-    m.open("pause"); const b = [...document.querySelectorAll("button")].find((x) => /Play the guide again/.test(x.textContent ?? ""));
+    m.open("pause"); const b = Array.from(document.querySelectorAll("button")).find((x) => /Play the guide again/.test(x.textContent ?? ""));
     expect(b).toBeTruthy(); b!.click(); expect(replays).toBe(1);
-    m.open("settings"); expect([...document.querySelectorAll("button")].some((x) => /Play the guide again/.test(x.textContent ?? ""))).toBe(true);
+    m.open("settings"); expect(Array.from(document.querySelectorAll("button")).some((x) => /Play the guide again/.test(x.textContent ?? ""))).toBe(true);
   });
 });
