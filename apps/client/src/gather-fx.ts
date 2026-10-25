@@ -15,7 +15,7 @@
  * DOM hooks: `#gather-fx` (canvas), `#pickup-toasts > [data-role=toast][data-item]`.
  */
 import { NetId, Transform, type Entity, type World } from "@engine/core";
-import { Animal, Dead, gameplayDefs, GroupSummary, Health, HitReact, IntentAction, listSlots, PlayerIntent, ResourceNode, Survival, Zombie } from "@engine/gameplay";
+import { Animal, Dead, gameplayDefs, GroupSummary, Health, HitReact, IntentAction, listSlots, PlayerIntent, Progression, XP, xpToNext, ResourceNode, Survival, Zombie } from "@engine/gameplay";
 import { isoToCss, type CameraLike } from "./world-tools.js";
 
 export const NODE_BAR_MS = 3000;
@@ -110,9 +110,22 @@ export class ToastStack {
     }
     if (this.toasts.length > TOAST_MAX) this.toasts = this.toasts.slice(-TOAST_MAX);
   }
+  /** ADR-135: "+N XP" line (pseudo item XP_ITEM), merged while visible like item pickups. */
+  addXp(gain: number, now: number, label = "XP"): void {
+    if (gain <= 0) return; const cur = this.toasts.find((t) => t.item === XP_ITEM && t.name === label);
+    if (cur && now - cur.at < XP.popup.mergeMs + TOAST_MS) { cur.count = label === "Level" ? gain : cur.count + gain; cur.at = now; this.toasts = [...this.toasts.filter((t) => t !== cur), cur]; }
+    else this.toasts.push({ item: XP_ITEM, count: gain, name: label, icon: "xp", at: now, id: ++this.seq });
+    if (this.toasts.length > TOAST_MAX) this.toasts = this.toasts.slice(-TOAST_MAX);
+  }
   reset(): void { this.last = undefined; this.toasts = []; }
 }
-export const toastText = (t: Pick<Toast, "count" | "name">): string => `+${t.count} ${t.name}`;
+export const XP_ITEM = -1;
+/** ADR-135: XP gained between two Progression samples (level-ups count the remainder of each finished level). */
+export function xpGain(prev: { xp: number; level: number } | undefined, cur: { xp: number; level: number }): number {
+  if (!prev) return 0; if (cur.level === prev.level) return Math.max(0, cur.xp - prev.xp);
+  if (cur.level < prev.level) return 0; let g = xpToNext(prev.level) - prev.xp; for (let l = prev.level + 1; l < cur.level; l++) g += xpToNext(l); return g + cur.xp;
+}
+export const toastText = (t: Pick<Toast, "count" | "name">): string => t.name === "Level" ? `Level ${t.count}!` : `+${t.count} ${t.name}`;
 export function inventoryTotals(world: World, e: Entity): Map<number, number> {
   const m = new Map<number, number>(); for (const s of listSlots(world, e)) m.set(s.item, (m.get(s.item) ?? 0) + s.count); return m;
 }
@@ -178,12 +191,17 @@ const CSS = `#gather-fx{position:absolute;inset:0;z-index:3;pointer-events:none}
 #pickup-toasts [data-role=toast]{display:flex;align-items:center;gap:6px;padding:3px 8px 3px 4px;border-radius:6px;background:rgba(20,16,12,.62);color:#FFFAF0;transition:opacity .3s ease,transform .3s ease;text-shadow:0 1px 1px #000}
 #pickup-toasts [data-role=toast][data-fade=true]{opacity:0;transform:translateX(-8px)}
 #pickup-toasts[data-art=true] [data-role=toast]{background:transparent;border-style:solid;border-width:6px 5px;border-image:var(--toast-bg) ${TOAST_SLICE.t} ${TOAST_SLICE.r} ${TOAST_SLICE.b} ${TOAST_SLICE.l} fill / 12px 10px / 0 round;border-radius:0;padding:0 6px 0 2px;color:#3a2a18;text-shadow:none}
+#pickup-toasts [data-item="-1"] .ic{background:#d9a227;border-radius:50%}
+#xp-chip{position:absolute;left:12px;bottom:72px;z-index:5;display:flex;align-items:center;gap:5px;padding:2px 6px;border-radius:9px;background:rgba(20,16,12,.55);color:#FFFAF0;font:700 11px/1 system-ui,sans-serif;pointer-events:none}
+#xp-chip[data-device=touch]{bottom:auto;top:60px;left:8px}
+#xp-chip .bar{width:56px;height:4px;border-radius:2px;background:rgba(255,255,255,.18);overflow:hidden}#xp-chip .bar>i{display:block;height:100%;width:var(--p,0%);background:#d9a227}
 #pickup-toasts .ic{width:20px;height:20px;flex:none;background:var(--cz-icon,#6b5a45) var(--cz-ipos,center)/var(--cz-isize,contain) no-repeat;border-radius:3px}`;
 
 export function mountGatherFx(root: HTMLElement, d: GatherFxDeps): { destroy(): void } {
   const style = document.createElement("style"); style.textContent = CSS; document.head.append(style);
   const cv = document.createElement("canvas"); cv.id = "gather-fx"; root.append(cv);
   const box = document.createElement("div"); box.id = "pickup-toasts"; box.setAttribute("aria-live", "polite"); root.append(box);
+  const chip = document.createElement("div"); chip.id = "xp-chip"; chip.innerHTML = '<span class="lv"></span><span class="bar"><i></i></span>'; root.append(chip); let lastXp: { xp: number; level: number } | undefined;
   const fx = loadArt(ART_URLS.fx), bar = loadArt(ART_URLS.hpbar), cbar = loadArt(ART_URLS.creatureHpbar);
   loadArt(ART_URLS.toast.slice(0, 1), () => { box.style.setProperty("--toast-bg", `url("${ART_URLS.toast[0]}")`); box.dataset["art"] = "true"; }); // else the CSS pill stays
   const hits = new NodeHits(); const creatures = new CreatureBars(); const stack = new ToastStack(); let parts: Particle[] = []; let raf = 0; let last = performance.now(); let player: Entity | undefined; let lastInv = 0;
@@ -196,7 +214,13 @@ export function mountGatherFx(root: HTMLElement, d: GatherFxDeps): { destroy(): 
         const a = Math.random() * Math.PI * 2; const sp = 0.6 + Math.random() * 1.2; const cs = COLORS[b.kind];
         parts.push({ x: b.x, y: b.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 0.45 + Math.random() * 0.35, age: 0, color: cs[i % cs.length]!, size: b.kind === "stone" ? 3 : 4, leaf: b.kind !== "stone" && i % 3 === 2, kind: b.kind });
       }
-      if (p !== player) { player = p; stack.reset(); }
+      if (p !== player) { player = p; stack.reset(); lastXp = undefined; }
+      const pr = p !== undefined ? w.get(p, Progression) : undefined; chip.hidden = !pr || d.hidden(); chip.dataset["device"] = d.device?.() ?? "keyboardMouse";
+      if (pr) {
+        const cur = { xp: pr.xp, level: pr.level }; const g = xpGain(lastXp, cur);
+        if (g >= XP.popup.minShown) stack.addXp(g, now); if (cur.level > (lastXp?.level ?? cur.level)) stack.addXp(cur.level, now, "Level"); lastXp = cur;
+        (chip.firstChild as HTMLElement).textContent = `Lv ${cur.level}`; chip.style.setProperty("--p", `${Math.min(100, (100 * cur.xp) / Math.max(1, xpToNext(cur.level))).toFixed(1)}%`);
+      }
       if (p !== undefined && now - lastInv > 100) { lastInv = now; stack.update(inventoryTotals(w, p), now, label); }
       drawToasts(now);
       const dpr = Math.min(3, globalThis.devicePixelRatio || 1); const W = root.clientWidth || innerWidth, H = root.clientHeight || innerHeight;
@@ -248,5 +272,5 @@ export function mountGatherFx(root: HTMLElement, d: GatherFxDeps): { destroy(): 
     }
   };
   raf = requestAnimationFrame(tick);
-  return { destroy: () => { cancelAnimationFrame(raf); cv.remove(); box.remove(); style.remove(); } };
+  return { destroy: () => { cancelAnimationFrame(raf); cv.remove(); box.remove(); chip.remove(); style.remove(); } };
 }

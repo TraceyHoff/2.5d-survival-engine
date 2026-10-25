@@ -2,7 +2,7 @@ import { wearSystem } from "./combat/arms.js";
 import { installVehicleCraft, VEHICLE_CRAFT_HASH } from "./vehicle_craft.js";
 import { CROP_EVERY, cropGrowthSystem, farmUseSystem } from "./farming.js";
 import { HUSBANDRY_EVERY, husbandrySystem, husbandryUseSystem } from "./skills/husbandry.js";
-import { installProgression } from "./skills/progression.js";
+import { installProgression, xpTravelSystem } from "./skills/progression.js";
 import { DEFAULT_TICK_HZ, pruneModifiers, setTimeOfDay, StallDisplay, TimeOfDay, Weather, type World } from "@engine/core";
 import { installSpatialIndex, setClimateModel, ClimateRes } from "@engine/world";
 import { Buffs, Equipment, GAMEPLAY_COMPONENTS, IntentAction, Inventory, NO_SLOT, PlayerIntent } from "./components.js";
@@ -52,6 +52,7 @@ export const GAMEPLAY_SYSTEM_ORDER: readonly (readonly [Phase, string, number?])
   ["simulation", "gameplay.weather"],
   ["simulation", "gameplay.vehicles"],
   ...BUILDING_SYSTEMS.pre,
+  ["simulation", "gameplay.equip"], // ADR-135 EquipCmd handler
   ["simulation", "gameplay.wear"],
   ["simulation", "gameplay.exposure", EXPOSURE_EVERY],
   ["simulation", "gameplay.fuel"],
@@ -74,6 +75,7 @@ export const GAMEPLAY_SYSTEM_ORDER: readonly (readonly [Phase, string, number?])
   ["simulation", "gameplay.chunkSurface", SURFACE_EVERY],
   ["simulation", "gameplay.clearIntents"],
   ["postSim", "gameplay.equipmentSync"],
+  ["postSim", "gameplay.xpTravel", 20],
   ...BUILDING_SYSTEMS.postSim,
   ...COMBAT_SYSTEMS.postSim,
   ["postSim", "gameplay.noiseDecay"],
@@ -114,7 +116,7 @@ export function installGameplay(world: World, options: GameplayOptions | number 
     "gameplay.spoilage": spoilageSystem, "gameplay.chunkSurface": chunkSurfaceSystem,
     "gameplay.clearIntents": clearIntentsSystem, "gameplay.equipmentSync": equipmentSyncSystem, "gameplay.noiseDecay": noiseDecaySystem,
     "gameplay.pruneBuffs": (w) => pruneModifiers(w, Buffs), "gameplay.stallDisplay": stallDisplaySystem, "gameplay.expression": expressionSystem, "gameplay.vehicles": vehicleSystem, "gameplay.vehicleGuard": vehicleGuardSystem, "gameplay.animSettle": animSettleSystem, "gameplay.farmUse": farmUseSystem, "gameplay.crops": cropGrowthSystem, "gameplay.husbandryUse": husbandryUseSystem, "gameplay.husbandry": husbandrySystem,
-    "gameplay.hordes": hordeDirectorSystem,
+    "gameplay.hordes": hordeDirectorSystem, "gameplay.xpTravel": xpTravelSystem, "gameplay.equip": equipSystem,
     ...installBuildingSystems(world), ...installCombatSystems(world),
   };
   installProgression(world);
@@ -129,6 +131,19 @@ export function clearIntentsSystem(world: World): void {
   const st = world.store(PlayerIntent);
   for (let k = 0; k < st.size; k++) {
     if (st.data.action[k] !== IntentAction.None) { st.data.action[k] = IntentAction.None; st.markChanged(entityIndex(st.dense[k]!)); }
+  }
+}
+
+/** ADR-135: IntentAction.Equip(slot) puts an inventory slot in the main hand; the same slot again (or an empty slot) unequips. */
+export function equipSystem(world: World): void {
+  const st = world.store(PlayerIntent);
+  for (let k = 0; k < st.size; k++) {
+    if (st.data.action[k] !== IntentAction.Equip) continue;
+    const e = st.dense[k]!; if (!world.has(e, Equipment) || !world.has(e, Inventory)) continue;
+    const slot = st.data.slot[k]!; const cur = world.getField(e, Equipment, "mainHandSlot");
+    const it = slotItem(world, e, slot);
+    const next = cur === slot || !it || it.count === 0 ? NO_SLOT : slot;
+    world.set(e, Equipment, { mainHandSlot: next, mainHandItem: next === NO_SLOT ? 0 : it.item });
   }
 }
 

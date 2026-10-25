@@ -33,7 +33,7 @@ describe("ADR-113 skill tree data", () => {
 describe("ADR-113 progression", () => {
   it("players spawn with Progression level 1; XP from gathering events levels up and grants points", () => {
     const w = world(); const a = mk(w, 1); expect(w.get(a, G.Progression)!.level).toBe(1);
-    const need = G.xpToNext(1); G.awardXp(w, a, "kill", Math.ceil(need / G.SKILLS.xp.kill) + 1);
+    const need = G.xpToNext(1); G.awardXp(w, a, "kill", Math.ceil(need / G.XP.sources.kill!) + 1);
     const p = w.get(a, G.Progression)!; expect(p.level).toBeGreaterThanOrEqual(2); expect(p.points).toBeGreaterThanOrEqual(1);
   });
   it("unlock respects prereqs and points; command validation uses the same rules", () => {

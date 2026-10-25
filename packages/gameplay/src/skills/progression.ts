@@ -3,15 +3,19 @@
  * levels -> skill points, node unlocks (prereqs + cost), paid respec, AI picks by personality (same commands),
  * and the recipe skill provider (setSkillLevelProvider). Authority-only writes; Progression replicates + persists.
  */
-import { defineCommand, Membership, Transform, type CommandHandlers, type Entity, type Traits, type World } from "@engine/core";
+import { DEFAULT_TICK_HZ, defineCommand, Membership, Transform, type CommandHandlers, type Entity, type Traits, type World } from "@engine/core";
 import { Animal, BuildPiece, Dead, Health, Progression, ResourceNode, Zombie } from "../components.js";
 import { gameplayDefs, isAuthority } from "../config.js";
-import { CraftCompleted, Damaged, emit, ev, ItemConsumed, ItemGathered, PiecePlaced } from "../events.js";
+import { CraftCompleted, Damaged, emit, ev, ItemConsumed, ItemGathered, PiecePlaced, WaterDrunk, XpActivity } from "../events.js";
+import { killXpBase, pvpFactor, travelStep, victimType, XP } from "./xp.js";
+import { ToolKind } from "../defs.js";
 import { countItem, removeItem } from "../inventory.js";
 import { setSkillLevelProvider } from "../systems/crafting.js";
 import { VehicleRepaired } from "../vehicle_craft.js";
 import { nodeWords, ownedNodes, pointsForLevel, SKILL_NODE_CATEGORY, SKILL_NODE_WORDS, SKILL_REQS, SKILLS, skillLevelOf, skillMod, skillNode, wordsHas, xpToNext, type XpSource } from "./tree.js";
 
+/** ADR-135: every award (after mods), for host-side popups/logs. The client derives its popup from Progression deltas. */
+export const XpGained = ev<{ entity: Entity; source: string; amount: number }>("gameplay.XpGained");
 export const LevelUp = ev<{ entity: Entity; level: number; points: number }>("gameplay.LevelUp");
 export const SkillUnlocked = ev<{ entity: Entity; node: number }>("gameplay.SkillUnlocked");
 export const SkillsRespecced = ev<{ entity: Entity; refunded: number; cost: number }>("gameplay.SkillsRespecced");
@@ -26,9 +30,14 @@ export function ensureProgression(world: World, e: Entity): void { if (!world.ha
 /** Award XP (scaled by the source table x skill "xp" mod); levels up and grants points. Shares to nearby party/clan. */
 export function awardXp(world: World, e: Entity, source: XpSource, units = 1, share = true): number {
   if (!isAuthority(world) || world.isReplaying || !world.isAlive(e) || !world.has(e, Progression)) return 0;
-  const amount = Math.round((SKILLS.xp[source] ?? 0) * units * (1 + skillMod(world, e, "xp")));
+  return awardXpRaw(world, e, source, (XP.sources[source] ?? 0) * units, share);
+}
+/** Award an already-computed base amount (kill XP); same mods / sharing as awardXp. */
+export function awardXpRaw(world: World, e: Entity, source: string, base: number, share = true): number {
+  if (!isAuthority(world) || world.isReplaying || !world.has(e, Progression)) return 0;
+  const amount = Math.round(base * (1 + skillMod(world, e, "xp")));
   if (amount <= 0) return 0;
-  addXp(world, e, amount);
+  addXp(world, e, amount); emit(world, XpGained, { entity: e, source, amount });
   const sh = share ? skillMod(world, e, "share") : 0;
   if (sh > 0) { const mates = matesNear(world, e, 20); const each = Math.round(amount * sh); if (each > 0) for (const m of mates) addXp(world, m, each); }
   return amount;
@@ -111,27 +120,43 @@ export function installProgression(world: World): void {
   world.addSchemaSalt("gameplay.skills", SKILLS_HASH);
   setSkillLevelProvider(world, (e, key) => skillLevelOf(world, e, key) ?? Number.MAX_SAFE_INTEGER);
   const defs = gameplayDefs(world);
+  // ADR-135: small XP for every activity (data/xp.json sources); kills scaled by victim type / kind / level
+  const TOOL_SRC: Partial<Record<number, XpSource>> = { [ToolKind.Axe]: "chop", [ToolKind.Pickaxe]: "mine", [ToolKind.Shovel]: "dig" };
   world.events.on(ItemGathered, (p: { entity: Entity; node: Entity; count: number }) => {
     if (!isPlayer(world, p.entity)) return;
     const kind = world.getField(p.node, ResourceNode, "kind");
-    const key = kind === undefined ? undefined : defs.resources.get(kind)?.key;
-    awardXp(world, p.entity, key?.startsWith("crop_") ? "farm" : "gather", Math.max(1, p.count));
+    const r = kind === undefined ? undefined : defs.resources.get(kind);
+    awardXp(world, p.entity, r?.key.startsWith("crop_") ? "farm" : (r && TOOL_SRC[r.requiredTool]) || "gather", Math.max(1, p.count));
   });
   world.events.on(CraftCompleted, (p: { entity: Entity; recipe: number; item: number }) => {
     if (!isPlayer(world, p.entity)) return; const it = defs.items.get(p.item);
     awardXp(world, p.entity, it?.food && it.food.hunger > 0 ? "cook" : "craft");
   });
+  const killedAt = new Map<Entity, number>();
   world.events.on(Damaged, (p: { target: Entity; source: Entity; amount: number }) => {
     if (!isPlayer(world, p.source) || p.source === p.target || world.has(p.target, BuildPiece)) return;
-    const hunt = world.has(p.target, Animal);
     awardXp(world, p.source, "combat", p.amount);
-    if ((world.getField(p.target, Health, "hp") ?? 1) <= 0) awardXp(world, p.source, hunt ? "hunt" : "kill", hunt ? 1 : world.has(p.target, Zombie) ? 1 : 2);
+    if ((world.getField(p.target, Health, "hp") ?? 1) > 0) return;
+    const last = killedAt.get(p.target); if (last !== undefined && world.tick - last < 40) return; // one award per death
+    killedAt.set(p.target, world.tick); if (killedAt.size > 512) for (const [k, t] of killedAt) if (world.tick - t >= 40) killedAt.delete(k);
+    const vt = victimType(world, p.target); if (!vt) return;
+    const f = vt === "player" ? pvpFactor(world, p.source, p.target, DEFAULT_TICK_HZ) : 1;
+    awardXpRaw(world, p.source, vt === "animal" ? "hunt" : "kill", killXpBase(world, p.target) * f);
   });
   world.events.on(PiecePlaced, (p: { builder: Entity }) => { if (isPlayer(world, p.builder)) awardXp(world, p.builder, "build"); });
   world.events.on(ItemConsumed, (p: { entity: Entity; item: number }) => {
-    const f = defs.items.get(p.item)?.food; if (isPlayer(world, p.entity) && f && f.health > 0 && f.hunger === 0) awardXp(world, p.entity, "heal");
+    const f = defs.items.get(p.item)?.food; if (!isPlayer(world, p.entity) || !f) return;
+    if (f.health > 0 && f.hunger === 0) awardXp(world, p.entity, "heal");
+    else awardXp(world, p.entity, f.hunger > 0 ? "eat" : "drink");
   });
+  world.events.on(WaterDrunk, (p: { entity: Entity }) => { if (isPlayer(world, p.entity)) awardXp(world, p.entity, "drink"); });
+  world.events.on(XpActivity, (p: { entity: Entity; source: string; units: number }) => { if (isPlayer(world, p.entity)) awardXp(world, p.entity, p.source as XpSource, p.units); });
   world.events.on(VehicleRepaired, (p: { entity: Entity }) => { if (isPlayer(world, p.entity)) awardXp(world, p.entity, "repair"); });
+}
+/** ADR-135 travel XP (every 20 ticks): tiles walked / driven, teleports ignored. */
+export function xpTravelSystem(world: World): void {
+  if (!isAuthority(world) || world.isReplaying) return;
+  for (const a of travelStep(world, DEFAULT_TICK_HZ, world.query([Progression, Transform], [Dead]))) awardXp(world, a.e, a.source, a.units, false);
 }
 /** Server/host command handlers (players and AI humans use the same commands). */
 export function installSkillHandlers(world: World, h: CommandHandlers): void {

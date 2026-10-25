@@ -13,7 +13,10 @@ import { itemInfo, type NameLookup } from "../economy/provenance.js";
 import { BuyFromStallCmd, CollectTillCmd, SetListingCmd, SetStallNameCmd, SetStallOpenCmd, StockStallCmd, UnstockStallCmd, listingRevision, stallListings, stallName, tillOf } from "../economy/stall.js";
 import { CancelQueuedCraftCmd, MAX_CRAFT_COUNT, QueueCraftCmd, craftQueueReason, owedOf } from "../systems/craft_queue.js";
 import { pieceCost } from "../building/place.js";
-import { DepositCmd, PaintCmd, PlaceCmd, ToggleFireCmd, UseCmd, WithdrawCmd } from "../input.js";
+import { DepositCmd, EquipCmd, PaintCmd, PlaceCmd, ToggleFireCmd, UseCmd, WearCmd, WithdrawCmd } from "../input.js";
+import { Equipment, Worn } from "../components.js";
+import { ItemCategory, WEAR_SLOTS } from "../defs.js";
+import { entityIndex } from "@engine/core";
 import { NO_SLOT } from "../components.js";
 import { Fuel } from "../components.js";
 import { fuelSecondsLeft } from "../systems/fuel.js";
@@ -35,7 +38,8 @@ const nameOf = (c: MenuCtx, playerId: number): string => (playerId ? c.names?.ge
 const withNames = (w: World, l: readonly ItemCount[], who?: Entity) => l.map((i) => ({ item: i.item, name: itemName(w, i.item), count: i.count, have: who !== undefined ? countItem(w, who, i.item) : 0 }));
 
 // ---- inventory --------------------------------------------------------------------------------------
-export interface InventorySlotView { slot: number; item: number; /** manifest icon key (ItemDef.spriteKey: `sprite` override, else item key) */ icon: string; name: string; count: number; durability: number; crafterId: number; crafterName: string; tooltip: string; /** ADR-128: context action for consumables ("eat" | "drink"), else undefined */ consume?: "eat" | "drink" }
+export interface InventorySlotView { slot: number; item: number; /** manifest icon key (ItemDef.spriteKey: `sprite` override, else item key) */ icon: string; name: string; count: number; durability: number; crafterId: number; crafterName: string; tooltip: string; /** ADR-128: context action for consumables ("eat" | "drink"), else undefined */ consume?: "eat" | "drink";
+  /** ADR-135: how the slot equips ("hand" = main hand via EquipCmd, "wear" = gear slot via WearCmd) and whether it is equipped now */ equip?: "hand" | "wear"; equipped?: boolean }
 /** ADR-128: "eat" / "drink" for consumables (liquid containers and thirst-only food drink), undefined otherwise. */
 export function consumeKind(w: World, item: number): "eat" | "drink" | undefined {
   const d = gameplayDefs(w).items.get(item); if (!d?.food) return undefined;
@@ -51,17 +55,35 @@ export function foodTooltip(w: World, item: number, durability = 0): string {
 }
 /** ADR-128: eat/drink the item in `slot` (server validates cooldown, rot, refill-at-water). */
 export function useIntent(slot: number): MenuIntent { return intent(UseCmd, { slot }); }
+/** ADR-135: main-hand equip (same command the hotbar keys send) and wear/unwear toggle for gear slots. */
+export const equipIntent = (slot: number): MenuIntent => intent(EquipCmd, { slot });
+export const wearIntent = (slot: number): MenuIntent => intent(WearCmd, { slot });
+export const EQUIP_SLOT_LABELS = ["Head", "Body", "Legs", "Feet", "Hands", "Back", "Off hand", "Accessory"] as const;
+export interface EquipSlotView { slot: number; label: string; invSlot: number; item: number; name: string; icon: string }
+/** ADR-135: paper-doll slots: Main hand (index -1) then the 8 Worn slots; invSlot -1 = empty. */
+export function equipmentView(c: MenuCtx): EquipSlotView[] {
+  const w = c.world; const d = gameplayDefs(w); const out: EquipSlotView[] = [];
+  const mk = (slot: number, label: string, inv: number, item: number): EquipSlotView => ({ slot, label, invSlot: item ? inv : -1, item, name: item ? itemName(w, item) : "", icon: item ? d.items.get(item)?.spriteKey ?? "" : "" });
+  const eq = w.isRegistered(Equipment) ? w.get(c.player, Equipment) : undefined;
+  out.push(mk(-1, "Main hand", eq?.mainHandSlot ?? -1, eq && eq.mainHandSlot !== NO_SLOT ? eq.mainHandItem : 0));
+  const st = w.isRegistered(Worn) && w.has(c.player, Worn) ? w.store(Worn) : undefined; const s = st ? st.slot(entityIndex(c.player)) : -1;
+  for (let i = 0; i < WEAR_SLOTS; i++) { const sl = st && s >= 0 ? st.data.slot[s * WEAR_SLOTS + i]! : 0; out.push(mk(i, EQUIP_SLOT_LABELS[i]!, sl - 1, sl ? st!.data.item[s * WEAR_SLOTS + i]! : 0)); }
+  return out;
+}
 /** ADR-128: drink straight from an adjacent water tile (UseCmd with NO_SLOT). */
 export function drinkWaterIntent(): MenuIntent { return intent(UseCmd, { slot: NO_SLOT }); }
+function equippedSlots(c: MenuCtx): Set<number> { const o = new Set<number>(); for (const v of equipmentView(c)) if (v.invSlot >= 0) o.add(v.invSlot); return o; }
 export function inventoryView(c: MenuCtx): InventorySlotView[] {
-  const w = c.world; const out: InventorySlotView[] = [];
+  const w = c.world; const out: InventorySlotView[] = []; let equipped: Set<number> | undefined;
   for (const s of listSlots(w, c.player)) {
     if (!s.item || !s.count) continue;
     const info = itemInfo(w, c.player, s.slot, c.names ?? { get: () => undefined });
     const crafterName = info?.crafterName || nameOf(c, s.crafterId);
     const name = itemName(w, s.item); const ck = consumeKind(w, s.item);
     const tip = [`${name} ×${s.count}`, s.durability && !gameplayDefs(w).items.get(s.item)?.sips && gameplayDefs(w).items.get(s.item)?.maxDurability ? `Durability ${s.durability}/${gameplayDefs(w).items.get(s.item)!.maxDurability}` : "", foodTooltip(w, s.item, s.durability), itemDefKey(w, s.item) === KEY_ITEM ? keyTooltip(w, s.crafterId) : crafterName ? `Crafted by ${crafterName}` : ""].filter(Boolean).join("\n");
-    out.push({ slot: s.slot, item: s.item, icon: gameplayDefs(w).items.get(s.item)?.spriteKey ?? "", name, count: s.count, durability: s.durability, crafterId: s.crafterId, crafterName, tooltip: tip, ...(ck ? { consume: ck } : {}) });
+    const def = gameplayDefs(w).items.get(s.item); const handy = def?.weapon || def?.tool || def?.ranged || def?.thrown;
+    const eqv = equipped ??= equippedSlots(c); const equip = def?.wear && (def.category === ItemCategory.Clothing || def.category === ItemCategory.Armor) ? "wear" as const : handy ? "hand" as const : def?.wear ? "wear" as const : undefined;
+    out.push({ slot: s.slot, item: s.item, icon: def?.spriteKey ?? "", name, count: s.count, durability: s.durability, crafterId: s.crafterId, crafterName, tooltip: tip, ...(ck ? { consume: ck } : {}), ...(equip ? { equip, equipped: eqv.has(s.slot) } : {}) });
   }
   return out;
 }

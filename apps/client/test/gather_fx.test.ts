@@ -51,3 +51,15 @@ describe("ADR-128 gather feedback", () => {
     for (const u of [...ART_URLS.fx, ...ART_URLS.hpbar, ...ART_URLS.toast]) expect(existsSync(fileURLToPath(u))).toBe(true);
   });
 });
+
+describe("ADR-135 XP popup", () => {
+  it("xpGain handles level-ups and merges +XP toasts", async () => {
+    const m = await import("../src/gather-fx.js"); const G = await import("@engine/gameplay");
+    expect(m.xpGain(undefined, { xp: 5, level: 1 })).toBe(0);
+    expect(m.xpGain({ xp: 5, level: 1 }, { xp: 9, level: 1 })).toBe(4);
+    expect(m.xpGain({ xp: G.xpToNext(1) - 2, level: 1 }, { xp: 3, level: 2 })).toBe(5);
+    const s = new m.ToastStack(); s.addXp(3, 0); s.addXp(2, 100);
+    expect(s.toasts.length).toBe(1); expect(m.toastText(s.toasts[0]!)).toBe("+5 XP");
+    s.addXp(4, 200, "Level"); expect(m.toastText(s.toasts[1]!)).toBe("Level 4!");
+  });
+});

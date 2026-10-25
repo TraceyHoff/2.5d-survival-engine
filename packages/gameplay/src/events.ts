@@ -34,6 +34,8 @@ export const InventoryOverflow = ev<{ entity: Entity; item: number; lost: number
 export const CraftStarted = ev<{ entity: Entity; recipe: number; totalTicks: number }>("gameplay.CraftStarted");
 export const CraftCompleted = ev<{ entity: Entity; recipe: number; item: number; count: number }>("gameplay.CraftCompleted");
 export const CraftFailed = ev<{ entity: Entity; recipe: number; reason: CraftFail }>("gameplay.CraftFailed");
+/** ADR-135: a small XP-earning activity (source = data/xp.json sources key); progression awards it. */
+export const XpActivity = ev<{ entity: Entity; source: string; units: number }>("gameplay.XpActivity");
 export const ItemConsumed = ev<{ entity: Entity; item: number }>("gameplay.ItemConsumed");
 /** ADR-128: why a Use (eat/drink) was refused. */
 export const enum ConsumeFail { Cooldown = 1, Rotten = 2, Empty = 3, NotConsumable = 4 }

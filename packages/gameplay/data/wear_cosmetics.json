@@ -1,0 +1,10 @@
+{
+  "_doc": "ADR-135: item family -> paper-doll wearable key (core Appearance slot from the key prefix). Placeholders until dedicated gear art lands; hands/offhand have no wearable art yet (held/offhand sprites instead).",
+  "families": {
+    "hat": "hat_straw", "cap": "hat_cap", "hood": "hat_frog_hood", "furhat": "hat_beanie", "leathercap": "hat_cap", "woolhat": "hat_beanie", "armor_head": "hat_viking",
+    "shirt": "top_tee", "jacket": "top_puffer", "coat": "top_puffer", "raincoat": "top_raincoat", "parka": "top_raincoat", "leatherjacket": "top_flannel", "sweater": "top_sweater", "furvest": "top_vest", "armor_torso": "top_vest",
+    "trousers": "bottom_jeans", "padded_legs": "bottom_cargo", "fur_legs": "bottom_leggings", "waxed_legs": "bottom_cargo", "leathertrousers": "bottom_jeans", "armor_legs": "bottom_cargo",
+    "sandals": "shoes_sandals", "boots": "shoes_boots", "fur_boots": "shoes_hiking_boots", "rubber_boots": "shoes_rain_boots", "armor_feet": "shoes_hiking_boots",
+    "cloak": "acc_cape", "backpack": "acc_backpack"
+  }
+}

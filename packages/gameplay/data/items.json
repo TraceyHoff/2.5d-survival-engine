@@ -354,7 +354,7 @@
       "durability": 150
     },
     {
-      "key": "stone_knife",
+      "key": "stone_knife", "wear": { "slot": "offhand", "armor": 0.5 },
       "name": "Stone Knife",
       "category": "tool",
       "maxStack": 1,
@@ -1308,7 +1308,7 @@
       "durability": 250
     },
     {
-      "key": "bronze_knife",
+      "key": "bronze_knife", "wear": { "slot": "offhand", "armor": 1 },
       "name": "Bronze Knife",
       "category": "tool",
       "maxStack": 1,
@@ -1343,7 +1343,7 @@
       "durability": 400
     },
     {
-      "key": "iron_knife",
+      "key": "iron_knife", "wear": { "slot": "offhand", "armor": 1.5 },
       "name": "Iron Knife",
       "category": "tool",
       "maxStack": 1,
@@ -1420,7 +1420,7 @@
       "durability": 600
     },
     {
-      "key": "steel_knife",
+      "key": "steel_knife", "wear": { "slot": "offhand", "armor": 2 },
       "name": "Steel Knife",
       "category": "tool",
       "maxStack": 1,
@@ -1497,7 +1497,7 @@
       "durability": 850
     },
     {
-      "key": "alloy_knife",
+      "key": "alloy_knife", "wear": { "slot": "offhand", "armor": 2.5 },
       "name": "Chrome Alloy Knife",
       "category": "tool",
       "maxStack": 1,
@@ -3730,7 +3730,7 @@
       "weight": 0.02
     },
     {
-      "key": "bone_knife",
+      "key": "bone_knife", "wear": { "slot": "offhand", "armor": 0.5 },
       "name": "Bone Knife",
       "category": "tool",
       "maxStack": 1,

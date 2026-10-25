@@ -49,6 +49,11 @@ export interface AppearanceBinding {
    * the expression name order.
    */
   expression?: { def: ComponentDef; name?: (id: number) => string | undefined };
+  /**
+   * ADR-135 (gameplay gear on the paper doll): per-entity part overrides [appearanceSlotIndex, wearableId] applied over
+   * Appearance.parts before resolve. `salt` must change whenever the overrides change (mixed into the cache key).
+   */
+  override?: (world: unknown, e: number) => { salt: number; parts: ReadonlyArray<readonly [number, number]> } | null;
 }
 
 /** Active face expression of `e` from binding.expression (undefined when absent, id 0 or untilTick has passed). */

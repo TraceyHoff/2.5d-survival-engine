@@ -16,7 +16,7 @@ import { iconForItem,
   setAppearanceIntent, setStallNameIntent, priceItemChoices, listItemIntents, unstockStallIntent, type StallListDraft, setStallOpenIntent, stallView, togglePermMask, wardrobeView, placeIntent,
   type BuildSelection, type MenuCtx, type MenuIntent, camperStationView, vehicleRefuelIntent, type CamperRecipeView,
   progressionView, unlockSkillIntent, respecSkillsIntent, SKILL_REJECT_TEXT, useIntent, drinkWaterIntent, nearWater,
-  SKILLS,
+  SKILLS, equipIntent, wearIntent, equipmentView,
 } from "@engine/gameplay";
 import { colorChoices, requestCharacterEdit } from "./character-creator.js";
 import { GroupRole, PlayerId, SLOT_PALETTE, Transform, type Entity, type WearableSlot } from "@engine/core";
@@ -122,7 +122,29 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       }
       if (cv) out.push(heading("Your pack"));
       if (!v.length) out.push(kit.para("Your pack is empty."));
-      else { const g = grid(); for (const s of v) g.append(btn(`${s.name} ×${s.count}`, `slot-${s.slot}`, () => cv ? send(depositIntent(cv.entity, s.item, s.count), `Stored ${s.name} ×${s.count}.`) : kit.status(s.tooltip.replace(/\n/g, " · ")), { title: cv ? `${s.tooltip}\nStore in container` : s.tooltip, role: "slot", data: { item: String(s.item), icon: s.icon } })); out.push(g); }
+      else {
+        // ADR-135: with no container open, tapping (click / D-pad + A) an equippable slot equips or unequips it; slots drag onto the Equipment section.
+        const equipSlot = (s: (typeof v)[number]): void => send(s.equip === "hand" ? equipIntent(s.slot) : wearIntent(s.slot), s.equipped ? `Unequipped ${s.name}.` : `Equipped ${s.name}.`);
+        const g = grid(); for (const s of v) {
+          const b = btn(`${s.equipped ? "◆ " : ""}${s.name} ×${s.count}`, `slot-${s.slot}`, () => cv ? send(depositIntent(cv.entity, s.item, s.count), `Stored ${s.name} ×${s.count}.`) : s.equip ? equipSlot(s) : kit.status(s.tooltip.replace(/\n/g, " · ")),
+            { title: cv ? `${s.tooltip}\nStore in container` : s.equip ? `${s.tooltip}\n${s.equipped ? "Unequip" : "Equip"}` : s.tooltip, role: "slot", data: { item: String(s.item), icon: s.icon, ...(s.equip && { equip: s.equip }), ...(s.equipped && { equipped: "" }) } });
+          if (!cv && s.equip) { b.draggable = true; b.ondragstart = (ev) => ev.dataTransfer?.setData("text/x-slot", String(s.slot)); }
+          g.append(b);
+        }
+        out.push(g);
+        if (!cv) {
+          const eq = el("section", { "data-role": "equipment" }); const eg = grid();
+          for (const q of equipmentView(c)) {
+            eg.append(btn(`${q.label}: ${q.item ? q.name : "—"}`, `equip-${q.slot}`, () => { if (!q.item) return kit.status(`Tap an item to equip it (${q.label}).`); send(q.slot < 0 ? equipIntent(q.invSlot) : wearIntent(q.invSlot), `Unequipped ${q.name}.`); },
+              { role: "equip", title: q.item ? "Unequip" : "Empty", data: { slot: String(q.slot), ...(q.item && { item: String(q.item), icon: q.icon }) } }));
+          }
+          eq.ondragover = (ev) => ev.preventDefault();
+          eq.ondrop = (ev) => { ev.preventDefault(); const sl = Number(ev.dataTransfer?.getData("text/x-slot")); const s = v.find((x) => x.slot === sl); if (s?.equip && !s.equipped) equipSlot(s); };
+          eq.append(eg); out.push(heading("Equipment"), eq);
+          const knives = v.filter((s) => s.equip === "hand" && gameplayDefs(c.world).items.get(s.item)?.wear?.slot === 6 /* WearSlot.OffHand */);
+          if (knives.length) { const kg = grid(); kg.dataset["role"] = "offhand"; for (const s of knives) kg.append(btn(`Off hand: ${s.name}`, `offhand-${s.slot}`, () => send(wearIntent(s.slot), `Off hand ${s.name}.`), { role: "use", title: "Hold in the off hand (armor)", data: { item: String(s.item), icon: s.icon } })); out.push(kg); }
+        }
+      }
       // ADR-128: Eat / Drink context actions (focusable buttons: tap, click, D-pad + A all work); server validates
       // cooldown, rotten food (iron_stomach) and refills empty containers next to water.
       if (!cv) {

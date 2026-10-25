@@ -10,7 +10,7 @@ import raw from "../data/farming.json";
 import { BuildPiece, Crop, Dead, Equipment, IntentAction, PlayerIntent, ResourceNode } from "./components.js";
 import { gameplayDefs, isAuthority } from "./config.js";
 import { countItem, slotItem, takeFromSlot } from "./inventory.js";
-import { emit, FarmFailed } from "./events.js";
+import { emit, FarmFailed, XpActivity } from "./events.js";
 import { indexEntity, spawnResourceNode } from "./spawn.js";
 import { hasPrivilege } from "./building/place.js";
 import { populationTile } from "./population.js";
@@ -100,6 +100,7 @@ export function farmUseSystem(world: World): void {
     else if (plantableBySeed(key) > 0) { r = plant(world, e, key, at.x, at.y); if (r === FarmFail.None) takeFromSlot(world, e, slot); }
     else continue;
     if (r !== FarmFail.None) emit(world, FarmFailed, { entity: e, reason: r });
+    else emit(world, XpActivity, { entity: e, source: key === FARM_TOOL.hoe ? "till" : key === FARM_TOOL.wateringCan ? "water" : key === FARM_TOOL.fertilizer ? "fertilize" : "plant", units: 1 });
   }
 }
 

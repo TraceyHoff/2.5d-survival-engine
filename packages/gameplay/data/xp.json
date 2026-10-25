@@ -1,0 +1,98 @@
+{
+ "$comment": "ADR-135: the single XP tunables table (server-authoritative; levels/points live in skills.json levels). sources = XP per unit of a small activity. kills = base XP by victim type x kindMul[key] x (1 + perLevel*(victimLevel-1)), capped by maxLevelMul. pvp = diminishing returns for killing the same victim. travel = tiles moved per award.",
+ "sources": {
+  "gather": 2,
+  "chop": 2,
+  "mine": 2,
+  "dig": 2,
+  "craft": 4,
+  "cook": 6,
+  "eat": 1,
+  "drink": 1,
+  "build": 5,
+  "road": 1,
+  "sign": 3,
+  "farm": 6,
+  "till": 1,
+  "plant": 2,
+  "water": 1,
+  "fertilize": 1,
+  "husbandry": 2,
+  "tame": 25,
+  "heal": 4,
+  "repair": 5,
+  "combat": 0.5,
+  "walk": 1,
+  "vehicle": 1,
+  "kill": 15,
+  "hunt": 8
+ },
+ "kills": {
+  "zombie": {
+   "base": 15,
+   "perLevel": 0,
+   "kindMul": {
+    "zombie_walker": 1,
+    "zombie_runner": 1.4,
+    "zombie_snuffer": 1.6,
+    "zombie_brute": 2.5
+   }
+  },
+  "animal": {
+   "base": 8,
+   "perLevel": 0,
+   "kindMul": {
+    "animal_squirrel": 0.4,
+    "animal_rabbit": 0.5,
+    "animal_hare": 0.5,
+    "animal_chicken": 0.5,
+    "animal_duck": 0.5,
+    "animal_goose": 0.6,
+    "animal_turkey": 0.7,
+    "animal_fox": 1,
+    "animal_snake": 1.2,
+    "animal_deer": 1.2,
+    "animal_goat": 1,
+    "animal_sheep": 1,
+    "animal_red_deer": 1.4,
+    "animal_stag": 1.5,
+    "animal_boar": 1.8,
+    "animal_cow": 1.2,
+    "animal_elk": 2,
+    "animal_wolf": 2.2,
+    "animal_bison": 2.5,
+    "animal_moose": 2.8,
+    "animal_bear": 4
+   }
+  },
+  "aiHuman": {
+   "base": 30,
+   "perLevel": 0.05,
+   "kindMul": {}
+  },
+  "player": {
+   "base": 40,
+   "perLevel": 0.05,
+   "kindMul": {}
+  },
+  "maxLevelMul": 4
+ },
+ "pvp": {
+  "windowSeconds": 1800,
+  "decay": 0.5,
+  "minFactor": 0,
+  "freeKills": 1,
+  "sameKillerVictimMaxPerWindow": 4,
+  "lowLevelGap": 10,
+  "lowLevelMul": 0.25
+ },
+ "travel": {
+  "walkTiles": 40,
+  "vehicleTiles": 120,
+  "maxTilesPerSecond": 25
+ },
+ "popup": {
+  "minShown": 1,
+  "mergeMs": 600
+ }
+}

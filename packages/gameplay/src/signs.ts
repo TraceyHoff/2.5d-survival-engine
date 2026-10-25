@@ -4,6 +4,7 @@
  * on the server. Owner or owner's clan may edit / remove it. Networked so every client renders a world label.
  */
 import { defineCommand, entityIndex, Membership, PlayerId, Transform, type CommandDef, type CommandHandlers, type Entity, type World } from "@engine/core";
+import { emit, XpActivity } from "./events.js";
 import raw from "../data/roads.json";
 import { Sign, SIGN_TEXT_MAX } from "./components.js";
 import { countItem, removeItem, addItem } from "./inventory.js";
@@ -76,7 +77,7 @@ export function placeSign(world: World, e: Entity, kind: number, x: number, y: n
   const d = signDef(kind); if (!d) return { fail: SignFail.BadKind };
   const item = itemIdSafe(world, d.item); if (item === undefined || countItem(world, e, item) < 1) return { fail: SignFail.NoItem };
   if (!hasPrivilege(world, e, x, y)) return { fail: SignFail.NoPrivilege };
-  removeItem(world, e, item, 1);
+  removeItem(world, e, item, 1); emit(world, XpActivity, { entity: e, source: "sign", units: 1 });
   return { fail: SignFail.None, sign: spawnSign(world, kind, x, y, rot, pid(world, e), clanOfActor(world, e), text) };
 }
 export function setSignText(world: World, e: Entity, sign: Entity, text: string): SignFail {

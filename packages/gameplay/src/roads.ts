@@ -6,6 +6,7 @@
  * Settlements: classifySettlements() clusters owned build pieces into clan cities / villages / houses.
  */
 import { defineCommand, PlayerId, Transform, entityIndex, type CommandDef, type CommandHandlers, type Entity, type World } from "@engine/core";
+import { emit, XpActivity } from "./events.js";
 import { installSpatialIndex } from "@engine/world";
 import raw from "../data/roads.json";
 import { BuildPiece, Dead, PieceOwner, Road, RoadSurface, Tribe } from "./components.js";
@@ -98,6 +99,7 @@ export function placeRoad(world: World, e: Entity, tx: number, ty: number, surfa
   const owner = pid(world, e);
   if (ex !== undefined) { world.setField(ex, Road, "surface", surface); world.setField(ex, Road, "owner", owner); }
   else spawnRoad(world, tx, ty, surface as RoadSurface, owner);
+  emit(world, XpActivity, { entity: e, source: "road", units: 1 });
   return RoadFail.None;
 }
 

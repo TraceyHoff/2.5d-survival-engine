@@ -36,7 +36,7 @@ export function feedAnimal(world: World, e: Entity, dryRun = false): { fail: Tam
   const tamed = world.get(a, Tamed);
   if (tamed) {
     if (tamed.owner !== e && tamed.owner !== 0) return { fail: TameFail.NotYours, tame: false, consumed: false };
-    if (!dryRun) world.set(a, Tamed, { fedUntil: world.tick + sec(H.fedSeconds) });
+    if (!dryRun) { world.set(a, Tamed, { fedUntil: world.tick + sec(H.fedSeconds) }); awardXp(world, e, "husbandry"); }
     return { fail: TameFail.None, tame: false, consumed: true };
   }
   const kind = world.get(a, Animal)!.kind; if (!domestic(kind)) return { fail: TameFail.NotDomestic, tame: true, consumed: false };

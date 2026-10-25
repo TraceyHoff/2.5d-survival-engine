@@ -221,7 +221,7 @@ export const Driver = defineComponent("Driver", { vehicleNetId: "u32", seat: "u8
 /** Hitch links (NetIds, 0 = none): towNetId = what this entity tows at its rear; parentNetId = what tows this entity. */
 export const Hitch = defineComponent("Hitch", { towNetId: "u32", parentNetId: "u32" }, { networked: true, persistent: true });
 /** Worn clothing/armor: per WearSlot the inventory slot + 1 (0 = empty) and the item (broadcast for render). carryBonus applied to Inventory.maxWeight. */
-export const Worn = defineComponent("Worn", { slot: { type: "u8", length: 6 }, item: { type: "u16", length: 6 }, carryBonus: "f32", waterproof: "f32", armor: "f32" }, { networked: true });
+export const Worn = defineComponent("Worn", { slot: { type: "u8", length: 8 }, item: { type: "u16", length: 8 }, carryBonus: "f32", waterproof: "f32", armor: "f32" }, { networked: true, persistent: true });
 /** Main-hand ranged state: inventory slot + 1 the magazine belongs to, loaded rounds of ammoItem, reload timer, draw start (0 = not drawing). */
 export const WeaponState = defineComponent("WeaponState", { slot: "u8", loaded: "u8", ammoItem: "u16", reloadUntilTick: "u32", chargeStartTick: "u32" }, { networked: true });
 /** A thrown explosive waiting for its fuse (Transform = landing point). Replicated: only what clients render (item, fuse). */

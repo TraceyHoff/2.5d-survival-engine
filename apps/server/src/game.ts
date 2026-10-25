@@ -10,7 +10,7 @@ import { AccountAssigned, ClaimAccount, SetName, WorldPersistence, loadSocial, t
 import { giveRandomAppearance } from "./appearance.js";
 import { SocialSync } from "./social_sync.js";
 import { Act, applyDemoInput, installDemoWorld, rejectReasonCode, DevBotHello, DEMO_COMMANDS, DEMO_EVENTS, ExplodedEvt, GAMEPLAY_NET_COMMANDS, Ping, Pong, ReloadedEvt, VehicleStationOpenedEvt, DeleteMyProgressCmd, DELETE_PROGRESS_CONFIRM, ProgressDeleted } from "./protocol.js";
-import { forgetPlayer, sweepForgottenPlayers, installSkillHandlers } from "@engine/gameplay";
+import { forgetPlayer, sweepForgottenPlayers, installSkillHandlers, setAiHumanPredicate } from "@engine/gameplay";
 
 /** Pre-ADR-107 worlds started at 0.25 of the day and did not persist the day-clock epoch. */
 export const LEGACY_START_TIME_OF_DAY = 0.25;
@@ -401,6 +401,8 @@ export function createGameServer(o: GameServerOptions): GameServer {
     chunks.update();
   });
   persist?.attach(chunks);
+  // ADR-135: AI humans are virtual players; kill XP pays the aiHuman rate for them (not the PvP rate + anti-farming)
+  setAiHumanPredicate(world, (e) => { for (const p of players.values()) if (p.entity === e) return !!p.bot; return false; });
   // Ambient population: zombies + animals everywhere; human bots only in singleplayer (mode.humanBots).
   const population = o.population === false ? undefined : installPopulation(world, {
     tickHz, ...(o.animalCapMul !== undefined ? { animalCapMul: o.animalCapMul } : {}),

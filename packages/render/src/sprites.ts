@@ -627,16 +627,18 @@ export class SpriteBatch {
         // resolveLayers gets the body's current anim name (face/eyes expressions via faceAnims, ADR-082): the AnimState
         // anim resolved on the body sprite (re-resolved once when the body sprite's anim name differs from the guess)
         const as0 = an ? an.slot(i) : -1; const st0 = as0 >= 0 && an ? an.data.state[as0]! : -1;
-        const read = () => readAppearanceSlot(apData!, apLen, aps);
+        const ov = this.layerCache.binding.override?.(world, e) ?? null;
+        const read = () => { const v = readAppearanceSlot(apData!, apLen, aps); if (ov) { const parts = Array.from(v.parts); for (const [s, w] of ov.parts) if (s >= 0 && s < parts.length) parts[s] = w; return { ...v, parts }; } return v; };
+        const ver = apVer![aps]! + (ov ? ov.salt * 65536 : 0); // equality-only cache key (u16 version + gear salt)
         const expr = activeExpression(world as never, e, this.layerCache.binding);
         const ro = (anim: string | undefined) => ({ ...(anim !== undefined ? { anim } : {}), ...(expr !== undefined ? { expression: expr } : {}) });
         let animName = st0 >= 0 ? atlas.animName(sid, atlas.stateAnim(sid, st0)) : undefined;
-        layers = this.layerCache.get(i, e, apVer![aps]!, f, read, ro(animName));
+        layers = this.layerCache.get(i, e, ver, f, read, ro(animName));
         for (const l of layers) if (l.slot === "body") { bodyL = l; sid = l.sprite; break; }
         if (bodyL && st0 >= 0) { const nm = atlas.animName(sid, atlas.stateAnim(sid, st0)); if (nm !== animName) { animName = nm;
-          layers = this.layerCache.get(i, e, apVer![aps]!, f, read, ro(nm)); bodyL = null;
+          layers = this.layerCache.get(i, e, ver, f, read, ro(nm)); bodyL = null;
           for (const l of layers) if (l.slot === "body") { bodyL = l; sid = l.sprite; break; } } }
-        else if (bodyL && st0 < 0 && bodyL.animName) { layers = this.layerCache.get(i, e, apVer![aps]!, f, read, ro(bodyL.animName)); bodyL = null;
+        else if (bodyL && st0 < 0 && bodyL.animName) { layers = this.layerCache.get(i, e, ver, f, read, ro(bodyL.animName)); bodyL = null;
           for (const l of layers) if (l.slot === "body") { bodyL = l; sid = l.sprite; break; } }
       }
       if (bodyL) atlas.markUsed(sid); // the paper-doll body sheet is visible art too: keep it in the hot (full-res) tier

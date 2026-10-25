@@ -15,8 +15,10 @@ export const enum WeatherKind { Clear = 0, Rain = 1, Storm = 2, Snow = 3, Fog = 
 
 export const enum ItemCategory { Resource = 0, Food = 1, Tool = 2, Placeable = 3, Weapon = 4, Clothing = 5, Armor = 6, Ammo = 7, Explosive = 8 }
 /** Worn slots (Worn component index). Append only. */
-export const enum WearSlot { Head = 0, Torso = 1, Legs = 2, Feet = 3, Hands = 4, Back = 5 }
-export const WEAR_SLOTS = 6;
+export const enum WearSlot { Head = 0, Torso = 1, Legs = 2, Feet = 3, Hands = 4, Back = 5, OffHand = 6, Accessory = 7 }
+/** ADR-135: 8 wear slots (6 clothing/armor + off hand + accessory). Waterproof still averages over the 6 body slots. */
+export const WEAR_SLOTS = 8;
+export const BODY_WEAR_SLOTS = 6;
 export const enum ToolKind { None = 0, Axe = 1, Pickaxe = 2, Shovel = 3, Knife = 4 }
 export const enum StationKind { None = 0, Campfire = 1, Workbench = 2, Furnace = 3, Anvil = 4, Garage = 5 }
 export const enum Placement { Cell = 0, Edge = 1, Opening = 2, Free = 3, Tri = 4 }
@@ -24,7 +26,7 @@ export const enum Placement { Cell = 0, Edge = 1, Opening = 2, Free = 3, Tri = 4
 export const enum SocketKind { Edge = 1, Door = 2, Window = 3, Hatch = 4 }
 
 const CATEGORY: Record<string, ItemCategory> = { resource: ItemCategory.Resource, food: ItemCategory.Food, tool: ItemCategory.Tool, placeable: ItemCategory.Placeable, weapon: ItemCategory.Weapon, clothing: ItemCategory.Clothing, armor: ItemCategory.Armor, ammo: ItemCategory.Ammo, explosive: ItemCategory.Explosive };
-const WEAR: Record<string, WearSlot> = { head: WearSlot.Head, torso: WearSlot.Torso, legs: WearSlot.Legs, feet: WearSlot.Feet, hands: WearSlot.Hands, back: WearSlot.Back };
+const WEAR: Record<string, WearSlot> = { head: WearSlot.Head, torso: WearSlot.Torso, legs: WearSlot.Legs, feet: WearSlot.Feet, hands: WearSlot.Hands, back: WearSlot.Back, offhand: WearSlot.OffHand, accessory: WearSlot.Accessory };
 const TOOL: Record<string, ToolKind> = { none: ToolKind.None, axe: ToolKind.Axe, pickaxe: ToolKind.Pickaxe, shovel: ToolKind.Shovel, knife: ToolKind.Knife };
 const STATION: Record<string, StationKind> = { none: StationKind.None, campfire: StationKind.Campfire, workbench: StationKind.Workbench, furnace: StationKind.Furnace, anvil: StationKind.Anvil, garage: StationKind.Garage };
 const WEATHER: Record<string, WeatherKind> = { clear: WeatherKind.Clear, rain: WeatherKind.Rain, storm: WeatherKind.Storm, snow: WeatherKind.Snow, fog: WeatherKind.Fog };
@@ -306,7 +308,8 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
     if (r.sips && (r.maxStack !== 1 || r.durability !== r.sips)) err(`${where}: liquid containers need maxStack 1 and durability = sips`);
     if ((r.tool || r.weapon) && r.maxStack !== 1) err(`${where}: tools/weapons are non-stackable (maxStack 1)`);
     const isWear = category === ItemCategory.Clothing || category === ItemCategory.Armor;
-    if (isWear !== !!r.wear) err(`${where}: clothing/armor items (only) need "wear"`);
+    const handWear = !!r.wear && (r.wear.slot === "offhand" || r.wear.slot === "accessory");
+    if (isWear ? !r.wear : (!!r.wear && !handWear)) err(`${where}: clothing/armor items (only) need "wear" (others may only use offhand/accessory)`);
     if ((category === ItemCategory.Ammo) !== !!r.ammo) err(`${where}: ammo items (only) need "ammo"`);
     if ((category === ItemCategory.Explosive) !== !!r.explosive) err(`${where}: explosive items (only) need "explosive"`);
     if ((r.ranged || r.thrown) && !r.weapon) err(`${where}: ranged/thrown weapons also need melee "weapon" stats`);

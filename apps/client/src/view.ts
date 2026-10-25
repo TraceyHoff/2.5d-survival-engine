@@ -10,7 +10,7 @@ import { showRenderError, glInfo, frameIsBlack } from "./glcheck.js";
  * from the gameplay components (Survival = character, Zombie, ResourceNode, CraftingStation, BuildPiece) using the
  * gameplay defs' sprite keys. Terrain is the net TileClient's TileMap, drawn directly.
  */
-import { World, Transform, PrevTransform, TimeOfDay, Weather, Appearance, PlayerId, defineComponent, entityIndex, type Entity } from "@engine/core";
+import { World, Transform, PrevTransform, TimeOfDay, Weather, Appearance, PlayerId, defineComponent, slotIndex, type WearableSlot, entityIndex, type Entity } from "@engine/core";
 import { CHUNK_SIZE, tileToChunk, tileToLocal, type TileMap } from "@engine/world";
 import { setDayFraction } from "@engine/render";
 import { pieceVariantOpts } from "./piece-variant.js";
@@ -19,7 +19,7 @@ import { BuildGhost, pieceArtRow, ROT_EXACT_PIVOT, IsoRenderer, Canvas2DRenderer
 import { countFraction } from "./load-progress.js";
 import { roadSpriteKeys, ROAD_FLAGS, signFrameId } from "./road-sign-view.js";
 import { Road, Sign, surfaceDef, signDef, walkAnimRate } from "@engine/gameplay";
-import { HitReact, NodeRegrow, hitDirRad } from "@engine/gameplay";
+import { HitReact, NodeRegrow, hitDirRad, Equipment, wornCosmetics } from "@engine/gameplay";
 import { gameplayDefs, rotationSteps, animalDefs, Animal, Health, Survival, Zombie, ResourceNode, CraftingStation, Fuel, AnimState as GAnim, BuildPiece as GPiece, Dead, Wetness, BodyTemp, Emitter, PieceLink, Crop, cropSpriteKey, clutterForChunk, resolveSprite, type ResolvedSprite } from "@engine/gameplay";
 
 /** Render-side schemas the renderer's bindings expect (view World only). */
@@ -28,6 +28,8 @@ const VPiece = defineComponent("ViewBuildPiece", { visualId: "u16", variant: "u8
 const VWet = defineComponent("ViewWetness", { level: "u8" });
 const VTemp = defineComponent("ViewBodyTemp", { cold: "u8", heat: "u8", shivering: "u8" });
 const VFuel = defineComponent("ViewFuel", { burnUntilTick: "u32", lit: "u8" });
+/** ADR-135: replicated main-hand item (held sprite at the hand anchor). */
+const VEquip = defineComponent("ViewEquipment", { mainHandItem: "u16" });
 /** gameplay Anim (Idle Walk Run Attack Hurt Die Gather Build) -> render AnimStateId (Idle Walk Run Attack Hit Death ...). */
 const ANIM_MAP: readonly number[] = [0, 1, 2, 3, 4, 5, 3, 3];
 /** ADR-107: Swim (14) / Punch (15) pass straight through (atlas fallbacks: swim->walk, punch->attack). */
@@ -93,14 +95,24 @@ export class IsoView {
   private characters = new Set<number>(); private walkRate = 1;
   private constructor(readonly renderer: IsoRenderer, readonly registry: AssetRegistry, private readonly ov: ViewOverrides, readonly lights: LightTable) {
     IsoRenderer.registerComponents(this.view);
-    for (const c of [VAnim, VPiece, VWet, VTemp, VFuel]) this.view.register(c);
+    for (const c of [VAnim, VPiece, VWet, VTemp, VFuel, VEquip]) this.view.register(c);
     const cat = noCosmetics ? undefined : registry.cosmetics;
     if (cat?.size) this.view.register(Appearance);
     renderer.bindGameplay({ animState: VAnim, buildPiece: VPiece, wetness: VWet, bodyTemp: VTemp, lit: VFuel, pieceState: (e) => this.pieceStates.get(e),
       hitFlash: (e) => this.hitPoseOf.get(e)?.flash ?? 0, hitTilt: (e) => this.hitPoseOf.get(e)?.tilt ?? 0,
       animRate: (e, st) => (st === 1 && this.characters.has(e) ? this.walkRate : undefined),
-      ...(cat?.size ? { appearance: coreAppearanceBinding(cat) } : {}) });
+      equipment: VEquip, heldSprite: (item) => this.heldSpriteOf(item),
+      ...(cat?.size ? { appearance: { ...coreAppearanceBinding(cat), override: (_w: unknown, ve: number) => this.gearOf.get(ve) ?? null } } : {}) });
   }
+  /** ADR-135: view entity -> worn-gear paper-doll overrides (salt = hash of the worn items). */
+  private gearOf = new Map<number, { salt: number; parts: Array<[number, number]> }>();
+  private heldCache = new Map<number, number | undefined>();
+  private heldSpriteOf(item: number): number | undefined {
+    if (this.heldCache.has(item)) return this.heldCache.get(item);
+    const key = this.netRef ? gameplayDefs(this.netRef).items.get(item)?.key : undefined; if (!key) return undefined;
+    const id = this.registry.ids.sprites.tryId(`held_${key}`); this.heldCache.set(item, id); return id;
+  }
+  private netRef: World | null = null;
   get appearanceEnabled(): boolean { return this.view.isRegistered(Appearance); }
 
   static async create(canvas: HTMLCanvasElement, base: string, ov: ViewOverrides = {}, onStage: (stage: string, f: number, label?: string) => void = () => {}): Promise<IsoView> {
@@ -285,13 +297,21 @@ export class IsoView {
         if (!a && v.has(ve, Appearance)) v.remove(ve, Appearance); const va = a ? v.get(ve, Appearance) : undefined;
         if (a && (!va || va.version !== a.version)) { const init = { bodyType: a.bodyType, skinTone: a.skinTone, version: a.version, parts: [...a.parts], primary: [...a.primary], secondary: [...a.secondary] }; if (va) v.set(ve, Appearance, init); else v.add(ve, Appearance, init); }
       }
+      if (net.isRegistered(Equipment) && net.has(e, Equipment)) { // ADR-135 held item + worn gear
+        this.netRef = net; const eq = net.get(e, Equipment); const mh = eq?.mainHandItem ?? 0;
+        if (eq && !v.has(ve, VEquip)) v.add(ve, VEquip, { mainHandItem: mh }); else if (v.has(ve, VEquip) && v.getField(ve, VEquip, "mainHandItem") !== mh) v.set(ve, VEquip, { mainHandItem: mh });
+        const cat = this.registry.cosmetics; const gear = cat ? wornCosmetics(net, e) : [];
+        if (gear.length && cat) { let salt = 7; const parts: Array<[number, number]> = []; for (const [s, k] of gear) { const id = cat.byKey(k)?.id; if (id === undefined) continue; parts.push([slotIndex(s as WearableSlot), id]); salt = (salt * 31 + id * 8 + slotIndex(s as WearableSlot)) % 32749; }
+          if (parts.length) this.gearOf.set(ve, { salt: salt + 1, parts }); else this.gearOf.delete(ve); }
+        else this.gearOf.delete(ve);
+      }
       if (v.has(ve, Sprite) && net.has(e, Crop)) { const c = net.get(e, Crop)!; const r = this.rs(cropSpriteKey(c.kind, c.stage)); if (r && (v.get(ve, Sprite)!.spriteId !== r.id || v.get(ve, Sprite)!.scale !== r.scale)) { v.set(ve, Sprite, { spriteId: r.id, scale: r.scale, tint: r.tint }); this.scales.set(ve, r.scale); } }
       if (v.has(ve, Sprite) && net.has(e, Road)) { const r0 = net.get(e, Road)!; const r = this.roadSprite(r0.surface, r0.mask); if (r && v.get(ve, Sprite)!.spriteId !== r.id) v.set(ve, Sprite, { spriteId: r.id }); } // neighbours placed / removed
       if (v.has(ve, Sprite) && net.has(e, Sign)) { const sp = v.get(ve, Sprite)!; const fid = this.signFrame(sp.spriteId, net.get(e, Sign)!.rot); if (sp.frameId !== fid) v.set(ve, Sprite, { frameId: fid }); } // rotated
       if (v.has(ve, VPiece)) this.syncPieceState(net, e, ve, defs);
       if (v.has(ve, VFuel)) { const f = net.get(e, Fuel); if (f) v.set(ve, VFuel, { lit: f.lit, burnUntilTick: f.burnUntilTick }); }
     }
-    for (const [ne, ve] of this.map) if (!seen.has(ne)) { if (ve === this.focusVe) { r.setFocusEntity(-1); this.focusVe = -1; } v.destroy(ve); this.map.delete(ne); this.characters.delete(ve); this.lightOf.delete(ne); this.pieceStates.delete(ve); this.lastMove.delete(ne); this.nodeAmt.delete(ne); this.nodeHit.delete(ne); this.animalHp.delete(ne); this.animalPrev.delete(ne); this.scales.delete(ve); this.hitSeen.delete(ne); this.hitPoseOf.delete(ve); }
+    for (const [ne, ve] of this.map) if (!seen.has(ne)) { if (ve === this.focusVe) { r.setFocusEntity(-1); this.focusVe = -1; } v.destroy(ve); this.map.delete(ne); this.characters.delete(ve); this.lightOf.delete(ne); this.pieceStates.delete(ve); this.lastMove.delete(ne); this.nodeAmt.delete(ne); this.nodeHit.delete(ne); this.animalHp.delete(ne); this.animalPrev.delete(ne); this.scales.delete(ve); this.hitSeen.delete(ne); this.hitPoseOf.delete(ve); this.gearOf.delete(ve); }
 
     this.syncClutter(tiles, ground);
     const camE = CAM_ANIMAL && this.camAnimal !== undefined ? this.camAnimal : player;

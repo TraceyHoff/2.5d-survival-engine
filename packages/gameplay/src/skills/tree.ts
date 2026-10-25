@@ -7,13 +7,13 @@ import raw from "../../data/skills.json";
 import { Progression } from "../components.js";
 
 export type SkillMod = "gather" | "cropYield" | "carry" | "fuel" | "vfuel" | "repair" | "nutrition" | "heal" | "produce" | "tame" | "share" | "xp" | "noise" | `dmg_${string}`;
-export type XpSource = "gather" | "craft" | "combat" | "kill" | "farm" | "hunt" | "build" | "tame" | "cook" | "heal" | "repair";
+/** ADR-135: keys of data/xp.json sources (the single XP table). */
+export type XpSource = keyof typeof import("../../data/xp.json")["sources"];
 export interface SkillNodeDef {
   key: string; name: string; branch: string; tier: number; x: number; y: number; cost: number; requires: string[]; desc: string; icon: string; retired?: boolean;
   effects: { skill?: { key: string; level: number }; mods?: Partial<Record<string, number>>; perk?: string };
 }
 export interface SkillsData {
-  xp: Record<XpSource, number>;
   levels: { base: number; growth: number; pointsPerLevel: number; maxLevel: number; bonusEvery: number; bonusPoints: number };
   respec: { item: string; base: number; perRespec: number; refundFraction: number };
   weaponClasses: Record<string, string[]>;

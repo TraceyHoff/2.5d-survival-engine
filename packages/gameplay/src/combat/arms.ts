@@ -12,7 +12,7 @@
 import { defineResource, entityIndex, PlayerId, Transform, type Entity, type World } from "@engine/core";
 import { BuildPiece, Container, DamageCause, ContainerViewers, Dead, Equipment, Exposure, Health, ExplosiveOwner, IntentAction, Inventory, LiveExplosive, LootBag, NO_SLOT, PlayerIntent, Tribe, WeaponState, Worn } from "../components.js";
 import { gameplayDefs, isAuthority } from "../config.js";
-import { ItemCategory, secondsToTicks, WEAR_SLOTS, type ItemDef } from "../defs.js";
+import { BODY_WEAR_SLOTS, ItemCategory, secondsToTicks, WearSlot, WEAR_SLOTS, type ItemDef } from "../defs.js";
 import { emit, ev } from "../events.js";
 import { addItem, countItem, moveSlotTuples, removeItem, slotItem, takeFromSlot } from "../inventory.js";
 import { applyDamage } from "./combat.js";
@@ -46,6 +46,7 @@ export function wearSlot(world: World, e: Entity, slot: number): boolean {
   const { item } = slotItem(world, e, slot); const w = item ? itemDef(world, item)?.wear : undefined; if (!w) return false;
   const st = world.store(Worn); const s = st.slot(entityIndex(e)); const k = s * WEAR_SLOTS + w.slot;
   if (st.data.slot[k] === slot + 1) { st.data.slot[k] = 0; st.data.item[k] = 0; }
+  else if (w.slot === WearSlot.OffHand && world.getField(e, Equipment, "mainHandSlot") === slot) return false;
   else { st.data.slot[k] = slot + 1; st.data.item[k] = item; }
   st.markChanged(entityIndex(e)); refreshWorn(world, e); return true;
 }
@@ -56,11 +57,11 @@ export function refreshWorn(world: World, e: Entity): void {
   for (let i = 0; i < WEAR_SLOTS; i++) {
     const k = s * WEAR_SLOTS + i; const sl = st.data.slot[k]!; if (!sl) continue;
     const it = st.data.item[k]!;
-    if (slotItem(world, e, sl - 1).item !== it) { st.data.slot[k] = 0; st.data.item[k] = 0; changed = true; continue; }
+    if (slotItem(world, e, sl - 1).item !== it || (i === WearSlot.OffHand && world.has(e, Equipment) && world.getField(e, Equipment, "mainHandSlot") === sl - 1)) { st.data.slot[k] = 0; st.data.item[k] = 0; changed = true; continue; }
     const w = itemDef(world, it)?.wear; if (!w) continue;
     ins += w.insulation; wp += w.waterproof; armor += w.armor; carry += w.carryBonus;
   }
-  wp /= WEAR_SLOTS;
+  wp /= BODY_WEAR_SLOTS;
   const oldCarry = st.data.carryBonus[s]!;
   if (oldCarry !== carry && world.has(e, Inventory)) world.setField(e, Inventory, "maxWeight", world.getField(e, Inventory, "maxWeight")! + carry - oldCarry);
   if (changed || oldCarry !== carry || st.data.waterproof[s] !== Math.fround(wp) || st.data.armor[s] !== armor) {
