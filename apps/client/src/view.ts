@@ -69,6 +69,11 @@ let noCosmetics = false;
 const PLAYER_KEYS = ["player", "player_b", "player_c"];
 
 /** Camera fallback when no player is replicated for CAMERA_GRACE_FRAMES: the legacy origin spawn (server SPAWN). */
+/** World z of an entity at (x, y): the sim's z, lifted onto the terrain step (tile height) it stands on. */
+export function groundZ(tiles: TileMap | undefined, x: number, y: number, z: number): number {
+  if (!tiles) return z; const tx = Math.floor(x), ty = Math.floor(y); const c = tiles.getChunk(tileToChunk(tx), tileToChunk(ty));
+  return c ? Math.max(z, c.height[tileToLocal(ty) * CHUNK_SIZE + tileToLocal(tx)] ?? 0) : z;
+}
 export const CAMERA_FALLBACK = { x: 16, y: 16, z: 0 };
 const CAMERA_GRACE_FRAMES = 300;
 export interface ViewStatus { localServer: string; snapshots: number; error?: string }
@@ -186,13 +191,15 @@ export class IsoView {
   /** Build-placement ghost from the client's buildMode.preview (call every frame; undefined removes it). Free-rotation
    *  pieces (rotSteps 16) are shown at the nearest quarter turn, triangles (12) on their exact art row (pieceArtRow); Tri/Free
    *  pieces pivot at the exact snapped x/y; variant goes by name (defs variantNames). */
+  private lastTiles: TileMap | undefined;
   syncGhost(p: import("@engine/gameplay").BuildPreview | undefined, net: World): void {
     if (!p && !this.ghost) return;
     this.ghost ??= new BuildGhost(this.view, VPiece as never, this.registry);
     if (!p) { this.ghost.sync(null); return; }
     const names = gameplayDefs(net).pieces.get(p.piece)?.variantNames ?? [];
     const def = gameplayDefs(net).pieces.get(p.piece);
-    this.ghost.sync({ pieceKey: this.pk(p.pieceKey) ?? p.pieceKey, x: p.x, y: p.y, rot: p.rot, valid: p.valid }, { z: p.z, level: p.level, tier: p.tier, rotSteps: p.rotSteps, exactPivot: exactPivot(def), ...(names[p.variant] ? { variant: names[p.variant]! } : { variant: p.variant }) });
+    // ADR-142: lifted onto the terrain step like the placed piece (view mirror `ground`); at z=0 it sank under raised ground
+    this.ghost.sync({ pieceKey: this.pk(p.pieceKey) ?? p.pieceKey, x: p.x, y: p.y, rot: p.rot, valid: p.valid }, { z: groundZ(this.lastTiles, p.x, p.y, p.z), level: p.level, tier: p.tier, rotSteps: p.rotSteps, exactPivot: exactPivot(def), ...(names[p.variant] ? { variant: names[p.variant]! } : { variant: p.variant }) });
   }
   resize(w: number, h: number, dpr: number): void {
     const safe = new URLSearchParams(location.search).get("safe") === "1" || this.renderer.capabilities.safe || this.renderer.capabilities.lowEnd;
@@ -233,10 +240,7 @@ export class IsoView {
     let defs: ReturnType<typeof gameplayDefs> | undefined; try { defs = gameplayDefs(net); } catch { defs = undefined; }
     const seen = this.seen; seen.clear();
     // the sim moves on the z=0 plane; lift entities onto the terrain step they stand on (tile height = world z)
-    const ground = (x: number, y: number, z: number): number => {
-      if (!tiles) return z; const tx = Math.floor(x), ty = Math.floor(y); const c = tiles.getChunk(tileToChunk(tx), tileToChunk(ty));
-      return c ? Math.max(z, c.height[tileToLocal(ty) * CHUNK_SIZE + tileToLocal(tx)] ?? 0) : z;
-    };
+    this.lastTiles = tiles; const ground = (x: number, y: number, z: number): number => groundZ(tiles, x, y, z);
     let dressed: Set<Entity> | undefined;
     if (lowendDress && this.appearanceEnabled && net.isRegistered(Appearance)) { // nearest N to the camera keep their layers
       const cx = this.renderer.camera.x, cy = this.renderer.camera.y;
