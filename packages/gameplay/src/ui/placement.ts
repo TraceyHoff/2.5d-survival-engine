@@ -9,7 +9,11 @@
 import { Transform, type Entity, type World } from "@engine/core";
 import { gameplayDefs } from "../config.js";
 import { Placement } from "../defs.js";
-import { snapPlacement, validatePlacement } from "../building/place.js";
+import { pieceCost, snapPlacement, validatePlacement } from "../building/place.js";
+import { maxHpOf } from "../building/integrity.js";
+import { BuildPiece, Dead, PieceSlot } from "../components.js";
+import { DemolishCmd, RepairCmd, UpgradeCmd } from "../input.js";
+import { countItem } from "../inventory.js";
 import { placeIntent, type BuildSelection, type MenuIntent } from "./menus.js";
 
 /** Renderer contract: draw the ghost of `pieceKey` at (x, y, level) with `rot`, tinted valid/invalid. */
@@ -73,3 +77,35 @@ function rawPreview(world: World, player: Entity, sel: BuildSelection, rot: numb
 /** PlaceCmd for a preview (raw rot as requested; the server re-snaps the same way). */
 export const placePreviewIntent = (p: BuildPreview): MenuIntent =>
   placeIntent({ piece: p.piece, tier: p.tier, variant: p.variant, paint: p.paint }, { x: p.request.x, y: p.request.y, level: p.level, rot: p.request.rot });
+
+// ---- ADR-136: targeted placed piece (contextual Repair / Upgrade / Demolish) -----------------------------------
+export interface PieceTarget {
+  entity: Entity; piece: number; pieceKey: string; level: number; tier: number; tierKey: string; hp: number; maxHp: number;
+  /** Next tier for Upgrade (undefined when not tiered / already top tier). */
+  nextTier: number | undefined; nextTierKey: string | undefined;
+  canRepair: boolean; canUpgrade: boolean; canAfford: { repair: boolean; upgrade: boolean };
+}
+/** Placed piece nearest the aim point (within `radius` tiles, same level preferred) that is in build reach; undefined if none. */
+export function pieceTargetAt(world: World, player: Entity, at: { x: number; y: number } | undefined, level = 0, radius = 0.9): PieceTarget | undefined {
+  const pt = world.get(player, Transform); if (!pt || !at || !world.isRegistered(BuildPiece)) return undefined;
+  const d = gameplayDefs(world); const reach = d.building.buildReach + 1;
+  let best: Entity | undefined; let bestD = Infinity;
+  for (const e of world.query([BuildPiece, Transform], [Dead])) {
+    const t = world.get(e, Transform)!; if (Math.hypot(t.x - pt.x, t.y - pt.y) > reach) continue;
+    const z = world.getField(e, PieceSlot, "z") ?? Math.round(t.z / d.building.levelHeight);
+    const dist = Math.hypot(t.x - at.x, t.y - at.y) + (z === level ? 0 : 0.5 + Math.abs(z - level));
+    if (dist <= radius + (z === level ? 0 : 0.5 + Math.abs(z - level)) && dist < bestD) { bestD = dist; best = e; }
+  }
+  if (best === undefined) return undefined;
+  const bp = world.get(best, BuildPiece)!; const def = d.pieces.get(bp.type); if (!def) return undefined;
+  const maxHp = maxHpOf(world, best); const tierKey = (id: number) => d.tiers.find((x) => x.id === id)?.key ?? String(id);
+  const next = def.tiered && bp.tier + 1 < d.tiers.length ? bp.tier + 1 : undefined;
+  const has = (cost: { item: number; count: number }[]) => cost.every((c) => countItem(world, player, c.item) >= c.count);
+  const missing = 1 - bp.hp / Math.max(1, maxHp); const mul = d.tiers[bp.tier]?.repairMul ?? 0.3;
+  return { entity: best, piece: def.id, pieceKey: def.key, level: world.getField(best, PieceSlot, "z") ?? 0, tier: bp.tier, tierKey: tierKey(bp.tier), hp: bp.hp, maxHp,
+    nextTier: next, nextTierKey: next === undefined ? undefined : tierKey(next), canRepair: bp.hp < maxHp, canUpgrade: next !== undefined,
+    canAfford: { repair: has(pieceCost(d, def, bp.tier, mul * missing)), upgrade: next !== undefined && has(pieceCost(d, def, next)) } };
+}
+export const repairIntent = (target: Entity): MenuIntent => ({ cmd: RepairCmd, args: { target }, entities: ["target"] });
+export const upgradeIntent = (target: Entity, tier: number): MenuIntent => ({ cmd: UpgradeCmd, args: { target, tier }, entities: ["target"] });
+export const demolishIntent = (target: Entity): MenuIntent => ({ cmd: DemolishCmd, args: { target }, entities: ["target"] });

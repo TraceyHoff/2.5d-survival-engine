@@ -8,6 +8,7 @@ import { installFullscreenRestore, exitFullscreen } from "./fullscreen.js";
 import { uiRoot, safeAreaInsets } from "./ui-root.js";
 import { GameMenus } from "./game-menus.js";
 import { BuildMode } from "./build-mode.js";
+import { mountBuildHud, onTouchControl } from "./build-hud.js";
 import { mountToolHint, toolIconFrame } from "./tool-hint.js";
 import { mountWorldTools, type WorldToolsHandle } from "./world-tools.js";
 import { mountTouchOverlay, syncTouchHidden } from "./touch-overlay.js";
@@ -179,17 +180,22 @@ const colors = ["#000", "#3a5", "#495", "#874"];
 let worldTools: WorldToolsHandle | undefined;
 const worldToolsApi = { road: (n: number) => worldTools?.road(n), roadSurface: () => worldTools?.roadSurface() ?? 0, placeSign: () => worldTools?.placeSign() ?? false, editNearestSign: () => worldTools?.editNearestSign() ?? false, surfaces: ROADS.surfaces.map((x) => x.name) };
 /** Build mode (aim-point placement); `buildMode.preview` is the Renderer's buildPreview. */
-const buildMode = new BuildMode({ input, ctx: () => menuCtx(), send: (i) => sendIntent(i),
+const buildMode = new BuildMode({ input, ctx: () => menuCtx(), send: (i) => sendIntent(i), device: () => promptDevice(), onPickPiece: () => { if (promptDevice() !== "keyboardMouse") menus?.open("build"); },
   aim: () => { const p = session.player; const pt = p !== undefined ? world.get(p, Transform) : undefined; return p !== undefined && pt ? aim.resolve(world, p, pt) : undefined; },
   onActiveChange: (on) => { const c = browserInput.controls; if (c) c.layout = on ? buildTouchLayout : touchLayout; } });
+const buildHud = mountBuildHud(root, { buildMode, device: () => promptDevice(), target: canvas,
+  screenToWorld: (x, y) => iso ? iso.renderer.camera.cssToWorld(x, y) : screenToWorld(x - innerWidth / 2 + cam.sx, y - innerHeight / 2 + cam.sy),
+  blocked: (x, y) => onTouchControl(buildTouchLayout, x, y, innerWidth, innerHeight) });
 const buildTouchLayout = { ...DEFAULT_TOUCH_LAYOUTS.building, elements: DEFAULT_TOUCH_LAYOUTS.building.elements.filter((e) => !MENU_BAR_IDS.has(e.id)) };
 /** Per input update: build mode, and the shared Interact action (E / pad X / touch interact) opening stall / wardrobe panels. */
 function onUiFrame(): void {
   if (menus?.nav.isOpen) { buildMode.stop(); return; }
-  if (buildMode.active) { worldTools?.road(0); buildMode.update(); return; }
+  if (buildMode.active) { worldTools?.road(0); buildMode.update(); buildHud.update(); return; }
+  buildHud.update();
   worldTools?.update(); if (worldTools?.tool.active) return; // ADR-122: the Road context owns A/B/X/Y/RS while laying
+  if (input.pressed("ToggleBuild") && promptDevice() === "gamepad") { menus?.open("build"); return; } // ADR-136: pad LB+Y (KBM B is a UINav hotkey)
   if (input.pressed("QuickUse") && farm) { const p = session.player; if (p !== undefined && quickUseFires(safeFarmPrompt(p))) farm.trigger(); }
-  if (input.pressed("Interact")) { const c = menuCtx(); const t = c && interactPanel(c); if (t?.panel === "trade") menus?.openStall(t.stall); else if (t) menus?.open("character"); }
+  if (input.pressed("Interact")) { const c = menuCtx(); const t = c && interactPanel(c); if (t?.panel === "trade") menus?.openStall(t.stall); else if (t?.panel === "station") menus?.openStation(t.station, t.kind); else if (t) menus?.open("character"); }
 }
 /** Panel refresh cadence: 250ms, 500ms on low-end devices (few cores / little memory / ?gl=lowend). */
 const LOW_END = params.get("gl") === "lowend" || (navigator.hardwareConcurrency ?? 8) <= 4 || ((navigator as { deviceMemory?: number }).deviceMemory ?? 8) <= 2;
