@@ -17,6 +17,8 @@ import { DepositCmd, EquipCmd, PaintCmd, PlaceCmd, ToggleFireCmd, UseCmd, WearCm
 import { Equipment, Worn } from "../components.js";
 import { ItemCategory, WEAR_SLOTS } from "../defs.js";
 import { entityIndex } from "@engine/core";
+import { installSpatialIndex } from "@engine/world";
+import { isAuthority } from "../config.js";
 import { NO_SLOT } from "../components.js";
 import { Fuel } from "../components.js";
 import { fuelSecondsLeft } from "../systems/fuel.js";
@@ -138,6 +140,9 @@ export const depositIntent = (target: Entity, item: number, count: number): Menu
 /** ADR-136: the personal menu (station 0) lists ONLY hand recipes; a station's panel lists ONLY that station's recipes. */
 export function craftingView(c: MenuCtx, station = 0): CraftingView { // station -1 = every recipe (camper station filters itself)
   const w = c.world; const defs = gameplayDefs(w); const all = [...defs.recipes.values()];
+  // ADR-141: a client replica never runs the postSim spatial-index system, so station range checks saw no stations
+  // and every station recipe read "no_station" (greyed, "light it / move closer") while standing at the workbench.
+  if (!isAuthority(w)) installSpatialIndex(w).rebuild();
   const counts = new Map<number, number>(); for (const r of all) if (station >= 0 && r.station !== station) counts.set(r.station, (counts.get(r.station) ?? 0) + 1);
   const elsewhere = [...counts].sort((a, b) => a[0] - b[0]).map(([k, n]) => ({ station: k, name: STATION_NAMES[k] ?? `Station ${k}`, count: n }));
   const recipes = all.filter((r) => station < 0 || r.station === station).map((r): RecipeView => ({ id: r.id, key: r.key, name: itemName(w, r.output.item), seconds: r.seconds, station: r.station,
