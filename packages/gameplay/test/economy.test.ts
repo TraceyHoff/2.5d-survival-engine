@@ -164,6 +164,13 @@ describe("trade stalls", () => {
     setIntent(w, A, { action: IntentAction.Withdraw, target: stall, item: PLANK, count: 5 }); w.step(1 / 20);
     expect(stallListing(w, stall, 0)!.stock).toBe(15);
   });
+  it("ADR-143: browsing a stall lets the owner (not a buyer) view its till; closing drops it", () => {
+    const { w, A, B, stall } = stocked(); const till = tillOf(w, stall)!;
+    expect(openStall(w, A, stall)).toBeUndefined(); expect(openStall(w, B, stall)).toBeUndefined();
+    expect(mod.containerViewersScope(w, stall, 7)).toBe(true); expect(mod.containerViewersScope(w, stall, 9)).toBe(true);
+    expect(mod.containerViewersScope(w, till, 7)).toBe(true); expect(mod.containerViewersScope(w, till, 9)).toBe(false);
+    expect(mod.closeStall(w, A)).toBeUndefined(); expect(mod.containerViewersScope(w, till, 7)).toBe(false); expect(mod.containerViewersScope(w, stall, 7)).toBe(false);
+  });
   it("persistence round trip: header, listings, stock with provenance, till, ledger", () => {
     const { w, B, stall } = stocked(); buyFromStall(w, B, stall, req(w, stall));
     const rev = listingRevision(w, stall);

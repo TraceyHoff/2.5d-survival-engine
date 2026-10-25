@@ -12,7 +12,7 @@ import { loadSettings, saveSettings } from "./menu.js";
 import { morph } from "./ui-diff.js";
 import { audioSettingsRows, type AudioControls } from "./audio/settings-ui.js";
 import { GAMEPLAY_PANELS, gameplayBody, pageContainer, pageSkillCategory, type GameplayPanel, type GameplaySource } from "./gameplay-panels.js";
-import { onlineTargets, openContainerIntent } from "@engine/gameplay";
+import { onlineTargets, openContainerIntent, openStallIntent } from "@engine/gameplay";
 import { loadPreset, parsePreset, savePreset, QUALITY_PRESETS, type QualityPreset } from "@engine/render";
 
 /** `data-chan` value per @engine/net ChatChannel number (Global 0 … System 6); omitted/unknown = "system". */
@@ -149,7 +149,7 @@ export class GameMenus {
     return morph(body, next);
   }
   /** Open the trade panel on a specific stall (interact). */
-  openStall(stall: number): void { this.stallTarget = stall; if (this.nav.top === "trade") this.refresh(); else this.nav.open("trade", this.build("trade")); }
+  openStall(stall: number): void { this.stallTarget = stall; this.o.gameplay?.send(openStallIntent(stall)); if (this.nav.top === "trade") this.refresh(); else this.nav.open("trade", this.build("trade")); }
   stallTarget: number | undefined;
   /** Open the camper station panel on a vehicle (gameplay.vehicleStationOpened event); asks the server to open its storage. */
   openCamper(vehicle: number): void {

@@ -19,7 +19,7 @@ import { gameplayDefs, isAuthority, rangeSlack } from "../config.js";
 import { emit, type GEvent } from "../events.js";
 import { defineEvent } from "@engine/core";
 import { attachmentsOf, pieceOf } from "../building/links.js";
-import { addViewer, closeContainer } from "../building/actions.js";
+import { addViewer, closeContainer, removeViewer } from "../building/actions.js";
 import { distance } from "../systems/fuel.js";
 import { countItem, moveSlotTuples } from "../inventory.js";
 import { indexEntity } from "../spawn.js";
@@ -299,12 +299,23 @@ export function collectTill(world: World, actor: Entity, target: Entity): R {
 export function openStall(world: World, actor: Entity, target: Entity): R {
   const stall = stallOf(world, target); if (stall === undefined) return "not_stall";
   if (distance(world, actor, stall) > ECONOMY.browseRange + rangeSlack(world, actor)) return "out_of_range";
-  if (world.getField(actor, Viewing, "container") === stall) return undefined;
-  closeContainer(world, actor);
-  if (!addViewer(world, stall, world.getField(actor, Owner, "clientId") ?? 0)) return "viewers_full";
-  world.add(actor, Viewing, { container: stall }); return undefined;
+  const client = world.getField(actor, Owner, "clientId") ?? 0;
+  if (world.getField(actor, Viewing, "container") !== stall) {
+    leaveStallTill(world, actor); closeContainer(world, actor);
+    if (!addViewer(world, stall, client)) return "viewers_full";
+    world.add(actor, Viewing, { container: stall });
+  }
+  // ADR-143: the till is its own Container (viewer-scoped too); managers who may collect also view it, else the owner's
+  // panel always read "Till: empty" and Collect till stayed disabled on clients.
+  const till = tillOf(world, stall); if (till !== undefined && can(world, actor, stall, StallActs.collect)) { if (!world.has(till, ContainerViewers)) world.add(till, ContainerViewers); addViewer(world, till, client); }
+  return undefined;
 }
-export function closeStall(world: World, actor: Entity): R { closeContainer(world, actor); return undefined; }
+/** Drop the actor's client from the till of the stall it is viewing (if any). */
+function leaveStallTill(world: World, actor: Entity): void {
+  const cur = world.getField(actor, Viewing, "container"); if (cur === undefined || !world.isAlive(cur) || !world.has(cur, StallHeader)) return;
+  const till = tillOf(world, cur); if (till !== undefined) removeViewer(world, till, world.getField(actor, Owner, "clientId") ?? 0);
+}
+export function closeStall(world: World, actor: Entity): R { leaveStallTill(world, actor); closeContainer(world, actor); return undefined; }
 
 /** Destroyed stalls spill stock and till into loot bags when data stallStockLootable (default true). Server only. */
 export function spillStall(world: World, att: Entity): Entity | undefined {

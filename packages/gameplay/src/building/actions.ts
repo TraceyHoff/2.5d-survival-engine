@@ -121,7 +121,7 @@ export function addViewer(world: World, c: Entity, client: number): boolean {
   if (n >= Math.min(MAX_VIEWERS, gameplayDefs(world).building.maxContainerViewers)) return false;
   a[s * MAX_VIEWERS + n] = client; st.data.count[s] = n + 1; st.markChanged(entityIndex(c)); return true;
 }
-function removeViewer(world: World, c: Entity, client: number): void {
+export function removeViewer(world: World, c: Entity, client: number): void {
   const st = world.store(ContainerViewers); const s = st.slot(entityIndex(c)); if (s < 0) return;
   const n = st.data.count[s]!; const a = st.data.clients;
   for (let i = 0; i < n; i++) if (a[s * MAX_VIEWERS + i] === client) { a[s * MAX_VIEWERS + i] = a[s * MAX_VIEWERS + n - 1]!; a[s * MAX_VIEWERS + n - 1] = 0; st.data.count[s] = n - 1; st.markChanged(entityIndex(c)); return; }

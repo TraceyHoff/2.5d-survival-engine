@@ -10,7 +10,7 @@ import { gameplayDefs } from "../config.js";
 import type { ItemCount } from "../defs.js";
 import { countItem, listSlots, readSlots } from "../inventory.js";
 import { itemInfo, type NameLookup } from "../economy/provenance.js";
-import { BuyFromStallCmd, CollectTillCmd, SetListingCmd, SetStallNameCmd, SetStallOpenCmd, StockStallCmd, UnstockStallCmd, listingRevision, stallListings, stallName, tillOf } from "../economy/stall.js";
+import { BuyFromStallCmd, OpenStallCmd, CollectTillCmd, SetListingCmd, SetStallNameCmd, SetStallOpenCmd, StockStallCmd, UnstockStallCmd, listingRevision, stallListings, stallName, tillOf } from "../economy/stall.js";
 import { CancelQueuedCraftCmd, MAX_CRAFT_COUNT, QueueCraftCmd, craftQueueReason, owedOf } from "../systems/craft_queue.js";
 import { pieceCost } from "../building/place.js";
 import { DepositCmd, EquipCmd, PaintCmd, PlaceCmd, ToggleFireCmd, UseCmd, WearCmd, WithdrawCmd } from "../input.js";
@@ -286,6 +286,8 @@ export function stallView(c: MenuCtx, stall: Entity): StallView | undefined {
 }
 export const buyFromStallIntent = (v: StallView, l: StallListingView, qty = 1): MenuIntent =>
   intent(BuyFromStallCmd, { stall: v.stall, listingSlot: l.slot, qty, expectedRevision: v.revision, expectedPriceItem: l.priceItem, expectedPriceCount: l.priceCount }, ["stall"]);
+/** ADR-143: join the stall's viewers so Listings + stock replicate to this client (buyers saw an empty panel). */
+export const openStallIntent = (stall: Entity): MenuIntent => intent(OpenStallCmd, { stall }, ["stall"]);
 export const collectTillIntent = (stall: Entity): MenuIntent => intent(CollectTillCmd, { stall }, ["stall"]);
 export const setListingIntent = (stall: Entity, slot: number, priceItem: number, priceCount: number, qty: number, enabled: boolean): MenuIntent =>
   intent(SetListingCmd, { stall, listingSlot: slot, priceItem, priceCount, qty, enabled: enabled ? 1 : 0 }, ["stall"]);
