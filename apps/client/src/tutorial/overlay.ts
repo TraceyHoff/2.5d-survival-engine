@@ -74,6 +74,11 @@ const CSS = `#tutorial{position:absolute;z-index:45;width:min(330px,calc(100vw -
 #tutorial .tut-wait{font-size:12px;color:#2D5A2E}
 #tutorial-spot{position:absolute;z-index:44;pointer-events:none;border:3px solid #FFD45A;border-radius:12px;box-shadow:0 0 0 3px rgba(59,36,51,.55),0 0 14px #FFD45A;animation:tutpulse 1.2s ease-in-out infinite;transition:left .15s,top .15s,width .15s,height .15s}
 #tutorial-arrow{position:absolute;z-index:44;pointer-events:none;font:24px system-ui;color:#FFD45A;text-shadow:0 0 3px #3B2433,0 0 3px #3B2433;transform:translate(-50%,-50%)}
+#tutorial .tut-hold{display:inline-block;vertical-align:middle;width:46px;height:6px;border-radius:3px;background:#E6C47E;overflow:hidden}#tutorial .tut-hold i{display:block;height:100%;width:0;background:#5A9A4A}
+#tutorial-ghost{position:absolute;z-index:43;left:max(22px,8vw);bottom:max(110px,16vh);width:116px;height:116px;border-radius:50%;border:3px dashed rgba(255,250,240,.85);background:rgba(20,16,12,.18);pointer-events:none;display:flex;align-items:center;justify-content:center;flex-direction:column;font:700 12px Fredoka,system-ui,sans-serif;color:#FFFAF0;text-shadow:0 1px 2px #3B2433}
+#tutorial-ghost i{width:44px;height:44px;border-radius:50%;background:rgba(255,250,240,.55);animation:tutdrag 1.6s ease-in-out infinite}
+@keyframes tutdrag{0%,100%{transform:translate(0,0)}25%{transform:translate(22px,-10px)}50%{transform:translate(0,-22px)}75%{transform:translate(-22px,0)}}
+#tutorial-ghost[hidden]{display:none}
 @keyframes tutpulse{50%{opacity:.55}}
 @media (prefers-reduced-motion:reduce){#tutorial-spot{animation:none}#tutorial{transition:none}}
 @media (min-width:1600px) and (min-height:900px){#tutorial{width:430px;font-size:18px;padding:12px 14px}#tutorial h3{font-size:21px}#tutorial .tut-key{font-size:16px}#tutorial button{font-size:17px;min-height:44px}#tutorial .tut-hint{font-size:14px}}
@@ -87,12 +92,15 @@ export interface TutorialOverlayOptions {
   onChange?(): void;
 }
 const AVOID = "#hud,#game-menubar,.build-hud:not([hidden]),#farm-prompt,#xp-chip,[data-touch],.gm-modal .gm-panel";
-export function mountTutorial(o: TutorialOverlayOptions): { update(): void; frame(i: { pressed(a: string): boolean }, menuOpen: boolean): void; destroy(): void; el: HTMLElement } {
+export const HOLD_MS = 1000;
+export function mountTutorial(o: TutorialOverlayOptions): { update(): void; frame(i: { pressed(a: string): boolean; down(a: string): boolean }, menuOpen: boolean): void; destroy(): void; el: HTMLElement } {
   if (!document.getElementById("tut-style")) { const st = document.createElement("style"); st.id = "tut-style"; st.textContent = CSS; document.head.append(st); }
   const el = document.createElement("section"); el.id = "tutorial"; el.setAttribute("role", "dialog"); el.setAttribute("aria-live", "polite"); el.setAttribute("aria-label", "Guide"); el.hidden = true;
   const spot = document.createElement("div"); spot.id = "tutorial-spot"; spot.hidden = true;
   const arrow = document.createElement("div"); arrow.id = "tutorial-arrow"; arrow.hidden = true;
-  o.root.append(spot, arrow, el);
+  const ghost = document.createElement("div"); ghost.id = "tutorial-ghost"; ghost.hidden = true; ghost.innerHTML = "<i></i><span>Drag here</span>";
+  o.root.append(ghost, spot, arrow, el);
+  let yHeld = 0; let yStart = 0;
   const p = o.progress; let key = "";
   const build = (d: TutDevice): void => {
     const s = p.step; const n = p.steps.length; const isDo = !!s.done;
@@ -103,7 +111,7 @@ export function mountTutorial(o: TutorialOverlayOptions): { update(): void; fram
       + (isDo ? `<div class="tut-wait">Do it to go on.</div>` : "")
       + `<div class="tut-btns">${p.index > 0 ? `<button type="button" class="alt" data-tut="back">Back</button>` : ""}`
       + (isDo ? `<button type="button" class="alt" data-tut="next">Skip this step</button>` : `<button type="button" data-tut="next">${p.index === n - 1 ? "Done" : "Next"}</button>`) + `</div>`
-      + (d === "gamepad" ? `<div class="tut-hint">${isDo ? "Stuck? Pause menu → Next tip" : `${nextKeys} Next · ${renderTokens("{A:QuickUse}", o.bindings, d)} Back`}</div>` : d === "keyboardMouse" && !isDo ? `<div class="tut-hint">${nextKeys} Next</div>` : "");
+      + (d === "gamepad" ? `<div class="tut-hint">${isDo ? `Stuck? Hold ${renderTokens("{A:Reload}", o.bindings, d)} to skip <b class="tut-hold"><i></i></b>` : `${nextKeys} Next · ${renderTokens("{A:QuickUse}", o.bindings, d)} Back`}</div>` : d === "keyboardMouse" && !isDo ? `<div class="tut-hint">${nextKeys} Next</div>` : "");
     el.dataset["step"] = s.id; el.dataset["device"] = d; el.dataset["kind"] = isDo ? "do" : "info";
   };
   el.addEventListener("click", (e) => {
@@ -116,8 +124,10 @@ export function mountTutorial(o: TutorialOverlayOptions): { update(): void; fram
   const rectOf = (n: Element): Rect | undefined => { const r = n.getBoundingClientRect(); return r.width > 0 && r.height > 0 ? { x: r.left, y: r.top, w: r.width, h: r.height } : undefined; };
   const rootRect = (): DOMRect => o.root.getBoundingClientRect();
   const layout = (d: TutDevice): void => {
-    const sel = p.step.target?.(d); const tn = sel ? document.querySelector(sel) : null;
-    const rr = rootRect(); const target = tn ? rectOf(tn) : undefined;
+    const sel = p.step.target?.(d); let tn: Element | null = sel ? document.querySelector(sel) : null;
+    const rr = rootRect(); let target = tn ? rectOf(tn) : undefined;
+    const wantGhost = d === "touch" && p.step.ghost === "joystick" && !target; ghost.hidden = !wantGhost;
+    if (wantGhost) { tn = ghost; target = rectOf(ghost); }
     const avoid: Rect[] = []; for (const n of Array.from(document.querySelectorAll(AVOID))) { if (n === tn || (tn && n.contains(tn))) continue; const r = rectOf(n); if (r) avoid.push(r); }
     const card = { w: el.offsetWidth, h: el.offsetHeight };
     const local = (r: Rect): Rect => ({ x: r.x - rr.left, y: r.y - rr.top, w: r.w, h: r.h });
@@ -131,6 +141,7 @@ export function mountTutorial(o: TutorialOverlayOptions): { update(): void; fram
     } else { spot.hidden = true; arrow.hidden = true; }
   };
   function update(): void {
+    if (!p.active || o.hidden() || p.step.ghost === undefined || o.device() !== "touch") ghost.hidden = true;
     if (!p.active || o.hidden()) { el.hidden = true; spot.hidden = true; arrow.hidden = true; key = ""; return; }
     if (p.observe(o.probe())) o.onChange?.();
     if (!p.active) { el.hidden = true; spot.hidden = true; arrow.hidden = true; key = ""; return; }
@@ -138,16 +149,23 @@ export function mountTutorial(o: TutorialOverlayOptions): { update(): void; fram
     if (k !== key) { key = k; build(d); }
     el.hidden = false; layout(d);
   }
+  function setHold(f: number): void { const b = el.querySelector<HTMLElement>(".tut-hold i"); if (b) b.style.width = `${Math.round(Math.min(1, f) * 100)}%`; }
   const timer = setInterval(update, 250); addEventListener("resize", update);
   return {
     el, update,
     /** Per input update: info cards move on with Jump (A / Space); gamepad B goes back. Skipped while a menu is open. */
-    frame(i, menuOpen): void {
-      if (!p.active || menuOpen || el.hidden) return;
+    frame(i: { pressed(a: string): boolean; down(a: string): boolean }, menuOpen: boolean): void {
+      if (!p.active || menuOpen || el.hidden) { if (yStart > 0) yStart = 0; return; }
       const d = o.device();
+      if (d === "gamepad" && p.step.done) { // ADR-144: hold Y (Reload) 1 s to skip an action card
+        const down = i.down("Reload"); const now = performance.now();
+        if (!down) { if (yStart) { yStart = 0; setHold(0); } }
+        else if (yStart < 0) { /* wait for release after a skip */ }
+        else { if (!yStart) yStart = now; yHeld = (now - yStart) / HOLD_MS; setHold(yHeld); if (yHeld >= 1) { yStart = -1; setHold(0); p.next(); o.onChange?.(); update(); return; } }
+      }
       if (!p.step.done && d !== "touch" && i.pressed("Jump")) { p.next(); o.onChange?.(); update(); }
       else if (d === "gamepad" && !p.step.done && p.index > 0 && i.pressed("QuickUse")) { p.back(); o.onChange?.(); update(); }
     },
-    destroy(): void { clearInterval(timer); removeEventListener("resize", update); el.remove(); spot.remove(); arrow.remove(); },
+    destroy(): void { clearInterval(timer); removeEventListener("resize", update); el.remove(); ghost.remove(); spot.remove(); arrow.remove(); },
   };
 }

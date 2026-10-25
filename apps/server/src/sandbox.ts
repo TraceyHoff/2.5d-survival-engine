@@ -6,9 +6,10 @@
 import type { World, Entity } from "@engine/core";
 import { addItem, itemIdSafe } from "@engine/gameplay";
 
-/** Kit sized to fit the 16-slot / weight-capped starting inventory: gear, food, campfire + workbench + anvil, twig build, gravel road, sign, market stall (cloth + fiber, ADR-142). */
+/** Kit sized to fit the 16-slot / weight-capped starting inventory with 2 slots left free (ADR-144: a full bag paused
+ * every craft at 0%, so the tutorial's craft step queued a Stone Axe that never arrived): gear, food, campfire + workbench + anvil, twig build, gravel road, sign, market stall (cloth + fiber, ADR-142). */
 export const SANDBOX_KIT: readonly (readonly [string, number])[] = [
-  ["iron_helmet", 1], ["leather_jacket", 1], ["leather_trousers", 1], ["leather_boots", 1], ["iron_sword", 1], ["stone_shovel", 1],
+  ["iron_helmet", 1], ["leather_jacket", 1], ["iron_sword", 1], ["stone_shovel", 1],
   ["cooked_meat", 5],
   ["wood", 16], ["stone", 10], ["sticks", 24], ["gravel", 10], ["sign_wooden_post", 2], ["iron_ingot", 6], ["hardwood", 2], ["cloth", 2], ["fiber", 4],
 ];

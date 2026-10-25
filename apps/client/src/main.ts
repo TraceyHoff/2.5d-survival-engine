@@ -28,7 +28,7 @@ import { InputSystem, AimResolver, DEFAULT_ACTIONS, DEFAULT_CONTEXTS, DEFAULT_PR
 import { attachBrowserInput } from "@engine/input/browser";
 import { Act, ClanRoster, ClanRosterMember, OnlinePlayer, VehicleStationOpenedEvt, gameplayNet, installDemoWorld } from "@engine/server/protocol";
 import { netIdOf, ChatChannel, type ChatDelivered } from "@engine/net";
-import { WorldRules, worldRules, ROADS, holdsRangedWeapon, Sign, signText, Road, StallHeader, buildView, listItemIntents, setStallOpenIntent, stallView, nearestStall, inventoryView, gameplayDefs } from "@engine/gameplay";
+import { WorldRules, worldRules, ROADS, holdsRangedWeapon, Sign, signText, Road, StallHeader, buildView, listItemIntents, setStallOpenIntent, stallView, nearestStall, inventoryView, gameplayDefs, BuildPiece } from "@engine/gameplay";
 import { SocialDirectory, hasCreatedLook, setAppearanceIntent, interactPanel, UseCmd, GatherCmd, farmPrompt, WaterProbeRes, type MenuCtx, type MenuIntent } from "@engine/gameplay";
 import { ClientSession } from "./session.js";
 import { mountConnectOverlay } from "./connect.js";
@@ -44,7 +44,7 @@ import { sampleDayClock } from "./day-clock.js";
 import { TUTORIAL_STEPS, TutorialProgress, tutorialKey } from "./tutorial/steps.js";
 import { mountTutorial } from "./tutorial/overlay.js";
 import { TutorialProber } from "./tutorial/probe.js";
-import { Survival, heldTool } from "@engine/gameplay";
+import { Survival, heldTool, ResourceNode, toolHint } from "@engine/gameplay";
 import { AudioSystem } from "./audio/index.js";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
@@ -211,7 +211,7 @@ const buildHud = mountBuildHud(root, { buildMode, device: () => promptDevice(), 
   blocked: (x, y) => onTouchControl(buildTouchLayout, x, y, innerWidth, innerHeight) });
 const buildTouchLayout = { ...DEFAULT_TOUCH_LAYOUTS.building, elements: DEFAULT_TOUCH_LAYOUTS.building.elements.filter((e) => !MENU_BAR_IDS.has(e.id)) };
 /** ADR-142: ?dev=sandbox exposes read-only QA handles (build preview, world, player) for automated browser tests. */
-if (params.get("dev") === "sandbox") (window as { __qa?: unknown }).__qa = { tutorial: () => tutProgress, buildMode, send: (i: MenuIntent) => sendIntent(i), ctx: () => menuCtx(), gp: { buildView, listItemIntents, setStallOpenIntent, stallView, nearestStall, inventoryView, gameplayDefs }, world: () => world, player: () => session.player, menus: () => menus, stalls: () => world.isRegistered(StallHeader) ? [...world.query([StallHeader])].length : 0, roads: () => world.isRegistered(Road) ? [...world.query([Road])].length : 0, signs: () => world.isRegistered(Sign) ? [...world.query([Sign, Transform])].map((e) => signText(world, e)) : [], pos: () => { const p = session.player; const t = p !== undefined ? world.get(p, Transform) : undefined; return t ? { x: t.x, y: t.y } : undefined; } };
+if (params.get("dev") === "sandbox") (window as { __qa?: unknown }).__qa = { tutorial: () => tutProgress, tutProbe: () => tutProber.probe(), buildMode, send: (i: MenuIntent) => sendIntent(i), ctx: () => menuCtx(), gp: { buildView, listItemIntents, setStallOpenIntent, stallView, nearestStall, inventoryView, gameplayDefs }, world: () => world, player: () => session.player, menus: () => menus, stalls: () => world.isRegistered(StallHeader) ? [...world.query([StallHeader])].length : 0, roads: () => world.isRegistered(Road) ? [...world.query([Road])].length : 0, signs: () => world.isRegistered(Sign) ? [...world.query([Sign, Transform])].map((e) => signText(world, e)) : [], nodes: () => world.isRegistered(ResourceNode) ? [...world.query([ResourceNode, Transform])].filter((n) => world.getField(n, ResourceNode, "amount") !== 0).map((n) => { const t = world.get(n, Transform)!; const d = gameplayDefs(world).resources.get(world.getField(n, ResourceNode, "kind")!); return { x: t.x, y: t.y, key: d?.key, tool: d?.requiredTool }; }) : [], hint: () => { const p = session.player; return p !== undefined ? toolHint(world, p) : undefined; }, pos: () => { const p = session.player; const t = p !== undefined ? world.get(p, Transform) : undefined; return t ? { x: t.x, y: t.y } : undefined; } };
 /** Per input update: build mode, and the shared Interact action (E / pad X / touch interact) opening stall / wardrobe panels. */
 function onUiFrame(): void {
   tutorialUi?.frame(input, !!menus?.nav.isOpen);
@@ -457,13 +457,14 @@ tutorialUi = mountTutorial({ root, progress: tutorialProgress(), bindings: input
   hidden: () => session.player === undefined || !!document.querySelector(".creator:not([hidden]),#boot:not([hidden])"),
   probe: () => {
     const p = session.player; const pt = p !== undefined ? world.get(p, Transform) : undefined; const c = menuCtx();
-    let items: Map<string, number> | undefined; let tk = 0; let sv: { hunger: number; thirst: number } | undefined;
+    let items: Map<string, number> | undefined; let tk = 0; let pieces: number | undefined; let sv: { hunger: number; thirst: number } | undefined;
     if (c) { try { items = new Map(); for (const v of inventoryView(c)) if (v.item) items.set(v.name, (items.get(v.name) ?? 0) + v.count); } catch { items = undefined; }
       try { tk = heldTool(world, c.player, gameplayDefs(world)).kind; } catch { tk = 0; }
+      try { if (pt && world.isRegistered(BuildPiece)) { pieces = 0; for (const e of world.query([BuildPiece, Transform])) { const t = world.get(e, Transform)!; if ((t.x - pt.x) ** 2 + (t.y - pt.y) ** 2 < 144) pieces++; } } } catch { pieces = undefined; }
       try { if (world.has(c.player, Survival)) sv = world.get(c.player, Survival) as { hunger: number; thirst: number }; } catch { /* none */ } }
     const av = input.vector("Aim");
     tutProber.sample({ pos: pt ? { x: pt.x, y: pt.y } : undefined, sprinting: input.down("Sprint"), zoom: iso?.renderer.camera.zoom, aiming: Math.hypot(av[0], av[1]) > 0.3 || input.down("Primary"),
-      items, menuOpen: !!menus?.nav.isOpen, hunger: sv?.hunger, thirst: sv?.thirst, toolKind: tk, buildActive: buildMode.active, buildRot: buildMode.rot, menuTop: menus?.nav.top });
+      items, menuOpen: !!menus?.nav.isOpen, hunger: sv?.hunger, thirst: sv?.thirst, toolKind: tk, buildActive: buildMode.active, buildRot: buildMode.rot, menuTop: menus?.nav.top, pieces });
     return tutProber.probe();
   } });
 input.onDeviceChange(() => tutorialUi?.update());

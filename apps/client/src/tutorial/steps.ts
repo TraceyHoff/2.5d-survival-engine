@@ -10,6 +10,8 @@ import type { TutDevice } from "./labels.js";
 export type Probe = Readonly<Record<string, number>>;
 export type StepText = string | ({ all?: string } & Partial<Record<TutDevice, string>>);
 export interface TutStep {
+  /** Touch: draw a ghost hint (e.g. the floating joystick, which only shows once touched) and ring it when the real control is not on screen. */
+  ghost?: "joystick";
   id: string; section: string; title: string; text: StepText;
   /** Finishes the step when true (cur vs. the probe when the step began). Missing = info card (Next). */
   done?: (cur: Probe, base: Probe) => boolean;
@@ -25,7 +27,7 @@ const stat = (k: string) => (): string => `#hud [data-stat=${k}]`;
 export const TUTORIAL_STEPS: readonly TutStep[] = [
   { id: "welcome", section: "Start", title: "Welcome!", text: "This quick guide shows you how to stay alive. You can skip it at any time. You can play it again from Settings." },
   // ---- moving ----
-  { id: "move", section: "Move", title: "Walk", text: "Walk around. Use {A:Move}.", done: grew("moved", 3), target: touchOr("[data-touch=move]") },
+  { id: "move", section: "Move", title: "Walk", text: "Walk around. Use {A:Move}.", done: grew("moved", 3), target: touchOr("[data-touch=move]"), ghost: "joystick" },
   { id: "sprint", section: "Move", title: "Run", text: { all: "Hold {A:Sprint} while you walk to run. Running uses stamina ⚡.", touch: "Tap {A:Sprint} and walk to run. Running uses stamina ⚡." }, done: grew("sprint", 3), target: (d) => d === "touch" ? "[data-touch=sprint]" : "#hud [data-stat=stamina]" },
   { id: "look", section: "Move", title: "Look around", text: { keyboardMouse: "Zoom in or out with {A:Camera.Zoom}.", gamepad: "Aim with {A:Aim}. Zoom with {A:Camera.Zoom}.", touch: "Zoom in or out: {A:Camera.Zoom}." }, done: any(grew("zoom"), grew("aim", 20)) },
   // ---- gathering + bag ----

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import { InputSystem, DEFAULT_ACTIONS, DEFAULT_CONTEXTS, DEFAULT_PROFILES } from "@engine/input";
 import { actionCombos, combosText, controlChip, type BindingSource } from "../src/tutorial/labels.js";
 import { TUTORIAL_STEPS, TutorialProgress, tutorialKey } from "../src/tutorial/steps.js";
@@ -101,5 +101,42 @@ describe("ADR-144 overlay placement", () => {
     m.open("pause"); const b = Array.from(document.querySelectorAll("button")).find((x) => /Play the guide again/.test(x.textContent ?? ""));
     expect(b).toBeTruthy(); b!.click(); expect(replays).toBe(1);
     m.open("settings"); expect(Array.from(document.querySelectorAll("button")).some((x) => /Play the guide again/.test(x.textContent ?? ""))).toBe(true);
+  });
+});
+
+describe("ADR-144 follow-up: touch ghost joystick, pad hold-Y skip, real placement", () => {
+  const mk = (dev: "touch" | "gamepad" | "keyboardMouse") => {
+    document.body.innerHTML = `<div id="game-root"></div>`; const root = document.getElementById("game-root")!;
+    const p = new TutorialProgress(TUTORIAL_STEPS, mem(), "k"); p.start(true); p.go(TUTORIAL_STEPS.findIndex((s) => s.id === "move"));
+    const ui = mountTutorial({ root, progress: p, bindings: input() as unknown as BindingSource, device: () => dev, probe: () => ({}), hidden: () => false });
+    ui.update(); return { p, ui };
+  };
+  test("touch Move card shows the ghost joystick and the spotlight targets it", () => {
+    const orig = HTMLElement.prototype.getBoundingClientRect;
+    HTMLElement.prototype.getBoundingClientRect = function (this: HTMLElement) { return (this.id === "tutorial-ghost" ? { x: 30, y: 600, left: 30, top: 600, width: 116, height: 116, right: 146, bottom: 716 } : orig.call(this)) as DOMRect; };
+    try {
+      const { ui } = mk("touch"); const g = document.getElementById("tutorial-ghost")!; const spot = document.getElementById("tutorial-spot")!;
+      expect(g.hidden).toBe(false); expect(g.textContent).toContain("Drag here"); expect(spot.hidden).toBe(false);
+      expect(parseFloat(spot.style.left)).toBeLessThan(30); expect(parseFloat(spot.style.top)).toBeLessThan(600); // ring wraps the ghost
+      ui.destroy();
+    } finally { HTMLElement.prototype.getBoundingClientRect = orig; }
+  });
+  test("no ghost on keyboard", () => { const { ui } = mk("keyboardMouse"); expect(document.getElementById("tutorial-ghost")!.hidden).toBe(true); ui.destroy(); });
+  test("gamepad: holding Y (Reload) for 1 s skips an action card; release needed before the next skip", () => {
+    const { p, ui } = mk("gamepad"); let t = 1000; const spy = vi.spyOn(performance, "now").mockImplementation(() => t);
+    expect(ui.el.textContent).toMatch(/Hold .* to skip/);
+    const held = { pressed: () => false, down: (a: string) => a === "Reload" };
+    ui.frame(held, false); t += 600; ui.frame(held, false); expect(p.step.id).toBe("move");
+    expect(parseInt((ui.el.querySelector(".tut-hold i") as HTMLElement).style.width)).toBeGreaterThan(50);
+    t += 500; ui.frame(held, false); expect(p.step.id).toBe("sprint");
+    t += 2000; ui.frame(held, false); expect(p.step.id).toBe("sprint"); // still held: no chain-skip
+    ui.frame({ pressed: () => false, down: () => false }, false); t += 100; ui.frame(held, false); t += 1100; ui.frame(held, false); expect(p.step.id).toBe("look");
+    spy.mockRestore(); ui.destroy();
+  });
+  test("place counts only a piece that really appeared, and only in build mode", () => {
+    const pr = new TutorialProber(); const base = { sprinting: false, aiming: false, menuOpen: false, toolKind: 0, buildRot: 0 };
+    pr.sample({ ...base, buildActive: false, pieces: 0 }); pr.sample({ ...base, buildActive: false, pieces: 4 }); expect(pr.probe()["place"]).toBeUndefined();
+    pr.command("gameplay.place"); pr.sample({ ...base, buildActive: true, pieces: 4 }); expect(pr.probe()["place"]).toBeUndefined();
+    pr.sample({ ...base, buildActive: true, pieces: 5 }); expect(pr.probe()["place"]).toBe(1);
   });
 });
