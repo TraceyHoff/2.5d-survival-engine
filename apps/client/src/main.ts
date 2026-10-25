@@ -1,5 +1,6 @@
 import { lastPlayedKey } from "./delete-progress.js";
 import { CHAT_TAG, chatLine, chatSender } from "./chat-line.js";
+import { intentPayload } from "./send-intent.js";
 import { LoadProgress } from "./load-progress.js";
 import { attachZoom } from "./camera-zoom.js";
 import { mountUi } from "./ui-root.js";
@@ -123,9 +124,10 @@ function menuCtx(): MenuCtx | undefined {
 /** Panel intent -> bridged gameplay net command; Entity args become NetIds (unbridged commands such as PaintCmd return false). */
 function sendIntent(i: MenuIntent): boolean {
   const c = session.client; if (!c) return false;
-  const args: Record<string, number | number[]> = { ...i.args };
-  for (const k of i.entities ?? []) { const id = netIdOf(world, args[k] as number); if (id === undefined) return false; args[k] = id; }
-  try { return c.sendCommand(gameplayNet(i.cmd), args as never) !== false; } catch { return false; }
+  try {
+    const def = gameplayNet(i.cmd); const args = intentPayload(i.args as Record<string, number | number[]>, i.entities, (def as unknown as { entityFields: readonly string[] }).entityFields, (e) => netIdOf(world, e as never));
+    return args !== undefined && c.sendCommand(def, args as never) !== false;
+  } catch { return false; }
 }
 let chatWired: unknown;
 /** Hook NetClient.chat (core ChatServer, already run by the server) into the chat panel once per client. */
