@@ -167,6 +167,11 @@ def pose(bt, d, anim, fi, n):
     ang = math.degrees(math.atan2(b2[0] - a2[0], -(b2[1] - a2[1])))
     K["anchor"] = None if ((anim == "death" and fi >= 3) or anim == "swim") else {"x": round(a2[0], 2), "y": round(a2[1], 2), "angle": round(ang, 1),
         "len": round(math.hypot(b2[0] - a2[0], b2[1] - a2[1]) / 10, 3), "behind": not K["front"][1]}
+    # off-hand (left) anchor: same convention, item direction mirrored across the body's x axis; always present
+    hL = K["hand"][-1]; dl = (-dv[0], dv[1], dv[2])
+    (a3, _), (b3, _) = P(*hL), P(hL[0] + dl[0] * 10, hL[1] + dl[1] * 10, hL[2] + dl[2] * 10)
+    K["anchorL"] = {"x": round(a3[0], 2), "y": round(a3[1], 2), "angle": round(math.degrees(math.atan2(b3[0] - a3[0], -(b3[1] - a3[1]))), 1),
+        "len": round(math.hypot(b3[0] - a3[0], b3[1] - a3[1]) / 10, 3), "behind": not K["front"][-1]}
     return K
 
 def circle(c, r, ry=None, rot=0, wob=0.03, seed=0): return ellipse_pts(c[0], c[1], r, ry or r, rot, wob=wob, seed=seed)
