@@ -156,12 +156,15 @@ export function setStallName(world: World, actor: Entity, target: Entity, raw: s
 export interface Listing { slot: number; priceItem: number; priceCount: number; qty: number; enabled: boolean; stockItem: number; stock: number }
 export function stallListing(world: World, stall: Entity, slot: number): Listing | undefined {
   const n = world.getField(stall, StallHeader, "listingCount") ?? 0; if (slot < 0 || slot >= n) return undefined;
-  const g = (f: "priceItem" | "priceCount" | "qty" | "enabled") => world.getArray(stall, Listings, f)![slot]!;
-  return { slot, priceItem: g("priceItem"), priceCount: g("priceCount"), qty: g("qty"), enabled: g("enabled") === 1,
-    stockItem: world.getArray(stall, Container, "items")![slot]!, stock: world.getArray(stall, Container, "counts")![slot]! };
+  // ADR-142: a client replica can see the header before Listings / Container arrive; no data -> no listing (was a crash opening the stall).
+  const L = (f: "priceItem" | "priceCount" | "qty" | "enabled") => world.getArray(stall, Listings, f);
+  const pi = L("priceItem"), pc = L("priceCount"), q = L("qty"), en = L("enabled"), items = world.getArray(stall, Container, "items"), counts = world.getArray(stall, Container, "counts");
+  if (!pi || !pc || !q || !en) return undefined;
+  return { slot, priceItem: pi[slot] ?? 0, priceCount: pc[slot] ?? 0, qty: q[slot] ?? 0, enabled: en[slot] === 1, stockItem: items?.[slot] ?? 0, stock: counts?.[slot] ?? 0 };
 }
 export function stallListings(world: World, stall: Entity): Listing[] {
-  const n = world.getField(stall, StallHeader, "listingCount") ?? 0; return Array.from({ length: n }, (_, i) => stallListing(world, stall, i)!);
+  const n = world.getField(stall, StallHeader, "listingCount") ?? 0; const out: Listing[] = [];
+  for (let i = 0; i < n; i++) { const l = stallListing(world, stall, i); if (l) out.push(l); } return out;
 }
 export const listingRevision = (world: World, stall: Entity): number => world.getField(stall, Listings, "revision") ?? 0;
 /** Bumps the listing revision (clients refresh; buyers' expectedRevision goes stale). */

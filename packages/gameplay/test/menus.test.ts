@@ -78,6 +78,13 @@ describe("menu view-models", () => {
     const n = G.setStallNameIntent(stall, "Ada's ✨ Planks"); expect(n.args["len"]).toBe(13); expect((n.args["name"] as number[]).length).toBe(24);
     expect(G.collectTillIntent(stall).cmd).toBe(G.CollectTillCmd);
   });
+  it("ADR-142: a replica without the viewer-scoped till / stock containers still builds a stall view", () => {
+    const { w, names, mk } = setup(); const a = mk(7, "Ada"); const b = mk(9, "Bo", 1);
+    const sn = G.snapPlacement(w, { piece: d.pieceId("stall_booth"), x: 1, y: 1, level: 0, rot: 0, tier: 0, variant: 0 }); if (typeof sn === "number") throw new Error("snap");
+    const stall = G.stallOf(w, G.placePiece(w, a, sn, { pay: false }))!;
+    const till = G.tillOf(w, stall)!; w.remove(till, G.Container); w.remove(stall, G.Container); w.remove(stall, G.Listings);
+    const v = G.stallView(ctx(w, b, names), stall)!; expect(v.till).toEqual([]); expect(v.listings).toEqual([]);
+  });
 });
 
 describe("build placement preview", () => {
@@ -86,7 +93,7 @@ describe("build placement preview", () => {
     const p = [...d.pieces.values()].find((x) => x.placement === G.Placement.Cell)!;
     const sel = { piece: p.id, tier: 0, variant: 0, paint: 0 };
     const far = G.buildPreviewFor(w, a, sel, 0, { x: 50, y: 0, mode: 1 })!;
-    expect(far.pieceKey).toBe(p.key); expect(far.request.x).toBeCloseTo(reach); expect(far.rotSteps).toBe(4);
+    expect(far.pieceKey).toBe(p.key); expect(far.request.x).toBeCloseTo(reach - G.SNAP_REACH_MARGIN); // ADR-142: pulled in so the snap stays in reach expect(far.rotSteps).toBe(4);
     expect(far.valid).toBe(far.reason === 0);
     const dir = G.buildPreviewFor(w, a, sel, 1, { x: 0, y: -1, mode: 0 })!;
     expect(dir.request).toMatchObject({ x: 0, y: -G.PLACE_AHEAD, rot: 1 });

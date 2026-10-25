@@ -281,7 +281,7 @@ export function stallView(c: MenuCtx, stall: Entity): StallView | undefined {
   const mine = (h.ownerKind === 1 && h.ownerId === me && me !== 0) || (h.ownerKind === 2 && h.ownerId === clan && clan !== 0);
   const listings = stallListings(w, stall).map((l) => ({ slot: l.slot, enabled: l.enabled, stockItem: l.stockItem, stockName: itemName(w, l.stockItem), stock: l.stock, qty: l.qty,
     priceItem: l.priceItem, priceName: itemName(w, l.priceItem), priceCount: l.priceCount, canAfford: l.priceItem ? countItem(w, c.player, l.priceItem) >= l.priceCount : false }));
-  const t = tillOf(w, stall); const till = t !== undefined ? listSlots(w, t).filter((s) => s.item && s.count).map((s) => ({ item: s.item, name: itemName(w, s.item), count: s.count })) : [];
+  const t = tillOf(w, stall); const till = t !== undefined && w.has(t, Container) ? listSlots(w, t).filter((s) => s.item && s.count).map((s) => ({ item: s.item, name: itemName(w, s.item), count: s.count })) : [];
   return { stall, name: stallName(w, stall), open: h.open === 1, mine, revision: listingRevision(w, stall), listings, till };
 }
 export const buyFromStallIntent = (v: StallView, l: StallListingView, qty = 1): MenuIntent =>

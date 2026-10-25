@@ -70,3 +70,10 @@ describe("ADR-142 market stalls stand on bare ground", () => {
     }
   });
 });
+
+describe("ADR-142 stall view on a client replica", () => {
+  it("header without Listings/Container data yields no listings instead of throwing", () => {
+    const w = makeWorld(); const e = w.create(); w.add(e, G.StallHeader, { ownerKind: 1, ownerId: 7, open: 1, listingCount: 4 });
+    expect(() => G.stallListings(w, e)).not.toThrow(); expect(G.stallListings(w, e)).toEqual([]); expect(G.stallListing(w, e, 0)).toBeUndefined();
+  });
+});
