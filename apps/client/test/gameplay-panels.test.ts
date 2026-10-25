@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, test } from "vitest";
 import { installPermissions, Membership, PlayerId, World, type Entity } from "@engine/core";
 import * as G from "@engine/gameplay";
@@ -179,6 +180,11 @@ describe("ADR-132 skill category tabs", () => {
   test("tabs show one tree at a time; ◀ ▶ and PgDn switch; points shown globally", () => {
     const { w, me, sent, menus } = setup(); w.set(me, G.Progression, { points: 3 }); menus.open("skills");
     const tabs = Array.from(document.querySelectorAll<HTMLElement>("[data-role=skill-tabs] [role=tab]")); expect(tabs.length).toBe(G.SKILLS.categories.length);
+    // ADR-132 art: every tab carries its own skill_tab_<category> icon, and the stylesheet has art for it.
+    const css = readFileSync("apps/client/src/gameplay-panels.css", "utf8");
+    for (const t of tabs) { const k = t.dataset["category"]!; expect(t.dataset["icon"]).toBe(`skill_tab_${k}`); expect(css).toContain(`[data-icon="skill_tab_${k}"]`); }
+    expect(q("[data-key=skill-tab-homestead]").dataset["icon"]).toBe("skill_tab_homestead");
+    expect(G.SKILLS.branches.find((b) => b.key === "perks")!.icon).toBe("skill_branch_perks");
     expect(q("[data-role=skill-summary]").textContent).toContain("3 skill points");
     const cat0 = q("[data-role=skill-tree]").dataset["category"]!;
     for (const b of Array.from(document.querySelectorAll<HTMLElement>("[data-role=skill-node]"))) expect(b.dataset["category"]).toBe(cat0);

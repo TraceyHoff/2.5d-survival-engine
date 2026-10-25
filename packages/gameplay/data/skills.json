@@ -166,14 +166,14 @@
   {
    "key": "perks",
    "name": "Trade-off Perks",
-   "icon": "skill_iron_stomach"
+   "icon": "skill_branch_perks"
   }
  ],
  "categories": [
   {
    "key": "perks",
    "name": "Buffs & Perks",
-   "icon": "skill_iron_stomach",
+   "icon": "skill_tab_perks",
    "branches": [
     "perks",
     "leadership"
@@ -182,7 +182,7 @@
   {
    "key": "survival",
    "name": "Survival & Gathering",
-   "icon": "skill_branch_survival",
+   "icon": "skill_tab_survival",
    "branches": [
     "survival"
    ]
@@ -190,7 +190,7 @@
   {
    "key": "homestead",
    "name": "Farming, Animals & Cooking",
-   "icon": "skill_branch_farming",
+   "icon": "skill_tab_homestead",
    "branches": [
     "farming",
     "husbandry",
@@ -200,7 +200,7 @@
   {
    "key": "medicine",
    "name": "Medicine",
-   "icon": "skill_branch_medicine",
+   "icon": "skill_tab_medicine",
    "branches": [
     "medicine"
    ]
@@ -208,7 +208,7 @@
   {
    "key": "crafting",
    "name": "Crafting & Building",
-   "icon": "skill_branch_crafting",
+   "icon": "skill_tab_crafting",
    "branches": [
     "crafting",
     "building"
@@ -217,7 +217,7 @@
   {
    "key": "combat",
    "name": "Combat & Weapon Mastery",
-   "icon": "skill_branch_combat",
+   "icon": "skill_tab_combat",
    "branches": [
     "combat",
     "stealth"
@@ -226,7 +226,7 @@
   {
    "key": "vehicles",
    "name": "Vehicles & Mechanics",
-   "icon": "skill_branch_vehicles",
+   "icon": "skill_tab_vehicles",
    "branches": [
     "vehicles"
    ]
