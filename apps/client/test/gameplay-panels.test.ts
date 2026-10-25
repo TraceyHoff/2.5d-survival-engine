@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { readFileSync } from "node:fs";
-import { beforeEach, describe, expect, test } from "vitest";
+import { beforeEach, describe, expect, test, it } from "vitest";
 import { installPermissions, Membership, PlayerId, World, type Entity } from "@engine/core";
 import * as G from "@engine/gameplay";
 import { GameMenus } from "../src/game-menus.js";
-import { GAMEPLAY_PANELS } from "../src/gameplay-panels.js";
+import { GAMEPLAY_PANELS, iconKeysFromCss, petTitle } from "../src/gameplay-panels.js";
 import { morph } from "../src/ui-diff.js";
 
 const key = (k: string, code = k): void => { (document.activeElement ?? document.body).dispatchEvent(new KeyboardEvent("keydown", { key: k, code, bubbles: true, cancelable: true })); };
@@ -217,5 +217,36 @@ describe("ADR-132 skill category tabs", () => {
     q("[data-key=skill-tab-perks]").click(); const b = q("[data-key=skill-iron_stomach]"); b.click(); q("[data-key=skill-iron_stomach]").click();
     expect(sent.at(-1)).toMatchObject({ cmd: G.UnlockSkillCmd, args: { node: G.skillNodeIndex("iron_stomach") } });
     menus.destroy();
+  });
+});
+
+describe("item icons never fall back to the generic bag (CSS)", () => {
+  const css = readFileSync("apps/client/src/gameplay-panels.css", "utf8");
+  // specificity (ids, classes/attrs/pseudo-classes incl. :is() max arg, types/pseudo-elements) of one selector
+  const spec = (sel: string): number[] => {
+    let s = sel, isMax = [0, 0, 0];
+    s = s.replace(/:is\(([^()]*)\)/g, (_, inner: string) => { for (const x of inner.split(",")) { const v = spec(x.trim()); if (v.join() > isMax.join()) isMax = v; } return ""; });
+    const ids = (s.match(/#[\w-]+/g) ?? []).length, cls = (s.match(/\.[\w-]+|\[[^\]]+\]|:(?!:)[\w-]+/g) ?? []).length;
+    const types = (s.replace(/\[[^\]]+\]/g, "").match(/(^|[\s>+~])[a-z][\w-]*/g) ?? []).length + (s.match(/::[\w-]+/g) ?? []).length;
+    return [ids + isMax[0]!, cls + isMax[1]!, types + isMax[2]!];
+  };
+  const gt = (a: number[], b: number[]): boolean => a[0]! !== b[0]! ? a[0]! > b[0]! : a[1]! !== b[1]! ? a[1]! > b[1]! : a[2]! > b[2]!;
+  const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => ({ sels: m[1]!.replace(/\/\*[\s\S]*?\*\//g, "").trim().split(/,(?![^(]*\))/).map((x) => x.trim()), body: m[2]! }));
+  it("the [data-icon] slot ::after rule out-ranks every bag ::after rule for slots", () => {
+    const icon = rules.find((r) => r.body.includes("var(--cz-icon") && r.sels.some((s) => s.includes("[data-icon]") && s.includes("slot") && s.endsWith("::after")))!;
+    expect(icon).toBeDefined(); const iconSpec = spec(icon.sels.find((s) => s.includes("slot"))!);
+    const bags = rules.filter((r) => r.body.includes("ui_ic_bag") && r !== icon).flatMap((r) => r.sels.filter((s) => s.includes("data-role=slot") && s.endsWith("::after")));
+    expect(bags.length).toBeGreaterThan(0); for (const b of bags) expect(gt(iconSpec, spec(b)), `${b} beats the icon rule`).toBe(true);
+  });
+  it("every item (incl. pet treats and Iron Sword) has a [data-icon] art rule; treat offers show it", () => {
+    const keys = iconKeysFromCss([css]); const missing: string[] = [];
+    for (const it of d.items.values()) if (!keys.has(G.iconForItem(it, (k) => keys.has(k)))) missing.push(it.key);
+    expect(missing).toEqual([]); for (const k of ["iron_sword", "dog_biscuit", "meaty_chew"]) expect(keys.has(k)).toBe(true);
+    expect(css).toMatch(/button\[data-role=offer\] > \[data-role=ic\]\[data-icon\]\{[^}]*--cz-icon/);
+  });
+  it("pet title shows the species once", () => {
+    expect(petTitle({ wild: false, name: "Dachshund", speciesName: "Dachshund", level: 1 })).toBe("Dachshund · Lv 1");
+    expect(petTitle({ wild: false, name: "Biscuit", speciesName: "Dachshund", level: 2 })).toBe("Biscuit · Dachshund · Lv 2");
+    expect(petTitle({ wild: true, name: "Dachshund", speciesName: "Dachshund", level: 1 })).toBe("Dachshund");
   });
 });

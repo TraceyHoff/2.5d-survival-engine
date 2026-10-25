@@ -87,6 +87,10 @@ export function containerPageIndex(): number { return containerPage; }
 const gameplayDefsIcon = (c: MenuCtx, item: number): string => gameplayDefs(c.world).items.get(item)?.spriteKey ?? "";
 const draft: StallListDraft = { listing: 0, invSlot: -1, count: 1, priceItem: 0, priceCount: 1, qty: 1 };
 
+/** ADR-145 pet panel title: the species shows once (an unnamed pet's name is its species). */
+export function petTitle(v: { wild: boolean; name: string; speciesName: string; level: number }): string {
+  if (v.wild) return v.name; return v.name === v.speciesName ? `${v.name} · Lv ${v.level}` : `${v.name} · ${v.speciesName} · Lv ${v.level}`;
+}
 /** ADR-110: icon keys the stylesheet has art for ([data-icon="x"] rules; Art's generated block), scanned once. */
 let knownIcons: Set<string> | undefined;
 export function iconKeysFromCss(cssTexts: Iterable<string>): Set<string> {
@@ -483,7 +487,7 @@ function petBody(c: MenuCtx, src: GameplaySource, kit: PanelKit, btn: Btn, send:
     return out;
   }
   const head = el("section", { "data-role": "pet-status", "data-species": petSpecies(v.species)?.key ?? "" });
-  head.append(el("p", { "data-role": "pet-name" }, v.wild ? v.name : `${v.name} · ${v.speciesName} · Lv ${v.level}`));
+  head.append(el("p", { "data-role": "pet-name" }, petTitle(v)));
   head.append(bar("HP", v.hp, v.maxHp, "pet-hp"));
   if (!v.wild) head.append(bar("Fed", v.fullness, 100, "pet-fullness"), bar("Trust", v.loyalty, 100, "pet-loyalty"), bar("XP", v.xp, v.xpNext, "pet-xp"));
   out.push(head);
@@ -500,6 +504,7 @@ function petBody(c: MenuCtx, src: GameplaySource, kit: PanelKit, btn: Btn, send:
   for (const o of v.offers) {
     const label = v.wild ? `Offer ${o.name} (${o.pref === "hate" ? "refuses" : Math.round(o.chance * 100) + "%"})` : `Feed ${o.name} ×${o.count}`;
     og.append(btn(label, `offer-${o.item}`, () => send(petOfferIntent(v.entity, o.item), v.wild ? `Offered ${o.name}…` : `Fed ${o.name}.`), { role: "offer", disabled: v.wild && o.chance <= 0, title: `${petSpecies(v.species)?.name}: ${PREF_TEXT[o.pref]}${o.fullness ? ` · +${o.fullness} fed` : ""}`, data: { item: String(o.item), icon: o.key, pref: o.pref } }));
+    og.lastElementChild?.prepend(el("span", { "data-role": "ic", "data-icon": o.key, "aria-hidden": "true" })); // treat icon (::before is the tooltip)
   }
   out.push(heading(v.wild ? "Tame with a treat" : "Feed"));
   if (og.childElementCount) out.push(og);
