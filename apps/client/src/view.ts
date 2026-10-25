@@ -48,6 +48,7 @@ export function hitPose(ms: number, dir: number): { dx: number; dy: number; scal
 const animMap = (a: number): number => (a >= 14 && a <= 19 ? a : a === 8 ? 8 : ANIM_MAP[a] ?? 0); // 16..19 ADR-128 harvest/chop/mine/drink, 8 eat
 import { LightTable, type LightSpec } from "./lights.js";
 import { MANIFEST_INDEX, type ManifestFragmentRef } from "./manifest-index.js";
+import { stumpKeys } from "./stumps.js";
 /** `?cam=animal`: debug camera that follows the first ambient animal instead of the player. */
 const CAM_ANIMAL = typeof location !== "undefined" && new URLSearchParams(location.search).get("cam") === "animal";
 /** Max bytes for the sprite texture array (mips included) before customization layers are dropped. */
@@ -421,9 +422,9 @@ export class IsoView {
       const s = this.sid(key) ?? this.sid("zombie_walker");
       return s === undefined ? undefined : { sprite: s, animated: true, shadow: 1, frame: z.variant };
     }
-    if (net.has(e, NodeRegrow)) { // ADR-134: depleted tree -> stump (tree_stump) until stumpUntilTick; other kinds draw nothing
+    if (net.has(e, NodeRegrow)) { // ADR-134: depleted tree -> stump (<species>_tree_stump, else tree_stump) until stumpUntilTick; other kinds draw nothing
       const g = net.get(e, NodeRegrow)!; if (g.stumpUntilTick <= net.tick) return undefined;
-      const r = this.rs("tree_stump"); if (!r) return undefined;
+      const sk = stumpKeys(defs?.resources.get(g.kind)?.spriteKey); const r = this.rs(sk[0]) ?? this.rs(sk[1]); if (!r) return undefined;
       return { sprite: r.id, flags: h & 1 ? SpriteFlag.FlipX : 0, scale: r.scale, shadow: 0.6, onCreate: r.scale, ...(r.tint ? { tint: r.tint } : {}) };
     }
     if (net.has(e, ResourceNode)) {

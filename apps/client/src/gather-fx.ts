@@ -134,11 +134,29 @@ export function hpbarSlices(dx: number, dw: number, scale = 1): Array<[number, n
   const { w, l, r } = HPBAR; const L = Math.min(l * 2, dw / 2), R = Math.min(r * 2, dw / 2); // caps drawn at 2 css px per art px
   return [[0, l * scale, dx, L], [l * scale, (w - l - r) * scale, dx + L, Math.max(0, dw - L - R)], [(w - r) * scale, r * scale, dx + dw - R, R]];
 }
+/** ui_creature_hpbar_frame (ADR-134, nature_adr134_hpbar): 24x6 bar at (4,5) in a 32x16 cell; manifest 9-slice l/t/r/b 7/6/7/6 of the cell. */
+export const CREATURE_HPBAR = { cellW: 32, cellH: 16, x: 4, y: 5, w: 24, h: 6, slice: { l: 7, t: 6, r: 7, b: 6 } } as const;
+/** 9-slice the creature frame into dest rect (dx,dy,dw,dh): [sx, sy, sw, sh, dx, dy, dw, dh] per piece (source px times scale).
+ *  The source is the bar box inside the cell, so the cell's slice lines become insets of l-x, t-y, (x+w)-(cellW-r), (y+h)-(cellH-b). */
+export function nineSlice(dx: number, dy: number, dw: number, dh: number, scale = 1, cap = 1): Array<[number, number, number, number, number, number, number, number]> {
+  const B = CREATURE_HPBAR, S = B.slice;
+  const l = S.l - B.x, t = S.t - B.y, r = B.x + B.w - (B.cellW - S.r), b = B.y + B.h - (B.cellH - S.b);
+  const xs = [B.x, B.x + l, B.x + B.w - r, B.x + B.w], ys = [B.y, B.y + t, B.y + B.h - b, B.y + B.h];
+  const L = Math.min(l * cap, dw / 2), R = Math.min(r * cap, dw / 2), T = Math.min(t * cap, dh / 2), Bt = Math.min(b * cap, dh / 2);
+  const dxs = [dx, dx + L, dx + dw - R, dx + dw], dys = [dy, dy + T, dy + dh - Bt, dy + dh];
+  const out: Array<[number, number, number, number, number, number, number, number]> = [];
+  for (let j = 0; j < 3; j++) for (let i = 0; i < 3; i++) {
+    const w = dxs[i + 1]! - dxs[i]!, h = dys[j + 1]! - dys[j]!; if (w <= 0 || h <= 0) continue;
+    out.push([xs[i]! * scale, ys[j]! * scale, (xs[i + 1]! - xs[i]!) * scale, (ys[j + 1]! - ys[j]!) * scale, dxs[i]!, dys[j]!, w, h]);
+  }
+  return out;
+}
 /** ui_pickup_toast_bg: 48x32 cell, 9-slice l/r 10, t/b 12 (pill rows 4..27). */
 export const TOAST_SLICE = { l: 10, t: 12, r: 10, b: 12 } as const;
 export const ART_URLS = {
   fx: [new URL("../../../packages/assets/pack/nature/atlases/nature_adr128_fx.png", import.meta.url).href, new URL("../../../packages/assets/pack/nature/atlases/nature_adr128_fx@2x.png", import.meta.url).href],
   hpbar: [new URL("../../../packages/assets/pack/nature/atlases/nature_adr128_hpbar.png", import.meta.url).href, new URL("../../../packages/assets/pack/nature/atlases/nature_adr128_hpbar@2x.png", import.meta.url).href],
+  creatureHpbar: [new URL("../../../packages/assets/pack/nature/atlases/nature_adr134_hpbar.png", import.meta.url).href, new URL("../../../packages/assets/pack/nature/atlases/nature_adr134_hpbar@2x.png", import.meta.url).href],
   toast: [new URL("../../../packages/assets/pack/nature/atlases/nature_adr128_toast.png", import.meta.url).href, new URL("../../../packages/assets/pack/nature/atlases/nature_adr128_toast@2x.png", import.meta.url).href],
 } as const;
 const ready = (im: HTMLImageElement | undefined): im is HTMLImageElement => !!im && im.complete && im.naturalWidth > 0;
@@ -166,7 +184,7 @@ export function mountGatherFx(root: HTMLElement, d: GatherFxDeps): { destroy(): 
   const style = document.createElement("style"); style.textContent = CSS; document.head.append(style);
   const cv = document.createElement("canvas"); cv.id = "gather-fx"; root.append(cv);
   const box = document.createElement("div"); box.id = "pickup-toasts"; box.setAttribute("aria-live", "polite"); root.append(box);
-  const fx = loadArt(ART_URLS.fx), bar = loadArt(ART_URLS.hpbar);
+  const fx = loadArt(ART_URLS.fx), bar = loadArt(ART_URLS.hpbar), cbar = loadArt(ART_URLS.creatureHpbar);
   loadArt(ART_URLS.toast.slice(0, 1), () => { box.style.setProperty("--toast-bg", `url("${ART_URLS.toast[0]}")`); box.dataset["art"] = "true"; }); // else the CSS pill stays
   const hits = new NodeHits(); const creatures = new CreatureBars(); const stack = new ToastStack(); let parts: Particle[] = []; let raf = 0; let last = performance.now(); let player: Entity | undefined; let lastInv = 0;
   const label = (item: number): { name: string; icon: string } => { const it = gameplayDefs(d.world()).items.get(item); const key = it?.spriteKey ?? ""; return { name: it?.name ?? `#${item}`, icon: d.icon ? d.icon(item, key) : key }; };
@@ -188,10 +206,15 @@ export function mountGatherFx(root: HTMLElement, d: GatherFxDeps): { destroy(): 
       const z = Math.max(0.6, Math.min(2, cam.drawZoom)); const touch = d.device?.() === "touch";
       const pi = dpr > 1 && ready(fx[1]) ? 1 : 0; const fxIm = ready(fx[pi]) ? fx[pi] : undefined; const fxS = pi + 1;
       const bi = dpr > 1 && ready(bar[1]) ? 1 : 0; const barIm = ready(bar[bi]) ? bar[bi] : undefined; const barS = bi + 1;
+      const ci = dpr > 1 && ready(cbar[1]) ? 1 : 0; const cIm = ready(cbar[ci]) ? cbar[ci] : undefined; const cS = ci + 1;
       g.imageSmoothingEnabled = false;
-      const drawBar = (cx: number, top: number, bw: number, bh: number, frac: number, fill: string, al: number): void => {
+      const drawBar = (cx: number, top: number, bw: number, bh: number, frac: number, fill: string, al: number, creature = false): void => {
         const x = cx - bw / 2, y = top; g.globalAlpha = al;
-        if (barIm) { // art frame (3-sliced, 4 px tall crop) over a dark well + the fill inside its rim
+        if (creature && cIm) { // ADR-134 creature frame (9-sliced) over a dark well + fill inside its rim
+          const ix = Math.max(1, bw / 8), iy = Math.max(1, bh / 4);
+          g.fillStyle = "rgba(20,16,12,.55)"; g.fillRect(x, y, bw, bh); g.fillStyle = fill; g.fillRect(x + ix, y + iy, (bw - 2 * ix) * frac, bh - 2 * iy);
+          for (const [sx, sy, sw, sh, dx, dy, dw, dh] of nineSlice(x, y, bw, bh, cS, bh / CREATURE_HPBAR.h)) g.drawImage(cIm, sx, sy, sw, sh, dx, dy, dw, dh);
+        } else if (!creature && barIm) { // art frame (3-sliced, 4 px tall crop) over a dark well + the fill inside its rim
           g.fillStyle = "rgba(20,16,12,.55)"; g.fillRect(x, y, bw, bh); g.fillStyle = fill; const inset = Math.max(1, bh / 4); g.fillRect(x + inset, y + inset, (bw - 2 * inset) * frac, bh - 2 * inset);
           for (const [sx, sw, dx, dw] of hpbarSlices(x, bw, barS)) if (dw > 0) g.drawImage(barIm, sx, HPBAR.y * barS, sw, HPBAR.h * barS, dx, y, dw, bh);
         } else { g.fillStyle = "rgba(20,16,12,.75)"; g.fillRect(x - 1, y - 1, bw + 2, bh + 2); g.fillStyle = fill; g.fillRect(x, y, bw * frac, bh); }
@@ -202,7 +225,7 @@ export function mountGatherFx(root: HTMLElement, d: GatherFxDeps): { destroy(): 
       }
       for (const b of creatures.scan(w, now, p)) { // ADR-134 creature bars: compact, a touch smaller than node bars
         const al = creatureBarAlpha(now - b.at, b.target); if (al <= 0) continue; const s = isoToCss(cam, b.x, b.y);
-        drawBar(s.x, s.y - CREATURE_BAR_LIFT[b.kind] * z, (b.kind === "animal" ? 26 : 30) * z * (touch ? 1.2 : 1), Math.max(3, 4 * z), b.frac, barFill(b.frac, b.ally), al);
+        drawBar(s.x, s.y - CREATURE_BAR_LIFT[b.kind] * z, (b.kind === "animal" ? 26 : 30) * z * (touch ? 1.2 : 1), Math.max(3, 4 * z), b.frac, barFill(b.frac, b.ally), al, true);
       }
       parts = parts.filter((q) => (q.age += dt) < q.life);
       for (const q of parts) {
