@@ -20,7 +20,8 @@ export const CHAT_CHAN_NAMES: Readonly<Record<number, string>> = { 0: "global", 
 export interface MenuDef { id: string; title: string; icon: string; hotkeys: string[]; bar?: boolean; text: string }
 export const GAME_MENUS: readonly MenuDef[] = [
   { id: "inventory", title: "Inventory", icon: "🎒", hotkeys: ["KeyI", "Tab"], bar: true, text: "Your items and equipment." },
-  { id: "crafting", title: "Crafting", icon: "🔨", hotkeys: ["KeyC"], bar: true, text: "Recipes you can craft with what you carry or at a nearby station." },
+  { id: "crafting", title: "Crafting", icon: "🔨", hotkeys: ["KeyC"], bar: true, text: "Recipes you can craft by hand. More recipes at stations." },
+  { id: "station", title: "Crafting Station", icon: "🛠", hotkeys: [], text: "Recipes made at this station." },
   { id: "build", title: "Build", icon: "🏗", hotkeys: ["KeyB"], bar: true, text: "Pick a piece to place." },
   { id: "character", title: "Character", icon: "👕", hotkeys: ["KeyK"], text: "Wardrobe and character creator." },
   { id: "party", title: "Party", icon: "👥", hotkeys: ["KeyP"], bar: true, text: "Your party: invite, kick or leave." },
@@ -135,7 +136,7 @@ export class GameMenus {
   }
   private gameplayNodes(id: GameplayPanel): Node[] {
     const status = this.para(this.statusLine); status.dataset["role"] = "status"; status.setAttribute("aria-live", "polite");
-    return [status, ...gameplayBody(id, { ...this.o.gameplay!, stall: () => this.stallTarget ?? this.o.gameplay!.stall?.(), camper: () => this.camperTarget }, { para: (t) => this.para(t), rerender: () => this.refresh(), status: (t) => { this.statusLine = t; }, close: () => this.nav.closeAll() })];
+    return [status, ...gameplayBody(id, { ...this.o.gameplay!, stall: () => this.stallTarget ?? this.o.gameplay!.stall?.(), camper: () => this.camperTarget, station: () => this.stationTarget }, { para: (t) => this.para(t), rerender: () => this.refresh(), status: (t) => { this.statusLine = t; }, close: () => this.nav.closeAll() })];
   }
   /** Re-render the open gameplay panel from live world state by diffing (only changed nodes are touched, focus kept).
    *  No-op when no gameplay panel is open. Returns the number of DOM mutations. */
@@ -154,6 +155,12 @@ export class GameMenus {
     if (this.nav.top === "camper") { this.o.root.querySelector<HTMLElement>("[data-panel=camper-station]")?.setAttribute("data-key", String(vehicle)); this.refresh(); } else this.nav.open("camper", this.build("camper"));
   }
   camperTarget: number | undefined;
+  /** ADR-136: open a station's crafting panel (Interact near a workbench, forge, campfire …). */
+  openStation(entity: number, kind: number): void {
+    this.stationTarget = { entity, kind }; if (kind === 1 || kind === 3) this.o.gameplay?.send(openContainerIntent(entity)); // fired: fuel deposits need the container open
+    if (this.nav.top === "station") this.refresh(); else this.nav.open("station", this.build("station"));
+  }
+  stationTarget: { entity: number; kind: number } | undefined;
   /** Append an incoming chat line (from NetClient.chat). */
   /** `channel`: ChatChannel number (1 global … 5 whisper) or omitted for client/system lines -> `data-chan`. */
   pushChat(line: string, channel?: number): void {

@@ -5,7 +5,7 @@
  * and the sender maps them to NetIds. Server handlers re-validate everything; reasons here are only hints.
  */
 import { Appearance, GroupRole, Membership, PlayerId, Transform, WEARABLE_SLOTS, getAppearance, type CommandDef, type CosmeticCatalogLike, type Entity, type World } from "@engine/core";
-import { BuildPiece, Container, ClanInvitePending, ClanStatus, CraftQueue, PartyInvitePending, StallHeader, Wardrobe } from "../components.js";
+import { BuildPiece, CraftingStation, Dead, Container, ClanInvitePending, ClanStatus, CraftQueue, PartyInvitePending, StallHeader, Wardrobe } from "../components.js";
 import { gameplayDefs } from "../config.js";
 import type { ItemCount } from "../defs.js";
 import { countItem, listSlots, readSlots } from "../inventory.js";
@@ -92,7 +92,10 @@ export function inventoryView(c: MenuCtx): InventorySlotView[] {
 export interface RecipeView { id: number; key: string; name: string; seconds: number; station: number; output: { item: number; name: string; count: number }; ingredients: { item: number; name: string; count: number; have: number }[]; reason: string | undefined }
 export interface QueueJobView { slot: number; recipe: number; name: string; count: number; state: number; progress: number; secondsLeft: number }
 export interface OwedView { item: number; name: string; count: number; crafterName: string }
-export interface CraftingView { recipes: RecipeView[]; queue: QueueJobView[]; owed: OwedView[]; maxCount: number }
+/** ADR-136: `station` = which list this is (0 = on your person / hand only); `elsewhere` = recipes hidden here, per station kind (hint text). */
+export interface CraftingView { station: number; stationName: string; recipes: RecipeView[]; queue: QueueJobView[]; owed: OwedView[]; maxCount: number; elsewhere: { station: number; name: string; count: number }[] }
+/** Display names per StationKind (0 hand … 5 garage). */
+export const STATION_NAMES: Readonly<Record<number, string>> = { 0: "By hand", 1: "Campfire / stove", 2: "Workbench", 3: "Furnace", 4: "Anvil / forge", 5: "Garage" };
 // ---- container panel (ADR-098: up to 96 slots, paged) ------------------------------------------------
 /** Slots per page in the container panel (one page = the old 24-slot box). */
 export const CONTAINER_PAGE_SIZE = 24;
@@ -132,9 +135,12 @@ export function fuelView(c: MenuCtx, fire: Entity): FuelView | undefined {
 export const toggleFireIntent = (target: Entity): MenuIntent => intent(ToggleFireCmd, { target }, ["target"]);
 export const depositIntent = (target: Entity, item: number, count: number): MenuIntent => intent(DepositCmd, { target, item, count }, ["target"]);
 
-export function craftingView(c: MenuCtx): CraftingView {
-  const w = c.world; const defs = gameplayDefs(w);
-  const recipes = [...defs.recipes.values()].map((r): RecipeView => ({ id: r.id, key: r.key, name: itemName(w, r.output.item), seconds: r.seconds, station: r.station,
+/** ADR-136: the personal menu (station 0) lists ONLY hand recipes; a station's panel lists ONLY that station's recipes. */
+export function craftingView(c: MenuCtx, station = 0): CraftingView { // station -1 = every recipe (camper station filters itself)
+  const w = c.world; const defs = gameplayDefs(w); const all = [...defs.recipes.values()];
+  const counts = new Map<number, number>(); for (const r of all) if (station >= 0 && r.station !== station) counts.set(r.station, (counts.get(r.station) ?? 0) + 1);
+  const elsewhere = [...counts].sort((a, b) => a[0] - b[0]).map(([k, n]) => ({ station: k, name: STATION_NAMES[k] ?? `Station ${k}`, count: n }));
+  const recipes = all.filter((r) => station < 0 || r.station === station).map((r): RecipeView => ({ id: r.id, key: r.key, name: itemName(w, r.output.item), seconds: r.seconds, station: r.station,
     output: { item: r.output.item, name: itemName(w, r.output.item), count: r.output.count }, ingredients: withNames(w, r.ingredients, c.player), reason: craftQueueReason(w, c.player, r.id, 1) }));
   const queue: QueueJobView[] = []; const q = w.get(c.player, CraftQueue);
   if (q) for (let i = 0; i < q.state.length; i++) {
@@ -144,7 +150,7 @@ export function craftingView(c: MenuCtx): CraftingView {
     queue.push({ slot: i, recipe: q.recipeId[i]!, name: r ? itemName(w, r.output.item) : `#${q.recipeId[i]}`, count: q.count[i]!, state: st, progress, secondsLeft: running ? Math.max(0, (s1 - w.tick) / TICKS_PER_SECOND) : (r?.seconds ?? 0) });
   }
   const owed = owedOf(w, c.player).map((o) => ({ item: o.item, name: itemName(w, o.item), count: o.count, crafterName: nameOf(c, o.crafterId) }));
-  return { recipes, queue, owed, maxCount: MAX_CRAFT_COUNT };
+  return { station, stationName: STATION_NAMES[station] ?? `Station ${station}`, recipes, queue, owed, maxCount: MAX_CRAFT_COUNT, elsewhere };
 }
 export const JOB_STATE_LABEL = ["", "Queued", "Crafting", "Paused", "Done"] as const;
 export const queueCraftIntent = (recipe: number, count = 1): MenuIntent => intent(QueueCraftCmd, { recipe, count: Math.max(1, Math.min(MAX_CRAFT_COUNT, count | 0)) });
@@ -305,10 +311,21 @@ export function listItemIntents(stall: Entity, d: StallListDraft): MenuIntent[] 
 // ---- interact → panel -------------------------------------------------------------------------------
 export const STALL_INTERACT_RANGE = 2.5;
 /** What the Interact action should open: a nearby stall's trade panel, else the wardrobe (character panel). */
-export function interactPanel(c: MenuCtx): { panel: "trade"; stall: Entity } | { panel: "character" } | undefined {
+export function interactPanel(c: MenuCtx): { panel: "trade"; stall: Entity } | { panel: "character" } | { panel: "station"; station: Entity; kind: number } | undefined {
   const s = nearestStall(c, STALL_INTERACT_RANGE); if (s !== undefined) return { panel: "trade", stall: s };
   if (nearWardrobe(c.world, c.player)) return { panel: "character" };
+  const st = nearestStation(c); if (st) return { panel: "station", ...st };
   return undefined;
+}
+/** ADR-136: nearest crafting station (placed piece or spawned) within its own range of the player; opens its crafting panel on Interact. */
+export function nearestStation(c: MenuCtx): { station: Entity; kind: number } | undefined {
+  const w = c.world; const me = w.get(c.player, Transform); if (!me) return undefined;
+  let best: { station: Entity; kind: number } | undefined; let bd = Infinity;
+  for (const e of w.query([CraftingStation, Transform])) {
+    const cs = w.get(e, CraftingStation)!; if (!cs.kind || w.has(e, Dead)) continue; const t = w.get(e, Transform)!;
+    const d = Math.hypot(t.x - me.x, t.y - me.y); if (d <= cs.range && d < bd) { bd = d; best = { station: e, kind: cs.kind }; }
+  }
+  return best;
 }
 
 // ---- social directory (owner-scoped net events: gameplay.clanRoster / clanRosterMember / onlinePlayer) ----------

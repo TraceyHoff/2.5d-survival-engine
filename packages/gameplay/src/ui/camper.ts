@@ -38,7 +38,7 @@ export function camperStationView(c: MenuCtx, vehicle: Entity): CamperStationVie
   const liters = w.getField(vehicle, Vehicle, "fuel") ?? 0; const cap = d.fuel?.capacity ?? 0;
   const fraction = cap > 0 ? Math.max(0, Math.min(1, liters / cap)) : 0;
   const fs = listSlots(w, c.player).find((s) => s.count > 0 && fuelFits(w, vehicle, s.item));
-  const cv = craftingView(c);
+  const cv = craftingView(c, -1);
   const withIcon = (r: RecipeView): CamperRecipeView => ({ ...r, icon: icon(r.output.item) });
   const station = new Map(cv.recipes.map((r) => [r.id, r.station]));
   const jobs = cv.queue.map((j) => ({ ...j, icon: icon(defs.recipes.get(j.recipe)?.output.item ?? 0) }));

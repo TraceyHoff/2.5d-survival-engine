@@ -21,7 +21,7 @@ import { iconForItem,
 import { colorChoices, requestCharacterEdit } from "./character-creator.js";
 import { GroupRole, PlayerId, SLOT_PALETTE, Transform, type Entity, type WearableSlot } from "@engine/core";
 
-export const GAMEPLAY_PANELS = ["inventory", "crafting", "build", "character", "party", "clan", "trade", "camper", "skills"] as const;
+export const GAMEPLAY_PANELS = ["inventory", "crafting", "build", "character", "party", "clan", "trade", "camper", "skills", "station"] as const;
 export type GameplayPanel = (typeof GAMEPLAY_PANELS)[number];
 /** What the client wires in (main.ts): the local replica + player, and a command sender (NetId mapping + gameplayNet). */
 export interface GameplaySource {
@@ -40,6 +40,8 @@ export interface GameplaySource {
   social?: SocialDirectory;
   /** Camper whose station panel is open (set from the vehicleStationOpened event, GameMenus.openCamper). */
   camper?(): Entity | undefined;
+  /** ADR-136: station whose crafting panel is open (Interact near a workbench / forge / campfire …, GameMenus.openStation). */
+  station?(): { entity: Entity; kind: number } | undefined;
 }
 export interface PanelKit { para(t: string): HTMLElement; rerender(): void; status(t: string): void; close(): void }
 
@@ -180,8 +182,21 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       }
       return out;
     }
+    case "station":
     case "crafting": {
-      const v = craftingView(c); const out: Node[] = [];
+      // ADR-136: personal menu = hand recipes only; a station's panel = that station's recipes only
+      const st = id === "station" ? src.station?.() : undefined;
+      if (id === "station" && !st) return [kit.para("Walk up to a crafting station and interact (E / X / tap) to use it.")];
+      const v = craftingView(c, st?.kind ?? 0); const out: Node[] = [];
+      if (st) {
+        out.push(el("p", { "data-role": "station-name" }, v.stationName));
+        const fv = fuelView(c, st.entity); // fired stations (campfire, furnace): light / fuel without leaving the panel
+        if (fv) { const secs = Math.round(fv.secondsLeft); const fs = el("section", { "data-role": "station-fuel" });
+          fs.append(el("p", { "data-role": "fuel-time" }, `${fv.lit ? "Lit" : "Out — light it to craft"} · fuel ${Math.floor(secs / 60)}m ${String(secs % 60).padStart(2, "0")}s`));
+          fs.append(btn(fv.lit ? "Put out" : "Light", "fire-toggle", () => send(toggleFireIntent(st.entity), fv.lit ? "Put out." : "Lit."), { role: "toggle", pressed: fv.lit, disabled: !fv.lit && secs <= 0, title: fv.lit ? "Extinguish (X)" : secs > 0 ? "Light (X)" : "Add fuel first", data: { pad: "X" } }));
+          const f0 = fv.fuels[0]; if (f0) fs.append(btn(`Add ${f0.name} ×${f0.count}`, `fuel-${f0.item}`, () => send(depositIntent(st.entity, f0.item, f0.count), `Added ${f0.name} ×${f0.count}.`), { role: "slot", title: `${f0.seconds}s each · add as fuel` }));
+          out.push(fs); }
+      }
       if (v.queue.length) { out.push(heading("Queue")); const g = grid(); for (const j of v.queue) g.append(btn(`✕ ${j.name} ×${j.count} · ${JOB_STATE_LABEL[j.state] ?? ""} ${Math.round(j.progress * 100)}%`, `job-${j.slot}`, () => send(cancelQueuedCraftIntent(j.slot), `Cancelled ${j.name}.`), { alt: true, role: "job", p: j.progress, title: `${Math.ceil(j.secondsLeft)}s left. Cancel refunds unfinished units.` })); out.push(g); }
       if (v.owed.length) { out.push(heading("Owed (delivered when you have space)")); for (const o of v.owed) { const p = kit.para(`${o.name} ×${o.count}${o.crafterName ? ` · crafted by ${o.crafterName}` : ""}`); p.dataset["role"] = "owed"; out.push(p); } }
       out.push(heading("Recipes"));
@@ -189,9 +204,11 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       const g = grid();
       for (const r of v.recipes) {
         const need = r.ingredients.map((i) => `${i.name} ${i.have}/${i.count * castSel.count}`).join(", ");
-        g.append(btn(`${r.output.name} ×${r.output.count}`, `recipe-${r.id}`, () => send(queueCraftIntent(r.id, castSel.count), `Queued ${r.output.name} ×${castSel.count}.`), { role: "recipe", title: `${need} · ${r.seconds}s${r.reason ? ` · ${r.reason.replace(/_/g, " ")}` : ""}`, alt: !!r.reason }));
+        g.append(btn(`${r.output.name} ×${r.output.count}`, `recipe-${r.id}`, () => send(queueCraftIntent(r.id, castSel.count), `Queued ${r.output.name} ×${castSel.count}.`), { role: "recipe", title: `${need} · ${r.seconds}s${r.reason ? ` · ${r.reason === "no_station" && st ? "light it / move closer" : r.reason.replace(/_/g, " ")}` : ""}`, alt: !!r.reason }));
       }
-      out.push(g); return out;
+      out.push(g);
+      if (!st) { const n = v.elsewhere.reduce((a, e) => a + e.count, 0); if (n) { const h = kit.para(`More recipes at stations (${n}): ${v.elsewhere.map((e) => `${e.name} ${e.count}`).join(" · ")}`); h.dataset["role"] = "station-hint"; out.push(h); } }
+      return out;
     }
     case "build": {
       const all = buildView(c); if (!buildSel.piece && all[0]) buildSel.piece = all[0].id;
