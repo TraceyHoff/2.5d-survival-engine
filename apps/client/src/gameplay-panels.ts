@@ -92,6 +92,12 @@ export function panelIcon(world: Parameters<typeof gameplayDefs>[0], icon: strin
   const it = item ? gameplayDefs(world).items.get(Number(item)) : undefined;
   return it ? iconForItem(it, hasIcon) : icon;
 }
+/** Short label telling apart recipes with the same output: first ingredient not shared by every sibling recipe. */
+export function recipeVariantLabel(r: { output: { item: number }; ingredients: { item: number; name: string }[] }, all: readonly { output: { item: number }; ingredients: { item: number }[] }[]): string {
+  const sib = all.filter((o) => o.output.item === r.output.item && o !== r);
+  const d = r.ingredients.find((i) => sib.every((o) => !o.ingredients.some((x) => x.item === i.item))) ?? r.ingredients.find((i) => sib.some((o) => !o.ingredients.some((x) => x.item === i.item)));
+  return (d ?? r.ingredients[0])?.name.toLowerCase() ?? "alt";
+}
 export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelKit): Node[] {
   const c = src.ctx(); if (!c) return [kit.para("Join a game to use this menu.")];
   const rankOf = (role: number): string => role === 3 ? "leader" : role === 2 ? "officer" : "member";
@@ -203,9 +209,12 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       out.push(heading("Recipes"));
       const counts = grid(); for (const n of [1, 5, 10]) counts.append(btn(`×${n}`, `count-${n}`, () => { castSel.count = n; kit.rerender(); }, { alt: castSel.count !== n, pressed: castSel.count === n })); out.push(counts);
       const g = grid();
+      const dupOut = new Set<number>(); { const seen = new Set<number>(); for (const r of v.recipes) { if (seen.has(r.output.item)) dupOut.add(r.output.item); seen.add(r.output.item); } }
       for (const r of v.recipes) {
         const need = r.ingredients.map((i) => `${i.name} ${i.have}/${i.count * castSel.count}`).join(", ");
-        g.append(btn(`${r.output.name} ×${r.output.count}`, `recipe-${r.id}`, () => send(queueCraftIntent(r.id, castSel.count), `Queued ${r.output.name} ×${castSel.count}.`), { role: "recipe", title: `${need} · ${r.seconds}s${r.reason ? ` · ${r.reason === "no_station" && st ? "light it / move closer" : r.reason.replace(/_/g, " ")}` : ""}`, alt: !!r.reason }));
+        // alternate recipes for the same item (e.g. Hoe from stone or bone) are told apart by their first distinct ingredient
+        const alt = dupOut.has(r.output.item) ? ` (${recipeVariantLabel(r, v.recipes)})` : "";
+        g.append(btn(`${r.output.name} ×${r.output.count}${alt}`, `recipe-${r.id}`, () => send(queueCraftIntent(r.id, castSel.count), `Queued ${r.output.name} ×${castSel.count}.`), { role: "recipe", title: `${need} · ${r.seconds}s${r.reason ? ` · ${r.reason === "no_station" && st ? "light it / move closer" : r.reason.replace(/_/g, " ")}` : ""}`, alt: !!r.reason, data: { item: String(r.output.item), icon: gameplayDefsIcon(c, r.output.item) } }));
       }
       out.push(g);
       return out;

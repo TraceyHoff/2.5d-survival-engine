@@ -47,6 +47,13 @@ describe("gameplay panels (ADR-095 shell)", () => {
     G.enqueueCraft(w, me, axe, 1); menus.refresh(); q("[data-key=job-0]").click();
     expect(sent.at(-1)).toMatchObject({ cmd: G.CancelQueuedCraftCmd, args: { slot: 0 } }); menus.destroy();
   });
+  test("crafting: recipe buttons carry the output item icon; same-output alternates get distinct labels", () => {
+    const { menus } = setup(); menus.open("crafting");
+    const axe = d.recipeId("stone_axe"); const b = q(`[data-key=recipe-${axe}]`);
+    expect(b.dataset["item"]).toBe(String(id("stone_axe"))); expect(b.dataset["icon"]).toBeTruthy();
+    const hoe = q(`[data-key=recipe-${d.recipeId("hoe")}]`).textContent!; const bone = q(`[data-key=recipe-${d.recipeId("bone_hoe")}]`).textContent!;
+    expect(hoe).not.toBe(bone); expect(bone.toLowerCase()).toContain("bone"); menus.destroy();
+  });
   test("party: invite a nearby player (entity arg flagged for NetId mapping); pending invite accept/decline", () => {
     const { w, mk, sent, menus } = setup(); const bob = mk(8, "Bob", 2); menus.open("party");
     q("[data-key=invite-8]").click(); expect(sent.at(-1)).toMatchObject({ cmd: G.PartyInviteCmd, args: { target: bob }, entities: ["target"] });
