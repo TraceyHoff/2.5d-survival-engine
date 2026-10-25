@@ -808,3 +808,13 @@ Accepted 2026-10-24. Context: the ADR-113 tree showed all 122 nodes on one giant
 - **Clients rebuild the spatial index before the crafting view**, so a station shows its own recipes instead of greyed-out ones.
 - **An out campfire draws unlit logs.** The bonfire building gained an `unlit` state, and spawned fires pick the `unlit` frame.
 - **Workbench "wouldn't place":** not a bug. The failure reason showed the spot was occupied.
+
+## ADR-142: QA pass 4: rotate ghost, snapping/signs over MP, stalls, touch and gamepad core loop
+
+- **Rotating the ghost no longer makes it vanish or show "Too far away".** The snap target is clamped to reach minus `SNAP_REACH_MARGIN` (0.75), and the ghost uses ground z. Rotation is kept when the piece is placed, on R, the bumpers, and the touch rotate button.
+- **Input:** a tap latch, so presses shorter than a frame still register. Mouse movement counts as activity. D-pad focus moves by the gap between rects. The focus ring shows only during nav. Touch controls are clamped 4px from the screen edges. The narrow build HUD sits below the top bar.
+- **The connect overlay hides while connected.** Before this, it covered the HUD.
+- **Market stalls (blanket, cart, booth, pavilion, counter) can stand on bare ground.** The sandbox kit now carries cloth and fiber.
+- **Opening a stall on a replica client no longer crashes.** Listings, till, and stock are viewer-scoped, so the stall view and menus tolerate them being missing.
+- Verified with two clients: sign text and road tiles replicate. Pressing E at the anvil opens the forge recipes.
+- Not verified: a second client buying from a stall, movement speed in the browser (headless runs at about 6 fps), and gathering and crafting with a gamepad.
