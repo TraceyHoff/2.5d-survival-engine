@@ -6,6 +6,7 @@
  */
 import { ROAD_COMMANDS } from "./roads.js";
 import { SIGN_COMMANDS } from "./signs.js";
+import { PET_COMMANDS } from "./pets.js";
 import { PARTY_COMMANDS } from "./party.js";
 import { CLAN_COMMANDS, ClanDeclineCmd } from "./clan.js";
 import { CommandRegistry, defineActions, defineCommand, defineResource, type Command, type CommandDef, type Entity, type InputFrame, type World } from "@engine/core";
@@ -87,6 +88,7 @@ export function registerGameplayCommands(reg: CommandRegistry = new CommandRegis
   for (const d of SKILL_COMMANDS) reg.register(d); // append-only: unlock / respec (ADR-113)
   for (const d of ROAD_COMMANDS) reg.register(d); // append-only: roads (ADR-119)
   for (const d of SIGN_COMMANDS) reg.register(d); // append-only: signs (ADR-120)
+  for (const d of PET_COMMANDS) reg.register(d); // append-only: pets (ADR-145)
   return reg;
 }
 

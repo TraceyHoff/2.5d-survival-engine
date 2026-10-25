@@ -14,8 +14,8 @@
  * Pure state machines (NodeHits, ToastStack, CreatureBars) are exported and tested; the DOM layer only draws them.
  * DOM hooks: `#gather-fx` (canvas), `#pickup-toasts > [data-role=toast][data-item]`.
  */
-import { NetId, Transform, type Entity, type World } from "@engine/core";
-import { Animal, Dead, gameplayDefs, GroupSummary, Health, HitReact, IntentAction, listSlots, PlayerIntent, Progression, XP, xpToNext, ResourceNode, Survival, Zombie } from "@engine/gameplay";
+import { NetId, PlayerId, Transform, type Entity, type World } from "@engine/core";
+import { Animal, Dead, gameplayDefs, GroupSummary, Health, HitReact, IntentAction, listSlots, Pet, PlayerIntent, Progression, XP, xpToNext, ResourceNode, Survival, Zombie } from "@engine/gameplay";
 import { isoToCss, type CameraLike } from "./world-tools.js";
 
 export const NODE_BAR_MS = 3000;
@@ -63,6 +63,7 @@ export class CreatureBars {
   scan(world: World, now: number, me: Entity | undefined): CreatureBar[] {
     const seen = new Set<Entity>(); const myId = me !== undefined ? world.getField(me, NetId, "id") ?? 0 : 0;
     const myG = me !== undefined ? world.get(me, GroupSummary) : undefined;
+    const myPid = me !== undefined && world.isRegistered(PlayerId) && world.isRegistered(Pet) ? world.getField(me, PlayerId, "id") ?? 0 : 0; // ADR-145: own pets = ally, bar kept up while hurt
     const it = me !== undefined ? world.get(me, PlayerIntent) : undefined; const attacking = it && it.action === IntentAction.Attack ? it.target : undefined;
     for (const e of world.query([Health, Transform], [Dead])) {
       if (e === me) continue;
@@ -74,11 +75,12 @@ export class CreatureBars {
       if (hr) this.hitTick.set(e, hr.startTick);
       const hitNow = (was !== undefined && h.hp < was - 1e-3) || (hr !== undefined && lastHit !== undefined && hr.startTick !== lastHit);
       if (hitNow && hr && myId && hr.src === myId) this.mine.set(e, now);
-      const target = attacking === e || now - (this.mine.get(e) ?? -Infinity) < COMBAT_TARGET_MS;
+      const myPet = !!myPid && world.has(e, Pet) && world.getField(e, Pet, "owner") === myPid;
+      const target = (myPet && h.hp < h.max - 1e-3) || attacking === e || now - (this.mine.get(e) ?? -Infinity) < COMBAT_TARGET_MS;
       let b = this.bars.get(e);
       if (!b && !hitNow && !target) continue;
       const g = world.get(e, GroupSummary);
-      const ally = !!(myG && g && ((myG.partyId && g.partyId === myG.partyId) || (myG.clanId && g.clanId === myG.clanId)));
+      const ally = myPet || !!(myG && g && ((myG.partyId && g.partyId === myG.partyId) || (myG.clanId && g.clanId === myG.clanId)));
       const frac = h.max > 0 ? Math.max(0, Math.min(1, h.hp / h.max)) : 0;
       if (!b) { b = { e, x: t.x, y: t.y, frac, at: now, kind, ally, target }; this.bars.set(e, b); }
       Object.assign(b, { x: t.x, y: t.y, frac, kind, ally, target }); if (hitNow) b.at = now;

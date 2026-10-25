@@ -716,6 +716,314 @@
      "sp": true,
      "mp": true
     }
+   },
+   {
+    "kind": "animal_dog_dachshund",
+    "category": "animal",
+    "density": 0.06,
+    "timeWeights": {
+     "night": 0.5,
+     "dawn": 1,
+     "day": 1,
+     "dusk": 1
+    },
+    "biomeWeights": {
+     "grass": 1,
+     "forest": 0.6
+    },
+    "minPlayerDistance": 10,
+    "perChunkCap": 1,
+    "globalCap": 4,
+    "despawnDistance": 70,
+    "group": [
+     1,
+     1
+    ],
+    "groupSpread": 3,
+    "modes": {
+     "sp": true,
+     "mp": true
+    }
+   },
+   {
+    "kind": "animal_dog_lab",
+    "category": "animal",
+    "density": 0.06,
+    "timeWeights": {
+     "night": 0.5,
+     "dawn": 1,
+     "day": 1,
+     "dusk": 1
+    },
+    "biomeWeights": {
+     "grass": 1,
+     "forest": 0.6
+    },
+    "minPlayerDistance": 10,
+    "perChunkCap": 1,
+    "globalCap": 4,
+    "despawnDistance": 70,
+    "group": [
+     1,
+     1
+    ],
+    "groupSpread": 3,
+    "modes": {
+     "sp": true,
+     "mp": true
+    }
+   },
+   {
+    "kind": "animal_dog_husky",
+    "category": "animal",
+    "density": 0.06,
+    "timeWeights": {
+     "night": 0.5,
+     "dawn": 1,
+     "day": 1,
+     "dusk": 1
+    },
+    "biomeWeights": {
+     "grass": 1,
+     "forest": 0.6
+    },
+    "minPlayerDistance": 10,
+    "perChunkCap": 1,
+    "globalCap": 4,
+    "despawnDistance": 70,
+    "group": [
+     1,
+     1
+    ],
+    "groupSpread": 3,
+    "modes": {
+     "sp": true,
+     "mp": true
+    }
+   },
+   {
+    "kind": "animal_dog_shepherd",
+    "category": "animal",
+    "density": 0.06,
+    "timeWeights": {
+     "night": 0.5,
+     "dawn": 1,
+     "day": 1,
+     "dusk": 1
+    },
+    "biomeWeights": {
+     "grass": 1,
+     "forest": 0.6
+    },
+    "minPlayerDistance": 10,
+    "perChunkCap": 1,
+    "globalCap": 4,
+    "despawnDistance": 70,
+    "group": [
+     1,
+     1
+    ],
+    "groupSpread": 3,
+    "modes": {
+     "sp": true,
+     "mp": true
+    }
+   },
+   {
+    "kind": "animal_dog_beagle",
+    "category": "animal",
+    "density": 0.06,
+    "timeWeights": {
+     "night": 0.5,
+     "dawn": 1,
+     "day": 1,
+     "dusk": 1
+    },
+    "biomeWeights": {
+     "grass": 1,
+     "forest": 0.6
+    },
+    "minPlayerDistance": 10,
+    "perChunkCap": 1,
+    "globalCap": 4,
+    "despawnDistance": 70,
+    "group": [
+     1,
+     1
+    ],
+    "groupSpread": 3,
+    "modes": {
+     "sp": true,
+     "mp": true
+    }
+   },
+   {
+    "kind": "animal_cat_tabby",
+    "category": "animal",
+    "density": 0.06,
+    "timeWeights": {
+     "night": 0.5,
+     "dawn": 1,
+     "day": 1,
+     "dusk": 1
+    },
+    "biomeWeights": {
+     "grass": 1,
+     "forest": 0.6
+    },
+    "minPlayerDistance": 10,
+    "perChunkCap": 1,
+    "globalCap": 4,
+    "despawnDistance": 70,
+    "group": [
+     1,
+     1
+    ],
+    "groupSpread": 3,
+    "modes": {
+     "sp": true,
+     "mp": true
+    }
+   },
+   {
+    "kind": "animal_cat_siamese",
+    "category": "animal",
+    "density": 0.06,
+    "timeWeights": {
+     "night": 0.5,
+     "dawn": 1,
+     "day": 1,
+     "dusk": 1
+    },
+    "biomeWeights": {
+     "grass": 1,
+     "forest": 0.6
+    },
+    "minPlayerDistance": 10,
+    "perChunkCap": 1,
+    "globalCap": 4,
+    "despawnDistance": 70,
+    "group": [
+     1,
+     1
+    ],
+    "groupSpread": 3,
+    "modes": {
+     "sp": true,
+     "mp": true
+    }
+   },
+   {
+    "kind": "animal_cat_black",
+    "category": "animal",
+    "density": 0.06,
+    "timeWeights": {
+     "night": 0.5,
+     "dawn": 1,
+     "day": 1,
+     "dusk": 1
+    },
+    "biomeWeights": {
+     "grass": 1,
+     "forest": 0.6
+    },
+    "minPlayerDistance": 10,
+    "perChunkCap": 1,
+    "globalCap": 4,
+    "despawnDistance": 70,
+    "group": [
+     1,
+     1
+    ],
+    "groupSpread": 3,
+    "modes": {
+     "sp": true,
+     "mp": true
+    }
+   },
+   {
+    "kind": "animal_parrot",
+    "category": "animal",
+    "density": 0.06,
+    "timeWeights": {
+     "night": 0.5,
+     "dawn": 1,
+     "day": 1,
+     "dusk": 1
+    },
+    "biomeWeights": {
+     "forest": 1,
+     "grass": 0.5
+    },
+    "minPlayerDistance": 10,
+    "perChunkCap": 1,
+    "globalCap": 4,
+    "despawnDistance": 70,
+    "group": [
+     1,
+     1
+    ],
+    "groupSpread": 3,
+    "modes": {
+     "sp": true,
+     "mp": true
+    }
+   },
+   {
+    "kind": "animal_crow",
+    "category": "animal",
+    "density": 0.06,
+    "timeWeights": {
+     "night": 0.5,
+     "dawn": 1,
+     "day": 1,
+     "dusk": 1
+    },
+    "biomeWeights": {
+     "forest": 1,
+     "grass": 0.5
+    },
+    "minPlayerDistance": 10,
+    "perChunkCap": 1,
+    "globalCap": 4,
+    "despawnDistance": 70,
+    "group": [
+     1,
+     1
+    ],
+    "groupSpread": 3,
+    "modes": {
+     "sp": true,
+     "mp": true
+    }
+   },
+   {
+    "kind": "animal_ferret",
+    "category": "animal",
+    "density": 0.06,
+    "timeWeights": {
+     "night": 0.5,
+     "dawn": 1,
+     "day": 1,
+     "dusk": 1
+    },
+    "biomeWeights": {
+     "grass": 1,
+     "forest": 0.6
+    },
+    "minPlayerDistance": 10,
+    "perChunkCap": 1,
+    "globalCap": 4,
+    "despawnDistance": 70,
+    "group": [
+     1,
+     1
+    ],
+    "groupSpread": 3,
+    "modes": {
+     "sp": true,
+     "mp": true
+    }
    }
   ],
   "humans": [

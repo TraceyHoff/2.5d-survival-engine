@@ -3,16 +3,17 @@
  * they read only the bot's own replica (fillAgentSensors) and write AgentOutput (action strings, see agent_output.ts).
  * Entity ids in the view are replica ids; hosts whose replica ids differ from the server's translate open/buy targets.
  */
-import { Membership, StallDisplay, Transform, type Entity, type World } from "@engine/core";
+import { Membership, PlayerId, StallDisplay, Transform, type Entity, type World } from "@engine/core";
 import type { AgentWorldView, GameBehavior } from "../agents.js";
-import { BuildPiece, Listings } from "../components.js";
+import { Animal, BuildPiece, Dead, Listings, Pet, Tamed } from "../components.js";
 import { GameplayConfig } from "../config.js";
 import { readSlots, countItem } from "../inventory.js";
 import { pieceCost } from "../building/place.js";
 import { StationKind } from "../defs.js";
+import { PET_TREATS, speciesOfAnimal, tameChance } from "../pets.js";
 
 export interface StallOffer { id: number; x: number; y: number; slot: number; item: number; qty: number; priceItem: number; priceCount: number; revision?: number }
-export interface AgentSensors { food?: number; water?: number; partyMates?: { id: number; x: number; y: number }[]; stall?: StallOffer }
+export interface AgentSensors { food?: number; water?: number; partyMates?: { id: number; x: number; y: number }[]; stall?: StallOffer; /** ADR-145: a wild pet-species animal nearby + the best treat in the bag (the bot has no pet yet) */ tame?: { id: number; x: number; y: number; item: number } }
 export const BUILD_PLAN_PIECES = ["campfire", "storage_box", "workbench"] as const;
 
 /** Fills optional AgentWorldView sensors from the replica (no writes). Missing gameplay config/inventory = skipped. */
@@ -50,6 +51,19 @@ export function fillAgentSensors(world: World, self: Entity, view: AgentWorldVie
     }
   }
   if (best) view.stall = best;
+  // ADR-145: AI humans tame a pet too (one each) when they carry a treat the species accepts
+  if (slots && world.isRegistered(PlayerId) && world.has(self, PlayerId)) {
+    const me = world.getField(self, PlayerId, "id") ?? 0; let mine = false; for (const e of world.query([Pet])) if (world.getField(e, Pet, "owner") === me) { mine = true; break; }
+    if (!mine) {
+      let bt: { id: number; x: number; y: number; item: number } | undefined, bc = 0, bdist = 14;
+      const treats = PET_TREATS.map((k) => { const d = [...defs.items.values()].find((i) => i.key === k); return d && countItem(world, self, d.id) > 0 ? d : undefined; }).filter((d) => d !== undefined);
+      if (treats.length) for (const e of world.query([Animal, Transform], [Dead, Pet, Tamed])) {
+        const sp = speciesOfAnimal(world, e); if (!sp) continue; const p = world.get(e, Transform)!; const d = Math.hypot(p.x - t.x, p.y - t.y); if (d > bdist) continue;
+        for (const it of treats) { const c = tameChance(sp, it.key); if (c > bc || (c === bc && c > 0 && d < bdist)) { bc = c; bdist = d; bt = { id: e, x: p.x, y: p.y, item: it.id }; } }
+      }
+      if (bt && bc > 0) view.tame = bt;
+    }
+  }
 }
 
 const toward = (o: { moveX: number; moveY: number; aimX: number; aimY: number }, fx: number, fy: number, tx: number, ty: number, s = 1): number => {
@@ -90,6 +104,14 @@ export function survivalBehaviors(): GameBehavior[] {
         o.moveX = 0; o.moveY = 0;
         if (s.revision === undefined) { if (c.self.tick - c.bb.num("openedAt", -1e9) > 40) { o.actions.push(`open:${s.id}`); c.bb.set("openedAt", c.self.tick); } return; }
         o.actions.push(`buy:${s.id}:${s.slot}:1:${s.revision}:${s.priceItem}:${s.priceCount}`); c.bb.set("tradedAt", c.self.tick); return false;
+      } },
+    { name: "tame_pet", traits: { sociability: 0.5 }, inertia: 0.3, considerations: [ // ADR-145
+        { name: "candidate", curve: { type: "step", at: 0.5 }, input: (c) => (c.world.tame && cooled(c.self.tick, c.bb.num("tamedAt", -1e9), 60) ? 1 : 0) },
+        { name: "safe", curve: { type: "step", at: 0.5 }, input: (c) => (c.memory.nearest("zombie", c.self.x, c.self.y, 0.3) ? 0 : 1) }],
+      run: (c, o) => {
+        const a = c.world.tame; if (!a) return false;
+        if (toward(o, c.self.x, c.self.y, a.x, a.y, 0.6) > 1.8) return;
+        o.moveX = 0; o.moveY = 0; o.actions.push(`tame:${a.id}:${a.item}`); c.bb.set("tamedAt", c.self.tick); return false;
       } },
     { name: "party", traits: { sociability: 1 }, inertia: 0.2, considerations: [
         { name: "mateAway", curve: { type: "logistic", k: 10, mid: 0.3 }, input: (c) => { const m = nearestMate(c.world, c.self.x, c.self.y); return m ? Math.min(1, m.d / 12) : 0; } }],

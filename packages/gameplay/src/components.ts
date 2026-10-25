@@ -278,6 +278,25 @@ export const HitReact = defineComponent("HitReact", { startTick: "u32", dir: "u8
  */
 export const NodeRegrow = defineComponent("NodeRegrow", { kind: "u16", respawnAtTick: "u32", stumpUntilTick: "u32", tries: "u8" }, { networked: true, persistent: true });
 
+/** ADR-145 pet name buffer width (printable ASCII). */
+export const PET_NAME_MAX = 16;
+export const enum PetCmd { Follow = 0, Stay = 1 }
+/**
+ * ADR-145 companion pet (authority writes; networked to all + persistent). species = pets.json index + 1; owner = PlayerId
+ * (stable across sessions/restarts); cmd = PetCmd; fullness/loyalty 0..100; hp mirrors Health (Health is not persistent);
+ * stayX/Y = the Stay anchor; name = renameable label (len chars). The pet also carries Tamed (despawn + load restore) and a
+ * small Container (its inventory, owner-only).
+ */
+export const Pet = defineComponent("Pet", {
+  species: "u8", owner: "u32", cmd: "u8", level: { type: "u8", default: 1 }, xp: "u32",
+  fullness: { type: "f32", quant: { bits: 8, min: 0, max: 100 }, default: 80 }, loyalty: { type: "f32", quant: { bits: 8, min: 0, max: 100 }, default: 60 }, hp: "f32",
+  stayX: "f32", stayY: "f32", len: "u8", name: { type: "u8", length: PET_NAME_MAX },
+}, { networked: true, persistent: true });
+/** ADR-145 owner of a pet_trough (builder PlayerId; persistent so pets still find it after a restart). */
+export const TroughOwner = defineComponent("TroughOwner", { player: "u32" }, { networked: true, persistent: true });
+/** ADR-145 server-only pet runtime (timers + current target). */
+export const PetBrain = defineComponent("PetBrain", { target: "u32", nextAttack: "u32", nextEat: "u32", nextStarve: "u32", goal: "u32", lastSeen: "u32" });
+
 export const GAMEPLAY_COMPONENTS = [
   Emitter, Buffs,
   Health, ResourceNode, Survival, VitalsState, Exposure, Dead,
@@ -308,4 +327,5 @@ export const GAMEPLAY_COMPONENTS = [
   Road, Sign, HordeMember, WorldRules, HordeStatus, PieceOwner, // append-only (ADR-119..121)
   HitReact, NodeRegrow, // append-only (ADR-134)
   PartyRank, // append-only (ADR-141)
+  Pet, TroughOwner, PetBrain, // append-only (ADR-145)
 ] as const;

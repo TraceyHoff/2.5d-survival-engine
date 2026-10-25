@@ -39,6 +39,9 @@ export function chooseRenderer(probe: ContextProbe, opts: { forceDebug?: boolean
  * table was shifted by one, so grass (3) drew brown, forest blue and water green. */
 export const TILE_COLORS = ["#1b1f1a", "#2d5d8a", "#c8b47a", "#4f8a43", "#3f7a3a", "#6b6b6b", "#7a6440", "#e8eef0"];
 
+/** ADR-145: snap a sprite origin to a whole device pixel (x*s + o integer) so nearest-neighbour pixel art keeps even texel widths. */
+export function snapPx(v: number, s: number, o: number): number { return s >= 1 ? (Math.round(v * s + o) - o) / s : v; }
+
 export class Canvas2DRenderer {
   readonly kind = "canvas2d" as const;
   readonly ctx: CanvasRenderingContext2D;
@@ -111,7 +114,7 @@ export class Canvas2DRenderer {
     const day = dimForWeather(computeDayLighting(readDayFraction(world), readDayNumber(world)), { overcast: Math.max(wt.rain, wt.fog, wt.snow * 0.7), storm: wt.storm });
     g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = "source-over"; g.globalAlpha = 1;
     g.fillStyle = rgb(day.sky); g.fillRect(0, 0, this.w, this.h);
-    g.setTransform(s, 0, 0, s, this.w / 2 - cam.x * s, this.h / 2 - cam.y * s); g.imageSmoothingEnabled = s < 1;
+    const ox = this.w / 2 - cam.x * s, oy = this.h / 2 - cam.y * s; g.setTransform(s, 0, 0, s, ox, oy); g.imageSmoothingEnabled = s < 1;
     const iso = DEFAULT_ISO; const tw = iso.tileW, th = iso.tileH;
     // terrain: diamonds around the camera
     const tm = this.tilemap; const c = cam.cssToWorld(cam.viewW / cam.dpr / 2, cam.viewH / cam.dpr / 2);
@@ -147,7 +150,7 @@ export class Canvas2DRenderer {
         let ls: PreviewLayer2D[] = []; try { ls = previewLayers2D(reg!, apB, look, 0, tAnim, this.sources, anim, facing); } catch { ls = []; }
         if (ls.length) {
           for (const p of ls) { const li = this.layerImage(p); if (!li) continue; const r = p.ref;
-            g.save(); g.translate(it.sx, it.sy); fx(); if (r.flipX) g.scale(-1, 1);
+            g.save(); g.translate(snapPx(it.sx, s, ox), snapPx(it.sy, s, oy)); fx(); if (r.flipX) g.scale(-1, 1);
             g.drawImage(li.img, li.x, li.y, r.w, r.h, (p.dx - r.anchorX) * k, (p.dy - r.anchorY) * k, r.w * k, r.h * k); g.restore(); stats.drawCalls++; }
           stats.sprites++; continue;
         }
@@ -155,7 +158,7 @@ export class Canvas2DRenderer {
       let f; try { f = reg!.dirFrame(sp.spriteId, anim, facing, tAnim); } catch { continue; }
       const img = this.image(f.atlas.key); if (!img) continue;
       const dw = f.w * k, dh = f.h * k;
-      g.save(); g.translate(it.sx, it.sy); fx(); if (f.flipX) g.scale(-1, 1);
+      g.save(); g.translate(snapPx(it.sx, s, ox), snapPx(it.sy, s, oy)); fx(); if (f.flipX) g.scale(-1, 1);
       g.drawImage(img, f.x, f.y, f.w, f.h, -f.anchorX * k, -f.anchorY * k, dw, dh); g.restore(); stats.sprites++; stats.drawCalls++;
     }
     // ambient (multiply) + lights (additive glows)

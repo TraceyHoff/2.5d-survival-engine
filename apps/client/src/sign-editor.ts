@@ -12,6 +12,8 @@ import { sanitizeSignText, SIGN_TEXT_MAX } from "@engine/gameplay";
 
 export interface SignEditorOptions {
   kindName: string; maxLen: number; initial: string;
+  /** Submit button text (default "Save sign"; ADR-145 pet rename uses "Save name"). */
+  saveLabel?: string;
   /** Show the on-screen keyboard immediately (gamepad). */
   keyboard?: boolean;
   onSave(text: string): void;
@@ -69,7 +71,7 @@ export function buildSignEditor(o: SignEditorOptions): HTMLElement {
   const last = mk("div", { className: "r" }); last.append(shift, keyBtn("Space", () => insert(" "), "space"), keyBtn("⌫", del, "backspace"), keyBtn("Clear", () => { input.value = ""; update(); }, "clear")); osk.append(last);
   osk.hidden = !o.keyboard; toggle.setAttribute("aria-expanded", String(!osk.hidden));
   toggle.addEventListener("click", () => { osk.hidden = !osk.hidden; toggle.setAttribute("aria-expanded", String(!osk.hidden)); if (!osk.hidden) osk.querySelector<HTMLElement>("button")?.focus(); });
-  const save = mk("button", { type: "button", textContent: "Save sign" }, "submit"); save.dataset["pad"] = "X";
+  const save = mk("button", { type: "button", textContent: o.saveLabel ?? "Save sign" }, "submit"); save.dataset["pad"] = "X";
   const cancel = mk("button", { type: "button", textContent: "Cancel", className: "alt" }, "cancel");
   function update(): void {
     const s = signEditorState(input.value, max);

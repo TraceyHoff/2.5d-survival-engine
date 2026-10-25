@@ -1503,6 +1503,90 @@
         "sign"
       ],
       "scale": 0.8
+    },
+    "animal_dog_dachshund": {
+      "to": [
+        "animal_wolf"
+      ],
+      "tint": "#9a5a30",
+      "scale": 0.55
+    },
+    "animal_dog_lab": {
+      "to": [
+        "animal_wolf"
+      ],
+      "tint": "#e0c078",
+      "scale": 0.8
+    },
+    "animal_dog_husky": {
+      "to": [
+        "animal_wolf"
+      ],
+      "tint": "#c8d4e0",
+      "scale": 0.85
+    },
+    "animal_dog_shepherd": {
+      "to": [
+        "animal_wolf"
+      ],
+      "tint": "#8a6034",
+      "scale": 0.85
+    },
+    "animal_dog_beagle": {
+      "to": [
+        "animal_wolf"
+      ],
+      "tint": "#c89464",
+      "scale": 0.65
+    },
+    "animal_cat_tabby": {
+      "to": [
+        "animal_fox"
+      ],
+      "tint": "#b89060",
+      "scale": 0.6
+    },
+    "animal_cat_siamese": {
+      "to": [
+        "animal_fox"
+      ],
+      "tint": "#ece0cc",
+      "scale": 0.6
+    },
+    "animal_cat_black": {
+      "to": [
+        "animal_fox"
+      ],
+      "tint": "#4a4a54",
+      "scale": 0.6
+    },
+    "animal_parrot": {
+      "to": [
+        "animal_duck"
+      ],
+      "tint": "#50d050",
+      "scale": 0.8
+    },
+    "animal_crow": {
+      "to": [
+        "animal_duck"
+      ],
+      "tint": "#383840",
+      "scale": 0.75
+    },
+    "animal_ferret": {
+      "to": [
+        "animal_squirrel"
+      ],
+      "tint": "#dccca8",
+      "scale": 1.15
+    },
+    "pet_trough": {
+      "to": [
+        "feeding_trough"
+      ],
+      "tint": "#c09060",
+      "scale": 0.6
     }
   },
   "stages": {

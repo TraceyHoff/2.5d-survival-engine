@@ -18,11 +18,12 @@ import { iconForItem,
   type BuildSelection, type MenuCtx, type MenuIntent, camperStationView, vehicleRefuelIntent, type CamperRecipeView,
   progressionView, unlockSkillIntent, respecSkillsIntent, SKILL_REJECT_TEXT, useIntent, drinkWaterIntent, nearWater,
   SKILLS, equipIntent, wearIntent, equipmentView,
+  petView, petsOf, petOfferIntent, petCommandIntent, dropItemIntent, PET_HELP, petName, petSpecies, Pet,
 } from "@engine/gameplay";
 import { colorChoices, requestCharacterEdit } from "./character-creator.js";
 import { GroupRole, PlayerId, SLOT_PALETTE, Transform, type Entity, type WearableSlot } from "@engine/core";
 
-export const GAMEPLAY_PANELS = ["inventory", "crafting", "build", "character", "party", "clan", "trade", "camper", "skills", "station"] as const;
+export const GAMEPLAY_PANELS = ["inventory", "crafting", "build", "character", "party", "clan", "trade", "camper", "skills", "station", /* ADR-145 */ "pet"] as const;
 export type GameplayPanel = (typeof GAMEPLAY_PANELS)[number];
 /** What the client wires in (main.ts): the local replica + player, and a command sender (NetId mapping + gameplayNet). */
 export interface GameplaySource {
@@ -43,6 +44,12 @@ export interface GameplaySource {
   camper?(): Entity | undefined;
   /** ADR-136: station whose crafting panel is open (Interact near a workbench / forge / campfire …, GameMenus.openStation). */
   station?(): { entity: Entity; kind: number } | undefined;
+  /** ADR-145: pet / tameable animal the pet panel shows (Interact next to it, or picked from the list). */
+  pet?(): Entity | undefined;
+  /** ADR-145: choose another pet from the panel's list. */
+  selectPet?(e: Entity | undefined): void;
+  /** ADR-145: open the rename editor (modal; on-screen keyboard on gamepad). */
+  renamePet?(pet: Entity, current: string): void;
 }
 export interface PanelKit { para(t: string): HTMLElement; rerender(): void; status(t: string): void; close(): void }
 
@@ -168,6 +175,10 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
           if (wet) g.append(btn("Drink water", "use-water", () => send(drinkWaterIntent(), "You drink from the water."), { role: "use", title: "Drink straight from the water", data: { use: "drink" } }));
           out.push(heading("Eat & drink"), g);
         }
+        // ADR-145: drop a stack on the ground (a following pet fetches it into its bag)
+        const dg = grid(); dg.dataset["role"] = "drop";
+        for (const s of v) if (!s.equipped) dg.append(btn(`Drop ${s.name}`, `drop-${s.slot}`, () => send(dropItemIntent(s.item, s.count), `Dropped ${s.name} ×${s.count}.`), { alt: true, role: "drop", title: "Drop on the ground (your pet fetches it)", data: { item: String(s.item), icon: s.icon } }));
+        if (dg.childElementCount) { const det = el("details", { "data-role": "drop-section" }); det.append(el("summary", {}, "Drop items…"), dg); out.push(det); }
       }
       if (cv) {
         // ADR-098: paged container grid (CONTAINER_PAGE_SIZE per page). Every slot is a focusable button so the D-pad /
@@ -401,6 +412,7 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       }
       return out;
     }
+    case "pet": return petBody(c, src, kit, btn, send);
     case "camper": {
       const ve = src.camper?.(); const v = ve === undefined ? undefined : camperStationView(c, ve);
       if (!v) return [kit.para("Open a camper's station (interact inside a parked camper).")];
@@ -441,4 +453,63 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       return [fuel, tabs, craft, cook, inv];
     }
   }
+}
+
+// ---- ADR-145 pet panel -----------------------------------------------------------------------------------
+type Btn = (label: string, key: string, fn: () => void, opts?: { alt?: boolean; disabled?: boolean; title?: string; role?: string; pressed?: boolean; data?: Record<string, string>; p?: number }) => HTMLButtonElement;
+const PREF_TEXT: Record<string, string> = { love: "loves it", like: "likes it", ok: "will try it", hate: "hates it", food: "food" };
+const bar = (label: string, v: number, max: number, role: string): HTMLElement => {
+  const p = el("p", { "data-role": role }, `${label} ${Math.round(v)}/${Math.round(max)}`); p.setAttribute("style", `--p:${Math.max(0, Math.min(1, max ? v / max : 0)).toFixed(3)}`); return p;
+};
+function petBody(c: MenuCtx, src: GameplaySource, kit: PanelKit, btn: Btn, send: (i: MenuIntent, ok: string) => void): Node[] {
+  const w = c.world; const me = w.getField(c.player, PlayerId, "id") ?? 0; const out: Node[] = [];
+  const target = src.pet?.(); const v = target !== undefined ? petView(w, c.player, target) : undefined;
+  const mine = petsOf(w, me);
+  if (mine.length > 1 || (mine.length && !v)) {
+    const g = grid(); g.dataset["role"] = "pet-list";
+    for (const e of mine) { const sp = petSpecies(w.getField(e, Pet, "species") ?? 0); g.append(btn(`${petName(w, e)} · Lv ${w.getField(e, Pet, "level") ?? 1}`, `pet-${e}`, () => { src.selectPet?.(e); kit.rerender(); }, { pressed: e === target, role: "pet", title: sp?.name ?? "Pet" })); }
+    out.push(heading("Your pets"), g);
+  }
+  if (!v) {
+    if (!mine.length) out.push(kit.para("You have no pets yet."));
+    out.push(heading("How pets work"), ...PET_HELP.map((t) => kit.para(t)));
+    return out;
+  }
+  const head = el("section", { "data-role": "pet-status", "data-species": petSpecies(v.species)?.key ?? "" });
+  head.append(el("p", { "data-role": "pet-name" }, v.wild ? v.name : `${v.name} · ${v.speciesName} · Lv ${v.level}`));
+  head.append(bar("HP", v.hp, v.maxHp, "pet-hp"));
+  if (!v.wild) head.append(bar("Fed", v.fullness, 100, "pet-fullness"), bar("Trust", v.loyalty, 100, "pet-loyalty"), bar("XP", v.xp, v.xpNext, "pet-xp"));
+  out.push(head);
+  if (!v.wild && !v.owned) { out.push(kit.para(`Someone else's ${v.speciesName.toLowerCase()}.`)); return out; }
+  if (v.owned) {
+    const g = grid(); g.dataset["role"] = "pet-commands";
+    g.append(btn("Follow", "pet-follow", () => send(petCommandIntent(v.entity, 0), `${v.name} follows you.`), { pressed: v.cmd === 0, role: "toggle", title: "Follow, defend you, fetch dropped items" }));
+    g.append(btn("Stay", "pet-stay", () => send(petCommandIntent(v.entity, 1), `${v.name} stays here.`), { pressed: v.cmd === 1, role: "toggle", title: "Guard this spot, your buildings and pets" }));
+    g.append(btn("Rename", "pet-rename", () => src.renamePet?.(v.entity, v.name), { alt: true, title: "Give your pet a name" }));
+    out.push(g);
+  }
+  // treats / food offers (tame chance for wild animals)
+  const og = grid(); og.dataset["role"] = "pet-offers";
+  for (const o of v.offers) {
+    const label = v.wild ? `Offer ${o.name} (${o.pref === "hate" ? "refuses" : Math.round(o.chance * 100) + "%"})` : `Feed ${o.name} ×${o.count}`;
+    og.append(btn(label, `offer-${o.item}`, () => send(petOfferIntent(v.entity, o.item), v.wild ? `Offered ${o.name}…` : `Fed ${o.name}.`), { role: "offer", disabled: v.wild && o.chance <= 0, title: `${petSpecies(v.species)?.name}: ${PREF_TEXT[o.pref]}${o.fullness ? ` · +${o.fullness} fed` : ""}`, data: { item: String(o.item), icon: o.key, pref: o.pref } }));
+  }
+  out.push(heading(v.wild ? "Tame with a treat" : "Feed"));
+  if (og.childElementCount) out.push(og);
+  else out.push(kit.para(v.wild ? `No treat it accepts. ${PET_HELP[0]}` : "Nothing it can eat in your pack."));
+  if (v.owned) {
+    const inv = inventoryView(c); const cv = containerView(c, v.entity, 0);
+    if (cv) {
+      out.push(heading(`${v.name}'s bag · ${cv.slotCount} slots`));
+      const g = grid(); g.dataset["role"] = "container-grid";
+      for (const s of cv.slots) g.append(s.item
+        ? btn(`${s.name} ×${s.count}`, `cslot-${s.slot}`, () => send(withdrawIntent(v.entity, s.item, s.count), `Took ${s.name} ×${s.count}.`), { title: `${s.tooltip}\nTake`, role: "cslot", data: { item: String(s.item), icon: s.icon, slot: String(s.slot) } })
+        : btn("·", `cslot-${s.slot}`, () => kit.status("Empty slot"), { alt: true, title: "Empty", role: "cslot", data: { item: "0", slot: String(s.slot) } }));
+      out.push(g);
+      out.push(heading("Give from your pack"));
+      const pg = grid(); for (const s of inv) if (!s.equipped) pg.append(btn(`${s.name} ×${s.count}`, `slot-${s.slot}`, () => send(depositIntent(v.entity, s.item, s.count), `Gave ${s.name} ×${s.count}.`), { title: `${s.tooltip}\nPut in ${v.name}'s bag`, role: "slot", data: { item: String(s.item), icon: s.icon } }));
+      out.push(pg.childElementCount ? pg : kit.para("Your pack is empty."));
+    } else { src.selectPet?.(v.entity); out.push(kit.para("Opening the bag…")); } // (re)sends the open; throttled in selectPet
+  }
+  return out;
 }

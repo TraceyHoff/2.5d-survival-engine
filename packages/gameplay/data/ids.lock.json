@@ -453,7 +453,13 @@
     "stewed_cherry": 451,
     "stewed_raspberry": 452,
     "stewed_strawberry": 453,
-    "water_bottle": 454
+    "water_bottle": 454,
+    "dog_biscuit": 455,
+    "egg_crunch": 456,
+    "fish_treat": 457,
+    "meaty_chew": 458,
+    "seed_mix": 459,
+    "veggie_bites": 460
   },
   "resources": {
     "fallen_branches": 1,
@@ -899,7 +905,13 @@
     "stewed_cherry": 355,
     "stewed_raspberry": 356,
     "stewed_strawberry": 357,
-    "water_bottle": 358
+    "water_bottle": 358,
+    "dog_biscuit": 359,
+    "egg_crunch": 360,
+    "fish_treat": 361,
+    "meaty_chew": 362,
+    "seed_mix": 363,
+    "veggie_bites": 364
   },
   "pieces": {
     "anvil": 1,
@@ -1081,7 +1093,8 @@
     "weapon_rack": 177,
     "well": 178,
     "window_planter": 179,
-    "feeding_trough": 180
+    "feeding_trough": 180,
+    "pet_trough": 181
   },
   "zombies": {
     "zombie_brute": 1,

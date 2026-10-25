@@ -55,6 +55,8 @@ export function silhouetteKey(bodyKey: number, layerCount: number): number { ret
 export const OUTLINE_ONLY = 256;
 /** Render-internal instance flag: face/eyes paper-doll layer (mip bias, small contrast lift, partial darkness bypass; see characterOpts.face*). */
 export const FACE_LAYER = 512;
+/** Render-internal instance flag (ADR-145): crisp pixel-art sampling (sharp bilinear: texel-snapped UVs, 1 device px AA seam) when magnified. */
+export const CRISP = 1024;
 /** Paper-doll slots that carry the character's face: never crowd-LOD'd or dress-capped, drawn with FACE_LAYER. */
 export const FACE_SLOTS: readonly string[] = ["face", "eyes"];
 
@@ -197,6 +199,13 @@ uniform int uPoolFirst;
 vec4 atlasAt(vec3 uv) { int l = int(uv.z + 0.5); return l >= uPoolFirst ? texture(uPoolTex, vec3(uv.xy, float(l - uPoolFirst))) : texture(uAtlas, uv); }
 // face/eyes layers: negative LOD bias so 1-3 px pupils/lashes are not averaged away in the minified mips
 vec4 atlasAtBias(vec3 uv, float b) { int l = int(uv.z + 0.5); return l >= uPoolFirst ? texture(uPoolTex, vec3(uv.xy, float(l - uPoolFirst)), b) : texture(uAtlas, uv, b); }
+// ADR-145 sharp bilinear: inside a texel sample its centre, blend only across a ~1 device px seam (crisp at any
+// non-integer magnification, no shimmer); minified (>= 1 texel per px) it is left to the mips.
+vec3 crispUv(vec3 uv, vec2 w) {
+  int l = int(uv.z + 0.5); vec2 sz = vec2(l >= uPoolFirst ? textureSize(uPoolTex, 0).xy : textureSize(uAtlas, 0).xy);
+  vec2 p = uv.xy * sz, d = w * sz; if (max(d.x, d.y) >= 1.0) return uv;
+  vec2 f = fract(p) - 0.5; p = floor(p) + 0.5 + clamp(f / max(d, vec2(1e-4)), -0.5, 0.5); return vec3(p / sz, uv.z);
+}
 float alphaAt(vec2 uv) { return atlasAt(vec3(uv, vUv.z)).a * inRect(uv); }
 // status tint row (AtlasManager tint table: per sprite SpriteDef.tints, row 0 = render_tuning globals)
 vec3 statusTint(vec3 c, int idx, float amount) {
@@ -227,6 +236,7 @@ float ringAt(vec2 uv) {
 }
 float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 void main() {
+  vec2 cw = fwidth(vUvRaw.xy); // uniform control flow: crispUv's footprint (ADR-145)
   if (uShadowPass == 1) {
     float a;
     if (uShadowMode == 0) { float d = length(vLocal); a = 1.0 - smoothstep(0.35, 1.0, d); }
@@ -240,6 +250,7 @@ void main() {
   if ((vFB.x & 4) != 0 && vSwayPx != 0.0) { // sway mask (R = weight): sample the source shifted against the wind
     float w = texture(uSwayM, vUv).r; uv.x -= vSwayPx * w; // vSwayPx is in uv units
   }
+  if ((vFlags & 1024) != 0) uv = crispUv(uv, cw);
   vec4 t = ((vFlags & 512) != 0 ? atlasAtBias(uv, uFaceBias) : atlasAt(uv)) * inRect(uv.xy);
   if (uSilhouette == 1) { // focus drawn through occluders (depth GREATER)
     if (t.a < 0.35) discard;
@@ -688,8 +699,8 @@ export class SpriteBatch {
         // explicit Occluder.fade overrides the style alpha (fade mode)
         if (os >= 0 && occT > 0 && occ.mode === "fade") { fade = 1 - (1 - oc.data.fade[os]!) * occT / Math.max(1e-3, 1 - occ.alpha); occT = 0; }
       }
-      const ss = sh.slot(i);
-      const o0 = this.writeOne(sx, sy, key, scale, res, sp.data.flags[k]! | (ls.slot(i) >= 0 ? SpriteFlag.BloomSource : 0), (i * 0.618034) % 1, fade, -OPEN, OPEN, sp.data.tint[k]! >>> 0, 0,
+      const ss = sh.slot(i); const crisp = atlas.isCrisp(res.atlas); if (crisp) atlas.markUsedAt(res.atlas);
+      const o0 = this.writeOne(sx, sy, key, scale, res, sp.data.flags[k]! | (ls.slot(i) >= 0 ? SpriteFlag.BloomSource : 0) | (crisp ? CRISP : 0), (i * 0.618034) % 1, fade, -OPEN, OPEN, sp.data.tint[k]! >>> 0, 0,
         ss >= 0 ? sh.data.alpha[ss]! : 0, 0, 0, ss >= 0 ? blobW * (sh.data.length[ss]! || 1) : 0);
       if (wet) { const s2 = wet.slot(i); if (s2 >= 0) { o0[20] = wet.data.level[s2]! / 255; if (o0[20] > 0.3) cx.statusFx?.("wet", x, y, z, o0[20]); } }
       if (bt) { const s2 = bt.slot(i); if (s2 >= 0) { o0[21] = bt.data.cold[s2]! / 255; o0[22] = bt.data.shivering[s2]! ? 1 : 0; o0[23] = (bt.data.heat[s2]! / 255) * cx.style.fx.flushStrength;

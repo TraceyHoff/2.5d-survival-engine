@@ -30,6 +30,7 @@ export const GAMEPLAY_REPLICATION: readonly Replication[] = [
   // vehicles (ADR-096/097): pose incl. trailer heading, seats, links and engine/headlight flags go to everyone in AOI
   r(C.Vehicle, "all"), r(C.VehicleSeats, "all"), r(C.Driver, "all"), r(C.Hitch, "all"), r(C.VehicleState, "all"),
   r(C.HitReact, "all"), r(C.NodeRegrow, "all"), // ADR-134
+  r(C.Pet, "all"), r(C.TroughOwner, "all"), r(C.PetBrain, "server"), // ADR-145
 ];
 export function replicationOf(def: ComponentDef): Replication | undefined { return GAMEPLAY_REPLICATION.find((x) => x.def === def); }
 

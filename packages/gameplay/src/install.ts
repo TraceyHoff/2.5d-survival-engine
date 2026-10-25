@@ -3,6 +3,7 @@ import { installVehicleCraft, VEHICLE_CRAFT_HASH } from "./vehicle_craft.js";
 import { CROP_EVERY, cropGrowthSystem, farmUseSystem } from "./farming.js";
 import { HUSBANDRY_EVERY, husbandrySystem, husbandryUseSystem } from "./skills/husbandry.js";
 import { installProgression, xpTravelSystem } from "./skills/progression.js";
+import { installPets, petSystem } from "./pets.js";
 import { DEFAULT_TICK_HZ, pruneModifiers, setTimeOfDay, StallDisplay, TimeOfDay, Weather, type World } from "@engine/core";
 import { installSpatialIndex, setClimateModel, ClimateRes } from "@engine/world";
 import { Buffs, Equipment, GAMEPLAY_COMPONENTS, IntentAction, Inventory, NO_SLOT, PlayerIntent } from "./components.js";
@@ -67,6 +68,7 @@ export const GAMEPLAY_SYSTEM_ORDER: readonly (readonly [Phase, string, number?])
   ["simulation", "gameplay.crops", CROP_EVERY], // ADR-110
   ["simulation", "gameplay.husbandryUse"], // ADR-113
   ["simulation", "gameplay.husbandry", HUSBANDRY_EVERY], // ADR-113
+  ["simulation", "gameplay.pets"], // ADR-145 (after animal AI)
   ["simulation", "gameplay.hordes", HORDES_EVERY], // ADR-121 server director (no-op on clients / when disabled)
   ["simulation", "gameplay.vitals"],
   ["simulation", "gameplay.death"],
@@ -116,10 +118,11 @@ export function installGameplay(world: World, options: GameplayOptions | number 
     "gameplay.spoilage": spoilageSystem, "gameplay.chunkSurface": chunkSurfaceSystem,
     "gameplay.clearIntents": clearIntentsSystem, "gameplay.equipmentSync": equipmentSyncSystem, "gameplay.noiseDecay": noiseDecaySystem,
     "gameplay.pruneBuffs": (w) => pruneModifiers(w, Buffs), "gameplay.stallDisplay": stallDisplaySystem, "gameplay.expression": expressionSystem, "gameplay.vehicles": vehicleSystem, "gameplay.vehicleGuard": vehicleGuardSystem, "gameplay.animSettle": animSettleSystem, "gameplay.farmUse": farmUseSystem, "gameplay.crops": cropGrowthSystem, "gameplay.husbandryUse": husbandryUseSystem, "gameplay.husbandry": husbandrySystem,
-    "gameplay.hordes": hordeDirectorSystem, "gameplay.xpTravel": xpTravelSystem, "gameplay.equip": equipSystem,
+    "gameplay.hordes": hordeDirectorSystem, "gameplay.xpTravel": xpTravelSystem, "gameplay.equip": equipSystem, "gameplay.pets": petSystem,
     ...installBuildingSystems(world), ...installCombatSystems(world),
   };
   installProgression(world);
+  installPets(world); // ADR-145
   for (const [phase, name, every] of GAMEPLAY_SYSTEM_ORDER) {
     const fn = sys[name]; if (!fn) throw new Error(`no system ${name}`);
     world.addSystem(phase, name, fn, every ? { every } : {});

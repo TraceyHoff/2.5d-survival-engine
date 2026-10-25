@@ -1,3 +1,4 @@
+import { DropItemCmd, encodePetName, nearestPet, petName, PetResult, PetCommandCmd, PetOfferCmd, PetRenameCmd } from "../pets.js";
 /**
  * Menu view-models + command builders for the client's in-game menus (apps/client game-menus.ts, ADR-095 shell).
  * Pure reads over a World (client replica or server world) and plain {cmd, args} intents; no DOM, browser-safe.
@@ -20,7 +21,7 @@ import { entityIndex } from "@engine/core";
 import { installSpatialIndex } from "@engine/world";
 import { isAuthority } from "../config.js";
 import { NO_SLOT } from "../components.js";
-import { Fuel } from "../components.js";
+import { Fuel, Pet } from "../components.js";
 import { fuelSecondsLeft } from "../systems/fuel.js";
 import { KEY_ITEM, keyTooltip } from "../vehicle_keys.js";
 const itemDefKey = (w: World, item: number): string => gameplayDefs(w).items.get(item)?.key ?? "";
@@ -109,7 +110,8 @@ export function openContainer(c: MenuCtx): Entity | undefined {
   const w = c.world; const p = w.get(c.player, Transform); if (!p) return undefined;
   const reach = gameplayDefs(w).building.containerReach + 1; let best: Entity | undefined; let bd = reach * reach;
   for (const e of w.query([Container, Transform])) {
-    if (e === c.player) continue; const t = w.get(e, Transform)!; const d = (t.x - p.x) ** 2 + (t.y - p.y) ** 2;
+    if (e === c.player || (w.isRegistered(Pet) && w.has(e, Pet))) continue; // ADR-145: a pet bag shows only in the pet panel
+    const t = w.get(e, Transform)!; const d = (t.x - p.x) ** 2 + (t.y - p.y) ** 2;
     if (d <= bd) { bd = d; best = e; }
   }
   return best;
@@ -320,12 +322,19 @@ export function listItemIntents(stall: Entity, d: StallListDraft): MenuIntent[] 
 // ---- interact → panel -------------------------------------------------------------------------------
 export const STALL_INTERACT_RANGE = 2.5;
 /** What the Interact action should open: a nearby stall's trade panel, else the wardrobe (character panel). */
-export function interactPanel(c: MenuCtx): { panel: "trade"; stall: Entity } | { panel: "character" } | { panel: "station"; station: Entity; kind: number } | undefined {
+export function interactPanel(c: MenuCtx): { panel: "trade"; stall: Entity } | { panel: "character" } | { panel: "station"; station: Entity; kind: number } | { panel: "pet"; pet: Entity } | undefined {
   const s = nearestStall(c, STALL_INTERACT_RANGE); if (s !== undefined) return { panel: "trade", stall: s };
   if (nearWardrobe(c.world, c.player)) return { panel: "character" };
-  const st = nearestStation(c); if (st) return { panel: "station", ...st };
+  const st = nearestStation(c); const pet = nearestPet(c.world, c.player); // ADR-145: the pet / tameable animal wins when it is closer than the station
+  if (pet && (!st || pet.d < stationDistance(c, st.station))) return { panel: "pet", pet: pet.entity };
+  if (st) return { panel: "station", ...st };
   return undefined;
 }
+const stationDistance = (c: MenuCtx, e: Entity): number => { const a = c.world.get(c.player, Transform), b = c.world.get(e, Transform); return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : Infinity; };
+export const petOfferIntent = (target: Entity, item: number): MenuIntent => intent(PetOfferCmd, { target, item }, ["target"]);
+export const petCommandIntent = (pet: Entity, cmd: number): MenuIntent => intent(PetCommandCmd, { pet, cmd }, ["pet"]);
+export const petRenameIntent = (pet: Entity, name: string): MenuIntent => intent(PetRenameCmd, { pet, ...encodePetName(name) } as never, ["pet"]);
+export const dropItemIntent = (item: number, count: number): MenuIntent => intent(DropItemCmd, { item, count });
 /** ADR-136: nearest crafting station (placed piece or spawned) within its own range of the player; opens its crafting panel on Interact. */
 export function nearestStation(c: MenuCtx): { station: Entity; kind: number } | undefined {
   const w = c.world; const me = w.get(c.player, Transform); if (!me) return undefined;
@@ -384,4 +393,20 @@ export function paintTarget(c: MenuCtx): Entity | undefined {
     const t = w.get(e, Transform)!; const dist = Math.hypot(t.x - me.x, t.y - me.y); if (dist <= bd) { bd = dist; best = e; }
   }
   return best;
+}
+
+/** ADR-145: toast text for a replicated pet event (PetEventEvt: pet, result, value). */
+export function petEventText(world: World, pet: Entity | undefined, result: number, value: number): string {
+  const name = pet !== undefined && world.isAlive(pet) && world.has(pet, Pet) ? petName(world, pet) : "Your pet";
+  switch (result) {
+    case PetResult.Tamed: return `Tamed! ${name} is your pet now.`;
+    case PetResult.Refused: return "It sniffs and refuses that.";
+    case PetResult.Shied: return "It took the treat but shied away — try again.";
+    case PetResult.Fed: return `${name} ate.`;
+    case PetResult.NotHungry: return `${name} isn't hungry.`;
+    case PetResult.LevelUp: return `${name} reached level ${value}!`;
+    case PetResult.Renamed: return "Pet renamed.";
+    case PetResult.Command: return value === 1 ? `${name} stays and guards.` : `${name} follows you.`;
+    default: return "";
+  }
 }

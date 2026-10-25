@@ -7,7 +7,7 @@ import { makeWorld, steps } from "./helpers.js";
 describe("ADR-110 wildlife, farming, flora, clutter", () => {
   it("content: 21 animals with yields, every plantable seed/sapling exists and is only gathered (never crafted)", () => {
     const w = makeWorld(); const d = gameplayDefs(w);
-    expect(animalDefs().length).toBe(21);
+    expect(animalDefs().length).toBe(32); // 21 + 11 ADR-145 pet species
     for (const a of animalDefs()) expect(a.loot.length).toBeGreaterThan(0);
     const crafted = new Set([...d.recipes.values()].map((r) => r.output.item));
     for (const p of FARMING.plantables) {

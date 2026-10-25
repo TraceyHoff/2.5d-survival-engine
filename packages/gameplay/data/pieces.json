@@ -4878,6 +4878,32 @@
         "bronze"
       ],
       "$decor": true
+    },
+    {
+      "key": "pet_trough",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 100,
+      "solid": true,
+      "ground": true,
+      "category": "outdoor",
+      "rotSteps": 4,
+      "container": 6,
+      "footprint": {
+        "w": 1,
+        "h": 1
+      },
+      "cost": [
+        {
+          "resource": "planks",
+          "amount": 3
+        },
+        {
+          "resource": "nails",
+          "amount": 1
+        }
+      ]
     }
   ]
 }

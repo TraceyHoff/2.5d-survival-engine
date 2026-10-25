@@ -4893,6 +4893,12 @@
       },
       "sips": 2,
       "durability": 2
-    }
+    },
+    {"key": "dog_biscuit", "name": "Dog Biscuit", "category": "food", "maxStack": 30, "weight": 0.05, "food": {"hunger": 4, "thirst": 0, "health": 0}, "spoilSeconds": 7200, "petTreat": true},
+    {"key": "meaty_chew", "name": "Meaty Chew", "category": "food", "maxStack": 30, "weight": 0.05, "food": {"hunger": 4, "thirst": 0, "health": 0}, "spoilSeconds": 7200, "petTreat": true},
+    {"key": "fish_treat", "name": "Fish Treat", "category": "food", "maxStack": 30, "weight": 0.05, "food": {"hunger": 4, "thirst": 0, "health": 0}, "spoilSeconds": 7200, "petTreat": true},
+    {"key": "seed_mix", "name": "Seed Mix", "category": "food", "maxStack": 30, "weight": 0.05, "food": {"hunger": 4, "thirst": 0, "health": 0}, "spoilSeconds": 7200, "petTreat": true},
+    {"key": "veggie_bites", "name": "Veggie Bites", "category": "food", "maxStack": 30, "weight": 0.05, "food": {"hunger": 4, "thirst": 0, "health": 0}, "spoilSeconds": 7200, "petTreat": true},
+    {"key": "egg_crunch", "name": "Egg Crunch", "category": "food", "maxStack": 30, "weight": 0.05, "food": {"hunger": 4, "thirst": 0, "health": 0}, "spoilSeconds": 7200, "petTreat": true}
   ]
 }

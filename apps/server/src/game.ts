@@ -1,5 +1,5 @@
-import { giveSandboxKit, sandboxSpawn } from "./sandbox.js";
-import { installRoadCommands, NodeRegrow, installSignCommands, setWorldRules, worldRules, type WorldRulesOpts } from "@engine/gameplay";
+import { giveSandboxKit, sandboxPetCorner, sandboxSpawn } from "./sandbox.js";
+import { installRoadCommands, NodeRegrow, installSignCommands, installPetCommands, PetEvent, setWorldRules, worldRules, type WorldRulesOpts } from "@engine/gameplay";
 /** Authoritative game server: world + gameplay + streaming chunks + persistence + NetServer sessions. */
 import { ChannelRegistry, CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, type CosmeticCatalogLike, Membership, Owner, PlayerId, TimeOfDay, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
 import { CHUNK_SIZE, ChunkManager, ProceduralGenerator, computeSpawnPoints, chunkKeyOf, type BuildingGrid, type PopulationSpawner } from "@engine/world";
@@ -10,7 +10,7 @@ import { createAgentStore, type AgentIdentityStore } from "./agents.js";
 import { AccountAssigned, ClaimAccount, SetName, WorldPersistence, loadSocial, tokenToHex, tokenToWords, wordsToName, wordsToToken, type WorldStore } from "@engine/persist";
 import { giveRandomAppearance } from "./appearance.js";
 import { SocialSync } from "./social_sync.js";
-import { Act, applyDemoInput, installDemoWorld, rejectReasonCode, DevBotHello, DEMO_COMMANDS, DEMO_EVENTS, ExplodedEvt, GAMEPLAY_NET_COMMANDS, Ping, Pong, ReloadedEvt, VehicleStationOpenedEvt, DeleteMyProgressCmd, DELETE_PROGRESS_CONFIRM, ProgressDeleted } from "./protocol.js";
+import { Act, applyDemoInput, installDemoWorld, rejectReasonCode, DevBotHello, DEMO_COMMANDS, DEMO_EVENTS, ExplodedEvt, GAMEPLAY_NET_COMMANDS, Ping, Pong, ReloadedEvt, VehicleStationOpenedEvt, PetEventEvt, DeleteMyProgressCmd, DELETE_PROGRESS_CONFIRM, ProgressDeleted } from "./protocol.js";
 import { forgetPlayer, sweepForgottenPlayers, installSkillHandlers, setAiHumanPredicate } from "@engine/gameplay";
 
 /** Pre-ADR-107 worlds started at 0.25 of the day and did not persist the day-clock epoch. */
@@ -155,6 +155,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
 
   const mode = gameModeConfig(o.mode ?? "multiplayer", !!o.virtualPlayers);
   const players = new Map<number, Player>();
+  let petCorner = false; // ADR-145 sandbox pet corner placed
   // Spawn points chosen by the population spawner for virtual players still connecting. Always empty in multiplayer.
   const pendingSpots: { x: number; y: number }[] = [];
   const agents = createAgentStore(o.store, { tick: () => world.tick, log });
@@ -181,6 +182,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
       const at = o.devSandbox ? sandboxSpawn(spawnPoints(w)[0] ?? at0, s.clientId) : at0;
       const e = spawnPlayer(w, { x: at.x, y: at.y, clientId: s.clientId });
       if (o.devSandbox) log(`sandbox kit: ${giveSandboxKit(w, e).length} items`);
+      if (o.devSandbox && !petCorner) { petCorner = true; sandboxPetCorner(w, spawnPoints(w)[0] ?? at0); }
       net.netIds.assign(e);
       // random valid look (replicates; a restored player record or the client's own setAppearance replaces it)
       if (o.catalog && o.randomAppearance) giveRandomAppearance(w, e, o.catalog, Math.random);
@@ -211,6 +213,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
   installVehicleCommands(world, handlers); // gameplay.vehicle* (enter/exit/hitch/unhitch/station), ADR-096
   installVehicleCraftCommands(world, handlers);
   installRoadCommands(world, handlers); // gameplay.placeRoad / removeRoad (ADR-119)
+  installPetCommands(world, handlers); // gameplay.petOffer / petCommand / petRename / dropItem (ADR-145)
   installSignCommands(world, handlers); // gameplay.placeSign / setSignText / removeSign (ADR-120) // gameplay.vehicleDeploy / vehicleRefuel / vehicleRepair (gameplay DESIGN.md §31)
   // ADR-102: server vehicle speed/teleport sanity (reverts the step) -> anomaly on the driver's session (AntiCheat scores it)
   installVehicleGuard(world, (v) => {
@@ -256,6 +259,9 @@ export function createGameServer(o: GameServerOptions): GameServer {
   });
   world.events.on(Reloaded, (ev: { entity: Entity; item: number; ammo: number; rounds: number }) => {
     for (const [cid, p] of players) if (p.entity === ev.entity) { net.emitEvent(ReloadedEvt, { entity: ev.entity, item: ev.item, ammo: ev.ammo, rounds: ev.rounds }, { reliable: (ARMS_EVENT_RELIABILITY["gameplay.Reloaded"] as string) === "reliable", scope: { owner: cid } }); break; }
+  });
+  world.events.on(PetEvent, (ev: { entity: Entity; pet: Entity; result: number; value: number }) => { // ADR-145
+    for (const [cid, p] of players) if (p.entity === ev.entity) { net.emitEvent(PetEventEvt, { pet: ev.pet, result: ev.result, value: ev.value }, { reliable: true, scope: { owner: cid } }); break; }
   });
   world.events.on(VehicleStationOpened, (ev: { entity: Entity; vehicle: Entity; station: number; kind: number }) => {
     for (const [cid, p] of players) if (p.entity === ev.entity) { net.emitEvent(VehicleStationOpenedEvt, { vehicle: ev.vehicle, station: ev.station, kind: ev.kind }, { reliable: true, scope: { owner: cid } }); break; }

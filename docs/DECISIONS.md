@@ -836,3 +836,42 @@ Accepted 2026-10-24. Context: the ADR-113 tree showed all 122 nodes on one giant
 - Follow-up (touch, gamepad, live run): on touch the Move card shows a ghost joystick (`#tutorial-ghost`, dashed circle, animated knob, "Drag here") in the left stick zone, and the spotlight ring targets it while no real stick is on screen (steps opt in with `ghost: "joystick"`). On gamepad, action cards say "Stuck? Hold Y to skip" with a fill bar; holding Reload (Y) for 1 s calls Next, and the button must be released before it can skip again (no chain skips).
 - Live sandbox run on desktop (headless Chrome, 1024×576): walk, sprint, zoom, gather by hand, open the bag, eat, craft a Stone Axe, equip, chop, build mode, rotate, place a real campfire, then E on it opens the station card. Fixes from that run: the 16-slot sandbox kit filled the bag, so every craft sat at "Paused 0%" (the kit now leaves 2 slots free; trousers/boots dropped); "place" counted the `gameplay.place` command even when the server refused it ("Spot taken"), so it now counts only a build piece that really appears within ~12 tiles while build mode is on (`ProbeSample.pieces`); sprint distance counts if either sample was sprinting. `__qa` (sandbox only) gained `tutProbe`, `nodes()` (with resource key and tool) and `hint()`.
 - Tests: apps/client/test/adr144_tutorial.test.ts.
+
+## ADR-145: Crisp animals and the pets system
+
+**Crisp animals (cause and fix).**
+- Cause: animal sheets were never in the hot atlas tier. `animals_large` was even matched by `COLD_ATLAS_RE`. Under VRAM pressure the atlas manager's idle-downscale halved them first. They were then magnified with plain bilinear filtering on WebGL2 (soft and blurry). On Canvas2D they were drawn at fractional device-pixel origins, so texel columns came out uneven and smeared, which was worst at phone DPR 3.
+- WebGL2: `animals` joins `HOT_ATLAS_RE`, and `animals_large` leaves the cold list. `CRISP_ATLAS_RE` (`^(animals|pets)_`) sheets are skipped by idle-downscale. Their instances carry the render-internal `CRISP` flag (1024). The fragment shader's `crispUv` does sharp bilinear: it samples the texel centre inside a texel and blends only across a ~1 device px seam when magnified. That gives crisp edges at any non-integer zoom or DPR with no shimmer. Minified sprites are left to the mips.
+- Canvas2D: sprite origins are snapped to whole device pixels (`snapPx`), and smoothing stays off when magnified.
+- VRAM: the measured sandbox resident set was unchanged (~127 MB). Creature sheets are small, and only these are exempt from downscale.
+- Art sizes: author creatures at 1× = 64×64 px cells for small animals (cat, birds, rabbit, ferret, chicken, dachshund, beagle) and 96×96 px for large dogs (lab, husky, shepherd), with a 2× (`@2x`) sheet for DPR ≥ 2. Use whole-pixel outlines and no sub-pixel AA on edges.
+
+**Pets (data-driven, `packages/gameplay/data/pets.json`, `src/pets.ts`).**
+- Species (13): dachshund, labrador, husky, german shepherd, beagle; tabby, siamese and black cat; parrot, crow, chicken, rabbit, ferret.
+- Treats (6): dog biscuit, meaty chew, fish treat and egg crunch (campfire); seed mix and veggie bites (by hand).
+- Each species has a love/like/ok/hate preference per treat that sets the tame chance. A hated treat is refused and kept; a failed try uses the treat.
+- Taming (`PetOfferCmd`): players and AI humans (survivor `tame_pet` behaviour) can tame. A tame adds `Pet` (owner PlayerId, name, species, level, xp, hp, fullness, loyalty, cmd, stay post), `Tamed` and a 6-slot `Container` bag. Only the owner can open the bag (other players get Locked), rename it (`PetRenameCmd`, sanitized, max 16) or command it (`PetCommandCmd`).
+- Hunger: 4 per minute. Below 60 the pet eats from its bag, then from food on the ground (non-permanent loot bags within 6 tiles that are unowned or the owner's), then from the owner's `pet_trough`.
+- `pet_trough` is a new buildable container. `TroughOwner` is set on placement.
+- Starving: −HP every 10 s, floored at 1, plus lost loyalty. A pet never dies of hunger. Well fed pets regenerate slowly.
+- Follow: keeps up with the owner (teleports when far), defends the owner, and fetches items the owner drops into its bag.
+- Stay: holds its post and defends itself, the owner, the owner's structures and the owner's other pets. Attackers are remembered from `Damaged` / `PieceDamaged` events for 15 s.
+- Defence takes priority over eating, so a hungry pet still fights back.
+- XP comes from hits and kills. The XP curve is base 20 × 1.35^level, up to level 20. Each level raises max HP, damage and speed.
+- A dead pet (combat only) drops its bag contents for the owner.
+- Persistence: `Pet`, `Tamed` and the container are persistent. Health is rebuilt from `Pet.hp` and level after a load.
+- Replication: `Pet` is networked. `PetEventEvt` (tamed, refused, shied, fed, level up, renamed) goes to the owner only.
+- Client:
+  - Interact (E / pad X / touch context button) on a pet or tameable animal opens the Pet panel. It shows HP, fed, trust and XP bars, Follow / Stay / Rename, treat offers with chances, and the bag grid (take) plus pack grid (give).
+  - Rename uses the sign editor ("Save name"), with the on-screen keyboard on gamepad.
+  - Pets show world HP bars and hit reacts. The inventory panel's "Drop items…" section lets the pet fetch.
+  - Help text is in the panel and the help menu (`PET_HELP`) and does not depend on the tutorial.
+  - Placeholder sprites come from `sprite_fallbacks`.
+- Sandbox: a pet corner on join (a dachshund, tabby and parrot, plus a permanent treat crate).
+- Tests: packages/gameplay/test/pets.test.ts, packages/persist/test/pets145.test.ts.
+
+## ADR-146: Container commands over the network; permanent bags
+
+- `OpenContainer`, `CloseContainer`, `Deposit` and `Withdraw` were never in `GAMEPLAY_NET_COMMANDS`, so panel container taps silently did nothing online and in the in-tab server (send returned false). They are now appended (append-only ids). Their `target` fields are remapped client→server entity ids, and they run through the input queue like every other command.
+- Closing the Pet panel sends `CloseContainer`, so the pet's bag stops being "the open container" and the pack panel returns to normal. `openContainer()` (client "which container is open") ignores pets, whose bags show only in the Pet panel.
+- `PERMANENT_BAG` (`LootBag.despawnAtTick === 0xffffffff`) marks caches like the sandbox treat crate. Pets never eat from or fetch those.

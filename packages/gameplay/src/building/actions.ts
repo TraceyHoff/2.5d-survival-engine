@@ -3,8 +3,10 @@
  * containers (open/close with range check + viewer tracking for net's "viewers" scope, deposit/withdraw,
  * auto-close when out of range). The client predicts none of this (only the ghost).
  */
+import { Pet } from "../components.js";
 import { entityIndex, Owner, Transform, type Entity, type World } from "@engine/core";
 import { canLootBag } from "../combat/pvp.js";
+import { isPetOwner } from "../pets.js";
 import { AttachKind, BuildPiece, PieceLink, StallHeader, Container, ContainerViewers, Dead, DoorState, IntentAction, MAX_VIEWERS, PieceStability, PlayerIntent, Tribe, Viewing } from "../components.js";
 import { gameplayDefs, isAuthority, rangeSlack } from "../config.js";
 import { secondsToTicks } from "../defs.js";
@@ -151,6 +153,7 @@ export function containerSystem(world: World): void {
     if (!inReach(world, e, c, b.containerReach)) { fail(BuildFail.OutOfRange); continue; }
     if (action === IntentAction.OpenContainer) {
       if (!canLootBag(world, e, c)) { fail(BuildFail.Locked); continue; }
+      if (world.has(c, Pet) && !isPetOwner(world, e, c)) { fail(BuildFail.Locked); continue; } // ADR-145 pet inventory: owner only
       if (world.getField(e, Viewing, "container") === c) continue;
       closeContainer(world, e);
       if (!addViewer(world, c, clientOf(world, e))) { fail(BuildFail.ViewersFull); continue; }

@@ -22,20 +22,21 @@ import { mountTouchOverlay, syncTouchHidden } from "./touch-overlay.js";
  *             ?offline=1 (skip the menu: singleplayer), ?menu=0 (skip the menu: legacy connect overlay), ?bots=N,
  *             ?ice=<JSON RTCIceServer[]> (P2P STUN/TURN override, also VITE_ICE_SERVERS), ?renderer=debug, ?time=0..24 / ?weather=clear|rain|storm|snow|fog &intensity=0..1 (view-only overrides), ?hud=0.
  */
-import { createGameLoop, World, Transform, PrevTransform, lerp, entityIndex, InputState, type FixedLoop } from "@engine/core";
+import { createGameLoop, World, Transform, PrevTransform, lerp, entityIndex, InputState, type FixedLoop, type Entity } from "@engine/core";
 import { TileMap, worldToScreen, screenToWorld, DEFAULT_ISO, ProceduralGenerator, computeSpawnPoints } from "@engine/world";
 import { InputSystem, AimResolver, DEFAULT_ACTIONS, DEFAULT_CONTEXTS, DEFAULT_PROFILES, DEFAULT_TOUCH_LAYOUTS, type FrameMapping } from "@engine/input";
 import { attachBrowserInput } from "@engine/input/browser";
-import { Act, ClanRoster, ClanRosterMember, OnlinePlayer, VehicleStationOpenedEvt, gameplayNet, installDemoWorld } from "@engine/server/protocol";
+import { Act, ClanRoster, ClanRosterMember, OnlinePlayer, VehicleStationOpenedEvt, PetEventEvt, gameplayNet, installDemoWorld } from "@engine/server/protocol";
 import { netIdOf, ChatChannel, type ChatDelivered } from "@engine/net";
 import { WorldRules, worldRules, ROADS, holdsRangedWeapon, Sign, signText, Road, StallHeader, buildView, listItemIntents, setStallOpenIntent, stallView, nearestStall, inventoryView, gameplayDefs, BuildPiece } from "@engine/gameplay";
-import { SocialDirectory, hasCreatedLook, setAppearanceIntent, interactPanel, UseCmd, GatherCmd, farmPrompt, WaterProbeRes, type MenuCtx, type MenuIntent } from "@engine/gameplay";
+import { SocialDirectory, hasCreatedLook, setAppearanceIntent, interactPanel, petEventText, petRenameIntent, UseCmd, GatherCmd, farmPrompt, WaterProbeRes, type MenuCtx, type MenuIntent } from "@engine/gameplay";
 import { ClientSession } from "./session.js";
 import { mountConnectOverlay } from "./connect.js";
 import { IsoView } from "./view.js";
 import { mountHud } from "./hud.js";
 import { mountGatherFx } from "./gather-fx.js";
 import { panelIcon } from "./gameplay-panels.js";
+import { buildSignEditor } from "./sign-editor.js";
 import { controlLabel, mountFarmPrompt, quickUseFires, type PromptDevice } from "./farm-prompt.js";
 import { attachContextRecovery, effectiveLevel, retryIsoAtSafe } from "./gl-recovery.js";
 import { BootUI, loadSettings, newWorldRules } from "./menu.js";
@@ -44,7 +45,7 @@ import { sampleDayClock } from "./day-clock.js";
 import { TUTORIAL_STEPS, TutorialProgress, tutorialKey } from "./tutorial/steps.js";
 import { mountTutorial } from "./tutorial/overlay.js";
 import { TutorialProber } from "./tutorial/probe.js";
-import { Survival, heldTool, ResourceNode, toolHint } from "@engine/gameplay";
+import { Survival, heldTool, ResourceNode, toolHint, Animal } from "@engine/gameplay";
 import { AudioSystem } from "./audio/index.js";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
@@ -131,7 +132,7 @@ function maybeStartTutorial(): void {
 function startMenus(): void {
   if (menus) return;
   maybeStartTutorial();
-  menus = new GameMenus({ root, input, tutorial: { active: () => tutorialProgress().active, replay: () => { tutorialProgress().start(true); tutorialUi?.update(); }, next: () => { tutorialProgress().next(); tutorialUi?.update(); }, skip: () => { tutorialProgress().skip(); tutorialUi?.update(); } }, audio: audio.mixer, worldRules: () => (world.isRegistered(WorldRules) && world.has(world.environment, WorldRules) ? worldRules(world) : undefined), onQuit: quitToMenu, session: () => sessionInfo?.(), deleteProgress: () => deleteInfo?.(), setQuality: (p) => iso?.renderer.setQualityPreset(p), qualityInfo: () => (iso && "quality" in iso.renderer ? (iso.renderer as { quality: { autoLabel(): string; detected?: { name: string; klass: string; remembered: boolean } | undefined } }).quality : undefined), gameplay: { ctx: menuCtx, send: sendIntent, social, startPlacing: (sel) => buildMode.start(sel), worldTools: worldToolsApi },
+  menus = new GameMenus({ root, input, tutorial: { active: () => tutorialProgress().active, replay: () => { tutorialProgress().start(true); tutorialUi?.update(); }, next: () => { tutorialProgress().next(); tutorialUi?.update(); }, skip: () => { tutorialProgress().skip(); tutorialUi?.update(); } }, audio: audio.mixer, worldRules: () => (world.isRegistered(WorldRules) && world.has(world.environment, WorldRules) ? worldRules(world) : undefined), onQuit: quitToMenu, session: () => sessionInfo?.(), deleteProgress: () => deleteInfo?.(), setQuality: (p) => iso?.renderer.setQualityPreset(p), qualityInfo: () => (iso && "quality" in iso.renderer ? (iso.renderer as { quality: { autoLabel(): string; detected?: { name: string; klass: string; remembered: boolean } | undefined } }).quality : undefined), gameplay: { ctx: menuCtx, send: sendIntent, social, startPlacing: (sel) => buildMode.start(sel), worldTools: worldToolsApi, renamePet },
     onChat: (text, channel, to) => { if (!session.client?.chat.send(channel as ChatChannel, text, to ? { to } : {})) menus?.pushChat("(not connected — message not sent)"); } });
 }
 /** Live data for the gameplay panels: the replicated world + local player; names via NetClient's NamesClient. */
@@ -140,6 +141,14 @@ function menuCtx(): MenuCtx | undefined {
   const names = { get: (id: number): string | undefined => { const n = c.names.get(id); if (n === undefined && id) c.names.want([id]); return n; } };
   const catalog = iso?.registry.cosmetics?.size ? iso.registry.cosmetics : undefined; // wardrobe palettes / eye list / secondary rows
   return { world, player: p, names, ...(catalog ? { catalog } : {}) };
+}
+/** ADR-145: pet rename modal (sign editor; on-screen keyboard on gamepad) -> PetRenameCmd. */
+function renamePet(pet: Entity, current: string): void {
+  let handle: { close(): void } | undefined; let closed = false;
+  const close = (): void => { if (closed) return; closed = true; if (handle) handle.close(); else ed.remove(); };
+  const ed = buildSignEditor({ kindName: "Pet name", saveLabel: "Save name", maxLen: 16, initial: current, keyboard: promptDevice() === "gamepad", close,
+    onSave: (t) => { sendIntent(petRenameIntent(pet, t)); } });
+  if (menus) handle = menus.nav.open("pet-rename", ed, () => { closed = true; menus?.refresh(); }); else root.append(ed);
 }
 /** Panel intent -> bridged gameplay net command; Entity args become NetIds (unbridged commands such as PaintCmd return false). */
 function sendIntent(i: MenuIntent): boolean {
@@ -159,6 +168,8 @@ function wireChat(): void {
   c.onEvent(ClanRoster, (e) => social.onRoster(e)); c.onEvent(ClanRosterMember, (e) => social.onMember(e)); c.onEvent(OnlinePlayer, (e) => social.onOnline(e));
   // camper interior station used (server VehicleStationOpened, owner only) → camper station panel
   c.onEvent(VehicleStationOpenedEvt, (e) => { if (e.vehicle) menus?.openCamper(e.vehicle); });
+  // ADR-145 pet feedback (owner only): tamed / refused / shied / fed / level up -> toast + panel refresh
+  c.onEvent(PetEventEvt, (e) => { const t = petEventText(world, e.pet as never, e.result, e.value); if (t) farm?.toast(t); if (e.result === 1 && e.pet) menus?.openPet(e.pet); else menus?.refresh(); });
   c.chat.onReject((ch, reason) => menus?.pushChat(`(${CHAT_TAG[ch] ?? "?"} message rejected: ${reason})`));
 }
 /** Pause menu "Quit to main menu": leave fullscreen, end the session, back to the main menu. */
@@ -211,7 +222,7 @@ const buildHud = mountBuildHud(root, { buildMode, device: () => promptDevice(), 
   blocked: (x, y) => onTouchControl(buildTouchLayout, x, y, innerWidth, innerHeight) });
 const buildTouchLayout = { ...DEFAULT_TOUCH_LAYOUTS.building, elements: DEFAULT_TOUCH_LAYOUTS.building.elements.filter((e) => !MENU_BAR_IDS.has(e.id)) };
 /** ADR-142: ?dev=sandbox exposes read-only QA handles (build preview, world, player) for automated browser tests. */
-if (params.get("dev") === "sandbox") (window as { __qa?: unknown }).__qa = { tutorial: () => tutProgress, tutProbe: () => tutProber.probe(), buildMode, send: (i: MenuIntent) => sendIntent(i), ctx: () => menuCtx(), gp: { buildView, listItemIntents, setStallOpenIntent, stallView, nearestStall, inventoryView, gameplayDefs }, world: () => world, player: () => session.player, menus: () => menus, stalls: () => world.isRegistered(StallHeader) ? [...world.query([StallHeader])].length : 0, roads: () => world.isRegistered(Road) ? [...world.query([Road])].length : 0, signs: () => world.isRegistered(Sign) ? [...world.query([Sign, Transform])].map((e) => signText(world, e)) : [], nodes: () => world.isRegistered(ResourceNode) ? [...world.query([ResourceNode, Transform])].filter((n) => world.getField(n, ResourceNode, "amount") !== 0).map((n) => { const t = world.get(n, Transform)!; const d = gameplayDefs(world).resources.get(world.getField(n, ResourceNode, "kind")!); return { x: t.x, y: t.y, key: d?.key, tool: d?.requiredTool }; }) : [], hint: () => { const p = session.player; return p !== undefined ? toolHint(world, p) : undefined; }, pos: () => { const p = session.player; const t = p !== undefined ? world.get(p, Transform) : undefined; return t ? { x: t.x, y: t.y } : undefined; } };
+if (params.get("dev") === "sandbox") (window as { __qa?: unknown }).__qa = { G: () => import("@engine/gameplay"), C: () => import("@engine/core"), iso: () => iso, tutorial: () => tutProgress, tutProbe: () => tutProber.probe(), buildMode, send: (i: MenuIntent) => sendIntent(i), ctx: () => menuCtx(), gp: { buildView, listItemIntents, setStallOpenIntent, stallView, nearestStall, inventoryView, gameplayDefs }, world: () => world, player: () => session.player, menus: () => menus, stalls: () => world.isRegistered(StallHeader) ? [...world.query([StallHeader])].length : 0, roads: () => world.isRegistered(Road) ? [...world.query([Road])].length : 0, signs: () => world.isRegistered(Sign) ? [...world.query([Sign, Transform])].map((e) => signText(world, e)) : [], nodes: () => world.isRegistered(ResourceNode) ? [...world.query([ResourceNode, Transform])].filter((n) => world.getField(n, ResourceNode, "amount") !== 0).map((n) => { const t = world.get(n, Transform)!; const d = gameplayDefs(world).resources.get(world.getField(n, ResourceNode, "kind")!); return { x: t.x, y: t.y, key: d?.key, tool: d?.requiredTool }; }) : [], hint: () => { const p = session.player; return p !== undefined ? toolHint(world, p) : undefined; }, animals: () => world.isRegistered(Animal) ? [...world.query([Animal, Transform])].map((e) => { const t = world.get(e, Transform)!; return { e, x: t.x, y: t.y, kind: world.getField(e, Animal, "kind") }; }) : [], pos: () => { const p = session.player; const t = p !== undefined ? world.get(p, Transform) : undefined; return t ? { x: t.x, y: t.y } : undefined; } };
 /** Per input update: build mode, and the shared Interact action (E / pad X / touch interact) opening stall / wardrobe panels. */
 function onUiFrame(): void {
   tutorialUi?.frame(input, !!menus?.nav.isOpen);
@@ -223,7 +234,7 @@ function onUiFrame(): void {
   if (input.pressed("ToggleBuild") && promptDevice() === "gamepad") { menus?.open("build"); return; } // ADR-136: pad LB+Y (KBM B is a UINav hotkey)
   { const id = padMenuAction(input); if (id) { menus?.open(id); return; } } // ADR-139: pad-only bindings: Select = inventory, LB+Select = crafting, RB+Select = chat
   if (input.pressed("QuickUse") && farm) { const p = session.player; if (p !== undefined && quickUseFires(safeFarmPrompt(p))) farm.trigger(); }
-  if (input.pressed("Interact")) { const c = menuCtx(); const t = c && interactPanel(c); if (t?.panel === "trade") menus?.openStall(t.stall); else if (t?.panel === "station") menus?.openStation(t.station, t.kind); else if (t) menus?.open("character"); }
+  if (input.pressed("Interact")) { const c = menuCtx(); const t = c && interactPanel(c); if (t?.panel === "trade") menus?.openStall(t.stall); else if (t?.panel === "station") menus?.openStation(t.station, t.kind); else if (t?.panel === "pet") menus?.openPet(t.pet); else if (t) menus?.open("character"); }
 }
 /** Panel refresh cadence: 250ms, 500ms on low-end devices (few cores / little memory / ?gl=lowend). */
 const LOW_END = params.get("gl") === "lowend" || (navigator.hardwareConcurrency ?? 8) <= 4 || ((navigator as { deviceMemory?: number }).deviceMemory ?? 8) <= 2;
@@ -327,7 +338,7 @@ async function startSingleplayer(): Promise<void> {
       const store = await openBrowserStore(dbName);
       localStatus.state = "starting";
       const inTab = await createLocalServer({ store, bots, devSandbox, worldRules: newWorldRules(settings), ...(catalog ? { catalog } : {}), log });
-      pumpLocal = inTab.pump;
+      pumpLocal = inTab.pump; if (devSandbox) (window as { __qaServer?: unknown }).__qaServer = inTab.game; // ADR-145 QA: in-tab server (?worker=0)
       local = { inWorker: false, createTransport: () => inTab.createTransport(), save: async () => { await inTab.game.persist?.saveAll(); }, stop: () => inTab.stop() };
     }
     log(local.inWorker ? "server running in Web Worker" : "server running in tab");

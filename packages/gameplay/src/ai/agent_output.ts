@@ -1,3 +1,4 @@
+import { PetOfferCmd } from "../pets.js";
 /**
  * AgentOutput (core ai.ts) -> the inputs a human sends. Pure except applyAgentEmote (queues an emote request).
  * Action strings: "gather" | "gather:<target>" | "attack:<target>" | "eat:<slot>" | "drink:<slot>" | "craft:<recipe>[:<count>]"
@@ -68,6 +69,7 @@ export function actionCommand(action: string): AgentCommand | undefined {
   const clan = clanActionCommand(action); if (clan !== null) return clan;
   const veh = vehicleActionCommand(action); if (veh !== null) return veh;
   if (action.startsWith("skill:")) { const n = Number(action.slice(6)); return Number.isInteger(n) && n >= 0 ? { type: UnlockSkillCmd.name, payload: { node: n } } : undefined; } // ADR-113
+  if (action.startsWith("tame:")) { const [, a, b] = action.split(":"); const t = Number(a), i = Number(b); return Number.isInteger(t) && t > 0 && Number.isInteger(i) && i > 0 ? { type: PetOfferCmd.name, payload: { target: t, item: i } } : undefined; } // ADR-145
   const it = actionIntent(action); if (!it) return undefined;
   switch (it.kind) {
     case "eat": return { type: UseCmd.name, payload: { slot: it.slot } };

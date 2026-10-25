@@ -212,9 +212,11 @@ export const MIN_ATLAS_DOWNSCALE = 0.125;
 
 export type AtlasTier = "hot" | "cold";
 /** Always hot: terrain, bodies/characters, common props, UI and fonts. */
-export const HOT_ATLAS_RE = /(^|[_/-])(tiles?|terrain|ground|characters?|bod(y|ies)|base|resources|decor|items|equipment|held|buildings?|openings|furniture|fog|ui|fonts?|sdf)([_@/-]|$)/i;
+export const HOT_ATLAS_RE = /(^|[_/-])(tiles?|terrain|ground|characters?|bod(y|ies)|base|resources|decor|items|animals|equipment|held|buildings?|openings|furniture|fog|ui|fonts?|sdf)([_@/-]|$)/i;
 /** Cold: rare variants, distant LODs, one-shot fx, huge set pieces. Anything matching neither stays hot. */
-export const COLD_ATLAS_RE = /(lod\d*|_far|distant|rare|_huge|_big|^fx_|death_bag|zombies_(brute|mummy|pumpkin|runner)|animals_large|critters|wear|cosmetic|hair|hats?|accessor|tops?|bottoms?|shoes|faces?|eyes)/i;
+/** ADR-145: pixel-art creature sheets sampled crisp (sharp bilinear) when magnified. */
+export const CRISP_ATLAS_RE = /^(animals|pets)_/;
+export const COLD_ATLAS_RE = /(lod\d*|_far|distant|rare|_huge|_big|^fx_|death_bag|zombies_(brute|mummy|pumpkin|runner)|critters|wear|cosmetic|hair|hats?|accessor|tops?|bottoms?|shoes|faces?|eyes)/i;
 /** Default tier: HOT_ATLAS_RE wins; atlases holding body sprites are hot; COLD_ATLAS_RE or mostly-wearable atlases are cold. */
 export function defaultAtlasTier(key: string, opts: { bodies?: boolean; wearShare?: number } = {}): AtlasTier {
   if (opts.bodies || HOT_ATLAS_RE.test(key)) return "hot";
@@ -697,7 +699,7 @@ export class AtlasManager {
       sprites[id] = { atlasIdx: list.indexOf(at), anchorX: s.anchor.x, anchorY: s.anchor.y, anims: s.animList, dirAt, dirF, stateAnim, damage,
         ...(b ? { building: { fw: b.footprint.w, fh: b.footprint.h, layer: b.layer, frames: b.frames } } : {}) };
     }
-    this.usedMark = new Uint8Array(list.length); this.atlases = list; this.atlasById = new Map(list.map((a) => [a.id, a])); this.sprites = sprites; this.registry = registry; this.headGroup.clear(); this.resolveSway(); this.resolveVariants(); this.resolveRoofs(); this.resolveHands();
+    this.usedMark = new Uint8Array(list.length); this.crispMark = []; this.atlases = list; this.atlasById = new Map(list.map((a) => [a.id, a])); this.sprites = sprites; this.registry = registry; this.headGroup.clear(); this.resolveSway(); this.resolveVariants(); this.resolveRoofs(); this.resolveHands();
     this.uploadTints();
     this.maskPixels.clear();
     // body pages: resident from the first frame (prio 0: no budget refusal; one slot each, so never evicted)
@@ -842,7 +844,7 @@ export class AtlasManager {
     let best: [number, number] | null = null; let keptReserve = reserveBytes; let demoted = 0;
     for (const r of [reserveBytes, keepBytes + (reserveBytes - keepBytes) / 2, keepBytes + (reserveBytes - keepBytes) / 4, keepBytes]) { const c = fits(1, full - r); if (c !== null) { best = [1, c]; keptReserve = r; break; } }
     if (!best && this.recentlyUsed.size) {
-      const idle = list.filter((a) => !a.cold && !this.recentlyUsed.has(a.key)).sort((a, b) => b.img!.width * b.img!.height - a.img!.width * a.img!.height);
+      const idle = list.filter((a) => !a.cold && !this.recentlyUsed.has(a.key) && !CRISP_ATLAS_RE.test(a.key)) // ADR-145: creature sheets stay full res.sort((a, b) => b.img!.width * b.img!.height - a.img!.width * a.img!.height);
       for (const a of idle) { a.cold = true; demoted++; const c = fits(1, full - keepBytes); if (c !== null) { best = [1, c]; keptReserve = keepBytes; break; } }
     }
     if (!best) {
@@ -1183,6 +1185,9 @@ export class AtlasManager {
   releaseSprite(spriteId: number, facing?: number): void { const a = this.lazyOf(spriteId, facing); const p = a && this.poolOfA(a); if (a && p) p.lru.release(a.key); }
   /** Mark a drawn sprite's atlas as recently used: it is classified hot at the next rebuild (budget / fallback refit). */
   /** markUsed() for a resolved page (multi-page sprites: the anim's own page is hot too). */
+  /** ADR-145: atlas drawn with crisp (sharp bilinear) sampling: pixel-art creatures (CRISP_ATLAS_RE). */
+  isCrisp(atlasIdx: number): boolean { let c = this.crispMark[atlasIdx]; if (c === undefined) { const a = this.atlases[atlasIdx]; if (!a) return false; c = this.crispMark[atlasIdx] = CRISP_ATLAS_RE.test(a.key) ? 1 : 0; } return c === 1; }
+  private crispMark: (0 | 1)[] = [];
   markUsedAt(atlasIdx: number): void { const a = this.atlases[atlasIdx]; if (a && !a.lazy && this.usedMark[atlasIdx] !== 1) { this.usedMark[atlasIdx] = 1; this.recentlyUsed.add(a.key); } }
   markUsed(spriteId: number): void { const s = this.sprites[spriteId]; if (!s) return; const a = this.atlases[s.atlasIdx]; if (a && !a.lazy && this.usedMark[s.atlasIdx] !== 1) { this.usedMark[s.atlasIdx] = 1; this.recentlyUsed.add(a.key); } }
   private usedMark = new Uint8Array(0);

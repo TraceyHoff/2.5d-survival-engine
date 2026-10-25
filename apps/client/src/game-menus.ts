@@ -12,7 +12,7 @@ import { loadSettings, saveSettings } from "./menu.js";
 import { morph } from "./ui-diff.js";
 import { audioSettingsRows, type AudioControls } from "./audio/settings-ui.js";
 import { GAMEPLAY_PANELS, gameplayBody, pageContainer, pageSkillCategory, type GameplayPanel, type GameplaySource } from "./gameplay-panels.js";
-import { onlineTargets, openContainerIntent, openStallIntent } from "@engine/gameplay";
+import { closeContainerIntent, onlineTargets, openContainerIntent, openStallIntent, isPetOwner, Pet, Viewing } from "@engine/gameplay";
 import { loadPreset, parsePreset, savePreset, QUALITY_PRESETS, type QualityPreset } from "@engine/render";
 
 /** `data-chan` value per @engine/net ChatChannel number (Global 0 … System 6); omitted/unknown = "system". */
@@ -31,6 +31,7 @@ export const GAME_MENUS: readonly MenuDef[] = [
   { id: "trade", title: "Trade stalls", icon: "⚖", hotkeys: ["KeyT"], text: "Browse and run trade stalls." },
   { id: "skills", title: "Skills", icon: "⭐", hotkeys: ["KeyJ"], bar: true, text: "Spend skill points from leveling up (ADR-113)." },
   { id: "camper", title: "Camper Station", icon: "🚐", hotkeys: [], text: "Craft, cook, refuel and use storage inside a parked camper." },
+  { id: "pet", title: "Pets", icon: "🐾", hotkeys: ["KeyY"], text: "Tame, feed and command your pets (ADR-145)." },
   { id: "chat", title: "Chat", icon: "💬", hotkeys: ["Enter", "Slash"], bar: true, text: "" },
   { id: "settings", title: "Settings", icon: "⚙", hotkeys: ["KeyO"], text: "" },
 ];
@@ -140,7 +141,7 @@ export class GameMenus {
   }
   private gameplayNodes(id: GameplayPanel): Node[] {
     const status = this.para(this.statusLine); status.dataset["role"] = "status"; status.setAttribute("aria-live", "polite");
-    return [status, ...gameplayBody(id, { ...this.o.gameplay!, stall: () => this.stallTarget ?? this.o.gameplay!.stall?.(), camper: () => this.camperTarget, station: () => this.stationTarget }, { para: (t) => this.para(t), rerender: () => this.refresh(), status: (t) => { this.statusLine = t; }, close: () => this.nav.closeAll() })];
+    return [status, ...gameplayBody(id, { ...this.o.gameplay!, stall: () => this.stallTarget ?? this.o.gameplay!.stall?.(), camper: () => this.camperTarget, station: () => this.stationTarget, pet: () => this.petTarget, selectPet: (e) => this.selectPet(e) }, { para: (t) => this.para(t), rerender: () => this.refresh(), status: (t) => { this.statusLine = t; }, close: () => this.nav.closeAll() })];
   }
   /** Re-render the open gameplay panel from live world state by diffing (only changed nodes are touched, focus kept).
    *  No-op when no gameplay panel is open. Returns the number of DOM mutations. */
@@ -165,13 +166,29 @@ export class GameMenus {
     if (this.nav.top === "station") this.refresh(); else this.nav.open("station", this.build("station"));
   }
   stationTarget: { entity: number; kind: number } | undefined;
+  /** ADR-145: open the pet panel on a pet / tameable animal (Interact next to it); asks the server to open an owned pet's bag. */
+  openPet(pet: number | undefined): void {
+    this.selectPet(pet);
+    if (this.nav.top === "pet") this.refresh(); else this.nav.open("pet", this.build("pet"), () => this.closePetBag());
+  }
+  selectPet(pet: number | undefined): void {
+    this.petTarget = pet; const c = this.o.gameplay?.ctx();
+    if (pet === undefined || !c || !isPetOwner(c.world, c.player, pet as never)) return;
+    const now = performance.now(); if (this.petOpenAt.pet === pet && now - this.petOpenAt.t < 800) return; // the panel re-asks until the bag replicates
+    this.petOpenAt = { pet, t: now }; this.o.gameplay?.send(openContainerIntent(pet as never));
+  }
+  private petOpenAt = { pet: -1, t: 0 };
+  /** Closing the pet panel closes the pet's bag on the server (so it stops replicating and the pack panel is normal again). */
+  private closePetBag(): void { const c = this.o.gameplay?.ctx(); const v = c?.world.isRegistered(Viewing) ? c.world.getField(c.player, Viewing, "container") : undefined;
+    if (v !== undefined && c!.world.isRegistered(Pet) && c!.world.has(v as never, Pet)) this.o.gameplay?.send(closeContainerIntent()); this.petOpenAt = { pet: -1, t: 0 }; }
+  petTarget: number | undefined;
   /** Append an incoming chat line (from NetClient.chat). */
   /** `channel`: ChatChannel number (1 global … 5 whisper) or omitted for client/system lines -> `data-chan`. */
   pushChat(line: string, channel?: number): void {
     this.chatLog.push({ text: line, chan: (channel === undefined ? undefined : CHAT_CHAN_NAMES[channel]) ?? "system" }); if (this.chatLog.length > 200) this.chatLog.splice(0, this.chatLog.length - 200);
     const log = this.o.root.querySelector<HTMLElement>("[data-menu=chat] [data-role=chat-log]"); if (log) { const lp = this.para(line); lp.dataset["chan"] = this.chatLog.at(-1)!.chan; log.append(lp); log.scrollTop = log.scrollHeight; }
   }
-  toggle(id: string): void { if (id === "trade") this.stallTarget = undefined; this.nav.toggle(id, () => this.build(id)); }
+  toggle(id: string): void { if (id === "trade") this.stallTarget = undefined; this.nav.toggle(id, () => this.build(id), id === "pet" ? () => this.closePetBag() : undefined); }
   open(id: string): void { this.nav.open(id, this.build(id)); }
   pause(): void { if (this.nav.top === "pause") return; this.nav.open("pause", this.build("pause")); }
 

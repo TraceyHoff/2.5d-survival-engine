@@ -4,6 +4,7 @@
  * (walkable tiles, no structures, no land claims / safe zones). Authority only. Human bots are spawned through
  * a host callback (virtual players join through the normal client path; see agents.ts / docs/AI_AGENTS.md).
  */
+import { Pet } from "./components.js";
 import { DEFAULT_TICK_HZ, Permissions, Transform, defineResource, type Entity, type World } from "@engine/core";
 import { PopulationSpawner, type BuildingGrid, type ChunkKey, type PhaseKey, type PopulationHost, type SpawnEntry, type PopulationViewpoint } from "@engine/world";
 import { Anim, AnimState, Animal, Tamed, Container, ContainerViewers, Dead, Health, LootBag, Survival } from "./components.js";
@@ -81,7 +82,7 @@ export function animalAISystem(world: World, dt: number): void {
       world.setField(e, Animal, "thinkAt", world.tick + Math.round(ANIMAL_CORPSE_SECONDS / dt)); if (world.has(e, AnimState)) setAnim(world, e, Anim.Die);
     } else if (world.tick >= a.thinkAt) world.destroy(e);
   }
-  for (const e of world.query([Animal, Transform], [Dead])) {
+  for (const e of world.query([Animal, Transform], [Dead, Pet])) { // ADR-145: pets are driven by petSystem
     const a = world.get(e, Animal)!; const t = world.get(e, Transform)!; const def = defs[a.kind]; if (!def) continue;
     const hp = world.get(e, Health); const hurt = !!hp && hp.hp < hp.max; const scared = !!hp && hp.hp <= hp.max * def.fleeHpFrac && hurt;
     const aggressive = !!def.attack && def.aggro.mode !== "passive" && !scared;

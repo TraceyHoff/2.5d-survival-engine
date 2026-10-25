@@ -286,6 +286,12 @@
     {"key": "roasted_onion", "station": "campfire", "seconds": 3, "ingredients": [{"item": "onion", "count": 1}], "output": {"item": "roasted_onion", "count": 1}},
     {"key": "roasted_wild_onion", "station": "campfire", "seconds": 3, "ingredients": [{"item": "wild_onion", "count": 1}], "output": {"item": "roasted_wild_onion", "count": 1}},
     {"key": "canteen", "station": "workbench", "seconds": 4, "ingredients": [{"item": "hide", "count": 2}, {"item": "fiber", "count": 2}], "output": {"item": "canteen", "count": 1}},
-    {"key": "water_bottle", "station": "none", "seconds": 1, "ingredients": [{"item": "glass_bottle", "count": 1}], "output": {"item": "water_bottle", "count": 1}}
+    {"key": "water_bottle", "station": "none", "seconds": 1, "ingredients": [{"item": "glass_bottle", "count": 1}], "output": {"item": "water_bottle", "count": 1}},
+    {"key": "dog_biscuit", "station": "campfire", "seconds": 3, "ingredients": [{"item": "wild_grain", "count": 1}, {"item": "egg", "count": 1}], "output": {"item": "dog_biscuit", "count": 3}},
+    {"key": "meaty_chew", "station": "campfire", "seconds": 3, "ingredients": [{"item": "raw_meat", "count": 1}, {"item": "bone", "count": 1}], "output": {"item": "meaty_chew", "count": 3}},
+    {"key": "fish_treat", "station": "campfire", "seconds": 3, "ingredients": [{"item": "fish", "count": 1}], "output": {"item": "fish_treat", "count": 2}},
+    {"key": "seed_mix", "station": "none", "seconds": 2, "ingredients": [{"item": "wild_grain", "count": 1}, {"item": "berries", "count": 1}], "output": {"item": "seed_mix", "count": 3}},
+    {"key": "veggie_bites", "station": "none", "seconds": 2, "ingredients": [{"item": "carrot", "count": 1}, {"item": "berries", "count": 1}], "output": {"item": "veggie_bites", "count": 3}},
+    {"key": "egg_crunch", "station": "campfire", "seconds": 3, "ingredients": [{"item": "egg", "count": 1}, {"item": "raw_small_game", "count": 1}], "output": {"item": "egg_crunch", "count": 3}}
   ]
 }
