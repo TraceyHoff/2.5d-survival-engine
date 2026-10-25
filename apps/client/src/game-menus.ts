@@ -224,7 +224,7 @@ export class GameMenus {
     for (const [n, c] of CHAT_CHANNELS) { const b = document.createElement("button"); b.type = "button"; b.className = c === this.chatChannel ? "" : "alt"; b.textContent = n; b.dataset["key"] = `chan-${c}`; b.setAttribute("aria-pressed", String(c === this.chatChannel));
       b.addEventListener("click", () => { this.chatChannel = c; for (const o of Array.from(chans.children)) { const on = o === b; (o as HTMLElement).className = on ? "" : "alt"; o.setAttribute("aria-pressed", String(on)); } fillPicker(); }); chans.append(b); }
     fillPicker();
-    const m = this.panel("chat", "Chat", [log, chans, picker, input], [["Send", send], ["Close", () => this.nav.close(), "alt"]]);
+    const m = this.panel("chat", "Chat", [log, chans, picker, input], [["Send", send]]); // header ✕, Esc, B and tap-outside close it; no second Close button
     m.querySelector<HTMLElement>("[data-action=Send]")!.dataset["role"] = "submit";
     return m;
   }

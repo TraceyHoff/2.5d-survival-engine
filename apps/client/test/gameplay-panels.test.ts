@@ -58,6 +58,10 @@ describe("gameplay panels (ADR-095 shell)", () => {
     const { menus } = setup(); menus.pause(); const txt = q("[data-menu=pause]").textContent!;
     expect(txt).not.toContain("Crafting Station"); expect(txt).not.toContain("Camper Station"); expect(txt).toContain("Crafting"); menus.destroy();
   });
+  test("chat has a single close control (header ✕), no duplicate footer Close", () => {
+    const { menus } = setup(); menus.open("chat"); const b = Array.from(q("[data-menu=chat]").querySelectorAll("button")).filter((x) => /close/i.test(x.textContent! + (x.getAttribute("aria-label") ?? "")));
+    expect(b).toHaveLength(1); menus.destroy();
+  });
   test("party: invite a nearby player (entity arg flagged for NetId mapping); pending invite accept/decline", () => {
     const { w, mk, sent, menus } = setup(); const bob = mk(8, "Bob", 2); menus.open("party");
     q("[data-key=invite-8]").click(); expect(sent.at(-1)).toMatchObject({ cmd: G.PartyInviteCmd, args: { target: bob }, entities: ["target"] });
