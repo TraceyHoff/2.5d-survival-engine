@@ -657,6 +657,15 @@ def draw_shoes(c, spec):
             if c.nv(side, 0) > -.1: cv.line([a, b], "S1", .7)
         if S.get("band"):
             q = c.p(c.off(ft, 0, 1.6, -.2)); cv.part(circle(q, W + .3, .8), "S", lw=.5, shade=.2, hl=0)
+        if S.get("plated"):   # ADR-137 tier boots: chunky toe cap + shaft cuff plate + tier mark
+            t = S["plated"]; toe = c.p(c.off(ft, 0, 1.0 + L * .32, -.9)); cv.part(circle(toe, W * .85, W * .6, wob=.04), t, lw=.8, shade=.22, hl=.18)
+            if shaft:
+                cv.part(circle(c.p(e), B["leg"] + 2.0, 1.7, wob=.04), t, lw=.8, shade=.22, hl=.15)
+                gear_parts.marks(c, t, c.p(along(c, up, shaft * .5)), 2.0, m, vertical=True)
+        if S.get("scales") and shaft:
+            for i, t3 in enumerate((.25, .5, .75)):
+                q = c.p(along(c, up, shaft * t3))
+                for dx in (-1.1, 1.1): cv.fill(circle((q[0] + dx + (i % 2) * .6, q[1]), .5, .4), ramp("snake")[3], clip=m)
         if st == "bunny":
             for s in (-1, 1):
                 a3 = c.off(ft, s * 1.2, 2.2, .3); b3 = c.off(ft, s * 1.8, 0.6, 4.2)
@@ -677,6 +686,7 @@ GLOVES = {   # ADR-135 hands gear: (main ramp, cuff ramp, cuff length t along fo
     "cloth_gloves": ("P", "S", .22, .35, .35, ()), "leather_gloves": ("leather", "P", .26, .55, .4, ("stitch",)),
     "fur_mittens": ("P", "fur_brown", .3, 1.1, .75, ("mitt",)), "gauntlets": ("iron", "P", .42, 1.0, .55, ("plates",)),
 }
+GLOVES.update({f"{t}_gauntlets": (t, "S" if t == "composite" else "P", .44, 1.2, .65, ("plates", "tier:" + t)) for t in gear_parts.TIERS})   # ADR-137 tier gauntlets
 def draw_gloves(c, st):
     K = c.K; B = K["B"]; cv = c.cv; main, cuff, t, cr, hr, ex = GLOVES[st]
     def glove(side):
@@ -686,6 +696,8 @@ def draw_gloves(c, st):
             cv.part(circle(c.p(w), B["arm"] + cr + .6, (B["arm"] + cr) * .7), cuff, lw=.8, shade=.25, hl=.1)
         cv.part(circle(hp, B["hand"] + hr, (B["hand"] + hr) * .95, wob=.05), main, lw=1.0, shade=.24, hl=.2 if main == "iron" else .12)
         if "plates" in ex: cv.line([(hp[0] - 1.2, hp[1] - .3), (hp[0] + 1.2, hp[1] - .3)], INK[3], .5)
+        tier = next((e[5:] for e in ex if e.startswith("tier:")), None)
+        if tier: gear_parts.marks(c, tier, hp, 1.8, None, vertical=False)
         if "stitch" in ex: cv.line([(hp[0] - .9, hp[1] + .5), (hp[0] + .9, hp[1] + .5)], "S1", .45, tm=(0, 1))
         if "mitt" in ex: cv.part(circle((hp[0] + .9 * side, hp[1] - .6), .9, .8), main, lw=.6, shade=.2, hl=.1)   # thumb
         if not K["front"][side]: cv.erase(cv.mask_from([c.torso_pts(.4), circle(c.p(K["hc"]), K["hr"] + .4, (K["hr"] + .4) * .96)]))

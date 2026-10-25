@@ -2817,7 +2817,27 @@
     "cz_bottom_gear_steel_greaves_female": 2815,
     "cz_bottom_gear_steel_greaves_male": 2816,
     "cz_bottom_gear_waxed_trousers_female": 2817,
-    "cz_bottom_gear_waxed_trousers_male": 2818
+    "cz_bottom_gear_waxed_trousers_male": 2818,
+    "cz_shoes_gear_bone_boots_female": 2819,
+    "cz_shoes_gear_bone_boots_male": 2820,
+    "cz_shoes_gear_bronze_boots_female": 2821,
+    "cz_shoes_gear_bronze_boots_male": 2822,
+    "cz_shoes_gear_composite_boots_female": 2823,
+    "cz_shoes_gear_composite_boots_male": 2824,
+    "cz_shoes_gear_fur_boots_female": 2825,
+    "cz_shoes_gear_fur_boots_male": 2826,
+    "cz_shoes_gear_iron_boots_female": 2827,
+    "cz_shoes_gear_iron_boots_male": 2828,
+    "cz_shoes_gear_leather_boots_female": 2829,
+    "cz_shoes_gear_leather_boots_male": 2830,
+    "cz_shoes_gear_reed_sandals_female": 2831,
+    "cz_shoes_gear_reed_sandals_male": 2832,
+    "cz_shoes_gear_rubber_boots_female": 2833,
+    "cz_shoes_gear_rubber_boots_male": 2834,
+    "cz_shoes_gear_snakeskin_boots_female": 2835,
+    "cz_shoes_gear_snakeskin_boots_male": 2836,
+    "cz_shoes_gear_steel_boots_female": 2837,
+    "cz_shoes_gear_steel_boots_male": 2838
   },
   "sounds": {
     "amb_rain": 1,
@@ -3040,6 +3060,16 @@
     "bottom_gear_linen_trousers": 143,
     "bottom_gear_padded_trousers": 144,
     "bottom_gear_steel_greaves": 145,
-    "bottom_gear_waxed_trousers": 146
+    "bottom_gear_waxed_trousers": 146,
+    "shoes_gear_bone_boots": 147,
+    "shoes_gear_bronze_boots": 148,
+    "shoes_gear_composite_boots": 149,
+    "shoes_gear_fur_boots": 150,
+    "shoes_gear_iron_boots": 151,
+    "shoes_gear_leather_boots": 152,
+    "shoes_gear_reed_sandals": 153,
+    "shoes_gear_rubber_boots": 154,
+    "shoes_gear_snakeskin_boots": 155,
+    "shoes_gear_steel_boots": 156
   }
 }

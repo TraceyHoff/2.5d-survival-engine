@@ -109,3 +109,11 @@ for k, ph, sp in [("linen_trousers", "bottom_jeans", dict(len=.9, seam=True, cuf
                   ("leather_trousers", "bottom_jeans", dict(len=.93, seam=True, waist=True, grow=1.1, remap={"P": "leather"}))] + \
                  [(f"{t}_greaves", "bottom_cargo", dict(len=.9, waist=True, grow=1.1, greaves=t)) for t in TIERS]:
     gear137("bottom_gear_" + k, "bottom", sp, ph, tint=2)
+# feet (shoes_gear_*)
+for k, ph, sp in [("reed_sandals", "shoes_sandals", dict(style="sandals", remap={"S": "reed", "P": "reed"})),
+                  ("leather_boots", "shoes_boots", dict(style="boots", shaft=.34, laces=True, soleS=True, cuffS=True, remap={"P": "leather"})),
+                  ("fur_boots", "shoes_hiking_boots", dict(style="boots", shaft=.36, flare=1.9, w=3.1, cuffS=True, soleS=True, remap={"P": "fur_brown"})),
+                  ("rubber_boots", "shoes_rain_boots", dict(style="rain", shaft=.48, flare=1.9, w=3.0, soleS=True, cuffS=True, band=True)),
+                  ("snakeskin_boots", "shoes_boots", dict(style="boots", shaft=.36, soleS=True, cuffS=True, scales=True, remap={"P": "snake"}))] + \
+                 [(f"{t}_boots", "shoes_hiking_boots", dict(style="boots", shaft=.34, w=3.0, soleS=True, plated=t, remap={"P": t})) for t in TIERS]:
+    gear137("shoes_gear_" + k, "shoes", sp, ph, tint=2)
