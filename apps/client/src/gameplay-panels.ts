@@ -8,6 +8,7 @@
  * (present = unlocked); member rows `[data-rank=member|officer|leader]`; tooltips `[data-tip]` (never `title=`).
  * Chat log lines (game-menus.ts) carry `[data-chan=global|local|party|clan|trade|whisper|system]`.
  */
+import { clanMemberActions } from "./clan-actions.js";
 import "./gameplay-panels.css";
 import { iconForItem,
   buildView, gameplayDefs, cancelQueuedCraftIntent, clanAcceptIntent, clanDeclineIntent, clanRosterRows, onlineTargets, paintIntent, paintTarget, type SocialDirectory, clanCreateIntent, clanDemoteIntent, clanDisbandIntent, clanInviteIntent, clanKickIntent, clanLeaveIntent,
@@ -336,19 +337,25 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       const v = clanView(c); const out: Node[] = [];
       if (v.invite && !dismissedClan.has(v.invite.clan)) { const inv = v.invite; out.push(kit.para(`${inv.fromName} invited you to a clan (${inv.secondsLeft}s).`)); const g = grid(); g.append(btn("Accept", "clan-accept", () => send(clanAcceptIntent(inv.clan), "Joined clan.")), btn("Dismiss", "clan-dismiss", () => { dismissedClan.add(inv.clan); send(clanDeclineIntent(inv.clan), "Declined."); }, { alt: true })); out.push(g); }
       if (!v.clan) { const g = grid(); g.append(btn("Create clan", "clan-create", () => send(clanCreateIntent(), "Clan created."))); out.push(kit.para("Not in a clan."), g); return out; }
-      const lead = v.role === GroupRole.Leader; const officer = v.role >= GroupRole.Officer;
+      const lead = v.role === GroupRole.Leader; const permOn = (perm: string): boolean => lead || !!v.perms.find((r) => r.role === v.role)?.perms.find((p) => p.perm === perm)?.on; const kickPerm = permOn("kick");
       out.push(kit.para(`${v.roleName} · goal: ${v.goalName} · your contribution: ${v.contrib}`));
-      out.push(heading("Goal")); const gg = grid(); v.goals.forEach((n, i) => gg.append(btn(n, `goal-${i}`, () => { const t = c.world.get(c.player, Transform); send(clanSetGoalIntent(i, t?.x ?? 0, t?.y ?? 0), `Goal: ${n}.`); }, { pressed: i === v.goal, alt: i !== v.goal, disabled: !officer, title: "Goal point = where you stand" }))); out.push(gg);
+      out.push(heading("Goal")); const gg = grid(); v.goals.forEach((n, i) => gg.append(btn(n, `goal-${i}`, () => { const t = c.world.get(c.player, Transform); send(clanSetGoalIntent(i, t?.x ?? 0, t?.y ?? 0), `Goal: ${n}.`); }, { pressed: i === v.goal, alt: i !== v.goal, disabled: !permOn("goal"), title: "Goal point = where you stand" }))); out.push(gg);
       out.push(heading("Members")); const mg = grid();
       const roster = clanRosterRows(c, src.social, v.clan); const myPid = c.world.getField(c.player, PlayerId, "id") ?? 0;
       if (roster) for (const m of roster) { if (m.playerId === myPid) continue; const e = m.entity; const r = el("div", { "data-role": "member", "data-key": String(m.playerId), "data-rank": rankOf(m.role) }); r.append(kit.para(`${m.online ? "●" : "○"} ${m.name} · ${m.roleName}`));
         const far = e === undefined ? " (not nearby)" : "";
-        r.append(btn("Promote", `promote-${m.playerId}`, () => { if (e !== undefined) send(clanPromoteIntent(e), `Promoted ${m.name}.`); }, { disabled: !lead || e === undefined, title: far }), btn("Demote", `demote-${m.playerId}`, () => { if (e !== undefined) send(clanDemoteIntent(e), `Demoted ${m.name}.`); }, { alt: true, disabled: !lead || e === undefined, title: far }), btn("Kick", `ckick-${m.playerId}`, () => { if (e !== undefined) send(clanKickIntent(e), `Kicked ${m.name}.`); }, { alt: true, disabled: !officer || e === undefined, title: far })); mg.append(r); }
+        const act = clanMemberActions(v.role, m.role, kickPerm);
+        if (act.promote) r.append(btn("Promote", `promote-${m.playerId}`, () => { if (e !== undefined) send(clanPromoteIntent(e), `Promoted ${m.name}.`); }, { disabled: e === undefined, title: far }));
+        if (act.demote) r.append(btn("Demote", `demote-${m.playerId}`, () => { if (e !== undefined) send(clanDemoteIntent(e), `Demoted ${m.name}.`); }, { alt: true, disabled: e === undefined, title: far }));
+        if (act.kick) r.append(btn("Kick", `ckick-${m.playerId}`, () => { if (e !== undefined) send(clanKickIntent(e), `Kicked ${m.name}.`); }, { alt: true, disabled: e === undefined, title: far })); mg.append(r); }
       else for (const m of v.members) { if (m.entity === c.player) continue; const r = el("div", { "data-role": "member", "data-key": String(m.playerId), "data-rank": rankOf(m.role) }); r.append(kit.para(`${m.name} · ${m.role === 3 ? "Leader" : m.role === 2 ? "Officer" : "Member"}`));
-        r.append(btn("Promote", `promote-${m.playerId}`, () => send(clanPromoteIntent(m.entity), `Promoted ${m.name}.`), { disabled: !lead }), btn("Demote", `demote-${m.playerId}`, () => send(clanDemoteIntent(m.entity), `Demoted ${m.name}.`), { alt: true, disabled: !lead }), btn("Kick", `ckick-${m.playerId}`, () => send(clanKickIntent(m.entity), `Kicked ${m.name}.`), { alt: true, disabled: !officer })); mg.append(r); }
+        const act = clanMemberActions(v.role, m.role, kickPerm);
+        if (act.promote) r.append(btn("Promote", `promote-${m.playerId}`, () => send(clanPromoteIntent(m.entity), `Promoted ${m.name}.`)));
+        if (act.demote) r.append(btn("Demote", `demote-${m.playerId}`, () => send(clanDemoteIntent(m.entity), `Demoted ${m.name}.`), { alt: true }));
+        if (act.kick) r.append(btn("Kick", `ckick-${m.playerId}`, () => send(clanKickIntent(m.entity), `Kicked ${m.name}.`), { alt: true })); mg.append(r); }
       out.push(mg);
       const cc = onlineTargets(c, src.social, new Set([...(roster ?? []).map((m) => m.playerId), ...v.members.map((m) => m.playerId)]));
-      out.push(heading("Invite")); const ig = grid(); for (const p of cc.slice(0, 16)) { const e = p.entity; ig.append(btn(`Invite ${p.name}`, `cinvite-${p.playerId}`, () => { if (e !== undefined) send(clanInviteIntent(e), `Invited ${p.name}.`); }, { disabled: !officer || e === undefined, title: e === undefined ? "online, not nearby" : "" })); } out.push(ig);
+      if (permOn("invite")) { out.push(heading("Invite")); const ig = grid(); for (const p of cc.slice(0, 16)) { const e = p.entity; ig.append(btn(`Invite ${p.name}`, `cinvite-${p.playerId}`, () => { if (e !== undefined) send(clanInviteIntent(e), `Invited ${p.name}.`); }, { disabled: e === undefined, title: e === undefined ? "online, not nearby" : "" })); } out.push(ig); }
       out.push(heading("Rank permissions"));
       for (const r of v.perms) { const pg = grid(); pg.dataset["role"] = "perm"; pg.dataset["key"] = String(r.role); for (const p of r.perms) pg.append(btn(`${r.roleName}: ${p.perm} ${p.on ? "✓" : "✕"}`, `perm-${r.role}-${p.perm}`, () => send(clanSetRankPermsIntent(r.role, togglePermMask(r.mask, p.perm)), "Permissions updated."), { pressed: p.on, alt: !p.on, disabled: !lead })); out.push(pg); }
       const a = grid(); a.append(btn("Leave clan", "clan-leave", () => send(clanLeaveIntent(), "Left clan."), { alt: true }));
