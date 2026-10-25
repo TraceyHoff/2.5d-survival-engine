@@ -469,7 +469,7 @@ def draw_top(c, spec):
         if tl == 0: return
         e = c.lerp3(a, b, tl)
         cv.part(c.tube(c.off(a, 0, 0, .8), e, sr + .4, sr), S.get("sm", "P"), lw=1.0, shade=.25, hl=.12)
-        if S.get("pauldron"): cv.part(circle(c.p(c.lerp3(a, b, .08)), sr + 1.6, sr + .9, wob=.04), "iron", lw=.9, shade=.25, hl=.15)
+        if S.get("pauldron"): cv.part(circle(c.p(c.lerp3(a, b, .08)), sr + 1.6, sr + .9, wob=.04), S["pauldron"] if isinstance(S["pauldron"], str) else "iron", lw=.9, shade=.25, hl=.15)
         if S.get("cuff"):
             cp = c.lerp3(a, b, tl - .02); q = c.p(cp); cv.part(circle(q, sr + .3, sr * .7), "S", lw=.8)
         if S.get("sleevehem") and not S.get("cuff"):
@@ -488,13 +488,15 @@ def draw_top(c, spec):
         m = cv.part(polys, S.get("pm", "P"), lw=1.1, shade=.24, hl=.12); state["m"] = m
         if S.get("plates"):   # ADR-135 cuirass: lames + rivets + tinted tabard strip
             for z in (-6.5, -3, .5):
-                pts = c.disc(c.off(K["tc"], 0, 0, z), B["trx"] + grow + .2, 40); cv.line(pts[0:20] if fv(c) > -.25 else pts[20:40], ramp("iron")[3], .6, clip=m)
+                pts = c.disc(c.off(K["tc"], 0, 0, z), B["trx"] + grow + .2, 40); cv.line(pts[0:20] if fv(c) > -.25 else pts[20:40], ramp(S["pm"] if S.get("pm", "P") not in ("P", "S") else "iron")[3], .6, clip=m)
             if fv(c) > -.25:
                 p, _ = tsurf(c, 0, 5.5, .95); q, _ = tsurf(c, 0, -9, 1.0)
                 cv.part([(p[0] - 1.8, p[1]), (p[0] + 1.8, p[1]), (q[0] + 2.4, q[1]), (q[0] - 2.4, q[1])], "P", clip=m, lw=.6, shade=.2, hl=.05)
             for az in (-50, 50):
                 p, v = tsurf(c, az, 6, .95)
                 if v > 0: cv.fill(circle(p, .55), ramp("iron")[0], clip=m)
+            if S.get("tier"):
+                p, v = tsurf(c, 0 if fv(c) > -.25 else 180, 1.5, .9); gear_parts.marks(c, S["tier"], p, 3.0, m, vertical=True)
         if S.get("furtrim"):
             cv.part(c.solid([(c.off(K["tc"], 0, -.5, 6.5), B["trx"] * .75 + 1.5), (c.off(K["tc"], 0, -.5, 8.5), B["trx"] * .6 + 1)]), "fur_brown", lw=.9, shade=.2, hl=.1)
         f = fv(c)

@@ -82,11 +82,22 @@ def _res_ph(k):   # resident placeholder: follow gear (streamed) placeholders ba
     seen = set()
     while k in GEAR_PH and k not in seen: seen.add(k); k = GEAR_PH[k]
     return None if (k is None or k in GEAR) else k
-def gear137(key, slot, spec, **kw):
-    item = next((i for i, w in _WC["artTodo"].items() if w == key), None); gear(key, slot, spec, **kw)
-    GEAR_PH[key] = _res_ph(_WC["items"].get(item)) if item else None
+def gear137(key, slot, spec, ph, **kw):   # ph = resident placeholder (frozen here: wear_cosmetics items[] later point at the art itself)
+    gear(key, slot, spec, **kw); GEAR_PH[key] = _res_ph(ph)
 TIERS = ("bone", "bronze", "iron", "steel", "composite")
-for k, st, hd, hh, kw in [("straw_hat", "gear_straw", [], True, {"tint": 1}), ("linen_cap", "linen_cap", [], True, {"remap": {"P": "cloth_cream"}}),
-                         ("rain_hood", "rain_hood", ["hair"], False, {}), ("fur_hat", "gear_fur_hat", [], True, {}), ("leather_cap", "gear_leather_cap", [], True, {}),
-                         ("wool_hat", "wool_hat", [], True, {})] + [(f"{t}_helmet", f"{t}_helmet", ["hair"], False, {}) for t in TIERS]:
-    gear137("hat_gear_" + k, "hat", dict({"style": st}, **({"remap": kw["remap"]} if "remap" in kw else {})), tint=kw.get("tint", 2), hides=hd, hatHairFlag=hh)
+for k, st, hd, hh, ph, kw in [("straw_hat", "gear_straw", [], True, "hat_straw", {"tint": 1}), ("linen_cap", "linen_cap", [], True, "hat_cap", {"remap": {"P": "cloth_cream"}}),
+                         ("rain_hood", "rain_hood", ["hair"], False, "hat_frog_hood", {}), ("fur_hat", "gear_fur_hat", [], True, "hat_beanie", {}),
+                         ("leather_cap", "gear_leather_cap", [], True, "hat_cap", {}), ("wool_hat", "wool_hat", [], True, "hat_beanie", {})] + \
+                        [(f"{t}_helmet", f"{t}_helmet", ["hair"], False, "hat_viking", {}) for t in TIERS]:
+    gear137("hat_gear_" + k, "hat", dict({"style": st}, **({"remap": kw["remap"]} if "remap" in kw else {})), ph, tint=kw.get("tint", 2), hides=hd, hatHairFlag=hh)
+# torso (top_gear_*): pm/sm = untinted body/sleeve material, P stays the tinted trim
+for k, ph, sp in [("linen_shirt", "top_tee", dict(sleeve="long", collar="v", buttons=True, cuff=True, pm="cloth_cream", sm="cloth_cream")),
+                  ("padded_jacket", "top_puffer", dict(sleeve="long", style="quilt", quilt=True, grow=1.8, sleeve_grow=1.8, cuff=True, buttons=True)),
+                  ("fur_coat", "top_puffer", dict(sleeve="long", hem=(6, 10.5), grow=2.0, sleeve_grow=2.0, pm="fur_brown", sm="fur_brown", furtrim=True)),
+                  ("raincoat", "top_raincoat", dict(sleeve="long", hem=(5, 9.5), buttons=True, collar="v", grow=1.3, sleeve_grow=1.7, cuff=True, hood=True)),
+                  ("oilskin_coat", "top_raincoat", dict(sleeve="long", hem=(6, 10), buttons=True, collar="v", grow=1.4, sleeve_grow=1.5, pm="oilskin", sm="oilskin")),
+                  ("leather_jacket", "top_flannel", dict(sleeve="long", open=True, collar="v", cuff=True, grow=1.3, sleeve_grow=1.3, pm="leather", sm="leather")),
+                  ("wool_sweater", "top_sweater", dict(sleeve="long", style="stripes", cuff=True, collar="round", grow=1.5, sleeve_grow=1.5)),
+                  ("fur_vest", "top_vest", dict(sleeve="none", open=True, grow=1.6, pm="fur_brown", furtrim=True))] + \
+                 [(f"{t}_cuirass", "top_vest", dict(sleeve="short", plates=True, pm=t, sm="S", pauldron=t, grow=1.4, tier=t)) for t in TIERS]:
+    gear137("top_gear_" + k, "top", sp, ph, tint=2)
