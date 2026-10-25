@@ -85,6 +85,8 @@ export interface GameMenusOptions {
   qualityInfo?: () => { autoLabel(): string; detected?: { name: string; klass: string; remembered: boolean } | undefined } | undefined;
   deleteProgress?: () => { label: string; message: string; settingsOption: boolean; run: (o: { resetSettings: boolean }) => Promise<string> } | undefined;
   showMenuBar?: boolean;
+  /** ADR-144 tutorial controls: "Play the guide again" in Pause + Settings; "Next tip" / "Skip the guide" while it runs. */
+  tutorial?: { active(): boolean; replay(): void; next(): void; skip(): void };
   getGamepads?: UINavOptions["getGamepads"];
   pollGamepads?: boolean;
 }
@@ -177,6 +179,9 @@ export class GameMenus {
     const items: [string, () => void, string?][] = [["Resume", () => this.nav.close()]];
     for (const m of GAME_MENUS) if (!CONTEXT_ONLY_MENUS.has(m.id)) items.push([`${m.icon} ${m.title}`, () => this.open(m.id)]); // station / camper open by walking up to one
     if (this.o.session?.()) items.push(["Session", () => this.open("session")]);
+    const tut = this.o.tutorial;
+    if (tut?.active()) items.push(["📖 Guide: next tip", () => { this.nav.closeAll(); tut.next(); }], ["📖 Skip the guide", () => { this.nav.closeAll(); tut.skip(); }, "alt"]);
+    else if (tut) items.push(["📖 Play the guide again", () => { this.nav.closeAll(); tut.replay(); }]);
     items.push(["Quit to main menu", () => { this.nav.closeAll(); this.o.onQuit(); }, "alt"]);
     return this.panel("pause", "Paused", [], items);
   }
@@ -198,7 +203,7 @@ export class GameMenus {
     const del = this.o.deleteProgress?.();
     const wr = this.o.worldRules?.(); const l4 = document.createElement("small"); l4.dataset["role"] = "world-rules"; l4.style.cssText = "display:block;opacity:.8";
     l4.textContent = wr ? `This world: zombie hordes ${wr.hordes ? `ON (after ${wr.hordeGraceDays} in-game days)` : "OFF"}` : "";
-    return this.panel("settings", "Settings", [l1, l2, l5, l3, ...(wr ? [l4] : []), ...(this.o.audio ? [audioSettingsRows(this.o.audio)] : [])], [...(del ? [[del.label, () => this.open("delete-progress"), "alt"] as [string, () => void, string]] : []),["Save", () => { saveSettings({ ...loadSettings(), showHud: hud.checked, fullscreen: fs.checked, toolHints: th.checked }); const qp = parsePreset(q.value) ?? "auto"; savePreset(qp); this.o.setQuality?.(qp); this.nav.close(); }], ["Back", () => this.nav.close(), "alt"]]);
+    return this.panel("settings", "Settings", [l1, l2, l5, l3, ...(wr ? [l4] : []), ...(this.o.audio ? [audioSettingsRows(this.o.audio)] : [])], [...(this.o.tutorial ? [["📖 Play the guide again", () => { this.nav.closeAll(); this.o.tutorial!.replay(); }, "alt"] as [string, () => void, string]] : []), ...(del ? [[del.label, () => this.open("delete-progress"), "alt"] as [string, () => void, string]] : []),["Save", () => { saveSettings({ ...loadSettings(), showHud: hud.checked, fullscreen: fs.checked, toolHints: th.checked }); const qp = parsePreset(q.value) ?? "auto"; savePreset(qp); this.o.setQuality?.(qp); this.nav.close(); }], ["Back", () => this.nav.close(), "alt"]]);
   }
   private deletePanel(): HTMLElement {
     const d = this.o.deleteProgress?.();

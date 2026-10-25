@@ -1,0 +1,153 @@
+/**
+ * ADR-144 tutorial overlay: one compact card + a spotlight ring and arrow on the element being explained.
+ * The card picks the free spot with the least overlap (target first, then HUD / menu bar / touch controls / panels),
+ * so it never covers the control it points at. Updates at 4 Hz; the card DOM only rebuilds when the step or device
+ * changes (no per-frame layout). Hooks: `#tutorial[data-step][data-device]`, `#tutorial-spot`, `#tutorial-arrow`.
+ */
+import { actionCombos, combosText, menuHotkeyCombos, type BindingSource, type Combo, type TutDevice } from "./labels.js";
+import { GAME_MENUS, PRIMARY_BAR_MENUS } from "../game-menus.js";
+import type { Probe, StepText, TutorialProgress } from "./steps.js";
+
+export interface Rect { x: number; y: number; w: number; h: number }
+const overlap = (a: Rect, b: Rect): number => Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+/** Where the card goes: the candidate with the least overlap (target ×100, other UI ×1); ties keep candidate order. */
+export function placeCard(view: { w: number; h: number }, card: { w: number; h: number }, target: Rect | undefined, avoid: readonly Rect[], m = 8): { x: number; y: number } {
+  const cx = Math.max(m, (view.w - card.w) / 2); const maxY = Math.max(m, view.h - card.h - m);
+  const cands: { x: number; y: number }[] = [];
+  if (target) { // next to the target first, so the arrow is short
+    cands.push({ x: clamp(target.x + target.w / 2 - card.w / 2, m, view.w - card.w - m), y: target.y + target.h + 14 });
+    cands.push({ x: clamp(target.x + target.w / 2 - card.w / 2, m, view.w - card.w - m), y: target.y - card.h - 14 });
+  }
+  cands.push({ x: cx, y: view.h * 0.16 }, { x: cx, y: maxY - view.h * 0.2 }, { x: m, y: view.h * 0.3 }, { x: view.w - card.w - m, y: view.h * 0.3 }, { x: cx, y: (view.h - card.h) / 2 }, { x: cx, y: m }, { x: cx, y: maxY });
+  let best = cands[0]!; let bestScore = Infinity;
+  for (const c0 of cands) {
+    const c = { x: clamp(c0.x, m, Math.max(m, view.w - card.w - m)), y: clamp(c0.y, m, maxY) }; const r = { ...c, w: card.w, h: card.h };
+    const s = (target ? overlap(r, target) * 100 : 0) + avoid.reduce((a, b) => a + overlap(r, b), 0);
+    if (s < bestScore - 1e-6) { best = c; bestScore = s; }
+  }
+  return best;
+}
+const clamp = (v: number, a: number, b: number): number => Math.min(b, Math.max(a, v));
+const esc = (s: string): string => s.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);
+
+export function stepText(t: StepText, d: TutDevice): string { return typeof t === "string" ? t : t[d] ?? t.all ?? ""; }
+const chipsHtml = (cs: readonly Combo[]): string => cs.slice(0, 2).map((c) => `${c.how === "hold" || c.how === "longPress" ? "hold " : ""}${c.chips.map((x) => `<kbd class="tut-key" data-glyph="${esc(x.glyph)}">${x.icon ? `<i>${x.icon}</i>` : ""}${esc(x.text)}</kbd>`).join(c.sep === " " ? "" : "+")}`).join(" or ");
+/** How to open a menu on this device: its binding, else the desktop hotkey, else Menu → item. */
+export function menuCombos(src: BindingSource, d: TutDevice, id: string): { html: string; text: string } {
+  const m = GAME_MENUS.find((x) => x.id === id); const name = m ? `${m.icon} ${m.title}` : id;
+  const bound: Record<string, string> = { inventory: "ToggleInventory", crafting: "ToggleCrafting", chat: "OpenChat", social: "OpenSocial", build: "ToggleBuild" };
+  if (d === "touch") {
+    const bar = m?.bar ? (PRIMARY_BAR_MENUS.has(id) ? `the ${name} button` : `the ${name} button (under ⋯ More)`) : `☰ Menu, then ${name}`;
+    return { html: esc(bar), text: bar };
+  }
+  const b = bound[id]; const cs = b ? actionCombos(src, d, b) : [];
+  if (cs.length) return { html: chipsHtml(cs), text: combosText(cs) };
+  if (d === "keyboardMouse") { const h = menuHotkeyCombos(id); if (h.length) return { html: chipsHtml(h), text: combosText(h) }; }
+  const pause = actionCombos(src, d, "Cancel").filter((c) => c.how !== "longPress");
+  return { html: `${chipsHtml(pause)} then ${esc(name)}`, text: `${combosText(pause)} then ${name}` };
+}
+/** Resolve {A:..}/{M:..} tokens to binding chips (HTML) or plain text. */
+export function renderTokens(text: string, src: BindingSource, d: TutDevice, html = true): string {
+  const parts = text.split(/(\{[AM]:[^}]+\})/g);
+  return parts.map((p) => {
+    const t = /^\{([AM]):([^}@]+)(?:@([^}]+))?\}$/.exec(p);
+    if (!t) return html ? esc(p) : p;
+    if (t[1] === "M") { const r = menuCombos(src, d, t[2]!); return html ? r.html : r.text; }
+    const cs = actionCombos(src, d, t[2]!, t[3] ?? "Gameplay");
+    if (!cs.length) return html ? "<kbd class=\"tut-key\">?</kbd>" : "?";
+    return html ? chipsHtml(cs) : combosText(cs);
+  }).join("");
+}
+
+const CSS = `#tutorial{position:absolute;z-index:45;width:min(330px,calc(100vw - 16px));box-sizing:border-box;background:rgba(246,234,210,.97);color:#3B2433;border:3px solid #74432C;border-radius:12px;box-shadow:0 3px 0 #432C24;padding:8px 10px;font:600 14px/1.35 Fredoka,system-ui,sans-serif;pointer-events:auto;transition:left .18s,top .18s;contain:layout paint}
+#tutorial[hidden],#tutorial-spot[hidden],#tutorial-arrow[hidden]{display:none}
+#tutorial .tut-head{display:flex;align-items:center;gap:6px;font-size:11px;color:#61402E}#tutorial .tut-head span{flex:1}
+#tutorial .tut-bar{height:4px;background:#E6C47E;border-radius:3px;overflow:hidden;margin:4px 0 6px}#tutorial .tut-bar i{display:block;height:100%;background:#5A9A4A}
+#tutorial h3{margin:0 0 2px;font-size:16px;color:#74432C}#tutorial p{margin:0}
+#tutorial .tut-key{display:inline-flex;align-items:center;gap:2px;font:700 12px Fredoka,system-ui,sans-serif;background:#3B2433;color:#FFFAF0;border-radius:6px;padding:1px 6px;margin:0 1px;border-bottom:2px solid #1d1119;white-space:nowrap}
+#tutorial .tut-key i{font-style:normal}
+#tutorial .tut-btns{display:flex;gap:6px;justify-content:flex-end;margin-top:8px;flex-wrap:wrap}
+#tutorial button{font:700 13px Fredoka,system-ui,sans-serif;min-height:34px;min-width:44px;border-radius:9px;border:2px solid #3B2433;background:#5A9A4A;color:#FFFAF0;padding:2px 10px;cursor:pointer}
+#tutorial button.alt{background:#C98A4B}#tutorial button.x{background:transparent;color:#61402E;border:none;min-width:34px;padding:0}
+#tutorial button:focus-visible{outline:3px solid #FFD45A;outline-offset:2px}
+#tutorial[data-device=touch] button{min-height:44px}#tutorial .tut-hint{font-size:11px;color:#61402E;margin-top:4px}
+#tutorial .tut-wait{font-size:12px;color:#2D5A2E}
+#tutorial-spot{position:absolute;z-index:44;pointer-events:none;border:3px solid #FFD45A;border-radius:12px;box-shadow:0 0 0 3px rgba(59,36,51,.55),0 0 14px #FFD45A;animation:tutpulse 1.2s ease-in-out infinite;transition:left .15s,top .15s,width .15s,height .15s}
+#tutorial-arrow{position:absolute;z-index:44;pointer-events:none;font:24px system-ui;color:#FFD45A;text-shadow:0 0 3px #3B2433,0 0 3px #3B2433;transform:translate(-50%,-50%)}
+@keyframes tutpulse{50%{opacity:.55}}
+@media (prefers-reduced-motion:reduce){#tutorial-spot{animation:none}#tutorial{transition:none}}
+@media (min-width:1600px) and (min-height:900px){#tutorial{width:430px;font-size:18px;padding:12px 14px}#tutorial h3{font-size:21px}#tutorial .tut-key{font-size:16px}#tutorial button{font-size:17px;min-height:44px}#tutorial .tut-hint{font-size:14px}}
+@media (max-height:420px){#tutorial{width:min(290px,calc(100vw - 16px));padding:6px 8px;font-size:13px}#tutorial h3{font-size:14px}}`;
+
+export interface TutorialOverlayOptions {
+  root: HTMLElement; progress: TutorialProgress; bindings: BindingSource;
+  device(): TutDevice; probe(): Probe;
+  /** Hide (but keep progress) while not in a world: boot menu, character creator. */
+  hidden(): boolean;
+  onChange?(): void;
+}
+const AVOID = "#hud,#game-menubar,.build-hud:not([hidden]),#farm-prompt,#xp-chip,[data-touch],.gm-modal .gm-panel";
+export function mountTutorial(o: TutorialOverlayOptions): { update(): void; frame(i: { pressed(a: string): boolean }, menuOpen: boolean): void; destroy(): void; el: HTMLElement } {
+  if (!document.getElementById("tut-style")) { const st = document.createElement("style"); st.id = "tut-style"; st.textContent = CSS; document.head.append(st); }
+  const el = document.createElement("section"); el.id = "tutorial"; el.setAttribute("role", "dialog"); el.setAttribute("aria-live", "polite"); el.setAttribute("aria-label", "Guide"); el.hidden = true;
+  const spot = document.createElement("div"); spot.id = "tutorial-spot"; spot.hidden = true;
+  const arrow = document.createElement("div"); arrow.id = "tutorial-arrow"; arrow.hidden = true;
+  o.root.append(spot, arrow, el);
+  const p = o.progress; let key = "";
+  const build = (d: TutDevice): void => {
+    const s = p.step; const n = p.steps.length; const isDo = !!s.done;
+    const nextKeys = d === "touch" ? "" : renderTokens("{A:Jump}", o.bindings, d);
+    el.innerHTML = `<div class="tut-head"><span>${esc(s.section)} · ${p.index + 1} of ${n}</span><button type="button" class="x" data-tut="skip" aria-label="Skip the guide" title="Skip the guide">✕</button></div>`
+      + `<div class="tut-bar"><i style="width:${Math.round(((p.index + 1) / n) * 100)}%"></i></div>`
+      + `<h3>${esc(s.title)}</h3><p data-role="tut-text">${renderTokens(stepText(s.text, d), o.bindings, d)}</p>`
+      + (isDo ? `<div class="tut-wait">Do it to go on.</div>` : "")
+      + `<div class="tut-btns">${p.index > 0 ? `<button type="button" class="alt" data-tut="back">Back</button>` : ""}`
+      + (isDo ? `<button type="button" class="alt" data-tut="next">Skip this step</button>` : `<button type="button" data-tut="next">${p.index === n - 1 ? "Done" : "Next"}</button>`) + `</div>`
+      + (d === "gamepad" ? `<div class="tut-hint">${isDo ? "Stuck? Pause menu → Next tip" : `${nextKeys} Next · ${renderTokens("{A:QuickUse}", o.bindings, d)} Back`}</div>` : d === "keyboardMouse" && !isDo ? `<div class="tut-hint">${nextKeys} Next</div>` : "");
+    el.dataset["step"] = s.id; el.dataset["device"] = d; el.dataset["kind"] = isDo ? "do" : "info";
+  };
+  el.addEventListener("click", (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLElement>("[data-tut]"); if (!b) return; e.stopPropagation();
+    const a = b.dataset["tut"]; if (a === "next") p.next(); else if (a === "back") p.back(); else if (a === "skip") p.skip();
+    o.onChange?.(); update();
+  });
+  // keep taps on the card from reaching the game canvas (touch controls / build placement)
+  for (const t of ["pointerdown", "touchstart", "mousedown"]) el.addEventListener(t, (e) => e.stopPropagation());
+  const rectOf = (n: Element): Rect | undefined => { const r = n.getBoundingClientRect(); return r.width > 0 && r.height > 0 ? { x: r.left, y: r.top, w: r.width, h: r.height } : undefined; };
+  const rootRect = (): DOMRect => o.root.getBoundingClientRect();
+  const layout = (d: TutDevice): void => {
+    const sel = p.step.target?.(d); const tn = sel ? document.querySelector(sel) : null;
+    const rr = rootRect(); const target = tn ? rectOf(tn) : undefined;
+    const avoid: Rect[] = []; for (const n of Array.from(document.querySelectorAll(AVOID))) { if (n === tn || (tn && n.contains(tn))) continue; const r = rectOf(n); if (r) avoid.push(r); }
+    const card = { w: el.offsetWidth, h: el.offsetHeight };
+    const local = (r: Rect): Rect => ({ x: r.x - rr.left, y: r.y - rr.top, w: r.w, h: r.h });
+    const pos = placeCard({ w: rr.width, h: rr.height }, card, target && local(target), avoid.map(local));
+    el.style.left = `${Math.round(pos.x)}px`; el.style.top = `${Math.round(pos.y)}px`;
+    if (target) {
+      const t = local(target); const pad = 4;
+      Object.assign(spot.style, { left: `${t.x - pad}px`, top: `${t.y - pad}px`, width: `${t.w + pad * 2}px`, height: `${t.h + pad * 2}px` }); spot.hidden = false;
+      const below = pos.y > t.y + t.h; const above = pos.y + card.h < t.y;
+      if (below || above) { arrow.textContent = below ? "▲" : "▼"; arrow.style.left = `${clamp(t.x + t.w / 2, 12, rr.width - 12)}px`; arrow.style.top = `${below ? t.y + t.h + 10 : t.y - 10}px`; arrow.hidden = false; } else arrow.hidden = true;
+    } else { spot.hidden = true; arrow.hidden = true; }
+  };
+  function update(): void {
+    if (!p.active || o.hidden()) { el.hidden = true; spot.hidden = true; arrow.hidden = true; key = ""; return; }
+    if (p.observe(o.probe())) o.onChange?.();
+    if (!p.active) { el.hidden = true; spot.hidden = true; arrow.hidden = true; key = ""; return; }
+    const d = o.device(); const k = `${p.step.id}|${d}`;
+    if (k !== key) { key = k; build(d); }
+    el.hidden = false; layout(d);
+  }
+  const timer = setInterval(update, 250); addEventListener("resize", update);
+  return {
+    el, update,
+    /** Per input update: info cards move on with Jump (A / Space); gamepad B goes back. Skipped while a menu is open. */
+    frame(i, menuOpen): void {
+      if (!p.active || menuOpen || el.hidden) return;
+      const d = o.device();
+      if (!p.step.done && d !== "touch" && i.pressed("Jump")) { p.next(); o.onChange?.(); update(); }
+      else if (d === "gamepad" && !p.step.done && p.index > 0 && i.pressed("QuickUse")) { p.back(); o.onChange?.(); update(); }
+    },
+    destroy(): void { clearInterval(timer); removeEventListener("resize", update); el.remove(); spot.remove(); arrow.remove(); },
+  };
+}

@@ -41,6 +41,10 @@ import { attachContextRecovery, effectiveLevel, retryIsoAtSafe } from "./gl-reco
 import { BootUI, loadSettings, newWorldRules } from "./menu.js";
 import { EDIT_CHAR_KEY, creatorShotFromQuery, creatorShotLook, loadCharacter, previewModeFromQuery, saveCharacter, showCharacterCreator, type CharacterSaveKind, type StoredCharacter } from "./character-creator.js";
 import { sampleDayClock } from "./day-clock.js";
+import { TUTORIAL_STEPS, TutorialProgress, tutorialKey } from "./tutorial/steps.js";
+import { mountTutorial } from "./tutorial/overlay.js";
+import { TutorialProber } from "./tutorial/probe.js";
+import { Survival, heldTool } from "@engine/gameplay";
 import { AudioSystem } from "./audio/index.js";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
@@ -110,9 +114,24 @@ let leaveCurrent: (() => Promise<void> | void) | undefined;
 /** Set by the active mode: Settings → "Delete my progress" (ADR-099); undefined hides the entry. */
 let deleteInfo: (() => { label: string; message: string; settingsOption: boolean; run: (o: { resetSettings: boolean }) => Promise<string> } | undefined) | undefined;
 let sessionInfo: (() => { label: string; leaveLabel: string; onLeave: () => void }) | undefined;
+/** ADR-144: the guide. `tutorialNewGame` is set when a NEW character enters (or ?tutorial=1). */
+let tutorialNewGame = false; let tutProgress: TutorialProgress | undefined; const tutProber = new TutorialProber();
+let tutorialUi: ReturnType<typeof mountTutorial> | undefined;
+function tutorialProgress(): TutorialProgress {
+  if (!tutProgress) { let store: Storage | undefined; try { store = localStorage; } catch { /* private mode */ }
+    tutProgress = new TutorialProgress(TUTORIAL_STEPS, store, tutorialKey(params.get("player") ?? "1")); }
+  return tutProgress;
+}
+function maybeStartTutorial(): void {
+  const t = tutorialProgress();
+  if (params.get("tutorial") === "1" && !t.active) t.start(true);
+  else if (t.shouldAutoStart(tutorialNewGame)) t.start();
+  tutorialUi?.update();
+}
 function startMenus(): void {
   if (menus) return;
-  menus = new GameMenus({ root, input, audio: audio.mixer, worldRules: () => (world.isRegistered(WorldRules) && world.has(world.environment, WorldRules) ? worldRules(world) : undefined), onQuit: quitToMenu, session: () => sessionInfo?.(), deleteProgress: () => deleteInfo?.(), setQuality: (p) => iso?.renderer.setQualityPreset(p), qualityInfo: () => (iso && "quality" in iso.renderer ? (iso.renderer as { quality: { autoLabel(): string; detected?: { name: string; klass: string; remembered: boolean } | undefined } }).quality : undefined), gameplay: { ctx: menuCtx, send: sendIntent, social, startPlacing: (sel) => buildMode.start(sel), worldTools: worldToolsApi },
+  maybeStartTutorial();
+  menus = new GameMenus({ root, input, tutorial: { active: () => tutorialProgress().active, replay: () => { tutorialProgress().start(true); tutorialUi?.update(); }, next: () => { tutorialProgress().next(); tutorialUi?.update(); }, skip: () => { tutorialProgress().skip(); tutorialUi?.update(); } }, audio: audio.mixer, worldRules: () => (world.isRegistered(WorldRules) && world.has(world.environment, WorldRules) ? worldRules(world) : undefined), onQuit: quitToMenu, session: () => sessionInfo?.(), deleteProgress: () => deleteInfo?.(), setQuality: (p) => iso?.renderer.setQualityPreset(p), qualityInfo: () => (iso && "quality" in iso.renderer ? (iso.renderer as { quality: { autoLabel(): string; detected?: { name: string; klass: string; remembered: boolean } | undefined } }).quality : undefined), gameplay: { ctx: menuCtx, send: sendIntent, social, startPlacing: (sel) => buildMode.start(sel), worldTools: worldToolsApi },
     onChat: (text, channel, to) => { if (!session.client?.chat.send(channel as ChatChannel, text, to ? { to } : {})) menus?.pushChat("(not connected — message not sent)"); } });
 }
 /** Live data for the gameplay panels: the replicated world + local player; names via NetClient's NamesClient. */
@@ -125,6 +144,7 @@ function menuCtx(): MenuCtx | undefined {
 /** Panel intent -> bridged gameplay net command; Entity args become NetIds (unbridged commands such as PaintCmd return false). */
 function sendIntent(i: MenuIntent): boolean {
   const c = session.client; if (!c) return false;
+  tutProber.command(i.cmd.name);
   try {
     const def = gameplayNet(i.cmd); const args = intentPayload(i.args as Record<string, number | number[]>, i.entities, (def as unknown as { entityFields: readonly string[] }).entityFields, (e) => netIdOf(world, e as never));
     return args !== undefined && c.sendCommand(def, args as never) !== false;
@@ -191,9 +211,10 @@ const buildHud = mountBuildHud(root, { buildMode, device: () => promptDevice(), 
   blocked: (x, y) => onTouchControl(buildTouchLayout, x, y, innerWidth, innerHeight) });
 const buildTouchLayout = { ...DEFAULT_TOUCH_LAYOUTS.building, elements: DEFAULT_TOUCH_LAYOUTS.building.elements.filter((e) => !MENU_BAR_IDS.has(e.id)) };
 /** ADR-142: ?dev=sandbox exposes read-only QA handles (build preview, world, player) for automated browser tests. */
-if (params.get("dev") === "sandbox") (window as { __qa?: unknown }).__qa = { buildMode, send: (i: MenuIntent) => sendIntent(i), ctx: () => menuCtx(), gp: { buildView, listItemIntents, setStallOpenIntent, stallView, nearestStall, inventoryView, gameplayDefs }, world: () => world, player: () => session.player, menus: () => menus, stalls: () => world.isRegistered(StallHeader) ? [...world.query([StallHeader])].length : 0, roads: () => world.isRegistered(Road) ? [...world.query([Road])].length : 0, signs: () => world.isRegistered(Sign) ? [...world.query([Sign, Transform])].map((e) => signText(world, e)) : [], pos: () => { const p = session.player; const t = p !== undefined ? world.get(p, Transform) : undefined; return t ? { x: t.x, y: t.y } : undefined; } };
+if (params.get("dev") === "sandbox") (window as { __qa?: unknown }).__qa = { tutorial: () => tutProgress, buildMode, send: (i: MenuIntent) => sendIntent(i), ctx: () => menuCtx(), gp: { buildView, listItemIntents, setStallOpenIntent, stallView, nearestStall, inventoryView, gameplayDefs }, world: () => world, player: () => session.player, menus: () => menus, stalls: () => world.isRegistered(StallHeader) ? [...world.query([StallHeader])].length : 0, roads: () => world.isRegistered(Road) ? [...world.query([Road])].length : 0, signs: () => world.isRegistered(Sign) ? [...world.query([Sign, Transform])].map((e) => signText(world, e)) : [], pos: () => { const p = session.player; const t = p !== undefined ? world.get(p, Transform) : undefined; return t ? { x: t.x, y: t.y } : undefined; } };
 /** Per input update: build mode, and the shared Interact action (E / pad X / touch interact) opening stall / wardrobe panels. */
 function onUiFrame(): void {
+  tutorialUi?.frame(input, !!menus?.nav.isOpen);
   if (promptDevice() === "gamepad") markNavFocus(); // ADR-142: pad users get a visible menu focus ring
   if (menus?.nav.isOpen) { buildMode.stop(); return; }
   if (buildMode.active) { worldTools?.road(0); buildMode.update(); buildHud.update(); return; }
@@ -409,7 +430,7 @@ if (creatorShot) {
     const choice = await boot.menu({ slot: SLOT, hostedStatic: import.meta.env["VITE_DEFAULT_OFFLINE"] === "1", defaultUrl, ...(notice ? { notice } : {}) });
     boot.hide();
     const kind: CharacterSaveKind = choice.kind === "singleplayer" ? "singleplayer" : choice.kind === "host" ? "hosted" : "remote";
-    const before = loadCharacter(kind, SLOT); activeChar = await ensureCharacter(kind);
+    const before = loadCharacter(kind, SLOT); tutorialNewGame = !before; activeChar = await ensureCharacter(kind);
     if (!activeChar) { backToMenu(""); return; }
     lookEdited = !before || JSON.stringify(before) !== JSON.stringify(activeChar);
     startMenus();
@@ -432,6 +453,20 @@ if (creatorShot) {
 }
 
 const promptDevice = (): PromptDevice => { const c = input.activeDevice?.deviceClass; return c === "gamepad" || c === "touch" ? c : "keyboardMouse"; };
+tutorialUi = mountTutorial({ root, progress: tutorialProgress(), bindings: input, device: promptDevice,
+  hidden: () => session.player === undefined || !!document.querySelector(".creator:not([hidden]),#boot:not([hidden])"),
+  probe: () => {
+    const p = session.player; const pt = p !== undefined ? world.get(p, Transform) : undefined; const c = menuCtx();
+    let items: Map<string, number> | undefined; let tk = 0; let sv: { hunger: number; thirst: number } | undefined;
+    if (c) { try { items = new Map(); for (const v of inventoryView(c)) if (v.item) items.set(v.name, (items.get(v.name) ?? 0) + v.count); } catch { items = undefined; }
+      try { tk = heldTool(world, c.player, gameplayDefs(world)).kind; } catch { tk = 0; }
+      try { if (world.has(c.player, Survival)) sv = world.get(c.player, Survival) as { hunger: number; thirst: number }; } catch { /* none */ } }
+    const av = input.vector("Aim");
+    tutProber.sample({ pos: pt ? { x: pt.x, y: pt.y } : undefined, sprinting: input.down("Sprint"), zoom: iso?.renderer.camera.zoom, aiming: Math.hypot(av[0], av[1]) > 0.3 || input.down("Primary"),
+      items, menuOpen: !!menus?.nav.isOpen, hunger: sv?.hunger, thirst: sv?.thirst, toolKind: tk, buildActive: buildMode.active, buildRot: buildMode.rot, menuTop: menus?.nav.top });
+    return tutProber.probe();
+  } });
+input.onDeviceChange(() => tutorialUi?.update());
 farm = mountFarmPrompt(root, {
   world: () => world, player: () => session.player, device: promptDevice, hidden: () => !!menus?.nav.isOpen || buildMode.active,
   key: (action) => controlLabel(input.bindings(promptDevice(), "Gameplay").find((b) => b.binding.action === action)?.binding.control),
