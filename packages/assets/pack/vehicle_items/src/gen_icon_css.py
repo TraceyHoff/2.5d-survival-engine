@@ -2,8 +2,9 @@
 Run from repo root: python3 packages/assets/pack/vehicle_items/src/gen_icon_css.py  (rewrites between the ICONS markers)."""
 import json, os
 R = 'packages/assets/pack/'
-SRC = [('manifest.json', {'items', 'equipment'}), ('items/manifest.items.json', {'items_icons'}), ('vehicle_items/manifest.vehicle_items.json', {'vitems_icons'}), ('nature/manifest.nature.json', {'nature_roadicons', 'nature_toolicons', 'nature_adr128'})]
+SRC = [('manifest.json', {'items', 'equipment'}), ('items/manifest.items.json', {'items_icons', 'items_skill_tabs'}), ('vehicle_items/manifest.vehicle_items.json', {'vitems_icons'}), ('nature/manifest.nature.json', {'nature_roadicons', 'nature_toolicons', 'nature_adr128'})]
 rel = '../../../packages/assets/pack/'
+UI_OK = {'items_skill_tabs'}  # ui-category atlases emitted too (ADR-132 skill tree tab icons)
 out, keys, seen = [], {}, set()
 for f, atl in SRC:
     m = json.load(open(R + f)); base = os.path.dirname(f)
@@ -14,7 +15,7 @@ for f, atl in SRC:
         src = f'image-set(url("{img}") 1x, url("{rel + os.path.join(base, p2[0]["image"])}") 2x)' if p2 else f'url("{img}")'
         ks = []
         for s in m['sprites']:
-            if s.get('atlas') != ak or s['category'] not in ('item', 'equipment') or s['key'] in seen: continue
+            if s.get('atlas') != ak or (s['category'] not in ('item', 'equipment') and not (ak in UI_OK and s['category'] == 'ui')) or s['key'] in seen: continue
             seen.add(s['key']); fr = s['animations']['idle']['frames'][0]; c, r = fr % a['columns'], fr // a['columns']
             px = 0 if a['columns'] == 1 else c * 100 / (a['columns'] - 1); py = 0 if a['rows'] == 1 else r * 100 / (a['rows'] - 1)
             ks.append(s['key']); out.append(f'[data-icon="{s["key"]}"]{{--cz-ipos:{px:.4g}% {py:.4g}%}}')

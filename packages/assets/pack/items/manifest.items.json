@@ -97,6 +97,23 @@
     }
    ],
    "ktx2": "atlases/items_skills.ktx2"
+  },
+  {
+   "key": "items_skill_tabs",
+   "image": "atlases/items_skill_tabs.png",
+   "frameW": 32,
+   "frameH": 32,
+   "columns": 8,
+   "rows": 1,
+   "residency": "resident",
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/items_skill_tabs@2x.png",
+     "ktx2": "atlases/items_skill_tabs@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/items_skill_tabs.ktx2"
   }
  ],
  "sprites": [
@@ -7178,6 +7195,142 @@
     "idle": {
      "frames": [
       132
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_branch_perks",
+   "category": "ui",
+   "atlas": "items_skill_tabs",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_tab_perks",
+   "category": "ui",
+   "atlas": "items_skill_tabs",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_tab_survival",
+   "category": "ui",
+   "atlas": "items_skill_tabs",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_tab_homestead",
+   "category": "ui",
+   "atlas": "items_skill_tabs",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      3
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_tab_medicine",
+   "category": "ui",
+   "atlas": "items_skill_tabs",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_tab_crafting",
+   "category": "ui",
+   "atlas": "items_skill_tabs",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      5
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_tab_combat",
+   "category": "ui",
+   "atlas": "items_skill_tabs",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      6
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "skill_tab_vehicles",
+   "category": "ui",
+   "atlas": "items_skill_tabs",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      7
      ],
      "fps": 1
     }

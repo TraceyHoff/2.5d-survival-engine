@@ -2680,7 +2680,15 @@
     "particle_stone_chip": 2678,
     "particle_wood_chip": 2679,
     "ui_node_hpbar_frame": 2680,
-    "ui_pickup_toast_bg": 2681
+    "ui_pickup_toast_bg": 2681,
+    "skill_branch_perks": 2682,
+    "skill_tab_combat": 2683,
+    "skill_tab_crafting": 2684,
+    "skill_tab_homestead": 2685,
+    "skill_tab_medicine": 2686,
+    "skill_tab_perks": 2687,
+    "skill_tab_survival": 2688,
+    "skill_tab_vehicles": 2689
   },
   "sounds": {
     "amb_rain": 1,
