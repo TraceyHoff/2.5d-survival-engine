@@ -7,7 +7,7 @@ Usage: python3 add_gear.py ENGINE_DIR [--jobs 8]   then: assets/tools/ktx2.py <m
 import sys, os, json, copy
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 import build_all, catalog, rerender, rectpack
-TEMPLATE = {"accessory": "acc_satchel", "hat": "hat_viking", "top": "top_vest", "bottom": "bottom_cargo", "shoes": "shoes_boots"}
+TEMPLATE = {"accessory": "acc_satchel", "hands": "acc_cloth_gloves", "hat": "hat_viking", "top": "top_vest", "bottom": "bottom_cargo", "shoes": "shoes_boots"}
 PLACEHOLDER = {"acc_cloth_gloves": None, "acc_leather_gloves": None, "acc_fur_mittens": None, "acc_gauntlets": None}   # gloves: nothing while loading
 def placeholder(key):
     if key in PLACEHOLDER: return PLACEHOLDER[key]

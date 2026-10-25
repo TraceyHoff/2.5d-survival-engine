@@ -35,7 +35,7 @@ describe("wardrobe colours", () => {
     expect(all("button[data-key^=skin-]").length).toBe(cat.skinTones.length);
     expect(q("[data-key=skin-2]").getAttribute("aria-pressed")).toBe("true");
     q(`[data-key=skin-${cat.skinTones.length - 1}]`).click();
-    expect(sent.at(-1)).toMatchObject({ cmd: G.SetAppearanceCmd, args: { bodyType: 1, skinTone: cat.skinTones.length - 1, parts: [1, 0, 0, 4, 0, 0, 0, 8], primary: [2, 0, 0, 3, 0, 0, 0, 16], secondary: [5, 0, 0, 0, 0, 0, 0, 1] } });
+    expect(sent.at(-1)).toMatchObject({ cmd: G.SetAppearanceCmd, args: { bodyType: 1, skinTone: cat.skinTones.length - 1, parts: [1, 0, 0, 4, 0, 0, 0, 8, 0], primary: [2, 0, 0, 3, 0, 0, 0, 16, 0], secondary: [5, 0, 0, 0, 0, 0, 0, 1, 0] } });
     menus.destroy();
   });
   test("eyes: curated eye colours + a secondary row; picks keep the other channel", () => {

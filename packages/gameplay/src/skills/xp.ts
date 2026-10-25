@@ -86,14 +86,30 @@ export function travelStep(world: World, tickHz: number, players: Iterable<Entit
   return out;
 }
 
-/** ADR-135: paper-doll overrides for an entity's Worn gear as [appearanceSlot, wearableKey] (accessory slot item beats a back item). */
-export function wornCosmetics(world: World, e: Entity): Array<[string, string]> {
+/** ADR-135/137 worn-item -> wearable table (data/wear_cosmetics.json). */
+export interface WearCosmeticsTable { families: Record<string, string>; items?: Record<string, string>; artTodo?: Record<string, string> }
+export const WEAR_COSMETICS_TABLE = WEAR_COSMETICS as WearCosmeticsTable;
+/** Appearance slot a gear wearable key draws on (key prefix; acc_ = accessory). */
+export function wearableSlotOfKey(k: string): string { return k.startsWith("acc_") ? "accessory" : k.slice(0, k.indexOf("_")); }
+/** Wearable key for item `itemKey` (family `family`): exact item mapping first, then the family; `has` (client catalog) rejects
+ *  an exact key whose art is not in the pack so it falls back to the family. */
+export function wearableKeyFor(itemKey: string | undefined, family: string | undefined, has?: (k: string) => boolean, t: WearCosmeticsTable = WEAR_COSMETICS_TABLE): string | undefined {
+  const ex = itemKey ? t.items?.[itemKey] : undefined; if (ex && (!has || has(ex))) return ex;
+  return family ? t.families[family] : undefined;
+}
+/**
+ * ADR-135/137: paper-doll overrides for an entity's Worn gear as [appearanceSlot, wearableKey]. Anything worn in the Hands
+ * wear slot draws on the dedicated "hands" Appearance slot, so gloves never displace a cloak/backpack; on the accessory layer
+ * the Accessory wear slot beats a Back item.
+ */
+export function wornCosmetics(world: World, e: Entity, has?: (k: string) => boolean): Array<[string, string]> {
   if (!world.isRegistered(Worn) || !world.has(e, Worn)) return [];
   const st = world.store(Worn); const s = st.slot(entityIndex(e)); if (s < 0) return [];
-  const fam = (WEAR_COSMETICS as { families: Record<string, string> }).families; const out = new Map<string, string>();
+  const out = new Map<string, string>();
   for (let i = 0; i < WEAR_SLOTS; i++) {
-    const it = st.data.item[s * WEAR_SLOTS + i]!; if (!it) continue; const d = itemDef(world, it); const k = d?.family ? fam[d.family] : undefined; if (!k) continue;
-    const slot = k.startsWith("acc_") ? "accessory" : k.slice(0, k.indexOf("_"));
+    const it = st.data.item[s * WEAR_SLOTS + i]!; if (!it) continue; const d = itemDef(world, it); if (!d) continue;
+    const k = wearableKeyFor(d.key, d.family, has); if (!k) continue;
+    const slot = i === WearSlot.Hands ? "hands" : wearableSlotOfKey(k);
     if (slot === "accessory" && out.has("accessory") && i !== WearSlot.Accessory) continue;
     out.set(slot, k);
   }

@@ -52,7 +52,7 @@ for k, t, l in ACC: add("acc_" + k, "accessory", {"style": k}, tint=t, layer=l)
 for k in ["smile", "grin", "freckles", "moustache", "beard", "cat", "bushy", "tongue", "stubble"]: add("face_" + k, "face", {"style": k}, tint=1)
 for k in ["round", "sparkle", "sleepy", "happy", "cat", "button", "lashes", "wide", "wink"]:
     add("eyes_" + k, "eyes", {"style": k}, tint=2)
-LAYER = dict(shoes=19, bottom=18, top=20, accessory=30, face=32, eyes=34, hair=40, hat=50)
+LAYER = dict(shoes=19, bottom=18, top=20, accessory=30, hands=33, face=32, eyes=34, hair=40, hat=50)
 # ---- ADR-114 starter wearables (append-only; no unlock tags -> listed in the creator for everyone)
 for s in ["wavy", "topknot", "space_buns", "shag"]: add("hair_" + s, "hair", {"style": s}, tint=2, hatHair=True)
 for k in ["goatee", "long_beard", "chops", "rosy"]: add("face_" + k, "face", {"style": k}, tint=1)
@@ -66,9 +66,11 @@ for k, v in {"loafers": dict(style="loafers", band=True, soleS=True, len=4.0), "
              "moccasins": dict(style="moccasins", w=2.9, laces=True, sole=False), "trail_runners": dict(style="trail", swoosh=True, laces=True, soleS=True)}.items():
     add("shoes_" + k, "shoes", v, tint=2)
 # ---- ADR-135 gameplay gear (append-only; unlockTags ["gear"] -> not in the creator; mapped by data/wear_cosmetics.json)
+# ADR-137: dedicated hands slot, over the front sleeves (31) on front facings, behind the torso on back facings (sleeves 21)
+HANDS_BY_DIR = [33, 33, 33, 33, 22, 22, 22, 33]
 GEAR = []
 def gear(key, slot, spec, **kw): GEAR.append(key); add(key, slot, spec, **kw)
-for k in ["cloth_gloves", "leather_gloves", "fur_mittens", "gauntlets"]: gear("acc_" + k, "accessory", {"style": k, "noarmcut": True}, tint=(1 if k == "gauntlets" else 2), layer=30)
+for k in ["cloth_gloves", "leather_gloves", "fur_mittens", "gauntlets"]: gear("acc_" + k, "hands", {"style": k, "noarmcut": True}, tint=(1 if k == "gauntlets" else 2), layer=33, layerByDir=HANDS_BY_DIR)
 GEAR_PH = {}   # gear key -> resident placeholder wearable (same slot) drawn while its stream page loads
 for s, hh, hd in [("helmet", False, ["hair"]), ("fur_hat", True, []), ("leather_cap", True, []), ("hood", False, ["hair"])]:
     gear("hat_" + s, "hat", {"style": s}, tint=2, hides=hd, hatHairFlag=hh)

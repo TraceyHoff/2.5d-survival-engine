@@ -10,14 +10,14 @@ import type { World } from "./world.js";
 export const BODY_TYPES = ["male", "female"] as const;
 export type BodyType = (typeof BODY_TYPES)[number];
 /** Slot order is part of the wire/save layout (array index); only append. */
-export const WEARABLE_SLOTS = ["hair", "hat", "accessory", "top", "bottom", "shoes", "face", "eyes"] as const;
+export const WEARABLE_SLOTS = ["hair", "hat", "accessory", "top", "bottom", "shoes", "face", "eyes", "hands"] as const;
 export type WearableSlot = (typeof WEARABLE_SLOTS)[number];
 export const SLOT_COUNT = WEARABLE_SLOTS.length;
 export const slotIndex = (s: WearableSlot): number => WEARABLE_SLOTS.indexOf(s);
 /** Which palette a slot's primary/secondary indices refer to. */
 export const SLOT_PALETTE: Record<WearableSlot, "hairColors" | "clothingColors"> = {
   hair: "hairColors", hat: "clothingColors", accessory: "clothingColors", top: "clothingColors",
-  bottom: "clothingColors", shoes: "clothingColors", face: "hairColors", eyes: "clothingColors",
+  bottom: "clothingColors", shoes: "clothingColors", face: "hairColors", eyes: "clothingColors", hands: "clothingColors",
 };
 
 /**

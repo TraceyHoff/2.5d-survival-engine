@@ -24,7 +24,7 @@ HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 from wearpack import body_of, variant_of, partitions, r8
 MAXP8 = 1016; PFX = "cz_wr_"
 # VRAM pass: every wearable slot packs tight, pivot-free crops (anchor per entry) with shared 1 px gutters
-ALL_TIGHT = ("accessory", "bottom", "eyes", "face", "hair", "hat", "shoes", "top")
+ALL_TIGHT = ("accessory", "bottom", "eyes", "face", "hair", "hands", "hat", "shoes", "top")
 
 def dir_index(d, n): return d  # entry slot d == AssetRegistry.directionIndex result d (arithmetic used d*dirStride)
 

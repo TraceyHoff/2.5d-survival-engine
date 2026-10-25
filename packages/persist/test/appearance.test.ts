@@ -34,13 +34,13 @@ describe("appearance persistence", () => {
     const parts = [1, 0, 0, 3, 0, 0, 0, 0]; const primary = [2, 0, 0, 3, 0, 0, 0, 0]; const secondary = [0, 0, 0, 1, 0, 0, 0, 0];
     const { b, e, r } = await oldSave((w) => w.register(OldAppearance), (w, p) => w.add(p, OldAppearance, { bodyType: 1, skinTone: 3, parts, primary, secondary } as never));
     expect(r.migrated).toBeTruthy(); expect(r.appearance).toBe("ok");
-    expect(getAppearance(b.world, e)).toEqual({ bodyType: 1, skinTone: 3, version: 0, parts, primary, secondary });
+    expect(getAppearance(b.world, e)).toEqual({ bodyType: 1, skinTone: 3, version: 0, parts: [...parts, 0], primary: [...primary, 0], secondary: [...secondary, 0] }); // ADR-137: 8-wide save padded with the hands slot
   });
   it("loaded Appearance with retired parts / bad colors is clamp-repaired through setAppearance (version bumps)", async () => {
     const parts = [1, 0, 0, 99, 0, 0, 0, 0]; // 99 retired from the catalog
     const { b, e, r } = await oldSave((w) => w.register(Appearance), (w, p) => w.add(p, Appearance, { bodyType: 0, skinTone: 7, version: 4, parts, primary: fill(0), secondary: fill(0) } as never));
     expect(r.appearance).toBe("repaired");
-    expect(getAppearance(b.world, e)).toMatchObject({ skinTone: 0, version: 5, parts: [1, 0, 0, 0, 0, 0, 0, 0] });
+    expect(getAppearance(b.world, e)).toMatchObject({ skinTone: 0, version: 5, parts: [1, 0, 0, 0, 0, 0, 0, 0, 0] });
     expect(ensureAppearance(b.world, e, catalog)).toBe("ok"); expect(getAppearance(b.world, e)!.version).toBe(5);
   });
 });

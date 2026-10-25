@@ -26,7 +26,13 @@ export const CONTAINER_96_MIGRATIONS: readonly AddedFields[] = [
   { component: "Container", fields: [], grown: C24 },
   { component: "Container", fields: ["crafterId"], grown: C24 },
 ];
-export const DEFAULT_MIGRATIONS: readonly AddedFields[] = [...CRAFTER_ID_MIGRATIONS, APPEARANCE_VERSION_MIGRATION, ...CONTAINER_96_MIGRATIONS];
+/** ADR-137: Appearance gained the "hands" wear slot (WEARABLE_SLOTS 8 -> 9). Old rows zero-pad it (no hands part, palette 0). */
+const A8 = { parts: 8, primary: 8, secondary: 8 } as const;
+export const APPEARANCE_HANDS_MIGRATIONS: readonly AddedFields[] = [
+  { component: "Appearance", fields: [], grown: A8 },
+  { component: "Appearance", fields: ["version"], grown: A8 },
+];
+export const DEFAULT_MIGRATIONS: readonly AddedFields[] = [...CRAFTER_ID_MIGRATIONS, APPEARANCE_VERSION_MIGRATION, ...CONTAINER_96_MIGRATIONS, ...APPEARANCE_HANDS_MIGRATIONS];
 
 const BYTES: Record<FieldType, number> = { f32: 4, f64: 8, i8: 1, u8: 1, i16: 2, u16: 2, i32: 4, u32: 4 };
 export const oldSchemaOf = (s: Schema, added: readonly string[], grown: Readonly<Record<string, number>> = {}): Schema =>

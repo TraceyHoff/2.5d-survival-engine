@@ -40,7 +40,7 @@ describe("menu view-models", () => {
   });
   it("wardrobe: slots, unlock list, equip/setAppearance intents", () => {
     const { w, names, mk } = setup(); const a = mk(7, "Ada");
-    const v = G.wardrobeView(ctx(w, a, names)); expect(v.slots.length).toBe(8); expect(v.unlocks.map((u) => u.tag)).toEqual([...G.COSMETICS.unlockTags]);
+    const v = G.wardrobeView(ctx(w, a, names)); expect(v.slots.length).toBe(9); expect(v.slots[8]!.key).toBe("hands"); expect(v.unlocks.map((u) => u.tag)).toEqual([...G.COSMETICS.unlockTags]);
     expect(G.equipCosmeticIntent(3, 12, 1, 2)).toMatchObject({ cmd: G.EquipCosmeticCmd, args: { slot: 3, wearable: 12, primary: 1, secondary: 2 } });
     expect(G.setAppearanceIntent({ bodyType: 1, skinTone: 2, parts: [1], primary: [0], secondary: [0] }).cmd).toBe(G.SetAppearanceCmd);
   });

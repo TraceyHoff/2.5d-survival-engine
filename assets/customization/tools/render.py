@@ -12,7 +12,7 @@ def draw(c, slot, spec, hat=False):
     elif slot == "top": parts.draw_top(c, spec)
     elif slot == "bottom": parts.draw_bottom(c, spec)
     elif slot == "shoes": parts.draw_shoes(c, spec)
-    elif slot == "accessory": parts.draw_acc(c, spec)
+    elif slot in ("accessory", "hands"): parts.draw_acc(c, spec)
     elif slot == "face": parts.draw_face(c, spec)
     elif slot == "eyes": parts.draw_eyes(c, spec)
 

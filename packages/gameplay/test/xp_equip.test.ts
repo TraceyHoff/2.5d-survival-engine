@@ -70,6 +70,33 @@ describe("ADR-135 equipment", () => {
     G.wearSlot(w, a, slotOf(w, a, id("iron_helmet"))); G.wearSlot(w, a, slotOf(w, a, id("leather_backpack")));
     expect(Object.fromEntries(G.wornCosmetics(w, a))).toMatchObject({ hat: "hat_helmet", accessory: "acc_backpack" });
   });
+  it("ADR-137: gloves draw on the dedicated hands slot and never displace a back item", () => {
+    const w = world(); const a = mk(w, 1);
+    for (const k of ["leather_gloves", "fur_cloak"]) { G.addItem(w, a, id(k), 1); G.wearSlot(w, a, slotOf(w, a, id(k))); }
+    expect(Object.fromEntries(G.wornCosmetics(w, a))).toEqual({ hands: "acc_leather_gloves", accessory: "acc_cape" });
+    const b = mk(w, 2); for (const k of ["iron_gauntlets", "leather_backpack"]) { G.addItem(w, b, id(k), 1); G.wearSlot(w, b, slotOf(w, b, id(k))); }
+    expect(Object.fromEntries(G.wornCosmetics(w, b))).toEqual({ hands: "acc_gauntlets", accessory: "acc_backpack" });
+  });
+  it("ADR-137: exact item mapping beats the family, falls back to the family when absent or not in the catalog", () => {
+    const t = { families: { armor_head: "hat_viking" }, items: { steel_helmet: "hat_gear_steel_helmet" } };
+    expect(G.wearableKeyFor("steel_helmet", "armor_head", undefined, t)).toBe("hat_gear_steel_helmet");
+    expect(G.wearableKeyFor("iron_helmet", "armor_head", undefined, t)).toBe("hat_viking");
+    expect(G.wearableKeyFor("steel_helmet", "armor_head", (k) => k === "hat_viking", t)).toBe("hat_viking");
+    expect(G.wearableKeyFor("x", undefined, undefined, t)).toBeUndefined();
+  });
+  it("ADR-137: wear_cosmetics items cover every worn armor/gear item; placeholders = family wearable; art keys unique", () => {
+    const T = G.WEAR_COSMETICS_TABLE; const defs = G.gameplayDefs(world());
+    const worn = [...defs.items.values()].filter((d) => d.wear && d.wear.slot !== 6 /* OffHand */ && d.family && T.families[d.family]);
+    expect(worn.length).toBeGreaterThan(40);
+    for (const d of worn) {
+      expect(T.items?.[d.key], d.key).toBe(T.families[d.family!]);
+      const art = T.artTodo?.[d.key]; expect(art, d.key).toBeDefined();
+      const slot = d.wear!.slot === 4 /* Hands */ ? "hands" : G.wearableSlotOfKey(T.families[d.family!]!);
+      expect(G.wearableSlotOfKey(art!), d.key).toBe(slot);
+    }
+    const arts = Object.values(T.artTodo ?? {}); expect(new Set(arts).size).toBe(arts.length);
+    for (const k of arts) expect(Object.values(T.families)).not.toContain(k);
+  });
 });
 
 describe("ADR-135 EquipCmd", () => {

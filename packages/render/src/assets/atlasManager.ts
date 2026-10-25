@@ -1644,7 +1644,7 @@ export function wearableSpriteIds(registry: AssetRegistry): Set<number> {
     if (!v || typeof v !== "object" || depth > 6) return;
     for (const [k, x] of Object.entries(v as Record<string, unknown>)) { if (k === "sprite" && typeof x === "number") wear.add(x); else walk(x, depth + 1); }
   };
-  for (const s of ["hair", "hat", "accessory", "top", "bottom", "shoes", "face", "eyes"]) for (const w of cat.bySlot(s)) walk(w, 0);
+  for (const s of ["hair", "hat", "accessory", "top", "bottom", "shoes", "face", "eyes", "hands"]) for (const w of cat.bySlot(s)) walk(w, 0);
   return wear;
 }
 
@@ -1656,7 +1656,7 @@ export function wearableOnlyAtlases(registry: AssetRegistry): Set<string> {
     if (!v || typeof v !== "object" || depth > 6) return;
     for (const [k, x] of Object.entries(v as Record<string, unknown>)) { if (k === "sprite" && typeof x === "number") wear.add(x); else walk(x, depth + 1); }
   };
-  for (const s of ["hair", "hat", "accessory", "top", "bottom", "shoes", "face", "eyes"]) for (const w of cat.bySlot(s)) walk(w, 0);
+  for (const s of ["hair", "hat", "accessory", "top", "bottom", "shoes", "face", "eyes", "hands"]) for (const w of cat.bySlot(s)) walk(w, 0);
   // every page a sprite draws from: sprite.atlas plus multi-page anims' dirFrames pages (swim/punch wear pages)
   const pagesOf = (s: { atlas: { key: string }; animList: { dirFrames?: { atlas: { key: string } }[] }[] }): string[] => { const k = new Set([s.atlas.key]); for (const a of s.animList) for (const d of a.dirFrames ?? []) k.add(d.atlas.key); return [...k]; };
   for (const s of registry.allSprites()) if (wear.has(s.id)) for (const k of pagesOf(s)) out.add(k);

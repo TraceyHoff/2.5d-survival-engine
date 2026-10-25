@@ -309,7 +309,7 @@ export class IsoView {
       if (net.isRegistered(Equipment) && net.has(e, Equipment)) { // ADR-135 held item + worn gear
         this.netRef = net; const eq = net.get(e, Equipment); const mh = eq?.mainHandItem ?? 0;
         if (eq && !v.has(ve, VEquip)) v.add(ve, VEquip, { mainHandItem: mh }); else if (v.has(ve, VEquip) && v.getField(ve, VEquip, "mainHandItem") !== mh) v.set(ve, VEquip, { mainHandItem: mh });
-        const cat = this.registry.cosmetics; const gear = cat ? wornCosmetics(net, e) : [];
+        const cat = this.registry.cosmetics; const gear = cat ? wornCosmetics(net, e, (k) => cat.byKey(k) !== undefined) : [];
         if (gear.length && cat) { let salt = 7; const parts: Array<[number, number]> = []; for (const [s, k] of gear) { const id = cat.byKey(k)?.id; if (id === undefined) continue; parts.push([slotIndex(s as WearableSlot), id]); salt = (salt * 31 + id * 8 + slotIndex(s as WearableSlot)) % 32749; }
           if (parts.length) this.gearOf.set(ve, { salt: salt + 1, parts }); else this.gearOf.delete(ve); }
         else this.gearOf.delete(ve);

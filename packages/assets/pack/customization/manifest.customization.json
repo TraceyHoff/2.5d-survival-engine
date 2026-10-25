@@ -2366299,7 +2366299,7 @@
   },
   {
    "key": "acc_cloth_gloves",
-   "slot": "accessory",
+   "slot": "hands",
    "displayName": "Cloth Gloves",
    "locKey": "cosmetic.acc_cloth_gloves",
    "bodies": {
@@ -2366310,7 +2366310,8 @@
      "sprite": "cz_acc_cloth_gloves_female"
     }
    },
-   "layer": 30,
+   "layer": 33,
+   "layerByDir": [33, 33, 33, 33, 22, 22, 22, 33],
    "z": 0,
    "tintChannels": 2,
    "hidesSlots": [],
@@ -2366322,7 +2366323,7 @@
   },
   {
    "key": "acc_leather_gloves",
-   "slot": "accessory",
+   "slot": "hands",
    "displayName": "Leather Gloves",
    "locKey": "cosmetic.acc_leather_gloves",
    "bodies": {
@@ -2366333,7 +2366334,8 @@
      "sprite": "cz_acc_leather_gloves_female"
     }
    },
-   "layer": 30,
+   "layer": 33,
+   "layerByDir": [33, 33, 33, 33, 22, 22, 22, 33],
    "z": 0,
    "tintChannels": 2,
    "hidesSlots": [],
@@ -2366345,7 +2366347,7 @@
   },
   {
    "key": "acc_fur_mittens",
-   "slot": "accessory",
+   "slot": "hands",
    "displayName": "Fur Mittens",
    "locKey": "cosmetic.acc_fur_mittens",
    "bodies": {
@@ -2366356,7 +2366358,8 @@
      "sprite": "cz_acc_fur_mittens_female"
     }
    },
-   "layer": 30,
+   "layer": 33,
+   "layerByDir": [33, 33, 33, 33, 22, 22, 22, 33],
    "z": 0,
    "tintChannels": 2,
    "hidesSlots": [],
@@ -2366368,7 +2366371,7 @@
   },
   {
    "key": "acc_gauntlets",
-   "slot": "accessory",
+   "slot": "hands",
    "displayName": "Gauntlets",
    "locKey": "cosmetic.acc_gauntlets",
    "bodies": {
@@ -2366379,7 +2366382,8 @@
      "sprite": "cz_acc_gauntlets_female"
     }
    },
-   "layer": 30,
+   "layer": 33,
+   "layerByDir": [33, 33, 33, 33, 22, 22, 22, 33],
    "z": 0,
    "tintChannels": 1,
    "hidesSlots": [],

@@ -3,7 +3,7 @@
 The engine provides the data contract only: no art, UI or rendering. Rationale is in ADR-080 and ARCHITECTURE §20.
 Players choose a body type (`male` | `female`), a skin tone, and wearables in 8 slots, with a primary and secondary color for each slot.
 
-Slots (fixed order; this order is the wire/save layout, so only append): `hair, hat, accessory, top, bottom, shoes, face, eyes`.
+Slots (fixed order; this order is the wire/save layout, so only append): `hair, hat, accessory, top, bottom, shoes, face, eyes, hands` (hands appended by ADR-137).
 Palettes: `hair` and `face` (beards, brows) use `hairColors`; all other slots use `clothingColors`; the body uses `skinTones`.
 
 ## Writing Appearance (everyone)
@@ -32,7 +32,7 @@ Add these to `packages/assets/pack/manifest.json`, then run `pnpm --filter @engi
 ```
 - Each sprite is a normal `character` sprite. Its anims must have per-direction frames (`directions` 4|8 or `rotations`) and the same anim names and frame timing as the body (`idle`, `walk`, ...), so the layers stay in sync. Use the same atlas frame size and anchor as the body.
 - The body sprite is tinted by skin tone through tintmask R. Any tinted part needs a `tintmask` mask on its atlas (the existing `masks.tintmask` convention: R = primary, G = secondary).
-- Suggested layers: body 10 (`BODY_LAYER`), shoes 15, bottom 18, top 20, accessory 30, face 32, eyes 34, hair 40, hat 50.
+- Suggested layers: body 10 (`BODY_LAYER`), shoes 15, bottom 18, top 20, accessory 30, face 32, hands 33 (22 on back facings, ADR-137), eyes 34, hair 40, hat 50.
 - Validation errors to expect: unknown sprite or anim, body type without `bodyTypes` base art, single-direction anim, tint without a tintmask, a part hiding its own slot, two slots hiding each other, `hatHair` together with `hidesSlots: ["hair"]`, bad colors, and palettes over 256 entries.
 
 ## Renderer

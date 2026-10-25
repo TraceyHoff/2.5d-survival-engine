@@ -68,7 +68,7 @@ def fragment(J):
             b = {"sprite": f"cz_{key}_{bt}"}
             if slot == "hair": b["hatHair"] = {"sprite": f"cz_{key}_{bt}_hathair"}
             bodies[bt] = b
-        w = {"key": key, "slot": slot, "displayName": STR[f"cosmetic.{key}"], "locKey": f"cosmetic.{key}", "bodies": bodies, "layer": kw.get("layer", catalog.LAYER[slot]), "z": 0,
+        w = {"key": key, "slot": slot, "displayName": STR[f"cosmetic.{key}"], "locKey": f"cosmetic.{key}", "bodies": bodies, "layer": kw.get("layer", catalog.LAYER[slot]), **({"layerByDir": kw["layerByDir"]} if "layerByDir" in kw else {}), "z": 0,
              "tintChannels": kw.get("tint", 0), "hidesSlots": kw.get("hides", []), "hatHair": bool(slot == "hat" and kw.get("hatHairFlag", False)),
              "unlockTags": [t for t, ks in UNLOCKS.items() if key in ks], "outline": "none" if slot in EXPR_SLOTS else "body"}
         if slot in EXPR_SLOTS: w["faceAnims"] = FACE_ANIMS
