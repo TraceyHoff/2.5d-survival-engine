@@ -7,6 +7,9 @@
 import { mountUi } from "./ui-root.js";
 import type { ClientSession } from "./session.js";
 
+/** ADR-142: the plain lobby box sat over the HUD for the whole session; once connected it gets out of the way (leave via ☰ → Main menu; it returns if the link drops). */
+export const connectOverlayVisible = (status: string): boolean => status !== "connected";
+
 export interface ConnectOverlay { root: HTMLElement; update(): void; destroy(): void }
 
 export function mountConnectOverlay(session: ClientSession, opts: { defaultUrl: string; onConnect: (url: string, name: string) => void; onDisconnect: () => void }): ConnectOverlay {
@@ -31,6 +34,7 @@ export function mountConnectOverlay(session: ClientSession, opts: { defaultUrl: 
   });
   const update = (): void => {
     const live = session.status === "connected" || session.status === "connecting";
+    root.style.display = connectOverlayVisible(session.status) ? "" : "none";
     button.textContent = live ? "Disconnect" : "Connect";
     url.disabled = live; name.disabled = live;
     status.textContent = `Status: ${session.status}${session.detail ? ` (${session.detail})` : ""}`;

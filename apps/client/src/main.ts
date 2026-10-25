@@ -28,7 +28,7 @@ import { InputSystem, AimResolver, DEFAULT_ACTIONS, DEFAULT_CONTEXTS, DEFAULT_PR
 import { attachBrowserInput } from "@engine/input/browser";
 import { Act, ClanRoster, ClanRosterMember, OnlinePlayer, VehicleStationOpenedEvt, gameplayNet, installDemoWorld } from "@engine/server/protocol";
 import { netIdOf, ChatChannel, type ChatDelivered } from "@engine/net";
-import { WorldRules, worldRules, ROADS, holdsRangedWeapon } from "@engine/gameplay";
+import { WorldRules, worldRules, ROADS, holdsRangedWeapon, Sign, signText, Road } from "@engine/gameplay";
 import { SocialDirectory, hasCreatedLook, setAppearanceIntent, interactPanel, UseCmd, GatherCmd, farmPrompt, WaterProbeRes, type MenuCtx, type MenuIntent } from "@engine/gameplay";
 import { ClientSession } from "./session.js";
 import { mountConnectOverlay } from "./connect.js";
@@ -191,7 +191,7 @@ const buildHud = mountBuildHud(root, { buildMode, device: () => promptDevice(), 
   blocked: (x, y) => onTouchControl(buildTouchLayout, x, y, innerWidth, innerHeight) });
 const buildTouchLayout = { ...DEFAULT_TOUCH_LAYOUTS.building, elements: DEFAULT_TOUCH_LAYOUTS.building.elements.filter((e) => !MENU_BAR_IDS.has(e.id)) };
 /** ADR-142: ?dev=sandbox exposes read-only QA handles (build preview, world, player) for automated browser tests. */
-if (params.get("dev") === "sandbox") (window as { __qa?: unknown }).__qa = { buildMode, world: () => world, player: () => session.player, menus: () => menus, pos: () => { const p = session.player; const t = p !== undefined ? world.get(p, Transform) : undefined; return t ? { x: t.x, y: t.y } : undefined; } };
+if (params.get("dev") === "sandbox") (window as { __qa?: unknown }).__qa = { buildMode, world: () => world, player: () => session.player, menus: () => menus, roads: () => world.isRegistered(Road) ? [...world.query([Road])].length : 0, signs: () => world.isRegistered(Sign) ? [...world.query([Sign, Transform])].map((e) => signText(world, e)) : [], pos: () => { const p = session.player; const t = p !== undefined ? world.get(p, Transform) : undefined; return t ? { x: t.x, y: t.y } : undefined; } };
 /** Per input update: build mode, and the shared Interact action (E / pad X / touch interact) opening stall / wardrobe panels. */
 function onUiFrame(): void {
   if (promptDevice() === "gamepad") markNavFocus(); // ADR-142: pad users get a visible menu focus ring
