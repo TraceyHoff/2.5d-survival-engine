@@ -17,6 +17,8 @@ export interface Device {
   /** Called once per InputSystem.update after reading (clears pulses like wheel). */
   endFrame(): void;
   connected: boolean;
+  /** Non-binding activity since the last endFrame() (e.g. real mouse travel): makes the device active, never a capture. */
+  moved?(): boolean;
 }
 
 /** Generic map-backed device; base for keyboard/mouse/gamepad/touch and for tests. */
@@ -28,22 +30,31 @@ export class MapDevice implements Device {
   set(control: string, v: number): void { const old = this.values.get(control) ?? 0; if (v === 0) this.values.delete(control); else this.values.set(control, v); if ((v !== 0 && old === 0) || (Math.abs(v) >= 0.5 && Math.abs(old) < 0.5)) this.fresh.add(control); }
   /** Non-zero for exactly one update (e.g. wheel ticks). */
   pulse(control: string, v: number): void { this.set(control, (this.values.get(control) ?? 0) + v); this.pulses.add(control); }
-  press(control: string): void { this.set(control, 1); }
-  release(control: string): void { this.set(control, 0); }
+  press(control: string): void { this.pendingRelease.delete(control); this.set(control, 1); }
+  /** A tap pressed and released between two updates stays down for that one update (ADR-142), so it is never lost. */
+  release(control: string): void { if (this.fresh.has(control) && this.values.has(control)) { this.pendingRelease.add(control); return; } this.set(control, 0); }
+  protected pendingRelease = new Set<string>();
   /** Release everything (blur / visibility hidden / disconnect). */
-  releaseAll(): void { this.values.clear(); this.pulses.clear(); }
+  releaseAll(): void { this.values.clear(); this.pulses.clear(); this.pendingRelease.clear(); }
   protected canceled = new Set<string>();
   /** Release a control as canceled (finger dragged off a touch button): taps/holds don't fire. */
   cancel(control: string): void { this.set(control, 0); this.canceled.add(control); }
   wasCanceled(control: string): boolean { return this.canceled.has(control); }
   activeControls(): Iterable<string> { return this.fresh; }
-  endFrame(): void { for (const p of this.pulses) this.values.delete(p); this.pulses.clear(); this.fresh.clear(); this.canceled.clear(); }
+  endFrame(): void { for (const p of this.pulses) this.values.delete(p); this.pulses.clear(); this.fresh.clear(); this.canceled.clear(); for (const c of this.pendingRelease) this.set(c, 0); this.pendingRelease.clear(); this.fresh.clear(); }
   snapshot(): Record<string, number> { return Object.fromEntries(this.values); }
 }
+export const MOUSE_ACTIVITY_PX = 12;
 export class KeyboardMouseDevice extends MapDevice {
   pointerLocked = false;
   constructor(id = "kbm") { super(id, "keyboardMouse"); }
   override activeControls(): Iterable<string> { return [...this.fresh].filter((c) => c !== "mouse.x" && c !== "mouse.y"); }
+  /** Pointer travel (px) since the last update; >= MOUSE_ACTIVITY_PX makes keyboard+mouse the active device (ADR-142:
+   *  the build ghost follows the mouse as soon as it moves, instead of jumping there on the next key press). */
+  private travel = 0;
+  override set(control: string, v: number): void { if (control === "mouse.x" || control === "mouse.y") this.travel += Math.abs(v - (this.values.get(control) ?? v)); super.set(control, v); }
+  moved(): boolean { return this.travel >= MOUSE_ACTIVITY_PX; }
+  override endFrame(): void { super.endFrame(); this.travel = 0; }
 }
 
 /** W3C standard gamepad mapping button order. */

@@ -165,9 +165,9 @@ export class InputSystem {
     for (const r of this.autoRules) { const on = r.when(); if (on && !this.stack.includes(r.context)) this.push(r.context); else if (!on && this.stack.includes(r.context)) this.pop(r.context); }
     // activity / active device / capture
     for (const d of this.devices) {
-      const act = [...d.activeControls()]; if (!act.length) continue;
+      const act = [...d.activeControls()]; if (!act.length && !d.moved?.()) continue;
       if (this.activeDevice !== d) { const prev = this.lastUsedDeviceClass; this.activeDevice = d; this.lastUsedDeviceClass = d.deviceClass; if (prev !== d.deviceClass) for (const h of this.deviceHooks) h(d.deviceClass, prev); }
-      for (const c of [...this.captures]) if (!c.cls || c.cls === d.deviceClass) {
+      if (act.length) for (const c of [...this.captures]) if (!c.cls || c.cls === d.deviceClass) {
         this.captures.splice(this.captures.indexOf(c), 1); c.resolve(c.cancel.includes(act[0]!) ? null : { control: act[0]!, deviceClass: d.deviceClass });
       }
     }
