@@ -17,6 +17,8 @@ import { loadPreset, parsePreset, savePreset, QUALITY_PRESETS, type QualityPrese
 
 /** `data-chan` value per @engine/net ChatChannel number (Global 0 … System 6); omitted/unknown = "system". */
 export const CHAT_CHAN_NAMES: Readonly<Record<number, string>> = { 0: "global", 1: "local", 2: "party", 3: "clan", 4: "trade", 5: "whisper", 6: "system" };
+/** Menus that only make sense next to a world object (opened by Interact), so the pause list leaves them out. */
+export const CONTEXT_ONLY_MENUS: ReadonlySet<string> = new Set(["station", "camper"]);
 export interface MenuDef { id: string; title: string; icon: string; hotkeys: string[]; bar?: boolean; text: string }
 export const GAME_MENUS: readonly MenuDef[] = [
   { id: "inventory", title: "Inventory", icon: "🎒", hotkeys: ["KeyI", "Tab"], bar: true, text: "Your items and equipment." },
@@ -173,7 +175,7 @@ export class GameMenus {
 
   private pausePanel(): HTMLElement {
     const items: [string, () => void, string?][] = [["Resume", () => this.nav.close()]];
-    for (const m of GAME_MENUS) items.push([`${m.icon} ${m.title}`, () => this.open(m.id)]);
+    for (const m of GAME_MENUS) if (!CONTEXT_ONLY_MENUS.has(m.id)) items.push([`${m.icon} ${m.title}`, () => this.open(m.id)]); // station / camper open by walking up to one
     if (this.o.session?.()) items.push(["Session", () => this.open("session")]);
     items.push(["Quit to main menu", () => { this.nav.closeAll(); this.o.onQuit(); }, "alt"]);
     return this.panel("pause", "Paused", [], items);

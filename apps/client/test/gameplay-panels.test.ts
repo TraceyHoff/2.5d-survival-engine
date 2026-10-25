@@ -54,6 +54,10 @@ describe("gameplay panels (ADR-095 shell)", () => {
     const hoe = q(`[data-key=recipe-${d.recipeId("hoe")}]`).textContent!; const bone = q(`[data-key=recipe-${d.recipeId("bone_hoe")}]`).textContent!;
     expect(hoe).not.toBe(bone); expect(bone.toLowerCase()).toContain("bone"); menus.destroy();
   });
+  test("pause menu lists no context-only menus (crafting station / camper open from the world)", () => {
+    const { menus } = setup(); menus.pause(); const txt = q("[data-menu=pause]").textContent!;
+    expect(txt).not.toContain("Crafting Station"); expect(txt).not.toContain("Camper Station"); expect(txt).toContain("Crafting"); menus.destroy();
+  });
   test("party: invite a nearby player (entity arg flagged for NetId mapping); pending invite accept/decline", () => {
     const { w, mk, sent, menus } = setup(); const bob = mk(8, "Bob", 2); menus.open("party");
     q("[data-key=invite-8]").click(); expect(sent.at(-1)).toMatchObject({ cmd: G.PartyInviteCmd, args: { target: bob }, entities: ["target"] });
