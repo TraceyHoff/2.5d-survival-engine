@@ -63,3 +63,13 @@ describe("ADR-135 XP popup", () => {
     s.addXp(4, 200, "Level"); expect(m.toastText(s.toasts[1]!)).toBe("Level 4!");
   });
 });
+
+describe("ADR-135 xp chip frame", () => {
+  it("ui_xp_chip_frame 9-slice matches the items manifest", async () => {
+    const { XP_CHIP_SLICE, ART_URLS: U } = await import("../src/gather-fx.js");
+    const { readFileSync } = await import("node:fs");
+    const man = JSON.parse(readFileSync("packages/assets/pack/items/manifest.items.json", "utf8")) as { atlases: Array<{ key: string; nineSlice?: Record<string, unknown> }> };
+    const a = man.atlases.find((x) => x.key === "items_xp_chip")!; expect(a.nineSlice?.["0"]).toEqual(XP_CHIP_SLICE);
+    expect(U.xpChip[0]).toMatch(/items_xp_chip\.png$/); expect(U.xpChip[1]).toMatch(/items_xp_chip@2x\.png$/);
+  });
+});

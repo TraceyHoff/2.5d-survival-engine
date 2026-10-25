@@ -166,11 +166,14 @@ export function nineSlice(dx: number, dy: number, dw: number, dh: number, scale 
 }
 /** ui_pickup_toast_bg: 48x32 cell, 9-slice l/r 10, t/b 12 (pill rows 4..27). */
 export const TOAST_SLICE = { l: 10, t: 12, r: 10, b: 12 } as const;
+/** ui_xp_chip_frame (ADR-135, items_xp_chip): 40x20 cell, 9-slice l/t/r/b 10/9/10/9. */
+export const XP_CHIP_SLICE = { l: 10, t: 9, r: 10, b: 9 } as const;
 export const ART_URLS = {
   fx: [new URL("../../../packages/assets/pack/nature/atlases/nature_adr128_fx.png", import.meta.url).href, new URL("../../../packages/assets/pack/nature/atlases/nature_adr128_fx@2x.png", import.meta.url).href],
   hpbar: [new URL("../../../packages/assets/pack/nature/atlases/nature_adr128_hpbar.png", import.meta.url).href, new URL("../../../packages/assets/pack/nature/atlases/nature_adr128_hpbar@2x.png", import.meta.url).href],
   creatureHpbar: [new URL("../../../packages/assets/pack/nature/atlases/nature_adr134_hpbar.png", import.meta.url).href, new URL("../../../packages/assets/pack/nature/atlases/nature_adr134_hpbar@2x.png", import.meta.url).href],
   toast: [new URL("../../../packages/assets/pack/nature/atlases/nature_adr128_toast.png", import.meta.url).href, new URL("../../../packages/assets/pack/nature/atlases/nature_adr128_toast@2x.png", import.meta.url).href],
+  xpChip: [new URL("../../../packages/assets/pack/items/atlases/items_xp_chip.png", import.meta.url).href, new URL("../../../packages/assets/pack/items/atlases/items_xp_chip@2x.png", import.meta.url).href],
 } as const;
 const ready = (im: HTMLImageElement | undefined): im is HTMLImageElement => !!im && im.complete && im.naturalWidth > 0;
 function loadArt(urls: readonly string[], onLoad?: (im: HTMLImageElement, i: number) => void): HTMLImageElement[] {
@@ -194,6 +197,7 @@ const CSS = `#gather-fx{position:absolute;inset:0;z-index:3;pointer-events:none}
 #pickup-toasts [data-item="-1"] .ic{background:#d9a227;border-radius:50%}
 #xp-chip{position:absolute;left:12px;bottom:72px;z-index:5;display:flex;align-items:center;gap:5px;padding:2px 6px;border-radius:9px;background:rgba(20,16,12,.55);color:#FFFAF0;font:700 11px/1 system-ui,sans-serif;pointer-events:none}
 #xp-chip[data-device=touch]{bottom:auto;top:60px;left:8px}
+#xp-chip[data-art=true]{background:transparent;border-radius:0;border-style:solid;border-width:5px 5px;border-image:var(--xp-chip-bg) ${XP_CHIP_SLICE.t} ${XP_CHIP_SLICE.r} ${XP_CHIP_SLICE.b} ${XP_CHIP_SLICE.l} fill / 9px 10px stretch;padding:0 2px}
 #xp-chip .bar{width:56px;height:4px;border-radius:2px;background:rgba(255,255,255,.18);overflow:hidden}#xp-chip .bar>i{display:block;height:100%;width:var(--p,0%);background:#d9a227}
 #pickup-toasts .ic{width:20px;height:20px;flex:none;background:var(--cz-icon,#6b5a45) var(--cz-ipos,center)/var(--cz-isize,contain) no-repeat;border-radius:3px}`;
 
@@ -201,7 +205,9 @@ export function mountGatherFx(root: HTMLElement, d: GatherFxDeps): { destroy(): 
   const style = document.createElement("style"); style.textContent = CSS; document.head.append(style);
   const cv = document.createElement("canvas"); cv.id = "gather-fx"; root.append(cv);
   const box = document.createElement("div"); box.id = "pickup-toasts"; box.setAttribute("aria-live", "polite"); root.append(box);
-  const chip = document.createElement("div"); chip.id = "xp-chip"; chip.innerHTML = '<span class="lv"></span><span class="bar"><i></i></span>'; root.append(chip); let lastXp: { xp: number; level: number } | undefined;
+  const chip = document.createElement("div"); chip.id = "xp-chip"; chip.innerHTML = '<span class="lv"></span><span class="bar"><i></i></span>'; root.append(chip);
+  loadArt(ART_URLS.xpChip, (_im, i) => { if (i !== 0) return; chip.style.setProperty("--xp-chip-bg", `image-set(url("${ART_URLS.xpChip[0]}") 1x, url("${ART_URLS.xpChip[1]}") 2x)`); chip.dataset["art"] = "true"; }); // else the CSS pill stays
+  let lastXp: { xp: number; level: number } | undefined;
   const fx = loadArt(ART_URLS.fx), bar = loadArt(ART_URLS.hpbar), cbar = loadArt(ART_URLS.creatureHpbar);
   loadArt(ART_URLS.toast.slice(0, 1), () => { box.style.setProperty("--toast-bg", `url("${ART_URLS.toast[0]}")`); box.dataset["art"] = "true"; }); // else the CSS pill stays
   const hits = new NodeHits(); const creatures = new CreatureBars(); const stack = new ToastStack(); let parts: Particle[] = []; let raf = 0; let last = performance.now(); let player: Entity | undefined; let lastInv = 0;
