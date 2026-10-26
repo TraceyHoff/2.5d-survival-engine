@@ -937,3 +937,16 @@ Graphics quality is unchanged.
 **Decision:** On budgets of `RESIDENT_CREATURE_MIN_MB` = 384 MB or more, `pets_*` and `nature_critters_*` sheets load resident and hot at full resolution, outside the stream pool. Smaller budgets (mobile and safe) keep streaming them, so they keep the same hot-tier floor as before.
 
 **Result:** Same 42 s profile at 768 MB: page-ins went from 23–32 to 8–10 (only wearables' first loads remain), and frame-table row uploads went from 87–121 to 55–64. No quality drops anywhere: creatures are now always full-res on PC.
+
+## ADR-157: Allocation-free per-frame view reads
+
+**Context:** A sampling heap profile (including objects collected by minor and major GCs) of the 42 s PC-budget run showed the client allocating about 22 MB/s. The view's per-frame mirror loop made the biggest share: about 12.7k `World.get()` calls per frame, and each one builds a fresh dictionary object (Transform 3.7k, ResourceNode 1.5k, HitReact 1.4k, PrevTransform 1.1k, Sprite, Health and others). On top of that, `groundZ` built two chunk-key strings per entity per frame. GC time in the CPU profile stayed small (0.3–0.4%), but minor-GC pauses are frame-time jitter on real hardware.
+
+**Decision:**
+- `World.getInto(e, def, out)` / `ComponentStore.readInto` fill a caller-owned object with scalar fields.
+- The view reads Transform and PrevTransform straight from the typed arrays into scratch objects (`readXform`).
+- Single-field reads use `getField`.
+- VWet/VTemp are written only when they change.
+- `groundZ` has a one-entry chunk cache that is reset every view frame.
+
+**Result:** Same work (normalised by the unchanged `query` cost), the view render subtree allocated 326 MB before and 208 MB after (-36%). get() plus groundZ allocation went from 169 MB to 53 MB (-69%). Rendering is unchanged.

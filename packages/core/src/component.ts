@@ -135,6 +135,12 @@ export class ComponentStore<S extends Schema = Schema> {
     }
     this.sparse[index] = -1;
   }
+  /** Fill `out` with the scalar fields (array fields are skipped); false if absent. Allocation-free get() for hot loops. */
+  readInto(index: number, out: Record<string, number>): boolean {
+    const s = this.sparse[index]!; if (s < 0) return false;
+    for (const f of this.fields) if (!this.isArray(f)) out[f] = this.data[f][s]!;
+    return true;
+  }
   /** Copy of the component (arrays copied to number[]). */
   get(index: number): SchemaValues<S> | undefined {
     const s = this.sparse[index]!; if (s < 0) return undefined;

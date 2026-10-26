@@ -156,6 +156,10 @@ export class World {
   get<S extends Schema>(e: Entity, def: ComponentDef<S>): SchemaValues<S> | undefined {
     return this.isAlive(e) ? this.store(def).get(entityIndex(e)) : undefined;
   }
+  /** ADR-157: allocation-free get(): fills the caller-owned `out` (scalar fields only) and returns it, else undefined. */
+  getInto<S extends Schema, O extends Partial<SchemaValues<S>>>(e: Entity, def: ComponentDef<S>, out: O): O | undefined {
+    return this.isAlive(e) && this.store(def).readInto(entityIndex(e), out as unknown as Record<string, number>) ? out : undefined;
+  }
   /** Writes several fields; marks changed. Throws if missing. */
   set<S extends Schema>(e: Entity, def: ComponentDef<S>, values: SchemaInit<S>): void {
     const st = this.store(def); const i = entityIndex(e);

@@ -70,11 +70,22 @@ const PLAYER_KEYS = ["player", "player_b", "player_c"];
 
 /** Camera fallback when no player is replicated for CAMERA_GRACE_FRAMES: the legacy origin spawn (server SPAWN). */
 /** World z of an entity at (x, y): the sim's z, lifted onto the terrain step (tile height) it stands on. */
+const gz: { tiles: TileMap | undefined; cx: number; cy: number; c: ReturnType<TileMap["getChunk"]> } = { tiles: undefined, cx: 0, cy: 0, c: undefined };
+/** Drop groundZ's chunk cache (chunks can be replaced between frames). */
+export function resetGroundCache(): void { gz.tiles = undefined; gz.c = undefined; }
 export function groundZ(tiles: TileMap | undefined, x: number, y: number, z: number): number {
-  if (!tiles) return z; const tx = Math.floor(x), ty = Math.floor(y); const c = tiles.getChunk(tileToChunk(tx), tileToChunk(ty));
+  if (!tiles) return z; const tx = Math.floor(x), ty = Math.floor(y); const cx = tileToChunk(tx), cy = tileToChunk(ty);
+  // ADR-157: one-entry chunk cache (getChunk builds a string key: 2 lookups per entity per frame); reset every view frame
+  if (gz.tiles !== tiles || gz.cx !== cx || gz.cy !== cy) { gz.tiles = tiles; gz.cx = cx; gz.cy = cy; gz.c = tiles.getChunk(cx, cy); }
+  const c = gz.c;
   return c ? Math.max(z, c.height[tileToLocal(ty) * CHUNK_SIZE + tileToLocal(tx)] ?? 0) : z;
 }
 /** ADR-155 camera z easing: time constant (s) and the jump (world z) beyond which it snaps (teleport / respawn). */
+/** ADR-157: Transform-shaped read straight from the typed arrays into a scratch object (no allocation, no keyed stores). */
+function readXform(w: World, e: Entity, def: typeof Transform | typeof PrevTransform, out: { x: number; y: number; z: number; facing: number }): typeof out | undefined {
+  if (!w.isAlive(e)) return undefined; const st = w.store(def); const i = entityIndex(e); if (!st.has(i)) return undefined; const k = st.slot(i), d = st.data as Record<"x" | "y" | "z" | "facing", Float32Array>;
+  out.x = d.x[k]!; out.y = d.y[k]!; out.z = d.z[k]!; out.facing = d.facing[k]!; return out;
+}
 export const CAM_Z_TAU = 0.15, CAM_Z_SNAP = 4;
 export const CAMERA_FALLBACK = { x: 16, y: 16, z: 0 };
 const CAMERA_GRACE_FRAMES = 300;
@@ -242,7 +253,7 @@ export class IsoView {
     let defs: ReturnType<typeof gameplayDefs> | undefined; try { defs = gameplayDefs(net); } catch { defs = undefined; }
     const seen = this.seen; seen.clear();
     // the sim moves on the z=0 plane; lift entities onto the terrain step they stand on (tile height = world z)
-    this.lastTiles = tiles; const ground = (x: number, y: number, z: number): number => groundZ(tiles, x, y, z);
+    this.lastTiles = tiles; resetGroundCache(); const ground = (x: number, y: number, z: number): number => groundZ(tiles, x, y, z);
     let dressed: Set<Entity> | undefined;
     if (lowendDress && this.appearanceEnabled && net.isRegistered(Appearance)) { // nearest N to the camera keep their layers
       const cx = this.renderer.camera.x, cy = this.renderer.camera.y;
@@ -251,7 +262,7 @@ export class IsoView {
     }
     for (const e of net.query([Transform])) {
       if (e === net.environment) continue;
-      const cur = net.get(e, Transform)!; const prev = net.get(e, PrevTransform) ?? cur;
+      const cur = readXform(net, e, Transform, this.sCur)!; const prev = readXform(net, e, PrevTransform, this.sPrev) ?? cur; // ADR-157: scratch, no per-entity allocation
       let ve = this.map.get(e);
       if (ve === undefined) {
         const spec = this.classify(net, e, defs, e === player);
@@ -276,27 +287,27 @@ export class IsoView {
       const dx = cur.x - prev.x, dy = cur.y - prev.y, moving = dx * dx + dy * dy > 1e-6;
       let facing = cur.facing;
       if (!facing) { if (moving) this.lastMove.set(e, Math.atan2(dy, dx)); facing = this.lastMove.get(e) ?? 0; }
-      v.set(ve, PrevTransform, { x: prev.x, y: prev.y, z: ground(prev.x, prev.y, prev.z), facing: v.get(ve, Transform)!.facing });
+      v.set(ve, PrevTransform, { x: prev.x, y: prev.y, z: ground(prev.x, prev.y, prev.z), facing: v.getField(ve, Transform, "facing")! });
       v.set(ve, Transform, { x: cur.x, y: cur.y, z: ground(cur.x, cur.y, cur.z), facing });
       if (v.has(ve, VAnim)) {
-        const ga = net.get(e, GAnim); const dead = net.has(e, Dead);
+        const ga = net.getInto(e, GAnim, this.sAnim); const dead = net.has(e, Dead);
         let state = dead ? 5 : ga && ga.anim > 1 ? animMap(ga.anim) : moving ? (net.has(e, Zombie) ? 6 : 1) : 0;
-        const an = net.get(e, Animal);
+        const an = net.has(e, Animal) ? net.get(e, Animal) : undefined;
         if (an) state = this.animalAnim(net, e, an, moving, dead, player);
         // ADR-107: anything on a swim tile at ground level swims (players have no replicated AnimState; locomotion only)
         if (!dead && (state <= 2 || state === 6 || state === 14) && cur.z < 0.5 && defs && tiles && defs.movement.swimTiles.has(tiles.getTile(Math.floor(cur.x), Math.floor(cur.y)))) state = 14;
-        const a = v.get(ve, VAnim)!; if (a.state !== state) v.set(ve, VAnim, { state, startTick: v.tick });
-        const wet = net.get(e, Wetness); if (wet) v.set(ve, VWet, { level: wet.level });
-        const bt = net.get(e, BodyTemp); if (bt) v.set(ve, VTemp, { cold: bt.cold, heat: bt.heat, shivering: bt.shivering });
+        if (v.getField(ve, VAnim, "state") !== state) v.set(ve, VAnim, { state, startTick: v.tick });
+        const wet = net.getField(e, Wetness, "level"); if (wet !== undefined && v.getField(ve, VWet, "level") !== wet) v.set(ve, VWet, { level: wet });
+        const bt = net.getInto(e, BodyTemp, this.sTemp); if (bt && (v.getField(ve, VTemp, "cold") !== bt.cold || v.getField(ve, VTemp, "heat") !== bt.heat || v.getField(ve, VTemp, "shivering") !== bt.shivering)) v.set(ve, VTemp, { cold: bt.cold, heat: bt.heat, shivering: bt.shivering });
       }
       if (net.has(e, ResourceNode) && v.has(ve, Sprite)) { // depleted nodes fade out
-        const amt = net.get(e, ResourceNode)!.amount; const empty = amt === 0;
+        const amt = net.getField(e, ResourceNode, "amount")!; const empty = amt === 0;
         // ADR-128: replicated node hp dropped -> short damped wiggle away from the local player (every client sees it)
         const was = this.nodeAmt.get(e); this.nodeAmt.set(e, amt);
         if (was !== undefined && amt < was) { const pt = player !== undefined ? net.get(player, Transform) : undefined; const ang = pt ? Math.atan2(cur.y - pt.y, cur.x - pt.x) : 0; this.nodeHit.set(e, { at: performance.now(), dx: Math.cos(ang), dy: Math.sin(ang) }); }
         const hit = this.nodeHit.get(e);
         if (hit) { const o = nodeWiggle(performance.now() - hit.at); if (o === undefined) this.nodeHit.delete(e); else v.set(ve, Transform, { x: cur.x + hit.dx * o, y: cur.y + hit.dy * o }); }
-        const sp = v.get(ve, Sprite)!; const want = empty ? 0.0001 : this.baseScale(ve); if (sp.scale !== want) v.set(ve, Sprite, { scale: want });
+        const want = empty ? 0.0001 : this.baseScale(ve); if (v.getField(ve, Sprite, "scale") !== want) v.set(ve, Sprite, { scale: want });
       }
       this.syncHitReact(net, e, ve, cur);
       if (v.has(ve, Sprite) && net.has(e, NodeRegrow)) { // ADR-134: stump while it lasts, then invisible until regrown elsewhere
@@ -361,6 +372,8 @@ export class IsoView {
     else if (r.heldFrames === held0 && this.checks < 90 && ++this.checks % 30 === 0 && daylightOf(r) > 0.5) bc.start(); // held (settling) frames draw nothing: not a black frame
   }
   private camZ: number | undefined; private camZAt = 0;
+  /** ADR-157 per-frame scratch components (render loop reads without allocating). */
+  private sCur = { x: 0, y: 0, z: 0, facing: 0 }; private sPrev = { x: 0, y: 0, z: 0, facing: 0 }; private sAnim: Record<string, number> & { anim: number } = { anim: 0 }; private sTemp = { cold: 0, heat: 0, shivering: 0 }; private sHit: Record<string, number> & { startTick: number; dir: number } = { startTick: 0, dir: 0 };
   private checks = 0; private blackFrames = 0; private blackCheck: BlackFrameCheck | undefined;
   /** View entity currently given to setFocusEntity; cleared when destroyed so a recycled id (a remote player) never inherits the focus silhouette. */
   private focusVe = -1;
@@ -387,7 +400,7 @@ export class IsoView {
   }
   /** ADR-134: replicated HitReact -> flinch (knockback nudge on the view Transform, squash on Sprite.scale, flash/tilt bindings). */
   private syncHitReact(net: World, e: Entity, ve: Entity, cur: { x: number; y: number }): void {
-    const h = net.get(e, HitReact); const v = this.view; const now = performance.now();
+    const h = net.getInto(e, HitReact, this.sHit); const v = this.view; const now = performance.now();
     if (h) { const s = this.hitSeen.get(e);
       if (!s) this.hitSeen.set(e, { tick: h.startTick, at: net.tick - h.startTick <= 6 ? now : -1e9, dir: hitDirRad(h.dir) }); // late joiners skip stale hits
       else if (s.tick !== h.startTick) { s.tick = h.startTick; s.at = now; s.dir = hitDirRad(h.dir); } }
@@ -407,7 +420,7 @@ export class IsoView {
   private animalHp = new Map<Entity, { hp: number; hitUntil: number }>();
   /** Animal anim (render state ids: 0 idle, 1 walk, 2 run, 4 hit, 5 death) from Animal.state (0 idle, 1 wander, 2 flee), movement and Health. */
   private animalAnim(net: World, e: Entity, an: { kind: number; state: number }, moving: boolean, dead: boolean, _player: Entity | undefined): number {
-    const now = performance.now(); const hp = net.get(e, Health)?.hp; const rec = this.animalHp.get(e) ?? { hp: hp ?? 0, hitUntil: 0 };
+    const now = performance.now(); const hp = net.getField(e, Health, "hp"); const rec = this.animalHp.get(e) ?? { hp: hp ?? 0, hitUntil: 0 };
     if (hp !== undefined) { if (hp < rec.hp - 1e-3) rec.hitUntil = now + 250; rec.hp = hp; } this.animalHp.set(e, rec); // ADR-117: animal sounds come from the audio director
     const st = dead || (hp !== undefined && hp <= 0) ? 5 : now < rec.hitUntil ? 4 : an.state === 2 && moving ? 2 : moving ? 1 : petSits(net, e) ? 13 : 0; // ADR-146: Stay -> sit
     this.animalPrev.set(e, st === 5 ? 5 : an.state);
