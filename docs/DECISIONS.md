@@ -1050,3 +1050,11 @@ checked visually).
   pushing another one. Browser and Android Back still close the top menu. Side effect: one extra Back press may be needed
   before leaving the page.
 - Test: `adr167_back_history`.
+
+## ADR-168: stopped music streams unload cleanly
+- Bug: the audit logged `music_explore_*.ogg net::ERR_ABORTED`. When a stream voice was released, `media.src = ""` aborted the
+  request. It also fired the element's `onerror` format fallback, so the stopped track refetched the `.m4a` (about 1.8 MB)
+  and played it on a disconnected node.
+- Fix: release clears `onerror` and `onended` first, then calls `removeAttribute("src")` and `load()`. The ERR_ABORTED left is
+  Chrome cancelling the stream on purpose.
+- Test: `adr168_music_stream_release`.

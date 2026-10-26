@@ -132,7 +132,7 @@ export class AudioMixer {
   private release(v: Voice): void {
     if (v.ended) return; v.ended = true;
     try { v.src?.stop(); } catch { /* already */ } try { v.src?.disconnect(); } catch { /* */ }
-    if (v.media) { try { v.media.pause(); v.media.src = ""; } catch { /* */ } try { v.mediaNode?.disconnect(); } catch { /* */ } }
+    if (v.media) { try { v.media.onerror = null; v.media.onended = null; v.media.pause(); v.media.removeAttribute?.("src"); v.media.load?.(); } catch { /* */ } try { v.mediaNode?.disconnect(); } catch { /* */ } }
     try { v.chain.gain.disconnect(); } catch { /* */ }
     if (this.pool.length < 48) this.pool.push(v.chain);
     const i = this.voices.indexOf(v); if (i >= 0) this.voices.splice(i, 1);
