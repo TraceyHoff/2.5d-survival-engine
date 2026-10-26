@@ -197,10 +197,38 @@ class MCanvas(Canvas):
         m = np.asarray(m_im, np.float32) / 255
         if ring: m = np.asarray(m_im.filter(ImageFilter.MaxFilter(7)), np.float32) / 255  # outline ring takes the part's tint too
         if tm is not None: s.tm = s.tm * (1 - m)[..., None] + np.array(tm, np.float32) * m[..., None]
+    pal = None
+    def cel_snap(s, im):
+        """cel post pass: snap every pixel to a drawn palette tone (no in-between airbrush tones) and harden alpha
+        (binary for the figure; the contact shadow stays one flat translucent tone)."""
+        from palette import SHADOW, SHADOW_ALPHA
+        a = np.asarray(im.convert("RGBA")).astype(np.float32); P = np.array(sorted(set(s.pal)), np.float32)
+        rgb = a[..., :3]; al = a[..., 3]; sh = np.array(hex2rgb(SHADOW), np.float32)
+        d = ((rgb[..., None, :] - P[None, None]) ** 2).sum(-1); q = P[d.argmin(-1)]
+        shadow = (al < 255 * (SHADOW_ALPHA + .12)) & (np.abs(rgb - sh).sum(-1) < 60)
+        out = np.zeros_like(a); fig = (al >= 128) & ~shadow
+        out[fig, :3] = q[fig]; out[fig, 3] = 255
+        sm = shadow & (al >= 255 * SHADOW_ALPHA * .5); out[sm, :3] = sh; out[sm, 3] = round(255 * SHADOW_ALPHA)
+        return Image.fromarray(out.astype(np.uint8), "RGBA")
+    cel = False     # cel look (solid fills, hard-edged shade/highlight bands, hard alpha) — set by parts.body
+    def shadow(s, cx, cy, rx, ry, *a, **k):
+        if not s.cel: return Canvas.shadow(s, cx, cy, rx, ry, *a, **k)
+        import toon; g = toon.ImageFilter.GaussianBlur; toon.ImageFilter.GaussianBlur = lambda r: ImageFilter.BoxBlur(0)
+        try: Canvas.shadow(s, cx, cy, rx, ry, *a, **k)
+        finally: toon.ImageFilter.GaussianBlur = g
     def part(s, polys, rp, tm=None, **kw):
+        if s.cel:
+            import toon; sm = toon.smooth; toon.smooth = lambda e0, e1, x: (np.asarray(x) >= (e0 + e1) / 2).astype(np.float32)
+            try: return s._part(polys, rp, tm, **kw)
+            finally: toon.smooth = sm
+        return s._part(polys, rp, tm, **kw)
+    def _part(s, polys, rp, tm=None, **kw):
         if rp in ("P", "S"):
             tm = (1, 0) if rp == "P" else (0, 1); rp = NEU; kw.setdefault("ink", NEU_INK)
         elif tm is None: tm = (0, 0)
+        if s.cel:
+            import toon; r = ramp(rp) if isinstance(rp, str) else rp
+            s.pal += [tuple(x) for x in r] + [tuple(kw.get("ink") or toon.outline_col(r))] + [tuple(tint_col(kw[k])) for k in ("shade_col", "base_col", "hl_col") if kw.get(k)]
         m_im = Canvas.part(s, polys, rp, **kw)
         if m_im is not None and m_im.getbbox():
             s._upd(m_im, tm, ring=kw.get("outline", True))
@@ -247,12 +275,14 @@ class MCanvas(Canvas):
         if tm is not None: s._upd(m, tm, ring=False)
     def fill(s, polys, color, alpha=255, clip=None, blur_r=0, tm=None):
         color = tint_col(color)
+        if s.cel: s.pal.append(tuple(color)); alpha, blur_r = 255, 0   # solid fills only
         Canvas.fill(s, polys, color, alpha, clip, blur_r)
         if tm is not None:
             m = s.mask_from(polys)
             if clip is not None: m = Image.fromarray(np.minimum(np.asarray(m), np.asarray(clip)))
             s._detail(m, tm)
     def line(s, pts, color, width=1.0, clip=None, alpha=255, tm=None):
+        if s.cel: s.pal.append(tuple(tint_col(color))); alpha = 255
         Canvas.line(s, pts, tint_col(color), width, clip, alpha)
         if tm is not None:
             m = Image.new("L", (s.W, s.H), 0); d = ImageDraw.Draw(m); sp = s.S(pts); rr = width * SS / 2
@@ -330,6 +360,8 @@ class Ctx:
         img = s.cv.img
         im1 = downscale(img, (FW, FH)); im2 = downscale(img, (FW * 2, FH * 2))
         tm = s.cv.tm * (np.asarray(img, np.float32)[..., 3:4] / 255)
+        if s.cv.cel:   # solid cel look: palette-snapped colours, hard alpha, flat (0/1) tint mask per region
+            im1, im2 = s.cv.cel_snap(im1), s.cv.cel_snap(im2); tm = np.round(np.clip(tm, 0, 1))
         def mk(sz):
             ch = [np.asarray(Image.fromarray(np.ascontiguousarray(tm[..., i] * 255).astype(np.uint8)).resize(sz, Image.BOX)) for i in range(2)]
             return np.stack(ch + [np.zeros_like(ch[0])], -1)

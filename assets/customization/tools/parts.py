@@ -50,7 +50,7 @@ def fv(c): return c.facev()
 
 # ============================================================ BODY
 def body(c, spec):
-    K = c.K; B = K["B"]; cv = c.cv
+    K = c.K; B = K["B"]; cv = c.cv; cv.cel = True; cv.pal = []   # solid cel-shaded skin (no airbrush gradients)
     if not K.get("sit"): cv.shadow(24, 74.5, 10.5, 3.6)   # seated riders cast no ground shadow (the vehicle does)
     for side in (-1, 1):
         hip, ft = K["hips"][side], K["feet"][side]
