@@ -16,7 +16,7 @@ def draw(c, slot, spec, hat=False):
     elif slot == "face": parts.draw_face(c, spec)
     elif slot == "eyes": parts.draw_eyes(c, spec)
 
-CEL_SLOTS = {"body", "hair", "top", "bottom", "shoes", "hat"}   # slots re-rendered with the rig cel mode (see rig.MCanvas.cel)
+CEL_SLOTS = {"body", "hair", "top", "bottom", "shoes", "hat", "face"}   # slots re-rendered with the rig cel mode (see rig.MCanvas.cel)
 def render_frame(bt, slot, spec, d, anim, fi, n, hat=False, part=None):
     K = pose(bt, d, anim, fi, n); c = Ctx(K); c.extra = None
     if slot in CEL_SLOTS: c.cv.cel = True; c.cv.pal = []   # solid cel look (flat palette fills, hard shade/highlight, binary alpha, 0/1 tintmask)
