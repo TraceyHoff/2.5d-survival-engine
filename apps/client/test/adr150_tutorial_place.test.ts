@@ -17,4 +17,11 @@ describe("ADR-150 tutorial card placement", () => {
       expect(r.x).toBeGreaterThanOrEqual(0); expect(r.x + r.w).toBeLessThanOrEqual(view.w); expect(r.y + r.h).toBeLessThanOrEqual(view.h);
     });
   }
+  it("phone landscape: a tall card clears the Run button's spotlight ring and the Run button when it is not the target", () => {
+    const view = { w: 860, h: 412 }, card = { w: 260, h: 201 }, run: Rect = { x: 20, y: 150, w: 44, h: 44 };
+    const ov = (a: Rect, b: Rect) => Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+    const ring: Rect = { x: run.x - 8, y: run.y - 8, w: run.w + 16, h: run.h + 16 };
+    const a = placeCard(view, card, run, []); expect(ov({ ...a, ...card }, ring)).toBe(0);
+    const b = placeCard(view, card, undefined, [run]); expect(ov({ ...b, ...card }, run)).toBe(0);
+  });
 });

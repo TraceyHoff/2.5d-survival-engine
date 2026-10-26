@@ -23,10 +23,12 @@ export function placeCard(view: { w: number; h: number }, card: { w: number; h: 
     const ty = clamp(target.y + target.h / 2 - card.h / 2, m, maxY); cands.push({ x: target.x - card.w - 14, y: ty }, { x: target.x + target.w + 14, y: ty });
   }
   cands.push({ x: cx, y: view.h * 0.16 }, { x: cx, y: maxY - view.h * 0.2 }, { x: m, y: view.h * 0.3 }, { x: view.w - card.w - m, y: view.h * 0.3 }, { x: cx, y: pz.y - card.h - m }, { x: cx, y: pz.y + pz.h + m }, { x: m, y: m }, { x: view.w - card.w - m, y: m }, { x: m, y: maxY }, { x: view.w - card.w - m, y: maxY }, { x: cx, y: m }, { x: cx, y: maxY }, { x: cx, y: (view.h - card.h) / 2 });
+  for (let i = 1; i < 8; i++) { const x = m + ((view.w - card.w - 2 * m) * i) / 8; cands.push({ x, y: m }, { x, y: maxY }); } // ADR-150: row scan for tight landscape phones
+  const tg = target && { x: target.x - 10, y: target.y - 10, w: target.w + 20, h: target.h + 20 }; // the spotlight (4px pad + border) is drawn outside the target
   let best = cands[0]!; let bestScore = Infinity;
   for (const c0 of cands) {
     const c = { x: clamp(c0.x, m, Math.max(m, view.w - card.w - m)), y: clamp(c0.y, m, maxY) }; const r = { ...c, w: card.w, h: card.h };
-    const s = (target ? overlap(r, target) * 100 : 0) + avoid.reduce((a, b) => a + overlap(r, b) * 20, 0) + overlap(r, pz);
+    const s = (tg ? overlap(r, tg) * 1000 : 0) + avoid.reduce((a, b) => a + overlap(r, b) * 20, 0) + overlap(r, pz);
     if (s < bestScore - 1e-6) { best = c; bestScore = s; }
   }
   return best;
