@@ -18,6 +18,9 @@ import { pieceVariantOpts } from "./piece-variant.js";
 import { loadManifest, mergeManifests, resolveManifestShards, buildPieceVisual, type AssetRegistry, type ManifestFragment, type ManifestJson } from "@engine/assets";
 import { BuildGhost, pieceArtRow, ROT_EXACT_PIVOT, ROT_NO_OCCLUDE, IsoRenderer, Canvas2DRenderer, chooseRenderer, Sprite, Shadow, LightSource, Occluder, SpriteFlag, sourcesFromManifest, coreAppearanceBinding, CameraTargetGuard } from "@engine/render";
 import { countFraction } from "./load-progress.js";
+import { VehicleView, type VehicleSnapshot, type VehicleRenderDef } from "@engine/render";
+import { Vehicle as GVehicle, VehicleSeats, VehicleState, Hitch, vehicleDefOf, localPlayerVehicle } from "@engine/gameplay";
+import { netIdOf } from "@engine/net";
 import { roadSpriteKeys, ROAD_FLAGS, signFrameId } from "./road-sign-view.js";
 import { Road, Sign, surfaceDef, signDef, walkAnimRate, petSits } from "@engine/gameplay";
 import { HitReact, NodeRegrow, hitDirRad, Equipment, Worn, wornCosmetics } from "@engine/gameplay";
@@ -355,6 +358,7 @@ export class IsoView {
     for (const [ne, ve] of this.map) if (!seen.has(ne)) { if (ve === this.focusVe) { r.setFocusEntity(-1); this.focusVe = -1; } v.destroy(ve); this.map.delete(ne); this.characters.delete(ve); this.lightOf.delete(ne); this.pieceStates.delete(ve); this.lastMove.delete(ne); this.nodeAmt.delete(ne); this.nodeHit.delete(ne); this.animalHp.delete(ne); this.animalPrev.delete(ne); this.scales.delete(ve); this.hitSeen.delete(ne); this.hitPoseOf.delete(ve); this.gearOf.delete(ve); }
 
     this.syncClutter(tiles, ground);
+    this.syncVehicles(net, player, ground, frac);
     const camE = CAM_ANIMAL && this.camAnimal !== undefined ? this.camAnimal : player;
     const pv = camE !== undefined ? this.map.get(camE) : undefined;
     let want: { x: number; y: number; z: number } | undefined;
@@ -479,8 +483,31 @@ export class IsoView {
   }
   private baseScale(ve: Entity): number { return this.scales.get(ve) ?? 1; }
 
+  /** ADR-170: vehicles were never drawn in the client (render's VehicleView had no caller). Mirror every net Vehicle as a
+   * VehicleSnapshot (key = NetId) into VehicleView, which owns the segment sprites + headlight lights in the view World. */
+  private vehicleView: VehicleView | undefined; private vehAt = 0;
+  readonly vehicleSnaps: VehicleSnapshot[] = [];
+  private syncVehicles(net: World, player: Entity | undefined, ground: (x: number, y: number, z: number) => number, frac: number | undefined): void {
+    if (!net.isRegistered(GVehicle)) return;
+    const list = this.vehicleSnaps; list.length = 0;
+    for (const e of net.query([GVehicle, Transform])) {
+      const d = vehicleDefOf(net, e); if (!d) continue;
+      const t = net.get(e, Transform)!, vh = net.get(e, GVehicle)!; const key = netIdOf(net, e) ?? entityIndex(e) + 1;
+      const seats = net.has(e, VehicleSeats) ? Array.from((net.get(e, VehicleSeats) as unknown as { occupant: ArrayLike<number> }).occupant) : undefined;
+      const parent = net.has(e, Hitch) ? net.getField(e, Hitch, "parentNetId") ?? 0 : 0;
+      const state = net.has(e, VehicleState) ? net.getField(e, VehicleState, "flags") ?? 0 : undefined;
+      list.push({ key, def: d as unknown as VehicleRenderDef, x: t.x, y: t.y, z: ground(t.x, t.y, t.z), heading: vh.heading, drift: vh.drift, speed: vh.speed,
+        ...(seats ? { occupants: seats } : {}), ...(parent ? { parent } : {}), ...(state !== undefined ? { state } : {}) });
+    }
+    if (!list.length && !this.vehicleView) return;
+    this.vehicleView ??= new VehicleView(this.view, this.registry, { art: true, pages: this.renderer.atlas as never });
+    const now = performance.now(), dt = this.vehAt ? Math.min(0.25, (now - this.vehAt) / 1000) : 0; this.vehAt = now;
+    const f = frac ?? 0.5, darkness = Math.max(0, Math.min(1, Math.cos(f * 2 * Math.PI) * 1.6 + 0.2));
+    this.vehicleView.sync(list, dt, { darkness, lowEnd: this.renderer.capabilities.lowEnd, ...(player !== undefined ? { localVehicle: localPlayerVehicle(net, player) } : {}), riderShadows: false });
+  }
   private classify(net: World, e: Entity, defs: ReturnType<typeof gameplayDefs> | undefined, own: boolean): Spec | undefined {
     const h = (entityIndex(e) * 2654435761) >>> 0;
+    if (net.isRegistered(GVehicle) && net.has(e, GVehicle)) return undefined; // ADR-170: drawn by VehicleView (syncVehicles)
     // characters: own player (Survival is owner-only) + other players and human bots (PlayerId / Appearance / Health+AnimState)
     if (net.has(e, Animal)) {
       const k = animalDefs()[net.get(e, Animal)!.kind]; const r = this.rs(k?.spriteKey);

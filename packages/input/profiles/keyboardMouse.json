@@ -183,6 +183,14 @@
    {
     "action": "PlaceSign",
     "control": "key.KeyN"
+   },
+   {
+    "action": "Vehicle.Engine",
+    "control": "key.KeyV"
+   },
+   {
+    "action": "Vehicle.Lights",
+    "control": "key.KeyF"
    }
   ],
   "Building": [

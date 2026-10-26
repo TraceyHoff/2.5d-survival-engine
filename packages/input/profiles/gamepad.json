@@ -204,6 +204,20 @@
     "modifiers": [
      "pad.rb"
     ]
+   },
+   {
+    "action": "Vehicle.Engine",
+    "control": "pad.y",
+    "modifiers": [
+     "pad.rb"
+    ]
+   },
+   {
+    "action": "Vehicle.Lights",
+    "control": "pad.b",
+    "modifiers": [
+     "pad.rb"
+    ]
    }
   ],
   "Building": [

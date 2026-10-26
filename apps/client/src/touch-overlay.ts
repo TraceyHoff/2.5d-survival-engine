@@ -9,6 +9,7 @@ import type { ElementGeometry } from "@engine/input";
 export const TOUCH_LABELS: Record<string, { icon: string; text: string }> = {
   attack: { icon: "⚔", text: "Hit" }, context: { icon: "✋", text: "Use" }, sprint: { icon: "»", text: "Run" }, reload: { icon: "↻", text: "Reload" },
   hotbar: { icon: "◎", text: "Slot" }, confirm: { icon: "✓", text: "Place" }, cancel: { icon: "✕", text: "Cancel" }, rotate: { icon: "⟳", text: "Rotate" },
+  engine: { icon: "🔑", text: "Engine" }, lights: { icon: "💡", text: "Lights" }, // ADR-170: only in the driving layout
 };
 const BG = (g: ElementGeometry): string => g.pressed ? "rgba(255,212,90,.45)" : `rgba(20,16,12,${g.kind === "joystick" ? ".12" : ".28"})`;
 export function mountTouchOverlay(root: HTMLElement, geometry: () => ElementGeometry[], hidden: () => boolean = () => false): { destroy(): void; draw(): void } {

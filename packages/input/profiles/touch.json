@@ -149,6 +149,14 @@
      "negative": "touch.pinch.in",
      "positive": "touch.pinch.out"
     }
+   },
+   {
+    "action": "Vehicle.Engine",
+    "control": "touch.btn.engine"
+   },
+   {
+    "action": "Vehicle.Lights",
+    "control": "touch.btn.lights"
    }
   ],
   "Building": [

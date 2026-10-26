@@ -15,6 +15,7 @@ import { BuildMode } from "./build-mode.js";
 import { mountBuildHud, onTouchControl } from "./build-hud.js";
 import { mountToolHint, toolIconFrame } from "./tool-hint.js";
 import { mountWorldTools, type WorldToolsHandle } from "./world-tools.js";
+import { mountVehicleControls, type VehicleControls } from "./vehicle-controls.js";
 import { mountTouchOverlay, syncTouchHidden } from "./touch-overlay.js";
 /**
  * Client bootstrap: fixed-step loop + WebGL2 IsoRenderer view (./view.ts, Art's pack) + network session.
@@ -102,6 +103,12 @@ input.push("Gameplay");
  * (./game-menus.ts): real, visible, focusable buttons that also work for mouse; the HUD sits where chat/social were. */
 const MENU_BAR_IDS = new Set(["inventory", "crafting", "map", "chat", "social", "build", "back"]);
 const touchLayout = { ...DEFAULT_TOUCH_LAYOUTS.gameplay, elements: DEFAULT_TOUCH_LAYOUTS.gameplay.elements.filter((e) => !MENU_BAR_IDS.has(e.id)) };
+/** ADR-170: the driving layout adds Engine / Lights buttons (right side, clear of reload / hotbar / attack); swapped in only while seated. */
+const driveTouchLayout = { ...touchLayout, elements: [...touchLayout.elements,
+  { id: "engine", kind: "button" as const, anchor: { x: 0.86, y: 0.4 }, radius: 20, control: "touch.btn.engine", label: "Engine" },
+  { id: "lights", kind: "button" as const, anchor: { x: 0.94, y: 0.4 }, radius: 20, control: "touch.btn.lights", label: "Lights" }] };
+let vehicleCtl: VehicleControls | undefined;
+const gameplayTouchLayout = (): typeof touchLayout => (vehicleCtl?.driving ? driveTouchLayout : touchLayout) as typeof touchLayout;
 const browserInput = attachBrowserInput(canvas, input, { ...(matchMedia("(pointer: coarse)").matches ? { virtualLayout: touchLayout } : {}), insets: () => safeAreaInsets() });
 let menus: GameMenus | undefined;
 /** ADR-117 audio (Web Audio mixer + snapshot-driven director); low-CPU mode follows LOW_END-style detection. */
@@ -222,7 +229,7 @@ const worldToolsApi = { road: (n: number) => worldTools?.road(n), roadSurface: (
 /** Build mode (aim-point placement); `buildMode.preview` is the Renderer's buildPreview. */
 const buildMode = new BuildMode({ input, ctx: () => menuCtx(), send: (i) => sendIntent(i), device: () => promptDevice(), onPickPiece: () => { if (promptDevice() !== "keyboardMouse") menus?.open("build"); },
   aim: () => { const p = session.player; const pt = p !== undefined ? world.get(p, Transform) : undefined; return p !== undefined && pt ? aim.resolve(world, p, pt) : undefined; },
-  onActiveChange: (on) => { const c = browserInput.controls; if (c) c.layout = on ? buildTouchLayout : touchLayout; } });
+  onActiveChange: (on) => { const c = browserInput.controls; if (c) c.layout = on ? buildTouchLayout : gameplayTouchLayout(); } });
 const buildHud = mountBuildHud(root, { buildMode, device: () => promptDevice(), target: canvas,
   screenToWorld: (x, y) => iso ? iso.renderer.camera.cssToWorld(x, y) : screenToWorld(x - innerWidth / 2 + cam.sx, y - innerHeight / 2 + cam.sy),
   blocked: (x, y) => onTouchControl(buildTouchLayout, x, y, innerWidth, innerHeight) });
@@ -242,6 +249,7 @@ function onUiFrame(): void {
   if (input.pressed("ToggleBuild") && promptDevice() === "gamepad") { menus?.open("build"); return; } // ADR-136: pad LB+Y (KBM B is a UINav hotkey)
   { const id = padMenuAction(input); if (id) { menus?.open(id); return; } } // ADR-139: pad-only bindings: Select = inventory, LB+Select = crafting, RB+Select = chat
   if (input.pressed("QuickUse") && farm) { const p = session.player; if (p !== undefined && quickUseFires(safeFarmPrompt(p))) farm.trigger(); }
+  if (vehicleCtl?.update()) return; // ADR-170: enter / exit (Interact), engine + headlights while driving
   if (input.pressed("Interact")) { const c = menuCtx(); const t = c && interactPanel(c); if (t?.panel === "trade") menus?.openStall(t.stall); else if (t?.panel === "station") menus?.openStation(t.station, t.kind); else if (t?.panel === "pet") menus?.openPet(t.pet); else if (t?.panel === "loot") menus?.openLoot(t.bag); else if (t) menus?.open("character"); }
 }
 /** ADR-160: a loot bag the server opened for us (primary click / tap fallback) shows in the inventory panel once. */
@@ -501,23 +509,25 @@ deathUi = mountDeathScreen(root, { world: () => world, player: () => session.pla
   respawn: () => { const c = session.client; if (!c?.connected) return false; try { return c.sendCommand(gameplayNet(RespawnCmd), {} as never) !== false; } catch { return false; } },
   onDeath: () => { menus?.nav.closeAll(); buildMode.stop(); } });
 farm = mountFarmPrompt(root, {
-  world: () => world, player: () => session.player, device: promptDevice, hidden: () => !!menus?.nav.isOpen || buildMode.active,
+  world: () => world, player: () => session.player, device: promptDevice, hidden: () => !!menus?.nav.isOpen || buildMode.active || !!vehicleCtl?.driving,
   key: (action) => controlLabel(input.bindings(promptDevice(), "Gameplay").find((b) => b.binding.action === action)?.binding.control),
   use: (p) => { if (p.action === "Harvest") { if (p.target !== undefined) sendIntent({ cmd: GatherCmd, args: { target: p.target }, entities: ["target"] }); } else if (p.slot !== undefined) sendIntent({ cmd: UseCmd, args: { slot: p.slot } }); },
 });
 // ADR-119..121: sign labels, road drag tool (G), sign placing (N), settlement label, horde toasts + cues
+vehicleCtl = mountVehicleControls(root, { world: () => world, player: () => session.player, send: (i) => sendIntent(i), input,
+  toast: (t) => farm?.toast(t), onDrivingChange: () => { const c = browserInput.controls; if (c && !buildMode.active) c.layout = gameplayTouchLayout(); } });
 worldTools = mountWorldTools(root, { world: () => world, player: () => session.player, camera: () => iso?.renderer.camera, send: (i) => sendIntent(i), hidden: () => !!menus?.nav.isOpen || buildMode.active, sound: (k) => audio.mixer.play(k),
   input, device: promptDevice, canvas,
   openModal: (id, el, onClose) => menus ? menus.nav.open(id, el, onClose) : (root.append(el), { close: () => el.remove() }),
   onControl: (x, y) => { const r = canvas.getBoundingClientRect(); return !!browserInput.controls?.geometry().some((g) => g.visible && Math.hypot(g.x - (x - r.left), g.y - (y - r.top)) <= g.r + 8); } });
 // ADR-128: node health bars + hit particles + "+3 Wood" pickup toasts
-mountGatherFx(root, { world: () => world, player: () => session.player, camera: () => iso?.renderer.camera, hidden: () => !!menus?.nav.isOpen || buildMode.active, device: promptDevice,
+mountGatherFx(root, { world: () => world, player: () => session.player, camera: () => iso?.renderer.camera, hidden: () => !!menus?.nav.isOpen || buildMode.active || !!vehicleCtl?.driving, device: promptDevice,
   icon: (item, key) => panelIcon(world, key, String(item)) });
 // ADR-161: floating loot-bag / dropped-item labels with the Interact prompt
-mountLootLabels(root, { world: () => world, player: () => session.player, camera: () => iso?.renderer.camera ?? (ctx ? debugCamera(cam, innerWidth, innerHeight, devicePixelRatio || 1) : undefined), hidden: () => !!menus?.nav.isOpen || buildMode.active,
+mountLootLabels(root, { world: () => world, player: () => session.player, camera: () => iso?.renderer.camera ?? (ctx ? debugCamera(cam, innerWidth, innerHeight, devicePixelRatio || 1) : undefined), hidden: () => !!menus?.nav.isOpen || buildMode.active || !!vehicleCtl?.driving,
   device: promptDevice, key: () => controlLabel(input.bindings(promptDevice(), "Gameplay").find((b) => b.binding.action === "Interact")?.binding.control) });
 // ADR-126: tool-needed symbol over the nearest resource node (Settings toggle, live)
-mountToolHint(root, { world: () => world, player: () => session.player, camera: () => iso?.renderer.camera, hidden: () => !!menus?.nav.isOpen || buildMode.active,
+mountToolHint(root, { world: () => world, player: () => session.player, camera: () => iso?.renderer.camera, hidden: () => !!menus?.nav.isOpen || buildMode.active || !!vehicleCtl?.driving,
   enabled: () => loadSettings().toolHints !== false, device: promptDevice,
   art: (icon) => toolIconFrame(iso?.registry, icon, Math.min(3, devicePixelRatio || 1) * (promptDevice() === "touch" ? 44 : 34) / 32) });
 if (params.get("hud") !== "0" && settings.showHud) mountHud(() => world, () => session.player, { ...(num("time") !== undefined ? { hours: num("time")! } : {}), ...(wi >= 0 ? { weather: wi } : {}) });

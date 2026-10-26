@@ -8,6 +8,7 @@
  * (present = unlocked); member rows `[data-rank=member|officer|leader]`; tooltips `[data-tip]` (never `title=`).
  * Chat log lines (game-menus.ts) carry `[data-chan=global|local|party|clan|trade|whisper|system]`.
  */
+import { deployKitIntent, isKit } from "./vehicle-controls.js";
 import { clanMemberActions } from "./clan-actions.js";
 import "./gameplay-panels.css";
 import { iconForItem,
@@ -180,6 +181,13 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
           }
           if (wet) g.append(btn("Drink water", "use-water", () => send(drinkWaterIntent(), "You drink from the water."), { role: "use", title: "Drink straight from the water", data: { use: "drink" } }));
           out.push(heading("Eat & drink"), g);
+        }
+        // ADR-170: vehicle kits deploy from here (tap / click / D-pad + A); the vehicle spawns 2.5 tiles ahead
+        const kits = v.filter((s) => isKit(c.world, s.item));
+        if (kits.length) {
+          const g = grid(); g.dataset["role"] = "deploy";
+          for (const s of kits) g.append(btn(`Deploy ${s.name}`, `deploy-${s.slot}`, () => { const i = deployKitIntent(c.world, c.player, s.slot); if (i) send(i, `Deployed ${s.name}. Walk up and press Use to get in.`); }, { role: "deploy", title: s.tooltip, data: { item: String(s.item), icon: s.icon } }));
+          out.push(heading("Vehicles"), g);
         }
         // ADR-145: drop a stack on the ground (a following pet fetches it into its bag)
         const dg = grid(); dg.dataset["role"] = "drop";

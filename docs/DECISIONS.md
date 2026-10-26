@@ -1058,3 +1058,19 @@ checked visually).
 - Fix: release clears `onerror` and `onended` first, then calls `removeAttribute("src")` and `load()`. The ERR_ABORTED left is
   Chrome cancelling the stream on purpose.
 - Test: `adr168_music_stream_release`.
+
+## ADR-170: vehicles are drawn, deployable, enterable and switchable on every input
+- Bug: the client never drew vehicles (`VehicleView` had no caller). Inventory had no way to deploy a kit. Interact never
+  entered a vehicle. `VehicleEngineCmd` and `VehicleHeadlightsCmd` were registered but never bridged. Every car, truck and
+  trailer kit (25-800 kg) also overflowed the 60 kg bag, so a crafted kit stayed owed forever.
+- Fix:
+  - `view.ts syncVehicles` feeds `VehicleView` snapshots, and headlights follow the day clock.
+  - The inventory gets a "Vehicles" section with `Deploy <kit>`, which places the vehicle 2.5 tiles ahead.
+  - `vehicle-controls.ts`: Interact enters the nearest vehicle or exits it. `Vehicle.Engine` and `Vehicle.Lights` toggle
+    `{target, on:2}`, and the `#vehicle-hud` chip shows the state.
+  - Bindings: KBM V/F; pad RB+Y/RB+B; touch 🔑/💡 buttons that exist only in the driving layout and do not overlap.
+  - World prompts hide while driving. The state commands are appended to `GAMEPLAY_NET_COMMANDS`.
+  - Kit weight is capped at 8 kg, as a flat-packed crate.
+- Note: `packages/input/scripts/gen-profiles.py` is stale against the JSON profiles, so its output was not regenerated.
+  The profiles were edited by hand.
+- Test: `adr170_vehicle_controls`. Checked in the browser: deploy → enter → engine/lights → drive → exit on KBM and touch.

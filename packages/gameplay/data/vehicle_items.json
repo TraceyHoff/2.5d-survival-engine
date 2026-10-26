@@ -410,7 +410,7 @@
       "name": "Car Compact Kit",
       "category": "placeable",
       "maxStack": 1,
-      "weight": 90,
+      "weight": 8,
       "tradeable": true
     },
     {
@@ -419,7 +419,7 @@
       "name": "Car Sedan Kit",
       "category": "placeable",
       "maxStack": 1,
-      "weight": 130,
+      "weight": 8,
       "tradeable": true
     },
     {
@@ -428,7 +428,7 @@
       "name": "Car Muscle Kit",
       "category": "placeable",
       "maxStack": 1,
-      "weight": 150,
+      "weight": 8,
       "tradeable": true
     },
     {
@@ -437,7 +437,7 @@
       "name": "Car Offroad Kit",
       "category": "placeable",
       "maxStack": 1,
-      "weight": 170,
+      "weight": 8,
       "tradeable": true
     },
     {
@@ -446,7 +446,7 @@
       "name": "Car Wagon Kit",
       "category": "placeable",
       "maxStack": 1,
-      "weight": 145,
+      "weight": 8,
       "tradeable": true
     },
     {
@@ -455,7 +455,7 @@
       "name": "Truck Pickup Kit",
       "category": "placeable",
       "maxStack": 1,
-      "weight": 220,
+      "weight": 8,
       "tradeable": true
     },
     {
@@ -464,7 +464,7 @@
       "name": "Truck Flatbed Kit",
       "category": "placeable",
       "maxStack": 1,
-      "weight": 350,
+      "weight": 8,
       "tradeable": true
     },
     {
@@ -473,7 +473,7 @@
       "name": "Truck Box Kit",
       "category": "placeable",
       "maxStack": 1,
-      "weight": 450,
+      "weight": 8,
       "tradeable": true
     },
     {
@@ -482,7 +482,7 @@
       "name": "Van Cargo Kit",
       "category": "placeable",
       "maxStack": 1,
-      "weight": 200,
+      "weight": 8,
       "tradeable": true
     },
     {
@@ -491,7 +491,7 @@
       "name": "Van Passenger Kit",
       "category": "placeable",
       "maxStack": 1,
-      "weight": 210,
+      "weight": 8,
       "tradeable": true
     },
     {
@@ -500,7 +500,7 @@
       "name": "Camper Van Kit",
       "category": "placeable",
       "maxStack": 1,
-      "weight": 280,
+      "weight": 8,
       "tradeable": true
     },
     {
@@ -509,7 +509,7 @@
       "name": "Camper Rv Kit",
       "category": "placeable",
       "maxStack": 1,
-      "weight": 650,
+      "weight": 8,
       "tradeable": true
     },
     {
@@ -518,7 +518,7 @@
       "name": "Semi Tractor Kit",
       "category": "placeable",
       "maxStack": 1,
-      "weight": 800,
+      "weight": 8,
       "tradeable": true
     },
     {
@@ -527,7 +527,7 @@
       "name": "Trailer Utility Small Kit",
       "category": "placeable",
       "maxStack": 1,
-      "weight": 25,
+      "weight": 8,
       "tradeable": true
     },
     {
@@ -536,7 +536,7 @@
       "name": "Trailer Cargo Medium Kit",
       "category": "placeable",
       "maxStack": 1,
-      "weight": 60,
+      "weight": 8,
       "tradeable": true
     },
     {
@@ -545,7 +545,7 @@
       "name": "Trailer Flatbed Large Kit",
       "category": "placeable",
       "maxStack": 1,
-      "weight": 120,
+      "weight": 8,
       "tradeable": true
     },
     {
@@ -554,7 +554,7 @@
       "name": "Trailer Livestock Kit",
       "category": "placeable",
       "maxStack": 1,
-      "weight": 110,
+      "weight": 8,
       "tradeable": true
     },
     {
@@ -563,7 +563,7 @@
       "name": "Trailer Tanker Kit",
       "category": "placeable",
       "maxStack": 1,
-      "weight": 150,
+      "weight": 8,
       "tradeable": true
     },
     {
@@ -572,7 +572,7 @@
       "name": "Trailer Camper Kit",
       "category": "placeable",
       "maxStack": 1,
-      "weight": 140,
+      "weight": 8,
       "tradeable": true
     },
     {
@@ -581,7 +581,7 @@
       "name": "Semi Trailer Box Kit",
       "category": "placeable",
       "maxStack": 1,
-      "weight": 600,
+      "weight": 8,
       "tradeable": true
     },
     {
@@ -590,7 +590,7 @@
       "name": "Semi Trailer Flatbed Kit",
       "category": "placeable",
       "maxStack": 1,
-      "weight": 500,
+      "weight": 8,
       "tradeable": true
     }
   ]
