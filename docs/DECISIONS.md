@@ -1085,3 +1085,11 @@ checked visually).
 - Limit: a pointed mouse cell or touch tap is always exact, so a red ghost can still say why. Placement is always
   grid-aligned on the server; `PlaceCmd` has no free-placement flag, and adding one would be a protocol change.
 - Test: `adr169_build_snap`. Checked in the browser on touch (shots/audit_snap_touch.png).
+
+## ADR-171: Road tool and sign placement from build mode on every input
+
+**Context.** The road tool and sign placing could only be reached with KBM G/N in Gameplay or from the Road context. Touch had no way in, and gamepad had no road entry. The world tool bar is hidden while building.
+
+**Decision.** Add the actions `Build.RoadTool` and `Build.PlaceSign`, appended to the Build list. They are bound in the Building context to KBM T/N and pad LT+X/LT+Y. The LT modifier shadows the plain X/Y repair and upgrade bindings. The build HUD now shows a 🛣 Road / 🪧 Sign row only while building, with device hints. Tapping or clicking a button, or pressing the action, stops build mode and then opens the road tool. For a sign, it edits the nearest sign, or places a new one if none is near. `BuildMode` gets an optional `tools` hook, which main.ts wires to worldTools.
+
+**Consequences.** All three inputs can reach both tools. A 2-button row is added under the build chip. It was checked on a 844×390 touch viewport with no overlaps. Test: apps/client/test/adr171_build_tools.test.ts.

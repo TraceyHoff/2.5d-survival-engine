@@ -261,6 +261,14 @@
     "control": "key.KeyH"
    },
    {
+    "action": "Build.RoadTool",
+    "control": "key.KeyT"
+   },
+   {
+    "action": "Build.PlaceSign",
+    "control": "key.KeyN"
+   },
+   {
     "action": "Build.Nudge",
     "composite": {
      "up": "key.ArrowUp",

@@ -300,6 +300,20 @@
     }
    },
    {
+    "action": "Build.RoadTool",
+    "control": "pad.x",
+    "modifiers": [
+     "pad.lt"
+    ]
+   },
+   {
+    "action": "Build.PlaceSign",
+    "control": "pad.y",
+    "modifiers": [
+     "pad.lt"
+    ]
+   },
+   {
     "action": "Build.Nudge",
     "composite": {
      "x": "pad.rx",

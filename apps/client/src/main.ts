@@ -228,6 +228,7 @@ let worldTools: WorldToolsHandle | undefined;
 const worldToolsApi = { road: (n: number) => worldTools?.road(n), roadSurface: () => worldTools?.roadSurface() ?? 0, placeSign: () => worldTools?.placeSign() ?? false, editNearestSign: () => worldTools?.editNearestSign() ?? false, surfaces: ROADS.surfaces.map((x) => x.name) };
 /** Build mode (aim-point placement); `buildMode.preview` is the Renderer's buildPreview. */
 const buildMode = new BuildMode({ input, ctx: () => menuCtx(), send: (i) => sendIntent(i), device: () => promptDevice(), onPickPiece: () => { if (promptDevice() !== "keyboardMouse") menus?.open("build"); },
+  tools: { road: () => worldTools?.road(), sign: () => { if (!worldTools?.editNearestSign()) worldTools?.placeSign(); } },
   aim: () => { const p = session.player; const pt = p !== undefined ? world.get(p, Transform) : undefined; return p !== undefined && pt ? aim.resolve(world, p, pt) : undefined; },
   onActiveChange: (on) => { const c = browserInput.controls; if (c) c.layout = on ? buildTouchLayout : gameplayTouchLayout(); } });
 const buildHud = mountBuildHud(root, { buildMode, device: () => promptDevice(), target: canvas,

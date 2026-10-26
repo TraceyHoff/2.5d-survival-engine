@@ -32,6 +32,8 @@ export interface BuildModeOptions {
   onActiveChange?(active: boolean): void;
   /** ToggleBuild while placing (pad LB+Y): back to the piece picker. */
   onPickPiece?(): void;
+  /** ADR-171: road tool / sign placing from inside build mode (HUD 🛣 / 🪧, KBM T / N, pad LT+X / LT+Y). Build mode stops first. */
+  tools?: { road(): void; sign(): void };
 }
 export type BuildActionId = "repair" | "upgrade" | "demolish";
 export interface BuildContextAction { id: BuildActionId; label: string; hint: string; enabled: boolean; armed?: boolean }
@@ -58,6 +60,9 @@ export class BuildMode {
   /** ADR-169: grid snap assist (Build.ToggleSnap: G / R3 / HUD "Snap" chip). On = an invalid aim snaps to the nearest valid
    * grid cell around it (facing aim + gamepad cursor; a pointed mouse cell / touch tap stays exact so a red ghost says why); off = the ghost sits exactly on the aimed cell, red when it can't be placed. */
   snap = true;
+  /** ADR-171: leave build mode and open the road tool / place (or edit) a sign. */
+  tool(id: "road" | "sign"): void { const t = this.o.tools; if (!t) return; this.stop(); if (id === "road") t.road(); else t.sign(); }
+  get hasTools(): boolean { return !!this.o.tools; }
   toggleSnap(): void { this.snap = !this.snap; this.toast = this.snap ? "Snap on" : "Snap off"; this.refresh(); }
   /** Last action feedback for the HUD ("Repaired", "Press X again to demolish", ...). */
   toast = "";
@@ -137,6 +142,7 @@ export class BuildMode {
     if (!this.sel) return; const i = this.o.input; const c = this.o.ctx(); const dev = this.device();
     if (i.pressed("ToggleBuild") && this.o.onPickPiece) { this.stop(); this.o.onPickPiece(); return; }
     if (i.pressed("Build.Cancel")) { if (this.demolishArmed) { this.disarm(); this.toast = ""; return; } this.stop(); return; }
+    if (i.pressed("Build.RoadTool")) { this.tool("road"); return; } if (i.pressed("Build.PlaceSign")) { this.tool("sign"); return; }
     if (i.pressed("Build.ToggleSnap")) this.toggleSnap();
     if (c && dev === "gamepad") this.padCursor(c);
     // LevelUp/Down win over TierNext/Prev (pad: LT + D-pad up/down shares the D-pad with tier).
