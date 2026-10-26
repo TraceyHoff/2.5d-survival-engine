@@ -33,7 +33,8 @@ import { attachBrowserInput } from "@engine/input/browser";
 import { Act, ClanRoster, ClanRosterMember, OnlinePlayer, VehicleStationOpenedEvt, PetEventEvt, gameplayNet, installDemoWorld } from "@engine/server/protocol";
 import { netIdOf, ChatChannel, type ChatDelivered } from "@engine/net";
 import { WorldRules, worldRules, ROADS, holdsRangedWeapon, Sign, signText, Road, StallHeader, buildView, listItemIntents, setStallOpenIntent, stallView, nearestStall, inventoryView, gameplayDefs, BuildPiece } from "@engine/gameplay";
-import { SocialDirectory, hasCreatedLook, setAppearanceIntent, interactPanel, petEventText, petRenameIntent, UseCmd, GatherCmd, farmPrompt, WaterProbeRes, type MenuCtx, type MenuIntent } from "@engine/gameplay";
+import { replicaTerrain } from "./replica-terrain.js";
+import { SocialDirectory, hasCreatedLook, setAppearanceIntent, interactPanel, petEventText, petRenameIntent, UseCmd, GatherCmd, farmPrompt, TerrainRes, type MenuCtx, type MenuIntent } from "@engine/gameplay";
 import { ClientSession } from "./session.js";
 import { mountConnectOverlay } from "./connect.js";
 import { IsoView } from "./view.js";
@@ -574,8 +575,9 @@ function wireUiSounds(a: AudioSystem): void {
   new MutationObserver((ms) => { for (const m of ms) { const el = m.target; if (el instanceof HTMLElement && el.id === "farm-toast" && el.textContent) { if (el.dataset["kind"] !== "levelup") a.ui("ui.notify"); return; } } })
     .observe(document.body, { childList: true, subtree: true });
 }
-// ADR-128: the replica has no TerrainRes; let gameplay UI probe replicated tiles for "Drink water" / refills.
-const waterProbe = { tileAt: (x: number, y: number): number => session.client?.tiles.tiles.getTile(x, y) ?? 0 };
-function frame(now: number): void { requestAnimationFrame(frame); const dt = Math.min(now - last, 250); last = now; try { if (!world.getResource(WaterProbeRes)) world.setResource(WaterProbeRes, waterProbe); pumpLocal?.(dt); loop.advance(dt); session.poll(); } catch (e) { showRenderError("Frame error", e instanceof Error ? e.stack ?? e.message : String(e)); } }
+// ADR-178: the replica gets a TerrainRes over replicated tiles (was a water-only probe, ADR-128) so predicted swim speed /
+// water collision match the server; nearWater / "Drink water" read it too.
+const replicaTerrainRes = replicaTerrain(() => session.client?.tiles.tiles);
+function frame(now: number): void { requestAnimationFrame(frame); const dt = Math.min(now - last, 250); last = now; try { if (!world.getResource(TerrainRes)) world.setResource(TerrainRes, replicaTerrainRes); pumpLocal?.(dt); loop.advance(dt); session.poll(); } catch (e) { showRenderError("Frame error", e instanceof Error ? e.stack ?? e.message : String(e)); } }
 requestAnimationFrame(frame);
 export const buildPreview = () => buildMode.preview;
