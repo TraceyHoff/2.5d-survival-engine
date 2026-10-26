@@ -219,7 +219,12 @@ export type AtlasTier = "hot" | "cold";
 export const HOT_ATLAS_RE = /(^|[_/-])(tiles?|terrain|ground|characters?|bod(y|ies)|base|resources|decor|items|animals|equipment|held|buildings?|openings|furniture|fog|ui|fonts?|sdf)([_@/-]|$)/i;
 /** Cold: rare variants, distant LODs, one-shot fx, huge set pieces. Anything matching neither stays hot. */
 /** ADR-145: pixel-art creature sheets sampled crisp (sharp bilinear) when magnified. */
-export const CRISP_ATLAS_RE = /^(animals|pets)_/;
+export const CRISP_ATLAS_RE = /^(animals|pets|nature_critters)_/;
+/** ADR-156: creature sheets (wild critters, pets: 62 small sheets, ~4.8 MPx) load resident instead of through the stream
+ *  pool. One species spans 4-11 frame-size sheets, so 12-24 fixed (704x400) stream slots starved as soon as a few species
+ *  were near: the rest drew the soft placeholder blob and ETC1S-compressed pages -> "blurry animals" while bushes (resident) stayed sharp. */
+export const RESIDENT_CREATURE_MIN_MB = 384;
+export const RESIDENT_CREATURE_RE = /^(pets|nature_critters)_/;
 /** ADR-149: hi-res painted pet sheets (streamed, drawn well below their stored size: need the mip tail). */
 export const PET_SHEET_RE = /^pets_/;
 export const COLD_ATLAS_RE = /(lod\d*|_far|distant|rare|_huge|_big|^fx_|death_bag|zombies_(brute|mummy|pumpkin|runner)|critters|wear|cosmetic|hair|hats?|accessor|tops?|bottoms?|shoes|faces?|eyes)/i;
@@ -406,6 +411,9 @@ export class AtlasManager {
 
   /** GPU memory budget for the atlas texture arrays (MB); over budget -> images are downscaled (0.5, 0.25). */
   textureBudgetMB: number;
+  /** ADR-156: creature sheets (pets, wild critters) are resident hot art at full res when the budget holds them
+   * (>= RESIDENT_CREATURE_MIN_MB); smaller budgets keep streaming them so the hot tier never drops below x1. */
+  get residentCreatures(): boolean { return this.textureBudgetMB >= RESIDENT_CREATURE_MIN_MB; }
   /** Current budget downscale (1 = full res). */
   downscale = 1;
   /** Downscale applied to cold-tier atlases (<= downscale). */
@@ -612,7 +620,7 @@ export class AtlasManager {
     const bldKeys = new Set<string>(); if (this.streamBuildingTiers) for (const a of registry.atlases.values()) { const src = sources.get(a.key); if (src && !lazyKeys.has(a.key) && !vehKeys.has(a.key) && isStreamedBuildingAtlas(a.key, src.url)) bldKeys.add(a.key); }
     // bodies (page geometry from the manifest: columns x rows x frame size per page, any number of pages) go compressed when KTX2 is available: KTX2 colour + tint mask KTX2
     // (@2x: pages[].ktx2 + pages[].masksKtx2.tintmask) at the scale poolScales picks; paged in eagerly at rebuild, never evicted
-    const streamKeys = new Set<string>(); if (this.streamSheets) for (const a of registry.atlases.values()) { const src = sources.get(a.key); if (src && a.residency === "stream" && !lazyKeys.has(a.key) && !vehKeys.has(a.key) && !bldKeys.has(a.key) && !legacy.has(a.key) && !/^(blob|data):/.test(src.url)) streamKeys.add(a.key); }
+    const streamKeys = new Set<string>(); if (this.streamSheets) for (const a of registry.atlases.values()) { const src = sources.get(a.key); if (src && a.residency === "stream" && !lazyKeys.has(a.key) && !vehKeys.has(a.key) && !bldKeys.has(a.key) && !legacy.has(a.key) && !(this.residentCreatures && RESIDENT_CREATURE_RE.test(a.key)) && !/^(blob|data):/.test(src.url)) streamKeys.add(a.key); }
     this.placeholderCache.clear();
     const bodyPages = bodyAtlasKeys(registry); this.bodyPageKeys = bodyPages;
     const bodyKeys = new Set<string>(); if (this.ktx2Target && this.streamWearables) for (const a of registry.atlases.values()) { const src = sources.get(a.key); if (src?.ktx2 && bodyPages.has(a.key) && !lazyKeys.has(a.key) && !vehKeys.has(a.key) && !bldKeys.has(a.key) && !streamKeys.has(a.key) && !/^(blob|data):/.test(src.url)) bodyKeys.add(a.key); }
@@ -888,7 +896,7 @@ export class AtlasManager {
     }
     for (const a of list) {
       const e = wear.get(a.key); const info = { bodies: bodies.has(a.key), wearShare: e && e[1] ? e[0] / e[1] : 0 };
-      a.cold = !this.recentlyUsed.has(a.key) && (this.atlasTier ?? defaultAtlasTier)(a.key, info) === "cold";
+      a.cold = !this.recentlyUsed.has(a.key) && !(this.residentCreatures && RESIDENT_CREATURE_RE.test(a.key)) /* ADR-156: resident creature sheets are hot (never x0.125 mosaics) */ && (this.atlasTier ?? defaultAtlasTier)(a.key, info) === "cold";
     }
   }
   private registryForTier: AssetRegistry | null = null;

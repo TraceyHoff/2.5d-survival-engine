@@ -929,3 +929,11 @@ Graphics quality is unchanged.
 **Decision:** The view eases only the camera target's z with an exponential filter (`CAM_Z_TAU` = 0.15 s). It snaps when the jump is larger than `CAM_Z_SNAP` = 4 (a teleport or respawn). The camera's x/y stays exact, and sprites still stand on their own steps.
 
 **Result:** Same 10 s walk: camera speed coefficient of variation went from 0.54 to 0.095, and the peak went from 332 to ≤157 px/s. Graphics and movement speeds are unchanged.
+
+## ADR-156: Creature sheets resident on budgets of 384 MB and up
+
+**Context:** At the PC texture budget (768 MB), a 42 s walk/sprint profile streamed creature and pet sheets in and out. Those sheets (62 small sheets, about 4.8 MPx) caused 23–32 page-ins and evictions per run, and each one meant a texture upload plus frame-table rows, which showed up as hitches.
+
+**Decision:** On budgets of `RESIDENT_CREATURE_MIN_MB` = 384 MB or more, `pets_*` and `nature_critters_*` sheets load resident and hot at full resolution, outside the stream pool. Smaller budgets (mobile and safe) keep streaming them, so they keep the same hot-tier floor as before.
+
+**Result:** Same 42 s profile at 768 MB: page-ins went from 23–32 to 8–10 (only wearables' first loads remain), and frame-table row uploads went from 87–121 to 55–64. No quality drops anywhere: creatures are now always full-res on PC.
