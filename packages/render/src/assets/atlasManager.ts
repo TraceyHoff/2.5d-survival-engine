@@ -157,6 +157,8 @@ export function swayFromManifest(json: unknown): { table: Record<string, SwayPar
 }
 export interface AtlasStats { layers: number; layerSize: number; /** atlas images scaled by this to fit the GPU memory budget (1 = full res) */ downscale: number; gpuMB: number; atlases: number; frames: number; sprites: number; version: number }
 
+/** ADR-154: budgets at or above this skip the per-page-in glGetError sync */
+export const SYNC_CHECK_MAX_MB = 384;
 const TABLE_W = 1024; // entries per frame-table row
 
 /**
@@ -386,7 +388,7 @@ export class AtlasManager {
   /** Pool may page now (fallback step 1 stops the wearable pool only; vehicles keep their placeholder fallback). */
   /** Wearables off (ladder EvictWearables) still pages in the local player + nearby characters (prio <= PRIO_NEAR). */
   private poolOn(p: Pool, prio = Infinity): boolean { return (p.cls !== "wear" && p.cls !== "stream") || this.wearablesOn || prio <= PRIO_NEAR; }
-  private table: Float32Array = new Float32Array(0); private tableDirty0 = -1; private tableDirty1 = -1;
+  private table: Float32Array = new Float32Array(0); private tableDirty0 = -1; private tableDirty1 = -1; /** ADR-154: rows patched since the last upload (only these go to the GPU) */ private tableRowDirty = new Uint8Array(0);
   private tintRowMap = new Map<number, number>();
   private frame = 1; private gen = 0; private inflight = 0; private queue: AtlasRT[] = [];
   private loader: (url: string) => Promise<ImageLike>;
@@ -489,6 +491,10 @@ export class AtlasManager {
     const max = gl.getParameter(gl.MAX_TEXTURE_SIZE) as number;
     this.layerSize = Math.min(opts.layerSize ?? 2048, max || 2048);
     this.textureBudgetMB = opts.textureBudgetMB ?? 768;
+    // ADR-154: the per-page-in glGetError is a full CPU<->GPU-process round trip (pipeline drain) on every stream upload -
+    // a hitch source on desktop/console ANGLE. Keep it only on small (mobile) budgets where lazily-committed OOM must free
+    // the exact slot; big budgets rely on the renderer watchdog's once-a-second getError.
+    this.syncChecks = this.textureBudgetMB < SYNC_CHECK_MAX_MB;
     this.vram = new VramAccountant(this.textureBudgetMB * 1048576);
     this.loader = opts.imageLoader ?? defaultImageLoader;
     this.maxLayers = gl.getParameter(gl.MAX_ARRAY_TEXTURE_LAYERS) as number;
@@ -1088,7 +1094,7 @@ export class AtlasManager {
     this.sheenTex = maskArray("sheen"); this.swayTex = maskArray("sway"); this.tintMaskTex = maskArray("tintmask");
     // frame table
     const n = Math.max(1, this.totalFrames); const rows = Math.ceil(n / TABLE_W);
-    const data = new Float32Array(TABLE_W * 2 * rows * 4); this.table = data; this.tableDirty0 = this.tableDirty1 = -1;
+    const data = new Float32Array(TABLE_W * 2 * rows * 4); this.table = data; this.tableDirty0 = this.tableDirty1 = -1; this.tableRowDirty = new Uint8Array(rows);
     void all;
     for (const a of list) this.writeFrames(a, data, tintRows);
     if (this.frameTex) gl.deleteTexture(this.frameTex);
@@ -1116,6 +1122,7 @@ export class AtlasManager {
   private markTable(a: AtlasRT): void {
     const r0 = Math.floor(a.base / TABLE_W), r1 = Math.floor((a.base + Math.max(1, a.count) - 1) / TABLE_W);
     this.tableDirty0 = this.tableDirty0 < 0 ? r0 : Math.min(this.tableDirty0, r0); this.tableDirty1 = Math.max(this.tableDirty1, r1);
+    for (let r = r0; r <= r1 && r < this.tableRowDirty.length; r++) this.tableRowDirty[r] = 1;
   }
 
   // ---- wearable page streaming -------------------------------------------------------------------------------------
@@ -1127,11 +1134,21 @@ export class AtlasManager {
     if ((this.frame & 15) === 0) this.unloadIdleStream();
     if (this.queue.length) this.pump();
     if (this.tableDirty0 < 0 || !this.frameTex) return;
-    const gl = this.gl; const r0 = this.tableDirty0, n = this.tableDirty1 - r0 + 1;
-    gl.bindTexture(gl.TEXTURE_2D, this.frameTex);
-    gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, r0, TABLE_W * 2, n, gl.RGBA, gl.FLOAT, this.table.subarray(r0 * TABLE_W * 8, (r0 + n) * TABLE_W * 8));
+    const gl = this.gl; gl.bindTexture(gl.TEXTURE_2D, this.frameTex);
+    // ADR-154: upload only the contiguous runs of patched rows. The old min..max span re-sent most of the table (MBs of
+    // RGBA32F) whenever two far-apart sheets paged in/out in the same frame - the main per-frame cost while streaming.
+    const d = this.tableRowDirty, hi = Math.min(this.tableDirty1, d.length - 1); this.tableSpanRows += hi - this.tableDirty0 + 1;
+    for (let r = this.tableDirty0; r <= hi; r++) {
+      if (!d[r]) continue; let e = r; while (e + 1 <= hi && d[e + 1]) e++;
+      gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, r, TABLE_W * 2, e - r + 1, gl.RGBA, gl.FLOAT, this.table.subarray(r * TABLE_W * 8, (e + 1) * TABLE_W * 8));
+      this.tableRowUploads += e - r + 1; d.fill(0, r, e + 1); r = e;
+    }
     this.tableDirty0 = this.tableDirty1 = -1;
   }
+  /** frame-table rows uploaded (ADR-154 stat) */
+  tableRowUploads = 0;
+  /** rows the pre-ADR-154 min..max span upload would have sent */
+  tableSpanRows = 0;
   private streamStarts = 0;
   /** ADR-148: decoded pages wait here for their GPU upload turn - at most PAGE_UPLOADS_PER_FRAME uploads per frame (the
    *  local player's own pages never wait), so a burst of finished decodes no longer lands as one long frame. */
