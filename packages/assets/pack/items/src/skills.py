@@ -14,6 +14,7 @@ import itemicons as _ni
 NT = _ni.T
 BR = dict(survival='#5f9e4a', combat='#c8443c', crafting='#d9903f', farming='#a8b83a', husbandry='#9a6a44', cooking='#e07a32',
           medicine='#e8e4dc', building='#6f86a8', vehicles='#4f7fa8', stealth='#6a4f8f', leadership='#e9bb46')
+BR['perks'] = '#c0508a'  # ADR-132 perks branch (same PERK colour as adr132.py); nodes moved to perks in skills.json
 GOLD = '#f2c23a'
 # ---------- custom glyphs (32-unit space)
 def paw(c, col='#7a4f30'):

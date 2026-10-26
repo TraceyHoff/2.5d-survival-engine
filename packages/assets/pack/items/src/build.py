@@ -12,7 +12,7 @@ os.makedirs(OUT+'/atlases', exist_ok=True); os.makedirs(PREV, exist_ok=True)
 import new8, vehicle_key, adr113, skills
 # icon cells: table.T (0-190), then the follow-up icons in commit order: new8 (191-198, 64357f1), vehicle_key (199, 29ef4c0), animal_feed (200, ADR-113)
 EXTRA = list(new8.NEW8) + ['vehicle_key', 'animal_feed']
-SKILLS = skills.KEYS  # ADR-113 skill tree icons -> items_skills atlas
+SKILLS = [k for k in skills.KEYS if k != 'skill_branch_perks']  # ADR-113 skill tree icons -> items_skills atlas (skill_branch_perks: ADR-132 adr132.py, items_skill_tabs)
 ICONS = list(T) + EXTRA; NODES = list(N)
 def icon(k):
     if k == 'vehicle_key': return vehicle_key.render()
