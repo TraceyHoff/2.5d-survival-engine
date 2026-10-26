@@ -1042,3 +1042,11 @@ checked visually).
 - Fix: every `LootBag` entity draws the pack's `death_bag` sprite (`LOOT_BAG_SPRITE`, frame 0, shadow, never an occluder).
 - Test: `adr166_bags_visible_after_respawn` covers die -> respawn -> walk back. It checks the death bag, pre-death loot
   and post-respawn loot replicate in SP and in 2-client MP. It also checks that the view routes LootBag to a manifest sprite.
+
+## ADR-167: BackHistory never calls history.back()
+- Bug: in the Party panel, Accept or Decline on an invite closes the panel and quickly reopens it. The async `history.back()`
+  from the close raced the reopen's `pushState`, so the skip counter went out of step. A later back then left the app (about:blank).
+- Fix: closing just disarms. The sentinel entry stays, and a reopen reuses it (`history.state.survivazBack`) rather than
+  pushing another one. Browser and Android Back still close the top menu. Side effect: one extra Back press may be needed
+  before leaving the page.
+- Test: `adr167_back_history`.
