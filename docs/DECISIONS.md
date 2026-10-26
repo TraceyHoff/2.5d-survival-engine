@@ -1136,3 +1136,11 @@ checked visually).
 - The art has 4 rotation rows, so the sprite shows the nearest quarter turn while the facing is exact.
 
 **Tests:** packages/gameplay/test/adr174_free_placement.test.ts covers the fine snap, ineligible pieces, overlap, ghost == server, the persistence round-trip with replica slot equality, and surface decor.
+
+## ADR-175: Viewport-relative default camera zoom (mobile sees the same world as PC/console)
+
+**Problem.** `camera.zoom` is CSS px per iso px, and ADR-100's `defaultZoom` returned a near-fixed value (1.40 desktop, 1.50 on phones). A fixed pixels-per-tile means world coverage scales with screen size: an 844x390 phone showed ~563x260 iso px vs ~1368x770 at 1920x1080 — roughly 3x closer per axis, ~7x less area.
+
+**Decision.** `defaultZoom(w, h) = DESKTOP_ZOOM × min(long/1920, short/1080)`, clamped to [0.3, 4]. The viewport is "contained" against the orientation-matched 1920x1080 reference, so every screen shows at least PC's view along both axes of its own orientation: any 16:9 screen (720p, 1440p, 4K) shows exactly the PC view; phone landscape shows PC's vertical span and a wider horizontal span; phone portrait shows PC's short-side span (≈770 iso px) across its width and more world vertically. DPR is untouched: the renderer still multiplies by `devicePixelRatio` and snaps zoom×DPR to quarter steps, so render resolution and sprite sharpness are unchanged. The user multiplier (wheel/pinch/±, 0.75–1.6) is unchanged and still persisted, so players can pinch in.
+
+**Trade-offs.** Sprites are physically small on phones (that is what "same view as PC" means); HUD/touch controls are CSS-sized and unaffected. Portrait cannot match PC's 16:9 width without being absurdly zoomed out, so it matches the short axis instead. Tests: `apps/client/test/adr175_camera_zoom.test.ts`.

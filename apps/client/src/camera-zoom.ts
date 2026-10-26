@@ -1,20 +1,31 @@
 /**
  * Gameplay camera zoom (ADR-100). The default view shows ~30% more world area than the old fixed zoom 1.6
- * (1.6 / sqrt(1.3) ≈ 1.4). Small (phone) screens get a slightly closer default so characters stay readable, and the
+ * (1.6 / sqrt(1.3) ≈ 1.4) at 1920x1080; ADR-175 scales it with the viewport so phones see the same world, and the
  * player's own zoom multiplier (mouse wheel, two-finger pinch, +/- keys) is clamped and persisted in "engine-settings".
  */
 export const LEGACY_ZOOM = 1.6;
 export const AREA_GAIN = 1.3;
 export const DESKTOP_ZOOM = LEGACY_ZOOM / Math.sqrt(AREA_GAIN); // ≈ 1.403
-export const PHONE_ZOOM = 1.5; // short side ≤ 480 CSS px: still ~14% more area than before, sprites not tiny
+/** ADR-175: reference viewport (CSS px) at which DESKTOP_ZOOM applies; every other viewport is scaled to show the same world. */
+export const REF_LONG = 1920, REF_SHORT = 1080;
+export const ZOOM_FLOOR = 0.3, ZOOM_CEIL = 4;
 export const USER_ZOOM_MIN = 0.75, USER_ZOOM_MAX = 1.6;
 const KEY = "engine-settings";
 
-/** Default camera zoom for a CSS viewport: linear blend from phone (short side ≤ 480) to desktop (≥ 800). */
+/**
+ * Default camera zoom (CSS px per iso px) for a CSS viewport (ADR-175). Zoom is resolution-relative, not a fixed
+ * pixels-per-tile: the viewport is "contained" against the orientation-matched 1920x1080 reference, so a phone shows
+ * at least as much world as PC along both axes of its own orientation (landscape: same vertical span as PC, wider if
+ * the screen is wider; portrait: same span across the short side as PC's short side). DPR is not involved here:
+ * the renderer multiplies by devicePixelRatio itself, so render resolution and sprite sharpness are unchanged.
+ */
 export function defaultZoom(cssW: number, cssH: number): number {
-  const s = Math.min(cssW, cssH); const t = Math.min(1, Math.max(0, (s - 480) / 320));
-  return PHONE_ZOOM + (DESKTOP_ZOOM - PHONE_ZOOM) * t;
+  if (!(cssW > 0 && cssH > 0)) return DESKTOP_ZOOM;
+  const f = Math.min(Math.max(cssW, cssH) / REF_LONG, Math.min(cssW, cssH) / REF_SHORT);
+  return Math.min(ZOOM_CEIL, Math.max(ZOOM_FLOOR, DESKTOP_ZOOM * f));
 }
+/** World extent in iso px visible at a zoom (for tests/QA). */
+export const visibleIso = (cssW: number, cssH: number, zoom = defaultZoom(cssW, cssH)): { w: number; h: number } => ({ w: cssW / zoom, h: cssH / zoom });
 export const clampUserZoom = (z: number): number => (Number.isFinite(z) ? Math.min(USER_ZOOM_MAX, Math.max(USER_ZOOM_MIN, z)) : 1);
 type KV = Pick<Storage, "getItem" | "setItem">;
 export function loadUserZoom(st: KV = localStorage): number {
