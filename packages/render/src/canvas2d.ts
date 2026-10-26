@@ -10,7 +10,7 @@
  */
 import { Transform, PrevTransform, getAppearance, type World, type Entity } from "@engine/core";
 import { previewLayers2D, tintPixels, type PreviewLayer2D } from "./character/preview2d.js";
-import { worldToScreen, DEFAULT_ISO, CHUNK_SIZE, type TileMap } from "@engine/world";
+import { worldToScreen, DEFAULT_ISO, CHUNK_SIZE, WATER_TILE, SHALLOW_WATER_TILE, WaterDepth, waterDepthAt, type TileMap } from "@engine/world";
 import type { AssetRegistry } from "@engine/assets";
 import { IsoCamera } from "./camera.js";
 import { Sprite, LightSource } from "./components.js";
@@ -37,7 +37,7 @@ export function chooseRenderer(probe: ContextProbe, opts: { forceDebug?: boolean
 
 /** Flat ground fill per world tile id (world DEFAULT_BANDS: 1 water, 2 sand, 3 grass, 4 forest, 5 rock; 0 = none). The old
  * table was shifted by one, so grass (3) drew brown, forest blue and water green. */
-export const TILE_COLORS = ["#1b1f1a", "#2d5d8a", "#c8b47a", "#4f8a43", "#3f7a3a", "#6b6b6b", "#7a6440", "#e8eef0"];
+export const TILE_COLORS = ["#1b1f1a", "#2d5d8a", "#c8b47a", "#4f8a43", "#3f7a3a", "#6b6b6b", "#7a6440", "#e8eef0", "#4f93bf"]; // [8] ADR-181 shallow water (lighter than deep [1])
 
 /** ADR-145: snap a sprite origin to a whole device pixel (x*s + o integer) so nearest-neighbour pixel art keeps even texel widths. */
 export function snapPx(v: number, s: number, o: number): number { return s >= 1 ? (Math.round(v * s + o) - o) / s : v; }
@@ -120,7 +120,8 @@ export class Canvas2DRenderer {
     const tm = this.tilemap; const c = cam.cssToWorld(cam.viewW / cam.dpr / 2, cam.viewH / cam.dpr / 2);
     const R = Math.ceil(Math.max(this.w, this.h) / (s * th)) + 2;
     if (tm) for (let y = Math.floor(c.y) - R; y < c.y + R; y++) for (let x = Math.floor(c.x) - R; x < c.x + R; x++) {
-      const t = tm.getTile(x, y); if (!t && !tm.getChunk(Math.floor(x / CHUNK_SIZE), Math.floor(y / CHUNK_SIZE))) continue;
+      let t = tm.getTile(x, y); if (!t && !tm.getChunk(Math.floor(x / CHUNK_SIZE), Math.floor(y / CHUNK_SIZE))) continue;
+      if (t === WATER_TILE && waterDepthAt((a, b) => tm.getTile(a, b), x, y) === WaterDepth.Shallow) t = SHALLOW_WATER_TILE;
       const p = worldToScreen(x, y, 0, iso); g.fillStyle = TILE_COLORS[t % TILE_COLORS.length]!;
       g.beginPath(); g.moveTo(p.sx, p.sy - th / 2); g.lineTo(p.sx + tw / 2, p.sy); g.lineTo(p.sx, p.sy + th / 2); g.lineTo(p.sx - tw / 2, p.sy); g.fill(); stats.tiles++;
     }

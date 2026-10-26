@@ -4,6 +4,7 @@
  * (hp / damage per hit x cooldown) x breakCostMul, so zombies route through doors/weak walls when that is cheaper
  * than walking around. Unwalkable terrain is impassable. Returns the tile path and the first blocking piece on it.
  */
+import { terrainBlocksWalker } from "../systems/movement.js";
 import type { Entity, World } from "@engine/core";
 import { BuildPiece, EdgeSide } from "../components.js";
 import { gameplayDefs } from "../config.js";
@@ -51,7 +52,7 @@ export function findPath(world: World, sx: number, sy: number, gx: number, gy: n
     if (x === gx && y === gy) { best = k; break; }
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
       const nx = x + dx, ny = y + dy; if (Math.abs(nx - sx) > R || Math.abs(ny - sy) > R) continue;
-      if (terrain && unwalk.has(terrain.tileAt(nx, ny))) continue;
+      if (terrain && unwalk.has(terrain.tileAt(nx, ny)) && terrainBlocksWalker(world, nx, ny)) continue;
       const b = stepBlocker(idx, x, y, nx, ny);
       const step = 1 + (b ? breakTicks(b) * ai.breakCostMul : 0);
       const nk = key(nx, ny); const ng = gc + step;

@@ -1192,3 +1192,12 @@ checked visually).
 **Audit.** These edges are UI or have no sim effect and are sent but ignored by the sim: Jump, HotbarNext/Prev, QuickUse, ToggleInventory/Crafting/Map, OpenChat, OpenSocial and Cancel.
 
 **Consequences.** `adr180_edges_reach_sim.test.ts` checks that every bound edge has a matching bit, that each sim edge maps to a command, and that keyboard and gamepad input equip and reload over loopback on the authoritative server.
+
+## ADR-181: Two water depths — shallow (wade) and deep (swim)
+- **Model:** no new persisted tile and no schema change. Depth is derived at runtime (`packages/world/src/waterDepth.ts`). Water tile 1 is **shallow** when a loaded non-water tile lies within `movement.shallowRadius` (2, Chebyshev); otherwise it is **deep**. Tile 8 (`ShallowWater`) is always shallow. Unloaded tile 0 never counts as shore. Existing saves and worldgen therefore get a shallow band along every shore and river and deep lake centres, without a migration. Narrow rivers (≤4 wide) come out entirely shallow.
+- **Shallow:** walkable for players, AI and vehicles (`terrainBlocksWalker`). Movement ×`wadeSpeedMul` (0.7), sprint allowed. You can drink here. Building is allowed. The client sinks the sprite by 0.15 and keeps the wet level ≥160 while moving, which gives drips and splash.
+- **Deep:** must swim, at ×`swimSpeedMul` (lowered from 0.4 to 0.35), with no sprint. The Swim anim plays only here. Placement is blocked (`building/place.ts`), and AI pathing treats it as a wall. Loot bags in deep water float ashore: every 10 ticks they move 0.5 tiles toward the nearest non-deep tile within 8.
+- **Shared:** server and client prediction use the same `waterDepth` over TerrainRes (ADR-178), so they agree.
+- **Render:** shallow uses the existing `ShallowWater` palette/sprite in WebGL2 (`tilemap.ts`, `terrainTiles.ts`) and `#4f93bf` in Canvas2D. No new art; the lighter tint is enough for now. Dedicated wade/foam art is future work.
+- **Caveats:** a chunk mesh can show stale depth at a chunk edge until it is rebuilt, because unloaded neighbours read as deep. The renderers use the constant `SHALLOW_RADIUS`, not the data value.
+- **Tests:** `packages/gameplay/test/adr181_water_depth.test.ts`. adr107 and adr178 were updated for the new swim speed and shallow band.

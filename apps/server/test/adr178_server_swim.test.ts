@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { Transform, World, AnimState as Anim } from "@engine/core";
-import { AnimState, GameplayActions as A, inWater, swimSpeedMulAt, movementBlocked, TerrainRes, terrainFromTileMap, applyMovementInput } from "@engine/gameplay";
+import { AnimState, GameplayActions as A, inWater, swimSpeedMulAt, movementBlocked, TerrainRes, terrainFromTileMap, applyMovementInput, defaultDefs } from "@engine/gameplay";
 import { LoopbackNetwork, NetClient } from "@engine/net";
 import { ClaimAccount, MemoryWorldStore } from "@engine/persist";
 import { createGameServer, applyMoveInput, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS } from "../src/main.js";
@@ -39,7 +39,7 @@ describe("ADR-178 swimming on the authoritative server", () => {
     gs.world.set(e, Transform, { x: 0.5, y: 0.5, z: 0 }); // compare against an unrestricted step with no terrain lookup
     const t = gs.world.getResource(TerrainRes)!; gs.world.setResource(TerrainRes, { tileAt: () => 3, heightAt: () => 0 });
     applyMovementInput(gs.world, e, A.MoveRight, 0.05); const dLand = gs.world.get(e, Transform)!.x - 0.5; gs.world.setResource(TerrainRes, t);
-    expect(dWater / dLand).toBeCloseTo(0.4, 2);
+    expect(dWater / dLand).toBeCloseTo(defaultDefs().movement.swimSpeedMul, 2);
     expect(movementBlocked(gs.world, spot.x - 1, spot.y, spot.x, spot.y, 0, false)).toBe(true);
   });
   it("client replica terrain over replicated tiles agrees with the server (prediction parity)", async () => {

@@ -7,12 +7,13 @@
  */
 import { roadSpeedMul } from "../roads.js";
 import { entityIndex, evaluate, Transform, type Entity, type World } from "@engine/core";
-import { Anim, AnimState, Buffs, Dead, Driver, EdgeSide, Inventory, PlayerIntent, Stat, Survival, Wetness } from "../components.js";
+import { Anim, AnimState, LootBag, Buffs, Dead, Driver, EdgeSide, Inventory, PlayerIntent, Stat, Survival, Wetness } from "../components.js";
 import { gameplayDefs } from "../config.js";
 import { skillMul } from "../skills/tree.js";
 import { GameplayActions as A } from "../input.js";
 import { StructureIndexRes } from "../building/structure.js";
 import { TerrainRes } from "../world.js";
+import { WaterDepth, waterDepthAt, installSpatialIndex } from "@engine/world";
 import { INPUT } from "../input_hooks.js";
 
 /**
@@ -50,7 +51,7 @@ export function speedMultiplier(world: World, e: Entity, sprint: boolean): numbe
 export function movementBlocked(world: World, x0: number, y0: number, x1: number, y1: number, level: number, swim = false): boolean {
   const defs = gameplayDefs(world); const terrain = world.getResource(TerrainRes);
   const tx0 = Math.floor(x0), ty0 = Math.floor(y0), tx1 = Math.floor(x1), ty1 = Math.floor(y1);
-  if (terrain) { const tile = terrain.tileAt(tx1, ty1); if (defs.worldgen.unwalkableTiles.has(tile) && !(swim && defs.movement.swimTiles.has(tile))) return true; }
+  if (terrain) { const tile = terrain.tileAt(tx1, ty1); if (defs.worldgen.unwalkableTiles.has(tile) && !(swim && defs.movement.swimTiles.has(tile)) && waterDepthAt(terrain.tileAt, tx1, ty1, defs.movement.shallowRadius) !== WaterDepth.Shallow) return true; }
   const idx = world.getResource(StructureIndexRes); if (!idx || idx.count === 0) return false;
   if (tx1 !== tx0 && idx.edgeBlocker(Math.max(tx0, tx1), ty0, level, EdgeSide.West)) return true;
   if (ty1 !== ty0 && idx.edgeBlocker(tx1, Math.max(ty0, ty1), level, EdgeSide.North)) return true;
@@ -64,7 +65,7 @@ export function applyMovementInput(world: World, e: Entity, actions: number, dt:
   if (world.has(e, Driver)) return; // riders move with their vehicle (gameplay.vehicles)
   const dead = world.has(e, Dead);
   const { dx, dy } = dead ? { dx: 0, dy: 0 } : moveVector(actions, analog);
-  const moving = dx || dy ? 1 : 0; const sprint = moving && actions & A.Sprint ? 1 : 0;
+  const moving = dx || dy ? 1 : 0; const sprint = moving && actions & A.Sprint && !(t.z < 0.5 && inDeepWater(world, t.x, t.y)) ? 1 : 0; // ADR-181: no sprint while swimming
   // ADR-147: PlayerIntent is not networked, so a client replica has none and its predicted vitals never drained sprint
   // stamina (the replica's stamina lagged the server by the snapshot delay, sprint ended a tick apart: a rubber-band).
   // The predicting client keeps a local PlayerIntent on its own entity so movement + vitals replay like the server.
@@ -92,8 +93,22 @@ export function inWater(world: World, x: number, y: number): boolean {
   const terrain = world.getResource(TerrainRes); if (!terrain) return false;
   return gameplayDefs(world).movement.swimTiles.has(terrain.tileAt(Math.floor(x), Math.floor(y)));
 }
-/** Speed multiplier at (x, y): swimSpeedMul in water, else 1 (players, zombies, animals). */
-export function swimSpeedMulAt(world: World, x: number, y: number): number { return inWater(world, x, y) ? gameplayDefs(world).movement.swimSpeedMul : 1; }
+/** ADR-181: 0 land, 1 shallow (wade), 2 deep (swim) at (x, y). Same function the renderers use. */
+export function waterDepth(world: World, x: number, y: number): WaterDepth {
+  const terrain = world.getResource(TerrainRes); if (!terrain) return WaterDepth.None;
+  return waterDepthAt(terrain.tileAt, Math.floor(x), Math.floor(y), gameplayDefs(world).movement.shallowRadius);
+}
+export function inDeepWater(world: World, x: number, y: number): boolean { return waterDepth(world, x, y) === WaterDepth.Deep; }
+/** Speed multiplier at (x, y): swimSpeedMul in deep water, wadeSpeedMul in shallow, else 1 (players, zombies, animals). */
+export function swimSpeedMulAt(world: World, x: number, y: number): number {
+  const d = waterDepth(world, x, y); const mv = gameplayDefs(world).movement;
+  return d === WaterDepth.Deep ? mv.swimSpeedMul : d === WaterDepth.Shallow ? mv.wadeSpeedMul : 1;
+}
+/** ADR-181: terrain blocks non-swimmers (AI pathing, zombies, hordes) at tile (tx, ty): unwalkable tiles except shallow water. */
+export function terrainBlocksWalker(world: World, tx: number, ty: number): boolean {
+  const terrain = world.getResource(TerrainRes); if (!terrain) return false; const defs = gameplayDefs(world);
+  return defs.worldgen.unwalkableTiles.has(terrain.tileAt(tx, ty)) && waterDepthAt(terrain.tileAt, tx, ty, defs.movement.shallowRadius) !== WaterDepth.Shallow;
+}
 
 const SWIM_OVER: ReadonlySet<number> = new Set([Anim.Idle, Anim.Walk, Anim.Run, Anim.Shamble, Anim.Crawl, Anim.Graze, Anim.Sit]);
 /** One-shot anims on players (Punch/Attack/Hurt/Gather/Build) settle back to Idle after this many ticks (players have no AI to reset them). */
@@ -111,8 +126,27 @@ export function animSettleSystem(world: World): void {
     const t = world.get(e, Transform)!; const a = world.get(e, AnimState)!; let cur = a.anim;
     if (world.has(e, Survival) && ONE_SHOT.has(cur) && world.tick - a.startTick >= (cur === Anim.Attack || cur === Anim.Punch ? PLAYER_SWING_TICKS : PLAYER_ONE_SHOT_TICKS)) { world.set(e, AnimState, { anim: Anim.Idle, startTick: world.tick }); cur = Anim.Idle; }
     if (!terrain) continue;
-    const wet = (t.z ?? 0) < 0.5 && inWater(world, t.x, t.y);
+    const wet = (t.z ?? 0) < 0.5 && inDeepWater(world, t.x, t.y); // ADR-181: wading keeps walk anims
     if (wet && SWIM_OVER.has(cur)) world.set(e, AnimState, { anim: Anim.Swim, startTick: world.tick });
     else if (!wet && cur === Anim.Swim) world.set(e, AnimState, { anim: Anim.Idle, startTick: world.tick });
+  }
+  floatLootAshore(world);
+}
+
+/** ADR-181: dropped loot bags float: in deep water they drift (1 tile/s) to the nearest wadeable/land tile within
+ * FLOAT_SEARCH tiles so items stay reachable without swimming; with no shore in range they stay afloat where they fell. */
+const FLOAT_SEARCH = 8;
+export function floatLootAshore(world: World): void {
+  if (world.tick % 10 !== 0 || !world.getResource(TerrainRes) || !world.isRegistered(LootBag)) return;
+  for (const e of world.query([LootBag, Transform])) {
+    const t = world.get(e, Transform)!; if ((t.z ?? 0) >= 0.5 || !inDeepWater(world, t.x, t.y)) continue;
+    const tx = Math.floor(t.x), ty = Math.floor(t.y); let best: [number, number] | undefined; let bd = Infinity;
+    for (let r = 1; r <= FLOAT_SEARCH && !best; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+      if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue; const x = tx + dx + 0.5, y = ty + dy + 0.5;
+      if (!inDeepWater(world, x, y)) { const d = Math.hypot(x - t.x, y - t.y); if (d < bd) { bd = d; best = [x, y]; } }
+    }
+    if (!best) continue; const k = Math.min(1, 0.5 / bd);
+    const x = t.x + (best[0] - t.x) * k, y = t.y + (best[1] - t.y) * k;
+    world.set(e, Transform, { x, y }); installSpatialIndex(world).hash.insert(e, x, y);
   }
 }

@@ -25,7 +25,7 @@ import { makeNoise } from "../systems/noise.js";
 import { shelterAt } from "../building/shelter.js";
 import { structures } from "../building/structure.js";
 import { TerrainRes } from "../world.js";
-import { swimSpeedMulAt } from "../systems/movement.js";
+import { swimSpeedMulAt, terrainBlocksWalker } from "../systems/movement.js";
 import { applyDamage, setAnim } from "./combat.js";
 import { findPath, pieceHp } from "./path.js";
 import { lightAt, lightGrid, nearestLight, type ActiveLight } from "../systems/lights.js";
@@ -69,7 +69,7 @@ export function zombieSpawnerSystem(world: World, dt: number): void {
     for (let attempt = 0; attempt < 6; attempt++) {
       const a = world.rng.range(-Math.PI, Math.PI); const d = world.rng.range(sp.minDistance, sp.maxDistance);
       const x = t.x + Math.cos(a) * d, y = t.y + Math.sin(a) * d; const tx = Math.floor(x), ty = Math.floor(y);
-      if (terrain && defs.worldgen.unwalkableTiles.has(terrain.tileAt(tx, ty))) continue;
+      if (terrain && defs.worldgen.unwalkableTiles.has(terrain.tileAt(tx, ty)) && terrainBlocksWalker(world, tx, ty)) continue;
       if (idx.deck(tx, ty, 0)) continue;
       const kind = pickWeighted(world, sp.weights[ph], defs.zombieKinds); if (kind === undefined) break;
       spawnZombie(world, kind, tx + 0.5, ty + 0.5, world.rng.int(0, 255));

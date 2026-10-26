@@ -12,6 +12,7 @@
  * then clipped to the global budget (maxHordeZombies alive in hordes, maxActiveHordes). With the shipped data the
  * smallest clan horde (16) is larger than the largest solo horde (14).
  */
+import { terrainBlocksWalker } from "./systems/movement.js";
 import { defineResource, GroupKind, TimeOfDay as TimeOfDayLike, Permissions, PlayerId, Transform, type Entity, type World } from "@engine/core";
 import raw from "../data/roads.json";
 import { BuildPiece, Dead, HordeMember, HordePhase, HordeStatus, PieceOwner, Progression, Survival, Tribe, WorldRules, Zombie, ZombieBrain, ZState } from "./components.js";
@@ -112,7 +113,7 @@ function setStatus(world: World, patch: Partial<{ phase: number; seq: number; ki
 
 function walkable(world: World, x: number, y: number): boolean {
   const terrain = world.getResource(TerrainRes); if (!terrain) return true;
-  return !gameplayDefs(world).worldgen.unwalkableTiles.has(terrain.tileAt(Math.floor(x), Math.floor(y)));
+  return !terrainBlocksWalker(world, Math.floor(x), Math.floor(y)); // ADR-181: shallow water is walkable
 }
 function compositionKinds(world: World): { kinds: number[]; weights: number[] } {
   const defs = gameplayDefs(world); const kinds: number[] = [], weights: number[] = [];

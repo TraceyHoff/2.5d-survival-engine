@@ -10,7 +10,7 @@ import { entityIndex, Membership, Transform, type Entity, type World } from "@en
 /** BuildPiece.tint for a clan: 1..255 index into assets clanPalettes (ADR-077). */
 import { spawnCrop } from "../farming.js";
 export const clanTintIndex = (clanId: number): number => clanId ? 1 + ((clanId - 1) % 255) : 0;
-import { installSpatialIndex, SUBTILE } from "@engine/world";
+import { installSpatialIndex, SUBTILE, WaterDepth, waterDepthAt } from "@engine/world";
 import {
   AttachKind, BuildPiece, Container, ContainerViewers, CraftingStation, DoorState, EdgeSide, Emitter, Fuel, Health,
   PieceLink, PieceStability, PrivilegeZone, Tribe, Zombie,
@@ -182,7 +182,7 @@ export function validatePlacement(world: World, builder: Entity, sn: Snapped, op
   if (terrain && onGround) {
     let lo = Infinity, hi = -Infinity;
     for (const [x, y] of tiles) {
-      if (defs.worldgen.unbuildableTiles.has(terrain.tileAt(x, y))) return BuildFail.Terrain;
+      if (defs.worldgen.unbuildableTiles.has(terrain.tileAt(x, y)) && waterDepthAt(terrain.tileAt, x, y, defs.movement.shallowRadius) !== WaterDepth.Shallow) return BuildFail.Terrain; // ADR-181: shallow is buildable, deep is not
       const h = terrain.heightAt(x, y); lo = Math.min(lo, h); hi = Math.max(hi, h);
     }
     if (hi - lo > (def.maxSlope >= 0 ? def.maxSlope : b.maxSlope)) return BuildFail.Terrain;

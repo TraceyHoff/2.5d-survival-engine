@@ -66,7 +66,7 @@ describe("ADR-107 swimming", () => {
   it("players enter water slowly and play Swim; zombies/animals get Swim in water", () => {
     const w = makeWorld();
     w.setResource(G.TerrainRes, { tileAt: (tx: number) => (tx >= 5 ? 1 : 3), heightAt: () => 0 });
-    expect(G.swimSpeedMulAt(w, 6, 0)).toBe(G.defaultDefs().movement.swimSpeedMul);
+    expect(G.swimSpeedMulAt(w, 9, 0)).toBe(G.defaultDefs().movement.swimSpeedMul);
     const p = G.spawnPlayer(w, { x: 4.5, y: 0.5 });
     const right = G.GameplayActions.MoveDown | G.GameplayActions.MoveRight; // +x
     for (let i = 0; i < 20; i++) { G.applyMovementInput(w, p, right, 1 / 20); w.step(1 / 20); }
@@ -75,6 +75,7 @@ describe("ADR-107 swimming", () => {
     expect(w.get(p, Transform)!.x - x0).toBeLessThan(land * 0.5);
     const z = G.spawnZombie(w, "zombie_walker", 8.5, 3.5); setTimeOfDay(w, 0, 0); steps(w, 2);
     expect(w.getField(z, G.AnimState, "anim")).toBe(G.Anim.Swim);
+    w.set(p, Transform, { x: 10.5, y: 0.5 }); // ADR-181: Swim plays in deep water (shore band wades)
     w.add(p, G.AnimState, { anim: G.Anim.Walk, startTick: w.tick }); steps(w, 1); expect(w.getField(p, G.AnimState, "anim")).toBe(G.Anim.Swim);
     w.set(p, Transform, { x: 1.5, y: 0.5 }); steps(w, 1); expect(w.getField(p, G.AnimState, "anim")).toBe(G.Anim.Idle);
   });

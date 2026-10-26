@@ -1,12 +1,14 @@
 {
-  "$comment": "Player movement (tiles/s). Screen-aligned iso mapping (W = up-screen). Speed = walkSpeed x sprintMul (while sprinting with stamina) x encumbrance x wetness x MoveSpeed buffs. Encumbrance: above encumberedFrom x maxWeight the multiplier falls linearly to encumberedMinMul at full weight. Wetness slows by up to wetSlowMul. swimTiles (ADR-107): terrain ids players may enter (overrides worldgen unwalkableTiles for player movement only; AI pathing still avoids them) at x swimSpeedMul; anything standing on one plays AnimState.Swim. ADR-125: walkSpeed cut 4 -> 2.6 (jog; sprint 4.16) so vehicles (12.5-18) are 3-4.3x sprint; walkAnimRefSpeed = the speed the character walk art was authored at (client plays walk at walkSpeed / walkAnimRefSpeed so feet do not slide).",
+  "$comment": "Player movement (tiles/s). Screen-aligned iso mapping (W = up-screen). Speed = walkSpeed x sprintMul (while sprinting with stamina) x encumbrance x wetness x MoveSpeed buffs. Encumbrance: above encumberedFrom x maxWeight the multiplier falls linearly to encumberedMinMul at full weight. Wetness slows by up to wetSlowMul. swimTiles (ADR-107): terrain ids players may enter (overrides worldgen unwalkableTiles for player movement only; AI pathing still avoids them) at x swimSpeedMul; anything standing on one plays AnimState.Swim. ADR-125: walkSpeed cut 4 -> 2.6 (jog; sprint 4.16) so vehicles (12.5-18) are 3-4.3x sprint; walkAnimRefSpeed = the speed the character walk art was authored at (client plays walk at walkSpeed / walkAnimRefSpeed so feet do not slide). ADR-181: water has two depths derived from distance to shore (no new persisted tile): SHALLOW = a water tile with land within shallowRadius tiles (wadeable by everyone, wadeSpeedMul, walk anim, can drink/build); DEEP = everything else (swim only, swimSpeedMul, no sprint, Swim anim, unbuildable; AI cannot enter).",
   "walkSpeed": 2.6,
   "sprintMul": 1.6,
   "encumberedFrom": 0.7,
   "encumberedMinMul": 0.45,
   "wetSlowMul": 0.15,
   "bodyRadius": 0.3,
-  "swimTiles": [1],
-  "swimSpeedMul": 0.4,
+  "swimTiles": [1, 8],
+  "swimSpeedMul": 0.35,
+  "wadeSpeedMul": 0.7,
+  "shallowRadius": 2,
   "walkAnimRefSpeed": 4
 }

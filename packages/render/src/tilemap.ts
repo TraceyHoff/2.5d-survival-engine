@@ -4,7 +4,7 @@
  * Meshes are rebuilt only when a chunk's `version` (or a neighbour's) changes. Chunks outside
  * the camera rect are culled (one draw call per visible chunk).
  */
-import { CHUNK_SIZE, tileToChunk, tileToLocal, type TileMap, type Chunk, type IsoConfig } from "@engine/world";
+import { CHUNK_SIZE, tileToChunk, tileToLocal, WaterDepth, waterDepthAt, type TileMap, type Chunk, type IsoConfig } from "@engine/world";
 import { createProgram, GLSL_COMMON, type FrameStats, type Program } from "./gl/util.js";
 import type { Rect } from "./camera.js";
 import { TileId, isWaterTile } from "./ids.js";
@@ -123,7 +123,8 @@ export class TilemapRenderer {
       const i = ly * CHUNK_SIZE + lx; const id = c.tiles[i]!; if (id === 0) continue;
       const x = ox + lx, y = oy + ly; const z = c.height[i]!;
       minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z);
-      const pal = PALETTE[id] ?? [255, 0, 255];
+      const shallow = id === TileId.Water && waterDepthAt((a, b) => map.getTile(a, b), x, y) === WaterDepth.Shallow; // ADR-181
+      const pal = PALETTE[shallow ? TileId.ShallowWater : id] ?? [255, 0, 255];
       const v = 0.94 + hash(x, y) * 0.12;
       const water = isWaterTile(id) ? 1 : 0;
       const zt = water ? z - 0.25 : z;

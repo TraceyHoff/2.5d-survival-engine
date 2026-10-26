@@ -5,7 +5,7 @@
  * Shore tiles are chosen from the 4/8-neighbourhood (TERRAIN rules below). Ground-plane depth like flat decals.
  * Surface overlays (wet ground, puddles, snow cover) are applied on top in the same shader.
  */
-import { CHUNK_SIZE, type TileMap, type Chunk, type IsoConfig } from "@engine/world";
+import { CHUNK_SIZE, WaterDepth, waterDepthAt, type TileMap, type Chunk, type IsoConfig } from "@engine/world";
 import { createProgram, GLSL_COMMON, type FrameStats, type Program } from "./gl/util.js";
 import type { AtlasManager } from "./assets/atlasManager.js";
 import type { Rect } from "./camera.js";
@@ -115,7 +115,8 @@ export class TileTerrain {
         if (w(0, -1)) key = SHORE_SPRITES.n; else if (w(1, 0)) key = SHORE_SPRITES.e; else if (w(0, 1)) key = SHORE_SPRITES.s; else if (w(-1, 0)) key = SHORE_SPRITES.w;
         else if (w(1, -1)) key = SHORE_SPRITES.ne; else if (w(1, 1)) key = SHORE_SPRITES.se; else if (w(-1, 1)) key = SHORE_SPRITES.sw; else if (w(-1, -1)) key = SHORE_SPRITES.nw;
       }
-      const variants = TERRAIN_SPRITES[id] ?? TERRAIN_SPRITES[TileId.Dirt]!;
+      const shallow = id === TileId.Water && waterDepthAt(tileAt, x, y) === WaterDepth.Shallow; // ADR-181: shore band uses the shallow-water art
+      const variants = (shallow ? TERRAIN_SPRITES[TileId.ShallowWater] : undefined) ?? TERRAIN_SPRITES[id] ?? TERRAIN_SPRITES[TileId.Dirt]!;
       const hsh = ((Math.imul(x, 374761393) ^ Math.imul(y, 668265263)) >>> 0) % 997;
       let e = key ? E(key) : null;
       if (!e) e = E(variants[hsh % variants.length]!) ?? E(variants[0]!);

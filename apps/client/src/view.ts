@@ -1,4 +1,7 @@
 import { effectiveLevel, levelFlags } from "./gl-recovery.js";
+import { WaterDepth, waterDepthAt } from "@engine/world";
+/** ADR-181 wading look (tint-free stand-in until wade art exists): sink the body and show wet drips/splash. */
+const WADE_SINK = 0.15, WADE_WET = 160;
 import { isFreeStandingStation, stationFireFrame } from "./station-view.js";
 import { DESKTOP_ZOOM } from "./camera-zoom.js";
 import { showRenderError, glInfo, BlackFrameCheck } from "./glcheck.js";
@@ -306,9 +309,13 @@ export class IsoView {
         const an = net.has(e, Animal) ? net.get(e, Animal) : undefined;
         if (an) state = this.animalAnim(net, e, an, moving, dead, player);
         // ADR-107: anything on a swim tile at ground level swims (players have no replicated AnimState; locomotion only)
-        if (!dead && (state <= 2 || state === 6 || state === 14) && cur.z < 0.5 && defs && tiles && defs.movement.swimTiles.has(tiles.getTile(Math.floor(cur.x), Math.floor(cur.y)))) state = 14;
+        // ADR-181: only DEEP water swims; shallow water wades (walk anim, body sunk to the shins, splashy wet particles)
+        const depth = cur.z < 0.5 && defs && tiles ? waterDepthAt((x, y) => tiles.getTile(x, y), Math.floor(cur.x), Math.floor(cur.y), defs.movement.shallowRadius) : WaterDepth.None;
+        if (!dead && (state <= 2 || state === 6 || state === 14) && depth === WaterDepth.Deep) state = 14;
+        else if (state === 14 && depth !== WaterDepth.Deep) state = moving ? 1 : 0;
+        if (depth === WaterDepth.Shallow) { v.setField(ve, Transform, "z", gr(cur.x, cur.y, cur.z) - WADE_SINK); if (moving && (v.getField(ve, VWet, "level") ?? 0) < WADE_WET) v.has(ve, VWet) ? v.set(ve, VWet, { level: WADE_WET }) : v.add(ve, VWet, { level: WADE_WET }); }
         if (v.getField(ve, VAnim, "state") !== state) v.set(ve, VAnim, { state, startTick: v.tick });
-        const wet = net.getField(e, Wetness, "level"); if (wet !== undefined && v.getField(ve, VWet, "level") !== wet) v.set(ve, VWet, { level: wet });
+        const wet = net.getField(e, Wetness, "level"); if (wet !== undefined && v.getField(ve, VWet, "level") !== wet && !(depth === WaterDepth.Shallow && moving && wet < WADE_WET)) v.set(ve, VWet, { level: wet });
         const bt = net.getInto(e, BodyTemp, this.sTemp); if (bt && (v.getField(ve, VTemp, "cold") !== bt.cold || v.getField(ve, VTemp, "heat") !== bt.heat || v.getField(ve, VTemp, "shivering") !== bt.shivering)) v.set(ve, VTemp, { cold: bt.cold, heat: bt.heat, shivering: bt.shivering });
       }
       if (net.has(e, ResourceNode) && v.has(ve, Sprite)) { // depleted nodes fade out
