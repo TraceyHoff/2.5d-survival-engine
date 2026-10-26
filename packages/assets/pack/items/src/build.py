@@ -2,7 +2,7 @@
 import json, math, os, sys
 from concurrent.futures import ProcessPoolExecutor
 from PIL import Image, ImageDraw, ImageFont
-from draw import C
+from draw import C, CEL, cel_snap
 from table import T, HELD
 from bonetools import BONE
 HELD_C = list(BONE)  # held-only keys (icons live in the nature pack)
@@ -36,6 +36,7 @@ def held(k):
             f = 28*scale/256  # 32 units -> 28px at 1x
             W = max(1, int(768*f*SQ[d])); H = int(768*f)
             im = im.resize((W, H), Image.LANCZOS)
+            if CEL: im = cel_snap(im, c.pal)   # projection resample -> back to flat palette + binary alpha
             if DIM[d] < 1:
                 r, g, b, a = im.split(); r, g, b = [ch.point(lambda v, m=DIM[d]: int(v*m)) for ch in (r, g, b)]; im = Image.merge('RGBA', (r, g, b, a))
             fr = Image.new('RGBA', (cell, cell), (0, 0, 0, 0)); ax, ay = cell*.5, cell*.75

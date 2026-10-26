@@ -3,6 +3,7 @@
 import math, numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 from palette import ramp, RAMPS, hex2rgb, SHADOW, SHADOW_ALPHA
+from cel import CEL, snap as cel_snap   # CEL=1: solid cel look (hard bands, palette snap, binary alpha)
 
 SS = 4
 INK = hex2rgb(RAMPS["ink"][2])
@@ -60,7 +61,7 @@ class Canvas:
     def __init__(self, w, h, seed=1, wobble=1.0):
         self.w, self.h = w, h; self.W, self.H = w * SS, h * SS
         self.img = Image.new("RGBA", (self.W, self.H), (0, 0, 0, 0)); self.seed = seed
-        self.wobble = wobble
+        self.wobble = wobble; self.pal = []
         self._n1 = noise(self.W, self.H, 10 * SS, seed) ; self._n2 = noise(self.W, self.H, 3 * SS, seed + 99)
 
     def S(self, pts): return [(x * SS, y * SS) for x, y in pts]
@@ -87,30 +88,36 @@ class Canvas:
         size = max(4.0, min(bb[2] - bb[0], bb[3] - bb[1]))
         base = np.array(base_col or r[1], np.float32); sh = np.array(shade_col or r[2], np.float32); hc = np.array(hl_col or r[0], np.float32)
         col = np.ones(m.shape + (3,), np.float32) * base
+        if CEL: self.pal += [tuple(base), tuple(sh), tuple(hc)] + ([tuple(r[0])] if gloss is not None else [])
         if not flat:
             o = max(2, shade * size)
             s = m * (1 - blur(shift(m, o, o * 1.1), o * 0.35))
             s = smooth(0.42, 0.58, s + (n2 - 0.5) * 0.12)
+            if CEL: s = (s > 0.5).astype(np.float32) * m
             col = col * (1 - s[..., None]) + sh * s[..., None]
             if hl > 0:
                 h = max(1.5, hl * size)
                 t = m * (1 - blur(shift(m, -h, -h * 1.2), h * 0.4))
                 t = smooth(0.5, 0.62, t) * (1 - s)
+                if CEL: t = (t > 0.5).astype(np.float32)
                 col = col * (1 - t[..., None]) + hc * t[..., None]
         if gloss is not None:
             for (gx, gy, grx, gry) in gloss:
                 gm = Image.new("L", (x1 - x0, y1 - y0), 0)
                 ImageDraw.Draw(gm).ellipse([gx * SS - grx * SS - x0, gy * SS - gry * SS - y0, gx * SS + grx * SS - x0, gy * SS + gry * SS - y0], fill=200)
-                g = np.asarray(gm.filter(ImageFilter.GaussianBlur(SS * 0.5)), np.float32) / 255 * m
+                g = np.asarray(gm if CEL else gm.filter(ImageFilter.GaussianBlur(SS * 0.5)), np.float32) / 255 * m
+                if CEL: g = (g > 0.3).astype(np.float32) * m
                 col = col * (1 - g[..., None]) + np.array(r[0], np.float32) * g[..., None]
         alpha = m
         if outline:
             oc = np.array(ink or outline_col(r), np.float32)
+            if CEL: self.pal.append(tuple(oc))
             rad = lw * SS * 0.75
             mm = np.maximum(m, shift(m, -SS * 0.35 * lw, -SS * 0.35 * lw))   # heavier line bottom-right
             D = blur(mm, rad)
             thr = np.maximum(0.07, 0.13 + 0.09 * (n1 - 0.5) * 2 * self.wobble + 0.04 * (n2 - 0.5))
             ring = smooth(thr - 0.04, thr + 0.04, D)
+            if CEL: ring = (ring > 0.5).astype(np.float32)
             ring = np.maximum(ring, m)
             col = col * m[..., None] + oc * (1 - m[..., None])
             alpha = ring
@@ -123,6 +130,7 @@ class Canvas:
     def fill(self, polys, color, alpha=255, clip=None, blur_r=0):
         """Flat detail without outline. color rgb tuple or hex."""
         if isinstance(color, str): color = hex2rgb(color)
+        if CEL: self.pal.append(tuple(color))
         m = self.mask_from(polys)
         if clip is not None: m = Image.fromarray(np.minimum(np.asarray(m), np.asarray(clip)))
         if blur_r: m = m.filter(ImageFilter.GaussianBlur(blur_r * SS))
@@ -132,6 +140,7 @@ class Canvas:
 
     def line(self, pts, color, width=1.0, clip=None, alpha=255):
         if isinstance(color, str): color = hex2rgb(color)
+        if CEL: self.pal.append(tuple(color))
         m = Image.new("L", (self.W, self.H), 0); d = ImageDraw.Draw(m)
         sp = self.S(pts); d.line(sp, fill=alpha, width=max(1, int(width * SS)), joint="curve")
         for p in (sp[0], sp[-1]):
@@ -152,7 +161,8 @@ class Canvas:
         self.img = Image.alpha_composite(self.img, full)
 
     def final(self, sharpen=True):
-        return downscale(self.img, (self.w, self.h), sharpen)
+        im = downscale(self.img, (self.w, self.h), sharpen)
+        return cel_snap(im, self.pal) if CEL and self.pal else im
 
 def downscale(img, size, sharpen=True):
     a = np.asarray(img, np.float32) / 255.0

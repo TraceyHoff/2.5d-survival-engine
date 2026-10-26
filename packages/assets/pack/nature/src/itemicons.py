@@ -1,7 +1,7 @@
 """ADR-110 item icons (98 keys from gameplay sprite_fallbacks.json `icons`): meats, seeds, saplings, produce, animal
 materials, bone/antler tools, leather/wool clothing, farm tools and dishes. Painted with the items pack painter
 (packages/assets/pack/items/src: draw.C + icons.py helpers) so they match the existing 32px icon set exactly:
-soft gradient fills, bold darker outline, drop shadow, art inside a 2px gutter. pine_sapling and pumpkin already
+gradient fills (solid cel bands under CEL=1, see assets/tools/cel.py), bold darker outline, drop shadow, art inside a 2px gutter. pine_sapling and pumpkin already
 exist in the base pack and are reused (not redrawn). Page: nature_icons (32px cells, 16 cols, 1x + @2x)."""
 import os, sys, math, json, importlib.util
 HERE = os.path.dirname(os.path.abspath(__file__)); ITEMS = os.path.normpath(os.path.join(HERE, "../../items/src"))

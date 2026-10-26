@@ -1,4 +1,8 @@
-# Tiny supersampled vector painter: every part gets a soft gradient fill + bold darker outline (cartoony icon look).
+# Tiny supersampled vector painter: every part gets a gradient fill + bold darker outline (cartoony icon look).
+# CEL=1 (assets/tools/cel.py): the gradient becomes three hard bands (highlight / base / one shade), out() palette-snaps.
+import os, sys
+sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../../../assets/tools')))
+from cel import CEL, snap as cel_snap
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageChops
 def hx(c):
@@ -10,7 +14,7 @@ def dk(c, t=0.3): return mix(c, (40, 22, 40), t)
 class C:
     def __init__(s, n=32, S=8):
         s.n, s.S = n, S; s.W = n*S; s.img = Image.new('RGBA', (s.W, s.W), (0, 0, 0, 0)); s.ow = 1.0
-        yy, xx = np.mgrid[0:s.W, 0:s.W].astype(np.float32); s.yy, s.xx = yy, xx
+        yy, xx = np.mgrid[0:s.W, 0:s.W].astype(np.float32); s.yy, s.xx = yy, xx; s.pal = []
     def P(s, pts): return [(x*s.S, y*s.S) for x, y in pts]
     def _mask(s, fn):
         m = Image.new('L', (s.W, s.W), 0); fn(ImageDraw.Draw(m)); return m
@@ -18,6 +22,7 @@ class C:
         col = hx(col)
         if ol:
             r = max(1, int(s.S*s.ow*owf)); d = m.filter(ImageFilter.MaxFilter(2*r+1))
+            if CEL: s.pal.append(olc and hx(olc) or dk(col, 0.62))
             s.img.alpha_composite(Image.composite(Image.new('RGBA', m.size, olc and hx(olc)+(255,) or dk(col, 0.62)+(255,)), Image.new('RGBA', m.size, (0,)*4), d))
         bb = m.getbbox()
         if not bb: return
@@ -25,7 +30,10 @@ class C:
         t = ((s.xx-x0)/max(1, x1-x0)*ang[0] + (s.yy-y0)/max(1, y1-y0)*ang[1]) / (ang[0]+ang[1])
         t = np.clip(t, 0, 1)[..., None]
         L, D = np.array(lt(col, shade), np.float32), np.array(dk(col, shade*0.9), np.float32)
-        rgb = np.where(t < 0.5, L + (np.array(col, np.float32)-L)*(t*2), np.array(col, np.float32) + (D-np.array(col, np.float32))*((t-0.5)*2))
+        if CEL:
+            s.pal += [tuple(int(v) for v in L), col, tuple(int(v) for v in D)]
+            rgb = np.where(t < 0.3, L, np.where(t > 0.62, D, np.array(col, np.float32))) * np.ones((1, 1, 1), np.float32)
+        else: rgb = np.where(t < 0.5, L + (np.array(col, np.float32)-L)*(t*2), np.array(col, np.float32) + (D-np.array(col, np.float32))*((t-0.5)*2))
         a = np.array(m, np.float32)[..., None]
         layer = Image.fromarray(np.concatenate([rgb, a], -1).astype(np.uint8), 'RGBA'); s.img.alpha_composite(layer)
     def poly(s, pts, col, **k): s._paint(s._mask(lambda d: d.polygon(s.P(pts), fill=255)), col, **k)
@@ -38,8 +46,10 @@ class C:
         s._paint(s._mask(f), col, **k)
     # unoutlined detail ink
     def line(s, pts, w, col, a=255):
+        if CEL: s.pal.append(hx(col))
         L = Image.new('RGBA', s.img.size, (0,)*4); ImageDraw.Draw(L).line(s.P(pts), fill=hx(col)+(a,), width=max(1, int(w*s.S)), joint='curve'); s.img.alpha_composite(L)
     def dot(s, x, y, r, col, a=255):
+        if CEL: s.pal.append(hx(col))
         L = Image.new('RGBA', s.img.size, (0,)*4); ImageDraw.Draw(L).ellipse([(x-r)*s.S, (y-r)*s.S, (x+r)*s.S, (y+r)*s.S], fill=hx(col)+(a,)); s.img.alpha_composite(L)
     def shine(s, x, y, r=0.9, a=200): s.dot(x, y, r, (255, 255, 250), a)
     def shadow(s, cx, cy, rx, ry, a=70):
@@ -47,4 +57,5 @@ class C:
         s.img.alpha_composite(L.filter(ImageFilter.GaussianBlur(s.S*0.8)))
     def out(s, px):
         im = s.img.resize((px, px), Image.LANCZOS)
-        a = np.array(im); al = a[..., 3].astype(np.float32); a[..., 3] = np.clip((al-20)*1.12, 0, 255).astype(np.uint8); return Image.fromarray(a)
+        a = np.array(im); al = a[..., 3].astype(np.float32); a[..., 3] = np.clip((al-20)*1.12, 0, 255).astype(np.uint8)
+        return cel_snap(Image.fromarray(a), s.pal) if CEL and s.pal else Image.fromarray(a)

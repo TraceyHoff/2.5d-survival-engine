@@ -30,7 +30,9 @@ palette.RAMPS.update({
 })
 
 K = 1
-def _final(self, sharpen=True): return toon.downscale(self.img, (self.w * K, self.h * K), sharpen)
+def _final(self, sharpen=True):
+    im = toon.downscale(self.img, (self.w * K, self.h * K), sharpen)
+    return toon.cel_snap(im, self.pal) if toon.CEL and getattr(self, "pal", None) else im   # CEL=1: solid cel look
 toon.Canvas.final = _final
 
 def render(fn, *a, **kw):

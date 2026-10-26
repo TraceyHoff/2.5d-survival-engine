@@ -13,7 +13,7 @@
 import json, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from PIL import Image, ImageDraw
-from draw import C
+from draw import C, CEL, cel_snap
 import icons
 from icons import M, knife
 from bonetools import BONE
@@ -39,6 +39,7 @@ def project(k, off):
             if off: im = im.transpose(Image.FLIP_LEFT_RIGHT); px = 768 - px
             f = 28 * scale / 256; W = max(1, int(768 * f * SQ[m])); H = int(768 * f)
             im = im.resize((W, H), Image.LANCZOS)
+            if CEL: im = cel_snap(im, c.pal)   # projection resample -> back to flat palette + binary alpha
             if DIM[m] < 1:
                 r, g, b, a = im.split(); r, g, b = [ch.point(lambda v, q=DIM[m]: int(v * q)) for ch in (r, g, b)]; im = Image.merge('RGBA', (r, g, b, a))
             fr = Image.new('RGBA', (cell, cell), (0, 0, 0, 0)); ax, ay = cell * .5, cell * (.25 if off else .75)
