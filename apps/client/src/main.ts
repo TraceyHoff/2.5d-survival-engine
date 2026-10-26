@@ -1,5 +1,6 @@
 import { markNavFocus } from "./back-history.js";
 import { debugCamera, mountLootLabels } from "./loot-labels.js";
+import { mountNameTags } from "./name-tags.js";
 import { lastPlayedKey } from "./delete-progress.js";
 import { CHAT_TAG, chatLine, chatSender } from "./chat-line.js";
 import { intentPayload } from "./send-intent.js";
@@ -277,7 +278,9 @@ function inviteNotices(): void {
   if (ck !== inviteSeen.clan) { if (ci) farm?.toast(`${ci.fromName} invited you to a clan: open Clan`); menus.setBadge("clan", ci ? 1 : 0); }
   inviteSeen = { party: pk, clan: ck };
 }
+let renderAlpha = 1; // ADR-173: name tags follow the same interpolated position as the sprites
 function render(w: World, alpha: number): void {
+  renderAlpha = alpha;
   wireChat();
   try { deathUi?.frame(); } catch { /* never break a frame */ }
   const dayFrac = sampleDayClock(w, session.client, alpha); // ADR-115: one clock for lighting + HUD
@@ -538,6 +541,11 @@ worldTools = mountWorldTools(root, { world: () => world, player: () => session.p
 mountGatherFx(root, { world: () => world, player: () => session.player, camera: () => iso?.renderer.camera, hidden: () => !!menus?.nav.isOpen || buildMode.active || !!vehicleCtl?.driving, device: promptDevice,
   icon: (item, key) => panelIcon(world, key, String(item)) });
 // ADR-161: floating loot-bag / dropped-item labels with the Interact prompt
+let nameTagsOn = true, nameTagsAt = 0; // settings read at most once a second (no per-frame JSON parse)
+mountNameTags(root, { world: () => world, player: () => session.player, alpha: () => renderAlpha, enabled: () => { const n = performance.now(); if (n >= nameTagsAt) { nameTagsAt = n + 1000; nameTagsOn = loadSettings().nameTags !== false; } return nameTagsOn; },
+  camera: () => iso?.renderer.camera ?? (ctx ? debugCamera(cam, innerWidth, innerHeight, devicePixelRatio || 1) : undefined),
+  names: () => { const c = session.client; return c ? { get: (id: number) => { const n = c.names.get(id); if (n === undefined && id) c.names.want([id]); return n; } } : undefined; },
+  hidden: () => !!menus?.nav.isOpen });
 mountLootLabels(root, { world: () => world, player: () => session.player, camera: () => iso?.renderer.camera ?? (ctx ? debugCamera(cam, innerWidth, innerHeight, devicePixelRatio || 1) : undefined), hidden: () => !!menus?.nav.isOpen || buildMode.active || !!vehicleCtl?.driving,
   device: promptDevice, key: () => controlLabel(input.bindings(promptDevice(), "Gameplay").find((b) => b.binding.action === "Interact")?.binding.control) });
 // ADR-126: tool-needed symbol over the nearest resource node (Settings toggle, live)
