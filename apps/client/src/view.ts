@@ -16,7 +16,7 @@ import { CHUNK_SIZE, tileToChunk, tileToLocal, type TileMap } from "@engine/worl
 import { setDayFraction, resolveOffHandSprite } from "@engine/render";
 import { pieceVariantOpts } from "./piece-variant.js";
 import { loadManifest, mergeManifests, resolveManifestShards, buildPieceVisual, type AssetRegistry, type ManifestFragment, type ManifestJson } from "@engine/assets";
-import { BuildGhost, pieceArtRow, ROT_EXACT_PIVOT, IsoRenderer, Canvas2DRenderer, chooseRenderer, Sprite, Shadow, LightSource, Occluder, SpriteFlag, sourcesFromManifest, coreAppearanceBinding, CameraTargetGuard } from "@engine/render";
+import { BuildGhost, pieceArtRow, ROT_EXACT_PIVOT, ROT_NO_OCCLUDE, IsoRenderer, Canvas2DRenderer, chooseRenderer, Sprite, Shadow, LightSource, Occluder, SpriteFlag, sourcesFromManifest, coreAppearanceBinding, CameraTargetGuard } from "@engine/render";
 import { countFraction } from "./load-progress.js";
 import { roadSpriteKeys, ROAD_FLAGS, signFrameId } from "./road-sign-view.js";
 import { Road, Sign, surfaceDef, signDef, walkAnimRate, petSits } from "@engine/gameplay";
@@ -260,6 +260,7 @@ export class IsoView {
         else if (spec.sprite !== undefined) v.add(ve, Sprite, { spriteId: spec.sprite!, frameId: spec.frame ?? 0, flags: spec.flags ?? 0, scale: spec.scale ?? 1, tint: spec.tint ?? 0 });
         if (spec.shadow) v.add(ve, Shadow, { alpha: spec.shadow, length: 1 });
         if (spec.occluder) v.add(ve, Occluder, { fade: 0.35 });
+        else if (spec.noOcclude) v.add(ve, Occluder, { fade: 1 }); // ADR-152: low prop whose frame anchor is tall but art is short -> never fade
         if (spec.light) { v.add(ve, LightSource, { ...spec.light, intensity: 0 }); this.lightOf.set(e, { spec: spec.light, ...(spec.fuelOf !== undefined ? { fuel: spec.fuelOf } : {}) }); }
         if (spec.character) { this.characters.add(ve); if (defs) this.walkRate = walkAnimRate(net); }
         if (spec.animated) { v.add(ve, VAnim, { state: 0, startTick: 0 }); v.add(ve, VWet, { level: 0 }); v.add(ve, VTemp, { cold: 0, heat: 0, shivering: 0 }); }
@@ -503,7 +504,7 @@ export class IsoView {
     if (isFreeStandingStation(net.has(e, CraftingStation), net.has(e, GPiece))) { // free-standing station (spawnStation): bonfire sprite + light following Fuel.lit
       const s = this.sid("bonfire") ?? this.sid("campfire_lit") ?? this.sid("fx_fire"); if (s === undefined) return undefined;
       const fired = net.has(e, Fuel); const spec = fired ? this.lights.get("bonfire") : undefined;
-      return { sprite: s, frame: fired ? this.fireFrame(s, (net.getField(e, Fuel, "lit") ?? 0) !== 0) : 0, shadow: 0.6, fuel: fired, ...(spec ? { light: spec } : {}) };
+      return { sprite: s, frame: fired ? this.fireFrame(s, (net.getField(e, Fuel, "lit") ?? 0) !== 0) : 0, shadow: 0.6, fuel: fired, noOcclude: true, ...(spec ? { light: spec } : {}) };
     }
     if (net.has(e, GPiece) && defs) {
       const p = net.get(e, GPiece)!; const def = defs.pieces.get(p.type);
@@ -511,7 +512,7 @@ export class IsoView {
       if (!vis.visualId) return undefined;
       const lh = (defs as unknown as { building?: { levelHeight?: number } }).building?.levelHeight ?? 1;
       const z = net.get(e, Transform)!.z; const level = Math.max(0, Math.round(z / (lh || 1)));
-      return { pieceVisual: vis.visualId, variant: p.variant, rot: vis.rotation | (exactPivot(def) ? ROT_EXACT_PIVOT : 0), tint: 0, damage: vis.damageStage, level, layer: vis.layer, pieceKey: def?.key };
+      return { pieceVisual: vis.visualId, variant: p.variant, rot: vis.rotation | (exactPivot(def) ? ROT_EXACT_PIVOT : 0) | (LOW_PROP_PIECES.has(def?.key ?? "") ? ROT_NO_OCCLUDE : 0), tint: 0, damage: vis.damageStage, level, layer: vis.layer, pieceKey: def?.key };
     }
     // emissive sprites (e.g. glow mushrooms) carry a light when the table knows their key
     return undefined;
@@ -520,12 +521,14 @@ export class IsoView {
 
 /** gameplay Placement.Tri (4) and the vertex-snapped Free (3) corner walls (ADR-104): drawn at the exact Transform x/y
  *  (centroid / vertex), not the floored tile. Other Free pieces keep the tile-centre pivot. */
+/** ADR-152: low ground props never auto-fade as occluders (their frame is far taller than the art). */
+export const LOW_PROP_PIECES: ReadonlySet<string> = new Set(["campfire"]);
 const exactPivot = (def: { placement?: number; key?: string } | undefined): boolean => def?.placement === 4 || (def?.placement === 3 && !!def.key?.startsWith("wall_corner"));
 /** rot/rotSteps for buildPieceVisual: triangles (12 steps of 30°) map exactly onto an art row (pieceArtRow), no quarter-turn snap. */
 const artRot = (rot: number, steps: number): { rot: number; rotSteps: number } => (steps === 12 ? { rot: pieceArtRow(rot, 12), rotSteps: 4 } : { rot, rotSteps: steps });
 
 interface Spec {
-  sprite?: number; frame?: number; flags?: number; scale?: number; shadow?: number; occluder?: boolean; animated?: boolean; character?: boolean; fuel?: boolean;
+  sprite?: number; frame?: number; flags?: number; scale?: number; shadow?: number; occluder?: boolean; /** ADR-152: explicit Occluder{fade:1} so a short prop never auto-fades */ noOcclude?: boolean; animated?: boolean; character?: boolean; fuel?: boolean;
   light?: { r: number; g: number; b: number; radius: number; intensity: number; flicker: number };
   pieceVisual?: number; variant?: number; rot?: number; onCreate?: number; tint?: number; damage?: number; level?: number; layer?: number; pieceKey?: string | undefined;
   /** light gated by this sibling's Fuel.lit (light attachment of a fired piece) */ fuelOf?: Entity | undefined;

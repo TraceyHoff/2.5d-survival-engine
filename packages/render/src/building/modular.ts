@@ -9,6 +9,9 @@
  *  - Gridless cutaway: a cover index built from the drawn pieces themselves (the client has no BuildingGrid).
  */
 export const ROT_EXACT_PIVOT = 0x80;
+/** ADR-152: BuildPiece.rotation bit 0x40: low ground prop (campfire) whose 128px frame is mostly empty above the art; never
+ * auto-occlusion-faded (the frame-height test faded the unlit campfire to a 35 % alpha smudge next to the player). */
+export const ROT_NO_OCCLUDE = 0x40;
 export const TRI_ROT_STEPS = 12;
 
 /** Art row (0-3, unique4 rows at 0/90/180/270°) for a triangle rotation step (0-11, 30° each). */

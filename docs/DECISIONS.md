@@ -892,3 +892,13 @@ Tutorial cards are scored against target, player zone (x1) and avoided UI (hotba
 Melee felt sluggish. All weapon melee cooldowns in items.json scaled x0.65 (rounded to 0.05 s, floor 0.3 s), fists 0.6 -> 0.4 s. Both client prediction and server authority read the same gameplay data in combatSystem, so swings are never rejected. Each swing restarts the Punch/Attack anim, which settles after PLAYER_SWING_TICKS = 6 (0.3 s, was 8); the client flinch HIT_REACT_MS is 320 -> 260 ms, so flinches don't stack at the fastest rate. Test: adr151_melee_speed.test.ts.
 
 ADR-150 addendum: the target (with the 10 px spotlight ring) is weighted x1000 and both screen edges are scanned in 8 columns, so tight phone-landscape steps (sprint, skills-info) no longer touch the Run button; measured 0 overlaps on all 4 layouts.
+
+## ADR-152: Low props never auto-fade (the tutorial "shadowy blob")
+
+**Context.** The translucent green smudge in front of the player in the tutorial was the player-built campfire (bonfire sprite, furniture atlas).
+Its frame is 128 px with an anchor at 0.75, so its frame-anchor height is 96 px. That is above the 40 px occlusion threshold, while the art is only about 33 px tall.
+Occlusion therefore faded it to 0.35 alpha whenever the player stood behind it. Its atlas also never registered as in use, so it stayed in the cold x0.125 tier as a mosaic.
+
+**Decision.** The free-standing campfire carries an explicit `Occluder{fade:1}`, so it never fades. Build pieces in `LOW_PROP_PIECES` get the
+`ROT_NO_OCCLUDE` (0x40) rotation bit, and the piece occlusion test skips them. Sprites with a never-fade Occluder mark their atlas as used, so it is promoted out of the cold tier on the next retier.
+The hot-tier scale measured unchanged on the 160 MB budget (hotMin 0.5, 500 hot atlases, before and after).

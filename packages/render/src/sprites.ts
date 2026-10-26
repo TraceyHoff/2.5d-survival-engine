@@ -24,7 +24,7 @@ import type { VfxLayer } from "./vfx.js";
 import { LayerCache, activeExpression, readAppearanceSlot, type AppearanceBinding, type CachedLayer } from "./character/layers.js";
 import { nearestCutoff } from "./gl/fallback.js";
 import { PRIO_NEAR } from "./gl/vram.js";
-import { crackAnim, PieceCoverIndex, ROT_EXACT_PIVOT } from "./building/modular.js";
+import { crackAnim, PieceCoverIndex, ROT_EXACT_PIVOT, ROT_NO_OCCLUDE } from "./building/modular.js";
 import { InteriorRoute, inInteriorRegion, interiorOrder, type InteriorRegion } from "./vehicles/interiorPass.js";
 
 export const INSTANCE_FLOATS = 40;
@@ -700,6 +700,7 @@ export class SpriteBatch {
         if (os >= 0 && occT > 0 && occ.mode === "fade") { fade = 1 - (1 - oc.data.fade[os]!) * occT / Math.max(1e-3, 1 - occ.alpha); occT = 0; }
       }
       const ss = sh.slot(i); const crisp = atlas.isCrisp(res.atlas); if (crisp) atlas.markUsedAt(res.atlas);
+      else if (occOn && oc.slot(i) >= 0 && oc.data.fade[oc.slot(i)]! >= 1) atlas.markUsedAt(res.atlas); // ADR-152: never-fade props (campfire) keep their atlas hot
       const o0 = this.writeOne(sx, sy, key, scale, res, sp.data.flags[k]! | (ls.slot(i) >= 0 ? SpriteFlag.BloomSource : 0) | (crisp ? CRISP : 0), (i * 0.618034) % 1, fade, -OPEN, OPEN, sp.data.tint[k]! >>> 0, 0,
         ss >= 0 ? sh.data.alpha[ss]! : 0, 0, 0, ss >= 0 ? blobW * (sh.data.length[ss]! || 1) : 0);
       if (wet) { const s2 = wet.slot(i); if (s2 >= 0) { o0[20] = wet.data.level[s2]! / 255; if (o0[20] > 0.3) cx.statusFx?.("wet", x, y, z, o0[20]); } }
@@ -912,7 +913,7 @@ export class SpriteBatch {
       const cutaway = !!cut && (level > playerLevel || (roof && level === playerLevel)) && footprintHits(cut, ax, ay, fw, fh);
       // occlusion (walls etc. not in cutaway): a hit, or a still-fading piece, is drawn dynamically this frame
       let occT = 0;
-      if (!cutaway && !flatLayer(layer, roof) && this.occ.occOn) {
+      if (!cutaway && !flatLayer(layer, roof) && !(rotRaw & ROT_NO_OCCLUDE) && this.occ.occOn) {
         const bottom = (ax + ay + fw + fh) * hh - z * zs; // front footprint corner
         const pivotY = cx.pieceAnchor === "front" ? bottom : (ax + ay + (fw + fh) / 2) * hh - z * zs;
         const top = pivotY - res.ay; const left = (ax - (ay + fh)) * hw, right = (ax + fw - ay) * hw;
