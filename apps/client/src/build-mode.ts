@@ -13,7 +13,7 @@
  *    the compact HUD carries floor ▲▼ and the contextual Repair / Upgrade / Demolish buttons.
  *  - a placed piece under the aim is the `target`; `context` lists its labelled actions (shown only when targeted).
  */
-import { buildPreviewFor, buildView, demolishIntent, gameplayDefs, moveVector, pieceTargetAt, placementTarget, placePreviewIntent, repairIntent, rotateStep, upgradeIntent,
+import { buildPreviewFor, fineEligible, FINE_ROT, FINE_ROT_STEPS, rotationSteps, buildView, demolishIntent, gameplayDefs, moveVector, pieceTargetAt, placementTarget, placePreviewIntent, repairIntent, rotateStep, upgradeIntent,
   type BuildPreview, type BuildSelection, type MenuCtx, type MenuIntent, type PieceTarget, type PlacementAim } from "@engine/gameplay";
 import { Transform } from "@engine/core";
 
@@ -63,7 +63,16 @@ export class BuildMode {
   /** ADR-171: leave build mode and open the road tool / place (or edit) a sign. */
   tool(id: "road" | "sign"): void { const t = this.o.tools; if (!t) return; this.stop(); if (id === "road") t.road(); else t.sign(); }
   get hasTools(): boolean { return !!this.o.tools; }
-  toggleSnap(): void { this.snap = !this.snap; this.toast = this.snap ? "Snap on" : "Snap off"; this.refresh(); }
+  /** ADR-174: 15° step (0..23) used while snap is off for pieces that may go off-grid (fineEligible). */
+  fineRot = 0;
+  /** Snap is off and the selected piece can be placed off-grid: 1/16-tile position, 15° rotation steps. */
+  get freePlacing(): boolean { const c = this.o.ctx(); const def = this.sel && c ? gameplayDefs(c.world).pieces.get(this.sel.piece) : undefined; return !this.snap && !!def && fineEligible(def); }
+  /** Rot sent with the preview / PlaceCmd (FINE_ROT | step when free placing). */
+  get requestRot(): number { return this.freePlacing ? FINE_ROT | this.fineRot : this.rot; }
+  toggleSnap(): void {
+    const c = this.o.ctx(); const n = this.sel && c ? rotationSteps(c.world, this.sel.piece) : 16; // keep the heading across the switch
+    if (this.snap) this.fineRot = Math.round((this.rot * FINE_ROT_STEPS) / n) % FINE_ROT_STEPS; else this.rot = Math.round((this.fineRot * n) / FINE_ROT_STEPS) % n;
+    this.snap = !this.snap; this.toast = this.snap ? "Snap on" : "Snap off"; this.refresh(); }
   /** Last action feedback for the HUD ("Repaired", "Press X again to demolish", ...). */
   toast = "";
   constructor(private readonly o: BuildModeOptions) {}
@@ -73,18 +82,18 @@ export class BuildMode {
   private device(): BuildDevice { return this.o.device?.() ?? "keyboardMouse"; }
   start(sel: BuildSelection): void {
     const was = this.active; this.sel = { ...sel };
-    if (!was) { this.rot = 0; this.level = 0; this.padOffset = undefined; this.touchPoint = undefined; this.disarm(); this.o.input.push("Building"); this.o.onActiveChange?.(true); }
+    if (!was) { this.rot = 0; this.fineRot = 0; this.level = 0; this.padOffset = undefined; this.touchPoint = undefined; this.disarm(); this.o.input.push("Building"); this.o.onActiveChange?.(true); }
     this.refresh();
   }
   stop(): void { if (!this.active) return; this.sel = undefined; this.preview = undefined; this.target = undefined; this.touchPoint = undefined; this.padOffset = undefined; this.disarm(); this.o.input.pop("Building"); this.o.onActiveChange?.(false); }
-  rotate(dir: 1 | -1): void { const c = this.o.ctx(); if (!this.sel || !c) return; this.rot = rotateStep(c.world, this.sel.piece, this.rot, dir); this.refresh(); }
+  rotate(dir: 1 | -1): void { const c = this.o.ctx(); if (!this.sel || !c) return; if (this.freePlacing) { this.fineRot = (this.fineRot + dir + FINE_ROT_STEPS) % FINE_ROT_STEPS; this.refresh(); return; } this.rot = rotateStep(c.world, this.sel.piece, this.rot, dir); this.refresh(); }
   setLevel(dir: 1 | -1): void { const c = this.o.ctx(); if (!this.sel || !c) return; const max = gameplayDefs(c.world).building.maxLevel; this.level = Math.max(0, Math.min(max, this.level + dir)); this.disarm(); this.refresh(); }
   /** Cycle the piece (all pieces, catalog order) keeping tier when the new piece has it. */
   cyclePiece(dir: 1 | -1): void {
     const c = this.o.ctx(); if (!this.sel || !c) return; const all = buildView(c); if (!all.length) return;
     const i = all.findIndex((p) => p.id === this.sel!.piece); const next = all[(((i + dir) % all.length) + all.length) % all.length]!;
     const tier = next.tiers.some((t) => t.tier === this.sel!.tier) ? this.sel.tier : next.tiers[0]!.tier;
-    this.sel = { piece: next.id, tier, variant: 0, paint: this.sel.paint }; this.rot = 0; this.refresh();
+    this.sel = { piece: next.id, tier, variant: 0, paint: this.sel.paint }; this.rot = 0; this.fineRot = 0; this.refresh();
   }
   cycleTier(dir: 1 | -1): void {
     const c = this.o.ctx(); if (!this.sel || !c) return; const p = buildView(c).find((x) => x.id === this.sel!.piece); if (!p || p.tiers.length < 2) return;
@@ -124,7 +133,7 @@ export class BuildMode {
     const aim = this.aim(c);
     // ADR-169: off = never assist; on = the default (facing / pad-cursor aims snap, a pointed mouse / tap cell stays exact so a red ghost says why)
     const assist = !this.snap ? false : this.device() === "gamepad" ? true : undefined; // pad cursor is imprecise: snap it too
-    this.preview = buildPreviewFor(c.world, c.player, this.sel, this.rot, aim, this.level, assist);
+    this.preview = buildPreviewFor(c.world, c.player, this.sel, this.requestRot, aim, this.level, assist);
     const at = placementTarget(c.world, c.player, aim);
     const prev = this.target?.entity; this.target = pieceTargetAt(c.world, c.player, at, this.level);
     if (this.target?.entity !== prev) this.disarm();

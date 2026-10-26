@@ -5,8 +5,8 @@
  * Layout v1 (little endian, core BinaryWriter):
  *   header: u8 'S','T','R','C' | u16 version | i32 cx | i32 cy | u32 pieceHash | u32 itemHash | u32 count
  *   record: u16 type | u8 tier | u8 rot | u8 variant | u8 paint | u16 hp | u8 level | i16 qx | i16 qy (quarter tiles
- *           relative to the chunk origin) | u16 tribe | u8 flags (1 door, 2 fire, 4 storage, 16 tri (v4))
- *           [tri (flag 16, v4): f64 x, f64 y exact world centroid — ADR-104]
+ *           relative to the chunk origin) | u16 tribe | u8 flags (1 door, 2 fire, 4 storage, 16 exact x/y: tri (v4), off-grid free piece (ADR-174))
+ *           [exact (flag 16, v4): f64 x, f64 y exact world position — tri centroid (ADR-104) or off-grid free piece (ADR-174)]
  *           [door: u8 open, u16 lockTribe] [fire: u8 lit, u32 burnRemainingTicks]
  *           [container (fire or storage): u8 slotCount, u8 n, n x (u8 slot, u16 item, u16 count, u32 ageTicks, u16 durability, u32 crafterId (v2))]
  *           [stall (flag 8, v2): u8 ownerKind, u32 ownerId, u8 open, u32 revision, u8 L, L x (u16 priceItem, u16 priceCount, u16 qty, u8 enabled),
@@ -25,7 +25,7 @@ import { Placement, type PieceDef } from "../defs.js";
 import { attachmentsOf, unlinkPiece } from "./links.js";
 import { recomputeRegion } from "./integrity.js";
 import { placePiece } from "./place.js";
-import { openingParent, slotFromPos, slotTransform, structures, unmarkLinked, type StructureIndex } from "./structure.js";
+import { isFineRot, openingParent, slotFromPos, slotTransform, structures, unmarkLinked, type StructureIndex } from "./structure.js";
 import { setEmittersLit } from "../systems/fuel.js";
 import { setStallOwnership } from "../economy/stall.js";
 
@@ -35,14 +35,14 @@ export class StructureCodecError extends Error {}
 
 const rank = (d: PieceDef): number => d.placement === Placement.Cell ? d.layer : d.placement === Placement.Edge ? 4 : d.placement === Placement.Free ? 5 : 6;
 
-interface Rec { e: Entity; def: PieceDef; level: number; qx: number; qy: number; rot: number; type: number }
+interface Rec { e: Entity; def: PieceDef; level: number; qx: number; qy: number; rot: number; type: number; x: number; y: number }
 function records(world: World, idx: StructureIndex, cx: number, cy: number): Rec[] {
   const lh = gameplayDefs(world).building.levelHeight; const out: Rec[] = [];
   for (const e of idx.chunkPieces.get(chunkKey(cx, cy)) ?? []) {
     const def = idx.def(e); const t = world.get(e, Transform); const bp = world.get(e, BuildPiece); if (!def || !t || !bp) continue;
-    out.push({ e, def, level: Math.round(t.z / lh), qx: Math.round((t.x - cx * CHUNK_SIZE) * 4), qy: Math.round((t.y - cy * CHUNK_SIZE) * 4), rot: bp.rot, type: bp.type });
+    out.push({ e, def, level: Math.round(t.z / lh), qx: Math.round((t.x - cx * CHUNK_SIZE) * 4), qy: Math.round((t.y - cy * CHUNK_SIZE) * 4), rot: bp.rot, type: bp.type, x: t.x, y: t.y });
   }
-  return out.sort((a, b) => rank(a.def) - rank(b.def) || a.level - b.level || a.qy - b.qy || a.qx - b.qx || a.type - b.type || a.rot - b.rot);
+  return out.sort((a, b) => rank(a.def) - rank(b.def) || a.level - b.level || a.qy - b.qy || a.qx - b.qx || a.type - b.type || a.rot - b.rot || a.x - b.x || a.y - b.y);
 }
 
 export function encodeStructures(world: World, cx: number, cy: number): Uint8Array {
@@ -58,8 +58,9 @@ export function encodeStructures(world: World, cx: number, cy: number): Uint8Arr
     const door = atts.find((a) => world.has(a, DoorState)); const fire = atts.find((a) => world.has(a, Fuel));
     const store = atts.find((a) => world.has(a, Container) && !world.has(a, Fuel));
     const stall = store !== undefined && world.has(store, StallHeader) ? store : undefined;
-    w.write("u8", (door !== undefined ? 1 : 0) | (fire !== undefined ? 2 : 0) | (store !== undefined ? 4 : 0) | (stall !== undefined ? 8 : 0) | (r.def.placement === Placement.Tri ? 16 : 0));
-    if (r.def.placement === Placement.Tri) { const s = idx.slotOf(r.e); const t = world.get(r.e, Transform)!; w.write("f64", s?.fx ?? t.x); w.write("f64", s?.fy ?? t.y); }
+    const exact = r.def.placement === Placement.Tri || isFineRot(r.def, bp.rot); // ADR-174: off-grid free pieces keep their exact x/y too
+    w.write("u8", (door !== undefined ? 1 : 0) | (fire !== undefined ? 2 : 0) | (store !== undefined ? 4 : 0) | (stall !== undefined ? 8 : 0) | (exact ? 16 : 0));
+    if (exact) { const s = idx.slotOf(r.e); const t = world.get(r.e, Transform)!; w.write("f64", s?.fx ?? t.x); w.write("f64", s?.fy ?? t.y); }
     if (door !== undefined) { const d = world.get(door, DoorState)!; w.write("u8", d.open); w.write("u16", d.lockTribe); }
     if (fire !== undefined) { const f = world.get(fire, Fuel)!; w.write("u8", f.lit); w.write("u32", Math.max(0, f.burnUntilTick - world.tick)); }
     for (const c of [fire, store]) if (c !== undefined) writeContainer(world, w, c);

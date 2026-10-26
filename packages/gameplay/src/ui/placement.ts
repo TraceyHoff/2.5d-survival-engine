@@ -10,6 +10,7 @@ import { Transform, type Entity, type World } from "@engine/core";
 import { gameplayDefs } from "../config.js";
 import { Placement } from "../defs.js";
 import { pieceCost, snapPlacement, validatePlacement } from "../building/place.js";
+import { isFineRot, rotParts } from "../building/structure.js";
 import { maxHpOf } from "../building/integrity.js";
 import { BuildPiece, Dead, PieceSlot } from "../components.js";
 import { DemolishCmd, RepairCmd, UpgradeCmd } from "../input.js";
@@ -30,6 +31,10 @@ export interface BuildPreview {
   valid: boolean; reason: number;
   /** Touch snap assist (ADR-104) moved the request to a nearby valid snap; `request` holds the moved point. */
   assisted?: boolean;
+  /** ADR-174: snap off, off-grid (1/16 tile, 15° steps) — rot/rotSteps are then the 24-step rotation. */
+  fine?: boolean;
+  /** Snapped facing (radians), identical to the placed piece's Transform.facing. */
+  facing?: number;
   /** Unsnapped request (reach-clamped aim point + requested rot) that placePreviewIntent sends. */
   request: { x: number; y: number; rot: number };
 }
@@ -85,7 +90,8 @@ function rawPreview(world: World, player: Entity, sel: BuildSelection, rot: numb
   const base = { pieceKey: def.key, piece: def.id, tier: sel.tier, variant: sel.variant, paint: sel.paint, level, rotSteps: rotationSteps(world, sel.piece), request: { x: at.x, y: at.y, rot } };
   if (typeof sn === "number") return { ...base, x: at.x, y: at.y, z: level * d.building.levelHeight, rot, valid: false, reason: sn };
   const reason = validatePlacement(world, player, sn);
-  return { ...base, tier: sn.tier, variant: sn.variant, x: sn.pos.x, y: sn.pos.y, z: sn.pos.z, rot: sn.slot.rot, valid: reason === 0, reason };
+  const r = rotParts(def, sn.slot.rot); // ADR-174: an off-grid piece's ghost turns in its 15° steps, like the placed piece
+  return { ...base, tier: sn.tier, variant: sn.variant, x: sn.pos.x, y: sn.pos.y, z: sn.pos.z, rot: r.rot, rotSteps: r.steps, fine: isFineRot(def, sn.slot.rot), facing: sn.pos.facing, valid: reason === 0, reason };
 }
 /** PlaceCmd for a preview (raw rot as requested; the server re-snaps the same way). */
 export const placePreviewIntent = (p: BuildPreview): MenuIntent =>

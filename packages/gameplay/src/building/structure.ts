@@ -24,13 +24,25 @@ export const edgeKey = (tx: number, ty: number, z: number, side: EdgeSide): numb
 export interface Slot { tx: number; ty: number; z: number; side: EdgeSide; rot: number; fx?: number; fy?: number }
 
 /** Geometry of a piece def at a slot: Transform center + facing. */
+/**
+ * ADR-174 free (off-grid) placement. A Placement.Free piece placed with snap off carries FINE_ROT (bit 7) in its rot:
+ * the low bits are a FINE_ROT_STEPS step (15°) and its position is on a FINE_POS_STEP (1/16 tile) grid. Snapped free
+ * pieces keep their 0..rotSteps-1 rot and quarter-tile position. Rot stays one u8 (PlaceCmd, BuildPiece, STRC).
+ */
+export const FINE_ROT = 0x80, FINE_ROT_STEPS = 24, FINE_POS_STEP = 1 / 16;
+export const isFineRot = (def: PieceDef, rot: number): boolean => def.placement === Placement.Free && (rot & FINE_ROT) !== 0;
+/** Rotation as (step, steps) for art / facing: fine rot → (low bits, 24); else (rot, def steps). */
+export function rotParts(def: PieceDef, rot: number): { rot: number; steps: number } {
+  if (isFineRot(def, rot)) return { rot: (rot & 0x7f) % FINE_ROT_STEPS, steps: FINE_ROT_STEPS };
+  return { rot, steps: def.placement === Placement.Free ? def.rotSteps || 16 : def.placement === Placement.Tri ? 12 : 4 };
+}
 export function slotTransform(def: PieceDef, slot: Slot, levelHeight: number, x?: number, y?: number): { x: number; y: number; z: number; facing: number } {
   const z = slot.z * levelHeight;
   if (def.placement === Placement.Edge || (def.placement === Placement.Opening && slot.side !== EdgeSide.None)) {
     const flip = (slot.rot & 2) ? Math.PI : 0;
     return slot.side === EdgeSide.North ? { x: slot.tx + 0.5, y: slot.ty, z, facing: norm(flip) } : { x: slot.tx, y: slot.ty + 0.5, z, facing: norm(Math.PI / 2 + flip) };
   }
-  if (def.placement === Placement.Free) return { x: x ?? slot.tx + 0.5, y: y ?? slot.ty + 0.5, z, facing: norm((slot.rot * 2 * Math.PI) / (def.rotSteps || 16)) };
+  if (def.placement === Placement.Free) return { x: x ?? slot.tx + 0.5, y: y ?? slot.ty + 0.5, z, facing: norm((rotParts(def, slot.rot).rot * 2 * Math.PI) / rotParts(def, slot.rot).steps) };
   if (def.placement === Placement.Tri) return { x: slot.fx ?? x ?? slot.tx + 0.5, y: slot.fy ?? y ?? slot.ty + 0.5, z, facing: norm((slot.rot * Math.PI) / 6) };
   const [w, h] = rotatedSize(def, slot.rot & 3);
   return { x: slot.tx + w / 2, y: slot.ty + h / 2, z, facing: norm((slot.rot & 3) * Math.PI / 2) };
@@ -38,7 +50,7 @@ export function slotTransform(def: PieceDef, slot: Slot, levelHeight: number, x?
 const norm = (a: number): number => { let r = a; while (r > Math.PI) r -= 2 * Math.PI; while (r < -Math.PI) r += 2 * Math.PI; return r; };
 export const rotatedSize = (def: PieceDef, rot4: number): [number, number] => (rot4 & 1 ? [def.footprint.h, def.footprint.w] : [def.footprint.w, def.footprint.h]);
 /** Grid rotation (0..3) used for occupancy: cells use rot directly, free pieces round their 16-step rot. */
-export const gridRot = (def: PieceDef, rot: number): number => (def.placement === Placement.Free ? Math.round(rot / ((def.rotSteps || 16) / 4)) & 3 : def.placement === Placement.Tri ? 0 : rot & 3);
+export const gridRot = (def: PieceDef, rot: number): number => (def.placement === Placement.Free ? Math.round(rotParts(def, rot).rot / (rotParts(def, rot).steps / 4)) & 3 : def.placement === Placement.Tri ? 0 : rot & 3);
 /** Anchor tile of a cell/free footprint centred near (x,y). */
 export function anchorFor(def: PieceDef, x: number, y: number, rot4: number): [number, number] {
   const [w, h] = rotatedSize(def, rot4); return [Math.floor(x - w / 2 + 0.5), Math.floor(y - h / 2 + 0.5)];

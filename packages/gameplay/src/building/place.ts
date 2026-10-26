@@ -25,7 +25,7 @@ import { TerrainRes } from "../world.js";
 import { linkAttachment } from "./links.js";
 import { reseatSmallOn, smallPieceZ, surfaceHeightAt } from "./surface.js";
 import { TRI_INRADIUS, triEdges } from "./modular.js";
-import { anchorFor, gridRot, LAYER_DECK, LAYER_OPENING, markLinked, slotTransform, structures, type Slot, type StructureIndex } from "./structure.js";
+import { anchorFor, FINE_POS_STEP, FINE_ROT, FINE_ROT_STEPS, gridRot, LAYER_DECK, LAYER_OPENING, markLinked, slotTransform, structures, type Slot, type StructureIndex } from "./structure.js";
 import { Falloff } from "@engine/world";
 import { indexEntity } from "../spawn.js";
 import { tillSlots } from "../economy/config.js";
@@ -61,6 +61,9 @@ export function snapEdge(idx: StructureIndex, x: number, y: number, z: number): 
   const [, ex, ey, side] = c[0]!; return { tx: ex, ty: ey, side };
 }
 
+/** ADR-174: may this piece be placed off-grid (snap off)? Free decor / furniture only: not vertex-snapped posts, claims
+ *  or stalls; structural pieces (cell decks, edge walls, openings, triangles) are never free. */
+export const fineEligible = (def: PieceDef): boolean => def.placement === Placement.Free && def.snap !== "vertex" && def.privilegeRadius === 0 && !def.stall;
 export function snapPlacement(world: World, req: PlaceRequest): Snapped | BuildFail {
   const defs = gameplayDefs(world); const def = defs.pieces.get(req.piece);
   if (!def) return BuildFail.UnknownPiece;
@@ -73,8 +76,9 @@ export function snapPlacement(world: World, req: PlaceRequest): Snapped | BuildF
     case Placement.Cell: { const r = req.rot & 3; const [tx, ty] = anchorFor(def, req.x, req.y, r); slot = { tx, ty, z, side: EdgeSide.None, rot: r }; break; }
     case Placement.Tri: { slot = snapTri(idx, req.x, req.y, z, req.rot); break; }
     case Placement.Free: {
-      const step = def.snap === "vertex" ? 1 : defs.building.freeSnapSubtiles / SUBTILE; px = Math.round(req.x / step) * step; py = Math.round(req.y / step) * step;
-      const rot = req.rot % (def.rotSteps || defs.building.freeRotSteps); const [tx, ty] = anchorFor(def, px, py, gridRot(def, rot));
+      const fine = (req.rot & FINE_ROT) !== 0 && fineEligible(def); // ADR-174: snap off → 1/16 tile, 15° steps
+      const step = def.snap === "vertex" ? 1 : fine ? FINE_POS_STEP : defs.building.freeSnapSubtiles / SUBTILE; px = Math.round(req.x / step) * step; py = Math.round(req.y / step) * step;
+      const rot = fine ? FINE_ROT | ((req.rot & 0x7f) % FINE_ROT_STEPS) : (req.rot & 0x7f) % (def.rotSteps || defs.building.freeRotSteps); const [tx, ty] = anchorFor(def, px, py, gridRot(def, rot));
       slot = { tx, ty, z, side: EdgeSide.None, rot }; break;
     }
     case Placement.Edge: { const e = snapEdge(idx, req.x, req.y, z); slot = { ...e, z, rot: (e.side === EdgeSide.West ? 1 : 0) | (req.rot & 2) }; if (def.features.mount) parent = idx.edge(e.tx, e.ty, z, e.side); break; }

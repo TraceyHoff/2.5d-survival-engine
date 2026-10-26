@@ -24,7 +24,7 @@ import { netIdOf } from "@engine/net";
 import { roadSpriteKeys, ROAD_FLAGS, signFrameId } from "./road-sign-view.js";
 import { Road, Sign, surfaceDef, signDef, walkAnimRate, petSits } from "@engine/gameplay";
 import { HitReact, NodeRegrow, hitDirRad, Equipment, Worn, wornCosmetics } from "@engine/gameplay";
-import { gameplayDefs, rotationSteps, animalDefs, LootBag, Animal, Health, Survival, Zombie, ResourceNode, CraftingStation, Fuel, AnimState as GAnim, BuildPiece as GPiece, Dead, Wetness, BodyTemp, Emitter, PieceLink, Crop, cropSpriteKey, clutterForChunk, resolveSprite, type ResolvedSprite } from "@engine/gameplay";
+import { gameplayDefs, rotationSteps, rotParts, animalDefs, LootBag, Animal, Health, Survival, Zombie, ResourceNode, CraftingStation, Fuel, AnimState as GAnim, BuildPiece as GPiece, Dead, Wetness, BodyTemp, Emitter, PieceLink, Crop, cropSpriteKey, clutterForChunk, resolveSprite, type ResolvedSprite } from "@engine/gameplay";
 
 /** Render-side schemas the renderer's bindings expect (view World only). */
 const VAnim = defineComponent("ViewAnimState", { state: "u8", startTick: "u32" });
@@ -465,7 +465,7 @@ export class IsoView {
     if ((net.tick + entityIndex(e)) % 15 !== 0 && this.pieceStates.has(ve)) return; // cheap: lit flips are rare
     const fire = this.siblings(net, e).find((o) => net.has(o, Fuel)); const lit = fire !== undefined && net.get(fire, Fuel)!.lit === 1;
     const p = net.get(e, GPiece)!;
-    const vis = buildPieceVisual(this.registry, { type: p.type, ...artRot(p.rot, rotationSteps(net, p.type)), tint: p.tint, paint: p.paint, state: lit ? "idle" : "unlit" }, { pieceKey: (t) => this.pk(defs?.pieces.get(t)?.key), ...pieceVariantOpts(defs?.pieces.get(p.type)?.variantNames, p.variant) });
+    const vis = buildPieceVisual(this.registry, { type: p.type, ...pieceArt(net, p.type, p.rot), tint: p.tint, paint: p.paint, state: lit ? "idle" : "unlit" }, { pieceKey: (t) => this.pk(defs?.pieces.get(t)?.key), ...pieceVariantOpts(defs?.pieces.get(p.type)?.variantNames, p.variant) });
     this.pieceStates.set(ve, vis.stateIndex);
   }
   /** ADR-119: autotile variant for the replicated mask, else the plain surface tile (with sprite_fallbacks). */
@@ -568,7 +568,7 @@ export class IsoView {
     }
     if (net.has(e, GPiece) && defs) {
       const p = net.get(e, GPiece)!; const def = defs.pieces.get(p.type);
-      const vis = buildPieceVisual(this.registry, { type: p.type, ...artRot(p.rot, rotationSteps(net, p.type)), tint: p.tint, paint: p.paint, damageStage: p.damageStage }, { tier: p.tier, pieceKey: (t) => this.pk(defs.pieces.get(t)?.key), ...pieceVariantOpts(def?.variantNames, p.variant) });
+      const vis = buildPieceVisual(this.registry, { type: p.type, ...pieceArt(net, p.type, p.rot), tint: p.tint, paint: p.paint, damageStage: p.damageStage }, { tier: p.tier, pieceKey: (t) => this.pk(defs.pieces.get(t)?.key), ...pieceVariantOpts(def?.variantNames, p.variant) });
       if (!vis.visualId) return undefined;
       const lh = (defs as unknown as { building?: { levelHeight?: number } }).building?.levelHeight ?? 1;
       const z = net.get(e, Transform)!.z; const level = Math.max(0, Math.round(z / (lh || 1)));
@@ -587,6 +587,8 @@ export const LOOT_BAG_SPRITE = "death_bag";
 export const LOW_PROP_PIECES: ReadonlySet<string> = new Set(["campfire"]);
 const exactPivot = (def: { placement?: number; key?: string } | undefined): boolean => def?.placement === 4 || (def?.placement === 3 && !!def.key?.startsWith("wall_corner"));
 /** rot/rotSteps for buildPieceVisual: triangles (12 steps of 30°) map exactly onto an art row (pieceArtRow), no quarter-turn snap. */
+/** ADR-174: art rot of a placed piece (off-grid free pieces carry FINE_ROT; their 15° step maps to the nearest art row). */
+const pieceArt = (net: World, type: number, rot: number): { rot: number; rotSteps: number } => { const def = gameplayDefs(net).pieces.get(type); if (!def) return artRot(rot, rotationSteps(net, type)); const r = rotParts(def, rot); return artRot(r.rot, r.steps); };
 const artRot = (rot: number, steps: number): { rot: number; rotSteps: number } => (steps === 12 ? { rot: pieceArtRow(rot, 12), rotSteps: 4 } : { rot, rotSteps: steps });
 
 interface Spec {

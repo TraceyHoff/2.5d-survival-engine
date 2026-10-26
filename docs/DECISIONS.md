@@ -1117,3 +1117,22 @@ checked visually).
 ## ADR-173: Name tags over other players
 
 **Context.** In multiplayer you could not tell who was who. **Decision.** `apps/client/src/name-tags.ts` draws a small pill (12 px Fredoka, 6 px padding) over every other living player, using the loot-label pattern (ADR-161): one pointer-events-none overlay canvas `#name-tags`, redrawn only while tags exist, with no per-tag DOM and cached `measureText`. It uses the same CameraLike as the loot labels, so it works over WebGL and the Canvas2D fallback (debugCamera). The tag position is the render-alpha lerp of PrevTransform→Transform (remote players are already interpolated), lifted by `NAME_TAG.lift × drawZoom` so it tracks the sprite at any zoom. Full opacity up to 8 tiles, fading to 0.25 at 22 tiles, then culled. Party mates are tinted green (#8EF08A) and clan mates blue (#8CC8FF), from the networked Membership. Your own player, the dead and players without a name yet get no tag; names come from `NetClient.names`, and unknown ids are requested. Tags are hidden while a full menu is open. The setting is Settings → "Show player names" (`Settings.nameTags`, on by default), read at most once a second. Test hooks `data-count` / `data-names` are written only when they change. **Tests.** `apps/client/test/adr173_name_tags.test.ts`.
+
+## ADR-174: Free (off-grid) placement when snap is off
+
+**Status:** accepted (2026-10-26)
+
+**Context:** With grid snap off, Free pieces still snapped to quarter tiles and 16 rotation steps, so decor could not be nudged or angled freely.
+
+**Decision:**
+- Bit 7 of the existing u8 placement rot (`FINE_ROT = 0x80`) marks a fine request. There is no protocol or save-version change.
+- The server's `snapPlacement` honours the flag only for `fineEligible` pieces: Free placement, not vertex-snapped, no claim radius, not a stall. Those snap to 1/16 tile with 24 rotation steps (15°).
+- Structural pieces (cell, edge, opening, tri), posts, claims and stalls ignore the flag and stay on the grid.
+- Overlap and validation reuse the existing tile-occupancy checks. Depth sorting comes from Transform x/y.
+- ADR-162 surface decor works off-grid, because `smallPieceZ` reads the tile under the exact x/y.
+- Persistence writes exact f64 x/y (flag 16, previously used only by tri pieces) for fine pieces. Older saves load unchanged.
+- The ghost runs the same `snapPlacement`, so the preview position and slot match the server.
+- The client's `BuildMode` sends `FINE_ROT | fineRot` while free-placing. Rotate (R / RB / LB / touch) steps 15°, and toggling snap converts the heading. The HUD snap chip shows "▢ Free 45°", or "Free · grid piece" for pieces that can't go off-grid.
+- The art has 4 rotation rows, so the sprite shows the nearest quarter turn while the facing is exact.
+
+**Tests:** packages/gameplay/test/adr174_free_placement.test.ts covers the fine snap, ineligible pieces, overlap, ghost == server, the persistence round-trip with replica slot equality, and surface decor.

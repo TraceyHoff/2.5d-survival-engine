@@ -43,7 +43,7 @@ export function renderBuildHud(bm: BuildMode, device: BuildDevice): string {
     + (p && !p.valid ? `<span class="bh-why" data-role="bh-why">${esc(buildFailText(p.reason))}</span>` : "")
     + `<span data-role="bh-level">Floor ${bm.level}</span>`
     + `<button data-bh="level-down" aria-label="Floor down">▼</button><button data-bh="level-up" aria-label="Floor up">▲</button>`
-    + `<button data-bh="snap" data-snap="${bm.snap ? "on" : "off"}" aria-pressed="${bm.snap}" aria-label="Grid snap">${bm.snap ? "▦ Snap" : "▢ Free"}${SNAP_HINT[device] ? ` <kbd>${SNAP_HINT[device]}</kbd>` : ""}</button></div>`;
+    + `<button data-bh="snap" data-snap="${bm.snap ? "on" : "off"}" aria-pressed="${bm.snap}" aria-label="Grid snap">${bm.snap ? "▦ Snap" : bm.freePlacing ? `▢ Free <span data-bh="angle">${bm.fineRot * 15}°</span>` : "▢ Free · grid piece"}${SNAP_HINT[device] ? ` <kbd>${SNAP_HINT[device]}</kbd>` : ""}</button></div>`;
   const strip = ctx ? `<div class="bh-ctx" role="menu" aria-label="${esc(ctx.title)}"><div class="bh-title">${esc(ctx.title)}</div>`
     + ctx.actions.map((a) => `<button role="menuitem" data-bh="${a.id}" class="${a.armed ? "armed" : ""}"${a.enabled ? "" : " disabled"}>${esc(a.label)}${a.hint ? ` <kbd>${esc(a.hint)}</kbd>` : ""}</button>`).join("")
     + `</div>` : "";
