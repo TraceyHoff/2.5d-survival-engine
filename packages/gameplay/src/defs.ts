@@ -129,6 +129,8 @@ export interface PieceDef extends BuildPieceDef, Visual {
   readonly features: PieceFeatures;
   /** Modular set (ADR-104). rotSteps: rotation steps (0 = placement default: 4, free freeRotSteps, tri 12). */
   readonly rotSteps: number;
+  /** ADR-162: small decor can sit on a surface piece; surfaceHeight > 0 = flat top (world z above its level) that holds small decor. */
+  readonly small: boolean; readonly surfaceHeight: number;
   /** Snap hint for free pieces: "" (sub-tile grid) or "vertex" (tile corners, corner pieces). */
   readonly snap: "" | "vertex";
   /** Ground slope tolerance override (raised/stilted foundations); -1 = building.maxSlope. */
@@ -244,7 +246,7 @@ export interface RawPiece extends RawVisual {
   fired?: boolean; heat?: number; heatRadius?: number; light?: boolean; container?: number; privilegeRadius?: number; paintable?: boolean; variants?: number; variantNames?: string[]; spoilMul?: number; fuelMul?: number;
   stall?: { listings: number; clanOnly?: boolean };
   features?: PieceFeatures;
-  rotSteps?: number; category?: string; snap?: "vertex"; maxSlope?: number; minTier?: number; extraCost?: { item: string; count: number; fromTier?: number }[]; family?: string;
+  rotSteps?: number; small?: boolean; surface?: { height: number }; category?: string; snap?: "vertex"; maxSlope?: number; minTier?: number; extraCost?: { item: string; count: number; fromTier?: number }[]; family?: string;
 }
 export interface RawZombie extends RawVisual { key: string; hp: number; speed: number; damage: number; structureDamage: number; attackRange: number; attackCooldownSeconds: number; sightRange: number; hearingMul: number; variants: number; tint?: [number, number, number]; light?: ZombieLightDef }
 export interface RawDefs {
@@ -410,10 +412,11 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
       door: p.door ?? false, station, fired: p.fired ?? false, heat: p.heat ?? 0, heatRadius: p.heatRadius ?? 0, light: p.light ?? false,
       container: p.container ?? 0, privilegeRadius: p.privilegeRadius ?? 0, paintable: p.paintable ?? false, variants: Math.max(1, p.variants ?? 1), variantNames: p.variantNames ?? [], category: p.category ?? defaultPieceCategory(p), spoilMul: p.spoilMul ?? 1, fuelMul: p.fuelMul ?? 1,
       stall: p.stall ? { listings: p.stall.listings, clanOnly: p.stall.clanOnly ?? false } : null, features: p.features ?? {},
-      rotSteps: p.rotSteps ?? 0, snap: p.snap ?? "", maxSlope: p.maxSlope ?? -1, minTier: p.minTier ?? 0, family: p.family ?? "",
+      rotSteps: p.rotSteps ?? 0, small: p.small ?? false, surfaceHeight: p.surface?.height ?? 0, snap: p.snap ?? "", maxSlope: p.maxSlope ?? -1, minTier: p.minTier ?? 0, family: p.family ?? "",
       extraCost: (p.extraCost ?? []).map((c) => ({ item: itemRef(c.item, where), count: c.count, fromTier: c.fromTier ?? 0 })),
     });
     if (placement === Placement.Tri && (p.footprint && (p.footprint.w !== 1 || p.footprint.h !== 1))) err(`${where}: tri pieces are 1x1`);
+    if (p.surface !== undefined && !(p.surface.height > 0 && p.surface.height < 1.5)) err(`${where}.surface.height must be in (0, 1.5)`);
     if (p.rotSteps !== undefined && !(Number.isInteger(p.rotSteps) && p.rotSteps >= 1 && p.rotSteps <= 16)) err(`${where}.rotSteps must be 1..16`);
     if (p.minTier !== undefined && !(p.minTier >= 0 && p.minTier < tiers.length)) err(`${where}.minTier out of range`);
     if (p.stall && (p.stall.listings !== (p.container ?? 0))) err(`${where}.stall.listings must equal container`);

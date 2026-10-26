@@ -266,6 +266,7 @@ export class StructureIndex {
       if (!onDeck) return { root: true, list: out };
     }
     if (def.snap === "vertex") { for (const [x, y] of [[s.tx, s.ty], [s.tx - 1, s.ty], [s.tx, s.ty - 1], [s.tx - 1, s.ty - 1]] as const) { const d = this.deck(x, y, z); if (this.isDeck(d)) push(d, 0); } return { root: false, list: out }; }
+    if (def.small) for (const [x, y] of tiles) { const f = this.cell(x, y, z, 2); if (f && (this.def(f)?.surfaceHeight ?? 0) > 0) push(f, 0); } // ADR-162 on a table / shelf
     for (const [x, y] of tiles) {
       const d = this.deck(x, y, z); if (this.isDeck(d)) push(d, def.placement === Placement.Free ? 0 : 1);
       if (def.layer === LAYER_STRUCT && z > 0) { const p = this.cell(x, y, z - 1, LAYER_STRUCT); if (p && this.def(p)?.supportsAbove) push(p, 1); }

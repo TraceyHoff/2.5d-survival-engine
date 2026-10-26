@@ -10,6 +10,7 @@
  *    max-Dijkstra (values are integers 0..100, so 101 buckets), then everything under minStability collapses.
  * HP damage is batched per tick (one BuildPiece write per piece per tick) and drives damageStage.
  */
+import { reseatSmallOn, smallPiecesOn } from "./surface.js";
 import { spillStall } from "../economy/stall.js";
 import { onPieceDamaged } from "../combat/pvp_pieces.js";
 import { type Entity, type World } from "@engine/core";
@@ -109,6 +110,8 @@ export function destroyPiece(world: World, e: Entity, cause: DestroyCause): void
     if (cause !== DestroyCause.Demolish) spillStall(world, a);
     unmarkLinked(world, a); world.destroy(a);
   }
+  if ((idx.def(e)?.surfaceHeight ?? 0) > 0) for (const m of smallPiecesOn(world, e)) idx.removedNeighbors.add(m); // ADR-162 decor on it drops
+  if ((idx.def(e)?.surfaceHeight ?? 0) > 0 && isAuthority(world)) reseatSmallOn(world, e, e);
   idx.removePiece(e); idx.removedNeighbors.delete(e);
   emit(world, PieceDestroyed, { piece: e, type, cause });
   world.destroy(e);

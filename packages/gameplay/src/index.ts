@@ -28,6 +28,7 @@ export * from "./systems/movement.js";
 export * from "./building/structure.js";
 export * from "./building/links.js";
 export * from "./building/place.js";
+export * from "./building/surface.js"; // ADR-162
 export * from "./building/integrity.js";
 export * from "./building/actions.js";
 export * from "./building/ghost.js";

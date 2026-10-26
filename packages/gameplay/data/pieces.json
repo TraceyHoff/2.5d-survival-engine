@@ -340,6 +340,7 @@
     },
     {
       "key": "workbench",
+      "surface": { "height": 0.85 },
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -481,6 +482,7 @@
     },
     {
       "key": "table",
+      "surface": { "height": 0.8 },
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -557,6 +559,7 @@
     },
     {
       "key": "potted_plant",
+      "small": true,
       "placement": "free",
       "layer": 3,
       "tier": 1,
@@ -601,6 +604,7 @@
     },
     {
       "key": "lantern",
+      "small": true,
       "placement": "free",
       "layer": 3,
       "tier": 2,
@@ -665,6 +669,7 @@
     },
     {
       "key": "trophy_skull",
+      "small": true,
       "placement": "free",
       "layer": 3,
       "tier": 1,
@@ -814,6 +819,7 @@
     },
     {
       "key": "market_counter",
+      "surface": { "height": 0.9 },
       "placement": "free",
       "ground": true,
       "layer": 2,
@@ -2022,6 +2028,7 @@
     },
     {
       "key": "table_dining_rustic",
+      "surface": { "height": 0.8 },
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -2050,6 +2057,7 @@
     },
     {
       "key": "table_dining_fine",
+      "surface": { "height": 0.8 },
       "placement": "free",
       "layer": 2,
       "tier": 2,
@@ -2082,6 +2090,7 @@
     },
     {
       "key": "table_dining_luxury",
+      "surface": { "height": 0.8 },
       "placement": "free",
       "layer": 2,
       "tier": 3,
@@ -2118,6 +2127,7 @@
     },
     {
       "key": "table_coffee_rustic",
+      "surface": { "height": 0.45 },
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -2141,6 +2151,7 @@
     },
     {
       "key": "table_coffee_fine",
+      "surface": { "height": 0.45 },
       "placement": "free",
       "layer": 2,
       "tier": 2,
@@ -2168,6 +2179,7 @@
     },
     {
       "key": "table_side_rustic",
+      "surface": { "height": 0.6 },
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -2191,6 +2203,7 @@
     },
     {
       "key": "table_side_fine",
+      "surface": { "height": 0.6 },
       "placement": "free",
       "layer": 2,
       "tier": 2,
@@ -2218,6 +2231,7 @@
     },
     {
       "key": "desk_rustic",
+      "surface": { "height": 0.8 },
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -2246,6 +2260,7 @@
     },
     {
       "key": "desk_fine",
+      "surface": { "height": 0.8 },
       "placement": "free",
       "layer": 2,
       "tier": 2,
@@ -2278,6 +2293,7 @@
     },
     {
       "key": "shelf_rustic",
+      "surface": { "height": 1.2 },
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -2303,6 +2319,7 @@
     },
     {
       "key": "shelf_fine",
+      "surface": { "height": 1.2 },
       "placement": "free",
       "layer": 2,
       "tier": 2,
@@ -2388,6 +2405,7 @@
     },
     {
       "key": "cabinet_rustic",
+      "surface": { "height": 0.9 },
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -2415,6 +2433,7 @@
     },
     {
       "key": "cabinet_fine",
+      "surface": { "height": 0.9 },
       "placement": "free",
       "layer": 2,
       "tier": 2,
@@ -2554,6 +2573,7 @@
     },
     {
       "key": "dresser_rustic",
+      "surface": { "height": 0.9 },
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -2583,6 +2603,7 @@
     },
     {
       "key": "dresser_fine",
+      "surface": { "height": 0.9 },
       "placement": "free",
       "layer": 2,
       "tier": 2,
@@ -2616,6 +2637,7 @@
     },
     {
       "key": "counter_rustic",
+      "surface": { "height": 0.9 },
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -2641,6 +2663,7 @@
     },
     {
       "key": "counter_fine",
+      "surface": { "height": 0.9 },
       "placement": "free",
       "layer": 2,
       "tier": 2,
@@ -2756,6 +2779,7 @@
     },
     {
       "key": "tool_bench",
+      "surface": { "height": 0.85 },
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -2894,6 +2918,7 @@
     },
     {
       "key": "candle",
+      "small": true,
       "placement": "free",
       "layer": 3,
       "tier": 1,
@@ -2925,6 +2950,7 @@
     },
     {
       "key": "candelabra",
+      "small": true,
       "placement": "free",
       "layer": 3,
       "tier": 2,
@@ -2989,6 +3015,7 @@
     },
     {
       "key": "table_lamp",
+      "small": true,
       "placement": "free",
       "layer": 3,
       "tier": 2,
@@ -3221,6 +3248,7 @@
     },
     {
       "key": "vase",
+      "small": true,
       "placement": "free",
       "layer": 3,
       "tier": 1,
@@ -3246,6 +3274,7 @@
     },
     {
       "key": "crate_decor",
+      "surface": { "height": 0.7 },
       "placement": "free",
       "layer": 2,
       "tier": 1,
@@ -3605,6 +3634,7 @@
     },
     {
       "key": "pottery",
+      "small": true,
       "placement": "free",
       "layer": 3,
       "tier": 1,
@@ -3630,6 +3660,7 @@
     },
     {
       "key": "books",
+      "small": true,
       "placement": "free",
       "layer": 3,
       "tier": 1,
@@ -3657,6 +3688,7 @@
     },
     {
       "key": "dishes",
+      "small": true,
       "placement": "free",
       "layer": 3,
       "tier": 1,
@@ -3681,6 +3713,7 @@
     },
     {
       "key": "basket",
+      "small": true,
       "placement": "free",
       "layer": 3,
       "tier": 1,
@@ -3760,6 +3793,7 @@
     },
     {
       "key": "cactus",
+      "small": true,
       "placement": "free",
       "layer": 3,
       "tier": 1,
@@ -3788,6 +3822,7 @@
     },
     {
       "key": "flowers_pot",
+      "small": true,
       "placement": "free",
       "layer": 3,
       "tier": 1,
@@ -3852,6 +3887,7 @@
     },
     {
       "key": "bonsai",
+      "small": true,
       "placement": "free",
       "layer": 3,
       "tier": 2,

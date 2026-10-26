@@ -1003,3 +1003,17 @@ replicate only to viewers, so clients cannot name a bag they have not opened.
 client range filter and "Your bag", and the device prompts. Not done: owner names for other players' bags (player
 names do not replicate) and labels for bags on upper floors (they use the bag's z, so they work but have not been
 checked visually).
+
+## ADR-162: Small decor on flat surfaces
+
+**Context.** Players want vases, candles, lamps, books and similar small decorations to sit on tables, counters, desks, shelves and other flat-topped pieces, and to rotate them there.
+
+**Decision.**
+- `pieces.json` gains `"small": true` (14 hand-sized decor pieces) and `"surface": { "height": h }` (tables .8, workbenches .85, counters/cabinets/dressers .9, coffee tables .45, side tables .6, shelves 1.2, decor crate .7) → `PieceDef.small` / `PieceDef.surfaceHeight` (validated 0 < h < 1.5).
+- Small decor (occupancy layer 3) already shares tiles with furniture (layer 2). `building/surface.ts`: `surfaceHeightAt` reads the layer-2 occupant of the tile at that level from the StructureIndex (works identically on server and client replica, so the ghost and the server agree); `smallPieceZ = level*levelHeight + surface height`.
+- `snapPlacement` lifts small pieces' `pos.z` (ghost preview snaps to the top). `validatePlacement` treats a small piece over a surface as supported (no deck needed) and `supportsAt` lists the surface piece as its support, so stability follows the table. Rotation is the normal Free-piece rotation.
+- `placePiece` re-derives z for small pieces, so persistence needs **no format change** (decode rebuilds through placePiece; surfaces precede decor by entity order, and placing a surface re-seats decor already on its tiles via `reseatSmallOn`).
+- `destroyPiece` of a surface re-seats its decor to the floor (server-authoritative Transform z, replicated as a normal static change) and marks it for the integrity pass; decor that only had the surface as support (e.g. a potted plant on a table on bare terrain) collapses.
+- Client: build pieces use `pieceGroundZ`: the lift above the level floor is kept on top of terrain steps (`max(z, terrain)` would otherwise swallow it); depth sorting uses that z.
+
+**Consequences.** Only axis tile occupancy matters (a vase on any tile of a 2×1 table sits on it). One small piece per tile. Not covered: stacking decor on decor, surfaces on non-layer-2 pieces.

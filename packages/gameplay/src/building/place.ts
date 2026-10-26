@@ -23,6 +23,7 @@ import { emitterSpecs } from "../realism.js";
 import { makeNoise } from "../systems/noise.js";
 import { TerrainRes } from "../world.js";
 import { linkAttachment } from "./links.js";
+import { reseatSmallOn, smallPieceZ, surfaceHeightAt } from "./surface.js";
 import { TRI_INRADIUS, triEdges } from "./modular.js";
 import { anchorFor, gridRot, LAYER_DECK, LAYER_OPENING, markLinked, slotTransform, structures, type Slot, type StructureIndex } from "./structure.js";
 import { Falloff } from "@engine/world";
@@ -89,6 +90,7 @@ export function snapPlacement(world: World, req: PlaceRequest): Snapped | BuildF
     }
   }
   const pos = slotTransform(def, slot, lh, px, py);
+  if (def.small && def.placement === Placement.Free) pos.z = smallPieceZ(world, pos.x, pos.y, z); // ADR-162 ghost + server snap to the surface top
   if (def.placement === Placement.Opening && parent && def.fits !== SocketKind.Hatch) { const t = world.get(parent, Transform); if (t) { pos.x = t.x; pos.y = t.y; } }
   if (def.placement === Placement.Opening && def.fits === SocketKind.Hatch) { pos.x = slot.tx + 0.5; pos.y = slot.ty + 0.5; }
   return { def, slot, parent, pos, tier, variant };
@@ -195,7 +197,7 @@ export function validatePlacement(world: World, builder: Entity, sn: Snapped, op
   else if (def.layer === LAYER_DECK && def.placement === Placement.Cell && idx.tris.size && tiles.some(([x, y]) => idx.trisInTile(x, y, slot.z).length > 0)) return BuildFail.Occupied;
   // furniture/decor on decks need a deck under every tile
   if (def.snap === "vertex") { if (!vertexTiles(slot.tx, slot.ty).some(([x, y]) => idx.isDeck(idx.deck(x, y, slot.z)))) return BuildFail.NoSupport; }
-  else if (def.placement === Placement.Free && !onGround && !tiles.every(([x, y]) => idx.isDeck(idx.deck(x, y, slot.z)))) return BuildFail.NoSupport;
+  else if (def.placement === Placement.Free && !onGround && !onSurface(world, def, tiles, slot.z) && !tiles.every(([x, y]) => idx.isDeck(idx.deck(x, y, slot.z)))) return BuildFail.NoSupport;
   if (def.placement === Placement.Cell && def.needsDeck && !tiles.every(([x, y]) => idx.isDeck(idx.deck(x, y, slot.z)))) return BuildFail.NoSupport;
   // creatures in the way of solid pieces
   if (def.solid && slot.z === 0) {
@@ -213,9 +215,14 @@ export function validatePlacement(world: World, builder: Entity, sn: Snapped, op
  * Authoritative place (after validatePlacement). Pays the cost, creates the piece entity (static replication class)
  * and its non-static attachment entities (door state, fire/fuel/emitters, storage), indexes everything.
  */
+/** ADR-162: a small piece whose every tile has a surface piece (table, shelf...) under it at this level. */
+function onSurface(world: World, def: PieceDef, tiles: readonly (readonly [number, number])[], z: number): boolean {
+  return def.small && tiles.length > 0 && tiles.every(([x, y]) => surfaceHeightAt(world, x + 0.5, y + 0.5, z) > 0);
+}
 export function placePiece(world: World, builder: Entity | 0, sn: Snapped, opts: { pay?: boolean; hp?: number; paint?: number; tribe?: number } = {}): Entity {
   const defs = gameplayDefs(world); const idx = structures(world); const { def, slot } = sn;
   if (builder && opts.pay !== false) exchangeItems(world, builder, pieceCost(defs, def, sn.tier), []);
+  if (def.small && def.placement === Placement.Free) sn = { ...sn, pos: { ...sn.pos, z: smallPieceZ(world, sn.pos.x, sn.pos.y, slot.z) } }; // ADR-162 (also persistence load)
   const e = world.create();
   const tribe = opts.tribe ?? (builder ? tribeOf(world, builder) : 0);
   world.add(e, Transform, sn.pos)
@@ -231,6 +238,7 @@ export function placePiece(world: World, builder: Entity | 0, sn: Snapped, opts:
   if (isAuthority(world)) world.add(e, PieceStability, { value: 0, placedTick: world.tick });
   idx.addPiece(e, slot, sn.parent);
   indexEntity(world, e);
+  if (def.surfaceHeight > 0 && isAuthority(world)) reseatSmallOn(world, e); // decor already on these tiles moves up onto the top
   const own = zonesAt(world, sn.pos.x, sn.pos.y)[0];
   if (own !== undefined) { idx.zoneOf.set(e, own); idx.zoneCounts.set(own, (idx.zoneCounts.get(own) ?? 0) + 1); }
   if (def.privilegeRadius > 0) idx.zoneCounts.set(e, idx.zoneCounts.get(e) ?? 0);

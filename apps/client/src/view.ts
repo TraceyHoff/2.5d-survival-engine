@@ -80,6 +80,10 @@ export function groundZ(tiles: TileMap | undefined, x: number, y: number, z: num
   const c = gz.c;
   return c ? Math.max(z, c.height[tileToLocal(ty) * CHUNK_SIZE + tileToLocal(tx)] ?? 0) : z;
 }
+/** ADR-162: groundZ for a build piece; a lift above its level floor (decor on a table) is kept on top of a terrain step. */
+export function pieceGroundZ(tiles: TileMap | undefined, x: number, y: number, z: number, lh: number): number {
+  const off = z - Math.round(z / lh) * lh; return off > 1e-3 ? groundZ(tiles, x, y, z - off) + off : groundZ(tiles, x, y, z);
+}
 /** ADR-155 camera z easing: time constant (s) and the jump (world z) beyond which it snaps (teleport / respawn). */
 /** ADR-157: Transform-shaped read straight from the typed arrays into a scratch object (no allocation, no keyed stores). */
 function readXform(w: World, e: Entity, def: typeof Transform | typeof PrevTransform, out: { x: number; y: number; z: number; facing: number }): typeof out | undefined {
@@ -212,7 +216,7 @@ export class IsoView {
     const names = gameplayDefs(net).pieces.get(p.piece)?.variantNames ?? [];
     const def = gameplayDefs(net).pieces.get(p.piece);
     // ADR-142: lifted onto the terrain step like the placed piece (view mirror `ground`); at z=0 it sank under raised ground
-    this.ghost.sync({ pieceKey: this.pk(p.pieceKey) ?? p.pieceKey, x: p.x, y: p.y, rot: p.rot, valid: p.valid }, { z: groundZ(this.lastTiles, p.x, p.y, p.z), level: p.level, tier: p.tier, rotSteps: p.rotSteps, exactPivot: exactPivot(def), ...(names[p.variant] ? { variant: names[p.variant]! } : { variant: p.variant }) });
+    this.ghost.sync({ pieceKey: this.pk(p.pieceKey) ?? p.pieceKey, x: p.x, y: p.y, rot: p.rot, valid: p.valid }, { z: pieceGroundZ(this.lastTiles, p.x, p.y, p.z, gameplayDefs(net).building.levelHeight), level: p.level, tier: p.tier, rotSteps: p.rotSteps, exactPivot: exactPivot(def), ...(names[p.variant] ? { variant: names[p.variant]! } : { variant: p.variant }) });
   }
   resize(w: number, h: number, dpr: number): void {
     const safe = new URLSearchParams(location.search).get("safe") === "1" || this.renderer.capabilities.safe || this.renderer.capabilities.lowEnd;
@@ -254,6 +258,9 @@ export class IsoView {
     const seen = this.seen; seen.clear();
     // the sim moves on the z=0 plane; lift entities onto the terrain step they stand on (tile height = world z)
     this.lastTiles = tiles; resetGroundCache(); const ground = (x: number, y: number, z: number): number => groundZ(tiles, x, y, z);
+    const lhv = (defs as unknown as { building?: { levelHeight?: number } } | undefined)?.building?.levelHeight ?? 3;
+    // ADR-162: a piece raised above its level floor (decor on a table) keeps that lift over terrain steps
+    const groundPiece = (x: number, y: number, z: number): number => pieceGroundZ(tiles, x, y, z, lhv);
     let dressed: Set<Entity> | undefined;
     if (lowendDress && this.appearanceEnabled && net.isRegistered(Appearance)) { // nearest N to the camera keep their layers
       const cx = this.renderer.camera.x, cy = this.renderer.camera.y;
@@ -262,13 +269,14 @@ export class IsoView {
     }
     for (const e of net.query([Transform])) {
       if (e === net.environment) continue;
+      const gr = net.has(e, GPiece) ? groundPiece : ground;
       const cur = readXform(net, e, Transform, this.sCur)!; const prev = readXform(net, e, PrevTransform, this.sPrev) ?? cur; // ADR-157: scratch, no per-entity allocation
       let ve = this.map.get(e);
       if (ve === undefined) {
         const spec = this.classify(net, e, defs, e === player);
         if (!spec) continue;
         ve = v.create(); this.map.set(e, ve);
-        v.add(ve, Transform, { x: cur.x, y: cur.y, z: ground(cur.x, cur.y, cur.z), facing: cur.facing }).add(ve, PrevTransform, { x: prev.x, y: prev.y, z: ground(prev.x, prev.y, prev.z), facing: prev.facing });
+        v.add(ve, Transform, { x: cur.x, y: cur.y, z: gr(cur.x, cur.y, cur.z), facing: cur.facing }).add(ve, PrevTransform, { x: prev.x, y: prev.y, z: gr(prev.x, prev.y, prev.z), facing: prev.facing });
         if (spec.pieceVisual !== undefined) v.add(ve, VPiece, { visualId: spec.pieceVisual, variant: spec.variant ?? 0, tint: spec.tint ?? 0, damageStage: spec.damage ?? 0, rotation: spec.rot ?? 0, level: spec.level ?? 0, layer: spec.layer ?? 1, ghost: 0 });
         else if (spec.sprite !== undefined) v.add(ve, Sprite, { spriteId: spec.sprite!, frameId: spec.frame ?? 0, flags: spec.flags ?? 0, scale: spec.scale ?? 1, tint: spec.tint ?? 0 });
         if (spec.shadow) v.add(ve, Shadow, { alpha: spec.shadow, length: 1 });
@@ -287,8 +295,8 @@ export class IsoView {
       const dx = cur.x - prev.x, dy = cur.y - prev.y, moving = dx * dx + dy * dy > 1e-6;
       let facing = cur.facing;
       if (!facing) { if (moving) this.lastMove.set(e, Math.atan2(dy, dx)); facing = this.lastMove.get(e) ?? 0; }
-      v.set(ve, PrevTransform, { x: prev.x, y: prev.y, z: ground(prev.x, prev.y, prev.z), facing: v.getField(ve, Transform, "facing")! });
-      v.set(ve, Transform, { x: cur.x, y: cur.y, z: ground(cur.x, cur.y, cur.z), facing });
+      v.set(ve, PrevTransform, { x: prev.x, y: prev.y, z: gr(prev.x, prev.y, prev.z), facing: v.getField(ve, Transform, "facing")! });
+      v.set(ve, Transform, { x: cur.x, y: cur.y, z: gr(cur.x, cur.y, cur.z), facing });
       if (v.has(ve, VAnim)) {
         const ga = net.getInto(e, GAnim, this.sAnim); const dead = net.has(e, Dead);
         let state = dead ? 5 : ga && ga.anim > 1 ? animMap(ga.anim) : moving ? (net.has(e, Zombie) ? 6 : 1) : 0;
