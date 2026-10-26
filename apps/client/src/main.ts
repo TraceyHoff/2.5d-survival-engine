@@ -1,5 +1,5 @@
 import { markNavFocus } from "./back-history.js";
-import { mountLootLabels } from "./loot-labels.js";
+import { debugCamera, mountLootLabels } from "./loot-labels.js";
 import { lastPlayedKey } from "./delete-progress.js";
 import { CHAT_TAG, chatLine, chatSender } from "./chat-line.js";
 import { intentPayload } from "./send-intent.js";
@@ -58,6 +58,8 @@ const params = new URLSearchParams(location.search);
 /** Clan roster + online directory from the server (reset per client). */
 const social = new SocialDirectory();
 let ctx: CanvasRenderingContext2D | null = null;
+/** Canvas the Canvas2D debug view draws on; declared before isoReady (?renderer=debug calls fallback() synchronously: ADR-164). */
+let debugCanvas = canvas;
 let iso: IsoView | undefined;
 const WEATHERS = ["clear", "rain", "storm", "snow", "fog"];
 const num = (k: string): number | undefined => { const v = params.get(k); return v === null || !Number.isFinite(Number(v)) ? undefined : Number(v); };
@@ -91,7 +93,6 @@ function fallback(): void {
   mountUi(c); debugCanvas = c; ctx = c.getContext("2d");
   (window as { __view?: unknown }).__view = { ready: true, renderer: "debug" };
 }
-let debugCanvas = canvas;
 void isoReady;
 
 // Input (@engine/input, see packages/input/README.md): keyboard/mouse, gamepad and touch -> one InputFrame per tick.
@@ -513,7 +514,7 @@ worldTools = mountWorldTools(root, { world: () => world, player: () => session.p
 mountGatherFx(root, { world: () => world, player: () => session.player, camera: () => iso?.renderer.camera, hidden: () => !!menus?.nav.isOpen || buildMode.active, device: promptDevice,
   icon: (item, key) => panelIcon(world, key, String(item)) });
 // ADR-161: floating loot-bag / dropped-item labels with the Interact prompt
-mountLootLabels(root, { world: () => world, player: () => session.player, camera: () => iso?.renderer.camera, hidden: () => !!menus?.nav.isOpen || buildMode.active,
+mountLootLabels(root, { world: () => world, player: () => session.player, camera: () => iso?.renderer.camera ?? (ctx ? debugCamera(cam, innerWidth, innerHeight, devicePixelRatio || 1) : undefined), hidden: () => !!menus?.nav.isOpen || buildMode.active,
   device: promptDevice, key: () => controlLabel(input.bindings(promptDevice(), "Gameplay").find((b) => b.binding.action === "Interact")?.binding.control) });
 // ADR-126: tool-needed symbol over the nearest resource node (Settings toggle, live)
 mountToolHint(root, { world: () => world, player: () => session.player, camera: () => iso?.renderer.camera, hidden: () => !!menus?.nav.isOpen || buildMode.active,

@@ -7,7 +7,7 @@
  */
 import { PlayerId, Transform, type Entity, type World } from "@engine/core";
 import { gameplayDefs, LOOT_LABEL, lootLabelText, LootBag, LootSummary, mergeLabels, type LabelPoint } from "@engine/gameplay";
-import { DEFAULT_ISO, worldToScreen } from "@engine/world";
+import { DEFAULT_ISO, screenToWorld, worldToScreen } from "@engine/world";
 import type { CameraLike } from "./world-tools.js";
 import type { PromptDevice } from "./farm-prompt.js";
 
@@ -34,6 +34,14 @@ export function lootLabelPoints(w: World, p: Entity, cam: CameraLike): (LabelPoi
     out.push({ key: e, x: gx, y: gy - 30 * Math.max(0.7, Math.min(1.6, z)), dist, text, gx, gy });
   }
   return out;
+}
+
+/** ADR-164: CameraLike for the Canvas2D debug/fallback view (zoom 1, centred on `cam` = worldToScreen(player)), so labels
+ * also show when WebGL2 / the art is unavailable. `tileH / 2 - 12` lines labels up with the fallback's entity dots. */
+export function debugCamera(cam: { sx: number; sy: number }, cssW: number, cssH: number, dpr: number): CameraLike {
+  const lift = DEFAULT_ISO.tileH / 2 - 12;
+  return { x: cam.sx, y: cam.sy - lift, viewW: cssW * dpr, viewH: cssH * dpr, dpr, drawZoom: 1,
+    cssToWorld: (x, y) => screenToWorld(x - cssW / 2 + cam.sx, y - cssH / 2 + cam.sy) };
 }
 
 export function mountLootLabels(root: HTMLElement, d: LootLabelDeps): { destroy(): void } {
