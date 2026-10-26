@@ -1,5 +1,5 @@
 import { giveSandboxKit, sandboxPetKit, sandboxPetCorner, sandboxSpawn } from "./sandbox.js";
-import { handLootTarget, Viewing } from "@engine/gameplay";
+import { handLootTarget, Viewing, WaterProbeRes } from "@engine/gameplay";
 import { installRoadCommands, NodeRegrow, installSignCommands, installPetCommands, PetEvent, setWorldRules, worldRules, type WorldRulesOpts } from "@engine/gameplay";
 /** Authoritative game server: world + gameplay + streaming chunks + persistence + NetServer sessions. */
 import { ChannelRegistry, CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, type CosmeticCatalogLike, Membership, Owner, PlayerId, TimeOfDay, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
@@ -421,6 +421,9 @@ export function createGameServer(o: GameServerOptions): GameServer {
     chunks.update();
   });
   persist?.attach(chunks);
+  // ADR-176: the server world has no TerrainRes (tiles live in ChunkManager), so nearWater() was always false on the
+  // authority: "Drink water" and flask refills were silently dropped. Give the water probe the chunk tiles.
+  world.setResource(WaterProbeRes, { tileAt: (tx: number, ty: number) => chunks.getTile(tx, ty) });
   // ADR-135: AI humans are virtual players; kill XP pays the aiHuman rate for them (not the PvP rate + anti-farming)
   setAiHumanPredicate(world, (e) => { for (const p of players.values()) if (p.entity === e) return !!p.bot; return false; });
   // Ambient population: zombies + animals everywhere; human bots only in singleplayer (mode.humanBots).

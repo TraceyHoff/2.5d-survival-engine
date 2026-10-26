@@ -1145,6 +1145,19 @@ checked visually).
 
 **Trade-offs.** Sprites are physically small on phones (that is what "same view as PC" means); HUD/touch controls are CSS-sized and unaffected. Portrait cannot match PC's 16:9 width without being absurdly zoomed out, so it matches the short axis instead. Tests: `apps/client/test/adr175_camera_zoom.test.ts`.
 
+## ADR-176: Drinking works on the server; raw produce hydrates
+
+**Problem.** Players could not drink. The client showed "Drink water" (ADR-128's `WaterProbeRes` reads replicated tiles) and sent `gameplay.use` with `NO_SLOT` (wired in `GAMEPLAY_NET_COMMANDS` since ADR-128, so not an ADR-163/165 wiring miss). But the authoritative server world has no `TerrainRes`: its tiles live in `ChunkManager`. `nearWater()` fell back to `inWater()`, which returns false without `TerrainRes`, so the server dropped every tile drink and every empty flask/canteen/bottle refill without an error. Single-player runs the same server code (in-tab or worker), so the bug hit everywhere. The prompt also needed empty hands, so holding an axe by a lake hid it.
+
+**Decision.**
+- `createGameServer` registers `WaterProbeRes` over `chunks.getTile`, so `nearWater` is correct on the authority. All water is tile id 1 (`movement.swimTiles`); worldgen has no salt or ocean tile, so all water is fresh.
+- `farmPrompt` offers "Drink water" next to water whenever the held item is not food or a farm tool, not only with empty hands. An empty liquid container held next to water shows "Refill <name>". The prompt is the existing ADR-110 context prompt: QuickUse key or gamepad binding, a tappable button on touch. The inventory panel's "Drink water" button (ADR-128) is unchanged. Wells and rain collectors do not exist.
+- Raw produce restores a small amount of thirst, scaled by juiciness, through `food.thirst` in items.json (thirst runs 0..100). The rule is to raise values and never lower them: berries/blue/rasp/blackberry/cherry 6, strawberry/apple 7, pear/peach 8, tomato 9, orange 10, coconut 14 (unchanged), cabbage/pumpkin/squash 6, carrot/corn 5, potato/onion/wild onion 4, mushroom/beans 3, garlic 2. Cooked food and meat are unchanged.
+
+**Caveat.** The server's `inWater` (swim speed and swim anim) still reads only `TerrainRes`. That is out of scope here.
+
+**Tests.** `apps/server/test/adr176_drink_water.test.ts` runs over loopback: a tile drink raises thirst by `WATER_TILE_THIRST` (12), an empty canteen refills and then hydrates, and the prompt shows while a tool is held. All three fail without the fix. `packages/gameplay/test/adr176_produce_thirst.test.ts` covers the produce values.
+
 ## ADR-177: Gamepad camera zoom (hold RB + D-pad ↑/↓)
 
 **Problem.** Zoom (ADR-100/175) only worked with wheel, pinch and +/- keys. The gamepad profile already bound `Camera.Zoom` to `RB + D-pad ↑/↓` (and the tutorial "Look around" step advertised it), but no client code ever read the `Camera.Zoom` action — `attachZoom` listened only to DOM wheel/pointer/key events — so the pad binding was dead (Xbox Edge and PC controllers alike).

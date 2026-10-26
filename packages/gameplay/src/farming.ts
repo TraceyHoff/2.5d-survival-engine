@@ -9,7 +9,7 @@ import { installSpatialIndex } from "@engine/world";
 import raw from "../data/farming.json";
 import { BuildPiece, Crop, Dead, Equipment, IntentAction, PlayerIntent, ResourceNode } from "./components.js";
 import { gameplayDefs, isAuthority } from "./config.js";
-import { countItem, slotItem, takeFromSlot } from "./inventory.js";
+import { countItem, readSlots, slotItem, takeFromSlot } from "./inventory.js";
 import { emit, FarmFailed, XpActivity } from "./events.js";
 import { indexEntity, spawnResourceNode } from "./spawn.js";
 import { hasPrivilege } from "./building/place.js";
@@ -147,7 +147,11 @@ export function farmPrompt(world: World, e: Entity): FarmPrompt | undefined {
   if (node !== undefined) { const { slot: _s, ...p } = mk("Harvest", FarmFail.None, { target: node }); return p; }
   // ADR-128: quick-use eats/drinks the held consumable; empty hands next to water drink from the tile (slot NO_SLOT)
   const food = key ? defs.items.get(item) : undefined;
+  const wet = nearWater(world, me.x, me.y);
+  // ADR-176: an empty liquid container next to water refills (same Use path); say so instead of a dead "Drink"
+  if (food?.food && food.sips > 0 && readSlots(world, e).durability(slot) <= 0 && wet) return { ...mk("Drink", FarmFail.None), label: `Refill ${food.name}` };
   if (food?.food) return mk(food.sips > 0 || (food.food.thirst > 0 && food.food.hunger <= 0) ? "Drink" : "Eat", FarmFail.None);
-  if (!key && nearWater(world, me.x, me.y)) return { action: "Drink", slot: 255, fail: FarmFail.None, label: "Drink water" };
+  // ADR-176: drinking from the tile no longer needs empty hands (holding an axe/tool by water used to hide the prompt)
+  if (wet) return { action: "Drink", slot: 255, fail: FarmFail.None, label: "Drink water" };
   return undefined;
 }

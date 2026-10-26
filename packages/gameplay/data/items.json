@@ -240,7 +240,7 @@
       "weight": 0.1,
       "food": {
         "hunger": 12,
-        "thirst": 4,
+        "thirst": 6,
         "health": 0
       },
       "spoilSeconds": 1200
@@ -552,7 +552,7 @@
       "weight": 0.05,
       "food": {
         "hunger": 6,
-        "thirst": 1,
+        "thirst": 3,
         "health": 0
       },
       "spoilSeconds": 900
@@ -565,7 +565,7 @@
       "weight": 0.1,
       "food": {
         "hunger": 8,
-        "thirst": 3,
+        "thirst": 5,
         "health": 0
       },
       "spoilSeconds": 1800
@@ -578,7 +578,7 @@
       "weight": 0.15,
       "food": {
         "hunger": 10,
-        "thirst": 6,
+        "thirst": 7,
         "health": 0
       },
       "spoilSeconds": 2400
@@ -804,7 +804,7 @@
       "weight": 0.2,
       "food": {
         "hunger": 6,
-        "thirst": 1,
+        "thirst": 4,
         "health": -2
       },
       "spoilSeconds": 3600
@@ -817,7 +817,7 @@
       "weight": 0.2,
       "food": {
         "hunger": 7,
-        "thirst": 2,
+        "thirst": 5,
         "health": 0
       },
       "spoilSeconds": 2400
@@ -830,7 +830,7 @@
       "weight": 0.05,
       "food": {
         "hunger": 4,
-        "thirst": 2,
+        "thirst": 4,
         "health": 0
       },
       "spoilSeconds": 2400
@@ -3951,7 +3951,7 @@
       "weight": 0.15,
       "food": {
         "hunger": 6,
-        "thirst": 8,
+        "thirst": 9,
         "health": 0
       },
       "spoilSeconds": 1400
@@ -3977,7 +3977,7 @@
       "weight": 0.15,
       "food": {
         "hunger": 10,
-        "thirst": 5,
+        "thirst": 6,
         "health": 0
       },
       "spoilSeconds": 3600
@@ -3990,7 +3990,7 @@
       "weight": 0.15,
       "food": {
         "hunger": 8,
-        "thirst": 0,
+        "thirst": 3,
         "health": 0
       },
       "spoilSeconds": 7200
@@ -4016,7 +4016,7 @@
       "weight": 0.15,
       "food": {
         "hunger": 4,
-        "thirst": 2,
+        "thirst": 4,
         "health": 0
       },
       "spoilSeconds": 4800
@@ -4029,7 +4029,7 @@
       "weight": 0.15,
       "food": {
         "hunger": 2,
-        "thirst": 0,
+        "thirst": 2,
         "health": 2
       },
       "spoilSeconds": 7200
@@ -4088,7 +4088,7 @@
       "weight": 0.1,
       "food": {
         "hunger": 10,
-        "thirst": 5,
+        "thirst": 6,
         "health": 1
       },
       "spoilSeconds": 1200
@@ -4101,7 +4101,7 @@
       "weight": 0.1,
       "food": {
         "hunger": 10,
-        "thirst": 5,
+        "thirst": 6,
         "health": 0
       },
       "spoilSeconds": 1200
@@ -4114,7 +4114,7 @@
       "weight": 0.1,
       "food": {
         "hunger": 11,
-        "thirst": 5,
+        "thirst": 6,
         "health": 0
       },
       "spoilSeconds": 1200
@@ -4127,7 +4127,7 @@
       "weight": 0.1,
       "food": {
         "hunger": 9,
-        "thirst": 6,
+        "thirst": 7,
         "health": 1
       },
       "spoilSeconds": 1200
@@ -4140,7 +4140,7 @@
       "weight": 0.15,
       "food": {
         "hunger": 10,
-        "thirst": 7,
+        "thirst": 8,
         "health": 0
       },
       "spoilSeconds": 2400
@@ -4153,7 +4153,7 @@
       "weight": 0.15,
       "food": {
         "hunger": 8,
-        "thirst": 5,
+        "thirst": 6,
         "health": 0
       },
       "spoilSeconds": 2400
