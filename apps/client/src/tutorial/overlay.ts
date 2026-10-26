@@ -11,18 +11,22 @@ import type { Probe, StepText, TutorialProgress } from "./steps.js";
 export interface Rect { x: number; y: number; w: number; h: number }
 const overlap = (a: Rect, b: Rect): number => Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
 /** Where the card goes: the candidate with the least overlap (target ×100, other UI ×1); ties keep candidate order. */
+/** ADR-150: screen area around the camera-centred player (the world action happens there): weighted like a control. */
+export function playerZone(view: { w: number; h: number }): Rect { const w = Math.min(220, view.w * 0.3), h = Math.min(240, view.h * 0.36); return { x: view.w / 2 - w / 2, y: view.h / 2 - h * 0.7, w, h }; }
 export function placeCard(view: { w: number; h: number }, card: { w: number; h: number }, target: Rect | undefined, avoid: readonly Rect[], m = 8): { x: number; y: number } {
+  const pz = playerZone(view);
   const cx = Math.max(m, (view.w - card.w) / 2); const maxY = Math.max(m, view.h - card.h - m);
   const cands: { x: number; y: number }[] = [];
   if (target) { // next to the target first, so the arrow is short
     cands.push({ x: clamp(target.x + target.w / 2 - card.w / 2, m, view.w - card.w - m), y: target.y + target.h + 14 });
     cands.push({ x: clamp(target.x + target.w / 2 - card.w / 2, m, view.w - card.w - m), y: target.y - card.h - 14 });
+    const ty = clamp(target.y + target.h / 2 - card.h / 2, m, maxY); cands.push({ x: target.x - card.w - 14, y: ty }, { x: target.x + target.w + 14, y: ty });
   }
-  cands.push({ x: cx, y: view.h * 0.16 }, { x: cx, y: maxY - view.h * 0.2 }, { x: m, y: view.h * 0.3 }, { x: view.w - card.w - m, y: view.h * 0.3 }, { x: cx, y: (view.h - card.h) / 2 }, { x: cx, y: m }, { x: cx, y: maxY });
+  cands.push({ x: cx, y: view.h * 0.16 }, { x: cx, y: maxY - view.h * 0.2 }, { x: m, y: view.h * 0.3 }, { x: view.w - card.w - m, y: view.h * 0.3 }, { x: cx, y: pz.y - card.h - m }, { x: cx, y: pz.y + pz.h + m }, { x: m, y: m }, { x: view.w - card.w - m, y: m }, { x: m, y: maxY }, { x: view.w - card.w - m, y: maxY }, { x: cx, y: m }, { x: cx, y: maxY }, { x: cx, y: (view.h - card.h) / 2 });
   let best = cands[0]!; let bestScore = Infinity;
   for (const c0 of cands) {
     const c = { x: clamp(c0.x, m, Math.max(m, view.w - card.w - m)), y: clamp(c0.y, m, maxY) }; const r = { ...c, w: card.w, h: card.h };
-    const s = (target ? overlap(r, target) * 100 : 0) + avoid.reduce((a, b) => a + overlap(r, b), 0);
+    const s = (target ? overlap(r, target) * 100 : 0) + avoid.reduce((a, b) => a + overlap(r, b) * 20, 0) + overlap(r, pz);
     if (s < bestScore - 1e-6) { best = c; bestScore = s; }
   }
   return best;
@@ -59,7 +63,7 @@ export function renderTokens(text: string, src: BindingSource, d: TutDevice, htm
   }).join("");
 }
 
-const CSS = `#tutorial{position:absolute;z-index:45;width:min(330px,calc(100vw - 16px));box-sizing:border-box;background:rgba(246,234,210,.97);color:#3B2433;border:3px solid #74432C;border-radius:12px;box-shadow:0 3px 0 #432C24;padding:8px 10px;font:600 14px/1.35 Fredoka,system-ui,sans-serif;pointer-events:auto;transition:left .18s,top .18s;contain:layout paint}
+const CSS = `#tutorial{position:absolute;z-index:45;width:min(330px,calc(100vw - 16px));box-sizing:border-box;background:rgba(246,234,210,.97);color:#3B2433;border:3px solid #74432C;border-radius:12px;box-shadow:0 3px 0 #432C24;padding:8px 10px;font:600 14px/1.35 Fredoka,system-ui,sans-serif;pointer-events:none;transition:left .18s,top .18s;contain:layout paint}
 #tutorial[hidden],#tutorial-spot[hidden],#tutorial-arrow[hidden]{display:none}
 #tutorial .tut-head{display:flex;align-items:center;gap:6px;font-size:11px;color:#61402E}#tutorial .tut-head span{flex:1}
 #tutorial .tut-bar{height:4px;background:#E6C47E;border-radius:3px;overflow:hidden;margin:4px 0 6px}#tutorial .tut-bar i{display:block;height:100%;background:#5A9A4A}
@@ -67,7 +71,7 @@ const CSS = `#tutorial{position:absolute;z-index:45;width:min(330px,calc(100vw -
 #tutorial .tut-key{display:inline-flex;align-items:center;gap:2px;font:700 12px Fredoka,system-ui,sans-serif;background:#3B2433;color:#FFFAF0;border-radius:6px;padding:1px 6px;margin:0 1px;border-bottom:2px solid #1d1119;white-space:nowrap}
 #tutorial .tut-key i{font-style:normal}
 #tutorial .tut-btns{display:flex;gap:6px;justify-content:flex-end;margin-top:8px;flex-wrap:wrap}
-#tutorial button{font:700 13px Fredoka,system-ui,sans-serif;min-height:34px;min-width:44px;border-radius:9px;border:2px solid #3B2433;background:#5A9A4A;color:#FFFAF0;padding:2px 10px;cursor:pointer}
+#tutorial button{pointer-events:auto;font:700 13px Fredoka,system-ui,sans-serif;min-height:34px;min-width:44px;border-radius:9px;border:2px solid #3B2433;background:#5A9A4A;color:#FFFAF0;padding:2px 10px;cursor:pointer}
 #tutorial button.alt{background:#C98A4B}#tutorial button.x{background:transparent;color:#61402E;border:none;min-width:34px;padding:0}
 #tutorial button:focus-visible{outline:3px solid #FFD45A;outline-offset:2px}
 #tutorial[data-device=touch] button{min-height:44px}#tutorial .tut-hint{font-size:11px;color:#61402E;margin-top:4px}
@@ -82,7 +86,8 @@ const CSS = `#tutorial{position:absolute;z-index:45;width:min(330px,calc(100vw -
 @keyframes tutpulse{50%{opacity:.55}}
 @media (prefers-reduced-motion:reduce){#tutorial-spot{animation:none}#tutorial{transition:none}}
 @media (min-width:1600px) and (min-height:900px){#tutorial{width:430px;font-size:18px;padding:12px 14px}#tutorial h3{font-size:21px}#tutorial .tut-key{font-size:16px}#tutorial button{font-size:17px;min-height:44px}#tutorial .tut-hint{font-size:14px}}
-@media (max-height:420px){#tutorial{width:min(290px,calc(100vw - 16px));padding:6px 8px;font-size:13px}#tutorial h3{font-size:14px}}`;
+@media (max-width:480px){#tutorial{width:min(280px,calc(100vw - 16px));font-size:13px;padding:6px 8px}#tutorial h3{font-size:14px}}
+@media (max-height:420px){#tutorial{width:min(260px,calc(100vw - 16px));padding:6px 8px;font-size:13px}#tutorial h3{font-size:14px}}`;
 
 export interface TutorialOverlayOptions {
   root: HTMLElement; progress: TutorialProgress; bindings: BindingSource;
@@ -91,7 +96,8 @@ export interface TutorialOverlayOptions {
   hidden(): boolean;
   onChange?(): void;
 }
-const AVOID = "#hud,#game-menubar,.build-hud:not([hidden]),#farm-prompt,#xp-chip,[data-touch],.gm-modal .gm-panel";
+// ADR-150: also the hotbar / tool bar, tool hint and pickup toasts (needed to progress) and the touch overlay's controls
+const AVOID = "#hud,#game-menubar,.build-hud:not([hidden]),#farm-prompt,#xp-chip,[data-touch],.gm-modal .gm-panel,#world-tool-bar,#tool-hint,#pickup-toasts,[class*=hotbar],#touch-overlay [data-touch]";
 export const HOLD_MS = 1000;
 export function mountTutorial(o: TutorialOverlayOptions): { update(): void; frame(i: { pressed(a: string): boolean; down(a: string): boolean }, menuOpen: boolean): void; destroy(): void; el: HTMLElement } {
   if (!document.getElementById("tut-style")) { const st = document.createElement("style"); st.id = "tut-style"; st.textContent = CSS; document.head.append(st); }
@@ -122,16 +128,21 @@ export function mountTutorial(o: TutorialOverlayOptions): { update(): void; fram
   // keep taps on the card from reaching the game canvas (touch controls / build placement)
   for (const t of ["pointerdown", "touchstart", "mousedown"]) el.addEventListener(t, (e) => e.stopPropagation());
   const rectOf = (n: Element): Rect | undefined => { const r = n.getBoundingClientRect(); return r.width > 0 && r.height > 0 ? { x: r.left, y: r.top, w: r.width, h: r.height } : undefined; };
+  // ADR-150: empty / transparent containers (an idle #tool-hint is a 300x150 box) must not push the card around
+  const shown = (n: Element): boolean => { const cs = getComputedStyle(n); return cs.visibility !== "hidden" && cs.opacity !== "0" && (n.childElementCount > 0 || !!n.textContent?.trim()); };
   const rootRect = (): DOMRect => o.root.getBoundingClientRect();
   const layout = (d: TutDevice): void => {
     const sel = p.step.target?.(d); let tn: Element | null = sel ? document.querySelector(sel) : null;
     const rr = rootRect(); let target = tn ? rectOf(tn) : undefined;
+    // ADR-150: a target inside a closed submenu has no box: point at its nearest visible ancestor (e.g. the menu bar) instead
+    for (let n = tn?.parentElement; tn && !target && !(d === "touch" && p.step.ghost) && n && n !== document.body; n = n.parentElement) { const r = rectOf(n); if (r && shown(n) && r.w * r.h < 0.25 * rr.width * rr.height) { tn = n; target = r; } }
     const wantGhost = d === "touch" && p.step.ghost === "joystick" && !target; ghost.hidden = !wantGhost;
     if (wantGhost) { tn = ghost; target = rectOf(ghost); }
-    const avoid: Rect[] = []; for (const n of Array.from(document.querySelectorAll(AVOID))) { if (n === tn || (tn && n.contains(tn))) continue; const r = rectOf(n); if (r) avoid.push(r); }
+    // ADR-150: a target inside a UI block (a HUD bar, a menu-bar button) keeps the card off the whole block
+    let zone = target; const avoid: Rect[] = []; for (const n of Array.from(document.querySelectorAll(AVOID))) { if (n === tn || !shown(n)) continue; const r = rectOf(n); if (!r) continue; if (tn && n.contains(tn)) { if (target && r.w * r.h < 0.25 * rr.width * rr.height) zone = r; continue; } avoid.push(r); }
     const card = { w: el.offsetWidth, h: el.offsetHeight };
     const local = (r: Rect): Rect => ({ x: r.x - rr.left, y: r.y - rr.top, w: r.w, h: r.h });
-    const pos = placeCard({ w: rr.width, h: rr.height }, card, target && local(target), avoid.map(local));
+    const pos = placeCard({ w: rr.width, h: rr.height }, card, zone && local(zone), avoid.map(local));
     el.style.left = `${Math.round(pos.x)}px`; el.style.top = `${Math.round(pos.y)}px`;
     if (target) {
       const t = local(target); const pad = 4;
