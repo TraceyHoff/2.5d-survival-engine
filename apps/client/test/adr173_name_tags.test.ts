@@ -16,9 +16,9 @@ describe("ADR-173: name tags over other players", () => {
     const ids = new Map<number, string>(); for (const e of [me, near, mid, far, clan]) { const id = w.getField(e, PlayerId, "id")!; ids.set(id, `P${id}`); }
     return { w, me, near, mid, far, clan, names: { get: (id: number) => ids.get(id) } };
   };
-  test("self hidden, range cut-off, distance fade, farthest first", () => {
+  test("self hidden, range cut-off, distance fade, screen-depth order (ADR-185)", () => {
     const { w, me, names } = setup(); const pts = nameTagPoints(w, me, cam, names);
-    expect(pts.map((p) => p.dist)).toEqual([...pts.map((p) => p.dist)].sort((a, b) => b - a));
+    expect(pts.map((p) => p.y)).toEqual([...pts.map((p) => p.y)].sort((a, b) => a - b));
     expect(pts.some((p) => p.e === me)).toBe(false); expect(pts.length).toBe(3); // far one culled
     const byDist = [...pts].sort((a, b) => a.dist - b.dist); expect(byDist[0]!.alpha).toBe(1); expect(byDist.at(-1)!.alpha).toBeLessThan(1); expect(byDist.at(-1)!.alpha).toBeGreaterThanOrEqual(NAME_TAG.minAlpha);
   });

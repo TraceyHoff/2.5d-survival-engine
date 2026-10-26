@@ -18,7 +18,9 @@ export type TagKind = keyof typeof TAG_COLORS;
 export interface NameTagPoint { e: Entity; x: number; y: number; dist: number; name: string; kind: TagKind; alpha: number }
 export interface NameLookupLike { get(id: number): string | undefined }
 
-/** Pure: the tags for every other living player near `p`, in CSS px, farthest first so nearer tags draw on top. */
+/** Pure: the tags for every other living player near `p`, in CSS px, in screen depth order (top of screen first, entity id
+ *  tie-break) so a tag stacks like its sprite. ADR-185: the old farthest-from-me order flipped every few frames when two
+ *  overlapping players were about equally far (interpolation jitter), so their dark tag boxes blinked over each other. */
 export function nameTagPoints(w: World, p: Entity, cam: CameraLike, names: NameLookupLike, alpha = 1): NameTagPoint[] {
   const me = w.get(p, Transform); if (!me) return [];
   const myParty = w.getField(p, Membership, "partyId") ?? 0, myClan = w.getField(p, Membership, "clanId") ?? 0;
@@ -36,7 +38,7 @@ export function nameTagPoints(w: World, p: Entity, cam: CameraLike, names: NameL
     const fade = dist <= NAME_TAG.fullUntil ? 1 : 1 - (dist - NAME_TAG.fullUntil) / (NAME_TAG.range - NAME_TAG.fullUntil);
     out.push({ e, x: sx, y: sy, dist, name: name.slice(0, 24), kind, alpha: Math.max(NAME_TAG.minAlpha, fade) });
   }
-  return out.sort((a, b) => b.dist - a.dist);
+  return out.sort((a, b) => a.y - b.y || a.e - b.e); // ADR-185: stable screen-depth order
 }
 
 export interface NameTagDeps { world(): World; player(): Entity | undefined; camera(): CameraLike | undefined; hidden(): boolean; enabled(): boolean; names(): NameLookupLike | undefined; alpha(): number }
