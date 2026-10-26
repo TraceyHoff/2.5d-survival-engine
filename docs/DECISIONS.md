@@ -1174,3 +1174,11 @@ checked visually).
   - Population and farming already fell back to `PopulationTiles`, and gathering already checked it. They are unchanged.
 - **Caveat:** tiles the client has not received yet read as 0 (land). Those tiles are outside the relevant-chunk radius, so the player cannot reach them.
 - Tests: `apps/server/test/adr178_server_swim.test.ts`. All of its tests fail without the server change.
+
+## ADR-179: Client hotbar strip + client-side hotbar selection
+
+**Context.** Players reported no hotbar at the bottom-centre. Root cause: the client never rendered one (no hotbar view existed; nothing to be hidden by z-index, safe-area, zoom (ADR-175) or HUD change-only updates (ADR-158)). Also, the client FRAME_MAPPING carries no `edgeBits`, so Hotbar1..8 edges never reached the sim and 1-8 / D-pad did nothing.
+
+**Decision.** `apps/client/src/hotbar.ts` mounts a minimal 8-slot `#hotbar` toolbar (inventory slots 0-7) absolutely positioned bottom-centre above `--sab`, z-index below menus/tutorial, 44px slots (36px on small screens). It rebuilds only when its content/equip/device key changes (ADR-158 spirit), hides while dead, in menus, build mode or world tools, and click/tap equips. `main.ts` reads pressed Hotbar1..8 (keys, D-pad, LB+D-pad) and gamepad RB/LB taps (cycle filled slots) in gameplay and sends `equipIntent(slot)`. Number labels show only for keyboard/mouse.
+
+**Consequences.** Visible on PC, gamepad, phone landscape/portrait, WebGL and Canvas2D, with no overlaps. The Reload edge is still not mapped (follow-up). There's no mouse-wheel cycling because the wheel zooms.

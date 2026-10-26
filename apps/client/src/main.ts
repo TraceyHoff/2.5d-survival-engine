@@ -32,7 +32,7 @@ import { InputSystem, AimResolver, DEFAULT_ACTIONS, DEFAULT_CONTEXTS, DEFAULT_PR
 import { attachBrowserInput } from "@engine/input/browser";
 import { Act, ClanRoster, ClanRosterMember, OnlinePlayer, VehicleStationOpenedEvt, PetEventEvt, gameplayNet, installDemoWorld } from "@engine/server/protocol";
 import { netIdOf, ChatChannel, type ChatDelivered } from "@engine/net";
-import { WorldRules, worldRules, ROADS, holdsRangedWeapon, Sign, signText, Road, StallHeader, buildView, listItemIntents, setStallOpenIntent, stallView, nearestStall, inventoryView, gameplayDefs, BuildPiece } from "@engine/gameplay";
+import { WorldRules, worldRules, ROADS, holdsRangedWeapon, Sign, signText, Road, StallHeader, buildView, listItemIntents, setStallOpenIntent, stallView, nearestStall, inventoryView, equipIntent, gameplayDefs, BuildPiece } from "@engine/gameplay";
 import { replicaTerrain } from "./replica-terrain.js";
 import { SocialDirectory, hasCreatedLook, setAppearanceIntent, interactPanel, petEventText, petRenameIntent, UseCmd, GatherCmd, farmPrompt, TerrainRes, type MenuCtx, type MenuIntent } from "@engine/gameplay";
 import { ClientSession } from "./session.js";
@@ -41,6 +41,7 @@ import { IsoView } from "./view.js";
 import { mountHud } from "./hud.js";
 import { mountGatherFx } from "./gather-fx.js";
 import { panelIcon } from "./gameplay-panels.js";
+import { mountHotbar, hotbarCells, hotbarCycle, pressedHotbarSlot } from "./hotbar.js";
 import { buildSignEditor } from "./sign-editor.js";
 import { controlLabel, mountFarmPrompt, quickUseFires, type PromptDevice } from "./farm-prompt.js";
 import { attachContextRecovery, effectiveLevel, retryIsoAtSafe } from "./gl-recovery.js";
@@ -240,8 +241,17 @@ const buildHud = mountBuildHud(root, { buildMode, device: () => promptDevice(), 
 const buildTouchLayout = { ...DEFAULT_TOUCH_LAYOUTS.building, elements: DEFAULT_TOUCH_LAYOUTS.building.elements.filter((e) => !MENU_BAR_IDS.has(e.id)) };
 /** ADR-142: ?dev=sandbox exposes read-only QA handles (build preview, world, player) for automated browser tests. */
 if (params.get("dev") === "sandbox") (window as { __qa?: unknown }).__qa = { G: () => import("@engine/gameplay"), C: () => import("@engine/core"), iso: () => iso, tutorial: () => tutProgress, tutProbe: () => tutProber.probe(), petKit: () => session.devPetKit(), buildMode, send: (i: MenuIntent) => sendIntent(i), ctx: () => menuCtx(), gp: { buildView, listItemIntents, setStallOpenIntent, stallView, nearestStall, inventoryView, gameplayDefs }, world: () => world, player: () => session.player, menus: () => menus, stalls: () => world.isRegistered(StallHeader) ? [...world.query([StallHeader])].length : 0, roads: () => world.isRegistered(Road) ? [...world.query([Road])].length : 0, signs: () => world.isRegistered(Sign) ? [...world.query([Sign, Transform])].map((e) => signText(world, e)) : [], nodes: () => world.isRegistered(ResourceNode) ? [...world.query([ResourceNode, Transform])].filter((n) => world.getField(n, ResourceNode, "amount") !== 0).map((n) => { const t = world.get(n, Transform)!; const d = gameplayDefs(world).resources.get(world.getField(n, ResourceNode, "kind")!); return { x: t.x, y: t.y, key: d?.key, tool: d?.requiredTool }; }) : [], hint: () => { const p = session.player; return p !== undefined ? toolHint(world, p) : undefined; }, animals: () => world.isRegistered(Animal) ? [...world.query([Animal, Transform])].map((e) => { const t = world.get(e, Transform)!; return { e, x: t.x, y: t.y, kind: world.getField(e, Animal, "kind") }; }) : [], pos: () => { const p = session.player; const t = p !== undefined ? world.get(p, Transform) : undefined; return t ? { x: t.x, y: t.y } : undefined; } };
+/** ADR-179: Hotbar1..8 (1-8 keys / D-pad, LB+D-pad / touch "Slot" radial) and pad RB/LB taps equip from the client.
+ * FRAME_MAPPING has no edgeBits, so these edges never reached the sim's hotbarSlotFromEdges and the keys did nothing. */
+function hotbarInput(): void {
+  let slot = pressedHotbarSlot((a) => input.pressed(a));
+  if (slot < 0 && promptDevice() === "gamepad") { const dir = input.pressed("HotbarNext") ? 1 : input.pressed("HotbarPrev") ? -1 : 0;
+    if (dir) { const c = menuCtx(); if (c) { try { const cells = hotbarCells(inventoryView(c)); slot = hotbarCycle(cells, cells.findIndex((x) => x.equipped), dir); } catch { /* no inventory yet */ } } } }
+  if (slot >= 0) sendIntent(equipIntent(slot));
+}
 /** Per input update: build mode, and the shared Interact action (E / pad X / touch interact) opening stall / wardrobe panels. */
 function onUiFrame(): void {
+  { const t = performance.now(); if (t - hotbarT > 120) { hotbarT = t; hotbar.update(hotbarVisible()); } } // ADR-179 (rebuilds only on change)
   if (deathUi?.dead) { buildMode.stop(); return; } // ADR-153: dead: only the death screen takes input
   tutorialUi?.frame(input, !!menus?.nav.isOpen);
   if (promptDevice() === "gamepad") markNavFocus(); // ADR-142: pad users get a visible menu focus ring
@@ -251,6 +261,7 @@ function onUiFrame(): void {
   buildHud.update();
   worldTools?.update(); if (worldTools?.tool.active) return; // ADR-122: the Road context owns A/B/X/Y/RS while laying
   { const t = performance.now(), dt = padZoomT ? t - padZoomT : 0; padZoomT = t; if (promptDevice() === "gamepad") camZoom?.nudge(input.axis("Camera.Zoom"), dt); } // ADR-177: hold RB + D-pad ↑/↓
+  hotbarInput(); // ADR-179
   if (input.pressed("ToggleBuild") && promptDevice() === "gamepad") { menus?.open("build"); return; } // ADR-136: pad LB+Y (KBM B is a UINav hotkey)
   { const id = padMenuAction(input); if (id) { menus?.open(id); return; } } // ADR-139: pad-only bindings: Select = inventory, LB+Select = crafting, RB+Select = chat
   if (input.pressed("QuickUse") && farm) { const p = session.player; if (p !== undefined && quickUseFires(safeFarmPrompt(p))) farm.trigger(); }
@@ -533,6 +544,11 @@ farm = mountFarmPrompt(root, {
   key: (action) => controlLabel(input.bindings(promptDevice(), "Gameplay").find((b) => b.binding.action === action)?.binding.control),
   use: (p) => { if (p.action === "Harvest") { if (p.target !== undefined) sendIntent({ cmd: GatherCmd, args: { target: p.target }, entities: ["target"] }); } else if (p.slot !== undefined) sendIntent({ cmd: UseCmd, args: { slot: p.slot } }); },
 });
+// ADR-179: visible hotbar (inventory slots 1..8) bottom-centre; equips like the Hotbar1..8 bindings
+const hotbar = mountHotbar({ device: promptDevice, equip: (slot) => sendIntent(equipIntent(slot)), icon: (icon, item) => panelIcon(world, icon, String(item)),
+  view: () => { const c = menuCtx(); if (!c) return undefined; try { return inventoryView(c); } catch { return undefined; } } });
+let hotbarT = 0;
+const hotbarVisible = (): boolean => !deathUi?.dead && !menus?.nav.isOpen && !buildMode.active && !worldTools?.tool.active && !document.querySelector("[data-boot=menu]");
 // ADR-119..121: sign labels, road drag tool (G), sign placing (N), settlement label, horde toasts + cues
 vehicleCtl = mountVehicleControls(root, { world: () => world, player: () => session.player, send: (i) => sendIntent(i), input,
   toast: (t) => farm?.toast(t), onDrivingChange: () => { const c = browserInput.controls; if (c && !buildMode.active) c.layout = gameplayTouchLayout(); } });
