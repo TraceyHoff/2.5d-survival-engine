@@ -46,6 +46,7 @@ export * from "./systems/lights.js";
 export * from "./vehicle_keys.js";
 export * from "./combat/pvp.js";
 export * from "./spawn_points.js";
+export * from "./respawn.js";
 export * from "./combat/arms.js";
 export * from "./net_hooks.js";
 export * from "./input_hooks.js";

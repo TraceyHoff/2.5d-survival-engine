@@ -47,6 +47,8 @@ import { mountTutorial } from "./tutorial/overlay.js";
 import { TutorialProber } from "./tutorial/probe.js";
 import { Survival, heldTool, ResourceNode, toolHint, Animal } from "@engine/gameplay";
 import { AudioSystem } from "./audio/index.js";
+import { mountDeathScreen, type DeathScreen } from "./death-screen.js";
+import { RespawnCmd } from "@engine/gameplay";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 /** Everything (canvas, HUD, touch overlay, menu bar, modals) lives in this root; fullscreen targets it (ADR-095). */
@@ -116,6 +118,8 @@ let leaveCurrent: (() => Promise<void> | void) | undefined;
 let deleteInfo: (() => { label: string; message: string; settingsOption: boolean; run: (o: { resetSettings: boolean }) => Promise<string> } | undefined) | undefined;
 let sessionInfo: (() => { label: string; leaveLabel: string; onLeave: () => void }) | undefined;
 /** ADR-144: the guide. `tutorialNewGame` is set when a NEW character enters (or ?tutorial=1). */
+/** ADR-153: death screen (mounted below, after the tutorial). */
+let deathUi: DeathScreen | undefined;
 let tutorialNewGame = false; let tutProgress: TutorialProgress | undefined; const tutProber = new TutorialProber();
 let tutorialUi: ReturnType<typeof mountTutorial> | undefined;
 function tutorialProgress(): TutorialProgress {
@@ -225,6 +229,7 @@ const buildTouchLayout = { ...DEFAULT_TOUCH_LAYOUTS.building, elements: DEFAULT_
 if (params.get("dev") === "sandbox") (window as { __qa?: unknown }).__qa = { G: () => import("@engine/gameplay"), C: () => import("@engine/core"), iso: () => iso, tutorial: () => tutProgress, tutProbe: () => tutProber.probe(), petKit: () => session.devPetKit(), buildMode, send: (i: MenuIntent) => sendIntent(i), ctx: () => menuCtx(), gp: { buildView, listItemIntents, setStallOpenIntent, stallView, nearestStall, inventoryView, gameplayDefs }, world: () => world, player: () => session.player, menus: () => menus, stalls: () => world.isRegistered(StallHeader) ? [...world.query([StallHeader])].length : 0, roads: () => world.isRegistered(Road) ? [...world.query([Road])].length : 0, signs: () => world.isRegistered(Sign) ? [...world.query([Sign, Transform])].map((e) => signText(world, e)) : [], nodes: () => world.isRegistered(ResourceNode) ? [...world.query([ResourceNode, Transform])].filter((n) => world.getField(n, ResourceNode, "amount") !== 0).map((n) => { const t = world.get(n, Transform)!; const d = gameplayDefs(world).resources.get(world.getField(n, ResourceNode, "kind")!); return { x: t.x, y: t.y, key: d?.key, tool: d?.requiredTool }; }) : [], hint: () => { const p = session.player; return p !== undefined ? toolHint(world, p) : undefined; }, animals: () => world.isRegistered(Animal) ? [...world.query([Animal, Transform])].map((e) => { const t = world.get(e, Transform)!; return { e, x: t.x, y: t.y, kind: world.getField(e, Animal, "kind") }; }) : [], pos: () => { const p = session.player; const t = p !== undefined ? world.get(p, Transform) : undefined; return t ? { x: t.x, y: t.y } : undefined; } };
 /** Per input update: build mode, and the shared Interact action (E / pad X / touch interact) opening stall / wardrobe panels. */
 function onUiFrame(): void {
+  if (deathUi?.dead) { buildMode.stop(); return; } // ADR-153: dead: only the death screen takes input
   tutorialUi?.frame(input, !!menus?.nav.isOpen);
   if (promptDevice() === "gamepad") markNavFocus(); // ADR-142: pad users get a visible menu focus ring
   if (menus?.nav.isOpen) { buildMode.stop(); return; }
@@ -242,6 +247,7 @@ export const MENU_REFRESH_MS = LOW_END ? 500 : 250;
 let menuRefreshAt = 0;
 function render(w: World, alpha: number): void {
   wireChat();
+  try { deathUi?.frame(); } catch { /* never break a frame */ }
   const dayFrac = sampleDayClock(w, session.client, alpha); // ADR-115: one clock for lighting + HUD
   audioFrame(w, dayFrac);
   if (menus?.nav.isOpen) { const now = performance.now(); if (now >= menuRefreshAt) { menuRefreshAt = now + MENU_REFRESH_MS; menus.refresh(); } }
@@ -465,7 +471,7 @@ if (creatorShot) {
 
 const promptDevice = (): PromptDevice => { const c = input.activeDevice?.deviceClass; return c === "gamepad" || c === "touch" ? c : "keyboardMouse"; };
 tutorialUi = mountTutorial({ root, progress: tutorialProgress(), bindings: input, device: promptDevice,
-  hidden: () => session.player === undefined || !!document.querySelector(".creator:not([hidden]),#boot:not([hidden])"),
+  hidden: () => session.player === undefined || !!deathUi?.dead || !!document.querySelector(".creator:not([hidden]),#boot:not([hidden])"),
   probe: () => {
     const p = session.player; const pt = p !== undefined ? world.get(p, Transform) : undefined; const c = menuCtx();
     let items: Map<string, number> | undefined; let tk = 0; let pieces: number | undefined; let sv: { hunger: number; thirst: number } | undefined;
@@ -479,6 +485,10 @@ tutorialUi = mountTutorial({ root, progress: tutorialProgress(), bindings: input
     return tutProber.probe();
   } });
 input.onDeviceChange(() => tutorialUi?.update());
+// ADR-153: death screen + Respawn (mouse / touch / keyboard / gamepad) and the death-bag compass; above the tutorial and menus.
+deathUi = mountDeathScreen(root, { world: () => world, player: () => session.player,
+  respawn: () => { const c = session.client; if (!c?.connected) return false; try { return c.sendCommand(gameplayNet(RespawnCmd), {} as never) !== false; } catch { return false; } },
+  onDeath: () => { menus?.nav.closeAll(); buildMode.stop(); } });
 farm = mountFarmPrompt(root, {
   world: () => world, player: () => session.player, device: promptDevice, hidden: () => !!menus?.nav.isOpen || buildMode.active,
   key: (action) => controlLabel(input.bindings(promptDevice(), "Gameplay").find((b) => b.binding.action === action)?.binding.control),
