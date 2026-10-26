@@ -23,14 +23,14 @@
   {
    "category": "top",
    "file": "manifest.customization.top.json",
-   "bytes": 15047912,
-   "sha": "cd60be4a8c119c33c46c5b06cb1152c5a40d7ad0600fa5b6bdbe4c53bc1eb161"
+   "bytes": 15048562,
+   "sha": "e4e9efad0b502ca67bd6ebd81a906e70c697e1b76789c1ace5029a42a51462aa"
   },
   {
    "category": "bottom",
    "file": "manifest.customization.bottom.json",
-   "bytes": 6596806,
-   "sha": "3b18c92ba7a7231085c2d0205e495feda93ab37add0afc4c3cecaf8f06bec9c4"
+   "bytes": 6597066,
+   "sha": "f1811b215e41b321ab47fd32840badf379e1f824dd3a78d6b892a4ccce16dc6d"
   },
   {
    "category": "shoes",

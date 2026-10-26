@@ -110,7 +110,8 @@
    "ktx2": "atlases/cz_wr_bottom_gear_bone_greaves.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_bottom_gear_bone_greaves.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_bottom_gear_bronze_greaves",
@@ -132,7 +133,8 @@
    "ktx2": "atlases/cz_wr_bottom_gear_bronze_greaves.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_bottom_gear_bronze_greaves.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_bottom_gear_composite_greaves",
@@ -154,7 +156,8 @@
    "ktx2": "atlases/cz_wr_bottom_gear_composite_greaves.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_bottom_gear_composite_greaves.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_bottom_gear_fur_leggings",
@@ -176,7 +179,8 @@
    "ktx2": "atlases/cz_wr_bottom_gear_fur_leggings.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_bottom_gear_fur_leggings.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_bottom_gear_iron_greaves",
@@ -198,7 +202,8 @@
    "ktx2": "atlases/cz_wr_bottom_gear_iron_greaves.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_bottom_gear_iron_greaves.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_bottom_gear_leather_trousers",
@@ -220,7 +225,8 @@
    "ktx2": "atlases/cz_wr_bottom_gear_leather_trousers.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_bottom_gear_leather_trousers.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_bottom_gear_linen_trousers",
@@ -242,7 +248,8 @@
    "ktx2": "atlases/cz_wr_bottom_gear_linen_trousers.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_bottom_gear_linen_trousers.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_bottom_gear_padded_trousers",
@@ -264,7 +271,8 @@
    "ktx2": "atlases/cz_wr_bottom_gear_padded_trousers.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_bottom_gear_padded_trousers.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_bottom_gear_steel_greaves",
@@ -286,7 +294,8 @@
    "ktx2": "atlases/cz_wr_bottom_gear_steel_greaves.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_bottom_gear_steel_greaves.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_bottom_gear_waxed_trousers",
@@ -308,7 +317,8 @@
    "ktx2": "atlases/cz_wr_bottom_gear_waxed_trousers.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_bottom_gear_waxed_trousers.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_bottom_jeans",

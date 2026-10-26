@@ -88,7 +88,8 @@
    "ktx2": "atlases/cz_wr_top_gear_bone_cuirass.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_top_gear_bone_cuirass.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_top_gear_bone_cuirass_sleeves",
@@ -110,7 +111,8 @@
    "ktx2": "atlases/cz_wr_top_gear_bone_cuirass_sleeves.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_top_gear_bone_cuirass_sleeves.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_top_gear_bronze_cuirass",
@@ -132,7 +134,8 @@
    "ktx2": "atlases/cz_wr_top_gear_bronze_cuirass.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_top_gear_bronze_cuirass.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_top_gear_bronze_cuirass_sleeves",
@@ -154,7 +157,8 @@
    "ktx2": "atlases/cz_wr_top_gear_bronze_cuirass_sleeves.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_top_gear_bronze_cuirass_sleeves.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_top_gear_composite_cuirass",
@@ -176,7 +180,8 @@
    "ktx2": "atlases/cz_wr_top_gear_composite_cuirass.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_top_gear_composite_cuirass.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_top_gear_composite_cuirass_sleeves",
@@ -198,7 +203,8 @@
    "ktx2": "atlases/cz_wr_top_gear_composite_cuirass_sleeves.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_top_gear_composite_cuirass_sleeves.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_top_gear_fur_coat_female",
@@ -220,7 +226,8 @@
    "ktx2": "atlases/cz_wr_top_gear_fur_coat_female.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_top_gear_fur_coat_female.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_top_gear_fur_coat_male",
@@ -242,7 +249,8 @@
    "ktx2": "atlases/cz_wr_top_gear_fur_coat_male.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_top_gear_fur_coat_male.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_top_gear_fur_vest",
@@ -264,7 +272,8 @@
    "ktx2": "atlases/cz_wr_top_gear_fur_vest.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_top_gear_fur_vest.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_top_gear_iron_cuirass",
@@ -286,7 +295,8 @@
    "ktx2": "atlases/cz_wr_top_gear_iron_cuirass.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_top_gear_iron_cuirass.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_top_gear_iron_cuirass_sleeves",
@@ -308,7 +318,8 @@
    "ktx2": "atlases/cz_wr_top_gear_iron_cuirass_sleeves.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_top_gear_iron_cuirass_sleeves.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_top_gear_leather_jacket_female",
@@ -330,7 +341,8 @@
    "ktx2": "atlases/cz_wr_top_gear_leather_jacket_female.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_top_gear_leather_jacket_female.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_top_gear_leather_jacket_male",
@@ -352,7 +364,8 @@
    "ktx2": "atlases/cz_wr_top_gear_leather_jacket_male.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_top_gear_leather_jacket_male.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_top_gear_linen_shirt_female",
@@ -374,7 +387,8 @@
    "ktx2": "atlases/cz_wr_top_gear_linen_shirt_female.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_top_gear_linen_shirt_female.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_top_gear_linen_shirt_male",
@@ -396,7 +410,8 @@
    "ktx2": "atlases/cz_wr_top_gear_linen_shirt_male.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_top_gear_linen_shirt_male.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_top_gear_oilskin_coat",
@@ -418,7 +433,8 @@
    "ktx2": "atlases/cz_wr_top_gear_oilskin_coat.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_top_gear_oilskin_coat.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_top_gear_oilskin_coat_sleeves",
@@ -440,7 +456,8 @@
    "ktx2": "atlases/cz_wr_top_gear_oilskin_coat_sleeves.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_top_gear_oilskin_coat_sleeves.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_top_gear_padded_jacket_female",
@@ -462,7 +479,8 @@
    "ktx2": "atlases/cz_wr_top_gear_padded_jacket_female.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_top_gear_padded_jacket_female.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_top_gear_padded_jacket_male",
@@ -484,7 +502,8 @@
    "ktx2": "atlases/cz_wr_top_gear_padded_jacket_male.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_top_gear_padded_jacket_male.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_top_gear_raincoat_female",
@@ -506,7 +525,8 @@
    "ktx2": "atlases/cz_wr_top_gear_raincoat_female.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_top_gear_raincoat_female.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_top_gear_raincoat_male",
@@ -528,7 +548,8 @@
    "ktx2": "atlases/cz_wr_top_gear_raincoat_male.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_top_gear_raincoat_male.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_top_gear_steel_cuirass",
@@ -550,7 +571,8 @@
    "ktx2": "atlases/cz_wr_top_gear_steel_cuirass.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_top_gear_steel_cuirass.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_top_gear_steel_cuirass_sleeves",
@@ -572,7 +594,8 @@
    "ktx2": "atlases/cz_wr_top_gear_steel_cuirass_sleeves.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_top_gear_steel_cuirass_sleeves.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_top_gear_wool_sweater_female",
@@ -594,7 +617,8 @@
    "ktx2": "atlases/cz_wr_top_gear_wool_sweater_female.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_top_gear_wool_sweater_female.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_top_gear_wool_sweater_male",
@@ -616,7 +640,8 @@
    "ktx2": "atlases/cz_wr_top_gear_wool_sweater_male.ktx2",
    "masksKtx2": {
     "tintmask": "atlases/cz_wr_top_gear_wool_sweater_male.tintmask.ktx2"
-   }
+   },
+   "residency": "stream"
   },
   {
    "key": "cz_wr_top_henley",
