@@ -1182,3 +1182,13 @@ checked visually).
 **Decision.** `apps/client/src/hotbar.ts` mounts a minimal 8-slot `#hotbar` toolbar (inventory slots 0-7) absolutely positioned bottom-centre above `--sab`, z-index below menus/tutorial, 44px slots (36px on small screens). It rebuilds only when its content/equip/device key changes (ADR-158 spirit), hides while dead, in menus, build mode or world tools, and click/tap equips. `main.ts` reads pressed Hotbar1..8 (keys, D-pad, LB+D-pad) and gamepad RB/LB taps (cycle filled slots) in gameplay and sends `equipIntent(slot)`. Number labels show only for keyboard/mouse.
 
 **Consequences.** Visible on PC, gamepad, phone landscape/portrait, WebGL and Canvas2D, with no overlaps. The Reload edge is still not mapped (follow-up). There's no mouse-wheel cycling because the wheel zooms.
+
+## ADR-180: Client frame edges reach the sim (Reload, Hotbar1..8)
+
+**Context.** The client FRAME_MAPPING had no `edgeBits`, so no edge action ever left the client, and the server's `applyInput` ignored `cmd.edges` anyway (`applyGameplayInput` is not on the server path). So R / pad Y / touch Reload did nothing, and Hotbar1..8 only worked through ADR-179's client-side shim.
+
+**Decision.** `apps/client/src/frame-mapping.ts` maps every edge action to `GameplayEdgeBits` (same order as input `EDGE_ACTIONS`). The client strips the sim edges (Reload, Hotbar1..8) outside plain gameplay, i.e. in menus, build mode, world tools and death. Gameplay's `edgeCommands(edges)` turns sim edges into commands (Hotbar*n* → `EquipCmd(n-1)`, Reload → `ReloadCmd`); it is shared by `applyGameplayInput` and the server's `applyInput`, which queues them like their net-command twins. ADR-179's client path now only does the pad RB/LB cycle, so Hotbar1..8 fire once.
+
+**Audit.** These edges are UI or have no sim effect and are sent but ignored by the sim: Jump, HotbarNext/Prev, QuickUse, ToggleInventory/Crafting/Map, OpenChat, OpenSocial and Cancel.
+
+**Consequences.** `adr180_edges_reach_sim.test.ts` checks that every bound edge has a matching bit, that each sim edge maps to a command, and that keyboard and gamepad input equip and reload over loopback on the authoritative server.

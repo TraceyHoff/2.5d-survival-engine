@@ -28,9 +28,9 @@ import { mountTouchOverlay, syncTouchHidden } from "./touch-overlay.js";
  */
 import { createGameLoop, World, PlayerId, Transform, PrevTransform, lerp, entityIndex, InputState, type FixedLoop, type Entity } from "@engine/core";
 import { TileMap, worldToScreen, screenToWorld, DEFAULT_ISO, ProceduralGenerator, computeSpawnPoints } from "@engine/world";
-import { InputSystem, AimResolver, DEFAULT_ACTIONS, DEFAULT_CONTEXTS, DEFAULT_PROFILES, DEFAULT_TOUCH_LAYOUTS, type FrameMapping } from "@engine/input";
+import { InputSystem, AimResolver, DEFAULT_ACTIONS, DEFAULT_CONTEXTS, DEFAULT_PROFILES, DEFAULT_TOUCH_LAYOUTS } from "@engine/input";
 import { attachBrowserInput } from "@engine/input/browser";
-import { Act, ClanRoster, ClanRosterMember, OnlinePlayer, VehicleStationOpenedEvt, PetEventEvt, gameplayNet, installDemoWorld } from "@engine/server/protocol";
+import { ClanRoster, ClanRosterMember, OnlinePlayer, VehicleStationOpenedEvt, PetEventEvt, gameplayNet, installDemoWorld } from "@engine/server/protocol";
 import { netIdOf, ChatChannel, type ChatDelivered } from "@engine/net";
 import { WorldRules, worldRules, ROADS, holdsRangedWeapon, Sign, signText, Road, StallHeader, buildView, listItemIntents, setStallOpenIntent, stallView, nearestStall, inventoryView, equipIntent, gameplayDefs, BuildPiece } from "@engine/gameplay";
 import { replicaTerrain } from "./replica-terrain.js";
@@ -41,7 +41,8 @@ import { IsoView } from "./view.js";
 import { mountHud } from "./hud.js";
 import { mountGatherFx } from "./gather-fx.js";
 import { panelIcon } from "./gameplay-panels.js";
-import { mountHotbar, hotbarCells, hotbarCycle, pressedHotbarSlot } from "./hotbar.js";
+import { mountHotbar, hotbarCells, hotbarCycle } from "./hotbar.js";
+import { CLIENT_FRAME_MAPPING, gateEdges } from "./frame-mapping.js";
 import { buildSignEditor } from "./sign-editor.js";
 import { controlLabel, mountFarmPrompt, quickUseFires, type PromptDevice } from "./farm-prompt.js";
 import { attachContextRecovery, effectiveLevel, retryIsoAtSafe } from "./gl-recovery.js";
@@ -200,16 +201,16 @@ function quitToMenu(): void {
 }
 let cam = { sx: 0, sy: 0 }; // camera offset from render(), for mouse aim
 const aim = new AimResolver(input, { screenToWorld: (x, y) => iso ? iso.renderer.camera.cssToWorld(x, y) : screenToWorld(x - innerWidth / 2 + cam.sx, y - innerHeight / 2 + cam.sy) });
-/** Input actions -> the demo's action bits (server protocol `Act`); analog move/aim/edges ride along as InputFrame v2 fields. */
-const FRAME_MAPPING: FrameMapping = { holdBits: { Sprint: Act.Sprint, Interact: Act.Gather, Primary: Act.Gather }, move: { action: "Move", up: Act.MoveUp, down: Act.MoveDown, left: Act.MoveLeft, right: Act.MoveRight } };
+/** Input actions -> InputFrame (frame-mapping.ts, ADR-180); `inGameplay` is set by onUiFrame (runs first) so sim edges only fire in plain gameplay. */
+let inGameplay = false;
 const inputState = new InputState();
 function sampleInput(): { buttons: number; aimX: number; aimY: number } {
   const p = session.player; const pt = p !== undefined ? world.get(p, Transform) : undefined;
   input.update(); onUiFrame();
-  input.writeFrame(inputState, FRAME_MAPPING, p !== undefined && pt ? aim.resolve(world, p, pt) : undefined);
-  const { tick: _t, commands: _c, actions, ...rest } = inputState.sample(world.tick);
+  input.writeFrame(inputState, CLIENT_FRAME_MAPPING, p !== undefined && pt ? aim.resolve(world, p, pt) : undefined);
+  const { tick: _t, commands: _c, actions, edges, ...rest } = inputState.sample(world.tick);
   // Every frame field goes to NetClient (spread into its InputCmd); net encodes the v2 fields once its InputCmd carries them.
-  const cmd = { buttons: actions, ...rest }; return cmd;
+  const e = gateEdges(edges, inGameplay); const cmd = { buttons: actions, ...rest, ...(e !== undefined ? { edges: e } : {}) }; return cmd;
 }
 
 const SLOT = params.get("player") ?? "1";
@@ -241,16 +242,17 @@ const buildHud = mountBuildHud(root, { buildMode, device: () => promptDevice(), 
 const buildTouchLayout = { ...DEFAULT_TOUCH_LAYOUTS.building, elements: DEFAULT_TOUCH_LAYOUTS.building.elements.filter((e) => !MENU_BAR_IDS.has(e.id)) };
 /** ADR-142: ?dev=sandbox exposes read-only QA handles (build preview, world, player) for automated browser tests. */
 if (params.get("dev") === "sandbox") (window as { __qa?: unknown }).__qa = { G: () => import("@engine/gameplay"), C: () => import("@engine/core"), iso: () => iso, tutorial: () => tutProgress, tutProbe: () => tutProber.probe(), petKit: () => session.devPetKit(), buildMode, send: (i: MenuIntent) => sendIntent(i), ctx: () => menuCtx(), gp: { buildView, listItemIntents, setStallOpenIntent, stallView, nearestStall, inventoryView, gameplayDefs }, world: () => world, player: () => session.player, menus: () => menus, stalls: () => world.isRegistered(StallHeader) ? [...world.query([StallHeader])].length : 0, roads: () => world.isRegistered(Road) ? [...world.query([Road])].length : 0, signs: () => world.isRegistered(Sign) ? [...world.query([Sign, Transform])].map((e) => signText(world, e)) : [], nodes: () => world.isRegistered(ResourceNode) ? [...world.query([ResourceNode, Transform])].filter((n) => world.getField(n, ResourceNode, "amount") !== 0).map((n) => { const t = world.get(n, Transform)!; const d = gameplayDefs(world).resources.get(world.getField(n, ResourceNode, "kind")!); return { x: t.x, y: t.y, key: d?.key, tool: d?.requiredTool }; }) : [], hint: () => { const p = session.player; return p !== undefined ? toolHint(world, p) : undefined; }, animals: () => world.isRegistered(Animal) ? [...world.query([Animal, Transform])].map((e) => { const t = world.get(e, Transform)!; return { e, x: t.x, y: t.y, kind: world.getField(e, Animal, "kind") }; }) : [], pos: () => { const p = session.player; const t = p !== undefined ? world.get(p, Transform) : undefined; return t ? { x: t.x, y: t.y } : undefined; } };
-/** ADR-179: Hotbar1..8 (1-8 keys / D-pad, LB+D-pad / touch "Slot" radial) and pad RB/LB taps equip from the client.
- * FRAME_MAPPING has no edgeBits, so these edges never reached the sim's hotbarSlotFromEdges and the keys did nothing. */
+/** ADR-179/180: Hotbar1..8 (1-8 keys / D-pad, LB+D-pad / touch "Slot" radial) now reach the sim as frame edges; only the
+ * pad RB/LB tap cycle (HotbarNext/Prev, which needs the filled-slot list) is sent from here, so nothing fires twice. */
 function hotbarInput(): void {
-  let slot = pressedHotbarSlot((a) => input.pressed(a));
-  if (slot < 0 && promptDevice() === "gamepad") { const dir = input.pressed("HotbarNext") ? 1 : input.pressed("HotbarPrev") ? -1 : 0;
+  let slot = -1;
+  if (promptDevice() === "gamepad") { const dir = input.pressed("HotbarNext") ? 1 : input.pressed("HotbarPrev") ? -1 : 0;
     if (dir) { const c = menuCtx(); if (c) { try { const cells = hotbarCells(inventoryView(c)); slot = hotbarCycle(cells, cells.findIndex((x) => x.equipped), dir); } catch { /* no inventory yet */ } } } }
   if (slot >= 0) sendIntent(equipIntent(slot));
 }
 /** Per input update: build mode, and the shared Interact action (E / pad X / touch interact) opening stall / wardrobe panels. */
 function onUiFrame(): void {
+  inGameplay = false;
   { const t = performance.now(); if (t - hotbarT > 120) { hotbarT = t; hotbar.update(hotbarVisible()); } } // ADR-179 (rebuilds only on change)
   if (deathUi?.dead) { buildMode.stop(); return; } // ADR-153: dead: only the death screen takes input
   tutorialUi?.frame(input, !!menus?.nav.isOpen);
@@ -261,7 +263,7 @@ function onUiFrame(): void {
   buildHud.update();
   worldTools?.update(); if (worldTools?.tool.active) return; // ADR-122: the Road context owns A/B/X/Y/RS while laying
   { const t = performance.now(), dt = padZoomT ? t - padZoomT : 0; padZoomT = t; if (promptDevice() === "gamepad") camZoom?.nudge(input.axis("Camera.Zoom"), dt); } // ADR-177: hold RB + D-pad ↑/↓
-  hotbarInput(); // ADR-179
+  inGameplay = true; hotbarInput(); // ADR-179/180
   if (input.pressed("ToggleBuild") && promptDevice() === "gamepad") { menus?.open("build"); return; } // ADR-136: pad LB+Y (KBM B is a UINav hotkey)
   { const id = padMenuAction(input); if (id) { menus?.open(id); return; } } // ADR-139: pad-only bindings: Select = inventory, LB+Select = crafting, RB+Select = chat
   if (input.pressed("QuickUse") && farm) { const p = session.player; if (p !== undefined && quickUseFires(safeFarmPrompt(p))) farm.trigger(); }

@@ -4,7 +4,7 @@ import { installRoadCommands, NodeRegrow, installSignCommands, installPetCommand
 /** Authoritative game server: world + gameplay + streaming chunks + persistence + NetServer sessions. */
 import { ChannelRegistry, CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, type CosmeticCatalogLike, Membership, Owner, PlayerId, TimeOfDay, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
 import { CHUNK_SIZE, ChunkManager, ProceduralGenerator, computeSpawnPoints, chunkKeyOf, type BuildingGrid, type PopulationSpawner } from "@engine/world";
-import { spawnPoints, GAMEPLAY_COMMANDS, ARMS_COMMANDS, ARMS_EVENT_RELIABILITY, Exploded, Reloaded, VehicleStationOpened, installPartyCommands, PartyInvitePending, installClanCommands, ClanInvitePending, ClanStatus, syncSocialMembership, clanState, encodeClanState, decodeClanState, loadClanState, queueCommand, spawnPlayer, spawnResourceNode, setSpawnPoints, spawnPoints as worldSpawnPoints, pickSpawnPoint, gameplayDefs, setIntent, IntentAction, nearestMeleeTarget, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installPopulation, installCustomization,
+import { spawnPoints, GAMEPLAY_COMMANDS, ARMS_COMMANDS, ARMS_EVENT_RELIABILITY, Exploded, Reloaded, VehicleStationOpened, installPartyCommands, PartyInvitePending, installClanCommands, ClanInvitePending, ClanStatus, syncSocialMembership, clanState, encodeClanState, decodeClanState, loadClanState, queueCommand, edgeCommands, spawnPlayer, spawnResourceNode, setSpawnPoints, spawnPoints as worldSpawnPoints, pickSpawnPoint, gameplayDefs, setIntent, IntentAction, nearestMeleeTarget, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installPopulation, installCustomization,
   appearanceServerHooks, applyReplication, installStallBuyHook, installViewBonus, setHitValidator, installPvp, installBedRespawn, installCraftQueue, installExpressionCommands, installVehicleCommands, installVehicleCraftCommands, installVehicleGuard, requestEmote, CraftQueue, CraftQueuesRes, playerNames, stallListing, listingRevision, stallOf, tillOf, StallHeader, StallOwnerKind } from "@engine/gameplay";
 import { AppearanceServer, ChatServer, NameSync, NetServer, StallResult, StallServer, TileSync, validateHit, type ClientSession, type ServerTransport, type StallHooks } from "@engine/net";
 import { createAgentStore, type AgentIdentityStore } from "./agents.js";
@@ -171,6 +171,8 @@ export function createGameServer(o: GameServerOptions): GameServer {
     forwardCoreRejections: false, // forwarded below with the net command def + a reason code (protocol.ts)
     applyInput: (w, e, cmd, clientId) => {
       applyDemoInput(w, e, cmd, 1 / tickHz); // riders: drive input (only the seat-0 driver steers, gameplay.vehicles)
+      // ADR-180: edge pulses (exactly-once per seq) -> the same input-queue commands their net command twins use (Hotbar1..8 equip, Reload)
+      if (cmd?.edges && players.get(clientId)?.entity === e) for (const c of edgeCommands(cmd.edges)) queueCommand(w, e, handlers.registry, handlers.registry.make(c.def, c.values as never));
       if (cmd && (cmd.buttons & Act.Gather) && players.get(clientId)?.entity === e) {
         // ADR-107: the primary button punches/strikes a zombie or animal in melee reach first, else gathers
         const foe = nearestMeleeTarget(w, e);

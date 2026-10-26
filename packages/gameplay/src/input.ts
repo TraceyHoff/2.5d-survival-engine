@@ -96,6 +96,18 @@ interface Pending { readonly action: IntentAction; readonly values: Record<strin
 export const CommandQueues = defineResource<Map<Entity, Pending[]>>("gameplay.CommandQueues");
 const MAX_QUEUE = 16;
 
+/**
+ * ADR-180: the sim commands an InputFrame's edge pulses stand for (Hotbar1..8 -> EquipCmd(slot), Reload -> ReloadCmd).
+ * Shared by applyGameplayInput and the authoritative server's applyInput so edges mean the same everywhere. Other edges
+ * (Jump, HotbarNext/Prev, QuickUse, Toggle*, OpenChat, OpenSocial, Cancel) are client-UI or have no sim effect yet.
+ */
+export const SIM_EDGE_ACTIONS = ["Reload", "Hotbar1", "Hotbar2", "Hotbar3", "Hotbar4", "Hotbar5", "Hotbar6", "Hotbar7", "Hotbar8"] as const;
+export function edgeCommands(edges: number): { def: CommandDef; values: Record<string, number> }[] {
+  const out: { def: CommandDef; values: Record<string, number> }[] = [];
+  const slot = hotbarSlotFromEdges(edges); if (slot >= 0) out.push({ def: EquipCmd as CommandDef, values: { slot } });
+  if (edges & GameplayEdgeBits.Reload) out.push({ def: ReloadCmd as CommandDef, values: {} });
+  return out;
+}
 /** Input phase: actions -> moving/sprint, commands -> queue (one becomes the tick's intent). */
 export function applyGameplayInput(world: World, e: Entity, frame: InputFrame | null, reg: CommandRegistry): void {
   if (!world.has(e, PlayerIntent)) return;
@@ -107,9 +119,7 @@ export function applyGameplayInput(world: World, e: Entity, frame: InputFrame | 
   } else world.set(e, PlayerIntent, { moving: actions & MOVE || analogMoving(frame) ? 1 : 0, sprint: actions & GameplayActions.Sprint ? 1 : 0, charge: actions & GameplayHoldBits.Charge ? 1 : 0 });
   for (const c of frame?.commands ?? []) queueCommand(world, e, reg, c);
   if (!frame) return;
-  const slot = hotbarSlotFromEdges(frame.edges ?? 0);
-  if (slot >= 0) { try { queueCommand(world, e, reg, reg.make(EquipCmd, { slot })); } catch { /* EquipCmd not in this registry */ } }
-  if ((frame.edges ?? 0) & GameplayEdgeBits.Reload) { try { queueCommand(world, e, reg, reg.make(ReloadCmd, {})); } catch { /* not registered */ } }
+  for (const c of edgeCommands(frame.edges ?? 0)) { try { queueCommand(world, e, reg, reg.make(c.def, c.values)); } catch { /* not in this registry */ } }
   runInputHooks(world, e, frame, reg);
 }
 export function queueCommand(world: World, e: Entity, reg: CommandRegistry, c: Command): boolean {
