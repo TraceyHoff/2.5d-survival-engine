@@ -298,6 +298,7 @@ def eye_clear(c):
         if len(arc) > 2: cv.line(sorted(arc), INK[3], .9, clip=hair_a)
     cv.erase(m)
 def draw_hair(c, spec, hat=False):
+    c.cv.cel = True; c.cv.pal = []   # solid cel-shaded hair (no airbrush gradients)
     if spec["style"] not in HAIR_NO_SCALP: c.add(hv(c) + 1.95, lambda: scalp_cover(c, 1.06 if spec["style"] == "buzz" else 1.035))  # buzz cap is the tightest
     HAIR[spec["style"]](c, hat)
     c.add(1e9, lambda: eye_clear(c))

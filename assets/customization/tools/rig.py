@@ -205,14 +205,16 @@ class MCanvas(Canvas):
         a = np.asarray(im.convert("RGBA")).astype(np.float32); P = np.array(sorted(set(s.pal)), np.float32)
         rgb = a[..., :3]; al = a[..., 3]; sh = np.array(hex2rgb(SHADOW), np.float32)
         d = ((rgb[..., None, :] - P[None, None]) ** 2).sum(-1); q = P[d.argmin(-1)]
-        shadow = (al < 255 * (SHADOW_ALPHA + .12)) & (np.abs(rgb - sh).sum(-1) < 60)
+        shadow = (al < 255 * (SHADOW_ALPHA + .12)) & (np.abs(rgb - sh).sum(-1) < 60) & bool(s.shadowed)   # only layers that drew a contact shadow
         out = np.zeros_like(a); fig = (al >= 128) & ~shadow
         out[fig, :3] = q[fig]; out[fig, 3] = 255
         sm = shadow & (al >= 255 * SHADOW_ALPHA * .5); out[sm, :3] = sh; out[sm, 3] = round(255 * SHADOW_ALPHA)
         return Image.fromarray(out.astype(np.uint8), "RGBA")
+    shadowed = False
     cel = False     # cel look (solid fills, hard-edged shade/highlight bands, hard alpha) — set by parts.body
     def shadow(s, cx, cy, rx, ry, *a, **k):
         if not s.cel: return Canvas.shadow(s, cx, cy, rx, ry, *a, **k)
+        s.shadowed = True
         import toon; g = toon.ImageFilter.GaussianBlur; toon.ImageFilter.GaussianBlur = lambda r: ImageFilter.BoxBlur(0)
         try: Canvas.shadow(s, cx, cy, rx, ry, *a, **k)
         finally: toon.ImageFilter.GaussianBlur = g
@@ -364,5 +366,8 @@ class Ctx:
             im1, im2 = s.cv.cel_snap(im1), s.cv.cel_snap(im2); tm = np.round(np.clip(tm, 0, 1))
         def mk(sz):
             ch = [np.asarray(Image.fromarray(np.ascontiguousarray(tm[..., i] * 255).astype(np.uint8)).resize(sz, Image.BOX)) for i in range(2)]
+            if s.cv.cel:   # strictly 0/1 per region after the box resize, and only under opaque figure texels
+                A = np.asarray((im1 if sz == (FW, FH) else im2).getchannel("A")) >= 128
+                ch = [np.where((c >= 128) & A, 255, 0).astype(np.uint8) for c in ch]
             return np.stack(ch + [np.zeros_like(ch[0])], -1)
         return im1, im2, mk((FW, FH)), mk((FW * 2, FH * 2))
