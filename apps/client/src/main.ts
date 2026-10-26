@@ -24,7 +24,7 @@ import { mountTouchOverlay, syncTouchHidden } from "./touch-overlay.js";
  *             ?offline=1 (skip the menu: singleplayer), ?menu=0 (skip the menu: legacy connect overlay), ?bots=N,
  *             ?ice=<JSON RTCIceServer[]> (P2P STUN/TURN override, also VITE_ICE_SERVERS), ?renderer=debug, ?time=0..24 / ?weather=clear|rain|storm|snow|fog &intensity=0..1 (view-only overrides), ?hud=0.
  */
-import { createGameLoop, World, Transform, PrevTransform, lerp, entityIndex, InputState, type FixedLoop, type Entity } from "@engine/core";
+import { createGameLoop, World, PlayerId, Transform, PrevTransform, lerp, entityIndex, InputState, type FixedLoop, type Entity } from "@engine/core";
 import { TileMap, worldToScreen, screenToWorld, DEFAULT_ISO, ProceduralGenerator, computeSpawnPoints } from "@engine/world";
 import { InputSystem, AimResolver, DEFAULT_ACTIONS, DEFAULT_CONTEXTS, DEFAULT_PROFILES, DEFAULT_TOUCH_LAYOUTS, type FrameMapping } from "@engine/input";
 import { attachBrowserInput } from "@engine/input/browser";
@@ -50,7 +50,7 @@ import { TutorialProber } from "./tutorial/probe.js";
 import { Survival, heldTool, ResourceNode, toolHint, Animal, LootBag, openContainer } from "@engine/gameplay";
 import { AudioSystem } from "./audio/index.js";
 import { mountDeathScreen, type DeathScreen } from "./death-screen.js";
-import { RespawnCmd } from "@engine/gameplay";
+import { RespawnCmd, partyView, clanView } from "@engine/gameplay";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 /** Everything (canvas, HUD, touch overlay, menu bar, modals) lives in this root; fullscreen targets it (ADR-095). */
@@ -153,7 +153,7 @@ function menuCtx(): MenuCtx | undefined {
   const p = session.player; const c = session.client; if (p === undefined || !c) return undefined;
   const names = { get: (id: number): string | undefined => { const n = c.names.get(id); if (n === undefined && id) c.names.want([id]); return n; } };
   const catalog = iso?.registry.cosmetics?.size ? iso.registry.cosmetics : undefined; // wardrobe palettes / eye list / secondary rows
-  return { world, player: p, names, ...(catalog ? { catalog } : {}) };
+  return { world, player: p, names, tick: c.serverTickEstimate, ...(catalog ? { catalog } : {}) };
 }
 /** ADR-145: pet rename modal (sign editor; on-screen keyboard on gamepad) -> PetRenameCmd. */
 function renamePet(pet: Entity, current: string): void {
@@ -176,7 +176,7 @@ let chatWired: unknown;
 /** Hook NetClient.chat (core ChatServer, already run by the server) into the chat panel once per client. */
 function wireChat(): void {
   const c = session.client; if (!c || chatWired === c || !menus) return; chatWired = c; social.reset();
-  c.chat.on((m: ChatDelivered) => { menus?.pushChat(chatLine(m.channel, chatSender(m.fromPlayer, (id) => c.names.get(id)), m.text), m.channel); });
+  c.chat.on((m: ChatDelivered) => { const me = session.player !== undefined ? world.getField(session.player, PlayerId, "id") : undefined; menus?.pushChat(chatLine(m.channel, chatSender(m.fromPlayer, (id) => c.names.get(id)), m.text), m.channel, m.fromPlayer !== me); });
   // owner-scoped social replication (Netcode SocialSync) → clan roster, invite lists, whisper picker
   c.onEvent(ClanRoster, (e) => social.onRoster(e)); c.onEvent(ClanRosterMember, (e) => social.onMember(e)); c.onEvent(OnlinePlayer, (e) => social.onOnline(e));
   // camper interior station used (server VehicleStationOpened, owner only) → camper station panel
@@ -265,11 +265,24 @@ function lootAutoOpen(): void {
 const LOW_END = params.get("gl") === "lowend" || (navigator.hardwareConcurrency ?? 8) <= 4 || ((navigator as { deviceMemory?: number }).deviceMemory ?? 8) <= 2;
 export const MENU_REFRESH_MS = LOW_END ? 500 : 250;
 let menuRefreshAt = 0;
+/** ADR-172: a party / clan invite used to show only inside its panel. Now a toast plus a badge on 👥 / clan when one arrives; the badge clears when the invite is answered or expires. */
+let inviteSeen = { party: 0, clan: 0 }; let inviteCheckAt = 0;
+function inviteNotices(): void {
+  const now = performance.now(); if (now < inviteCheckAt || !menus) return; inviteCheckAt = now + 400;
+  const c = menuCtx(); if (!c) return;
+  let pi: ReturnType<typeof partyView>["invite"]; let ci: ReturnType<typeof clanView>["invite"];
+  try { pi = partyView(c).invite; ci = clanView(c).invite; } catch { return; }
+  const pk = pi?.party ?? 0, ck = ci?.clan ?? 0;
+  if (pk !== inviteSeen.party) { if (pi) farm?.toast(`${pi.fromName} invited you to a party: open 👥 Party`); menus.setBadge("party", pi ? 1 : 0); }
+  if (ck !== inviteSeen.clan) { if (ci) farm?.toast(`${ci.fromName} invited you to a clan: open Clan`); menus.setBadge("clan", ci ? 1 : 0); }
+  inviteSeen = { party: pk, clan: ck };
+}
 function render(w: World, alpha: number): void {
   wireChat();
   try { deathUi?.frame(); } catch { /* never break a frame */ }
   const dayFrac = sampleDayClock(w, session.client, alpha); // ADR-115: one clock for lighting + HUD
   audioFrame(w, dayFrac);
+  inviteNotices();
   if (menus?.nav.isOpen) { const now = performance.now(); if (now >= menuRefreshAt) { menuRefreshAt = now + MENU_REFRESH_MS; menus.refresh(); } }
   iso?.syncGhost(buildMode.preview, w);
   if (iso) {
@@ -538,7 +551,7 @@ function audioFrame(w: World, dayFrac: number | undefined): void {
   try {
     audio.mixer.pollGamepadUnlock(navigator.getGamepads?.() as never);
     const inGame = session.player !== undefined; const paused = !!menus?.nav.isOpenId("pause") && !!spStatus; // singleplayer pause: world audio stops, UI stays live
-    audio.frame(w, session.player, session.client?.tiles.tiles, dayFrac, !inGame ? "menu" : paused ? "off" : "game", performance.now() / 1000);
+    audio.frame(w, session.player, session.client?.tiles.tiles, dayFrac, !inGame ? "menu" : paused ? "off" : "game", performance.now() / 1000, session.client?.serverTickEstimate);
   } catch { /* audio must never break a frame */ }
 }
 /** UI sounds: button clicks (touch/mouse/gamepad A all dispatch click), hover/focus, toasts. */

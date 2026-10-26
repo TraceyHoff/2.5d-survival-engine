@@ -33,7 +33,10 @@ import { CLAN_GOAL_COUNT, CLAN_PERMS, clanPermBit, clanState, defaultRankMasks, 
 export const TICKS_PER_SECOND = 20;
 /** One command intent for the client to send (`client.sendCommand(gameplayNet(cmd), args)` after NetId mapping). */
 export interface MenuIntent { cmd: CommandDef; args: Record<string, number | number[]>; /** arg names holding Entities (sender maps to NetIds) */ entities?: readonly string[] }
-export interface MenuCtx { world: World; player: Entity; names?: NameLookup; catalog?: CosmeticCatalogLike }
+/** `tick` (ADR-172): the authoritative server tick on a networked client. A replica's own `world.tick` counts from its join, so timers that come from the server (invite expiry, craft progress, fuel) must be compared against this value. */
+export interface MenuCtx { world: World; player: Entity; names?: NameLookup; catalog?: CosmeticCatalogLike; tick?: number }
+/** ADR-172: the "now" for server-stamped ticks. */
+export const ctxTick = (c: MenuCtx): number => c.tick ?? c.world.tick;
 const intent = (cmd: CommandDef, args: MenuIntent["args"], entities?: readonly string[]): MenuIntent => (entities ? { cmd, args, entities } : { cmd, args });
 const itemName = (w: World, item: number): string => gameplayDefs(w).items.get(item)?.name ?? (item ? `#${item}` : "");
 const pidOf = (w: World, e: Entity): number => w.getField(e, PlayerId, "id") ?? 0;
@@ -136,7 +139,7 @@ export function fuelView(c: MenuCtx, fire: Entity): FuelView | undefined {
   const w = c.world; if (!w.has(fire, Fuel)) return undefined; const defs = gameplayDefs(w);
   const fuels: FuelView["fuels"] = [];
   for (const x of listSlots(w, c.player)) { const it = defs.items.get(x.item); if (!it || !it.fuelSeconds) continue; const f = fuels.find((y) => y.item === x.item); if (f) f.count += x.count; else fuels.push({ item: x.item, key: it.key, name: it.name, count: x.count, seconds: it.fuelSeconds }); }
-  return { lit: (w.getField(fire, Fuel, "lit") ?? 0) > 0, secondsLeft: fuelSecondsLeft(w, fire), fuels };
+  return { lit: (w.getField(fire, Fuel, "lit") ?? 0) > 0, secondsLeft: fuelSecondsLeft(w, fire, undefined, c.tick), fuels };
 }
 export const toggleFireIntent = (target: Entity): MenuIntent => intent(ToggleFireCmd, { target }, ["target"]);
 export const depositIntent = (target: Entity, item: number, count: number): MenuIntent => intent(DepositCmd, { target, item, count }, ["target"]);
@@ -155,8 +158,8 @@ export function craftingView(c: MenuCtx, station = 0): CraftingView { // station
   if (q) for (let i = 0; i < q.state.length; i++) {
     const st = q.state[i]!; if (!st) continue; const r = defs.recipes.get(q.recipeId[i]!);
     const s0 = q.startTick[i]!, s1 = q.endTick[i]!; const running = st === 2 && s1 > s0;
-    const progress = running ? Math.min(1, Math.max(0, (w.tick - s0) / (s1 - s0))) : 0;
-    queue.push({ slot: i, recipe: q.recipeId[i]!, name: r ? itemName(w, r.output.item) : `#${q.recipeId[i]}`, count: q.count[i]!, state: st, progress, secondsLeft: running ? Math.max(0, (s1 - w.tick) / TICKS_PER_SECOND) : (r?.seconds ?? 0) });
+    const progress = running ? Math.min(1, Math.max(0, (ctxTick(c) - s0) / (s1 - s0))) : 0;
+    queue.push({ slot: i, recipe: q.recipeId[i]!, name: r ? itemName(w, r.output.item) : `#${q.recipeId[i]}`, count: q.count[i]!, state: st, progress, secondsLeft: running ? Math.max(0, (s1 - ctxTick(c)) / TICKS_PER_SECOND) : (r?.seconds ?? 0) });
   }
   const owed = owedOf(w, c.player).map((o) => ({ item: o.item, name: itemName(w, o.item), count: o.count, crafterName: nameOf(c, o.crafterId) }));
   return { station, stationName: STATION_NAMES[station] ?? `Station ${station}`, recipes, queue, owed, maxCount: MAX_CRAFT_COUNT, elsewhere };
@@ -215,20 +218,20 @@ const groupMembers = (c: MenuCtx, field: "partyId" | "clanId", id: number): Play
   for (const e of w.query([PlayerId, Membership])) if (w.getField(e, Membership, field) === id) { const t = w.get(e, Transform); out.push({ entity: e, playerId: pidOf(w, e), name: nameOf(c, pidOf(w, e)), distance: me && t ? Math.hypot(t.x - me.x, t.y - me.y) : 0 }); }
   return out;
 };
-const pending = (w: World, e: Entity, def: typeof PartyInvitePending | typeof ClanInvitePending) => {
+const pending = (w: World, e: Entity, def: typeof PartyInvitePending | typeof ClanInvitePending, now: number) => {
   const p = w.get(e, def as typeof PartyInvitePending) as unknown as { from: number; expiresTick: number; party?: number; clan?: number } | undefined;
-  return p && p.expiresTick > w.tick && (p.party ?? p.clan) ? p : undefined;
+  return p && p.expiresTick > now && (p.party ?? p.clan) ? p : undefined;
 };
 
 // ---- party ------------------------------------------------------------------------------------------
 export interface PartyView { party: number; members: PlayerRef[]; maxSize: number; invite: { party: number; from: number; fromName: string; secondsLeft: number } | undefined; candidates: PlayerRef[]; /** my PartyRank role (0 = none) */ myRole: number; canInvite: boolean; /** kick allowed by rank (PARTY_RULES; the server still validates) */ canKick: (m: PlayerRef) => boolean }
 export function partyView(c: MenuCtx): PartyView {
   const w = c.world; const party = w.getField(c.player, Membership, "partyId") ?? 0; const members = groupMembers(c, "partyId", party);
-  const p = pending(w, c.player, PartyInvitePending);
+  const p = pending(w, c.player, PartyInvitePending, ctxTick(c));
   const rank = (e: Entity): number => w.getField(e, PartyRank, "role") ?? 0; const myRole = party ? rank(c.player) : 0;
   return { party, members, maxSize: PARTY_RULES.maxSize, myRole, canInvite: !party || myRole >= PARTY_RULES.minInviteRole,
     canKick: (m) => m.entity !== c.player && myRole >= PARTY_RULES.minKickRole && myRole > rank(m.entity),
-    invite: p ? { party: p.party!, from: p.from, fromName: nameOf(c, p.from), secondsLeft: Math.ceil((p.expiresTick - w.tick) / TICKS_PER_SECOND) } : undefined,
+    invite: p ? { party: p.party!, from: p.from, fromName: nameOf(c, p.from), secondsLeft: Math.ceil((p.expiresTick - ctxTick(c)) / TICKS_PER_SECOND) } : undefined,
     candidates: nearbyPlayers(c).filter((x) => !members.some((m) => m.entity === x.entity)) };
 }
 export const partyInviteIntent = (target: Entity): MenuIntent => intent(PartyInviteCmd, { target }, ["target"]);
@@ -251,9 +254,9 @@ export function clanView(c: MenuCtx): ClanView {
   const members = groupMembers(c, "clanId", clan).map((m) => ({ ...m, role: w.get(m.entity, ClanStatus)?.role ?? GroupRole.Member }));
   const known = clan ? clanState(w).clans.get(clan) : undefined; const [dm, dof] = defaultRankMasks();
   const masks: [number, number] = known ? [known.member, known.officer] : [dm, dof];
-  const p = pending(w, c.player, ClanInvitePending); const goal = st?.goal ?? 0;
+  const p = pending(w, c.player, ClanInvitePending, ctxTick(c)); const goal = st?.goal ?? 0;
   return { clan, role: st?.role ?? 0, roleName: CLAN_ROLE_NAMES[st?.role ?? 0] ?? "", goal, goalName: CLAN_GOAL_NAMES[goal] ?? "", goalX: st?.goalX ?? 0, goalY: st?.goalY ?? 0, contrib: st?.contrib ?? 0, members,
-    invite: p ? { clan: p.clan!, from: p.from, fromName: nameOf(c, p.from), secondsLeft: Math.ceil((p.expiresTick - w.tick) / TICKS_PER_SECOND) } : undefined,
+    invite: p ? { clan: p.clan!, from: p.from, fromName: nameOf(c, p.from), secondsLeft: Math.ceil((p.expiresTick - ctxTick(c)) / TICKS_PER_SECOND) } : undefined,
     candidates: nearbyPlayers(c).filter((x) => !members.some((m) => m.entity === x.entity)),
     perms: [GroupRole.Member, GroupRole.Officer].map((role, i) => ({ role, roleName: CLAN_ROLE_NAMES[role]!, mask: masks[i]!, perms: CLAN_PERMS.map((perm) => ({ perm, on: (masks[i]! & clanPermBit(perm)) !== 0 })) })),
     goals: CLAN_GOAL_NAMES.slice(0, CLAN_GOAL_COUNT) };

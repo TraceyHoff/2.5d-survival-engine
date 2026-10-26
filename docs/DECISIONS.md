@@ -1093,3 +1093,23 @@ checked visually).
 **Decision.** Add the actions `Build.RoadTool` and `Build.PlaceSign`, appended to the Build list. They are bound in the Building context to KBM T/N and pad LT+X/LT+Y. The LT modifier shadows the plain X/Y repair and upgrade bindings. The build HUD now shows a 🛣 Road / 🪧 Sign row only while building, with device hints. Tapping or clicking a button, or pressing the action, stops build mode and then opens the road tool. For a sign, it edits the nearest sign, or places a new one if none is near. `BuildMode` gets an optional `tools` hook, which main.ts wires to worldTools.
 
 **Consequences.** All three inputs can reach both tools. A 2-button row is added under the build chip. It was checked on a 844×390 touch viewport with no overlaps. Test: apps/client/test/adr171_build_tools.test.ts.
+
+## ADR-172: Replica timers use the server tick; chat and invite notices
+
+**Context.** The 2-client browser pass turned up two problems.
+1. Bob saw a 60 s party invite as "417s". A replica's `world.tick` counts from when it joined, while the timers below are stamped with server ticks:
+   - `expiresTick` on party and clan invites;
+   - craft `startTick` / `endTick`;
+   - fuel `burnUntilTick`;
+   - `CombatTag.untilTick`.
+
+   So the UI timers were wrong. An invite could also outlive its server expiry, or be hidden on a long-lived client.
+2. Incoming chat and party/clan invites were only visible inside their closed panels, so nothing told the player they had arrived.
+
+**Decision.**
+- `MenuCtx.tick` (optional) plus `ctxTick(c)`. The client passes `NetClient.serverTickEstimate`. The party and clan invite views, craft progress, and `fuelView` (via a new `now` param on `fuelSecondsLeft`) use it. Audio `snapshotWorld` gets `now` for the combat tag.
+- `GameMenus.setBadge(id, n)` adds a red count on a menu-bar button. On mobile, ⋯ is also marked when the badged button is a collapsed secondary one.
+  - Chat lines from other players increment the chat badge while the chat panel is closed. Opening chat clears it.
+  - A new party or clan invite shows a toast and badges 👥 / Clan. The badge clears when the invite is answered or expires.
+
+**Consequences.** Timers are correct online. Players notice messages and invites on PC, gamepad and touch alike, since the notices are visual and not tied to an input. Test: apps/client/test/adr172_server_tick_notices.test.ts. Verified with two live clients against a dev server.

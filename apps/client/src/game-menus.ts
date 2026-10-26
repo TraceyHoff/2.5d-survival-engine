@@ -52,6 +52,7 @@ padding:12px 14px;display:flex;flex-direction:column;gap:10px;font:600 15px Fred
 #game-menubar button{width:44px;height:44px;border-radius:12px;border:2px solid #3B2433;background:rgba(246,234,210,.9);font:20px system-ui,sans-serif;padding:0;touch-action:manipulation;cursor:pointer}
 #game-menubar button:focus-visible{outline:3px solid #FFD45A}
 #game-menubar .gm-more{display:none}
+#game-menubar button[data-badge]{position:relative}#game-menubar button[data-badge]::after{content:attr(data-badge);position:absolute;top:-5px;right:-5px;min-width:16px;height:16px;padding:0 3px;box-sizing:border-box;border-radius:8px;background:#D9412B;color:#fff;font:700 11px/16px system-ui,sans-serif;pointer-events:none}
 /* ADR-133: on phones (coarse pointer, short landscape) only the primary menus + "More" + Menu show; the rest fold behind More */
 @media (pointer:coarse) and (max-height:500px),(max-width:700px){#game-menubar{gap:4px}#game-menubar button{width:44px;height:44px;font-size:18px;background:rgba(246,234,210,.72)}
 #game-menubar .gm-more{display:block}#game-menubar:not([data-expanded=true]) .gm-secondary{display:none}}`;
@@ -129,7 +130,17 @@ export class GameMenus {
   }
   private para(t: string): HTMLElement { const p = document.createElement("p"); p.textContent = t; return p; }
 
+  /** ADR-172: unread / pending count on a menu-bar button (chat lines, party / clan invites); mirrored on ⋯ when it is a collapsed secondary button. 0 clears. */
+  setBadge(id: string, n: number): void {
+    if (n > 0) this.badges.set(id, n); else this.badges.delete(id); const bar = this.bar; if (!bar) return;
+    const b = bar.querySelector<HTMLElement>(`[data-open="${id}"]`); if (b) { if (n > 0) b.dataset["badge"] = n > 9 ? "9+" : String(n); else delete b.dataset["badge"]; }
+    const sec = [...this.badges.keys()].filter((k) => !PRIMARY_BAR_MENUS.has(k)).length; const more = bar.querySelector<HTMLElement>('[data-open="more"]');
+    if (more) { if (sec) more.dataset["badge"] = "•"; else delete more.dataset["badge"]; }
+  }
+  badge(id: string): number { return this.badges.get(id) ?? 0; }
+  private badges = new Map<string, number>();
   build(id: string): HTMLElement {
+    if (id === "chat" && this.badges.has("chat")) this.setBadge("chat", 0);
     if (id === "pause") return this.pausePanel();
     if (id === "settings") return this.settingsPanel();
     if (id === "chat") return this.chatPanel();
@@ -186,7 +197,9 @@ export class GameMenus {
   petTarget: number | undefined;
   /** Append an incoming chat line (from NetClient.chat). */
   /** `channel`: ChatChannel number (1 global … 5 whisper) or omitted for client/system lines -> `data-chan`. */
-  pushChat(line: string, channel?: number): void {
+  /** `notify` (ADR-172): count it on the chat button's unread badge while the chat panel is closed (main.ts: not for your own lines). */
+  pushChat(line: string, channel?: number, notify = false): void {
+    if (notify && this.nav.top !== "chat") this.setBadge("chat", this.badge("chat") + 1);
     this.chatLog.push({ text: line, chan: (channel === undefined ? undefined : CHAT_CHAN_NAMES[channel]) ?? "system" }); if (this.chatLog.length > 200) this.chatLog.splice(0, this.chatLog.length - 200);
     const log = this.o.root.querySelector<HTMLElement>("[data-menu=chat] [data-role=chat-log]"); if (log) { const lp = this.para(line); lp.dataset["chan"] = this.chatLog.at(-1)!.chan; log.append(lp); log.scrollTop = log.scrollHeight; }
   }

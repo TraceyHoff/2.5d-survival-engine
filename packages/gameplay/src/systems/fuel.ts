@@ -44,9 +44,9 @@ export function snuffFire(world: World, fire: Entity, by: Entity = 0 as Entity):
 }
 export const LightSnuffed = ev<{ entity: Entity; by: Entity }>("gameplay.LightSnuffed");
 /** Seconds of burn left on a fire: current item + every fuel item still in its Container (x fuelMul). */
-export function fuelSecondsLeft(world: World, fire: Entity, dt = 1 / 20): number {
+export function fuelSecondsLeft(world: World, fire: Entity, dt = 1 / 20, now = world.tick): number {
   const defs = gameplayDefs(world); const mul = fuelMulOf(world, fire, defs);
-  let s = Math.max(0, (world.getField(fire, Fuel, "burnUntilTick") ?? 0) - world.tick) * dt;
+  let s = Math.max(0, (world.getField(fire, Fuel, "burnUntilTick") ?? 0) - now) * dt;
   if (world.has(fire, Container)) for (const x of listSlots(world, fire)) s += (defs.items.get(x.item)?.fuelSeconds ?? 0) * x.count * mul;
   return s;
 }

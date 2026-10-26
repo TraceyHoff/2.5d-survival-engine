@@ -11,7 +11,8 @@ type Tiles = { getTile(x: number, y: number): number } | undefined;
 const TOOL_GATHER = ["harvest", "chop", "mine", "dig", "pick"];
 const ZKIND = (k: string): string => k.replace(/^zombie_/, "");
 
-export function snapshotWorld(w: World, local: Entity | undefined, tiles: Tiles, radius = 26): WorldAudioState {
+/** `now` (ADR-172): server tick for server-stamped expiries (a replica's world.tick counts from its join). */
+export function snapshotWorld(w: World, local: Entity | undefined, tiles: Tiles, radius = 26, now = w.tick): WorldAudioState {
   let defs: ReturnType<typeof gameplayDefs> | undefined; try { defs = gameplayDefs(w); } catch { defs = undefined; }
   const lt = local !== undefined ? w.get(local, Transform) : undefined;
   const listener = { x: lt?.x ?? 0, y: lt?.y ?? 0 }; const lz = lt?.z ?? 0; const r2 = radius * radius;
@@ -28,7 +29,7 @@ export function snapshotWorld(w: World, local: Entity | undefined, tiles: Tiles,
       s.kind = "player"; const it = w.getField(e, Equipment, "mainHandItem") ?? 0; s.sub = weaponClass(defs?.items.get(it)?.family);
       const ws = w.get(e, WeaponState); if (ws) { s.reload = ws.reloadUntilTick; s.charge = ws.chargeStartTick; }
       if (e === local) { s.local = true; const sv = w.get(e, Survival); if (sv) { s.hunger = sv.hunger; s.thirst = sv.thirst; } const lv = w.getField(e, Progression, "level"); if (lv !== undefined) s.level = lv;
-        const ct = w.getField(e, CombatTag, "untilTick"); if (ct !== undefined && ct > w.tick) { s.combatTag = true; threat = Math.max(threat, 0.4); } }
+        const ct = w.getField(e, CombatTag, "untilTick"); if (ct !== undefined && ct > now) { s.combatTag = true; threat = Math.max(threat, 0.4); } }
       s.surface = surfaceOf(tiles?.getTile(Math.floor(t.x), Math.floor(t.y)) ?? 3);
     } else if (w.has(e, Zombie)) {
       s.kind = "zombie"; const k = w.getField(e, Zombie, "kind") ?? 0; s.sub = ZKIND(defs?.zombies.get(k)?.key ?? zDefs[0]?.key ?? "walker");

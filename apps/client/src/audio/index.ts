@@ -24,12 +24,12 @@ export class AudioSystem {
   start(target?: EventTarget): void { this.mixer.installUnlock(target); this.mixer.preload(PRELOAD); }
   ui(key: string): void { this.mixer.play(key); }
   /** Per frame. mode "menu" = main menu (menu theme only), "game" = in world. */
-  frame(w: World | undefined, local: Entity | undefined, tiles: { getTile(x: number, y: number): number } | undefined, dayFrac: number | undefined, mode: MusicMode, nowSec: number): void {
+  frame(w: World | undefined, local: Entity | undefined, tiles: { getTile(x: number, y: number): number } | undefined, dayFrac: number | undefined, mode: MusicMode, nowSec: number, serverTick?: number): void {
     const dt = this.last ? Math.min(0.25, Math.max(0, nowSec - this.last)) : 0; this.last = nowSec;
     if (!this.mixer.running) return;
     const night = dayFrac !== undefined && daylight(dayFrac) < 0.5;
     if (mode !== "game" || !w || local === undefined) { this.loops.clear(); this.ambLoops.clear(); this.music.step({ mode, night, threat: 0, dt }); return; }
-    const s = snapshotWorld(w, local, tiles); this.driving = s.driving;
+    const s = snapshotWorld(w, local, tiles, 26, serverTick ?? w.tick); this.driving = s.driving;
     this.mixer.setListener(s.listener, s.indoors);
     const { events, loops } = this.director.step(s.ents, { now: nowSec, listener: s.listener });
     let n = 0; for (const e of events) { if (n++ >= this.maxEventsPerFrame) break; this.mixer.play(e.key, { ...(e.pos ? { pos: e.pos } : {}), ...(e.indoors !== undefined ? { indoors: e.indoors } : {}), ...(e.gain !== undefined ? { gain: e.gain } : {}) }); }
