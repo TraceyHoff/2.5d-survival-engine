@@ -204,7 +204,8 @@ class MCanvas(Canvas):
         from palette import SHADOW, SHADOW_ALPHA
         a = np.asarray(im.convert("RGBA")).astype(np.float32); P = np.array(sorted(set(s.pal)), np.float32)
         rgb = a[..., :3]; al = a[..., 3]; sh = np.array(hex2rgb(SHADOW), np.float32)
-        d = ((rgb[..., None, :] - P[None, None]) ** 2).sum(-1); q = P[d.argmin(-1)]
+        if len(P): d = ((rgb[..., None, :] - P[None, None]) ** 2).sum(-1); q = P[d.argmin(-1)]
+        else: q = rgb   # nothing palette-tracked drawn (empty/hidden frame): only harden alpha
         shadow = (al < 255 * (SHADOW_ALPHA + .12)) & (np.abs(rgb - sh).sum(-1) < 60) & bool(s.shadowed)   # only layers that drew a contact shadow
         out = np.zeros_like(a); fig = (al >= 128) & ~shadow
         out[fig, :3] = q[fig]; out[fig, 3] = 255
