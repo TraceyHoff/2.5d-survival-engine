@@ -1201,3 +1201,12 @@ checked visually).
 - **Render:** shallow uses the existing `ShallowWater` palette/sprite in WebGL2 (`tilemap.ts`, `terrainTiles.ts`) and `#4f93bf` in Canvas2D. No new art; the lighter tint is enough for now. Dedicated wade/foam art is future work.
 - **Caveats:** a chunk mesh can show stale depth at a chunk edge until it is rebuilt, because unloaded neighbours read as deep. The renderers use the constant `SHALLOW_RADIUS`, not the data value.
 - **Tests:** `packages/gameplay/test/adr181_water_depth.test.ts`. adr107 and adr178 were updated for the new swim speed and shallow band.
+
+## ADR-182: Water renders as one flat surface; depth shown only by a smooth tint
+- **Cause:** worldgen stores tile height as `floor(n*4)`, and the water band spans n ≈ 0–0.3, so one lake mixes heights 0 and 1. The WebGL2 tile sprites and the terrain mesh drew water at its stored height minus 0.25, so the surface had steps and skirts inside the water. ADR-181 also swapped shore water to the `tile_water_shallow` sprite, which made the steps stand out more. Canvas2D was already flat, but it drew a hard two-colour edge.
+- **Fix (render only):** `renderTileHeight` (world/waterDepth.ts) draws every water tile (1 and 8) at `WATER_SURFACE_HEIGHT` (0, minus the usual 0.25), whatever its stored height. It is used by `terrainTiles.ts` (z and neighbour skirt masks), `tilemap.ts` (`tileHeight`, the top face and cliff faces) and the client `groundZ`, so swimmers sit on the surface. All water now uses the same `tile_water` art. Depth is shown by `waterShoreTint`: 1 next to land, then 0.67 and 0.33, and 0 from 4 tiles out.
+  - The WebGL2 sprite shader lightens water by up to 50% × tint.
+  - The vertex-colour mesh blends the tint per corner, so the gradient is smooth.
+  - Canvas2D lerps from #3484bc to #4f93bf.
+- **Unchanged:** gameplay depth rules (ADR-181, radius 2), stored heights and saves. A shore now has one single skirt or cliff, going from land down to the water level.
+- **Tests:** `packages/render/test/adr182_flat_water.test.ts` (fails without the fix).

@@ -21,3 +21,20 @@ export function waterDepthAt(tileAt: (tx: number, ty: number) => number, tx: num
   }
   return WaterDepth.Deep;
 }
+
+/**
+ * ADR-182: render-only. Worldgen gives water tiles height floor(n*4), i.e. 0 or 1 inside one lake, which drew the
+ * surface as two levels. Every water tile renders at this one flat surface height, whatever its stored height.
+ * Gameplay heights and depth rules are unchanged.
+ */
+export const WATER_SURFACE_HEIGHT = 0;
+/** Height a renderer should draw tile `id` at (stored height `h`; water is flattened). */
+export function renderTileHeight(id: number, h: number): number { return isWaterId(id) ? WATER_SURFACE_HEIGHT : h; }
+/** 0..1 shore tint for water (1 next to land, fading to 0 by 4 tiles out); a smooth visual stand-in for depth. */
+export function waterShoreTint(tileAt: (tx: number, ty: number) => number, tx: number, ty: number): number {
+  const id = tileAt(tx, ty); if (!isWaterId(id)) return 0; if (id === SHALLOW_WATER_TILE) return 1;
+  for (let r = 1; r <= 3; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+    if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue; const n = tileAt(tx + dx, ty + dy); if (n !== 0 && !isWaterId(n)) return 1 - (r - 1) / 3;
+  }
+  return 0;
+}

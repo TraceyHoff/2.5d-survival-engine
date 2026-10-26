@@ -10,7 +10,7 @@
  */
 import { Transform, PrevTransform, getAppearance, type World, type Entity } from "@engine/core";
 import { previewLayers2D, tintPixels, type PreviewLayer2D } from "./character/preview2d.js";
-import { worldToScreen, DEFAULT_ISO, CHUNK_SIZE, WATER_TILE, SHALLOW_WATER_TILE, WaterDepth, waterDepthAt, type TileMap } from "@engine/world";
+import { worldToScreen, DEFAULT_ISO, CHUNK_SIZE, isWaterId, waterShoreTint, type TileMap } from "@engine/world";
 import type { AssetRegistry } from "@engine/assets";
 import { IsoCamera } from "./camera.js";
 import { Sprite, LightSource } from "./components.js";
@@ -42,6 +42,8 @@ export const TILE_COLORS = ["#1b1f1a", "#2d5d8a", "#c8b47a", "#4f8a43", "#3f7a3a
 /** ADR-145: snap a sprite origin to a whole device pixel (x*s + o integer) so nearest-neighbour pixel art keeps even texel widths. */
 export function snapPx(v: number, s: number, o: number): number { return s >= 1 ? (Math.round(v * s + o) - o) / s : v; }
 
+/** ADR-182: water colour from deep (#3484bc) toward shallow (#4f93bf) by shore tint 0..1. */
+function waterFill(k: number): string { const m = (a: number, b: number): number => Math.round(a + (b - a) * k); return `rgb(${m(0x34, 0x4f)},${m(0x84, 0x93)},${m(0xbc, 0xbf)})`; }
 export class Canvas2DRenderer {
   readonly kind = "canvas2d" as const;
   readonly ctx: CanvasRenderingContext2D;
@@ -121,8 +123,7 @@ export class Canvas2DRenderer {
     const R = Math.ceil(Math.max(this.w, this.h) / (s * th)) + 2;
     if (tm) for (let y = Math.floor(c.y) - R; y < c.y + R; y++) for (let x = Math.floor(c.x) - R; x < c.x + R; x++) {
       let t = tm.getTile(x, y); if (!t && !tm.getChunk(Math.floor(x / CHUNK_SIZE), Math.floor(y / CHUNK_SIZE))) continue;
-      if (t === WATER_TILE && waterDepthAt((a, b) => tm.getTile(a, b), x, y) === WaterDepth.Shallow) t = SHALLOW_WATER_TILE;
-      const p = worldToScreen(x, y, 0, iso); g.fillStyle = TILE_COLORS[t % TILE_COLORS.length]!;
+      const p = worldToScreen(x, y, 0, iso); g.fillStyle = isWaterId(t) ? waterFill(waterShoreTint((a, b) => tm.getTile(a, b), x, y)) : TILE_COLORS[t % TILE_COLORS.length]!; // ADR-182
       g.beginPath(); g.moveTo(p.sx, p.sy - th / 2); g.lineTo(p.sx + tw / 2, p.sy); g.lineTo(p.sx, p.sy + th / 2); g.lineTo(p.sx - tw / 2, p.sy); g.fill(); stats.tiles++;
     }
     // sprites: gather, sort by iso depth (screen y of the foot), draw

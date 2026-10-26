@@ -15,7 +15,7 @@ import { showRenderError, glInfo, BlackFrameCheck } from "./glcheck.js";
  * gameplay defs' sprite keys. Terrain is the net TileClient's TileMap, drawn directly.
  */
 import { World, Transform, PrevTransform, TimeOfDay, Weather, Appearance, PlayerId, defineComponent, slotIndex, type WearableSlot, entityIndex, type Entity } from "@engine/core";
-import { CHUNK_SIZE, tileToChunk, tileToLocal, type TileMap } from "@engine/world";
+import { CHUNK_SIZE, tileToChunk, tileToLocal, renderTileHeight, type TileMap } from "@engine/world";
 import { setDayFraction, resolveOffHandSprite } from "@engine/render";
 import { pieceVariantOpts } from "./piece-variant.js";
 import { loadManifest, mergeManifests, resolveManifestShards, buildPieceVisual, type AssetRegistry, type ManifestFragment, type ManifestJson } from "@engine/assets";
@@ -84,7 +84,8 @@ export function groundZ(tiles: TileMap | undefined, x: number, y: number, z: num
   // ADR-157: one-entry chunk cache (getChunk builds a string key: 2 lookups per entity per frame); reset every view frame
   if (gz.tiles !== tiles || gz.cx !== cx || gz.cy !== cy) { gz.tiles = tiles; gz.cx = cx; gz.cy = cy; gz.c = tiles.getChunk(cx, cy); }
   const c = gz.c;
-  return c ? Math.max(z, c.height[tileToLocal(ty) * CHUNK_SIZE + tileToLocal(tx)] ?? 0) : z;
+  if (!c) return z; const i = tileToLocal(ty) * CHUNK_SIZE + tileToLocal(tx);
+  return Math.max(z, renderTileHeight((c.tiles as Uint16Array | undefined)?.[i] ?? 0, c.height[i] ?? 0)); // ADR-182: swimmers sit on the flat water surface
 }
 /** ADR-162: groundZ for a build piece; a lift above its level floor (decor on a table) is kept on top of a terrain step. */
 export function pieceGroundZ(tiles: TileMap | undefined, x: number, y: number, z: number, lh: number): number {

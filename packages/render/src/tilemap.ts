@@ -4,7 +4,7 @@
  * Meshes are rebuilt only when a chunk's `version` (or a neighbour's) changes. Chunks outside
  * the camera rect are culled (one draw call per visible chunk).
  */
-import { CHUNK_SIZE, tileToChunk, tileToLocal, WaterDepth, waterDepthAt, type TileMap, type Chunk, type IsoConfig } from "@engine/world";
+import { CHUNK_SIZE, tileToChunk, tileToLocal, renderTileHeight, waterShoreTint, type TileMap, type Chunk, type IsoConfig } from "@engine/world";
 import { createProgram, GLSL_COMMON, type FrameStats, type Program } from "./gl/util.js";
 import type { Rect } from "./camera.js";
 import { TileId, isWaterTile } from "./ids.js";
@@ -14,7 +14,7 @@ export function tileHeight(map: TileMap, tx: number, ty: number): number {
   const c = map.getChunk(tileToChunk(tx), tileToChunk(ty));
   if (!c) return -1;
   const i = tileToLocal(ty) * CHUNK_SIZE + tileToLocal(tx);
-  return c.tiles[i] === 0 ? -1 : c.height[i]!;
+  return c.tiles[i] === 0 ? -1 : renderTileHeight(c.tiles[i]!, c.height[i]!); // ADR-182: water is one flat level
 }
 
 // Base palette (sRGB 0..255) per TileId: Art & Assets palette.json base tones (used under/without the tile atlas).
@@ -22,6 +22,7 @@ const PALETTE: Record<number, [number, number, number]> = {
   [TileId.Water]: [0x34, 0x84, 0xbc], [TileId.ShallowWater]: [0x4a, 0x9c, 0xc8], [TileId.Sand]: [0xf6, 0xdf, 0xa4], [TileId.Grass]: [0x8f, 0xd1, 0x5c],
   [TileId.Dirt]: [0xc0, 0x8a, 0x5a], [TileId.Stone]: [0xb8, 0xb2, 0xb0], [TileId.Snow]: [0xee, 0xf4, 0xfb], [TileId.Forest]: [0x6f, 0xa8, 0x4a],
 };
+const SHALLOW_RGB = PALETTE[TileId.ShallowWater]!;
 const SIDE: Record<number, [number, number, number]> = {
   [TileId.Grass]: [112, 84, 56], [TileId.Sand]: [168, 140, 92], [TileId.Water]: [38, 92, 140],
 };
@@ -118,17 +119,24 @@ export class TilemapRenderer {
       for (const v of p) { verts.push(v[0]!, v[1]!, v[2]!); cols.push(r, g, b, flag); }
       idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
     };
-    const ox = c.cx * CHUNK_SIZE, oy = c.cy * CHUNK_SIZE;
+    const ox = c.cx * CHUNK_SIZE, oy = c.cy * CHUNK_SIZE; const tg = (a: number, b: number): number => map.getTile(a, b);
     for (let ly = 0; ly < CHUNK_SIZE; ly++) for (let lx = 0; lx < CHUNK_SIZE; lx++) {
       const i = ly * CHUNK_SIZE + lx; const id = c.tiles[i]!; if (id === 0) continue;
-      const x = ox + lx, y = oy + ly; const z = c.height[i]!;
+      const x = ox + lx, y = oy + ly; const z = renderTileHeight(id, c.height[i]!);
       minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z);
-      const shallow = id === TileId.Water && waterDepthAt((a, b) => map.getTile(a, b), x, y) === WaterDepth.Shallow; // ADR-181
-      const pal = PALETTE[shallow ? TileId.ShallowWater : id] ?? [255, 0, 255];
+      const pal = PALETTE[isWaterTile(id) ? TileId.Water : id] ?? [255, 0, 255];
       const v = 0.94 + hash(x, y) * 0.12;
       const water = isWaterTile(id) ? 1 : 0;
       const zt = water ? z - 0.25 : z;
-      quad([[x, y, zt], [x + 1, y, zt], [x + 1, y + 1, zt], [x, y + 1, zt]], pal[0] * v, pal[1] * v, pal[2] * v, water);
+      if (water) { // ADR-182: shore tint blended per corner (smooth, not stepped) over one flat surface
+        const base = verts.length / 3; const corners = [[x, y], [x + 1, y], [x + 1, y + 1], [x, y + 1]] as const;
+        for (const [qx, qy] of corners) {
+          let t = 0; for (const [ax, ay] of [[qx - 1, qy - 1], [qx, qy - 1], [qx - 1, qy], [qx, qy]] as const) t += isWaterTile(map.getTile(ax, ay)) ? waterShoreTint(tg, ax, ay) : map.getTile(ax, ay) ? 1 : 0;
+          const k = t / 4; verts.push(qx, qy, zt);
+          cols.push(...([0, 1, 2] as const).map((j) => (pal[j] + (SHALLOW_RGB[j] - pal[j]) * k) * v), water);
+        }
+        idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
+      } else quad([[x, y, zt], [x + 1, y, zt], [x + 1, y + 1, zt], [x, y + 1, zt]], pal[0] * v, pal[1] * v, pal[2] * v, water);
       // Camera-facing cliff faces: +x (screen lower-right) and +y (screen lower-left).
       const side = SIDE[id] ?? pal;
       const hx = tileHeight(map, x + 1, y), hy = tileHeight(map, x, y + 1);
