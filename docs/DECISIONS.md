@@ -958,3 +958,11 @@ Graphics quality is unchanged.
 **Decision.** `apps/client/src/dom-diff.ts` helpers (setHidden/setData/setText/setAttr/setStyle/setDisabled) compare before writing; the hot writers use them. Behaviour is unchanged (same values, same elements); canvas drawing untouched.
 
 **Result (hud.mjs, 20 s walk).** Mutations 14510/1185 frames (12.2/f) → 362/1739 frames (0.21/f); layouts 1224 → 352, style recalcs 2424 → 367; layout 83 → 28 ms, style 132 → 14 ms. Real-browser/Xbox Edge confirmation of frame-time spikes still needed.
+
+## ADR-159: no watchdog glGetError on desktop/console budgets; frame pacing audit
+
+**Context.** The ADR-148 blank-frame watchdog still called `gl.getError()` on every collected readback (~1/s), a synchronous GPU-process round trip (3 calls = 211 ms in headless swiftshader at BUDGET=768).
+
+**Decision.** That check is gated on `atlas.syncChecks`, which is off at budgets ≥384 MB (ADR-154). Low budgets keep the OOM check. Audit, no change: frame() uses the rAF timestamp, clamps dt to 250 ms, and FixedLoop interpolates with alpha = acc/dt (backlog drop after 5 steps). The draw path is already batched (~11 instanced draws + 5 element draws, 8 programs, 17 texture binds per frame), so no batching change. SP server: it runs in a Worker by default (ADR-105); forcing `?worker=0` drops headless fps 16.1 → 5.1 and raises p99 from 134 to 365 ms, so the Worker default matters and must stay.
+
+**Result.** getError 3 → 0 per 42 s walk; the frame-time effect needs confirmation on a real GPU and on Xbox Edge.

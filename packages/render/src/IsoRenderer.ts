@@ -606,7 +606,8 @@ export class IsoRenderer implements Renderer {
     if (rb.pending) {
       const px = rb.poll(); if (!px) return; const at = this.watchAt; this.watchAt = undefined; if (!at) return;
       const n = SAMPLE_POINTS.length; const scene = px.slice(0, n), output = px.slice(n, 2 * n);
-      const err = this.gl.getError();
+      // ADR-159: getError is a synchronous GPU-process round trip; skip it when sync checks are off (budgets >=384 MB)
+      const err = this.atlas.syncChecks ? this.gl.getError() : this.gl.NO_ERROR;
       if (err === this.gl.OUT_OF_MEMORY) this.fault("frame", "GL_OUT_OF_MEMORY during the frame");
       if (this.watchdog.sample(at.frame, scene, output, at.instances)) this.fault("watchdog", `flat frame ${this.watchdog.consecutive}x in a row (${at.instances} instances)`);
       return;
