@@ -33,6 +33,7 @@ export const buildFailText = (reason: number | undefined): string => (reason && 
 const esc = (s: string): string => s.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);
 const label = (k: string): string => k.replace(/_/g, " ").replace(/^\w/, (m) => m.toUpperCase());
 
+const SNAP_HINT: Record<BuildDevice, string> = { keyboardMouse: "G", gamepad: "R3", touch: "" };
 export function renderBuildHud(bm: BuildMode, device: BuildDevice): string {
   const s = bm.selection; if (!s) return "";
   const p = bm.preview; const ctx = bm.context;
@@ -40,7 +41,8 @@ export function renderBuildHud(bm: BuildMode, device: BuildDevice): string {
     + `<span class="bh-dot ${p?.valid ? "ok" : "bad"}" data-role="bh-valid">${p?.valid ? "✓" : "✕"}</span>`
     + (p && !p.valid ? `<span class="bh-why" data-role="bh-why">${esc(buildFailText(p.reason))}</span>` : "")
     + `<span data-role="bh-level">Floor ${bm.level}</span>`
-    + `<button data-bh="level-down" aria-label="Floor down">▼</button><button data-bh="level-up" aria-label="Floor up">▲</button></div>`;
+    + `<button data-bh="level-down" aria-label="Floor down">▼</button><button data-bh="level-up" aria-label="Floor up">▲</button>`
+    + `<button data-bh="snap" data-snap="${bm.snap ? "on" : "off"}" aria-pressed="${bm.snap}" aria-label="Grid snap">${bm.snap ? "▦ Snap" : "▢ Free"}${SNAP_HINT[device] ? ` <kbd>${SNAP_HINT[device]}</kbd>` : ""}</button></div>`;
   const strip = ctx ? `<div class="bh-ctx" role="menu" aria-label="${esc(ctx.title)}"><div class="bh-title">${esc(ctx.title)}</div>`
     + ctx.actions.map((a) => `<button role="menuitem" data-bh="${a.id}" class="${a.armed ? "armed" : ""}"${a.enabled ? "" : " disabled"}>${esc(a.label)}${a.hint ? ` <kbd>${esc(a.hint)}</kbd>` : ""}</button>`).join("")
     + `</div>` : "";
@@ -55,7 +57,7 @@ export function mountBuildHud(root: HTMLElement, o: BuildHudOptions): { update()
   style.textContent = `.build-hud{position:absolute;left:50%;top:calc(8px + env(safe-area-inset-top));transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;z-index:30;font:13px system-ui,sans-serif;color:#eee;pointer-events:none}
 .build-hud .bh-chip,.build-hud .bh-ctx{display:flex;gap:6px;align-items:center;background:rgba(15,18,22,.82);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:4px 8px;pointer-events:auto}
 .build-hud button{min-width:36px;min-height:32px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:#2a3038;color:#eee;font:inherit;cursor:pointer}
-.build-hud button:disabled{opacity:.45}.build-hud button.armed{background:#8a2020}.build-hud kbd{font-size:11px;opacity:.75;margin-left:4px}
+.build-hud button:disabled{opacity:.45}.build-hud button[data-snap=on]{background:#2f5a3a}.build-hud button.armed{background:#8a2020}.build-hud kbd{font-size:11px;opacity:.75;margin-left:4px}
 .build-hud .bh-title{opacity:.85;margin-right:4px}.bh-dot.ok{color:#6d6}.bh-dot.bad{color:#e66}.bh-why{color:#f99;font-size:12px}.bh-hint,.bh-toast{background:rgba(15,18,22,.7);border-radius:8px;padding:2px 8px}
 .build-hud .bh-chip,.build-hud .bh-ctx{max-width:calc(100vw - 16px);flex-wrap:wrap;justify-content:center}
 @media (max-width:640px){.build-hud{top:calc(${NARROW_TOP_PX}px + env(safe-area-inset-top))}}`;
@@ -64,7 +66,7 @@ export function mountBuildHud(root: HTMLElement, o: BuildHudOptions): { update()
   el.addEventListener("click", (e) => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>("[data-bh]"); if (!b || b.disabled) return; e.stopPropagation();
     const id = b.dataset.bh!; const bm = o.buildMode;
-    if (id === "level-up") bm.setLevel(1); else if (id === "level-down") bm.setLevel(-1); else bm.act(id as "repair" | "upgrade" | "demolish");
+    if (id === "snap") bm.toggleSnap(); else if (id === "level-up") bm.setLevel(1); else if (id === "level-down") bm.setLevel(-1); else bm.act(id as "repair" | "upgrade" | "demolish");
     update();
   });
   let dragging: number | undefined;

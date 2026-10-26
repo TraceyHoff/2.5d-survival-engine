@@ -1074,3 +1074,14 @@ checked visually).
 - Note: `packages/input/scripts/gen-profiles.py` is stale against the JSON profiles, so its output was not regenerated.
   The profiles were edited by hand.
 - Test: `adr170_vehicle_controls`. Checked in the browser: deploy → enter → engine/lights → drive → exit on KBM and touch.
+
+## ADR-169: Build.ToggleSnap is a working grid-snap toggle with a chip indicator
+- Bug: `Build.ToggleSnap` was bound (KBM G, pad R3, `touch.btn.snap`), but nothing read it.
+- Fix:
+  - `BuildMode.snap` is on by default. The toggle passes `assist=false` into `buildPreviewFor` when off. When on, it keeps the
+    default (facing aim snaps to the nearest valid cell) and also snaps the imprecise gamepad cursor.
+  - The build HUD chip has a `[data-bh=snap][data-snap=on|off]` "▦ Snap / ▢ Free" button with a G / R3 hint (tap on touch),
+    plus a "Snap on/off" toast.
+- Limit: a pointed mouse cell or touch tap is always exact, so a red ghost can still say why. Placement is always
+  grid-aligned on the server; `PlaceCmd` has no free-placement flag, and adding one would be a protocol change.
+- Test: `adr169_build_snap`. Checked in the browser on touch (shots/audit_snap_touch.png).
