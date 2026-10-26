@@ -1017,3 +1017,9 @@ checked visually).
 - Client: build pieces use `pieceGroundZ`: the lift above the level floor is kept on top of terrain steps (`max(z, terrain)` would otherwise swallow it); depth sorting uses that z.
 
 **Consequences.** Only axis tile occupancy matters (a vase on any tile of a 2×1 table sits on it). One small piece per tile. Not covered: stacking decor on decor, surfaces on non-layer-2 pieces.
+
+## ADR-163: build-mode piece actions are bridged net commands
+
+**Context.** In networked play (including the browser's offline sandbox, which runs a local server) build-mode Demolish, Upgrade, Repair and door toggle/lock went through `sendIntent`, but `DemolishCmd`, `UpgradeCmd`, `RepairCmd`, `ToggleDoorCmd` and `LockDoorCmd` were never in `GAMEPLAY_NET_COMMANDS`. `gameplayNet()` threw, `sendIntent` returned false, and nothing reached the server. Their `target` was also missing from `INPUT_ENTITY_FIELDS`, so even a bridged send would have handed the server a raw NetId instead of an entity.
+
+**Decision.** Append the five commands to the end of `GAMEPLAY_NET_COMMANDS` so existing ids do not change, and map their `target` as an entity field. `apps/server/test/adr163_mp_build_loot.test.ts` checks every bridged command. It also runs a real two-client loopback session that covers loot labels on both clients, the owner-only window and then bare-hand take-all, a vase placed over the net on a table with rot 1 on both replicas, and a table demolished through the client command path, which drops the vase to the floor on the server and both clients.
