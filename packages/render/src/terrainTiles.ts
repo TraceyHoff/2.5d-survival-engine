@@ -5,23 +5,24 @@
  * Shore tiles are chosen from the 4/8-neighbourhood (TERRAIN rules below). Ground-plane depth like flat decals.
  * Surface overlays (wet ground, puddles, snow cover) are applied on top in the same shader.
  */
-import { CHUNK_SIZE, renderTileHeight, waterShoreTint, type TileMap, type Chunk, type IsoConfig } from "@engine/world";
+import { CHUNK_SIZE, renderTileHeight, waterShoreTint, waterCornerTint, type TileMap, type Chunk, type IsoConfig } from "@engine/world";
 import { createProgram, GLSL_COMMON, type FrameStats, type Program } from "./gl/util.js";
 import type { AtlasManager } from "./assets/atlasManager.js";
 import type { Rect } from "./camera.js";
 import { TileId, TERRAIN_SPRITES, SHORE_SPRITES, isWaterTile } from "./ids.js";
 import type { SurfaceState, SurfaceProvider } from "./tilemap.js";
 
-const FLOATS = 12;
+const FLOATS = 16;
 const VS = /* glsl */ `#version 300 es
 precision highp float; precision highp int;
 layout(location=0) in vec4 aA; // x, y, z, entry
 layout(location=1) in vec4 aB; // count, fps, skirtMask (1 = +x side, 2 = +y side), phase
 layout(location=2) in vec4 aC; // ax, ay, water, -
+layout(location=3) in vec4 aD; // ADR-184: water corner tints (x,y), (x+1,y), (x+1,y+1), (x,y+1)
 ${GLSL_COMMON}
 uniform highp sampler2D uFrames;
 uniform vec3 uIso; uniform float uZFactor, uTime;
-out vec3 vUvRaw; flat out int vLayer; flat out vec4 vRect; out vec2 vLocal; out vec2 vWorld; flat out vec4 vInfo; flat out float vTint; // vInfo: w, h, skirtMask, water
+out vec3 vUvRaw; flat out int vLayer; flat out vec4 vRect; out vec2 vLocal; out vec2 vWorld; flat out vec4 vInfo; flat out vec4 vCorn; flat out vec2 vOrg; // vInfo: w, h, skirtMask, water
 void main() {
   int frames = max(1, int(aB.x + 0.5));
   int entry = int(aA.w + 0.5) + int(mod(floor(uTime * aB.y + aB.w), float(frames)));
@@ -29,7 +30,7 @@ void main() {
   vec4 uvr = texelFetch(uFrames, tc, 0); vec4 dim = texelFetch(uFrames, tc + ivec2(1, 0), 0);
   vec2 c = vec2(float(gl_VertexID & 1), float((gl_VertexID >> 1) & 1));
   vec2 px = c * dim.xy; // frame px
-  vUvRaw = vec3(mix(uvr.xy, uvr.zw, c), dim.z); vLayer = int(dim.z + 0.5); vRect = uvr; vLocal = px; vInfo = vec4(dim.xy, aB.z, aC.z); vTint = aC.w;
+  vUvRaw = vec3(mix(uvr.xy, uvr.zw, c), dim.z); vLayer = int(dim.z + 0.5); vRect = uvr; vLocal = px; vInfo = vec4(dim.xy, aB.z, aC.z); vCorn = aD; vOrg = aA.xy - 0.5;
   vec2 pivot = vec2((aA.x - aA.y) * uIso.x, (aA.x + aA.y) * uIso.y - aA.z * uIso.z); // tile centre
   vec2 iso = pivot + px - aC.xy;
   // world position (for overlays) of the ground point under this pixel
@@ -40,7 +41,7 @@ void main() {
 }`;
 const FS = /* glsl */ `#version 300 es
 precision highp float; precision highp int;
-in vec3 vUvRaw; flat in int vLayer; flat in vec4 vRect; in vec2 vLocal; in vec2 vWorld; flat in vec4 vInfo; flat in float vTint;
+in vec3 vUvRaw; flat in int vLayer; flat in vec4 vRect; in vec2 vLocal; in vec2 vWorld; flat in vec4 vInfo; flat in vec4 vCorn; flat in vec2 vOrg;
 uniform highp sampler2DArray uAtlas;
 #define vUv vec3(vUvRaw.xy, float(vLayer)) // flat int array layer (no interpolated layer index)
 uniform vec3 uIso; uniform float uTime, uWet, uSnow, uPuddles, uWetDarken; uniform vec3 uSkyRefl;
@@ -59,7 +60,14 @@ void main() {
   int mask = int(vInfo.z + 0.5);
   if (!inDiamond && q.y > 0.0) { bool right = q.x > 0.0; if (right ? (mask & 1) == 0 : (mask & 2) == 0) discard; }
   vec3 c = t.rgb;
-  if (vInfo.w > 0.5) c = mix(c, c * 1.16 + vec3(0.02, 0.07, 0.07), vTint * 0.5); // ADR-182: subtle shore tint, same art + height
+  if (vInfo.w > 0.5) { // ADR-184: smooth per-pixel shore->deep gradient (bilinear corner tints; continuous across tiles)
+    vec2 f = clamp(vWorld - vOrg, 0.0, 1.0);
+    float k = mix(mix(vCorn.x, vCorn.y, f.x), mix(vCorn.w, vCorn.z, f.x), f.y); k = smoothstep(0.0, 1.0, k);
+    float lum = dot(c, vec3(0.299, 0.587, 0.114)); vec3 detail = c - vec3(lum);
+    vec3 deep = vec3(0.09, 0.27, 0.56) + detail * 0.7 + (lum - 0.45) * 0.35;
+    vec3 shallow = vec3(0.36, 0.82, 0.82) + detail * 0.6 + (lum - 0.45) * 0.4;
+    c = mix(deep, shallow, k);
+  }
   if (inDiamond && vInfo.w < 0.5) {
     float m = vnoise(vWorld * 0.9) * 0.65 + vnoise(vWorld * 3.1 + 11.0) * 0.35;
     if (uWet > 0.001) {
@@ -104,6 +112,8 @@ export class TileTerrain {
     };
     const tileAt = (x: number, y: number): number => map.getTile(x, y);
     const hAt = (x: number, y: number): number => { const ch = map.getChunk(Math.floor(x / CHUNK_SIZE), Math.floor(y / CHUNK_SIZE)); if (!ch) return -99; const i = (((y % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE) * CHUNK_SIZE + (((x % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE); return ch.tiles[i] === 0 ? -99 : renderTileHeight(ch.tiles[i]!, ch.height[i]!) - (isWaterTile(ch.tiles[i]!) ? 0.25 : 0); };
+    const tm = new Map<number, number>(); const tintAt = (x: number, y: number): number => { const k = x * 65536 + y; let v = tm.get(k); if (v === undefined) tm.set(k, (v = waterShoreTint(tileAt, x, y))); return v; };
+    const cT = (x: number, y: number): number => waterCornerTint(tileAt, x, y, tintAt);
     const data: number[] = []; let minZ = 1e9, maxZ = -1e9;
     const ox = c.cx * CHUNK_SIZE, oy = c.cy * CHUNK_SIZE;
     for (let ly = 0; ly < CHUNK_SIZE; ly++) for (let lx = 0; lx < CHUNK_SIZE; lx++) {
@@ -122,12 +132,12 @@ export class TileTerrain {
       if (!e) e = E(variants[hsh % variants.length]!) ?? E(variants[0]!);
       if (!e) continue;
       const mask = (hAt(x + 1, y) < z ? 1 : 0) | (hAt(x, y + 1) < z ? 2 : 0);
-      data.push(x + 0.5, y + 0.5, z, e.first, e.count, e.fps, mask, 0, e.ax, e.ay, water ? 1 : 0, water ? waterShoreTint(tileAt, x, y) : 0);
+      data.push(x + 0.5, y + 0.5, z, e.first, e.count, e.fps, mask, 0, e.ax, e.ay, water ? 1 : 0, 0, ...(water ? [cT(x, y), cT(x + 1, y), cT(x + 1, y + 1), cT(x, y + 1)] : [0, 0, 0, 0]));
       minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z);
     }
     const vao = old?.vao ?? gl.createVertexArray()!; const vbo = old?.vbo ?? gl.createBuffer()!;
     gl.bindVertexArray(vao); gl.bindBuffer(gl.ARRAY_BUFFER, vbo); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
-    for (let a = 0; a < 3; a++) { gl.enableVertexAttribArray(a); gl.vertexAttribPointer(a, 4, gl.FLOAT, false, FLOATS * 4, a * 16); gl.vertexAttribDivisor(a, 1); }
+    for (let a = 0; a < 4; a++) { gl.enableVertexAttribArray(a); gl.vertexAttribPointer(a, 4, gl.FLOAT, false, FLOATS * 4, a * 16); gl.vertexAttribDivisor(a, 1); }
     gl.bindVertexArray(null);
     return { vao, vbo, count: data.length / FLOATS, stamp: this.stamp(map, c), cx: c.cx, cy: c.cy, minZ, maxZ, atlasVersion: atlas.version };
   }

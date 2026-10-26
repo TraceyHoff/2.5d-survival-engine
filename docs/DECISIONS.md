@@ -1215,3 +1215,11 @@ checked visually).
 - **Cause:** after every frame, `IsoView.render` ran the ADR-148 black-frame check with `if (this.blackCheck?.gl !== r.gl) this.blackCheck = new BlackFrameCheck(r.gl); bc.pending`. The Canvas2D renderer (`?renderer=canvas`, or the fallback when WebGL2 is missing) has no `gl`, so the condition was `undefined !== undefined`, which is false. No check was ever created, and `bc.pending` threw "Cannot read properties of undefined (reading 'pending')" on every frame. The frame loop showed it as a "Frame error" overlay.
 - **Fix:** the check moved into the exported `blackFrameStep(state, renderer, held0)`, which returns early when the renderer has no `gl`. With nothing to read back there is no black-frame check. The WebGL2 behaviour is unchanged.
 - **Test:** `apps/client/test/adr183_canvas_blackcheck.test.ts` (fails without the guard).
+
+## ADR-184: Smooth, stronger shore-to-deep water tint (no per-tile steps)
+
+- **Problem:** the ADR-182 tint was subtle and stepped. The WebGL2 sprite layer had one flat tint per tile, the range was 3 tiles, and Canvas2D used one fill per tile, so you could see diamond-shaped bands.
+- **Field:** `waterShoreTint` now reaches `SHORE_TINT_RANGE` = 6 tiles out (linear, 1 → 0). The new `waterCornerTint(tileAt, cx, cy)` averages the four tiles around a corner (land = 1, unloaded skipped), and `bilerpTint` blends four corners. Neighbouring tiles share their corners, so the blend is continuous across edges.
+- **WebGL2:** `terrainTiles` passes the 4 corner tints per instance (attribute 3, 16 floats per instance), and the fragment shader bilinearly interpolates them at the pixel's ground position (`vWorld - tile origin`), smoothstepped. Colour mixes from deep blue to turquoise and keeps the art's luminance/detail. The `tilemap` mesh uses the same corners with SHALLOW #5cd0d0 and DEEP #184690.
+- **Canvas2D:** water is drawn as a single image at 1 px per tile, using the same endpoints (`waterRgb`), with tints cached per chunk. It goes through the iso affine with bilinear smoothing, under the land diamonds, which replaces the per-tile water fills.
+- **Unchanged:** the flat surface height (ADR-182) and gameplay depth (ADR-181). Test: `packages/render/test/adr184_smooth_water_tint.test.ts`.

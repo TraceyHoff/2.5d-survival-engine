@@ -23,8 +23,8 @@ describe("ADR-182: one flat water surface", () => {
   });
   it("shore tint fades smoothly from the shore to deep water", () => {
     const m = lake(); const t = (x: number, y: number) => m.getTile(x, y);
-    const row = [2, 3, 4, 5].map((x) => waterShoreTint(t, x, 7));
+    const row = [2, 3, 4, 5, 6, 7].map((x) => waterShoreTint(t, x, 7));
     expect(row[0]).toBe(1); for (let i = 1; i < row.length; i++) expect(row[i]!).toBeLessThan(row[i - 1]!);
-    expect(row[3]).toBe(0); expect(waterShoreTint(t, 0, 0)).toBe(0);
+    expect(row[5]).toBe(0); // ADR-184: 6-tile range expect(waterShoreTint(t, 0, 0)).toBe(0);
   });
 });

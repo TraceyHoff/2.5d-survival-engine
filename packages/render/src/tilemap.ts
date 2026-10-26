@@ -4,7 +4,7 @@
  * Meshes are rebuilt only when a chunk's `version` (or a neighbour's) changes. Chunks outside
  * the camera rect are culled (one draw call per visible chunk).
  */
-import { CHUNK_SIZE, tileToChunk, tileToLocal, renderTileHeight, waterShoreTint, type TileMap, type Chunk, type IsoConfig } from "@engine/world";
+import { CHUNK_SIZE, tileToChunk, tileToLocal, renderTileHeight, waterCornerTint, type TileMap, type Chunk, type IsoConfig } from "@engine/world";
 import { createProgram, GLSL_COMMON, type FrameStats, type Program } from "./gl/util.js";
 import type { Rect } from "./camera.js";
 import { TileId, isWaterTile } from "./ids.js";
@@ -22,7 +22,7 @@ const PALETTE: Record<number, [number, number, number]> = {
   [TileId.Water]: [0x34, 0x84, 0xbc], [TileId.ShallowWater]: [0x4a, 0x9c, 0xc8], [TileId.Sand]: [0xf6, 0xdf, 0xa4], [TileId.Grass]: [0x8f, 0xd1, 0x5c],
   [TileId.Dirt]: [0xc0, 0x8a, 0x5a], [TileId.Stone]: [0xb8, 0xb2, 0xb0], [TileId.Snow]: [0xee, 0xf4, 0xfb], [TileId.Forest]: [0x6f, 0xa8, 0x4a],
 };
-const SHALLOW_RGB = PALETTE[TileId.ShallowWater]!;
+const SHALLOW_RGB = [0x5c, 0xd0, 0xd0] as const, DEEP_RGB = [0x18, 0x46, 0x90] as const; // ADR-184: turquoise shore -> deep blue
 const SIDE: Record<number, [number, number, number]> = {
   [TileId.Grass]: [112, 84, 56], [TileId.Sand]: [168, 140, 92], [TileId.Water]: [38, 92, 140],
 };
@@ -131,9 +131,8 @@ export class TilemapRenderer {
       if (water) { // ADR-182: shore tint blended per corner (smooth, not stepped) over one flat surface
         const base = verts.length / 3; const corners = [[x, y], [x + 1, y], [x + 1, y + 1], [x, y + 1]] as const;
         for (const [qx, qy] of corners) {
-          let t = 0; for (const [ax, ay] of [[qx - 1, qy - 1], [qx, qy - 1], [qx - 1, qy], [qx, qy]] as const) t += isWaterTile(map.getTile(ax, ay)) ? waterShoreTint(tg, ax, ay) : map.getTile(ax, ay) ? 1 : 0;
-          const k = t / 4; verts.push(qx, qy, zt);
-          cols.push(...([0, 1, 2] as const).map((j) => (pal[j] + (SHALLOW_RGB[j] - pal[j]) * k) * v), water);
+          const k = waterCornerTint(tg, qx, qy); verts.push(qx, qy, zt); // ADR-184: shared corners -> continuous gradient
+          cols.push(...([0, 1, 2] as const).map((j) => (DEEP_RGB[j] + (SHALLOW_RGB[j] - DEEP_RGB[j]) * k) * v), water);
         }
         idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
       } else quad([[x, y, zt], [x + 1, y, zt], [x + 1, y + 1, zt], [x, y + 1, zt]], pal[0] * v, pal[1] * v, pal[2] * v, water);

@@ -30,11 +30,34 @@ export function waterDepthAt(tileAt: (tx: number, ty: number) => number, tx: num
 export const WATER_SURFACE_HEIGHT = 0;
 /** Height a renderer should draw tile `id` at (stored height `h`; water is flattened). */
 export function renderTileHeight(id: number, h: number): number { return isWaterId(id) ? WATER_SURFACE_HEIGHT : h; }
-/** 0..1 shore tint for water (1 next to land, fading to 0 by 4 tiles out); a smooth visual stand-in for depth. */
+/** ADR-184: shore tint reaches this many tiles out (was 3, stepped per tile). */
+export const SHORE_TINT_RANGE = 6;
+/**
+ * 0..1 shore tint for one water tile: 1 next to land, falling linearly to 0 at SHORE_TINT_RANGE tiles (Chebyshev).
+ * Renderers never draw this per tile; they sample `waterCornerTint` at tile corners and interpolate (ADR-184).
+ */
 export function waterShoreTint(tileAt: (tx: number, ty: number) => number, tx: number, ty: number): number {
   const id = tileAt(tx, ty); if (!isWaterId(id)) return 0; if (id === SHALLOW_WATER_TILE) return 1;
-  for (let r = 1; r <= 3; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
-    if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue; const n = tileAt(tx + dx, ty + dy); if (n !== 0 && !isWaterId(n)) return 1 - (r - 1) / 3;
+  const R = SHORE_TINT_RANGE;
+  for (let r = 1; r < R; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+    if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue; const n = tileAt(tx + dx, ty + dy); if (n !== 0 && !isWaterId(n)) return 1 - (r - 1) / (R - 1);
   }
   return 0;
+}
+/**
+ * ADR-184: tint at the shared corner (cx, cy) of tiles (cx-1..cx, cy-1..cy): the mean of those four tiles, with land
+ * counting as 1 (fully shallow) and unloaded tiles skipped. Every tile touching a corner reads the same value, so a
+ * bilinear blend of the four corners is continuous across tile edges (no per-tile steps).
+ */
+export function waterCornerTint(tileAt: (tx: number, ty: number) => number, cx: number, cy: number,
+  tintAt: (tx: number, ty: number) => number = (x, y) => waterShoreTint(tileAt, x, y)): number {
+  let s = 0, n = 0;
+  for (let dy = -1; dy <= 0; dy++) for (let dx = -1; dx <= 0; dx++) {
+    const id = tileAt(cx + dx, cy + dy); if (id === 0) continue; n++; s += isWaterId(id) ? tintAt(cx + dx, cy + dy) : 1;
+  }
+  return n ? s / n : 0;
+}
+/** Bilinear blend of corner tints c00 (x,y), c10 (x+1,y), c11 (x+1,y+1), c01 (x,y+1) at fractional (fx, fy). */
+export function bilerpTint(c00: number, c10: number, c11: number, c01: number, fx: number, fy: number): number {
+  return (c00 * (1 - fx) + c10 * fx) * (1 - fy) + (c01 * (1 - fx) + c11 * fx) * fy;
 }

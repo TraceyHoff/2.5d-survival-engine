@@ -10,7 +10,7 @@
  */
 import { Transform, PrevTransform, getAppearance, type World, type Entity } from "@engine/core";
 import { previewLayers2D, tintPixels, type PreviewLayer2D } from "./character/preview2d.js";
-import { worldToScreen, DEFAULT_ISO, CHUNK_SIZE, isWaterId, waterShoreTint, type TileMap } from "@engine/world";
+import { worldToScreen, DEFAULT_ISO, CHUNK_SIZE, isWaterId, waterShoreTint, type TileMap, type Chunk } from "@engine/world";
 import type { AssetRegistry } from "@engine/assets";
 import { IsoCamera } from "./camera.js";
 import { Sprite, LightSource } from "./components.js";
@@ -43,7 +43,9 @@ export const TILE_COLORS = ["#1b1f1a", "#2d5d8a", "#c8b47a", "#4f8a43", "#3f7a3a
 export function snapPx(v: number, s: number, o: number): number { return s >= 1 ? (Math.round(v * s + o) - o) / s : v; }
 
 /** ADR-182: water colour from deep (#3484bc) toward shallow (#4f93bf) by shore tint 0..1. */
-function waterFill(k: number): string { const m = (a: number, b: number): number => Math.round(a + (b - a) * k); return `rgb(${m(0x34, 0x4f)},${m(0x84, 0x93)},${m(0xbc, 0xbf)})`; }
+/** ADR-184: deep blue -> shore turquoise (same endpoints as the WebGL2 mesh). */
+export const C2D_DEEP = [0x18, 0x46, 0x90] as const, C2D_SHALLOW = [0x5c, 0xd0, 0xd0] as const;
+export function waterRgb(k: number): [number, number, number] { const m = (j: 0 | 1 | 2): number => Math.round(C2D_DEEP[j] + (C2D_SHALLOW[j] - C2D_DEEP[j]) * k); return [m(0), m(1), m(2)]; }
 export class Canvas2DRenderer {
   readonly kind = "canvas2d" as const;
   readonly ctx: CanvasRenderingContext2D;
@@ -52,6 +54,7 @@ export class Canvas2DRenderer {
   readonly settings = { lights: true, shadows: true, weather: false, fog: false };
   stats: FrameStats = newStats();
   tilemap: TileMap | undefined;
+  private tintCache = new WeakMap<Chunk, { stamp: string; t: Float32Array }>(); private waterCanvas: HTMLCanvasElement | undefined;
   bindings: GameplayBindings = {};
   readonly vram = undefined;
   readonly gl = undefined;
@@ -110,6 +113,35 @@ export class Canvas2DRenderer {
     if (this.tinted.size > 512) this.tinted.clear(); this.tinted.set(key, c); return { img: c, x: 0, y: 0 };
   }
 
+  /** ADR-184: cached per-chunk shore tints (re-derived when this chunk or a neighbour changes). */
+  private chunkTint(tm: TileMap, ch: Chunk): Float32Array {
+    let st = ""; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const n = tm.getChunk(ch.cx + dx, ch.cy + dy); st += n ? n.version + "," : "x,"; }
+    const hit = this.tintCache.get(ch); if (hit && hit.stamp === st) return hit.t;
+    const t = new Float32Array(CHUNK_SIZE * CHUNK_SIZE); const at = (a: number, b: number): number => tm.getTile(a, b);
+    for (let ly = 0; ly < CHUNK_SIZE; ly++) for (let lx = 0; lx < CHUNK_SIZE; lx++) t[ly * CHUNK_SIZE + lx] = waterShoreTint(at, ch.cx * CHUNK_SIZE + lx, ch.cy * CHUNK_SIZE + ly);
+    this.tintCache.set(ch, { stamp: st, t }); return t;
+  }
+  /**
+   * ADR-184: water as one image, 1 px per tile (land = full shore tint so the blend under sand is turquoise), drawn
+   * through the iso affine with bilinear smoothing: a continuous shore->deep gradient instead of one fill per tile.
+   */
+  private drawWater(tm: TileMap, x0: number, y0: number, n: number): void {
+    if (typeof document === "undefined") return;
+    const cv = (this.waterCanvas ??= document.createElement("canvas")); if (cv.width !== n || cv.height !== n) { cv.width = n; cv.height = n; }
+    const wg = cv.getContext("2d"); if (!wg) return; const img = wg.createImageData(n, n); const d = img.data; let any = false;
+    for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+      const x = x0 + i, y = y0 + j; const ch = tm.getChunk(Math.floor(x / CHUNK_SIZE), Math.floor(y / CHUNK_SIZE)); if (!ch) continue;
+      const li = (((y % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE) * CHUNK_SIZE + (((x % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE); const id = ch.tiles[li]!;
+      const k = isWaterId(id) ? (any = true, this.chunkTint(tm, ch)[li]!) : 1; const c = waterRgb(k); const o = (j * n + i) * 4;
+      d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 255;
+    }
+    if (!any) return; wg.putImageData(img, 0, 0);
+    const g = this.ctx; const iso = DEFAULT_ISO; const o = worldToScreen(x0 - 0.5, y0 - 0.5, 0, iso);
+    const a = worldToScreen(x0 + 0.5, y0 - 0.5, 0, iso), b = worldToScreen(x0 - 0.5, y0 + 0.5, 0, iso);
+    g.save(); g.transform(a.sx - o.sx, a.sy - o.sy, b.sx - o.sx, b.sy - o.sy, o.sx, o.sy); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = "high";
+    g.drawImage(cv, 0, 0); g.restore();
+  }
+
   render(world: World, alpha: number): void {
     const g = this.ctx, cam = this.camera, s = cam.scale; const stats = (this.stats = newStats());
     const time = (performance.now() - this.t0) / 1000; const wr = readWeather(world), wt = weatherTargets(wr.kind, wr.intensity); // ADR-115: same curve + weather dimming as WebGL2 (no smoothing state: cheap)
@@ -121,9 +153,11 @@ export class Canvas2DRenderer {
     // terrain: diamonds around the camera
     const tm = this.tilemap; const c = cam.cssToWorld(cam.viewW / cam.dpr / 2, cam.viewH / cam.dpr / 2);
     const R = Math.ceil(Math.max(this.w, this.h) / (s * th)) + 2;
+    if (tm) this.drawWater(tm, Math.floor(c.x) - R, Math.floor(c.y) - R, 2 * R + 1); // ADR-184: smooth gradient under the land diamonds
     if (tm) for (let y = Math.floor(c.y) - R; y < c.y + R; y++) for (let x = Math.floor(c.x) - R; x < c.x + R; x++) {
       let t = tm.getTile(x, y); if (!t && !tm.getChunk(Math.floor(x / CHUNK_SIZE), Math.floor(y / CHUNK_SIZE))) continue;
-      const p = worldToScreen(x, y, 0, iso); g.fillStyle = isWaterId(t) ? waterFill(waterShoreTint((a, b) => tm.getTile(a, b), x, y)) : TILE_COLORS[t % TILE_COLORS.length]!; // ADR-182
+      if (isWaterId(t)) { stats.tiles++; continue; }
+      const p = worldToScreen(x, y, 0, iso); g.fillStyle = TILE_COLORS[t % TILE_COLORS.length]!;
       g.beginPath(); g.moveTo(p.sx, p.sy - th / 2); g.lineTo(p.sx + tw / 2, p.sy); g.lineTo(p.sx, p.sy + th / 2); g.lineTo(p.sx - tw / 2, p.sy); g.fill(); stats.tiles++;
     }
     // sprites: gather, sort by iso depth (screen y of the foot), draw
