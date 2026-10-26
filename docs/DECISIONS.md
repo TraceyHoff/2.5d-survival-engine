@@ -1210,3 +1210,8 @@ checked visually).
   - Canvas2D lerps from #3484bc to #4f93bf.
 - **Unchanged:** gameplay depth rules (ADR-181, radius 2), stored heights and saves. A shore now has one single skirt or cliff, going from land down to the water level.
 - **Tests:** `packages/render/test/adr182_flat_water.test.ts` (fails without the fix).
+
+## ADR-183: The Canvas2D renderer skips the GL black-frame self-check
+- **Cause:** after every frame, `IsoView.render` ran the ADR-148 black-frame check with `if (this.blackCheck?.gl !== r.gl) this.blackCheck = new BlackFrameCheck(r.gl); bc.pending`. The Canvas2D renderer (`?renderer=canvas`, or the fallback when WebGL2 is missing) has no `gl`, so the condition was `undefined !== undefined`, which is false. No check was ever created, and `bc.pending` threw "Cannot read properties of undefined (reading 'pending')" on every frame. The frame loop showed it as a "Frame error" overlay.
+- **Fix:** the check moved into the exported `blackFrameStep(state, renderer, held0)`, which returns early when the renderer has no `gl`. With nothing to read back there is no black-frame check. The WebGL2 behaviour is unchanged.
+- **Test:** `apps/client/test/adr183_canvas_blackcheck.test.ts` (fails without the guard).

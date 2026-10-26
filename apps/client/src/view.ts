@@ -112,6 +112,19 @@ function watchResources(match: RegExp, cb: (count: number, bytes: number) => voi
     po.observe({ type: "resource", buffered: false }); return () => po.disconnect();
   } catch { return () => {}; }
 }
+/** ADR-183: black-frame self-check state carried by the view. */
+export interface BlackCheckState { checks: number; blackFrames: number; blackCheck: BlackFrameCheck | undefined }
+/**
+ * One step of the all-black self-check after a frame. ADR-183: the Canvas2D renderer has no `gl`; before this guard
+ * `blackCheck?.gl !== r.gl` was `undefined !== undefined` (false), so no check was created and `bc.pending` threw
+ * "reading 'pending'" every frame (shown as a Frame error overlay under ?renderer=canvas). No GL → nothing to read back.
+ */
+export function blackFrameStep(st: BlackCheckState, r: { gl?: WebGL2RenderingContext | undefined; heldFrames: number }, held0: number, daylight: () => number = () => daylightOf(r as never)): void {
+  if (!r.gl) return;
+  if (st.blackCheck?.gl !== r.gl) st.blackCheck = new BlackFrameCheck(r.gl); const bc = st.blackCheck;
+  if (bc.pending) { const black = bc.poll(); if (black === true) { if (++st.blackFrames >= 2) showRenderError("World rendered black", glInfo(r.gl)); } else if (black === false) st.blackFrames = 0; }
+  else if (r.heldFrames === held0 && st.checks < 90 && ++st.checks % 30 === 0 && daylight() > 0.5) bc.start(); // held (settling) frames draw nothing: not a black frame
+}
 export class IsoView {
   readonly view = new World({ seed: 1 });
   private map = new Map<Entity, Entity>();
@@ -387,14 +400,12 @@ export class IsoView {
     try { r.render(v, alpha); } catch (e) { showRenderError("Renderer exception", `${e instanceof Error ? e.stack ?? e.message : String(e)}\n${glInfo(r.gl)}`); return; }
     // all-black self-check over the first frames (daytime only, where black means a broken pass)
     // ADR-148: async readback (no pipeline stall during startup); the default framebuffer is read right after the frame
-    if (this.blackCheck?.gl !== r.gl) this.blackCheck = new BlackFrameCheck(r.gl); const bc = this.blackCheck;
-    if (bc.pending) { const black = bc.poll(); if (black === true) { if (++this.blackFrames >= 2) showRenderError("World rendered black", glInfo(r.gl)); } else if (black === false) this.blackFrames = 0; }
-    else if (r.heldFrames === held0 && this.checks < 90 && ++this.checks % 30 === 0 && daylightOf(r) > 0.5) bc.start(); // held (settling) frames draw nothing: not a black frame
+    blackFrameStep(this, r, held0);
   }
   private camZ: number | undefined; private camZAt = 0;
   /** ADR-157 per-frame scratch components (render loop reads without allocating). */
   private sCur = { x: 0, y: 0, z: 0, facing: 0 }; private sPrev = { x: 0, y: 0, z: 0, facing: 0 }; private sAnim: Record<string, number> & { anim: number } = { anim: 0 }; private sTemp = { cold: 0, heat: 0, shivering: 0 }; private sHit: Record<string, number> & { startTick: number; dir: number } = { startTick: 0, dir: 0 };
-  private checks = 0; private blackFrames = 0; private blackCheck: BlackFrameCheck | undefined;
+  checks = 0; blackFrames = 0; blackCheck: BlackFrameCheck | undefined;
   /** View entity currently given to setFocusEntity; cleared when destroyed so a recycled id (a remote player) never inherits the focus silhouette. */
   private focusVe = -1;
   /** ADR-110 render-only ground clutter: view-World sprites for chunks around the camera (never networked). Density 1,
