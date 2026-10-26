@@ -52,7 +52,7 @@ describe("vitals", () => {
     const { w, p } = neutral();
     setIntent(w, p, { moving: 1, sprint: 1 });
     steps(w, 2 * SEC);
-    expect(w.get(p, Survival)!.stamina).toBeCloseTo(vt.maxStamina - vt.sprintStaminaDrainPerSec * 2, 3);
+    expect(w.get(p, Survival)!.stamina).toBeCloseTo(vt.maxStamina - vt.sprintStaminaDrainPerSec * 2, 1); // ADR-147: stamina snaps to the 16-bit wire grid each tick (<0.05 drift over 2 s)
     setIntent(w, p, { sprint: 0 });
     const before = w.get(p, Survival)!.stamina;
     steps(w, Math.round(vt.staminaRegenDelaySeconds * SEC) - 1);

@@ -18,8 +18,17 @@ export const Health = defineComponent("Health", {
 /** persistent: saved with the chunk (core chunk codec), so depleted nodes and their absolute respawnAtTick survive reloads. */
 export const ResourceNode = defineComponent("ResourceNode", { kind: "u16", amount: "u16", respawnAtTick: "u32" }, { networked: true, persistent: true });
 
+/**
+ * ADR-147: stamina replicates at 16 bits and the authority keeps it ON the quantization grid (snapStamina), so the
+ * owner's prediction replays from exactly the server's value. At 8 bits (0.39 steps) the replica's stamina ran out a
+ * tick or two apart from the server's, so the sprint ended at different ticks: a visible singleplayer rubber-band.
+ */
+export const STAMINA_BITS = 16;
+const STAMINA_MAX_I = (1 << STAMINA_BITS) - 1;
+export function snapStamina(v: number): number { const t = Math.min(100, Math.max(0, v)) / 100; return (Math.round(t * STAMINA_MAX_I) / STAMINA_MAX_I) * 100; }
+
 export const Survival = defineComponent("Survival", {
-  hunger: pct(), thirst: pct(), stamina: pct(), maxStamina: pct(),
+  hunger: pct(), thirst: pct(), stamina: pct(STAMINA_BITS), maxStamina: pct(),
   bodyTemp: { type: "f32", quant: { bits: 10, min: 25, max: 45 } },
   staminaDelayTicks: "u16", // remaining regen delay (replicates as u16 ticks, per Netcode)
 }, { networked: true });

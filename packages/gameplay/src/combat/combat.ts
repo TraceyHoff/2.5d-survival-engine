@@ -21,7 +21,7 @@ import { damageMulFor } from "../skills/tree.js";
 import { Progression } from "../components.js";
 import { armorReduce, igniteTarget, landThrown, resolveAttack, spendRound, throwExplosive } from "./arms.js";
 
-export const FISTS: WeaponDef = { damage: 5, range: 1.0, cooldownSeconds: 0.6, staminaCost: 3, structureMul: 0.2 };
+export const FISTS: WeaponDef = { damage: 5, range: 1.0, cooldownSeconds: 0.4, staminaCost: 3, structureMul: 0.2 };
 export function heldWeapon(world: World, e: Entity): WeaponDef {
   const slot = world.getField(e, Equipment, "mainHandSlot");
   if (slot === undefined || slot === NO_SLOT || !world.has(e, Inventory)) return FISTS;
@@ -100,7 +100,7 @@ export function combatSystem(world: World, dt: number): void {
     const stamina = mode.kind === "ranged" ? mode.staminaCost : w.staminaCost;
     if (world.has(e, Survival) && !spendStamina(world, e, stamina, dt)) continue;
     world.setField(e, Attacker, "cooldownUntilTick", world.tick + secondsToTicks(mode.kind === "ranged" ? mode.cooldownSeconds : w.cooldownSeconds, dt));
-    if (authority || world.has(e, AnimState)) setAnim(world, e, w === FISTS && mode.kind === "melee" ? Anim.Punch : Anim.Attack); // players get AnimState lazily (settled by gameplay.animSettle)
+    if (authority || world.has(e, AnimState)) { const sw = w === FISTS && mode.kind === "melee" ? Anim.Punch : Anim.Attack; if (world.has(e, AnimState)) world.set(e, AnimState, { anim: sw, startTick: world.tick }); else setAnim(world, e, sw); } // ADR-151: every swing restarts the anim (fast weapons chain swings); // players get AnimState lazily (settled by gameplay.animSettle)
     emit(world, AttackSwing, { entity: e, target });
     if (!authority) continue;
     if (mode.kind === "explosive") { // lands at the target's position; no hit check (area effect resolves later)

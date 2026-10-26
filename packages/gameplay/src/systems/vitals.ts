@@ -4,7 +4,7 @@
  * Deterministic and RNG-free, so the client predicts it for its own entity.
  */
 import { addModifier, defineResource, entityIndex, evaluate, ModOp, Transform, type Entity, type World } from "@engine/core";
-import { Anim, AnimState, BodyTemp, NO_SLOT, Buffs, DamageCause, Dead, Exposure, Health, IntentAction, PlayerIntent, Stat, Survival, VitalsState } from "../components.js";
+import { Anim, AnimState, BodyTemp, NO_SLOT, Buffs, DamageCause, Dead, Exposure, Health, IntentAction, PlayerIntent, Stat, Survival, VitalsState, snapStamina } from "../components.js";
 import { gameplayDefs, isAuthority } from "../config.js";
 import { secondsToTicks } from "../defs.js";
 import { ConsumeFail, ConsumeFailed, Died, emit, ItemConsumed, WaterDrunk, Vital, VitalDepleted } from "../events.js";
@@ -101,10 +101,44 @@ export const IRON_STOMACH_HP = 4;
 /** Blocks stamina regen for the configured delay (called by sprinting and by gathering). */
 export function spendStamina(world: World, e: Entity, amount: number, dt: number): boolean {
   const st = world.getField(e, Survival, "stamina"); if (st === undefined || st < amount) return false;
-  world.setField(e, Survival, "stamina", st - amount);
+  world.setField(e, Survival, "stamina", snapStamina(st - amount));
   world.setField(e, Survival, "staminaDelayTicks", Math.min(0xffff, secondsToTicks(gameplayDefs(world).vitals.staminaRegenDelaySeconds, dt)));
   if (st - amount <= 0) emit(world, VitalDepleted, { entity: e, vital: Vital.Stamina });
   return true;
+}
+
+/**
+ * Sprint drain / regen delay / regen for one Survival slot. Shared by the authority's vitalsSystem and (ADR-147) the
+ * client's prediction of its own entity: the replica has no VitalsState (not networked), so before ADR-147 the client
+ * never predicted stamina and its sprint ran out a few ticks after the server's, a visible singleplayer rubber-band.
+ */
+function stepStamina(world: World, e: Entity, idx: number, s: number, hunger: number, thirst: number, dt: number, delayTicks: number, events: boolean): void {
+  const vt = gameplayDefs(world).vitals; const sv = world.store(Survival); const intent = world.store(PlayerIntent);
+  const max = sv.data.maxStamina[s]!; let stamina = sv.data.stamina[s]!;
+  const sprinting = intent.has(idx) && intent.data.sprint[intent.slot(idx)] === 1 && intent.data.moving[intent.slot(idx)] === 1;
+  if (sprinting && stamina > 0) {
+    stamina = Math.max(0, stamina - vt.sprintStaminaDrainPerSec * dt);
+    sv.data.staminaDelayTicks[s] = delayTicks;
+    if (stamina === 0 && events) emit(world, VitalDepleted, { entity: e, vital: Vital.Stamina });
+  } else if (sv.data.staminaDelayTicks[s]! > 0) {
+    sv.data.staminaDelayTicks[s] = sv.data.staminaDelayTicks[s]! - 1;
+  } else {
+    const needsMul = hunger < vt.lowNeedsThreshold || thirst < vt.lowNeedsThreshold ? vt.lowNeedsStaminaRegenMul : 1;
+    const regen = Math.max(0, evaluate(world, e, Buffs, Stat.StaminaRegen, vt.staminaRegenPerSec));
+    stamina = Math.min(max, stamina + regen * needsMul * dt);
+  }
+  sv.data.stamina[s] = snapStamina(stamina);
+}
+
+/** ADR-147: client prediction of its own stamina (entities the replica predicts that have no VitalsState). */
+function predictOwnStamina(world: World, dt: number, delayTicks: number): void {
+  if (isAuthority(world) || !world.predicted.size) return;
+  const sv = world.store(Survival);
+  for (const e of world.predicted) {
+    if (!world.isAlive(e) || !world.has(e, Survival) || world.has(e, VitalsState) || world.has(e, Dead)) continue;
+    const idx = entityIndex(e); const s = sv.slot(idx);
+    stepStamina(world, e, idx, s, sv.data.hunger[s]!, sv.data.thirst[s]!, dt, delayTicks, false);
+  }
 }
 
 export function vitalsSystem(world: World, dt: number): void {
@@ -128,21 +162,7 @@ export function vitalsSystem(world: World, dt: number): void {
     if (hunger0 > 0 && hunger === 0) emit(world, VitalDepleted, { entity: e, vital: Vital.Hunger });
     if (thirst0 > 0 && thirst === 0) emit(world, VitalDepleted, { entity: e, vital: Vital.Thirst });
 
-    // stamina
-    const max = sv.data.maxStamina[s]!; let stamina = sv.data.stamina[s]!;
-    const sprinting = intent.has(idx) && intent.data.sprint[intent.slot(idx)] === 1 && intent.data.moving[intent.slot(idx)] === 1;
-    if (sprinting && stamina > 0) {
-      stamina = Math.max(0, stamina - vt.sprintStaminaDrainPerSec * dt);
-      sv.data.staminaDelayTicks[s] = delayTicks;
-      if (stamina === 0) emit(world, VitalDepleted, { entity: e, vital: Vital.Stamina });
-    } else if (sv.data.staminaDelayTicks[s]! > 0) {
-      sv.data.staminaDelayTicks[s] = sv.data.staminaDelayTicks[s]! - 1;
-    } else {
-      const needsMul = hunger < vt.lowNeedsThreshold || thirst < vt.lowNeedsThreshold ? vt.lowNeedsStaminaRegenMul : 1;
-      const regen = Math.max(0, evaluate(world, e, Buffs, Stat.StaminaRegen, vt.staminaRegenPerSec));
-      stamina = Math.min(max, stamina + regen * needsMul * dt);
-    }
-    sv.data.stamina[s] = stamina;
+    stepStamina(world, e, idx, s, hunger, thirst, dt, delayTicks, true);
 
     // body temperature drifts toward the felt temperature outside the comfort band
     let body = sv.data.bodyTemp[s]!;
@@ -177,6 +197,7 @@ export function vitalsSystem(world: World, dt: number): void {
     hs.markChanged(idx); vs.markChanged(idx);
     writeBodyTemp(world, e, body);
   }
+  predictOwnStamina(world, dt, delayTicks);
 }
 
 /** Render-facing BodyTemp (cold/heat 0..255, shivering) derived from the precise owner-only bodyTemp; writes on change. */

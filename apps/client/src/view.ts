@@ -1,7 +1,7 @@
 import { effectiveLevel, levelFlags } from "./gl-recovery.js";
 import { isFreeStandingStation, stationFireFrame } from "./station-view.js";
 import { DESKTOP_ZOOM } from "./camera-zoom.js";
-import { showRenderError, glInfo, frameIsBlack } from "./glcheck.js";
+import { showRenderError, glInfo, BlackFrameCheck } from "./glcheck.js";
 /**
  * WebGL2 game view: @engine/render IsoRenderer + Art's pack (packages/assets/pack, served at `<base>art/pack/`).
  *
@@ -41,9 +41,9 @@ const ANIM_MAP: readonly number[] = [0, 1, 2, 3, 4, 5, 3, 3];
 export function nodeWiggle(ms: number): number | undefined { if (ms < 0 || ms > 360) return undefined; const k = ms / 360; return 0.09 * Math.sin(k * Math.PI * 4) * (1 - k); }
 /**
  * ADR-134 flinch pose `ms` after a HitReact (dir = radians, away from the attacker): knockback nudge (tiles, out fast
- * then back), uniform squash pulse, tilt (rad, Canvas2D) and white flash 0..1. undefined once the 320 ms flinch is over.
+ * then back), uniform squash pulse, tilt (rad, Canvas2D) and white flash 0..1. undefined once the 260 ms flinch is over.
  */
-export const HIT_REACT_MS = 320;
+export const HIT_REACT_MS = 260; // ADR-151: < fastest player melee cooldown (300 ms) so flinches don't stack
 export function hitPose(ms: number, dir: number): { dx: number; dy: number; scale: number; tilt: number; flash: number } | undefined {
   if (!(ms >= 0) || ms > HIT_REACT_MS) return undefined;
   const k = ms / HIT_REACT_MS, f = 1 - k;
@@ -344,13 +344,15 @@ export class IsoView {
     r.camera.lookAt(tgt.x, tgt.y, tgt.z);
     r.sceneDiag = { entities: this.map.size, playerEid: player, cameraTarget: tgt, localServer: st?.localServer, snapshots: st?.snapshots, lastError: st?.error ?? this.camGuard.error };
     v.runPhase("renderPrep", 0);
+    const held0 = r.heldFrames;
     try { r.render(v, alpha); } catch (e) { showRenderError("Renderer exception", `${e instanceof Error ? e.stack ?? e.message : String(e)}\n${glInfo(r.gl)}`); return; }
     // all-black self-check over the first frames (daytime only, where black means a broken pass)
-    if (this.checks < 90 && ++this.checks % 30 === 0 && daylightOf(r) > 0.5) {
-      if (frameIsBlack(r.gl)) { if (++this.blackFrames >= 2) showRenderError("World rendered black", glInfo(r.gl)); } else this.blackFrames = 0;
-    }
+    // ADR-148: async readback (no pipeline stall during startup); the default framebuffer is read right after the frame
+    if (this.blackCheck?.gl !== r.gl) this.blackCheck = new BlackFrameCheck(r.gl); const bc = this.blackCheck;
+    if (bc.pending) { const black = bc.poll(); if (black === true) { if (++this.blackFrames >= 2) showRenderError("World rendered black", glInfo(r.gl)); } else if (black === false) this.blackFrames = 0; }
+    else if (r.heldFrames === held0 && this.checks < 90 && ++this.checks % 30 === 0 && daylightOf(r) > 0.5) bc.start(); // held (settling) frames draw nothing: not a black frame
   }
-  private checks = 0; private blackFrames = 0;
+  private checks = 0; private blackFrames = 0; private blackCheck: BlackFrameCheck | undefined;
   /** View entity currently given to setFocusEntity; cleared when destroyed so a recycled id (a remote player) never inherits the focus silhouette. */
   private focusVe = -1;
   /** ADR-110 render-only ground clutter: view-World sprites for chunks around the camera (never networked). Density 1,

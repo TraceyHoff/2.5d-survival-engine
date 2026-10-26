@@ -65,6 +65,10 @@ export function applyMovementInput(world: World, e: Entity, actions: number, dt:
   const dead = world.has(e, Dead);
   const { dx, dy } = dead ? { dx: 0, dy: 0 } : moveVector(actions, analog);
   const moving = dx || dy ? 1 : 0; const sprint = moving && actions & A.Sprint ? 1 : 0;
+  // ADR-147: PlayerIntent is not networked, so a client replica has none and its predicted vitals never drained sprint
+  // stamina (the replica's stamina lagged the server by the snapshot delay, sprint ended a tick apart: a rubber-band).
+  // The predicting client keeps a local PlayerIntent on its own entity so movement + vitals replay like the server.
+  if (!world.has(e, PlayerIntent) && world.predicted.has(e)) world.add(e, PlayerIntent);
   if (world.has(e, PlayerIntent)) {
     const st = world.store(PlayerIntent); const i = entityIndex(e); const s = st.slot(i);
     if (st.data.moving[s] !== moving || st.data.sprint[s] !== sprint) { st.data.moving[s] = moving; st.data.sprint[s] = sprint; st.markChanged(i); }
@@ -94,6 +98,8 @@ export function swimSpeedMulAt(world: World, x: number, y: number): number { ret
 const SWIM_OVER: ReadonlySet<number> = new Set([Anim.Idle, Anim.Walk, Anim.Run, Anim.Shamble, Anim.Crawl, Anim.Graze, Anim.Sit]);
 /** One-shot anims on players (Punch/Attack/Hurt/Gather/Build) settle back to Idle after this many ticks (players have no AI to reset them). */
 export const PLAYER_ONE_SHOT_TICKS = 8;
+/** ADR-151: Punch/Attack settle sooner so the swing fits the fastest melee cooldown (0.3 s = 6 ticks). */
+export const PLAYER_SWING_TICKS = 6;
 const ONE_SHOT: ReadonlySet<number> = new Set([Anim.Attack, Anim.Punch, Anim.Hurt, Anim.Gather, Anim.Build, Anim.Eat, Anim.Harvest, Anim.Chop, Anim.Mine, Anim.Drink]);
 /**
  * gameplay.animSettle (authority, ADR-107): locomotion anims become Swim on a swim tile at ground level and Swim reverts
@@ -103,7 +109,7 @@ export function animSettleSystem(world: World): void {
   const terrain = world.getResource(TerrainRes);
   for (const e of world.query([AnimState, Transform], [Dead])) {
     const t = world.get(e, Transform)!; const a = world.get(e, AnimState)!; let cur = a.anim;
-    if (world.has(e, Survival) && ONE_SHOT.has(cur) && world.tick - a.startTick >= PLAYER_ONE_SHOT_TICKS) { world.set(e, AnimState, { anim: Anim.Idle, startTick: world.tick }); cur = Anim.Idle; }
+    if (world.has(e, Survival) && ONE_SHOT.has(cur) && world.tick - a.startTick >= (cur === Anim.Attack || cur === Anim.Punch ? PLAYER_SWING_TICKS : PLAYER_ONE_SHOT_TICKS)) { world.set(e, AnimState, { anim: Anim.Idle, startTick: world.tick }); cur = Anim.Idle; }
     if (!terrain) continue;
     const wet = (t.z ?? 0) < 0.5 && inWater(world, t.x, t.y);
     if (wet && SWIM_OVER.has(cur)) world.set(e, AnimState, { anim: Anim.Swim, startTick: world.tick });

@@ -875,3 +875,18 @@ Accepted 2026-10-24. Context: the ADR-113 tree showed all 122 nodes on one giant
 - `OpenContainer`, `CloseContainer`, `Deposit` and `Withdraw` were never in `GAMEPLAY_NET_COMMANDS`, so panel container taps silently did nothing online and in the in-tab server (send returned false). They are now appended (append-only ids). Their `target` fields are remapped client→server entity ids, and they run through the input queue like every other command.
 - Closing the Pet panel sends `CloseContainer`, so the pet's bag stops being "the open container" and the pack panel returns to normal. `openContainer()` (client "which container is open") ignores pets, whose bags show only in the Pet panel.
 - `PERMANENT_BAG` (`LootBag.despawnAtTick === 0xffffffff`) marks caches like the sandbox treat crate. Pets never eat from or fetch those.
+
+## ADR-147: Singleplayer prediction stamina snap
+Rubber-banding in SP came from client prediction reconciling against stamina quantised to 16 bits by the server snapshot, so predicted sprint/walk diverged and was corrected. Prediction now uses the same snapped stamina; walk 2.6 / sprint 4.2 and normalised diagonals unchanged. Test: adr147_sp_prediction.test.ts.
+
+## ADR-148: Startup/tutorial hitch removal
+Page LRU now uses residency/margin hysteresis (no evict/reload thrash), GPU readbacks use async PBO+fence with orphaned buffers, page uploads are gated to 2/frame (bypassed for prio 0 and while settling). The black-frame check skips settle-held frames (was a false "World rendered black"). No quality reduction.
+
+## ADR-149: Pet sheets get full mip tail
+`pets_*` sheets were uploaded with 1 mip level, so heavily minified 704px sheets looked blurry/aliased. Stream pools holding pets now force OWN_MAX_LEVELS (3).
+
+## ADR-150: Scored tutorial card placement
+Tutorial cards are scored against target, player zone (x1) and avoided UI (hotbar, touch controls, HUD, tool bar; x20), are pointer-events:none except buttons, and are compact on phones. Test: adr150_tutorial_place.test.ts.
+
+## ADR-151: Faster player melee
+Melee felt sluggish. All weapon melee cooldowns in items.json scaled x0.65 (rounded to 0.05 s, floor 0.3 s), fists 0.6 -> 0.4 s. Both client prediction and server authority read the same gameplay data in combatSystem, so swings are never rejected. Each swing restarts the Punch/Attack anim, which settles after PLAYER_SWING_TICKS = 6 (0.3 s, was 8); the client flinch HIT_REACT_MS is 320 -> 260 ms, so flinches don't stack at the fastest rate. Test: adr151_melee_speed.test.ts.
