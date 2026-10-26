@@ -1,3 +1,4 @@
+import { AsyncReadback } from "@engine/render";
 /** Never silently black: on-screen overlay for renderer exceptions, lost contexts and all-black frames, with GPU diagnostics. */
 import { mountUi } from "./ui-root.js";
 let box: HTMLDivElement | undefined; const seen = new Set<string>();
@@ -27,4 +28,19 @@ export function frameIsBlack(gl: WebGL2RenderingContext | undefined): boolean {
     if (px[0]! + px[1]! + px[2]! > 12) return false;
   }
   return true;
+}
+
+/** ADR-148: the same 5x5 grid via a non-blocking readback (PBO + fence; no CPU/GPU stall). start() right after a frame,
+ *  poll() on later frames: null while the GPU is busy, else whether that frame was black. */
+export class BlackFrameCheck {
+  private rb: AsyncReadback | undefined;
+  constructor(readonly gl: WebGL2RenderingContext | undefined) {}
+  get pending(): boolean { return !!this.rb?.pending; }
+  start(): void {
+    const gl = this.gl; if (!gl || this.pending) return; this.rb ??= new AsyncReadback(gl);
+    const w = gl.drawingBufferWidth, h = gl.drawingBufferHeight; const pts: [number, number][] = [];
+    for (let i = 1; i <= 5; i++) for (let j = 1; j <= 5; j++) pts.push([Math.floor((w * i) / 6), Math.floor((h * j) / 6)]);
+    this.rb.start([{ fbo: null, pts }]);
+  }
+  poll(): boolean | null { const px = this.rb?.poll(); if (!px) return null; return px.every((p) => p[0] + p[1] + p[2] <= 12); }
 }

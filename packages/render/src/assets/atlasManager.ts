@@ -132,6 +132,8 @@ const POOL_MIN_SLOTS_DESKTOP = 48, POOL_MIN_SLOTS_LOWMEM = 24, POOL_GAP = 4, PAG
 /** Manifest residency "stream" sheets (crops, saplings, clutter, ADR-110 animals): pool slots, page-in starts per
  *  frame (upload budget), frames off-screen before a page is dropped (~3 s at 60 fps; touched again inside the keep
  *  radius = hysteresis), and screen-px margins around the view: load radius, keep radius (x1.5), animals (move into view). */
+/** ADR-148: GPU page uploads per frame (see uploadTurn). */
+export const PAGE_UPLOADS_PER_FRAME = 2;
 export const STREAM_POOL_SLOTS_DESKTOP = 24, STREAM_POOL_SLOTS_LOWMEM = 12, STREAM_UPLOADS_PER_FRAME = 2, STREAM_UNLOAD_FRAMES = 180;
 export const STREAM_MARGIN_PX = 256, STREAM_MARGIN_ANIMAL_PX = 640, STREAM_KEEP_FACTOR = 1.5;
 const WEAR_1X_SLOTS_LOWMEM = 18, WEAR_1X_SLOTS_DESKTOP = 32;
@@ -216,6 +218,8 @@ export const HOT_ATLAS_RE = /(^|[_/-])(tiles?|terrain|ground|characters?|bod(y|i
 /** Cold: rare variants, distant LODs, one-shot fx, huge set pieces. Anything matching neither stays hot. */
 /** ADR-145: pixel-art creature sheets sampled crisp (sharp bilinear) when magnified. */
 export const CRISP_ATLAS_RE = /^(animals|pets)_/;
+/** ADR-149: hi-res painted pet sheets (streamed, drawn well below their stored size: need the mip tail). */
+export const PET_SHEET_RE = /^pets_/;
 export const COLD_ATLAS_RE = /(lod\d*|_far|distant|rare|_huge|_big|^fx_|death_bag|zombies_(brute|mummy|pumpkin|runner)|critters|wear|cosmetic|hair|hats?|accessor|tops?|bottoms?|shoes|faces?|eyes)/i;
 /** Default tier: HOT_ATLAS_RE wins; atlases holding body sprites are hot; COLD_ATLAS_RE or mostly-wearable atlases are cold. */
 export function defaultAtlasTier(key: string, opts: { bodies?: boolean; wearShare?: number } = {}): AtlasTier {
@@ -303,8 +307,13 @@ export class AtlasManager {
    *  magnified (<= 1) -> level 0 only; minified by m -> ceil(log2 m) + 1 levels (trilinear), at most OWN_MAX_LEVELS. */
   private ownLevelsFor(pools: Pool[]): number {
     let n = 1; for (const p of pools) { if (p.cls === "body") continue; const m = Math.log2(p.k / this.charFootprint); if (m > 0) n = Math.max(n, Math.ceil(m) + 1); }
+    // ADR-149: hi-res painted pet sheets (704px frames) are drawn far below their stored size, independent of the character
+    // footprint: without the mip tail they were point-sampled from level 0 (sparkly, then smeared by the upscale = "blurry")
+    if (pools.some((p) => p.cls === "stream") && this.streamPets) n = OWN_MAX_LEVELS;
     return Math.min(OWN_MAX_LEVELS, n);
   }
+  /** ADR-149: a streamed pool holds hi-res pet sheets (set by upload before planOwn). */
+  private streamPets = false;
   private tailPools(): Pool[] { return [...this.pools].sort((x, y) => x.first - y.first); }
   /**
    * Streamed pools (building tiers, bodies, vehicles, wearables) are the tail layers: they get their own colour array, KTX2-compressed
@@ -844,7 +853,7 @@ export class AtlasManager {
     let best: [number, number] | null = null; let keptReserve = reserveBytes; let demoted = 0;
     for (const r of [reserveBytes, keepBytes + (reserveBytes - keepBytes) / 2, keepBytes + (reserveBytes - keepBytes) / 4, keepBytes]) { const c = fits(1, full - r); if (c !== null) { best = [1, c]; keptReserve = r; break; } }
     if (!best && this.recentlyUsed.size) {
-      const idle = list.filter((a) => !a.cold && !this.recentlyUsed.has(a.key) && !CRISP_ATLAS_RE.test(a.key)) // ADR-145: creature sheets stay full res.sort((a, b) => b.img!.width * b.img!.height - a.img!.width * a.img!.height);
+      const idle = list.filter((a) => !a.cold && !this.recentlyUsed.has(a.key) && !CRISP_ATLAS_RE.test(a.key)) /* ADR-145: creature sheets stay full res */.sort((a, b) => b.img!.width * b.img!.height - a.img!.width * a.img!.height);
       for (const a of idle) { a.cold = true; demoted++; const c = fits(1, full - keepBytes); if (c !== null) { best = [1, c]; keptReserve = keepBytes; break; } }
     }
     if (!best) {
@@ -1017,7 +1026,7 @@ export class AtlasManager {
       const w = Math.min(im.width, H - x), h = Math.min(im.height, H - y); if (w <= 0 || h <= 0) return;
       if (w !== im.width || h !== im.height) { this.uploadErrors.push(`side image ${a.key} ${im.width}x${im.height} clipped`); return; }
       gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, x, y, a.layer, w, h, 1, gl.RGBA, gl.UNSIGNED_BYTE, im as TexImageSource); };
-    this.planOwn();
+    this.streamPets = all.some((a) => !!a.lazy && PET_SHEET_RE.test(a.key)); this.planOwn();
     const owned = this.pools.filter((p) => p.own); const own = owned[0];
     const ownLayers = owned.reduce((t, p) => t + p.layers, 0);
     const colourLayers = Math.max(1, this.layers - ownLayers);
@@ -1113,7 +1122,8 @@ export class AtlasManager {
 
   /** Once per frame before drawing: advances the LRU clock and uploads frame-table rows patched by page-ins/evictions. */
   beginFrame(): void {
-    this.frame++; this.streamStarts = 0;
+    this.frame++; this.streamStarts = 0; this.uploadsThisFrame = 0;
+    while (this.uploadWaiters?.length && this.uploadsThisFrame < PAGE_UPLOADS_PER_FRAME) { this.uploadsThisFrame++; this.uploadWaiters.shift()!(); }
     if ((this.frame & 15) === 0) this.unloadIdleStream();
     if (this.queue.length) this.pump();
     if (this.tableDirty0 < 0 || !this.frameTex) return;
@@ -1123,6 +1133,13 @@ export class AtlasManager {
     this.tableDirty0 = this.tableDirty1 = -1;
   }
   private streamStarts = 0;
+  /** ADR-148: decoded pages wait here for their GPU upload turn - at most PAGE_UPLOADS_PER_FRAME uploads per frame (the
+   *  local player's own pages never wait), so a burst of finished decodes no longer lands as one long frame. */
+  private uploadsThisFrame = 0; private uploadWaiters: (() => void)[] = [];
+  private uploadTurn(prio: number): Promise<void> | void {
+    if (prio === 0 || this.settling || this.uploadsThisFrame < PAGE_UPLOADS_PER_FRAME) { this.uploadsThisFrame++; return; }
+    return new Promise<void>((res) => (this.uploadWaiters ??= []).push(res));
+  }
   /** Stream pool pages not touched for STREAM_UNLOAD_FRAMES (off-screen and outside the keep radius) are dropped. */
   private unloadIdleStream(): void {
     if (this.ctxLost) return;
@@ -1237,6 +1254,7 @@ export class AtlasManager {
     const tintUrls = src.masks?.tintmask === undefined ? [] : Array.isArray(src.masks.tintmask) ? src.masks.tintmask : [src.masks.tintmask];
     const [img, tint, emi] = await Promise.all([this.loader(url), (async () => { if (!p.tint) return null; for (const u of tintUrls) { try { return await this.loader(u); } catch { /* next */ } } return null; })(),
       (async () => { if (!p.emis || !src.emissiveUrl) return null; try { return await this.loader(src.emissiveUrl); } catch { return null; } })()]);
+    await this.uploadTurn(a.lazy!.prio ?? Infinity);
     if (g !== this.gen) return;
     const W = Math.max(1, Math.round(a.lazy!.w1 * ak)), H = Math.max(1, Math.round(a.lazy!.h1 * ak));
     const chain = async (im: ImageLike, q: "high" | "pixelated"): Promise<ImageLike[]> => {
@@ -1328,6 +1346,7 @@ export class AtlasManager {
       return out;
     })();
     const [col, tc, ec] = await Promise.all([colourP, tintP, emisP]);
+    await this.uploadTurn(a.lazy!.prio ?? Infinity);
     if (g !== this.gen) return;
     if (!col.kt && !col.levels.length) { this.ktx2Stats.failed++; a.lazy!.state = 0; return; }
     if (col.kt) this.ktx2Stats.colour++; else if (src.ktx2 && this.ktx2Target) this.ktx2Stats.pngFallback++;

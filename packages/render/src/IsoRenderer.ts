@@ -49,6 +49,7 @@ import type { Renderer } from "./types.js";
 import { loadPreset, parsePreset, QualityController, QUALITY_TIERS, type QualityPreset } from "./quality.js";
 import { benchAdjust, deviceSignature, rememberLevel, startLevel } from "./deviceTier.js";
 import { BlankWatchdog, FallbackLadder, FallbackStep, FALLBACK_STEP_NAMES } from "./gl/fallback.js";
+import { AsyncReadback } from "./gl/readback.js";
 import { fboStatusName, formatDiagReport, glErrorName, isEmptyScene, newDiag, parseDiagFlag, SAMPLE_POINTS, type DiagReadback, type RenderDiag, type Rgba } from "./gl/diag.js";
 
 export interface IsoRendererOptions {
@@ -587,7 +588,7 @@ export class IsoRenderer implements Renderer {
     stats.drawCalls++;
     pass("composite");
     if (probe) this.probe(stats, clearBg);
-    else if (this._sync && this.watchdog.due(this.totalFrames)) this.watch(stats);
+    else if (this._sync) this.watch(stats);
 
     // --- 4. weather particles --------------------------------------------------------------
     if (this.settings.weather) this.weather.draw(this.w, this.h, this.camera.x * this.camera.scale, this.camera.y * this.camera.scale, this.camera.dpr, ws, this.time, amb, stats, this.quality.tier.weather);
@@ -596,20 +597,26 @@ export class IsoRenderer implements Renderer {
     stats.cpuMs = performance.now() - t0;
   }
 
-  private readSamples(fbo: WebGLFramebuffer | null, w: number, h: number): Rgba[] {
-    const gl = this.gl; gl.bindFramebuffer(gl.FRAMEBUFFER, fbo); if (fbo) gl.readBuffer(gl.COLOR_ATTACHMENT0);
-    const px = new Uint8Array(4);
-    const out = SAMPLE_POINTS.map(([x, y]) => { gl.readPixels(Math.min(w - 1, Math.floor(x * w)), Math.min(h - 1, Math.floor(y * h)), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); return [px[0]!, px[1]!, px[2]!, px[3]!] as Rgba; });
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null); return out;
-  }
+
   /** Blank-frame watchdog check (whole session): flat scene + output while instances were drawn -> fallback step. */
   private watch(stats: FrameStats): void {
-    const instances = stats.sprites + stats.staticInstances + stats.tiles;
-    const scene = this.readSamples(this.sceneFbo, this.w, this.h), output = this.readSamples(null, this.w, this.h);
-    const err = this.gl.getError();
-    if (err === this.gl.OUT_OF_MEMORY) this.fault("frame", "GL_OUT_OF_MEMORY during the frame");
-    if (this.watchdog.sample(this.totalFrames, scene, output, instances)) this.fault("watchdog", `flat frame ${this.watchdog.consecutive}x in a row (${instances} instances)`);
+    // ADR-148: async readback (PBO + fence) queued on the due frame and collected a few frames later without a CPU/GPU
+    // stall (the old synchronous readPixels drained the pipeline once a second: a periodic hitch)
+    const rb = this.watchRb ??= new AsyncReadback(this.gl);
+    if (rb.pending) {
+      const px = rb.poll(); if (!px) return; const at = this.watchAt; this.watchAt = undefined; if (!at) return;
+      const n = SAMPLE_POINTS.length; const scene = px.slice(0, n), output = px.slice(n, 2 * n);
+      const err = this.gl.getError();
+      if (err === this.gl.OUT_OF_MEMORY) this.fault("frame", "GL_OUT_OF_MEMORY during the frame");
+      if (this.watchdog.sample(at.frame, scene, output, at.instances)) this.fault("watchdog", `flat frame ${this.watchdog.consecutive}x in a row (${at.instances} instances)`);
+      return;
+    }
+    if (!this.watchdog.due(this.totalFrames)) return;
+    const pts = SAMPLE_POINTS.map(([x, y]) => [Math.min(this.w - 1, Math.floor(x * this.w)), Math.min(this.h - 1, Math.floor(y * this.h))] as [number, number]);
+    if (rb.start([{ fbo: this.sceneFbo, pts }, { fbo: null, pts }])) this.watchAt = { frame: this.totalFrames, instances: stats.sprites + stats.staticInstances + stats.tiles };
   }
+  private watchRb: AsyncReadback | undefined; private watchAt: { frame: number; instances: number } | undefined;
+
   /** Frame-1/60 readback: a few pixels of the scene FBO, lightmap and final output; empty scene with draws -> onError + one safe retry. */
   private probe(stats: FrameStats, bg: readonly number[]): void {
     const gl = this.gl; const d = this.diagState;

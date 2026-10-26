@@ -51,7 +51,11 @@ export class VramAccountant {
   }
 }
 
-interface PageEntry { slot: number; refs: number; lastUsed: number; prio: number }
+interface PageEntry { slot: number; refs: number; lastUsed: number; prio: number; /** frame it was paged in */ since: number }
+/** ADR-148: a live page stays at least this many frames before a nearer (non-local-player) request may take it, and only
+ *  a clearly nearer request (squared distance x LIVE_STEAL_MARGIN) may: a crowd of near characters used to swap the same
+ *  slots every few frames (~15 KTX2 transcodes + uploads a second -> startup / tutorial hitches). */
+export const LIVE_MIN_RESIDENT_FRAMES = 120, LIVE_STEAL_MARGIN = 1.5;
 /**
  * Page priority (lower = more important): 0 = the local player, else squared tile distance to them. Pages at or under
  * PRIO_NEAR (local player + characters within 12 tiles) are exempt from dress caps / ladder eviction, and a nearer
@@ -94,7 +98,7 @@ export class PageLRU<K = string> {
     // Pinned pages (retained by a visible character's layer set) are only taken by PRIO_NEAR requests (local player /
     // characters right next to them): otherwise two crowds on screen stole each other's wear/face pages every few
     // frames and characters flickered between dressed and body-only.
-    for (const [k, p] of this.pages) if (p.prio > prio && (p.refs === 0 || prio <= PRIO_NEAR) && (!bp || p.prio > bp.prio)) { best = k; bp = p; }
+    for (const [k, p] of this.pages) if (p.prio > prio && (prio === 0 || (p.prio > prio * LIVE_STEAL_MARGIN && frame - p.since >= LIVE_MIN_RESIDENT_FRAMES)) && (p.refs === 0 || prio <= PRIO_NEAR) && (!bp || p.prio > bp.prio)) { best = k; bp = p; }
     return best;
   }
   /**
@@ -108,7 +112,7 @@ export class PageLRU<K = string> {
       evicted = this.victim(frame, prio); if (evicted === undefined) return null;
       slot = this.pages.get(evicted)!.slot; this.pages.delete(evicted);
     }
-    this.pages.set(k, { slot, refs: this.refs.get(k) ?? 0, lastUsed: frame, prio });
+    this.pages.set(k, { slot, refs: this.refs.get(k) ?? 0, lastUsed: frame, prio, since: frame });
     return evicted === undefined ? { slot } : { slot, evicted };
   }
   /** True when allocate(k, frame) would succeed (resident, a free slot, or an evictable page). */
