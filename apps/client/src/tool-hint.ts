@@ -7,6 +7,7 @@
  * canvas-drawn vector placeholder is only a fallback (registry not loaded, key missing, image failed).
  * Settings: `toolHints` (on by default). DOM hook: `#tool-hint[data-icon][data-have][data-show]`.
  */
+import { setAttr, setData } from "./dom-diff.js";
 import type { Entity, World } from "@engine/core";
 import { toolHint, toolReqSpriteKey, type ToolHint, type ToolReqIcon } from "@engine/gameplay";
 
@@ -78,7 +79,7 @@ export function mountToolHint(root: HTMLElement, d: ToolHintDeps): { destroy(): 
     if (!imgs.has(f.src)) { imgs.set(f.src, null); const im = new Image(); im.onload = () => { imgs.set(f.src, im); drawn = ""; }; im.src = f.src; }
     const im = imgs.get(f.src); return im ? { im, f } : null;
   };
-  let cur: ToolHint | undefined; let shown: ToolHint | undefined; let drawn = ""; let lastScan = 0; let raf = 0;
+  let cur: ToolHint | undefined; let shown: ToolHint | undefined; let drawn = ""; let lastScan = 0; let raf = 0; let lastTf = "";
   const draw = (h: ToolHint, size: number): void => {
     const art = image(h.icon); const key = `${h.icon}|${h.have}|${h.equipped}|${size}|${art ? 1 : 0}`; if (key === drawn) return; drawn = key;
     const dpr = Math.min(3, globalThis.devicePixelRatio || 1); cv.width = cv.height = Math.round(size * dpr); cv.style.width = cv.style.height = `${size}px`;
@@ -96,13 +97,13 @@ export function mountToolHint(root: HTMLElement, d: ToolHintDeps): { destroy(): 
         cur = p === undefined || d.hidden() || !d.enabled() ? undefined : toolHint(d.world(), p);
       }
       const cam = d.camera();
-      el.dataset["show"] = String(!!cur && !!cam);
+      setData(el, "show", String(!!cur && !!cam));
       if (cur) shown = cur; // keep the last hint while fading out
       if (!shown || !cam) return;
       const size = d.device?.() === "touch" ? 44 : 34; draw(shown, size);
-      el.dataset["icon"] = shown.icon; el.dataset["have"] = String(shown.have); el.setAttribute("aria-label", shown.label); el.title = shown.label;
+      setData(el, "icon", shown.icon); setData(el, "have", String(shown.have)); setAttr(el, "aria-label", shown.label); setAttr(el, "title", shown.label);
       const s = isoToCss(cam, shown.x, shown.y); const lift = 40 * Math.max(0.6, Math.min(2, cam.drawZoom));
-      el.style.transform = `translate(${Math.round(s.x - size / 2)}px,${Math.round(s.y - lift - size)}px)`;
+      const tf = `translate(${Math.round(s.x - size / 2)}px,${Math.round(s.y - lift - size)}px)`; if (tf !== lastTf) { lastTf = tf; el.style.transform = tf; }
     } catch { el.dataset["show"] = "false"; }
   };
   raf = requestAnimationFrame(tick);

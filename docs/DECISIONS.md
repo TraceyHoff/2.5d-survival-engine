@@ -950,3 +950,11 @@ Graphics quality is unchanged.
 - `groundZ` has a one-entry chunk cache that is reset every view frame.
 
 **Result:** Same work (normalised by the unchanged `query` cost), the view render subtree allocated 326 MB before and 208 MB after (-36%). get() plus groundZ allocation went from 169 MB to 53 MB (-69%). Rendering is unchanged.
+
+## ADR-158: HUD DOM writes only when values change
+
+**Context.** Per-frame HUD code (death screen + bag compass, tool hint, XP chip, pickup toasts, world-tools buttons) re-assigned identical hidden/dataset/text/style values every frame: ~12.2 DOM mutations/frame, ~1 layout + 2 style recalcs per frame while walking (headless perf2 hud.mjs, 20 s walk).
+
+**Decision.** `apps/client/src/dom-diff.ts` helpers (setHidden/setData/setText/setAttr/setStyle/setDisabled) compare before writing; the hot writers use them. Behaviour is unchanged (same values, same elements); canvas drawing untouched.
+
+**Result (hud.mjs, 20 s walk).** Mutations 14510/1185 frames (12.2/f) → 362/1739 frames (0.21/f); layouts 1224 → 352, style recalcs 2424 → 367; layout 83 → 28 ms, style 132 → 14 ms. Real-browser/Xbox Edge confirmation of frame-time spikes still needed.

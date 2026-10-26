@@ -6,6 +6,7 @@
  * respawned us yet. After respawn a compass pill points at the newest death bag ("Your bag 23 m") until it is looted.
  * Hooks: `#death-screen[data-ready]`, `#death-respawn`, `#bag-compass[data-dist]`.
  */
+import { setData, setDisabled, setHidden, setStyle, setText } from "./dom-diff.js";
 import { PlayerId, Transform, type Entity, type World } from "@engine/core";
 import { worldToScreen } from "@engine/world";
 import { Dead, PVP, deathBagsOf } from "@engine/gameplay";
@@ -74,10 +75,10 @@ export function mountDeathScreen(root: HTMLElement, o: DeathScreenOptions): Deat
   const pads = (): readonly (Gamepad | null)[] => { try { return o.getGamepads?.() ?? (typeof navigator !== "undefined" && navigator.getGamepads ? navigator.getGamepads() : []); } catch { return []; } };
   function update(): void {
     const s = deathUiState(dead, deadAt, now(), sentAt);
-    el.hidden = !dead; el.dataset["ready"] = s.ready ? "1" : "0";
+    setHidden(el, !dead); setData(el, "ready", s.ready ? "1" : "0");
     const label = s.pending ? "Respawning…" : s.secondsLeft > 0 ? `Respawn in ${s.secondsLeft}` : "Respawn";
     if (label !== lastLabel) { btn.textContent = label; lastLabel = label; }
-    btn.disabled = !s.ready;
+    setDisabled(btn, !s.ready);
     if (s.ready && dead && document.activeElement !== btn) btn.focus();
   }
   function frame(): void {
@@ -98,11 +99,11 @@ export function mountDeathScreen(root: HTMLElement, o: DeathScreenOptions): Deat
     // no bag is there (looted / despawned / nothing dropped), stop.
     if (!seen && deathSpot && t && Math.hypot(t.x - deathSpot.x, t.y - deathSpot.y) < 12 && !dead) deathSpot = undefined;
     const bag = seen ?? deathSpot;
-    if (!t || !bag) { compass.hidden = true; return; }
+    if (!t || !bag) { setHidden(compass, true); return; }
     const b = bagBearing(t, bag); const d = Math.round(b.dist);
-    compass.hidden = d < 2 && !dead; compass.dataset["dist"] = String(d);
-    compass.querySelector(".dist")!.textContent = `${d} m`; compass.querySelector(".lbl")!.textContent = seen ? "Your bag" : "Where you fell";
-    (compass.querySelector(".arrow") as HTMLElement).style.transform = `rotate(${b.angle}rad)`;
+    setHidden(compass, d < 2 && !dead); setData(compass, "dist", String(d));
+    setText(compass.querySelector(".dist")!, `${d} m`); setText(compass.querySelector(".lbl")!, seen ? "Your bag" : "Where you fell");
+    setStyle(compass.querySelector(".arrow") as HTMLElement, "transform", `rotate(${b.angle}rad)`);
   }
   return { frame, get dead() { return dead; }, el, compass, press };
 }

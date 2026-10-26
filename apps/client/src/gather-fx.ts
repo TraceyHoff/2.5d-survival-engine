@@ -14,6 +14,7 @@
  * Pure state machines (NodeHits, ToastStack, CreatureBars) are exported and tested; the DOM layer only draws them.
  * DOM hooks: `#gather-fx` (canvas), `#pickup-toasts > [data-role=toast][data-item]`.
  */
+import { setData, setHidden, setStyle, setText } from "./dom-diff.js";
 import { NetId, PlayerId, Transform, type Entity, type World } from "@engine/core";
 import { Animal, Dead, gameplayDefs, GroupSummary, Health, HitReact, IntentAction, listSlots, Pet, PlayerIntent, Progression, XP, xpToNext, ResourceNode, Survival, Zombie } from "@engine/gameplay";
 import { isoToCss, type CameraLike } from "./world-tools.js";
@@ -223,11 +224,11 @@ export function mountGatherFx(root: HTMLElement, d: GatherFxDeps): { destroy(): 
         parts.push({ x: b.x, y: b.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 0.45 + Math.random() * 0.35, age: 0, color: cs[i % cs.length]!, size: b.kind === "stone" ? 3 : 4, leaf: b.kind !== "stone" && i % 3 === 2, kind: b.kind });
       }
       if (p !== player) { player = p; stack.reset(); lastXp = undefined; }
-      const pr = p !== undefined ? w.get(p, Progression) : undefined; chip.hidden = !pr || d.hidden(); chip.dataset["device"] = d.device?.() ?? "keyboardMouse";
+      const pr = p !== undefined ? w.get(p, Progression) : undefined; setHidden(chip, !pr || d.hidden()); setData(chip, "device", d.device?.() ?? "keyboardMouse");
       if (pr) {
         const cur = { xp: pr.xp, level: pr.level }; const g = xpGain(lastXp, cur);
         if (g >= XP.popup.minShown) stack.addXp(g, now); if (cur.level > (lastXp?.level ?? cur.level)) stack.addXp(cur.level, now, "Level"); lastXp = cur;
-        (chip.firstChild as HTMLElement).textContent = `Lv ${cur.level}`; chip.style.setProperty("--p", `${Math.min(100, (100 * cur.xp) / Math.max(1, xpToNext(cur.level))).toFixed(1)}%`);
+        setText(chip.firstChild as HTMLElement, `Lv ${cur.level}`); setStyle(chip, "--p", `${Math.min(100, (100 * cur.xp) / Math.max(1, xpToNext(cur.level))).toFixed(1)}%`);
       }
       if (p !== undefined && now - lastInv > 100) { lastInv = now; stack.update(inventoryTotals(w, p), now, label); }
       drawToasts(now);
@@ -270,13 +271,13 @@ export function mountGatherFx(root: HTMLElement, d: GatherFxDeps): { destroy(): 
     } catch { /* overlays must never break a frame */ }
   };
   const drawToasts = (now: number): void => {
-    box.dataset["device"] = d.device?.() ?? "keyboardMouse"; box.hidden = d.hidden();
+    setData(box, "device", d.device?.() ?? "keyboardMouse"); setHidden(box, d.hidden());
     const keep = new Set(stack.toasts.map((t) => String(t.id)));
     for (const el of Array.from(box.children) as HTMLElement[]) if (!keep.has(el.dataset["id"] ?? "")) el.remove();
     for (const t of stack.toasts) {
       let el = box.querySelector<HTMLElement>(`[data-id="${t.id}"]`);
       if (!el) { el = document.createElement("div"); el.dataset["role"] = "toast"; el.dataset["id"] = String(t.id); el.dataset["item"] = String(t.item); const ic = document.createElement("span"); ic.className = "ic"; ic.setAttribute("data-icon", t.icon); const tx = document.createElement("span"); el.append(ic, tx); }
-      box.append(el); (el.lastChild as HTMLElement).textContent = toastText(t); el.dataset["fade"] = String(now - t.at > TOAST_MS - 350);
+      box.append(el); setText(el.lastChild as HTMLElement, toastText(t)); setData(el, "fade", String(now - t.at > TOAST_MS - 350));
     }
   };
   raf = requestAnimationFrame(tick);

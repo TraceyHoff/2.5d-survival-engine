@@ -12,6 +12,7 @@
  * `#road-tool[data-surface][data-device]`, `#world-tool-bar [data-tool=road|sign]`, `#road-confirm [data-role=confirm|cancel]`,
  * `#road-preview`, `#road-cursor`.
  */
+import { setAttr, setDisabled, setText } from "./dom-diff.js";
 import { Transform, type Entity, type World } from "@engine/core";
 import { worldToScreen, DEFAULT_ISO } from "@engine/world";
 import {
@@ -194,7 +195,7 @@ export function mountWorldTools(root: HTMLElement, d: WorldToolsDeps): WorldTool
       layer.style.display = hide ? "none" : "";
       { const vis = worldToolBarState({ active: rt.active, nearSign: !hide && nearestSign() !== undefined, hidden: hide }); bar.style.display = vis.bar ? "" : "none"; roadBtn.style.display = vis.road ? "" : "none"; signBtn.style.display = vis.sign ? "" : "none"; }
       const dev = device();
-      roadBtn.setAttribute("aria-pressed", String(rt.active)); roadBtn.textContent = rt.active ? `🛣 ${ROADS.surfaces[rt.surface - 1]!.name.split(" ")[0]}` : "🛣 Road";
+      setAttr(roadBtn, "aria-pressed", String(rt.active)); setText(roadBtn, rt.active ? `🛣 ${ROADS.surfaces[rt.surface - 1]!.name.split(" ")[0]}` : "🛣 Road");
       tool.style.display = rt.active && !hide ? "" : "none";
       if (rt.active) { tool.dataset["surface"] = String(rt.surface); tool.dataset["device"] = dev; tool.textContent = `Road tool: ${ROADS.surfaces[rt.surface - 1]!.name} — ${roadPrompt(dev, { start: !!rt.start, pending: !!rt.pending })}`; }
       confirmBar.style.display = rt.active && rt.pending && !hide && dev !== "gamepad" ? "flex" : "none";
@@ -209,7 +210,7 @@ export function mountWorldTools(root: HTMLElement, d: WorldToolsDeps): WorldTool
       if (rt.active && dev === "gamepad" && ct && cam && !hide) { const c = isoToCss(cam, ct.x + 0.5, ct.y + 0.5); cursorEl.style.display = ""; cursorEl.style.left = `${c.x.toFixed(1)}px`; cursorEl.style.top = `${c.y.toFixed(1)}px`; }
       else cursorEl.style.display = "none";
       if (hide || !w.isRegistered(Sign)) return;
-      const near = nearestSign() !== undefined; signBtn.textContent = near ? "✎ Edit sign" : "🪧 Sign"; signBtn.disabled = !near && signKind() <= 0;
+      const near = nearestSign() !== undefined; setText(signBtn, near ? "✎ Edit sign" : "🪧 Sign"); setDisabled(signBtn, !near && signKind() <= 0);
       const pt = w.get(p!, Transform); if (!pt) return;
       const seen = new Set<Entity>();
       for (const e of w.query([Sign, Transform])) {
