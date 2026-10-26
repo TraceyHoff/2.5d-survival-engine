@@ -1,4 +1,4 @@
-import { UpgradeCmd, RepairCmd, DemolishCmd, ToggleDoorCmd, LockDoorCmd, OpenContainerCmd, CloseContainerCmd, DepositCmd, WithdrawCmd, PET_COMMANDS, PET_ENTITY_FIELDS, PET_REJECT_REASONS, ROAD_COMMANDS, SIGN_COMMANDS, SIGN_ENTITY_FIELDS } from "@engine/gameplay";
+import { GatherCmd, ToggleFireCmd, UpgradeCmd, RepairCmd, DemolishCmd, ToggleDoorCmd, LockDoorCmd, OpenContainerCmd, CloseContainerCmd, DepositCmd, WithdrawCmd, PET_COMMANDS, PET_ENTITY_FIELDS, PET_REJECT_REASONS, ROAD_COMMANDS, SIGN_COMMANDS, SIGN_ENTITY_FIELDS } from "@engine/gameplay";
 /**
  * Browser-safe demo protocol shared by apps/server, the headless bots and apps/client ("@engine/server/protocol").
  * Input bits + movement (identical on server and in client prediction), and the ordered command/event lists.
@@ -29,7 +29,8 @@ export const SOCIAL_COMMAND_NAMES: ReadonlySet<string> = new Set(["gameplay.emot
 /** NetId entity fields of bridged input-queue commands (validated under the server's entityRefs, default "aoi"). */
 export const INPUT_ENTITY_FIELDS: Readonly<Record<string, readonly string[]>> = { [PaintCmd.name]: ["target"], ...VEHICLE_ENTITY_FIELDS, ...VEHICLE_CRAFT_ENTITY_FIELDS, ...SIGN_ENTITY_FIELDS, ...PET_ENTITY_FIELDS,
   /* ADR-146: container panel commands */ [OpenContainerCmd.name]: ["target"], [DepositCmd.name]: ["target"], [WithdrawCmd.name]: ["target"],
-  /* ADR-163 */ [UpgradeCmd.name]: ["target"], [RepairCmd.name]: ["target"], [DemolishCmd.name]: ["target"], [ToggleDoorCmd.name]: ["target"], [LockDoorCmd.name]: ["target"] };
+  /* ADR-163 */ [UpgradeCmd.name]: ["target"], [RepairCmd.name]: ["target"], [DemolishCmd.name]: ["target"], [ToggleDoorCmd.name]: ["target"], [LockDoorCmd.name]: ["target"],
+  /* ADR-165 */ [GatherCmd.name]: ["target"], [ToggleFireCmd.name]: ["target"] };
 /** Vehicle wire rates (ADR-102): seat/hitch/station 4/s burst 8; deploy/refuel/repair 2/s burst 4. Dispatch: handlers.enqueue only (not INPUT_QUEUE). */
 export const VEHICLE_NET_RATES: Readonly<Record<string, { perSec: number; burst: number }>> = Object.fromEntries([
   ...VEHICLE_COMMANDS.map((d) => [d.name, { perSec: 4, burst: 8 }] as const),
@@ -53,7 +54,7 @@ const mirror = (d: CommandDef) => {
   const perSec = ECONOMY_COMMAND_RATES[d.name] ?? VEHICLE_COMMAND_RATES[d.name] ?? COMMAND_RATES[d.name] ?? 2;
   return defineCommand(d.name, d.schema, { entityFields: [...(ECONOMY_ENTITY_FIELDS[d.name] ?? PARTY_ENTITY_FIELDS[d.name] ?? CLAN_ENTITY_FIELDS[d.name] ?? INPUT_ENTITY_FIELDS[d.name] ?? VEHICLE_ENTITY_FIELDS[d.name] ?? [])], rate: { perSec, burst: Math.max(2, Math.ceil(perSec * 2)) } });
 };
-export const GAMEPLAY_NET_COMMANDS = [...ECONOMY_COMMANDS, ...CUSTOMIZATION_COMMANDS, ...PVP_COMMANDS, ...CRAFT_QUEUE_COMMANDS, /* appended */ UseCmd, PlaceCmd, EmoteCmd, ...PARTY_COMMANDS, ...CLAN_COMMANDS, PaintCmd, ClanDeclineCmd, ReloadCmd, WearCmd, ...VEHICLE_COMMANDS, ...VEHICLE_CRAFT_COMMANDS, DeleteMyProgressCmd, ...SKILL_COMMANDS, ...ROAD_COMMANDS, ...SIGN_COMMANDS, /* QA2: inventory main-hand equip (was hotbar-only; menu taps threw) */ EquipCmd, /* ADR-145 */ ...PET_COMMANDS, /* ADR-146: panel container open/close/deposit/withdraw (input-queue; were frame-only, so panel taps silently failed) */ OpenContainerCmd, CloseContainerCmd, DepositCmd, WithdrawCmd, /* ADR-163: build-mode piece actions (were frame-only, so Repair / Upgrade / Demolish and door taps failed to send) */ UpgradeCmd, RepairCmd, DemolishCmd, ToggleDoorCmd, LockDoorCmd].map((d) => ({ core: d as CommandDef, net: mirror(d) }));
+export const GAMEPLAY_NET_COMMANDS = [...ECONOMY_COMMANDS, ...CUSTOMIZATION_COMMANDS, ...PVP_COMMANDS, ...CRAFT_QUEUE_COMMANDS, /* appended */ UseCmd, PlaceCmd, EmoteCmd, ...PARTY_COMMANDS, ...CLAN_COMMANDS, PaintCmd, ClanDeclineCmd, ReloadCmd, WearCmd, ...VEHICLE_COMMANDS, ...VEHICLE_CRAFT_COMMANDS, DeleteMyProgressCmd, ...SKILL_COMMANDS, ...ROAD_COMMANDS, ...SIGN_COMMANDS, /* QA2: inventory main-hand equip (was hotbar-only; menu taps threw) */ EquipCmd, /* ADR-145 */ ...PET_COMMANDS, /* ADR-146: panel container open/close/deposit/withdraw (input-queue; were frame-only, so panel taps silently failed) */ OpenContainerCmd, CloseContainerCmd, DepositCmd, WithdrawCmd, /* ADR-163: build-mode piece actions (were frame-only, so Repair / Upgrade / Demolish and door taps failed to send) */ UpgradeCmd, RepairCmd, DemolishCmd, ToggleDoorCmd, LockDoorCmd, /* ADR-165: touch Harvest prompt + campfire Light/Put out (were frame-only; taps silently failed) */ GatherCmd, ToggleFireCmd].map((d) => ({ core: d as CommandDef, net: mirror(d) }));
 /** Net command for a gameplay core CommandDef (clients: `client.sendCommand(gameplayNet(BuyFromStallCmd), {...})`). */
 export function gameplayNet<D extends CommandDef>(d: D): ReturnType<typeof defineCommand<D["schema"]>> {
   const m = GAMEPLAY_NET_COMMANDS.find((x) => x.core === d); if (!m) throw new Error(`not a bridged gameplay command: ${d.name}`);

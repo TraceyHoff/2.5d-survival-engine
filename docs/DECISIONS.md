@@ -1029,3 +1029,9 @@ checked visually).
 **Context.** The ADR-161 overlay projected labels through `iso.renderer.camera`. When WebGL2 or the art fails, or with `?renderer=debug`, the client draws the Canvas2D debug view, `iso` is undefined, and no labels showed. `?renderer=debug` also threw `Cannot access 'debugCanvas' before initialization`, because `fallback()` runs synchronously before the `let` line, which left the page without a game loop or `__qa`.
 
 **Decision.** `debugCamera(cam, cssW, cssH, dpr)` in `loot-labels.ts` builds a `CameraLike` for the fallback (zoom 1, centred on `worldToScreen(player)`, lifted `tileH / 2 - 12` so it lines up with the fallback's entity dots). `mountLootLabels` uses it whenever `iso` is missing and the fallback context exists. `debugCanvas` is now declared before the renderer boot. A unit test checks that a label sits right over the fallback's bag dot. Browser check: `/workspace/shots/loot_canvas2d_dropped_label.png`.
+
+## ADR-165: Gather and ToggleFire are bridged net commands
+
+**Context.** An audit of every command the client sends through `sendIntent` (panel intents in `packages/gameplay/src/ui` and `sendIntent({ cmd })` in `apps/client`) against `GAMEPLAY_NET_COMMANDS` found two that were never bridged: `GatherCmd` (the touch **Harvest** farm prompt tap) and `ToggleFireCmd` (the campfire panel's **Light / Put out** button). `gameplayNet()` threw, `sendIntent` swallowed it, and the tap did nothing in networked play (including the offline sandbox's local server). Keyboard and gamepad gathering still worked because they use the input bits.
+
+**Decision.** Append both to the end of `GAMEPLAY_NET_COMMANDS` so existing ids stay the same, and map `target` as an entity field. `apps/server/test/adr165_sent_commands_bridged.test.ts` scans the client and UI sources for every `intent(XCmd` / `cmd: XCmd` and fails if any of them is not bridged, so a new panel button cannot fail silently in the same way again.
