@@ -1035,3 +1035,10 @@ checked visually).
 **Context.** An audit of every command the client sends through `sendIntent` (panel intents in `packages/gameplay/src/ui` and `sendIntent({ cmd })` in `apps/client`) against `GAMEPLAY_NET_COMMANDS` found two that were never bridged: `GatherCmd` (the touch **Harvest** farm prompt tap) and `ToggleFireCmd` (the campfire panel's **Light / Put out** button). `gameplayNet()` threw, `sendIntent` swallowed it, and the tap did nothing in networked play (including the offline sandbox's local server). Keyboard and gamepad gathering still worked because they use the input bits.
 
 **Decision.** Append both to the end of `GAMEPLAY_NET_COMMANDS` so existing ids stay the same, and map `target` as an entity field. `apps/server/test/adr165_sent_commands_bridged.test.ts` scans the client and UI sources for every `intent(XCmd` / `cmd: XCmd` and fails if any of them is not bridged, so a new panel button cannot fail silently in the same way again.
+
+## ADR-166: draw loot bags (death bags, zombie/animal loot, dropped items, supply crates)
+- Bug (live): bags looked like they vanished after dying. They were never drawn. `view.ts` classify had no LootBag
+  branch, so a bag showed only its ADR-161 label. Before respawn, the corpse standing on the bag hid that.
+- Fix: every `LootBag` entity draws the pack's `death_bag` sprite (`LOOT_BAG_SPRITE`, frame 0, shadow, never an occluder).
+- Test: `adr166_bags_visible_after_respawn` covers die -> respawn -> walk back. It checks the death bag, pre-death loot
+  and post-respawn loot replicate in SP and in 2-client MP. It also checks that the view routes LootBag to a manifest sprite.

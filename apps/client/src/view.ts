@@ -21,7 +21,7 @@ import { countFraction } from "./load-progress.js";
 import { roadSpriteKeys, ROAD_FLAGS, signFrameId } from "./road-sign-view.js";
 import { Road, Sign, surfaceDef, signDef, walkAnimRate, petSits } from "@engine/gameplay";
 import { HitReact, NodeRegrow, hitDirRad, Equipment, Worn, wornCosmetics } from "@engine/gameplay";
-import { gameplayDefs, rotationSteps, animalDefs, Animal, Health, Survival, Zombie, ResourceNode, CraftingStation, Fuel, AnimState as GAnim, BuildPiece as GPiece, Dead, Wetness, BodyTemp, Emitter, PieceLink, Crop, cropSpriteKey, clutterForChunk, resolveSprite, type ResolvedSprite } from "@engine/gameplay";
+import { gameplayDefs, rotationSteps, animalDefs, LootBag, Animal, Health, Survival, Zombie, ResourceNode, CraftingStation, Fuel, AnimState as GAnim, BuildPiece as GPiece, Dead, Wetness, BodyTemp, Emitter, PieceLink, Crop, cropSpriteKey, clutterForChunk, resolveSprite, type ResolvedSprite } from "@engine/gameplay";
 
 /** Render-side schemas the renderer's bindings expect (view World only). */
 const VAnim = defineComponent("ViewAnimState", { state: "u8", startTick: "u32" });
@@ -497,6 +497,10 @@ export class IsoView {
       const s = this.sid(key) ?? this.sid("zombie_walker");
       return s === undefined ? undefined : { sprite: s, animated: true, shadow: 1, frame: z.variant };
     }
+    if (net.has(e, LootBag)) { // ADR-166: death bags / zombie+animal loot / supply crates were never given a sprite (label only)
+      const r = this.rs(LOOT_BAG_SPRITE); if (!r) return undefined;
+      return { sprite: r.id, frame: 0, shadow: 0.6, noOcclude: true, flags: h & 1 ? SpriteFlag.FlipX : 0, ...(r.tint ? { tint: r.tint } : {}), ...(r.scale !== 1 ? { scale: r.scale, onCreate: r.scale } : {}) };
+    }
     if (net.has(e, NodeRegrow)) { // ADR-134: depleted tree -> stump (<species>_tree_stump, else tree_stump) until stumpUntilTick; other kinds draw nothing
       const g = net.get(e, NodeRegrow)!; if (g.stumpUntilTick <= net.tick) return undefined;
       const sk = stumpKeys(defs?.resources.get(g.kind)?.spriteKey); const r = this.rs(sk[0]) ?? this.rs(sk[1]); if (!r) return undefined;
@@ -551,6 +555,8 @@ export class IsoView {
 /** gameplay Placement.Tri (4) and the vertex-snapped Free (3) corner walls (ADR-104): drawn at the exact Transform x/y
  *  (centroid / vertex), not the floored tile. Other Free pieces keep the tile-centre pivot. */
 /** ADR-152: low ground props never auto-fade as occluders (their frame is far taller than the art). */
+/** ADR-166: every LootBag entity (death bag, zombie/animal loot, supply crate) draws this pack sprite. */
+export const LOOT_BAG_SPRITE = "death_bag";
 export const LOW_PROP_PIECES: ReadonlySet<string> = new Set(["campfire"]);
 const exactPivot = (def: { placement?: number; key?: string } | undefined): boolean => def?.placement === 4 || (def?.placement === 3 && !!def.key?.startsWith("wall_corner"));
 /** rot/rotSteps for buildPieceVisual: triangles (12 steps of 30°) map exactly onto an art row (pieceArtRow), no quarter-turn snap. */
