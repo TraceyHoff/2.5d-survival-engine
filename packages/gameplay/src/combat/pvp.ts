@@ -17,6 +17,7 @@ import { gameplayDefs, isAuthority } from "../config.js";
 import { secondsToTicks } from "../defs.js";
 import { emit, ev } from "../events.js";
 import { listSlots, moveSlotTuples } from "../inventory.js";
+import { LootSource, tagLootSource } from "../loot_labels.js";
 import { indexEntity } from "../spawn.js";
 import { pickSpawnPoint, respawnLocation } from "../spawn_points.js";
 
@@ -68,7 +69,7 @@ export function dropDeathBag(world: World, e: Entity): Entity | undefined {
   const t = world.get(e, Transform)!; const bag = world.create(); const ownerId = (hasPlayerId(world, e) ? world.getField(e, PlayerId, "id") : undefined) ?? 0;
   world.add(bag, Transform, { x: t.x, y: t.y, z: t.z }).add(bag, Container, { slotCount: Math.max(PVP.bagSlots, moves.length) }).add(bag, ContainerViewers)
     .add(bag, LootBag, { owner: ownerId, despawnAtTick: world.tick + secondsToTicks(PVP.bagDespawnSeconds, DT) });
-  moveSlotTuples(world, e, bag, moves); indexEntity(world, bag);
+  moveSlotTuples(world, e, bag, moves); tagLootSource(world, bag, LootSource.Death); indexEntity(world, bag);
   emit(world, DeathBagDropped, { bag, owner: e, ownerId, stacks: moves.length }); return bag;
 }
 /** Loot gate (container open / withdraw): owner-only window after the drop. */

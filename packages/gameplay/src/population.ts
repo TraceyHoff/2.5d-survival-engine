@@ -4,6 +4,7 @@
  * (walkable tiles, no structures, no land claims / safe zones). Authority only. Human bots are spawned through
  * a host callback (virtual players join through the normal client path; see agents.ts / docs/AI_AGENTS.md).
  */
+import { LootSource, tagLootSource } from "./loot_labels.js";
 import { Pet } from "./components.js";
 import { DEFAULT_TICK_HZ, Permissions, Transform, defineResource, type Entity, type World } from "@engine/core";
 import { PopulationSpawner, type BuildingGrid, type ChunkKey, type PhaseKey, type PopulationHost, type SpawnEntry, type PopulationViewpoint } from "@engine/world";
@@ -58,7 +59,7 @@ export function dropAnimalLoot(world: World, e: Entity): Entity | undefined {
   world.add(bag, Transform, { x: t.x, y: t.y, z: t.z }).add(bag, Container, { slotCount: Math.max(4, rolled.length) }).add(bag, ContainerViewers)
     .add(bag, LootBag, { owner: 0, despawnAtTick: world.tick + LOOT_BAG_SECONDS * DEFAULT_TICK_HZ });
   for (const r of rolled) addItem(world, bag, r.item, r.n);
-  indexEntity(world, bag); return bag;
+  tagLootSource(world, bag, LootSource.Animal); indexEntity(world, bag); return bag;
 }
 
 /** ADR-160: roll a dead zombie's ai.json archetype loot (the zombie def key) into an ownerless, hand-lootable LootBag. */
@@ -74,7 +75,7 @@ export function dropZombieLoot(world: World, e: Entity): Entity | undefined {
   world.add(bag, Transform, { x: t.x, y: t.y, z: t.z }).add(bag, Container, { slotCount: Math.max(4, rolled.length) }).add(bag, ContainerViewers)
     .add(bag, LootBag, { owner: 0, despawnAtTick: world.tick + LOOT_BAG_SECONDS * DEFAULT_TICK_HZ });
   for (const r of rolled) addItem(world, bag, r.item, r.n);
-  indexEntity(world, bag); return bag;
+  tagLootSource(world, bag, LootSource.Zombie); indexEntity(world, bag); return bag;
 }
 
 /** Tile lookup used by population when the world has no TerrainRes (the server reads ChunkManager directly). */

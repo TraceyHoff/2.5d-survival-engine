@@ -45,6 +45,7 @@ export * from "./combat/defenses.js";
 export * from "./systems/lights.js";
 export * from "./vehicle_keys.js";
 export * from "./combat/pvp.js";
+export * from "./loot_labels.js";
 export * from "./spawn_points.js";
 export * from "./respawn.js";
 export * from "./combat/arms.js";

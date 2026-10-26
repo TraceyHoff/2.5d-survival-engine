@@ -8,6 +8,7 @@
  * death), follow / stay movement, defence (owner / stay point / owner's structures + other pets) and item pickup.
  * Pet + Tamed + Container are persistent; Health is rebuilt from Pet.hp + level after a load.
  */
+import { LootSource, tagLootSource } from "./loot_labels.js";
 import { defineCommand, DEFAULT_TICK_HZ, entityIndex, PlayerId, Transform, type CommandDef, type CommandHandlers, type Entity, type World } from "@engine/core";
 import { installSpatialIndex } from "@engine/world";
 import raw from "../data/pets.json";
@@ -154,7 +155,7 @@ export function dropItem(world: World, e: Entity, item: number, count: number): 
   const bag = world.create(); const ang = t.facing ?? 0;
   world.add(bag, Transform, { x: t.x + Math.cos(ang) * 0.6, y: t.y + Math.sin(ang) * 0.6, z: t.z }).add(bag, Container, { slotCount: 4 }).add(bag, ContainerViewers)
     .add(bag, LootBag, { owner: pidOf(world, e), despawnAtTick: world.tick + sec(PVP.bagDespawnSeconds) });
-  transferItem(world, e, bag, item, n); indexEntity(world, bag); return bag;
+  transferItem(world, e, bag, item, n); tagLootSource(world, bag, LootSource.Dropped); indexEntity(world, bag); return bag;
 }
 // ---- commands -----------------------------------------------------------------------------------------
 export const PetOfferCmd = defineCommand("gameplay.petOffer", { target: "u32", item: "u16" });
@@ -301,7 +302,7 @@ export function petSystem(world: World, dt: number): void {
     const t = world.get(e, Transform)!; const bag = world.create();
     world.add(bag, Transform, { x: t.x + 0.3, y: t.y, z: t.z }).add(bag, Container, { slotCount: Math.max(4, moves.length) }).add(bag, ContainerViewers)
       .add(bag, LootBag, { owner: petOwnerId(world, e), despawnAtTick: now + sec(PVP.bagDespawnSeconds) });
-    moveSlotTuples(world, e, bag, moves); indexEntity(world, bag);
+    moveSlotTuples(world, e, bag, moves); tagLootSource(world, bag, LootSource.Animal); indexEntity(world, bag);
   }
   for (const e of [...world.query([Pet, Transform], [Dead])].sort((a, b) => a - b)) {
     const p = world.get(e, Pet)!; const st = petStats(p.species, p.level);

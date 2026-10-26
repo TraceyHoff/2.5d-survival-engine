@@ -1,4 +1,5 @@
 import { markNavFocus } from "./back-history.js";
+import { mountLootLabels } from "./loot-labels.js";
 import { lastPlayedKey } from "./delete-progress.js";
 import { CHAT_TAG, chatLine, chatSender } from "./chat-line.js";
 import { intentPayload } from "./send-intent.js";
@@ -511,6 +512,9 @@ worldTools = mountWorldTools(root, { world: () => world, player: () => session.p
 // ADR-128: node health bars + hit particles + "+3 Wood" pickup toasts
 mountGatherFx(root, { world: () => world, player: () => session.player, camera: () => iso?.renderer.camera, hidden: () => !!menus?.nav.isOpen || buildMode.active, device: promptDevice,
   icon: (item, key) => panelIcon(world, key, String(item)) });
+// ADR-161: floating loot-bag / dropped-item labels with the Interact prompt
+mountLootLabels(root, { world: () => world, player: () => session.player, camera: () => iso?.renderer.camera, hidden: () => !!menus?.nav.isOpen || buildMode.active,
+  device: promptDevice, key: () => controlLabel(input.bindings(promptDevice(), "Gameplay").find((b) => b.binding.action === "Interact")?.binding.control) });
 // ADR-126: tool-needed symbol over the nearest resource node (Settings toggle, live)
 mountToolHint(root, { world: () => world, player: () => session.player, camera: () => iso?.renderer.camera, hidden: () => !!menus?.nav.isOpen || buildMode.active,
   enabled: () => loadSettings().toolHints !== false, device: promptDevice,

@@ -161,6 +161,10 @@ export const CombatTag = defineComponent("CombatTag", { untilTick: "u32" }, { ne
 /** Death loot container marker (player corpse / bag): owner PlayerId, despawn tick. Contents in Container. */
 export const LootBag = defineComponent("LootBag", { owner: "u32", despawnAtTick: "u32" }, { networked: true, persistent: true });
 /** Written by net on the server (per-connection RTT) for range slack. */
+/** ADR-161 world-label summary of a LootBag (everyone sees it; Container itself is viewers-only). Server recomputes
+ *  ~every 10 ticks: top item + its total count, number of non-empty stacks, and a LootSource tag. */
+export const LootSummary = defineComponent("LootSummary", { item: "u16", count: "u16", stacks: "u8", source: "u8" }, { networked: true });
+/** Written by net on the server (per-connection RTT) for range slack. */
 export const Latency = defineComponent("Latency", { rttMs: "u16" });
 
 // ---- economy (trade stalls) ----------------------------------------------------------------------
@@ -337,4 +341,5 @@ export const GAMEPLAY_COMPONENTS = [
   HitReact, NodeRegrow, // append-only (ADR-134)
   PartyRank, // append-only (ADR-141)
   Pet, TroughOwner, PetBrain, // append-only (ADR-145)
+  LootSummary, // ADR-161
 ] as const;

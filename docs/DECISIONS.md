@@ -979,3 +979,27 @@ Graphics quality is unchanged.
 - **Gates:** no tool or equip check. The existing gates still apply: canLootBag's owner-only window and container reach.
 
 **Result.** Zombie, animal, player and bot death bags, dropped stacks and sandbox crates all open and empty by hand (adr160_hand_loot.test.ts).
+
+## ADR-161: world labels for loot bags and dropped items
+
+**Context.** Players could not tell a dropped stack, a zombie bag or a death bag from scenery. Bag contents (Container)
+replicate only to viewers, so clients cannot name a bag they have not opened.
+
+**Decision.**
+- New networked component `LootSummary {item:u16, count:u16, stacks:u8, source:u8}` (appended last to
+  GAMEPLAY_COMPONENTS, replicated to "all"). `source` is a LootSource tag (Zombie, Animal, Death, Dropped, Crate)
+  set at creation via `tagLootSource` (zombie / animal / death / pet bags, dropItem, thrown weapons); untagged bags are
+  inferred (permanent ownerless = Crate). Postsim `gameplay.lootSummary` (every 10 ticks) recomputes top item / count /
+  stacks and writes only on change.
+- Text (`lootLabelText`): one stack = "Wood ×4"; Zombie loot; Death bag / "Your bag" for the local owner; Supply crate;
+  otherwise "<top item> +N more" or "Loot".
+- Client `loot-labels.ts`: one pointer-events:none 2D overlay canvas (no per-label DOM, no layout; idle frames do no
+  canvas work, per ADR-158). Labels within 12 tiles, nearest first, merged when closer than 46 css px ("(+2 bags)"),
+  at most 14. Each bag gets a soft pulsing gold ground glow. The nearest bag inside containerReach shows the
+  Interact prompt for the active device ("[E] Open", the gamepad binding label, or "Tap ✋ to open"). Labels are 13 px or
+  larger so they stay readable at 1080p, and they hide while a menu is open or build mode is on.
+
+**Result.** Tests cover the summary and source tagging, inference and refresh, the label text, merge and cap, the
+client range filter and "Your bag", and the device prompts. Not done: owner names for other players' bags (player
+names do not replicate) and labels for bags on upper floors (they use the bag's z, so they work but have not been
+checked visually).
