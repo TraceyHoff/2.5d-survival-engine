@@ -74,6 +74,8 @@ export function groundZ(tiles: TileMap | undefined, x: number, y: number, z: num
   if (!tiles) return z; const tx = Math.floor(x), ty = Math.floor(y); const c = tiles.getChunk(tileToChunk(tx), tileToChunk(ty));
   return c ? Math.max(z, c.height[tileToLocal(ty) * CHUNK_SIZE + tileToLocal(tx)] ?? 0) : z;
 }
+/** ADR-155 camera z easing: time constant (s) and the jump (world z) beyond which it snaps (teleport / respawn). */
+export const CAM_Z_TAU = 0.15, CAM_Z_SNAP = 4;
 export const CAMERA_FALLBACK = { x: 16, y: 16, z: 0 };
 const CAMERA_GRACE_FRAMES = 300;
 export interface ViewStatus { localServer: string; snapshots: number; error?: string }
@@ -340,6 +342,11 @@ export class IsoView {
     if (pv !== undefined) { const t = v.get(pv, Transform)!, p = v.get(pv, PrevTransform) ?? t; want = { x: p.x + (t.x - p.x) * alpha, y: p.y + (t.y - p.y) * alpha, z: p.z + (t.z - p.z) * alpha }; }
     const st = this.status;
     const why = player === undefined ? `no player entity (entities ${this.map.size}, local server ${st?.localServer ?? "?"}, snapshots ${st?.snapshots ?? 0}${st?.error ? `: ${st.error}` : ""})` : "player not mirrored into the view";
+    // ADR-155: the target z is lifted onto stepped tile heights, so a step jerked the whole screen for 2-3 frames
+    // (camera speed 3.8x). Ease only the camera's z (tau CAM_Z_TAU s); x/y stay exact, sprites stay on their steps.
+    if (want) { const now = performance.now(), dt = this.camZAt ? Math.min(0.25, (now - this.camZAt) / 1000) : 0; this.camZAt = now;
+      if (this.camZ === undefined || Math.abs(want.z - this.camZ) > CAM_Z_SNAP) this.camZ = want.z; else this.camZ += (want.z - this.camZ) * (1 - Math.exp(-dt / CAM_Z_TAU));
+      want.z = this.camZ; }
     const hadErr = this.camGuard.error; const tgt = this.camGuard.resolve(want, camE !== player ? "follow" : "player", why);
     if (this.camGuard.error && !hadErr) console.warn(`[render] ${this.camGuard.error}`);
     r.camera.lookAt(tgt.x, tgt.y, tgt.z);
@@ -353,6 +360,7 @@ export class IsoView {
     if (bc.pending) { const black = bc.poll(); if (black === true) { if (++this.blackFrames >= 2) showRenderError("World rendered black", glInfo(r.gl)); } else if (black === false) this.blackFrames = 0; }
     else if (r.heldFrames === held0 && this.checks < 90 && ++this.checks % 30 === 0 && daylightOf(r) > 0.5) bc.start(); // held (settling) frames draw nothing: not a black frame
   }
+  private camZ: number | undefined; private camZAt = 0;
   private checks = 0; private blackFrames = 0; private blackCheck: BlackFrameCheck | undefined;
   /** View entity currently given to setFocusEntity; cleared when destroyed so a recycled id (a remote player) never inherits the focus silhouette. */
   private focusVe = -1;

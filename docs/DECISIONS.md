@@ -921,3 +921,11 @@ They showed that streaming sheet page-ins (creatures and wearables) drove two pe
 Graphics quality is unchanged.
 
 **Consequences.** Frame-time effect on real GPUs still has to be confirmed on hardware. SwiftShader moves GPU cost into whichever call syncs first, so its fps is not representative.
+
+## ADR-155: Camera z eases across terrain height steps
+
+**Context:** On PC and console, walking felt choppy. Profiling at 320x180 while holding a direction showed the camera moving at a steady 87 px/s, with bursts of about 330 px/s (3.8x) lasting 2–3 frames every ~10 frames. Prediction corrections and snaps were both 0. Those bursts lined up with the camera target's z jumping by a full terrain step: `groundZ` lifts an entity onto stepped tile heights, and `camera.lookAt` projects z onto screen y. So every tile-height boundary jerked the whole screen.
+
+**Decision:** The view eases only the camera target's z with an exponential filter (`CAM_Z_TAU` = 0.15 s). It snaps when the jump is larger than `CAM_Z_SNAP` = 4 (a teleport or respawn). The camera's x/y stays exact, and sprites still stand on their own steps.
+
+**Result:** Same 10 s walk: camera speed coefficient of variation went from 0.54 to 0.095, and the peak went from 332 to ≤157 px/s. Graphics and movement speeds are unchanged.
