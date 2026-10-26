@@ -1,7 +1,7 @@
 /**
  * Gameplay camera zoom (ADR-100). The default view shows ~30% more world area than the old fixed zoom 1.6
  * (1.6 / sqrt(1.3) ≈ 1.4) at 1920x1080; ADR-175 scales it with the viewport so phones see the same world, and the
- * player's own zoom multiplier (mouse wheel, two-finger pinch, +/- keys) is clamped and persisted in "engine-settings".
+ * player's own zoom multiplier (mouse wheel, two-finger pinch, +/- keys, gamepad hold RB + D-pad ↑/↓ — ADR-177) is clamped and persisted in "engine-settings".
  */
 export const LEGACY_ZOOM = 1.6;
 export const AREA_GAIN = 1.3;
@@ -35,7 +35,13 @@ export function saveUserZoom(z: number, st: KV = localStorage): void {
   try { const cur = JSON.parse(st.getItem(KEY) ?? "{}") as Record<string, unknown>; st.setItem(KEY, JSON.stringify({ ...cur, zoom: Math.round(clampUserZoom(z) * 100) / 100 })); } catch { /* private mode */ }
 }
 
-export interface ZoomControl { readonly user: number; zoom(): number; setUser(z: number): void; apply(): void; dispose(): void }
+/** ADR-177: gamepad zoom speed (log-space per second) — the full 0.75..1.6 range takes ~0.85 s of holding RB + D-pad. */
+export const PAD_ZOOM_RATE = 0.9;
+/** ADR-177: one frame of continuous gamepad zoom. `axis` is the Camera.Zoom value (+1 = RB+D-pad ↑ = zoom in). */
+export const padZoomStep = (user: number, axis: number, dtMs: number): number =>
+  clampUserZoom(user * Math.exp(Math.max(-1, Math.min(1, axis || 0)) * PAD_ZOOM_RATE * Math.max(0, Math.min(250, dtMs || 0)) / 1000));
+
+export interface ZoomControl { readonly user: number; zoom(): number; setUser(z: number): void; apply(): void; /** ADR-177 held-stick/D-pad zoom. */ nudge(axis: number, dtMs: number): void; dispose(): void }
 /** Drives `camera.zoom` = defaultZoom(viewport) × user multiplier, with wheel / pinch / +- input on `el`. */
 export function attachZoom(camera: { zoom: number }, el: HTMLElement, opts: { storage?: KV; viewport?: () => { w: number; h: number }; enabled?: () => boolean } = {}): ZoomControl {
   const vp = opts.viewport ?? (() => ({ w: innerWidth, h: innerHeight }));
@@ -57,6 +63,7 @@ export function attachZoom(camera: { zoom: number }, el: HTMLElement, opts: { st
   el.addEventListener("wheel", wheel, { passive: false });
   el.addEventListener("pointerdown", down); addEventListener("pointermove", move); addEventListener("pointerup", up); addEventListener("pointercancel", up);
   addEventListener("keydown", key); addEventListener("resize", apply); apply();
-  return { get user() { return user; }, zoom, setUser, apply,
+  const nudge = (axis: number, dtMs: number): void => { if (!on() || !axis) return; const n = padZoomStep(user, axis, dtMs); if (n !== user) setUser(n); };
+  return { get user() { return user; }, zoom, setUser, apply, nudge,
     dispose: () => { el.removeEventListener("wheel", wheel); el.removeEventListener("pointerdown", down); removeEventListener("pointermove", move); removeEventListener("pointerup", up); removeEventListener("pointercancel", up); removeEventListener("keydown", key); removeEventListener("resize", apply); clearTimeout(saveT); } };
 }

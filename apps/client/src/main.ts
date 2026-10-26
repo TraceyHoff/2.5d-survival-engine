@@ -5,7 +5,8 @@ import { lastPlayedKey } from "./delete-progress.js";
 import { CHAT_TAG, chatLine, chatSender } from "./chat-line.js";
 import { intentPayload } from "./send-intent.js";
 import { LoadProgress } from "./load-progress.js";
-import { attachZoom } from "./camera-zoom.js";
+import { attachZoom, type ZoomControl } from "./camera-zoom.js";
+let camZoom: ZoomControl | undefined; let padZoomT = 0; // ADR-177
 import { mountUi } from "./ui-root.js";
 import { showRenderError } from "./glcheck.js";
 import { startDiag } from "./diag.js";
@@ -82,7 +83,7 @@ const isoReady: Promise<void> = wantIso ? (async () => {
   const v = await IsoView.create(canvas, import.meta.env.BASE_URL, { ...(num("time") !== undefined ? { hours: num("time")! } : {}), ...(wi >= 0 ? { weather: wi, intensity: num("intensity") ?? 1 } : {}) }, onStage);
   const onResize = (): void => v.resize(innerWidth, innerHeight, devicePixelRatio || 1); addEventListener("resize", onResize); onResize();
   attachContextRecovery(canvas, { notify: showRenderError });
-  attachZoom(v.renderer.camera, canvas, { enabled: () => !document.querySelector("[data-boot=menu]") });
+  camZoom = attachZoom(v.renderer.camera, canvas, { enabled: () => !document.querySelector("[data-boot=menu]") });
   iso = v; (window as { __view?: unknown }).__view = { ready: true, renderer: "iso", iso: v };
 })().catch((e: unknown) => {
   // keep the sprite renderer: retry once at safe quality (still full art) before the Canvas2D debug view
@@ -248,6 +249,7 @@ function onUiFrame(): void {
   if (buildMode.active) { worldTools?.road(0); buildMode.update(); buildHud.update(); return; }
   buildHud.update();
   worldTools?.update(); if (worldTools?.tool.active) return; // ADR-122: the Road context owns A/B/X/Y/RS while laying
+  { const t = performance.now(), dt = padZoomT ? t - padZoomT : 0; padZoomT = t; if (promptDevice() === "gamepad") camZoom?.nudge(input.axis("Camera.Zoom"), dt); } // ADR-177: hold RB + D-pad ↑/↓
   if (input.pressed("ToggleBuild") && promptDevice() === "gamepad") { menus?.open("build"); return; } // ADR-136: pad LB+Y (KBM B is a UINav hotkey)
   { const id = padMenuAction(input); if (id) { menus?.open(id); return; } } // ADR-139: pad-only bindings: Select = inventory, LB+Select = crafting, RB+Select = chat
   if (input.pressed("QuickUse") && farm) { const p = session.player; if (p !== undefined && quickUseFires(safeFarmPrompt(p))) farm.trigger(); }
