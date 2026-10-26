@@ -12,7 +12,7 @@ import { clanMemberActions } from "./clan-actions.js";
 import "./gameplay-panels.css";
 import { iconForItem,
   buildView, gameplayDefs, cancelQueuedCraftIntent, clanAcceptIntent, clanDeclineIntent, clanRosterRows, onlineTargets, paintIntent, paintTarget, type SocialDirectory, clanCreateIntent, clanDemoteIntent, clanDisbandIntent, clanInviteIntent, clanKickIntent, clanLeaveIntent,
-  clanPromoteIntent, clanSetGoalIntent, clanSetRankPermsIntent, clanView, collectTillIntent, containerView, CONTAINER_PAGE_SIZE, craftingView, depositIntent, fuelView, toggleFireIntent, openContainer, withdrawIntent, equipCosmeticIntent, inventoryView, JOB_STATE_LABEL,
+  clanPromoteIntent, takeAllIntent, LootBag, clanSetGoalIntent, clanSetRankPermsIntent, clanView, collectTillIntent, containerView, CONTAINER_PAGE_SIZE, craftingView, depositIntent, fuelView, toggleFireIntent, openContainer, withdrawIntent, equipCosmeticIntent, inventoryView, JOB_STATE_LABEL,
   nearestStall, partyAcceptIntent, partyDeclineIntent, partyInviteIntent, partyKickIntent, partyLeaveIntent, partyView, queueCraftIntent, buyFromStallIntent,
   setAppearanceIntent, setStallNameIntent, priceItemChoices, listItemIntents, unstockStallIntent, type StallListDraft, setStallOpenIntent, stallView, togglePermMask, wardrobeView, placeIntent,
   type BuildSelection, type MenuCtx, type MenuIntent, camperStationView, vehicleRefuelIntent, type CamperRecipeView,
@@ -195,6 +195,8 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
         // ADR-098: paged container grid (CONTAINER_PAGE_SIZE per page). Every slot is a focusable button so the D-pad /
         // arrows walk the grid; ◀ ▶ (touch), PgUp/PgDn (keyboard) and LB/RB (gamepad) change pages. Keys are slot-stable,
         // so the morph refresh only patches the slots that changed.
+        // ADR-160: loot bags (zombie / animal / death / dropped) get a "Take all" first (focusable: click, tap, D-pad + A)
+        if (c.world.isRegistered(LootBag) && c.world.has(cv.entity, LootBag) && cv.slots.some((x) => x.item)) out.push(btn("Take all", "take-all", () => send(takeAllIntent(cv.entity), "Took everything that fits."), { role: "use", title: "Move every stack into your pack" }));
         out.push(heading(`Storage · ${cv.slotCount} slots · ${Math.round(cv.weight)}/${Math.round(cv.maxWeight)} kg`));
         const g = grid(); g.dataset["role"] = "container-grid"; g.dataset["page"] = String(cv.page);
         for (const s of cv.slots) g.append(s.item

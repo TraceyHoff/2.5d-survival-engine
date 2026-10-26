@@ -160,6 +160,8 @@ export class GameMenus {
     if (this.nav.top === "camper") { this.o.root.querySelector<HTMLElement>("[data-panel=camper-station]")?.setAttribute("data-key", String(vehicle)); this.refresh(); } else this.nav.open("camper", this.build("camper"));
   }
   camperTarget: number | undefined;
+  /** ADR-160: open a loot bag by hand (Interact / click): ask the server to open it and show it in the inventory panel. */
+  openLoot(bag: number): void { this.o.gameplay?.send(openContainerIntent(bag as never)); if (this.nav.top === "inventory") this.refresh(); else this.open("inventory"); }
   /** ADR-136: open a station's crafting panel (Interact near a workbench, forge, campfire …). */
   openStation(entity: number, kind: number): void {
     this.stationTarget = { entity, kind }; if (kind === 1 || kind === 3) this.o.gameplay?.send(openContainerIntent(entity)); // fired: fuel deposits need the container open

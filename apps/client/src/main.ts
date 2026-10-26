@@ -45,7 +45,7 @@ import { sampleDayClock } from "./day-clock.js";
 import { TUTORIAL_STEPS, TutorialProgress, tutorialKey } from "./tutorial/steps.js";
 import { mountTutorial } from "./tutorial/overlay.js";
 import { TutorialProber } from "./tutorial/probe.js";
-import { Survival, heldTool, ResourceNode, toolHint, Animal } from "@engine/gameplay";
+import { Survival, heldTool, ResourceNode, toolHint, Animal, LootBag, openContainer } from "@engine/gameplay";
 import { AudioSystem } from "./audio/index.js";
 import { mountDeathScreen, type DeathScreen } from "./death-screen.js";
 import { RespawnCmd } from "@engine/gameplay";
@@ -232,6 +232,7 @@ function onUiFrame(): void {
   if (deathUi?.dead) { buildMode.stop(); return; } // ADR-153: dead: only the death screen takes input
   tutorialUi?.frame(input, !!menus?.nav.isOpen);
   if (promptDevice() === "gamepad") markNavFocus(); // ADR-142: pad users get a visible menu focus ring
+  lootAutoOpen(); // ADR-160 (tracks the open bag even while a menu is up, so closing the panel does not reopen it)
   if (menus?.nav.isOpen) { buildMode.stop(); return; }
   if (buildMode.active) { worldTools?.road(0); buildMode.update(); buildHud.update(); return; }
   buildHud.update();
@@ -239,7 +240,15 @@ function onUiFrame(): void {
   if (input.pressed("ToggleBuild") && promptDevice() === "gamepad") { menus?.open("build"); return; } // ADR-136: pad LB+Y (KBM B is a UINav hotkey)
   { const id = padMenuAction(input); if (id) { menus?.open(id); return; } } // ADR-139: pad-only bindings: Select = inventory, LB+Select = crafting, RB+Select = chat
   if (input.pressed("QuickUse") && farm) { const p = session.player; if (p !== undefined && quickUseFires(safeFarmPrompt(p))) farm.trigger(); }
-  if (input.pressed("Interact")) { const c = menuCtx(); const t = c && interactPanel(c); if (t?.panel === "trade") menus?.openStall(t.stall); else if (t?.panel === "station") menus?.openStation(t.station, t.kind); else if (t?.panel === "pet") menus?.openPet(t.pet); else if (t) menus?.open("character"); }
+  if (input.pressed("Interact")) { const c = menuCtx(); const t = c && interactPanel(c); if (t?.panel === "trade") menus?.openStall(t.stall); else if (t?.panel === "station") menus?.openStation(t.station, t.kind); else if (t?.panel === "pet") menus?.openPet(t.pet); else if (t?.panel === "loot") menus?.openLoot(t.bag); else if (t) menus?.open("character"); }
+}
+/** ADR-160: a loot bag the server opened for us (primary click / tap fallback) shows in the inventory panel once. */
+let lootShown: number | undefined;
+function lootAutoOpen(): void {
+  const c = menuCtx(); if (!c || !world.isRegistered(LootBag)) return; const box = openContainer(c);
+  const bag = box !== undefined && world.has(box, LootBag) ? box : undefined;
+  if (bag !== undefined && bag !== lootShown && !menus?.nav.isOpen) menus?.open("inventory");
+  lootShown = bag;
 }
 /** Panel refresh cadence: 250ms, 500ms on low-end devices (few cores / little memory / ?gl=lowend). */
 const LOW_END = params.get("gl") === "lowend" || (navigator.hardwareConcurrency ?? 8) <= 4 || ((navigator as { deviceMemory?: number }).deviceMemory ?? 8) <= 2;

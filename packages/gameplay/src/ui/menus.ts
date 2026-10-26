@@ -127,6 +127,8 @@ export function containerView(c: MenuCtx, e: Entity, page = 0, pageSize = CONTAI
   }
   return { entity: e, slotCount: n, page: pg, pages, first, slots, weight: box.weight, maxWeight: box.maxWeight };
 }
+/** ADR-160: withdraw every stack from an open container (server: Withdraw with item 0). */
+export const takeAllIntent = (target: Entity): MenuIntent => intent(WithdrawCmd, { target, item: 0, count: 0 }, ["target"]);
 export const withdrawIntent = (target: Entity, item: number, count: number): MenuIntent => intent(WithdrawCmd, { target, item, count }, ["target"]);
 /** ADR-108 station fuel panel: lit state, burn time left, and the fuel items the player can drop in. */
 export interface FuelView { lit: boolean; secondsLeft: number; fuels: { item: number; key: string; name: string; count: number; seconds: number }[] }
@@ -322,14 +324,23 @@ export function listItemIntents(stall: Entity, d: StallListDraft): MenuIntent[] 
 // ---- interact → panel -------------------------------------------------------------------------------
 export const STALL_INTERACT_RANGE = 2.5;
 /** What the Interact action should open: a nearby stall's trade panel, else the wardrobe (character panel). */
-export function interactPanel(c: MenuCtx): { panel: "trade"; stall: Entity } | { panel: "character" } | { panel: "station"; station: Entity; kind: number } | { panel: "pet"; pet: Entity } | undefined {
+export function interactPanel(c: MenuCtx): { panel: "trade"; stall: Entity } | { panel: "character" } | { panel: "station"; station: Entity; kind: number } | { panel: "pet"; pet: Entity } | { panel: "loot"; bag: Entity } | undefined {
   const s = nearestStall(c, STALL_INTERACT_RANGE); if (s !== undefined) return { panel: "trade", stall: s };
   if (nearWardrobe(c.world, c.player)) return { panel: "character" };
-  const st = nearestStation(c); const pet = nearestPet(c.world, c.player); // ADR-145: the pet / tameable animal wins when it is closer than the station
+  const st = nearestStation(c); const pet = nearestPet(c.world, c.player);
+  // ADR-160: a loot bag (zombie / animal / death / dropped / crate) in reach opens by hand when it is the closest target
+  const bag = nearestLootBag(c);
+  if (bag && (!st || bag.d <= stationDistance(c, st.station)) && (!pet || bag.d <= pet.d)) return { panel: "loot", bag: bag.entity }; // ADR-145: the pet / tameable animal wins when it is closer than the station
   // a loot bag / container (e.g. the sandbox pet-corner crate) closer than the pet keeps Interact: the server opens it
   if (pet && (!st || pet.d < stationDistance(c, st.station)) && !(nearestOpenable(c, pet.d) < pet.d)) return { panel: "pet", pet: pet.entity };
   if (st) return { panel: "station", ...st };
   return undefined;
+}
+/** ADR-160: nearest LootBag within container reach of the player (hand loot; no tool needed), with its distance. */
+export function nearestLootBag(c: MenuCtx, r = gameplayDefs(c.world).building.containerReach): { entity: Entity; d: number } | undefined {
+  const w = c.world; const me = w.get(c.player, Transform); if (!me || !w.isRegistered(LootBag)) return undefined; let best: { entity: Entity; d: number } | undefined;
+  for (const e of w.query([LootBag, Transform])) { const t = w.get(e, Transform)!; const d = Math.hypot(t.x - me.x, t.y - me.y); if (d <= r && (!best || d < best.d)) best = { entity: e, d }; }
+  return best;
 }
 /** Distance to the nearest non-pet, non-station LootBag / Container within `r` (Infinity if none). */
 function nearestOpenable(c: MenuCtx, r: number): number {

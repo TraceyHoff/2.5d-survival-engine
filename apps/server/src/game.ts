@@ -1,4 +1,5 @@
 import { giveSandboxKit, sandboxPetKit, sandboxPetCorner, sandboxSpawn } from "./sandbox.js";
+import { handLootTarget, Viewing } from "@engine/gameplay";
 import { installRoadCommands, NodeRegrow, installSignCommands, installPetCommands, PetEvent, setWorldRules, worldRules, type WorldRulesOpts } from "@engine/gameplay";
 /** Authoritative game server: world + gameplay + streaming chunks + persistence + NetServer sessions. */
 import { ChannelRegistry, CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, type CosmeticCatalogLike, Membership, Owner, PlayerId, TimeOfDay, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
@@ -174,7 +175,13 @@ export function createGameServer(o: GameServerOptions): GameServer {
         // ADR-107: the primary button punches/strikes a zombie or animal in melee reach first, else gathers
         const foe = nearestMeleeTarget(w, e);
         if (foe !== undefined) setIntent(w, e, { action: IntentAction.Attack, target: foe });
-        else { const target = nearestNode(e); if (target !== undefined) setIntent(w, e, { action: IntentAction.Gather, target }); }
+        else {
+          // ADR-160: bare-handed loot: a loot bag in reach that is closer than any node opens instead of gathering
+          const target = nearestNode(e); const nt = target !== undefined ? w.get(target, Transform) : undefined; const et = w.get(e, Transform);
+          const bag = handLootTarget(w, e, nt && et ? Math.hypot(nt.x - et.x, nt.y - et.y) : Infinity);
+          if (bag !== undefined) { if (!w.has(e, Viewing) || w.getField(e, Viewing, "container") !== bag) setIntent(w, e, { action: IntentAction.OpenContainer, target: bag }); }
+          else if (target !== undefined) setIntent(w, e, { action: IntentAction.Gather, target });
+        }
       }
     },
     onClientJoin: (s, w) => {

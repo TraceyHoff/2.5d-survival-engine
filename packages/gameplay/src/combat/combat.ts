@@ -17,6 +17,7 @@ import { spendStamina } from "../systems/vitals.js";
 import { checkHit, tagCombat } from "./pvp.js";
 import { installSpatialIndex } from "@engine/world";
 import { Animal, Pet } from "../components.js";
+import { dropZombieLoot } from "../population.js";
 import { damageMulFor } from "../skills/tree.js";
 import { Progression } from "../components.js";
 import { armorReduce, igniteTarget, landThrown, resolveAttack, spendRound, throwExplosive } from "./arms.js";
@@ -119,14 +120,17 @@ export function combatSystem(world: World, dt: number): void {
   }
 }
 
-/** Removes dead zombies after corpseSeconds (authority, postSim). */
+const zombieLooted = new WeakMap<World, Set<Entity>>();
+/** Drops zombie loot on death (ADR-160) and removes dead zombies after corpseSeconds (authority, postSim). */
 export function corpseSystem(world: World, dt: number): void {
   if (!isAuthority(world) || world.isReplaying) return;
   const ticks = secondsToTicks(gameplayDefs(world).ai.corpseSeconds, dt);
   for (const z of world.query([Zombie, Dead])) {
     const at = world.getField(z, Dead, "tick")!;
     if (world.getField(z, AnimState, "anim") !== Anim.Die) setAnim(world, z, Anim.Die);
-    if (world.tick >= at + ticks) world.destroy(z);
+    let done = zombieLooted.get(world); if (!done) zombieLooted.set(world, done = new Set());
+    if (!done.has(z)) { done.add(z); dropZombieLoot(world, z); } // ADR-160: once per corpse
+    if (world.tick >= at + ticks) { done.delete(z); world.destroy(z); }
   }
   for (const p of world.query([Survival, Dead, AnimState])) if (world.getField(p, AnimState, "anim") !== Anim.Die) setAnim(world, p, Anim.Die);
 }

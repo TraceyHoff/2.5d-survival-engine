@@ -13,7 +13,7 @@ import { secondsToTicks } from "../defs.js";
 import {
   BuildFail, BuildFailed, ContainerClosed, ContainerOpened, DestroyCause, DoorToggled, emit, PiecePainted, PieceRepaired, PieceUpgraded,
 } from "../events.js";
-import { addItem, countItem, exchangeItems, transferItem } from "../inventory.js";
+import { addItem, countItem, exchangeItems, listSlots, transferItem } from "../inventory.js";
 import { makeNoise } from "../systems/noise.js";
 import { clearBreach, DOOR_BREACHED } from "../combat/pvp_pieces.js";
 import { distance } from "../systems/fuel.js";
@@ -165,7 +165,10 @@ export function containerSystem(world: World): void {
     if (world.has(c, StallHeader) || world.getField(c, PieceLink, "kind") === AttachKind.Till) { fail(BuildFail.Locked); continue; }
     const item = it.data.item[s]!; const count = it.data.count[s]!;
     if (action === IntentAction.Deposit) { if (transferItem(world, e, c, item, count) === 0) fail(countItem(world, e, item) ? BuildFail.Occupied : BuildFail.CannotAfford); }
-    else if (transferItem(world, c, e, item, count) === 0) fail(BuildFail.CannotAfford);
+    else if (item === 0) { // ADR-160 "Take all": item 0 withdraws every stack that fits
+      let moved = 0; for (const sl of listSlots(world, c)) if (sl.item && sl.count) moved += transferItem(world, c, e, sl.item, sl.count);
+      if (moved === 0) fail(BuildFail.CannotAfford);
+    } else if (transferItem(world, c, e, item, count) === 0) fail(BuildFail.CannotAfford);
   }
   // auto-close: out of range (1.5x reach), dead, or container gone
   for (const e of world.query([Viewing])) {

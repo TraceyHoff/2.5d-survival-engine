@@ -77,6 +77,16 @@ export function canLootBag(world: World, actor: Entity, bag: Entity): boolean {
   const dropped = lb.despawnAtTick - secondsToTicks(PVP.bagDespawnSeconds, DT);
   return (hasPlayerId(world, actor) ? world.getField(actor, PlayerId, "id") : undefined) === lb.owner || world.tick >= dropped + secondsToTicks(PVP.bagOwnerOnlySeconds, DT);
 }
+/** ADR-160 bare-handed loot: the nearest LootBag within container reach (and closer than `within`) the actor may open. */
+export function handLootTarget(world: World, actor: Entity, within = Infinity): Entity | undefined {
+  const t = world.get(actor, Transform); if (!t) return undefined;
+  let bd = Math.min(gameplayDefs(world).building.containerReach, within); let best: Entity | undefined;
+  for (const b of world.query([LootBag, Transform])) {
+    const bt = world.get(b, Transform)!; const d = Math.hypot(bt.x - t.x, bt.y - t.y);
+    if (d <= bd && canLootBag(world, actor, b)) { bd = d; best = b; }
+  }
+  return best;
+}
 /** simulation, right after gameplay.death: bags for players that died this tick. */
 export function deathBagSystem(world: World): void {
   if (!isAuthority(world) || world.isReplaying) return;

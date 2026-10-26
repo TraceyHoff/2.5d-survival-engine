@@ -23,7 +23,7 @@ describe("pets (ADR-145)", () => {
     const { w, p } = setup(); const a = G.spawnAnimal(w, "animal_dog_dachshund", 1.5, 1.5); const c = { world: w, player: p, names: new Map() };
     expect(G.interactPanel(c)).toEqual({ panel: "pet", pet: a });
     const crate = w.create(); w.add(crate, Transform, { x: 0.8, y: 0 }).add(crate, G.LootBag, { owner: 0, despawnAtTick: 0xffffffff });
-    expect(G.interactPanel(c)).toBeUndefined();
+    expect(G.interactPanel(c)).toEqual({ panel: "loot", bag: crate }); // ADR-160 opens the bag by hand
     w.set(crate, Transform, { x: -2.5, y: 0 }); expect(G.interactPanel(c)).toEqual({ panel: "pet", pet: a });
   });
   it("ADR-146: a pet on Stay sits (AnimState Sit) when idle; Follow does not", () => {

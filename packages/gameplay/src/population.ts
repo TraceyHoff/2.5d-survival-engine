@@ -7,6 +7,7 @@
 import { Pet } from "./components.js";
 import { DEFAULT_TICK_HZ, Permissions, Transform, defineResource, type Entity, type World } from "@engine/core";
 import { PopulationSpawner, type BuildingGrid, type ChunkKey, type PhaseKey, type PopulationHost, type SpawnEntry, type PopulationViewpoint } from "@engine/world";
+import { Zombie } from "./components.js";
 import { Anim, AnimState, Animal, Tamed, Container, ContainerViewers, Dead, Health, LootBag, Survival } from "./components.js";
 import { gameplayDefs, isAuthority } from "./config.js";
 import { indexEntity } from "./spawn.js";
@@ -52,6 +53,22 @@ export function dropAnimalLoot(world: World, e: Entity): Entity | undefined {
   const a = world.get(e, Animal); const def = a && animalDefs()[a.kind]; const t = world.get(e, Transform); if (!def || !t) return undefined;
   const rng = world.rngFor("animal.loot", e); const defs = gameplayDefs(world);
   const rolled = def.loot.map((l) => ({ item: defs.itemId(l.item), n: rng.next() < l.chance ? rng.int(l.min, l.max + 1) : 0 })).filter((r) => r.n > 0);
+  if (!rolled.length) return undefined;
+  const bag = world.create();
+  world.add(bag, Transform, { x: t.x, y: t.y, z: t.z }).add(bag, Container, { slotCount: Math.max(4, rolled.length) }).add(bag, ContainerViewers)
+    .add(bag, LootBag, { owner: 0, despawnAtTick: world.tick + LOOT_BAG_SECONDS * DEFAULT_TICK_HZ });
+  for (const r of rolled) addItem(world, bag, r.item, r.n);
+  indexEntity(world, bag); return bag;
+}
+
+/** ADR-160: roll a dead zombie's ai.json archetype loot (the zombie def key) into an ownerless, hand-lootable LootBag. */
+export function dropZombieLoot(world: World, e: Entity): Entity | undefined {
+  const z = world.get(e, Zombie); const t = world.get(e, Transform); if (!z || !t) return undefined;
+  const defs = gameplayDefs(world); const key = defs.zombies.get(z.kind)?.key; if (!key) return undefined;
+  let loot: readonly { item: string; min: number; max: number; chance: number }[];
+  try { loot = resolveBehavior(key).loot; } catch { return undefined; }
+  const rng = world.rngFor("zombie.loot", e);
+  const rolled = loot.map((l) => ({ item: defs.itemId(l.item), n: rng.next() < l.chance ? rng.int(l.min, l.max + 1) : 0 })).filter((r) => r.n > 0);
   if (!rolled.length) return undefined;
   const bag = world.create();
   world.add(bag, Transform, { x: t.x, y: t.y, z: t.z }).add(bag, Container, { slotCount: Math.max(4, rolled.length) }).add(bag, ContainerViewers)

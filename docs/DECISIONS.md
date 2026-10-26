@@ -966,3 +966,16 @@ Graphics quality is unchanged.
 **Decision.** That check is gated on `atlas.syncChecks`, which is off at budgets ≥384 MB (ADR-154). Low budgets keep the OOM check. Audit, no change: frame() uses the rAF timestamp, clamps dt to 250 ms, and FixedLoop interpolates with alpha = acc/dt (backlog drop after 5 steps). The draw path is already batched (~11 instanced draws + 5 element draws, 8 programs, 17 texture binds per frame), so no batching change. SP server: it runs in a Worker by default (ADR-105); forcing `?worker=0` drops headless fps 16.1 → 5.1 and raises p99 from 134 to 365 ms, so the Worker default matters and must stay.
 
 **Result.** getError 3 → 0 per 42 s walk; the frame-time effect needs confirmation on a real GPU and on Xbox Edge.
+
+## ADR-160: bare-handed loot bags (zombie loot, Interact / primary open, Take all)
+
+**Context.** Zombie archetypes in ai.json had loot tables, but nothing dropped them: corpseSystem only removed corpses. No input opened a loot bag. Interact only opened stall, station, pet and wardrobe panels, and Primary only attacked or gathered.
+
+**Decision.**
+- **Zombie loot:** corpseSystem rolls the zombie's ai.json archetype loot once per corpse (`dropZombieLoot`, rng `zombie.loot` per entity) into an ownerless LootBag that despawns after 120 s, the same as animal loot.
+- **Interact (E / pad X / touch interact):** `interactPanel` returns `{panel:"loot"}` for the nearest LootBag in `containerReach` when it is at least as close as any station or pet. The client sends OpenContainer and shows the bag in the inventory panel.
+- **Primary (mouse click / pad RT / touch tap):** the server's Gather fallback opens a bag (`handLootTarget`) when no melee foe is in reach and the bag is closer than the nearest node. The client opens the inventory panel when a newly opened LootBag replicates to it.
+- **Take all:** a "Take all" panel button sends Withdraw with item 0, which moves every stack that fits.
+- **Gates:** no tool or equip check. The existing gates still apply: canLootBag's owner-only window and container reach.
+
+**Result.** Zombie, animal, player and bot death bags, dropped stacks and sandbox crates all open and empty by hand (adr160_hand_loot.test.ts).
