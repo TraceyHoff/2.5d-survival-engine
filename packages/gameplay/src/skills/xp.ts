@@ -15,8 +15,8 @@ import { animalDefs } from "../population.js";
 export interface KillTypeDef { base: number; perLevel: number; kindMul: Record<string, number> }
 export interface XpTable {
   sources: Record<string, number>;
-  /** ADR-209: source -> skill tree (category key); perksShare = fraction of every other award also given to the perks tree. */
-  trees: Record<string, string>; perksShare: number;
+  /** ADR-209: source -> skill tree (category key); each tree earns only from its own sources. */
+  trees: Record<string, string>;
   kills: { zombie: KillTypeDef; animal: KillTypeDef; aiHuman: KillTypeDef; player: KillTypeDef; maxLevelMul: number };
   pvp: { windowSeconds: number; decay: number; minFactor: number; freeKills: number; sameKillerVictimMaxPerWindow: number; lowLevelGap: number; lowLevelMul: number };
   travel: { walkTiles: number; vehicleTiles: number; maxTilesPerSecond: number };

@@ -1460,7 +1460,7 @@ Consequences: test `adr208_correction_render`. In a simulated 0.5-tile correctio
 - **Context:** before this change, all seven skill categories (perks, survival, homestead, medicine, crafting, combat, vehicles) shared one character level and one point pool. Chopping trees could pay for combat skills.
 - **Decision:** each tree now has its own XP, level curve (`skills.json` → `treeLevels`: base 40, ×1.1 per level, 1 point per level plus 1 bonus point every 5 levels, max level 60) and unspent points. These are stored in `Progression.txp/tlevel/tpoints` (8 slots) with `tver`. The fields are networked and persistent, so they replicate the same way as the old row.
   - `xp.json` → `trees` maps every XP source to a tree; for example chop/gather/mine → survival, kill/hunt → combat, cook/farm → homestead, craft/build → crafting.
-  - Every award also gives 20% (`perksShare`) to Buffs & Perks.
+  - Each tree earns XP **only** from its own activities. Buffs & Perks earns only from its own sources (eat, drink, sign). There is no cross-tree share.
   - Awards run on the authority only (`awardXpRaw`, skipped while replaying). Party/clan XP sharing goes to the same tree.
   - `canUnlock`/`unlockSkill` check and spend the node's own tree ("Not enough points in this tree"). Respec refunds each tree what was spent in it. NPC AI picks go through `canUnlock`, so they follow the same rule.
   - The global `xp/level` row stays as the **character level**, used for kill, PvP and horde scaling and the HUD "Lv" chip. It no longer grants points.
@@ -1476,3 +1476,4 @@ Consequences: test `adr208_correction_render`. In a simulated 0.5-tile correctio
   - XP toasts name the tree ("+12 Combat XP", "Combat level 6!"), and the level-up hint says "6 Combat points — open Skills".
   - Controls are unchanged: LB/RB/PgUp/PgDn switch trees, A selects then A learns, B goes back. Mouse, keyboard and touch use the same buttons.
 - **Tests:** `gameplay/test/skill_trees.test.ts` (routing, perks share, cross-tree rejection, per-tree respec, conversion, in-world migration), `persist/test/progression_trees.test.ts` (old-layout player record → load → convert), `client/test/adr209_skill_trees_pad.test.ts` (pad-only spend: RB → D-pad → A A; empty tree refuses), `client/test/adr209_tree_toasts.test.ts`, and the updated `skills.test.ts`/`gameplay-panels.test.ts`.
+- **Amendment (2026-10-27):** removed the original 20% `perksShare` that every award gave to Buffs & Perks, because each tree must earn only from its own activities. `xp.json` no longer has `perksShare`. Test: "ADR-209 amendment: strictly per-tree XP" checks that every source credits exactly one tree. Saves are unaffected because no schema changed.

@@ -15,13 +15,13 @@ describe("ADR-209 per-tree progression", () => {
     for (const s of Object.keys(G.XP.sources)) expect(G.TREE_KEYS).toContain(G.XP.trees[s]);
     expect(G.SKILL_NODE_TREE.length).toBe(G.SKILLS.nodes.length); expect(G.TREE_KEYS.length).toBeLessThanOrEqual(G.TREE_SLOTS);
   });
-  it("awards go only to the activity's tree (+ the perks share) and level that tree", () => {
+  it("awards go only to the activity's tree and level that tree (no cross-tree / perks share)", () => {
     const w = world(); const a = mk(w, 1);
     const got = G.awardXpRaw(w, a, "chop", 100);
     expect(tx(w, a, "survival").xp + G.treeXpToNext(1) * (tx(w, a, "survival").level - 1)).toBeGreaterThan(0);
     expect(tx(w, a, "survival").level).toBeGreaterThanOrEqual(2); expect(tx(w, a, "survival").points).toBeGreaterThanOrEqual(1);
     expect(tx(w, a, "combat")).toEqual({ xp: 0, level: 1, points: 0 }); expect(tx(w, a, "crafting")).toEqual({ xp: 0, level: 1, points: 0 });
-    expect(tx(w, a, "perks").xp).toBe(Math.round(got * G.XP.perksShare));
+    expect(got).toBeGreaterThan(0); expect(tx(w, a, "perks")).toEqual({ xp: 0, level: 1, points: 0 }); // no cross-tree share
     G.awardXpRaw(w, a, "kill", 50); expect(tx(w, a, "combat").xp + tx(w, a, "combat").level).toBeGreaterThan(1);
     G.awardXpRaw(w, a, "cook", 10); expect(tx(w, a, "homestead").xp).toBeGreaterThan(0);
     G.awardXpRaw(w, a, "craft", 10); expect(tx(w, a, "crafting").xp).toBeGreaterThan(0);
@@ -43,6 +43,18 @@ describe("ADR-209 per-tree progression", () => {
     G.unlockSkill(w, a, G.skillNodeIndex("brawler")); G.unlockSkill(w, a, G.skillNodeIndex("forager"));
     w.set(a, G.Progression, { level: 30 }); G.addItem(w, a, G.defaultDefs().itemId("coin"), 10000);
     expect(G.respecSkills(w, a)).toBeUndefined(); expect(G.treePoints(w, a, "combat")).toBe(5); expect(G.treePoints(w, a, "survival")).toBe(5);
+  });
+});
+
+describe("ADR-209 amendment: strictly per-tree XP", () => {
+  it("each source credits exactly one tree; perks only from its own activities", () => {
+    for (const src of Object.keys(G.XP.sources)) {
+      const w = world(); const a = mk(w, 1); G.awardXpRaw(w, a, src, 500, false);
+      const gained = G.TREE_KEYS.filter((k) => { const t = tx(w, a, k); return t.xp > 0 || t.level > 1; });
+      expect(gained, src).toEqual([G.XP.trees[src]]);
+    }
+    expect(Object.keys(G.XP.trees).filter((s) => G.XP.trees[s] === "perks").sort()).toEqual(["drink", "eat", "sign"]);
+    expect("perksShare" in G.XP).toBe(false);
   });
 });
 

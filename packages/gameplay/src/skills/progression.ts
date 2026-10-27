@@ -84,11 +84,9 @@ function addTreeXp(world: World, e: Entity, ti: number, amount: number): void {
   world.setElement(e, Progression, "txp", ti, xp); world.setElement(e, Progression, "tlevel", ti, level); world.setElement(e, Progression, "tpoints", ti, Math.min(0xffff, points));
   if (up) emit(world, TreeLevelUp, { entity: e, tree: TREE_KEYS[ti]!, level, points });
 }
-const PERKS_TREE = treeIndex("perks");
-/** One award into tree `ti` (+ the perks tree's general share of every other activity) and the character level. */
+/** One award into tree `ti` (ONLY that tree: no cross-tree share, ADR-209 amendment) and the character level. */
 function credit(world: World, e: Entity, ti: number, amount: number): void {
   addXp(world, e, amount); addTreeXp(world, e, ti, amount);
-  if (PERKS_TREE >= 0 && ti !== PERKS_TREE) addTreeXp(world, e, PERKS_TREE, Math.round(amount * (XP.perksShare ?? 0)));
 }
 
 /** Award XP (scaled by the source table x skill "xp" mod); levels up and grants points. Shares to nearby party/clan. */
