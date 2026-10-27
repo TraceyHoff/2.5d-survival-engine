@@ -127,3 +127,18 @@ export class PieceCoverIndex {
     return seen;
   }
 }
+
+/**
+ * ADR-211 L corner (gameplay building/structure.ts lCornerArms, kept in lockstep by apps/client/test/adr211_lcorner):
+ * the two arm walls of a corner at vertex (vx, vy), rot r (arms rot0 +x/+y, rot1 -x/+y, rot2 -x/-y, rot3 +x/-y), as
+ * edge-midpoint pivots with the outward-facing wall rotation (north 0, west 1, south 2, east 3). Both renderers draw
+ * the tier's straight wall at each arm and the corner post art at the vertex as the joint cap.
+ */
+export function lCornerArmPivots(vx: number, vy: number, rot: number): { x: number; y: number; rot: number }[] {
+  const r = rot & 3; const cx = r === 1 || r === 2 ? vx - 1 : vx, cy = r >= 2 ? vy - 1 : vy;
+  return [{ x: cx + 0.5, y: vy, rot: r >= 2 ? 2 : 0 }, { x: vx, y: cy + 0.5, rot: r === 1 || r === 2 ? 3 : 1 }];
+}
+/** Straight-wall piece key drawn for an L corner piece key (`wall_corner_outer[@tierN]` -> `wall[@tierN]`), else undefined. */
+export function lCornerArmPiece(piece: string | undefined): string | undefined {
+  const m = piece ? /^wall_corner_outer(@tier\d+)?$/.exec(piece) : null; return m ? `wall${m[1] ?? ""}` : undefined;
+}

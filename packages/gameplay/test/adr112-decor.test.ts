@@ -39,7 +39,7 @@ describe("ADR-112 decor catalog", () => {
 });
 
 describe("ADR-112 wall mounts", () => {
-  function hut(w: World): Entity { place(w, "foundation", 10.5, 10.5); return place(w, "wall", 10.5, 10.02); }
+  function hut(w: World): Entity { for (const x of [9.5, 10.5, 11.5]) place(w, "foundation", x, 10.5); return place(w, "wall", 10.5, 10.02); } // ADR-211: mid edge (1x1 edges are L-corner slots)
   it("need a wall, hang on either face, and fall with it", () => {
     const w = makeWorld();
     expect(G.validatePlacement(w, 0 as Entity, snap(w, "painting_wall", 10.5, 10.02) as G.Snapped, { ignoreCost: true, ignoreRange: true })).toBe(G.BuildFail.NoSocket);

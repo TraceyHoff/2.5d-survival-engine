@@ -4,7 +4,7 @@
  * runs on the client for the ghost preview (client mode skips server-only stability values and uses "has support").
  *
  * Validation order: UnknownPiece, BadTier, LevelLimit, OutOfRange, NoPrivilege, ZoneFull, Terrain, Occupied,
- * NoSocket, Blocked, NoSupport, CannotAfford.
+ * NoSocket, Blocked, NoSupport, CannotAfford. ADR-211: CornerSlot (straight wall in an outer corner slot) follows Occupied.
  */
 import { entityIndex, Membership, Transform, type Entity, type World } from "@engine/core";
 /** BuildPiece.tint for a clan: 1..255 index into assets clanPalettes (ADR-077). */
@@ -25,7 +25,8 @@ import { TerrainRes } from "../world.js";
 import { linkAttachment } from "./links.js";
 import { reseatSmallOn, smallPieceZ, surfaceHeightAt } from "./surface.js";
 import { TRI_INRADIUS, triEdges } from "./modular.js";
-import { anchorFor, FINE_POS_STEP, FINE_ROT, FINE_ROT_STEPS, gridRot, LAYER_DECK, LAYER_OPENING, markLinked, slotTransform, structures, type Slot, type StructureIndex } from "./structure.js";
+import { anchorFor, edgeKey, isLCorner, lCornerArms, lCornerTile, StructureIndex as SIdx, FINE_POS_STEP, FINE_ROT, FINE_ROT_STEPS, gridRot, LAYER_DECK, LAYER_OPENING, markLinked, slotTransform, structures, type Slot } from "./structure.js";
+type StructureIndex = SIdx;
 import { Falloff } from "@engine/world";
 import { indexEntity } from "../spawn.js";
 import { tillSlots } from "../economy/config.js";
@@ -128,6 +129,26 @@ export function snapTri(idx: StructureIndex, x: number, y: number, z: number, ro
   const fx = Math.round(x * 4) / 4, fy = Math.round(y * 4) / 4;
   return { tx: Math.floor(fx), ty: Math.floor(fy), z, side: EdgeSide.None, rot: ((rot % 12) + 12) % 12, fx, fy };
 }
+/**
+ * ADR-211 L corners. An outer corner of a deck tile is a tile corner whose two edges both face out (no deck across).
+ * outerCornerRots: the L rotations at vertex (vx,vy) that wrap a deck tile's outer corner (auto-rotate targets).
+ * isCornerSlot: is this edge an arm of some deck tile's outer corner (where only an L corner may stand)?
+ */
+export function outerCornerRots(idx: StructureIndex, vx: number, vy: number, z: number): number[] {
+  const out: number[] = [];
+  for (let r = 0; r < 4; r++) {
+    const [cx, cy] = lCornerTile(vx, vy, r); if (!idx.isDeck(idx.deck(cx, cy, z))) continue;
+    if (lCornerArms(vx, vy, r).every((a) => { const [t0, t1] = SIdx.edgeTiles(a.tx, a.ty, a.side); const o = t0[0] === cx && t0[1] === cy ? t1 : t0; return !idx.isDeck(idx.deck(o[0], o[1], z)); })) out.push(r);
+  }
+  return out;
+}
+export function isCornerSlot(idx: StructureIndex, tx: number, ty: number, z: number, side: EdgeSide): boolean {
+  const k = edgeKey(tx, ty, z, side);
+  const verts: [number, number][] = side === EdgeSide.North ? [[tx, ty], [tx + 1, ty]] : [[tx, ty], [tx, ty + 1]];
+  return verts.some(([vx, vy]) => outerCornerRots(idx, vx, vy, z).some((r) => lCornerArms(vx, vy, r).some((a) => edgeKey(a.tx, a.ty, z, a.side) === k)));
+}
+/** ADR-211: "regular straight walls" = wall-family edge pieces without an opening socket (door/window frames may still sit in a corner slot). */
+export const isStraightWall = (def: PieceDef | undefined): boolean => !!def && def.placement === Placement.Edge && !def.features.mount && def.family === "wall" && !def.opening;
 /** Tiles around a vertex-snapped corner piece (any one with a deck supports it). */
 export const vertexTiles = (tx: number, ty: number): [number, number][] => [[tx, ty], [tx - 1, ty], [tx, ty - 1], [tx - 1, ty - 1]];
 
@@ -191,23 +212,29 @@ export function validatePlacement(world: World, builder: Entity, sn: Snapped, op
   if (def.placement === Placement.Edge && def.features.mount) { // ADR-112: hung on a wall face
     const w = sn.parent ? idx.def(sn.parent) : undefined; if (!w || w.placement !== Placement.Edge || w.features.mount || !w.blocksPath) return BuildFail.NoSocket;
     if (idx.mount(slot.tx, slot.ty, slot.z, slot.side, slot.rot)) return BuildFail.Occupied;
-  } else if (def.placement === Placement.Edge) { if (idx.edge(slot.tx, slot.ty, slot.z, slot.side)) return BuildFail.Occupied; }
+  } else if (def.placement === Placement.Edge) {
+    if (idx.edge(slot.tx, slot.ty, slot.z, slot.side)) return BuildFail.Occupied;
+    if (isStraightWall(def) && isCornerSlot(idx, slot.tx, slot.ty, slot.z, slot.side)) return BuildFail.CornerSlot; // ADR-211
+  }
   else if (def.placement === Placement.Tri) {
     if (idx.triAt(slot.fx!, slot.fy!, slot.z) || idx.deck(slot.tx, slot.ty, slot.z)) return BuildFail.Occupied;
   } else if (def.placement === Placement.Opening) {
     if (!sn.parent || idx.def(sn.parent)?.opening !== def.fits) return BuildFail.NoSocket;
     if (idx.opening(sn.parent)) return BuildFail.Occupied;
   } else if (!idx.grid.canPlace(def.id, slot.tx, slot.ty, slot.z, gridRot(def, slot.rot)).ok) return BuildFail.Occupied;
+  else if (isLCorner(def) && lCornerArms(slot.tx, slot.ty, slot.rot).some((a) => idx.edge(a.tx, a.ty, slot.z, a.side))) return BuildFail.Occupied; // ADR-211: both arm edges must be free
   else if (def.layer === LAYER_DECK && def.placement === Placement.Cell && idx.tris.size && tiles.some(([x, y]) => idx.trisInTile(x, y, slot.z).length > 0)) return BuildFail.Occupied;
   // furniture/decor on decks need a deck under every tile
-  if (def.snap === "vertex") { if (!vertexTiles(slot.tx, slot.ty).some(([x, y]) => idx.isDeck(idx.deck(x, y, slot.z)))) return BuildFail.NoSupport; }
+  if (isLCorner(def)) { const [cx, cy] = lCornerTile(slot.tx, slot.ty, slot.rot); if (!idx.isDeck(idx.deck(cx, cy, slot.z))) return BuildFail.NoSupport; } // ADR-211: wraps a deck corner
+  else if (def.snap === "vertex") { if (!vertexTiles(slot.tx, slot.ty).some(([x, y]) => idx.isDeck(idx.deck(x, y, slot.z)))) return BuildFail.NoSupport; }
   else if (def.placement === Placement.Free && !onGround && !onSurface(world, def, tiles, slot.z) && !tiles.every(([x, y]) => idx.isDeck(idx.deck(x, y, slot.z)))) return BuildFail.NoSupport;
   if (def.placement === Placement.Cell && def.needsDeck && !tiles.every(([x, y]) => idx.isDeck(idx.deck(x, y, slot.z)))) return BuildFail.NoSupport;
   // creatures in the way of solid pieces
   if (def.solid && slot.z === 0) {
     const [hw, hh] = def.placement === Placement.Edge ? (slot.side === EdgeSide.North ? [0.5, 0.15] : [0.15, 0.5]) : def.snap === "vertex" ? [0.15, 0.15] : [def.footprint.w / 2, def.footprint.h / 2]; // ADR-210: a corner post is a thin pillar at the vertex
-    for (const c of installSpatialIndex(world).queryRect(sn.pos.x - hw - 0.3, sn.pos.y - hh - 0.3, sn.pos.x + hw + 0.3, sn.pos.y + hh + 0.3)) {
-      if (world.has(c, Health) && !world.has(c, BuildPiece) && (world.has(c, Zombie) || c !== builder || def.placement !== Placement.Free)) return BuildFail.Blocked;
+    const rects: [number, number, number, number][] = isLCorner(def) ? lCornerArms(slot.tx, slot.ty, slot.rot).map((a) => [a.x, a.y, a.side === EdgeSide.North ? 0.5 : 0.15, a.side === EdgeSide.North ? 0.15 : 0.5]) : [[sn.pos.x, sn.pos.y, hw, hh]]; // ADR-211: the L blocks like its two arm walls
+    for (const [rx, ry, rw, rh] of rects) for (const c of installSpatialIndex(world).queryRect(rx - rw - 0.3, ry - rh - 0.3, rx + rw + 0.3, ry + rh + 0.3)) {
+      if (world.has(c, Health) && !world.has(c, BuildPiece) && (world.has(c, Zombie) || c !== builder || def.placement !== Placement.Free || isLCorner(def))) return BuildFail.Blocked;
     }
   }
   if (candidateStability(world, sn) < b.minStability) return BuildFail.NoSupport;

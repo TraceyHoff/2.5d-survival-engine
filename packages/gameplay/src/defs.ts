@@ -137,6 +137,8 @@ export interface PieceDef extends BuildPieceDef, Visual {
   readonly maxSlope: number;
   /** Lowest material tier allowed (new modular pieces: 1 = wood, no twig). */
   readonly minTier: number;
+  /** ADR-211: "L" = a vertex-snapped corner wall whose two full-length arms claim the two edges of the deck corner it wraps. */
+  readonly shape: "" | "L";
   /** Extra per-piece ingredients on top of the tier cost (only from fromTier up), e.g. glass for windows. */
   readonly extraCost: readonly (ItemCount & { readonly fromTier: number })[];
   /** Modular family for art/menus ("foundation" | "wall" | "floor" | "corner" | "roof" | ""). */
@@ -247,7 +249,7 @@ export interface RawPiece extends RawVisual {
   fired?: boolean; heat?: number; heatRadius?: number; light?: boolean; container?: number; privilegeRadius?: number; paintable?: boolean; variants?: number; variantNames?: string[]; spoilMul?: number; fuelMul?: number;
   stall?: { listings: number; clanOnly?: boolean };
   features?: PieceFeatures;
-  rotSteps?: number; small?: boolean; surface?: { height: number }; category?: string; snap?: "vertex"; maxSlope?: number; minTier?: number; extraCost?: { item: string; count: number; fromTier?: number }[]; family?: string;
+  rotSteps?: number; small?: boolean; surface?: { height: number }; category?: string; snap?: "vertex"; shape?: "L"; maxSlope?: number; minTier?: number; extraCost?: { item: string; count: number; fromTier?: number }[]; family?: string;
 }
 export interface RawZombie extends RawVisual { key: string; hp: number; speed: number; damage: number; structureDamage: number; attackRange: number; attackCooldownSeconds: number; sightRange: number; hearingMul: number; variants: number; tint?: [number, number, number]; light?: ZombieLightDef }
 export interface RawDefs {
@@ -413,7 +415,7 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
       door: p.door ?? false, station, fired: p.fired ?? false, heat: p.heat ?? 0, heatRadius: p.heatRadius ?? 0, light: p.light ?? false,
       container: p.container ?? 0, privilegeRadius: p.privilegeRadius ?? 0, paintable: p.paintable ?? false, variants: Math.max(1, p.variants ?? 1), variantNames: p.variantNames ?? [], category: p.category ?? defaultPieceCategory(p), spoilMul: p.spoilMul ?? 1, fuelMul: p.fuelMul ?? 1,
       stall: p.stall ? { listings: p.stall.listings, clanOnly: p.stall.clanOnly ?? false } : null, features: p.features ?? {},
-      rotSteps: p.rotSteps ?? 0, small: p.small ?? false, surfaceHeight: p.surface?.height ?? 0, snap: p.snap ?? "", maxSlope: p.maxSlope ?? -1, minTier: p.minTier ?? 0, family: p.family ?? "",
+      rotSteps: p.rotSteps ?? 0, small: p.small ?? false, surfaceHeight: p.surface?.height ?? 0, snap: p.snap ?? "", shape: p.shape ?? "", maxSlope: p.maxSlope ?? -1, minTier: p.minTier ?? 0, family: p.family ?? "",
       extraCost: (p.extraCost ?? []).map((c) => ({ item: itemRef(c.item, where), count: c.count, fromTier: c.fromTier ?? 0 })),
     });
     if (placement === Placement.Tri && (p.footprint && (p.footprint.w !== 1 || p.footprint.h !== 1))) err(`${where}: tri pieces are 1x1`);

@@ -25,7 +25,7 @@ import { readDayFraction, readDayNumber, readWeather } from "./env.js";
 import { newStats, type FrameStats } from "./gl/util.js";
 import type { GameplayBindings } from "./sprites.js";
 import { DeckNeighbors, deckTopPx, deckClipPolygon, deckSeamPatches, pieceTieBreak, exactTieBreak, pieceOrder, VERTEX_POST_BIAS } from "./building/deckFaces.js";
-import { ROT_EXACT_PIVOT, ROT_DECK_LIFT, ROT_VERTEX_POST } from "./building/modular.js";
+import { lCornerArmPiece, lCornerArmPivots, ROT_EXACT_PIVOT, ROT_DECK_LIFT, ROT_VERTEX_POST } from "./building/modular.js";
 
 export type FallbackRendererKind = "webgl2" | "canvas2d" | "debug";
 export interface ContextProbe { (kind: "webgl2" | "2d"): unknown }
@@ -158,6 +158,13 @@ export class Canvas2DRenderer {
       const roof = (sd.building.piece ?? sd.key).startsWith("roof"); const deck = b.layer === 0 && !roof; const top = deck ? deckTopPx(sd.key) : undefined;
       const r = { e, ax: Math.floor(t.x), ay: Math.floor(t.y), fw, fh, level: b.level, layer: b.layer, z: floorToTerrainZ(b.level, t.z), vis: b.visualId, rot: b.rotation, dmg: b.damageStage, ghost: b.ghost > 0, deck, top, px: t.x, py: t.y };
       raw.push(r); if (deck && !r.ghost && top !== undefined) this.decks.add(r.ax, r.ay, fw, fh, r.level, top);
+      // ADR-211: an L corner = its tier's straight wall on both arm edges (same pivots/flags as an edge wall) + the post art
+      const armKey = lCornerArmPiece(sd.building.piece); const arm = armKey ? reg.spriteForPiece(armKey) : undefined;
+      if (arm !== undefined) { let ad; try { ad = reg.sprite(arm); } catch { ad = undefined; }
+        if (ad?.building) for (const a of lCornerArmPivots(t.x, t.y, b.rotation)) {
+          const afw = a.rot & 1 ? ad.building.footprint.h : ad.building.footprint.w, afh = a.rot & 1 ? ad.building.footprint.w : ad.building.footprint.h;
+          raw.push({ ...r, ax: Math.floor(a.x), ay: Math.floor(a.y), fw: afw, fh: afh, layer: 1, vis: arm, rot: a.rot | ROT_EXACT_PIVOT | ROT_DECK_LIFT, deck: false, top: undefined, px: a.x, py: a.y });
+        } }
     }
     const out: C2DPiece[] = [];
     for (const r of raw) {

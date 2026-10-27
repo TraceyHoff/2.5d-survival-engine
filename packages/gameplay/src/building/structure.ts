@@ -20,6 +20,23 @@ export const LAYER_DECK = 0, LAYER_STRUCT = 1, LAYER_FURNITURE = 2, LAYER_DECOR 
 const OFF = 1 << 20;
 export const edgeKey = (tx: number, ty: number, z: number, side: EdgeSide): number => ((tx + OFF) * 2 ** 21 + (ty + OFF)) * 32 + z * 2 + (side - 1);
 
+/**
+ * ADR-211 L corner at vertex (vx,vy), rot r (arms rot0 +x/+y, rot1 -x/+y, rot2 -x/-y, rot3 +x/-y): the deck tile it wraps
+ * and its two arms as (edge tx, ty, side, wall rot, arm midpoint x, y). Arm wall rots face outward like a perimeter wall
+ * (north 0, west 1, south 2, east 3), so the arm sprites are the tier's straight wall at the exact edge pivot.
+ */
+export type LArm = { tx: number; ty: number; side: EdgeSide; wallRot: number; x: number; y: number };
+export const lCornerTile = (vx: number, vy: number, rot: number): [number, number] => [(rot & 3) === 1 || (rot & 3) === 2 ? vx - 1 : vx, (rot & 3) >= 2 ? vy - 1 : vy];
+export function lCornerArms(vx: number, vy: number, rot: number): [LArm, LArm] {
+  const r = rot & 3; const [cx, cy] = lCornerTile(vx, vy, r);
+  const south = r >= 2, east = r === 1 || r === 2;
+  return [
+    { tx: cx, ty: south ? cy + 1 : cy, side: EdgeSide.North, wallRot: south ? 2 : 0, x: cx + 0.5, y: vy },
+    { tx: east ? cx + 1 : cx, ty: cy, side: EdgeSide.West, wallRot: east ? 3 : 1, x: vx, y: cy + 0.5 },
+  ];
+}
+export const isLCorner = (def: PieceDef | undefined): boolean => def?.shape === "L";
+
 /** fx/fy: exact centroid of tri pieces (tx/ty = the tile containing it). */
 export interface Slot { tx: number; ty: number; z: number; side: EdgeSide; rot: number; fx?: number; fy?: number }
 
@@ -157,9 +174,12 @@ export class StructureIndex {
       this.tris.set(triKey(fx, fy, slot.z), e);
       const tk = edgeKey(slot.tx, slot.ty, slot.z, EdgeSide.North); let ts = this.tileTris.get(tk); if (!ts) this.tileTris.set(tk, (ts = new Set())); ts.add(e);
     } else {
+      const arms = isLCorner(def) ? lCornerArms(slot.tx, slot.ty, slot.rot).map((a) => edgeKey(a.tx, a.ty, slot.z, a.side)) : [];
+      if (arms.some((k) => this.edges.has(k))) return false;
       gridId = this.grid.place(def.id, slot.tx, slot.ty, slot.z, gridRot(def, slot.rot));
       if (!gridId) return false;
       this.byGrid.set(gridId, e);
+      for (const k of arms) this.edges.set(k, e); // ADR-211: the L claims both arm edges (walls, doors, paths, enclosure)
     }
     const w = this.world;
     if (w.has(e, PieceSlot)) w.set(e, PieceSlot, { tx: slot.tx, ty: slot.ty, z: slot.z, side: slot.side, gridId, parent });
@@ -176,6 +196,7 @@ export class StructureIndex {
     if (inf.parent && this.openings.get(inf.parent) === e) this.openings.delete(inf.parent);
     else if (def.placement === Placement.Edge && def.features.mount) { const k = `${edgeKey(s.tx, s.ty, s.z, s.side)}:${s.rot & 2}`; if (this.mounts.get(k) === e) this.mounts.delete(k); }
     else if (def.placement === Placement.Edge) { const k = edgeKey(s.tx, s.ty, s.z, s.side); if (this.edges.get(k) === e) this.edges.delete(k); }
+    else if (isLCorner(def)) for (const a of lCornerArms(s.tx, s.ty, s.rot)) { const k = edgeKey(a.tx, a.ty, s.z, a.side); if (this.edges.get(k) === e) this.edges.delete(k); }
     this.openings.delete(e);
     if (def.placement === Placement.Tri) {
       const k = triKey(s.fx ?? s.tx + 0.5, s.fy ?? s.ty + 0.5, s.z); if (this.tris.get(k) === e) this.tris.delete(k);

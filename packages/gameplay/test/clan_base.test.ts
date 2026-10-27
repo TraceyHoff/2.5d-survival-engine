@@ -25,8 +25,8 @@ describe("clan shared base (ADR-207)", () => {
     G.clanCreate(w, A); const clan = G.clanOf(w, 1); expect(G.clanInvite(w, A, B)).toBeUndefined(); expect(G.clanAccept(w, B, clan)).toBeUndefined();
     const totem = place(w, A, "claim_totem", 0.5, 3.5); expect(w.getField(totem, G.PrivilegeZone, "tribe")).toBe(clan);
     const fa = place(w, A, "foundation", 1, 1);
-    // B snaps a wall onto A's foundation inside A's claim
-    const ws = snap(w, "wall", 1.5, 1); expect(typeof ws).not.toBe("number");
+    // B snaps a wall (ADR-211: an L corner on a lone foundation's outer corner) onto A's foundation inside A's claim
+    const ws = snap(w, "wall_corner_outer", 1, 1); expect(typeof ws).not.toBe("number");
     if (typeof ws !== "number") { expect(G.validatePlacement(w, B, ws, { ignoreCost: true })).toBe(0); expect(G.validatePlacement(w, X, ws, { ignoreCost: true })).toBe(G.BuildFail.NoPrivilege); }
     const fb = place(w, B, "foundation", 2, 1); expect(w.getField(fb, G.Tribe, "id")).toBe(clan);
     stock(w, A); stock(w, B); stock(w, X);

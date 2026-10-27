@@ -24,8 +24,8 @@ import type { VfxLayer } from "./vfx.js";
 import { LayerCache, activeExpression, readAppearanceSlot, type AppearanceBinding, type CachedLayer } from "./character/layers.js";
 import { nearestCutoff } from "./gl/fallback.js";
 import { PRIO_NEAR } from "./gl/vram.js";
-import { DeckNeighbors, deckTopPx, pieceTieBreak, exactTieBreak, VERTEX_POST_BIAS, DECK_EDGE_EPS, DECK_SEAM_BAND, DECK_SEAM_SHIFT } from "./building/deckFaces.js";
-import { crackAnim, PieceCoverIndex, ROT_EXACT_PIVOT, ROT_NO_OCCLUDE, ROT_DECK_LIFT, ROT_VERTEX_POST } from "./building/modular.js";
+import { DeckNeighbors, deckTopPx, pieceTieBreak, exactTieBreak, vertexPostGlBias, DECK_EDGE_EPS, DECK_SEAM_BAND, DECK_SEAM_SHIFT } from "./building/deckFaces.js";
+import { crackAnim, lCornerArmPivots, PieceCoverIndex, ROT_EXACT_PIVOT, ROT_NO_OCCLUDE, ROT_DECK_LIFT, ROT_VERTEX_POST } from "./building/modular.js";
 import { InteriorRoute, inInteriorRegion, interiorOrder, type InteriorRegion } from "./vehicles/interiorPass.js";
 
 export const INSTANCE_FLOATS = 40;
@@ -414,6 +414,7 @@ export class SpriteBatch {
   private staticScratch = new Map<string, number[]>();
   // per-frame scratch reused across frames (no allocations in the gather/sort hot paths)
   private pieceChecks = new Map<string, number>(); private pieceTmp: number[] = [];
+  private pieceParts: { vis: number; rot: number; layer: number; x: number; y: number; last: boolean }[] = [];
   private ckCache = new Map<number, string>();
   private lateOrder = new Uint32Array(0); private lateBuf = new Float32Array(0);
   /** Adaptive sort stats: frames where the incremental (insertion) pass sufficed vs fell back to a full sort. */
@@ -454,8 +455,8 @@ export class SpriteBatch {
   private silVbo: WebGLBuffer | null = null; private silVao: WebGLVertexArrayObject | null = null;
   private silInst = new Float32Array(INSTANCE_FLOATS); private silOn = false;
   private focusScr: [number, number] = [0, 0];
-  private occ: { occAmount: (i: number, hit: boolean) => number; overlapsFocus: (l: number, r: number, t: number, b: number) => boolean; occOn: boolean; fk: number } =
-    { occAmount: () => 0, overlapsFocus: () => false, occOn: false, fk: 0 };
+  private occ: { occAmount: (i: number, hit: boolean) => number; peek: (i: number) => number; overlapsFocus: (l: number, r: number, t: number, b: number) => boolean; occOn: boolean; fk: number } =
+    { occAmount: () => 0, peek: () => 0, overlapsFocus: () => false, occOn: false, fk: 0 };
   /** Character layer cache (per entity; re-resolved on Appearance change or facing bucket change). */
   layerCache: LayerCache | null = null;
   /** Character layers: outline mode ("union" = one outline around body+layers, "body" = body only); crowd LOD zoom. */
@@ -668,7 +669,7 @@ export class SpriteBatch {
     /** Screen rect [l, r] x [t, b] of a sprite overlaps the focus rect. */
     const overlapsFocus = (l: number, r: number, t: number, b: number): boolean => occOn && r > fl && l < fr && b > ft && t < fb;
     this.silOn = false; this.late.length = 0;
-    this.occ = { occAmount, overlapsFocus, occOn, fk };
+    this.occ = { occAmount, peek: (i: number): number => this.occT[i] ?? 0, overlapsFocus, occOn, fk };
 
     // ---- dynamic Sprite entities ----
     const emitSprite = (k: number): void => {
@@ -987,92 +988,100 @@ export class SpriteBatch {
         if (gcx !== lastCx || gcy !== lastCy) { lastCx = gcx; lastCy = gcy; lastVis = this.chunkOnScreen(gcx, gcy, rect, hw, hh); }
         if (!lastVis) continue;
       }
-      const vis = d.visualId![k]!; const rotRaw = d.rotation![k]!; const rot = rotRaw & 3; const exact = (rotRaw & ROT_EXACT_PIVOT) !== 0; const level = d.level![k]!; const layer = d.layer![k]!;
-      const ghost = d.ghost![k]!; const dmg = d.damageStage![k]!; const tints = cx.bindings.pieceTints?.(e); const tint = tints ? tints[0] : d.tint![k]! >>> 0;
-      // tier page streaming in: draw the bare-key / other resident tier / family default art instead of nothing
-      let drawVis = vis;
-      if (atlas.streamClass(vis) === "bld" && !atlas.pageReady(vis, PRIO_NEAR)) { drawVis = atlas.buildingFallback(vis, PRIO_NEAR); if (drawVis < 0) continue; this.tierFallbacks++; }
-      if (!atlas.resolvePiece(drawVis, d.variant![k]!, rot, dmg, res, cx.bindings.pieceState?.(e) ?? (d.state ? d.state[k]! - 1 : -1))) continue;
-      const info = atlas.pieceInfo(vis); const sway = atlas.swayOf(vis);
-      const fw = info ? (rot & 1 ? info.fh : info.fw) : 1, fh = info ? (rot & 1 ? info.fw : info.fh) : 1;
-      const ax = Math.floor(tr.data.x[ts]!), ay = Math.floor(tr.data.y[ts]!);
-      const roof = atlas.isRoof(vis);
-      this.coverNext.add(ax, ay, fw, fh, level, layer === PIECE_LAYER_DECK, roof);
-      // roofs are deck-layer (0) pieces placed on the level above the walls and drawn from that level's floor (= wall top)
-      const z = floorToTerrainZ(level, tr.data.z[ts]!);
-      const cutaway = !!cut && (level > playerLevel || (roof && level === playerLevel)) && footprintHits(cut, ax, ay, fw, fh);
-      // occlusion (walls etc. not in cutaway): a hit, or a still-fading piece, is drawn dynamically this frame
-      let occT = 0;
-      if (!cutaway && !flatLayer(layer, roof) && !(rotRaw & ROT_NO_OCCLUDE) && this.occ.occOn) {
-        const bottom = (ax + ay + fw + fh) * hh - z * zs; // front footprint corner
-        const pivotY = cx.pieceAnchor === "front" ? bottom : (ax + ay + (fw + fh) / 2) * hh - z * zs;
-        const top = pivotY - res.ay; const left = (ax - (ay + fh)) * hw, right = (ax + fw - ay) * hw;
-        const front = ax + fw + ay + fh - 2 + 1.95 + z * zf;
-        const hit = res.ay >= cx.style.occlusion.minHeightPx && front > this.occ.fk + 0.05 && this.occ.overlapsFocus(left, right, top, bottom);
-        occT = this.occ.occAmount(i, hit);
-      }
-      const dynamic = ghost > 0 || cutaway || occT > 0;
-      const alpha = cutaway ? cx.style.cutawayAlpha : 1;
-      // footprint far corner (fx, fy); sprite pivot = footprint centre on the ground (art guide / sample manifest)
-      // or the front-most footprint corner (cx.pieceAnchor === "front")
-      const fx = ax + fw, fy = ay + fh;
-      // exact pivot (triangle centroid / vertex-snapped corner): the Transform position itself
-      const pvx = exact ? tr.data.x[ts]! : cx.pieceAnchor === "front" ? fx : ax + fw / 2, pvy = exact ? tr.data.y[ts]! : cx.pieceAnchor === "front" ? fy : ay + fh / 2;
-      // ADR-210: uprights on a deck stand on its top, not the ground under it
-      const lift = rotRaw & ROT_DECK_LIFT ? (exact ? decks.topNear(pvx, pvy, level) : decks.topOver(ax, ay, fw, fh, level)) : 0;
-      const sx = (pvx - pvy) * hw, sy = (pvx + pvy) * hh - z * zs - lift;
-      const flat = flatLayer(layer, roof); // deck pieces (floors/foundations), never roofs
-      const flags = (flat ? SpriteFlag.Flat : 0) | (res.flipX ? SpriteFlag.FlipX : 0) | (nightSet?.has(vis) ? 64 : 0);
-      // damage 1-3: Art's crack overlay sprite (building.crackOverlay = bld_crack, anim stage<N>) on top of the (baked)
-      // damage frame. Where bld_crack covers the stage, no procedural shader crack at all (a not-yet-resident page just
-      // shows the bare damage frame for a moment); the procedural crack is kept only for sets with no overlay declared
-      const crackSid = dmg > 0 ? atlas.crackOverlayOf(drawVis) : -1; const ca = crackAnim(dmg);
-      const crackCovered = crackSid >= 0 && ca !== undefined;
-      const crack = crackCovered && atlas.pageReady(crackSid, PRIO_NEAR) && atlas.resolve(crackSid, atlas.animIndex(crackSid, ca), 0, 0, 0, this.crackRes);
-      const dmgOverlay = dmg > 0 && !res.hasDamageFrames && !crackCovered ? dmg : 0;
-      const bias = (roof ? 0.05 : layer * 0.01) + (exact ? exactTieBreak(pvx, pvy, ghost > 0) : pieceTieBreak(ax, ay, ghost > 0)) + (rotRaw & ROT_VERTEX_POST ? VERTEX_POST_BIAS : 0) + (zs > 0 ? (lift / zs) * zf : 0); // roofs above every other layer of the cell; ADR-197 unique tie-break
-      const deckTop = flat && !exact && cx.pieceAnchor !== "front" ? this.deckTop(atlas, vis) : undefined;
-      const deckMask = deckTop === undefined ? 0 : decks.mask(ax, ay, fw, fh, level, deckTop);
-      tmp.length = 0;
-      // per-column slices: columns c = x - y over the footprint
-      const cMin = ax - (fy - 1), cMax = (fx - 1) - ay;
-      const single = flat || exact || cMin === cMax;
-      for (let c = cMin; c <= cMax; c++) {
-        // front-most tile in column c: maximise x+y with x-y=c inside footprint
-        let best = -1e9;
-        for (let tyy = ay; tyy < fy; tyy++) { const txx = c + tyy; if (txx >= ax && txx < fx) best = Math.max(best, txx + tyy); }
-        // depth anchor: the front-most tile's centre (front-corner pivot) or its front corner (centre pivot, whose
-        // pixels extend down to that corner and must not be clipped by the terrain in front of the pivot)
-        const front = cx.pieceAnchor === "front" ? 1 : 1.95;
-        const key = (exact ? pvx + pvy - 1 + front : single ? fx + fy - 2 + front : best + front) + z * zf + bias;
-        const colCenter = c * hw - sx; // relative to pivot (px)
-        const sliceL = single || c === cMin ? -OPEN : colCenter - hw / 2;
-        const sliceR = single || c === cMax ? OPEN : colCenter + hw / 2;
-        // slice foot = screen y of the front corner of its front-most tile, relative to pivot
-        const footDy = single ? 0 : (best + 2) * hh - z * zs - sy;
-        const o = this.writeOne(sx, sy, key, 1, res, flags, (i * 0.618034) % 1, alpha, sliceL, sliceR, tint, footDy, 0, ghost, dmgOverlay, 0);
-        o[27] = occT;
-        if (deckMask) { o[38] = deckMask | (fw << 4) | (fh << 8); o[39] = deckTop!; }
-        if (sway) { o[24] = sway[0]!; o[25] = sway[1]!; o[26] = sway[2]!; } // SpriteDef.sway (+ masks.sway weights in the shader)
-        if (tints?.[1]) writeTint2(o, tints[1]);
-        for (let q = 0; q < INSTANCE_FLOATS; q++) tmp.push(o[q]!);
-        if (single) break;
-      }
-      if (crack) {
-        const r = this.crackRes; const ck0 = tmp[2]!; // on top of the piece (its first instance's key + epsilon)
-        const o = this.writeOne(sx, sy, ck0 + 0.002, 1, r, flags, 0, alpha, -OPEN, OPEN, 0, 0, 0, 0, 0, 0);
-        o[27] = occT; for (let q = 0; q < INSTANCE_FLOATS; q++) tmp.push(o[q]!); this.crackOverlays++;
-      }
-      if (dynamic) {
-        if (sx < rect.x0 - 512 || sx > rect.x1 + 512 || sy < rect.y0 - 256 || sy > rect.y1 + 1024) continue;
-        for (let j = 0; j < tmp.length; j += INSTANCE_FLOATS) this.pushOcc(tmp, j, occT, cx.style.occlusion.mode);
-      } else {
-        const ck = this.chunkKeyOf(Math.floor(ax / CHUNK_SIZE), Math.floor(ay / CHUNK_SIZE));
-        let list = scratch.get(ck); if (!list) scratch.set(ck, (list = []));
-        for (let j = 0; j < tmp.length; j++) list.push(tmp[j]!);
-        let h = checksums.get(ck) ?? 0x811c9dc5;
-        for (let j = 0; j < tmp.length; j++) h = Math.imul(h ^ Math.round(tmp[j]! * 64), 16777619) >>> 0;
-        checksums.set(ck, h);
+      // ADR-211: an L corner draws its two arm walls (same tier straight wall at the arm edge pivots) then its post art
+      const parts = this.pieceParts; parts.length = 0;
+      { const v0 = d.visualId![k]!, r0 = d.rotation![k]!, arm = atlas.lArmOf(v0);
+        if (arm >= 0) for (const a of lCornerArmPivots(tr.data.x[ts]!, tr.data.y[ts]!, r0)) parts.push({ vis: arm, rot: a.rot | ROT_EXACT_PIVOT | ROT_DECK_LIFT, layer: 1, x: a.x, y: a.y, last: false });
+        parts.push({ vis: v0, rot: r0, layer: d.layer![k]!, x: tr.data.x[ts]!, y: tr.data.y[ts]!, last: true }); }
+      let anyHit = false;
+      for (const part of parts) {
+        const vis = part.vis; const rotRaw = part.rot; const rot = rotRaw & 3; const exact = (rotRaw & ROT_EXACT_PIVOT) !== 0; const level = d.level![k]!; const layer = part.layer;
+        const ghost = d.ghost![k]!; const dmg = d.damageStage![k]!; const tints = cx.bindings.pieceTints?.(e); const tint = tints ? tints[0] : d.tint![k]! >>> 0;
+        // tier page streaming in: draw the bare-key / other resident tier / family default art instead of nothing
+        let drawVis = vis;
+        if (atlas.streamClass(vis) === "bld" && !atlas.pageReady(vis, PRIO_NEAR)) { drawVis = atlas.buildingFallback(vis, PRIO_NEAR); if (drawVis < 0) continue; this.tierFallbacks++; }
+        if (!atlas.resolvePiece(drawVis, d.variant![k]!, rot, dmg, res, cx.bindings.pieceState?.(e) ?? (d.state ? d.state[k]! - 1 : -1))) continue;
+        const info = atlas.pieceInfo(vis); const sway = atlas.swayOf(vis);
+        const fw = info ? (rot & 1 ? info.fh : info.fw) : 1, fh = info ? (rot & 1 ? info.fw : info.fh) : 1;
+        const ax = Math.floor(part.x), ay = Math.floor(part.y);
+        const roof = atlas.isRoof(vis);
+        this.coverNext.add(ax, ay, fw, fh, level, layer === PIECE_LAYER_DECK, roof);
+        // roofs are deck-layer (0) pieces placed on the level above the walls and drawn from that level's floor (= wall top)
+        const z = floorToTerrainZ(level, tr.data.z[ts]!);
+        const cutaway = !!cut && (level > playerLevel || (roof && level === playerLevel)) && footprintHits(cut, ax, ay, fw, fh);
+        // occlusion (walls etc. not in cutaway): a hit, or a still-fading piece, is drawn dynamically this frame
+        let occT = 0;
+        if (!cutaway && !flatLayer(layer, roof) && !(rotRaw & ROT_NO_OCCLUDE) && this.occ.occOn) {
+          const bottom = (ax + ay + fw + fh) * hh - z * zs; // front footprint corner
+          const pivotY = cx.pieceAnchor === "front" ? bottom : (ax + ay + (fw + fh) / 2) * hh - z * zs;
+          const top = pivotY - res.ay; const left = (ax - (ay + fh)) * hw, right = (ax + fw - ay) * hw;
+          const front = ax + fw + ay + fh - 2 + 1.95 + z * zf;
+          const hit = res.ay >= cx.style.occlusion.minHeightPx && front > this.occ.fk + 0.05 && this.occ.overlapsFocus(left, right, top, bottom);
+          anyHit ||= hit; occT = part.last ? this.occ.occAmount(i, anyHit) : this.occ.peek(i); // ADR-211: an L fades as one piece (arms read the smoothed value, the post steps it)
+        }
+        const dynamic = ghost > 0 || cutaway || occT > 0;
+        const alpha = cutaway ? cx.style.cutawayAlpha : 1;
+        // footprint far corner (fx, fy); sprite pivot = footprint centre on the ground (art guide / sample manifest)
+        // or the front-most footprint corner (cx.pieceAnchor === "front")
+        const fx = ax + fw, fy = ay + fh;
+        // exact pivot (triangle centroid / vertex-snapped corner): the Transform position itself
+        const pvx = exact ? part.x : cx.pieceAnchor === "front" ? fx : ax + fw / 2, pvy = exact ? part.y : cx.pieceAnchor === "front" ? fy : ay + fh / 2;
+        // ADR-210: uprights on a deck stand on its top, not the ground under it
+        const lift = rotRaw & ROT_DECK_LIFT ? (exact ? decks.topNear(pvx, pvy, level) : decks.topOver(ax, ay, fw, fh, level)) : 0;
+        const sx = (pvx - pvy) * hw, sy = (pvx + pvy) * hh - z * zs - lift;
+        const flat = flatLayer(layer, roof); // deck pieces (floors/foundations), never roofs
+        const flags = (flat ? SpriteFlag.Flat : 0) | (res.flipX ? SpriteFlag.FlipX : 0) | (nightSet?.has(vis) ? 64 : 0);
+        // damage 1-3: Art's crack overlay sprite (building.crackOverlay = bld_crack, anim stage<N>) on top of the (baked)
+        // damage frame. Where bld_crack covers the stage, no procedural shader crack at all (a not-yet-resident page just
+        // shows the bare damage frame for a moment); the procedural crack is kept only for sets with no overlay declared
+        const crackSid = dmg > 0 ? atlas.crackOverlayOf(drawVis) : -1; const ca = crackAnim(dmg);
+        const crackCovered = crackSid >= 0 && ca !== undefined;
+        const crack = crackCovered && atlas.pageReady(crackSid, PRIO_NEAR) && atlas.resolve(crackSid, atlas.animIndex(crackSid, ca), 0, 0, 0, this.crackRes);
+        const dmgOverlay = dmg > 0 && !res.hasDamageFrames && !crackCovered ? dmg : 0;
+        const bias = (roof ? 0.05 : layer * 0.01) + (exact ? exactTieBreak(pvx, pvy, ghost > 0) : pieceTieBreak(ax, ay, ghost > 0)) + (rotRaw & ROT_VERTEX_POST ? vertexPostGlBias(hh, zf / zs) : 0) + (zs > 0 ? (lift / zs) * zf : 0); // roofs above every other layer of the cell; ADR-197 unique tie-break
+        const deckTop = flat && !exact && cx.pieceAnchor !== "front" ? this.deckTop(atlas, vis) : undefined;
+        const deckMask = deckTop === undefined ? 0 : decks.mask(ax, ay, fw, fh, level, deckTop);
+        tmp.length = 0;
+        // per-column slices: columns c = x - y over the footprint
+        const cMin = ax - (fy - 1), cMax = (fx - 1) - ay;
+        const single = flat || exact || cMin === cMax;
+        for (let c = cMin; c <= cMax; c++) {
+          // front-most tile in column c: maximise x+y with x-y=c inside footprint
+          let best = -1e9;
+          for (let tyy = ay; tyy < fy; tyy++) { const txx = c + tyy; if (txx >= ax && txx < fx) best = Math.max(best, txx + tyy); }
+          // depth anchor: the front-most tile's centre (front-corner pivot) or its front corner (centre pivot, whose
+          // pixels extend down to that corner and must not be clipped by the terrain in front of the pivot)
+          const front = cx.pieceAnchor === "front" ? 1 : 1.95;
+          const key = (exact ? pvx + pvy - 1 + front : single ? fx + fy - 2 + front : best + front) + z * zf + bias;
+          const colCenter = c * hw - sx; // relative to pivot (px)
+          const sliceL = single || c === cMin ? -OPEN : colCenter - hw / 2;
+          const sliceR = single || c === cMax ? OPEN : colCenter + hw / 2;
+          // slice foot = screen y of the front corner of its front-most tile, relative to pivot
+          const footDy = single ? 0 : (best + 2) * hh - z * zs - sy;
+          const o = this.writeOne(sx, sy, key, 1, res, flags, (i * 0.618034) % 1, alpha, sliceL, sliceR, tint, footDy, 0, ghost, dmgOverlay, 0);
+          o[27] = occT;
+          if (deckMask) { o[38] = deckMask | (fw << 4) | (fh << 8); o[39] = deckTop!; }
+          if (sway) { o[24] = sway[0]!; o[25] = sway[1]!; o[26] = sway[2]!; } // SpriteDef.sway (+ masks.sway weights in the shader)
+          if (tints?.[1]) writeTint2(o, tints[1]);
+          for (let q = 0; q < INSTANCE_FLOATS; q++) tmp.push(o[q]!);
+          if (single) break;
+        }
+        if (crack) {
+          const r = this.crackRes; const ck0 = tmp[2]!; // on top of the piece (its first instance's key + epsilon)
+          const o = this.writeOne(sx, sy, ck0 + 0.002, 1, r, flags, 0, alpha, -OPEN, OPEN, 0, 0, 0, 0, 0, 0);
+          o[27] = occT; for (let q = 0; q < INSTANCE_FLOATS; q++) tmp.push(o[q]!); this.crackOverlays++;
+        }
+        if (dynamic) {
+          if (sx < rect.x0 - 512 || sx > rect.x1 + 512 || sy < rect.y0 - 256 || sy > rect.y1 + 1024) continue;
+          for (let j = 0; j < tmp.length; j += INSTANCE_FLOATS) this.pushOcc(tmp, j, occT, cx.style.occlusion.mode);
+        } else {
+          const ck = this.chunkKeyOf(Math.floor(ax / CHUNK_SIZE), Math.floor(ay / CHUNK_SIZE));
+          let list = scratch.get(ck); if (!list) scratch.set(ck, (list = []));
+          for (let j = 0; j < tmp.length; j++) list.push(tmp[j]!);
+          let h = checksums.get(ck) ?? 0x811c9dc5;
+          for (let j = 0; j < tmp.length; j++) h = Math.imul(h ^ Math.round(tmp[j]! * 64), 16777619) >>> 0;
+          checksums.set(ck, h);
+        }
       }
     }
     { const t = this.cover; this.cover = this.coverNext; this.coverNext = t; }

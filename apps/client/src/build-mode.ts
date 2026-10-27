@@ -82,18 +82,22 @@ export class BuildMode {
   private device(): BuildDevice { return this.o.device?.() ?? "keyboardMouse"; }
   start(sel: BuildSelection): void {
     const was = this.active; this.sel = { ...sel };
-    if (!was) { this.rot = 0; this.fineRot = 0; this.level = 0; this.padOffset = undefined; this.touchPoint = undefined; this.disarm(); this.o.input.push("Building"); this.o.onActiveChange?.(true); }
+    if (!was) { this.rotLockAt = undefined; this.rot = 0; this.fineRot = 0; this.level = 0; this.padOffset = undefined; this.touchPoint = undefined; this.disarm(); this.o.input.push("Building"); this.o.onActiveChange?.(true); }
     this.refresh();
   }
   stop(): void { if (!this.active) return; this.sel = undefined; this.preview = undefined; this.target = undefined; this.touchPoint = undefined; this.padOffset = undefined; this.disarm(); this.o.input.pop("Building"); this.o.onActiveChange?.(false); }
-  rotate(dir: 1 | -1): void { const c = this.o.ctx(); if (!this.sel || !c) return; if (this.freePlacing) { this.fineRot = (this.fineRot + dir + FINE_ROT_STEPS) % FINE_ROT_STEPS; this.refresh(); return; } this.rot = rotateStep(c.world, this.sel.piece, this.rot, dir); this.refresh(); }
+  rotate(dir: 1 | -1): void { const c = this.o.ctx(); if (!this.sel || !c) return; if (this.freePlacing) { this.fineRot = (this.fineRot + dir + FINE_ROT_STEPS) % FINE_ROT_STEPS; this.refresh(); return; } // ADR-211: step from the rotation shown (a corner may have auto-fitted it); RB then overrides auto-fit at this junction
+    const shown = this.preview?.request.rot; if (this.preview?.magnet !== undefined && shown !== undefined && shown < FINE_ROT) this.rot = shown;
+    this.rot = rotateStep(c.world, this.sel.piece, this.rot, dir); this.rotLockAt = this.preview ? { x: Math.round(this.preview.x), y: Math.round(this.preview.y) } : { x: NaN, y: NaN }; this.refresh(); }
+  /** ADR-211: junction where the player last rotated by hand (corner auto-fit off there; moving to another junction re-enables it). */
+  private rotLockAt: { x: number; y: number } | undefined;
   setLevel(dir: 1 | -1): void { const c = this.o.ctx(); if (!this.sel || !c) return; const max = gameplayDefs(c.world).building.maxLevel; this.level = Math.max(0, Math.min(max, this.level + dir)); this.disarm(); this.refresh(); }
   /** Cycle the piece (all pieces, catalog order) keeping tier when the new piece has it. */
   cyclePiece(dir: 1 | -1): void {
     const c = this.o.ctx(); if (!this.sel || !c) return; const all = buildView(c); if (!all.length) return;
     const i = all.findIndex((p) => p.id === this.sel!.piece); const next = all[(((i + dir) % all.length) + all.length) % all.length]!;
     const tier = next.tiers.some((t) => t.tier === this.sel!.tier) ? this.sel.tier : next.tiers[0]!.tier;
-    this.sel = { piece: next.id, tier, variant: 0, paint: this.sel.paint }; this.rot = 0; this.fineRot = 0; this.refresh();
+    this.sel = { piece: next.id, tier, variant: 0, paint: this.sel.paint }; this.rot = 0; this.rotLockAt = undefined; this.fineRot = 0; this.refresh();
   }
   cycleTier(dir: 1 | -1): void {
     const c = this.o.ctx(); if (!this.sel || !c) return; const p = buildView(c).find((x) => x.id === this.sel!.piece); if (!p || p.tiers.length < 2) return;
@@ -133,7 +137,11 @@ export class BuildMode {
     const aim = this.aim(c);
     // ADR-169: off = never assist; on = the default (facing / pad-cursor aims snap, a pointed mouse / tap cell stays exact so a red ghost says why)
     const assist = !this.snap ? false : this.device() === "gamepad" ? true : undefined; // pad cursor is imprecise: snap it too
-    this.preview = buildPreviewFor(c.world, c.player, this.sel, this.requestRot, aim, this.level, assist);
+    const sel = { ...this.sel, autoRot: this.rotLockAt === undefined };
+    this.preview = buildPreviewFor(c.world, c.player, sel, this.requestRot, aim, this.level, assist);
+    if (this.rotLockAt && this.preview && (Math.round(this.preview.x) !== this.rotLockAt.x || Math.round(this.preview.y) !== this.rotLockAt.y)) {
+      this.rotLockAt = undefined; this.preview = buildPreviewFor(c.world, c.player, { ...this.sel, autoRot: true }, this.requestRot, aim, this.level, assist);
+    }
     const at = placementTarget(c.world, c.player, aim);
     const prev = this.target?.entity; this.target = pieceTargetAt(c.world, c.player, at, this.level);
     if (this.target?.entity !== prev) this.disarm();

@@ -130,3 +130,12 @@ export const EXACT_TB_STEP = 0.0004;
 export const exactTieBreak = (px: number, py: number, ghost: boolean): number => ((((Math.round(2 * (px - py)) % 8) + 8) % 8) * EXACT_TB_STEP + (ghost ? GHOST_TB : 0));
 /** ADR-210: a vertex corner post draws just in front of every wall whose end meets its vertex (pivot key + 0.5). */
 export const VERTEX_POST_BIAS = 0.53;
+/**
+ * ADR-211: WebGL2 upright depth grows with pixel height above the pivot (key + hp * zPerPx). A wall whose end meets the
+ * vertex has its pivot up to 0.52 tile rows lower on screen than the post, so at a shared pixel it gains 0.52 * hh * zPerPx
+ * (~0.17 at 64x32 / zStep 16) and beat the post's whole-sprite +0.53 (Canvas2D painter order has no per-pixel term).
+ * The post's GPU key adds 1.5 rows of that height term on top of VERTEX_POST_BIAS (0.6 rows was not enough against the
+ * tall 64x96 wood tier walls in headless captures); an occupant or wall one tile row in front still out-ranks it.
+ */
+export const VERTEX_POST_ROWS = 1.5;
+export const vertexPostGlBias = (hh: number, zPerPx: number): number => VERTEX_POST_BIAS + VERTEX_POST_ROWS * hh * zPerPx;

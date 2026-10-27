@@ -33,7 +33,7 @@ describe("ADR-196 structural magnet snap", () => {
     expect(g.magnet).toBeUndefined(); expect(g.snapEdge).toBeUndefined(); expect([g.x, g.y]).toEqual([7.5, 7.5]);
   });
   it("a wall highlights the foundation edge it sits on", () => {
-    const { w, p } = setup(); place(w, p, "foundation", 6.5, 5.5);
+    const { w, p } = setup(); for (const x of [5.5, 6.5, 7.5]) place(w, p, "foundation", x, 5.5); // ADR-211: not a corner slot
     const g = buildPreviewFor(w, p, sel("wall"), 0, { mode: 1, x: 6.5, y: 5.1 }, 0)!;
     expect(g.valid).toBe(true); expect(g.snapEdge).toEqual({ x0: 6, y0: 5, x1: 7, y1: 5 });
   });

@@ -19,13 +19,13 @@
 import { BinaryReader, BinaryWriter, entityIndex, Transform, type Entity, type World } from "@engine/core";
 import { refreshSoldOut, stallName, writeStallName } from "../economy/stall.js";
 import { CHUNK_SIZE, chunkKey, type ChunkKey } from "@engine/world";
-import { AttachKind, BuildPiece, Container, DoorState, Fuel, LEDGER_SIZE, Listings, PieceLink, PieceStability, StallHeader, StallLedger, Tribe } from "../components.js";
+import { AttachKind, BuildPiece, Container, DoorState, Fuel, LEDGER_SIZE, Listings, PieceLink, PieceSlot, PieceStability, StallHeader, StallLedger, Tribe } from "../components.js";
 import { gameplayDefs, isAuthority } from "../config.js";
 import { Placement, type PieceDef } from "../defs.js";
 import { attachmentsOf, unlinkPiece } from "./links.js";
 import { recomputeRegion } from "./integrity.js";
-import { placePiece } from "./place.js";
-import { isFineRot, openingParent, slotFromPos, slotTransform, structures, unmarkLinked, type StructureIndex } from "./structure.js";
+import { maxHp, outerCornerRots, placePiece } from "./place.js";
+import { edgeKey, isFineRot, lCornerArms, openingParent, slotFromPos, slotTransform, structures, unmarkLinked, type StructureIndex } from "./structure.js";
 import { setEmittersLit } from "../systems/fuel.js";
 import { setStallOwnership } from "../economy/stall.js";
 
@@ -152,6 +152,7 @@ export function decodeStructures(world: World, bytes: Uint8Array, opts: { strict
     if (flags & 4) readContainer(world, r, storeA, version);
     if (flags & 8) readStall(world, r, storeA !== undefined && world.has(storeA, StallHeader) ? storeA : undefined, atts.find((a) => world.getField(a, PieceLink, "kind") === AttachKind.Till), version);
   }
+  if (isAuthority(world)) migrateWallPairsToCorners(world, idx, pieces);
   if (isAuthority(world) && pieces.length) { recomputeRegion(world, idx, new Set(pieces)); idx.dirty.clear(); }
   // fires: restore emitter strength for lit fires
   for (const p of pieces) for (const a of attachmentsOf(world, p)) if (world.getField(a, Fuel, "lit")) setEmittersLit(world, a, 1);
@@ -169,3 +170,40 @@ export function unloadStructures(world: World, k: ChunkKey): number {
 /** Per-chunk structure version (bumped on any change) for dirty tracking. */
 export const structureChunkVersion = (world: World, k: ChunkKey): number => structures(world).chunkVersions.get(k) ?? 0;
 
+
+/**
+ * ADR-211 save migration (load, authority only; idempotent): a pair of plain straight walls (`wall` at any tier, no
+ * door/window opening, no attachments) occupying both arms of a foundation outer corner was the only way to close a
+ * corner before L corners; it now fills a slot straight walls may not use. Each such pair is merged into one
+ * `wall_corner_outer` L at the vertex, at the lower of the two tiers (cost-neutral: an L costs 2 walls, so nothing is
+ * refunded or charged), hp scaled to the pair's mean health fraction, keeping the first wall's paint/variant/tribe.
+ * Singles in a corner slot (and doorway/window frames) are grandfathered as-is. `pieces` is updated in place.
+ */
+export function migrateWallPairsToCorners(world: World, idx: StructureIndex, pieces: Entity[]): number {
+  const defs = gameplayDefs(world); let wallDef: PieceDef | undefined, lDef: PieceDef | undefined;
+  for (const d of defs.pieces.values()) { if (d.key === "wall") wallDef = d; else if (d.key === "wall_corner_outer") lDef = d; }
+  if (!wallDef || !lDef) return 0; const lh = defs.building.levelHeight;
+  const plain = (e: Entity | 0): e is Entity => !!e && world.isAlive(e) && world.getField(e, BuildPiece, "type") === wallDef!.id && !idx.opening(e) && attachmentsOf(world, e).length === 0;
+  const verts = new Set<string>(); let n = 0;
+  for (const e of pieces) {
+    if (!plain(e)) continue; const s = world.get(e, PieceSlot); if (!s) continue;
+    const vs: [number, number][] = s.side === 1 ? [[s.tx, s.ty], [s.tx + 1, s.ty]] : [[s.tx, s.ty], [s.tx, s.ty + 1]];
+    for (const [vx, vy] of vs) verts.add(`${vx},${vy},${s.z}`);
+  }
+  for (const v of [...verts].sort()) {
+    const [vx, vy, z] = v.split(",").map(Number) as [number, number, number];
+    for (const r of outerCornerRots(idx, vx, vy, z)) {
+      const ws = lCornerArms(vx, vy, r).map((a) => idx.edges.get(edgeKey(a.tx, a.ty, z, a.side)) ?? 0);
+      if (!plain(ws[0]!) || !plain(ws[1]!) || ws[0] === ws[1]) continue;
+      const [a, b] = ws as [Entity, Entity]; const pa = world.get(a, BuildPiece)!, pb = world.get(b, BuildPiece)!;
+      const tier = Math.min(pa.tier, pb.tier); const tribe = world.getField(a, Tribe, "id") ?? 0;
+      const frac = (pa.hp / Math.max(1, maxHp(defs, wallDef, pa.tier)) + pb.hp / Math.max(1, maxHp(defs, wallDef, pb.tier))) / 2;
+      for (const e of [a, b]) { idx.removePiece(e); world.destroy(e); const i = pieces.indexOf(e); if (i >= 0) pieces.splice(i, 1); }
+      const slot = { tx: vx, ty: vy, z, side: 0, rot: r } as const;
+      const hp = Math.max(1, Math.min(0xffff, Math.round(maxHp(defs, lDef, tier) * Math.min(1, frac))));
+      pieces.push(placePiece(world, 0, { def: lDef, slot, parent: 0, pos: slotTransform(lDef, slot, lh, vx, vy), tier, variant: pa.variant }, { pay: false, hp, paint: pa.paint, tribe }));
+      n++; break;
+    }
+  }
+  return n;
+}

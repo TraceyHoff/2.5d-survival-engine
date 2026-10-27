@@ -9,8 +9,8 @@
 import { Transform, type Entity, type World } from "@engine/core";
 import { gameplayDefs } from "../config.js";
 import { Placement } from "../defs.js";
-import { pieceCost, snapPlacement, validatePlacement } from "../building/place.js";
-import { isFineRot, rotParts, rotatedSize, structures, type StructureIndex } from "../building/structure.js";
+import { outerCornerRots, pieceCost, snapPlacement, validatePlacement } from "../building/place.js";
+import { isFineRot, isLCorner, rotParts, rotatedSize, structures, type StructureIndex } from "../building/structure.js";
 import { maxHpOf } from "../building/integrity.js";
 import { BuildPiece, Dead, EdgeSide, PieceSlot } from "../components.js";
 import { DemolishCmd, RepairCmd, UpgradeCmd } from "../input.js";
@@ -84,6 +84,7 @@ export function buildPreviewFor(world: World, player: Entity, sel: BuildSelectio
   const p0 = rawPreview(world, player, sel, rot, aim, level);
   const p = p0 && assist !== false ? magnetize(world, player, sel, rot, aim, level, p0) : p0;
   if (!p || p.valid || !(assist ?? (aim !== undefined && aim.mode !== 1))) return p;
+  if (p.magnet && isLCorner(gameplayDefs(world).pieces.get(sel.piece))) return p; // ADR-211: the L's red corner is final (no hop to another vertex)
   const at = placementTarget(world, player, aim)!;
   for (const [dx, dy] of SNAP_ASSIST_RING) {
     const q = rawPreview(world, player, sel, rot, { mode: 1, x: at.x + dx, y: at.y + dy }, level);
@@ -211,14 +212,64 @@ export function magnetize(world: World, player: Entity, sel: BuildSelection, rot
 
 /** ADR-210: a corner post auto-suggests the nearest wall junction (a vertex where N- and W-running walls meet). */
 function magnetizeCorner(world: World, player: Entity, sel: BuildSelection, rot: number, aim: PlacementAim | undefined, level: number, p: BuildPreview): BuildPreview {
-  const idx = structures(world); const [n0, w0] = vertexWalls(idx, Math.round(p.x), Math.round(p.y), level);
-  if (p.valid && n0 > 0 && w0 > 0) return { ...p, magnet: false };
+  const idx = structures(world);
+  if (isLCorner(gameplayDefs(world).pieces.get(sel.piece))) return magnetizeL(world, player, sel, rot, aim, level, p, idx);
+  const [n0, w0] = vertexWalls(idx, Math.round(p.x), Math.round(p.y), level);
+  if (p.valid && n0 > 0 && w0 > 0) { const q = sel.autoRot === false ? p : fitCorner(world, player, sel, rot, { x: Math.round(p.x), y: Math.round(p.y) }, level, idx); return { ...(q?.valid ? q : p), magnet: false }; }
   if (!p.valid && p.reason !== 10 && p.reason !== 11) return p;
   const at = placementTarget(world, player, aim) ?? { x: p.x, y: p.y };
   for (const c of cornerJunctions(idx, at, level)) {
-    const q = rawPreview(world, player, sel, rot, { mode: 1, x: c.x, y: c.y }, level); if (q?.valid) return { ...q, magnet: true };
+    const q = fitCorner(world, player, sel, rot, c, level, idx); if (q?.valid) return { ...q, magnet: true };
   }
   return p;
+}
+/**
+ * ADR-211 L corner: snap to the nearest foundation outer corner (vertex within ~1.5 tiles of the aim), auto-rotated so
+ * both arms run along its open sides. RB / R (autoRot false) keeps the hand-picked rotation and snaps to the nearest
+ * vertex where that rotation wraps a deck tile. Same path for pad, mouse and touch (all aim through placementTarget).
+ */
+export function lCornerCandidates(idx: StructureIndex, x: number, y: number, z: number): { x: number; y: number; rot: number; d: number }[] {
+  const out: { x: number; y: number; rot: number; d: number }[] = [];
+  for (let vy = Math.floor(y) - 1; vy <= Math.floor(y) + 2; vy++) for (let vx = Math.floor(x) - 1; vx <= Math.floor(x) + 2; vx++) {
+    const d = Math.hypot(vx - x, vy - y); if (d > 1.6) continue;
+    for (const r of outerCornerRots(idx, vx, vy, z)) out.push({ x: vx, y: vy, rot: r, d });
+  }
+  return out.sort((a, b) => a.d - b.d || a.y - b.y || a.x - b.x || a.rot - b.rot);
+}
+/**
+ * ADR-211 L corner preview: snaps to the nearest foundation outer corner (within 1.6 tiles of the aim), auto-rotated
+ * to wrap it. After RB (sel.autoRot false) the corner stays on that vertex with the player's rotation, red when that
+ * rotation does not wrap a deck. A taken outer corner falls through to the next one; none valid shows the nearest red.
+ */
+function magnetizeL(world: World, player: Entity, sel: BuildSelection, rot: number, aim: PlacementAim | undefined, level: number, p: BuildPreview, idx: StructureIndex): BuildPreview {
+  const at = placementTarget(world, player, aim) ?? { x: p.x, y: p.y };
+  const cands = lCornerCandidates(idx, at.x, at.y, level);
+  if (sel.autoRot === false && rot < 4) {
+    const v = cands[0] ?? { x: Math.round(at.x), y: Math.round(at.y) };
+    const q = rawPreview(world, player, sel, rot & 3, { mode: 1, x: v.x, y: v.y }, level); return q ? { ...q, magnet: true } : p;
+  }
+  let first: BuildPreview | undefined;
+  for (const c of cands) {
+    const q = rawPreview(world, player, sel, c.rot, { mode: 1, x: c.x, y: c.y }, level); if (!q) continue;
+    if (q.valid) return { ...q, magnet: true };
+    first ??= q;
+  }
+  return first ? { ...first, magnet: true } : p; // nearest corner shown red (e.g. an arm edge already holds a wall)
+}
+/**
+ * ADR-211: rotations whose two arms lie along walls meeting at vertex (vx, vy): rot 0 = walls toward +x and +y,
+ * 1 = -x/+y, 2 = -x/-y, 3 = +x/-y (quarter turns of the corner art; same quadrant for outer/inner/angled).
+ */
+export function cornerFitRots(idx: StructureIndex, vx: number, vy: number, z: number): number[] {
+  const px = hasEdge(idx, vx, vy, z, EdgeSide.North), nx = hasEdge(idx, vx - 1, vy, z, EdgeSide.North);
+  const py = hasEdge(idx, vx, vy, z, EdgeSide.West), ny = hasEdge(idx, vx, vy - 1, z, EdgeSide.West);
+  const out: number[] = []; if (px && py) out.push(0); if (nx && py) out.push(1); if (nx && ny) out.push(2); if (px && ny) out.push(3); return out;
+}
+/** Preview at junction `c`: auto-rotated to fit its walls (kept when `rot` already fits, or the player rotated by hand). */
+function fitCorner(world: World, player: Entity, sel: BuildSelection, rot: number, c: { x: number; y: number }, level: number, idx: StructureIndex): BuildPreview | undefined {
+  let r = rot;
+  if (sel.autoRot !== false && rot < 4) { const fits = cornerFitRots(idx, c.x, c.y, level); if (fits.length && !fits.includes(rot & 3)) r = fits[0]!; }
+  return rawPreview(world, player, sel, r, { mode: 1, x: c.x, y: c.y }, level);
 }
 
 /** PlaceCmd for a preview (raw rot as requested; the server re-snaps the same way). */

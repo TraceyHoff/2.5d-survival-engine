@@ -32,14 +32,12 @@ describe("ADR-210 corners", () => {
   test("pad only: right stick to a wall junction, RB rotates 90° x4, A places the corner on the vertex (twig tier)", () => {
     const s = setup();
     for (let x = 0; x < 2; x++) for (let y = 0; y < 2; y++) s.place("foundation", x + 0.5, y + 0.5);
-    s.place("wall", 0.5, 0); s.place("wall", 0, 0.5); // N and W walls meet at vertex (0,0)
-    const corner = s.d.pieceId("wall_corner_outer");
+    const corner = s.d.pieceId("wall_corner_outer"); // ADR-211: an L that wraps the deck's outer corner (0,0)
     s.bm.start({ piece: corner, tier: 0, variant: 0, paint: 0 });
-    s.pad.set("pad.ry", -1); for (let i = 0; i < 30; i++) s.tick(); s.pad.set("pad.ry", 0); s.tick(); // cursor up toward the junction
-    s.bm.padOffset = { x: 0.1, y: -2.4 }; s.tick(); // aim (0.6, 0.1): grid-rounds to vertex (1,0), the junction (0,0) is 0.61 away
-    const p = s.bm.preview!; expect(p.reason, JSON.stringify(p)).toBe(0); expect(p.valid).toBe(true); expect([p.x, p.y]).toEqual([0, 0]); expect(p.magnet).toBe(true);
-    for (let r = 1; r <= 4; r++) { s.btn("pad.rb"); expect(s.bm.rot).toBe(r % 4); expect(s.bm.preview!.valid).toBe(true); }
-    s.btn("pad.rb"); expect(s.bm.rot).toBe(1);
+    s.pad.set("pad.ry", -1); for (let i = 0; i < 30; i++) s.tick(); s.pad.set("pad.ry", 0); s.tick(); // cursor up toward the corner
+    s.bm.padOffset = { x: 0.1, y: -2.4 }; s.tick(); // aim (0.6, 0.1): the outer corner (0,0) is 0.61 away
+    const p = s.bm.preview!; expect(p.reason, JSON.stringify(p)).toBe(0); expect(p.valid).toBe(true); expect([p.x, p.y]).toEqual([0, 0]); expect(p.magnet).toBe(true); expect(p.rot).toBe(0);
+    for (let r = 1; r <= 4; r++) { s.btn("pad.rb"); expect(s.bm.rot).toBe(r % 4); expect([s.bm.preview!.x, s.bm.preview!.y]).toEqual([0, 0]); expect(s.bm.preview!.valid).toBe(r % 4 === 0); }
     s.btn("pad.a"); expect(s.sent.map((i) => i.cmd.name)).toEqual(["gameplay.place"]); expect((s.sent[0]!.args as unknown as { x: number }).x).toBe(0);
     const args = s.sent[0]!.args as unknown as { x: number; y: number; rot: number; tier: number };
     const r = G.tryPlace(s.w, s.me, { piece: corner, x: args.x, y: args.y, level: 0, rot: args.rot, tier: args.tier, variant: 0 }); expect(r.ok).toBe(true);
@@ -50,8 +48,8 @@ describe("ADR-210 corners", () => {
     s.place("foundation", 1.5, 0.5);
     expect(G.tryPlace(s.w, s.me, { piece: corner, x: 2, y: 1, level: 0, rot: 2, tier: 0, variant: 0 }).ok).toBe(true);
   });
-  test("a corner post does not block walking across the tile it is anchored to", () => {
-    const s = setup(); s.place("foundation", 3.5, 3.5); s.place("wall_corner_outer", 3, 3);
-    expect(G.movementBlocked(s.w, 2.5, 3.5, 3.5, 3.5, 0)).toBe(false);
+  test("an L corner blocks crossing its arms, not walking inside the tile it wraps (ADR-211)", () => {
+    const s = setup(); s.place("foundation", 3.5, 3.5); expect(G.tryPlace(s.w, s.me, { piece: s.d.pieceId("wall_corner_outer"), x: 3, y: 3, level: 0, rot: 0, tier: 0, variant: 0 }).ok).toBe(true);
+    expect(G.movementBlocked(s.w, 2.5, 3.5, 3.5, 3.5, 0)).toBe(true); expect(G.movementBlocked(s.w, 3.5, 3.5, 3.5, 4.5, 0)).toBe(false);
   });
 });

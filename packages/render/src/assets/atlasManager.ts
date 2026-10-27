@@ -35,7 +35,7 @@ import type { RectTable } from "./texturePacker.js";
 import { PageLRU, PRIO_NEAR, VramAccountant, rgbaBytes, type VramStats } from "../gl/vram.js";
 import { blockBytes, GL_FORMAT, ktx2Target, loadKtx2, loadKtx2Rgba, type Ktx2Target } from "./ktx2.js";
 import type { CompressedTextureSupport } from "../gl/capabilities.js";
-import { streamingFallbackKeys } from "../building/modular.js";
+import { lCornerArmPiece, streamingFallbackKeys } from "../building/modular.js";
 
 export const NO_HEAD_OFFSET: Readonly<{ x: number; y: number }> = Object.freeze({ x: 0, y: 0 });
 /** Held-item hand anchor of one character frame (Art hands.json). */
@@ -106,7 +106,7 @@ const OWN_MAX_LEVELS = 3;
 // once every 1x sheet fits 1020x1020 a layer holds 4 (6 slots: 13 MB instead of 40)
 const VEH_POOL_SLOTS_DESKTOP = 8, VEH_POOL_SLOTS_LOWMEM = 6;
 /** Building tier pages (building_t1..t4) resident at once: every tier on desktop; 2 on <=256 MB budgets (a base mixes ~2 tiers). */
-const BLD_POOL_SLOTS_DESKTOP = 4, BLD_POOL_SLOTS_LOWMEM = 2;
+const BLD_POOL_SLOTS_DESKTOP = 4, BLD_POOL_SLOTS_LOWMEM = 4; // ADR-211: one slot per tier page (0.7 MB each at 0.5x): 2 slots thrashed a mixed-tier base onto the legacy fallback art
 /** Building tier sheets streamed per tier present nearby (BuildingTierStreamer): `building_t<N>` atlases from files. */
 export function isStreamedBuildingAtlas(key: string, url: string): boolean { return /^building_t\d+$/.test(key) && !/^(blob|data):/.test(url); }
 /** Character body sheets (`body_*`): with a KTX2 target they live compressed in the tail array (body pool), not RGBA8. */
@@ -221,6 +221,9 @@ export const HOT_ATLAS_RE = /(^|[_/-])(tiles?|terrain|ground|characters?|bod(y|i
 /** Cold: rare variants, distant LODs, one-shot fx, huge set pieces. Anything matching neither stays hot. */
 /** ADR-145: pixel-art creature sheets sampled crisp (sharp bilinear) when magnified. */
 export const CRISP_ATLAS_RE = /^(animals|pets|nature_critters)_/;
+/** ADR-211: player-built art (resident building tiers, openings, furniture, defenses). Demoted to the cold tier last:
+ *  the idle demotion ran before any base was on screen and stored them at x0.125 (walls drawn as orange blobs). */
+export const BUILD_ATLAS_RE = /^(buildings?(_[a-z0-9]+)?|openings|furniture|defenses)$/;
 /** ADR-156: creature sheets (wild critters, pets: 62 small sheets, ~4.8 MPx) load resident instead of through the stream
  *  pool. One species spans 4-11 frame-size sheets, so 12-24 fixed (704x400) stream slots starved as soon as a few species
  *  were near: the rest drew the soft placeholder blob and ETC1S-compressed pages -> "blurry animals" while bushes (resident) stayed sharp. */
@@ -697,7 +700,7 @@ export class AtlasManager {
     }));
     list.sort((a, b) => a.id - b.id); lazyList.sort((a, b) => a.id - b.id);
     addDirFrameRects(registry, [...list, ...lazyList]);
-    this.gen++; this.queue = []; this.pools = []; this.layoutVersion++; this.fallbackCache.clear();
+    this.gen++; this.queue = []; this.pools = []; this.layoutVersion++; this.fallbackCache.clear(); this.lArmCache.clear();
     const lowMem = this.textureBudgetMB <= 256; this.sideShift = lowMem ? SIDE_SHIFT_LOWMEM : SIDE_SHIFT;
     const groups: { cls: PoolClass; lazy: AtlasRT[]; minSlots: number; cap: boolean; /** wear split: fraction of the 1x working set */ share?: number }[] = [];
     const wear = lazyList.filter((a) => a.lazy!.pool === 0), veh = lazyList.filter((a) => a.lazy!.pool === 1), bld = lazyList.filter((a) => a.lazy!.pool === 2), body = lazyList.filter((a) => a.lazy!.pool === 3), strm = lazyList.filter((a) => a.lazy!.pool === 4);
@@ -916,7 +919,7 @@ export class AtlasManager {
     let best: [number, number] | null = null; let keptReserve = reserveBytes; let demoted = 0;
     for (const r of [reserveBytes, keepBytes + (reserveBytes - keepBytes) / 2, keepBytes + (reserveBytes - keepBytes) / 4, keepBytes]) { const c = fits(1, full - r); if (c !== null) { best = [1, c]; keptReserve = r; break; } }
     if (!best && this.recentlyUsed.size) {
-      const idle = list.filter((a) => !a.cold && !this.recentlyUsed.has(a.key) && !CRISP_ATLAS_RE.test(a.key)) /* ADR-145: creature sheets stay full res */.sort((a, b) => b.img!.width * b.img!.height - a.img!.width * a.img!.height);
+      const idle = list.filter((a) => !a.cold && !this.recentlyUsed.has(a.key) && !CRISP_ATLAS_RE.test(a.key)) /* ADR-145: creature sheets stay full res */.sort((a, b) => (BUILD_ATLAS_RE.test(a.key) ? 1 : 0) - (BUILD_ATLAS_RE.test(b.key) ? 1 : 0) || b.img!.width * b.img!.height - a.img!.width * a.img!.height); // ADR-211: building art last
       for (const a of idle) { a.cold = true; demoted++; const c = fits(1, full - keepBytes); if (c !== null) { best = [1, c]; keptReserve = keepBytes; break; } }
     }
     if (!best) {
@@ -1643,6 +1646,18 @@ export class AtlasManager {
     return -1;
   }
   private fallbackCache = new Map<number, number>();
+  /**
+   * ADR-211: arm sprite of an L corner piece (building.piece `wall_corner_outer[@tierN]`): the same tier's straight wall
+   * (`wall[@tierN]`), drawn once per arm at the arm's edge pivot by both renderers. -1 = not an L corner.
+   */
+  lArmOf(spriteId: number): number {
+    const c = this.lArmCache.get(spriteId); if (c !== undefined) return c;
+    const reg = this.registry; let out = -1;
+    if (reg) { let piece: string | undefined; try { piece = reg.sprite(spriteId).building?.piece; } catch { piece = undefined; }
+      const k = lCornerArmPiece(piece); if (k) out = reg.spriteForPiece(k) ?? -1; }
+    if (reg) this.lArmCache.set(spriteId, out); return out;
+  }
+  private lArmCache = new Map<number, number>();
   /** Crack overlay of a building sprite (manifest building.crackOverlay, e.g. bld_crack), or -1. */
   crackOverlayOf(spriteId: number): number { const r = this.registry; if (!r) return -1; try { return r.sprite(spriteId).building?.crackOverlay ?? -1; } catch { return -1; } }
   /** Sprite-level attach point (px from pivot, 1x, unmirrored) or undefined. */

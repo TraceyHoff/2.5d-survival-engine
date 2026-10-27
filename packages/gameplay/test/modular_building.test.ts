@@ -77,8 +77,10 @@ describe("modular building set (ADR-104)", () => {
     const w = makeWorld(); const b = spawnPlayer(w, { x: 0, y: 0 });
     const q = spawnPlayer(w, { x: 30, y: 30 }); const lone = snap(w, "wall_corner_outer", 30.2, 30.1); expect(typeof lone === "number" ? lone : validatePlacement(w, q, lone)).toBe(BuildFail.NoSupport);
     place(w, b, "foundation", 5.5, 5.5);
-    const s = snap(w, "wall_corner_outer", 6.1, 5.9); if (typeof s === "number") throw new Error(String(s));
-    expect([s.pos.x, s.pos.y]).toEqual([6, 6]); const c = spawnPlayer(w, { x: 6, y: 6 }); for (const k of d.tiers[1]!.cost) addItem(w, c, k.item, 100); expect(validatePlacement(w, c, s)).toBe(0);
+    const s = snap(w, "wall_corner_outer", 6.1, 5.9, { rot: 2 }); // ADR-211: the L wraps the deck (rot 2 = -x/-y)
+    if (typeof s === "number") throw new Error(String(s));
+    expect([s.pos.x, s.pos.y]).toEqual([6, 6]); const c = spawnPlayer(w, { x: 7.5, y: 7.5 }); // ADR-211: off the L arms
+    for (const k of d.tiers[1]!.cost) addItem(w, c, k.item, 100); expect(validatePlacement(w, c, s)).toBe(0);
   });
   it("new pieces reject twig and add extra recipe items per tier", () => {
     const w = makeWorld(); const b = spawnPlayer(w, { x: 0, y: 0 });
@@ -135,7 +137,7 @@ describe("modular building set (ADR-104)", () => {
   });
   it("touch snap assist moves an invalid aim to a nearby valid snap", () => {
     const w = makeWorld(); const p = spawnPlayer(w, { x: 5.5, y: 5.5 });
-    place(w, p, "foundation", 7.5, 5.5); for (const k of d.tiers[1]!.cost) addItem(w, p, k.item, 100);
+    for (const x of [6.5, 7.5, 8.5]) place(w, p, "foundation", x, 5.5); for (const k of d.tiers[1]!.cost) addItem(w, p, k.item, 100);
     const sel = { piece: id("wall"), tier: 1, variant: 0, paint: 0 };
     const off = buildPreviewFor(w, p, sel, 0, { mode: 1, x: 7.5, y: 4.4 }, 0, false)!;
     const on = buildPreviewFor(w, p, sel, 0, { mode: 1, x: 7.5, y: 4.4 }, 0, true)!;

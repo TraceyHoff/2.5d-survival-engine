@@ -22,6 +22,8 @@ export const enum BuildFail {
   UnknownPiece = 1, BadTier = 2, OutOfRange = 3, LevelLimit = 4, NoPrivilege = 5, ZoneFull = 6, Terrain = 7, Occupied = 8,
   Blocked = 9, NoSocket = 10, NoSupport = 11, CannotAfford = 12, InvalidTarget = 13, NotPaintable = 14, RepairBlocked = 15,
   NothingToRepair = 16, Locked = 17, ViewersFull = 18, NotViewing = 19, NotFuelable = 20,
+  /** ADR-211: a straight wall may not take an outer foundation-corner slot (that is the L corner piece's job). */
+  CornerSlot = 21,
 }
 export const enum DestroyCause { Damage = 1, Collapse = 2, Demolish = 3 }
 
