@@ -1,6 +1,7 @@
 import { markNavFocus } from "./back-history.js";
 import { debugCamera, mountLootLabels } from "./loot-labels.js";
 import { mountNameTags } from "./name-tags.js";
+import { mountSnapOverlay } from "./snap-overlay.js";
 import { lastPlayedKey } from "./delete-progress.js";
 import { CHAT_TAG, chatLine, chatSender } from "./chat-line.js";
 import { intentPayload } from "./send-intent.js";
@@ -561,6 +562,8 @@ worldTools = mountWorldTools(root, { world: () => world, player: () => session.p
 // ADR-128: node health bars + hit particles + "+3 Wood" pickup toasts
 mountGatherFx(root, { world: () => world, player: () => session.player, camera: () => iso?.renderer.camera, hidden: () => !!menus?.nav.isOpen || buildMode.active || !!vehicleCtl?.driving, device: promptDevice,
   icon: (item, key) => panelIcon(world, key, String(item)) });
+// ADR-196: build ghost validity outline + magnet snap-edge highlight (WebGL2 and Canvas2D)
+mountSnapOverlay(root, { preview: () => (buildMode.active ? buildMode.preview : undefined), camera: () => iso?.renderer.camera ?? (ctx ? debugCamera(cam, innerWidth, innerHeight, devicePixelRatio || 1) : undefined), hidden: () => !!menus?.nav.isOpen, groundZ: () => iso?.ghostZ });
 // ADR-161: floating loot-bag / dropped-item labels with the Interact prompt
 let nameTagsOn = true, nameTagsAt = 0; // settings read at most once a second (no per-frame JSON parse)
 mountNameTags(root, { world: () => world, player: () => session.player, alpha: () => renderAlpha, enabled: () => { const n = performance.now(); if (n >= nameTagsAt) { nameTagsAt = n + 1000; nameTagsOn = loadSettings().nameTags !== false; } return nameTagsOn; },

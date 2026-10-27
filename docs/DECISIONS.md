@@ -1272,3 +1272,15 @@ Near characters flashed pale/undressed (body only) and hair dropped out and back
 - **Hordes:** `HordeMember` zombies are always aggressive.
 - **Retaliation:** a calm zombie that is hit by a living non-zombie (player, AI human, pet) targets that attacker for `ai.retaliateSeconds` (30 s), within `loseTargetMul` × sight. It then calms down again. `combat.lastAttacker` is a sim-local, server-only map written by `applyDamage`. Getting hit should never be free, and this lets a player choose a daytime fight.
 - **Tests:** `packages/gameplay/test/adr194_day_calm.test.ts` covers no daylight damage, a day zombie ignoring a nearby player, retaliation, and the staggered dusk; those fail without the change. It also covers the night zombie and the horde-by-day zombie, which already passed and now guard against regressions. ADR-193's test now uses sourceless Fire.
+
+## ADR-195: Foundation seams — flat-sprite depth tie-break
+- **Cause:** flat (deck) sprites, such as foundations and floors, take their depth from the ground plane: `aA.z + 0.01 - hp/uHH`. Two same-level neighbours therefore have exactly equal depth on every pixel where their art overlaps. With `LESS`, whichever was drawn first won, so the back piece's edge showed through the front piece and flickered as the batch order changed.
+- **Fix:** the key adds `(aA.z - uDepth.x) * FLAT_TIE_BREAK` (2e-4), so the piece with the nearer pivot wins every shared pixel deterministically. The bias is far below a single tile row, so it never reorders a flat sprite against anything standing on it. The CPU mirror for this is `flatDepthKey`. Canvas2D draws no building pieces, so it has no seam (see ADR-196 for the overlay).
+- **Tests:** `packages/render/test/adr195_flat_seam.test.ts`.
+
+## ADR-196: Magnetic structure snapping + snap overlay
+- **Magnet:** `buildPreviewFor` runs `magnetize` when assist is on. It looks for valid placements that touch an existing structural piece: a foundation or floor next to a foundation within `MAGNET_CELL_RADIUS` (1 tile), a wall on a foundation edge or a floor on wall tops within `MAGNET_EDGE_RADIUS` (0.6). It picks the nearest one that is valid, so the cursor, the touch point, or the gamepad aim only has to come within about half a tile. The preview then reports `magnet`, `snapEdge` (the shared segment) and `outline`.
+- **Visuals:** ghost tint is clearer green (0.3, 1, 0.4) or red (1, 0.22, 0.22), alpha 0.62–0.70. `apps/client/src/snap-overlay.ts` draws the footprint outline in green or red and the snap edge in a highlight colour on a 2D canvas, `#snap-overlay`, above both renderers. Canvas2D/debug mode also gets placement feedback this way. The outline is lifted to `IsoView.ghostZ`, so it sits on the ghost over terrain.
+- **No surprise jumps:** when the raw spot is invalid for any reason other than a missing socket or support (10/11), for example spot taken, too far or no materials, the red ghost and its reason are kept.
+- **Input:** all three modes feed the same preview: touch point, gamepad aim and mouse.
+- **Tests:** `packages/gameplay/test/adr196_magnet_snap.test.ts`, `apps/client/test/adr196_snap_overlay.test.ts`.

@@ -40,8 +40,8 @@ describe("build-placement ghost (buildPreview)", () => {
     }
   });
   it("shader: ghosts tint green/red at ~0.5 alpha, bypass the lightmap (emissive r) and not bloom", () => {
-    expect(SPRITE_FS).toMatch(/ghost == 1 \? vec3\(0\.35, 1\.0, 0\.45\) : vec3\(1\.0, 0\.3, 0\.3\)/);
-    expect(SPRITE_FS).toMatch(/alpha \*= 0\.5 \+ 0\.06 \* sin/);
+    expect(SPRITE_FS).toMatch(/ghost == 1 \? vec3\(0\.3, ?1\.0, ?0\.4\) : vec3\(1\.0, ?0\.22, ?0\.22\)/);
+    expect(SPRITE_FS).toMatch(/alpha \*= 0\.62 \+ 0\.08 \* sin/);
     expect(SPRITE_FS).toMatch(/oEmissive = vec4\(ghost > 0 \? 1\.0 : e \* uEmisStrength, \(vFlags & 32\) != 0 \? max\(e, 0\.6\) : e/);
   });
 });

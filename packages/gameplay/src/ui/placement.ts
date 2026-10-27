@@ -10,9 +10,9 @@ import { Transform, type Entity, type World } from "@engine/core";
 import { gameplayDefs } from "../config.js";
 import { Placement } from "../defs.js";
 import { pieceCost, snapPlacement, validatePlacement } from "../building/place.js";
-import { isFineRot, rotParts } from "../building/structure.js";
+import { isFineRot, rotParts, rotatedSize, structures, type StructureIndex } from "../building/structure.js";
 import { maxHpOf } from "../building/integrity.js";
-import { BuildPiece, Dead, PieceSlot } from "../components.js";
+import { BuildPiece, Dead, EdgeSide, PieceSlot } from "../components.js";
 import { DemolishCmd, RepairCmd, UpgradeCmd } from "../input.js";
 import { countItem } from "../inventory.js";
 import { placeIntent, type BuildSelection, type MenuIntent } from "./menus.js";
@@ -37,7 +37,14 @@ export interface BuildPreview {
   facing?: number;
   /** Unsnapped request (reach-clamped aim point + requested rot) that placePreviewIntent sends. */
   request: { x: number; y: number; rot: number };
+  /** ADR-196: the ghost was pulled onto a neighbour's edge by the structural magnet. */
+  magnet?: boolean;
+  /** ADR-196: world-tile segment (at the preview level) shared with an existing piece: the HUD highlights it. */
+  snapEdge?: SnapSegment;
+  /** ADR-196: ghost footprint outline (world tiles; a segment for wall-like pieces) for the validity overlay. */
+  outline?: SnapSegment[];
 }
+export interface SnapSegment { x0: number; y0: number; x1: number; y1: number }
 export interface PlacementAim { x: number; y: number; mode: number }
 export const PLACE_AHEAD = 2;
 
@@ -74,7 +81,8 @@ export const SNAP_ASSIST_RING: readonly (readonly [number, number])[] = [0.5, 1]
  * mode 0; `assist` overrides), the first valid preview from SNAP_ASSIST_RING around the aim is returned instead.
  */
 export function buildPreviewFor(world: World, player: Entity, sel: BuildSelection, rot: number, aim: PlacementAim | undefined, level = 0, assist?: boolean): BuildPreview | undefined {
-  const p = rawPreview(world, player, sel, rot, aim, level);
+  const p0 = rawPreview(world, player, sel, rot, aim, level);
+  const p = p0 && assist !== false ? magnetize(world, player, sel, rot, aim, level, p0) : p0;
   if (!p || p.valid || !(assist ?? (aim !== undefined && aim.mode !== 1))) return p;
   const at = placementTarget(world, player, aim)!;
   for (const [dx, dy] of SNAP_ASSIST_RING) {
@@ -93,6 +101,97 @@ function rawPreview(world: World, player: Entity, sel: BuildSelection, rot: numb
   const r = rotParts(def, sn.slot.rot); // ADR-174: an off-grid piece's ghost turns in its 15° steps, like the placed piece
   return { ...base, tier: sn.tier, variant: sn.variant, x: sn.pos.x, y: sn.pos.y, z: sn.pos.z, rot: r.rot, rotSteps: r.steps, fine: isFineRot(def, sn.slot.rot), facing: sn.pos.facing, valid: reason === 0, reason };
 }
+// ---- ADR-196: structural magnet --------------------------------------------------------------------------------
+/** Aim distance (tiles) within which a structural ghost is pulled onto a neighbour: the aim may be up to ~0.5 tile
+ *  past the edge band of the cell next to an existing piece (cell centre <= 1.0 away) or 0.5 from a free edge. */
+export const MAGNET_CELL_RADIUS = 1.0, MAGNET_EDGE_RADIUS = 0.6;
+const STRUCTURAL = new Set(["foundation", "wall", "floor", "corner", "roof"]);
+const NB: readonly (readonly [number, number])[] = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+const hasCell = (idx: StructureIndex, x: number, y: number, z: number): boolean => idx.deck(x, y, z) !== 0;
+const hasEdge = (idx: StructureIndex, tx: number, ty: number, z: number, side: EdgeSide): boolean => idx.edge(tx, ty, z, side) !== 0;
+const edgeSeg = (tx: number, ty: number, side: EdgeSide): SnapSegment => side === EdgeSide.North ? { x0: tx, y0: ty, x1: tx + 1, y1: ty } : { x0: tx, y0: ty, x1: tx, y1: ty + 1 };
+/** Ghost outline + the segment it shares with an existing piece (undefined when it touches nothing). Pure over the index. */
+export function snapContact(idx: StructureIndex, kind: "cell" | "edge", r: { x0: number; y0: number; x1: number; y1: number }, z: number): { outline: SnapSegment[]; edge?: SnapSegment } {
+  if (kind === "edge") {
+    const side = r.y0 === r.y1 ? EdgeSide.North : EdgeSide.West; const tx = r.x0, ty = r.y0; const seg = edgeSeg(tx, ty, side);
+    const below = side === EdgeSide.North ? [[tx, ty], [tx, ty - 1]] : [[tx, ty], [tx - 1, ty]];
+    const onDeck = below.some(([x, y]) => hasCell(idx, x!, y!, z)) || (z > 0 && hasWallsBelow(idx, tx, ty, side, z - 1));
+    const along = side === EdgeSide.North ? hasEdge(idx, tx - 1, ty, z, side) || hasEdge(idx, tx + 1, ty, z, side) : hasEdge(idx, tx, ty - 1, z, side) || hasEdge(idx, tx, ty + 1, z, side);
+    return { outline: [seg], ...(onDeck || along ? { edge: seg } : {}) };
+  }
+  const { x0, y0, x1, y1 } = r;
+  const outline = [{ x0, y0, x1, y1: y0 }, { x0: x1, y0, x1, y1 }, { x0, y0: y1, x1, y1 }, { x0, y0, x1: x0, y1 }];
+  for (let x = x0; x < x1; x++) {
+    if (hasCell(idx, x, y0 - 1, z) || (z > 0 && hasEdge(idx, x, y0, z - 1, EdgeSide.North))) return { outline, edge: { x0: x, y0, x1: x + 1, y1: y0 } };
+    if (hasCell(idx, x, y1, z) || (z > 0 && hasEdge(idx, x, y1, z - 1, EdgeSide.North))) return { outline, edge: { x0: x, y0: y1, x1: x + 1, y1 } };
+  }
+  for (let y = y0; y < y1; y++) {
+    if (hasCell(idx, x0 - 1, y, z) || (z > 0 && hasEdge(idx, x0, y, z - 1, EdgeSide.West))) return { outline, edge: { x0, y0: y, x1: x0, y1: y + 1 } };
+    if (hasCell(idx, x1, y, z) || (z > 0 && hasEdge(idx, x1, y, z - 1, EdgeSide.West))) return { outline, edge: { x0: x1, y0: y, x1, y1: y + 1 } };
+  }
+  return { outline };
+}
+const hasWallsBelow = (idx: StructureIndex, tx: number, ty: number, side: EdgeSide, z: number): boolean => hasEdge(idx, tx, ty, z, side);
+/**
+ * Candidate aim points next to existing structure around `at` (deterministic order): for cell pieces the centres of
+ * free cells beside same-level decks or bounded by walls one level down (floors on wall tops); for edge pieces the
+ * midpoints of free edges of same-level decks, wall tops below, and the collinear continuation of existing walls.
+ */
+export function magnetCandidates(idx: StructureIndex, kind: "cell" | "edge", at: { x: number; y: number }, z: number): { x: number; y: number }[] {
+  const out: { x: number; y: number }[] = []; const cx = Math.floor(at.x), cy = Math.floor(at.y);
+  for (let ty = cy - 2; ty <= cy + 2; ty++) for (let tx = cx - 2; tx <= cx + 2; tx++) {
+    if (kind === "cell") {
+      if (hasCell(idx, tx, ty, z)) continue;
+      const near = NB.some(([dx, dy]) => hasCell(idx, tx + dx, ty + dy, z))
+        || (z > 0 && (hasEdge(idx, tx, ty, z - 1, EdgeSide.North) || hasEdge(idx, tx, ty + 1, z - 1, EdgeSide.North) || hasEdge(idx, tx, ty, z - 1, EdgeSide.West) || hasEdge(idx, tx + 1, ty, z - 1, EdgeSide.West)));
+      if (near) out.push({ x: tx + 0.5, y: ty + 0.5 });
+    } else {
+      for (const side of [EdgeSide.North, EdgeSide.West]) {
+        if (hasEdge(idx, tx, ty, z, side)) continue;
+        const c = snapContact(idx, "edge", edgeSeg(tx, ty, side), z);
+        if (c.edge) out.push(side === EdgeSide.North ? { x: tx + 0.5, y: ty } : { x: tx, y: ty + 0.5 });
+      }
+    }
+  }
+  return out;
+}
+function footRect(world: World, p: BuildPreview): { kind: "cell" | "edge"; r: SnapSegment } | undefined {
+  const def = gameplayDefs(world).pieces.get(p.piece); if (!def) return undefined;
+  if (def.placement === Placement.Edge) {
+    const north = Number.isInteger(p.y); return { kind: "edge", r: north ? { x0: Math.floor(p.x), y0: p.y, x1: Math.floor(p.x) + 1, y1: p.y } : { x0: p.x, y0: Math.floor(p.y), x1: p.x, y1: Math.floor(p.y) + 1 } };
+  }
+  if (def.placement !== Placement.Cell) return undefined;
+  const [w, h] = rotatedSize(def, p.rot & 3); const x0 = Math.round(p.x - w / 2), y0 = Math.round(p.y - h / 2);
+  return { kind: "cell", r: { x0, y0, x1: x0 + w, y1: y0 + h } };
+}
+function withContact(world: World, idx: StructureIndex, p: BuildPreview): BuildPreview {
+  const f = footRect(world, p); if (!f) return p; const c = snapContact(idx, f.kind, f.r, p.level);
+  return { ...p, outline: c.outline, ...(c.edge ? { snapEdge: c.edge } : {}) };
+}
+/**
+ * ADR-196 magnet: structural pieces (foundation/wall/floor/corner/roof families) whose direct snap is invalid or
+ * touches nothing jump to the nearest VALID slot beside existing structure within the magnet radius. Every input
+ * (mouse, touch tap/drag, gamepad cursor, facing aim) goes through here while Snap is on.
+ */
+export function magnetize(world: World, player: Entity, sel: BuildSelection, rot: number, aim: PlacementAim | undefined, level: number, p: BuildPreview): BuildPreview {
+  const def = gameplayDefs(world).pieces.get(sel.piece); if (!def || !STRUCTURAL.has(def.family)) return p;
+  const f = footRect(world, p); if (!f) return p;
+  const idx = structures(world); const direct = withContact(world, idx, p);
+  if (direct.valid && direct.snapEdge) return direct;
+  // Only pull from open ground or a missing-socket/support spot; a taken/too-far/unaffordable spot keeps its red "why".
+  if (!direct.valid && direct.reason !== 10 && direct.reason !== 11) return direct;
+  const at = placementTarget(world, player, aim); if (!at) return direct;
+  const radius = f.kind === "cell" ? MAGNET_CELL_RADIUS : MAGNET_EDGE_RADIUS;
+  let best: BuildPreview | undefined; let bestD = Infinity;
+  for (const c of magnetCandidates(idx, f.kind, at, level)) {
+    const d = Math.hypot(c.x - at.x, c.y - at.y); if (d > radius || d >= bestD) continue;
+    const q = rawPreview(world, player, sel, rot, { mode: 1, x: c.x, y: c.y }, level); if (!q?.valid) continue;
+    const qc = withContact(world, idx, q); if (!qc.snapEdge) continue;
+    best = { ...qc, magnet: true }; bestD = d;
+  }
+  return best ?? direct;
+}
+
 /** PlaceCmd for a preview (raw rot as requested; the server re-snaps the same way). */
 export const placePreviewIntent = (p: BuildPreview): MenuIntent =>
   placeIntent({ piece: p.piece, tier: p.tier, variant: p.variant, paint: p.paint }, { x: p.request.x, y: p.request.y, level: p.level, rot: p.request.rot });

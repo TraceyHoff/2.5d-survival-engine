@@ -230,14 +230,17 @@ export class IsoView {
    *  pieces (rotSteps 16) are shown at the nearest quarter turn, triangles (12) on their exact art row (pieceArtRow); Tri/Free
    *  pieces pivot at the exact snapped x/y; variant goes by name (defs variantNames). */
   private lastTiles: TileMap | undefined;
+  /** ADR-196: world z the ghost is drawn at (terrain-lifted), for the snap overlay. */
+  ghostZ: number | undefined;
   syncGhost(p: import("@engine/gameplay").BuildPreview | undefined, net: World): void {
     if (!p && !this.ghost) return;
     this.ghost ??= new BuildGhost(this.view, VPiece as never, this.registry);
-    if (!p) { this.ghost.sync(null); return; }
+    if (!p) { this.ghost.sync(null); this.ghostZ = undefined; return; }
     const names = gameplayDefs(net).pieces.get(p.piece)?.variantNames ?? [];
     const def = gameplayDefs(net).pieces.get(p.piece);
     // ADR-142: lifted onto the terrain step like the placed piece (view mirror `ground`); at z=0 it sank under raised ground
-    this.ghost.sync({ pieceKey: this.pk(p.pieceKey) ?? p.pieceKey, x: p.x, y: p.y, rot: p.rot, valid: p.valid }, { z: pieceGroundZ(this.lastTiles, p.x, p.y, p.z, gameplayDefs(net).building.levelHeight), level: p.level, tier: p.tier, rotSteps: p.rotSteps, exactPivot: exactPivot(def), ...(names[p.variant] ? { variant: names[p.variant]! } : { variant: p.variant }) });
+    this.ghostZ = pieceGroundZ(this.lastTiles, p.x, p.y, p.z, gameplayDefs(net).building.levelHeight);
+    this.ghost.sync({ pieceKey: this.pk(p.pieceKey) ?? p.pieceKey, x: p.x, y: p.y, rot: p.rot, valid: p.valid }, { z: this.ghostZ, level: p.level, tier: p.tier, rotSteps: p.rotSteps, exactPivot: exactPivot(def), ...(names[p.variant] ? { variant: names[p.variant]! } : { variant: p.variant }) });
   }
   resize(w: number, h: number, dpr: number): void {
     const safe = new URLSearchParams(location.search).get("safe") === "1" || this.renderer.capabilities.safe || this.renderer.capabilities.lowEnd;

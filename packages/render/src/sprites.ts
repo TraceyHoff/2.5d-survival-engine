@@ -28,6 +28,17 @@ import { crackAnim, PieceCoverIndex, ROT_EXACT_PIVOT, ROT_NO_OCCLUDE } from "./b
 import { InteriorRoute, inInteriorRegion, interiorOrder, type InteriorRegion } from "./vehicles/interiorPass.js";
 
 export const INSTANCE_FLOATS = 40;
+/**
+ * ADR-195: Flat (deck) pieces take ground-plane depth, so two same-level neighbours have EXACTLY equal depth on
+ * every pixel they share (an edge strip / thickness face of one over the other's top) and z-fight. Each Flat instance
+ * adds (pivotKey - keyMin) * FLAT_TIE_BREAK, so the piece further front always wins a shared pixel (<= ~0.05 key
+ * over a whole screen: no effect on interleaving with characters, ~20x the 24-bit depth step).
+ */
+export const FLAT_TIE_BREAK = 2e-4;
+/** CPU mirror of the vertex shader's Flat depth key (tests). */
+export function flatDepthKey(pivotKey: number, hpPx: number, hh: number, keyMin: number): number {
+  return pivotKey + 0.01 - hpPx / hh + (pivotKey - keyMin) * FLAT_TIE_BREAK;
+}
 /** Depth offset of held items vs the body (must exceed depth-key precision; < the next tile row). */
 export const HELD_BIAS = 0.05;
 /**
@@ -195,7 +206,7 @@ void main() {
   if (aI.x != 0.0) { float cr = cos(aI.x), sr = sin(aI.x); off = vec2(cr * off.x - sr * off.y, sr * off.x + cr * off.y); }
   vec2 iso = snapPivot(aA.xy) + off; vScr = iso;
   float hpd = hp + aD.w; // Footprint (128): pixels below the pivot are ground-level box faces nearer the camera
-  float key = (flags & 8) != 0 ? aA.z + 0.01 - hp / uHH
+  float key = (flags & 8) != 0 ? aA.z + 0.01 - hp / uHH + (aA.z - uDepth.x) * ${FLAT_TIE_BREAK.toFixed(6)} // ADR-195 seam tie-break
     : (flags & 192) == 192 ? aA.z + 0.62 + max(-hpd, 0.0) / uHH // Footprint|Cutaway: open interior, no height term (low walls/floor never out-rank occupants drawn upright)
     : aA.z + 0.02 + max(hpd, 0.0) * uZPerPx + ((flags & 128) != 0 ? max(-hpd, 0.0) / uHH + 0.6 : 0.0); // Footprint: near walls beat terrain skirts
   gl_Position = vec4(isoToClip(iso), keyToNdc(key), 1.0);
@@ -327,8 +338,8 @@ void main() {
   if (uOccMode == 0) alpha *= mix(1.0, uOccAlpha, vOcc);
   int ghost = int(vMisc.x + 0.5);
   if (ghost > 0) {
-    vec3 gc = ghost == 1 ? vec3(0.35, 1.0, 0.45) : vec3(1.0, 0.3, 0.3);
-    col = mix(col, gc, 0.55); alpha *= 0.5 + 0.06 * sin(uTime * 4.0); // ~0.5 alpha, subtle pulse
+    vec3 gc = ghost == 1 ? vec3(0.3, 1.0, 0.4) : vec3(1.0, 0.22, 0.22);
+    col = mix(col, gc, 0.68); alpha *= 0.62 + 0.08 * sin(uTime * 4.0); // ADR-196: clearer green/red, ~0.6 alpha, subtle pulse
   }
   if ((vFlags & 512) != 0) col = clamp((col - 0.5) * uFaceContrast + 0.5, 0.0, 1.0); // face/eyes: small contrast lift (after tint + status)
   float e = (vFlags & 2) != 0 ? 1.0 : 0.0;
