@@ -92,7 +92,7 @@ interface AtlasRT { key: string; id: number; source: AtlasSource; img: ImageLike
   masks: Partial<Record<MaskName, ImageLike>>; maskUrls: Partial<Record<MaskName, string>>; base: number; count: number; fw: number; fh: number; cols: number; layer: number; px: number; py: number;
   /** streamed wearable page: not loaded at rebuild (see header); w1/h1 = 1x page size */ lazy?: { w1: number; h1: number; state: 0 | 1 | 2; pool: number; prio?: number };
   /** budget tier: cold art is downscaled before hot art (see fitBudget) */ cold?: boolean;
-  /** explicit dirFrames rects (deduped), frame-table entries n0.. after the grid/TexturePacker frames */ extra?: { n0: number; rects: DirFrameRect[]; byKey: Map<string, number> } }
+  /** explicit dirFrames rects (deduped), frame-table entries n0.. after the grid/TexturePacker frames */ extra?: { n0: number; rects: DirFrameRect[]; byKey: Map<string, number>; /** ADR-190: same index by rect object (no string key per lookup) */ byRect: Map<DirFrameRect, number> } }
 /** One streaming pool (wearables, vehicles): own slot geometry, layers and LRU; all pools share the VRAM accountant. */
 interface Pool { k: number; sw: number; sh: number; /** slot pitch (16-aligned: KTX2 4x4 blocks stay aligned down to mip 2) */ pw: number; ph: number; cols: number; perLayer: number; first: number; layers: number; lru: PageLRU<string>; slotBytes: number; tint: boolean; emis: boolean; cls: PoolClass;
   /** wear pool: its own colour array (poolTex), KTX2-compressed (`fmt` = GL internal format) or RGBA8 (fmt null), `levels` mips only */
@@ -235,22 +235,63 @@ export function defaultAtlasTier(key: string, opts: { bodies?: boolean; wearShar
   return "hot";
 }
 
-/** Downscale every image of the list by k (colour/emissive smooth, masks pixelated); frame sizes stay in 1x px via a.scale. */
+/**
+ * ADR-190: every rebuild-time resize goes through resizeImage. Chrome does the createImageBitmap resize of an
+ * ImageBitmap synchronously inside the call, so the old `Promise.all(list.map(createImageBitmap))` ran ~100 resizes in one
+ * task (a 0.3-0.8 s freeze on every re-tier). Now (1) results are memoized per source image + size + filter, so a re-tier
+ * reuses the resizes of the previous rebuild (same pixels: same source, same options), and (2) uncached resizes are
+ * serialized and time-sliced: after RESIZE_SLICE_MS of resize work the next one waits for the next frame.
+ */
+export const RESIZE_SLICE_MS = 6;
+/** ADR-190: re-tier hysteresis - consecutive positive checks (IsoRenderer checks every 30 frames) and minimum spacing. */
+export const RETIER_CONFIRM = 3;
+export const RETIER_MIN_GAP_FRAMES = 1800;
+const RESIZE_CACHE_PER_SOURCE = 2;
+const resizeCache = new WeakMap<object, Map<string, Promise<ImageLike>>>();
+let resizeChain: Promise<unknown> = Promise.resolve(); let sliceStart = -1; let pendingJobs = 0;
+/** stats for tests / diag: resizes actually run, cache hits, frame yields */
+export const resizeStats = { runs: 0, hits: 0, yields: 0 };
+const now = (): number => (typeof performance !== "undefined" ? performance.now() : Date.now());
+const nextFrame = (): Promise<void> => new Promise<void>((r) => { if (typeof requestAnimationFrame === "function") requestAnimationFrame(() => setTimeout(r, 0)); else setTimeout(r, 0); });
+let yieldImpl = nextFrame; let sliceClock = now;
+/** Tests: replace the "wait for the next frame" primitive and the clock used by the slicer (null: defaults). */
+export function setResizeYield(y: (() => Promise<void>) | null, clock?: () => number): void { yieldImpl = y ?? nextFrame; sliceClock = clock ?? now; }
+/** Run `job` serialized behind earlier jobs; yields one frame first once the current slice spent RESIZE_SLICE_MS. */
+export function sliced<T>(job: () => Promise<T> | T): Promise<T> {
+  pendingJobs++;
+  const run = async (): Promise<T> => {
+    try {
+      if (sliceStart < 0) sliceStart = sliceClock();
+      if (sliceClock() - sliceStart >= RESIZE_SLICE_MS) { resizeStats.yields++; await yieldImpl(); sliceStart = sliceClock(); }
+      return await job();
+    } finally { if (--pendingJobs === 0) sliceStart = -1; }
+  };
+  const p = resizeChain.then(run, run); resizeChain = p.catch(() => undefined); return p;
+}
+export function resizeImage(im: ImageLike, w: number, h: number, q: "high" | "pixelated"): Promise<ImageLike> {
+  const key = `${w}x${h}:${q}`; let m = resizeCache.get(im as object); if (!m) resizeCache.set(im as object, (m = new Map()));
+  const hit = m.get(key); if (hit) { resizeStats.hits++; m.delete(key); m.set(key, hit); return hit; }
+  const p = sliced(() => { resizeStats.runs++; return createImageBitmap(im as ImageBitmapSource, { resizeWidth: w, resizeHeight: h, resizeQuality: q, premultiplyAlpha: "none", colorSpaceConversion: "none" } as ImageBitmapOptions) as Promise<ImageLike>; });
+  m.set(key, p); p.catch(() => m!.delete(key));
+  while (m.size > RESIZE_CACHE_PER_SOURCE) m.delete(m.keys().next().value!);
+  return p;
+}
+const resizeBy = (im: ImageLike, k: number, q: "high" | "pixelated"): Promise<ImageLike> => resizeImage(im, Math.max(1, Math.floor(im.width * k)), Math.max(1, Math.floor(im.height * k)), q);
+
 /** Halve emissive + mask images for the half-size side arrays (no-op without createImageBitmap). */
 async function halveSide(list: AtlasRT[], shift: number = SIDE_SHIFT): Promise<boolean> {
   if (typeof createImageBitmap !== "function" || shift === 0) return false;
   const k = 1 / (1 << shift);
-  const rs = (im: ImageLike, q: "high" | "pixelated") => createImageBitmap(im as ImageBitmapSource, { resizeWidth: Math.max(1, Math.floor(im.width * k)), resizeHeight: Math.max(1, Math.floor(im.height * k)), resizeQuality: q, premultiplyAlpha: "none", colorSpaceConversion: "none" } as ImageBitmapOptions);
-  await Promise.all(list.map(async (a) => { if (a.emis) a.emis = await rs(a.emis, "high"); for (const m of Object.keys(a.masks) as MaskName[]) a.masks[m] = await rs(a.masks[m]!, "pixelated"); }));
+  await Promise.all(list.map(async (a) => { if (a.emis) a.emis = await resizeBy(a.emis, k, "high"); for (const m of Object.keys(a.masks) as MaskName[]) a.masks[m] = await resizeBy(a.masks[m]!, k, "pixelated"); }));
   return true;
 }
 
+/** Downscale every image of the list by k (colour/emissive smooth, masks pixelated); frame sizes stay in 1x px via a.scale. */
 async function scaleList(list: AtlasRT[], k: number): Promise<void> {
   if (typeof createImageBitmap !== "function") return;
-  const rs = (im: ImageLike, q: "high" | "pixelated") => createImageBitmap(im as ImageBitmapSource, { resizeWidth: Math.max(1, Math.floor(im.width * k)), resizeHeight: Math.max(1, Math.floor(im.height * k)), resizeQuality: q, premultiplyAlpha: "none", colorSpaceConversion: "none" } as ImageBitmapOptions);
   await Promise.all(list.map(async (a) => {
-    a.img = await rs(a.img!, "high"); if (a.emis) a.emis = await rs(a.emis, "high");
-    for (const m of Object.keys(a.masks) as MaskName[]) a.masks[m] = await rs(a.masks[m]!, "pixelated");
+    a.img = await resizeBy(a.img!, k, "high"); if (a.emis) a.emis = await resizeBy(a.emis, k, "high");
+    for (const m of Object.keys(a.masks) as MaskName[]) a.masks[m] = await resizeBy(a.masks[m]!, k, "pixelated");
     a.scale *= k;
   }));
 }
@@ -260,7 +301,7 @@ async function fitToPage(img: ImageLike, w: number, h: number): Promise<ImageLik
   if (img.width === w && img.height === h) return img;
   if (typeof createImageBitmap !== "function") return null;
   if (Math.abs(img.width / img.height - w / h) > 0.01) return null; // not the same layout
-  return createImageBitmap(img as ImageBitmapSource, { resizeWidth: w, resizeHeight: h, resizeQuality: "pixelated", premultiplyAlpha: "none", colorSpaceConversion: "none" } as ImageBitmapOptions);
+  return resizeImage(img, w, h, "pixelated");
 }
 
 export async function defaultImageLoader(url: string): Promise<ImageLike> {
@@ -488,12 +529,19 @@ export class AtlasManager {
     return this.atlases.some((a) => !a.lazy && this.recentlyUsed.has(a.key) && !this.retiered.has(a.key) && (a.cold ? this.coldDownscale : this.downscale) < 1);
   }
   /** Rebuild so recently drawn atlases move to the hot (full-res) tier; at most once per `minGap` frames. */
-  async retier(frame: number, minGap = 600): Promise<boolean> {
-    if (!this.registry || frame - this.retierAt < minGap || !this.needsRetier) return false;
-    this.retierAt = frame; for (const k of this.recentlyUsed) this.retiered.add(k); // each atlas triggers at most one re-tier (no rebuild loop when the budget cannot hold it at full res)
+  async retier(frame: number, minGap = RETIER_MIN_GAP_FRAMES): Promise<boolean> {
+    // ADR-190 hysteresis: the need must hold on RETIER_CONFIRM consecutive checks (a passing zoom / a sprite drawn
+    // for a moment never rebuilds), never while a rebuild is still in flight, and at most once per minGap frames
+    if (!this.registry || this.retierBusy) return false;
+    if (!this.needsRetier) { this.retierWant = 0; return false; }
+    if (++this.retierWant < RETIER_CONFIRM || frame - this.retierAt < minGap) return false;
+    this.retierWant = 0; this.retierAt = frame; this.retierBusy = true;
+    try { for (const k of this.recentlyUsed) this.retiered.add(k); // each atlas triggers at most one re-tier (no rebuild loop when the budget cannot hold it at full res)
     await this.rebuild(this.registry, new Map(this.atlases.map((a) => [a.key, a.source] as [string, AtlasSource])));
+    } finally { this.retierBusy = false; }
     return true;
   }
+  private retierWant = 0; private retierBusy = false;
 
   constructor(private gl: WebGL2RenderingContext, private assets: AssetManager, opts: { layerSize?: number; imageLoader?: (url: string) => Promise<ImageLike>; textureBudgetMB?: number } = {}) {
     const max = gl.getParameter(gl.MAX_TEXTURE_SIZE) as number;
@@ -1664,14 +1712,16 @@ export function addDirFrameRects(registry: AssetRegistry, atlases: AtlasRT[]): v
   for (const a of atlases) if (a.extra) { a.count = a.extra.n0; delete a.extra; }
   for (const s of registry.allSprites()) for (const an of s.animList) for (const d of an.dirFrames ?? []) {
     if (!d.rect) continue; const a = byId.get(d.atlas.id); if (!a) continue;
-    const e = (a.extra ??= { n0: a.count, rects: [], byKey: new Map() }); const k = `${d.rect.x},${d.rect.y},${d.rect.w},${d.rect.h}`;
-    if (!e.byKey.has(k)) { e.byKey.set(k, e.n0 + e.rects.length); e.rects.push(d.rect); }
+    const e = (a.extra ??= { n0: a.count, rects: [], byKey: new Map(), byRect: new Map() }); if (e.byRect.has(d.rect)) continue;
+    const k = `${d.rect.x},${d.rect.y},${d.rect.w},${d.rect.h}`;
+    let i = e.byKey.get(k); if (i === undefined) { i = e.n0 + e.rects.length; e.byKey.set(k, i); e.rects.push(d.rect); }
+    e.byRect.set(d.rect, i);
   }
   for (const a of atlases) if (a.extra) a.count = a.extra.n0 + a.extra.rects.length;
 }
 /** Atlas-local frame-table index of one dirFrames entry. */
 export function dirFrameIndex(a: AtlasRT | undefined, d: { frame: number; rect?: DirFrameRect }): number {
-  if (!a || !d.rect) return d.frame; return a.extra?.byKey.get(`${d.rect.x},${d.rect.y},${d.rect.w},${d.rect.h}`) ?? d.frame;
+  if (!a || !d.rect) return d.frame; const r = a.extra?.byRect.get(d.rect); if (r !== undefined) return r; return a.extra?.byKey.get(`${d.rect.x},${d.rect.y},${d.rect.w},${d.rect.h}`) ?? d.frame;
 }
 /** Atlases only the legacy full-size layout of facing-split sprites (anims with dirFrames) uses: sprite.atlas of such
  *  sprites, unless a sprite without dirFrames or any dirFrames entry also uses it. Art may delete these pages. */
