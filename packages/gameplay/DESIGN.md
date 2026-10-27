@@ -219,7 +219,7 @@ Read it with `docs/ARCHITECTURE.md` (core batches 2 and 3), `docs/DECISIONS.md` 
 
 ### 5.3 AI (server, `gameplay.zombieAI`)
 - **States:** `Wander → Investigate (noise) → Chase (player in sight) → AttackPlayer | AttackStructure`.
-- **Daylight.** In daylight zombies take `dayDps` and give up investigating.
+- **Day/night temperament (ADR-194).** No sunlight damage. By day a non-horde zombie is calm: it wanders and seeks or attacks no one, unless it is hit, in which case it retaliates against that attacker for `retaliateSeconds`. From `aggroStartT` (dusk) until `aggroEndT` (dawn) it is aggressive. Each zombie is offset by up to `aggroStaggerT`, so a crowd changes gradually. Horde members are always aggressive.
 - **Thinking** is staggered (`thinkTicks`, by entity index). Targets are found with `SpatialIndex.queryRadius`.
 - **Pathing.**
   - A* on the tile grid within `maxSearchRadius`, with deterministic tie-breaks and a cap on expanded nodes. Unwalkable tiles and solid cell pieces (`BuildingGrid.isBlocked`) are impassable.

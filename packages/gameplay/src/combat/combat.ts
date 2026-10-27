@@ -53,6 +53,12 @@ export function setAnim(world: World, e: Entity, anim: Anim): void {
 
 /** Applies damage (authority): creatures lose hp now; structures get batched damage. */
 /** Creature damage is reduced by worn armor (Combat / Explosion causes; `pierce` 0..1 ignores part of it). */
+/** ADR-194: the last living attacker of each damaged entity (sim-local, server) — day-calm zombies retaliate against it. */
+const lastHits = new WeakMap<World, Map<Entity, { e: Entity; tick: number }>>();
+const lastHitsOf = (w: World): Map<Entity, { e: Entity; tick: number }> => { let m = lastHits.get(w); if (!m) lastHits.set(w, (m = new Map())); return m; };
+export function lastAttacker(world: World, e: Entity): { e: Entity; tick: number } | undefined {
+  const m = lastHits.get(world); const h = m?.get(e); if (h && !world.isAlive(e)) { m!.delete(e); return undefined; } return h;
+}
 export function applyDamage(world: World, target: Entity, amount: number, source: Entity, cause: DamageCause = DamageCause.Combat, pierce = 0): void {
   if (!isAuthority(world) || world.isReplaying || amount <= 0 || !world.isAlive(target)) return;
   if (cause === DamageCause.Combat && world.has(source, Progression)) { // ADR-113 weapon mastery / berserker
@@ -65,6 +71,7 @@ export function applyDamage(world: World, target: Entity, amount: number, source
   world.setField(target, Health, "hp", Math.max(0, hp - amount));
   if (world.has(target, VitalsState)) world.setField(target, VitalsState, "lastDamageCause", cause);
   emit(world, Damaged, { target, source, amount, cause });
+  if (source !== 0 && source !== target && world.isAlive(source)) lastHitsOf(world).set(target, { e: source, tick: world.tick }); // ADR-194 retaliation
   if (cause === DamageCause.Combat || cause === DamageCause.Explosion) tagCombat(world, source, target);
   // ADR-193: sourceless hits (sunlight, a creature's own fire) carry no attacker: no Hurt anim / knockback flinch,
   // which read as being struck by an invisible force. The HitReact still goes out (hp bar + cause-coloured sizzle).

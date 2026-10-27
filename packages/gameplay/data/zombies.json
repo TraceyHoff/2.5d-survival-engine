@@ -25,7 +25,10 @@
     "wanderRadius": 8,
     "loseTargetMul": 1.6,
     "investigateSeconds": 12,
-    "dayDps": 3,
+    "aggroStartT": 0.77,
+    "aggroEndT": 0.27,
+    "aggroStaggerT": 0.05,
+    "retaliateSeconds": 30,
     "despawnDistance": 60,
     "corpseSeconds": 5
   },

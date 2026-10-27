@@ -7,12 +7,13 @@
  *
  * AI (every tick, thinking every ai.thinkTicks staggered by entity): Wander -> Investigate (heard noise) ->
  * Chase (sighted player) -> AttackPlayer (in range) / AttackStructure (path blocked by a wall/door: blockPiece).
- * Paths come from combat/path.ts (A* with break costs); repath every ai.repathTicks. Daylight burns exposed zombies
- * (ai.dayDps, scaled by shelter exposure). Far zombies despawn.
+ * Paths come from combat/path.ts (A* with break costs); repath every ai.repathTicks. ADR-194: no sunlight damage; by day
+ * a non-horde zombie is calm (wanders, seeks / attacks no one) unless it was hit, then it retaliates against that attacker.
+ * It turns aggressive at dusk and calm at dawn, staggered per zombie (zombieAggressive). Far zombies despawn.
  */
 import { entityIndex, NetId, Transform, timeOfDay, type Entity, type World } from "@engine/core";
 import { installSpatialIndex } from "@engine/world";
-import { Anim, AnimState, Attacker, BodyTemp, DamageCause, Dead, Exposure, Health, NoiseLevel, Survival, Zombie, ZombieBrain, ZState } from "../components.js";
+import { Anim, AnimState, Attacker, BodyTemp, Dead, Exposure, Health, NoiseLevel, Survival, Zombie, ZombieBrain, ZState } from "../components.js";
 import { gameplayDefs, isAuthority } from "../config.js";
 import { secondsToTicks, type ZombieDef } from "../defs.js";
 import { DayPhase, emit, ZombieSpawned, ZombieStateChanged } from "../events.js";
@@ -22,11 +23,10 @@ import { defineResource } from "@engine/core";
 export const PopulationZombies = defineResource<boolean>("gameplay.PopulationZombies");
 import { dayPhase } from "../systems/environment.js";
 import { makeNoise } from "../systems/noise.js";
-import { shelterAt } from "../building/shelter.js";
 import { structures } from "../building/structure.js";
 import { TerrainRes } from "../world.js";
 import { swimSpeedMulAt, terrainBlocksWalker } from "../systems/movement.js";
-import { applyDamage, setAnim } from "./combat.js";
+import { applyDamage, lastAttacker, setAnim } from "./combat.js";
 import { findPath, pieceHp } from "./path.js";
 import { lightAt, lightGrid, nearestLight, type ActiveLight } from "../systems/lights.js";
 import { snuffFire } from "../systems/fuel.js";
@@ -102,6 +102,25 @@ function acquire(world: World, x: number, y: number, def: ZombieDef): { e: Entit
   return best && { e: best.e, seen: best.seen };
 }
 
+/**
+ * ADR-194 day/night temperament. Aggressive from ai.aggroStartT (dusk) until ai.aggroEndT (dawn), each zombie shifted
+ * by a stable 0..ai.aggroStaggerT offset (NetId hash) so a crowd wakes / settles over time instead of all at once.
+ * No clock (dayLengthTicks 0) reads t = 0: night, aggressive. Horde members ignore this (always aggressive).
+ */
+export function zombieAggressive(world: World, z: Entity, t = timeOfDay(world).t): boolean {
+  if (world.has(z, HordeMember)) return true;
+  const ai = gameplayDefs(world).ai; const id = (world.getField(z, NetId, "id") ?? z) >>> 0;
+  const o = (((Math.imul(id ^ 0x9e3779b9, 0x85ebca6b) >>> 0) % 1000) / 1000) * ai.aggroStaggerT;
+  return t >= ai.aggroStartT + o || t < ai.aggroEndT - o;
+}
+/** ADR-194: a calm zombie's target — the last living attacker within ai.retaliateSeconds and loseTargetMul x sight. */
+function provoker(world: World, z: Entity, x: number, y: number, def: ZombieDef, dt: number): { e: Entity; seen: boolean } | undefined {
+  const h = lastAttacker(world, z); const ai = gameplayDefs(world).ai;
+  if (!h || world.tick - h.tick > secondsToTicks(ai.retaliateSeconds, dt) || !world.isAlive(h.e) || world.has(h.e, Dead) || world.has(h.e, Zombie)) return undefined;
+  const t = world.get(h.e, Transform); if (!t || dist(x, y, t.x, t.y) > def.sightRange * ai.loseTargetMul) return undefined;
+  return { e: h.e, seen: true };
+}
+
 /** ADR-108 Snuffer targets: zombie -> light entity it is going for (sim-local, server). */
 const snuffs = new WeakMap<World, Map<Entity, Entity>>();
 const snuffsOf = (w: World): Map<Entity, Entity> => { let m = snuffs.get(w); if (!m) snuffs.set(w, (m = new Map())); return m; };
@@ -113,7 +132,7 @@ export const snuffTargetOf = (world: World, z: Entity): Entity | undefined => sn
 export function zombieAISystem(world: World, dt: number): void {
   if (!isAuthority(world)) return;
   const defs = gameplayDefs(world); const ai = defs.ai; const tf = world.store(Transform); const br = world.store(ZombieBrain);
-  const ps = pathsOf(world); const phase = currentPhaseKey(world); const isDay = phase === "day";
+  const ps = pathsOf(world); const phase = currentPhaseKey(world); const todT = timeOfDay(world).t;
   const avoid = defs.lightAvoid.phases.includes(phase); const sn = snuffsOf(world);
   if (avoid) lightGrid(world);
   const breakTicks = (piece: Entity): number => pieceHp(world, piece) / 10;
@@ -124,16 +143,14 @@ export function zombieAISystem(world: World, dt: number): void {
     // think
     if (world.tick >= br.data.thinkAt[s]!) {
       br.data.thinkAt[s] = world.tick + ai.thinkTicks; br.markChanged(idx);
-      if (isDay && !world.isReplaying) {
-        const sh = shelterAt(world, x, y, 0);
-        if (sh.exposure > 0) applyDamage(world, z, ai.dayDps * sh.exposure * ai.thinkTicks * dt, 0 as Entity, DamageCause.Sunlight);
-      }
       // despawn when no player is near
       let anyNear = false; for (const p of installSpatialIndex(world).queryRadius(x, y, ai.despawnDistance)) if (world.has(p, Survival)) { anyNear = true; break; }
       const horde = world.has(z, HordeMember); // ADR-121: horde members roam far from players
       if (!anyNear && !horde && !world.isReplaying) { ps.delete(z); world.destroy(z); continue; }
       const state = br.data.state[s]! as ZState; const target = br.data.target[s]!;
-      const tgt = acquire(world, x, y, def);
+      const aggr = horde || zombieAggressive(world, z, todT);
+      const tgt = aggr ? acquire(world, x, y, def) : provoker(world, z, x, y, def, dt);
+      if (!aggr && !tgt && (state === ZState.Chase || state === ZState.AttackPlayer || state === ZState.Investigate)) setState(world, z, ZState.Wander);
       if (tgt) {
         br.data.target[s] = tgt.e; const tt = world.get(tgt.e, Transform)!;
         br.data.goalX[s] = tt.x; br.data.goalY[s] = tt.y;

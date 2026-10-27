@@ -177,7 +177,7 @@ export interface SpawnTuning {
 export interface AiTuning {
   readonly thinkTicks: number; readonly repathTicks: number; readonly maxSearchRadius: number; readonly maxExpandedNodes: number;
   readonly breakCostMul: number; readonly wanderRadius: number; readonly loseTargetMul: number; readonly investigateSeconds: number;
-  readonly dayDps: number; readonly despawnDistance: number; readonly corpseSeconds: number;
+  /** ADR-194 aggression window (time-of-day fractions) + per-zombie stagger; calm zombies retaliate for retaliateSeconds. */ readonly aggroStartT: number; readonly aggroEndT: number; readonly aggroStaggerT: number; readonly retaliateSeconds: number; readonly despawnDistance: number; readonly corpseSeconds: number;
 }
 export interface NoiseTuning { readonly gather: number; readonly build: number; readonly attack: number; readonly structureHit: number; readonly door: number; readonly decayPerSec: number }
 export interface WorldgenBand { readonly max: number; readonly tile: number; readonly nodes: readonly number[]; readonly nodeChance: number; readonly temp: number; readonly humidity: number }
