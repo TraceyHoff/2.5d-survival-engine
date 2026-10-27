@@ -46,6 +46,13 @@ export class World {
   readonly environment: Entity;
   /** True while simulate() is replaying ticks. */
   isReplaying = false;
+  /**
+   * ADR-191: client prediction lead - ticks between world.tick and the server tick that will run the newest predicted
+   * input (set by netcode each input phase; 0 on servers). See simTick().
+   */
+  predictLead = 0;
+  /** Server-frame tick for tick-based rules (buff expiry, cadences) on `e`: live prediction of a predicted entity adds predictLead; replays already run at server ticks. */
+  simTick(e: Entity): number { return !this.isReplaying && this.predicted.has(e) ? this.tick + this.predictLead : this.tick; }
   /** Entities the client predicts; populated by netcode, checked by systems during replay. */
   readonly predicted = new Set<Entity>();
   private envViews = new Map<ComponentDef, unknown>();

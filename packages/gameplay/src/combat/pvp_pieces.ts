@@ -98,7 +98,8 @@ export function burningSystem(world: World, dt: number): void {
 
 /** Contact damage + slow (barricade_spiked), every CONTACT_EVERY ticks. */
 export function contactSystem(world: World, dt: number): void {
-  if (!isAuthority(world) || world.isReplaying || world.tick % CONTACT_EVERY !== 0) return;
+  if (!isAuthority(world)) { predictContactSlow(world, dt); return; }
+  if (world.isReplaying || world.tick % CONTACT_EVERY !== 0) return;
   const spikes = [...world.query([BuildPiece, Transform])].filter(pieceWith(world, (d) => d.features.contact !== undefined)); if (spikes.length === 0) return;
   const period = CONTACT_EVERY * dt;
   for (const s of spikes.sort((a, b) => a - b)) {
@@ -107,6 +108,29 @@ export function contactSystem(world: World, dt: number): void {
       if (tribe !== 0 && world.getField(v, Tribe, "id") === tribe) continue;
       applyDamage(world, v, c.dps * period, s, DamageCause.Contact);
       addModifier(world, v, Buffs, { stat: Stat.MoveSpeed, op: ModOp.Mul, value: c.slowMul, expiresAtTick: world.tick + secondsToTicks(c.slowSeconds, dt) });
+    }
+  }
+}
+
+/**
+ * ADR-191: the predicting client applies the same contact slow to its own predicted entities (live ticks and
+ * reconcile replays), so walking through spikes no longer rubber-bands back by the slow the server applied a round
+ * trip earlier. Damage stays authority-only; only the MoveSpeed modifier (replace semantics: idempotent) is predicted.
+ */
+export function predictContactSlow(world: World, dt: number): void {
+  if (world.predicted.size === 0) return;
+  let spikes: Entity[] | undefined;
+  for (const v of world.predicted) {
+    if (!world.isAlive(v) || !world.has(v, Health) || world.has(v, Dead) || world.has(v, BuildPiece)) continue;
+    const tick = world.simTick(v); if (tick % CONTACT_EVERY !== 0) continue; // the server's cadence, in its tick frame
+    const q = pos(world, v); if (!q) continue;
+    spikes ??= [...world.query([BuildPiece, Transform])].filter(pieceWith(world, (d) => d.features.contact !== undefined)).sort((a, b) => a - b);
+    if (spikes.length === 0) return;
+    for (const s of spikes) {
+      const c = defOf(world, s)!.features.contact!; const p = pos(world, s)!;
+      if (Math.hypot(q.x - p.x, q.y - p.y) > c.radius) continue;
+      const tribe = world.getField(s, Tribe, "id") ?? 0; if (tribe !== 0 && world.getField(v, Tribe, "id") === tribe) continue;
+      addModifier(world, v, Buffs, { stat: Stat.MoveSpeed, op: ModOp.Mul, value: c.slowMul, expiresAtTick: tick + secondsToTicks(c.slowSeconds, dt) });
     }
   }
 }

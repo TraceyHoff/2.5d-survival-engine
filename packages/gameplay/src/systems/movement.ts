@@ -44,7 +44,7 @@ export function speedMultiplier(world: World, e: Entity, sprint: boolean): numbe
   if (max > 0) { const f = w / max; if (f > mv.encumberedFrom) m *= 1 - (1 - mv.encumberedMinMul) * Math.min(1, (f - mv.encumberedFrom) / (1 - mv.encumberedFrom)); }
   m *= 1 - mv.wetSlowMul * ((world.getField(e, Wetness, "level") ?? 0) / 255);
   const t = world.get(e, Transform); if (t) m *= roadSpeedMul(world, t.x, t.y); // ADR-119 road surface bonus
-  return evaluate(world, e, Buffs, Stat.MoveSpeed, m);
+  return evaluate(world, e, Buffs, Stat.MoveSpeed, m, world.simTick(e)); // ADR-191: server-frame expiry while predicting
 }
 
 /** Movement collision query (terrain, edge walls/doors, solid cells); vehicles reuse it per footprint corner. */

@@ -307,6 +307,8 @@ export class NetClient {
       const cmd: InputCmd = { seq: this.nextSeq++, ...quantizeInput(fed ?? this.opts.sampleInput!()) };
       if (!cmd.edges) delete cmd.edges;
       this.pending.push(cmd);
+      // ADR-191: the server runs this input at latestTick + pending.length (one queued input per tick)
+      w.predictLead = this.latestTick < 0 ? 0 : Math.max(0, this.latestTick + this.pending.length - w.tick);
       for (const e of owned) this.opts.applyInput?.(w, e, cmd);
     }
     const n = this.opts.inputRedundancy ?? 8;
@@ -477,7 +479,7 @@ export class NetClient {
     const pending = this.pending;
     const beforeTick = (i: number): void => { for (const e of inputs) this.opts.applyInput?.(w, e, pending[i]!); };
     // core simulate: world.tick follows the replayed ticks, world.isReplaying is set, replay events are discarded.
-    w.simulate(pending.length, dt, { beforeTick, ...(this.opts.predictedSystems && { systems: this.opts.predictedSystems }) });
+    w.simulate(pending.length, dt, { beforeTick, startTick: this.latestTick + 1, ...(this.opts.predictedSystems && { systems: this.opts.predictedSystems }) });
     this.stats.reconciliations++;
     let corr = 0;
     for (const [e, before] of owned) {
