@@ -48,7 +48,7 @@ describe("Delete progress picker", () => {
 
 describe("camera zoom (ADR-100)", () => {
   test("desktop shows ~30% more area than the old 1.6, phones zoom out less, user zoom clamps + persists", () => {
-    expect((LEGACY_ZOOM / defaultZoom(1920, 1080)) ** 2).toBeCloseTo(1.3, 2);
+    expect((LEGACY_ZOOM / defaultZoom(1920, 1080)) ** 2).toBeCloseTo(1.3 / 1.1 ** 2, 2); // ADR-206: default ~10% closer than ADR-100
     expect(defaultZoom(390, 844)).toBeLessThan(DESKTOP_ZOOM);
     localStorage.setItem("engine-settings", "{\"bots\":5}");
     const el = document.createElement("canvas"); const cam = { zoom: 0 };

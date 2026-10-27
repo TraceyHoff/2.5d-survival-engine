@@ -224,6 +224,8 @@ export class IsoRenderer implements Renderer {
   private tierStream: BuildingTierStreamer | null = null; private tierLayout = -1;
   /** Streamed building tier pages currently held (diagnostics / tests). */
   get buildingTiersHeld(): string[] { return this.tierStream?.heldKeys() ?? []; }
+  /** ADR-206: last frame had a roof/upper-floor cutaway around the focus entity (player is indoors). Allocation-free. */
+  get indoor(): boolean { return this.sprites.cutawayActive; }
   /** Modular building stats of the last frame: pieces drawn with streaming fallback art, crack overlays, gridless/grid cutaway active. */
   get buildingStats(): { tierFallbacks: number; crackOverlays: number; cutaway: boolean; chimneys: number; smoke: number } {
     return { tierFallbacks: this.sprites.tierFallbacks, crackOverlays: this.sprites.crackOverlays, cutaway: this.sprites.cutawayActive, chimneys: this.chimneySmoke.chimneys, smoke: this.chimneySmoke.spawned };
