@@ -194,7 +194,7 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
         for (const s of v) if (!s.equipped) dg.append(btn(`Drop ${s.name}`, `drop-${s.slot}`, () => send(dropItemIntent(s.item, s.count), `Dropped ${s.name} ×${s.count}.`), { alt: true, role: "drop", title: "Drop on the ground (your pet fetches it)", data: { item: String(s.item), icon: s.icon } }));
         if (dg.childElementCount) {
           // the panel re-renders on every inventory / tick change, so keep the open state outside the DOM (a native toggle was lost)
-          const det = el("details", { "data-role": "drop-section" }); det.open = dropUi.open; const sum = el("summary", {}, "Drop items…");
+          const det = el("details", { "data-role": "drop-section" }); det.open = dropUi.open; const sum = el("summary", { tabindex: "0" }, "Drop items…");
           sum.addEventListener("click", (ev) => { ev.preventDefault(); dropUi.open = !dropUi.open; det.open = dropUi.open; });
           det.append(sum, dg); out.push(det);
         }

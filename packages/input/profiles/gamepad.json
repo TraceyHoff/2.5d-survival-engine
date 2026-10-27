@@ -147,7 +147,7 @@
     "control": "pad.select",
     "interaction": {
      "type": "tap",
-     "maxMs": 250
+     "maxMs": 500
     }
    },
    {

@@ -86,7 +86,7 @@ export class BootUI {
   private header = document.createElement("div");
   private body = document.createElement("div");
   private zw = document.createElement("div");
-  private padTimer = 0;
+  private padTimer = 0; private padGen = 0;
   private keyHandler: ((e: KeyboardEvent) => void) | undefined;
   private back: (() => void) | undefined;
   private readonly history = new BackHistory(() => { this.back?.(); });
@@ -268,9 +268,10 @@ export class BootUI {
       else if (e.key === "Enter" && typing && buttons[0]) { buttons[0].click(); e.preventDefault(); }
     };
     addEventListener("keydown", this.keyHandler);
-    cancelAnimationFrame(this.padTimer);
+    cancelAnimationFrame(this.padTimer); const gen = ++this.padGen;
     let prev = { up: false, down: false, a: false, b: false };
     const poll = (): void => {
+      if (gen !== this.padGen) return; // a click inside this poll re-rendered / hid the menu: never keep a stale loop alive
       const gp = [...(navigator.getGamepads?.() ?? [])].find((g) => g); if (gp) {
         const ay = gp.axes[1] ?? 0; const cur = { up: !!gp.buttons[12]?.pressed || ay < -0.5, down: !!gp.buttons[13]?.pressed || ay > 0.5, a: !!gp.buttons[0]?.pressed, b: !!gp.buttons[1]?.pressed };
         if (cur.down && !prev.down) focus(idx + 1); if (cur.up && !prev.up) focus(idx - 1);
@@ -278,13 +279,14 @@ export class BootUI {
         if (cur.b && !prev.b) this.back?.();
         prev = cur;
       }
+      if (gen !== this.padGen) return;
       this.padTimer = requestAnimationFrame(poll);
     };
     this.padTimer = requestAnimationFrame(poll);
   }
 
   hide(): void {
-    cancelAnimationFrame(this.padTimer); if (this.keyHandler) removeEventListener("keydown", this.keyHandler);
+    cancelAnimationFrame(this.padTimer); this.padGen++; if (this.keyHandler) removeEventListener("keydown", this.keyHandler);
     this.history.sync(false); this.history.destroy();
     this.root.classList.add("hide"); this.root.dataset["boot"] = "done"; setTimeout(() => this.root.remove(), 400);
   }

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { SLOT_COUNT, slotIndex, type CosmeticCatalogLike, type WearableDef } from "@engine/core";
 import { cleanName, creatorOptions, loadCharacter, randomLook, saveCharacter, showCharacterCreator, stepLook } from "../src/character-creator.js";
 
@@ -48,5 +48,21 @@ describe("ADR-114 character creator", () => {
     const p2 = showCharacterCreator({ root: document.body, catalog: cat, initial: r, pads: () => [] });
     expect(document.querySelector("h2")!.textContent).toMatch(/Edit/);
     document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" })); expect(await p2).toBeUndefined();
+  });
+  it("ADR-200: the pad loop dies with the creator (no zombie A / Start polling in game); A on the name opens the pad keyboard", async () => {
+    document.body.innerHTML = ""; let q = new Map<number, FrameRequestCallback>(); let nid = 0; const step = (): void => { const r = q; q = new Map(); for (const f of r.values()) f(0); };
+    vi.stubGlobal("requestAnimationFrame", (f: FrameRequestCallback) => { q.set(++nid, f); return nid; }); vi.stubGlobal("cancelAnimationFrame", (i: number) => { q.delete(i); });
+    const mk = () => ({ buttons: Array.from({ length: 17 }, () => ({ pressed: false })), axes: [0, 0, 0, 0] }); let gp = mk();
+    try {
+      const p = showCharacterCreator({ root: document.body, catalog: cat, pads: () => [gp] as never });
+      const name = document.querySelector<HTMLInputElement>("[data-role=creator-name]")!; name.focus(); step();
+      gp = mk(); gp.buttons[0]!.pressed = true; step(); gp = mk(); step(); for (let i = 0; i < 3; i++) step();
+      expect(document.querySelector("[data-role=creator-osk]")).not.toBeNull(); // A on the name field -> on-screen keyboard
+      document.querySelector<HTMLButtonElement>("[data-role=creator-osk] [data-key=save], [data-role=creator-osk] [data-pad=X]")?.click();
+      name.value = "Ada"; name.dispatchEvent(new Event("input")); for (let i = 0; i < 3; i++) step();
+      gp = mk(); gp.buttons[9]!.pressed = true; step(); gp = mk(); step();
+      expect((await p)?.name).toBe("Ada");
+      await new Promise((r) => setTimeout(r, 5)); for (let i = 0; i < 4; i++) step(); expect(q.size).toBe(0); // nothing re-armed after done()
+    } finally { vi.unstubAllGlobals(); }
   });
 });

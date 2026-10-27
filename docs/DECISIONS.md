@@ -1337,3 +1337,20 @@ Canvas2D drew no building pieces at all.
 - **Cause (found by soak with `WEBGL_lose_context`):** if a black-frame readback was in flight, or started, while the context was lost, it read all zeros. After a restore, the dead readback buffer gave glError 0x502. Either way the player saw a second, false "World rendered black" overlay on top of the real "context lost" one. `glInfo` also reported "GPU: null" on a lost context.
 - **Fix:** `blackFrameStep` stops checking for the rest of the page once `gl.isContextLost()` has been true, because the renderer is rebuilt by the recovery reload. `glInfo` remembers the GPU name from the last live probe. The renderer's own `context-lost` event no longer opens a second overlay: gl-recovery already reports the loss and the quality step-down.
 - **Tests:** `apps/client/test/adr199_lost_context_blackcheck.test.ts`.
+
+## ADR-200: Gamepad can drive every menu (blocker pass: inventory, crafting, build)
+- **Report:** with a gamepad (PC and Xbox Edge), only the main menu could be navigated. Inventory, crafting and build menus, and modals in general, ignored the pad or opened and closed again by themselves.
+- **Root cause:** the character creator's own pad `tick` called `ok.click()`, which ran `done()` and cancelled its rAF, but then the tick re-armed itself with `raf = requestAnimationFrame(tick)` on its last line. That zombie loop kept polling in game: A clicked `document.activeElement` a second time, so every menu item activated twice (open then close), and Start clicked a detached Enter-world button. The creator's name field could also not be filled by pad at all.
+  - The boot menu (`menu.ts`) had the same stale-loop shape.
+  - Select→inventory was a 250 ms `tap`. A frame hitch on a slow device (Xbox Edge, software GL) stretched a normal press past the window, so it was cancelled and nothing opened.
+  - The "Drop items…" `<summary>` was not focusable, so drop was unreachable by pad.
+- **Fix:**
+  - The creator tick returns when `disposed` (checked at entry and again before re-arming), and `done()` destroys any open keyboard nav.
+  - The boot menu poll is guarded by a show generation (`padGen`).
+  - A on the creator name (or Enter world with an empty name on pad) opens the shared on-screen keyboard (`buildSignEditor` with `keyboard: true`) in a nested `UINav` (`ignoreBoot`); X saves.
+  - The Select tap window is now 500 ms, the same as the Map long-press threshold. Shorter is inventory, longer is map, and there is no dead zone.
+  - The Drop summary has `tabindex=0`.
+  - All menus keep going through the one shared `UINav` (modal stack, focus trap and restore, spatial D-pad and stick with repeat, A/B, LB/RB tabs, X/Y `[data-pad]` shortcuts, Dialog context suppressing gameplay).
+- **Not covered:** split stack and move-to-hotbar have no game command for any device yet (the hotbar is the first inventory slots), so the pad cannot do them either.
+- **Tests:** `apps/client/test/adr200_pad_blockers.test.ts` covers pad-only equip, eat, drop, craft, and selecting a foundation then Place. `character_creator.test.ts` covers the creator pad loop dying with the creator and A opening the keyboard.
+- **Browser check:** a headless Chrome run at 1920×1080 with a mocked `navigator.getGamepads` went pad-only through main menu, creator keyboard, inventory equip and eat, LB+Select crafting queue, and pause→Build→foundation→Place→A. The foundation piece count went 1→2.

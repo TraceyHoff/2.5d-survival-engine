@@ -31,6 +31,8 @@ export interface UINavOptions {
   /** default true: poll gamepads every animation frame */
   pollGamepads?: boolean;
   now?: () => number;
+  /** Poll the pad even while a boot screen ([data-boot]) is up (the character creator's name keyboard). */
+  ignoreBoot?: boolean;
   /** default true: Android/browser back (popstate) closes the top modal */
   history?: boolean;
 }
@@ -52,7 +54,7 @@ export class UINav {
   constructor(readonly o: UINavOptions) {
     addEventListener("keydown", this.onKey, true);
     // ADR-139: menus built mid-press (Start in the character creator enters the world) ignore buttons already held until released
-    try { const g = (o.getGamepads?.() ?? (typeof navigator !== "undefined" ? [...(navigator.getGamepads?.() ?? [])] : [])).find((x) => !!x); this.bootHold = !!g?.buttons.some((x) => x?.pressed); } catch { /* no gamepad API */ }
+    try { const g = (o.getGamepads?.() ?? (typeof navigator !== "undefined" ? [...(navigator.getGamepads?.() ?? [])] : [])).find((x) => !!x); this.bootHold = !o.ignoreBoot && !!g?.buttons.some((x) => x?.pressed); } catch { /* no gamepad API */ }
     this.backHistory = o.history === false ? undefined : new BackHistory(() => { this.close(); });
     if (o.pollGamepads !== false && typeof requestAnimationFrame === "function") { const loop = (): void => { this.pollGamepad(); this.raf = requestAnimationFrame(loop); }; this.raf = requestAnimationFrame(loop); }
   }
@@ -164,7 +166,7 @@ export class UINav {
     const start = edge("start", b(PAD.START)), select = edge("select", b(PAD.SELECT)), a = edge("a", b(PAD.A)), bb = edge("b", b(PAD.B));
     const ax = gp.axes[0] ?? 0, ay = gp.axes[1] ?? 0;
     // boot menu / character creator own the pad (Start there = Enter world); a button still held from there is ignored until released
-    if (typeof document !== "undefined" && document.querySelector("[data-boot]")) { this.bootHold = true; return; }
+    if (!this.o.ignoreBoot && typeof document !== "undefined" && document.querySelector("[data-boot]")) { this.bootHold = true; return; }
     if (this.bootHold) { if (gp.buttons.some((x) => x?.pressed)) return; this.bootHold = false; }
     const dir: Dir | undefined = b(PAD.UP) ? "up" : b(PAD.DOWN) ? "down" : b(PAD.LEFT) ? "left" : b(PAD.RIGHT) ? "right"
       : Math.max(Math.abs(ax), Math.abs(ay)) < 0.5 ? undefined : Math.abs(ax) > Math.abs(ay) ? (ax < 0 ? "left" : "right") : ay < 0 ? "up" : "down";

@@ -69,7 +69,7 @@ export function buildSignEditor(o: SignEditorOptions): HTMLElement {
   for (const row of OSK_ROWS) { const r = mk("div", { className: "r" }); for (const ch of row) { const b = keyBtn(ch, () => insert(/[A-Z]/.test(ch) && !upper ? ch.toLowerCase() : ch), ch); if (/[A-Z]/.test(ch)) letters.push(b); r.append(b); } osk.append(r); }
   const shift = keyBtn("⇧ abc", () => { upper = !upper; shift.textContent = upper ? "⇧ abc" : "⇧ ABC"; for (const b of letters) b.textContent = upper ? b.dataset["osk"]! : b.dataset["osk"]!.toLowerCase(); }, "shift");
   const last = mk("div", { className: "r" }); last.append(shift, keyBtn("Space", () => insert(" "), "space"), keyBtn("⌫", del, "backspace"), keyBtn("Clear", () => { input.value = ""; update(); }, "clear")); osk.append(last);
-  osk.hidden = !o.keyboard; toggle.setAttribute("aria-expanded", String(!osk.hidden));
+  osk.hidden = !o.keyboard; if (o.keyboard) { const k0 = osk.querySelector<HTMLButtonElement>("button"); if (k0) k0.autofocus = true; } // gamepad: start on the keys toggle.setAttribute("aria-expanded", String(!osk.hidden));
   toggle.addEventListener("click", () => { osk.hidden = !osk.hidden; toggle.setAttribute("aria-expanded", String(!osk.hidden)); if (!osk.hidden) osk.querySelector<HTMLElement>("button")?.focus(); });
   const save = mk("button", { type: "button", textContent: o.saveLabel ?? "Save sign" }, "submit"); save.dataset["pad"] = "X";
   const cancel = mk("button", { type: "button", textContent: "Cancel", className: "alt" }, "cancel");

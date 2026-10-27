@@ -12,6 +12,8 @@
  * The panel scrolls (overflow:auto, touch pan) and fits fullscreen phones (dvh units).
  */
 import type { AssetRegistry } from "@engine/assets";
+import { buildSignEditor } from "./sign-editor.js";
+import { UINav } from "./ui-nav.js";
 import { CharacterPreview2D, coreAppearanceBinding, createCharacterPreview, type AtlasSource, type CharacterPreview } from "@engine/render";
 import { BODY_TYPES, SLOT_COUNT, WEARABLE_SLOTS, defaultAppearance, slotIndex, type AppearanceValue, type CosmeticCatalogLike, type WearableDef, type WearableSlot } from "@engine/core";
 
@@ -242,7 +244,19 @@ export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter
   const msg = doc.createElement("p"); msg.dataset["role"] = "creator-msg"; msg.style.cssText = "flex:1 1 100%;margin:0;min-height:1.2em";
   const foot = doc.createElement("div"); foot.className = "sticky-footer"; foot.style.cssText = "flex:1 1 100%;display:flex;flex-wrap:wrap;gap:8px;position:sticky;bottom:-14px;margin-bottom:-14px;padding-bottom:14px;background:#FFF3DC;padding-top:6px";
   let done: (v: StoredCharacter | undefined) => void = () => undefined;
-  const ok = mk("Enter world", "creator-done", () => { const n = cleanName(name); if (!n) { msg.textContent = "Pick a name for your survivor."; nameIn.focus(); return; } done({ v: 1, name: n, appearance: look }); }, "");
+  // Gamepad (Xbox Edge has no usable system keyboard): A on the name field / Enter world with no name opens the shared
+  // on-screen keyboard editor on its own UINav (the creator's pad loop pauses while it is open).
+  let oskNav: UINav | undefined;
+  const openNameOsk = (): void => {
+    if (oskNav) return;
+    const nav = new UINav({ root: wrap, history: false, ignoreBoot: true, ...(o.pads ? { getGamepads: o.pads as never } : {}) }); oskNav = nav;
+    const ed = buildSignEditor({ kindName: "survivor name", saveLabel: "Use name", maxLen: NAME_MAX, initial: name, keyboard: true,
+      close: () => nav.close(), onSave: (t) => { if (t) { name = t; nameIn.value = t; msg.textContent = ""; } } });
+    ed.dataset["role"] = "creator-osk";
+    nav.open("creator-name", ed, () => { setTimeout(() => nav.destroy(), 0); oskNav = undefined; padHold = true; (cleanName(name) ? ok : nameIn).focus(); });
+  };
+  let padHold = false;
+  const ok = mk("Enter world", "creator-done", () => { const n = cleanName(name); if (!n) { msg.textContent = "Pick a name for your survivor."; nameIn.focus(); if (padActive) openNameOsk(); return; } done({ v: 1, name: n, appearance: look }); }, "");
   foot.append(mk("Back", "creator-back", () => done(undefined)), ok);
   panel.append(h, left, right, msg, foot); wrap.append(panel);
   function refresh(): void {
@@ -274,23 +288,27 @@ export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter
   };
   doc.addEventListener("keydown", onKey);
   const pads = o.pads ?? (() => (typeof navigator !== "undefined" && navigator.getGamepads ? navigator.getGamepads() : []));
-  let prev = { up: false, down: false, left: false, right: false, a: false, b: false, y: false, lb: false, rb: false, start: false }; let raf = 0, last = 0; const win = doc.defaultView;
+  let prev = { up: false, down: false, left: false, right: false, a: false, b: false, y: false, lb: false, rb: false, start: false }; let raf = 0, last = 0, padActive = false; const win = doc.defaultView;
   const tick = (t: number): void => {
+    if (disposed) return; // ok.click() inside this tick resolves the dialog: never re-arm (a zombie loop kept clicking in-game menus)
     if (auto && t - last > 900) { last = t; turn(1); } else if (drv?.kind === "canvas2d") draw(); // 2D: idle anim frames
-    const gp = Array.from(pads()).find((p) => p) ?? undefined;
-    if (gp) { const ax = gp.axes[0] ?? 0, ay = gp.axes[1] ?? 0, B = (i: number): boolean => !!gp.buttons[i]?.pressed;
+    let gp = Array.from(pads()).find((p) => p) ?? undefined;
+    if (gp && padHold) { if (gp.buttons.some((x) => x?.pressed)) gp = undefined; else padHold = false; } // buttons from the OSK editor: wait for release
+    if (gp && oskNav) gp = undefined;
+    if (gp) { if (gp.buttons.some((x) => x?.pressed)) padActive = true; const ax = gp.axes[0] ?? 0, ay = gp.axes[1] ?? 0, B = (i: number): boolean => !!gp.buttons[i]?.pressed;
       const cur = { up: B(12) || ay < -0.5, down: B(13) || ay > 0.5, left: B(14) || ax < -0.5, right: B(15) || ax > 0.5, a: B(0), b: B(1), y: B(3), lb: B(4), rb: B(5), start: B(9) };
       if (cur.lb && !prev.lb) { auto = false; turn(-1); } if (cur.rb && !prev.rb) { auto = false; turn(1); }
       if (cur.down && !prev.down) move(1); if (cur.up && !prev.up) move(-1);
       // left/right on a ◀ ▶ row steps the value directly
       const a = doc.activeElement as HTMLElement | null; const rowBox = a?.parentElement;
       if ((cur.left && !prev.left) || (cur.right && !prev.right)) { const bs = rowBox?.querySelectorAll<HTMLButtonElement>("button"); if (bs && bs.length === 2) bs[cur.left ? 0 : 1]!.click(); }
-      if (cur.a && !prev.a && a && a !== nameIn) a.click(); if (cur.b && !prev.b) done(undefined); if (cur.y && !prev.y && cat) { look = randomLook(cat); refresh(); }
+      if (cur.a && !prev.a && a) { if (a === nameIn) openNameOsk(); else a.click(); } if (cur.b && !prev.b) done(undefined); if (cur.y && !prev.y && cat) { look = randomLook(cat); refresh(); }
       if (cur.start && !prev.start) ok.click(); // TV: Start = Enter world without D-padding past ~30 rows
       prev = cur; }
+    if (disposed) return;
     raf = win?.requestAnimationFrame?.(tick) ?? 0;
   };
   raf = win?.requestAnimationFrame?.(tick) ?? 0;
   o.root.append(wrap); (o.initial ? ok : nameIn).focus();
-  return new Promise((resolve) => { done = (v) => { disposed = true; drv?.dispose(); drv = undefined; doc.removeEventListener("keydown", onKey); if (raf) win?.cancelAnimationFrame?.(raf); wrap.remove(); resolve(v); }; });
+  return new Promise((resolve) => { done = (v) => { disposed = true; oskNav?.destroy(); oskNav = undefined; drv?.dispose(); drv = undefined; doc.removeEventListener("keydown", onKey); if (raf) win?.cancelAnimationFrame?.(raf); wrap.remove(); resolve(v); }; });
 }
