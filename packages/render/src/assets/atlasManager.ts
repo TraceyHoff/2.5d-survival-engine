@@ -157,8 +157,8 @@ export function swayFromManifest(json: unknown): { table: Record<string, SwayPar
 }
 export interface AtlasStats { layers: number; layerSize: number; /** atlas images scaled by this to fit the GPU memory budget (1 = full res) */ downscale: number; gpuMB: number; atlases: number; frames: number; sprites: number; version: number }
 
-/** ADR-154: budgets at or above this skip the per-page-in glGetError sync */
-export const SYNC_CHECK_MAX_MB = 384;
+/** ADR-154 / ADR-187: budgets at or above this skip the per-page-in glGetError sync (200: console 256/448 skip it, mobile 128/160 keep it) */
+export const SYNC_CHECK_MAX_MB = 200;
 const TABLE_W = 1024; // entries per frame-table row
 
 /**

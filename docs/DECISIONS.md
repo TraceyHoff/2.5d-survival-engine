@@ -1232,3 +1232,7 @@ Name tags (ADR-173) were sorted farthest-from-me first. When two players/bots st
 - **Measured** (swiftshader, 480x270, SP worker): Basis no longer shows up in main-thread profiles. Long tasks dropped from 49 to 36, and p95 frame time from 183 to 150 ms.
 - **Tests:** `packages/render/test/ktx2_worker.test.ts`.
 
+## ADR-187: Console texture budgets skip the per-page-in getError sync
+- **Cause:** ADR-154 drained `gl.getError()` after each page-in when `textureBudgetMB < 384`. The Xbox/console budgets (256, 448 ultra) fall under that, so consoles paid a full GPU pipeline sync on every page-in. In profiles, `getError` was the biggest single main-thread cost at 12.7%, with single stalls of 300-800 ms.
+- **Fix:** `SYNC_CHECK_MAX_MB` is now 200. Mobile/safe budgets (128/160) keep the per-page check, because those drivers OOM in practice. Console and desktop budgets rely on the existing once-per-frame `OUT_OF_MEMORY` check and the rebuild-time retry. Texture quality is unchanged.
+- **Tests:** `packages/render/test/frametable_rows.test.ts` (256 MB → no sync checks).
