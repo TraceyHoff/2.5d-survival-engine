@@ -50,8 +50,9 @@ export function nodeWiggle(ms: number): number | undefined { if (ms < 0 || ms > 
  * then back), uniform squash pulse, tilt (rad, Canvas2D) and white flash 0..1. undefined once the 260 ms flinch is over.
  */
 export const HIT_REACT_MS = 260; // ADR-151: < fastest player melee cooldown (300 ms) so flinches don't stack
-export function hitPose(ms: number, dir: number): { dx: number; dy: number; scale: number; tilt: number; flash: number } | undefined {
+export function hitPose(ms: number, dir: number, directed = true): { dx: number; dy: number; scale: number; tilt: number; flash: number } | undefined {
   if (!(ms >= 0) || ms > HIT_REACT_MS) return undefined;
+  if (!directed) return ms < 120 ? { dx: 0, dy: 0, scale: 1, tilt: 0, flash: 0.5 * (1 - ms / 120) } : undefined; // ADR-193: no attacker -> no knockback/flinch, faint sizzle only
   const k = ms / HIT_REACT_MS, f = 1 - k;
   const push = 0.16 * Math.sin(Math.min(1, ms / 70) * Math.PI / 2) * f * f;
   const side = Math.sign(Math.cos(dir) - Math.sin(dir)) || 1; // iso screen x ~ (x - y): lean away from the hit
@@ -132,7 +133,7 @@ export class IsoView {
   private nodeAmt = new Map<Entity, number>(); private nodeHit = new Map<Entity, { at: number; dx: number; dy: number }>(); // ADR-128 wiggle
   private seen = new Set<Entity>();
   /** ADR-134: net entity -> last seen HitReact.startTick + local receive time; view entity -> current flinch pose. */
-  private hitSeen = new Map<Entity, { tick: number; at: number; dir: number }>(); private hitPoseOf = new Map<Entity, { scale: number; tilt: number; flash: number; base: number }>();
+  private hitSeen = new Map<Entity, { tick: number; at: number; dir: number; directed: boolean }>(); private hitPoseOf = new Map<Entity, { scale: number; tilt: number; flash: number; base: number }>();
   /** Light emitters (net entity -> table spec), re-evaluated every frame from replicated Fuel.lit / Emitter.strength. */
   private lightOf = new Map<Entity, { spec: LightSpec; fuel?: Entity }>();
   /** Piece view entity -> building state index (e.g. "unlit") for the renderer's pieceState binding. */
@@ -433,9 +434,9 @@ export class IsoView {
   private syncHitReact(net: World, e: Entity, ve: Entity, cur: { x: number; y: number }): void {
     const h = net.getInto(e, HitReact, this.sHit); const v = this.view; const now = performance.now();
     if (h) { const s = this.hitSeen.get(e);
-      if (!s) this.hitSeen.set(e, { tick: h.startTick, at: net.tick - h.startTick <= 6 ? now : -1e9, dir: hitDirRad(h.dir) }); // late joiners skip stale hits
-      else if (s.tick !== h.startTick) { s.tick = h.startTick; s.at = now; s.dir = hitDirRad(h.dir); } }
-    const s = this.hitSeen.get(e); const pose = s ? hitPose(now - s.at, s.dir) : undefined;
+      if (!s) this.hitSeen.set(e, { tick: h.startTick, at: net.tick - h.startTick <= 6 ? now : -1e9, dir: hitDirRad(h.dir), directed: h.src !== 0 }); // late joiners skip stale hits
+      else if (s.tick !== h.startTick) { s.tick = h.startTick; s.at = now; s.dir = hitDirRad(h.dir); s.directed = h.src !== 0; } }
+    const s = this.hitSeen.get(e); const pose = s ? hitPose(now - s.at, s.dir, s.directed) : undefined;
     const had = this.hitPoseOf.get(ve);
     if (!pose) { if (had) { this.hitPoseOf.delete(ve); if (v.has(ve, Sprite)) v.set(ve, Sprite, { scale: had.base }); } return; }
     const base = had?.base ?? v.get(ve, Sprite)?.scale ?? 1;

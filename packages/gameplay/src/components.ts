@@ -283,7 +283,8 @@ export const PieceOwner = defineComponent("PieceOwner", { player: "u32" });
  * dir = hit direction (attacker -> target) quantised to 0..255 over 2*pi, src = attacker NetId (0 = none), amount = damage (clamped u8).
  * Clients render a short flinch/knockback nudge + flash from it; health bars use src to spot their own combat targets.
  */
-export const HitReact = defineComponent("HitReact", { startTick: "u32", dir: "u8", src: "u32", amount: "u8" }, { networked: true });
+/** ADR-193: `cause` = DamageCause; src 0 = undirected (sunlight, own fire): clients show no knockback flinch. */
+export const HitReact = defineComponent("HitReact", { startTick: "u32", dir: "u8", src: "u32", amount: "u8", cause: "u8" }, { networked: true });
 /**
  * ADR-134 depleted resource node waiting to regrow (authority; networked + persistent so it survives restarts).
  * Sits at the old node's position (a tree leaves a stump until stumpUntilTick); at respawnAtTick a fresh node of `kind`

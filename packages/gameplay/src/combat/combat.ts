@@ -66,21 +66,24 @@ export function applyDamage(world: World, target: Entity, amount: number, source
   if (world.has(target, VitalsState)) world.setField(target, VitalsState, "lastDamageCause", cause);
   emit(world, Damaged, { target, source, amount, cause });
   if (cause === DamageCause.Combat || cause === DamageCause.Explosion) tagCombat(world, source, target);
-  if (world.has(target, AnimState) && hp - amount > 0) setAnim(world, target, Anim.Hurt);
-  if (hp - amount > 0) markHit(world, target, source, amount);
+  // ADR-193: sourceless hits (sunlight, a creature's own fire) carry no attacker: no Hurt anim / knockback flinch,
+  // which read as being struck by an invisible force. The HitReact still goes out (hp bar + cause-coloured sizzle).
+  const directed = source !== 0 && source !== target && world.isAlive(source);
+  if (directed && world.has(target, AnimState) && hp - amount > 0) setAnim(world, target, Anim.Hurt);
+  if (hp - amount > 0) markHit(world, target, source, amount, cause);
 }
 
 /**
  * ADR-134: stamp a broadcast HitReact on a damaged creature/player (flinch direction from the attacker, attacker NetId).
  * Cosmetic + targeting only: no stun or forced movement, so PvP stays fair; clients turn it into a ~0.3 s flinch.
  */
-export function markHit(world: World, target: Entity, source: Entity, amount: number): void {
+export function markHit(world: World, target: Entity, source: Entity, amount: number, cause: DamageCause = DamageCause.Combat): void {
   const tt = world.get(target, Transform); if (!tt) return;
   const st = world.isAlive(source) && source !== target ? world.get(source, Transform) : undefined;
   let dir = 0;
   if (st) { const a = Math.atan2(tt.y - st.y, tt.x - st.x); dir = Math.round(((a / (2 * Math.PI)) + 1) * 256) & 255; }
   const src = st ? world.getField(source, NetId, "id") ?? 0 : 0;
-  const v = { startTick: world.tick, dir, src, amount: Math.min(255, Math.max(1, Math.round(amount))) };
+  const v = { startTick: world.tick, dir, src, amount: Math.min(255, Math.max(1, Math.round(amount))), cause };
   if (world.has(target, HitReact)) world.set(target, HitReact, v); else world.add(target, HitReact, v);
 }
 /** Radians of a HitReact.dir byte. */
