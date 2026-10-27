@@ -1366,3 +1366,24 @@ Canvas2D drew no building pieces at all.
 - **Client:** `main.ts` installs the sink. `visible` reports call `showRenderError`, which shows the overlay and logs. Everything else calls `logRecoverable` and goes only to the ADR-198 log, with no overlay. In the audio mixer, `play()`, resume and decode-failed-for-every-format now call `logRecoverable`. `NotAllowedError` and `AbortError` (autoplay policy, interrupted play) are expected and are dropped.
 - **Left as is (intentional fallbacks, not errors):** feature probes (`canPlayType`, OffscreenCanvas mask readback), catalog-shape guards, fullscreen and orientation lock rejections, the DB close-after-late-open, the resize-chain tail and the menu leave chain.
 - **Tests:** `apps/client/test/adr201_swallowed_errors.test.ts`.
+
+## ADR-202: Zombies hunt AI humans exactly like players
+
+Accepted 2026-10-26. Context: AI humans (virtual players, ADR-105) must feel the same pressure as players so that crafting and building matter to them.
+
+- **Finding:** no targeting change was needed. `zombies.ts` `acquire()` picks any living entity with `Survival`. AI humans are real server player entities (a DirectClient's `Survival`/`Health`), so the ADR-194 day-calm / night-hunt / horde rules, sight and noise detection, and retaliation already apply to them unchanged.
+- **Guard:** `apps/client/test/adr197_zombies_hunt_ai_humans.test.ts` spawns a zombie next to an AI human at night and asserts the bot becomes `ZombieBrain.target`.
+- **Pets:** zombies do not proactively hunt pets, because pets have no `Survival`. A pet that bites a zombie is hit back through `lastAttacker` retaliation. Pets stay companions, not bait.
+- **Defence:** AI humans answer with ADR-203 (the `defend` behaviour, held weapon, and a campfire and walls at home).
+
+## ADR-203: AI human autonomy — needs-driven goals, stuck re-planning
+
+Accepted 2026-10-26. Context: AI humans stood still.
+
+- **Root cause:** the gather behaviour stopped 1.6 tiles from a node, but gather reach is 1.5 (`rangeSlack` 0 for bots), so every swing failed `OutOfRange` (597 of 597 in a probe). The 120-tick timeout then re-picked the same node. Fix: `GATHER_STOP` = 1.2.
+- **Second cause:** home was the `addBot` (x, y), but the server spawns or restores the bot elsewhere (~300 tiles away), so `build`, `sleep` and `return_home` walked across the map. The host now re-homes a bot that is more than `HOME_MAX_DIST` (48) from its home (`local.ts` view builder; bot host, not UI).
+- **Goal sensors** (`packages/gameplay/src/ai/autonomy.ts`, `fillGoalSensors`). They compute `needs`: the first missing goal tool's ingredients (`GOAL_CRAFTS`: stone axe, then pickaxe, then spear, using the player recipe rules), then the campfire cost, then food, plus wood fuel when the home fire is out. They also find the gather node the bot needs (banned, empty and tool-locked nodes skipped), nearby water when thirsty (ADR-176 drink, `UseCmd` slot 255), an equip slot when the hand is empty, a repair target (home piece below 60% hp), body cold (`COLD_BELOW` 36.3), and the home campfire with its lit state.
+- **Behaviours:** gather, explore, craft (goal tools first), build (per-key plan at home, with a campfire bonus at night), `tend_fire` (open → deposit wood → toggle fire → close, the station panel's own commands), `drink_water`, `equip`, `repair`, and `defend`. At night a cold bot with no fire, or an unlit fire, may still gather and is not allowed to sleep. Eat, drink, equip and craft also run inline from long behaviours (`instantChores`), so a chore never has to win against gather's inertia. Every action is a normal client command (wire path, rate limits, server validation): server-authoritative, no cheats.
+- **Stuck detection:** `stuckOn` (the bot has not closed 0.5 tiles in `STUCK_TICKS` 60) bans the node for 1200 ticks and re-plans. explore re-goals, build shifts its spot, return_home gives up, and a node held for 240 ticks is banned.
+- **Cost:** goal sensors refresh every `SENSE_EVERY` (10) ticks per agent. Item, recipe and campfire lookups are indexed once per defs object, and one alloc-free build-piece pass per home is shared for 30 ticks. Goal sensing takes about 0.4 ms per tick with 16 bots (3.2 ms before the caching). The whole local server ran at 25.4 ms per tick with 16 bots versus 20.7 ms before, and most of that difference is the extra gather, craft and build simulation the bots now trigger.
+- **Tests:** `apps/client/test/adr198_ai_human_autonomy.test.ts`: a bot gathers within 600 ticks, crafts a stone axe, and builds a campfire between 15:00 and 21:00. All three fail without this change.

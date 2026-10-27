@@ -7,7 +7,7 @@
  * mode: "multiplayer" disables human bots entirely (and ignores `bots`). No Node-only imports.
  */
 import { CommandRegistry, DEFAULT_TICK_HZ, FixedLoop, Owner, Transform, World, type CosmeticCatalogLike, type Agent, type AgentOutput, type Entity } from "@engine/core";
-import { Animal, Dead, Health, ResourceNode, Zombie, agentOutputFrame, applyAgentEmote, buildAgentSelf, buildAgentView, type AgentWorldView, flushSocialMemory, makeAgent, makeAgentIdentity, survivorController } from "@engine/gameplay";
+import { Animal, Dead, Health, ResourceNode, Zombie, agentOutputFrame, applyAgentEmote, buildAgentSelf, buildAgentView, type AgentWorldView, flushSocialMemory, makeAgent, makeAgentIdentity, survivorController, HOME_MAX_DIST } from "@engine/gameplay";
 import { ChatChannel, DirectClient, LoopbackNetwork, MultiServerTransport, NetClient, type ClientTransport, type ServerTransport } from "@engine/net";
 import { ClaimAccount, IndexedDbWorldStore, MemoryWorldStore, SetName, nameToWords, tokenToWords, type WorldStore } from "@engine/persist";
 import { detectDevice, isMobileHost, type DeviceHints } from "./p2p.js";
@@ -177,6 +177,9 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
   const viewFor = (a: Agent, tick: number, humans: readonly { x: number; y: number }[]): ReturnType<typeof buildAgentView> => {
     const vp = byAgent.get(a); const e = vp && serverEntityOf(vp.client.clientId); if (!vp || e === undefined) return undefined;
     const t = vp.world.get(e, Transform); if (!t) return undefined;
+    // ADR-203: the server spawns / restores the bot elsewhere than addBot's (x, y) (pickSpawnPoint, saved account); a home
+    // hundreds of tiles away made build / sleep / return_home walk across the map forever. Home = where the bot lives.
+    if (Math.hypot(vp.home.x - t.x, vp.home.y - t.y) > HOME_MAX_DIST) vp.home = { x: t.x, y: t.y };
     let near = humans.length === 0; // no human: everyone is "near" (headless tests keep full fidelity)
     for (const h of humans) { const dx = h.x - t.x, dy = h.y - t.y; if (dx * dx + dy * dy <= AGENT_LOD_NEAR * AGENT_LOD_NEAR) { near = true; break; } }
     const cached = lodViews.get(vp);

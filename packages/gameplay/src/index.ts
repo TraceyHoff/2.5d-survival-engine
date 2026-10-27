@@ -59,6 +59,7 @@ export * from "./ai/population.js";
 export * from "./ai/bot_input.js";
 export * from "./ai/agent_output.js";
 export * from "./ai/survivor_behaviors.js";
+export * from "./ai/autonomy.js";
 export * from "./systems/stall_display.js";
 export * from "./expression.js";
 export * from "./party.js";

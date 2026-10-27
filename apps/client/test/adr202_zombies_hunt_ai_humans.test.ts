@@ -1,4 +1,4 @@
-// ADR-197: zombies hunt AI humans (virtual players) exactly like players.
+// ADR-202: zombies hunt AI humans (virtual players) exactly like players.
 import { describe, expect, it } from "vitest";
 import { Transform, setTimeOfDay } from "@engine/core";
 import { MemoryWorldStore } from "@engine/persist";
@@ -7,7 +7,7 @@ import { createLocalServer, type LocalServer } from "../src/local.js";
 
 const botEntities = (l: LocalServer) => new Set(l.bots.map((b) => l.game.players.get(b.client.clientId)!.entity));
 
-describe("zombies hunt AI humans like players (ADR-197)", () => {
+describe("zombies hunt AI humans like players (ADR-202)", () => {
   it("a night zombie next to an AI human acquires it as its target", async () => {
     const local = await createLocalServer({ store: new MemoryWorldStore(), seed: 11, bots: 1 });
     const W = local.game.world; setTimeOfDay(W, 23);

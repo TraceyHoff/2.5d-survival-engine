@@ -17,6 +17,7 @@ import { observeSocialMemory } from "./ai/social_memory.js";
 import { fillVehicleSensors, vehicleBehaviors, type VehicleSensors } from "./ai/vehicle_behaviors.js";
 import { clanBehaviors, fillClanSensors, type ClanSensors } from "./ai/clan_behaviors.js";
 import { emitAgentCommands } from "./ai/agent_output.js";
+import { autonomyBehaviors, banNode, instantChores, fillGoalSensors, stuckOn, type GoalSensors } from "./ai/autonomy.js";
 
 export interface AgentsData {
   archetypes: Record<string, { perception: PerceptionConfig; imperfections: Imperfections; schedule: ScheduleSlot[]; goals: string[]; chatMinSeconds: number }>;
@@ -25,7 +26,7 @@ export interface AgentsData {
 export const AGENTS_DATA: AgentsData = raw as unknown as AgentsData;
 
 export interface SeenThing { id: number; kind: "zombie" | "player" | "node" | "animal"; x: number; y: number }
-export interface AgentWorldView extends AgentSensors, PartySensors, ClanSensors, VehicleSensors {
+export interface AgentWorldView extends AgentSensors, GoalSensors, PartySensors, ClanSensors, VehicleSensors {
   seen: SeenThing[]; home: { x: number; y: number }; playerName: string;
   /** Optional sensors (0..1 / plans) the host fills from the bot's replica; missing = neutral. */
   invSpaceFree?: number; craftRecipe?: number; buildPlan?: { piece: number; x: number; y: number };
@@ -62,7 +63,7 @@ export function buildAgentView(world: World, self: Entity, a: Agent, home: { x: 
     if (visible) seen.push({ id: e, kind, x: o.x, y: o.y });
   }
   const tod = timeOfDay(world);
-  const view: AgentWorldView = { seen, home, playerName }; fillAgentSensors(world, self, view, (sv?.hunger ?? 100) < 50); fillPartySensors(world, self, view); fillClanSensors(world, self, view); if ((world.getField(self, Progression, "points") ?? 0) > 0) { const p = pickSkillNode(world, self, a.identity.traits); if (p !== undefined) view.skillPick = p; } fillVehicleSensors(world, self, view); observeSocialMemory(world, self, a);
+  const view: AgentWorldView = { seen, home, playerName }; fillAgentSensors(world, self, view, (sv?.hunger ?? 100) < 50); fillPartySensors(world, self, view); fillClanSensors(world, self, view); if ((world.getField(self, Progression, "points") ?? 0) > 0) { const p = pickSkillNode(world, self, a.identity.traits); if (p !== undefined) view.skillPick = p; } fillVehicleSensors(world, self, view); fillGoalSensors(world, self, view, a); observeSocialMemory(world, self, a);
   return {
     self: { x: t.x, y: t.y, facing, hp: hp ? hp.hp / Math.max(1, hp.max) : 1, hunger: (sv?.hunger ?? 100) / 100, thirst: (sv?.thirst ?? 100) / 100, stamina: sv ? sv.stamina / Math.max(1, sv.maxStamina) : 1, tick: world.tick, dayT: tod.t, phase: currentPhaseKey(world) },
     world: view,
@@ -73,6 +74,9 @@ const toward = (out: { moveX: number; moveY: number; aimX: number; aimY: number 
   const dx = tx - fx, dy = ty - fy, d = Math.hypot(dx, dy) || 1; out.moveX = (dx / d) * s; out.moveY = (dy / d) * s; out.aimX = dx / d; out.aimY = dy / d; return d;
 };
 const night = (p: string): number => (p === "night" ? 1 : p === "dusk" ? 0.6 : 0);
+/** ADR-203: inside Gatherer.reach (1.5) with margin for the bot's own drift. */
+export const GATHER_STOP = 1.2;
+const gatherGoal = (c: AgentContext<AgentWorldView>): { id: number; x: number; y: number } | undefined => c.world.gatherScanned ? c.world.gatherNode : c.memory.nearest("node", c.self.x, c.self.y);
 
 /** Minimal reference set (works end to end today): flee, gather, explore, return_home, rest, greet. */
 export function referenceBehaviors(): GameBehavior[] {
@@ -82,24 +86,31 @@ export function referenceBehaviors(): GameBehavior[] {
       run: (c, o) => { const z = c.memory.nearest("zombie", c.self.x, c.self.y, 0.3); if (!z) return false; toward(o, z.x, z.y, c.self.x * 2 - z.x, c.self.y * 2 - z.y); o.sprint = c.self.stamina > 0.2; o.aimX = -o.aimX; o.aimY = -o.aimY; } },
     { name: "gather", chatOnStart: "gather", scheduleBonus: 0.25, traits: { industriousness: 0.8, greed: 0.4 },
       considerations: [
-        { name: "nodeKnown", curve: { type: "inverse" }, input: (c) => { const n = c.memory.nearest("node", c.self.x, c.self.y); return n ? Math.hypot(n.x - c.self.x, n.y - c.self.y) / 20 : 1; } },
-        { name: "daylight", curve: { type: "linear", m: -0.8, b: 1 }, input: (c) => night(c.self.phase) },
+        { name: "nodeKnown", curve: { type: "inverse" }, input: (c) => { const n = gatherGoal(c); return n ? Math.hypot(n.x - c.self.x, n.y - c.self.y) / (c.world.gatherNode?.wanted ? 40 : 20) : 1; } },
+        // ADR-203: cold at night with no campfire -> gather what the fire needs instead of freezing asleep
+        { name: "daylight", curve: { type: "linear", m: -0.8, b: 1 }, input: (c) => (c.world.cold && (c.world.fireMissing || (c.world.fire && !c.world.fire.lit && !c.world.woodSlot)) ? 0 : night(c.self.phase)) },
       ],
+      // ADR-203: stop inside the server's gather reach (1.5 tiles; was 1.6 -> every swing OutOfRange, bots froze), ban a node
+      // that stays out of reach / is worked too long without depleting, and re-plan instead of re-picking it forever
       run: (c, o) => {
-        const n = c.memory.nearest("node", c.self.x, c.self.y); if (!n) return false;
+        instantChores(c, o); const n = gatherGoal(c); if (!n) return false;
         const d = toward(o, c.self.x, c.self.y, n.x, n.y, 0.8);
-        if (d < 1.6) { o.moveX = 0; o.moveY = 0; o.actions.push("gather"); if (c.self.tick - c.bb.num("behaviorStart") > 120) { c.memory.items.delete(n.id); return false; } }
+        if (d >= GATHER_STOP) { if (stuckOn(c, n.x, n.y)) { banNode(c, n.id); return false; } return; }
+        o.moveX = 0; o.moveY = 0; o.actions.push("gather");
+        const at = c.bb.num("gatherAt", -1), id = c.bb.num("gatherId", -1);
+        if (id !== n.id || at < 0) { c.bb.set("gatherId", n.id); c.bb.set("gatherAt", c.self.tick); }
+        else if (c.self.tick - at > 240) { banNode(c, n.id); c.bb.set("gatherId", -1); return false; }
       } },
     { name: "explore", scheduleBonus: 0.15, traits: { industriousness: 0.3 },
       considerations: [{ name: "base", curve: { type: "linear", m: 0, b: 0.35 }, input: () => 0 }],
       run: (c, o) => {
-        let g = c.bb.get<{ x: number; y: number }>("exploreGoal");
-        if (!g || Math.hypot(g.x - c.self.x, g.y - c.self.y) < 1.5) { const a = c.rng.range(-Math.PI, Math.PI), r = c.rng.range(4, 14); g = { x: c.world.home.x + Math.cos(a) * r, y: c.world.home.y + Math.sin(a) * r }; c.bb.set("exploreGoal", g); }
+        instantChores(c, o); let g = c.bb.get<{ x: number; y: number }>("exploreGoal");
+        if (!g || Math.hypot(g.x - c.self.x, g.y - c.self.y) < 1.5 || stuckOn(c, g.x, g.y)) { const a = c.rng.range(-Math.PI, Math.PI), r = c.rng.range(4, 14); g = { x: c.world.home.x + Math.cos(a) * r, y: c.world.home.y + Math.sin(a) * r }; c.bb.set("exploreGoal", g); }
         toward(o, c.self.x, c.self.y, g.x, g.y, 0.7); c.bb.set("facing", Math.atan2(o.aimY, o.aimX));
       } },
     { name: "return_home", chatOnStart: "return_home", scheduleBonus: 0.4,
       considerations: [{ name: "farFromHome", curve: { type: "logistic", k: 10, mid: 0.3 }, input: (c) => Math.hypot(c.world.home.x - c.self.x, c.world.home.y - c.self.y) / 30 }, { name: "evening", curve: { type: "linear", m: 0.8, b: 0.2 }, input: (c) => night(c.self.phase) }],
-      run: (c, o) => { if (toward(o, c.self.x, c.self.y, c.world.home.x, c.world.home.y) < 2) return false; } },
+      run: (c, o) => { instantChores(c, o); if (toward(o, c.self.x, c.self.y, c.world.home.x, c.world.home.y) < 2 || stuckOn(c, c.world.home.x, c.world.home.y, 100)) return false; } },
     { name: "rest", chatOnStart: "rest", scheduleBonus: 0.3,
       considerations: [{ name: "night", curve: { type: "step", at: 0.5 }, input: (c) => night(c.self.phase) }, { name: "nearHome", curve: { type: "inverse" }, input: (c) => Math.hypot(c.world.home.x - c.self.x, c.world.home.y - c.self.y) / 10 }],
       run: () => { /* stand still (sleep hook: Survival adds a sleep action) */ } },
@@ -136,7 +147,7 @@ export const skillPickBehavior: GameBehavior = { name: "skill_pick", inertia: 0,
   run: (c, o) => { o.actions.push(`skill:${c.world.skillPick}`); c.bb.set("skillPickAt", c.self.tick); return false; } };
 
 export function survivorRegistry(extra: readonly GameBehavior[] = []): BehaviorRegistry<AgentWorldView> {
-  const r = new BehaviorRegistry<AgentWorldView>(); for (const b of [...referenceBehaviors(), ...survivalBehaviors(), ...partyBehaviors(), ...clanBehaviors(), ...vehicleBehaviors(), skillPickBehavior, ...extra]) r.register(withBotUtility(b)); return r;
+  const r = new BehaviorRegistry<AgentWorldView>(); for (const b of [...referenceBehaviors(), ...survivalBehaviors(), ...autonomyBehaviors(), ...partyBehaviors(), ...clanBehaviors(), ...vehicleBehaviors(), skillPickBehavior, ...extra]) r.register(withBotUtility(b)); return r;
 }
 /**
  * Deterministic identity for virtual player #slot of a world seed. archetype = a bots.json archetype (picked by the

@@ -10,6 +10,7 @@ import { GameplayConfig } from "../config.js";
 import { readSlots, countItem } from "../inventory.js";
 import { pieceCost } from "../building/place.js";
 import { StationKind } from "../defs.js";
+import { GOAL_CRAFTS, pieceNear, stuckOn } from "./autonomy.js";
 import { PET_TREATS, speciesOfAnimal, tameChance } from "../pets.js";
 
 export interface StallOffer { id: number; x: number; y: number; slot: number; item: number; qty: number; priceItem: number; priceCount: number; revision?: number }
@@ -18,7 +19,7 @@ export const BUILD_PLAN_PIECES = ["campfire", "storage_box", "workbench"] as con
 
 /** Fills optional AgentWorldView sensors from the replica (no writes). Missing gameplay config/inventory = skipped. */
 export function fillAgentSensors(world: World, self: Entity, view: AgentWorldView, hungry = false): void {
-  const cfg = world.getResource(GameplayConfig); const t = world.get(self, Transform); if (!cfg || !t) return; const defs = cfg.defs;
+  const cfg = world.getResource(GameplayConfig); const t = world.get(self, Transform); if (!cfg || !t) return; const defs = cfg.defs; noteCampfire(world);
   let slots: ReturnType<typeof readSlots> | undefined; try { slots = readSlots(world, self); } catch { slots = undefined; }
   if (slots) {
     let empty = 0, bestFood = -1, bestWater = -1, fScore = 0, wScore = 0;
@@ -31,11 +32,24 @@ export function fillAgentSensors(world: World, self: Entity, view: AgentWorldVie
     view.invSpaceFree = slots.items.length ? empty / slots.items.length : 0;
     if (bestFood >= 0) view.food = bestFood; if (bestWater >= 0) view.water = bestWater;
     const have = (item: number, n: number): boolean => countItem(world, self, item) >= n;
-    for (const r of defs.recipes.values()) if (r.station === StationKind.None && countItem(world, self, r.output.item) === 0 && r.ingredients.every((g) => have(g.item, g.count))) { view.craftRecipe = r.id; break; }
-    let based = false; for (const e of world.query([BuildPiece, Transform])) { const p = world.get(e, Transform)!; if (Math.hypot(p.x - view.home.x, p.y - view.home.y) < 6) { based = true; break; } }
-    if (!based) for (const key of BUILD_PLAN_PIECES) {
-      const def = [...defs.pieces.values()].find((p) => p.key === key); if (!def) continue;
-      if (pieceCost(defs, def, 0).every((c) => have(c.item, c.count))) { view.buildPlan = { piece: def.id, x: Math.round(view.home.x) + 1, y: Math.round(view.home.y) }; break; }
+    // ADR-203: goal tools first (stone axe / pickaxe / spear); other hand recipes keep the next goal tool's ingredients and the campfire cost
+    const hand = [...defs.recipes.values()].filter((r) => r.station === StationKind.None && countItem(world, self, r.output.item) === 0);
+    const goalOf = (r: (typeof hand)[number]): number => { const k = defs.items.get(r.output.item)?.key ?? ""; const i = (GOAL_CRAFTS as readonly string[]).indexOf(k); return i < 0 ? 99 : i; };
+    // other hand recipes may only spend what the next unowned goal tool does not need (reserve = its ingredients)
+    const reserve = new Map<number, number>();
+    for (const k of GOAL_CRAFTS) { const d = [...defs.items.values()].find((i) => i.key === k); if (!d || countItem(world, self, d.id) > 0) continue;
+      const gr = [...defs.recipes.values()].find((r) => r.output.item === d.id); if (gr) for (const g of gr.ingredients) reserve.set(g.item, g.count); break; }
+    { const cf = [...defs.pieces.values()].find((p) => p.key === "campfire"); // and the home campfire's cost
+      if (cf && !pieceNear(world, cf.id, view.home.x, view.home.y, 6)) for (const c of pieceCost(defs, cf, 0)) reserve.set(c.item, (reserve.get(c.item) ?? 0) + c.count); }
+    for (const r of hand.sort((a, b) => goalOf(a) - goalOf(b))) {
+      const extra = goalOf(r) === 99 ? (id: number) => reserve.get(id) ?? 0 : () => 0;
+      if (r.ingredients.every((g) => have(g.item, g.count + extra(g.item)))) { view.craftRecipe = r.id; break; }
+    }
+    // ADR-203: plan each base piece that is missing near home (campfire first), not only "no piece at all"
+    let k = 0;
+    for (const key of BUILD_PLAN_PIECES) {
+      k++; const def = [...defs.pieces.values()].find((p) => p.key === key); if (!def || pieceNear(world, def.id, view.home.x, view.home.y, 6)) continue;
+      if (pieceCost(defs, def, 0).every((c) => have(c.item, c.count))) { view.buildPlan = { piece: def.id, x: Math.round(view.home.x) + k, y: Math.round(view.home.y) + (k === 1 ? 0 : 2) }; break; }
     }
   }
   const party = world.getField(self, Membership, "partyId") ?? 0;
@@ -70,6 +84,10 @@ const toward = (o: { moveX: number; moveY: number; aimX: number; aimY: number },
   const dx = tx - fx, dy = ty - fy, d = Math.hypot(dx, dy) || 1; o.moveX = (dx / d) * s; o.moveY = (dy / d) * s; o.aimX = dx / d; o.aimY = dy / d; return d;
 };
 const cooled = (tick: number, at: number, ticks: number): number => (tick - at >= ticks ? 1 : 0);
+let campfireId: number | undefined;
+const isCampfire = (piece: number | undefined): boolean => piece !== undefined && piece === campfireId;
+/** Called by fillAgentSensors so build's considerations can tell a campfire plan apart without the defs. */
+function noteCampfire(world: World): void { if (campfireId !== undefined) return; const d = world.getResource(GameplayConfig)?.defs; if (d) for (const p of d.pieces.values()) if (p.key === "campfire") campfireId = p.id; }
 const night = (p: string): number => (p === "night" ? 1 : p === "dusk" ? 0.6 : 0);
 
 /** party, stall_trade, eat, drink, sleep, craft, build. */
@@ -85,7 +103,7 @@ export function survivalBehaviors(): GameBehavior[] {
       run: (c, o) => { if (c.world.water === undefined) return false; o.actions.push(`drink:${c.world.water}`); c.bb.set("drankAt", c.self.tick); return false; } },
     { name: "sleep", chatOnStart: "rest", scheduleBonus: 0.4, inertia: 0.3, considerations: [
         { name: "night", curve: { type: "step", at: 0.5 }, input: (c) => night(c.self.phase) },
-        { name: "safe", curve: { type: "step", at: 0.5 }, input: (c) => (c.memory.nearest("zombie", c.self.x, c.self.y, 0.3) ? 0 : 1) }],
+        { name: "safe", curve: { type: "step", at: 0.5 }, input: (c) => (c.memory.nearest("zombie", c.self.x, c.self.y, 0.3) || (c.world.cold && (c.world.fireMissing || (c.world.fire && !c.world.fire.lit))) ? 0 : 1) }],
       run: (c, o) => { if (toward(o, c.self.x, c.self.y, c.world.home.x, c.world.home.y, 0.8) < 1.5) { o.moveX = 0; o.moveY = 0; o.aimX = 0; o.aimY = 0; o.actions.push("sleep"); } if (night(c.self.phase) < 0.5) return false; } },
     { name: "craft", scheduleBonus: 0.3, traits: { industriousness: 0.6 }, considerations: [
         { name: "canCraft", curve: { type: "step", at: 0.5 }, input: (c) => (c.world.craftRecipe !== undefined ? cooled(c.self.tick, c.bb.num("craftedAt", -1e9), 200) : 0) },
@@ -93,8 +111,15 @@ export function survivalBehaviors(): GameBehavior[] {
       run: (c, o) => { if (c.world.craftRecipe === undefined) return false; o.actions.push(`craft:${c.world.craftRecipe}`); c.bb.set("craftedAt", c.self.tick); return false; } },
     { name: "build", scheduleBonus: 0.3, traits: { industriousness: 0.6 }, considerations: [
         { name: "plan", curve: { type: "step", at: 0.5 }, input: (c) => (c.world.buildPlan ? cooled(c.self.tick, c.bb.num("builtAt", -1e9), 200) : 0) },
-        { name: "daylight", curve: { type: "linear", m: -0.8, b: 1 }, input: (c) => night(c.self.phase) }],
-      run: (c, o) => { const p = c.world.buildPlan; if (!p) return false; if (toward(o, c.self.x, c.self.y, p.x, p.y, 0.8) < 2) { o.moveX = 0; o.moveY = 0; o.actions.push(`build:${p.piece}:${p.x}:${p.y}`); c.bb.set("builtAt", c.self.tick); return false; } } },
+        // ADR-203: a campfire (light + heat) is what a survivor builds at dusk / night; other pieces are daytime work
+        { name: "daylight", curve: { type: "linear", m: -0.8, b: 1 }, input: (c) => (isCampfire(c.world.buildPlan?.piece) ? 0 : night(c.self.phase)) },
+        { name: "nightFire", curve: { type: "linear", m: 0.6, b: 0.4 }, input: (c) => (isCampfire(c.world.buildPlan?.piece) ? night(c.self.phase) : 0) }],
+      run: (c, o) => {
+        const p = c.world.buildPlan; if (!p) return false;
+        const sh = c.bb.num("buildShift"); const x = p.x + (sh % 3), y = p.y + Math.floor(sh / 3) % 3;
+        if (toward(o, c.self.x, c.self.y, x, y, 0.8) < 2) { o.moveX = 0; o.moveY = 0; o.actions.push(`build:${p.piece}:${x}:${y}`); c.bb.set("builtAt", c.self.tick); c.bb.set("buildShift", sh + 1); return false; }
+        if (stuckOn(c, x, y)) { c.bb.set("buildShift", sh + 1); return false; }
+      } },
     { name: "stall_trade", scheduleBonus: 0.3, traits: { greed: 0.5, sociability: 0.4 }, considerations: [
         { name: "offer", curve: { type: "inverse" }, input: (c) => { const s = c.world.stall; return s && cooled(c.self.tick, c.bb.num("tradedAt", -1e9), 300) ? Math.hypot(s.x - c.self.x, s.y - c.self.y) / 12 : 1; } },
         { name: "need", curve: { type: "linear", m: 0.6, b: 0.4 }, input: (c) => 1 - c.self.hunger }],
