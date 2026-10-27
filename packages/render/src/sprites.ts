@@ -30,6 +30,25 @@ import { InteriorRoute, inInteriorRegion, interiorOrder, type InteriorRegion } f
 export const INSTANCE_FLOATS = 40;
 /** Depth offset of held items vs the body (must exceed depth-key precision; < the next tile row). */
 export const HELD_BIAS = 0.05;
+/**
+ * ADR-188: where a paper-doll layer's frame comes from this frame. `complete` = every layer the character should draw is
+ * resident. Complete -> the current frame. Otherwise the character holds its last fully-composited look: a slot shows its
+ * last good frame (`held`) unless the same piece is resident (keeps animating); a character never composited yet draws
+ * what is resident (`partial`, first sight only). Never a mix of old and new outfit pieces, never a dropped slot that
+ * has a held frame.
+ */
+export function layerSource(complete: boolean, rdy: boolean, heldSprite: number, heldReady: boolean, sprite: number): "current" | "held" | "partial" | "skip" {
+  if (complete) return "current";
+  if (rdy && heldSprite === sprite) return "current";
+  if (heldSprite >= 0 && heldReady) return "held";
+  if (rdy) return heldSprite >= 0 ? "current" : "partial";
+  return "skip";
+}
+/** ADR-188: characters within this many px outside the draw margin prefetch their wardrobe/hair pages. */
+export const PREFETCH_RING_PX = 768;
+const PREFETCH_EVERY = 8;
+/** ring requests rank just behind on-screen characters at the same distance */
+const PREFETCH_PRIO_PAD = 64;
 const OPEN = 1e5;
 /** Swim fallback (ADR-107): fraction of the pivot height hidden below the waterline, and the bob amplitude in sprite px. */
 const SWIM_CLIP = 0.45, SWIM_BOB_PX = 1.5;
@@ -379,6 +398,11 @@ export class SpriteBatch {
   /** ADR-123: per (entity, layer slot) last resolved frame, drawn while the current one is not resident */
   private lastGood = new Map<string, { sprite: number; atlas: number; entry: number; ax: number; ay: number }>();
   lastGoodHits = 0;
+  /** ADR-188: layers drawn for a character that has never been fully composited (first sight while its pages stream). */
+  partialLayers = 0;
+  /** ADR-188: prefetch-ring page requests/touches this session. */
+  prefetches = 0;
+  private layerPlan: { l: CachedLayer; j: number; faceL: boolean; rdy: boolean; atlas: number; entry: number; ax: number; ay: number }[] = [];
   /** Chunk screen bounds (any height up to 1024 px above ground) against the view rect grown by 512 px. */
   private chunkOnScreen(cx: number, cy: number, r: Rect, hw: number, hh: number): boolean {
     const x0 = cx * CHUNK_SIZE, y0 = cy * CHUNK_SIZE, x1 = x0 + CHUNK_SIZE, y1 = y0 + CHUNK_SIZE;
@@ -414,7 +438,7 @@ export class SpriteBatch {
   /** Per-frame stats: characters with Appearance drawn, extra layer instances pushed. */
   characters = 0; layerInstances = 0;
   /** ?diag: local player + characters within PRIO_NEAR this frame (layer count, resident pages, worst pool scale). */
-  readonly nearInfo: { e: number; d: number; layers: number; resident: number; scale: number; missing: string[] }[] = Array.from({ length: 8 }, () => ({ e: -1, d: 0, layers: 0, resident: 0, scale: 1, missing: [] }));
+  readonly nearInfo: { e: number; d: number; layers: number; resident: number; drawn: number; scale: number; missing: string[] }[] = Array.from({ length: 8 }, () => ({ e: -1, d: 0, layers: 0, resident: 0, drawn: 0, scale: 1, missing: [] }));
   nearN = 0;
   /** Fallback step 2: only the nearest `maxDressed` layered characters (to the view centre) draw their wearables; the rest body-only. */
   maxDressed = Infinity;
@@ -637,7 +661,17 @@ export class SpriteBatch {
         if (sx >= rect.x0 - km && sx <= rect.x1 + km && sy >= rect.y0 - km && sy <= rect.y1 + km)
           atlas.streamNear(sid, sx >= rect.x0 - m && sx <= rect.x1 + m && sy >= rect.y0 - m && sy <= rect.y1 + m, sprio);
       }
-      if (sx < r0x || sx > r1x || sy < r0y || sy > r1y) return;
+      if (sx < r0x || sx > r1x || sy < r0y || sy > r1y) {
+        // ADR-188: wardrobe/hair prefetch ring: a character walking toward the view requests its layer pages before it is
+        // drawn, so it enters fully dressed (staggered: each entity every PREFETCH_EVERY frames)
+        const pm = PREFETCH_RING_PX; const aps0 = ap ? ap.slot(i) : -1;
+        if (aps0 >= 0 && this.layerCache && ((this.frameNo + i) % PREFETCH_EVERY) === 0 && sx >= r0x - pm && sx <= r1x + pm && sy >= r0y - pm && sy <= r1y + pm) {
+          const ov = this.layerCache.binding.override?.(world, e) ?? null;
+          const read = () => { const v = readAppearanceSlot(apData!, apLen, aps0); if (ov) { const parts = Array.from(v.parts); for (const [s2, w] of ov.parts) if (s2 >= 0 && s2 < parts.length) parts[s2] = w; return { ...v, parts }; } return v; };
+          for (const l of this.layerCache.get(i, e, apVer![aps0]! + (ov ? ov.salt * 65536 : 0), f, read, {})) if (atlas.isStreamed(l.sprite)) { atlas.pageReady(l.sprite, sprio + PREFETCH_PRIO_PAD); this.prefetches++; }
+        }
+        return;
+      }
       this.curRoute = 0;
       for (const rg of this.interiorRegions) if (inInteriorRegion(rg, x, y)) { this.curRoute = this.interiorFloorIds.has(sid) ? InteriorRoute.Floor : InteriorRoute.Occupant; break; }
       atlas.markUsed(sid); // hot/cold tiers: drawn-near-camera atlases stay (or are re-tiered) full res
@@ -737,7 +771,7 @@ export class SpriteBatch {
       }
       if (layers && layers.length && (dress || this.dressFaces)) {
         if (dress) this.characters++;
-        if (nearC && this.nearN < this.nearInfo.length) { const ni = this.nearInfo[this.nearN]!; ni.e = e; ni.d = Math.sqrt(prio); ni.layers = 0; ni.resident = 0; ni.scale = 1; ni.missing.length = 0; }
+        if (nearC && this.nearN < this.nearInfo.length) { const ni = this.nearInfo[this.nearN]!; ni.e = e; ni.d = Math.sqrt(prio); ni.layers = 0; ni.resident = 0; ni.drawn = 0; ni.scale = 1; ni.missing.length = 0; }
         // copy the body instance (pivot, flip, seed -> same shiver, status fx, occlusion, flash) and swap frame + tint;
         // keys step by LAYER_BIAS in resolveLayers order so a character's layers stay contiguous; outline-only copies
         // sit just behind the body so only the ring outside the union silhouette survives
@@ -745,6 +779,10 @@ export class SpriteBatch {
         const lr = this.layerRes; let j = 0;
         // ADR-128 neck: head-group layers (face, eyes, hair, headwear) follow the body frame's head anchor
         const ho = atlas.headOffsetOf(res); const hoOn = ho.x !== 0 || ho.y !== 0;
+        // ADR-188: plan every layer first, draw after. When any layer that should draw is not resident, the character keeps
+        // its previous fully-composited look (each slot's last good frame) instead of drawing a partial set (pale body-only
+        // flash, hair dropping out and back); the composite is only refreshed (lastGood) when every layer is resident.
+        const plan = this.layerPlan; let pn = 0; let complete = true;
         for (const l of layers) {
           if (l === bodyL) continue; j++;
           const faceL = FACE_SLOTS.includes(l.slot);
@@ -761,20 +799,30 @@ export class SpriteBatch {
           // re-tiered to the cold (downscaled) size under a full-res body (soft hair edge -> scalp shows at the hairline)
           if (rdy && lr.atlas >= 0) atlas.markUsedAt(lr.atlas);
           if (nearC && this.nearN < this.nearInfo.length) { const ni = this.nearInfo[this.nearN]!; if (ni.e === e) { ni.layers++; if (rdy) ni.resident++; else ni.missing.push(l.slot); const pi = atlas.pageInfo(l.sprite); ni.scale = Math.min(ni.scale, pi.scale); } }
-          // ADR-123: page not resident (swim/punch wear page streaming, page evicted): draw this slot's last good frame when
-          // its page is still resident instead of blanking the layer for a frame (pop in/out of hair, clothes, eyes)
-          const lgk = `${e}|${l.slot}`;
-          if (rdy) { const g = this.lastGood.get(lgk); if (g) { g.sprite = l.sprite; g.atlas = lr.atlas; g.entry = lr.entry; g.ax = lr.ax; g.ay = lr.ay; }
-            else { if (this.lastGood.size > 8192) this.lastGood.clear(); this.lastGood.set(lgk, { sprite: l.sprite, atlas: lr.atlas, entry: lr.entry, ax: lr.ax, ay: lr.ay }); } }
-          else { const g = this.lastGood.get(lgk);
-            if (!g || g.sprite !== l.sprite || !(g.atlas >= 0 ? atlas.pageReadyAt(g.atlas, lp) : atlas.pageReady(l.sprite, lp))) continue; // body-only fallback
-            lr.entry = g.entry; lr.ax = g.ax; lr.ay = g.ay; this.lastGoodHits++; }
+          if (pn >= plan.length) plan.push({ l, j: 0, faceL: false, rdy: false, atlas: -1, entry: 0, ax: 0, ay: 0 });
+          const q = plan[pn++]!; q.l = l; q.j = j; q.faceL = faceL; q.rdy = rdy; q.atlas = lr.atlas; q.entry = lr.entry; q.ax = lr.ax; q.ay = lr.ay;
+          if (!rdy) complete = false;
+        }
+        for (let pi = 0; pi < pn; pi++) {
+          const q = plan[pi]!; const l = q.l; const faceL = q.faceL; const lp = faceL ? prio * 0.25 : prio;
+          const lgk = `${e}|${l.slot}`; const g = this.lastGood.get(lgk);
+          const gr = !!g && (g.atlas >= 0 ? atlas.pageReadyAt(g.atlas, lp) : atlas.pageReady(g.sprite, lp));
+          const lsrc = layerSource(complete, q.rdy, g ? g.sprite : -1, gr, l.sprite);
+          if (lsrc === "skip") continue;
+          if (complete) {
+            if (g) { g.sprite = l.sprite; g.atlas = q.atlas; g.entry = q.entry; g.ax = q.ax; g.ay = q.ay; }
+            else { if (this.lastGood.size > 8192) this.lastGood.clear(); this.lastGood.set(lgk, { sprite: l.sprite, atlas: q.atlas, entry: q.entry, ax: q.ax, ay: q.ay }); }
+          }
+          if (lsrc === "held") { lr.entry = g!.entry; lr.ax = g!.ax; lr.ay = g!.ay; this.lastGoodHits++; }
+          else { lr.entry = q.entry; lr.ax = q.ax; lr.ay = q.ay; if (lsrc === "partial") this.partialLayers++; }
+          const j = q.j;
           o0.set(base); o0[4] = lr.entry; o0[8] = lr.ax; o0[9] = lr.ay; o0[16] = 0;
           if (hoOn && atlas.isHeadSprite(l.sprite)) { o0[8] = lr.ax - ho.x; o0[9] = lr.ay - ho.y; }
           if (outlineOn && l.outline && !(sp.data.flags[k]! & SpriteFlag.NoOutline)) {
             o0[2] = dkey - LAYER_BIAS * 0.5; o0[5] = (base[5]! & ~SpriteFlag.NoOutline) | OUTLINE_ONLY;
             this.pushOcc(o0, 0, occT, occ.mode); this.layerInstances++;
           }
+          if (nearC && this.nearN < this.nearInfo.length && this.nearInfo[this.nearN]!.e === e) this.nearInfo[this.nearN]!.drawn++;
           o0[2] = dkey + j * LAYER_BIAS; o0[5] = base[5]! | SpriteFlag.NoOutline | (faceL ? FACE_LAYER : 0);
           this.writeLayerTint(o0, l);
           this.pushOcc(o0, 0, occT, occ.mode); this.layerInstances++;

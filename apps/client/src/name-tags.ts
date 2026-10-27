@@ -41,9 +41,33 @@ export function nameTagPoints(w: World, p: Entity, cam: CameraLike, names: NameL
   return out.sort((a, b) => a.y - b.y || a.e - b.e); // ADR-185: stable screen-depth order
 }
 
+export const TAG_GAP = 2;
+/** ADR-189: pure vertical declutter. The tag lowest on screen (nearest the camera) keeps its spot; each tag above it that
+ *  would overlap an already placed tag is nudged straight up just clear of it. Deterministic from positions alone (same
+ *  input -> same layout, no frame-to-frame state), so tags never jitter; the mount eases the result so a new overlap
+ *  slides apart instead of snapping. Returns the target y per tag (index-aligned with `pts`). */
+export function declutterTags(pts: readonly NameTagPoint[], widthOf: (name: string) => number, bh = NAME_TAG.font + 6): number[] {
+  const ys = pts.map((q) => q.y); const order = pts.map((_, i) => i).sort((a, b) => pts[b]!.y - pts[a]!.y || pts[a]!.e - pts[b]!.e);
+  const placed: number[] = [];
+  for (const i of order) {
+    const q = pts[i]!; const w = widthOf(q.name) + 12; let y = q.y;
+    for (let pass = 0; pass < placed.length + 1; pass++) {
+      let moved = false;
+      for (const k of placed) {
+        const o = pts[k]!; const ow = widthOf(o.name) + 12;
+        if (Math.abs(q.x - o.x) < (w + ow) / 2 + TAG_GAP && Math.abs(y - ys[k]!) < bh + TAG_GAP) { y = ys[k]! - bh - TAG_GAP; moved = true; }
+      }
+      if (!moved) break;
+    }
+    ys[i] = y; placed.push(i);
+  }
+  return ys;
+}
+
 export interface NameTagDeps { world(): World; player(): Entity | undefined; camera(): CameraLike | undefined; hidden(): boolean; enabled(): boolean; names(): NameLookupLike | undefined; alpha(): number }
 export function mountNameTags(root: HTMLElement, d: NameTagDeps): { destroy(): void } {
   const cv = document.createElement("canvas"); cv.id = "name-tags"; cv.style.cssText = "position:absolute;inset:0;pointer-events:none;z-index:4"; root.append(cv);
+  const eased = new Map<Entity, number>(); let lastT = 0; // ADR-189: per-tag eased declutter offset
   let raf = 0, drewLast = false, lastSig = ""; const widths = new Map<string, number>(); // measureText cache (names rarely change)
   const tick = (): void => {
     raf = requestAnimationFrame(tick);
@@ -58,8 +82,12 @@ export function mountNameTags(root: HTMLElement, d: NameTagDeps): { destroy(): v
       const g = cv.getContext("2d"); if (!g) return; g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
       drewLast = pts.length > 0; if (!drewLast) return;
       const fs = NAME_TAG.font; g.font = `600 ${fs}px Fredoka,system-ui,sans-serif`; g.textAlign = "center"; g.textBaseline = "middle";
-      for (const q of pts) {
-        let tw = widths.get(q.name); if (tw === undefined) { tw = g.measureText(q.name).width; if (widths.size > 256) widths.clear(); widths.set(q.name, tw); }
+      const widthOf = (n: string): number => { let tw = widths.get(n); if (tw === undefined) { tw = g.measureText(n).width; if (widths.size > 256) widths.clear(); widths.set(n, tw); } return tw; };
+      const ty = declutterTags(pts, widthOf); const now = performance.now(); const k = Math.min(1, Math.max(0, (now - (lastT || now)) / 1000) * 14); lastT = now;
+      for (let qi = 0; qi < pts.length; qi++) { const q = pts[qi]!; const want = ty[qi]! - q.y; const o0 = eased.get(q.e); const o = o0 === undefined ? want : o0 + (want - o0) * k; eased.set(q.e, Math.abs(o - want) < 0.05 ? want : o); }
+      if (eased.size > pts.length * 2 + 16) for (const e of eased.keys()) if (!pts.some((q) => q.e === e)) eased.delete(e);
+      for (const q0 of pts) {
+        const q = { ...q0, y: q0.y + (eased.get(q0.e) ?? 0) }; const tw = widthOf(q.name);
         const bw = tw + 12, bh = fs + 6; g.globalAlpha = q.alpha;
         g.fillStyle = "rgba(16,14,12,.62)"; g.beginPath(); g.roundRect(q.x - bw / 2, q.y - bh / 2, bw, bh, 6); g.fill();
         if (q.kind !== "other") { g.strokeStyle = TAG_COLORS[q.kind]; g.lineWidth = 1; g.stroke(); }

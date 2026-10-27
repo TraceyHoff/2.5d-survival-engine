@@ -61,6 +61,9 @@ export const LIVE_MIN_RESIDENT_FRAMES = 120, LIVE_STEAL_MARGIN = 1.5;
  * PRIO_NEAR (local player + characters within 12 tiles) are exempt from dress caps / ladder eviction, and a nearer
  * request may evict a farther page even inside the protect window (eviction by distance).
  */
+/** ADR-188: a page touched within this many frames is on screen right now (drawn this or last frame). It is never a
+ *  victim, not even for the local player: stealing it blanked a visible character's hair/clothes for a frame (flicker). */
+export const ONSCREEN_FRAMES = 2;
 export const PRIO_NEAR = 16; // squared tiles: characters within ~4 tiles never drop below the 1:1 mip
 
 /** Slot pool keyed by page id (atlas key). */
@@ -98,7 +101,7 @@ export class PageLRU<K = string> {
     // Pinned pages (retained by a visible character's layer set) are only taken by PRIO_NEAR requests (local player /
     // characters right next to them): otherwise two crowds on screen stole each other's wear/face pages every few
     // frames and characters flickered between dressed and body-only.
-    for (const [k, p] of this.pages) if (p.prio > prio && (prio === 0 || (p.prio > prio * LIVE_STEAL_MARGIN && frame - p.since >= LIVE_MIN_RESIDENT_FRAMES)) && (p.refs === 0 || prio <= PRIO_NEAR) && (!bp || p.prio > bp.prio)) { best = k; bp = p; }
+    for (const [k, p] of this.pages) if (frame - p.lastUsed > ONSCREEN_FRAMES && p.prio > prio && (prio === 0 || (p.prio > prio * LIVE_STEAL_MARGIN && frame - p.since >= LIVE_MIN_RESIDENT_FRAMES)) && (p.refs === 0 || prio <= PRIO_NEAR) && (!bp || p.prio > bp.prio)) { best = k; bp = p; }
     return best;
   }
   /**

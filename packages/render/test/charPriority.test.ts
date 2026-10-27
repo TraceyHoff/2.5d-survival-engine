@@ -6,7 +6,8 @@ describe("wear pool distance priority", () => {
     const lru = new PageLRU<string>(2, 90);
     lru.allocate("far1", 10, 400); lru.allocate("far2", 10, 900);
     expect(lru.canAllocate("me", 10)).toBe(false); // no priority: old behaviour, pool full of live pages
-    const r = lru.allocate("me", 10, 0);
+    expect(lru.allocate("me", 10, 0)).toBeNull(); // ADR-188: drawn this frame (on screen) -> never stolen
+    const r = lru.allocate("me", 13, 0); // off screen for > ONSCREEN_FRAMES, still inside the protect window
     expect(r?.evicted).toBe("far2");
     expect(lru.prioOf("me")).toBe(0);
   });
