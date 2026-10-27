@@ -17,7 +17,7 @@ import { readSlots, slotFreshness } from "../inventory.js";
 import { spoilStageIndex, spoilStages } from "../food.js";
 import { StationKind, type GameDefs } from "../defs.js";
 import { animalDefs } from "../population.js";
-import { BASE_SLOTS, DOOR_IN, DOOR_OUT, aiMemoryOf, bumpStat, insideBase, makePlan, markAiDirty, pickBaseSite, plannerIndex, scanBase, type BaseState, type Plan } from "./planner.js";
+import { BASE_SLOTS, DOOR_IN, DOOR_OUT, HEARTH_SIT, aiMemoryOf, bumpStat, insideBase, makePlan, markAiDirty, pickBaseSite, plannerIndex, scanBase, type BaseState, type Plan } from "./planner.js";
 import { stuckOn } from "./autonomy.js";
 
 export interface PlanSensors {
@@ -227,7 +227,8 @@ function endTrip(c: Ctx, max: number): void { c.bb.set("trip", undefined); c.bb.
 export function baseSleepRun(c: Ctx, o: { moveX: number; moveY: number; aimX: number; aimY: number; actions: string[] }): boolean | void {
   const b = c.world.base; let tx = c.world.home.x, ty = c.world.home.y;
   const f = c.world.bs?.stations.get(StationKind.Campfire); // ADR-211: a lit fire beats walls at 6 C nights; the roofed base when it is out
-  if (f && (f.lit || !c.world.bs?.door)) { tx = f.x - 1.1; ty = f.y + 0.4; }
+  if (b && f && c.world.bs?.hearth === f.id) { tx = b.x + HEARTH_SIT.x; ty = b.y + HEARTH_SIT.y; }
+  else if (f && (f.lit || !c.world.bs?.door)) { tx = f.x - 1.1; ty = f.y + 0.4; }
   if (goTo(c, o, tx, ty, 0.8) < 0.9 || stuckOn(c, tx, ty, 200)) { stop(o); o.aimX = 0; o.aimY = 0; o.actions.push("sleep"); }
   if (night(c.self.phase) < 0.5) return false;
 }
@@ -240,10 +241,15 @@ function warmRun(c: Ctx, o: { moveX: number; moveY: number; aimX: number; aimY: 
   if (camp && wd.isAlive(camp.id as Entity) && (!f || Math.hypot(camp.x - c.self.x, camp.y - c.self.y) < Math.hypot(f.x - c.self.x, f.y - c.self.y))) {
     const fa = resolveAttachment(wd, camp.id as Entity, AttachKind.Fire); f = { ...camp, lit: (fa !== undefined && (wd.getField(fa, Fuel, "lit") ?? 0) > 0) }; }
   const fd = f ? Math.hypot(f.x - c.self.x, f.y - c.self.y) : Infinity;
-  if (f && f.lit && fd < 60) { const tx = f.x - 1.1, ty = f.y + 0.4; if (goTo(c, o, tx, ty, 1) < 0.5 || stuckOn(c, tx, ty, 200)) stop(o); return; }
+  const b0 = c.world.base; const atHearth = !!b0 && st !== undefined && c.world.bs?.hearth === st.id && f?.id === st.id;
+  if (f && f.lit && fd < 60) { const tx = atHearth ? b0!.x + HEARTH_SIT.x : f.x - 1.1, ty = atHearth ? b0!.y + HEARTH_SIT.y : f.y + 0.4; if (goTo(c, o, tx, ty, 1) < 0.5 || stuckOn(c, tx, ty, 200)) stop(o); return; }
   if (f && !f.lit && wood !== undefined && woodN > 0 && fd < 60) {
     if (goTo(c, o, f.x, f.y, 1) > 1.6) { if (stuckOn(c, f.x, f.y)) c.bb.set("warming", false); return; } stop(o);
     if (containerSeq(c, o, f.id, [`cdeposit:${f.id}:${wood}:${Math.min(8, woodN)}`, `fire:${f.id}`])) mark(c, "refuels"); return; }
+  const sb = c.world.bs?.storage; // no wood in the bag: fetch some from the box (same container panel steps as a player)
+  if (f && !f.lit && wood !== undefined && woodN === 0 && sb && (sb.counts.get(wood) ?? 0) > 0 && fd < 60) {
+    if (goTo(c, o, sb.x, sb.y) > 1.6) { if (stuckOn(c, sb.x, sb.y)) c.bb.set("warming", false); return; } stop(o);
+    if (containerSeq(c, o, sb.id, [`cwithdraw:${sb.id}:${wood}:${Math.min(12, sb.counts.get(wood)!)}`])) mark(c, "withdraws"); return; }
   const b = c.world.base;
   if (b && c.world.bs?.door && c.world.bs.complete && Math.hypot(b.x - c.self.x, b.y - c.self.y) < 60) { const h = { x: b.x + 1, y: b.y + 1 }; if (goTo(c, o, h.x, h.y, 1) < 0.5) stop(o); return; }
   // far from any fire: make camp like a player would (campfire from the bag, then light it)
