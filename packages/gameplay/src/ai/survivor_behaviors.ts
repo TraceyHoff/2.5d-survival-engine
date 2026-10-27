@@ -7,7 +7,8 @@ import { Membership, PlayerId, StallDisplay, Transform, type Entity, type World 
 import type { AgentWorldView, GameBehavior } from "../agents.js";
 import { Animal, BuildPiece, Dead, Listings, Pet, Tamed } from "../components.js";
 import { GameplayConfig } from "../config.js";
-import { readSlots, countItem } from "../inventory.js";
+import { readSlots, countItem, slotFreshness } from "../inventory.js";
+import { spoilStageIndex, spoilStages } from "../food.js";
 import { pieceCost } from "../building/place.js";
 import { StationKind, type GameDefs, type ItemDef, type PieceDef, type RecipeDef } from "../defs.js";
 import { GOAL_CRAFTS, pieceNear, stuckOn } from "./autonomy.js";
@@ -37,6 +38,7 @@ export function fillAgentSensors(world: World, self: Entity, view: AgentWorldVie
     for (let i = 0; i < slots.items.length; i++) {
       const it = slots.items[i]!; if (!it || !slots.counts[i]) { empty++; continue; }
       const f = defs.items.get(it)?.food; if (!f || f.health < 0) continue;
+      if (spoilStages(defs)[spoilStageIndex(slotFreshness(world, self, i), spoilStages(defs))]?.sick) continue; // spoiled food makes you sick (negative regen): a player bins it
       if (f.hunger > fScore) { fScore = f.hunger; bestFood = i; }
       if (f.thirst > wScore) { wScore = f.thirst; bestWater = i; }
     }

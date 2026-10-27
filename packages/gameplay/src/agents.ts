@@ -17,6 +17,7 @@ import { observeSocialMemory } from "./ai/social_memory.js";
 import { fillVehicleSensors, vehicleBehaviors, type VehicleSensors } from "./ai/vehicle_behaviors.js";
 import { clanBehaviors, fillClanSensors, type ClanSensors } from "./ai/clan_behaviors.js";
 import { emitAgentCommands } from "./ai/agent_output.js";
+import { baseBehaviors, baseReturnRun, baseSleepRun, type PlanSensors } from "./ai/base_behaviors.js";
 import { autonomyBehaviors, banNode, instantChores, fillGoalSensors, stuckOn, type GoalSensors } from "./ai/autonomy.js";
 
 export interface AgentsData {
@@ -26,7 +27,7 @@ export interface AgentsData {
 export const AGENTS_DATA: AgentsData = raw as unknown as AgentsData;
 
 export interface SeenThing { id: number; kind: "zombie" | "player" | "node" | "animal"; x: number; y: number }
-export interface AgentWorldView extends AgentSensors, GoalSensors, PartySensors, ClanSensors, VehicleSensors {
+export interface AgentWorldView extends AgentSensors, GoalSensors, PlanSensors, PartySensors, ClanSensors, VehicleSensors {
   seen: SeenThing[]; home: { x: number; y: number }; playerName: string;
   /** Optional sensors (0..1 / plans) the host fills from the bot's replica; missing = neutral. */
   invSpaceFree?: number; craftRecipe?: number; buildPlan?: { piece: number; x: number; y: number };
@@ -109,8 +110,8 @@ export function referenceBehaviors(): GameBehavior[] {
         toward(o, c.self.x, c.self.y, g.x, g.y, 0.7); c.bb.set("facing", Math.atan2(o.aimY, o.aimX));
       } },
     { name: "return_home", chatOnStart: "return_home", scheduleBonus: 0.4,
-      considerations: [{ name: "farFromHome", curve: { type: "logistic", k: 10, mid: 0.3 }, input: (c) => Math.hypot(c.world.home.x - c.self.x, c.world.home.y - c.self.y) / 30 }, { name: "evening", curve: { type: "linear", m: 0.8, b: 0.2 }, input: (c) => night(c.self.phase) }],
-      run: (c, o) => { instantChores(c, o); if (toward(o, c.self.x, c.self.y, c.world.home.x, c.world.home.y) < 2 || stuckOn(c, c.world.home.x, c.world.home.y, 100)) return false; } },
+      considerations: [{ name: "farFromHome", curve: { type: "logistic", k: 10, mid: 0.3 }, input: (c) => (c.bb.get("trip") ? 0 : Math.hypot(c.world.home.x - c.self.x, c.world.home.y - c.self.y) / 30) }, { name: "evening", curve: { type: "linear", m: 0.8, b: 0.2 }, input: (c) => night(c.self.phase) }],
+      run: (c, o) => { instantChores(c, o); if (c.world.base) return baseReturnRun(c, o); if (toward(o, c.self.x, c.self.y, c.world.home.x, c.world.home.y) < 2 || stuckOn(c, c.world.home.x, c.world.home.y, 100)) return false; } },
     { name: "rest", chatOnStart: "rest", scheduleBonus: 0.3,
       considerations: [{ name: "night", curve: { type: "step", at: 0.5 }, input: (c) => night(c.self.phase) }, { name: "nearHome", curve: { type: "inverse" }, input: (c) => Math.hypot(c.world.home.x - c.self.x, c.world.home.y - c.self.y) / 10 }],
       run: () => { /* stand still (sleep hook: Survival adds a sleep action) */ } },
@@ -147,7 +148,7 @@ export const skillPickBehavior: GameBehavior = { name: "skill_pick", inertia: 0,
   run: (c, o) => { o.actions.push(`skill:${c.world.skillPick}`); c.bb.set("skillPickAt", c.self.tick); return false; } };
 
 export function survivorRegistry(extra: readonly GameBehavior[] = []): BehaviorRegistry<AgentWorldView> {
-  const r = new BehaviorRegistry<AgentWorldView>(); for (const b of [...referenceBehaviors(), ...survivalBehaviors(), ...autonomyBehaviors(), ...partyBehaviors(), ...clanBehaviors(), ...vehicleBehaviors(), skillPickBehavior, ...extra]) r.register(withBotUtility(b)); return r;
+  const r = new BehaviorRegistry<AgentWorldView>(); for (const b of [...referenceBehaviors(), ...survivalBehaviors(), ...autonomyBehaviors(), ...partyBehaviors(), ...clanBehaviors(), ...vehicleBehaviors(), ...baseBehaviors(), skillPickBehavior, ...extra]) r.register(withBotUtility(b.name === "sleep" ? { ...b, run: (c, o) => (c.world.base ? baseSleepRun(c, o) : b.run(c, o)) } : b)); return r;
 }
 /**
  * Deterministic identity for virtual player #slot of a world seed. archetype = a bots.json archetype (picked by the

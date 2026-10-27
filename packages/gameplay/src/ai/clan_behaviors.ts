@@ -144,6 +144,6 @@ export function clanBehaviors(): GameBehavior[] {
       } },
     { name: "clan_goal", traits: { sociability: 0.4, bravery: 0.3 }, inertia: 0.4, considerations: [
         { name: "far", curve: { type: "step", at: 0.5 }, input: (c) => { const k = c.world.clan; if (!k || k.goal === ClanGoal.None || k.goal === ClanGoal.StockStalls) return 0; return Math.hypot(k.goalX - c.self.x, k.goalY - c.self.y) > CLAN_AI.goalRadius ? 1 : 0; } }],
-      run: (c, o) => { const k = c.world.clan!; return toward(o, c.self.x, c.self.y, k.goalX, k.goalY, k.goal === ClanGoal.Raid || k.goal === ClanGoal.Defend ? 1 : 0.8) > CLAN_AI.goalRadius; } },
+      run: (c, o) => { const k = c.world.clan; if (!k) return false; return toward(o, c.self.x, c.self.y, k.goalX, k.goalY, k.goal === ClanGoal.Raid || k.goal === ClanGoal.Defend ? 1 : 0.8) > CLAN_AI.goalRadius; } },
   ];
 }

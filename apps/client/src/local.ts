@@ -7,7 +7,7 @@
  * mode: "multiplayer" disables human bots entirely (and ignores `bots`). No Node-only imports.
  */
 import { CommandRegistry, DEFAULT_TICK_HZ, FixedLoop, Owner, Transform, World, type CosmeticCatalogLike, type Agent, type AgentOutput, type Entity } from "@engine/core";
-import { Animal, Dead, Health, ResourceNode, Zombie, agentOutputFrame, applyAgentEmote, buildAgentSelf, buildAgentView, type AgentWorldView, flushSocialMemory, makeAgent, makeAgentIdentity, survivorController, HOME_MAX_DIST } from "@engine/gameplay";
+import { Animal, Dead, Health, ResourceNode, Zombie, agentOutputFrame, applyAgentEmote, buildAgentSelf, buildAgentView, type AgentWorldView, flushSocialMemory, makeAgent, makeAgentIdentity, survivorController, HOME_MAX_DIST, aiMemoryOf, baseHome, flushAiMemory, RespawnCmd } from "@engine/gameplay";
 import { ChatChannel, DirectClient, LoopbackNetwork, MultiServerTransport, NetClient, type ClientTransport, type ServerTransport } from "@engine/net";
 import { ClaimAccount, IndexedDbWorldStore, MemoryWorldStore, SetName, nameToWords, tokenToWords, type WorldStore } from "@engine/persist";
 import { detectDevice, isMobileHost, type DeviceHints } from "./p2p.js";
@@ -154,7 +154,7 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
   const putAgent = (id: string, partial: Parameters<typeof game.agents.put>[1]): unknown => game.agents.put(id, partial);
   function dropBot(clientId: number): void {
     const i = bots.findIndex((b) => b.client.clientId === clientId); if (i < 0) return;
-    const b = bots[i]!; byAgent.delete(b.agent); lodViews.delete(b); lodPhase.delete(b); flushSocialMemory([b.agent], putAgent, game.world.tick, true); controller.remove(b.agent); b.client.close(); bots.splice(i, 1);
+    const b = bots[i]!; byAgent.delete(b.agent); lodViews.delete(b); lodPhase.delete(b); flushSocialMemory([b.agent], putAgent, game.world.tick, true); flushAiMemory([b.agent], putAgent, game.world.tick, true); controller.remove(b.agent); b.client.close(); bots.splice(i, 1);
   }
   // Player/bot entity lookups (ADR-105): game.players already maps clientId -> server entity, and bots perceive the authoritative world through it.
   const serverEntityOf = (cid: number): Entity | undefined => { const p = game.players.get(cid); return p && game.world.isAlive(p.entity) ? p.entity : undefined; };
@@ -180,7 +180,10 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
     const t = vp.world.get(e, Transform); if (!t) return undefined;
     // ADR-203: the server spawns / restores the bot elsewhere than addBot's (x, y) (pickSpawnPoint, saved account); a home
     // hundreds of tiles away made build / sleep / return_home walk across the map forever. Home = where the bot lives.
-    if (Math.hypot(vp.home.x - t.x, vp.home.y - t.y) > HOME_MAX_DIST) vp.home = { x: t.x, y: t.y };
+    // ADR-211: a bot with a base remembers it (AiMemory persists via game.agents): home = inside the base, even after a trip
+    const mem = aiMemoryOf(a); if (mem.base && Math.hypot(mem.base.x - t.x, mem.base.y - t.y) > 4 * HOME_MAX_DIST) delete mem.base;
+    if (mem.base) { const h = baseHome(mem.base); if (h.x !== vp.home.x || h.y !== vp.home.y) vp.home = h; }
+    else if (Math.hypot(vp.home.x - t.x, vp.home.y - t.y) > HOME_MAX_DIST) vp.home = { x: t.x, y: t.y };
     let near = humans.length === 0; // no human: everyone is "near" (headless tests keep full fidelity)
     for (const h of humans) { const dx = h.x - t.x, dy = h.y - t.y; if (dx * dx + dy * dy <= AGENT_LOD_NEAR * AGENT_LOD_NEAR) { near = true; break; } }
     const cached = lodViews.get(vp);
@@ -215,7 +218,8 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
     if (byAgent.size !== bots.length) { byAgent.clear(); for (const b of bots) byAgent.set(b.agent, b); }
     const outs = controller.tick(tick, (a) => viewFor(a, tick, humans));
     for (const vp of bots) { const out = outs.get(vp.agent); if (!out) continue; vp.output = out; vp.client.sendInput(sampleOf(vp)); if (out.chat) vp.client.chat.send(ChatChannel.Local, out.chat.text); if (out.emote) { const e = serverEntityOf(vp.client.clientId); if (e !== undefined) applyAgentEmote(game.world, e, out); } if (out.commands) sendAgentCommands(vp.client, out.commands); }
-    flushSocialMemory(bots.map((b) => b.agent), putAgent, game.world.tick); // debounced social-memory write-through
+    if (tick % 40 === 0) for (const vp of bots) { const e = serverEntityOf(vp.client.clientId); if (e !== undefined && game.world.has(e, Dead)) sendAgentCommands(vp.client, [{ type: RespawnCmd.name, payload: {} }]); } // ADR-211: a dead bot presses Respawn like a player (server enforces respawnSeconds)
+    flushAiMemory(bots.map((b) => b.agent), putAgent, game.world.tick); flushSocialMemory(bots.map((b) => b.agent), putAgent, game.world.tick); // debounced social-memory write-through
   } });
   const pump = (ms: number): void => {
     for (const q of queued.splice(0)) { inflight++; connecting.push(addBot(q.x, q.y, false).catch((e) => o.log?.(`bot failed: ${String(e)}`)).finally(() => { inflight--; })); }
@@ -226,7 +230,7 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
   const server: LocalServer = {
     game, network, bots, pump,
     createTransport: () => network.createClient(),
-    async stop() { stopped = true; await Promise.allSettled(connecting); flushSocialMemory(bots.map((b) => b.agent), putAgent, game.world.tick, true); for (const b of bots) b.client.close(); await game.shutdown(); serverTransport.close(); },
+    async stop() { stopped = true; await Promise.allSettled(connecting); flushSocialMemory(bots.map((b) => b.agent), putAgent, game.world.tick, true); flushAiMemory(bots.map((b) => b.agent), putAgent, game.world.tick, true); for (const b of bots) b.client.close(); await game.shutdown(); serverTransport.close(); },
   };
   if (mode === "singleplayer") for (let i = 0; i < Math.min(o.bots ?? 0, maxBots); i++) { const sp = game.spawnPoints[i % game.spawnPoints.length]!; await addBot(sp.x + 1, sp.y + 1); } // dev bots over the 4 spawn points (ADR-106)
   return server;
