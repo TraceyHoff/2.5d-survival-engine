@@ -352,7 +352,7 @@ export class NetClient {
       this.history.set(tick, d.state);
       for (const t of this.history.keys()) if (t <= tick - (this.opts.historySize ?? 64)) this.history.delete(t);
       this.latestTick = tick; this.stats.snapshots++;
-      this.applyState(w, tick, prevState, d.state);
+      this.applyState(w, tick, prevState, d.state, base);
       if (processed !== NONE_U32) reconcileSeq = processed; else reconcileSeq ??= -1;
     }
     // Behind the newest snapshot: catch up. Too far ahead (a burst of lost/late snapshots): hold at latest+4 instead of
@@ -377,7 +377,7 @@ export class NetClient {
   }
 
   /** Bring the local world in line with `cur` (diffed against the previously applied state, which may be an older tick). */
-  private applyState(w: World, tick: number, prev: WorldState | undefined, cur: WorldState): void {
+  private applyState(w: World, tick: number, prev: WorldState | undefined, cur: WorldState, base?: WorldState): void {
     if (prev) for (const netId of prev.keys()) if (!cur.has(netId) && !this.statics.has(netId)) this.despawn(w, netId);
     for (const [netId, es] of cur) {
       const old = prev?.get(netId);
@@ -400,7 +400,10 @@ export class NetClient {
       }
       if (!this.owned.has(netId) && !this.controlled.has(netId) && this.interpIndex !== undefined) {
         const v = es.get(this.interpIndex);
-        if (v) this.interp.push(netId, tick, this.decode(this.interpIndex, v));
+        // ADR-192: values not in this snapshot's record (throttled/deferred/unchanged) carry the baseline; re-pushing them
+        // as a sample froze far movers then jumped them ("teleport"), and could even step them back to an older baseline.
+        if (v && old && base?.get(netId)?.get(this.interpIndex) === v && this.interp.has(netId)) this.interp.hold(netId, tick);
+        else if (v) this.interp.push(netId, tick, this.decode(this.interpIndex, v));
       }
     }
   }
