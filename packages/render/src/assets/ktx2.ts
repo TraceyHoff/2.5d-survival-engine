@@ -52,12 +52,58 @@ function loadBasis(): Promise<BasisModule> {
   return basis;
 }
 
-/** Default transcoder: vendored Basis, all mip levels of layer 0. */
+/**
+ * ADR-186: Basis transcoding is CPU-heavy (tens to hundreds of ms per 2048 page) and used to run on the main thread inside
+ * the atlas page-in, a long task (dropped frames / visible hitch) every time a page streamed in while walking. In browsers
+ * it now runs in a small worker pool (buffers transferred, no copies); the main thread only uploads the result. Falls back
+ * to in-thread transcoding when Worker/Blob URLs are unavailable (node tests, strict CSP) or a worker fails.
+ */
+type Job = { op: "gpu"; fmt: number } | { op: "rgba" };
+interface WorkerOut { id: number; ok: boolean; error?: string; width?: number; height?: number; levels?: ArrayBuffer[] }
+const WORKER_SRC = `let B=null;const load=(js,wasm)=>B??=Promise.all([fetch(js).then(r=>r.text()),fetch(wasm).then(r=>r.arrayBuffer())]).then(([s,b])=>new Function(s+"\\n;return BASIS;")()({wasmBinary:b})).then(m=>{m.initializeBasis();return m;});
+onmessage=async(e)=>{const d=e.data;try{const m=await load(d.js,d.wasm);const f=new m.KTX2File(new Uint8Array(d.data));try{if(!f.isValid()||!f.startTranscoding())throw new Error("invalid KTX2");
+const fmt=d.op==="rgba"?13:d.fmt;const n=d.op==="rgba"?1:f.getLevels();const lv=[];for(let l=0;l<n;l++){const dst=new Uint8Array(f.getImageTranscodedSizeInBytes(l,0,0,fmt));if(!f.transcodeImage(dst,l,0,0,fmt,0,-1,-1))throw new Error("transcode level "+l);lv.push(dst.buffer);}
+postMessage({id:d.id,ok:true,width:f.getWidth(),height:f.getHeight(),levels:lv},lv);}finally{f.close();f.delete();}}catch(err){postMessage({id:d.id,ok:false,error:String(err&&err.message||err)});}};`;
+interface Pool { workers: Worker[]; next: number; waiting: Map<number, (o: WorkerOut) => void>; id: number }
+let pool: Pool | null | undefined;
+/** Worker count: 2 (one decodes while the other finishes), 1 on <=4 logical cores. */
+export function transcodeWorkerCount(cores: number | undefined): number { return (cores ?? 4) <= 4 ? 1 : 2; }
+function workerPool(): Pool | null {
+  if (pool !== undefined) return pool;
+  pool = null;
+  try {
+    if (typeof Worker === "undefined" || typeof Blob === "undefined" || typeof URL.createObjectURL !== "function") return null;
+    const url = URL.createObjectURL(new Blob([WORKER_SRC], { type: "text/javascript" }));
+    const p: Pool = { workers: [], next: 0, waiting: new Map(), id: 0 };
+    const n = transcodeWorkerCount(typeof navigator !== "undefined" ? navigator.hardwareConcurrency : undefined);
+    for (let i = 0; i < n; i++) {
+      const w = new Worker(url);
+      w.onmessage = (e: MessageEvent<WorkerOut>) => { const r = p.waiting.get(e.data.id); p.waiting.delete(e.data.id); r?.(e.data); };
+      w.onerror = () => { pool = null; for (const r of p.waiting.values()) r({ id: -1, ok: false, error: "worker failed" }); p.waiting.clear(); };
+      p.workers.push(w);
+    }
+    pool = p;
+  } catch { pool = null; }
+  return pool;
+}
+/** Disable (false) or re-enable (true) the worker pool; tests use this to force the in-thread path. */
+export function setKtx2Workers(on: boolean): void { pool = on ? undefined : null; }
+function inWorker(data: ArrayBuffer, job: Job): Promise<WorkerOut> | null {
+  const p = workerPool(); if (!p) return null;
+  const id = ++p.id; const w = p.workers[p.next++ % p.workers.length]!;
+  const js = new URL("../../vendor/basis/basis_transcoder.js", import.meta.url).href, wasm = new URL("../../vendor/basis/basis_transcoder.wasm", import.meta.url).href;
+  return new Promise((res) => { p.waiting.set(id, res); w.postMessage({ id, js, wasm, data, ...job }, [data]); });
+}
+
+/** Default transcoder: vendored Basis, all mip levels of layer 0 (worker pool when available, ADR-186). */
 export const basisTranscoder: Ktx2Transcoder = async (data, target, srgb = false) => {
+  const fmt = BASIS_FORMAT[target];
+  const wj = inWorker(data, { op: "gpu", fmt });
+  if (wj) { const o = await wj; if (!o.ok) throw new Error(o.error ?? "transcode failed"); return { width: o.width!, height: o.height!, levels: o.levels!.map((b) => new Uint8Array(b)), internalFormat: GL_FORMAT[target][srgb ? 1 : 0], target }; }
   const m = await loadBasis(); const f = new m.KTX2File(new Uint8Array(data));
   try {
     if (!f.isValid() || !f.startTranscoding()) throw new Error("invalid KTX2");
-    const fmt = BASIS_FORMAT[target]; const levels: ArrayBufferView[] = [];
+    const levels: ArrayBufferView[] = [];
     for (let l = 0; l < f.getLevels(); l++) { const dst = new Uint8Array(f.getImageTranscodedSizeInBytes(l, 0, 0, fmt)); if (!f.transcodeImage(dst, l, 0, 0, fmt, 0, -1, -1)) throw new Error(`transcode level ${l}`); levels.push(dst); }
     return { width: f.getWidth(), height: f.getHeight(), levels, internalFormat: GL_FORMAT[target][srgb ? 1 : 0], target };
   } finally { f.close(); f.delete(); }
@@ -73,7 +119,11 @@ export async function loadKtx2(url: string, c: CompressedTextureSupport, srgb = 
 export async function loadKtx2Rgba(url: string, fetcher: (u: string) => Promise<ArrayBuffer> = async (u) => { const r = await fetch(u); if (!r.ok) throw new Error(String(r.status)); return r.arrayBuffer(); }): Promise<{ width: number; height: number; data: Uint8Array } | null> {
   if (!enabled) return null;
   try {
-    const m = await loadBasis(); const f = new m.KTX2File(new Uint8Array(await fetcher(url)));
+    const buf = await fetcher(url);
+    // only the default transcoder setup uses the worker; a test-installed transcoder keeps everything in-thread
+    const wj = transcoder === basisTranscoder ? inWorker(buf, { op: "rgba" }) : null;
+    if (wj) { const o = await wj; return o.ok ? { width: o.width!, height: o.height!, data: new Uint8Array(o.levels![0]!) } : null; }
+    const m = await loadBasis(); const f = new m.KTX2File(new Uint8Array(buf));
     try {
       if (!f.isValid() || !f.startTranscoding()) return null;
       const dst = new Uint8Array(f.getImageTranscodedSizeInBytes(0, 0, 0, 13));

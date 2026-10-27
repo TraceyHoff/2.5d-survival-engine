@@ -1225,3 +1225,10 @@ checked visually).
 - **Unchanged:** the flat surface height (ADR-182) and gameplay depth (ADR-181). Test: `packages/render/test/adr184_smooth_water_tint.test.ts`.
 ## ADR-185: Name tags keep a stable screen-depth draw order (no blinking boxes over characters)
 Name tags (ADR-173) were sorted farthest-from-me first. When two players/bots stand close together at about the same distance, interpolation jitter flipped that order every few frames, so their overlapping dark tag boxes alternated on top: "blinking boxes over characters", in both WebGL2 and Canvas2D (the tags are a shared overlay canvas). Tags now sort by screen y (top first, entity id tie-break), matching sprite depth, so the order only changes when characters actually cross. Ruled out by per-frame probes: creature HP bars, atlas eviction, silhouettes. Test: `adr185_name_tag_blink.test.ts`.
+
+## ADR-186: KTX2/Basis transcoding runs in a worker pool
+- **Cause:** in profiles of long `?dev=sandbox` sessions, the Basis wasm transcoder (`basisTranscoder`, `loadKtx2Rgba`) ran on the main thread. It took about 8% of main-thread time, in long tasks of 50-200 ms every time a streamed page (wearables, vehicles, bodies, building tiers) came in. On screen this showed up as hitches while walking into new areas or meeting new characters.
+- **Fix:** `ktx2.ts` now starts a small worker pool from an inline Blob worker, with `transcodeWorkerCount(cores)` workers: 1 on ≤4 cores, otherwise 2. The workers load the same vendored transcoder. The KTX2 bytes are transferred to the worker (no copy), and the transcoded levels are transferred back. Output formats, mip levels and quality are unchanged. When there is no `Worker`/Blob URL, the old in-thread path runs. Worker errors reject, and the caller falls back to PNG as before. `setKtx2Workers(false)` forces the in-thread path.
+- **Measured** (swiftshader, 480x270, SP worker): Basis no longer shows up in main-thread profiles. Long tasks dropped from 49 to 36, and p95 frame time from 183 to 150 ms.
+- **Tests:** `packages/render/test/ktx2_worker.test.ts`.
+
