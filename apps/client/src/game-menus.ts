@@ -169,6 +169,8 @@ export class GameMenus {
   }
   /** Re-render the open gameplay panel from live world state by diffing (only changed nodes are touched, focus kept).
    *  No-op when no gameplay panel is open. Returns the number of DOM mutations. */
+  /** ADR-205: set the open gameplay panel's status line (e.g. a friendly server-reject text) and re-render. */
+  notice(text: string): void { this.statusLine = text; this.refresh(); }
   refresh(): number {
     const id = this.nav.top; if (!id || !this.o.gameplay || !(GAMEPLAY_PANELS as readonly string[]).includes(id)) return 0;
     const body = this.o.root.querySelector<HTMLElement>(`[data-menu="${id}"] [data-role=body]`); if (!body) return 0;

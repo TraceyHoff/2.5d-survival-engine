@@ -25,7 +25,15 @@ export class BackHistory {
  *  :focus-visible in Chrome (and `.gm-panel button:focus:not(:focus-visible)` hid it), so the pad user saw no cursor.
  *  Pad/keyboard navigation flags the document (`html[data-nav-focus]`, see markNavFocus) until the next pointer/touch press;
  *  while flagged, focus asks for a visible ring. Touch/mouse-opened menus show none. */
-export function focusVisible(el: HTMLElement | undefined): void { if (!el) return; el.focus({ focusVisible: navFocusActive() } as FocusOptions); el.scrollIntoView?.({ block: "nearest", inline: "nearest" }); }
+export function focusVisible(el: HTMLElement | undefined): void { if (!el) return; el.focus({ focusVisible: navFocusActive() } as FocusOptions); el.scrollIntoView?.({ block: "nearest", inline: "nearest" }); revealAboveFooter(el); }
+/** ADR-205: the sticky pad hint footer must never cover the focused control — scroll its panel so `el` ends above the footer. */
+export function revealAboveFooter(el: Element | null | undefined): void {
+  if (!el || typeof getComputedStyle === "undefined") return;
+  const host = el.closest(".gm-panel, .se-panel, [data-modal]"); const f = host?.querySelector<HTMLElement>(":scope > .pad-hints, :scope > .gm-panel > .pad-hints");
+  if (!f || !f.offsetHeight || f.contains(el)) return;
+  const gap = el.getBoundingClientRect().bottom - (f.getBoundingClientRect().top - 6); if (gap <= 0) return;
+  for (let p = el.parentElement; p; p = p.parentElement) { const oy = getComputedStyle(p).overflowY; if ((oy === "auto" || oy === "scroll") && p.scrollHeight > p.clientHeight) { p.scrollTop += gap; return; } }
+}
 
 let navFocusHooked = false;
 export function markNavFocus(doc: Document | undefined = typeof document !== "undefined" ? document : undefined): void {

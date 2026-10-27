@@ -33,7 +33,8 @@ import { createGameLoop, World, PlayerId, Transform, PrevTransform, lerp, entity
 import { TileMap, worldToScreen, screenToWorld, DEFAULT_ISO, ProceduralGenerator, computeSpawnPoints } from "@engine/world";
 import { InputSystem, AimResolver, DEFAULT_ACTIONS, DEFAULT_CONTEXTS, DEFAULT_PROFILES, DEFAULT_TOUCH_LAYOUTS } from "@engine/input";
 import { attachBrowserInput } from "@engine/input/browser";
-import { ClanRoster, ClanRosterMember, OnlinePlayer, VehicleStationOpenedEvt, PetEventEvt, gameplayNet, installDemoWorld } from "@engine/server/protocol";
+import { ClanRoster, ClanRosterMember, OnlinePlayer, VehicleStationOpenedEvt, PetEventEvt, gameplayNet, installDemoWorld, onGameplayRejected } from "@engine/server/protocol";
+import { inventoryOpRejectText } from "./inventory-reject.js";
 import { netIdOf, ChatChannel, type ChatDelivered } from "@engine/net";
 import { WorldRules, worldRules, ROADS, holdsRangedWeapon, Sign, signText, Road, StallHeader, buildView, listItemIntents, setStallOpenIntent, stallView, nearestStall, inventoryView, equipIntent, gameplayDefs, BuildPiece } from "@engine/gameplay";
 import { replicaTerrain } from "./replica-terrain.js";
@@ -198,6 +199,8 @@ function wireChat(): void {
   c.onEvent(VehicleStationOpenedEvt, (e) => { if (e.vehicle) menus?.openCamper(e.vehicle); });
   // ADR-145 pet feedback (owner only): tamed / refused / shied / fed / level up -> toast + panel refresh
   c.onEvent(PetEventEvt, (e) => { const t = petEventText(world, e.pet as never, e.result, e.value); if (t) farm?.toast(t); if (e.result === 1 && e.pet) menus?.openPet(e.pet); else menus?.refresh(); });
+  // ADR-205: split / move / to-hotbar rejected by the server -> specific friendly text in the panel status line + toast
+  onGameplayRejected(c, (r) => { const t = inventoryOpRejectText(r.command, r.reason); if (t) { menus?.notice(t); farm?.toast(t); } });
   c.chat.onReject((ch, reason) => menus?.pushChat(`(${CHAT_TAG[ch] ?? "?"} message rejected: ${reason})`));
 }
 /** Pause menu "Quit to main menu": leave fullscreen, end the session, back to the main menu. */

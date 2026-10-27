@@ -8,6 +8,7 @@
  * (present = unlocked); member rows `[data-rank=member|officer|leader]`; tooltips `[data-tip]` (never `title=`).
  * Chat log lines (game-menus.ts) carry `[data-chan=global|local|party|clan|trade|whisper|system]`.
  */
+import { revealAboveFooter } from "./back-history.js";
 import { deployKitIntent, isKit } from "./vehicle-controls.js";
 import { clanMemberActions } from "./clan-actions.js";
 import "./gameplay-panels.css";
@@ -19,7 +20,7 @@ import { iconForItem,
   type BuildSelection, type MenuCtx, type MenuIntent, camperStationView, vehicleRefuelIntent, type CamperRecipeView,
   progressionView, unlockSkillIntent, respecSkillsIntent, SKILL_REJECT_TEXT, useIntent, drinkWaterIntent, nearWater,
   SKILLS, equipIntent, wearIntent, equipmentView,
-  petView, petsOf, petOfferIntent, petCommandIntent, dropItemIntent, splitStackIntent, moveSlotIntent, defaultSplit, HOTBAR_SIZE, PET_HELP, petName, petSpecies, Pet,
+  petView, petsOf, petOfferIntent, petCommandIntent, dropItemIntent, splitStackIntent, moveSlotIntent, containerToSlotIntent, defaultSplit, HOTBAR_SIZE, PET_HELP, petName, petSpecies, Pet,
 } from "@engine/gameplay";
 import { colorChoices, requestCharacterEdit } from "./character-creator.js";
 import { GroupRole, PlayerId, SLOT_PALETTE, Transform, type Entity, type WearableSlot } from "@engine/core";
@@ -74,9 +75,9 @@ let containerPage = 0;
 /** ADR-145: inventory "Drop items…" section open state (survives panel re-renders). */
 export const dropUi = { open: false };
 /** ADR-204: split / move-to-hotbar picker state (outside the DOM: the panel re-renders on every inventory change). */
-export const arrangeUi: { mode: "" | "split" | "hotbar"; slot: number; count: number; open: boolean } = { mode: "", slot: -1, count: 1, open: false };
+export const arrangeUi: { mode: "" | "split" | "hotbar"; where: 0 | 1; slot: number; count: number; open: boolean } = { mode: "", where: 0, slot: -1, count: 1, open: false };
 /** Focus a control by data-key after the (synchronous) re-render; pad focus ring when the pad drove it. */
-function focusKey(key: string): void { const t = typeof document !== "undefined" ? document.querySelector<HTMLElement>(`[data-modal] [data-key="${key}"]`) : null; if (t) { t.focus(); t.scrollIntoView?.({ block: "nearest" }); } }
+function focusKey(key: string): void { const t = typeof document !== "undefined" ? document.querySelector<HTMLElement>(`[data-modal] [data-key="${key}"]`) : null; if (t) { t.focus(); t.scrollIntoView?.({ block: "nearest" }); revealAboveFooter(t); } }
 /** Skill tree (ADR-113): zoom + selected node survive re-renders; the viewport scroll position is kept by the diffing refresh. */
 const skillUi = { zoom: 0.6, sel: -1, branch: "", cat: "" };
 /** ADR-132: active skill category tab (one tree per tab); ◀ ▶ / tab buttons (touch, mouse, Tab+Enter, gamepad focus+A), PgUp/PgDn and gamepad LB/RB. */
@@ -147,6 +148,54 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
         else fs.append(g);
         out.push(heading("Fuel"), fs);
       }
+      // ADR-204/205: Arrange — split a stack (amount picker, default half) / move a slot onto hotbar slot 1..8 (swaps if taken).
+      // where 0 = pack, 1 = the open container (to hotbar then moves it into the pack's hotbar slot, swapping the old one back).
+      // Plain focusable buttons: mouse, touch, Tab/arrows + Enter and D-pad + A all work; X / Y jump straight here from a slot.
+      const arrange = (): HTMLElement => {
+          type Ent = { slot: number; item: number; count: number; name: string; icon: string };
+          const packE: Ent[] = v; const boxE: Ent[] = cv ? cv.slots.filter((x) => x.item) : [];
+          const listOf = (w: 0 | 1): Ent[] => (w === 1 ? boxE : packE); const pre = (w: 0 | 1): string => (w === 1 ? "c" : "");
+          const start = (mode: "split" | "hotbar", w: 0 | 1, sl: number): void => { const it = listOf(w).find((x) => x.slot === sl); if (!it) return;
+            arrangeUi.mode = mode; arrangeUi.where = w; arrangeUi.slot = sl; arrangeUi.count = defaultSplit(it.count); arrangeUi.open = true; kit.rerender();
+            let h = 0; while (h < HOTBAR_SIZE && ((w === 0 && h === sl) || v.some((x) => x.slot === h))) h++; if (h >= HOTBAR_SIZE) h = w === 0 && sl === 0 ? 1 : 0;
+            focusKey(mode === "split" ? "split-go" : `hb-to-${h}`); };
+          const back = (w: 0 | 1, sl: number): string => (w === 1 ? `cslot-${sl}` : `slot-${sl}`);
+          const cancel = (): void => { const sl = arrangeUi.slot, w = arrangeUi.where; arrangeUi.mode = ""; kit.rerender(); focusKey(back(w, sl)); };
+          if (arrangeUi.where === 1 && !cv) arrangeUi.mode = "";
+          const W = arrangeUi.where; const cur = listOf(W).find((x) => x.slot === arrangeUi.slot);
+          if (arrangeUi.mode && (!cur || (arrangeUi.mode === "split" && cur.count < 2))) arrangeUi.mode = "";
+          const ar = el("section", { "data-role": "arrange" });
+          if (arrangeUi.mode === "split" && cur) {
+            const max = cur.count - 1; arrangeUi.count = Math.max(1, Math.min(max, arrangeUi.count));
+            const adj = (d: number): void => { arrangeUi.count = Math.max(1, Math.min(max, arrangeUi.count + d)); kit.rerender(); };
+            // amount readout sits in the heading (own line) so no tooltip / button ever covers it
+            const hd = heading(`Split ${cur.name} — `); const out_ = el("output", { "data-role": "split-count", "aria-live": "polite" }, `${arrangeUi.count} / ${cur.count}`); hd.append(out_);
+            const row = grid(); row.dataset["role"] = "split-picker"; row.dataset["tabsLabel"] = "Amount";
+            row.append(btn("−", "split-dec", () => adj(-1), { alt: true, disabled: arrangeUi.count <= 1, data: { pad: "LT", padLabel: "Less" } }),
+              btn("+", "split-inc", () => adj(1), { alt: true, disabled: arrangeUi.count >= max, data: { pad: "RT", padLabel: "More" } }),
+              btn(`Split ×${arrangeUi.count}`, "split-go", () => { const n = arrangeUi.count; arrangeUi.mode = ""; send(splitStackIntent(cur.slot, n, W), `Split ${cur.name} ×${n} into a new stack.`); focusKey(back(W, cur.slot)); }, { role: "split" }),
+              btn("Cancel", "arrange-cancel", cancel, { alt: true }));
+            ar.append(hd, row);
+          } else if (arrangeUi.mode === "hotbar" && cur) {
+            const row = grid(); row.dataset["role"] = "hotbar-picker";
+            for (let h = 0; h < HOTBAR_SIZE; h++) { const o = v.find((x) => x.slot === h); const lock = W === 1 && !!o?.equipped;
+              row.append(btn(`${h + 1}${o ? `: ${o.name}` : ""}${lock ? " (equipped)" : ""}`, `hb-to-${h}`, () => { arrangeUi.mode = "";
+                send(W === 1 ? containerToSlotIntent(cur.slot, h) : moveSlotIntent(cur.slot, h), o ? `Swapped ${cur.name} with ${o.name} (hotbar ${h + 1}).` : `${cur.name} → hotbar ${h + 1}.`); focusKey(`slot-${h}`); },
+                { role: "hotbar-slot", disabled: (W === 0 && h === cur.slot) || lock, alt: !!o, data: { slot: String(h) } })); }
+            row.append(btn("Cancel", "arrange-cancel", cancel, { alt: true }));
+            ar.append(heading(`Put ${cur.name} on hotbar slot${W === 1 ? " (from storage)" : ""}`), row);
+          } else {
+            // pad targets for X / Y + a collapsed list for mouse / touch / keyboard
+            const det = el("details", { "data-role": "arrange-section" }); det.open = arrangeUi.open; const sum = el("summary", { tabindex: "0" }, "Split / hotbar…");
+            sum.addEventListener("click", (ev) => { ev.preventDefault(); arrangeUi.open = !arrangeUi.open; det.open = arrangeUi.open; });
+            const ag = grid();
+            for (const w of [0, 1] as const) for (const x of listOf(w)) { const tag = w === 1 ? " (storage)" : "";
+              if (x.count >= 2) ag.append(btn(`Split ${x.name}${tag}`, `${pre(w)}split-${x.slot}`, () => start("split", w, x.slot), { alt: true, role: "split-start", data: { item: String(x.item), icon: x.icon } }));
+              ag.append(btn(`${x.name}${tag} → hotbar`, `${pre(w)}tohb-${x.slot}`, () => start("hotbar", w, x.slot), { alt: true, role: "hotbar-start", data: { item: String(x.item), icon: x.icon } })); }
+            det.append(sum, ag); ar.append(det);
+          }
+          return ar;
+      };
       if (cv) out.push(heading("Your pack"));
       if (!v.length) out.push(kit.para("Your pack is empty."));
       else {
@@ -156,51 +205,13 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
           const b = btn(`${s.equipped ? "◆ " : ""}${s.name} ×${s.count}`, `slot-${s.slot}`, () => cv ? send(depositIntent(cv.entity, s.item, s.count), `Stored ${s.name} ×${s.count}.`) : s.equip ? equipSlot(s) : kit.status(s.tooltip.replace(/\n/g, " · ")),
             { title: cv ? `${s.tooltip}\nStore in container` : s.equip ? `${s.tooltip}\n${s.equipped ? "Unequip" : "Equip"}` : s.tooltip, role: "slot", data: { item: String(s.item), icon: s.icon, ...(s.equip && { equip: s.equip }), ...(s.equipped && { equipped: "" }) } });
           if (!cv && s.equip) { b.draggable = true; b.ondragstart = (ev) => ev.dataTransfer?.setData("text/x-slot", String(s.slot)); }
-          if (!cv) { // ADR-204: pad X = split, Y = to hotbar on the focused slot (UINav contextual shortcuts + footer hints)
-            if (s.count >= 2) { b.dataset["padX"] = `split-${s.slot}`; b.dataset["padXLabel"] = "Split"; }
-            b.dataset["padY"] = `tohb-${s.slot}`; b.dataset["padYLabel"] = "To hotbar";
-          }
+          // ADR-204/205: pad X = split, Y = to hotbar on the focused slot (UINav contextual shortcuts + footer hints)
+          if (s.count >= 2) { b.dataset["padX"] = `split-${s.slot}`; b.dataset["padXLabel"] = "Split"; }
+          b.dataset["padY"] = `tohb-${s.slot}`; b.dataset["padYLabel"] = "To hotbar";
           g.append(b);
         }
         out.push(g);
-        if (!cv) {
-          // ADR-204: Arrange — split a stack (amount picker, default half) / move a slot onto hotbar slot 1..8 (swaps if taken).
-          // Plain focusable buttons: mouse, touch, Tab/arrows + Enter and D-pad + A all work; X / Y jump straight here from a slot.
-          const start = (mode: "split" | "hotbar", sl: number): void => { const it = v.find((x) => x.slot === sl); if (!it) return;
-            arrangeUi.mode = mode; arrangeUi.slot = sl; arrangeUi.count = defaultSplit(it.count); arrangeUi.open = true; kit.rerender(); let h = 0; while (h < HOTBAR_SIZE && (h === sl || v.some((x) => x.slot === h))) h++; if (h >= HOTBAR_SIZE) h = sl === 0 ? 1 : 0;
-            focusKey(mode === "split" ? "split-go" : `hb-to-${h}`); };
-          const cancel = (): void => { const sl = arrangeUi.slot; arrangeUi.mode = ""; kit.rerender(); focusKey(`slot-${sl}`); };
-          const cur = v.find((x) => x.slot === arrangeUi.slot);
-          if (arrangeUi.mode && (!cur || (arrangeUi.mode === "split" && cur.count < 2))) arrangeUi.mode = "";
-          const ar = el("section", { "data-role": "arrange" });
-          if (arrangeUi.mode === "split" && cur) {
-            const max = cur.count - 1; arrangeUi.count = Math.max(1, Math.min(max, arrangeUi.count));
-            const adj = (d: number): void => { arrangeUi.count = Math.max(1, Math.min(max, arrangeUi.count + d)); kit.rerender(); };
-            const row = grid(); row.dataset["role"] = "split-picker"; row.dataset["tabsLabel"] = "Amount";
-            row.append(btn("−", "split-dec", () => adj(-1), { alt: true, disabled: arrangeUi.count <= 1, title: "One less (LT)", data: { pad: "LT", padLabel: "Less" } }),
-              el("output", { "data-role": "split-count", "aria-live": "polite" }, `${arrangeUi.count} / ${cur.count}`),
-              btn("+", "split-inc", () => adj(1), { alt: true, disabled: arrangeUi.count >= max, title: "One more (RT)", data: { pad: "RT", padLabel: "More" } }),
-              btn(`Split ×${arrangeUi.count}`, "split-go", () => { const n = arrangeUi.count; arrangeUi.mode = ""; send(splitStackIntent(cur.slot, n), `Split ${cur.name} ×${n} into a new stack.`); focusKey(`slot-${cur.slot}`); }, { role: "split", title: "Move this many into an empty slot" }),
-              btn("Cancel", "arrange-cancel", cancel, { alt: true }));
-            ar.append(heading(`Split ${cur.name} ×${cur.count}`), row);
-          } else if (arrangeUi.mode === "hotbar" && cur) {
-            const row = grid(); row.dataset["role"] = "hotbar-picker";
-            for (let h = 0; h < HOTBAR_SIZE; h++) { const o = v.find((x) => x.slot === h);
-              row.append(btn(`${h + 1}${o ? `: ${o.name}` : ""}`, `hb-to-${h}`, () => { arrangeUi.mode = ""; send(moveSlotIntent(cur.slot, h), o ? `Swapped ${cur.name} with ${o.name} (hotbar ${h + 1}).` : `${cur.name} → hotbar ${h + 1}.`); focusKey(`slot-${h}`); },
-                { role: "hotbar-slot", disabled: h === cur.slot, alt: !!o, title: o ? `Swap with ${o.name}` : "Empty", data: { slot: String(h) } })); }
-            row.append(btn("Cancel", "arrange-cancel", cancel, { alt: true }));
-            ar.append(heading(`Put ${cur.name} on hotbar slot`), row);
-          } else {
-            // hidden pad targets for X / Y + a collapsed list for mouse / touch / keyboard
-            const det = el("details", { "data-role": "arrange-section" }); det.open = arrangeUi.open; const sum = el("summary", { tabindex: "0" }, "Split / hotbar…");
-            sum.addEventListener("click", (ev) => { ev.preventDefault(); arrangeUi.open = !arrangeUi.open; det.open = arrangeUi.open; });
-            const ag = grid();
-            for (const x of v) { if (x.count >= 2) ag.append(btn(`Split ${x.name}`, `split-${x.slot}`, () => start("split", x.slot), { alt: true, role: "split-start", data: { item: String(x.item), icon: x.icon } }));
-              ag.append(btn(`${x.name} → hotbar`, `tohb-${x.slot}`, () => start("hotbar", x.slot), { alt: true, role: "hotbar-start", data: { item: String(x.item), icon: x.icon } })); }
-            det.append(sum, ag); ar.append(det);
-          }
-          out.push(ar);
-        }
+        if (!cv) out.push(arrange());
         if (!cv) {
           const eq = el("section", { "data-role": "equipment" }); const eg = grid();
           for (const q of equipmentView(c)) {
@@ -254,7 +265,8 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
         out.push(heading(`Storage · ${cv.slotCount} slots · ${Math.round(cv.weight)}/${Math.round(cv.maxWeight)} kg`));
         const g = grid(); g.dataset["role"] = "container-grid"; g.dataset["page"] = String(cv.page);
         for (const s of cv.slots) g.append(s.item
-          ? btn(`${s.name} ×${s.count}`, `cslot-${s.slot}`, () => send(withdrawIntent(cv.entity, s.item, s.count), `Took ${s.name} ×${s.count}.`), { title: `${s.tooltip}\nTake`, role: "cslot", data: { item: String(s.item), icon: s.icon, slot: String(s.slot) } })
+          ? btn(`${s.name} ×${s.count}`, `cslot-${s.slot}`, () => send(withdrawIntent(cv.entity, s.item, s.count), `Took ${s.name} ×${s.count}.`), { title: `${s.tooltip}\nTake`, role: "cslot", data: { item: String(s.item), icon: s.icon, slot: String(s.slot),
+              ...(s.count >= 2 && { "pad-x": `csplit-${s.slot}`, "pad-x-label": "Split" }), "pad-y": `ctohb-${s.slot}`, "pad-y-label": "To hotbar" } }) // ADR-205
           : btn("·", `cslot-${s.slot}`, () => kit.status(s.tooltip), { alt: true, title: s.tooltip, role: "cslot", data: { item: "0", slot: String(s.slot) } }));
         out.push(g);
         if (cv.pages > 1) {
@@ -264,6 +276,7 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
           pg.append(btn("Next ▶", "page-next", () => { pageContainer(1); kit.rerender(); }, { alt: true, disabled: cv.page >= cv.pages - 1, title: "Next page (PgDn / RB)" }));
           out.push(pg);
         }
+        out.push(arrange()); // ADR-205: one arrange row for pack + storage, below the storage grid
       }
       return out;
     }

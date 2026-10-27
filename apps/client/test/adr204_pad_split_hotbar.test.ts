@@ -37,7 +37,7 @@ describe("ADR-204 pad-only split / to hotbar", () => {
   test("split: X on a stack opens the picker at half, RT/LT adjust, A confirms", () => {
     const { w, me, sent, menus, press, seek } = setup(); G.addItem(w, me, id("wood"), 10);
     menus.open("inventory"); seek("[data-key=slot-0]");
-    expect(document.querySelector("[data-role=pad-hints]")?.textContent ?? document.body.textContent).toContain("Split");
+    const hints = document.querySelector<HTMLElement>("[data-role=pad-hints]"); expect(hints).not.toBeNull(); expect(hints!.textContent).toContain("Split"); expect(hints!.textContent).toContain("To hotbar");
     press(PAD.X); expect(document.querySelector("[data-role=split-count]")!.textContent).toBe("5 / 10"); expect(focused().dataset["key"]).toBe("split-go");
     press(PAD.RT); press(PAD.RT); press(PAD.LT); expect(document.querySelector("[data-role=split-count]")!.textContent).toBe("6 / 10");
     press(PAD.A); const last = sent.at(-1)!; expect(last.cmd).toBe(G.SplitStackCmd); expect(last.args).toMatchObject({ where: 0, slot: 0, count: 6 });

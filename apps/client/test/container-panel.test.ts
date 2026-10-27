@@ -57,7 +57,7 @@ describe("paged container panel (ADR-098)", () => {
     const { w, box, menus } = setup(); const wood = d.itemId("wood"); menus.open("inventory");
     const s5 = q("[data-key=cslot-5]"); s5.focus();
     G.addItem(w, box, wood, 3);
-    const muts = menus.refresh(); expect(muts).toBeGreaterThan(0); expect(muts).toBeLessThan(12);
+    const muts = menus.refresh(); expect(muts).toBeGreaterThan(0); expect(muts).toBeLessThan(20); // ADR-205: the slot now also carries its X/Y shortcut attrs + the arrange details list
     expect(q("[data-key=cslot-0]").textContent).toContain("×3"); expect(document.activeElement).toBe(s5);
     menus.destroy(); document.body.innerHTML = `<div id="game-root"></div>`;
     const small = setup(12); small.menus.open("inventory");

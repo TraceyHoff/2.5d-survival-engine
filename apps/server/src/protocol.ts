@@ -1,4 +1,4 @@
-import { INVENTORY_OP_COMMANDS, INVENTORY_OP_RATES, GatherCmd, ToggleFireCmd, UpgradeCmd, RepairCmd, DemolishCmd, ToggleDoorCmd, LockDoorCmd, OpenContainerCmd, CloseContainerCmd, DepositCmd, WithdrawCmd, PET_COMMANDS, PET_ENTITY_FIELDS, PET_REJECT_REASONS, ROAD_COMMANDS, SIGN_COMMANDS, SIGN_ENTITY_FIELDS } from "@engine/gameplay";
+import { INVENTORY_OP_COMMANDS, INVENTORY_OP_RATES, INVENTORY_OP_REJECT_REASONS, GatherCmd, ToggleFireCmd, UpgradeCmd, RepairCmd, DemolishCmd, ToggleDoorCmd, LockDoorCmd, OpenContainerCmd, CloseContainerCmd, DepositCmd, WithdrawCmd, PET_COMMANDS, PET_ENTITY_FIELDS, PET_REJECT_REASONS, ROAD_COMMANDS, SIGN_COMMANDS, SIGN_ENTITY_FIELDS } from "@engine/gameplay";
 /**
  * Browser-safe demo protocol shared by apps/server, the headless bots and apps/client ("@engine/server/protocol").
  * Input bits + movement (identical on server and in client prediction), and the ordered command/event lists.
@@ -115,6 +115,7 @@ export const COMMAND_REJECT_REASONS = [
   /* appended (ADR-109) */ "no_key",
   /* appended (ADR-119/120): roads + signs */ "bad_surface", "no_privilege", "occupied", "cannot_afford", "no_tool", "not_found", "too_far", "bad_kind", "no_item", "not_owner",
   /* appended (ADR-145): pets */ ...PET_REJECT_REASONS,
+  /* appended (ADR-205): split / move / to-hotbar (no_space, bad_count, bad_slot, empty_slot keep their earlier codes) */ ...INVENTORY_OP_REJECT_REASONS,
 ] as const;
 export type CommandRejectReason = (typeof COMMAND_REJECT_REASONS)[number];
 export function rejectReasonCode(reason: string): number { const i = (COMMAND_REJECT_REASONS as readonly string[]).indexOf(reason); return i < 0 ? 0 : i + 1; }

@@ -26,7 +26,7 @@ describe("ADR-204 split stack", () => {
     run(G.SplitStackCmd, { where: 0, slot: 1, count: 1 }); // single item
     run(G.SplitStackCmd, { where: 0, slot: 200, count: 1 }); run(G.SplitStackCmd, { where: 0, slot: 16, count: 1 });
     run(G.SplitStackCmd, { where: 1, slot: 0, count: 2 }); run(G.SplitStackCmd, { where: 7, slot: 0, count: 2 }); // no open container / bad holder
-    expect(rej).toEqual(["bad_count", "bad_count", "bad_count", "bad_count", "bad_count", "bad_slot", "bad_slot", "bad_holder", "bad_holder"]);
+    expect(rej).toEqual(["bad_count", "bad_count", "bad_count", "bad_count", "bad_count", "bad_slot", "bad_slot", "no_container", "bad_holder"]);
     expect(slots(w, p).count(0)).toBe(10);
     const full = new G.ScratchSlots(2, 0, [id("wood"), id("stone")], [5, 5], [0, 0]); expect(G.checkSplit(full, 0, 2)).toEqual({ fail: "no_space" });
   });
@@ -50,7 +50,7 @@ describe("ADR-204 move slot (to hotbar)", () => {
   it("rejects same slot, empty source and out-of-range slots", () => {
     const { w, p, run, rej } = setup(); G.addItem(w, p, id("wood"), 3);
     run(G.MoveSlotCmd, { where: 0, slot: 0, to: 0 }); run(G.MoveSlotCmd, { where: 0, slot: 5, to: 1 }); run(G.MoveSlotCmd, { where: 0, slot: 0, to: 16 }); run(G.MoveSlotCmd, { where: 0, slot: 255, to: 1 });
-    expect(rej).toEqual(["same_slot", "bad_count", "bad_slot", "bad_slot"]); expect(slots(w, p).count(0)).toBe(3);
+    expect(rej).toEqual(["same_slot", "empty_slot", "bad_slot", "bad_slot"]); expect(slots(w, p).count(0)).toBe(3);
   });
   it("re-arranged inventory survives a persistence snapshot round trip", () => {
     const { w, p, run } = setup(); G.addItem(w, p, id("wood"), 10); run(G.SplitStackCmd, { where: 0, slot: 0, count: 3 }); run(G.MoveSlotCmd, { where: 0, slot: 1, to: 7 });

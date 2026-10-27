@@ -1408,3 +1408,14 @@ Accepted 2026-10-27. Context: the inventory had no way to split a stack or put a
 - **Persistence:** items, counts, created tick, durability and crafter move together and totals/weight are unchanged, so no schema change. A snapshot round trip is tested.
 - **UI** (`gameplay-panels.ts`): pack slots carry pad X = Split (stacks ≥2) and Y = To hotbar, shown in the pad hint footer (`data-pad-x-label`). Split opens one picker row: − (LT) / "n / total" / + (RT) / Split ×n / Cancel, default half. To hotbar opens one row of 8 hotbar targets (occupied ones show the item and swap). Mouse/touch reach the same through a collapsed "Split / hotbar…" section. Only one arrange row renders at a time, so no buttons overlap. `ui-nav.ts` resolves `data-pad-<btn>` on the focused element before modal-wide `[data-pad]` shortcuts.
 - **Tests:** `packages/gameplay/test/adr204_inventory_ops.test.ts`, `apps/client/test/adr204_pad_split_hotbar.test.ts` (pad-only split and to-hotbar).
+
+## ADR-205: Container split / to hotbar, specific reject text, hint footer never covers focus
+
+Accepted 2026-10-27. Context: ADR-204 left three rough edges — open containers had no Split / To-hotbar, its new reject reasons were not in the wire list (clients saw a generic message), and the sticky pad hint footer could cover the focused control (hotbar picker slots 5/6) while the split tooltip covered the count.
+
+Decision:
+- `gameplay.containerToSlot {slot, to}` moves a stack from the open container (`Viewing`, so in reach) into pack hotbar slot `to` (0..7); an occupied slot swaps back into the container. The server validates open container, bounds (incl. the 96 slot cap), non-empty source, target not equipped/worn, and weight (neither side may end above its `maxWeight` when it got heavier); freshness is rebased per holder. Split / move with `where = 1` reuse the ADR-204 commands. Storage slots get the same X = Split / Y = To hotbar pad shortcuts, footer hints, and mouse/touch/keyboard buttons in one arrange row (still one picker at a time).
+- Reasons are now specific (`empty_slot`, `no_container` added; `bad_holder`, `same_slot`, `too_heavy`, `equipped` appended to `COMMAND_REJECT_REASONS`, append-only). The client maps inventory-op rejections to friendly text in the panel status line and a toast.
+- The split count is part of the picker heading (no tooltips on −/+), so nothing covers it. Any focus change in a modal (`focusin`, `focusVisible`, panel `focusKey`, footer rebuild) scrolls the panel so the focused control ends above the `.pad-hints` footer.
+
+Consequences: tests `adr205_container_ops`, `adr205_reject_reasons`, `adr205_pad_container_ops` (pad only); the ADR-204 footer test now asserts on the footer element.

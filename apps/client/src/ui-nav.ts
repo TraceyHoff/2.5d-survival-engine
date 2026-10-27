@@ -11,7 +11,7 @@
  * Spatial moves use @engine/input's FocusManager over element rects; with no layout (all rects empty) they fall back to DOM order.
  */
 import { FocusManager, type Dir } from "@engine/input";
-import { BackHistory, focusVisible, markNavFocus } from "./back-history.js";
+import { BackHistory, focusVisible, markNavFocus, revealAboveFooter } from "./back-history.js";
 import { buildSignEditor } from "./sign-editor.js";
 
 export interface ContextStack { push(name: string): void; pop(name?: string): void; isActive?(name: string): boolean }
@@ -162,7 +162,9 @@ export class UINav {
   /** ADR-200: (re)build the glyph hint footer of a modal from its live `[data-pad]` shortcuts. */
   hints(el: HTMLElement | undefined = this.stack.at(-1)?.el): void {
     if (!el || typeof document === "undefined") return;
-    if (!document.getElementById("pad-hints-css")) { const st = document.createElement("style"); st.id = "pad-hints-css"; st.textContent = HINT_CSS; document.head.append(st); }
+    if (!document.getElementById("pad-hints-css")) { const st = document.createElement("style"); st.id = "pad-hints-css"; st.textContent = HINT_CSS; document.head.append(st);
+      // ADR-205: any focus change (pad, keys, panel code) keeps the focused control clear of the sticky footer
+      document.addEventListener("focusin", (e) => revealAboveFooter(e.target as Element | null)); }
     const parts: string[] = [`<span><b>${PAD_GLYPH["A"]}</b>Select</span>`, `<span><b>${PAD_GLYPH["B"]}</b>Back</span>`];
     const fo = this.focused && el.contains(this.focused) ? this.focused : undefined;
     for (const n of PAD_SHORTCUTS) { const ck = `pad${n[0]}${n.slice(1).toLowerCase()}`; const cl = fo?.dataset[ck];
@@ -175,7 +177,7 @@ export class UINav {
     let f = el.querySelector<HTMLElement>(":scope > .pad-hints, :scope > .gm-panel > .pad-hints");
     if (f?.dataset["h"] === html) return;
     if (!f) { f = document.createElement("div"); f.className = "pad-hints"; f.dataset["role"] = "pad-hints"; f.setAttribute("aria-hidden", "true"); (el.querySelector(":scope > .gm-panel, :scope > .se-panel") ?? el).append(f); }
-    f.dataset["h"] = html; f.innerHTML = html;
+    f.dataset["h"] = html; f.innerHTML = html; revealAboveFooter(document.activeElement); // footer height may have changed
   }
   private pause(): void { this.o.onPause?.(); }
 
