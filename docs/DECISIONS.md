@@ -1419,3 +1419,39 @@ Decision:
 - The split count is part of the picker heading (no tooltips on −/+), so nothing covers it. Any focus change in a modal (`focusin`, `focusVisible`, panel `focusKey`, footer rebuild) scrolls the panel so the focused control ends above the `.pad-hints` footer.
 
 Consequences: tests `adr205_container_ops`, `adr205_reject_reasons`, `adr205_pad_container_ops` (pad only); the ADR-204 footer test now asserts on the footer element.
+
+## ADR-206: Closer default / max zoom, indoor zoom
+
+Context: players wanted to see inside their homes better and a slightly closer camera on PC and console.
+
+Decision:
+- `DESKTOP_ZOOM` = ADR-175 base × `DEFAULT_CLOSER` 1.1 (≈ 1.543 at 1920×1080). The ADR-175 viewport scaling is unchanged, so phones still show the same world span as PC/console.
+- The user zoom range is now 0.68..1.75 (was ~0.75..1.6). Max zoom-in goes from about 2.24 to 2.70 absolute at 1080p. The farthest view stays about the same.
+- Indoor zoom: `IsoRenderer.indoor` exposes the existing roof cutaway state (`sprites.cutawayActive`) and does not allocate. `ZoomControl.setIndoor` eases an extra ×1.15 factor (`indoorStep`, exponential, tau 280 ms, frame-rate independent). The factor multiplies the user's zoom, so it is relative and never overrides it. A 180 ms debounce stops doorway flicker from pumping the camera.
+
+Consequences: tests `adr206_indoor_zoom` (includes a gamepad-only RB + D-pad min/max test). `delete_picker` now expects the new default. `__qa.zoom()` is a sandbox probe.
+
+## ADR-207: Clan-shared bases
+
+Context: clan members should be able to build one big base together, and non-members must stay out.
+
+Decision:
+- This reuses the Tribe privilege model. A clan member whose rank has the `base` perm carries `Tribe = clan id`. Pieces, claim totems (`PrivilegeZone.tribe`) and door `lockTribe` all store it, and they persist as the u16 tribe (structures codec).
+- Members can therefore place, snap, upgrade, repair and demolish each other's pieces inside a clan claim and use clan doors.
+- Fixes found while doing this:
+  - Storage inside a claim (`canUseBaseStorage`) now needs privilege. Stalls and tills stay public. The rule is checked when the container is opened and again while it is open, so a kicked member's open chest closes on the next tick.
+  - Repair now needs privilege like the other build actions (it used to be exempt).
+- Leave or kick removes the Tribe, so build, storage and door rights end immediately and rejoining restores them. Disband leaves the leader's Tribe, so the leader keeps the base. Ranks without `base` cannot build in the clan claim. Raiders must destroy the claim totem before they can loot storage.
+- All checks are server-side (the gameplay command handlers). Clients only see the outcome.
+
+Consequences: test `clan_base` (co-build/snap/upgrade/repair/demolish, outsider blocked, shared storage, kick closes the viewer and revokes rights, persistence round-trip). Behaviour change: outsiders can no longer open chests or repair inside someone else's claim.
+
+## ADR-208: Render reconciliation smoothing; hot-path allocations
+
+Context: profiling of PC/console movement (ADR-191/192 prediction). NetClient has computed a decaying visual `correctionOffset` since ADR-191, but the game client never consumed it. The render package's `netTransformSource` was not wired, and IsoView mirrors the net world itself. So every reconciliation that moved the local player (late or lost input, server collision, knockback) appeared as a rubber-band jump of the full correction within one tick, and the camera, which follows the player, jumped the whole screen with it.
+
+Decision:
+- `CorrectionSampler` (apps/client) offsets predicted entities by `NetClient.correctionInto` (an allocation-free accessor). It samples once per network tick and keeps the previous tick's sample for PrevTransform, so lerp(prev+offPrev, cur+offCur, alpha) stays continuous. Sim state is untouched.
+- Allocations removed from the per-frame or per-tick path: the camera follow target is a scratch object, and `NetClient.interpolate` reuses one value record instead of allocating one per remote entity per tick.
+
+Consequences: test `adr208_correction_render`. In a simulated 0.5-tile correction while walking, the old path moves backwards up to 0.1 tile per frame; the new path never moves backwards and never moves faster than walk speed. Sandbox (`?dev=sandbox&worker=0`) shows 0 corrections at zero latency, so the change matters on real networks.

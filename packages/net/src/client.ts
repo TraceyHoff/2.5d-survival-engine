@@ -135,6 +135,7 @@ export class NetClient {
   private netOf = new Map<Entity, number>();
   /** Static replication channel (building pieces etc.). */
   readonly statics: StaticClient;
+  private interpVals: Record<string, number> = {};
   private corrections = new Map<Entity, number[]>(); // visual offset per predicted entity (interp comp fields)
   private staticInbox: Uint8Array[] = [];
   private rawHandlers = new Map<number, (r: BitReader) => void>();
@@ -508,7 +509,7 @@ export class NetClient {
     for (const netId of this.interp.ids()) {
       const e = this.entities.get(netId); if (e === undefined || !w.isAlive(e) || !w.has(e, this.interpStore.def)) continue;
       const v = this.interp.sample(netId, t); if (!v) continue;
-      const vals: Record<string, number> = {}; this.interpStore.fields.forEach((f, i) => { vals[f] = v[i]!; });
+      const vals = this.interpVals, fs = this.interpStore.fields; for (let i = 0; i < fs.length; i++) vals[fs[i]!] = v[i]!; // ADR-208: reused scratch (no per-entity alloc)
       w.set(e, this.interpStore.def, vals);
     }
   }
@@ -527,6 +528,13 @@ export class NetClient {
    * {x, y, z, facing}). Render at sim value + offset: a reconciliation snap becomes a ~correctionSmoothingSec decay.
    * Sim state is never modified. Returns undefined when there is no pending correction.
    */
+  /** ADR-208: allocation-free x/y/z view of correctionOffset for the per-frame render path. False = no correction. */
+  correctionInto(e: Entity, out: { x: number; y: number; z: number }): boolean {
+    const off = this.corrections.get(e); if (!off) return false; const f = this.interpStore.fields;
+    const ix = f.indexOf("x"), iy = f.indexOf("y"), iz = f.indexOf("z");
+    out.x = ix >= 0 ? off[ix]! : 0; out.y = iy >= 0 ? off[iy]! : 0; out.z = iz >= 0 ? off[iz]! : 0; return true;
+  }
+
   correctionOffset(e: Entity): Record<string, number> | undefined {
     const off = this.corrections.get(e); if (!off) return undefined;
     const r: Record<string, number> = {}; this.interpStore.fields.forEach((f, i) => { r[f] = off[i]!; }); return r;

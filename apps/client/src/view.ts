@@ -14,6 +14,7 @@ import { showRenderError, glInfo, BlackFrameCheck } from "./glcheck.js";
  * from the gameplay components (Survival = character, Zombie, ResourceNode, CraftingStation, BuildPiece) using the
  * gameplay defs' sprite keys. Terrain is the net TileClient's TileMap, drawn directly.
  */
+import { CorrectionSampler, type CorrectionSource } from "./correction-sampler.js";
 import { World, Transform, PrevTransform, TimeOfDay, Weather, Appearance, PlayerId, defineComponent, slotIndex, type WearableSlot, entityIndex, type Entity } from "@engine/core";
 import { CHUNK_SIZE, tileToChunk, tileToLocal, renderTileHeight, type TileMap } from "@engine/world";
 import { setDayFraction, resolveOffHandSprite } from "@engine/render";
@@ -297,7 +298,8 @@ export class IsoView {
     for (const e of net.query([Transform])) {
       if (e === net.environment) continue;
       const gr = net.has(e, GPiece) ? groundPiece : ground;
-      const cur = readXform(net, e, Transform, this.sCur)!; const prev = readXform(net, e, PrevTransform, this.sPrev) ?? cur; // ADR-157: scratch, no per-entity allocation
+      const cur = readXform(net, e, Transform, this.sCur)!; let prev = readXform(net, e, PrevTransform, this.sPrev) ?? cur; // ADR-157: scratch, no per-entity allocation
+      if (this.corrections && net.predicted.has(e)) prev = this.corrSampler.apply(this.corrections, e, net.tick, cur, prev, this.sPrev);
       let ve = this.map.get(e);
       if (ve === undefined) {
         const spec = this.classify(net, e, defs, e === player);
@@ -383,14 +385,14 @@ export class IsoView {
       if (v.has(ve, VPiece)) this.syncPieceState(net, e, ve, defs);
       if (v.has(ve, VFuel)) { const f = net.get(e, Fuel); if (f) { v.set(ve, VFuel, { lit: f.lit, burnUntilTick: f.burnUntilTick }); if (v.has(ve, Sprite)) { const sp = v.get(ve, Sprite)!; const fid = this.fireFrame(sp.spriteId, f.lit !== 0); if (sp.frameId !== fid) v.set(ve, Sprite, { frameId: fid }); } } }
     }
-    for (const [ne, ve] of this.map) if (!seen.has(ne)) { if (ve === this.focusVe) { r.setFocusEntity(-1); this.focusVe = -1; } v.destroy(ve); this.map.delete(ne); this.characters.delete(ve); this.lightOf.delete(ne); this.pieceStates.delete(ve); this.lastMove.delete(ne); this.nodeAmt.delete(ne); this.nodeHit.delete(ne); this.animalHp.delete(ne); this.animalPrev.delete(ne); this.scales.delete(ve); this.hitSeen.delete(ne); this.hitPoseOf.delete(ve); this.gearOf.delete(ve); }
+    for (const [ne, ve] of this.map) if (!seen.has(ne)) { if (ve === this.focusVe) { r.setFocusEntity(-1); this.focusVe = -1; } v.destroy(ve); this.map.delete(ne); this.corrSampler.forget(ne); this.characters.delete(ve); this.lightOf.delete(ne); this.pieceStates.delete(ve); this.lastMove.delete(ne); this.nodeAmt.delete(ne); this.nodeHit.delete(ne); this.animalHp.delete(ne); this.animalPrev.delete(ne); this.scales.delete(ve); this.hitSeen.delete(ne); this.hitPoseOf.delete(ve); this.gearOf.delete(ve); }
 
     this.syncClutter(tiles, ground);
     this.syncVehicles(net, player, ground, frac);
     const camE = CAM_ANIMAL && this.camAnimal !== undefined ? this.camAnimal : player;
     const pv = camE !== undefined ? this.map.get(camE) : undefined;
     let want: { x: number; y: number; z: number } | undefined;
-    if (pv !== undefined) { const t = v.get(pv, Transform)!, p = v.get(pv, PrevTransform) ?? t; want = { x: p.x + (t.x - p.x) * alpha, y: p.y + (t.y - p.y) * alpha, z: p.z + (t.z - p.z) * alpha }; }
+    if (pv !== undefined) { const t = v.get(pv, Transform)!, p = v.get(pv, PrevTransform) ?? t; want = this.sWant; want.x = p.x + (t.x - p.x) * alpha; want.y = p.y + (t.y - p.y) * alpha; want.z = p.z + (t.z - p.z) * alpha; }
     const st = this.status;
     const why = player === undefined ? `no player entity (entities ${this.map.size}, local server ${st?.localServer ?? "?"}, snapshots ${st?.snapshots ?? 0}${st?.error ? `: ${st.error}` : ""})` : "player not mirrored into the view";
     // ADR-155: the target z is lifted onto stepped tile heights, so a step jerked the whole screen for 2-3 frames
@@ -411,6 +413,9 @@ export class IsoView {
   }
   private camZ: number | undefined; private camZAt = 0;
   /** ADR-157 per-frame scratch components (render loop reads without allocating). */
+  /** ADR-208: NetClient (or any provider) whose reconciliation offsets are rendered on predicted entities. */
+  corrections: CorrectionSource | undefined; private corrSampler = new CorrectionSampler();
+  private sWant = { x: 0, y: 0, z: 0 };
   private sCur = { x: 0, y: 0, z: 0, facing: 0 }; private sPrev = { x: 0, y: 0, z: 0, facing: 0 }; private sAnim: Record<string, number> & { anim: number } = { anim: 0 }; private sTemp = { cold: 0, heat: 0, shivering: 0 }; private sHit: Record<string, number> & { startTick: number; dir: number } = { startTick: 0, dir: 0 };
   checks = 0; blackFrames = 0; blackCheck: BlackFrameCheck | undefined;
   /** View entity currently given to setFocusEntity; cleared when destroyed so a recycled id (a remote player) never inherits the focus silhouette. */
