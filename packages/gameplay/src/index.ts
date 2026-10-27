@@ -88,3 +88,4 @@ export * from "./roads.js";
 export * from "./signs.js";
 export * from "./hordes.js";
 export * from "./pets.js"; // ADR-145
+export * from "./inventory_ops.js"; // ADR-204

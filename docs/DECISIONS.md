@@ -1397,3 +1397,14 @@ Accepted 2026-10-26. Context: AI humans stood still.
 - **Stuck detection:** `stuckOn` (the bot has not closed 0.5 tiles in `STUCK_TICKS` 60) bans the node for 1200 ticks and re-plans. explore re-goals, build shifts its spot, return_home gives up, and a node held for 240 ticks is banned.
 - **Cost:** goal sensors refresh every `SENSE_EVERY` (10) ticks per agent. Item, recipe and campfire lookups are indexed once per defs object, and one alloc-free build-piece pass per home is shared for 30 ticks. Goal sensing takes about 0.4 ms per tick with 16 bots (3.2 ms before the caching). The whole local server ran at 25.4 ms per tick with 16 bots versus 20.7 ms before, and most of that difference is the extra gather, craft and build simulation the bots now trigger.
 - **Tests:** `apps/client/test/adr198_ai_human_autonomy.test.ts`: a bot gathers within 600 ticks, crafts a stone axe, and builds a campfire between 15:00 and 21:00. All three fail without this change.
+
+## ADR-204: Split stack and move item to hotbar
+
+Accepted 2026-10-27. Context: the inventory had no way to split a stack or put an item on the hotbar (inventory slots 0..7).
+
+- **Commands** (`packages/gameplay/src/inventory_ops.ts`): `gameplay.splitStack {where,slot,count}` and `gameplay.moveSlot {where,slot,to}`, registered append-only after the pet commands and bridged in `GAMEPLAY_NET_COMMANDS` at 10/s each. `where` 0 is the player's own inventory, 1 is the open `Viewing` container (stalls and tills are refused).
+- **Server-authoritative validation:** slots must be below the holder's slot count and below `CONTAINER_MAX_SLOTS` (96); split count must be 1..n-1; the new stack goes to the first empty slot, else `no_space`; moving to the same slot or from an empty slot is refused. Rejects write nothing.
+- **Move = swap:** an occupied target swaps. Main-hand, weapon-state and worn slot references follow their item, so an equipped item stays equipped.
+- **Persistence:** items, counts, created tick, durability and crafter move together and totals/weight are unchanged, so no schema change. A snapshot round trip is tested.
+- **UI** (`gameplay-panels.ts`): pack slots carry pad X = Split (stacks ≥2) and Y = To hotbar, shown in the pad hint footer (`data-pad-x-label`). Split opens one picker row: − (LT) / "n / total" / + (RT) / Split ×n / Cancel, default half. To hotbar opens one row of 8 hotbar targets (occupied ones show the item and swap). Mouse/touch reach the same through a collapsed "Split / hotbar…" section. Only one arrange row renders at a time, so no buttons overlap. `ui-nav.ts` resolves `data-pad-<btn>` on the focused element before modal-wide `[data-pad]` shortcuts.
+- **Tests:** `packages/gameplay/test/adr204_inventory_ops.test.ts`, `apps/client/test/adr204_pad_split_hotbar.test.ts` (pad-only split and to-hotbar).

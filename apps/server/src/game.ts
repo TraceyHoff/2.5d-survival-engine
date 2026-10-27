@@ -1,6 +1,6 @@
 import { giveSandboxKit, sandboxPetKit, sandboxPetCorner, sandboxSpawn } from "./sandbox.js";
 import { handLootTarget, Viewing, TerrainRes, terrainFromTileMap } from "@engine/gameplay";
-import { installRoadCommands, NodeRegrow, installSignCommands, installPetCommands, PetEvent, setWorldRules, worldRules, type WorldRulesOpts } from "@engine/gameplay";
+import { installInventoryOpCommands, installRoadCommands, NodeRegrow, installSignCommands, installPetCommands, PetEvent, setWorldRules, worldRules, type WorldRulesOpts } from "@engine/gameplay";
 /** Authoritative game server: world + gameplay + streaming chunks + persistence + NetServer sessions. */
 import { ChannelRegistry, CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, type CosmeticCatalogLike, Membership, Owner, PlayerId, TimeOfDay, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
 import { CHUNK_SIZE, ChunkManager, ProceduralGenerator, computeSpawnPoints, chunkKeyOf, type BuildingGrid, type PopulationSpawner } from "@engine/world";
@@ -223,6 +223,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
   installVehicleCommands(world, handlers); // gameplay.vehicle* (enter/exit/hitch/unhitch/station), ADR-096
   installVehicleCraftCommands(world, handlers);
   installRoadCommands(world, handlers); // gameplay.placeRoad / removeRoad (ADR-119)
+  installInventoryOpCommands(world, handlers); // gameplay.splitStack / moveSlot (ADR-204)
   installPetCommands(world, handlers); // gameplay.petOffer / petCommand / petRename / dropItem (ADR-145)
   installSignCommands(world, handlers); // gameplay.placeSign / setSignText / removeSign (ADR-120) // gameplay.vehicleDeploy / vehicleRefuel / vehicleRepair (gameplay DESIGN.md §31)
   // ADR-102: server vehicle speed/teleport sanity (reverts the step) -> anomaly on the driver's session (AntiCheat scores it)

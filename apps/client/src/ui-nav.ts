@@ -146,6 +146,9 @@ export class UINav {
   /** Click the open modal's enabled `[data-pad=name]` control (gamepad X/Y/LB/RB). Returns whether one fired. */
   padShortcut(name: string): boolean {
     const t = this.stack.at(-1)?.el;
+    // ADR-204: contextual first — the focused control's data-pad-<x|y|lb|…>="<data-key>" names the action it stands for
+    const ctx = this.focused?.dataset[`pad${name[0]}${name.slice(1).toLowerCase()}`];
+    if (ctx && t) { const k = t.querySelector<HTMLButtonElement>(`[data-key="${ctx}"]`); if (k && !k.disabled) { k.click(); return true; } }
     const c = t?.querySelector<HTMLButtonElement>(`[data-pad="${name}"]`); if (!c || c.disabled || c.closest("[hidden]")) return false; c.click(); return true;
   }
   /** ADR-200: gamepad text entry — A on any text field opens the shared on-screen keyboard as a nested modal; Save writes the
@@ -161,7 +164,10 @@ export class UINav {
     if (!el || typeof document === "undefined") return;
     if (!document.getElementById("pad-hints-css")) { const st = document.createElement("style"); st.id = "pad-hints-css"; st.textContent = HINT_CSS; document.head.append(st); }
     const parts: string[] = [`<span><b>${PAD_GLYPH["A"]}</b>Select</span>`, `<span><b>${PAD_GLYPH["B"]}</b>Back</span>`];
-    for (const n of PAD_SHORTCUTS) { const c = el.querySelector<HTMLButtonElement>(`[data-pad="${n}"]`); if (!c || c.disabled || c.closest("[hidden]")) continue;
+    const fo = this.focused && el.contains(this.focused) ? this.focused : undefined;
+    for (const n of PAD_SHORTCUTS) { const ck = `pad${n[0]}${n.slice(1).toLowerCase()}`; const cl = fo?.dataset[ck];
+      if (cl && el.querySelector(`[data-key="${cl}"]`)) { parts.push(`<span><b>${PAD_GLYPH[n]}</b>${(fo!.dataset[`${ck}Label`] ?? n).replace(/[<&]/g, "")}</span>`); continue; }
+      const c = el.querySelector<HTMLButtonElement>(`[data-pad="${n}"]`); if (!c || c.disabled || c.closest("[hidden]")) continue;
       const t = (c.dataset["padLabel"] ?? c.getAttribute("aria-label") ?? c.textContent ?? "").replace(/\s+/g, " ").trim().slice(0, 18); parts.push(`<span><b>${PAD_GLYPH[n]}</b>${t.replace(/[<&]/g, "")}</span>`); }
     if (this.o.onPage && !el.querySelector('[data-pad="LB"],[data-pad="RB"]') && el.querySelector("[data-tabs=tab],[role=tablist]")) parts.push(`<span><b>LB/RB</b>Tabs</span>`);
     if (this.o.onPage && el.querySelector("[data-tabs=page]")) parts.push(`<span><b>LT/RT</b>${(el.querySelector<HTMLElement>("[data-tabs=page]")!.dataset["tabsLabel"] ?? "Page").replace(/[<&]/g, "")}</span>`);

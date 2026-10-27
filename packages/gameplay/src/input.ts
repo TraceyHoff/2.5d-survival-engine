@@ -7,6 +7,7 @@
 import { ROAD_COMMANDS } from "./roads.js";
 import { SIGN_COMMANDS } from "./signs.js";
 import { PET_COMMANDS } from "./pets.js";
+import { INVENTORY_OP_COMMANDS, INVENTORY_OP_RATES } from "./inventory_ops.js";
 import { PARTY_COMMANDS } from "./party.js";
 import { CLAN_COMMANDS, ClanDeclineCmd } from "./clan.js";
 import { CommandRegistry, defineActions, defineCommand, defineResource, type Command, type CommandDef, type Entity, type InputFrame, type World } from "@engine/core";
@@ -68,7 +69,7 @@ export const COMMAND_ENTITY_FIELDS: Readonly<Record<string, readonly string[]>> 
 };
 /** Suggested per-command rate limits (per second) for net's limiter; gameplay still enforces cooldowns. */
 export const COMMAND_RATES: Readonly<Record<string, number>> = {
-  ...Object.fromEntries([...GAMEPLAY_COMMANDS, ...ARMS_COMMANDS].map(([d]) => [d.name, d === PlaceCmd ? 8 : 20])), ...ECONOMY_COMMAND_RATES,
+  ...Object.fromEntries([...GAMEPLAY_COMMANDS, ...ARMS_COMMANDS].map(([d]) => [d.name, d === PlaceCmd ? 8 : 20])), ...ECONOMY_COMMAND_RATES, ...INVENTORY_OP_RATES,
 };
 
 export function registerGameplayCommands(reg: CommandRegistry = new CommandRegistry()): CommandRegistry {
@@ -89,6 +90,7 @@ export function registerGameplayCommands(reg: CommandRegistry = new CommandRegis
   for (const d of ROAD_COMMANDS) reg.register(d); // append-only: roads (ADR-119)
   for (const d of SIGN_COMMANDS) reg.register(d); // append-only: signs (ADR-120)
   for (const d of PET_COMMANDS) reg.register(d); // append-only: pets (ADR-145)
+  for (const d of INVENTORY_OP_COMMANDS) reg.register(d); // append-only: split / move slot (ADR-204)
   return reg;
 }
 
