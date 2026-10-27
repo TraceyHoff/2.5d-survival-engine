@@ -16,7 +16,7 @@
  */
 import { setData, setHidden, setStyle, setText } from "./dom-diff.js";
 import { NetId, PlayerId, Transform, type Entity, type World } from "@engine/core";
-import { Animal, Dead, gameplayDefs, GroupSummary, Health, HitReact, IntentAction, listSlots, Pet, PlayerIntent, Progression, XP, xpToNext, ResourceNode, Survival, Zombie } from "@engine/gameplay";
+import { Animal, Dead, gameplayDefs, GroupSummary, Health, HitReact, IntentAction, listSlots, Pet, PlayerIntent, Progression, XP, xpToNext, treesOf, treeShortName, treeXpToNext, ResourceNode, Survival, Zombie } from "@engine/gameplay";
 import { isoToCss, type CameraLike } from "./world-tools.js";
 
 export const NODE_BAR_MS = 3000;
@@ -116,7 +116,7 @@ export class ToastStack {
   /** ADR-135: "+N XP" line (pseudo item XP_ITEM), merged while visible like item pickups. */
   addXp(gain: number, now: number, label = "XP"): void {
     if (gain <= 0) return; const cur = this.toasts.find((t) => t.item === XP_ITEM && t.name === label);
-    if (cur && now - cur.at < XP.popup.mergeMs + TOAST_MS) { cur.count = label === "Level" ? gain : cur.count + gain; cur.at = now; this.toasts = [...this.toasts.filter((t) => t !== cur), cur]; }
+    if (cur && now - cur.at < XP.popup.mergeMs + TOAST_MS) { cur.count = isLevelLabel(label) ? gain : cur.count + gain; cur.at = now; this.toasts = [...this.toasts.filter((t) => t !== cur), cur]; }
     else this.toasts.push({ item: XP_ITEM, count: gain, name: label, icon: "xp", at: now, id: ++this.seq });
     if (this.toasts.length > TOAST_MAX) this.toasts = this.toasts.slice(-TOAST_MAX);
   }
@@ -124,11 +124,23 @@ export class ToastStack {
 }
 export const XP_ITEM = -1;
 /** ADR-135: XP gained between two Progression samples (level-ups count the remainder of each finished level). */
-export function xpGain(prev: { xp: number; level: number } | undefined, cur: { xp: number; level: number }): number {
+export function xpGain(prev: { xp: number; level: number } | undefined, cur: { xp: number; level: number }, next: (level: number) => number = xpToNext): number {
   if (!prev) return 0; if (cur.level === prev.level) return Math.max(0, cur.xp - prev.xp);
-  if (cur.level < prev.level) return 0; let g = xpToNext(prev.level) - prev.xp; for (let l = prev.level + 1; l < cur.level; l++) g += xpToNext(l); return g + cur.xp;
+  if (cur.level < prev.level) return 0; let g = next(prev.level) - prev.xp; for (let l = prev.level + 1; l < cur.level; l++) g += next(l); return g + cur.xp;
 }
-export const toastText = (t: Pick<Toast, "count" | "name">): string => t.name === "Level" ? `Level ${t.count}!` : `+${t.count} ${t.name}`;
+/** "Level" (character) or "<Tree> level" (ADR-209): the count is a level, replaced rather than summed. */
+export const isLevelLabel = (name: string): boolean => name === "Level" || name.endsWith(" level");
+export const toastText = (t: Pick<Toast, "count" | "name">): string => isLevelLabel(t.name) ? `${t.name} ${t.count}!` : `+${t.count} ${t.name}`;
+/** ADR-209: per-tree XP toasts ("+6 Combat XP", "Combat level 3!") from two replicated per-tree samples. */
+export function treeXpToasts(prev: readonly { xp: number; level: number }[] | undefined, cur: readonly { xp: number; level: number }[]): { label: string; count: number }[] {
+  const out: { label: string; count: number }[] = []; if (!prev) return out;
+  cur.forEach((c, i) => {
+    const p = prev[i]; if (!p) return; const g = xpGain(p, c, treeXpToNext); const n = treeShortName(i);
+    if (g >= XP.popup.minShown) out.push({ label: `${n} XP`, count: g });
+    if (c.level > p.level) out.push({ label: `${n} level`, count: c.level });
+  });
+  return out;
+}
 export function inventoryTotals(world: World, e: Entity): Map<number, number> {
   const m = new Map<number, number>(); for (const s of listSlots(world, e)) m.set(s.item, (m.get(s.item) ?? 0) + s.count); return m;
 }
@@ -210,7 +222,7 @@ export function mountGatherFx(root: HTMLElement, d: GatherFxDeps): { destroy(): 
   const box = document.createElement("div"); box.id = "pickup-toasts"; box.setAttribute("aria-live", "polite"); root.append(box);
   const chip = document.createElement("div"); chip.id = "xp-chip"; chip.innerHTML = '<span class="lv"></span><span class="bar"><i></i></span>'; root.append(chip);
   loadArt(ART_URLS.xpChip, (_im, i) => { if (i !== 0) return; chip.style.setProperty("--xp-chip-bg", `image-set(url("${ART_URLS.xpChip[0]}") 1x, url("${ART_URLS.xpChip[1]}") 2x)`); chip.dataset["art"] = "true"; }); // else the CSS pill stays
-  let lastXp: { xp: number; level: number } | undefined;
+  let lastXp: { xp: number; level: number } | undefined; let lastTrees: { xp: number; level: number }[] | undefined;
   const fx = loadArt(ART_URLS.fx), bar = loadArt(ART_URLS.hpbar), cbar = loadArt(ART_URLS.creatureHpbar);
   loadArt(ART_URLS.toast.slice(0, 1), () => { box.style.setProperty("--toast-bg", `url("${ART_URLS.toast[0]}")`); box.dataset["art"] = "true"; }); // else the CSS pill stays
   const hits = new NodeHits(); const creatures = new CreatureBars(); const stack = new ToastStack(); let parts: Particle[] = []; let raf = 0; let last = performance.now(); let player: Entity | undefined; let lastInv = 0;
@@ -223,11 +235,13 @@ export function mountGatherFx(root: HTMLElement, d: GatherFxDeps): { destroy(): 
         const a = Math.random() * Math.PI * 2; const sp = 0.6 + Math.random() * 1.2; const cs = COLORS[b.kind];
         parts.push({ x: b.x, y: b.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 0.45 + Math.random() * 0.35, age: 0, color: cs[i % cs.length]!, size: b.kind === "stone" ? 3 : 4, leaf: b.kind !== "stone" && i % 3 === 2, kind: b.kind });
       }
-      if (p !== player) { player = p; stack.reset(); lastXp = undefined; }
+      if (p !== player) { player = p; stack.reset(); lastXp = undefined; lastTrees = undefined; }
       const pr = p !== undefined ? w.get(p, Progression) : undefined; setHidden(chip, !pr || d.hidden()); setData(chip, "device", d.device?.() ?? "keyboardMouse");
       if (pr) {
-        const cur = { xp: pr.xp, level: pr.level }; const g = xpGain(lastXp, cur);
-        if (g >= XP.popup.minShown) stack.addXp(g, now); if (cur.level > (lastXp?.level ?? cur.level)) stack.addXp(cur.level, now, "Level"); lastXp = cur;
+        const cur = { xp: pr.xp, level: pr.level };
+        // ADR-209: XP toasts name the tree that earned it; the chip stays the character level
+        const trees = treesOf(w, p!); if (trees) { for (const t of treeXpToasts(lastTrees, trees)) stack.addXp(t.count, now, t.label); lastTrees = trees; }
+        if (cur.level > (lastXp?.level ?? cur.level)) stack.addXp(cur.level, now, "Level"); lastXp = cur;
         setText(chip.firstChild as HTMLElement, `Lv ${cur.level}`); setStyle(chip, "--p", `${Math.min(100, (100 * cur.xp) / Math.max(1, xpToNext(cur.level))).toFixed(1)}%`);
       }
       if (p !== undefined && now - lastInv > 100) { lastInv = now; stack.update(inventoryTotals(w, p), now, label); }

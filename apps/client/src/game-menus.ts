@@ -30,7 +30,7 @@ export const GAME_MENUS: readonly MenuDef[] = [
   { id: "party", title: "Party", icon: "👥", hotkeys: ["KeyP"], bar: true, text: "Your party: invite, kick or leave." },
   { id: "clan", title: "Clan", icon: "🛡", hotkeys: ["KeyL"], text: "Clan members, ranks and goals." },
   { id: "trade", title: "Trade stalls", icon: "⚖", hotkeys: ["KeyT"], text: "Browse and run trade stalls." },
-  { id: "skills", title: "Skills", icon: "⭐", hotkeys: ["KeyJ"], bar: true, text: "Spend skill points from leveling up (ADR-113)." },
+  { id: "skills", title: "Skills", icon: "⭐", hotkeys: ["KeyJ"], bar: true, text: "Each skill tree levels from its own activities; spend its points there (ADR-209)." },
   { id: "camper", title: "Camper Station", icon: "🚐", hotkeys: [], text: "Craft, cook, refuel and use storage inside a parked camper." },
   { id: "pet", title: "Pets", icon: "🐾", hotkeys: ["KeyY"], text: "Tame, feed and command your pets (ADR-145)." },
   { id: "chat", title: "Chat", icon: "💬", hotkeys: ["Enter", "Slash"], bar: true, text: "" },

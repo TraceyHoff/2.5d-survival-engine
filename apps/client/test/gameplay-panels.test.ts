@@ -199,15 +199,16 @@ describe("camper station panel (assets/ui/screens/camper_station.md)", () => {
 });
 
 describe("ADR-132 skill category tabs", () => {
-  test("tabs show one tree at a time; ◀ ▶ and PgDn switch; points shown globally", () => {
-    const { w, me, sent, menus } = setup(); w.set(me, G.Progression, { points: 3 }); menus.open("skills");
+  test("tabs show one tree at a time; ◀ ▶ and PgDn switch; each tab shows its own level + points (ADR-209)", () => {
+    const { w, me, sent, menus } = setup(); G.migrateProgression(w, me); G.grantTreePoints(w, me, "perks", 3); menus.open("skills");
     const tabs = Array.from(document.querySelectorAll<HTMLElement>("[data-role=skill-tabs] [role=tab]")); expect(tabs.length).toBe(G.SKILLS.categories.length);
     // ADR-132 art: every tab carries its own skill_tab_<category> icon, and the stylesheet has art for it.
     const css = readFileSync("apps/client/src/gameplay-panels.css", "utf8");
     for (const t of tabs) { const k = t.dataset["category"]!; expect(t.dataset["icon"]).toBe(`skill_tab_${k}`); expect(css).toContain(`[data-icon="skill_tab_${k}"]`); }
     expect(q("[data-key=skill-tab-homestead]").dataset["icon"]).toBe("skill_tab_homestead");
     expect(G.SKILLS.branches.find((b) => b.key === "perks")!.icon).toBe("skill_branch_perks");
-    expect(q("[data-role=skill-summary]").textContent).toContain("3 skill points");
+    expect(q("[data-role=skill-summary]").textContent).toContain("3 points to spend here"); expect(q("[data-key=skill-tab-perks]").textContent).toContain("Lv 1 · 3 pts");
+    expect(q("[data-key=skill-tab-combat]").textContent).not.toContain("pts"); expect(q("[data-role=skill-xpbar]").getAttribute("aria-valuemax")).toBe(String(G.treeXpToNext(1)));
     const cat0 = q("[data-role=skill-tree]").dataset["category"]!;
     for (const b of Array.from(document.querySelectorAll<HTMLElement>("[data-role=skill-node]"))) expect(b.dataset["category"]).toBe(cat0);
     q("[data-key=skill-tab-next]").click(); expect(q("[data-role=skill-tree]").dataset["category"]).toBe(G.SKILLS.categories[1]!.key);

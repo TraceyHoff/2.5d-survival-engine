@@ -21,6 +21,7 @@ import { iconForItem,
   progressionView, unlockSkillIntent, respecSkillsIntent, SKILL_REJECT_TEXT, useIntent, drinkWaterIntent, nearWater,
   SKILLS, equipIntent, wearIntent, equipmentView,
   petView, petsOf, petOfferIntent, petCommandIntent, dropItemIntent, splitStackIntent, moveSlotIntent, containerToSlotIntent, defaultSplit, HOTBAR_SIZE, PET_HELP, petName, petSpecies, Pet,
+  treeShortName, treeIndex,
 } from "@engine/gameplay";
 import { colorChoices, requestCharacterEdit } from "./character-creator.js";
 import { GroupRole, PlayerId, SLOT_PALETTE, Transform, type Entity, type WearableSlot } from "@engine/core";
@@ -370,18 +371,23 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
     case "skills": {
       const v = progressionView(c.world, c.player); if (!v) return [kit.para("No skills for this character.")];
       const out: Node[] = [];
-      const head = kit.para(`Level ${v.level} · XP ${v.xp}/${v.next} · ${v.points} skill point${v.points === 1 ? "" : "s"} (shared by all trees)`); head.dataset["role"] = "skill-summary"; out.push(head);
+      // ADR-209: each tree has its own level / XP / points; the summary + bar below show the selected tab's tree
+      const cats = v.categories; const ci = Math.max(0, cats.findIndex((c) => c.key === skillUi.cat)); const cat = cats[ci]!; skillUi.cat = cat.key;
+      const head = kit.para(`${cat.name} · Level ${cat.level} · ${cat.maxed ? "max level" : `XP ${cat.xp}/${cat.next}`} · ${cat.points} point${cat.points === 1 ? "" : "s"} to spend here`);
+      head.dataset["role"] = "skill-summary"; head.dataset["category"] = cat.key; out.push(head);
+      const bar = el("div", { "data-role": "skill-xpbar", role: "progressbar", "aria-label": `${cat.name} XP`, "aria-valuemin": "0", "aria-valuemax": String(cat.next), "aria-valuenow": String(cat.xp) });
+      const pct = cat.maxed ? 100 : Math.min(100, (100 * cat.xp) / Math.max(1, cat.next)); const fill = el("div"); fill.setAttribute("style", `height:100%;width:${pct.toFixed(1)}%;background:#5A9A4A;border-radius:6px`);
+      bar.setAttribute("style", "height:10px;margin:2px 0 6px;border:2px solid #74432C;border-radius:8px;background:#EAD9B8;overflow:hidden"); bar.append(fill); out.push(bar);
       const tools = grid();
       tools.append(btn("Zoom −", "skill-zoom-out", () => { zoomSkills(-SKILL_ZOOM.step); kit.rerender(); }, { alt: true }), btn("Zoom +", "skill-zoom-in", () => { zoomSkills(SKILL_ZOOM.step); kit.rerender(); }, { alt: true }));
       tools.append(btn(`Respec (${v.respecCost} coin)`, "skill-respec", () => send(respecSkillsIntent(), "Skills reset."), { alt: true, disabled: v.canRespec !== undefined, title: v.canRespec ? SKILL_REJECT_TEXT[v.canRespec] : "Refund all skill points" }));
       tools.append(btn("Back", "skill-back", () => kit.close(), { alt: true }));
       out.push(tools);
-      // ADR-132 category tabs: one tree per tab, shared point pool shown above. Buttons = touch / keyboard (Tab/Enter) / gamepad (focus+A).
-      const cats = v.categories; const ci = Math.max(0, cats.findIndex((c) => c.key === skillUi.cat)); const cat = cats[ci]!; skillUi.cat = cat.key;
+      // ADR-132/206 category tabs: one tree per tab with its own level + unspent points. Buttons = touch / keyboard (Tab/Enter) / gamepad (focus+A).
       const go = (d: number): void => { pageSkillCategory(d); kit.rerender(); };
       const tabs = el("div", { class: "gm-grid", "data-role": "skill-tabs", role: "tablist" });
       tabs.append(btn("◀", "skill-tab-prev", () => go(-1), { alt: true, title: "Previous tree (PgUp / LB)" }));
-      for (const c of cats) { const t = btn(`${c.name} ${c.owned}/${c.nodes.length}${c.available ? ` · ${c.available}✦` : ""}`, `skill-tab-${c.key}`, () => { selectSkillCategory(c.key); kit.rerender(); }, { alt: c.key !== cat.key, pressed: c.key === cat.key, data: { icon: c.icon, category: c.key } }); t.setAttribute("role", "tab"); t.setAttribute("aria-selected", String(c.key === cat.key)); t.style.minHeight = "44px"; tabs.append(t); }
+      for (const c of cats) { const t = btn(`${treeShortName(treeIndex(c.key))} · Lv ${c.level}${c.points ? ` · ${c.points} pt${c.points === 1 ? "" : "s"}` : ""}`, `skill-tab-${c.key}`, () => { selectSkillCategory(c.key); kit.rerender(); }, { alt: c.key !== cat.key, pressed: c.key === cat.key, title: `${c.name}: ${c.owned}/${c.nodes.length} learned`, data: { icon: c.icon, category: c.key, level: String(c.level), points: String(c.points) } }); t.setAttribute("role", "tab"); t.setAttribute("aria-selected", String(c.key === cat.key)); t.style.minHeight = "44px"; tabs.append(t); }
       tabs.append(btn("▶", "skill-tab-next", () => go(1), { alt: true, title: "Next tree (PgDn / RB)" }));
       tabs.setAttribute("style", "display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;-webkit-overflow-scrolling:touch;touch-action:pan-x");
       for (const t of Array.from(tabs.children) as HTMLElement[]) t.style.flex = "0 0 auto";
@@ -410,7 +416,7 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       out.push(vp);
       const sel = v.nodes[skillUi.sel];
       if (sel) { const d = kit.para(`${sel.name}: ${sel.desc} — cost ${sel.cost}. ${sel.state === "owned" ? "Learned." : sel.why ? SKILL_REJECT_TEXT[sel.why] : "Tap / press again to learn."}`); d.dataset["role"] = "skill-detail"; out.push(d); }
-      out.push(kit.para("Pick a tree tab (◀ ▶, PgUp/PgDn or LB/RB) · scroll or drag to pan · Ctrl+wheel or Zoom ± to zoom · select a skill, then select again to learn. Points are shared across all trees."));
+      out.push(kit.para("Pick a tree tab (◀ ▶, PgUp/PgDn or LB/RB) · scroll or drag to pan · Ctrl+wheel or Zoom ± to zoom · select a skill, then select again to learn. Each tree levels from its own activities and its points only buy skills in that tree."));
       return out;
     }
     case "party": {

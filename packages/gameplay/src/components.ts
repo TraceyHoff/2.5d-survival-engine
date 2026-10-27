@@ -255,7 +255,7 @@ export const VEHICLE_ENGINE_ON = 1, VEHICLE_HEADLIGHTS = 2;
 export const Crop = defineComponent("Crop", { kind: "u8", stage: "u8", growth: "f32", waterUntilTick: "u32", fertilized: "u8" }, { networked: true, persistent: true });
 /** ADR-113 skill progression (skills/progression.ts): xp toward next level, unspent points, respec count, nodes = bitset of
  * skills.json node indices (append-only order). Networked (own tree UI / toast) + persistent (saves, rejoin). */
-export const Progression = defineComponent("Progression", { xp: "u32", level: "u16", points: "u16", respecs: "u8", nodes: { type: "u32", length: 8 } }, { networked: true, persistent: true });
+export const Progression = defineComponent("Progression", { xp: "u32", level: "u16", points: "u16", respecs: "u8", nodes: { type: "u32", length: 8 }, /* ADR-209 per-tree (index = skills.json categories) */ tver: "u8", txp: { type: "u32", length: 8 }, tlevel: { type: "u16", length: 8 }, tpoints: { type: "u16", length: 8 } }, { networked: true, persistent: true });
 /** ADR-113 domesticated animal (skills/husbandry.ts). owner = tamer PlayerId (0 = none); fedUntil / produceAt / breedAt are ticks. */
 export const Tamed = defineComponent("Tamed", { kind: "u8", owner: "u32", fedUntil: "u32", produceAt: "u32", breedAt: "u32" }, { networked: true, persistent: true });
 

@@ -32,7 +32,9 @@ export const APPEARANCE_HANDS_MIGRATIONS: readonly AddedFields[] = [
   { component: "Appearance", fields: [], grown: A8 },
   { component: "Appearance", fields: ["version"], grown: A8 },
 ];
-export const DEFAULT_MIGRATIONS: readonly AddedFields[] = [...CRAFTER_ID_MIGRATIONS, APPEARANCE_VERSION_MIGRATION, ...CONTAINER_96_MIGRATIONS, ...APPEARANCE_HANDS_MIGRATIONS];
+/** ADR-209: Progression gained per-tree xp / level / points (tver 0 = legacy global pool; gameplay converts it on load). */
+export const PROGRESSION_TREES_MIGRATION: AddedFields = { component: "Progression", fields: ["tver", "txp", "tlevel", "tpoints"] };
+export const DEFAULT_MIGRATIONS: readonly AddedFields[] = [...CRAFTER_ID_MIGRATIONS, APPEARANCE_VERSION_MIGRATION, ...CONTAINER_96_MIGRATIONS, ...APPEARANCE_HANDS_MIGRATIONS, PROGRESSION_TREES_MIGRATION];
 
 const BYTES: Record<FieldType, number> = { f32: 4, f64: 8, i8: 1, u8: 1, i16: 2, u16: 2, i32: 4, u32: 4 };
 export const oldSchemaOf = (s: Schema, added: readonly string[], grown: Readonly<Record<string, number>> = {}): Schema =>

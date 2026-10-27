@@ -1,5 +1,7 @@
 {
  "$comment": "ADR-135: the single XP tunables table (server-authoritative; levels/points live in skills.json levels). sources = XP per unit of a small activity. kills = base XP by victim type x kindMul[key] x (1 + perLevel*(victimLevel-1)), capped by maxLevelMul. pvp = diminishing returns for killing the same victim. travel = tiles moved per award.",
+  "trees": {"gather": "survival", "chop": "survival", "mine": "survival", "dig": "survival", "walk": "survival", "farm": "homestead", "till": "homestead", "plant": "homestead", "water": "homestead", "fertilize": "homestead", "husbandry": "homestead", "tame": "homestead", "cook": "homestead", "heal": "medicine", "craft": "crafting", "build": "crafting", "road": "crafting", "combat": "combat", "kill": "combat", "hunt": "combat", "vehicle": "vehicles", "repair": "vehicles", "eat": "perks", "drink": "perks", "sign": "perks"},
+ "perksShare": 0.2,
  "sources": {
   "gather": 2,
   "chop": 2,

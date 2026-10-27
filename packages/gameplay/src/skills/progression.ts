@@ -12,10 +12,12 @@ import { ToolKind } from "../defs.js";
 import { countItem, removeItem } from "../inventory.js";
 import { setSkillLevelProvider } from "../systems/crafting.js";
 import { VehicleRepaired } from "../vehicle_craft.js";
-import { nodeWords, ownedNodes, pointsForLevel, SKILL_NODE_CATEGORY, SKILL_NODE_WORDS, SKILL_REQS, SKILLS, skillLevelOf, skillMod, skillNode, wordsHas, xpToNext, type XpSource } from "./tree.js";
+import { nodeWords, ownedNodes, SKILL_NODE_TREE, TREE_KEYS, TREE_SLOTS, treeIndex, treePointsAtLevel, treePointsForLevel, treeProgress, treeXpToNext, type TreeProgress, SKILL_NODE_CATEGORY, SKILL_NODE_WORDS, SKILL_REQS, SKILLS, skillLevelOf, skillMod, skillNode, wordsHas, xpToNext, type XpSource } from "./tree.js";
 
 /** ADR-135: every award (after mods), for host-side popups/logs. The client derives its popup from Progression deltas. */
-export const XpGained = ev<{ entity: Entity; source: string; amount: number }>("gameplay.XpGained");
+export const XpGained = ev<{ entity: Entity; source: string; amount: number; tree: string }>("gameplay.XpGained");
+/** ADR-209: a skill tree levelled (points = that tree's unspent points after the level-up). */
+export const TreeLevelUp = ev<{ entity: Entity; tree: string; level: number; points: number }>("gameplay.TreeLevelUp");
 export const LevelUp = ev<{ entity: Entity; level: number; points: number }>("gameplay.LevelUp");
 export const SkillUnlocked = ev<{ entity: Entity; node: number }>("gameplay.SkillUnlocked");
 export const SkillsRespecced = ev<{ entity: Entity; refunded: number; cost: number }>("gameplay.SkillsRespecced");
@@ -25,7 +27,69 @@ export const RespecSkillsCmd = defineCommand("gameplay.respecSkills", {});
 export const SKILL_COMMANDS = [UnlockSkillCmd, RespecSkillsCmd] as const;
 
 const blank = { xp: 0, level: 1, points: 0, respecs: 0 };
-export function ensureProgression(world: World, e: Entity): void { if (!world.has(e, Progression)) world.add(e, Progression, blank); }
+export function ensureProgression(world: World, e: Entity): void { if (!world.has(e, Progression)) world.add(e, Progression, blank); migrateProgression(world, e); }
+
+// ---- ADR-209 per-tree XP / level / points + legacy (global pool) conversion ---------------------------------
+/** XP tree of a data/xp.json source (unknown sources -> survival). */
+export const treeOfSource = (source: string): number => { const i = treeIndex((XP.trees as Record<string, string>)[source] ?? "survival"); return i < 0 ? 0 : i; };
+/**
+ * Pure conversion of a pre-ADR-209 row (one global level/points pool) into per-tree progress:
+ *  1. every learned node stays learned and is charged to its own tree; that tree gets the lowest level whose earned
+ *     points cover what was spent there (rounding surplus stays in the tree as unspent points; xp 0);
+ *  2. leftover global unspent points are split evenly over all trees; the remainder goes one each to the trees with
+ *     the least spent (ties -> lower tree index). The global xp/level stays as the character level (kill / PvP scaling).
+ */
+export function convertLegacyProgression(points: number, words: readonly number[]): TreeProgress[] {
+  const spent = TREE_KEYS.map(() => 0);
+  for (let i = 0; i < SKILLS.nodes.length; i++) if (wordsHas(words, i)) spent[SKILL_NODE_TREE[i]!]! += SKILLS.nodes[i]!.cost;
+  const out = spent.map((s): TreeProgress => {
+    let level = 1; while (level < SKILLS.treeLevels.maxLevel && treePointsAtLevel(level) < s) level++;
+    return { xp: 0, level, points: Math.max(0, treePointsAtLevel(level) - s) };
+  });
+  const n = out.length; const each = Math.floor(points / n); let rem = points - each * n;
+  for (const t of out) t.points += each;
+  for (const i of out.map((_, i) => i).sort((a, b) => spent[a]! - spent[b]! || a - b)) { if (rem <= 0) break; out[i]!.points++; rem--; }
+  for (const t of out) t.points = Math.min(0xffff, t.points);
+  return out;
+}
+function writeTrees(world: World, e: Entity, t: readonly TreeProgress[]): void {
+  for (let i = 0; i < TREE_SLOTS; i++) {
+    world.setElement(e, Progression, "txp", i, t[i]?.xp ?? 0); world.setElement(e, Progression, "tlevel", i, t[i]?.level ?? 1); world.setElement(e, Progression, "tpoints", i, t[i]?.points ?? 0);
+  }
+}
+/** Authority: converts an unmigrated row (tver 0: legacy save or fresh spawn) in place. Idempotent. */
+export function migrateProgression(world: World, e: Entity): boolean {
+  if (!isAuthority(world) || world.isReplaying || !world.has(e, Progression) || (world.getField(e, Progression, "tver") ?? 0) >= 1) return false;
+  writeTrees(world, e, convertLegacyProgression(world.getField(e, Progression, "points") ?? 0, nodeWords(world, e)!));
+  world.set(e, Progression, { points: 0, tver: 1 }); return true;
+}
+/** Per-tree progress as the authority will see it (unmigrated rows are converted on the fly, read-only). */
+export function treesOf(world: World, e: Entity): TreeProgress[] | undefined {
+  if (!world.has(e, Progression)) return undefined;
+  if ((world.getField(e, Progression, "tver") ?? 0) < 1) return convertLegacyProgression(world.getField(e, Progression, "points") ?? 0, nodeWords(world, e)!);
+  return treeProgress(world, e);
+}
+/** Unspent points of tree `tree` (index or key). */
+export function treePoints(world: World, e: Entity, tree: number | string): number { const i = typeof tree === "string" ? treeIndex(tree) : tree; return treesOf(world, e)?.[i]?.points ?? 0; }
+/** Authority/test/QA: add unspent points to one tree. */
+export function grantTreePoints(world: World, e: Entity, tree: number | string, n: number): void {
+  const i = typeof tree === "string" ? treeIndex(tree) : tree; if (i < 0 || !world.has(e, Progression)) return; migrateProgression(world, e);
+  world.setElement(e, Progression, "tpoints", i, Math.max(0, Math.min(0xffff, treePoints(world, e, i) + n)));
+}
+function addTreeXp(world: World, e: Entity, ti: number, amount: number): void {
+  if (amount <= 0) return; migrateProgression(world, e); const t = treesOf(world, e)![ti]!; let { xp, level, points } = t; xp += amount; let up = false;
+  const max = SKILLS.treeLevels.maxLevel;
+  while (level < max && xp >= treeXpToNext(level)) { xp -= treeXpToNext(level); level++; points += treePointsForLevel(level); up = true; }
+  if (level >= max) xp = Math.min(xp, treeXpToNext(level));
+  world.setElement(e, Progression, "txp", ti, xp); world.setElement(e, Progression, "tlevel", ti, level); world.setElement(e, Progression, "tpoints", ti, Math.min(0xffff, points));
+  if (up) emit(world, TreeLevelUp, { entity: e, tree: TREE_KEYS[ti]!, level, points });
+}
+const PERKS_TREE = treeIndex("perks");
+/** One award into tree `ti` (+ the perks tree's general share of every other activity) and the character level. */
+function credit(world: World, e: Entity, ti: number, amount: number): void {
+  addXp(world, e, amount); addTreeXp(world, e, ti, amount);
+  if (PERKS_TREE >= 0 && ti !== PERKS_TREE) addTreeXp(world, e, PERKS_TREE, Math.round(amount * (XP.perksShare ?? 0)));
+}
 
 /** Award XP (scaled by the source table x skill "xp" mod); levels up and grants points. Shares to nearby party/clan. */
 export function awardXp(world: World, e: Entity, source: XpSource, units = 1, share = true): number {
@@ -37,17 +101,18 @@ export function awardXpRaw(world: World, e: Entity, source: string, base: number
   if (!isAuthority(world) || world.isReplaying || !world.has(e, Progression)) return 0;
   const amount = Math.round(base * (1 + skillMod(world, e, "xp")));
   if (amount <= 0) return 0;
-  addXp(world, e, amount); emit(world, XpGained, { entity: e, source, amount });
+  const ti = treeOfSource(source); credit(world, e, ti, amount); emit(world, XpGained, { entity: e, source, amount, tree: TREE_KEYS[ti]! });
   const sh = share ? skillMod(world, e, "share") : 0;
-  if (sh > 0) { const mates = matesNear(world, e, 20); const each = Math.round(amount * sh); if (each > 0) for (const m of mates) addXp(world, m, each); }
+  if (sh > 0) { const mates = matesNear(world, e, 20); const each = Math.round(amount * sh); if (each > 0) for (const m of mates) credit(world, m, ti, each); }
   return amount;
 }
 function addXp(world: World, e: Entity, amount: number): void {
-  const p = world.get(e, Progression)!; let { xp, level, points } = p; xp += amount; let up = false;
-  while (level < SKILLS.levels.maxLevel && xp >= xpToNext(level)) { xp -= xpToNext(level); level++; points += pointsForLevel(level); up = true; }
+  // ADR-209: the global row is now only the character level (kill / PvP / horde scaling); skill points are per tree
+  const p = world.get(e, Progression)!; let { xp, level } = p; xp += amount; let up = false;
+  while (level < SKILLS.levels.maxLevel && xp >= xpToNext(level)) { xp -= xpToNext(level); level++; up = true; }
   if (level >= SKILLS.levels.maxLevel) xp = Math.min(xp, xpToNext(level));
-  world.set(e, Progression, { xp, level, points });
-  if (up) emit(world, LevelUp, { entity: e, level, points });
+  world.set(e, Progression, { xp, level });
+  if (up) emit(world, LevelUp, { entity: e, level, points: treesOf(world, e)!.reduce((s, t) => s + t.points, 0) });
 }
 function matesNear(world: World, e: Entity, r: number): Entity[] {
   const m = world.get(e, Membership); const t = world.get(e, Transform); if (!m || !t || (!m.partyId && !m.clanId)) return [];
@@ -66,13 +131,13 @@ export function canUnlock(world: World, e: Entity, node: number): SkillReject | 
   const n = skillNode(node); if (!n) return "bad_node"; if (n.retired) return "retired";
   if (wordsHas(w, node)) return "owned";
   if (!SKILL_REQS[node]!.every((r) => wordsHas(w, r))) return "requires";
-  if ((world.getField(e, Progression, "points") ?? 0) < n.cost) return "points";
+  if (treePoints(world, e, SKILL_NODE_TREE[node]!) < n.cost) return "points"; // ADR-209: only this tree's points
   return undefined;
 }
 export function unlockSkill(world: World, e: Entity, node: number): SkillReject | undefined {
-  const why = canUnlock(world, e, node); if (why) return why;
+  const why = canUnlock(world, e, node); if (why) return why; migrateProgression(world, e);
+  const ti = SKILL_NODE_TREE[node]!; world.setElement(e, Progression, "tpoints", ti, treePoints(world, e, ti) - skillNode(node)!.cost);
   const a = world.getArray(e, Progression, "nodes")!; world.setElement(e, Progression, "nodes", node >>> 5, (a[node >>> 5]! | (1 << (node & 31))) >>> 0);
-  world.set(e, Progression, { points: world.getField(e, Progression, "points")! - skillNode(node)!.cost });
   emit(world, SkillUnlocked, { entity: e, node }); return undefined;
 }
 export const respecCost = (world: World, e: Entity): number => SKILLS.respec.base + SKILLS.respec.perRespec * (world.getField(e, Progression, "respecs") ?? 0);
@@ -84,9 +149,11 @@ export function canRespec(world: World, e: Entity): SkillReject | undefined {
 export function respecSkills(world: World, e: Entity): SkillReject | undefined {
   const why = canRespec(world, e); if (why) return why;
   const cost = respecCost(world, e); removeItem(world, e, gameplayDefs(world).itemId(SKILLS.respec.item), cost);
-  const spent = ownedNodes(world, e).reduce((s, i) => s + skillNode(i)!.cost, 0); const refunded = Math.floor(spent * SKILLS.respec.refundFraction);
+  migrateProgression(world, e); // ADR-209: each tree's spent points go back to that tree
+  const spent = TREE_KEYS.map(() => 0); for (const i of ownedNodes(world, e)) spent[SKILL_NODE_TREE[i]!]! += skillNode(i)!.cost;
+  let refunded = 0; spent.forEach((s, ti) => { const r = Math.floor(s * SKILLS.respec.refundFraction); refunded += r; if (r) world.setElement(e, Progression, "tpoints", ti, Math.min(0xffff, treePoints(world, e, ti) + r)); });
   for (let i = 0; i < SKILL_NODE_WORDS; i++) world.setElement(e, Progression, "nodes", i, 0);
-  const p = world.get(e, Progression)!; world.set(e, Progression, { points: p.points + refunded, respecs: Math.min(255, p.respecs + 1) });
+  const p = world.get(e, Progression)!; world.set(e, Progression, { respecs: Math.min(255, p.respecs + 1) });
   emit(world, SkillsRespecced, { entity: e, refunded, cost }); return undefined;
 }
 
@@ -153,6 +220,11 @@ export function installProgression(world: World): void {
   world.events.on(XpActivity, (p: { entity: Entity; source: string; units: number }) => { if (isPlayer(world, p.entity)) awardXp(world, p.entity, p.source as XpSource, p.units); });
   world.events.on(VehicleRepaired, (p: { entity: Entity }) => { if (isPlayer(world, p.entity)) awardXp(world, p.entity, "repair"); });
 }
+/** ADR-209: converts unmigrated Progression rows (legacy saves, fresh spawns) on the authority every tick. */
+export function progressionMigrateSystem(world: World): void {
+  if (!isAuthority(world) || world.isReplaying) return;
+  for (const e of world.query([Progression])) if ((world.getField(e, Progression, "tver") ?? 0) < 1) migrateProgression(world, e);
+}
 /** ADR-135 travel XP (every 20 ticks): tiles walked / driven, teleports ignored. */
 export function xpTravelSystem(world: World): void {
   if (!isAuthority(world) || world.isReplaying) return;
@@ -172,16 +244,17 @@ export interface SkillNodeView { index: number; key: string; name: string; branc
 /** ADR-132: one tab per category; node coordinates (cx, cy) are laid out per category tree, branches side by side. */
 /** Lanes are 80 apart in skills.json but nodes draw 150 wide: spread them so siblings never overlap. */
 export const LANE_SPREAD = 2.1;
-export interface SkillCategoryView { key: string; name: string; icon: string; branches: string[]; nodes: number[]; owned: number; available: number; width: number; height: number }
+export interface SkillCategoryView { key: string; name: string; icon: string; branches: string[]; nodes: number[]; owned: number; available: number; width: number; height: number; /** ADR-209 */ level: number; xp: number; next: number; points: number; maxed: boolean }
 export interface ProgressionView { categories: SkillCategoryView[]; level: number; xp: number; next: number; points: number; respecCost: number; canRespec: SkillReject | undefined; branches: { key: string; name: string; icon: string }[]; nodes: SkillNodeView[]; width: number; height: number }
 export function progressionView(world: World, e: Entity): ProgressionView | undefined {
-  const p = world.get(e, Progression); if (!p) return undefined; const w = nodeWords(world, e)!;
+  const p = world.get(e, Progression); if (!p) return undefined; const w = nodeWords(world, e)!; const trees = treesOf(world, e)!;
   const nodes = SKILLS.nodes.map((n, i): SkillNodeView => {
     const why = wordsHas(w, i) ? undefined : canUnlock(world, e, i);
     return { index: i, key: n.key, name: n.name, branch: n.branch, category: SKILL_NODE_CATEGORY[i]!, cx: 0, cy: n.y, tier: n.tier, x: n.x, y: n.y, cost: n.cost, desc: n.desc, icon: n.icon,
       state: wordsHas(w, i) ? "owned" : why === undefined || why === "points" ? "available" : "locked", why, requires: SKILL_REQS[i]! as number[] };
   });
-  const categories = SKILLS.categories.map((c): SkillCategoryView => {
+  const categories = SKILLS.categories.map((c, ci): SkillCategoryView => {
+    const tp = trees[ci]!;
     let cursor = 0; const idx: number[] = [];
     for (const b of c.branches) {
       const bn = nodes.filter((n) => n.branch === b); if (!bn.length) continue; const minX = Math.min(...bn.map((n) => n.x));
@@ -190,13 +263,14 @@ export function progressionView(world: World, e: Entity): ProgressionView | unde
     }
     const cn = idx.map((i) => nodes[i]!);
     return { key: c.key, name: c.name, icon: c.icon, branches: [...c.branches], nodes: idx, owned: cn.filter((n) => n.state === "owned").length,
-      available: cn.filter((n) => n.state === "available" && n.why === undefined).length, width: Math.max(0, cursor - 200) + 240, height: Math.max(0, ...cn.map((n) => n.cy)) + 120 };
+      available: cn.filter((n) => n.state === "available" && n.why === undefined).length, width: Math.max(0, cursor - 200) + 240, height: Math.max(0, ...cn.map((n) => n.cy)) + 120,
+      level: tp.level, xp: tp.xp, next: treeXpToNext(tp.level), points: tp.points, maxed: tp.level >= SKILLS.treeLevels.maxLevel };
   });
-  return { categories, level: p.level, xp: p.xp, next: xpToNext(p.level), points: p.points, respecCost: respecCost(world, e), canRespec: canRespec(world, e),
+  return { categories, level: p.level, xp: p.xp, next: xpToNext(p.level), points: trees.reduce((s, t) => s + t.points, 0), respecCost: respecCost(world, e), canRespec: canRespec(world, e),
     branches: SKILLS.branches.map((b) => ({ ...b })), nodes, width: Math.max(...nodes.map((n) => n.x)) + 240, height: Math.max(...nodes.map((n) => n.y)) + 120 };
 }
 export const SKILL_REJECT_TEXT: Readonly<Record<SkillReject, string>> = {
-  no_progression: "No progression", bad_node: "Unknown skill", owned: "Already learned", requires: "Learn the connected skills first", points: "Not enough skill points",
+  no_progression: "No progression", bad_node: "Unknown skill", owned: "Already learned", requires: "Learn the connected skills first", points: "Not enough points in this tree",
   retired: "Retired skill", cost: "Not enough coin to respec", nothing: "No skills to reset",
 };
 export const unlockSkillIntent = (node: number): { cmd: typeof UnlockSkillCmd; args: { node: number } } => ({ cmd: UnlockSkillCmd, args: { node } });

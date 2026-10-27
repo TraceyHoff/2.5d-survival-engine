@@ -4,7 +4,7 @@
  * a tappable button on touch. Pure decisions live in @engine/gameplay farmPrompt; this is DOM only.
  * Hooks: `#farm-prompt` (`data-action`, `data-fail`), `#farm-toast`.
  */
-import { FARM_FAIL_TEXT, FarmFail, farmPrompt, husbandryPrompt, Progression, TameFail, type FarmPrompt } from "@engine/gameplay";
+import { FARM_FAIL_TEXT, FarmFail, farmPrompt, husbandryPrompt, TameFail, treesOf, treeShortName, type FarmPrompt } from "@engine/gameplay";
 import type { Entity, World } from "@engine/core";
 
 /** "key.KeyX" -> "X", "pad.b" -> "B", "mouse.left" -> "LMB". */
@@ -46,11 +46,11 @@ export function mountFarmPrompt(root: HTMLElement, d: FarmPromptDeps): { destroy
       return h ? { action: h.action as FarmPrompt["action"], slot: h.slot, fail: h.fail === TameFail.None ? FarmFail.None : FarmFail.NothingToTend, label: h.label } : undefined;
     } catch { return undefined; }
   };
-  let lastLevel = -1; // ADR-113 level-up toast (Progression replicates; polled with the prompt)
+  let lastLevels: number[] | undefined; // ADR-113/206 per-tree level-up toast (Progression replicates; polled with the prompt)
   const levelCheck = (): void => {
-    const p = d.player(); const pr = p === undefined ? undefined : d.world().get(p, Progression); if (!pr) return;
-    if (lastLevel >= 0 && pr.level > lastLevel) { toastEl.dataset["kind"] = "levelup"; toast(`Level ${pr.level}! ${pr.points} skill point${pr.points === 1 ? "" : "s"} — open Skills (J)`); }
-    lastLevel = pr.level;
+    const p = d.player(); const tr = p === undefined ? undefined : treesOf(d.world(), p); if (!tr) { lastLevels = undefined; return; }
+    if (lastLevels) for (let i = 0; i < tr.length; i++) { const t = tr[i]!; if (t.level > (lastLevels[i] ?? t.level)) { toastEl.dataset["kind"] = "levelup"; toast(`${treeShortName(i)} level ${t.level}! ${t.points} ${treeShortName(i)} point${t.points === 1 ? "" : "s"} — open Skills`); } }
+    lastLevels = tr.map((t) => t.level);
   };
   const trigger = (): void => {
     const p = read(); if (!p) return;

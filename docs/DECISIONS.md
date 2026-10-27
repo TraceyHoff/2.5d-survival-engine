@@ -1455,3 +1455,24 @@ Decision:
 - Allocations removed from the per-frame or per-tick path: the camera follow target is a scratch object, and `NetClient.interpolate` reuses one value record instead of allocating one per remote entity per tick.
 
 Consequences: test `adr208_correction_render`. In a simulated 0.5-tile correction while walking, the old path moves backwards up to 0.1 tile per frame; the new path never moves backwards and never moves faster than walk speed. Sandbox (`?dev=sandbox&worker=0`) shows 0 corrections at zero latency, so the change matters on real networks.
+
+## ADR-209: Per-tree skill XP, levels and points
+- **Context:** before this change, all seven skill categories (perks, survival, homestead, medicine, crafting, combat, vehicles) shared one character level and one point pool. Chopping trees could pay for combat skills.
+- **Decision:** each tree now has its own XP, level curve (`skills.json` → `treeLevels`: base 40, ×1.1 per level, 1 point per level plus 1 bonus point every 5 levels, max level 60) and unspent points. These are stored in `Progression.txp/tlevel/tpoints` (8 slots) with `tver`. The fields are networked and persistent, so they replicate the same way as the old row.
+  - `xp.json` → `trees` maps every XP source to a tree; for example chop/gather/mine → survival, kill/hunt → combat, cook/farm → homestead, craft/build → crafting.
+  - Every award also gives 20% (`perksShare`) to Buffs & Perks.
+  - Awards run on the authority only (`awardXpRaw`, skipped while replaying). Party/clan XP sharing goes to the same tree.
+  - `canUnlock`/`unlockSkill` check and spend the node's own tree ("Not enough points in this tree"). Respec refunds each tree what was spent in it. NPC AI picks go through `canUnlock`, so they follow the same rule.
+  - The global `xp/level` row stays as the **character level**, used for kill, PvP and horde scaling and the HUD "Lv" chip. It no longer grants points.
+- **Migration (old saves):** the persist `AddedFields` migration (`PROGRESSION_TREES_MIGRATION`) zero-fills the new fields when an old record loads, so `tver = 0`. Then, on the authority, `migrateProgression` runs once (on spawn/ensure and in the `gameplay.progressionMigrate` postSim system) and applies `convertLegacyProgression`:
+  1. Every learned node stays learned and is charged to its own tree. That tree's level is set to the lowest level whose earned points cover the cost (no refund-and-relearn needed). Any rounding surplus stays in that tree as unspent points, and tree XP starts at 0.
+  2. Leftover global unspent points are split evenly across all 7 trees. The remainder goes one point each to the trees with the least spent; ties go to the lower tree index.
+  3. Legacy `points` is set to 0 and `tver` to 1. The migration is idempotent.
+
+  Clients read through `treesOf`, which shows the same conversion read-only for an unmigrated row, so no false level-up toasts appear.
+- **UI:**
+  - Each Skills tab reads "<Tree> · Lv N · P pts".
+  - The summary line shows the selected tree's level, XP x/next and "N points to spend here", with an XP progress bar (`role=progressbar`).
+  - XP toasts name the tree ("+12 Combat XP", "Combat level 6!"), and the level-up hint says "6 Combat points — open Skills".
+  - Controls are unchanged: LB/RB/PgUp/PgDn switch trees, A selects then A learns, B goes back. Mouse, keyboard and touch use the same buttons.
+- **Tests:** `gameplay/test/skill_trees.test.ts` (routing, perks share, cross-tree rejection, per-tree respec, conversion, in-world migration), `persist/test/progression_trees.test.ts` (old-layout player record → load → convert), `client/test/adr209_skill_trees_pad.test.ts` (pad-only spend: RB → D-pad → A A; empty tree refuses), `client/test/adr209_tree_toasts.test.ts`, and the updated `skills.test.ts`/`gameplay-panels.test.ts`.

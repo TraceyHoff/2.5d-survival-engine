@@ -8,7 +8,8 @@ const d = defaultDefs(); const id = (k: string) => d.itemId(k);
 const mk = (w: World, pid: number, x = 0) => { const p = spawnPlayer(w, { x, y: 0, clientId: pid }); w.add(p, PlayerId, { id: pid }); return p; };
 function world() { const w = makeWorld(); installPermissions(w); return w; }
 const node = (k: string) => G.skillNodeIndex(k);
-const give = (w: World, e: Entity, pts: number) => w.set(e, G.Progression, { points: pts });
+/** ADR-209: points are per tree; tests give every tree `pts`. */
+const give = (w: World, e: Entity, pts: number) => { for (const k of G.TREE_KEYS) { G.grantTreePoints(w, e, k, pts - G.treePoints(w, e, k)); } };
 const traits = (o: Partial<Record<"bravery" | "sociability" | "greed" | "industriousness" | "chattiness", number>>) => ({ bravery: 0.5, sociability: 0.5, greed: 0.5, industriousness: 0.5, chattiness: 0.5, ...o });
 
 describe("ADR-113 skill tree data", () => {
@@ -34,7 +35,8 @@ describe("ADR-113 progression", () => {
   it("players spawn with Progression level 1; XP from gathering events levels up and grants points", () => {
     const w = world(); const a = mk(w, 1); expect(w.get(a, G.Progression)!.level).toBe(1);
     const need = G.xpToNext(1); G.awardXp(w, a, "kill", Math.ceil(need / G.XP.sources.kill!) + 1);
-    const p = w.get(a, G.Progression)!; expect(p.level).toBeGreaterThanOrEqual(2); expect(p.points).toBeGreaterThanOrEqual(1);
+    const p = w.get(a, G.Progression)!; expect(p.level).toBeGreaterThanOrEqual(2);
+    const t = G.treesOf(w, a)![G.treeIndex("combat")]!; expect(t.level).toBeGreaterThanOrEqual(2); expect(t.points).toBeGreaterThanOrEqual(1);
   });
   it("unlock respects prereqs and points; command validation uses the same rules", () => {
     const w = world(); const a = mk(w, 1);
@@ -44,7 +46,7 @@ describe("ADR-113 progression", () => {
     expect(G.unlockSkill(w, a, node("forager"))).toBeUndefined(); expect(G.hasNode(w, a, node("forager"))).toBe(true);
     expect(G.canUnlock(w, a, node("forager"))).toBe("owned");
     expect(G.unlockSkill(w, a, node("pack_mule"))).toBeUndefined();
-    expect(w.get(a, G.Progression)!.points).toBe(8);
+    expect(G.treePoints(w, a, "survival")).toBe(8); expect(G.treePoints(w, a, "combat")).toBe(10);
     expect(G.skillMul(w, a, "carry")).toBeCloseTo(1.15);
   });
   it("recipe skills come from nodes (setSkillLevelProvider) and gate fresh players", () => {
@@ -57,7 +59,7 @@ describe("ADR-113 progression", () => {
     expect(G.canRespec(w, a)).toBe("cost");
     const c0 = G.respecCost(w, a); addItem(w, a, id("coin"), c0 * 3);
     expect(G.respecSkills(w, a)).toBeUndefined();
-    expect(G.ownedNodes(w, a).length).toBe(0); expect(w.get(a, G.Progression)!.points).toBe(5);
+    expect(G.ownedNodes(w, a).length).toBe(0); expect(G.treePoints(w, a, "survival")).toBe(5);
     expect(countItem(w, a, id("coin"))).toBe(c0 * 2); expect(G.respecCost(w, a)).toBeGreaterThan(c0);
   });
   it("iron stomach: spoiled food no longer makes you sick but costs hp", () => {
@@ -125,9 +127,9 @@ describe("ADR-132 category skill trees", () => {
     expect(G.ownedNodes(w, a)).toEqual([0, 3, 64, 113]); expect(G.hasPerk(w, a, "iron_stomach")).toBe(true);
     expect(G.skillMod(w, a, "cropYield")).toBeCloseTo(0.3); expect(w.get(a, G.Progression)!.points).toBe(4);
   });
-  it("view: one shared point pool, per-category trees with their own layout", () => {
+  it("view: per-tree point pools, per-category trees with their own layout", () => {
     const w = world(); const a = mk(w, 1); give(w, a, 3); G.unlockSkill(w, a, node("iron_stomach"));
-    const v = G.progressionView(w, a)!; expect(v.points).toBe(1); expect(v.categories.length).toBe(G.SKILLS.categories.length);
+    const v = G.progressionView(w, a)!; expect(v.categories.find((c) => c.key === "perks")!.points).toBe(1); expect(v.categories.length).toBe(G.SKILLS.categories.length);
     const perks = v.categories.find((c) => c.key === "perks")!; expect(perks.owned).toBe(1);
     expect(perks.nodes.map((i) => v.nodes[i]!.key)).toContain("light_pack");
     for (const c of v.categories) { expect(Math.min(...c.nodes.map((i) => v.nodes[i]!.cx))).toBe(0); for (const i of c.nodes) expect(v.nodes[i]!.cx).toBeLessThan(c.width); }

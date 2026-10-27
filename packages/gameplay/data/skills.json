@@ -8,6 +8,7 @@
   "bonusEvery": 10,
   "bonusPoints": 1
  },
+  "treeLevels": { "$comment": "ADR-209: per-tree curve (each category tab levels on its own XP)", "base": 40, "growth": 1.1, "pointsPerLevel": 1, "maxLevel": 60, "bonusEvery": 5, "bonusPoints": 1 },
  "respec": {
   "item": "coin",
   "base": 50,

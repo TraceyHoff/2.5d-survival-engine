@@ -2,7 +2,7 @@ import { wearSystem } from "./combat/arms.js";
 import { installVehicleCraft, VEHICLE_CRAFT_HASH } from "./vehicle_craft.js";
 import { CROP_EVERY, cropGrowthSystem, farmUseSystem } from "./farming.js";
 import { HUSBANDRY_EVERY, husbandrySystem, husbandryUseSystem } from "./skills/husbandry.js";
-import { installProgression, xpTravelSystem } from "./skills/progression.js";
+import { installProgression, progressionMigrateSystem, xpTravelSystem } from "./skills/progression.js";
 import { installPets, petSystem } from "./pets.js";
 import { DEFAULT_TICK_HZ, pruneModifiers, setTimeOfDay, StallDisplay, TimeOfDay, Weather, type World } from "@engine/core";
 import { installSpatialIndex, setClimateModel, ClimateRes } from "@engine/world";
@@ -78,6 +78,7 @@ export const GAMEPLAY_SYSTEM_ORDER: readonly (readonly [Phase, string, number?])
   ["simulation", "gameplay.clearIntents"],
   ["postSim", "gameplay.equipmentSync"],
   ["postSim", "gameplay.xpTravel", 20],
+  ["postSim", "gameplay.progressionMigrate"], // ADR-209 legacy / fresh Progression -> per-tree
   ...BUILDING_SYSTEMS.postSim,
   ...COMBAT_SYSTEMS.postSim,
   ["postSim", "gameplay.noiseDecay"],
@@ -118,7 +119,7 @@ export function installGameplay(world: World, options: GameplayOptions | number 
     "gameplay.spoilage": spoilageSystem, "gameplay.chunkSurface": chunkSurfaceSystem,
     "gameplay.clearIntents": clearIntentsSystem, "gameplay.equipmentSync": equipmentSyncSystem, "gameplay.noiseDecay": noiseDecaySystem,
     "gameplay.pruneBuffs": (w) => pruneModifiers(w, Buffs), "gameplay.stallDisplay": stallDisplaySystem, "gameplay.expression": expressionSystem, "gameplay.vehicles": vehicleSystem, "gameplay.vehicleGuard": vehicleGuardSystem, "gameplay.animSettle": animSettleSystem, "gameplay.farmUse": farmUseSystem, "gameplay.crops": cropGrowthSystem, "gameplay.husbandryUse": husbandryUseSystem, "gameplay.husbandry": husbandrySystem,
-    "gameplay.hordes": hordeDirectorSystem, "gameplay.xpTravel": xpTravelSystem, "gameplay.equip": equipSystem, "gameplay.pets": petSystem,
+    "gameplay.hordes": hordeDirectorSystem, "gameplay.xpTravel": xpTravelSystem, "gameplay.progressionMigrate": progressionMigrateSystem, "gameplay.equip": equipSystem, "gameplay.pets": petSystem,
     ...installBuildingSystems(world), ...installCombatSystems(world),
   };
   installProgression(world);

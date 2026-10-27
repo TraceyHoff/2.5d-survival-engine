@@ -15,6 +15,8 @@ export interface SkillNodeDef {
 }
 export interface SkillsData {
   levels: { base: number; growth: number; pointsPerLevel: number; maxLevel: number; bonusEvery: number; bonusPoints: number };
+  /** ADR-209: per-tree curve (each category has its own XP / level / points). */
+  treeLevels: { base: number; growth: number; pointsPerLevel: number; maxLevel: number; bonusEvery: number; bonusPoints: number };
   respec: { item: string; base: number; perRespec: number; refundFraction: number };
   weaponClasses: Record<string, string[]>;
   husbandry: { feed: string; trough: string; reach: number; troughRange: number; penRadius: number; fedSeconds: number; tameBase: number; breedSeconds: number; maxPerTrough: number; animals: Record<string, { produce: string; seconds: number }> };
@@ -81,3 +83,26 @@ export function skillLevelOf(world: World, e: Entity, key: string): number | und
 export const damageMulFor = (world: World, e: Entity, itemKey: string | undefined): number => skillMul(world, e, `dmg_${weaponClassOf(itemKey)}`);
 /** Integer amount scaled by a multiplier with a deterministic fractional roll (r in [0,1)). */
 export const scaleCount = (n: number, mul: number, r: number): number => { const v = n * mul; const f = Math.floor(v); return f + (r < v - f ? 1 : 0); };
+
+// ---- ADR-209 per-tree progression ---------------------------------------------------------------------
+/** Tree (category) keys; index = slot in Progression.txp / tlevel / tpoints. skills.json categories are append-only. */
+export const TREE_KEYS: readonly string[] = SKILLS.categories.map((c) => c.key);
+export const TREE_SLOTS = 8;
+if (TREE_KEYS.length > TREE_SLOTS) throw new Error("skills.json: too many categories for Progression tree slots");
+const treeIdx = new Map(TREE_KEYS.map((k, i) => [k, i]));
+export const treeIndex = (key: string): number => treeIdx.get(key) ?? -1;
+export const treeName = (i: number): string => SKILLS.categories[i]?.name ?? "";
+/** Short tab label ("Survival & Gathering" -> "Survival"). */
+export const treeShortName = (i: number): string => treeName(i).split(/[ ,&]/)[0] || treeName(i);
+export const SKILL_NODE_TREE: readonly number[] = SKILL_NODE_CATEGORY.map((c) => treeIdx.get(c)!);
+export const treeXpToNext = (level: number): number => Math.round(SKILLS.treeLevels.base * Math.pow(SKILLS.treeLevels.growth, Math.max(0, level - 1)));
+export const treePointsForLevel = (level: number): number => SKILLS.treeLevels.pointsPerLevel + (SKILLS.treeLevels.bonusEvery > 0 && level % SKILLS.treeLevels.bonusEvery === 0 ? SKILLS.treeLevels.bonusPoints : 0);
+/** Points a tree has earned in total at `level` (level 1 = 0). */
+export function treePointsAtLevel(level: number): number { let p = 0; for (let l = 2; l <= level; l++) p += treePointsForLevel(l); return p; }
+export interface TreeProgress { xp: number; level: number; points: number }
+/** Per-tree xp / level / unspent points (level 0 in an unmigrated row reads as 1). */
+export function treeProgress(world: World, e: Entity): TreeProgress[] | undefined {
+  if (!world.has(e, Progression)) return undefined;
+  const x = world.getArray(e, Progression, "txp"), l = world.getArray(e, Progression, "tlevel"), p = world.getArray(e, Progression, "tpoints");
+  return TREE_KEYS.map((_, i) => ({ xp: x?.[i] ?? 0, level: Math.max(1, l?.[i] ?? 1), points: p?.[i] ?? 0 }));
+}
