@@ -24,6 +24,7 @@ import type { VfxLayer } from "./vfx.js";
 import { LayerCache, activeExpression, readAppearanceSlot, type AppearanceBinding, type CachedLayer } from "./character/layers.js";
 import { nearestCutoff } from "./gl/fallback.js";
 import { PRIO_NEAR } from "./gl/vram.js";
+import { DeckNeighbors, deckTopPx, pieceTieBreak, DECK_EDGE_EPS } from "./building/deckFaces.js";
 import { crackAnim, PieceCoverIndex, ROT_EXACT_PIVOT, ROT_NO_OCCLUDE } from "./building/modular.js";
 import { InteriorRoute, inInteriorRegion, interiorOrder, type InteriorRegion } from "./vehicles/interiorPass.js";
 
@@ -145,13 +146,13 @@ layout(location=5) in vec4 aF; // wet 0..1, cold 0..1, shivering 0/1, heat 0..1
 layout(location=6) in vec4 aG; // sway amp (px), freq (Hz), stiffness, occlusion 0..1
 layout(location=7) in vec4 aH; // secondary tint rgb (tintmask G; 0 = none), exhausted 0..1
 layout(location=8) in vec4 aI; // rotation (radians, screen, around the pivot; held items), unused x3
-layout(location=9) in vec4 aJ; // ADR-107 swim fallback: hidden sprite px above the pivot (lower body clip), bob amp px, unused x2
+layout(location=9) in vec4 aJ; // ADR-107 swim fallback: hidden sprite px above the pivot (lower body clip), bob amp px; ADR-197 deck: closed-side mask | fw<<4 | fh<<8, top px
 ${GLSL_COMMON}
 uniform highp sampler2D uFrames;
-uniform float uZPerPx, uHH, uTime, uWind, uOutline;
+uniform float uZPerPx, uHH, uHW, uTime, uWind, uOutline;
 uniform int uShadowPass, uShadowMode;
 uniform vec2 uShadowDir; uniform float uBlobAspect; uniform vec2 uWindVec; // screen-x wind direction, strength 0..1
-out vec4 vFx; out vec3 vUvRaw; flat out int vLayer; out float vAlpha; flat out int vFlags; flat out vec4 vRect; out vec3 vTint; flat out vec3 vMisc; out vec2 vLocal; out vec2 vScr; flat out float vOcc; flat out ivec2 vFB; flat out vec4 vTint2; flat out float vSwayPx; flat out vec4 vLT;
+out vec4 vFx; out vec3 vUvRaw; flat out int vLayer; out float vAlpha; flat out int vFlags; flat out vec4 vRect; out vec3 vTint; flat out vec3 vMisc; out vec2 vLocal; out vec2 vScr; flat out float vOcc; flat out ivec2 vFB; flat out vec4 vTint2; flat out float vSwayPx; flat out vec4 vLT; out vec2 vDeck; flat out ivec2 vDeckM;
 uniform vec2 uViewPx; // drawing-buffer size (device px): sprite pivots snap to whole device pixels (no shimmer / half-texel blur)
 vec2 snapPivot(vec2 p) {
   if (uViewPx.x <= 0.0) return p;
@@ -167,7 +168,7 @@ void main() {
   float s = aA.w;
   vFx = aF; vFlags = flags; vRect = uvr; vTint = aD.rgb; int fw = int(dim.w + 0.5); vFB = ivec2(fw & 15, fw >> 4); vMisc = vec3(aE.y, aE.z, float(fw & 1)); vAlpha = aB.w;
   vTint2 = aH; vSwayPx = 0.0; vLT = aI;
-  vLocal = c * 2.0 - 1.0; vOcc = aG.w; vScr = aA.xy;
+  vLocal = c * 2.0 - 1.0; vOcc = aG.w; vScr = aA.xy; vDeck = vec2(0.0); vDeckM = ivec2(0);
   if (uShadowPass == 1) {
     if (aE.x <= 0.0) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); return; }
     vAlpha = aE.x;
@@ -205,6 +206,8 @@ void main() {
   if (aJ.x > 0.0) off.y += (aJ.x + sin(uTime * 3.0 + aB.z * 6.283) * aJ.y) * s; // swim: sink the upper body to the waterline + bob
   if (aI.x != 0.0) { float cr = cos(aI.x), sr = sin(aI.x); off = vec2(cr * off.x - sr * off.y, sr * off.x + cr * off.y); }
   vec2 iso = snapPivot(aA.xy) + off; vScr = iso;
+  int dm = int(aJ.z + 0.5); vDeckM = ivec2(dm & 15, dm >> 4); // ADR-197: tile offset of this pixel on the deck top plane
+  if ((flags & 8) != 0 && (dm & 15) != 0) { float dy = off.y + aJ.w; vDeck = vec2(off.x / uHW + dy / uHH, dy / uHH - off.x / uHW) * 0.5; } else { vDeckM.x = 0; vDeck = vec2(0.0); }
   float hpd = hp + aD.w; // Footprint (128): pixels below the pivot are ground-level box faces nearer the camera
   float key = (flags & 8) != 0 ? aA.z + 0.01 - hp / uHH + (aA.z - uDepth.x) * ${FLAT_TIE_BREAK.toFixed(6)} // ADR-195 seam tie-break
     : (flags & 192) == 192 ? aA.z + 0.62 + max(-hpd, 0.0) / uHH // Footprint|Cutaway: open interior, no height term (low walls/floor never out-rank occupants drawn upright)
@@ -214,7 +217,7 @@ void main() {
 
 const FS = /* glsl */ `#version 300 es
 precision highp float; precision highp int;
-in vec4 vFx; in vec3 vUvRaw; flat in int vLayer; in float vAlpha; flat in int vFlags; flat in vec4 vRect; in vec3 vTint; flat in vec3 vMisc; in vec2 vLocal; in vec2 vScr; flat in float vOcc; flat in ivec2 vFB; flat in vec4 vTint2; flat in float vSwayPx; flat in vec4 vLT;
+in vec4 vFx; in vec3 vUvRaw; flat in int vLayer; in float vAlpha; flat in int vFlags; flat in vec4 vRect; in vec3 vTint; flat in vec3 vMisc; in vec2 vLocal; in vec2 vScr; flat in float vOcc; flat in ivec2 vFB; flat in vec4 vTint2; flat in float vSwayPx; flat in vec4 vLT; in vec2 vDeck; flat in ivec2 vDeckM;
 uniform highp sampler2DArray uAtlas, uPoolTex, uEmis, uSheenM, uSwayM, uTintM; uniform highp sampler2D uTints;
 #define vUv vec3(vUvRaw.xy, float(vLayer)) // flat int array layer (no interpolated layer index)
 uniform int uShadowPass, uShadowMode;
@@ -267,6 +270,10 @@ float ringAt(vec2 uv) {
 float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 void main() {
   vec2 cw = fwidth(vUvRaw.xy); // uniform control flow: crispUv's footprint (ADR-145)
+  if (vDeckM.x != 0) { // ADR-197: a side face/rim is drawn only toward an open side (no deck neighbour there)
+    float ha = float(vDeckM.y & 15) * 0.5 + ${DECK_EDGE_EPS}, hb = float((vDeckM.y >> 4) & 15) * 0.5 + ${DECK_EDGE_EPS};
+    if (((vDeckM.x & 1) != 0 && vDeck.x > ha) || ((vDeckM.x & 2) != 0 && vDeck.y > hb) || ((vDeckM.x & 4) != 0 && vDeck.x < -ha) || ((vDeckM.x & 8) != 0 && vDeck.y < -hb)) discard;
+  }
   if (uShadowPass == 1) {
     float a;
     if (uShadowMode == 0) { float d = length(vLocal); a = 1.0 - smoothstep(0.35, 1.0, d); }
@@ -935,6 +942,12 @@ export class SpriteBatch {
     }
   }
 
+  private decks = new DeckNeighbors(); private deckTops = new Map<number, number | undefined>();
+  private deckTop(atlas: AtlasManager, vis: number): number | undefined {
+    if (this.deckTops.has(vis)) return this.deckTops.get(vis);
+    let key: string | undefined; try { key = atlas.registry?.sprite(vis).key; } catch { key = undefined; }
+    const t = deckTopPx(key); if (atlas.registry) this.deckTops.set(vis, t); return t;
+  }
   private gatherPieces(cx: PrepareContext, bp: ReturnType<World["store"]>, hasFocus: boolean, fwx: number, fwy: number, fwz: number): void {
     const { world, atlas, rect } = cx; const tr = world.store(Transform);
     const d = bp.data as Record<string, ArrayLike<number>>;
@@ -948,6 +961,15 @@ export class SpriteBatch {
     this.cutawayActive = !!cut;
     const scratch = this.staticScratch; for (const v of scratch.values()) v.length = 0;
     const checksums = this.pieceChecks; checksums.clear(); let lastCx = NaN, lastCy = NaN, lastVis = true; this.culledChunks = 0;
+    // ADR-197: deck neighbour map (every non-ghost deck, not chunk-culled: a visible piece's neighbour may be off screen)
+    const decks = this.decks; decks.clear();
+    for (let k = 0; k < bp.size; k++) {
+      if (d.ghost![k]! || !flatLayer(d.layer![k]!, false)) continue; const vis0 = d.visualId![k]!; if (atlas.isRoof(vis0)) continue;
+      const top0 = this.deckTop(atlas, vis0); if (top0 === undefined) continue;
+      const ts0 = tr.slot(entityIndex(bp.dense[k]!)); if (ts0 < 0) continue; const inf = atlas.pieceInfo(vis0); const r0 = d.rotation![k]! & 3;
+      const w0 = inf ? (r0 & 1 ? inf.fh : inf.fw) : 1, h0 = inf ? (r0 & 1 ? inf.fw : inf.fh) : 1;
+      decks.add(Math.floor(tr.data.x[ts0]!), Math.floor(tr.data.y[ts0]!), w0, h0, d.level![k]!, top0);
+    }
     const tmp = this.pieceTmp; const nightSet = cx.bindings.nightEmissive?.sprites; this.nightGate = cx.bindings.nightEmissive?.gate ?? 1;
     for (let k = 0; k < bp.size; k++) {
       const e = bp.dense[k]!; const i = entityIndex(e); const ts = tr.slot(i); if (ts < 0) continue;
@@ -997,7 +1019,9 @@ export class SpriteBatch {
       const crackCovered = crackSid >= 0 && ca !== undefined;
       const crack = crackCovered && atlas.pageReady(crackSid, PRIO_NEAR) && atlas.resolve(crackSid, atlas.animIndex(crackSid, ca), 0, 0, 0, this.crackRes);
       const dmgOverlay = dmg > 0 && !res.hasDamageFrames && !crackCovered ? dmg : 0;
-      const bias = roof ? 0.05 : layer * 0.01; // roofs above every other layer of the cell
+      const bias = (roof ? 0.05 : layer * 0.01) + pieceTieBreak(ax, ay, ghost > 0); // roofs above every other layer of the cell; ADR-197 unique tie-break
+      const deckTop = flat && !exact && cx.pieceAnchor !== "front" ? this.deckTop(atlas, vis) : undefined;
+      const deckMask = deckTop === undefined ? 0 : decks.mask(ax, ay, fw, fh, level, deckTop);
       tmp.length = 0;
       // per-column slices: columns c = x - y over the footprint
       const cMin = ax - (fy - 1), cMax = (fx - 1) - ay;
@@ -1017,6 +1041,7 @@ export class SpriteBatch {
         const footDy = single ? 0 : (best + 2) * hh - z * zs - sy;
         const o = this.writeOne(sx, sy, key, 1, res, flags, (i * 0.618034) % 1, alpha, sliceL, sliceR, tint, footDy, 0, ghost, dmgOverlay, 0);
         o[27] = occT;
+        if (deckMask) { o[38] = deckMask | (fw << 4) | (fh << 8); o[39] = deckTop!; }
         if (sway) { o[24] = sway[0]!; o[25] = sway[1]!; o[26] = sway[2]!; } // SpriteDef.sway (+ masks.sway weights in the shader)
         if (tints?.[1]) writeTint2(o, tints[1]);
         for (let q = 0; q < INSTANCE_FLOATS; q++) tmp.push(o[q]!);
@@ -1049,7 +1074,7 @@ export class SpriteBatch {
         const gl = this.gl;
         if (!sc) { const vbo = gl.createBuffer()!; const [cxs, cys] = ck.split(",").map(Number) as [number, number]; sc = { vbo, vao: this.makeVao(vbo), count: 0, checksum: 0, cx: cxs, cy: cys, maxZ: 0, seen: 0, born: cx.now }; this.statics.set(ck, sc); }
         // sort within chunk back-to-front for nicer edge blending
-        const cnt = list.length / INSTANCE_FLOATS; const order = Array.from({ length: cnt }, (_, j) => j).sort((a, b) => list[a * INSTANCE_FLOATS + 2]! - list[b * INSTANCE_FLOATS + 2]!);
+        const cnt = list.length / INSTANCE_FLOATS; const F = INSTANCE_FLOATS; const order = Array.from({ length: cnt }, (_, j) => j).sort((a, b) => (list[a * F + 2]! - list[b * F + 2]!) || (list[a * F + 1]! - list[b * F + 1]!) || (list[a * F]! - list[b * F]!) || (list[a * F + 4]! - list[b * F + 4]!)); // ADR-197: total order
         const buf = new Float32Array(list.length); let maxZ = 0;
         order.forEach((j, o) => { for (let q = 0; q < INSTANCE_FLOATS; q++) buf[o * INSTANCE_FLOATS + q] = list[j * INSTANCE_FLOATS + q]!; });
         for (let j = 0; j < cnt; j++) maxZ = Math.max(maxZ, -(buf[j * INSTANCE_FLOATS + 1]! - 0));
@@ -1092,7 +1117,7 @@ export class SpriteBatch {
     }
     this.setupFrame = this.frameNo; this.setupTex = atlas.tex;
     gl.uniform4fv(u.uView!, view); gl.uniform2fv(u.uDepth!, depth); gl.uniform2f(u.uViewPx!, gl.drawingBufferWidth, gl.drawingBufferHeight);
-    gl.uniform1f(u.uZPerPx!, this.zFactor / this.iso.zStep); gl.uniform1f(u.uHH!, this.iso.tileH / 2);
+    gl.uniform1f(u.uZPerPx!, this.zFactor / this.iso.zStep); gl.uniform1f(u.uHH!, this.iso.tileH / 2); gl.uniform1f(u.uHW ?? null, this.iso.tileW / 2);
     gl.uniform1f(u.uTime!, time); gl.uniform1f(u.uWind!, wind);
     gl.uniform2fv(u.uWindVec!, this.windVec); gl.uniform3fv(u.uShadowColor!, this.shadowColor);
     gl.uniform3fv(u.uFrostColor!, style.fx.frostColor); gl.uniform3fv(u.uFlushTint!, style.fx.flushTint);

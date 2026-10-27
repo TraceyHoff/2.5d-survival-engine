@@ -1284,3 +1284,44 @@ Near characters flashed pale/undressed (body only) and hair dropped out and back
 - **No surprise jumps:** when the raw spot is invalid for any reason other than a missing socket or support (10/11), for example spot taken, too far or no materials, the red ghost and its reason are kept.
 - **Input:** all three modes feed the same preview: touch point, gamepad aim and mouse.
 - **Tests:** `packages/gameplay/test/adr196_magnet_snap.test.ts`, `apps/client/test/adr196_snap_overlay.test.ts`.
+
+## ADR-197: Deck side-face culling + total depth order for structure pieces
+
+**Context.** On large bases, adjacent foundations and floors drew their side skirts into each other. Those hidden sides were
+covered only by the depth test, and the depth key is coarse, so under camera micro-jitter they flickered in and out.
+Ghosts had the same key as the piece under them, and equal keys in the static chunk sort were ordered arbitrarily.
+Canvas2D drew no building pieces at all.
+
+**Decision.**
+- *Neighbour-aware culling, no new art.* `building/deckFaces.ts` builds a per-frame `DeckNeighbors` map from every
+  placed (non-ghost) layer-0 deck before chunk culling, so it crosses chunk borders. It is rebuilt from ECS state each
+  frame, so place, demolish, upgrade and remote replication are handled with no events.
+  - A side is *closed* when every cell along it holds a deck at the same level whose top is the same height or taller
+    (within 0.5 px), of any tier.
+  - Each pixel is projected onto the piece's top plane, giving tile offsets (a, b). Pixels past a closed edge
+    (beyond `DECK_EDGE_EPS` = 0.02 tiles) are discarded: in the WebGL2 fragment shader, using instance floats o[38]
+    (mask | fw<<4 | fh<<8) and o[39] (top px).
+  - Canvas2D uses the equivalent convex clip polygon (`deckClipPolygon`).
+  - Top heights come from the art: `tools/measure-deck-tops.py` generates `deckTops.generated.ts` (foundations at all
+    tiers 12 px, floors 5 px).
+  - The chunk checksum covers all instance floats, so a mask change rebuilds the static chunk.
+- *Walls and roofs are not culled.* Walls are edge pieces whose faces are always outward, and roofs have their own
+  occlusion handling.
+- *Unique tie-break.* `pieceTieBreak` = ((x−y) mod 4)·0.0008, plus 0.004 for ghosts, which stays below the 0.01 layer
+  bias. The static sort is now a total order (key, sy, sx, entity).
+- *Canvas2D.* Pieces are painted level-major. Decks draw under their level's uprights, in iso order, with ties broken
+  by `pieceOrder` (level, layer, y, x). The camera origin is rounded to whole device pixels.
+
+**Tests.** `adr197_deck_faces.test.ts` covers a 10x10 mixed-tier base (foundations, floors on level 1, walls, a ghost):
+- Interior sides are all closed and outward sides open.
+- The clip polygon matches the per-pixel test.
+- A software raster over 120 jittered frames, with a shuffled raster order, gives identical output with zero interior
+  side pixels.
+- The same raster without the fix shows interior side fragments, equal-key ties and changing frames.
+
+**Art & Assets could improve.**
+- Ship the top and skirt as separate layers, or a per-side mask channel. Culling would then be exact on irregular rims,
+  not plane-based.
+- Use trimmed frames for decks: the 128x128 untrimmed frames waste fill.
+- Add a `deckTop` field to the manifest instead of measuring it.
+- Measure each rotation separately if rotated deck art ever stops being a mirror.

@@ -3,14 +3,15 @@
  * the origin, software-only devices). Draws the REAL sprite art from the same manifest + atlas PNGs and the same view
  * World IsoView fills for IsoRenderer: terrain diamonds, depth-sorted sprites (Transform + Sprite + AnimState), and a
  * day/night ambient overlay with additive light glows, and paper-doll wearables (tinted on the CPU, ADR-128 head offset).
- * No bloom, lightmap, masks or building piece visuals.
+ * No bloom, lightmap or masks. Building pieces (ADR-197) are painted level by level in a total order, with deck side faces
+ * clipped where a neighbouring deck covers them.
  *
  * Presents the subset of the IsoRenderer surface the client uses (camera, capabilities, atlas.setRegistry, bindGameplay,
  * loadLook, resize, render, tilemap, setFocusEntity, diagReport) so IsoView can drive either one.
  */
 import { Transform, PrevTransform, getAppearance, type World, type Entity } from "@engine/core";
 import { previewLayers2D, tintPixels, type PreviewLayer2D } from "./character/preview2d.js";
-import { worldToScreen, DEFAULT_ISO, CHUNK_SIZE, isWaterId, waterShoreTint, type TileMap, type Chunk } from "@engine/world";
+import { worldToScreen, DEFAULT_ISO, CHUNK_SIZE, floorToTerrainZ, terrainZToFloor, isWaterId, waterShoreTint, type TileMap, type Chunk } from "@engine/world";
 import type { AssetRegistry } from "@engine/assets";
 import { IsoCamera } from "./camera.js";
 import { Sprite, LightSource } from "./components.js";
@@ -22,6 +23,7 @@ import { weatherTargets } from "./weather.js";
 import { readDayFraction, readDayNumber, readWeather } from "./env.js";
 import { newStats, type FrameStats } from "./gl/util.js";
 import type { GameplayBindings } from "./sprites.js";
+import { DeckNeighbors, deckTopPx, deckClipPolygon, pieceTieBreak, pieceOrder } from "./building/deckFaces.js";
 
 export type FallbackRendererKind = "webgl2" | "canvas2d" | "debug";
 export interface ContextProbe { (kind: "webgl2" | "2d"): unknown }
@@ -142,13 +144,45 @@ export class Canvas2DRenderer {
     g.drawImage(cv, 0, 0); g.restore();
   }
 
+  private decks = new DeckNeighbors();
+  /** ADR-197: building pieces as painter items: level-major, decks under their floor's uprights, iso order, unique tie-break. */
+  gatherPieces(world: World, reg: AssetRegistry): C2DPiece[] {
+    const bpd = this.bindings.buildPiece; if (!bpd || !world.isRegistered(bpd)) return [];
+    const iso = DEFAULT_ISO; const hw = iso.tileW / 2, hh = iso.tileH / 2; const raw: { e: Entity; ax: number; ay: number; fw: number; fh: number; level: number; layer: number; z: number; vis: number; rot: number; dmg: number; ghost: boolean; deck: boolean; top: number | undefined }[] = [];
+    this.decks.clear();
+    for (const e of world.query([bpd, Transform])) {
+      const b = world.get(e, bpd)!; const t = world.get(e, Transform)!; let sd; try { sd = reg.sprite(b.visualId); } catch { continue; } if (!sd.building) continue;
+      const rot = b.rotation & 3; const fw = rot & 1 ? sd.building.footprint.h : sd.building.footprint.w, fh = rot & 1 ? sd.building.footprint.w : sd.building.footprint.h;
+      const roof = (sd.building.piece ?? sd.key).startsWith("roof"); const deck = b.layer === 0 && !roof; const top = deck ? deckTopPx(sd.key) : undefined;
+      const r = { e, ax: Math.floor(t.x), ay: Math.floor(t.y), fw, fh, level: b.level, layer: b.layer, z: floorToTerrainZ(b.level, t.z), vis: b.visualId, rot: b.rotation, dmg: b.damageStage, ghost: b.ghost > 0, deck, top };
+      raw.push(r); if (deck && !r.ghost && top !== undefined) this.decks.add(r.ax, r.ay, fw, fh, r.level, top);
+    }
+    const out: C2DPiece[] = [];
+    for (const r of raw) {
+      let f; try { f = reg.buildingFrame(r.vis, r.rot, r.dmg); } catch { continue; } const img = this.image(f.atlas.key); if (!img) continue;
+      const p = worldToScreen(r.ax + r.fw / 2, r.ay + r.fh / 2, r.z, iso);
+      const mask = r.top === undefined ? 0 : this.decks.mask(r.ax, r.ay, r.fw, r.fh, r.level, r.top);
+      const isoD = r.ax + r.fw - 1 + r.ay + r.fh - 1 + r.layer * 0.01 + pieceTieBreak(r.ax, r.ay, r.ghost);
+      out.push({ e: r.e, sx: p.sx, sy: p.sy, depth: r.level * LEVEL_DEPTH + (r.deck ? DECK_DEPTH : 0) + isoD, ord: pieceOrder(r.level, r.layer, r.ax, r.ay) * 2 + (r.ghost ? 1 : 0), img, f,
+        clip: mask ? deckClipPolygon(r.fw, r.fh, mask, r.top!, hw, hh) : undefined, ghost: r.ghost });
+    }
+    return out;
+  }
+  private drawPiece(pc: C2DPiece, s: number, ox: number, oy: number): void {
+    const g = this.ctx; const f = pc.f; g.save(); g.translate(snapPx(pc.sx, s, ox), snapPx(pc.sy, s, oy));
+    if (pc.clip) { g.beginPath(); pc.clip.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.closePath(); g.clip(); }
+    if (pc.ghost) g.globalAlpha = 0.6;
+    if (f.flipX) g.scale(-1, 1);
+    g.drawImage(pc.img, f.x, f.y, f.w, f.h, -f.anchorX, -f.anchorY, f.w, f.h); g.restore(); this.stats.sprites++; this.stats.drawCalls++;
+  }
+
   render(world: World, alpha: number): void {
     const g = this.ctx, cam = this.camera, s = cam.scale; const stats = (this.stats = newStats());
     const time = (performance.now() - this.t0) / 1000; const wr = readWeather(world), wt = weatherTargets(wr.kind, wr.intensity); // ADR-115: same curve + weather dimming as WebGL2 (no smoothing state: cheap)
     const day = dimForWeather(computeDayLighting(readDayFraction(world), readDayNumber(world)), { overcast: Math.max(wt.rain, wt.fog, wt.snow * 0.7), storm: wt.storm });
     g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = "source-over"; g.globalAlpha = 1;
     g.fillStyle = rgb(day.sky); g.fillRect(0, 0, this.w, this.h);
-    const ox = this.w / 2 - cam.x * s, oy = this.h / 2 - cam.y * s; g.setTransform(s, 0, 0, s, ox, oy); g.imageSmoothingEnabled = s < 1;
+    const ox = Math.round(this.w / 2 - cam.x * s), oy = Math.round(this.h / 2 - cam.y * s); g.setTransform(s, 0, 0, s, ox, oy); g.imageSmoothingEnabled = s < 1; // ADR-197: whole-pixel camera origin
     const iso = DEFAULT_ISO; const tw = iso.tileW, th = iso.tileH;
     // terrain: diamonds around the camera
     const tm = this.tilemap; const c = cam.cssToWorld(cam.viewW / cam.dpr / 2, cam.viewH / cam.dpr / 2);
@@ -161,16 +195,19 @@ export class Canvas2DRenderer {
       g.beginPath(); g.moveTo(p.sx, p.sy - th / 2); g.lineTo(p.sx + tw / 2, p.sy); g.lineTo(p.sx, p.sy + th / 2); g.lineTo(p.sx - tw / 2, p.sy); g.fill(); stats.tiles++;
     }
     // sprites: gather, sort by iso depth (screen y of the foot), draw
-    const reg = this.registry; const items: { e: Entity; sx: number; sy: number; depth: number }[] = [];
+    const reg = this.registry; const items: { e: Entity; sx: number; sy: number; depth: number; ord: number; pc?: C2DPiece }[] = [];
     if (reg && world.isRegistered(Sprite)) for (const e of world.query([Transform, Sprite])) {
       const cur = world.get(e, Transform)!; const prev = world.get(e, PrevTransform) ?? cur;
       const x = prev.x + (cur.x - prev.x) * alpha, y = prev.y + (cur.y - prev.y) * alpha, z = prev.z + (cur.z - prev.z) * alpha;
       const p = worldToScreen(x, y, z, iso); const flat = (world.get(e, Sprite)!.flags & SpriteFlag.Flat) !== 0;
-      items.push({ e, sx: p.sx, sy: p.sy, depth: flatSortDepth(x + y, flat) });
+      const lvl = z >= FLOOR_Z - 1e-6 ? terrainZToFloor(z, 0) : 0;
+      items.push({ e, sx: p.sx, sy: p.sy, depth: lvl * LEVEL_DEPTH + flatSortDepth(x + y, flat), ord: 1e15 + e });
     }
-    items.sort((a, b) => a.depth - b.depth); // Flat ground decals (roads) first: always under feet and entities
+    if (reg) for (const pc of this.gatherPieces(world, reg)) items.push({ e: pc.e, sx: pc.sx, sy: pc.sy, depth: pc.depth, ord: pc.ord, pc });
+    items.sort((a, b) => (a.depth - b.depth) || (a.ord - b.ord)); // ADR-197: total order (no equal-key coin flips) // Flat ground decals (roads) first: always under feet and entities
     const an = this.bindings.animState; const tick = world.tick;
     for (const it of items) {
+      if (it.pc) { this.drawPiece(it.pc, s, ox, oy); continue; }
       const sp = world.get(it.e, Sprite)!; if (sp.scale > 0 && sp.scale < 0.01) continue;
       let anim = "idle"; let tAnim = time;
       const fa = frameAnim(sp.frameId); if (fa >= 0) { try { anim = reg!.sprite(sp.spriteId).animList[fa]?.name ?? "idle"; } catch { /* unknown sprite */ } tAnim = 0; }
@@ -212,6 +249,10 @@ export class Canvas2DRenderer {
     g.globalCompositeOperation = "source-over"; void this.focus;
   }
 }
+const FLOOR_Z = floorToTerrainZ(1, 0);
+/** Painter layers: everything on floor N draws after floor N-1; decks draw below the uprights of their own floor. */
+const LEVEL_DEPTH = 1e6, DECK_DEPTH = -5e5;
+interface C2DPiece { e: Entity; sx: number; sy: number; depth: number; ord: number; img: CanvasImageSource; f: { x: number; y: number; w: number; h: number; anchorX: number; anchorY: number; flipX?: boolean }; clip: [number, number][] | undefined; ghost: boolean }
 const rgb = (c: readonly number[]): string => `rgb(${Math.round(Math.min(1, c[0]!) * 255)},${Math.round(Math.min(1, c[1]!) * 255)},${Math.round(Math.min(1, c[2]!) * 255)})`;
 
 /** Canvas2D sort key: Flat ground decals (roads, ADR-119) draw in a layer below every upright sprite, in iso order. */
