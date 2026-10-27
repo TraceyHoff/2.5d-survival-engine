@@ -49,7 +49,7 @@ export function buildActionSystem(world: World, dt: number): void {
     if (!inReach(world, e, p, b.buildReach)) { fail(BuildFail.OutOfRange); continue; }
     const pt = world.get(p, Transform)!;
     const bp = world.get(p, BuildPiece)!; const def = defs.pieces.get(bp.type)!;
-    if (!hasPrivilege(world, e, pt.x, pt.y) && action !== IntentAction.Repair) { fail(BuildFail.NoPrivilege); continue; }
+    if (!hasPrivilege(world, e, pt.x, pt.y)) { fail(BuildFail.NoPrivilege); continue; } // ADR-207: repair too (outsiders may not touch a claimed base)
     switch (action) {
       case IntentAction.Upgrade: {
         const tier = it.data.tier[s]!;
@@ -140,6 +140,17 @@ export function viewersOf(world: World, c: Entity): number[] {
   return Array.from(st.data.clients.subarray(s * MAX_VIEWERS, s * MAX_VIEWERS + st.data.count[s]!));
 }
 
+/**
+ * ADR-207: storage attached to a building piece that stands inside a privilege zone (claim totem) opens only for that
+ * zone's tribe, i.e. the owning clan's base-rank members. Unclaimed storage, loot bags and pets keep their own rules;
+ * raiders must destroy the claim first (same rule as building there).
+ */
+export function canUseBaseStorage(world: World, e: Entity, c: Entity): boolean {
+  if (world.has(c, StallHeader) || world.getField(c, PieceLink, "kind") === AttachKind.Till) return true; // stalls: economy rules
+  const p = pieceOf(world, c); if (p === undefined) return true;
+  const t = world.get(p, Transform); return !t || hasPrivilege(world, e, t.x, t.y);
+}
+
 export function containerSystem(world: World): void {
   if (!isAuthority(world)) return;
   const b = gameplayDefs(world).building; const it = world.store(PlayerIntent);
@@ -154,6 +165,7 @@ export function containerSystem(world: World): void {
     if (action === IntentAction.OpenContainer) {
       if (!canLootBag(world, e, c)) { fail(BuildFail.Locked); continue; }
       if (world.has(c, Pet) && !isPetOwner(world, e, c)) { fail(BuildFail.Locked); continue; } // ADR-145 pet inventory: owner only
+      if (!canUseBaseStorage(world, e, c)) { fail(BuildFail.Locked); continue; } // ADR-207: base storage inside a claim = its tribe (clan) only
       if (world.getField(e, Viewing, "container") === c) continue;
       closeContainer(world, e);
       if (!addViewer(world, c, clientOf(world, e))) { fail(BuildFail.ViewersFull); continue; }
@@ -173,6 +185,6 @@ export function containerSystem(world: World): void {
   // auto-close: out of range (1.5x reach), dead, or container gone
   for (const e of world.query([Viewing])) {
     const c = world.getField(e, Viewing, "container")!;
-    if (!world.isAlive(c) || world.has(e, Dead) || distance(world, e, c) > b.containerReach * 1.5) closeContainer(world, e);
+    if (!world.isAlive(c) || world.has(e, Dead) || distance(world, e, c) > b.containerReach * 1.5 || !canUseBaseStorage(world, e, c)) closeContainer(world, e); // ADR-207: kicked / left clan → closes
   }
 }
