@@ -16,6 +16,10 @@ export interface SignEditorOptions {
   saveLabel?: string;
   /** Show the on-screen keyboard immediately (gamepad). */
   keyboard?: boolean;
+  /** ADR-200: generic text entry (chat, names, prices): keep the text as typed (no sign sanitising / 48-char cap). */
+  raw?: boolean;
+  /** Placeholder for the text field (default "Sign text"). */
+  placeholder?: string;
   onSave(text: string): void;
   close(): void;
 }
@@ -41,13 +45,13 @@ background:#F6EAD2;color:#3B2433;border:3px solid #74432C;border-radius:14px;box
 
 export function buildSignEditor(o: SignEditorOptions): HTMLElement {
   if (!document.getElementById("sign-editor-css")) { const st = document.createElement("style"); st.id = "sign-editor-css"; st.textContent = CSS; document.head.append(st); }
-  const max = Math.max(1, Math.min(SIGN_TEXT_MAX, o.maxLen));
+  const max = Math.max(1, o.raw ? o.maxLen : Math.min(SIGN_TEXT_MAX, o.maxLen));
   const root = document.createElement("div"); root.id = "sign-editor";
   const panel = document.createElement("div"); panel.className = "se-panel gm-panel"; root.append(panel);
   const mk = <K extends keyof HTMLElementTagNameMap>(tag: K, props: Partial<HTMLElementTagNameMap[K]> = {}, role?: string): HTMLElementTagNameMap[K] => { const e = Object.assign(document.createElement(tag), props); if (role) (e as HTMLElement).dataset["role"] = role; return e; };
   const back = mk("button", { type: "button", textContent: "← Back", className: "alt ui-back" }, "close"); back.setAttribute("aria-label", "Back");
   const h = mk("h2", { textContent: `Edit ${o.kindName}` }); h.id = "sign-editor-title"; root.setAttribute("aria-labelledby", h.id);
-  const input = mk("input", { type: "text", value: o.initial.slice(0, max), maxLength: max, autocomplete: "off", spellcheck: false, placeholder: "Sign text" }, "sign-input");
+  const input = mk("input", { type: "text", value: o.initial.slice(0, max), maxLength: max, autocomplete: "off", spellcheck: false, placeholder: o.placeholder ?? "Sign text" }, "sign-input");
   input.setAttribute("aria-label", `Sign text, up to ${max} characters`); input.setAttribute("enterkeyhint", "done"); input.autofocus = !o.keyboard;
   const count = mk("span", {}, "sign-count"); count.setAttribute("aria-live", "polite");
   const preview = mk("span", {}, "sign-preview");
@@ -73,14 +77,15 @@ export function buildSignEditor(o: SignEditorOptions): HTMLElement {
   toggle.addEventListener("click", () => { osk.hidden = !osk.hidden; toggle.setAttribute("aria-expanded", String(!osk.hidden)); if (!osk.hidden) osk.querySelector<HTMLElement>("button")?.focus(); });
   const save = mk("button", { type: "button", textContent: o.saveLabel ?? "Save sign" }, "submit"); save.dataset["pad"] = "X";
   const cancel = mk("button", { type: "button", textContent: "Cancel", className: "alt" }, "cancel");
+  const state = (v: string): ReturnType<typeof signEditorState> => o.raw ? { stored: v.slice(0, max), used: Math.min(v.length, max), max, empty: !v.trim(), masked: false } : signEditorState(v, max);
   function update(): void {
-    const s = signEditorState(input.value, max);
+    const s = state(input.value);
     count.textContent = `${s.used}/${s.max}`; count.dataset["full"] = String(s.used >= s.max);
-    preview.textContent = s.empty ? "(blank — sign shows nothing)" : s.stored; preview.dataset["empty"] = String(s.empty); preview.dataset["masked"] = String(s.masked);
+    preview.textContent = s.empty ? (o.raw ? "(empty)" : "(blank — sign shows nothing)") : s.stored; preview.dataset["empty"] = String(s.empty); preview.dataset["masked"] = String(s.masked);
   }
   input.addEventListener("input", update);
   input.addEventListener("focus", () => { input.scrollIntoView?.({ block: "nearest" }); });
-  save.addEventListener("click", () => { o.onSave(signEditorState(input.value, max).stored); o.close(); });
+  save.addEventListener("click", () => { o.onSave(state(input.value).stored); o.close(); });
   cancel.addEventListener("click", () => o.close()); back.addEventListener("click", () => o.close());
   const r1 = mk("div", { className: "se-row" }); r1.append(input, toggle);
   const r2 = mk("div", { className: "se-row" }); r2.append(mk("span", { textContent: "Preview:" }), preview, count);

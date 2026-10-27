@@ -101,7 +101,7 @@ export class GameMenus {
     if (!document.getElementById("gm-style")) { const st = document.createElement("style"); st.id = "gm-style"; st.textContent = CSS; document.head.append(st); }
     const hotkeys: Record<string, () => void> = {};
     for (const m of GAME_MENUS) for (const k of m.hotkeys) hotkeys[k] = () => this.toggle(m.id);
-    this.nav = new UINav({ root: o.root, onPause: () => this.pause(), onPage: (d) => { if (this.nav.top === "inventory" && pageContainer(d)) this.refresh(); else if (this.nav.top === "skills") { pageSkillCategory(d); this.refresh(); } }, ...(o.input ? { input: o.input } : {}), hotkeys, ...(o.getGamepads ? { getGamepads: o.getGamepads } : {}), ...(o.pollGamepads !== undefined ? { pollGamepads: o.pollGamepads } : {}) });
+    this.nav = new UINav({ root: o.root, onPause: () => this.pause(), onPage: (d, kind) => { if (this.nav.top === "inventory" && pageContainer(d)) this.refresh(); else if (this.nav.top === "skills") { pageSkillCategory(d); this.refresh(); } else cycleTabs(this.nav, d, kind ?? "tab"); }, ...(o.input ? { input: o.input } : {}), hotkeys, ...(o.getGamepads ? { getGamepads: o.getGamepads } : {}), ...(o.pollGamepads !== undefined ? { pollGamepads: o.pollGamepads } : {}) });
     if (o.showMenuBar !== false) {
       const bar = document.createElement("nav"); bar.id = "game-menubar"; bar.setAttribute("aria-label", "Game menus");
       const add = (id: string, icon: string, title: string, fn: () => void): void => { const b = document.createElement("button"); b.type = "button"; b.dataset["open"] = id; b.dataset["tip"] = title; b.setAttribute("aria-label", title); b.textContent = icon; b.addEventListener("click", (e) => { e.stopPropagation(); fn(); }); bar.append(b); };
@@ -272,17 +272,25 @@ export class GameMenus {
       for (const t of ts.slice(0, 16)) { const b = document.createElement("button"); b.type = "button"; b.textContent = t.name; b.dataset["key"] = `whisper-${t.playerId}`; const on = t.playerId === this.whisperTo; b.className = on ? "" : "alt"; b.setAttribute("aria-pressed", String(on));
         b.addEventListener("click", () => { this.whisperTo = t.playerId; fillPicker(); }); picker.append(b); }
     };
-    const chans = document.createElement("div"); chans.className = "gm-grid"; chans.dataset["role"] = "chat-channels";
+    const chans = document.createElement("div"); chans.className = "gm-grid"; chans.dataset["role"] = "chat-channels"; chans.dataset["tabs"] = "tab";
     for (const [n, c] of CHAT_CHANNELS) { const b = document.createElement("button"); b.type = "button"; b.className = c === this.chatChannel ? "" : "alt"; b.textContent = n; b.dataset["key"] = `chan-${c}`; b.setAttribute("aria-pressed", String(c === this.chatChannel));
       b.addEventListener("click", () => { this.chatChannel = c; for (const o of Array.from(chans.children)) { const on = o === b; (o as HTMLElement).className = on ? "" : "alt"; o.setAttribute("aria-pressed", String(on)); } fillPicker(); }); chans.append(b); }
     fillPicker();
     const m = this.panel("chat", "Chat", [log, chans, picker, input], [["Send", send]]); // header ✕, Esc, B and tap-outside close it; no second Close button
-    m.querySelector<HTMLElement>("[data-action=Send]")!.dataset["role"] = "submit";
+    { const sb = m.querySelector<HTMLElement>("[data-action=Send]")!; sb.dataset["role"] = "submit"; sb.dataset["pad"] = "X"; }
     return m;
   }
 }
 
 /** ADR-139: gamepad menu actions from the gamepad profile; modifier combos win over plain Select. */
+/** ADR-200: LB/RB (kind "tab") and LT/RT (kind "page") step the top modal's `[data-tabs=tab|page]` button group (pressed = current), keeping pad focus on it. */
+export function cycleTabs(nav: UINav, d: number, kind: "tab" | "page"): boolean {
+  const m = nav.stack_top(); const g = m?.querySelector<HTMLElement>(`[data-tabs=${kind}]`) ?? (kind === "tab" ? m?.querySelector<HTMLElement>("[data-tabs]") : null); if (!g) return false;
+  const bs = Array.from(g.querySelectorAll<HTMLButtonElement>("button")).filter((b) => !b.disabled); if (bs.length < 2) return false;
+  const i = Math.max(0, bs.findIndex((b) => b.getAttribute("aria-pressed") === "true" || !b.classList.contains("alt")));
+  const key = bs[(i + d + bs.length) % bs.length]!.dataset["key"]; bs[(i + d + bs.length) % bs.length]!.click();
+  const n = key ? m?.querySelector<HTMLElement>(`[data-key="${key}"]`) : undefined; n?.focus(); return true;
+}
 export function padMenuAction(i: { pressed(a: string): boolean }): "crafting" | "chat" | "inventory" | undefined {
   return i.pressed("ToggleCrafting") ? "crafting" : i.pressed("OpenChat") ? "chat" : i.pressed("ToggleInventory") ? "inventory" : undefined;
 }

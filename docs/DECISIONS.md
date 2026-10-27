@@ -1355,6 +1355,16 @@ Canvas2D drew no building pieces at all.
 - **Tests:** `apps/client/test/adr200_pad_blockers.test.ts` covers pad-only equip, eat, drop, craft, and selecting a foundation then Place. `character_creator.test.ts` covers the creator pad loop dying with the creator and A opening the keyboard.
 - **Browser check:** a headless Chrome run at 1920×1080 with a mocked `navigator.getGamepads` went pad-only through main menu, creator keyboard, inventory equip and eat, LB+Select crafting queue, and pause→Build→foundation→Place→A. The foundation piece count went 1→2.
 
+**Part 2 — one focus system for every surface (extends `ui-nav.ts`, no second navigator).**
+- A on any text `<input>`/`<textarea>` (pad only) opens the shared `buildSignEditor` on-screen keyboard as a nested `osk` modal, in a new `raw` mode (no sign sanitising / 48-char cap; respects the field's `maxLength`). Done writes the value back and fires `input` + `change`; focus returns to the field. Mouse/keyboard/touch still type directly.
+- LT/RT (buttons 6/7) join X/Y/LB/RB as `[data-pad]` shortcuts; when a modal has no such control, LB/RB call `onPage(d, "tab")` and LT/RT call `onPage(d, "page")`. GameMenus routes those to inventory container paging, skill categories, or `cycleTabs` over a `[data-tabs=tab|page]` group (build categories, station tabs, chat channels, craft amount).
+- Glyph hint footer `[data-role=pad-hints]` (Ⓐ Select, Ⓑ Back, plus live `[data-pad]` labels and LB/RB / LT/RT when they apply) in the top modal. It shows only while `html[data-pad-ui]` is set (by any pad input; cleared by pointerdown/keydown), together with a stronger pad focus ring.
+- Closing a nested modal restores focus to the element that opened it when that element is still inside the new top modal.
+- `navigator.gamepadInputEmulation = "gamepad"` at startup (Xbox Edge).
+- Chat Send has `data-pad=X`.
+- Test `adr200_pad_registration.test.ts` enumerates `GAME_MENUS` + pause and asserts that each registers as `nav.top`, traps focus and renders the footer.
+- Not covered: split stack / move-to-hotbar (no game command exists for any input device).
+
 ## ADR-201: Errors that were swallowed now go to the error log
 - **Render:** `@engine/render` exports `reportRenderError(where, err, visible?)` and `setRenderErrorSink`. Without a sink it falls back to console.warn, and it never throws. These paths now report through it instead of `() => undefined` or a bare console.warn:
   - the atlas retier (ADR-190 async swap, `IsoRenderer` every 30 frames)

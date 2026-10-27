@@ -59,6 +59,8 @@ import { Survival, heldTool, ResourceNode, toolHint, Animal, LootBag, openContai
 import { AudioSystem } from "./audio/index.js";
 import { mountDeathScreen, type DeathScreen } from "./death-screen.js";
 import { RespawnCmd, partyView, clanView } from "@engine/gameplay";
+// ADR-200: Xbox Edge — deliver the controller as a Gamepad (not emulated mouse/keys) so UINav owns menu navigation.
+try { const nv = navigator as Navigator & { gamepadInputEmulation?: string }; if ("gamepadInputEmulation" in nv) nv.gamepadInputEmulation = "gamepad"; } catch { /* read-only on some engines */ }
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 /** Everything (canvas, HUD, touch overlay, menu bar, modals) lives in this root; fullscreen targets it (ADR-095). */

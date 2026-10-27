@@ -240,7 +240,7 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       if (v.owed.length) { out.push(heading("Owed (delivered when you have space)")); for (const o of v.owed) { const p = kit.para(`${o.name} ×${o.count}${o.crafterName ? ` · crafted by ${o.crafterName}` : ""}`); p.dataset["role"] = "owed"; out.push(p); } }
       if (!st) { const n = v.elsewhere.reduce((a, e) => a + e.count, 0); if (n) { const h = kit.para(`More recipes at stations (${n}): ${v.elsewhere.map((e) => `${e.name} ${e.count}`).join(" · ")}`); h.dataset["role"] = "station-hint"; out.push(h); } }
       out.push(heading("Recipes"));
-      const counts = grid(); for (const n of [1, 5, 10]) counts.append(btn(`×${n}`, `count-${n}`, () => { castSel.count = n; kit.rerender(); }, { alt: castSel.count !== n, pressed: castSel.count === n })); out.push(counts);
+      const counts = grid(); counts.dataset["tabs"] = "page"; counts.dataset["tabsLabel"] = "Amount"; for (const n of [1, 5, 10]) counts.append(btn(`×${n}`, `count-${n}`, () => { castSel.count = n; kit.rerender(); }, { alt: castSel.count !== n, pressed: castSel.count === n })); out.push(counts);
       const g = grid();
       const dupOut = new Set<number>(); { const seen = new Set<number>(); for (const r of v.recipes) { if (seen.has(r.output.item)) dupOut.add(r.output.item); seen.add(r.output.item); } }
       for (const r of v.recipes) {
@@ -257,7 +257,7 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       // ADR-112: category tabs keep the 170+ piece catalog scannable (focusable buttons: touch, D-pad, keys)
       const cats = [...new Set(all.map((p) => p.category))]; if (!cats.includes(buildCat)) buildCat = all.find((p) => p.id === buildSel.piece)?.category ?? cats[0] ?? "structure";
       const v = all.filter((p) => p.category === buildCat);
-      const sel = all.find((p) => p.id === buildSel.piece); const out: Node[] = [heading("Category")]; const cg0 = grid(); cg0.dataset["role"] = "build-cats";
+      const sel = all.find((p) => p.id === buildSel.piece); const out: Node[] = [heading("Category")]; const cg0 = grid(); cg0.dataset["role"] = "build-cats"; cg0.dataset["tabs"] = "tab";
       for (const k of cats) cg0.append(btn(k, `bcat-${k}`, () => { buildCat = k; kit.rerender(); }, { pressed: k === buildCat, alt: k !== buildCat }));
       out.push(cg0, heading("Pieces")); const g = grid();
       for (const p of v) { const t = p.tiers.find((x) => x.tier === buildSel.tier) ?? p.tiers[0]!; g.append(btn(p.key.replace(/_/g, " "), `piece-${p.id}`, () => { buildSel.piece = p.id; buildSel.variant = 0; if (!p.tiers.some((x) => x.tier === buildSel.tier)) buildSel.tier = p.tiers[0]!.tier; src.onBuildSelect?.({ ...buildSel }); kit.rerender(); }, { role: "piece", pressed: p.id === buildSel.piece, alt: !t.affordable, title: t.cost.map((x) => `${x.name} ${x.have}/${x.count}`).join(", ") || "free" })); }
@@ -445,7 +445,7 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       const pct = Math.round(v.fuel.fraction * 100);
       const gauge = el("div", { "data-role": "fuel-gauge", role: "progressbar", "aria-valuemin": "0", "aria-valuemax": "100", "aria-valuenow": String(pct), style: `--p:${v.fuel.fraction.toFixed(3)}` }); if (v.fuel.low) gauge.setAttribute("data-low", "");
       const secs = Math.round(v.fuel.seconds); fuel.append(gauge, el("p", { "data-role": "fuel-time" }, v.fuel.uses ? `${pct}% · ${Math.floor(secs / 60)}m ${String(secs % 60).padStart(2, "0")}s` : "No fuel tank"));
-      const tabs = el("nav", { "data-role": "station-tabs" });
+      const tabs = el("nav", { "data-role": "station-tabs", "data-tabs": "tab" });
       tabs.append(btn("Craft", "tab-craft", () => { camperSel.tab = "craft"; kit.rerender(); }, { pressed: camperSel.tab === "craft", data: { pad: "LB" } }), btn("Cook", "tab-cook", () => { camperSel.tab = "cook"; kit.rerender(); }, { pressed: camperSel.tab === "cook", data: { pad: "RB" } }));
       const tip = (r: CamperRecipeView): string => `${r.output.name}${r.output.count > 1 ? ` ×${r.output.count}` : ""} · ${r.ingredients.map((i) => `${i.count} ${i.name}`).join(" + ")}${r.reason ? ` · ${r.reason.replace(/_/g, " ")}` : ""}`;
       const jobBtn = (j: { slot: number; name: string; count: number; progress: number; secondsLeft: number; icon: string; recipe: number }, key: string): HTMLButtonElement => btn(`${j.name} · ${Math.ceil(j.secondsLeft)}s`, key, () => send(cancelQueuedCraftIntent(j.slot), `Cancelled ${j.name}.`),
