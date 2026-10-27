@@ -27,7 +27,7 @@ describe("ADR-209 per-tree progression", () => {
     G.awardXpRaw(w, a, "craft", 10); expect(tx(w, a, "crafting").xp).toBeGreaterThan(0);
   });
   it("tree level-ups emit TreeLevelUp; the global row grants no points", () => {
-    const w = world(); const a = mk(w, 1); const seen: string[] = []; w.events.on(G.TreeLevelUp, (e) => { seen.push(e.tree); });
+    const w = world(); const a = mk(w, 1); const seen: string[] = []; w.events.on(G.TreeLevelUp, (e: { tree: string }) => { seen.push(e.tree); });
     G.awardXpRaw(w, a, "kill", G.treeXpToNext(1) + 1); steps(w, 1); expect(seen).toContain("combat");
     expect(w.get(a, G.Progression)!.points).toBe(0);
   });
