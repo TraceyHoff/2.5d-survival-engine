@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { DeckNeighbors, deckTopPx, deckTileOffset, deckKeep, deckClipPolygon, pieceTieBreak, pieceOrder, SIDE_PX, SIDE_PY, SIDE_NX, SIDE_NY } from "../src/building/deckFaces.js";
+import { DeckNeighbors, deckTopPx, deckTileOffset, deckKeep, deckClipPolygon, deckSideOf, pieceTieBreak, pieceOrder, SIDE_PX, SIDE_PY, SIDE_NX, SIDE_NY } from "../src/building/deckFaces.js";
 
 const HW = 32, HH = 16;
 const TIERS = ["foundation_twig", "foundation", "foundation_stone", "foundation_metal"];
@@ -45,7 +45,7 @@ describe("ADR-197 deck side-face culling", () => {
   it("Canvas2D clip polygon equals the per-pixel keep test", () => {
     for (const mask of [0, 1, 3, 5, 15, 10]) {
       const poly = deckClipPolygon(1, 1, mask, 12, HW, HH);
-      const inside = (x: number, y: number): boolean => { let s = 0; for (let i = 0; i < 4; i++) { const [x0, y0] = poly[i]!, [x1, y1] = poly[(i + 1) % 4]!; const c = (x1 - x0) * (y - y0) - (y1 - y0) * (x - x0); if (Math.abs(c) < 1e-9) continue; s |= c > 0 ? 1 : 2; } return s !== 3; };
+      const inside = (x: number, y: number): boolean => { let c = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const [xi, yi] = poly[i]!, [xj, yj] = poly[j]!; if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) c = !c; } return c; }; // ADR-210: non-convex (diagonal wedges)
       for (let y = -60; y < 40; y += 1.37) for (let x = -50; x < 50; x += 1.37) { const [a, b] = deckTileOffset(x, y, 12, HW, HH); expect(inside(x, y)).toBe(deckKeep(a, b, 1, 1, mask)); }
     }
   });
@@ -73,7 +73,8 @@ function raster(ps: P[], cull: boolean, tie: boolean, frame: number): { img: Int
       const onSkirt = !inRim && ga <= 0.5 + R && gb <= 0.5 + R && a > -0.5 - R && b > -0.5 - R;
       if (!inRim && !onSkirt) continue; if (!deckKeep(a, b, 1, 1, m[i]!)) continue;
       const X = Math.floor(pvx + x), Y = Math.floor(pvy + y); if (X < 0 || Y < 0 || X >= W || Y >= H) continue; const k = Y * W + X;
-      const interior = (p.ax < 9 && a > E) || (p.ay < 9 && b > E) || (p.ax > 0 && a < -E) || (p.ay > 0 && b < -E);
+      const full = (p.ax < 9 ? SIDE_PX : 0) | (p.ay < 9 ? SIDE_PY : 0) | (p.ax > 0 ? SIDE_NX : 0) | (p.ay > 0 ? SIDE_NY : 0); void E;
+      const interior = (deckSideOf(a, b, 1, 1) & full) !== 0; // ADR-210: the owning face (larger excess) is an interior one
       if (interior && !p.ghost) drawn++;
       if (key === dep[k]! && img[k]! >> 1 !== i) tied++;
       if (key > dep[k]! || (key === dep[k]! && (rnd() < 0.5))) { dep[k] = key; img[k] = i * 2 + (onTop ? 0 : 1); skirtOwner[k] = interior && !p.ghost ? 1 : 0; }

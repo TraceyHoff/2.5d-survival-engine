@@ -25,6 +25,7 @@ export interface BuildGhostOpts {
   /** gameplay rotation steps of the piece (preview.rotSteps): rot is then the raw step; 12 = triangle 30° steps mapped
    *  exactly onto the art rows (triArtRow), others rounded to the nearest quarter turn */ rotSteps?: number;
   /** pivot at the exact x/y (Placement.Tri centroid / Free vertex) instead of the floored tile */ exactPivot?: boolean;
+  /** ADR-210: full render flag bits (pieceRotFlags: exact pivot, deck lift, vertex post); supersedes exactPivot */ rotFlags?: number;
   variant?: string | number; variantName?: (pieceKey: string, index: number) => string | undefined }
 
 /** Owns the single ghost entity. sync(preview) creates/updates it; sync(null|undefined) removes it. */
@@ -40,7 +41,8 @@ export class BuildGhost {
     this.last = applyBuildPieceVisual(w, e, this.def, this.registry, { type: 0, rot: opts.rotSteps ? pieceArtRow(p.rot, opts.rotSteps) : p.rot & 3, tint: 0, paint: 0, level: opts.level ?? 0 }, {
       pieceKey: () => p.pieceKey, ghost: p.valid ? 1 : 2,
       ...(opts.variant !== undefined ? { variant: opts.variant } : {}), ...(opts.variantName ? { variantName: opts.variantName } : {}), ...(opts.tier !== undefined ? { tier: opts.tier } : {}) });
-    if (opts.exactPivot && w.has(e, this.def)) { const c = w.get(e, this.def)!; w.set(e, this.def, { ...c, rotation: (c.rotation & 3) | ROT_EXACT_PIVOT }); }
+    const rf = opts.rotFlags ?? (opts.exactPivot ? ROT_EXACT_PIVOT : 0);
+    if (rf && w.has(e, this.def)) { const c = w.get(e, this.def)!; w.set(e, this.def, { ...c, rotation: (c.rotation & 3) | rf }); }
     return this.last;
   }
 }

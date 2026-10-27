@@ -13,6 +13,25 @@ export const ROT_EXACT_PIVOT = 0x80;
  * auto-occlusion-faded (the frame-height test faded the unlit campfire to a 35 % alpha smudge next to the player). */
 export const ROT_NO_OCCLUDE = 0x40;
 export const TRI_ROT_STEPS = 12;
+/** ADR-210: BuildPiece.rotation bit 0x20: upright standing on a deck; drawn lifted by the deck's top height (DECK_TOP_PX). */
+export const ROT_DECK_LIFT = 0x20;
+/** ADR-210: BuildPiece.rotation bit 0x10: vertex-snapped corner post; depth just in front of the wall ends it joins. */
+export const ROT_VERTEX_POST = 0x10;
+/** Minimal gameplay PieceDef view used by pieceRotFlags (Placement: Cell 0, Edge 1, Opening 2, Free 3, Tri 4). */
+export interface PieceFlagDef { placement?: number; key?: string; snap?: string; fits?: number; layer?: number; }
+/**
+ * ADR-210: render flag bits for a gameplay piece. Edge pieces and edge openings sit on the shared tile edge, so they pivot
+ * at the exact edge midpoint (their Transform), not the floored tile centre (the pre-ADR-210 half-tile offset bug).
+ */
+export function pieceRotFlags(def: PieceFlagDef | undefined): number {
+  if (!def) return 0;
+  const vertex = def.placement === 3 && (def.snap === "vertex" || !!def.key?.startsWith("wall_corner"));
+  if (def.placement === 4) return ROT_EXACT_PIVOT;
+  if (def.placement === 1 || (def.placement === 2 && def.fits !== 4)) return ROT_EXACT_PIVOT | ROT_DECK_LIFT;
+  if (vertex) return ROT_EXACT_PIVOT | ROT_DECK_LIFT | ROT_VERTEX_POST;
+  if (def.placement === 0 && def.layer === 1) return ROT_DECK_LIFT;
+  return 0;
+}
 
 /** Art row (0-3, unique4 rows at 0/90/180/270°) for a triangle rotation step (0-11, 30° each). */
 export function triArtRow(rot: number): number {

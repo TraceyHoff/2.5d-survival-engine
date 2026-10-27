@@ -168,6 +168,22 @@ function withContact(world: World, idx: StructureIndex, p: BuildPreview): BuildP
   const f = footRect(world, p); if (!f) return p; const c = snapContact(idx, f.kind, f.r, p.level);
   return { ...p, outline: c.outline, ...(c.edge ? { snapEdge: c.edge } : {}) };
 }
+/** ADR-210: wall edges meeting at vertex (vx, vy) on level z: [north-edge count, west-edge count]. */
+export function vertexWalls(idx: StructureIndex, vx: number, vy: number, z: number): [number, number] {
+  const n = (hasEdge(idx, vx - 1, vy, z, EdgeSide.North) ? 1 : 0) + (hasEdge(idx, vx, vy, z, EdgeSide.North) ? 1 : 0);
+  const w = (hasEdge(idx, vx, vy - 1, z, EdgeSide.West) ? 1 : 0) + (hasEdge(idx, vx, vy, z, EdgeSide.West) ? 1 : 0);
+  return [n, w];
+}
+/** ADR-210: vertices near `at` where a north-running and a west-running wall meet (corner junctions), nearest first. */
+export function cornerJunctions(idx: StructureIndex, at: { x: number; y: number }, z: number, radius = MAGNET_CORNER_RADIUS): { x: number; y: number }[] {
+  const out: { x: number; y: number; d: number }[] = []; const cx = Math.round(at.x), cy = Math.round(at.y);
+  for (let vy = cy - 1; vy <= cy + 1; vy++) for (let vx = cx - 1; vx <= cx + 1; vx++) {
+    const [n, w] = vertexWalls(idx, vx, vy, z); if (n === 0 || w === 0) continue;
+    const d = Math.hypot(vx - at.x, vy - at.y); if (d <= radius) out.push({ x: vx, y: vy, d });
+  }
+  return out.sort((a, b) => a.d - b.d || a.y - b.y || a.x - b.x).map(({ x, y }) => ({ x, y }));
+}
+export const MAGNET_CORNER_RADIUS = 0.75;
 /**
  * ADR-196 magnet: structural pieces (foundation/wall/floor/corner/roof families) whose direct snap is invalid or
  * touches nothing jump to the nearest VALID slot beside existing structure within the magnet radius. Every input
@@ -175,6 +191,7 @@ function withContact(world: World, idx: StructureIndex, p: BuildPreview): BuildP
  */
 export function magnetize(world: World, player: Entity, sel: BuildSelection, rot: number, aim: PlacementAim | undefined, level: number, p: BuildPreview): BuildPreview {
   const def = gameplayDefs(world).pieces.get(sel.piece); if (!def || !STRUCTURAL.has(def.family)) return p;
+  if (def.snap === "vertex") return magnetizeCorner(world, player, sel, rot, aim, level, p);
   const f = footRect(world, p); if (!f) return p;
   const idx = structures(world); const direct = withContact(world, idx, p);
   if (direct.valid && direct.snapEdge) return direct;
@@ -190,6 +207,18 @@ export function magnetize(world: World, player: Entity, sel: BuildSelection, rot
     best = { ...qc, magnet: true }; bestD = d;
   }
   return best ?? direct;
+}
+
+/** ADR-210: a corner post auto-suggests the nearest wall junction (a vertex where N- and W-running walls meet). */
+function magnetizeCorner(world: World, player: Entity, sel: BuildSelection, rot: number, aim: PlacementAim | undefined, level: number, p: BuildPreview): BuildPreview {
+  const idx = structures(world); const [n0, w0] = vertexWalls(idx, Math.round(p.x), Math.round(p.y), level);
+  if (p.valid && n0 > 0 && w0 > 0) return { ...p, magnet: false };
+  if (!p.valid && p.reason !== 10 && p.reason !== 11) return p;
+  const at = placementTarget(world, player, aim) ?? { x: p.x, y: p.y };
+  for (const c of cornerJunctions(idx, at, level)) {
+    const q = rawPreview(world, player, sel, rot, { mode: 1, x: c.x, y: c.y }, level); if (q?.valid) return { ...q, magnet: true };
+  }
+  return p;
 }
 
 /** PlaceCmd for a preview (raw rot as requested; the server re-snaps the same way). */

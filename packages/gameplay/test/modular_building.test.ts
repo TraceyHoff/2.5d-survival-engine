@@ -23,7 +23,7 @@ describe("modular building set (ADR-104)", () => {
   it("loads every new piece in four material tiers with art keys", () => {
     const keys = ["foundation_triangle", "foundation_stilt", "foundation_ramp", "foundation_steps", "wall_arched", "wall_fortified", "floor_stairwell",
       "floor_skylight", "floor_triangle", "wall_corner_inner", "wall_corner_outer", "wall_corner_angled", "roof_gable", "roof_corner", "roof_hip", "roof_chimney"];
-    for (const k of keys) { const p = d.pieces.get(id(k))!; expect(p.tiered).toBe(true); expect(p.minTier).toBe(1); expect(p.family).not.toBe(""); }
+    for (const k of keys) { const p = d.pieces.get(id(k))!; expect(p.tiered).toBe(true); expect(p.minTier).toBe(k.startsWith("wall_corner") ? 0 : 1); expect(p.family).not.toBe(""); }
     const art = modularArtKeys(d);
     expect(new Set(art).size).toBe(art.length);
     expect(art).toContain("wall_window@tier2"); expect(art).toContain("roof_hip@tier4"); expect(art).not.toContain("wall@tier0"); expect(art.some((k) => k.includes(".d"))).toBe(false);

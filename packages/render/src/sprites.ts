@@ -24,8 +24,8 @@ import type { VfxLayer } from "./vfx.js";
 import { LayerCache, activeExpression, readAppearanceSlot, type AppearanceBinding, type CachedLayer } from "./character/layers.js";
 import { nearestCutoff } from "./gl/fallback.js";
 import { PRIO_NEAR } from "./gl/vram.js";
-import { DeckNeighbors, deckTopPx, pieceTieBreak, DECK_EDGE_EPS } from "./building/deckFaces.js";
-import { crackAnim, PieceCoverIndex, ROT_EXACT_PIVOT, ROT_NO_OCCLUDE } from "./building/modular.js";
+import { DeckNeighbors, deckTopPx, pieceTieBreak, exactTieBreak, VERTEX_POST_BIAS, DECK_EDGE_EPS, DECK_SEAM_BAND, DECK_SEAM_SHIFT } from "./building/deckFaces.js";
+import { crackAnim, PieceCoverIndex, ROT_EXACT_PIVOT, ROT_NO_OCCLUDE, ROT_DECK_LIFT, ROT_VERTEX_POST } from "./building/modular.js";
 import { InteriorRoute, inInteriorRegion, interiorOrder, type InteriorRegion } from "./vehicles/interiorPass.js";
 
 export const INSTANCE_FLOATS = 40;
@@ -270,9 +270,11 @@ float ringAt(vec2 uv) {
 float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 void main() {
   vec2 cw = fwidth(vUvRaw.xy); // uniform control flow: crispUv's footprint (ADR-145)
+  mat2 deckJu = mat2(dFdx(vUvRaw.xy), dFdy(vUvRaw.xy)), deckJd = mat2(dFdx(vDeck), dFdy(vDeck)); // ADR-210 seam remap Jacobians
   if (vDeckM.x != 0) { // ADR-197: a side face/rim is drawn only toward an open side (no deck neighbour there)
     float ha = float(vDeckM.y & 15) * 0.5 + ${DECK_EDGE_EPS}, hb = float((vDeckM.y >> 4) & 15) * 0.5 + ${DECK_EDGE_EPS};
-    if (((vDeckM.x & 1) != 0 && vDeck.x > ha) || ((vDeckM.x & 2) != 0 && vDeck.y > hb) || ((vDeckM.x & 4) != 0 && vDeck.x < -ha) || ((vDeckM.x & 8) != 0 && vDeck.y < -hb)) discard;
+    float ea = abs(vDeck.x) - ha, eb = abs(vDeck.y) - hb; int sd = (ea > 0.0 && ea >= eb) ? (vDeck.x > 0.0 ? 1 : 4) : (eb > 0.0 ? (vDeck.y > 0.0 ? 2 : 8) : 0); // ADR-210 owning face
+    if ((vDeckM.x & sd) != 0) discard;
   }
   if (uShadowPass == 1) {
     float a;
@@ -286,6 +288,13 @@ void main() {
   vec3 uv = vUv;
   if ((vFB.x & 4) != 0 && vSwayPx != 0.0) { // sway mask (R = weight): sample the source shifted against the wind
     float w = texture(uSwayM, vUv).r; uv.x -= vSwayPx * w; // vSwayPx is in uv units
+  }
+  if (vDeckM.x != 0) { // ADR-210 connected top: the border band toward a CLOSED side samples the interior instead
+    float ia = float(vDeckM.y & 15) * 0.5 - ${DECK_SEAM_BAND}, ib = float((vDeckM.y >> 4) & 15) * 0.5 - ${DECK_SEAM_BAND};
+    vec2 sh = vec2(((vDeckM.x & 1) != 0 && vDeck.x > ia) ? -${DECK_SEAM_SHIFT} : ((vDeckM.x & 4) != 0 && vDeck.x < -ia) ? ${DECK_SEAM_SHIFT} : 0.0,
+                   ((vDeckM.x & 2) != 0 && vDeck.y > ib) ? -${DECK_SEAM_SHIFT} : ((vDeckM.x & 8) != 0 && vDeck.y < -ib) ? ${DECK_SEAM_SHIFT} : 0.0);
+    float det = determinant(deckJd);
+    if ((sh.x != 0.0 || sh.y != 0.0) && abs(det) > 1e-12) uv.xy += deckJu * (inverse(deckJd) * sh);
   }
   if ((vFlags & 1024) != 0) uv = crispUv(uv, cw);
   vec4 t = ((vFlags & 512) != 0 ? atlasAtBias(uv, uFaceBias) : atlasAt(uv)) * inRect(uv.xy);
@@ -1009,7 +1018,9 @@ export class SpriteBatch {
       const fx = ax + fw, fy = ay + fh;
       // exact pivot (triangle centroid / vertex-snapped corner): the Transform position itself
       const pvx = exact ? tr.data.x[ts]! : cx.pieceAnchor === "front" ? fx : ax + fw / 2, pvy = exact ? tr.data.y[ts]! : cx.pieceAnchor === "front" ? fy : ay + fh / 2;
-      const sx = (pvx - pvy) * hw, sy = (pvx + pvy) * hh - z * zs;
+      // ADR-210: uprights on a deck stand on its top, not the ground under it
+      const lift = rotRaw & ROT_DECK_LIFT ? (exact ? decks.topNear(pvx, pvy, level) : decks.topOver(ax, ay, fw, fh, level)) : 0;
+      const sx = (pvx - pvy) * hw, sy = (pvx + pvy) * hh - z * zs - lift;
       const flat = flatLayer(layer, roof); // deck pieces (floors/foundations), never roofs
       const flags = (flat ? SpriteFlag.Flat : 0) | (res.flipX ? SpriteFlag.FlipX : 0) | (nightSet?.has(vis) ? 64 : 0);
       // damage 1-3: Art's crack overlay sprite (building.crackOverlay = bld_crack, anim stage<N>) on top of the (baked)
@@ -1019,7 +1030,7 @@ export class SpriteBatch {
       const crackCovered = crackSid >= 0 && ca !== undefined;
       const crack = crackCovered && atlas.pageReady(crackSid, PRIO_NEAR) && atlas.resolve(crackSid, atlas.animIndex(crackSid, ca), 0, 0, 0, this.crackRes);
       const dmgOverlay = dmg > 0 && !res.hasDamageFrames && !crackCovered ? dmg : 0;
-      const bias = (roof ? 0.05 : layer * 0.01) + pieceTieBreak(ax, ay, ghost > 0); // roofs above every other layer of the cell; ADR-197 unique tie-break
+      const bias = (roof ? 0.05 : layer * 0.01) + (exact ? exactTieBreak(pvx, pvy, ghost > 0) : pieceTieBreak(ax, ay, ghost > 0)) + (rotRaw & ROT_VERTEX_POST ? VERTEX_POST_BIAS : 0) + (zs > 0 ? (lift / zs) * zf : 0); // roofs above every other layer of the cell; ADR-197 unique tie-break
       const deckTop = flat && !exact && cx.pieceAnchor !== "front" ? this.deckTop(atlas, vis) : undefined;
       const deckMask = deckTop === undefined ? 0 : decks.mask(ax, ay, fw, fh, level, deckTop);
       tmp.length = 0;

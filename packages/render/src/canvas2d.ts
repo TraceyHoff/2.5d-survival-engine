@@ -24,7 +24,8 @@ import { weatherTargets } from "./weather.js";
 import { readDayFraction, readDayNumber, readWeather } from "./env.js";
 import { newStats, type FrameStats } from "./gl/util.js";
 import type { GameplayBindings } from "./sprites.js";
-import { DeckNeighbors, deckTopPx, deckClipPolygon, pieceTieBreak, pieceOrder } from "./building/deckFaces.js";
+import { DeckNeighbors, deckTopPx, deckClipPolygon, deckSeamPatches, pieceTieBreak, exactTieBreak, pieceOrder, VERTEX_POST_BIAS } from "./building/deckFaces.js";
+import { ROT_EXACT_PIVOT, ROT_DECK_LIFT, ROT_VERTEX_POST } from "./building/modular.js";
 
 export type FallbackRendererKind = "webgl2" | "canvas2d" | "debug";
 export interface ContextProbe { (kind: "webgl2" | "2d"): unknown }
@@ -149,23 +150,26 @@ export class Canvas2DRenderer {
   /** ADR-197: building pieces as painter items: level-major, decks under their floor's uprights, iso order, unique tie-break. */
   gatherPieces(world: World, reg: AssetRegistry): C2DPiece[] {
     const bpd = this.bindings.buildPiece; if (!bpd || !world.isRegistered(bpd)) return [];
-    const iso = DEFAULT_ISO; const hw = iso.tileW / 2, hh = iso.tileH / 2; const raw: { e: Entity; ax: number; ay: number; fw: number; fh: number; level: number; layer: number; z: number; vis: number; rot: number; dmg: number; ghost: boolean; deck: boolean; top: number | undefined }[] = [];
+    const iso = DEFAULT_ISO; const hw = iso.tileW / 2, hh = iso.tileH / 2; const raw: { e: Entity; ax: number; ay: number; fw: number; fh: number; level: number; layer: number; z: number; vis: number; rot: number; dmg: number; ghost: boolean; deck: boolean; top: number | undefined; px: number; py: number }[] = [];
     this.decks.clear();
     for (const e of world.query([bpd, Transform])) {
       const b = world.get(e, bpd)!; const t = world.get(e, Transform)!; let sd; try { sd = reg.sprite(b.visualId); } catch { continue; } if (!sd.building) continue;
       const rot = b.rotation & 3; const fw = rot & 1 ? sd.building.footprint.h : sd.building.footprint.w, fh = rot & 1 ? sd.building.footprint.w : sd.building.footprint.h;
       const roof = (sd.building.piece ?? sd.key).startsWith("roof"); const deck = b.layer === 0 && !roof; const top = deck ? deckTopPx(sd.key) : undefined;
-      const r = { e, ax: Math.floor(t.x), ay: Math.floor(t.y), fw, fh, level: b.level, layer: b.layer, z: floorToTerrainZ(b.level, t.z), vis: b.visualId, rot: b.rotation, dmg: b.damageStage, ghost: b.ghost > 0, deck, top };
+      const r = { e, ax: Math.floor(t.x), ay: Math.floor(t.y), fw, fh, level: b.level, layer: b.layer, z: floorToTerrainZ(b.level, t.z), vis: b.visualId, rot: b.rotation, dmg: b.damageStage, ghost: b.ghost > 0, deck, top, px: t.x, py: t.y };
       raw.push(r); if (deck && !r.ghost && top !== undefined) this.decks.add(r.ax, r.ay, fw, fh, r.level, top);
     }
     const out: C2DPiece[] = [];
     for (const r of raw) {
       let f; try { f = reg.buildingFrame(r.vis, r.rot, r.dmg); } catch { continue; } const img = this.image(f.atlas.key); if (!img) continue;
-      const p = worldToScreen(r.ax + r.fw / 2, r.ay + r.fh / 2, r.z, iso);
-      const mask = r.top === undefined ? 0 : this.decks.mask(r.ax, r.ay, r.fw, r.fh, r.level, r.top);
-      const isoD = r.ax + r.fw - 1 + r.ay + r.fh - 1 + r.layer * 0.01 + pieceTieBreak(r.ax, r.ay, r.ghost);
+      // ADR-210: exact pivot (edge midpoint / vertex / tri centroid) and deck-top lift, mirroring the WebGL2 path
+      const exact = (r.rot & ROT_EXACT_PIVOT) !== 0; const pvx = exact ? r.px : r.ax + r.fw / 2, pvy = exact ? r.py : r.ay + r.fh / 2;
+      const lift = r.rot & ROT_DECK_LIFT ? (exact ? this.decks.topNear(pvx, pvy, r.level) : this.decks.topOver(r.ax, r.ay, r.fw, r.fh, r.level)) : 0;
+      const p0 = worldToScreen(pvx, pvy, r.z, iso); const p = { sx: p0.sx, sy: p0.sy - lift };
+      const mask = r.top === undefined || exact ? 0 : this.decks.mask(r.ax, r.ay, r.fw, r.fh, r.level, r.top);
+      const isoD = (exact ? pvx + pvy - 1 : r.ax + r.fw - 1 + r.ay + r.fh - 1) + r.layer * 0.01 + (exact ? exactTieBreak(pvx, pvy, r.ghost) : pieceTieBreak(r.ax, r.ay, r.ghost)) + (r.rot & ROT_VERTEX_POST ? VERTEX_POST_BIAS : 0);
       out.push({ e: r.e, sx: p.sx, sy: p.sy, depth: r.level * LEVEL_DEPTH + (r.deck ? DECK_DEPTH : 0) + isoD, ord: pieceOrder(r.level, r.layer, r.ax, r.ay) * 2 + (r.ghost ? 1 : 0), img, f,
-        clip: mask ? deckClipPolygon(r.fw, r.fh, mask, r.top!, hw, hh) : undefined, ghost: r.ghost });
+        clip: mask ? deckClipPolygon(r.fw, r.fh, mask, r.top!, hw, hh) : undefined, seams: mask ? deckSeamPatches(r.fw, r.fh, mask, r.top!, hw, hh) : undefined, ghost: r.ghost });
     }
     return out;
   }
@@ -175,6 +179,13 @@ export class Canvas2DRenderer {
     if (pc.ghost) g.globalAlpha = 0.6;
     if (f.flipX) g.scale(-1, 1);
     g.drawImage(pc.img, f.x, f.y, f.w, f.h, -f.anchorX, -f.anchorY, f.w, f.h); g.restore(); this.stats.sprites++; this.stats.drawCalls++;
+    if (pc.seams) for (const sp of pc.seams) { // ADR-210 connected top: closed-side border bands repainted from the interior
+      g.save(); g.translate(snapPx(pc.sx, s, ox), snapPx(pc.sy, s, oy));
+      g.beginPath(); sp.poly.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.closePath(); g.clip();
+      if (pc.ghost) g.globalAlpha = 0.6;
+      g.translate(-sp.dx, -sp.dy); if (f.flipX) g.scale(-1, 1);
+      g.drawImage(pc.img, f.x, f.y, f.w, f.h, -f.anchorX, -f.anchorY, f.w, f.h); g.restore(); this.stats.drawCalls++;
+    }
   }
 
   render(world: World, alpha: number): void {
@@ -253,7 +264,7 @@ export class Canvas2DRenderer {
 const FLOOR_Z = floorToTerrainZ(1, 0);
 /** Painter layers: everything on floor N draws after floor N-1; decks draw below the uprights of their own floor. */
 const LEVEL_DEPTH = 1e6, DECK_DEPTH = -5e5;
-interface C2DPiece { e: Entity; sx: number; sy: number; depth: number; ord: number; img: CanvasImageSource; f: { x: number; y: number; w: number; h: number; anchorX: number; anchorY: number; flipX?: boolean }; clip: [number, number][] | undefined; ghost: boolean }
+interface C2DPiece { e: Entity; sx: number; sy: number; depth: number; ord: number; img: CanvasImageSource; f: { x: number; y: number; w: number; h: number; anchorX: number; anchorY: number; flipX?: boolean }; clip: [number, number][] | undefined; seams?: { poly: [number, number][]; dx: number; dy: number }[] | undefined; ghost: boolean }
 const rgb = (c: readonly number[]): string => `rgb(${Math.round(Math.min(1, c[0]!) * 255)},${Math.round(Math.min(1, c[1]!) * 255)},${Math.round(Math.min(1, c[2]!) * 255)})`;
 
 /** Canvas2D sort key: Flat ground decals (roads, ADR-119) draw in a layer below every upright sprite, in iso order. */

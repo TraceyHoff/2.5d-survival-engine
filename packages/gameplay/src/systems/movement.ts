@@ -55,7 +55,8 @@ export function movementBlocked(world: World, x0: number, y0: number, x1: number
   const idx = world.getResource(StructureIndexRes); if (!idx || idx.count === 0) return false;
   if (tx1 !== tx0 && idx.edgeBlocker(Math.max(tx0, tx1), ty0, level, EdgeSide.West)) return true;
   if (ty1 !== ty0 && idx.edgeBlocker(tx1, Math.max(ty0, ty1), level, EdgeSide.North)) return true;
-  if (tx1 !== tx0 || ty1 !== ty0) for (let la = 1; la < 4; la++) { const c = idx.cell(tx1, ty1, level, la); if (c && idx.def(c)?.solid) return true; }
+  // ADR-210: vertex-snapped corner posts sit on the tile corner, so they do not block the whole tile
+  if (tx1 !== tx0 || ty1 !== ty0) for (let la = 1; la < 4; la++) { const c = idx.cell(tx1, ty1, level, la); const d = c ? idx.def(c) : undefined; if (d?.solid && d.snap !== "vertex") return true; }
   return false;
 }
 

@@ -1477,3 +1477,24 @@ Consequences: test `adr208_correction_render`. In a simulated 0.5-tile correctio
   - Controls are unchanged: LB/RB/PgUp/PgDn switch trees, A selects then A learns, B goes back. Mouse, keyboard and touch use the same buttons.
 - **Tests:** `gameplay/test/skill_trees.test.ts` (routing, perks share, cross-tree rejection, per-tree respec, conversion, in-world migration), `persist/test/progression_trees.test.ts` (old-layout player record → load → convert), `client/test/adr209_skill_trees_pad.test.ts` (pad-only spend: RB → D-pad → A A; empty tree refuses), `client/test/adr209_tree_toasts.test.ts`, and the updated `skills.test.ts`/`gameplay-panels.test.ts`.
 - **Amendment (2026-10-27):** removed the original 20% `perksShare` that every award gave to Buffs & Perks, because each tree must earn only from its own activities. `xp.json` no longer has `perksShare`. Test: "ADR-209 amendment: strictly per-tree XP" checks that every source credits exactly one tree. Saves are unaffected because no schema changed.
+
+## ADR-210: Edge walls flush on the foundation rim, corner posts in every tier, seamless decks
+- **Root cause (walls off the edge):** both renderers floored an edge piece's Transform (the exact edge midpoint `(tx+.5, ty)` / `(tx, ty+.5)`) to its tile and pivoted at that tile's centre, which moved every wall, doorway, window and half wall half a tile inward along the edge normal. They were also drawn at ground height (no deck-top lift), and the N and W walls meeting at a junction had equal depth keys, so they flickered. Gameplay positions were always correct.
+- **Fix:** `pieceRotFlags(def)` (`render/building/modular.ts`) replaces the client's `exactPivot` flag:
+  - Edge pieces and edge openings (not hatches) get `ROT_EXACT_PIVOT | ROT_DECK_LIFT`.
+  - Vertex corner posts also get `ROT_VERTEX_POST`.
+  - Layer-1 cell pieces get the lift.
+  - WebGL2 (`sprites.ts`) and Canvas2D (`canvas2d.ts`) both honour the exact pivot. They lift by `DeckNeighbors.topNear/topOver` (the tallest deck touching the pivot) and add `exactTieBreak` (`(round(2(px-py)) mod 8) * 0.0004`) to the depth. Posts add `VERTEX_POST_BIAS` (0.53) so a post draws in front of the wall ends that meet at its vertex. No gaps, no overlap, no z-fight.
+- **Persistence:** no migration. Stored positions were already right; only the drawing changed.
+- **Corners:** `wall_corner_inner/outer/angled` now use `minTier: 0` (twig through tier 4, cost = `costScale` × tier recipe).
+  - Twig uses the bare-key art (placeholder).
+  - Rotation: 4 steps (angled: 8) by RB/LB, R/Q or the touch rotate button.
+  - The ADR-196 magnet has a corner mode (`magnetizeCorner`, `cornerJunctions`). It suggests the nearest vertex within 0.75 tile where an N-running and a W-running wall meet.
+  - Server validation is unchanged: there must be a deck at one of the four vertex tiles. The creature `Blocked` box is ±0.15 at the vertex.
+  - Movement no longer treats a vertex post as blocking its whole anchor tile.
+- **Seamless decks (connected texture):**
+  - Side faces: ADR-197's per-axis test culled the open front skirt next to a closed neighbour, because a skirt pixel projects onto the top plane diagonally. This left staggered "teeth". A pixel now belongs to the face with the larger rim excess (`deckSideOf`). The Canvas2D clip polygon is the matching non-convex shape, with wedges bounded by the diagonals.
+  - Tops: pixels within `DECK_SEAM_BAND` (0.16 tile) of a closed side are resampled `DECK_SEAM_SHIFT` (0.3) toward the interior. WebGL2 does this per fragment through the screen↔top-plane Jacobian. Canvas2D redraws clipped, shifted patches. The result is that bevels, outlines and edge shading show only on the outer perimeter.
+  - Tier-pack decks (`bld_foundation_t*`, `bld_floor_t*`, stilts) were missing from `DECK_TOP_PX`, so they got no culling at all. `tools/measure-deck-tops.py` now measures pack layer-0 slabs.
+  - Masks are rebuilt every frame from `DeckNeighbors`, so they update immediately when pieces are added or removed.
+- **Tests:** `render/test/adr210_seamless.test.ts` (no-hole 3x3 slab, owning face, clip polygon for all 16 masks, seam shift and patches, flags, lift, junction depth) and `client/test/adr210_corners_pad.test.ts` (twig to top-tier costs; pad-only junction snap, RB 90° steps and A place; server validation; movement). `adr197_deck_faces.test.ts` was updated for the owning-face rule.

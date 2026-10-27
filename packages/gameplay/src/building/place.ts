@@ -205,7 +205,7 @@ export function validatePlacement(world: World, builder: Entity, sn: Snapped, op
   if (def.placement === Placement.Cell && def.needsDeck && !tiles.every(([x, y]) => idx.isDeck(idx.deck(x, y, slot.z)))) return BuildFail.NoSupport;
   // creatures in the way of solid pieces
   if (def.solid && slot.z === 0) {
-    const [hw, hh] = def.placement === Placement.Edge ? (slot.side === EdgeSide.North ? [0.5, 0.15] : [0.15, 0.5]) : [def.footprint.w / 2, def.footprint.h / 2];
+    const [hw, hh] = def.placement === Placement.Edge ? (slot.side === EdgeSide.North ? [0.5, 0.15] : [0.15, 0.5]) : def.snap === "vertex" ? [0.15, 0.15] : [def.footprint.w / 2, def.footprint.h / 2]; // ADR-210: a corner post is a thin pillar at the vertex
     for (const c of installSpatialIndex(world).queryRect(sn.pos.x - hw - 0.3, sn.pos.y - hh - 0.3, sn.pos.x + hw + 0.3, sn.pos.y + hh + 0.3)) {
       if (world.has(c, Health) && !world.has(c, BuildPiece) && (world.has(c, Zombie) || c !== builder || def.placement !== Placement.Free)) return BuildFail.Blocked;
     }

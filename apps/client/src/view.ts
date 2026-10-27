@@ -20,7 +20,7 @@ import { CHUNK_SIZE, tileToChunk, tileToLocal, renderTileHeight, type TileMap } 
 import { setDayFraction, resolveOffHandSprite } from "@engine/render";
 import { pieceVariantOpts } from "./piece-variant.js";
 import { loadManifest, mergeManifests, resolveManifestShards, buildPieceVisual, type AssetRegistry, type ManifestFragment, type ManifestJson } from "@engine/assets";
-import { BuildGhost, pieceArtRow, ROT_EXACT_PIVOT, ROT_NO_OCCLUDE, IsoRenderer, Canvas2DRenderer, chooseRenderer, Sprite, Shadow, LightSource, Occluder, SpriteFlag, sourcesFromManifest, coreAppearanceBinding, CameraTargetGuard } from "@engine/render";
+import { BuildGhost, pieceArtRow, pieceRotFlags, ROT_NO_OCCLUDE, IsoRenderer, Canvas2DRenderer, chooseRenderer, Sprite, Shadow, LightSource, Occluder, SpriteFlag, sourcesFromManifest, coreAppearanceBinding, CameraTargetGuard } from "@engine/render";
 import { countFraction } from "./load-progress.js";
 import { VehicleView, type VehicleSnapshot, type VehicleRenderDef } from "@engine/render";
 import { Vehicle as GVehicle, VehicleSeats, VehicleState, Hitch, vehicleDefOf, localPlayerVehicle } from "@engine/gameplay";
@@ -244,7 +244,7 @@ export class IsoView {
     const def = gameplayDefs(net).pieces.get(p.piece);
     // ADR-142: lifted onto the terrain step like the placed piece (view mirror `ground`); at z=0 it sank under raised ground
     this.ghostZ = pieceGroundZ(this.lastTiles, p.x, p.y, p.z, gameplayDefs(net).building.levelHeight);
-    this.ghost.sync({ pieceKey: this.pk(p.pieceKey) ?? p.pieceKey, x: p.x, y: p.y, rot: p.rot, valid: p.valid }, { z: this.ghostZ, level: p.level, tier: p.tier, rotSteps: p.rotSteps, exactPivot: exactPivot(def), ...(names[p.variant] ? { variant: names[p.variant]! } : { variant: p.variant }) });
+    this.ghost.sync({ pieceKey: this.pk(p.pieceKey) ?? p.pieceKey, x: p.x, y: p.y, rot: p.rot, valid: p.valid }, { z: this.ghostZ, level: p.level, tier: p.tier, rotSteps: p.rotSteps, rotFlags: pieceRotFlags(def), ...(names[p.variant] ? { variant: names[p.variant]! } : { variant: p.variant }) });
   }
   resize(w: number, h: number, dpr: number): void {
     const safe = new URLSearchParams(location.search).get("safe") === "1" || this.renderer.capabilities.safe || this.renderer.capabilities.lowEnd;
@@ -603,7 +603,7 @@ export class IsoView {
       if (!vis.visualId) return undefined;
       const lh = (defs as unknown as { building?: { levelHeight?: number } }).building?.levelHeight ?? 1;
       const z = net.get(e, Transform)!.z; const level = Math.max(0, Math.round(z / (lh || 1)));
-      return { pieceVisual: vis.visualId, variant: p.variant, rot: vis.rotation | (exactPivot(def) ? ROT_EXACT_PIVOT : 0) | (LOW_PROP_PIECES.has(def?.key ?? "") ? ROT_NO_OCCLUDE : 0), tint: 0, damage: vis.damageStage, level, layer: vis.layer, pieceKey: def?.key };
+      return { pieceVisual: vis.visualId, variant: p.variant, rot: vis.rotation | pieceRotFlags(def) | (LOW_PROP_PIECES.has(def?.key ?? "") ? ROT_NO_OCCLUDE : 0), tint: 0, damage: vis.damageStage, level, layer: vis.layer, pieceKey: def?.key };
     }
     // emissive sprites (e.g. glow mushrooms) carry a light when the table knows their key
     return undefined;
@@ -616,7 +616,7 @@ export class IsoView {
 /** ADR-166: every LootBag entity (death bag, zombie/animal loot, supply crate) draws this pack sprite. */
 export const LOOT_BAG_SPRITE = "death_bag";
 export const LOW_PROP_PIECES: ReadonlySet<string> = new Set(["campfire"]);
-const exactPivot = (def: { placement?: number; key?: string } | undefined): boolean => def?.placement === 4 || (def?.placement === 3 && !!def.key?.startsWith("wall_corner"));
+
 /** rot/rotSteps for buildPieceVisual: triangles (12 steps of 30°) map exactly onto an art row (pieceArtRow), no quarter-turn snap. */
 /** ADR-174: art rot of a placed piece (off-grid free pieces carry FINE_ROT; their 15° step maps to the nearest art row). */
 const pieceArt = (net: World, type: number, rot: number): { rot: number; rotSteps: number } => { const def = gameplayDefs(net).pieces.get(type); if (!def) return artRot(rot, rotationSteps(net, type)); const r = rotParts(def, rot); return artRot(r.rot, r.steps); };

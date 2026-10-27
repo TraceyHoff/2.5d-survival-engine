@@ -1339,7 +1339,7 @@
       "hp": 250,
       "snap": "vertex",
       "rotSteps": 4,
-      "minTier": 1,
+      "minTier": 0,
       "family": "corner",
       "solid": true
     },
@@ -1352,7 +1352,7 @@
       "hp": 250,
       "snap": "vertex",
       "rotSteps": 4,
-      "minTier": 1,
+      "minTier": 0,
       "family": "corner",
       "solid": true
     },
@@ -1365,7 +1365,7 @@
       "hp": 250,
       "snap": "vertex",
       "rotSteps": 8,
-      "minTier": 1,
+      "minTier": 0,
       "family": "corner",
       "solid": true
     },
