@@ -1,3 +1,4 @@
+import { logRecoverable } from "../error-log.js";
 /**
  * ADR-117 Web Audio mixer: buses master <- {music, ambient, sfx, ui, voice}, per-bus volume/mute (persisted), unlock
  * on first user gesture (mobile / iOS / console browsers), suspend while hidden or paused, voice limits with
@@ -49,7 +50,7 @@ export class AudioMixer {
         this.ctx = this.deps.createContext ? this.deps.createContext() : C.AudioContext ? new C.AudioContext({ latencyHint: "interactive" }) : C.webkitAudioContext ? new C.webkitAudioContext() : undefined;
         if (!this.ctx) return; this.build();
       }
-      if (this.suspendReasons.size === 0) void this.ctx.resume?.().catch(() => undefined);
+      if (this.suspendReasons.size === 0) void this.ctx.resume?.().catch((e: unknown) => logRecoverable("audio context resume", e));
       // iOS: a (silent) buffer started inside the gesture fully unlocks output
       try { const b = this.ctx.createBuffer(1, 1, this.ctx.sampleRate || 22050); const s = this.ctx.createBufferSource(); s.buffer = b; s.connect(this.ctx.destination); s.start(0); } catch { /* ignore */ }
       this.unlocked = true;
@@ -69,8 +70,8 @@ export class AudioMixer {
   setSuspended(reason: string, on: boolean): void {
     if (on) this.suspendReasons.add(reason); else this.suspendReasons.delete(reason);
     if (!this.ctx) return;
-    try { if (this.suspendReasons.size) void this.ctx.suspend?.().catch(() => undefined); else if (this.unlocked) void this.ctx.resume?.().catch(() => undefined); } catch { /* ignore */ }
-    for (const v of this.voices) if (v.media) { try { if (this.suspendReasons.size) v.media.pause(); else void v.media.play().catch(() => undefined); } catch { /* ignore */ } }
+    try { if (this.suspendReasons.size) void this.ctx.suspend?.().catch(() => undefined); else if (this.unlocked) void this.ctx.resume?.().catch((e: unknown) => logRecoverable("audio context resume", e)); } catch { /* ignore */ }
+    for (const v of this.voices) if (v.media) { try { if (this.suspendReasons.size) v.media.pause(); else void v.media.play().catch((e: unknown) => logRecoverable("audio resume", e)); } catch { /* ignore */ } }
   }
   get suspended(): boolean { return this.suspendReasons.size > 0; }
 
@@ -110,7 +111,9 @@ export class AudioMixer {
   private async loadFile(r: Resolved): Promise<AudioBuffer | null> {
     const c = this.ctx; if (!c) return null;
     const fetchBytes = this.deps.fetchBytes ?? (async (u: string) => { const res = await fetch(u); if (!res.ok) throw new Error(String(res.status)); return res.arrayBuffer(); });
-    for (const u of r.urls) { try { const bytes = await fetchBytes(u); return await new Promise<AudioBuffer>((ok, bad) => { const p = c.decodeAudioData(bytes, ok, bad); if (p && typeof (p as Promise<AudioBuffer>).then === "function") (p as Promise<AudioBuffer>).then(ok, bad); }); } catch { /* next format */ } }
+    let last: unknown;
+    for (const u of r.urls) { try { const bytes = await fetchBytes(u); return await new Promise<AudioBuffer>((ok, bad) => { const p = c.decodeAudioData(bytes, ok, bad); if (p && typeof (p as Promise<AudioBuffer>).then === "function") (p as Promise<AudioBuffer>).then(ok, bad); }); } catch (e) { last = e; /* next format */ } }
+    if (r.urls.length) logRecoverable(`audio decode ${r.urls[0]}`, last); // ADR-201: every format failed (falls back to synth / silence)
     return null;
   }
   private synthBuffer(r: Resolved): AudioBuffer | null {
@@ -177,9 +180,9 @@ export class AudioMixer {
     try {
       media.loop = r.def.loop; const node = c.createMediaElementSource(media); const chain = this.chain(); node.connect(chain.gain); chain.gain.connect(this.buses.get(r.def.bus)!);
       // try the fallback formats if the first one fails to load
-      let i = 0; media.onerror = () => { i++; if (i < r.urls.length) { media.src = r.urls[i]!; void media.play().catch(() => undefined); } };
+      let i = 0; media.onerror = () => { i++; if (i < r.urls.length) { media.src = r.urls[i]!; void media.play().catch((e: unknown) => logRecoverable("audio play", e)); } };
       const v: Voice = { id: this.nextId++, key: r.key, bus: r.def.bus, priority: r.def.priority, started: c.currentTime, loop: r.def.loop, src: undefined, media, mediaNode: node, chain, baseGain: r.gain * (opts.gain ?? 1), ended: false, opts };
-      media.onended = () => this.release(v); this.applySpatial(v, true); void media.play().catch(() => undefined); this.voices.push(v); return v.id;
+      media.onended = () => this.release(v); this.applySpatial(v, true); void media.play().catch((e: unknown) => logRecoverable("audio play", e)); this.voices.push(v); return v.id;
     } catch { return 0; }
   }
   private applySpatial(v: Voice, now = false): void {

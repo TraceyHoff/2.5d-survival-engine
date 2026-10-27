@@ -1,3 +1,4 @@
+import { reportRenderError } from "../report.js";
 /**
  * AtlasManager: GPU side of the @engine/assets registry.
  *
@@ -655,7 +656,7 @@ export class AtlasManager {
     const load = async (url: string): Promise<ImageLike> => { held.push([AtlasManager.IMAGE_KIND, url]); return this.assets.load<ImageLike>(AtlasManager.IMAGE_KIND, url); };
     const loadOpt = async (url: string | null | undefined): Promise<ImageLike | null> => {
       if (!url) return null;
-      try { return await load(url); } catch { held.pop(); this.assets.release(AtlasManager.IMAGE_KIND, url); return null; }
+      try { return await load(url); } catch (e) { reportRenderError(`atlas optional layer ${url}`, e); held.pop(); this.assets.release(AtlasManager.IMAGE_KIND, url); return null; }
     };
     const firstOf = async (c: string | string[] | undefined): Promise<[ImageLike | null, string | undefined]> => {
       for (const u of c === undefined ? [] : Array.isArray(c) ? c : [c]) { const im = await loadOpt(u); if (im) return [im, u]; }
@@ -775,7 +776,7 @@ export class AtlasManager {
     this.maskPixels.clear();
     // body pages: resident from the first frame (prio 0: no budget refusal; one slot each, so never evicted)
     const g0 = this.gen; const bodies = list.filter((a) => a.lazy && this.poolOfA(a)?.cls === "body");
-    await Promise.all(bodies.map(async (a) => { a.lazy!.prio = 0; a.lazy!.state = 1; try { await this.pageIn(a, g0); } catch (e) { console.warn(`[render] body page ${a.key} failed`, e); } if ((a.lazy!.state as number) !== 2) { a.lazy!.state = 0; const m = `body page ${a.key} not resident`; if (this.uploadErrors.length < 32) this.uploadErrors.push(m); } }));
+    await Promise.all(bodies.map(async (a) => { a.lazy!.prio = 0; a.lazy!.state = 1; try { await this.pageIn(a, g0); } catch (e) { reportRenderError(`body page-in ${a.key}`, e, true); } if ((a.lazy!.state as number) !== 2) { a.lazy!.state = 0; const m = `body page ${a.key} not resident`; if (this.uploadErrors.length < 32) this.uploadErrors.push(m); } }));
     // previously resident pages (closest first) back in before drawing resumes: no undressed / missing-art frames
     const back = list.filter((a) => a.lazy && a.lazy.state === 0 && wasResident.has(a.key) && this.poolOfA(a)).sort((x, y) => wasResident.get(x.key)! - wasResident.get(y.key)!);
     await Promise.all(back.map(async (a) => { const pr = wasResident.get(a.key)!; a.lazy!.prio = pr; if (!this.poolOn(this.poolOfA(a)!, pr)) return; a.lazy!.state = 1; try { await this.pageIn(a, g0); } catch { /* re-requested by pageReady */ } if ((a.lazy!.state as number) !== 2) a.lazy!.state = 0; }));
@@ -1316,7 +1317,7 @@ export class AtlasManager {
       const pr = a.lazy!.prio ?? Infinity; const p = this.poolOfA(a); if (!p || !this.poolOn(p, pr) || !p.lru.canAllocate(a.key, this.frame, pr)) continue;
       if (p.cls === "stream") this.streamStarts++;
       a.lazy!.state = 1; this.inflight++;
-      this.pageIn(a, g).catch((e: unknown) => { console.warn(`[render] page-in ${a.key} failed`, e); if (g === this.gen) a.lazy!.state = 0; })
+      this.pageIn(a, g).catch((e: unknown) => { reportRenderError(`atlas page-in ${a.key}`, e); if (g === this.gen) a.lazy!.state = 0; })
         .finally(() => { this.inflight--; this.vram.pending = this.queue.length + this.inflight; this.pump(); });
     }
   }

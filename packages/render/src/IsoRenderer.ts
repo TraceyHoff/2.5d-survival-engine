@@ -1,3 +1,4 @@
+import { reportRenderError } from "./report.js";
 /**
  * IsoRenderer: WebGL2 2.5D isometric renderer. Read-only consumer of the ECS World.
  *
@@ -506,7 +507,7 @@ export class IsoRenderer implements Renderer {
     { const up = this.fallback.recover(this.totalFrames); if (up !== null) this.recoverFallback(up); }
     // texel footprint from zoom x device DPR, not the governor's resScale: a quality tier change must never trigger an atlas re-tier
     this.atlas.setCharFootprint(atlasFootprint(this.camera.zoom, this.lastCss[2] || this.camera.dpr));
-    if (this.totalFrames >= 30 && this.totalFrames % 30 === 0) void this.atlas.retier(this.totalFrames).then((r) => { if (r) { this.w = 0; console.info(`[render] re-tiered atlases: ${this.atlas.tiers.hot.length} hot x${this.atlas.tiers.hotScale}`); } }, () => undefined);
+    if (this.totalFrames >= 30 && this.totalFrames % 30 === 0) void this.atlas.retier(this.totalFrames).then((r) => { if (r) { this.w = 0; console.info(`[render] re-tiered atlases: ${this.atlas.tiers.hot.length} hot x${this.atlas.tiers.hotScale}`); } }, (e: unknown) => reportRenderError("atlas retier", e));
     if (this.tilemap) this.terrain.sync(this.tilemap);
     this.camera.viewUniform(this.viewU);
     const rect = this.camera.visibleRect(0, this.rect);

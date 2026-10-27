@@ -1,3 +1,4 @@
+import { reportRenderError } from "../report.js";
 /**
  * KTX2 (Basis Universal) transcoding. The Basis transcoder (Apache-2.0, Binomial LLC; vendored from three.js r170
  * examples/jsm/libs/basis, see vendor/basis/README.md) lives in packages/render/vendor/basis and is loaded lazily on the
@@ -134,4 +135,4 @@ export async function loadKtx2Rgba(url: string, fetcher: (u: string) => Promise<
 }
 
 let warned = 0;
-function warnOnce(url: string, e: unknown): void { if (warned++ < 3) console.warn(`[render] ktx2 ${url}: ${e instanceof Error ? e.message : String(e)}`); }
+function warnOnce(url: string, e: unknown): void { reportRenderError(`ktx2 transcode ${url}`, e); if (warned++ < 3) console.warn(`[render] ktx2 ${url}: ${e instanceof Error ? e.message : String(e)}`); }

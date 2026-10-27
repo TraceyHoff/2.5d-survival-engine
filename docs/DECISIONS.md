@@ -1354,3 +1354,15 @@ Canvas2D drew no building pieces at all.
 - **Not covered:** split stack and move-to-hotbar have no game command for any device yet (the hotbar is the first inventory slots), so the pad cannot do them either.
 - **Tests:** `apps/client/test/adr200_pad_blockers.test.ts` covers pad-only equip, eat, drop, craft, and selecting a foundation then Place. `character_creator.test.ts` covers the creator pad loop dying with the creator and A opening the keyboard.
 - **Browser check:** a headless Chrome run at 1920×1080 with a mocked `navigator.getGamepads` went pad-only through main menu, creator keyboard, inventory equip and eat, LB+Select crafting queue, and pause→Build→foundation→Place→A. The foundation piece count went 1→2.
+
+## ADR-201: Errors that were swallowed now go to the error log
+- **Render:** `@engine/render` exports `reportRenderError(where, err, visible?)` and `setRenderErrorSink`. Without a sink it falls back to console.warn, and it never throws. These paths now report through it instead of `() => undefined` or a bare console.warn:
+  - the atlas retier (ADR-190 async swap, `IsoRenderer` every 30 frames)
+  - lazy atlas page-in
+  - optional atlas layers (tint and emissive)
+  - KTX2 transcode failures (also covers the ADR-186 texture worker)
+  - Canvas2D image and atlas loads
+  - body page-in, which is marked `visible`: characters would go missing
+- **Client:** `main.ts` installs the sink. `visible` reports call `showRenderError`, which shows the overlay and logs. Everything else calls `logRecoverable` and goes only to the ADR-198 log, with no overlay. In the audio mixer, `play()`, resume and decode-failed-for-every-format now call `logRecoverable`. `NotAllowedError` and `AbortError` (autoplay policy, interrupted play) are expected and are dropped.
+- **Left as is (intentional fallbacks, not errors):** feature probes (`canPlayType`, OffscreenCanvas mask readback), catalog-shape guards, fullscreen and orientation lock rejections, the DB close-after-late-open, the resize-chain tail and the menu leave chain.
+- **Tests:** `apps/client/test/adr201_swallowed_errors.test.ts`.

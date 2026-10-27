@@ -43,3 +43,4 @@ export * from "./building/modular.js";
 export * from "./building/chimney.js";
 export * from "./gl/sceneTarget.js";
 export * from "./canvas2d.js";
+export * from "./report.js";

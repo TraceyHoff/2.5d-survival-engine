@@ -1,3 +1,4 @@
+import { reportRenderError } from "./report.js";
 /**
  * Canvas2DRenderer: sprite fallback when WebGL2 cannot be created (console browsers after a GPU reset, WebGL blocked for
  * the origin, software-only devices). Draws the REAL sprite art from the same manifest + atlas PNGs and the same view
@@ -91,14 +92,14 @@ export class Canvas2DRenderer {
   image(atlasKey: string): HTMLImageElement | ImageBitmap | null {
     if (this.images.has(atlasKey)) return this.images.get(atlasKey)!;
     this.images.set(atlasKey, null);
-    const src = this.sources.get(atlasKey); if (src) this.loadImage(src.url).then((i) => this.images.set(atlasKey, i), () => undefined);
+    const src = this.sources.get(atlasKey); if (src) this.loadImage(src.url).then((i) => this.images.set(atlasKey, i), (e: unknown) => reportRenderError(`canvas2d atlas load ${src.url}`, e));
     return null;
   }
 
   /** Image by URL (tint masks), loaded on first use; null while loading / failed. */
   private urlImage(url: string): HTMLImageElement | ImageBitmap | null {
     const k = `url:${url}`; if (this.images.has(k)) return this.images.get(k)!;
-    this.images.set(k, null); this.loadImage(url).then((i) => this.images.set(k, i), () => undefined); return null;
+    this.images.set(k, null); this.loadImage(url).then((i) => this.images.set(k, i), (e: unknown) => reportRenderError(`canvas2d image load ${url}`, e)); return null;
   }
   private tinted = new Map<string, CanvasImageSource>();
   /** A paper-doll layer's frame, tinted through its tintmask (cached); the raw sheet when untinted or no DOM canvas. */

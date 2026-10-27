@@ -74,3 +74,9 @@ export function installGlobalErrorCapture(target: Pick<Window, "addEventListener
   target.addEventListener("unhandledrejection", (ev: Event) => { const r = log.record("Unhandled rejection", (ev as PromiseRejectionEvent).reason); onError?.(r); });
   target.addEventListener("pagehide", () => log.flush());
 }
+
+/** ADR-201: recoverable errors go to the log only (no overlay). Autoplay / aborted-play rejections are expected noise. */
+export function logRecoverable(where: string, err: unknown): void {
+  const n = (err as { name?: string } | null)?.name; if (n === "NotAllowedError" || n === "AbortError") return;
+  try { errorLog().record(`Recoverable: ${where}`, err); } catch { /* never throw */ }
+}
