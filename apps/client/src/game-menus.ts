@@ -7,6 +7,7 @@
  * L clan, J skills, T trade, Enter or / chat, O settings. Gamepad: Start/Select pause (hub), D-pad/stick + A/B inside menus.
  */
 import { deleteConfirm } from "./delete-progress.js";
+import { errorLog } from "./error-log.js";
 import { UINav, type ContextStack } from "./ui-nav.js";
 import { loadSettings, saveSettings } from "./menu.js";
 import { morph } from "./ui-diff.js";
@@ -128,6 +129,17 @@ export class GameMenus {
     const hint = document.createElement("div"); hint.className = "hint"; hint.textContent = "Tap · Tab/arrows + Enter, Esc back · D-pad + A, B back"; p.append(hint);
     m.append(p); m.dataset["menu"] = id; return m;
   }
+  /** ADR-198: Settings → Error log. Plain buttons in the modal, so ui-nav's focus layer makes them D-pad / A / B navigable. */
+  private errorLogPanel(): HTMLElement {
+    const log = errorLog(), entries = log.list();
+    const pre = document.createElement("pre"); pre.dataset["role"] = "error-log";
+    pre.style.cssText = "margin:0;max-height:45vh;overflow:auto;white-space:pre-wrap;word-break:break-word;font:12px/1.35 ui-monospace,monospace;background:#FFFAF0;border:2px solid #74432C;border-radius:8px;padding:8px";
+    pre.textContent = entries.length ? [...entries].reverse().map((e) => `${new Date(e.t).toLocaleString()}  ${e.code}  ${e.kind}${e.count > 1 ? ` ×${e.count}` : ""}\n${e.message.split("\n").slice(0, 3).join("\n")}`).join("\n\n") : "No errors recorded. 🎉";
+    const status = this.para(`${entries.length} entr${entries.length === 1 ? "y" : "ies"} · build ${entries[0]?.build ?? ""}`); status.dataset["role"] = "status";
+    const copy = (): void => { const t = log.text(); const done = (ok: boolean): void => { status.textContent = ok ? "Copied — paste it into your bug report." : "Copy blocked — select the text above and copy it."; };
+      try { void navigator.clipboard.writeText(t).then(() => done(true), () => done(false)); } catch { done(false); } };
+    return this.panel("error-log", "Error log", [status, pre], [["📋 Copy", copy], ["Clear", () => { log.clear(); this.nav.close(); }, "alt"], ["Back", () => this.nav.close(), "alt"]]);
+  }
   private para(t: string): HTMLElement { const p = document.createElement("p"); p.textContent = t; return p; }
 
   /** ADR-172: unread / pending count on a menu-bar button (chat lines, party / clan invites); mirrored on ⋯ when it is a collapsed secondary button. 0 clears. */
@@ -145,6 +157,7 @@ export class GameMenus {
     if (id === "settings") return this.settingsPanel();
     if (id === "chat") return this.chatPanel();
     if (id === "delete-progress") return this.deletePanel();
+    if (id === "error-log") return this.errorLogPanel();
     if (id === "session") { const s = this.o.session?.(); return this.panel("session", "Session", [this.para(s?.label ?? "Not in a shared session.")], s ? [[s.leaveLabel, () => { this.nav.closeAll(); s.onLeave(); }, "alt"]] : []); }
     const m = GAME_MENUS.find((d) => d.id === id); if (!m) throw new Error(`unknown menu ${id}`);
     if (this.o.gameplay && (GAMEPLAY_PANELS as readonly string[]).includes(id)) return this.panel(id, m.title, this.gameplayNodes(id as GameplayPanel));
@@ -237,7 +250,7 @@ export class GameMenus {
     const del = this.o.deleteProgress?.();
     const wr = this.o.worldRules?.(); const l4 = document.createElement("small"); l4.dataset["role"] = "world-rules"; l4.style.cssText = "display:block;opacity:.8";
     l4.textContent = wr ? `This world: zombie hordes ${wr.hordes ? `ON (after ${wr.hordeGraceDays} in-game days)` : "OFF"}` : "";
-    return this.panel("settings", "Settings", [l1, l2, l5, l6, l3, ...(wr ? [l4] : []), ...(this.o.audio ? [audioSettingsRows(this.o.audio)] : [])], [...(this.o.tutorial ? [["📖 Play the guide again", () => { this.nav.closeAll(); this.o.tutorial!.replay(); }, "alt"] as [string, () => void, string]] : []), ...(del ? [[del.label, () => this.open("delete-progress"), "alt"] as [string, () => void, string]] : []),["Save", () => { saveSettings({ ...loadSettings(), showHud: hud.checked, fullscreen: fs.checked, toolHints: th.checked, nameTags: nt.checked }); const qp = parsePreset(q.value) ?? "auto"; savePreset(qp); this.o.setQuality?.(qp); this.nav.close(); }], ["Back", () => this.nav.close(), "alt"]]);
+    return this.panel("settings", "Settings", [l1, l2, l5, l6, l3, ...(wr ? [l4] : []), ...(this.o.audio ? [audioSettingsRows(this.o.audio)] : [])], [...(this.o.tutorial ? [["📖 Play the guide again", () => { this.nav.closeAll(); this.o.tutorial!.replay(); }, "alt"] as [string, () => void, string]] : []), ...(del ? [[del.label, () => this.open("delete-progress"), "alt"] as [string, () => void, string]] : []), ["🐞 Error log", () => this.open("error-log"), "alt"],["Save", () => { saveSettings({ ...loadSettings(), showHud: hud.checked, fullscreen: fs.checked, toolHints: th.checked, nameTags: nt.checked }); const qp = parsePreset(q.value) ?? "auto"; savePreset(qp); this.o.setQuality?.(qp); this.nav.close(); }], ["Back", () => this.nav.close(), "alt"]]);
   }
   private deletePanel(): HTMLElement {
     const d = this.o.deleteProgress?.();

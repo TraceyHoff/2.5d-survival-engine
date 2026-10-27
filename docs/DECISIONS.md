@@ -1325,3 +1325,15 @@ Canvas2D drew no building pieces at all.
 - Use trimmed frames for decks: the 128x128 untrimmed frames waste fill.
 - Add a `deckTop` field to the manifest instead of measuring it.
 - Measure each rotation separately if rotated deck art ever stops being a mirror.
+
+## ADR-198: Persistent client error log + timed error overlay
+- **Capture:** `apps/client/src/error-log.ts` keeps a ring buffer (`ERROR_LOG_MAX` = 60) in localStorage (`survivaz.errorlog.v1`). Every `showRenderError` call (frame errors, renderer exceptions, resize failures, context loss, black-frame checks, start-up failures) is recorded, and so are window `error` and `unhandledrejection` events. Each entry stores the timestamp, a short stable code (`E-XXXX`, an FNV hash of kind + first message line), the message, the stack, the renderer (webgl2 / canvas2d / debug), the GPU and the build hash (`__BUILD_HASH__`, set from git or `GITHUB_SHA` in the Vite config). When the same error repeats back to back, its counter goes up instead of adding a new entry.
+- **Safety:** saves are throttled to one coalesced write per second and flushed on `pagehide`. The logger never throws: a corrupt store, a full quota (the buffer is halved and saved again), an unserializable error value or a context probe that throws are all handled.
+- **Overlay:** it stays up for 8 s (`OVERLAY_MS`) and then removes itself. A tap dismisses it sooner. Each error shows its code and "Saved to Settings → Error log". The same error is shown at most once every 8 s, but every occurrence is logged. Before this change the overlay showed each error only once per page and never closed. A reload (for example the context-loss recovery reload) was the only thing that cleared it, which is why players saw it "vanish".
+- **UI:** Settings → "🐞 Error log" opens the `error-log` modal: newest entries first, plus 📋 Copy (full text report to the clipboard), Clear and Back. These are ordinary modal buttons, so the shared ui-nav focus layer handles them: D-pad/stick to move, A to activate, B to go back.
+- **Tests:** `apps/client/test/adr198_error_log.test.ts`.
+
+## ADR-199: No false "World rendered black" after a WebGL context loss
+- **Cause (found by soak with `WEBGL_lose_context`):** if a black-frame readback was in flight, or started, while the context was lost, it read all zeros. After a restore, the dead readback buffer gave glError 0x502. Either way the player saw a second, false "World rendered black" overlay on top of the real "context lost" one. `glInfo` also reported "GPU: null" on a lost context.
+- **Fix:** `blackFrameStep` stops checking for the rest of the page once `gl.isContextLost()` has been true, because the renderer is rebuilt by the recovery reload. `glInfo` remembers the GPU name from the last live probe. The renderer's own `context-lost` event no longer opens a second overlay: gl-recovery already reports the loss and the quality step-down.
+- **Tests:** `apps/client/test/adr199_lost_context_blackcheck.test.ts`.

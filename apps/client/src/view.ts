@@ -114,7 +114,7 @@ function watchResources(match: RegExp, cb: (count: number, bytes: number) => voi
   } catch { return () => {}; }
 }
 /** ADR-183: black-frame self-check state carried by the view. */
-export interface BlackCheckState { checks: number; blackFrames: number; blackCheck: BlackFrameCheck | undefined }
+export interface BlackCheckState { checks: number; blackFrames: number; blackCheck: BlackFrameCheck | undefined; lost?: boolean }
 /**
  * One step of the all-black self-check after a frame. ADR-183: the Canvas2D renderer has no `gl`; before this guard
  * `blackCheck?.gl !== r.gl` was `undefined !== undefined` (false), so no check was created and `bc.pending` threw
@@ -122,6 +122,9 @@ export interface BlackCheckState { checks: number; blackFrames: number; blackChe
  */
 export function blackFrameStep(st: BlackCheckState, r: { gl?: WebGL2RenderingContext | undefined; heldFrames: number }, held0: number, daylight: () => number = () => daylightOf(r as never)): void {
   if (!r.gl) return;
+  // ADR-199: a lost (or lost-then-restored, pre-reload) context reads back zeros and its readback buffer is dead
+  // (glError 0x502) — that showed a false "World rendered black" overlay after every GPU reset. Stop checking this page.
+  if (st.lost || r.gl.isContextLost()) { st.lost = true; st.blackCheck = undefined; st.blackFrames = 0; return; }
   if (st.blackCheck?.gl !== r.gl) st.blackCheck = new BlackFrameCheck(r.gl); const bc = st.blackCheck;
   if (bc.pending) { const black = bc.poll(); if (black === true) { if (++st.blackFrames >= 2) showRenderError("World rendered black", glInfo(r.gl)); } else if (black === false) st.blackFrames = 0; }
   else if (r.heldFrames === held0 && st.checks < 90 && ++st.checks % 30 === 0 && daylight() > 0.5) bc.start(); // held (settling) frames draw nothing: not a black frame
@@ -182,7 +185,7 @@ export class IsoView {
       // ?safe=1 implies ?gl=lowend (mediump, no float targets, low texture memory)
       // after a context loss gl-recovery.ts steps the level down (sessionStorage) so a reload starts lower and never loops
       ...(levelFlags(effectiveLevel(location.search)) ? { gl: levelFlags(effectiveLevel(location.search))! } : q0.get("safe") === "1" && !q0.get("gl") ? { gl: ["lowend" as const] } : {}),
-      onError: (e) => { if (e.kind !== "context-restored") showRenderError(`Renderer: ${e.kind}`, `${e.message}${e.detail ? `\n${e.detail.slice(0, 300)}` : ""}\nTry ?gl=lowend or ?safe=1 — please report this text.`); } });
+      onError: (e) => { if (e.kind !== "context-restored" && e.kind !== "context-lost") /* ADR-199: gl-recovery already reports the loss (one overlay, not two) */ showRenderError(`Renderer: ${e.kind}`, `${e.message}${e.detail ? `\n${e.detail.slice(0, 300)}` : ""}\nTry ?gl=lowend or ?safe=1 — please report this text.`); } });
     } catch (e) { console.warn("[view] IsoRenderer failed", e); renderer = make2d(); }
     { const c = renderer.capabilities; console.info(`[view] gl ${c.renderer} mobile=${c.mobile} lowEnd=${c.lowEnd} flags=${c.flags.join(",")} fallbacks=${c.fallbacks.join("; ")}`); (globalThis as { __renderCaps?: unknown }).__renderCaps = c; }
     onStage("manifest", 0);

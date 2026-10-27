@@ -2,6 +2,7 @@ import { defineConfig, type Plugin, type Connect } from "vite";
 import { cpSync, createReadStream, existsSync, readFileSync, mkdirSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { extname, join, normalize, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { execSync } from "node:child_process";
 import { servedManifestIndex } from "./src/manifest-index.js";
 
 /**
@@ -82,8 +83,10 @@ const BRANDING = {
   loadingAnim: existsSync(join(BR, "loading/loading_zombie_walk.png")) && existsSync(join(BR, "loading/loading_campfire.png")),
 };
 
+/** ADR-198: short git hash stamped into the error log (GITHUB_SHA on CI). */
+function buildHash(): string { const e = process.env["GITHUB_SHA"]; if (e) return e.slice(0, 8); try { return execSync("git rev-parse --short=8 HEAD", { cwd: root }).toString().trim(); } catch { return "unknown"; } }
 export default defineConfig({
-  define: { __BRANDING__: JSON.stringify(BRANDING) },
+  define: { __BRANDING__: JSON.stringify(BRANDING), __BUILD_HASH__: JSON.stringify(buildHash()) },
   base: process.env["BASE"] ?? "/",
   plugins: [art()],
   build: { target: "es2022" },

@@ -9,7 +9,8 @@ import { LoadProgress } from "./load-progress.js";
 import { attachZoom, type ZoomControl } from "./camera-zoom.js";
 let camZoom: ZoomControl | undefined; let padZoomT = 0; // ADR-177
 import { mountUi } from "./ui-root.js";
-import { showRenderError } from "./glcheck.js";
+import { showRenderError, glInfo } from "./glcheck.js";
+import { errorLog, installGlobalErrorCapture } from "./error-log.js";
 import { startDiag } from "./diag.js";
 import { installFullscreenRestore, exitFullscreen } from "./fullscreen.js";
 import { uiRoot, safeAreaInsets } from "./ui-root.js";
@@ -78,6 +79,9 @@ const creatorShot = creatorShotFromQuery(params);
 const useMenu = !creatorShot && !serverParam && params.get("offline") !== "1" && params.get("menu") !== "0";
 const boot = useMenu ? new BootUI(import.meta.env.BASE_URL) : undefined;
 /** ADR-118: weighted boot stages -> the loading bar (monotonic; BootUI eases the fill and walks the zombie). */
+// ADR-198: persistent error log — uncaught errors / unhandled rejections are recorded even when no overlay shows.
+installGlobalErrorCapture(window);
+errorLog().ctx = { renderer: () => (iso ? (iso.renderer.gl ? "webgl2" : "canvas2d") : ctx ? "debug" : "booting"), gpu: () => (iso ? glInfo(iso.renderer.gl).split(" | ")[0] ?? "" : "n/a") };
 const loadProgress = new LoadProgress();
 const onStage = (id: string, f: number, label?: string): void => { const v = loadProgress.update(id, f, label); boot?.progress(v, loadProgress.label); };
 onStage("renderer", 0);
