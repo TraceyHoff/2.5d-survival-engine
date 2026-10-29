@@ -387,15 +387,18 @@ export function structureIndexSystem(world: World): void {
     const parent: Entity | 0 = def.placement === Placement.Opening ? openingParent(idx, def, slot) : 0;
     if (def.placement === Placement.Opening && !parent) continue; // parent not streamed yet: retry next tick
     idx.addPiece(e, slot, parent);
-    if (world.has(e, PieceStability)) idx.dirty.add(e);
+    if (world.has(e, PieceStability)) idx.dirty.add(e); else loadedQueue(world).pieces.push(e); // ADR-212: loaded (authority) / replicated piece
   }
   for (const a of world.query([PieceLink])) {
     if (world.getResource(LinkedRes)?.has(a)) continue;
     const l = world.get(a, PieceLink)!;
     const p = idx.atSlot(l.tx, l.ty, l.z, l.side as EdgeSide, l.layer);
-    if (p) { linkAttachment(world, p, a); let m = world.getResource(LinkedRes); if (!m) world.setResource(LinkedRes, (m = new Set())); m.add(a); }
+    if (p) { linkAttachment(world, p, a); let m = world.getResource(LinkedRes); if (!m) world.setResource(LinkedRes, (m = new Set())); m.add(a); loadedQueue(world).atts.push(a); }
   }
 }
+/** ADR-212: pieces / attachments indexed from storage or replication this tick (rehydrate.ts restores their derived, non-persistent components on the authority). */
+export const LoadedQueueRes = defineResource<{ pieces: Entity[]; atts: Entity[] }>("gameplay.LoadedStructureQueue");
+export function loadedQueue(world: World): { pieces: Entity[]; atts: Entity[] } { let q = world.getResource(LoadedQueueRes); if (!q) world.setResource(LoadedQueueRes, (q = { pieces: [], atts: [] })); return q; }
 const LinkedRes = defineResource<Set<Entity>>("gameplay.LinkedAttachments");
 export function markLinked(world: World, a: Entity): void { let m = world.getResource(LinkedRes); if (!m) world.setResource(LinkedRes, (m = new Set())); m.add(a); }
 export function unmarkLinked(world: World, a: Entity): void { world.getResource(LinkedRes)?.delete(a); }

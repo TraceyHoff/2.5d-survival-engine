@@ -6,6 +6,7 @@ import { ghostSystem } from "./ghost.js";
 import { installStabilityRule, stabilitySystem, structureDamageSystem } from "./integrity.js";
 import { structureOcclusion } from "./shelter.js";
 import { structureIndexSystem, structures } from "./structure.js";
+import { rehydrateLoadedStructures } from "./rehydrate.js";
 import { installBuildingRaidRule } from "./modular.js";
 
 type Entry = readonly ["input" | "simulation" | "postSim", string, number?];
@@ -21,7 +22,7 @@ export function installBuildingSystems(world: World): Record<string, (w: World, 
   installStabilityRule(world, idx); installDoorLookup(world); installBuildingRaidRule(world);
   installEmitterIndex(world, { occlusion: structureOcclusion(world) });
   return {
-    "gameplay.structureIndex": structureIndexSystem, "gameplay.build": buildActionSystem, "gameplay.doors": doorSystem,
+    "gameplay.structureIndex": (w: World) => { structureIndexSystem(w); rehydrateLoadedStructures(w); } /* ADR-212 */, "gameplay.build": buildActionSystem, "gameplay.doors": doorSystem,
     "gameplay.containers": containerSystem, "gameplay.structureDamage": structureDamageSystem, "gameplay.stability": stabilitySystem,
     "gameplay.ghost": ghostSystem,
   };

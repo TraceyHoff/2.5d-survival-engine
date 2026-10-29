@@ -276,7 +276,7 @@ export const enum HordePhase { Idle = 0, Warning = 1, Active = 2 }
  *  seq bumps per horde; kind 1 solo / 2 clan; alive/size members; x,y = target centroid; owner = clan id or PlayerId. */
 export const HordeStatus = defineComponent("HordeStatus", { phase: "u8", seq: "u16", kind: "u8", size: "u16", alive: "u16", x: "f32", y: "f32", owner: "u32", nextTick: "u32" }, { networked: true });
 /** ADR-119 server-only runtime builder of a piece (PlayerId), for settlement classification + solo horde owners. */
-export const PieceOwner = defineComponent("PieceOwner", { player: "u32" });
+export const PieceOwner = defineComponent("PieceOwner", { player: "u32" }, { persistent: true }); // ADR-212: survives restarts (respawn at base, horde groups)
 
 /**
  * ADR-134 hit reaction (authority writes on creature damage; broadcast, NOT persisted). startTick = tick of the hit,
