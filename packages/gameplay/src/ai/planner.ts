@@ -204,7 +204,8 @@ export const WOOD_RESERVE = 8;
 /** Freezing with no fire and no wood: wood + stone for a campfire on the spot comes before anything else. */
 const EMERGENCY: readonly Goal[] = [{ k: "item", key: "wood", count: 8 }, { k: "item", key: "stone", count: 4 }];
 /** Late afternoon without a finished, heated base: stock a night of fuel first. */
-const EVENING: readonly Goal[] = [{ k: "item", key: "wood", count: 20 }];
+export const NIGHT_WOOD = 130; // ADR-216: a campfire burns a wood per 20 s; ~16 cold hours (h16-h8) = ~120 wood
+const EVENING = (have: number): Goal[] => [{ k: "item", key: "wood", count: Math.max(8, Math.min(150, NIGHT_WOOD - have)) }];
 const spendsFuel = (g: Goal): boolean => (g.k === "item" && (g.key === "wood" || g.key === "stone")) || (g.k === "piece" && g.key === "campfire") || g.k === "hearth" || g.k === "cook";
 
 export interface PlanInput { world: World; self: Entity; defs: GameDefs; base?: { x: number; y: number }; bs?: BaseState; fails: Record<string, number>; hungry?: boolean; snooze?: Record<string, number>; freezing?: boolean; evening?: boolean }
@@ -278,7 +279,7 @@ export function makePlan(p: PlanInput): Plan {
   const worn = new Set<number>(); const wi = world.getArray(self, Worn, "item"); if (wi) for (const x of wi) if (x) worn.add(x);
   const blocked: string[] = []; const keepAll = new Set<number>();
   const pre: Goal[] = []; if (p.freezing) pre.push(...EMERGENCY); if (p.hungry) pre.push({ k: "cook" });
-  if (p.evening && !(p.bs?.complete && p.bs.hearth !== undefined)) pre.push(...EVENING);
+  if (p.evening) { const fire = p.bs?.stations.get(StationKind.Campfire); const inFire = fire ? Math.floor(fire.fuelTicks / 400) : 0; if (inFire < NIGHT_WOOD) pre.push(...EVENING(inFire)); }
   const ladder = pre.length ? [...pre, ...GOAL_LADDER] : GOAL_LADDER; const woodId = ix.item.get("wood")?.id;
   for (const g of ladder) {
     if (p.snooze && (p.snooze[goalName(g)] ?? 0) > world.tick) continue; // gave up on it for now (no source found in time)

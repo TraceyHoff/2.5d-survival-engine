@@ -196,7 +196,7 @@ export function autonomyBehaviors(): GameBehavior[] {
       } },
     // dusk / night or cold: fuel and light the home campfire (open -> deposit wood -> toggle, the station panel's steps)
     { name: "tend_fire", inertia: 0.4, considerations: [
-        { name: "unlit", weight: 1.6, curve: { type: "step", at: 0.5 }, input: (c) => (c.world.fire && !c.world.fire.lit && cooled(c.self.tick, c.bb.num("fireAt", -1e9), 150) ? 1 : 0) },
+        { name: "unlit", weight: 1.6, curve: { type: "step", at: 0.5 }, input: (c) => (c.world.fire && !c.world.fire.lit && !(c.world as { base?: unknown }).base && cooled(c.self.tick, c.bb.num("fireAt", -1e9), 150) ? 1 : 0) }, // ADR-216: a base bot's warm_up tends its fires (door-aware)
         { name: "needed", curve: { type: "step", at: 0.5 }, input: (c) => (night(c.self.phase) > 0 || c.world.cold ? 1 : 0) },
         { name: "hasWood", curve: { type: "step", at: 0.5 }, input: (c) => (c.world.woodSlot !== undefined ? 1 : 0) }],
       run: (c, o) => {

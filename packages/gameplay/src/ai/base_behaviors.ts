@@ -50,7 +50,7 @@ export function fillPlanSensors(world: World, self: Entity, view: AgentWorldView
   const woodId = plannerIndex(defs).item.get("wood")?.id; let woodBag = 0; if (woodId !== undefined) for (let i = 0; i < slots.items.length; i++) if (slots.items[i] === woodId) woodBag += slots.counts[i] ?? 0;
   const body = world.getField(self, Survival, "bodyTemp") ?? 37; const dayT = timeOfDay(world).t;
   const freezing = body < 36.4 && woodBag < 7 && !(bs?.complete) && !(bs?.stations.get(StationKind.Campfire)?.lit);
-  const evening = dayT >= 0.55 && dayT < 0.85;
+  const evening = dayT >= 0.45 && dayT < 0.66; // h11-h16: stock the night's fuel (NIGHT_WOOD) before the cold sets in
   const plan = makePlan({ world, self, defs, ...(base ? { base } : {}), ...(bs ? { bs } : {}), fails: mem.fails, hungry, freezing, evening, ...(mem.snooze ? { snooze: mem.snooze } : {}) }); view.plan = plan; a.bb.set("planGoal", plan.goal); a.bb.set("planStep", plan.step);
   { // patience: a goal with no step and no leaf gathered for GOAL_PATIENCE ticks is snoozed half a day (persisted), like a player giving up on reeds
     let leafN = 0; for (let i = 0; i < slots.items.length; i++) if (slots.items[i] && plan.leaves.includes(slots.items[i]!)) leafN += slots.counts[i] ?? 0;
@@ -117,7 +117,10 @@ export function goTo(c: Ctx, o: { moveX: number; moveY: number; aimX: number; ai
   if (b && door) {
     const inS = insideBase(b, c.self.x, c.self.y), inT = insideBase(b, tx, ty);
     const shut = c.bb.get<number>("doorShut");
-    if (shut !== undefined && c.world.bs?.door?.open && Math.hypot(door.x - c.self.x, door.y - c.self.y) > 1.1 && c.self.tick - c.bb.num("doorAt", -1e9) > 10) { o.actions.push(`door:${door.id}`); c.bb.set("doorAt", c.self.tick); c.bb.set("doorShut", undefined); }
+    const dd = Math.hypot(door.x - c.self.x, door.y - c.self.y);
+    // close the door behind us, only from within reach (ADR-216: a far toggle is a wasted, rejected command)
+    if (shut !== undefined && (!door.open || dd > 2.2)) c.bb.set("doorShut", undefined);
+    else if (shut !== undefined && dd > 1.1 && c.self.tick - c.bb.num("doorAt", -1e9) > 10) { o.actions.push(`door:${door.id}`); c.bb.set("doorAt", c.self.tick); c.bb.set("doorShut", undefined); }
     if (inS !== inT) {
       const near = inS ? { x: b.x + DOOR_IN.x, y: b.y + DOOR_IN.y } : { x: b.x + DOOR_OUT.x, y: b.y + DOOR_OUT.y };
       const far = inS ? { x: b.x + DOOR_OUT.x, y: b.y + DOOR_OUT.y } : { x: b.x + DOOR_IN.x, y: b.y + DOOR_IN.y };
@@ -218,7 +221,7 @@ export function baseBehaviors(): GameBehavior[] {
     // ADR-216: cold kills in ~70 s once the body is under 35 C; get warm first (lit fire > light the fire > roofed base > a camp fire on the spot)
     { name: "warm_up", inertia: 0.6, considerations: [
         { name: "chilled", weight: 2.2, curve: step01, input: (c) => { const ch = c.world.chill; if (!ch) return 0;
-          const on = c.bb.get("warming") ? ch.body < 36.8 || (ch.felt < 10 && ch.body < 37) : ch.body < 36.2 || (ch.felt < 8 && ch.body < 36.6); c.bb.set("warming", on); return on ? 1 : 0; } },
+          const on = (c.bb.get("warming") ? ch.body < 36.8 || (ch.felt < 10 && ch.body < 37) : ch.body < 36.2 || (ch.felt < 8 && ch.body < 36.6)) || (bankHours(c) && c.self.thirst > 0.45 && c.self.hunger > 0.35); // banking yields to drink / eat c.bb.set("warming", on); return on ? 1 : 0; } },
         { name: "canWarm", curve: step01, input: (c) => (warmOption(c) ? 1 : 0) }], // nothing to warm at: the planner's emergency wood/stone goal (gather) takes over
       run: warmRun },
     { name: "leave_base", inertia: 0.2, considerations: [
@@ -237,6 +240,13 @@ export function baseSleepRun(c: Ctx, o: { moveX: number; moveY: number; aimX: nu
   else if (f && (f.lit || !c.world.bs?.door)) { tx = f.x - 1.1; ty = f.y + 0.4; }
   if (goTo(c, o, tx, ty, 0.8) < 0.9 || stuckOn(c, tx, ty, 200)) { stop(o); o.aimX = 0; o.aimY = 0; o.actions.push("sleep"); }
   if (night(c.self.phase) < 0.5) return false;
+}
+/** ADR-216: the cold hours (h15-h7.5) with a base fire in reach: stay by it and keep it stocked, like a player banking the hearth. */
+function bankHours(c: Ctx): boolean {
+  const w = worldOf(c); if (!w) return false; const t = timeOfDay(w).t; if (t < 0.62 && t >= 0.31) return false;
+  const f = c.world.bs?.stations.get(StationKind.Campfire); if (!f || Math.hypot(f.x - c.self.x, f.y - c.self.y) > 400) return false; // far bots walk home for the night
+  const sw = plannerIndex(gdefs(c)).item.get("wood")?.id; const sb = sw !== undefined ? (c.world.bs?.storage?.counts.get(sw) ?? 0) : 0;
+  return f.lit || (c.world.woodTotal ?? 0) > 0 || sb > 0;
 }
 /** Any way to get warm right now: a fire (lit, or unlit with wood to hand), the finished base, or campfire materials in the bag. */
 function warmOption(c: Ctx): boolean {
@@ -258,14 +268,18 @@ function warmRun(c: Ctx, o: { moveX: number; moveY: number; aimX: number; aimY: 
     const fa = resolveAttachment(wd, camp.id as Entity, AttachKind.Fire); f = { ...camp, lit: (fa !== undefined && (wd.getField(fa, Fuel, "lit") ?? 0) > 0) }; }
   const fd = f ? Math.hypot(f.x - c.self.x, f.y - c.self.y) : Infinity;
   const b0 = c.world.base; const atHearth = !!b0 && st !== undefined && c.world.bs?.hearth === st.id && f?.id === st.id;
+  const bank = bankHours(c) && st !== undefined && f?.id === st.id;
+  if (bank && f && f.lit && st!.fuelTicks < 16000 && wood !== undefined && woodN > 0 && c.self.tick - c.bb.num("bankAt", -1e9) > 100) { // top the burning fire up for the night
+    if (goTo(c, o, f.x, f.y, 1) > 2) { if (stuckOn(c, f.x, f.y)) c.bb.set("bankAt", c.self.tick); return; } stop(o);
+    if (containerSeq(c, o, f.id, [`cdeposit:${f.id}:${wood}:${Math.min(50, woodN)}`])) { mark(c, "refuels"); c.bb.set("bankAt", c.self.tick); } return; }
   if (f && f.lit && fd < 60) { const tx = atHearth ? b0!.x + HEARTH_SIT.x : f.x - 1.1, ty = atHearth ? b0!.y + HEARTH_SIT.y : f.y + 0.4; if (goTo(c, o, tx, ty, 1) < 0.5 || stuckOn(c, tx, ty, 200)) stop(o); return; }
   if (f && !f.lit && wood !== undefined && woodN > 0 && fd < 60) {
-    if (goTo(c, o, f.x, f.y, 1) > 1.6) { if (stuckOn(c, f.x, f.y)) c.bb.set("warming", false); return; } stop(o);
-    if (containerSeq(c, o, f.id, [`cdeposit:${f.id}:${wood}:${Math.min(8, woodN)}`, `fire:${f.id}`])) mark(c, "refuels"); return; }
+    if (goTo(c, o, f.x, f.y, 1) > 2) { if (stuckOn(c, f.x, f.y)) c.bb.set("warming", false); return; } stop(o);
+    if (containerSeq(c, o, f.id, [`cdeposit:${f.id}:${wood}:${Math.min(bank ? 50 : 8, woodN)}`, `fire:${f.id}`])) mark(c, "refuels"); return; }
   const sb = c.world.bs?.storage; // no wood in the bag: fetch some from the box (same container panel steps as a player)
-  if (f && !f.lit && wood !== undefined && woodN === 0 && sb && (sb.counts.get(wood) ?? 0) > 0 && fd < 60) {
+  if (f && (!f.lit || bank && st!.fuelTicks < 16000) && wood !== undefined && woodN === 0 && sb && (sb.counts.get(wood) ?? 0) > 0 && fd < 60 && c.self.tick - c.bb.num("bankAt", -1e9) > 100) {
     if (goTo(c, o, sb.x, sb.y) > 1.6) { if (stuckOn(c, sb.x, sb.y)) c.bb.set("warming", false); return; } stop(o);
-    if (containerSeq(c, o, sb.id, [`cwithdraw:${sb.id}:${wood}:${Math.min(12, sb.counts.get(wood)!)}`])) mark(c, "withdraws"); return; }
+    if (containerSeq(c, o, sb.id, [`cwithdraw:${sb.id}:${wood}:${Math.min(bank ? 50 : 12, sb.counts.get(wood)!)}`])) mark(c, "withdraws"); return; }
   const b = c.world.base;
   if (b && c.world.bs?.door && c.world.bs.complete && Math.hypot(b.x - c.self.x, b.y - c.self.y) < 60) { const h = { x: b.x + 1, y: b.y + 1 }; if (goTo(c, o, h.x, h.y, 1) < 0.5) stop(o); return; }
   // far from any fire: make camp like a player would (campfire from the bag, then light it)
