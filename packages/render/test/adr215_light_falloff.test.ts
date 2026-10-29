@@ -27,3 +27,12 @@ describe("ADR-215 light falloff profile", () => {
     const pk = lightPeak([1, 0.6, 0.29], 1.3, 1, 0); expect(pk[0]).toBe(1); expect(pk[1]).toBeGreaterThan(0.5); expect(pk[2]).toBeGreaterThan(0.2);
   });
 });
+
+import { lightKnee } from "../src/composite.js";
+describe("ADR-215 composite light knee", () => {
+  it("identity up to 1, compresses above while keeping the hue, bounded", () => {
+    expect(lightKnee([0.5, 0.3, 0.1])).toEqual([0.5, 0.3, 0.1]); expect(lightKnee([1, 0.6, 0.3])).toEqual([1, 0.6, 0.3]);
+    const k = lightKnee([2, 1.2, 0.6]); expect(k[0]).toBeLessThan(2); expect(k[0]).toBeGreaterThan(1); expect(k[1] / k[0]).toBeCloseTo(0.6, 9);
+    expect(lightKnee([100, 0, 0])[0]).toBeLessThan(1.63);
+  });
+});

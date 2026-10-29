@@ -26,6 +26,8 @@ const FLOATS = 8;
 /** ADR-215 light profile (shared by the WebGL shader and the Canvas2D gradient): full strength to FALLOFF_INNER of
  *  the radius, then a smoothstep fade that reaches 0 exactly at the radius (no visible rim), plus a hot core. */
 export const FALLOFF_INNER = 0.35, CORE_SHARPNESS = 14, CORE_GAIN = 0.45;
+/** Overall light gain: the plateau of an intensity-1 light lands at ~0.8 (warm, not blown out; composite adds a knee). */
+export const LIGHT_GAIN = 0.8;
 const smoothstep = (a: number, b: number, x: number): number => { const k = Math.min(1, Math.max(0, (x - a) / (b - a))); return k * k * (3 - 2 * k); };
 /** Light falloff at t = distance / radius (0 centre .. 1 edge); > 1 at the core, exactly 0 at and beyond the radius. */
 export function lightFalloff(t: number): number { if (t >= 1) return 0; return 1 - smoothstep(FALLOFF_INNER, 1, t) + Math.exp(-t * t * CORE_SHARPNESS) * CORE_GAIN; }
@@ -59,7 +61,7 @@ void main() {
   float t = sqrt(d);
   float att = 1.0 - smoothstep(${FALLOFF_INNER.toFixed(2)}, 1.0, t);
   float core = exp(-d * ${CORE_SHARPNESS.toFixed(1)}) * ${CORE_GAIN.toFixed(2)};
-  o = vec4(vColor * (att + core) * 0.5, 1.0);
+  o = vec4(vColor * (att + core) * ${(0.5 * LIGHT_GAIN).toFixed(3)}, 1.0);
 }`;
 
 export class LightPass {

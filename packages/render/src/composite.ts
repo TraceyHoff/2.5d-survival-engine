@@ -8,6 +8,13 @@ import { createProgram, FULLSCREEN_VS, type Program } from "./gl/util.js";
 import { GLSL_LUT } from "./grading.js";
 import { MAX_HEAT } from "./lighting.js";
 import type { StyleConfig } from "./style.js";
+/** ADR-215: soft shoulder on the decoded light (max channel above 1 compressed toward 1.625, hue kept), so the larger,
+ *  overlapping fire/lamp lights brighten the scene instead of blowing it out to flat yellow. */
+export const LIGHT_KNEE_GLSL = /* glsl */ `vec3 lightKnee(vec3 l) { float m = max(l.r, max(l.g, l.b)); if (m <= 1.0) return l; float k = 1.0 + (m - 1.0) / (1.0 + (m - 1.0) * 1.6); return l * (k / m); }`;
+/** CPU mirror of LIGHT_KNEE_GLSL (tests). */
+export function lightKnee(l: readonly [number, number, number]): [number, number, number] {
+  const m = Math.max(l[0], l[1], l[2]); if (m <= 1) return [l[0], l[1], l[2]]; const k = 1 + (m - 1) / (1 + (m - 1) * 1.6); return [l[0] * k / m, l[1] * k / m, l[2] * k / m];
+}
 
 const FS = /* glsl */ `#version 300 es
 precision highp float; precision highp int;
@@ -24,6 +31,7 @@ float vnoise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 *
   return mix(mix(h21(i), h21(i + vec2(1, 0)), f.x), mix(h21(i + vec2(0, 1)), h21(i + vec2(1, 1)), f.x), f.y); }
 float fbm(vec2 p) { float s = 0.0, a = 0.5; for (int i = 0; i < 4; i++) { s += a * vnoise(p); p = p * 2.03 + 7.1; a *= 0.5; } return s; }
 ${GLSL_LUT}
+${LIGHT_KNEE_GLSL}
 void main() {
   vec2 wpx = uWorldOrigin + vUv * uWorldSize; // world-anchored screen pixels
   vec2 uv = vUv;
@@ -45,7 +53,7 @@ void main() {
   // transparent canvas: the scene is premultiplied over (0,0,0,0); grade the straight colour, re-premultiply at the end
   float alpha = 1.0; if (uTransparent == 1) { alpha = scene4.a; scene = alpha > 0.0 ? scene / alpha : vec3(0.0); }
   float emis = clamp(texture(uEmissive, uv).r, 0.0, 1.0);
-  vec3 light = texture(uLight, uv).rgb * 2.0;
+  vec3 light = lightKnee(texture(uLight, uv).rgb * 2.0);
   float ll = dot(light, vec3(0.299, 0.587, 0.114));
   if (uNightMin > 0.0 && ll < uNightMin) light = mix(light, uNightTint * (uNightMin / max(0.001, dot(uNightTint, vec3(0.299, 0.587, 0.114)))), 1.0 - ll / uNightMin);
   if (uBands > 0.5) { vec3 q = floor(light * uBands + 0.5) / uBands; light = mix(light, q, uBandMix); }
@@ -84,9 +92,10 @@ void main() {
 const SAFE_FS = /* glsl */ `#version 300 es
 precision highp float; precision highp int;
 in vec2 vUv; uniform highp sampler2D uScene, uEmissive, uLight; uniform int uTransparent; out vec4 o;
+${LIGHT_KNEE_GLSL}
 void main() {
   vec4 s4 = texture(uScene, vUv); vec3 scene = s4.rgb; float a = uTransparent == 1 ? s4.a : 1.0; float emis = clamp(texture(uEmissive, vUv).r, 0.0, 1.0);
-  vec3 light = texture(uLight, vUv).rgb * 2.0;
+  vec3 light = lightKnee(texture(uLight, vUv).rgb * 2.0);
   // premultiplied scene stays premultiplied: scene*light <= a*light, clamp to a
   o = vec4(min(mix(scene * light, scene, emis), vec3(a)), a);
 }`;
