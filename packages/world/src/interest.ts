@@ -1,6 +1,7 @@
 import type { Entity } from "@engine/core";
 import { chunkKey, tileToChunk, type ChunkKey } from "./chunk.js";
 import type { ChunkMembership } from "./membership.js";
+let cur: State | undefined;
 
 export interface InterestOptions {
   /** Chunks within this Chebyshev radius become relevant. */
@@ -63,12 +64,26 @@ export class InterestGrid {
     }
     s.sig.length = s.views.length * 3; return same;
   }
+  private applyChange = (e: Entity, _from: ChunkKey | undefined, to: ChunkKey | undefined): void => {
+    // ADR-212 incremental path (window + always-set unchanged): same result as a full rebuild for this one entity.
+    const s = cur!; const inside = to !== undefined && s.chunks.has(to); const had = s.entities.has(e);
+    if (inside && !had) { s.entities.add(e); const j = s.left.indexOf(e); if (j >= 0) s.left.splice(j, 1); else s.entered.push(e); }
+    else if (!inside && had && !s.always.has(e)) { s.entities.delete(e); const j = s.entered.indexOf(e); if (j >= 0) s.entered.splice(j, 1); else s.left.push(e); }
+  };
   update(): void {
+    this.updateClients(); let min = this.membership.version; for (const s of this.clients.values()) if (s.ver < min) min = s.ver;
+    this.membership.trimLog(min); cur = undefined;
+  }
+  private updateClients(): void {
     for (const s of this.clients.values()) {
       // ADR-212: viewer chunk window unchanged and no membership churn -> keep last tick's sets (no per-tick Set rebuild);
       // otherwise rebuild into the spare sets (double-buffered) instead of allocating new ones.
       const sigSame = this.sameWindow(s); const ver = this.membership.version;
-      if (sigSame && ver === s.ver && s.alwaysVer === s.alwaysSeen) { if (s.enteredChunks.length) s.enteredChunks = []; if (s.leftChunks.length) s.leftChunks = []; if (s.entered.length) s.entered = []; if (s.left.length) s.left = []; continue; }
+      if (sigSame && s.alwaysVer === s.alwaysSeen) {
+        if (s.enteredChunks.length) s.enteredChunks = []; if (s.leftChunks.length) s.leftChunks = []; if (s.entered.length) s.entered = []; if (s.left.length) s.left = [];
+        if (ver === s.ver) continue;
+        cur = s; if (this.membership.changesSince(s.ver, this.applyChange)) { s.ver = ver; continue; }
+      }
       s.ver = ver; s.alwaysSeen = s.alwaysVer;
       const vs = s.views.map((v) => ({ cx: tileToChunk(v.x), cy: tileToChunk(v.y), r: v.r }));
       const chunks = s.spareChunks ?? new Set<ChunkKey>(); chunks.clear(); s.enteredChunks = []; s.leftChunks = [];

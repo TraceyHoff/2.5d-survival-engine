@@ -56,7 +56,7 @@ export function buildAgentView(world: World, self: Entity, a: Agent, home: { x: 
     if (e === self) continue; if (candidates && world.has(e, Dead)) continue; const ox = world.getField(e, Transform, "x"); if (ox === undefined) continue; const o = { x: ox, y: world.getField(e, Transform, "y")! }; // ADR-212: no full-record get() per candidate
     const kind = world.has(e, Zombie) ? "zombie" : world.has(e, ResourceNode) ? "node" : world.has(e, Animal) ? "animal" : world.has(e, Health) ? "player" : undefined;
     if (!kind) continue; if (kind === "node" && world.getField(e, ResourceNode, "amount") === 0) continue;
-    const d = Math.hypot(o.x - t.x, o.y - t.y);
+    const ddx = o.x - t.x, ddy = o.y - t.y; const d = Math.sqrt(ddx * ddx + ddy * ddy); // ADR-212: Math.hypot allocates its rest-args array per call
     const visible = canSee(a.perception, t.x, t.y, facing, o.x, o.y);
     if (visible) a.memory.see({ id: e, kind, x: o.x, y: o.y, tick: world.tick });
     else if (kind === "zombie" && d <= a.perception.hearingRange * 0.5) a.memory.hear({ id: e, kind, x: o.x, y: o.y, tick: world.tick }, 1);

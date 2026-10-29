@@ -11,6 +11,21 @@ export class ChunkMembership {
   version = 0;
   /** ADR-212: last numeric chunk per entity (skips the per-tick "cx,cy" string for entities moving inside their chunk). */
   private packed = new Map<Entity, number>();
+  /** ADR-212: change log (entity, from, to) for versions logBase+1..version so interest can apply deltas instead of rebuilding. */
+  private logE: Entity[] = []; private logFrom: (ChunkKey | undefined)[] = []; private logTo: (ChunkKey | undefined)[] = []; private logBase = 0;
+  /** Calls fn for every change after version `since`; false if the log no longer reaches back that far (caller must rebuild). */
+  changesSince(since: number, fn: (e: Entity, from: ChunkKey | undefined, to: ChunkKey | undefined) => void): boolean {
+    if (since < this.logBase) return false;
+    for (let i = since - this.logBase; i < this.logE.length; i++) fn(this.logE[i]!, this.logFrom[i], this.logTo[i]);
+    return true;
+  }
+  /** Drop log entries up to version `upTo` (all consumers have seen them). */
+  trimLog(upTo: number): void {
+    const n = Math.min(this.logE.length, upTo - this.logBase); if (n <= 0) return;
+    if (n === this.logE.length) { this.logE.length = 0; this.logFrom.length = 0; this.logTo.length = 0; }
+    else { this.logE.splice(0, n); this.logFrom.splice(0, n); this.logTo.splice(0, n); }
+    this.logBase += n;
+  }
   constructor(private world: World) {}
   entitiesIn(k: ChunkKey): ReadonlySet<Entity> { return this.byChunk.get(k) ?? EMPTY; }
   chunkOf(e: Entity): ChunkKey | undefined { return this.chunkOfEntity.get(e); }
@@ -19,6 +34,8 @@ export class ChunkMembership {
     const old = this.chunkOfEntity.get(e); if (old === k) return;
     if (old !== undefined) { const s = this.byChunk.get(old)!; s.delete(e); if (!s.size) this.byChunk.delete(old); }
     this.version++; this.packed.delete(e);
+    if (this.logE.length >= 65536) { this.logBase += this.logE.length; this.logE.length = 0; this.logFrom.length = 0; this.logTo.length = 0; }
+    this.logE.push(e); this.logFrom.push(old); this.logTo.push(k);
     if (k === undefined) this.chunkOfEntity.delete(e);
     else { this.chunkOfEntity.set(e, k); let s = this.byChunk.get(k); if (!s) this.byChunk.set(k, (s = new Set())); s.add(e); }
     this.onMove?.(e, old, k);

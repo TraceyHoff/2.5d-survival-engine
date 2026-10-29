@@ -380,7 +380,7 @@ export class NetClient {
   /** Bring the local world in line with `cur` (diffed against the previously applied state, which may be an older tick). */
   private applyState(w: World, tick: number, prev: WorldState | undefined, cur: WorldState, base?: WorldState): void {
     if (prev) for (const netId of prev.keys()) if (!cur.has(netId) && !this.statics.has(netId)) this.despawn(w, netId);
-    for (const [netId, es] of cur) {
+    cur.forEach((es, netId) => { // ADR-212: no [k, v] entry array per entity per snapshot
       const old = prev?.get(netId);
       let e = this.entities.get(netId);
       if (e === undefined || !w.isAlive(e)) {
@@ -406,7 +406,7 @@ export class NetClient {
         if (v && old && base?.get(netId)?.get(this.interpIndex) === v && this.interp.has(netId)) this.interp.hold(netId, tick);
         else if (v) this.interp.push(netId, tick, this.decode(this.interpIndex, v));
       }
-    }
+    });
   }
 
   private staticUpsert(netId: number, es: EntityState, old: EntityState | undefined): void {
@@ -441,14 +441,14 @@ export class NetClient {
     // ADR-105: direct typed-array writes via a per-component plan (same semantics as w.add/w.set: defaults on add,
     // every field overwritten, change bit set) without the per-write decode array, init object and closures.
     const idx = entityIndex(e);
-    for (const [ci, v] of es) {
-      if (old?.get(ci) === v) continue;
-      if (!full && ci === this.interpIndex && old?.has(ci)) continue;
+    es.forEach((v, ci) => { // ADR-212: forEach (no entry arrays)
+      if (old?.get(ci) === v) return;
+      if (!full && ci === this.interpIndex && old?.has(ci)) return;
       const st = this.schema.stores[ci]!; const plan = this.writePlan(ci); const specs = this.schema.specs[ci]!;
       if (!st.has(idx)) st.add(e, idx); else st.markChanged(idx);
       const slot = st.slot(idx);
       for (let i = 0; i < plan.length; i += 1) { const p = plan[i]!; (st.data[p.f] as TypedArrayLike)[slot * p.n + p.el] = fromWire(specs[i]!, v[i]!); }
-    }
+    });
   }
   private readonly plans: ({ f: string; n: number; el: number }[] | undefined)[] = [];
   private writePlan(ci: number): { f: string; n: number; el: number }[] {

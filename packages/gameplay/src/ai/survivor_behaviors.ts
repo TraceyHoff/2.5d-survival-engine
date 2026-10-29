@@ -9,7 +9,7 @@ import { Animal, BuildPiece, Dead, Listings, Pet, Tamed } from "../components.js
 import { GameplayConfig } from "../config.js";
 import { readSlots, countItem } from "../inventory.js";
 import { pieceCost } from "../building/place.js";
-import { StationKind } from "../defs.js";
+import { StationKind, type GameDefs, type ItemDef, type PieceDef, type RecipeDef } from "../defs.js";
 import { GOAL_CRAFTS, pieceNear, stuckOn } from "./autonomy.js";
 import { PET_TREATS, speciesOfAnimal, tameChance } from "../pets.js";
 
@@ -17,6 +17,17 @@ export interface StallOffer { id: number; x: number; y: number; slot: number; it
 export interface AgentSensors { food?: number; water?: number; partyMates?: { id: number; x: number; y: number }[]; stall?: StallOffer; /** ADR-145: a wild pet-species animal nearby + the best treat in the bag (the bot has no pet yet) */ tame?: { id: number; x: number; y: number; item: number } }
 export const BUILD_PLAN_PIECES = ["campfire", "storage_box", "workbench"] as const;
 
+/** ADR-212: per-defs lookups (were rebuilt with [...map.values()].filter/find per bot per perception tick). */
+interface DefsCache { hand: RecipeDef[]; itemByKey: Map<string, ItemDef>; pieceByKey: Map<string, PieceDef>; recipeFor: Map<number, RecipeDef> }
+const DC = new WeakMap<GameDefs, DefsCache>();
+function defsCache(defs: GameDefs): DefsCache {
+  let c = DC.get(defs); if (c) return c;
+  c = { hand: [], itemByKey: new Map(), pieceByKey: new Map(), recipeFor: new Map() };
+  for (const r of defs.recipes.values()) { if (r.station === StationKind.None) c.hand.push(r); if (!c.recipeFor.has(r.output.item)) c.recipeFor.set(r.output.item, r); }
+  for (const i of defs.items.values()) if (!c.itemByKey.has(i.key)) c.itemByKey.set(i.key, i);
+  for (const p of defs.pieces.values()) if (!c.pieceByKey.has(p.key)) c.pieceByKey.set(p.key, p);
+  DC.set(defs, c); return c;
+}
 /** Fills optional AgentWorldView sensors from the replica (no writes). Missing gameplay config/inventory = skipped. */
 export function fillAgentSensors(world: World, self: Entity, view: AgentWorldView, hungry = false): void {
   const cfg = world.getResource(GameplayConfig); const t = world.get(self, Transform); if (!cfg || !t) return; const defs = cfg.defs; noteCampfire(world);
@@ -33,13 +44,13 @@ export function fillAgentSensors(world: World, self: Entity, view: AgentWorldVie
     if (bestFood >= 0) view.food = bestFood; if (bestWater >= 0) view.water = bestWater;
     const have = (item: number, n: number): boolean => countItem(world, self, item) >= n;
     // ADR-203: goal tools first (stone axe / pickaxe / spear); other hand recipes keep the next goal tool's ingredients and the campfire cost
-    const hand = [...defs.recipes.values()].filter((r) => r.station === StationKind.None && countItem(world, self, r.output.item) === 0);
+    const dc = defsCache(defs); const hand = dc.hand.filter((r) => countItem(world, self, r.output.item) === 0);
     const goalOf = (r: (typeof hand)[number]): number => { const k = defs.items.get(r.output.item)?.key ?? ""; const i = (GOAL_CRAFTS as readonly string[]).indexOf(k); return i < 0 ? 99 : i; };
     // other hand recipes may only spend what the next unowned goal tool does not need (reserve = its ingredients)
     const reserve = new Map<number, number>();
-    for (const k of GOAL_CRAFTS) { const d = [...defs.items.values()].find((i) => i.key === k); if (!d || countItem(world, self, d.id) > 0) continue;
-      const gr = [...defs.recipes.values()].find((r) => r.output.item === d.id); if (gr) for (const g of gr.ingredients) reserve.set(g.item, g.count); break; }
-    { const cf = [...defs.pieces.values()].find((p) => p.key === "campfire"); // and the home campfire's cost
+    for (const k of GOAL_CRAFTS) { const d = dc.itemByKey.get(k); if (!d || countItem(world, self, d.id) > 0) continue;
+      const gr = dc.recipeFor.get(d.id); if (gr) for (const g of gr.ingredients) reserve.set(g.item, g.count); break; }
+    { const cf = dc.pieceByKey.get("campfire"); // and the home campfire's cost
       if (cf && !pieceNear(world, cf.id, view.home.x, view.home.y, 6)) for (const c of pieceCost(defs, cf, 0)) reserve.set(c.item, (reserve.get(c.item) ?? 0) + c.count); }
     for (const r of hand.sort((a, b) => goalOf(a) - goalOf(b))) {
       const extra = goalOf(r) === 99 ? (id: number) => reserve.get(id) ?? 0 : () => 0;
@@ -48,7 +59,7 @@ export function fillAgentSensors(world: World, self: Entity, view: AgentWorldVie
     // ADR-203: plan each base piece that is missing near home (campfire first), not only "no piece at all"
     let k = 0;
     for (const key of BUILD_PLAN_PIECES) {
-      k++; const def = [...defs.pieces.values()].find((p) => p.key === key); if (!def || pieceNear(world, def.id, view.home.x, view.home.y, 6)) continue;
+      k++; const def = dc.pieceByKey.get(key); if (!def || pieceNear(world, def.id, view.home.x, view.home.y, 6)) continue;
       if (pieceCost(defs, def, 0).every((c) => have(c.item, c.count))) { view.buildPlan = { piece: def.id, x: Math.round(view.home.x) + k, y: Math.round(view.home.y) + (k === 1 ? 0 : 2) }; break; }
     }
   }
@@ -70,7 +81,7 @@ export function fillAgentSensors(world: World, self: Entity, view: AgentWorldVie
     const me = world.getField(self, PlayerId, "id") ?? 0; let mine = false; for (const e of world.query([Pet])) if (world.getField(e, Pet, "owner") === me) { mine = true; break; }
     if (!mine) {
       let bt: { id: number; x: number; y: number; item: number } | undefined, bc = 0, bdist = 14;
-      const treats = PET_TREATS.map((k) => { const d = [...defs.items.values()].find((i) => i.key === k); return d && countItem(world, self, d.id) > 0 ? d : undefined; }).filter((d) => d !== undefined);
+      const treats = PET_TREATS.map((k) => { const d = defsCache(defs).itemByKey.get(k); return d && countItem(world, self, d.id) > 0 ? d : undefined; }).filter((d) => d !== undefined);
       if (treats.length) for (const e of world.query([Animal, Transform], [Dead, Pet, Tamed])) {
         const sp = speciesOfAnimal(world, e); if (!sp) continue; const p = world.get(e, Transform)!; const d = Math.hypot(p.x - t.x, p.y - t.y); if (d > bdist) continue;
         for (const it of treats) { const c = tameChance(sp, it.key); if (c > bc || (c === bc && c > 0 && d < bdist)) { bc = c; bdist = d; bt = { id: e, x: p.x, y: p.y, item: it.id }; } }

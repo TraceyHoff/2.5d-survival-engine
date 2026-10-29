@@ -162,10 +162,10 @@ export interface DeltaStats { spawns: number; despawns: number; changes: number 
 export function encodeDelta(w: BitWriter, schema: NetSchema, cur: WorldState, base: WorldState | undefined): DeltaStats {
   const st: DeltaStats = { spawns: 0, despawns: 0, changes: 0 };
   if (base) for (const netId of base.keys()) if (!cur.has(netId)) { writeDespawn(w, netId); st.despawns++; }
-  for (const [netId, es] of cur) {
+  cur.forEach((es, netId) => {
     const old = base?.get(netId);
     if (writeEntityRecord(w, schema, netId, es, old)) { if (old) st.changes++; else st.spawns++; }
-  }
+  });
   writeEnd(w);
   return st;
 }
@@ -176,9 +176,11 @@ export interface DecodedDelta {
   despawned: number[];
   changed: Map<number, { changed: number[]; removed: number[] }>;
 }
+/** ADR-212: Map copy via forEach (the iterable constructor allocates a [k, v] array per entry). */
+function copyMap<K, V>(m: ReadonlyMap<K, V> | undefined): Map<K, V> { const o = new Map<K, V>(); if (m) m.forEach((v, k) => { o.set(k, v); }); return o; }
 export function decodeDelta(r: BitReader, schema: NetSchema, base: WorldState | undefined): DecodedDelta {
   const n = schema.count;
-  const state = new Map<number, EntityState>(base ?? []);
+  const state = copyMap<number, EntityState>(base);
   const spawned: number[] = []; const despawned: number[] = [];
   const changed = new Map<number, { changed: number[]; removed: number[] }>();
   const readAll = (ci: number): number[] => schema.specs[ci]!.map((s) => readWire(r, s));
@@ -198,7 +200,7 @@ export function decodeDelta(r: BitReader, schema: NetSchema, base: WorldState | 
     for (let ci = 0; ci < n; ci++) if (r.readBool()) rm.push(ci);
     const old = state.get(netId);
     if (!old) throw new Error(`delta references unknown netId ${netId}`);
-    const es = new Map(old);
+    const es = copyMap(old);
     for (const ci of rm) es.delete(ci);
     for (const ci of ch) {
       if (r.readBool()) { es.set(ci, readAll(ci)); continue; }

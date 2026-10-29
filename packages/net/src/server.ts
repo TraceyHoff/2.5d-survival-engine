@@ -677,7 +677,7 @@ export class NetServer {
     let maxId = 0; for (const id of cur.keys()) if (id > maxId) maxId = id;
     if (this.curArr.length <= maxId) { this.curArr = new Array(maxId * 2 + 1); this.stamp = new Int32Array(maxId * 2 + 1); }
     const curArr = this.curArr; curArr.fill(undefined);
-    for (const [id, es] of cur) curArr[id] = es;
+    cur.forEach((es, id) => { curArr[id] = es; }); // ADR-212: forEach, no [k, v] entry array per entity per tick
     if (this.statics) for (const id of this.statics.ids) curArr[id] = undefined; // static channel, not snapshots
     const stamp = this.stamp;
     for (const s of this.byConn.values()) {
