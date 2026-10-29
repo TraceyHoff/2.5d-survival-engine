@@ -25,6 +25,7 @@ export * from "./customization.js";
 export * from "./systems/noise.js";
 export * from "./systems/spoilage.js";
 export * from "./systems/movement.js";
+export * from "./systems/creature_nav.js";
 export * from "./building/structure.js";
 export * from "./building/links.js";
 export * from "./building/place.js";

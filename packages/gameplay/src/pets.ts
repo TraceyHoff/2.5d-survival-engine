@@ -25,6 +25,7 @@ import { awardXp } from "./skills/progression.js";
 import { indexEntity } from "./spawn.js";
 import { maskProfanity } from "./signs.js";
 import { swimSpeedMulAt } from "./systems/movement.js";
+import { creatureStep, navNeeded, reachableSpotNear, walledOff } from "./systems/creature_nav.js";
 import { PVP } from "./combat/pvp.js";
 
 export type TreatPref = "love" | "like" | "ok" | "hate";
@@ -278,7 +279,10 @@ function threatNear(world: World, pet: Entity, x: number, y: number, r: number):
 function step(world: World, e: Entity, gx: number, gy: number, speed: number, dt: number, stopAt = 0.15): boolean {
   const t = world.get(e, Transform)!; const dx = gx - t.x, dy = gy - t.y, d = Math.hypot(dx, dy); if (d <= stopAt) return false;
   const sp = speed * swimSpeedMulAt(world, t.x, t.y) * dt; const k = Math.min(sp, d - stopAt) / d;
-  const nx = t.x + dx * k, ny = t.y + dy * k; const unwalk = gameplayDefs(world).worldgen.unwalkableTiles;
+  const unwalk = gameplayDefs(world).worldgen.unwalkableTiles;
+  const nav = creatureStep(world, e, gx, gy, sp, stopAt, petBlocked(world), dt); // ADR-214: walls, closed doors, stations
+  if (nav !== undefined) return nav;
+  const nx = t.x + dx * k, ny = t.y + dy * k;
   if (unwalk.has(populationTile(world, Math.floor(nx), Math.floor(ny)))) {
     // slide along one axis
     if (!unwalk.has(populationTile(world, Math.floor(nx), Math.floor(t.y)))) world.set(e, Transform, { x: nx, facing: Math.atan2(dy, dx) });
@@ -286,6 +290,19 @@ function step(world: World, e: Entity, gx: number, gy: number, speed: number, dt
     else return false; return true;
   }
   world.set(e, Transform, { x: nx, y: ny, facing: Math.atan2(dy, dx) }); return true;
+}
+/** ADR-214: within followDistance of the owner but walled off, the pet paths round until this close (or in sight). */
+const WALLED_STOP = 0.8;
+const petBlocked = (world: World) => { const unwalk = gameplayDefs(world).worldgen.unwalkableTiles; return (tx: number, ty: number): boolean => unwalk.has(populationTile(world, tx, ty)); };
+/** ADR-214: a trough is a solid piece the pet body now stops against (bodyRadius off its tile), so its reach covers a 1-tile footprint. */
+const TROUGH_REACH = 1.5;
+/** Catch-up spot beside the owner: legacy (-1, +0.5); near structures (ADR-214) the first offset in body-sized sight of the owner, so a pet never lands on the far side of a wall or inside a station. */
+const TELEPORT_OFFSETS: readonly [number, number][] = [[-1, 0.5], [1, 0.5], [0.5, 1], [0.5, -1], [-1, -0.5], [1, -0.5], [-0.5, 1], [-0.5, -1], [-0.6, 0], [0.6, 0], [0, 0.6], [0, -0.6]];
+function teleportSpot(world: World, ot: { x: number; y: number; z?: number }): { x: number; y: number; z?: number } {
+  if (!navNeeded(world, ot.x - 1.5, ot.y - 1.5, ot.x + 1.5, ot.y + 1.5)) return { x: ot.x - 1, y: ot.y + 0.5 };
+  const z = ot.z ?? 0;
+  const unwalk = gameplayDefs(world).worldgen.unwalkableTiles;
+  return { ...reachableSpotNear(world, ot.x, ot.y, z, (tx, ty) => unwalk.has(populationTile(world, tx, ty)), TELEPORT_OFFSETS), z };
 }
 /** ADR-146: a pet on Stay sits when idle (render: AnimState Sit = 13 -> the pet atlas's `sit` animation). Client-safe (replicated Pet.cmd). */
 export function petSits(world: World, e: Entity): boolean { return world.isRegistered(Pet) && world.has(e, Pet) && world.getField(e, Pet, "cmd") === PetCmd.Stay; }
@@ -355,7 +372,7 @@ export function petSystem(world: World, dt: number): void {
         const src = foodSources(world, e, t.x, t.y)[0];
         if (src) {
           const sxy = world.get(src.e, Transform)!; busy = true;
-          if (src.d <= 1.0) { if (eatFrom(world, e, src.e, src.source)) world.setField(e, PetBrain, "nextEat", now + sec(T.eatCooldownSeconds)); }
+          if (src.d <= (src.source === 2 ? TROUGH_REACH : 1.0)) { if (eatFrom(world, e, src.e, src.source)) world.setField(e, PetBrain, "nextEat", now + sec(T.eatCooldownSeconds)); }
           else { moved = step(world, e, sxy.x, sxy.y, st.walk, dt, 0.6); }
         } else world.setField(e, PetBrain, "nextEat", now + sec(2));
       }
@@ -373,8 +390,9 @@ export function petSystem(world: World, dt: number): void {
     // follow / stay
     if (!busy) {
       const d = Math.hypot(ax - t.x, ay - t.y);
-      if (!stay && ot && d > T.teleportDistance) { world.set(e, Transform, { x: ot.x - 1, y: ot.y + 0.5 }); }
+      if (!stay && ot && d > T.teleportDistance) { world.set(e, Transform, teleportSpot(world, ot)); }
       else if (!stay && ot && d > T.followDistance) { run = d > T.runDistance; moved = step(world, e, ax, ay, run ? st.run : st.walk, dt, T.followDistance * 0.7); }
+      else if (!stay && ot && d > WALLED_STOP && walledOff(world, t.x, t.y, ax, ay, t.z ?? 0, petBlocked(world))) moved = step(world, e, ax, ay, st.walk, dt, WALLED_STOP); // ADR-214: close but through a wall: go round
       else if (stay && d > 0.4) moved = step(world, e, ax, ay, st.walk, dt, 0.2);
     }
     world.set(e, Animal, { homeX: ax, homeY: ay, state: moved ? (run ? 2 : 1) : 0 });

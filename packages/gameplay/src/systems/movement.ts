@@ -60,7 +60,7 @@ export function movementBlocked(world: World, x0: number, y0: number, x1: number
   if (tx1 !== tx0 || ty1 !== ty0) return solidCell(idx, tx1, ty1, level);
   return false;
 }
-const solidCell = (idx: StructureIndex, tx: number, ty: number, level: number): boolean => {
+export const solidCell = (idx: StructureIndex, tx: number, ty: number, level: number): boolean => {
   for (let la = 1; la < 4; la++) { const c = idx.cell(tx, ty, level, la); const d = c ? idx.def(c) : undefined; if (d?.solid && d.snap !== "vertex") return true; }
   return false;
 };
@@ -102,6 +102,9 @@ function edgeAxisMove(idx: StructureIndex, x: number, y: number, n: number, axis
 // ---- ADR-214 vertex corner posts ------------------------------------------------------------------------------
 /** Half-size of the square post on a tile corner (placement keeps a +-0.15 creature box clear there too). */
 export const POST_HALF = 0.15;
+/** Inner-corner stub half-length: the stub reaches 0.19 along its arm (art 0.22), so a body walking through the middle of
+ *  the neighbouring edge (0.5 - bodyRadius = 0.2 of clearance) never snags on it. */
+export const STUB_HALF = 0.095;
 /** Collision boxes [cx, cy, hx, hy] (tile units, world axes) of a free-standing vertex corner at (vx, vy):
  *  the post, plus for wall_corner_inner (4 steps) two short stubs along the art row's +x/+y arms, and for
  *  wall_corner_angled (8 steps) the 45 deg wall run (to 0.48, 0.48 diagonally) as a chain of overlapping boxes.
@@ -114,7 +117,7 @@ export function cornerPostBoxes(def: PieceDef, rot: number, vx: number, vy: numb
   if (rp.steps === 8) {
     for (let k = 0; k < 4; k++) { const c = 0.06 + 0.12 * k; const [cx, cy] = turn(c, -c); out.push(vx + cx, vy + cy, 0.08, 0.08); }
   } else {
-    for (const [ax, ay] of [[1, 0], [0, 1]] as const) { const [dx, dy] = turn(ax, ay); out.push(vx + dx * 0.11, vy + dy * 0.11, Math.abs(dx) * 0.11 + Math.abs(dy) * 0.05, Math.abs(dy) * 0.11 + Math.abs(dx) * 0.05); }
+    for (const [ax, ay] of [[1, 0], [0, 1]] as const) { const [dx, dy] = turn(ax, ay); out.push(vx + dx * STUB_HALF, vy + dy * STUB_HALF, Math.abs(dx) * STUB_HALF + Math.abs(dy) * 0.05, Math.abs(dy) * STUB_HALF + Math.abs(dx) * 0.05); }
   }
   return out;
 }

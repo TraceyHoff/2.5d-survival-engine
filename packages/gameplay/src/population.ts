@@ -18,6 +18,7 @@ import { addItem } from "./inventory.js";
 import { structures } from "./building/structure.js";
 import { TerrainRes } from "./world.js";
 import { swimSpeedMulAt } from "./systems/movement.js";
+import { creatureStep, type TileBlocked } from "./systems/creature_nav.js";
 import { installSpatialIndex } from "@engine/world";
 import { populationData, resolveBehavior, toSpawnEntries, type AggroMode, type GameMode, type LootEntry } from "./ai/population.js";
 
@@ -93,6 +94,7 @@ const animAt = (world: World, e: Entity, anim: Anim): void => { if (world.has(e,
 export function animalAISystem(world: World, dt: number): void {
   if (!isAuthority(world) || world.isReplaying) return;
   const index = installSpatialIndex(world); const unwalk = gameplayDefs(world).worldgen.unwalkableTiles; const defs = animalDefs();
+  const tileBlocked: TileBlocked = (tx, ty) => unwalk.has(populationTile(world, tx, ty));
   for (const e of [...world.query([Animal, Dead])].sort((x, y) => x - y)) {
     const a = world.get(e, Animal)!;
     if (a.state !== AnimalState.Dead) {
@@ -138,9 +140,13 @@ export function animalAISystem(world: World, dt: number): void {
       const dx = gx - t.x, dy = gy - t.y, d = Math.hypot(dx, dy); const sp = (state === AnimalState.Wander ? def.speed : def.fleeSpeed) * swimSpeedMulAt(world, t.x, t.y) * dt;
       if (d < 0.1) { if (state !== AnimalState.Attack) state = AnimalState.Idle; }
       else {
-        const nx = t.x + (dx / d) * Math.min(sp, d), ny = t.y + (dy / d) * Math.min(sp, d);
-        if (!unwalk.has(populationTile(world, Math.floor(nx), Math.floor(ny)))) { world.set(e, Transform, { x: nx, y: ny, facing: Math.atan2(dy, dx) }); moving = true; }
-        else state = AnimalState.Idle;
+        const nav = creatureStep(world, e, gx, gy, sp, 0, tileBlocked, dt); // ADR-214: collide with / path around structures
+        if (nav !== undefined) { moving = nav; if (!nav && state !== AnimalState.Attack) state = AnimalState.Idle; }
+        else {
+          const nx = t.x + (dx / d) * Math.min(sp, d), ny = t.y + (dy / d) * Math.min(sp, d);
+          if (!unwalk.has(populationTile(world, Math.floor(nx), Math.floor(ny)))) { world.set(e, Transform, { x: nx, y: ny, facing: Math.atan2(dy, dx) }); moving = true; }
+          else state = AnimalState.Idle;
+        }
       }
     }
     if (world.getField(e, AnimState, "anim") !== Anim.Attack || !moving) animAt(world, e, moving ? (state === AnimalState.Wander ? Anim.Walk : Anim.Run) : state === AnimalState.Attack ? world.getField(e, AnimState, "anim") as Anim : Anim.Idle);

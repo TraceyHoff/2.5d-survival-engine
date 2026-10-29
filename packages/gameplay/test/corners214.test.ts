@@ -4,7 +4,7 @@
  */
 import { describe, it, expect } from "vitest";
 import { type Entity, type World } from "@engine/core";
-import { applyMovementInput, bodyAxisMove, cornerPostBoxes, POST_HALF, defaultDefs, structures } from "../src/index.js";
+import { applyMovementInput, bodyAxisMove, cornerPostBoxes, POST_HALF, STUB_HALF, defaultDefs, structures } from "../src/index.js";
 import { pos, tp, world214 } from "./nav214_fixture.js";
 import { steps } from "./helpers.js";
 
@@ -34,8 +34,8 @@ describe("ADR-214 corner posts", () => {
         tp(w, me, sx, sy, Z); for (let i = 0; i < 50; i++) { walk(w, me, dx, dy, 1); expect(overlap(pos(w, me), boxes), `rot ${rot} from ${sx},${sy} tick ${i}`).toBe(false); }
       }
       // a stub sticks out 0.22 along its arm: walking at it end-on stops on the stub, not the post
-      const [ax, ay] = [[1, 0], [-1, 0], [-1, 0], [1, 0]][rot]!; void ay;
-      expect(bodyAxisMove(w, 3 + ax * 1.5, 3, 3, 0, 0, false) * ax).toBeGreaterThanOrEqual((3 + ax * (0.22 + R - 1e-3)) * ax);
+      const ax = [1, -1, -1, 1][rot]!;
+      expect(bodyAxisMove(w, 3 + ax * 1.5, 3, 3, 0, 0, false) * ax).toBeGreaterThanOrEqual((3 + ax * (2 * STUB_HALF + R - 1e-3)) * ax);
     }
     // passing well beside the post is free
     const { w, me, put } = field(); put("wall_corner_inner", 3, 3, 0, 0); steps(w, 2);
