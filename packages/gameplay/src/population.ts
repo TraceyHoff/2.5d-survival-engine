@@ -91,6 +91,7 @@ const animAt = (world: World, e: Entity, anim: Anim): void => { if (world.has(e,
  * aggressive kinds (ai.json aggro) chase + bite targets within aggro.range, leash back past leashRange: hostile = anyone close,
  * territorial = close to home, defensive = only after being hurt. Death: loot bag + corpse, then removal.
  */
+const THREATS: number[] = []; const THREAT_LIST_MAX = 48;
 export function animalAISystem(world: World, dt: number): void {
   if (!isAuthority(world) || world.isReplaying) return;
   const index = installSpatialIndex(world); const unwalk = gameplayDefs(world).worldgen.unwalkableTiles; const defs = animalDefs();
@@ -102,6 +103,10 @@ export function animalAISystem(world: World, dt: number): void {
       world.setField(e, Animal, "thinkAt", world.tick + Math.round(ANIMAL_CORPSE_SECONDS / dt)); if (world.has(e, AnimState)) setAnim(world, e, Anim.Die);
     } else if (world.tick >= a.thinkAt) world.destroy(e);
   }
+  // ADR-215: threat candidates (living survivors) gathered once; a short list beats a radius query over every piece
+  // and animal in a village. Same set as the radius query (exact distance on the current Transform).
+  THREATS.length = 0; let few = true;
+  for (const p of world.query([Survival, Transform], [Dead])) { if (THREATS.length >= 3 * THREAT_LIST_MAX) { few = false; break; } const pt = world.get(p, Transform)!; THREATS.push(p, pt.x, pt.y); }
   for (const e of world.query([Animal, Transform], [Dead, Pet])) { // ADR-145: pets are driven by petSystem
     const a = world.get(e, Animal)!; const t = world.get(e, Transform)!; const def = defs[a.kind]; if (!def) continue;
     const hp = world.get(e, Health); const hurt = !!hp && hp.hp < hp.max; const scared = !!hp && hp.hp <= hp.max * def.fleeHpFrac && hurt;
@@ -109,7 +114,12 @@ export function animalAISystem(world: World, dt: number): void {
     const homeD = Math.hypot(t.x - a.homeX, t.y - a.homeY);
     let threat: { e: Entity; x: number; y: number; d: number } | undefined;
     const tame = world.has(e, Tamed); // ADR-113: domesticated animals neither flee nor attack
-    if (!tame) for (const p of index.queryRadius(t.x, t.y, Math.max(def.fleeRange, aggressive ? def.aggro.leashRange : 0))) {
+    const tr = Math.max(def.fleeRange, aggressive ? def.aggro.leashRange : 0);
+    if (!tame && few) for (let i = 0; i < THREATS.length; i += 3) {
+      const p = THREATS[i]! as Entity, px = THREATS[i + 1]!, py = THREATS[i + 2]!; const ddx = px - t.x, ddy = py - t.y; if (ddx * ddx + ddy * ddy > tr * tr) continue;
+      const d = Math.hypot(px - t.x, py - t.y); if (!threat || d < threat.d || (d === threat.d && p < threat.e)) threat = { e: p, x: px, y: py, d };
+    }
+    else if (!tame) for (const p of index.queryRadius(t.x, t.y, tr)) {
       if (!world.has(p, Survival) || world.has(p, Dead)) continue; const pt = world.get(p, Transform)!; const d = Math.hypot(pt.x - t.x, pt.y - t.y);
       if (!threat || d < threat.d || (d === threat.d && p < threat.e)) threat = { e: p, x: pt.x, y: pt.y, d };
     }
