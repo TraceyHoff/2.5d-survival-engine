@@ -400,8 +400,8 @@
           "amount": 6
         },
         {
-          "resource": "hardwood",
-          "amount": 2
+          "resource": "planks",
+          "amount": 4
         }
       ]
     },
