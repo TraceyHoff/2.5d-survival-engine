@@ -10,7 +10,8 @@
  * Near structures: a body-sized line check (centre + 4 body corners through the tile DDA, plus the exact corner post
  * boxes) decides whether the goal is in straight sight; if not, a bounded passable-only A* (4-neighbour, doorways
  * and open doors pass, closed doors / walls / solid cells / angled-corner tiles / unwalkable terrain do not) finds a
- * tile route, cached per entity and re-planned when the goal tile or StructureIndex.version changes or it expires.
+ * tile route, cached per entity and re-planned when the goal tile or StructureIndex.version changes or it expires
+ * (a goal stepping one open tile on extends the route; a stall forces a re-plan and tile-lane-only steering).
  * The creature steers to the farthest of the next few route tiles in straight sight (string pulling). An unreachable
  * goal routes to the closest reachable tile; a step that makes no progress returns false (callers idle).
  */
@@ -22,12 +23,13 @@ import { bodyAxisMove, cornerPostBoxes, settleStandZ, solidCell } from "./moveme
 
 /** Per-tile terrain veto of the caller (animals / pets: unwalkable population tiles). */
 export type TileBlocked = (tx: number, ty: number) => boolean;
-interface NavState { gtx: number; gty: number; ver: number; until: number; clear: boolean; path: number[]; i: number; reached: boolean; stall: number; strict: number }
+interface NavState { gtx: number; gty: number; ver: number; until: number; clear: boolean; path: number[]; i: number; reached: boolean; stall: number; strict: number; pj: number; pi: number; pexp: number }
 const NavRes = defineResource<Map<Entity, NavState>>("gameplay.CreatureNav");
 const nav = (w: World): Map<Entity, NavState> => { let m = w.getResource(NavRes); if (!m) w.setResource(NavRes, (m = new Map())); return m; };
 
-/** Route search bounds: radius (tiles) around the start and node budget; straight-sight cache lifetime (ticks). */
-export const NAV = { radius: 24, maxNodes: 1200, repathTicks: 40, sightTicks: 6, lookahead: 4, strictTicks: 40 } as const;
+/** Route search bounds: radius (tiles) around the start, node budget and detour allowance (tiles over 2x the straight
+ *  distance); cache lifetimes (ticks): open sight, unreached route, found route, string-pull pick; strict lanes after a stall. */
+export const NAV = { radius: 24, maxNodes: 1200, detour: 12, clearTicks: 60, repathTicks: 40, keepTicks: 120, pullTicks: 8, lookahead: 4, strictTicks: 40 } as const;
 
 /** True when the structure index has pieces anchored near the segment (else callers keep the legacy straight step). */
 export function navNeeded(world: World, x0: number, y0: number, x1: number, y1: number): boolean {
@@ -79,10 +81,18 @@ export function reachableSpotNear(world: World, ox: number, oy: number, z: numbe
 function waypoint(world: World, idx: StructureIndex, e: Entity, x: number, y: number, gx: number, gy: number, level: number, r: number, blocked: TileBlocked): { x: number; y: number; final: boolean } | undefined {
   const m = nav(world); const gtx = Math.floor(gx), gty = Math.floor(gy); const now = world.tick;
   let st = m.get(e);
+  if (st && !st.clear && st.reached && st.ver === idx.version && now < st.until && now >= st.strict && Math.abs(gtx - st.gtx) + Math.abs(gty - st.gty) === 1 && enterable(idx, gtx, gty, level, blocked)
+    && !(gtx !== st.gtx ? idx.edgeBlocker(Math.max(gtx, st.gtx), gty, level, EdgeSide.West) : idx.edgeBlocker(gtx, Math.max(gty, st.gty), level, EdgeSide.North))) {
+    // goal stepped one open edge on (a pet's walking owner): extend the route instead of searching again
+    const p = st.path; const k = p.length;
+    if (k >= 4 && p[k - 4] === gtx && p[k - 3] === gty) p.length = k - 2; else p.push(gtx, gty);
+    if (st.i > p.length >> 1) st.i = p.length >> 1;
+    st.gtx = gtx; st.gty = gty; st.pexp = 0;
+  }
   if (!st || st.gtx !== gtx || st.gty !== gty || st.ver !== idx.version || now >= st.until) {
     const strict = st && now < st.strict ? st.strict : 0; const clear = !strict && sight(idx, x, y, gx, gy, level, r, blocked);
-    st = { gtx, gty, ver: idx.version, until: now + (clear ? NAV.sightTicks : NAV.repathTicks), clear, path: [], i: 0, reached: true, stall: st?.stall ?? 0, strict };
-    if (!clear) { const p = route(idx, Math.floor(x), Math.floor(y), gtx, gty, level, blocked); st.path = p.path; st.reached = p.reached; }
+    st = { gtx, gty, ver: idx.version, until: now + (clear ? NAV.clearTicks : NAV.repathTicks), clear, path: [], i: 0, reached: true, stall: st?.stall ?? 0, strict, pj: -2, pi: -1, pexp: 0 };
+    if (!clear) { const p = route(idx, Math.floor(x), Math.floor(y), gtx, gty, level, blocked); st.path = p.path; st.reached = p.reached; if (p.reached) st.until = now + NAV.keepTicks; } // a found route holds (a door shut on it shows up as a stall)
     m.set(e, st);
     if (m.size > 64 && (now & 63) === 0) for (const k of [...m.keys()]) if (!world.isAlive(k)) m.delete(k);
   }
@@ -94,9 +104,15 @@ function waypoint(world: World, idx: StructureIndex, e: Entity, x: number, y: nu
   if (st.i >= n) return st.reached ? { x: gx, y: gy, final: true } : undefined; // at the closest reachable tile
   // string pulling: farthest of the next few route tiles in straight sight (the goal itself when it is)
   const pull = now >= st.strict; // after a stall: no string pulling (thin sight rays can miss a wall end the square body catches)
-  if (pull && st.reached && n - st.i <= NAV.lookahead && sight(idx, x, y, gx, gy, level, r, blocked)) return { x: gx, y: gy, final: true };
-  if (pull) for (let j = Math.min(n - 1, st.i + NAV.lookahead - 1); j > st.i; j--) {
-    const cx = p[j * 2]! + 0.5, cy = p[j * 2 + 1]! + 0.5; if (sight(idx, x, y, cx, cy, level, r, blocked)) return { x: cx, y: cy, final: false };
+  // (the pick is cached while the route index holds: walking toward a point in straight sight keeps it in sight)
+  if (pull) {
+    if (st.pi !== st.i || now >= st.pexp) {
+      st.pi = st.i; st.pexp = now + NAV.pullTicks; st.pj = -1;
+      if (st.reached && n - st.i <= NAV.lookahead && sight(idx, x, y, gx, gy, level, r, blocked)) st.pj = n;
+      else for (let j = Math.min(n - 1, st.i + NAV.lookahead - 1); j > st.i; j--) if (sight(idx, x, y, p[j * 2]! + 0.5, p[j * 2 + 1]! + 0.5, level, r, blocked)) { st.pj = j; break; }
+    }
+    if (st.pj === n) return { x: gx, y: gy, final: true };
+    if (st.pj > st.i) return { x: p[st.pj * 2]! + 0.5, y: p[st.pj * 2 + 1]! + 0.5, final: false };
   }
   // next route tile only: cross into it along the current tile's centre line (clears corner posts and the ADR-212
   // lateral samples), so first slide back onto that lane when the body is off it
@@ -109,12 +125,9 @@ function waypoint(world: World, idx: StructureIndex, e: Entity, x: number, y: nu
 }
 const LANE = 0.04;
 
-/** Passable 4-neighbour step (tx, ty) -> (nx, ny) at level (no breaking through). */
-function stepOk(idx: StructureIndex, tx: number, ty: number, nx: number, ny: number, level: number, blocked: TileBlocked): boolean {
-  if (blocked(nx, ny)) return false;
-  if (nx !== tx ? idx.edgeBlocker(Math.max(tx, nx), ty, level, EdgeSide.West) : idx.edgeBlocker(tx, Math.max(ty, ny), level, EdgeSide.North)) return false;
-  if (solidCell(idx, nx, ny, level)) return false;
-  return !(idx.vertexPosts > 0 && angledTile(idx, nx, ny, level));
+/** Tile a body may stand in: walkable terrain, no solid station / furniture, not split by an angled corner run. */
+function enterable(idx: StructureIndex, nx: number, ny: number, level: number, blocked: TileBlocked): boolean {
+  return !blocked(nx, ny) && !solidCell(idx, nx, ny, level) && !(idx.vertexPosts > 0 && angledTile(idx, nx, ny, level));
 }
 const scratch: number[] = [];
 /** Tile containing the 45 deg run of a wall_corner_angled at one of its four corners (the run splits it diagonally). */
@@ -142,20 +155,21 @@ function ray(idx: StructureIndex, x0: number, y0: number, x1: number, y1: number
   const tdx = sx ? Math.abs(1 / dx) : Infinity, tdy = sy ? Math.abs(1 / dy) : Infinity;
   let tmx = sx > 0 ? (tx + 1 - x0) * tdx : sx < 0 ? (x0 - tx) * tdx : Infinity;
   let tmy = sy > 0 ? (ty + 1 - y0) * tdy : sy < 0 ? (y0 - ty) * tdy : Infinity;
-  const ok = (ax: number, ay: number, bx: number, by: number): boolean => {
-    if (blocked && blocked(bx, by)) return false;
-    if (bx !== ax ? idx.edgeBlocker(Math.max(ax, bx), ay, level, EdgeSide.West) : idx.edgeBlocker(ax, Math.max(ay, by), level, EdgeSide.North)) return false;
-    return !solidCell(idx, bx, by, level);
-  };
   for (let guard = 0; guard < 256 && (tx !== ex || ty !== ey); guard++) {
     if (Math.abs(tmx - tmy) < 1e-9) { // through a vertex: both orders
       if (tmx > 1) break;
-      if (!(ok(tx, ty, tx + sx, ty) && ok(tx + sx, ty, tx + sx, ty + sy) && ok(tx, ty, tx, ty + sy) && ok(tx, ty + sy, tx + sx, ty + sy))) return false;
+      if (!(crossOk(idx, tx, ty, tx + sx, ty, level, blocked) && crossOk(idx, tx + sx, ty, tx + sx, ty + sy, level, blocked) && crossOk(idx, tx, ty, tx, ty + sy, level, blocked) && crossOk(idx, tx, ty + sy, tx + sx, ty + sy, level, blocked))) return false;
       tx += sx; ty += sy; tmx += tdx; tmy += tdy;
-    } else if (tmx < tmy) { if (tmx > 1) break; if (!ok(tx, ty, tx + sx, ty)) return false; tx += sx; tmx += tdx; }
-    else { if (tmy > 1) break; if (!ok(tx, ty, tx, ty + sy)) return false; ty += sy; tmy += tdy; }
+    } else if (tmx < tmy) { if (tmx > 1) break; if (!crossOk(idx, tx, ty, tx + sx, ty, level, blocked)) return false; tx += sx; tmx += tdx; }
+    else { if (tmy > 1) break; if (!crossOk(idx, tx, ty, tx, ty + sy, level, blocked)) return false; ty += sy; tmy += tdy; }
   }
   return true;
+}
+/** One tile-boundary crossing of a sight ray (terrain veto optional). */
+function crossOk(idx: StructureIndex, ax: number, ay: number, bx: number, by: number, level: number, blocked: TileBlocked | undefined): boolean {
+  if (blocked && blocked(bx, by)) return false;
+  if (bx !== ax ? idx.edgeBlocker(Math.max(ax, bx), ay, level, EdgeSide.West) : idx.edgeBlocker(ax, Math.max(ay, by), level, EdgeSide.North)) return false;
+  return !solidCell(idx, bx, by, level);
 }
 /** Segment vs vertex post boxes inflated by the body half-size (slab test). */
 function postsHit(idx: StructureIndex, x0: number, y0: number, x1: number, y1: number, level: number, r: number): boolean {
@@ -170,7 +184,8 @@ function postsHit(idx: StructureIndex, x0: number, y0: number, x1: number, y1: n
 }
 function segBox(x0: number, y0: number, x1: number, y1: number, cx: number, cy: number, hx: number, hy: number): boolean {
   let t0 = 0, t1 = 1; const dx = x1 - x0, dy = y1 - y0;
-  for (const [p, d, lo, hi] of [[x0, dx, cx - hx, cx + hx], [y0, dy, cy - hy, cy + hy]] as const) {
+  for (let ax = 0; ax < 2; ax++) {
+    const p = ax ? y0 : x0, d = ax ? dy : dx, lo = ax ? cy - hy : cx - hx, hi = ax ? cy + hy : cx + hx;
     if (Math.abs(d) < 1e-12) { if (p <= lo || p >= hi) return false; continue; }
     let a = (lo - p) / d, b = (hi - p) / d; if (a > b) { const s = a; a = b; b = s; }
     t0 = Math.max(t0, a); t1 = Math.min(t1, b); if (t0 >= t1) return false;
@@ -179,17 +194,17 @@ function segBox(x0: number, y0: number, x1: number, y1: number, cx: number, cy: 
 }
 
 // A* scratch (single-threaded sim): a (2R+1)^2 window around the start
-const W = NAV.radius * 2 + 1; const G = new Float64Array(W * W); const PARENT = new Int32Array(W * W); const SEEN = new Uint32Array(W * W); const CLOSED = new Uint32Array(W * W); let stamp = 0;
+const W = NAV.radius * 2 + 1; const G = new Float64Array(W * W); const PARENT = new Int32Array(W * W); const SEEN = new Uint32Array(W * W); const CLOSED = new Uint32Array(W * W); const ENTER = new Uint32Array(W * W); const ENTER_OK = new Uint8Array(W * W); let stamp = 0;
 const HEAP: number[] = []; const HF: number[] = [];
 /** Bounded A* over passable steps; falls back to the closest reached tile (by heuristic) when the goal is not reachable. */
 function route(idx: StructureIndex, sx: number, sy: number, gx: number, gy: number, level: number, blocked: TileBlocked): { path: number[]; reached: boolean } {
-  stamp = (stamp + 1) >>> 0; if (stamp === 0) { SEEN.fill(0); CLOSED.fill(0); stamp = 1; }
+  stamp = (stamp + 1) >>> 0; if (stamp === 0) { SEEN.fill(0); CLOSED.fill(0); ENTER.fill(0); stamp = 1; }
   const ox = sx - NAV.radius, oy = sy - NAV.radius;
   const inWin = (x: number, y: number): boolean => x >= ox && y >= oy && x < ox + W && y < oy + W;
   const h = (x: number, y: number): number => Math.abs(x - gx) + Math.abs(y - gy);
   const id0 = (sy - oy) * W + (sx - ox); SEEN[id0] = stamp; G[id0] = 0; PARENT[id0] = -1;
   HEAP.length = 0; HF.length = 0; push(id0, h(sx, sy));
-  let best = id0, bestH = h(sx, sy), expanded = 0, goal = -1;
+  let best = id0, bestH = h(sx, sy), expanded = 0, goal = -1; const fMax = 2 * bestH + NAV.detour; // bounded detour: a sealed goal cannot flood the window
   while (HEAP.length && expanded < NAV.maxNodes) {
     const cur = pop(); if (CLOSED[cur] === stamp) continue; CLOSED[cur] = stamp; expanded++;
     const cx = (cur % W) + ox, cy = Math.floor(cur / W) + oy;
@@ -198,8 +213,10 @@ function route(idx: StructureIndex, sx: number, sy: number, gx: number, gy: numb
     for (let k = 0; k < 4; k++) {
       const nx = cx + (k === 0 ? 1 : k === 1 ? -1 : 0), ny = cy + (k === 2 ? 1 : k === 3 ? -1 : 0);
       if (!inWin(nx, ny)) continue; const nid = (ny - oy) * W + (nx - ox); if (CLOSED[nid] === stamp) continue;
-      if (!stepOk(idx, cx, cy, nx, ny, level, blocked)) continue;
-      const g = G[cur]! + 1;
+      const g = G[cur]! + 1; if (g + h(nx, ny) > fMax) continue;
+      if (nx !== cx ? idx.edgeBlocker(Math.max(cx, nx), cy, level, EdgeSide.West) : idx.edgeBlocker(cx, Math.max(cy, ny), level, EdgeSide.North)) continue;
+      if (ENTER[nid] !== stamp) { ENTER[nid] = stamp; ENTER_OK[nid] = enterable(idx, nx, ny, level, blocked) ? 1 : 0; }
+      if (!ENTER_OK[nid]) continue;
       if (SEEN[nid] === stamp && G[nid]! <= g) continue;
       SEEN[nid] = stamp; G[nid] = g; PARENT[nid] = cur; push(nid, g + h(nx, ny) * 1.001);
     }
