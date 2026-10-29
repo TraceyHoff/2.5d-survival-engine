@@ -9,7 +9,7 @@ const hex = (c: string): [number, number, number] => { const n = parseInt(c.repl
 const mk = (radius: number, intensity: number, color: string, flicker: number): LightSpec => { const [r, g, b] = hex(color); return { radius, intensity, r, g, b, flicker }; };
 
 /** Fallbacks (used when render_tuning lacks the key). ADR-215: radii are the distance at which the light has faded to
- *  zero (smooth plateau profile, full strength to ~20% and still clearly lit at ~75%). Light PIECES are drawn with the
+ *  zero (smooth plateau profile, full strength to ~35% and still clearly lit at ~75%). Light PIECES are drawn with the
  *  replicated gameplay Emitter radius (pieces.json lightRadius) so the lit area and zombie light-avoidance match; the
  *  radius here is used only for things without a gameplay light (free-standing bonfire, props, held lights). */
 export const DEFAULT_LIGHTS: Record<string, LightSpec> = {
