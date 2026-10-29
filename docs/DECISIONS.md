@@ -1531,3 +1531,44 @@ Consequences: test `adr208_correction_render`. In a simulated 0.5-tile correctio
 - Zombies use the same `bodyAxisMove` and `settleStandZ`.
 **Tests:** `gameplay/test/collision212.test.ts` (step-up/down, walls/window/doorway/jamb assist, closed/open door, station + L corner, deterministic replay, zombie confined).
 **Caveats:** vertex posts (`wall_corner_inner/angled`) do not block. Animals and pets do not test structures.
+
+**Interaction hand (feature):** `apps/client/src/station-hint.ts` shows a hand symbol over the crafting station that Interact would open. It uses the same selection as `interactPanel`, so the symbol never disagrees with the button. The device hint sits under it (`[E]`, gamepad face button, or "Tap"), and the symbol is also a tap target. It does not blink: there is no pulse, just one fade. Hysteresis (`exitSlack` 0.35 tiles, 350 ms grace) keeps it steady at the edge of range. It hides when Interact would open something else (a loot bag, pet or stall). It is a renderer-agnostic DOM overlay, identical in WebGL2 and Canvas2D. **Test:** `client/test/station_hint212.test.ts`.
+
+**Progression dead end (root cause):** the anvil cost `hardwood` 2. Hardwood (oak/maple) needs a tier-2 axe, and every tier-2 tool is crafted at the anvil, so anvil → hardwood → bronze axe → anvil was a cycle. Players could only escape it by luck, through creature loot or bare-hand drops. **Fix (balance data):** the anvil now costs `iron_ingot` 6 + `planks` 4. Iron still gates it, so the anvil stays a meaningful milestone, and hardwood remains the tier-2+ building material. The sandbox kit swaps `hardwood` 2 for `planks` 4. **Test:** `gameplay/test/progression212.test.ts` starts from bare hands plus world-gatherable resources (nodes, bare-hand rules, creature material loot; gear drops do not count) and walks the recipe/station/harvest-tier graph to a fixpoint. It asserts that every tool, weapon, armor and clothing item, every station, every tool kind's top tier, every armor/weapon tier and every building tier is reachable. Failures name the blocking recipe and the missing ingredients. A regression check removes all hardwood sources and still reaches the anvil and the bronze axe. No other dead ends were found.
+
+**Xbox Edge crashes — memory (root causes):** no texture/VFX/DOM leak was found. The crash pressure was GC churn plus a few unbounded or ever-growing structures:
+- **Allocation rate.** The in-tab server and client allocated **~205 MB/s** of JS heap in sandbox combat, measured with a CDP sampling heap profile (worker=0, 15 s). The main sources:
+  - `interest.update` rebuilt every client's relevant set every tick, because the global membership version changes every tick.
+  - `for (const [k,v] of map)` and `new Map(map)` allocate an entry array per element in net encode/decode/apply.
+  - `world.get` object allocations in hot loops (agents, inventory scans).
+  - `[...defs.values()].filter` in survivor AI.
+  - `Math.hypot` rest arrays.
+  - Generator-heavy queries driven by the largest store.
+- **Fixes.**
+  - `ChunkMembership` keeps a change log (entity, from, to) that is only enabled when a consumer trims it (`InterestGrid`); persistence's membership logs nothing. `InterestGrid` applies those deltas incrementally, with a full double-buffered rebuild only when a window moves.
+  - Net code iterates with `forEach`, copies with `copyMap`, and reads with `getField`.
+  - Inventory helpers avoid temp objects; skill totals are hash-cached; `world.query` drives from the smallest store.
+  - AI uses a `WeakMap` defs lookup cache.
+- **Result:** **205 → 117 → 75.7 MB/s** (−63%), with the post-GC heap at ~92–123 MB. No graphics settings were touched.
+- **Remaining sources** are each ≤ 5 MB/s: snapshot `captureState`/`replicate` maps (inherent to snapshot history), `world.query`/`world.get` in animal AI/anim settle/render, `buildAgentView`, static updates, `nearestNode`, `spatialIndex.queryRadius`, bot `rebuildGrid` and client interpolation.
+- **Audio:** `AudioSystem.frame` already returns before `snapshotWorld` while the mixer is locked or suspended, so there is no per-frame audio snapshot in this tree.
+
+**Console memory budget profile:** `apps/client/src/memory-budget.ts` defines `MEMORY_BUDGETS` desktop/console/mobile. It is chosen by UA (Xbox/PlayStation/Nintendo) and can be overridden with `?profile=`.
+- **Console:** 12 offline bots (desktop 32) and 8 P2P host slots, a 384 MB soft JS heap and a 1 MB/min leak threshold.
+- **Visuals are unchanged.** The existing console VRAM budget (`capabilities.ts`, 256/448 MB) still applies.
+- **Watchdog:** `HeapTrend` samples `performance.memory` every 5 s into a fixed ring. It skips a 3-minute warm-up and compares the lowest floor of the last 5 one-minute windows against the first 5. A short-window minimum is not the post-GC floor, because V8 major GCs can be minutes apart; the soak showed a 30 s-window version raising a false leak flag. It warns once in the console and exposes `window.__survivazMem()` for QA (no UI).
+- **Tests:** `client/test/memory_budget212.test.ts` covers detection, caps and leak/no-leak, including old-gen sawtooth and warm-up. `server/test/leak212.test.ts` runs a long two-client session with AOI churn. It checks that snapshot views stay ≤ `historySize`+1, the change logs (interest and persistence) stay at 0, client history stays ≤ 64, entity counts plateau and linger drains. `world/test/interest212.test.ts` checks that incremental interest equals a full rebuild over 600 ticks of churn.
+
+**32-minute soak (`/tmp` Playwright script).** Setup: production build, sandbox `worker=0`, SwiftShader. Each ~1-minute cycle: 35 s of WASD movement and attacks, then placing foundations and walls (pieces periodically demolished), then 1/6 day per cycle, so a full day/night every ~6 min. Each sample read CDP `Runtime.getHeapUsage`, forced a GC every other cycle, and read `Memory.getDOMCounters` and the atlas VRAM accountant.
+
+| | desktop (33 players incl. bots) | `?profile=console` (13 players) |
+|---|---|---|
+| post-GC JS heap first → last (min–max) | 91.8 → 97.3 MB (88.4–97.7) | 88.6 → 90.3 MB (79.5–90.3) |
+| post-GC slope, minutes 5–32 | **+0.03 MB/min** (flat) | **+0.15 MB/min** (~4 MB over 27 min, within noise) |
+| peak pre-GC heap / V8 total heap | 354 / 414 MB | 290 / 330 MB |
+| DOM nodes / JS listeners (steady) | 264–285 / 87–90 | 237–328 / 87–89 |
+| GPU texture (atlas VRAM, SwiftShader budget 160 MB) | 115.7 → 143.1 MB, plateaued after streaming | same |
+| server entities | 4.8k → 9.9k by min ~8, then flat | 4.6k → 8.3k, then flat |
+| page errors / crashes | 0 / 0 | 0 / 0 |
+
+DOM spikes (4.9k–17.6k nodes, 1.2k–3.3k listeners) appeared only while a menu was open. They dropped back to baseline on close, so they are not a leak. There was no unbounded growth in heap, DOM, listeners, VRAM or entities.
