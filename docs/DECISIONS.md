@@ -1513,3 +1513,21 @@ Consequences: test `adr208_correction_render`. In a simulated 0.5-tile correctio
 **Corner posts hidden in WebGL2 only:** Canvas2D orders a vertex post as a whole sprite (pivot + `VERTEX_POST_BIAS` 0.53, just in front of the walls whose ends meet the vertex), but the WebGL2 upright depth is per pixel (`key + hp * zPerPx`). Walls meeting the vertex pivot up to half a tile row lower on screen, so at a shared pixel they gain extra height term and won the depth test: posts drew behind the wall ends. `vertexPostGlBias(hh, zPerPx)` = 0.53 + 1.5 rows of the height term (≈1.03 at 64x32 / zStep 16) in `sprites.ts`; an occupant or wall one row in front still out-ranks the post (`adr211_vertex_post_depth.test.ts`).
 
 **Soft art on 1024-layer devices:** a basic/software adapter (e.g. SwiftShader) is auto "lowend" (mediump → 1024-px texture-array layers, DPR 1). Tier pages (2016x1056) only fit 1x in 2048 layers, so such devices keep building art at 0.5x (LINEAR mag) — crisp-shape but soft. Desktop/integrated GPUs get 1x. Possible follow-up: split tier pages into ≤1024 sub-pages. Representative desktop captures spoof the WebGL renderer string (UNMASKED_RENDERER) to a desktop GPU; the near-player occlusion fade is the uniform `fade` mode (alpha 0.35).
+
+## ADR-212: Relog-safe stations, all pieces placeable, body collision + deck stand height, interaction hand, console memory budget, progression reachability
+
+**Stations unusable / walls unplaceable after relog (root cause):** `WorldPersistence` restores only persistent components. Derived, non-persistent piece components (station/storage/door runtime state, socket and blocker data that `placePiece` adds) and the `StructureIndex` entries were never rebuilt for loaded pieces, and `PieceOwner` was not persistent. As a result, a reloaded workbench had no station component (so it could not be used), and the index had no record of loaded walls/foundations (so sockets for new pieces such as `wall_doorway` were missing).
+**Fix:** `building/rehydrate.ts` re-derives those components for every loaded piece. `LoadedQueueRes` queues loaded pieces, and the `structureIndex` system wrapper rebuilds the index on the next tick. `PieceOwner` is now `persistent: true`. No save migration is needed because loading is idempotent.
+**Tests:** `persist/test/relogin212.test.ts` (save → reload → use the station; place `wall_doorway` after reload). `gameplay/test/all_pieces212.test.ts` places every piece × every tier it supports (143 combos) and checks that `tryPlace` and the preview agree.
+**Caveat:** the ADR-211 `CornerSlot` (21) rule is kept on purpose: a straight wall on a foundation's outer-corner arm still fails, and players should use `wall_corner_outer`.
+
+**Collision (root causes):** (1) Player `z` was never raised on decks, so players sank into foundations. (2) Movement tested only the centre point, so bodies clipped half into walls and door jambs. (3) `wall_arched` had no `blocksPath`. (4) Open shutters made a `wall_window` passable. (5) Zombie `moveToward` ignored structures.
+**Fix (one shared function, so server = prediction = bots):**
+- `applyMovementInput` moves on each axis with `bodyAxisMove`, a square body of half-size `movement.bodyRadius` (0.3). It samples the leading face at three lateral points against `edgeBlocker` and solid cells, and also checks perpendicular edges in the newly entered row (T-junctions and jambs). A blocked move is clamped to the face.
+- When the player pushes straight into a wall beside an opening, a small nudge slides them into the doorway.
+- `standHeightAt` gives the stand height: foundation deck 0.75 (= 12 px / zStep 16), floor 0.3125, ramp/steps half. `settleStandZ` eases toward it at `stepRate` (6 /s), so step-up and step-down are smooth.
+- Open doors and doorways pass; closed doors, walls, corners and stations block.
+- The client renders walkers on a deck with piece ground so they do not dip over terrain steps.
+- Zombies use the same `bodyAxisMove` and `settleStandZ`.
+**Tests:** `gameplay/test/collision212.test.ts` (step-up/down, walls/window/doorway/jamb assist, closed/open door, station + L corner, deterministic replay, zombie confined).
+**Caveats:** vertex posts (`wall_corner_inner/angled`) do not block. Animals and pets do not test structures.
