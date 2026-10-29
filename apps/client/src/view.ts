@@ -169,7 +169,7 @@ export class IsoView {
     const key = this.netRef ? gameplayDefs(this.netRef).items.get(item)?.key : undefined; if (!key) return undefined;
     const id = resolveOffHandSprite(key, (k) => this.registry.ids.sprites.tryId(k)); this.offCache.set(item, id); return id;
   }
-  /** ADR-215: character view entity -> its held-light view entity (separate so the character sprite never gets BloomSource). */
+  /** ADR-216: character view entity -> its held-light view entity (separate so the character sprite never gets BloomSource). */
   private heldLights = new Map<number, number>(); private heldLightCache = new Map<number, LightSpec | undefined>();
   private heldLightSpec(item: number): LightSpec | undefined {
     if (!item || !this.netRef) return undefined; if (this.heldLightCache.has(item)) return this.heldLightCache.get(item);
@@ -378,7 +378,7 @@ export class IsoView {
         const em = net.get(e, Emitter); const fu = net.get(lo.fuel ?? e, Fuel);
         const on = fu ? fu.lit === 1 : em ? em.strength > 0 : true;
         const want = on ? lo.spec.intensity : 0; const L = v.get(ve, LightSource)!; if (L.intensity !== want) v.set(ve, LightSource, { intensity: want });
-        if (em?.kind === 2 && em.radius > 0 && L.radius !== em.radius) v.set(ve, LightSource, { radius: em.radius }); // ADR-215: radius follows the replicated Emitter
+        if (em?.kind === 2 && em.radius > 0 && L.radius !== em.radius) v.set(ve, LightSource, { radius: em.radius }); // ADR-216: radius follows the replicated Emitter
       }
       if (this.appearanceEnabled && net.isRegistered(Appearance)) { // paper-doll look (server-assigned, replicated)
         const a = dressed && !dressed.has(e) ? undefined : net.get(e, Appearance);
@@ -398,7 +398,7 @@ export class IsoView {
         if (oh) { this.netRef = net; if (!v.has(ve, VOffHand)) v.add(ve, VOffHand, { offHandItem: oh }); else if (v.getField(ve, VOffHand, "offHandItem") !== oh) v.set(ve, VOffHand, { offHandItem: oh }); }
         else if (v.has(ve, VOffHand)) v.remove(ve, VOffHand);
       }
-      if (v.has(ve, VAnim)) this.syncHeldLight(net, e, ve); // ADR-215: a held torch/lantern/candle lights the area around its bearer
+      if (v.has(ve, VAnim)) this.syncHeldLight(net, e, ve); // ADR-216: a held torch/lantern/candle lights the area around its bearer
       if (v.has(ve, Sprite) && net.has(e, Crop)) { const c = net.get(e, Crop)!; const r = this.rs(cropSpriteKey(c.kind, c.stage)); if (r && (v.get(ve, Sprite)!.spriteId !== r.id || v.get(ve, Sprite)!.scale !== r.scale)) { v.set(ve, Sprite, { spriteId: r.id, scale: r.scale, tint: r.tint }); this.scales.set(ve, r.scale); } }
       if (v.has(ve, Sprite) && net.has(e, Road)) { const r0 = net.get(e, Road)!; const r = this.roadSprite(r0.surface, r0.mask); if (r && v.get(ve, Sprite)!.spriteId !== r.id) v.set(ve, Sprite, { spriteId: r.id }); } // neighbours placed / removed
       if (v.has(ve, Sprite) && net.has(e, Sign)) { const sp = v.get(ve, Sprite)!; const fid = this.signFrame(sp.spriteId, net.get(e, Sign)!.rot); if (sp.frameId !== fid) v.set(ve, Sprite, { frameId: fid }); } // rotated
@@ -612,13 +612,13 @@ export class IsoView {
       const em = net.get(e, Emitter);
       const isLight = em?.kind === 2 || (net.has(e, Fuel) && !this.hasLightSibling(net, e));
       const base = isLight ? this.lights.get(key) ?? this.lights.get("campfire") : undefined;
-      const spec = base ? LightTable.withRadius(base, em?.kind === 2 ? em.radius : undefined) : undefined; // ADR-215: draw the gameplay light radius
+      const spec = base ? LightTable.withRadius(base, em?.kind === 2 ? em.radius : undefined) : undefined; // ADR-216: draw the gameplay light radius
       return spec ? { light: spec, ...(em?.kind === 2 ? { fuelOf: this.fuelSibling(net, e) } : {}) } : undefined;
     }
     if (isFreeStandingStation(net.has(e, CraftingStation), net.has(e, GPiece))) { // free-standing station (spawnStation): bonfire sprite + light following Fuel.lit
       const s = this.sid("bonfire") ?? this.sid("campfire_lit") ?? this.sid("fx_fire"); if (s === undefined) return undefined;
       const fired = net.has(e, Fuel); const bf = fired ? this.lights.get("bonfire") : undefined;
-      const spec = bf ? LightTable.withRadius(bf, STATION_LIGHT_RADIUS[net.getField(e, CraftingStation, "kind") ?? 0]) : undefined; // ADR-215: = gameplay light grid
+      const spec = bf ? LightTable.withRadius(bf, STATION_LIGHT_RADIUS[net.getField(e, CraftingStation, "kind") ?? 0]) : undefined; // ADR-216: = gameplay light grid
       return { sprite: s, frame: fired ? this.fireFrame(s, (net.getField(e, Fuel, "lit") ?? 0) !== 0) : 0, shadow: 0.6, fuel: fired, noOcclude: true, ...(spec ? { light: spec } : {}) };
     }
     if (net.has(e, GPiece) && defs) {

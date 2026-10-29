@@ -3,7 +3,7 @@ import { reportRenderError } from "./report.js";
  * Canvas2DRenderer: sprite fallback when WebGL2 cannot be created (console browsers after a GPU reset, WebGL blocked for
  * the origin, software-only devices). Draws the REAL sprite art from the same manifest + atlas PNGs and the same view
  * World IsoView fills for IsoRenderer: terrain diamonds, depth-sorted sprites (Transform + Sprite + AnimState), and a
- * day/night lightmap (ambient + iso light ellipses, multiplied; ADR-215), and paper-doll wearables (tinted on the CPU, ADR-128 head offset).
+ * day/night lightmap (ambient + iso light ellipses, multiplied; ADR-216), and paper-doll wearables (tinted on the CPU, ADR-128 head offset).
  * No bloom or masks. Building pieces (ADR-197) are painted level by level in a total order, with deck side faces
  * clipped where a neighbouring deck covers them.
  *
@@ -258,7 +258,7 @@ export class Canvas2DRenderer {
       g.save(); g.translate(snapPx(it.sx, s, ox), snapPx(it.sy, s, oy)); fx(); if (f.flipX) g.scale(-1, 1);
       g.drawImage(img, f.x, f.y, f.w, f.h, -f.anchorX * k, -f.anchorY * k, dw, dh); g.restore(); stats.sprites++; stats.drawCalls++;
     }
-    // ADR-215: real lightmap (ambient + additive iso light ellipses) multiplied onto the scene, like the WebGL LightPass
+    // ADR-216: real lightmap (ambient + additive iso light ellipses) multiplied onto the scene, like the WebGL LightPass
     g.setTransform(1, 0, 0, 1, 0, 0);
     const a = day.ambient;
     if (a[0] + a[1] + a[2] < 2.9) {

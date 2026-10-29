@@ -1,5 +1,5 @@
 /**
- * ADR-215: Canvas2D lightmap. The fallback renderer used to multiply the whole frame by the ambient colour and then
+ * ADR-216: Canvas2D lightmap. The fallback renderer used to multiply the whole frame by the ambient colour and then
  * ADD a faint capped glow per light, which tinted the dark but never pushed it back. This builds a real lightmap like
  * the WebGL LightPass: a downscaled offscreen canvas cleared to the ambient colour, every light added ("lighter") as an
  * iso ellipse with the shared lightFalloff profile and flicker, then multiplied onto the scene. The pure helpers below

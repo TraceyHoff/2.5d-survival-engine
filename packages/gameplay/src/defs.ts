@@ -116,7 +116,7 @@ export interface PieceDef extends BuildPieceDef, Visual {
   readonly supportsAbove: boolean; readonly roof: boolean; readonly blocksPath: boolean; readonly opening: SocketKind | 0;
   readonly fits: SocketKind | 0; readonly door: boolean; readonly station: StationKind; readonly fired: boolean;
   readonly heat: number; readonly heatRadius: number; readonly light: boolean; readonly container: number;
-  /** ADR-215: light radius in tiles (gameplay light grid AND the rendered light; 0 = legacy max(heatRadius*2, 4)). */
+  /** ADR-216: light radius in tiles (gameplay light grid AND the rendered light; 0 = legacy max(heatRadius*2, 4)). */
   readonly lightRadius: number;
   readonly privilegeRadius: number; readonly paintable: boolean; readonly variants: number; readonly spoilMul: number;
   /** Art skin name per variant index (`<piece>@<name>` sprite lookup); empty = unnamed. */

@@ -6,7 +6,7 @@ const tuning = JSON.parse(readFileSync(new URL("../../../assets/survival_fx/rend
 const pieces = (JSON.parse(readFileSync(new URL("../../../packages/gameplay/data/pieces.json", import.meta.url), "utf8")) as { pieces?: unknown[] } | unknown[]);
 const list = (Array.isArray(pieces) ? pieces : (pieces as { pieces: unknown[] }).pieces) as Array<{ key: string; light?: boolean; lightRadius?: number }>;
 
-describe("ADR-215 client light table", () => {
+describe("ADR-216 client light table", () => {
   const t = new LightTable(); t.load(tuning);
   it("campfire lights 6-8 tiles, torches/lanterns proportionally (render_tuning merged)", () => {
     expect(t.get("campfire")!.radius).toBeGreaterThanOrEqual(6); expect(t.get("campfire")!.radius).toBeLessThanOrEqual(8);

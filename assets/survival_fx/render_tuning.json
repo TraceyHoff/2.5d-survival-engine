@@ -327,7 +327,7 @@
       "intensity": 0
      }
     },
-    "note": "gameplay piece campfire: heat 18, heatRadius 4 tiles, lightRadius 8 (ADR-215); size anims are visual only"
+    "note": "gameplay piece campfire: heat 18, heatRadius 4 tiles, lightRadius 8 (ADR-216); size anims are visual only"
    },
    "torch_stand": {
     "radiusTiles": 6.0,

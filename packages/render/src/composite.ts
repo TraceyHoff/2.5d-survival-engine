@@ -8,7 +8,7 @@ import { createProgram, FULLSCREEN_VS, type Program } from "./gl/util.js";
 import { GLSL_LUT } from "./grading.js";
 import { MAX_HEAT } from "./lighting.js";
 import type { StyleConfig } from "./style.js";
-/** ADR-215: soft shoulder on the decoded light (max channel above 1 compressed toward 1.625, hue kept), so the larger,
+/** ADR-216: soft shoulder on the decoded light (max channel above 1 compressed toward 1.625, hue kept), so the larger,
  *  overlapping fire/lamp lights brighten the scene instead of blowing it out to flat yellow. */
 export const LIGHT_KNEE_GLSL = /* glsl */ `vec3 lightKnee(vec3 l) { float m = max(l.r, max(l.g, l.b)); if (m <= 1.0) return l; float k = 1.0 + (m - 1.0) / (1.0 + (m - 1.0) * 1.6); return l * (k / m); }`;
 /** CPU mirror of LIGHT_KNEE_GLSL (tests). */

@@ -1663,3 +1663,75 @@ Consequences:
 - An unreachable goal leaves the creature idle at the closest tile.
 - ADR-212's lateral slop applies to creatures too.
 - The threat scan reads current Transforms rather than spatial-hash cells, which differs only for an entity that crossed a cell this tick.
+
+## ADR-216: Realistic light radii; lights push back the night (gameplay radius = drawn radius)
+
+Accepted 2026-10-29. Context: players reported that campfires and other lights "hardly give any light to protect the player". The drawn light was much smaller than the gameplay light:
+- The client light table gave a campfire 4.5 tiles, a torch stand 3.5, a lantern 2.5 and a held torch 3. Lamp posts, candles, chandeliers and other light pieces had no entry and borrowed the campfire spec.
+- The WebGL falloff `(1-d²)²` (d = dist²/r²) plus a tight core put the visible edge at about 55–65% of the nominal radius, so a campfire visibly lit about 3 tiles.
+- The gameplay light grid (ADR-108 zombie light avoidance) used `max(heatRadius*2, 4)`, so the zombies' stand-off ring (campfire 8, torch 4) sat far outside the visible pool.
+- Free-standing lit stations (`spawnStation` campfire/furnace) were not in the light grid at all.
+- Canvas2D multiplied the frame by the ambient colour and then added a capped (alpha ≤ 0.6) glow, which tinted the dark but never pushed it back.
+
+Decision:
+- **One radius per light piece:** `pieces.json` `lightRadius` (tiles, the distance where the light fades to 0) drives the gameplay light Emitter (`lightRadiusOf`; 0 = legacy `max(heatRadius*2, 4)`).
+  - The client draws piece lights with the replicated Emitter radius (`LightTable.withRadius`, kept in sync every frame). The table now supplies only colour, intensity and flicker.
+  - Rehydrate refreshes the radius on old saves.
+  - The client table and `render_tuning.json` carry the same radius for every light piece (test-enforced).
+- **Values:**
+
+  | Source | Old radius (drawn / gameplay) | New radius |
+  |---|---|---|
+  | campfire | 4.5 / 8 | 8 |
+  | fireplace | 4 / 10 | 8 |
+  | wood_stove | 3 / 8 | 6 |
+  | stove_iron, cook_range | campfire spec / 6 | 5 |
+  | clay_oven | campfire spec / 5 | 4.5 |
+  | furnace | 3.5 / 6 | 6 |
+  | torch_stand | 3.5 / 4 | 6 |
+  | lantern, lantern_hanging | 2.5 / 4 | 6 |
+  | candle | campfire spec / 4 | 3 |
+  | candelabra | campfire spec / 4 | 4 |
+  | table_lamp | campfire spec / 4 | 4.5 |
+  | floor_lamp | campfire spec / 4 | 6 |
+  | wall_sconce | campfire spec / 4 | 5 |
+  | chandelier | campfire spec / 4 | 7 |
+  | lamp_post | campfire spec / 4 | 9 |
+  | free-standing campfire / furnace (`STATION_LIGHT_RADIUS`) | 6 / none | 8 / 6 |
+  | heat_brazier (visual) | 4 | 6.5 |
+  | held torch (visual) | 3 | 5.5 |
+  | held lantern (visual) | — | 5 |
+  | held candle (visual) | — | 3 |
+  | glow mushrooms, lit windows | 1.6 / 1.5 | 2.5 |
+
+  Gameplay radii that shrink (fireplace, stoves, ovens, candle) now match what is drawn. Every one stays at least `lightAvoid.minRadius`.
+- **Free-standing stations:** a lit `spawnStation` campfire or furnace (CraftingStation + Fuel, no piece) joins the light grid at `STATION_LIGHT_RADIUS`. Zombies keep out of it and Snuffers can target it (`snuffLight` already handles a Fuel entity). The client's bonfire light uses the same radius.
+- **Falloff (WebGL LightPass and Canvas2D share `lightFalloff`):**
+  - Full strength out to 35% of the radius, then a smoothstep fade to exactly 0 at the radius: no rim, and still clearly lit at 75%.
+  - A hot core: `exp(-14 t²) · 0.45`.
+  - `LIGHT_GAIN` 0.8 puts an intensity-1 plateau at about 0.8 (warm, scene colours readable).
+  - Flicker moves brightness ±30% and radius only ±3.5%, since big radii would visibly wobble.
+  - The composite applies a hue-preserving soft knee to the decoded light (`lightKnee`: max channel above 1 compressed toward 1.625), so overlapping fires brighten the scene instead of clipping to flat yellow.
+- **Canvas2D (`canvasLight.ts`):** a real lightmap.
+  - A 1/4-res offscreen canvas is cleared to ambient. Each light is added (`lighter`) as an iso 2:1 ellipse, with the same radius conversion as WebGL (`r·tileW/2·1.414`), gradient stops sampled from `lightFalloff`, and the WebGL flicker noise.
+  - The lightmap is multiplied onto the frame, then a small additive warm core is drawn per light.
+  - When the ambient sum is ≥ 2.9 (day) it is skipped, as before.
+- **Held lights (visual only):** a character whose main hand (or off hand) holds `torch`, `lantern`, `tallow_candle` or `candle` gets a follower view entity with a `held_<key>` LightSource. It is a separate entity so the character sprite never gets BloomSource. Only `tallow_candle` exists in items.json today; `torch` is still only proposed (items_proposed.json), and its light lights up as soon as the item ships.
+  - Held lights do not feed the gameplay light grid, so a carried torch does not repel zombies. That would be a gameplay change, left for when the torch item ships.
+
+Not changed:
+- Lightmap resolution per quality tier: ultra 1×, high 2×, low/medium/console 4×. The smooth, larger lights look the same at quarter res.
+- The light count is uncapped, as before.
+- `uStrength` (daylightLightScale 0.2 → 1 at night).
+
+Performance: the same number of instanced quads, with larger quads. Headless SwiftShader sandbox at 23:00 with 6 lit fires, a torch stand and a lamp post:
+
+| Renderer | Before (mean / p95) | After (mean / p95) |
+|---|---|---|
+| WebGL | 140 / 150 ms | 124 / 150 ms |
+| `?profile=console` | 131–146 / 250–300 ms | 122–131 / 233–250 ms |
+| `?renderer=canvas` | 107 / 133 ms | 102 / 167 ms (one noisy run 277 ms) |
+
+The numbers are all within run-to-run noise.
+
+Tests: `adr216_light_radius` (gameplay data, light grid, stations, avoidance, rehydrate), `adr216_light_falloff` (profile, canvas stops, flicker, knee) and `adr216_lights` (client table matches pieces.json, held lights).

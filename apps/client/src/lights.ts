@@ -8,7 +8,7 @@ export interface LightSpec { radius: number; intensity: number; r: number; g: nu
 const hex = (c: string): [number, number, number] => { const n = parseInt(c.replace("#", ""), 16); return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255]; };
 const mk = (radius: number, intensity: number, color: string, flicker: number): LightSpec => { const [r, g, b] = hex(color); return { radius, intensity, r, g, b, flicker }; };
 
-/** Fallbacks (used when render_tuning lacks the key). ADR-215: radii are the distance at which the light has faded to
+/** Fallbacks (used when render_tuning lacks the key). ADR-216: radii are the distance at which the light has faded to
  *  zero (smooth plateau profile, full strength to ~35% and still clearly lit at ~75%). Light PIECES are drawn with the
  *  replicated gameplay Emitter radius (pieces.json lightRadius) so the lit area and zombie light-avoidance match; the
  *  radius here is used only for things without a gameplay light (free-standing bonfire, props, held lights). */
@@ -27,7 +27,7 @@ export const DEFAULT_LIGHTS: Record<string, LightSpec> = {
   glow_mushrooms: mk(2.5, 0.55, "#7ff0d8", 0.1), "prop_glow_mushroom_*": mk(2.5, 0.55, "#7ff0d8", 0.1),
   mirror: mk(1.5, 0.4, "#cfe8ff", 0.05),
 };
-/** Item keys whose held light is looked up as `held_<key>` (main hand or off hand). Visual only (ADR-215). */
+/** Item keys whose held light is looked up as `held_<key>` (main hand or off hand). Visual only (ADR-216). */
 export const HELD_LIGHT_ITEMS: readonly string[] = ["torch", "lantern", "tallow_candle", "candle"];
 
 export class LightTable {
@@ -49,6 +49,6 @@ export class LightTable {
   }
   /** Light carried by a character holding `itemKey` (held torch/lantern/candle), or undefined. */
   held(itemKey: string | undefined): LightSpec | undefined { return itemKey && HELD_LIGHT_ITEMS.includes(itemKey) ? this.get(`held_${itemKey}`) : undefined; }
-  /** Spec for a light piece drawn at its gameplay Emitter radius (ADR-215: visuals == light-avoidance radius). */
+  /** Spec for a light piece drawn at its gameplay Emitter radius (ADR-216: visuals == light-avoidance radius). */
   static withRadius(spec: LightSpec, radius: number | undefined): LightSpec { return radius && radius > 0 && radius !== spec.radius ? { ...spec, radius } : spec; }
 }

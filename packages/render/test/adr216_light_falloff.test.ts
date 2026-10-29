@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { lightFalloff, FALLOFF_INNER } from "../src/lighting.js";
 import { C2D_FALLOFF_STOPS, lightFlicker, lightPeak, lightRadiusPx } from "../src/canvasLight.js";
 
-describe("ADR-215 light falloff profile", () => {
+describe("ADR-216 light falloff profile", () => {
   it("bright core, wide plateau, smooth fade to exactly 0 at the radius", () => {
     expect(lightFalloff(0)).toBeGreaterThan(1.3);
     expect(lightFalloff(FALLOFF_INNER)).toBeGreaterThan(0.95);
@@ -29,7 +29,7 @@ describe("ADR-215 light falloff profile", () => {
 });
 
 import { lightKnee } from "../src/composite.js";
-describe("ADR-215 composite light knee", () => {
+describe("ADR-216 composite light knee", () => {
   it("identity up to 1, compresses above while keeping the hue, bounded", () => {
     expect(lightKnee([0.5, 0.3, 0.1])).toEqual([0.5, 0.3, 0.1]); expect(lightKnee([1, 0.6, 0.3])).toEqual([1, 0.6, 0.3]);
     const k = lightKnee([2, 1.2, 0.6]); expect(k[0]).toBeLessThan(2); expect(k[0]).toBeGreaterThan(1); expect(k[1] / k[0]).toBeCloseTo(0.6, 9);

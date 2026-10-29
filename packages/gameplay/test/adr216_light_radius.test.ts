@@ -13,7 +13,7 @@ function place(w: World, key: string, x: number, y: number): Entity {
 const lightOf = (w: World, piece: Entity) => G.attachmentsOf(w, piece).find((a) => w.getField(a, G.Emitter, "kind") === G.EmitterKind.Light)!;
 const lightPieces = () => [...d.pieces.values()].filter((p) => p.light);
 
-describe("ADR-215 realistic light radii (data)", () => {
+describe("ADR-216 realistic light radii (data)", () => {
   it("every light piece has an explicit lightRadius and the emitter uses it", () => {
     expect(lightPieces().length).toBeGreaterThanOrEqual(15);
     for (const p of lightPieces()) {
@@ -33,7 +33,7 @@ describe("ADR-215 realistic light radii (data)", () => {
   });
 });
 
-describe("ADR-215 gameplay light grid matches the visual radius", () => {
+describe("ADR-216 gameplay light grid matches the visual radius", () => {
   it("a placed, lit campfire protects its full lightRadius", () => {
     const w = makeWorld(); const camp = place(w, "campfire", 20, 20);
     const f = G.attachmentsOf(w, camp).find((a) => w.has(a, G.Fuel))!; G.addItem(w, f, d.itemId("wood"), 20);
@@ -62,7 +62,7 @@ describe("ADR-215 gameplay light grid matches the visual radius", () => {
   });
   it("rehydrate refreshes an old save's light emitter radius to the def", () => {
     const w = makeWorld(); const lamp = place(w, "lamp_post", 10, 10); const a = lightOf(w, lamp);
-    w.setField(a, G.Emitter, "radius", 4); // pre-ADR-215 save
+    w.setField(a, G.Emitter, "radius", 4); // pre-ADR-216 save
     G.loadedQueue(w).atts.push(a); rehydrateLoadedStructures(w);
     expect(w.getField(a, G.Emitter, "radius")).toBe(d.pieces.get(d.pieceId("lamp_post")!)!.lightRadius);
   });
