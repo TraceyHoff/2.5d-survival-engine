@@ -19,6 +19,7 @@ import { GameMenus, padMenuAction } from "./game-menus.js";
 import { BuildMode } from "./build-mode.js";
 import { mountBuildHud, onTouchControl } from "./build-hud.js";
 import { mountToolHint, toolIconFrame } from "./tool-hint.js";
+import { mountStationHint } from "./station-hint.js";
 import { mountWorldTools, type WorldToolsHandle } from "./world-tools.js";
 import { mountVehicleControls, type VehicleControls } from "./vehicle-controls.js";
 import { mountTouchOverlay, syncTouchHidden } from "./touch-overlay.js";
@@ -586,6 +587,13 @@ mountNameTags(root, { world: () => world, player: () => session.player, alpha: (
   hidden: () => !!menus?.nav.isOpen });
 mountLootLabels(root, { world: () => world, player: () => session.player, camera: () => iso?.renderer.camera ?? (ctx ? debugCamera(cam, innerWidth, innerHeight, devicePixelRatio || 1) : undefined), hidden: () => !!menus?.nav.isOpen || buildMode.active || !!vehicleCtl?.driving,
   device: promptDevice, key: () => controlLabel(input.bindings(promptDevice(), "Gameplay").find((b) => b.binding.action === "Interact")?.binding.control) });
+// ADR-212: hand symbol + Interact hint over the station Interact would open (same pick as interactPanel)
+mountStationHint(root, { world: () => world, player: () => session.player, camera: () => iso?.renderer.camera ?? (ctx ? debugCamera(cam, innerWidth, innerHeight, devicePixelRatio || 1) : undefined),
+  hidden: () => !!menus?.nav.isOpen || buildMode.active || !!vehicleCtl?.driving, device: promptDevice,
+  key: () => controlLabel(input.bindings(promptDevice(), "Gameplay").find((b) => b.binding.action === "Interact")?.binding.control),
+  pick: () => { const c = menuCtx(); const t = c && interactPanel(c); return !t ? undefined : t.panel === "station" ? { station: t.station, kind: t.kind } : "other"; },
+  open: (st, kind) => menus?.openStation(st, kind),
+  art: () => toolIconFrame(iso?.registry, "hand", Math.min(3, devicePixelRatio || 1) * (promptDevice() === "touch" ? 44 : 34) / 32) });
 // ADR-126: tool-needed symbol over the nearest resource node (Settings toggle, live)
 mountToolHint(root, { world: () => world, player: () => session.player, camera: () => iso?.renderer.camera, hidden: () => !!menus?.nav.isOpen || buildMode.active || !!vehicleCtl?.driving,
   enabled: () => loadSettings().toolHints !== false, device: promptDevice,
