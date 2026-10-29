@@ -3,13 +3,14 @@
  * grid (cell = lightAvoid.gridCell tiles), each light bucketed into every cell its radius (+ edge margin) touches, so a
  * point query reads one cell. Active lights:
  *  - light Emitters (EmitterKind.Light) with strength > 0 (lit campfire / torch stand / lantern / furnace, any lamp);
+ *  - free-standing lit fired stations (spawnStation campfire/furnace: heat Emitter + Fuel.lit), radius STATION_LIGHT_RADIUS (ADR-215);
  *  - vehicles with headlights on (radius lightAvoid.headlightRadius).
  * Normal zombies use `lightAt` to stay out of lit radii at night (combat/zombies.ts); Snuffers use `nearestLight`.
  */
 import { Transform, type Entity, type World } from "@engine/core";
-import { Emitter, Vehicle } from "../components.js";
+import { BuildPiece, CraftingStation, Emitter, Fuel, PieceLink, Vehicle } from "../components.js";
 import { gameplayDefs } from "../config.js";
-import { EmitterKind } from "../realism.js";
+import { EmitterKind, STATION_LIGHT_RADIUS } from "../realism.js";
 import { headlightsOn } from "../vehicles.js";
 
 export interface ActiveLight { readonly e: Entity; readonly x: number; readonly y: number; readonly r: number; readonly vehicle: boolean }
@@ -25,6 +26,11 @@ export function activeLights(world: World): ActiveLight[] {
     if (world.getField(e, Emitter, "kind") !== EmitterKind.Light) continue;
     const s = world.getField(e, Emitter, "strength") ?? 0; if (!(s > 0)) continue;
     const t = world.get(e, Transform)!; out.push({ e, x: t.x, y: t.y, r: Math.max(la.minRadius, world.getField(e, Emitter, "radius") ?? 0), vehicle: false });
+  }
+  // ADR-215: a free-standing lit campfire/furnace (no piece, no light attachment) lights its surroundings too
+  if (world.isRegistered(CraftingStation) && world.isRegistered(Fuel)) for (const e of world.query([CraftingStation, Fuel, Transform], [BuildPiece, PieceLink])) {
+    const r = STATION_LIGHT_RADIUS[world.getField(e, CraftingStation, "kind") ?? 0]; if (!r || !world.getField(e, Fuel, "lit")) continue;
+    const t = world.get(e, Transform)!; out.push({ e, x: t.x, y: t.y, r: Math.max(la.minRadius, r), vehicle: false });
   }
   if (world.isRegistered(Vehicle)) for (const v of world.query([Vehicle, Transform])) {
     if (!headlightsOn(world, v)) continue; const t = world.get(v, Transform)!;

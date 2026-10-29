@@ -3,8 +3,8 @@ import { reportRenderError } from "./report.js";
  * Canvas2DRenderer: sprite fallback when WebGL2 cannot be created (console browsers after a GPU reset, WebGL blocked for
  * the origin, software-only devices). Draws the REAL sprite art from the same manifest + atlas PNGs and the same view
  * World IsoView fills for IsoRenderer: terrain diamonds, depth-sorted sprites (Transform + Sprite + AnimState), and a
- * day/night ambient overlay with additive light glows, and paper-doll wearables (tinted on the CPU, ADR-128 head offset).
- * No bloom, lightmap or masks. Building pieces (ADR-197) are painted level by level in a total order, with deck side faces
+ * day/night lightmap (ambient + iso light ellipses, multiplied; ADR-215), and paper-doll wearables (tinted on the CPU, ADR-128 head offset).
+ * No bloom or masks. Building pieces (ADR-197) are painted level by level in a total order, with deck side faces
  * clipped where a neighbouring deck covers them.
  *
  * Presents the subset of the IsoRenderer surface the client uses (camera, capabilities, atlas.setRegistry, bindGameplay,
@@ -17,6 +17,8 @@ import type { AssetRegistry } from "@engine/assets";
 import { IsoCamera } from "./camera.js";
 import { Sprite, LightSource } from "./components.js";
 import { frameAnim } from "./frame-select.js";
+import { Canvas2DLightmap, lightRadiusPx, type C2DLight } from "./canvasLight.js";
+import { DEFAULT_STYLE } from "./style.js";
 import { SpriteFlag } from "./ids.js";
 import { STATE_ANIMS, type AtlasSource } from "./assets/atlasManager.js";
 import { computeDayLighting, dimForWeather } from "./timeOfDay.js";
@@ -66,6 +68,7 @@ export class Canvas2DRenderer {
   private sources = new Map<string, AtlasSource>();
   private images = new Map<string, HTMLImageElement | ImageBitmap | null>();
   private focus = -1; private w = 0; private h = 0;
+  private readonly lightmap = new Canvas2DLightmap();
   /** ADR-214: renderer-clock rate (hit-stop); the clock accumulates scaled frame time instead of reading wall time. */
   timeScale = 1; private clock = 0; private clockAt = -1;
   /** Image loader (tests inject one). */
@@ -255,22 +258,23 @@ export class Canvas2DRenderer {
       g.save(); g.translate(snapPx(it.sx, s, ox), snapPx(it.sy, s, oy)); fx(); if (f.flipX) g.scale(-1, 1);
       g.drawImage(img, f.x, f.y, f.w, f.h, -f.anchorX * k, -f.anchorY * k, dw, dh); g.restore(); stats.sprites++; stats.drawCalls++;
     }
-    // ambient (multiply) + lights (additive glows)
+    // ADR-215: real lightmap (ambient + additive iso light ellipses) multiplied onto the scene, like the WebGL LightPass
     g.setTransform(1, 0, 0, 1, 0, 0);
-    const a = day.ambient; if (a[0] + a[1] + a[2] < 2.9) { g.globalCompositeOperation = "multiply"; g.fillStyle = rgb(a.map((v) => Math.min(1, v)) as [number, number, number]); g.fillRect(0, 0, this.w, this.h); }
-    if (world.isRegistered(LightSource)) {
-      g.globalCompositeOperation = "lighter"; g.setTransform(s, 0, 0, s, this.w / 2 - cam.x * s, this.h / 2 - cam.y * s);
-      for (const e of world.query([Transform, LightSource])) {
-        const L = world.get(e, LightSource)!; if (!(L.intensity > 0)) continue; const t = world.get(e, Transform)!; const p = worldToScreen(t.x, t.y, t.z, iso);
-        const r = L.radius * tw * 0.5; const gr = g.createRadialGradient(p.sx, p.sy, 0, p.sx, p.sy, r);
-        gr.addColorStop(0, `rgba(${L.r * 255 | 0},${L.g * 255 | 0},${L.b * 255 | 0},${Math.min(0.6, L.intensity * 0.4 * (1 - day.daylight * 0.8))})`); gr.addColorStop(1, "rgba(0,0,0,0)");
-        g.fillStyle = gr; g.fillRect(p.sx - r, p.sy - r, 2 * r, 2 * r);
+    const a = day.ambient;
+    if (a[0] + a[1] + a[2] < 2.9) {
+      const lights: C2DLight[] = [];
+      if (this.settings.lights && world.isRegistered(LightSource)) for (const e of world.query([Transform, LightSource])) {
+        const L = world.get(e, LightSource)!; if (!(L.intensity > 0) || !(L.radius > 0)) continue; const t = world.get(e, Transform)!; const p = worldToScreen(t.x, t.y, t.z, iso);
+        lights.push({ sx: p.sx, sy: p.sy, r: lightRadiusPx(L.radius, tw), color: [L.r, L.g, L.b], intensity: L.intensity, flicker: L.flicker });
       }
+      stats.lights = lights.length;
+      this.lightmap.apply(g, this.w, this.h, { s, ox: this.w / 2 - cam.x * s, oy: this.h / 2 - cam.y * s }, a, C2D_DAYLIGHT_LIGHT_SCALE + (1 - C2D_DAYLIGHT_LIGHT_SCALE) * day.glow, time, lights);
     }
     g.globalCompositeOperation = "source-over"; void this.focus;
   }
 }
 const FLOOR_Z = floorToTerrainZ(1, 0);
+const C2D_DAYLIGHT_LIGHT_SCALE = DEFAULT_STYLE.daylightLightScale;
 /** Painter layers: everything on floor N draws after floor N-1; decks draw below the uprights of their own floor. */
 const LEVEL_DEPTH = 1e6, DECK_DEPTH = -5e5;
 interface C2DPiece { e: Entity; sx: number; sy: number; depth: number; ord: number; img: CanvasImageSource; f: { x: number; y: number; w: number; h: number; anchorX: number; anchorY: number; flipX?: boolean }; clip: [number, number][] | undefined; seams?: { poly: [number, number][]; dx: number; dy: number }[] | undefined; ghost: boolean }

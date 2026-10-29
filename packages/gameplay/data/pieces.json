@@ -326,6 +326,7 @@
       "heat": 18,
       "heatRadius": 4,
       "light": true,
+      "lightRadius": 8,
       "container": 4,
       "cost": [
         {
@@ -374,6 +375,7 @@
       "heat": 12,
       "heatRadius": 3,
       "light": true,
+      "lightRadius": 6,
       "container": 6,
       "cost": [
         {
@@ -503,6 +505,7 @@
       "ground": true,
       "fired": true,
       "light": true,
+      "lightRadius": 6,
       "heat": 4,
       "heatRadius": 1.5,
       "container": 1,
@@ -611,6 +614,7 @@
       "hp": 40,
       "solid": false,
       "light": true,
+      "lightRadius": 6,
       "fired": true,
       "container": 1,
       "cost": [
@@ -860,6 +864,7 @@
       "heat": 22,
       "heatRadius": 5,
       "light": true,
+      "lightRadius": 8,
       "container": 4,
       "footprint": {
         "w": 2,
@@ -889,6 +894,7 @@
       "heat": 16,
       "heatRadius": 4,
       "light": true,
+      "lightRadius": 6,
       "container": 4,
       "cost": [
         {
@@ -2829,6 +2835,7 @@
       "heat": 12,
       "heatRadius": 3,
       "light": true,
+      "lightRadius": 5,
       "container": 4,
       "fuelMul": 1.5,
       "cost": [
@@ -2868,6 +2875,7 @@
       "heat": 14,
       "heatRadius": 3,
       "light": true,
+      "lightRadius": 5,
       "container": 6,
       "fuelMul": 1.75,
       "cost": [
@@ -2901,6 +2909,7 @@
       "heat": 10,
       "heatRadius": 2.5,
       "light": true,
+      "lightRadius": 4.5,
       "container": 4,
       "fuelMul": 1.25,
       "cost": [
@@ -2930,6 +2939,7 @@
       "solid": false,
       "ground": true,
       "light": true,
+      "lightRadius": 3,
       "fired": true,
       "container": 1,
       "category": "lighting",
@@ -2962,6 +2972,7 @@
       "solid": false,
       "ground": true,
       "light": true,
+      "lightRadius": 4,
       "fired": true,
       "container": 1,
       "category": "lighting",
@@ -2992,6 +3003,7 @@
       "solid": false,
       "ground": true,
       "light": true,
+      "lightRadius": 6,
       "fired": true,
       "container": 1,
       "category": "lighting",
@@ -3027,6 +3039,7 @@
       "solid": false,
       "ground": true,
       "light": true,
+      "lightRadius": 4.5,
       "fired": true,
       "container": 1,
       "category": "lighting",
@@ -3056,6 +3069,7 @@
       "solid": false,
       "ground": false,
       "light": true,
+      "lightRadius": 7,
       "fired": true,
       "container": 1,
       "category": "lighting",
@@ -3095,6 +3109,7 @@
       "solid": false,
       "ground": true,
       "light": true,
+      "lightRadius": 6,
       "fired": true,
       "container": 1,
       "category": "lighting",
@@ -3133,6 +3148,7 @@
       },
       "category": "lighting",
       "light": true,
+      "lightRadius": 5,
       "fired": true,
       "container": 1,
       "cost": [
@@ -3162,6 +3178,7 @@
       "solid": true,
       "ground": true,
       "light": true,
+      "lightRadius": 9,
       "fired": true,
       "container": 1,
       "category": "outdoor",

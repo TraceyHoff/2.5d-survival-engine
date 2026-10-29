@@ -23,6 +23,12 @@ import type { Rect } from "./camera.js";
 import type { TransformSource } from "./transformSource.js";
 
 const FLOATS = 8;
+/** ADR-215 light profile (shared by the WebGL shader and the Canvas2D gradient): full strength to FALLOFF_INNER of
+ *  the radius, then a smoothstep fade that reaches 0 exactly at the radius (no visible rim), plus a hot core. */
+export const FALLOFF_INNER = 0.2, CORE_SHARPNESS = 14, CORE_GAIN = 0.45;
+const smoothstep = (a: number, b: number, x: number): number => { const k = Math.min(1, Math.max(0, (x - a) / (b - a))); return k * k * (3 - 2 * k); };
+/** Light falloff at t = distance / radius (0 centre .. 1 edge); > 1 at the core, exactly 0 at and beyond the radius. */
+export function lightFalloff(t: number): number { if (t >= 1) return 0; return 1 - smoothstep(FALLOFF_INNER, 1, t) + Math.exp(-t * t * CORE_SHARPNESS) * CORE_GAIN; }
 const VS = /* glsl */ `#version 300 es
 precision highp float; precision highp int;
 layout(location=0) in vec4 aA; // sx, sy, radiusPx, intensity
@@ -37,8 +43,8 @@ void main() {
   vLocal = c;
   float seed = aA.x * 0.013 + aA.y * 0.007;
   float fl = aB.w * (noise(uTime * 9.0 + seed * 31.0) * 0.7 + noise(uTime * 23.0 + seed * 17.0) * 0.3 - 0.5) * 2.0;
-  float r = aA.z * (1.0 + 0.08 * fl);
-  vColor = aB.rgb * aA.w * uStrength * (1.0 + 0.35 * fl);
+  float r = aA.z * (1.0 + 0.035 * fl); // ADR-215: big radii -> gentle size breathing, the flicker lives in brightness
+  vColor = aB.rgb * aA.w * uStrength * (1.0 + 0.3 * fl);
   vec2 iso = aA.xy + c * vec2(r, r * 0.5);
   gl_Position = vec4(isoToClip(iso), 0.0, 1.0);
 }`;
@@ -49,8 +55,10 @@ out vec4 o;
 void main() {
   float d = dot(vLocal, vLocal);
   if (d >= 1.0) discard;
-  float att = (1.0 - d); att *= att;
-  float core = exp(-d * 9.0) * 0.6;
+  // ADR-215 (keep in sync with lightFalloff): wide plateau, smooth zero-slope fade to the radius, bright inner core
+  float t = sqrt(d);
+  float att = 1.0 - smoothstep(${FALLOFF_INNER.toFixed(2)}, 1.0, t);
+  float core = exp(-d * ${CORE_SHARPNESS.toFixed(1)}) * ${CORE_GAIN.toFixed(2)};
   o = vec4(vColor * (att + core) * 0.5, 1.0);
 }`;
 

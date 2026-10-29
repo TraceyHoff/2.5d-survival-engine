@@ -45,6 +45,7 @@ export function rehydrateLoadedStructures(world: World): void {
     } else if (kind === AttachKind.Light) {
       const light = specs.find((s) => s.kind === 2);
       if (light && !world.has(a, Emitter)) world.add(a, Emitter, { kind: light.kind, radius: light.radius, strength: def.fired ? 0 : light.strength, falloff: Falloff.Quadratic });
+      else if (light && world.getField(a, Emitter, "radius") !== light.radius) world.setField(a, Emitter, "radius", light.radius); // ADR-215: saves keep the old radius
     } else if (kind === AttachKind.Storage && world.has(a, StallHeader) && !world.has(a, StallSign)) world.add(a, StallSign, { soldOut: 1 });
   }
   for (const a of atts) if (world.isAlive(a) && world.getField(a, Fuel, "lit")) setEmittersLit(world, a, 1);
