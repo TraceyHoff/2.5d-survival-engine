@@ -1,5 +1,5 @@
 /**
- * ADR-211: goal-driven planner for AI humans. Each sense pass (autonomy.ts, every SENSE_EVERY ticks per bot) walks a fixed
+ * ADR-212: goal-driven planner for AI humans. Each sense pass (autonomy.ts, every SENSE_EVERY ticks per bot) walks a fixed
  * goal ladder (tools -> campfire -> knife / weapon -> workbench -> storage -> 2x2 base -> clothes / armour -> furnace ->
  * metal) and backward-chains the first unmet goal through the same RecipeDef / ResourceDef / PieceDef data players read:
  * have it (bag or base storage -> withdraw), craft it (hand or at a base station), gather it (node with the right tool),
@@ -45,14 +45,19 @@ export function flushAiMemory(agents: Iterable<Agent>, put: AiPut, tick: number,
 export function bumpStat(a: Agent, k: keyof AiStats, tick: number, by = 1): void { aiMemoryOf(a).stats[k] += by; markAiDirty(a, tick); }
 
 // ---------------- base layout (relative to the anchor = north-west corner of a 2x2 foundation) ----------------
-export interface BaseSlot { id: string; key: string; x: number; y: number; level: number }
-/** Verified against PlaceCmd snapping: cells at centres, north / south edges at y = by / by+2, west / east at x = bx / bx+2, roof = level 1. */
+export interface BaseSlot { id: string; key: string; x: number; y: number; level: number; rot?: number; legacy?: readonly { key: string; x: number; y: number }[] }
+/**
+ * 2x2 hut, built with the same Place commands a player sends. ADR-211 corners: every perimeter edge of a 2x2 is an arm of an outer
+ * corner, so three corners are L pieces (`wall_corner_outer`, rot = which tile the L wraps) and the south-west corner keeps a doorway
+ * (south) + window frame (west), the two openings allowed in a corner slot. `legacy` = the pre-ADR-211 straight walls that still count.
+ */
 export const BASE_SLOTS: readonly BaseSlot[] = [
   ...[[0, 0], [1, 0], [0, 1], [1, 1]].map(([x, y]) => ({ id: `f${x}${y}`, key: "foundation", x: x! + 0.5, y: y! + 0.5, level: 0 })),
-  { id: "wn0", key: "wall", x: 0.5, y: 0, level: 0 }, { id: "wn1", key: "wall", x: 1.5, y: 0, level: 0 },
-  { id: "ww0", key: "wall", x: 0, y: 0.5, level: 0 }, { id: "ww1", key: "wall", x: 0, y: 1.5, level: 0 },
-  { id: "we0", key: "wall", x: 2, y: 0.5, level: 0 }, { id: "we1", key: "wall", x: 2, y: 1.5, level: 0 },
-  { id: "ws1", key: "wall", x: 1.5, y: 2, level: 0 }, { id: "wd", key: "wall_doorway", x: 0.5, y: 2, level: 0 }, { id: "door", key: "door_wood", x: 0.5, y: 2, level: 0 },
+  { id: "cnw", key: "wall_corner_outer", x: 0, y: 0, level: 0, rot: 0, legacy: [{ key: "wall", x: 0.5, y: 0 }, { key: "wall", x: 0, y: 0.5 }] },
+  { id: "cne", key: "wall_corner_outer", x: 2, y: 0, level: 0, rot: 1, legacy: [{ key: "wall", x: 1.5, y: 0 }, { key: "wall", x: 2, y: 0.5 }] },
+  { id: "cse", key: "wall_corner_outer", x: 2, y: 2, level: 0, rot: 2, legacy: [{ key: "wall", x: 2, y: 1.5 }, { key: "wall", x: 1.5, y: 2 }] },
+  { id: "wwin", key: "wall_window", x: 0, y: 1.5, level: 0, legacy: [{ key: "wall", x: 0, y: 1.5 }] },
+  { id: "wd", key: "wall_doorway", x: 0.5, y: 2, level: 0 }, { id: "door", key: "door_wood", x: 0.5, y: 2, level: 0 },
   ...[[0, 0], [1, 0], [0, 1], [1, 1]].map(([x, y]) => ({ id: `r${x}${y}`, key: "roof_flat", x: x! + 0.5, y: y! + 0.5, level: 1 })),
 ];
 /** Station spots outside the walls (2 candidates each; a slot failing 4 times moves to the next). */
@@ -68,7 +73,7 @@ const ghostOk = (world: World, self: Entity, piece: number, x: number, y: number
 /** Where a builder stands for base pieces (outside the footprint, inside build reach of every slot). */
 export const BUILD_STAND = { x: 1, y: 3.3 };
 export const DOOR_OUT = { x: 0.5, y: 2.8 }, DOOR_IN = { x: 0.5, y: 1.25 };
-/** ADR-211: indoor campfire (back corner, off the door path): the walls keep its heat in and the roof keeps rain off; sleep spot next to it. */
+/** ADR-212: indoor campfire (back corner, off the door path): the walls keep its heat in and the roof keeps rain off; sleep spot next to it. */
 export const HEARTH: BaseSlot = { id: "hearth", key: "campfire", x: 1.5, y: 0.5, level: 0 }; export const HEARTH_SIT = { x: 0.9, y: 1.1 };
 export const baseHome = (b: { x: number; y: number }): { x: number; y: number } => ({ x: b.x + 1, y: b.y + 1 });
 export const insideBase = (b: { x: number; y: number }, x: number, y: number): boolean => x > b.x + 0.1 && x < b.x + 1.9 && y > b.y + 0.1 && y < b.y + 1.9;
@@ -106,7 +111,7 @@ export function plannerIndex(defs: GameDefs): Ix {
   for (const g of GOAL_LADDER) {
     if (g.k === "item") { addU(ix.item.get(g.key)?.id); if (g.alt) addU(ix.item.get(g.alt)?.id); }
     else if (g.k === "wear") addU(ix.item.get(g.key)?.id);
-    else if (g.k === "tool") for (const d of ix.tools) if (d.tool!.kind === g.kind && d.tool!.tier <= g.tier) addU(d.id);
+    else if (g.k === "tool") { for (const d of ix.tools) if (d.tool!.kind === g.kind && d.tool!.tier <= g.tier) addU(d.id); }
     else if (g.k === "piece") { const p = ix.piece.get(g.key); if (p) for (const c of pieceCost(defs, p, 0)) addU(c.item); }
   }
   for (const sl of BASE_SLOTS) { const p = ix.piece.get(sl.key); if (p) for (const c of pieceCost(defs, p, 0)) addU(c.item); }
@@ -127,7 +132,7 @@ export function scanBase(world: World, defs: GameDefs, b: { x: number; y: number
   let m = scans.get(world); if (!m) scans.set(world, (m = new Map())); const key = `${b.x},${b.y}`; const c = m.get(key);
   if (c && world.tick - c.tick < BASE_SCAN_EVERY && world.tick >= c.tick) return c.s;
   const ix = plannerIndex(defs); const s: BaseState = { pieces: new Map(), stations: new Map(), complete: false };
-  const cx = b.x + 1, cy = b.y + 1; const woodFuel = (ix.item.get("wood")?.fuelSeconds ?? 20) * 20;
+  const legacy = new Map<string, Entity>(); const cx = b.x + 1, cy = b.y + 1; const woodFuel = (ix.item.get("wood")?.fuelSeconds ?? 20) * 20;
   for (const e of installSpatialIndex(world).queryRadius(cx, cy, 6)) {
     if (!world.has(e, BuildPiece)) continue; const t = world.get(e, Transform); if (!t) continue;
     const def = defs.pieces.get(world.getField(e, BuildPiece, "type")!); if (!def) continue;
@@ -143,9 +148,11 @@ export function scanBase(world: World, defs: GameDefs, b: { x: number; y: number
     if (sa !== undefined && world.has(sa, Container) && !s.storage) { const sl = readSlots(world, sa); const counts = new Map<number, number>(); let free = 0;
       for (let i = 0; i < sl.items.length; i++) { const it = sl.items[i]!; if (!it || !sl.counts[i]) { free++; continue; } counts.set(it, (counts.get(it) ?? 0) + sl.counts[i]!); }
       s.storage = { id: e, x: t.x, y: t.y, counts, free }; continue; }
+    if (def.key === "wall" && t.z < 1.5) legacy.set(`wall@${Math.round((t.x - b.x) * 2) / 2},${Math.round((t.y - b.y) * 2) / 2}`, e);
     for (const sl of BASE_SLOTS) if (sl.key === def.key && Math.abs(t.x - (b.x + sl.x)) < 0.3 && Math.abs(t.y - (b.y + sl.y)) < 0.3 && (sl.level === 0) === (t.z < 1.5)) { s.pieces.set(sl.id, e);
       if (def.door) s.door = { id: e, x: t.x, y: t.y, open: (world.getField(resolveAttachment(world, e, AttachKind.Door) ?? e, DoorState, "open") ?? 0) > 0 }; }
   }
+  for (const sl of BASE_SLOTS) if (sl.legacy && !s.pieces.has(sl.id)) { const es = sl.legacy.map((q) => legacy.get(`${q.key}@${q.x},${q.y}`)); if (es.every((e) => e !== undefined)) s.pieces.set(sl.id, es[0]!); }
   s.complete = BASE_SLOTS.every((sl) => s.pieces.has(sl.id));
   if (m.size > 512) m.clear(); m.set(key, { tick: world.tick, s }); return s;
 }
@@ -177,7 +184,7 @@ const gameplayDefsOf = (world: World): GameDefs | undefined => world.getResource
 export type Step =
   | { k: "withdraw"; item: number; count: number }
   | { k: "craft"; recipe: number; count: number; station: StationKind; ticks: number }
-  | { k: "build"; piece: number; x: number; y: number; level: number; slot: string; stand: { x: number; y: number } }
+  | { k: "build"; piece: number; x: number; y: number; level: number; rot?: number; slot: string; stand: { x: number; y: number } }
   | { k: "wear"; invSlot: number };
 export interface Plan { goal: string; step?: Step; leaves: number[]; hunt: number[]; keep: Set<number>; blocked: string[] }
 
@@ -247,7 +254,7 @@ class Resolver {
       const i = c.findIndex((q, j) => (this.p.fails[`${key}${j}`] ?? 0) < 4 && ghostOk(this.p.world, this.p.self, def.id, b.x + q.x, b.y + q.y)); if (i < 0) { this.stuck = true; return false; } at = { x: c[i]!.x, y: c[i]!.y, level: 0, id: `${key}${i}` }; }
     const x = b.x + at.x, y = b.y + at.y;
     const stand = slot === HEARTH ? { x: b.x + DOOR_IN.x, y: b.y + DOOR_IN.y } : slot ? { x: b.x + BUILD_STAND.x, y: b.y + BUILD_STAND.y } : standNear(b, x, y);
-    this.step = { k: "build", piece: def.id, x, y, level: at.level, slot: at.id, stand }; return false;
+    this.step = { k: "build", piece: def.id, x, y, level: at.level, ...(slot?.rot ? { rot: slot.rot } : {}), slot: at.id, stand }; return false;
   }
 }
 const standNear = (b: { x: number; y: number }, x: number, y: number): { x: number; y: number } => {
