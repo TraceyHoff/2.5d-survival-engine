@@ -20,12 +20,21 @@ describe("ADR-212 console memory budget profile", () => {
   });
   it("HeapTrend flags a rising post-GC floor and ignores a flat sawtooth", () => {
     const flat = new HeapTrend(), leak = new HeapTrend();
-    for (let t = 0; t <= 20 * 60_000; t += 1000) {
+    for (let t = 0; t <= 25 * 60_000; t += 1000) {
       const saw = ((t / 1000) % 20) * 4e6; // 0..80 MB of garbage between GCs
       flat.push(t, 100e6 + saw); leak.push(t, 100e6 + saw + (t / 60_000) * 3 * 1048576); // +3 MB/min retained
     }
     expect(Math.abs(flat.slopeMBPerMin())).toBeLessThan(0.1); expect(flat.leaking(MEMORY_BUDGETS.console)).toBe(false);
     expect(leak.slopeMBPerMin()).toBeGreaterThan(2.5); expect(leak.leaking(MEMORY_BUDGETS.console)).toBe(true);
     expect(leak.windows).toBeLessThanOrEqual(120);
+  });
+  it("an old-generation sawtooth (major GC every ~4 min) and a warm-up ramp are not a leak", () => {
+    const tr = new HeapTrend();
+    for (let t = 0; t <= 30 * 60_000; t += 5000) {
+      const warm = Math.min(t, 180_000) / 180_000 * 120e6; // first 3 min: streaming in chunks/bots
+      const old = ((t % 240_000) / 240_000) * 150e6; // old gen climbs 150 MB, then a major GC
+      tr.push(t, 90e6 + warm + old + ((t / 1000) % 10) * 3e6);
+    }
+    expect(Math.abs(tr.slopeMBPerMin())).toBeLessThan(0.5); expect(tr.leaking(MEMORY_BUDGETS.console)).toBe(false);
   });
 });

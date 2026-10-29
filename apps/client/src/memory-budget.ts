@@ -33,14 +33,18 @@ export function isConsoleHost(): boolean {
 }
 
 /**
- * Leak detector over heap samples: keeps the minimum used heap per window (a proxy for the post-GC floor, which is
- * what a leak raises; the sawtooth peaks are just allocation rate) and fits a least-squares slope over the floors.
- * Fixed-size ring, so the detector itself never grows.
+ * Leak detector over heap samples. A leak raises the post-GC floor; the sawtooth peaks are only allocation rate, and
+ * V8 major GCs can be minutes apart, so a short-window minimum is NOT the floor (an old-generation sawtooth looks like
+ * a leak). We keep the minimum per window in a fixed ring (the detector never grows), ignore a warm-up period
+ * (streaming in the first chunks / bots), and compare the lowest floor of the most recent `span` windows against the
+ * lowest floor of the first `span` windows after warm-up: both lows include at least one major GC.
  */
 export class HeapTrend {
-  private floors: { t: number; mb: number }[] = []; private winStart = -1; private winMin = Infinity;
-  constructor(private windowMs = 30_000, private maxWindows = 120) {}
+  private floors: { t: number; mb: number }[] = []; private winStart = -1; private winMin = Infinity; private t0 = -1;
+  constructor(private windowMs = 60_000, private maxWindows = 120, private warmupMs = 180_000, private span = 5) {}
   push(tMs: number, usedBytes: number): void {
+    if (this.t0 < 0) this.t0 = tMs;
+    if (tMs - this.t0 < this.warmupMs) return;
     if (this.winStart < 0) this.winStart = tMs;
     this.winMin = Math.min(this.winMin, usedBytes / 1048576);
     if (tMs - this.winStart >= this.windowMs) {
@@ -50,16 +54,18 @@ export class HeapTrend {
   }
   get windows(): number { return this.floors.length; }
   get lastFloorMB(): number | undefined { return this.floors[this.floors.length - 1]?.mb; }
-  /** Least-squares slope of the per-window floors in MB per minute (0 with < 3 windows). */
-  slopeMBPerMin(): number {
-    const n = this.floors.length; if (n < 3) return 0;
-    let st = 0, sm = 0; for (const f of this.floors) { st += f.t; sm += f.mb; } const mt = st / n, mm = sm / n;
-    let num = 0, den = 0; for (const f of this.floors) { num += (f.t - mt) * (f.mb - mm); den += (f.t - mt) ** 2; }
-    return den > 0 ? (num / den) * 60_000 : 0;
+  private low(from: number, to: number): { t: number; mb: number } {
+    let best = this.floors[from]!; for (let i = from + 1; i < to; i++) if (this.floors[i]!.mb < best.mb) best = this.floors[i]!; return best;
   }
-  /** Leak verdict for a budget: enough history (>= 10 min) and a floor slope above the budget's threshold. */
+  /** Floor growth in MB per minute: lowest of the last `span` windows vs lowest of the first `span` (0 until 2*span windows). */
+  slopeMBPerMin(): number {
+    const n = this.floors.length, k = this.span; if (n < 2 * k) return 0;
+    const a = this.low(0, k), b = this.low(n - k, n); const dt = this.floors[n - 1]!.t - this.floors[k - 1]!.t;
+    return dt > 0 ? ((b.mb - a.mb) / dt) * 60_000 : 0;
+  }
+  /** Leak verdict for a budget: >= 10 min of post-warm-up history and floor growth above the budget's threshold. */
   leaking(b: MemoryBudget): boolean {
-    const n = this.floors.length; if (n < 3) return false;
+    const n = this.floors.length; if (n < 2 * this.span) return false;
     return this.floors[n - 1]!.t - this.floors[0]!.t >= 600_000 && this.slopeMBPerMin() > b.leakSlopeMBPerMin;
   }
 }
