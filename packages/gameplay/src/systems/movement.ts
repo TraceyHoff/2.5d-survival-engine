@@ -11,7 +11,8 @@ import { Anim, AnimState, LootBag, Buffs, Dead, Driver, EdgeSide, Inventory, Pla
 import { gameplayDefs } from "../config.js";
 import { skillMul } from "../skills/tree.js";
 import { GameplayActions as A } from "../input.js";
-import { StructureIndexRes, type StructureIndex } from "../building/structure.js";
+import { isLCorner, rotParts, StructureIndexRes, type StructureIndex } from "../building/structure.js";
+import type { PieceDef } from "../defs.js";
 import { TerrainRes } from "../world.js";
 import { WaterDepth, waterDepthAt, installSpatialIndex } from "@engine/world";
 import { INPUT } from "../input_hooks.js";
@@ -71,11 +72,15 @@ const solidCell = (idx: StructureIndex, tx: number, ty: number, level: number): 
  * past a doorway jamb) and against solid cell pieces (stations, furniture, pillars...) it would newly overlap.
  * Terrain keeps the centre-point test (shorelines). Returns the allowed coordinate along the axis.
  */
-export function bodyAxisMove(world: World, x: number, y: number, n: number, axis: 0 | 1, level: number, swim: boolean): number {
+export function bodyAxisMove(world: World, x: number, y: number, n: number, axis: 0 | 1, level: number, swim: boolean, radius?: number): number {
   const nx = axis === 0 ? n : x, ny = axis === 0 ? y : n;
   if (movementBlocked(world, x, y, nx, ny, level, swim)) return axis === 0 ? x : y; // centre point (terrain + legacy rules)
   const idx = world.getResource(StructureIndexRes); if (!idx || idx.count === 0) return n;
-  const r = gameplayDefs(world).movement.bodyRadius; if (!(r > 0)) return n;
+  const r = radius ?? gameplayDefs(world).movement.bodyRadius; if (!(r > 0)) return n;
+  const m = edgeAxisMove(idx, x, y, n, axis, level, r);
+  return idx.vertexPosts > 0 ? postAxisMove(idx, x, y, m, axis, level, r) : m;
+}
+function edgeAxisMove(idx: StructureIndex, x: number, y: number, n: number, axis: 0 | 1, level: number, r: number): number {
   const cur = axis === 0 ? x : y, lat = axis === 0 ? y : x; const s = Math.sign(n - cur); if (!s) return n;
   const lead0 = cur + s * r, lead1 = n + s * r; const b0 = Math.floor(lead0), b1 = Math.floor(lead1);
   if (b0 === b1) return n;
@@ -92,6 +97,48 @@ export function bodyAxisMove(world: World, x: number, y: number, n: number, axis
     if (blocked) { const stop = s > 0 ? edgeT - r - 1e-4 : edgeT + r + 1e-4; return s > 0 ? Math.max(cur, Math.min(n, stop)) : Math.min(cur, Math.max(n, stop)); }
   }
   return n;
+}
+
+// ---- ADR-214 vertex corner posts ------------------------------------------------------------------------------
+/** Half-size of the square post on a tile corner (placement keeps a +-0.15 creature box clear there too). */
+export const POST_HALF = 0.15;
+/** Collision boxes [cx, cy, hx, hy] (tile units, world axes) of a free-standing vertex corner at (vx, vy):
+ *  the post, plus for wall_corner_inner (4 steps) two short stubs along the art row's +x/+y arms, and for
+ *  wall_corner_angled (8 steps) the 45 deg wall run (to 0.48, 0.48 diagonally) as a chain of overlapping boxes.
+ *  Art row as the renderer picks it (pieceArtRow: rot % 4 for 4 steps, round(rot * 4 / steps) % 4 otherwise);
+ *  a row turns the art (x, y) -> (-y, x). ADR-211 L corners are edges, not posts. */
+export function cornerPostBoxes(def: PieceDef, rot: number, vx: number, vy: number, out: number[] = []): number[] {
+  out.length = 0; out.push(vx, vy, POST_HALF, POST_HALF);
+  const rp = rotParts(def, rot); const row = rp.steps === 4 ? ((rp.rot % 4) + 4) % 4 : ((Math.round((rp.rot * 4) / Math.max(1, rp.steps)) % 4) + 4) % 4;
+  const turn = (ax: number, ay: number): [number, number] => { let a = ax, b = ay; for (let i = 0; i < row; i++) { const t = a; a = -b; b = t; } return [a, b]; };
+  if (rp.steps === 8) {
+    for (let k = 0; k < 4; k++) { const c = 0.06 + 0.12 * k; const [cx, cy] = turn(c, -c); out.push(vx + cx, vy + cy, 0.08, 0.08); }
+  } else {
+    for (const [ax, ay] of [[1, 0], [0, 1]] as const) { const [dx, dy] = turn(ax, ay); out.push(vx + dx * 0.11, vy + dy * 0.11, Math.abs(dx) * 0.11 + Math.abs(dy) * 0.05, Math.abs(dy) * 0.11 + Math.abs(dx) * 0.05); }
+  }
+  return out;
+}
+const POST_REACH = 0.6; const boxScratch: number[] = [];
+/** Clamps a one-axis move against corner post boxes the body would newly overlap (a body already overlapping one is let out). */
+function postAxisMove(idx: StructureIndex, x: number, y: number, n: number, axis: 0 | 1, level: number, r: number): number {
+  const cur = axis === 0 ? x : y, lat = axis === 0 ? y : x; const s = Math.sign(n - cur); if (!s) return n;
+  const a0 = Math.min(cur, n) - r - POST_REACH, a1 = Math.max(cur, n) + r + POST_REACH, l0 = lat - r - POST_REACH, l1 = lat + r + POST_REACH;
+  let out = n;
+  for (let va = Math.ceil(a0); va <= Math.floor(a1); va++) for (let vl = Math.ceil(l0); vl <= Math.floor(l1); vl++) {
+    const vx = axis === 0 ? va : vl, vy = axis === 0 ? vl : va;
+    const e = idx.cell(vx, vy, level, 3); if (!e) continue; const d = idx.def(e);
+    if (!d || d.snap !== "vertex" || !d.solid || isLCorner(d)) continue;
+    const b = cornerPostBoxes(d, idx.info.get(e)?.slot.rot ?? 0, vx, vy, boxScratch);
+    for (let i = 0; i < b.length; i += 4) {
+      const bA = axis === 0 ? b[i]! : b[i + 1]!, bL = axis === 0 ? b[i + 1]! : b[i]!, hA = axis === 0 ? b[i + 2]! : b[i + 3]!, hL = axis === 0 ? b[i + 3]! : b[i + 2]!;
+      if (Math.abs(lat - bL) >= r + hL) continue; // no lateral overlap
+      if (Math.abs(cur - bA) < r + hA - 1e-6) continue; // already overlapping: escape hatch
+      const stop = s > 0 ? bA - hA - r - 1e-4 : bA + hA + r + 1e-4;
+      if (s > 0 ? stop < cur - 1e-6 : stop > cur + 1e-6) continue; // box is behind the body
+      out = s > 0 ? Math.max(cur, Math.min(out, stop)) : Math.min(cur, Math.max(out, stop));
+    }
+  }
+  return out;
 }
 
 /** ADR-212: stand height above the level floor on (x, y): foundation decks (art top 12 px / zStep 16), ramps/steps half. */

@@ -73,6 +73,10 @@ export function anchorFor(def: PieceDef, x: number, y: number, rot4: number): [n
   const [w, h] = rotatedSize(def, rot4); return [Math.floor(x - w / 2 + 0.5), Math.floor(y - h / 2 + 0.5)];
 }
 
+/** ADR-214 coarse occupancy block size (tiles) and padding for footprints larger than the anchor tile. */
+export const NAV_BLOCK = 8; const NAV_PAD = 4;
+const navBlockKey = (bx: number, by: number): number => (bx + 0x8000) * 0x10000 + (by + 0x8000);
+
 export class StructureIndex {
   readonly grid: BuildingGrid;
   readonly byGrid = new Map<number, Entity>();
@@ -186,13 +190,13 @@ export class StructureIndex {
     else w.add(e, PieceSlot, { tx: slot.tx, ty: slot.ty, z: slot.z, side: slot.side, gridId, parent });
     const ck = this.chunkOf(e); this.info.set(e, { slot: { ...slot }, gridId, parent, def, ck });
     let set = this.chunkPieces.get(ck); if (!set) this.chunkPieces.set(ck, (set = new Set()));
-    set.add(e); this.bump(ck);
+    set.add(e); this.bump(ck); this.coarse(slot.tx, slot.ty, def, 1);
     return true;
   }
   removePiece(e: Entity): void {
     const inf = this.info.get(e); if (!inf) return;
     this.info.delete(e);
-    const { slot: s, def } = inf;
+    const { slot: s, def } = inf; this.coarse(s.tx, s.ty, def, -1);
     if (inf.parent && this.openings.get(inf.parent) === e) this.openings.delete(inf.parent);
     else if (def.placement === Placement.Edge && def.features.mount) { const k = `${edgeKey(s.tx, s.ty, s.z, s.side)}:${s.rot & 2}`; if (this.mounts.get(k) === e) this.mounts.delete(k); }
     else if (def.placement === Placement.Edge) { const k = edgeKey(s.tx, s.ty, s.z, s.side); if (this.edges.get(k) === e) this.edges.delete(k); }
@@ -251,7 +255,25 @@ export class StructureIndex {
     const out: Entity[] = []; for (const sg of [1, -1]) { const t = this.triAt(mx + sg * nx * TRI_INRADIUS, my + sg * ny * TRI_INRADIUS, z); if (t) out.push(t); }
     return out;
   }
-  get count(): number { let n = 0; for (const s of this.chunkPieces.values()) n += s.size; return n; }
+  /** Indexed piece count; O(1) (info and chunkPieces are kept in step by addPiece/removePiece). Hot: movement checks it per axis. */
+  get count(): number { return this.info.size; }
+  /** ADR-214: free-standing vertex corner posts (inner / angled; not ADR-211 L corners, which are edges) for a collision early-out. */
+  vertexPosts = 0;
+  /** ADR-214: piece counts per NAV_BLOCK x NAV_BLOCK tile block (anchor tile), so creature nav can skip open ground cheaply. */
+  readonly blockCounts = new Map<number, number>();
+  private coarse(tx: number, ty: number, def: PieceDef, d: 1 | -1): void {
+    if (def.snap === "vertex" && def.solid && !isLCorner(def)) this.vertexPosts += d;
+    const k = navBlockKey(Math.floor(tx / NAV_BLOCK), Math.floor(ty / NAV_BLOCK)); const n = (this.blockCounts.get(k) ?? 0) + d;
+    if (n > 0) this.blockCounts.set(k, n); else this.blockCounts.delete(k);
+  }
+  /** ADR-214: any piece anchored within the tile rect (inclusive, padded by NAV_PAD for multi-tile footprints / wall faces)? */
+  anyPieceNear(x0: number, y0: number, x1: number, y1: number): boolean {
+    if (!this.info.size) return false;
+    const bx0 = Math.floor((Math.min(x0, x1) - NAV_PAD) / NAV_BLOCK), bx1 = Math.floor((Math.max(x0, x1) + NAV_PAD) / NAV_BLOCK);
+    const by0 = Math.floor((Math.min(y0, y1) - NAV_PAD) / NAV_BLOCK), by1 = Math.floor((Math.max(y0, y1) + NAV_PAD) / NAV_BLOCK);
+    for (let by = by0; by <= by1; by++) for (let bx = bx0; bx <= bx1; bx++) if (this.blockCounts.has(navBlockKey(bx, by))) return true;
+    return false;
+  }
 
   // ---- support graph (server stability; also used for client-side "has any support" ghost checks) ----
   /** Supporting pieces of an indexed piece with the loss kind: 0 none (openings/furniture), 1 vertical, 2 horizontal. */
