@@ -459,7 +459,9 @@
     "fish_treat": 457,
     "meaty_chew": 458,
     "seed_mix": 459,
-    "veggie_bites": 460
+    "veggie_bites": 460,
+    "lantern": 461,
+    "torch": 462
   },
   "resources": {
     "fallen_branches": 1,
@@ -911,7 +913,9 @@
     "fish_treat": 361,
     "meaty_chew": 362,
     "seed_mix": 363,
-    "veggie_bites": 364
+    "veggie_bites": 364,
+    "lantern": 365,
+    "torch": 366
   },
   "pieces": {
     "anvil": 1,

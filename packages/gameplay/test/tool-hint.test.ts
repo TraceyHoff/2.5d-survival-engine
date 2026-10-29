@@ -11,10 +11,10 @@ describe("tool requirement hint (ADR-126)", () => {
     const b = spawnResourceNode(w, "fallen_branches", 1, 0);
     expect(toolHint(w, p)).toMatchObject({ node: b, icon: "hand", have: true, bare: true });
   });
-  it("tier-1 tool nodes show a hand without the tool (bareHands), the tool once owned, best tier first", () => {
+  it("tier-1 tool nodes show their tool even without it (ADR-217: axe over a tree, bare hands only a 25% fallback), the tool once owned, best tier first", () => {
     const w = makeWorld(); const p = spawnPlayer(w, { x: 0, y: 0 });
     spawnResourceNode(w, "tree", 1, 0);
-    expect(toolHint(w, p)).toMatchObject({ icon: "hand", have: true, bare: true });
+    expect(toolHint(w, p)).toMatchObject({ icon: "axe", have: true, equipped: false, bare: true });
     expect(toolHint(w, p)!.label).toContain("25%");
     addItem(w, p, d.itemId("stone_axe"), 1);
     expect(toolHint(w, p)).toMatchObject({ icon: "axe", have: true, equipped: false, bare: false });

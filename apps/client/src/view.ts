@@ -173,14 +173,18 @@ export class IsoView {
   private heldLights = new Map<number, number>(); private heldLightCache = new Map<number, LightSpec | undefined>();
   private heldLightSpec(item: number): LightSpec | undefined {
     if (!item || !this.netRef) return undefined; if (this.heldLightCache.has(item)) return this.heldLightCache.get(item);
-    const spec = this.lights.held(gameplayDefs(this.netRef).items.get(item)?.key); this.heldLightCache.set(item, spec); return spec;
+    const def = gameplayDefs(this.netRef).items.get(item); const hl = def?.heldLight ?? 0;
+    // ADR-217: the drawn radius is the item's gameplay heldLight (what repels zombies); any heldLight item without its own held_<key> look borrows the torch's
+    const base = this.lights.held(def?.key) ?? (hl > 0 ? this.lights.held("torch") : undefined);
+    const spec = base ? LightTable.withRadius(base, hl) : undefined; this.heldLightCache.set(item, spec); return spec;
   }
   private dropHeldLight(ve: number): void { const le = this.heldLights.get(ve); if (le !== undefined) { this.view.destroy(le); this.heldLights.delete(ve); } }
   private syncHeldLight(net: World, e: Entity, ve: number): void {
     this.netRef = net;
     const mh = net.isRegistered(Equipment) && net.has(e, Equipment) ? (net.getField(e, Equipment, "mainHandItem") ?? 0) : 0;
     const oh = net.isRegistered(Worn) && net.has(e, Worn) ? (net.get(e, Worn)?.item[OFFHAND_SLOT] ?? 0) : 0;
-    const spec = !net.has(e, Dead) ? this.heldLightSpec(mh) ?? this.heldLightSpec(oh) : undefined;
+    const sm = net.has(e, Dead) ? undefined : this.heldLightSpec(mh), so = net.has(e, Dead) ? undefined : this.heldLightSpec(oh);
+    const spec = sm && so ? (so.radius > sm.radius ? so : sm) : sm ?? so; // ADR-217: larger of main / off hand, = gameplay heldLightRadius
     if (!spec) { this.dropHeldLight(ve); return; }
     const v = this.view; const t = v.get(ve, Transform)!, p = v.get(ve, PrevTransform) ?? t; let le = this.heldLights.get(ve);
     if (le === undefined) { le = v.create(); this.heldLights.set(ve, le); v.add(le, Transform, { x: t.x, y: t.y, z: t.z, facing: 0 }); v.add(le, PrevTransform, { x: p.x, y: p.y, z: p.z, facing: 0 }); v.add(le, LightSource, { ...spec }); return; }

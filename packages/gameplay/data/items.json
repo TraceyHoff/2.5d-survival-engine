@@ -3720,7 +3720,38 @@
       "category": "resource",
       "maxStack": 20,
       "weight": 0.1,
-      "fuelSeconds": 180
+      "fuelSeconds": 180,
+      "tier": 1,
+      "heldLight": 3,
+      "wear": {
+        "slot": "offhand"
+      }
+    },
+    {
+      "key": "torch",
+      "name": "Torch",
+      "category": "resource",
+      "maxStack": 5,
+      "weight": 0.4,
+      "fuelSeconds": 30,
+      "tier": 1,
+      "heldLight": 5.5,
+      "wear": {
+        "slot": "offhand"
+      }
+    },
+    {
+      "key": "lantern",
+      "name": "Lantern",
+      "category": "resource",
+      "maxStack": 1,
+      "weight": 1.0,
+      "tier": 2,
+      "heldLight": 5,
+      "sprite": "dec_lantern_hanging__iron",
+      "wear": {
+        "slot": "offhand"
+      }
     },
     {
       "key": "bone_needle",

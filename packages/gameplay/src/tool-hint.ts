@@ -1,8 +1,11 @@
 /**
  * ADR-126: "what tool does this need?" hint over the nearest resource node (pure; the client draws it).
  * Source of truth: resources.json requiredTool / minTier and the bareHands block (ADR-107).
- * - requiredTool none, or a tool node fists can work (bareHands) and the player owns no fitting tool: "hand".
+ * - requiredTool none (bushes, branches, crops, loose rocks, fruit trees): "hand".
  * - player owns a fitting tool (equipped or anywhere in the inventory): that tool, best tier first, `have` true.
+ * - ADR-217: a tool node fists can still work (bareHands, e.g. a tier-1 tree) without the tool: the tool's icon (axe over
+ *   trees, pickaxe over boulders/veins, shovel over clay) with `have` true, `equipped` false, `bare` true — the node is
+ *   meant for that tool, punching it is only the 25% fallback (label says so). Never the hand.
  * - otherwise: the required tool with `have` false (drawn greyed with a lock).
  */
 import { Transform, type Entity, type World } from "@engine/core";
@@ -49,7 +52,7 @@ export function toolHintFor(world: World, e: Entity, defs: GameDefs, def: { key:
   const icon = KIND_ICON[def.requiredTool] ?? "hand"; const owned = bestOwnedTool(world, e, defs, def.requiredTool, def.minTier);
   const tierTxt = def.minTier > 1 ? ` (tier ${def.minTier}+)` : "";
   if (owned) return { ...base, icon, have: true, equipped: owned.equipped, bare: false, label: `${name(def.key)}: ${icon}${tierTxt}${owned.equipped ? "" : " — equip it"}` };
-  if (bareHandsCan(defs, def)) return { ...base, icon: "hand", have: true, equipped: true, bare: true, label: `${name(def.key)}: bare hands (${Math.round(defs.bareHands.yieldMul * 100)}% yield; ${icon} for full)` };
+  if (bareHandsCan(defs, def)) return { ...base, icon, have: true, equipped: false, bare: true, label: `${name(def.key)}: bare hands (${Math.round(defs.bareHands.yieldMul * 100)}% yield; ${icon} for full)` };
   return { ...base, icon, have: false, equipped: false, bare: false, label: `${name(def.key)}: needs ${icon}${tierTxt}` };
 }
 

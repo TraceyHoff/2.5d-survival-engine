@@ -1735,3 +1735,46 @@ Performance: the same number of instanced quads, with larger quads. Headless Swi
 The numbers are all within run-to-run noise.
 
 Tests: `adr216_light_radius` (gameplay data, light grid, stations, avoidance, rehydrate), `adr216_light_falloff` (profile, canvas stops, flicker, knee) and `adr216_lights` (client table matches pieces.json, held lights).
+
+## ADR-217: Axe icon over trees, logs from trees / sticks from the ground, held lights repel zombies
+
+Accepted 2026-10-29. Context: owner feedback. Trees showed the hand interaction icon although they are meant for an axe; trees dropped about as many sticks as logs while fallen branches were the main log source; and a torch, lantern or candle in hand did not scare zombies (ADR-216 left held lights visual-only).
+
+Decision:
+- **Tool icon (ADR-126 `toolHintFor`).** A tool node that bare hands can still work (`bareHands`, e.g. a tier-1 tree) now shows its tool's icon (axe over trees, pickaxe over boulders / veins, shovel over clay) with `have` true, `equipped` false and `bare` true. The client draws the crisp axe art with the gold "use / equip a tool" ring, never the hand; the label still says "bare hands (25% yield; axe for full)". Nodes with `requiredTool: none` (bushes, branches, fiber grass, loose rocks, crops, fruit trees) keep the hand. The hint is the same DOM canvas overlay for WebGL and Canvas2D, and it works for mouse, touch and gamepad.
+- **Yields (resources.json).** Old → new:
+  - `tree`: wood 2–4, sticks 1–2 @40% → wood 3–5, sticks 1 @30%. Fiber and apple are unchanged.
+  - `oak_tree`: hardwood 2–3, sticks 1–2 @50% → hardwood 2–4, sticks 1 @30%.
+  - `fallen_branches`: wood 1–2 (always) + sticks 1–3 @60% → sticks 2–4 (always, first yield, so bare hands get sticks) + wood 1 @35% + fiber 1 @20%.
+  - Expected value per swing: tree 4 logs vs 0.3 sticks; branches 3 sticks vs 0.35 logs. `dry_shrub` and `rotten_stump` already gave only sticks.
+  - Why branches still drop the odd log: with zero logs, the ADR-203 AI humans (and a brand-new player without an axe) only get wood by punching trees (1 log per 2 s), and the AI campfire-before-night test failed. 35% keeps "more sticks than logs" by about 9× and keeps the first night survivable.
+- **AI (ADR-203 autonomy).**
+  - A wanted node's pull (up to −20 tiles) now scales with how much of the needed items one swing is worth. Bare hands count only the first yield at `yieldMul / cooldownMul`.
+  - A fitting tool in the bag counts for a node, and the bot equips it for that node (`gameplay.equip`, as a player taps Equip), so a bot holding a knife switches to its axe for trees.
+  - The goal order is now stone axe → home campfire → pickaxe / spear (`FIRE_AFTER_GOALS = 1`). The goal tools after the axe also reserve the campfire's cost.
+- **Torch and lantern (items.json, recipes.json).**
+  - `torch`: tier 1, stack 5, worn in the off hand, `heldLight` 5.5. Hand-crafted in 2 s from 2 sticks + 2 fiber, so it is available on day one.
+  - `lantern`: tier 2, worn in the off hand, `heldLight` 5. Made at a workbench from glass + copper ingot + tallow candle.
+  - `tallow_candle`: now has `heldLight` 3, off-hand wear and tier 1.
+  - `ItemDef.heldLight` (0..12 tiles, default 0) is the single source of truth. The client draws the held light at that radius (the `held_<key>` look, otherwise the torch look), so the drawn radius equals the gameplay radius as in ADR-216.
+- **Held lights in the light grid (lights.ts, server-authoritative).**
+  - `activeLights` adds one light per living entity with `max(heldLight(main-hand item), heldLight(worn off-hand item))`. Players, AI humans and NPCs all count. A torch merely carried in the bag does not; a dead bearer does not.
+  - The rebuild interval is unchanged (every 10 ticks). Held lights are bucketed with a 4-tile pad (`HELD_LIGHT_PAD`), and `lightAt` reads the bearer's live position, so the ring follows a running player between rebuilds.
+  - Zombies, including horde members (same `shyGoal`), keep out of the radius at dusk and night exactly as for placed lights (ADR-108 / ADR-216).
+  - Same exceptions as for placed lights:
+    - a zombie already in melee reach (AttackPlayer) still swings;
+    - `ignoresLight` types ignore it;
+    - Snuffers go for the light, which for a held light means attacking the bearer.
+  - Cost: one Equipment / Worn query per grid rebuild, plus one Transform read per held-light candidate in the queried cell.
+
+Tests:
+- `adr217_axe_yields_heldlight` covers:
+  - the icons per node class;
+  - expected yields;
+  - a stone-axe tree run vs a branch run;
+  - the torch / lantern / candle data and recipes;
+  - main-hand and off-hand radii and the live follow;
+  - a carried torch and a dead bearer;
+  - a walker kept beyond 5 tiles of a torch bearer at night (control: it closes to 2 tiles);
+  - a horde member kept away.
+- `tool-hint` and `gathering` are updated for the new icon and yields.

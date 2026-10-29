@@ -14,7 +14,7 @@ import { GameplayConfig } from "../config.js";
 import { countItem, readSlots } from "../inventory.js";
 import { bareHandsCan, heldTool } from "../systems/gathering.js";
 import { nearWater } from "../systems/vitals.js";
-import { ToolKind, type GameDefs, type ItemDef, type PieceDef, type RecipeDef } from "../defs.js";
+import { ToolKind, type GameDefs, type ItemDef, type PieceDef, type RecipeDef, type ResourceDef } from "../defs.js";
 import { pieceCost } from "../building/place.js";
 
 export interface GoalSensors {
@@ -36,6 +36,8 @@ export interface GoalSensors {
 }
 /** Tools / weapons an AI human works toward, in order (hand recipes, the same RecipeDef rules players craft by). */
 export const GOAL_CRAFTS = ["stone_axe", "stone_pickaxe", "stone_spear"] as const;
+/** ADR-217: goal tools before the home campfire. Wood now comes from trees (an axe job), so the order is axe -> campfire -> rest. */
+export const FIRE_AFTER_GOALS = 1;
 export const STUCK_TICKS = 60;
 export const COLD_BELOW = 36.3;
 /** Hosts re-home an AI human that ends up farther than this from its home spot (spawn moved / account restored). */
@@ -93,6 +95,15 @@ export function fillGoalSensors(world: World, self: Entity, view: AgentWorldView
   const s: Partial<GoalSensors> = {}; for (const k of SENSOR_KEYS) if (view[k] !== undefined) (s as Record<string, unknown>)[k] = view[k];
   sensed.set(a, { tick: world.tick, home, s });
 }
+/** Expected count of `needs` items one successful swing yields (bare hands: first yield only, x yieldMul, / cooldownMul). */
+function wantedYield(defs: GameDefs, def: ResourceDef, needs: ReadonlySet<number>, bare: boolean): number {
+  const bh = defs.bareHands; let n = 0;
+  def.yields.forEach((y, i) => {
+    if (!needs.has(y.item) || (bare && i > 0)) return; const avg = y.chance * (y.min + y.max) / 2;
+    n += bare ? Math.max(bh.minYield, Math.floor(avg * bh.yieldMul)) / bh.cooldownMul : avg;
+  });
+  return n;
+}
 function computeGoalSensors(world: World, self: Entity, view: AgentWorldView, a: Agent): void {
   const cfg = world.getResource(GameplayConfig); const t = world.get(self, Transform); if (!cfg || !t) return; const defs = cfg.defs;
   let slots: ReturnType<typeof readSlots>; try { slots = readSlots(world, self); } catch { return; }
@@ -100,36 +111,48 @@ function computeGoalSensors(world: World, self: Entity, view: AgentWorldView, a:
   const have = (id: number): number => countItem(world, self, id);
   // needs: first missing goal tool's ingredients, then the campfire's cost, then food when the bag has none
   const needs = new Set<number>();
+  const fire = ix.campfire;
+  const hs = homeScan(world, defs, view.home.x, view.home.y, fire?.id ?? -1); const fe = hs.fire;
+  const fireCost = (): void => { if (fire && fe === undefined) for (const c of pieceCost(defs, fire, 0)) if (have(c.item) < c.count) needs.add(c.item); };
+  let gi = 0;
   for (const key of GOAL_CRAFTS) {
+    if (gi++ === FIRE_AFTER_GOALS) { fireCost(); if (needs.size) break; }
     const out = item(key); if (!out || have(out.id) > 0) continue;
     const r = ix.recipeFor.get(out.id); if (!r) continue;
     for (const g of r.ingredients) if (have(g.item) < g.count) needs.add(g.item);
     if (needs.size) break;
   }
-  const fire = ix.campfire;
   view.cold = (world.getField(self, Survival, "bodyTemp") ?? 37) < COLD_BELOW;
-  const hs = homeScan(world, defs, view.home.x, view.home.y, fire?.id ?? -1); const fe = hs.fire;
   if (fe !== undefined) { const p = world.get(fe, Transform)!; view.fire = { id: fe, x: p.x, y: p.y, lit: (world.getField(fe, Fuel, "lit") ?? 0) > 0 }; }
   else view.fireMissing = true;
-  if (fire && fe === undefined) for (const c of pieceCost(defs, fire, 0)) if (have(c.item) < c.count) needs.add(c.item);
+  fireCost();
   if (view.food === undefined) for (const id of ix.foods) needs.add(id);
   if (needs.size) view.needs = [...needs];
   const wood = item("wood"); if (wood) { const n = have(wood.id); if (n > 0) view.woodSlot = { item: wood.id, count: n };
     if (view.fire && !view.fire.lit && n < 4) { view.needs = [wood.id, ...(view.needs ?? []).filter((x) => x !== wood.id)]; } } // fuel for the night
   // gather target from memory (bounded), skipping banned / empty / tool-locked nodes; wanted yields win within ~20 tiles
   const ban = bans(a.bb); const tool = heldTool(world, self, defs); let best: GoalSensors["gatherNode"], bs = Infinity;
+  // ADR-217: best tool of each kind in the bag (trees are worked with the axe, not fists) -> switch to it for that node
+  const carried = new Map<number, { slot: number; tier: number }>();
+  for (let i = 0; i < slots.items.length; i++) { const tl = slots.items[i] && slots.counts[i] ? defs.items.get(slots.items[i]!)?.tool : undefined; if (tl && tl.kind !== ToolKind.None && (carried.get(tl.kind)?.tier ?? -1) < tl.tier) carried.set(tl.kind, { slot: i, tier: tl.tier }); }
+  let bestNeeds: { slot: number } | undefined;
   for (const p of a.memory.items.values()) {
     if (p.kind !== "node") continue; const until = ban.get(p.id); if (until !== undefined) { if (until > world.tick) continue; ban.delete(p.id); }
     if (!world.isAlive(p.id) || !world.has(p.id, ResourceNode) || world.getField(p.id, ResourceNode, "amount") === 0) continue;
     const def = defs.resources.get(world.getField(p.id, ResourceNode, "kind")!); if (!def) continue;
-    const toolOk = def.requiredTool === ToolKind.None || (tool.kind === def.requiredTool && tool.tier >= def.minTier) || bareHandsCan(defs, def);
-    if (!toolOk) continue;
+    const bagTool = def.requiredTool !== ToolKind.None && !(tool.kind === def.requiredTool && tool.tier >= def.minTier) ? carried.get(def.requiredTool) : undefined;
+    const withTool = def.requiredTool === ToolKind.None || (tool.kind === def.requiredTool && tool.tier >= def.minTier) || (bagTool !== undefined && bagTool.tier >= def.minTier);
+    const bare = !withTool && bareHandsCan(defs, def);
+    if (!withTool && !bare) continue;
     const wanted = def.yields.some((y) => needs.has(y.item));
     if (!wanted && needs.size && def.yields[0] && have(def.yields[0].item) >= 8) continue; // stocked up: explore for what the goal needs
-    const s = Math.hypot(p.x - t.x, p.y - t.y) - (wanted ? 20 : 0);
-    if (s < bs || (s === bs && best && p.id < best.id)) { bs = s; best = { id: p.id, x: p.x, y: p.y, wanted }; }
+    // ADR-217: a wanted node's pull scales with how much of the needed items one swing is worth (an axe on a tree beats
+    // picking twigs for an odd log; punching a tree only drops its first yield, at reduced rate and slower)
+    const s = Math.hypot(p.x - t.x, p.y - t.y) - (wanted ? 20 * Math.min(1, wantedYield(defs, def, needs, bare)) : 0);
+    if (s < bs || (s === bs && best && p.id < best.id)) { bs = s; best = { id: p.id, x: p.x, y: p.y, wanted }; bestNeeds = bagTool !== undefined && bagTool.tier >= def.minTier ? bagTool : undefined; }
   }
   view.gatherScanned = true; if (best) view.gatherNode = best;
+  if (bestNeeds) view.equipSlot = bestNeeds.slot; // the inventory "Equip" a player taps before chopping
   // ADR-176 water: thirsty without a drink in the bag -> nearest tile next to water on a coarse 7x7 grid (2.5 tile step)
   const sv = view as { water?: number }; const thirst = a.bb.num("thirstSeen", 1);
   if (sv.water === undefined && thirst < 0.6) {
@@ -138,7 +161,7 @@ function computeGoalSensors(world: World, self: Entity, view: AgentWorldView, a:
     if (wb) view.waterAt = wb;
   }
   // hold the best tool / weapon when the main hand is empty (gameplay.equip, the inventory "Equip" a player taps)
-  if ((world.getField(self, Equipment, "mainHandSlot") ?? NO_SLOT) === NO_SLOT) {
+  if (view.equipSlot === undefined && (world.getField(self, Equipment, "mainHandSlot") ?? NO_SLOT) === NO_SLOT) {
     let bi = -1, bsc = 0;
     for (let i = 0; i < slots.items.length; i++) { const d = slots.items[i] ? defs.items.get(slots.items[i]!) : undefined; if (!d || !slots.counts[i]) continue; const sc = (d.weapon?.damage ?? 0) + (d.tool ? 5 + d.tool.tier : 0); if (sc > bsc) { bsc = sc; bi = i; } }
     if (bi >= 0) view.equipSlot = bi;

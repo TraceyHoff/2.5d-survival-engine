@@ -64,6 +64,8 @@ export interface ItemDef extends Visual {
   /** Progression tier (1 primitive, 2 bronze, 3 iron, 4 steel, 5 advanced; 0 = untiered) and balance family. */
   readonly tier: number; readonly family: string;
   readonly wear: WearDef | null; readonly ranged: RangedDef | null; readonly thrown: ThrownDef | null; readonly ammo: AmmoDef | null; readonly explosive: ExplosiveDef | null;
+  /** ADR-217: light radius (tiles) while held in the main hand or worn in the off hand; zombies shy away like from placed lights. 0 / absent = no light. */
+  readonly heldLight?: number;
 }
 export interface SpoilStage { readonly key: string; readonly minFresh: number; readonly nutritionMul: number; readonly sick: boolean }
 export interface ItemCount { readonly item: number; readonly count: number }
@@ -238,7 +240,7 @@ export interface BareHandsDef { readonly maxMinTier: number; readonly tools: Rea
 
 interface RawVisual { sprite?: string }
 export interface RawItem extends RawVisual { key: string; name: string; category: string; maxStack: number; weight: number; food?: FoodDef; tool?: { kind: string; tier: number }; weapon?: WeaponDef; fuelSeconds?: number; spoilSeconds?: number; durability?: number; tradeable?: boolean; sips?: number;
-  tier?: number; family?: string; wear?: { slot: string; insulation?: number; waterproof?: number; armor?: number; carryBonus?: number };
+  tier?: number; family?: string; heldLight?: number; wear?: { slot: string; insulation?: number; waterproof?: number; armor?: number; carryBonus?: number };
   ranged?: Omit<RangedDef, "ammo" | "chargeSeconds" | "minChargeMul" | "staminaCost" | "structureMul"> & { ammo: string[]; chargeSeconds?: number; minChargeMul?: number; staminaCost?: number; structureMul?: number };
   thrown?: ThrownDef; ammo?: { damageMul: number; structureMul?: number; armorPierce?: number; ignite?: boolean }; explosive?: Omit<ExplosiveDef, "ignite"> & { ignite?: boolean } }
 export interface RawRecipe { key: string; station: string; seconds: number; ingredients: { item: string; count: number }[]; output: { item: string; count: number }; skill?: { key: string; level: number } }
@@ -325,6 +327,7 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
     if (r.tier !== undefined && !(Number.isInteger(r.tier) && r.tier >= 0 && r.tier <= 5)) err(`${where}.tier must be 0..5`);
     if (r.wear && !((r.wear.waterproof ?? 0) >= 0 && (r.wear.waterproof ?? 0) <= 1)) err(`${where}.wear.waterproof must be 0..1`);
     if (r.ranged) { posInt(r.ranged.magazine, `${where}.ranged.magazine`); if (r.ranged.magazine > 255) err(`${where}.ranged.magazine > 255`); if (!r.ranged.ammo.length) err(`${where}.ranged.ammo empty`); }
+    if (r.heldLight !== undefined && !(r.heldLight >= 0 && r.heldLight <= 12)) err(`${where}.heldLight must be 0..12 tiles`);
     if (r.explosive && !(r.explosive.radius > 0 && r.explosive.fuseSeconds >= 0)) err(`${where}.explosive: radius > 0, fuseSeconds >= 0`);
     const id = itemsR.reg.tryId(r.key) ?? 0;
     const rg = r.ranged;
@@ -338,6 +341,7 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
       thrown: r.thrown ? { ...r.thrown } : null,
       ammo: r.ammo ? { damageMul: r.ammo.damageMul, structureMul: r.ammo.structureMul ?? 1, armorPierce: r.ammo.armorPierce ?? 0, ignite: r.ammo.ignite ?? false } : null,
       explosive: r.explosive ? { ...r.explosive, ignite: r.explosive.ignite ?? false } : null,
+      heldLight: r.heldLight ?? 0,
     });
   }
 

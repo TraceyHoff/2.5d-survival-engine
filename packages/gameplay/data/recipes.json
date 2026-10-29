@@ -223,6 +223,8 @@
     {"key": "cooked_prime_cut", "station": "campfire", "seconds": 3, "ingredients": [{"item": "raw_prime_cut", "count": 1}], "output": {"item": "cooked_prime_cut", "count": 1}},
     {"key": "tallow", "station": "campfire", "seconds": 4, "ingredients": [{"item": "animal_fat", "count": 2}], "output": {"item": "tallow", "count": 2}},
     {"key": "tallow_candle", "station": "none", "seconds": 2, "ingredients": [{"item": "tallow", "count": 1}, {"item": "fiber", "count": 1}], "output": {"item": "tallow_candle", "count": 2}},
+    {"key": "torch", "station": "none", "seconds": 2, "ingredients": [{"item": "sticks", "count": 2}, {"item": "fiber", "count": 2}], "output": {"item": "torch", "count": 1}},
+    {"key": "lantern", "station": "workbench", "seconds": 4, "ingredients": [{"item": "glass", "count": 1}, {"item": "copper_ingot", "count": 1}, {"item": "tallow_candle", "count": 1}], "output": {"item": "lantern", "count": 1}},
     {"key": "bone_meal", "station": "none", "seconds": 2, "ingredients": [{"item": "bone", "count": 1}], "output": {"item": "bone_meal", "count": 2}},
     {"key": "fertilizer", "station": "none", "seconds": 2, "ingredients": [{"item": "bone_meal", "count": 2}, {"item": "fiber", "count": 2}], "output": {"item": "fertilizer", "count": 2}},
     {"key": "bone_needle", "station": "none", "seconds": 1, "ingredients": [{"item": "bone", "count": 1}], "output": {"item": "bone_needle", "count": 2}},

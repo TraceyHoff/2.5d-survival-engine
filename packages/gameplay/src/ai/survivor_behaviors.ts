@@ -10,7 +10,7 @@ import { GameplayConfig } from "../config.js";
 import { readSlots, countItem } from "../inventory.js";
 import { pieceCost } from "../building/place.js";
 import { StationKind, type GameDefs, type ItemDef, type PieceDef, type RecipeDef } from "../defs.js";
-import { GOAL_CRAFTS, pieceNear, stuckOn } from "./autonomy.js";
+import { FIRE_AFTER_GOALS, GOAL_CRAFTS, pieceNear, stuckOn } from "./autonomy.js";
 import { PET_TREATS, speciesOfAnimal, tameChance } from "../pets.js";
 
 export interface StallOffer { id: number; x: number; y: number; slot: number; item: number; qty: number; priceItem: number; priceCount: number; revision?: number }
@@ -50,10 +50,12 @@ export function fillAgentSensors(world: World, self: Entity, view: AgentWorldVie
     const reserve = new Map<number, number>();
     for (const k of GOAL_CRAFTS) { const d = dc.itemByKey.get(k); if (!d || countItem(world, self, d.id) > 0) continue;
       const gr = dc.recipeFor.get(d.id); if (gr) for (const g of gr.ingredients) reserve.set(g.item, g.count); break; }
+    const fireRes = new Map<number, number>();
     { const cf = dc.pieceByKey.get("campfire"); // and the home campfire's cost
-      if (cf && !pieceNear(world, cf.id, view.home.x, view.home.y, 6)) for (const c of pieceCost(defs, cf, 0)) reserve.set(c.item, (reserve.get(c.item) ?? 0) + c.count); }
+      if (cf && !pieceNear(world, cf.id, view.home.x, view.home.y, 6)) for (const c of pieceCost(defs, cf, 0)) { reserve.set(c.item, (reserve.get(c.item) ?? 0) + c.count); fireRes.set(c.item, c.count); } }
     for (const r of hand.sort((a, b) => goalOf(a) - goalOf(b))) {
-      const extra = goalOf(r) === 99 ? (id: number) => reserve.get(id) ?? 0 : () => 0;
+      // ADR-217: the goal tools after the axe (FIRE_AFTER_GOALS) wait for the campfire's cost too (wood is chopped now)
+      const extra = goalOf(r) === 99 ? (id: number) => reserve.get(id) ?? 0 : goalOf(r) >= FIRE_AFTER_GOALS ? (id: number) => fireRes.get(id) ?? 0 : () => 0;
       if (r.ingredients.every((g) => have(g.item, g.count + extra(g.item)))) { view.craftRecipe = r.id; break; }
     }
     // ADR-203: plan each base piece that is missing near home (campfire first), not only "no piece at all"

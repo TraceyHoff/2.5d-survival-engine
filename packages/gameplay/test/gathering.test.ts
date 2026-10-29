@@ -19,9 +19,10 @@ describe("gathering", () => {
     const branches = spawnResourceNode(w, "fallen_branches", 1, 0);
     const got = collect(w, ItemGathered);
     gather(w, p, branches);
-    const wood = countItem(w, p, WOOD);
-    expect(wood).toBeGreaterThanOrEqual(1); expect(wood).toBeLessThanOrEqual(2);
-    expect(got).toMatchObject([{ entity: p, node: branches, item: WOOD, count: wood }]);
+    const sticks = countItem(w, p, d.itemId("sticks")); // ADR-217: fallen branches are sticks (2..4), an odd log at most
+    expect(sticks).toBeGreaterThanOrEqual(2); expect(sticks).toBeLessThanOrEqual(4);
+    expect(got[0]).toMatchObject({ entity: p, node: branches, item: d.itemId("sticks"), count: sticks });
+    expect(countItem(w, p, WOOD)).toBeLessThanOrEqual(1);
     expect(w.get(branches, ResourceNode)!.amount).toBe(2);
   });
 
@@ -41,7 +42,7 @@ describe("gathering", () => {
     for (let i = 0; i < 4; i++) gather(w, p, tree);
     const woodHits = got.filter((g) => g.item === WOOD).map((g) => g.count);
     expect(woodHits).toHaveLength(4);
-    for (const n of woodHits) { expect(n).toBeGreaterThanOrEqual(3); expect(n).toBeLessThanOrEqual(5); } // 2..4 + 1 tier bonus
+    for (const n of woodHits) { expect(n).toBeGreaterThanOrEqual(4); expect(n).toBeLessThanOrEqual(6); } // 3..5 (ADR-217) + 1 tier bonus
   });
 
   it("depletes: node leaves the world, regrows elsewhere after respawnSeconds (ADR-134)", () => {
