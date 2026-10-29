@@ -186,6 +186,7 @@ export interface WorldgenBand { readonly max: number; readonly tile: number; rea
 export interface WorldgenDef { readonly bands: readonly WorldgenBand[]; readonly unbuildableTiles: ReadonlySet<number>; readonly unwalkableTiles: ReadonlySet<number> }
 
 export interface MovementTuning { readonly walkSpeed: number; readonly sprintMul: number; readonly encumberedFrom: number; readonly encumberedMinMul: number; readonly wetSlowMul: number; readonly bodyRadius: number;
+  /** ADR-212: walker stand height on a foundation deck / an upper floor (z above the level floor), step-up ease rate (z/s). */ readonly deckStandHeight: number; readonly floorStandHeight: number; readonly stepRate: number;
   /** ADR-107 swimming: terrain ids players may swim in, and the speed multiplier there. */ readonly swimTiles: ReadonlySet<number>; readonly swimSpeedMul: number;
   /** ADR-181 depths: shallow water (shore band within shallowRadius tiles of land) is wadeable for everyone at wadeSpeedMul; deep water is swim-only (swimSpeedMul, no sprint). */ readonly wadeSpeedMul: number; readonly shallowRadius: number;
   /** ADR-125: tiles/s the character walk art was authored at (render playback = walkSpeed / this). */ readonly walkAnimRefSpeed: number }
@@ -261,7 +262,7 @@ export interface RawDefs {
   pieces: { pieces: RawPiece[] };
   tiers: { tiers: (Omit<TierDef, "id" | "cost" | "raid"> & { cost: { item: string; count: number }[]; raid?: Partial<RaidMuls> })[]; building: BuildingTuning };
   zombies: { zombies: RawZombie[]; spawning: SpawnTuning; ai: AiTuning; noise: NoiseTuning; lightAvoid?: LightAvoidTuning };
-  movement: Omit<MovementTuning, "swimTiles" | "swimSpeedMul" | "walkAnimRefSpeed" | "wadeSpeedMul" | "shallowRadius"> & { $comment?: string; swimTiles?: number[]; swimSpeedMul?: number; walkAnimRefSpeed?: number; wadeSpeedMul?: number; shallowRadius?: number };
+  movement: Omit<MovementTuning, "swimTiles" | "swimSpeedMul" | "walkAnimRefSpeed" | "wadeSpeedMul" | "shallowRadius" | "deckStandHeight" | "floorStandHeight" | "stepRate"> & { deckStandHeight?: number; floorStandHeight?: number; stepRate?: number; $comment?: string; swimTiles?: number[]; swimSpeedMul?: number; walkAnimRefSpeed?: number; wadeSpeedMul?: number; shallowRadius?: number };
   worldgen: { bands: { max: number; tile: number; nodes: string[]; nodeChance: number; temp?: number; humidity?: number }[]; unbuildableTiles: number[]; unwalkableTiles: number[] };
 }
 
@@ -460,7 +461,7 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
     items, recipes, resources, pieces, pieceRegistry: pieceRegistry!, tiers, building: { ...raw.tiers.building }, zombies,
     zombieKinds: raw.zombies.zombies.map((z) => zomR.reg.id(z.key)), spoiledItem: spoiledItem ?? 0,
     spawning: raw.zombies.spawning, ai: raw.zombies.ai, noise: raw.zombies.noise, lightAvoid: raw.zombies.lightAvoid ?? DEFAULT_LIGHT_AVOID,
-    vitals: strip(raw.vitals), environment: { ...envRest, weather }, movement: { ...strip(raw.movement), swimTiles: new Set(raw.movement.swimTiles ?? []), swimSpeedMul: raw.movement.swimSpeedMul ?? 1, wadeSpeedMul: raw.movement.wadeSpeedMul ?? 1, shallowRadius: raw.movement.shallowRadius ?? 2, walkAnimRefSpeed: raw.movement.walkAnimRefSpeed ?? raw.movement.walkSpeed },
+    vitals: strip(raw.vitals), environment: { ...envRest, weather }, movement: { ...strip(raw.movement), deckStandHeight: raw.movement.deckStandHeight ?? 0.75, floorStandHeight: raw.movement.floorStandHeight ?? 0.3125, stepRate: raw.movement.stepRate ?? 6, swimTiles: new Set(raw.movement.swimTiles ?? []), swimSpeedMul: raw.movement.swimSpeedMul ?? 1, wadeSpeedMul: raw.movement.wadeSpeedMul ?? 1, shallowRadius: raw.movement.shallowRadius ?? 2, walkAnimRefSpeed: raw.movement.walkAnimRefSpeed ?? raw.movement.walkSpeed },
     worldgen: { bands, unbuildableTiles: new Set(raw.worldgen.unbuildableTiles), unwalkableTiles: new Set(raw.worldgen.unwalkableTiles) },
     lock, hashes: { items: itemsR.reg.hash, pieces: pieceHash, all }, bareHands, depletion,
     itemId: lookup(itemsR.reg), recipeId: lookup(recR.reg), resourceId: lookup(resR.reg), zombieId: lookup(zomR.reg),

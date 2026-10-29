@@ -1229,6 +1229,7 @@
       "key": "wall_arched",
       "placement": "edge",
       "layer": 1,
+      "blocksPath": true,
       "tiered": true,
       "costScale": 0.9,
       "hp": 230,

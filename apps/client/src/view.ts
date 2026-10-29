@@ -297,7 +297,7 @@ export class IsoView {
     }
     for (const e of net.query([Transform])) {
       if (e === net.environment) continue;
-      const gr = net.has(e, GPiece) ? groundPiece : ground;
+      const gr = net.has(e, GPiece) || net.has(e, GAnim) ? groundPiece : ground; // ADR-212: walkers on a deck keep their stand height over terrain steps
       const cur = readXform(net, e, Transform, this.sCur)!; let prev = readXform(net, e, PrevTransform, this.sPrev) ?? cur; // ADR-157: scratch, no per-entity allocation
       if (this.corrections && net.predicted.has(e)) prev = this.corrSampler.apply(this.corrections, e, net.tick, cur, prev, this.sPrev);
       let ve = this.map.get(e);

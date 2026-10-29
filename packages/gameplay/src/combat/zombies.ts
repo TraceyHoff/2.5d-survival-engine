@@ -25,7 +25,7 @@ import { dayPhase } from "../systems/environment.js";
 import { makeNoise } from "../systems/noise.js";
 import { structures } from "../building/structure.js";
 import { TerrainRes } from "../world.js";
-import { swimSpeedMulAt, terrainBlocksWalker } from "../systems/movement.js";
+import { bodyAxisMove, settleStandZ, swimSpeedMulAt, terrainBlocksWalker } from "../systems/movement.js";
 import { applyDamage, lastAttacker, setAnim } from "./combat.js";
 import { findPath, pieceHp } from "./path.js";
 import { lightAt, lightGrid, nearestLight, type ActiveLight } from "../systems/lights.js";
@@ -277,9 +277,12 @@ function stepBlockerCached(world: World, x: number, y: number, nx: number, ny: n
 /** Moves toward (gx,gy) by up to `step`; returns true when arrived. */
 function moveToward(world: World, e: Entity, gx: number, gy: number, step: number, ts: number): boolean {
   const tf = world.store(Transform); const x = tf.data.x[ts]!, y = tf.data.y[ts]!; const dx = gx - x, dy = gy - y; const d = Math.hypot(dx, dy);
-  if (d <= step || d === 0) { tf.data.x[ts] = gx; tf.data.y[ts] = gy; tf.markChanged(entityIndex(e)); return true; }
-  tf.data.x[ts] = x + (dx / d) * step; tf.data.y[ts] = y + (dy / d) * step; tf.data.facing[ts] = Math.atan2(dy, dx); tf.markChanged(entityIndex(e));
-  return false;
+  const arrive = d <= step || d === 0; let tx = arrive ? gx : x + (dx / d) * step, ty = arrive ? gy : y + (dy / d) * step;
+  // ADR-212: zombies collide like walkers (body vs walls / closed doors / solid pieces); a blocked step is attacked via stepBlocker
+  if (structures(world).count) { tx = bodyAxisMove(world, x, y, tx, 0, 0, false); ty = bodyAxisMove(world, tx, y, ty, 1, 0, false); }
+  tf.data.x[ts] = tx; tf.data.y[ts] = ty; if (!arrive) tf.data.facing[ts] = Math.atan2(dy, dx); tf.markChanged(entityIndex(e));
+  if (structures(world).count) settleStandZ(world, e, 1 / 20);
+  return arrive && tx === gx && ty === gy;
 }
 
 /** ADR-121: drive a horde member toward / onto its target piece; disband (plain zombie) when nothing is left there. */

@@ -11,7 +11,7 @@ import { Anim, AnimState, LootBag, Buffs, Dead, Driver, EdgeSide, Inventory, Pla
 import { gameplayDefs } from "../config.js";
 import { skillMul } from "../skills/tree.js";
 import { GameplayActions as A } from "../input.js";
-import { StructureIndexRes } from "../building/structure.js";
+import { StructureIndexRes, type StructureIndex } from "../building/structure.js";
 import { TerrainRes } from "../world.js";
 import { WaterDepth, waterDepthAt, installSpatialIndex } from "@engine/world";
 import { INPUT } from "../input_hooks.js";
@@ -56,8 +56,63 @@ export function movementBlocked(world: World, x0: number, y0: number, x1: number
   if (tx1 !== tx0 && idx.edgeBlocker(Math.max(tx0, tx1), ty0, level, EdgeSide.West)) return true;
   if (ty1 !== ty0 && idx.edgeBlocker(tx1, Math.max(ty0, ty1), level, EdgeSide.North)) return true;
   // ADR-210: vertex-snapped corner posts sit on the tile corner, so they do not block the whole tile
-  if (tx1 !== tx0 || ty1 !== ty0) for (let la = 1; la < 4; la++) { const c = idx.cell(tx1, ty1, level, la); const d = c ? idx.def(c) : undefined; if (d?.solid && d.snap !== "vertex") return true; }
+  if (tx1 !== tx0 || ty1 !== ty0) return solidCell(idx, tx1, ty1, level);
   return false;
+}
+const solidCell = (idx: StructureIndex, tx: number, ty: number, level: number): boolean => {
+  for (let la = 1; la < 4; la++) { const c = idx.cell(tx, ty, level, la); const d = c ? idx.def(c) : undefined; if (d?.solid && d.snap !== "vertex") return true; }
+  return false;
+};
+
+/**
+ * ADR-212 body collision for walkers (players, AI humans: same function on the server and in client prediction).
+ * The body is a square of half-size bodyRadius: one axis moves at a time; the leading face is tested against edge
+ * walls / closed doors (at the centre and both sides, so a body cannot clip half-way into a wall end or squeeze
+ * past a doorway jamb) and against solid cell pieces (stations, furniture, pillars...) it would newly overlap.
+ * Terrain keeps the centre-point test (shorelines). Returns the allowed coordinate along the axis.
+ */
+export function bodyAxisMove(world: World, x: number, y: number, n: number, axis: 0 | 1, level: number, swim: boolean): number {
+  const nx = axis === 0 ? n : x, ny = axis === 0 ? y : n;
+  if (movementBlocked(world, x, y, nx, ny, level, swim)) return axis === 0 ? x : y; // centre point (terrain + legacy rules)
+  const idx = world.getResource(StructureIndexRes); if (!idx || idx.count === 0) return n;
+  const r = gameplayDefs(world).movement.bodyRadius; if (!(r > 0)) return n;
+  const cur = axis === 0 ? x : y, lat = axis === 0 ? y : x; const s = Math.sign(n - cur); if (!s) return n;
+  const lead0 = cur + s * r, lead1 = n + s * r; const b0 = Math.floor(lead0), b1 = Math.floor(lead1);
+  if (b0 === b1) return n;
+  const k = r * 0.8; const side = axis === 0 ? EdgeSide.West : EdgeSide.North; const edgeT = Math.max(b0, b1);
+  const inSolid = solidCell(idx, Math.floor(x), Math.floor(y), level); // escape hatch: never trap a body already inside a solid
+  // a wall end perpendicular to the move inside the newly entered row/column (T-junction, doorway jamb) also blocks
+  let perp = false; const pside = axis === 0 ? EdgeSide.North : EdgeSide.West;
+  for (let bl = Math.floor(lat - r) + 1; bl <= Math.floor(lat + r) && !perp; bl++) perp = !!(axis === 0 ? idx.edgeBlocker(b1, bl, level, pside) : idx.edgeBlocker(bl, b1, level, pside));
+  for (const l of perp ? [lat] : [lat - k, lat, lat + k]) {
+    if (perp) { const stop = s > 0 ? edgeT - r - 1e-4 : edgeT + r + 1e-4; return s > 0 ? Math.max(cur, Math.min(n, stop)) : Math.min(cur, Math.max(n, stop)); }
+    const lt = Math.floor(l);
+    const blocked = (axis === 0 ? idx.edgeBlocker(edgeT, lt, level, side) : idx.edgeBlocker(lt, edgeT, level, side))
+      || (!inSolid && (axis === 0 ? solidCell(idx, b1, lt, level) : solidCell(idx, lt, b1, level)));
+    if (blocked) { const stop = s > 0 ? edgeT - r - 1e-4 : edgeT + r + 1e-4; return s > 0 ? Math.max(cur, Math.min(n, stop)) : Math.min(cur, Math.max(n, stop)); }
+  }
+  return n;
+}
+
+/** ADR-212: stand height above the level floor on (x, y): foundation decks (art top 12 px / zStep 16), ramps/steps half. */
+export function standHeightAt(world: World, x: number, y: number, level: number): number {
+  const idx = world.getResource(StructureIndexRes); const mv = gameplayDefs(world).movement;
+  const base = level * gameplayDefs(world).building.levelHeight; if (!idx || idx.count === 0) return base;
+  const tx = Math.floor(x), ty = Math.floor(y);
+  const d = idx.deck(tx, ty, level); const dd = d ? idx.def(d) : undefined;
+  if (dd && !dd.roof) return base + (dd.family === "foundation" ? mv.deckStandHeight : mv.floorStandHeight);
+  for (const t of idx.trisInTile(tx, ty, level)) { const td = idx.def(t); if (td?.roof) continue; const tt = world.get(t, Transform); if (tt && Math.hypot(tt.x - x, tt.y - y) < 0.5) return base + (td?.family === "foundation" ? mv.deckStandHeight : mv.floorStandHeight); }
+  const ramp = idx.cell(tx, ty, level, 1); const rd = ramp ? idx.def(ramp) : undefined;
+  if (rd && rd.family === "foundation") return base + mv.deckStandHeight * 0.5;
+  return base;
+}
+/** ADR-212: ease Transform.z toward the stand height (smooth step-up / step-down, stepRate z units per second). */
+export function settleStandZ(world: World, e: Entity, dt: number): void {
+  const t = world.get(e, Transform); if (!t) return;
+  const lh = gameplayDefs(world).building.levelHeight; const level = Math.max(0, Math.round(t.z / lh));
+  const target = standHeightAt(world, t.x, t.y, level); const z = t.z ?? 0; if (Math.abs(target - z) < 1e-4) return;
+  const step = gameplayDefs(world).movement.stepRate * dt;
+  world.set(e, Transform, { z: Math.abs(target - z) <= step ? target : z + Math.sign(target - z) * step });
 }
 
 /** Applies one tick of movement input (server authority + client prediction). Writes PlayerIntent.moving/sprint. */
@@ -75,14 +130,28 @@ export function applyMovementInput(world: World, e: Entity, actions: number, dt:
     const st = world.store(PlayerIntent); const i = entityIndex(e); const s = st.slot(i);
     if (st.data.moving[s] !== moving || st.data.sprint[s] !== sprint) { st.data.moving[s] = moving; st.data.sprint[s] = sprint; st.markChanged(i); }
   }
-  if (!moving) return;
-  const level = Math.max(0, Math.round(t.z / gameplayDefs(world).building.levelHeight));
-  const swim = level === 0; // ground level only: no swimming off a deck
-  const sp = gameplayDefs(world).movement.walkSpeed * speedMultiplier(world, e, sprint === 1) * (swim ? swimSpeedMulAt(world, t.x, t.y) : 1) * dt;
-  let x = t.x, y = t.y; const nx = x + dx * sp, ny = y + dy * sp;
-  if (!movementBlocked(world, x, y, nx, y, level, swim)) x = nx;
-  if (!movementBlocked(world, x, y, x, ny, level, swim)) y = ny;
-  if (x !== t.x || y !== t.y) world.set(e, Transform, { x, y, facing: Math.atan2(dy, dx) });
+  if (moving) {
+    const level = Math.max(0, Math.round(t.z / gameplayDefs(world).building.levelHeight));
+    const swim = level === 0; // ground level only: no swimming off a deck
+    const sp = gameplayDefs(world).movement.walkSpeed * speedMultiplier(world, e, sprint === 1) * (swim ? swimSpeedMulAt(world, t.x, t.y) : 1) * dt;
+    let x = t.x, y = t.y;
+    x = bodyAxisMove(world, x, y, x + dx * sp, 0, level, swim);
+    y = bodyAxisMove(world, x, y, y + dy * sp, 1, level, swim);
+    // ADR-212 doorway assist: pushing straight into a wall beside an opening slides the body toward the opening's centre
+    if (x === t.x && dx && !dy) y = doorAssist(world, x, y, dx, 0, sp, level, swim);
+    else if (y === t.y && dy && !dx) x = doorAssist(world, x, y, dy, 1, sp, level, swim);
+    if (x !== t.x || y !== t.y) world.set(e, Transform, { x, y, facing: Math.atan2(dy, dx) });
+  }
+  settleStandZ(world, e, dt); // ADR-212: decks are walked on at deck-top height
+}
+/** Lateral nudge (up to `sp`) toward the centre of the neighbouring row whose centre line is free along `axis`. */
+function doorAssist(world: World, x: number, y: number, d: number, axis: 0 | 1, sp: number, level: number, swim: boolean): number {
+  const lat = axis === 0 ? y : x; const c = Math.floor(lat) + 0.5; if (Math.abs(c - lat) < 1e-6) return lat;
+  const probe = Math.sign(d) * (gameplayDefs(world).movement.bodyRadius + sp + 0.05);
+  const free = axis === 0 ? bodyAxisMove(world, x, c, x + probe, 0, level, swim) !== x : bodyAxisMove(world, c, y, y + probe, 1, level, swim) !== y;
+  if (!free) return lat;
+  const nl = lat + Math.sign(c - lat) * Math.min(sp, Math.abs(c - lat));
+  return bodyAxisMove(world, axis === 0 ? x : lat, axis === 0 ? lat : y, nl, axis === 0 ? 1 : 0, level, swim);
 }
 
 /** ADR-125: character walk-cycle playback rate (walkSpeed / walkAnimRefSpeed) so feet match ground speed; shared by both renderers. */

@@ -220,7 +220,7 @@ export class StructureIndex {
   edgeBlocker(tx: number, ty: number, z: number, side: EdgeSide): Entity | 0 {
     const w = this.edge(tx, ty, z, side); if (!w) return 0;
     const d = this.def(w)!; const op = this.openings.get(w);
-    if (op) { const od = this.def(op); if (od?.door) return this.doorOpen(op) ? 0 : op; return od?.blocksPath ? op : d.blocksPath ? w : 0; }
+    if (op) { const od = this.def(op); if (od?.door) return !this.doorOpen(op) ? op : d.blocksPath ? w : 0; return od?.blocksPath ? op : d.blocksPath ? w : 0; } // ADR-212: open shutters leave a window wall solid
     return d.blocksPath ? w : 0;
   }
   /** Door open state lookup (DoorState lives on the door's attachment entity). Set by the doors module. */
