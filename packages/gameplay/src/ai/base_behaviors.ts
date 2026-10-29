@@ -166,7 +166,7 @@ export function baseBehaviors(): GameBehavior[] {
         if (d > 0.5 && !(d < 3 && stuckOn(c, s.stand.x, s.stand.y, 40))) { if (d >= 3 && stuckOn(c, s.stand.x, s.stand.y)) return fail(); return; }
         stop(o); o.aimX = s.x - c.self.x; o.aimY = s.y - c.self.y;
         if (!cooled(c, "buildAt", 30)) return;
-        o.actions.push(`build:${s.piece}:${s.x}:${s.y}:${s.level}:${s.rot ?? 0}:0`); c.bb.set("buildAt", c.self.tick);
+        o.actions.push(`build:${s.piece}:${s.x}:${s.y}:${s.level}:${s.rot ?? 0}:${s.tier ?? 0}`); c.bb.set("buildAt", c.self.tick);
         const m = aiMemoryOf(c.agent); m.fails[s.slot] = (m.fails[s.slot] ?? 0) + 1; markAiDirty(c.agent, c.self.tick); return false;
       } },
     { name: "stash", inertia: 0.4, traits: { greed: 0.3 }, considerations: [
@@ -198,12 +198,13 @@ export function baseBehaviors(): GameBehavior[] {
     { name: "trip", inertia: 0.6, scheduleBonus: 0.2, traits: { industriousness: 0.4, bravery: 0.3 }, considerations: [
         { name: "want", curve: step01, input: (c) => (c.bb.get("trip") ? 1 : c.world.tripWanted && cooled(c, "tripEnd", 600) ? 0.8 : 0) },
         { name: "day", curve: { type: "linear", m: -1, b: 1 }, input: (c) => (c.bb.get<{ ret: boolean }>("trip")?.ret ? 0 : night(c.self.phase)) },
-        { name: "fed", curve: step01, input: (c) => (c.bb.get("trip") || (c.self.hunger > 0.5 && c.self.thirst > 0.5) ? 1 : 0) }],
+        { name: "fed", curve: step01, input: (c) => (c.bb.get("trip") || (c.self.hunger > 0.5 && c.self.thirst > 0.5) ? 1 : 0) },
+        { name: "warm", curve: step01, input: (c) => (c.bb.get<{ ret: boolean }>("trip")?.ret || (c.world.chill?.body ?? 37) >= 36.6 ? 1 : 0) }], // a chilled bot does not set out (and turns back)
       run: (c, o) => {
         const home = c.world.home; let tr = c.bb.get<{ x: number; y: number; t0: number; ret: boolean; max: number }>("trip");
         if (!tr) { const a = c.rng.range(-Math.PI, Math.PI), r = c.rng.range(18, 36); tr = { x: home.x + Math.cos(a) * r, y: home.y + Math.sin(a) * r, t0: c.self.tick, ret: false, max: 0 }; c.bb.set("trip", tr); }
         const dh = Math.hypot(home.x - c.self.x, home.y - c.self.y); tr.max = Math.max(tr.max, dh);
-        if (!tr.ret && (night(c.self.phase) > 0 || c.self.hunger < 0.35 || c.self.thirst < 0.35 || (c.world.invSpaceFree ?? 1) < 0.3 || c.self.tick - tr.t0 > 3600 || !c.world.tripWanted && tr.max > 12)) tr.ret = true;
+        if (!tr.ret && ((c.world.chill?.body ?? 37) < 36.6 || night(c.self.phase) > 0 || c.self.hunger < 0.35 || c.self.thirst < 0.35 || (c.world.invSpaceFree ?? 1) < 0.3 || c.self.tick - tr.t0 > 3600 || !c.world.tripWanted && tr.max > 12)) tr.ret = true;
         if (tr.ret) { if (goTo(c, o, home.x, home.y, 1) < 3 || stuckOn(c, home.x, home.y, 200)) { endTrip(c, tr.max); return false; } return; }
         if (toward(o, c.self.x, c.self.y, tr.x, tr.y, 0.9) < 2 || stuckOn(c, tr.x, tr.y, 120)) { const a = c.rng.range(-Math.PI, Math.PI); tr.x = c.self.x + Math.cos(a) * 10; tr.y = c.self.y + Math.sin(a) * 10; }
         return false; // re-evaluate every tick so gather / hunt take over when a wanted node or prey shows up

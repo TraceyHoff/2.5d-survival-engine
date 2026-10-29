@@ -45,7 +45,7 @@ export function flushAiMemory(agents: Iterable<Agent>, put: AiPut, tick: number,
 export function bumpStat(a: Agent, k: keyof AiStats, tick: number, by = 1): void { aiMemoryOf(a).stats[k] += by; markAiDirty(a, tick); }
 
 // ---------------- base layout (relative to the anchor = north-west corner of a 2x2 foundation) ----------------
-export interface BaseSlot { id: string; key: string; x: number; y: number; level: number; rot?: number; legacy?: readonly { key: string; x: number; y: number }[] }
+export interface BaseSlot { id: string; key: string; x: number; y: number; level: number; rot?: number; /** material tier (0 twig); roofs are wood: a twig roof cantilevers only one tile off a wall (horizLoss 45) */ tier?: number; legacy?: readonly { key: string; x: number; y: number }[] }
 /**
  * 2x2 hut, built with the same Place commands a player sends. ADR-211 corners: every perimeter edge of a 2x2 is an arm of an outer
  * corner, so three corners are L pieces (`wall_corner_outer`, rot = which tile the L wraps) and the south-west corner keeps a doorway
@@ -58,7 +58,7 @@ export const BASE_SLOTS: readonly BaseSlot[] = [
   { id: "cse", key: "wall_corner_outer", x: 2, y: 2, level: 0, rot: 2, legacy: [{ key: "wall", x: 2, y: 1.5 }, { key: "wall", x: 1.5, y: 2 }] },
   { id: "wwin", key: "wall_window", x: 0, y: 1.5, level: 0, legacy: [{ key: "wall", x: 0, y: 1.5 }] },
   { id: "wd", key: "wall_doorway", x: 0.5, y: 2, level: 0 }, { id: "door", key: "door_wood", x: 0.5, y: 2, level: 0 },
-  ...[[0, 0], [1, 0], [0, 1], [1, 1]].map(([x, y]) => ({ id: `r${x}${y}`, key: "roof_flat", x: x! + 0.5, y: y! + 0.5, level: 1 })),
+  ...[[0, 1], [0, 0], [1, 1], [1, 0]].map(([x, y]) => ({ id: `r${x}${y}`, key: "roof_flat", x: x! + 0.5, y: y! + 0.5, level: 1, tier: 1 })), // wall-backed tile first (L corners are vertex pieces: no roof support)
 ];
 /** Station spots outside the walls (2 candidates each; a slot failing 4 times moves to the next). */
 export const STATION_SLOTS: Readonly<Record<string, readonly { x: number; y: number }[]>> = {
@@ -184,7 +184,7 @@ const gameplayDefsOf = (world: World): GameDefs | undefined => world.getResource
 export type Step =
   | { k: "withdraw"; item: number; count: number }
   | { k: "craft"; recipe: number; count: number; station: StationKind; ticks: number }
-  | { k: "build"; piece: number; x: number; y: number; level: number; rot?: number; slot: string; stand: { x: number; y: number } }
+  | { k: "build"; piece: number; x: number; y: number; level: number; rot?: number; tier?: number; slot: string; stand: { x: number; y: number } }
   | { k: "wear"; invSlot: number };
 export interface Plan { goal: string; step?: Step; leaves: number[]; hunt: number[]; keep: Set<number>; blocked: string[] }
 
@@ -253,7 +253,7 @@ class Resolver {
   ensureStation(k: StationKind): boolean { if (this.p.bs?.stations.has(k)) return true; const sp = this.ix.station.get(k); if (!sp) { this.stuck = true; return false; } this.obtainPiece(sp.key); return false; }
   obtainPiece(key: string, slot?: BaseSlot): boolean {
     const def = this.ix.piece.get(key); const b = this.p.base; if (!def || !b) { this.stuck = true; return false; }
-    let ok = true; for (const c of pieceCost(this.p.defs, def, 0)) ok = this.obtain(c.item, c.count) && ok;
+    let ok = true; for (const c of pieceCost(this.p.defs, def, slot?.tier ?? 0)) ok = this.obtain(c.item, c.count) && ok;
     if (def.station !== StationKind.None) for (const sk of [StationKind.None]) void sk;
     if (!ok || this.step) return false;
     let at = slot ? { x: slot.x, y: slot.y, level: slot.level, id: slot.id } : undefined;
@@ -261,7 +261,7 @@ class Resolver {
       const i = c.findIndex((q, j) => (this.p.fails[`${key}${j}`] ?? 0) < 4 && ghostOk(this.p.world, this.p.self, def.id, b.x + q.x, b.y + q.y)); if (i < 0) { this.stuck = true; return false; } at = { x: c[i]!.x, y: c[i]!.y, level: 0, id: `${key}${i}` }; }
     const x = b.x + at.x, y = b.y + at.y;
     const stand = slot === HEARTH ? { x: b.x + DOOR_IN.x, y: b.y + DOOR_IN.y } : slot ? { x: b.x + BUILD_STAND.x, y: b.y + BUILD_STAND.y } : standNear(b, x, y);
-    this.step = { k: "build", piece: def.id, x, y, level: at.level, ...(slot?.rot ? { rot: slot.rot } : {}), slot: at.id, stand }; return false;
+    this.step = { k: "build", piece: def.id, x, y, level: at.level, ...(slot?.rot ? { rot: slot.rot } : {}), ...(slot?.tier ? { tier: slot.tier } : {}), slot: at.id, stand }; return false;
   }
 }
 const standNear = (b: { x: number; y: number }, x: number, y: number): { x: number; y: number } => {

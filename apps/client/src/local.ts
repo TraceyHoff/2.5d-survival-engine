@@ -213,12 +213,14 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
     for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) { const l = cells.get(cellKey(cx + dx, cy + dy)); if (l) for (const e of l) out.push(e); }
     return out;
   };
+  let lastRespawnTry = -1e9;
   const agentLoop = new FixedLoop({ tickHz: DEFAULT_TICK_HZ, step: () => {
     const tick = game.world.tick; const humans = humanPositions();
     if (byAgent.size !== bots.length) { byAgent.clear(); for (const b of bots) byAgent.set(b.agent, b); }
     const outs = controller.tick(tick, (a) => viewFor(a, tick, humans));
     for (const vp of bots) { const out = outs.get(vp.agent); if (!out) continue; vp.output = out; vp.client.sendInput(sampleOf(vp)); if (out.chat) vp.client.chat.send(ChatChannel.Local, out.chat.text); if (out.emote) { const e = serverEntityOf(vp.client.clientId); if (e !== undefined) applyAgentEmote(game.world, e, out); } if (out.commands) sendAgentCommands(vp.client, out.commands); }
-    if (tick % 40 === 0) for (const vp of bots) { const e = serverEntityOf(vp.client.clientId); if (e !== undefined && game.world.has(e, Dead)) sendAgentCommands(vp.client, [{ type: RespawnCmd.name, payload: {} }]); } // ADR-216: a dead bot presses Respawn like a player (server enforces respawnSeconds)
+    if (tick - lastRespawnTry >= 40) { lastRespawnTry = tick; for (const vp of bots) { const e = serverEntityOf(vp.client.clientId); if (e !== undefined && game.world.has(e, Dead)) sendAgentCommands(vp.client, [{ type: RespawnCmd.name, payload: {} }]); } // ADR-216: a dead bot presses Respawn like a player (server enforces respawnSeconds)
+    }
     flushAiMemory(bots.map((b) => b.agent), putAgent, game.world.tick); flushSocialMemory(bots.map((b) => b.agent), putAgent, game.world.tick); // debounced social-memory write-through
   } });
   const pump = (ms: number): void => {
