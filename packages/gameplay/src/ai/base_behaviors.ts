@@ -1,5 +1,5 @@
 /**
- * ADR-212: base life for AI humans, driven by the planner (planner.ts). Every behaviour here only moves the bot and
+ * ADR-214: base life for AI humans, driven by the planner (planner.ts). Every behaviour here only moves the bot and
  * emits the action strings a human client sends (craft / build / copen / cdeposit / cwithdraw / cclose / fire / door /
  * wear / attack / gather); the server validates reach, stations, recipes, costs and placement exactly as for players.
  *  - base_work: the planner's step (withdraw from storage, craft at a station - lighting it first -, build the next
@@ -8,10 +8,10 @@
  *  - trip: outbound gathering / hunting trip 18..36 tiles from the base and back (counts trips / max distance).
  *  - refuel: keep the base fire burning through the night. - leave_base / sleep: door-aware in / out of the 2x2 base.
  */
-import { Transform, type Agent, type AgentContext, type Entity, type World } from "@engine/core";
+import { timeOfDay, Transform, type Agent, type AgentContext, type Entity, type World } from "@engine/core";
 import { installSpatialIndex } from "@engine/world";
 import type { AgentWorldView, GameBehavior } from "../agents.js";
-import { Animal, AttachKind, BuildPiece, Container, Dead, Fuel, LootBag, Worn } from "../components.js";
+import { Animal, AttachKind, BuildPiece, Container, Dead, Fuel, LootBag, Survival, Worn } from "../components.js";
 import { resolveAttachment } from "../building/links.js";
 import { readSlots, slotFreshness } from "../inventory.js";
 import { spoilStageIndex, spoilStages } from "../food.js";
@@ -47,7 +47,11 @@ export function fillPlanSensors(world: World, self: Entity, view: AgentWorldView
     view.base = base; view.bs = bs;
   }
   const hungry = (view as { self?: unknown }) && a.bb.num("hungerSeen", 1) < 0.5;
-  const plan = makePlan({ world, self, defs, ...(base ? { base } : {}), ...(bs ? { bs } : {}), fails: mem.fails, hungry, ...(mem.snooze ? { snooze: mem.snooze } : {}) }); view.plan = plan; a.bb.set("planGoal", plan.goal); a.bb.set("planStep", plan.step);
+  const woodId = plannerIndex(defs).item.get("wood")?.id; let woodBag = 0; if (woodId !== undefined) for (let i = 0; i < slots.items.length; i++) if (slots.items[i] === woodId) woodBag += slots.counts[i] ?? 0;
+  const body = world.getField(self, Survival, "bodyTemp") ?? 37; const dayT = timeOfDay(world).t;
+  const freezing = body < 36.4 && woodBag < 7 && !(bs?.complete) && !(bs?.stations.get(StationKind.Campfire)?.lit);
+  const evening = dayT >= 0.55 && dayT < 0.85;
+  const plan = makePlan({ world, self, defs, ...(base ? { base } : {}), ...(bs ? { bs } : {}), fails: mem.fails, hungry, freezing, evening, ...(mem.snooze ? { snooze: mem.snooze } : {}) }); view.plan = plan; a.bb.set("planGoal", plan.goal); a.bb.set("planStep", plan.step);
   { // patience: a goal with no step and no leaf gathered for GOAL_PATIENCE ticks is snoozed half a day (persisted), like a player giving up on reeds
     let leafN = 0; for (let i = 0; i < slots.items.length; i++) if (slots.items[i] && plan.leaves.includes(slots.items[i]!)) leafN += slots.counts[i] ?? 0;
     const gs = a.bb.get("goalSeen") as { g: string; last: number; n: number } | undefined;
@@ -210,10 +214,11 @@ export function baseBehaviors(): GameBehavior[] {
       run: (c, o) => { const f = c.world.bs?.stations.get(StationKind.Campfire); const wood = plannerIndex(gdefs(c)).item.get("wood")?.id; if (!f || wood === undefined || !c.world.woodTotal) return false;
         if (goTo(c, o, f.x, f.y) > 1.6) { if (stuckOn(c, f.x, f.y)) { c.bb.set("refuelAt", c.self.tick); return false; } return; } stop(o);
         if (containerSeq(c, o, f.id, [`cdeposit:${f.id}:${wood}:${Math.min(10, c.world.woodTotal)}`])) { mark(c, "refuels"); c.bb.set("refuelAt", c.self.tick); return false; } } },
-    // ADR-212: cold kills in ~70 s once the body is under 35 C; get warm first (lit fire > light the fire > roofed base > a camp fire on the spot)
+    // ADR-214: cold kills in ~70 s once the body is under 35 C; get warm first (lit fire > light the fire > roofed base > a camp fire on the spot)
     { name: "warm_up", inertia: 0.6, considerations: [
         { name: "chilled", weight: 2.2, curve: step01, input: (c) => { const ch = c.world.chill; if (!ch) return 0;
-          const on = c.bb.get("warming") ? ch.body < 36.8 || (ch.felt < 10 && ch.body < 37) : ch.body < 36.2 || (ch.felt < 8 && ch.body < 36.6); c.bb.set("warming", on); return on ? 1 : 0; } }],
+          const on = c.bb.get("warming") ? ch.body < 36.8 || (ch.felt < 10 && ch.body < 37) : ch.body < 36.2 || (ch.felt < 8 && ch.body < 36.6); c.bb.set("warming", on); return on ? 1 : 0; } },
+        { name: "canWarm", curve: step01, input: (c) => (warmOption(c) ? 1 : 0) }], // nothing to warm at: the planner's emergency wood/stone goal (gather) takes over
       run: warmRun },
     { name: "leave_base", inertia: 0.2, considerations: [
         { name: "inside", curve: step01, input: (c) => (c.world.base && c.world.bs?.door && insideBase(c.world.base, c.self.x, c.self.y) && night(c.self.phase) === 0 && (c.world.plan?.step || c.world.needs?.length) ? 1 : 0) }],
@@ -226,11 +231,21 @@ function endTrip(c: Ctx, max: number): void { c.bb.set("trip", undefined); c.bb.
 /** Sleep in the base (through the door) when it has one; else by the fire. Replaces the survivor sleep run. */
 export function baseSleepRun(c: Ctx, o: { moveX: number; moveY: number; aimX: number; aimY: number; actions: string[] }): boolean | void {
   const b = c.world.base; let tx = c.world.home.x, ty = c.world.home.y;
-  const f = c.world.bs?.stations.get(StationKind.Campfire); // ADR-212: a lit fire beats walls at 6 C nights; the roofed base when it is out
+  const f = c.world.bs?.stations.get(StationKind.Campfire); // ADR-214: a lit fire beats walls at 6 C nights; the roofed base when it is out
   if (b && f && c.world.bs?.hearth === f.id) { tx = b.x + HEARTH_SIT.x; ty = b.y + HEARTH_SIT.y; }
   else if (f && (f.lit || !c.world.bs?.door)) { tx = f.x - 1.1; ty = f.y + 0.4; }
   if (goTo(c, o, tx, ty, 0.8) < 0.9 || stuckOn(c, tx, ty, 200)) { stop(o); o.aimX = 0; o.aimY = 0; o.actions.push("sleep"); }
   if (night(c.self.phase) < 0.5) return false;
+}
+/** Any way to get warm right now: a fire (lit, or unlit with wood to hand), the finished base, or campfire materials in the bag. */
+function warmOption(c: Ctx): boolean {
+  const near = (x: number, y: number): boolean => Math.hypot(x - c.self.x, y - c.self.y) < 60; const woodN = c.world.woodTotal ?? 0;
+  const st = c.world.bs?.stations.get(StationKind.Campfire); const vf = c.world.fire; const camp = c.bb.get<{ x: number; y: number }>("camp");
+  const sbWood = (() => { const w = plannerIndex(gdefs(c)).item.get("wood")?.id; return w !== undefined ? (c.world.bs?.storage?.counts.get(w) ?? 0) : 0; })();
+  for (const f of [st, vf]) if (f && near(f.x, f.y) && (f.lit || woodN > 0 || sbWood > 0)) return true;
+  if (camp && near(camp.x, camp.y) && woodN > 0) return true;
+  const b = c.world.base; if (b && c.world.bs?.complete && near(b.x, b.y)) return true;
+  return woodN >= 7 && (c.world.stoneTotal ?? 0) >= 4;
 }
 function warmRun(c: Ctx, o: { moveX: number; moveY: number; aimX: number; aimY: number; actions: string[] }): boolean | void {
   if (!c.bb.get("warming")) return false;

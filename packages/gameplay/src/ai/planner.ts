@@ -1,5 +1,5 @@
 /**
- * ADR-212: goal-driven planner for AI humans. Each sense pass (autonomy.ts, every SENSE_EVERY ticks per bot) walks a fixed
+ * ADR-214: goal-driven planner for AI humans. Each sense pass (autonomy.ts, every SENSE_EVERY ticks per bot) walks a fixed
  * goal ladder (tools -> campfire -> knife / weapon -> workbench -> storage -> 2x2 base -> clothes / armour -> furnace ->
  * metal) and backward-chains the first unmet goal through the same RecipeDef / ResourceDef / PieceDef data players read:
  * have it (bag or base storage -> withdraw), craft it (hand or at a base station), gather it (node with the right tool),
@@ -73,7 +73,7 @@ const ghostOk = (world: World, self: Entity, piece: number, x: number, y: number
 /** Where a builder stands for base pieces (outside the footprint, inside build reach of every slot). */
 export const BUILD_STAND = { x: 1, y: 3.3 };
 export const DOOR_OUT = { x: 0.5, y: 2.8 }, DOOR_IN = { x: 0.5, y: 1.25 };
-/** ADR-212: indoor campfire (back corner, off the door path): the walls keep its heat in and the roof keeps rain off; sleep spot next to it. */
+/** ADR-214: indoor campfire (back corner, off the door path): the walls keep its heat in and the roof keeps rain off; sleep spot next to it. */
 export const HEARTH: BaseSlot = { id: "hearth", key: "campfire", x: 1.5, y: 0.5, level: 0 }; export const HEARTH_SIT = { x: 0.9, y: 1.1 };
 export const baseHome = (b: { x: number; y: number }): { x: number; y: number } => ({ x: b.x + 1, y: b.y + 1 });
 export const insideBase = (b: { x: number; y: number }, x: number, y: number): boolean => x > b.x + 0.1 && x < b.x + 1.9 && y > b.y + 0.1 && y < b.y + 1.9;
@@ -191,16 +191,23 @@ export interface Plan { goal: string; step?: Step; leaves: number[]; hunt: numbe
 type Goal = { k: "tool"; kind: ToolKind; tier: number; name: string } | { k: "item"; key: string; count: number; alt?: string } | { k: "piece"; key: string } | { k: "base" } | { k: "wear"; key: string } | { k: "cook" } | { k: "hearth" };
 export const GOAL_LADDER: readonly Goal[] = [
   { k: "tool", kind: ToolKind.Axe, tier: 1, name: "axe" }, { k: "tool", kind: ToolKind.Pickaxe, tier: 1, name: "pickaxe" },
-  { k: "piece", key: "campfire" }, { k: "item", key: "wood", count: 8 }, { k: "tool", kind: ToolKind.Knife, tier: 1, name: "knife" },
-  { k: "item", key: "stone_spear", count: 1, alt: "wooden_club" }, { k: "piece", key: "workbench" }, { k: "piece", key: "storage_box" }, { k: "base" }, { k: "hearth" },
+  { k: "piece", key: "campfire" }, { k: "item", key: "wood", count: 8 }, { k: "piece", key: "workbench" }, { k: "base" }, { k: "hearth" },
+  { k: "tool", kind: ToolKind.Knife, tier: 1, name: "knife" }, { k: "item", key: "stone_spear", count: 1, alt: "wooden_club" }, { k: "piece", key: "storage_box" },
   { k: "cook" }, { k: "wear", key: "straw_hat" }, { k: "wear", key: "reed_sandals" }, { k: "tool", kind: ToolKind.Shovel, tier: 1, name: "shovel" },
   { k: "item", key: "wood", count: 20 }, { k: "item", key: "cooked_meat", count: 2 }, { k: "wear", key: "leather_gloves" }, { k: "wear", key: "leather_boots" },
   { k: "wear", key: "leather_cap" }, { k: "item", key: "water_flask", count: 1 }, { k: "piece", key: "furnace" }, { k: "item", key: "charcoal", count: 4 },
   { k: "item", key: "bronze_ingot", count: 4 }, { k: "piece", key: "anvil" }, { k: "tool", kind: ToolKind.Axe, tier: 2, name: "axe2" },
   { k: "tool", kind: ToolKind.Pickaxe, tier: 2, name: "pickaxe2" }, { k: "item", key: "bronze_spear", count: 1 },
 ];
+/** Fire wood a bot never spends on planks / sticks / pieces (a night's first fuel load). */
+export const WOOD_RESERVE = 8;
+/** Freezing with no fire and no wood: wood + stone for a campfire on the spot comes before anything else. */
+const EMERGENCY: readonly Goal[] = [{ k: "item", key: "wood", count: 8 }, { k: "item", key: "stone", count: 4 }];
+/** Late afternoon without a finished, heated base: stock a night of fuel first. */
+const EVENING: readonly Goal[] = [{ k: "item", key: "wood", count: 20 }];
+const spendsFuel = (g: Goal): boolean => (g.k === "item" && (g.key === "wood" || g.key === "stone")) || (g.k === "piece" && g.key === "campfire") || g.k === "hearth" || g.k === "cook";
 
-export interface PlanInput { world: World; self: Entity; defs: GameDefs; base?: { x: number; y: number }; bs?: BaseState; fails: Record<string, number>; hungry?: boolean; snooze?: Record<string, number> }
+export interface PlanInput { world: World; self: Entity; defs: GameDefs; base?: { x: number; y: number }; bs?: BaseState; fails: Record<string, number>; hungry?: boolean; snooze?: Record<string, number>; freezing?: boolean; evening?: boolean }
 class Resolver {
   avail = new Map<number, number>(); inv = new Map<number, number>(); visiting = new Set<number>();
   step?: Step; leaves = new Set<number>(); hunt = new Set<number>(); keep = new Set<number>(); stuck = false;
@@ -270,10 +277,13 @@ export function makePlan(p: PlanInput): Plan {
   for (const d of ix.tools) if (allCount(d.id) > 0) tool.set(d.tool!.kind, Math.max(tool.get(d.tool!.kind) ?? 0, d.tool!.tier));
   const worn = new Set<number>(); const wi = world.getArray(self, Worn, "item"); if (wi) for (const x of wi) if (x) worn.add(x);
   const blocked: string[] = []; const keepAll = new Set<number>();
-  const ladder = p.hungry ? [{ k: "cook" } as Goal, ...GOAL_LADDER] : GOAL_LADDER;
+  const pre: Goal[] = []; if (p.freezing) pre.push(...EMERGENCY); if (p.hungry) pre.push({ k: "cook" });
+  if (p.evening && !(p.bs?.complete && p.bs.hearth !== undefined)) pre.push(...EVENING);
+  const ladder = pre.length ? [...pre, ...GOAL_LADDER] : GOAL_LADDER; const woodId = ix.item.get("wood")?.id;
   for (const g of ladder) {
     if (p.snooze && (p.snooze[goalName(g)] ?? 0) > world.tick) continue; // gave up on it for now (no source found in time)
     const r = new Resolver(p, ix, inv, tool); let name = "";
+    if (woodId !== undefined && !spendsFuel(g)) r.avail.set(woodId, Math.max(0, (r.avail.get(woodId) ?? 0) - WOOD_RESERVE)); // keep a fire's worth
     if (g.k === "tool") { name = g.name; if ((tool.get(g.kind) ?? 0) >= g.tier) { const d = ix.tools.find((t) => t.tool!.kind === g.kind && t.tool!.tier >= g.tier && allCount(t.id) > 0); if (d) { r.obtain(d.id, 1); if (r.step) return out(g, r); keepAll.add(d.id); } continue; }
       if (!ix.tools.some((d) => d.tool!.kind === g.kind && d.tool!.tier >= g.tier && ix.reachable.has(d.id))) { blocked.push(name); continue; } r.obtainTool(g.kind, g.tier); }
     else if (g.k === "item") { let d = ix.item.get(g.key); name = g.key; if (!d) continue; if (!ix.reachable.has(d.id)) { const a = g.alt ? ix.item.get(g.alt) : undefined; if (!a || !ix.reachable.has(a.id)) { blocked.push(name); continue; } d = a; }

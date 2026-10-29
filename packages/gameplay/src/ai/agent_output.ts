@@ -24,7 +24,7 @@ export function actionIntent(action: string): BotIntent | undefined {
     case "attack": return n.length >= 1 ? { kind: "attack", target: n[0]! } : undefined;
     case "eat": case "drink": return n.length >= 1 ? { kind: "eat", slot: n[0]! } : undefined;
     case "craft": return n.length >= 1 ? { kind: "craft", recipe: n[0]!, count: n[1] ?? 1 } : undefined;
-    case "build": return n.length >= 3 ? { kind: "build", piece: n[0]!, x: n[1]!, y: n[2]!, ...(n.length >= 6 ? { level: n[3]!, rot: n[4]!, tier: n[5]! } : {}) } : undefined; // ADR-212 [:level:rot:tier]
+    case "build": return n.length >= 3 ? { kind: "build", piece: n[0]!, x: n[1]!, y: n[2]!, ...(n.length >= 6 ? { level: n[3]!, rot: n[4]!, tier: n[5]! } : {}) } : undefined; // ADR-214 [:level:rot:tier]
     case "open": return n.length >= 1 ? { kind: "open", target: n[0]! } : undefined;
     case "buy": return n.length >= 6 ? { kind: "buy", stall: n[0]!, listingSlot: n[1]!, qty: n[2]!, expectedRevision: n[3]!, expectedPriceItem: n[4]!, expectedPriceCount: n[5]! } : undefined;
     default: return undefined;
@@ -75,9 +75,9 @@ export function actionCommand(action: string): AgentCommand | undefined {
     if (k === "cclose") return { type: CloseContainerCmd.name, payload: {} };
     if (k === "fire") return ok ? { type: ToggleFireCmd.name, payload: { target: n[0]! } } : undefined;
     if (k === "cdeposit") return ok && n.length >= 3 ? { type: DepositCmd.name, payload: { target: n[0]!, item: n[1]!, count: n[2]! } } : undefined;
-    if (k === "cwithdraw") return ok && n.length >= 3 ? { type: WithdrawCmd.name, payload: { target: n[0]!, item: n[1]!, count: n[2]! } } : undefined; // ADR-212
+    if (k === "cwithdraw") return ok && n.length >= 3 ? { type: WithdrawCmd.name, payload: { target: n[0]!, item: n[1]!, count: n[2]! } } : undefined; // ADR-214
     if (k === "wear") return ok ? { type: WearCmd.name, payload: { slot: n[0]! } } : undefined;
-    if (k === "drop") return ok && n.length >= 2 && n[0]! > 0 && n[1]! > 0 ? { type: DropItemCmd.name, payload: { item: n[0]!, count: n[1]! } } : undefined; // ADR-212 inventory "Drop"
+    if (k === "drop") return ok && n.length >= 2 && n[0]! > 0 && n[1]! > 0 ? { type: DropItemCmd.name, payload: { item: n[0]!, count: n[1]! } } : undefined; // ADR-214 inventory "Drop"
     if (k === "door") return ok ? { type: ToggleDoorCmd.name, payload: { target: n[0]! } } : undefined; }
   if (action.startsWith("equip:") || action.startsWith("repair:")) { const n = Number(action.split(":")[1]); if (!Number.isInteger(n) || n < 0) return undefined; return action[0] === "e" ? { type: EquipCmd.name, payload: { slot: n } } : { type: RepairCmd.name, payload: { target: n } }; } // ADR-203
   const it = actionIntent(action); if (!it) return undefined;
