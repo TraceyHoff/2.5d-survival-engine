@@ -2,7 +2,7 @@
  * ADR-113 skill tree data + pure reads (no gameplay imports besides components, so every system can hook it without
  * import cycles). Node index = bit in Progression.nodes (skills.json order is append-only).
  */
-import type { Entity, World } from "@engine/core";
+import { entityIndex, type Entity, type World } from "@engine/core";
 import raw from "../../data/skills.json";
 import { Progression } from "../components.js";
 
@@ -74,11 +74,20 @@ function totalsOf(w: readonly number[]): Totals {
   if (cache.size > 512) cache.clear(); cache.set(k, t); return t;
 }
 /** Additive fraction for a mod (0 without Progression). Multiply by (1 + skillMod). */
-export function skillMod(world: World, e: Entity, mod: SkillMod): number { const w = nodeWords(world, e); return w ? totalsOf(w).mods.get(mod) ?? 0 : 0; }
+/** ADR-212: totals of the live Progression words without copying / joining them (hot: movement speed, carry weight, every tick). */
+const hashed = new Map<number, { w: number[]; t: Totals }>();
+function liveTotals(world: World, e: Entity): Totals | undefined {
+  if (!world.has(e, Progression)) return undefined; const st = world.store(Progression); const idx = entityIndex(e);
+  let h = 0x811c9dc5, n = 0; for (let v = st.readElement(idx, "nodes", 0); v !== undefined; v = st.readElement(idx, "nodes", ++n)) h = Math.imul(h ^ (v >>> 0), 0x01000193);
+  const hit = hashed.get(h);
+  if (hit && hit.w.length === n) { let same = true; for (let i = 0; i < n; i++) if (hit.w[i] !== st.readElement(idx, "nodes", i)) { same = false; break; } if (same) return hit.t; }
+  const w = nodeWords(world, e)!; const t = totalsOf(w); if (hashed.size > 512) hashed.clear(); hashed.set(h, { w: w.slice(), t }); return t;
+}
+export function skillMod(world: World, e: Entity, mod: SkillMod): number { return liveTotals(world, e)?.mods.get(mod) ?? 0; }
 export const skillMul = (world: World, e: Entity, mod: SkillMod, min = 0.1): number => Math.max(min, 1 + skillMod(world, e, mod));
-export function hasPerk(world: World, e: Entity, perk: string): boolean { const w = nodeWords(world, e); return !!w && totalsOf(w).perks.has(perk); }
+export function hasPerk(world: World, e: Entity, perk: string): boolean { return liveTotals(world, e)?.perks.has(perk) ?? false; }
 /** Recipe skill level granted by nodes; undefined when the entity has no Progression (legacy / NPC crafters). */
-export function skillLevelOf(world: World, e: Entity, key: string): number | undefined { const w = nodeWords(world, e); return w ? totalsOf(w).skills.get(key) ?? 0 : undefined; }
+export function skillLevelOf(world: World, e: Entity, key: string): number | undefined { const t = liveTotals(world, e); return t ? t.skills.get(key) ?? 0 : undefined; }
 /** Damage multiplier for the held weapon class. */
 export const damageMulFor = (world: World, e: Entity, itemKey: string | undefined): number => skillMul(world, e, `dmg_${weaponClassOf(itemKey)}`);
 /** Integer amount scaled by a multiplier with a deterministic fractional roll (r in [0,1)). */

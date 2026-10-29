@@ -51,10 +51,20 @@ export function slotsDef(world: World, e: Entity): ComponentDef<InvSchema> {
 }
 export const hasSlots = (world: World, e: Entity): boolean => world.has(e, Inventory) || world.has(e, Container);
 
+/** ADR-212: plain-loop copy (Array.from(subarray) went through the iterator protocol: ~45 MB/s of garbage with bots). */
+function takeField(world: World, def: ComponentDef<InvSchema>, idx: number, f: "items" | "counts" | "createdTick" | "durability" | "crafterId", n: number): number[] {
+  const st = world.store(def); const out = new Array<number>(n); for (let i = 0; i < n; i++) out[i] = st.readElement(idx, f, i) ?? 0; return out;
+}
+/** ADR-212 allocation-free slot count of the live arrays (0 when the entity has no Inventory / Container). */
+function liveSlotCount(world: World, e: Entity): { def: ComponentDef<InvSchema>; idx: number; n: number } | undefined {
+  const def = world.has(e, Inventory) ? Inventory : world.has(e, Container) ? Container : undefined; if (!def) return undefined;
+  const st = world.store(def); const idx = entityIndex(e); LIVE.def = def; LIVE.idx = idx; LIVE.n = Math.min(st.data.slotCount[st.slot(idx)]!, def.schema.items.length); return LIVE;
+}
+const LIVE: { def: ComponentDef<InvSchema>; idx: number; n: number } = { def: Inventory, idx: 0, n: 0 };
 export function readSlots(world: World, e: Entity): ScratchSlots {
-  const def = slotsDef(world, e); const st = world.store(def); const s = st.slot(entityIndex(e));
+  const def = slotsDef(world, e); const st = world.store(def); const idx = entityIndex(e); const s = st.slot(idx);
   const n = Math.min(st.data.slotCount[s]!, def.schema.items.length);
-  const take = (f: "items" | "counts" | "createdTick" | "durability" | "crafterId"): number[] => Array.from(world.getArray(e, def, f)!.subarray(0, n));
+  const take = (f: "items" | "counts" | "createdTick" | "durability" | "crafterId"): number[] => takeField(world, def, idx, f, n);
   return new ScratchSlots(n, st.data.maxWeight[s]! * (def === Inventory ? skillMul(world, e, "carry") : 1), take("items"), take("counts"), take("createdTick"), take("durability"), world.tick, take("crafterId"));
 }
 export function writeSlots(world: World, e: Entity, v: ScratchSlots, defs: GameDefs): void {
@@ -128,7 +138,10 @@ export function rebaseCreated(created: number, now: number, fromMul: number, toM
 
 // ---- world-level API ---------------------------------------------------------------------------
 
-export function countItem(world: World, e: Entity, item: number): number { return slotsCount(readSlots(world, e), item); }
+export function countItem(world: World, e: Entity, item: number): number {
+  const L = liveSlotCount(world, e); if (!L) throw new Error("entity has no Inventory or Container");
+  const st = world.store(L.def); let c = 0; for (let i = 0; i < L.n; i++) if (st.readElement(L.idx, "items", i) === item) c += st.readElement(L.idx, "counts", i) ?? 0; return c; // ADR-212: no copy
+}
 export function canAddItem(world: World, e: Entity, item: number, count: number): number {
   return slotsCanAdd(readSlots(world, e), item, count, gameplayDefs(world));
 }
@@ -174,8 +187,10 @@ export function exchangeItems(world: World, e: Entity, take: readonly ItemCount[
   return true;
 }
 export function slotItem(world: World, e: Entity, slot: number): { item: number; count: number } {
-  const v = readSlots(world, e);
-  return slot < v.slotCount ? { item: v.item(slot), count: v.count(slot) } : { item: 0, count: 0 };
+  const L = liveSlotCount(world, e); if (!L) throw new Error("entity has no Inventory or Container"); // ADR-212: no ScratchSlots copy
+  if (slot < 0 || slot >= L.n) return { item: 0, count: 0 };
+  const st = world.store(L.def); const item = st.readElement(L.idx, "items", slot) ?? 0;
+  return { item, count: item ? st.readElement(L.idx, "counts", slot) ?? 0 : 0 };
 }
 /** Removes one unit from a specific slot. */
 export function takeFromSlot(world: World, e: Entity, slot: number): number {
@@ -195,8 +210,8 @@ export function freshness(defs: GameDefs, item: number, created: number, spoilMu
 /** Debug/UI view: non-empty slots. */
 export interface SlotTuple { slot: number; item: number; count: number; created: number; durability: number; crafterId: number }
 export function listSlots(world: World, e: Entity): SlotTuple[] {
-  const v = readSlots(world, e); const out: SlotTuple[] = [];
-  for (let i = 0; i < v.slotCount; i++) if (v.item(i) !== 0) out.push({ slot: i, item: v.item(i), count: v.count(i), created: v.created(i), durability: v.durability(i), crafterId: v.crafter(i) });
+  const L = liveSlotCount(world, e); if (!L) throw new Error("entity has no Inventory or Container"); const st = world.store(L.def); const { idx, n } = L; const out: SlotTuple[] = [];
+  for (let i = 0; i < n; i++) { const item = st.readElement(idx, "items", i) ?? 0; if (item !== 0) out.push({ slot: i, item, count: st.readElement(idx, "counts", i) ?? 0, created: st.readElement(idx, "createdTick", i) ?? 0, durability: st.readElement(idx, "durability", i) ?? 0, crafterId: st.readElement(idx, "crafterId", i) ?? 0 }); }
   return out;
 }
 /** Low-level: rewrite every slot through fn (used by spoilage re-basing / conversion). */

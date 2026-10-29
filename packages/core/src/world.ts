@@ -206,12 +206,15 @@ export class World {
 
   /** Iterates entities having all `all` and none of `none`. Drives from the smallest store. Safe to destroy the current entity. */
   *query(all: readonly ComponentDef[], none: readonly ComponentDef[] = []): IterableIterator<Entity> {
-    if (all.length === 0) return;
-    const inc = all.map((d) => this.store(d)); const exc = none.map((d) => this.store(d));
-    const driver = inc.reduce((a, b) => (b.size < a.size ? b : a));
-    for (let k = driver.size - 1; k >= 0; k--) {
+    const na = all.length, nn = none.length; if (na === 0) return;
+    // ADR-212: no per-call map/reduce/every/some closures (hot: dozens of queries per tick)
+    let driver = this.store(all[0]!); for (let j = 1; j < na; j++) { const s = this.store(all[j]!); if (s.size < driver.size) driver = s; }
+    for (let j = 0; j < nn; j++) this.store(none[j]!); // throws on unregistered, as before
+    outer: for (let k = driver.size - 1; k >= 0; k--) {
       const e = driver.dense[k]!; const i = entityIndex(e);
-      if (inc.every((s) => s.has(i)) && !exc.some((s) => s.has(i))) yield e;
+      for (let j = 0; j < na; j++) if (!this.store(all[j]!).has(i)) continue outer;
+      for (let j = 0; j < nn; j++) if (this.store(none[j]!).has(i)) continue outer;
+      yield e;
     }
   }
 

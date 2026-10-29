@@ -53,7 +53,7 @@ export function buildAgentView(world: World, self: Entity, a: Agent, home: { x: 
   const facing = a.bb.num("facing", t.facing);
   const seen: SeenThing[] = [];
   for (const e of candidates ?? world.query([Transform], [Dead])) {
-    if (e === self) continue; if (candidates && world.has(e, Dead)) continue; const o = world.get(e, Transform); if (!o) continue;
+    if (e === self) continue; if (candidates && world.has(e, Dead)) continue; const ox = world.getField(e, Transform, "x"); if (ox === undefined) continue; const o = { x: ox, y: world.getField(e, Transform, "y")! }; // ADR-212: no full-record get() per candidate
     const kind = world.has(e, Zombie) ? "zombie" : world.has(e, ResourceNode) ? "node" : world.has(e, Animal) ? "animal" : world.has(e, Health) ? "player" : undefined;
     if (!kind) continue; if (kind === "node" && world.getField(e, ResourceNode, "amount") === 0) continue;
     const d = Math.hypot(o.x - t.x, o.y - t.y);
