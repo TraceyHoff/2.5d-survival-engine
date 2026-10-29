@@ -12,6 +12,8 @@ export class ChunkMembership {
   /** ADR-212: last numeric chunk per entity (skips the per-tick "cx,cy" string for entities moving inside their chunk). */
   private packed = new Map<Entity, number>();
   /** ADR-212: change log (entity, from, to) for versions logBase+1..version so interest can apply deltas instead of rebuilding. */
+  /** ADR-212: only consumers that trim (InterestGrid) turn the log on; otherwise set() keeps it empty (persistence's membership never grows one). */
+  logChanges = false;
   private logE: Entity[] = []; private logFrom: (ChunkKey | undefined)[] = []; private logTo: (ChunkKey | undefined)[] = []; private logBase = 0;
   /** Calls fn for every change after version `since`; false if the log no longer reaches back that far (caller must rebuild). */
   changesSince(since: number, fn: (e: Entity, from: ChunkKey | undefined, to: ChunkKey | undefined) => void): boolean {
@@ -34,8 +36,11 @@ export class ChunkMembership {
     const old = this.chunkOfEntity.get(e); if (old === k) return;
     if (old !== undefined) { const s = this.byChunk.get(old)!; s.delete(e); if (!s.size) this.byChunk.delete(old); }
     this.version++; this.packed.delete(e);
-    if (this.logE.length >= 65536) { this.logBase += this.logE.length; this.logE.length = 0; this.logFrom.length = 0; this.logTo.length = 0; }
-    this.logE.push(e); this.logFrom.push(old); this.logTo.push(k);
+    if (!this.logChanges) this.logBase = this.version;
+    else {
+      if (this.logE.length >= 65536) { this.logBase += this.logE.length; this.logE.length = 0; this.logFrom.length = 0; this.logTo.length = 0; }
+      this.logE.push(e); this.logFrom.push(old); this.logTo.push(k);
+    }
     if (k === undefined) this.chunkOfEntity.delete(e);
     else { this.chunkOfEntity.set(e, k); let s = this.byChunk.get(k); if (!s) this.byChunk.set(k, (s = new Set())); s.add(e); }
     this.onMove?.(e, old, k);

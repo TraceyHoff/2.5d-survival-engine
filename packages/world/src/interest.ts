@@ -29,6 +29,7 @@ export class InterestGrid {
   readonly radius: number; readonly hysteresis: number;
   private clients = new Map<number, State>();
   constructor(private membership: ChunkMembership, opts: InterestOptions = {}) {
+    membership.logChanges = true; membership.trimLog(membership.version);
     this.radius = opts.radius ?? 2; this.hysteresis = opts.hysteresis ?? 1;
   }
   /** Single-viewpoint shorthand for setClientViewpoints(id, [{x, y, r: radius}]). */

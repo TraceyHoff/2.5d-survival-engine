@@ -11,6 +11,7 @@ import { Animal, Dead, Health, ResourceNode, Zombie, agentOutputFrame, applyAgen
 import { ChatChannel, DirectClient, LoopbackNetwork, MultiServerTransport, NetClient, type ClientTransport, type ServerTransport } from "@engine/net";
 import { ClaimAccount, IndexedDbWorldStore, MemoryWorldStore, SetName, nameToWords, tokenToWords, type WorldStore } from "@engine/persist";
 import { detectDevice, isMobileHost, type DeviceHints } from "./p2p.js";
+import { MEMORY_BUDGETS } from "./memory-budget.js";
 import { createGameServer, type GameMode, type GameServer } from "@engine/server/game";
 import { Act, applyDemoInput, VEHICLE_CLIENT_OPTIONS, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS } from "@engine/server/protocol";
 
@@ -20,7 +21,7 @@ export const DESKTOP_MAX_BOTS = 32;
 /** ADR-110: wildlife caps follow the bot budget (mobile hosts get fewer animals), x0.6 under ?gl=lowend / ?safe=1. */
 export function animalCapMulFor(maxBots: number, lowEnd = false): number { return Math.min(1, Math.max(0.4, maxBots / DESKTOP_MAX_BOTS)) * (lowEnd ? 0.6 : 1); }
 function lowEndQuery(): boolean { try { const q = new URLSearchParams(globalThis.location?.search ?? ""); return q.get("gl") === "lowend" || q.get("safe") === "1"; } catch { return false; } }
-export function defaultMaxBots(d: DeviceHints = detectDevice()): number { return isMobileHost(d) ? MOBILE_MAX_BOTS : DESKTOP_MAX_BOTS; }
+export function defaultMaxBots(d: DeviceHints = detectDevice()): number { return isMobileHost(d) ? MOBILE_MAX_BOTS : d.console ? MEMORY_BUDGETS.console.maxBots : DESKTOP_MAX_BOTS; } // ADR-212: console memory profile
 
 export interface LocalServerOptions {
   store?: WorldStore; seed?: number;

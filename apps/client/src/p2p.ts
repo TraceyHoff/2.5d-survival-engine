@@ -4,6 +4,7 @@
  * channels (see @engine/net transport/rtc.ts and ADR-094). Swap PeerJS for e.g. a Cloudflare Worker by
  * implementing `Signaling`.
  */
+import { MEMORY_BUDGETS, isConsoleHost } from "./memory-budget.js";
 import { pipeFromDataChannel, type RTCDataChannelLike, type RtcPeerLink } from "@engine/net";
 
 /** Unambiguous alphabet: digits 2-9 + A-Z without I, L, O (no 0/O or 1/I/L confusion). 31 symbols, 31^6 ≈ 887M codes. */
@@ -30,17 +31,18 @@ export const formatRoomCode = (code: string): string => `${code.slice(0, 3)}-${c
 export const MOBILE_PLAYER_CAP = 6;
 export const DEFAULT_DESKTOP_PLAYER_CAP = 12;
 export const MAX_DESKTOP_PLAYER_CAP = 32;
-export interface DeviceHints { coarsePointer: boolean; uaMobile: boolean | undefined }
+export interface DeviceHints { coarsePointer: boolean; uaMobile: boolean | undefined; /** ADR-212: console browser (Xbox Edge) or ?profile=console */ console?: boolean }
 export function detectDevice(): DeviceHints {
   const coarse = typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
   const ua = (globalThis as { navigator?: { userAgentData?: { mobile?: boolean } } }).navigator?.userAgentData?.mobile;
-  return { coarsePointer: coarse, uaMobile: ua };
+  return { coarsePointer: coarse, uaMobile: ua, console: isConsoleHost() };
 }
 export const isMobileHost = (d: DeviceHints): boolean => d.uaMobile === true || d.coarsePointer;
 /** Player cap including the host. Mobile hosts are fixed at 6; desktop uses the configured cap (clamped 2..32). */
 export function hostPlayerCap(d: DeviceHints, desktopCap = DEFAULT_DESKTOP_PLAYER_CAP): { cap: number; mobile: boolean; detail: string } {
   const mobile = isMobileHost(d);
-  const cap = mobile ? MOBILE_PLAYER_CAP : Math.max(2, Math.min(MAX_DESKTOP_PLAYER_CAP, Math.floor(desktopCap) || DEFAULT_DESKTOP_PLAYER_CAP));
+  const max = d.console ? MEMORY_BUDGETS.console.hostPlayerCap : MAX_DESKTOP_PLAYER_CAP; // ADR-212 console memory profile
+  const cap = mobile ? MOBILE_PLAYER_CAP : Math.max(2, Math.min(max, Math.floor(desktopCap) || DEFAULT_DESKTOP_PLAYER_CAP));
   return { cap, mobile, detail: `the host's game is full (${cap} players max${mobile ? " on a mobile host" : ""})` };
 }
 
