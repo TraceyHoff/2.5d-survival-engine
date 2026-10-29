@@ -9,7 +9,8 @@
     "typecheck": "tsc -p tsconfig.json",
     "build": "tsc -p tsconfig.json && vite build",
     "dev": "vite",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "e2e:xbox": "node e2e/xbox-nav.mjs"
   },
   "dependencies": {
     "@engine/assets": "workspace:*",

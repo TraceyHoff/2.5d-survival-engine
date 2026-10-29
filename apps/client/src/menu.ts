@@ -6,7 +6,9 @@
 import { deleteConfirm, deleteLocalProgress, listLocalSaves, type LocalSaveKind } from "./delete-progress.js";
 import { mountUi } from "./ui-root.js";
 import { enterFullscreen } from "./fullscreen.js";
-import { BackHistory, focusVisible } from "./back-history.js";
+import { BackHistory, focusVisible, markNavFocus } from "./back-history.js";
+import { navPad, PadEdges, padKeyEdge, traceAction, type PadControl } from "./pad-input.js";
+const isTyping = (t: EventTarget | null): boolean => t instanceof HTMLInputElement && t.type !== "checkbox" && t.type !== "range";
 import { EasedBar, zombiePose } from "./load-progress.js";
 interface Branding { title: string; tagline: string; logo: string; bg: "" | "flat" | "parallax"; plates: boolean; icons: boolean; loading: boolean; loadingAnim: boolean }
 declare const __BRANDING__: Branding | undefined;
@@ -258,8 +260,11 @@ export class BootUI {
     let idx = focusables().indexOf(buttons[0]!); const focus = (i: number): void => { const f = focusables(); if (!f.length) return; idx = (i + f.length) % f.length; focusVisible(f[idx]); };
     panel.addEventListener("focusin", (e) => { const i = focusables().indexOf(e.target as HTMLElement); if (i >= 0) idx = i; }); // content added later (save picker)
     focus(idx);
-    if (this.keyHandler) removeEventListener("keydown", this.keyHandler);
+    if (this.keyHandler) { removeEventListener("keydown", this.keyHandler); removeEventListener("keyup", this.keyHandler); }
     this.keyHandler = (e: KeyboardEvent): void => {
+      // ADR-213: Edge on Xbox delivers the controller as GamepadDPadDown / keyCode 204 / GamepadA... keys
+      const pk = padKeyEdge(e); if (pk !== undefined) { if (!isTyping(e.target)) e.preventDefault(); if (pk) padDo(pk); return; }
+      if (e.type !== "keydown") return;
       const typing = (document.activeElement as HTMLElement | null)?.tagName === "INPUT" && (document.activeElement as HTMLInputElement).type !== "checkbox";
       if (e.key === "ArrowDown" || (!typing && (e.key === "s" || e.key === "S"))) { focus(idx + 1); e.preventDefault(); }
       else if (e.key === "ArrowUp" || (!typing && (e.key === "w" || e.key === "W"))) { focus(idx - 1); e.preventDefault(); }
@@ -267,18 +272,19 @@ export class BootUI {
       else if (e.key === "Enter" && e.target instanceof HTMLInputElement && e.target.type === "checkbox") { e.target.click(); e.preventDefault(); }
       else if (e.key === "Enter" && typing && buttons[0]) { buttons[0].click(); e.preventDefault(); }
     };
-    addEventListener("keydown", this.keyHandler);
+    const padDo = (c: PadControl): void => {
+      traceAction(`boot ${c}`); markNavFocus();
+      if (c === "DOWN" || c === "RIGHT") focus(idx + 1); else if (c === "UP" || c === "LEFT") focus(idx - 1);
+      else if (c === "A") { const f = focusables()[idx]; if (f instanceof HTMLInputElement && f.type !== "checkbox") focusVisible(f); else f?.click(); }
+      else if (c === "B") this.back?.();
+    };
+    addEventListener("keydown", this.keyHandler); addEventListener("keyup", this.keyHandler);
     cancelAnimationFrame(this.padTimer); const gen = ++this.padGen;
-    let prev = { up: false, down: false, a: false, b: false };
+    // ADR-213: every connected pad merged (an idle pad at index 0 hid the real one), mapping "" normalised, stick + D-pad with repeat
+    const edges = new PadEdges(["UP", "DOWN", "A", "B"]); edges.hold(navPad());
     const poll = (): void => {
       if (gen !== this.padGen) return; // a click inside this poll re-rendered / hid the menu: never keep a stale loop alive
-      const gp = [...(navigator.getGamepads?.() ?? [])].find((g) => g); if (gp) {
-        const ay = gp.axes[1] ?? 0; const cur = { up: !!gp.buttons[12]?.pressed || ay < -0.5, down: !!gp.buttons[13]?.pressed || ay > 0.5, a: !!gp.buttons[0]?.pressed, b: !!gp.buttons[1]?.pressed };
-        if (cur.down && !prev.down) focus(idx + 1); if (cur.up && !prev.up) focus(idx - 1);
-        if (cur.a && !prev.a) { const f = focusables()[idx]; f?.click(); }
-        if (cur.b && !prev.b) this.back?.();
-        prev = cur;
-      }
+      for (const c of edges.step(navPad(), performance.now())) { padDo(c); if (gen !== this.padGen) return; }
       if (gen !== this.padGen) return;
       this.padTimer = requestAnimationFrame(poll);
     };
@@ -286,7 +292,7 @@ export class BootUI {
   }
 
   hide(): void {
-    cancelAnimationFrame(this.padTimer); this.padGen++; if (this.keyHandler) removeEventListener("keydown", this.keyHandler);
+    cancelAnimationFrame(this.padTimer); this.padGen++; if (this.keyHandler) { removeEventListener("keydown", this.keyHandler); removeEventListener("keyup", this.keyHandler); }
     this.history.sync(false); this.history.destroy();
     this.root.classList.add("hide"); this.root.dataset["boot"] = "done"; setTimeout(() => this.root.remove(), 400);
   }

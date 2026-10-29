@@ -5,6 +5,7 @@
  * Confirm = type DELETE and press Delete, OR hold the "Hold to delete" button for HOLD_MS (mouse/touch press, Enter/Space
  * held, or gamepad A held while it is focused). Nothing is deleted on a single tap/click/A press.
  */
+import { gamepadKeyControl, navPad, padHeld } from "./pad-input.js";
 export const DELETE_WORD = "DELETE";
 export const HOLD_MS = 1500;
 /** localStorage keys reset only when the player opts in ("Also reset settings"). */
@@ -55,10 +56,14 @@ export function deleteConfirm(o: DeleteConfirmOptions): DeleteConfirm {
     finally { busy = false; }
   };
   const paint = (f: number): void => { hold.style.background = f > 0 ? `linear-gradient(90deg,#d9534f ${Math.round(f * 100)}%,transparent ${Math.round(f * 100)}%)` : ""; hold.textContent = f > 0 ? `Hold… ${Math.ceil(((1 - f) * HOLD_MS) / 100) / 10}s` : "Hold to delete"; };
-  const padA = (): boolean => document.activeElement === hold && pads().some((p) => !!p?.buttons[0]?.pressed);
+  // ADR-213: merged pads (mapping "" normalised) or Edge's keyboard-emulated GamepadA held on the hold button
+  let padKeyA = false;
+  const onPadKey = (e: KeyboardEvent): void => { if (gamepadKeyControl(e) === "A") padKeyA = e.type === "keydown" && document.activeElement === hold; };
+  addEventListener("keydown", onPadKey, true); addEventListener("keyup", onPadKey, true); addEventListener("blur", () => { padKeyA = false; });
+  const padA = (): boolean => document.activeElement === hold && (padKeyA || padHeld(navPad(pads as never), "A"));
   const tick = (): void => {
     if (destroyed) return;
-    if (el.isConnected) shown = true; else if (shown) { destroyed = true; return; } // dialog closed/replaced
+    if (el.isConnected) shown = true; else if (shown) { destroyed = true; removeEventListener("keydown", onPadKey, true); removeEventListener("keyup", onPadKey, true); return; } // dialog closed/replaced
     const held = keyHeld || pointerHeld || padA();
     if (!held || done || busy || !can()) { if (holdFrom !== undefined) { holdFrom = undefined; paint(0); } }
     else { holdFrom ??= now(); const f = Math.min(1, (now() - holdFrom) / HOLD_MS); paint(f); if (f >= 1) void confirm(); }
@@ -76,7 +81,7 @@ export function deleteConfirm(o: DeleteConfirmOptions): DeleteConfirm {
   cancel.addEventListener("click", () => { if (!busy) o.onCancel(); });
   sync();
   if (!o.manualTick) raf = frame(tick);
-  return { el, tick, refresh: sync, destroy: () => { destroyed = true; (globalThis.cancelAnimationFrame ?? clearTimeout)(raf); }, get done() { return done; } };
+  return { el, tick, refresh: sync, destroy: () => { destroyed = true; removeEventListener("keydown", onPadKey, true); removeEventListener("keyup", onPadKey, true); (globalThis.cancelAnimationFrame ?? clearTimeout)(raf); }, get done() { return done; } };
 }
 
 type Factory = Pick<IDBFactory, "deleteDatabase"> & { databases?: () => Promise<{ name?: string }[]> };

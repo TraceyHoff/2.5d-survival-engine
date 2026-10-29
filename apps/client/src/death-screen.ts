@@ -6,6 +6,7 @@
  * respawned us yet. After respawn a compass pill points at the newest death bag ("Your bag 23 m") until it is looted.
  * Hooks: `#death-screen[data-ready]`, `#death-respawn`, `#bag-compass[data-dist]`.
  */
+import { navPad, padHeld, padKeyEdge } from "./pad-input.js";
 import { setData, setDisabled, setHidden, setStyle, setText } from "./dom-diff.js";
 import { PlayerId, Transform, type Entity, type World } from "@engine/core";
 import { worldToScreen } from "@engine/world";
@@ -69,9 +70,12 @@ export function mountDeathScreen(root: HTMLElement, o: DeathScreenOptions): Deat
   btn.addEventListener("click", (e) => { e.preventDefault(); press(); });
   addEventListener("keydown", (e) => {
     if (!dead) return;
+    // ADR-213: Edge on Xbox sends the controller as keys (GamepadA / GamepadMenu / keyCode 195/207)
+    const pk = padKeyEdge(e); if (pk !== undefined) { e.preventDefault(); e.stopImmediatePropagation(); if (pk === "A" || pk === "START") press(); return; }
     if (e.code === "Enter" || e.code === "Space" || e.code === "KeyR" || e.code === "NumpadEnter") { e.preventDefault(); e.stopPropagation(); if (!e.repeat) press(); }
     else if (e.code === "Escape" || e.code === "Tab") { e.preventDefault(); e.stopPropagation(); } // nothing else to open while dead
   }, true);
+  addEventListener("keyup", (e) => { if (dead) padKeyEdge(e); }, true);
   const pads = (): readonly (Gamepad | null)[] => { try { return o.getGamepads?.() ?? (typeof navigator !== "undefined" && navigator.getGamepads ? navigator.getGamepads() : []); } catch { return []; } };
   function update(): void {
     const s = deathUiState(dead, deadAt, now(), sentAt);
@@ -87,7 +91,7 @@ export function mountDeathScreen(root: HTMLElement, o: DeathScreenOptions): Deat
     if (isDead && !dead) { dead = true; deadAt = now(); sentAt = undefined; const t0 = p !== undefined ? w.get(p, Transform) : undefined; deathSpot = t0 ? { x: t0.x, y: t0.y } : undefined; o.onDeath?.(); }
     else if (!isDead && dead) { dead = false; sentAt = undefined; (document.activeElement as HTMLElement | null)?.blur?.(); }
     if (dead) {
-      const pad = pads().some((g) => !!g && (g.buttons[0]?.pressed || g.buttons[9]?.pressed));
+      const g = navPad(pads as never), pad = padHeld(g, "A") || padHeld(g, "START"); // ADR-213: merged + mapping "" normalised
       if (pad && !prevPad) press();
       prevPad = pad;
     } else prevPad = false;

@@ -13,6 +13,7 @@
 import { FocusManager, type Dir } from "@engine/input";
 import { BackHistory, focusVisible, markNavFocus, revealAboveFooter } from "./back-history.js";
 import { buildSignEditor } from "./sign-editor.js";
+import { gamepadKeyControl, navPad, padArbiter, traceAction, type PadControl, type PadSource } from "./pad-input.js";
 
 export interface ContextStack { push(name: string): void; pop(name?: string): void; isActive?(name: string): boolean }
 /** Input contexts in which Esc belongs to the game (Build.Cancel / Road.Cancel, ADR-122), not the pause menu. */
@@ -37,7 +38,7 @@ export interface UINavOptions {
   /** default true: Android/browser back (popstate) closes the top modal */
   history?: boolean;
 }
-export interface GamepadLikeNav { buttons: readonly { pressed: boolean }[]; axes: readonly number[] }
+export interface GamepadLikeNav { buttons: readonly { pressed: boolean; value?: number }[]; axes: readonly number[]; mapping?: string; id?: string; index?: number; connected?: boolean }
 export const PAD = { A: 0, B: 1, X: 2, Y: 3, LB: 4, RB: 5, LT: 6, RT: 7, SELECT: 8, START: 9, UP: 12, DOWN: 13, LEFT: 14, RIGHT: 15 } as const;
 /** Face/shoulder shortcuts inside an open modal: clicks its enabled `[data-pad=<name>]` control (e.g. camper Y = add fuel, LB/RB = tabs). */
 export const PAD_SHORTCUTS = ["X", "Y", "LB", "RB", "LT", "RT"] as const;
@@ -47,30 +48,42 @@ export const PAD_GLYPH: Record<string, string> = { A: "Ⓐ", B: "Ⓑ", X: "Ⓧ",
 let padUiHooked = false;
 export function setPadUi(on: boolean, doc: Document | undefined = typeof document !== "undefined" ? document : undefined): void {
   if (!doc) return; if (on) doc.documentElement.dataset["padUi"] = "1"; else delete doc.documentElement.dataset["padUi"];
-  if (!padUiHooked) { padUiHooked = true; const off = (): void => setPadUi(false, doc); doc.addEventListener("pointerdown", off, true); doc.addEventListener("keydown", off, true); }
+  if (!padUiHooked) { padUiHooked = true; const off = (): void => setPadUi(false, doc); doc.addEventListener("pointerdown", off, true);
+    // ADR-213: Edge keyboard emulation delivers the PAD as keys (GamepadDPadUp / keyCode 203): those keep the pad UI on
+    doc.addEventListener("keydown", (e) => { if (gamepadKeyControl(e) === undefined) off(); }, true); }
 }
 const HINT_CSS = `.pad-hints{display:none;position:sticky;bottom:0;z-index:2;gap:12px;flex-wrap:wrap;justify-content:center;padding:4px 8px;margin-top:6px;background:rgba(43,28,36,.92);color:#FFFAF0;font:700 13px Fredoka,system-ui,sans-serif;border-radius:8px;pointer-events:none}
 :root[data-pad-ui] .pad-hints{display:flex}.pad-hints b{display:inline-block;min-width:20px;text-align:center;margin-right:3px;color:#FFD45A}
 :root[data-pad-ui] [data-modal] :focus{outline:3px solid #FFD45A !important;outline-offset:2px;box-shadow:0 0 0 6px rgba(255,212,90,.35)}`;
 const FOCUSABLE = "button,input,select,textarea,a[href],[tabindex]:not([tabindex='-1'])";
+const DIR_OF: Partial<Record<PadControl, Dir>> = { UP: "up", DOWN: "down", LEFT: "left", RIGHT: "right" };
+const CTL_OF: Record<Dir, PadControl> = { up: "UP", down: "DOWN", left: "LEFT", right: "RIGHT" };
+const ARROWS: Record<string, PadControl> = { ArrowUp: "UP", ArrowDown: "DOWN", ArrowLeft: "LEFT", ArrowRight: "RIGHT" };
 const isText = (el: Element | null): boolean => (el instanceof HTMLInputElement && !["checkbox", "radio", "button", "submit", "range"].includes(el.type)) || el instanceof HTMLTextAreaElement || (el instanceof HTMLElement && el.isContentEditable);
 
 export class UINav {
   private stack: { id: string; el: HTMLElement; onClose?: (() => void) | undefined; restore: Element | null }[] = [];
   private prevPad: Record<string, boolean> = {};
   private held: Dir | undefined; private nextAt = 0; private raf = 0;
+  /** ADR-213: repeat clock = poll time with each step capped at 120 ms, so one long frame (a hitch on a console) never turns a tap into a repeat. */
+  private vnow = 0; private lastPoll = 0;
   private readonly onKey = (e: KeyboardEvent): void => this.key(e);
   /** Android/browser back closes the top modal like Esc / B (ADR-107); opt out with history:false. */
   private readonly backHistory: BackHistory | undefined;
   private bootHold = false;
+  /** ADR-213: a keyboard-emulated pad direction being held (repeat is ours: Edge may not auto-repeat pad keys). */
+  private keyHeld: { ctl: PadControl; dir: Dir; nextAt: number } | undefined;
+  private readonly onKeyUp = (e: KeyboardEvent): void => { const c = gamepadKeyControl(e); if (c) { padArbiter.release(c, "key", this.t()); if (this.keyHeld?.ctl === c) this.keyHeld = undefined; } else if (ARROWS[e.key]) padArbiter.release(ARROWS[e.key]!, "arrow", this.t()); };
+  private readonly onBlur = (): void => { this.keyHeld = undefined; };
+  private t(): number { return this.o.now?.() ?? performance.now(); }
   constructor(readonly o: UINavOptions) {
-    addEventListener("keydown", this.onKey, true);
+    padArbiter.reset(); addEventListener("keydown", this.onKey, true); addEventListener("keyup", this.onKeyUp, true); addEventListener("blur", this.onBlur);
     // ADR-139: menus built mid-press (Start in the character creator enters the world) ignore buttons already held until released
-    try { const g = (o.getGamepads?.() ?? (typeof navigator !== "undefined" ? [...(navigator.getGamepads?.() ?? [])] : [])).find((x) => !!x); this.bootHold = !o.ignoreBoot && !!g?.buttons.some((x) => x?.pressed); } catch { /* no gamepad API */ }
+    { const g = navPad(o.getGamepads); this.bootHold = !o.ignoreBoot && !!g?.buttons.some((x) => x.pressed); }
     this.backHistory = o.history === false ? undefined : new BackHistory(() => { this.close(); });
     if (o.pollGamepads !== false && typeof requestAnimationFrame === "function") { const loop = (): void => { this.pollGamepad(); this.raf = requestAnimationFrame(loop); }; this.raf = requestAnimationFrame(loop); }
   }
-  destroy(): void { removeEventListener("keydown", this.onKey, true); if (this.raf) cancelAnimationFrame(this.raf); this.closeAll(); this.backHistory?.destroy(); }
+  destroy(): void { removeEventListener("keydown", this.onKey, true); removeEventListener("keyup", this.onKeyUp, true); removeEventListener("blur", this.onBlur); if (this.raf) cancelAnimationFrame(this.raf); this.closeAll(); this.backHistory?.destroy(); }
 
   /** The top modal element (ADR-200 tab cycling). */
   stack_top(): HTMLElement | undefined { return this.stack.at(-1)?.el; }
@@ -181,7 +194,37 @@ export class UINav {
   }
   private pause(): void { this.o.onPause?.(); }
 
+  /** ADR-213: one logical pad control from either source (Gamepad API poll or Edge keyboard emulation). */
+  private padAction(c: PadControl, src: PadSource): void {
+    traceAction(`${src} ${c} -> ${this.top ?? "(no modal)"}`);
+    if (c === "START") { if (this.top === "pause") this.close(); else this.pause(); return; }
+    if (!this.isOpen) return; // Select / D-pad / A... belong to gameplay with no modal open (ADR-139)
+    const d = DIR_OF[c]; if (d) { this.move(d); return; }
+    if (c === "SELECT") { if (this.top === "inventory") this.close(); return; }
+    if (c === "A") { this.activate(true); return; }
+    if (c === "B") { this.close(); return; }
+    if (c === "LB" || c === "RB" || c === "LT" || c === "RT" || c === "X" || c === "Y") { if (!this.padShortcut(c) && c !== "X" && c !== "Y") this.o.onPage?.(c === "LB" || c === "LT" ? -1 : 1, c === "LB" || c === "RB" ? "tab" : "page"); this.hints(); }
+  }
+  /** ADR-213: Edge on Xbox (gamepadInputEmulation 'keyboard', or the setting ignored) sends the controller as key events:
+   *  key "GamepadDPadUp" / "GamepadLeftThumbstickUp" / "GamepadA"... or "Unidentified" with keyCode 195..218. */
+  private padKey(e: KeyboardEvent, c: PadControl | null): void {
+    if (!this.o.ignoreBoot && typeof document !== "undefined" && document.querySelector("[data-boot]")) return; // the boot menu owns the pad
+    if (typeof document !== "undefined" && !document.documentElement.dataset["padUi"]) setPadUi(true); markNavFocus();
+    if (c === null || (!this.isOpen && c !== "START")) return; // gameplay gets it (browser input adapter: virtual pad)
+    e.preventDefault(); e.stopPropagation();
+    const t = this.t(); if (!padArbiter.claim(c, "key", t, 1000)) { traceAction(`key ${c} dropped (pad API owns it)`); return; }
+    if (e.repeat || this.keyHeld?.ctl === c) return; // repeat comes from our own timer (keyRepeat), never twice
+    const d = DIR_OF[c]; this.keyHeld = d ? { ctl: c, dir: d, nextAt: this.vnow + 400 } : undefined;
+    this.padAction(c, "key");
+  }
+  private keyRepeat(now: number, v: number): void {
+    const k = this.keyHeld; if (!k || v < k.nextAt) return;
+    if (!this.isOpen) { this.keyHeld = undefined; return; }
+    padArbiter.claim(k.ctl, "key", now, 1000); k.nextAt = v + 110; this.move(k.dir); traceAction(`key ${k.ctl} repeat`);
+  }
+
   private key(e: KeyboardEvent): void {
+    const pc = gamepadKeyControl(e); if (pc !== undefined) { this.padKey(e, pc); return; }
     const typing = isText(document.activeElement);
     if (!this.isOpen) {
       if (typing) return;
@@ -195,7 +238,10 @@ export class UINav {
     if (e.key === "Tab") { this.step(e.shiftKey ? -1 : 1); e.preventDefault(); e.stopPropagation(); return; }
     if (typing) { if (e.key === "Enter") { this.activate(); e.preventDefault(); } return; }
     const dirs: Record<string, Dir> = { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right" };
-    const d = dirs[e.key]; if (d) { this.move(d); e.preventDefault(); e.stopPropagation(); return; }
+    const d = dirs[e.key]; if (d) { e.preventDefault(); e.stopPropagation();
+      // ADR-213: Edge may turn the same D-pad press into ArrowDown too: the pad API / pad key that already moved owns it
+      if (!padArbiter.claim(ARROWS[e.key]!, "arrow", this.t(), 150)) { traceAction(`arrow ${e.key} dropped (pad owns it)`); return; }
+      this.move(d); return; }
     // hold-to-confirm buttons (data-hold, e.g. delete progress) handle their own Enter/Space press + release
     if ((e.key === "Enter" || e.key === " ") && (e.target as HTMLElement | null)?.dataset?.["hold"] !== undefined) return;
     if (e.key === "Enter" || e.key === " ") { this.activate(); e.preventDefault(); e.stopPropagation(); return; }
@@ -203,30 +249,44 @@ export class UINav {
     const h = this.o.hotkeys?.[e.code]; if (h && !e.ctrlKey && !e.metaKey && !e.altKey) { h(); e.preventDefault(); e.stopPropagation(); }
   }
 
-  /** One gamepad sample (edge-detected; stick/D-pad repeat 400ms then 110ms). Called per frame; exposed for tests. */
+  /** One gamepad sample (edge-detected; stick/D-pad repeat 400ms then 110ms). Called per frame; exposed for tests.
+   *  ADR-213: every connected pad is merged (an idle pad at index 0 no longer hides the live one at index 1), mapping ""
+   *  pads are normalised (hat D-pad, View/Menu), and a press also delivered as a pad key / arrow key acts only once. */
   pollGamepad(): void {
-    const pads = this.o.getGamepads?.() ?? (typeof navigator !== "undefined" ? [...(navigator.getGamepads?.() ?? [])] : []);
-    const gp = pads.find((g): g is GamepadLikeNav => !!g); if (!gp) return;
-    const b = (i: number): boolean => !!gp.buttons[i]?.pressed;
-    const edge = (k: string, v: boolean): boolean => { const was = this.prevPad[k]; this.prevPad[k] = v; return v && !was; };
-    const start = edge("start", b(PAD.START)), select = edge("select", b(PAD.SELECT)), a = edge("a", b(PAD.A)), bb = edge("b", b(PAD.B));
-    const ax = gp.axes[0] ?? 0, ay = gp.axes[1] ?? 0;
+    const now = this.t();
+    this.vnow += this.lastPoll ? Math.min(Math.max(now - this.lastPoll, 0), 120) : 16; this.lastPoll = now; const v = this.vnow;
+    this.keyRepeat(now, v);
+    const gp = navPad(this.o.getGamepads); if (!gp) return;
+    const raw = (i: number): boolean => !!gp.buttons[i]?.pressed;
     // boot menu / character creator own the pad (Start there = Enter world); a button still held from there is ignored until released
-    if (!this.o.ignoreBoot && typeof document !== "undefined" && document.querySelector("[data-boot]")) { this.bootHold = true; return; }
-    if (this.bootHold) { if (gp.buttons.some((x) => x?.pressed)) return; this.bootHold = false; }
-    const dir: Dir | undefined = b(PAD.UP) ? "up" : b(PAD.DOWN) ? "down" : b(PAD.LEFT) ? "left" : b(PAD.RIGHT) ? "right"
+    if (!this.o.ignoreBoot && typeof document !== "undefined" && document.querySelector("[data-boot]")) { this.bootHold = true; for (const k of Object.keys(PAD)) this.prevPad[k] = raw(PAD[k as keyof typeof PAD]); return; }
+    if (this.bootHold) { if (gp.buttons.some((x) => x.pressed)) return; this.bootHold = false; }
+    const ax = gp.axes[0] ?? 0, ay = gp.axes[1] ?? 0;
+    const dir: Dir | undefined = raw(PAD.UP) ? "up" : raw(PAD.DOWN) ? "down" : raw(PAD.LEFT) ? "left" : raw(PAD.RIGHT) ? "right"
       : Math.max(Math.abs(ax), Math.abs(ay)) < 0.5 ? undefined : Math.abs(ax) > Math.abs(ay) ? (ax < 0 ? "left" : "right") : ay < 0 ? "up" : "down";
-    const now = this.o.now?.() ?? performance.now();
-    if (gp.buttons.some((x) => x?.pressed) || dir) { if (typeof document !== "undefined" && !document.documentElement.dataset["padUi"]) setPadUi(true); }
-    if (start) { if (this.top === "pause") this.close(); else this.pause(); return; }
+    if (gp.buttons.some((x) => x.pressed) || dir) { if (typeof document !== "undefined" && !document.documentElement.dataset["padUi"]) setPadUi(true); }
+    /** Edge + ownership: true on the frame `name` goes down AND this source owns it (not already handled as a key). */
+    const press = (name: PadControl, v: boolean): boolean => {
+      const was = this.prevPad[name]; this.prevPad[name] = v;
+      if (!v) { if (was) padArbiter.release(name, "api", now); return false; }
+      const owned = padArbiter.claim(name, "api", now);
+      if (!was && !owned) traceAction(`api ${name} dropped (key owns it)`);
+      return !was && owned;
+    };
+    const DIRC = dir ? CTL_OF[dir] : undefined;
+    if (this.held && this.held !== dir) padArbiter.release(CTL_OF[this.held], "api", now);
+    const dirOwned = DIRC ? padArbiter.claim(DIRC, "api", now) : false;
+    if (press("START", raw(PAD.START))) { this.padAction("START", "api"); return; }
+    const select = press("SELECT", raw(PAD.SELECT)), a = press("A", raw(PAD.A)), bb = press("B", raw(PAD.B));
+    const sc = PAD_SHORTCUTS.filter((n) => press(n, raw(PAD[n])));
     if (!this.isOpen) { this.held = dir; return; } // Select is the inventory action in gameplay (ADR-139), not pause
-    if (select && this.top === "inventory") { this.close(); return; }
-    if (dir !== this.held) { this.held = dir; if (dir) { this.move(dir); this.nextAt = now + 400; } }
-    else if (dir && now >= this.nextAt) { this.move(dir); this.nextAt = now + 110; }
-    if (a) { this.activate(true); return; }
-    if (bb) { this.close(); return; }
+    if (select && this.top === "inventory") { this.padAction("SELECT", "api"); return; }
+    if (dir !== this.held) { this.held = dir; if (dir) { if (dirOwned) this.padAction(DIRC!, "api"); else traceAction(`api ${DIRC} dropped (key owns it)`); this.nextAt = v + 400; } }
+    else if (dir && v >= this.nextAt) { if (dirOwned) this.move(dir); this.nextAt = v + 110; }
+    if (a) { this.padAction("A", "api"); return; }
+    if (bb) { this.padAction("B", "api"); return; }
     // X / Y / LB / RB / LT / RT: the modal's own [data-pad] control wins; otherwise LB/RB switch tabs and LT/RT page (onPage)
-    for (const n of PAD_SHORTCUTS) if (edge(n, b(PAD[n])) && !this.padShortcut(n) && n !== "X" && n !== "Y") this.o.onPage?.(n === "LB" || n === "LT" ? -1 : 1, n === "LB" || n === "RB" ? "tab" : "page");
+    for (const n of sc) this.padAction(n, "api");
     this.hints();
   }
 }

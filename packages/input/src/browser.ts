@@ -7,6 +7,7 @@
  */
 import { GamepadDevice, KeyboardMouseDevice, TouchDevice, type GamepadLike } from "./devices.js";
 import type { StorageAdapter, InputSystem } from "./system.js";
+import { gamepadKeyControl, normalizePad, type PadControl, type RawPad } from "./xbox.js";
 import { GestureRecognizer, VirtualControls, type Gesture, type Insets, type VirtualLayout } from "./touch.js";
 
 export interface BrowserInputOptions {
@@ -27,6 +28,13 @@ export interface BrowserInput { kbm: KeyboardMouseDevice; touch: TouchDevice; pa
 export function localStorageAdapter(key = "engine.input.bindings"): StorageAdapter {
   return { load: () => { try { return globalThis.localStorage?.getItem(key) ?? null; } catch { return null; } }, save: (d) => { try { globalThis.localStorage?.setItem(key, d); } catch { /* quota/private mode */ } } };
 }
+const KEY_PAD_BUTTON: Partial<Record<PadControl, string>> = { A: "pad.a", B: "pad.b", X: "pad.x", Y: "pad.y", LB: "pad.lb", RB: "pad.rb", LT: "pad.lt", RT: "pad.rt", SELECT: "pad.select", START: "pad.start", LS: "pad.ls", RS: "pad.rs", UP: "pad.dup", DOWN: "pad.ddown", LEFT: "pad.dleft", RIGHT: "pad.dright" };
+/** ADR-213: a pad with mapping "" (hat D-pad, View/Menu at 6/7) in the standard layout GamepadDevice expects. */
+function standardPad(gp: GamepadLike): GamepadLike {
+  if (gp.mapping === "standard") return gp;
+  const n = normalizePad(gp as unknown as RawPad);
+  return { index: gp.index, id: gp.id, connected: gp.connected, mapping: "standard", buttons: n.buttons, axes: n.axes, ...(gp.vibrationActuator ? { vibrationActuator: gp.vibrationActuator } : {}), ...(gp.hapticActuators ? { hapticActuators: gp.hapticActuators } : {}) };
+}
 const isTextTarget = (t: EventTarget | null) => t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || (t instanceof HTMLElement && t.isContentEditable);
 
 export function attachBrowserInput(el: HTMLElement, input: InputSystem, opts: BrowserInputOptions = {}): BrowserInput {
@@ -45,8 +53,21 @@ export function attachBrowserInput(el: HTMLElement, input: InputSystem, opts: Br
   // fullscreen enter/exit and rotation change the element's size without always firing a window resize first
   resize(); on(window, "resize", resize); on(document, "fullscreenchange", () => { controls?.reset(); resize(); }); on(document, "webkitfullscreenchange", resize);
   on(window, "orientationchange", () => { controls?.reset(); resize(); });
-  on(window, "keydown", (e: KeyboardEvent) => { if (isTextTarget(e.target)) return; kbm.press(`key.${e.code}`); if (prevent.has(e.code)) e.preventDefault(); });
-  on(window, "keyup", (e: KeyboardEvent) => kbm.release(`key.${e.code}`));
+  // ADR-213: Edge (Xbox) keyboard emulation sends the controller as keys (GamepadA / keyCode 195...): feed them to a
+  // virtual gamepad so gameplay (and the prompt device) see a gamepad, never stray keyboard keys.
+  let keyPad: GamepadDevice | undefined;
+  const padKey = (e: KeyboardEvent, down: boolean): boolean => {
+    const c = gamepadKeyControl(e); if (c === undefined) return false;
+    if (c !== null) {
+      if (!keyPad) { keyPad = new GamepadDevice(-1, "keyboard-emulated gamepad"); pads.set(-1, keyPad); input.addDevice(keyPad); }
+      const stick = /Thumbstick(Up|Down|Left|Right)$/.test(e.key) || (e.keyCode >= 211 && e.keyCode <= 214);
+      if (stick) { const ax = c === "LEFT" || c === "RIGHT" ? "pad.lx" : "pad.ly"; keyPad.set(ax, down ? (c === "LEFT" || c === "UP" ? -1 : 1) : 0); }
+      else { const b = KEY_PAD_BUTTON[c]; if (b) { if (down) keyPad.press(b); else keyPad.release(b); } }
+    }
+    if (!isTextTarget(e.target)) e.preventDefault(); return true;
+  };
+  on(window, "keydown", (e: KeyboardEvent) => { if (padKey(e, true)) return; if (isTextTarget(e.target)) return; kbm.press(`key.${e.code}`); if (prevent.has(e.code)) e.preventDefault(); });
+  on(window, "keyup", (e: KeyboardEvent) => { if (padKey(e, false)) return; kbm.release(`key.${e.code}`); });
   const btn = ["mouse.left", "mouse.middle", "mouse.right", "mouse.back", "mouse.forward"];
   const rel = (e: PointerEvent) => { const r = el.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
   on(el, "pointerdown", (e: PointerEvent) => {
@@ -73,7 +94,7 @@ export function attachBrowserInput(el: HTMLElement, input: InputSystem, opts: Br
   on(window, "gamepadconnected", (e: GamepadEvent) => { const d = new GamepadDevice(e.gamepad.index, e.gamepad.id); pads.set(e.gamepad.index, d); input.addDevice(d); });
   on(window, "gamepaddisconnected", (e: GamepadEvent) => { const d = pads.get(e.gamepad.index); if (d) { d.releaseAll(); d.connected = false; input.removeDevice(d); pads.delete(e.gamepad.index); } });
   let raf = 0; const poll = (t: number) => {
-    for (const gp of navigator.getGamepads?.() ?? []) { if (!gp) continue; let d = pads.get(gp.index); if (!d) { d = new GamepadDevice(gp.index, gp.id); pads.set(gp.index, d); input.addDevice(d); } d.poll(gp as unknown as GamepadLike); }
+    for (const gp of navigator.getGamepads?.() ?? []) { if (!gp) continue; let d = pads.get(gp.index); if (!d) { d = new GamepadDevice(gp.index, gp.id); pads.set(gp.index, d); input.addDevice(d); } d.poll(standardPad(gp as unknown as GamepadLike)); }
     gestures.update(t); raf = requestAnimationFrame(poll);
   };
   raf = requestAnimationFrame(poll);

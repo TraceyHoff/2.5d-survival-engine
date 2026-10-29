@@ -61,14 +61,18 @@ import { TutorialProber } from "./tutorial/probe.js";
 import { Survival, heldTool, ResourceNode, toolHint, Animal, LootBag, openContainer } from "@engine/gameplay";
 import { AudioSystem } from "./audio/index.js";
 import { mountDeathScreen, type DeathScreen } from "./death-screen.js";
+import { mountPadDebug } from "./pad-input.js";
 import { RespawnCmd, partyView, clanView } from "@engine/gameplay";
 // ADR-200: Xbox Edge — deliver the controller as a Gamepad (not emulated mouse/keys) so UINav owns menu navigation.
+// ADR-213: index.html sets it before any module runs too; pad keys (if Edge still emulates) are handled everywhere.
 try { const nv = navigator as Navigator & { gamepadInputEmulation?: string }; if ("gamepadInputEmulation" in nv) nv.gamepadInputEmulation = "gamepad"; } catch { /* read-only on some engines */ }
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 /** Everything (canvas, HUD, touch overlay, menu bar, modals) lives in this root; fullscreen targets it (ADR-095). */
 const root = uiRoot();
 const params = new URLSearchParams(location.search);
+// ADR-213: ?padDebug=1 — raw gamepad / pad-key readout for diagnosing real controllers (Xbox Edge)
+if (params.get("padDebug") === "1") mountPadDebug();
 /** Clan roster + online directory from the server (reset per client). */
 const social = new SocialDirectory();
 let ctx: CanvasRenderingContext2D | null = null;

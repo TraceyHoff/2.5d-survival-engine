@@ -11,6 +11,8 @@
  * mouse), ⟲/⟳, LB/RB on a gamepad. Rendered at the device DPR (integer pixel scale in 2D: no blur).
  * The panel scrolls (overflow:auto, touch pan) and fits fullscreen phones (dvh units).
  */
+import { navPad, PadEdges, padKeyEdge, traceAction, type PadControl } from "./pad-input.js";
+import { markNavFocus } from "./back-history.js";
 import type { AssetRegistry } from "@engine/assets";
 import { buildSignEditor } from "./sign-editor.js";
 import { UINav } from "./ui-nav.js";
@@ -279,6 +281,9 @@ export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter
   const focusables = (): HTMLElement[] => Array.from(panel.querySelectorAll<HTMLElement>("input,button:not(:disabled)"));
   const move = (d: number): void => { const f = focusables(); const i = f.indexOf(doc.activeElement as HTMLElement); const n = f[(i + d + f.length) % f.length]; n?.focus(); n?.scrollIntoView?.({ block: "nearest" }); };
   const onKey = (e: KeyboardEvent): void => {
+    // ADR-213: Edge on Xbox sends the controller as keys (GamepadDPadDown / keyCode 204 / GamepadA): same actions as the pad poll
+    const pk = padKeyEdge(e); if (pk !== undefined) { e.preventDefault(); padActive = true; if (pk && !oskNav) padDo(pk); return; }
+    if (e.type !== "keydown") return;
     const typing = doc.activeElement === nameIn;
     if (!typing && (e.key === "ArrowLeft" || e.key === "ArrowRight")) { const bs = (doc.activeElement as HTMLElement | null)?.parentElement?.querySelectorAll<HTMLButtonElement>("button"); if (bs && bs.length === 2) { bs[e.key === "ArrowLeft" ? 0 : 1]!.click(); e.preventDefault(); return; } }
     if (e.key === "Escape") { done(undefined); e.preventDefault(); }
@@ -286,29 +291,35 @@ export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter
     else if (e.key === "ArrowUp") { move(-1); e.preventDefault(); }
     else if (e.key === "Enter" && typing) { ok.click(); e.preventDefault(); }
   };
-  doc.addEventListener("keydown", onKey);
+  doc.addEventListener("keydown", onKey); doc.addEventListener("keyup", onKey);
   const pads = o.pads ?? (() => (typeof navigator !== "undefined" && navigator.getGamepads ? navigator.getGamepads() : []));
-  let prev = { up: false, down: false, left: false, right: false, a: false, b: false, y: false, lb: false, rb: false, start: false }; let raf = 0, last = 0, padActive = false; const win = doc.defaultView;
+  let raf = 0, last = 0, padActive = false; const win = doc.defaultView;
+  // ADR-213: all connected pads merged + mapping "" normalised (navPad); D-pad / stick repeat; shared with the pad-key path
+  const edges = new PadEdges(["UP", "DOWN", "LEFT", "RIGHT", "A", "B", "Y", "LB", "RB", "START"]);
+  const padDo = (c: PadControl): void => {
+    traceAction(`creator ${c}`); markNavFocus();
+    if (c === "LB" || c === "RB") { auto = false; turn(c === "LB" ? -1 : 1); return; }
+    if (c === "DOWN") { move(1); return; } if (c === "UP") { move(-1); return; }
+    const a = doc.activeElement as HTMLElement | null; const rowBox = a?.parentElement;
+    if (c === "LEFT" || c === "RIGHT") { const bs = rowBox?.querySelectorAll<HTMLButtonElement>("button"); if (bs && bs.length === 2) bs[c === "LEFT" ? 0 : 1]!.click(); return; } // ◀ ▶ row steps the value
+    if (c === "A" && a) { if (a === nameIn) openNameOsk(); else a.click(); return; }
+    if (c === "B") { done(undefined); return; }
+    if (c === "Y" && cat) { look = randomLook(cat); refresh(); return; }
+    if (c === "START") ok.click(); // TV: Start = Enter world without D-padding past ~30 rows
+  };
   const tick = (t: number): void => {
     if (disposed) return; // ok.click() inside this tick resolves the dialog: never re-arm (a zombie loop kept clicking in-game menus)
     if (auto && t - last > 900) { last = t; turn(1); } else if (drv?.kind === "canvas2d") draw(); // 2D: idle anim frames
-    let gp = Array.from(pads()).find((p) => p) ?? undefined;
-    if (gp && padHold) { if (gp.buttons.some((x) => x?.pressed)) gp = undefined; else padHold = false; } // buttons from the OSK editor: wait for release
+    let gp = navPad(pads as never);
+    if (gp && padHold) { if (gp.buttons.some((x) => x.pressed)) gp = undefined; else padHold = false; } // buttons from the OSK editor: wait for release
     if (gp && oskNav) gp = undefined;
-    if (gp) { if (gp.buttons.some((x) => x?.pressed)) padActive = true; const ax = gp.axes[0] ?? 0, ay = gp.axes[1] ?? 0, B = (i: number): boolean => !!gp.buttons[i]?.pressed;
-      const cur = { up: B(12) || ay < -0.5, down: B(13) || ay > 0.5, left: B(14) || ax < -0.5, right: B(15) || ax > 0.5, a: B(0), b: B(1), y: B(3), lb: B(4), rb: B(5), start: B(9) };
-      if (cur.lb && !prev.lb) { auto = false; turn(-1); } if (cur.rb && !prev.rb) { auto = false; turn(1); }
-      if (cur.down && !prev.down) move(1); if (cur.up && !prev.up) move(-1);
-      // left/right on a ◀ ▶ row steps the value directly
-      const a = doc.activeElement as HTMLElement | null; const rowBox = a?.parentElement;
-      if ((cur.left && !prev.left) || (cur.right && !prev.right)) { const bs = rowBox?.querySelectorAll<HTMLButtonElement>("button"); if (bs && bs.length === 2) bs[cur.left ? 0 : 1]!.click(); }
-      if (cur.a && !prev.a && a) { if (a === nameIn) openNameOsk(); else a.click(); } if (cur.b && !prev.b) done(undefined); if (cur.y && !prev.y && cat) { look = randomLook(cat); refresh(); }
-      if (cur.start && !prev.start) ok.click(); // TV: Start = Enter world without D-padding past ~30 rows
-      prev = cur; }
+    if (!gp) edges.hold(navPad(pads as never));
+    else { if (gp.buttons.some((x) => x.pressed)) padActive = true;
+      for (const c of edges.step(gp, t)) { padDo(c); if (disposed) return; } }
     if (disposed) return;
     raf = win?.requestAnimationFrame?.(tick) ?? 0;
   };
   raf = win?.requestAnimationFrame?.(tick) ?? 0;
   o.root.append(wrap); (o.initial ? ok : nameIn).focus();
-  return new Promise((resolve) => { done = (v) => { disposed = true; oskNav?.destroy(); oskNav = undefined; drv?.dispose(); drv = undefined; doc.removeEventListener("keydown", onKey); if (raf) win?.cancelAnimationFrame?.(raf); wrap.remove(); resolve(v); }; });
+  return new Promise((resolve) => { done = (v) => { disposed = true; oskNav?.destroy(); oskNav = undefined; drv?.dispose(); drv = undefined; doc.removeEventListener("keydown", onKey); doc.removeEventListener("keyup", onKey); if (raf) win?.cancelAnimationFrame?.(raf); wrap.remove(); resolve(v); }; });
 }
