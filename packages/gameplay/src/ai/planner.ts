@@ -1,5 +1,5 @@
 /**
- * ADR-214: goal-driven planner for AI humans. Each sense pass (autonomy.ts, every SENSE_EVERY ticks per bot) walks a fixed
+ * ADR-216: goal-driven planner for AI humans. Each sense pass (autonomy.ts, every SENSE_EVERY ticks per bot) walks a fixed
  * goal ladder (tools -> campfire -> knife / weapon -> workbench -> storage -> 2x2 base -> clothes / armour -> furnace ->
  * metal) and backward-chains the first unmet goal through the same RecipeDef / ResourceDef / PieceDef data players read:
  * have it (bag or base storage -> withdraw), craft it (hand or at a base station), gather it (node with the right tool),
@@ -73,7 +73,7 @@ const ghostOk = (world: World, self: Entity, piece: number, x: number, y: number
 /** Where a builder stands for base pieces (outside the footprint, inside build reach of every slot). */
 export const BUILD_STAND = { x: 1, y: 3.3 };
 export const DOOR_OUT = { x: 0.5, y: 2.8 }, DOOR_IN = { x: 0.5, y: 1.25 };
-/** ADR-214: indoor campfire (back corner, off the door path): the walls keep its heat in and the roof keeps rain off; sleep spot next to it. */
+/** ADR-216: indoor campfire (back corner, off the door path): the walls keep its heat in and the roof keeps rain off; sleep spot next to it. */
 export const HEARTH: BaseSlot = { id: "hearth", key: "campfire", x: 1.5, y: 0.5, level: 0 }; export const HEARTH_SIT = { x: 0.9, y: 1.1 };
 export const baseHome = (b: { x: number; y: number }): { x: number; y: number } => ({ x: b.x + 1, y: b.y + 1 });
 export const insideBase = (b: { x: number; y: number }, x: number, y: number): boolean => x > b.x + 0.1 && x < b.x + 1.9 && y > b.y + 0.1 && y < b.y + 1.9;

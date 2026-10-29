@@ -123,7 +123,7 @@ function computeGoalSensors(world: World, self: Entity, view: AgentWorldView, a:
   if (needs.size) view.needs = [...needs];
   const wood = item("wood"); if (wood) { const n = have(wood.id); if (n > 0) view.woodSlot = { item: wood.id, count: n };
     if (view.fire && !view.fire.lit && n < 4) { view.needs = [wood.id, ...(view.needs ?? []).filter((x) => x !== wood.id)]; } } // fuel for the night
-  // ADR-214: the planner owns needs / hand crafts / base pieces (needs = leaves of the first unmet goal)
+  // ADR-216: the planner owns needs / hand crafts / base pieces (needs = leaves of the first unmet goal)
   bindAgentWorld(a, world);
   { const pn = fillPlanSensors(world, self, view, a, defs, slots); if (pn) { needs.clear(); for (const x of pn) needs.add(x); if (view.food === undefined && view.bs?.stations.has(1)) for (const id of ix.foods) needs.add(id); if (needs.size) view.needs = [...needs]; else delete view.needs; } }
   // gather target from memory (bounded), skipping banned / empty / tool-locked nodes; wanted yields win within ~20 tiles
@@ -178,7 +178,7 @@ export function instantChores(c: Ctx, o: { actions: string[] }): void {
   const w = c.world, t = c.self.tick; c.bb.set("hungerSeen", c.self.hunger);
   if (w.equipSlot !== undefined && t - c.bb.num("equipAt", -1e9) >= 100) { o.actions.push(`equip:${w.equipSlot}`); c.bb.set("equipAt", t); }
   if (w.craftRecipe !== undefined && t - c.bb.num("craftedAt", -1e9) >= Math.max(100, w.craftTicks ?? 0)) { const n = w.craftCount ?? 1; o.actions.push(n > 1 ? `craft:${w.craftRecipe}:${n}` : `craft:${w.craftRecipe}`); c.bb.set("craftedAt", t); if (w.plan) armCraft(c); }
-  if (w.junk && t - c.bb.num("dropAt", -1e9) >= 30) { o.actions.push(`drop:${w.junk.item}:${w.junk.count}`); c.bb.set("dropAt", t); } // ADR-214: a full bag drops what no goal uses
+  if (w.junk && t - c.bb.num("dropAt", -1e9) >= 30) { o.actions.push(`drop:${w.junk.item}:${w.junk.count}`); c.bb.set("dropAt", t); } // ADR-216: a full bag drops what no goal uses
   if (w.food !== undefined && c.self.hunger < 0.5 && t - c.bb.num("ateAt", -1e9) >= 40) { o.actions.push(`eat:${w.food}`); c.bb.set("ateAt", t); }
   if (w.water !== undefined && c.self.thirst < 0.5 && t - c.bb.num("drankAt", -1e9) >= 40) { o.actions.push(`drink:${w.water}`); c.bb.set("drankAt", t); }
 }

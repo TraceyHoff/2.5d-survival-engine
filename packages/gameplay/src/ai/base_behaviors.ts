@@ -1,5 +1,5 @@
 /**
- * ADR-214: base life for AI humans, driven by the planner (planner.ts). Every behaviour here only moves the bot and
+ * ADR-216: base life for AI humans, driven by the planner (planner.ts). Every behaviour here only moves the bot and
  * emits the action strings a human client sends (craft / build / copen / cdeposit / cwithdraw / cclose / fire / door /
  * wear / attack / gather); the server validates reach, stations, recipes, costs and placement exactly as for players.
  *  - base_work: the planner's step (withdraw from storage, craft at a station - lighting it first -, build the next
@@ -214,7 +214,7 @@ export function baseBehaviors(): GameBehavior[] {
       run: (c, o) => { const f = c.world.bs?.stations.get(StationKind.Campfire); const wood = plannerIndex(gdefs(c)).item.get("wood")?.id; if (!f || wood === undefined || !c.world.woodTotal) return false;
         if (goTo(c, o, f.x, f.y) > 1.6) { if (stuckOn(c, f.x, f.y)) { c.bb.set("refuelAt", c.self.tick); return false; } return; } stop(o);
         if (containerSeq(c, o, f.id, [`cdeposit:${f.id}:${wood}:${Math.min(10, c.world.woodTotal)}`])) { mark(c, "refuels"); c.bb.set("refuelAt", c.self.tick); return false; } } },
-    // ADR-214: cold kills in ~70 s once the body is under 35 C; get warm first (lit fire > light the fire > roofed base > a camp fire on the spot)
+    // ADR-216: cold kills in ~70 s once the body is under 35 C; get warm first (lit fire > light the fire > roofed base > a camp fire on the spot)
     { name: "warm_up", inertia: 0.6, considerations: [
         { name: "chilled", weight: 2.2, curve: step01, input: (c) => { const ch = c.world.chill; if (!ch) return 0;
           const on = c.bb.get("warming") ? ch.body < 36.8 || (ch.felt < 10 && ch.body < 37) : ch.body < 36.2 || (ch.felt < 8 && ch.body < 36.6); c.bb.set("warming", on); return on ? 1 : 0; } },
@@ -231,7 +231,7 @@ function endTrip(c: Ctx, max: number): void { c.bb.set("trip", undefined); c.bb.
 /** Sleep in the base (through the door) when it has one; else by the fire. Replaces the survivor sleep run. */
 export function baseSleepRun(c: Ctx, o: { moveX: number; moveY: number; aimX: number; aimY: number; actions: string[] }): boolean | void {
   const b = c.world.base; let tx = c.world.home.x, ty = c.world.home.y;
-  const f = c.world.bs?.stations.get(StationKind.Campfire); // ADR-214: a lit fire beats walls at 6 C nights; the roofed base when it is out
+  const f = c.world.bs?.stations.get(StationKind.Campfire); // ADR-216: a lit fire beats walls at 6 C nights; the roofed base when it is out
   if (b && f && c.world.bs?.hearth === f.id) { tx = b.x + HEARTH_SIT.x; ty = b.y + HEARTH_SIT.y; }
   else if (f && (f.lit || !c.world.bs?.door)) { tx = f.x - 1.1; ty = f.y + 0.4; }
   if (goTo(c, o, tx, ty, 0.8) < 0.9 || stuckOn(c, tx, ty, 200)) { stop(o); o.aimX = 0; o.aimY = 0; o.actions.push("sleep"); }

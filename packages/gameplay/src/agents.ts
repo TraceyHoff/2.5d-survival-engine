@@ -89,6 +89,8 @@ export function referenceBehaviors(): GameBehavior[] {
       considerations: [
         { name: "nodeKnown", curve: { type: "inverse" }, input: (c) => { const n = gatherGoal(c); return n ? Math.hypot(n.x - c.self.x, n.y - c.self.y) / (c.world.gatherNode?.wanted ? 40 : 20) : 1; } },
         // ADR-203: cold at night with no campfire -> gather what the fire needs instead of freezing asleep
+        // ADR-216: a planner step that is not gathering (build / craft / withdraw) beats idle gathering of things the plan does not need
+        { name: "planFree", curve: { type: "linear", m: 1, b: 0 }, input: (c) => (c.world.plan?.step && !c.world.gatherNode?.wanted ? 0.3 : 1) },
         { name: "daylight", curve: { type: "linear", m: -0.8, b: 1 }, input: (c) => (c.world.cold && (c.world.fireMissing || (c.world.fire && !c.world.fire.lit && !c.world.woodSlot)) ? 0 : night(c.self.phase)) },
       ],
       // ADR-203: stop inside the server's gather reach (1.5 tiles; was 1.6 -> every swing OutOfRange, bots froze), ban a node
