@@ -1618,3 +1618,48 @@ Measurements:
 Tests: `apps/client/test/adr214_vfx.test.ts` (17) covers the pool (caps, stealing, ambient cap, shedding), settings, effect state, the director, a 3000-frame stress run with bounded maps, the overlay pixel cap, texBytes constant then 0 after dispose (`FX_MEM_REPORT=1` prints the numbers), and console-profile detection and caps.
 
 Consequences: effects add bounded, constant memory, and the console gets about half the particle and texture budget. The game's own allocation rate (about 70 MB/s in the sandbox) is outside this ADR. Not verified on Xbox hardware.
+
+## ADR-215: Inner/angled corner posts collide; animals and pets collide with and path around structures
+
+Accepted 2026-10-29. Context: ADR-212 gave players and zombies body collision with edge walls, closed doors and solid cell pieces. Two gaps were left. Free-standing vertex corners (`wall_corner_inner`, `wall_corner_angled`) had no collision: `solidCell` skips `snap === "vertex"`, and only ADR-211 L corners, which are edges, blocked. Animals (`animalAISystem`) and pets (`petSystem`) also moved with a bare centre-point terrain test, so they walked through walls, corners, closed doors and stations.
+
+Decision:
+- **Corner posts (movement.ts, shared by player authority, client prediction, zombies and creatures):** `bodyAxisMove` runs the ADR-212 edge/cell clamp, then `postAxisMove` against `cornerPostBoxes(def, rot, vx, vy)`. Each corner has a 0.3×0.3 post at the vertex. An inner corner adds two short stubs (half-length 0.095) along its art arms, so a body walking down the middle of the neighbouring edge never snags. An angled corner adds a chain of four boxes along its 45° run. The art row is chosen the way the renderer chooses it. A body already overlapping a box can always move out of it. `StructureIndex.vertexPosts` counts free-standing solid vertex pieces, so the post pass costs nothing when there are none. `StructureIndex.count` is now O(1) (`info.size`), because it is read per axis.
+- **Creature nav (`systems/creature_nav.ts`, authority only; creature Transforms replicate, so prediction is unaffected):**
+  - `creatureStep(world, e, gx, gy, sp, stopAt, tileBlocked, dt)` moves the creature with the same `bodyAxisMove` body (radius `bodyRadius`), so creatures obey the same rules as players and zombies.
+  - It returns `undefined` when no piece is anchored near the move. `StructureIndex.anyPieceNear` keeps an 8×8-tile block count, updated in `addPiece`/`removePiece`. On `undefined` the caller runs its legacy straight-line step, bit for bit.
+  - Near structures it does a body-sized sight check: the centre plus 4 body corners through a tile DDA, plus the exact post boxes. It is allocation-free (`crossOk`, `segBox`), and a clear result is cached for 60 ticks.
+  - When sight is blocked, it runs a bounded A*: 4-neighbour, radius 24, at most 1200 nodes, and a detour bound of f ≤ 2·h₀ + 12. A per-search memo handles ENTER/ENTER_OK. Doorways and open doors pass. Closed doors, walls, solid cells, angled-corner tiles and unwalkable terrain block.
+  - Routes are cached per entity and dropped when the goal tile changes or `StructureIndex.version` changes (door toggle, build or removal).
+    - A found route is kept for 120 ticks. An unreached one re-plans every 40 ticks.
+    - A goal that moves one open tile extends the route instead of searching again.
+    - The creature steers to the farthest of the next 4 route tiles in sight (string pulling, with the pick cached for 8 ticks).
+    - A stall forces a re-plan, then 40 ticks of lane-only steering.
+  - An unreachable goal routes to the closest reachable tile. A step that makes no progress returns `false`, and the caller idles.
+- **Animals (population.ts):** wander, flee, approach and attack moves go through `creatureStep`. On `false` the animal idles, except in Attack state.
+- **Pets (pets.ts):**
+  - `step` goes through `creatureStep`, so pets follow their owner through open doorways and doors and stop at closed ones.
+  - The legacy "close enough to the owner" stop is not used when the owner is walled off (`walledOff`). The pet paths round until it is within 0.8 tiles or in sight.
+  - The catch-up teleport uses `reachableSpotNear`: the first of 12 offsets in body-sized sight of the owner, so a pet never lands behind a wall or inside a station. Away from structures it keeps the legacy (-1, +0.5).
+  - Trough reach is 1.5 tiles, because the pet body now stops against the trough footprint.
+- **Animal threat scan (perf, population.ts):** living survivors are gathered once per tick into a flat `[e, x, y]` list. Each animal scans that list instead of running `index.queryRadius`, which in a village walks every piece and animal in range. The test is the same: exact r², then hypot, with ties broken on entity id. Above 48 survivors it falls back to the radius query.
+
+Measurements: `PERF=1 pnpm vitest run packages/gameplay/test/bench215.test.ts`. The scenario has 160 animals, 16 pets, 4 walking players and 20 zombies, either on open ground or around a 4×4 village of rooms with doors and workbenches. Values are ms/tick, medians of interleaved runs on the box.
+
+| Build | Open ground | Village |
+|---|---|---|
+| origin/main (c15efcdd) | 1.48–1.70 | 3.60–3.85 |
+| this ADR | 0.71–0.74 | 1.69–1.79 |
+| origin/main + threat scan only | 0.68–0.76 | 1.40–1.48 |
+
+Nav itself costs about 0.3 ms/tick in the dense village (about 10% of the profile, mostly route and sight). The threat scan more than pays for it: net, about 2× faster than main in both scenarios.
+
+Tests: `corners215.test.ts` (4) covers inner/angled posts blocking, a body sliding past an inner-corner stub along the edge, escape from overlap and the box geometry per rotation. `nav215.test.ts` (7) covers animals walled in or out by a closed room, routing through a doorway, routing around a station, a closed door blocking and an open door passing, a pet following its owner in through an open door and stopping at a closed one, the teleport spot never landing behind a wall, and a version bump re-planning. The fixture is in `nav215_fixture.ts`. `bench215.test.ts` runs with PERF=1. Screenshots: `/workspace/shots/gaps214_door_closed.png` and `gaps214_door_open_pet_inside.png`.
+
+Consequences:
+- Creatures respect buildings server-side.
+- Open-ground behaviour is unchanged (legacy path).
+- An Attack-state animal blocked by a wall keeps trying rather than idling.
+- An unreachable goal leaves the creature idle at the closest tile.
+- ADR-212's lateral slop applies to creatures too.
+- The threat scan reads current Transforms rather than spatial-hash cells, which differs only for an entity that crossed a cell this tick.
