@@ -221,7 +221,7 @@ export function baseBehaviors(): GameBehavior[] {
     // ADR-216: cold kills in ~70 s once the body is under 35 C; get warm first (lit fire > light the fire > roofed base > a camp fire on the spot)
     { name: "warm_up", inertia: 0.6, considerations: [
         { name: "chilled", weight: 2.2, curve: step01, input: (c) => { const ch = c.world.chill; if (!ch) return 0;
-          const on = (c.bb.get("warming") ? ch.body < 36.8 || (ch.felt < 10 && ch.body < 37) : ch.body < 36.2 || (ch.felt < 8 && ch.body < 36.6)) || (bankHours(c) && c.self.thirst > 0.45 && c.self.hunger > 0.35); /* banking yields to drink / eat */ c.bb.set("warming", on); return on ? 1 : 0; } },
+          const on = (c.bb.get("warming") ? ch.body < 36.8 || (ch.felt < 10 && ch.body < 37) : ch.body < 36.2 || (ch.felt < 8 && ch.body < 36.6)) || (bankHours(c) && c.self.thirst > 0.45 && (c.self.hunger > 0.35 || c.world.food === undefined)); /* banking yields to drink / eat */ c.bb.set("warming", on); return on ? 1 : 0; } },
         { name: "canWarm", curve: step01, input: (c) => (warmOption(c) ? 1 : 0) }], // nothing to warm at: the planner's emergency wood/stone goal (gather) takes over
       run: warmRun },
     { name: "leave_base", inertia: 0.2, considerations: [
@@ -272,7 +272,8 @@ function warmRun(c: Ctx, o: { moveX: number; moveY: number; aimX: number; aimY: 
   if (bank && f && f.lit && st!.fuelTicks < 16000 && wood !== undefined && woodN > 0 && c.self.tick - c.bb.num("bankAt", -1e9) > 100) { // top the burning fire up for the night
     if (goTo(c, o, f.x, f.y, 1) > 2) { if (stuckOn(c, f.x, f.y)) c.bb.set("bankAt", c.self.tick); return; } stop(o);
     if (containerSeq(c, o, f.id, [`cdeposit:${f.id}:${wood}:${Math.min(50, woodN)}`])) { mark(c, "refuels"); c.bb.set("bankAt", c.self.tick); } return; }
-  if (f && f.lit && fd < 60) { const tx = atHearth ? b0!.x + HEARTH_SIT.x : f.x - 1.1, ty = atHearth ? b0!.y + HEARTH_SIT.y : f.y + 0.4; if (goTo(c, o, tx, ty, 1) < 0.5 || stuckOn(c, tx, ty, 200)) stop(o); return; }
+  if (f && f.lit && fd < 60) { const ux = fd > 0.05 ? (c.self.x - f.x) / fd : -1, uy = fd > 0.05 ? (c.self.y - f.y) / fd : 0; // sit close on our own side (heat falls off linearly, walls occlude)
+    const tx = atHearth ? b0!.x + HEARTH_SIT.x : f.x + ux * 0.6, ty = atHearth ? b0!.y + HEARTH_SIT.y : f.y + uy * 0.6; if (goTo(c, o, tx, ty, 1) < 0.25 || stuckOn(c, tx, ty, 200)) stop(o); return; }
   if (f && !f.lit && wood !== undefined && woodN > 0 && fd < 60) {
     if (goTo(c, o, f.x, f.y, 1) > 2) { if (stuckOn(c, f.x, f.y)) c.bb.set("warming", false); return; } stop(o);
     if (containerSeq(c, o, f.id, [`cdeposit:${f.id}:${wood}:${Math.min(bank ? 50 : 8, woodN)}`, `fire:${f.id}`])) mark(c, "refuels"); return; }
