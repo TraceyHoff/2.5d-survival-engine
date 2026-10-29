@@ -1,11 +1,11 @@
 /**
- * ADR-214 corner posts: free-standing inner / angled vertex corners block a walker body (post + stubs / the 45 deg run),
+ * ADR-215 corner posts: free-standing inner / angled vertex corners block a walker body (post + stubs / the 45 deg run),
  * the same in client prediction replay; bodies already overlapping a post can leave; L corners still use edges.
  */
 import { describe, it, expect } from "vitest";
 import { type Entity, type World } from "@engine/core";
 import { applyMovementInput, bodyAxisMove, cornerPostBoxes, POST_HALF, STUB_HALF, defaultDefs, structures } from "../src/index.js";
-import { pos, tp, world214 } from "./nav214_fixture.js";
+import { pos, tp, world215 } from "./nav215_fixture.js";
 import { steps } from "./helpers.js";
 
 const d = defaultDefs(); const DT = 1 / 20; const R = d.movement.bodyRadius;
@@ -13,14 +13,14 @@ function walk(w: World, e: Entity, dx: number, dy: number, n: number): void {
   const sx = (dx - dy) * Math.SQRT1_2, sy = (dx + dy) * Math.SQRT1_2;
   for (let i = 0; i < n; i++) applyMovementInput(w, e, 0, DT, { x: sx, y: sy });
 }
-function field(): ReturnType<typeof world214> {
-  const f = world214(); for (let y = 0; y < 6; y++) for (let x = 0; x < 6; x++) f.put("foundation", x + 0.5, y + 0.5); return f;
+function field(): ReturnType<typeof world215> {
+  const f = world215(); for (let y = 0; y < 6; y++) for (let x = 0; x < 6; x++) f.put("foundation", x + 0.5, y + 0.5); return f;
 }
 const Z = d.movement.deckStandHeight;
 /** Body square (half R) overlaps any [cx, cy, hx, hy] box by more than a hair? */
 const overlap = (p: { x: number; y: number }, b: number[]): boolean => { for (let i = 0; i < b.length; i += 4) if (Math.abs(p.x - b[i]!) < R + b[i + 2]! - 1e-3 && Math.abs(p.y - b[i + 1]!) < R + b[i + 3]! - 1e-3) return true; return false; };
 
-describe("ADR-214 corner posts", () => {
+describe("ADR-215 corner posts", () => {
   it("wall_corner_inner: the post and both stubs block a body from every side (no overlap along any walk)", () => {
     for (const rot of [0, 1, 2, 3]) {
       const { w, me, put } = field(); const c = put("wall_corner_inner", 3, 3, 0, rot); steps(w, 2);

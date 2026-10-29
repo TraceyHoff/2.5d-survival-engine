@@ -99,7 +99,7 @@ function edgeAxisMove(idx: StructureIndex, x: number, y: number, n: number, axis
   return n;
 }
 
-// ---- ADR-214 vertex corner posts ------------------------------------------------------------------------------
+// ---- ADR-215 vertex corner posts ------------------------------------------------------------------------------
 /** Half-size of the square post on a tile corner (placement keeps a +-0.15 creature box clear there too). */
 export const POST_HALF = 0.15;
 /** Inner-corner stub half-length: the stub reaches 0.19 along its arm (art 0.22), so a body walking through the middle of

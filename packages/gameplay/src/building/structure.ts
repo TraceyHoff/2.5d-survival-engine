@@ -73,7 +73,7 @@ export function anchorFor(def: PieceDef, x: number, y: number, rot4: number): [n
   const [w, h] = rotatedSize(def, rot4); return [Math.floor(x - w / 2 + 0.5), Math.floor(y - h / 2 + 0.5)];
 }
 
-/** ADR-214 coarse occupancy block size (tiles) and padding for footprints larger than the anchor tile. */
+/** ADR-215 coarse occupancy block size (tiles) and padding for footprints larger than the anchor tile. */
 export const NAV_BLOCK = 8; const NAV_PAD = 4;
 const navBlockKey = (bx: number, by: number): number => (bx + 0x8000) * 0x10000 + (by + 0x8000);
 
@@ -257,16 +257,16 @@ export class StructureIndex {
   }
   /** Indexed piece count; O(1) (info and chunkPieces are kept in step by addPiece/removePiece). Hot: movement checks it per axis. */
   get count(): number { return this.info.size; }
-  /** ADR-214: free-standing vertex corner posts (inner / angled; not ADR-211 L corners, which are edges) for a collision early-out. */
+  /** ADR-215: free-standing vertex corner posts (inner / angled; not ADR-211 L corners, which are edges) for a collision early-out. */
   vertexPosts = 0;
-  /** ADR-214: piece counts per NAV_BLOCK x NAV_BLOCK tile block (anchor tile), so creature nav can skip open ground cheaply. */
+  /** ADR-215: piece counts per NAV_BLOCK x NAV_BLOCK tile block (anchor tile), so creature nav can skip open ground cheaply. */
   readonly blockCounts = new Map<number, number>();
   private coarse(tx: number, ty: number, def: PieceDef, d: 1 | -1): void {
     if (def.snap === "vertex" && def.solid && !isLCorner(def)) this.vertexPosts += d;
     const k = navBlockKey(Math.floor(tx / NAV_BLOCK), Math.floor(ty / NAV_BLOCK)); const n = (this.blockCounts.get(k) ?? 0) + d;
     if (n > 0) this.blockCounts.set(k, n); else this.blockCounts.delete(k);
   }
-  /** ADR-214: any piece anchored within the tile rect (inclusive, padded by NAV_PAD for multi-tile footprints / wall faces)? */
+  /** ADR-215: any piece anchored within the tile rect (inclusive, padded by NAV_PAD for multi-tile footprints / wall faces)? */
   anyPieceNear(x0: number, y0: number, x1: number, y1: number): boolean {
     if (!this.info.size) return false;
     const bx0 = Math.floor((Math.min(x0, x1) - NAV_PAD) / NAV_BLOCK), bx1 = Math.floor((Math.max(x0, x1) + NAV_PAD) / NAV_BLOCK);

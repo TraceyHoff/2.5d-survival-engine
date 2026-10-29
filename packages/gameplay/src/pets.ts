@@ -280,7 +280,7 @@ function step(world: World, e: Entity, gx: number, gy: number, speed: number, dt
   const t = world.get(e, Transform)!; const dx = gx - t.x, dy = gy - t.y, d = Math.hypot(dx, dy); if (d <= stopAt) return false;
   const sp = speed * swimSpeedMulAt(world, t.x, t.y) * dt; const k = Math.min(sp, d - stopAt) / d;
   const unwalk = gameplayDefs(world).worldgen.unwalkableTiles;
-  const nav = creatureStep(world, e, gx, gy, sp, stopAt, petBlocked(world), dt); // ADR-214: walls, closed doors, stations
+  const nav = creatureStep(world, e, gx, gy, sp, stopAt, petBlocked(world), dt); // ADR-215: walls, closed doors, stations
   if (nav !== undefined) return nav;
   const nx = t.x + dx * k, ny = t.y + dy * k;
   if (unwalk.has(populationTile(world, Math.floor(nx), Math.floor(ny)))) {
@@ -291,12 +291,12 @@ function step(world: World, e: Entity, gx: number, gy: number, speed: number, dt
   }
   world.set(e, Transform, { x: nx, y: ny, facing: Math.atan2(dy, dx) }); return true;
 }
-/** ADR-214: within followDistance of the owner but walled off, the pet paths round until this close (or in sight). */
+/** ADR-215: within followDistance of the owner but walled off, the pet paths round until this close (or in sight). */
 const WALLED_STOP = 0.8;
 const petBlocked = (world: World) => { const unwalk = gameplayDefs(world).worldgen.unwalkableTiles; return (tx: number, ty: number): boolean => unwalk.has(populationTile(world, tx, ty)); };
-/** ADR-214: a trough is a solid piece the pet body now stops against (bodyRadius off its tile), so its reach covers a 1-tile footprint. */
+/** ADR-215: a trough is a solid piece the pet body now stops against (bodyRadius off its tile), so its reach covers a 1-tile footprint. */
 const TROUGH_REACH = 1.5;
-/** Catch-up spot beside the owner: legacy (-1, +0.5); near structures (ADR-214) the first offset in body-sized sight of the owner, so a pet never lands on the far side of a wall or inside a station. */
+/** Catch-up spot beside the owner: legacy (-1, +0.5); near structures (ADR-215) the first offset in body-sized sight of the owner, so a pet never lands on the far side of a wall or inside a station. */
 const TELEPORT_OFFSETS: readonly [number, number][] = [[-1, 0.5], [1, 0.5], [0.5, 1], [0.5, -1], [-1, -0.5], [1, -0.5], [-0.5, 1], [-0.5, -1], [-0.6, 0], [0.6, 0], [0, 0.6], [0, -0.6]];
 function teleportSpot(world: World, ot: { x: number; y: number; z?: number }): { x: number; y: number; z?: number } {
   if (!navNeeded(world, ot.x - 1.5, ot.y - 1.5, ot.x + 1.5, ot.y + 1.5)) return { x: ot.x - 1, y: ot.y + 0.5 };
@@ -392,7 +392,7 @@ export function petSystem(world: World, dt: number): void {
       const d = Math.hypot(ax - t.x, ay - t.y);
       if (!stay && ot && d > T.teleportDistance) { world.set(e, Transform, teleportSpot(world, ot)); }
       else if (!stay && ot && d > T.followDistance) { run = d > T.runDistance; moved = step(world, e, ax, ay, run ? st.run : st.walk, dt, T.followDistance * 0.7); }
-      else if (!stay && ot && d > WALLED_STOP && walledOff(world, t.x, t.y, ax, ay, t.z ?? 0, petBlocked(world))) moved = step(world, e, ax, ay, st.walk, dt, WALLED_STOP); // ADR-214: close but through a wall: go round
+      else if (!stay && ot && d > WALLED_STOP && walledOff(world, t.x, t.y, ax, ay, t.z ?? 0, petBlocked(world))) moved = step(world, e, ax, ay, st.walk, dt, WALLED_STOP); // ADR-215: close but through a wall: go round
       else if (stay && d > 0.4) moved = step(world, e, ax, ay, st.walk, dt, 0.2);
     }
     world.set(e, Animal, { homeX: ax, homeY: ay, state: moved ? (run ? 2 : 1) : 0 });

@@ -140,7 +140,7 @@ export function animalAISystem(world: World, dt: number): void {
       const dx = gx - t.x, dy = gy - t.y, d = Math.hypot(dx, dy); const sp = (state === AnimalState.Wander ? def.speed : def.fleeSpeed) * swimSpeedMulAt(world, t.x, t.y) * dt;
       if (d < 0.1) { if (state !== AnimalState.Attack) state = AnimalState.Idle; }
       else {
-        const nav = creatureStep(world, e, gx, gy, sp, 0, tileBlocked, dt); // ADR-214: collide with / path around structures
+        const nav = creatureStep(world, e, gx, gy, sp, 0, tileBlocked, dt); // ADR-215: collide with / path around structures
         if (nav !== undefined) { moving = nav; if (!nav && state !== AnimalState.Attack) state = AnimalState.Idle; }
         else {
           const nx = t.x + (dx / d) * Math.min(sp, d), ny = t.y + (dy / d) * Math.min(sp, d);

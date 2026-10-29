@@ -1,8 +1,8 @@
 /**
- * ADR-214 creature navigation: animals and pets collide with building pieces and path around them.
+ * ADR-215 creature navigation: animals and pets collide with building pieces and path around them.
  *
  * Authority only (animal AI and pets never run in client prediction; their Transforms replicate). The body is the
- * walker body of ADR-212/214 (bodyAxisMove with bodyRadius: edge walls / closed doors, solid cell pieces such as
+ * walker body of ADR-212/215 (bodyAxisMove with bodyRadius: edge walls / closed doors, solid cell pieces such as
  * stations, vertex corner posts), so creatures obey exactly the rules players and zombies do. Open ground keeps the
  * legacy straight-line step bit for bit: creatureStep() returns undefined when no piece is anchored near the move
  * (StructureIndex.anyPieceNear, a coarse 8x8 block count) and the caller runs its old code.
@@ -62,7 +62,7 @@ export function creatureStep(world: World, e: Entity, gx: number, gy: number, sp
   return true;
 }
 
-/** True when structures stand between (x0, y0) and (x1, y1) on level z's deck: no body-sized straight sight (ADR-214;
+/** True when structures stand between (x0, y0) and (x1, y1) on level z's deck: no body-sized straight sight (ADR-215;
  *  e.g. a pet "close" to its owner through a wall). False on open ground. */
 export function walledOff(world: World, x0: number, y0: number, x1: number, y1: number, z: number, blocked: TileBlocked): boolean {
   if (!navNeeded(world, x0, y0, x1, y1)) return false;

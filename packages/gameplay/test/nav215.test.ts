@@ -1,12 +1,12 @@
 /**
- * ADR-214 creature navigation: animals and pets collide with walls, L / inner / angled corners, closed doors and
+ * ADR-215 creature navigation: animals and pets collide with walls, L / inner / angled corners, closed doors and
  * stations, path around them through doorways and open doors, pets follow their owner into a room through an open
  * door (not a closed one) and a catch-up teleport never lands on the far side of a wall. Open ground is unchanged.
  */
 import { describe, expect, it } from "vitest";
 import { PlayerId, Transform, type Entity, type World } from "@engine/core";
 import * as G from "../src/index.js";
-import { pos, room, setDoor, tp, world214 } from "./nav214_fixture.js";
+import { pos, room, setDoor, tp, world215 } from "./nav215_fixture.js";
 import { steps } from "./helpers.js";
 
 const DT = 1 / 20; const R = G.defaultDefs().movement.bodyRadius;
@@ -25,15 +25,15 @@ function drive(w: World, e: Entity, gx: number, gy: number, ticks: number, sp = 
   for (let i = 0; i < ticks; i++) { G.creatureStep(w, e, gx, gy, sp, stopAt, never, DT); w.step(DT); check?.(pos(w, e)); }
 }
 
-describe("ADR-214 creature nav", () => {
+describe("ADR-215 creature nav", () => {
   it("open ground keeps the legacy straight step (creatureStep defers)", () => {
-    const { w } = world214(); const a = G.spawnAnimal(w, passive(), 100, 100);
+    const { w } = world215(); const a = G.spawnAnimal(w, passive(), 100, 100);
     expect(G.creatureStep(w, a, 105, 100, 0.1, 0, never, DT)).toBeUndefined();
-    const f = world214(); room(f.w, f.put, 0, 0, 4); const b = G.spawnAnimal(f.w, passive(), 100, 100);
+    const f = world215(); room(f.w, f.put, 0, 0, 4); const b = G.spawnAnimal(f.w, passive(), 100, 100);
     expect(G.creatureStep(f.w, b, 105, 100, 0.1, 0, never, DT)).toBeUndefined(); // structures far away: still legacy
   });
   it("an animal driven at a goal behind a wall paths round through the doorway; a closed door keeps it out", () => {
-    const { w, put } = world214(); const { door } = room(w, put, 0, 0, 4, { door: true });
+    const { w, put } = world215(); const { door } = room(w, put, 0, 0, 4, { door: true });
     const a = G.spawnAnimal(w, passive(), 2.5, 6.5); // south of the room, goal inside: the straight line crosses the south wall
     drive(w, a, 2.5, 2.5, 600, 0.15, 0, (p) => { expect(bodyClearOfRim(p, 0, 0, 4), `rim ${p.x},${p.y}`).toBe(true); expect(inside(p, 0, 0, 4)).toBe(false); });
     expect(pos(w, a).y).toBeGreaterThan(4); // closed door: never got in
@@ -43,7 +43,7 @@ describe("ADR-214 creature nav", () => {
     expect(p.z).toBeCloseTo(G.defaultDefs().movement.deckStandHeight, 3); // walked onto the foundation deck
   });
   it("an animal inside a closed room stays in; a workbench blocks and is walked round", () => {
-    const { w, put } = world214(); room(w, put, 0, 0, 4, { door: true, bench: true });
+    const { w, put } = world215(); room(w, put, 0, 0, 4, { door: true, bench: true });
     const a = G.spawnAnimal(w, passive(), 1.5, 1.5);
     drive(w, a, 1.5, 9, 300, 0.15, 0, (p) => expect(inside(p, 0, 0, 4)).toBe(true));
     // the workbench covers tiles (2,3)-(3,3): walk from (1.5,3.5) past it to (3.6,2.4) without overlapping it
@@ -53,7 +53,7 @@ describe("ADR-214 creature nav", () => {
     expect(Math.hypot(pos(w, a).x - 3.6, pos(w, a).y - 2.4)).toBeLessThan(0.2);
   });
   it("inner and angled corner posts block creatures too", () => {
-    const { w, put } = world214(); for (let y = 0; y < 5; y++) for (let x = 0; x < 5; x++) put("foundation", x + 0.5, y + 0.5);
+    const { w, put } = world215(); for (let y = 0; y < 5; y++) for (let x = 0; x < 5; x++) put("foundation", x + 0.5, y + 0.5);
     const c = put("wall_corner_inner", 2, 2, 0, 0); const g = put("wall_corner_angled", 3, 3, 0, 4); steps(w, 2);
     const idx = G.structures(w); const boxes = [...G.cornerPostBoxes(idx.def(c)!, 0, 2, 2), ...G.cornerPostBoxes(idx.def(g)!, 4, 3, 3)];
     const hit = (p: { x: number; y: number }): boolean => { for (let i = 0; i < boxes.length; i += 4) if (Math.abs(p.x - boxes[i]!) < R + boxes[i + 2]! - 2e-3 && Math.abs(p.y - boxes[i + 1]!) < R + boxes[i + 3]! - 2e-3) return true; return false; };
@@ -63,7 +63,7 @@ describe("ADR-214 creature nav", () => {
     }
   });
   it("animal AI: wandering / fleeing animals around a closed house never cross its walls", () => {
-    const { w, put } = world214(); w.addSystem("simulation", "gameplay.animalAI", G.animalAISystem); room(w, put, 0, 0, 4, { door: true, bench: true });
+    const { w, put } = world215(); w.addSystem("simulation", "gameplay.animalAI", G.animalAISystem); room(w, put, 0, 0, 4, { door: true, bench: true });
     const out = [[2, -2], [-2, 2], [6, 2], [2, 6], [-1.5, -1.5], [5.5, 5.5]].map(([x, y]) => G.spawnAnimal(w, passive(), x!, y!));
     const inn = [G.spawnAnimal(w, passive(), 1.5, 1.5), G.spawnAnimal(w, passive(), 2.5, 2.5)];
     const scare = G.spawnPlayer(w, { x: 2, y: 8, maxWeight: 0, clientId: 9 }); // a player passing by makes them flee
@@ -77,9 +77,9 @@ describe("ADR-214 creature nav", () => {
   });
 });
 
-describe("ADR-214 pets and structures", () => {
+describe("ADR-215 pets and structures", () => {
   const owned = (): { w: World; p: Entity; dog: Entity; door: Entity } => {
-    const { w, put } = world214(); if (!w.isRegistered(PlayerId)) w.register(PlayerId);
+    const { w, put } = world215(); if (!w.isRegistered(PlayerId)) w.register(PlayerId);
     const { door } = room(w, put, 0, 0, 4, { door: true });
     const p = G.spawnPlayer(w, { x: 2.5, y: -3, maxWeight: 0, clientId: 7 }); if (w.has(p, PlayerId)) w.set(p, PlayerId, { id: 7 }); else w.add(p, PlayerId, { id: 7 });
     const dog = G.spawnAnimal(w, "animal_dog_dachshund", 2.5, 7); G.makePet(w, dog, p); steps(w, 2);
@@ -98,7 +98,7 @@ describe("ADR-214 pets and structures", () => {
   it("catch-up teleport lands on the owner's side of the walls", () => {
     const { w, p, dog } = owned(); tp(w, p, 0.6, 0.6, 0.75); tp(w, dog, 60, 60); // owner in the room's NW corner: (-1, +0.5) is outside the wall
     w.step(DT); const q = pos(w, dog); expect(inside(q, 0, 0, 4), `${q.x},${q.y}`).toBe(true); expect(w.get(dog, Transform)!.z).toBeCloseTo(0.75, 3);
-    const o = world214(); if (!o.w.isRegistered(PlayerId)) o.w.register(PlayerId); // legacy offset on open ground
+    const o = world215(); if (!o.w.isRegistered(PlayerId)) o.w.register(PlayerId); // legacy offset on open ground
     const p2 = G.spawnPlayer(o.w, { x: 10, y: 10, maxWeight: 0, clientId: 8 }); o.w.add(p2, PlayerId, { id: 8 });
     const d2 = G.spawnAnimal(o.w, "animal_dog_dachshund", 60, 60); G.makePet(o.w, d2, p2); o.w.step(DT);
     expect(pos(o.w, d2).x).toBeCloseTo(9, 3); expect(pos(o.w, d2).y).toBeCloseTo(10.5, 3);
