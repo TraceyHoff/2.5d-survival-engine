@@ -208,6 +208,8 @@ export class IsoRenderer implements Renderer {
   time = 0;
   /** Freeze `time` (dt = 0) and adaptive quality: pixel-stable frames for screenshot diffs (character preview freeze). */
   freezeClock = false;
+  /** ADR-214: renderer-clock rate (hit-stop dilates particles/weather/flicker for ~60 ms; the sim and input never pause). */
+  timeScale = 1;
   /** Runtime GPU-memory fallback ladder (wearables -> dressed cap -> low atlas tier -> safe); see gl/fallback.ts. */
   readonly fallback = new FallbackLadder();
   /** Ongoing blank-frame watchdog (centre pixels every 60 frames for the whole session). */
@@ -453,7 +455,7 @@ export class IsoRenderer implements Renderer {
     // drawing frames with the player's body / clothes / streamed art missing
     if (this.totalFrames > 0 && this.settleHold.hold(this.atlas.settling, t0)) { this.heldFrames++; return; }
     const dt = this.freezeClock || this.lastNow < 0 ? 0 : Math.min(0.1, (t0 - this.lastNow) / 1000);
-    this.lastNow = t0; this.time += dt;
+    this.lastNow = t0; this.time += dt * (this.timeScale > 0 ? Math.min(1, this.timeScale) : 1);
     if (!this.freezeClock && this.quality.feed(dt * 1000) && this.lastCss[0] > 0) this.applyQuality();
     this.vfx.maxActive = Math.round(2048 * this.quality.tier.particles);
     const stats = (this.stats = newStats());

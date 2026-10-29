@@ -18,7 +18,7 @@ export interface EntSnap {
   crafting?: { recipe: number; start: number; total: number; cooking: boolean };
   hunger?: number; thirst?: number; level?: number; combatTag?: boolean; local?: boolean; surface?: string; explosiveFire?: boolean;
 }
-export interface SoundEvent { key: string; pos?: Vec2; indoors?: boolean; gain?: number; pitch?: number }
+export interface SoundEvent { key: string; pos?: Vec2; indoors?: boolean; gain?: number; pitch?: number; /** ADR-214: EntSnap id of the emitter (VFX facing / attribution). */ src?: number }
 export interface LoopSpec { id: string; key: string; pos?: Vec2; indoors?: boolean; gain: number; pitch?: number }
 
 /** Anim ids (core AnimState, wire-stable). */
@@ -55,7 +55,7 @@ export class AudioDirector {
     const out: SoundEvent[] = []; const loops: LoopSpec[] = [];
     const curMap = new Map(cur.map((e) => [e.id, e]));
     const near = (e: { x: number; y: number }, r = hear): boolean => Math.hypot(e.x - c.listener.x, e.y - c.listener.y) <= r;
-    const at = (e: EntSnap, key: string, extra: Partial<SoundEvent> = {}): void => { out.push({ key, pos: { x: e.x, y: e.y }, indoors: !!e.indoors, ...extra }); };
+    const at = (e: EntSnap, key: string, extra: Partial<SoundEvent> = {}): void => { out.push({ key, pos: { x: e.x, y: e.y }, indoors: !!e.indoors, src: e.id, ...extra }); };
     const vocalKey = (e: EntSnap, what: string): string | undefined => e.kind === "player" ? `player.${what}` : e.kind === "zombie" ? `zombie.${e.sub}.${what}` : e.kind === "animal" ? `animal.${e.sub}.${what}` : undefined;
     // recent attackers (for per-class hit sounds)
     const attackers: EntSnap[] = [];

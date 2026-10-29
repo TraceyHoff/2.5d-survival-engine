@@ -12,6 +12,7 @@ import { UINav, type ContextStack } from "./ui-nav.js";
 import { loadSettings, saveSettings } from "./menu.js";
 import { morph } from "./ui-diff.js";
 import { audioSettingsRows, type AudioControls } from "./audio/settings-ui.js";
+import { fxSettingsRows, type FxControls } from "./fx/settings-ui.js";
 import { GAMEPLAY_PANELS, gameplayBody, pageContainer, pageSkillCategory, type GameplayPanel, type GameplaySource } from "./gameplay-panels.js";
 import { closeContainerIntent, onlineTargets, openContainerIntent, openStallIntent, isPetOwner, Pet, Viewing } from "@engine/gameplay";
 import { loadPreset, parsePreset, savePreset, QUALITY_PRESETS, type QualityPreset } from "@engine/render";
@@ -67,6 +68,8 @@ export interface GameMenusOptions {
   root: HTMLElement;
   /** ADR-117 audio mixer controls (Settings volume rows). */
   audio?: AudioControls;
+  /** ADR-214 visual-effects settings rows. */
+  fx?: FxControls;
   input?: ContextStack;
   /** "Quit to main menu": caller exits fullscreen and returns to the main menu. */
   onQuit: () => void;
@@ -252,7 +255,7 @@ export class GameMenus {
     const del = this.o.deleteProgress?.();
     const wr = this.o.worldRules?.(); const l4 = document.createElement("small"); l4.dataset["role"] = "world-rules"; l4.style.cssText = "display:block;opacity:.8";
     l4.textContent = wr ? `This world: zombie hordes ${wr.hordes ? `ON (after ${wr.hordeGraceDays} in-game days)` : "OFF"}` : "";
-    return this.panel("settings", "Settings", [l1, l2, l5, l6, l3, ...(wr ? [l4] : []), ...(this.o.audio ? [audioSettingsRows(this.o.audio)] : [])], [...(this.o.tutorial ? [["📖 Play the guide again", () => { this.nav.closeAll(); this.o.tutorial!.replay(); }, "alt"] as [string, () => void, string]] : []), ...(del ? [[del.label, () => this.open("delete-progress"), "alt"] as [string, () => void, string]] : []), ["🐞 Error log", () => this.open("error-log"), "alt"],["Save", () => { saveSettings({ ...loadSettings(), showHud: hud.checked, fullscreen: fs.checked, toolHints: th.checked, nameTags: nt.checked }); const qp = parsePreset(q.value) ?? "auto"; savePreset(qp); this.o.setQuality?.(qp); this.nav.close(); }], ["Back", () => this.nav.close(), "alt"]]);
+    return this.panel("settings", "Settings", [l1, l2, l5, l6, l3, ...(wr ? [l4] : []), ...(this.o.fx ? [fxSettingsRows(this.o.fx)] : []), ...(this.o.audio ? [audioSettingsRows(this.o.audio)] : [])], [...(this.o.tutorial ? [["📖 Play the guide again", () => { this.nav.closeAll(); this.o.tutorial!.replay(); }, "alt"] as [string, () => void, string]] : []), ...(del ? [[del.label, () => this.open("delete-progress"), "alt"] as [string, () => void, string]] : []), ["🐞 Error log", () => this.open("error-log"), "alt"],["Save", () => { saveSettings({ ...loadSettings(), showHud: hud.checked, fullscreen: fs.checked, toolHints: th.checked, nameTags: nt.checked }); const qp = parsePreset(q.value) ?? "auto"; savePreset(qp); this.o.setQuality?.(qp); this.nav.close(); }], ["Back", () => this.nav.close(), "alt"]]);
   }
   private deletePanel(): HTMLElement {
     const d = this.o.deleteProgress?.();

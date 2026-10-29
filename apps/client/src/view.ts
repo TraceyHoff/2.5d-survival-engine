@@ -402,7 +402,7 @@ export class IsoView {
       want.z = this.camZ; }
     const hadErr = this.camGuard.error; const tgt = this.camGuard.resolve(want, camE !== player ? "follow" : "player", why);
     if (this.camGuard.error && !hadErr) console.warn(`[render] ${this.camGuard.error}`);
-    r.camera.lookAt(tgt.x, tgt.y, tgt.z);
+    r.camera.lookAt(tgt.x + this.camShake.x, tgt.y + this.camShake.y, tgt.z); // ADR-214: screen shake offset (tiles; 0 when off)
     r.sceneDiag = { entities: this.map.size, playerEid: player, cameraTarget: tgt, localServer: st?.localServer, snapshots: st?.snapshots, lastError: st?.error ?? this.camGuard.error };
     v.runPhase("renderPrep", 0);
     const held0 = r.heldFrames;
@@ -417,6 +417,8 @@ export class IsoView {
   corrections: CorrectionSource | undefined; private corrSampler = new CorrectionSampler();
   private sWant = { x: 0, y: 0, z: 0 };
   private sCur = { x: 0, y: 0, z: 0, facing: 0 }; private sPrev = { x: 0, y: 0, z: 0, facing: 0 }; private sAnim: Record<string, number> & { anim: number } = { anim: 0 }; private sTemp = { cold: 0, heat: 0, shivering: 0 }; private sHit: Record<string, number> & { startTick: number; dir: number } = { startTick: 0, dir: 0 };
+  /** ADR-214: per-frame camera shake offset in tiles, written by the VFX layer (fx/) before render. */
+  readonly camShake = { x: 0, y: 0 };
   checks = 0; blackFrames = 0; blackCheck: BlackFrameCheck | undefined;
   /** View entity currently given to setFocusEntity; cleared when destroyed so a recycled id (a remote player) never inherits the focus silhouette. */
   private focusVe = -1;

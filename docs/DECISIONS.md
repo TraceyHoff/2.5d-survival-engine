@@ -1591,3 +1591,30 @@ Decision:
 Tests: `packages/input/test/adr213_xbox.test.ts` covers key/keyCode mapping, hat decoding, mapping "" layout and merging. `apps/client/test/adr213_xbox_pad.test.ts` covers pad keys (named and Unidentified) moving once, key repeat timing, A/B/Start, idle pad 0 + live pad 1, the hat pad, API + key + Arrow for one press moving once, frame-hitch taps and the simple-screen helpers. `apps/client/e2e/xbox-nav.mjs` (`pnpm -C apps/client e2e:xbox <url> <shotDir>`) is the production-build harness. It runs six delivery modes (key, keyUnid, apiIdle0, apiHat, apiStick, both) over the main menu, pause hub, every pause entry, inventory (equip, eat, X split, Y to hotbar, drop), chat OSK, settings dialogs, station/camper/trade/pet screens and the death screen. It counts focusin per press, checks repeat and the focus ring, and confirms that the hotbar and zoom do not change while a menu is open.
 
 Consequences: menus accept the controller however Edge delivers it, and no single press can move focus twice. Not verified on Xbox hardware. The harness emulates the documented event shapes.
+
+## ADR-214: Pooled VFX layer (combat, world and ambient effects) with hard memory caps for both renderers
+
+Accepted 2026-10-29. Context: combat and the world had no feedback: no hit sparks, blood, debris, muzzle flash, dust or weather particles. Xbox Edge also crashes under memory pressure (see ADR-212), so any effects layer must stay bounded: no per-frame garbage, no texture growth, and a lighter budget on consoles without changing the PC look.
+
+Decision:
+- **One pool:** `apps/client/src/fx/pool.ts` `ParticlePool` is a struct-of-arrays pool (Float32Array/Uint8Array) with a fixed capacity and a live budget. `PF.Prio` spawns steal a slot when the pool is full. Ambient spawns are capped at 60% of the budget and are shed first by the frame-time governor (`shedAmbient`). A refused spawn is counted (`dropped`); nothing grows.
+- **Effects (`fx/effects.ts`):** material impacts (blood, ichor, spark/metal, wood, stone, fire, sizzle) with a directional spray, crit flash, deaths, melee swings, muzzle flash and tracers, explosions, footsteps per surface, water splash/ripple/wake, gathering, tree fall, rock break, build place/break, sparkles, steam, level-up, fire ignite/snuff/emit, vehicle exhaust and wheel dust, fireflies, motes, leaves and rain splashes. Screen cues: shake (trauma), hit-stop (the renderer's effect clock; the sim is untouched), hurt/cold/heat/fire vignette, horde flicker and night-fall fog.
+- **Director (`fx/director.ts`):** reads the replicated world and the audio director's per-frame sound events, so effects fire on the same events on host and client. It keeps no per-frame maps: a bounded entity lookup is rebuilt at most every 30 frames, and caches are interned.
+- **Drawing (`fx/draw.ts`):** a single Canvas2D overlay (`#vfx-fx`) above both the WebGL and Canvas2D renderers, so both look the same. Two fixed sprite atlases (emissive, plus ambient-lit, re-tinted in place when the light level changes). The overlay backing store is capped at `FX_MAX_PIXELS` = 1920×1080 (sprites are soft, so upscaling is invisible). It shrinks to 1×1 when effects are off or the layer is hidden. Vignette canvases are capped at 4. `dispose()` releases every canvas, and `texBytes()` reports the total.
+- **Zero per-frame allocation:** hot paths stage particle parameters into the shared `S` Float64Array and call `spawnS(shape, color, flags)`. Passing 16 doubles across a non-inlined call boxed each one as a HeapNumber, about 2.4 KB per impact. PRNG state lives in a Uint32Array, and the frame/env objects are reused.
+- **Console profile (ADR-212):** when `memoryProfileFor(...) === "console"` (Xbox/PlayStation/Nintendo UA or `?profile=console`), `FX_CONSOLE` sets a 1024-slot pool, an 800-particle budget and a 1280×720 overlay cap. The effects and palette are the same. Desktop keeps 2048/1400 and the 1080p cap.
+- **Settings:** `survivaz.fx.v1` controls effects full/reduced/off, shake, hit-stop, reduced motion (auto follows `prefers-reduced-motion`), ambient and vignette. Effects follow the render-quality tier's particle scale.
+
+Measurements:
+
+| Measurement | Result |
+|---|---|
+| Node probe (`tools/fx-alloc-probe.ts`), 20k frames of stress | 59 B/frame attributed to fx. Most of it is ambient spawn arguments and `step`'s return value; before the fix it was about 2 KB/frame. |
+| `impact` microbenchmark | 0.13 B/impact (was 2463), 1.0 µs/impact |
+| Chrome/SwiftShader, 15 s sandbox with continuous bursts | fx-attributed allocation was 0.9–2.5 MB out of about 1.1 GB for the whole page (≤0.2%) |
+| Texture memory | constant after warm-up: 12.48 MB worst case at 4K/DPR2 (an uncapped 4K/DPR2 overlay alone would be 132 MB), 10.4 MB at 1280×720/DPR2, 5.8 MB under the console profile, 0 after dispose |
+| Frame cost | 0.3–0.8 ms per frame for update plus draw, with 600–1300 live particles |
+
+Tests: `apps/client/test/adr214_vfx.test.ts` (17) covers the pool (caps, stealing, ambient cap, shedding), settings, effect state, the director, a 3000-frame stress run with bounded maps, the overlay pixel cap, texBytes constant then 0 after dispose (`FX_MEM_REPORT=1` prints the numbers), and console-profile detection and caps.
+
+Consequences: effects add bounded, constant memory, and the console gets about half the particle and texture budget. The game's own allocation rate (about 70 MB/s in the sandbox) is outside this ADR. Not verified on Xbox hardware.

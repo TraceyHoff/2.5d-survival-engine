@@ -43,7 +43,8 @@ import { replicaTerrain } from "./replica-terrain.js";
 import { SocialDirectory, hasCreatedLook, setAppearanceIntent, interactPanel, petEventText, petRenameIntent, UseCmd, GatherCmd, farmPrompt, TerrainRes, type MenuCtx, type MenuIntent } from "@engine/gameplay";
 import { ClientSession } from "./session.js";
 import { mountConnectOverlay } from "./connect.js";
-import { IsoView } from "./view.js";
+import { IsoView, groundZ } from "./view.js";
+import { mountFx, saveFx } from "./fx/index.js";
 import { mountHud } from "./hud.js";
 import { mountGatherFx } from "./gather-fx.js";
 import { panelIcon } from "./gameplay-panels.js";
@@ -167,7 +168,7 @@ function maybeStartTutorial(): void {
 function startMenus(): void {
   if (menus) return;
   maybeStartTutorial();
-  menus = new GameMenus({ root, input, tutorial: { active: () => tutorialProgress().active, replay: () => { tutorialProgress().start(true); tutorialUi?.update(); }, next: () => { tutorialProgress().next(); tutorialUi?.update(); }, skip: () => { tutorialProgress().skip(); tutorialUi?.update(); } }, audio: audio.mixer, worldRules: () => (world.isRegistered(WorldRules) && world.has(world.environment, WorldRules) ? worldRules(world) : undefined), onQuit: quitToMenu, session: () => sessionInfo?.(), deleteProgress: () => deleteInfo?.(), setQuality: (p) => iso?.renderer.setQualityPreset(p), qualityInfo: () => (iso && "quality" in iso.renderer ? (iso.renderer as { quality: { autoLabel(): string; detected?: { name: string; klass: string; remembered: boolean } | undefined } }).quality : undefined), gameplay: { ctx: menuCtx, send: sendIntent, social, startPlacing: (sel) => buildMode.start(sel), worldTools: worldToolsApi, renamePet },
+  menus = new GameMenus({ root, input, tutorial: { active: () => tutorialProgress().active, replay: () => { tutorialProgress().start(true); tutorialUi?.update(); }, next: () => { tutorialProgress().next(); tutorialUi?.update(); }, skip: () => { tutorialProgress().skip(); tutorialUi?.update(); } }, audio: audio.mixer, fx: { get: () => fxLayer.settings(), set: (v) => { saveFx(v); fxLayer.apply(v); }, click: () => audio.ui("ui.click") }, worldRules: () => (world.isRegistered(WorldRules) && world.has(world.environment, WorldRules) ? worldRules(world) : undefined), onQuit: quitToMenu, session: () => sessionInfo?.(), deleteProgress: () => deleteInfo?.(), setQuality: (p) => iso?.renderer.setQualityPreset(p), qualityInfo: () => (iso && "quality" in iso.renderer ? (iso.renderer as { quality: { autoLabel(): string; detected?: { name: string; klass: string; remembered: boolean } | undefined } }).quality : undefined), gameplay: { ctx: menuCtx, send: sendIntent, social, startPlacing: (sel) => buildMode.start(sel), worldTools: worldToolsApi, renamePet },
     onChat: (text, channel, to) => { if (!session.client?.chat.send(channel as ChatChannel, text, to ? { to } : {})) menus?.pushChat("(not connected — message not sent)"); } });
 }
 /** Live data for the gameplay panels: the replicated world + local player; names via NetClient's NamesClient. */
@@ -334,7 +335,9 @@ function render(w: World, alpha: number): void {
   if (iso) {
     iso.status = { localServer: spStatus?.state ?? (session.client ? "n/a (remote)" : "idle"), snapshots: session.client?.stats.snapshots ?? 0, ...(spStatus?.error ? { error: spStatus.error } : {}) };
     { const t = performance.now(); camZoom?.setIndoor(iso.renderer.indoor, indoorT ? t - indoorT : 0); indoorT = t; } // ADR-206: ease in under a roof
-    iso.corrections = session.client; iso.render(w, session.client?.tiles.tiles, session.player, alpha, dayFrac); diag?.afterRender(); return;
+    iso.corrections = session.client; fxLayer.pre(); iso.render(w, session.client?.tiles.tiles, session.player, alpha, dayFrac);
+    try { fxLayer.draw(dayFrac); } catch { /* effects must never break a frame */ }
+    diag?.afterRender(); return;
   }
   if (!ctx) return;
   const canvas = debugCanvas;
@@ -589,6 +592,12 @@ worldTools = mountWorldTools(root, { world: () => world, player: () => session.p
 // ADR-128: node health bars + hit particles + "+3 Wood" pickup toasts
 mountGatherFx(root, { world: () => world, player: () => session.player, camera: () => iso?.renderer.camera, hidden: () => !!menus?.nav.isOpen || buildMode.active || !!vehicleCtl?.driving, device: promptDevice,
   icon: (item, key) => panelIcon(world, key, String(item)) });
+// ADR-214: pooled VFX layer (impacts, muzzle/tracers, swings, deaths, explosions, fire embers, footsteps, ambient life,
+// screen cues) on both renderers; fed by the replicated world + the audio director's events, drawn after iso.render.
+const fxLayer = mountFx(root, { world: () => world, player: () => session.player, renderer: () => iso?.renderer as never, view: () => iso,
+  audio: () => audio, ground: (x, y, z) => groundZ(session.client?.tiles.tiles, x, y, z), tile: (x, y) => session.client?.tiles.tiles.getTile(x, y) ?? 3,
+  hidden: () => !!menus?.nav.isOpen, lowEnd: LOW_END, console: memoryProfileFor(navigator.userAgent, location.search, false) === "console" });
+{ const qa = (window as { __qa?: Record<string, unknown> }).__qa; if (qa) qa["fx"] = fxLayer; }
 // ADR-196: build ghost validity outline + magnet snap-edge highlight (WebGL2 and Canvas2D)
 mountSnapOverlay(root, { preview: () => (buildMode.active ? buildMode.preview : undefined), camera: () => iso?.renderer.camera ?? (ctx ? debugCamera(cam, innerWidth, innerHeight, devicePixelRatio || 1) : undefined), hidden: () => !!menus?.nav.isOpen, groundZ: () => iso?.ghostZ });
 // ADR-161: floating loot-bag / dropped-item labels with the Interact prompt

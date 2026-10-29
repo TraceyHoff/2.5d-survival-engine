@@ -65,7 +65,9 @@ export class Canvas2DRenderer {
   private registry: AssetRegistry | undefined;
   private sources = new Map<string, AtlasSource>();
   private images = new Map<string, HTMLImageElement | ImageBitmap | null>();
-  private focus = -1; private t0 = performance.now(); private w = 0; private h = 0;
+  private focus = -1; private w = 0; private h = 0;
+  /** ADR-214: renderer-clock rate (hit-stop); the clock accumulates scaled frame time instead of reading wall time. */
+  timeScale = 1; private clock = 0; private clockAt = -1;
   /** Image loader (tests inject one). */
   loadImage: (url: string) => Promise<HTMLImageElement | ImageBitmap> = (url) => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error(url)); i.src = url; });
   readonly atlas = {
@@ -197,7 +199,7 @@ export class Canvas2DRenderer {
 
   render(world: World, alpha: number): void {
     const g = this.ctx, cam = this.camera, s = cam.scale; const stats = (this.stats = newStats());
-    const time = (performance.now() - this.t0) / 1000; const wr = readWeather(world), wt = weatherTargets(wr.kind, wr.intensity); // ADR-115: same curve + weather dimming as WebGL2 (no smoothing state: cheap)
+    const nowMs = performance.now(); if (this.clockAt >= 0) this.clock += Math.min(0.1, (nowMs - this.clockAt) / 1000) * (this.timeScale > 0 ? Math.min(1, this.timeScale) : 1); this.clockAt = nowMs; const time = this.clock; const wr = readWeather(world), wt = weatherTargets(wr.kind, wr.intensity); // ADR-115: same curve + weather dimming as WebGL2 (no smoothing state: cheap)
     const day = dimForWeather(computeDayLighting(readDayFraction(world), readDayNumber(world)), { overcast: Math.max(wt.rain, wt.fog, wt.snow * 0.7), storm: wt.storm });
     g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = "source-over"; g.globalAlpha = 1;
     g.fillStyle = rgb(day.sky); g.fillRect(0, 0, this.w, this.h);
