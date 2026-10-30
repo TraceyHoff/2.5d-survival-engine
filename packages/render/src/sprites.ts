@@ -402,6 +402,14 @@ export interface PrepareContext {
   statusFx?: ((kind: "wet" | "cold" | "heat", x: number, y: number, z: number, level: number) => void) | undefined;
 }
 
+/** ADR-232: sprite a build piece draws this frame. Building-tier pages fall back to resident tier art; manifest stream
+ *  sheets (decor: rugs, vases, ...) are requested (pageReady at near priority) and draw their placeholder, or nothing (-1),
+ *  until uploaded. Before this the stream case was never requested, so streamed decor stayed invisible. */
+export function pieceDrawSprite(atlas: Pick<AtlasManager, "streamClass" | "pageReady" | "buildingFallback" | "placeholderOf">, vis: number): number {
+  const cls = atlas.streamClass(vis); if (cls === null || atlas.pageReady(vis, PRIO_NEAR)) return vis;
+  return cls === "bld" ? atlas.buildingFallback(vis, PRIO_NEAR) : atlas.placeholderOf(vis);
+}
+
 export class SpriteBatch {
   private prog: Program;
   private vao: WebGLVertexArrayObject;
@@ -459,7 +467,7 @@ export class SpriteBatch {
   /** Seconds for newly streamed static chunks to fade in (0 = pop). */
   chunkFadeIn = 0.35;
   visible = 0;
-  staticInstances = 0; staticChunksDrawn = 0; staticRebuilds = 0;
+  staticInstances = 0; staticChunksDrawn = 0; staticRebuilds = 0; /** ADR-232: pieces drawn as their placeholder (or skipped) while a stream page loads */ streamFallbacks = 0;
   focusEntity = -1;
   /** occlusion fade state per entity index (smoothed 0..1) */
   private occT = new Float32Array(1024); private occLast = -1;
@@ -987,7 +995,7 @@ export class SpriteBatch {
     const playerLevel = hasFocus ? terrainZToFloor(fwz, Math.max(0, cx.groundZAt?.(Math.floor(fwx), Math.floor(fwy)) ?? 0)) : 0;
     const cut = !hasFocus ? null : cx.grid ? cutawayRegion(cx.grid, Math.floor(fwx), Math.floor(fwy), playerLevel, 600, (sid) => atlas.isRoof(sid))
       : this.cover.region(Math.floor(fwx), Math.floor(fwy), playerLevel);
-    this.coverNext.clear(); this.tierFallbacks = 0; this.crackOverlays = 0;
+    this.coverNext.clear(); this.tierFallbacks = 0; this.streamFallbacks = 0; this.crackOverlays = 0;
     this.cutawayActive = !!cut;
     const scratch = this.staticScratch; for (const v of scratch.values()) v.length = 0;
     const checksums = this.pieceChecks; checksums.clear(); let lastCx = NaN, lastCy = NaN, lastVis = true; this.culledChunks = 0;
@@ -1018,8 +1026,8 @@ export class SpriteBatch {
         const vis = part.vis; const rotRaw = part.rot; const rot = rotRaw & 3; const exact = (rotRaw & ROT_EXACT_PIVOT) !== 0; const level = d.level![k]!; const layer = part.layer;
         const ghost = d.ghost![k]!; const dmg = d.damageStage![k]!; const tints = cx.bindings.pieceTints?.(e); const tint = tints ? tints[0] : d.tint![k]! >>> 0;
         // tier page streaming in: draw the bare-key / other resident tier / family default art instead of nothing
-        let drawVis = vis;
-        if (atlas.streamClass(vis) === "bld" && !atlas.pageReady(vis, PRIO_NEAR)) { drawVis = atlas.buildingFallback(vis, PRIO_NEAR); if (drawVis < 0) continue; this.tierFallbacks++; }
+        const drawVis = pieceDrawSprite(atlas, vis); if (drawVis < 0) continue;
+        if (drawVis !== vis) { if (atlas.streamClass(vis) === "bld") this.tierFallbacks++; else this.streamFallbacks++; }
         const pst = cx.bindings.pieceState?.(e) ?? (d.state ? d.state[k]! - 1 : -1);
         if (!atlas.resolvePiece(drawVis, d.variant![k]!, rot, dmg, res, pst)) continue;
         // ADR-218: lit fires animate their idle loop on the render clock (per-entity phase); out fires show their unlit frame

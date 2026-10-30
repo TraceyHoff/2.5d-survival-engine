@@ -2140,3 +2140,22 @@ Browser (swiftshader, 1280×720, about 220 pieces): frame times are GPU-raster b
 - **Tests:** `adr231_drag_moves` (4: pack merge + overflow, swap, dir 1 empty/merge/swap, dir 0 merge + empty-source rejects) and `adr231_slot_drag` (6: threshold/ghost/cancel/click-swallow/Escape; touch long-press vs tap vs scroll; panel pack/merge/canvas-cancel/equip; container mappings; pad Move + A, double-tap take; HUD hotbar). `adr223_inventory_grid` drag test moved to pointer events.
 - **Full gate:** typecheck clean; 379 files / 1983 tests passed, 1 skipped.
 - **Screenshots (`/workspace/shots/drag231.mjs`, live server + real storage box):** `drag_{desktop,720p,mobile,tablet}.png` and `drag_*_ghost.png` (mid-drag ghost; mobile and tablet use a CDP touch long-press). No horizontal scroll and no overlap at 1280×800, 1280×720, 390×844 and 820×1180; each run's drop landed server-side ("Moved Gravel.").
+
+## ADR-232: Streamed decor build pieces never requested their atlas page
+
+**Finding (real bug, not a headless artefact).** Rugs and vases placed in the world stayed invisible in WebGL. Runtime probe of the view world after placing campfire, wood_stove, rug_2x2 and vase:
+- `dec_rug_2x2__plain` and `dec_vase__tall` resolve to manifest **stream** sheets (`streamClass` = "stream"). Their page state stayed `"missing"` forever. Campfire (`bonfire`) and stove (`furnace`) are on resident sheets, which is why they showed.
+- `SpriteRenderer.gatherPieces` only handled the `"bld"` tier pool: it called `pageReady` (which touches and requests the page) for building tiers alone. For every other streamed class it wrote the instance straight from the frame table, so nothing ever requested the page and the instance pointed at an unloaded layer.
+- Culling, sorting and static chunk insertion were fine: the pieces were in the chunk (`staticInstances` 6). The page simply never loaded.
+- Any GPU is affected, not just SwiftShader. The rug only showed earlier when the build ghost (a dynamic sprite, which does call `streamNear`) had already paged in the decor sheet. So decor placed by other players, or loaded from a save, was invisible.
+
+**Decision.** New exported `pieceDrawSprite(atlas, vis)` in `sprites.ts` picks the sprite a piece draws each frame:
+- resident art draws as is;
+- a building-tier page falls back to the resident tier (unchanged);
+- any other streamed page is requested at `PRIO_NEAR` (so the fallback ladder never starves it) and the piece draws the sheet's placeholder, or nothing, until the page is uploaded.
+
+Because the instance changes when the page arrives, the static chunk checksum changes and the chunk rebuilds once. Visible pieces touch their page each frame, so it is not idle-unloaded while on screen. New `streamFallbacks` counter.
+
+**Evidence.**
+- **Tests:** `stream.test.ts` has 2 new ADR-232 tests: the request is made and the placeholder or skip is drawn until resident; it still requests when the ladder is off. 8 tests in the file.
+- **Headless WebGL (SwiftShader + GPU spoof):** rug and vase page state goes missing → resident and both are drawn (`/workspace/shots/decor232_webgl.png`). `staticRebuilds` settles; there was no change over the last 10 s idle.

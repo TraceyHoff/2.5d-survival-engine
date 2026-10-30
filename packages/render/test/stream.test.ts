@@ -4,6 +4,7 @@ import { loadManifest, ManifestError, type AssetRegistry } from "@engine/assets"
 import { PACK_DIR } from "@engine/assets/node";
 import { AtlasManager, STREAM_UNLOAD_FRAMES, STREAM_UPLOADS_PER_FRAME } from "../src/assets/atlasManager.js";
 import { PageLRU, PRIO_NEAR } from "../src/gl/vram.js";
+import { pieceDrawSprite } from "../src/sprites.js";
 
 const json = (p: string) => JSON.parse(readFileSync(PACK_DIR + p, "utf8"));
 const img = (k: string) => ({ key: k, image: `atlases/${k}.png`, frameW: 32, frameH: 32, columns: 4, rows: 4 });
@@ -80,5 +81,22 @@ describe("stream pool: placeholders, near-view load/keep, upload budget, idle un
     am.streamNear(c[2], true, 4); await flush(); expect(am.pools[0].lru.size).toBe(2); expect(am.pools[0].lru.has("crop_t2")).toBe(true);
     am.wearablesOn = false; am.streamNear(c[3], true, 400); await flush(); expect(am.started).not.toContain("crop_t3");
     am.streamNear(c[3], true, PRIO_NEAR); await flush(); expect(am.started).toContain("crop_t3");
+  });
+});
+
+describe("ADR-232: build pieces on stream sheets (decor rugs / vases) request their page", () => {
+  it("pieceDrawSprite requests a missing stream page, draws the placeholder (or nothing) meanwhile, then the real art", async () => {
+    const { reg } = pack(3); const am = mgr(reg); const rug = id(reg, "crop_t0_a"), vase = id(reg, "clutter_t");
+    expect(pieceDrawSprite(am, rug)).toBe(id(reg, "ph_sprout")); // was: drawn from a never-requested page = invisible forever
+    expect(pieceDrawSprite(am, vase)).toBe(-1); // placeholder null: skipped until resident
+    expect(am.started).toEqual(["crop_t0", "crop_t1"]);
+    await flush(); am.beginFrame();
+    expect(pieceDrawSprite(am, rug)).toBe(rug); expect(pieceDrawSprite(am, vase)).toBe(vase);
+    expect(pieceDrawSprite(am, id(reg, "ph_sprout"))).toBe(id(reg, "ph_sprout")); // resident art: unchanged, no request
+    expect(am.started.length).toBe(2);
+  });
+  it("stays requested with wearables/stream ladder off (near priority)", async () => {
+    const { reg } = pack(2); const am = mgr(reg); am.wearablesOn = false; const rug = id(reg, "crop_t0_a");
+    pieceDrawSprite(am, rug); await flush(); expect(am.started).toEqual(["crop_t0"]); expect(pieceDrawSprite(am, rug)).toBe(rug);
   });
 });
