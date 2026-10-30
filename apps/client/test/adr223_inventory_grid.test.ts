@@ -5,13 +5,13 @@ import { installPermissions, Membership, PlayerId, World } from "@engine/core";
 import * as G from "@engine/gameplay";
 import { GameMenus, padMenuAction } from "../src/game-menus.js";
 import { PAD } from "../src/ui-nav.js";
-import { craftUi } from "../src/gameplay-panels.js";
+import { craftUi, resetSlotDrag } from "../src/gameplay-panels.js";
 
 type Pad = { buttons: { pressed: boolean; value?: number }[]; axes: number[] };
 const pad = (): Pad => ({ buttons: Array.from({ length: 17 }, () => ({ pressed: false })), axes: [0, 0, 0, 0] });
 const d = G.defaultDefs(); const id = (k: string): number => d.itemId(k);
 
-beforeEach(() => { document.head.innerHTML = ""; document.body.innerHTML = `<div id="game-root"><canvas id="game"></canvas></div>`; localStorage.clear(); (globalThis as { matchMedia?: unknown }).matchMedia = () => ({ matches: false }); });
+beforeEach(() => { resetSlotDrag(); document.head.innerHTML = ""; document.body.innerHTML = `<div id="game-root"><canvas id="game"></canvas></div>`; localStorage.clear(); (globalThis as { matchMedia?: unknown }).matchMedia = () => ({ matches: false }); });
 
 function setup() {
   const w = new World({ seed: 1, maxEntities: 1 << 12 }); G.installGameplay(w, {}); installPermissions(w); G.installEconomy(w); G.installCraftQueue(w);
@@ -63,11 +63,12 @@ describe("ADR-223 slot-grid inventory", () => {
   });
   test("drag a tile onto another slot moves it (MoveSlotCmd); onto Equipment equips", () => {
     const { w, me, sent, menus } = setup(); G.addItem(w, me, id("wood"), 5); G.addItem(w, me, id("stone_axe"), 1); menus.open("inventory");
-    const dt = (slot: number) => ({ getData: () => String(slot), setData: () => {} });
-    const drop = (t: HTMLElement, slot: number): void => { const e = new Event("drop", { bubbles: true, cancelable: true }); Object.defineProperty(e, "dataTransfer", { value: dt(slot) }); t.dispatchEvent(e); };
-    drop(q(`[data-key=slot-${G.HOTBAR_SIZE + 2}]`), 0); const mv = sent.find((i) => i.cmd === G.MoveSlotCmd); expect(mv?.args).toMatchObject({ slot: 0, to: G.HOTBAR_SIZE + 2 });
+    // ADR-231: pointer drag (was HTML5 drag-and-drop): mouse down, move past the threshold, release over the target slot
+    const drag = (from: HTMLElement, to: HTMLElement): void => { const pe = (t: string, x: number): void => { const e = new MouseEvent(t, { bubbles: true, clientX: x, clientY: x, button: 0 }); Object.defineProperty(e, "pointerId", { value: 1 }); Object.defineProperty(e, "pointerType", { value: "mouse" }); from.dispatchEvent(e); };
+      (document as { elementFromPoint?: unknown }).elementFromPoint = () => to; pe("pointerdown", 10); pe("pointermove", 40); pe("pointerup", 40); };
+    drag(q("[data-key=slot-0]"), q(`[data-key=slot-${G.HOTBAR_SIZE + 2}]`)); const mv = sent.find((i) => i.cmd === G.MoveSlotCmd); expect(mv?.args).toMatchObject({ slot: 0, to: G.HOTBAR_SIZE + 2 });
     expect(G.readSlots(w, me as never).item(G.HOTBAR_SIZE + 2)).toBe(id("wood"));
-    drop(q("[data-role=equipment]"), 1); expect(sent.some((i) => i.cmd === G.EquipCmd)).toBe(true);
+    drag(q("[data-key=slot-1]"), q("[data-role=equipment] [data-role=equip]")); expect(sent.some((i) => i.cmd === G.EquipCmd)).toBe(true);
     menus.destroy();
   });
   test("hotbar key / hotbar tap on food eats (UseCmd), on a tool equips (EquipCmd)", () => {

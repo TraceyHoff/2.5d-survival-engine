@@ -31,7 +31,7 @@ export interface SlotDragOptions {
 export interface SlotDrag { readonly active: boolean; cancel(): void; destroy(): void }
 
 function canScroll(el: HTMLElement, stop: HTMLElement | Document): boolean {
-  for (let n: HTMLElement | null = el.parentElement; n && n !== stop; n = n.parentElement) {
+  for (let n: HTMLElement | null = el.parentElement; n; n = n === stop ? null : n.parentElement) { // the root itself may be the scroller
     const cs = getComputedStyle(n); if (/(auto|scroll)/.test(cs.overflowY + cs.overflowX) && (n.scrollHeight > n.clientHeight + 1 || n.scrollWidth > n.clientWidth + 1)) return true;
   }
   return false;
