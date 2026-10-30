@@ -2223,3 +2223,35 @@ Several nodes had more than one bug, which is why the counts sum past 33. Also, 
 They are stepping stones to the gated levels. The mechanics nodes' repair and vfuel mods are verified. The audit checks that each level is granted.
 
 **Evidence.** `adr234_skill_audit.test.ts`: 137 tests (135 nodes, coverage, poison). Against the old src, 34 fail; all pass after the fixes. Full suite: 2124 passed, 1 skipped.
+
+## ADR-235: Bigger content areas in list modals (build, crafting, inventory, container)
+
+**Context.** The owner wants to see more pieces, slots and items at once. The grids were capped at fixed sizes: piece grid `min(38vh,300px)`, recipe grid `min(36vh,280px)` and inventory grid `min(34vh,252px)`. Panels were also capped at 560–940px. At 1080p this left the build grid showing 12 of 37 pieces in a 720px panel surrounded by mostly empty screen.
+
+**Decision.** A CSS-only block, appended last in `gameplay-panels.css` so it overrides the earlier caps:
+- **Wider panels:**
+  - build: `min(1120px,96vw)`;
+  - crafting: `min(1000px,96vw)`;
+  - inventory: `min(960px,96vw)`;
+  - container view: `min(1200px,96vw)`, with slot tiles at `min(56px, …)` instead of 48px.
+- **Grid heights come from the viewport:** each is `max(floor, calc(100dvh - chrome))`, where chrome is the measured header, tabs and details. The panel therefore never exceeds `100dvh-16px`, and the grid stays the only scroll container.
+- **Phones (≤620px):**
+  - build and recipe grids use 4 columns of 76–80px tiles instead of 3;
+  - piece names are 10.5px, with tighter borders and word-boundary wrapping (no mid-word "Foundatio-n" break);
+  - stacked container and pack grids each get half the free height.
+
+Tile sizes and hit targets (≥48/56px) are unchanged. Spatial gamepad and arrow navigation was checked: it still moves through the grid and keeps the focused tile in view. The bottom-row → header wrap is the same as before.
+
+**Evidence.** `bigger.mjs` (Playwright and Chrome sandbox) measured each view at 1920×1080, 1280×720, tablet 820×1180 touch and mobile 390×844 touch.
+- "Visible" counts tiles fully inside both the grid and the viewport.
+- "Cap" counts the slots that fit without scrolling.
+- No panel or page scroll and no cut-off at any size.
+
+| View | 1080p | 720p | Tablet | Mobile |
+|---|---|---|---|---|
+| Build pieces visible | 12→37 of 37 | 12→20 | 12→37 | 6→12 |
+| Crafting recipes visible | 15→35 of 35 | 10→30 | 15→35 | 9→16 |
+| Inventory pack capacity | 28→72 | 21→32 | 28→72 | 48→88 |
+| Container storage capacity | 48→72 | 32→40 | 56→104 | 24→40 |
+
+Inventory and container show all of their 8 and 12 test items both before and after. `adr235_bigger_lists.test.ts` has 4 tests. Screenshots: `/workspace/shots/bigger_{before,after}_{1080p,720p,tablet,mobile}_{build,crafting,inventory,container}.png`.

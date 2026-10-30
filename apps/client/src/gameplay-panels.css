@@ -1138,3 +1138,25 @@ html[data-slot-dragging] .gm-modal .gm-panel [data-role=inv-layout] button[data-
 .gm-modal .gm-panel header [data-tip]:not([data-tip=""])::before{bottom:auto;top:calc(100% + 6px);left:auto;right:0;transform:translateY(-4px)}
 .gm-modal .gm-panel header [data-tip]:not([data-tip=""]):is(:hover,:focus-visible,:focus,:active)::before{transform:none}
 @media (hover:none),(pointer:coarse){.gm-modal .gm-panel header [data-tip]:not([data-tip=""]):focus:not(:active)::before{opacity:0;visibility:hidden}}
+
+/* ADR-235 bigger content areas: list modals use the viewport (wider panels, grids sized from the
+   viewport height minus measured chrome instead of fixed px caps). Same tiles/hit sizes; panels never
+   exceed 100dvh-16px so nothing is cut off, and the grids stay the scroll containers for gamepad nav. */
+.gm-modal .gm-panel:has([data-role=build-cats]){width:min(1120px,96vw);max-width:min(1120px,96vw)}
+.gm-modal .gm-panel [data-role=body] [data-role=piece-grid]{grid-template-columns:repeat(auto-fill,minmax(96px,1fr));max-height:max(200px,calc(100dvh - 420px))}
+.gm-modal .gm-panel:has([data-role=recipe-grid]){width:min(1000px,96vw);max-width:min(1000px,96vw)}
+.gm-modal .gm-panel [data-role=body] [data-role=recipe-grid]{max-height:max(180px,calc(100dvh - 400px))}
+.gm-modal .gm-panel:has([data-role=inv-layout]){max-width:min(960px,96vw)}
+.gm-modal .gm-panel [data-role=inv-grid]{max-height:max(130px,min(calc(100dvh - 430px),560px))}
+.gm-modal .gm-panel:has([data-role=inv-layout][data-mode=container]){max-width:min(1200px,96vw)}
+.gm-modal .gm-panel [data-role=inv-layout][data-mode=container]{--inv-t:min(56px,calc(((min(1200px,96vw) - 46px) / 2 - 44px) / 8))}
+.gm-modal .gm-panel [data-role=container-grid],.gm-modal .gm-panel [data-role=inv-layout][data-mode=container] [data-role=inv-grid]{max-height:max(130px,min(calc(100dvh - 380px),600px))}
+@media (max-width:760px){
+  .gm-modal .gm-panel [data-role=inv-layout][data-mode=container]{--inv-t:min(48px,calc((94vw - 72px) / 8))}
+  .gm-modal .gm-panel [data-role=container-grid],.gm-modal .gm-panel [data-role=inv-layout][data-mode=container] [data-role=inv-grid]{max-height:max(100px,calc((100dvh - 420px) / 2))}}
+@media (max-width:620px){
+  .gm-modal .gm-panel [data-role=body] [data-role=piece-grid]{grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:4px;padding:4px;max-height:max(200px,calc(100dvh - 440px))}
+  .gm-modal .gm-panel [data-role=body] [data-role=piece-grid] button[data-role=piece],.gm-modal .gm-panel [data-role=body] [data-role=piece-grid] button[data-role=piece][aria-pressed=true]{font-size:10.5px;letter-spacing:-.01em;border-width:8px 8px 10px;border-image-width:8px 8px 10px;padding:34px 0 2px}
+  .gm-modal .gm-panel [data-role=piece-grid] button .nm{word-break:normal;overflow-wrap:anywhere}
+  .gm-modal .gm-panel [data-role=body] [data-role=recipe-grid]{grid-template-columns:repeat(auto-fill,76px);max-height:max(180px,calc(100dvh - 480px))}
+  .gm-modal .gm-panel [data-role=body] [data-role=recipe-grid] button[data-role=recipe]{width:76px}}
