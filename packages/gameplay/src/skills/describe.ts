@@ -27,7 +27,7 @@ const cap = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
 
 /** Label per additive mod (what a +x% means in play). Every mod key in skills.json must be here (tested). */
 export const SKILL_MOD_LABEL: Readonly<Record<string, string>> = {
-  gather: "gathering yield", cropYield: "crop harvest yield", carry: "carry weight",
+  gather: "gathering yield", cropYield: "harvest yield of crops, fruit trees and berry bushes", carry: "carry weight",
   fuel: `burn time of fuel in fires you tend (within ${FIRE_TENDER_RADIUS} tiles)`, vfuel: "liters per fuel item when refueling vehicles",
   repair: "vehicle repair per kit", nutrition: "nutrition from food", heal: "healing from food and medicine",
   produce: "animal produce speed (eggs, milk, wool)", tame: "taming chance", xp: "XP from all activities", noise: "noise you make (how far zombies can hear you)",

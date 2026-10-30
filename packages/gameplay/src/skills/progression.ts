@@ -109,6 +109,14 @@ function credit(world: World, e: Entity, ti: number, amount: number): void {
   addXp(world, e, amount); addTreeXp(world, e, ti, amount);
 }
 
+/** ADR-234: sim-local fractional XP remainders (server only; under 1 XP per entity is lost on restart). */
+const carries = new WeakMap<World, Map<string, number>>();
+/** Whole XP to credit now for `v`; the fraction is kept for the next award of the same entity / kind. */
+export function carryRound(world: World, kind: string, e: Entity, v: number): number {
+  let m = carries.get(world); if (!m) carries.set(world, (m = new Map()));
+  const k = `${kind}:${e}`; const acc = (m.get(k) ?? 0) + Math.max(0, v); const n = Math.floor(acc + 1e-9);
+  if (m.size > 8192) m.clear(); m.set(k, acc - n); return n;
+}
 /** Award XP (scaled by the source table x skill "xp" mod); levels up and grants points. Shares to nearby party/clan. */
 export function awardXp(world: World, e: Entity, source: XpSource, units = 1, share = true): number {
   if (!isAuthority(world) || world.isReplaying || !world.isAlive(e) || !world.has(e, Progression)) return 0;
@@ -118,11 +126,12 @@ export function awardXp(world: World, e: Entity, source: XpSource, units = 1, sh
 export function awardXpRaw(world: World, e: Entity, source: string, base: number, share = true): number {
   if (!isAuthority(world) || world.isReplaying || !world.has(e, Progression)) return 0;
   // ADR-225: AI humans (virtual players) compress a player's hours into their short lives: x aiHumanMul
-  const amount = Math.round(base * (1 + skillMod(world, e, "xp")) * (isAiHuman(world, e) ? XP.aiHumanMul ?? 1 : 1));
+  // ADR-234: fractional XP carries over per entity (Math.round erased +5% / +10% XP on the 1-6 XP activity awards)
+  const amount = carryRound(world, "xp", e, base * (1 + skillMod(world, e, "xp")) * (isAiHuman(world, e) ? XP.aiHumanMul ?? 1 : 1));
   if (amount <= 0) return 0;
   const ti = treeOfSource(source); credit(world, e, ti, amount); emit(world, XpGained, { entity: e, source, amount, tree: TREE_KEYS[ti]! });
   const sh = share ? skillMod(world, e, "share") : 0;
-  if (sh > 0) { const mates = matesNear(world, e, XP_SHARE_RADIUS); const each = Math.round(amount * sh); if (each > 0) for (const m of mates) credit(world, m, ti, each); }
+  if (sh > 0) for (const m of matesNear(world, e, XP_SHARE_RADIUS)) { const each = carryRound(world, "share", m, amount * sh); if (each > 0) credit(world, m, ti, each); } // ADR-234: carried, not rounded to 0
   return amount;
 }
 function addXp(world: World, e: Entity, amount: number): void {

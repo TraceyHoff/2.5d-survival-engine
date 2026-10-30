@@ -2172,3 +2172,51 @@ Because the instance changes when the page arrives, the static chunk checksum ch
 **Evidence.**
 - `adr233_header_tip.test.ts` (2 tests).
 - Screenshots, tablet 820×1180 at DSF 2: `/workspace/shots/tab233_before.png` shows the sliver; `tab233_after.png` shows it gone.
+
+## ADR-234: Skill-tree audit, all 135 nodes measured server-side
+
+**Context.** The owner asked whether every skill-tree node actually gives its bonus. ADR-219 generates each node's description from its `effects` data, so the description values are the spec. Until now, tests only checked that a modifier was summed, not that the system consuming it produced the described change.
+
+**Decision.** `test/adr234_skill_audit.test.ts` has one case per node. Each case builds two players with the same prerequisites, one of them also owning the node, and runs the real authoritative system. It asserts the measured ratio equals (1 + sum with) / (1 + sum without).
+
+What each case measures:
+- **gather / cropYield:** bare-hand swings at fresh nodes. NetId pairs the base roll across the two worlds, 2000 swings. Covered nodes: wild tree, crop_wheat, apple_tree and blueberry_bush.
+- **carry:** stones accepted.
+- **fuel:** campfire burn ticks with the player within 6 tiles.
+- **vfuel / repair:** refuel liters and repair HP.
+- **nutrition:** hunger from berries.
+- **heal:** HP from bandage and medkit.
+- **noise:** NoiseLevel.
+- **xp:** 500 gather awards.
+- **share:** a party mate's XP.
+- **dmg_\*:** `applyDamage` with a held weapon of the class.
+- **tame:** chance.
+- **produce:** egg interval at a trough.
+- **breeding and iron_stomach perks:** checked directly.
+- **skill levels:** level reached, plus `meetsSkill` on a recipe at that level.
+- **husbandry 1 / 2:** taming and pens.
+- **unlock tokens:** `hasSkillUnlock`, `pieceUnlocked` and the station crafting gate.
+
+A coverage case rejects any effect kind the audit does not handle.
+
+Run against the old code, 33 of 135 nodes failed. Fixes:
+
+| Nodes | Bug | Fix |
+|---|---|---|
+| wilderness_master, battle_hardened, tinkerer, master_farmer, preserver, master_chef, doctor, carpenter, architect, interior_designer, master_builder, phantom, diplomat, chieftain, tactician (15) | `awardXpRaw` rounded `base*(1+xp)` per award, and activity awards are 1–6 XP, so +5% / +10% rounded to 0 (measured ×1.00). | Per-entity fractional carry (`carryRound`, sim-local), so the XP is paid out over time. |
+| rally, mentor, commander, chieftain (4) | Party/clan share was `Math.round(amount*share)`, which is 0 for small awards (mates got nothing). Stacked share also rounded wrong. | Per-mate fractional carry. |
+| hardy, camp_cook, seasoning, preserver, baker, butcher_block, gourmet, glutton, master_chef, brewer, antiseptics (11) | The "nutrition" multiplier also scaled the health of food and medicine, so cooking nodes boosted bandages/medkits and heal nodes over-healed. It also scaled poison (raw meat −hp). | Health uses freshness × heal mod only; negative health is unscaled. |
+| green_thumb, composter, irrigator, orchardist, master_farmer, monoculture (6) | `cropYield` applied only to `crop_*` nodes. Planted fruit trees and berry bushes used "gather", so orchardist did nothing for orchards and monoculture's −10% gather hit fruit. | `yieldSkillMod`: food yields of non-crop plantables (farming.json `becomes`) use cropYield. Description now says "harvest yield of crops, fruit trees and berry bushes". |
+| husbandry_pens (1) | Husbandry level 2 was checked nowhere. Tamed animals produced and bred at troughs without it. | `canUsePens`: an owner needs husbandry ≥ 2 for trough settling, production and breeding. Owners with no Progression or who are offline are not gated. |
+
+Several nodes had more than one bug, which is why the counts sum past 33. Also, `tameChance` was renamed `livestockTameChance`, because `pets.ts` already exports `tameChance`.
+
+**Not changed (informational).** These nodes raise levels that no recipe currently gates:
+- Mechanics levels 1–4;
+- smithing 1–2 and 4;
+- bowyery 1–2 and 4;
+- demolitions 2 and 4.
+
+The audit verifies the level is granted. Their repair, vfuel and other mods are verified.
+
+**Evidence.** `adr234_skill_audit.test.ts`: 137 tests (135 nodes, coverage, poison). Against the old src, 34 fail; all pass after the fixes. Full suite: 2124 passed, 1 skipped.

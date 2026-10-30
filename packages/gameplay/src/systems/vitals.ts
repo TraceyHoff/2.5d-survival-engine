@@ -84,7 +84,9 @@ export function consumeSystem(world: World, dt = 1 / 20): void {
     const sv = world.get(e, Survival)!; const hp = world.get(e, Health)!; const k = stage.nutritionMul * per * skillMul(world, e, "nutrition");
     const iron = stage.sick && ironPerk; // ADR-113: no sickness, flat hp cost instead
     world.set(e, Survival, { hunger: clamp(sv.hunger + food.hunger * k, 0, 100), thirst: clamp(sv.thirst + food.thirst * k, 0, 100) });
-    world.set(e, Health, { hp: clamp(hp.hp + food.health * k * (food.health > 0 ? skillMul(world, e, "heal") : 1) - (iron ? IRON_STOMACH_HP : 0), 0, hp.max) });
+    // ADR-234: health uses the freshness stage and the "heal" mod only; "nutrition" no longer scales bandages / medkits (or poison)
+    const kh = stage.nutritionMul * per * (food.health > 0 ? skillMul(world, e, "heal") : 1);
+    world.set(e, Health, { hp: clamp(hp.hp + food.health * kh - (iron ? IRON_STOMACH_HP : 0), 0, hp.max) });
     const sp = defs.environment.spoilage;
     if (stage.sick && !iron) {
       const until = world.tick + secondsToTicks(sp.sickSeconds, dt);

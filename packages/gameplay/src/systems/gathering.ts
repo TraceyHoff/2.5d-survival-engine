@@ -20,6 +20,14 @@ import { makeNoise } from "./noise.js";
 import { addItem, slotItem } from "../inventory.js";
 import { spendStamina } from "./vitals.js";
 import { scaleCount, skillMul } from "../skills/tree.js";
+import farmingRaw from "../../data/farming.json";
+/** ADR-234: nodes a player can grow without tilling (berry bushes, saplings): their food yields are farm produce. */
+const ORCHARD_NODES: ReadonlySet<string> = new Set((farmingRaw as unknown as { plantables: { type: string; becomes: string }[] }).plantables.filter((p) => p.type !== "crop").map((p) => p.becomes));
+/** ADR-234: which skill mod scales a yield: "cropYield" for crop_* nodes and the food (fruit / berries) of orchard nodes, else "gather". */
+export function yieldSkillMod(defs: GameDefs, nodeKey: string | undefined, item: number): "cropYield" | "gather" {
+  if (!nodeKey) return "gather"; if (nodeKey.startsWith("crop_")) return "cropYield";
+  return ORCHARD_NODES.has(nodeKey) && defs.items.get(item)?.food ? "cropYield" : "gather";
+}
 
 const BARE_HANDS: ToolDef = { kind: ToolKind.None, tier: 0 };
 
@@ -157,7 +165,7 @@ export function gatherSystem(world: World, dt: number): void {
       if (y.chance < 1 && rng.next() >= y.chance) return;
       const rolled = rng.int(y.min, y.max + 1) + (i === 0 ? bonus : 0);
       const n0 = bare ? Math.max(defs.bareHands.minYield, Math.floor(rolled * defs.bareHands.yieldMul)) : rolled;
-      const gm = skillMul(world, e, defs.resources.get(world.get(node, ResourceNode)!.kind)?.key.startsWith("crop_") ? "cropYield" : "gather");
+      const gm = skillMul(world, e, yieldSkillMod(defs, defs.resources.get(world.get(node, ResourceNode)!.kind)?.key, y.item));
       const n = gm === 1 ? n0 : scaleCount(n0, gm, rng.next()); // ADR-113 (no extra roll without perks: rng stream unchanged)
       if (n <= 0) return;
       const added = addItem(world, e, y.item, n);

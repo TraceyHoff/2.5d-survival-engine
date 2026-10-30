@@ -30,6 +30,11 @@ export function animalNear(world: World, e: Entity, r = H.reach): Entity | undef
   for (const a of world.query([Animal, Transform], [Dead])) { const at = world.get(a, Transform)!; const d = (at.x - t.x) ** 2 + (at.y - t.y) ** 2; if (d <= bd && (best === undefined || d < bd || a < best)) { bd = d; best = a; } }
   return best;
 }
+/** ADR-234: taming chance for e (base x (1 + "tame" mod), capped at 95%). */
+export const livestockTameChance = (world: World, e: Entity): number => Math.min(0.95, H.tameBase * (1 + skillMod(world, e, "tame")));
+/** ADR-234: Husbandry 2 ("pens"): an owner's tamed animals settle, produce and breed at feeding troughs. Owners without
+ *  Progression (NPCs, legacy) or offline owners (no live entity to read) are not gated. */
+export const canUsePens = (world: World, owner: Entity): boolean => !owner || !world.isAlive(owner) || (skillLevelOf(world, owner, "husbandry") ?? 2) >= 2;
 /** Dry-run (dryRun) or perform feeding/taming of the animal in front. Returns failure and whether feed should be consumed. */
 export function feedAnimal(world: World, e: Entity, dryRun = false): { fail: TameFail; tame: boolean; consumed: boolean } {
   const a = animalNear(world, e); if (a === undefined) return { fail: TameFail.NoAnimal, tame: false, consumed: false };
@@ -42,7 +47,7 @@ export function feedAnimal(world: World, e: Entity, dryRun = false): { fail: Tam
   const kind = world.get(a, Animal)!.kind; if (!domestic(kind)) return { fail: TameFail.NotDomestic, tame: true, consumed: false };
   if ((skillLevelOf(world, e, "husbandry") ?? 1) < 1) return { fail: TameFail.NeedsSkill, tame: true, consumed: false };
   if (dryRun) return { fail: TameFail.None, tame: true, consumed: true };
-  const chance = Math.min(0.95, H.tameBase * (1 + skillMod(world, e, "tame")));
+  const chance = livestockTameChance(world, e);
   if (world.rngFor(`husbandry.tame.${world.tick}`, a).next() >= chance) return { fail: TameFail.Failed, tame: true, consumed: true };
   const now = world.tick; const p = H.animals[animalDefs()[kind]!.key]!;
   world.add(a, Tamed, { kind, owner: e, fedUntil: now + sec(H.fedSeconds), produceAt: now + sec(p.seconds), breedAt: now + sec(H.breedSeconds) });
@@ -67,7 +72,7 @@ export function husbandrySystem(world: World): void {
   }
   const atTrough = (a: Entity): Entity | undefined => { const t = world.get(a, Transform)!; return tr.find((b) => { const bt = world.get(b, Transform)!; return (bt.x - t.x) ** 2 + (bt.y - t.y) ** 2 <= H.troughRange ** 2; }); };
   const perTrough = new Map<Entity, Entity[]>();
-  for (const a of animals) { const b = atTrough(a); if (b !== undefined) { const l = perTrough.get(b) ?? []; l.push(a); perTrough.set(b, l); } }
+  for (const a of animals) { const b = canUsePens(world, world.get(a, Tamed)!.owner) ? atTrough(a) : undefined; if (b !== undefined) { const l = perTrough.get(b) ?? []; l.push(a); perTrough.set(b, l); } }
   for (const [b, list] of perTrough) {
     for (const a of list) {
       const t = world.get(a, Tamed)!; if (t.fedUntil <= now) continue;
