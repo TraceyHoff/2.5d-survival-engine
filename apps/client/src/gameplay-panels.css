@@ -1133,3 +1133,8 @@ html[data-slot-dragging] .gm-modal .gm-panel [data-role=inv-layout] button[data-
 /* ADR-224: a tooltip on the last tile of a row-grid opens leftwards (never past the panel's right edge) */
 .gm-modal .gm-panel .gm-grid > [data-tip]:last-child:not(:first-child)::before{left:auto;right:0;transform:none}
 .gm-modal .gm-panel [data-role=body] [data-role=piece-grid] button[data-role=piece][aria-pressed=true]{border-width:10px 10px 12px;border-image-width:10px 10px 12px;padding:34px 2px 2px}
+/* ADR-233: header (close) tooltips open below, right-aligned, inside the panel; on touch the auto-focused close button
+   no longer pops its tip on open (it was clipped by the panel top as a stray "tab" sliver) - only a press shows it */
+.gm-modal .gm-panel header [data-tip]:not([data-tip=""])::before{bottom:auto;top:calc(100% + 6px);left:auto;right:0;transform:translateY(-4px)}
+.gm-modal .gm-panel header [data-tip]:not([data-tip=""]):is(:hover,:focus-visible,:focus,:active)::before{transform:none}
+@media (hover:none),(pointer:coarse){.gm-modal .gm-panel header [data-tip]:not([data-tip=""]):focus:not(:active)::before{opacity:0;visibility:hidden}}

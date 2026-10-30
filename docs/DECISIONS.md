@@ -2159,3 +2159,16 @@ Because the instance changes when the page arrives, the static chunk checksum ch
 **Evidence.**
 - **Tests:** `stream.test.ts` has 2 new ADR-232 tests: the request is made and the placeholder or skip is drawn until resident; it still requests when the ladder is off. 8 tests in the file.
 - **Headless WebGL (SwiftShader + GPU spoof):** rug and vase page state goes missing → resident and both are drawn (`/workspace/shots/decor232_webgl.png`). `staticRebuilds` settles; there was no change over the last 10 s idle.
+
+## ADR-233: Stray "tab" behind the panel's top-right corner on touch devices
+
+**Context.** ADR-231's tablet and mobile screenshots showed a small light rounded sliver at the top edge of every modal, just left of the close button. It was not hit-testable (`elementsFromPoint` only returned the panel). The cause was the close button's tooltip: modals auto-focus the close button, and on touch (`hover:none`/`pointer:coarse`) `:focus` shows the `data-tip` tooltip. That tooltip is anchored *above* its button (`bottom:calc(100% + 8px)`), so the panel's top edge clipped it, leaving only its bottom border and shadow visible. Desktop was unaffected because it only shows tips on hover or `:focus-visible`.
+
+**Decision.** In `gameplay-panels.css`:
+- Tooltips on `header` buttons open below the button and right-aligned, so they stay inside the panel.
+- On touch, `:focus` alone (the modal's auto-focus) no longer shows a header tooltip. A press (`:active`) still does.
+- Every other button keeps its tap-to-show tooltip.
+
+**Evidence.**
+- `adr233_header_tip.test.ts` (2 tests).
+- Screenshots, tablet 820×1180 at DSF 2: `/workspace/shots/tab233_before.png` shows the sliver; `tab233_after.png` shows it gone.
