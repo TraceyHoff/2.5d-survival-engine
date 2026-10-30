@@ -12,7 +12,7 @@ import { revealAboveFooter } from "./back-history.js";
 import { deployKitIntent, isKit } from "./vehicle-controls.js";
 import { clanMemberActions } from "./clan-actions.js";
 import "./gameplay-panels.css";
-import { iconForItem,
+import { iconForItem, ROADS, clanTintIndex,
   buildView, gameplayDefs, cancelQueuedCraftIntent, clanAcceptIntent, clanDeclineIntent, clanRosterRows, onlineTargets, paintIntent, paintTarget, type SocialDirectory, clanCreateIntent, clanDemoteIntent, clanDisbandIntent, clanInviteIntent, clanKickIntent, clanLeaveIntent,
   clanPromoteIntent, takeAllIntent, LootBag, clanSetGoalIntent, clanSetRankPermsIntent, clanView, collectTillIntent, containerView, CONTAINER_PAGE_SIZE, craftingView, depositIntent, fuelView, toggleFireIntent, openContainer, withdrawIntent, equipCosmeticIntent, inventoryView, JOB_STATE_LABEL,
   nearestStall, partyAcceptIntent, partyDeclineIntent, partyInviteIntent, partyKickIntent, partyLeaveIntent, partyView, queueCraftIntent, buyFromStallIntent,
@@ -24,7 +24,7 @@ import { iconForItem,
   treeShortName, treeIndex, readSlots,
 } from "@engine/gameplay";
 import { colorChoices, requestCharacterEdit } from "./character-creator.js";
-import { GroupRole, PlayerId, SLOT_PALETTE, Transform, type Entity, type WearableSlot } from "@engine/core";
+import { GroupRole, Membership, PlayerId, SLOT_PALETTE, Transform, type Entity, type WearableSlot } from "@engine/core";
 
 export const GAMEPLAY_PANELS = ["inventory", "crafting", "build", "character", "party", "clan", "trade", "camper", "skills", "station", /* ADR-145 */ "pet"] as const;
 export type GameplayPanel = (typeof GAMEPLAY_PANELS)[number];
@@ -37,6 +37,8 @@ export interface GameplaySource {
   onBuildSelect?(s: BuildSelection): void;
   /** Enter build mode with this selection (aim-point placement, see build-mode.ts). */
   startPlacing?(s: BuildSelection): void;
+  /** ADR-229: clan palette primary (0xRRGGBB) for a BuildPiece tint index (registry.clanPaletteForTint); tints the white cloth icons. */
+  clanTint?(tint: number): number | undefined;
   /** ADR-122 road / sign tools (world-tools.ts): Build panel buttons so gamepad and touch reach them. */
   worldTools?: { road(surface: number): void; roadSurface(): number; placeSign(): boolean; editNearestSign(): boolean; surfaces: readonly string[] };
   /** Stall the trade panel shows (set by interacting with a stall); falls back to the nearest stall. */
@@ -124,6 +126,23 @@ function hasIcon(k: string): boolean {
   if (!knownIcons) { const texts: string[] = []; try { for (const sh of Array.from(document.styleSheets)) { try { for (const r of Array.from(sh.cssRules)) texts.push(r.cssText); } catch { /* cross-origin sheet */ } } } catch { /* no DOM */ } knownIcons = iconKeysFromCss(texts); }
   return knownIcons.size === 0 || knownIcons.has(k); // no stylesheet info (tests / headless): keep keys as-is
 }
+/**
+ * ADR-229: build window icon key (Art's items_build atlas, packages/assets/pack/items/src/adr224.py). Tiered pieces have
+ * build_<key>_t<N> for N = minTier..4 (the selected tier's art, else the nearest tier above it); untiered build_<key>.
+ * undefined = no art -> the tile keeps its placeholder glyph.
+ */
+export function buildIconKey(pieceKey: string, tier: number, tiered: boolean, has: (k: string) => boolean = hasIcon): string | undefined {
+  const c = tiered ? [...Array.from({ length: Math.max(0, 5 - tier) }, (_, i) => `build_${pieceKey}_t${tier + i}`), `build_${pieceKey}`] : [`build_${pieceKey}`];
+  return c.find(has);
+}
+/** ADR-229: roads tab — road-<i> = surfaces[i-1] -> build_road_<surface key>; sign tools use the wooden post sign. */
+export const roadIconKey = (surfaceKey: string): string => `build_road_${surfaceKey}`;
+export const signIconKey = (signKey: string): string => `build_${signKey}`;
+export const SIGN_TOOL_ICON = "build_sign_wooden_post";
+/** ADR-229: cloth icons Art ships white (rugs, curtains, tapestry): tinted with the clan palette at draw time. */
+export const isClanTintedIcon = (pieceKey: string): boolean => /^(rug_.+|curtains|tapestry)$/.test(pieceKey);
+/** 0xRRGGBB -> #rrggbb */
+const hex6 = (n: number): string => `#${(n & 0xffffff).toString(16).padStart(6, "0")}`;
 /** Real icon when Art has it, else the item's mapped fallback, else its category's generic icon. */
 export function panelIcon(world: Parameters<typeof gameplayDefs>[0], icon: string, item: string | undefined): string {
   if (!icon || hasIcon(icon)) return icon;
@@ -387,6 +406,15 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       // one details pane for the focused / hovered tile. Choosing a tile (click / tap / pad A / Enter) closes the window and
       // enters placement at once (nothing is spent until the placement is confirmed; B / Esc there comes back here).
       const all = buildView(c); if (!buildSel.piece && all[0]) buildSel.piece = all[0].id;
+      // ADR-229: Art's items_build icon on the tile (::before) instead of the glyph; white cloth icons get the clan palette
+      // (the selected paint, else the player's clan, else palette 1) as a multiply tint masked to the icon's alpha.
+      const tintIdx = buildSel.paint || clanTintIndex(c.world.isRegistered(Membership) ? c.world.getField(c.player, Membership, "clanId") ?? 0 : 0);
+      const tintCss = ((): string | undefined => { const rgb = src.clanTint?.(tintIdx) ?? src.clanTint?.(1); return rgb === undefined ? undefined : hex6(rgb); })();
+      const iconize = <T extends HTMLElement>(b: T, key: string | undefined, tinted = false): T => {
+        if (!key) return b; b.dataset["icon"] = key; b.dataset["bicon"] = "1";
+        if (tinted && tintCss) { b.dataset["tint"] = "clan"; b.style.setProperty("--bt", tintCss); }
+        return b;
+      };
       const wt = src.worldTools; const cats = [...new Set(all.map((p) => p.category))]; if (wt) cats.push("roads"); if (!cats.includes(buildCat)) buildCat = all.find((p) => p.id === buildSel.piece)?.category ?? cats[0] ?? "structure";
       const v = all.filter((p) => p.category === buildCat);
       if (!v.some((p) => p.id === buildSel.piece) && v[0]) { buildSel.piece = v[0].id; buildSel.variant = 0; }
@@ -395,11 +423,11 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       out.push(cg0);
       if (buildCat === "roads" && wt) {
         // ADR-224: roads & signs are a tab of their own (keeps the piece view short)
-        const rg = grid(); rg.dataset["role"] = "world-tools";
-        wt.surfaces.forEach((name, i) => rg.append(btn(`Lay ${name.toLowerCase()} (G)`, `road-${i + 1}`, () => { wt.road(i + 1); kit.close(); }, { pressed: wt.roadSurface() === i + 1, alt: wt.roadSurface() !== i + 1 })));
+        const rg = grid(); rg.dataset["role"] = "world-tools"; const signIcon = hasIcon(SIGN_TOOL_ICON) ? SIGN_TOOL_ICON : undefined;
+        wt.surfaces.forEach((name, i) => { const sk = ROADS.surfaces[i]?.key; rg.append(iconize(btn(`Lay ${name.toLowerCase()} (G)`, `road-${i + 1}`, () => { wt.road(i + 1); kit.close(); }, { pressed: wt.roadSurface() === i + 1, alt: wt.roadSurface() !== i + 1 }), sk && hasIcon(roadIconKey(sk)) ? roadIconKey(sk) : undefined)); });
         if (wt.roadSurface()) rg.append(btn("Road tool off", "road-0", () => { wt.road(0); kit.rerender(); }, { alt: true }));
-        rg.append(btn("Place sign (N)", "sign-place", () => { if (wt.placeSign()) { kit.status("Sign placed — choose Edit nearest sign to write on it."); } else kit.status("You need a sign item (craft one first)."); }));
-        rg.append(btn("Edit nearest sign", "sign-edit", () => { kit.close(); if (!wt.editNearestSign()) kit.status("No sign within reach."); }));
+        rg.append(iconize(btn("Place sign (N)", "sign-place", () => { if (wt.placeSign()) { kit.status("Sign placed — choose Edit nearest sign to write on it."); } else kit.status("You need a sign item (craft one first)."); }), signIcon));
+        rg.append(iconize(btn("Edit nearest sign", "sign-edit", () => { kit.close(); if (!wt.editNearestSign()) kit.status("No sign within reach."); }), signIcon));
         out.push(rg, kit.para("Roads: drag (mouse) · drag then ✓ (touch) · right stick + A (gamepad)."));
         return out;
       }
@@ -425,6 +453,7 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
         const costTxt = t.cost.map((x) => `${x.count} ${x.name}`).join(" · ") || "free";
         const b = btn("", `piece-${p.id}`, () => choose(p), { role: "piece", pressed: p.id === buildSel.piece, alt: !t.affordable || lk,
           data: { padLabel: lk ? "Locked" : t.affordable ? "Place" : "Can't afford", glyph: pieceGlyph(p.key), ...(lk ? { locked: "1" } : {}), ...(!t.affordable ? { short: "1" } : {}) } });
+        iconize(b, buildIconKey(p.key, t.tier, p.tiers.length > 1), isClanTintedIcon(p.key));
         const nm = document.createElement("span"); nm.className = "nm"; nm.textContent = name;
         const ct = document.createElement("span"); ct.className = "ct"; ct.textContent = lk ? "Locked" : costTxt;
         b.append(nm, ct); b.setAttribute("aria-label", `${name}, ${lk ? (t.requirement ?? "locked") : t.affordable ? costTxt : `need ${costTxt}`}`);
