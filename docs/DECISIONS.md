@@ -1866,3 +1866,30 @@ Tests:
   - `morph` carries the handlers.
 
 Shots: `/workspace/shots/skilldesc_{desktop,720p,mobile}.png` (Crafting / Master Smith), `skilldesc_combat_*.png` (Blades Expert, rank 2/3) and `skilldesc_before_*.png`. The layout probe reports overflow false, no clipped nodes, and the focused node visible at 1920×1080, 1280×720 and 390×844.
+
+## ADR-220: Characters never render distorted after an atlas re-tier (live layout kept until swap; lossless paper-doll pools)
+
+**Symptom.** Player and AI humans (body, customizations, wardrobe layers) look right for a few seconds, then go wrong. They show as undressed or body-only for about 4 s, with stray garbage frames (e.g. a floating head), and then settle at reduced fidelity.
+
+**Root cause.**
+1. `AtlasManager.rebuild()` (an ADR-190 re-tier, e.g. a downscale step-up about 11 s after start, a zoom or footprint change) tore down the live state *first*: `pools = []`, `layoutVersion++`, `gen++`, caches cleared. It then spent seconds loading images, running `fitBudget`/`halveSide` and laying out before the swap. During that window the renderer kept drawing with no pool residency, so wear layers were missing. ADR-188 `lastGood` held composites also replayed entry/atlas indices from the dead layout, which produced the misplaced-part frames. SettleHold (1500 ms) only covered the post-upload phase.
+2. Contributing cause: paper-doll pages were ETC1S-transcoded and are lossy against the source PNGs. Measured mean diff was 9.3 for hoodie (8.5 % of px > 32 off) and 10.6 for body_male (11.9 %).
+
+**Fix.**
+- `rebuild()` keeps the live pools, layoutVersion and gen untouched while planning (`planningRebuild` flag; `poolReserveBytes` ignores stale tint flags meanwhile). It bumps generation, clears caches and swaps only immediately before `layout()` and upload, which SettleHold covers.
+- `SpriteRenderer` clears `lastGood` whenever `atlas.layoutVersion` changes, so held frames never index a foreign layout.
+- When the texture budget is ≥ 448 MB (desktop 768, ultra 1024, ultra-console 448), the `body` and `wear` pools are no longer put in the compressed own array. They page in from the lossless PNGs into RGBA8, so they match the source art exactly. Lower budgets keep ETC1S (console 256, mobile 128, lowmem/safe 160): always-lossless measured 130 → 246 MB at a 160 budget and crushed vehicles and buildings to 0.25×. That is a documented quality-for-VRAM trade-off on those tiers. The compressed tail order is now body, wear, bld, veh, stream.
+- No per-frame cost was added: one integer compare per draw, and the rebuild work is unchanged.
+
+**Tests.** `packages/render/test/adr220_char_fidelity.test.ts` covers four cases:
+- the lossless threshold;
+- `planOwn` at 768 leaves body/wear uncompressed while veh stays compressed;
+- at 160 everything is compressed;
+- rebuild keeps the live layout, layoutVersion and gen through `fitBudget` and bumps them once at the swap.
+
+**Shots (`/workspace/shots`).**
+- `charfix_before_dpr2_1..14.png` and `charfix_before_timeline.png`: original code, t = 10–19 s, dressed → undressed → stray head → dressed.
+- `charfix_after_dpr2_1..14.png` and `charfix_after_timeline.png`: stays dressed through the re-tier.
+- `charfix_after_{canvas,console_webgl,mobile_webgl}_1..3.png`: Canvas2D, `?profile=console` and mobile, stable at t = 5/15/25 s.
+- `charfix_source_ref_png_vs_etc1s.png`: source PNG vs ETC1S comparison.
+- `charfix_before_webgl_1..10.png`: initial reproduction.

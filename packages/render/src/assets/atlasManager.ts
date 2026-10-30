@@ -95,6 +95,15 @@ interface AtlasRT { key: string; id: number; source: AtlasSource; img: ImageLike
   /** budget tier: cold art is downscaled before hot art (see fitBudget) */ cold?: boolean;
   /** explicit dirFrames rects (deduped), frame-table entries n0.. after the grid/TexturePacker frames */ extra?: { n0: number; rects: DirFrameRect[]; byKey: Map<string, number>; /** ADR-190: same index by rect object (no string key per lookup) */ byRect: Map<DirFrameRect, number> } }
 /** One streaming pool (wearables, vehicles): own slot geometry, layers and LRU; all pools share the VRAM accountant. */
+/** ADR-220: pool classes holding paper-doll character art: always RGBA8 from the PNG, never ETC1S. */
+export const LOSSLESS_CHAR_MIN_MB = 448;
+/**
+ * ADR-220: character pages are uploaded from the PNG (RGBA8, exact) instead of the ETC1S twin when the atlas budget is a
+ * desktop or ultra-console one (>= 448 MB). Lower budgets (console 256, mobile 128, lowmem/safe 160) cannot hold the 4x larger wear
+ * working set without crushing vehicles/buildings to 0.25x (measured: 130 -> 246 MB at 160), so they keep ETC1S.
+ */
+export function losslessCharPools(budgetMB: number): boolean { return budgetMB >= LOSSLESS_CHAR_MIN_MB; }
+export const CHAR_POOL_CLS: ReadonlySet<PoolClass> = new Set<PoolClass>(["body", "wear"]);
 interface Pool { k: number; sw: number; sh: number; /** slot pitch (16-aligned: KTX2 4x4 blocks stay aligned down to mip 2) */ pw: number; ph: number; cols: number; perLayer: number; first: number; layers: number; lru: PageLRU<string>; slotBytes: number; tint: boolean; emis: boolean; cls: PoolClass;
   /** wear pool: its own colour array (poolTex), KTX2-compressed (`fmt` = GL internal format) or RGBA8 (fmt null), `levels` mips only */
   own?: { fmt: number | null; target: Ktx2Target | null; levels: number } }
@@ -374,7 +383,9 @@ export class AtlasManager {
    */
   private planOwn(): void {
     for (const p of this.pools) delete p.own;
-    const tail = this.tailPools();
+    // ADR-220: with the VRAM for it, character pools (body/wear) are not part of the compressed tail (lossless paper-doll art)
+    const lossless = losslessCharPools(this.textureBudgetMB);
+    const tail = this.tailPools().filter((p) => !lossless || !CHAR_POOL_CLS.has(p.cls));
     if (!tail.length) return;
     let at = tail[0]!.first; for (const p of tail) { if (p.first !== at) return; at += p.layers; } if (at !== this.layers) return;
     const t = this.ktx2Target; const pow2 = (k: number) => k <= 2 && Number.isInteger(Math.log2(k));
@@ -700,18 +711,18 @@ export class AtlasManager {
     }));
     list.sort((a, b) => a.id - b.id); lazyList.sort((a, b) => a.id - b.id);
     addDirFrameRects(registry, [...list, ...lazyList]);
-    this.gen++; this.queue = []; this.pools = []; this.layoutVersion++; this.fallbackCache.clear(); this.lArmCache.clear();
+    // ADR-220: the live layout (pools, LRUs, frame entries, fallback caches) stays intact while the new one is planned:
+    // fitBudget/halveSide take seconds (image rescales), and clearing `pools` here left the renderer drawing the old
+    // arrays with no pool residency for that whole window (undressed bodies, held frames from a dead layout, a stranger's
+    // head at the feet) - the old state is replaced only at the swap below, where `settling` starts
+    this.planningRebuild = true;
     const lowMem = this.textureBudgetMB <= 256; this.sideShift = lowMem ? SIDE_SHIFT_LOWMEM : SIDE_SHIFT;
     const groups: { cls: PoolClass; lazy: AtlasRT[]; minSlots: number; cap: boolean; /** wear split: fraction of the 1x working set */ share?: number }[] = [];
     const wear = lazyList.filter((a) => a.lazy!.pool === 0), veh = lazyList.filter((a) => a.lazy!.pool === 1), bld = lazyList.filter((a) => a.lazy!.pool === 2), body = lazyList.filter((a) => a.lazy!.pool === 3), strm = lazyList.filter((a) => a.lazy!.pool === 4);
-    // building tiers first: main colour array (never the compressed tail of vehicle/wear pools)
-    if (bld.length) groups.push({ cls: "bld", lazy: bld, minSlots: Math.min(bld.length, lowMem ? BLD_POOL_SLOTS_LOWMEM : BLD_POOL_SLOTS_DESKTOP), cap: true });
-    // bodies: the first tail pool (compressed own array), one slot per body sheet
+    // ADR-220: character pools (bodies, then wearables) come first and stay in the main RGBA8 colour array: their pages are
+    // uploaded losslessly from the PNG (never the ETC1S tail: ~10% of a paper-doll sheet's texels came back >32 off, which
+    // read as smeared, blotchy clothes/faces once the KTX2 page replaced the first look). One slot per body sheet
     if (body.length) groups.push({ cls: "body", lazy: body, minSlots: body.length, cap: true });
-    // vehicles first: the wear pool's layers come last so they can live in their own (compressed) array
-    if (veh.length) groups.push({ cls: "veh", lazy: veh, minSlots: Math.min(veh.length, lowMem ? VEH_POOL_SLOTS_LOWMEM : VEH_POOL_SLOTS_DESKTOP), cap: true });
-    // manifest stream sheets: visible art (kept at 1x, counted in keepVis like vehicles), a small LRU working set
-    if (strm.length) groups.push({ cls: "stream", lazy: strm, minSlots: Math.min(strm.length, lowMem ? STREAM_POOL_SLOTS_LOWMEM : STREAM_POOL_SLOTS_DESKTOP), cap: true });
     if (wear.length) {
       const min = Math.min(wear.length, this.poolPolicy.minSlots ?? (lowMem ? POOL_MIN_SLOTS_LOWMEM : POOL_MIN_SLOTS_DESKTOP));
       const small = this.poolPolicy.splitWear === false || this.layerSize < 2048 ? [] : wear.filter((a) => a.lazy!.w1 <= WEAR_SMALL_PX && a.lazy!.h1 <= WEAR_SMALL_PX);
@@ -723,6 +734,12 @@ export class AtlasManager {
         groups.push({ cls: "wear", lazy: small, minSlots: ms, cap: false, share }, { cls: "wear", lazy: big, minSlots: mb, cap: false, share: 1 - share });
       } else groups.push({ cls: "wear", lazy: wear, minSlots: min, cap: false });
     }
+    // building tiers: first pool of the compressed tail (ETC1S own array) with vehicles and stream sheets
+    if (bld.length) groups.push({ cls: "bld", lazy: bld, minSlots: Math.min(bld.length, lowMem ? BLD_POOL_SLOTS_LOWMEM : BLD_POOL_SLOTS_DESKTOP), cap: true });
+    // vehicles: compressed tail
+    if (veh.length) groups.push({ cls: "veh", lazy: veh, minSlots: Math.min(veh.length, lowMem ? VEH_POOL_SLOTS_LOWMEM : VEH_POOL_SLOTS_DESKTOP), cap: true });
+    // manifest stream sheets: visible art (kept at 1x, counted in keepVis like vehicles), a small LRU working set
+    if (strm.length) groups.push({ cls: "stream", lazy: strm, minSlots: Math.min(strm.length, lowMem ? STREAM_POOL_SLOTS_LOWMEM : STREAM_POOL_SLOTS_DESKTOP), cap: true });
     // vehicles are visible art: their pool keeps a full-res (1x) working set that fitBudget never trades away; the
     // wearables pool is the streaming tier and may shrink (more paging) before any visible art is blurred
     // wear is never planned below wearScale and always keeps its 1x working set (planPool forces it even over budget), so
@@ -736,6 +753,8 @@ export class AtlasManager {
     const keep = keepVis + Math.min(keepWear, wantWear) / 2, reserve = keepVis + Math.max(keepWear, wantWear);
     this.registryForTier = registry; await this.fitBudget(list, reserve, keep); this.sideScale = (await halveSide(list, this.sideShift)) ? 1 / (1 << this.sideShift) : 1;
     const layout = (): void => { this.pack(list); this.pools = []; for (const g of groups) this.planPool(g.lazy, g.minSlots, list, g.cls, g.cap, g.share); let b = this.totalFrames; for (const a of lazyList) { a.base = b; b += a.count; } this.totalFrames = b; };
+    this.planningRebuild = false;
+    this.gen++; this.queue = []; this.layoutVersion++; this.fallbackCache.clear(); this.lArmCache.clear();
     layout();
     const all = [...list, ...lazyList];
     this.settling = true; // from the first new texture until the old residency is restored: the renderer holds its last frame
@@ -790,6 +809,8 @@ export class AtlasManager {
   /** True while a rebuild has replaced the GPU arrays but not yet restored the pages that were resident before it
    *  (IsoRenderer skips drawing, so the last presented frame stays on screen instead of a flash of missing art). */
   settling = false;
+  /** ADR-220: a rebuild is planning its new layout; the live pools still serve the renderer and are not planner input. */
+  private planningRebuild = false;
 
   private gpuMB(): number { return Math.round(this.gpuBytes / 1048576); }
   /** Estimated bytes of the atlas arrays for a packing (colour + emissive + present masks, full mip chains). */
@@ -837,7 +858,7 @@ export class AtlasManager {
   }
   /** Budget held back for the pool before the resident art is downscaled: minSlots at the smallest workable scale. */
   private poolReserveBytes(lazy: AtlasRT[], minSlots: number, resident: AtlasRT[], k?: number): number {
-    const tint = this.pools.some((p) => p.tint) || lazy.some((a) => a.source.masks?.tintmask), emis = lazy.some((a) => a.source.emissiveUrl);
+    const tint = (!this.planningRebuild && this.pools.some((p) => p.tint)) || lazy.some((a) => a.source.masks?.tintmask), emis = lazy.some((a) => a.source.emissiveUrl);
     const ks = this.poolScales(lazy); if (!ks.length) return 0;
     const g = this.poolGeom(lazy, k !== undefined && ks.includes(k) ? k : ks.includes(0.5) ? 0.5 : ks[ks.length - 1]!);
     return Math.ceil(minSlots / g.perLayer) * this.poolLayerBytes(resident, tint, emis);

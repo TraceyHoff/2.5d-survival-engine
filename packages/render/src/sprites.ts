@@ -431,6 +431,8 @@ export class SpriteBatch {
   /** Sprites drawn as their placeholder this frame because their stream sheet was still loading. */
   streamPlaceholders = 0;
   /** ADR-123: per (entity, layer slot) last resolved frame, drawn while the current one is not resident */
+  /** ADR-220: atlas layout the held frames (entry/atlas indices) belong to; a rebuild renumbers both. */
+  private lastGoodLayout = -1;
   private lastGood = new Map<string, { sprite: number; atlas: number; entry: number; ax: number; ay: number }>();
   lastGoodHits = 0;
   /** ADR-188: layers drawn for a character that has never been fully composited (first sight while its pages stream). */
@@ -822,6 +824,9 @@ export class SpriteBatch {
         // ADR-188: plan every layer first, draw after. When any layer that should draw is not resident, the character keeps
         // its previous fully-composited look (each slot's last good frame) instead of drawing a partial set (pale body-only
         // flash, hair dropping out and back); the composite is only refreshed (lastGood) when every layer is resident.
+        // ADR-220: held entries are frame-table / atlas indices of the layout they were recorded in; after a rebuild they
+        // point at other frames (a stranger's sleeve on the torso, a shifted UV rect) - never replay them across layouts
+        if (this.lastGoodLayout !== atlas.layoutVersion) { this.lastGood.clear(); this.lastGoodLayout = atlas.layoutVersion; }
         const plan = this.layerPlan; let pn = 0; let complete = true;
         for (const l of layers) {
           if (l === bodyL) continue; j++;
