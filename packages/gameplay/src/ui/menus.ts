@@ -67,7 +67,9 @@ export function useIntent(slot: number): MenuIntent { return intent(UseCmd, { sl
 export const equipIntent = (slot: number): MenuIntent => intent(EquipCmd, { slot });
 /** ADR-204: split `count` off a stack (where 0 = own inventory, 1 = open container) / move a slot (swap) e.g. onto the hotbar. */
 export const splitStackIntent = (slot: number, count: number, where = 0): MenuIntent => intent(SplitStackCmd, { where, slot, count });
-export const containerToSlotIntent = (slot: number, to: number): MenuIntent => intent(ContainerToSlotCmd, { slot, to });
+export const containerToSlotIntent = (slot: number, to: number, dir: 0 | 1 = 0): MenuIntent => intent(ContainerToSlotCmd, { slot, to, dir });
+/** ADR-231: pack slot -> container slot (swap / merge; the container slot may be empty). */
+export const slotToContainerIntent = (packSlot: number, cslot: number): MenuIntent => intent(ContainerToSlotCmd, { slot: cslot, to: packSlot, dir: 1 });
 export const moveSlotIntent = (slot: number, to: number, where = 0): MenuIntent => intent(MoveSlotCmd, { where, slot, to });
 export const wearIntent = (slot: number): MenuIntent => intent(WearCmd, { slot });
 export const EQUIP_SLOT_LABELS = ["Head", "Body", "Legs", "Feet", "Hands", "Back", "Off hand", "Accessory"] as const;

@@ -38,7 +38,7 @@ import { attachBrowserInput } from "@engine/input/browser";
 import { ClanRoster, ClanRosterMember, OnlinePlayer, VehicleStationOpenedEvt, PetEventEvt, gameplayNet, installDemoWorld, onGameplayRejected } from "@engine/server/protocol";
 import { inventoryOpRejectText } from "./inventory-reject.js";
 import { netIdOf, ChatChannel, type ChatDelivered } from "@engine/net";
-import { WorldRules, worldRules, ROADS, holdsRangedWeapon, Sign, signText, Road, StallHeader, buildView, listItemIntents, setStallOpenIntent, stallView, nearestStall, inventoryView, equipIntent, useIntent, hotbarConsumes, gameplayDefs, BuildPiece } from "@engine/gameplay";
+import { WorldRules, worldRules, ROADS, holdsRangedWeapon, Sign, signText, Road, StallHeader, buildView, listItemIntents, setStallOpenIntent, stallView, nearestStall, inventoryView, equipIntent, useIntent, moveSlotIntent, hotbarConsumes, gameplayDefs, BuildPiece } from "@engine/gameplay";
 import { replicaTerrain } from "./replica-terrain.js";
 import { SocialDirectory, hasCreatedLook, setAppearanceIntent, interactPanel, petEventText, petRenameIntent, UseCmd, GatherCmd, farmPrompt, TerrainRes, type MenuCtx, type MenuIntent } from "@engine/gameplay";
 import { ClientSession } from "./session.js";
@@ -579,6 +579,7 @@ farm = mountFarmPrompt(root, {
 });
 // ADR-179: visible hotbar (inventory slots 1..8) bottom-centre; equips like the Hotbar1..8 bindings
 const hotbar = mountHotbar({ device: promptDevice, equip: (slot) => { const c = menuCtx(); sendIntent(c && hotbarConsumes(c.world, c.player, slot) ? useIntent(slot) : equipIntent(slot)); }, /* ADR-223: food in the hotbar is eaten */ icon: (icon, item) => panelIcon(world, icon, String(item)),
+  move: (from, to) => sendIntent(moveSlotIntent(from, to)), /* ADR-231: drag between HUD hotbar slots */
   view: () => { const c = menuCtx(); if (!c) return undefined; try { return inventoryView(c); } catch { return undefined; } } });
 let hotbarT = 0;
 const hotbarVisible = (): boolean => !deathUi?.dead && !menus?.nav.isOpen && !buildMode.active && !worldTools?.tool.active && !document.querySelector("[data-boot=menu]");

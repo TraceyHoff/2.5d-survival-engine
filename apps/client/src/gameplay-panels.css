@@ -32,12 +32,12 @@ html[data-nav-focus] .gm-modal .gm-panel button:focus,html[data-nav-focus] .gm-m
 /* ---- item slots: kit slot frame + icon well ---- */
 .gm-modal .gm-panel [data-role=body] button[data-role=slot],.gm-modal .gm-panel [data-role=body] button[data-role=recipe],.gm-modal .gm-panel [data-role=body] button[data-key^=draft-slot-]{color:var(--cz-ink);text-shadow:none;background:none;box-shadow:none;
   border-style:solid;border-width:14px 14px 14px 14px;border-image:image-set(url("../../../assets/ui/kit/css/ui_slot_empty.png") 1x, url("../../../assets/ui/kit/css/ui_slot_empty@2x.png") 2x) 29.167% 29.167% 29.167% 29.167% fill / 14px 14px 14px 14px stretch;min-height:64px;padding:0 2px 0 44px;text-align:left;font-size:14px}
-.gm-modal .gm-panel [data-role=body] button[data-role=slot]::after,.gm-modal .gm-panel [data-role=body] button[data-role=recipe]::after,.gm-modal .gm-panel [data-role=body] button[data-key^=draft-slot-]:not([aria-pressed=true])::after{content:"";position:absolute;left:-4px;top:50%;width:36px;height:36px;margin-top:-18px;
+.gm-modal .gm-panel [data-role=body] button[data-role=slot]::after,.gm-modal .gm-panel [data-role=body] button[data-role=cslot][data-icon]::after,.gm-modal .gm-panel [data-role=body] button[data-role=recipe]::after,.gm-modal .gm-panel [data-role=body] button[data-key^=draft-slot-]:not([aria-pressed=true])::after{content:"";position:absolute;left:-4px;top:50%;width:36px;height:36px;margin-top:-18px;
   background:image-set(url("../../../assets/ui/kit/css/ui_ic_bag.png") 1x, url("../../../assets/ui/kit/css/ui_ic_bag@2x.png") 2x) center/contain no-repeat;pointer-events:none}
 .gm-modal .gm-panel [data-role=body] button[data-role=recipe]::after{background-image:image-set(url("../../../assets/ui/kit/css/ui_ic_craft.png") 1x, url("../../../assets/ui/kit/css/ui_ic_craft@2x.png") 2x)}
 /* real item icon: [data-icon=<manifest key>] sets --cz-icon/--cz-ipos/--cz-isize (generated block at the end); unknown keys keep the bag */
 /* specificity must beat the bag rule above (0,4,2), else every slot shows the bag */
-.gm-modal .gm-panel [data-role=body] button[data-icon]:is([data-role=slot],[data-role=recipe],[data-key^=draft-slot-])::after{background:var(--cz-icon,image-set(url("../../../assets/ui/kit/css/ui_ic_bag.png") 1x, url("../../../assets/ui/kit/css/ui_ic_bag@2x.png") 2x)) var(--cz-ipos,center) / var(--cz-isize,contain) no-repeat;image-rendering:auto}
+.gm-modal .gm-panel [data-role=body] button[data-icon]:is([data-role=slot],[data-role=cslot],[data-role=recipe],[data-key^=draft-slot-])::after{background:var(--cz-icon,image-set(url("../../../assets/ui/kit/css/ui_ic_bag.png") 1x, url("../../../assets/ui/kit/css/ui_ic_bag@2x.png") 2x)) var(--cz-ipos,center) / var(--cz-isize,contain) no-repeat;image-rendering:auto}
 /* ADR-145 pet panel treat offers: item icon left of the label */
 .gm-modal .gm-panel button[data-role=offer] > [data-role=ic][data-icon]{display:inline-block;flex:none;width:28px;height:28px;margin-right:6px;vertical-align:middle;background:var(--cz-icon,none) var(--cz-ipos,center) / var(--cz-isize,contain) no-repeat}
 /* ADR-132 skill tree tabs: show the category's skill_tab_* art left of the label (::before; ::after is the pressed check) */
@@ -1032,17 +1032,17 @@ html[data-nav-focus] .gm-modal .gm-panel button:focus,html[data-nav-focus] .gm-m
 .gm-modal .gm-panel:has([data-role=inv-layout]){max-width:min(760px,96vw)}
 .gm-modal .gm-panel [data-role=inv-layout]{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:start}
 .gm-modal .gm-panel [data-role=inv-main]{display:flex;flex-direction:column;gap:8px;min-width:0}
-.gm-modal .gm-panel [data-role=inv-grid],.gm-modal .gm-panel [data-role=inv-hotbar]{display:grid;grid-template-columns:repeat(auto-fill,var(--inv-t,58px));gap:4px;justify-content:start}
+.gm-modal .gm-panel [data-role=inv-grid],.gm-modal .gm-panel [data-role=inv-hotbar],.gm-modal .gm-panel [data-role=container-grid]{display:grid;grid-template-columns:repeat(auto-fill,var(--inv-t,58px));gap:4px;justify-content:start}
 .gm-modal .gm-panel [data-role=inv-grid]{max-height:min(34vh,252px);overflow-y:auto;overscroll-behavior:contain;padding:4px;border-radius:10px;background:rgba(116,67,44,.10);scroll-padding:6px}
 .gm-modal .gm-panel [data-role=inv-hotbar]{grid-template-columns:repeat(8,var(--inv-t,58px));padding:4px;border-radius:10px;background:rgba(59,36,51,.16)}
-.gm-modal .gm-panel [data-role=body] :is([data-role=inv-grid],[data-role=inv-hotbar]) button[data-role=slot]{position:relative;width:var(--inv-t,58px);height:var(--inv-t,58px);min-height:0;min-width:0;padding:0;border-width:10px;border-image-width:10px;overflow:visible}
-.gm-modal .gm-panel [data-role=body] :is([data-role=inv-grid],[data-role=inv-hotbar]) button[data-role=slot]::after{left:50%;top:50%;width:calc(var(--inv-t,58px) - 18px);height:calc(var(--inv-t,58px) - 18px);margin:0;transform:translate(-50%,-50%)}
-.gm-modal .gm-panel [data-role=body] :is([data-role=inv-grid],[data-role=inv-hotbar]) button[data-role=slot][data-empty]::after{display:none}
+.gm-modal .gm-panel [data-role=body] :is([data-role=inv-grid],[data-role=inv-hotbar],[data-role=container-grid]) button:is([data-role=slot],[data-role=cslot]){position:relative;width:var(--inv-t,58px);height:var(--inv-t,58px);min-height:0;min-width:0;padding:0;border-width:10px;border-image-width:10px;overflow:visible}
+.gm-modal .gm-panel [data-role=body] :is([data-role=inv-grid],[data-role=inv-hotbar],[data-role=container-grid]) button:is([data-role=slot],[data-role=cslot])::after{left:50%;top:50%;width:calc(var(--inv-t,58px) - 18px);height:calc(var(--inv-t,58px) - 18px);margin:0;transform:translate(-50%,-50%)}
+.gm-modal .gm-panel [data-role=body] :is([data-role=inv-grid],[data-role=inv-hotbar],[data-role=container-grid]) button:is([data-role=slot],[data-role=cslot])[data-empty]::after{display:none}
 .gm-modal .gm-panel [data-role=inv-layout] button .nm{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .gm-modal .gm-panel [data-role=inv-layout] button .ct{position:absolute;right:-6px;bottom:-8px;z-index:1;font:700 13px/1 Fredoka,system-ui,sans-serif;color:var(--cz-cream,#FFFAF0);text-shadow:0 0 2px #3B2433,0 1px 0 #3B2433}
 .gm-modal .gm-panel [data-role=inv-layout] button .hk{position:absolute;left:-6px;top:-8px;z-index:1;font:700 11px/1 Fredoka,system-ui,sans-serif;color:#61402E;opacity:.8}
 .gm-modal .gm-panel [data-role=inv-layout] button[data-role=slot][data-equipped]{outline:3px solid #FFD45A;outline-offset:-3px}
-.gm-modal .gm-panel [data-role=inv-layout] button[data-role=slot][data-sel]{box-shadow:0 0 0 3px #5A9A4A}
+.gm-modal .gm-panel [data-role=inv-layout] button:is([data-role=slot],[data-role=cslot])[data-sel]{box-shadow:0 0 0 3px #5A9A4A}
 .gm-modal .gm-panel [data-role=inv-layout] button[data-role=slot][data-use]::before{content:"";position:absolute;left:-5px;bottom:-6px;width:9px;height:9px;border-radius:50%;background:#5A9A4A;border:2px solid #F6EAD2;z-index:1}
 .gm-modal .gm-panel [data-role=equipment]{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;width:min(230px,34vw)}
 .gm-modal .gm-panel [data-role=equipment] button[data-role=equip]{min-height:48px;padding:4px 6px;font-size:13px;line-height:1.1;text-align:left;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;display:flex;flex-direction:column;justify-content:center;align-items:flex-start}
@@ -1054,6 +1054,30 @@ html[data-nav-focus] .gm-modal .gm-panel button:focus,html[data-nav-focus] .gm-m
 @media (max-width:620px){.gm-modal .gm-panel [data-role=inv-layout]{grid-template-columns:minmax(0,1fr)}.gm-modal .gm-panel [data-role=equipment]{width:auto;grid-template-columns:repeat(4,minmax(0,1fr));order:-1}
   .gm-modal .gm-panel [data-role=inv-layout]{--inv-t:min(48px,calc((94vw - 72px) / 8))}.gm-modal .gm-panel [data-role=inv-hotbar]{justify-content:center}}
 @media (max-height:760px){.gm-modal .gm-panel [data-role=inv-grid]{max-height:min(28vh,200px)}.gm-modal .gm-panel [data-role=inv-details]{min-height:72px}}
+
+/* ADR-231 drag-and-drop + container view: pack (left) and storage grid (right) side by side; stacked on narrow screens */
+.gm-modal .gm-panel:has([data-role=inv-layout][data-mode=container]){max-width:min(940px,96vw)}
+.gm-modal .gm-panel [data-role=inv-layout][data-mode=container]{--inv-t:48px;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.gm-modal .gm-panel [data-role=container-side]{display:flex;flex-direction:column;gap:6px;min-width:0}
+.gm-modal .gm-panel [data-role=container-side] > h3,.gm-modal .gm-panel [data-role=inv-main] > h3{margin:0;font-size:14px}
+.gm-modal .gm-panel [data-role=container-grid]{max-height:min(40vh,320px);overflow-y:auto;overscroll-behavior:contain;padding:4px;border-radius:10px;background:rgba(74,110,140,.14);scroll-padding:6px}
+.gm-modal .gm-panel [data-role=inv-layout][data-mode=container] [data-role=inv-grid]{max-height:min(40vh,320px)}
+.gm-modal .gm-panel [data-role=container-pager]{grid-template-columns:auto 1fr auto;align-items:center;gap:6px}
+.gm-modal .gm-panel [data-role=container-pager] [data-role=page-label]{margin:0;text-align:center;font-size:13px}
+.gm-modal .gm-panel [data-role=inv-layout] button:is([data-drag],[data-drop]){touch-action:pan-y;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.gm-modal .gm-panel [data-role=inv-layout] button[data-dragging]{opacity:.35}
+.gm-modal .gm-panel [data-role=inv-layout] button[data-picked]{outline:3px dashed #2E7BB8;outline-offset:-2px}
+.gm-modal .gm-panel [data-role=inv-layout] button[data-drop-over]{box-shadow:0 0 0 3px #2E7BB8,0 0 12px rgba(46,123,184,.6);filter:brightness(1.1)}
+html[data-slot-dragging] .gm-modal .gm-panel [data-role=inv-layout] button[data-drop]:not([data-dragging]){transition:none}
+.gm-modal .gm-panel [data-role=body] button[data-ghost]{border-width:10px;border-image-width:10px;padding:0;min-height:0;min-width:0;box-shadow:0 8px 18px rgba(59,36,51,.45)}
+.gm-modal .gm-panel [data-role=body] button[data-ghost]::after{left:50%;top:50%;width:calc(100% - 4px);height:calc(100% - 4px);margin:0;transform:translate(-50%,-50%)}
+.gm-modal .gm-panel [data-role=body] button[data-ghost] .nm{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+.gm-modal .gm-panel [data-role=body] button[data-ghost] :is(.ct,.hk){position:absolute;right:-6px;bottom:-8px;font:700 13px/1 Fredoka,system-ui,sans-serif;color:#FFFAF0;text-shadow:0 0 2px #3B2433}
+.gm-modal .gm-panel [data-role=body] button[data-ghost] .hk{display:none}
+@media (max-width:760px){.gm-modal .gm-panel [data-role=inv-layout][data-mode=container]{grid-template-columns:minmax(0,1fr);gap:8px;--inv-t:min(48px,calc((94vw - 72px) / 8))}
+  .gm-modal .gm-panel [data-role=inv-layout][data-mode=container] [data-role=inv-grid],.gm-modal .gm-panel [data-role=container-grid]{max-height:min(19vh,160px)}
+  .gm-modal .gm-panel [data-role=inv-layout][data-mode=container] :is([data-role=inv-grid],[data-role=container-grid]){justify-content:center}}
+@media (max-height:760px) and (min-width:761px){.gm-modal .gm-panel [data-role=inv-layout][data-mode=container] [data-role=inv-grid],.gm-modal .gm-panel [data-role=container-grid]{max-height:min(30vh,220px)}}
 /* ---- ADR-223 compact crafting: tabs, search + amount, tile grid (scrolls inside), details pane ---- */
 .gm-modal .gm-panel [data-role=craft-cats]{grid-template-columns:repeat(auto-fit,minmax(78px,1fr));gap:4px}
 .gm-modal .gm-panel [data-role=craft-cats] button{padding:4px 6px;font-size:14px}
