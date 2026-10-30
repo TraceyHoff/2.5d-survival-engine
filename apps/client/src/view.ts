@@ -1,4 +1,5 @@
 import { effectiveLevel, levelFlags } from "./gl-recovery.js";
+import { pieceFireState } from "./fire-state.js";
 import { WaterDepth, waterDepthAt } from "@engine/world";
 /** ADR-181 wading look (tint-free stand-in until wade art exists): sink the body and show wet drips/splash. */
 const WADE_SINK = 0.15, WADE_WET = 160;
@@ -142,6 +143,8 @@ export class IsoView {
   private lightOf = new Map<Entity, { spec: LightSpec; fuel?: Entity }>();
   /** Piece view entity -> building state index (e.g. "unlit") for the renderer's pieceState binding. */
   private pieceStates = new Map<number, number>();
+  /** ADR-218: fired piece view entity -> FireState (0 out, 1 lit, 2 lit hearth); drives flame anim + embers/smoke. */
+  private pieceLit = new Map<number, number>(); private litHearths = new Map<number, number>();
   /** ADR-125: character view entities (players/human bots); their Walk plays at walkAnimRate so feet match ground speed. */
   private characters = new Set<number>(); private walkRate = 1;
   private constructor(readonly renderer: IsoRenderer, readonly registry: AssetRegistry, private readonly ov: ViewOverrides, readonly lights: LightTable) {
@@ -149,7 +152,7 @@ export class IsoView {
     for (const c of [VAnim, VPiece, VWet, VTemp, VFuel, VEquip, VOffHand]) this.view.register(c);
     const cat = noCosmetics ? undefined : registry.cosmetics;
     if (cat?.size) this.view.register(Appearance);
-    renderer.bindGameplay({ animState: VAnim, buildPiece: VPiece, wetness: VWet, bodyTemp: VTemp, lit: VFuel, pieceState: (e) => this.pieceStates.get(e),
+    renderer.bindGameplay({ animState: VAnim, buildPiece: VPiece, wetness: VWet, bodyTemp: VTemp, lit: VFuel, pieceState: (e) => this.pieceStates.get(e), pieceLit: (e) => this.pieceLit.get(e), litPieces: () => this.litHearths,
       hitFlash: (e) => this.hitPoseOf.get(e)?.flash ?? 0, hitTilt: (e) => this.hitPoseOf.get(e)?.tilt ?? 0,
       animRate: (e, st) => (st === 1 && this.characters.has(e) ? this.walkRate : undefined),
       equipment: VEquip, heldSprite: (item) => this.heldSpriteOf(item), offHand: VOffHand, offHandSprite: (item) => this.offHandSpriteOf(item),
@@ -409,7 +412,7 @@ export class IsoView {
       if (v.has(ve, VPiece)) this.syncPieceState(net, e, ve, defs);
       if (v.has(ve, VFuel)) { const f = net.get(e, Fuel); if (f) { v.set(ve, VFuel, { lit: f.lit, burnUntilTick: f.burnUntilTick }); if (v.has(ve, Sprite)) { const sp = v.get(ve, Sprite)!; const fid = this.fireFrame(sp.spriteId, f.lit !== 0); if (sp.frameId !== fid) v.set(ve, Sprite, { frameId: fid }); } } }
     }
-    for (const [ne, ve] of this.map) if (!seen.has(ne)) { if (ve === this.focusVe) { r.setFocusEntity(-1); this.focusVe = -1; } v.destroy(ve); this.map.delete(ne); this.corrSampler.forget(ne); this.characters.delete(ve); this.lightOf.delete(ne); this.dropHeldLight(ve); this.pieceStates.delete(ve); this.lastMove.delete(ne); this.nodeAmt.delete(ne); this.nodeHit.delete(ne); this.animalHp.delete(ne); this.animalPrev.delete(ne); this.scales.delete(ve); this.hitSeen.delete(ne); this.hitPoseOf.delete(ve); this.gearOf.delete(ve); }
+    for (const [ne, ve] of this.map) if (!seen.has(ne)) { if (ve === this.focusVe) { r.setFocusEntity(-1); this.focusVe = -1; } v.destroy(ve); this.map.delete(ne); this.corrSampler.forget(ne); this.characters.delete(ve); this.lightOf.delete(ne); this.dropHeldLight(ve); this.pieceStates.delete(ve); this.pieceLit.delete(ve); this.litHearths.delete(ve); this.lastMove.delete(ne); this.nodeAmt.delete(ne); this.nodeHit.delete(ne); this.animalHp.delete(ne); this.animalPrev.delete(ne); this.scales.delete(ve); this.hitSeen.delete(ne); this.hitPoseOf.delete(ve); this.gearOf.delete(ve); }
 
     this.syncClutter(tiles, ground);
     this.syncVehicles(net, player, ground, frac);
@@ -524,6 +527,8 @@ export class IsoView {
     const p = net.get(e, GPiece)!;
     const vis = buildPieceVisual(this.registry, { type: p.type, ...pieceArt(net, p.type, p.rot), tint: p.tint, paint: p.paint, state: lit ? "idle" : "unlit" }, { pieceKey: (t) => this.pk(defs?.pieces.get(t)?.key), ...pieceVariantOpts(defs?.pieces.get(p.type)?.variantNames, p.variant) });
     this.pieceStates.set(ve, vis.stateIndex);
+    const fs = pieceFireState(defs?.pieces.get(p.type)?.key, lit); this.pieceLit.set(ve, fs);
+    if (fs === 2) this.litHearths.set(ve, fs); else this.litHearths.delete(ve);
   }
   /** ADR-119: autotile variant for the replicated mask, else the plain surface tile (with sprite_fallbacks). */
   private roadSprite(surface: number, mask: number): (ResolvedSprite & { id: number }) | undefined {

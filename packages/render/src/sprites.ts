@@ -11,6 +11,7 @@
  *   the depth buffer, so terrain cliffs, walls and sprites interleave correctly. Multi-tile pieces are
  *   split into per-column slices, each keyed by its front-most footprint tile.
  */
+import { fireAnimTime } from "./fire-anim.js";
 import { AnimState as CoreAnimState, entityIndex, lerpAngle, PrevTransform, Transform, type ComponentDef, type World } from "@engine/core";
 import { CHUNK_SIZE, chunkKey, floorToTerrainZ, terrainZToFloor, type BuildingGrid, type ChunkedSpatialIndex, type IsoConfig } from "@engine/world";
 import { createProgram, GLSL_COMMON, type FrameStats, type Program } from "./gl/util.js";
@@ -127,6 +128,12 @@ export interface GameplayBindings {
   pieceTints?: (entity: number) => readonly [number, number] | undefined;
   /** Per build-piece state index override (e.g. stall closed/open from StallHeader.open); undefined = BuildPiece.state. */
   pieceState?: (entity: number) => number | undefined;
+  /** ADR-218 fired pieces: FireState (0 out, 1 lit, 2 lit hearth with embers/smoke); undefined = not a fired piece. Lit pieces whose
+   *  sprite has a looping multi-frame `idle` anim animate it on the render clock (drawn dynamically, never baked into a static
+   *  chunk); out pieces show the sprite's `unlit` anim frame when the building has no own unlit state. */
+  pieceLit?: (entity: number) => number | undefined;
+  /** ADR-218: every lit fired piece (view entity -> FireState) for hearth embers/smoke; read once per frame. */
+  litPieces?: () => ReadonlyMap<number, number>;
   /** core Appearance + resolveLayers (character customization): entities with Appearance draw their resolved layers. */
   appearance?: AppearanceBinding;
   /** Hit flash 0..1 per entity (white flash on the body and all its layers); undefined/0 = none. */
@@ -577,13 +584,13 @@ export class SpriteBatch {
    * behind / in front of the character, mirrored with the character's flipX. No anchor for the frame = not drawn.
    */
   private emitHeld(atlas: AtlasManager, heldOf: (item: number) => number | undefined, item: number, body: ResolvedFrame, sx: number, sy: number, key: number,
-    scale: number, facing: number, flip: boolean, fade: number, occT: number, mode: "fade" | "dither", lift = 0, off = false): void {
+    scale: number, facing: number, flip: boolean, fade: number, occT: number, mode: "fade" | "dither", lift = 0, off = false, animT = 0): void {
     if (!item) return; const hid = heldOf(item); if (hid === undefined) return; const st = off ? this.offHandStats : this.heldStats; st[0]++;
     let h: HandAnchor | undefined; let behind: boolean;
     if (off) { const a = offHandAnchor((b: ResolvedFrame, n?: string) => atlas.handOf(b, n), body); if (!a) return; h = a.anchor; behind = offHandBehind(facing, h.behind); if (a.fallback) this.offHandStats[3]++; }
     else { h = atlas.handOf(body); if (!h) return; behind = h.behind; }
     st[1]++;
-    const r = this.heldRes; if (!atlas.resolve(hid, 0, facing, 0, 0, r)) return; st[2]++;
+    const r = this.heldRes; const hfa = atlas.fireAnim(hid); if (!atlas.resolve(hid, hfa >= 0 ? hfa : 0, facing, hfa >= 0 ? animT : 0, 0, r)) return; st[2]++; // ADR-218: held torches flicker (render clock)
     const m = flip ? -1 : 1;
     const hx = sx + (h.x - body.ax) * scale * m, hy = sy + (h.y - body.ay) * scale;
     const o = this.writeOne(hx, hy, key + (behind ? -HELD_BIAS : HELD_BIAS), scale, r, (flip ? SpriteFlag.FlipX : 0) | SpriteFlag.NoOutline, 0, fade, -OPEN, OPEN, 0, 0, 0, 0, 0, 0);
@@ -605,6 +612,7 @@ export class SpriteBatch {
     const bt = cx.bindings.bodyTemp ? world.store(cx.bindings.bodyTemp) : null;
     const exh = cx.bindings.exhausted ? world.store(cx.bindings.exhausted) : null;
     const eq = cx.bindings.equipment ? world.store(cx.bindings.equipment) : null; const heldOf = cx.bindings.heldSprite;
+    const litSt = cx.bindings.lit && world.isRegistered(cx.bindings.lit) ? world.store(cx.bindings.lit) : null; const litData = litSt?.data as Record<string, ArrayLike<number>> | undefined;
     const oh = cx.bindings.offHand ? world.store(cx.bindings.offHand) : null; const offOf = cx.bindings.offHandSprite ?? heldOf;
     const t2s = world.isRegistered(TintSecondary) ? world.store(TintSecondary) : null;
     const apB = cx.bindings.appearance; const ap0 = apB && world.isRegistered(apB.def) ? world.store(apB.def) : null; const ap = ap0 && (ap0.data as Record<string, unknown>).version ? ap0 : null;
@@ -735,7 +743,11 @@ export class SpriteBatch {
         const bai = bodyL && layers ? atlas.sharedStateAnim(sid, layers, st) : atlas.stateAnim(sid, st);
         ok = atlas.resolve(sid, bai, f, t, 0, res);
         if (bodyL) { dollAnim = res.anim; if (ok && res.atlas >= 0) atlas.markUsedAt(res.atlas); }
-      } else ok = atlas.resolve(sid, bodyL ? atlas.animIndex(sid, bodyL.animName) : -1, f, 0, sp.data.frameId[k]!, res);
+      } else {
+        // ADR-218: a lit fire sprite (station bonfire: Fuel.lit, frame 0 = idle) loops its idle anim on the render clock
+        const ls = litSt && !bodyL && sp.data.frameId[k]! === 0 ? litSt.slot(i) : -1; const fa = ls >= 0 && litData!.lit?.[ls] ? atlas.fireAnim(sid) : -1;
+        ok = fa >= 0 ? atlas.resolve(sid, fa, f, fireAnimTime(cx.now, i), 0, res) : atlas.resolve(sid, bodyL ? atlas.animIndex(sid, bodyL.animName) : -1, f, 0, sp.data.frameId[k]!, res);
+      }
       // stream sheet still loading: its placeholder (resident sprout/stub) or nothing
       if (ok && !bodyL && res.atlas >= 0 && !atlas.streamPageReady(res.atlas, sprio)) {
         const ph = atlas.placeholderOf(sid); if (ph < 0) return;
@@ -858,8 +870,8 @@ export class SpriteBatch {
         o0.set(base);
         if (nearC && this.nearN < this.nearInfo.length) this.nearN++;
       }
-      if (eq && heldOf) { const s2 = eq.slot(i); if (s2 >= 0) this.emitHeld(atlas, heldOf, eq.data.mainHandItem[s2]!, res, sx, sy, dkey, scale, f, (sp.data.flags[k]! & SpriteFlag.FlipX) !== 0, fade, occT, occ.mode, bodyL ? o0[15]! : 0); }
-      if (oh && offOf) { const s3 = oh.slot(i); if (s3 >= 0) this.emitHeld(atlas, offOf, oh.data.offHandItem[s3]!, res, sx, sy, dkey, scale, f, (sp.data.flags[k]! & SpriteFlag.FlipX) !== 0, fade, occT, occ.mode, bodyL ? o0[15]! : 0, true); }
+      if (eq && heldOf) { const s2 = eq.slot(i); if (s2 >= 0) this.emitHeld(atlas, heldOf, eq.data.mainHandItem[s2]!, res, sx, sy, dkey, scale, f, (sp.data.flags[k]! & SpriteFlag.FlipX) !== 0, fade, occT, occ.mode, bodyL ? o0[15]! : 0, false, fireAnimTime(cx.now, i)); }
+      if (oh && offOf) { const s3 = oh.slot(i); if (s3 >= 0) this.emitHeld(atlas, offOf, oh.data.offHandItem[s3]!, res, sx, sy, dkey, scale, f, (sp.data.flags[k]! & SpriteFlag.FlipX) !== 0, fade, occT, occ.mode, bodyL ? o0[15]! : 0, true, fireAnimTime(cx.now, i)); }
     };
     if (cx.spatial) {
       // chunk-level culling through the shared spatial index
@@ -960,6 +972,7 @@ export class SpriteBatch {
   }
   private gatherPieces(cx: PrepareContext, bp: ReturnType<World["store"]>, hasFocus: boolean, fwx: number, fwy: number, fwz: number): void {
     const { world, atlas, rect } = cx; const tr = world.store(Transform);
+    const pieceLit = cx.bindings.pieceLit;
     const d = bp.data as Record<string, ArrayLike<number>>;
     const hw = this.iso.tileW / 2, hh = this.iso.tileH / 2, zs = this.iso.zStep, zf = this.zFactor;
     const res = this.res;
@@ -1000,7 +1013,16 @@ export class SpriteBatch {
         // tier page streaming in: draw the bare-key / other resident tier / family default art instead of nothing
         let drawVis = vis;
         if (atlas.streamClass(vis) === "bld" && !atlas.pageReady(vis, PRIO_NEAR)) { drawVis = atlas.buildingFallback(vis, PRIO_NEAR); if (drawVis < 0) continue; this.tierFallbacks++; }
-        if (!atlas.resolvePiece(drawVis, d.variant![k]!, rot, dmg, res, cx.bindings.pieceState?.(e) ?? (d.state ? d.state[k]! - 1 : -1))) continue;
+        const pst = cx.bindings.pieceState?.(e) ?? (d.state ? d.state[k]! - 1 : -1);
+        if (!atlas.resolvePiece(drawVis, d.variant![k]!, rot, dmg, res, pst)) continue;
+        // ADR-218: lit fires animate their idle loop on the render clock (per-entity phase); out fires show their unlit frame
+        let animated = false;
+        const fire = pieceLit ? pieceLit(e) : undefined;
+        if (fire !== undefined && dmg === 0 && ghost === 0) {
+          const flip = res.flipX, hd = res.hasDamageFrames;
+          if (fire > 0) { const fa = atlas.fireAnim(drawVis); if (fa >= 0 && atlas.resolve(drawVis, fa, 0, fireAnimTime(cx.now, i), 0, res)) { animated = true; res.flipX = flip; res.hasDamageFrames = hd; } }
+          else if (pst < 0) { const ua = atlas.namedAnim(drawVis, "unlit"); if (ua >= 0 && atlas.resolve(drawVis, ua, 0, 0, 0, res)) { res.flipX = flip; res.hasDamageFrames = hd; } }
+        }
         const info = atlas.pieceInfo(vis); const sway = atlas.swayOf(vis);
         const fw = info ? (rot & 1 ? info.fh : info.fw) : 1, fh = info ? (rot & 1 ? info.fw : info.fh) : 1;
         const ax = Math.floor(part.x), ay = Math.floor(part.y);
@@ -1019,7 +1041,7 @@ export class SpriteBatch {
           const hit = res.ay >= cx.style.occlusion.minHeightPx && front > this.occ.fk + 0.05 && this.occ.overlapsFocus(left, right, top, bottom);
           anyHit ||= hit; occT = part.last ? this.occ.occAmount(i, anyHit) : this.occ.peek(i); // ADR-211: an L fades as one piece (arms read the smoothed value, the post steps it)
         }
-        const dynamic = ghost > 0 || cutaway || occT > 0;
+        const dynamic = ghost > 0 || cutaway || occT > 0 || animated;
         const alpha = cutaway ? cx.style.cutawayAlpha : 1;
         // footprint far corner (fx, fy); sprite pivot = footprint centre on the ground (art guide / sample manifest)
         // or the front-most footprint corner (cx.pieceAnchor === "front")

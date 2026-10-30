@@ -1778,3 +1778,55 @@ Tests:
   - a walker kept beyond 5 tiles of a torch bearer at night (control: it closes to 2 tiles);
   - a horde member kept away.
 - `tool-hint` and `gathering` are updated for the new icon and yields.
+
+## ADR-218: Fires animate (placed hearths, stations, held torches, burning flames) with embers and smoke
+
+Status: accepted (2026-10-29)
+
+Context: campfires and other fires looked frozen. Causes, in both renderers:
+- Placed fired pieces (campfire / bonfire, furnace, fireplace, stoves, torch stand) resolved their static building frame. In WebGL they were then baked into the static chunk VBOs. In Canvas2D `gatherPieces` also ignored the piece state, so an out bonfire still looked lit.
+- The free-standing station bonfire was stuck on frame 0 in WebGL (`frameId` 0 with no AnimState). In Canvas2D it animated, but in lockstep with every other fire.
+- The held torch was resolved at t = 0.
+- The furnace has no `unlit` building state (its building frames are per damage stage), so an out furnace drew lit art.
+- ADR-214 burning flames lived 0.8 s (exactly one 8-frame loop) and were respawned at 0.98 × life with a 0.15 s fade-out. Every flame dipped in alpha about every 0.78 s and all tiles restarted on frame 0 together. VfxLayer eviction could also drop them silently.
+- Lit hearths had no embers or smoke; only Burning pieces and chimneys emitted them.
+
+Decision:
+- **Fire clock (`fire-anim.ts`).**
+  - `fireAnimTime(now, seed)` runs on render time (not sim ticks), with a hashed per-entity phase (0..8 s) and a rate jitter of 0.85..1.15×, so neighbouring fires never flicker in sync.
+  - A lit fire plays its sprite's looping multi-frame `idle` (`AtlasManager.fireAnim`, `isFireAnim`).
+  - `pieceFireFrame` is the shared rule:
+    - lit, intact and not a ghost: play the flame;
+    - out, with no own building state: show the `unlit` anim frame;
+    - otherwise: the building frame. flipX is kept.
+- **WebGL (`sprites.ts`).**
+  - Pieces apply the rule from the new `pieceLit` binding. An animated fire is `dynamic`, so it is never put in a static chunk.
+  - Lit station sprites with a fire anim animate.
+  - `emitHeld` plays the held sprite's fire anim at the bearer's fire time.
+- **Canvas2D.**
+  - `gatherPieces` uses `pieceFireFrame` with `pieceLit` / `pieceState`.
+  - Lit stations get the per-entity fire time.
+  - Hearths draw stateless embers and smoke (`hearthParticles`, additive embers).
+- **Burning (ADR-214 revisited).**
+  - One persistent, infinite-lifetime flame per footprint tile (capped), each with a random anim age.
+  - A flame is respawned only if it was evicted (`VfxInstance.dead`) or its size class changed. Flames are killed (`VfxLayer.kill`) when the burn stops.
+  - `VfxSpawn.age` back-dates the birth time.
+- **HearthFx.**
+  - Calm `campfire_sparks` and `campfire_smoke` particles rise over lit hearths and lit fire stations (`litPieces` binding, FireState.Hearth = 2). It is capped at 48 hearths.
+  - The client classifies hearths in `fire-state.ts`: campfire, furnace, fireplace, wood_stove, stove_iron, cook_range, clay_oven. Lanterns, candles and lamps stay light-flicker only.
+
+Unchanged:
+- Light flicker (shader, time-based).
+- Single-frame decor lights.
+
+Tests:
+- `render/adr218_fire_anim` covers:
+  - clock advance, looping and per-entity desync;
+  - `pieceFireFrame` on the real bonfire / furnace art: lit animates, out furnace shows unlit, damaged / ghost / non-fired keep the building frame;
+  - VfxLayer age / kill / eviction `dead`;
+  - BurningFx keeps the same flame instance at full alpha for 5 s and kills it when the burn ends;
+  - HearthFx emits only for hearths and lit stations;
+  - the bounds and alpha of the Canvas2D particles.
+- `client/adr218_fire_state` covers the state mapping, that hearth keys are fired pieces, and the binding / static-chunk wiring.
+
+Shots: `/workspace/shots/fire_{before,after}_{webgl,canvas}_1..6.png` (screencast, about 100–230 ms apart under swiftshader).

@@ -44,7 +44,7 @@ import { DEFAULT_STYLE, mergeStyle, type StyleConfig, type StylePatch } from "./
 import { readDayFraction, readDayNumber, readWeather, readWind } from "./env.js";
 import type { TransformSource } from "./transformSource.js";
 import { VfxLayer } from "./vfx.js";
-import { BurningFx } from "./burning.js";
+import { BurningFx, HearthFx } from "./burning.js";
 import { ChimneySmoke } from "./building/chimney.js";
 import type { Renderer } from "./types.js";
 import { loadPreset, parsePreset, QualityController, QUALITY_TIERS, type QualityPreset } from "./quality.js";
@@ -128,6 +128,8 @@ export class IsoRenderer implements Renderer {
   readonly vfx = new VfxLayer();
   /** Burning -> fire/ember/smoke VFX (keys in burning.cfg). */
   readonly burning = new BurningFx();
+  /** ADR-218: embers + smoke over lit hearths (litPieces binding) and lit fire stations. */
+  readonly hearth = new HearthFx();
   /** roof_chimney smoke attach point -> campfire_smoke particles (building/chimney.ts). */
   readonly chimneySmoke = new ChimneySmoke();
   style: StyleConfig;
@@ -466,6 +468,7 @@ export class IsoRenderer implements Renderer {
     if (this.w === 0) this.resize(this.lastCss[0] || this.canvas.clientWidth || 800, this.lastCss[1] || this.canvas.clientHeight || 600, this.lastCss[2]);
     this.vfx.update(this.time); this.statusDt = dt;
     if (this.bindings.burning) this.burning.update(world, this.bindings.burning, this.bindings.buildPiece, this.atlas, this.vfx, this.time, dt);
+    if (this.bindings.litPieces || this.bindings.lit) this.hearth.update(world, this.bindings.litPieces?.(), this.bindings.lit, this.bindings.buildPiece, this.atlas, this.vfx, dt * (this.timeScale > 0 ? Math.min(1, this.timeScale) : 1));
     if (this.chimneySmoke.cfg.rateScale > 0) this.chimneySmoke.update(world, this.bindings.buildPiece, this.atlas, this.vfx, dt, this.iso);
 
     // --- 0. prep ---------------------------------------------------------------------------

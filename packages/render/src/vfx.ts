@@ -14,10 +14,13 @@ export interface VfxSpawn {
   vx?: number; vy?: number; vz?: number; gravity?: number; fade?: boolean; scaleCurve?: [number, number];
   /** Opacity multiplier 0..1 (default 1). */
   alpha?: number;
+  /** ADR-218: start this many seconds into the animation (desyncs looping flames). */
+  age?: number;
 }
 export interface VfxInstance { spriteId: number; x: number; y: number; z: number; anim: number; born: number; lifetime: number; scale: number; facing: number; emissive: boolean;
   vx: number; vy: number; vz: number; gravity: number; fade: boolean; s0: number; s1: number; alpha: number;
-  /** one-frame overlay instance (see VfxLayer.overlay) */ overlay?: boolean }
+  /** one-frame overlay instance (see VfxLayer.overlay) */ overlay?: boolean;
+  /** ADR-218: set once the instance left `active` (expired, killed or evicted by maxActive). */ dead?: boolean }
 export interface VfxEventLike { tick: number; def: { name?: string; type?: number } | unknown; payload: Record<string, number> }
 
 export class VfxLayer {
@@ -32,11 +35,14 @@ export class VfxLayer {
    */
   overlay: readonly VfxSpawn[] = [];
 
-  spawn(s: VfxSpawn, overlay = false): void {
-    if (this.active.length >= this.maxActive) this.active.shift();
-    this.active.push({ alpha: s.alpha ?? 1, ...(overlay ? { overlay: true, } : {}), spriteId: s.spriteId, x: s.x, y: s.y, z: s.z ?? 0, anim: s.anim ?? 0, born: this.now, lifetime: s.lifetime ?? 0.5, scale: s.scale ?? 1, facing: s.facing ?? 0, emissive: s.emissive ?? true,
-      vx: s.vx ?? 0, vy: s.vy ?? 0, vz: s.vz ?? 0, gravity: s.gravity ?? 0, fade: s.fade ?? false, s0: s.scaleCurve?.[0] ?? 1, s1: s.scaleCurve?.[1] ?? 1 });
+  spawn(s: VfxSpawn, overlay = false): VfxInstance {
+    if (this.active.length >= this.maxActive) { const ev = this.active.shift(); if (ev) ev.dead = true; }
+    const v: VfxInstance = { alpha: s.alpha ?? 1, ...(overlay ? { overlay: true, } : {}), spriteId: s.spriteId, x: s.x, y: s.y, z: s.z ?? 0, anim: s.anim ?? 0, born: this.now - (s.age ?? 0), lifetime: s.lifetime ?? 0.5, scale: s.scale ?? 1, facing: s.facing ?? 0, emissive: s.emissive ?? true,
+      vx: s.vx ?? 0, vy: s.vy ?? 0, vz: s.vz ?? 0, gravity: s.gravity ?? 0, fade: s.fade ?? false, s0: s.scaleCurve?.[0] ?? 1, s1: s.scaleCurve?.[1] ?? 1 };
+    this.active.push(v); return v;
   }
+  /** ADR-218: end a (persistent) instance now; it is dropped on the next update(). */
+  kill(v: VfxInstance): void { v.lifetime = 0; v.born = this.now - 1; v.alpha = 0; }
   /** Map a gameplay/net event (by def name) to effects. */
   onEvent(defName: string, map: (ev: VfxEventLike) => VfxSpawn | VfxSpawn[] | null): void { this.mappers.set(defName, map); }
   handle(ev: VfxEventLike): void {
@@ -50,7 +56,7 @@ export class VfxLayer {
     for (const v of this.active) if (!v.overlay && now - v.born < v.lifetime) {
       if (v.vx || v.vy || v.vz || v.gravity) { v.x += v.vx * dt; v.y += v.vy * dt; v.vz -= v.gravity * dt; v.z += v.vz * dt; }
       this.active[w++] = v;
-    }
+    } else v.dead = true;
     this.active.length = w;
     for (const o of this.overlay) this.spawn({ ...o, lifetime: Infinity }, true);
   }

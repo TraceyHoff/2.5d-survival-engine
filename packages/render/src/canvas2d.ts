@@ -10,7 +10,8 @@ import { reportRenderError } from "./report.js";
  * Presents the subset of the IsoRenderer surface the client uses (camera, capabilities, atlas.setRegistry, bindGameplay,
  * loadLook, resize, render, tilemap, setFocusEntity, diagReport) so IsoView can drive either one.
  */
-import { Transform, PrevTransform, getAppearance, type World, type Entity } from "@engine/core";
+import { Transform, PrevTransform, entityIndex, getAppearance, type World, type Entity } from "@engine/core";
+import { fireAnimTime, hearthParticles, pieceFireFrame, isFireAnim, type HearthParticle } from "./fire-anim.js";
 import { previewLayers2D, tintPixels, type PreviewLayer2D } from "./character/preview2d.js";
 import { worldToScreen, DEFAULT_ISO, CHUNK_SIZE, floorToTerrainZ, terrainZToFloor, isWaterId, waterShoreTint, type TileMap, type Chunk } from "@engine/world";
 import type { AssetRegistry } from "@engine/assets";
@@ -153,7 +154,7 @@ export class Canvas2DRenderer {
 
   private decks = new DeckNeighbors();
   /** ADR-197: building pieces as painter items: level-major, decks under their floor's uprights, iso order, unique tie-break. */
-  gatherPieces(world: World, reg: AssetRegistry): C2DPiece[] {
+  gatherPieces(world: World, reg: AssetRegistry, time = this.clock): C2DPiece[] {
     const bpd = this.bindings.buildPiece; if (!bpd || !world.isRegistered(bpd)) return [];
     const iso = DEFAULT_ISO; const hw = iso.tileW / 2, hh = iso.tileH / 2; const raw: { e: Entity; ax: number; ay: number; fw: number; fh: number; level: number; layer: number; z: number; vis: number; rot: number; dmg: number; ghost: boolean; deck: boolean; top: number | undefined; px: number; py: number }[] = [];
     this.decks.clear();
@@ -173,7 +174,9 @@ export class Canvas2DRenderer {
     }
     const out: C2DPiece[] = [];
     for (const r of raw) {
-      let f; try { f = reg.buildingFrame(r.vis, r.rot, r.dmg); } catch { continue; } const img = this.image(f.atlas.key); if (!img) continue;
+      // ADR-218: piece state (bonfire "unlit") + lit fires play their idle flame loop on the render clock (per-entity phase)
+      const fire = this.bindings.pieceLit?.(r.e); const pst = this.bindings.pieceState?.(r.e) ?? -1;
+      let f; try { f = pieceFireFrame(reg, r.vis, r.rot & 3, r.dmg, pst, fire, r.ghost, time, entityIndex(r.e)); } catch { continue; } const img = this.image(f.atlas.key); if (!img) continue;
       // ADR-210: exact pivot (edge midpoint / vertex / tri centroid) and deck-top lift, mirroring the WebGL2 path
       const exact = (r.rot & ROT_EXACT_PIVOT) !== 0; const pvx = exact ? r.px : r.ax + r.fw / 2, pvy = exact ? r.py : r.ay + r.fh / 2;
       const lift = r.rot & ROT_DECK_LIFT ? (exact ? this.decks.topNear(pvx, pvy, r.level) : this.decks.topOver(r.ax, r.ay, r.fw, r.fh, r.level)) : 0;
@@ -181,9 +184,22 @@ export class Canvas2DRenderer {
       const mask = r.top === undefined || exact ? 0 : this.decks.mask(r.ax, r.ay, r.fw, r.fh, r.level, r.top);
       const isoD = (exact ? pvx + pvy - 1 : r.ax + r.fw - 1 + r.ay + r.fh - 1) + r.layer * 0.01 + (exact ? exactTieBreak(pvx, pvy, r.ghost) : pieceTieBreak(r.ax, r.ay, r.ghost)) + (r.rot & ROT_VERTEX_POST ? VERTEX_POST_BIAS : 0);
       out.push({ e: r.e, sx: p.sx, sy: p.sy, depth: r.level * LEVEL_DEPTH + (r.deck ? DECK_DEPTH : 0) + isoD, ord: pieceOrder(r.level, r.layer, r.ax, r.ay) * 2 + (r.ghost ? 1 : 0), img, f,
-        clip: mask ? deckClipPolygon(r.fw, r.fh, mask, r.top!, hw, hh) : undefined, seams: mask ? deckSeamPatches(r.fw, r.fh, mask, r.top!, hw, hh) : undefined, ghost: r.ghost });
+        clip: mask ? deckClipPolygon(r.fw, r.fh, mask, r.top!, hw, hh) : undefined, seams: mask ? deckSeamPatches(r.fw, r.fh, mask, r.top!, hw, hh) : undefined, ghost: r.ghost, hearth: fire === 2 && !r.ghost && r.dmg === 0 });
     }
     return out;
+  }
+  private hearthBuf: HearthParticle[] = [];
+  /** ADR-218: stateless embers (additive) + smoke puffs over a lit hearth (Canvas2D has no particle layer). */
+  private drawHearth(sx: number, sy: number, time: number, seed: number, s: number, ox: number, oy: number): void {
+    const g = this.ctx; const ps = hearthParticles(time, seed, 9, DEFAULT_ISO.tileW, this.hearthBuf);
+    g.save(); g.translate(snapPx(sx, s, ox), snapPx(sy, s, oy));
+    for (const p of ps) {
+      if (p.alpha <= 0.01) continue;
+      g.globalCompositeOperation = p.ember ? "lighter" : "source-over"; g.globalAlpha = Math.min(1, p.alpha);
+      g.fillStyle = p.ember ? "rgb(255,170,60)" : "rgb(120,116,110)";
+      g.beginPath(); g.arc(p.dx, p.dy, p.size, 0, Math.PI * 2); g.fill(); this.stats.drawCalls++;
+    }
+    g.restore();
   }
   private drawPiece(pc: C2DPiece, s: number, ox: number, oy: number): void {
     const g = this.ctx; const f = pc.f; g.save(); g.translate(snapPx(pc.sx, s, ox), snapPx(pc.sy, s, oy));
@@ -231,12 +247,18 @@ export class Canvas2DRenderer {
     items.sort((a, b) => (a.depth - b.depth) || (a.ord - b.ord)); // ADR-197: total order (no equal-key coin flips) // Flat ground decals (roads) first: always under feet and entities
     const an = this.bindings.animState; const tick = world.tick;
     for (const it of items) {
-      if (it.pc) { this.drawPiece(it.pc, s, ox, oy); continue; }
+      if (it.pc) { this.drawPiece(it.pc, s, ox, oy); if (it.pc.hearth) this.drawHearth(it.pc.sx, it.pc.sy, time, entityIndex(it.e), s, ox, oy); continue; }
       const sp = world.get(it.e, Sprite)!; if (sp.scale > 0 && sp.scale < 0.01) continue;
       let anim = "idle"; let tAnim = time;
       const fa = frameAnim(sp.frameId); if (fa >= 0) { try { anim = reg!.sprite(sp.spriteId).animList[fa]?.name ?? "idle"; } catch { /* unknown sprite */ } tAnim = 0; }
       if (an && world.has(it.e, an)) { const a = world.get(it.e, an)!; const names = STATE_ANIMS[a.state] ?? ["idle"]; let def; try { def = reg!.sprite(sp.spriteId); } catch { def = undefined; }
         anim = names.find((n) => def?.animations.has(n)) ?? "idle"; tAnim = Math.max(0, (tick - a.startTick) / 20) * (this.bindings.animRate?.(it.e, a.state) ?? 1); }
+      // ADR-218: a lit fire sprite (station bonfire) loops its flame at its own phase, with embers + smoke
+      const litB = this.bindings.lit; let hearth = false;
+      if (fa < 0 && !(an && world.has(it.e, an)) && litB && world.isRegistered(litB) && world.has(it.e, litB) && (world.get(it.e, litB) as { lit?: number }).lit) {
+        let def; try { def = reg!.sprite(sp.spriteId); } catch { def = undefined; }
+        if (def && isFireAnim(def)) { anim = "idle"; tAnim = fireAnimTime(time, entityIndex(it.e)); hearth = true; }
+      }
       const facing = world.get(it.e, Transform)!.facing; const k = sp.scale || 1;
       // ADR-134 flinch: brief brightness flash + tilt about the foot (same bindings as WebGL's hitFlash)
       const hf = this.bindings.hitFlash?.(it.e) ?? 0; const tilt = this.bindings.hitTilt?.(it.e) ?? 0;
@@ -257,6 +279,7 @@ export class Canvas2DRenderer {
       const dw = f.w * k, dh = f.h * k;
       g.save(); g.translate(snapPx(it.sx, s, ox), snapPx(it.sy, s, oy)); fx(); if (f.flipX) g.scale(-1, 1);
       g.drawImage(img, f.x, f.y, f.w, f.h, -f.anchorX * k, -f.anchorY * k, dw, dh); g.restore(); stats.sprites++; stats.drawCalls++;
+      if (hearth) this.drawHearth(it.sx, it.sy, time, entityIndex(it.e), s, ox, oy);
     }
     // ADR-216: real lightmap (ambient + additive iso light ellipses) multiplied onto the scene, like the WebGL LightPass
     g.setTransform(1, 0, 0, 1, 0, 0);
@@ -277,7 +300,7 @@ const FLOOR_Z = floorToTerrainZ(1, 0);
 const C2D_DAYLIGHT_LIGHT_SCALE = DEFAULT_STYLE.daylightLightScale;
 /** Painter layers: everything on floor N draws after floor N-1; decks draw below the uprights of their own floor. */
 const LEVEL_DEPTH = 1e6, DECK_DEPTH = -5e5;
-interface C2DPiece { e: Entity; sx: number; sy: number; depth: number; ord: number; img: CanvasImageSource; f: { x: number; y: number; w: number; h: number; anchorX: number; anchorY: number; flipX?: boolean }; clip: [number, number][] | undefined; seams?: { poly: [number, number][]; dx: number; dy: number }[] | undefined; ghost: boolean }
+interface C2DPiece { e: Entity; sx: number; sy: number; depth: number; ord: number; img: CanvasImageSource; f: { x: number; y: number; w: number; h: number; anchorX: number; anchorY: number; flipX?: boolean }; clip: [number, number][] | undefined; seams?: { poly: [number, number][]; dx: number; dy: number }[] | undefined; ghost: boolean; hearth?: boolean }
 const rgb = (c: readonly number[]): string => `rgb(${Math.round(Math.min(1, c[0]!) * 255)},${Math.round(Math.min(1, c[1]!) * 255)},${Math.round(Math.min(1, c[2]!) * 255)})`;
 
 /** Canvas2D sort key: Flat ground decals (roads, ADR-119) draw in a layer below every upright sprite, in iso order. */

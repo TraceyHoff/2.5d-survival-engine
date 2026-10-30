@@ -1667,6 +1667,14 @@ export class AtlasManager {
   pieceInfo(spriteId: number): { fw: number; fh: number; layer: number } | null { const b = this.sprites[spriteId]?.building; return b ? { fw: b.fw, fh: b.fh, layer: b.layer } : null; }
 
   /** Animation index of `name` on a sprite (-1 = unknown; resolve() then uses the first animation's frame list). */
+  /** Exact index of the animation `name` (-1 when the sprite has none; animIndex falls back to 0). */
+  namedAnim(spriteId: number, name: string): number { const s = this.sprites[spriteId]; return s ? s.anims.findIndex((a) => a.name === name) : -1; }
+  /** ADR-218: the looping multi-frame `idle` animation of a fire sprite (bonfire, furnace, held torch...), else -1. */
+  fireAnim(spriteId: number): number {
+    const s = this.sprites[spriteId]; if (!s) return -1;
+    const i = s.anims.findIndex((a) => a.name === "idle"); const a = s.anims[i];
+    return a && a.loop && a.fps > 0 && a.frames.length > 1 ? i : -1;
+  }
   animIndex(spriteId: number, name: string): number { const s = this.sprites[spriteId]; if (!s) return -1; const i = s.anims.findIndex((a) => a.name === name); return i < 0 ? 0 : i; }
   /** Animation index of `name`, or -1 when the sprite has no such anim (animIndex() falls back to 0). */
   findAnim(spriteId: number, name: string): number { const s = this.sprites[spriteId]; if (!s) return -1; for (let i = 0; i < s.anims.length; i++) if (s.anims[i]!.name === name) return i; return -1; }
