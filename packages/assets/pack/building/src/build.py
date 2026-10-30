@@ -84,5 +84,6 @@ if __name__ == '__main__':
     st, dclip = decor.emit(man, OUT, decor.GROUPS, prev=os.environ.get('DECOR_PREVIEW'))
     for a in st: print(*a)
     print('decor clipped:', dclip)
+    import clan_palettes; clan_palettes.apply(man)   # clanPalettes for the client (pvp_clan is not served); see clan_palettes.py
     p = f'{OUT}/manifest.building.json'; json.dump(man, open(p, 'w'), indent=1); open(p, 'a').write('\n')
     import pickle; pickle.dump({k: [im for im, _ in v] for k, v in R.items()}, open('/tmp/bld_frames.pkl', 'wb'))

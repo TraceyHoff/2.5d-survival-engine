@@ -28108,5 +28108,87 @@
    },
    "rotationArt": "mirror"
   }
+ ],
+ "clanPalettes": [
+  {
+   "key": "berry_cream",
+   "primary": "#E8475F",
+   "secondary": "#F6EAD2"
+  },
+  {
+   "key": "sky_sun",
+   "primary": "#4F8FD6",
+   "secondary": "#FFD45A"
+  },
+  {
+   "key": "meadow",
+   "primary": "#72C45C",
+   "secondary": "#FFFAF0"
+  },
+  {
+   "key": "plum_gold",
+   "primary": "#9B72D6",
+   "secondary": "#FFD45A"
+  },
+  {
+   "key": "pumpkin_cocoa",
+   "primary": "#F4A74A",
+   "secondary": "#87563A"
+  },
+  {
+   "key": "teal_rose",
+   "primary": "#3FB3A6",
+   "secondary": "#FF9EC4"
+  },
+  {
+   "key": "honey_bark",
+   "primary": "#F7C844",
+   "secondary": "#74432C"
+  },
+  {
+   "key": "denim_cream",
+   "primary": "#5A6FB0",
+   "secondary": "#F6EAD2"
+  },
+  {
+   "key": "rose_mint",
+   "primary": "#FF9EC4",
+   "secondary": "#94DCA8"
+  },
+  {
+   "key": "pine_gold",
+   "primary": "#4FA37A",
+   "secondary": "#FFD45A"
+  },
+  {
+   "key": "brick_sand",
+   "primary": "#D0705A",
+   "secondary": "#F6DFA4"
+  },
+  {
+   "key": "lilac_teal",
+   "primary": "#BBA4F0",
+   "secondary": "#3FB3A6"
+  },
+  {
+   "key": "mint_plum",
+   "primary": "#94DCA8",
+   "secondary": "#7452AD"
+  },
+  {
+   "key": "ember_sky",
+   "primary": "#FF8A2A",
+   "secondary": "#5CC6DC"
+  },
+  {
+   "key": "pebble_berry",
+   "primary": "#A9A094",
+   "secondary": "#E8475F"
+  },
+  {
+   "key": "midnight_star",
+   "primary": "#3A66A8",
+   "secondary": "#FFF2A8"
+  }
  ]
 }
