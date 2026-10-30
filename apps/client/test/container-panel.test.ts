@@ -49,7 +49,7 @@ describe("paged container panel (ADR-098)", () => {
     press(PAD.RB); expect(q("[data-role=container-grid]").dataset["page"]).toBe("2");
     press(PAD.LB); key("PageUp"); expect(q("[data-role=container-grid]").dataset["page"]).toBe("0");
     key("PageUp"); expect(q("[data-role=container-grid]").dataset["page"]).toBe("0"); // clamped
-    const seen = new Set<string>(); for (let i = 0; i < 40; i++) { key("Tab"); const k = (document.activeElement as HTMLElement | null)?.dataset["key"]; if (k) seen.add(k); }
+    const seen = new Set<string>(); for (let i = 0; i < 60; i++) { key("Tab"); const k = (document.activeElement as HTMLElement | null)?.dataset["key"]; if (k) seen.add(k); }
     expect(seen.has("cslot-0") && seen.has("cslot-23") && seen.has("page-next")).toBe(true);
     menus.destroy();
   });

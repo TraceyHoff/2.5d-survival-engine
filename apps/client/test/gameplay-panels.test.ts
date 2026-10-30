@@ -35,16 +35,15 @@ describe("gameplay panels (ADR-095 shell)", () => {
     }
     menus.destroy();
   });
-  test("ADR-145: the Drop items… section opens on click and stays open across panel re-renders", () => {
+  test("ADR-223: selecting a slot shows one details pane with Drop (no separate drop list)", () => {
     const { w, me, menus } = setup(); G.addItem(w, me, id("wood"), 5); menus.open("inventory");
-    const det = (): HTMLDetailsElement => q("[data-role=drop-section]") as HTMLDetailsElement;
-    expect(det().open).toBe(false); q("[data-role=drop-section] summary").click(); expect(det().open).toBe(true);
-    G.addItem(w, me, id("stone"), 2); menus.refresh(); expect(det().open).toBe(true);
-    q("[data-role=drop-section] summary").click(); menus.refresh(); expect(det().open).toBe(false); menus.destroy();
+    expect(document.querySelector("[data-role=drop-section]")).toBeNull(); q("[data-role=slot][data-item]").click();
+    expect(q("[data-role=inv-details]").textContent).toContain("×5"); G.addItem(w, me, id("stone"), 2); menus.refresh();
+    expect(q("[data-role=inv-details] [data-role=drop]")).toBeTruthy(); menus.destroy();
   });
   test("inventory tooltip names the crafter", () => {
     const { w, me, menus } = setup(); G.addItem(w, me, id("wood"), 5, 7); menus.open("inventory");
-    expect(q("[data-role=slot]").dataset["tip"]).toContain("Crafted by Ada"); menus.destroy();
+    q("[data-role=slot][data-item]").click(); expect(q("[data-role=inv-details]").textContent).toContain("Crafted by Ada"); menus.destroy();
   });
   test("crafting: Enter on a recipe sends queueCraft with the chosen count; queue jobs cancel", () => {
     const { w, me, sent, menus } = setup(); G.addItem(w, me, id("wood"), 20); G.addItem(w, me, id("stone"), 10); G.addItem(w, me, id("fiber"), 10);

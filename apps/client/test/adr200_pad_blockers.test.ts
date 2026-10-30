@@ -46,9 +46,9 @@ describe("ADR-200 pad-only blockers", () => {
     menus.open("inventory"); seek("[data-role=use]:not(:disabled)"); press(PAD.A);
     expect(sent.some((i) => i.cmd === G.UseCmd)).toBe(true); menus.destroy();
   });
-  test("drop a stack with the pad only (the Drop items… summary is pad-focusable)", () => {
+  test("drop a stack with the pad only (ADR-223: the details pane's Drop is pad-focusable)", () => {
     const { w, me, sent, menus, press, seek } = setup(); G.addItem(w, me, id("wood"), 5);
-    menus.open("inventory"); seek("[data-role=drop-section] summary"); press(PAD.A); seek("[data-role=drop] button, [data-role=drop] [data-role=drop]"); press(PAD.A);
+    menus.open("inventory"); seek("[data-role=slot][data-item]"); seek("[data-role=drop]"); press(PAD.A);
     expect(sent.some((i) => i.cmd === G.DropItemCmd)).toBe(true); menus.destroy();
   });
   test("craft an item with the pad only", () => {

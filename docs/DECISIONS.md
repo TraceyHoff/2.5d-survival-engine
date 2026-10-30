@@ -1932,3 +1932,25 @@ Shots: `/workspace/shots/skilldesc_{desktop,720p,mobile}.png` (Crafting / Master
 - the selecting press, held for 3 frames, places nothing;
 - after release, rotate, then a fresh confirm places it;
 - re-selecting re-arms the latch.
+
+## ADR-223: Slot-grid inventory, quick eat, compact crafting
+
+**Context.** The inventory was one long list of buttons (pack, a "Split / hotbar…" list, Equipment, "Eat & drink", Vehicles, "Drop items…"),
+and crafting was one huge recipe list; players scrolled to eat or craft, and hover tooltips overlapped neighbours.
+
+**Decision.**
+- Inventory (`[data-role=inv-layout]`): pack slots `HOTBAR_SIZE..slotCount-1` as fixed tiles in a contained scroll area (`inv-grid`), the
+  hotbar `0..7` as a bottom row (`inv-hotbar`, key numbers shown), Equipment as a right column (stacked above the grid under 620px).
+  Tiles keep `slot-N` / `[data-role=slot]` and carry no `data-tip`; ONE details pane (`inv-details`) shows the selected / focused item and
+  its actions (Eat/Drink · Equip · Off hand · Deploy · Split · To hotbar · Drop) as plain buttons — the old Eat / Drop / Vehicles / arrange lists are gone.
+- Quick use with no Eat button: pad A / Enter (click `detail === 0`) = primary action (eat · drink · equip · store); mouse / touch: tap selects,
+  a second tap within 450 ms (double-click / double-tap) = primary. Pad X / Y stay split / to hotbar (ADR-204/205; targets live in the pane,
+  which follows focus). Drag a tile onto any slot = MoveSlotCmd (move / swap), onto Equipment = equip.
+- Hotbar food: `edgeCommands(edges, world, e)` maps Hotbar1..8 on a food slot (not tool / weapon) to UseCmd instead of EquipCmd
+  (`hotbarConsumes`, shared by client prediction and the server); tapping the on-screen hotbar does the same. Without a world the ADR-180 mapping is unchanged.
+- Crafting / station: category tabs from the output item's category (All · Tools · Combat · Wear · Food · Materials; LB/RB on pad), a search
+  box (name or ingredient), ×1/×5/×10 (LT/RT), a scrollable tile grid (`recipe-grid`, `recipe-ID` keys kept, click / A queues) and a details
+  pane (`craft-details`) for the focused / hovered recipe with have/need per ingredient.
+
+**Consequences.** Tests: adr223_inventory_grid (layout, double-tap eat, pad A eat/equip + X split, drag-drop, hotbar food, crafting tabs/search/details);
+old Drop-section / crafter-tooltip tests now target the details pane. RB/LB hotbar *cycling* still equips (cycling past food must not eat it).

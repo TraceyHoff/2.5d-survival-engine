@@ -5,6 +5,8 @@
  * is processed in order over consecutive ticks, identically on server and predicting client).
  */
 import { ROAD_COMMANDS } from "./roads.js";
+import { slotItem } from "./inventory.js";
+import { gameplayDefs } from "./config.js";
 import { SIGN_COMMANDS } from "./signs.js";
 import { PET_COMMANDS } from "./pets.js";
 import { INVENTORY_OP_COMMANDS, INVENTORY_OP_RATES } from "./inventory_ops.js";
@@ -103,10 +105,15 @@ const MAX_QUEUE = 16;
  * Shared by applyGameplayInput and the authoritative server's applyInput so edges mean the same everywhere. Other edges
  * (Jump, HotbarNext/Prev, QuickUse, Toggle*, OpenChat, OpenSocial, Cancel) are client-UI or have no sim effect yet.
  */
+/** ADR-223: a hotbar key on food / drink (not a tool or weapon) eats / drinks it instead of holding it. */
+export function hotbarConsumes(world: World, e: Entity, slot: number): boolean {
+  try { const { item, count } = slotItem(world, e, slot); if (!item || !count) return false; const d = gameplayDefs(world).items.get(item);
+    return !!d?.food && !d.weapon && !d.tool && !d.ranged && !d.thrown; } catch { return false; }
+}
 export const SIM_EDGE_ACTIONS = ["Reload", "Hotbar1", "Hotbar2", "Hotbar3", "Hotbar4", "Hotbar5", "Hotbar6", "Hotbar7", "Hotbar8"] as const;
-export function edgeCommands(edges: number): { def: CommandDef; values: Record<string, number> }[] {
+export function edgeCommands(edges: number, world?: World, e?: Entity): { def: CommandDef; values: Record<string, number> }[] {
   const out: { def: CommandDef; values: Record<string, number> }[] = [];
-  const slot = hotbarSlotFromEdges(edges); if (slot >= 0) out.push({ def: EquipCmd as CommandDef, values: { slot } });
+  const slot = hotbarSlotFromEdges(edges); if (slot >= 0) out.push({ def: (world && e !== undefined && hotbarConsumes(world, e, slot) ? UseCmd : EquipCmd) as CommandDef, values: { slot } });
   if (edges & GameplayEdgeBits.Reload) out.push({ def: ReloadCmd as CommandDef, values: {} });
   return out;
 }
@@ -121,7 +128,7 @@ export function applyGameplayInput(world: World, e: Entity, frame: InputFrame | 
   } else world.set(e, PlayerIntent, { moving: actions & MOVE || analogMoving(frame) ? 1 : 0, sprint: actions & GameplayActions.Sprint ? 1 : 0, charge: actions & GameplayHoldBits.Charge ? 1 : 0 });
   for (const c of frame?.commands ?? []) queueCommand(world, e, reg, c);
   if (!frame) return;
-  for (const c of edgeCommands(frame.edges ?? 0)) { try { queueCommand(world, e, reg, reg.make(c.def, c.values)); } catch { /* not in this registry */ } }
+  for (const c of edgeCommands(frame.edges ?? 0, world, e)) { try { queueCommand(world, e, reg, reg.make(c.def, c.values)); } catch { /* not in this registry */ } }
   runInputHooks(world, e, frame, reg);
 }
 export function queueCommand(world: World, e: Entity, reg: CommandRegistry, c: Command): boolean {

@@ -742,3 +742,46 @@ html[data-nav-focus] .gm-modal .gm-panel button:focus,html[data-nav-focus] .gm-m
 .gm-modal .gm-panel [data-role=body] button[data-key^=color2-]{font-size:0;aspect-ratio:1;background:var(--cz-sw,#ccc);border:3px solid var(--cz-ink);border-radius:50%}
 .gm-modal .gm-panel [data-role=body] button[data-key^=color2-][aria-pressed=true]{box-shadow:0 0 0 3px var(--cz-gold),0 0 0 6px var(--cz-ink)}
 .gm-modal .gm-panel [data-role=body] .gm-grid:has(> button[data-key^=color2-]){grid-template-columns:repeat(auto-fill,minmax(var(--cz-hit),1fr))}
+/* ---- ADR-223 slot-grid inventory: pack grid (scrolls inside), hotbar row, equipment column, one details pane ---- */
+.gm-modal .gm-panel:has([data-role=inv-layout]){max-width:min(760px,96vw)}
+.gm-modal .gm-panel [data-role=inv-layout]{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:start}
+.gm-modal .gm-panel [data-role=inv-main]{display:flex;flex-direction:column;gap:8px;min-width:0}
+.gm-modal .gm-panel [data-role=inv-grid],.gm-modal .gm-panel [data-role=inv-hotbar]{display:grid;grid-template-columns:repeat(auto-fill,var(--inv-t,58px));gap:4px;justify-content:start}
+.gm-modal .gm-panel [data-role=inv-grid]{max-height:min(34vh,252px);overflow-y:auto;overscroll-behavior:contain;padding:4px;border-radius:10px;background:rgba(116,67,44,.10);scroll-padding:6px}
+.gm-modal .gm-panel [data-role=inv-hotbar]{grid-template-columns:repeat(8,var(--inv-t,58px));padding:4px;border-radius:10px;background:rgba(59,36,51,.16)}
+.gm-modal .gm-panel [data-role=body] :is([data-role=inv-grid],[data-role=inv-hotbar]) button[data-role=slot]{position:relative;width:var(--inv-t,58px);height:var(--inv-t,58px);min-height:0;min-width:0;padding:0;border-width:10px;border-image-width:10px;overflow:visible}
+.gm-modal .gm-panel [data-role=body] :is([data-role=inv-grid],[data-role=inv-hotbar]) button[data-role=slot]::after{left:50%;top:50%;width:calc(var(--inv-t,58px) - 18px);height:calc(var(--inv-t,58px) - 18px);margin:0;transform:translate(-50%,-50%)}
+.gm-modal .gm-panel [data-role=body] :is([data-role=inv-grid],[data-role=inv-hotbar]) button[data-role=slot][data-empty]::after{display:none}
+.gm-modal .gm-panel [data-role=inv-layout] button .nm{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.gm-modal .gm-panel [data-role=inv-layout] button .ct{position:absolute;right:-6px;bottom:-8px;z-index:1;font:700 13px/1 Fredoka,system-ui,sans-serif;color:var(--cz-cream,#FFFAF0);text-shadow:0 0 2px #3B2433,0 1px 0 #3B2433}
+.gm-modal .gm-panel [data-role=inv-layout] button .hk{position:absolute;left:-6px;top:-8px;z-index:1;font:700 11px/1 Fredoka,system-ui,sans-serif;color:#61402E;opacity:.8}
+.gm-modal .gm-panel [data-role=inv-layout] button[data-role=slot][data-equipped]{outline:3px solid #FFD45A;outline-offset:-3px}
+.gm-modal .gm-panel [data-role=inv-layout] button[data-role=slot][data-sel]{box-shadow:0 0 0 3px #5A9A4A}
+.gm-modal .gm-panel [data-role=inv-layout] button[data-role=slot][data-use]::before{content:"";position:absolute;left:-5px;bottom:-6px;width:9px;height:9px;border-radius:50%;background:#5A9A4A;border:2px solid #F6EAD2;z-index:1}
+.gm-modal .gm-panel [data-role=equipment]{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;width:min(230px,34vw)}
+.gm-modal .gm-panel [data-role=equipment] button[data-role=equip]{min-height:48px;padding:4px 6px;font-size:13px;line-height:1.1;text-align:left;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;display:flex;flex-direction:column;justify-content:center;align-items:flex-start}
+.gm-modal .gm-panel [data-role=equipment] button[data-role=equip] .nm{position:static;width:auto;height:auto;clip-path:none;font-size:11px;font-weight:500;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.gm-modal .gm-panel [data-role=inv-details]{margin-top:8px;padding:8px 10px;min-height:92px;border-radius:10px;background:#FFFAF0;border:2px solid #E6C47E;display:flex;flex-direction:column;gap:6px}
+.gm-modal .gm-panel [data-role=inv-details] [data-role=inv-name]{font-weight:700}
+.gm-modal .gm-panel [data-role=inv-details] [data-role=inv-tip]{font-size:13px;color:#61402E;overflow-wrap:anywhere}
+.gm-modal .gm-panel [data-role=inv-details] .gm-grid{grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:6px}
+@media (max-width:620px){.gm-modal .gm-panel [data-role=inv-layout]{grid-template-columns:minmax(0,1fr)}.gm-modal .gm-panel [data-role=equipment]{width:auto;grid-template-columns:repeat(4,minmax(0,1fr));order:-1}
+  .gm-modal .gm-panel [data-role=inv-layout]{--inv-t:min(48px,calc((94vw - 72px) / 8))}.gm-modal .gm-panel [data-role=inv-hotbar]{justify-content:center}}
+@media (max-height:760px){.gm-modal .gm-panel [data-role=inv-grid]{max-height:min(28vh,200px)}.gm-modal .gm-panel [data-role=inv-details]{min-height:72px}}
+/* ---- ADR-223 compact crafting: tabs, search + amount, tile grid (scrolls inside), details pane ---- */
+.gm-modal .gm-panel [data-role=craft-cats]{grid-template-columns:repeat(auto-fit,minmax(78px,1fr));gap:4px}
+.gm-modal .gm-panel [data-role=craft-cats] button{padding:4px 6px;font-size:14px}
+.gm-modal .gm-panel [data-role=craft-tools]{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.gm-modal .gm-panel [data-role=craft-tools] input{flex:1 1 140px;min-width:0}
+.gm-modal .gm-panel [data-role=craft-counts]{display:flex;gap:4px}
+.gm-modal .gm-panel [data-role=body] [data-role=recipe-grid]{grid-template-columns:repeat(auto-fill,86px);gap:4px;max-height:min(36vh,280px);overflow-y:auto;overscroll-behavior:contain;padding:4px;border-radius:10px;background:rgba(116,67,44,.10);justify-content:start}
+.gm-modal .gm-panel [data-role=body] [data-role=recipe-grid] button[data-role=recipe]{position:relative;width:86px;height:86px;min-height:0;padding:40px 0 0;border-width:10px;border-image-width:10px;text-align:center;font-size:11px;line-height:1.1;overflow:hidden}
+.gm-modal .gm-panel [data-role=body] [data-role=recipe-grid] button[data-role=recipe]::after{left:50%;top:2px;width:36px;height:36px;margin:0;transform:translateX(-50%)}
+.gm-modal .gm-panel [data-role=recipe-grid] button .nm{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
+.gm-modal .gm-panel [data-role=recipe-grid] button .ct{position:absolute;right:0;top:0;font-size:11px;font-weight:700}
+.gm-modal .gm-panel [data-role=recipe-grid] button[data-sel]{box-shadow:0 0 0 3px #5A9A4A}
+.gm-modal .gm-panel [data-role=craft-details]{padding:8px 10px;min-height:64px;border-radius:10px;background:#FFFAF0;border:2px solid #E6C47E;display:flex;flex-direction:column;gap:4px;font-size:14px}
+.gm-modal .gm-panel [data-role=craft-details] [data-role=craft-name]{font-weight:700}
+.gm-modal .gm-panel [data-role=craft-details] [data-have="0"]{color:#B4443A;font-weight:700}
+.gm-modal .gm-panel [data-role=craft-details] [data-role=craft-why]{color:#61402E;font-size:13px}
+@media (max-height:760px){.gm-modal .gm-panel [data-role=body] [data-role=recipe-grid]{max-height:min(30vh,200px)}}

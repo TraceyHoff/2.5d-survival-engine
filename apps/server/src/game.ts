@@ -172,7 +172,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
     applyInput: (w, e, cmd, clientId) => {
       applyDemoInput(w, e, cmd, 1 / tickHz); // riders: drive input (only the seat-0 driver steers, gameplay.vehicles)
       // ADR-180: edge pulses (exactly-once per seq) -> the same input-queue commands their net command twins use (Hotbar1..8 equip, Reload)
-      if (cmd?.edges && players.get(clientId)?.entity === e) for (const c of edgeCommands(cmd.edges)) queueCommand(w, e, handlers.registry, handlers.registry.make(c.def, c.values as never));
+      if (cmd?.edges && players.get(clientId)?.entity === e) for (const c of edgeCommands(cmd.edges, w, e)) queueCommand(w, e, handlers.registry, handlers.registry.make(c.def, c.values as never));
       if (cmd && (cmd.buttons & Act.Gather) && players.get(clientId)?.entity === e) {
         // ADR-107: the primary button punches/strikes a zombie or animal in melee reach first, else gathers
         const foe = nearestMeleeTarget(w, e);
