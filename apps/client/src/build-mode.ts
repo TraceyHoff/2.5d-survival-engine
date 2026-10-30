@@ -13,7 +13,7 @@
  *    the compact HUD carries floor ▲▼ and the contextual Repair / Upgrade / Demolish buttons.
  *  - a placed piece under the aim is the `target`; `context` lists its labelled actions (shown only when targeted).
  */
-import { buildPreviewFor, fineEligible, FINE_ROT, FINE_ROT_STEPS, rotationSteps, buildView, demolishIntent, gameplayDefs, moveVector, pieceTargetAt, placementTarget, placePreviewIntent, repairIntent, rotateStep, upgradeIntent,
+import { BuildPiece, buildPreviewFor, fineEligible, FINE_ROT, FINE_ROT_STEPS, rotationSteps, buildView, demolishIntent, gameplayDefs, moveVector, pieceTargetAt, placementTarget, placePreviewIntent, repairIntent, rotateStep, structures, upgradeIntent,
   type BuildPreview, type BuildSelection, type MenuCtx, type MenuIntent, type PieceTarget, type PlacementAim } from "@engine/gameplay";
 import { Transform } from "@engine/core";
 
@@ -42,6 +42,8 @@ export interface BuildContextAction { id: BuildActionId; label: string; hint: st
 export interface BuildContextView { target: PieceTarget; title: string; actions: BuildContextAction[] }
 /** Gamepad cursor speed (tiles/s at full stick). */
 export const PAD_CURSOR_SPEED = 5;
+/** ADR-228: per-frame placement queries rerun once the aim moved this many tiles or this long passed (inputs unchanged). */
+export const REFRESH_STEP = 0.125, REFRESH_MAX_MS = 100;
 export const DEMOLISH_CONFIRM_MS = 3000;
 const HINTS: Record<BuildDevice, Record<BuildActionId, string>> = {
   keyboardMouse: { repair: "H", upgrade: "U", demolish: "X" },
@@ -141,12 +143,26 @@ export class BuildMode {
     if (dev === "gamepad" && this.padOffset && pt) return { mode: 1, x: pt.x + this.padOffset.x, y: pt.y + this.padOffset.y };
     return this.o.aim();
   }
-  private refresh(): void {
-    const c = this.o.ctx(); if (!this.sel || !c) { this.preview = undefined; this.target = undefined; return; }
+  /** ADR-228: the last full refresh's inputs (everything but the aim point), aim and time, for the per-frame throttle. */
+  private lastRefresh: { key: string; x: number; y: number; at: number } | undefined;
+  /** ADR-228 bench/test counter: full (snap + validate + target) refreshes actually computed. */
+  refreshes = 0;
+  /**
+   * `throttled` (the per-frame call only): skip the snap/validate/target queries while nothing but the aim changed and
+   * the aim moved less than REFRESH_STEP tiles within REFRESH_MAX_MS since the last full pass; every explicit action
+   * (place, rotate, level, tier, piece, snap toggle, target actions) still refreshes exactly. The view eases the ghost.
+   */
+  private refresh(throttled = false): void {
+    const c = this.o.ctx(); if (!this.sel || !c) { this.preview = undefined; this.target = undefined; this.lastRefresh = undefined; return; }
     const aim = this.aim(c);
     // ADR-169: off = never assist; on = the default (facing / pad-cursor aims snap, a pointed mouse / tap cell stays exact so a red ghost says why)
     const assist = !this.snap ? false : this.device() === "gamepad" ? true : undefined; // pad cursor is imprecise: snap it too
     const sel = { ...this.sel, autoRot: this.rotLockAt === undefined };
+    { const pt = c.world.get(c.player, Transform); const s = this.sel; const now = this.now();
+      const key = `${s.piece}|${s.tier}|${s.variant}|${s.paint}|${sel.autoRot ? 1 : 0}|${this.requestRot}|${this.level}|${assist}|${aim?.mode}|${pt?.x}|${pt?.y}|${c.world.tick}|${c.player}|${c.world.isRegistered(BuildPiece) ? structures(c.world).count : 0}`;
+      const ax = aim?.x ?? NaN, ay = aim?.y ?? NaN; const L = this.lastRefresh;
+      if (throttled && L && L.key === key && now - L.at < REFRESH_MAX_MS && Math.abs(ax - L.x) < REFRESH_STEP && Math.abs(ay - L.y) < REFRESH_STEP) return;
+      this.lastRefresh = { key, x: ax, y: ay, at: now }; this.refreshes++; }
     this.preview = buildPreviewFor(c.world, c.player, sel, this.requestRot, aim, this.level, assist);
     if (this.rotLockAt && this.preview && (Math.round(this.preview.x) !== this.rotLockAt.x || Math.round(this.preview.y) !== this.rotLockAt.y)) {
       this.rotLockAt = undefined; this.preview = buildPreviewFor(c.world, c.player, { ...this.sel, autoRot: true }, this.requestRot, aim, this.level, assist);
@@ -178,7 +194,7 @@ export class BuildMode {
     if (lvl) this.setLevel(lvl);
     else if (i.pressed("Build.TierNext")) this.cycleTier(1); else if (i.pressed("Build.TierPrev")) this.cycleTier(-1);
     else if (i.pressed("Build.PieceNext")) this.cyclePiece(1); else if (i.pressed("Build.PiecePrev")) this.cyclePiece(-1);
-    if (i.pressed("Build.RotateCW")) this.rotate(1); else if (i.pressed("Build.RotateCCW")) this.rotate(-1); else this.refresh();
+    if (i.pressed("Build.RotateCW")) this.rotate(1); else if (i.pressed("Build.RotateCCW")) this.rotate(-1); else this.refresh(true);
     if (i.pressed("Build.RepairMode")) this.act("repair");
     else if (i.pressed("Build.UpgradeMode")) this.act("upgrade");
     else if (i.pressed("Build.DemolishMode")) this.act("demolish", dev === "gamepad"); // pad: the 500ms hold is the confirmation

@@ -9,7 +9,7 @@
 import { Transform, type Entity, type World } from "@engine/core";
 import { gameplayDefs } from "../config.js";
 import { Placement } from "../defs.js";
-import { outerCornerRots, pieceCost, snapPlacement, validatePlacement } from "../building/place.js";
+import { outerCornerRots, pieceCost, snapPlacement, validatePlacement, type Snapped } from "../building/place.js";
 import { isFineRot, isLCorner, rotParts, rotatedSize, structures, type StructureIndex } from "../building/structure.js";
 import { maxHpOf } from "../building/integrity.js";
 import { BuildPiece, Dead, EdgeSide, PieceSlot } from "../components.js";
@@ -81,6 +81,20 @@ export const SNAP_ASSIST_RING: readonly (readonly [number, number])[] = [0.5, 1]
  * mode 0; `assist` overrides), the first valid preview from SNAP_ASSIST_RING around the aim is returned instead.
  */
 export function buildPreviewFor(world: World, player: Entity, sel: BuildSelection, rot: number, aim: PlacementAim | undefined, level = 0, assist?: boolean): BuildPreview | undefined {
+  // ADR-228: one preview pass validates each distinct snapped slot once (the magnet candidates and the 16-offset assist
+  // ring mostly snap to the same few slots); the world cannot change inside the pass, so the reuse is exact.
+  const outer = validateMemo === undefined; if (outer) validateMemo = new Map();
+  try { return buildPreviewPass(world, player, sel, rot, aim, level, assist); } finally { if (outer) validateMemo = undefined; }
+}
+let validateMemo: Map<string, number> | undefined;
+/** ADR-228 stats (tests/bench): validatePlacement calls made and reused by preview passes. */
+export const previewStats = { validated: 0, reused: 0 };
+const slotKey = (sn: Snapped): string => {
+  let k = `${sn.def.id}|${sn.tier}|${sn.variant}|${sn.parent}|${sn.pos.x}|${sn.pos.y}|${sn.pos.z}|${sn.pos.facing}`;
+  for (const v of Object.values(sn.slot)) if (typeof v !== "object") k += `|${String(v)}`;
+  return k;
+};
+function buildPreviewPass(world: World, player: Entity, sel: BuildSelection, rot: number, aim: PlacementAim | undefined, level: number, assist?: boolean): BuildPreview | undefined {
   const p0 = rawPreview(world, player, sel, rot, aim, level);
   const p = p0 && assist !== false ? magnetize(world, player, sel, rot, aim, level, p0) : p0;
   if (!p || p.valid || !(assist ?? (aim !== undefined && aim.mode !== 1))) return p;
@@ -98,7 +112,8 @@ function rawPreview(world: World, player: Entity, sel: BuildSelection, rot: numb
   const sn = snapPlacement(world, { piece: sel.piece, x: at.x, y: at.y, level, rot, tier: sel.tier, variant: sel.variant });
   const base = { pieceKey: def.key, piece: def.id, tier: sel.tier, variant: sel.variant, paint: sel.paint, level, rotSteps: rotationSteps(world, sel.piece), request: { x: at.x, y: at.y, rot } };
   if (typeof sn === "number") return { ...base, x: at.x, y: at.y, z: level * d.building.levelHeight, rot, valid: false, reason: sn };
-  const reason = validatePlacement(world, player, sn);
+  const key = validateMemo ? slotKey(sn) : ""; let reason = validateMemo?.get(key);
+  if (reason === undefined) { reason = validatePlacement(world, player, sn); previewStats.validated++; validateMemo?.set(key, reason); } else previewStats.reused++;
   const r = rotParts(def, sn.slot.rot); // ADR-174: an off-grid piece's ghost turns in its 15° steps, like the placed piece
   return { ...base, tier: sn.tier, variant: sn.variant, x: sn.pos.x, y: sn.pos.y, z: sn.pos.z, rot: r.rot, rotSteps: r.steps, fine: isFineRot(def, sn.slot.rot), facing: sn.pos.facing, valid: reason === 0, reason };
 }
@@ -289,10 +304,14 @@ export function pieceTargetAt(world: World, player: Entity, at: { x: number; y: 
   const d = gameplayDefs(world); const reach = d.building.buildReach + 1;
   let best: Entity | undefined; let bestD = Infinity;
   for (const e of world.query([BuildPiece, Transform], [Dead])) {
-    const t = world.get(e, Transform)!; if (Math.hypot(t.x - pt.x, t.y - pt.y) > reach) continue;
-    const z = world.getField(e, PieceSlot, "z") ?? Math.round(t.z / d.building.levelHeight);
-    const dist = Math.hypot(t.x - at.x, t.y - at.y) + (z === level ? 0 : 0.5 + Math.abs(z - level));
-    if (dist <= radius + (z === level ? 0 : 0.5 + Math.abs(z - level)) && dist < bestD) { bestD = dist; best = e; }
+    // ADR-228: field reads (no Transform copy per piece) and the aim-box reject first: the level penalty is added to
+    // both sides of the radius test, so only pieces within `radius` of the aim can ever win.
+    const tx = world.getField(e, Transform, "x")!, ty = world.getField(e, Transform, "y")!;
+    if (Math.abs(tx - at.x) > radius || Math.abs(ty - at.y) > radius) continue;
+    if (Math.hypot(tx - pt.x, ty - pt.y) > reach) continue;
+    const z = world.getField(e, PieceSlot, "z") ?? Math.round(world.getField(e, Transform, "z")! / d.building.levelHeight);
+    const pen = z === level ? 0 : 0.5 + Math.abs(z - level); const dist = Math.hypot(tx - at.x, ty - at.y) + pen;
+    if (dist <= radius + pen && dist < bestD) { bestD = dist; best = e; }
   }
   if (best === undefined) return undefined;
   const bp = world.get(best, BuildPiece)!; const def = d.pieces.get(bp.type); if (!def) return undefined;

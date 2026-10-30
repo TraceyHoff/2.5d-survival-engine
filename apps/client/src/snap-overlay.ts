@@ -23,13 +23,16 @@ export function snapOverlayLines(p: BuildPreview | undefined, cam: CameraLike, g
 export interface SnapOverlayDeps { preview(): BuildPreview | undefined; camera(): CameraLike | undefined; hidden(): boolean; groundZ?(): number | undefined }
 export function mountSnapOverlay(root: HTMLElement, d: SnapOverlayDeps): { destroy(): void } {
   const cv = document.createElement("canvas"); cv.id = "snap-overlay"; cv.style.cssText = "position:absolute;inset:0;pointer-events:none;z-index:3"; root.append(cv);
-  let raf = 0, drew = false, sig = "";
+  let raf = 0, drew = false, sig = "", lineSig = "", redraws = 0;
   const tick = (): void => {
     raf = requestAnimationFrame(tick);
     try {
       const cam = d.camera(); const p = d.preview(); const lines = !cam || d.hidden() ? [] : snapOverlayLines(p, cam, d.groundZ?.());
       const s = p ? `${lines.length}:${p.valid ? 1 : 0}:${p.magnet ? 1 : 0}:${p.snapEdge ? 1 : 0}` : ""; if (s !== sig) { sig = s; cv.dataset["state"] = s; }
       if (!lines.length && !drew) return;
+      // ADR-228: a still ghost under a still camera draws identical lines; skip the full-canvas clear + blurred strokes
+      let ls = `${root.clientWidth}x${root.clientHeight}`; for (const l of lines) ls += `|${l.x0.toFixed(1)},${l.y0.toFixed(1)},${l.x1.toFixed(1)},${l.y1.toFixed(1)},${l.color},${l.width}`;
+      if (ls === lineSig) return; lineSig = ls; redraws++; cv.dataset["redraws"] = String(redraws);
       const dpr = Math.min(3, globalThis.devicePixelRatio || 1); const W = root.clientWidth || innerWidth, H = root.clientHeight || innerHeight;
       if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); cv.style.width = `${W}px`; cv.style.height = `${H}px`; }
       const g = cv.getContext("2d"); if (!g) return; g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H); drew = lines.length > 0;

@@ -2022,3 +2022,50 @@ Existing saves keep their levels (only future XP is affected). AI humans (host-f
 **Other fires.** The lantern (0.4) and torch stand (0.6) now actually render smaller, which is also correct for their size. Wood stove 0.8 and fireplace 1.0 use furnace art. The real `bonfire` piece stays at full size.
 
 **Tests.** gameplay adr227_campfire_scale (3) and render adr227_flame_scale (1). Screenshots: /workspace/shots/flame_small_{before,after}_{webgl,canvas}_{1,2}.png.
+
+## ADR-228: Smoother build placement mode
+
+**Context.** In build mode, `BuildMode.refresh()` ran every frame and did all of this each time:
+- a snap + validate pass (`buildPreviewFor`);
+- with the gamepad assist, up to 16 extra ring previews, each calling `validatePlacement` again;
+- a full linear `pieceTargetAt` scan that copied the Transform of every BuildPiece.
+
+The view also re-synced the ghost every frame and stepped to each new snapped spot. The snap overlay cleared and re-stroked its full-screen canvas (with shadow blur) every frame, even when nothing had changed. Static chunks were not the problem: the browser probe counted 0 `staticRebuilds` while moving the ghost, before and after the change, because the ghost is drawn as a dynamic sprite.
+
+**Decision.**
+- **Memoized validation per preview pass.** `buildPreviewFor` wraps its pass in a memo keyed by the snapped slot (def, tier, variant, parent, pos, facing, slot fields). The magnet candidates and the assist ring validate each distinct slot only once. The world cannot change inside one pass, so the reuse is exact. Counters live in `previewStats`.
+- **Spatially throttled per-frame refresh.** The per-frame call skips the snap/validate/target queries while all other inputs are unchanged and the aim moved less than `REFRESH_STEP` (0.125 tile) within `REFRESH_MAX_MS` (100 ms). The other inputs are: selection, autoRot, rotation, level, assist, aim mode, player position, world tick, and structure count. Explicit actions (place, rotate, level, tier, piece, snap toggle, target actions) always refresh exactly.
+- **Cheaper `pieceTargetAt`.** It reads fields instead of copying Transforms and rejects pieces outside the aim box first. The level penalty sits on both sides of the radius test, so only pieces within `radius` of the aim can win. Results are identical, and a brute-force comparison test checks this.
+- **Interpolated ghost.** `view.syncGhost` eases the drawn ghost toward the preview: rate 25/s, about 40 ms to close two thirds of the gap. It snaps instead when the piece, tier, variant, rotation or level changes, or on a jump of 3 tiles or more. A settled, unchanged ghost is not re-synced.
+- **Snap overlay.** It redraws only when its line set (coordinates, colours, viewport) changes.
+
+**Numbers.**
+
+Node bench: 478 pieces (a 20×20 foundation grid plus 4 wall rows), aim sweeping each frame, BuildMode.update CPU ms/frame:
+
+| Input | Piece | Before (ms) | After (ms) |
+|---|---|---|---|
+| Mouse | wall | 0.565 | 0.256 |
+| Mouse | foundation | 0.378 | 0.195 |
+| Mouse | campfire | 0.300 | 0.169 |
+| Gamepad | wall | 0.466 | 0.230 |
+| Gamepad | foundation | 1.515 | 0.321 |
+| Gamepad | campfire | 0.316 | 0.180 |
+
+`pieceTargetAt` dropped from about 0.15 to 0.085 ms.
+
+Browser (swiftshader, 1280×720, about 220 pieces): frame times are GPU-raster bound at about 200 ms in software GL, so the change does not show up in total frame time there. The CPU segments came out as follows:
+
+| Renderer | Input | BuildMode.update before (ms) | After (ms) |
+|---|---|---|---|
+| WebGL | mouse | 1.02 | 0.67 |
+| WebGL | pad | 3.6 | 2.8 |
+| Canvas2D | mouse | 0.70 | 0.60 |
+| Canvas2D | pad | 2.6 | 3.3 |
+
+- The pad numbers are noise at 5 fps: every frame moves about 1 tile, so the throttle never applies.
+- Hot in-page timings after the change: pad preview 0.32 ms, mouse preview 0.04 ms, target 0.03 ms.
+- Static chunk rebuilds while moving: 0 before and after.
+- Probe: /workspace/shots/perf228.mjs.
+
+**Tests.** apps/client adr228_build_smooth (3): throttle/refresh rules, memoized ring validation, and target scan equal to brute force.
