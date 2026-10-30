@@ -8,7 +8,7 @@ import {
   ECONOMY, Container, type PurchaseRequest,
 } from "../src/index.js";
 import { DEFAULT_RAW_DEFS } from "../src/data.js";
-import { collect, makeWorld, steps } from "./helpers.js";
+import { collect, makeWorld, steps, spawnLearned } from "./helpers.js";
 
 const d = defaultDefs(); const id = (k: string) => d.itemId(k);
 const COIN = id("coin"), AXE = id("iron_axe"), PLANK = id("planks");
@@ -17,7 +17,7 @@ function setup() {
   const w = makeWorld(); const perms = installPermissions(w);
   const { installEconomy } = mod; installEconomy(w);
   const names = playerNames(w);
-  const mk = (pid: number, name: string, x = 0) => { const p = spawnPlayer(w, { x, y: 0, maxWeight: 0, clientId: pid }); w.add(p, PlayerId, { id: pid }).add(p, Membership, { partyId: 0, clanId: 0 }); names.set(pid, name); return p; };
+  const mk = (pid: number, name: string, x = 0) => { const p = spawnLearned(w, { x, y: 0, maxWeight: 0, clientId: pid }); w.add(p, PlayerId, { id: pid }).add(p, Membership, { partyId: 0, clanId: 0 }); names.set(pid, name); return p; };
   return { w, perms, mk };
 }
 import * as mod from "../src/index.js";

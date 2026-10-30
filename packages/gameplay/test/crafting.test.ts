@@ -4,14 +4,14 @@ import {
   addItem, countItem, CraftCompleted, CraftFail, CraftFailed, Crafter, craftProgressTicks, CraftStarted, defaultDefs, Fuel, IntentAction,
   removeItem, setIntent, spawnPlayer, spawnStation, StationKind,
 } from "../src/index.js";
-import { collect, makeWorld, steps } from "./helpers.js";
+import { collect, makeWorld, steps, spawnLearned } from "./helpers.js";
 
 const d = defaultDefs();
 const id = (k: string) => d.itemId(k);
 const strip = <T extends { tick: number }>(xs: T[]) => xs.map(({ tick: _t, ...r }) => r);
 
 function crafter(role: "standalone" | "client" = "standalone") {
-  const w = makeWorld({ role }); const p = spawnPlayer(w, { x: 0, y: 0, maxWeight: 0 });
+  const w = makeWorld({ role }); const p = spawnLearned(w, { x: 0, y: 0, maxWeight: 0 });
   return { w, p, done: collect(w, CraftCompleted), failed: collect(w, CraftFailed), started: collect(w, CraftStarted) };
 }
 
@@ -103,7 +103,7 @@ describe("crafting", () => {
     setIntent(w, p, { action: IntentAction.CancelCraft }); w.step(1 / 20);
     expect(failed.at(-1)!.reason).toBe(CraftFail.Cancelled);
 
-    const tight = spawnPlayer(w, { x: 0, y: 0, slots: 2, maxWeight: 0 });
+    const tight = spawnLearned(w, { x: 0, y: 0, slots: 2, maxWeight: 0 });
     // two full stacks: ingredients exist, but both slots stay occupied after consumption
     addItem(w, tight, id("wood"), 50); addItem(w, tight, id("stone"), 50);
     setIntent(w, tight, { action: IntentAction.Craft, recipe: d.recipeId("wooden_club") }); w.step(1 / 20);

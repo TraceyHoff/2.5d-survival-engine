@@ -34,6 +34,7 @@ import { initDefense } from "../combat/defenses.js";
 import { assignStallOwner, canPlaceStall } from "../economy/stall.js";
 import { Listings, PieceOwner, StallHeader, StallLedger, StallSign } from "../components.js";
 import { PlayerId } from "@engine/core";
+import { hasSkillUnlock, pieceToken, tierToken } from "../skills/tree.js";
 
 export interface PlaceRequest { piece: number; x: number; y: number; level: number; rot: number; tier: number; variant: number }
 export interface Snapped { def: PieceDef; slot: Slot; parent: Entity | 0; pos: { x: number; y: number; z: number; facing: number }; tier: number; variant: number }
@@ -183,9 +184,15 @@ export function candidateStability(world: World, sn: Snapped): number {
   return best;
 }
 
+/** ADR-221: gate tokens a piece at `tier` needs (station piece unlock; tier unlock for tiered pieces). Twig and ordinary pieces need none. */
+export function pieceGates(defs: GameDefs, def: PieceDef, tier: number): string[] {
+  const out = [pieceToken((def as { key?: string }).key ?? "")]; const tk = defs.tiers[tier]?.key; if (def.tiered && tk) out.push(tierToken(tk)); return out;
+}
+export const pieceUnlocked = (world: World, e: Entity, def: PieceDef, tier: number): boolean => pieceGates(gameplayDefs(world), def, tier).every((t) => hasSkillUnlock(world, e, t));
 export function validatePlacement(world: World, builder: Entity, sn: Snapped, opts: { ignoreCost?: boolean; ignoreRange?: boolean } = {}): BuildFail | 0 {
   const defs = gameplayDefs(world); const b = defs.building; const idx = structures(world); const { def, slot } = sn;
   if (slot.z > b.maxLevel || slot.z < def.minLevel || (def.groundOnly && slot.z !== 0)) return BuildFail.LevelLimit;
+  if (!pieceUnlocked(world, builder, def, sn.tier)) return BuildFail.SkillLocked;
   const bt = world.get(builder, Transform);
   if (!opts.ignoreRange && bt && Math.hypot(bt.x - sn.pos.x, bt.y - sn.pos.y) > b.buildReach + rangeSlack(world, builder)) return BuildFail.OutOfRange;
   // privilege: foreign zones block; a claim also may not overlap a foreign zone and needs a tribe

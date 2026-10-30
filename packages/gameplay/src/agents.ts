@@ -4,7 +4,7 @@
  * only write AgentOutput (move axes / aim / action names / chat) - the host maps that to the same InputFrame +
  * commands a human client sends. Survival Systems extends this with registerBehavior() and data/agents.json.
  */
-import { pickSkillNode } from "./skills/progression.js";
+import { pickSkillNode, treesOf } from "./skills/progression.js";
 import { Progression } from "./components.js";
 import { Agent, AgentController, BehaviorRegistry, ChatTemplates, Rng, Transform, canSee, timeOfDay, type AgentContext, type AgentIdentity, type AgentSelf, type BehaviorDef, type ScheduleSlot, type World, type Entity, type Imperfections, type PerceptionConfig } from "@engine/core";
 import raw from "../data/agents.json";
@@ -63,7 +63,8 @@ export function buildAgentView(world: World, self: Entity, a: Agent, home: { x: 
     if (visible) seen.push({ id: e, kind, x: o.x, y: o.y });
   }
   const tod = timeOfDay(world);
-  const view: AgentWorldView = { seen, home, playerName }; fillAgentSensors(world, self, view, (sv?.hunger ?? 100) < 50); fillPartySensors(world, self, view); fillClanSensors(world, self, view); if ((world.getField(self, Progression, "points") ?? 0) > 0) { const p = pickSkillNode(world, self, a.identity.traits); if (p !== undefined) view.skillPick = p; } fillVehicleSensors(world, self, view); fillGoalSensors(world, self, view, a); observeSocialMemory(world, self, a);
+  const view: AgentWorldView = { seen, home, playerName }; fillAgentSensors(world, self, view, (sv?.hunger ?? 100) < 50); fillPartySensors(world, self, view); fillClanSensors(world, self, view); if ((treesOf(world, self) ?? []).some((t) => t.points > 0)) { // ADR-221: per-tree points since ADR-209 (global points is always 0)
+    const p = pickSkillNode(world, self, a.identity.traits); if (p !== undefined) view.skillPick = p; } fillVehicleSensors(world, self, view); fillGoalSensors(world, self, view, a); observeSocialMemory(world, self, a);
   return {
     self: { x: t.x, y: t.y, facing, hp: hp ? hp.hp / Math.max(1, hp.max) : 1, hunger: (sv?.hunger ?? 100) / 100, thirst: (sv?.thirst ?? 100) / 100, stamina: sv ? sv.stamina / Math.max(1, sv.maxStamina) : 1, tick: world.tick, dayT: tod.t, phase: currentPhaseKey(world) },
     world: view,

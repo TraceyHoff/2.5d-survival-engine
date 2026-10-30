@@ -8,7 +8,7 @@ import type { AgentWorldView, GameBehavior } from "../agents.js";
 import { Animal, BuildPiece, Dead, Listings, Pet, Tamed } from "../components.js";
 import { GameplayConfig } from "../config.js";
 import { readSlots, countItem } from "../inventory.js";
-import { pieceCost } from "../building/place.js";
+import { pieceCost, pieceUnlocked } from "../building/place.js";
 import { StationKind, type GameDefs, type ItemDef, type PieceDef, type RecipeDef } from "../defs.js";
 import { FIRE_AFTER_GOALS, GOAL_CRAFTS, pieceNear, stuckOn } from "./autonomy.js";
 import { PET_TREATS, speciesOfAnimal, tameChance } from "../pets.js";
@@ -62,6 +62,7 @@ export function fillAgentSensors(world: World, self: Entity, view: AgentWorldVie
     let k = 0;
     for (const key of BUILD_PLAN_PIECES) {
       k++; const def = dc.pieceByKey.get(key); if (!def || pieceNear(world, def.id, view.home.x, view.home.y, 6)) continue;
+      if (!pieceUnlocked(world, self, def, def.tiered ? 0 : def.fixedTier)) continue; // ADR-221: learn it first (skillPickBehavior)
       if (pieceCost(defs, def, 0).every((c) => have(c.item, c.count))) { view.buildPlan = { piece: def.id, x: Math.round(view.home.x) + k, y: Math.round(view.home.y) + (k === 1 ? 0 : 2) }; break; }
     }
   }

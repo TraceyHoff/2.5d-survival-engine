@@ -18,7 +18,7 @@ describe("ADR-113 skill tree data", () => {
     expect(G.SKILLS.nodes.length).toBeLessThanOrEqual(G.SKILL_NODE_WORDS * 32);
     const keys = new Set<string>();
     G.SKILLS.nodes.forEach((n, i) => {
-      expect(keys.has(n.key)).toBe(false); keys.add(n.key); expect(n.icon).toBe(`skill_${n.key}`);
+      expect(keys.has(n.key)).toBe(false); keys.add(n.key); expect(n.icon).toBe(n.effects.unlock ? n.icon : `skill_${n.key}`); expect(n.icon.startsWith("skill_")).toBe(true); // ADR-221 unlock nodes reuse art
       for (const r of n.requires) expect(G.skillNodeIndex(r)).toBeGreaterThanOrEqual(0);
     });
     const seen = new Map<string, number>(); const visit = (k: string): void => { const st = seen.get(k); if (st === 2) return; expect(st).not.toBe(1); seen.set(k, 1); for (const r of G.skillNode(G.skillNodeIndex(k))!.requires) visit(r); seen.set(k, 2); };
@@ -78,6 +78,9 @@ describe("ADR-113 progression", () => {
   });
   it("AI picks by personality: brave -> combat, timid -> stealth/medicine, same validation", () => {
     const w = world(); const a = mk(w, 1); give(w, a, 1);
+    // ADR-221: a fresh character learns its base-plan unlocks (campfire) before personality picks
+    expect(G.skillNode(G.pickSkillNode(w, a, traits({ bravery: 1, industriousness: 0, sociability: 0, greed: 0, chattiness: 0 }))!)!.key).toBe("firecraft");
+    G.grantSkillUnlocks(w, a);
     const brave = G.skillNode(G.pickSkillNode(w, a, traits({ bravery: 1, industriousness: 0, sociability: 0, greed: 0, chattiness: 0 }))!)!;
     const timid = G.skillNode(G.pickSkillNode(w, a, traits({ bravery: 0, industriousness: 0, sociability: 0, greed: 0, chattiness: 0 }))!)!;
     expect(brave.branch).toBe("combat"); expect(timid.branch).toBe("stealth");

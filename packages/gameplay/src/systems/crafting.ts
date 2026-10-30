@@ -14,6 +14,7 @@ import { secondsToTicks, StationKind, type RecipeDef } from "../defs.js";
 import { CraftCompleted, CraftFail, CraftFailed, CraftStarted, emit } from "../events.js";
 import { exchangeItems } from "../inventory.js";
 import { crafterIdFor } from "../economy/provenance.js";
+import stationsRaw from "../../data/stations.json";
 
 /** Stations are looked up in the shared spatial index within this radius (>= any CraftingStation.range). */
 export const MAX_STATION_RANGE = 4;
@@ -57,8 +58,18 @@ export function setSkillLevelProvider(world: World, fn: SkillLevelFn | undefined
 export function meetsSkill(world: World, e: Entity, r: RecipeDef): boolean {
   const fn = world.getResource(SkillLevelRes)?.fn; return !r.skill || !fn || fn(e, r.skill.key) >= r.skill.level;
 }
+/** ADR-221: station recipes need the station's piece unlock ("piece:<station key>"); hand recipes never. Absent provider = not enforced. */
+export type UnlockFn = (e: Entity, token: string) => boolean;
+export const UnlockRes = defineResource<{ fn: UnlockFn | undefined }>("gameplay.Unlock");
+export function setUnlockProvider(world: World, fn: UnlockFn | undefined): void { world.setResource(UnlockRes, { fn }); }
+const STATION_KEYS = Object.entries((stationsRaw as { stations: Record<string, number> }).stations).reduce<string[]>((a, [k, v]) => { a[v] = k; return a; }, []);
+export const stationToken = (kind: StationKind): string | undefined => kind === StationKind.None ? undefined : `piece:${STATION_KEYS[kind]}`;
+export function stationUnlocked(world: World, e: Entity, kind: StationKind): boolean {
+  const t = stationToken(kind); const fn = world.getResource(UnlockRes)?.fn; return !t || !fn || fn(e, t);
+}
 function checkRecipe(world: World, e: Entity, r: RecipeDef): CraftFail | 0 {
   if (!meetsSkill(world, e, r)) return CraftFail.SkillTooLow;
+  if (!stationUnlocked(world, e, r.station)) return CraftFail.Locked;
   if (!stationInRange(world, e, r.station)) return CraftFail.NoStation;
   if (!exchangeItems(world, e, r.ingredients, [], true)) return CraftFail.MissingIngredients;
   if (!exchangeItems(world, e, r.ingredients, [r.output], true, crafterIdFor(world, e, r.output.item))) return CraftFail.InventoryFull;

@@ -49,6 +49,15 @@ export function recipesUnlockedAt(key: string, level: number): string[] {
   return RECIPES.filter((r) => r.skill?.key === key && r.skill.level === level).map((r) => ITEM_NAME.get(r.output?.item ?? r.key) ?? human(r.key));
 }
 
+/** ADR-221 unlock token -> player text ("Build the Campfire" / "Build and upgrade to the stone tier"). */
+export function unlockText(token: string): string {
+  const [kind, key = ""] = token.split(":");
+  if (kind === "tier") return `Build and upgrade to the ${human(key)} tier`;
+  const name = cap(human(key)); const station = STATION_PIECES.has(key);
+  return station ? `Build the ${name} (and craft its recipes)` : `Build the ${name}`;
+}
+const STATION_PIECES = new Set(["campfire", "workbench", "furnace", "anvil", "garage"]);
+export const unlockLines = (tokens: readonly string[]): string[] => tokens.map(unlockText);
 /** Effect lines for a mod map; dmg_* mods with the same value merge ("+20% blade, blunt and axe damage"). */
 export function modLines(mods: Partial<Record<string, number>>, compact = false): string[] {
   const out: string[] = []; const dmg = new Map<number, string[]>();
@@ -62,7 +71,7 @@ export function modLines(mods: Partial<Record<string, number>>, compact = false)
   return out;
 }
 
-const signature = (n: SkillNodeDef): string => n.effects.skill ? `skill:${n.effects.skill.key}` : n.effects.perk ? `perk:${n.effects.perk}` : `mods:${Object.keys(n.effects.mods ?? {}).sort().join(",")}`;
+const signature = (n: SkillNodeDef): string => n.effects.unlock ? `unlock:${n.key}` : n.effects.skill ? `skill:${n.effects.skill.key}` : n.effects.perk ? `perk:${n.effects.perk}` : `mods:${Object.keys(n.effects.mods ?? {}).sort().join(",")}`;
 /** Same-effect predecessor (rank chain) of node i, or -1. */
 function chainPred(i: number): number {
   const n = SKILLS.nodes[i]!; const s = signature(n);
@@ -91,6 +100,7 @@ export function skillDescription(i: number): SkillDescription {
     const extra = n.desc.replace(/^[A-Z][a-z]+ \d+[.:]?\s*/, "").trim().replace(/\.$/, "");
     if (extra && !/^[+-]\d/.test(extra) && (!got.length || extra.length > 30)) note = cap(extra);
   }
+  if (n.effects.unlock?.length) effects.push(...unlockLines(n.effects.unlock)); // ADR-221
   if (n.effects.perk) { const f = SKILL_PERK_TEXT[n.effects.perk]; effects.push(f ? f() : n.desc.replace(/\.$/, "")); }
   effects.push(...modLines(n.effects.mods ?? {}));
   if (!effects.length && n.desc.trim()) effects.push(n.desc.replace(/\.$/, ""));

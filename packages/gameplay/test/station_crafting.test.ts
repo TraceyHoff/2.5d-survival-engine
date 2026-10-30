@@ -2,11 +2,11 @@
 import { describe, expect, it } from "vitest";
 import { CommandRegistry, CommandRejected, installCommandHandlers, Transform } from "@engine/core";
 import * as G from "../src/index.js";
-import { makeWorld, steps } from "./helpers.js";
+import { makeWorld, steps, spawnLearned } from "./helpers.js";
 
 const d = G.defaultDefs(); const id = (k: string) => d.itemId(k);
 const KINDS = [0, 1, 2, 3, 4, 5];
-function setup() { const w = makeWorld(); G.installCraftQueue(w); const p = G.spawnPlayer(w, { x: 0, y: 0, maxWeight: 0 }); return { w, p, c: { world: w, player: p } }; }
+function setup() { const w = makeWorld(); G.installCraftQueue(w); const p = spawnLearned(w, { x: 0, y: 0, maxWeight: 0 }); return { w, p, c: { world: w, player: p } }; }
 
 describe("ADR-136 station crafting split", () => {
   it("every recipe carries a known station tag", () => {
@@ -52,7 +52,7 @@ describe("ADR-136 station crafting split", () => {
     G.addItem(w, p, id("fiber"), 4); expect(G.craftQueueReason(w, p, d.recipeId("rope"), 1)).toBeUndefined();
   });
   it("QueueCraftCmd through command handlers rejects a station recipe without a station", () => {
-    const w = makeWorld(); const p = G.spawnPlayer(w, { x: 0, y: 0, maxWeight: 0 }); G.addItem(w, p, id("wood"), 4);
+    const w = makeWorld(); const p = spawnLearned(w, { x: 0, y: 0, maxWeight: 0 }); G.addItem(w, p, id("wood"), 4);
     const reg = G.registerGameplayCommands(new CommandRegistry()); const h = installCommandHandlers(w, reg); G.installCraftQueue(w, h);
     const rej: string[] = []; w.events.on(CommandRejected, (e) => rej.push(e.reason));
     h.enqueue(p, 1, 1, reg.make(G.QueueCraftCmd, { recipe: d.recipeId("planks"), count: 1 })); w.step(1 / 20);

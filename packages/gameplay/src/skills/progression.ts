@@ -11,9 +11,9 @@ import { skillDescription, type SkillDescription } from "./describe.js";
 import { killXpBase, pvpFactor, travelStep, victimType, XP } from "./xp.js";
 import { ToolKind } from "../defs.js";
 import { countItem, removeItem } from "../inventory.js";
-import { setSkillLevelProvider } from "../systems/crafting.js";
+import { setSkillLevelProvider, setUnlockProvider } from "../systems/crafting.js";
 import { VehicleRepaired } from "../vehicle_craft.js";
-import { nodeWords, ownedNodes, SKILL_NODE_TREE, TREE_KEYS, TREE_SLOTS, treeIndex, treePointsAtLevel, treePointsForLevel, treeProgress, treeXpToNext, type TreeProgress, SKILL_NODE_CATEGORY, SKILL_NODE_WORDS, SKILL_REQS, SKILLS, skillLevelOf, skillMod, skillNode, wordsHas, xpToNext, XP_SHARE_RADIUS, type XpSource } from "./tree.js";
+import { hasSkillUnlock, isUnlockNode, nodeWords, ownedNodes, SKILL_NODE_TREE, TREE_KEYS, TREE_SLOTS, treeIndex, treePointsAtLevel, treePointsForLevel, treeProgress, treeXpToNext, type TreeProgress, SKILL_NODE_CATEGORY, SKILL_NODE_WORDS, SKILL_REQS, SKILLS, skillLevelOf, skillMod, skillNode, wordsHas, xpToNext, XP_SHARE_RADIUS, type XpSource } from "./tree.js";
 
 /** ADR-135: every award (after mods), for host-side popups/logs. The client derives its popup from Progression deltas. */
 export const XpGained = ev<{ entity: Entity; source: string; amount: number; tree: string }>("gameplay.XpGained");
@@ -58,12 +58,31 @@ function writeTrees(world: World, e: Entity, t: readonly TreeProgress[]): void {
     world.setElement(e, Progression, "txp", i, t[i]?.xp ?? 0); world.setElement(e, Progression, "tlevel", i, t[i]?.level ?? 1); world.setElement(e, Progression, "tpoints", i, t[i]?.points ?? 0);
   }
 }
-/** Authority: converts an unmigrated row (tver 0: legacy save or fresh spawn) in place. Idempotent. */
+/**
+ * Authority: converts an unmigrated row in place. Idempotent.
+ *  tver 0 -> per-tree progress (ADR-209); tver < 2 -> ADR-221 unlock grant: a pre-ADR-221 character (any tver-1 row, or a
+ *  tver-0 row with xp / level / points / nodes) learns every unlock node free (no points charged) so the stations and
+ *  tiers it already built or crafted at keep working. A fresh spawn (blank tver-0 row) gets nothing: twig tier only.
+ */
 export function migrateProgression(world: World, e: Entity): boolean {
-  if (!isAuthority(world) || world.isReplaying || !world.has(e, Progression) || (world.getField(e, Progression, "tver") ?? 0) >= 1) return false;
-  writeTrees(world, e, convertLegacyProgression(world.getField(e, Progression, "points") ?? 0, nodeWords(world, e)!));
-  world.set(e, Progression, { points: 0, tver: 1 }); return true;
+  if (!isAuthority(world) || world.isReplaying || !world.has(e, Progression)) return false;
+  const tv = world.getField(e, Progression, "tver") ?? 0; if (tv >= PROGRESSION_TVER) return false;
+  const p = world.get(e, Progression)!; const words = nodeWords(world, e)!;
+  const legacy = tv >= 1 || p.points > 0 || p.xp > 0 || p.level > 1 || words.some((x) => x !== 0);
+  if (tv < 1) writeTrees(world, e, convertLegacyProgression(p.points, words));
+  if (legacy) setUnlockBits(world, e);
+  world.set(e, Progression, { points: 0, tver: PROGRESSION_TVER }); return true;
 }
+function setUnlockBits(world: World, e: Entity): void {
+  for (const i of UNLOCK_NODES) { const a = world.getArray(e, Progression, "nodes")!; world.setElement(e, Progression, "nodes", i >>> 5, (a[i >>> 5]! | (1 << (i & 31))) >>> 0); }
+}
+/** Authority / QA / tests: learn every station and tier unlock free (ADR-221), without touching tree points. */
+export function grantSkillUnlocks(world: World, e: Entity): void {
+  if (!world.has(e, Progression)) return; migrateProgression(world, e); setUnlockBits(world, e);
+}
+/** ADR-209 tver 1 (per-tree pools); ADR-221 tver 2 (unlock nodes granted to legacy characters). */
+export const PROGRESSION_TVER = 2;
+const UNLOCK_NODES: readonly number[] = SKILLS.nodes.flatMap((n, i) => (isUnlockNode(i) && !n.retired ? [i] : []));
 /** Per-tree progress as the authority will see it (unmigrated rows are converted on the fly, read-only). */
 export function treesOf(world: World, e: Entity): TreeProgress[] | undefined {
   if (!world.has(e, Progression)) return undefined;
@@ -141,7 +160,7 @@ export function unlockSkill(world: World, e: Entity, node: number): SkillReject 
 }
 export const respecCost = (world: World, e: Entity): number => SKILLS.respec.base + SKILLS.respec.perRespec * (world.getField(e, Progression, "respecs") ?? 0);
 export function canRespec(world: World, e: Entity): SkillReject | undefined {
-  if (!world.has(e, Progression)) return "no_progression"; if (!ownedNodes(world, e).length) return "nothing";
+  if (!world.has(e, Progression)) return "no_progression"; if (!ownedNodes(world, e).some((i) => !isUnlockNode(i))) return "nothing";
   const item = safeItem(world, SKILLS.respec.item); if (item === undefined || countItem(world, e, item) < respecCost(world, e)) return "cost";
   return undefined;
 }
@@ -149,9 +168,11 @@ export function respecSkills(world: World, e: Entity): SkillReject | undefined {
   const why = canRespec(world, e); if (why) return why;
   const cost = respecCost(world, e); removeItem(world, e, gameplayDefs(world).itemId(SKILLS.respec.item), cost);
   migrateProgression(world, e); // ADR-209: each tree's spent points go back to that tree
-  const spent = TREE_KEYS.map(() => 0); for (const i of ownedNodes(world, e)) spent[SKILL_NODE_TREE[i]!]! += skillNode(i)!.cost;
+  // ADR-221: unlock nodes are permanent knowledge: kept, not refunded
+  const owned = ownedNodes(world, e); const spent = TREE_KEYS.map(() => 0); for (const i of owned) if (!isUnlockNode(i)) spent[SKILL_NODE_TREE[i]!]! += skillNode(i)!.cost;
   let refunded = 0; spent.forEach((s, ti) => { const r = Math.floor(s * SKILLS.respec.refundFraction); refunded += r; if (r) world.setElement(e, Progression, "tpoints", ti, Math.min(0xffff, treePoints(world, e, ti) + r)); });
-  for (let i = 0; i < SKILL_NODE_WORDS; i++) world.setElement(e, Progression, "nodes", i, 0);
+  const keep = new Array<number>(SKILL_NODE_WORDS).fill(0); for (const i of owned) if (isUnlockNode(i)) keep[i >>> 5] = (keep[i >>> 5]! | (1 << (i & 31))) >>> 0;
+  for (let i = 0; i < SKILL_NODE_WORDS; i++) world.setElement(e, Progression, "nodes", i, keep[i]!);
   const p = world.get(e, Progression)!; world.set(e, Progression, { respecs: Math.min(255, p.respecs + 1) });
   emit(world, SkillsRespecced, { entity: e, refunded, cost }); return undefined;
 }
@@ -166,12 +187,16 @@ const BRANCH_TRAITS: Record<string, (t: Traits) => number> = {
   building: (t) => 0.3 + 0.9 * t.industriousness, vehicles: (t) => 0.2 + 0.5 * t.greed + 0.3 * t.bravery, stealth: (t) => 0.2 + 0.9 * (1 - t.bravery),
   perks: (t) => 0.1 + 0.4 * t.greed, leadership: (t) => 0.1 + 0.7 * t.sociability + 0.4 * t.chattiness,
 };
+/** ADR-221: unlock tokens AI survivors need for their base plan (campfire, workbench, wood tier). */
+export const AI_FIRST_UNLOCKS: ReadonlySet<string> = new Set(["piece:campfire", "piece:workbench", "tier:wood"]);
 /** Best affordable node for a personality (deterministic: ties -> lower index). undefined when nothing is affordable. */
 export function pickSkillNode(world: World, e: Entity, traits: Traits): number | undefined {
   let best: number | undefined, bestScore = -Infinity;
   for (let i = 0; i < SKILLS.nodes.length; i++) {
     if (canUnlock(world, e, i)) continue; const n = skillNode(i)!;
-    const s = (BRANCH_TRAITS[n.branch]?.(traits) ?? 0.5) * (1 + 0.15 * n.tier) / n.cost;
+    let s = (BRANCH_TRAITS[n.branch]?.(traits) ?? 0.5) * (1 + 0.15 * n.tier) / n.cost;
+    // ADR-221: stations / tiers gate progress, so AI learns them first (the ones its build plan needs first of all)
+    if (isUnlockNode(i)) s *= n.effects.unlock!.some((u) => AI_FIRST_UNLOCKS.has(u)) ? 20 : 4;
     if (s > bestScore) { bestScore = s; best = i; }
   }
   return best;
@@ -185,6 +210,7 @@ const isPlayer = (world: World, e: Entity): boolean => world.isAlive(e) && world
 export function installProgression(world: World): void {
   world.addSchemaSalt("gameplay.skills", SKILLS_HASH);
   setSkillLevelProvider(world, (e, key) => skillLevelOf(world, e, key) ?? Number.MAX_SAFE_INTEGER);
+  setUnlockProvider(world, (e, token) => hasSkillUnlock(world, e, token)); // ADR-221
   const defs = gameplayDefs(world);
   // ADR-135: small XP for every activity (data/xp.json sources); kills scaled by victim type / kind / level
   const TOOL_SRC: Partial<Record<number, XpSource>> = { [ToolKind.Axe]: "chop", [ToolKind.Pickaxe]: "mine", [ToolKind.Shovel]: "dig" };
@@ -222,7 +248,7 @@ export function installProgression(world: World): void {
 /** ADR-209: converts unmigrated Progression rows (legacy saves, fresh spawns) on the authority every tick. */
 export function progressionMigrateSystem(world: World): void {
   if (!isAuthority(world) || world.isReplaying) return;
-  for (const e of world.query([Progression])) if ((world.getField(e, Progression, "tver") ?? 0) < 1) migrateProgression(world, e);
+  for (const e of world.query([Progression])) if ((world.getField(e, Progression, "tver") ?? 0) < PROGRESSION_TVER) migrateProgression(world, e);
 }
 /** ADR-135 travel XP (every 20 ticks): tiles walked / driven, teleports ignored. */
 export function xpTravelSystem(world: World): void {

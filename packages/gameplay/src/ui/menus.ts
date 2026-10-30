@@ -14,7 +14,8 @@ import { countItem, listSlots, readSlots } from "../inventory.js";
 import { itemInfo, type NameLookup } from "../economy/provenance.js";
 import { BuyFromStallCmd, OpenStallCmd, CollectTillCmd, SetListingCmd, SetStallNameCmd, SetStallOpenCmd, StockStallCmd, UnstockStallCmd, listingRevision, stallListings, stallName, tillOf } from "../economy/stall.js";
 import { CancelQueuedCraftCmd, MAX_CRAFT_COUNT, QueueCraftCmd, craftQueueReason, owedOf } from "../systems/craft_queue.js";
-import { pieceCost } from "../building/place.js";
+import { pieceCost, pieceGates } from "../building/place.js";
+import { hasSkillUnlock, unlockRequirement } from "../skills/tree.js";
 import { DepositCmd, EquipCmd, PaintCmd, PlaceCmd, ToggleFireCmd, UseCmd, WearCmd, WithdrawCmd } from "../input.js";
 import { Equipment, Worn } from "../components.js";
 import { ItemCategory, WEAR_SLOTS } from "../defs.js";
@@ -174,13 +175,15 @@ export const queueCraftIntent = (recipe: number, count = 1): MenuIntent => inten
 export const cancelQueuedCraftIntent = (slot: number): MenuIntent => intent(CancelQueuedCraftCmd, { slot });
 
 // ---- build ------------------------------------------------------------------------------------------
-export interface BuildPieceView { id: number; key: string; tiers: { tier: number; key: string; cost: { item: number; name: string; count: number; have: number }[]; affordable: boolean }[]; variants: string[]; paintable: boolean; category: string }
+export interface BuildPieceView { id: number; key: string; tiers: { tier: number; key: string; cost: { item: number; name: string; count: number; have: number }[]; affordable: boolean; /** ADR-221: not yet learned in the skill tree */ locked: boolean; /** ADR-221: "Requires Stonework (Crafting & Building)" when locked */ requirement?: string }[]; variants: string[]; paintable: boolean; category: string }
 export interface BuildSelection { piece: number; tier: number; variant: number; paint: number; /** ADR-211: false = the player rotated by hand (RB / R): a corner keeps that rotation instead of auto-fitting its junction */ autoRot?: boolean }
 export function buildView(c: MenuCtx): BuildPieceView[] {
   const w = c.world; const defs = gameplayDefs(w);
   return [...defs.pieces.values()].map((p) => {
     const tierIds = p.tiered ? defs.tiers.map((t) => t.id) : [p.fixedTier];
-    const tiers = tierIds.map((t) => { const cost = withNames(w, pieceCost(defs, p, t), c.player); return { tier: t, key: defs.tiers.find((d) => d.id === t)?.key ?? String(t), cost, affordable: cost.every((x) => x.have >= x.count) }; });
+    const tiers = tierIds.map((t) => { const cost = withNames(w, pieceCost(defs, p, t), c.player); const miss = pieceGates(defs, p, t).filter((k) => !hasSkillUnlock(w, c.player, k)).map(unlockRequirement).filter((r) => !!r);
+      return { tier: t, key: defs.tiers.find((d) => d.id === t)?.key ?? String(t), cost, affordable: cost.every((x) => x.have >= x.count), locked: miss.length > 0,
+        ...(miss.length ? { requirement: `Requires ${miss.map((r) => `${r!.name} (${r!.tree})`).join(" + ")}` } : {}) }; });
     const variants = Array.from({ length: Math.max(1, p.variants) }, (_, i) => p.variantNames[i] || `Variant ${i + 1}`);
     return { id: p.id, key: (p as { key?: string }).key ?? String(p.id), tiers, variants, paintable: p.paintable, category: p.category };
   });

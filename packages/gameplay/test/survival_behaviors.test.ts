@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { idleOutput, installPermissions, Membership, PlayerId, Transform, type AgentContext, type Entity } from "@engine/core";
 import * as G from "../src/index.js";
-import { makeWorld } from "./helpers.js";
+import { makeWorld, spawnLearned } from "./helpers.js";
 
 const d = G.defaultDefs(); const I = (k: string) => d.itemId(k);
 function setup() {
   const w = makeWorld(); installPermissions(w); G.installEconomy(w);
-  const p = G.spawnPlayer(w, { x: 0, y: 0, maxWeight: 0, clientId: 1 }); w.add(p, PlayerId, { id: 1 }).add(p, Membership, { partyId: 0, clanId: 0 });
+  const p = spawnLearned(w, { x: 0, y: 0, maxWeight: 0, clientId: 1 }); w.add(p, PlayerId, { id: 1 }).add(p, Membership, { partyId: 0, clanId: 0 });
   const agent = G.makeAgent(G.makeAgentIdentity(5, 0, "bot_gatherer"), 1);
   return { w, p, agent };
 }

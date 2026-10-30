@@ -1893,3 +1893,23 @@ Shots: `/workspace/shots/skilldesc_{desktop,720p,mobile}.png` (Crafting / Master
 - `charfix_after_{canvas,console_webgl,mobile_webgl}_1..3.png`: Canvas2D, `?profile=console` and mobile, stable at t = 5/15/25 s.
 - `charfix_source_ref_png_vs_etc1s.png`: source PNG vs ETC1S comparison.
 - `charfix_before_webgl_1..10.png`: initial reproduction.
+
+## ADR-221: Crafting stations and building tiers are unlocked in the skill trees
+
+**Context.** Every crafting station and every building tier was available from the first minute. The request: all stations and base-building tiers must be learned in the skill trees, a fresh character starts with twig only, the build menu shows what is locked and why, the server enforces it, and AI humans must still progress.
+
+**Decision.**
+- 13 new skill nodes (appended to `gen-skills.mjs`, so existing node bits are unchanged; 122 → 135 nodes). Each carries `effects.unlock: string[]` with `piece:<key>` / `tier:<key>` tokens:
+  - Survival: **Firecraft** (campfire, cost 1). It lives in Survival, not Cooking, so the first fire never needs cooking XP (cooking XP needs a fire).
+  - Crafting: **Workbench** (1) → **Furnace** (1) → **Anvil** (2) → **Garage** (2).
+  - Building: **Wood Framing** (tier wood, 1) → **Stonework** (stone, 2) → **Sheet Metal** (metal, 2) → **Reinforced Steel** (reinforced, 3).
+  - Cooking: **Wood Stove** (1) → **Clay Oven** (1) → **Iron Stove** (2) → **Cook Range** (2).
+  - Prerequisites stay inside one category (ADR-209 trees). Unlock nodes reuse existing atlas icons.
+- Gates: a station piece needs its `piece:` token; a tiered piece at tier > twig needs that `tier:` token. Recipes made at a station need that station's token. Fixed-tier furniture/decor (storage box, doors, beds, …) is **not** gated; gating 170 pieces would have needed 170 nodes and was not asked for.
+- Server enforcement (authoritative): `validatePlacement` → `BuildFail.SkillLocked` (22), Upgrade → `SkillLocked`, `checkRecipe` → `CraftFail.Locked` (8), craft queue → `"skill_locked"` (new `COMMAND_REJECT_REASONS` entry). Entities without `Progression` (NPC crafters, tooling) are never gated.
+- UI: `buildView` returns `locked` + `requirement` ("Requires Stonework (Crafting & Building)") per tier. The build panel prefixes locked pieces and tiers with 🔒, greys them (`alt`), puts the requirement in the tooltip/aria-label, shows a requirement line and disables Place. Locked buttons remain focusable, so D-pad/gamepad navigation and the scrolling grid layout are unchanged. The craft panel explains `skill_locked`. Skill descriptions say "Build the Campfire (and craft its recipes)" / "Build and upgrade to the stone tier".
+- AI: `pickSkillNode` heavily weights unlock nodes (×20 for campfire, workbench and wood tier; ×4 for the rest). The agent now spends per-tree points; before this change it checked the always-0 global `points`, so AI never learned anything. The survivor build planner skips pieces it has not unlocked.
+
+**Save migration.** `Progression.tver` 1 → 2. Any character with history (tver ≥ 1, points, xp, level > 1 or any node) gets **all** unlock nodes free, so already-placed pieces, upgrades and known recipes keep working. Placed pieces are never removed for any player. Fresh characters (tver 0, no history) start twig-only. Respec keeps unlock nodes and does not refund them; a character that only owns unlock nodes has nothing to respec.
+
+**Tests.** `packages/gameplay/test/adr221_unlocks.test.ts` (16): data/gating invariants, reachability, twig-only placement, SkillLocked on place/preview/upgrade, craft `skill_locked`/`Locked`, the NPC exemption, migration (legacy vs fresh), respec, AI picks, and `buildView` locked/requirement. Existing tests that assume a seasoned builder use the `spawnLearned` helper. `persist/progression_trees` and the icon-count test were updated.

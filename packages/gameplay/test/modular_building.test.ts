@@ -6,7 +6,7 @@ import {
   modularArtKeys, pieceCost, pieceVariantKey, pieceVariantKeyChain, PlayerIntent, placePiece, raidMul, RaidDamage, RaidRuleRes, rotationSteps,
   snapPlacement, spawnPlayer, structures, TRI_INRADIUS, triEdges, validatePlacement, variantKeyFor,
 } from "../src/index.js";
-import { makeWorld, steps } from "./helpers.js";
+import { makeWorld, steps, spawnLearned } from "./helpers.js";
 
 const d = defaultDefs();
 const id = (k: string) => d.pieceId(k);
@@ -29,7 +29,7 @@ describe("modular building set (ADR-104)", () => {
     expect(art).toContain("wall_window@tier2"); expect(art).toContain("roof_hip@tier4"); expect(art).not.toContain("wall@tier0"); expect(art.some((k) => k.includes(".d"))).toBe(false);
   });
   it("pieceVariantKey: piece@tierN with damage suffix, and a fallback chain", () => {
-    const w = makeWorld(); const b = spawnPlayer(w, { x: 0, y: 0 });
+    const w = makeWorld(); const b = spawnLearned(w, { x: 0, y: 0 });
     const f = place(w, b, "foundation", 5.5, 5.5, { tier: 2 });
     expect(pieceVariantKey(d, w.get(f, BuildPiece)!)).toBe("foundation@tier2");
     w.setField(f, BuildPiece, "damageStage", 2); expect(pieceVariantKey(d, w.get(f, BuildPiece)!)).toBe("foundation@tier2");
@@ -47,7 +47,7 @@ describe("modular building set (ADR-104)", () => {
     const w = makeWorld(); expect(rotationSteps(w, id("foundation_triangle"))).toBe(12); expect(rotationSteps(w, id("wall_corner_angled"))).toBe(8);
   });
   it("triangle foundations snap edge-to-edge onto square foundations and onto each other", () => {
-    const w = makeWorld(); const b = spawnPlayer(w, { x: 0, y: 0 });
+    const w = makeWorld(); const b = spawnLearned(w, { x: 0, y: 0 });
     place(w, b, "foundation", 5.5, 5.5);
     const s1 = snap(w, "foundation_triangle", 6.4, 5.5); if (typeof s1 === "number") throw new Error(String(s1));
     expect(s1.pos.x).toBeCloseTo(6 + TRI_INRADIUS); expect(s1.pos.y).toBeCloseTo(5.5);
@@ -61,11 +61,11 @@ describe("modular building set (ADR-104)", () => {
   });
   it("triangle floors need support; they collapse deterministically when it goes", () => {
     const run = () => {
-      const w = makeWorld(); const b = spawnPlayer(w, { x: 0, y: 0 });
+      const w = makeWorld(); const b = spawnLearned(w, { x: 0, y: 0 });
       place(w, b, "foundation", 5.5, 5.5); place(w, b, "foundation", 6.5, 5.5);
       const wall = place(w, b, "wall", 7, 5.5);
       place(w, b, "floor", 6.5, 5.5, { level: 1 });
-      const q = spawnPlayer(w, { x: 20, y: 20 }); const lone = snap(w, "floor_triangle", 20.5, 20.5, { level: 1 }); expect(typeof lone === "number" ? lone : validatePlacement(w, q, lone)).toBe(BuildFail.NoSupport);
+      const q = spawnLearned(w, { x: 20, y: 20 }); const lone = snap(w, "floor_triangle", 20.5, 20.5, { level: 1 }); expect(typeof lone === "number" ? lone : validatePlacement(w, q, lone)).toBe(BuildFail.NoSupport);
       const tri = place(w, b, "floor_triangle", 7.3, 5.5, { level: 1 }); steps(w, 2);
       const floor = structures(w).deck(6, 5, 1) as Entity;
       damagePiece(w, floor, 1e6); damagePiece(w, wall, 1e6); steps(w, 3);
@@ -74,16 +74,16 @@ describe("modular building set (ADR-104)", () => {
     const a = run(); expect(a).toEqual([false, false]); expect(run()).toEqual(a);
   });
   it("corners vertex-snap and need an adjacent deck", () => {
-    const w = makeWorld(); const b = spawnPlayer(w, { x: 0, y: 0 });
-    const q = spawnPlayer(w, { x: 30, y: 30 }); const lone = snap(w, "wall_corner_outer", 30.2, 30.1); expect(typeof lone === "number" ? lone : validatePlacement(w, q, lone)).toBe(BuildFail.NoSupport);
+    const w = makeWorld(); const b = spawnLearned(w, { x: 0, y: 0 });
+    const q = spawnLearned(w, { x: 30, y: 30 }); const lone = snap(w, "wall_corner_outer", 30.2, 30.1); expect(typeof lone === "number" ? lone : validatePlacement(w, q, lone)).toBe(BuildFail.NoSupport);
     place(w, b, "foundation", 5.5, 5.5);
     const s = snap(w, "wall_corner_outer", 6.1, 5.9, { rot: 2 }); // ADR-211: the L wraps the deck (rot 2 = -x/-y)
     if (typeof s === "number") throw new Error(String(s));
-    expect([s.pos.x, s.pos.y]).toEqual([6, 6]); const c = spawnPlayer(w, { x: 7.5, y: 7.5 }); // ADR-211: off the L arms
+    expect([s.pos.x, s.pos.y]).toEqual([6, 6]); const c = spawnLearned(w, { x: 7.5, y: 7.5 }); // ADR-211: off the L arms
     for (const k of d.tiers[1]!.cost) addItem(w, c, k.item, 100); expect(validatePlacement(w, c, s)).toBe(0);
   });
   it("new pieces reject twig and add extra recipe items per tier", () => {
-    const w = makeWorld(); const b = spawnPlayer(w, { x: 0, y: 0 });
+    const w = makeWorld(); const b = spawnLearned(w, { x: 0, y: 0 });
     const s = snap(w, "foundation_triangle", 9.5, 9.5, { tier: 0 }); expect(s).toBe(BuildFail.BadTier);
     const glass = d.itemId("glass"), clay = d.itemId("clay_brick");
     expect(pieceCost(d, d.pieces.get(id("floor_skylight"))!, 1).find((c) => c.item === glass)?.count).toBe(3);
@@ -94,7 +94,7 @@ describe("modular building set (ADR-104)", () => {
     expect(items.size).toBeGreaterThanOrEqual(10);
   });
   it("upgrade wood -> stone -> metal -> reinforced scales hp; repair restores it", () => {
-    const w = makeWorld(); const p = spawnPlayer(w, { x: 5, y: 5 });
+    const w = makeWorld(); const p = spawnLearned(w, { x: 5, y: 5 });
     place(w, p, "foundation", 5.5, 5.5); const wall = place(w, p, "wall_fortified", 6, 5.5);
     const fort = d.pieces.get(id("wall_fortified"))!;
     const hps = [maxHpOf(w, wall)];
@@ -106,7 +106,7 @@ describe("modular building set (ADR-104)", () => {
   });
   it("raid multipliers scale player melee/explosive/fire damage by tier; zombies are unscaled; rule denies immune tiers", () => {
     expect(raidMul(d, 1, RaidDamage.Melee)).toBe(1); expect(raidMul(d, 4, RaidDamage.Melee)).toBeLessThan(raidMul(d, 2, RaidDamage.Melee));
-    const w = makeWorld(); const p = spawnPlayer(w, { x: 0, y: 0 });
+    const w = makeWorld(); const p = spawnLearned(w, { x: 0, y: 0 });
     const a = place(w, p, "foundation", 3.5, 3.5, { tier: 1 }), c = place(w, p, "foundation", 8.5, 3.5, { tier: 4 });
     const h = (e: Entity) => w.getField(e, BuildPiece, "hp")!; const a0 = h(a), c0 = h(c);
     damagePiece(w, a, 50, p, DamageCause.Combat); damagePiece(w, c, 50, p, DamageCause.Combat); steps(w, 1);
@@ -124,7 +124,7 @@ describe("modular building set (ADR-104)", () => {
       for (const t of [1, 2, 3, 4]) expect(art.has(`${k}@tier${t}`)).toBe(true);
   });
   it("persists triangle positions exactly (STRC v4) and new fields round-trip", () => {
-    const w = makeWorld(); const b = spawnPlayer(w, { x: 0, y: 0 });
+    const w = makeWorld(); const b = spawnLearned(w, { x: 0, y: 0 });
     place(w, b, "foundation", 5.5, 5.5, { tier: 3 }); const t = place(w, b, "foundation_triangle", 6.4, 5.5, { tier: 2 });
     const cs = place(w, b, "wall_corner_angled", 5.1, 5.9, { rot: 3, tier: 4 }); void cs;
     const tp = structures(w).slotOf(t)!;
@@ -136,7 +136,7 @@ describe("modular building set (ADR-104)", () => {
     expect(encodeStructures(w2, 0, 0)).toEqual(blob);
   });
   it("touch snap assist moves an invalid aim to a nearby valid snap", () => {
-    const w = makeWorld(); const p = spawnPlayer(w, { x: 5.5, y: 5.5 });
+    const w = makeWorld(); const p = spawnLearned(w, { x: 5.5, y: 5.5 });
     for (const x of [6.5, 7.5, 8.5]) place(w, p, "foundation", x, 5.5); for (const k of d.tiers[1]!.cost) addItem(w, p, k.item, 100);
     const sel = { piece: id("wall"), tier: 1, variant: 0, paint: 0 };
     const off = buildPreviewFor(w, p, sel, 0, { mode: 1, x: 7.5, y: 4.4 }, 0, false)!;

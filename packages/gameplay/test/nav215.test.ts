@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { PlayerId, Transform, type Entity, type World } from "@engine/core";
 import * as G from "../src/index.js";
 import { pos, room, setDoor, tp, world215 } from "./nav215_fixture.js";
-import { steps } from "./helpers.js";
+import { steps, spawnLearned } from "./helpers.js";
 
 const DT = 1 / 20; const R = G.defaultDefs().movement.bodyRadius;
 const never = (): boolean => false;
@@ -66,7 +66,7 @@ describe("ADR-215 creature nav", () => {
     const { w, put } = world215(); w.addSystem("simulation", "gameplay.animalAI", G.animalAISystem); room(w, put, 0, 0, 4, { door: true, bench: true });
     const out = [[2, -2], [-2, 2], [6, 2], [2, 6], [-1.5, -1.5], [5.5, 5.5]].map(([x, y]) => G.spawnAnimal(w, passive(), x!, y!));
     const inn = [G.spawnAnimal(w, passive(), 1.5, 1.5), G.spawnAnimal(w, passive(), 2.5, 2.5)];
-    const scare = G.spawnPlayer(w, { x: 2, y: 8, maxWeight: 0, clientId: 9 }); // a player passing by makes them flee
+    const scare = spawnLearned(w, { x: 2, y: 8, maxWeight: 0, clientId: 9 }); // a player passing by makes them flee
     for (let i = 0; i < 1500; i++) {
       if (i % 200 === 0) tp(w, scare, [2, 8, -4, 2][(i / 200) % 4]!, [8, 2, 2, -4][(i / 200) % 4]!);
       w.step(DT);
@@ -81,7 +81,7 @@ describe("ADR-215 pets and structures", () => {
   const owned = (): { w: World; p: Entity; dog: Entity; door: Entity } => {
     const { w, put } = world215(); if (!w.isRegistered(PlayerId)) w.register(PlayerId);
     const { door } = room(w, put, 0, 0, 4, { door: true });
-    const p = G.spawnPlayer(w, { x: 2.5, y: -3, maxWeight: 0, clientId: 7 }); if (w.has(p, PlayerId)) w.set(p, PlayerId, { id: 7 }); else w.add(p, PlayerId, { id: 7 });
+    const p = spawnLearned(w, { x: 2.5, y: -3, maxWeight: 0, clientId: 7 }); if (w.has(p, PlayerId)) w.set(p, PlayerId, { id: 7 }); else w.add(p, PlayerId, { id: 7 });
     const dog = G.spawnAnimal(w, "animal_dog_dachshund", 2.5, 7); G.makePet(w, dog, p); steps(w, 2);
     return { w, p, dog, door: door! };
   };
@@ -99,7 +99,7 @@ describe("ADR-215 pets and structures", () => {
     const { w, p, dog } = owned(); tp(w, p, 0.6, 0.6, 0.75); tp(w, dog, 60, 60); // owner in the room's NW corner: (-1, +0.5) is outside the wall
     w.step(DT); const q = pos(w, dog); expect(inside(q, 0, 0, 4), `${q.x},${q.y}`).toBe(true); expect(w.get(dog, Transform)!.z).toBeCloseTo(0.75, 3);
     const o = world215(); if (!o.w.isRegistered(PlayerId)) o.w.register(PlayerId); // legacy offset on open ground
-    const p2 = G.spawnPlayer(o.w, { x: 10, y: 10, maxWeight: 0, clientId: 8 }); o.w.add(p2, PlayerId, { id: 8 });
+    const p2 = spawnLearned(o.w, { x: 10, y: 10, maxWeight: 0, clientId: 8 }); o.w.add(p2, PlayerId, { id: 8 });
     const d2 = G.spawnAnimal(o.w, "animal_dog_dachshund", 60, 60); G.makePet(o.w, d2, p2); o.w.step(DT);
     expect(pos(o.w, d2).x).toBeCloseTo(9, 3); expect(pos(o.w, d2).y).toBeCloseTo(10.5, 3);
   });

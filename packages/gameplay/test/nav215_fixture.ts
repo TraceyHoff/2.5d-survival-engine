@@ -2,12 +2,12 @@
 import { Transform, type Entity, type World } from "@engine/core";
 import { AttachKind, DoorState, defaultDefs, placePiece, snapPlacement, spawnPlayer, structures, validatePlacement } from "../src/index.js";
 import { resolveAttachment } from "../src/building/links.js";
-import { makeWorld, steps } from "./helpers.js";
+import { makeWorld, steps, spawnLearned } from "./helpers.js";
 
 export const defs = defaultDefs();
 export type Put = (key: string, x: number, y: number, level?: number, rot?: number) => Entity;
 export function world215(): { w: World; me: Entity; put: Put } {
-  const w = makeWorld(); const me = spawnPlayer(w, { x: -40, y: -40, maxWeight: 0, clientId: 1 });
+  const w = makeWorld(); const me = spawnLearned(w, { x: -40, y: -40, maxWeight: 0, clientId: 1 });
   const put: Put = (key, x, y, level = 0, rot = 0) => {
     const sn = snapPlacement(w, { piece: defs.pieceId(key), x, y, level, rot, tier: 1, variant: 0 }); if (typeof sn === "number") throw new Error(`setup ${key} snap ${sn}`);
     const f = validatePlacement(w, me, sn, { ignoreCost: true, ignoreRange: true }); if (f) throw new Error(`setup ${key} @${x},${y} r${rot}: fail ${f}`);

@@ -18,8 +18,10 @@ describe("Progression per-tree persist migration (ADR-209)", () => {
     expect(decodePlayerInto(b, q, bytes).migrated).toContain("Progression");
     expect(b.get(q, G.Progression)!.tver).toBe(0);
     expect(G.migrateProgression(b, q)).toBe(true);
-    const r = b.get(q, G.Progression)!; expect(r.level).toBe(9); expect(r.points).toBe(0); expect(r.tver).toBe(1);
-    expect([...r.nodes]).toEqual(nodes.map((x) => x >>> 0));
+    const r = b.get(q, G.Progression)!; expect(r.level).toBe(9); expect(r.points).toBe(0); expect(r.tver).toBe(G.PROGRESSION_TVER); // ADR-221: tver 2 (legacy: unlock nodes granted)
+    // ADR-221: legacy nodes kept; the free unlock nodes are OR'd on top (placed pieces/recipes keep working).
+    nodes.forEach((x, i) => expect((r.nodes[i]! & (x >>> 0)) >>> 0).toBe(x >>> 0));
+    for (const k of ["firecraft", "workbench_craft", "reinforcement"]) { const i = G.skillNodeIndex(k); expect((r.nodes[i >> 5]! >>> (i & 31)) & 1).toBe(1); }
     const t = G.treesOf(b, q)!; expect(t).toEqual(G.convertLegacyProgression(8, nodes));
     expect(t.reduce((s2, x) => s2 + x.points, 0)).toBeGreaterThanOrEqual(8);
   });

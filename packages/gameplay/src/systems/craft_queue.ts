@@ -17,7 +17,7 @@ import { gameplayDefs, isAuthority } from "../config.js";
 import { secondsToTicks } from "../defs.js";
 import { CraftCompleted, CraftFail, CraftFailed, CraftStarted, emit } from "../events.js";
 import { crafterIdFor } from "../economy/provenance.js";
-import { meetsSkill, stationInRange } from "./crafting.js";
+import { meetsSkill, stationInRange, stationUnlocked } from "./crafting.js";
 
 export const CRAFT_QUEUE_SLOTS = 4;
 export const MAX_CRAFT_COUNT = 50;
@@ -87,6 +87,7 @@ export function craftQueueReason(world: World, e: Entity, recipe: number, count:
   const r = recipeOf(world, recipe); if (!r) return "unknown_recipe";
   if (!world.has(e, Inventory) || world.has(e, Dead)) return "no_actor";
   if (count < 1 || count > MAX_CRAFT_COUNT) return "bad_count";
+  if (!stationUnlocked(world, e, r.station)) return "skill_locked"; // ADR-221: before no_station (you cannot build it yet)
   if (!stationInRange(world, e, r.station)) return "no_station";
   if (!meetsSkill(world, e, r)) return "skill_too_low";
   const q = world.getResource(CraftQueuesRes); if (q && q.jobs(e).length >= CRAFT_QUEUE_SLOTS) return "queue_full";

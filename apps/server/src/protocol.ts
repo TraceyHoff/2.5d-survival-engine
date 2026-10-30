@@ -116,6 +116,7 @@ export const COMMAND_REJECT_REASONS = [
   /* appended (ADR-119/120): roads + signs */ "bad_surface", "no_privilege", "occupied", "cannot_afford", "no_tool", "not_found", "too_far", "bad_kind", "no_item", "not_owner",
   /* appended (ADR-145): pets */ ...PET_REJECT_REASONS,
   /* appended (ADR-205): split / move / to-hotbar (no_space, bad_count, bad_slot, empty_slot keep their earlier codes) */ ...INVENTORY_OP_REJECT_REASONS,
+  /* appended (ADR-221): station recipe needs a skill-tree unlock */ "skill_too_low", "skill_locked",
 ] as const;
 export type CommandRejectReason = (typeof COMMAND_REJECT_REASONS)[number];
 export function rejectReasonCode(reason: string): number { const i = (COMMAND_REJECT_REASONS as readonly string[]).indexOf(reason); return i < 0 ? 0 : i + 1; }

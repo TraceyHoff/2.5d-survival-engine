@@ -1,13 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { installPermissions, Membership, PlayerId, type Entity, type World } from "@engine/core";
 import * as G from "../src/index.js";
-import { makeWorld, steps } from "./helpers.js";
+import { makeWorld, steps, spawnLearned } from "./helpers.js";
 
 /** ADR-207: one shared clan base — members co-build, outsiders stay blocked, leaving / kick revokes access. */
 const d = G.defaultDefs();
 function setup() {
   const w = makeWorld(); installPermissions(w); G.installEconomy(w);
-  const mk = (pid: number, x = 0) => { const p = G.spawnPlayer(w, { x, y: 0, maxWeight: 0, clientId: pid }); w.add(p, PlayerId, { id: pid }).add(p, Membership, { partyId: 0, clanId: 0 }); return p; };
+  const mk = (pid: number, x = 0) => { const p = spawnLearned(w, { x, y: 0, maxWeight: 0, clientId: pid }); w.add(p, PlayerId, { id: pid }).add(p, Membership, { partyId: 0, clanId: 0 }); return p; };
   return { w, mk };
 }
 const snap = (w: World, key: string, x: number, y: number, tier = 1) => G.snapPlacement(w, { piece: d.pieceId(key), x, y, level: 0, rot: 0, tier, variant: 0 });

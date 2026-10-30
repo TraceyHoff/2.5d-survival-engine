@@ -11,7 +11,7 @@ export type SkillMod = "gather" | "cropYield" | "carry" | "fuel" | "vfuel" | "re
 export type XpSource = keyof typeof import("../../data/xp.json")["sources"];
 export interface SkillNodeDef {
   key: string; name: string; branch: string; tier: number; x: number; y: number; cost: number; requires: string[]; desc: string; icon: string; retired?: boolean;
-  effects: { skill?: { key: string; level: number }; mods?: Partial<Record<string, number>>; perk?: string };
+  effects: { skill?: { key: string; level: number }; mods?: Partial<Record<string, number>>; perk?: string; /** ADR-221: "piece:<key>" / "tier:<key>" */ unlock?: string[] };
 }
 export interface SkillsData {
   levels: { base: number; growth: number; pointsPerLevel: number; maxLevel: number; bonusEvery: number; bonusPoints: number };
@@ -62,15 +62,16 @@ export const wordsHas = (w: readonly number[], i: number): boolean => ((w[i >>> 
 export function hasNode(world: World, e: Entity, i: number): boolean { const w = nodeWords(world, e); return !!w && wordsHas(w, i); }
 export function ownedNodes(world: World, e: Entity): number[] { const w = nodeWords(world, e); if (!w) return []; const o: number[] = []; for (let i = 0; i < SKILLS.nodes.length; i++) if (wordsHas(w, i)) o.push(i); return o; }
 
-interface Totals { mods: Map<string, number>; perks: Set<string>; skills: Map<string, number> }
+interface Totals { mods: Map<string, number>; perks: Set<string>; skills: Map<string, number>; unlocks: Set<string> }
 const cache = new Map<string, Totals>();
 function totalsOf(w: readonly number[]): Totals {
   const k = w.join(","); let t = cache.get(k); if (t) return t;
-  t = { mods: new Map(), perks: new Set(), skills: new Map() };
+  t = { mods: new Map(), perks: new Set(), skills: new Map(), unlocks: new Set() };
   for (let i = 0; i < SKILLS.nodes.length; i++) {
     if (!wordsHas(w, i)) continue; const n = SKILLS.nodes[i]!; if (n.retired) continue;
     for (const [m, v] of Object.entries(n.effects.mods ?? {})) t.mods.set(m, (t.mods.get(m) ?? 0) + (v ?? 0));
     if (n.effects.perk) t.perks.add(n.effects.perk);
+    for (const u of n.effects.unlock ?? []) t.unlocks.add(u);
     if (n.effects.skill) t.skills.set(n.effects.skill.key, Math.max(t.skills.get(n.effects.skill.key) ?? 0, n.effects.skill.level));
   }
   if (cache.size > 512) cache.clear(); cache.set(k, t); return t;
@@ -90,6 +91,22 @@ export const skillMul = (world: World, e: Entity, mod: SkillMod, min = 0.1): num
 export function hasPerk(world: World, e: Entity, perk: string): boolean { return liveTotals(world, e)?.perks.has(perk) ?? false; }
 /** Recipe skill level granted by nodes; undefined when the entity has no Progression (legacy / NPC crafters). */
 export function skillLevelOf(world: World, e: Entity, key: string): number | undefined { const t = liveTotals(world, e); return t ? t.skills.get(key) ?? 0 : undefined; }
+// ---- ADR-221 unlock gates (stations, building tiers) ----------------------------------------------------------
+/** Gate token -> node index that grants it. Tokens no node grants (twig tier, non-station pieces) are never gated. */
+export const UNLOCK_NODE: ReadonlyMap<string, number> = new Map(SKILLS.nodes.flatMap((n, i) => (n.retired ? [] : (n.effects.unlock ?? []).map((u) => [u, i] as [string, number]))));
+/** True for unlock (knowledge) nodes: kept on respec, granted free to pre-ADR-221 characters. */
+export const isUnlockNode = (i: number): boolean => !!SKILLS.nodes[i]?.effects.unlock?.length;
+export const pieceToken = (key: string): string => `piece:${key}`;
+export const tierToken = (key: string): string => `tier:${key}`;
+/** Whether e may use gate `token`. Ungated tokens and entities without Progression (NPC crafters, legacy tests) pass. */
+export function hasSkillUnlock(world: World, e: Entity, token: string): boolean {
+  if (!UNLOCK_NODE.has(token)) return true; const t = liveTotals(world, e); return !t || t.unlocks.has(token);
+}
+/** Node granting `token` (undefined = not gated), for the "Requires <skill> (<tree>)" UI hint. */
+export function unlockRequirement(token: string): { node: number; name: string; tree: string; cost: number } | undefined {
+  const i = UNLOCK_NODE.get(token); if (i === undefined) return undefined; const n = SKILLS.nodes[i]!;
+  return { node: i, name: n.name, tree: SKILLS.categories.find((c) => c.key === SKILL_NODE_CATEGORY[i])?.name ?? "", cost: n.cost };
+}
 /** Damage multiplier for the held weapon class. */
 export const damageMulFor = (world: World, e: Entity, itemKey: string | undefined): number => skillMul(world, e, `dmg_${weaponClassOf(itemKey)}`);
 /** Integer amount scaled by a multiplier with a deterministic fractional roll (r in [0,1)). */

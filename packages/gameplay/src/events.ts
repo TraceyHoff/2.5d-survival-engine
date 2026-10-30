@@ -15,7 +15,7 @@ export function emit<T>(world: World, type: GEvent<T>, payload: T): void {
 }
 
 export const enum GatherFail { Cooldown = 1, InvalidTarget = 2, Depleted = 3, OutOfRange = 4, WrongTool = 5, Exhausted = 6 }
-export const enum CraftFail { Busy = 1, UnknownRecipe = 2, NoStation = 3, MissingIngredients = 4, InventoryFull = 5, Cancelled = 6, SkillTooLow = 7 }
+export const enum CraftFail { Busy = 1, UnknownRecipe = 2, NoStation = 3, MissingIngredients = 4, InventoryFull = 5, Cancelled = 6, SkillTooLow = 7, /** ADR-221: the recipe's station is not unlocked */ Locked = 8 }
 export const enum Vital { Hunger = 1, Thirst = 2, Stamina = 3 }
 export const enum DayPhase { Night = 0, Dawn = 1, Day = 2, Dusk = 3 }
 export const enum BuildFail {
@@ -24,6 +24,8 @@ export const enum BuildFail {
   NothingToRepair = 16, Locked = 17, ViewersFull = 18, NotViewing = 19, NotFuelable = 20,
   /** ADR-211: a straight wall may not take an outer foundation-corner slot (that is the L corner piece's job). */
   CornerSlot = 21,
+  /** ADR-221: the station piece or building tier needs a skill-tree unlock. */
+  SkillLocked = 22,
 }
 export const enum DestroyCause { Damage = 1, Collapse = 2, Demolish = 3 }
 

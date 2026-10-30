@@ -28,6 +28,7 @@ export const TOUCH_LIFT_PX = 48;
 export const BUILD_FAIL_TEXT: Readonly<Record<number, string>> = {
   1: "Unknown piece", 2: "Tier not allowed", 3: "Too far away", 4: "Too high", 5: "Not your land", 6: "Area full", 7: "Bad ground",
   8: "Spot taken", 9: "Blocked", 10: "Needs a socket", 11: "Needs support", 12: "Not enough materials",
+  22: "Locked: learn it in the skill tree", // ADR-221 BuildFail.SkillLocked
 };
 export const buildFailText = (reason: number | undefined): string => (reason && BUILD_FAIL_TEXT[reason]) || "Can't place here";
 const esc = (s: string): string => s.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);

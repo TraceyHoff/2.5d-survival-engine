@@ -1,5 +1,8 @@
 import { Weather, World, type EventType } from "@engine/core";
-import { installGameplay, type GameplayOptions, type GEvent } from "../src/index.js";
+import { grantSkillUnlocks, installGameplay, spawnPlayer, type GameplayOptions, type GEvent, type PlayerSpawn } from "../src/index.js";
+import type { Entity } from "@engine/core";
+/** ADR-221: a player who already learned every station / building-tier unlock (tests about building / crafting, not gating). */
+export function spawnLearned(world: World, p: PlayerSpawn): Entity { const e = spawnPlayer(world, p); grantSkillUnlocks(world, e); return e; }
 
 export const DT = 1 / 20;
 /** Standalone world; weather pinned to Clear unless `liveWeather` (tests stay independent of weather rolls). */
