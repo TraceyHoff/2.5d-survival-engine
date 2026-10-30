@@ -1996,4 +1996,4 @@ and pad, unaffordable stays, glyphs, back-after-release); adr200 pad test now pl
 | homestead | 34 | 1.2m / 9m / L19 | 22 | 6.8m / 1.1h / 4.8h / 10.6h | 3 |
 | combat | 24 | 1.7m / 13m / L17 | 24 | 6.3m / 58m / 4.4h / 9.7h | 4 |
 
-Existing saves keep their levels (only future XP is affected). AI humans use the same awards and spend points through the same picker; the ADR-221 base-plan unlocks still come first.
+Existing saves keep their levels (only future XP is affected). AI humans (host-flagged bots) get `xp.json aiHumanMul` = ×5 on every award so their short simulated lives still reach the base-plan unlocks (ADR-203 campfire-before-night test); they use the same awards and spend points through the same picker; the ADR-221 base-plan unlocks still come first.

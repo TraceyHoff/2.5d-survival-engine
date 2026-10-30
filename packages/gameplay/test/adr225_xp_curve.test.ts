@@ -34,4 +34,9 @@ describe("ADR-225 tree XP curve", () => {
     G.emit(w, G.ItemGathered, { entity: a, node, item: 1, count: 5 }); steps(w, 1);
     expect(G.treesOf(w, a)![ti]!.xp).toBe(2 * G.XP.sources.gather!);
   });
+  it("AI humans keep progressing: x aiHumanMul on every award", () => {
+    const w = makeWorld(); installPermissions(w); const a = mk(w, 1); const b = mk(w, 2); G.setAiHumanPredicate(w, (e) => e === b);
+    expect(G.awardXp(w, a, "chop")).toBe(G.XP.sources.chop); expect(G.awardXp(w, b, "chop")).toBe(G.XP.sources.chop! * G.XP.aiHumanMul!);
+    expect(G.XP.aiHumanMul!).toBeGreaterThan(1);
+  });
 });

@@ -8,7 +8,7 @@ import { Animal, BuildPiece, Dead, Health, Progression, ResourceNode, Zombie } f
 import { gameplayDefs, isAuthority } from "../config.js";
 import { CraftCompleted, Damaged, emit, ev, ItemConsumed, ItemGathered, PiecePlaced, WaterDrunk, XpActivity } from "../events.js";
 import { skillDescription, type SkillDescription } from "./describe.js";
-import { killXpBase, pvpFactor, travelStep, victimType, XP } from "./xp.js";
+import { isAiHuman, killXpBase, pvpFactor, travelStep, victimType, XP } from "./xp.js";
 import { ToolKind } from "../defs.js";
 import { countItem, removeItem } from "../inventory.js";
 import { setSkillLevelProvider, setUnlockProvider } from "../systems/crafting.js";
@@ -117,7 +117,8 @@ export function awardXp(world: World, e: Entity, source: XpSource, units = 1, sh
 /** Award an already-computed base amount (kill XP); same mods / sharing as awardXp. */
 export function awardXpRaw(world: World, e: Entity, source: string, base: number, share = true): number {
   if (!isAuthority(world) || world.isReplaying || !world.has(e, Progression)) return 0;
-  const amount = Math.round(base * (1 + skillMod(world, e, "xp")));
+  // ADR-225: AI humans (virtual players) compress a player's hours into their short lives: x aiHumanMul
+  const amount = Math.round(base * (1 + skillMod(world, e, "xp")) * (isAiHuman(world, e) ? XP.aiHumanMul ?? 1 : 1));
   if (amount <= 0) return 0;
   const ti = treeOfSource(source); credit(world, e, ti, amount); emit(world, XpGained, { entity: e, source, amount, tree: TREE_KEYS[ti]! });
   const sh = share ? skillMod(world, e, "share") : 0;

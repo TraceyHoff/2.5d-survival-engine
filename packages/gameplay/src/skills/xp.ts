@@ -14,6 +14,8 @@ import { animalDefs } from "../population.js";
 
 export interface KillTypeDef { base: number; perLevel: number; kindMul: Record<string, number> }
 export interface XpTable {
+  /** ADR-225: XP multiplier for host-flagged AI humans. */
+  aiHumanMul?: number;
   sources: Record<string, number>;
   /** ADR-209: source -> skill tree (category key); each tree earns only from its own sources. */
   trees: Record<string, string>;
@@ -28,6 +30,8 @@ export type VictimType = "zombie" | "animal" | "aiHuman" | "player";
 const AiHumanRes = defineResource<{ fn: (e: Entity) => boolean }>("gameplay.xpAiHuman");
 /** Server hook: AI humans are virtual players (same components), so the host says which entities are bots. */
 export function setAiHumanPredicate(world: World, fn: (e: Entity) => boolean): void { world.setResource(AiHumanRes, { fn }); }
+/** True for host-flagged AI humans (bots). */
+export const isAiHuman = (world: World, e: Entity): boolean => !!world.getResource(AiHumanRes)?.fn(e);
 const ZOMBIE_KEYS = ["zombie_walker", "zombie_runner", "zombie_brute", "zombie_snuffer"];
 /** Victim classification: zombie, animal, AI human (core Agent) or player (Progression without Agent). */
 export function victimType(world: World, v: Entity): VictimType | undefined {
