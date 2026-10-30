@@ -32,6 +32,8 @@ export interface BuildModeOptions {
   onActiveChange?(active: boolean): void;
   /** ToggleBuild while placing (pad LB+Y): back to the piece picker. */
   onPickPiece?(): void;
+  /** ADR-224: Cancel (B / Esc) after a menu-started placement goes back to the build menu (once Cancel is released). */
+  onBack?(): void;
   /** ADR-171: road tool / sign placing from inside build mode (HUD 🛣 / 🪧, KBM T / N, pad LT+X / LT+Y). Build mode stops first. */
   tools?: { road(): void; sign(): void };
 }
@@ -83,8 +85,9 @@ export class BuildMode {
   /** ADR-222: true until Build.PlaceConfirm has been observed up after start(). */
   private confirmLatch = false;
   get awaitingRelease(): boolean { return this.confirmLatch; }
-  start(sel: BuildSelection): void {
-    const was = this.active; this.sel = { ...sel };
+  private fromMenu = false; private pendingBack = false;
+  start(sel: BuildSelection, opts?: { fromMenu?: boolean }): void {
+    const was = this.active; this.sel = { ...sel }; this.fromMenu = !!opts?.fromMenu; this.pendingBack = false;
     // ADR-222: the press that chose the piece (pad A / Enter / click on a menu tile) must never also place it. Placement
     // only confirms after PlaceConfirm has been seen released at least one frame after entering build mode.
     this.confirmLatch = true;
@@ -162,9 +165,11 @@ export class BuildMode {
   }
   /** Per frame, after input.update(). */
   update(): void {
+    // ADR-224: back to the menu only after Cancel is released (the same press must not also close the reopened menu)
+    if (this.pendingBack && !this.sel) { if (!(this.o.input.down?.("Build.Cancel") ?? false)) { this.pendingBack = false; this.o.onBack?.(); } return; }
     if (!this.sel) return; const i = this.o.input; const c = this.o.ctx(); const dev = this.device();
     if (i.pressed("ToggleBuild") && this.o.onPickPiece) { this.stop(); this.o.onPickPiece(); return; }
-    if (i.pressed("Build.Cancel")) { if (this.demolishArmed) { this.disarm(); this.toast = ""; return; } this.stop(); return; }
+    if (i.pressed("Build.Cancel")) { if (this.demolishArmed) { this.disarm(); this.toast = ""; return; } const back = this.fromMenu && !!this.o.onBack; this.stop(); this.pendingBack = back; return; }
     if (i.pressed("Build.RoadTool")) { this.tool("road"); return; } if (i.pressed("Build.PlaceSign")) { this.tool("sign"); return; }
     if (i.pressed("Build.ToggleSnap")) this.toggleSnap();
     if (c && dev === "gamepad") this.padCursor(c);

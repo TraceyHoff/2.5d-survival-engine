@@ -1954,3 +1954,27 @@ and crafting was one huge recipe list; players scrolled to eat or craft, and hov
 
 **Consequences.** Tests: adr223_inventory_grid (layout, double-tap eat, pad A eat/equip + X split, drag-drop, hotbar food, crafting tabs/search/details);
 old Drop-section / crafter-tooltip tests now target the details pane. RB/LB hotbar *cycling* still equips (cycling past food must not eat it).
+
+## ADR-224: Build window — tabs, tile grid, choose = place
+
+**Context.** The build panel was a wall of text buttons: category buttons, a piece list, then Tier / Variant / Tint rows, a Cost line and a
+separate "Place" button (one more press for every piece, and the ADR-222 carry-through bug lived on that press). Piece cost / lock reasons were
+`data-tip` hover tooltips, which were cut off at the panel's right edge (ADR-221 follow-up), and Roads & signs made the panel scroll.
+
+**Decision.**
+- Category tabs are derived from the piece data (`bcat-<category>`, `data-tabs="tab"` → LB/RB), plus a `bcat-roads` tab for the road / sign
+  tools when available. They wrap on wide screens and scroll horizontally under 620px.
+- Tier tabs (`tier-N`, `data-tabs="page"` → LT/RT, 🔒 when locked) appear when the category holds tiered (structural) pieces. Tile cost follows the chosen tier.
+- `[data-role=piece-grid]`: one tile per piece (`piece-ID`, role piece) with a preview glyph from its key (`pieceGlyph`; pieces have no item art),
+  name, cost (or "Locked"), `data-locked` / `data-short`, aria-label and pad label (Place / Locked / Can't afford). There is no hover tooltip;
+  the grid scrolls inside the panel.
+- One details pane (`build-details`) for the focused / hovered tile: name · tier, have/need per material, the ADR-221 requirement line
+  (`build-locked`) or a hint, then Variant and Tint rows when the piece has them.
+- Choosing a tile (click, tap, pad A, Enter) starts placement at once (`startPlacing`) and closes the window. There is no Place button, and
+  nothing is spent until the placement is confirmed (ADR-222 latch). A locked or unaffordable tile only selects and says why.
+- Back: Cancel (B / Esc) in a menu-started placement returns to the build window once Cancel is released (`BuildMode.start(sel, { fromMenu })`
+  + `onBack`). ToggleBuild still goes straight to the picker.
+- Tooltip edge fix: the last button of a multi-item grid opens its `data-tip` leftwards; the build window itself has no tooltips.
+
+**Consequences.** Tests: adr224_build_window (tabs, tiles, no tips / no Place, tier tabs change cost, hover → details, choose → placing on mouse
+and pad, unaffordable stays, glyphs, back-after-release); adr200 pad test now places with one A. Glyphs are a stand-in until pieces get icon art.

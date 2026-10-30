@@ -69,6 +69,13 @@ const castSel = { recipe: 0, count: 1 };
 /** ADR-223: crafting category tab, search text and focused recipe (details pane) survive re-renders. */
 export const craftUi = { cat: "all", q: "", sel: 0 };
 let buildCat = "";
+/** ADR-224: tile preview glyph from the piece key (pieces have no item art; keyword → symbol, else a block). */
+export function pieceGlyph(key: string): string {
+  const m: [RegExp, string][] = [[/foundation/, "▦"], [/roof/, "⌂"], [/stair|steps|ramp/, "▤"], [/floor|hatch_frame|skylight/, "▭"], [/pillar/, "▮"], [/door|gate|hatch/, "🚪"], [/window/, "🪟"],
+    [/wall|barricade/, "🧱"], [/fire|stove|furnace|torch/, "🔥"], [/lantern|lamp|light|candle/, "💡"], [/chest|box|storage|crate|shelf|cabinet/, "📦"], [/bed/, "🛏"], [/chair|bench|stool|sofa|couch/, "🪑"],
+    [/table|counter|desk|workbench|anvil/, "🛠"], [/plant|flower|tree|bush|garden/, "🌿"], [/rug|carpet|mat/, "🟫"], [/banner|flag|windsock/, "🚩"], [/totem|bell|tower/, "🗼"], [/stall|booth|pavilion|cart/, "🎪"], [/mirror|painting|trophy|frame/, "🖼"], [/garage/, "🚗"]];
+  for (const [r, g] of m) if (r.test(key)) return g; return "◼";
+}
 let wardrobeSlot = 0;
 /** Camper station: active tab + selected cook recipe survive re-renders. */
 const camperSel = { tab: "craft" as "craft" | "cook", cook: 0 };
@@ -376,34 +383,69 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       return out;
     }
     case "build": {
+      // ADR-224: data-derived category tabs (LB/RB) · tier tabs for structural pieces (LT/RT) · tile grid (icon, cost, lock) ·
+      // one details pane for the focused / hovered tile. Choosing a tile (click / tap / pad A / Enter) closes the window and
+      // enters placement at once (nothing is spent until the placement is confirmed; B / Esc there comes back here).
       const all = buildView(c); if (!buildSel.piece && all[0]) buildSel.piece = all[0].id;
-      // ADR-112: category tabs keep the 170+ piece catalog scannable (focusable buttons: touch, D-pad, keys)
-      const cats = [...new Set(all.map((p) => p.category))]; if (!cats.includes(buildCat)) buildCat = all.find((p) => p.id === buildSel.piece)?.category ?? cats[0] ?? "structure";
+      const wt = src.worldTools; const cats = [...new Set(all.map((p) => p.category))]; if (wt) cats.push("roads"); if (!cats.includes(buildCat)) buildCat = all.find((p) => p.id === buildSel.piece)?.category ?? cats[0] ?? "structure";
       const v = all.filter((p) => p.category === buildCat);
-      const sel = all.find((p) => p.id === buildSel.piece); const out: Node[] = [heading("Category")]; const cg0 = grid(); cg0.dataset["role"] = "build-cats"; cg0.dataset["tabs"] = "tab";
+      if (!v.some((p) => p.id === buildSel.piece) && v[0]) { buildSel.piece = v[0].id; buildSel.variant = 0; }
+      const out: Node[] = []; const cg0 = grid(); cg0.dataset["role"] = "build-cats"; cg0.dataset["tabs"] = "tab";
       for (const k of cats) cg0.append(btn(k, `bcat-${k}`, () => { buildCat = k; kit.rerender(); }, { pressed: k === buildCat, alt: k !== buildCat }));
-      out.push(cg0, heading("Pieces")); const g = grid();
-      for (const p of v) { const t = p.tiers.find((x) => x.tier === buildSel.tier) ?? p.tiers[0]!; const lk = p.tiers.every((x) => x.locked) || t.locked; g.append(btn(`${lk ? "🔒 " : ""}${p.key.replace(/_/g, " ")}`, `piece-${p.id}`, () => { buildSel.piece = p.id; buildSel.variant = 0; if (!p.tiers.some((x) => x.tier === buildSel.tier)) buildSel.tier = p.tiers[0]!.tier; src.onBuildSelect?.({ ...buildSel }); kit.rerender(); }, { role: "piece", pressed: p.id === buildSel.piece, alt: !t.affordable || lk, title: (lk ? `${t.requirement ?? p.tiers.find((x) => x.requirement)?.requirement ?? "Locked"} · ` : "") + (t.cost.map((x) => `${x.name} ${x.have}/${x.count}`).join(", ") || "free"), ...(lk ? { data: { locked: "1" } } : {}) })); }
-      out.push(g);
-      if (sel) {
-        if (sel.tiers.length > 1) { out.push(heading("Tier")); const tg = grid(); for (const t of sel.tiers) tg.append(btn(`${t.locked ? "🔒 " : ""}${t.key}`, `tier-${t.tier}`, () => { buildSel.tier = t.tier; src.onBuildSelect?.({ ...buildSel }); kit.rerender(); }, { pressed: t.tier === buildSel.tier, alt: t.tier !== buildSel.tier || t.locked, title: (t.locked ? `${t.requirement} · ` : "") + t.cost.map((x) => `${x.name} ${x.have}/${x.count}`).join(", "), ...(t.locked ? { data: { locked: "1" } } : {}) })); out.push(tg); }
-        if (sel.variants.length > 1) { out.push(heading("Variant")); const vg = grid(); sel.variants.forEach((n, i) => vg.append(btn(n, `variant-${i}`, () => { buildSel.variant = i; src.onBuildSelect?.({ ...buildSel }); kit.rerender(); }, { pressed: i === buildSel.variant, alt: i !== buildSel.variant }))); out.push(vg); }
-        if (sel.paintable) { out.push(heading("Tint")); const pg = grid(); for (let i = 0; i < 6; i++) pg.append(btn(i ? `Tint ${i}` : "Clan / none", `tint-${i}`, () => { buildSel.paint = i; src.onBuildSelect?.({ ...buildSel }); kit.rerender(); }, { pressed: i === buildSel.paint, alt: i !== buildSel.paint }));
-          const tgt = paintTarget(c); pg.append(btn("Paint nearest piece", "paint-apply", () => { if (tgt !== undefined) send(paintIntent(tgt, buildSel.paint), "Painted."); }, { disabled: tgt === undefined, title: "Applies the selected tint to the nearest paintable piece in reach" })); out.push(pg); }
-        const t = sel.tiers.find((x) => x.tier === buildSel.tier) ?? sel.tiers[0]!;
-        out.push(kit.para(`Cost: ${t.cost.map((x) => `${x.name} ${x.have}/${x.count}`).join(", ") || "free"}`));
-        // ADR-221: locked tier / station — the requirement stays visible (focusable buttons above remain navigable; Place is disabled)
-        if (t.locked) { const lp = kit.para(`🔒 ${t.requirement ?? "Locked"} — open the Skills panel to learn it.`); (lp as HTMLElement).dataset["role"] = "build-locked"; out.push(lp); }
-        const a = grid(); a.append(btn("Place (aim to position · R / RB / ⟳ rotate)", "place", () => { if (!src.startPlacing) { kit.status("Placement unavailable."); return; } src.startPlacing({ ...buildSel }); kit.close(); }, { disabled: !t.affordable || t.locked || !src.startPlacing })); out.push(a);
-      }
-      const wt = src.worldTools;
-      if (wt) {
-        out.push(heading("Roads & signs")); const rg = grid(); rg.dataset["role"] = "world-tools";
-        wt.surfaces.forEach((name, i) => rg.append(btn(`Lay ${name.toLowerCase()} (G)`, `road-${i + 1}`, () => { wt.road(i + 1); kit.close(); }, { pressed: wt.roadSurface() === i + 1, alt: wt.roadSurface() !== i + 1, title: "Drag (mouse) · drag then ✓ (touch) · right stick + A (gamepad)" })));
+      out.push(cg0);
+      if (buildCat === "roads" && wt) {
+        // ADR-224: roads & signs are a tab of their own (keeps the piece view short)
+        const rg = grid(); rg.dataset["role"] = "world-tools";
+        wt.surfaces.forEach((name, i) => rg.append(btn(`Lay ${name.toLowerCase()} (G)`, `road-${i + 1}`, () => { wt.road(i + 1); kit.close(); }, { pressed: wt.roadSurface() === i + 1, alt: wt.roadSurface() !== i + 1 })));
         if (wt.roadSurface()) rg.append(btn("Road tool off", "road-0", () => { wt.road(0); kit.rerender(); }, { alt: true }));
         rg.append(btn("Place sign (N)", "sign-place", () => { if (wt.placeSign()) { kit.status("Sign placed — choose Edit nearest sign to write on it."); } else kit.status("You need a sign item (craft one first)."); }));
         rg.append(btn("Edit nearest sign", "sign-edit", () => { kit.close(); if (!wt.editNearestSign()) kit.status("No sign within reach."); }));
-        out.push(rg);
+        out.push(rg, kit.para("Roads: drag (mouse) · drag then ✓ (touch) · right stick + A (gamepad)."));
+        return out;
+      }
+      const tiered = v.find((p) => p.tiers.length > 1);
+      if (tiered) {
+        if (!tiered.tiers.some((x) => x.tier === buildSel.tier)) buildSel.tier = tiered.tiers[0]!.tier;
+        const tg = grid(); tg.dataset["role"] = "build-tiers"; tg.dataset["tabs"] = "page";
+        for (const t of tiered.tiers) tg.append(btn(`${t.locked ? "🔒 " : ""}${t.key}`, `tier-${t.tier}`, () => { buildSel.tier = t.tier; src.onBuildSelect?.({ ...buildSel }); kit.rerender(); }, { pressed: t.tier === buildSel.tier, alt: t.tier !== buildSel.tier, ...(t.locked ? { data: { locked: "1" } } : {}) }));
+        out.push(tg);
+      }
+      const tierOf = (p: (typeof all)[number]) => p.tiers.find((x) => x.tier === buildSel.tier) ?? p.tiers[0]!;
+      const choose = (p: (typeof all)[number]): void => {
+        if (buildSel.piece !== p.id) buildSel.variant = 0; buildSel.piece = p.id; const t = tierOf(p); buildSel.tier = t.tier; src.onBuildSelect?.({ ...buildSel });
+        if (t.locked) { kit.status(`🔒 ${t.requirement ?? "Locked"} — open the Skills panel to learn it.`); kit.rerender(); return; }
+        if (!t.affordable) { kit.status(`Need ${t.cost.filter((x) => x.have < x.count).map((x) => `${x.name} ${x.have}/${x.count}`).join(", ")}.`); kit.rerender(); return; }
+        if (!src.startPlacing) { kit.status("Placement unavailable."); return; }
+        src.startPlacing({ ...buildSel }); kit.close();
+      };
+      const focusPiece = (id: number): void => { if (buildSel.piece === id) return; buildSel.piece = id; buildSel.variant = 0; src.onBuildSelect?.({ ...buildSel }); kit.rerender(); };
+      const g = grid(); g.dataset["role"] = "piece-grid";
+      for (const p of v) {
+        const t = tierOf(p); const lk = t.locked; const name = p.key.replace(/_/g, " ");
+        const costTxt = t.cost.map((x) => `${x.count} ${x.name}`).join(" · ") || "free";
+        const b = btn("", `piece-${p.id}`, () => choose(p), { role: "piece", pressed: p.id === buildSel.piece, alt: !t.affordable || lk,
+          data: { padLabel: lk ? "Locked" : t.affordable ? "Place" : "Can't afford", glyph: pieceGlyph(p.key), ...(lk ? { locked: "1" } : {}), ...(!t.affordable ? { short: "1" } : {}) } });
+        const nm = document.createElement("span"); nm.className = "nm"; nm.textContent = name;
+        const ct = document.createElement("span"); ct.className = "ct"; ct.textContent = lk ? "Locked" : costTxt;
+        b.append(nm, ct); b.setAttribute("aria-label", `${name}, ${lk ? (t.requirement ?? "locked") : t.affordable ? costTxt : `need ${costTxt}`}`);
+        b.addEventListener("focus", () => focusPiece(p.id)); b.addEventListener("mouseenter", () => focusPiece(p.id));
+        g.append(b);
+      }
+      out.push(g);
+      const sel = all.find((p) => p.id === buildSel.piece);
+      if (sel) {
+        const t = tierOf(sel); const d = document.createElement("section"); d.dataset["role"] = "build-details";
+        const h = document.createElement("p"); h.dataset["role"] = "build-name"; h.textContent = `${sel.key.replace(/_/g, " ")}${sel.tiers.length > 1 ? ` · ${t.key}` : ""}`; d.append(h);
+        const need = document.createElement("p"); need.dataset["role"] = "build-cost";
+        if (!t.cost.length) need.textContent = "Free"; else for (const x of t.cost) { const sp = document.createElement("span"); sp.dataset["have"] = x.have >= x.count ? "1" : "0"; sp.textContent = `${x.name} ${x.have}/${x.count}`; need.append(sp); }
+        d.append(need);
+        // ADR-221: locked tier / station — the requirement stays visible in the pane (no hover tooltip to clip)
+        if (t.locked) { const lp = document.createElement("p"); lp.dataset["role"] = "build-locked"; lp.textContent = `🔒 ${t.requirement ?? "Locked"} — open the Skills panel to learn it.`; d.append(lp); }
+        else { const hp = document.createElement("p"); hp.dataset["role"] = "build-hint"; hp.textContent = t.affordable ? "Choose to place · aim, rotate, confirm · Back returns here" : "Not enough materials"; d.append(hp); }
+        if (sel.variants.length > 1) { const vg = grid(); vg.dataset["role"] = "build-variants"; sel.variants.forEach((n, i) => vg.append(btn(n, `variant-${i}`, () => { buildSel.variant = i; src.onBuildSelect?.({ ...buildSel }); kit.rerender(); }, { pressed: i === buildSel.variant, alt: i !== buildSel.variant }))); d.append(vg); }
+        if (sel.paintable) { const pg = grid(); pg.dataset["role"] = "build-tints"; for (let i = 0; i < 6; i++) pg.append(btn(i ? `Tint ${i}` : "Clan / none", `tint-${i}`, () => { buildSel.paint = i; src.onBuildSelect?.({ ...buildSel }); kit.rerender(); }, { pressed: i === buildSel.paint, alt: i !== buildSel.paint }));
+          const tgt = paintTarget(c); pg.append(btn("Paint nearest", "paint-apply", () => { if (tgt !== undefined) send(paintIntent(tgt, buildSel.paint), "Painted."); }, { disabled: tgt === undefined })); d.append(pg); }
+        out.push(d);
       }
       return out;
     }

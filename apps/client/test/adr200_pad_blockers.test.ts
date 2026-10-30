@@ -58,9 +58,7 @@ describe("ADR-200 pad-only blockers", () => {
   });
   test("select a foundation and start placing it with the pad only", () => {
     const { w, me, placing, menus, press, seek } = setup(); for (const k of ["wood", "stone", "fiber", "sticks"]) G.addItem(w, me, id(k), 200);
-    menus.open("build"); seek("[data-role=piece]", "foundation"); press(PAD.A);
-    const pl = document.querySelector<HTMLButtonElement>("[data-key=place]"); if (pl?.disabled) throw new Error("place disabled: " + document.querySelector("[data-menu=build]")!.textContent!.match(/Cost:[^]*?(?=Place)/)?.[0]);
-    seek("[data-key=place]:not(:disabled)"); press(PAD.A);
+    menus.open("build"); seek("[data-role=piece]", "foundation"); press(PAD.A); // ADR-224: choosing the tile starts placing
     expect(placing).toHaveLength(1); expect(menus.nav.isOpen).toBe(false); menus.destroy();
   });
 });
