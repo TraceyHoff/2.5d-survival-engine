@@ -32,6 +32,6 @@ describe("ADR-225 tree XP curve", () => {
     G.emit(w, G.ItemGathered, { entity: a, node, item: 1, count: 5 }); G.emit(w, G.ItemGathered, { entity: a, node, item: 2, count: 1 }); steps(w, 1);
     expect(G.treesOf(w, a)![ti]!.xp).toBe(G.XP.sources.gather);
     G.emit(w, G.ItemGathered, { entity: a, node, item: 1, count: 5 }); steps(w, 1);
-    expect(G.treesOf(w, a)![ti]!.xp).toBe(2 * G.XP.sources.gather);
+    expect(G.treesOf(w, a)![ti]!.xp).toBe(2 * G.XP.sources.gather!);
   });
 });
