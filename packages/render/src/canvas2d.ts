@@ -184,14 +184,14 @@ export class Canvas2DRenderer {
       const mask = r.top === undefined || exact ? 0 : this.decks.mask(r.ax, r.ay, r.fw, r.fh, r.level, r.top);
       const isoD = (exact ? pvx + pvy - 1 : r.ax + r.fw - 1 + r.ay + r.fh - 1) + r.layer * 0.01 + (exact ? exactTieBreak(pvx, pvy, r.ghost) : pieceTieBreak(r.ax, r.ay, r.ghost)) + (r.rot & ROT_VERTEX_POST ? VERTEX_POST_BIAS : 0);
       out.push({ e: r.e, sx: p.sx, sy: p.sy, depth: r.level * LEVEL_DEPTH + (r.deck ? DECK_DEPTH : 0) + isoD, ord: pieceOrder(r.level, r.layer, r.ax, r.ay) * 2 + (r.ghost ? 1 : 0), img, f,
-        clip: mask ? deckClipPolygon(r.fw, r.fh, mask, r.top!, hw, hh) : undefined, seams: mask ? deckSeamPatches(r.fw, r.fh, mask, r.top!, hw, hh) : undefined, ghost: r.ghost, hearth: fire === 2 && !r.ghost && r.dmg === 0 });
+        clip: mask ? deckClipPolygon(r.fw, r.fh, mask, r.top!, hw, hh) : undefined, seams: mask ? deckSeamPatches(r.fw, r.fh, mask, r.top!, hw, hh) : undefined, ghost: r.ghost, hearth: fire === 2 && !r.ghost && r.dmg === 0, scale: this.bindings.pieceScale?.(r.e) ?? 1 });
     }
     return out;
   }
   private hearthBuf: HearthParticle[] = [];
   /** ADR-218: stateless embers (additive) + smoke puffs over a lit hearth (Canvas2D has no particle layer). */
-  private drawHearth(sx: number, sy: number, time: number, seed: number, s: number, ox: number, oy: number): void {
-    const g = this.ctx; const ps = hearthParticles(time, seed, 9, DEFAULT_ISO.tileW, this.hearthBuf);
+  private drawHearth(sx: number, sy: number, time: number, seed: number, s: number, ox: number, oy: number, sc = 1): void {
+    const g = this.ctx; const ps = hearthParticles(time, seed, 9, DEFAULT_ISO.tileW * sc, this.hearthBuf);
     g.save(); g.translate(snapPx(sx, s, ox), snapPx(sy, s, oy));
     for (const p of ps) {
       if (p.alpha <= 0.01) continue;
@@ -205,6 +205,7 @@ export class Canvas2DRenderer {
     const g = this.ctx; const f = pc.f; g.save(); g.translate(snapPx(pc.sx, s, ox), snapPx(pc.sy, s, oy));
     if (pc.clip) { g.beginPath(); pc.clip.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.closePath(); g.clip(); }
     if (pc.ghost) g.globalAlpha = 0.6;
+    if (pc.scale !== 1) g.scale(pc.scale, pc.scale); // ADR-227: about the pivot
     if (f.flipX) g.scale(-1, 1);
     g.drawImage(pc.img, f.x, f.y, f.w, f.h, -f.anchorX, -f.anchorY, f.w, f.h); g.restore(); this.stats.sprites++; this.stats.drawCalls++;
     if (pc.seams) for (const sp of pc.seams) { // ADR-210 connected top: closed-side border bands repainted from the interior
@@ -247,7 +248,7 @@ export class Canvas2DRenderer {
     items.sort((a, b) => (a.depth - b.depth) || (a.ord - b.ord)); // ADR-197: total order (no equal-key coin flips) // Flat ground decals (roads) first: always under feet and entities
     const an = this.bindings.animState; const tick = world.tick;
     for (const it of items) {
-      if (it.pc) { this.drawPiece(it.pc, s, ox, oy); if (it.pc.hearth) this.drawHearth(it.pc.sx, it.pc.sy, time, entityIndex(it.e), s, ox, oy); continue; }
+      if (it.pc) { this.drawPiece(it.pc, s, ox, oy); if (it.pc.hearth) this.drawHearth(it.pc.sx, it.pc.sy, time, entityIndex(it.e), s, ox, oy, it.pc.scale); continue; }
       const sp = world.get(it.e, Sprite)!; if (sp.scale > 0 && sp.scale < 0.01) continue;
       let anim = "idle"; let tAnim = time;
       const fa = frameAnim(sp.frameId); if (fa >= 0) { try { anim = reg!.sprite(sp.spriteId).animList[fa]?.name ?? "idle"; } catch { /* unknown sprite */ } tAnim = 0; }
@@ -279,7 +280,7 @@ export class Canvas2DRenderer {
       const dw = f.w * k, dh = f.h * k;
       g.save(); g.translate(snapPx(it.sx, s, ox), snapPx(it.sy, s, oy)); fx(); if (f.flipX) g.scale(-1, 1);
       g.drawImage(img, f.x, f.y, f.w, f.h, -f.anchorX * k, -f.anchorY * k, dw, dh); g.restore(); stats.sprites++; stats.drawCalls++;
-      if (hearth) this.drawHearth(it.sx, it.sy, time, entityIndex(it.e), s, ox, oy);
+      if (hearth) this.drawHearth(it.sx, it.sy, time, entityIndex(it.e), s, ox, oy, k);
     }
     // ADR-216: real lightmap (ambient + additive iso light ellipses) multiplied onto the scene, like the WebGL LightPass
     g.setTransform(1, 0, 0, 1, 0, 0);
@@ -300,7 +301,7 @@ const FLOOR_Z = floorToTerrainZ(1, 0);
 const C2D_DAYLIGHT_LIGHT_SCALE = DEFAULT_STYLE.daylightLightScale;
 /** Painter layers: everything on floor N draws after floor N-1; decks draw below the uprights of their own floor. */
 const LEVEL_DEPTH = 1e6, DECK_DEPTH = -5e5;
-interface C2DPiece { e: Entity; sx: number; sy: number; depth: number; ord: number; img: CanvasImageSource; f: { x: number; y: number; w: number; h: number; anchorX: number; anchorY: number; flipX?: boolean }; clip: [number, number][] | undefined; seams?: { poly: [number, number][]; dx: number; dy: number }[] | undefined; ghost: boolean; hearth?: boolean }
+interface C2DPiece { e: Entity; sx: number; sy: number; depth: number; ord: number; img: CanvasImageSource; f: { x: number; y: number; w: number; h: number; anchorX: number; anchorY: number; flipX?: boolean }; clip: [number, number][] | undefined; seams?: { poly: [number, number][]; dx: number; dy: number }[] | undefined; ghost: boolean; hearth?: boolean; scale: number }
 const rgb = (c: readonly number[]): string => `rgb(${Math.round(Math.min(1, c[0]!) * 255)},${Math.round(Math.min(1, c[1]!) * 255)},${Math.round(Math.min(1, c[2]!) * 255)})`;
 
 /** Canvas2D sort key: Flat ground decals (roads, ADR-119) draw in a layer below every upright sprite, in iso order. */

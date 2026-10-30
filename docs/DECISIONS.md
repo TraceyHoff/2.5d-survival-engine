@@ -2003,3 +2003,22 @@ Existing saves keep their levels (only future XP is affected). AI humans (host-f
 **Decision.** A zombie kind may carry `minPlayerLevel` / `levelRadius` (zombies.json); the Snuffer has 10 / 64 tiles.
 **Which level:** the **highest skill-tree level** (ADR-209 per-tree level, the number on the skill tabs, retuned by ADR-225) of any **human** player (alive, `Progression`, not a host-flagged AI human) within 64 tiles of the spawn point. Chosen over the hidden character level because it is what players see and plan around, and because AI humans level ×5 (ADR-225) and must not pull light-destroyers onto new players. With ADR-225 that is ~9–12 h of focused play in one tree.
 **Where (server only):** `combat/zombie_gate.ts` — population spawner (`host.spawn` refuses the snuffer entry), legacy per-player spawner (gated roll becomes a walker) and horde director (gated by the horde target's position; roll becomes a walker so the horde keeps its size). Snuffers that already exist are untouched. Tests: `adr226_snuffer_gate.test.ts`.
+
+## ADR-227: Smaller campfire flames (fallback `scale` honoured for build pieces)
+
+**Context.** The pack has no campfire art, so the campfire piece/station falls back to the full-size `bonfire` sprite (ADR-110/112). Its flames were taller than the player. The view's piece-key fallback (`pk`) kept only the key and dropped the chain's `scale`/`tint`, so the existing `lantern` (0.4), `torch_stand` (0.6) and `wood_stove` (0.8) scales had no effect either: every bonfire-art fire drew at bonfire size.
+
+**Decision.**
+- `sprite_fallbacks.json`: campfire → bonfire gets `"scale": 0.55`.
+- New render binding `pieceScale(entity)` sets a uniform scale about the pivot.
+  - WebGL: written into the piece instance scale, so it covers the static chunk, dynamic and ADR-218 animated paths.
+  - Canvas2D: `drawPiece` applies `ctx.scale`.
+- The client view resolves the scale per piece key (`pieceArtScale`, cached) for placed pieces and the build ghost. Free-standing campfire stations draw the campfire fallback sprite with its scale.
+- ADR-218 hearth embers/smoke scale with the flame:
+  - WebGL `HearthFx`: spawn height × scale; stations read `Sprite.scale`.
+  - Canvas2D: `hearthParticles` gets tileW × scale.
+- Unchanged: the ADR-218 animation (same frames and clock) and the ADR-216 light radius (8).
+
+**Other fires.** The lantern (0.4) and torch stand (0.6) now actually render smaller, which is also correct for their size. Wood stove 0.8 and fireplace 1.0 use furnace art. The real `bonfire` piece stays at full size.
+
+**Tests.** gameplay adr227_campfire_scale (3) and render adr227_flame_scale (1). Screenshots: /workspace/shots/flame_small_{before,after}_{webgl,canvas}_{1,2}.png.

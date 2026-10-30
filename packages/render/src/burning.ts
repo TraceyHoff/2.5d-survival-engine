@@ -12,6 +12,7 @@ import { floorToTerrainZ } from "@engine/world";
 import type { AssetRegistry, VfxDef } from "@engine/assets";
 import type { VfxInstance, VfxLayer } from "./vfx.js";
 import type { AtlasManager } from "./assets/atlasManager.js";
+import { Sprite } from "./components.js";
 
 export type BurningDefT = ComponentDef<{ lit: "u8"; intensity: "u8"; startTick: "u32" }>;
 export interface BurningFxConfig { fireBig: string; fireHuge: string; embers: string; smoke: string; hugeTiles: number; hugeIntensity: number; maxFlames: number }
@@ -118,12 +119,12 @@ export class HearthFx {
     return r;
   }
 
-  update(world: World, litPieces: ReadonlyMap<number, number> | undefined, lit: ComponentDef | undefined, buildPiece: ComponentDef<any> | undefined, atlas: AtlasManager, vfx: VfxLayer, dt: number): void {
+  update(world: World, litPieces: ReadonlyMap<number, number> | undefined, lit: ComponentDef | undefined, buildPiece: ComponentDef<any> | undefined, atlas: AtlasManager, vfx: VfxLayer, dt: number, pieceScale?: (e: number) => number | undefined): void {
     const reg = atlas.registry; if (!reg || dt <= 0) return;
     const tr = world.store(Transform); let n = 0;
     const bp = buildPiece && world.isRegistered(buildPiece) ? world.store(buildPiece) : null;
     const bpd = bp?.data as Record<string, ArrayLike<number>> | undefined;
-    const emit = (e: number, fw: number, fh: number, level: number, piece: boolean): void => {
+    const emit = (e: number, fw: number, fh: number, level: number, piece: boolean, sc = 1): void => {
       const i = entityIndex(e); const ts = tr.slot(i); if (ts < 0) return;
       // pieces: footprint centre from the anchor tile (as BurningFx); stations: their own position
       const x = piece ? Math.floor(tr.data.x[ts]!) + fw / 2 : tr.data.x[ts]!, y = piece ? Math.floor(tr.data.y[ts]!) + fh / 2 : tr.data.y[ts]!;
@@ -134,8 +135,9 @@ export class HearthFx {
         while (expect > 0) {
           if (expect < 1 && this.rnd() > expect) break; expect -= 1;
           const sp = pj.speed[0] + (pj.speed[1] - pj.speed[0]) * this.rnd(); const a = this.rnd() * Math.PI * 2; const h = pj.spread * this.rnd();
-          vfx.spawn({ spriteId: p.def.sprite, anim: p.anim, x: x + (this.rnd() - 0.5) * 0.4 * fw, y: y + (this.rnd() - 0.5) * 0.4 * fh, z: z + this.cfg.height + 0.2 * this.rnd(),
-            lifetime: p.def.lifetime * (0.7 + 0.6 * this.rnd()), emissive: p.def.blend === "additive", scale: 0.7,
+          vfx.spawn({ spriteId: p.def.sprite, anim: p.anim, x: x + (this.rnd() - 0.5) * 0.4 * fw, y: y + (this.rnd() - 0.5) * 0.4 * fh, z: z + (this.cfg.height + 0.2 * this.rnd()) * sc, // ADR-227: a scaled-down flame emits from its own (lower) top
+           
+            lifetime: p.def.lifetime * (0.7 + 0.6 * this.rnd()), emissive: p.def.blend === "additive", scale: 0.7 * Math.max(0.6, sc),
             vx: Math.cos(a) * h * sp * 0.5, vy: Math.sin(a) * h * sp * 0.5, vz: sp * 1.5, gravity: pj.gravity, fade: pj.fade,
             scaleCurve: [pj.scaleCurve[0] ?? 1, pj.scaleCurve[pj.scaleCurve.length - 1] ?? 1] });
           this.spawned++;
@@ -146,11 +148,11 @@ export class HearthFx {
       if (st !== 2) continue; if (n++ >= this.cfg.maxHearths) return;
       const i = entityIndex(e); const ps = bp ? bp.slot(i) : -1; let fw = 1, fh = 1, level = 0;
       if (bp && ps >= 0 && bpd) { const info = atlas.pieceInfo(bpd.visualId![ps]!); const rot = bpd.rotation![ps]! & 1; if (info) { fw = rot ? info.fh : info.fw; fh = rot ? info.fw : info.fh; } level = bpd.level![ps]!; }
-      emit(e, fw, fh, level, true);
+      emit(e, fw, fh, level, true, pieceScale?.(e) ?? 1);
     }
     if (lit && world.isRegistered(lit)) {
       const ls = world.store(lit); const ld = ls.data as Record<string, ArrayLike<number>>;
-      for (let k = 0; k < ls.size; k++) { if (!ld.lit?.[k]) continue; if (n++ >= this.cfg.maxHearths) return; emit(ls.dense[k]!, 1, 1, 0, false); }
+      for (let k = 0; k < ls.size; k++) { if (!ld.lit?.[k]) continue; if (n++ >= this.cfg.maxHearths) return; const se = ls.dense[k]!; const sc = world.isRegistered(Sprite) && world.has(se, Sprite) ? world.get(se, Sprite)!.scale || 1 : 1; emit(se, 1, 1, 0, false, sc); }
     }
   }
 }

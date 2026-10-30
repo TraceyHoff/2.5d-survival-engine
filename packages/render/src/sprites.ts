@@ -132,6 +132,8 @@ export interface GameplayBindings {
    *  sprite has a looping multi-frame `idle` anim animate it on the render clock (drawn dynamically, never baked into a static
    *  chunk); out pieces show the sprite's `unlit` anim frame when the building has no own unlit state. */
   pieceLit?: (entity: number) => number | undefined;
+  /** ADR-227: per build-piece uniform draw scale about its pivot (sprite_fallbacks `scale`, e.g. campfire = bonfire art x0.55); undefined = 1. */
+  pieceScale?: (entity: number) => number | undefined;
   /** ADR-218: every lit fired piece (view entity -> FireState) for hearth embers/smoke; read once per frame. */
   litPieces?: () => ReadonlyMap<number, number>;
   /** core Appearance + resolveLayers (character customization): entities with Appearance draw their resolved layers. */
@@ -977,7 +979,7 @@ export class SpriteBatch {
   }
   private gatherPieces(cx: PrepareContext, bp: ReturnType<World["store"]>, hasFocus: boolean, fwx: number, fwy: number, fwz: number): void {
     const { world, atlas, rect } = cx; const tr = world.store(Transform);
-    const pieceLit = cx.bindings.pieceLit;
+    const pieceLit = cx.bindings.pieceLit, pieceScale = cx.bindings.pieceScale;
     const d = bp.data as Record<string, ArrayLike<number>>;
     const hw = this.iso.tileW / 2, hh = this.iso.tileH / 2, zs = this.iso.zStep, zf = this.zFactor;
     const res = this.res;
@@ -1023,6 +1025,7 @@ export class SpriteBatch {
         // ADR-218: lit fires animate their idle loop on the render clock (per-entity phase); out fires show their unlit frame
         let animated = false;
         const fire = pieceLit ? pieceLit(e) : undefined;
+        const psc = pieceScale ? pieceScale(e) ?? 1 : 1; // ADR-227
         if (fire !== undefined && dmg === 0 && ghost === 0) {
           const flip = res.flipX, hd = res.hasDamageFrames;
           if (fire > 0) { const fa = atlas.fireAnim(drawVis); if (fa >= 0 && atlas.resolve(drawVis, fa, 0, fireAnimTime(cx.now, i), 0, res)) { animated = true; res.flipX = flip; res.hasDamageFrames = hd; } }
@@ -1085,7 +1088,7 @@ export class SpriteBatch {
           const sliceR = single || c === cMax ? OPEN : colCenter + hw / 2;
           // slice foot = screen y of the front corner of its front-most tile, relative to pivot
           const footDy = single ? 0 : (best + 2) * hh - z * zs - sy;
-          const o = this.writeOne(sx, sy, key, 1, res, flags, (i * 0.618034) % 1, alpha, sliceL, sliceR, tint, footDy, 0, ghost, dmgOverlay, 0);
+          const o = this.writeOne(sx, sy, key, psc, res, flags, (i * 0.618034) % 1, alpha, sliceL, sliceR, tint, footDy, 0, ghost, dmgOverlay, 0);
           o[27] = occT;
           if (deckMask) { o[38] = deckMask | (fw << 4) | (fh << 8); o[39] = deckTop!; }
           if (sway) { o[24] = sway[0]!; o[25] = sway[1]!; o[26] = sway[2]!; } // SpriteDef.sway (+ masks.sway weights in the shader)

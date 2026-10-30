@@ -1418,7 +1418,8 @@
     "campfire": {
       "to": [
         "bonfire"
-      ]
+      ],
+      "scale": 0.55
     },
     "market_counter": {
       "to": [

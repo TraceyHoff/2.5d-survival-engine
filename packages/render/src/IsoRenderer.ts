@@ -468,7 +468,7 @@ export class IsoRenderer implements Renderer {
     if (this.w === 0) this.resize(this.lastCss[0] || this.canvas.clientWidth || 800, this.lastCss[1] || this.canvas.clientHeight || 600, this.lastCss[2]);
     this.vfx.update(this.time); this.statusDt = dt;
     if (this.bindings.burning) this.burning.update(world, this.bindings.burning, this.bindings.buildPiece, this.atlas, this.vfx, this.time, dt);
-    if (this.bindings.litPieces || this.bindings.lit) this.hearth.update(world, this.bindings.litPieces?.(), this.bindings.lit, this.bindings.buildPiece, this.atlas, this.vfx, dt * (this.timeScale > 0 ? Math.min(1, this.timeScale) : 1));
+    if (this.bindings.litPieces || this.bindings.lit) this.hearth.update(world, this.bindings.litPieces?.(), this.bindings.lit, this.bindings.buildPiece, this.atlas, this.vfx, dt * (this.timeScale > 0 ? Math.min(1, this.timeScale) : 1), this.bindings.pieceScale);
     if (this.chimneySmoke.cfg.rateScale > 0) this.chimneySmoke.update(world, this.bindings.buildPiece, this.atlas, this.vfx, dt, this.iso);
 
     // --- 0. prep ---------------------------------------------------------------------------
