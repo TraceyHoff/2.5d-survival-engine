@@ -80,7 +80,13 @@ export const arrangeUi: { mode: "" | "split" | "hotbar"; where: 0 | 1; slot: num
 /** Focus a control by data-key after the (synchronous) re-render; pad focus ring when the pad drove it. */
 function focusKey(key: string): void { const t = typeof document !== "undefined" ? document.querySelector<HTMLElement>(`[data-modal] [data-key="${key}"]`) : null; if (t) { t.focus(); t.scrollIntoView?.({ block: "nearest" }); revealAboveFooter(t); } }
 /** Skill tree (ADR-113): zoom + selected node survive re-renders; the viewport scroll position is kept by the diffing refresh. */
-const skillUi = { zoom: 0.6, sel: -1, branch: "", cat: "" };
+/** ADR-219: scroll the tree viewport (only) so the focused node is fully inside it with a small margin. */
+function revealIn(vp: HTMLElement, b: HTMLElement, m = 12): void {
+  const l = b.offsetLeft, t = b.offsetTop, r = l + b.offsetWidth, btm = t + b.offsetHeight;
+  if (l - m < vp.scrollLeft) vp.scrollLeft = Math.max(0, l - m); else if (r + m > vp.scrollLeft + vp.clientWidth) vp.scrollLeft = r + m - vp.clientWidth;
+  if (t - m < vp.scrollTop) vp.scrollTop = Math.max(0, t - m); else if (btm + m > vp.scrollTop + vp.clientHeight) vp.scrollTop = btm + m - vp.clientHeight;
+}
+const skillUi = { zoom: 0.6, sel: -1, branch: "", cat: "", /** ADR-219 last focused / hovered node (survives re-renders) */ peek: -1 };
 /** ADR-132: active skill category tab (one tree per tab); ◀ ▶ / tab buttons (touch, mouse, Tab+Enter, gamepad focus+A), PgUp/PgDn and gamepad LB/RB. */
 export function selectSkillCategory(key: string): void { if (skillUi.cat !== key) { skillUi.cat = key; skillUi.sel = -1; } }
 export const skillCategory = (): string => skillUi.cat;
@@ -393,7 +399,7 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       for (const t of Array.from(tabs.children) as HTMLElement[]) t.style.flex = "0 0 auto";
       out.push(tabs); queueMicrotask(() => (tabs.querySelector("[aria-selected=true]") as HTMLElement | null)?.scrollIntoView?.({ block: "nearest", inline: "nearest" }));
       const z = skillUi.zoom; const vp = el("div", { "data-role": "skill-tree", class: "skill-tree", "data-category": cat.key });
-      vp.setAttribute("style", "position:relative;overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y;height:min(52dvh,420px);border:2px solid #74432C;border-radius:10px;background:#EAD9B8");
+      vp.setAttribute("style", "position:relative;overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y;height:clamp(150px,calc(100dvh - 470px),420px);border:2px solid #74432C;border-radius:10px;background:#EAD9B8");
       const inner = el("div"); inner.setAttribute("style", `position:relative;width:${Math.ceil(cat.width * z)}px;height:${Math.ceil(cat.height * z)}px`);
       const ns = "http://www.w3.org/2000/svg"; const svg = document.createElementNS(ns, "svg"); svg.setAttribute("width", String(Math.ceil(cat.width * z))); svg.setAttribute("height", String(Math.ceil(cat.height * z)));
       svg.setAttribute("style", "position:absolute;left:0;top:0;pointer-events:none"); const W = 150, H = 56;
@@ -402,20 +408,44 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
         l.setAttribute("x1", String((p.cx + W / 2) * z)); l.setAttribute("y1", String((p.cy + H) * z)); l.setAttribute("x2", String((n.cx + W / 2) * z)); l.setAttribute("y2", String(n.cy * z));
         l.setAttribute("stroke", n.state === "owned" ? "#5A9A4A" : "#9C7A5A"); l.setAttribute("stroke-width", "2"); svg.append(l); }
       inner.append(svg);
+      // ADR-219: one description panel (above the tree, never inside its clipped viewport) shows the focused / hovered /
+      // selected skill: generated effect lines with values, rank, cost and state. Updates in place on focus (D-pad, Tab),
+      // hover and tap, wraps freely and has no fixed height, so nothing is cut off at any resolution.
+      const descEl = el("div", { "data-role": "skill-desc", id: "skill-desc", role: "region", "aria-live": "polite", "aria-label": "Skill description" });
+      descEl.setAttribute("style", "box-sizing:border-box;min-height:6.2em;margin:0 0 6px;padding:6px 10px;border:2px solid #74432C;border-radius:10px;background:#F6ECD6;color:#432C24;font-size:14px;line-height:1.3;white-space:normal;overflow-wrap:anywhere;word-break:normal;overflow:visible");
+      // Handlers are property handlers (morph copies them onto reused elements) and resolve the live panel from the DOM,
+      // because a re-render morphs into the existing tree and keeps the first-built elements.
+      const liveDesc = (from: Element | null): HTMLElement => from?.closest("[data-role=skill-view]")?.querySelector<HTMLElement>("[data-role=skill-desc]") ?? descEl;
+      const showDesc = (n: typeof shown[number] | undefined, desc: HTMLElement = descEl): void => {
+        desc.replaceChildren(); desc.dataset["key"] = n?.key ?? "";
+        if (!n) { const h = el("p", {}, "Move to a skill (D-pad / Tab / hover / tap) to see what it does."); h.setAttribute("style", "margin:0"); desc.append(h); return; }
+        const t = el("p", { "data-role": "skill-desc-title" }, `${n.name} · cost ${n.cost}${n.info.rank ? ` · Rank ${n.info.rank.n}/${n.info.rank.of}` : ""}`); t.setAttribute("style", "margin:0 0 2px;font-weight:700");
+        const ul = el("ul", { "data-role": "skill-desc-effects" }); ul.setAttribute("style", "margin:0;padding-left:1.1em");
+        for (const line of n.info.effects) ul.append(el("li", {}, line));
+        if (n.info.rank && n.info.rank.n > 1 && n.info.rank.text.includes("total")) ul.append(el("li", { "data-role": "skill-desc-rank" }, n.info.rank.text.replace(/^Rank \d+ of \d+ · /, "")));
+        if (n.info.note) ul.append(el("li", { "data-role": "skill-desc-note" }, n.info.note));
+        const st = el("p", { "data-role": "skill-detail" }, n.state === "owned" ? "Learned." : n.why ? SKILL_REJECT_TEXT[n.why] : skillUi.sel === n.index ? "Press A / tap again to learn." : "Press A / tap to select, again to learn.");
+        st.setAttribute("style", `margin:2px 0 0;font-weight:600;color:${n.state === "owned" ? "#3F7A32" : n.why ? "#9A3B2A" : "#432C24"}`);
+        desc.append(t, ul, st);
+      };
       for (const n of shown) {
         const b = btn(`${n.name} (${n.cost})`, `skill-${n.key}`, () => {
           if (skillUi.sel !== n.index) { skillUi.sel = n.index; kit.rerender(); return; } // first tap/A selects (shows details), second learns
           if (n.state === "owned") return; if (n.why) { kit.status(SKILL_REJECT_TEXT[n.why]); kit.rerender(); return; }
           send(unlockSkillIntent(n.index), `Learned ${n.name}.`);
-        }, { role: "skill-node", alt: n.state !== "owned", disabled: false, pressed: skillUi.sel === n.index, title: n.desc, data: { icon: n.icon, branch: n.branch, category: n.category, state: n.state, tier: String(n.tier) } });
-        b.setAttribute("style", `position:absolute;left:${Math.round(n.cx * z)}px;top:${Math.round(n.cy * z)}px;width:${Math.round(W * z)}px;min-height:44px;font-size:${Math.max(11, Math.round(14 * z))}px;padding:2px 4px;${n.state === "locked" ? "opacity:.55;" : ""}`);
+        }, { role: "skill-node", alt: n.state !== "owned", disabled: false, pressed: skillUi.sel === n.index, data: { icon: n.icon, branch: n.branch, category: n.category, state: n.state, tier: String(n.tier) } });
+        b.setAttribute("aria-describedby", "skill-desc"); b.setAttribute("aria-label", `${n.name}, cost ${n.cost}. ${n.info.text}`);
+        b.setAttribute("style", `position:absolute;left:${Math.round(n.cx * z)}px;top:${Math.round(n.cy * z)}px;width:${Math.round(W * z)}px;min-height:44px;font-size:${Math.max(11, Math.round(14 * z))}px;line-height:1.15;padding:2px 4px;white-space:normal;overflow-wrap:anywhere;${n.state === "locked" ? "opacity:.55;" : ""}`);
+        b.onmouseenter = (ev) => { skillUi.peek = n.index; showDesc(n, liveDesc(ev.currentTarget as Element)); };
+        b.onfocus = (ev) => { const t = ev.currentTarget as HTMLElement; skillUi.peek = n.index; showDesc(n, liveDesc(t)); queueMicrotask(() => {
+          const tv = t.closest<HTMLElement>("[data-role=skill-tree]"); if (tv) revealIn(tv, t); t.closest("[data-role=skill-view]")?.scrollIntoView?.({ block: "nearest", inline: "nearest" }); revealAboveFooter(t); }); };
         inner.append(b);
       }
       vp.append(inner);
       vp.addEventListener("wheel", (ev) => { if (!ev.ctrlKey) return; ev.preventDefault(); zoomSkills(ev.deltaY < 0 ? SKILL_ZOOM.step : -SKILL_ZOOM.step); kit.rerender(); }, { passive: false });
-      out.push(vp);
-      const sel = v.nodes[skillUi.sel];
-      if (sel) { const d = kit.para(`${sel.name}: ${sel.desc} — cost ${sel.cost}. ${sel.state === "owned" ? "Learned." : sel.why ? SKILL_REJECT_TEXT[sel.why] : "Tap / press again to learn."}`); d.dataset["role"] = "skill-detail"; out.push(d); }
+      vp.onmouseleave = (ev) => { const k = (document.activeElement as HTMLElement | null)?.dataset?.["key"]; const f2 = shown.find((n) => `skill-${n.key}` === k); skillUi.peek = f2?.index ?? -1; showDesc(f2 ?? v.nodes[skillUi.sel], liveDesc(ev.currentTarget as Element)); };
+      const inCat = (i: number) => v.nodes[i]?.category === cat.key ? v.nodes[i] : undefined; showDesc(inCat(skillUi.peek) ?? inCat(skillUi.sel));
+      const wrap = el("div", { "data-role": "skill-view" }); wrap.append(descEl, vp); out.push(wrap);
       out.push(kit.para("Pick a tree tab (◀ ▶, PgUp/PgDn or LB/RB) · scroll or drag to pan · Ctrl+wheel or Zoom ± to zoom · select a skill, then select again to learn. Each tree levels from its own activities and its points only buy skills in that tree."));
       return out;
     }

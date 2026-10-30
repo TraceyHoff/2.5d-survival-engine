@@ -27,6 +27,8 @@ export interface SkillsData {
 }
 export const SKILLS: SkillsData = raw as unknown as SkillsData;
 export const SKILL_NODE_WORDS = 8;
+/** ADR-219: party / clan mates within this many tiles receive the "share" fraction of your XP. */
+export const XP_SHARE_RADIUS = 20;
 if (SKILLS.nodes.length > SKILL_NODE_WORDS * 32) throw new Error("skills.json: too many nodes for Progression.nodes");
 const byKey = new Map(SKILLS.nodes.map((n, i) => [n.key, i]));
 export const skillNodeIndex = (key: string): number => byKey.get(key) ?? -1;

@@ -81,6 +81,7 @@ export * from "./farming.js";
 export * from "./tool-hint.js";
 export * from "./skills/tree.js";
 export * from "./skills/progression.js";
+export * from "./skills/describe.js";
 export * from "./skills/xp.js";
 export * from "./skills/husbandry.js";
 export * from "./clutter.js";

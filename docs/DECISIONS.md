@@ -1830,3 +1830,39 @@ Tests:
 - `client/adr218_fire_state` covers the state mapping, that hearth keys are fired pieces, and the binding / static-chunk wiring.
 
 Shots: `/workspace/shots/fire_{before,after}_{webgl,canvas}_1..6.png` (screencast, about 100–230 ms apart under swiftshader).
+
+## ADR-219: Skill nodes show a generated, never-clipped description (focus / hover / select)
+
+Problem: skill nodes showed only a name and cost. The `title` → `[data-tip]` bubble was a CSS `::before`, so the tree viewport clipped it and it covered neighbouring nodes. Gamepad focus showed nothing.
+
+Decision:
+- **Generated text (`gameplay/skills/describe.ts`).** `skillDescription(i)` (cached) is built from the node's `effects`, and `SkillNodeView.info` carries it.
+  - Mods → `SKILL_MOD_LABEL` lines with values, e.g. "+15% gather yield". `dmg_*` entries with equal values merge into one line, and a single class lists its weapons.
+  - Perks → `SKILL_PERK_TEXT`, which uses the real constants: `IRON_STOMACH_HP`, husbandry `breedSeconds` / `maxPerTrough`.
+  - Skill-level nodes → "<Skill> skill level N" plus "Unlocks recipes: … and N more" from recipes.json, or "Needed for <Skill> N+1".
+  - Rank chains (same branch, same effect signature) → "Rank n of N" plus a running total for earlier ranks.
+  - An authored `desc` survives only as a non-numeric flavour note, so the shown numbers always come from data.
+  - New exported constants used by both the code and the text: `FIRE_TENDER_RADIUS = 6` (fuel.ts) and `XP_SHARE_RADIUS = 20` (tree.ts).
+- **Description panel (`[data-role=skill-desc]`, `#skill-desc`).** The panel sits above the tree viewport, inside `[data-role=skill-view]`, so it is never inside the clipped, pannable area.
+  - It wraps (`white-space:normal; overflow-wrap:anywhere`) and has a min-height of 6.2em, so its height doesn't jump.
+  - The tree height became `clamp(150px, 100dvh - 470px, 420px)`, so panel + tree fit at 720p and on mobile.
+  - It shows the title, cost and rank, the effect lines, and the state (learned / reject reason / how to learn).
+- **Focus drives the panel.**
+  - Node `onfocus` (D-pad / Tab) and `onmouseenter` set `skillUi.peek`, which survives the periodic menu re-render. `vp.onmouseleave` restores the focused or selected node.
+  - On focus, the node is revealed inside the tree viewport only (`revealIn`), and then above the sticky pad-hints footer.
+  - Nodes drop `title` (no `data-tip`) and get `aria-describedby="skill-desc"` plus an aria-label that contains the description.
+- **`morph` copies handler properties.** It now copies `onfocus` / `onmouseenter` / `onmouseleave` as well as `onclick` (`MORPH_HANDLERS`). Reused elements no longer keep stale closures pointing at a discarded panel. Panels that need focus / hover behaviour across refreshes must use these properties, not `addEventListener`.
+
+Tests:
+- `gameplay/adr219_skill_desc` covers:
+  - every node has non-empty text;
+  - every mod value appears as a %;
+  - authored % values agree with the data;
+  - specific values, rank chains and totals, and recipe unlocks.
+- `client/adr219_skill_desc_panel` covers:
+  - D-pad focus updates the panel and it survives `refresh()`;
+  - the panel is outside and before the tree viewport and wraps;
+  - every node in every tab yields effect lines;
+  - `morph` carries the handlers.
+
+Shots: `/workspace/shots/skilldesc_{desktop,720p,mobile}.png` (Crafting / Master Smith), `skilldesc_combat_*.png` (Blades Expert, rank 2/3) and `skilldesc_before_*.png`. The layout probe reports overflow false, no clipped nodes, and the focused node visible at 1920×1080, 1280×720 and 390×844.

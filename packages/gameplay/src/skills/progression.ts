@@ -7,12 +7,13 @@ import { DEFAULT_TICK_HZ, defineCommand, Membership, Transform, type CommandHand
 import { Animal, BuildPiece, Dead, Health, Progression, ResourceNode, Zombie } from "../components.js";
 import { gameplayDefs, isAuthority } from "../config.js";
 import { CraftCompleted, Damaged, emit, ev, ItemConsumed, ItemGathered, PiecePlaced, WaterDrunk, XpActivity } from "../events.js";
+import { skillDescription, type SkillDescription } from "./describe.js";
 import { killXpBase, pvpFactor, travelStep, victimType, XP } from "./xp.js";
 import { ToolKind } from "../defs.js";
 import { countItem, removeItem } from "../inventory.js";
 import { setSkillLevelProvider } from "../systems/crafting.js";
 import { VehicleRepaired } from "../vehicle_craft.js";
-import { nodeWords, ownedNodes, SKILL_NODE_TREE, TREE_KEYS, TREE_SLOTS, treeIndex, treePointsAtLevel, treePointsForLevel, treeProgress, treeXpToNext, type TreeProgress, SKILL_NODE_CATEGORY, SKILL_NODE_WORDS, SKILL_REQS, SKILLS, skillLevelOf, skillMod, skillNode, wordsHas, xpToNext, type XpSource } from "./tree.js";
+import { nodeWords, ownedNodes, SKILL_NODE_TREE, TREE_KEYS, TREE_SLOTS, treeIndex, treePointsAtLevel, treePointsForLevel, treeProgress, treeXpToNext, type TreeProgress, SKILL_NODE_CATEGORY, SKILL_NODE_WORDS, SKILL_REQS, SKILLS, skillLevelOf, skillMod, skillNode, wordsHas, xpToNext, XP_SHARE_RADIUS, type XpSource } from "./tree.js";
 
 /** ADR-135: every award (after mods), for host-side popups/logs. The client derives its popup from Progression deltas. */
 export const XpGained = ev<{ entity: Entity; source: string; amount: number; tree: string }>("gameplay.XpGained");
@@ -101,7 +102,7 @@ export function awardXpRaw(world: World, e: Entity, source: string, base: number
   if (amount <= 0) return 0;
   const ti = treeOfSource(source); credit(world, e, ti, amount); emit(world, XpGained, { entity: e, source, amount, tree: TREE_KEYS[ti]! });
   const sh = share ? skillMod(world, e, "share") : 0;
-  if (sh > 0) { const mates = matesNear(world, e, 20); const each = Math.round(amount * sh); if (each > 0) for (const m of mates) credit(world, m, ti, each); }
+  if (sh > 0) { const mates = matesNear(world, e, XP_SHARE_RADIUS); const each = Math.round(amount * sh); if (each > 0) for (const m of mates) credit(world, m, ti, each); }
   return amount;
 }
 function addXp(world: World, e: Entity, amount: number): void {
@@ -238,7 +239,7 @@ export const PROGRESSION_WORDS = SKILL_NODE_WORDS;
 
 // ---- view model (client skill-tree panel) ---------------------------------------------------------------
 export type SkillNodeState = "owned" | "available" | "locked";
-export interface SkillNodeView { index: number; key: string; name: string; branch: string; category: string; cx: number; cy: number; tier: number; x: number; y: number; cost: number; desc: string; icon: string; state: SkillNodeState; why?: SkillReject | undefined; requires: number[] }
+export interface SkillNodeView { index: number; key: string; name: string; branch: string; category: string; cx: number; cy: number; tier: number; x: number; y: number; cost: number; desc: string; /** ADR-219 generated from the effect data */ info: SkillDescription; icon: string; state: SkillNodeState; why?: SkillReject | undefined; requires: number[] }
 /** ADR-132: one tab per category; node coordinates (cx, cy) are laid out per category tree, branches side by side. */
 /** Lanes are 80 apart in skills.json but nodes draw 150 wide: spread them so siblings never overlap. */
 export const LANE_SPREAD = 2.1;
@@ -248,7 +249,7 @@ export function progressionView(world: World, e: Entity): ProgressionView | unde
   const p = world.get(e, Progression); if (!p) return undefined; const w = nodeWords(world, e)!; const trees = treesOf(world, e)!;
   const nodes = SKILLS.nodes.map((n, i): SkillNodeView => {
     const why = wordsHas(w, i) ? undefined : canUnlock(world, e, i);
-    return { index: i, key: n.key, name: n.name, branch: n.branch, category: SKILL_NODE_CATEGORY[i]!, cx: 0, cy: n.y, tier: n.tier, x: n.x, y: n.y, cost: n.cost, desc: n.desc, icon: n.icon,
+    return { index: i, key: n.key, name: n.name, branch: n.branch, category: SKILL_NODE_CATEGORY[i]!, cx: 0, cy: n.y, tier: n.tier, x: n.x, y: n.y, cost: n.cost, desc: n.desc, info: skillDescription(i), icon: n.icon,
       state: wordsHas(w, i) ? "owned" : why === undefined || why === "points" ? "available" : "locked", why, requires: SKILL_REQS[i]! as number[] };
   });
   const categories = SKILLS.categories.map((c, ci): SkillCategoryView => {

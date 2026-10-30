@@ -25,11 +25,13 @@ function burnNext(world: World, fire: Entity, defs: GameDefs, dt: number): boole
   }
   return false;
 }
-/** ADR-113: best "fuel" skill mod among players within 6 tiles of the fire (fire tenders make fuel last longer). */
+/** ADR-113/219: tiles within which a player tends a fire (their "fuel" skill mod applies). */
+export const FIRE_TENDER_RADIUS = 6;
+/** ADR-113: best "fuel" skill mod among players within FIRE_TENDER_RADIUS tiles of the fire (fire tenders make fuel last longer). */
 export function tenderFuelMod(world: World, fire: Entity): number {
   const t = world.get(fire, Transform) ?? (pieceOf(world, fire) !== undefined ? world.get(pieceOf(world, fire)!, Transform) : undefined); if (!t) return 0;
   let best = 0;
-  for (const p of world.query([Progression, Transform], [Dead])) { const pt = world.get(p, Transform)!; if ((pt.x - t.x) ** 2 + (pt.y - t.y) ** 2 <= 36) best = Math.max(best, skillMod(world, p, "fuel")); }
+  for (const p of world.query([Progression, Transform], [Dead])) { const pt = world.get(p, Transform)!; if ((pt.x - t.x) ** 2 + (pt.y - t.y) ** 2 <= FIRE_TENDER_RADIUS ** 2) best = Math.max(best, skillMod(world, p, "fuel")); }
   return best;
 }
 /** Piece fuelMul (fireplace/wood_stove burn fuel slower); free-standing stations = 1. */
