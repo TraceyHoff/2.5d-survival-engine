@@ -1913,3 +1913,22 @@ Shots: `/workspace/shots/skilldesc_{desktop,720p,mobile}.png` (Crafting / Master
 **Save migration.** `Progression.tver` 1 → 2. Any character with history (tver ≥ 1, points, xp, level > 1 or any node) gets **all** unlock nodes free, so already-placed pieces, upgrades and known recipes keep working. Placed pieces are never removed for any player. Fresh characters (tver 0, no history) start twig-only. Respec keeps unlock nodes and does not refund them; a character that only owns unlock nodes has nothing to respec.
 
 **Tests.** `packages/gameplay/test/adr221_unlocks.test.ts` (16): data/gating invariants, reachability, twig-only placement, SkillLocked on place/preview/upgrade, craft `skill_locked`/`Locked`, the NPC exemption, migration (legacy vs fresh), respec, AI picks, and `buildView` locked/requirement. Existing tests that assume a seasoned builder use the `spawnLearned` helper. `persist/progression_trees` and the icon-count test were updated.
+
+## ADR-222: Choosing a piece never places it (placement-confirm latch)
+
+**Bug.** With a controller, picking some stations or furniture in the Build panel placed them straight away, at whatever spot the aim defaulted to. The player never chose where.
+
+**Root cause.**
+- `UINav` reads the pad directly and clicks the focused button on the A edge. That happens inside `onUiFrame()`, after `input.update()` has already recorded the same A press.
+- The click calls `startPlacing`, which pushes the `Building` context. In that context A (and RT, mouse left, Enter-driven clicks) is bound to `Build.PlaceConfirm`.
+- `buildMode.update()` then runs in the same input frame and sees `Build.PlaceConfirm` as pressed, so the piece was placed at once.
+- Mouse had the same race on the click that closed the menu. Pieces are only ever placed through BuildMode (no item auto-deploys), so this one path covers stations, furniture and structures from every entry point.
+
+**Fix.** `BuildMode.start()` arms a confirm latch. `Build.PlaceConfirm` is ignored until it has been seen released (`input.down` false) in a frame after the start. The latch re-arms when the picker reselects a piece while placing. Rotation, nudging, tier and floor all work during the latch, and cancel (B / Esc) still works. `BuildModeInput.down` is optional; fakes without it fall back to `pressed`.
+
+**Tests.** `apps/client/test/adr222_place_latch.test.ts`:
+- gamepad, keyboard/mouse and touch;
+- campfire, workbench, storage box, foundation and lantern;
+- the selecting press, held for 3 frames, places nothing;
+- after release, rotate, then a fresh confirm places it;
+- re-selecting re-arms the latch.

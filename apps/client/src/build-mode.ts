@@ -18,7 +18,7 @@ import { buildPreviewFor, fineEligible, FINE_ROT, FINE_ROT_STEPS, rotationSteps,
 import { Transform } from "@engine/core";
 
 export type BuildDevice = "keyboardMouse" | "gamepad" | "touch";
-export interface BuildModeInput { pressed(action: string): boolean; push(context: string): void; pop(context?: string): void; vector?(action: string): readonly number[] }
+export interface BuildModeInput { pressed(action: string): boolean; /** held state (ADR-222 confirm latch); optional for older fakes */ down?(action: string): boolean; push(context: string): void; pop(context?: string): void; vector?(action: string): readonly number[] }
 export interface BuildModeOptions {
   input: BuildModeInput;
   ctx(): MenuCtx | undefined;
@@ -80,8 +80,14 @@ export class BuildMode {
   get selection(): BuildSelection | undefined { return this.sel; }
   private now(): number { return this.o.now?.() ?? (typeof performance !== "undefined" ? performance.now() : Date.now()); }
   private device(): BuildDevice { return this.o.device?.() ?? "keyboardMouse"; }
+  /** ADR-222: true until Build.PlaceConfirm has been observed up after start(). */
+  private confirmLatch = false;
+  get awaitingRelease(): boolean { return this.confirmLatch; }
   start(sel: BuildSelection): void {
     const was = this.active; this.sel = { ...sel };
+    // ADR-222: the press that chose the piece (pad A / Enter / click on a menu tile) must never also place it. Placement
+    // only confirms after PlaceConfirm has been seen released at least one frame after entering build mode.
+    this.confirmLatch = true;
     if (!was) { this.rotLockAt = undefined; this.rot = 0; this.fineRot = 0; this.level = 0; this.padOffset = undefined; this.touchPoint = undefined; this.disarm(); this.o.input.push("Building"); this.o.onActiveChange?.(true); }
     this.refresh();
   }
@@ -171,6 +177,7 @@ export class BuildMode {
     if (i.pressed("Build.RepairMode")) this.act("repair");
     else if (i.pressed("Build.UpgradeMode")) this.act("upgrade");
     else if (i.pressed("Build.DemolishMode")) this.act("demolish", dev === "gamepad"); // pad: the 500ms hold is the confirmation
-    else if (i.pressed("Build.PlaceConfirm")) this.place();
+    else if (i.pressed("Build.PlaceConfirm") && !this.confirmLatch) this.place();
+    if (this.confirmLatch && !(i.down?.("Build.PlaceConfirm") ?? i.pressed("Build.PlaceConfirm"))) this.confirmLatch = false;
   }
 }
