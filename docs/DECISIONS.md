@@ -2126,3 +2126,17 @@ Browser (swiftshader, 1280×720, about 220 pieces): frame times are GPU-raster b
   - In headless SwiftShader WebGL, streamed decor pages (rugs, vases) do not appear in screenshots. Campfire and stove do appear.
   - So `clantint_webgl_*.png` show the scene without decor.
   - The WebGL tint is verified by the shader path, the `pieceTintPairs` counts and one earlier near-player run that showed a correctly tinted rug, vase and flag.
+
+## ADR-231: Touch drag-and-drop between pack, hotbar, equipment and containers
+
+**Decision.** Slot tiles move by pointer-event drag (mouse, touch, pen) with gamepad/keyboard pick-to-move as the fallback. All moves stay server-authoritative and reuse existing commands.
+- **Drag core (`apps/client/src/slot-drag.ts`):** sources carry `data-drag="k:n"`, targets `data-drop="k:n"` (p = pack, c = viewed container, e = equip, h = HUD hotbar). Mouse/pen start after a 6 px move; touch starts after a 260 ms long-press (10 px of movement first cancels it, so the grid still scrolls), so tap, double-tap-to-eat/take and scrolling are unchanged. A ghost clone follows the pointer; it lives on `[data-modal]` so panel re-renders do not wipe it. Dropping on a slot moves, swaps or merges; dropping outside, on the same slot, or pressing Escape cancels. The click after a drag is swallowed.
+- **Server ops:** `MoveSlotCmd` now merges identical stacks (same item and crafter, up to maxStack, remainder stays) and otherwise swaps, for the pack (`where` 0) and the viewed container (`where` 1). `ContainerToSlotCmd` gains `dir` (0 = container → pack slot, 1 = pack slot → container slot) with the same merge/swap rule. Client intents: `containerToSlotIntent(slot,to,dir)`, `slotToContainerIntent(packSlot,cslot)`.
+- **Mapping:** p→p and c→c `moveSlot`; c→p `containerToSlot`; p→c `slotToContainer`; →e equip; e→p unequip then move; HUD `h:N`→`h:M` `moveSlot`.
+- **Container view:** replaces the ADR-223 split/to-hotbar list with a two-column grid (pack + hotbar left, storage grid with take-all and pager right); a single column at ≤ 760 px wide, tile size scales so eight hotbar tiles always fit. The details pane keeps Store/Take, Split, To hotbar and a new Move (pick) action; with a pick held, tapping or pressing A on any slot places it, and Cancel drops the pick.
+- **HUD hotbar:** gets its own `installSlotDrag` with `touch-action:none` so slots can be reordered directly on screen.
+
+**Evidence.**
+- **Tests:** `adr231_drag_moves` (4: pack merge + overflow, swap, dir 1 empty/merge/swap, dir 0 merge + empty-source rejects) and `adr231_slot_drag` (6: threshold/ghost/cancel/click-swallow/Escape; touch long-press vs tap vs scroll; panel pack/merge/canvas-cancel/equip; container mappings; pad Move + A, double-tap take; HUD hotbar). `adr223_inventory_grid` drag test moved to pointer events.
+- **Full gate:** typecheck clean; 379 files / 1983 tests passed, 1 skipped.
+- **Screenshots (`/workspace/shots/drag231.mjs`, live server + real storage box):** `drag_{desktop,720p,mobile,tablet}.png` and `drag_*_ghost.png` (mid-drag ghost; mobile and tablet use a CDP touch long-press). No horizontal scroll and no overlap at 1280×800, 1280×720, 390×844 and 820×1180; each run's drop landed server-side ("Moved Gravel.").

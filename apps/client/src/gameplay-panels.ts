@@ -88,7 +88,7 @@ let containerPage = 0;
 /** ADR-145: inventory "Drop items…" section open state (survives panel re-renders). */
 export const dropUi = { open: false };
 /** ADR-223: selected inventory slot (details pane) + last tap for double-tap quick use; survives re-renders. */
-export const invUi: { sel: number; lastTap: { slot: number; t: number }; /** ADR-231 selected container slot */ csel: number; /** ADR-231 picked tile (pad / keys / tap move) */ pick?: SlotRef } = { sel: -1, lastTap: { slot: -1, t: 0 }, csel: -1 };
+export const invUi: { sel: number; lastTap: { slot: number; t: number }; /** ADR-231 selected container slot */ csel: number; /** ADR-231 picked tile (pad / keys / tap move) */ pick?: SlotRef | undefined } = { sel: -1, lastTap: { slot: -1, t: 0 }, csel: -1 };
 /** ADR-231: drop handler of the inventory panel currently on screen (the panel re-renders; looked up at release). */
 let invDrop: ((from: SlotRef, to: SlotRef) => void) | undefined;
 let slotDrag: SlotDrag | undefined;
@@ -336,7 +336,7 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
         // ADR-098 paged container grid (CONTAINER_PAGE_SIZE per page) as tiles beside / below the pack. Every slot is a focusable
         // button so the D-pad / arrows walk the grid; ◀ ▶ (touch), PgUp/PgDn (keyboard) and LB/RB (gamepad) change pages.
         const right = el("section", { "data-role": "container-side", "aria-label": "Storage" });
-        right.append(heading(`Storage · ${cv.slotCount} slots · ${Math.round(cv.weight)}/${Math.round(cv.maxWeight)} kg`));
+        right.append(heading(`Storage · ${cv.slotCount} slots${cv.maxWeight > 0 ? ` · ${Math.round(cv.weight)}/${Math.round(cv.maxWeight)} kg` : ""}`));
         // ADR-160: loot bags (zombie / animal / death / dropped) get a "Take all" first (focusable: click, tap, D-pad + A)
         if (c.world.isRegistered(LootBag) && c.world.has(cv.entity, LootBag) && cv.slots.some((x) => x.item)) right.append(btn("Take all", "take-all", () => send(takeAllIntent(cv.entity), "Took everything that fits."), { role: "use", title: "Move every stack into your pack" }));
         const g = el("div", { "data-role": "container-grid", "aria-label": "Storage slots" }); g.dataset["page"] = String(cv.page);

@@ -23,7 +23,7 @@ export interface SlotDragOptions {
   /** Current drop handler (looked up at release: panels re-render). undefined = drops are ignored (cancel). */
   onDrop: () => ((from: SlotRef, to: SlotRef) => void) | undefined;
   holdMs?: number;
-  /** Element the ghost is appended to (default: the panel body so the tile's icon CSS applies, else the source's parent). */
+  /** Element the ghost is appended to (default: the open menu `[data-modal]` — outside the re-rendered panel body — else the source's parent). */
   ghostHost?: (src: HTMLElement) => HTMLElement | undefined;
   /** Only sources inside an element matching this selector (document-level installs). */
   within?: string;
@@ -41,7 +41,7 @@ export function installSlotDrag(root: HTMLElement | Document, o: SlotDragOptions
   const doc = (root as Document).defaultView ? (root as Document) : (root as HTMLElement).ownerDocument;
   const win = doc.defaultView!; const hold = o.holdMs ?? DRAG_HOLD_MS;
   let pend: { id: number; x: number; y: number; src: HTMLElement; ref: SlotRef; touch: boolean; moveOk: boolean; timer: number } | undefined;
-  let drag: { id: number; src: HTMLElement; ref: SlotRef; ghost: HTMLElement; over?: HTMLElement; w: number; h: number; ox: number; oy: number } | undefined;
+  let drag: { id: number; src: HTMLElement; ref: SlotRef; ghost: HTMLElement; over?: HTMLElement | undefined; w: number; h: number; ox: number; oy: number } | undefined;
   let swallowUntil = 0;
   const clearPend = (): void => { if (pend) win.clearTimeout(pend.timer); pend = undefined; };
   const setOver = (t: HTMLElement | undefined): void => { if (!drag || drag.over === t) return; drag.over?.removeAttribute("data-drop-over"); drag.over = t; t?.setAttribute("data-drop-over", ""); };
@@ -56,7 +56,7 @@ export function installSlotDrag(root: HTMLElement | Document, o: SlotDragOptions
     const g = p.src.cloneNode(true) as HTMLElement; g.removeAttribute("data-key"); g.removeAttribute("id"); g.removeAttribute("data-drop"); g.removeAttribute("data-drag"); g.removeAttribute("data-sel");
     g.setAttribute("data-ghost", ""); g.setAttribute("aria-hidden", "true"); g.tabIndex = -1; // keeps data-role / data-icon: the tile's own icon CSS applies
     Object.assign(g.style, { position: "fixed", left: "0", top: "0", width: `${w}px`, height: `${h}px`, margin: "0", zIndex: "2147483000", pointerEvents: "none", opacity: "0.92", transition: "none", transform: "none" });
-    (o.ghostHost?.(p.src) ?? (p.src.closest("[data-role=body]") as HTMLElement | null) ?? p.src.parentElement ?? doc.body).append(g);
+    (o.ghostHost?.(p.src) ?? (p.src.closest("[data-modal]") as HTMLElement | null) ?? p.src.parentElement ?? doc.body).append(g); // outside the panel body: it re-renders
     const g0 = g.getBoundingClientRect(); // a transformed ancestor becomes the fixed containing block: measure its origin once
     drag = { id: p.id, src: p.src, ref: p.ref, ghost: g, w, h, ox: g0.left || 0, oy: g0.top || 0 }; p.src.setAttribute("data-dragging", ""); doc.documentElement.setAttribute("data-slot-dragging", "");
     win.getSelection?.()?.removeAllRanges?.(); place(x, y);
