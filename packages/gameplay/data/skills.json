@@ -9,9 +9,10 @@
   "bonusPoints": 1
  },
  "treeLevels": {
-  "$comment": "ADR-209: per-tree curve (each category tab levels on its own XP)",
+  "$comment": "ADR-209: per-tree curve (each category tab levels on its own XP). ADR-225: early = hand-tuned XP to next for levels 1..6 (level 2 in ~5-8 min, 3-4 after ~1 h, 7 after ~4 h of normal play in that tree; see xp_sim.ts), then geometric x growth from the last early step. base is only used without early.",
   "base": 40,
   "growth": 1.1,
+  "early": [150, 450, 800, 1200, 1600, 2100],
   "pointsPerLevel": 1,
   "maxLevel": 60,
   "bonusEvery": 5,

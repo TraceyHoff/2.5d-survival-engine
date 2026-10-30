@@ -1978,3 +1978,22 @@ separate "Place" button (one more press for every piece, and the ADR-222 carry-t
 
 **Consequences.** Tests: adr224_build_window (tabs, tiles, no tips / no Place, tier tabs change cost, hover → details, choose → placing on mouse
 and pad, unaffordable stays, glyphs, back-after-release); adr200 pad test now places with one A. Glyphs are a stand-in until pieces get icon art.
+
+## ADR-225: Slower skill-tree leveling (modelled play session)
+
+**Problem.** Trees went 1 → 7 in minutes. Two causes: the ADR-209 tree curve was tiny (base 40, ×1.1: 309 XP to level 7), and gathering paid `source × items` once **per yield line** (a tree swing dropping 4 wood + sticks + apple paid ~12 XP instead of 2).
+
+**Decision.**
+- Gathering XP is paid **once per successful swing** (`ItemGathered` de-duplicated per entity/node/tick), units = 1.
+- `skills.json treeLevels.early = [150, 450, 800, 1200, 1600, 2100]` (XP to next for levels 1..6), then geometric ×`growth` (1.1) from the last early step (`treeXpCurve`). Cumulative: L2 150, L3 600, L4 1400, L5 2600, L6 4200, L7 6300, L10 ~13 950.
+- Character level (`levels`, used by hordes / ADR-226) is unchanged; it only slows because gather XP is no longer multiplied by item count.
+- `skills/xp_sim.ts` models one hour of focused play per tree (rates include walking, stamina, inventory, respawns). `adr225_xp_curve.test.ts` asserts: level 2 (ADR-221 cost-1 unlock nodes) < 10 min, level 3–4 after 1 h, level 7 after 3–7 h; and prints the table.
+
+| tree | old XP/min | old L2 / L7 / L@1h | new XP/min | new L2 / L4 / L7 / L10 | new L@1h |
+|---|---|---|---|---|---|
+| survival | 87 | 0.5m / 3.5m / L28 | 27 | 5.6m / 52m / 3.9h / 8.6h | 4 |
+| crafting | 20 | 2.0m / 15m / L15 | 20 | 7.5m / 1.2h / 5.3h / 11.6h | 3 |
+| homestead | 34 | 1.2m / 9m / L19 | 22 | 6.8m / 1.1h / 4.8h / 10.6h | 3 |
+| combat | 24 | 1.7m / 13m / L17 | 24 | 6.3m / 58m / 4.4h / 9.7h | 4 |
+
+Existing saves keep their levels (only future XP is affected). AI humans use the same awards and spend points through the same picker; the ADR-221 base-plan unlocks still come first.

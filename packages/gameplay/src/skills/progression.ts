@@ -214,11 +214,15 @@ export function installProgression(world: World): void {
   const defs = gameplayDefs(world);
   // ADR-135: small XP for every activity (data/xp.json sources); kills scaled by victim type / kind / level
   const TOOL_SRC: Partial<Record<number, XpSource>> = { [ToolKind.Axe]: "chop", [ToolKind.Pickaxe]: "mine", [ToolKind.Shovel]: "dig" };
+  // ADR-225: one award per successful swing (a swing emits one ItemGathered per yield line; it used to pay XP x item count)
+  const swungAt = new Map<Entity, string>();
   world.events.on(ItemGathered, (p: { entity: Entity; node: Entity; count: number }) => {
     if (!isPlayer(world, p.entity)) return;
+    const key = `${world.tick}:${p.node}`; if (swungAt.get(p.entity) === key) return; swungAt.set(p.entity, key);
+    if (swungAt.size > 1024) swungAt.clear();
     const kind = world.getField(p.node, ResourceNode, "kind");
     const r = kind === undefined ? undefined : defs.resources.get(kind);
-    awardXp(world, p.entity, r?.key.startsWith("crop_") ? "farm" : (r && TOOL_SRC[r.requiredTool]) || "gather", Math.max(1, p.count));
+    awardXp(world, p.entity, r?.key.startsWith("crop_") ? "farm" : (r && TOOL_SRC[r.requiredTool]) || "gather");
   });
   world.events.on(CraftCompleted, (p: { entity: Entity; recipe: number; item: number }) => {
     if (!isPlayer(world, p.entity)) return; const it = defs.items.get(p.item);

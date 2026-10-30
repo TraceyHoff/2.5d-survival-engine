@@ -16,7 +16,7 @@ export interface SkillNodeDef {
 export interface SkillsData {
   levels: { base: number; growth: number; pointsPerLevel: number; maxLevel: number; bonusEvery: number; bonusPoints: number };
   /** ADR-209: per-tree curve (each category has its own XP / level / points). */
-  treeLevels: { base: number; growth: number; pointsPerLevel: number; maxLevel: number; bonusEvery: number; bonusPoints: number };
+  treeLevels: { base: number; growth: number; early?: number[]; pointsPerLevel: number; maxLevel: number; bonusEvery: number; bonusPoints: number };
   respec: { item: string; base: number; perRespec: number; refundFraction: number };
   weaponClasses: Record<string, string[]>;
   husbandry: { feed: string; trough: string; reach: number; troughRange: number; penRadius: number; fedSeconds: number; tameBase: number; breedSeconds: number; maxPerTrough: number; animals: Record<string, { produce: string; seconds: number }> };
@@ -123,7 +123,13 @@ export const treeName = (i: number): string => SKILLS.categories[i]?.name ?? "";
 /** Short tab label ("Survival & Gathering" -> "Survival"). */
 export const treeShortName = (i: number): string => treeName(i).split(/[ ,&]/)[0] || treeName(i);
 export const SKILL_NODE_TREE: readonly number[] = SKILL_NODE_CATEGORY.map((c) => treeIdx.get(c)!);
-export const treeXpToNext = (level: number): number => Math.round(SKILLS.treeLevels.base * Math.pow(SKILLS.treeLevels.growth, Math.max(0, level - 1)));
+/** ADR-225: XP from `level` to `level+1`. `early[level-1]` (hand-tuned first levels) when present, then geometric from the last early step (or `base`). */
+export const treeXpToNext = (level: number): number => treeXpCurve(level, SKILLS.treeLevels);
+export function treeXpCurve(level: number, c: { base: number; growth: number; early?: readonly number[] }): number {
+  const l = Math.max(1, level); const e = c.early ?? [];
+  if (l <= e.length) return e[l - 1]!;
+  return e.length ? Math.round(e[e.length - 1]! * Math.pow(c.growth, l - e.length)) : Math.round(c.base * Math.pow(c.growth, l - 1));
+}
 export const treePointsForLevel = (level: number): number => SKILLS.treeLevels.pointsPerLevel + (SKILLS.treeLevels.bonusEvery > 0 && level % SKILLS.treeLevels.bonusEvery === 0 ? SKILLS.treeLevels.bonusPoints : 0);
 /** Points a tree has earned in total at `level` (level 1 = 0). */
 export function treePointsAtLevel(level: number): number { let p = 0; for (let l = 2; l <= level; l++) p += treePointsForLevel(l); return p; }

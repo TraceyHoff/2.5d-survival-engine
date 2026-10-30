@@ -17,7 +17,7 @@ describe("ADR-209 per-tree progression", () => {
   });
   it("awards go only to the activity's tree and level that tree (no cross-tree / perks share)", () => {
     const w = world(); const a = mk(w, 1);
-    const got = G.awardXpRaw(w, a, "chop", 100);
+    const got = G.awardXpRaw(w, a, "chop", G.treeXpToNext(1) + 50);
     expect(tx(w, a, "survival").xp + G.treeXpToNext(1) * (tx(w, a, "survival").level - 1)).toBeGreaterThan(0);
     expect(tx(w, a, "survival").level).toBeGreaterThanOrEqual(2); expect(tx(w, a, "survival").points).toBeGreaterThanOrEqual(1);
     expect(tx(w, a, "combat")).toEqual({ xp: 0, level: 1, points: 0 }); expect(tx(w, a, "crafting")).toEqual({ xp: 0, level: 1, points: 0 });
