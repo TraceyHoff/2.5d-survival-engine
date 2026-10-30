@@ -2211,12 +2211,15 @@ Run against the old code, 33 of 135 nodes failed. Fixes:
 
 Several nodes had more than one bug, which is why the counts sum past 33. Also, `tameChance` was renamed `livestockTameChance`, because `pets.ts` already exports `tameChance`.
 
-**Not changed (informational).** These nodes raise levels that no recipe currently gates:
-- Mechanics levels 1–4;
-- smithing 1–2 and 4;
-- bowyery 1–2 and 4;
-- demolitions 2 and 4.
+**Not changed (informational).** These 13 skill-level nodes grant a level that no recipe asks for directly:
+- smithing_1 and smithing_2;
+- armorsmithing_1 and armorsmithing_2;
+- tailoring_1;
+- chemistry_1;
+- demolitions_2;
+- bowyery_1 and bowyery_2;
+- the mechanics levels 1–4 (grease_monkey, mechanic_2 to mechanic_4).
 
-The audit verifies the level is granted. Their repair, vfuel and other mods are verified.
+They are stepping stones to the gated levels. The mechanics nodes' repair and vfuel mods are verified. The audit checks that each level is granted.
 
 **Evidence.** `adr234_skill_audit.test.ts`: 137 tests (135 nodes, coverage, poison). Against the old src, 34 fail; all pass after the fixes. Full suite: 2124 passed, 1 skipped.
