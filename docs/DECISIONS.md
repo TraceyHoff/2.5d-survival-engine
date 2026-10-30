@@ -2069,3 +2069,21 @@ Browser (swiftshader, 1280×720, about 220 pieces): frame times are GPU-raster b
 - Probe: /workspace/shots/perf228.mjs.
 
 **Tests.** apps/client adr228_build_smooth (3): throttle/refresh rules, memoized ring validation, and target scan equal to brute force.
+
+## ADR-229: Build window icons from Art's items_build atlas
+
+**Context.** The ADR-224 build window used placeholder emoji glyphs on its tiles (`pieceGlyph`). Art & Assets shipped one icon per piece and tier, plus road surfaces and sign kinds, in the `items_build` atlas (32px cells, @2x 64px, category ui, stream residency, centre-anchored; generator `packages/assets/pack/items/src/adr224.py`). The generated icon CSS already has `[data-icon="build_*"]` rules for it. The rug, curtain and tapestry icons are white because the game tints them with the clan palette.
+
+**Decision.**
+- **Piece tiles.** `buildIconKey(pieceKey, tier, tiered)` maps a tiered piece to `build_<key>_t<N>` for the selected tier and an untiered piece to `build_<key>`. If the selected tier has no art (below the piece's `minTier`), the nearest tier above it is used. The tile gets `data-icon` and `data-bicon`, and its `::before` draws the atlas cell at 32px in place of the glyph.
+- **Locked tiles.** They keep their art, shown greyed, with a 🔒 before the name.
+- **Glyph fallback.** If no candidate key exists in the stylesheet (`hasIcon`), the tile keeps `data-glyph`.
+- **Roads tab.** Button `road-<i>` uses `build_road_<ROADS.surfaces[i-1].key>`. `sign-place` and `sign-edit` use `build_sign_wooden_post`. Icons sit left of the label.
+- **Clan tint.** It applies to pieces whose key matches `isClanTintedIcon` (`rug_*`, `curtains`, `tapestry`). The tile's `::before` multiplies a colour over the art (`background-blend-mode: multiply`) and is masked to the icon's alpha, which keeps the cel shading. The colour is the selected paint index, else the player's clan (`clanTintIndex`), else palette 1. It comes from `GameplaySource.clanTint`, which is the registry's `clanPaletteForTint`. The client registry currently loads no clanPalettes, so `CLAN_PRIMARY_FALLBACK` is used: it copies the assets/pvp_clan primaries and is test-locked against them.
+- Art's `skills.py` is not touched.
+
+**Tests.** apps/client adr229_build_icons (2):
+- For every pieces.json entry, every tier from minTier to 4 has its exact key in both the items_build manifest and the stylesheet. Below minTier there is no glyph. Every road surface and sign kind has its key, and the sign tool has its icon. The tinted set is pinned, and the fallback palette equals the assets palette.
+- In the DOM: a tier-3 click gives `build_foundation_t3`; a rug tile gets `data-tint=clan` with `--bt` from the clan; the road and sign buttons carry their keys.
+
+**Screenshots.** In /workspace/shots, `build3_{desktop,720p,mobile}{,_tier3,_rugs,_rugs_tint2,_roads}.png`, produced by build3.mjs. In each view, all 186 tiles and tools across the 10 tabs show an icon, with 0 glyph fallbacks.
