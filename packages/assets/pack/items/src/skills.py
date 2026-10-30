@@ -230,4 +230,4 @@ _SK = _json.load(open(os.path.normpath(os.path.join(os.path.dirname(os.path.absp
 BRANCHES = [b['icon'] for b in _SK['branches']]
 NODES = [n['icon'] for n in _SK['nodes']]
 BRANCH_OF = {n['key']: n['branch'] for n in _SK['nodes']}
-KEYS = BRANCHES + NODES
+KEYS = list(dict.fromkeys(BRANCHES + NODES))  # ADR-221 nodes reuse existing icon keys: one cell per key
