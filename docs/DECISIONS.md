@@ -2087,3 +2087,42 @@ Browser (swiftshader, 1280×720, about 220 pieces): frame times are GPU-raster b
 - In the DOM: a tier-3 click gives `build_foundation_t3`; a rug tile gets `data-tint=clan` with `--bt` from the clan; the road and sign buttons carry their keys.
 
 **Screenshots.** In /workspace/shots, `build3_{desktop,720p,mobile}{,_tier3,_rugs,_rugs_tint2,_roads}.png`, produced by build3.mjs. In each view, all 186 tiles and tools across the 10 tabs show an icon, with 0 glyph fallbacks.
+
+## ADR-230: In-world clan tint for build pieces
+
+**Context.** Art put clan palettes on main (1ed134b9): `registry.clanPaletteForTint(t)` (1-based, 16 palettes) and `buildPieceVisual(...).palette`. In the world, pieces were still drawn with `tint: 0`. `clanTintIndex` returned 1-255, and the build window used a hard-coded `CLAN_PRIMARY_FALLBACK` table.
+
+**Decision.**
+- **Tintmask gating** (`apps/client/src/clan-tint.ts`):
+  - A piece is tinted only when its atlas frame has a `tintmask` region (`pieceHasTintMask`). Without a mask, the shader multiplies the whole frame, which would recolour stone and wood.
+  - `clanPieceTintPair` returns the RGBA8 pair: primary to mask.r and secondary to mask.g, using `clanRgbToRgba8`.
+- **view.ts:**
+  - The VPiece classify branch sets `tint` and `tintIndex` from the palette.
+  - `bindGameplay` gets `pieceTints: e => pieceTintPairs.get(e)`, so the G mask receives the secondary colour.
+  - `syncPieceTint` re-checks every 15 ticks, staggered per entity, so repaint and clan changes are applied. The maps are cleared on destroy.
+- **Canvas2D:** `tintPiecePixels` applies the same r/g mask maths on the CPU. Results are cached per (frame, pair) in `tintedPieces`, capped at 512 entries, so Canvas2D tints too.
+- **`clanTintIndex`:** now wraps to `1 + (id-1) % 16` (`CLAN_PALETTE_COUNT`).
+- **Build window:**
+  - Uses `clanPaletteForTint(t)?.primary`, falling back to palette 1.
+  - `CLAN_PRIMARY_FALLBACK` and its sync test are removed.
+  - The tint-icon regex now also covers vase, pottery and fence_picket.
+
+**Tinted pieces:** rugs, curtains, tapestry, clan_flag, vase, pottery, shield_mount@clan, fence_picket/@white, garden_gate/@picket, @painted cabinets/dressers/kitchen cupboard, and desk@drafting.
+
+**Evidence.**
+- **Tests:** `adr230_clan_tint` has 4 tests covering the wrap, mask gating and pair, the Canvas2D pixel tint and the palette registry. `adr229_build_icons` was updated.
+- **No churn:** after placement, `staticRebuildsIdle3s` was 0 in every WebGL run. The tint only changes when the palette changes, so the static chunk checksum is stable.
+- **Perf (perf228 harness, headless SwiftShader, mouse):**
+
+  | Build | avgMs | p95 | renderMs/frame | staticRebuilds |
+  |---|---|---|---|---|
+  | after | 188.1 | 233 | 6.18 | 0 |
+  | before | 192.6 | 250 | 9.30 | 0 |
+
+  The two are at parity, within noise.
+- **Screenshots:** `/workspace/shots/clantint_canvas_{a,b,c,d}{,_crop}.png`. Each set places pieces in columns for tint 0, 1, 2 and 10, and the colours match `assets/preview/clan_tint_inworld.png`.
+- **Wall-mounted pieces:** curtains, tapestry and shield_mount need a wall, so they are covered by the unit test rather than a shot.
+- **Known limitation (pre-existing; baseline main shows the same):**
+  - In headless SwiftShader WebGL, streamed decor pages (rugs, vases) do not appear in screenshots. Campfire and stove do appear.
+  - So `clantint_webgl_*.png` show the scene without decor.
+  - The WebGL tint is verified by the shader path, the `pieceTintPairs` counts and one earlier near-player run that showed a correctly tinted rug, vase and flag.

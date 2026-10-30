@@ -2,7 +2,7 @@
  * Trade stalls (Art & Assets `stalls` fragment + render_tuning.stalls.json): pure, GL-free logic shared by StallLayer and
  * tests. Gameplay contract (packages/gameplay/src/components.ts): StallHeader {ownerKind, ownerId, open, listingCount} lives
  * on the stall's STOCK attachment (Container = stock, Listings), not on the BuildPiece; BuildPiece.tint is a u8 clan palette
- * index (0 = untinted, clanTintIndex = 1..255) and BuildPiece.paint overrides it when != 0.
+ * index (0 = untinted, clanTintIndex = 1..16) and BuildPiece.paint overrides it when != 0.
  */
 import { cloneData } from "../style.js";
 import { AssetRegistry, type AttachPoint, type ClanPalette, type FrameRef } from "@engine/assets";

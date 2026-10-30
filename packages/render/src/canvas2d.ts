@@ -109,6 +109,19 @@ export class Canvas2DRenderer {
     this.images.set(k, null); this.loadImage(url).then((i) => this.images.set(k, i), (e: unknown) => reportRenderError(`canvas2d image load ${url}`, e)); return null;
   }
   private tinted = new Map<string, CanvasImageSource>();
+  private tintedPieces = new Map<string, HTMLCanvasElement>();
+  /** ADR-230: a build-piece frame tinted through its atlas tintmask (cached per frame rect + tint pair); null = draw untinted (no mask / no DOM / mask loading). */
+  private tintedPiece(img: CanvasImageSource, f: { atlas: { key: string }; x: number; y: number; w: number; h: number }, primary: number, secondary: number): HTMLCanvasElement | null {
+    if (typeof document === "undefined") return null;
+    const key = `${f.atlas.key}|${f.x},${f.y},${f.w},${f.h}|${primary}|${secondary}`; const c0 = this.tintedPieces.get(key); if (c0) return c0;
+    const m = this.sources.get(f.atlas.key)?.masks?.tintmask; const url = Array.isArray(m) ? m[0] : m; if (!url) return null;
+    const mi = this.urlImage(url); if (!mi) return null;
+    const c = document.createElement("canvas"); c.width = f.w; c.height = f.h; const g = c.getContext("2d", { willReadFrequently: true }); if (!g) return null;
+    g.drawImage(img, f.x, f.y, f.w, f.h, 0, 0, f.w, f.h);
+    try { const d = g.getImageData(0, 0, f.w, f.h); const mc = document.createElement("canvas"); mc.width = f.w; mc.height = f.h; const mg = mc.getContext("2d", { willReadFrequently: true })!;
+      mg.drawImage(mi, f.x, f.y, f.w, f.h, 0, 0, f.w, f.h); tintPiecePixels(d.data, mg.getImageData(0, 0, f.w, f.h).data, primary, secondary); g.putImageData(d, 0, 0); } catch { return null; }
+    if (this.tintedPieces.size > 512) this.tintedPieces.clear(); this.tintedPieces.set(key, c); return c;
+  }
   /** A paper-doll layer's frame, tinted through its tintmask (cached); the raw sheet when untinted or no DOM canvas. */
   private layerImage(p: PreviewLayer2D): { img: CanvasImageSource; x: number; y: number } | null {
     const img = this.image(p.ref.atlas.key); if (!img) return null; const r = p.ref, l = p.layer;
@@ -156,13 +169,13 @@ export class Canvas2DRenderer {
   /** ADR-197: building pieces as painter items: level-major, decks under their floor's uprights, iso order, unique tie-break. */
   gatherPieces(world: World, reg: AssetRegistry, time = this.clock): C2DPiece[] {
     const bpd = this.bindings.buildPiece; if (!bpd || !world.isRegistered(bpd)) return [];
-    const iso = DEFAULT_ISO; const hw = iso.tileW / 2, hh = iso.tileH / 2; const raw: { e: Entity; ax: number; ay: number; fw: number; fh: number; level: number; layer: number; z: number; vis: number; rot: number; dmg: number; ghost: boolean; deck: boolean; top: number | undefined; px: number; py: number }[] = [];
+    const iso = DEFAULT_ISO; const hw = iso.tileW / 2, hh = iso.tileH / 2; const raw: { e: Entity; ax: number; ay: number; fw: number; fh: number; level: number; layer: number; z: number; vis: number; rot: number; dmg: number; ghost: boolean; deck: boolean; top: number | undefined; px: number; py: number; tint: number }[] = [];
     this.decks.clear();
     for (const e of world.query([bpd, Transform])) {
       const b = world.get(e, bpd)!; const t = world.get(e, Transform)!; let sd; try { sd = reg.sprite(b.visualId); } catch { continue; } if (!sd.building) continue;
       const rot = b.rotation & 3; const fw = rot & 1 ? sd.building.footprint.h : sd.building.footprint.w, fh = rot & 1 ? sd.building.footprint.w : sd.building.footprint.h;
       const roof = (sd.building.piece ?? sd.key).startsWith("roof"); const deck = b.layer === 0 && !roof; const top = deck ? deckTopPx(sd.key) : undefined;
-      const r = { e, ax: Math.floor(t.x), ay: Math.floor(t.y), fw, fh, level: b.level, layer: b.layer, z: floorToTerrainZ(b.level, t.z), vis: b.visualId, rot: b.rotation, dmg: b.damageStage, ghost: b.ghost > 0, deck, top, px: t.x, py: t.y };
+      const r = { e, ax: Math.floor(t.x), ay: Math.floor(t.y), fw, fh, level: b.level, layer: b.layer, z: floorToTerrainZ(b.level, t.z), vis: b.visualId, rot: b.rotation, dmg: b.damageStage, ghost: b.ghost > 0, deck, top, px: t.x, py: t.y, tint: (b as { tint?: number }).tint ?? 0 };
       raw.push(r); if (deck && !r.ghost && top !== undefined) this.decks.add(r.ax, r.ay, fw, fh, r.level, top);
       // ADR-211: an L corner = its tier's straight wall on both arm edges (same pivots/flags as an edge wall) + the post art
       const armKey = lCornerArmPiece(sd.building.piece); const arm = armKey ? reg.spriteForPiece(armKey) : undefined;
@@ -176,7 +189,10 @@ export class Canvas2DRenderer {
     for (const r of raw) {
       // ADR-218: piece state (bonfire "unlit") + lit fires play their idle flame loop on the render clock (per-entity phase)
       const fire = this.bindings.pieceLit?.(r.e); const pst = this.bindings.pieceState?.(r.e) ?? -1;
-      let f; try { f = pieceFireFrame(reg, r.vis, r.rot & 3, r.dmg, pst, fire, r.ghost, time, entityIndex(r.e)); } catch { continue; } const img = this.image(f.atlas.key); if (!img) continue;
+      let f; try { f = pieceFireFrame(reg, r.vis, r.rot & 3, r.dmg, pst, fire, r.ghost, time, entityIndex(r.e)); } catch { continue; } let img: CanvasImageSource | null = this.image(f.atlas.key); if (!img) continue;
+      { // ADR-230: clan tint through the atlas tintmask (R primary, G secondary), as the WebGL2 shader does
+        const tp = r.ghost ? undefined : this.bindings.pieceTints?.(r.e) ?? (r.tint ? [r.tint >>> 0, 0] as const : undefined);
+        if (tp && tp[0]) { const ti = this.tintedPiece(img, f, tp[0], tp[1]); if (ti) { img = ti; f = { ...f, x: 0, y: 0 }; } } }
       // ADR-210: exact pivot (edge midpoint / vertex / tri centroid) and deck-top lift, mirroring the WebGL2 path
       const exact = (r.rot & ROT_EXACT_PIVOT) !== 0; const pvx = exact ? r.px : r.ax + r.fw / 2, pvy = exact ? r.py : r.ay + r.fh / 2;
       const lift = r.rot & ROT_DECK_LIFT ? (exact ? this.decks.topNear(pvx, pvy, r.level) : this.decks.topOver(r.ax, r.ay, r.fw, r.fh, r.level)) : 0;
@@ -301,6 +317,18 @@ const FLOOR_Z = floorToTerrainZ(1, 0);
 const C2D_DAYLIGHT_LIGHT_SCALE = DEFAULT_STYLE.daylightLightScale;
 /** Painter layers: everything on floor N draws after floor N-1; decks draw below the uprights of their own floor. */
 const LEVEL_DEPTH = 1e6, DECK_DEPTH = -5e5;
+/**
+ * ADR-230: the WebGL2 two-tone tintmask multiply on the CPU: rgb *= mix(1, primary, mask.r) * mix(1, secondary || primary, mask.g).
+ * primary / secondary are RGBA8 (0xRRGGBBAA, as Sprite.tint / pieceTints); secondary 0 = reuse the primary.
+ */
+export function tintPiecePixels(px: Uint8ClampedArray, mask: Uint8ClampedArray, primary: number, secondary: number): void {
+  const p = [(primary >>> 24) & 255, (primary >>> 16) & 255, (primary >>> 8) & 255].map((v) => v / 255) as [number, number, number];
+  const s2 = secondary >>> 8 ? secondary : primary; const q = [(s2 >>> 24) & 255, (s2 >>> 16) & 255, (s2 >>> 8) & 255].map((v) => v / 255) as [number, number, number];
+  for (let i = 0; i < px.length; i += 4) {
+    if (px[i + 3] === 0) continue; const mr = mask[i]! / 255, mg = mask[i + 1]! / 255; if (mr === 0 && mg === 0) continue;
+    for (let c = 0; c < 3; c++) px[i + c] = px[i + c]! * (1 + (p[c]! - 1) * mr) * (1 + (q[c]! - 1) * mg);
+  }
+}
 interface C2DPiece { e: Entity; sx: number; sy: number; depth: number; ord: number; img: CanvasImageSource; f: { x: number; y: number; w: number; h: number; anchorX: number; anchorY: number; flipX?: boolean }; clip: [number, number][] | undefined; seams?: { poly: [number, number][]; dx: number; dy: number }[] | undefined; ghost: boolean; hearth?: boolean; scale: number }
 const rgb = (c: readonly number[]): string => `rgb(${Math.round(Math.min(1, c[0]!) * 255)},${Math.round(Math.min(1, c[1]!) * 255)},${Math.round(Math.min(1, c[2]!) * 255)})`;
 

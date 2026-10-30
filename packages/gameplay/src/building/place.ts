@@ -7,9 +7,11 @@
  * NoSocket, Blocked, NoSupport, CannotAfford. ADR-211: CornerSlot (straight wall in an outer corner slot) follows Occupied.
  */
 import { entityIndex, Membership, Transform, type Entity, type World } from "@engine/core";
-/** BuildPiece.tint for a clan: 1..255 index into assets clanPalettes (ADR-077). */
+/** ADR-230: number of clan palettes Art ships (assets clanPalettes 1..16); clan ids wrap onto them. */
+export const CLAN_PALETTE_COUNT = 16;
+/** BuildPiece.tint for a clan: 1..CLAN_PALETTE_COUNT index into assets clanPalettes (ADR-077; wrapped since ADR-230). */
 import { spawnCrop } from "../farming.js";
-export const clanTintIndex = (clanId: number): number => clanId ? 1 + ((clanId - 1) % 255) : 0;
+export const clanTintIndex = (clanId: number): number => clanId > 0 ? 1 + ((clanId - 1) % CLAN_PALETTE_COUNT) : 0;
 import { installSpatialIndex, SUBTILE, WaterDepth, waterDepthAt } from "@engine/world";
 import {
   AttachKind, BuildPiece, Container, ContainerViewers, CraftingStation, DoorState, EdgeSide, Emitter, Fuel, Health,
@@ -268,7 +270,7 @@ export function placePiece(world: World, builder: Entity | 0, sn: Snapped, opts:
   if (tribe) world.add(e, Tribe, { id: tribe });
   const builderId = builder && world.isRegistered(PlayerId) ? world.getField(builder, PlayerId, "id") ?? 0 : 0;
   if (builderId && isAuthority(world)) world.add(e, PieceOwner, { player: builderId }); // ADR-119 settlements / ADR-121 solo hordes
-  // clan tint: u8 index into the assets manifest clanPalettes (0 = no clan; render wraps by palette count)
+  // clan tint: u8 index into the assets manifest clanPalettes (0 = no clan; clanTintIndex wraps ids onto the 16 palettes, ADR-230)
   const clan = builder && world.isRegistered(Membership) ? world.getField(builder, Membership, "clanId") ?? 0 : 0;
   if (clan) world.setField(e, BuildPiece, "tint", clanTintIndex(clan));
   if (def.privilegeRadius > 0) world.add(e, PrivilegeZone, { radius: def.privilegeRadius, tribe });

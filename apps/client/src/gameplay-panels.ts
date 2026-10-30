@@ -139,10 +139,8 @@ export function buildIconKey(pieceKey: string, tier: number, tiered: boolean, ha
 export const roadIconKey = (surfaceKey: string): string => `build_road_${surfaceKey}`;
 export const signIconKey = (signKey: string): string => `build_${signKey}`;
 export const SIGN_TOOL_ICON = "build_sign_wooden_post";
-/** ADR-229: cloth icons Art ships white (rugs, curtains, tapestry): tinted with the clan palette at draw time. */
-export const isClanTintedIcon = (pieceKey: string): boolean => /^(rug_.+|curtains|tapestry)$/.test(pieceKey);
-/** ADR-229: clan palette primaries (assets/pvp_clan clanPalettes, test-locked) for when the registry has none loaded. */
-export const CLAN_PRIMARY_FALLBACK: readonly number[] = [0xE8475F, 0x4F8FD6, 0x72C45C, 0x9B72D6, 0xF4A74A, 0x3FB3A6, 0xF7C844, 0x5A6FB0, 0xFF9EC4, 0x4FA37A, 0xD0705A, 0xBBA4F0, 0x94DCA8, 0xFF8A2A, 0xA9A094, 0x3A66A8];
+/** ADR-229/230: icons Art ships white/neutral (rugs, curtains, tapestry, clan flag, vase, pottery, picket fence): tinted with the clan palette at draw time. */
+export const isClanTintedIcon = (pieceKey: string): boolean => /^(rug_.+|curtains|tapestry|clan_flag|vase|pottery|fence_picket)$/.test(pieceKey);
 /** 0xRRGGBB -> #rrggbb */
 const hex6 = (n: number): string => `#${(n & 0xffffff).toString(16).padStart(6, "0")}`;
 /** Real icon when Art has it, else the item's mapped fallback, else its category's generic icon. */
@@ -411,7 +409,7 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
       // ADR-229: Art's items_build icon on the tile (::before) instead of the glyph; white cloth icons get the clan palette
       // (the selected paint, else the player's clan, else palette 1) as a multiply tint masked to the icon's alpha.
       const tintIdx = buildSel.paint || clanTintIndex(c.world.isRegistered(Membership) ? c.world.getField(c.player, Membership, "clanId") ?? 0 : 0);
-      const tintCss = ((): string | undefined => { const pal = (i: number): number | undefined => src.clanTint?.(i) ?? CLAN_PRIMARY_FALLBACK[i - 1]; const rgb = pal(tintIdx) ?? pal(1); return rgb === undefined ? undefined : hex6(rgb); })();
+      const tintCss = ((): string | undefined => { const rgb = src.clanTint?.(tintIdx) ?? src.clanTint?.(1); /* ADR-230: registry.clanPaletteForTint (building manifest clanPalettes) */ return rgb === undefined ? undefined : hex6(rgb); })();
       const iconize = <T extends HTMLElement>(b: T, key: string | undefined, tinted = false): T => {
         if (!key) return b; b.dataset["icon"] = key; b.dataset["bicon"] = "1";
         if (tinted && tintCss) { b.dataset["tint"] = "clan"; b.style.setProperty("--bt", tintCss); }

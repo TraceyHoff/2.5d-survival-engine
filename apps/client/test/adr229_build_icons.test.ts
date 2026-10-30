@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, test } from "vitest";
 import { installPermissions, Membership, PlayerId, World } from "@engine/core";
 import * as G from "@engine/gameplay";
 import { GameMenus } from "../src/game-menus.js";
-import { buildIconKey, CLAN_PRIMARY_FALLBACK, iconKeysFromCss, isClanTintedIcon, roadIconKey, signIconKey, SIGN_TOOL_ICON } from "../src/gameplay-panels.js";
+import { buildIconKey, iconKeysFromCss, isClanTintedIcon, roadIconKey, signIconKey, SIGN_TOOL_ICON } from "../src/gameplay-panels.js";
 
 const read = (p: string): string => readFileSync(resolve(__dirname, "../../..", p), "utf8");
 const manifest = JSON.parse(read("packages/assets/pack/items/manifest.items.json")) as { sprites: { key: string; atlas?: string }[] };
@@ -32,9 +32,7 @@ describe("ADR-229 build window icons", () => {
     for (const s of ROADS.signs) expect(has(signIconKey(s.key)), s.key).toBe(true);
     expect(has(SIGN_TOOL_ICON)).toBe(true);
     expect(buildIconKey("no_such_piece", 2, true, has)).toBeUndefined(); // -> glyph fallback
-    const pvp = JSON.parse(read("assets/pvp_clan/manifest.fragment.json")) as { clanPalettes: { primary: string }[] };
-    expect(CLAN_PRIMARY_FALLBACK.map((n) => `#${n.toString(16).padStart(6, "0")}`)).toEqual(pvp.clanPalettes.map((c) => c.primary.toLowerCase()));
-    expect(PIECES.filter((p) => isClanTintedIcon(p.key)).map((p) => p.key).sort()).toEqual(["curtains", "rug_1x1", "rug_2x1", "rug_2x2", "rug_3x2", "rug_round", "rug_runner", "tapestry"]);
+    expect(PIECES.filter((p) => isClanTintedIcon(p.key)).map((p) => p.key).sort()).toEqual(["clan_flag", "curtains", "fence_picket", "pottery", "rug_1x1", "rug_2x1", "rug_2x2", "rug_3x2", "rug_round", "rug_runner", "tapestry", "vase"]);
   });
 
   test("tiles carry the selected tier's icon, cloth tiles the clan tint, road and sign tools their icons", () => {

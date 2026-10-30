@@ -19,6 +19,7 @@ import { CorrectionSampler, type CorrectionSource } from "./correction-sampler.j
 import { World, Transform, PrevTransform, TimeOfDay, Weather, Appearance, PlayerId, defineComponent, slotIndex, type WearableSlot, entityIndex, type Entity } from "@engine/core";
 import { CHUNK_SIZE, tileToChunk, tileToLocal, renderTileHeight, type TileMap } from "@engine/world";
 import { setDayFraction, resolveOffHandSprite } from "@engine/render";
+import { clanPieceTint, clanPieceTintPair } from "./clan-tint.js";
 import { pieceVariantOpts } from "./piece-variant.js";
 import { loadManifest, mergeManifests, resolveManifestShards, buildPieceVisual, type AssetRegistry, type ManifestFragment, type ManifestJson } from "@engine/assets";
 import { BuildGhost, pieceArtRow, pieceRotFlags, ROT_NO_OCCLUDE, IsoRenderer, Canvas2DRenderer, chooseRenderer, Sprite, Shadow, LightSource, Occluder, SpriteFlag, sourcesFromManifest, coreAppearanceBinding, CameraTargetGuard } from "@engine/render";
@@ -145,6 +146,8 @@ export class IsoView {
   private pieceStates = new Map<number, number>();
   /** ADR-218: fired piece view entity -> FireState (0 out, 1 lit, 2 lit hearth); drives flame anim + embers/smoke. */
   private pieceLit = new Map<number, number>(); private litHearths = new Map<number, number>();
+  /** ADR-230: clan-tinted piece view entity -> [primary, secondary] RGBA8 (tintmask R/G) + the tint index it was built from. */
+  private pieceTintPairs = new Map<number, readonly [number, number]>(); private pieceTintIdx = new Map<number, number>();
   /** ADR-125: character view entities (players/human bots); their Walk plays at walkAnimRate so feet match ground speed. */
   private characters = new Set<number>(); private walkRate = 1;
   private constructor(readonly renderer: IsoRenderer, readonly registry: AssetRegistry, private readonly ov: ViewOverrides, readonly lights: LightTable) {
@@ -152,7 +155,7 @@ export class IsoView {
     for (const c of [VAnim, VPiece, VWet, VTemp, VFuel, VEquip, VOffHand]) this.view.register(c);
     const cat = noCosmetics ? undefined : registry.cosmetics;
     if (cat?.size) this.view.register(Appearance);
-    renderer.bindGameplay({ animState: VAnim, buildPiece: VPiece, wetness: VWet, bodyTemp: VTemp, lit: VFuel, pieceState: (e) => this.pieceStates.get(e), pieceScale: (e) => this.pieceScales.get(e), pieceLit: (e) => this.pieceLit.get(e), litPieces: () => this.litHearths,
+    renderer.bindGameplay({ animState: VAnim, buildPiece: VPiece, wetness: VWet, bodyTemp: VTemp, lit: VFuel, pieceState: (e) => this.pieceStates.get(e), pieceScale: (e) => this.pieceScales.get(e), pieceLit: (e) => this.pieceLit.get(e), pieceTints: (e) => this.pieceTintPairs.get(e), litPieces: () => this.litHearths,
       hitFlash: (e) => this.hitPoseOf.get(e)?.flash ?? 0, hitTilt: (e) => this.hitPoseOf.get(e)?.tilt ?? 0,
       animRate: (e, st) => (st === 1 && this.characters.has(e) ? this.walkRate : undefined),
       equipment: VEquip, heldSprite: (item) => this.heldSpriteOf(item), offHand: VOffHand, offHandSprite: (item) => this.offHandSpriteOf(item),
@@ -351,7 +354,7 @@ export class IsoView {
         if (!spec) continue;
         ve = v.create(); this.map.set(e, ve);
         v.add(ve, Transform, { x: cur.x, y: cur.y, z: gr(cur.x, cur.y, cur.z), facing: cur.facing }).add(ve, PrevTransform, { x: prev.x, y: prev.y, z: gr(prev.x, prev.y, prev.z), facing: prev.facing });
-        if (spec.pieceVisual !== undefined) { v.add(ve, VPiece, { visualId: spec.pieceVisual, variant: spec.variant ?? 0, tint: spec.tint ?? 0, damageStage: spec.damage ?? 0, rotation: spec.rot ?? 0, level: spec.level ?? 0, layer: spec.layer ?? 1, ghost: 0 }); const sc = this.pieceArtScale(spec.pieceKey); if (sc !== 1) this.pieceScales.set(ve, sc); }
+        if (spec.pieceVisual !== undefined) { v.add(ve, VPiece, { visualId: spec.pieceVisual, variant: spec.variant ?? 0, tint: spec.tint ?? 0, damageStage: spec.damage ?? 0, rotation: spec.rot ?? 0, level: spec.level ?? 0, layer: spec.layer ?? 1, ghost: 0 }); const sc = this.pieceArtScale(spec.pieceKey); if (sc !== 1) this.pieceScales.set(ve, sc); if (spec.tintIndex) this.setPieceTint(ve, spec.pieceVisual, spec.tintIndex); }
         else if (spec.sprite !== undefined) v.add(ve, Sprite, { spriteId: spec.sprite!, frameId: spec.frame ?? 0, flags: spec.flags ?? 0, scale: spec.scale ?? 1, tint: spec.tint ?? 0 });
         if (spec.shadow) v.add(ve, Shadow, { alpha: spec.shadow, length: 1 });
         if (spec.occluder) v.add(ve, Occluder, { fade: 0.35 });
@@ -429,10 +432,10 @@ export class IsoView {
       if (v.has(ve, Sprite) && net.has(e, Crop)) { const c = net.get(e, Crop)!; const r = this.rs(cropSpriteKey(c.kind, c.stage)); if (r && (v.get(ve, Sprite)!.spriteId !== r.id || v.get(ve, Sprite)!.scale !== r.scale)) { v.set(ve, Sprite, { spriteId: r.id, scale: r.scale, tint: r.tint }); this.scales.set(ve, r.scale); } }
       if (v.has(ve, Sprite) && net.has(e, Road)) { const r0 = net.get(e, Road)!; const r = this.roadSprite(r0.surface, r0.mask); if (r && v.get(ve, Sprite)!.spriteId !== r.id) v.set(ve, Sprite, { spriteId: r.id }); } // neighbours placed / removed
       if (v.has(ve, Sprite) && net.has(e, Sign)) { const sp = v.get(ve, Sprite)!; const fid = this.signFrame(sp.spriteId, net.get(e, Sign)!.rot); if (sp.frameId !== fid) v.set(ve, Sprite, { frameId: fid }); } // rotated
-      if (v.has(ve, VPiece)) this.syncPieceState(net, e, ve, defs);
+      if (v.has(ve, VPiece)) { this.syncPieceState(net, e, ve, defs); this.syncPieceTint(net, e, ve); }
       if (v.has(ve, VFuel)) { const f = net.get(e, Fuel); if (f) { v.set(ve, VFuel, { lit: f.lit, burnUntilTick: f.burnUntilTick }); if (v.has(ve, Sprite)) { const sp = v.get(ve, Sprite)!; const fid = this.fireFrame(sp.spriteId, f.lit !== 0); if (sp.frameId !== fid) v.set(ve, Sprite, { frameId: fid }); } } }
     }
-    for (const [ne, ve] of this.map) if (!seen.has(ne)) { if (ve === this.focusVe) { r.setFocusEntity(-1); this.focusVe = -1; } v.destroy(ve); this.map.delete(ne); this.corrSampler.forget(ne); this.characters.delete(ve); this.lightOf.delete(ne); this.dropHeldLight(ve); this.pieceStates.delete(ve); this.pieceScales.delete(ve); this.pieceLit.delete(ve); this.litHearths.delete(ve); this.lastMove.delete(ne); this.nodeAmt.delete(ne); this.nodeHit.delete(ne); this.animalHp.delete(ne); this.animalPrev.delete(ne); this.scales.delete(ve); this.hitSeen.delete(ne); this.hitPoseOf.delete(ve); this.gearOf.delete(ve); }
+    for (const [ne, ve] of this.map) if (!seen.has(ne)) { if (ve === this.focusVe) { r.setFocusEntity(-1); this.focusVe = -1; } v.destroy(ve); this.map.delete(ne); this.corrSampler.forget(ne); this.characters.delete(ve); this.lightOf.delete(ne); this.dropHeldLight(ve); this.pieceStates.delete(ve); this.pieceScales.delete(ve); this.pieceLit.delete(ve); this.litHearths.delete(ve); this.pieceTintPairs.delete(ve); this.pieceTintIdx.delete(ve); this.lastMove.delete(ne); this.nodeAmt.delete(ne); this.nodeHit.delete(ne); this.animalHp.delete(ne); this.animalPrev.delete(ne); this.scales.delete(ve); this.hitSeen.delete(ne); this.hitPoseOf.delete(ve); this.gearOf.delete(ve); }
 
     this.syncClutter(tiles, ground);
     this.syncVehicles(net, player, ground, frac);
@@ -540,6 +543,22 @@ export class IsoView {
   private hasLightSibling(net: World, e: Entity): boolean { return this.siblings(net, e).some((o) => net.get(o, Emitter)?.kind === 2); }
   private fuelSibling(net: World, e: Entity): Entity | undefined { return this.siblings(net, e).find((o) => net.has(o, Fuel)); }
   /** Fired pieces show their "unlit" building state while their fire attachment is out. */
+  /** ADR-230: clan tint pair for a piece whose art carries a tintmask (else none: an unmasked frame would be multiplied whole). */
+  private setPieceTint(ve: Entity, visualId: number, idx: number): boolean {
+    const t = clanPieceTintPair(this.registry, visualId, idx); const had = this.pieceTintPairs.get(ve);
+    this.pieceTintIdx.set(ve, idx);
+    if (!t) { if (had) { this.pieceTintPairs.delete(ve); return true; } return false; }
+    if (had && had[0] === t[0] && had[1] === t[1]) return false;
+    this.pieceTintPairs.set(ve, t); return true;
+  }
+  /** ADR-230: repaint / clan change -> retint (staggered every 15 ticks; only a changed index touches VPiece, so static chunks stay cached). */
+  private syncPieceTint(net: World, e: Entity, ve: Entity): void {
+    if ((net.tick + entityIndex(e)) % 15 !== 0) return;
+    const p = net.get(e, GPiece); if (!p) return; const idx = p.paint || p.tint;
+    if ((this.pieceTintIdx.get(ve) ?? 0) === idx) return;
+    const vid = this.view.get(ve, VPiece)!.visualId; this.setPieceTint(ve, vid, idx);
+    const t = this.pieceTintPairs.get(ve); this.view.set(ve, VPiece, { tint: t ? t[0] : 0 });
+  }
   private syncPieceState(net: World, e: Entity, ve: Entity, defs: ReturnType<typeof gameplayDefs> | undefined): void {
     const def = defs?.pieces.get(net.get(e, GPiece)?.type ?? -1) as { fired?: boolean } | undefined; if (!def?.fired) return;
     if ((net.tick + entityIndex(e)) % 15 !== 0 && this.pieceStates.has(ve)) return; // cheap: lit flips are rare
@@ -657,7 +676,7 @@ export class IsoView {
       if (!vis.visualId) return undefined;
       const lh = (defs as unknown as { building?: { levelHeight?: number } }).building?.levelHeight ?? 1;
       const z = net.get(e, Transform)!.z; const level = Math.max(0, Math.round(z / (lh || 1)));
-      return { pieceVisual: vis.visualId, variant: p.variant, rot: vis.rotation | pieceRotFlags(def) | (LOW_PROP_PIECES.has(def?.key ?? "") ? ROT_NO_OCCLUDE : 0), tint: 0, damage: vis.damageStage, level, layer: vis.layer, pieceKey: def?.key };
+      return { pieceVisual: vis.visualId, variant: p.variant, rot: vis.rotation | pieceRotFlags(def) | (LOW_PROP_PIECES.has(def?.key ?? "") ? ROT_NO_OCCLUDE : 0), tint: clanPieceTint(this.registry, vis), tintIndex: vis.tintIndex, damage: vis.damageStage, level, layer: vis.layer, pieceKey: def?.key };
     }
     // emissive sprites (e.g. glow mushrooms) carry a light when the table knows their key
     return undefined;
@@ -679,7 +698,7 @@ const artRot = (rot: number, steps: number): { rot: number; rotSteps: number } =
 interface Spec {
   sprite?: number; frame?: number; flags?: number; scale?: number; shadow?: number; occluder?: boolean; /** ADR-152: explicit Occluder{fade:1} so a short prop never auto-fades */ noOcclude?: boolean; animated?: boolean; character?: boolean; fuel?: boolean;
   light?: { r: number; g: number; b: number; radius: number; intensity: number; flicker: number };
-  pieceVisual?: number; variant?: number; rot?: number; onCreate?: number; tint?: number; damage?: number; level?: number; layer?: number; pieceKey?: string | undefined;
+  pieceVisual?: number; /** ADR-230: effective clan tint index (paint || tint) */ tintIndex?: number; variant?: number; rot?: number; onCreate?: number; tint?: number; damage?: number; level?: number; layer?: number; pieceKey?: string | undefined;
   /** light gated by this sibling's Fuel.lit (light attachment of a fired piece) */ fuelOf?: Entity | undefined;
 }
 
