@@ -82,6 +82,7 @@ export * from "./tool-hint.js";
 export * from "./skills/tree.js";
 export * from "./skills/progression.js";
 export * from "./skills/xp_sim.js";
+export * from "./combat/zombie_gate.js";
 export * from "./skills/describe.js";
 export * from "./skills/xp.js";
 export * from "./skills/husbandry.js";

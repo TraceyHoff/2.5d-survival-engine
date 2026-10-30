@@ -1997,3 +1997,9 @@ and pad, unaffordable stays, glyphs, back-after-release); adr200 pad test now pl
 | combat | 24 | 1.7m / 13m / L17 | 24 | 6.3m / 58m / 4.4h / 9.7h | 4 |
 
 Existing saves keep their levels (only future XP is affected). AI humans (host-flagged bots) get `xp.json aiHumanMul` = ×5 on every award so their short simulated lives still reach the base-plan unlocks (ADR-203 campfire-before-night test); they use the same awards and spend points through the same picker; the ADR-221 base-plan unlocks still come first.
+
+## ADR-226: Snuffers wait for level 10
+
+**Decision.** A zombie kind may carry `minPlayerLevel` / `levelRadius` (zombies.json); the Snuffer has 10 / 64 tiles.
+**Which level:** the **highest skill-tree level** (ADR-209 per-tree level, the number on the skill tabs, retuned by ADR-225) of any **human** player (alive, `Progression`, not a host-flagged AI human) within 64 tiles of the spawn point. Chosen over the hidden character level because it is what players see and plan around, and because AI humans level ×5 (ADR-225) and must not pull light-destroyers onto new players. With ADR-225 that is ~9–12 h of focused play in one tree.
+**Where (server only):** `combat/zombie_gate.ts` — population spawner (`host.spawn` refuses the snuffer entry), legacy per-player spawner (gated roll becomes a walker) and horde director (gated by the horde target's position; roll becomes a walker so the horde keeps its size). Snuffers that already exist are untouched. Tests: `adr226_snuffer_gate.test.ts`.

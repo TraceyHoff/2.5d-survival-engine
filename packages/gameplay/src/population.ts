@@ -13,6 +13,7 @@ import { Anim, AnimState, Animal, Tamed, Container, ContainerViewers, Dead, Heal
 import { gameplayDefs, isAuthority } from "./config.js";
 import { indexEntity } from "./spawn.js";
 import { currentPhaseKey, PopulationZombies, spawnZombie } from "./combat/zombies.js";
+import { zombieKindAllowed } from "./combat/zombie_gate.js";
 import { applyDamage, setAnim } from "./combat/combat.js";
 import { addItem } from "./inventory.js";
 import { structures } from "./building/structure.js";
@@ -211,7 +212,7 @@ export function installPopulation(world: World, o: InstallPopulationOptions): Po
     tileAt: (tx, ty) => populationTile(world, tx, ty),
     blocked: (tx, ty) => populationBlocked(world, tx, ty, o.buildings),
     spawn: (entry, x, y) => {
-      if (entry.category === "zombie") { const rng = world.rngFor(`pop.variant:${entry.kind}`); return spawnZombie(world, entry.kind, x, y, rng.int(0, 255)); }
+      if (entry.category === "zombie") { if (!zombieKindAllowed(world, entry.kind, x, y)) return undefined; /* ADR-226 */ const rng = world.rngFor(`pop.variant:${entry.kind}`); return spawnZombie(world, entry.kind, x, y, rng.int(0, 255)); }
       if (entry.category === "animal") return spawnAnimal(world, entry.kind, x, y);
       if (entry.category === "human_bot") return o.humanBots?.spawn(x, y, entry.kind) ? "pending" : undefined;
       return undefined;

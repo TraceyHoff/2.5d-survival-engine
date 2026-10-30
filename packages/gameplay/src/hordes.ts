@@ -15,6 +15,7 @@
 import { terrainBlocksWalker } from "./systems/movement.js";
 import { defineResource, GroupKind, TimeOfDay as TimeOfDayLike, Permissions, PlayerId, Transform, type Entity, type World } from "@engine/core";
 import raw from "../data/roads.json";
+import { gateZombieKind } from "./combat/zombie_gate.js";
 import { BuildPiece, Dead, HordeMember, HordePhase, HordeStatus, PieceOwner, Progression, Survival, Tribe, WorldRules, Zombie, ZombieBrain, ZState } from "./components.js";
 import { gameplayDefs, isAuthority } from "./config.js";
 import { secondsToTicks } from "./defs.js";
@@ -136,7 +137,7 @@ export function spawnHorde(world: World, t: HordeTarget, size: number): number {
   for (let n = 0; n < size; n++) {
     let roll = rng.range(0, total), kind = kinds[0]!; for (let i = 0; i < kinds.length; i++) { roll -= weights[i]!; if (roll <= 0) { kind = kinds[i]!; break; } }
     const x = cx + rng.range(-3, 3), y = cy + rng.range(-3, 3); if (!walkable(world, x, y)) continue;
-    const z = spawnZombie(world, kind, x, y, 0);
+    const z = spawnZombie(world, gateZombieKind(world, kind, tt.x, tt.y), x, y, 0); // ADR-226: gated kinds by the target's nearby players
     world.add(z, HordeMember, { horde: id & 0xffff, target, tx: tt.x, ty: tt.y });
     world.setField(z, ZombieBrain, "goalX", tt.x); world.setField(z, ZombieBrain, "goalY", tt.y); world.setField(z, ZombieBrain, "state", ZState.Chase);
     members.add(z);

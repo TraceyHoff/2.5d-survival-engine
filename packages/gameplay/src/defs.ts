@@ -173,6 +173,8 @@ export interface ZombieDef extends Visual {
   readonly attackRange: number; readonly attackCooldownSeconds: number; readonly sightRange: number; readonly hearingMul: number; readonly variants: number;
   /** ADR-108: render tint (rgb 0..1) for visually distinct kinds; light behaviour (absent = light-shy). */
   readonly tint?: readonly [number, number, number]; readonly light?: ZombieLightDef;
+  /** ADR-226: spawns only when a human player within levelRadius (default 64) has a skill tree at >= this level. */
+  readonly minPlayerLevel?: number; readonly levelRadius?: number;
 }
 export const DEFAULT_LIGHT_AVOID: LightAvoidTuning = { phases: ["night", "dusk"], gridCell: 8, rebuildTicks: 10, edgeMargin: 0.75, paceSeconds: 3, headlightRadius: 9, minRadius: 2 };
 export type PhaseTable<T> = { readonly night: T; readonly dawn: T; readonly day: T; readonly dusk: T };

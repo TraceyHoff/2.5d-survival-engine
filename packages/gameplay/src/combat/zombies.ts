@@ -33,6 +33,7 @@ import { snuffFire } from "../systems/fuel.js";
 import { attachmentsOf, pieceOf } from "../building/links.js";
 import { damagePiece } from "../building/integrity.js";
 import { BuildPiece, Fuel, HordeMember } from "../components.js";
+import { gateZombieKind } from "./zombie_gate.js";
 
 const PHASE_KEY = { [DayPhase.Night]: "night", [DayPhase.Dawn]: "dawn", [DayPhase.Day]: "day", [DayPhase.Dusk]: "dusk" } as const;
 export const currentPhaseKey = (world: World): "night" | "dawn" | "day" | "dusk" => PHASE_KEY[dayPhase(timeOfDay(world).t)];
@@ -71,7 +72,8 @@ export function zombieSpawnerSystem(world: World, dt: number): void {
       const x = t.x + Math.cos(a) * d, y = t.y + Math.sin(a) * d; const tx = Math.floor(x), ty = Math.floor(y);
       if (terrain && defs.worldgen.unwalkableTiles.has(terrain.tileAt(tx, ty)) && terrainBlocksWalker(world, tx, ty)) continue;
       if (idx.deck(tx, ty, 0)) continue;
-      const kind = pickWeighted(world, sp.weights[ph], defs.zombieKinds); if (kind === undefined) break;
+      const k0 = pickWeighted(world, sp.weights[ph], defs.zombieKinds); if (k0 === undefined) break;
+      const kind = gateZombieKind(world, k0, tx + 0.5, ty + 0.5); // ADR-226
       spawnZombie(world, kind, tx + 0.5, ty + 0.5, world.rng.int(0, 255));
       break;
     }
