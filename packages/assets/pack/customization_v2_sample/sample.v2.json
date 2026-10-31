@@ -317,6 +317,14 @@
   "face": "face_smile",
   "eyes": "eyes_round"
  },
+ "compatAliases": {
+  "v2s_cz_top_scrap_male": "v2s_cz_top_henley_male",
+  "v2s_cz_top_scrap_male_sleeves": "v2s_cz_top_henley_male_sleeves",
+  "v2s_cz_bottom_scrap_male": "v2s_cz_bottom_cargo_male",
+  "v2s_cz_shoes_scrap_male": "v2s_cz_shoes_boots_male",
+  "v2s_cz_hat_scrap_male": "v2s_cz_hat_cap_male",
+  "note": "ADR-240 V2S_ALIAS slot fallbacks; same atlases as the exact-key sprite (+0 VRAM); drop once V2S_ALIAS uses the exact keys"
+ },
  "anchorUnits": {
   "x,y": "1x px relative to the sprite pivot (+y down)",
   "angle": "DEGREES clockwise from screen-up (v1 + engine handOf: sprites.ts converts deg->rad); flipX mirrors (-angle)",

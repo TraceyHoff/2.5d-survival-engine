@@ -265,6 +265,18 @@ def sleep_set(key, slot, RS):
         anims[an] = {"frames": list(range(SL.NF)), "fps": SL.FPS, "directions": SL.ROTS, "dirStride": SL.NF, "loop": True, "dirFrames": dfs, **({"frameMeta": fm} if fm else {})}
     return atlas, {"anims": anims, "total": len(order), "page": {"group": "sleep", "atlas": ak, "residency": "stream", "pages1x": [PW, PH], "uniqueFrames": len(U)}}
 
+# ADR-240 (render charArt.ts V2S_ALIAS) still names the pre-fix sample pieces as slot fallbacks; keep those keys as
+# aliases of the exact-key sprites (same atlases/frames, +0 VRAM) until V2S_ALIAS moves to the exact keys.
+COMPAT_ALIASES = {"v2s_cz_top_scrap_male": "v2s_cz_top_henley_male", "v2s_cz_top_scrap_male_sleeves": "v2s_cz_top_henley_male_sleeves",
+                  "v2s_cz_bottom_scrap_male": "v2s_cz_bottom_cargo_male", "v2s_cz_shoes_scrap_male": "v2s_cz_shoes_boots_male",
+                  "v2s_cz_hat_scrap_male": "v2s_cz_hat_cap_male"}
+
+
+def compat_sprites(sprites):
+    by = {x["key"]: x for x in sprites}
+    return [{**by[new], "key": old} for old, new in COMPAT_ALIASES.items()]
+
+
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--jobs", type=int, default=os.cpu_count()); A = ap.parse_args()
     work = [(li, d, an, fi, n) for li in range(len(LAYERS)) for an, n, _, _ in ANIMS for fi in range(n) for d in range(DIRS)]
@@ -343,6 +355,7 @@ def main():
                      **({"layerByDir": [31, 31, 31, 31, 21, 21, 21, 31]} if part == "sleeves" else {}),
                      "atlases": pages, "uniqueFrames": nuniq})
         print(f"{sk}: {nuniq}/{ntot} unique, pages " + ", ".join(f"{p['group']} {p['pages1x'][0]*2}x{p['pages1x'][1]*2}" for p in pages) + " @2x", flush=True)
+    sprites += compat_sprites(sprites)
     man = {"version": 1, "name": NAME, "atlases": atlases, "sprites": sprites}
     with open(os.path.join(OUT, f"manifest.{NAME}.json"), "w") as f: json.dump(man, f, separators=(",", ":"))
     side = {"doc": "Player v2 sample paper-doll (isolated test fragment; NOT wired into wearables/ids.lock/saves). Draw order = layer asc; "
@@ -352,6 +365,7 @@ def main():
             "frame": {"w": FW, "h": FH, "pivot": list(PIV), "scales": [1, 2], "dirOrder": ["E", "SE", "S", "SW", "W", "NW", "N", "NE"], "dirFramesIndex": "frame*8+dir"},
             "anims": [{"name": a[0], "frames": a[1], "fps": a[2], "loop": a[3], "group": a[4], "state": a[5], "note": a[6], **({"events": v2_anims.EVENTS[a[0]]} if a[0] in v2_anims.EVENTS else {})} for a in v2_anims.ANIMS],
             "appearance": APPEARANCE,
+            "compatAliases": {**COMPAT_ALIASES, "note": "ADR-240 V2S_ALIAS slot fallbacks; same atlases as the exact-key sprite (+0 VRAM); drop once V2S_ALIAS uses the exact keys"},
             "anchorUnits": {"x,y": "1x px relative to the sprite pivot (+y down)", "angle": "DEGREES clockwise from screen-up (v1 + engine handOf: sprites.ts converts deg->rad); flipX mirrors (-angle)", "len": "px per unit item length", "behind": "draw held item behind the body"},
             "residencyNote": "core group atlases (idle/walk/attack) residency resident + pool (body|wear, ADR-220 character pools / ADR-156 core set); combat/ranged/pose/sleep atlases stream",
             "sleepLie": {"anims": {"sleep_lie": "reference-bed cut: bed (main pack), dec_bed_double_* (left/right), dec_bunk_bed upper", "sleep_lie_under": "dec_bunk_bed lower bunk (cut by the upper bunk)"},

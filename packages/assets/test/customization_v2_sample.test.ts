@@ -34,13 +34,21 @@ const SPRITES = ["v2s_body_male", "v2s_cz_bottom_cargo_male", "v2s_cz_shoes_boot
   "v2s_body_male_armfront", "v2s_cz_top_henley_male_armfront"];
 // every v2s_ layer twin of a v1 part = "v2s_" + the exact v1 sprite key the sample appearance resolves to
 const V1_TWINS = SPRITES.filter((k) => !k.endsWith("_armfront")).map((k) => k.slice(4));
+// ADR-240 charArt V2S_ALIAS still names the pre-fix sample pieces: kept as same-atlas aliases (+0 VRAM)
+const COMPAT = { v2s_cz_top_scrap_male: "v2s_cz_top_henley_male", v2s_cz_top_scrap_male_sleeves: "v2s_cz_top_henley_male_sleeves",
+  v2s_cz_bottom_scrap_male: "v2s_cz_bottom_cargo_male", v2s_cz_shoes_scrap_male: "v2s_cz_shoes_boots_male", v2s_cz_hat_scrap_male: "v2s_cz_hat_cap_male" } as const;
 const SLEEP = ["v2s_body_male", "v2s_cz_bottom_cargo_male", "v2s_cz_shoes_boots_male", "v2s_cz_top_henley_male", "v2s_cz_face_smile_male", "v2s_cz_eyes_round_male", "v2s_cz_hair_buzz_male"];
 const SLEEP_ANIMS = ["sleep_lie", "sleep_lie_under"];
+const base = (k: string): string => (COMPAT as Record<string, string>)[k] ?? k;
 
 describe("customization_v2_sample (player v2 test fragment)", () => {
   it("only new v2s_ keys, merges with pack + customization without collisions and loads", () => {
     const s = sample(); const v1 = cz();
-    expect(s.sprites.map((x) => x.key).sort()).toEqual([...SPRITES].sort());
+    expect(s.sprites.map((x) => x.key).sort()).toEqual([...SPRITES, ...Object.keys(COMPAT)].sort());
+    for (const [a, k] of Object.entries(COMPAT)) {
+      const al = s.sprites.find((x) => x.key === a)!, tw = s.sprites.find((x) => x.key === k)!;
+      expect({ ...al, key: k }, a).toEqual(tw);
+    }
     for (const k of [...s.sprites, ...s.atlases].map((x) => x.key)) expect(k).toMatch(/^v2s_/);
     expect((s as any).wearables ?? [], "no wearables: creator UI, ids.lock and saves untouched").toEqual([]);
     expect((s as any).bodyTypes, "no bodyTypes").toBeUndefined();
@@ -88,7 +96,7 @@ describe("customization_v2_sample (player v2 test fragment)", () => {
 
   it("8 facings x the full v2 anim set; group atlases; rects in page, trimmed from 48x80 frames", () => {
     const s = sample(); const at = new Map(s.atlases.map((a) => [a.key, a]));
-    for (const sp of s.sprites) { expect(Object.keys(sp.animations).sort(), sp.key).toEqual([...Object.keys(ANIMS), ...(SLEEP.includes(sp.key) ? SLEEP_ANIMS : [])].sort()); for (const [an, [n, fps, loop]] of Object.entries(ANIMS)) {
+    for (const sp of s.sprites) { expect(Object.keys(sp.animations).sort(), sp.key).toEqual([...Object.keys(ANIMS), ...(SLEEP.includes(base(sp.key)) ? SLEEP_ANIMS : [])].sort()); for (const [an, [n, fps, loop]] of Object.entries(ANIMS)) {
       const a = sp.animations[an]; expect(a, `${sp.key}.${an}`).toBeDefined();
       for (const e of a.dirFrames) expect(e.atlas, `${sp.key}.${an}`).toBe(sp.atlas + GROUP_OF(an));
       expect([a.frames.length, a.fps, a.loop, a.directions, a.dirStride, a.dirFrames.length]).toEqual([n, fps, loop, 8, n, n * 8]);
@@ -111,7 +119,7 @@ describe("customization_v2_sample (player v2 test fragment)", () => {
           expect(w).toBeLessThanOrEqual(96); expect(h).toBeLessThanOrEqual(88);
           for (const v of [e.anchor.x, e.anchor.y]) { expect(v).toBeGreaterThanOrEqual(-8); expect(v).toBeLessThanOrEqual(9); } }
       } }
-    for (const k of s.sprites.map((x) => x.key).filter((k) => !SLEEP.includes(k))) for (const an of SLEEP_ANIMS) expect(s.sprites.find((x) => x.key === k)!.animations[an], `${k} hidden in bed`).toBeUndefined();
+    for (const k of s.sprites.map((x) => x.key).filter((k) => !SLEEP.includes(base(k)))) for (const an of SLEEP_ANIMS) expect(s.sprites.find((x) => x.key === k)!.animations[an], `${k} hidden in bed`).toBeUndefined();
     const id = r.id("v2s_body_male"); const body = s.sprites.find((x) => x.key === "v2s_body_male")!;
     for (const an of SLEEP_ANIMS) for (let rot = 0; rot < 4; rot++) {
       expect(AssetRegistry.directionIndex((rot * Math.PI) / 2, 4)).toBe(rot);
