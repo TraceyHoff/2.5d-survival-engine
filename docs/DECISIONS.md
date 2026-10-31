@@ -2586,6 +2586,7 @@ Plain X / A keep Interact / Jump. The touch buttons are checked for no overlap a
 - The touch Sleep/Wake anchor moved off the bottom-center hotbar strip (test guards the strip at the 844x390 reference).
 - `InputState` latches every action bit seen by `setActions` until the next `sample()`, so a hold bit tapped between sim ticks (e.g. touch Crouch) is not lost. Press/release edges are unchanged.
 - Known art gap: v2 sleep lies flat only when every worn layer has `sleep_lie` (the paper-doll shares one chain anim). Henley sleeves, hat-hair, cap and the v1 accessories lack it today, so the doll falls back to sit.
+- Art follow-up (2026-10-30): gap closed. `v2s_cz_top_henley_male_sleeves`, `v2s_cz_hair_buzz_male_hathair` and `v2s_cz_hat_cap_male` gained the bed set (`v2_sample.py --sleep-only`). Every v1 accessory and hands sprite (`cz_acc_*`, `cz_hands_gear_*`, male + female) carries `sleep_lie` / `sleep_lie_under` under its own v1 key, on streamed `cz_sleep_acc_<look>` atlases (`add_sleep_lie_acc.py`). Bags and packs are hidden in bed (one blank frame). Same 4 bed rotations as the body. The `_scrap_` compat sprites and `compatAliases` were dropped. Resident VRAM is unchanged.
 
 ## ADR-247: Seeds come only from their own plant species (wild or farmed)
 
