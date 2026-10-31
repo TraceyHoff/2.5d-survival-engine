@@ -4,7 +4,7 @@ python3 ground_pack.py --manifest-only   rewrites only the manifest entries (no 
 Residency: resident (ADR-246 follow-up: the engine keeps gt_ pages hot at 1x; RESIDENT_GROUND_RE). Every sprite carries a
 placeholder: bases -> legacy tile_*, fall/winter overlays -> their summer twin, summer edges -> the invader base,
 summer shore/bank -> gt_water_shallow, fall leaf decals -> gt_water.
-Cells: 64x48 art (64x32 diamond + 16 px skirt) padded 2 px -> 68x52 (1x) / 136x104 (@2x); anchor keeps the diamond centre
+Cells: 64x48 art (64x32 diamond; bases carry no skirt: side faces are separate gt_side_* sprites, 16 px = one level) padded 2 px -> 68x52 (1x) / 136x104 (@2x); anchor keeps the diamond centre
 (0.5, 18/52). Pages are per season (gt_<season>_p<N>), 15x19 cells -> <=1020x988 (1x), <=2040x1976 (@2x). Re-runnable."""
 import os, sys, json
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -24,13 +24,18 @@ SUF = ['', '_b', '_c', '_d', '_e', '_f']
 SEAS = ['summer', 'fall', 'winter']; TW = {'summer': '', 'fall': '_fall', 'winter': '_winter'}
 
 from scipy.ndimage import binary_dilation
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../../../assets/tools'))
+from ktx2 import dilate
 def bleed(t, sc):
-    """Ice tiles seamlessly: the ice diamond continues PAD px past its edges into the cell padding (copied from the
+    """Base tiles (land, water, ice) tile seamlessly: the ice diamond continues PAD px past its edges into the cell padding (copied from the
     lattice-shifted diamond, i.e. what the neighbour shows there), so filtering / mips / sub-pixel gaps never reveal
-    an outline. The shader drops the lower-side bleed (skirt rule); the upper bleed overlaps the neighbour seamlessly."""
+    an outline. Front edges only (the shader keeps <=1.02 of it; the front neighbour covers the rest). RGB under alpha 0
+    is push-pull dilated per page (as ktx2.py does), so filtered / downscaled pages never pull black or skirt colour in."""
     p = PAD * sc; h, w = t.shape[:2]; out = np.zeros((h + 2 * p, w + 2 * p, 4), np.uint8); out[p:p + h, p:p + w] = t
     src = out.copy(); dx, dy = FW // 2 * sc, FH // 3 * sc   # half diamond: 32 x 16 (@1x)
-    near = binary_dilation(out[..., 3] == 255, np.ones((3, 3), bool), iterations=p)   # only the PAD px ring
+    near = binary_dilation(out[..., 3] == 255, np.ones((3, 3), bool), iterations=p)   # only the PAD px ring ...
+    near[:p + FH // 3 * sc] = False   # ... on the front (lower) edges only: a back-edge ring would be drawn over the back
+    # neighbour (a strip of this material across a different one); the front ring sits under the front neighbour
     for ox, oy in ((dx, dy), (-dx, dy), (dx, -dy), (-dx, -dy), (2 * dx, 0), (-2 * dx, 0), (0, 2 * dy), (0, -2 * dy)):
         sh = np.zeros_like(src)
         ys, yd = (slice(0, src.shape[0] - oy), slice(oy, None)) if oy >= 0 else (slice(-oy, None), slice(0, src.shape[0] + oy))
@@ -60,6 +65,10 @@ def plan():
             for se in SEAS:
                 fr = [f'sh|{style}|{se}|{m}|0'] if se == 'winter' else [f'sh|{style}|{se}|{m}|{f}' for f in range(4)]
                 S.append((f'gt_{nm}_{m}{TW[se]}', se, fr, 4 if len(fr) > 1 else 1, f'gt_{nm}_{m}' if se != 'summer' else 'gt_water_shallow'))
+    for mat in MATS:   # cliff side faces (one height level; base frames carry no skirt any more)
+        k0 = f'gt_side_{NAME.get(mat, mat)}'
+        for se in SEAS: S.append((k0 + TW[se], se, [f'side|{mat}|{se}'], 1, k0 if se != 'summer' else f'gt_{NAME.get(mat, mat)}'))
+        for se in SEAS: S.append((k0 + '_low' + TW[se], se, [f'sidel|{mat}|{se}'], 1, k0 + TW[se]))   # lower levels: no lip
     return S
 
 def main():
@@ -80,9 +89,9 @@ def main():
                 im = Image.new('RGBA', (cols * CW * sc, rows * CH * sc), (0, 0, 0, 0))
                 for i, k in enumerate(chunk):
                     t = np.asarray(GPV.get(k, sc)).copy(); t[..., 3] = np.where(t[..., 3] >= 128, 255, 0); t[t[..., 3] == 0] = 0
-                    if k.startswith('ice|'): im.paste(Image.fromarray(bleed(t, sc), 'RGBA'), (i % cols * CW * sc, i // cols * CH * sc)); continue
+                    if k.startswith(('ice|', 'base|', 'w|')): im.paste(Image.fromarray(bleed(t, sc), 'RGBA'), (i % cols * CW * sc, i // cols * CH * sc)); continue
                     im.paste(Image.fromarray(t, 'RGBA'), ((i % cols * CW + PAD) * sc, (i // cols * CH + PAD) * sc))
-                im.save(R + f'atlases/{name}{"" if sc == 1 else "@2x"}.png', optimize=True)
+                im = dilate(im); im.save(R + f'atlases/{name}{"" if sc == 1 else "@2x"}.png', optimize=True)
             atlases.append({'key': name, 'image': f'atlases/{name}.png', 'frameW': CW, 'frameH': CH, 'columns': cols, 'rows': rows,
                             'pages': [{'scale': 2, 'image': f'atlases/{name}@2x.png'}]})
     sprites = []

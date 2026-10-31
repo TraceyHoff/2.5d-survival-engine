@@ -177,7 +177,6 @@ def skirt(t, season, kind, lip=None, lipdepth=2.2, seed=3):
         t.fill(faces & st & (D > 4) & (D < 13), S[0])
     if kind == 'rock':
         st = vn(T, D / SK * .6, 6, seed + 5); t.fill(faces & (np.abs(st - .5) < .03), S[3])
-    t.fill(faces & (D > SK - 1.2), S[3])
     if lip:
         ld = lipdepth + (vn1(T, 14, seed + 2) - .5) * 2.4 + (vn1(T, 40, seed + 3) > .7) * 1.5
         t.fill(faces & (D < ld), lip[1]); t.fill(faces & (D < ld) & (D > ld - .9), lip[2]); t.fill(faces & (D < .9), lip[0])

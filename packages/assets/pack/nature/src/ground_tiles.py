@@ -32,7 +32,7 @@ WOB = {'sand': (.5, ((2, .4), (5, .35), (11, .25))), 'dirt': (.66, ((2, .4), (6,
        'water': (.42, ((2, .45), (3, .35), (7, .2)))}
 def wob(inv):
     a, o = WOB[inv]; return (fbm(U, V, 4000 + len(inv) * 13 + ord(inv[0]), o) - .5) * a
-RIM = {'grass': 3, 'forest': 3, 'dirt': 3, 'mud': 3, 'sand': 2, 'snow': 2}
+RIM = {'grass': 1, 'forest': 1, 'dirt': 1, 'mud': 1, 'sand': 1, 'snow': 1}   # soft boundary band: a mid tone, never a dark rim
 
 def land_overlay(inv, season, m):
     t = Tile(); I = fringe(m) + wob(inv); reg = TOP & (I > .5)
@@ -41,7 +41,7 @@ def land_overlay(inv, season, m):
         iu = fringe(m, np.array([u]), np.array([v]))[0]; return iu > .72
     PAINT[inv](season, None, t, reg, ok, .7)
     pal = P[inv][season]['t']; rimc = pal[RIM[inv]]
-    if inv == 'grass' and season == 'winter': rimc = P['grass']['winter']['t'][3]
+    if inv == 'grass' and season == 'winter': rimc = P['grass']['winter']['t'][1]
     t.fill(reg & (I < .5 + .065), rimc)
     if inv in ('snow',): t.fill(reg & (I >= .565) & (I < .6), pal[2])          # soft drift lip inside the snow edge
     if inv in ('grass',):   # tufts poking out along the boundary
@@ -57,9 +57,10 @@ def water_art(t, mask, f, nf=4):
     ph = f / nf
     F = fbm(U + ph, V + ph * .5, 7001, ((6, .55), (12, .45)))
     G = fbm(U - ph * .5, V + ph, 7002, ((5, .5), (10, .5)))
-    t.fill(mask, WGREY['mid']); t.fill(mask & (F < .38), WGREY['trough']); t.fill(mask & (F > .62), WGREY['lite'])
-    rip = np.abs(G - .5) < .018; t.fill(mask & rip & (F > .42), WGREY['ripple'])
-    sp = vn(U + ph * 2, V, 18, 7003 + f) > .955; t.fill(mask & sp & (F > .5), WGREY['spark'])
+    t.fill(mask, WCOL['mid']); t.fill(mask & (F < .38), WCOL['trough']); t.fill(mask & (F > .62), WCOL['lite'])
+    rip = np.abs(G - .5) < .018; t.fill(mask & rip & (F > .42), WCOL['ripple'])
+    sp = vn(U + ph * 2, V, 18, 7003 + f) > .955; t.fill(mask & sp & (F > .5), WCOL['spark'])
+WBAKE = .3   # share of the mid-depth tint chroma baked into the art (luminance kept = the grey ripple structure)
 def tint(rgb, k):
     """terrainTiles.ts water recolour: k=1 shallow (shore), k=0 deep."""
     c = rgb.astype(np.float32) / 255; lum = (c * [.299, .587, .114]).sum(-1, keepdims=True); det = c - lum
@@ -67,11 +68,18 @@ def tint(rgb, k):
     sh = np.array([.36, .82, .82]) + det * .6 + (lum - .45) * .4
     k = np.asarray(k, np.float32)[..., None] if np.ndim(k) else k
     return (np.clip(deep * (1 - k) + sh * k, 0, 1) * 255 + .5).astype(np.uint8)
+def _bake(g):
+    G = np.full((1, 1, 3), int(g[1:3], 16), np.uint8); T = tint(G, .5)[0, 0].astype(float)
+    l = (T / 255 * [.299, .587, .114]).sum() * 255; c = np.clip(G[0, 0] + WBAKE * (T - l), 0, 255).round().astype(int)
+    return '#%02x%02x%02x' % tuple(c)
+# ADR-249 water shader: out = base(k) + detail*0.6..0.7 + (lum-.45)*0.35..0.4 with detail = art - lum(art). Baked chroma is
+# therefore ADDED to the tint; WBAKE .3 keeps that within ~13/255 per channel (see ground_pack notes / report) while the
+# art reads as blue water on its own. Luminance is unchanged, so ripples/shimmer/rim softening behave as with grey.
+WCOL = {k: _bake(v) for k, v in WGREY.items()}
 def water_tile(season, f):
     t = Tile()
     if season == 'winter': ice_art(t, TOP, 0)
     else: water_art(t, TOP, f)
-    skirt(t, 'summer', 'rock', None) if False else None
     return t.finish(TOP)
 ICE = ['#f4fbff', '#d6eef8', '#b4dcef', '#8cc0e0', '#6a9cc8']
 def ice_art(t, mask, var):
@@ -91,15 +99,15 @@ def ice_tile(var):
     t = Tile(); ice_art(t, TOP, var); return t.finish(TOP)
 
 BANK = {'sand': {'summer': ['#d8bc86', '#c4a070'], 'fall': ['#d0b482', '#ba986c'], 'winter': ['#cfc4ae', '#b4a68e']},
-        'bank': {'summer': ['#8e6a4c', '#6e5040'], 'fall': ['#86644a', '#684c3c'], 'winter': ['#d4e0f0', '#a8b8d6']}}
+        'bank': {'summer': ['#b08c64', '#a07e5a'], 'fall': ['#a8865e', '#9a7a56'], 'winter': ['#d4e0f0', '#a8b8d6']}}
 def shore_overlay(style, season, m, f, nf=4):
     """Water invading land. Water baked with the shader's shallow tint so it meets the tinted water tile; foam laps per frame."""
     t = Tile(); I = fringe(m) + wob('water')
     lap = .5 + .022 * math.sin(6.2832 * f / nf)
     bank = TOP & (I > .5 - .085) & (I <= lap); wat = TOP & (I > lap)
-    b = BANK[style][season]; t.fill(bank, b[0]); t.fill(bank & (I < .5 - .055), b[1])
+    b = BANK[style][season]; t.fill(bank, b[0]); t.fill(bank & (I > .5 - .03), b[1])   # damp band toward the water (close tone: no dark rim)
     if season == 'winter':
-        ice_art(t, wat, None); t.fill(wat & (I < lap + .05), '#ffffff'); t.fill(wat & (I >= lap + .05) & (I < lap + .07), ICE[3])
+        ice_art(t, wat, None); t.fill(wat & (I < lap + .05), '#ffffff'); t.fill(wat & (I >= lap + .05) & (I < lap + .07), ICE[1])
         fm = (RFACE if m & E else np.zeros_like(TOP)) | (LFACE if m & S else np.zeros_like(TOP))
         if fm.any(): ice_art(t, fm, None)
         return t.finish(t.alpha)

@@ -231,10 +231,16 @@ SKIRT = {'grass': ('soil', 'grass'), 'dirt': ('soil', 'dirt'), 'forest': ('soil'
          'stone': ('rock', 'stone'), 'mud': ('soil', 'mud'), 'snow': ('rock', 'snow')}
 
 def land_tile(mat, season, var):
+    """Base ground: the top diamond only. No skirt / lip / rim on base frames, so the ground tiles with no visible cell
+    edge (a skirt sits right under the diamond in the page, and filtering / downscaled pages bleed it into the edge)."""
     t = Tile(); PAINT[mat](season, var, t, TOP, None, 1.0)
-    kind, lm = SKIRT[mat]; pal = P[lm][season]['t']
+    return t.finish(TOP)
+def land_side(mat, season, lipped=True):
+    """One height level (16 px) of camera-facing side faces (left = +y face, right = +x face) for a cliff/drop under a
+    `mat` top: strata + top-material lip; drawn by the engine only where a neighbour is lower (stack per level)."""
+    t = Tile(); kind, lm = SKIRT[mat]; pal = P[lm][season]['t']
     if mat == 'grass' and season == 'winter': lip = [P['grass']['winter']['t'][0], P['grass']['winter']['t'][1], P['grass']['winter']['t'][2]]
     else: lip = [pal[0], pal[1], pal[2]]
-    if mat in ('stone',): lip = None
+    if mat in ('stone',) or not lipped: lip = None   # lip-less = the level(s) below the top one in a multi-level drop
     skirt(t, season, kind, lip, 2.6 if mat in ('grass', 'forest', 'snow') else 1.6, seed=SEED[mat])
-    return t.finish(TOP | LFACE | RFACE)
+    return t.finish(LFACE | RFACE)

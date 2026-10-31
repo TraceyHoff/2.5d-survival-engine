@@ -20,6 +20,8 @@ def render_key(key):
     elif p[0] == 'w': t = G.water_tile(p[1], int(p[2]))
     elif p[0] == 'ice': t = G.ice_tile(int(p[1]))
     elif p[0] == 'lv': t = G.water_leaves(int(p[1]))
+    elif p[0] == 'side': t = GP.land_side(p[1], p[2])
+    elif p[0] == 'sidel': t = GP.land_side(p[1], p[2], False)
     a, b = out1(t), out2(t)
     im = Image.new('RGBA', (64 + 128, 96)); im.paste(a, (0, 0)); im.paste(b, (64, 0)); im.save(_fn(key))
     return key

@@ -201,7 +201,7 @@
       "frameW": 68,
       "frameH": 52,
       "columns": 15,
-      "rows": 8,
+      "rows": 9,
       "pages": [
         {
           "scale": 2,
@@ -249,7 +249,7 @@
       "frameW": 68,
       "frameH": 52,
       "columns": 15,
-      "rows": 8,
+      "rows": 9,
       "pages": [
         {
           "scale": 2,
@@ -281,7 +281,7 @@
       "frameW": 68,
       "frameH": 52,
       "columns": 15,
-      "rows": 9,
+      "rows": 10,
       "pages": [
         {
           "scale": 2,
@@ -27362,6 +27362,762 @@
         }
       },
       "placeholder": "gt_bank_240"
+    },
+    {
+      "key": "gt_side_grass",
+      "category": "tile",
+      "atlas": "gt_summer_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            120
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_grass"
+    },
+    {
+      "key": "gt_side_grass_fall",
+      "category": "tile",
+      "atlas": "gt_fall_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            120
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_grass"
+    },
+    {
+      "key": "gt_side_grass_winter",
+      "category": "tile",
+      "atlas": "gt_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            131
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_grass"
+    },
+    {
+      "key": "gt_side_grass_low",
+      "category": "tile",
+      "atlas": "gt_summer_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            121
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_grass"
+    },
+    {
+      "key": "gt_side_grass_low_fall",
+      "category": "tile",
+      "atlas": "gt_fall_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            121
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_grass_fall"
+    },
+    {
+      "key": "gt_side_grass_low_winter",
+      "category": "tile",
+      "atlas": "gt_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            132
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_grass_winter"
+    },
+    {
+      "key": "gt_side_dirt",
+      "category": "tile",
+      "atlas": "gt_summer_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            122
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_dirt"
+    },
+    {
+      "key": "gt_side_dirt_fall",
+      "category": "tile",
+      "atlas": "gt_fall_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            122
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_dirt"
+    },
+    {
+      "key": "gt_side_dirt_winter",
+      "category": "tile",
+      "atlas": "gt_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            133
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_dirt"
+    },
+    {
+      "key": "gt_side_dirt_low",
+      "category": "tile",
+      "atlas": "gt_summer_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            123
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_dirt"
+    },
+    {
+      "key": "gt_side_dirt_low_fall",
+      "category": "tile",
+      "atlas": "gt_fall_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            123
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_dirt_fall"
+    },
+    {
+      "key": "gt_side_dirt_low_winter",
+      "category": "tile",
+      "atlas": "gt_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            134
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_dirt_winter"
+    },
+    {
+      "key": "gt_side_forest",
+      "category": "tile",
+      "atlas": "gt_summer_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            124
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_forest"
+    },
+    {
+      "key": "gt_side_forest_fall",
+      "category": "tile",
+      "atlas": "gt_fall_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            124
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_forest"
+    },
+    {
+      "key": "gt_side_forest_winter",
+      "category": "tile",
+      "atlas": "gt_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            135
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_forest"
+    },
+    {
+      "key": "gt_side_forest_low",
+      "category": "tile",
+      "atlas": "gt_summer_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            125
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_forest"
+    },
+    {
+      "key": "gt_side_forest_low_fall",
+      "category": "tile",
+      "atlas": "gt_fall_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            125
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_forest_fall"
+    },
+    {
+      "key": "gt_side_forest_low_winter",
+      "category": "tile",
+      "atlas": "gt_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            136
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_forest_winter"
+    },
+    {
+      "key": "gt_side_sand",
+      "category": "tile",
+      "atlas": "gt_summer_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            126
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_sand"
+    },
+    {
+      "key": "gt_side_sand_fall",
+      "category": "tile",
+      "atlas": "gt_fall_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            126
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_sand"
+    },
+    {
+      "key": "gt_side_sand_winter",
+      "category": "tile",
+      "atlas": "gt_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            137
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_sand"
+    },
+    {
+      "key": "gt_side_sand_low",
+      "category": "tile",
+      "atlas": "gt_summer_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            127
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_sand"
+    },
+    {
+      "key": "gt_side_sand_low_fall",
+      "category": "tile",
+      "atlas": "gt_fall_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            127
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_sand_fall"
+    },
+    {
+      "key": "gt_side_sand_low_winter",
+      "category": "tile",
+      "atlas": "gt_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            138
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_sand_winter"
+    },
+    {
+      "key": "gt_side_rock",
+      "category": "tile",
+      "atlas": "gt_summer_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            128
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_rock"
+    },
+    {
+      "key": "gt_side_rock_fall",
+      "category": "tile",
+      "atlas": "gt_fall_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            128
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_rock"
+    },
+    {
+      "key": "gt_side_rock_winter",
+      "category": "tile",
+      "atlas": "gt_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            139
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_rock"
+    },
+    {
+      "key": "gt_side_rock_low",
+      "category": "tile",
+      "atlas": "gt_summer_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            129
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_rock"
+    },
+    {
+      "key": "gt_side_rock_low_fall",
+      "category": "tile",
+      "atlas": "gt_fall_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            129
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_rock_fall"
+    },
+    {
+      "key": "gt_side_rock_low_winter",
+      "category": "tile",
+      "atlas": "gt_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            140
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_rock_winter"
+    },
+    {
+      "key": "gt_side_mud",
+      "category": "tile",
+      "atlas": "gt_summer_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            130
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_mud"
+    },
+    {
+      "key": "gt_side_mud_fall",
+      "category": "tile",
+      "atlas": "gt_fall_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            130
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_mud"
+    },
+    {
+      "key": "gt_side_mud_winter",
+      "category": "tile",
+      "atlas": "gt_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            141
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_mud"
+    },
+    {
+      "key": "gt_side_mud_low",
+      "category": "tile",
+      "atlas": "gt_summer_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            131
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_mud"
+    },
+    {
+      "key": "gt_side_mud_low_fall",
+      "category": "tile",
+      "atlas": "gt_fall_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            131
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_mud_fall"
+    },
+    {
+      "key": "gt_side_mud_low_winter",
+      "category": "tile",
+      "atlas": "gt_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            142
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_mud_winter"
+    },
+    {
+      "key": "gt_side_snow",
+      "category": "tile",
+      "atlas": "gt_summer_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            132
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_snow"
+    },
+    {
+      "key": "gt_side_snow_fall",
+      "category": "tile",
+      "atlas": "gt_fall_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            132
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_snow"
+    },
+    {
+      "key": "gt_side_snow_winter",
+      "category": "tile",
+      "atlas": "gt_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            143
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_snow"
+    },
+    {
+      "key": "gt_side_snow_low",
+      "category": "tile",
+      "atlas": "gt_summer_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            133
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_snow"
+    },
+    {
+      "key": "gt_side_snow_low_fall",
+      "category": "tile",
+      "atlas": "gt_fall_p2",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            133
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_snow_fall"
+    },
+    {
+      "key": "gt_side_snow_low_winter",
+      "category": "tile",
+      "atlas": "gt_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.346154
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            144
+          ],
+          "fps": 1
+        }
+      },
+      "placeholder": "gt_side_snow_winter"
     },
     {
       "key": "tree",
