@@ -46,9 +46,10 @@ export const LEAF_NEAR = 0.3, LEAF_FAR = 0.08;
  * Sprite keys for one cell, bottom to top (unresolved: the loader falls back per key). `tint(x, y)` = shore tint 0..1
  * (only consulted for fall leaves). Returns [] for empty cells.
  */
-export function groundLayers(tileAt: (x: number, y: number) => number, x: number, y: number, season: number, tint?: (x: number, y: number) => number, out: GroundLayer[] = []): GroundLayer[] {
+export function groundLayers(tileAt: (x: number, y: number) => number, x: number, y: number, season: number, tint?: (x: number, y: number) => number, out: GroundLayer[] = [],
+  hash?: number): GroundLayer[] { // ADR-253: `hash` = the world tile's groundHash when (x, y) are view-space cells (variants stay put on rotation)
   out.length = 0; const id = tileAt(x, y); const mat = groundMaterial(id); if (!mat) return out;
-  const h = groundHash(x, y), v = GROUND_VARIANTS[h % 6]!, suf = GROUND_SEASON_SUFFIX[season] ?? "";
+  const h = hash ?? groundHash(x, y), v = GROUND_VARIANTS[h % 6]!, suf = GROUND_SEASON_SUFFIX[season] ?? "";
   if (mat === "water") {
     if (season === 2) { out.push({ key: `gt_ice${v}`, kind: GroundLayerKind.Ice }); return out; } // winter: static, untinted ice
     out.push({ key: id === TileId.ShallowWater ? "gt_water_shallow" : "gt_water", kind: GroundLayerKind.Water });

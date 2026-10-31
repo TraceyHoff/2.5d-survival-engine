@@ -81,6 +81,9 @@ export class DeckNeighbors {
   }
 }
 
+/** ADR-253: a world-side mask (SIDE_PX, PY, NX, NY) as seen in view quarter q: +x -> +v at q1 etc. (cyclic bit rotate). */
+export function rotSideMask(m: number, q: number): number { const k = q & 3; return k === 0 ? m & 15 : ((m << k) | (m >> (4 - k))) & 15; }
+
 /** Screen offset (dx, dy px from the footprint-centre pivot) -> tile offsets (a, b) on the top plane `top` px up. */
 export function deckTileOffset(dx: number, dy: number, top: number, hw: number, hh: number): [number, number] {
   const d = dy + top; return [(dx / hw + d / hh) / 2, (d / hh - dx / hw) / 2];

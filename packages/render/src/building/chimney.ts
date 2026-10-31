@@ -4,7 +4,7 @@
  * scaleCurve) from that point. Mirrored art (rotationArt "mirror", rows 2/3 flipX) negates the attach x.
  */
 import { entityIndex, Transform, type ComponentDef, type World } from "@engine/core";
-import { floorToTerrainZ } from "@engine/world";
+import { floorToTerrainZ, VIEW_COS, VIEW_SIN } from "@engine/world";
 import type { AssetRegistry, VfxDef } from "@engine/assets";
 import type { VfxLayer } from "../vfx.js";
 import type { AtlasManager } from "../assets/atlasManager.js";
@@ -15,11 +15,12 @@ export const DEFAULT_CHIMNEY_SMOKE: ChimneySmokeConfig = { vfx: "campfire_smoke"
 
 /** World position of a piece's smoke attach point (exported for tests). */
 export function chimneySmokePoint(px: number, py: number, exact: boolean, rot: number, fw: number, fh: number, z: number,
-  at: { x: number; y: number }, flipX: boolean, iso: { tileW: number; zStep: number }): { x: number; y: number; z: number } {
+  at: { x: number; y: number }, flipX: boolean, iso: { tileW: number; zStep: number; view?: number }): { x: number; y: number; z: number } {
   const w = rot & 1 ? fh : fw, h = rot & 1 ? fw : fh;
   const cx = exact ? px : Math.floor(px) + w / 2, cy = exact ? py : Math.floor(py) + h / 2;
-  const o = attachToWorld(at.x, at.y, flipX, iso);
-  return { x: cx + o.x, y: cy + o.y, z: z + o.z };
+  const o = attachToWorld(at.x, at.y, flipX, iso); // view-space offset (art px) -> rotate back to world (ADR-253)
+  const q = (iso.view ?? 0) & 3, c = VIEW_COS[q]!, s = VIEW_SIN[q]!;
+  return { x: cx + c * o.x + s * o.y, y: cy - s * o.x + c * o.y, z: z + o.z };
 }
 
 export class ChimneySmoke {
@@ -28,7 +29,7 @@ export class ChimneySmoke {
   /** particles spawned last update (diagnostics / tests) */ spawned = 0; chimneys = 0;
   private attach = new Map<number, { x: number; y: number } | null>(); private reg: AssetRegistry | null = null;
   private fx: { def: VfxDef; anim: number } | null | undefined;
-  update(world: World, bpDef: ComponentDef<any> | undefined, atlas: AtlasManager, vfx: VfxLayer, dt: number, iso: { tileW: number; zStep: number }): void {
+  update(world: World, bpDef: ComponentDef<any> | undefined, atlas: AtlasManager, vfx: VfxLayer, dt: number, iso: { tileW: number; zStep: number; view?: number }): void {
     const reg = atlas.registry; this.spawned = 0; this.chimneys = 0;
     if (!reg || !bpDef || !world.isRegistered(bpDef)) return;
     if (reg !== this.reg) { this.reg = reg; this.attach.clear(); this.fx = undefined; }
@@ -45,7 +46,7 @@ export class ChimneySmoke {
       const ts = tr.slot(entityIndex(bp.dense[k]!)); if (ts < 0) continue;
       this.chimneys++;
       const raw = d.rotation![k]!; const rot = raw & 3; const info = atlas.pieceInfo(vis);
-      const flip = reg.buildingFrame(vis, rot, 0).flipX === true;
+      const flip = reg.buildingFrame(vis, (rot + (iso.view ?? 0)) & 3, 0).flipX === true; // art row seen in this view
       const p = chimneySmokePoint(tr.data.x[ts]!, tr.data.y[ts]!, (raw & ROT_EXACT_PIVOT) !== 0, rot, info?.fw ?? 1, info?.fh ?? 1, floorToTerrainZ(d.level![k]!, tr.data.z[ts]!), at, flip, iso);
       let expect = pj.rate * this.cfg.rateScale * dt;
       while (expect > 0 && this.spawned < this.cfg.maxPerFrame) {

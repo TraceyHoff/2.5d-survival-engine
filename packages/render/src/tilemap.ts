@@ -1,10 +1,11 @@
 /**
  * Terrain renderer for @engine/world's chunked TileMap: one static mesh (VAO) per 32x32 chunk,
- * with top faces plus the two camera-facing cliff faces wherever a neighbour is lower.
+ * with top faces plus cliff faces wherever a neighbour is lower (all four sides since ADR-253: the vertex shader
+ * collapses the two facing away from the current view rotation and shades the two facing it).
  * Meshes are rebuilt only when a chunk's `version` (or a neighbour's) changes. Chunks outside
  * the camera rect are culled (one draw call per visible chunk).
  */
-import { CHUNK_SIZE, tileToChunk, tileToLocal, renderTileHeight, waterCornerTint, type TileMap, type Chunk, type IsoConfig } from "@engine/world";
+import { CHUNK_SIZE, VIEW_COS, VIEW_SIN, viewRect, tileToChunk, tileToLocal, renderTileHeight, waterCornerTint, type TileMap, type Chunk, type IsoConfig } from "@engine/world";
 import { SEASON_GROUND_GLSL } from "./season.js";
 import { createProgram, GLSL_COMMON, type FrameStats, type Program } from "./gl/util.js";
 import type { Rect } from "./camera.js";
@@ -23,7 +24,15 @@ const PALETTE: Record<number, [number, number, number]> = {
   [TileId.Water]: [0x34, 0x84, 0xbc], [TileId.ShallowWater]: [0x4a, 0x9c, 0xc8], [TileId.Sand]: [0xf6, 0xdf, 0xa4], [TileId.Grass]: [0x8f, 0xd1, 0x5c],
   [TileId.Dirt]: [0xc0, 0x8a, 0x5a], [TileId.Stone]: [0xb8, 0xb2, 0xb0], [TileId.Snow]: [0xee, 0xf4, 0xfb], [TileId.Forest]: [0x6f, 0xa8, 0x4a], [TileId.Mud]: [0x7a, 0x5c, 0x3e], // mud: ADR-246
 };
-const SHALLOW_RGB = [0x5c, 0xd0, 0xd0] as const, DEEP_RGB = [0x18, 0x46, 0x90] as const; // ADR-184: turquoise shore -> deep blue
+const SHALLOW_RGB = [0x41, 0xb5, 0xcc] as const, DEEP_RGB = [0x18, 0x46, 0x90] as const; // ADR-184: turquoise shore -> deep blue (ADR-253: shallow #41b5cc, same as Canvas2D C2D_SHALLOW)
+/** ADR-253 cliff face flags (aColor.a): face normal +x, +y, -x, -y. */
+export const CLIFF_PX = 2, CLIFF_PY = 3, CLIFF_NX = 4, CLIFF_NY = 5;
+/** Cliff face shade by its normal in view space: +u (screen lower-right) 0.62, +v (screen lower-left) 0.8, else hidden (0). */
+export function cliffShade(flag: number, view: number): number {
+  const n = [[1, 0], [0, 1], [-1, 0], [0, -1]][flag - CLIFF_PX]; if (!n) return 0;
+  const k = view & 3, c = VIEW_COS[k]!, s = VIEW_SIN[k]!; const u = c * n[0]! - s * n[1]!, v = s * n[0]! + c * n[1]!;
+  return u > 0.5 ? 0.62 : v > 0.5 ? 0.8 : 0;
+}
 const SIDE: Record<number, [number, number, number]> = {
   [TileId.Grass]: [112, 84, 56], [TileId.Sand]: [168, 140, 92], [TileId.Water]: [38, 92, 140],
 };
@@ -41,12 +50,22 @@ layout(location=1) in vec4 aColor;   // rgb + flags (a*255: 1 = water)
 ${GLSL_COMMON}
 uniform vec3 uIso; // tileW/2, tileH/2, zStep
 uniform float uZFactor;
+uniform vec2 uRot; // ADR-253 view rotation (cos, sin) of the quarter turn: world (x, y) -> view (u, v)
 out vec3 vColor; out vec2 vWorld; flat out int vFlags;
 void main() {
-  vec2 iso = vec2((aPos.x - aPos.y) * uIso.x, (aPos.x + aPos.y) * uIso.y - aPos.z * uIso.z);
-  float key = aPos.x + aPos.y + aPos.z * uZFactor;
+  vec2 w = vec2(uRot.x * aPos.x - uRot.y * aPos.y, uRot.y * aPos.x + uRot.x * aPos.y);
+  vec2 iso = vec2((w.x - w.y) * uIso.x, (w.x + w.y) * uIso.y - aPos.z * uIso.z);
+  float key = w.x + w.y + aPos.z * uZFactor;
+  int fl = int(aColor.a * 255.0 + 0.5); vColor = aColor.rgb; vWorld = aPos.xy;
+  if (fl >= 2) { // ADR-253 cliff face: shade by its view-space normal; faces turned away collapse to a point (no fragments)
+    vec2 n = fl == 2 ? vec2(1, 0) : fl == 3 ? vec2(0, 1) : fl == 4 ? vec2(-1, 0) : vec2(0, -1);
+    vec2 nv = vec2(uRot.x * n.x - uRot.y * n.y, uRot.y * n.x + uRot.x * n.y);
+    float sh = nv.x > 0.5 ? 0.62 : nv.y > 0.5 ? 0.8 : 0.0;
+    if (sh == 0.0) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); vColor = vec3(0.0); vFlags = 2; return; }
+    vColor *= sh; fl = 2;
+  }
   gl_Position = vec4(isoToClip(iso), keyToNdc(key), 1.0);
-  vColor = aColor.rgb; vWorld = aPos.xy; vFlags = int(aColor.a * 255.0 + 0.5);
+  vFlags = fl;
 }`;
 
 const FS = /* glsl */ `#version 300 es
@@ -105,10 +124,11 @@ export class TilemapRenderer {
     this.prog = createProgram(gl, VS, FS, "tilemap");
   }
 
-  /** Combined version stamp of a chunk and the 2 neighbours whose heights affect its cliff faces. */
+  /** Combined version stamp of a chunk and the 4 neighbours whose heights affect its cliff faces (ADR-253: all sides). */
   private stamp(map: TileMap, c: Chunk): number {
-    const a = map.getChunk(c.cx + 1, c.cy), b = map.getChunk(c.cx, c.cy + 1);
-    return c.version * 1e6 + (a ? a.version + 1 : 0) * 1e3 + (b ? b.version + 1 : 0);
+    const v = (d: Chunk | undefined): number => (d ? d.version + 1 : 0);
+    const a = map.getChunk(c.cx + 1, c.cy), b = map.getChunk(c.cx, c.cy + 1), a2 = map.getChunk(c.cx - 1, c.cy), b2 = map.getChunk(c.cx, c.cy - 1);
+    return (((c.version * 1009 + v(a)) * 1013 + v(b)) * 1019 + v(a2)) * 1021 + v(b2);
   }
 
   private build(map: TileMap, c: Chunk, old?: ChunkMesh): ChunkMesh {
@@ -137,13 +157,15 @@ export class TilemapRenderer {
         }
         idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
       } else quad([[x, y, zt], [x + 1, y, zt], [x + 1, y + 1, zt], [x, y + 1, zt]], pal[0] * v, pal[1] * v, pal[2] * v, water);
-      // Camera-facing cliff faces: +x (screen lower-right) and +y (screen lower-left).
+      // Cliff faces on every side whose neighbour is lower (ADR-253): base side colour, the vertex shader shades the two
+      // facing the current view (+u 0.62 / +v 0.8, as the fixed +x / +y faces before) and collapses the other two.
       const side = SIDE[id] ?? pal;
-      const hx = tileHeight(map, x + 1, y), hy = tileHeight(map, x, y + 1);
-      const bx = hx < 0 ? -1 : hx - (tileIsWater(map, x + 1, y) ? 0.25 : 0);
-      const by = hy < 0 ? -1 : hy - (tileIsWater(map, x, y + 1) ? 0.25 : 0);
-      if (bx < zt) quad([[x + 1, y, zt], [x + 1, y + 1, zt], [x + 1, y + 1, bx], [x + 1, y, bx]], side[0] * 0.62, side[1] * 0.62, side[2] * 0.62, 2);
-      if (by < zt) quad([[x, y + 1, zt], [x + 1, y + 1, zt], [x + 1, y + 1, by], [x, y + 1, by]], side[0] * 0.8, side[1] * 0.8, side[2] * 0.8, 2);
+      const low = (nx: number, ny: number): number => { const h = tileHeight(map, nx, ny); return h < 0 ? -1 : h - (tileIsWater(map, nx, ny) ? 0.25 : 0); };
+      const bx = low(x + 1, y), by = low(x, y + 1), bnx = low(x - 1, y), bny = low(x, y - 1);
+      if (bx < zt) quad([[x + 1, y, zt], [x + 1, y + 1, zt], [x + 1, y + 1, bx], [x + 1, y, bx]], side[0], side[1], side[2], CLIFF_PX);
+      if (by < zt) quad([[x, y + 1, zt], [x + 1, y + 1, zt], [x + 1, y + 1, by], [x, y + 1, by]], side[0], side[1], side[2], CLIFF_PY);
+      if (bnx < zt) quad([[x, y + 1, zt], [x, y, zt], [x, y, bnx], [x, y + 1, bnx]], side[0], side[1], side[2], CLIFF_NX);
+      if (bny < zt) quad([[x + 1, y, zt], [x, y, zt], [x, y, bny], [x + 1, y, bny]], side[0], side[1], side[2], CLIFF_NY);
     }
     const n = verts.length / 3;
     const buf = new ArrayBuffer(n * 16); const f = new Float32Array(buf); const u8 = new Uint8Array(buf);
@@ -168,8 +190,8 @@ export class TilemapRenderer {
     for (const c of map.loadedChunks()) {
       let m = this.meshes.get(c);
       if (!m || m.stamp !== this.stamp(map, c)) { m = this.build(map, c, m); this.meshes.set(c, m); }
-      const x0 = c.cx * CHUNK_SIZE, y0 = c.cy * CHUNK_SIZE;
-      minKey = Math.min(minKey, x0 + y0 - 2); maxKey = Math.max(maxKey, x0 + y0 + 2 * CHUNK_SIZE + m.maxZ * this.zFactor);
+      const vr = viewRect(c.cx * CHUNK_SIZE, c.cy * CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE, this.iso.view ?? 0); // ADR-253 view-space keys
+      minKey = Math.min(minKey, vr.x + vr.y - 2); maxKey = Math.max(maxKey, vr.x + vr.y + 2 * CHUNK_SIZE + m.maxZ * this.zFactor);
       this.maxZ = Math.max(this.maxZ, m.maxZ);
     }
     for (const [c, m] of this.meshes) if (map.getChunk(c.cx, c.cy) !== c) {
@@ -191,6 +213,7 @@ export class TilemapRenderer {
     gl.uniform4fv(u.uView!, view); gl.uniform2fv(u.uDepth!, depth);
     gl.uniform3f(u.uIso!, this.iso.tileW / 2, this.iso.tileH / 2, this.iso.zStep);
     gl.uniform1f(u.uZFactor!, this.zFactor); gl.uniform1f(u.uTime!, time);
+    const vq = (this.iso.view ?? 0) & 3; gl.uniform2f(u.uRot ?? null, VIEW_COS[vq]!, VIEW_SIN[vq]!);
     gl.uniform1f(u.uPuddles!, this.surfaceStyle.puddles); gl.uniform1f(u.uWetDarken!, this.surfaceStyle.wetDarken);
     gl.uniform3f(u.uSeason ?? null, this.season[0], this.season[1], this.season[2]); gl.uniform1f(u.uIce ?? null, this.season[3]);
     const sr = this.surfaceStyle.skyRefl; gl.uniform3f(u.uSkyRefl!, sr[0]!, sr[1]!, sr[2]!);
@@ -200,7 +223,7 @@ export class TilemapRenderer {
       if (m.count === 0) continue;
       if (activeKeys && !activeKeys.has(c.key)) continue;
       // Chunk iso bounds: diamond spanning corners (x0,y0)..(x0+S,y0+S), lifted by z range.
-      const x0 = m.cx * S, y0 = m.cy * S;
+      const vr = viewRect(m.cx * S, m.cy * S, S, S, vq); const x0 = vr.x, y0 = vr.y; // ADR-253: the chunk's view-space square
       const sxMin = (x0 - (y0 + S)) * hw, sxMax = (x0 + S - y0) * hw;
       const syMin = (x0 + y0) * hh - m.maxZ * this.iso.zStep, syMax = (x0 + y0 + 2 * S) * hh - Math.min(0, m.minZ - 1) * this.iso.zStep;
       if (sxMax < rect.x0 || sxMin > rect.x1 || syMax < rect.y0 || syMin > rect.y1) continue;

@@ -5,7 +5,7 @@
  * Values are stored at 0.5 scale in RGBA8 so lights can over-brighten up to 2x in composite.
  */
 import { entityIndex, PrevTransform, Transform, type World } from "@engine/core";
-import type { IsoConfig } from "@engine/world";
+import { VIEW_COS, VIEW_SIN, type IsoConfig } from "@engine/world";
 import { createColorTarget, createProgram, GLSL_COMMON, type FrameStats, type Program } from "./gl/util.js";
 import { LightSource } from "./components.js";
 import type { ComponentDef, Entity } from "@engine/core";
@@ -101,12 +101,13 @@ export class LightPass {
     this.count = 0; this.heatCount = 0;
     const tr = world.store(Transform), pv = world.store(PrevTransform);
     const hw = this.iso.tileW / 2, hh = this.iso.tileH / 2, zs = this.iso.zStep;
+    const vq = (this.iso.view ?? 0) & 3, vc = VIEW_COS[vq]!, vs = VIEW_SIN[vq]!; // ADR-253 view rotation
     const pos = (e: Entity): boolean => {
       const i = entityIndex(e); const ts = tr.slot(i); if (ts < 0) return false;
       let x = tr.data.x[ts]!, y = tr.data.y[ts]!, z = tr.data.z[ts]!; const ps = pv.slot(i);
       if (source && source.entities.has(e) && source.sample(world, e, alpha, this.xf)) { x = this.xf[0]!; y = this.xf[1]!; z = this.xf[2]!; }
       else if (ps >= 0) { x = pv.data.x[ps]! + (x - pv.data.x[ps]!) * alpha; y = pv.data.y[ps]! + (y - pv.data.y[ps]!) * alpha; z = pv.data.z[ps]! + (z - pv.data.z[ps]!) * alpha; }
-      this.sx = (x - y) * hw; this.sy = (x + y) * hh - z * zs; return true;
+      const u = vc * x - vs * y, v = vs * x + vc * y; this.sx = (u - v) * hw; this.sy = (u + v) * hh - z * zs; return true;
     };
     const visible = (r: number): boolean => !(this.sx + r < rect.x0 || this.sx - r > rect.x1 || this.sy + r < rect.y0 || this.sy - r > rect.y1);
     const add = (radiusTiles: number, intensity: number, r: number, g: number, b: number, flicker: number): void => {

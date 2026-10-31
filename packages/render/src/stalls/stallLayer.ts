@@ -15,7 +15,7 @@
  * Events:             for (const ev of client.pollEvents(client.renderTick)) renderer.vfx.handle(ev);
  */
 import { entityIndex, StallDisplay, STALL_DISPLAY_ROWS, Transform, type ComponentDef, type Entity, type World } from "@engine/core";
-import { floorToTerrainZ } from "@engine/world";
+import { floorToTerrainZ, viewRect } from "@engine/world";
 import type { AssetRegistry, VfxDef } from "@engine/assets";
 import type { IsoRenderer } from "../IsoRenderer.js";
 import type { VfxSpawn } from "../vfx.js";
@@ -137,11 +137,14 @@ export class StallLayer {
     const vis = g.visualId, rot = g.rotation & 3; const info = r.atlas.pieceInfo(vis);
     const fw = info ? (rot & 1 ? info.fh : info.fw) : 1, fh = info ? (rot & 1 ? info.fw : info.fh) : 1;
     const ax = Math.floor(tr.x), ay = Math.floor(tr.y); const z = floorToTerrainZ(g.level, tr.z);
-    const hw = r.iso.tileW / 2, hh = r.iso.tileH / 2, zs = r.iso.zStep;
+    const hw = r.iso.tileW / 2, hh = r.iso.tileH / 2, zs = r.iso.zStep, q = (r.iso.view ?? 0) & 3;
     const front = r.pieceAnchor === "front"; const fx = ax + fw, fy = ay + fh;
     const pvx = front ? fx : ax + fw / 2, pvy = front ? fy : ay + fh / 2;
-    const key = fx + fy - 2 + (front ? 1 : 1.95) + z * r.zFactor + g.layer * 0.01;
-    return { sx: (pvx - pvy) * hw, sy: (pvx + pvy) * hh - z * zs, key, vis, rot, dmg: g.damageStage, x: pvx, y: pvy };
+    // ADR-253: screen pivot / key from the view footprint (as sprites.ts gatherPieces); attach points at the view rotation
+    const vr = viewRect(ax, ay, fw, fh, q); const vfx = vr.x + vr.w, vfy = vr.y + vr.h;
+    const pu = front ? vfx : vr.x + vr.w / 2, pv = front ? vfy : vr.y + vr.h / 2;
+    const key = vfx + vfy - 2 + (front ? 1 : 1.95) + z * r.zFactor + g.layer * 0.01;
+    return { sx: (pu - pv) * hw, sy: (pu + pv) * hh - z * zs, key, vis, rot: (rot + q) & 3, dmg: g.damageStage, x: pvx, y: pvy };
   }
   /** Overlay sprite centred on (px, py) iso px, `w` px wide (frame width, or `ref` box width), in front of depth key `key`. */
   private place(spriteId: number, px: number, py: number, w: number, key: number, alpha: number, ref?: { w: number; cx: number; cy: number }): (VfxSpawn & { px: number; py: number; k: number }) | null {
@@ -154,7 +157,7 @@ export class StallLayer {
     // billboard depth grows with screen height above the pivot (sprite VS: key + hp * zFactor / zStep): lift the overlay's key by
     // its height above the stall pivot so it stays in front of the stall pixels it sits on (upper shelves, roofs, banners)
     const kk = key + Math.max(0, this.baseSy - pvy) * r.zFactor / r.iso.zStep;
-    const p = isoPlace(pvx, pvy, kk - 0.05, r.iso.tileW / 2, r.iso.tileH / 2, r.iso.zStep, r.zFactor);
+    const p = isoPlace(pvx, pvy, kk - 0.05, r.iso.tileW / 2, r.iso.tileH / 2, r.iso.zStep, r.zFactor, r.iso.view ?? 0);
     return { spriteId, x: p.x, y: p.y, z: p.z, scale, emissive: false, alpha, px: pvx, py: pvy, k: scale };
   }
 
@@ -286,7 +289,7 @@ export class StallLayer {
     const h = w.get(stall, this.b.stallHeader);
     const pts = stallPoints(this.reg, pi.vis, pi.rot, pi.dmg, stallStateIndex(this.reg, pi.vis, h?.open ?? 1));
     const slot = pts.slots.find((s) => s.index === p.listingSlot)?.p ?? { x: 0, y: -pts.frame.anchorY * 0.5 };
-    const r = this.renderer; const at = isoPlace(pi.sx + slot.x, pi.sy + slot.y, pi.key + 0.1 + Math.max(0, -slot.y) * r.zFactor / r.iso.zStep, r.iso.tileW / 2, r.iso.tileH / 2, r.iso.zStep, r.zFactor);
+    const r = this.renderer; const at = isoPlace(pi.sx + slot.x, pi.sy + slot.y, pi.key + 0.1 + Math.max(0, -slot.y) * r.zFactor / r.iso.zStep, r.iso.tileW / 2, r.iso.tileH / 2, r.iso.zStep, r.zFactor, r.iso.view ?? 0);
     const pj = fx.particles; const n = pj ? Math.max(1, pj.count) : 1; const out: VfxSpawn[] = [];
     for (let i = 0; i < n; i++) {
       const sp = pj ? pj.speed[0] + (pj.speed[1] - pj.speed[0]) * Math.random() : 1; const ang = Math.random() * Math.PI * 2; const hs = (pj?.spread ?? 1) * Math.random() * 0.5;

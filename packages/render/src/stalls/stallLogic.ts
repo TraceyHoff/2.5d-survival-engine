@@ -4,6 +4,7 @@
  * on the stall's STOCK attachment (Container = stock, Listings), not on the BuildPiece; BuildPiece.tint is a u8 clan palette
  * index (0 = untinted, clanTintIndex = 1..16) and BuildPiece.paint overrides it when != 0.
  */
+import { fromView } from "@engine/world";
 import { cloneData } from "../style.js";
 import { AssetRegistry, type AttachPoint, type ClanPalette, type FrameRef } from "@engine/assets";
 import { computeDayLighting } from "../timeOfDay.js";
@@ -145,8 +146,9 @@ export const formatPrice = (fmt: string, count: number): string => fmt.replace("
  * World position (tiles x,y and z levels) that projects to screen point (sx, sy) with depth key `key`
  * (sprite batch key = x + y + z * zFactor), for drawing overlays at a pivot-relative attach point.
  */
-export function isoPlace(sx: number, sy: number, key: number, hw: number, hh: number, zs: number, zf: number): { x: number; y: number; z: number } {
-  const d = sx / hw; // x - y
-  const z = (key * hh - sy) / (zf * hh + zs); const s = key - z * zf; // x + y
-  return { x: (s + d) / 2, y: (s - d) / 2, z };
+export function isoPlace(sx: number, sy: number, key: number, hw: number, hh: number, zs: number, zf: number, view = 0): { x: number; y: number; z: number } {
+  const d = sx / hw; // u - v (view space; = x - y at view 0)
+  const z = (key * hh - sy) / (zf * hh + zs); const s = key - z * zf; // u + v
+  const u = (s + d) / 2, v = (s - d) / 2; if (!(view & 3)) return { x: u, y: v, z };
+  const w = fromView(u, v, view); return { x: w.x, y: w.y, z }; // ADR-253: back to world
 }

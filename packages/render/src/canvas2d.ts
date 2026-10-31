@@ -13,7 +13,7 @@ import { reportRenderError } from "./report.js";
 import { Transform, PrevTransform, entityIndex, getAppearance, type World, type Entity } from "@engine/core";
 import { fireAnimTime, hearthParticles, pieceFireFrame, isFireAnim, type HearthParticle } from "./fire-anim.js";
 import { previewLayers2D, tintPixels, type PreviewLayer2D } from "./character/preview2d.js";
-import { worldToScreen, DEFAULT_ISO, CHUNK_SIZE, floorToTerrainZ, terrainZToFloor, isWaterId, waterShoreTint, type TileMap, type Chunk } from "@engine/world";
+import { worldToScreen, toView, fromView, viewRect, DEFAULT_ISO, CHUNK_SIZE, floorToTerrainZ, terrainZToFloor, isWaterId, waterShoreTint, type TileMap, type Chunk } from "@engine/world";
 import type { AssetRegistry } from "@engine/assets";
 import { IsoCamera } from "./camera.js";
 import { Sprite, LightSource, SpriteAlpha } from "./components.js";
@@ -21,7 +21,7 @@ import { frameAnim } from "./frame-select.js";
 import { Canvas2DLightmap, lightRadiusPx, type C2DLight } from "./canvasLight.js";
 import { DEFAULT_STYLE } from "./style.js";
 import { SpriteFlag } from "./ids.js";
-import { GroundArt, groundLayers, GroundLayerKind, type GroundLayer } from "./groundArt.js";
+import { GroundArt, groundHash, groundLayers, GroundLayerKind, type GroundLayer } from "./groundArt.js";
 import { STATE_ANIMS, type AtlasSource } from "./assets/atlasManager.js";
 import { computeDayLighting, dimForWeather } from "./timeOfDay.js";
 import { weatherTargets } from "./weather.js";
@@ -31,7 +31,7 @@ import { VfxLayer } from "./vfx.js";
 import { WeatherFx } from "./weatherFx.js";
 import { newStats, type FrameStats } from "./gl/util.js";
 import { BED_SORT_EPS, type GameplayBindings } from "./sprites.js";
-import { DeckNeighbors, deckTopPx, deckClipPolygon, deckSeamPatches, pieceTieBreak, exactTieBreak, pieceOrder, VERTEX_POST_BIAS } from "./building/deckFaces.js";
+import { DeckNeighbors, rotSideMask, deckTopPx, deckClipPolygon, deckSeamPatches, pieceTieBreak, exactTieBreak, pieceOrder, VERTEX_POST_BIAS } from "./building/deckFaces.js";
 import { lCornerArmPiece, lCornerArmPivots, ROT_EXACT_PIVOT, ROT_DECK_LIFT, ROT_VERTEX_POST } from "./building/modular.js";
 
 export type FallbackRendererKind = "webgl2" | "canvas2d" | "debug";
@@ -57,10 +57,20 @@ export function snapPx(v: number, s: number, o: number): number { return s >= 1 
 /** ADR-184: deep blue -> shore turquoise (same endpoints as the WebGL2 mesh). */
 export const C2D_DEEP = [0x18, 0x46, 0x90] as const, C2D_SHALLOW = [0x41, 0xb5, 0xcc] as const; // #41b5cc: matches the shallow shore overlays (50a10091)
 export function waterRgb(k: number): [number, number, number] { const m = (j: 0 | 1 | 2): number => Math.round(C2D_DEEP[j] + (C2D_SHALLOW[j] - C2D_DEEP[j]) * k); return [m(0), m(1), m(2)]; }
+/** ADR-253: true when a sprite has art per facing (building rows or a multi-direction / pre-rotated anim); otherwise the
+ *  odd view quarters mirror it (the WebGL path: AtlasManager.isDirectional). */
+export function spriteIsDirectional(reg: AssetRegistry, sid: number): boolean {
+  let s; try { s = reg.sprite(sid); } catch { return false; } if (s.building) return true;
+  for (const a of s.animList) if (a && (a.directions > 1 || (a.rotations?.length ?? 0) > 1)) return true; return false;
+}
 export class Canvas2DRenderer {
   readonly kind = "canvas2d" as const;
   readonly ctx: CanvasRenderingContext2D;
-  readonly camera = new IsoCamera(DEFAULT_ISO);
+  readonly camera = new IsoCamera({ ...DEFAULT_ISO });
+  /** ADR-253: the camera's projection (carries the view quarter). */ get iso() { return this.camera.iso; }
+  /** ADR-253: current 90-degree view quarter 0..3. */ get viewRotation(): number { return this.camera.view; }
+  /** ADR-253: rotate the view (instant 90-degree snap), keeping `pivot` (e.g. the player) at the same screen spot. */
+  setViewRotation(q: number, pivot?: { x: number; y: number; z?: number }): void { this.camera.setView(q, pivot); }
   readonly capabilities = { renderer: "Canvas2D (no WebGL2)", vendor: "", mobile: false, lowEnd: true, basicAdapter: false, console: false, safe: true, flags: ["lowend"] as string[], fallbacks: ["Canvas2D sprite renderer (WebGL2 unavailable)"], problems: [] as string[], textureBudgetMB: 0 };
   readonly settings = { lights: true, shadows: true, weather: false, fog: false };
   stats: FrameStats = newStats();
@@ -173,7 +183,7 @@ export class Canvas2DRenderer {
       d[o + 3] = 255;
     }
     if (!any) return; wg.putImageData(img, 0, 0);
-    const g = this.ctx; const iso = DEFAULT_ISO; const o = worldToScreen(x0 - 0.5, y0 - 0.5, 0, iso);
+    const g = this.ctx; const iso = this.camera.iso; const o = worldToScreen(x0 - 0.5, y0 - 0.5, 0, iso); // affine: rotates with the view
     const a = worldToScreen(x0 + 0.5, y0 - 0.5, 0, iso), b = worldToScreen(x0 - 0.5, y0 + 0.5, 0, iso);
     g.save(); g.transform(a.sx - o.sx, a.sy - o.sy, b.sx - o.sx, b.sy - o.sy, o.sx, o.sy); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = "high";
     g.drawImage(cv, 0, 0); g.restore();
@@ -189,16 +199,22 @@ export class Canvas2DRenderer {
     return this.gArt;
   }
   /** One baked block (null = an art page is still loading or no DOM). Back-to-front so skirts sit under front cells. */
-  private gtBlock(tm: TileMap, reg: AssetRegistry, ga: GroundArt, bx: number, by: number, season: number, build: boolean): HTMLCanvasElement | null {
+  private gtBlock(tm: TileMap, reg: AssetRegistry, ga: GroundArt, bx: number, by: number, season: number, build: boolean, q = 0): HTMLCanvasElement | null {
+    // ADR-253: (bx, by) and the cells below are VIEW indices (U, V) of quarter q; tile (x, y) sits at view point toView(x, y)
+    // (C2D centres tile (x, y) on the point (x, y)), so view index -> world tile = fromView. q = 0 is unchanged.
     const B = GT_BLOCK, x0 = bx * B, y0 = by * B; let st = `${season}`;
-    for (let cy = Math.floor((y0 - 1) / CHUNK_SIZE); cy <= Math.floor((y0 + B) / CHUNK_SIZE); cy++) for (let cx = Math.floor((x0 - 1) / CHUNK_SIZE); cx <= Math.floor((x0 + B) / CHUNK_SIZE); cx++) { const n = tm.getChunk(cx, cy); st += n ? `,${n.version}` : ",x"; }
-    const k = `${bx},${by}`; const hit = this.gBlocks.get(k); if (hit && hit.stamp === st) { hit.used = this.gFrame; return hit.cv; }
+    const ca = fromView(x0 - 1, y0 - 1, q), cb = fromView(x0 + B, y0 + B, q); // world tile bounds of the block (+1 ring)
+    const wx0 = Math.min(ca.x, cb.x), wx1 = Math.max(ca.x, cb.x), wy0 = Math.min(ca.y, cb.y), wy1 = Math.max(ca.y, cb.y);
+    for (let cy = Math.floor(wy0 / CHUNK_SIZE); cy <= Math.floor(wy1 / CHUNK_SIZE); cy++) for (let cx = Math.floor(wx0 / CHUNK_SIZE); cx <= Math.floor(wx1 / CHUNK_SIZE); cx++) { const n = tm.getChunk(cx, cy); st += n ? `,${n.version}` : ",x"; }
+    const k = `${q}:${bx},${by}`; const hit = this.gBlocks.get(k); if (hit && hit.stamp === st) { hit.used = this.gFrame; return hit.cv; }
     if (!build || typeof document === "undefined") return hit?.cv ?? null; // stale block until rebuilt (no flash)
-    const at = (a: number, b: number): number => tm.getTile(a, b); const L: GroundLayer[] = [];
+    const at = q === 0 ? (a: number, b: number): number => tm.getTile(a, b) : (a: number, b: number): number => { const w = fromView(a, b, q); return tm.getTile(w.x, w.y); };
+    const L: GroundLayer[] = [];
     const ops: { img: CanvasImageSource; f: { x: number; y: number; w: number; h: number; anchorX: number; anchorY: number }; dx: number; dy: number }[] = [];
     for (let d = 0; d <= 2 * (B - 1); d++) for (let lx = Math.max(0, d - B + 1); lx <= Math.min(B - 1, d); lx++) {
       const x = x0 + lx, y = y0 + d - lx; if (!at(x, y)) continue;
-      groundLayers(at, x, y, season, (a, b) => waterShoreTint(at, a, b), L);
+      const w = q === 0 ? null : fromView(x, y, q);
+      groundLayers(at, x, y, season, (a, b) => waterShoreTint(at, a, b), L, w ? groundHash(w.x, w.y) : undefined);
       for (const l of L) { if (l.kind === GroundLayerKind.Water) continue; /* tinted by the drawWater gradient underneath (the grey detail art needs the GPU tint) */ const id = ga.id(l.key); if (id < 0) continue; let f; try { f = reg.dirFrame(id, "idle", 0, 0); } catch { continue; }
         const img = this.image(f.atlas.key); if (!img) return hit?.cv ?? null; ops.push({ img, f, dx: (lx - (d - lx)) * 32 + GT_OX, dy: d * 16 + GT_OY }); }
     }
@@ -211,14 +227,16 @@ export class Canvas2DRenderer {
     const ga = this.groundArtEnabled ? this.groundArtOf(reg) : null; if (!ga) return false;
     const g = this.ctx, B = GT_BLOCK, season = Math.max(0, Math.min(2, this.sv.art | 0)); this.gFrame++; this.groundStats = { blocks: 0, built: 0, cached: this.gBlocks.size };
     const vx0 = -ox / s, vx1 = (this.w - ox) / s, vy0 = -oy / s, vy1 = (this.h - oy) / s; let budget = GT_BUILDS_PER_FRAME;
+    const q = this.camera.view; const cv0 = toView(cx, cy, q); cx = cv0.u; cy = cv0.v; // ADR-253: view indices
     const bx0 = Math.floor((cx - R) / B), bx1 = Math.floor((cx + R) / B), by0 = Math.floor((cy - R) / B), by1 = Math.floor((cy + R) / B);
     for (let d = bx0 + by0; d <= bx1 + by1; d++) for (let bx = Math.max(bx0, d - by1); bx <= Math.min(bx1, d - by0); bx++) {
       const by = d - bx; const sx = (bx - by) * B * 32 - GT_OX, sy = (bx + by) * B * 16 - GT_OY; // block canvas origin (world px)
       if (sx > vx1 || sx + GT_W < vx0 || sy > vy1 || sy + GT_H < vy0) continue;
-      if (!tm.getChunk(Math.floor(bx * B / CHUNK_SIZE), Math.floor(by * B / CHUNK_SIZE))) continue;
-      const nb = this.groundStats.built; const cv = this.gtBlock(tm, reg, ga, bx, by, season, budget > 0); if (this.groundStats.built > nb) budget--;
+      { const w0 = fromView(bx * B, by * B, q), w1 = fromView(bx * B + B - 1, by * B + B - 1, q); // any chunk under the block
+        if (!tm.getChunk(Math.floor(w0.x / CHUNK_SIZE), Math.floor(w0.y / CHUNK_SIZE)) && !tm.getChunk(Math.floor(w1.x / CHUNK_SIZE), Math.floor(w1.y / CHUNK_SIZE))) continue; }
+      const nb = this.groundStats.built; const cv = this.gtBlock(tm, reg, ga, bx, by, season, budget > 0, q); if (this.groundStats.built > nb) budget--;
       if (cv) { g.drawImage(cv, sx, sy); stats.drawCalls++; this.groundStats.blocks++; stats.tiles += B * B; continue; }
-      this.flatTiles(tm, bx * B, by * B, B, stats); // still loading / over budget: flat diamonds
+      this.flatTiles(tm, bx * B, by * B, B, stats, q); // still loading / over budget: flat diamonds
     }
     const cap = Math.max(48, this.groundStats.blocks + 24); // LRU: drop the least recently drawn blocks
     if (this.gBlocks.size > cap) { const old = [...this.gBlocks.entries()].sort((a, b) => a[1].used - b[1].used); for (let i = 0; i < old.length - cap; i++) this.gBlocks.delete(old[i]![0]); }
@@ -228,8 +246,8 @@ export class Canvas2DRenderer {
   private drawWeatherFx(world: World, reg: AssetRegistry, kind: number, wt: { snow: number; wind: number }, daylight: number, time: number, s: number, ox: number, oy: number, stats: FrameStats): void {
     const dt = Math.max(0, Math.min(0.1, time - this.wvfx.now)); this.wvfx.update(time); this.weatherFx.scale = 0.5;
     const w = readWind(world); const wv = Math.min(2, (w.speed > 0 ? w.speed : DEFAULT_STYLE.wind.defaultSpeed * (1 + 3 * wt.wind)) / Math.max(0.1, DEFAULT_STYLE.wind.refSpeed)); const dir = w.speed > 0 ? w.dir : DEFAULT_STYLE.wind.defaultDir;
-    const iso = DEFAULT_ISO, hw = iso.tileW / 2, hh = iso.tileH / 2; const sx0 = -ox / s, sx1 = (this.w - ox) / s, sy0 = -oy / s, sy1 = (this.h - oy) / s;
-    const t = (a: number, b: number): [number, number] => [(a / hw + b / hh) / 2, (b / hh - a / hw) / 2]; const A = t(sx0, sy0), B = t(sx1, sy0), C = t(sx0, sy1), D = t(sx1, sy1);
+    const iso = this.camera.iso, hw = iso.tileW / 2, hh = iso.tileH / 2; const sx0 = -ox / s, sx1 = (this.w - ox) / s, sy0 = -oy / s, sy1 = (this.h - oy) / s;
+    const t = (a: number, b: number): [number, number] => { const w = fromView((a / hw + b / hh) / 2, (b / hh - a / hw) / 2, iso.view ?? 0); return [w.x, w.y]; }; const A = t(sx0, sy0), B = t(sx1, sy0), C = t(sx0, sy1), D = t(sx1, sy1);
     this.weatherFx.update(this.wvfx, (k) => reg.ids.sprites.tryId(k), kind, wt, daylight, { x: Math.cos(dir) * wv, y: Math.sin(dir) * wv },
       { x0: Math.min(A[0], B[0], C[0], D[0]), x1: Math.max(A[0], B[0], C[0], D[0]), y0: Math.min(A[1], B[1], C[1], D[1]), y1: Math.max(A[1], B[1], C[1], D[1]), tiles: ((sx1 - sx0) * (sy1 - sy0)) / (2 * hw * hh) }, dt);
     const g = this.ctx;
@@ -241,11 +259,11 @@ export class Canvas2DRenderer {
     g.globalAlpha = 1;
   }
   /** Legacy flat land diamonds for an n x n tile square (water: the gradient image below). */
-  private flatTiles(tm: TileMap, x0: number, y0: number, n: number, stats: FrameStats): void {
+  private flatTiles(tm: TileMap, x0: number, y0: number, n: number, stats: FrameStats, q = 0): void { // (x0, y0): view indices
     const g = this.ctx, tw = DEFAULT_ISO.tileW, th = DEFAULT_ISO.tileH;
     for (let y = y0; y < y0 + n; y++) for (let x = x0; x < x0 + n; x++) {
-      const t = tm.getTile(x, y); if (!t || isWaterId(t)) { if (t) stats.tiles++; continue; }
-      const p = worldToScreen(x, y, 0, DEFAULT_ISO); g.fillStyle = this.groundColor(t, x, y);
+      const w = fromView(x, y, q); const t = tm.getTile(w.x, w.y); if (!t || isWaterId(t)) { if (t) stats.tiles++; continue; }
+      const p = worldToScreen(x, y, 0, DEFAULT_ISO); g.fillStyle = this.groundColor(t, w.x, w.y);
       g.beginPath(); g.moveTo(p.sx, p.sy - th / 2); g.lineTo(p.sx + tw / 2, p.sy); g.lineTo(p.sx, p.sy + th / 2); g.lineTo(p.sx - tw / 2, p.sy); g.fill(); stats.tiles++;
     }
   }
@@ -288,7 +306,7 @@ export class Canvas2DRenderer {
   /** ADR-197: building pieces as painter items: level-major, decks under their floor's uprights, iso order, unique tie-break. */
   gatherPieces(world: World, reg: AssetRegistry, time = this.clock): C2DPiece[] {
     const bpd = this.bindings.buildPiece; if (!bpd || !world.isRegistered(bpd)) return [];
-    const iso = DEFAULT_ISO; const hw = iso.tileW / 2, hh = iso.tileH / 2; const raw: { e: Entity; ax: number; ay: number; fw: number; fh: number; level: number; layer: number; z: number; vis: number; rot: number; dmg: number; ghost: boolean; deck: boolean; top: number | undefined; px: number; py: number; tint: number }[] = [];
+    const iso = this.camera.iso; const hw = iso.tileW / 2, hh = iso.tileH / 2; const q = (iso.view ?? 0) & 3; const raw: { e: Entity; ax: number; ay: number; fw: number; fh: number; level: number; layer: number; z: number; vis: number; rot: number; dmg: number; ghost: boolean; deck: boolean; top: number | undefined; px: number; py: number; tint: number }[] = [];
     this.decks.clear();
     for (const e of world.query([bpd, Transform])) {
       const b = world.get(e, bpd)!; const t = world.get(e, Transform)!; let sd; try { sd = reg.sprite(b.visualId); } catch { continue; } if (!sd.building) continue;
@@ -309,7 +327,8 @@ export class Canvas2DRenderer {
       // ADR-218: piece state (bonfire "unlit") + lit fires play their idle flame loop on the render clock (per-entity phase)
       const fire = this.bindings.pieceLit?.(r.e); const pst = this.bindings.pieceState?.(r.e) ?? -1;
       const spk = r.ghost ? { sid: r.vis, flags: 0 } : this.seasonPick(reg, r.vis); // ADR-239: <key>_<season> piece art, else procedural
-      let f; try { f = pieceFireFrame(reg, spk.sid, r.rot & 3, r.dmg, pst, fire, r.ghost, time, entityIndex(r.e)); } catch { try { f = pieceFireFrame(reg, r.vis, r.rot & 3, r.dmg, pst, fire, r.ghost, time, entityIndex(r.e)); } catch { continue; } } let img: CanvasImageSource | null = this.image(f.atlas.key); if (!img) continue;
+      const ar = (r.rot + q) & 3; // ADR-253: the art row seen from this view
+      let f; try { f = pieceFireFrame(reg, spk.sid, ar, r.dmg, pst, fire, r.ghost, time, entityIndex(r.e)); } catch { try { f = pieceFireFrame(reg, r.vis, ar, r.dmg, pst, fire, r.ghost, time, entityIndex(r.e)); } catch { continue; } } let img: CanvasImageSource | null = this.image(f.atlas.key); if (!img) continue;
       const f0 = f; let tintSalt = "";
       { // ADR-230: clan tint through the atlas tintmask (R primary, G secondary), as the WebGL2 shader does
         const tp = r.ghost ? undefined : this.bindings.pieceTints?.(r.e) ?? (r.tint ? [r.tint >>> 0, 0] as const : undefined);
@@ -319,10 +338,12 @@ export class Canvas2DRenderer {
       const exact = (r.rot & ROT_EXACT_PIVOT) !== 0; const pvx = exact ? r.px : r.ax + r.fw / 2, pvy = exact ? r.py : r.ay + r.fh / 2;
       const lift = r.rot & ROT_DECK_LIFT ? (exact ? this.decks.topNear(pvx, pvy, r.level) : this.decks.topOver(r.ax, r.ay, r.fw, r.fh, r.level)) : 0;
       const p0 = worldToScreen(pvx, pvy, r.z, iso); const p = { sx: p0.sx, sy: p0.sy - lift };
-      const mask = r.top === undefined || exact ? 0 : this.decks.mask(r.ax, r.ay, r.fw, r.fh, r.level, r.top);
-      const isoD = (exact ? pvx + pvy - 1 : r.ax + r.fw - 1 + r.ay + r.fh - 1) + r.layer * 0.01 + (exact ? exactTieBreak(pvx, pvy, r.ghost) : pieceTieBreak(r.ax, r.ay, r.ghost)) + (r.rot & ROT_VERTEX_POST ? VERTEX_POST_BIAS : 0);
-      out.push({ e: r.e, sx: p.sx, sy: p.sy, depth: r.level * LEVEL_DEPTH + (r.deck ? DECK_DEPTH : 0) + isoD, ord: pieceOrder(r.level, r.layer, r.ax, r.ay) * 2 + (r.ghost ? 1 : 0), img, f,
-        clip: mask ? deckClipPolygon(r.fw, r.fh, mask, r.top!, hw, hh) : undefined, seams: mask ? deckSeamPatches(r.fw, r.fh, mask, r.top!, hw, hh) : undefined, ghost: r.ghost, hearth: fire === 2 && !r.ghost && r.dmg === 0, scale: this.bindings.pieceScale?.(r.e) ?? 1 });
+      // ADR-253: depth / tie-breaks / deck sides from the VIEW footprint and pivot (decks.mask stays in world tiles)
+      const vr = viewRect(r.ax, r.ay, r.fw, r.fh, q); const pv = toView(pvx, pvy, q);
+      const mask = r.top === undefined || exact ? 0 : rotSideMask(this.decks.mask(r.ax, r.ay, r.fw, r.fh, r.level, r.top), q);
+      const isoD = (exact ? pv.u + pv.v - 1 : vr.x + vr.w - 1 + vr.y + vr.h - 1) + r.layer * 0.01 + (exact ? exactTieBreak(pv.u, pv.v, r.ghost) : pieceTieBreak(vr.x, vr.y, r.ghost)) + (r.rot & ROT_VERTEX_POST ? VERTEX_POST_BIAS : 0);
+      out.push({ e: r.e, sx: p.sx, sy: p.sy, depth: r.level * LEVEL_DEPTH + (r.deck ? DECK_DEPTH : 0) + isoD, ord: pieceOrder(r.level, r.layer, vr.x, vr.y) * 2 + (r.ghost ? 1 : 0), img, f,
+        clip: mask ? deckClipPolygon(vr.w, vr.h, mask, r.top!, hw, hh) : undefined, seams: mask ? deckSeamPatches(vr.w, vr.h, mask, r.top!, hw, hh) : undefined, ghost: r.ghost, hearth: fire === 2 && !r.ghost && r.dmg === 0, scale: this.bindings.pieceScale?.(r.e) ?? 1 });
     }
     return out;
   }
@@ -363,7 +384,7 @@ export class Canvas2DRenderer {
     g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = "source-over"; g.globalAlpha = 1;
     g.fillStyle = rgb(day.sky); g.fillRect(0, 0, this.w, this.h);
     const ox = Math.round(this.w / 2 - cam.x * s), oy = Math.round(this.h / 2 - cam.y * s); g.setTransform(s, 0, 0, s, ox, oy); g.imageSmoothingEnabled = s < 1; // ADR-197: whole-pixel camera origin
-    const iso = DEFAULT_ISO; const tw = iso.tileW, th = iso.tileH;
+    const iso = this.camera.iso; const tw = iso.tileW, th = iso.tileH; const vq = (iso.view ?? 0) & 3, vFace = vq * (Math.PI / 2);
     // terrain: diamonds around the camera
     const tm = this.tilemap; const c = cam.cssToWorld(cam.viewW / cam.dpr / 2, cam.viewH / cam.dpr / 2);
     const R = Math.ceil(Math.max(this.w, this.h) / (s * th)) + 2;
@@ -382,7 +403,8 @@ export class Canvas2DRenderer {
       const p = worldToScreen(x, y, z, iso); const flat = (world.get(e, Sprite)!.flags & SpriteFlag.Flat) !== 0;
       const lvl = z >= FLOOR_Z - 1e-6 ? terrainZToFloor(z, 0) : 0;
       const bed = this.bindings.bedFit?.(e) ? BED_SORT_EPS : 0; // ADR-244 (c): a lying sleeper sorts just after its bed (as WebGL)
-      items.push({ e, sx: p.sx, sy: p.sy, depth: lvl * LEVEL_DEPTH + flatSortDepth(x + y, flat) + bed, ord: 1e15 + e });
+      const vp = vq ? toView(x, y, vq) : null; // ADR-253: depth along the view axes
+      items.push({ e, sx: p.sx, sy: p.sy, depth: lvl * LEVEL_DEPTH + flatSortDepth(vp ? vp.u + vp.v : x + y, flat) + bed, ord: 1e15 + e });
     }
     if (reg) for (const pc of this.gatherPieces(world, reg)) items.push({ e: pc.e, sx: pc.sx, sy: pc.sy, depth: pc.depth, ord: pc.ord, pc });
     items.sort((a, b) => (a.depth - b.depth) || (a.ord - b.ord)); // ADR-197: total order (no equal-key coin flips) // Flat ground decals (roads) first: always under feet and entities
@@ -400,7 +422,7 @@ export class Canvas2DRenderer {
         let def; try { def = reg!.sprite(sp.spriteId); } catch { def = undefined; }
         if (def && isFireAnim(def)) { anim = "idle"; tAnim = fireAnimTime(time, entityIndex(it.e)); hearth = true; }
       }
-      const facing = world.get(it.e, Transform)!.facing; const k = sp.scale || 1;
+      const facing = world.get(it.e, Transform)!.facing + vFace; const k = sp.scale || 1; // ADR-253: art facing = world facing + view
       // ADR-134 flinch: brief brightness flash + tilt about the foot (same bindings as WebGL's hitFlash)
       const hf = this.bindings.hitFlash?.(it.e) ?? 0; const tilt = this.bindings.hitTilt?.(it.e) ?? 0;
       const fx = (): void => { if (tilt) g.rotate(tilt); if (hf > 0) g.filter = `brightness(${(1 + 2.5 * Math.min(1, hf)).toFixed(2)})`; };
@@ -420,6 +442,7 @@ export class Canvas2DRenderer {
       const flatS = (sp.flags & SpriteFlag.Flat) !== 0; const spk = this.seasonPick(reg!, sp.spriteId); // ADR-239: <key>_<season> art first
       let f; try { f = reg!.dirFrame(spk.sid, anim, facing, tAnim); } catch { try { f = reg!.dirFrame(sp.spriteId, anim, facing, tAnim); } catch { continue; } }
       let img: CanvasImageSource | null = this.image(f.atlas.key); if (!img) continue;
+      if ((vq & 1) && !spriteIsDirectional(reg!, spk.sid)) f = { ...f, flipX: !f.flipX }; // ADR-253 fallback: mirror single-facing art
       const sFl = flatS ? (spk.sid === sp.spriteId && this.sv.fall + this.sv.winter > 0.002 ? SEASON_GROUND : 0) : spk.flags; // ADR-246: seasonal roads
       if (sFl) { const sc = this.seasonFrame(img, f, sFl, entityIndex(it.e)); if (sc) { img = sc; f = { ...f, x: 0, y: 0 }; } }
       const dw = f.w * k, dh = f.h * k;

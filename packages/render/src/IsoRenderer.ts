@@ -17,7 +17,7 @@ import { reportRenderError } from "./report.js";
 import { buildSceneTarget, type SceneDepth } from "./gl/sceneTarget.js";
 import { formatSceneDiag, type SceneDiag } from "./sceneDiag.js";
 import { AssetManager, entityIndex, Transform, type World } from "@engine/core";
-import { DEFAULT_ISO, type BuildingGrid, type ChunkedSpatialIndex, type IsoConfig, type TileMap } from "@engine/world";
+import { DEFAULT_ISO, screenToWorld, toView, type BuildingGrid, type ChunkedSpatialIndex, type IsoConfig, type TileMap } from "@engine/world";
 import { IsoCamera, type Rect } from "./camera.js";
 import { BloomPass } from "./bloom.js";
 import { lightningStrikeAnim } from "./frame-select.js";
@@ -296,7 +296,7 @@ export class IsoRenderer implements Renderer {
     }
     canvas.addEventListener("webglcontextlost", this.onLost, false);
     canvas.addEventListener("webglcontextrestored", this.onRestored, false);
-    this.iso = opts.iso ?? DEFAULT_ISO;
+    this.iso = { ...(opts.iso ?? DEFAULT_ISO) }; // own copy: the ADR-253 view rotation lives on it (camera + passes share it)
     this.zFactor = isoZDepthFactor(this.iso);
     this.camera = new IsoCamera(this.iso);
     this.tilemap = opts.tilemap;
@@ -331,12 +331,12 @@ export class IsoRenderer implements Renderer {
     if (this.tierLayout !== this.atlas.layoutVersion) { this.tierStream = new BuildingTierStreamer(this.atlas); this.tierLayout = this.atlas.layoutVersion; }
     else if (this.totalFrames % 15 !== 1) return;
     const ts = this.tierStream!; const bp = world.store(bpDef); const tr = world.store(Transform); const vis = (bp.data as Record<string, ArrayLike<number>>).visualId!;
-    const hw = this.iso.tileW / 2, hh = this.iso.tileH / 2; const mx = (rect.x1 - rect.x0) / 2, my = (rect.y1 - rect.y0) / 2;
+    const hw = this.iso.tileW / 2, hh = this.iso.tileH / 2, q = this.iso.view ?? 0; const mx = (rect.x1 - rect.x0) / 2, my = (rect.y1 - rect.y0) / 2;
     const x0 = rect.x0 - mx, x1 = rect.x1 + mx, y0 = rect.y0 - my, y1 = rect.y1 + my * 3; // + tall pieces below the bottom edge
     ts.begin();
     for (let k = 0; k < bp.size; k++) {
       const t = tr.slot(entityIndex(bp.dense[k]!)); if (t < 0) continue;
-      const x = tr.data.x[t]!, y = tr.data.y[t]!; const sx = (x - y) * hw, sy = (x + y) * hh;
+      const p = toView(tr.data.x[t]!, tr.data.y[t]!, q); const sx = (p.u - p.v) * hw, sy = (p.u + p.v) * hh;
       if (sx >= x0 && sx <= x1 && sy >= y0 && sy <= y1) ts.add(vis[k]!);
     }
     ts.end();
@@ -345,6 +345,11 @@ export class IsoRenderer implements Renderer {
 
   /** Entity (the local player) used for Occluder fading and roof/upper-floor cutaways. */
   setFocusEntity(e: number): void { this.sprites.focusEntity = e; }
+  /** ADR-253: view rotation in quarter turns (0..3). */
+  get viewRotation(): number { return this.camera.view; }
+  /** ADR-253: snap the view to quarter `q` keeping `pivot` (default: the view centre) fixed on screen. All passes read the
+   *  shared IsoConfig, so terrain, sprites, buildings, lights and shadows follow on the next frame. */
+  setViewRotation(q: number, pivot?: { x: number; y: number; z?: number }): void { this.camera.setView(q, pivot); }
   /** Gameplay components the renderer reads (BuildPiece, AnimState). */
   bindGameplay(b: GameplayBindings): void { this.bindings = { ...this.bindings, ...b }; }
   /** BuildingGrid used for cutaway detection (multi-level). */
@@ -494,9 +499,10 @@ export class IsoRenderer implements Renderer {
     const wenv = readWind(world);
     const wDir = wenv.speed > 0 ? wenv.dir : style.wind.defaultDir;
     const wSpeed = wenv.speed > 0 ? wenv.speed : style.wind.defaultSpeed * (1 + 3 * ws.wind);
-    const wsx = Math.cos(wDir) - Math.sin(wDir); // tile-axis direction -> screen x
+    const wvd = wDir + ((this.iso.view ?? 0) & 3) * Math.PI / 2; // ADR-253: wind in view space (screen-space sway / clouds)
+    const wsx = Math.cos(wvd) - Math.sin(wvd); // tile-axis direction -> screen x
     this.sprites.windVec[0] = Math.sign(wsx) * Math.min(1, Math.abs(wsx)); this.sprites.windVec[1] = Math.min(1.5, wSpeed / Math.max(0.1, style.wind.refSpeed));
-    this.cloudOff[0]! -= wsx * wSpeed * 8 * dt; this.cloudOff[1]! -= (Math.cos(wDir) + Math.sin(wDir)) * 0.5 * wSpeed * 8 * dt;
+    this.cloudOff[0]! -= wsx * wSpeed * 8 * dt; this.cloudOff[1]! -= (Math.cos(wvd) + Math.sin(wvd)) * 0.5 * wSpeed * 8 * dt;
     // surface wetness / snow cover accumulate from weather (gameplay's per-chunk value overrides via setSurfaceProvider)
     const sf = this.surface, su = style.surface;
     sf.wet = Math.max(0, Math.min(1, sf.wet + (ws.rain > 0.05 ? ws.rain * su.wetRate : -su.dryRate * (0.5 + day.daylight)) * dt));
@@ -516,7 +522,7 @@ export class IsoRenderer implements Renderer {
       if (this.nextBolt <= 0) {
         this.flash = 1; this.nextBolt = style.lightning.meanIntervalSec * (0.3 + Math.random() * 1.4);
         const r = this.rect; const sx = r.x0 + Math.random() * (r.x1 - r.x0), sy = r.y0 + Math.random() * (r.y1 - r.y0) * 0.6;
-        const hw0 = this.iso.tileW / 2, hh0 = this.iso.tileH / 2; const tx = (sx / hw0 + sy / hh0) / 2, ty = (sy / hh0 - sx / hw0) / 2;
+        const wp = screenToWorld(sx, sy, 0, this.iso); const tx = wp.x, ty = wp.y; // ADR-253: rotation-aware
         const bolt = this.atlas.registry?.ids.sprites.tryId("fx_lightning");
         if (bolt !== undefined) { // ADR-242: random strike_a/b/c variant per bolt
           let names: string[] = []; try { names = this.atlas.registry!.sprite(bolt).animList.map((a) => a.name ?? ""); } catch { /* unknown sprite */ }
@@ -526,7 +532,7 @@ export class IsoRenderer implements Renderer {
       }
     }
     // ADR-246: Art's weather sprites (snowflakes, blizzard gusts, heat haze) from the ADR-239 weather
-    { const r = this.rect, hw0 = this.iso.tileW / 2, hh0 = this.iso.tileH / 2; const t = (sx: number, sy: number): [number, number] => [(sx / hw0 + sy / hh0) / 2, (sy / hh0 - sx / hw0) / 2];
+    { const r = this.rect, hw0 = this.iso.tileW / 2, hh0 = this.iso.tileH / 2; const t = (sx: number, sy: number): [number, number] => { const w = screenToWorld(sx, sy, 0, this.iso); return [w.x, w.y]; };
       const a = t(r.x0, r.y0), b = t(r.x1, r.y0), c = t(r.x0, r.y1), d = t(r.x1, r.y1); const reg = this.atlas.registry;
       const wv = Math.min(2, wSpeed / Math.max(0.1, style.wind.refSpeed)); this.weatherFx.scale = this.quality.tier.particles;
       this.weatherFx.update(this.vfx, (k) => reg?.ids.sprites.tryId(k), wr.kind, ws, day.daylight, { x: Math.cos(wDir) * wv, y: Math.sin(wDir) * wv },

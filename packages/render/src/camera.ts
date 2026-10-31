@@ -16,7 +16,7 @@ export class IsoCamera {
   /** CSS->device pixel ratio, so zoom=1 means 1 iso px = 1 CSS px. */
   dpr = 1;
 
-  constructor(readonly iso: IsoConfig = DEFAULT_ISO) {}
+  constructor(readonly iso: IsoConfig = { ...DEFAULT_ISO }) {}
 
   /** Snap the effective device scale (zoom x dpr) to quarter steps >= 1 so non-integer zooms (ADR-100 ~1.4) x
    *  fractional DPRs (2.625) sample the atlas on a stable grid; the view center snaps to whole device pixels. */
@@ -24,6 +24,19 @@ export class IsoCamera {
   get scale(): number { const s = this.zoom * this.dpr; return this.snap && s >= 1 ? Math.round(s * 4) / 4 : s; }
   /** Effective CSS zoom actually drawn (zoom after scale snapping). */
   get drawZoom(): number { return this.scale / this.dpr; }
+
+  /** ADR-253 view rotation (quarter turns 0..3) — lives on the (renderer-owned) IsoConfig so every projection agrees. */
+  get view(): number { return (this.iso.view ?? 0) & 3; }
+  /**
+   * ADR-253: rotate the view to quarter `q`, keeping the world point under the view centre (or `pivot`, e.g. the
+   * player, at height z) at the same screen position. Instant snap: no per-frame cost, no tween of axis-aligned art.
+   */
+  setView(q: number, pivot?: { x: number; y: number; z?: number }): void {
+    const k = ((Math.round(q) % 4) + 4) % 4; if (k === this.view) return;
+    const z = pivot?.z ?? 0; const p = pivot ?? screenToWorld(this.x, this.y, 0, this.iso);
+    const before = worldToScreen(p.x, p.y, z, this.iso); const dx = this.x - before.sx, dy = this.y - before.sy;
+    this.iso.view = k; const after = worldToScreen(p.x, p.y, z, this.iso); this.x = after.sx + dx; this.y = after.sy + dy;
+  }
 
   setViewport(w: number, h: number, dpr: number): void { this.viewW = w; this.viewH = h; this.dpr = dpr; }
 

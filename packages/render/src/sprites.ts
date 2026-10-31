@@ -14,7 +14,7 @@
 import { fireAnimTime } from "./fire-anim.js";
 import { SEASON_SPRITE_GLSL, SEASON_FOLIAGE, SEASON_SNOWCAP, SEASON_GROUND, SUMMER_VISUAL, SeasonArt, type SeasonVisual } from "./season.js";
 import { AnimState as CoreAnimState, entityIndex, lerpAngle, PrevTransform, Transform, type ComponentDef, type World } from "@engine/core";
-import { CHUNK_SIZE, chunkKey, floorToTerrainZ, terrainZToFloor, type BuildingGrid, type ChunkedSpatialIndex, type IsoConfig } from "@engine/world";
+import { CHUNK_SIZE, VIEW_COS, VIEW_SIN, viewRect, chunkKey, floorToTerrainZ, terrainZToFloor, type BuildingGrid, type ChunkedSpatialIndex, type IsoConfig } from "@engine/world";
 import { createProgram, GLSL_COMMON, type FrameStats, type Program } from "./gl/util.js";
 import { Sprite, Shadow, Occluder, SpriteFlag, LightSource, TintSecondary, SpriteAlpha } from "./components.js";
 import { newResolved, STREAM_MARGIN_PX, STREAM_MARGIN_ANIMAL_PX, STREAM_KEEP_FACTOR, type AtlasManager, type ResolvedFrame, type HandAnchor } from "./assets/atlasManager.js";
@@ -31,7 +31,7 @@ import type { VfxLayer } from "./vfx.js";
 import { LayerCache, activeExpression, readAppearanceSlot, type AppearanceBinding, type CachedLayer } from "./character/layers.js";
 import { nearestCutoff } from "./gl/fallback.js";
 import { PRIO_NEAR } from "./gl/vram.js";
-import { DeckNeighbors, deckTopPx, pieceTieBreak, exactTieBreak, vertexPostGlBias, DECK_EDGE_EPS, DECK_SEAM_BAND, DECK_SEAM_SHIFT } from "./building/deckFaces.js";
+import { DeckNeighbors, rotSideMask, deckTopPx, pieceTieBreak, exactTieBreak, vertexPostGlBias, DECK_EDGE_EPS, DECK_SEAM_BAND, DECK_SEAM_SHIFT } from "./building/deckFaces.js";
 import { crackAnim, lCornerArmPivots, PieceCoverIndex, ROT_EXACT_PIVOT, ROT_NO_OCCLUDE, ROT_DECK_LIFT, ROT_VERTEX_POST } from "./building/modular.js";
 import { InteriorRoute, inInteriorRegion, interiorOrder, type InteriorRegion } from "./vehicles/interiorPass.js";
 
@@ -481,7 +481,8 @@ export class SpriteBatch {
   private layerPlan: { l: CachedLayer; j: number; faceL: boolean; rdy: boolean; atlas: number; entry: number; ax: number; ay: number }[] = [];
   /** Chunk screen bounds (any height up to 1024 px above ground) against the view rect grown by 512 px. */
   private chunkOnScreen(cx: number, cy: number, r: Rect, hw: number, hh: number): boolean {
-    const x0 = cx * CHUNK_SIZE, y0 = cy * CHUNK_SIZE, x1 = x0 + CHUNK_SIZE, y1 = y0 + CHUNK_SIZE;
+    const vr = viewRect(cx * CHUNK_SIZE, cy * CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE, this.iso.view ?? 0); // ADR-253: view-space square
+    const x0 = vr.x, y0 = vr.y, x1 = x0 + CHUNK_SIZE, y1 = y0 + CHUNK_SIZE;
     const sl = (x0 - y1) * hw, sr = (x1 - y0) * hw, st = (x0 + y0) * hh - 1024, sb = (x1 + y1) * hh;
     return sr >= r.x0 - 512 && sl <= r.x1 + 512 && sb >= r.y0 - 512 && st <= r.y1 + 512;
   }
@@ -684,6 +685,9 @@ export class SpriteBatch {
     this.dressCut = nearestCutoff(this.dressD2, this.dressN, this.maxDressed); this.dressN = 0; this.dressDrawn = 0; this.dressCapped = 0;
     if (this.layerCache && (this.frameNo & 255) === 0) this.layerCache.prune((e) => world.isAlive(e));
     const hw = this.iso.tileW / 2, hh = this.iso.tileH / 2, zs = this.iso.zStep, zf = this.zFactor;
+    // ADR-253 view rotation: projections / depth keys use view coords (u, v) = R_q (x, y); art facings get + q quarter turns;
+    // world coords stay for distances, interiors, streaming priority. q = 0: u = x, v = y (bit-identical to before).
+    const vq = (this.iso.view ?? 0) & 3, vc = VIEW_COS[vq]!, vs = VIEW_SIN[vq]!, vFace = vq * (Math.PI / 2);
     const margin = 256;
     const r0x = rect.x0 - margin, r1x = rect.x1 + margin, r0y = rect.y0 - margin * 0.5, r1y = rect.y1 + margin * 2;
     const tx = tr.data.x, ty = tr.data.y, tz = tr.data.z, tf = tr.data.facing;
@@ -703,7 +707,8 @@ export class SpriteBatch {
         fwy = ps >= 0 ? py[ps]! + (ty[ts]! - py[ps]!) * alpha : ty[ts]!;
         fwz = ps >= 0 ? pz[ps]! + (tz[ts]! - pz[ps]!) * alpha : tz[ts]!;
         if (cx.transformSource?.entities.has(this.focusEntity) && cx.transformSource.sample(world, this.focusEntity, alpha, this.xf)) { fwx = this.xf[0]!; fwy = this.xf[1]!; fwz = this.xf[2]!; }
-        fx = (fwx - fwy) * hw; fy = (fwx + fwy) * hh - fwz * zs - 20; fk = fwx + fwy + fwz * zf; hasFocus = true;
+        const fu = vc * fwx - vs * fwy, fv = vs * fwx + vc * fwy;
+        fx = (fu - fv) * hw; fy = (fu + fv) * hh - fwz * zs - 20; fk = fu + fv + fwz * zf; hasFocus = true;
       }
     }
     // focus screen rect (from its current frame; fallback 32x56) for the occlusion test
@@ -714,7 +719,7 @@ export class SpriteBatch {
       const ok = fsl >= 0 && atlas.resolve(sp.data.spriteId[fsl]!, -1, 0, 0, sp.data.frameId[fsl]!, res);
       const sc = fsl >= 0 ? sp.data.scale[fsl]! || 1 : 1;
       const w = ok ? res.w * sc : 32, h = ok ? res.h * sc : 56, ax = ok ? res.ax * sc : 16, ay = ok ? res.ay * sc : 56;
-      const sx0 = (fwx - fwy) * hw, sy0 = (fwx + fwy) * hh - fwz * zs;
+      const fu = vc * fwx - vs * fwy, fv = vs * fwx + vc * fwy; const sx0 = (fu - fv) * hw, sy0 = (fu + fv) * hh - fwz * zs;
       fl = sx0 - ax + w * 0.2; fr = sx0 - ax + w * 0.8; ft = sy0 - ay + h * 0.1; fb = sy0 - ay + h * 0.95;
       this.focusScr = [sx0, sy0 - Math.min(ay, h) * 0.5];
     }
@@ -739,7 +744,8 @@ export class SpriteBatch {
       let x = tx[ts]!, y = ty[ts]!, z = tz[ts]!, f = tf[ts]!;
       if (src && src.entities.has(e) && src.sample(world, e, alpha, xf)) { x = xf[0]!; y = xf[1]!; z = xf[2]!; f = xf[3]!; }
       else if (ps >= 0) { x = px[ps]! + (x - px[ps]!) * alpha; y = py[ps]! + (y - py[ps]!) * alpha; z = pz[ps]! + (z - pz[ps]!) * alpha; f = lerpAngle(pf[ps]!, f, alpha); }
-      const sx = (x - y) * hw, sy = (x + y) * hh - z * zs;
+      const vu = vc * x - vs * y, vv = vs * x + vc * y; f += vFace; // ADR-253: view position + art facing
+      const sx = (vu - vv) * hw, sy = (vu + vv) * hh - z * zs;
       let sid = sp.data.spriteId[k]!;
       const spk = this.seasonPick(atlas, sid); const seasonGr = spk.sid === sid && this.season.fall + this.season.winter > 0.002 ? SEASON_GROUND : 0; sid = spk.sid; const seasonFl = spk.flags; // ADR-239 (ADR-246: flat decals w/o season art get the ground pass)
       // manifest "stream" sheets: page in inside view + margin (animals: wider, they walk into view), keep resident inside
@@ -822,7 +828,7 @@ export class SpriteBatch {
       let bedBias = 0;
       if (bodyL && res.anim.startsWith("sleep_lie")) { const bf = cx.bindings.bedFit?.(e); if (bf) { res.ax -= bf.x; res.ay -= bf.y; seatDx -= bf.x; seatDy -= bf.y; bedBias = BED_SORT_EPS; } }
       const scale = sp.data.scale[k]! || 1;
-      const key = x + y + z * zf + bedBias;
+      const key = vu + vv + z * zf + bedBias;
       // occlusion: tall sprites (or explicit Occluders) in front of the focus whose rect overlaps it
       let occT = 0, fade = 1;
       if (occOn && e !== this.focusEntity) {
@@ -843,7 +849,9 @@ export class SpriteBatch {
       const ss = sh.slot(i); const crisp = atlas.isCrisp(res.atlas); if (crisp) atlas.markUsedAt(res.atlas);
       else if (occOn && oc.slot(i) >= 0 && oc.data.fade[oc.slot(i)]! >= 1) atlas.markUsedAt(res.atlas); // ADR-152: never-fade props (campfire) keep their atlas hot
       let sAl = 1; if (sa) { const s2 = sa.slot(i); if (s2 >= 0) { sAl = Math.max(0, Math.min(1, sa.data.alpha[s2]!)); fade *= sAl; } } // ADR-238: whole-sprite fade
-      const o0 = this.writeOne(sx, sy, key, scale, res, sp.data.flags[k]! | (ls.slot(i) >= 0 ? SpriteFlag.BloomSource : 0) | (crisp ? CRISP : 0) | ((sp.data.flags[k]! & SpriteFlag.Flat) ? seasonGr : seasonFl), (i * 0.618034) % 1, fade, -OPEN, OPEN, sp.data.tint[k]! >>> 0, 0,
+      // ADR-253 fallback: non-directional art (props, decor) mirrors on odd view quarters (no art for the other facings)
+      const mir = (vq & 1) && !atlas.isDirectional(sid) ? SpriteFlag.FlipX : 0;
+      const o0 = this.writeOne(sx, sy, key, scale, res, (sp.data.flags[k]! ^ mir) | (ls.slot(i) >= 0 ? SpriteFlag.BloomSource : 0) | (crisp ? CRISP : 0) | ((sp.data.flags[k]! & SpriteFlag.Flat) ? seasonGr : seasonFl), (i * 0.618034) % 1, fade, -OPEN, OPEN, sp.data.tint[k]! >>> 0, 0,
         ss >= 0 ? sh.data.alpha[ss]! * sAl : 0, 0, 0, ss >= 0 ? blobW * (sh.data.length[ss]! || 1) : 0);
       if (wet) { const s2 = wet.slot(i); if (s2 >= 0) { o0[20] = wet.data.level[s2]! / 255; if (o0[20] > 0.3) cx.statusFx?.("wet", x, y, z, o0[20]); } }
       if (bt) { const s2 = bt.slot(i); if (s2 >= 0) { o0[21] = bt.data.cold[s2]! / 255; o0[22] = bt.data.shivering[s2]! ? 1 : 0; o0[23] = (bt.data.heat[s2]! / 255) * cx.style.fx.flushStrength;
@@ -951,7 +959,7 @@ export class SpriteBatch {
     if (cx.spatial) {
       // chunk-level culling through the shared spatial index
       // culled with the sprite margin too: a character standing just past a chunk's diamond edge was dropped with its chunk
-      const keys = visibleChunkKeys({ x0: r0x, y0: r0y, x1: r1x, y1: r1y }, hw, hh, zs, 16);
+      const keys = visibleChunkKeys({ x0: r0x, y0: r0y, x1: r1x, y1: r1y }, hw, hh, zs, 16, vq);
       for (const ck of keys) {
         if (cx.spatial.activeKeys && !cx.spatial.activeKeys.has(ck)) continue;
         for (const e of cx.spatial.index.entitiesInChunk(ck)) { const s = sp.slot(entityIndex(e)); if (s >= 0) emitSprite(s); }
@@ -966,7 +974,8 @@ export class SpriteBatch {
         for (const side of [-1, 1]) for (let j = 0; j < nSeg; j++) {
           const u = -rg.length / 2 + (j + 0.5) * (rg.length / nSeg), v = side * rg.width / 2;
           const x = rg.cx + u * c - v * sn, y = rg.cy + u * sn + v * c;
-          this.push(this.writeOne((x - y) * hw, (x + y) * hh, x + y, 1, res, SpriteFlag.NoOutline | (side > 0 ? SpriteFlag.FlipX : 0), 0, 1, -OPEN, OPEN, 0, 0, 0, 0, 0, 0), 0);
+          const wu = vc * x - vs * y, wv = vs * x + vc * y;
+          this.push(this.writeOne((wu - wv) * hw, (wu + wv) * hh, wu + wv, 1, res, SpriteFlag.NoOutline | (side > 0 ? SpriteFlag.FlipX : 0), 0, 1, -OPEN, OPEN, 0, 0, 0, 0, 0, 0), 0);
         }
       }
       this.curRoute = 0;
@@ -974,12 +983,13 @@ export class SpriteBatch {
 
     // ---- VFX (render-side, short-lived) ----
     if (cx.vfx) for (const v of cx.vfx.active) {
-      const sx = (v.x - v.y) * hw, sy = (v.x + v.y) * hh - v.z * zs;
+      const xu = vc * v.x - vs * v.y, xv = vs * v.x + vc * v.y;
+      const sx = (xu - xv) * hw, sy = (xu + xv) * hh - v.z * zs;
       if (sx < r0x || sx > r1x || sy < r0y || sy > r1y) continue;
-      if (!atlas.resolve(v.spriteId, v.anim, v.facing, cx.now - v.born, 0, res)) continue;
+      if (!atlas.resolve(v.spriteId, v.anim, v.facing + vFace, cx.now - v.born, 0, res)) continue;
       const life = Math.min(1, (cx.now - v.born) / Math.max(1e-3, v.lifetime));
       const fadeOut = (v.fade ? 1 - life : Math.min(1, (v.lifetime - (cx.now - v.born)) / 0.15)) * v.alpha;
-      this.push(this.writeOne(sx, sy, v.x + v.y + v.z * zf + 0.05, v.scale * (v.s0 + (v.s1 - v.s0) * life), res, (v.emissive ? SpriteFlag.Emissive : 0) | SpriteFlag.NoOutline, 0, fadeOut, -OPEN, OPEN, 0, 0, 0, 0, 0, 0), 0);
+      this.push(this.writeOne(sx, sy, xu + xv + v.z * zf + 0.05, v.scale * (v.s0 + (v.s1 - v.s0) * life), res, (v.emissive ? SpriteFlag.Emissive : 0) | SpriteFlag.NoOutline, 0, fadeOut, -OPEN, OPEN, 0, 0, 0, 0, 0, 0), 0);
     }
 
     // ---- build pieces ----
@@ -1050,6 +1060,9 @@ export class SpriteBatch {
     const pieceLit = cx.bindings.pieceLit, pieceScale = cx.bindings.pieceScale;
     const d = bp.data as Record<string, ArrayLike<number>>;
     const hw = this.iso.tileW / 2, hh = this.iso.tileH / 2, zs = this.iso.zStep, zf = this.zFactor;
+    // ADR-253: footprints / cover / cutaway / decks stay in world tiles; screen pivot, occlusion rect, column slices and depth
+    // keys use the view footprint (viewRect) and pivot; art resolves at rotation (rot + q) & 3 (+ mirror fallback)
+    const vq = (this.iso.view ?? 0) & 3, vc = VIEW_COS[vq]!, vs = VIEW_SIN[vq]!;
     const res = this.res;
     // cutaway region from BuildingGrid: tiles of the building the focus entity stands in
     const playerLevel = hasFocus ? terrainZToFloor(fwz, Math.max(0, cx.groundZAt?.(Math.floor(fwx), Math.floor(fwy)) ?? 0)) : 0;
@@ -1090,7 +1103,8 @@ export class SpriteBatch {
         const drawVis = pieceDrawSprite(atlas, spk.sid); if (drawVis < 0) continue;
         if (drawVis !== spk.sid) { if (atlas.streamClass(vis) === "bld") this.tierFallbacks++; else this.streamFallbacks++; }
         const pst = cx.bindings.pieceState?.(e) ?? (d.state ? d.state[k]! - 1 : -1);
-        if (!atlas.resolvePiece(drawVis, d.variant![k]!, rot, dmg, res, pst)) continue;
+        if (!atlas.resolvePiece(drawVis, d.variant![k]!, (rot + vq) & 3, dmg, res, pst)) continue;
+        if ((vq & 1) && !atlas.isDirectional(drawVis)) res.flipX = !res.flipX; // ADR-253 fallback: no facing art -> mirror
         // ADR-218: lit fires animate their idle loop on the render clock (per-entity phase); out fires show their unlit frame
         let animated = false;
         const fire = pieceLit ? pieceLit(e) : undefined;
@@ -1103,6 +1117,7 @@ export class SpriteBatch {
         const info = atlas.pieceInfo(vis); const sway = atlas.swayOf(vis);
         const fw = info ? (rot & 1 ? info.fh : info.fw) : 1, fh = info ? (rot & 1 ? info.fw : info.fh) : 1;
         const ax = Math.floor(part.x), ay = Math.floor(part.y);
+        const vr = viewRect(ax, ay, fw, fh, vq); const vax = vr.x, vay = vr.y, vfw = vr.w, vfh = vr.h; // view footprint
         const roof = atlas.isRoof(vis);
         this.coverNext.add(ax, ay, fw, fh, level, layer === PIECE_LAYER_DECK, roof);
         // roofs are deck-layer (0) pieces placed on the level above the walls and drawn from that level's floor (= wall top)
@@ -1111,10 +1126,10 @@ export class SpriteBatch {
         // occlusion (walls etc. not in cutaway): a hit, or a still-fading piece, is drawn dynamically this frame
         let occT = 0;
         if (!cutaway && !flatLayer(layer, roof) && !(rotRaw & ROT_NO_OCCLUDE) && this.occ.occOn) {
-          const bottom = (ax + ay + fw + fh) * hh - z * zs; // front footprint corner
-          const pivotY = cx.pieceAnchor === "front" ? bottom : (ax + ay + (fw + fh) / 2) * hh - z * zs;
-          const top = pivotY - res.ay; const left = (ax - (ay + fh)) * hw, right = (ax + fw - ay) * hw;
-          const front = ax + fw + ay + fh - 2 + 1.95 + z * zf;
+          const bottom = (vax + vay + vfw + vfh) * hh - z * zs; // front footprint corner
+          const pivotY = cx.pieceAnchor === "front" ? bottom : (vax + vay + (vfw + vfh) / 2) * hh - z * zs;
+          const top = pivotY - res.ay; const left = (vax - (vay + vfh)) * hw, right = (vax + vfw - vay) * hw;
+          const front = vax + vfw + vay + vfh - 2 + 1.95 + z * zf;
           const hit = res.ay >= cx.style.occlusion.minHeightPx && front > this.occ.fk + 0.05 && this.occ.overlapsFocus(left, right, top, bottom);
           anyHit ||= hit; occT = part.last ? this.occ.occAmount(i, anyHit) : this.occ.peek(i); // ADR-211: an L fades as one piece (arms read the smoothed value, the post steps it)
         }
@@ -1122,12 +1137,13 @@ export class SpriteBatch {
         const alpha = cutaway ? cx.style.cutawayAlpha : 1;
         // footprint far corner (fx, fy); sprite pivot = footprint centre on the ground (art guide / sample manifest)
         // or the front-most footprint corner (cx.pieceAnchor === "front")
-        const fx = ax + fw, fy = ay + fh;
-        // exact pivot (triangle centroid / vertex-snapped corner): the Transform position itself
-        const pvx = exact ? part.x : cx.pieceAnchor === "front" ? fx : ax + fw / 2, pvy = exact ? part.y : cx.pieceAnchor === "front" ? fy : ay + fh / 2;
+        const fx = vax + vfw, fy = vay + vfh; // view space
+        // exact pivot (triangle centroid / vertex-snapped corner): the Transform position itself (world pvx/pvy; view pu/pv)
+        const pvx = exact ? part.x : ax + fw / 2, pvy = exact ? part.y : ay + fh / 2;
+        const pu = exact ? vc * part.x - vs * part.y : cx.pieceAnchor === "front" ? fx : vax + vfw / 2, pv = exact ? vs * part.x + vc * part.y : cx.pieceAnchor === "front" ? fy : vay + vfh / 2;
         // ADR-210: uprights on a deck stand on its top, not the ground under it
         const lift = rotRaw & ROT_DECK_LIFT ? (exact ? decks.topNear(pvx, pvy, level) : decks.topOver(ax, ay, fw, fh, level)) : 0;
-        const sx = (pvx - pvy) * hw, sy = (pvx + pvy) * hh - z * zs - lift;
+        const sx = (pu - pv) * hw, sy = (pu + pv) * hh - z * zs - lift;
         const flat = flatLayer(layer, roof); // deck pieces (floors/foundations), never roofs
         const flags = (flat ? SpriteFlag.Flat : 0) | (res.flipX ? SpriteFlag.FlipX : 0) | (nightSet?.has(vis) ? 64 : 0) | (flat || cutaway ? 0 : spk.flags);
         // damage 1-3: Art's crack overlay sprite (building.crackOverlay = bld_crack, anim stage<N>) on top of the (baked)
@@ -1137,21 +1153,21 @@ export class SpriteBatch {
         const crackCovered = crackSid >= 0 && ca !== undefined;
         const crack = crackCovered && atlas.pageReady(crackSid, PRIO_NEAR) && atlas.resolve(crackSid, atlas.animIndex(crackSid, ca), 0, 0, 0, this.crackRes);
         const dmgOverlay = dmg > 0 && !res.hasDamageFrames && !crackCovered ? dmg : 0;
-        const bias = (roof ? 0.05 : layer * 0.01) + (exact ? exactTieBreak(pvx, pvy, ghost > 0) : pieceTieBreak(ax, ay, ghost > 0)) + (rotRaw & ROT_VERTEX_POST ? vertexPostGlBias(hh, zf / zs) : 0) + (zs > 0 ? (lift / zs) * zf : 0); // roofs above every other layer of the cell; ADR-197 unique tie-break
+        const bias = (roof ? 0.05 : layer * 0.01) + (exact ? exactTieBreak(pu, pv, ghost > 0) : pieceTieBreak(vax, vay, ghost > 0)) + (rotRaw & ROT_VERTEX_POST ? vertexPostGlBias(hh, zf / zs) : 0) + (zs > 0 ? (lift / zs) * zf : 0); // roofs above every other layer of the cell; ADR-197 unique tie-break
         const deckTop = flat && !exact && cx.pieceAnchor !== "front" ? this.deckTop(atlas, vis) : undefined;
-        const deckMask = deckTop === undefined ? 0 : decks.mask(ax, ay, fw, fh, level, deckTop);
+        const deckMask = deckTop === undefined ? 0 : rotSideMask(decks.mask(ax, ay, fw, fh, level, deckTop), vq); // view sides
         tmp.length = 0;
         // per-column slices: columns c = x - y over the footprint
-        const cMin = ax - (fy - 1), cMax = (fx - 1) - ay;
+        const cMin = vax - (fy - 1), cMax = (fx - 1) - vay;
         const single = flat || exact || cMin === cMax;
         for (let c = cMin; c <= cMax; c++) {
           // front-most tile in column c: maximise x+y with x-y=c inside footprint
           let best = -1e9;
-          for (let tyy = ay; tyy < fy; tyy++) { const txx = c + tyy; if (txx >= ax && txx < fx) best = Math.max(best, txx + tyy); }
+          for (let tyy = vay; tyy < fy; tyy++) { const txx = c + tyy; if (txx >= vax && txx < fx) best = Math.max(best, txx + tyy); }
           // depth anchor: the front-most tile's centre (front-corner pivot) or its front corner (centre pivot, whose
           // pixels extend down to that corner and must not be clipped by the terrain in front of the pivot)
           const front = cx.pieceAnchor === "front" ? 1 : 1.95;
-          const key = (exact ? pvx + pvy - 1 + front : single ? fx + fy - 2 + front : best + front) + z * zf + bias;
+          const key = (exact ? pu + pv - 1 + front : single ? fx + fy - 2 + front : best + front) + z * zf + bias;
           const colCenter = c * hw - sx; // relative to pivot (px)
           const sliceL = single || c === cMin ? -OPEN : colCenter - hw / 2;
           const sliceR = single || c === cMax ? OPEN : colCenter + hw / 2;
@@ -1159,7 +1175,7 @@ export class SpriteBatch {
           const footDy = single ? 0 : (best + 2) * hh - z * zs - sy;
           const o = this.writeOne(sx, sy, key, psc, res, flags, (i * 0.618034) % 1, alpha, sliceL, sliceR, tint, footDy, 0, ghost, dmgOverlay, 0);
           o[27] = occT;
-          if (deckMask) { o[38] = deckMask | (fw << 4) | (fh << 8); o[39] = deckTop!; }
+          if (deckMask) { o[38] = deckMask | (vfw << 4) | (vfh << 8); o[39] = deckTop!; }
           if (sway) { o[24] = sway[0]!; o[25] = sway[1]!; o[26] = sway[2]!; } // SpriteDef.sway (+ masks.sway weights in the shader)
           if (tints?.[1]) writeTint2(o, tints[1]);
           for (let q = 0; q < INSTANCE_FLOATS; q++) tmp.push(o[q]!);
@@ -1272,7 +1288,7 @@ export class SpriteBatch {
     const hw = this.iso.tileW / 2, hh = this.iso.tileH / 2, S = CHUNK_SIZE; let drawn = 0;
     for (const [ck, sc] of this.statics) {
       if (activeKeys && !activeKeys.has(ck)) continue;
-      const x0 = sc.cx * S, y0 = sc.cy * S;
+      const vr = viewRect(sc.cx * S, sc.cy * S, S, S, this.iso.view ?? 0); const x0 = vr.x, y0 = vr.y; // ADR-253
       const sxMin = (x0 - (y0 + S)) * hw - 128, sxMax = (x0 + S - y0) * hw + 128;
       const syMin = (x0 + y0) * hh - 1024, syMax = (x0 + y0 + 2 * S) * hh + 64;
       if (sxMax < rect.x0 || sxMin > rect.x1 || syMax < rect.y0 || syMin > rect.y1) continue;
@@ -1342,20 +1358,22 @@ export let PIECE_LAYER_DECK = 0;
 export function setPieceLayers(l: { deck: number }): void { PIECE_LAYER_DECK = l.deck; }
 const flatLayer = (layer: number, roof: boolean): boolean => layer === PIECE_LAYER_DECK && !roof;
 
-/** Chunk keys whose tiles may project into the iso rect (tile box from inverted rect corners). */
-export function visibleChunkKeys(rect: Rect, hw: number, hh: number, zs: number, maxZ: number): string[] {
-  const a0 = rect.x0 / hw, a1 = rect.x1 / hw; // x - y
-  const b0 = rect.y0 / hh, b1 = (rect.y1 + maxZ * zs) / hh; // x + y
+/** Chunk keys whose tiles may project into the iso rect (tile box from inverted rect corners). ADR-253: the box is in
+ *  view space (quarter `view`); each view-space chunk cell maps back to its world chunk (chunk squares stay aligned). */
+export function visibleChunkKeys(rect: Rect, hw: number, hh: number, zs: number, maxZ: number, view = 0): string[] {
+  const a0 = rect.x0 / hw, a1 = rect.x1 / hw; // u - v
+  const b0 = rect.y0 / hh, b1 = (rect.y1 + maxZ * zs) / hh; // u + v
   const xMin = Math.floor((a0 + b0) / 2) - 2, xMax = Math.ceil((a1 + b1) / 2) + 2;
   const yMin = Math.floor((b0 - a1) / 2) - 2, yMax = Math.ceil((b1 - a0) / 2) + 2;
-  const out: string[] = [];
+  const out: string[] = []; const q = view & 3;
   for (let cy = Math.floor(yMin / CHUNK_SIZE); cy <= Math.floor(yMax / CHUNK_SIZE); cy++)
     for (let cx = Math.floor(xMin / CHUNK_SIZE); cx <= Math.floor(xMax / CHUNK_SIZE); cx++) {
       // reject chunks whose diamond misses the rect horizontally/vertically
       const x0 = cx * CHUNK_SIZE, y0 = cy * CHUNK_SIZE, S = CHUNK_SIZE;
       if ((x0 + S - y0) * hw < rect.x0 - hw || (x0 - y0 - S) * hw > rect.x1 + hw) continue;
       if ((x0 + y0 + 2 * S) * hh < rect.y0 || (x0 + y0) * hh - maxZ * zs > rect.y1 + hh) continue;
-      out.push(chunkKey(cx, cy));
+      // view chunk cell (cx, cy) -> world chunk (inverse of viewRect on a chunk square)
+      out.push(q === 0 ? chunkKey(cx, cy) : q === 1 ? chunkKey(cy, -cx - 1) : q === 2 ? chunkKey(-cx - 1, -cy - 1) : chunkKey(-cy - 1, cx));
     }
   return out;
 }

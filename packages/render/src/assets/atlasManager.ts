@@ -1639,6 +1639,14 @@ export class AtlasManager {
     return true;
   }
 
+  /** ADR-253: art with more than one facing (or rotation-aware building art). Non-directional sprites mirror on odd
+   *  view quarters as the rotation fallback (sprites.ts); directional ones resolve facing + view instead. */
+  isDirectional(spriteId: number): boolean {
+    const s = this.sprites[spriteId]; if (!s) return false; if (s.building) return true;
+    for (const an of s.anims) if (an && an.directions > 1) return true;
+    return false;
+  }
+
   /**
    * Resolve a build-piece frame through AssetRegistry.buildingFrame (rotation, damage stage, piece state, mirror
    * rotationArt -> out.flipX). out.hasDamageFrames is false when the stage has no own frame (crack overlay fallback).
