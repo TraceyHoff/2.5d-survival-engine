@@ -20,6 +20,8 @@ import { Sprite, Shadow, Occluder, SpriteFlag, LightSource, TintSecondary, Sprit
 import { newResolved, STREAM_MARGIN_PX, STREAM_MARGIN_ANIMAL_PX, STREAM_KEEP_FACTOR, type AtlasManager, type ResolvedFrame, type HandAnchor } from "./assets/atlasManager.js";
 import { offHandAnchor, offHandBehind } from "./character/offhand.js";
 import { CARRY_SOCKET, SEAT_SOCKET } from "./character/animChain.js";
+/** ADR-244 (c): a sleeper shares the bed's footprint centre (same depth key); this nudge draws it after the bed. */
+export const BED_SORT_EPS = 0.02;
 /** ADR-241: carried sprite ids ride emitHeld's item slot as id + 1 (item 0 = none). */
 const carriedId = (n: number): number => n - 1;
 import type { Rect } from "./camera.js";
@@ -113,6 +115,9 @@ export interface GameplayBindings {
   animChain?: (entity: number, state: number, elapsed: number) => readonly string[] | undefined;
   /** ADR-241: sprite id carried in both arms (Carry state), drawn at the body frame's `carry` socket; undefined = none. */
   carriedSprite?: (entity: number) => number | undefined;
+  /** ADR-244 (c): a sleeper's bed fit (sample.v2.json sleepLie.bedFits[piece][spot][rot], 1x px): the sleep_lie /
+   *  sleep_lie_under frame's pivot lands on the bed footprint centre + (x, y), drawn just after (in front of) the bed. */
+  bedFit?: (entity: number) => { x: number; y: number } | undefined;
   /** Wetness {level u8 0..255} (art's 0-3 intensity maps onto 0..255). */
   wetness?: WetnessDefT;
   /** BodyTemp {cold, heat u8; shivering 0/1}: shivering gates the shiver, cold scales it and drives the frost rim, heat drives flush. */
@@ -454,6 +459,8 @@ export class SpriteBatch {
   culledChunks = 0;
   /** Sprites drawn as their placeholder this frame because their stream sheet was still loading. */
   streamPlaceholders = 0;
+  /** ADR-244 (b): bodies drawn on the resident core idle while their streamed v2 sheet page loads (last frame). */
+  streamBodyFallbacks = 0;
   /** ADR-123: per (entity, layer slot) last resolved frame, drawn while the current one is not resident */
   /** ADR-220: atlas layout the held frames (entry/atlas indices) belong to; a rebuild renumbers both. */
   private lastGoodLayout = -1;
@@ -664,7 +671,7 @@ export class SpriteBatch {
     const apVer = apData?.version ?? null;
     const lodMinor = (cx.zoom ?? 1) < this.characterOpts.minorLayerMinZoom; const hitOf = cx.bindings.hitFlash;
     const outlineOn = cx.style.outline.enabled && this.characterOpts.outline === "union";
-    this.streamPlaceholders = 0; this.characters = 0; this.layerInstances = 0; this.nearN = 0;
+    this.streamPlaceholders = 0; this.streamBodyFallbacks = 0; this.characters = 0; this.layerInstances = 0; this.nearN = 0;
     // nearest-N cutoff from last frame's candidate distances (one frame lag, no per-frame sort of all sprites)
     this.dressCut = nearestCutoff(this.dressD2, this.dressN, this.maxDressed); this.dressN = 0; this.dressDrawn = 0; this.dressCapped = 0;
     if (this.layerCache && (this.frameNo & 255) === 0) this.layerCache.prune((e) => world.isAlive(e));
@@ -784,6 +791,9 @@ export class SpriteBatch {
         if (st !== chSt) ch0 = cx.bindings.animChain?.(e, st, (tickTime - an.data.startTick[as]!) / cx.tickHz);
         const bai = bodyL && layers ? (ch0 ? atlas.sharedChainAnim(sid, layers, ch0, st) : atlas.sharedStateAnim(sid, layers, st)) : atlas.chainAnim(sid, ch0, st);
         ok = atlas.resolve(sid, bai, f, t, 0, res);
+        // ADR-244 (b): a v2 combat/ranged/pose/sleep sheet streams; until its page is in, the doll plays the resident core
+        // idle (body + every layer follow dollAnim), never a missing/placeholder body
+        if (bodyL && ok && res.atlas >= 0 && !atlas.streamPageReady(res.atlas, sprio)) { const ia = atlas.animIndex(sid, "idle"); if (ia >= 0 && atlas.resolve(sid, ia, f, t, 0, res)) this.streamBodyFallbacks++; }
         if (bodyL) { dollAnim = res.anim; if (ok && res.atlas >= 0) atlas.markUsedAt(res.atlas); }
       } else {
         // ADR-218: a lit fire sprite (station bonfire: Fuel.lit, frame 0 = idle) loops its idle anim on the render clock
@@ -800,8 +810,11 @@ export class SpriteBatch {
       // vehicle seat socket) instead of the feet pivot; body + layers shift together. v1 frames have no seat: unchanged.
       let seatDx = 0, seatDy = 0;
       if (bodyL && (res.anim === "vehicle" || res.anim === "sit")) { const sa = atlas.handOf(res, SEAT_SOCKET); if (sa) { seatDx = sa.x - res.ax; seatDy = sa.y - res.ay; res.ax += seatDx; res.ay += seatDy; } }
+      // ADR-244 (c): sleep_lie* frames sit on the bed (pivot = bed footprint centre + bedFits offset) and sort after it
+      let bedBias = 0;
+      if (bodyL && res.anim.startsWith("sleep_lie")) { const bf = cx.bindings.bedFit?.(e); if (bf) { res.ax -= bf.x; res.ay -= bf.y; seatDx -= bf.x; seatDy -= bf.y; bedBias = BED_SORT_EPS; } }
       const scale = sp.data.scale[k]! || 1;
-      const key = x + y + z * zf;
+      const key = x + y + z * zf + bedBias;
       // occlusion: tall sprites (or explicit Occluders) in front of the focus whose rect overlaps it
       let occT = 0, fade = 1;
       if (occOn && e !== this.focusEntity) {

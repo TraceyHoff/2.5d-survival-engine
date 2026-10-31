@@ -23,7 +23,6 @@ describe("touch layout audit (ADR-133)", () => {
   it("gameplay keeps only controls with a consumer; no large aim pad", () => {
     const ids = DEFAULT_TOUCH_LAYOUTS.gameplay.elements.filter((e) => !MENU.has(e.id)).map((e) => e.id).sort();
     expect(ids).toEqual(["attack", "carry", "context", "crouch", "hotbar", "move", "reload", "secondary", "sleep", "sprint"]); // ADR-244 adds block / crouch + contextual carry / sleep
-    expect(1).toBe(1);
     expect(DEFAULT_TOUCH_LAYOUTS.building.elements.filter((e) => !MENU.has(e.id)).map((e) => e.id).sort()).toEqual(["cancel", "confirm", "move", "rotate"]);
     for (const e of DEFAULT_TOUCH_LAYOUTS.gameplay.elements) if (e.kind !== "joystick") expect(e.radius, e.id).toBeLessThanOrEqual(28);
   });

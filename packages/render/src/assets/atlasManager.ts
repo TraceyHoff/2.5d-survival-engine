@@ -122,6 +122,9 @@ const VEH_POOL_SLOTS_DESKTOP = 8, VEH_POOL_SLOTS_LOWMEM = 6;
 const BLD_POOL_SLOTS_DESKTOP = 4, BLD_POOL_SLOTS_LOWMEM = 4; // ADR-211: one slot per tier page (0.7 MB each at 0.5x): 2 slots thrashed a mixed-tier base onto the legacy fallback art
 /** Building tier sheets streamed per tier present nearby (BuildingTierStreamer): `building_t<N>` atlases from files. */
 export function isStreamedBuildingAtlas(key: string, url: string): boolean { return /^building_t\d+$/.test(key) && !/^(blob|data):/.test(url); }
+/** ADR-244 (b): v2 per-group sheets (`<core>__combat|ranged|pose|sleep`) stream in the stream pool; only the core sheet
+ *  stays resident in the body / wear pools. */
+export const isV2StreamSheet = (key: string): boolean => /^v2s?_.*__(combat|ranged|pose|sleep)$/.test(key);
 /** Character body sheets (`body_*`): with a KTX2 target they live compressed in the tail array (body pool), not RGBA8. */
 export function isBodyAtlasKey(key: string): boolean { return /^body_/.test(key); }
 /** Every page character bodies draw from (sprite.atlas + multi-page dirFrames pages, e.g. a swim/punch page), whatever its key. */
@@ -131,6 +134,7 @@ export function bodyAtlasKeys(registry: AssetRegistry): Set<string> {
   for (const s of registry.allSprites()) if (isBodyAtlasKey(s.atlas.key) || isV2BodyKey(s.key)) ids.add(s.id); // ADR-240: v2 body sheets
   try { for (const b of ["male", "female"]) { const x = cat?.bodySprite?.(b); if (x) ids.add(x.sprite); } } catch { /* catalog shape differs: key rule only */ }
   for (const s of registry.allSprites()) if (ids.has(s.id)) { out.add(s.atlas.key); for (const a of s.animList) for (const d of a.dirFrames ?? []) out.add(d.atlas.key); }
+  for (const k of out) if (isV2StreamSheet(k)) out.delete(k); // ADR-244 (b)
   return out;
 }
 /** Art vehicle sheets: `veh_*` atlases loaded from files (the procedural placeholders are blob: URLs and stay resident). */
@@ -1842,6 +1846,7 @@ export function wearableOnlyAtlases(registry: AssetRegistry): Set<string> {
   for (const s of registry.allSprites()) if (wear.has(s.id)) for (const k of pagesOf(s)) out.add(k);
   // an atlas shared with anything else (bodies, mirrors, world props) stays resident
   for (const s of registry.allSprites()) if (!wear.has(s.id)) for (const k of pagesOf(s)) out.delete(k);
+  for (const k of out) if (isV2StreamSheet(k)) out.delete(k); // ADR-244 (b): per-group v2 sheets go to the stream pool
   return out;
 }
 

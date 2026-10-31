@@ -66,8 +66,8 @@ export function hitPose(ms: number, dir: number, directed = true): { dx: number;
 }
 const animMap = (a: number): number => (a >= 14 && a <= 24 ? a : a === 8 ? 8 : ANIM_MAP[a] ?? 0); // 16..19 ADR-128 harvest/chop/mine/drink, 20..24 ADR-241 block/aim/crouch/carry/sleep, 8 eat
 import { LightTable, type LightSpec } from "./lights.js";
-import { Burning, Driver, weaponClassOf } from "@engine/gameplay";
-import { animChainFor, type AnimChainCtx } from "@engine/render";
+import { Burning, Driver, weaponClassOf, Stance, StanceMode, netIdEntity, bedSpots, bedRot } from "@engine/gameplay";
+import { animChainFor, bedFit, type AnimChainCtx } from "@engine/render";
 import { floorToTerrainZ } from "@engine/world";
 import { RaidFx, useRaidBurning, type RaidPiece } from "./raid-fx.js";
 import { MANIFEST_INDEX, applyFragmentFlags, withCharArtFragment, fragmentBase, type ManifestFragmentRef } from "./manifest-index.js";
@@ -172,6 +172,7 @@ export class IsoView {
     const cat = noCosmetics ? undefined : registry.cosmetics;
     if (cat?.size) this.view.register(Appearance);
     renderer.bindGameplay({ animState: VAnim, buildPiece: VPiece, wetness: VWet, bodyTemp: VTemp, lit: VFuel, burning: VBurn, pieceState: (e) => this.pieceStates.get(e), pieceScale: (e) => this.pieceScales.get(e), pieceLit: (e) => this.pieceLit.get(e), pieceTints: (e) => this.pieceTintPairs.get(e), litPieces: () => this.litHearths,
+      carriedSprite: (e) => this.carriedOf.get(e), bedFit: (e) => this.bedOf.get(e)?.fit, // ADR-244 carry socket / bed fit
       hitFlash: (e) => this.hitPoseOf.get(e)?.flash ?? 0, hitTilt: (e) => this.hitPoseOf.get(e)?.tilt ?? 0,
       animRate: (e, st) => (st === 1 && this.characters.has(e) ? this.walkRate : undefined),
       animChain: (e, st, elapsed) => ((st === 3 || st >= 13) && this.characters.has(e) ? animChainFor(st, this.animCtx(e, elapsed)) : undefined), // ADR-241
@@ -193,10 +194,24 @@ export class IsoView {
   private heldCache = new Map<number, number | undefined>();
   /** ADR-241 anim chain context: view entities moving this sync / in a driver seat; item id -> [key, weaponClassOf]. */
   private movingVe = new Set<number>(); private driverVe = new Set<number>();
+  /** ADR-244: sleeper ve -> bed lie kind + bedFits offset; carrier ve -> carried bag sprite; net bags hidden while carried. */
+  private bedOf = new Map<number, { lie: "lie" | "under"; fit: { x: number; y: number } }>(); private carriedOf = new Map<number, number>(); private carriedNet = new Set<Entity>();
+  private syncStance(net: World, e: Entity, ve: Entity): void {
+    const s = net.isRegistered(Stance) ? net.get(e, Stance) : undefined;
+    if (s && s.mode === StanceMode.Sleep && s.lie) {
+      const b = netIdEntity(net, s.bedNetId); let fit = { x: 0, y: 0 };
+      if (b !== undefined && net.has(b, GPiece)) { const key = gameplayDefs(net).pieces.get(net.getField(b, GPiece, "type")!)?.key ?? ""; fit = bedFit(key, bedSpots(key)[s.spot] ?? "", bedRot(net.getField(b, Transform, "facing") ?? 0)); }
+      this.bedOf.set(ve, { lie: s.lie === 2 ? "under" : "lie", fit });
+    } else this.bedOf.delete(ve);
+    const b = s && s.mode === StanceMode.Carry && s.carriedNetId ? netIdEntity(net, s.carriedNetId) : undefined;
+    const bve = b !== undefined ? this.map.get(b) : undefined;
+    if (b !== undefined) this.carriedNet.add(b);
+    if (bve !== undefined && this.view.has(bve, Sprite)) this.carriedOf.set(ve, this.view.getField(bve, Sprite, "spriteId")!); else this.carriedOf.delete(ve);
+  }
   private itemClass = new Map<number, readonly [string, string]>();
   private chainCtx: AnimChainCtx = {};
   private animCtx(ve: number, elapsed: number): AnimChainCtx {
-    const c = this.chainCtx; c.moving = this.movingVe.has(ve); c.driver = this.driverVe.has(ve); c.elapsed = elapsed;
+    const c = this.chainCtx; c.moving = this.movingVe.has(ve); c.driver = this.driverVe.has(ve); c.elapsed = elapsed; c.bed = this.bedOf.get(ve)?.lie; // ADR-244 (c)
     const item = this.view.has(ve as Entity, VEquip) ? this.view.getField(ve as Entity, VEquip, "mainHandItem") ?? 0 : 0;
     let ic = this.itemClass.get(item);
     if (!ic) { const key = item && this.netRef ? gameplayDefs(this.netRef).items.get(item)?.key ?? "" : ""; ic = [key, weaponClassOf(key || undefined)]; if (this.netRef || !item) this.itemClass.set(item, ic); }
@@ -383,6 +398,7 @@ export class IsoView {
       const d = [...net.query([Appearance, Transform])].map((e) => { const t = net.get(e, Transform)!; return { e, d: (t.x - cx) ** 2 + (t.y - cy) ** 2 }; });
       dressed = new Set(d.sort((a, b) => a.d - b.d).slice(0, DRESSED_LOWEND).map((x) => x.e));
     }
+    this.carriedNet.clear(); if (net.isRegistered(Stance)) for (const p of net.query([Stance])) { const id = net.getField(p, Stance, "carriedNetId"); const b = id ? netIdEntity(net, id) : undefined; if (b !== undefined) this.carriedNet.add(b); }
     for (const e of net.query([Transform])) {
       if (e === net.environment) continue;
       const gr = net.has(e, GPiece) || net.has(e, GAnim) ? groundPiece : ground; // ADR-212: walkers on a deck keep their stand height over terrain steps
@@ -428,6 +444,7 @@ export class IsoView {
         if (v.getField(ve, VAnim, "state") !== state) v.set(ve, VAnim, { state, startTick: v.tick });
         if (moving) this.movingVe.add(ve); else this.movingVe.delete(ve); // ADR-241 crouch/carry walk
         if (net.has(e, Driver)) this.driverVe.add(ve); else this.driverVe.delete(ve);
+        this.syncStance(net, e, ve); // ADR-244
         const wet = net.getField(e, Wetness, "level"); if (wet !== undefined && v.getField(ve, VWet, "level") !== wet && !(depth === WaterDepth.Shallow && moving && wet < WADE_WET)) v.set(ve, VWet, { level: wet });
         const bt = net.getInto(e, BodyTemp, this.sTemp); if (bt && (v.getField(ve, VTemp, "cold") !== bt.cold || v.getField(ve, VTemp, "heat") !== bt.heat || v.getField(ve, VTemp, "shivering") !== bt.shivering)) v.set(ve, VTemp, { cold: bt.cold, heat: bt.heat, shivering: bt.shivering });
       }
@@ -479,7 +496,7 @@ export class IsoView {
       if (v.has(ve, VFuel)) { const f = net.get(e, Fuel); if (f) { v.set(ve, VFuel, { lit: f.lit, burnUntilTick: f.burnUntilTick }); if (v.has(ve, Sprite)) { const sp = v.get(ve, Sprite)!; const fid = this.fireFrame(sp.spriteId, f.lit !== 0); if (sp.frameId !== fid) v.set(ve, Sprite, { frameId: fid }); } } }
     }
     if (r.vfx) this.raid.step(this.registry, r.vfx, this.raidPieces, performance.now() / 1000); this.raidPieces.length = 0; // ADR-242 (Canvas2D: no vfx layer)
-    for (const [ne, ve] of this.map) if (!seen.has(ne)) { if (ve === this.focusVe) { r.setFocusEntity(-1); this.focusVe = -1; } v.destroy(ve); this.map.delete(ne); this.corrSampler.forget(ne); this.characters.delete(ve); this.movingVe.delete(ve); this.driverVe.delete(ve); this.lightOf.delete(ne); this.dropHeldLight(ve); this.pieceStates.delete(ve); this.pieceScales.delete(ve); this.pieceLit.delete(ve); this.litHearths.delete(ve); this.pieceTintPairs.delete(ve); this.pieceTintIdx.delete(ve); this.lastMove.delete(ne); this.nodeAmt.delete(ne); this.nodeHit.delete(ne); this.animalHp.delete(ne); this.animalPrev.delete(ne); this.scales.delete(ve); this.hitSeen.delete(ne); this.hitPoseOf.delete(ve); this.gearOf.delete(ve); }
+    for (const [ne, ve] of this.map) if (!seen.has(ne)) { if (ve === this.focusVe) { r.setFocusEntity(-1); this.focusVe = -1; } v.destroy(ve); this.map.delete(ne); this.corrSampler.forget(ne); this.characters.delete(ve); this.movingVe.delete(ve); this.driverVe.delete(ve); this.bedOf.delete(ve); this.carriedOf.delete(ve); this.lightOf.delete(ne); this.dropHeldLight(ve); this.pieceStates.delete(ve); this.pieceScales.delete(ve); this.pieceLit.delete(ve); this.litHearths.delete(ve); this.pieceTintPairs.delete(ve); this.pieceTintIdx.delete(ve); this.lastMove.delete(ne); this.nodeAmt.delete(ne); this.nodeHit.delete(ne); this.animalHp.delete(ne); this.animalPrev.delete(ne); this.scales.delete(ve); this.hitSeen.delete(ne); this.hitPoseOf.delete(ve); this.gearOf.delete(ve); }
 
     this.syncClutter(tiles, ground);
     this.syncVehicles(net, player, ground, frac);
@@ -514,7 +531,7 @@ export class IsoView {
   /** ADR-238: SpriteAlpha from the replicated despawn timer (server ticks; `alpha` = interpolation into the next tick). */
   private syncLootFade(net: World, e: Entity, ve: Entity, alpha: number): void {
     const v = this.view; const lb = net.getInto(e, LootBag, this.sBag); if (!lb) return;
-    const a = despawnFadeAlpha(lb, net.tick + alpha);
+    const a = this.carriedNet.has(e) ? 0 : despawnFadeAlpha(lb, net.tick + alpha); // ADR-244: a carried bag draws at its carrier's socket
     if (a >= 0.999) { if (v.has(ve, SpriteAlpha)) v.remove(ve, SpriteAlpha); }
     else if (v.has(ve, SpriteAlpha)) v.setField(ve, SpriteAlpha, "alpha", a); else v.add(ve, SpriteAlpha, { alpha: a });
   }

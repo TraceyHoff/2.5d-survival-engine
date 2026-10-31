@@ -18,7 +18,7 @@ export interface AnimChainCtx {
   /** Rider in a vehicle driver seat (gameplay Driver): Sit plays `vehicle`. */
   driver?: boolean;
   /** Sleep in a bed: "lie" = top/only spot (sleep_lie), "under" = bunk lower spot (sleep_lie_under). */
-  bed?: "lie" | "under";
+  bed?: "lie" | "under" | undefined;
   /** Seconds since the state started (Aim with a bow: bow_draw, then bow_hold). */
   elapsed?: number;
 }

@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { FIDELITY_ATLAS_RE } from "../src/assets/atlasManager.js";
-import { CharArtMapper, parseCharArt, withCharArt, isV2BodyKey, isV2WearKey } from "../src/character/charArt.js";
+import { V2S_ALIAS, CharArtMapper, parseCharArt, withCharArt, isV2BodyKey, isV2WearKey } from "../src/character/charArt.js";
 
-const keys = ["body_male", "cz_top_tee_male", "cz_top_tee_male_sleeves", "cz_hair_bun_female_hathair", "cz_acc_backpack_female", "cz_eyes_round_male",
-  "v2s_body_male", "v2s_cz_top_scrap_male", "v2s_cz_top_scrap_male_sleeves", "v2s_cz_hair_buzz_male_hathair", "v2s_cz_eyes_round_male"];
+const keys = ["body_male", "cz_top_tee_male", "cz_top_tee_male_sleeves", "cz_hair_bun_female_hathair", "cz_acc_backpack_female", "cz_eyes_round_male", "cz_hair_bun_female",
+  "v2s_body_male", "v2s_cz_top_henley_male", "v2s_cz_top_henley_male_sleeves", "v2s_cz_hair_buzz_male_hathair", "v2s_cz_eyes_round_male", "v2s_cz_hair_buzz_male"];
 const ids = { key: (i: number) => keys[i], tryId: (k: string) => { const i = keys.indexOf(k); return i < 0 ? undefined : i; } };
 const id = (k: string) => keys.indexOf(k);
 
@@ -17,9 +17,13 @@ describe("ADR-240 charArt", () => {
   it("maps twins first, then slot aliases for any v1 key (no _male dependency), else keeps v1", () => {
     const m = new CharArtMapper(ids);
     const out = m.map([{ sprite: id("body_male"), slot: "body" }, { sprite: id("cz_eyes_round_male"), slot: "eyes" }, { sprite: id("cz_top_tee_male_sleeves"), slot: "top" },
-      { sprite: id("cz_hair_bun_female_hathair"), slot: "hair" }, { sprite: id("cz_acc_backpack_female"), slot: "acc" }]);
-    expect(out.map((l) => keys[l.sprite])).toEqual(["v2s_body_male", "v2s_cz_eyes_round_male", "v2s_cz_top_scrap_male_sleeves", "v2s_cz_hair_buzz_male_hathair", "cz_acc_backpack_female"]);
-    expect(m.stats).toEqual({ twin: 2, alias: 2, v1: 1 });
+      { sprite: id("cz_hair_bun_female_hathair"), slot: "hair" }, { sprite: id("cz_acc_backpack_female"), slot: "acc" }, { sprite: id("cz_hair_bun_female"), slot: "hair" }]);
+    expect(out.map((l) => keys[l.sprite])).toEqual(["v2s_body_male", "v2s_cz_eyes_round_male", "v2s_cz_top_henley_male_sleeves", "v2s_cz_hair_buzz_male_hathair", "cz_acc_backpack_female", "v2s_cz_hair_buzz_male"]);
+    expect(m.stats).toEqual({ twin: 2, alias: 3, v1: 1 });
+  });
+  it("ADR-244 (a): every alias is an exact v2s_ + v1 key the sample ships (no _scrap_ compat names)", () => {
+    for (const v of Object.values(V2S_ALIAS)) { expect(v).toMatch(/^v2s_/); expect(v).not.toMatch(/scrap/); }
+    expect(V2S_ALIAS.hair).toBe("v2s_cz_hair_buzz_male"); expect(V2S_ALIAS["hair:hathair"]).toBe("v2s_cz_hair_buzz_male_hathair");
   });
   it("withCharArt is the identity for v1 or when the sample is missing", () => {
     const b = { resolve: () => [{ sprite: id("body_male"), slot: "body" }] } as never as Parameters<typeof withCharArt>[0];

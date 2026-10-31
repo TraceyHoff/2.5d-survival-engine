@@ -14,11 +14,13 @@ export function parseCharArt(query?: string | null, stored?: string | null): Cha
   return "v1";
 }
 
-/** Sample piece per doll slot (`slot:sleeves` = the sleeves layer of a top). */
+/** Sample piece per doll slot (`slot:sleeves` = the sleeves layer of a top, `hair:hathair` = hair under a hat).
+ * ADR-244 (a): exact names only, `v2s_` + the v1 key the sample appearance resolves to (no `_scrap_` compat aliases);
+ * hair a v1 twin doesn't cover falls back to the uncovered buzz cut. */
 export const V2S_ALIAS: Readonly<Record<string, string>> = {
-  body: "v2s_body_male", top: "v2s_cz_top_scrap_male", "top:sleeves": "v2s_cz_top_scrap_male_sleeves", bottom: "v2s_cz_bottom_scrap_male",
-  shoes: "v2s_cz_shoes_scrap_male", hat: "v2s_cz_hat_scrap_male", hair: "v2s_cz_hair_buzz_male_hathair", face: "v2s_cz_face_smile_male",
-  eyes: "v2s_cz_eyes_round_male",
+  body: "v2s_body_male", top: "v2s_cz_top_henley_male", "top:sleeves": "v2s_cz_top_henley_male_sleeves", bottom: "v2s_cz_bottom_cargo_male",
+  shoes: "v2s_cz_shoes_boots_male", hat: "v2s_cz_hat_cap_male", hair: "v2s_cz_hair_buzz_male", "hair:hathair": "v2s_cz_hair_buzz_male_hathair",
+  face: "v2s_cz_face_smile_male", eyes: "v2s_cz_eyes_round_male",
 };
 /** v2 sprite keys: body sheets join the body pool, `cz_` pieces the wear pool (never the stream pool). */
 export const isV2BodyKey = (key: string): boolean => /^v2s?_body_/.test(key);
@@ -40,7 +42,7 @@ export class CharArtMapper {
       if (t === undefined) {
         const key = this.ids.key(l.sprite) ?? "";
         const twin = key ? this.ids.tryId("v2s_" + key) : undefined;
-        const ak = V2S_ALIAS[l.slot + (/_sleeves$/.test(key) ? ":sleeves" : "")];
+        const ak = V2S_ALIAS[l.slot + (/_sleeves$/.test(key) ? ":sleeves" : /_hathair$/.test(key) ? ":hathair" : "")];
         const alias = ak ? this.ids.tryId(ak) : undefined;
         t = twin !== undefined ? [twin, "twin"] : alias !== undefined ? [alias, "alias"] : null; this.memo.set(l.sprite, t);
       }
