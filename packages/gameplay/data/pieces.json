@@ -424,6 +424,33 @@
       "spoilMul": 1
     },
     {
+      "key": "basic_storage_box",
+      "$comment": "ADR-250: starter storage. Never skill-gated (starter), hand-built from gatherable sticks/fiber/wood, 12 slots, picked up for a full refund (pickup); contents spill into a loot bag when it is picked up or destroyed.",
+      "placement": "free",
+      "layer": 2,
+      "tier": 1,
+      "hp": 120,
+      "ground": true,
+      "container": 12,
+      "starter": true,
+      "pickup": true,
+      "cost": [
+        {
+          "resource": "sticks",
+          "amount": 10
+        },
+        {
+          "resource": "fiber",
+          "amount": 6
+        },
+        {
+          "resource": "wood",
+          "amount": 2
+        }
+      ],
+      "spoilMul": 1
+    },
+    {
       "key": "large_chest",
       "placement": "free",
       "layer": 2,

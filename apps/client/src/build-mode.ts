@@ -125,15 +125,16 @@ export class BuildMode {
     this.refresh(); const t = this.target; if (!t) return false;
     if (id === "repair") { if (!t.canRepair) { this.toast = "Nothing to repair"; return false; } if (!t.canAfford.repair) { this.toast = "Can't afford repair"; return false; } this.toast = "Repairing…"; return this.o.send(repairIntent(t.entity)); }
     if (id === "upgrade") { if (!t.canUpgrade || t.nextTier === undefined) { this.toast = "Already top tier"; return false; } if (!t.canAfford.upgrade) { this.toast = `Need materials for ${label(t.nextTierKey!)}`; return false; } this.toast = `Upgrading to ${label(t.nextTierKey!)}…`; return this.o.send(upgradeIntent(t.entity, t.nextTier)); }
-    if (!confirmed && !this.demolishArmed) { this.demolishArmedAt = this.now(); this.toast = "Demolish? Press again to confirm"; return false; }
-    this.disarm(); this.toast = "Demolishing…"; return this.o.send(demolishIntent(t.entity));
+    const verb = t.pickup ? "Pick up" : "Demolish"; // ADR-250: pickup pieces (basic_storage_box) refund in full
+    if (!confirmed && !this.demolishArmed) { this.demolishArmedAt = this.now(); this.toast = `${verb}? Press again to confirm`; return false; }
+    this.disarm(); this.toast = t.pickup ? "Picking up…" : "Demolishing…"; return this.o.send(demolishIntent(t.entity));
   }
   get context(): BuildContextView | undefined {
     const t = this.target; if (!t) return undefined; const h = HINTS[this.device()]; const armed = this.demolishArmed;
     return { target: t, title: `${label(t.pieceKey)} · ${label(t.tierKey)} · ${Math.round((100 * t.hp) / Math.max(1, t.maxHp))}%`, actions: [
       { id: "repair", label: "Repair", hint: h.repair, enabled: t.canRepair && t.canAfford.repair },
       { id: "upgrade", label: t.nextTierKey ? `Upgrade → ${label(t.nextTierKey)}` : "Upgrade", hint: h.upgrade, enabled: t.canUpgrade && t.canAfford.upgrade },
-      { id: "demolish", label: armed ? "Confirm demolish" : "Demolish", hint: h.demolish, enabled: true, armed },
+      { id: "demolish", label: t.pickup ? (armed ? "Confirm pick up" : "Pick up") : armed ? "Confirm demolish" : "Demolish", hint: h.demolish, enabled: true, armed },
     ] };
   }
   /** Aim actually used: touch point / gamepad cursor override the resolver's aim. */

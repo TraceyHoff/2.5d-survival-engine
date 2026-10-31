@@ -2,12 +2,12 @@ import { PetOfferCmd } from "../pets.js";
 /**
  * AgentOutput (core ai.ts) -> the inputs a human sends. Pure except applyAgentEmote (queues an emote request).
  * Action strings: "gather" | "gather:<target>" | "attack:<target>" | "eat:<slot>" | "drink:<slot>" | "craft:<recipe>[:<count>]"
- * | "build:<piece>:<x>:<y>" | "open:<target>" | "buy:<stall>:<slot>:<qty>:<revision>:<priceItem>:<priceCount>" | "sleep" (stand still).
+ * | "build:<piece>:<x>:<y>" | "open:<target>" | "copen:<t>" | "cdeposit:<t>:<item>:<n>" | "cwithdraw:<t>:<item>:<n>" | "cclose" | "buy:<stall>:<slot>:<qty>:<revision>:<priceItem>:<priceCount>" | "sleep" (stand still).
  */
 import { UnlockSkillCmd } from "../skills/progression.js";
 import type { AgentOutput, CommandRegistry, Entity, InputFrame, World } from "@engine/core";
 import { intentToFrame, type BotIntent } from "./bot_input.js";
-import { CloseContainerCmd, DepositCmd, EquipCmd, GameplayActions, OpenContainerCmd, PlaceCmd, RepairCmd, ToggleFireCmd, UseCmd } from "../input.js";
+import { CloseContainerCmd, DepositCmd, EquipCmd, GameplayActions, OpenContainerCmd, PlaceCmd, RepairCmd, ToggleFireCmd, UseCmd, WithdrawCmd } from "../input.js";
 import { BuyFromStallCmd, OpenStallCmd } from "../economy/stall.js";
 import { QueueCraftCmd } from "../systems/craft_queue.js";
 import { PartyAcceptCmd, PartyDeclineCmd, PartyInviteCmd, PartyKickCmd, PartyLeaveCmd } from "../party.js";
@@ -74,7 +74,8 @@ export function actionCommand(action: string): AgentCommand | undefined {
     if (k === "copen") return ok ? { type: OpenContainerCmd.name, payload: { target: n[0]! } } : undefined;
     if (k === "cclose") return { type: CloseContainerCmd.name, payload: {} };
     if (k === "fire") return ok ? { type: ToggleFireCmd.name, payload: { target: n[0]! } } : undefined;
-    if (k === "cdeposit") return ok && n.length >= 3 ? { type: DepositCmd.name, payload: { target: n[0]!, item: n[1]!, count: n[2]! } } : undefined; }
+    if (k === "cdeposit") return ok && n.length >= 3 ? { type: DepositCmd.name, payload: { target: n[0]!, item: n[1]!, count: n[2]! } } : undefined;
+    if (k === "cwithdraw") return ok && n.length >= 3 ? { type: WithdrawCmd.name, payload: { target: n[0]!, item: n[1]!, count: n[2]! } } : undefined; } // ADR-250 (item 0 = take all)
   if (action.startsWith("equip:") || action.startsWith("repair:")) { const n = Number(action.split(":")[1]); if (!Number.isInteger(n) || n < 0) return undefined; return action[0] === "e" ? { type: EquipCmd.name, payload: { slot: n } } : { type: RepairCmd.name, payload: { target: n } }; } // ADR-203
   const it = actionIntent(action); if (!it) return undefined;
   switch (it.kind) {
@@ -142,7 +143,7 @@ function vehicleActionCommand(action: string): AgentCommand | undefined | null {
     default: return null;
   }
 }
-const COMMAND_ACTIONS = new Set(["venter", "vexit", "vhitch", "vunhitch", "vstation", "vrefuel", "vrepair", "vdeploy", "ccreate", "cinvite", "caccept", "cleave", "cpromote", "cdemote", "ckick", "cperms", "cgoal", "cstock", "eat", "drink", "craft", "build", "open", "buy", "pinvite", "paccept", "pdecline", "pleave", "pkick", "skill", "equip", "repair", "copen", "cclose", "cdeposit", "fire"]);
+const COMMAND_ACTIONS = new Set(["venter", "vexit", "vhitch", "vunhitch", "vstation", "vrefuel", "vrepair", "vdeploy", "ccreate", "cinvite", "caccept", "cleave", "cpromote", "cdemote", "ckick", "cperms", "cgoal", "cstock", "eat", "drink", "craft", "build", "open", "buy", "pinvite", "paccept", "pdecline", "pleave", "pkick", "skill", "equip", "repair", "copen", "cclose", "cdeposit", "fire", "cwithdraw"]);
 /**
  * Moves the command-type actions (eat, drink, craft, build, open, buy) out of out.actions and into out.commands, in order.
   Movement and gather/attack/sleep stay

@@ -22,7 +22,7 @@ import { iconForItem, ROADS, clanTintIndex,
   progressionView, unlockSkillIntent, respecSkillsIntent, SKILL_REJECT_TEXT, useIntent, drinkWaterIntent, nearWater,
   SKILLS, equipIntent, wearIntent, equipmentView,
   petView, petsOf, petOfferIntent, petCommandIntent, dropItemIntent, splitStackIntent, moveSlotIntent, containerToSlotIntent, slotToContainerIntent, defaultSplit, HOTBAR_SIZE, PET_HELP, petName, petSpecies, Pet,
-  treeShortName, treeIndex, readSlots,
+  treeShortName, treeIndex, readSlots, SPRITE_FALLBACKS,
 } from "@engine/gameplay";
 import { colorChoices, requestCharacterEdit } from "./character-creator.js";
 import { GroupRole, Membership, PlayerId, SLOT_PALETTE, swatchColor, Transform, type Entity, type WearableSlot } from "@engine/core";
@@ -144,7 +144,14 @@ function hasIcon(k: string): boolean {
  */
 export function buildIconKey(pieceKey: string, tier: number, tiered: boolean, has: (k: string) => boolean = hasIcon): string | undefined {
   const c = tiered ? [...Array.from({ length: Math.max(0, 5 - tier) }, (_, i) => `build_${pieceKey}_t${tier + i}`), `build_${pieceKey}`] : [`build_${pieceKey}`];
-  return c.find(has);
+  return c.find(has) ?? fallbackBuildIcon(pieceKey, has);
+}
+/** ADR-250: a piece without its own build icon borrows the icon of its art fallback (sprite_fallbacks.json `to` chain):
+ *  basic_storage_box -> build_crate_decor until Art ships build_basic_storage_box. */
+function fallbackBuildIcon(pieceKey: string, has: (k: string) => boolean, depth = 0): string | undefined {
+  const e = SPRITE_FALLBACKS.sprites[pieceKey]; if (!e || depth > 4) return undefined;
+  for (const k of e.to) { const r = has(`build_${k}`) ? `build_${k}` : fallbackBuildIcon(k, has, depth + 1); if (r) return r; }
+  return undefined;
 }
 /** ADR-229: roads tab — road-<i> = surfaces[i-1] -> build_road_<surface key>; sign tools use the wooden post sign. */
 export const roadIconKey = (surfaceKey: string): string => `build_road_${surfaceKey}`;

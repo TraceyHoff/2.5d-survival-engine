@@ -19,15 +19,20 @@ beforeEach(() => { document.head.innerHTML = ""; document.body.innerHTML = `<div
 
 describe("ADR-229 build window icons", () => {
   test("every piece has an icon for every tier it can be built at (atlas + stylesheet), roads and signs too", () => {
-    const has = (k: string): boolean => ART.has(k) && CSS.has(k); const missing: string[] = [];
+    const has = (k: string): boolean => ART.has(k) && CSS.has(k); const missing: string[] = []; const pending: string[] = [];
     expect(PIECES.length).toBeGreaterThan(100);
     for (const p of PIECES) {
       if (p.tiered) for (let t = p.minTier ?? 0; t <= 4; t++) { if (buildIconKey(p.key, t, true, has) !== `build_${p.key}_t${t}`) missing.push(`${p.key}@t${t}`); }
-      else if (buildIconKey(p.key, 0, false, has) !== `build_${p.key}`) missing.push(p.key);
+      else if (buildIconKey(p.key, 0, false, has) !== `build_${p.key}`) {
+        // ADR-250: art-pending pieces borrow a sprite_fallbacks neighbour's tile icon (never the glyph) until Art ships theirs
+        const fb = (G.SPRITE_FALLBACKS.sprites as Record<string, { to: string[] }>)[p.key]?.to.map((k) => `build_${k}`) ?? [];
+        if (has(`build_${p.key}`) || !fb.includes(buildIconKey(p.key, 0, false, has) ?? "")) missing.push(p.key); else pending.push(p.key);
+      }
       // below minTier the nearest tier's art is used, never the glyph
       if (p.tiered) expect(buildIconKey(p.key, 0, true, has), p.key).toBeDefined();
     }
-    expect(missing).toEqual([]);
+    expect(missing).toEqual([]); expect(pending).toEqual(["basic_storage_box"]); // ADR-250 art request: build_basic_storage_box
+    expect(buildIconKey("basic_storage_box", 0, false, has)).toBe("build_crate_decor");
     for (const s of ROADS.roads.surfaces) expect(has(roadIconKey(s.key)), s.key).toBe(true);
     for (const s of ROADS.signs) expect(has(signIconKey(s.key)), s.key).toBe(true);
     expect(has(SIGN_TOOL_ICON)).toBe(true);

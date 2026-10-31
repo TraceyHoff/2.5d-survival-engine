@@ -297,6 +297,8 @@ export interface PieceTarget {
   /** Next tier for Upgrade (undefined when not tiered / already top tier). */
   nextTier: number | undefined; nextTierKey: string | undefined;
   canRepair: boolean; canUpgrade: boolean; canAfford: { repair: boolean; upgrade: boolean };
+  /** ADR-250: Demolish is a "Pick up" (full refund x hp fraction, contents drop as a bag). */
+  pickup: boolean;
 }
 /** Placed piece nearest the aim point (within `radius` tiles, same level preferred) that is in build reach; undefined if none. */
 export function pieceTargetAt(world: World, player: Entity, at: { x: number; y: number } | undefined, level = 0, radius = 0.9): PieceTarget | undefined {
@@ -320,7 +322,7 @@ export function pieceTargetAt(world: World, player: Entity, at: { x: number; y: 
   const has = (cost: { item: number; count: number }[]) => cost.every((c) => countItem(world, player, c.item) >= c.count);
   const missing = 1 - bp.hp / Math.max(1, maxHp); const mul = d.tiers[bp.tier]?.repairMul ?? 0.3;
   return { entity: best, piece: def.id, pieceKey: def.key, level: world.getField(best, PieceSlot, "z") ?? 0, tier: bp.tier, tierKey: tierKey(bp.tier), hp: bp.hp, maxHp,
-    nextTier: next, nextTierKey: next === undefined ? undefined : tierKey(next), canRepair: bp.hp < maxHp, canUpgrade: next !== undefined,
+    nextTier: next, nextTierKey: next === undefined ? undefined : tierKey(next), canRepair: bp.hp < maxHp, canUpgrade: next !== undefined, pickup: def.pickup,
     canAfford: { repair: has(pieceCost(d, def, bp.tier, mul * missing)), upgrade: next !== undefined && has(pieceCost(d, def, next)) } };
 }
 export const repairIntent = (target: Entity): MenuIntent => ({ cmd: RepairCmd, args: { target }, entities: ["target"] });

@@ -2684,3 +2684,49 @@ Plain X / A keep Interact / Jump. The touch buttons are checked for no overlap a
   - Appearances replicate both ways between two players.
   - A returning player's legacy ebony (9) restores as ebony (16) with the new scheme.
 - ADR-246 follow-up (screenshot pass): gt_ pages load resident + hot at 1x on >= 128 MB budgets (RESIDENT_GROUND_RE; the stream pool's x0.25 ETC1S slots turned every cell into a flat colour diamond = a visible grid; @2x would add ~120 MB, 1x adds ~7 MB: 118 MB total, within budget). WebGL water mesh drops the per-tile brightness jitter (diamond checker on water). Canvas2D gt blocks skip the grey gt_water layer so the drawWater tint gradient shows (it rendered untinted grey).
+
+## ADR-250: Basic storage box — a starter container outside the skill tree (players and AI humans)
+
+**Context.** Since ADR-221 every container (`storage_box`, `large_chest`) is gated behind a skill-tree unlock. A brand-new player, or an AI human, has nowhere to put resources before they spend points.
+
+**Decision.**
+- New piece `basic_storage_box` (id 182, Furniture tab):
+  - **Recipe:** 10 sticks, 6 plant fiber and 2 Pine Log (`wood`). All three can be gathered by hand.
+  - **Crafting:** free placement, with no station and no skill.
+  - **Stats:** layer 2, 1×1, solid, hp 120, tier 1.
+  - **Storage:** `container: 12`. That is half of `large_chest` and the same as `storage_box`, whose slot count is unchanged.
+- **New piece flags in `defs.ts`:**
+  - `starter: true`: `pieceGates` returns `[]`, so the piece is never SkillLocked and needs no UNLOCK_NODE.
+  - `pickup: true`: build mode's contextual Demolish becomes "Pick up" / "Confirm pick up". Pick up refunds the full cost × the hp fraction, instead of the usual demolish refund. Pieces without the flag are unchanged.
+- **Contents are never lost:**
+  - When the box is picked up, its contents drop as a `LootSource.Dropped` bag and any viewer is closed.
+  - `destroyPiece` now spills the contents of *any* plain storage piece into a bag. This covers decay, raids and demolish. An empty box leaves no bag. Before this, a destroyed chest's contents were simply lost.
+- **It is a piece, not a LootBag,** so the ADR-238 despawn timers never touch it. It persists through the existing piece and container persistence: chunk reload and host restart both keep its contents.
+  - Note: persistence re-bases the container's `created` stamp on load. This is existing behaviour; the tests compare slot, item and count.
+- **UI:** the box uses the existing container panel (Inventory → "Storage · 12 slots") for touch, gamepad and KBM.
+- **Art:** the build icon and world sprite fall back to `crate_decor` via `sprite_fallbacks.json`. `adr229_build_icons` allows a piece whose icon resolves through its fallback chain and lists it as art-pending; today that list is exactly `["basic_storage_box"]`.
+- **AI humans** use the new `packages/gameplay/src/ai/storage_api.ts`:
+  - `STARTER_STORAGE_PIECE`
+  - `isBaseStoragePiece(def)`: any plain container piece, not stalls, stations or vehicles.
+  - `nearbyStorage(world, entity, radius)`: sorted by distance, with free slots and contents.
+  - `storedCount`
+  - `storageDepositActions` / `storageWithdrawActions`: they emit `copen`/`cdeposit`/`cwithdraw`/`cclose` agent commands.
+  - `cwithdraw` is a new agent command action, mapped to the existing Withdraw intent.
+  - `BUILD_PLAN_PIECES` in `survivor_behaviors` is now campfire → basic_storage_box → workbench, so survivors can build storage before they have skills.
+- **How the in-progress AI-base work (`wt-aibase`) should hook in.** It is not changed here.
+  - Its storage-piece checks in `planner.ts` should use `isBaseStoragePiece`.
+  - Its build goal ladder should start storage with `STARTER_STORAGE_PIECE`.
+  - Its piece slot table needs a `basic_storage_box` row.
+  - Deposit and withdraw should go through `nearbyStorage` plus the action builders, one action per think tick.
+
+**Art & Assets needed.**
+- A `basic_storage_box` building sprite: 1×1, layer 2, 4 rotations, smaller and rougher than `storage_box` (lashed sticks/fiber crate).
+- An `items_build` icon `build_basic_storage_box`.
+- Until both exist, the box uses `crate_decor`.
+
+**Tests.**
+- `packages/gameplay/test/adr250_basic_storage_box.test.ts` (14): recipe and gating, placement while the workbench is SkillLocked, buildView, collision, intents, the despawn exemption, the pickup refund and spill, decay spill, the AI API end to end, and the build plan.
+- `packages/persist/test/adr250_basic_storage_box.test.ts`: chunk reload and fresh host restore.
+- `apps/server/test/adr250_mp_storage_box.test.ts`: two clients place, deposit, withdraw and pick up over the network.
+- `apps/client/test/adr250_storage_box_pickup.test.ts`: the "Pick up" UI flow.
+- `adr229_build_icons` gains the art-pending allowance.

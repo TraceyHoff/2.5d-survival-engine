@@ -1099,7 +1099,8 @@
     "well": 178,
     "window_planter": 179,
     "feeding_trough": 180,
-    "pet_trough": 181
+    "pet_trough": 181,
+    "basic_storage_box": 182
   },
   "zombies": {
     "zombie_brute": 1,

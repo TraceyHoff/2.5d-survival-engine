@@ -13,10 +13,14 @@
 import { reseatSmallOn, smallPiecesOn } from "./surface.js";
 import { spillStall } from "../economy/stall.js";
 import { onPieceDamaged } from "../combat/pvp_pieces.js";
-import { type Entity, type World } from "@engine/core";
+import { Transform, type Entity, type World } from "@engine/core";
 import { raidScaled } from "./modular.js";
 import { Placement } from "../defs.js";
-import { AttachKind, BuildPiece, type DamageCause, ContainerViewers, PieceStability, Viewing } from "../components.js";
+import { AttachKind, BuildPiece, Container, type DamageCause, ContainerViewers, Fuel, LootBag, PieceLink, PieceStability, StallHeader, Viewing } from "../components.js";
+import { lootBagInit } from "../loot_despawn.js";
+import { LootSource } from "../loot_labels.js";
+import { moveSlotTuples } from "../inventory.js";
+import { indexEntity } from "../spawn.js";
 import { gameplayDefs, isAuthority } from "../config.js";
 import { DestroyCause, emit, PieceDamaged, PieceDestroyed } from "../events.js";
 import { unlinkPiece } from "./links.js";
@@ -93,6 +97,20 @@ export function recomputeRegion(world: World, idx: StructureIndex, nodes: Set<En
   return out.sort((a, b) => a - b);
 }
 
+/** ADR-250: a destroyed storage attachment (plain Storage container: not a stall, till or fire) spills its items into a
+ *  Dropped loot bag at the piece with the stall-spill lifetime (ADR-238 timers apply to the bag, never to the box). Server only; undefined when empty. */
+export function spillStorage(world: World, att: Entity): Entity | undefined {
+  if (!isAuthority(world) || world.isReplaying) return undefined;
+  if (world.getField(att, PieceLink, "kind") !== AttachKind.Storage || world.has(att, StallHeader) || world.has(att, Fuel) || !world.has(att, Container)) return undefined;
+  const n = world.getField(att, Container, "slotCount") ?? 0; const items = world.getArray(att, Container, "items")!; const counts = world.getArray(att, Container, "counts")!;
+  const moves: { slot: number; count: number }[] = []; for (let i = 0; i < n; i++) if (items[i] && counts[i]) moves.push({ slot: i, count: counts[i]! });
+  if (!moves.length) return undefined;
+  const t = world.get(att, Transform)!; const bag = world.create();
+  world.add(bag, Transform, { x: t.x, y: t.y, z: t.z }).add(bag, Container, { slotCount: Math.max(24, n) }).add(bag, ContainerViewers)
+    .add(bag, LootBag, lootBagInit(world, 0, "stall", LootSource.Dropped));
+  moveSlotTuples(world, att, bag, moves); indexEntity(world, bag); return bag;
+}
+
 /** Destroy a piece (server): removes attachments and the hosted opening, records neighbors for recompute. */
 export function destroyPiece(world: World, e: Entity, cause: DestroyCause): void {
   const idx = structures(world); if (!idx.info.has(e)) return;
@@ -108,6 +126,7 @@ export function destroyPiece(world: World, e: Entity, cause: DestroyCause): void
     const vs = world.get(a, ContainerViewers);
     if (vs) for (const v of world.query([Viewing])) if (world.getField(v, Viewing, "container") === a) world.remove(v, Viewing);
     if (cause !== DestroyCause.Demolish) spillStall(world, a);
+    spillStorage(world, a); // ADR-250: chest contents drop as a loot bag (demolish / pickup / raid / decay alike)
     unmarkLinked(world, a); world.destroy(a);
   }
   if ((idx.def(e)?.surfaceHeight ?? 0) > 0) for (const m of smallPiecesOn(world, e)) idx.removedNeighbors.add(m); // ADR-162 decor on it drops

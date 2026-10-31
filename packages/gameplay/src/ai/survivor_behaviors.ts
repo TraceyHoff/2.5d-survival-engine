@@ -15,7 +15,8 @@ import { PET_TREATS, speciesOfAnimal, tameChance } from "../pets.js";
 
 export interface StallOffer { id: number; x: number; y: number; slot: number; item: number; qty: number; priceItem: number; priceCount: number; revision?: number }
 export interface AgentSensors { food?: number; water?: number; partyMates?: { id: number; x: number; y: number }[]; stall?: StallOffer; /** ADR-145: a wild pet-species animal nearby + the best treat in the bag (the bot has no pet yet) */ tame?: { id: number; x: number; y: number; item: number } }
-export const BUILD_PLAN_PIECES = ["campfire", "storage_box", "workbench"] as const;
+/** ADR-250: the starter basic_storage_box (never skill-gated, hand-built) instead of the plank storage_box. */
+export const BUILD_PLAN_PIECES = ["campfire", "basic_storage_box", "workbench"] as const;
 
 /** ADR-212: per-defs lookups (were rebuilt with [...map.values()].filter/find per bot per perception tick). */
 interface DefsCache { hand: RecipeDef[]; itemByKey: Map<string, ItemDef>; pieceByKey: Map<string, PieceDef>; recipeFor: Map<number, RecipeDef> }

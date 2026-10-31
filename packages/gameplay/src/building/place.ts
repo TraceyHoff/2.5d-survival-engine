@@ -188,6 +188,7 @@ export function candidateStability(world: World, sn: Snapped): number {
 
 /** ADR-221: gate tokens a piece at `tier` needs (station piece unlock; tier unlock for tiered pieces). Twig and ordinary pieces need none. */
 export function pieceGates(defs: GameDefs, def: PieceDef, tier: number): string[] {
+  if (def.starter) return []; // ADR-250: starter pieces (basic_storage_box) are craftable from the start
   const out = [pieceToken((def as { key?: string }).key ?? "")]; const tk = defs.tiers[tier]?.key; if (def.tiered && tk) out.push(tierToken(tk)); return out;
 }
 export const pieceUnlocked = (world: World, e: Entity, def: PieceDef, tier: number): boolean => pieceGates(gameplayDefs(world), def, tier).every((t) => hasSkillUnlock(world, e, t));

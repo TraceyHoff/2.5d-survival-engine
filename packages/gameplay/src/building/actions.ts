@@ -74,7 +74,7 @@ export function buildActionSystem(world: World, dt: number): void {
         const owner = world.getField(p, Tribe, "id") ?? 0;
         if (owner !== 0 && owner !== tribeOf(world, e)) { fail(BuildFail.NoPrivilege); continue; }
         const frac = bp.hp / Math.max(1, maxHpOf(world, p));
-        for (const c of pieceCost(defs, def, bp.tier)) { const n = Math.floor(c.count * b.demolishRefund * frac); if (n > 0) addItem(world, e, c.item, n); }
+        for (const c of pieceCost(defs, def, bp.tier)) { const n = Math.floor(c.count * (def.pickup ? 1 : b.demolishRefund) * frac); /* ADR-250: pickup = full refund */ if (n > 0) addItem(world, e, c.item, n); }
         destroyPiece(world, p, DestroyCause.Demolish);
         break;
       }

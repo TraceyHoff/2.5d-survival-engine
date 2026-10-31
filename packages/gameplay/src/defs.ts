@@ -137,6 +137,8 @@ export interface PieceDef extends BuildPieceDef, Visual {
   readonly supportsAbove: boolean; readonly roof: boolean; readonly blocksPath: boolean; readonly opening: SocketKind | 0;
   readonly fits: SocketKind | 0; readonly door: boolean; readonly station: StationKind; readonly fired: boolean;
   readonly heat: number; readonly heatRadius: number; readonly light: boolean; readonly container: number;
+  /** ADR-250: starter pieces are never skill-gated; pickup pieces refund their full cost (x hp fraction) on Demolish ("Pick up"). */
+  readonly starter: boolean; readonly pickup: boolean;
   /** ADR-216: light radius in tiles (gameplay light grid AND the rendered light; 0 = legacy max(heatRadius*2, 4)). */
   readonly lightRadius: number;
   readonly privilegeRadius: number; readonly paintable: boolean; readonly variants: number; readonly spoilMul: number;
@@ -276,6 +278,8 @@ export interface RawPiece extends RawVisual {
   tiered?: boolean; costScale?: number; tier?: number; groundOnly?: boolean; ground?: boolean; minLevel?: number; needsDeck?: boolean;
   supportsAbove?: boolean; roof?: boolean; blocksPath?: boolean; opening?: string; fits?: string; door?: boolean; station?: string;
   fired?: boolean; heat?: number; heatRadius?: number; light?: boolean; lightRadius?: number; container?: number; privilegeRadius?: number; paintable?: boolean; variants?: number; variantNames?: string[]; spoilMul?: number; fuelMul?: number;
+  /** ADR-250: never skill-gated (pieceGates = []); pickup: Demolish refunds the full cost (x hp fraction). */
+  starter?: boolean; pickup?: boolean;
   stall?: { listings: number; clanOnly?: boolean };
   features?: PieceFeatures;
   rotSteps?: number; small?: boolean; surface?: { height: number }; category?: string; snap?: "vertex"; shape?: "L"; maxSlope?: number; minTier?: number; extraCost?: { item: string; count: number; fromTier?: number }[]; family?: string;
@@ -469,7 +473,7 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
       door: p.door ?? false, station, fired: p.fired ?? false, heat: p.heat ?? 0, heatRadius: p.heatRadius ?? 0, light: p.light ?? false, lightRadius: p.lightRadius ?? 0,
       container: p.container ?? 0, privilegeRadius: p.privilegeRadius ?? 0, paintable: p.paintable ?? false, variants: Math.max(1, p.variants ?? 1), variantNames: p.variantNames ?? [], category: p.category ?? defaultPieceCategory(p), spoilMul: p.spoilMul ?? 1, fuelMul: p.fuelMul ?? 1,
       stall: p.stall ? { listings: p.stall.listings, clanOnly: p.stall.clanOnly ?? false } : null, features: p.features ?? {},
-      rotSteps: p.rotSteps ?? 0, small: p.small ?? false, surfaceHeight: p.surface?.height ?? 0, snap: p.snap ?? "", shape: p.shape ?? "", maxSlope: p.maxSlope ?? -1, minTier: p.minTier ?? 0, family: p.family ?? "",
+      rotSteps: p.rotSteps ?? 0, small: p.small ?? false, surfaceHeight: p.surface?.height ?? 0, snap: p.snap ?? "", shape: p.shape ?? "", maxSlope: p.maxSlope ?? -1, minTier: p.minTier ?? 0, family: p.family ?? "", starter: p.starter ?? false, pickup: p.pickup ?? false,
       extraCost: (p.extraCost ?? []).map((c) => ({ item: itemRef(c.item, where), count: c.count, fromTier: c.fromTier ?? 0 })),
     });
     if (placement === Placement.Tri && (p.footprint && (p.footprint.w !== 1 || p.footprint.h !== 1))) err(`${where}: tri pieces are 1x1`);
