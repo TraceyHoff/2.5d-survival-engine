@@ -415,6 +415,7 @@ flowchart LR
 | Cancel | `Escape` | `pad.start (tap 250ms)` | `btn:back` |
 | ToggleBuild | `B` | `pad.lb+pad.y` | `btn:build` |
 | Camera.Zoom | `AltLeft+mouse.wheelDown/mouse.wheelUp`, `Minus/Equal` | `pad.rb+pad.ddown/pad.dup` | `touch.pinch.in/touch.pinch.out` |
+| Camera.RotateCCW / Camera.RotateCW (ADR-253) | `BracketLeft` / `BracketRight` | `pad.rb+pad.dleft` / `pad.rb+pad.dright` | `btn:camccw` / `btn:camcw` (⟲ ⟳ HUD) |
 | Aim | — | `pad.rx/pad.ry` | `touch.aim.x/touch.aim.y` |
 
 **Building**
@@ -430,6 +431,7 @@ flowchart LR
 | Build.TierNext | `ShiftLeft+mouse.wheelDown` | `pad.dup` | `btn:tierup` |
 | Build.TierPrev | `ShiftLeft+mouse.wheelUp` | `pad.ddown` | `btn:tierdown` |
 | Build.ToggleSnap | `G` | `pad.rs` | `btn:snap` |
+| Camera.RotateCCW / Camera.RotateCW (ADR-253) | `BracketLeft` / `BracketRight` | `pad.lt+pad.dleft` / `pad.lt+pad.dright` | `btn:camccw` / `btn:camcw` |
 | Build.LevelUp | `PageUp` | `pad.lt+pad.dup` | `btn:levelup` |
 | Build.LevelDown | `PageDown` | `pad.lt+pad.ddown` | `btn:leveldown` |
 | Build.DemolishMode | `X` | `pad.x (longPress 500ms)` | `btn:demolish` |

@@ -2807,3 +2807,49 @@ Plain X / A keep Interact / Jump. The touch buttons are checked for no overlap a
 - Sleep needs a complete base and a bed, so a bot without a base rests by its fire.
 - Winter warmth is fire-based; bots don't pick clothes for temperature beyond the clothes goal.
 - The live tests give bots a head start (skills and materials) to keep runtime low; from scratch the ladder is the same but slower.
+
+## ADR-253: Camera rotation — four 90° isometric views (WebGL + Canvas2D, camera-relative input)
+
+**Context.** The camera always looked from the same corner, so walls hid the far side of bases and characters were seen from one side only. Players asked to look at the world from other vantage points. It had to work on Xbox (incl. Elite/Edge), keyboard + mouse and touch, without new overlapping UI and without costing frame time or image quality.
+
+**Decision.** A purely client-side view rotation in quarter turns (`IsoConfig.view`, 0..3). The server, the simulation and replication are untouched: rotation is presentation plus input remapping, so nothing new is authoritative and nothing is sent.
+
+- **Projection** (`@engine/world` iso.ts). World (x, y) is rotated into view space (u, v) = R_q (x, y) (`VIEW_COS` / `VIEW_SIN` are exact integers) before the unchanged 2:1 projection. Painter depth is u + v. `toView` / `fromView` / `viewRect` / `viewFacing` are the shared helpers. q = 0 is bit-identical to before. The renderer owns its `IsoConfig` copy; `DEFAULT_ISO` is never mutated.
+- **Camera** (`IsoCamera.setView(q, pivot)`). Instant snap (no tween: axis-aligned art can't be drawn at 45°), with the player as the pivot so they stay where they were on screen. `IsoRenderer` and `Canvas2DRenderer` both expose `viewRotation` / `setViewRotation`.
+- **Tilemap / terrain** (WebGL `tilemap.ts`, `terrainTiles.ts`, Canvas2D). Chunks are built in view-space cells, so neighbour rules, skirts, shore and edge blobs and corner tints see view-space neighbours and the screen-relative art stays right. Cliff faces shade by their view normal (the two faces towards the camera are drawn, the other two collapse). Ground variants use the world tile's hash, so they don't change on rotation. Surface noise and shimmer are rotated back to world space. One cached instance buffer per quarter; the two adjacent quarters are prewarmed one chunk per idle frame, so a rotation never stalls.
+- **Sprites and depth** (`sprites.ts`, Canvas2D). Positions, depth keys, chunk culling (`visibleChunkKeys(…, q)`), the occlusion fade, roads and VFX all use view coordinates. Directional art (characters, zombies, critters, vehicles, 8-way equipment) gets facing + q quarter turns, so you really see their other side.
+- **Building pieces.** Pieces resolve the art row for `(rot + q) & 3` with view footprints (`viewRect`), deck side masks (`rotSideMask`), chimney smoke (`isoPlace` / attach points rotated back to world) and stall slot attach points. `unique4` pieces therefore show their real other faces; `mirror` pieces show the mirrored row, exactly like a piece built at that rotation.
+- **Missing facings (fallback).** Non-directional sprites (props, decor, items, resources, decals, single-facing VFX) are mirrored (`FlipX`) on odd quarters (`AtlasManager.isDirectional`). That way, the left/right orientation of the art follows the rotation and it is never blank or wrong-sided. Art needs are listed below.
+- **Lighting / shadows.** Point lights, the light grid and the bloom/occluder passes are projected through the view, so they stay on their sources. The blob/contact shadows and the sun are kept in screen space on purpose: all sprites are pre-lit from the same screen direction. Rotating the sun would contradict the baked shading of every sprite and of the terrain art.
+- **Input (camera-relative)** (`@engine/input`). `InputSystem.viewQuarter` rotates the stick/WASD move vector and the build ghost nudge back into the q0 screen frame (`rotateScreenVec`) before `writeFrame`, so "up" is up on screen in every view, for walking and driving alike. Gamepad stick aim goes through `AimResolver.dirToWorld` (`screenDirToWorld`), which also fixes the old bug of using the raw stick as a world direction. Mouse aim already went through `screenToWorld`. The build-mode pad cursor rotates too.
+- **Controls.**
+  - Keyboard + mouse: `[` / `]` (BracketLeft / BracketRight), in gameplay and build mode. A consuming menu keeps them for its tabs.
+  - Gamepad (Xbox / Edge): **RB + D-pad ← / →** in gameplay. This follows the ADR-177 RB + D-pad ↑ / ↓ zoom, so the plain D-pad hotbar is shadowed only while RB is held. In build mode RB is piece-rotate, so it is **LT + D-pad ← / →** there; the plain D-pad still cycles pieces. Elite/Edge back paddles can be mapped to these in the controller's own app.
+  - Touch and mouse: two 44 px HUD buttons **⟲ ⟳** at the top right, under the menu bar (`#cam-rotate`, safe-area aware). They are hidden while menus are open, on the boot menu, when dead or with no player. Their events never reach the game. A two-finger twist was rejected because it fights pinch zoom.
+  - The chosen view is persisted in `engine-settings.view` next to the zoom.
+- **No overlapping UI.** `#world-tool-bar` moved from top 58 px to 108 px (under the rotate buttons), and it is hidden while driving (it overlapped the drive layout's Engine / Lights buttons). Checked with layout screenshots at 1280×720, 844×390 and 390×844, in gameplay and build mode (build HUD).
+- **Overlays / audio.** Name tags, loot labels, station hints, the snap overlay and `isoToCss` read the camera's `iso` (`camIso`). The death-screen bag compass (`bagBearing(…, view)`) and stereo pan (`screenDx` / `pan(…, view)`, `mixer.view`) follow the view.
+
+**Performance.** No per-frame cost beyond two integer multiplies per projected point. Tile chunks for other quarters are built lazily or prewarmed one per idle frame, and the memory cost is at most four cached views of the visible chunks. There is no extra pass and no resolution change.
+
+**Art needs (for Art & Assets).** The full list, generated from the served manifests, is in `docs/art-requests/adr253_rotation_facings.csv` (1343 rows).
+- **A: needs facings (6).** These single-facing stall props are mirrored on views 1/3 and have an obvious front: `stall_coin_pouch`, `stall_barter_scale`, `stall_display_slot`, `stall_lantern`, `stall_shop_bell`, `stall_rent_marker`.
+- **B: `rotationArt: "mirror"` building pieces → `unique4` wanted (340: building 281, pack 54, vehicles 4, pvp_clan 1).** Rotations 2/3, and so the far-side views, show the mirrored 0/1 frames. This matters most for asymmetric pieces:
+  - furniture and decor (stools, tables, lamps, candelabra, chandeliers, vases, pottery, barrels, books, dishes, baskets, clay ovens, statues, plants, planters, rugs);
+  - outdoor pieces (birdbath, sundial, scarecrow, hedge, flower/garden beds, fountain, well, paths, stepping stones, banners, clan flags);
+  - stall booths and blankets;
+  - foundations, floors, hatches, skylights, pillars, roofs and chimneys (all tiers);
+  - camper floor, wall, bench and stove;
+  - traps, turrets, bonfire, furnace, cooking pot, campfire, lantern, torch stand, wood stove, storage box, claim totem, raid bell, watchtower, windsock.
+- **C: optional (997).** Single-facing items, equipment, resources, decals and VFX, where the mirror fallback reads fine (trees, rocks, ground items, decals).
+- Characters, zombies, critters, vehicles and 8-way equipment already have 8 directions, and tiles are view-built: no new art needed.
+
+**Tests.**
+- `packages/render/test/adr253_camera_rotation.test.ts` (10): q0 is bit-identical; inverses; quarter semantics; `viewRect` / `viewCellToTile`; `setView` pivot; cliff faces per view; deck masks; chunk culling; `isoPlace`; chimney smoke.
+- `packages/input/test/adr253_camera_rotation.test.ts` (10): `rotateScreenVec`; move / bits / ghost nudge per quarter; q0 unchanged; `dirToWorld` aim; KBM, pad (RB / LT + D-pad) and touch bindings; menu tab precedence.
+- `apps/client/test/adr253_camera_rotate.test.ts` (9): view state and persistence; rotate requests; camera-relative move and aim match the q0 on-screen direction (exact for the four axes); restore + player pivot + input sync; HUD buttons don't leak; overlays via `IsoCamera.iso`; bag compass and stereo pan.
+
+**Limits.**
+- 2:1 dimetric plus the sim's 45° move map means screen diagonals aren't exactly 45° on screen. They behave identically in all four views, as at q0 before.
+- Snap only (no animated turn).
+- The rotation is local and not shared with spectators or replays.

@@ -1,0 +1,1344 @@
+priority,fragment,key,category,piece,note
+A,stalls,stall_barter_scale,building,,"stall prop, single facing: mirrored on views 1/3; needs facings for the other 3 sides"
+A,stalls,stall_coin_pouch,building,,"stall prop, single facing: mirrored on views 1/3; needs facings for the other 3 sides"
+A,stalls,stall_display_slot,building,,"stall prop, single facing: mirrored on views 1/3; needs facings for the other 3 sides"
+A,stalls,stall_lantern,building,,"stall prop, single facing: mirrored on views 1/3; needs facings for the other 3 sides"
+A,stalls,stall_rent_marker,building,,"stall prop, single facing: mirrored on views 1/3; needs facings for the other 3 sides"
+A,stalls,stall_shop_bell,building,,"stall prop, single facing: mirrored on views 1/3; needs facings for the other 3 sides"
+B,building,banner,building,banner,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,banner_large,building,banner@large,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,banner_small,building,banner@small,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_floor_hatch_frame_t1,building,floor_hatch_frame@tier1,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_floor_hatch_frame_t2,building,floor_hatch_frame@tier2,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_floor_hatch_frame_t3,building,floor_hatch_frame@tier3,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_floor_hatch_frame_t4,building,floor_hatch_frame@tier4,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_floor_skylight,building,floor_skylight,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_floor_skylight_t1,building,floor_skylight@tier1,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_floor_skylight_t2,building,floor_skylight@tier2,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_floor_skylight_t3,building,floor_skylight@tier3,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_floor_skylight_t4,building,floor_skylight@tier4,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_floor_t1,building,floor@tier1,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_floor_t2,building,floor@tier2,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_floor_t3,building,floor@tier3,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_floor_t4,building,floor@tier4,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_foundation_stilt,building,foundation_stilt,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_foundation_stilt_t1,building,foundation_stilt@tier1,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_foundation_stilt_t2,building,foundation_stilt@tier2,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_foundation_stilt_t3,building,foundation_stilt@tier3,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_foundation_stilt_t4,building,foundation_stilt@tier4,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_foundation_t1,building,foundation@tier1,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_foundation_t2,building,foundation@tier2,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_foundation_t3,building,foundation@tier3,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_foundation_t4,building,foundation@tier4,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_pillar_t1,building,pillar@tier1,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_pillar_t2,building,pillar@tier2,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_pillar_t3,building,pillar@tier3,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_pillar_t4,building,pillar@tier4,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_roof_chimney,building,roof_chimney,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_roof_chimney_t1,building,roof_chimney@tier1,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_roof_chimney_t2,building,roof_chimney@tier2,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_roof_chimney_t3,building,roof_chimney@tier3,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_roof_chimney_t4,building,roof_chimney@tier4,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_roof_flat_t1,building,roof_flat@tier1,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_roof_flat_t2,building,roof_flat@tier2,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_roof_flat_t3,building,roof_flat@tier3,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,bld_roof_flat_t4,building,roof_flat@tier4,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,campfire,building,campfire,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,claim_totem,building,claim_totem,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_barrel_decor,building,barrel_decor,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_barrel_decor__side,building,barrel_decor@side,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_barrel_decor__upright,building,barrel_decor@upright,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_barrel_decor__water,building,barrel_decor@water,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_barrel_storage,building,barrel_storage,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_barrel_storage__iron_band,building,barrel_storage@iron_band,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_barrel_storage__oak,building,barrel_storage@oak,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_basket,building,basket,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_basket__fruit,building,basket@fruit,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_basket__laundry,building,basket@laundry,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_basket__wicker,building,basket@wicker,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_birdbath,building,birdbath,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_birdbath__copper,building,birdbath@copper,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_birdbath__stone,building,birdbath@stone,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_bonsai,building,bonsai,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_bonsai__maple,building,bonsai@maple,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_bonsai__pine,building,bonsai@pine,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_books,building,books,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_books__open,building,books@open,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_books__row,building,books@row,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_books__stack,building,books@stack,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_cactus,building,cactus,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_cactus__barrel,building,cactus@barrel,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_cactus__flowering,building,cactus@flowering,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_cactus__prickly,building,cactus@prickly,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_cactus__saguaro,building,cactus@saguaro,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_candelabra,building,candelabra,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_candelabra__brass,building,candelabra@brass,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_candelabra__iron,building,candelabra@iron,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_candelabra__silver,building,candelabra@silver,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_candle,building,candle,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_candle__single,building,candle@single,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_candle__tall,building,candle@tall,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_candle__trio,building,candle@trio,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_chandelier,building,chandelier,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_chandelier__crystal,building,chandelier@crystal,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_chandelier__iron,building,chandelier@iron,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_chandelier__wood,building,chandelier@wood,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_clan_flag,building,clan_flag,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_clan_flag__crossed,building,clan_flag@crossed,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_clan_flag__pole,building,clan_flag@pole,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_clan_flag__tall,building,clan_flag@tall,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_clay_oven,building,clay_oven,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_clay_oven__brick,building,clay_oven@brick,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_clay_oven__dome,building,clay_oven@dome,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_dishes,building,dishes,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_dishes__cups,building,dishes@cups,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_dishes__cutlery,building,dishes@cutlery,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_dishes__plates,building,dishes@plates,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_dishes__set,building,dishes@set,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_fern,building,fern,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_fern__boston,building,fern@boston,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_fern__maidenhair,building,fern@maidenhair,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_floor_lamp,building,floor_lamp,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_floor_lamp__brass,building,floor_lamp@brass,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_floor_lamp__oil,building,floor_lamp@oil,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_floor_lamp__shade,building,floor_lamp@shade,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_flower_bed,building,flower_bed,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_flower_bed__mixed,building,flower_bed@mixed,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_flower_bed__red,building,flower_bed@red,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_flower_bed__wild,building,flower_bed@wild,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_flower_bed__yellow,building,flower_bed@yellow,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_flowers_pot,building,flowers_pot,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_flowers_pot__daisy,building,flowers_pot@daisy,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_flowers_pot__lavender,building,flowers_pot@lavender,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_flowers_pot__rose,building,flowers_pot@rose,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_flowers_pot__sunflower,building,flowers_pot@sunflower,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_flowers_pot__tulip,building,flowers_pot@tulip,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_fountain,building,fountain,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_fountain__lion,building,fountain@lion,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_fountain__round,building,fountain@round,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_fountain__tiered,building,fountain@tiered,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_garden_bed,building,garden_bed,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_garden_bed__raised,building,garden_bed@raised,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_garden_bed__stone,building,garden_bed@stone,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_hanging_plant,building,hanging_plant,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_hanging_plant__ivy,building,hanging_plant@ivy,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_hanging_plant__pearls,building,hanging_plant@pearls,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_hanging_plant__spider,building,hanging_plant@spider,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_hedge,building,hedge,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_hedge__box,building,hedge@box,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_hedge__round,building,hedge@round,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_hedge__tall,building,hedge@tall,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_herb_planter,building,herb_planter,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_herb_planter__clay,building,herb_planter@clay,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_herb_planter__stone,building,herb_planter@stone,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_herb_planter__wood,building,herb_planter@wood,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_lamp_post,building,lamp_post,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_lamp_post__double,building,lamp_post@double,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_lamp_post__iron,building,lamp_post@iron,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_lamp_post__wood,building,lamp_post@wood,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_lantern,building,lantern,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_lantern_hanging,building,lantern_hanging,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_lantern_hanging__brass,building,lantern_hanging@brass,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_lantern_hanging__iron,building,lantern_hanging@iron,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_lantern_hanging__paper,building,lantern_hanging@paper,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_path_stone,building,path_stone,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_path_stone__brick,building,path_stone@brick,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_path_stone__cobble,building,path_stone@cobble,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_path_stone__flagstone,building,path_stone@flagstone,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_path_stone__gravel,building,path_stone@gravel,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_path_stone__plank,building,path_stone@plank,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_plant_floor,building,plant_floor,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_plant_floor__fern,building,plant_floor@fern,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_plant_floor__ficus,building,plant_floor@ficus,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_plant_floor__monstera,building,plant_floor@monstera,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_plant_floor__palm,building,plant_floor@palm,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_plant_floor__snake_plant,building,plant_floor@snake_plant,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_planter_box,building,planter_box,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_planter_box__long,building,planter_box@long,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_planter_box__raised,building,planter_box@raised,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_planter_box__square,building,planter_box@square,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_pottery,building,pottery,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_pottery__bowl_stack,building,pottery@bowl_stack,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_pottery__jug,building,pottery@jug,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_pottery__pitcher,building,pottery@pitcher,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_pottery__urn,building,pottery@urn,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_1x1,building,rug_1x1,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_1x1__border,building,rug_1x1@border,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_1x1__braided,building,rug_1x1@braided,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_1x1__checker,building,rug_1x1@checker,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_1x1__diamond,building,rug_1x1@diamond,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_1x1__floral,building,rug_1x1@floral,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_1x1__plain,building,rug_1x1@plain,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_1x1__striped,building,rug_1x1@striped,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_1x1__tribal,building,rug_1x1@tribal,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_2x1,building,rug_2x1,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_2x1__border,building,rug_2x1@border,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_2x1__braided,building,rug_2x1@braided,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_2x1__checker,building,rug_2x1@checker,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_2x1__diamond,building,rug_2x1@diamond,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_2x1__floral,building,rug_2x1@floral,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_2x1__plain,building,rug_2x1@plain,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_2x1__striped,building,rug_2x1@striped,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_2x1__tribal,building,rug_2x1@tribal,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_2x2,building,rug_2x2,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_2x2__border,building,rug_2x2@border,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_2x2__braided,building,rug_2x2@braided,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_2x2__checker,building,rug_2x2@checker,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_2x2__diamond,building,rug_2x2@diamond,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_2x2__floral,building,rug_2x2@floral,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_2x2__plain,building,rug_2x2@plain,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_2x2__striped,building,rug_2x2@striped,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_2x2__tribal,building,rug_2x2@tribal,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_3x2,building,rug_3x2,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_3x2__border,building,rug_3x2@border,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_3x2__braided,building,rug_3x2@braided,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_3x2__checker,building,rug_3x2@checker,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_3x2__diamond,building,rug_3x2@diamond,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_3x2__floral,building,rug_3x2@floral,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_3x2__plain,building,rug_3x2@plain,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_3x2__striped,building,rug_3x2@striped,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_3x2__tribal,building,rug_3x2@tribal,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_round,building,rug_round,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_round__border,building,rug_round@border,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_round__braided,building,rug_round@braided,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_round__checker,building,rug_round@checker,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_round__diamond,building,rug_round@diamond,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_round__floral,building,rug_round@floral,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_round__plain,building,rug_round@plain,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_round__striped,building,rug_round@striped,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_round__tribal,building,rug_round@tribal,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_runner,building,rug_runner,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_runner__border,building,rug_runner@border,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_runner__braided,building,rug_runner@braided,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_runner__checker,building,rug_runner@checker,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_runner__diamond,building,rug_runner@diamond,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_runner__floral,building,rug_runner@floral,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_runner__plain,building,rug_runner@plain,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_runner__striped,building,rug_runner@striped,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_rug_runner__tribal,building,rug_runner@tribal,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_scarecrow,building,scarecrow,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_scarecrow__classic,building,scarecrow@classic,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_scarecrow__pumpkin,building,scarecrow@pumpkin,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_scarecrow__tattered,building,scarecrow@tattered,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_statue,building,statue,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_statue__abstract,building,statue@abstract,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_statue__angel,building,statue@angel,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_statue__bear,building,statue@bear,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_statue__bust,building,statue@bust,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_statue__deer,building,statue@deer,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_statue__warrior,building,statue@warrior,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_statue_large,building,statue_large,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_statue_large__hero,building,statue_large@hero,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_statue_large__horse,building,statue_large@horse,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_statue_large__obelisk,building,statue_large@obelisk,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_stepping_stone,building,stepping_stone,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_stepping_stone__round,building,stepping_stone@round,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_stepping_stone__slate,building,stepping_stone@slate,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_stool_fine,building,stool_fine,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_stool_fine__round,building,stool_fine@round,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_stool_fine__square,building,stool_fine@square,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_stool_fine__tall,building,stool_fine@tall,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_stool_rustic,building,stool_rustic,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_stool_rustic__round,building,stool_rustic@round,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_stool_rustic__square,building,stool_rustic@square,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_stool_rustic__tall,building,stool_rustic@tall,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_sundial,building,sundial,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_sundial__bronze,building,sundial@bronze,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_sundial__stone,building,sundial@stone,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_table_coffee_fine,building,table_coffee_fine,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_table_coffee_fine__glass_top,building,table_coffee_fine@glass_top,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_table_coffee_fine__round,building,table_coffee_fine@round,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_table_coffee_fine__square,building,table_coffee_fine@square,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_table_coffee_rustic,building,table_coffee_rustic,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_table_coffee_rustic__glass_top,building,table_coffee_rustic@glass_top,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_table_coffee_rustic__round,building,table_coffee_rustic@round,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_table_coffee_rustic__square,building,table_coffee_rustic@square,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_table_lamp,building,table_lamp,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_table_lamp__oil,building,table_lamp@oil,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_table_lamp__shade,building,table_lamp@shade,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_table_side_fine,building,table_side_fine,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_table_side_fine__drawer,building,table_side_fine@drawer,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_table_side_fine__round,building,table_side_fine@round,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_table_side_fine__square,building,table_side_fine@square,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_table_side_rustic,building,table_side_rustic,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_table_side_rustic__drawer,building,table_side_rustic@drawer,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_table_side_rustic__round,building,table_side_rustic@round,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_table_side_rustic__square,building,table_side_rustic@square,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_vase,building,vase,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_vase__amphora,building,vase@amphora,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_vase__painted,building,vase@painted,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_vase__round,building,vase@round,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_vase__tall,building,vase@tall,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_well,building,well,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_well__roofed,building,well@roofed,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_well__stone,building,well@stone,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_windsock,building,windsock,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,dec_windsock__plain,building,windsock@plain,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,raid_bell,building,raid_bell,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,stall_blanket,building,stall_blanket,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,stall_blanket_gingham,building,stall_blanket@gingham,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,stall_blanket_patch,building,stall_blanket@patch,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,stall_blanket_picnic,building,stall_blanket@picnic,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,stall_booth,building,stall_booth,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,stall_booth_bluecloth,building,stall_booth@bluecloth,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,stall_booth_redroof,building,stall_booth@redroof,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,stall_booth_thatch,building,stall_booth@thatch,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,torch_stand,building,torch_stand,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,watchtower,building,watchtower,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,building,wood_stove,building,wood_stove,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,arrow_turret,building,arrow_turret,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,barbed_wire,building,barbed_wire,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,bear_trap,building,bear_trap,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,bolt_turret,building,bolt_turret,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,bonfire,building,bonfire,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,cooking_pot,building,cooking_pot,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,flame_turret,building,flame_turret,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,floor,building,floor,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,floor_hatch_frame,building,floor_hatch_frame,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,floor_hatch_frame_metal,building,floor_hatch_frame,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,floor_hatch_frame_stone,building,floor_hatch_frame,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,floor_hatch_frame_twig,building,floor_hatch_frame,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,floor_metal,building,floor,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,floor_stone,building,floor,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,floor_twig,building,floor,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,flower_box,building,flower_box,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,flower_box_2,building,flower_box,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,flower_box_3,building,flower_box,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,flower_box_4,building,flower_box,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,foundation,building,foundation,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,foundation_metal,building,foundation,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,foundation_stone,building,foundation,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,foundation_twig,building,foundation,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,furnace,building,furnace,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,pillar,building,pillar,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,pillar_metal,building,pillar,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,pillar_stone,building,pillar,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,pillar_twig,building,pillar,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,planter,building,flower_box,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,potted_plant,building,potted_plant,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,potted_plant_2,building,potted_plant,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,potted_plant_3,building,potted_plant,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,roof_flat,building,roof_flat,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,roof_flat_metal,building,roof_flat,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,roof_flat_metal_winter,building,roof_flat@winter,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,roof_flat_stone,building,roof_flat,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,roof_flat_stone_winter,building,roof_flat@winter,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,roof_flat_twig,building,roof_flat,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,roof_flat_twig_winter,building,roof_flat@winter,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,roof_flat_winter,building,roof_flat@winter,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,roof_peak,building,roof_peak,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,roof_peak_metal,building,roof_peak,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,roof_peak_metal_winter,building,roof_peak@winter,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,roof_peak_stone,building,roof_peak,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,roof_peak_stone_winter,building,roof_peak@winter,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,roof_peak_twig,building,roof_peak,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,roof_peak_twig_winter,building,roof_peak@winter,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,roof_peak_winter,building,roof_peak@winter,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,rug,building,rug,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,rug_2,building,rug,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,rug_3,building,rug,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,rug_4,building,rug,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,spike_trap,building,spike_trap,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pack,table,building,table,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,pvp_clan,storage_box_locked,building,storage_box,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,vehicles,camper_cook_stove,building,camper_cook_stove,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,vehicles,camper_craft_bench,building,camper_craft_bench,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,vehicles,camper_interior_floor,building,camper_floor,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+B,vehicles,camper_interior_wall,building,camper_wall,"building piece, rotationArt=mirror: rotations 2/3 (and so the back views) show the mirrored 0/1 frames; unique4 rows wanted for asymmetric detail"
+C,building,bld_crack,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,alloy_axe,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,alloy_ingot,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,alloy_knife,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,alloy_pickaxe,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,alloy_plate,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,alloy_shovel,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,alloy_sword,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,alloy_warhammer,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,animal_fat,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,animal_feed,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,antiseptic,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,ap_rifle_round,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,aramid_weave,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,auto_rifle,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,baked_potato,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,bayonet_carbine,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,bayonet_musket,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,bayonet_rifle,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,beehive,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,beeswax,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,berry_pie,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,black_powder_bomb,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,bone,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,bone_boots,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,bone_cuirass,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,bone_dagger,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,bone_gauntlets,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,bone_greaves,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,bone_helmet,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,bowstring,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,breaching_charge,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,bread,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,bronze_boots,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,bronze_cuirass,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,bronze_dagger,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,bronze_gauntlets,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,bronze_greaves,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,bronze_helmet,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,bronze_knife,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,bronze_mace,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,bronze_shovel,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,bronze_spear,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,bronze_throwing_axe,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,canned_corn,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,canned_fish,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,canned_stew,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,casings,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,ceramic_plate,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,chain_rings,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,chromite_ore,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,chromite_vein,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,cloth_gloves,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,coin,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,composite_boots,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,composite_cuirass,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,composite_gauntlets,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,composite_greaves,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,composite_helmet,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,compound_bow,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,cooked_fish,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,corn,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,cornbread,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,cotton,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,cotton_bush,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,crossbow,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,crude_oil,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,dog_biscuit,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,egg,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,egg_crunch,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,feather,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,fire_arrow,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,fish,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,fish_stew,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,fish_treat,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,flax_patch,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,flint_arrow,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,flintlock_pistol,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,flour,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,frame_pack,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,fried_egg,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,fur,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,fur_boots,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,fur_cloak,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,fur_coat,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,fur_hat,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,fur_leggings,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,fur_mittens,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,fur_pelt,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,fuse,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,galena_vein,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,glass_bottle,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,glue,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,grenade,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,gun_barrel,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,gunpowder,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,hardened_leather,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,herb_patch,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,herbal_poultice,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,herbal_tea,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,honey,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,honey_cake,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,hunting_rifle,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,icon_pine_sapling,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,incendiary_grenade,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,incendiary_shell,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,iron_arrow,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,iron_bolt,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,iron_boots,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,iron_cuirass,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,iron_dagger,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,iron_gauntlets,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,iron_greaves,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,iron_helmet,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,iron_knife,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,iron_mace,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,iron_machete,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,iron_pipe,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,iron_shovel,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,iron_sledgehammer,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,iron_spear,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,iron_throwing_axe,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,jerky,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,laminated_bow,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,lamp_oil,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,lantern,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,lead_ingot,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,lead_ore,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,leather_backpack,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,leather_boots,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,leather_gloves,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,light_crossbow,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,linen,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,linen_cap,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,linen_shirt,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,linen_trousers,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,longbow,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,marksman_rifle,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,meat_pie,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,meaty_chew,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,mechanism,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,medkit,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,molotov,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,musket_ball,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,nail_bat,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,oil_seep,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,oilskin_coat,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,omelette,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,padded_cloth,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,padded_jacket,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,padded_trousers,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,pipe_bomb,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,pipe_shotgun,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,pistol_round,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,polymer_sheet,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,potato,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,potato_soup,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,pump_shotgun,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,rain_hood,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,raincoat,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,recurve_bow,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,reed_bed,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,reed_sandals,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,reed_satchel,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,resin,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,resin_tree,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,revolver,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,rifle_round,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,roasted_corn,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,roasted_mushroom,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,rot,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,rubber_boots,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,rubble_pile,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,salt,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,salt_flat,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,salted_fish,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,saltpeter,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,saltpeter_deposit,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,salvaged_parts,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,satchel_charge,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,scrap_metal,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,seed_mix,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,semi_auto_pistol,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,short_bow,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,shotgun_shell,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,sinew,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,sling,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,sling_stone,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,slug_shell,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,spring,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,steel_axe,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,steel_bolt,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,steel_boots,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,steel_crossbow,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,steel_cuirass,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,steel_dagger,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,steel_gauntlets,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,steel_greaves,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,steel_helmet,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,steel_knife,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,steel_mace,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,steel_machete,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,steel_pickaxe,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,steel_shovel,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,steel_sledgehammer,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,steel_spear,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,steel_sword,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,steel_throwing_axe,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,stew_bowl,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,stone_maul,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,straw_hat,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,sulfur,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,sulfur_vent,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,tactical_pack,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,thread,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,tin_can,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,trail_mix,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,veggie_bites,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,vehicle_key,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,waxed_cloth,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,waxed_trousers,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,wild_garden,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,wild_grain,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,items,wild_onion,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,aloe,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,aloe_seeds,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,antler,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,antler_pickaxe,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,apple_sapling,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,apple_tree,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,apple_tree_stump,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,asphalt,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,baked_apple,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,baked_beans,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,baked_coconut,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,baked_orange,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,baked_peach,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,baked_pear,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,beans,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,beans_seeds,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,berry_seeds,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,birch_bark,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,birch_sapling,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,birch_tree,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,birch_tree_stump,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,blackberry,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,blackberry_bush,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,blackberry_seeds,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,blueberry,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,blueberry_seeds,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,bone_arrow,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,bone_axe,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,bone_knife,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,bone_meal,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,bone_needle,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,cabbage,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,cabbage_seeds,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,canteen,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,carrot_seeds,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,cement,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,cherry,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,cherry_sapling,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,cherry_tree,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,cherry_tree_stump,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,clutter_driftwood,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,clutter_dry_grass,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,clutter_fern,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,clutter_flower_a,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,clutter_flower_b,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,clutter_flower_c,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,clutter_grass_tuft_a,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,clutter_grass_tuft_b,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,clutter_leaves,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,clutter_moss_rock,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,clutter_mushroom,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,clutter_pebbles,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,clutter_reeds,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,clutter_rock_small,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,clutter_shell,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,clutter_twigs,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,coconut,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,cooked_poultry,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,cooked_prime_cut,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,cooked_small_game,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,cooked_venison,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,corn_seeds,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,cotton_seeds,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_aloe,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_aloe_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_aloe_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_aloe_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_aloe_3,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_beans,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_beans_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_beans_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_beans_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_beans_3,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_cabbage,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_cabbage_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_cabbage_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_cabbage_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_cabbage_3,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_carrot,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_carrot_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_carrot_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_carrot_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_carrot_3,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_corn,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_corn_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_corn_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_corn_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_corn_3,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_cotton,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_cotton_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_cotton_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_cotton_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_cotton_3,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_flax,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_flax_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_flax_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_flax_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_flax_3,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_garlic,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_garlic_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_garlic_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_garlic_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_garlic_3,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_ginseng,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_ginseng_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_ginseng_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_ginseng_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_ginseng_3,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_hemp,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_hemp_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_hemp_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_hemp_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_hemp_3,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_herbs,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_herbs_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_herbs_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_herbs_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_herbs_3,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_mushroom,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_mushroom_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_mushroom_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_mushroom_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_mushroom_3,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_onion,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_onion_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_onion_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_onion_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_onion_3,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_potato,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_potato_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_potato_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_potato_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_potato_3,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_pumpkin,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_pumpkin_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_pumpkin_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_pumpkin_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_pumpkin_3,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_squash,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_squash_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_squash_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_squash_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_squash_3,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_tomato,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_tomato_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_tomato_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_tomato_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_tomato_3,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_wheat,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_wheat_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_wheat_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_wheat_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_wheat_3,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_yarrow,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_yarrow_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_yarrow_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_yarrow_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,crop_yarrow_3,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,dry_shrub,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,fallen_log,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,farm_soil,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,fertilizer,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,fiber_bush,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,fish_shoal,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,flax_seeds,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,fruit_salad,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,fur_vest,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,fx_breath_puff,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,fx_drip,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,fx_lightning,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,fx_sweat_drop,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,garlic,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,garlic_clove,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,ginseng,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,ginseng_seeds,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,gravel,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,hemp,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,hemp_seeds,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,herbs_seeds,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,hoe,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,icon_sign_arrow,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,icon_sign_billboard,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,icon_sign_hanging,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,icon_sign_metal_road,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,icon_sign_wall_plaque,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,icon_sign_wooden_post,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,leather_cap,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,leather_jacket,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,leather_trousers,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,maple_sap,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,maple_sapling,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,maple_syrup,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,maple_tree,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,maple_tree_stump,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,milk,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,mossy_log,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,mushroom_spores,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,oak_sapling,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,oak_tree_stump,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,onion,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,onion_seeds,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,orange,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,orange_sapling,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,orange_tree,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,orange_tree_stump,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,palm_frond,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,palm_sapling,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,palm_tree,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,palm_tree_stump,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,particle_leaf,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,particle_stone_chip,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,particle_wood_chip,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,peach,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,peach_sapling,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,peach_tree,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,peach_tree_stump,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,pear,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,pear_sapling,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,pear_tree,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,pear_tree_stump,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,pet_trough_crack,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,pine_cone,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,pine_tree,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,pine_tree_stump,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,placeholder_animal_l,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,placeholder_animal_m,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,placeholder_animal_s,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,placeholder_sapling,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,placeholder_sprout,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,pumpkin_pie,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,pumpkin_seeds,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,raspberry,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,raspberry_bush,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,raspberry_seeds,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,raw_poultry,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,raw_prime_cut,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,raw_small_game,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,raw_venison,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m0,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m0_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m0_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m1,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m10,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m10_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m10_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m11,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m11_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m11_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m12,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m12_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m12_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m13,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m13_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m13_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m14,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m14_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m14_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m15,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m15_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m15_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m1_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m1_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m2,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m2_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m2_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m3,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m3_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m3_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m4,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m4_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m4_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m5,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m5_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m5_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m6,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m6_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m6_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m7,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m7_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m7_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m8,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m8_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m8_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m9,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m9_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_m9_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_gravel_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m0,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m0_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m0_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m1,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m10,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m10_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m10_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m11,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m11_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m11_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m12,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m12_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m12_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m13,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m13_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m13_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m14,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m14_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m14_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m15,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m15_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m15_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m1_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m1_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m2,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m2_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m2_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m3,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m3_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m3_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m4,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m4_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m4_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m5,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m5_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m5_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m6,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m6_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m6_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m7,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m7_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m7_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m8,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m8_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m8_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m9,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m9_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_m9_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_path_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m0,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m0_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m0_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m1,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m10,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m10_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m10_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m11,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m11_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m11_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m12,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m12_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m12_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m13,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m13_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m13_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m14,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m14_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m14_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m15,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m15_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m15_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m1_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m1_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m2,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m2_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m2_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m3,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m3_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m3_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m4,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m4_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m4_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m5,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m5_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m5_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m6,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m6_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m6_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m7,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m7_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m7_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m8,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m8_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m8_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m9,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m9_fall,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_m9_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,road_paved_winter,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,roasted_cabbage,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,roasted_carrot,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,roasted_garlic,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,roasted_onion,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,roasted_pumpkin,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,roasted_squash,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,roasted_tomato,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,roasted_wild_onion,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,rotten_stump,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_apple_tree_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_apple_tree_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_apple_tree_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_birch_tree_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_birch_tree_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_birch_tree_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_blackberry_bush_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_blackberry_bush_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_blackberry_bush_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_blueberry_bush_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_blueberry_bush_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_blueberry_bush_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_cherry_tree_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_cherry_tree_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_cherry_tree_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_maple_tree_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_maple_tree_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_maple_tree_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_oak_tree_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_oak_tree_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_oak_tree_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_orange_tree_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_orange_tree_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_orange_tree_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_palm_tree_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_palm_tree_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_palm_tree_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_peach_tree_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_peach_tree_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_peach_tree_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_pear_tree_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_pear_tree_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_pear_tree_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_pine_tree_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_pine_tree_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_pine_tree_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_raspberry_bush_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_raspberry_bush_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_raspberry_bush_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_strawberry_bush_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_strawberry_bush_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_strawberry_bush_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_willow_tree_0,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_willow_tree_1,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sapling_willow_tree_2,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,seed_potato,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sign_arrow,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sign_billboard,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sign_hanging,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sign_metal_road,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sign_wall_plaque,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,sign_wooden_post,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,snake_skin,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,snakeskin_boots,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,squash,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,squash_seeds,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,stewed_berries,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,stewed_blackberry,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,stewed_blueberry,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,stewed_cherry,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,stewed_raspberry,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,stewed_strawberry,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,strawberry,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,strawberry_bush,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,strawberry_seeds,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,tallow,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,tallow_candle,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,tomato,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,tomato_seeds,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,tool_req_axe,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,tool_req_hand,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,tool_req_hoe,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,tool_req_knife,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,tool_req_pickaxe,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,tool_req_shovel,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,tool_req_sickle,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,vegetable_stew,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,water_bottle,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,watering_can,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,wheat,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,wheat_seeds,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,wild_aloe,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,wild_beans,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,wild_cabbage,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,wild_carrot,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,wild_corn,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,wild_garlic,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,wild_ginseng,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,wild_hemp,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,wild_mushroom,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,wild_potato,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,wild_pumpkin,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,wild_squash,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,wild_tomato,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,wild_wheat,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,wild_yarrow,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,willow_bark,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,willow_sapling,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,willow_tea,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,willow_tree,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,willow_tree_stump,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,wool,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,wool_cloth,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,wool_hat,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,wool_sweater,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,yarrow,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,nature,yarrow_seeds,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,animal_carcass,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,apple,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,armor_leather,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,arrow,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,bandage,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,berries,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,berry_bush,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,berry_bush_fall,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,berry_bush_winter,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,blueberries,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,blueberry_bush,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,boots_leather,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,boulder,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,bow,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,bronze_axe,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,bronze_ingot,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,bronze_pickaxe,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,bronze_sword,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,bush,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,bush_fall,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,bush_winter,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,campfire_kit,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,carrot,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,carrot_patch,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,charcoal,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,clay,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,clay_brick,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,clay_deposit,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,cloth,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,club,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,coal,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,coal_seam,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,cooked_meat,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,copper_ingot,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,copper_ore,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,copper_vein,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,death_bag,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,dye,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,fallen_branches,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,fiber,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,fiber_grass,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,fiber_grass_fall,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,fiber_grass_winter,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,flax,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,flint,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,flowers,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,flowers_fall,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,flowers_winter,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,fx_blizzard,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,fx_deathbag_drop,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,fx_dust,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,fx_fire,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,fx_fire_big,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,fx_fire_huge,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,fx_firefly,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,fx_fog,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,fx_gate_breach,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,fx_heat_haze,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,fx_leaf,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,fx_leaf_autumn,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,fx_poof,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,fx_puff,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,fx_rain,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,fx_rain_splash,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,fx_respawn_poof,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,fx_shadow_blob,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,fx_smoke,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,fx_snow,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,fx_snowflake,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,fx_spark,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,fx_splinter,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,glass,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,glow_mushrooms,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,gold_ingot,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,gold_ore,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,gold_vein,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,hardwood,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,hardwood_planks,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,helmet_leather,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,herbs,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,hide,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,iron_axe,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,iron_ingot,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,iron_ore,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,iron_pickaxe,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,iron_plate,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,iron_sword,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,iron_vein,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,leather,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,loose_rocks,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,mortar,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,mushroom,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,mushrooms,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,nails,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,oak_tree,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,oak_tree_fall,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,oak_tree_winter,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,pine_sapling,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,pine_young,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,planks,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,pumpkin,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,pumpkin_patch,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,raw_meat,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,reeds,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,rock_small,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,rope,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,sand,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,sand_dune,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,shield,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,spear,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,steel_ingot,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,steel_plate,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,sticks,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,stone,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,stone_axe,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,stone_brick,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,stone_knife,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,stone_pickaxe,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,stone_shovel,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,stone_spear,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,sword,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,tin_ingot,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,tin_ore,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,tin_vein,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,torch,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,tree,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,tree_apple,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,tree_apple_fall,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,tree_apple_winter,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,tree_autumn,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,tree_fall,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,tree_pine,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,tree_pine_winter,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,tree_sapling,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,tree_stump,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,tree_twisty,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,tree_winter,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,tree_young,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,water_flask,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,wild_herbs,resource,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,wood,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,wooden_club,equipment,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pack,workbench_kit,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,crack_1x1,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,crack_2x1,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,crack_2x2,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,fx_block_shield,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,fx_bonk_stars,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,fx_collapse_poof,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,fx_crit_burst,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,fx_dodge_dust,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,fx_downed_overlay,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,fx_downed_ring,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,fx_fire_large,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,fx_fire_small,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,fx_hit_dust,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,fx_hit_spark,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,fx_hit_stone,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,fx_hit_wood,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,fx_impact_flash,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,fx_impact_puff,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,fx_item_drop_bounce,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,fx_ko_ghost,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,fx_ko_puff,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,fx_loot_beam,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,fx_parry_spark,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,fx_raid_ember,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,fx_raid_smoke,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,fx_repair_sparkle,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,fx_respawn_sparkle,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,grave_marker,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,loot_glow_common,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,loot_glow_epic,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,loot_glow_legendary,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,loot_glow_rare,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,loot_glow_uncommon,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,loot_sack_large,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,loot_sack_medium,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,loot_sack_small,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,proj_sling_stone,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,rubble_smoldering,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,territory_edge,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,territory_fill,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,territory_in_e,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,territory_in_n,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,territory_in_s,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,territory_in_w,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,territory_ne,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,territory_nw,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,territory_se,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,territory_sw,decal,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,trail_arrow,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,trail_spear,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,pvp_clan,trail_stone,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_axle,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_battery,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_bike_chain,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_bike_frame,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_bike_tire,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_bike_wheel,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_biofuel,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_body_panel,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_camper_interior,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_chassis_heavy,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_chassis_large,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_chassis_medium,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_chassis_small,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_copper_wire,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_diesel,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_engine_diesel,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_engine_large,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_engine_medium,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_engine_small,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_flax,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_fuel_tank,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_gasoline,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_gearbox,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_headlight,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_hitch_coupler,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_patch_kit,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_plant_oil,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_radiator,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_reeds,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_repair_kit,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_rubber,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_saddle,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_seat,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_steering_column,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_sulfuric_acid,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_tank_shell,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_tire,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_trailer_frame,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_vehicle_kit_bike_basic,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_vehicle_kit_bike_bmx,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_vehicle_kit_bike_cargo,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_vehicle_kit_bike_cruiser,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_vehicle_kit_bike_fat_tire,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_vehicle_kit_bike_mountain,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_vehicle_kit_bike_road,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_vehicle_kit_bike_tandem,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_vehicle_kit_bike_trike,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_vehicle_kit_camper_rv,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_vehicle_kit_camper_van,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_vehicle_kit_car_compact,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_vehicle_kit_car_muscle,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_vehicle_kit_car_offroad,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_vehicle_kit_car_sedan,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_vehicle_kit_car_wagon,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_vehicle_kit_semi_tractor,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_vehicle_kit_semi_trailer_box,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_vehicle_kit_semi_trailer_flatbed,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_vehicle_kit_trailer_camper,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_vehicle_kit_trailer_cargo_medium,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_vehicle_kit_trailer_flatbed_large,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_vehicle_kit_trailer_livestock,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_vehicle_kit_trailer_tanker,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_vehicle_kit_trailer_utility_small,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_vehicle_kit_truck_box,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_vehicle_kit_truck_flatbed,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_vehicle_kit_truck_pickup,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_vehicle_kit_van_cargo,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_vehicle_kit_van_passenger,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_wheel,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_wheel_rim,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,item_windshield,item,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
+C,vehicle_items,piece_garage_crack,vfx,,single-facing world sprite: mirrored on views 1/3 (fallback); extra facings optional
