@@ -58,8 +58,18 @@ box-shadow:0 4px 0 #2D5A2E;cursor:pointer;touch-action:manipulation;text-shadow:
 .boot h2{margin:0;font-size:22px;color:#74432C}
 .boot label{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:15px}
 .boot .hint{font-size:12px;color:#E6C47E}
+.boot[data-page=multiplayer] .panel{width:min(480px,94vw);gap:10px}
+.boot .mp-sec{display:flex;flex-direction:column;gap:6px;padding-top:8px;border-top:2px solid rgba(116,67,44,.25)}
+.boot .mp-sec h3{margin:0;font-size:15px;color:#74432C;text-transform:uppercase;letter-spacing:1px}
+.boot .mp-sec p{font-size:13px;max-width:none}.boot .mp-sec code{font-size:12px}
+.boot .mp-row{display:flex;gap:8px;align-items:stretch}.boot .mp-row input{flex:1 1 0;min-width:0;min-height:44px;box-sizing:border-box}.boot .mp-row button{flex:0 0 auto}
+.boot input:focus{outline:3px solid #FFD45A;outline-offset:1px}
+.boot .mp-status{font-weight:700}.boot .mp-status[data-state=online]{color:#2D5A2E}.boot .mp-status[data-state=offline]{color:#A0302A}
+.boot .mp-foot{font-size:12px;opacity:.8}
+@media (max-height:760px){.boot[data-page=multiplayer]{justify-content:flex-start;gap:8px;padding-top:max(8px,env(safe-area-inset-top,0px))}.boot[data-page=multiplayer] .title{font-size:28px}.boot[data-page=multiplayer] .title small{display:none}.boot[data-page=multiplayer] .logo{max-height:56px}.boot[data-page=multiplayer] .lane,.boot[data-page=multiplayer] .lbl{display:none}}
+@media (max-height:760px),(max-width:480px){.boot[data-page=multiplayer] .panel{padding:12px 14px}.boot[data-page=multiplayer] button{font-size:17px;padding:8px 14px}}
 ${artCss(base)}`;
-const KEYS: Record<string, string> = { Singleplayer: "singleplayer", Multiplayer: "multiplayer", Settings: "settings", Connect: "multiplayer", "Host game": "multiplayer", "Join with code": "multiplayer", Join: "multiplayer", "Dedicated server": "multiplayer", Save: "settings", Back: "quit" };
+const KEYS: Record<string, string> = { Singleplayer: "singleplayer", Multiplayer: "multiplayer", Settings: "settings", Save: "settings", Back: "quit" };
 function artCss(base: string): string {
   const u = (f: string): string => `url(${base}art/ui/branding/${f})`; let c = "";
   if (BR.bg === "parallax") c += `.boot{background:#1b1622}.boot .px{position:absolute;inset:-4%;background-size:cover;background-position:center;pointer-events:none;z-index:-1;animation:bootdrift 30s ease-in-out infinite alternate}
@@ -79,6 +89,32 @@ function artCss(base: string): string {
 @keyframes bootsheet{to{background-position:-384px 0}}.boot[data-boot=menu] .zw,.boot[data-boot=menu] .cf{display:none}
 @media (prefers-reduced-motion:reduce){.boot .cf{animation:none}}`;
   return c;
+}
+
+/** ADR-236 Multiplayer page inputs from main.ts. */
+export interface MultiplayerPageOpts { /** e.g. "12" (or "6 (mobile)") */ hostCap?: string; /** test hook: resolve RTT ms or reject */ probe?: (url: string) => Promise<number> }
+/** Reachability + ping of a dedicated server: time to open (then close) a WebSocket. */
+export function probeServer(url: string, timeoutMs = 4000, Ws: typeof WebSocket = WebSocket): Promise<number> {
+  return new Promise((ok, fail) => {
+    if (!/^wss?:\/\/./i.test(url)) { fail(new Error("address must start with ws:// or wss://")); return; }
+    if (typeof location !== "undefined" && location.protocol === "https:" && /^ws:/i.test(url)) { fail(new Error("https pages need wss://")); return; }
+    const t0 = performance.now(); let ws: WebSocket;
+    try { ws = new Ws(url); } catch (e) { fail(e instanceof Error ? e : new Error(String(e))); return; }
+    const done = (err?: Error): void => { clearTimeout(timer); ws.onopen = ws.onerror = null; try { ws.close(); } catch { /* ignore */ } if (err) fail(err); else ok(performance.now() - t0); };
+    const timer = setTimeout(() => done(new Error("timed out")), timeoutMs);
+    ws.onopen = () => done(); ws.onerror = () => done(new Error(""));
+  });
+}
+function mpButton(text: string, action: string, fn: () => void): HTMLButtonElement { const b = document.createElement("button"); b.type = "button"; b.setAttribute("role", "menuitem"); b.dataset["action"] = action; b.textContent = text; b.addEventListener("click", fn); return b; }
+function mpInput(role: string, label: string, placeholder: string): HTMLInputElement {
+  const i = document.createElement("input"); i.dataset["role"] = role; i.setAttribute("aria-label", label); i.placeholder = placeholder; i.autocomplete = "off"; i.spellcheck = false; return i;
+}
+function mpRow(...els: HTMLElement[]): HTMLElement { const r = document.createElement("div"); r.className = "mp-row"; r.append(...els); return r; }
+function mpSection(title: string, help: string, ...body: HTMLElement[]): HTMLElement {
+  const s = document.createElement("section"); s.className = "mp-sec"; s.dataset["section"] = title.toLowerCase().split(" ")[0]!;
+  const h = document.createElement("h3"); h.textContent = title; s.append(h);
+  if (help) { const p = document.createElement("p"); p.innerHTML = help; s.append(p); }
+  s.append(...body); return s;
 }
 
 export class BootUI {
@@ -150,7 +186,8 @@ export class BootUI {
   /** Main menu; resolves with the player's choice. */
   /** notice: shown once on the main screen (e.g. "Host ended the session"), hook `.boot [data-role=notice]`. */
   /** slot: ?player slot whose browser saves "Manage saves" deletes (ADR-099). */
-  menu(opts: { hostedStatic: boolean; defaultUrl: string; notice?: string; slot?: string }): Promise<MenuChoice> {
+  /** page: open straight on a sub-page (ADR-236: a multiplayer session ending returns to the Multiplayer page). */
+  menu(opts: { hostedStatic: boolean; defaultUrl: string; notice?: string; slot?: string; page?: "multiplayer"; mp?: MultiplayerPageOpts }): Promise<MenuChoice> {
     this.root.dataset["boot"] = "menu";
     return new Promise((resolve) => {
       let notice = opts.notice;
@@ -164,25 +201,38 @@ export class BootUI {
           ["Settings", settings, "alt"],
         ], undefined, `<div class="hint">Mouse / touch · arrows + Enter · gamepad D-pad + A</div>`, ...extra);
       };
-      // Multiplayer: browser-hosted P2P (Host game / Join with code) or a dedicated server.
-      const multi = (): void => this.screen([
-        ["Host game", () => { enterFullscreen(); resolve({ kind: "host" }); }],
-        ["Join with code", join],
-        ["Dedicated server", dedicated, "alt"],
-        ["Back", main, "alt"],
-      ], main, `<h2>Multiplayer</h2><p>Host a game in this browser and share the code, or join a friend's code. Human bots are off in multiplayer.</p>`);
-      const join = (): void => {
-        const input = document.createElement("input"); input.dataset["role"] = "room-code"; input.placeholder = "ABC-234"; input.maxLength = 7; input.autocapitalize = "characters"; input.autocomplete = "off"; input.spellcheck = false; input.setAttribute("aria-label", "Room code");
-        this.screen([["Join", () => { const code = input.value.trim(); if (!code) return; enterFullscreen(); resolve({ kind: "join", code }); }], ["Back", multi, "alt"]],
-          multi, `<h2>Join with code</h2><p>Enter the 6-character code shown on the host's screen.</p>`, input);
-      };
-      const dedicated = (): void => {
-        const input = document.createElement("input"); input.value = localStorage.getItem("engine-server-url") ?? opts.defaultUrl; input.placeholder = "wss://your-server:7777"; input.setAttribute("aria-label", "Server URL");
-        const note = opts.hostedStatic
-          ? `<p><b>Dedicated server.</b> This GitHub Pages build can't run one (use Host game for a browser-hosted session): run <code>pnpm --filter @engine/server start</code> on a machine and enter its <code>ws://</code> / <code>wss://</code> address (https pages need <code>wss://</code>). Human bots are off in multiplayer.</p>`
-          : `<p>Enter the game server address. Human bots are off in multiplayer.</p>`;
-        this.screen([["Connect", () => { const url = input.value.trim(); if (!url) return; localStorage.setItem("engine-server-url", url); enterFullscreen(); resolve({ kind: "multiplayer", url }); }], ["Back", multi, "alt"]],
-          multi, `<h2>Dedicated server</h2>${note}`, input);
+      // ADR-236: one Multiplayer page holds everything the old in-game connect / P2P boxes did: host, join a room code,
+      // dedicated server address + live reachability/ping, and why the last session ended. In-game only Pause → Session
+      // and a tiny problem-only indicator remain. One focus column (D-pad / arrows / Tab), A or Enter on a field types,
+      // Enter in a field submits its own row, B / Esc = Back.
+      const multi = (): void => {
+        const mp = opts.mp ?? {};
+        const extra: HTMLElement[] = [];
+        if (notice) { const n = document.createElement("p"); n.dataset["role"] = "notice"; n.setAttribute("role", "status"); n.textContent = notice; extra.push(n); notice = undefined; }
+        const go = (c: MenuChoice): void => { enterFullscreen(); resolve(c); };
+        const host = mpButton("Host game", "mp-host", () => go({ kind: "host" })); host.dataset["autofocus"] = "1";
+        extra.push(mpSection("Host", `Run the world in this browser${mp.hostCap ? ` · up to ${mp.hostCap} players` : ""}. The room code is in Pause → Session.`, host));
+        const code = mpInput("room-code", "Room code", "ABC-234"); code.maxLength = 7; code.autocapitalize = "characters"; code.style.textTransform = "uppercase";
+        const join = mpButton("Join", "mp-join", () => { const c = code.value.trim(); if (!c) { code.focus(); return; } go({ kind: "join", code: c }); });
+        extra.push(mpSection("Join a friend", "", mpRow(code, join)));
+        const url = mpInput("server-url", "Server URL", "wss://your-server:7777"); url.value = localStorage.getItem("engine-server-url") ?? opts.defaultUrl;
+        const connect = mpButton("Connect", "mp-connect", () => { const u = url.value.trim(); if (!u) { url.focus(); return; } localStorage.setItem("engine-server-url", u); go({ kind: "multiplayer", url: u }); });
+        const st = document.createElement("p"); st.dataset["role"] = "server-status"; st.setAttribute("aria-live", "polite"); st.className = "mp-status";
+        const help = opts.hostedStatic ? "This web build can't run a server: run <code>pnpm --filter @engine/server start</code> somewhere and enter its <code>wss://</code> address." : "";
+        extra.push(mpSection("Dedicated server", help, mpRow(url, connect), st));
+        for (const [i, b] of [[code, join], [url, connect]] as const) i.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); b.click(); } });
+        const foot = document.createElement("p"); foot.className = "mp-foot"; foot.textContent = "Human bots are off in multiplayer."; extra.push(foot);
+        this.screen([["Back", main, "alt"]], main, `<h2>Multiplayer</h2>`, ...extra);
+        this.root.dataset["page"] = "multiplayer";
+        // reachability + ping of the typed address (re-checked as it changes)
+        const probe = mp.probe ?? probeServer; let gen = 0, timer = 0;
+        const check = (): void => { const u = url.value.trim(); const g = ++gen; if (!u) { st.textContent = ""; return; }
+          st.dataset["state"] = "checking"; st.textContent = "Checking server…";
+          probe(u).then((ms) => { if (g !== gen || !st.isConnected) return; st.dataset["state"] = "online"; st.textContent = `● Online · ${Math.round(ms)} ms`; },
+            (e: unknown) => { if (g !== gen || !st.isConnected) return; st.dataset["state"] = "offline"; st.textContent = `● Can't reach server${e instanceof Error && e.message ? ` (${e.message})` : ""}`; }); };
+        url.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(check, 600) as unknown as number; });
+        this.cleanup = () => { gen++; clearTimeout(timer); delete this.root.dataset["page"]; };
+        check();
       };
       const settings = (): void => {
         const s = loadSettings();
@@ -237,7 +287,7 @@ export class BootUI {
           (rows[0]?.querySelector("input") as HTMLInputElement | null)?.focus();
         }, (e: unknown) => { status.textContent = `Couldn't read saves: ${e instanceof Error ? e.message : String(e)}`; });
       };
-      main();
+      if (opts.page === "multiplayer") multi(); else main();
     });
   }
   private cleanup: (() => void) | undefined;
@@ -257,7 +307,7 @@ export class BootUI {
     const nodes: HTMLElement[] = [panel]; if (html.includes("hint")) { const h = document.createElement("div"); h.className = "hint"; h.textContent = "Mouse / touch · arrows + Enter · gamepad D-pad + A"; nodes.push(h); }
     this.body.replaceChildren(...nodes);
     const focusables = (): HTMLElement[] => Array.from(panel.querySelectorAll<HTMLElement>("input:not(:disabled),button:not(:disabled)"));
-    let idx = focusables().indexOf(buttons[0]!); const focus = (i: number): void => { const f = focusables(); if (!f.length) return; idx = (i + f.length) % f.length; focusVisible(f[idx]); };
+    let idx = focusables().indexOf(panel.querySelector<HTMLElement>("[data-autofocus]") ?? buttons[0]!); const focus = (i: number): void => { const f = focusables(); if (!f.length) return; idx = (i + f.length) % f.length; focusVisible(f[idx]); };
     panel.addEventListener("focusin", (e) => { const i = focusables().indexOf(e.target as HTMLElement); if (i >= 0) idx = i; }); // content added later (save picker)
     focus(idx);
     if (this.keyHandler) { removeEventListener("keydown", this.keyHandler); removeEventListener("keyup", this.keyHandler); }
@@ -292,6 +342,7 @@ export class BootUI {
   }
 
   hide(): void {
+    this.cleanup?.(); this.cleanup = undefined;
     cancelAnimationFrame(this.padTimer); this.padGen++; if (this.keyHandler) { removeEventListener("keydown", this.keyHandler); removeEventListener("keyup", this.keyHandler); }
     this.history.sync(false); this.history.destroy();
     this.root.classList.add("hide"); this.root.dataset["boot"] = "done"; setTimeout(() => this.root.remove(), 400);

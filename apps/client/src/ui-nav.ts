@@ -1,6 +1,6 @@
 /**
  * Shared in-game focus/navigation layer for every menu and modal (inventory, crafting, build, character, party, clan,
- * trade, chat, settings, session/#p2p-overlay, pause). One modal stack, portaled into the UI root (./ui-root.ts) so it
+ * trade, chat, settings, session, pause). One modal stack, portaled into the UI root (./ui-root.ts) so it
  * renders and takes input in fullscreen. Devices:
  * - touch / mouse: modals are plain DOM with >= 44px tap targets; the menu bar (./game-menus.ts) opens each one.
  * - keyboard: Tab / Shift+Tab cycle (trapped in the top modal), arrows move spatially, Enter / Space activate,

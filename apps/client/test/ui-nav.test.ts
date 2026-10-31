@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { uiRoot, mountUi, ROOT_ID } from "../src/ui-root.js";
 import { enterFullscreen, fullscreenTarget } from "../src/fullscreen.js";
 import { padMenuAction, GameMenus } from "../src/game-menus.js";
-import { mountP2POverlay } from "../src/p2p-overlay.js";
+import { mountNetStatus } from "../src/net-status.js";
 import { mountTouchOverlay } from "../src/touch-overlay.js";
 import { PAD } from "../src/ui-nav.js";
 
@@ -26,7 +26,7 @@ describe("fullscreen target", () => {
     expect(fullscreenTarget()).toBe(root); expect(root.id).toBe(ROOT_ID);
     enterFullscreen();
     expect(req).toHaveBeenCalledTimes(1); expect(canvasReq).not.toHaveBeenCalled();
-    const p2p = mountP2POverlay({ mode: "host", code: "ABC-234", status: () => "ok", onLeave: () => {} });
+    const p2p = mountNetStatus({ status: "disconnected", rttMs: undefined }, root);
     const touch = mountTouchOverlay(root, () => [{ id: "move", kind: "joystick", x: 50, y: 50, r: 40, pressed: false, visible: true }]); touch.draw();
     const menus = new GameMenus({ root, onQuit: () => {}, pollGamepads: false }); menus.pause();
     const hud = mountUi(Object.assign(document.createElement("div"), { id: "hud" }));

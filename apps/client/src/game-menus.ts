@@ -74,7 +74,7 @@ export interface GameMenusOptions {
   /** "Quit to main menu": caller exits fullscreen and returns to the main menu. */
   onQuit: () => void;
   /** Session entry (P2P / dedicated): shown in the pause menu when set. */
-  session?: () => { label: string; leaveLabel: string; onLeave: () => void } | undefined;
+  session?: () => SessionInfo | undefined;
   /** Chat send hook: main.ts wires it to NetClient.chat (core ChatServer). `channel` is a ChatChannel id. */
   onChat?: (text: string, channel: number, to?: number) => void;
   /** Real gameplay data + command sender for the inventory/crafting/build/character/party/clan/trade panels. */
@@ -161,7 +161,8 @@ export class GameMenus {
     if (id === "chat") return this.chatPanel();
     if (id === "delete-progress") return this.deletePanel();
     if (id === "error-log") return this.errorLogPanel();
-    if (id === "session") { const s = this.o.session?.(); return this.panel("session", "Session", [this.para(s?.label ?? "Not in a shared session.")], s ? [[s.leaveLabel, () => { this.nav.closeAll(); s.onLeave(); }, "alt"]] : []); }
+    if (id === "session") { const s = this.o.session?.(); return this.panel("session", "Session", s ? sessionBody(s, (t) => this.para(t)) : [this.para("Not in a shared session.")],
+      s ? [...(s.actions?.() ?? []).map(([t, fn]): [string, () => void] => [t, () => { this.nav.closeAll(); fn(); }]), [s.leaveLabel, () => { this.nav.closeAll(); s.onLeave(); }, "alt"]] : []); }
     const m = GAME_MENUS.find((d) => d.id === id); if (!m) throw new Error(`unknown menu ${id}`);
     if (this.o.gameplay && (GAMEPLAY_PANELS as readonly string[]).includes(id)) return this.panel(id, m.title, this.gameplayNodes(id as GameplayPanel));
     return this.panel(id, m.title, [this.para(m.text)]);
@@ -227,8 +228,8 @@ export class GameMenus {
 
   private pausePanel(): HTMLElement {
     const items: [string, () => void, string?][] = [["Resume", () => this.nav.close()]];
+    if (this.o.session?.()) items.push(["Session", () => this.open("session")]); // ADR-236: multiplayer status / room code / leave live here, not over the game
     for (const m of GAME_MENUS) if (!CONTEXT_ONLY_MENUS.has(m.id)) items.push([`${m.icon} ${m.title}`, () => this.open(m.id)]); // station / camper open by walking up to one
-    if (this.o.session?.()) items.push(["Session", () => this.open("session")]);
     const tut = this.o.tutorial;
     if (tut?.active()) items.push(["📖 Guide: next tip", () => { this.nav.closeAll(); tut.next(); }], ["📖 Skip the guide", () => { this.nav.closeAll(); tut.skip(); }, "alt"]);
     else if (tut) items.push(["📖 Play the guide again", () => { this.nav.closeAll(); tut.replay(); }]);
@@ -298,4 +299,29 @@ export function cycleTabs(nav: UINav, d: number, kind: "tab" | "page"): boolean 
 }
 export function padMenuAction(i: { pressed(a: string): boolean }): "crafting" | "chat" | "inventory" | undefined {
   return i.pressed("ToggleCrafting") ? "crafting" : i.pressed("OpenChat") ? "chat" : i.pressed("ToggleInventory") ? "inventory" : undefined;
+}
+
+/** ADR-236: Pause → Session (the in-game home of what the old connect / P2P boxes showed over the game). */
+export interface SessionInfo {
+  label: string; leaveLabel: string; onLeave: () => void;
+  /** Live rows (re-read every 500 ms while open): e.g. Room code, Server, Status, Ping, Account. */
+  rows?: () => [string, string][];
+  /** Live player list (P2P host). */
+  players?: () => { name: string; host?: boolean }[];
+  /** Extra buttons before Leave, read when the panel opens (e.g. Reconnect while disconnected). */
+  actions?: () => [string, () => void][];
+}
+export function sessionBody(s: SessionInfo, para: (t: string) => HTMLElement): Node[] {
+  const label = para(s.label); label.dataset["role"] = "session-label";
+  const dl = document.createElement("dl"); dl.dataset["role"] = "session-rows"; dl.style.cssText = "display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0;font-size:14px";
+  const ul = document.createElement("ul"); ul.dataset["role"] = "session-players"; ul.style.cssText = "margin:0;padding-left:18px;font-size:14px;max-height:30vh;overflow:auto";
+  const render = (): void => {
+    const rows = s.rows?.() ?? []; dl.replaceChildren(...rows.flatMap(([k, v]) => { const dt = document.createElement("dt"); dt.textContent = k; dt.style.cssText = "font-weight:700;opacity:.8";
+      const dd = document.createElement("dd"); dd.textContent = v; dd.dataset["row"] = k.toLowerCase().replace(/\s+/g, "-"); dd.style.cssText = "margin:0;overflow-wrap:anywhere"; return [dt, dd]; }));
+    const ps = s.players?.() ?? []; ul.hidden = !ps.length;
+    ul.replaceChildren(...ps.map((p) => { const li = document.createElement("li"); li.dataset["role"] = "player"; if (p.host) li.dataset["host"] = "1"; li.textContent = p.host ? `${p.name} (host)` : p.name; return li; }));
+  };
+  render();
+  if (s.rows || s.players) { const t = setInterval(() => { if (!dl.isConnected) { clearInterval(t); return; } render(); }, 500); }
+  return [label, dl, ul];
 }

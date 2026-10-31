@@ -42,7 +42,8 @@ import { WorldRules, worldRules, ROADS, holdsRangedWeapon, Sign, signText, Road,
 import { replicaTerrain } from "./replica-terrain.js";
 import { SocialDirectory, hasCreatedLook, setAppearanceIntent, interactPanel, petEventText, petRenameIntent, UseCmd, GatherCmd, farmPrompt, TerrainRes, type MenuCtx, type MenuIntent } from "@engine/gameplay";
 import { ClientSession } from "./session.js";
-import { mountConnectOverlay } from "./connect.js";
+import { mountNetStatus, pingLabel } from "./net-status.js";
+import type { SessionInfo } from "./game-menus.js";
 import { IsoView, groundZ } from "./view.js";
 import { mountFx, saveFx } from "./fx/index.js";
 import { mountHud } from "./hud.js";
@@ -148,7 +149,7 @@ if (browserInput.controls) { const c = browserInput.controls; mountTouchOverlay(
 let leaveCurrent: (() => Promise<void> | void) | undefined;
 /** Set by the active mode: Settings → "Delete my progress" (ADR-099); undefined hides the entry. */
 let deleteInfo: (() => { label: string; message: string; settingsOption: boolean; run: (o: { resetSettings: boolean }) => Promise<string> } | undefined) | undefined;
-let sessionInfo: (() => { label: string; leaveLabel: string; onLeave: () => void }) | undefined;
+let sessionInfo: (() => SessionInfo) | undefined;
 /** ADR-144: the guide. `tutorialNewGame` is set when a NEW character enters (or ?tutorial=1). */
 /** ADR-153: death screen (mounted below, after the tutorial). */
 let deathUi: DeathScreen | undefined;
@@ -268,7 +269,7 @@ const buildTouchLayout = { ...DEFAULT_TOUCH_LAYOUTS.building, elements: DEFAULT_
     if (!warned && (trend.leaking(prof) || m.usedJSHeapSize / 1048576 > prof.jsHeapSoftMB)) { warned = true; console.warn(`[memory] ${prof.name} budget: heap ${(m.usedJSHeapSize / 1048576).toFixed(0)} MB, floor slope ${trend.slopeMBPerMin().toFixed(2)} MB/min`); } }, 5000);
   (window as { __survivazMem?: unknown }).__survivazMem = () => ({ profile: prof.name, budget: prof, usedMB: (pm()?.usedJSHeapSize ?? 0) / 1048576, floorMB: trend.lastFloorMB, slopeMBPerMin: trend.slopeMBPerMin(), windows: trend.windows, leaking: trend.leaking(prof), domNodes: document.getElementsByTagName("*").length });
 }
-if (params.get("dev") === "sandbox") (window as { __qa?: unknown }).__qa = { input, G: () => import("@engine/gameplay"), C: () => import("@engine/core"), iso: () => iso, tutorial: () => tutProgress, tutProbe: () => tutProber.probe(), petKit: () => session.devPetKit(), buildMode, send: (i: MenuIntent) => sendIntent(i), ctx: () => menuCtx(), gp: { buildView, listItemIntents, setStallOpenIntent, stallView, nearestStall, inventoryView, gameplayDefs }, world: () => world, player: () => session.player, menus: () => menus, stalls: () => world.isRegistered(StallHeader) ? [...world.query([StallHeader])].length : 0, roads: () => world.isRegistered(Road) ? [...world.query([Road])].length : 0, signs: () => world.isRegistered(Sign) ? [...world.query([Sign, Transform])].map((e) => signText(world, e)) : [], nodes: () => world.isRegistered(ResourceNode) ? [...world.query([ResourceNode, Transform])].filter((n) => world.getField(n, ResourceNode, "amount") !== 0).map((n) => { const t = world.get(n, Transform)!; const d = gameplayDefs(world).resources.get(world.getField(n, ResourceNode, "kind")!); return { x: t.x, y: t.y, key: d?.key, tool: d?.requiredTool }; }) : [], hint: () => { const p = session.player; return p !== undefined ? toolHint(world, p) : undefined; }, animals: () => world.isRegistered(Animal) ? [...world.query([Animal, Transform])].map((e) => { const t = world.get(e, Transform)!; return { e, x: t.x, y: t.y, kind: world.getField(e, Animal, "kind") }; }) : [], net: () => session.client ? { ...session.client.stats, pending: (session.client as unknown as { pending?: unknown[] }).pending?.length } : undefined, zoom: () => ({ user: camZoom?.user, indoor: camZoom?.indoor, cam: iso?.renderer.camera.zoom, cut: iso?.renderer.indoor }), pos: () => { const p = session.player; const t = p !== undefined ? world.get(p, Transform) : undefined; return t ? { x: t.x, y: t.y } : undefined; } };
+if (params.get("dev") === "sandbox") (window as { __qa?: unknown }).__qa = { input, G: () => import("@engine/gameplay"), C: () => import("@engine/core"), iso: () => iso, tutorial: () => tutProgress, tutProbe: () => tutProber.probe(), petKit: () => session.devPetKit(), session: () => session, buildMode, send: (i: MenuIntent) => sendIntent(i), ctx: () => menuCtx(), gp: { buildView, listItemIntents, setStallOpenIntent, stallView, nearestStall, inventoryView, gameplayDefs }, world: () => world, player: () => session.player, menus: () => menus, stalls: () => world.isRegistered(StallHeader) ? [...world.query([StallHeader])].length : 0, roads: () => world.isRegistered(Road) ? [...world.query([Road])].length : 0, signs: () => world.isRegistered(Sign) ? [...world.query([Sign, Transform])].map((e) => signText(world, e)) : [], nodes: () => world.isRegistered(ResourceNode) ? [...world.query([ResourceNode, Transform])].filter((n) => world.getField(n, ResourceNode, "amount") !== 0).map((n) => { const t = world.get(n, Transform)!; const d = gameplayDefs(world).resources.get(world.getField(n, ResourceNode, "kind")!); return { x: t.x, y: t.y, key: d?.key, tool: d?.requiredTool }; }) : [], hint: () => { const p = session.player; return p !== undefined ? toolHint(world, p) : undefined; }, animals: () => world.isRegistered(Animal) ? [...world.query([Animal, Transform])].map((e) => { const t = world.get(e, Transform)!; return { e, x: t.x, y: t.y, kind: world.getField(e, Animal, "kind") }; }) : [], net: () => session.client ? { ...session.client.stats, pending: (session.client as unknown as { pending?: unknown[] }).pending?.length } : undefined, zoom: () => ({ user: camZoom?.user, indoor: camZoom?.indoor, cam: iso?.renderer.camera.zoom, cut: iso?.renderer.indoor }), pos: () => { const p = session.player; const t = p !== undefined ? world.get(p, Transform) : undefined; return t ? { x: t.x, y: t.y } : undefined; } };
 /** ADR-179/180: Hotbar1..8 (1-8 keys / D-pad, LB+D-pad / touch "Slot" radial) now reach the sim as frame edges; only the
  * pad RB/LB tap cycle (HotbarNext/Prev, which needs the filled-slot list) is sent from here, so nothing fires twice. */
 function hotbarInput(): void {
@@ -457,8 +458,10 @@ async function startSingleplayer(): Promise<void> {
 }
 /** P2P: return to the main menu with a one-shot notice (the menu flow is one-shot, so reload). */
 const P2P_NOTICE_KEY = "engine-p2p-notice";
-function backToMenu(notice: string): void {
-  try { sessionStorage.setItem(P2P_NOTICE_KEY, notice); } catch { /* private mode */ }
+/** ADR-236: a multiplayer session ending lands on the Multiplayer page (its notice shown there). */
+const MENU_PAGE_KEY = "engine-menu-page";
+function backToMenu(notice: string, page?: "multiplayer"): void {
+  try { sessionStorage.setItem(P2P_NOTICE_KEY, notice); if (page) sessionStorage.setItem(MENU_PAGE_KEY, page); } catch { /* private mode */ }
   location.reload();
 }
 async function p2pSignaling(): Promise<import("./p2p.js").Signaling> {
@@ -467,40 +470,43 @@ async function p2pSignaling(): Promise<import("./p2p.js").Signaling> {
 }
 /** Host game: authoritative server in this tab (mode "multiplayer"), guests over WebRTC, room code via signaling. */
 async function startHost(): Promise<void> {
-  const [{ startP2PHost }, { openBrowserStore }, { hostPlayerCap, detectDevice }, { mountP2POverlay }] = await Promise.all([import("./host.js"), import("./local.js"), import("./p2p.js"), import("./p2p-overlay.js")]);
+  const [{ startP2PHost }, { openBrowserStore }, { hostPlayerCap, detectDevice }] = await Promise.all([import("./host.js"), import("./local.js"), import("./p2p.js")]);
   const cap = hostPlayerCap(detectDevice(), settings.hostCap);
   let host: import("./host.js").P2PHost;
   try {
     stampPlayed("hosted");
     host = await startP2PHost({ worldRules: newWorldRules(), signaling: await p2pSignaling(), store: await openBrowserStore(`engine-p2p-host-${params.get("player") ?? "1"}`), cap: cap.cap, capDetail: cap.detail,
       ...(await isoReady, iso?.registry.cosmetics?.size ? { catalog: iso.registry.cosmetics } : {}), log: (m) => console.info(`[host] ${m}`) });
-  } catch (e) { backToMenu(`Couldn't host: ${e instanceof Error ? e.message : String(e)}`); return; }
+  } catch (e) { backToMenu(`Couldn't host: ${e instanceof Error ? e.message : String(e)}`, "multiplayer"); return; }
   pumpLocal = host.local.pump;
   const { formatRoomCode } = await import("./p2p.js");
-  const end = (): void => { void host.leave().finally(() => backToMenu("Session ended.")); };
+  const end = (): void => { void host.leave().finally(() => backToMenu("Session ended.", "multiplayer")); };
   leaveCurrent = () => host.leave();
   deleteInfo = () => ({ label: "Delete hosted world", settingsOption: false,
     message: "The hosted world can't be deleted while you are hosting it. End the session first, then use Main menu → Manage saves → Delete hosted world.",
     run: () => Promise.reject(new Error("End the session first (Pause → End session), then delete it from the main menu.")) });
-  sessionInfo = () => ({ label: `Hosting · room code ${formatRoomCode(host.code)} · ${host.players().length}/${host.cap} players`, leaveLabel: "End session", onLeave: end });
+  // ADR-236: room code, players and status live in Pause → Session (no box over the game)
+  sessionInfo = () => ({ label: `Hosting${cap.mobile ? " (mobile)" : ""} · keep this tab open. Friends join from Multiplayer → Join a friend.`, leaveLabel: "End session", onLeave: end,
+    rows: () => [["Room code", formatRoomCode(host.code)], ["Players", `${host.players().length}/${host.cap}`], ["Status", session.status]],
+    players: () => host.players() });
   addEventListener("beforeunload", () => host.unload());
   addEventListener("pagehide", () => host.unload());
-  mountP2POverlay({ mode: "host", code: formatRoomCode(host.code), cap: host.cap, players: () => host.players(), status: () => `Hosting${cap.mobile ? " (mobile)" : ""} · keep this tab open`, onLeave: end });
   useWorld(await session.connect("p2p-host", playerName(), host.hostTransport));
   host.hostClientId = session.client?.clientId;
 }
 /** Join with code: guest over WebRTC; "Host ended the session" (or a lost link) returns to the menu. */
 async function startJoin(raw: string): Promise<void> {
-  const [{ guestTransport }, { normalizeRoomCode, formatRoomCode }, { mountP2POverlay }] = await Promise.all([import("./host.js"), import("./p2p.js"), import("./p2p-overlay.js")]);
+  const [{ guestTransport }, { normalizeRoomCode, formatRoomCode }] = await Promise.all([import("./host.js"), import("./p2p.js")]);
   const code = normalizeRoomCode(raw);
-  if (!code) { backToMenu("That isn't a valid room code (6 letters/digits, e.g. ABC-234)."); return; }
-  session.onEnded = (detail) => backToMenu(detail);
+  if (!code) { backToMenu("That isn't a valid room code (6 letters/digits, e.g. ABC-234).", "multiplayer"); return; }
+  session.onEnded = (detail) => backToMenu(detail, "multiplayer");
   leaveCurrent = () => { session.onEnded = undefined; session.disconnect(); };
   deleteInfo = () => remoteDeleteInfo("this host", () => { session.onEnded = undefined; session.disconnect(); backToMenu("Your progress on that host was deleted. Join again to start fresh."); });
-  sessionInfo = () => ({ label: `Joined ${formatRoomCode(code)} · ${session.status}`, leaveLabel: "Leave", onLeave: () => { session.onEnded = undefined; session.disconnect(); backToMenu("You left the session."); } });
-  mountP2POverlay({ mode: "guest", code: formatRoomCode(code), status: () => `Status: ${session.status}${session.detail ? ` (${session.detail})` : ""}`, onLeave: () => { session.onEnded = undefined; session.disconnect(); backToMenu("You left the session."); } });
+  sessionInfo = () => ({ label: `Joined a friend's game (room ${formatRoomCode(code)}).`, leaveLabel: "Leave", onLeave: () => { session.onEnded = undefined; session.disconnect(); backToMenu("You left the session.", "multiplayer"); },
+    rows: () => [["Room code", formatRoomCode(code)], ["Status", statusText()], ["Ping", pingLabel(session.rttMs)]] });
+  netStatus ??= mountNetStatus(session, uiRoot());
   try { useWorld(await session.connect(`p2p:${code}`, playerName(), guestTransport(await p2pSignaling(), code))); }
-  catch (e) { session.onEnded = undefined; backToMenu(`Couldn't join ${formatRoomCode(code)}: ${e instanceof Error ? e.message : String(e)}`); }
+  catch (e) { session.onEnded = undefined; backToMenu(`Couldn't join ${formatRoomCode(code)}: ${e instanceof Error ? e.message : String(e)}`, "multiplayer"); }
 }
 /** Remote server / P2P guest: ask the server to delete *my* character (DeleteMyProgressCmd, ADR-099); resolves on ProgressDeleted. */
 function remoteDeleteInfo(where: string, after: () => void): NonNullable<ReturnType<NonNullable<typeof deleteInfo>>> {
@@ -512,22 +518,32 @@ function remoteDeleteInfo(where: string, after: () => void): NonNullable<ReturnT
       if (!session.deleteMyProgress()) { clearTimeout(t); session.onProgressDeleted = undefined; reject(new Error("Not connected.")); }
     }) };
 }
+const statusText = (): string => `${session.status}${session.detail && session.detail !== session.savedUrl && session.status !== "connected" ? ` (${session.detail})` : ""}`;
 function connectRemote(url: string): void {
   leaveCurrent = () => session.disconnect();
+  // ADR-236: Pause → Session replaces the old connect box: server, status, ping, account, Reconnect / Disconnect
+  sessionInfo = () => ({ label: "Dedicated server.", leaveLabel: session.status === "connected" ? "Disconnect" : "Main menu",
+    onLeave: () => { session.disconnect(); if (useMenu) backToMenu("Disconnected from the server.", "multiplayer"); },
+    rows: () => [["Server", url], ["Status", statusText()], ["Ping", session.status === "connected" ? pingLabel(session.rttMs) : "—"], ["Account", session.account ? `${session.account.slice(0, 8)}…${session.restored ? " (restored)" : ""}` : "new"]],
+    actions: () => session.status === "connected" || session.status === "connecting" ? [] : [["Reconnect", () => connectTo(url, playerName())]] });
   deleteInfo = () => session.status === "connected" ? remoteDeleteInfo("this server", () => {
     // the server kicks us shortly; reconnect with the same token = a fresh character, straight into the creator
     session.disconnect(); session.connect(url, session.savedName ?? "").then((w) => { useWorld(w); menus?.open("character"); }, (e: unknown) => console.warn("reconnect failed", e));
   }) : undefined;
 }
 const connectTo = (url: string, name: string): void => { connectRemote(url); session.connect(url, name).then(useWorld, (e: unknown) => console.warn("connect failed", e)); };
+let netStatus: ReturnType<typeof mountNetStatus> | undefined;
 const defaultUrl = serverParam ?? `${location.protocol === "https:" ? "wss" : "ws"}://${location.hostname || "localhost"}:7777`;
 if (creatorShot) {
   runCreatorShot(creatorShot).catch((e: unknown) => { (window as { __creatorReady?: unknown }).__creatorReady = { ok: false, seed: creatorShot.seed, error: String(e) }; });
 } else if (boot) {
   void (async () => {
     await isoReady; loadProgress.complete(); await boot.finish("Ready");
-    let notice: string | undefined; try { notice = sessionStorage.getItem(P2P_NOTICE_KEY) ?? undefined; sessionStorage.removeItem(P2P_NOTICE_KEY); } catch { /* ignore */ }
-    const choice = await boot.menu({ slot: SLOT, hostedStatic: import.meta.env["VITE_DEFAULT_OFFLINE"] === "1", defaultUrl, ...(notice ? { notice } : {}) });
+    let notice: string | undefined, page: string | null = null;
+    try { notice = sessionStorage.getItem(P2P_NOTICE_KEY) ?? undefined; sessionStorage.removeItem(P2P_NOTICE_KEY); page = sessionStorage.getItem(MENU_PAGE_KEY); sessionStorage.removeItem(MENU_PAGE_KEY); } catch { /* ignore */ }
+    const { hostPlayerCap, detectDevice } = await import("./p2p.js"); const hc = hostPlayerCap(detectDevice(), settings.hostCap);
+    const choice = await boot.menu({ slot: SLOT, hostedStatic: import.meta.env["VITE_DEFAULT_OFFLINE"] === "1", defaultUrl, ...(notice ? { notice } : {}), ...(page === "multiplayer" ? { page } : {}),
+      mp: { hostCap: `${hc.cap}${hc.mobile ? " (mobile host)" : ""}` } });
     boot.hide();
     const kind: CharacterSaveKind = choice.kind === "singleplayer" ? "singleplayer" : choice.kind === "host" ? "hosted" : "remote";
     const before = loadCharacter(kind, SLOT); tutorialNewGame = !before; activeChar = await ensureCharacter(kind);
@@ -537,19 +553,21 @@ if (creatorShot) {
     if (choice.kind === "singleplayer") await startSingleplayer();
     else if (choice.kind === "host") await startHost();
     else if (choice.kind === "join") await startJoin(choice.code);
-    else { // multiplayer: remote server, no local human bots
-      mountConnectOverlay(session, { defaultUrl: choice.url, onConnect: connectTo, onDisconnect: () => session.disconnect() });
-      leaveCurrent = () => session.disconnect();
-      connectTo(choice.url, playerName());
+    else { // multiplayer: remote server, no local human bots. ADR-236: no box over the game; a failed first connect returns to the Multiplayer page
+      netStatus ??= mountNetStatus(session, uiRoot());
+      connectRemote(choice.url);
+      session.connect(choice.url, playerName()).then(useWorld, (e: unknown) => backToMenu(`Couldn't connect to ${choice.url}: ${e instanceof Error ? e.message : String(e)}`, "multiplayer"));
     }
   })().catch((e: unknown) => console.error("start failed", e));
 } else if (!serverParam && (params.get("offline") === "1" || (params.get("menu") === "0" && import.meta.env["VITE_DEFAULT_OFFLINE"] === "1"))) {
   startMenus(); startSingleplayer().catch((e: unknown) => console.error("local server failed", e));
 } else {
-  startMenus(); leaveCurrent = () => session.disconnect();
-  mountConnectOverlay(session, { defaultUrl, onConnect: connectTo, onDisconnect: () => session.disconnect() });
-  // Reload = reconnect as the same player (account token in localStorage).
-  if (session.account && session.savedUrl && params.get("autoconnect") !== "0") connectTo(serverParam ?? session.savedUrl, session.savedName ?? "");
+  // ?server= / ?menu=0 (tests, QA links): connect straight away, no box over the game (ADR-236); Pause → Session has
+  // Reconnect / Disconnect and the tiny indicator shows problems. ?autoconnect=0 = stay idle until Session → Reconnect.
+  startMenus(); netStatus ??= mountNetStatus(session, uiRoot());
+  const url = serverParam ?? session.savedUrl ?? defaultUrl;
+  connectRemote(url);
+  if (params.get("autoconnect") !== "0") connectTo(url, session.savedName ?? "");
 }
 
 const promptDevice = (): PromptDevice => { const c = input.activeDevice?.deviceClass; return c === "gamepad" || c === "touch" ? c : "keyboardMouse"; };
