@@ -15,7 +15,7 @@ def p_grass(season, var, t, mask, ok, dens):
     p = P['grass'][season]; sc, ok = _sc('grass', season, var, ok); rng = sc.rng; vv = 0 if var is None else var
     if season == 'winter':
         tone(t, mask, p['t'], 11, var, 2, 2)
-        Pn = patches(var, 900, [0, 4, 1, 2, 5, 1][vv % 6], (.05, .16))
+        Pn = patches(var, 900, 2, (.08, .12))   # same snow-patch count/size on every variant: one tone, only placement varies
         sn = mask & (Pn > .5); t.fill(sn & ~np.roll(sn, -R(1.2), 0), p['snow'][2]); t.fill(sn & np.roll(sn, -R(1.2), 0), p['snow'][1])
         t.fill(sn & (Pn > .78), p['snow'][0])
         t.fill(mask & (vn(U, V, 22, 13) > .9), p['frost'])
@@ -23,7 +23,7 @@ def p_grass(season, var, t, mask, ok, dens):
             tuft(t, u, v, p['blade'], h=rng.uniform(3, 4.6), n=int(rng.integers(3, 6)), seed=int(rng.integers(1e6)))
         for (u, v) in sc.take(int(rng.integers(2, 6) * dens), .08, accept=ok): sparkle(t, u, v, '#ffffff', .8)
         return
-    tone(t, mask, p['t'], 11, var, [2, 3, 2, 4, 3, 2][vv % 6], [3, 2, 4, 2, 3, 3][vv % 6])
+    tone(t, mask, p['t'], 11, var, 3, 3, (.07, .1))   # one palette + equal highlight/shade coverage per variant (no hue patchwork); detail varies
     if var is None and dens < .5: return
     kind = vv % 6
     if season == 'summer':
@@ -41,7 +41,7 @@ def p_grass(season, var, t, mask, ok, dens):
                 flower(t, u, v, pe, ey, rng.uniform(.8, 1.05))
         if kind == 5 and ok(.55, .5): pebble(t, .55, .5, .04, P['dirt']['summer']['peb'], P['dirt']['summer']['ol'], 5)
     else:   # fall
-        for (u, v) in sc.take(int(rng.integers(4, 9) * dens), .07, .11, accept=ok):
+        for (u, v) in sc.take(int(6 * dens), .07, .11, accept=ok):
             leaf(t, u, v, rng.uniform(1.3, 2.0), p['leaves'][int(rng.integers(4))], p['leafol'], rng.uniform(0, 6.28))
         if kind == 2 and ok(.5, .55): mushroom(t, .5, .55, '#d89a64', '#a8683e', '#f6ead2', s=.9)
         if kind == 4:

@@ -23,6 +23,21 @@ MASKS = [m for m in BLOB47 if m]            # mask 0 = no overlay
 SUF = ['', '_b', '_c', '_d', '_e', '_f']
 SEAS = ['summer', 'fall', 'winter']; TW = {'summer': '', 'fall': '_fall', 'winter': '_winter'}
 
+from scipy.ndimage import binary_dilation
+def bleed(t, sc):
+    """Ice tiles seamlessly: the ice diamond continues PAD px past its edges into the cell padding (copied from the
+    lattice-shifted diamond, i.e. what the neighbour shows there), so filtering / mips / sub-pixel gaps never reveal
+    an outline. The shader drops the lower-side bleed (skirt rule); the upper bleed overlaps the neighbour seamlessly."""
+    p = PAD * sc; h, w = t.shape[:2]; out = np.zeros((h + 2 * p, w + 2 * p, 4), np.uint8); out[p:p + h, p:p + w] = t
+    src = out.copy(); dx, dy = FW // 2 * sc, FH // 3 * sc   # half diamond: 32 x 16 (@1x)
+    near = binary_dilation(out[..., 3] == 255, np.ones((3, 3), bool), iterations=p)   # only the PAD px ring
+    for ox, oy in ((dx, dy), (-dx, dy), (dx, -dy), (-dx, -dy), (2 * dx, 0), (-2 * dx, 0), (0, 2 * dy), (0, -2 * dy)):
+        sh = np.zeros_like(src)
+        ys, yd = (slice(0, src.shape[0] - oy), slice(oy, None)) if oy >= 0 else (slice(-oy, None), slice(0, src.shape[0] + oy))
+        xs, xd = (slice(0, src.shape[1] - ox), slice(ox, None)) if ox >= 0 else (slice(-ox, None), slice(0, src.shape[1] + ox))
+        sh[yd, xd] = src[ys, xs]; fill = near & (out[..., 3] == 0) & (sh[..., 3] == 255); out[fill] = sh[fill]
+    return out
+
 def plan():
     """[(sprite_key, season_page, [render keys], fps, placeholder)] in manifest order."""
     S = []
@@ -65,6 +80,7 @@ def main():
                 im = Image.new('RGBA', (cols * CW * sc, rows * CH * sc), (0, 0, 0, 0))
                 for i, k in enumerate(chunk):
                     t = np.asarray(GPV.get(k, sc)).copy(); t[..., 3] = np.where(t[..., 3] >= 128, 255, 0); t[t[..., 3] == 0] = 0
+                    if k.startswith('ice|'): im.paste(Image.fromarray(bleed(t, sc), 'RGBA'), (i % cols * CW * sc, i // cols * CH * sc)); continue
                     im.paste(Image.fromarray(t, 'RGBA'), ((i % cols * CW + PAD) * sc, (i // cols * CH + PAD) * sc))
                 im.save(R + f'atlases/{name}{"" if sc == 1 else "@2x"}.png', optimize=True)
             atlases.append({'key': name, 'image': f'atlases/{name}.png', 'frameW': CW, 'frameH': CH, 'columns': cols, 'rows': rows,
