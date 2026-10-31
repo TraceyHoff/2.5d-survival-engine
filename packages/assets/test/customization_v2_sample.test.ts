@@ -6,9 +6,11 @@ import { MANIFEST_INDEX } from "../../../apps/client/src/manifest-index.js";
 
 // Player v2 SAMPLE (assets/customization/tools/v2_sample.py; spec player_v2_spec.md): an isolated test fragment that sits
 // NEXT TO the v1 character art. It must load and merge with the shipped customization pack without a single key
-// collision, never replace v1 keys, stream (no resident VRAM) and carry the v2 frame contract: 48x80 / @2x 96x160 frames
-// pivoted at (24,74), 8 facings, v1 frame counts/fps for the core anims + the full v2 set (spec §6), one streamed atlas
-// per anim group (every @2x page <= 2048), body frameMeta head/handR/handL/back/hip/footL/footR (+ carry / seat sockets).
+// collision, never replace v1 keys, keep only the core group resident (in the ADR-220 body/wear pools; everything else
+// streams) and carry the v2 frame contract: 48x80 / @2x 96x160 frames pivoted at (24,74), 8 facings, v1 frame counts/fps
+// for the core anims + the full v2 set (spec §6), one atlas per anim group (every @2x page <= 2048), body frameMeta
+// head/handR/handL/back/hip/footL/footR (+ carry / seat sockets), hand angles in DEGREES (as v1 / handOf), every layer
+// keyed v2s_<exact v1 part key> of the sample appearance, and the sleep_lie / sleep_lie_under bed sets (4 rotations).
 const DIR = PACK_DIR + "customization_v2_sample/";
 const FILE = DIR + "manifest.customization_v2_sample.json";
 const sample = () => JSON.parse(readFileSync(FILE, "utf8")) as { atlases: any[]; sprites: any[]; [k: string]: any };
@@ -25,9 +27,15 @@ const ANIMS: Record<string, readonly [number, number, boolean]> = {   // frames 
 };
 const GROUP_OF = (an: string) => (["idle", "walk", "attack"].includes(an) ? "" : ["bow_draw", "bow_hold", "bow_release", "attack_crossbow", "gun_aim", "gun_fire"].includes(an) ? "__ranged"
   : an === "block" || an.startsWith("attack_") ? "__combat" : "__pose");
-const PX2_MIB = 160;   // whole sample, all 4 groups streamed at @2x (colour + tintmask RGBA8); a player streams core + the groups in use
-const SPRITES = ["v2s_body_male", "v2s_cz_bottom_scrap_male", "v2s_cz_shoes_scrap_male", "v2s_cz_top_scrap_male", "v2s_cz_top_scrap_male_sleeves",
-  "v2s_cz_face_smile_male", "v2s_cz_eyes_round_male", "v2s_cz_hair_buzz_male_hathair", "v2s_cz_hat_scrap_male", "v2s_body_male_armfront", "v2s_cz_top_scrap_male_armfront"];
+const PX2_MIB = 185;    // whole sample, every group at @2x (colour + tintmask RGBA8)
+const CORE_MIB = 32;    // resident core group only (@2x + 1x colour + tintmask RGBA8, lossless upper bound: measured 30.4)
+const SPRITES = ["v2s_body_male", "v2s_cz_bottom_cargo_male", "v2s_cz_shoes_boots_male", "v2s_cz_top_henley_male", "v2s_cz_top_henley_male_sleeves",
+  "v2s_cz_face_smile_male", "v2s_cz_eyes_round_male", "v2s_cz_hair_buzz_male", "v2s_cz_hair_buzz_male_hathair", "v2s_cz_hat_cap_male",
+  "v2s_body_male_armfront", "v2s_cz_top_henley_male_armfront"];
+// every v2s_ layer twin of a v1 part = "v2s_" + the exact v1 sprite key the sample appearance resolves to
+const V1_TWINS = SPRITES.filter((k) => !k.endsWith("_armfront")).map((k) => k.slice(4));
+const SLEEP = ["v2s_body_male", "v2s_cz_bottom_cargo_male", "v2s_cz_shoes_boots_male", "v2s_cz_top_henley_male", "v2s_cz_face_smile_male", "v2s_cz_eyes_round_male", "v2s_cz_hair_buzz_male"];
+const SLEEP_ANIMS = ["sleep_lie", "sleep_lie_under"];
 
 describe("customization_v2_sample (player v2 test fragment)", () => {
   it("only new v2s_ keys, merges with pack + customization without collisions and loads", () => {
@@ -46,9 +54,26 @@ describe("customization_v2_sample (player v2 test fragment)", () => {
     expect(loadManifest(s).registry.id("v2s_body_male")).toBeGreaterThanOrEqual(0);   // and the fragment loads on its own
   });
 
-  it("is not served by default (isolated) and streams: zero resident VRAM, shard far under 20 MiB", () => {
+  it("every layer is v2s_<exact v1 part key> of the sample appearance (uncovered + hathair hair)", () => {
+    const v1 = new Set((cz().sprites as any[]).map((x) => x.key));
+    for (const k of V1_TWINS) expect(v1.has(k), `v1 sprite ${k}`).toBe(true);
+    const sd = side as any;
+    expect(sd.appearance).toEqual({ bodyType: "male", top: "top_henley", bottom: "bottom_cargo", shoes: "shoes_boots", hat: "hat_cap", hair: "hair_buzz", face: "face_smile", eyes: "eyes_round" });
+    for (const l of sd.layers) if (l.v1Sprite) expect(l.sprite).toBe("v2s_" + l.v1Sprite);
+    const hair = sd.layers.filter((l: any) => l.slot === "hair").map((l: any) => [l.sprite, l.variant]);
+    expect(hair).toEqual([["v2s_cz_hair_buzz_male", "uncovered"], ["v2s_cz_hair_buzz_male_hathair", "hatHair"]]);
+  });
+
+  it("is not served by default (isolated); core group resident in the body/wear pools, the rest streams; shard far under 20 MiB", () => {
     expect(MANIFEST_INDEX.some((f) => f.url.includes("customization_v2_sample"))).toBe(false);
-    for (const a of sample().atlases) expect(a.residency, a.key).toBe("stream");
+    let core = 0;
+    for (const a of sample().atlases) {
+      const isCore = !a.key.includes("__");
+      expect(a.residency, a.key).toBe(isCore ? "resident" : "stream");
+      if (isCore) { expect(a.pool, a.key).toBe(a.key.startsWith("v2s_wr_body_") ? "body" : "wear"); const s1 = imageSizeOf(DIR + a.image)!; core += s1.w * s1.h * 5; }
+      else expect(a.pool, a.key).toBeUndefined();
+    }
+    expect((core * 4 * 2) / 2 ** 20, "resident core: (1x + @2x) colour + tintmask RGBA8 MiB").toBeLessThan(CORE_MIB);
     expect(statSync(FILE).size).toBeLessThan(4 * 1024 * 1024);
     let px2 = 0;
     for (const a of sample().atlases) {
@@ -58,12 +83,12 @@ describe("customization_v2_sample (player v2 test fragment)", () => {
       expect(Math.max(s2.w, s2.h), `${a.key} @2x page`).toBeLessThanOrEqual(2048);
       px2 += s2.w * s2.h;
     }
-    expect((px2 * 4 * 2) / 2 ** 20, "@2x colour + tintmask RGBA8 MiB (streamed)").toBeLessThan(PX2_MIB);
+    expect((px2 * 4 * 2) / 2 ** 20, "@2x colour + tintmask RGBA8 MiB (all groups)").toBeLessThan(PX2_MIB);
   });
 
   it("8 facings x the full v2 anim set; group atlases; rects in page, trimmed from 48x80 frames", () => {
     const s = sample(); const at = new Map(s.atlases.map((a) => [a.key, a]));
-    for (const sp of s.sprites) { expect(Object.keys(sp.animations).sort(), sp.key).toEqual(Object.keys(ANIMS).sort()); for (const [an, [n, fps, loop]] of Object.entries(ANIMS)) {
+    for (const sp of s.sprites) { expect(Object.keys(sp.animations).sort(), sp.key).toEqual([...Object.keys(ANIMS), ...(SLEEP.includes(sp.key) ? SLEEP_ANIMS : [])].sort()); for (const [an, [n, fps, loop]] of Object.entries(ANIMS)) {
       const a = sp.animations[an]; expect(a, `${sp.key}.${an}`).toBeDefined();
       for (const e of a.dirFrames) expect(e.atlas, `${sp.key}.${an}`).toBe(sp.atlas + GROUP_OF(an));
       expect([a.frames.length, a.fps, a.loop, a.directions, a.dirStride, a.dirFrames.length]).toEqual([n, fps, loop, 8, n, n * 8]);
@@ -74,6 +99,36 @@ describe("customization_v2_sample (player v2 test fragment)", () => {
       }
     } }
     expect((side as any).anims.map((a: any) => [a.name, a.frames, a.fps, a.loop])).toEqual(Object.entries(ANIMS).map(([k, v]) => [k, ...v]));
+  });
+
+  it("sleep_lie / sleep_lie_under: 4 bed rotations x 4 frames, streamed sleep atlas, bed socket, rotation r = facing r*PI/2", () => {
+    const s = sample(); const at = new Map(s.atlases.map((a) => [a.key, a])); const r = loadManifest(s).registry;
+    for (const k of SLEEP) { const sp = s.sprites.find((x) => x.key === k)!;
+      for (const an of SLEEP_ANIMS) { const a = sp.animations[an];
+        expect([a.frames.length, a.fps, a.loop, a.directions, a.dirStride, a.dirFrames.length], `${k}.${an}`).toEqual([4, 2, true, 4, 4, 16]);
+        for (const e of a.dirFrames) { expect(e.atlas).toBe(sp.atlas + "__sleep"); const A = at.get(e.atlas)!; expect(A.residency).toBe("stream");
+          const { x, y, w, h } = e.rect; expect(x + w <= A.frameW && y + h <= A.frameH && w > 0 && h > 0).toBe(true);
+          expect(w).toBeLessThanOrEqual(96); expect(h).toBeLessThanOrEqual(88);
+          for (const v of [e.anchor.x, e.anchor.y]) { expect(v).toBeGreaterThanOrEqual(-8); expect(v).toBeLessThanOrEqual(9); } }
+      } }
+    for (const k of s.sprites.map((x) => x.key).filter((k) => !SLEEP.includes(k))) for (const an of SLEEP_ANIMS) expect(s.sprites.find((x) => x.key === k)!.animations[an], `${k} hidden in bed`).toBeUndefined();
+    const id = r.id("v2s_body_male"); const body = s.sprites.find((x) => x.key === "v2s_body_male")!;
+    for (const an of SLEEP_ANIMS) for (let rot = 0; rot < 4; rot++) {
+      expect(AssetRegistry.directionIndex((rot * Math.PI) / 2, 4)).toBe(rot);
+      const f = r.dirFrame(id, an, (rot * Math.PI) / 2, 0); for (const n of ["bed", "head", "pillow"]) expect(f.anchors?.[n], `${an} r${rot} ${n}`).toBeDefined();
+      expect(body.animations[an].frameMeta[`df:${rot}`].anchors.bed).toEqual(f.anchors!.bed);
+    }
+    const sl = (side as any).sleepLie; expect(sl.directions).toBe(4); expect(sl.hairVariant).toBe("uncovered");
+    for (const p of ["bed", "bed_double_*", "bunk_bed"]) expect(Object.values(sl.bedFits[p]).every((v: any) => v.length === 4), p).toBe(true);
+    expect(sl.bedFits.bed.single.every((o: any) => o.x === 0 && o.y === 0)).toBe(true);
+  });
+
+  it("hand anchor angle is DEGREES clockwise from up, same unit as v1 body_male / handOf", () => {
+    const deg = (sp: any) => { const out: number[] = []; const walk = (o: any) => { if (o && typeof o === "object") { if (typeof o.handR?.angle === "number") out.push(o.handR.angle); for (const v of Object.values(o)) walk(v); } }; walk(sp); return out; };
+    const v2 = deg(sample().sprites.find((x) => x.key === "v2s_body_male")), v1 = deg((cz().sprites as any[]).find((x) => x.key === "body_male"));
+    expect(v1.length).toBeGreaterThan(0); expect(v2.length).toBeGreaterThan(0);
+    for (const a of [v1, v2]) { expect(Math.max(...a.map(Math.abs)), "radians would stay under 2*PI").toBeGreaterThan(2 * Math.PI); expect(Math.max(...a.map(Math.abs))).toBeLessThanOrEqual(360); }
+    expect((side as any).anchorUnits.angle).toMatch(/^DEGREES/);
   });
 
   it("body frameMeta: head/handR/handL (+ back/hip/footL/footR) on every entry, readable through the registry", () => {
@@ -99,7 +154,9 @@ describe("customization_v2_sample (player v2 test fragment)", () => {
     const s = sample();
     for (const l of side.layers) { const sp = s.sprites.find((x) => x.key === l.sprite); expect(sp, l.sprite).toBeDefined(); expect([1, 2]).toContain(l.tintChannels); }
     expect(r8(DIR + s.atlases.find((a) => a.key === "v2s_wr_body_male").masks.tintmask)).toEqual({ r: true, g: false });
-    expect(r8(DIR + s.atlases.find((a) => a.key === "v2s_wr_cz_top_scrap_male").masks.tintmask)).toEqual({ r: true, g: true });
+    expect(r8(DIR + s.atlases.find((a) => a.key === "v2s_wr_cz_top_henley_male").masks.tintmask)).toEqual({ r: true, g: true });
+    expect(r8(DIR + s.atlases.find((a) => a.key === "v2s_wr_body_male__sleep").masks.tintmask)).toEqual({ r: true, g: false });
+    expect(r8(DIR + s.atlases.find((a) => a.key === "v2s_wr_cz_bottom_cargo_male__sleep").masks.tintmask)).toEqual({ r: true, g: true });
   });
 });
 

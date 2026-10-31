@@ -307,6 +307,159 @@
    }
   }
  ],
+ "appearance": {
+  "bodyType": "male",
+  "top": "top_henley",
+  "bottom": "bottom_cargo",
+  "shoes": "shoes_boots",
+  "hat": "hat_cap",
+  "hair": "hair_buzz",
+  "face": "face_smile",
+  "eyes": "eyes_round"
+ },
+ "anchorUnits": {
+  "x,y": "1x px relative to the sprite pivot (+y down)",
+  "angle": "DEGREES clockwise from screen-up (v1 + engine handOf: sprites.ts converts deg->rad); flipX mirrors (-angle)",
+  "len": "px per unit item length",
+  "behind": "draw held item behind the body"
+ },
+ "residencyNote": "core group atlases (idle/walk/attack) residency resident + pool (body|wear, ADR-220 character pools / ADR-156 core set); combat/ranged/pose/sleep atlases stream",
+ "sleepLie": {
+  "anims": {
+   "sleep_lie": "reference-bed cut: bed (main pack), dec_bed_double_* (left/right), dec_bunk_bed upper",
+   "sleep_lie_under": "dec_bunk_bed lower bunk (cut by the upper bunk)"
+  },
+  "directions": 4,
+  "dirIndex": "bed rotation r (pass facing = r*PI/2 to resolve(); directionIndex(r*PI/2, 4) == r); dirFrames entry = frame*4 + r",
+  "frames": 4,
+  "fps": 2,
+  "frame1x": [
+   96,
+   88
+  ],
+  "pivot1x": [
+   48,
+   60
+  ],
+  "pivot": "the bed's footprint centre on the ground (the bed sprite's own anchor point) + bedFits[piece][spot][r] (1x px)",
+  "socket": "frameMeta anchor 'bed' on the body sprite = hip contact on the mattress; also 'head' (Zzz/bubble FX) and 'pillow'",
+  "layers": {
+   "body_male": "body",
+   "cz_bottom_cargo_male": "bottom",
+   "cz_shoes_boots_male": "shoes",
+   "cz_top_henley_male": "top",
+   "cz_face_smile_male": "face",
+   "cz_eyes_round_male": "eyes",
+   "cz_hair_buzz_male": "hair"
+  },
+  "hidden": [
+   "hat",
+   "top sleeves",
+   "armfront overlays",
+   "hair hatHair"
+  ],
+  "hairVariant": "uncovered",
+  "drawOrder": "layer asc, same layers as upright; draw after (in front of) the bed sprite",
+  "referenceBed": "main pack `bed` (1x2, mattress z14, blanket z16, pillow z19, headboard z30, footboard z16)",
+  "bedFits": {
+   "bed": {
+    "single": [
+     {
+      "x": 0.0,
+      "y": 0.0
+     },
+     {
+      "x": -0.0,
+      "y": 0.0
+     },
+     {
+      "x": 0.0,
+      "y": -0.0
+     },
+     {
+      "x": 0.0,
+      "y": 0.0
+     }
+    ]
+   },
+   "bed_double_*": {
+    "left": [
+     {
+      "x": -11.36,
+      "y": -9.16
+     },
+     {
+      "x": 12.32,
+      "y": -8.68
+     },
+     {
+      "x": 11.36,
+      "y": 3.16
+     },
+     {
+      "x": -12.32,
+      "y": 2.68
+     }
+    ],
+    "right": [
+     {
+      "x": 12.32,
+      "y": 2.68
+     },
+     {
+      "x": -11.36,
+      "y": 3.16
+     },
+     {
+      "x": -12.32,
+      "y": -8.68
+     },
+     {
+      "x": 11.36,
+      "y": -9.16
+     }
+    ]
+   },
+   "bunk_bed": {
+    "lower": [
+     {
+      "x": 2.08,
+      "y": -2.04
+     },
+     {
+      "x": 2.08,
+      "y": 0.04
+     },
+     {
+      "x": -2.08,
+      "y": 0.04
+     },
+     {
+      "x": -2.08,
+      "y": -2.04
+     }
+    ],
+    "upper": [
+     {
+      "x": 2.08,
+      "y": -32.04
+     },
+     {
+      "x": 2.08,
+      "y": -29.96
+     },
+     {
+      "x": -2.08,
+      "y": -29.96
+     },
+     {
+      "x": -2.08,
+      "y": -32.04
+     }
+    ]
+   }
+  }
+ },
  "sockets": {
   "carry": "chest-held object centre (carry_idle/carry_walk; behind=true facing N/NW/NE)",
   "seat": "pelvis contact point (sit/vehicle): put it on the seat/vehicle socket"
@@ -318,10 +471,13 @@
    "layer": 0,
    "layerName": "main",
    "tintChannels": 1,
+   "wearable": null,
+   "v1Sprite": "body_male",
    "atlases": [
     {
      "group": "core",
      "atlas": "v2s_wr_body_male",
+     "residency": "resident",
      "pages1x": [
       484,
       416
@@ -331,6 +487,7 @@
     {
      "group": "combat",
      "atlas": "v2s_wr_body_male__combat",
+     "residency": "stream",
      "pages1x": [
       708,
       648
@@ -340,6 +497,7 @@
     {
      "group": "ranged",
      "atlas": "v2s_wr_body_male__ranged",
+     "residency": "stream",
      "pages1x": [
       532,
       472
@@ -349,71 +507,101 @@
     {
      "group": "pose",
      "atlas": "v2s_wr_body_male__pose",
+     "residency": "stream",
      "pages1x": [
       768,
       680
      ],
      "uniqueFrames": 304
+    },
+    {
+     "group": "sleep",
+     "atlas": "v2s_wr_body_male__sleep",
+     "residency": "stream",
+     "pages1x": [
+      268,
+      268
+     ],
+     "uniqueFrames": 24
     }
    ],
-   "uniqueFrames": 792
+   "uniqueFrames": 816
   },
   {
-   "sprite": "v2s_cz_bottom_scrap_male",
+   "sprite": "v2s_cz_bottom_cargo_male",
    "slot": "bottom",
    "layer": 18,
    "layerName": "main",
    "tintChannels": 2,
+   "wearable": "bottom_cargo",
+   "v1Sprite": "cz_bottom_cargo_male",
    "atlases": [
     {
      "group": "core",
-     "atlas": "v2s_wr_cz_bottom_scrap_male",
+     "atlas": "v2s_wr_cz_bottom_cargo_male",
+     "residency": "resident",
      "pages1x": [
-      240,
-      248
+      244,
+      252
      ],
      "uniqueFrames": 112
     },
     {
      "group": "combat",
-     "atlas": "v2s_wr_cz_bottom_scrap_male__combat",
+     "atlas": "v2s_wr_cz_bottom_cargo_male__combat",
+     "residency": "stream",
      "pages1x": [
-      352,
+      356,
       352
      ],
      "uniqueFrames": 240
     },
     {
      "group": "ranged",
-     "atlas": "v2s_wr_cz_bottom_scrap_male__ranged",
+     "atlas": "v2s_wr_cz_bottom_cargo_male__ranged",
+     "residency": "stream",
      "pages1x": [
-      264,
+      272,
       276
      ],
      "uniqueFrames": 136
     },
     {
      "group": "pose",
-     "atlas": "v2s_wr_cz_bottom_scrap_male__pose",
+     "atlas": "v2s_wr_cz_bottom_cargo_male__pose",
+     "residency": "stream",
      "pages1x": [
       396,
-      392
+      396
      ],
      "uniqueFrames": 304
+    },
+    {
+     "group": "sleep",
+     "atlas": "v2s_wr_cz_bottom_cargo_male__sleep",
+     "residency": "stream",
+     "pages1x": [
+      116,
+      120
+     ],
+     "uniqueFrames": 16
     }
    ],
-   "uniqueFrames": 792
+   "uniqueFrames": 808
   },
   {
-   "sprite": "v2s_cz_shoes_scrap_male",
+   "sprite": "v2s_cz_shoes_boots_male",
    "slot": "shoes",
    "layer": 19,
    "layerName": "main",
    "tintChannels": 2,
+   "wearable": "shoes_boots",
+   "v1Sprite": "cz_shoes_boots_male",
    "atlases": [
     {
      "group": "core",
-     "atlas": "v2s_wr_cz_shoes_scrap_male",
+     "atlas": "v2s_wr_cz_shoes_boots_male",
+     "residency": "resident",
      "pages1x": [
       196,
       204
@@ -422,7 +610,8 @@
     },
     {
      "group": "combat",
-     "atlas": "v2s_wr_cz_shoes_scrap_male__combat",
+     "atlas": "v2s_wr_cz_shoes_boots_male__combat",
+     "residency": "stream",
      "pages1x": [
       272,
       288
@@ -431,7 +620,8 @@
     },
     {
      "group": "ranged",
-     "atlas": "v2s_wr_cz_shoes_scrap_male__ranged",
+     "atlas": "v2s_wr_cz_shoes_boots_male__ranged",
+     "residency": "stream",
      "pages1x": [
       212,
       232
@@ -440,26 +630,40 @@
     },
     {
      "group": "pose",
-     "atlas": "v2s_wr_cz_shoes_scrap_male__pose",
+     "atlas": "v2s_wr_cz_shoes_boots_male__pose",
+     "residency": "stream",
      "pages1x": [
       324,
       364
      ],
      "uniqueFrames": 304
+    },
+    {
+     "group": "sleep",
+     "atlas": "v2s_wr_cz_shoes_boots_male__sleep",
+     "residency": "stream",
+     "pages1x": [
+      68,
+      68
+     ],
+     "uniqueFrames": 8
     }
    ],
-   "uniqueFrames": 792
+   "uniqueFrames": 800
   },
   {
-   "sprite": "v2s_cz_top_scrap_male",
+   "sprite": "v2s_cz_top_henley_male",
    "slot": "top",
    "layer": 20,
    "layerName": "main",
    "tintChannels": 2,
+   "wearable": "top_henley",
+   "v1Sprite": "cz_top_henley_male",
    "atlases": [
     {
      "group": "core",
-     "atlas": "v2s_wr_cz_top_scrap_male",
+     "atlas": "v2s_wr_cz_top_henley_male",
+     "residency": "resident",
      "pages1x": [
       308,
       332
@@ -468,16 +672,18 @@
     },
     {
      "group": "combat",
-     "atlas": "v2s_wr_cz_top_scrap_male__combat",
+     "atlas": "v2s_wr_cz_top_henley_male__combat",
+     "residency": "stream",
      "pages1x": [
-      468,
-      492
+      464,
+      488
      ],
      "uniqueFrames": 240
     },
     {
      "group": "ranged",
-     "atlas": "v2s_wr_cz_top_scrap_male__ranged",
+     "atlas": "v2s_wr_cz_top_henley_male__ranged",
+     "residency": "stream",
      "pages1x": [
       336,
       356
@@ -486,15 +692,26 @@
     },
     {
      "group": "pose",
-     "atlas": "v2s_wr_cz_top_scrap_male__pose",
+     "atlas": "v2s_wr_cz_top_henley_male__pose",
+     "residency": "stream",
      "pages1x": [
-      516,
+      512,
       516
      ],
      "uniqueFrames": 304
+    },
+    {
+     "group": "sleep",
+     "atlas": "v2s_wr_cz_top_henley_male__sleep",
+     "residency": "stream",
+     "pages1x": [
+      140,
+      152
+     ],
+     "uniqueFrames": 24
     }
    ],
-   "uniqueFrames": 792
+   "uniqueFrames": 816
   },
   {
    "sprite": "v2s_cz_face_smile_male",
@@ -502,10 +719,13 @@
    "layer": 40,
    "layerName": "main",
    "tintChannels": 1,
+   "wearable": "face_smile",
+   "v1Sprite": "cz_face_smile_male",
    "atlases": [
     {
      "group": "core",
      "atlas": "v2s_wr_cz_face_smile_male",
+     "residency": "resident",
      "pages1x": [
       92,
       120
@@ -515,6 +735,7 @@
     {
      "group": "combat",
      "atlas": "v2s_wr_cz_face_smile_male__combat",
+     "residency": "stream",
      "pages1x": [
       164,
       212
@@ -524,6 +745,7 @@
     {
      "group": "ranged",
      "atlas": "v2s_wr_cz_face_smile_male__ranged",
+     "residency": "stream",
      "pages1x": [
       80,
       108
@@ -533,14 +755,25 @@
     {
      "group": "pose",
      "atlas": "v2s_wr_cz_face_smile_male__pose",
+     "residency": "stream",
      "pages1x": [
       148,
       180
      ],
      "uniqueFrames": 117
+    },
+    {
+     "group": "sleep",
+     "atlas": "v2s_wr_cz_face_smile_male__sleep",
+     "residency": "stream",
+     "pages1x": [
+      68,
+      36
+     ],
+     "uniqueFrames": 24
     }
    ],
-   "uniqueFrames": 341
+   "uniqueFrames": 365
   },
   {
    "sprite": "v2s_cz_eyes_round_male",
@@ -548,10 +781,13 @@
    "layer": 41,
    "layerName": "main",
    "tintChannels": 2,
+   "wearable": "eyes_round",
+   "v1Sprite": "cz_eyes_round_male",
    "atlases": [
     {
      "group": "core",
      "atlas": "v2s_wr_cz_eyes_round_male",
+     "residency": "resident",
      "pages1x": [
       104,
       136
@@ -561,6 +797,7 @@
     {
      "group": "combat",
      "atlas": "v2s_wr_cz_eyes_round_male__combat",
+     "residency": "stream",
      "pages1x": [
       152,
       208
@@ -570,6 +807,7 @@
     {
      "group": "ranged",
      "atlas": "v2s_wr_cz_eyes_round_male__ranged",
+     "residency": "stream",
      "pages1x": [
       116,
       148
@@ -579,14 +817,88 @@
     {
      "group": "pose",
      "atlas": "v2s_wr_cz_eyes_round_male__pose",
+     "residency": "stream",
      "pages1x": [
       164,
       224
      ],
      "uniqueFrames": 185
+    },
+    {
+     "group": "sleep",
+     "atlas": "v2s_wr_cz_eyes_round_male__sleep",
+     "residency": "stream",
+     "pages1x": [
+      68,
+      36
+     ],
+     "uniqueFrames": 22
     }
    ],
-   "uniqueFrames": 492
+   "uniqueFrames": 514
+  },
+  {
+   "sprite": "v2s_cz_hair_buzz_male",
+   "slot": "hair",
+   "layer": 45,
+   "layerName": "main",
+   "tintChannels": 2,
+   "wearable": "hair_buzz",
+   "v1Sprite": "cz_hair_buzz_male",
+   "variant": "uncovered",
+   "atlases": [
+    {
+     "group": "core",
+     "atlas": "v2s_wr_cz_hair_buzz_male",
+     "residency": "resident",
+     "pages1x": [
+      340,
+      340
+     ],
+     "uniqueFrames": 112
+    },
+    {
+     "group": "combat",
+     "atlas": "v2s_wr_cz_hair_buzz_male__combat",
+     "residency": "stream",
+     "pages1x": [
+      488,
+      464
+     ],
+     "uniqueFrames": 240
+    },
+    {
+     "group": "ranged",
+     "atlas": "v2s_wr_cz_hair_buzz_male__ranged",
+     "residency": "stream",
+     "pages1x": [
+      368,
+      372
+     ],
+     "uniqueFrames": 136
+    },
+    {
+     "group": "pose",
+     "atlas": "v2s_wr_cz_hair_buzz_male__pose",
+     "residency": "stream",
+     "pages1x": [
+      548,
+      524
+     ],
+     "uniqueFrames": 304
+    },
+    {
+     "group": "sleep",
+     "atlas": "v2s_wr_cz_hair_buzz_male__sleep",
+     "residency": "stream",
+     "pages1x": [
+      108,
+      124
+     ],
+     "uniqueFrames": 24
+    }
+   ],
+   "uniqueFrames": 816
   },
   {
    "sprite": "v2s_cz_hair_buzz_male_hathair",
@@ -594,10 +906,14 @@
    "layer": 45,
    "layerName": "main",
    "tintChannels": 2,
+   "wearable": "hair_buzz",
+   "v1Sprite": "cz_hair_buzz_male_hathair",
+   "variant": "hatHair",
    "atlases": [
     {
      "group": "core",
      "atlas": "v2s_wr_cz_hair_buzz_male_hathair",
+     "residency": "resident",
      "pages1x": [
       340,
       340
@@ -607,6 +923,7 @@
     {
      "group": "combat",
      "atlas": "v2s_wr_cz_hair_buzz_male_hathair__combat",
+     "residency": "stream",
      "pages1x": [
       488,
       464
@@ -616,6 +933,7 @@
     {
      "group": "ranged",
      "atlas": "v2s_wr_cz_hair_buzz_male_hathair__ranged",
+     "residency": "stream",
      "pages1x": [
       368,
       372
@@ -625,6 +943,7 @@
     {
      "group": "pose",
      "atlas": "v2s_wr_cz_hair_buzz_male_hathair__pose",
+     "residency": "stream",
      "pages1x": [
       548,
       524
@@ -635,11 +954,13 @@
    "uniqueFrames": 792
   },
   {
-   "sprite": "v2s_cz_top_scrap_male_sleeves",
+   "sprite": "v2s_cz_top_henley_male_sleeves",
    "slot": "top",
    "layer": 31,
    "layerName": "sleeves",
    "tintChannels": 2,
+   "wearable": "top_henley",
+   "v1Sprite": "cz_top_henley_male_sleeves",
    "layerByDir": [
     31,
     31,
@@ -653,7 +974,8 @@
    "atlases": [
     {
      "group": "core",
-     "atlas": "v2s_wr_cz_top_scrap_male_sleeves",
+     "atlas": "v2s_wr_cz_top_henley_male_sleeves",
+     "residency": "resident",
      "pages1x": [
       200,
       212
@@ -662,7 +984,8 @@
     },
     {
      "group": "combat",
-     "atlas": "v2s_wr_cz_top_scrap_male_sleeves__combat",
+     "atlas": "v2s_wr_cz_top_henley_male_sleeves__combat",
+     "residency": "stream",
      "pages1x": [
       268,
       316
@@ -671,7 +994,8 @@
     },
     {
      "group": "ranged",
-     "atlas": "v2s_wr_cz_top_scrap_male_sleeves__ranged",
+     "atlas": "v2s_wr_cz_top_henley_male_sleeves__ranged",
+     "residency": "stream",
      "pages1x": [
       188,
       212
@@ -680,7 +1004,8 @@
     },
     {
      "group": "pose",
-     "atlas": "v2s_wr_cz_top_scrap_male_sleeves__pose",
+     "atlas": "v2s_wr_cz_top_henley_male_sleeves__pose",
+     "residency": "stream",
      "pages1x": [
       348,
       380
@@ -691,15 +1016,18 @@
    "uniqueFrames": 586
   },
   {
-   "sprite": "v2s_cz_hat_scrap_male",
+   "sprite": "v2s_cz_hat_cap_male",
    "slot": "hat",
    "layer": 50,
    "layerName": "main",
    "tintChannels": 2,
+   "wearable": "hat_cap",
+   "v1Sprite": "cz_hat_cap_male",
    "atlases": [
     {
      "group": "core",
-     "atlas": "v2s_wr_cz_hat_scrap_male",
+     "atlas": "v2s_wr_cz_hat_cap_male",
+     "residency": "resident",
      "pages1x": [
       292,
       308
@@ -708,7 +1036,8 @@
     },
     {
      "group": "combat",
-     "atlas": "v2s_wr_cz_hat_scrap_male__combat",
+     "atlas": "v2s_wr_cz_hat_cap_male__combat",
+     "residency": "stream",
      "pages1x": [
       452,
       432
@@ -717,7 +1046,8 @@
     },
     {
      "group": "ranged",
-     "atlas": "v2s_wr_cz_hat_scrap_male__ranged",
+     "atlas": "v2s_wr_cz_hat_cap_male__ranged",
+     "residency": "stream",
      "pages1x": [
       324,
       336
@@ -726,7 +1056,8 @@
     },
     {
      "group": "pose",
-     "atlas": "v2s_wr_cz_hat_scrap_male__pose",
+     "atlas": "v2s_wr_cz_hat_cap_male__pose",
+     "residency": "stream",
      "pages1x": [
       512,
       480
@@ -742,10 +1073,13 @@
    "layer": 56,
    "layerName": "armfront",
    "tintChannels": 1,
+   "wearable": null,
+   "v1Sprite": null,
    "atlases": [
     {
      "group": "core",
      "atlas": "v2s_wr_body_male_armfront",
+     "residency": "resident",
      "pages1x": [
       56,
       36
@@ -755,6 +1089,7 @@
     {
      "group": "combat",
      "atlas": "v2s_wr_body_male_armfront__combat",
+     "residency": "stream",
      "pages1x": [
       156,
       180
@@ -764,6 +1099,7 @@
     {
      "group": "ranged",
      "atlas": "v2s_wr_body_male_armfront__ranged",
+     "residency": "stream",
      "pages1x": [
       148,
       180
@@ -773,6 +1109,7 @@
     {
      "group": "pose",
      "atlas": "v2s_wr_body_male_armfront__pose",
+     "residency": "stream",
      "pages1x": [
       92,
       104
@@ -783,15 +1120,18 @@
    "uniqueFrames": 252
   },
   {
-   "sprite": "v2s_cz_top_scrap_male_armfront",
+   "sprite": "v2s_cz_top_henley_male_armfront",
    "slot": "top",
    "layer": 57,
    "layerName": "armfront",
    "tintChannels": 2,
+   "wearable": "top_henley",
+   "v1Sprite": null,
    "atlases": [
     {
      "group": "core",
-     "atlas": "v2s_wr_cz_top_scrap_male_armfront",
+     "atlas": "v2s_wr_cz_top_henley_male_armfront",
+     "residency": "resident",
      "pages1x": [
       56,
       36
@@ -800,7 +1140,8 @@
     },
     {
      "group": "combat",
-     "atlas": "v2s_wr_cz_top_scrap_male_armfront__combat",
+     "atlas": "v2s_wr_cz_top_henley_male_armfront__combat",
+     "residency": "stream",
      "pages1x": [
       156,
       184
@@ -809,7 +1150,8 @@
     },
     {
      "group": "ranged",
-     "atlas": "v2s_wr_cz_top_scrap_male_armfront__ranged",
+     "atlas": "v2s_wr_cz_top_henley_male_armfront__ranged",
+     "residency": "stream",
      "pages1x": [
       148,
       176
@@ -818,7 +1160,8 @@
     },
     {
      "group": "pose",
-     "atlas": "v2s_wr_cz_top_scrap_male_armfront__pose",
+     "atlas": "v2s_wr_cz_top_henley_male_armfront__pose",
+     "residency": "stream",
      "pages1x": [
       92,
       104
