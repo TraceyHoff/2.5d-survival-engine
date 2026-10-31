@@ -15,12 +15,15 @@ import numpy as np
 from PIL import Image
 from multiprocessing import Pool
 import rig, parts, render
+import v2_anims
+from PIL import ImageOps
 from rig import FW, FH, FEET, PAD
 
 ROOT = os.path.abspath(os.path.join(HERE, "../../.."))
 NAME = "customization_v2_sample"; OUT = os.path.join(ROOT, "packages/assets/pack", NAME)
 BT = "male"; DIRS = 8; PIV = (FW / 2, FEET)
-ANIMS = [("idle", 4, 4, True), ("walk", 6, 10, True), ("attack", 4, 12, False)]   # v1 frame counts / fps (parity)
+ANIMS = [(a[0], a[1], a[2], a[3]) for a in v2_anims.ANIMS]   # name, frames, fps, loop (idle/walk/attack/sit = v1 parity)
+GROUP = {a[0]: a[4] for a in v2_anims.ANIMS}; GROUPS = ["core", "combat", "ranged", "pose"]
 TAPE = [(232, 228, 214), (206, 202, 188), (168, 166, 158), (122, 120, 122)]      # untinted grey duct tape
 INK = (74, 47, 61)
 V1_HEAD = (0, -29.65); ATTACH_HEAD = {"x": 0, "y": -26.65}   # v1 body frameMeta head / sprite attach.head: 3 px neck lift (ADR-128)
@@ -36,6 +39,10 @@ LAYERS = [
     ("cz_hair_buzz_male_hathair", "hair", {"style": "buzz"}, True, None, 45, 2),
     ("cz_top_scrap_male_sleeves", "top", dict(sleeve="long", collar="v", grow=1.1, scrap=True), False, "sleeves", 31, 2),
     ("cz_hat_scrap_male", "hat", {"style": "cap", "scrap": True}, False, None, 50, 2),
+    # arm-front overlays: the front forearm+hand re-drawn above the head group on frames where it passes in front of the
+    # face/hair/hat (aim, block, overhead swings seen from behind); empty elsewhere. Same tint as their source layer.
+    ("body_male_armfront", "body", {}, False, "armfront", 56, 1),
+    ("cz_top_scrap_male_armfront", "top", dict(sleeve="long", collar="v", grow=1.1, scrap=True), False, "armfront", 57, 2),
 ]
 
 def stitches(cv, a, b, n=3, w=.42):
@@ -115,8 +122,11 @@ def wrap_side_items(c, fn_side):
     c.items = out
 
 def render_layer(bt, slot, spec, d, anim, fi, n, hat, part):
-    K = rig.pose(bt, d, anim, fi, n); c = rig.Ctx(K); c.extra = None
+    K = v2_anims.pose(bt, d, anim, fi, n); c = rig.Ctx(K); c.extra = None
     c.cv.cel = True; c.cv.pal = []; c.cv.detail = slot if slot in render.DETAIL_SLOTS else None
+    front_part = part == "armfront"
+    if front_part: part = "sleeves" if slot == "top" else None
+    if slot == "body" and K.get("ground"): c.cv.shadow(24, 74.5, 10.5, 3.6)   # bent-leg poses on the ground (sit flag skips it in parts.body)
     parts.gear_parts.apply_remap(c, spec); render.draw(c, slot, spec, hat)
     if spec.get("scrap"):
         if slot == "top":
@@ -134,7 +144,25 @@ def render_layer(bt, slot, spec, d, anim, fi, n, hat, part):
     if part == "sleeves": c.items = []; c.run(armcut=False, extra=c.extra)
     elif part == "main": c.run(armcut=True, extra=None)
     else: c.run(armcut=(slot != "body"), extra=c.extra)
+    if front_part: c.cv.erase(ImageOps.invert(armfront_mask(c, K)))
     return c.out(), K
+
+def armfront_sides(K):
+    """sides whose hand is at/in front of the head's depth and overlaps the head (+hat) on screen"""
+    R = K["rig"]; (hx, hy), vh = R.proj(*K["hc"]); out = []
+    for s in (-1, 1):
+        if not K["front"][s]: continue
+        (px, py), vb = R.proj(*K["hand"][s]); mid = tuple(a + (b - a) * .55 for a, b in zip(K["sh"][s], K["hand"][s])); (mx, my), _ = R.proj(*mid)
+        near = min(math.hypot(px - hx, py - hy), math.hypot(mx - hx, my - hy)) < K["hr"] + 4.5
+        if near and vb >= vh + .5: out.append(s)
+    return out
+
+def armfront_mask(c, K):
+    B = K["B"]; polys = []
+    for s in armfront_sides(K):
+        a = c.lerp3(K["sh"][s], K["hand"][s], 0.3)
+        polys.append(c.tube(a, K["hand"][s], B["arm"] + .9)); polys.append(rig.circle(c.p(K["hand"][s]), B["hand"] + 1.0))
+    return c.cv.mask_from(polys)
 
 def anchors(K):
     R = K["rig"]; P = lambda p3: R.proj(*p3)[0]; rel = lambda p: {"x": round(p[0] - PIV[0], 2), "y": round(p[1] - PIV[1], 2)}
@@ -144,6 +172,9 @@ def anchors(K):
     tc = K["tc"]; out["back"] = rel(P((tc[0], tc[1] - K["B"]["trx"] * .8, tc[2] + 2)))
     out["back"]["behind"] = K["d"] in (1, 2, 3)   # S-ish facings: back gear sits behind the body
     out["hip"] = rel(P(K["hipc"])); out["footL"] = rel(P(K["feet"][-1])); out["footR"] = rel(P(K["feet"][1]))
+    for nm, p3 in K.get("sockets", {}).items():   # carry: object centre held at the chest (behind the body when facing away); seat: pelvis contact
+        out[nm] = rel(P(p3))
+        if nm == "carry": out[nm]["behind"] = K["d"] in (5, 6, 7)
     return out
 
 def job(args):
@@ -154,7 +185,7 @@ def job(args):
         a = np.asarray(im).copy(); m = np.asarray(m).copy(); p = PAD * s
         for arr in (a, m): arr[:p] = 0; arr[-p:] = 0; arr[:, :p] = 0; arr[:, -p:] = 0
         m[a[..., 3] == 0] = 0; res += [a, m]
-    return li, d, anim, fi, res, (anchors(K) if slot == "body" else None)
+    return li, d, anim, fi, res, (anchors(K) if slot == "body" and part != "armfront" else None)
 
 def shelf(sizes, maxw):
     """simple shelf pack of (w,h) at 1x (2px gutter); returns positions + page size (multiple of 4)"""
@@ -173,66 +204,68 @@ def main():
     byl = {}
     for li, d, an, fi, res, anc in R: byl.setdefault(li, {})[(an, fi, d)] = (res, anc)
     atlases, sprites, meta = [], [], []
+    def fit(b):   # the loader wants each dirFrame anchor within [-8,9] of its rect: grow tiny slivers toward the pivot
+        x0, y0, x1, y1 = b
+        for _ in range(64):
+            ax, ay = (PIV[0] - x0) / (x1 - x0), (PIV[1] - y0) / (y1 - y0)
+            if -7.5 <= ax <= 8.5 and -7.5 <= ay <= 8.5: break
+            if not -7.5 <= ax <= 8.5: x1, x0 = (x1 + 1, x0) if x1 < FW else (x1, x0 - 1)
+            if not -7.5 <= ay <= 8.5: y1, y0 = (y1 + 1, y0) if y1 < FH else (y1, y0 - 1)
+        return (x0, y0, x1, y1)
     for li, (key, slot, spec, hat, part, layer, tch) in enumerate(LAYERS):
-        fr = byl[li]; order = [(an, fi, d) for an, n, _, _ in ANIMS for fi in range(n) for d in range(DIRS)]
-        # trim on the union of 1x alpha and the @2x alpha downsampled (so both scales share one rect)
-        boxes = []
-        for k in order:
-            a1, _, a2, _ = fr[k][0]
-            al = (a1[..., 3] > 0) | (a2[..., 3].reshape(FH, 2, FW, 2).max(axis=(1, 3)) > 0)
-            ys, xs = np.nonzero(al)
-            boxes.append((int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1) if len(xs) else (int(PIV[0]), int(PIV[1]) - 1, int(PIV[0]) + 1, int(PIV[1])))
-        # the loader wants each dirFrame anchor within [-8,9] of its rect: grow tiny slivers (e.g. a face seen from behind) toward the pivot
-        def fit(b):
-            x0, y0, x1, y1 = b
-            for _ in range(64):
-                ax, ay = (PIV[0] - x0) / (x1 - x0), (PIV[1] - y0) / (y1 - y0)
-                if -7.5 <= ax <= 8.5 and -7.5 <= ay <= 8.5: break
-                if not -7.5 <= ax <= 8.5: x1, x0 = (x1 + 1, x0) if x1 < FW else (x1, x0 - 1)
-                if not -7.5 <= ay <= 8.5: y1, y0 = (y1 + 1, y0) if y1 < FH else (y1, y0 - 1)
-            return (x0, y0, x1, y1)
-        boxes = [fit(b) for b in boxes]
-        # dedupe identical frames (same rect content at 1x+2x)
-        uniq, idx = {}, []
-        for k, b in zip(order, boxes):
-            a1, m1, a2, m2 = fr[k][0]; x0, y0, x1, y1 = b
-            h = hash((b, a1[y0:y1, x0:x1].tobytes(), a2[y0 * 2:y1 * 2, x0 * 2:x1 * 2].tobytes(), m2[y0 * 2:y1 * 2, x0 * 2:x1 * 2].tobytes()))
-            if h not in uniq: uniq[h] = (len(uniq), k, b)
-            idx.append(uniq[h][0])
-        U = sorted(uniq.values()); sizes = [(b[2] - b[0], b[3] - b[1]) for _, _, b in U]
-        side = max(64, int(math.sqrt(sum(w * h for w, h in sizes) * 1.35)))
-        pos, PW, PH = shelf(sizes, side)
-        P1 = np.zeros((PH, PW, 4), np.uint8); M1 = np.zeros((PH, PW, 3), np.uint8); P2 = np.zeros((PH * 2, PW * 2, 4), np.uint8); M2 = np.zeros((PH * 2, PW * 2, 3), np.uint8)
-        for (u, k, b), (x, y) in zip(U, pos):
-            a1, m1, a2, m2 = fr[k][0]; x0, y0, x1, y1 = b; w, h = x1 - x0, y1 - y0
-            P1[y:y + h, x:x + w] = a1[y0:y1, x0:x1]; M1[y:y + h, x:x + w] = m1[y0:y1, x0:x1]
-            P2[y * 2:(y + h) * 2, x * 2:(x + w) * 2] = a2[y0 * 2:y1 * 2, x0 * 2:x1 * 2]; M2[y * 2:(y + h) * 2, x * 2:(x + w) * 2] = m2[y0 * 2:y1 * 2, x0 * 2:x1 * 2]
-        ak = "v2s_wr_" + key; base = f"atlases/{ak}"
-        Image.fromarray(P1, "RGBA").save(os.path.join(OUT, "atlases", ak + ".png"), optimize=True)
-        Image.fromarray(P2, "RGBA").save(os.path.join(OUT, "atlases", ak + "@2x.png"), optimize=True)
-        Image.fromarray(M1, "RGB").save(os.path.join(OUT, "atlases", ak + ".tintmask.png"), optimize=True)
-        Image.fromarray(M2, "RGB").save(os.path.join(OUT, "atlases", ak + ".tintmask@2x.png"), optimize=True)
-        atlases.append({"key": ak, "image": base + ".png", "frameW": PW, "frameH": PH, "columns": 1, "rows": 1,
-                        "pages": [{"scale": 2, "image": base + "@2x.png"}],   # @2x tintmask: <mask>@2x naming (as v1)
-                        "masks": {"tintmask": base + ".tintmask.png"}, "residency": "stream"})
-        anims = {}; j = 0
-        for an, n, fps, loop in ANIMS:
-            dfs, fm = [], {}
-            for fi in range(n):
-                for d in range(DIRS):
-                    u, k, b = U[idx[j]]; x, y = pos[u]; x0, y0, x1, y1 = b; w, h = x1 - x0, y1 - y0
-                    dfs.append({"atlas": ak, "rect": {"x": x, "y": y, "w": w, "h": h}, "anchor": {"x": round((PIV[0] - x0) / w, 5), "y": round((PIV[1] - y0) / h, 5)}})
-                    anc = fr[(an, fi, d)][1]
-                    if anc: fm[f"df:{fi * DIRS + d}"] = {"anchors": anc}
-                    j += 1
-            anims[an] = {"frames": list(range(n)), "fps": fps, "directions": DIRS, "dirStride": n, "loop": loop, "dirFrames": dfs}
-            if fm: anims[an]["frameMeta"] = fm
+        fr = byl[li]; anims = {}; pages = []; nuniq = ntot = 0
+        for g in GROUPS:   # one atlas per anim group keeps every @2x page <= 2048
+            GA = [a for a in ANIMS if GROUP[a[0]] == g]
+            order = [(an, fi, d) for an, n, _, _ in GA for fi in range(n) for d in range(DIRS)]
+            boxes = []   # trim on the union of 1x alpha and the @2x alpha downsampled (both scales share one rect)
+            for k in order:
+                a1, _, a2, _ = fr[k][0]
+                al = (a1[..., 3] > 0) | (a2[..., 3].reshape(FH, 2, FW, 2).max(axis=(1, 3)) > 0)
+                ys, xs = np.nonzero(al)
+                boxes.append((int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1) if len(xs) else (int(PIV[0]), int(PIV[1]) - 1, int(PIV[0]) + 1, int(PIV[1])))
+            boxes = [fit(b) for b in boxes]
+            uniq, idx = {}, []   # dedupe identical frames (same rect content at 1x+2x)
+            for k, b in zip(order, boxes):
+                a1, m1, a2, m2 = fr[k][0]; x0, y0, x1, y1 = b
+                h = hash((b, a1[y0:y1, x0:x1].tobytes(), a2[y0 * 2:y1 * 2, x0 * 2:x1 * 2].tobytes(), m2[y0 * 2:y1 * 2, x0 * 2:x1 * 2].tobytes()))
+                if h not in uniq: uniq[h] = (len(uniq), k, b)
+                idx.append(uniq[h][0])
+            U = sorted(uniq.values()); sizes = [(b[2] - b[0], b[3] - b[1]) for _, _, b in U]
+            side = max(64, int(math.sqrt(sum(w * h for w, h in sizes) * 1.35)))
+            pos, PW, PH = shelf(sizes, side)
+            assert PW <= 1024 and PH <= 1024, (key, g, PW, PH)
+            P1 = np.zeros((PH, PW, 4), np.uint8); M1 = np.zeros((PH, PW, 3), np.uint8); P2 = np.zeros((PH * 2, PW * 2, 4), np.uint8); M2 = np.zeros((PH * 2, PW * 2, 3), np.uint8)
+            for (u, k, b), (x, y) in zip(U, pos):
+                a1, m1, a2, m2 = fr[k][0]; x0, y0, x1, y1 = b; w, h = x1 - x0, y1 - y0
+                P1[y:y + h, x:x + w] = a1[y0:y1, x0:x1]; M1[y:y + h, x:x + w] = m1[y0:y1, x0:x1]
+                P2[y * 2:(y + h) * 2, x * 2:(x + w) * 2] = a2[y0 * 2:y1 * 2, x0 * 2:x1 * 2]; M2[y * 2:(y + h) * 2, x * 2:(x + w) * 2] = m2[y0 * 2:y1 * 2, x0 * 2:x1 * 2]
+            ak = "v2s_wr_" + key + ("" if g == "core" else "__" + g); base = f"atlases/{ak}"
+            Image.fromarray(P1, "RGBA").save(os.path.join(OUT, "atlases", ak + ".png"), optimize=True)
+            Image.fromarray(P2, "RGBA").save(os.path.join(OUT, "atlases", ak + "@2x.png"), optimize=True)
+            Image.fromarray(M1, "RGB").save(os.path.join(OUT, "atlases", ak + ".tintmask.png"), optimize=True)
+            Image.fromarray(M2, "RGB").save(os.path.join(OUT, "atlases", ak + ".tintmask@2x.png"), optimize=True)
+            atlases.append({"key": ak, "image": base + ".png", "frameW": PW, "frameH": PH, "columns": 1, "rows": 1,
+                            "pages": [{"scale": 2, "image": base + "@2x.png"}],   # @2x tintmask: <mask>@2x naming (as v1)
+                            "masks": {"tintmask": base + ".tintmask.png"}, "residency": "stream"})
+            pages.append({"group": g, "atlas": ak, "pages1x": [PW, PH], "uniqueFrames": len(U)}); nuniq += len(U); ntot += len(order)
+            j = 0
+            for an, n, fps, loop in GA:
+                dfs, fm = [], {}
+                for fi in range(n):
+                    for d in range(DIRS):
+                        u, k, b = U[idx[j]]; x, y = pos[u]; x0, y0, x1, y1 = b; w, h = x1 - x0, y1 - y0
+                        dfs.append({"atlas": ak, "rect": {"x": x, "y": y, "w": w, "h": h}, "anchor": {"x": round((PIV[0] - x0) / w, 5), "y": round((PIV[1] - y0) / h, 5)}})
+                        anc = fr[(an, fi, d)][1]
+                        if anc: fm[f"df:{fi * DIRS + d}"] = {"anchors": anc}
+                        j += 1
+                anims[an] = {"frames": list(range(n)), "fps": fps, "directions": DIRS, "dirStride": n, "loop": loop, "dirFrames": dfs}
+                if fm: anims[an]["frameMeta"] = fm
         sk = "v2s_" + key
-        sprites.append({"key": sk, "category": "character", "atlas": ak, "anchor": {"x": .5, "y": 1}, **({"attach": {"head": ATTACH_HEAD}} if slot == "body" else {}), "animations": anims})
+        sprites.append({"key": sk, "category": "character", "atlas": "v2s_wr_" + key, "anchor": {"x": .5, "y": 1}, **({"attach": {"head": ATTACH_HEAD}} if slot == "body" else {}), "animations": anims})
         meta.append({"sprite": sk, "slot": slot, "layer": layer, "layerName": part or "main", "tintChannels": tch,
                      **({"layerByDir": [31, 31, 31, 31, 21, 21, 21, 31]} if part == "sleeves" else {}),
-                     "pages1x": [PW, PH], "uniqueFrames": len(U)})
-        print(f"{sk}: {len(U)}/{len(order)} unique, page {PW}x{PH} (@2x {PW*2}x{PH*2})", flush=True)
+                     "atlases": pages, "uniqueFrames": nuniq})
+        print(f"{sk}: {nuniq}/{ntot} unique, pages " + ", ".join(f"{p['group']} {p['pages1x'][0]*2}x{p['pages1x'][1]*2}" for p in pages) + " @2x", flush=True)
     man = {"version": 1, "name": NAME, "atlases": atlases, "sprites": sprites}
     with open(os.path.join(OUT, f"manifest.{NAME}.json"), "w") as f: json.dump(man, f, separators=(",", ":"))
     side = {"doc": "Player v2 sample paper-doll (isolated test fragment; NOT wired into wearables/ids.lock/saves). Draw order = layer asc; "
@@ -240,7 +273,9 @@ def main():
             "spec": "player_v2_spec.md (style: cute cel base + scrappy worn/patched/taped gear)", "bodyType": BT, "skinTone": "tan",
             "palette": {"skin": "tan", "hair": ["espresso", "ash"], "top": ["sage", "denim"], "bottom": ["slate", "brick"], "shoes": ["charcoal", "cream"], "hat": ["mustard", "brick"], "eyes": ["black", "black"]},
             "frame": {"w": FW, "h": FH, "pivot": list(PIV), "scales": [1, 2], "dirOrder": ["E", "SE", "S", "SW", "W", "NW", "N", "NE"], "dirFramesIndex": "frame*8+dir"},
-            "anims": [{"name": a, "frames": n, "fps": f, "loop": l} for a, n, f, l in ANIMS], "layers": meta}
+            "anims": [{"name": a[0], "frames": a[1], "fps": a[2], "loop": a[3], "group": a[4], "state": a[5], "note": a[6], **({"events": v2_anims.EVENTS[a[0]]} if a[0] in v2_anims.EVENTS else {})} for a in v2_anims.ANIMS],
+            "sockets": {"carry": "chest-held object centre (carry_idle/carry_walk; behind=true facing N/NW/NE)", "seat": "pelvis contact point (sit/vehicle): put it on the seat/vehicle socket"},
+            "layers": meta}
     with open(os.path.join(OUT, "sample.v2.json"), "w") as f: json.dump(side, f, indent=1)
 
 if __name__ == "__main__": main()

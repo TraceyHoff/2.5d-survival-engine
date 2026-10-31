@@ -58,21 +58,259 @@
    "name": "idle",
    "frames": 4,
    "fps": 4,
-   "loop": true
+   "loop": true,
+   "group": "core",
+   "state": "Idle",
+   "note": ""
   },
   {
    "name": "walk",
    "frames": 6,
    "fps": 10,
-   "loop": true
+   "loop": true,
+   "group": "core",
+   "state": "Walk",
+   "note": ""
   },
   {
    "name": "attack",
    "frames": 4,
    "fps": 12,
-   "loop": false
+   "loop": false,
+   "group": "core",
+   "state": "Attack",
+   "note": "generic swing, fallback for every attack_*",
+   "events": {
+    "hit": 2
+   }
+  },
+  {
+   "name": "block",
+   "frames": 3,
+   "fps": 10,
+   "loop": false,
+   "group": "combat",
+   "state": "NEW Block",
+   "note": "raise guard, hold last frame while blocking"
+  },
+  {
+   "name": "attack_unarmed",
+   "frames": 5,
+   "fps": 14,
+   "loop": false,
+   "group": "combat",
+   "state": "Punch (unarmed)",
+   "note": "jab-cross",
+   "events": {
+    "hit": [
+     1,
+     3
+    ]
+   }
+  },
+  {
+   "name": "attack_blade",
+   "frames": 4,
+   "fps": 14,
+   "loop": false,
+   "group": "combat",
+   "state": "Attack + blade",
+   "note": "knife/dagger/sword/machete slash",
+   "events": {
+    "hit": 2
+   }
+  },
+  {
+   "name": "attack_blunt",
+   "frames": 5,
+   "fps": 10,
+   "loop": false,
+   "group": "combat",
+   "state": "Attack + blunt",
+   "note": "overhead two-hand smash (club/mace/maul/hammer/bat)",
+   "events": {
+    "hit": 3
+   }
+  },
+  {
+   "name": "attack_axe",
+   "frames": 5,
+   "fps": 11,
+   "loop": false,
+   "group": "combat",
+   "state": "Attack + axe",
+   "note": "diagonal chop (axe/pickaxe as weapon)",
+   "events": {
+    "hit": 3
+   }
+  },
+  {
+   "name": "attack_spear",
+   "frames": 4,
+   "fps": 11,
+   "loop": false,
+   "group": "combat",
+   "state": "Attack + spear",
+   "note": "two-hand thrust",
+   "events": {
+    "hit": 2
+   }
+  },
+  {
+   "name": "attack_throw",
+   "frames": 4,
+   "fps": 12,
+   "loop": false,
+   "group": "combat",
+   "state": "Attack + throwing_axe / sling",
+   "note": "overhand throw, release = frame 2",
+   "events": {
+    "release": 2
+   }
+  },
+  {
+   "name": "bow_draw",
+   "frames": 4,
+   "fps": 10,
+   "loop": false,
+   "group": "ranged",
+   "state": "NEW Aim (bow)",
+   "note": "nock + draw to the cheek"
+  },
+  {
+   "name": "bow_hold",
+   "frames": 2,
+   "fps": 4,
+   "loop": true,
+   "group": "ranged",
+   "state": "NEW Aim (bow, held)",
+   "note": "full draw, slight tremble"
+  },
+  {
+   "name": "bow_release",
+   "frames": 3,
+   "fps": 12,
+   "loop": false,
+   "group": "ranged",
+   "state": "Attack + bow",
+   "note": "release, string hand snaps back, release = frame 0",
+   "events": {
+    "release": 0
+   }
+  },
+  {
+   "name": "attack_crossbow",
+   "frames": 3,
+   "fps": 12,
+   "loop": false,
+   "group": "ranged",
+   "state": "Attack + crossbow",
+   "note": "shoulder shot, light kick",
+   "events": {
+    "release": 0
+   }
+  },
+  {
+   "name": "gun_aim",
+   "frames": 2,
+   "fps": 4,
+   "loop": true,
+   "group": "ranged",
+   "state": "NEW Aim (firearm/crossbow)",
+   "note": "two-hand shoulder aim"
+  },
+  {
+   "name": "gun_fire",
+   "frames": 3,
+   "fps": 15,
+   "loop": false,
+   "group": "ranged",
+   "state": "Attack + firearm",
+   "note": "shot with recoil (muzzle FX at handR + len along angle on frame 0)",
+   "events": {
+    "fire": 0
+   }
+  },
+  {
+   "name": "crouch_idle",
+   "frames": 4,
+   "fps": 4,
+   "loop": true,
+   "group": "pose",
+   "state": "NEW Crouch",
+   "note": "low stance, hands on knees"
+  },
+  {
+   "name": "crouch_walk",
+   "frames": 6,
+   "fps": 8,
+   "loop": true,
+   "group": "pose",
+   "state": "NEW Crouch + moving",
+   "note": "sneak"
+  },
+  {
+   "name": "carry_idle",
+   "frames": 4,
+   "fps": 4,
+   "loop": true,
+   "group": "pose",
+   "state": "NEW Carry",
+   "note": "box held at the chest (carry socket)"
+  },
+  {
+   "name": "carry_walk",
+   "frames": 6,
+   "fps": 9,
+   "loop": true,
+   "group": "pose",
+   "state": "NEW Carry + moving",
+   "note": "short steps"
+  },
+  {
+   "name": "sleep",
+   "frames": 4,
+   "fps": 2,
+   "loop": true,
+   "group": "pose",
+   "state": "NEW Sleep",
+   "note": "curled doze on the ground, slow breathing"
+  },
+  {
+   "name": "sit",
+   "frames": 4,
+   "fps": 4,
+   "loop": true,
+   "group": "pose",
+   "state": "Sit",
+   "note": "v1 seat-height sit (seat socket)"
+  },
+  {
+   "name": "vehicle",
+   "frames": 4,
+   "fps": 6,
+   "loop": true,
+   "group": "pose",
+   "state": "Sit + in vehicle (ADR-101 rider)",
+   "note": "seated, hands on bars/wheel, road bump (seat socket)"
+  },
+  {
+   "name": "build",
+   "frames": 6,
+   "fps": 12,
+   "loop": true,
+   "group": "pose",
+   "state": "Build",
+   "note": "hammering, impact = frame 3",
+   "events": {
+    "hit": 3
+   }
   }
  ],
+ "sockets": {
+  "carry": "chest-held object centre (carry_idle/carry_walk; behind=true facing N/NW/NE)",
+  "seat": "pelvis contact point (sit/vehicle): put it on the seat/vehicle socket"
+ },
  "layers": [
   {
    "sprite": "v2s_body_male",
@@ -80,11 +318,45 @@
    "layer": 0,
    "layerName": "main",
    "tintChannels": 1,
-   "pages1x": [
-    484,
-    416
+   "atlases": [
+    {
+     "group": "core",
+     "atlas": "v2s_wr_body_male",
+     "pages1x": [
+      484,
+      416
+     ],
+     "uniqueFrames": 112
+    },
+    {
+     "group": "combat",
+     "atlas": "v2s_wr_body_male__combat",
+     "pages1x": [
+      708,
+      648
+     ],
+     "uniqueFrames": 240
+    },
+    {
+     "group": "ranged",
+     "atlas": "v2s_wr_body_male__ranged",
+     "pages1x": [
+      532,
+      472
+     ],
+     "uniqueFrames": 136
+    },
+    {
+     "group": "pose",
+     "atlas": "v2s_wr_body_male__pose",
+     "pages1x": [
+      768,
+      680
+     ],
+     "uniqueFrames": 304
+    }
    ],
-   "uniqueFrames": 112
+   "uniqueFrames": 792
   },
   {
    "sprite": "v2s_cz_bottom_scrap_male",
@@ -92,11 +364,45 @@
    "layer": 18,
    "layerName": "main",
    "tintChannels": 2,
-   "pages1x": [
-    240,
-    248
+   "atlases": [
+    {
+     "group": "core",
+     "atlas": "v2s_wr_cz_bottom_scrap_male",
+     "pages1x": [
+      240,
+      248
+     ],
+     "uniqueFrames": 112
+    },
+    {
+     "group": "combat",
+     "atlas": "v2s_wr_cz_bottom_scrap_male__combat",
+     "pages1x": [
+      352,
+      352
+     ],
+     "uniqueFrames": 240
+    },
+    {
+     "group": "ranged",
+     "atlas": "v2s_wr_cz_bottom_scrap_male__ranged",
+     "pages1x": [
+      264,
+      276
+     ],
+     "uniqueFrames": 136
+    },
+    {
+     "group": "pose",
+     "atlas": "v2s_wr_cz_bottom_scrap_male__pose",
+     "pages1x": [
+      396,
+      392
+     ],
+     "uniqueFrames": 304
+    }
    ],
-   "uniqueFrames": 112
+   "uniqueFrames": 792
   },
   {
    "sprite": "v2s_cz_shoes_scrap_male",
@@ -104,11 +410,45 @@
    "layer": 19,
    "layerName": "main",
    "tintChannels": 2,
-   "pages1x": [
-    196,
-    204
+   "atlases": [
+    {
+     "group": "core",
+     "atlas": "v2s_wr_cz_shoes_scrap_male",
+     "pages1x": [
+      196,
+      204
+     ],
+     "uniqueFrames": 112
+    },
+    {
+     "group": "combat",
+     "atlas": "v2s_wr_cz_shoes_scrap_male__combat",
+     "pages1x": [
+      272,
+      288
+     ],
+     "uniqueFrames": 240
+    },
+    {
+     "group": "ranged",
+     "atlas": "v2s_wr_cz_shoes_scrap_male__ranged",
+     "pages1x": [
+      212,
+      232
+     ],
+     "uniqueFrames": 136
+    },
+    {
+     "group": "pose",
+     "atlas": "v2s_wr_cz_shoes_scrap_male__pose",
+     "pages1x": [
+      324,
+      364
+     ],
+     "uniqueFrames": 304
+    }
    ],
-   "uniqueFrames": 112
+   "uniqueFrames": 792
   },
   {
    "sprite": "v2s_cz_top_scrap_male",
@@ -116,11 +456,45 @@
    "layer": 20,
    "layerName": "main",
    "tintChannels": 2,
-   "pages1x": [
-    308,
-    332
+   "atlases": [
+    {
+     "group": "core",
+     "atlas": "v2s_wr_cz_top_scrap_male",
+     "pages1x": [
+      308,
+      332
+     ],
+     "uniqueFrames": 112
+    },
+    {
+     "group": "combat",
+     "atlas": "v2s_wr_cz_top_scrap_male__combat",
+     "pages1x": [
+      468,
+      492
+     ],
+     "uniqueFrames": 240
+    },
+    {
+     "group": "ranged",
+     "atlas": "v2s_wr_cz_top_scrap_male__ranged",
+     "pages1x": [
+      336,
+      356
+     ],
+     "uniqueFrames": 136
+    },
+    {
+     "group": "pose",
+     "atlas": "v2s_wr_cz_top_scrap_male__pose",
+     "pages1x": [
+      516,
+      516
+     ],
+     "uniqueFrames": 304
+    }
    ],
-   "uniqueFrames": 112
+   "uniqueFrames": 792
   },
   {
    "sprite": "v2s_cz_face_smile_male",
@@ -128,11 +502,45 @@
    "layer": 40,
    "layerName": "main",
    "tintChannels": 1,
-   "pages1x": [
-    92,
-    120
+   "atlases": [
+    {
+     "group": "core",
+     "atlas": "v2s_wr_cz_face_smile_male",
+     "pages1x": [
+      92,
+      120
+     ],
+     "uniqueFrames": 46
+    },
+    {
+     "group": "combat",
+     "atlas": "v2s_wr_cz_face_smile_male__combat",
+     "pages1x": [
+      164,
+      212
+     ],
+     "uniqueFrames": 142
+    },
+    {
+     "group": "ranged",
+     "atlas": "v2s_wr_cz_face_smile_male__ranged",
+     "pages1x": [
+      80,
+      108
+     ],
+     "uniqueFrames": 36
+    },
+    {
+     "group": "pose",
+     "atlas": "v2s_wr_cz_face_smile_male__pose",
+     "pages1x": [
+      148,
+      180
+     ],
+     "uniqueFrames": 117
+    }
    ],
-   "uniqueFrames": 46
+   "uniqueFrames": 341
   },
   {
    "sprite": "v2s_cz_eyes_round_male",
@@ -140,11 +548,45 @@
    "layer": 41,
    "layerName": "main",
    "tintChannels": 2,
-   "pages1x": [
-    104,
-    136
+   "atlases": [
+    {
+     "group": "core",
+     "atlas": "v2s_wr_cz_eyes_round_male",
+     "pages1x": [
+      104,
+      136
+     ],
+     "uniqueFrames": 71
+    },
+    {
+     "group": "combat",
+     "atlas": "v2s_wr_cz_eyes_round_male__combat",
+     "pages1x": [
+      152,
+      208
+     ],
+     "uniqueFrames": 151
+    },
+    {
+     "group": "ranged",
+     "atlas": "v2s_wr_cz_eyes_round_male__ranged",
+     "pages1x": [
+      116,
+      148
+     ],
+     "uniqueFrames": 85
+    },
+    {
+     "group": "pose",
+     "atlas": "v2s_wr_cz_eyes_round_male__pose",
+     "pages1x": [
+      164,
+      224
+     ],
+     "uniqueFrames": 185
+    }
    ],
-   "uniqueFrames": 71
+   "uniqueFrames": 492
   },
   {
    "sprite": "v2s_cz_hair_buzz_male_hathair",
@@ -152,11 +594,45 @@
    "layer": 45,
    "layerName": "main",
    "tintChannels": 2,
-   "pages1x": [
-    340,
-    340
+   "atlases": [
+    {
+     "group": "core",
+     "atlas": "v2s_wr_cz_hair_buzz_male_hathair",
+     "pages1x": [
+      340,
+      340
+     ],
+     "uniqueFrames": 112
+    },
+    {
+     "group": "combat",
+     "atlas": "v2s_wr_cz_hair_buzz_male_hathair__combat",
+     "pages1x": [
+      488,
+      464
+     ],
+     "uniqueFrames": 240
+    },
+    {
+     "group": "ranged",
+     "atlas": "v2s_wr_cz_hair_buzz_male_hathair__ranged",
+     "pages1x": [
+      368,
+      372
+     ],
+     "uniqueFrames": 136
+    },
+    {
+     "group": "pose",
+     "atlas": "v2s_wr_cz_hair_buzz_male_hathair__pose",
+     "pages1x": [
+      548,
+      524
+     ],
+     "uniqueFrames": 304
+    }
    ],
-   "uniqueFrames": 112
+   "uniqueFrames": 792
   },
   {
    "sprite": "v2s_cz_top_scrap_male_sleeves",
@@ -174,11 +650,45 @@
     21,
     31
    ],
-   "pages1x": [
-    200,
-    212
+   "atlases": [
+    {
+     "group": "core",
+     "atlas": "v2s_wr_cz_top_scrap_male_sleeves",
+     "pages1x": [
+      200,
+      212
+     ],
+     "uniqueFrames": 102
+    },
+    {
+     "group": "combat",
+     "atlas": "v2s_wr_cz_top_scrap_male_sleeves__combat",
+     "pages1x": [
+      268,
+      316
+     ],
+     "uniqueFrames": 178
+    },
+    {
+     "group": "ranged",
+     "atlas": "v2s_wr_cz_top_scrap_male_sleeves__ranged",
+     "pages1x": [
+      188,
+      212
+     ],
+     "uniqueFrames": 85
+    },
+    {
+     "group": "pose",
+     "atlas": "v2s_wr_cz_top_scrap_male_sleeves__pose",
+     "pages1x": [
+      348,
+      380
+     ],
+     "uniqueFrames": 221
+    }
    ],
-   "uniqueFrames": 102
+   "uniqueFrames": 586
   },
   {
    "sprite": "v2s_cz_hat_scrap_male",
@@ -186,11 +696,137 @@
    "layer": 50,
    "layerName": "main",
    "tintChannels": 2,
-   "pages1x": [
-    292,
-    308
+   "atlases": [
+    {
+     "group": "core",
+     "atlas": "v2s_wr_cz_hat_scrap_male",
+     "pages1x": [
+      292,
+      308
+     ],
+     "uniqueFrames": 112
+    },
+    {
+     "group": "combat",
+     "atlas": "v2s_wr_cz_hat_scrap_male__combat",
+     "pages1x": [
+      452,
+      432
+     ],
+     "uniqueFrames": 240
+    },
+    {
+     "group": "ranged",
+     "atlas": "v2s_wr_cz_hat_scrap_male__ranged",
+     "pages1x": [
+      324,
+      336
+     ],
+     "uniqueFrames": 136
+    },
+    {
+     "group": "pose",
+     "atlas": "v2s_wr_cz_hat_scrap_male__pose",
+     "pages1x": [
+      512,
+      480
+     ],
+     "uniqueFrames": 304
+    }
    ],
-   "uniqueFrames": 112
+   "uniqueFrames": 792
+  },
+  {
+   "sprite": "v2s_body_male_armfront",
+   "slot": "body",
+   "layer": 56,
+   "layerName": "armfront",
+   "tintChannels": 1,
+   "atlases": [
+    {
+     "group": "core",
+     "atlas": "v2s_wr_body_male_armfront",
+     "pages1x": [
+      56,
+      36
+     ],
+     "uniqueFrames": 8
+    },
+    {
+     "group": "combat",
+     "atlas": "v2s_wr_body_male_armfront__combat",
+     "pages1x": [
+      156,
+      180
+     ],
+     "uniqueFrames": 114
+    },
+    {
+     "group": "ranged",
+     "atlas": "v2s_wr_body_male_armfront__ranged",
+     "pages1x": [
+      148,
+      180
+     ],
+     "uniqueFrames": 85
+    },
+    {
+     "group": "pose",
+     "atlas": "v2s_wr_body_male_armfront__pose",
+     "pages1x": [
+      92,
+      104
+     ],
+     "uniqueFrames": 45
+    }
+   ],
+   "uniqueFrames": 252
+  },
+  {
+   "sprite": "v2s_cz_top_scrap_male_armfront",
+   "slot": "top",
+   "layer": 57,
+   "layerName": "armfront",
+   "tintChannels": 2,
+   "atlases": [
+    {
+     "group": "core",
+     "atlas": "v2s_wr_cz_top_scrap_male_armfront",
+     "pages1x": [
+      56,
+      36
+     ],
+     "uniqueFrames": 8
+    },
+    {
+     "group": "combat",
+     "atlas": "v2s_wr_cz_top_scrap_male_armfront__combat",
+     "pages1x": [
+      156,
+      184
+     ],
+     "uniqueFrames": 114
+    },
+    {
+     "group": "ranged",
+     "atlas": "v2s_wr_cz_top_scrap_male_armfront__ranged",
+     "pages1x": [
+      148,
+      176
+     ],
+     "uniqueFrames": 85
+    },
+    {
+     "group": "pose",
+     "atlas": "v2s_wr_cz_top_scrap_male_armfront__pose",
+     "pages1x": [
+      92,
+      104
+     ],
+     "uniqueFrames": 45
+    }
+   ],
+   "uniqueFrames": 252
   }
  ]
 }
