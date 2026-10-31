@@ -133,7 +133,7 @@ export class TilemapRenderer {
         const base = verts.length / 3; const corners = [[x, y], [x + 1, y], [x + 1, y + 1], [x, y + 1]] as const;
         for (const [qx, qy] of corners) {
           const k = waterCornerTint(tg, qx, qy); verts.push(qx, qy, zt); // ADR-184: shared corners -> continuous gradient
-          cols.push(...([0, 1, 2] as const).map((j) => (DEEP_RGB[j] + (SHALLOW_RGB[j] - DEEP_RGB[j]) * k) * v), water);
+          cols.push(...([0, 1, 2] as const).map((j) => DEEP_RGB[j] + (SHALLOW_RGB[j] - DEEP_RGB[j]) * k), water); // ADR-246: no per-tile brightness jitter on water (a visible diamond grid)
         }
         idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
       } else quad([[x, y, zt], [x + 1, y, zt], [x + 1, y + 1, zt], [x, y + 1, zt]], pal[0] * v, pal[1] * v, pal[2] * v, water);

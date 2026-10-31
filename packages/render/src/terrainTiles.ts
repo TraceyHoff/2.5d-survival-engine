@@ -42,7 +42,7 @@ void main() {
   // world position (for overlays) of the ground point under this pixel
   vec2 d = (px - aC.xy) / uIso.xy; vWorld = vec2(aA.x, aA.y) + vec2(d.x + d.y, d.y - d.x) * 0.5;
   float hp = aC.y - px.y; // px above pivot
-  float key = aA.x + aA.y + aA.z * uZFactor + 0.004 - max(hp, -uIso.y) / uIso.y; // ground plane; skirt clamped to the front corner
+  float key = aA.x + aA.y + aA.z * uZFactor + 0.004 - max(hp, -uIso.y) / uIso.y; // ground plane; skirt clamped to the front corner // ground plane; skirt clamped to the front corner
   gl_Position = vec4(isoToClip(iso), keyToNdc(key), 1.0);
 }`;
 const FS = /* glsl */ `#version 300 es

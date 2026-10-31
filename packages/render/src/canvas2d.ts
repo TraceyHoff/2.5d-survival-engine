@@ -21,7 +21,7 @@ import { frameAnim } from "./frame-select.js";
 import { Canvas2DLightmap, lightRadiusPx, type C2DLight } from "./canvasLight.js";
 import { DEFAULT_STYLE } from "./style.js";
 import { SpriteFlag } from "./ids.js";
-import { GroundArt, groundLayers, type GroundLayer } from "./groundArt.js";
+import { GroundArt, groundLayers, GroundLayerKind, type GroundLayer } from "./groundArt.js";
 import { STATE_ANIMS, type AtlasSource } from "./assets/atlasManager.js";
 import { computeDayLighting, dimForWeather } from "./timeOfDay.js";
 import { weatherTargets } from "./weather.js";
@@ -193,7 +193,7 @@ export class Canvas2DRenderer {
     for (let d = 0; d <= 2 * (B - 1); d++) for (let lx = Math.max(0, d - B + 1); lx <= Math.min(B - 1, d); lx++) {
       const x = x0 + lx, y = y0 + d - lx; if (!at(x, y)) continue;
       groundLayers(at, x, y, season, (a, b) => waterShoreTint(at, a, b), L);
-      for (const l of L) { const id = ga.id(l.key); if (id < 0) continue; let f; try { f = reg.dirFrame(id, "idle", 0, 0); } catch { continue; }
+      for (const l of L) { if (l.kind === GroundLayerKind.Water) continue; /* tinted by the drawWater gradient underneath (the grey detail art needs the GPU tint) */ const id = ga.id(l.key); if (id < 0) continue; let f; try { f = reg.dirFrame(id, "idle", 0, 0); } catch { continue; }
         const img = this.image(f.atlas.key); if (!img) return hit?.cv ?? null; ops.push({ img, f, dx: (lx - (d - lx)) * 32 + GT_OX, dy: d * 16 + GT_OY }); }
     }
     const cv = hit?.cv ?? document.createElement("canvas"); cv.width = GT_W; cv.height = GT_H; const g = cv.getContext("2d"); if (!g) return null;

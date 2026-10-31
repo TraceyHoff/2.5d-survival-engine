@@ -248,6 +248,9 @@ export const BUILD_ATLAS_RE = /^(buildings?(_[a-z0-9]+)?|openings|furniture|defe
  *  resident (drawn ones x1, the rest x0.5 hot) instead of the stream pool's ETC1S x0.25 slots (8x8 texel critters). */
 export const RESIDENT_CREATURE_MIN_MB = 128;
 export const RESIDENT_CREATURE_RE = /^(pets|nature_critters)_/;
+/** ADR-246: gt_ ground pages (manifest residency "stream") load resident + hot on >= RESIDENT_CREATURE_MIN_MB budgets: in the
+ *  stream pool's ETC1S x0.25 slots every 68x52 cell became a flat colour diamond (a visible tile grid, no texture). */
+export const RESIDENT_GROUND_RE = /^gt_/;
 /** ADR-237: creature, character and zombie sheets (small pixel art, magnified ~2-4x on a dpr-3 phone) keep x1 when the
  *  budget halves the hot tier: the rest of the hot art takes the x0.5, these never become 2x-magnified mush (mobile only
  *  ever ran them at x0.5 / the stream pool's x0.25 - "animals blurry on mobile, sharp on desktop"). */
@@ -661,6 +664,7 @@ export class AtlasManager {
   get currentPageScale(): number { return this.pageScale; }
   private pickScale(atlas: Atlas | undefined, src: AtlasSource): number {
     if (!src.pages?.length || !atlas) return 1;
+    if (RESIDENT_GROUND_RE.test(atlas.key)) return 1; // ADR-246: resident ground pages stay 1x (8 pages @2x = +120 MB; pixel-art cells, magnified crisp)
     const want = atlas.pages?.length ? AssetRegistry.pickPage(atlas, this.pageScale).scale : this.pageScale;
     const ok = (k: number) => k === 1 || ((src.pages!.some((p) => p.scale === k)) && atlas.columns * atlas.frameW * k <= this.layerSize && atlas.rows * atlas.frameH * k <= this.layerSize);
     for (const k of [...new Set([want, ...src.pages.map((p) => p.scale).filter((k) => k < want).sort((a, b) => b - a), 1])]) if (ok(k)) return k;
@@ -699,7 +703,7 @@ export class AtlasManager {
     // bodies (page geometry from the manifest: columns x rows x frame size per page, any number of pages) go compressed when KTX2 is available: KTX2 colour + tint mask KTX2
     // (@2x: pages[].ktx2 + pages[].masksKtx2.tintmask) at the scale poolScales picks; paged in eagerly at rebuild, never evicted
     const bodyPages0 = bodyAtlasKeys(registry); // ADR-240: body sheets (v2 sample ships them "stream") stay in the character pools
-    const streamKeys = new Set<string>(); if (this.streamSheets) for (const a of registry.atlases.values()) { const src = sources.get(a.key); if (src && a.residency === "stream" && !lazyKeys.has(a.key) && !bodyPages0.has(a.key) && !vehKeys.has(a.key) && !bldKeys.has(a.key) && !legacy.has(a.key) && !(this.residentCreatures && RESIDENT_CREATURE_RE.test(a.key)) && !/^(blob|data):/.test(src.url)) streamKeys.add(a.key); }
+    const streamKeys = new Set<string>(); if (this.streamSheets) for (const a of registry.atlases.values()) { const src = sources.get(a.key); if (src && a.residency === "stream" && !lazyKeys.has(a.key) && !bodyPages0.has(a.key) && !vehKeys.has(a.key) && !bldKeys.has(a.key) && !legacy.has(a.key) && !(this.residentCreatures && (RESIDENT_CREATURE_RE.test(a.key) || RESIDENT_GROUND_RE.test(a.key))) && !/^(blob|data):/.test(src.url)) streamKeys.add(a.key); }
     this.placeholderCache.clear();
     const bodyPages = bodyAtlasKeys(registry); this.bodyPageKeys = bodyPages;
     const bodyKeys = new Set<string>(); if (this.ktx2Target && this.streamWearables) for (const a of registry.atlases.values()) { const src = sources.get(a.key); if (src?.ktx2 && bodyPages.has(a.key) && !lazyKeys.has(a.key) && !vehKeys.has(a.key) && !bldKeys.has(a.key) && !streamKeys.has(a.key) && !/^(blob|data):/.test(src.url)) bodyKeys.add(a.key); }
@@ -997,7 +1001,7 @@ export class AtlasManager {
     }
     for (const a of list) {
       const e = wear.get(a.key); const info = { bodies: bodies.has(a.key), wearShare: e && e[1] ? e[0] / e[1] : 0 };
-      a.cold = !this.recentlyUsed.has(a.key) && !(this.residentCreatures && RESIDENT_CREATURE_RE.test(a.key)) /* ADR-156: resident creature sheets are hot (never x0.125 mosaics) */ && (this.atlasTier ?? defaultAtlasTier)(a.key, info) === "cold";
+      a.cold = !this.recentlyUsed.has(a.key) && !(this.residentCreatures && (RESIDENT_CREATURE_RE.test(a.key) || RESIDENT_GROUND_RE.test(a.key))) /* ADR-156: resident creature sheets are hot (never x0.125 mosaics) */ && (this.atlasTier ?? defaultAtlasTier)(a.key, info) === "cold";
     }
   }
   private registryForTier: AssetRegistry | null = null;

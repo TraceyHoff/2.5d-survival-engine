@@ -2681,3 +2681,4 @@ Plain X / A keep Interact / Jump. The touch buttons are checked for no overlap a
   - A client with the same hash or no hash is accepted; one with a different hash is rejected with `HashMismatch`.
   - Appearances replicate both ways between two players.
   - A returning player's legacy ebony (9) restores as ebony (16) with the new scheme.
+- ADR-246 follow-up (screenshot pass): gt_ pages load resident + hot at 1x on >= 128 MB budgets (RESIDENT_GROUND_RE; the stream pool's x0.25 ETC1S slots turned every cell into a flat colour diamond = a visible grid; @2x would add ~120 MB, 1x adds ~7 MB: 118 MB total, within budget). WebGL water mesh drops the per-tile brightness jitter (diamond checker on water). Canvas2D gt blocks skip the grey gt_water layer so the drawWater tint gradient shows (it rendered untinted grey).
