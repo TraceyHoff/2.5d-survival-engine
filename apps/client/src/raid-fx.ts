@@ -26,7 +26,8 @@ export interface VfxSink { spawn(s: VfxSpawn): unknown }
 export interface RaidPiece { e: number; x: number; y: number; z: number; hp: number; tier: number }
 
 /** Point BurningFx at the raid flames when all four keys are served (returns whether it switched). */
-export function useRaidBurning(burning: { cfg: { fireBig: string; fireHuge: string; embers: string; smoke: string } }, art: RaidArt): boolean {
+export function useRaidBurning(burning: { cfg: { fireBig: string; fireHuge: string; embers: string; smoke: string } } | undefined, art: RaidArt): boolean {
+  if (!burning) return false; // Canvas2D has no BurningFx
   if (!Object.values(RAID_BURNING).every((k) => art.ids.vfx.tryId(k) !== undefined)) return false;
   burning.cfg = { ...burning.cfg, ...RAID_BURNING }; return true;
 }

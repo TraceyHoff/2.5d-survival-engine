@@ -117,6 +117,7 @@ describe("ADR-242 raid fx", () => {
     const b = new BurningFx(); expect(useRaidBurning(b, art)).toBe(true); expect(b.cfg).toMatchObject(RAID_BURNING); expect(b.cfg.maxFlames).toBe(4);
     const none = { ids: { vfx: { tryId: () => undefined } }, effect: () => { throw new Error("x"); }, sprite: () => ({ animList: [] }) } as unknown as RaidArt;
     const b2 = new BurningFx(); expect(useRaidBurning(b2, none)).toBe(false); expect(b2.cfg.fireBig).toBe("fire_big");
+    expect(useRaidBurning(undefined, art)).toBe(false); // Canvas2D: no BurningFx
   });
 });
 
