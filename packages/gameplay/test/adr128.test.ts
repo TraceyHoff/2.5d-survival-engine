@@ -18,7 +18,7 @@ const wet = (w: ReturnType<typeof makeWorld>): void => w.setResource(G.TerrainRe
 describe("ADR-128 gathering animations", () => {
   it("AnimState appends Harvest/Chop/Mine/Drink (wire-stable)", () => {
     expect([CoreAnim.Punch, CoreAnim.Harvest, CoreAnim.Chop, CoreAnim.Mine, CoreAnim.Drink]).toEqual([15, 16, 17, 18, 19]);
-    expect(ANIM_STATE_NAMES.slice(15)).toEqual(["punch", "harvest", "chop", "mine", "drink"]);
+    expect(ANIM_STATE_NAMES.slice(15, 20)).toEqual(["punch", "harvest", "chop", "mine", "drink"]);
   });
   it("gatherAnimFor picks by node tool + held tool", () => {
     const axe = { kind: ToolKind.Axe, tier: 1 }, pick = { kind: ToolKind.Pickaxe, tier: 1 }, none = { kind: ToolKind.None, tier: 0 };
