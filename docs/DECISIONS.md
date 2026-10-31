@@ -2579,3 +2579,10 @@ Plain X / A keep Interact / Jump. The touch buttons are checked for no overlap a
 - `packages/input/test/adr244_bindings.test.ts`: pad / KBM / touch frame bits, modifier precedence, no key collisions.
 - `packages/render/test/adr244_v2_fixes.test.ts`: aliases exist, stream pools, bed fits in sync, sleep chains.
 - `apps/client/test/adr244_touch_context.test.ts`: contextual touch buttons and captions.
+
+**Follow-up (play-test fixes).**
+- A carried LootBag is excluded from loot/open targets (`nearestLootBag`, `nearestOpenable`) and from world labels, so no "[E] Open" is drawn over the carrier.
+- `liftableNear` uses a plain `LootBag` query instead of the spatial index; the client world's index is not kept current, which hid the contextual touch Carry button.
+- The touch Sleep/Wake anchor moved off the bottom-center hotbar strip (test guards the strip at the 844x390 reference).
+- `InputState` latches every action bit seen by `setActions` until the next `sample()`, so a hold bit tapped between sim ticks (e.g. touch Crouch) is not lost. Press/release edges are unchanged.
+- Known art gap: v2 sleep lies flat only when every worn layer has `sleep_lie` (the paper-doll shares one chain anim). Henley sleeves, hat-hair, cap and the v1 accessories lack it today, so the doll falls back to sit.

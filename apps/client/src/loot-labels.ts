@@ -6,7 +6,7 @@
  * nearest bag inside containerReach also shows the Interact prompt for the active device ([E] / gamepad / "Tap").
  */
 import { PlayerId, Transform, type Entity, type World } from "@engine/core";
-import { gameplayDefs, LOOT_LABEL, lootLabelText, LootBag, LootSummary, mergeLabels, type LabelPoint } from "@engine/gameplay";
+import { carriedBags, gameplayDefs, LOOT_LABEL, lootLabelText, LootBag, LootSummary, mergeLabels, type LabelPoint } from "@engine/gameplay";
 import { DEFAULT_ISO, screenToWorld, worldToScreen } from "@engine/world";
 import type { CameraLike } from "./world-tools.js";
 import type { PromptDevice } from "./farm-prompt.js";
@@ -24,7 +24,9 @@ export function lootLabelPoints(w: World, p: Entity, cam: CameraLike): (LabelPoi
   const me = w.get(p, Transform); if (!me) return [];
   const myId = w.getField(p, PlayerId, "id"); const defs = gameplayDefs(w); const z = cam.drawZoom;
   const hw = cam.viewW / cam.dpr / 2, hh = cam.viewH / cam.dpr / 2; const out: (LabelPoint & { gx: number; gy: number })[] = [];
+  const carried = carriedBags(w); // ADR-244: no label on a bag someone is carrying
   for (const e of w.query([LootBag, LootSummary, Transform])) {
+    if (carried.has(e)) continue;
     const t = w.get(e, Transform)!; const dist = Math.hypot(t.x - me.x, t.y - me.y); if (dist > LOOT_LABEL.range) continue;
     const s = w.get(e, LootSummary)!; if (!s.stacks) continue;
     const owner = w.getField(e, LootBag, "owner") ?? 0;

@@ -65,3 +65,13 @@ describe("ADR-244 touch", () => {
     vc.hidden.add("carry"); expect(vc.pointerDown(5, c.x, c.y)).toBe(false);
   });
 });
+
+describe("ADR-244 sub-tick taps", () => {
+  it("a crouch tap pressed and released between two sim samples still reaches the server once (then clears)", () => {
+    const st = new InputState(); const C = DefaultHoldBits.Crouch;
+    st.setActions(C); st.setActions(0); // two render frames inside one sim tick
+    expect(hold(st.sample(1), C)).toBe(true); expect(hold(st.sample(2), C)).toBe(false);
+    st.setActions(C); expect(hold(st.sample(3), C)).toBe(true); expect(hold(st.sample(4), C)).toBe(true); // a real hold stays held
+    st.setActions(0); expect(hold(st.sample(5), C)).toBe(false);
+  });
+});

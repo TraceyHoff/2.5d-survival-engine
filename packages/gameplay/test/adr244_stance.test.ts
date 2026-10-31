@@ -85,6 +85,12 @@ describe("ADR-244 carry (LootBag)", () => {
     inp(w, p, { carry: true }); expect(mode(w, p)).toBe(M.Carry);
     inp(w, p, { interact: true }); expect(mode(w, p)).toBe(M.None); // Interact (E / X / tap) also drops
   });
+  it("a carried bag is not a loot / open target (no [E] Open prompt over the carrier)", () => {
+    const w = makeWorld(); const p = mk(w, 5, 5); const b = bag(w, 5.5, 5); steps(w, 1); const ctx = { world: w, player: p } as never;
+    expect(G.nearestLootBag(ctx)?.entity).toBe(b);
+    inp(w, p, { carry: true }); expect(G.nearestLootBag(ctx)).toBeUndefined();
+    inp(w, p, { carry: true }); expect(G.nearestLootBag(ctx)?.entity).toBe(b);
+  });
   it("a bag carried by one player cannot be taken by another; nothing in reach = no-op", () => {
     const w = makeWorld(); const a = mk(w, 0, 0, 1); const c = mk(w, 0.5, 0, 2); bag(w, 0.2, 0); steps(w, 1);
     inp(w, a, { carry: true }); inp(w, c, { carry: true }); expect(mode(w, a)).toBe(M.Carry); expect(mode(w, c)).toBe(M.None);

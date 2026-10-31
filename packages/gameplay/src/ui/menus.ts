@@ -9,6 +9,7 @@ import { DropItemCmd, encodePetName, nearestPet, petName, PetResult, PetCommandC
 import { Appearance, GroupRole, Membership, PlayerId, Transform, WEARABLE_SLOTS, getAppearance, type CommandDef, type CosmeticCatalogLike, type Entity, type World } from "@engine/core";
 import { BuildPiece, CraftingStation, Dead, Container, LootBag, ClanInvitePending, ClanStatus, CraftQueue, PartyInvitePending, PartyRank, StallHeader, Wardrobe } from "../components.js";
 import { gameplayDefs } from "../config.js";
+import { carriedBags } from "../stance.js";
 import type { ItemCount } from "../defs.js";
 import { countItem, listSlots, readSlots } from "../inventory.js";
 import { itemInfo, type NameLookup } from "../economy/provenance.js";
@@ -352,13 +353,16 @@ export function interactPanel(c: MenuCtx): { panel: "trade"; stall: Entity } | {
 /** ADR-160: nearest LootBag within container reach of the player (hand loot; no tool needed), with its distance. */
 export function nearestLootBag(c: MenuCtx, r = gameplayDefs(c.world).building.containerReach): { entity: Entity; d: number } | undefined {
   const w = c.world; const me = w.get(c.player, Transform); if (!me || !w.isRegistered(LootBag)) return undefined; let best: { entity: Entity; d: number } | undefined;
-  for (const e of w.query([LootBag, Transform])) { const t = w.get(e, Transform)!; const d = Math.hypot(t.x - me.x, t.y - me.y); if (d <= r && (!best || d < best.d)) best = { entity: e, d }; }
+  const carried = carriedBags(w); // ADR-244: a carried bag is not a loot target (Interact drops it)
+  for (const e of w.query([LootBag, Transform])) { if (carried.has(e)) continue; const t = w.get(e, Transform)!; const d = Math.hypot(t.x - me.x, t.y - me.y); if (d <= r && (!best || d < best.d)) best = { entity: e, d }; }
   return best;
 }
 /** Distance to the nearest non-pet, non-station LootBag / Container within `r` (Infinity if none). */
 function nearestOpenable(c: MenuCtx, r: number): number {
   const w = c.world; const me = w.get(c.player, Transform); if (!me) return Infinity; let bd = Infinity;
+  const carried = carriedBags(w);
   for (const q of [[LootBag, Transform], [Container, Transform]] as const) for (const e of w.query([...q], [Dead])) {
+    if (carried.has(e)) continue;
     if (e === c.player || w.has(e, PlayerId) || w.has(e, Pet) || w.has(e, CraftingStation)) continue; const t = w.get(e, Transform)!; const d = Math.hypot(t.x - me.x, t.y - me.y); if (d <= r && d < bd) bd = d;
   }
   return bd;

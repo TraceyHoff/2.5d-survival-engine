@@ -105,18 +105,23 @@ export class InputState {
   /** Edge-triggered pulse: included in the next sampled frame only. */
   pulse(edgeMask: number): void { this.edges = (this.edges | edgeMask) >>> 0; }
   /** Replace the held action mask (used by input systems that recompute all bits each tick). */
-  setActions(mask: number): void { this.actions = mask >>> 0; }
+  setActions(mask: number): void { this.actions = mask >>> 0; this.seen = (this.seen | this.actions) >>> 0; }
   press(mask: number): void { this.actions = (this.actions | mask) >>> 0; }
+  /** ADR-244: hold bits an input system set (setActions, once per render frame) since the last sample, so a tap shorter
+   *  than one sim tick (touch crouch) still reaches the server as one held sample (its rising edge) instead of being
+   *  dropped between two samples. Explicit press()/release() callers keep exact semantics. */
+  private seen = 0;
   release(mask: number): void { this.actions = (this.actions & ~mask) >>> 0; }
   isDown(mask: number): boolean { return (this.actions & mask) !== 0; }
   queue(cmd: Command): void { this.commands.push(cmd); }
   sample(tick: number): InputFrame {
     const c = this.commands; this.commands = [];
-    const f: InputFrame = { tick, actions: this.actions, aimX: this.aimX, aimY: this.aimY, commands: c };
+    const f: InputFrame = { tick, actions: (this.actions | this.seen) >>> 0, aimX: this.aimX, aimY: this.aimY, commands: c };
     if (this.moveX !== undefined || this.moveY !== undefined) { f.moveX = this.moveX ?? 0; f.moveY = this.moveY ?? 0; }
     if (this.aimMode !== undefined) f.aimMode = this.aimMode;
     if (this.ghostNudgeX !== undefined || this.ghostNudgeY !== undefined) { f.ghostNudgeX = this.ghostNudgeX ?? 0; f.ghostNudgeY = this.ghostNudgeY ?? 0; }
     if (this.edges) { f.edges = this.edges; this.edges = 0; }
+    this.seen = 0;
     return f;
   }
 }

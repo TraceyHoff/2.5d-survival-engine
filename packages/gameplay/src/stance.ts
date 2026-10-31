@@ -6,7 +6,6 @@
  * / zombie sight read the replicated Stance, so client prediction applies the same multipliers.
  */
 import { Transform, setTimeOfDay, timeOfDay, type Entity, type World } from "@engine/core";
-import { installSpatialIndex } from "@engine/world";
 import raw from "../data/stance.json";
 import { Anim, AnimState, BuildPiece, Dead, Driver, Equipment, Health, LootBag, Stance, StanceMode, Survival } from "./components.js";
 import { gameplayDefs, isAuthority } from "./config.js";
@@ -81,8 +80,9 @@ function setMode(world: World, e: Entity, mode: number): void {
 export function liftableNear(world: World, e: Entity): Entity | undefined {
   const t = world.get(e, Transform); if (!t || !world.isRegistered(LootBag)) return undefined;
   const carried = carriedBags(world); let best: Entity | undefined; let bd = STANCE.carryReach;
-  for (const b of installSpatialIndex(world).queryRadius(t.x, t.y, STANCE.carryReach)) {
-    if (!world.has(b, LootBag) || carried.has(b)) continue;
+  // a plain LootBag query (bags are few): also correct on a client world whose spatial index is not kept per tick
+  for (const b of world.query([LootBag, Transform])) {
+    if (carried.has(b)) continue;
     const bt = world.get(b, Transform)!; const d = Math.hypot(bt.x - t.x, bt.y - t.y); if (d <= bd) { bd = d; best = b; }
   }
   return best;
