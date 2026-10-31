@@ -1,5 +1,5 @@
 /**
- * ADR-239: player v2 character art behind the `charArt` setting (v1 stays the default).
+ * ADR-240: player v2 character art behind the `charArt` setting (v1 stays the default).
  * The resolved v1 paper-doll layers are swapped sprite-for-sprite: a v2 twin (`v2s_` + v1 key) when the sample ships
  * one, else the slot's sample piece (V2S_ALIAS; any v1 key, not only `_male` ones), else the v1 layer (mixed doll).
  * The sample is greyscale + tintmask, so the v1 appearance colours still tint it (same look/tints as the v1 doll).

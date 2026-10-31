@@ -192,7 +192,7 @@ export async function createPreviewDriver(host: HTMLElement, src: CreatorPreview
     return { kind: "canvas2d", loaded, set: (a) => { cur = a; void pv.setAppearance(cur); }, facing: (k) => pv.setFacing(k), frame: (t) => pv.renderNow(t), dispose: () => cv.remove() };
   } catch (e) { console.warn("[creator] Canvas2D preview failed:", e); cv.remove(); return undefined; }
 }
-/** ADR-239: the creator previews the same doll art as in-game (`charArt` setting; v2s/v2s-all = the v2 sample). */
+/** ADR-240: the creator previews the same doll art as in-game (`charArt` setting; v2s/v2s-all = the v2 sample). */
 const charArt = () => parseCharArt(new URLSearchParams(globalThis.location?.search ?? "").get("charArt"), (() => { try { return globalThis.localStorage?.getItem("charArt"); } catch { return null; } })());
 /** Opens the creator; resolves with the character, or undefined on Back. */
 export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter | undefined> {

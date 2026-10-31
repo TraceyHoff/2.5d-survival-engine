@@ -54,7 +54,7 @@ export interface AppearanceBinding {
    * Appearance.parts before resolve. `salt` must change whenever the overrides change (mixed into the cache key).
    */
   override?: (world: unknown, e: number) => { salt: number; parts: ReadonlyArray<readonly [number, number]> } | null;
-  /** Player v2 (ADR-239, spec §12): swap resolved layer sprites per entity (charArt resolver). Clear the cache when it changes. */
+  /** Player v2 (ADR-240, spec §12): swap resolved layer sprites per entity (charArt resolver). Clear the cache when it changes. */
   mapLayers?: <L extends { sprite: number; slot: string; layerName?: string }>(e: number, layers: readonly L[]) => L[];
 }
 

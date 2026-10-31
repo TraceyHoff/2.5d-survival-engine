@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { FIDELITY_ATLAS_RE } from "../src/assets/atlasManager.js";
 import { CharArtMapper, parseCharArt, withCharArt, isV2BodyKey, isV2WearKey } from "../src/character/charArt.js";
 
 const keys = ["body_male", "cz_top_tee_male", "cz_top_tee_male_sleeves", "cz_hair_bun_female_hathair", "cz_acc_backpack_female", "cz_eyes_round_male",
@@ -6,7 +7,7 @@ const keys = ["body_male", "cz_top_tee_male", "cz_top_tee_male_sleeves", "cz_hai
 const ids = { key: (i: number) => keys[i], tryId: (k: string) => { const i = keys.indexOf(k); return i < 0 ? undefined : i; } };
 const id = (k: string) => keys.indexOf(k);
 
-describe("ADR-239 charArt", () => {
+describe("ADR-240 charArt", () => {
   it("defaults to v1; query beats stored; junk ignored", () => {
     expect(parseCharArt(null, null)).toBe("v1");
     expect(parseCharArt("v2s", "v1")).toBe("v2s");
@@ -29,5 +30,9 @@ describe("ADR-239 charArt", () => {
   it("classifies v2 body/wear sprite keys for the character pools", () => {
     expect(isV2BodyKey("v2s_body_male")).toBe(true); expect(isV2BodyKey("body_male")).toBe(false);
     expect(isV2WearKey("v2s_cz_hat_scrap_male")).toBe(true); expect(isV2WearKey("cz_hat_cap_male")).toBe(false);
+  });
+  it("v2 character sheets get the ADR-237 x1 pin (lowmem/mobile budgets)", () => {
+    for (const k of ["v2s_wr_body_male", "v2s_wr_cz_top_scrap_male", "v2_body_female"]) expect(FIDELITY_ATLAS_RE.test(k)).toBe(true);
+    expect(FIDELITY_ATLAS_RE.test("v2x_tiles")).toBe(false);
   });
 });

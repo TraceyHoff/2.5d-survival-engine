@@ -2460,3 +2460,49 @@ Desktop (1024 MB) is unchanged: it re-tiers to hot x1 and already kept creatures
 - Canvas2D blends in 8 steps rather than continuously.
 - Winter is harsh by design (cold damage without clothing or shelter).
 - Art-dependent extras (snow overlays for roofs, ice tiles, a snowflake sprite, a thermometer icon in the UI atlas) fall back to procedural looks until Art delivers them.
+
+## ADR-240: v2 character art behind the `charArt` setting (v1 stays the default)
+
+**Problem.** The `customization_v2_sample` pack (Art, b7ace139+) loaded, but in-game the player still looked like the legacy v1 figure. Three debug passes ruled out the asset-index lookup and the frame table. Sprite ids 201817–201842 resolve to their own rows: layer 6, uv 0..0.0254 × 0..0.0557, a 26×57 frame. A kill test that failed every non-v2 sprite still drew the figure, and the ktx2 pages decode to the expected white mannequins. The real cause had two parts:
+- SwiftShader (and any adapter the capability probe calls "basic") runs lowend/lowmem: a 160 MB texture budget, with hot atlases at x0.25. The v2 sheets were not in `FIDELITY_ATLAS_RE`, so they got no ADR-237 pin.
+- The greyscale v2 art is tinted through the tint mask with the player's v1 appearance colours.
+
+So a tiny, blurred v2 figure in v1 colours read as "legacy". With a faked desktop GPU string, the v2 figure is crisp and plainly different (`v2sample_sv1_webgl_tight.png` vs `v2sample_sv2s_webgl_tight.png`).
+
+**Decision.**
+- **The setting.** `charArt` = `v1` | `v2s` | `v2s-all`. The `?charArt=` query wins, then localStorage `charArt`, else `v1`. `v2s` applies to the focus (local) player only; `v2s-all` applies to every character.
+  - The mapper is `packages/render/src/character/charArt.ts` (`CharArtMapper`, `withCharArt`, `parseCharArt`).
+  - It maps each v1 layer key to its `v2s_` twin, else to the slot alias (body, top, sleeves, bottom, shoes, hat, hair, face, eyes), else keeps v1. It does not depend on a `_male` key. Results are memoised per sprite.
+  - It is the identity for `v1`, and when the sample pack is missing.
+- **Layer hook.** `AppearanceBinding.mapLayers` is applied in `LayerCache.get` and in the Canvas2D resolve. Both renderers therefore draw the same layers, tints and anchors. When the setting is on, the in-game binding salts its cache key (+7919).
+- **Character pools, not stream.** v2 body sheets (`isV2BodyKey`) join `bodyAtlasKeys`, and v2 wear sheets (`isV2WearKey`) join the wear sets. Body pages are excluded from the stream keys. When a streamed body page is still drawn, `pageReady(sid, 0)` requests it at top priority.
+- **Crisp on small budgets.** `FIDELITY_ATLAS_RE` gains `v2s?_`, so drawn v2 sheets keep x1 when the hot tier is halved (ADR-237).
+- **Creator.** The WebGL2 and Canvas2D previews wrap `coreAppearanceBinding` with `withCharArt`, so the creator shows exactly the in-game layers.
+- **Pack mount.** The pack mounts as an optional manifest fragment (`manifest-index.ts`, Vite `MOUNTS`). Art's manifest is untouched.
+
+**Evidence.** Shots are `/workspace/shots/v2sample_*.png`:
+- desktop WebGL, default and max zoom;
+- Canvas2D;
+- console 1280×720;
+- mobile 390×844 at dpr 3;
+- night by a campfire;
+- walk S/E/N/W and axe attacks S/SE/W/N;
+- a v1 bot beside the player;
+- creator v1 vs v2s (`v2sample_creator_*`).
+
+All shots used SwiftShader with a faked GPU string. Perf on SwiftShader: 83–100 ms/frame and 14–15 draw calls, the same as v1.
+
+**Art follow-ups.**
+- The hand anchor angle is stored in degrees, but the spec says radians.
+- Only 4 of 9 parts have `v2s_` twins.
+- Hair ships only in its hat-hair cut.
+- The sample manifest marks body and wear sheets `residency: "stream"`. They should be resident, in the character pools.
+
+**Tests.** `packages/render/test/adr240_char_art.test.ts` covers:
+- `parseCharArt` precedence;
+- twin and alias mapping without `_male` keys, with v1 kept when there is no twin;
+- the identity for v1 and when the pack is missing;
+- body and wear key classes;
+- the `FIDELITY_ATLAS_RE` scope for v2 sheets.
+
+**Limits.** v1 stays the default. `v2s` maps a v1 look onto the sample outfit, so colours come from the v1 appearance until the v2 catalog lands. Lowmem devices still run at x0.25 when the pin does not fit.
