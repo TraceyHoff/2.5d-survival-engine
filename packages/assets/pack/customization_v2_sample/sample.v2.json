@@ -317,14 +317,6 @@
   "face": "face_smile",
   "eyes": "eyes_round"
  },
- "compatAliases": {
-  "v2s_cz_top_scrap_male": "v2s_cz_top_henley_male",
-  "v2s_cz_top_scrap_male_sleeves": "v2s_cz_top_henley_male_sleeves",
-  "v2s_cz_bottom_scrap_male": "v2s_cz_bottom_cargo_male",
-  "v2s_cz_shoes_scrap_male": "v2s_cz_shoes_boots_male",
-  "v2s_cz_hat_scrap_male": "v2s_cz_hat_cap_male",
-  "note": "ADR-240 V2S_ALIAS slot fallbacks; same atlases as the exact-key sprite (+0 VRAM); drop once V2S_ALIAS uses the exact keys"
- },
  "anchorUnits": {
   "x,y": "1x px relative to the sprite pivot (+y down)",
   "angle": "DEGREES clockwise from screen-up (v1 + engine handOf: sprites.ts converts deg->rad); flipX mirrors (-angle)",
@@ -358,15 +350,24 @@
    "cz_top_henley_male": "top",
    "cz_face_smile_male": "face",
    "cz_eyes_round_male": "eyes",
-   "cz_hair_buzz_male": "hair"
+   "cz_hair_buzz_male": "hair",
+   "cz_top_henley_male_sleeves": "sleeves",
+   "cz_hair_buzz_male_hathair": "hathair",
+   "cz_hat_cap_male": "hat"
   },
   "hidden": [
-   "hat",
-   "top sleeves",
-   "armfront overlays",
-   "hair hatHair"
+   "armfront overlays (the lying arms are drawn by the sleeves layer)"
   ],
-  "hairVariant": "uncovered",
+  "layerByRot": {
+   "cz_top_henley_male_sleeves": [
+    31,
+    31,
+    21,
+    21
+   ]
+  },
+  "hairVariant": "uncovered (hair) / hathair under the cap: both have a lying twin, so the worn hair variant lies too",
+  "accessories": "v1 accessory + hands sprites carry their own sleep_lie/sleep_lie_under (add_sleep_lie_acc.py, v1 shards)",
   "drawOrder": "layer asc, same layers as upright; draw after (in front of) the bed sprite",
   "referenceBed": "main pack `bed` (1x2, mattress z14, blanket z16, pillow z19, headboard z30, footboard z16)",
   "bedFits": {
@@ -713,8 +714,8 @@
      "atlas": "v2s_wr_cz_top_henley_male__sleep",
      "residency": "stream",
      "pages1x": [
-      140,
-      152
+      108,
+      128
      ],
      "uniqueFrames": 24
     }
@@ -957,9 +958,19 @@
       524
      ],
      "uniqueFrames": 304
+    },
+    {
+     "group": "sleep",
+     "atlas": "v2s_wr_cz_hair_buzz_male_hathair__sleep",
+     "residency": "stream",
+     "pages1x": [
+      68,
+      84
+     ],
+     "uniqueFrames": 21
     }
    ],
-   "uniqueFrames": 792
+   "uniqueFrames": 813
   },
   {
    "sprite": "v2s_cz_top_henley_male_sleeves",
@@ -1019,9 +1030,19 @@
       380
      ],
      "uniqueFrames": 221
+    },
+    {
+     "group": "sleep",
+     "atlas": "v2s_wr_cz_top_henley_male_sleeves__sleep",
+     "residency": "stream",
+     "pages1x": [
+      120,
+      152
+     ],
+     "uniqueFrames": 20
     }
    ],
-   "uniqueFrames": 586
+   "uniqueFrames": 606
   },
   {
    "sprite": "v2s_cz_hat_cap_male",
@@ -1071,9 +1092,19 @@
       480
      ],
      "uniqueFrames": 304
+    },
+    {
+     "group": "sleep",
+     "atlas": "v2s_wr_cz_hat_cap_male__sleep",
+     "residency": "stream",
+     "pages1x": [
+      104,
+      124
+     ],
+     "uniqueFrames": 24
     }
    ],
-   "uniqueFrames": 792
+   "uniqueFrames": 816
   },
   {
    "sprite": "v2s_body_male_armfront",

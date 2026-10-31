@@ -12,7 +12,7 @@ Nothing in the v1 customization pack is read-modified or replaced; this tool onl
 Frames: 48x80 (1x) / 96x160 (@2x), pivot (24,74); dirFrames entry i = frame*8 + dir; frameMeta "df:i" anchors
 (pivot-relative 1x px): head, handR (x, y, angle = DEGREES clockwise from up as v1/handOf, len, behind), handL, plus v2
 extras back, hip, footL, footR (+ carry / seat sockets on those anims).
-Usage: python3 assets/customization/tools/v2_sample.py [--jobs N]
+Usage: python3 assets/customization/tools/v2_sample.py [--jobs N] [--sleep-only]   (--sleep-only: redo just the sleep sets in place)
   then: python3 assets/tools/ktx2.py packages/assets/pack/customization_v2_sample/manifest.customization_v2_sample.json"""
 import sys, os, json, math, argparse
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
@@ -212,9 +212,10 @@ def shelf(sizes, maxw):
     H = y + rowh; r4 = lambda v: (v + 3) // 4 * 4
     return pos, r4(W), r4(H)
 
+LAYER_KEYS = [l[0] for l in LAYERS]
 SLEEP = {k: slot for k, slot, _l, _t in SL.LAYERS}   # part keys with a sleep_lie twin (the rest are hidden in bed)
 
-def sleep_set(key, slot, RS):
+def sleep_set(key, slot, RS, ak=None, out=None):
     """pack one layer's sleep frames (2 anims x NF frames x 4 rotations) into a streamed atlas + the two animations"""
     fr = {(an, fi, r): (res[an][slot], anc) for r, fi, res, anc in RS for an in SL.ANIMS}
     order = [(an, fi, r) for an in SL.ANIMS for fi in range(SL.NF) for r in range(SL.ROTS)]
@@ -246,11 +247,11 @@ def sleep_set(key, slot, RS):
         a1, m1, a2, m2 = fr[k][0]; x0, y0, x1, y1 = b; w, h = x1 - x0, y1 - y0
         P1[y:y + h, x:x + w] = a1[y0:y1, x0:x1]; M1[y:y + h, x:x + w] = m1[y0:y1, x0:x1]
         P2[y * 2:(y + h) * 2, x * 2:(x + w) * 2] = a2[y0 * 2:y1 * 2, x0 * 2:x1 * 2]; M2[y * 2:(y + h) * 2, x * 2:(x + w) * 2] = m2[y0 * 2:y1 * 2, x0 * 2:x1 * 2]
-    ak = "v2s_wr_" + key + "__sleep"; base = f"atlases/{ak}"
-    Image.fromarray(P1, "RGBA").save(os.path.join(OUT, "atlases", ak + ".png"), optimize=True)
-    Image.fromarray(P2, "RGBA").save(os.path.join(OUT, "atlases", ak + "@2x.png"), optimize=True)
-    Image.fromarray(M1, "RGB").save(os.path.join(OUT, "atlases", ak + ".tintmask.png"), optimize=True)
-    Image.fromarray(M2, "RGB").save(os.path.join(OUT, "atlases", ak + ".tintmask@2x.png"), optimize=True)
+    ak = ak or "v2s_wr_" + key + "__sleep"; base = f"atlases/{ak}"; out = out or OUT
+    Image.fromarray(P1, "RGBA").save(os.path.join(out, "atlases", ak + ".png"), optimize=True)
+    Image.fromarray(P2, "RGBA").save(os.path.join(out, "atlases", ak + "@2x.png"), optimize=True)
+    Image.fromarray(M1, "RGB").save(os.path.join(out, "atlases", ak + ".tintmask.png"), optimize=True)
+    Image.fromarray(M2, "RGB").save(os.path.join(out, "atlases", ak + ".tintmask@2x.png"), optimize=True)
     atlas = {"key": ak, "image": base + ".png", "frameW": PW, "frameH": PH, "columns": 1, "rows": 1,
              "pages": [{"scale": 2, "image": base + "@2x.png"}], "masks": {"tintmask": base + ".tintmask.png"}, "residency": "stream"}
     anims = {}; j = 0
@@ -265,20 +266,53 @@ def sleep_set(key, slot, RS):
         anims[an] = {"frames": list(range(SL.NF)), "fps": SL.FPS, "directions": SL.ROTS, "dirStride": SL.NF, "loop": True, "dirFrames": dfs, **({"frameMeta": fm} if fm else {})}
     return atlas, {"anims": anims, "total": len(order), "page": {"group": "sleep", "atlas": ak, "residency": "stream", "pages1x": [PW, PH], "uniqueFrames": len(U)}}
 
-# ADR-240 (render charArt.ts V2S_ALIAS) still names the pre-fix sample pieces as slot fallbacks; keep those keys as
-# aliases of the exact-key sprites (same atlases/frames, +0 VRAM) until V2S_ALIAS moves to the exact keys.
-COMPAT_ALIASES = {"v2s_cz_top_scrap_male": "v2s_cz_top_henley_male", "v2s_cz_top_scrap_male_sleeves": "v2s_cz_top_henley_male_sleeves",
-                  "v2s_cz_bottom_scrap_male": "v2s_cz_bottom_cargo_male", "v2s_cz_shoes_scrap_male": "v2s_cz_shoes_boots_male",
-                  "v2s_cz_hat_scrap_male": "v2s_cz_hat_cap_male"}
+SLEEP_HIDDEN = ["armfront overlays (the lying arms are drawn by the sleeves layer)"]
 
 
-def compat_sprites(sprites):
-    by = {x["key"]: x for x in sprites}
-    return [{**by[new], "key": old} for old, new in COMPAT_ALIASES.items()]
+def sleep_lie_meta():
+    return {"anims": {"sleep_lie": "reference-bed cut: bed (main pack), dec_bed_double_* (left/right), dec_bunk_bed upper", "sleep_lie_under": "dec_bunk_bed lower bunk (cut by the upper bunk)"},
+            "directions": SL.ROTS, "dirIndex": "bed rotation r (pass facing = r*PI/2 to resolve(); directionIndex(r*PI/2, 4) == r); dirFrames entry = frame*4 + r",
+            "frames": SL.NF, "fps": SL.FPS, "frame1x": [SL.FWL, SL.FHL], "pivot1x": [SL.OX, SL.OY],
+            "pivot": "the bed's footprint centre on the ground (the bed sprite's own anchor point) + bedFits[piece][spot][r] (1x px)",
+            "socket": "frameMeta anchor 'bed' on the body sprite = hip contact on the mattress; also 'head' (Zzz/bubble FX) and 'pillow'",
+            "layers": {k: slot for k, slot, _l, _t in SL.LAYERS}, "hidden": SLEEP_HIDDEN,
+            "layerByRot": {k: list(l) for k, _s, l, _t in SL.LAYERS if isinstance(l, tuple)},
+            "hairVariant": "uncovered (hair) / hathair under the cap: both have a lying twin, so the worn hair variant lies too",
+            "accessories": "v1 accessory + hands sprites carry their own sleep_lie/sleep_lie_under (add_sleep_lie_acc.py, v1 shards)",
+            "drawOrder": "layer asc, same layers as upright; draw after (in front of) the bed sprite",
+            "referenceBed": "main pack `bed` (1x2, mattress z14, blanket z16, pillow z19, headboard z30, footboard z16)",
+            "bedFits": SL.bed_fits()}
+
+
+def sleep_only(jobs):
+    """regenerate just the sleep_lie sets (SL.LAYERS) into the existing manifest + sidecar; other atlases untouched"""
+    mp = os.path.join(OUT, f"manifest.{NAME}.json"); sp_ = os.path.join(OUT, "sample.v2.json")
+    man = json.load(open(mp)); side = json.load(open(sp_))
+    with Pool(jobs) as pool:
+        RS = pool.map(SL.frame_job, [(r, fi) for fi in range(SL.NF) for r in range(SL.ROTS)])
+    keep = {"v2s_" + k for k in LAYER_KEYS}
+    man["sprites"] = [x for x in man["sprites"] if x["key"] in keep]   # drops the ADR-240 compat alias sprites
+    by = {x["key"]: x for x in man["sprites"]}; metas = {m["sprite"]: m for m in side["layers"]}
+    for key, slot in SLEEP.items():
+        sa, sp = sleep_set(key, slot, RS); sk = "v2s_" + key
+        old = next((a for a in man["atlases"] if a["key"] == sa["key"]), None)
+        if old: man["atlases"][man["atlases"].index(old)] = sa
+        else: man["atlases"].append(sa)
+        an = by[sk]["animations"]
+        for a in SL.ANIMS: an.pop(a, None)
+        an.update(sp["anims"])
+        m = metas[sk]; pg = [p for p in m["atlases"] if p["group"] != "sleep"] + [sp["page"]]
+        m["uniqueFrames"] += sp["page"]["uniqueFrames"] - sum(p["uniqueFrames"] for p in m["atlases"] if p["group"] == "sleep"); m["atlases"] = pg
+        print(f"{sk}: sleep {sp['page']['uniqueFrames']}/{sp['total']} unique, page {sp['page']['pages1x'][0]*2}x{sp['page']['pages1x'][1]*2} @2x", flush=True)
+    side.pop("compatAliases", None); side["sleepLie"] = sleep_lie_meta()
+    with open(mp, "w") as f: json.dump(man, f, separators=(",", ":"))
+    with open(sp_, "w") as f: json.dump(side, f, indent=1)
 
 
 def main():
-    ap = argparse.ArgumentParser(); ap.add_argument("--jobs", type=int, default=os.cpu_count()); A = ap.parse_args()
+    ap = argparse.ArgumentParser(); ap.add_argument("--jobs", type=int, default=os.cpu_count())
+    ap.add_argument("--sleep-only", action="store_true", help="only regenerate the sleep_lie sets into the existing manifest"); A = ap.parse_args()
+    if A.sleep_only: return sleep_only(A.jobs)
     work = [(li, d, an, fi, n) for li in range(len(LAYERS)) for an, n, _, _ in ANIMS for fi in range(n) for d in range(DIRS)]
     with Pool(A.jobs) as pool:
         R = pool.map(job, work, chunksize=8)
@@ -355,7 +389,6 @@ def main():
                      **({"layerByDir": [31, 31, 31, 31, 21, 21, 21, 31]} if part == "sleeves" else {}),
                      "atlases": pages, "uniqueFrames": nuniq})
         print(f"{sk}: {nuniq}/{ntot} unique, pages " + ", ".join(f"{p['group']} {p['pages1x'][0]*2}x{p['pages1x'][1]*2}" for p in pages) + " @2x", flush=True)
-    sprites += compat_sprites(sprites)
     man = {"version": 1, "name": NAME, "atlases": atlases, "sprites": sprites}
     with open(os.path.join(OUT, f"manifest.{NAME}.json"), "w") as f: json.dump(man, f, separators=(",", ":"))
     side = {"doc": "Player v2 sample paper-doll (isolated test fragment; NOT wired into wearables/ids.lock/saves). Draw order = layer asc; "
@@ -365,18 +398,9 @@ def main():
             "frame": {"w": FW, "h": FH, "pivot": list(PIV), "scales": [1, 2], "dirOrder": ["E", "SE", "S", "SW", "W", "NW", "N", "NE"], "dirFramesIndex": "frame*8+dir"},
             "anims": [{"name": a[0], "frames": a[1], "fps": a[2], "loop": a[3], "group": a[4], "state": a[5], "note": a[6], **({"events": v2_anims.EVENTS[a[0]]} if a[0] in v2_anims.EVENTS else {})} for a in v2_anims.ANIMS],
             "appearance": APPEARANCE,
-            "compatAliases": {**COMPAT_ALIASES, "note": "ADR-240 V2S_ALIAS slot fallbacks; same atlases as the exact-key sprite (+0 VRAM); drop once V2S_ALIAS uses the exact keys"},
             "anchorUnits": {"x,y": "1x px relative to the sprite pivot (+y down)", "angle": "DEGREES clockwise from screen-up (v1 + engine handOf: sprites.ts converts deg->rad); flipX mirrors (-angle)", "len": "px per unit item length", "behind": "draw held item behind the body"},
             "residencyNote": "core group atlases (idle/walk/attack) residency resident + pool (body|wear, ADR-220 character pools / ADR-156 core set); combat/ranged/pose/sleep atlases stream",
-            "sleepLie": {"anims": {"sleep_lie": "reference-bed cut: bed (main pack), dec_bed_double_* (left/right), dec_bunk_bed upper", "sleep_lie_under": "dec_bunk_bed lower bunk (cut by the upper bunk)"},
-                         "directions": SL.ROTS, "dirIndex": "bed rotation r (pass facing = r*PI/2 to resolve(); directionIndex(r*PI/2, 4) == r); dirFrames entry = frame*4 + r",
-                         "frames": SL.NF, "fps": SL.FPS, "frame1x": [SL.FWL, SL.FHL], "pivot1x": [SL.OX, SL.OY],
-                         "pivot": "the bed's footprint centre on the ground (the bed sprite's own anchor point) + bedFits[piece][spot][r] (1x px)",
-                         "socket": "frameMeta anchor 'bed' on the body sprite = hip contact on the mattress; also 'head' (Zzz/bubble FX) and 'pillow'",
-                         "layers": {k: slot for k, slot, _l, _t in SL.LAYERS}, "hidden": ["hat", "top sleeves", "armfront overlays", "hair hatHair"],
-                         "hairVariant": "uncovered", "drawOrder": "layer asc, same layers as upright; draw after (in front of) the bed sprite",
-                         "referenceBed": "main pack `bed` (1x2, mattress z14, blanket z16, pillow z19, headboard z30, footboard z16)",
-                         "bedFits": SL.bed_fits()},
+            "sleepLie": sleep_lie_meta(),
             "sockets": {"carry": "chest-held object centre (carry_idle/carry_walk; behind=true facing N/NW/NE)", "seat": "pelvis contact point (sit/vehicle): put it on the seat/vehicle socket"},
             "layers": meta}
     with open(os.path.join(OUT, "sample.v2.json"), "w") as f: json.dump(side, f, indent=1)
