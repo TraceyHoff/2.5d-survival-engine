@@ -2390,3 +2390,37 @@ Desktop (1024 MB) is unchanged: it re-tiers to hot x1 and already kept creatures
 **Amendment (crate).** An emptied permanent crate goes at `emptiedTick` itself (`bagExpiryTick`). Test: "a permanent crate ... still vanishes IMMEDIATELY when emptied" in `adr238_ground_despawn.test.ts`, which also checks that a death bag emptied alongside it keeps its 12 s fade.
 
 **Limits.** The Canvas2D fallback does not fade paper-doll layers (bags have none). The cap is a global count, not per area.
+
+## ADR-242: Art fill — pvp_clan and stalls packs, banner variants, lit/unlit fire art, held lights, weather/status FX
+
+**Context.** Art & Assets landed the clan/stall building pieces (fffa24ae), lit/unlit fire pieces plus windsock and mirror (0f65ad84), streamed nature FX (fx_drip, fx_breath_puff, fx_sweat_drop, fx_lightning strike_a/b/c; 36013e2c) and held light sprites (745b018e). The engine still drew procedural fallbacks for several of them and never loaded the pvp_clan or stalls packs.
+
+**Decision.**
+- **Packs.** `manifest-index.ts` lists `pvp_clan` and `stalls` as optional fragments with `root: ""` (paths are relative to the art root) and `stream: true`. `applyFragmentFlags` marks their atlases `residency: "stream"` unless they say otherwise. Vite MOUNTS serve both directories. `write-lock-pack.ts` includes them in SUBS. A collision is tolerated only when every later fragment is in `TOLERATED`, so the first definition still wins. `ids.lock.json` is regenerated append-only.
+- **Raid FX.** `raid-fx.ts` `RaidFx.step` diffs `BuildPiece.hp` per piece each frame. A drop emits `raid_hit_stone` (tier ≥ 2) or `raid_hit_wood` plus `raid_hit_dust`. A rise emits `raid_repair`. A piece removed within 4 s of a hit emits `raid_collapse` and a 6 s `raid_rubble_smolder`. The client now binds `Burning` (view component `VBurn`). `useRaidBurning` switches BurningFx to `raid_fire_small/large`, `raid_embers` and `raid_smoke`, but only when all four keys exist.
+- **Nameplates.** `name-tags.ts` draws a nine-slice plate from `pvp_clan/atlases/nameplates@2x.png`, using frame other/party/clan with stroked text. It falls back to the old box if the image fails to load.
+- **Banner.** `pieces.json` banner gets `variantNames ["", "small", "large"]`, so `banner@small` and `banner@large` resolve.
+- **Fallbacks.** The `sprite_fallbacks.json` entries for campfire, torch_stand, fireplace, wood_stove, lantern, windsock and mirror are removed, and their aliases are kept. Lit/unlit art follows `Fuel.lit` through the existing `syncPieceState` and `building.states.unlit` frames.
+- **Held lights.** held_lantern and held_tallow_candle use the existing ADR-216/217 specs (`DEFAULT_LIGHTS` lantern 5, tallow_candle 3, which match `items.json heldLight`). A test pins them.
+- **Weather and status FX.** `lightningStrikeAnim(names, r)` picks a random `strike_*` anim for each bolt. Breath shows in cold: `COLD_BREATH = 0.4` on the cold channel, or when the cold flag is set. Sweat shows in heat and drip shows when wet, both through the existing statusFx hooks. To avoid ADR-239 (seasons), no season or env code was touched.
+
+**Tests.** `apps/client/test/adr242_art_fill.test.ts` (12 tests) covers:
+- the index, roots and streaming;
+- that the referenced images exist;
+- collisions and lock keys;
+- banner variants;
+- no fallbacks, with unlit states;
+- held light radii;
+- the lightning pick and COLD_BREATH;
+- RaidFx and useRaidBurning;
+- nineSlice.
+
+`adr227_campfire_scale` and `adr112-decor` are updated for the removed fallbacks.
+
+**Limits.**
+- Canvas2D has no vfx layer, so it shows no raid, status or lightning FX.
+- The stalls `StallLayer` is still demo-only, and `stall_sale_coins` is not wired up.
+- pvp combat vfx, loot_beam/loot_drop_bounce, chat bubbles, and the clan-tag and self/enemy plates are unused.
+- The stalls UI kit diff is not applied.
+- `stateVfx` is not consumed.
+- About 120 other dead fallbacks remain.

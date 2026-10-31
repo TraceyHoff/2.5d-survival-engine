@@ -68,7 +68,7 @@ describe("ADR-242 pieces + lights", () => {
     }
     for (const k of ["campfire", "torch_stand", "fireplace", "wood_stove"]) {
       const sp = registry.sprite(registry.spriteForPiece(k)!); const names = sp.animList.map((a) => a.name);
-      expect(names, k).toContain("idle"); expect(sp.building?.states?.["unlit"] ?? names.includes("unlit"), k).toBeTruthy();
+      expect(names, k).toContain("idle"); expect((sp.building?.states as Record<string, unknown> | undefined)?.["unlit"] ?? names.includes("unlit"), k).toBeTruthy();
     }
   });
   test("held lantern / tallow candle light radius == gameplay heldLight (ADR-216/217)", () => {
