@@ -33,6 +33,7 @@ export { TERRAIN_SPRITES, SHORE_SPRITES, isWaterTile } from "./ids.js";
 export * from "./burning.js";
 export * from "./fire-anim.js";
 export * from "./character/layers.js";
+export * from "./character/charArt.js";
 export * from "./character/offhand.js";
 export * from "./stalls/index.js";
 export * from "./character/preview.js";

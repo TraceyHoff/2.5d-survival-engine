@@ -21,6 +21,8 @@ export const MANIFEST_INDEX: readonly ManifestFragmentRef[] = [
   // sale coins). Both repeat keys the building pack already serves; mergeManifests keeps building's (first wins).
   { name: "pvp_clan", url: "pvp_clan/manifest.fragment.json", optional: true, root: "", stream: true },
   { name: "stalls", url: "stalls/manifest.fragment.json", optional: true, root: "", stream: true },
+  // ADR-239: player v2 sample (spec §11.1), drawn only with the charArt setting (v2s / v2s-all; v1 default)
+  { name: "customization_v2_sample", url: "pack/customization_v2_sample/manifest.customization_v2_sample.json", optional: true },
 ];
 /** ADR-242: directory (absolute URL) that `frag`'s relative image paths resolve against. */
 export function fragmentBase(f: ManifestFragmentRef, fragUrl: string, artUrl: string): string {
