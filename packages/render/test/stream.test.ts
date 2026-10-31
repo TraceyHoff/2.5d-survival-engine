@@ -35,8 +35,9 @@ const flush = () => new Promise((r) => setTimeout(r, 0));
 
 describe("manifest residency + placeholder (schema, backward compatible)", () => {
   it("the shipped packs load unchanged (no residency = resident)", () => {
-    const reg = loadManifest(json("manifest.json")).registry; const opt = (k: string) => /^(season|gt)_/.test(k); // seasonal + ground sheets opt in to streaming
+    const reg = loadManifest(json("manifest.json")).registry; const opt = (k: string) => /^season_/.test(k); // seasonal twin sheets opt in to streaming; gt_ ground pages are resident (ADR-246 follow-up)
     expect([...reg.atlases.values()].every((a) => opt(a.key) ? a.residency === "stream" : a.residency === undefined)).toBe(true);
+    expect([...reg.atlases.values()].filter((a) => a.key.startsWith("gt_")).length).toBeGreaterThan(0);
     const { reg: r2 } = pack(); expect(r2.atlases.get("crop_t0")!.residency).toBe("stream"); expect(r2.atlases.get("crop_t0")!.placeholder).toBe("ph_sprout");
     expect(r2.sprite(id(r2, "clutter_t")).placeholder).toBeNull(); expect(r2.sprite(id(r2, "sapling_t")).placeholder).toBe("ph_sapling");
   });

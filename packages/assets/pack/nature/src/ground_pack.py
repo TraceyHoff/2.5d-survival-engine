@@ -1,5 +1,9 @@
-"""Pack the seasons ground tileset into streamed `gt_` atlases in pack/manifest.json (alongside the shipped tile_* terrain).
+"""Pack the seasons ground tileset into resident `gt_` atlases in pack/manifest.json (alongside the shipped tile_* terrain).
 python3 ground_pack.py            renders missing tiles into $GROUND_CACHE (pool of 8), packs 1x + @2x pages, merges the manifest.
+python3 ground_pack.py --manifest-only   rewrites only the manifest entries (no render, no page PNGs; keeps ktx2 fields).
+Residency: resident (ADR-246 follow-up: the engine keeps gt_ pages hot at 1x; RESIDENT_GROUND_RE). Every sprite carries a
+placeholder: bases -> legacy tile_*, fall/winter overlays -> their summer twin, summer edges -> the invader base,
+summer shore/bank -> gt_water_shallow, fall leaf decals -> gt_water.
 Cells: 64x48 art (64x32 diamond + 16 px skirt) padded 2 px -> 68x52 (1x) / 136x104 (@2x); anchor keeps the diamond centre
 (0.5, 18/52). Pages are per season (gt_<season>_p<N>), 15x19 cells -> <=1020x988 (1x), <=2040x1976 (@2x). Re-runnable."""
 import os, sys, json
@@ -31,21 +35,22 @@ def plan():
         S.append((w, 'summer', [f'w|summer|{f}' for f in range(4)], 4, ph))
         S.append((w + '_winter', 'winter', ['ice|0'], 1, ph))
     for v in range(6): S.append((f'gt_ice{SUF[v]}', 'winter', [f'ice|{v}'], 1, 'tile_water'))
-    for v in range(3): S.append((f'gt_water_leaves_{"abc"[v]}', 'fall', [f'lv|{v}'], 1, None))
+    for v in range(3): S.append((f'gt_water_leaves_{"abc"[v]}', 'fall', [f'lv|{v}'], 1, 'gt_water'))
     for inv in INV:
         for m in MASKS:
-            for se in SEAS: S.append((f'gt_{NAME.get(inv, inv)}_edge_{m}{TW[se]}', se, [f'ov|{inv}|{se}|{m}'], 1, None))
+            k0 = f'gt_{NAME.get(inv, inv)}_edge_{m}'
+            for se in SEAS: S.append((k0 + TW[se], se, [f'ov|{inv}|{se}|{m}'], 1, k0 if se != 'summer' else f'gt_{NAME.get(inv, inv)}'))
     for style, nm in (('sand', 'shore'), ('bank', 'bank')):
         for m in MASKS:
             for se in SEAS:
                 fr = [f'sh|{style}|{se}|{m}|0'] if se == 'winter' else [f'sh|{style}|{se}|{m}|{f}' for f in range(4)]
-                S.append((f'gt_{nm}_{m}{TW[se]}', se, fr, 4 if len(fr) > 1 else 1, None))
+                S.append((f'gt_{nm}_{m}{TW[se]}', se, fr, 4 if len(fr) > 1 else 1, f'gt_{nm}_{m}' if se != 'summer' else 'gt_water_shallow'))
     return S
 
 def main():
-    S = plan(); keys = sorted({k for s in S for k in s[2]})
+    S = plan(); keys = sorted({k for s in S for k in s[2]}); only = '--manifest-only' in sys.argv
     print('sprites', len(S), 'unique cells', len(keys), 'cache', GPV.CACHE, flush=True)
-    GPV.ensure(keys, 8)
+    if not only: GPV.ensure(keys, 8)
     # assign cells to per-season pages (an animated sprite never straddles two pages); dedup render keys per season
     per = COLS * ROWS; pages = {}; amap = {}
     for key, se, fr, _, _ in S:
@@ -56,14 +61,14 @@ def main():
     for se in SEAS:
         for pi, chunk in enumerate(pages[se]):
             name = f'gt_{se}_p{pi}'; cols = min(COLS, len(chunk)); rows = -(-len(chunk) // cols)
-            for sc in (1, 2):
+            for sc in (() if only else (1, 2)):
                 im = Image.new('RGBA', (cols * CW * sc, rows * CH * sc), (0, 0, 0, 0))
                 for i, k in enumerate(chunk):
                     t = np.asarray(GPV.get(k, sc)).copy(); t[..., 3] = np.where(t[..., 3] >= 128, 255, 0); t[t[..., 3] == 0] = 0
                     im.paste(Image.fromarray(t, 'RGBA'), ((i % cols * CW + PAD) * sc, (i // cols * CH + PAD) * sc))
                 im.save(R + f'atlases/{name}{"" if sc == 1 else "@2x"}.png', optimize=True)
             atlases.append({'key': name, 'image': f'atlases/{name}.png', 'frameW': CW, 'frameH': CH, 'columns': cols, 'rows': rows,
-                            'pages': [{'scale': 2, 'image': f'atlases/{name}@2x.png'}], 'residency': 'stream'})
+                            'pages': [{'scale': 2, 'image': f'atlases/{name}@2x.png'}]})
     sprites = []
     for key, se, fr, fps, ph in S:
         at = {amap[(se, k)][0] for k in fr}; assert len(at) == 1, key
@@ -72,6 +77,13 @@ def main():
         if ph: d['placeholder'] = ph
         sprites.append(d)
     m = json.load(open(R + 'manifest.json'))
+    old = {a['key']: a for a in m['atlases']}
+    for a in atlases:   # keep KTX2 siblings (ktx2.py re-encodes any page whose PNG is newer)
+        o = old.get(a['key'])
+        if o and (o['columns'], o['rows']) == (a['columns'], a['rows']):
+            if 'ktx2' in o: a['ktx2'] = o['ktx2']
+            for pg, po in zip(a['pages'], o.get('pages', [])):
+                if 'ktx2' in po: pg['ktx2'] = po['ktx2']
     m['atlases'] = [a for a in m['atlases'] if not a['key'].startswith('gt_')]
     m['sprites'] = [s for s in m['sprites'] if not s['key'].startswith('gt_')]
     ia = next(i for i, a in enumerate(m['atlases']) if a['key'] == 'tiles') + 1
