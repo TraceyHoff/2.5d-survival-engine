@@ -930,7 +930,7 @@ Graphics quality is unchanged.
 
 **Result:** Same 10 s walk: camera speed coefficient of variation went from 0.54 to 0.095, and the peak went from 332 to ≤157 px/s. Graphics and movement speeds are unchanged.
 
-## ADR-156: Creature sheets resident on budgets of 384 MB and up
+## ADR-156: Creature sheets resident on budgets of 384 MB and up (128 MB since ADR-237)
 
 **Context:** At the PC texture budget (768 MB), a 42 s walk/sprint profile streamed creature and pet sheets in and out. Those sheets (62 small sheets, about 4.8 MPx) caused 23–32 page-ins and evictions per run, and each one meant a texture upload plus frame-table rows, which showed up as hitches.
 
@@ -2296,3 +2296,47 @@ Each run opens Multiplayer, checks the focus order, connects to the dedicated se
 - **P2P join:** the guest reached the host ("join: client 1"), but the WebRTC data channel timed out between two headless contexts on this box. That is a network/TURN limit; the transport code is unchanged. The failure correctly returns to Multiplayer with "Couldn't join … TURN server may be needed".
 
 `adr236_mp_menu.test.ts` has 10 tests. Screenshots: `/workspace/shots/mp_menu_{before,after}_*.png`, `mp_ingame_{before,after}_*[_lost|_session].png` and `mp_ingame_after_{host,join}_session.png`.
+
+## ADR-237: Creature, character and zombie sheets stay x1 on the mobile budget
+
+**Problem.** Animals were blurry on phones only. Desktop was sharp. Emulated in Playwright with a faked GPU string: iPhone 14 Pro Max at dpr 3 ("Apple GPU", mobile-high), Pixel 7 at dpr 3 ("Adreno 660", mobile), and a desktop RTX at dpr 3 for reference. The mobile 128 MB atlas budget caused it in two ways:
+- **Hot tier halved.** `fitBudget` could not fit the hot tier at x1, so after cold shrink, pool trimming and idle demotion it halved *every* hot atlas. That left `animals_medium`/`animals_large`, `characters*` and `zombies` at x0.5 for the whole session.
+- **Pets and critters streamed.** `RESIDENT_CREATURE_MIN_MB` = 384 (ADR-156) kept the 62 `pets_*`/`nature_critters_*` sheets in the stream pool. With no free layers, that pool was planned at its smallest scale: ETC1S **x0.25** slots. A 32 px critter frame became 8×8 texels.
+
+A phone at dpr ≈2.7 and zoom 0.61 magnifies a sprite texel about 1.8× at x1, about 3.7× at x0.5 and about 7× at x0.25. That matches the mosaic critters and soft deer in the before shots.
+
+The backbuffer was not the cause. It is `dpr × resScale`, which is 2.7 at high on iPhone and 2.25 at medium on Android, so the compositor upscales it at most 1.33× (ADR-116/quality). That costs far less than the 2–4× atlas loss. The old local `sceneDpr` WIP (a backbuffer floor at native 1×) only helps dpr ≤ 2 screens, so it was not landed.
+
+**Decision.**
+- **Pin drawn sheets at x1.** New `FIDELITY_ATLAS_RE = /^(animals|pets|nature_critters|characters|zombies)(_|$)/`. When `fitBudget` has to halve the hot tier, it first tries the same hot scale with every *drawn* (`recentlyUsed`), hot sheet matching that pattern kept at x1. It falls back to the old plan at that same scale only if the pinned plan does not fit. The rest of the hot tier is never lowered further to make room.
+  - Before anything has been drawn, the pin covers every hot creature, character and zombie sheet except the 62 small resident creature sheets. Those follow through the normal re-tier once drawn.
+  - `needsRetier` treats pinned sheets as x1, so they never trigger a rebuild loop.
+  - The result is exposed as `fitInfo.pinned` and in the diag tier line ("x1-pinned N").
+- **Mobile keeps creatures resident.** `RESIDENT_CREATURE_MIN_MB` drops from 384 to 128. Pets and critters are now resident and hot on mobile and lowmem (x0.5 when idle, x1 once drawn) instead of x0.25 ETC1S stream slots.
+- **Never-drawn menu art goes cold.** `^brand_` joins `COLD_ATLAS_RE`. The six 1920×1080 `brand_menu_bg*` sheets and the other brand sheets were registered as hot atlases but are never sampled, because the menu uses DOM images. They cost 6 × 3.3 MB at x0.5 on mobile and about 66 MB at x1 on desktop. Cold, they pay for the pinned sheets. A brand sheet that does get drawn becomes hot through `recentlyUsed` as usual.
+
+**Evidence.** Probes are in `/tmp/wt-animblur-probe`: probe/vram/shot `.mjs`, Playwright with SwiftShader and a faked `UNMASKED_RENDERER`, `?quality=high`.
+
+| | Before | After |
+|---|---|---|
+| Mobile animals_medium/large, characters, zombies | x0.5 | x1 |
+| Mobile pets/critters | stream pool x0.25 (ETC1S) | resident, drawn ones x1 (26 pinned in the sandbox) |
+| Mobile atlas arrays (75 s, after re-tier) | 131 MB, 14 layers | 127 MB, 12 layers (budget 128) |
+| Mobile at boot (before the first re-tier) | 165 MB | same plan (the pin does not fit at boot, so the old plan is kept) |
+| Crop sharpness (mean abs Laplacian on animal crops, iPhone / Android) | 9.1, 7.6 / 9.6, 7.1 | 10.9, 9.7 / 11.4, 10.3 (desktop ref 8.3–9.0) |
+
+Shots: `/workspace/shots/animalblur_{before,after}_mobile_{iphone,android}.png`, `animalblur_desktop_reference.png`, `animalblur_before_after_mobile_crops.png`.
+
+Desktop (1024 MB) is unchanged: it re-tiers to hot x1 and already kept creatures resident. Perf: there is no backbuffer, draw-call or shader change. A rebuild costs at most one extra pack attempt per hot scale tried, and re-tiers keep the ADR-190 hysteresis.
+
+**Tests.** `packages/render/test/adr237_mobile_crisp_creatures.test.ts` checks:
+- the regex scope;
+- that a halved hot tier keeps drawn sheets at x1 while terrain and decor take x0.5;
+- that undrawn hot sheets are not pinned;
+- the exact old plan when the pin does not fit;
+- no boot pin for the resident creature sheets;
+- `needsRetier` quiet for pinned sheets;
+- 128 MB residency;
+- brand art cold.
+
+`resident_creatures.test.ts` is updated to the 128 MB threshold.

@@ -8,7 +8,8 @@ describe("ADR-156 resident creature sheets", () => {
   it("creature sheets are resident only on budgets that hold them", () => {
     expect(mk(RESIDENT_CREATURE_MIN_MB).residentCreatures).toBe(true);
     expect(mk(768).residentCreatures).toBe(true);
-    expect(mk(160).residentCreatures).toBe(false);
+    expect(mk(160).residentCreatures).toBe(true); // ADR-237: mobile (128) and lowmem keep creatures resident too
+    expect(mk(96).residentCreatures).toBe(false);
     expect(RESIDENT_CREATURE_RE.test("pets_cat_tabby")).toBe(true);
     expect(RESIDENT_CREATURE_RE.test("nature_critters_a_24x40")).toBe(true);
     expect(RESIDENT_CREATURE_RE.test("cz_wr_top_puffer")).toBe(false);

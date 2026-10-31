@@ -236,11 +236,17 @@ export const BUILD_ATLAS_RE = /^(buildings?(_[a-z0-9]+)?|openings|furniture|defe
 /** ADR-156: creature sheets (wild critters, pets: 62 small sheets, ~4.8 MPx) load resident instead of through the stream
  *  pool. One species spans 4-11 frame-size sheets, so 12-24 fixed (704x400) stream slots starved as soon as a few species
  *  were near: the rest drew the soft placeholder blob and ETC1S-compressed pages -> "blurry animals" while bushes (resident) stayed sharp. */
-export const RESIDENT_CREATURE_MIN_MB = 384;
+/** ADR-237: lowered from 384 to the mobile budget (128): with FIDELITY_ATLAS_RE pinning, a phone keeps the creature sheets
+ *  resident (drawn ones x1, the rest x0.5 hot) instead of the stream pool's ETC1S x0.25 slots (8x8 texel critters). */
+export const RESIDENT_CREATURE_MIN_MB = 128;
 export const RESIDENT_CREATURE_RE = /^(pets|nature_critters)_/;
+/** ADR-237: creature, character and zombie sheets (small pixel art, magnified ~2-4x on a dpr-3 phone) keep x1 when the
+ *  budget halves the hot tier: the rest of the hot art takes the x0.5, these never become 2x-magnified mush (mobile only
+ *  ever ran them at x0.5 / the stream pool's x0.25 - "animals blurry on mobile, sharp on desktop"). */
+export const FIDELITY_ATLAS_RE = /^(animals|pets|nature_critters|characters|zombies)(_|$)/;
 /** ADR-149: hi-res painted pet sheets (streamed, drawn well below their stored size: need the mip tail). */
 export const PET_SHEET_RE = /^pets_/;
-export const COLD_ATLAS_RE = /(lod\d*|_far|distant|rare|_huge|_big|^fx_|death_bag|zombies_(brute|mummy|pumpkin|runner)|critters|wear|cosmetic|hair|hats?|accessor|tops?|bottoms?|shoes|faces?|eyes)/i;
+export const COLD_ATLAS_RE = /(^brand_|lod\d*|_far|distant|rare|_huge|_big|^fx_|death_bag|zombies_(brute|mummy|pumpkin|runner)|critters|wear|cosmetic|hair|hats?|accessor|tops?|bottoms?|shoes|faces?|eyes)/i;
 /** Default tier: HOT_ATLAS_RE wins; atlases holding body sprites are hot; COLD_ATLAS_RE or mostly-wearable atlases are cold. */
 export function defaultAtlasTier(key: string, opts: { bodies?: boolean; wearShare?: number } = {}): AtlasTier {
   if (opts.bodies || HOT_ATLAS_RE.test(key)) return "hot";
@@ -479,7 +485,7 @@ export class AtlasManager {
   /** Side-array (emissive / masks) shift for this build: SIDE_SHIFT, or SIDE_SHIFT_LOWMEM on <=256 MB budgets. */
   sideShift: number = SIDE_SHIFT;
   /** How fitBudget met the budget (diag): pool reserve actually kept, hot atlases demoted to cold. */
-  fitInfo = { reserveMB: 0, reserveWantedMB: 0, demoted: 0 };
+  fitInfo: { reserveMB: number; reserveWantedMB: number; demoted: number; /** ADR-237: sheets kept x1 while the hot tier is halved */ pinned?: string[] } = { reserveMB: 0, reserveWantedMB: 0, demoted: 0 };
   /** Override the hot/cold budget tier per atlas key (default defaultAtlasTier). */
   atlasTier?: (key: string, info: { bodies: boolean; wearShare: number }) => AtlasTier;
   /** Atlas keys used recently (renderer marks them); always treated hot at the next rebuild. */
@@ -541,7 +547,7 @@ export class AtlasManager {
     const own = this.tailPools().find((p) => p.own)?.own; if (own && own.levels < this.ownLevelsFor(this.tailPools())) return true; // zoomed out past the sampled mip range (more levels needed; fewer is never worth a rebuild)
     const wp = this.wearPool(); if (wp && wp.k <= 1 && wp.k < this.wearScale() && this.poolScales(this.atlases.filter((a) => a.lazy && this.poolOfA(a)?.cls === "wear")).includes(this.wearScale())) return true; // zoomed in: wear needs a crisper scale (a smaller one never triggers a rebuild)
     if (this.coldDownscale >= 1 && this.downscale >= 1) return false;
-    return this.atlases.some((a) => !a.lazy && this.recentlyUsed.has(a.key) && !this.retiered.has(a.key) && (a.cold ? this.coldDownscale : this.downscale) < 1);
+    return this.atlases.some((a) => !a.lazy && this.recentlyUsed.has(a.key) && !this.retiered.has(a.key) && (a.cold ? this.coldDownscale : this.pinnedKeys.has(a.key) ? 1 : this.downscale) < 1);
   }
   /** Rebuild so recently drawn atlases move to the hot (full-res) tier; at most once per `minGap` frames. */
   async retier(frame: number, minGap = RETIER_MIN_GAP_FRAMES): Promise<boolean> {
@@ -928,11 +934,21 @@ export class AtlasManager {
     this.classify(list);
     const cap = (a: AtlasRT) => { let d = 1; const t = Math.max(a.img!.width, a.img!.height) / S; while (d > 1 / Math.max(1, t)) d /= 2; return d; };
     const caps = list.map(cap);
-    const dims = (h: number, c: number) => list.map((a, i) => { const k = Math.min(caps[i]!, a.cold ? c : h); return { ...a, img: { width: Math.max(1, Math.floor(a.img!.width * k)), height: Math.max(1, Math.floor(a.img!.height * k)) } as ImageLike }; });
-    const fits = (h: number, budget: number): number | null => {
+    // ADR-237: hot creature/character/zombie sheets (drawn recently; before anything was drawn every one but the 62 small
+    // resident creature sheets, which follow once drawn via retier) stay x1 while
+    // the rest of the hot tier is halved - tried first at every hot scale, dropped only when even that does not fit
+    const pinned = list.map((a) => !a.cold && FIDELITY_ATLAS_RE.test(a.key) && (this.recentlyUsed.size ? this.recentlyUsed.has(a.key) : !RESIDENT_CREATURE_RE.test(a.key)));
+    let pin = false;
+    const scaleOf = (i: number, h: number, c: number): number => { const a = list[i]!; return Math.min(caps[i]!, a.cold ? c : pin && pinned[i] ? 1 : h); };
+    const dims = (h: number, c: number) => list.map((a, i) => { const k = scaleOf(i, h, c); return { ...a, img: { width: Math.max(1, Math.floor(a.img!.width * k)), height: Math.max(1, Math.floor(a.img!.height * k)) } as ImageLike }; });
+    const fits1 = (h: number, budget: number): number | null => {
       const anyCold = list.some((a) => a.cold);
       for (let c = h; c >= MIN_ATLAS_DOWNSCALE; c /= 2) { this.pack(dims(h, c)); if (this.planEstimate(list) <= budget) return c; if (!anyCold) break; }
       return null;
+    };
+    const fits = (h: number, budget: number): number | null => {
+      if (h < 1 && pinned.some(Boolean)) { pin = true; const c = fits1(h, budget); if (c !== null) return c; }
+      pin = false; return fits1(h, budget);
     };
     // Blur-safe order: visible (hot) art keeps full res. Memory comes from (1) shrinking cold atlases, (2) a smaller
     // streaming-pool reserve (the pools then page more often instead of blurring resident art), (3) demoting hot
@@ -952,13 +968,15 @@ export class AtlasManager {
     }
     const [h, c] = best ?? [MIN_ATLAS_DOWNSCALE, MIN_ATLAS_DOWNSCALE];
     this.downscale = h; this.coldDownscale = c;
-    this.fitInfo = { reserveMB: Math.round(keptReserve / 1048576), reserveWantedMB: Math.round(reserveBytes / 1048576), demoted };
+    if (!best) pin = false;
+    this.pinnedKeys = new Set(pin ? list.filter((_, i) => pinned[i]).map((a) => a.key) : []);
+    this.fitInfo = { reserveMB: Math.round(keptReserve / 1048576), reserveWantedMB: Math.round(reserveBytes / 1048576), demoted, pinned: [...this.pinnedKeys] };
     this.pack(dims(h, c));
     if (h < 1) {
       const nc = list.filter((a) => a.cold).length;
       console.warn(`[render] atlas arrays over the ${this.textureBudgetMB} MB GPU budget at full res: hot x${h} (${list.length - nc} atlases), cold x${c} (${nc}) (~${Math.round(this.estimate(list) / 1048576)} MB)`);
     }
-    await Promise.all(list.map((a, i) => { const k = Math.min(caps[i]!, a.cold ? c : h); return k < 1 ? scaleList([a], k) : undefined; }));
+    await Promise.all(list.map((a, i) => { const k = scaleOf(i, h, c); return k < 1 ? scaleList([a], k) : undefined; }));
   }
   /** Tier every resident atlas (see defaultAtlasTier / atlasTier / recentlyUsed). */
   private classify(list: AtlasRT[]): void {
@@ -973,6 +991,8 @@ export class AtlasManager {
     }
   }
   private registryForTier: AssetRegistry | null = null;
+  /** ADR-237: resident atlases the last fitBudget kept x1 while the hot tier was halved. */
+  private pinnedKeys = new Set<string>();
   /** Hot/cold split of the resident atlases (keys) after the last rebuild. */
   get tiers(): { hot: string[]; cold: string[]; hotScale: number; coldScale: number } {
     const r = this.atlases.filter((a) => !a.lazy);
