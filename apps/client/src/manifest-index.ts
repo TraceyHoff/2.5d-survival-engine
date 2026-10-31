@@ -17,6 +17,10 @@ export const MANIFEST_INDEX: readonly ManifestFragmentRef[] = [
   { name: "vehicle_items", url: "pack/vehicle_items/manifest.vehicle_items.json", optional: true },
   { name: "building", url: "pack/building/manifest.building.json", optional: true },
   { name: "nature", url: "pack/nature/manifest.nature.json", optional: true },
+  // ADR-242: Art's PvP/clan drop (raid fx, clan banners/gates, nameplates, loot beams) and the stalls drop (stall art,
+  // sale coins). Both repeat keys the building pack already serves; mergeManifests keeps building's (first wins).
+  { name: "pvp_clan", url: "pvp_clan/manifest.fragment.json", optional: true, root: "", stream: true },
+  { name: "stalls", url: "stalls/manifest.fragment.json", optional: true, root: "", stream: true },
   // ADR-240: player v2 sample (spec §11.1), drawn only with the charArt setting (v2s / v2s-all; v1 default)
   { name: "customization_v2_sample", url: "pack/customization_v2_sample/manifest.customization_v2_sample.json", optional: true },
 ];
