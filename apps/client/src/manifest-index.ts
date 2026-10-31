@@ -21,8 +21,6 @@ export const MANIFEST_INDEX: readonly ManifestFragmentRef[] = [
   // sale coins). Both repeat keys the building pack already serves; mergeManifests keeps building's (first wins).
   { name: "pvp_clan", url: "pvp_clan/manifest.fragment.json", optional: true, root: "", stream: true },
   { name: "stalls", url: "stalls/manifest.fragment.json", optional: true, root: "", stream: true },
-  // ADR-240: player v2 sample (spec §11.1), drawn only with the charArt setting (v2s / v2s-all; v1 default)
-  { name: "customization_v2_sample", url: "pack/customization_v2_sample/manifest.customization_v2_sample.json", optional: true },
 ];
 /** ADR-242: directory (absolute URL) that `frag`'s relative image paths resolve against. */
 export function fragmentBase(f: ManifestFragmentRef, fragUrl: string, artUrl: string): string {
@@ -34,6 +32,11 @@ export function applyFragmentFlags<M>(f: ManifestFragmentRef, m: M): M {
   if (f.stream && Array.isArray(at)) for (const a of at) a.residency ??= "stream";
   return m;
 }
+/** ADR-240: player v2 sample (spec §11.1). Not in MANIFEST_INDEX (Art keeps it isolated): loadMergedManifest appends it
+ *  only when the charArt setting is v2s / v2s-all (v1 = default = not fetched). */
+export const CHAR_ART_V2_FRAGMENT: ManifestFragmentRef = { name: "customization_v2_sample", url: "pack/customization_v2_sample/manifest.customization_v2_sample.json", optional: true };
+export const withCharArtFragment = (list: readonly ManifestFragmentRef[], art: string): readonly ManifestFragmentRef[] =>
+  art === "v1" || list.some((f) => f.name === CHAR_ART_V2_FRAGMENT.name) ? list : [...list, CHAR_ART_V2_FRAGMENT];
 /** The served subset: required fragments always, optional ones only when `served(url)`. */
 export const servedManifestIndex = (served: (url: string) => boolean): { fragments: ManifestFragmentRef[] } =>
   ({ fragments: MANIFEST_INDEX.filter((f) => !f.optional || served(f.url)) });

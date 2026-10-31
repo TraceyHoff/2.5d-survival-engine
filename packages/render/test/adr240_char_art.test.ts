@@ -25,7 +25,7 @@ describe("ADR-240 charArt", () => {
     const b = { resolve: () => [{ sprite: id("body_male"), slot: "body" }] } as never as Parameters<typeof withCharArt>[0];
     expect(withCharArt(b, "v1", ids)).toBe(b);
     expect(withCharArt(b, "v2s", { key: () => undefined, tryId: () => undefined })).toBe(b);
-    const w = withCharArt(b, "v2s", ids); expect(keys[(w.resolve({} as never, 0, {}) as { sprite: number }[])[0]!.sprite]).toBe("v2s_body_male");
+    const w = withCharArt(b, "v2s", ids); expect(keys[(w.resolve({} as never, 0, {}) as unknown as { sprite: number }[])[0]!.sprite]).toBe("v2s_body_male");
   });
   it("classifies v2 body/wear sprite keys for the character pools", () => {
     expect(isV2BodyKey("v2s_body_male")).toBe(true); expect(isV2BodyKey("body_male")).toBe(false);

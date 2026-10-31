@@ -186,7 +186,7 @@ export async function createPreviewDriver(host: HTMLElement, src: CreatorPreview
   if (!cat) return undefined;
   const cv = doc.createElement("canvas"); cv.dataset["role"] = "creator-preview"; cv.dataset["renderer"] = "canvas2d"; cv.style.cssText = "border-radius:12px;display:block;image-rendering:pixelated;touch-action:none";
   try {
-    const o = { registry: src.registry, binding: withCharArt(coreAppearanceBinding(cat), charArt(), src.registry.ids.sprites), appearance: look, sources: src.sources, facing, backdrop };
+    const o = { registry: src.registry, binding: charArt() === "v1" ? coreAppearanceBinding(cat) : withCharArt(coreAppearanceBinding(cat), charArt(), src.registry.ids.sprites), appearance: look, sources: src.sources, facing, backdrop };
     const pv = src.create2d ? src.create2d(cv, o) : new CharacterPreview2D(cv, o); pv.resize(PREVIEW_CSS.w, PREVIEW_CSS.h, dpr); host.append(cv);
     let cur = look; const loaded = pv.setAppearance(look);
     return { kind: "canvas2d", loaded, set: (a) => { cur = a; void pv.setAppearance(cur); }, facing: (k) => pv.setFacing(k), frame: (t) => pv.renderNow(t), dispose: () => cv.remove() };

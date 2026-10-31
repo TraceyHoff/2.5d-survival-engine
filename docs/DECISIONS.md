@@ -2478,7 +2478,7 @@ So a tiny, blurred v2 figure in v1 colours read as "legacy". With a faked deskto
 - **Character pools, not stream.** v2 body sheets (`isV2BodyKey`) join `bodyAtlasKeys`, and v2 wear sheets (`isV2WearKey`) join the wear sets. Body pages are excluded from the stream keys. When a streamed body page is still drawn, `pageReady(sid, 0)` requests it at top priority.
 - **Crisp on small budgets.** `FIDELITY_ATLAS_RE` gains `v2s?_`, so drawn v2 sheets keep x1 when the hot tier is halved (ADR-237).
 - **Creator.** The WebGL2 and Canvas2D previews wrap `coreAppearanceBinding` with `withCharArt`, so the creator shows exactly the in-game layers.
-- **Pack mount.** The pack mounts as an optional manifest fragment (`manifest-index.ts`, Vite `MOUNTS`). Art's manifest is untouched.
+- **Pack mount.** `CHAR_ART_V2_FRAGMENT` (optional) is appended by `loadMergedManifest` only when `charArt` is not `v1`, so v1 never fetches it. Vite `MOUNTS` serves the pack. Art's manifest is untouched.
 
 **Evidence.** Shots are `/workspace/shots/v2sample_*.png`:
 - desktop WebGL, default and max zoom;
@@ -2504,5 +2504,7 @@ All shots used SwiftShader with a faked GPU string. Perf on SwiftShader: 83–10
 - the identity for v1 and when the pack is missing;
 - body and wear key classes;
 - the `FIDELITY_ATLAS_RE` scope for v2 sheets.
+
+`apps/client/test/adr240_char_art_fragment.test.ts` checks that the sample fragment is appended to the manifest index only when `charArt` is not `v1`. Art's isolation test (`customization_v2_sample.test.ts`) still holds: the sample is not in `MANIFEST_INDEX`.
 
 **Limits.** v1 stays the default. `v2s` maps a v1 look onto the sample outfit, so colours come from the v1 appearance until the v2 catalog lands. Lowmem devices still run at x0.25 when the pin does not fit.

@@ -69,7 +69,7 @@ import { LightTable, type LightSpec } from "./lights.js";
 import { Burning } from "@engine/gameplay";
 import { floorToTerrainZ } from "@engine/world";
 import { RaidFx, useRaidBurning, type RaidPiece } from "./raid-fx.js";
-import { MANIFEST_INDEX, applyFragmentFlags, fragmentBase, type ManifestFragmentRef } from "./manifest-index.js";
+import { MANIFEST_INDEX, applyFragmentFlags, withCharArtFragment, fragmentBase, type ManifestFragmentRef } from "./manifest-index.js";
 import { stumpKeys } from "./stumps.js";
 /** `?cam=animal`: debug camera that follows the first ambient animal instead of the player. */
 const CAM_ANIMAL = typeof location !== "undefined" && new URLSearchParams(location.search).get("cam") === "animal";
@@ -753,7 +753,8 @@ interface Spec {
 async function loadMergedManifest(art: string): Promise<ReturnType<typeof loadManifest>> {
   const get = async (u: string): Promise<unknown> => { try { const r = await fetch(u); return r.ok ? await r.json() : undefined; } catch { return undefined; } };
   const idx = (await get(art + "manifests.index.json")) as { fragments?: ManifestFragmentRef[] } | undefined;
-  const list = idx?.fragments?.length ? idx.fragments : MANIFEST_INDEX;
+  const charArt = parseCharArt(new URLSearchParams(globalThis.location?.search ?? "").get("charArt"), (() => { try { return globalThis.localStorage?.getItem("charArt"); } catch { return null; } })());
+  const list = withCharArtFragment(idx?.fragments?.length ? idx.fragments : MANIFEST_INDEX, charArt); // ADR-240: v2 sample only with charArt
   const frags: ManifestFragment[] = []; const dirOf = new Map<string, string>();
   for (const f of list) {
     const url = new URL(f.url, new URL(art, location.href)).href; let m = await get(url);
