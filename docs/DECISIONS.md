@@ -2542,3 +2542,40 @@ All shots used SwiftShader with a faked GPU string. Perf on SwiftShader: 83–10
 **Not yet driven by gameplay.** Block, Crouch, Carry and Sleep have no mechanic, the firearm aim hold has no input, and nothing sets `bed` or `carriedSprite` yet; the states and bindings are ready for them. The sleep_lie bed pivot (`bedFits`), 4-direction bed facing and sort-after-bed (§6b) wait for the sleep_lie art. Canvas2D does not draw the carry/seat sockets.
 
 **Tests.** `packages/render/test/adr241_anim_chain.test.ts` (state numbering, every class / ctx chain, frozen chains ending in v1, v2 sample resolves each new anim while v1 falls back, doll alignment, carry/seat sockets on the sample frames) and `packages/gameplay/test/arms.test.ts` (bow draw → Aim → Idle).
+
+## ADR-244: Block / crouch / carry / sleep / aim mechanics and controls (drives ADR-241's states); Art v2 fixes
+
+**Status:** accepted. **Context:** ADR-241 added the Block / Aim / Crouch / Carry / Sleep anim states and chains, but nothing in play set them. This ADR adds the mechanics, the inputs on every device, and four v2-art follow-ups.
+
+**Mechanics (server-authoritative, `packages/gameplay/src/stance.ts`, tuning in `data/stance.json`).**
+- A networked `Stance {mode, crouch, carriedNetId, bedNetId, spot, lie, sinceTick}` component is appended to the gameplay component list (append-only; wire ids unchanged). The server's per-input hook `applyStanceInput` runs once per input seq; `stanceSystem` runs each authority tick. Clients read the replicated Stance, so prediction uses the same speed multipliers (one RTT lag on mode changes).
+- **Block (hold Secondary, melee / shield / fists).** Walk ×0.55, no sprint. Frontal hits (150° arc) from melee range (≤2.5 tiles) take 30% damage and cost 6 stamina each. At 0 stamina the guard breaks until the button is released.
+- **Aim (hold Secondary with a ranged weapon).** Walk ×0.6, Aim anim.
+- **Crouch (toggle on the rising edge of the Crouch hold bit).** Walk ×0.6, noise ×0.4, zombie sight radius ×0.55, no sprint. Crouch_walk while moving (ADR-241 chain). A block/aim hold returns to crouch on release.
+- **Carry (LootBag bodies/bags).** Carry picks up the nearest uncarried bag in 1.6 tiles. While carrying: walk ×0.7, no sprint, no attack/gather/tool use (server gate on Primary), and the bag follows the carrier. Carry or Interact drops it 0.6 tiles in front. Death drops it.
+- **Sleep (beds: `bed`, `bed_double_*` left/right, `bunk_bed` lower (= sleep_lie_under) / upper).** Rest snaps the sleeper to the bed centre facing rot·π/2. HP +0.5/s, stamina regen ×3. Any input after a 4-tick grace wakes; damage wakes; a destroyed bed wakes. Between 19:00 and 06:00 the clock runs ×30 only while **every** live player sleeps (multiplayer-safe), and it stops at 06:00.
+
+**Bindings (profiles patched directly; `gen-profiles.py` is stale and only mirrored for documentation).**
+
+| Action | Xbox pad | KBM | Touch |
+|---|---|---|---|
+| Block / Aim (hold) | LT | RMB | 🛡 hold button |
+| Crouch (toggle) | R3 | Ctrl | ⤓ momentary button (each tap toggles) |
+| Carry / Drop | RB+X | Q (G is RoadTool) | ⇪ contextual (near a bag / while carrying) |
+| Sleep / Wake | RB+A | Z | ☾ contextual (near a free bed / while asleep) |
+
+Plain X / A keep Interact / Jump. The touch buttons are checked for no overlap at the ADR-133 phone sizes. The tutorial gains block / crouch / carry / sleep steps with live binding chips (this is the controls help).
+
+**Art v2 fixes.**
+- (a) `V2S_ALIAS` maps v1 slots to exact sample keys (henley / cargo / boots / cap / buzz / smile / round). Uncovered hair uses `v2s_cz_hair_buzz_male`. No `_scrap_` compat sprites are used, so Art can drop compatAliases and the scrap sprites.
+- (b) `__combat|__ranged|__pose|__sleep` sheets (residency `stream`) go to the stream pool; core sheets stay resident in the body/wear pools. If a body's stream page is not ready, the body falls back to idle from the resident sheet for that frame (`streamBodyFallbacks` counter).
+- (c) sleep_lie / sleep_lie_under: the client mirrors Stance into `bedOf` (lie kind + `bedFit(piece, spot, rot)` from `packages/render/src/character/bedFits.json`, a test-checked copy of sample.v2.json `sleepLie.bedFits`). The renderer shifts the pivot (body and every layer) by the fit and adds `BED_SORT_EPS` to the depth key, so the sleeper draws after the bed. A carried bag draws at the `carry` socket and its ground sprite is hidden.
+- (d) VRAM: the resident core at @2x is ~6.1 MiB GPU-compressed (BC7/ASTC 1 B/px; 1.5 MiB on disk), or 24.4 MiB if the device falls back to RGBA. Either fits the 153.8 MB budget (4% / 16%). All stream groups together would be 37.9 MiB compressed (151.6 MiB RGBA), which is why they stream per group.
+
+**Limitations.** Only LootBags are liftable and only bed pieces are sleepable. Mode changes show after one RTT (no client-side stance prediction). The bow charge-to-aim (ADR-241) is still standalone-only. Block uses a melee-range distance proxy, not the weapon type of the hit. The stream pool slot sizing has not been tuned for the larger v2 sheets.
+
+**Tests.**
+- `packages/gameplay/test/adr244_stance.test.ts`: per mechanic, hold vs toggle, drop / wake, all-asleep skip, snapshot replication, client role ignored.
+- `packages/input/test/adr244_bindings.test.ts`: pad / KBM / touch frame bits, modifier precedence, no key collisions.
+- `packages/render/test/adr244_v2_fixes.test.ts`: aliases exist, stream pools, bed fits in sync, sleep chains.
+- `apps/client/test/adr244_touch_context.test.ts`: contextual touch buttons and captions.

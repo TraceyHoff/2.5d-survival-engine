@@ -15,5 +15,5 @@ export function bedFitTable(pieceKey: string): Readonly<Record<string, readonly 
 }
 /** Pixel offset for (bed piece key, spot name, rotation 0..3); {0,0} when the bed / spot is unknown. */
 export function bedFit(pieceKey: string, spot: string, rot: number): Fit {
-  const f = bedFitTable(pieceKey)?.[spot]?.[((rot % 4) + 4) % 4]; return f ? { x: f.x, y: f.y } : { x: 0, y: 0 };
+  const f = bedFitTable(pieceKey)?.[spot]?.[((rot % 4) + 4) % 4]; return f ? { x: f.x || 0, y: f.y || 0 } : { x: 0, y: 0 }; // || 0: Art data has -0
 }
