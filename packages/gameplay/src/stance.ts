@@ -11,6 +11,8 @@ import { Anim, AnimState, BuildPiece, Dead, Driver, Equipment, Health, LootBag, 
 import { gameplayDefs, isAuthority } from "./config.js";
 import { netIdEntity } from "./vehicle_net.js";
 import { netIdOf } from "./vehicles.js";
+import { gridRot, rotatedSize } from "./building/structure.js";
+import { Placement } from "./defs.js";
 
 export interface StanceTuning {
   blockMoveMul: number; blockMeleeReduction: number; blockArcDeg: number; blockStaminaDrainPerSec: number; blockStaminaPerHit: number;
@@ -122,12 +124,19 @@ export function drop(world: World, e: Entity): void {
   if (b !== undefined && t) { const f = t.facing ?? 0; world.set(b, Transform, { x: t.x + Math.cos(f) * 0.6, y: t.y + Math.sin(f) * 0.6, z: t.z ?? 0 }); }
   world.set(e, Stance, { carriedNetId: 0 }); setMode(world, e, world.getField(e, Stance, "crouch") ? StanceMode.Crouch : StanceMode.None);
 }
+/** ADR-244 (c): a sleeper lies at the bed's footprint centre (the bed sprite's pivot, Art's sleep_lie pivot), not its anchor
+ *  tile, so the lying frame lands on the mattress and sorts just after the bed in both renderers. */
+export function bedCentre(world: World, bed: Entity, bt: { x: number; y: number }): { x: number; y: number } {
+  const bp = world.get(bed, BuildPiece); const def = bp ? gameplayDefs(world).pieces.get(bp.type) : undefined;
+  if (!bp || !def || (def.placement !== Placement.Cell && def.placement !== Placement.Free)) return { x: bt.x, y: bt.y };
+  const [w, h] = rotatedSize(def, gridRot(def, bp.rot)); return { x: Math.floor(bt.x) + w / 2, y: Math.floor(bt.y) + h / 2 };
+}
 export function sleepIn(world: World, e: Entity, bed: Entity, spot: number): boolean {
   const defs = gameplayDefs(world); const key = defs.pieces.get(world.getField(bed, BuildPiece, "type")!)?.key ?? "";
   const spots = bedSpots(key); const name = spots[spot]; if (!name) return false;
   ensure(world, e); if (world.getField(e, Stance, "carriedNetId")) drop(world, e);
-  const bt = world.get(bed, Transform)!;
-  world.set(e, Transform, { x: bt.x, y: bt.y, z: bt.z ?? 0, facing: bedRot(bt.facing ?? 0) * (Math.PI / 2) });
+  const bt = world.get(bed, Transform)!; const c = bedCentre(world, bed, bt);
+  world.set(e, Transform, { x: c.x, y: c.y, z: bt.z ?? 0, facing: bedRot(bt.facing ?? 0) * (Math.PI / 2) });
   world.set(e, Stance, { bedNetId: netIdOf(world, bed), spot, lie: spotLie(name), crouch: 0 });
   setMode(world, e, StanceMode.Sleep); return true;
 }

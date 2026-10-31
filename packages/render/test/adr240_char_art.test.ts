@@ -33,10 +33,10 @@ describe("ADR-240 charArt", () => {
   });
   it("classifies v2 body/wear sprite keys for the character pools", () => {
     expect(isV2BodyKey("v2s_body_male")).toBe(true); expect(isV2BodyKey("body_male")).toBe(false);
-    expect(isV2WearKey("v2s_cz_hat_scrap_male")).toBe(true); expect(isV2WearKey("cz_hat_cap_male")).toBe(false);
+    expect(isV2WearKey("v2s_cz_hat_cap_male")).toBe(true); expect(isV2WearKey("cz_hat_cap_male")).toBe(false);
   });
   it("v2 character sheets get the ADR-237 x1 pin (lowmem/mobile budgets)", () => {
-    for (const k of ["v2s_wr_body_male", "v2s_wr_cz_top_scrap_male", "v2_body_female"]) expect(FIDELITY_ATLAS_RE.test(k)).toBe(true);
+    for (const k of ["v2s_wr_body_male", "v2s_wr_cz_top_henley_male", "v2_body_female"]) expect(FIDELITY_ATLAS_RE.test(k)).toBe(true);
     expect(FIDELITY_ATLAS_RE.test("v2x_tiles")).toBe(false);
   });
 });

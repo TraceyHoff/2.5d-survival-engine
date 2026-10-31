@@ -30,7 +30,7 @@ import { readDayFraction, readDayNumber, readWeather, readWind } from "./env.js"
 import { VfxLayer } from "./vfx.js";
 import { WeatherFx } from "./weatherFx.js";
 import { newStats, type FrameStats } from "./gl/util.js";
-import type { GameplayBindings } from "./sprites.js";
+import { BED_SORT_EPS, type GameplayBindings } from "./sprites.js";
 import { DeckNeighbors, deckTopPx, deckClipPolygon, deckSeamPatches, pieceTieBreak, exactTieBreak, pieceOrder, VERTEX_POST_BIAS } from "./building/deckFaces.js";
 import { lCornerArmPiece, lCornerArmPivots, ROT_EXACT_PIVOT, ROT_DECK_LIFT, ROT_VERTEX_POST } from "./building/modular.js";
 
@@ -127,6 +127,12 @@ export class Canvas2DRenderer {
     if (this.tintedPieces.size > 512) this.tintedPieces.clear(); this.tintedPieces.set(key, c); return c;
   }
   /** A paper-doll layer's frame, tinted through its tintmask (cached); the raw sheet when untinted or no DOM canvas. */
+  /** ADR-244: a paper doll picks its anim from the body layer it actually draws (v2 twin via mapLayers, e.g. sleep_lie), not the entity's v1 sprite. */
+  private dollBodySprite(world: World, e: Entity, spriteId: number): number {
+    const apB = this.bindings.appearance; if (!apB?.mapLayers || !world.has(e, apB.def)) return spriteId;
+    const look = getAppearance(world, e); if (!look) return spriteId;
+    try { const ls = apB.mapLayers(e, apB.resolve(look as never, 0, {}) as readonly { sprite: number; slot: string }[]); return ls.find((l) => l.slot === "body")?.sprite ?? spriteId; } catch { return spriteId; }
+  }
   private layerImage(p: PreviewLayer2D): { img: CanvasImageSource; x: number; y: number } | null {
     const img = this.image(p.ref.atlas.key); if (!img) return null; const r = p.ref, l = p.layer;
     if ((l.tintR === undefined && l.tintG === undefined) || typeof document === "undefined") return { img, x: r.x, y: r.y };
@@ -375,7 +381,8 @@ export class Canvas2DRenderer {
       const x = prev.x + (cur.x - prev.x) * alpha, y = prev.y + (cur.y - prev.y) * alpha, z = prev.z + (cur.z - prev.z) * alpha;
       const p = worldToScreen(x, y, z, iso); const flat = (world.get(e, Sprite)!.flags & SpriteFlag.Flat) !== 0;
       const lvl = z >= FLOOR_Z - 1e-6 ? terrainZToFloor(z, 0) : 0;
-      items.push({ e, sx: p.sx, sy: p.sy, depth: lvl * LEVEL_DEPTH + flatSortDepth(x + y, flat), ord: 1e15 + e });
+      const bed = this.bindings.bedFit?.(e) ? BED_SORT_EPS : 0; // ADR-244 (c): a lying sleeper sorts just after its bed (as WebGL)
+      items.push({ e, sx: p.sx, sy: p.sy, depth: lvl * LEVEL_DEPTH + flatSortDepth(x + y, flat) + bed, ord: 1e15 + e });
     }
     if (reg) for (const pc of this.gatherPieces(world, reg)) items.push({ e: pc.e, sx: pc.sx, sy: pc.sy, depth: pc.depth, ord: pc.ord, pc });
     items.sort((a, b) => (a.depth - b.depth) || (a.ord - b.ord)); // ADR-197: total order (no equal-key coin flips) // Flat ground decals (roads) first: always under feet and entities
@@ -385,7 +392,7 @@ export class Canvas2DRenderer {
       const sp = world.get(it.e, Sprite)!; if (sp.scale > 0 && sp.scale < 0.01) continue;
       let anim = "idle"; let tAnim = time;
       const fa = frameAnim(sp.frameId); if (fa >= 0) { try { anim = reg!.sprite(sp.spriteId).animList[fa]?.name ?? "idle"; } catch { /* unknown sprite */ } tAnim = 0; }
-      if (an && world.has(it.e, an)) { const a = world.get(it.e, an)!; const names = this.bindings.animChain?.(it.e, a.state, Math.max(0, (tick - a.startTick) / 20)) ?? STATE_ANIMS[a.state] ?? ["idle"]; /* ADR-241 per-entity chain */ let def; try { def = reg!.sprite(sp.spriteId); } catch { def = undefined; }
+      if (an && world.has(it.e, an)) { const a = world.get(it.e, an)!; const names = this.bindings.animChain?.(it.e, a.state, Math.max(0, (tick - a.startTick) / 20)) ?? STATE_ANIMS[a.state] ?? ["idle"]; /* ADR-241 per-entity chain */ let def; try { def = reg!.sprite(this.dollBodySprite(world, it.e, sp.spriteId)); } catch { def = undefined; }
         anim = names.find((n) => def?.animations.has(n)) ?? "idle"; tAnim = Math.max(0, (tick - a.startTick) / 20) * (this.bindings.animRate?.(it.e, a.state) ?? 1); }
       // ADR-218: a lit fire sprite (station bonfire) loops its flame at its own phase, with embers + smoke
       const litB = this.bindings.lit; let hearth = false;
@@ -402,8 +409,10 @@ export class Canvas2DRenderer {
       if (look && apB) {
         let ls: PreviewLayer2D[] = []; try { ls = previewLayers2D(reg!, apB.mapLayers ? { ...apB, resolve: (a, fa, o) => apB.mapLayers!(it.e, apB.resolve(a, fa, o)) } : apB, look, 0, tAnim, this.sources, anim, facing); } catch { ls = []; }
         if (ls.length) {
+          // ADR-244 (c): sleep_lie* frames put their pivot on the bed footprint centre + bedFits offset (WebGL: sprites.ts)
+          const bf = anim.startsWith("sleep_lie") ? this.bindings.bedFit?.(it.e) : undefined; const bx = (bf?.x ?? 0) * k, by = (bf?.y ?? 0) * k;
           for (const p of ls) { const li = this.layerImage(p); if (!li) continue; const r = p.ref;
-            g.save(); g.translate(snapPx(it.sx, s, ox), snapPx(it.sy, s, oy)); fx(); if (r.flipX) g.scale(-1, 1);
+            g.save(); g.translate(snapPx(it.sx + bx, s, ox), snapPx(it.sy + by, s, oy)); fx(); if (r.flipX) g.scale(-1, 1);
             g.drawImage(li.img, li.x, li.y, r.w, r.h, (p.dx - r.anchorX) * k, (p.dy - r.anchorY) * k, r.w * k, r.h * k); g.restore(); stats.drawCalls++; }
           stats.sprites++; continue;
         }

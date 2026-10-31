@@ -2661,6 +2661,8 @@ Plain X / A keep Interact / Jump. The touch buttons are checked for no overlap a
 - *Mud*: `TileId.Mud = 9`. Worldgen turns grass/dirt within 0.045 noise of the sand band into mud where a moisture field (seed^"mud", scale 9) > 0.56 (~3% of tiles); `tileAt` ≡ `load`; `mud: false` opts out. Walkable/buildable; footsteps "dirt". Fixed the client FX `surfaceOfTile` (6 = snow, 7 = forest floor).
 - `packages/render/test/stream.test.ts`: kept Art's change allowing `season_*`/`gt_*` atlases to be `stream`.
 
+**Add-on: v2 sleep_lie (Art c6faf67e / 11699c57 / ffd98940).** Canvas2D now picks the anim def from the doll's mapped body sprite (not the entity's v1 def, which has no `sleep_lie`), applies `bindings.bedFit` to the doll offset, and adds `BED_SORT_EPS` to the sleeper's depth like WebGL. Gameplay `sleepIn` places the sleeper at `bedCentre` (bed footprint centre = the bed sprite's pivot, per Art's sleepLie spec) instead of the anchor tile, so both renderers draw the body on the mattress instead of offset/behind the bed. Facing stays `bedRot(r)·π/2` (dir 2r). Stale scrap keys removed from `adr240_char_art.test.ts`.
+
 **Tests.** `packages/render/test/adr246_ground_art.test.ts`, `packages/world/test/mud246.test.ts`, `apps/client/test/audio_events.test.ts` (mud/shallow).
 
 ## ADR-248: The dedicated server builds the client's merged manifest (customization + cosmetics hash headless)

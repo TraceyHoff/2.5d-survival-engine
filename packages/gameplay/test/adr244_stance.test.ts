@@ -104,7 +104,8 @@ describe("ADR-244 sleep (bed)", () => {
     w.setField(p, G.Health, "max", 100); w.setField(p, G.Health, "hp", 50);
     inp(w, p, { rest: true }); expect(mode(w, p)).toBe(M.Sleep);
     expect(w.getField(p, Stance, "bedNetId")).toBe(w.getField(bed, NetId, "id")); expect(w.getField(p, Stance, "lie")).toBe(1);
-    expect(w.get(p, Transform)).toMatchObject({ x: 4, y: 3 }); expect(w.getField(p, Transform, "facing")).toBeCloseTo(Math.PI / 2);
+    // ADR-246 add-on: sleeper sits at the bed footprint centre (BuildPiece.rot 0 here -> 1x2 => +0.5,+1), facing from the bed.
+    expect(w.get(p, Transform)).toMatchObject({ x: 4.5, y: 4 }); expect(G.bedCentre(w, bed, { x: 4, y: 3 })).toEqual({ x: 4.5, y: 4 }); expect(w.getField(p, Transform, "facing")).toBeCloseTo(Math.PI / 2);
     expect(G.stanceMoveMul(w, p)).toBe(0); expect(G.stanceBlocksActions(w, p)).toBe(true);
     steps(w, 40); expect(w.getField(p, G.Health, "hp")!).toBeGreaterThan(50);
     expect(G.bedSpots("bed_double_rustic")).toEqual(["left", "right"]); expect(G.spotLie("lower")).toBe(2); expect(G.spotLie("upper")).toBe(1);
