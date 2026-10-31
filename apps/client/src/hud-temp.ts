@@ -8,13 +8,14 @@ import { gameplayDefs, seasonalTemperature } from "@engine/gameplay";
 
 export type TempUnit = "C" | "F";
 const SETTINGS_KEY = "engine-settings"; // menu.ts Settings (tempUnit)
-/** Settings → Temperature units (default °C). */
+/** Settings → Temperature (ADR-243: default °F, °C only when chosen). */
 export function loadTempUnit(): TempUnit {
-  try { return (JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as { tempUnit?: string }).tempUnit === "F" ? "F" : "C"; } catch { return "C"; }
+  // ADR-243: °F default; °C only when explicitly chosen (mirrors menu.ts resolveTempUnit, kept dependency-free for the HUD)
+  try { const s = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as { tempUnit?: string; tempUnitChosen?: boolean }; return s.tempUnit === "C" && s.tempUnitChosen === true ? "C" : "F"; } catch { return "F"; }
 }
 export const toF = (c: number): number => c * 9 / 5 + 32;
 /** "24°C" / "75°F" (rounded; "−" minus sign so negatives read cleanly in Fredoka). */
-export function formatTemp(c: number, unit: TempUnit = "C"): string {
+export function formatTemp(c: number, unit: TempUnit = "F"): string {
   const v = Math.round(unit === "F" ? toF(c) : c); return `${v < 0 ? "−" : ""}${Math.abs(v)}°${unit}`;
 }
 /** Gauge scale (deg C) - covers winter blizzard nights to summer heat waves. */

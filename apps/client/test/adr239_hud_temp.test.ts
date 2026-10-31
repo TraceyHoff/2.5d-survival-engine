@@ -5,7 +5,7 @@ import { World, Season, setSeason, TimeOfDay } from "@engine/core";
 import * as G from "@engine/gameplay";
 import { mountHud, WEATHER_LABEL } from "../src/hud.js";
 import { formatTemp, gaugeFrac, hudAirTemp, loadTempUnit, tempBand, toF } from "../src/hud-temp.js";
-import { tempUnitSelect } from "../src/menu.js";
+import { tempUnitControl } from "../src/menu.js";
 import { sampleDayClock, serverDays } from "../src/day-clock.js";
 
 const world = (): World => { const w = new World({ seed: 1, maxEntities: 1 << 12 }); G.installGameplay(w, {}); return w; };
@@ -15,12 +15,12 @@ afterEach(() => { h?.destroy(); h = undefined; });
 
 describe("ADR-239 HUD temperature gauge", () => {
   test("formatting, °F conversion, gauge scale and comfort bands", () => {
-    expect(formatTemp(24.4)).toBe("24°C"); expect(formatTemp(-7.6)).toBe("−8°C"); expect(formatTemp(0, "F")).toBe("32°F"); expect(formatTemp(30, "F")).toBe("86°F");
+    expect(formatTemp(24.4, "C")).toBe("24°C"); expect(formatTemp(-7.6, "C")).toBe("−8°C"); expect(formatTemp(24.4)).toBe("76°F"); expect(formatTemp(0, "F")).toBe("32°F"); expect(formatTemp(30, "F")).toBe("86°F");
     expect(toF(-15)).toBe(5); expect(gaugeFrac(-50)).toBe(0); expect(gaugeFrac(100)).toBe(1); expect(gaugeFrac(10)).toBeCloseTo(0.5, 9);
     expect(tempBand(-3)).toBe("cold"); expect(tempBand(20)).toBe("mild"); expect(tempBand(35)).toBe("hot");
   });
-  test("°C by default; the Settings picker stores °F and the HUD reads it", () => {
-    expect(loadTempUnit()).toBe("C"); const sel = tempUnitSelect(undefined); expect(sel.value).toBe("C"); expect(Array.from(sel.options).map((o) => o.value)).toEqual(["C", "F"]);
+  test("°F by default (ADR-243); the Settings toggle offers °F / °C and the HUD reads the stored unit", () => {
+    expect(loadTempUnit()).toBe("F"); const c = tempUnitControl(undefined); expect(c.value()).toBe("F"); expect(Array.from(c.el.querySelectorAll("button")).map((o) => o.dataset["unit"])).toEqual(["F", "C"]);
     localStorage.setItem("engine-settings", JSON.stringify({ tempUnit: "F" })); expect(loadTempUnit()).toBe("F");
     const w = world(); h = mountHud(() => w, () => undefined, { hours: 14, season: 0, weather: 0 });
     expect(document.querySelector("#hud [data-hud=temp]")!.textContent).toMatch(/^-?−?\d+°F$/);

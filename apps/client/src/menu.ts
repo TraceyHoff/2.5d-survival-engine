@@ -17,15 +17,28 @@ const BR: Branding = (typeof __BRANDING__ !== "undefined" && __BRANDING__) || { 
 export const APP_TITLE = BR.title;
 export type MenuChoice = { kind: "singleplayer" } | { kind: "multiplayer"; url: string } | { kind: "host" } | { kind: "join"; code: string };
 /** hostCap: desktop P2P host player cap incl. the host (mobile hosts are fixed at 6, see p2p.ts). */
-export interface Settings { bots: number; showHud: boolean; fullscreen: boolean; hostCap: number; /** ADR-121: new-world rules */ hordes: boolean; hordeGraceDays: number; /** ADR-126: tool symbol near resource nodes */ toolHints: boolean; /** ADR-173: name tags over other players */ nameTags?: boolean; /** ADR-239: HUD temperature units (default C) */ tempUnit?: "C" | "F" }
+export interface Settings { bots: number; showHud: boolean; fullscreen: boolean; hostCap: number; /** ADR-121: new-world rules */ hordes: boolean; hordeGraceDays: number; /** ADR-126: tool symbol near resource nodes */ toolHints: boolean; /** ADR-173: name tags over other players */ nameTags?: boolean; /** ADR-239/243: HUD temperature units (default F; C only with tempUnitChosen) */ tempUnit?: "C" | "F"; /** ADR-243: the player picked tempUnit themselves */ tempUnitChosen?: boolean }
 /** ADR-121: the world rules a NEW local / hosted world is created with (an existing save keeps its own). */
 export function newWorldRules(s: Settings = loadSettings()): { hordes: boolean; hordeGraceDays: number } { return { hordes: s.hordes !== false, hordeGraceDays: Math.max(0, Math.min(30, Number(s.hordeGraceDays) || 0)) }; }
 const SETTINGS_KEY = "engine-settings";
-/** ADR-239: °C / °F picker shared by the boot and in-game Settings panels (`data-setting=tempUnit`). */
-export function tempUnitSelect(v: string | undefined): HTMLSelectElement {
-  const q = document.createElement("select"); q.dataset["setting"] = "tempUnit";
-  for (const [k, l] of [["C", "Celsius (°C)"], ["F", "Fahrenheit (°F)"]] as const) { const o = document.createElement("option"); o.value = k; o.textContent = l; q.append(o); }
-  q.value = v === "F" ? "F" : "C"; return q;
+/** ADR-243: the HUD temperature unit a Settings object resolves to. °F is the default; °C only when the player picked it
+ *  (`tempUnitChosen`). A bare `tempUnit: "C"` is the ADR-239 default that every Settings save wrote, not a choice -> °F. */
+export function resolveTempUnit(s: { tempUnit?: string; tempUnitChosen?: boolean } | undefined): "C" | "F" { return s?.tempUnit === "C" && s.tempUnitChosen === true ? "C" : "F"; }
+export interface TempUnitControl { el: HTMLElement; value(): "C" | "F"; /** Settings fields to save: empty until the player presses a unit (keeps "never changed" = °F default) */ patch(): Partial<Settings> }
+/** ADR-243 (amends ADR-239): "Temperature" row with two big °F / °C toggle buttons (`data-setting=tempUnit`, `data-unit`).
+ *  Plain buttons, so D-pad / stick focus + A, touch taps, mouse and Enter/Space all work (a native <select> does not open from
+ *  the gamepad A press, which only .click()s). A <div>, not a <label>: a label would forward taps on its text to the first button. */
+export function tempUnitControl(s: { tempUnit?: string; tempUnitChosen?: boolean } | undefined): TempUnitControl {
+  let v = resolveTempUnit(s), touched = false;
+  const row = document.createElement("div"); row.className = "temp-unit"; row.dataset["setting"] = "tempUnit"; row.setAttribute("role", "radiogroup"); row.setAttribute("aria-label", "Temperature units");
+  row.style.cssText = "display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:15px";
+  const t = document.createElement("span"); t.textContent = "Temperature 🌡"; const g = document.createElement("span"); g.style.cssText = "display:flex;gap:6px";
+  const bs = (["F", "C"] as const).map((u) => { const b = document.createElement("button"); b.type = "button"; b.dataset["unit"] = u; b.dataset["key"] = `temp-unit-${u}`; b.setAttribute("role", "radio");
+    b.textContent = u === "F" ? "°F" : "°C"; b.title = u === "F" ? "Fahrenheit" : "Celsius"; b.style.cssText = "min-width:56px;min-height:40px;padding:6px 12px";
+    b.addEventListener("click", () => { v = u; touched = true; sync(); }); g.append(b); return b; });
+  const sync = (): void => { for (const b of bs) { const on = b.dataset["unit"] === v; b.className = on ? "" : "alt"; b.setAttribute("aria-checked", String(on)); b.setAttribute("aria-pressed", String(on)); } };
+  sync(); row.append(t, g);
+  return { el: row, value: () => v, patch: () => (touched || s?.tempUnitChosen ? { tempUnit: v, tempUnitChosen: true } : {}) };
 }
 export function saveSettings(s: Settings): void { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...(JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as object), ...s })); } catch { /* private mode */ } }
 export function loadSettings(): Settings {
@@ -254,10 +267,10 @@ export class BootUI {
         const l5 = document.createElement("label"); l5.append("Roaming zombie hordes (new worlds)", hz);
         const gd = document.createElement("input"); gd.type = "number"; gd.min = "0"; gd.max = "30"; gd.step = "0.5"; gd.value = String(s.hordeGraceDays ?? 3); gd.style.width = "70px"; gd.dataset["setting"] = "hordeGraceDays";
         const l6 = document.createElement("label"); l6.append("Horde grace period (in-game days)", gd);
-        const tu = tempUnitSelect(s.tempUnit); const l7 = document.createElement("label"); l7.append("Temperature units", tu);
+        const tu = tempUnitControl(s); const l7 = tu.el; // ADR-243: near the top, gamepad/touch toggle
         const manage = document.createElement("button"); manage.className = "alt"; manage.textContent = "Delete progress…"; manage.dataset["action"] = "manage-saves"; manage.addEventListener("click", saves);
-        const save = (): void => { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...(JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as object), bots: Math.max(0, Math.min(12, Number(bots.value) || 0)), showHud: hud.checked, fullscreen: fs.checked, hordes: hz.checked, hordeGraceDays: Math.max(0, Math.min(30, Number(gd.value) || 0)), hostCap: Math.max(2, Math.min(32, Math.round(Number(cap.value)) || 12)), tempUnit: tu.value === "F" ? "F" : "C" })); main(); };
-        this.screen([["Save", save], ["Back", main, "alt"]], main, `<h2>Settings</h2>`, l1, l2, l3, l4, l5, l6, l7, manage);
+        const save = (): void => { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...(JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as object), bots: Math.max(0, Math.min(12, Number(bots.value) || 0)), showHud: hud.checked, fullscreen: fs.checked, hordes: hz.checked, hordeGraceDays: Math.max(0, Math.min(30, Number(gd.value) || 0)), hostCap: Math.max(2, Math.min(32, Math.round(Number(cap.value)) || 12)), ...tu.patch() })); main(); };
+        this.screen([["Save", save], ["Back", main, "alt"]], main, `<h2>Settings</h2>`, l7, l1, l2, l3, l4, l5, l6, manage);
       };
       // Delete progress (ADR-099): pick what to delete from this device, then type DELETE or hold to confirm.
       const slot = opts.slot ?? "1";

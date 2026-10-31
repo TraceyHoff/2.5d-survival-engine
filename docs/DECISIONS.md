@@ -2461,6 +2461,18 @@ Desktop (1024 MB) is unchanged: it re-tiers to hot x1 and already kept creatures
 - Winter is harsh by design (cold damage without clothing or shelter).
 - Art-dependent extras (snow overlays for roofs, ice tiles, a snowflake sprite, a thermometer icon in the UI atlas) fall back to procedural looks until Art delivers them.
 
+## ADR-243: HUD temperature defaults to °F; °C is an explicit, pad/touch-friendly Settings choice (amends ADR-239)
+
+**Context.** ADR-239 added the HUD temperature gauge with °C as the default and a native `<select>` for °C/°F in Settings. Players asked for Fahrenheit by default with Celsius as an option. A native `<select>` can't be opened from a gamepad (ui-nav's A just calls `.click()`), and on touch it opened the OS picker. ADR-239's Settings save paths also always wrote `tempUnit: "C"`, even for players who never touched the picker, so a stored `"C"` alone doesn't show the player chose it.
+
+**Decision.**
+- **Default °F.** `loadTempUnit()` / `resolveTempUnit()` return `"C"` only when `tempUnit === "C" && tempUnitChosen === true`. Anything else is °F: no settings, a bare ADR-239-era `"C"`, `"F"`, or unparsable storage. `formatTemp()` defaults to °F.
+- **Migration.** Players who never changed the unit (including those with the auto-saved `"C"`) move to °F. A pick made through the new control stores `{tempUnit, tempUnitChosen: true}` and is kept. Saving Settings without touching the toggle writes nothing about the unit (`tempUnitControl().patch()` returns `{}`), so the default can change again later without another migration.
+- **Control.** `tempUnitControl()` builds a `div[data-setting=tempUnit][role=radiogroup]` labelled "Temperature 🌡" with two real `<button>`s, **°F** and **°C** (`role=radio`, `aria-checked`/`aria-pressed`, at least 56×40 px). They use the same `""`/`"alt"` styling as the chat-channel toggles. D-pad focus, A, Enter/Space, mouse and touch all work. The row is a `<div>`, not a `<label>`, so a tap on the text doesn't get forwarded to a button.
+- **Findability.** Temperature is the **first** row in both the boot Settings screen and the in-game Settings panel.
+
+**Tests.** `apps/client/test/adr243_temp_fahrenheit.test.ts` covers the migration matrix, that an untouched save records nothing, °C pick/keep/revert, the button semantics and focus, and the HUD reading °F by default and °C once picked. `adr239_hud_temp.test.ts` is updated for the new default and control.
+
 ## ADR-240: v2 character art behind the `charArt` setting (v1 stays the default)
 
 **Problem.** The `customization_v2_sample` pack (Art, b7ace139+) loaded, but in-game the player still looked like the legacy v1 figure. Three debug passes ruled out the asset-index lookup and the frame table. Sprite ids 201817–201842 resolve to their own rows: layer 6, uv 0..0.0254 × 0..0.0557, a 26×57 frame. A kill test that failed every non-v2 sprite still drew the figure, and the ktx2 pages decode to the expected white mannequins. The real cause had two parts:
