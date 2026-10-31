@@ -80,6 +80,19 @@ describe("ADR-238 ground loot despawn", () => {
     steps(w, 20); expect(w.getField(old, LootBag, "despawnAtTick")!).toBeLessThanOrEqual(w.tick + T(DESPAWN.fadeSeconds));
     expect(G.capProtected(w.get(old, LootBag)!, w.tick)).toBe(false);
   });
+  it("a permanent crate (sandbox pet corner) still vanishes IMMEDIATELY when emptied: no 12 s grace, no fade", () => {
+    const w = makeWorld(); installPermissions(w); const p = mk(w, 1, 2); const gone = collect(w, G.LootBagDespawned);
+    const crate = w.create(); w.add(crate, Transform, { x: 2, y: 0 }).add(crate, G.Container, { slotCount: 4 }).add(crate, G.ContainerViewers)
+      .add(crate, LootBag, { owner: 0, despawnAtTick: G.PERMANENT_DESPAWN, spawnTick: w.tick, kind: LootSource.Crate });
+    addItem(w, crate, WOOD, 3); steps(w, 40); expect(w.isAlive(crate)).toBe(true);
+    expect(G.transferItem(w, crate, p, WOOD, 2)).toBe(2); steps(w, 20); expect(w.isAlive(crate)).toBe(true); // partly looted: stays, unfaded
+    expect(G.despawnFadeAlpha(w.get(crate, LootBag)!, w.tick + 10_000)).toBe(1);
+    expect(G.transferItem(w, crate, p, WOOD, 1)).toBe(1); steps(w, 20); // one despawn pass (same cadence as before ADR-238)
+    expect(w.isAlive(crate)).toBe(false); steps(w, 1); expect(gone.map((g) => g.reason)).toEqual(["emptied"]); expect(gone[0]!.kind).toBe(LootSource.Crate);
+    // a death bag emptied at the same moment keeps its emptiedSeconds fade
+    const v = mk(w, 3, 2); const bag = deathBag(w, v); G.transferItem(w, bag, v, WOOD, 3); steps(w, 20); expect(w.isAlive(bag)).toBe(true);
+    steps(w, T(DESPAWN.emptiedSeconds) + 20); expect(w.isAlive(bag)).toBe(false);
+  });
   it("fade: 1 until the last fadeSeconds, then an eased, bounded fall (no blink: never back to full, never below the floor)", () => {
     const b = { owner: 0, despawnAtTick: 10_000, spawnTick: 0, kind: LootSource.Dropped, emptiedTick: 0 };
     expect(G.despawnFadeAlpha(b, 10_000 - T(DESPAWN.fadeSeconds) - 1)).toBe(1);

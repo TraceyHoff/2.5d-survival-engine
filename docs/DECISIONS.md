@@ -2362,7 +2362,7 @@ Desktop (1024 MB) is unchanged: it re-tiers to hot x1 and already kept creatures
   | `deathBagMinAgeSeconds` | 300 |
   | `legacyBagSeconds` | 900 |
 
-- **No reset on interaction.** Opening a bag or taking part of it changes nothing. A bag looted down to empty records `emptiedTick` and despawns `emptiedSeconds` later, fading over that grace. It used to vanish the instant it was empty. Refilling it inside the grace cancels the grace. Permanent caches (`despawnAtTick` 0xffffffff, such as the sandbox crate, now `kind` Crate) never time out. Emptied, they also go after the grace.
+- **No reset on interaction.** Opening a bag or taking part of it changes nothing. A bag looted down to empty records `emptiedTick` and despawns `emptiedSeconds` later, fading over that grace. It used to vanish the instant it was empty. Refilling it inside the grace cancels the grace. Permanent caches (`despawnAtTick` 0xffffffff, such as the sandbox crate, now `kind` Crate) never time out. Emptied, they vanish immediately on the next despawn pass, as before ADR-238: no grace, fade or puff. *(Amended: the first version gave them the 12 s grace too.)*
 - **Cap.** With more than `maxGroundBags` live bags, the oldest by spawn tick (ties by entity id) get `despawnAtTick = now + fadeSeconds`, so they fade and puff like any other bag. Permanent bags and bags already in their last fade window are not counted. A death bag younger than `deathBagMinAgeSeconds` is never taken. The cap overflows rather than eat a fresh corpse run.
 - **Legacy saves.** Migration `LOOTBAG_DESPAWN_MIGRATION` zero-fills the new fields. `kind` 0 means legacy: the spawn tick is `despawnAtTick - legacyBagSeconds` (used by the `canLootBag` owner window), and the old expiry is kept.
 - **Client.**
@@ -2386,5 +2386,7 @@ Desktop (1024 MB) is unchanged: it re-tiers to hot x1 and already kept creatures
 - `apps/server/test/adr238_ground_despawn.test.ts` covers field replication, the client fade value, replicated removal, an emptied death bag gone about 12 s later on the client, and the timer across a SQLite restart.
 - `apps/client/test/adr238_loot_despawn_fx.test.ts` covers puff-on-expiry (no puff on early removal, on a crate, or when not live) and the fade wiring.
 - `pvp.test.ts` and `adr160_hand_loot.test.ts` now expect the emptied grace.
+
+**Amendment (crate).** An emptied permanent crate goes at `emptiedTick` itself (`bagExpiryTick`). Test: "a permanent crate ... still vanishes IMMEDIATELY when emptied" in `adr238_ground_despawn.test.ts`, which also checks that a death bag emptied alongside it keeps its 12 s fade.
 
 **Limits.** The Canvas2D fallback does not fade paper-doll layers (bags have none). The cap is a global count, not per area.

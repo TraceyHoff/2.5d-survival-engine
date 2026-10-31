@@ -7,7 +7,8 @@
  *    goes `emptiedSeconds` later (refilled before that: the grace is cancelled);
  *  - safety cap `maxGroundBags`: past it the OLDEST non-permanent bags are scheduled out first (they get the normal last-`fadeSeconds` fade), but a
  *    death bag younger than `deathBagMinAgeSeconds` never is (the cap may overflow rather than eat a fresh corpse run);
- *  - permanent caches (despawnAtTick 0xffffffff, e.g. the sandbox crate) never time out.
+ *  - permanent caches (despawnAtTick 0xffffffff, e.g. the sandbox crate) never time out, and vanish IMMEDIATELY once
+ *    emptied (the pre-ADR-238 behaviour: no grace, no fade, no puff).
  * Clients read the replicated fields for the last-`fadeSeconds` sprite fade + a dust puff on removal.
  */
 import type { Entity, World } from "@engine/core";
@@ -45,10 +46,11 @@ export interface LootBagTimes { spawnTick: number; despawnAtTick: number; emptie
 export const isPermanentBag = (b: { despawnAtTick: number }): boolean => b.despawnAtTick >>> 0 === PERMANENT_DESPAWN;
 /** Spawn tick; legacy (pre-ADR-238, kind 0) bags derive it from their old fixed lifetime. */
 export const bagSpawnTick = (b: LootBagTimes): number => (b.kind ? b.spawnTick : Math.max(0, b.despawnAtTick - T(DESPAWN.legacyBagSeconds)));
-/** Tick the bag goes: its timer, or emptiedTick + emptied grace, whichever is first. PERMANENT_DESPAWN = never. */
+/** Tick the bag goes: its timer, or emptiedTick + emptied grace, whichever is first. PERMANENT_DESPAWN = never;
+ * an emptied permanent cache goes at emptiedTick itself (no grace). */
 export function bagExpiryTick(b: LootBagTimes): number {
   const emptied = b.emptiedTick ? b.emptiedTick + T(DESPAWN.emptiedSeconds) : Infinity;
-  if (isPermanentBag(b)) return Number.isFinite(emptied) ? emptied : PERMANENT_DESPAWN;
+  if (isPermanentBag(b)) return b.emptiedTick ? b.emptiedTick : PERMANENT_DESPAWN;
   return Math.min(b.despawnAtTick, emptied);
 }
 /** A death bag (or a legacy owner-tagged bag) still inside its protection window: the cap never takes it. */
