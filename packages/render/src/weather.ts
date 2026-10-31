@@ -8,8 +8,9 @@ import { createProgram, type FrameStats, type Program } from "./gl/util.js";
 
 export interface WeatherLevels { rain: number; snow: number; fog: number; wind: number; storm: number }
 
-/** Default kind ids (gameplay WeatherKind: Clear 0, Rain 1, Storm 2, Snow 3, Fog 4). Gameplay owns the values. */
-export const enum WeatherKindId { Clear = 0, Rain = 1, Storm = 2, Snow = 3, Fog = 4 }
+/** Default kind ids (gameplay WeatherKind: Clear 0, Rain 1, Storm 2, Snow 3, Fog 4; ADR-239 seasonal kinds Overcast 5,
+ * Heat 6, Blizzard 7, Windy 8). Gameplay owns the values. */
+export const enum WeatherKindId { Clear = 0, Rain = 1, Storm = 2, Snow = 3, Fog = 4, Overcast = 5, Heat = 6, Blizzard = 7, Windy = 8 }
 
 /** Visual levels at intensity 1 for one weather kind; scaled by intensity (fog has a floor). */
 export interface WeatherVisual { rain: number; snow: number; fog: number; wind: number; storm: number; fogFloor?: number }
@@ -20,6 +21,10 @@ export const DEFAULT_WEATHER_TABLE: Record<number, WeatherVisual> = {
   [WeatherKindId.Storm]: { rain: 1, snow: 0, fog: 0.5, wind: 1, storm: 0.45 },
   [WeatherKindId.Snow]: { rain: 0, snow: 1, fog: 0.3, wind: 0.2, storm: 0 },
   [WeatherKindId.Fog]: { rain: 0, snow: 0, fog: 1, wind: 0.05, storm: 0, fogFloor: 0.2 },
+  [WeatherKindId.Overcast]: { rain: 0, snow: 0, fog: 0.28, wind: 0.2, storm: 0.12 },
+  [WeatherKindId.Heat]: { rain: 0, snow: 0, fog: 0, wind: 0, storm: 0 },
+  [WeatherKindId.Blizzard]: { rain: 0, snow: 1, fog: 0.65, wind: 1, storm: 0.22, fogFloor: 0.25 },
+  [WeatherKindId.Windy]: { rain: 0, snow: 0, fog: 0.05, wind: 0.9, storm: 0.05 },
 };
 let table: Record<number, WeatherVisual> = DEFAULT_WEATHER_TABLE;
 let fallback: WeatherVisual = DEFAULT_WEATHER_TABLE[WeatherKindId.Clear]!;

@@ -5,6 +5,7 @@
  * the camera rect are culled (one draw call per visible chunk).
  */
 import { CHUNK_SIZE, tileToChunk, tileToLocal, renderTileHeight, waterCornerTint, type TileMap, type Chunk, type IsoConfig } from "@engine/world";
+import { SEASON_GROUND_GLSL } from "./season.js";
 import { createProgram, GLSL_COMMON, type FrameStats, type Program } from "./gl/util.js";
 import type { Rect } from "./camera.js";
 import { TileId, isWaterTile } from "./ids.js";
@@ -51,13 +52,14 @@ void main() {
 const FS = /* glsl */ `#version 300 es
 precision highp float; precision highp int;
 in vec3 vColor; in vec2 vWorld; flat in int vFlags;
-uniform float uTime, uWet, uSnow, uPuddles, uWetDarken;
-uniform vec3 uSkyRefl;
+uniform float uTime, uWet, uSnow, uPuddles, uWetDarken, uIce;
+uniform vec3 uSkyRefl, uSeason;
 layout(location=0) out vec4 oColor;
 layout(location=1) out vec4 oEmissive;
 float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float vnoise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
   return mix(mix(h21(i), h21(i + vec2(1, 0)), f.x), mix(h21(i + vec2(0, 1)), h21(i + vec2(1, 1)), f.x), f.y); }
+${SEASON_GROUND_GLSL}
 void main() {
   vec3 c = vColor;
   if (vFlags == 1) {
@@ -67,11 +69,13 @@ void main() {
     c *= 0.9 + 0.12 * w + 0.05 * w2;
     float sp = step(0.985, h21(floor(vWorld * 10.0) + floor(uTime * 3.0)));
     c += sp * 0.25;
+    c = seasonIce(c, vWorld, uIce, 0.5); // ADR-239 winter ice
   } else if (vFlags != 2) {
     // top-face texture speckle (cheap procedural detail)
     float n = h21(floor(vWorld * 8.0));
     c *= 0.92 + 0.16 * n;
   }
+  if (vFlags != 1) c = seasonGround(c, vWorld, uSeason); // ADR-239
   if (vFlags != 1) {
     // surface overlays (procedural fallback for the 64x32 overlay tiles): wet ground, puddles, snow cover
     float m = vnoise(vWorld * 0.9) * 0.65 + vnoise(vWorld * 3.1 + 11.0) * 0.35;
@@ -81,10 +85,7 @@ void main() {
       float ripple = 0.5 + 0.5 * sin(length(fract(vWorld * 2.0) - 0.5) * 40.0 - uTime * 8.0);
       c = mix(c, uSkyRefl * (0.85 + 0.15 * ripple), pud * 0.65);
     }
-    if (uSnow > 0.001 && vFlags == 0) {
-      float cover = smoothstep(1.0 - uSnow, 1.0 - uSnow + 0.15, m * 0.6 + 0.4 * h21(floor(vWorld * 6.0)) * 0.5 + 0.2);
-      c = mix(c, vec3(0.9, 0.93, 0.98) * (0.94 + 0.06 * h21(floor(vWorld * 16.0))), cover);
-    }
+    if (vFlags == 0) c = seasonSnow(c, vWorld, m, max(uSnow, uSeason.z)); // weather snow + ADR-239 snowpack
   }
   oColor = vec4(c, 1.0);
   oEmissive = vec4(0.0);
@@ -179,6 +180,8 @@ export class TilemapRenderer {
 
   /** Surface state: global (from Weather) unless `perChunk` (gameplay's per-chunk surface value) returns one. */
   surface: SurfaceState = { wet: 0, snow: 0 };
+  /** ADR-239: fall, winter, ground snow floor, ice (seasonVisual). */
+  season: [number, number, number, number] = [0, 0, 0, 0];
   perChunk: SurfaceProvider | undefined;
   surfaceStyle = { puddles: 1, wetDarken: 0.72, skyRefl: [0.55, 0.62, 0.72] as readonly number[] };
 
@@ -189,6 +192,7 @@ export class TilemapRenderer {
     gl.uniform3f(u.uIso!, this.iso.tileW / 2, this.iso.tileH / 2, this.iso.zStep);
     gl.uniform1f(u.uZFactor!, this.zFactor); gl.uniform1f(u.uTime!, time);
     gl.uniform1f(u.uPuddles!, this.surfaceStyle.puddles); gl.uniform1f(u.uWetDarken!, this.surfaceStyle.wetDarken);
+    gl.uniform3f(u.uSeason ?? null, this.season[0], this.season[1], this.season[2]); gl.uniform1f(u.uIce ?? null, this.season[3]);
     const sr = this.surfaceStyle.skyRefl; gl.uniform3f(u.uSkyRefl!, sr[0]!, sr[1]!, sr[2]!);
     let lastW = -1, lastS = -1;
     const hw = this.iso.tileW / 2, hh = this.iso.tileH / 2, S = CHUNK_SIZE;

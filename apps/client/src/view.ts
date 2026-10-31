@@ -16,9 +16,10 @@ import { showRenderError, glInfo, BlackFrameCheck } from "./glcheck.js";
  * gameplay defs' sprite keys. Terrain is the net TileClient's TileMap, drawn directly.
  */
 import { CorrectionSampler, type CorrectionSource } from "./correction-sampler.js";
-import { World, Transform, PrevTransform, TimeOfDay, Weather, Appearance, PlayerId, defineComponent, slotIndex, type WearableSlot, entityIndex, type Entity } from "@engine/core";
+import { World, Transform, PrevTransform, TimeOfDay, Weather, Appearance, PlayerId, defineComponent, slotIndex, type WearableSlot, entityIndex, type Entity, seasonAtDays, type SeasonInfo } from "@engine/core";
 import { CHUNK_SIZE, tileToChunk, tileToLocal, renderTileHeight, type TileMap } from "@engine/world";
-import { setDayFraction, resolveOffHandSprite } from "@engine/render";
+import { setDayFraction, setSeasonState, resolveOffHandSprite } from "@engine/render";
+import { dayCount } from "./day-clock.js";
 import { clanPieceTint, clanPieceTintPair } from "./clan-tint.js";
 import { pieceVariantOpts } from "./piece-variant.js";
 import { loadManifest, mergeManifests, resolveManifestShards, buildPieceVisual, type AssetRegistry, type ManifestFragment, type ManifestJson } from "@engine/assets";
@@ -110,7 +111,15 @@ export const CAM_Z_TAU = 0.15, CAM_Z_SNAP = 4;
 export const CAMERA_FALLBACK = { x: 16, y: 16, z: 0 };
 const CAMERA_GRACE_FRAMES = 300;
 export interface ViewStatus { localServer: string; snapshots: number; error?: string }
-export interface ViewOverrides { hours?: number; weather?: number; intensity?: number }
+export interface ViewOverrides { hours?: number; weather?: number; intensity?: number;
+  /** ADR-239 `?season=`: 0 summer, 1 fall, 2 winter; a fraction blends toward the next season (1.5 = half fall/winter). */ season?: number }
+/** ADR-239: the season to draw: the override, else the replicated Season at the client's server-tick day count. */
+export function viewSeason(net: World, days: number, ov?: number): SeasonInfo {
+  if (ov === undefined || !Number.isFinite(ov)) return seasonAtDays(net, days);
+  const p = ((ov % 3) + 3) % 3, index = Math.floor(p), next = (index + 1) % 3, blend = p - index;
+  const weights: [number, number, number] = [0, 0, 0]; weights[index] = 1 - blend; weights[next] = weights[next]! + blend;
+  return { index, next, blend, into: 0, lengthDays: 1, weights, year: 0 };
+}
 
 /** Resource Timing watcher (ADR-118): calls back with the count and transfer bytes of matching responses since start. */
 function watchResources(match: RegExp, cb: (count: number, bytes: number) => void): () => void {
@@ -332,6 +341,7 @@ export class IsoView {
     const frac = this.ov.hours !== undefined ? this.ov.hours / 24 : dayFrac;
     td.epochTick = frac !== undefined ? Math.round(v.tick - frac * td.dayLengthTicks) : nt.epochTick;
     setDayFraction(v, frac);
+    { const len = td.dayLengthTicks, days = dayFrac !== undefined ? dayCount() : (net.tick - nt.epochTick) / len; setSeasonState(v, viewSeason(net, days, this.ov.season)); }
     const w = v.env(Weather), nw = net.env(Weather) as unknown as Record<string, number>;
     for (const k of Object.keys(w)) (w as unknown as Record<string, number>)[k] = nw[k] ?? 0;
     if (this.ov.weather !== undefined) { w.kind = this.ov.weather; w.intensity = this.ov.intensity ?? 1; }

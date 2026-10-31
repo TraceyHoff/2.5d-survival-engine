@@ -2424,3 +2424,39 @@ Desktop (1024 MB) is unchanged: it re-tiers to hot x1 and already kept creatures
 - The stalls UI kit diff is not applied.
 - `stateVfx` is not consumed.
 - About 120 other dead fallbacks remain.
+
+## ADR-239: Seasons (Summer → Fall → Winter) with seasonal weather, visuals and a HUD temperature gauge
+
+**Context.** The world had one look all year, the weather could roll snow at any time, and temperature only affected survival out of sight. The request was three seasons that change the look of the world and everything in it, weather that matches each season (no summer snow), and a temperature gauge in the vitals panel with realistic seasonal values.
+
+**Decision.**
+- **Cycle (core `season.ts`).** A networked `Season` environment singleton `{lengthDays, offsetDays, blendDays}` sits on top of the server-tick day clock (ADR-115). `seasonAt(world)` / `seasonAtDays(world, days)` / `seasonFromDays(days, L, blend)` give `{index, into, weights[3], next}`. The last `blendDays` of a season blend smoothly into the next. Length, blend and start season live in `environment.json` `seasons` (3 days each, 0.75-day blend; `lengthDays: 0` turns seasons off). `setSeason(w, idx, frac)` is a dev/admin jump that keeps the time of day. Persistence stores `seasonOffsetDays`, and `restoreSeason` puts the world back in the same season after a restart.
+- **Weather (gameplay `environment.ts`).** Each season has its own weighted weather table: Summer clear/heat/rain/storm, Fall rain/fog/windy/overcast, Winter snow/blizzard/overcast/clear-cold. In the blend window the roll mixes both tables. `weatherAllowed` rejects snow kinds in summer, and any live snow is ended when summer starts, so it never snows in summer. New kinds are Overcast 5, Heat 6, Blizzard 7 and Windy 8, with render table entries for fog, wind and storm.
+- **Temperature.** `seasonalTemperature(env, season, time, weather, bandDelta)` = blended season mean + day/night curve (coldest just before dawn, warmest mid-afternoon) + per-day seeded noise + weather offset × intensity + biome band (ClimateRes only) − altitude, clamped to the season range. Means and spreads: Summer 27.5 ± 5 (about 20–35 °C), Fall 11.5 ± 4.5 (about 5–18 °C), Winter −6 ± 5 (about −15 to 3 °C). Exposure / felt temperature (vitals) uses it, so cold and heat damage follow the seasons. The comfort band is 8–32 °C.
+- **Visuals.**
+  - Render reads the replicated Season. The client evaluates it on the server-tick day clock (`dayCount()`), so every peer agrees, and `?season=` overrides only the view.
+  - `seasonVisual(world)` gives `{fall, winter, snow, ice, art}` weights.
+  - **WebGL2.** Ground, tile and terrain shaders share `SEASON_GROUND_GLSL`: warm fall grass, then a snow blanket with ice on water. Sprites share `SEASON_SPRITE_GLSL`: green pixels shift to an orange/red/yellow palette per sprite seed in fall and turn bare grey-brown in winter. Snow caps go on upward alpha edges for every `SEASON_SNOWCAP` sprite (trees, pines, buildings, roofs, rocks, ores, props). Flags come from `seasonClassOf(key)`; icons, held items, characters and FX are untouched.
+  - **Canvas2D.** CPU mirrors (`seasonSpritePixels`, `seasonGroundRgb`) build quantized (8-step) recoloured frames. These are cached (900 max) and budgeted at 24 builds per frame, so the first winter frame does not hitch. Water blends to ice with cracks.
+  - **Art hook.** The `SeasonArt` loader prefers `<key>_<season>` (`_fall`/`_autumn`, `_winter`) when Art ships it. The swap happens at blend 0.5, and explicit art is never re-tinted. Otherwise it falls back to procedural tinting.
+  - **Falling leaves.** The client FX director (both renderers) draws falling leaves in fall. Blizzard counts as snow precipitation with strong wind.
+- **HUD.**
+  - A fifth vitals row shows a thermometer, a cold→hot gradient bar with an air-temperature marker and a felt-temperature caret, and a "24°C" readout coloured by band. The clock line shows a season glyph (☀ 🍂 ❄) next to the time.
+  - Settings → "Temperature" picks °C (default) or °F (`engine-settings.tempUnit`).
+  - The panel keeps its old width. The readout is `nowrap`, and short (phone-landscape) viewports get a smaller font.
+  - The panel height is published as `--hud-bottom`, and the touch XP chip stacks below it.
+
+**Tests.**
+- `packages/gameplay/test/adr239_seasons.test.ts` (14) covers: the cycle order and weights; smooth blends; the tick-driven advance; setSeason; per-season weather tables; no summer snow over long runs, including blend windows and pinned weather; temperature ranges per season; the day/night curve; daily variation; and felt temperature.
+- `apps/server/test/adr239_seasons_server.test.ts` (3) covers: Season replication to clients; persistence across a SQLite restart; and client weather and temperature matching the server.
+- `packages/render/test/adr239_season_visuals.test.ts` (7) covers: sprite classes; visual weights; the override; `<key>_<season>` lookup and fallback; CPU recolour; GLSL self-containment; and the new weather kinds.
+- `apps/client/test/adr239_hud_temp.test.ts` (5) covers: formatting and °F; the settings picker; the gauge row placement and seasonal values; the layout CSS; weather labels; and the server-tick day count.
+- Screenshots for each season at day and night (WebGL2), plus Canvas2D winter and the gauge on desktop, mobile and 1920×1080, measured to make sure no other HUD element overlaps the panel.
+
+**Limits.**
+- Night at 22:00 is dark enough that most of the seasonal look is hidden; it shows at dusk and dawn.
+- Heat has no visual haze yet.
+- The biome band term only applies where `ClimateRes` is installed.
+- Canvas2D blends in 8 steps rather than continuously.
+- Winter is harsh by design (cold damage without clothing or shelter).
+- Art-dependent extras (snow overlays for roofs, ice tiles, a snowflake sprite, a thermometer icon in the UI atlas) fall back to procedural looks until Art delivers them.

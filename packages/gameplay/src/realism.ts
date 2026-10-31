@@ -27,7 +27,7 @@ export function emitterSpecs(def: PieceDef): EmitterSpec[] {
 }
 
 /** Wind (tiles/s-ish 0..1 scale). Reads core Weather.windSpeed when present, else a per-kind default. */
-const WIND_DEFAULT: Record<number, number> = { [WeatherKind.Clear]: 0.2, [WeatherKind.Rain]: 0.4, [WeatherKind.Storm]: 1, [WeatherKind.Snow]: 0.5, [WeatherKind.Fog]: 0.05 };
+const WIND_DEFAULT: Record<number, number> = { [WeatherKind.Clear]: 0.2, [WeatherKind.Rain]: 0.4, [WeatherKind.Storm]: 1, [WeatherKind.Snow]: 0.5, [WeatherKind.Fog]: 0.05, [WeatherKind.Overcast]: 0.25, [WeatherKind.Heat]: 0.1, [WeatherKind.Blizzard]: 1, [WeatherKind.Windy]: 0.9 };
 export function windSpeed(world: World): number {
   const w = world.env(Weather) as unknown as Record<string, number>;
   return typeof w.windSpeed === "number" ? w.windSpeed : (WIND_DEFAULT[w.kind ?? 0] ?? 0.2) * (w.intensity ?? 1);

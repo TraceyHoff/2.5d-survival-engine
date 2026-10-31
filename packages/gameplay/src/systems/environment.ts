@@ -6,9 +6,10 @@
  *  - exposure (every 4 ticks = 5 Hz): heat from the world EmitterIndex (sampleField, walls occlude), shelter from
  *    BuildingGrid isCovered/exposure + edge-wall enclosure, wetness, felt temperature, buff modifiers;
  *  - chunk surface wetness (every 20 ticks): rises with rain, dries with wind and sun.
- * WeatherKind values are stable (renderer contract): 0 Clear, 1 Rain, 2 Storm, 3 Snow, 4 Fog.
+ * WeatherKind values are stable (renderer contract): 0 Clear, 1 Rain, 2 Storm, 3 Snow, 4 Fog, 5 Overcast, 6 Heat, 7 Blizzard, 8 Windy.
+ *  - seasons (ADR-239): core Season on the environment; season weather tables + seasonal temperature live here.
  */
-import { addModifier, entityIndex, ModOp, timeOfDay, Transform, Weather, type Entity, type World } from "@engine/core";
+import { addModifier, dayNoise, entityIndex, ModOp, Season, seasonFromDays, timeOfDay, Transform, Weather, type Entity, type SeasonInfo, type TimeOfDayInfo, type World } from "@engine/core";
 import { ClimateRes, climateAt, EmitterIndexRes, type BaseClimate, type ClimateContext, type ClimateModel, type ClimateSample } from "@engine/world";
 import { Buffs, ChunkSurface, Exposure, Stat, Wetness } from "../components.js";
 import { gameplayDefs, isAuthority } from "../config.js";
@@ -41,13 +42,51 @@ export function weatherDef(env: EnvironmentTuning, kind: WeatherKind): WeatherDe
   return env.weather.find((w) => w.kind === kind) ?? NEUTRAL;
 }
 
-/** Authoritative weather state machine (world.rng, server only; clients receive Weather by replication). */
+/** ADR-239: the world's season (always summer / seasons off without a Season component or seasons tuning). */
+export function worldSeason(world: World, env: EnvironmentTuning = gameplayDefs(world).environment, time?: TimeOfDayInfo): SeasonInfo {
+  const st = env.seasons; if (!st || !(st.lengthDays > 0) || !world.isRegistered(Season) || !world.has(world.environment, Season)) return OFF_SEASON;
+  const s = world.env(Season); const t = time ?? timeOfDay(world);
+  return t.dayLengthTicks > 0 ? seasonFromDays(t.day + t.t + s.offsetDays, s.lengthDays, s.blendDays) : OFF_SEASON;
+}
+/** Weather.endsAtTick that pins the current weather (u32 max). */
+export const PINNED_WEATHER = 0xffffffff; const PINNED = PINNED_WEATHER;
+const OFF_SEASON: SeasonInfo = seasonFromDays(0, 0, 0);
+
+/** Whether `kind` may be the current weather in this season (current table, or the next one while blending into it). */
+export function weatherAllowed(env: EnvironmentTuning, si: SeasonInfo, kind: number): boolean {
+  const st = env.seasons; if (!st || si.lengthDays <= 0) return true;
+  const inTable = (i: number): boolean => st.seasons[i]!.weather.some((d) => d.kind === kind && d.weight > 0);
+  return inTable(si.index) || (si.blend > 0 && inTable(si.next));
+}
+
+/** The weather table in force (season table, crossing into the next one with probability = blend). */
+function weatherTable(world: World, env: EnvironmentTuning, si: SeasonInfo): readonly WeatherDef[] {
+  const st = env.seasons; if (!st || si.lengthDays <= 0) return env.weather;
+  const i = si.blend > 0 && world.rng.next() < si.blend ? si.next : si.index;
+  return st.seasons[i]!.weather;
+}
+
+/** Season-aware def for an active kind (current season's entry, then the next season's, then the base entry). */
+export function seasonalWeatherDef(env: EnvironmentTuning, si: SeasonInfo, kind: WeatherKind): WeatherDef {
+  const st = env.seasons;
+  if (st && si.lengthDays > 0) for (const i of [si.index, si.next]) { const d = st.seasons[i]!.weather.find((w) => w.kind === kind); if (d) return d; }
+  return weatherDef(env, kind);
+}
+
+/**
+ * Authoritative weather state machine (world.rng, server only; clients receive Weather by replication).
+ * ADR-239: rolls from the current season's table and re-rolls at once when the season changes under a kind it does not
+ * allow (so winter snow never carries into summer).
+ */
 export function weatherSystem(world: World, dt: number): void {
   if (!isAuthority(world) || world.isReplaying) return;
   const w = world.env(Weather);
-  if (world.tick < w.endsAtTick) return;
   const env = gameplayDefs(world).environment;
-  const def = env.weather[weightedIndex(world, env.weather.map((d) => d.weight))]!;
+  const si = worldSeason(world, env, timeOfDay(world, world.tick + 1)); // the season this step ends in (like clockSystem)
+  // endsAtTick u32 max = pinned (admin / tests / ?weather=): never re-rolled by the season guard
+  if (world.tick < w.endsAtTick && (w.endsAtTick === PINNED || weatherAllowed(env, si, w.kind))) return;
+  const table = weatherTable(world, env, si);
+  const def = table[weightedIndex(world, table.map((d) => d.weight))]!;
   const from = w.kind as WeatherKind;
   w.kind = def.kind;
   w.intensity = world.rng.range(def.intensity[0], def.intensity[1]);
@@ -65,14 +104,38 @@ function weightedIndex(world: World, weights: readonly number[]): number {
   return weights.length - 1;
 }
 
-/** Gameplay temperature/humidity curves for world climateAt: base(biome band, altitude) + day/night + weather. */
-export function gameplayClimateModel(env: EnvironmentTuning): ClimateModel {
+/** Smooth per-day noise in [-1, 1] (cosine-interpolated between day centres; same on server and clients). */
+function dailyNoise(days: number): number {
+  const d = days - 0.5; const d0 = Math.floor(d); const f = d - d0; const k = (1 - Math.cos(Math.PI * f)) / 2;
+  return dayNoise(d0, 239) * (1 - k) + dayNoise(d0 + 1, 239) * k;
+}
+
+/**
+ * ADR-239 seasonal air temperature (deg C) from the season weights, time of day, a per-day random swing and the weather.
+ * Without seasons: the legacy baseTemp + day/night + weather curve. `bandDelta` = biome band temperature - baseTemp.
+ */
+export function seasonalTemperature(env: EnvironmentTuning, si: SeasonInfo, time: TimeOfDayInfo, weather: { kind: number; intensity: number }, bandDelta = 0): number {
+  const st = env.seasons;
+  if (!st || si.lengthDays <= 0) return env.baseTemp + bandDelta + env.dayNightAmplitude * -Math.cos(2 * Math.PI * time.t) + weatherDef(env, weather.kind as WeatherKind).tempOffset * weather.intensity;
+  const curve = -Math.cos(2 * Math.PI * (time.t - 0.04)); // coldest just before dawn-ish, warmest early afternoon
+  const noise = dailyNoise(time.day + time.t);
+  let t = 0, lo = 0, hi = 0;
+  for (let i = 0; i < 3; i++) {
+    const wgt = si.weights[i]!; if (wgt <= 0) continue; const s = st.seasons[i]!;
+    t += wgt * (s.meanTemp + s.dayNightAmplitude * curve + s.dailyVariation * noise); lo += wgt * s.tempRange[0]; hi += wgt * s.tempRange[1];
+  }
+  t += seasonalWeatherDef(env, si, weather.kind as WeatherKind).tempOffset * weather.intensity + st.bandScale * bandDelta;
+  return Math.min(hi, Math.max(lo, t));
+}
+
+/** Gameplay temperature/humidity curves for world climateAt: season + biome band + altitude + day/night + weather. */
+export function gameplayClimateModel(env: EnvironmentTuning, world?: World): ClimateModel {
   return {
     sample(b: BaseClimate, ctx: ClimateContext): ClimateSample {
-      const curve = -Math.cos(2 * Math.PI * ctx.time.t); // -1 midnight, +1 noon
       const wd = weatherDef(env, ctx.weather.kind as WeatherKind);
+      const si = world ? worldSeason(world, env, ctx.time) : OFF_SEASON;
       return {
-        temperature: b.temperature + env.dayNightAmplitude * curve + wd.tempOffset * ctx.weather.intensity - env.altitudeLapse * b.altitude,
+        temperature: seasonalTemperature(env, si, ctx.time, ctx.weather, b.temperature - env.baseTemp) - env.altitudeLapse * b.altitude,
         humidity: Math.min(1, b.humidity + env.humidityPerIntensity * (wd.wetnessPerSec > 0 ? ctx.weather.intensity : 0)),
         altitude: b.altitude, windDir: ctx.weather.windDir, windSpeed: ctx.weather.windSpeed,
         weatherKind: ctx.weather.kind, weatherIntensity: ctx.weather.intensity,
@@ -84,10 +147,8 @@ export function gameplayClimateModel(env: EnvironmentTuning): ClimateModel {
 /** Air temperature (deg C) at a position: world climate if installed, else baseTemp through the same model. */
 export function ambientTemperature(world: World, x = 0, y = 0): number {
   if (world.getResource(ClimateRes)) return climateAt(world, x, y).temperature;
-  const env = gameplayDefs(world).environment; const w = world.env(Weather);
-  return gameplayClimateModel(env).sample({ temperature: env.baseTemp, humidity: 0.5, altitude: 0 }, {
-    time: timeOfDay(world), x, y, weather: { kind: w.kind, intensity: w.intensity, windDir: w.windDir, windSpeed: w.windSpeed },
-  }).temperature;
+  const env = gameplayDefs(world).environment; const w = world.env(Weather); const time = timeOfDay(world);
+  return seasonalTemperature(env, worldSeason(world, env, time), time, w);
 }
 
 /** Spawn-pressure multiplier (night). */
@@ -119,7 +180,9 @@ export function exposureSystem(world: World, dt: number): void {
     else wet -= env.dryPerSec * (heat > 0 ? env.heatDryMul : 1) * dt;
     wet = Math.min(1, Math.max(0, wet));
     const ambient = ambientTemperature(world, x, y);
-    const felt = ambient + ex.data.insulation[s]! + (1 - sh.exposure) * env.shelterTempBonus + heat
+    // ADR-239: shelter warms when it is cold and shades (cools) when the air is above the comfort band
+    const shelter = (1 - sh.exposure) * (ambient > vt.comfortMax ? -env.shelterTempBonus : env.shelterTempBonus);
+    const felt = ambient + ex.data.insulation[s]! + shelter + heat
       - env.wetChill * wet - env.windChillPerSpeed * Math.sqrt(Math.max(0, w.windSpeed)) * sh.exposure;
     ex.data.wetness[s] = wet; ex.data.feltTemp[s] = felt; ex.data.sheltered[s] = sh.covered ? 1 : 0; ex.markChanged(idx);
 
@@ -146,7 +209,7 @@ export function chunkSurfaceSystem(world: World, dt: number): void {
   if (!isAuthority(world)) return;
   const env = gameplayDefs(world).environment; const w = world.env(Weather);
   const curve = -Math.cos(2 * Math.PI * timeOfDay(world).t);
-  const sun = w.kind === WeatherKind.Clear ? Math.max(0, curve) : 0;
+  const sun = w.kind === WeatherKind.Clear || w.kind === WeatherKind.Heat ? Math.max(0, curve) : 0;
   const rain = isRaining(w.kind) ? env.surface.rainPerSec * w.intensity : 0;
   const dry = env.surface.dryPerSec * (1 + env.surface.windDryMul * w.windSpeed + env.surface.sunDryMul * sun);
   const delta = (rain - (rain > 0 ? 0 : dry)) * dt;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { Weather } from "@engine/core";
+import { setSeason, Weather } from "@engine/core";
 import { WeatherKind } from "../src/defs.js";
 import {
   addItem, countItem, DamageCause, Dead, defaultDefs, Died, Exposure, Health, IntentAction, setIntent,
@@ -12,7 +12,7 @@ const SEC = 20;
 
 /** A world where exposure is neutral: comfortable midday, insulation tuned so felt temp stays in band. */
 function neutral() {
-  const w = makeWorld();
+  const w = makeWorld(); setSeason(w, 1, 1); // ADR-239: mild fall morning
   const p = spawnPlayer(w, { x: 0, y: 0 });
   w.setField(p, Exposure, "insulation", 6);
   return { w, p };
@@ -73,7 +73,7 @@ describe("vitals", () => {
   it("cold drops body temperature into hypothermia damage", () => {
     const w = makeWorld();
     const p = spawnPlayer(w, { x: 0, y: 0 });
-    w.env(Weather).kind = WeatherKind.Snow; w.env(Weather).intensity = 1; w.env(Weather).endsAtTick = 0xffffffff;
+    setSeason(w, 2); w.env(Weather).kind = WeatherKind.Snow; w.env(Weather).intensity = 1; w.env(Weather).endsAtTick = 0xffffffff;
     w.set(p, Survival, { bodyTemp: vt.hypothermiaBelow + 0.05 });
     steps(w, 5 * SEC);
     expect(w.get(p, Survival)!.bodyTemp).toBeLessThan(vt.hypothermiaBelow);

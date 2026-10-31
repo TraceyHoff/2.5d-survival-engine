@@ -6,6 +6,7 @@
  * Surface overlays (wet ground, puddles, snow cover) are applied on top in the same shader.
  */
 import { CHUNK_SIZE, renderTileHeight, waterShoreTint, waterCornerTint, type TileMap, type Chunk, type IsoConfig } from "@engine/world";
+import { SEASON_GROUND_GLSL } from "./season.js";
 import { createProgram, GLSL_COMMON, type FrameStats, type Program } from "./gl/util.js";
 import type { AtlasManager } from "./assets/atlasManager.js";
 import type { Rect } from "./camera.js";
@@ -44,11 +45,12 @@ precision highp float; precision highp int;
 in vec3 vUvRaw; flat in int vLayer; flat in vec4 vRect; in vec2 vLocal; in vec2 vWorld; flat in vec4 vInfo; flat in vec4 vCorn; flat in vec2 vOrg;
 uniform highp sampler2DArray uAtlas;
 #define vUv vec3(vUvRaw.xy, float(vLayer)) // flat int array layer (no interpolated layer index)
-uniform vec3 uIso; uniform float uTime, uWet, uSnow, uPuddles, uWetDarken; uniform vec3 uSkyRefl;
+uniform vec3 uIso; uniform float uTime, uWet, uSnow, uPuddles, uWetDarken, uIce; uniform vec3 uSkyRefl, uSeason;
 layout(location=0) out vec4 oColor; layout(location=1) out vec4 oEmissive;
 float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float vnoise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
   return mix(mix(h21(i), h21(i + vec2(1, 0)), f.x), mix(h21(i + vec2(0, 1)), h21(i + vec2(1, 1)), f.x), f.y); }
+${SEASON_GROUND_GLSL}
 void main() {
   vec2 uv = clamp(vUv.xy, vRect.xy, vRect.zw);
   vec4 t = texture(uAtlas, vec3(uv, vUv.z));
@@ -67,7 +69,9 @@ void main() {
     vec3 deep = vec3(0.09, 0.27, 0.56) + detail * 0.7 + (lum - 0.45) * 0.35;
     vec3 shallow = vec3(0.36, 0.82, 0.82) + detail * 0.6 + (lum - 0.45) * 0.4;
     c = mix(deep, shallow, k);
+    c = seasonIce(c, vWorld, uIce, k); // ADR-239: winter ice (shallows freeze first)
   }
+  if (vInfo.w < 0.5) c = seasonGround(c, vWorld, uSeason); // ADR-239 (skirts too, so cliff faces match)
   if (inDiamond && vInfo.w < 0.5) {
     float m = vnoise(vWorld * 0.9) * 0.65 + vnoise(vWorld * 3.1 + 11.0) * 0.35;
     if (uWet > 0.001) {
@@ -76,10 +80,7 @@ void main() {
       float ripple = 0.5 + 0.5 * sin(length(fract(vWorld * 2.0) - 0.5) * 40.0 - uTime * 8.0);
       c = mix(c, uSkyRefl * (0.85 + 0.15 * ripple), pud * 0.65);
     }
-    if (uSnow > 0.001) {
-      float cover = smoothstep(1.0 - uSnow, 1.0 - uSnow + 0.15, m * 0.6 + 0.2 * h21(floor(vWorld * 6.0)) + 0.2);
-      c = mix(c, vec3(0.9, 0.93, 0.98) * (0.94 + 0.06 * h21(floor(vWorld * 16.0))), cover);
-    }
+    c = seasonSnow(c, vWorld, m, max(uSnow, uSeason.z)); // weather snow + ADR-239 winter snowpack
   }
   oColor = vec4(c, 1.0); oEmissive = vec4(0.0);
 }`;
@@ -89,6 +90,8 @@ interface TileChunk { vao: WebGLVertexArrayObject; vbo: WebGLBuffer; count: numb
 export class TileTerrain {
   private prog: Program;
   private chunks = new Map<Chunk, TileChunk>();
+  /** ADR-239: fall, winter, ground snow floor, ice (seasonVisual). */
+  season: [number, number, number, number] = [0, 0, 0, 0];
   constructor(private gl: WebGL2RenderingContext, private iso: IsoConfig, private zFactor: number) { this.prog = createProgram(gl, VS, FS, "terrain-tiles"); }
 
   /** True when the registry has at least the base terrain sprites. */
@@ -149,6 +152,7 @@ export class TileTerrain {
     gl.useProgram(this.prog.prog);
     gl.uniform4fv(u.uView ?? null, view); gl.uniform2fv(u.uDepth ?? null, depth);
     gl.uniform3f(u.uIso ?? null, hw, hh, this.iso.zStep); gl.uniform1f(u.uZFactor ?? null, this.zFactor); gl.uniform1f(u.uTime ?? null, time);
+    gl.uniform3f(u.uSeason ?? null, this.season[0], this.season[1], this.season[2]); gl.uniform1f(u.uIce ?? null, this.season[3]);
     gl.uniform1f(u.uPuddles ?? null, sstyle.puddles); gl.uniform1f(u.uWetDarken ?? null, sstyle.wetDarken);
     gl.uniform3f(u.uSkyRefl ?? null, sstyle.skyRefl[0]!, sstyle.skyRefl[1]!, sstyle.skyRefl[2]!);
     gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D_ARRAY, atlas.tex); gl.uniform1i(u.uAtlas ?? null, 0);

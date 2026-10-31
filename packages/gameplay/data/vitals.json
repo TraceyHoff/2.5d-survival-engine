@@ -21,8 +21,8 @@
   "hypothermiaBelow": 35,
   "hyperthermiaAbove": 39,
   "exposureDps": 2.0,
-  "comfortMin": 10,
-  "comfortMax": 28,
+  "comfortMin": 8,
+  "comfortMax": 32,
   "coldHungerMul": 1.5,
   "heatThirstMul": 1.75
 }

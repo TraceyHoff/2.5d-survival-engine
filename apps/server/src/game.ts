@@ -2,7 +2,7 @@ import { giveSandboxKit, sandboxPetKit, sandboxPetCorner, sandboxSpawn } from ".
 import { handLootTarget, Viewing, TerrainRes, terrainFromTileMap } from "@engine/gameplay";
 import { installInventoryOpCommands, installRoadCommands, NodeRegrow, installSignCommands, installPetCommands, PetEvent, setWorldRules, worldRules, type WorldRulesOpts } from "@engine/gameplay";
 /** Authoritative game server: world + gameplay + streaming chunks + persistence + NetServer sessions. */
-import { ChannelRegistry, CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, type CosmeticCatalogLike, Membership, Owner, PlayerId, TimeOfDay, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
+import { ChannelRegistry, CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, type CosmeticCatalogLike, Membership, Owner, PlayerId, Season, TimeOfDay, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
 import { CHUNK_SIZE, ChunkManager, ProceduralGenerator, computeSpawnPoints, chunkKeyOf, type BuildingGrid, type PopulationSpawner } from "@engine/world";
 import { spawnPoints, GAMEPLAY_COMMANDS, ARMS_COMMANDS, ARMS_EVENT_RELIABILITY, Exploded, Reloaded, VehicleStationOpened, installPartyCommands, PartyInvitePending, installClanCommands, ClanInvitePending, ClanStatus, syncSocialMembership, clanState, encodeClanState, decodeClanState, loadClanState, queueCommand, edgeCommands, spawnPlayer, spawnResourceNode, setSpawnPoints, spawnPoints as worldSpawnPoints, pickSpawnPoint, gameplayDefs, setIntent, IntentAction, nearestMeleeTarget, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installPopulation, installCustomization,
   appearanceServerHooks, applyReplication, installStallBuyHook, installViewBonus, setHitValidator, installPvp, installBedRespawn, installCraftQueue, installExpressionCommands, installVehicleCommands, installVehicleCraftCommands, installVehicleGuard, requestEmote, CraftQueue, CraftQueuesRes, playerNames, stallListing, listingRevision, stallOf, tillOf, StallHeader, StallOwnerKind } from "@engine/gameplay";
@@ -20,6 +20,11 @@ export const LEGACY_START_TIME_OF_DAY = 0.25;
 export function restoreDayClock(world: World, meta: { dayEpochTick?: number }): void {
   const tod = world.env(TimeOfDay);
   tod.epochTick = meta.dayEpochTick !== undefined && Number.isFinite(meta.dayEpochTick) ? meta.dayEpochTick : -Math.round(LEGACY_START_TIME_OF_DAY * tod.dayLengthTicks);
+}
+/** ADR-239: restore the season phase (Season.offsetDays) from save meta; older saves keep the install default. */
+export function restoreSeason(world: World, meta: { seasonOffsetDays?: number }): void {
+  if (!world.isRegistered(Season) || !world.has(world.environment, Season)) return;
+  if (meta.seasonOffsetDays !== undefined && Number.isFinite(meta.seasonOffsetDays)) world.set(world.environment, Season, { offsetDays: meta.seasonOffsetDays });
 }
 export const CLAN_BLOB = "gameplay.clans";
 /** ProceduralGenerator node kinds -> gameplay resource keys (see DEFAULT_BANDS comments in @engine/world). */
@@ -125,7 +130,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
   // Saved parties/clans/claims (throws on a corrupt record rather than starting empty and overwriting it).
   const permissions = installDemoWorld(world, "server", { tickHz, ...(o.store ? { social: loadSocial(o.store) } : {}) });
   // ADR-107: restore the saved day clock (meta.dayEpochTick); pre-ADR-107 saves fall back to their 0.25 start.
-  if (meta) restoreDayClock(world, meta);
+  if (meta) { restoreDayClock(world, meta); restoreSeason(world, meta); }
   // ADR-121: world rules - a save keeps its own (meta), a new world takes the creation options.
   setWorldRules(world, { ...o.worldRules, ...(meta?.hordes !== undefined ? { hordes: meta.hordes === 1 } : {}), ...(meta?.hordeGraceDays !== undefined ? { hordeGraceDays: meta.hordeGraceDays } : {}) });
   if (meta) { world.tick = meta.tick; if (meta.schemaHash !== world.getSchemaHash()) log(`persist: save schema ${meta.schemaHash.toString(16)} != build ${world.getSchemaHash().toString(16)}; chunks with changed persistent components load read-only`); }

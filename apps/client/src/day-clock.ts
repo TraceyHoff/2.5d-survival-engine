@@ -9,7 +9,7 @@ import { DayClock, DEFAULT_TICK_HZ, TimeOfDay, dayFractionAt, type World } from 
 
 export interface ServerTickSource { serverTickEstimate: number }
 const clock = new DayClock(2); // persists across reconnects: a new Welcome blends, never snaps
-let lastMs: number | undefined; let lastT = 0.5;
+let lastMs: number | undefined; let lastT = 0.5; let lastDays = 0.5;
 
 /** Target fraction from the authoritative clock (pure; used by tests to compare peers). */
 export function serverDayFraction(net: World, src: ServerTickSource | undefined, alpha = 0): number {
@@ -20,8 +20,17 @@ export function serverDayFraction(net: World, src: ServerTickSource | undefined,
 export function sampleDayClock(net: World, src: ServerTickSource | undefined, alpha: number, nowMs = performance.now()): number {
   const len = net.env(TimeOfDay).dayLengthTicks || 72000;
   const dt = lastMs === undefined ? 0 : (nowMs - lastMs) / 1000; lastMs = nowMs;
-  return (lastT = clock.update(serverDayFraction(net, src, alpha), dt, len / DEFAULT_TICK_HZ));
+  lastT = clock.update(serverDayFraction(net, src, alpha), dt, len / DEFAULT_TICK_HZ);
+  lastDays = Math.round(serverDays(net, src, alpha) - lastT) + lastT; // ADR-239: whole days from the server tick + the smoothed fraction
+  return lastT;
 }
+/** ADR-239: continuous days since the replicated epoch on the authoritative tick (the season input; pure). */
+export function serverDays(net: World, src: ServerTickSource | undefined, alpha = 0): number {
+  const td = net.env(TimeOfDay); const tick = src ? src.serverTickEstimate + alpha : net.tick + alpha;
+  return (tick - td.epochTick) / (td.dayLengthTicks || 72000);
+}
+/** Last drawn continuous day count (whole days + the drawn fraction): seasonAtDays(world, dayCount()). */
+export const dayCount = (): number => lastDays;
 /** Last drawn day fraction / hours (HUD reads this so its clock matches the lighting exactly). */
 export const dayFraction = (): number => lastT;
 export const dayHours = (): number => lastT * 24;

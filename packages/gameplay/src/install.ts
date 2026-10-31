@@ -4,7 +4,7 @@ import { CROP_EVERY, cropGrowthSystem, farmUseSystem } from "./farming.js";
 import { HUSBANDRY_EVERY, husbandrySystem, husbandryUseSystem } from "./skills/husbandry.js";
 import { installProgression, progressionMigrateSystem, xpTravelSystem } from "./skills/progression.js";
 import { installPets, petSystem } from "./pets.js";
-import { DEFAULT_TICK_HZ, pruneModifiers, setTimeOfDay, StallDisplay, TimeOfDay, Weather, type World } from "@engine/core";
+import { DEFAULT_TICK_HZ, pruneModifiers, Season, setTimeOfDay, StallDisplay, TimeOfDay, Weather, type World } from "@engine/core";
 import { installSpatialIndex, setClimateModel, ClimateRes } from "@engine/world";
 import { Buffs, Equipment, GAMEPLAY_COMPONENTS, IntentAction, Inventory, NO_SLOT, PlayerIntent } from "./components.js";
 import { GameplayConfig, type GameplayRole } from "./config.js";
@@ -105,11 +105,14 @@ export function installGameplay(world: World, options: GameplayOptions | number 
   // Environment singleton is created by core; initialise TimeOfDay once (dayLengthTicks 0 = uninitialised).
   if (world.env(TimeOfDay).dayLengthTicks === 0) { world.env(TimeOfDay).dayLengthTicks = dayLengthTicks; setTimeOfDay(world, env.startTimeOfDay * 24, 0); }
   world.set(world.environment, Weather, { kind: WeatherKind.Clear });
+  // ADR-239: seasons ride on the day clock; offsetDays starts the cycle at startSeason (server meta restores it).
+  if (!world.isRegistered(Season)) world.register(Season);
+  if (!world.has(world.environment, Season)) { const st = env.seasons; world.add(world.environment, Season, st ? { lengthDays: st.lengthDays, blendDays: st.blendDays, offsetDays: st.startSeason * st.lengthDays } : { lengthDays: 0 }); }
   if (role !== "client") setWorldRules(world, opts.worldRules ?? {});
   installSpatialIndex(world);
   installGameplayContainers(world);
   installVehicleCraft(world);
-  if (world.getResource(ClimateRes)) setClimateModel(world, gameplayClimateModel(env));
+  if (world.getResource(ClimateRes)) setClimateModel(world, gameplayClimateModel(env, world));
   if (opts.net && role === "server") applyReplication(opts.net);
 
   const sys: Record<string, (w: World, dt: number) => void> = {

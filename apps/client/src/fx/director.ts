@@ -23,6 +23,7 @@ export interface FxFrame {
   /** real seconds since the last frame */ dt: number; daylight: number; sunElev: number; indoors: boolean;
   ground: (x: number, y: number, z: number) => number; tile: (x: number, y: number) => number;
   view: FxView; weather: FxWeather; ambient: boolean;
+  /** ADR-239 season weights (fall: drifting autumn leaves; winter: no leaves) */ season?: { fall: number; winter: number };
 }
 export const surfaceOfTile = (t: number): Surface => (t === 1 || t === 8 ? "water" : t === 2 ? "sand" : t === 5 ? "stone" : t === 6 ? "dirt" : t === 7 ? "snow" : "grass");
 const BIG_FIRE = /campfire|bonfire|fire_?pit|brazier|hearth|fireplace/;
@@ -213,7 +214,8 @@ export class FxDirector {
     if (this.wakes.size > 64) this.wakes.clear();
   }
   private prevPos(e: EntSnap): boolean { return e.kind === "player" || e.kind === "animal" || e.kind === "zombie"; }
-  /** Ambient spawns, closure-free: kind 0 firefly, 1 dust mote, 2 rain splash, 3 wind leaf. */
+  private autumn = 0.3;
+  /** Ambient spawns, closure-free: kind 0 firefly, 1 dust mote, 2 rain splash, 3 wind leaf, 4 fall leaf (ADR-239). */
   private ambient(f: FxFrame): void {
     const fx = this.fx, wx = f.weather, d = f.daylight;
     const rain = wx.kind === 1 || wx.kind === 2 ? Math.max(0.2, wx.intensity) : 0, clear = wx.kind === 0;
@@ -221,7 +223,10 @@ export class FxDirector {
     if (d < 0.3 && (clear || wx.kind === 4)) this.spawnIn(f, 5 * (1 - d / 0.3), 0);
     if (d > 0.45 && clear && f.snap?.listener) this.spawnIn(f, 2.5, 1);
     if (rain > 0) this.spawnIn(f, (wx.kind === 2 ? 70 : 40) * rain, 2);
-    if (wx.windSpeed > 3 && wx.kind !== 3) this.spawnIn(f, Math.min(6, (wx.windSpeed - 3) * 0.6), 3);
+    const fall = f.season?.fall ?? 0, winter = f.season?.winter ?? 0;
+    if (wx.windSpeed > 3 && wx.kind !== 3 && wx.kind !== 7 && winter < 0.5) this.spawnIn(f, Math.min(6, (wx.windSpeed - 3) * 0.6), 3);
+    if (fall > 0.05 && !rain) this.spawnIn(f, 7 * fall * (1 + Math.min(1.5, wx.windSpeed / 6)), 4); // ADR-239: fall leaves drift down
+    this.autumn = 0.3 + 0.7 * fall;
   }
   private spawnIn(f: FxFrame, rate: number, kind: number): void {
     const fx = this.fx, v = f.view, wx = f.weather; let n = rate * f.dt * fx.density;
@@ -231,7 +236,8 @@ export class FxDirector {
       if (kind === 0) { if (t === 3 || t === 4) fx.firefly(x, y, f.ground(x, y, 0)); }
       else if (kind === 1) { const c = f.snap!.listener; const mx = c.x + (x - (v.x0 + v.x1) / 2) * 0.4, my = c.y + (y - (v.y0 + v.y1) / 2) * 0.4; fx.mote(mx, my, f.ground(mx, my, 0)); }
       else if (kind === 2) { if (t !== 0) fx.rainSplash(x, y, f.ground(x, y, 0), t === 1 || t === 8); }
-      else if (t === 3 || t === 4) fx.leaf(x, y, f.ground(x, y, 0), wx.windDir, wx.windSpeed, fx.rnd() < 0.3);
+      else if (kind === 4) { if (t === 3 || t === 4 || t === 7) fx.leaf(x, y, f.ground(x, y, 0), wx.windDir, Math.max(1, wx.windSpeed), fx.rnd() < 0.85); }
+      else if (t === 3 || t === 4) fx.leaf(x, y, f.ground(x, y, 0), wx.windDir, wx.windSpeed, fx.rnd() < this.autumn);
     }
 
   }

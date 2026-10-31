@@ -12,6 +12,7 @@
  *   split into per-column slices, each keyed by its front-most footprint tile.
  */
 import { fireAnimTime } from "./fire-anim.js";
+import { SEASON_SPRITE_GLSL, SEASON_FOLIAGE, SEASON_SNOWCAP, SUMMER_VISUAL, SeasonArt, type SeasonVisual } from "./season.js";
 import { AnimState as CoreAnimState, entityIndex, lerpAngle, PrevTransform, Transform, type ComponentDef, type World } from "@engine/core";
 import { CHUNK_SIZE, chunkKey, floorToTerrainZ, terrainZToFloor, type BuildingGrid, type ChunkedSpatialIndex, type IsoConfig } from "@engine/world";
 import { createProgram, GLSL_COMMON, type FrameStats, type Program } from "./gl/util.js";
@@ -163,7 +164,7 @@ uniform highp sampler2D uFrames;
 uniform float uZPerPx, uHH, uHW, uTime, uWind, uOutline;
 uniform int uShadowPass, uShadowMode;
 uniform vec2 uShadowDir; uniform float uBlobAspect; uniform vec2 uWindVec; // screen-x wind direction, strength 0..1
-out vec4 vFx; out vec3 vUvRaw; flat out int vLayer; out float vAlpha; flat out int vFlags; flat out vec4 vRect; out vec3 vTint; flat out vec3 vMisc; out vec2 vLocal; out vec2 vScr; flat out float vOcc; flat out ivec2 vFB; flat out vec4 vTint2; flat out float vSwayPx; flat out vec4 vLT; out vec2 vDeck; flat out ivec2 vDeckM;
+out vec4 vFx; out vec3 vUvRaw; flat out int vLayer; out float vAlpha; flat out int vFlags; flat out vec4 vRect; out vec3 vTint; flat out vec3 vMisc; out vec2 vLocal; out vec2 vScr; flat out float vOcc; flat out ivec2 vFB; flat out vec4 vTint2; flat out float vSwayPx; flat out vec4 vLT; out vec2 vDeck; flat out ivec2 vDeckM; flat out float vSeed;
 uniform vec2 uViewPx; // drawing-buffer size (device px): sprite pivots snap to whole device pixels (no shimmer / half-texel blur)
 vec2 snapPivot(vec2 p) {
   if (uViewPx.x <= 0.0) return p;
@@ -178,7 +179,7 @@ void main() {
   vec2 c = vec2(float(gl_VertexID & 1), float((gl_VertexID >> 1) & 1));
   float s = aA.w;
   vFx = aF; vFlags = flags; vRect = uvr; vTint = aD.rgb; int fw = int(dim.w + 0.5); vFB = ivec2(fw & 15, fw >> 4); vMisc = vec3(aE.y, aE.z, float(fw & 1)); vAlpha = aB.w;
-  vTint2 = aH; vSwayPx = 0.0; vLT = aI;
+  vTint2 = aH; vSwayPx = 0.0; vLT = aI; vSeed = aB.z;
   vLocal = c * 2.0 - 1.0; vOcc = aG.w; vScr = aA.xy; vDeck = vec2(0.0); vDeckM = ivec2(0);
   if (uShadowPass == 1) {
     if (aE.x <= 0.0) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); return; }
@@ -228,7 +229,8 @@ void main() {
 
 const FS = /* glsl */ `#version 300 es
 precision highp float; precision highp int;
-in vec4 vFx; in vec3 vUvRaw; flat in int vLayer; in float vAlpha; flat in int vFlags; flat in vec4 vRect; in vec3 vTint; flat in vec3 vMisc; in vec2 vLocal; in vec2 vScr; flat in float vOcc; flat in ivec2 vFB; flat in vec4 vTint2; flat in float vSwayPx; flat in vec4 vLT; in vec2 vDeck; flat in ivec2 vDeckM;
+in vec4 vFx; in vec3 vUvRaw; flat in int vLayer; in float vAlpha; flat in int vFlags; flat in vec4 vRect; in vec3 vTint; flat in vec3 vMisc; in vec2 vLocal; in vec2 vScr; flat in float vOcc; flat in ivec2 vFB; flat in vec4 vTint2; flat in float vSwayPx; flat in vec4 vLT; in vec2 vDeck; flat in ivec2 vDeckM; flat in float vSeed;
+uniform vec3 uSeason; // ADR-239: fall, winter, snow cap
 uniform highp sampler2DArray uAtlas, uPoolTex, uEmis, uSheenM, uSwayM, uTintM; uniform highp sampler2D uTints;
 #define vUv vec3(vUvRaw.xy, float(vLayer)) // flat int array layer (no interpolated layer index)
 uniform int uShadowPass, uShadowMode;
@@ -251,6 +253,7 @@ vec3 crispUv(vec3 uv, vec2 w) {
   vec2 f = fract(p) - 0.5; p = floor(p) + 0.5 + clamp(f / max(d, vec2(1e-4)), -0.5, 0.5); return vec3(p / sz, uv.z);
 }
 float alphaAt(vec2 uv) { return atlasAt(vec3(uv, vUv.z)).a * inRect(uv); }
+${SEASON_SPRITE_GLSL}
 // status tint row (AtlasManager tint table: per sprite SpriteDef.tints, row 0 = render_tuning globals)
 vec3 statusTint(vec3 c, int idx, float amount) {
   if (amount <= 0.003) return c;
@@ -331,6 +334,7 @@ void main() {
     if (ringAt(vUv.xy) > 0.5) { col = uOutlineColor.rgb; a = uOutlineColor.a; }
   }
   if (a < 0.35) discard;
+  if ((vFlags & ${SEASON_FOLIAGE | SEASON_SNOWCAP}) != 0 && t.a >= 0.5) col = seasonSprite(col, vFlags, uv.xy, vSeed, vUv.xy / uTexel); // ADR-239
   if (vOcc > 0.001 && uOccMode == 1) { // dithered circle cut around the focus
     float d = length((vScr - uFocusScr) * vec2(1.0, 1.15)) / uOccRadius;
     ivec2 p = ivec2(gl_FragCoord.xy) & 3;
@@ -471,6 +475,15 @@ export class SpriteBatch {
   visible = 0;
   staticInstances = 0; staticChunksDrawn = 0; staticRebuilds = 0; /** ADR-232: pieces drawn as their placeholder (or skipped) while a stream page loads */ streamFallbacks = 0;
   focusEntity = -1;
+  /** ADR-239: current season visual (IsoRenderer sets it per frame) + snow-cap amount for Snowcap sprites. */
+  season: SeasonVisual = SUMMER_VISUAL; seasonSnowCap = 0;
+  private seasonArt: SeasonArt | null = null; private seasonArtReg: unknown = null;
+  /** `<key>_<season>` art when the registry has it (no procedural pass), else the sprite + its season class flags. */
+  seasonPick(atlas: AtlasManager, sid: number): { sid: number; flags: number } {
+    const reg = atlas.registry; if (!reg) return { sid, flags: 0 };
+    if (this.seasonArtReg !== reg) { this.seasonArt = new SeasonArt(reg); this.seasonArtReg = reg; }
+    return this.seasonArt!.resolve(sid, this.season);
+  }
   /** occlusion fade state per entity index (smoothed 0..1) */
   private occT = new Float32Array(1024); private occLast = -1;
   private silVbo: WebGLBuffer | null = null; private silVao: WebGLVertexArrayObject | null = null;
@@ -704,6 +717,7 @@ export class SpriteBatch {
       else if (ps >= 0) { x = px[ps]! + (x - px[ps]!) * alpha; y = py[ps]! + (y - py[ps]!) * alpha; z = pz[ps]! + (z - pz[ps]!) * alpha; f = lerpAngle(pf[ps]!, f, alpha); }
       const sx = (x - y) * hw, sy = (x + y) * hh - z * zs;
       let sid = sp.data.spriteId[k]!;
+      const spk = this.seasonPick(atlas, sid); sid = spk.sid; const seasonFl = spk.flags; // ADR-239
       // manifest "stream" sheets: page in inside view + margin (animals: wider, they walk into view), keep resident inside
       // margin x STREAM_KEEP_FACTOR (hysteresis); outside both the page times out (AtlasManager.unloadIdleStream)
       const sprio = hasFocus ? (x - fwx) * (x - fwx) + (y - fwy) * (y - fwy) : Infinity;
@@ -791,7 +805,7 @@ export class SpriteBatch {
       const ss = sh.slot(i); const crisp = atlas.isCrisp(res.atlas); if (crisp) atlas.markUsedAt(res.atlas);
       else if (occOn && oc.slot(i) >= 0 && oc.data.fade[oc.slot(i)]! >= 1) atlas.markUsedAt(res.atlas); // ADR-152: never-fade props (campfire) keep their atlas hot
       let sAl = 1; if (sa) { const s2 = sa.slot(i); if (s2 >= 0) { sAl = Math.max(0, Math.min(1, sa.data.alpha[s2]!)); fade *= sAl; } } // ADR-238: whole-sprite fade
-      const o0 = this.writeOne(sx, sy, key, scale, res, sp.data.flags[k]! | (ls.slot(i) >= 0 ? SpriteFlag.BloomSource : 0) | (crisp ? CRISP : 0), (i * 0.618034) % 1, fade, -OPEN, OPEN, sp.data.tint[k]! >>> 0, 0,
+      const o0 = this.writeOne(sx, sy, key, scale, res, sp.data.flags[k]! | (ls.slot(i) >= 0 ? SpriteFlag.BloomSource : 0) | (crisp ? CRISP : 0) | ((sp.data.flags[k]! & SpriteFlag.Flat) ? 0 : seasonFl), (i * 0.618034) % 1, fade, -OPEN, OPEN, sp.data.tint[k]! >>> 0, 0,
         ss >= 0 ? sh.data.alpha[ss]! * sAl : 0, 0, 0, ss >= 0 ? blobW * (sh.data.length[ss]! || 1) : 0);
       if (wet) { const s2 = wet.slot(i); if (s2 >= 0) { o0[20] = wet.data.level[s2]! / 255; if (o0[20] > 0.3) cx.statusFx?.("wet", x, y, z, o0[20]); } }
       if (bt) { const s2 = bt.slot(i); if (s2 >= 0) { o0[21] = bt.data.cold[s2]! / 255; o0[22] = bt.data.shivering[s2]! ? 1 : 0; o0[23] = (bt.data.heat[s2]! / 255) * cx.style.fx.flushStrength;
@@ -1030,8 +1044,9 @@ export class SpriteBatch {
         const vis = part.vis; const rotRaw = part.rot; const rot = rotRaw & 3; const exact = (rotRaw & ROT_EXACT_PIVOT) !== 0; const level = d.level![k]!; const layer = part.layer;
         const ghost = d.ghost![k]!; const dmg = d.damageStage![k]!; const tints = cx.bindings.pieceTints?.(e); const tint = tints ? tints[0] : d.tint![k]! >>> 0;
         // tier page streaming in: draw the bare-key / other resident tier / family default art instead of nothing
-        const drawVis = pieceDrawSprite(atlas, vis); if (drawVis < 0) continue;
-        if (drawVis !== vis) { if (atlas.streamClass(vis) === "bld") this.tierFallbacks++; else this.streamFallbacks++; }
+        const spk = ghost > 0 ? { sid: vis, flags: 0 } : this.seasonPick(atlas, vis); // ADR-239: <key>_<season> piece art, else procedural
+        const drawVis = pieceDrawSprite(atlas, spk.sid); if (drawVis < 0) continue;
+        if (drawVis !== spk.sid) { if (atlas.streamClass(vis) === "bld") this.tierFallbacks++; else this.streamFallbacks++; }
         const pst = cx.bindings.pieceState?.(e) ?? (d.state ? d.state[k]! - 1 : -1);
         if (!atlas.resolvePiece(drawVis, d.variant![k]!, rot, dmg, res, pst)) continue;
         // ADR-218: lit fires animate their idle loop on the render clock (per-entity phase); out fires show their unlit frame
@@ -1072,7 +1087,7 @@ export class SpriteBatch {
         const lift = rotRaw & ROT_DECK_LIFT ? (exact ? decks.topNear(pvx, pvy, level) : decks.topOver(ax, ay, fw, fh, level)) : 0;
         const sx = (pvx - pvy) * hw, sy = (pvx + pvy) * hh - z * zs - lift;
         const flat = flatLayer(layer, roof); // deck pieces (floors/foundations), never roofs
-        const flags = (flat ? SpriteFlag.Flat : 0) | (res.flipX ? SpriteFlag.FlipX : 0) | (nightSet?.has(vis) ? 64 : 0);
+        const flags = (flat ? SpriteFlag.Flat : 0) | (res.flipX ? SpriteFlag.FlipX : 0) | (nightSet?.has(vis) ? 64 : 0) | (flat || cutaway ? 0 : spk.flags);
         // damage 1-3: Art's crack overlay sprite (building.crackOverlay = bld_crack, anim stage<N>) on top of the (baked)
         // damage frame. Where bld_crack covers the stage, no procedural shader crack at all (a not-yet-resident page just
         // shows the bare damage frame for a moment); the procedural crack is kept only for sets with no overlay declared
@@ -1179,6 +1194,7 @@ export class SpriteBatch {
     }
     this.setupFrame = this.frameNo; this.setupTex = atlas.tex;
     gl.uniform4fv(u.uView!, view); gl.uniform2fv(u.uDepth!, depth); gl.uniform2f(u.uViewPx!, gl.drawingBufferWidth, gl.drawingBufferHeight);
+    gl.uniform3f(u.uSeason ?? null, this.season.fall, this.season.winter, this.seasonSnowCap);
     gl.uniform1f(u.uZPerPx!, this.zFactor / this.iso.zStep); gl.uniform1f(u.uHH!, this.iso.tileH / 2); gl.uniform1f(u.uHW ?? null, this.iso.tileW / 2);
     gl.uniform1f(u.uTime!, time); gl.uniform1f(u.uWind!, wind);
     gl.uniform2fv(u.uWindVec!, this.windVec); gl.uniform3fv(u.uShadowColor!, this.shadowColor);

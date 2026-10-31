@@ -24,6 +24,7 @@ import { SpriteFlag } from "./ids.js";
 import { STATE_ANIMS, type AtlasSource } from "./assets/atlasManager.js";
 import { computeDayLighting, dimForWeather } from "./timeOfDay.js";
 import { weatherTargets } from "./weather.js";
+import { SeasonArt, seasonGroundRgb, seasonSpritePixels, seasonVisual, SUMMER_VISUAL, type SeasonVisual } from "./season.js";
 import { readDayFraction, readDayNumber, readWeather } from "./env.js";
 import { newStats, type FrameStats } from "./gl/util.js";
 import type { GameplayBindings } from "./sprites.js";
@@ -151,18 +152,56 @@ export class Canvas2DRenderer {
   private drawWater(tm: TileMap, x0: number, y0: number, n: number): void {
     if (typeof document === "undefined") return;
     const cv = (this.waterCanvas ??= document.createElement("canvas")); if (cv.width !== n || cv.height !== n) { cv.width = n; cv.height = n; }
-    const wg = cv.getContext("2d"); if (!wg) return; const img = wg.createImageData(n, n); const d = img.data; let any = false;
+    const wg = cv.getContext("2d"); if (!wg) return; const img = wg.createImageData(n, n); const d = img.data; let any = false; const ice = this.sv.ice;
     for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
       const x = x0 + i, y = y0 + j; const ch = tm.getChunk(Math.floor(x / CHUNK_SIZE), Math.floor(y / CHUNK_SIZE)); if (!ch) continue;
       const li = (((y % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE) * CHUNK_SIZE + (((x % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE); const id = ch.tiles[li]!;
       const k = isWaterId(id) ? (any = true, this.chunkTint(tm, ch)[li]!) : 1; const c = waterRgb(k); const o = (j * n + i) * 4;
-      d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 255;
+      if (ice > 0) { // ADR-239 winter ice: shallow water freezes first, a few darker cracks
+        const crack = ((x * 2654435761) ^ (y * 40503)) % 7 === 0 ? 0.82 : 1; const a = Math.min(1, ice * (0.75 + 0.25 * k)); const ic = [196 * crack, 220 * crack, 232 * crack];
+        d[o] = c[0] + (ic[0]! - c[0]) * a; d[o + 1] = c[1] + (ic[1]! - c[1]) * a; d[o + 2] = c[2] + (ic[2]! - c[2]) * a;
+      } else { d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; }
+      d[o + 3] = 255;
     }
     if (!any) return; wg.putImageData(img, 0, 0);
     const g = this.ctx; const iso = DEFAULT_ISO; const o = worldToScreen(x0 - 0.5, y0 - 0.5, 0, iso);
     const a = worldToScreen(x0 + 0.5, y0 - 0.5, 0, iso), b = worldToScreen(x0 - 0.5, y0 + 0.5, 0, iso);
     g.save(); g.transform(a.sx - o.sx, a.sy - o.sy, b.sx - o.sx, b.sy - o.sy, o.sx, o.sy); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = "high";
     g.drawImage(cv, 0, 0); g.restore();
+  }
+
+  // ---- ADR-239 seasons (CPU mirror of the WebGL2 shader pass, quantised so the recoloured frames cache) ----
+  private sv: SeasonVisual = SUMMER_VISUAL; private seasonArt: SeasonArt | undefined; private seasonArtReg: AssetRegistry | undefined;
+  private seasonCache = new Map<string, HTMLCanvasElement | null>(); private seasonBuilds = 0;
+  /** Frames recoloured per frame at most (the rest draw plain until the next frame): no hitch when the season turns. */
+  static SEASON_BUILDS_PER_FRAME = 24; static SEASON_CACHE_MAX = 900;
+  private seasonPick(reg: AssetRegistry, sid: number): { sid: number; flags: number } {
+    if (this.seasonArtReg !== reg) { this.seasonArt = new SeasonArt(reg); this.seasonArtReg = reg; }
+    return this.seasonArt!.resolve(sid, this.sv);
+  }
+  /** Recoloured copy of one frame (fall palette / bare winter / snow caps) or null (summer, budget, tainted image). */
+  private seasonFrame(img: CanvasImageSource, f: { atlas: { key: string }; x: number; y: number; w: number; h: number }, flags: number, seed: number, salt = ""): HTMLCanvasElement | null {
+    const sv = this.sv; if (!flags || typeof document === "undefined" || f.w <= 0 || f.h <= 0) return null;
+    const qf = Math.round(sv.fall * 8), qw = Math.round(sv.winter * 8), qs = Math.round(Math.min(1, sv.snow * 1.15) * 8); if (qf + qw === 0) return null;
+    const b = seed % 3, key = `${f.atlas.key}|${f.x},${f.y},${f.w},${f.h}|${flags}|${b}|${qf},${qw},${qs}|${salt}`;
+    const hit = this.seasonCache.get(key); if (hit !== undefined) return hit;
+    if (this.seasonBuilds >= Canvas2DRenderer.SEASON_BUILDS_PER_FRAME) return null; this.seasonBuilds++;
+    if (this.seasonCache.size >= Canvas2DRenderer.SEASON_CACHE_MAX) this.seasonCache.clear();
+    let out: HTMLCanvasElement | null = document.createElement("canvas"); out.width = f.w; out.height = f.h;
+    try { const g = out.getContext("2d", { willReadFrequently: true })!; g.drawImage(img, f.x, f.y, f.w, f.h, 0, 0, f.w, f.h);
+      const d = g.getImageData(0, 0, f.w, f.h); seasonSpritePixels(d.data, f.w, f.h, flags, [0.03, 0.08, 0.125][b]!, qf / 8, qw / 8, qs / 8); g.putImageData(d, 0, 0); } catch { out = null; }
+    this.seasonCache.set(key, out); return out;
+  }
+  private groundCache = new Map<string, string>();
+  /** Season-recoloured ground diamond colour (2 noise variants per tile type), snow blanket + quantised like the frames. */
+  private groundColor(t: number, x: number, y: number): string {
+    const base = TILE_COLORS[t % TILE_COLORS.length]!; const sv = this.sv; if (sv.fall + sv.winter < 0.01) return base;
+    const v = ((x * 73856093) ^ (y * 19349663)) & 1, qf = Math.round(sv.fall * 16), qw = Math.round(sv.winter * 16), qs = Math.round(sv.snow * 16);
+    const key = `${t}|${v}|${qf}|${qw}|${qs}`; let c = this.groundCache.get(key); if (c) return c;
+    const h = parseInt(base.slice(1), 16); const rgb = [(h >> 16 & 255) / 255, (h >> 8 & 255) / 255, (h & 255) / 255];
+    let [r, g, b] = seasonGroundRgb(rgb, qf / 16, qw / 16, v ? 0.7 : 0.3); const sn = (qs / 16) * (t === 5 ? 0.6 : 0.92); // bare rock holds less snow
+    r += (0.9 - r) * sn; g += (0.93 - g) * sn; b += (0.98 - b) * sn;
+    c = `rgb(${Math.round(r * 255)},${Math.round(g * 255)},${Math.round(b * 255)})`; if (this.groundCache.size > 512) this.groundCache.clear(); this.groundCache.set(key, c); return c;
   }
 
   private decks = new DeckNeighbors();
@@ -189,10 +228,13 @@ export class Canvas2DRenderer {
     for (const r of raw) {
       // ADR-218: piece state (bonfire "unlit") + lit fires play their idle flame loop on the render clock (per-entity phase)
       const fire = this.bindings.pieceLit?.(r.e); const pst = this.bindings.pieceState?.(r.e) ?? -1;
-      let f; try { f = pieceFireFrame(reg, r.vis, r.rot & 3, r.dmg, pst, fire, r.ghost, time, entityIndex(r.e)); } catch { continue; } let img: CanvasImageSource | null = this.image(f.atlas.key); if (!img) continue;
+      const spk = r.ghost ? { sid: r.vis, flags: 0 } : this.seasonPick(reg, r.vis); // ADR-239: <key>_<season> piece art, else procedural
+      let f; try { f = pieceFireFrame(reg, spk.sid, r.rot & 3, r.dmg, pst, fire, r.ghost, time, entityIndex(r.e)); } catch { try { f = pieceFireFrame(reg, r.vis, r.rot & 3, r.dmg, pst, fire, r.ghost, time, entityIndex(r.e)); } catch { continue; } } let img: CanvasImageSource | null = this.image(f.atlas.key); if (!img) continue;
+      const f0 = f; let tintSalt = "";
       { // ADR-230: clan tint through the atlas tintmask (R primary, G secondary), as the WebGL2 shader does
         const tp = r.ghost ? undefined : this.bindings.pieceTints?.(r.e) ?? (r.tint ? [r.tint >>> 0, 0] as const : undefined);
-        if (tp && tp[0]) { const ti = this.tintedPiece(img, f, tp[0], tp[1]); if (ti) { img = ti; f = { ...f, x: 0, y: 0 }; } } }
+        if (tp && tp[0]) { const ti = this.tintedPiece(img, f, tp[0], tp[1]); if (ti) { img = ti; f = { ...f, x: 0, y: 0 }; tintSalt = `${tp[0]},${tp[1]}`; } } }
+      if (spk.flags) { const sc = this.seasonFrame(img, { ...f, atlas: f0.atlas, x: f.x, y: f.y }, spk.flags, entityIndex(r.e), tintSalt ? `${f0.x},${f0.y}|${tintSalt}` : ""); if (sc) { img = sc; f = { ...f, x: 0, y: 0 }; } }
       // ADR-210: exact pivot (edge midpoint / vertex / tri centroid) and deck-top lift, mirroring the WebGL2 path
       const exact = (r.rot & ROT_EXACT_PIVOT) !== 0; const pvx = exact ? r.px : r.ax + r.fw / 2, pvy = exact ? r.py : r.ay + r.fh / 2;
       const lift = r.rot & ROT_DECK_LIFT ? (exact ? this.decks.topNear(pvx, pvy, r.level) : this.decks.topOver(r.ax, r.ay, r.fw, r.fh, r.level)) : 0;
@@ -237,6 +279,7 @@ export class Canvas2DRenderer {
     const g = this.ctx, cam = this.camera, s = cam.scale; const stats = (this.stats = newStats());
     const nowMs = performance.now(); if (this.clockAt >= 0) this.clock += Math.min(0.1, (nowMs - this.clockAt) / 1000) * (this.timeScale > 0 ? Math.min(1, this.timeScale) : 1); this.clockAt = nowMs; const time = this.clock; const wr = readWeather(world), wt = weatherTargets(wr.kind, wr.intensity); // ADR-115: same curve + weather dimming as WebGL2 (no smoothing state: cheap)
     const day = dimForWeather(computeDayLighting(readDayFraction(world), readDayNumber(world)), { overcast: Math.max(wt.rain, wt.fog, wt.snow * 0.7), storm: wt.storm });
+    this.sv = seasonVisual(world); this.seasonBuilds = 0; // ADR-239
     g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = "source-over"; g.globalAlpha = 1;
     g.fillStyle = rgb(day.sky); g.fillRect(0, 0, this.w, this.h);
     const ox = Math.round(this.w / 2 - cam.x * s), oy = Math.round(this.h / 2 - cam.y * s); g.setTransform(s, 0, 0, s, ox, oy); g.imageSmoothingEnabled = s < 1; // ADR-197: whole-pixel camera origin
@@ -248,7 +291,7 @@ export class Canvas2DRenderer {
     if (tm) for (let y = Math.floor(c.y) - R; y < c.y + R; y++) for (let x = Math.floor(c.x) - R; x < c.x + R; x++) {
       let t = tm.getTile(x, y); if (!t && !tm.getChunk(Math.floor(x / CHUNK_SIZE), Math.floor(y / CHUNK_SIZE))) continue;
       if (isWaterId(t)) { stats.tiles++; continue; }
-      const p = worldToScreen(x, y, 0, iso); g.fillStyle = TILE_COLORS[t % TILE_COLORS.length]!;
+      const p = worldToScreen(x, y, 0, iso); g.fillStyle = this.groundColor(t, x, y); // ADR-239 season tint
       g.beginPath(); g.moveTo(p.sx, p.sy - th / 2); g.lineTo(p.sx + tw / 2, p.sy); g.lineTo(p.sx, p.sy + th / 2); g.lineTo(p.sx - tw / 2, p.sy); g.fill(); stats.tiles++;
     }
     // sprites: gather, sort by iso depth (screen y of the foot), draw
@@ -291,8 +334,10 @@ export class Canvas2DRenderer {
           stats.sprites++; continue;
         }
       }
-      let f; try { f = reg!.dirFrame(sp.spriteId, anim, facing, tAnim); } catch { continue; }
-      const img = this.image(f.atlas.key); if (!img) continue;
+      const flatS = (sp.flags & SpriteFlag.Flat) !== 0; const spk = this.seasonPick(reg!, sp.spriteId); // ADR-239: <key>_<season> art first
+      let f; try { f = reg!.dirFrame(spk.sid, anim, facing, tAnim); } catch { try { f = reg!.dirFrame(sp.spriteId, anim, facing, tAnim); } catch { continue; } }
+      let img: CanvasImageSource | null = this.image(f.atlas.key); if (!img) continue;
+      if (spk.flags && !flatS) { const sc = this.seasonFrame(img, f, spk.flags, entityIndex(it.e)); if (sc) { img = sc; f = { ...f, x: 0, y: 0 }; } }
       const dw = f.w * k, dh = f.h * k;
       const sAl = world.isRegistered(SpriteAlpha) ? world.getField(it.e, SpriteAlpha, "alpha") : undefined; // ADR-238 despawn fade
       if (sAl !== undefined && sAl <= 0.01) continue;

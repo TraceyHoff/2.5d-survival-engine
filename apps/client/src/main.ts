@@ -29,7 +29,7 @@ import { mountTouchOverlay, syncTouchHidden } from "./touch-overlay.js";
  * Falls back to the Canvas2D debug draw with ?renderer=debug or when WebGL2 / the art fails to load.
  * URL params: ?server=ws://host:7777 (default: same host, port 7777), ?player=N (separate saved account per N),
  *             ?offline=1 (skip the menu: singleplayer), ?menu=0 (skip the menu: legacy connect overlay), ?bots=N,
- *             ?ice=<JSON RTCIceServer[]> (P2P STUN/TURN override, also VITE_ICE_SERVERS), ?renderer=debug, ?time=0..24 / ?weather=clear|rain|storm|snow|fog &intensity=0..1 (view-only overrides), ?hud=0.
+ *             ?ice=<JSON RTCIceServer[]> (P2P STUN/TURN override, also VITE_ICE_SERVERS), ?renderer=debug, ?time=0..24 / ?weather=clear|rain|storm|snow|fog|overcast|heat|blizzard|windy &intensity=0..1, ?season=summer|fall|winter|0..3 (view-only overrides), ?hud=0.
  */
 import { createGameLoop, World, PlayerId, Transform, PrevTransform, lerp, entityIndex, InputState, type FixedLoop, type Entity } from "@engine/core";
 import { TileMap, worldToScreen, screenToWorld, DEFAULT_ISO, ProceduralGenerator, computeSpawnPoints } from "@engine/world";
@@ -81,9 +81,12 @@ let ctx: CanvasRenderingContext2D | null = null;
 /** Canvas the Canvas2D debug view draws on; declared before isoReady (?renderer=debug calls fallback() synchronously: ADR-164). */
 let debugCanvas = canvas;
 let iso: IsoView | undefined;
-const WEATHERS = ["clear", "rain", "storm", "snow", "fog"];
+const WEATHERS = ["clear", "rain", "storm", "snow", "fog", "overcast", "heat", "blizzard", "windy"];
+const SEASONS = ["summer", "fall", "winter"]; // ADR-239 ?season= view override (name or 0..3 fractional blend)
 const num = (k: string): number | undefined => { const v = params.get(k); return v === null || !Number.isFinite(Number(v)) ? undefined : Number(v); };
 const wq = params.get("weather"); const wi = wq ? WEATHERS.indexOf(wq) : -1;
+const sq = params.get("season"); const si = sq ? (SEASONS.indexOf(sq === "autumn" ? "fall" : sq) >= 0 ? SEASONS.indexOf(sq === "autumn" ? "fall" : sq) : Number.isFinite(Number(sq)) ? Number(sq) : -1) : -1;
+const seasonOv = si >= 0 ? { season: si } : {};
 const serverParam = params.get("server");
 /** Main menu unless a URL param already picks the mode (?offline=1, ?server=, ?menu=0: tests/screenshots). */
 /** ?creator=shot&seed=N[&facing=0..7][&body=|sex=][&freeze=1][&timeout=ms]: deterministic creator capture (no menu / world); sets window.__creatorReady (ADR-124, ADR-130). */
@@ -102,7 +105,7 @@ onStage("renderer", 0);
 const glLevel = effectiveLevel(location.search);
 const wantIso = glLevel !== "debug" && typeof WebGL2RenderingContext !== "undefined";
 const isoReady: Promise<void> = wantIso ? (async () => {
-  const v = await IsoView.create(canvas, import.meta.env.BASE_URL, { ...(num("time") !== undefined ? { hours: num("time")! } : {}), ...(wi >= 0 ? { weather: wi, intensity: num("intensity") ?? 1 } : {}) }, onStage);
+  const v = await IsoView.create(canvas, import.meta.env.BASE_URL, { ...(num("time") !== undefined ? { hours: num("time")! } : {}), ...(wi >= 0 ? { weather: wi, intensity: num("intensity") ?? 1 } : {}), ...seasonOv }, onStage);
   const onResize = (): void => v.resize(innerWidth, innerHeight, devicePixelRatio || 1); addEventListener("resize", onResize); onResize();
   attachContextRecovery(canvas, { notify: showRenderError });
   camZoom = attachZoom(v.renderer.camera, canvas, { enabled: () => !document.querySelector("[data-boot=menu]") });
@@ -638,7 +641,7 @@ mountStationHint(root, { world: () => world, player: () => session.player, camer
 mountToolHint(root, { world: () => world, player: () => session.player, camera: () => iso?.renderer.camera, hidden: () => !!menus?.nav.isOpen || buildMode.active || !!vehicleCtl?.driving,
   enabled: () => loadSettings().toolHints !== false, device: promptDevice,
   art: (icon) => toolIconFrame(iso?.registry, icon, Math.min(3, devicePixelRatio || 1) * (promptDevice() === "touch" ? 44 : 34) / 32) });
-if (params.get("hud") !== "0" && settings.showHud) mountHud(() => world, () => session.player, { ...(num("time") !== undefined ? { hours: num("time")! } : {}), ...(wi >= 0 ? { weather: wi } : {}) });
+if (params.get("hud") !== "0" && settings.showHud) mountHud(() => world, () => session.player, { ...(num("time") !== undefined ? { hours: num("time")! } : {}), ...(wi >= 0 ? { weather: wi } : {}), ...seasonOv });
 
 let last = performance.now();
 function audioFrame(w: World, dayFrac: number | undefined): void {

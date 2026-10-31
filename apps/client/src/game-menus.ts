@@ -9,7 +9,7 @@
 import { deleteConfirm } from "./delete-progress.js";
 import { errorLog } from "./error-log.js";
 import { UINav, type ContextStack } from "./ui-nav.js";
-import { loadSettings, saveSettings } from "./menu.js";
+import { loadSettings, saveSettings, tempUnitSelect } from "./menu.js";
 import { morph } from "./ui-diff.js";
 import { audioSettingsRows, type AudioControls } from "./audio/settings-ui.js";
 import { fxSettingsRows, type FxControls } from "./fx/settings-ui.js";
@@ -246,6 +246,7 @@ export class GameMenus {
     const l5 = document.createElement("label"); l5.append("Show tool needed near resources", th);
     const nt = document.createElement("input"); nt.type = "checkbox"; nt.checked = s.nameTags !== false; nt.dataset["key"] = "name-tags"; // ADR-173
     const l6 = document.createElement("label"); l6.append("Show player names", nt);
+    const tu = tempUnitSelect(s.tempUnit); const l7 = document.createElement("label"); l7.append("Temperature units", tu); // ADR-239
     const q = document.createElement("select");
     const qi = this.o.qualityInfo?.(); // ADR-116: Auto shows what it picked; the detected device tier is listed below
     for (const p of QUALITY_PRESETS) { const o = document.createElement("option"); o.value = p; o.textContent = p === "auto" ? (qi ? `${qi.autoLabel()} — adaptive` : "Auto (adaptive)") : p[0]!.toUpperCase() + p.slice(1); q.append(o); }
@@ -256,7 +257,7 @@ export class GameMenus {
     const del = this.o.deleteProgress?.();
     const wr = this.o.worldRules?.(); const l4 = document.createElement("small"); l4.dataset["role"] = "world-rules"; l4.style.cssText = "display:block;opacity:.8";
     l4.textContent = wr ? `This world: zombie hordes ${wr.hordes ? `ON (after ${wr.hordeGraceDays} in-game days)` : "OFF"}` : "";
-    return this.panel("settings", "Settings", [l1, l2, l5, l6, l3, ...(wr ? [l4] : []), ...(this.o.fx ? [fxSettingsRows(this.o.fx)] : []), ...(this.o.audio ? [audioSettingsRows(this.o.audio)] : [])], [...(this.o.tutorial ? [["📖 Play the guide again", () => { this.nav.closeAll(); this.o.tutorial!.replay(); }, "alt"] as [string, () => void, string]] : []), ...(del ? [[del.label, () => this.open("delete-progress"), "alt"] as [string, () => void, string]] : []), ["🐞 Error log", () => this.open("error-log"), "alt"],["Save", () => { saveSettings({ ...loadSettings(), showHud: hud.checked, fullscreen: fs.checked, toolHints: th.checked, nameTags: nt.checked }); const qp = parsePreset(q.value) ?? "auto"; savePreset(qp); this.o.setQuality?.(qp); this.nav.close(); }], ["Back", () => this.nav.close(), "alt"]]);
+    return this.panel("settings", "Settings", [l1, l2, l5, l6, l7, l3, ...(wr ? [l4] : []), ...(this.o.fx ? [fxSettingsRows(this.o.fx)] : []), ...(this.o.audio ? [audioSettingsRows(this.o.audio)] : [])], [...(this.o.tutorial ? [["📖 Play the guide again", () => { this.nav.closeAll(); this.o.tutorial!.replay(); }, "alt"] as [string, () => void, string]] : []), ...(del ? [[del.label, () => this.open("delete-progress"), "alt"] as [string, () => void, string]] : []), ["🐞 Error log", () => this.open("error-log"), "alt"],["Save", () => { saveSettings({ ...loadSettings(), showHud: hud.checked, fullscreen: fs.checked, toolHints: th.checked, nameTags: nt.checked, tempUnit: tu.value === "F" ? "F" : "C" }); const qp = parsePreset(q.value) ?? "auto"; savePreset(qp); this.o.setQuality?.(qp); this.nav.close(); }], ["Back", () => this.nav.close(), "alt"]]);
   }
   private deletePanel(): HTMLElement {
     const d = this.o.deleteProgress?.();

@@ -225,8 +225,8 @@ export class FxDraw {
     gr.addColorStop(0, "rgba(255,255,255,0.9)"); gr.addColorStop(0.6, "rgba(255,255,255,0.4)"); gr.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); return c; }
   /** Canvas2D fallback rain / snow: stateless streaks hashed from index + time (no per-drop state). */
   private weather(g: CanvasRenderingContext2D, e: DrawEnv, bw: number, bh: number, dpr: number): void {
-    const k = e.weather.kind, it = Math.max(0, Math.min(1, e.weather.intensity)); if (!(k === 1 || k === 2 || k === 3) || it <= 0) return;
-    const snow = k === 3, n = Math.round((snow ? 220 : k === 2 ? 420 : 280) * (0.3 + it * 0.7)), wx = Math.cos(e.weather.windDir) * (k === 2 ? 0.35 : 0.18);
+    const k = e.weather.kind, it = Math.max(0, Math.min(1, e.weather.intensity)); if (!(k === 1 || k === 2 || k === 3 || k === 7) || it <= 0) return; // 7 = blizzard (ADR-239)
+    const snow = k === 3 || k === 7, n = Math.round((snow ? 220 : k === 2 ? 420 : 280) * (0.3 + it * 0.7)), wx = Math.cos(e.weather.windDir) * (k === 2 || k === 7 ? 0.35 : 0.18);
     g.globalCompositeOperation = "source-over";
     const st = (snow ? SNOW : RAIN)[Math.round(Math.max(0, Math.min(1, e.daylight)) * Q)]!; g.strokeStyle = st; g.fillStyle = st; g.lineWidth = snow ? 0 : 1.1 * dpr; g.globalAlpha = 1;
     const speed = snow ? 0.12 : 1.5, len = (snow ? 0 : k === 2 ? 26 : 18) * dpr; g.beginPath();

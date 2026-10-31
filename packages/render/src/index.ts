@@ -46,3 +46,4 @@ export * from "./gl/sceneTarget.js";
 export * from "./canvas2d.js";
 export * from "./canvasLight.js";
 export * from "./report.js";
+export * from "./season.js";

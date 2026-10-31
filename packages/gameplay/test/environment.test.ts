@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { evaluate, TimeOfDay, Weather, World, setTimeOfDay, timeOfDay } from "@engine/core";
+import { evaluate, setSeason, TimeOfDay, Weather, World, setTimeOfDay, timeOfDay } from "@engine/core";
 import { WeatherKind } from "../src/defs.js";
 import {
   ambientTemperature, DayPhase, DayPhaseChanged, dayPhase, defaultDefs, Exposure, installGameplay, spawnPlayer,
@@ -26,7 +26,9 @@ describe("day/night", () => {
     setTimeOfDay(w, 0.5 * 24); const noon = ambientTemperature(w);
     expect(threatLevel(w)).toBe(1);
     setTimeOfDay(w, 0 * 24); const midnight = ambientTemperature(w);
-    expect(noon - midnight).toBeCloseTo(2 * env.dayNightAmplitude, 4);
+    // ADR-239: the swing is the season's amplitude (peak shifted a little into the afternoon) plus a slow per-day drift
+    const amp = env.seasons!.seasons[0].dayNightAmplitude;
+    expect(noon - midnight).toBeGreaterThan(1.5 * amp); expect(noon - midnight).toBeLessThan(2.5 * amp);
     expect(threatLevel(w)).toBe(env.nightThreatMul);
     expect(dayPhase(0.9)).toBe(DayPhase.Night);
   });
@@ -75,7 +77,7 @@ describe("exposure", () => {
   });
 
   it("campfires warm nearby players and speed drying", () => {
-    const w = rainy(); setTimeOfDay(w, 0 * 24);
+    const w = rainy(); setSeason(w, 2); setTimeOfDay(w, 0 * 24); // a winter night
     const p = spawnPlayer(w, { x: 0, y: 0 }); const far = spawnPlayer(w, { x: 30, y: 0 });
     Object.assign(w.env(Weather), { kind: WeatherKind.Clear });
     w.setField(p, Exposure, "wetness", 0.5); w.setField(far, Exposure, "wetness", 0.5);
@@ -87,7 +89,7 @@ describe("exposure", () => {
   });
 
   it("cold raises hunger multiplier; weather sets thirst/stamina multipliers", () => {
-    const w = rainy(); setTimeOfDay(w, 0 * 24);
+    const w = rainy(); setSeason(w, 2); setTimeOfDay(w, 0 * 24); // a winter night
     const p = spawnPlayer(w, { x: 0, y: 0 });
     steps(w, 4);
     expect(w.get(p, Exposure)!.feltTemp).toBeLessThan(vt.comfortMin);

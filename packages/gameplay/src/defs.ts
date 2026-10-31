@@ -11,7 +11,10 @@ import { fnv1a, StableIdRegistry } from "@engine/core";
 import { loadBuildPieces, type BuildPieceDef, type BuildPieceRegistry, type RawBuildPiece } from "@engine/world";
 
 /** Weather kind ids (u8 in core Weather.kind). Owned by gameplay; append-only. */
-export const enum WeatherKind { Clear = 0, Rain = 1, Storm = 2, Snow = 3, Fog = 4 }
+export const enum WeatherKind { Clear = 0, Rain = 1, Storm = 2, Snow = 3, Fog = 4,
+  /** ADR-239 seasonal kinds */ Overcast = 5, Heat = 6, Blizzard = 7, Windy = 8 }
+/** Kinds that drop snow (render snow particles + snow cover; never in summer). */
+export const isSnowing = (kind: number): boolean => kind === WeatherKind.Snow || kind === WeatherKind.Blizzard;
 
 export const enum ItemCategory { Resource = 0, Food = 1, Tool = 2, Placeable = 3, Weapon = 4, Clothing = 5, Armor = 6, Ammo = 7, Explosive = 8 }
 /** Worn slots (Worn component index). Append only. */
@@ -29,7 +32,8 @@ const CATEGORY: Record<string, ItemCategory> = { resource: ItemCategory.Resource
 const WEAR: Record<string, WearSlot> = { head: WearSlot.Head, torso: WearSlot.Torso, legs: WearSlot.Legs, feet: WearSlot.Feet, hands: WearSlot.Hands, back: WearSlot.Back, offhand: WearSlot.OffHand, accessory: WearSlot.Accessory };
 const TOOL: Record<string, ToolKind> = { none: ToolKind.None, axe: ToolKind.Axe, pickaxe: ToolKind.Pickaxe, shovel: ToolKind.Shovel, knife: ToolKind.Knife };
 const STATION: Record<string, StationKind> = { none: StationKind.None, campfire: StationKind.Campfire, workbench: StationKind.Workbench, furnace: StationKind.Furnace, anvil: StationKind.Anvil, garage: StationKind.Garage };
-const WEATHER: Record<string, WeatherKind> = { clear: WeatherKind.Clear, rain: WeatherKind.Rain, storm: WeatherKind.Storm, snow: WeatherKind.Snow, fog: WeatherKind.Fog };
+const WEATHER: Record<string, WeatherKind> = { clear: WeatherKind.Clear, rain: WeatherKind.Rain, storm: WeatherKind.Storm, snow: WeatherKind.Snow, fog: WeatherKind.Fog, overcast: WeatherKind.Overcast, heat: WeatherKind.Heat, blizzard: WeatherKind.Blizzard, windy: WeatherKind.Windy };
+export const WEATHER_KEYS: readonly string[] = Object.keys(WEATHER);
 const PLACEMENT: Record<string, Placement> = { cell: Placement.Cell, edge: Placement.Edge, opening: Placement.Opening, free: Placement.Free, tri: Placement.Tri };
 const OPENING: Record<string, SocketKind> = { door: SocketKind.Door, window: SocketKind.Window, hatch: SocketKind.Hatch };
 
@@ -90,10 +94,25 @@ export interface VitalsTuning {
   readonly hypothermiaBelow: number; readonly hyperthermiaAbove: number; readonly exposureDps: number; readonly comfortMin: number;
   readonly comfortMax: number; readonly coldHungerMul: number; readonly heatThirstMul: number;
 }
+/** ADR-239: one season's climate + weather table (entries are full WeatherDefs: base kind def + season overrides). */
+export interface SeasonDef {
+  readonly key: "summer" | "fall" | "winter"; readonly meanTemp: number; readonly dayNightAmplitude: number; readonly dailyVariation: number;
+  readonly tempRange: readonly [number, number]; readonly weather: readonly WeatherDef[];
+}
+export interface SeasonsTuning {
+  /** In-game days per season (0 = seasons off: base weather table + baseTemp). */
+  readonly lengthDays: number; readonly blendDays: number; readonly startSeason: number;
+  /** How much of a biome band's temperature offset (band temp - baseTemp) carries over to seasonal temperatures. */
+  readonly bandScale: number;
+  /** [summer, fall, winter]. */
+  readonly seasons: readonly [SeasonDef, SeasonDef, SeasonDef];
+}
 export interface EnvironmentTuning {
   readonly dayLengthSeconds: number; readonly startTimeOfDay: number; readonly baseTemp: number; readonly dayNightAmplitude: number;
   readonly nightThreatMul: number; readonly wetChill: number; readonly dryPerSec: number; readonly heatDryMul: number;
   readonly shelterTempBonus: number; readonly weather: readonly WeatherDef[];
+  /** ADR-239 seasons (absent = seasons off). */
+  readonly seasons?: SeasonsTuning;
   readonly altitudeLapse: number; readonly humidityPerIntensity: number; readonly windChillPerSpeed: number;
   readonly surface: { readonly rainPerSec: number; readonly dryPerSec: number; readonly windDryMul: number; readonly sunDryMul: number };
   readonly wetBuffThreshold: number; readonly coldBuffBelow: number;
@@ -248,6 +267,9 @@ export interface RawItem extends RawVisual { key: string; name: string; category
 export interface RawRecipe { key: string; station: string; seconds: number; ingredients: { item: string; count: number }[]; output: { item: string; count: number }; skill?: { key: string; level: number } }
 export interface RawResource extends RawVisual { key: string; requiredTool: string; minTier: number; capacity: number; respawnSeconds: number; cooldownSeconds: number; staminaCost: number; bonusPerTier: number; yields: { item: string; min: number; max: number; chance: number }[]; oneShot?: boolean }
 export interface RawWeather { kind: string; weight: number; durationSeconds: number[]; intensity: number[]; tempOffset: number; wetnessPerSec: number; thirstMul: number; staminaRegenMul: number; windSpeed?: number[] }
+export interface RawSeasonWeather { kind: string; weight: number; durationSeconds?: number[]; intensity?: number[]; tempOffset?: number; windSpeed?: number[] }
+export interface RawSeason { meanTemp: number; dayNightAmplitude: number; dailyVariation: number; tempRange: number[]; weather: RawSeasonWeather[] }
+export interface RawSeasons { $comment?: string; lengthDays: number; blendDays: number; startSeason?: string; bandScale?: number; summer: RawSeason; fall: RawSeason; winter: RawSeason }
 export interface RawPiece extends RawVisual {
   key: string; placement: string; layer?: number; footprint?: { w: number; h: number }; levels?: number; solid?: boolean; hp: number;
   sockets?: { x: number; y: number; z?: number; kind: number }[]; cost?: { resource: string; amount: number }[];
@@ -264,7 +286,7 @@ export interface RawDefs {
   recipes: { recipes: RawRecipe[] };
   resources: { resources: RawResource[]; bareHands?: { maxMinTier: number; tools: string[]; yieldMul: number; minYield: number; cooldownMul: number }; depletion?: Partial<DepletionDef> & { $comment?: string } };
   vitals: VitalsTuning & { $comment?: string };
-  environment: Omit<EnvironmentTuning, "weather"> & { weather: RawWeather[]; $comment?: string };
+  environment: Omit<EnvironmentTuning, "weather" | "seasons"> & { weather: RawWeather[]; seasons?: RawSeasons; $comment?: string };
   pieces: { pieces: RawPiece[] };
   tiers: { tiers: (Omit<TierDef, "id" | "cost" | "raid"> & { cost: { item: string; count: number }[]; raid?: Partial<RaidMuls> })[]; building: BuildingTuning };
   zombies: { zombies: RawZombie[]; spawning: SpawnTuning; ai: AiTuning; noise: NoiseTuning; lightAvoid?: LightAvoidTuning };
@@ -385,6 +407,29 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
     return { kind: enumOf(WEATHER, w.kind, `${where}.kind`), weight: w.weight, durationSeconds: pair(w.durationSeconds, "durationSeconds"), intensity: pair(w.intensity, "intensity"), tempOffset: w.tempOffset, wetnessPerSec: w.wetnessPerSec, thirstMul: w.thirstMul, staminaRegenMul: w.staminaRegenMul, windSpeed: w.windSpeed ? pair(w.windSpeed, "windSpeed") : [0, 0] };
   });
   if (!weather.some((w) => w.weight > 0)) err("environment.weather: at least one entry needs weight > 0");
+  const SEASON_KEYS = ["summer", "fall", "winter"] as const;
+  let seasons: SeasonsTuning | undefined;
+  if (env.seasons) {
+    const rs = env.seasons; const where = "environment.seasons";
+    if (!(rs.lengthDays >= 0) || !(rs.blendDays >= 0) || rs.blendDays > rs.lengthDays) err(`${where}: need lengthDays >= 0 and 0 <= blendDays <= lengthDays`);
+    const start = SEASON_KEYS.indexOf((rs.startSeason ?? "summer") as typeof SEASON_KEYS[number]); if (start < 0) err(`${where}.startSeason: unknown season ${rs.startSeason}`);
+    const defs = SEASON_KEYS.map((key): SeasonDef => {
+      const r = rs[key]; const w = `${where}.${key}`;
+      if (!r) { err(`${w}: missing`); return { key, meanTemp: env.baseTemp, dayNightAmplitude: env.dayNightAmplitude, dailyVariation: 0, tempRange: [-50, 60], weather }; }
+      const range: [number, number] = [r.tempRange?.[0] ?? -50, r.tempRange?.[1] ?? 60]; if (!(range[0] < range[1])) err(`${w}.tempRange must be [min, max]`);
+      const table = r.weather.map((e, i): WeatherDef => {
+        const kind = enumOf(WEATHER, e.kind, `${w}.weather[${i}].kind`); const base = weather.find((b) => b.kind === kind);
+        if (!base) { err(`${w}.weather[${i}]: kind ${e.kind} has no environment.weather entry`); }
+        const b = base ?? weather[0]!;
+        const pair = (a: number[] | undefined, d: readonly [number, number]): [number, number] => (a && a.length === 2 && a[0]! <= a[1]! ? [a[0]!, a[1]!] : [d[0], d[1]]);
+        return { ...b, kind, weight: e.weight, durationSeconds: pair(e.durationSeconds, b.durationSeconds), intensity: pair(e.intensity, b.intensity), windSpeed: pair(e.windSpeed, b.windSpeed), tempOffset: e.tempOffset ?? b.tempOffset };
+      });
+      if (!table.some((t) => t.weight > 0)) err(`${w}.weather: at least one entry needs weight > 0`);
+      if (key === "summer" && table.some((t) => t.weight > 0 && isSnowing(t.kind))) err(`${w}.weather: snow is not allowed in summer`);
+      return { key, meanTemp: r.meanTemp, dayNightAmplitude: r.dayNightAmplitude, dailyVariation: r.dailyVariation, tempRange: range, weather: table };
+    });
+    seasons = { lengthDays: rs.lengthDays, blendDays: rs.blendDays, startSeason: Math.max(0, start), bandScale: rs.bandScale ?? 0.35, seasons: defs as unknown as [SeasonDef, SeasonDef, SeasonDef] };
+  }
 
   // tiers
   const tiers: TierDef[] = raw.tiers.tiers.map((t, i) => ({ id: i, key: t.key, hpMul: t.hpMul, vertLoss: t.vertLoss, horizLoss: t.horizLoss, repairMul: t.repairMul, cost: t.cost.map((c) => ({ item: itemRef(c.item, `tier ${t.key}`), count: c.count })),
@@ -460,7 +505,7 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
   if (!(depletion.respawnMul > 0) || !(depletion.stumpSeconds >= 0) || !(depletion.maxRadius > depletion.minRadius) || !(depletion.minRadius >= 0) || !(depletion.attempts >= 1) || !(depletion.maxTries >= 1)) err("resources.depletion: bad values");
   if (!(bareHands.yieldMul >= 0 && bareHands.yieldMul <= 1) || !(bareHands.cooldownMul >= 1)) err("resources.bareHands: yieldMul must be 0..1 and cooldownMul >= 1");
   const strip = <T extends { $comment?: string }>(o: T): Omit<T, "$comment"> => { const { $comment: _c, ...rest } = o; return rest; };
-  const { weather: _w, ...envRest } = strip(env);
+  const { weather: _w, seasons: _s, ...envRest } = strip(env);
   const lock: IdLock = { items: itemsR.lock, resources: resR.lock, recipes: recR.lock, pieces: pieceLock, zombies: zomR.lock };
   const lookup = (r: StableIdRegistry) => (key: string): number => r.id(key);
   const pieceHash = pieceRegistry!.hash;
@@ -469,7 +514,7 @@ export function loadDefs(raw: RawDefs, opts: LoadDefsOptions = {}): GameDefs {
     items, recipes, resources, pieces, pieceRegistry: pieceRegistry!, tiers, building: { ...raw.tiers.building }, zombies,
     zombieKinds: raw.zombies.zombies.map((z) => zomR.reg.id(z.key)), spoiledItem: spoiledItem ?? 0,
     spawning: raw.zombies.spawning, ai: raw.zombies.ai, noise: raw.zombies.noise, lightAvoid: raw.zombies.lightAvoid ?? DEFAULT_LIGHT_AVOID,
-    vitals: strip(raw.vitals), environment: { ...envRest, weather }, movement: { ...strip(raw.movement), deckStandHeight: raw.movement.deckStandHeight ?? 0.75, floorStandHeight: raw.movement.floorStandHeight ?? 0.3125, stepRate: raw.movement.stepRate ?? 6, swimTiles: new Set(raw.movement.swimTiles ?? []), swimSpeedMul: raw.movement.swimSpeedMul ?? 1, wadeSpeedMul: raw.movement.wadeSpeedMul ?? 1, shallowRadius: raw.movement.shallowRadius ?? 2, walkAnimRefSpeed: raw.movement.walkAnimRefSpeed ?? raw.movement.walkSpeed },
+    vitals: strip(raw.vitals), environment: { ...envRest, weather, ...(seasons ? { seasons } : {}) }, movement: { ...strip(raw.movement), deckStandHeight: raw.movement.deckStandHeight ?? 0.75, floorStandHeight: raw.movement.floorStandHeight ?? 0.3125, stepRate: raw.movement.stepRate ?? 6, swimTiles: new Set(raw.movement.swimTiles ?? []), swimSpeedMul: raw.movement.swimSpeedMul ?? 1, wadeSpeedMul: raw.movement.wadeSpeedMul ?? 1, shallowRadius: raw.movement.shallowRadius ?? 2, walkAnimRefSpeed: raw.movement.walkAnimRefSpeed ?? raw.movement.walkSpeed },
     worldgen: { bands, unbuildableTiles: new Set(raw.worldgen.unbuildableTiles), unwalkableTiles: new Set(raw.worldgen.unwalkableTiles) },
     lock, hashes: { items: itemsR.reg.hash, pieces: pieceHash, all }, bareHands, depletion,
     itemId: lookup(itemsR.reg), recipeId: lookup(recR.reg), resourceId: lookup(resR.reg), zombieId: lookup(zomR.reg),

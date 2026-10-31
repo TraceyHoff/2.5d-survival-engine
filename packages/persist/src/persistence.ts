@@ -1,4 +1,4 @@
-import { entityIndex, Owner, TimeOfDay, Transform, type ComponentStore, type Entity, type World } from "@engine/core";
+import { entityIndex, Owner, Season, TimeOfDay, Transform, type ComponentStore, type Entity, type World } from "@engine/core";
 import { ChunkMembership, decodeChunk, encodeChunk, parseChunkKey, chunkKeyOf, type BuildingGrid, type ChunkKey, type AsyncChunkProvider, type ChunkManager, type ChunkProvider, type GeneratedChunk } from "@engine/world";
 import { decodePlayerInto, encodePlayer, PLAYER_VERSION, type PlayerCodecOptions, type PlayerRestoreResult } from "./playerCodec.js";
 import { SocialSaver, type SocialState } from "./social.js";
@@ -226,7 +226,7 @@ export class WorldPersistence {
     return this;
   }
 
-  meta(): WorldMeta { return { seed: this.world.seed, tick: this.world.tick, schemaHash: this.world.getSchemaHash(), nextPlayerId: this.nextPlayerId, dayEpochTick: this.world.env(TimeOfDay).epochTick, ...(this.opts.extraMeta?.() ?? {}) }; }
+  meta(): WorldMeta { return { seed: this.world.seed, tick: this.world.tick, schemaHash: this.world.getSchemaHash(), nextPlayerId: this.nextPlayerId, dayEpochTick: this.world.env(TimeOfDay).epochTick, ...(this.world.isRegistered(Season) && this.world.has(this.world.environment, Season) ? { seasonOffsetDays: this.world.env(Season).offsetDays } : {}), ...(this.opts.extraMeta?.() ?? {}) }; }
   /**
    * Hands out the next account PlayerId (core `PlayerId`, persistent: it is saved in the player record). The counter
    * is written right away, ahead of any player row that could carry the id, so ids are never reused after a crash.

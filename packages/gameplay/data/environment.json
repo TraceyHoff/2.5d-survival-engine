@@ -109,6 +109,86 @@
         2,
         8
       ]
+    },
+    {
+      "kind": "overcast",
+      "weight": 0,
+      "durationSeconds": [
+        150,
+        360
+      ],
+      "intensity": [
+        0.4,
+        1
+      ],
+      "tempOffset": -1,
+      "wetnessPerSec": 0,
+      "thirstMul": 1.0,
+      "staminaRegenMul": 1.0,
+      "windSpeed": [
+        1,
+        5
+      ]
+    },
+    {
+      "kind": "heat",
+      "weight": 0,
+      "durationSeconds": [
+        150,
+        360
+      ],
+      "intensity": [
+        0.6,
+        1
+      ],
+      "tempOffset": 3,
+      "wetnessPerSec": 0,
+      "thirstMul": 1.4,
+      "staminaRegenMul": 0.85,
+      "windSpeed": [
+        0,
+        2
+      ]
+    },
+    {
+      "kind": "blizzard",
+      "weight": 0,
+      "durationSeconds": [
+        90,
+        240
+      ],
+      "intensity": [
+        0.7,
+        1
+      ],
+      "tempOffset": -6,
+      "wetnessPerSec": 0.012,
+      "thirstMul": 0.9,
+      "staminaRegenMul": 0.6,
+      "windSpeed": [
+        10,
+        18
+      ]
+    },
+    {
+      "kind": "windy",
+      "weight": 0,
+      "durationSeconds": [
+        90,
+        240
+      ],
+      "intensity": [
+        0.5,
+        1
+      ],
+      "tempOffset": -1.5,
+      "wetnessPerSec": 0,
+      "thirstMul": 1.0,
+      "staminaRegenMul": 0.95,
+      "windSpeed": [
+        7,
+        13
+      ]
     }
   ],
   "altitudeLapse": 0.6,
@@ -157,5 +237,105 @@
         "sick": true
       }
     ]
+  },
+  "seasons": {
+    "$comment": "ADR-239. Summer -> Fall -> Winter, lengthDays in-game days each (0 = seasons off). The last blendDays of a season blend visuals, temperature and the weather table into the next. Temperature = blended (meanTemp + dayNightAmplitude * day curve + dailyVariation * per-day noise) + weather tempOffset * intensity + bandScale * (biome band temp - baseTemp) - altitude lapse, clamped to tempRange. Season weather entries reference environment.weather kinds (effects come from there) and may override durationSeconds / intensity / windSpeed / tempOffset. Snow kinds are rejected in summer.",
+    "lengthDays": 3,
+    "blendDays": 0.75,
+    "startSeason": "summer",
+    "bandScale": 0.35,
+    "summer": {
+      "meanTemp": 27.5,
+      "dayNightAmplitude": 5,
+      "dailyVariation": 2.5,
+      "tempRange": [
+        17,
+        38
+      ],
+      "weather": [
+        {
+          "kind": "clear",
+          "weight": 48,
+          "tempOffset": 0
+        },
+        {
+          "kind": "heat",
+          "weight": 18
+        },
+        {
+          "kind": "rain",
+          "weight": 20,
+          "tempOffset": -2.5
+        },
+        {
+          "kind": "storm",
+          "weight": 14,
+          "tempOffset": -4
+        }
+      ]
+    },
+    "fall": {
+      "meanTemp": 11.5,
+      "dayNightAmplitude": 4.5,
+      "dailyVariation": 2,
+      "tempRange": [
+        -2,
+        22
+      ],
+      "weather": [
+        {
+          "kind": "rain",
+          "weight": 30,
+          "tempOffset": -2
+        },
+        {
+          "kind": "fog",
+          "weight": 20,
+          "tempOffset": -1
+        },
+        {
+          "kind": "windy",
+          "weight": 22
+        },
+        {
+          "kind": "overcast",
+          "weight": 28
+        }
+      ]
+    },
+    "winter": {
+      "meanTemp": -6,
+      "dayNightAmplitude": 5,
+      "dailyVariation": 3,
+      "tempRange": [
+        -28,
+        6
+      ],
+      "weather": [
+        {
+          "kind": "snow",
+          "weight": 35,
+          "tempOffset": -1.5
+        },
+        {
+          "kind": "blizzard",
+          "weight": 12
+        },
+        {
+          "kind": "overcast",
+          "weight": 25,
+          "tempOffset": 1
+        },
+        {
+          "kind": "clear",
+          "weight": 28,
+          "tempOffset": -2,
+          "windSpeed": [
+            0,
+            3
+          ]
+        }
+      ]
+    }
   }
 }

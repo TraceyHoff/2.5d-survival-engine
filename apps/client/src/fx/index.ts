@@ -5,7 +5,7 @@
  * touches the sim, input or zoom.
  */
 import { Weather, type World, type Entity } from "@engine/core";
-import { computeDayLighting, newDayLighting, readDayNumber } from "@engine/render";
+import { computeDayLighting, newDayLighting, readDayNumber, readSeason } from "@engine/render";
 import type { SoundEvent } from "../audio/events.js";
 import type { WorldAudioState } from "../audio/snapshot.js";
 import { Fx } from "./effects.js";
@@ -49,6 +49,7 @@ export function mountFx(root: HTMLElement, d: FxDeps): FxHandle {
   let warm = false, wasHidden = false, settings = loadFx(), res: FxResolved = resolveFx(settings, !!mq?.matches), tierP = -1, last = -1, ema = 0, texTick = 0;
   const day = newDayLighting(), view: FxView = { x0: 0, y0: 0, x1: 0, y1: 0 }, weather = { kind: 0, intensity: 0, windDir: 0, windSpeed: 0 };
   // Zero per-frame allocation: the director frame and draw env are two long-lived objects mutated in place.
+  const season = { fall: 0, winter: 0 }; // ADR-239
   const NO_EVENTS: readonly SoundEvent[] = [], NO_LIGHT: readonly number[] = [1, 1, 1];
   const frame: FxFrame = { world: d.world(), local: undefined, snap: undefined, events: NO_EVENTS, dt: 0, daylight: 1, sunElev: 0, indoors: false,
     ground: d.ground, tile: d.tile, view, weather, ambient: true };
@@ -89,7 +90,7 @@ export function mountFx(root: HTMLElement, d: FxDeps): FxHandle {
       const mx = (a0 + b0) / 2, my = (b0 - a0) / 2; view.x0 = mx - hx; view.x1 = mx + hx; view.y0 = my - hx; view.y1 = my + hx; }
     const au = d.audio(), indoors = !!(r.indoor as { active?: boolean } | undefined)?.active || !!au?.lastSnap?.indoors;
     const sdt = fx.step(dtReal);
-    frame.world = w; frame.local = d.player(); frame.snap = au?.lastSnap; frame.events = au?.lastEvents ?? NO_EVENTS; frame.dt = dtReal; frame.daylight = lit.daylight;
+    frame.world = w; frame.local = d.player(); frame.snap = au?.lastSnap; frame.events = au?.lastEvents ?? NO_EVENTS; frame.dt = dtReal; frame.daylight = lit.daylight; { const si = readSeason(w); season.fall = si?.weights[1] ?? 0; season.winter = si?.weights[2] ?? 0; frame.season = season; }
     frame.sunElev = lit.sunElevation ?? 0; frame.indoors = indoors; frame.ambient = res.ambient && !hidden;
     director.step(frame);
     fx.pool.shedAmbient = ema > 2; // governor: ambient life yields first if the layer gets expensive

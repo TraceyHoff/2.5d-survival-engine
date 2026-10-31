@@ -211,7 +211,7 @@ const CSS = `#gather-fx{position:absolute;inset:0;z-index:3;pointer-events:none}
 #pickup-toasts[data-art=true] [data-role=toast]{background:transparent;border-style:solid;border-width:6px 5px;border-image:var(--toast-bg) ${TOAST_SLICE.t} ${TOAST_SLICE.r} ${TOAST_SLICE.b} ${TOAST_SLICE.l} fill / 12px 10px / 0 round;border-radius:0;padding:0 6px 0 2px;color:#3a2a18;text-shadow:none}
 #pickup-toasts [data-item="-1"] .ic{background:#d9a227;border-radius:50%}
 #xp-chip{position:absolute;left:12px;bottom:72px;z-index:5;display:flex;align-items:center;gap:5px;padding:2px 6px;border-radius:9px;background:rgba(20,16,12,.55);color:#FFFAF0;font:700 11px/1 system-ui,sans-serif;pointer-events:none}
-#xp-chip[data-device=touch]{bottom:auto;top:60px;left:8px}
+#xp-chip[data-device=touch]{bottom:auto;top:max(60px,var(--hud-bottom,60px));left:8px}
 #xp-chip[data-art=true]{background:transparent;border-radius:0;border-style:solid;border-width:5px 5px;border-image:var(--xp-chip-bg) ${XP_CHIP_SLICE.t} ${XP_CHIP_SLICE.r} ${XP_CHIP_SLICE.b} ${XP_CHIP_SLICE.l} fill / 9px 10px stretch;padding:0 2px}
 #xp-chip .bar{width:56px;height:4px;border-radius:2px;background:rgba(255,255,255,.18);overflow:hidden}#xp-chip .bar>i{display:block;height:100%;width:var(--p,0%);background:#d9a227}
 #pickup-toasts .ic{width:20px;height:20px;flex:none;background:var(--cz-icon,#6b5a45) var(--cz-ipos,center)/var(--cz-isize,contain) no-repeat;border-radius:3px}`;

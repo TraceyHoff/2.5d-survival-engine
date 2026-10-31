@@ -43,6 +43,7 @@ import { clampDrawingBuffer, detectCapabilities, parseGlFlags, type GlFlag, type
 import { RENDER_COMPONENTS } from "./components.js";
 import { DEFAULT_STYLE, mergeStyle, type StyleConfig, type StylePatch } from "./style.js";
 import { readDayFraction, readDayNumber, readWeather, readWind } from "./env.js";
+import { seasonVisual } from "./season.js";
 import type { TransformSource } from "./transformSource.js";
 import { VfxLayer } from "./vfx.js";
 import { BurningFx, HearthFx } from "./burning.js";
@@ -152,6 +153,8 @@ export class IsoRenderer implements Renderer {
   emitterKinds: Record<number, EmitterVisual> = { ...DEFAULT_EMITTER_KINDS };
   /** Surface wetness/snow: derived from Weather over time unless a per-chunk provider is set. */
   readonly surface = { wet: 0, snow: 0 };
+  /** ADR-239: [fall, winter, ground snow floor, ice] for the terrain shaders. */
+  private readonly seasonU: [number, number, number, number] = [0, 0, 0, 0];
   /** Grading keyframes (time-of-day sun/ambient/fog/shadow tint + optional LUT per keyframe). */
   gradingKeyframes: GradingKeyframe[] = [];
   private luts = new Map<string, LutBinding>();
@@ -497,6 +500,11 @@ export class IsoRenderer implements Renderer {
     sf.snow = Math.max(0, Math.min(1, sf.snow + (ws.snow > 0.05 ? ws.snow * su.snowRate : -su.meltRate * day.daylight) * dt));
     if (this.firstFrame2) { sf.wet = Math.min(1, ws.rain * 0.85); sf.snow = Math.min(1, ws.snow * 0.8); this.firstFrame2 = false; }
     this.terrain.surface = sf;
+    // ADR-239 seasons: ground recolour + snowpack + ice (terrain uniforms), sprite foliage/snow caps (falling leaves: the client FX director)
+    const sv = seasonVisual(world); const SU = this.seasonU;
+    SU[0] = sv.fall; SU[1] = sv.winter; SU[2] = sv.snow; SU[3] = sv.ice;
+    this.terrain.season = SU; this.tiles.season = SU;
+    this.sprites.season = sv; this.sprites.seasonSnowCap = Math.max(sv.snow * 1.15, sf.snow * 0.9);
     this.terrain.surfaceStyle = { puddles: su.puddles, wetDarken: su.wetDarken, skyRefl: su.skyReflection };
     // lightning during storms
     this.flash = Math.max(0, this.flash - dt * 4);
