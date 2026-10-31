@@ -83,7 +83,7 @@ def fragment(J):
             "bodyTypes": {bt: {"sprite": "body_" + bt, "anim": "idle", "displayName": STR[f"body.{bt}"], "locKey": f"body.{bt}",
                                "cosmeticDefaults": DEFAULTS[bt]} for bt in BODIES},
             "requiredSlots": ["face", "eyes"], "faceAnims": FACE_ANIMS, "tintNeutral": 0.78,
-            "skinTones": pal(catalog.SKIN), "hairColors": pal(catalog.HAIR), "clothingColors": pal(catalog.CLOTH), "wearables": W}
+            "skinTones": [{k: t[k] for k in ("key", "color", "ramp", "undertone", "monk", "fitzpatrick")} for t in catalog.SKIN_TONES], "hairColors": pal(catalog.HAIR), "clothingColors": pal(catalog.CLOTH), "wearables": W}
 
 # tags from engine packages/gameplay/data/cosmetics.json (DESIGN §10); untagged = free for everyone
 UNLOCKS = {"founder": {"hat_top_hat", "acc_cape", "eyes_sparkle"}, "chef": {"hat_chef", "top_pinafore"},

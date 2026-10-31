@@ -38,7 +38,9 @@ export interface WearableJson extends WearableLayerPropsJson {
   /** face/eyes only: expression key -> per-body art. Every anim of the part's sprite is also an expression key. */
   expressions?: Record<string, Partial<Record<BodyType, BodyArtJson>>>;
 }
-export interface PaletteColorJson { key: string; color: string }
+/** Skin tones only (data, optional): intended on-screen cel ramp (`color` stays the multiply-tint input). See pack/customization/skin_tones.json. */
+export interface SkinRampJson { base: string; shadow: string; highlight: string }
+export interface PaletteColorJson { key: string; color: string; ramp?: SkinRampJson; undertone?: "cool" | "neutral" | "warm" | "olive"; monk?: number; fitzpatrick?: string }
 export interface CosmeticsJson {
   bodyTypes?: Partial<Record<BodyType, BodyTypeJson>>; wearables?: WearableJson[];
   skinTones?: PaletteColorJson[]; hairColors?: PaletteColorJson[]; clothingColors?: PaletteColorJson[];

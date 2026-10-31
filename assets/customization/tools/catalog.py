@@ -2,9 +2,10 @@
 from palette import ramp
 def hx(c): return "#%02x%02x%02x" % tuple(c)
 
-SKIN = [("porcelain", "#fbe3d2"), ("peach", "#f6cfb0"), ("rose", "#eebfa4"), ("honey", "#e2a878"), ("tan", "#c98d5e"),
-        ("caramel", "#b0744a"), ("bronze", "#94603c"), ("umber", "#774a2e"), ("cocoa", "#5e3a26"), ("ebony", "#46291c"),
-        ("olive", "#c6a27a"), ("goblin", "#a8c98a")]
+# Realistic human skin tones only (light -> deep): source of truth skin_tones.py -> pack/customization/skin_tones.json
+import json as _json, os as _os
+SKIN_TONES = _json.load(open(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "../../../packages/assets/pack/customization/skin_tones.json")))["tones"]
+SKIN = [(t["key"], t["color"]) for t in SKIN_TONES]
 HAIR = [("black", "#2e2630"), ("espresso", "#4a3228"), ("chestnut", "#7a4a2c"), ("auburn", "#9a4426"), ("ginger", "#d0702e"),
         ("strawberry", "#e09a6a"), ("honey_blonde", "#e2b464"), ("platinum", "#f2e6c4"), ("ash", "#a89a94"), ("silver", "#d6d2dc"),
         ("bubblegum", "#f48cb8"), ("mint", "#8fe0c0"), ("lilac", "#b89ae6"), ("sky", "#7cb8f0"), ("teal", "#3aa6a0"),

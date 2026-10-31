@@ -45,51 +45,219 @@
  "skinTones": [
   {
    "key": "porcelain",
-   "color": "#fbe3d2"
+   "color": "#faf5d5",
+   "ramp": {
+    "base": "#f6e3da",
+    "shadow": "#b6a59f",
+    "highlight": "#fff0e8"
+   },
+   "undertone": "cool",
+   "monk": 1,
+   "fitzpatrick": "I"
+  },
+  {
+   "key": "ivory",
+   "color": "#f7f6ca",
+   "ramp": {
+    "base": "#f3e4cf",
+    "shadow": "#b4a596",
+    "highlight": "#fff4e1"
+   },
+   "undertone": "neutral",
+   "monk": 1,
+   "fitzpatrick": "I"
   },
   {
    "key": "peach",
-   "color": "#f6cfb0"
+   "color": "#f6e5b6",
+   "ramp": {
+    "base": "#f2d4bb",
+    "shadow": "#b39785",
+    "highlight": "#ffe8d1"
+   },
+   "undertone": "warm",
+   "monk": 2,
+   "fitzpatrick": "I-II"
   },
   {
    "key": "rose",
-   "color": "#eebfa4"
+   "color": "#f2dbb5",
+   "ramp": {
+    "base": "#eecbba",
+    "shadow": "#b09085",
+    "highlight": "#ffe3d2"
+   },
+   "undertone": "cool",
+   "monk": 3,
+   "fitzpatrick": "II"
+  },
+  {
+   "key": "sand",
+   "color": "#ebdba5",
+   "ramp": {
+    "base": "#e8cba9",
+    "shadow": "#ac9077",
+    "highlight": "#ffe8c8"
+   },
+   "undertone": "neutral",
+   "monk": 3,
+   "fitzpatrick": "II"
+  },
+  {
+   "key": "light_olive",
+   "color": "#dfd59b",
+   "ramp": {
+    "base": "#dcc59f",
+    "shadow": "#a38c70",
+    "highlight": "#f3e2bd"
+   },
+   "undertone": "olive",
+   "monk": 4,
+   "fitzpatrick": "III"
   },
   {
    "key": "honey",
-   "color": "#e2a878"
+   "color": "#e3c488",
+   "ramp": {
+    "base": "#e0b58c",
+    "shadow": "#a67d60",
+    "highlight": "#f8d5ad"
+   },
+   "undertone": "warm",
+   "monk": 4,
+   "fitzpatrick": "III"
   },
   {
-   "key": "tan",
-   "color": "#c98d5e"
-  },
-  {
-   "key": "caramel",
-   "color": "#b0744a"
-  },
-  {
-   "key": "bronze",
-   "color": "#94603c"
-  },
-  {
-   "key": "umber",
-   "color": "#774a2e"
-  },
-  {
-   "key": "cocoa",
-   "color": "#5e3a26"
-  },
-  {
-   "key": "ebony",
-   "color": "#46291c"
+   "key": "almond",
+   "color": "#d5b881",
+   "ramp": {
+    "base": "#d2aa84",
+    "shadow": "#9b765b",
+    "highlight": "#e9c9a4"
+   },
+   "undertone": "neutral",
+   "monk": 5,
+   "fitzpatrick": "III-IV"
   },
   {
    "key": "olive",
-   "color": "#c6a27a"
+   "color": "#c5b076",
+   "ramp": {
+    "base": "#c2a379",
+    "shadow": "#907253",
+    "highlight": "#d8bf97"
+   },
+   "undertone": "olive",
+   "monk": 5,
+   "fitzpatrick": "IV"
   },
   {
-   "key": "goblin",
-   "color": "#a8c98a"
+   "key": "tan",
+   "color": "#c99d65",
+   "ramp": {
+    "base": "#c69168",
+    "shadow": "#936145",
+    "highlight": "#dcb188"
+   },
+   "undertone": "warm",
+   "monk": 6,
+   "fitzpatrick": "IV"
+  },
+  {
+   "key": "caramel",
+   "color": "#b08450",
+   "ramp": {
+    "base": "#ad7a52",
+    "shadow": "#805135",
+    "highlight": "#c29870"
+   },
+   "undertone": "warm",
+   "monk": 6,
+   "fitzpatrick": "IV-V"
+  },
+  {
+   "key": "deep_olive",
+   "color": "#9a8452",
+   "ramp": {
+    "base": "#987a54",
+    "shadow": "#705438",
+    "highlight": "#ab936e"
+   },
+   "undertone": "olive",
+   "monk": 6,
+   "fitzpatrick": "V"
+  },
+  {
+   "key": "bronze",
+   "color": "#916c41",
+   "ramp": {
+    "base": "#8f6443",
+    "shadow": "#6a422b",
+    "highlight": "#a27e5d"
+   },
+   "undertone": "neutral",
+   "monk": 7,
+   "fitzpatrick": "V"
+  },
+  {
+   "key": "umber",
+   "color": "#7d5835",
+   "ramp": {
+    "base": "#7b5136",
+    "shadow": "#5b3422",
+    "highlight": "#8d694d"
+   },
+   "undertone": "warm",
+   "monk": 7,
+   "fitzpatrick": "V"
+  },
+  {
+   "key": "mahogany",
+   "color": "#6c452f",
+   "ramp": {
+    "base": "#6a4030",
+    "shadow": "#4e281e",
+    "highlight": "#7b5645"
+   },
+   "undertone": "cool",
+   "monk": 8,
+   "fitzpatrick": "VI"
+  },
+  {
+   "key": "cocoa",
+   "color": "#59412a",
+   "ramp": {
+    "base": "#583c2b",
+    "shadow": "#41271c",
+    "highlight": "#674f3d"
+   },
+   "undertone": "neutral",
+   "monk": 8,
+   "fitzpatrick": "VI"
+  },
+  {
+   "key": "ebony",
+   "color": "#463529",
+   "ramp": {
+    "base": "#45312a",
+    "shadow": "#33211d",
+    "highlight": "#534139"
+   },
+   "undertone": "warm",
+   "monk": 9,
+   "fitzpatrick": "VI"
+  },
+  {
+   "key": "onyx",
+   "color": "#31281e",
+   "ramp": {
+    "base": "#30251f",
+    "shadow": "#241915",
+    "highlight": "#3d332c"
+   },
+   "undertone": "cool",
+   "monk": 10,
+   "fitzpatrick": "VI"
   }
  ],
  "hairColors": [

@@ -1,0 +1,403 @@
+{
+ "version": 2,
+ "note": "Realistic human skin tones only, light -> deep (Monk Skin Tone 1-10, Fitzpatrick I-VI; warm / neutral / cool / olive undertones). `color` = tint input for the baked cel body art (out = art * color / tintNeutral); ramp = intended on-screen base/shadow/highlight; mul* = what the multiply path draws today. Saves store the index: apply legacyMap (Appearance.skinTone old -> new) when loading appearances saved before this change.",
+ "tintNeutral": 0.78,
+ "artLevels": {
+  "base": "#c4b8cc",
+  "shade": "#8c7a96",
+  "highlight": "#ece6ec"
+ },
+ "count": 18,
+ "tones": [
+  {
+   "key": "porcelain",
+   "color": "#faf5d5",
+   "ramp": {
+    "base": "#f6e3da",
+    "shadow": "#b6a59f",
+    "highlight": "#fff0e8"
+   },
+   "mulBase": "#f6e3da",
+   "mulShadow": "#b097a0",
+   "mulHighlight": "#fffffc",
+   "undertone": "cool",
+   "monk": 1,
+   "fitzpatrick": "I"
+  },
+  {
+   "key": "ivory",
+   "color": "#f7f6ca",
+   "ramp": {
+    "base": "#f3e4cf",
+    "shadow": "#b4a596",
+    "highlight": "#fff4e1"
+   },
+   "mulBase": "#f3e4cf",
+   "mulShadow": "#ae9798",
+   "mulHighlight": "#ffffef",
+   "undertone": "neutral",
+   "monk": 1,
+   "fitzpatrick": "I"
+  },
+  {
+   "key": "peach",
+   "color": "#f6e5b6",
+   "ramp": {
+    "base": "#f2d4bb",
+    "shadow": "#b39785",
+    "highlight": "#ffe8d1"
+   },
+   "mulBase": "#f2d4bb",
+   "mulShadow": "#ad8d8a",
+   "mulHighlight": "#ffffd8",
+   "undertone": "warm",
+   "monk": 2,
+   "fitzpatrick": "I-II"
+  },
+  {
+   "key": "rose",
+   "color": "#f2dbb5",
+   "ramp": {
+    "base": "#eecbba",
+    "shadow": "#b09085",
+    "highlight": "#ffe3d2"
+   },
+   "mulBase": "#eecbba",
+   "mulShadow": "#aa8789",
+   "mulHighlight": "#fffed7",
+   "undertone": "cool",
+   "monk": 3,
+   "fitzpatrick": "II"
+  },
+  {
+   "key": "sand",
+   "color": "#ebdba5",
+   "ramp": {
+    "base": "#e8cba9",
+    "shadow": "#ac9077",
+    "highlight": "#ffe8c8"
+   },
+   "mulBase": "#e8cba9",
+   "mulShadow": "#a6877c",
+   "mulHighlight": "#fffec4",
+   "undertone": "neutral",
+   "monk": 3,
+   "fitzpatrick": "II"
+  },
+  {
+   "key": "light_olive",
+   "color": "#dfd59b",
+   "ramp": {
+    "base": "#dcc59f",
+    "shadow": "#a38c70",
+    "highlight": "#f3e2bd"
+   },
+   "mulBase": "#dcc59f",
+   "mulShadow": "#9d8375",
+   "mulHighlight": "#fff6b8",
+   "undertone": "olive",
+   "monk": 4,
+   "fitzpatrick": "III"
+  },
+  {
+   "key": "honey",
+   "color": "#e3c488",
+   "ramp": {
+    "base": "#e0b58c",
+    "shadow": "#a67d60",
+    "highlight": "#f8d5ad"
+   },
+   "mulBase": "#e0b58c",
+   "mulShadow": "#a07867",
+   "mulHighlight": "#ffe2a2",
+   "undertone": "warm",
+   "monk": 4,
+   "fitzpatrick": "III"
+  },
+  {
+   "key": "almond",
+   "color": "#d5b881",
+   "ramp": {
+    "base": "#d2aa84",
+    "shadow": "#9b765b",
+    "highlight": "#e9c9a4"
+   },
+   "mulBase": "#d2aa84",
+   "mulShadow": "#967161",
+   "mulHighlight": "#fdd499",
+   "undertone": "neutral",
+   "monk": 5,
+   "fitzpatrick": "III-IV"
+  },
+  {
+   "key": "olive",
+   "color": "#c5b076",
+   "ramp": {
+    "base": "#c2a379",
+    "shadow": "#907253",
+    "highlight": "#d8bf97"
+   },
+   "mulBase": "#c2a379",
+   "mulShadow": "#8b6c59",
+   "mulHighlight": "#eacc8c",
+   "undertone": "olive",
+   "monk": 5,
+   "fitzpatrick": "IV"
+  },
+  {
+   "key": "tan",
+   "color": "#c99d65",
+   "ramp": {
+    "base": "#c69168",
+    "shadow": "#936145",
+    "highlight": "#dcb188"
+   },
+   "mulBase": "#c69168",
+   "mulShadow": "#8d604c",
+   "mulHighlight": "#eeb578",
+   "undertone": "warm",
+   "monk": 6,
+   "fitzpatrick": "IV"
+  },
+  {
+   "key": "caramel",
+   "color": "#b08450",
+   "ramp": {
+    "base": "#ad7a52",
+    "shadow": "#805135",
+    "highlight": "#c29870"
+   },
+   "mulBase": "#ad7a52",
+   "mulShadow": "#7c513c",
+   "mulHighlight": "#d0985f",
+   "undertone": "warm",
+   "monk": 6,
+   "fitzpatrick": "IV-V"
+  },
+  {
+   "key": "deep_olive",
+   "color": "#9a8452",
+   "ramp": {
+    "base": "#987a54",
+    "shadow": "#705438",
+    "highlight": "#ab936e"
+   },
+   "mulBase": "#987a54",
+   "mulShadow": "#6d513e",
+   "mulHighlight": "#b79861",
+   "undertone": "olive",
+   "monk": 6,
+   "fitzpatrick": "V"
+  },
+  {
+   "key": "bronze",
+   "color": "#916c41",
+   "ramp": {
+    "base": "#8f6443",
+    "shadow": "#6a422b",
+    "highlight": "#a27e5d"
+   },
+   "mulBase": "#8f6443",
+   "mulShadow": "#664231",
+   "mulHighlight": "#ac7d4e",
+   "undertone": "neutral",
+   "monk": 7,
+   "fitzpatrick": "V"
+  },
+  {
+   "key": "umber",
+   "color": "#7d5835",
+   "ramp": {
+    "base": "#7b5136",
+    "shadow": "#5b3422",
+    "highlight": "#8d694d"
+   },
+   "mulBase": "#7b5136",
+   "mulShadow": "#583628",
+   "mulHighlight": "#94653e",
+   "undertone": "warm",
+   "monk": 7,
+   "fitzpatrick": "V"
+  },
+  {
+   "key": "mahogany",
+   "color": "#6c452f",
+   "ramp": {
+    "base": "#6a4030",
+    "shadow": "#4e281e",
+    "highlight": "#7b5645"
+   },
+   "mulBase": "#6a4030",
+   "mulShadow": "#4c2a23",
+   "mulHighlight": "#805038",
+   "undertone": "cool",
+   "monk": 8,
+   "fitzpatrick": "VI"
+  },
+  {
+   "key": "cocoa",
+   "color": "#59412a",
+   "ramp": {
+    "base": "#583c2b",
+    "shadow": "#41271c",
+    "highlight": "#674f3d"
+   },
+   "mulBase": "#583c2b",
+   "mulShadow": "#3f2820",
+   "mulHighlight": "#6a4b32",
+   "undertone": "neutral",
+   "monk": 8,
+   "fitzpatrick": "VI"
+  },
+  {
+   "key": "ebony",
+   "color": "#463529",
+   "ramp": {
+    "base": "#45312a",
+    "shadow": "#33211d",
+    "highlight": "#534139"
+   },
+   "mulBase": "#45312a",
+   "mulShadow": "#31201f",
+   "mulHighlight": "#533d31",
+   "undertone": "warm",
+   "monk": 9,
+   "fitzpatrick": "VI"
+  },
+  {
+   "key": "onyx",
+   "color": "#31281e",
+   "ramp": {
+    "base": "#30251f",
+    "shadow": "#241915",
+    "highlight": "#3d332c"
+   },
+   "mulBase": "#30251f",
+   "mulShadow": "#221917",
+   "mulHighlight": "#3a2e24",
+   "undertone": "cool",
+   "monk": 10,
+   "fitzpatrick": "VI"
+  }
+ ],
+ "legacyMap": [
+  0,
+  2,
+  3,
+  6,
+  9,
+  10,
+  12,
+  13,
+  15,
+  16,
+  8,
+  8
+ ],
+ "legacy": [
+  {
+   "old": 0,
+   "oldKey": "porcelain",
+   "oldColor": "#fbe3d2",
+   "new": 0,
+   "newKey": "porcelain",
+   "dE": 10.8
+  },
+  {
+   "old": 1,
+   "oldKey": "peach",
+   "oldColor": "#f6cfb0",
+   "new": 2,
+   "newKey": "peach",
+   "dE": 11.8
+  },
+  {
+   "old": 2,
+   "oldKey": "rose",
+   "oldColor": "#eebfa4",
+   "new": 3,
+   "newKey": "rose",
+   "dE": 12.4
+  },
+  {
+   "old": 3,
+   "oldKey": "honey",
+   "oldColor": "#e2a878",
+   "new": 6,
+   "newKey": "honey",
+   "dE": 13.1
+  },
+  {
+   "old": 4,
+   "oldKey": "tan",
+   "oldColor": "#c98d5e",
+   "new": 9,
+   "newKey": "tan",
+   "dE": 8.2
+  },
+  {
+   "old": 5,
+   "oldKey": "caramel",
+   "oldColor": "#b0744a",
+   "new": 10,
+   "newKey": "caramel",
+   "dE": 8.8
+  },
+  {
+   "old": 6,
+   "oldKey": "bronze",
+   "oldColor": "#94603c",
+   "new": 12,
+   "newKey": "bronze",
+   "dE": 7.7
+  },
+  {
+   "old": 7,
+   "oldKey": "umber",
+   "oldColor": "#774a2e",
+   "new": 13,
+   "newKey": "umber",
+   "dE": 6.1
+  },
+  {
+   "old": 8,
+   "oldKey": "cocoa",
+   "oldColor": "#5e3a26",
+   "new": 15,
+   "newKey": "cocoa",
+   "dE": 6.0
+  },
+  {
+   "old": 9,
+   "oldKey": "ebony",
+   "oldColor": "#46291c",
+   "new": 16,
+   "newKey": "ebony",
+   "dE": 7.9
+  },
+  {
+   "old": 10,
+   "oldKey": "olive",
+   "oldColor": "#c6a27a",
+   "new": 8,
+   "newKey": "olive",
+   "dE": 10.9
+  },
+  {
+   "old": 11,
+   "oldKey": "goblin",
+   "oldColor": "#a8c98a",
+   "new": 8,
+   "newKey": "olive",
+   "dE": 21.7,
+   "removed": "green fantasy tone"
+  }
+ ],
+ "removed": [
+  {
+   "key": "goblin",
+   "color": "#a8c98a",
+   "reason": "green fantasy tone"
+  }
+ ]
+}
