@@ -4667,7 +4667,8 @@
     "gt_water_leaves_c": 4665,
     "gt_water_shallow": 4666,
     "gt_water_shallow_winter": 4667,
-    "gt_water_winter": 4668
+    "gt_water_winter": 4668,
+    "berry_seeds": 4669
   },
   "sounds": {
     "amb_rain": 1,

@@ -273,11 +273,18 @@ k('pear', pear); k('cherry', cherry); k('orange', citrus); k('peach', peach)
 k('birch_bark', bark, '#f2eee4', '#2a2626'); k('maple_sap', maple_sap); k('willow_bark', strips, '#8a6a4a'); k('palm_frond', frond); k('coconut', coconut)
 k('maple_syrup', maple_syrup); k('pine_cone', pinecone); k('vegetable_stew', stew); k('pumpkin_pie', pie_pumpkin); k('fruit_salad', fruit_salad)
 k('baked_beans', baked_beans); k('roasted_garlic', roasted_garlic); k('willow_tea', willow_tea)
+# ADR-247 berry_seeds (id 463): appended last so every committed cell keeps its frame index. Same seedbag framing as the
+# *_seeds row (sack, berry emblem, small spilled seeds), berry-red accent; painted solid cel (CEL_KEYS) even on plain rebuilds.
+k('berry_seeds', seedbag, '#c8283a', '#e8cf9a', em_berry(lt('#c8283a', .1)))
+CEL_KEYS = {'berry_seeds'}   # flat fills, one hard shade, hard highlight, binary alpha (assets/tools/cel.py snap)
 REUSED = ('pine_sapling', 'pumpkin')   # already in the base pack
 EQUIP = ('bone_knife', 'bone_axe', 'antler_pickaxe', 'hoe', 'leather_cap', 'leather_jacket', 'leather_trousers', 'wool_sweater', 'wool_hat', 'fur_vest', 'snakeskin_boots')
 
 def _icon(key):
-    c = C(32, 8); T[key](c); return c.out(32), c.out(64)
+    import draw
+    was = draw.CEL; draw.CEL = was or key in CEL_KEYS
+    try: c = C(32, 8); T[key](c); return c.out(32), c.out(64)
+    finally: draw.CEL = was
 
 def g(b):
     keys = list(T); cols = 16; rows = math.ceil(len(keys) / cols); rows += rows % 2   # 32*rows stays 16-aligned anyway; even rows keep @2x tidy

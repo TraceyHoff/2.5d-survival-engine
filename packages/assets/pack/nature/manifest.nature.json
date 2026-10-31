@@ -1056,7 +1056,7 @@
    "frameW": 32,
    "frameH": 32,
    "columns": 16,
-   "rows": 6,
+   "rows": 8,
    "pages": [
     {
      "scale": 2,
@@ -28224,6 +28224,23 @@
     "idle": {
      "frames": [
       27
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "berry_seeds",
+   "category": "item",
+   "atlas": "nature_icons",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      96
      ],
      "fps": 1
     }
