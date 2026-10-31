@@ -8148,6 +8148,450 @@
        }
       }
      ]
+    },
+    "sleep_lie": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 22,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.72727,
+        "y": 2.88889
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 24,
+        "y": 0,
+        "w": 12,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 2.9
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 38,
+        "y": 0,
+        "w": 26,
+        "h": 18
+       },
+       "anchor": {
+        "x": 0.26923,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 0,
+        "y": 20,
+        "w": 16,
+        "h": 23
+       },
+       "anchor": {
+        "x": 0.4375,
+        "y": 1.26087
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 18,
+        "y": 20,
+        "w": 22,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.72727,
+        "y": 2.88889
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 42,
+        "y": 20,
+        "w": 12,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 3.22222
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 0,
+        "y": 45,
+        "w": 26,
+        "h": 18
+       },
+       "anchor": {
+        "x": 0.26923,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 28,
+        "y": 45,
+        "w": 16,
+        "h": 23
+       },
+       "anchor": {
+        "x": 0.4375,
+        "y": 1.26087
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 46,
+        "y": 45,
+        "w": 22,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.72727,
+        "y": 3
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 0,
+        "y": 70,
+        "w": 12,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 3.22222
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 14,
+        "y": 70,
+        "w": 26,
+        "h": 18
+       },
+       "anchor": {
+        "x": 0.26923,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 42,
+        "y": 70,
+        "w": 16,
+        "h": 23
+       },
+       "anchor": {
+        "x": 0.4375,
+        "y": 1.26087
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 18,
+        "y": 20,
+        "w": 22,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.72727,
+        "y": 2.88889
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 42,
+        "y": 20,
+        "w": 12,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 3.22222
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 0,
+        "y": 45,
+        "w": 26,
+        "h": 18
+       },
+       "anchor": {
+        "x": 0.26923,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 28,
+        "y": 45,
+        "w": 16,
+        "h": 23
+       },
+       "anchor": {
+        "x": 0.4375,
+        "y": 1.26087
+       }
+      }
+     ]
+    },
+    "sleep_lie_under": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 60,
+        "y": 70,
+        "w": 9,
+        "h": 7
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 3.42857
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 0,
+        "y": 95,
+        "w": 9,
+        "h": 6
+       },
+       "anchor": {
+        "x": 0.88889,
+        "y": 4.16667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 11,
+        "y": 95,
+        "w": 7,
+        "h": 9
+       },
+       "anchor": {
+        "x": -1.71429,
+        "y": 2.33333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 20,
+        "y": 95,
+        "w": 11,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.63636,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 33,
+        "y": 95,
+        "w": 9,
+        "h": 7
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 3.42857
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 44,
+        "y": 95,
+        "w": 9,
+        "h": 5
+       },
+       "anchor": {
+        "x": 0.88889,
+        "y": 5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 11,
+        "y": 95,
+        "w": 7,
+        "h": 9
+       },
+       "anchor": {
+        "x": -1.71429,
+        "y": 2.33333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 20,
+        "y": 95,
+        "w": 11,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.63636,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 55,
+        "y": 95,
+        "w": 9,
+        "h": 6
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 4
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 0,
+        "y": 106,
+        "w": 8,
+        "h": 5
+       },
+       "anchor": {
+        "x": 1,
+        "y": 5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 11,
+        "y": 95,
+        "w": 7,
+        "h": 9
+       },
+       "anchor": {
+        "x": -1.71429,
+        "y": 2.33333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 20,
+        "y": 95,
+        "w": 11,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.63636,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 33,
+        "y": 95,
+        "w": 9,
+        "h": 7
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 3.42857
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 44,
+        "y": 95,
+        "w": 9,
+        "h": 5
+       },
+       "anchor": {
+        "x": 0.88889,
+        "y": 5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 11,
+        "y": 95,
+        "w": 7,
+        "h": 9
+       },
+       "anchor": {
+        "x": -1.71429,
+        "y": 2.33333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 20,
+        "y": 95,
+        "w": 11,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.63636,
+        "y": 1.66667
+       }
+      }
+     ]
     }
    }
   },
@@ -16076,6 +16520,450 @@
        "anchor": {
         "x": -0.307692,
         "y": 3
+       }
+      }
+     ]
+    },
+    "sleep_lie": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 22,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.72727,
+        "y": 2.88889
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 24,
+        "y": 0,
+        "w": 12,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 2.9
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 38,
+        "y": 0,
+        "w": 26,
+        "h": 18
+       },
+       "anchor": {
+        "x": 0.26923,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 0,
+        "y": 20,
+        "w": 16,
+        "h": 23
+       },
+       "anchor": {
+        "x": 0.4375,
+        "y": 1.26087
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 18,
+        "y": 20,
+        "w": 22,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.72727,
+        "y": 2.88889
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 42,
+        "y": 20,
+        "w": 12,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 3.22222
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 0,
+        "y": 45,
+        "w": 26,
+        "h": 18
+       },
+       "anchor": {
+        "x": 0.26923,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 28,
+        "y": 45,
+        "w": 16,
+        "h": 23
+       },
+       "anchor": {
+        "x": 0.4375,
+        "y": 1.26087
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 46,
+        "y": 45,
+        "w": 22,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.72727,
+        "y": 3
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 0,
+        "y": 70,
+        "w": 12,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 3.22222
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 14,
+        "y": 70,
+        "w": 26,
+        "h": 18
+       },
+       "anchor": {
+        "x": 0.26923,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 42,
+        "y": 70,
+        "w": 16,
+        "h": 23
+       },
+       "anchor": {
+        "x": 0.4375,
+        "y": 1.26087
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 18,
+        "y": 20,
+        "w": 22,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.72727,
+        "y": 2.88889
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 42,
+        "y": 20,
+        "w": 12,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 3.22222
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 0,
+        "y": 45,
+        "w": 26,
+        "h": 18
+       },
+       "anchor": {
+        "x": 0.26923,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 28,
+        "y": 45,
+        "w": 16,
+        "h": 23
+       },
+       "anchor": {
+        "x": 0.4375,
+        "y": 1.26087
+       }
+      }
+     ]
+    },
+    "sleep_lie_under": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 60,
+        "y": 70,
+        "w": 9,
+        "h": 7
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 3.42857
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 0,
+        "y": 95,
+        "w": 9,
+        "h": 6
+       },
+       "anchor": {
+        "x": 0.88889,
+        "y": 4.16667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 11,
+        "y": 95,
+        "w": 7,
+        "h": 9
+       },
+       "anchor": {
+        "x": -1.71429,
+        "y": 2.33333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 20,
+        "y": 95,
+        "w": 11,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.63636,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 33,
+        "y": 95,
+        "w": 9,
+        "h": 7
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 3.42857
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 44,
+        "y": 95,
+        "w": 9,
+        "h": 5
+       },
+       "anchor": {
+        "x": 0.88889,
+        "y": 5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 11,
+        "y": 95,
+        "w": 7,
+        "h": 9
+       },
+       "anchor": {
+        "x": -1.71429,
+        "y": 2.33333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 20,
+        "y": 95,
+        "w": 11,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.63636,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 55,
+        "y": 95,
+        "w": 9,
+        "h": 6
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 4
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 0,
+        "y": 106,
+        "w": 8,
+        "h": 5
+       },
+       "anchor": {
+        "x": 1,
+        "y": 5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 11,
+        "y": 95,
+        "w": 7,
+        "h": 9
+       },
+       "anchor": {
+        "x": -1.71429,
+        "y": 2.33333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 20,
+        "y": 95,
+        "w": 11,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.63636,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 33,
+        "y": 95,
+        "w": 9,
+        "h": 7
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 3.42857
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 44,
+        "y": 95,
+        "w": 9,
+        "h": 5
+       },
+       "anchor": {
+        "x": 0.88889,
+        "y": 5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 11,
+        "y": 95,
+        "w": 7,
+        "h": 9
+       },
+       "anchor": {
+        "x": -1.71429,
+        "y": 2.33333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 20,
+        "y": 95,
+        "w": 11,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.63636,
+        "y": 1.66667
        }
       }
      ]
@@ -24010,6 +24898,450 @@
        }
       }
      ]
+    },
+    "sleep_lie": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 22,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.72727,
+        "y": 2.88889
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 24,
+        "y": 0,
+        "w": 12,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 2.9
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 38,
+        "y": 0,
+        "w": 26,
+        "h": 18
+       },
+       "anchor": {
+        "x": 0.26923,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 0,
+        "y": 20,
+        "w": 16,
+        "h": 24
+       },
+       "anchor": {
+        "x": 0.4375,
+        "y": 1.20833
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 18,
+        "y": 20,
+        "w": 22,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.72727,
+        "y": 2.88889
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 42,
+        "y": 20,
+        "w": 12,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 3.22222
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 0,
+        "y": 46,
+        "w": 26,
+        "h": 18
+       },
+       "anchor": {
+        "x": 0.26923,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 28,
+        "y": 46,
+        "w": 16,
+        "h": 24
+       },
+       "anchor": {
+        "x": 0.4375,
+        "y": 1.20833
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 46,
+        "y": 46,
+        "w": 22,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.72727,
+        "y": 3
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 0,
+        "y": 72,
+        "w": 12,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 3.22222
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 14,
+        "y": 72,
+        "w": 26,
+        "h": 18
+       },
+       "anchor": {
+        "x": 0.26923,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 42,
+        "y": 72,
+        "w": 16,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.4375,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 18,
+        "y": 20,
+        "w": 22,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.72727,
+        "y": 2.88889
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 42,
+        "y": 20,
+        "w": 12,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 3.22222
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 0,
+        "y": 46,
+        "w": 26,
+        "h": 18
+       },
+       "anchor": {
+        "x": 0.26923,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 28,
+        "y": 46,
+        "w": 16,
+        "h": 24
+       },
+       "anchor": {
+        "x": 0.4375,
+        "y": 1.20833
+       }
+      }
+     ]
+    },
+    "sleep_lie_under": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 60,
+        "y": 72,
+        "w": 9,
+        "h": 7
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 3.42857
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 0,
+        "y": 99,
+        "w": 9,
+        "h": 6
+       },
+       "anchor": {
+        "x": 0.88889,
+        "y": 4.16667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 11,
+        "y": 99,
+        "w": 7,
+        "h": 9
+       },
+       "anchor": {
+        "x": -1.71429,
+        "y": 2.33333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 20,
+        "y": 99,
+        "w": 11,
+        "h": 11
+       },
+       "anchor": {
+        "x": 0.63636,
+        "y": 1.45455
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 33,
+        "y": 99,
+        "w": 9,
+        "h": 7
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 3.42857
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 44,
+        "y": 99,
+        "w": 9,
+        "h": 5
+       },
+       "anchor": {
+        "x": 0.88889,
+        "y": 5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 11,
+        "y": 99,
+        "w": 7,
+        "h": 9
+       },
+       "anchor": {
+        "x": -1.71429,
+        "y": 2.33333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 20,
+        "y": 99,
+        "w": 11,
+        "h": 11
+       },
+       "anchor": {
+        "x": 0.63636,
+        "y": 1.45455
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 55,
+        "y": 99,
+        "w": 9,
+        "h": 6
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 4
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 0,
+        "y": 112,
+        "w": 9,
+        "h": 5
+       },
+       "anchor": {
+        "x": 0.88889,
+        "y": 5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 11,
+        "y": 99,
+        "w": 7,
+        "h": 9
+       },
+       "anchor": {
+        "x": -1.71429,
+        "y": 2.33333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 20,
+        "y": 99,
+        "w": 11,
+        "h": 11
+       },
+       "anchor": {
+        "x": 0.63636,
+        "y": 1.45455
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 33,
+        "y": 99,
+        "w": 9,
+        "h": 7
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 3.42857
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 44,
+        "y": 99,
+        "w": 9,
+        "h": 5
+       },
+       "anchor": {
+        "x": 0.88889,
+        "y": 5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 11,
+        "y": 99,
+        "w": 7,
+        "h": 9
+       },
+       "anchor": {
+        "x": -1.71429,
+        "y": 2.33333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 20,
+        "y": 99,
+        "w": 11,
+        "h": 11
+       },
+       "anchor": {
+        "x": 0.63636,
+        "y": 1.45455
+       }
+      }
+     ]
     }
    }
   },
@@ -31938,6 +33270,450 @@
        "anchor": {
         "x": -0.307692,
         "y": 3
+       }
+      }
+     ]
+    },
+    "sleep_lie": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 22,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.72727,
+        "y": 2.88889
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 24,
+        "y": 0,
+        "w": 12,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 2.9
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 38,
+        "y": 0,
+        "w": 26,
+        "h": 18
+       },
+       "anchor": {
+        "x": 0.26923,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 0,
+        "y": 20,
+        "w": 16,
+        "h": 24
+       },
+       "anchor": {
+        "x": 0.4375,
+        "y": 1.20833
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 18,
+        "y": 20,
+        "w": 22,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.72727,
+        "y": 2.88889
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 42,
+        "y": 20,
+        "w": 12,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 3.22222
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 0,
+        "y": 46,
+        "w": 26,
+        "h": 18
+       },
+       "anchor": {
+        "x": 0.26923,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 28,
+        "y": 46,
+        "w": 16,
+        "h": 24
+       },
+       "anchor": {
+        "x": 0.4375,
+        "y": 1.20833
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 46,
+        "y": 46,
+        "w": 22,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.72727,
+        "y": 3
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 0,
+        "y": 72,
+        "w": 12,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 3.22222
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 14,
+        "y": 72,
+        "w": 26,
+        "h": 18
+       },
+       "anchor": {
+        "x": 0.26923,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 42,
+        "y": 72,
+        "w": 16,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.4375,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 18,
+        "y": 20,
+        "w": 22,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.72727,
+        "y": 2.88889
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 42,
+        "y": 20,
+        "w": 12,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 3.22222
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 0,
+        "y": 46,
+        "w": 26,
+        "h": 18
+       },
+       "anchor": {
+        "x": 0.26923,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 28,
+        "y": 46,
+        "w": 16,
+        "h": 24
+       },
+       "anchor": {
+        "x": 0.4375,
+        "y": 1.20833
+       }
+      }
+     ]
+    },
+    "sleep_lie_under": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 60,
+        "y": 72,
+        "w": 9,
+        "h": 7
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 3.42857
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 0,
+        "y": 99,
+        "w": 9,
+        "h": 6
+       },
+       "anchor": {
+        "x": 0.88889,
+        "y": 4.16667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 11,
+        "y": 99,
+        "w": 7,
+        "h": 9
+       },
+       "anchor": {
+        "x": -1.71429,
+        "y": 2.33333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 20,
+        "y": 99,
+        "w": 11,
+        "h": 11
+       },
+       "anchor": {
+        "x": 0.63636,
+        "y": 1.45455
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 33,
+        "y": 99,
+        "w": 9,
+        "h": 7
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 3.42857
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 44,
+        "y": 99,
+        "w": 9,
+        "h": 5
+       },
+       "anchor": {
+        "x": 0.88889,
+        "y": 5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 11,
+        "y": 99,
+        "w": 7,
+        "h": 9
+       },
+       "anchor": {
+        "x": -1.71429,
+        "y": 2.33333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 20,
+        "y": 99,
+        "w": 11,
+        "h": 11
+       },
+       "anchor": {
+        "x": 0.63636,
+        "y": 1.45455
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 55,
+        "y": 99,
+        "w": 9,
+        "h": 6
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 4
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 0,
+        "y": 112,
+        "w": 9,
+        "h": 5
+       },
+       "anchor": {
+        "x": 0.88889,
+        "y": 5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 11,
+        "y": 99,
+        "w": 7,
+        "h": 9
+       },
+       "anchor": {
+        "x": -1.71429,
+        "y": 2.33333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 20,
+        "y": 99,
+        "w": 11,
+        "h": 11
+       },
+       "anchor": {
+        "x": 0.63636,
+        "y": 1.45455
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 33,
+        "y": 99,
+        "w": 9,
+        "h": 7
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 3.42857
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 44,
+        "y": 99,
+        "w": 9,
+        "h": 5
+       },
+       "anchor": {
+        "x": 0.88889,
+        "y": 5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 11,
+        "y": 99,
+        "w": 7,
+        "h": 9
+       },
+       "anchor": {
+        "x": -1.71429,
+        "y": 2.33333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 20,
+        "y": 99,
+        "w": 11,
+        "h": 11
+       },
+       "anchor": {
+        "x": 0.63636,
+        "y": 1.45455
        }
       }
      ]
@@ -39872,6 +41648,450 @@
        }
       }
      ]
+    },
+    "sleep_lie": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 25,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.64,
+        "y": 1.92857
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 27,
+        "y": 0,
+        "w": 17,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.58824,
+        "y": 2.23077
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 46,
+        "y": 0,
+        "w": 30,
+        "h": 20
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 1.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 0,
+        "y": 22,
+        "w": 20,
+        "h": 24
+       },
+       "anchor": {
+        "x": 0.5,
+        "y": 1.20833
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 22,
+        "y": 22,
+        "w": 26,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.61538,
+        "y": 2.07692
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 50,
+        "y": 22,
+        "w": 17,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.58824,
+        "y": 2.23077
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 0,
+        "y": 48,
+        "w": 30,
+        "h": 20
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 1.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 32,
+        "y": 48,
+        "w": 20,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.5,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 54,
+        "y": 48,
+        "w": 26,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.61538,
+        "y": 2.07692
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 0,
+        "y": 75,
+        "w": 17,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.58824,
+        "y": 2.23077
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 19,
+        "y": 75,
+        "w": 30,
+        "h": 21
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 1.47619
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 51,
+        "y": 75,
+        "w": 20,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.5,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 22,
+        "y": 22,
+        "w": 26,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.61538,
+        "y": 2.07692
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 50,
+        "y": 22,
+        "w": 17,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.58824,
+        "y": 2.23077
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 0,
+        "y": 48,
+        "w": 30,
+        "h": 20
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 1.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 32,
+        "y": 48,
+        "w": 20,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.5,
+        "y": 1.2
+       }
+      }
+     ]
+    },
+    "sleep_lie_under": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 73,
+        "y": 75,
+        "w": 12,
+        "h": 11
+       },
+       "anchor": {
+        "x": 0.25,
+        "y": 2.18182
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 0,
+        "y": 102,
+        "w": 11,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.90909,
+        "y": 2.77778
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 13,
+        "y": 102,
+        "w": 12,
+        "h": 12
+       },
+       "anchor": {
+        "x": -0.66667,
+        "y": 1.83333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 27,
+        "y": 102,
+        "w": 15,
+        "h": 12
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 1.41667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 44,
+        "y": 102,
+        "w": 13,
+        "h": 11
+       },
+       "anchor": {
+        "x": 0.23077,
+        "y": 2.27273
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 59,
+        "y": 102,
+        "w": 11,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.90909,
+        "y": 2.77778
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 13,
+        "y": 102,
+        "w": 12,
+        "h": 12
+       },
+       "anchor": {
+        "x": -0.66667,
+        "y": 1.83333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 27,
+        "y": 102,
+        "w": 15,
+        "h": 12
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 1.41667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 72,
+        "y": 102,
+        "w": 13,
+        "h": 11
+       },
+       "anchor": {
+        "x": 0.23077,
+        "y": 2.27273
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 0,
+        "y": 116,
+        "w": 11,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.90909,
+        "y": 2.77778
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 13,
+        "y": 102,
+        "w": 12,
+        "h": 12
+       },
+       "anchor": {
+        "x": -0.66667,
+        "y": 1.83333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 27,
+        "y": 102,
+        "w": 15,
+        "h": 12
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 1.41667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 44,
+        "y": 102,
+        "w": 13,
+        "h": 11
+       },
+       "anchor": {
+        "x": 0.23077,
+        "y": 2.27273
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 59,
+        "y": 102,
+        "w": 11,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.90909,
+        "y": 2.77778
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 13,
+        "y": 102,
+        "w": 12,
+        "h": 12
+       },
+       "anchor": {
+        "x": -0.66667,
+        "y": 1.83333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 27,
+        "y": 102,
+        "w": 15,
+        "h": 12
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 1.41667
+       }
+      }
+     ]
     }
    }
   },
@@ -47800,6 +50020,450 @@
        "anchor": {
         "x": -0.2,
         "y": 2.642857
+       }
+      }
+     ]
+    },
+    "sleep_lie": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 25,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.64,
+        "y": 1.92857
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 27,
+        "y": 0,
+        "w": 17,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.58824,
+        "y": 2.23077
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 46,
+        "y": 0,
+        "w": 30,
+        "h": 20
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 1.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 0,
+        "y": 22,
+        "w": 20,
+        "h": 24
+       },
+       "anchor": {
+        "x": 0.5,
+        "y": 1.20833
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 22,
+        "y": 22,
+        "w": 26,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.61538,
+        "y": 2.07692
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 50,
+        "y": 22,
+        "w": 17,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.58824,
+        "y": 2.23077
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 0,
+        "y": 48,
+        "w": 30,
+        "h": 20
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 1.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 32,
+        "y": 48,
+        "w": 20,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.5,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 54,
+        "y": 48,
+        "w": 26,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.61538,
+        "y": 2.07692
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 0,
+        "y": 75,
+        "w": 17,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.58824,
+        "y": 2.23077
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 19,
+        "y": 75,
+        "w": 30,
+        "h": 21
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 1.47619
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 51,
+        "y": 75,
+        "w": 20,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.5,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 22,
+        "y": 22,
+        "w": 26,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.61538,
+        "y": 2.07692
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 50,
+        "y": 22,
+        "w": 17,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.58824,
+        "y": 2.23077
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 0,
+        "y": 48,
+        "w": 30,
+        "h": 20
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 1.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 32,
+        "y": 48,
+        "w": 20,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.5,
+        "y": 1.2
+       }
+      }
+     ]
+    },
+    "sleep_lie_under": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 73,
+        "y": 75,
+        "w": 12,
+        "h": 11
+       },
+       "anchor": {
+        "x": 0.25,
+        "y": 2.18182
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 0,
+        "y": 102,
+        "w": 11,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.90909,
+        "y": 2.77778
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 13,
+        "y": 102,
+        "w": 12,
+        "h": 12
+       },
+       "anchor": {
+        "x": -0.66667,
+        "y": 1.83333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 27,
+        "y": 102,
+        "w": 15,
+        "h": 12
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 1.41667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 44,
+        "y": 102,
+        "w": 13,
+        "h": 11
+       },
+       "anchor": {
+        "x": 0.23077,
+        "y": 2.27273
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 59,
+        "y": 102,
+        "w": 11,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.90909,
+        "y": 2.77778
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 13,
+        "y": 102,
+        "w": 12,
+        "h": 12
+       },
+       "anchor": {
+        "x": -0.66667,
+        "y": 1.83333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 27,
+        "y": 102,
+        "w": 15,
+        "h": 12
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 1.41667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 72,
+        "y": 102,
+        "w": 13,
+        "h": 11
+       },
+       "anchor": {
+        "x": 0.23077,
+        "y": 2.27273
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 0,
+        "y": 116,
+        "w": 11,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.90909,
+        "y": 2.77778
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 13,
+        "y": 102,
+        "w": 12,
+        "h": 12
+       },
+       "anchor": {
+        "x": -0.66667,
+        "y": 1.83333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 27,
+        "y": 102,
+        "w": 15,
+        "h": 12
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 1.41667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 44,
+        "y": 102,
+        "w": 13,
+        "h": 11
+       },
+       "anchor": {
+        "x": 0.23077,
+        "y": 2.27273
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 59,
+        "y": 102,
+        "w": 11,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.90909,
+        "y": 2.77778
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 13,
+        "y": 102,
+        "w": 12,
+        "h": 12
+       },
+       "anchor": {
+        "x": -0.66667,
+        "y": 1.83333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 27,
+        "y": 102,
+        "w": 15,
+        "h": 12
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 1.41667
        }
       }
      ]
@@ -55734,6 +58398,450 @@
        }
       }
      ]
+    },
+    "sleep_lie": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 28,
+        "h": 16
+       },
+       "anchor": {
+        "x": 0.57143,
+        "y": 1.6875
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 30,
+        "y": 0,
+        "w": 22,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.54545,
+        "y": 2.23077
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 54,
+        "y": 0,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 24,
+        "w": 24,
+        "h": 24
+       },
+       "anchor": {
+        "x": 0.5,
+        "y": 1.20833
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 26,
+        "y": 24,
+        "w": 28,
+        "h": 16
+       },
+       "anchor": {
+        "x": 0.57143,
+        "y": 1.6875
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 56,
+        "y": 24,
+        "w": 22,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.54545,
+        "y": 2.23077
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 50,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 34,
+        "y": 50,
+        "w": 24,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.5,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 60,
+        "y": 50,
+        "w": 28,
+        "h": 16
+       },
+       "anchor": {
+        "x": 0.57143,
+        "y": 1.6875
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 77,
+        "w": 22,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.54545,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 24,
+        "y": 77,
+        "w": 32,
+        "h": 23
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.34783
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 58,
+        "y": 77,
+        "w": 24,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.5,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 26,
+        "y": 24,
+        "w": 28,
+        "h": 16
+       },
+       "anchor": {
+        "x": 0.57143,
+        "y": 1.6875
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 56,
+        "y": 24,
+        "w": 22,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.54545,
+        "y": 2.23077
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 50,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 34,
+        "y": 50,
+        "w": 24,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.5,
+        "y": 1.2
+       }
+      }
+     ]
+    },
+    "sleep_lie_under": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 84,
+        "y": 77,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.84615
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 104,
+        "w": 13,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.77778
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 104,
+        "w": 14,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.42857,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 31,
+        "y": 104,
+        "w": 16,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.75,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 49,
+        "y": 104,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.84615
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 66,
+        "y": 104,
+        "w": 13,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.77778
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 104,
+        "w": 14,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.42857,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 31,
+        "y": 104,
+        "w": 16,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.75,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 81,
+        "y": 104,
+        "w": 15,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.78571
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 120,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 104,
+        "w": 14,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.42857,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 31,
+        "y": 104,
+        "w": 16,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.75,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 49,
+        "y": 104,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.84615
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 66,
+        "y": 104,
+        "w": 13,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.77778
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 104,
+        "w": 14,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.42857,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 31,
+        "y": 104,
+        "w": 16,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.75,
+        "y": 1.35714
+       }
+      }
+     ]
     }
    }
   },
@@ -63662,6 +66770,450 @@
        "anchor": {
         "x": -0.0625,
         "y": 2.466667
+       }
+      }
+     ]
+    },
+    "sleep_lie": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 28,
+        "h": 16
+       },
+       "anchor": {
+        "x": 0.57143,
+        "y": 1.6875
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 30,
+        "y": 0,
+        "w": 22,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.54545,
+        "y": 2.23077
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 54,
+        "y": 0,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 24,
+        "w": 24,
+        "h": 24
+       },
+       "anchor": {
+        "x": 0.5,
+        "y": 1.20833
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 26,
+        "y": 24,
+        "w": 28,
+        "h": 16
+       },
+       "anchor": {
+        "x": 0.57143,
+        "y": 1.6875
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 56,
+        "y": 24,
+        "w": 22,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.54545,
+        "y": 2.23077
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 50,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 34,
+        "y": 50,
+        "w": 24,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.5,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 60,
+        "y": 50,
+        "w": 28,
+        "h": 16
+       },
+       "anchor": {
+        "x": 0.57143,
+        "y": 1.6875
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 77,
+        "w": 22,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.54545,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 24,
+        "y": 77,
+        "w": 32,
+        "h": 23
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.34783
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 58,
+        "y": 77,
+        "w": 24,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.5,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 26,
+        "y": 24,
+        "w": 28,
+        "h": 16
+       },
+       "anchor": {
+        "x": 0.57143,
+        "y": 1.6875
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 56,
+        "y": 24,
+        "w": 22,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.54545,
+        "y": 2.23077
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 50,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 34,
+        "y": 50,
+        "w": 24,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.5,
+        "y": 1.2
+       }
+      }
+     ]
+    },
+    "sleep_lie_under": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 84,
+        "y": 77,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.84615
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 104,
+        "w": 13,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.77778
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 104,
+        "w": 14,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.42857,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 31,
+        "y": 104,
+        "w": 16,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.75,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 49,
+        "y": 104,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.84615
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 66,
+        "y": 104,
+        "w": 13,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.77778
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 104,
+        "w": 14,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.42857,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 31,
+        "y": 104,
+        "w": 16,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.75,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 81,
+        "y": 104,
+        "w": 15,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.78571
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 120,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 104,
+        "w": 14,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.42857,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 31,
+        "y": 104,
+        "w": 16,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.75,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 49,
+        "y": 104,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.84615
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 66,
+        "y": 104,
+        "w": 13,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.77778
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 104,
+        "w": 14,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.42857,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_gauntlets",
+       "rect": {
+        "x": 31,
+        "y": 104,
+        "w": 16,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.75,
+        "y": 1.35714
        }
       }
      ]
@@ -71596,6 +75148,450 @@
        }
       }
      ]
+    },
+    "sleep_lie": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 22,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.72727,
+        "y": 2.88889
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 24,
+        "y": 0,
+        "w": 12,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 2.9
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 38,
+        "y": 0,
+        "w": 26,
+        "h": 18
+       },
+       "anchor": {
+        "x": 0.26923,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 0,
+        "y": 20,
+        "w": 16,
+        "h": 23
+       },
+       "anchor": {
+        "x": 0.4375,
+        "y": 1.26087
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 18,
+        "y": 20,
+        "w": 22,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.72727,
+        "y": 2.88889
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 42,
+        "y": 20,
+        "w": 12,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 3.22222
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 0,
+        "y": 45,
+        "w": 26,
+        "h": 18
+       },
+       "anchor": {
+        "x": 0.26923,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 28,
+        "y": 45,
+        "w": 16,
+        "h": 23
+       },
+       "anchor": {
+        "x": 0.4375,
+        "y": 1.26087
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 46,
+        "y": 45,
+        "w": 22,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.72727,
+        "y": 3
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 0,
+        "y": 70,
+        "w": 12,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 3.22222
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 14,
+        "y": 70,
+        "w": 26,
+        "h": 18
+       },
+       "anchor": {
+        "x": 0.26923,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 42,
+        "y": 70,
+        "w": 16,
+        "h": 23
+       },
+       "anchor": {
+        "x": 0.4375,
+        "y": 1.26087
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 18,
+        "y": 20,
+        "w": 22,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.72727,
+        "y": 2.88889
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 42,
+        "y": 20,
+        "w": 12,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 3.22222
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 0,
+        "y": 45,
+        "w": 26,
+        "h": 18
+       },
+       "anchor": {
+        "x": 0.26923,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 28,
+        "y": 45,
+        "w": 16,
+        "h": 23
+       },
+       "anchor": {
+        "x": 0.4375,
+        "y": 1.26087
+       }
+      }
+     ]
+    },
+    "sleep_lie_under": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 60,
+        "y": 70,
+        "w": 9,
+        "h": 7
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 3.42857
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 0,
+        "y": 95,
+        "w": 9,
+        "h": 6
+       },
+       "anchor": {
+        "x": 0.88889,
+        "y": 4.16667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 11,
+        "y": 95,
+        "w": 7,
+        "h": 9
+       },
+       "anchor": {
+        "x": -1.71429,
+        "y": 2.33333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 20,
+        "y": 95,
+        "w": 11,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.63636,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 33,
+        "y": 95,
+        "w": 9,
+        "h": 7
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 3.42857
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 44,
+        "y": 95,
+        "w": 9,
+        "h": 5
+       },
+       "anchor": {
+        "x": 0.88889,
+        "y": 5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 11,
+        "y": 95,
+        "w": 7,
+        "h": 9
+       },
+       "anchor": {
+        "x": -1.71429,
+        "y": 2.33333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 20,
+        "y": 95,
+        "w": 11,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.63636,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 55,
+        "y": 95,
+        "w": 9,
+        "h": 6
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 4
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 0,
+        "y": 106,
+        "w": 8,
+        "h": 5
+       },
+       "anchor": {
+        "x": 1,
+        "y": 5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 11,
+        "y": 95,
+        "w": 7,
+        "h": 9
+       },
+       "anchor": {
+        "x": -1.71429,
+        "y": 2.33333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 20,
+        "y": 95,
+        "w": 11,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.63636,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 33,
+        "y": 95,
+        "w": 9,
+        "h": 7
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 3.42857
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 44,
+        "y": 95,
+        "w": 9,
+        "h": 5
+       },
+       "anchor": {
+        "x": 0.88889,
+        "y": 5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 11,
+        "y": 95,
+        "w": 7,
+        "h": 9
+       },
+       "anchor": {
+        "x": -1.71429,
+        "y": 2.33333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 20,
+        "y": 95,
+        "w": 11,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.63636,
+        "y": 1.66667
+       }
+      }
+     ]
     }
    }
   },
@@ -79524,6 +83520,450 @@
        "anchor": {
         "x": -0.307692,
         "y": 3
+       }
+      }
+     ]
+    },
+    "sleep_lie": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 22,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.72727,
+        "y": 2.88889
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 24,
+        "y": 0,
+        "w": 12,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 2.9
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 38,
+        "y": 0,
+        "w": 26,
+        "h": 18
+       },
+       "anchor": {
+        "x": 0.26923,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 0,
+        "y": 20,
+        "w": 16,
+        "h": 23
+       },
+       "anchor": {
+        "x": 0.4375,
+        "y": 1.26087
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 18,
+        "y": 20,
+        "w": 22,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.72727,
+        "y": 2.88889
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 42,
+        "y": 20,
+        "w": 12,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 3.22222
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 0,
+        "y": 45,
+        "w": 26,
+        "h": 18
+       },
+       "anchor": {
+        "x": 0.26923,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 28,
+        "y": 45,
+        "w": 16,
+        "h": 23
+       },
+       "anchor": {
+        "x": 0.4375,
+        "y": 1.26087
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 46,
+        "y": 45,
+        "w": 22,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.72727,
+        "y": 3
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 0,
+        "y": 70,
+        "w": 12,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 3.22222
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 14,
+        "y": 70,
+        "w": 26,
+        "h": 18
+       },
+       "anchor": {
+        "x": 0.26923,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 42,
+        "y": 70,
+        "w": 16,
+        "h": 23
+       },
+       "anchor": {
+        "x": 0.4375,
+        "y": 1.26087
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 18,
+        "y": 20,
+        "w": 22,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.72727,
+        "y": 2.88889
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 42,
+        "y": 20,
+        "w": 12,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 3.22222
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 0,
+        "y": 45,
+        "w": 26,
+        "h": 18
+       },
+       "anchor": {
+        "x": 0.26923,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 28,
+        "y": 45,
+        "w": 16,
+        "h": 23
+       },
+       "anchor": {
+        "x": 0.4375,
+        "y": 1.26087
+       }
+      }
+     ]
+    },
+    "sleep_lie_under": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 60,
+        "y": 70,
+        "w": 9,
+        "h": 7
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 3.42857
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 0,
+        "y": 95,
+        "w": 9,
+        "h": 6
+       },
+       "anchor": {
+        "x": 0.88889,
+        "y": 4.16667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 11,
+        "y": 95,
+        "w": 7,
+        "h": 9
+       },
+       "anchor": {
+        "x": -1.71429,
+        "y": 2.33333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 20,
+        "y": 95,
+        "w": 11,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.63636,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 33,
+        "y": 95,
+        "w": 9,
+        "h": 7
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 3.42857
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 44,
+        "y": 95,
+        "w": 9,
+        "h": 5
+       },
+       "anchor": {
+        "x": 0.88889,
+        "y": 5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 11,
+        "y": 95,
+        "w": 7,
+        "h": 9
+       },
+       "anchor": {
+        "x": -1.71429,
+        "y": 2.33333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 20,
+        "y": 95,
+        "w": 11,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.63636,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 55,
+        "y": 95,
+        "w": 9,
+        "h": 6
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 4
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 0,
+        "y": 106,
+        "w": 8,
+        "h": 5
+       },
+       "anchor": {
+        "x": 1,
+        "y": 5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 11,
+        "y": 95,
+        "w": 7,
+        "h": 9
+       },
+       "anchor": {
+        "x": -1.71429,
+        "y": 2.33333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 20,
+        "y": 95,
+        "w": 11,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.63636,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 33,
+        "y": 95,
+        "w": 9,
+        "h": 7
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 3.42857
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 44,
+        "y": 95,
+        "w": 9,
+        "h": 5
+       },
+       "anchor": {
+        "x": 0.88889,
+        "y": 5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 11,
+        "y": 95,
+        "w": 7,
+        "h": 9
+       },
+       "anchor": {
+        "x": -1.71429,
+        "y": 2.33333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_cloth_gloves",
+       "rect": {
+        "x": 20,
+        "y": 95,
+        "w": 11,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.63636,
+        "y": 1.66667
        }
       }
      ]
@@ -87458,6 +91898,450 @@
        }
       }
      ]
+    },
+    "sleep_lie": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 22,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.72727,
+        "y": 2.88889
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 24,
+        "y": 0,
+        "w": 12,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 2.9
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 38,
+        "y": 0,
+        "w": 26,
+        "h": 18
+       },
+       "anchor": {
+        "x": 0.26923,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 0,
+        "y": 20,
+        "w": 16,
+        "h": 24
+       },
+       "anchor": {
+        "x": 0.4375,
+        "y": 1.20833
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 18,
+        "y": 20,
+        "w": 22,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.72727,
+        "y": 2.88889
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 42,
+        "y": 20,
+        "w": 12,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 3.22222
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 0,
+        "y": 46,
+        "w": 26,
+        "h": 18
+       },
+       "anchor": {
+        "x": 0.26923,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 28,
+        "y": 46,
+        "w": 16,
+        "h": 24
+       },
+       "anchor": {
+        "x": 0.4375,
+        "y": 1.20833
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 46,
+        "y": 46,
+        "w": 22,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.72727,
+        "y": 3
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 0,
+        "y": 72,
+        "w": 12,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 3.22222
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 14,
+        "y": 72,
+        "w": 26,
+        "h": 18
+       },
+       "anchor": {
+        "x": 0.26923,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 42,
+        "y": 72,
+        "w": 16,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.4375,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 18,
+        "y": 20,
+        "w": 22,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.72727,
+        "y": 2.88889
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 42,
+        "y": 20,
+        "w": 12,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 3.22222
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 0,
+        "y": 46,
+        "w": 26,
+        "h": 18
+       },
+       "anchor": {
+        "x": 0.26923,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 28,
+        "y": 46,
+        "w": 16,
+        "h": 24
+       },
+       "anchor": {
+        "x": 0.4375,
+        "y": 1.20833
+       }
+      }
+     ]
+    },
+    "sleep_lie_under": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 60,
+        "y": 72,
+        "w": 9,
+        "h": 7
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 3.42857
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 0,
+        "y": 99,
+        "w": 9,
+        "h": 6
+       },
+       "anchor": {
+        "x": 0.88889,
+        "y": 4.16667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 11,
+        "y": 99,
+        "w": 7,
+        "h": 9
+       },
+       "anchor": {
+        "x": -1.71429,
+        "y": 2.33333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 20,
+        "y": 99,
+        "w": 11,
+        "h": 11
+       },
+       "anchor": {
+        "x": 0.63636,
+        "y": 1.45455
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 33,
+        "y": 99,
+        "w": 9,
+        "h": 7
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 3.42857
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 44,
+        "y": 99,
+        "w": 9,
+        "h": 5
+       },
+       "anchor": {
+        "x": 0.88889,
+        "y": 5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 11,
+        "y": 99,
+        "w": 7,
+        "h": 9
+       },
+       "anchor": {
+        "x": -1.71429,
+        "y": 2.33333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 20,
+        "y": 99,
+        "w": 11,
+        "h": 11
+       },
+       "anchor": {
+        "x": 0.63636,
+        "y": 1.45455
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 55,
+        "y": 99,
+        "w": 9,
+        "h": 6
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 4
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 0,
+        "y": 112,
+        "w": 9,
+        "h": 5
+       },
+       "anchor": {
+        "x": 0.88889,
+        "y": 5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 11,
+        "y": 99,
+        "w": 7,
+        "h": 9
+       },
+       "anchor": {
+        "x": -1.71429,
+        "y": 2.33333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 20,
+        "y": 99,
+        "w": 11,
+        "h": 11
+       },
+       "anchor": {
+        "x": 0.63636,
+        "y": 1.45455
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 33,
+        "y": 99,
+        "w": 9,
+        "h": 7
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 3.42857
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 44,
+        "y": 99,
+        "w": 9,
+        "h": 5
+       },
+       "anchor": {
+        "x": 0.88889,
+        "y": 5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 11,
+        "y": 99,
+        "w": 7,
+        "h": 9
+       },
+       "anchor": {
+        "x": -1.71429,
+        "y": 2.33333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 20,
+        "y": 99,
+        "w": 11,
+        "h": 11
+       },
+       "anchor": {
+        "x": 0.63636,
+        "y": 1.45455
+       }
+      }
+     ]
     }
    }
   },
@@ -95386,6 +100270,450 @@
        "anchor": {
         "x": -0.307692,
         "y": 3
+       }
+      }
+     ]
+    },
+    "sleep_lie": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 22,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.72727,
+        "y": 2.88889
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 24,
+        "y": 0,
+        "w": 12,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 2.9
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 38,
+        "y": 0,
+        "w": 26,
+        "h": 18
+       },
+       "anchor": {
+        "x": 0.26923,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 0,
+        "y": 20,
+        "w": 16,
+        "h": 24
+       },
+       "anchor": {
+        "x": 0.4375,
+        "y": 1.20833
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 18,
+        "y": 20,
+        "w": 22,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.72727,
+        "y": 2.88889
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 42,
+        "y": 20,
+        "w": 12,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 3.22222
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 0,
+        "y": 46,
+        "w": 26,
+        "h": 18
+       },
+       "anchor": {
+        "x": 0.26923,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 28,
+        "y": 46,
+        "w": 16,
+        "h": 24
+       },
+       "anchor": {
+        "x": 0.4375,
+        "y": 1.20833
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 46,
+        "y": 46,
+        "w": 22,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.72727,
+        "y": 3
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 0,
+        "y": 72,
+        "w": 12,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 3.22222
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 14,
+        "y": 72,
+        "w": 26,
+        "h": 18
+       },
+       "anchor": {
+        "x": 0.26923,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 42,
+        "y": 72,
+        "w": 16,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.4375,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 18,
+        "y": 20,
+        "w": 22,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.72727,
+        "y": 2.88889
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 42,
+        "y": 20,
+        "w": 12,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 3.22222
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 0,
+        "y": 46,
+        "w": 26,
+        "h": 18
+       },
+       "anchor": {
+        "x": 0.26923,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 28,
+        "y": 46,
+        "w": 16,
+        "h": 24
+       },
+       "anchor": {
+        "x": 0.4375,
+        "y": 1.20833
+       }
+      }
+     ]
+    },
+    "sleep_lie_under": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 60,
+        "y": 72,
+        "w": 9,
+        "h": 7
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 3.42857
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 0,
+        "y": 99,
+        "w": 9,
+        "h": 6
+       },
+       "anchor": {
+        "x": 0.88889,
+        "y": 4.16667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 11,
+        "y": 99,
+        "w": 7,
+        "h": 9
+       },
+       "anchor": {
+        "x": -1.71429,
+        "y": 2.33333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 20,
+        "y": 99,
+        "w": 11,
+        "h": 11
+       },
+       "anchor": {
+        "x": 0.63636,
+        "y": 1.45455
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 33,
+        "y": 99,
+        "w": 9,
+        "h": 7
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 3.42857
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 44,
+        "y": 99,
+        "w": 9,
+        "h": 5
+       },
+       "anchor": {
+        "x": 0.88889,
+        "y": 5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 11,
+        "y": 99,
+        "w": 7,
+        "h": 9
+       },
+       "anchor": {
+        "x": -1.71429,
+        "y": 2.33333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 20,
+        "y": 99,
+        "w": 11,
+        "h": 11
+       },
+       "anchor": {
+        "x": 0.63636,
+        "y": 1.45455
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 55,
+        "y": 99,
+        "w": 9,
+        "h": 6
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 4
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 0,
+        "y": 112,
+        "w": 9,
+        "h": 5
+       },
+       "anchor": {
+        "x": 0.88889,
+        "y": 5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 11,
+        "y": 99,
+        "w": 7,
+        "h": 9
+       },
+       "anchor": {
+        "x": -1.71429,
+        "y": 2.33333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 20,
+        "y": 99,
+        "w": 11,
+        "h": 11
+       },
+       "anchor": {
+        "x": 0.63636,
+        "y": 1.45455
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 33,
+        "y": 99,
+        "w": 9,
+        "h": 7
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 3.42857
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 44,
+        "y": 99,
+        "w": 9,
+        "h": 5
+       },
+       "anchor": {
+        "x": 0.88889,
+        "y": 5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 11,
+        "y": 99,
+        "w": 7,
+        "h": 9
+       },
+       "anchor": {
+        "x": -1.71429,
+        "y": 2.33333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_leather_gloves",
+       "rect": {
+        "x": 20,
+        "y": 99,
+        "w": 11,
+        "h": 11
+       },
+       "anchor": {
+        "x": 0.63636,
+        "y": 1.45455
        }
       }
      ]
@@ -103320,6 +108648,450 @@
        }
       }
      ]
+    },
+    "sleep_lie": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 25,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.64,
+        "y": 1.92857
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 27,
+        "y": 0,
+        "w": 17,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.58824,
+        "y": 2.23077
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 46,
+        "y": 0,
+        "w": 30,
+        "h": 20
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 1.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 0,
+        "y": 22,
+        "w": 20,
+        "h": 24
+       },
+       "anchor": {
+        "x": 0.5,
+        "y": 1.20833
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 22,
+        "y": 22,
+        "w": 26,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.61538,
+        "y": 2.07692
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 50,
+        "y": 22,
+        "w": 17,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.58824,
+        "y": 2.23077
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 0,
+        "y": 48,
+        "w": 30,
+        "h": 20
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 1.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 32,
+        "y": 48,
+        "w": 20,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.5,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 54,
+        "y": 48,
+        "w": 26,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.61538,
+        "y": 2.07692
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 0,
+        "y": 75,
+        "w": 17,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.58824,
+        "y": 2.23077
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 19,
+        "y": 75,
+        "w": 30,
+        "h": 21
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 1.47619
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 51,
+        "y": 75,
+        "w": 20,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.5,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 22,
+        "y": 22,
+        "w": 26,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.61538,
+        "y": 2.07692
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 50,
+        "y": 22,
+        "w": 17,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.58824,
+        "y": 2.23077
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 0,
+        "y": 48,
+        "w": 30,
+        "h": 20
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 1.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 32,
+        "y": 48,
+        "w": 20,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.5,
+        "y": 1.2
+       }
+      }
+     ]
+    },
+    "sleep_lie_under": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 73,
+        "y": 75,
+        "w": 12,
+        "h": 11
+       },
+       "anchor": {
+        "x": 0.25,
+        "y": 2.18182
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 0,
+        "y": 102,
+        "w": 11,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.90909,
+        "y": 2.77778
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 13,
+        "y": 102,
+        "w": 12,
+        "h": 12
+       },
+       "anchor": {
+        "x": -0.66667,
+        "y": 1.83333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 27,
+        "y": 102,
+        "w": 15,
+        "h": 12
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 1.41667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 44,
+        "y": 102,
+        "w": 13,
+        "h": 11
+       },
+       "anchor": {
+        "x": 0.23077,
+        "y": 2.27273
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 59,
+        "y": 102,
+        "w": 11,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.90909,
+        "y": 2.77778
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 13,
+        "y": 102,
+        "w": 12,
+        "h": 12
+       },
+       "anchor": {
+        "x": -0.66667,
+        "y": 1.83333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 27,
+        "y": 102,
+        "w": 15,
+        "h": 12
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 1.41667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 72,
+        "y": 102,
+        "w": 13,
+        "h": 11
+       },
+       "anchor": {
+        "x": 0.23077,
+        "y": 2.27273
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 0,
+        "y": 116,
+        "w": 11,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.90909,
+        "y": 2.77778
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 13,
+        "y": 102,
+        "w": 12,
+        "h": 12
+       },
+       "anchor": {
+        "x": -0.66667,
+        "y": 1.83333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 27,
+        "y": 102,
+        "w": 15,
+        "h": 12
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 1.41667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 44,
+        "y": 102,
+        "w": 13,
+        "h": 11
+       },
+       "anchor": {
+        "x": 0.23077,
+        "y": 2.27273
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 59,
+        "y": 102,
+        "w": 11,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.90909,
+        "y": 2.77778
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 13,
+        "y": 102,
+        "w": 12,
+        "h": 12
+       },
+       "anchor": {
+        "x": -0.66667,
+        "y": 1.83333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 27,
+        "y": 102,
+        "w": 15,
+        "h": 12
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 1.41667
+       }
+      }
+     ]
     }
    }
   },
@@ -111248,6 +117020,450 @@
        "anchor": {
         "x": -0.2,
         "y": 2.642857
+       }
+      }
+     ]
+    },
+    "sleep_lie": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 25,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.64,
+        "y": 1.92857
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 27,
+        "y": 0,
+        "w": 17,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.58824,
+        "y": 2.23077
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 46,
+        "y": 0,
+        "w": 30,
+        "h": 20
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 1.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 0,
+        "y": 22,
+        "w": 20,
+        "h": 24
+       },
+       "anchor": {
+        "x": 0.5,
+        "y": 1.20833
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 22,
+        "y": 22,
+        "w": 26,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.61538,
+        "y": 2.07692
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 50,
+        "y": 22,
+        "w": 17,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.58824,
+        "y": 2.23077
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 0,
+        "y": 48,
+        "w": 30,
+        "h": 20
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 1.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 32,
+        "y": 48,
+        "w": 20,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.5,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 54,
+        "y": 48,
+        "w": 26,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.61538,
+        "y": 2.07692
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 0,
+        "y": 75,
+        "w": 17,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.58824,
+        "y": 2.23077
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 19,
+        "y": 75,
+        "w": 30,
+        "h": 21
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 1.47619
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 51,
+        "y": 75,
+        "w": 20,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.5,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 22,
+        "y": 22,
+        "w": 26,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.61538,
+        "y": 2.07692
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 50,
+        "y": 22,
+        "w": 17,
+        "h": 13
+       },
+       "anchor": {
+        "x": 0.58824,
+        "y": 2.23077
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 0,
+        "y": 48,
+        "w": 30,
+        "h": 20
+       },
+       "anchor": {
+        "x": 0.33333,
+        "y": 1.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 32,
+        "y": 48,
+        "w": 20,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.5,
+        "y": 1.2
+       }
+      }
+     ]
+    },
+    "sleep_lie_under": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 73,
+        "y": 75,
+        "w": 12,
+        "h": 11
+       },
+       "anchor": {
+        "x": 0.25,
+        "y": 2.18182
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 0,
+        "y": 102,
+        "w": 11,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.90909,
+        "y": 2.77778
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 13,
+        "y": 102,
+        "w": 12,
+        "h": 12
+       },
+       "anchor": {
+        "x": -0.66667,
+        "y": 1.83333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 27,
+        "y": 102,
+        "w": 15,
+        "h": 12
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 1.41667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 44,
+        "y": 102,
+        "w": 13,
+        "h": 11
+       },
+       "anchor": {
+        "x": 0.23077,
+        "y": 2.27273
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 59,
+        "y": 102,
+        "w": 11,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.90909,
+        "y": 2.77778
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 13,
+        "y": 102,
+        "w": 12,
+        "h": 12
+       },
+       "anchor": {
+        "x": -0.66667,
+        "y": 1.83333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 27,
+        "y": 102,
+        "w": 15,
+        "h": 12
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 1.41667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 72,
+        "y": 102,
+        "w": 13,
+        "h": 11
+       },
+       "anchor": {
+        "x": 0.23077,
+        "y": 2.27273
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 0,
+        "y": 116,
+        "w": 11,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.90909,
+        "y": 2.77778
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 13,
+        "y": 102,
+        "w": 12,
+        "h": 12
+       },
+       "anchor": {
+        "x": -0.66667,
+        "y": 1.83333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 27,
+        "y": 102,
+        "w": 15,
+        "h": 12
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 1.41667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 44,
+        "y": 102,
+        "w": 13,
+        "h": 11
+       },
+       "anchor": {
+        "x": 0.23077,
+        "y": 2.27273
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 59,
+        "y": 102,
+        "w": 11,
+        "h": 9
+       },
+       "anchor": {
+        "x": 0.90909,
+        "y": 2.77778
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 13,
+        "y": 102,
+        "w": 12,
+        "h": 12
+       },
+       "anchor": {
+        "x": -0.66667,
+        "y": 1.83333
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_fur_mittens",
+       "rect": {
+        "x": 27,
+        "y": 102,
+        "w": 15,
+        "h": 12
+       },
+       "anchor": {
+        "x": 0.66667,
+        "y": 1.41667
        }
       }
      ]
@@ -119182,6 +125398,450 @@
        }
       }
      ]
+    },
+    "sleep_lie": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 29,
+        "h": 17
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.58824
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 31,
+        "y": 0,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 56,
+        "y": 0,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 24,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 27,
+        "y": 24,
+        "w": 29,
+        "h": 17
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.58824
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 58,
+        "y": 24,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 51,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 34,
+        "y": 51,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 61,
+        "y": 51,
+        "w": 29,
+        "h": 16
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.6875
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 78,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 25,
+        "y": 78,
+        "w": 32,
+        "h": 23
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.34783
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 59,
+        "y": 78,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 27,
+        "y": 24,
+        "w": 29,
+        "h": 17
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.58824
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 58,
+        "y": 24,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 51,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 34,
+        "y": 51,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      }
+     ]
+    },
+    "sleep_lie_under": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 86,
+        "y": 78,
+        "w": 15,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.71429
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 105,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 52,
+        "y": 105,
+        "w": 15,
+        "h": 15
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 69,
+        "y": 105,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 84,
+        "y": 105,
+        "w": 15,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.78571
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 122,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 52,
+        "y": 105,
+        "w": 15,
+        "h": 15
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 69,
+        "y": 105,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      }
+     ]
     }
    }
   },
@@ -127110,6 +133770,450 @@
        "anchor": {
         "x": 0,
         "y": 2.466667
+       }
+      }
+     ]
+    },
+    "sleep_lie": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 29,
+        "h": 17
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.58824
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 31,
+        "y": 0,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 56,
+        "y": 0,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 24,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 27,
+        "y": 24,
+        "w": 29,
+        "h": 17
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.58824
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 58,
+        "y": 24,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 51,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 34,
+        "y": 51,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 61,
+        "y": 51,
+        "w": 29,
+        "h": 16
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.6875
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 78,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 25,
+        "y": 78,
+        "w": 32,
+        "h": 23
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.34783
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 59,
+        "y": 78,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 27,
+        "y": 24,
+        "w": 29,
+        "h": 17
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.58824
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 58,
+        "y": 24,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 51,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 34,
+        "y": 51,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      }
+     ]
+    },
+    "sleep_lie_under": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 86,
+        "y": 78,
+        "w": 15,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.71429
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 105,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 52,
+        "y": 105,
+        "w": 15,
+        "h": 15
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 69,
+        "y": 105,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 84,
+        "y": 105,
+        "w": 15,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.78571
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 122,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 52,
+        "y": 105,
+        "w": 15,
+        "h": 15
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 69,
+        "y": 105,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bone_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
        }
       }
      ]
@@ -135044,6 +142148,450 @@
        }
       }
      ]
+    },
+    "sleep_lie": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 29,
+        "h": 17
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.58824
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 31,
+        "y": 0,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 56,
+        "y": 0,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 24,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 27,
+        "y": 24,
+        "w": 29,
+        "h": 17
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.58824
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 58,
+        "y": 24,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 51,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 34,
+        "y": 51,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 61,
+        "y": 51,
+        "w": 29,
+        "h": 16
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.6875
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 78,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 25,
+        "y": 78,
+        "w": 32,
+        "h": 23
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.34783
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 59,
+        "y": 78,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 27,
+        "y": 24,
+        "w": 29,
+        "h": 17
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.58824
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 58,
+        "y": 24,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 51,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 34,
+        "y": 51,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      }
+     ]
+    },
+    "sleep_lie_under": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 86,
+        "y": 78,
+        "w": 15,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.71429
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 105,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 52,
+        "y": 105,
+        "w": 15,
+        "h": 15
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 69,
+        "y": 105,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 84,
+        "y": 105,
+        "w": 15,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.78571
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 122,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 52,
+        "y": 105,
+        "w": 15,
+        "h": 15
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 69,
+        "y": 105,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      }
+     ]
     }
    }
   },
@@ -142972,6 +150520,450 @@
        "anchor": {
         "x": 0,
         "y": 2.466667
+       }
+      }
+     ]
+    },
+    "sleep_lie": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 29,
+        "h": 17
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.58824
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 31,
+        "y": 0,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 56,
+        "y": 0,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 24,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 27,
+        "y": 24,
+        "w": 29,
+        "h": 17
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.58824
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 58,
+        "y": 24,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 51,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 34,
+        "y": 51,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 61,
+        "y": 51,
+        "w": 29,
+        "h": 16
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.6875
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 78,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 25,
+        "y": 78,
+        "w": 32,
+        "h": 23
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.34783
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 59,
+        "y": 78,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 27,
+        "y": 24,
+        "w": 29,
+        "h": 17
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.58824
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 58,
+        "y": 24,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 51,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 34,
+        "y": 51,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      }
+     ]
+    },
+    "sleep_lie_under": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 86,
+        "y": 78,
+        "w": 15,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.71429
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 105,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 52,
+        "y": 105,
+        "w": 15,
+        "h": 15
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 69,
+        "y": 105,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 84,
+        "y": 105,
+        "w": 15,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.78571
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 122,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 52,
+        "y": 105,
+        "w": 15,
+        "h": 15
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 69,
+        "y": 105,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_bronze_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
        }
       }
      ]
@@ -150906,6 +158898,450 @@
        }
       }
      ]
+    },
+    "sleep_lie": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 29,
+        "h": 17
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.58824
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 31,
+        "y": 0,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 56,
+        "y": 0,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 24,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 27,
+        "y": 24,
+        "w": 29,
+        "h": 17
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.58824
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 58,
+        "y": 24,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 51,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 34,
+        "y": 51,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 61,
+        "y": 51,
+        "w": 29,
+        "h": 16
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.6875
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 78,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 25,
+        "y": 78,
+        "w": 32,
+        "h": 23
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.34783
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 59,
+        "y": 78,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 27,
+        "y": 24,
+        "w": 29,
+        "h": 17
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.58824
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 58,
+        "y": 24,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 51,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 34,
+        "y": 51,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      }
+     ]
+    },
+    "sleep_lie_under": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 86,
+        "y": 78,
+        "w": 15,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.71429
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 105,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 52,
+        "y": 105,
+        "w": 15,
+        "h": 15
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 69,
+        "y": 105,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 84,
+        "y": 105,
+        "w": 15,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.78571
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 122,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 52,
+        "y": 105,
+        "w": 15,
+        "h": 15
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 69,
+        "y": 105,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      }
+     ]
     }
    }
   },
@@ -158834,6 +167270,450 @@
        "anchor": {
         "x": 0,
         "y": 2.466667
+       }
+      }
+     ]
+    },
+    "sleep_lie": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 29,
+        "h": 17
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.58824
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 31,
+        "y": 0,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 56,
+        "y": 0,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 24,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 27,
+        "y": 24,
+        "w": 29,
+        "h": 17
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.58824
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 58,
+        "y": 24,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 51,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 34,
+        "y": 51,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 61,
+        "y": 51,
+        "w": 29,
+        "h": 16
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.6875
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 78,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 25,
+        "y": 78,
+        "w": 32,
+        "h": 23
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.34783
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 59,
+        "y": 78,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 27,
+        "y": 24,
+        "w": 29,
+        "h": 17
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.58824
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 58,
+        "y": 24,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 51,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 34,
+        "y": 51,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      }
+     ]
+    },
+    "sleep_lie_under": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 86,
+        "y": 78,
+        "w": 15,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.71429
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 105,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 52,
+        "y": 105,
+        "w": 15,
+        "h": 15
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 69,
+        "y": 105,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 84,
+        "y": 105,
+        "w": 15,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.78571
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 122,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 52,
+        "y": 105,
+        "w": 15,
+        "h": 15
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 69,
+        "y": 105,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_iron_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
        }
       }
      ]
@@ -166768,6 +175648,450 @@
        }
       }
      ]
+    },
+    "sleep_lie": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 29,
+        "h": 17
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.58824
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 31,
+        "y": 0,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 56,
+        "y": 0,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 24,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 27,
+        "y": 24,
+        "w": 29,
+        "h": 17
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.58824
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 58,
+        "y": 24,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 51,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 34,
+        "y": 51,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 61,
+        "y": 51,
+        "w": 29,
+        "h": 16
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.6875
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 78,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 25,
+        "y": 78,
+        "w": 32,
+        "h": 23
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.34783
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 59,
+        "y": 78,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 27,
+        "y": 24,
+        "w": 29,
+        "h": 17
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.58824
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 58,
+        "y": 24,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 51,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 34,
+        "y": 51,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      }
+     ]
+    },
+    "sleep_lie_under": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 86,
+        "y": 78,
+        "w": 15,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.71429
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 105,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 52,
+        "y": 105,
+        "w": 15,
+        "h": 15
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 69,
+        "y": 105,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 84,
+        "y": 105,
+        "w": 15,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.78571
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 122,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 52,
+        "y": 105,
+        "w": 15,
+        "h": 15
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 69,
+        "y": 105,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      }
+     ]
     }
    }
   },
@@ -174696,6 +184020,450 @@
        "anchor": {
         "x": 0,
         "y": 2.466667
+       }
+      }
+     ]
+    },
+    "sleep_lie": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 29,
+        "h": 17
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.58824
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 31,
+        "y": 0,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 56,
+        "y": 0,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 24,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 27,
+        "y": 24,
+        "w": 29,
+        "h": 17
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.58824
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 58,
+        "y": 24,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 51,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 34,
+        "y": 51,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 61,
+        "y": 51,
+        "w": 29,
+        "h": 16
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.6875
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 78,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 25,
+        "y": 78,
+        "w": 32,
+        "h": 23
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.34783
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 59,
+        "y": 78,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 27,
+        "y": 24,
+        "w": 29,
+        "h": 17
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.58824
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 58,
+        "y": 24,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 51,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 34,
+        "y": 51,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      }
+     ]
+    },
+    "sleep_lie_under": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 86,
+        "y": 78,
+        "w": 15,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.71429
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 105,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 52,
+        "y": 105,
+        "w": 15,
+        "h": 15
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 69,
+        "y": 105,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 84,
+        "y": 105,
+        "w": 15,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.78571
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 122,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 52,
+        "y": 105,
+        "w": 15,
+        "h": 15
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 69,
+        "y": 105,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_steel_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
        }
       }
      ]
@@ -182630,6 +192398,450 @@
        }
       }
      ]
+    },
+    "sleep_lie": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 29,
+        "h": 17
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.58824
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 31,
+        "y": 0,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 56,
+        "y": 0,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 24,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 27,
+        "y": 24,
+        "w": 29,
+        "h": 17
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.58824
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 58,
+        "y": 24,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 51,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 34,
+        "y": 51,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 61,
+        "y": 51,
+        "w": 29,
+        "h": 16
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.6875
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 78,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 25,
+        "y": 78,
+        "w": 32,
+        "h": 23
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.34783
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 59,
+        "y": 78,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 27,
+        "y": 24,
+        "w": 29,
+        "h": 17
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.58824
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 58,
+        "y": 24,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 51,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 34,
+        "y": 51,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      }
+     ]
+    },
+    "sleep_lie_under": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 86,
+        "y": 78,
+        "w": 15,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.71429
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 105,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 52,
+        "y": 105,
+        "w": 15,
+        "h": 15
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 69,
+        "y": 105,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 84,
+        "y": 105,
+        "w": 15,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.78571
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 122,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 52,
+        "y": 105,
+        "w": 15,
+        "h": 15
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 69,
+        "y": 105,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      }
+     ]
     }
    }
   },
@@ -190558,6 +200770,450 @@
        "anchor": {
         "x": 0,
         "y": 2.466667
+       }
+      }
+     ]
+    },
+    "sleep_lie": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 29,
+        "h": 17
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.58824
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 31,
+        "y": 0,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 56,
+        "y": 0,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 24,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 27,
+        "y": 24,
+        "w": 29,
+        "h": 17
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.58824
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 58,
+        "y": 24,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 51,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 34,
+        "y": 51,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 61,
+        "y": 51,
+        "w": 29,
+        "h": 16
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.6875
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 78,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 25,
+        "y": 78,
+        "w": 32,
+        "h": 23
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.34783
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 59,
+        "y": 78,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 27,
+        "y": 24,
+        "w": 29,
+        "h": 17
+       },
+       "anchor": {
+        "x": 0.58621,
+        "y": 1.58824
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 58,
+        "y": 24,
+        "w": 23,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.52174,
+        "y": 2.07143
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 51,
+        "w": 32,
+        "h": 22
+       },
+       "anchor": {
+        "x": 0.375,
+        "y": 1.36364
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 34,
+        "y": 51,
+        "w": 25,
+        "h": 25
+       },
+       "anchor": {
+        "x": 0.52,
+        "y": 1.2
+       }
+      }
+     ]
+    },
+    "sleep_lie_under": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 2,
+     "directions": 4,
+     "dirStride": 4,
+     "loop": true,
+     "dirFrames": [
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 86,
+        "y": 78,
+        "w": 15,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.71429
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 105,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 52,
+        "y": 105,
+        "w": 15,
+        "h": 15
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 69,
+        "y": 105,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 84,
+        "y": 105,
+        "w": 15,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.78571
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 0,
+        "y": 122,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 52,
+        "y": 105,
+        "w": 15,
+        "h": 15
+       },
+       "anchor": {
+        "x": 0.2,
+        "y": 1.66667
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 69,
+        "y": 105,
+        "w": 13,
+        "h": 10
+       },
+       "anchor": {
+        "x": 0.92308,
+        "y": 2.5
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 15,
+        "y": 105,
+        "w": 15,
+        "h": 13
+       },
+       "anchor": {
+        "x": -0.33333,
+        "y": 1.61538
+       }
+      },
+      {
+       "atlas": "cz_sleep_acc_composite_gauntlets",
+       "rect": {
+        "x": 32,
+        "y": 105,
+        "w": 18,
+        "h": 14
+       },
+       "anchor": {
+        "x": 0.72222,
+        "y": 1.35714
        }
       }
      ]

@@ -517,6 +517,519 @@
     "emissive": true
    },
    "ktx2": "mirror/mirror.ktx2"
+  },
+  {
+   "key": "cz_sleep_acc_bag",
+   "image": "atlases/cz_sleep_acc_bag.png",
+   "frameW": 8,
+   "frameH": 8,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/cz_sleep_acc_bag@2x.png",
+     "ktx2": "atlases/cz_sleep_acc_bag@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/cz_sleep_acc_bag.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/cz_sleep_acc_bag.tintmask.png"
+   },
+   "residency": "stream",
+   "placeholder": null,
+   "ktx2": "atlases/cz_sleep_acc_bag.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/cz_sleep_acc_bag.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "cz_sleep_acc_bandana",
+   "image": "atlases/cz_sleep_acc_bandana.png",
+   "frameW": 64,
+   "frameH": 52,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/cz_sleep_acc_bandana@2x.png",
+     "ktx2": "atlases/cz_sleep_acc_bandana@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/cz_sleep_acc_bandana.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/cz_sleep_acc_bandana.tintmask.png"
+   },
+   "residency": "stream",
+   "placeholder": null,
+   "ktx2": "atlases/cz_sleep_acc_bandana.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/cz_sleep_acc_bandana.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "cz_sleep_acc_bone_gauntlets",
+   "image": "atlases/cz_sleep_acc_bone_gauntlets.png",
+   "frameW": 104,
+   "frameH": 132,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/cz_sleep_acc_bone_gauntlets@2x.png",
+     "ktx2": "atlases/cz_sleep_acc_bone_gauntlets@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/cz_sleep_acc_bone_gauntlets.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/cz_sleep_acc_bone_gauntlets.tintmask.png"
+   },
+   "residency": "stream",
+   "placeholder": null,
+   "ktx2": "atlases/cz_sleep_acc_bone_gauntlets.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/cz_sleep_acc_bone_gauntlets.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "cz_sleep_acc_bronze_gauntlets",
+   "image": "atlases/cz_sleep_acc_bronze_gauntlets.png",
+   "frameW": 104,
+   "frameH": 132,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/cz_sleep_acc_bronze_gauntlets@2x.png",
+     "ktx2": "atlases/cz_sleep_acc_bronze_gauntlets@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/cz_sleep_acc_bronze_gauntlets.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/cz_sleep_acc_bronze_gauntlets.tintmask.png"
+   },
+   "residency": "stream",
+   "placeholder": null,
+   "ktx2": "atlases/cz_sleep_acc_bronze_gauntlets.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/cz_sleep_acc_bronze_gauntlets.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "cz_sleep_acc_cape",
+   "image": "atlases/cz_sleep_acc_cape.png",
+   "frameW": 132,
+   "frameH": 184,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/cz_sleep_acc_cape@2x.png",
+     "ktx2": "atlases/cz_sleep_acc_cape@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/cz_sleep_acc_cape.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/cz_sleep_acc_cape.tintmask.png"
+   },
+   "residency": "stream",
+   "placeholder": null,
+   "ktx2": "atlases/cz_sleep_acc_cape.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/cz_sleep_acc_cape.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "cz_sleep_acc_cloth_gloves",
+   "image": "atlases/cz_sleep_acc_cloth_gloves.png",
+   "frameW": 72,
+   "frameH": 112,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/cz_sleep_acc_cloth_gloves@2x.png",
+     "ktx2": "atlases/cz_sleep_acc_cloth_gloves@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/cz_sleep_acc_cloth_gloves.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/cz_sleep_acc_cloth_gloves.tintmask.png"
+   },
+   "residency": "stream",
+   "placeholder": null,
+   "ktx2": "atlases/cz_sleep_acc_cloth_gloves.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/cz_sleep_acc_cloth_gloves.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "cz_sleep_acc_composite_gauntlets",
+   "image": "atlases/cz_sleep_acc_composite_gauntlets.png",
+   "frameW": 104,
+   "frameH": 132,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/cz_sleep_acc_composite_gauntlets@2x.png",
+     "ktx2": "atlases/cz_sleep_acc_composite_gauntlets@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/cz_sleep_acc_composite_gauntlets.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/cz_sleep_acc_composite_gauntlets.tintmask.png"
+   },
+   "residency": "stream",
+   "placeholder": null,
+   "ktx2": "atlases/cz_sleep_acc_composite_gauntlets.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/cz_sleep_acc_composite_gauntlets.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "cz_sleep_acc_earrings",
+   "image": "atlases/cz_sleep_acc_earrings.png",
+   "frameW": 80,
+   "frameH": 84,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/cz_sleep_acc_earrings@2x.png",
+     "ktx2": "atlases/cz_sleep_acc_earrings@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/cz_sleep_acc_earrings.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/cz_sleep_acc_earrings.tintmask.png"
+   },
+   "residency": "stream",
+   "placeholder": null,
+   "ktx2": "atlases/cz_sleep_acc_earrings.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/cz_sleep_acc_earrings.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "cz_sleep_acc_eyepatch",
+   "image": "atlases/cz_sleep_acc_eyepatch.png",
+   "frameW": 76,
+   "frameH": 104,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/cz_sleep_acc_eyepatch@2x.png",
+     "ktx2": "atlases/cz_sleep_acc_eyepatch@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/cz_sleep_acc_eyepatch.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/cz_sleep_acc_eyepatch.tintmask.png"
+   },
+   "residency": "stream",
+   "placeholder": null,
+   "ktx2": "atlases/cz_sleep_acc_eyepatch.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/cz_sleep_acc_eyepatch.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "cz_sleep_acc_flower",
+   "image": "atlases/cz_sleep_acc_flower.png",
+   "frameW": 64,
+   "frameH": 44,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/cz_sleep_acc_flower@2x.png",
+     "ktx2": "atlases/cz_sleep_acc_flower@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/cz_sleep_acc_flower.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/cz_sleep_acc_flower.tintmask.png"
+   },
+   "residency": "stream",
+   "placeholder": null,
+   "ktx2": "atlases/cz_sleep_acc_flower.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/cz_sleep_acc_flower.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "cz_sleep_acc_fur_cloak",
+   "image": "atlases/cz_sleep_acc_fur_cloak.png",
+   "frameW": 144,
+   "frameH": 160,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/cz_sleep_acc_fur_cloak@2x.png",
+     "ktx2": "atlases/cz_sleep_acc_fur_cloak@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/cz_sleep_acc_fur_cloak.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/cz_sleep_acc_fur_cloak.tintmask.png"
+   },
+   "residency": "stream",
+   "placeholder": null,
+   "ktx2": "atlases/cz_sleep_acc_fur_cloak.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/cz_sleep_acc_fur_cloak.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "cz_sleep_acc_fur_mittens",
+   "image": "atlases/cz_sleep_acc_fur_mittens.png",
+   "frameW": 88,
+   "frameH": 128,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/cz_sleep_acc_fur_mittens@2x.png",
+     "ktx2": "atlases/cz_sleep_acc_fur_mittens@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/cz_sleep_acc_fur_mittens.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/cz_sleep_acc_fur_mittens.tintmask.png"
+   },
+   "residency": "stream",
+   "placeholder": null,
+   "ktx2": "atlases/cz_sleep_acc_fur_mittens.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/cz_sleep_acc_fur_mittens.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "cz_sleep_acc_gauntlets",
+   "image": "atlases/cz_sleep_acc_gauntlets.png",
+   "frameW": 104,
+   "frameH": 132,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/cz_sleep_acc_gauntlets@2x.png",
+     "ktx2": "atlases/cz_sleep_acc_gauntlets@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/cz_sleep_acc_gauntlets.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/cz_sleep_acc_gauntlets.tintmask.png"
+   },
+   "residency": "stream",
+   "placeholder": null,
+   "ktx2": "atlases/cz_sleep_acc_gauntlets.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/cz_sleep_acc_gauntlets.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "cz_sleep_acc_iron_gauntlets",
+   "image": "atlases/cz_sleep_acc_iron_gauntlets.png",
+   "frameW": 104,
+   "frameH": 132,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/cz_sleep_acc_iron_gauntlets@2x.png",
+     "ktx2": "atlases/cz_sleep_acc_iron_gauntlets@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/cz_sleep_acc_iron_gauntlets.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/cz_sleep_acc_iron_gauntlets.tintmask.png"
+   },
+   "residency": "stream",
+   "placeholder": null,
+   "ktx2": "atlases/cz_sleep_acc_iron_gauntlets.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/cz_sleep_acc_iron_gauntlets.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "cz_sleep_acc_leather_gloves",
+   "image": "atlases/cz_sleep_acc_leather_gloves.png",
+   "frameW": 72,
+   "frameH": 120,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/cz_sleep_acc_leather_gloves@2x.png",
+     "ktx2": "atlases/cz_sleep_acc_leather_gloves@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/cz_sleep_acc_leather_gloves.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/cz_sleep_acc_leather_gloves.tintmask.png"
+   },
+   "residency": "stream",
+   "placeholder": null,
+   "ktx2": "atlases/cz_sleep_acc_leather_gloves.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/cz_sleep_acc_leather_gloves.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "cz_sleep_acc_round_glasses",
+   "image": "atlases/cz_sleep_acc_round_glasses.png",
+   "frameW": 72,
+   "frameH": 76,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/cz_sleep_acc_round_glasses@2x.png",
+     "ktx2": "atlases/cz_sleep_acc_round_glasses@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/cz_sleep_acc_round_glasses.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/cz_sleep_acc_round_glasses.tintmask.png"
+   },
+   "residency": "stream",
+   "placeholder": null,
+   "ktx2": "atlases/cz_sleep_acc_round_glasses.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/cz_sleep_acc_round_glasses.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "cz_sleep_acc_scarf",
+   "image": "atlases/cz_sleep_acc_scarf.png",
+   "frameW": 72,
+   "frameH": 116,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/cz_sleep_acc_scarf@2x.png",
+     "ktx2": "atlases/cz_sleep_acc_scarf@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/cz_sleep_acc_scarf.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/cz_sleep_acc_scarf.tintmask.png"
+   },
+   "residency": "stream",
+   "placeholder": null,
+   "ktx2": "atlases/cz_sleep_acc_scarf.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/cz_sleep_acc_scarf.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "cz_sleep_acc_steel_gauntlets",
+   "image": "atlases/cz_sleep_acc_steel_gauntlets.png",
+   "frameW": 104,
+   "frameH": 132,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/cz_sleep_acc_steel_gauntlets@2x.png",
+     "ktx2": "atlases/cz_sleep_acc_steel_gauntlets@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/cz_sleep_acc_steel_gauntlets.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/cz_sleep_acc_steel_gauntlets.tintmask.png"
+   },
+   "residency": "stream",
+   "placeholder": null,
+   "ktx2": "atlases/cz_sleep_acc_steel_gauntlets.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/cz_sleep_acc_steel_gauntlets.tintmask.ktx2"
+   }
+  },
+  {
+   "key": "cz_sleep_acc_sunglasses",
+   "image": "atlases/cz_sleep_acc_sunglasses.png",
+   "frameW": 72,
+   "frameH": 76,
+   "columns": 1,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/cz_sleep_acc_sunglasses@2x.png",
+     "ktx2": "atlases/cz_sleep_acc_sunglasses@2x.ktx2",
+     "masksKtx2": {
+      "tintmask": "atlases/cz_sleep_acc_sunglasses.tintmask@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "tintmask": "atlases/cz_sleep_acc_sunglasses.tintmask.png"
+   },
+   "residency": "stream",
+   "placeholder": null,
+   "ktx2": "atlases/cz_sleep_acc_sunglasses.ktx2",
+   "masksKtx2": {
+    "tintmask": "atlases/cz_sleep_acc_sunglasses.tintmask.ktx2"
+   }
   }
  ],
  "sprites": [
