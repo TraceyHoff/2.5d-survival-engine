@@ -17,6 +17,7 @@ export const TileId = {
   Snow: 6,
   Forest: 7, // dedicated forest floor (tile_forest); appended
   ShallowWater: 8, // tile_water_shallow; appended
+  Mud: 9, // ADR-246: wet lowland ground (gt_mud*; tile_dirt fallback); appended
 } as const;
 export type TileId = (typeof TileId)[keyof typeof TileId];
 
@@ -43,6 +44,7 @@ export const TERRAIN_SPRITES: Readonly<Record<number, readonly string[]>> = {
   [TileId.Snow]: ["tile_snow"],
   [TileId.Forest]: ["tile_forest"],
   [TileId.ShallowWater]: ["tile_water_shallow"],
+  [TileId.Mud]: ["tile_dirt"], // ADR-246: no tile_mud art; the gt_ ground set has gt_mud*
 };
 /** Shore overlay sprite keys by the direction of the neighbouring water (n = -y, e = +x, s = +y, w = -x in tile axes). */
 export const SHORE_SPRITES = { n: "tile_shore_n", e: "tile_shore_e", s: "tile_shore_s", w: "tile_shore_w", ne: "tile_shore_ne", se: "tile_shore_se", sw: "tile_shore_sw", nw: "tile_shore_nw" } as const;

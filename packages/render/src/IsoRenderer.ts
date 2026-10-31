@@ -503,7 +503,7 @@ export class IsoRenderer implements Renderer {
     // ADR-239 seasons: ground recolour + snowpack + ice (terrain uniforms), sprite foliage/snow caps (falling leaves: the client FX director)
     const sv = seasonVisual(world); const SU = this.seasonU;
     SU[0] = sv.fall; SU[1] = sv.winter; SU[2] = sv.snow; SU[3] = sv.ice;
-    this.terrain.season = SU; this.tiles.season = SU;
+    this.terrain.season = SU; this.tiles.season = SU; this.tiles.groundSeason = sv.art; // ADR-246: gt_ ground art season
     this.sprites.season = sv; this.sprites.seasonSnowCap = Math.max(sv.snow * 1.15, sf.snow * 0.9);
     this.terrain.surfaceStyle = { puddles: su.puddles, wetDarken: su.wetDarken, skyRefl: su.skyReflection };
     // lightning during storms

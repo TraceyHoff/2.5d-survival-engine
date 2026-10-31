@@ -21,6 +21,7 @@ import { frameAnim } from "./frame-select.js";
 import { Canvas2DLightmap, lightRadiusPx, type C2DLight } from "./canvasLight.js";
 import { DEFAULT_STYLE } from "./style.js";
 import { SpriteFlag } from "./ids.js";
+import { GroundArt, groundLayers, type GroundLayer } from "./groundArt.js";
 import { STATE_ANIMS, type AtlasSource } from "./assets/atlasManager.js";
 import { computeDayLighting, dimForWeather } from "./timeOfDay.js";
 import { weatherTargets } from "./weather.js";
@@ -45,7 +46,7 @@ export function chooseRenderer(probe: ContextProbe, opts: { forceDebug?: boolean
 
 /** Flat ground fill per world tile id (world DEFAULT_BANDS: 1 water, 2 sand, 3 grass, 4 forest, 5 rock; 0 = none). The old
  * table was shifted by one, so grass (3) drew brown, forest blue and water green. */
-export const TILE_COLORS = ["#1b1f1a", "#2d5d8a", "#c8b47a", "#4f8a43", "#3f7a3a", "#6b6b6b", "#7a6440", "#e8eef0", "#4f93bf"]; // [8] ADR-181 shallow water (lighter than deep [1])
+export const TILE_COLORS = ["#1b1f1a", "#2d5d8a", "#c8b47a", "#4f8a43", "#3f7a3a", "#6b6b6b", "#e8eef0", "#35552c", "#4f93bf", "#5e4a33"]; // [8] ADR-181 shallow water (lighter than deep [1]); ADR-246: [6] snow / [7] forest were swapped, [9] mud
 
 /** ADR-145: snap a sprite origin to a whole device pixel (x*s + o integer) so nearest-neighbour pixel art keeps even texel widths. */
 export function snapPx(v: number, s: number, o: number): number { return s >= 1 ? (Math.round(v * s + o) - o) / s : v; }
@@ -170,6 +171,61 @@ export class Canvas2DRenderer {
     g.drawImage(cv, 0, 0); g.restore();
   }
 
+  // ---- ADR-246 gt_ ground art: cached B x B tile blocks (all layers baked once per season / chunk edit) ----
+  private gArt: GroundArt | null = null; private gArtReg: AssetRegistry | undefined;
+  private gBlocks = new Map<string, { cv: HTMLCanvasElement; stamp: string; used: number }>(); private gFrame = 0;
+  /** false = flat legacy diamonds (tests / diag). */ groundArtEnabled = true;
+  /** gt blocks drawn / built this frame (diag). */ groundStats = { blocks: 0, built: 0, cached: 0 };
+  private groundArtOf(reg: AssetRegistry): GroundArt | null {
+    if (this.gArtReg !== reg) { this.gArtReg = reg; const g = new GroundArt(reg); this.gArt = g.available ? g : null; this.gBlocks.clear(); }
+    return this.gArt;
+  }
+  /** One baked block (null = an art page is still loading or no DOM). Back-to-front so skirts sit under front cells. */
+  private gtBlock(tm: TileMap, reg: AssetRegistry, ga: GroundArt, bx: number, by: number, season: number, build: boolean): HTMLCanvasElement | null {
+    const B = GT_BLOCK, x0 = bx * B, y0 = by * B; let st = `${season}`;
+    for (let cy = Math.floor((y0 - 1) / CHUNK_SIZE); cy <= Math.floor((y0 + B) / CHUNK_SIZE); cy++) for (let cx = Math.floor((x0 - 1) / CHUNK_SIZE); cx <= Math.floor((x0 + B) / CHUNK_SIZE); cx++) { const n = tm.getChunk(cx, cy); st += n ? `,${n.version}` : ",x"; }
+    const k = `${bx},${by}`; const hit = this.gBlocks.get(k); if (hit && hit.stamp === st) { hit.used = this.gFrame; return hit.cv; }
+    if (!build || typeof document === "undefined") return hit?.cv ?? null; // stale block until rebuilt (no flash)
+    const at = (a: number, b: number): number => tm.getTile(a, b); const L: GroundLayer[] = [];
+    const ops: { img: CanvasImageSource; f: { x: number; y: number; w: number; h: number; anchorX: number; anchorY: number }; dx: number; dy: number }[] = [];
+    for (let d = 0; d <= 2 * (B - 1); d++) for (let lx = Math.max(0, d - B + 1); lx <= Math.min(B - 1, d); lx++) {
+      const x = x0 + lx, y = y0 + d - lx; if (!at(x, y)) continue;
+      groundLayers(at, x, y, season, (a, b) => waterShoreTint(at, a, b), L);
+      for (const l of L) { const id = ga.id(l.key); if (id < 0) continue; let f; try { f = reg.dirFrame(id, "idle", 0, 0); } catch { continue; }
+        const img = this.image(f.atlas.key); if (!img) return hit?.cv ?? null; ops.push({ img, f, dx: (lx - (d - lx)) * 32 + GT_OX, dy: d * 16 + GT_OY }); }
+    }
+    const cv = hit?.cv ?? document.createElement("canvas"); cv.width = GT_W; cv.height = GT_H; const g = cv.getContext("2d"); if (!g) return null;
+    g.clearRect(0, 0, GT_W, GT_H); for (const o of ops) g.drawImage(o.img, o.f.x, o.f.y, o.f.w, o.f.h, o.dx - o.f.anchorX, o.dy - o.f.anchorY, o.f.w, o.f.h);
+    this.gBlocks.set(k, { cv, stamp: st, used: this.gFrame }); this.groundStats.built++; return cv;
+  }
+  /** Draws the visible gt blocks (iso order); blocks not baked yet fall back to flat diamonds. Returns false = no gt art. */
+  private drawGroundArt(tm: TileMap, reg: AssetRegistry, cx: number, cy: number, R: number, s: number, ox: number, oy: number, stats: FrameStats): boolean {
+    const ga = this.groundArtEnabled ? this.groundArtOf(reg) : null; if (!ga) return false;
+    const g = this.ctx, B = GT_BLOCK, season = Math.max(0, Math.min(2, this.sv.art | 0)); this.gFrame++; this.groundStats = { blocks: 0, built: 0, cached: this.gBlocks.size };
+    const vx0 = -ox / s, vx1 = (this.w - ox) / s, vy0 = -oy / s, vy1 = (this.h - oy) / s; let budget = GT_BUILDS_PER_FRAME;
+    const bx0 = Math.floor((cx - R) / B), bx1 = Math.floor((cx + R) / B), by0 = Math.floor((cy - R) / B), by1 = Math.floor((cy + R) / B);
+    for (let d = bx0 + by0; d <= bx1 + by1; d++) for (let bx = Math.max(bx0, d - by1); bx <= Math.min(bx1, d - by0); bx++) {
+      const by = d - bx; const sx = (bx - by) * B * 32 - GT_OX, sy = (bx + by) * B * 16 - GT_OY; // block canvas origin (world px)
+      if (sx > vx1 || sx + GT_W < vx0 || sy > vy1 || sy + GT_H < vy0) continue;
+      if (!tm.getChunk(Math.floor(bx * B / CHUNK_SIZE), Math.floor(by * B / CHUNK_SIZE))) continue;
+      const nb = this.groundStats.built; const cv = this.gtBlock(tm, reg, ga, bx, by, season, budget > 0); if (this.groundStats.built > nb) budget--;
+      if (cv) { g.drawImage(cv, sx, sy); stats.drawCalls++; this.groundStats.blocks++; stats.tiles += B * B; continue; }
+      this.flatTiles(tm, bx * B, by * B, B, stats); // still loading / over budget: flat diamonds
+    }
+    const cap = Math.max(48, this.groundStats.blocks + 24); // LRU: drop the least recently drawn blocks
+    if (this.gBlocks.size > cap) { const old = [...this.gBlocks.entries()].sort((a, b) => a[1].used - b[1].used); for (let i = 0; i < old.length - cap; i++) this.gBlocks.delete(old[i]![0]); }
+    return true;
+  }
+  /** Legacy flat land diamonds for an n x n tile square (water: the gradient image below). */
+  private flatTiles(tm: TileMap, x0: number, y0: number, n: number, stats: FrameStats): void {
+    const g = this.ctx, tw = DEFAULT_ISO.tileW, th = DEFAULT_ISO.tileH;
+    for (let y = y0; y < y0 + n; y++) for (let x = x0; x < x0 + n; x++) {
+      const t = tm.getTile(x, y); if (!t || isWaterId(t)) { if (t) stats.tiles++; continue; }
+      const p = worldToScreen(x, y, 0, DEFAULT_ISO); g.fillStyle = this.groundColor(t, x, y);
+      g.beginPath(); g.moveTo(p.sx, p.sy - th / 2); g.lineTo(p.sx + tw / 2, p.sy); g.lineTo(p.sx, p.sy + th / 2); g.lineTo(p.sx - tw / 2, p.sy); g.fill(); stats.tiles++;
+    }
+  }
+
   // ---- ADR-239 seasons (CPU mirror of the WebGL2 shader pass, quantised so the recoloured frames cache) ----
   private sv: SeasonVisual = SUMMER_VISUAL; private seasonArt: SeasonArt | undefined; private seasonArtReg: AssetRegistry | undefined;
   private seasonCache = new Map<string, HTMLCanvasElement | null>(); private seasonBuilds = 0;
@@ -288,7 +344,7 @@ export class Canvas2DRenderer {
     const tm = this.tilemap; const c = cam.cssToWorld(cam.viewW / cam.dpr / 2, cam.viewH / cam.dpr / 2);
     const R = Math.ceil(Math.max(this.w, this.h) / (s * th)) + 2;
     if (tm) this.drawWater(tm, Math.floor(c.x) - R, Math.floor(c.y) - R, 2 * R + 1); // ADR-184: smooth gradient under the land diamonds
-    if (tm) for (let y = Math.floor(c.y) - R; y < c.y + R; y++) for (let x = Math.floor(c.x) - R; x < c.x + R; x++) {
+    if (tm && !(this.registry && this.drawGroundArt(tm, this.registry, Math.floor(c.x), Math.floor(c.y), R, s, ox, oy, stats))) for (let y = Math.floor(c.y) - R; y < c.y + R; y++) for (let x = Math.floor(c.x) - R; x < c.x + R; x++) {
       let t = tm.getTile(x, y); if (!t && !tm.getChunk(Math.floor(x / CHUNK_SIZE), Math.floor(y / CHUNK_SIZE))) continue;
       if (isWaterId(t)) { stats.tiles++; continue; }
       const p = worldToScreen(x, y, 0, iso); g.fillStyle = this.groundColor(t, x, y); // ADR-239 season tint
@@ -361,6 +417,9 @@ export class Canvas2DRenderer {
   }
 }
 const FLOOR_Z = floorToTerrainZ(1, 0);
+/** ADR-246 Canvas2D gt blocks: B x B tiles per cached canvas (cell 68x52, centre at frame px 34, 18). */
+export const GT_BLOCK = 8; const GT_OX = (GT_BLOCK - 1) * 32 + 34, GT_OY = 18;
+const GT_W = (2 * GT_BLOCK - 2) * 32 + 68, GT_H = (2 * GT_BLOCK - 2) * 16 + 52; const GT_BUILDS_PER_FRAME = 4;
 const C2D_DAYLIGHT_LIGHT_SCALE = DEFAULT_STYLE.daylightLightScale;
 /** Painter layers: everything on floor N draws after floor N-1; decks draw below the uprights of their own floor. */
 const LEVEL_DEPTH = 1e6, DECK_DEPTH = -5e5;

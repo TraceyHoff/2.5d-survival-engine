@@ -50,3 +50,4 @@ export * from "./canvas2d.js";
 export * from "./canvasLight.js";
 export * from "./report.js";
 export * from "./season.js";
+export * from "./groundArt.js";
