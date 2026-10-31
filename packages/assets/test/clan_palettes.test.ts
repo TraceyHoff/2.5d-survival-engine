@@ -32,13 +32,9 @@ describe("clan palettes are served to the client", () => {
     expect(bld.clanPalettes).toEqual(want);
     expect(read("assets/pvp_clan/manifest.fragment.json").clanPalettes).toEqual(want);
   });
-  it("served fragments defining clanPalettes all carry the identical 16 (keyed merge: same keys/order keep N = 16)", () => {
-    // ADR-242 serves the pvp_clan fragment too; its copy must stay byte-equal to the building one (tint = index + 1).
+  it("exactly one served fragment defines clanPalettes (merge appends, a second copy would shift nothing but double N)", () => {
     expect(served.find((f) => f.name === "pack")).toBeDefined();
-    const withPals = served.filter((f) => (f.manifest.clanPalettes?.length ?? 0) > 0);
-    expect(withPals.map((f) => f.name)).toContain("building");
-    const want = source.map(({ key, primary, secondary }) => ({ key, primary, secondary }));
-    for (const f of withPals) expect(f.manifest.clanPalettes, f.name).toEqual(want);
+    expect(served.filter((f) => (f.manifest.clanPalettes?.length ?? 0) > 0).map((f) => f.name)).toEqual(["building"]);
   });
   const merged = mergeManifests(served);
   const { registry } = loadManifest(merged.manifest, { lock: read("packages/assets/pack/ids.lock.json") });
