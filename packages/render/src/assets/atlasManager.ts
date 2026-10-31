@@ -165,7 +165,7 @@ export const WEAR_SMALL_PX = 672, WEAR_SPLIT_MIN = 4;
  *  ground pages) keep their 1x working set reserved ahead of them. */
 export const WEAR_BUDGET_SHARE = 0.3;
 /** ADR-251: the 1x wear floor kept even when the cap is tight: one fully dressed character (a worn set is ~8 pages). */
-export const WEAR_FLOOR_SLOTS = 8;
+export const WEAR_FLOOR_SLOTS = 4;
 /** ADR-251: budget share of the stream-sheet pool's 1x working set, and its floor (slots). */
 export const STREAM_BUDGET_SHARE = 0.25, STREAM_FLOOR_SLOTS = 4;
 
@@ -996,14 +996,16 @@ export class AtlasManager {
   private async fitBudget(list: AtlasRT[], reserveBytes = 0, keepBytes = 0): Promise<void> {
     const S = this.layerSize; const full = this.textureBudgetMB * 1048576;
     this.classify(list);
+    for (const a of list) if (a.cold && VISIBLE_PIN_RE.test(a.key) && this.groundPinOk(a.key)) a.cold = false; // ADR-251: furniture / drawn-season gt never go cold (they are what the camera sits on)
     const cap = (a: AtlasRT) => { let d = 1; const t = Math.max(a.img!.width, a.img!.height) / S; while (d > 1 / Math.max(1, t)) d /= 2; return d; };
     const caps = list.map(cap);
     // ADR-237: hot creature/character/zombie sheets (drawn recently; before anything was drawn every one but the 62 small
     // resident creature sheets, which follow once drawn via retier) stay x1 while
     // the rest of the hot tier is halved - tried first at every hot scale, dropped only when even that does not fit
-    const pinned = list.map((a) => !a.cold && ((FIDELITY_ATLAS_RE.test(a.key) && (this.recentlyUsed.size ? this.recentlyUsed.has(a.key) : !RESIDENT_CREATURE_RE.test(a.key))) || VISIBLE_PIN_RE.test(a.key)));
-    let pin = false;
-    const scaleOf = (i: number, h: number, c: number): number => { const a = list[i]!; return Math.min(caps[i]!, a.cold ? c : pin && pinned[i] ? 1 : h); };
+    const visPin = list.map((a) => !a.cold && VISIBLE_PIN_RE.test(a.key) && this.groundPinOk(a.key));
+    const pinned = list.map((a, i) => visPin[i]! || (!a.cold && FIDELITY_ATLAS_RE.test(a.key) && (this.recentlyUsed.size ? this.recentlyUsed.has(a.key) : !RESIDENT_CREATURE_RE.test(a.key))));
+    let pin = 0; // 2 = creature + visible pins, 1 = ADR-251 visible pins only (furniture / drawn-season gt), 0 = none
+    const scaleOf = (i: number, h: number, c: number): number => { const a = list[i]!; return Math.min(caps[i]!, a.cold ? c : (pin === 2 ? pinned[i] : pin === 1 && visPin[i]) ? 1 : h); };
     const dims = (h: number, c: number) => list.map((a, i) => { const k = scaleOf(i, h, c); return { ...a, img: { width: Math.max(1, Math.floor(a.img!.width * k)), height: Math.max(1, Math.floor(a.img!.height * k)) } as ImageLike }; });
     const fits1 = (h: number, budget: number): number | null => {
       const anyCold = list.some((a) => a.cold);
@@ -1011,8 +1013,9 @@ export class AtlasManager {
       return null;
     };
     const fits = (h: number, budget: number): number | null => {
-      if (h < 1 && pinned.some(Boolean)) { pin = true; const c = fits1(h, budget); if (c !== null) return c; }
-      pin = false; return fits1(h, budget);
+      if (h < 1 && pinned.some(Boolean)) { pin = 2; const c = fits1(h, budget); if (c !== null) return c; }
+      if (h < 1 && visPin.some(Boolean) && visPin.some((v, i) => v !== pinned[i])) { pin = 1; const c = fits1(h, budget); if (c !== null) return c; }
+      pin = 0; return fits1(h, budget);
     };
     // Blur-safe order: visible (hot) art keeps full res. Memory comes from (1) shrinking cold atlases, (2) a smaller
     // streaming-pool reserve (the pools then page more often instead of blurring resident art), (3) demoting hot
@@ -1026,8 +1029,9 @@ export class AtlasManager {
     if (!best) {
       // halving the hot tier still keeps the visible pools' floor (vehicles/buildings/bodies at 1x): giving resident art
       // the whole budget only appended those pools over it (mobile: 187 MB of arrays at a 128 MB budget -> fbo OOM)
-      keptReserve = keepBytes;
-      for (let h = 0.5; h >= MIN_ATLAS_DOWNSCALE && !best; h /= 2) { const c = fits(h, full - keepBytes); if (c !== null) best = [h, c]; }
+      // ADR-251: hot resolution before reserve size - at each hot scale try the full keep, then half of it (the pools
+      // still get their floors; Xbox kept a 372 MB reserve at 0.25 while 150 MB of it stayed idle and furniture blurred)
+      for (let h = 0.5; h >= MIN_ATLAS_DOWNSCALE && !best; h /= 2) for (const r of [keepBytes, keepBytes / 2]) { if (best) break; keptReserve = r; const c = fits(h, full - r); if (c !== null) best = [h, c]; }
       // ADR-251: the pools are forced to their floor anyway (body, wear floor, one layer per visible pool), so a smaller
       // share of that floor is still held before resident art takes the whole budget (mobile ended 25 MB over 128)
       for (const r of [keepBytes / 2, keepBytes / 4, 0]) {
@@ -1037,8 +1041,8 @@ export class AtlasManager {
     }
     const [h, c] = best ?? [MIN_ATLAS_DOWNSCALE, MIN_ATLAS_DOWNSCALE];
     this.downscale = h; this.coldDownscale = c;
-    if (!best) pin = false;
-    this.pinnedKeys = new Set(pin ? list.filter((_, i) => pinned[i]).map((a) => a.key) : []);
+    if (!best) pin = 0;
+    this.pinnedKeys = new Set(pin ? list.filter((_, i) => (pin === 2 ? pinned : visPin)[i]).map((a) => a.key) : []);
     this.fitInfo = { reserveMB: Math.round(keptReserve / 1048576), reserveWantedMB: Math.round(reserveBytes / 1048576), demoted, pinned: [...this.pinnedKeys] };
     this.pack(dims(h, c));
     if (h < 1) {
@@ -1085,6 +1089,9 @@ export class AtlasManager {
   }
   /** Resident layers the budget planner charges for (shelf count of the last pack; >= the real MaxRects count). */
   private planLayers = 0; private packedLayers = 0;
+  /** ADR-251: season whose gt_<season>_p* pages are pinned at 1x (TileTerrain sets the drawn one; the others may halve). */
+  groundPinSeason: "summer" | "fall" | "winter" = "summer";
+  private groundPinOk(key: string): boolean { const m = /^gt_(summer|fall|winter)_/.exec(key); return !m || m[1] === this.groundPinSeason; }
   /**
    * Pack whole atlas images into array layers: MaxRects (best short side fit) across layers, largest first, rects
    * padded by a 2px gutter and rounded to 4px so side arrays (>> sideShift <= 2) stay texel-exact. Only placement

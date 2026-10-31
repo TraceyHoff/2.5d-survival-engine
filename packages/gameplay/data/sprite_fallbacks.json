@@ -1450,12 +1450,6 @@
         "sign"
       ],
       "scale": 0.8
-    },
-    "basic_storage_box": {
-      "to": [
-        "crate_decor",
-        "storage_box"
-      ]
     }
   },
   "stages": {

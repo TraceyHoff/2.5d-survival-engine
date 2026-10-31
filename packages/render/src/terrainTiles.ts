@@ -15,7 +15,7 @@ import { createProgram, GLSL_COMMON, type FrameStats, type Program } from "./gl/
 import type { AtlasManager } from "./assets/atlasManager.js";
 import type { Rect } from "./camera.js";
 import { TileId, TERRAIN_SPRITES, SHORE_SPRITES, isWaterTile } from "./ids.js";
-import { GroundArt, GroundLayerKind, groundLayers, type GroundLayer } from "./groundArt.js";
+import { GroundArt, GroundLayerKind, groundLayers, groundMaterial, groundSideKey, groundSideLevels, type GroundLayer } from "./groundArt.js";
 import type { SurfaceState, SurfaceProvider } from "./tilemap.js";
 
 const FLOATS = 16;
@@ -77,15 +77,16 @@ void main() {
   if (vInfo.w > 0.5) { // ADR-184: smooth per-pixel shore->deep gradient (bilinear corner tints; continuous across tiles)
     vec2 f = clamp(vWorld - vOrg, 0.0, 1.0);
     float k = mix(mix(vCorn.x, vCorn.y, f.x), mix(vCorn.w, vCorn.z, f.x), f.y); k = smoothstep(0.0, 1.0, k);
-    float lum = dot(c, vec3(0.299, 0.587, 0.114)); vec3 detail = c - vec3(lum);
-    if (int(vArt.z + 0.5) == 1) { // ADR-249: gt_water art: keep its ripples, soften the dark diamond rim (no tile grid) + slow shimmer
-      float rim = smoothstep(0.72, 1.0, abs(q.x) / uIso.x + abs(q.y) / uIso.y);
-      detail *= 1.0 - 0.8 * rim; lum = mix(lum, max(lum, 0.45), rim);
-      lum += 0.035 * sin(dot(vWorld, vec2(1.3, 0.9)) - uTime * 1.1) * sin(dot(vWorld, vec2(-0.6, 1.7)) * 0.8 + uTime * 0.7);
+    if (int(vArt.z + 0.5) == 1) { // ADR-251: gt_water carries its full baked colour: no tint palette, no doubled detail
+      // (detail = c - lum is zeroed); shore -> deep is a brightness ramp only (deep x0.80, shallow x1.06) + slow shimmer
+      float sh = 0.035 * sin(dot(vWorld, vec2(1.3, 0.9)) - uTime * 1.1) * sin(dot(vWorld, vec2(-0.6, 1.7)) * 0.8 + uTime * 0.7);
+      c = clamp(c * mix(0.80, 1.06, k) + sh, 0.0, 1.0);
+    } else { // legacy grey tile_water: tint palette + art detail
+      float lum = dot(c, vec3(0.299, 0.587, 0.114)); vec3 detail = c - vec3(lum);
+      vec3 deep = vec3(0.09, 0.27, 0.56) + detail * 0.7 + (lum - 0.45) * 0.35;
+      vec3 shallow = vec3(0.36, 0.82, 0.82) + detail * 0.6 + (lum - 0.45) * 0.4;
+      c = mix(deep, shallow, k);
     }
-    vec3 deep = vec3(0.09, 0.27, 0.56) + detail * 0.7 + (lum - 0.45) * 0.35;
-    vec3 shallow = vec3(0.36, 0.82, 0.82) + detail * 0.6 + (lum - 0.45) * 0.4;
-    c = mix(deep, shallow, k);
     c = seasonIce(c, vWorld, uIce, k); // ADR-239: winter ice (shallows freeze first)
   }
   if (vInfo.w < -0.5) { // ADR-249: gt_ice decal (water = -1): lift the dark diamond outline so frozen water reads as one sheet
@@ -149,7 +150,7 @@ export class TileTerrain {
    *  with: 1 + season once every page is resident, else 0 (legacy tile_* art while streaming). */
   private groundMode(atlas: AtlasManager): number {
     const g = this.groundArt ? this.ground(atlas) : null; if (!g) return 0;
-    const s = Math.max(0, Math.min(2, this.groundSeason | 0));
+    const s = Math.max(0, Math.min(2, this.groundSeason | 0)); atlas.groundPinSeason = (["summer", "fall", "winter"] as const)[s]!; // ADR-251: pinned at 1x on the next rebuild
     if (s === this.heldSeason && this.pendSeason >= 0) { this.pend.forEach((id) => atlas.releaseSprite(id)); this.pend = []; this.pendSeason = -1; }
     if (s !== this.pendSeason && s !== this.heldSeason) { this.pend.forEach((id) => atlas.releaseSprite(id)); this.pend = g.pageSprites(s); this.pend.forEach((id) => atlas.retainSprite(id)); this.pendSeason = s; }
     const ready = (ids: readonly number[]): boolean => { let ok = true; for (const id of ids) if (atlas.pageInfo(id).state !== "resident") { atlas.streamNear(id, true); ok = false; } return ok; };
@@ -169,7 +170,7 @@ export class TileTerrain {
     };
     const eid = new Map<number, ReturnType<AtlasManager["animEntries"]>>();
     const EI = (id: number): ReturnType<AtlasManager["animEntries"]> => { if (id < 0) return null; if (!eid.has(id)) eid.set(id, atlas.animEntries(id)); return eid.get(id)!; };
-    const g = art ? this.ground(atlas) : null; const L: GroundLayer[] = [];
+    const g = art ? this.ground(atlas) : null; const L: GroundLayer[] = []; const SL: { level: number; mask: number }[] = [];
     const tileAt = (x: number, y: number): number => map.getTile(x, y);
     const hAt = (x: number, y: number): number => { const ch = map.getChunk(Math.floor(x / CHUNK_SIZE), Math.floor(y / CHUNK_SIZE)); if (!ch) return -99; const i = (((y % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE) * CHUNK_SIZE + (((x % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE); return ch.tiles[i] === 0 ? -99 : renderTileHeight(ch.tiles[i]!, ch.height[i]!) - (isWaterTile(ch.tiles[i]!) ? 0.25 : 0); };
     const tm = new Map<number, number>(); const tintAt = (x: number, y: number): number => { const k = x * 65536 + y; let v = tm.get(k); if (v === undefined) tm.set(k, (v = waterShoreTint(tileAt, x, y))); return v; };
@@ -187,6 +188,15 @@ export class TileTerrain {
           const e = EI(g.id(l.key)); if (!e) continue; const wl = l.kind === GroundLayerKind.Water;
           const mode = l.kind === GroundLayerKind.Ice || l.kind === GroundLayerKind.Leaves ? 2 : 1;
           data.push(x + 0.5, y + 0.5, z, e.first, e.count, e.fps, mask, 0, e.ax, e.ay, wl ? 1 : l.kind === GroundLayerKind.Ice ? -1 : 0, mode, ...(wl ? [cT(x, y), cT(x + 1, y), cT(x + 1, y + 1), cT(x, y + 1)] : [0, 0, 0, 0])); n++;
+        }
+        // ADR-251: gt_side faces where a +x / +y neighbour is lower, one per level of drop (left half +y, right half +x;
+        // the shader's skirt rule keeps the half whose mask bit is set). Drawn over the polygon-offset mesh cliff, which
+        // stays the fallback (no gt_side art, void neighbours, drops deeper than GROUND_SIDE_MAX_LEVELS).
+        const mat = water ? undefined : groundMaterial(id);
+        if (n && mat && mat !== "water" && mask) for (const sl of groundSideLevels(z, hAt(x + 1, y), hAt(x, y + 1), SL)) {
+          const e = EI(g.id(groundSideKey(mat, art - 1, sl.level))); if (!e) break;
+          data.push(x + 0.5, y + 0.5, z - sl.level, e.first, e.count, e.fps, sl.mask, 0, e.ax, e.ay, 0, 1, 0, 0, 0, 0); n++;
+          minZ = Math.min(minZ, z - sl.level);
         }
         if (n) { minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z); continue; }
       }

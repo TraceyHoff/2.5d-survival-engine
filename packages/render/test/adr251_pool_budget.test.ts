@@ -45,3 +45,28 @@ describe("ADR-251: atlas pool rebalancing", () => {
     expect(src).not.toMatch(/texture\(uTintM, uv\)/);
   });
 });
+
+describe("ADR-251 ground follow-ups", () => {
+  it("side faces: one instance per level with the +x / +y skirt mask bits; _low below the top level; void / sub-level drops none", async () => {
+    const { groundSideKey, groundSideLevels, GROUND_SIDE_MAX_LEVELS } = await import("../src/groundArt.js");
+    expect(groundSideLevels(3, 1, 2)).toEqual([{ level: 0, mask: 3 }, { level: 1, mask: 1 }]);
+    expect(groundSideLevels(2, 2, 0)).toEqual([{ level: 0, mask: 2 }, { level: 1, mask: 2 }]);
+    expect(groundSideLevels(1, 0.75, 1)).toEqual([]); // water inset (0.25) is not a cliff
+    expect(groundSideLevels(1, -99, -99)).toEqual([]); // void: the mesh skirt handles it
+    expect(groundSideLevels(40, 0, 40).length).toBe(GROUND_SIDE_MAX_LEVELS);
+    expect(groundSideKey("grass", 0, 0)).toBe("gt_side_grass"); expect(groundSideKey("grass", 1, 2)).toBe("gt_side_grass_low_fall"); expect(groundSideKey("dirt", 2, 0)).toBe("gt_side_dirt_winter");
+  });
+  it("gt_water (art == 1) keeps its baked colour: no doubled detail term, no tint palette", async () => {
+    const fs = await import("node:fs"); const src = fs.readFileSync(new URL("../src/terrainTiles.ts", import.meta.url), "utf8");
+    const art = src.slice(src.indexOf("if (int(vArt.z + 0.5) == 1) { // ADR-251"), src.indexOf("} else { // legacy grey tile_water"));
+    expect(art.length).toBeGreaterThan(0); expect(art).not.toMatch(/detail\s*\*/); expect(art).not.toMatch(/vec3\(0\.09, 0\.27/);
+  });
+  it("only the drawn season's gt pages pin at 1x", () => {
+    const a = am(448); expect(a.groundPinOk("gt_summer_p0")).toBe(true); expect(a.groundPinOk("gt_winter_p0")).toBe(false); expect(a.groundPinOk("gt_shared")).toBe(true);
+    a.groundPinSeason = "winter"; expect(a.groundPinOk("gt_winter_p1")).toBe(true); expect(a.groundPinOk("gt_summer_p1")).toBe(false);
+  });
+  it("basic_storage_box has real art: its crate_decor fallback is gone", async () => {
+    const fs = await import("node:fs"); const fb = JSON.parse(fs.readFileSync(new URL("../../gameplay/data/sprite_fallbacks.json", import.meta.url), "utf8"));
+    expect(JSON.stringify(fb)).not.toContain("basic_storage_box");
+  });
+});

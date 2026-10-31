@@ -89,6 +89,7 @@ export class GroundArt {
       for (const m of GROUND_PRIORITY) for (const v of GROUND_VARIANTS) add(`gt_${m}${v}${GROUND_SEASON_SUFFIX[s]}`);
       for (const m of GROUND_PRIORITY) for (let k = 1; k < 256; k++) if (blobReduce(k) === k) { add(`gt_${m}_edge_${k}${GROUND_SEASON_SUFFIX[s]}`); }
       for (let k = 1; k < 256; k++) if (blobReduce(k) === k) { add(`gt_shore_${k}${GROUND_SEASON_SUFFIX[s]}`); add(`gt_bank_${k}${GROUND_SEASON_SUFFIX[s]}`); }
+      for (const m of GROUND_PRIORITY) { add(groundSideKey(m, s, 0)); add(groundSideKey(m, s, 1)); } // ADR-251 height-drop faces
       if (s === 2) for (const v of GROUND_VARIANTS) add(`gt_ice${v}`); else { add("gt_water"); add("gt_water_shallow"); }
       if (s === 1) for (const c of "abc") add(`gt_water_leaves_${c}`);
       this.pages[s] = [...by.values()];
@@ -101,10 +102,28 @@ export class GroundArt {
     v = t(key);
     if (v < 0 && /_(fall|winter)$/.test(key)) v = t(key.replace(/_(fall|winter)$/, ""));
     if (v < 0 && key.startsWith("gt_ice")) v = t("gt_water_winter");
+    if (v < 0 && key.startsWith("gt_side_") && key.includes("_low")) v = this.id(key.replace("_low", "")); // lower level -> top face
     this.ids.set(key, v); return v;
   }
   /** One sprite per atlas page the season draws from (stream keep-alive + readiness). */
   pageSprites(season: number): readonly number[] { return this.pages[season] ?? []; }
+}
+/** ADR-251: max height-drop levels drawn as gt_side faces (deeper drops keep the mesh cliff below them). */
+export const GROUND_SIDE_MAX_LEVELS = 8;
+/** ADR-251: side-face key for one level of a height drop: level 0 = `gt_side_<mat>` (top, with the material's lip),
+ *  deeper levels = `gt_side_<mat>_low`; `<season>` suffix as the bases (rock is stone's side kind). */
+export const groundSideKey = (mat: GroundMaterial, season: number, level: number): string => `gt_side_${mat}${level > 0 ? "_low" : ""}${GROUND_SEASON_SUFFIX[season] ?? ""}`;
+/**
+ * ADR-251: side-face instances for a land cell at height z: one per level of drop on the camera-facing sides, with the
+ * skirt mask bits of that level (1 = +x neighbour lower, 2 = +y neighbour lower; the face art's right half is +x, the
+ * left half +y). Drops < 0.5 level (e.g. the 0.25 water inset) draw none; void neighbours (-99) are left to the mesh.
+ */
+export function groundSideLevels(z: number, hx: number, hy: number, out: { level: number; mask: number }[] = []): { level: number; mask: number }[] {
+  out.length = 0;
+  const lv = (h: number): number => (h <= -90 ? 0 : Math.min(GROUND_SIDE_MAX_LEVELS, Math.max(0, Math.round(z - h))));
+  const nx = lv(hx), ny = lv(hy);
+  for (let i = 0; i < Math.max(nx, ny); i++) out.push({ level: i, mask: (nx > i ? 1 : 0) | (ny > i ? 2 : 0) });
+  return out;
 }
 /** Is this layer drawn with the water tint (animated grey water art)? Ice, leaves and shores are not. */
 export const tintedLayer = (k: GroundLayerKind): boolean => k === GroundLayerKind.Water;

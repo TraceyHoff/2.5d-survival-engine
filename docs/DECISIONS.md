@@ -2738,3 +2738,34 @@ Plain X / A keep Interact / Jump. The touch buttons are checked for no overlap a
 - **Sleep.** sprites.ts skips main-hand, off-hand and carried emitHeld while `anim` starts with `sleep` (Canvas2D draws no held items).
 - **Bed/sleeper blur + magenta edges: real, not SwiftShader-only.** atlasManager `layout()` plans pools body → wear → bld → veh → stream; wear uses coverAll with a forced 1x floor (32 slots desktop), so it takes free layers first and bld/veh/stream (furniture, gt pages) fall to k = 0.25 with global downscale 0.25 even inside a 1024 MB budget (spoofed RTX: wear 166 slots / 34 layers, 1249/1024 MB). The magenta/rect fringes are neighbouring-slot bleed at 0.25 scale. Naively planning visible pools first overshot (1429 MB), so it is NOT changed here; follow-up: give bld/veh a reserved share (or cap wear coverAll) before wear's 1x floor.
 - **Dev server.** vite.config.ts registers tsx (`tsx/esm/api`) and dynamically imports `@engine/assets`, so plain `vite` / `pnpm dev` work under Node 24 type-stripping.
+
+## ADR-251: Atlas pool rebalancing (visible art at 1x inside the VRAM budget), slot-bleed clamp, gt side faces, baked water colour
+
+**Context.** ADR-249 item 4: `layout()` planned wear first (coverAll, charged at the compressed tail cost although ADR-220 char pools are lossless RGBA8), so clothing took the free layers and bld / veh / stream (furniture, vehicles, gt pages) fell to 0.25 with a 0.25 global downscale even on a 1 GB budget; the magenta fringes were neighbouring-slot bleed.
+
+**Pools (`packages/render/src/assets/atlasManager.ts`).**
+- Lossless char pools are costed at RGBA8 (`costOf`, `poolReserveBytes`). Wear is capped at `WEAR_BUDGET_SHARE` (30 %) of the budget with a forced 1x floor of `WEAR_FLOOR_SLOTS` (4) big slots; the less-used clothing layers stream through the existing PageLRU.
+- Wear is planned with `holdBytes` = the 1x working set of the visible pools after it; bld gets `bldHold` (veh at 1x + stream at its floor). Stream has a budget share (`STREAM_BUDGET_SHARE` 25 %) and keeps 1x with fewer slots (down to `STREAM_FLOOR_SLOTS` 4) before it blurs.
+- `planPool` uses the real packed layer count (the shelf estimate left ~2 layers idle). Pages that tile a layer exactly (1024 in 2048) get no `POOL_GAP`, so four fit per layer instead of one.
+- `fitBudget`: `VISIBLE_PIN_RE` (furniture, gt) pages never go cold and are pinned at 1x when the hot tier halves (a second, visible-only pin pass when the creature pins do not fit). Only the drawn season's gt pages pin (`groundPinSeason`, set by TileTerrain). Halving tries keep, then keep/2, at each hot scale before the next halving (hot resolution before reserve size); the keep/2, keep/4, 0 fallback stays for mobile.
+- gt pages are resident (RESIDENT_GROUND_RE), so they are in the resident numbers below.
+
+**MB per pool, before → after (sandbox sleeper probe, `__qa` vramStats):**
+| tier | body | wear small + big | bld | veh | stream | resident | total / budget |
+|---|---|---|---|---|---|---|---|
+| RTX (spoofed, 1024) | 43 → 43 | 299 + 1152 → 43 + 256 | 21 @0.25 → 85 @1 | 27 @0.25 → 53 @1 | 27 @0.25 → 160 @1 | hot 0.25 → 0.5, furniture / gt / creatures pinned 1x | 1249 (over) → 731 |
+| Xbox (448) | 43 → 43 | 43 + 256 → 43 + 43 | 21 @0.25 → 21 @0.5 | 27 @0.25 → 53 @1 | 27 @0.25 → 27 @1 (4 slots) | 256 → 213 (furniture + gt summer 1x, rest 0.5) | 556 (over) → 368 |
+| mobile (Adreno, 128) | 11 → 11 | 11 + 42 → 11 + 11 | 9 @0.25 → 9 @0.5 | 11 @0.25 → 21 @1 | 11 @0.25 → 11 @1 (4 slots) | 106.7 → 53.3 (all 0.25) | 166.7 (over) → 100 |
+- Not reached: Xbox building pool stays at 0.5 (1x needs 4 more layers). Mobile resident art stays 0.25; furniture at 1x does not fit a 1024 layer at 128 MB.
+
+**Slot bleed.** `sprites.ts` clamps every sample (`rectClamp` / `inUv`: colour, alpha, tint and sheen masks) to the frame rect inset by max(half a texel, half the footprint), so filtering or mip footprints never read the neighbouring slot. Together with the gap rule above, this also covers the downscale bleed on gt pages.
+
+**gt side faces.** `groundSideLevels(z, hx, hy)` gives one instance per level of drop (≤ `GROUND_SIDE_MAX_LEVELS` 8, void and sub-level drops none) with skirt mask bits 1 = +x lower, 2 = +y lower. `groundSideKey` gives `gt_side_<mat>` for the top level and `gt_side_<mat>_low` below, plus the season suffix (a missing `_low` falls back to the top key). TileTerrain draws them at z − level over the polygon-offset mesh cliff, which stays the fallback; the shader's skirt rule keeps the left (+y) or right (+x) half.
+
+**Water (art == 1).** The detail term is **zeroed** and the tint palette is dropped for gt_water. The baked colour is used directly, with a shore → deep brightness ramp (×0.80 … ×1.06), a slow ±0.035 shimmer, then the season ice. Legacy grey tile_water keeps the palette + detail. Art can now bake gt_water at full colour; until then it reads as the current 30 % chroma slate.
+
+**Canvas2D water while loading.** Could not reproduce. Canvas2D shots at 300 ms and 12 s in summer / fall / winter at (178, −112) show the shore → deep gradient (drawWater runs before the gt blocks and the flat-diamond fallback skips water), so no code change was made.
+
+**Fallbacks.** The `basic_storage_box → crate_decor / storage_box` entry is removed from `sprite_fallbacks.json` (real art since 982fb28b).
+
+**Tests.** `packages/render/test/adr251_pool_budget.test.ts` (9): pin regex, 1024 pages tile 4 per layer, wear cap and stream at 1x within 1024 / 448, the shader clamp, side levels and keys, no water detail doubling, season-only gt pin, and the fallback removal.
