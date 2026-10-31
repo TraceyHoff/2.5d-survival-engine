@@ -15,6 +15,24 @@ import type { CameraLike } from "./world-tools.js";
 export const NAME_TAG = { range: 22, fullUntil: 8, minAlpha: 0.25, font: 12, lift: 78 } as const;
 export const TAG_COLORS = { other: "#FFFAF0", party: "#8EF08A", clan: "#8CC8FF" } as const;
 export type TagKind = keyof typeof TAG_COLORS;
+/**
+ * ADR-242: Art's pvp_clan nameplates (atlas `nameplates`, 64x24 frames, nine-slice 9/8/9/8; @2x page): neutral 0,
+ * party 2, clan 3 (self 1 / enemy 4 unused: you never get a tag, PvP hostility is not replicated). Text colours from
+ * pvp_clan/world_ui_colors.json nameplateText. Falls back to the dark rounded box until (or unless) the image loads.
+ */
+export const NAMEPLATE = { url: "pvp_clan/atlases/nameplates@2x.png", scale: 2, fw: 64, fh: 24, slice: { l: 9, t: 8, r: 9, b: 8 },
+  frame: { other: 0, party: 2, clan: 3 } as Record<TagKind, number>, text: "#F6EAD2", stroke: "#2A1B2E", padX: 10 } as const;
+/** Pure nine-slice: [sx, sy, sw, sh, dx, dy, dw, dh] x9 for `frame` of a 1-row atlas page at `scale`, into the dst box
+ *  (border px scaled by dh / fh so a short plate keeps its proportions). */
+export function nineSlice(frame: number, dx: number, dy: number, dw: number, dh: number, p: { scale: number; fw: number; fh: number; slice: { l: number; t: number; r: number; b: number } } = NAMEPLATE): number[][] {
+  const k = p.scale, sx0 = frame * p.fw * k, { l, t, r, b } = p.slice, f = dh / p.fh;
+  const sxs = [0, l, p.fw - r, p.fw].map((v) => sx0 + v * k), sys = [0, t, p.fh - b, p.fh].map((v) => v * k);
+  const dl = Math.min(l * f, dw / 2), dr = Math.min(r * f, dw / 2);
+  const dxs = [dx, dx + dl, dx + dw - dr, dx + dw], dys = [dy, dy + t * f, dy + dh - b * f, dy + dh];
+  const out: number[][] = [];
+  for (let j = 0; j < 3; j++) for (let i = 0; i < 3; i++) out.push([sxs[i]!, sys[j]!, sxs[i + 1]! - sxs[i]!, sys[j + 1]! - sys[j]!, dxs[i]!, dys[j]!, dxs[i + 1]! - dxs[i]!, dys[j + 1]! - dys[j]!]);
+  return out;
+}
 export interface NameTagPoint { e: Entity; x: number; y: number; dist: number; name: string; kind: TagKind; alpha: number }
 export interface NameLookupLike { get(id: number): string | undefined }
 
@@ -64,10 +82,13 @@ export function declutterTags(pts: readonly NameTagPoint[], widthOf: (name: stri
   return ys;
 }
 
-export interface NameTagDeps { world(): World; player(): Entity | undefined; camera(): CameraLike | undefined; hidden(): boolean; enabled(): boolean; names(): NameLookupLike | undefined; alpha(): number }
+export interface NameTagDeps { world(): World; player(): Entity | undefined; camera(): CameraLike | undefined; hidden(): boolean; enabled(): boolean; names(): NameLookupLike | undefined; alpha(): number;
+  /** ADR-242: `<art>/` base; when set, tags draw on Art's nameplate plates (NAMEPLATE). */ artBase?: string }
 export function mountNameTags(root: HTMLElement, d: NameTagDeps): { destroy(): void } {
   const cv = document.createElement("canvas"); cv.id = "name-tags"; cv.style.cssText = "position:absolute;inset:0;pointer-events:none;z-index:4"; root.append(cv);
   const eased = new Map<Entity, number>(); let lastT = 0; // ADR-189: per-tag eased declutter offset
+  let plate: HTMLImageElement | undefined; // ADR-242
+  if (d.artBase !== undefined && typeof Image !== "undefined") { const im = new Image(); im.onload = () => { plate = im; }; im.src = d.artBase + NAMEPLATE.url; }
   let raf = 0, drewLast = false, lastSig = ""; const widths = new Map<string, number>(); // measureText cache (names rarely change)
   const tick = (): void => {
     raf = requestAnimationFrame(tick);
@@ -89,9 +110,15 @@ export function mountNameTags(root: HTMLElement, d: NameTagDeps): { destroy(): v
       for (const q0 of pts) {
         const q = { ...q0, y: q0.y + (eased.get(q0.e) ?? 0) }; const tw = widthOf(q.name);
         const bw = tw + 12, bh = fs + 6; g.globalAlpha = q.alpha;
+        if (plate) { // ADR-242: Art's nine-slice plate, cream text with a dark stroke
+          const pw = tw + NAMEPLATE.padX * 2, ph = Math.round(bh * 1.25);
+          for (const [sx, sy, sw, sh, dx, dy, dw, dh] of nineSlice(NAMEPLATE.frame[q.kind], q.x - pw / 2, q.y - ph / 2, pw, ph)) if (sw! > 0 && dw! > 0) g.drawImage(plate, sx!, sy!, sw!, sh!, dx!, dy!, dw!, dh!);
+          g.lineWidth = 3; g.lineJoin = "round"; g.strokeStyle = NAMEPLATE.stroke; g.strokeText(q.name, q.x, q.y + 0.5); g.fillStyle = NAMEPLATE.text; g.fillText(q.name, q.x, q.y + 0.5);
+        } else {
         g.fillStyle = "rgba(16,14,12,.62)"; g.beginPath(); g.roundRect(q.x - bw / 2, q.y - bh / 2, bw, bh, 6); g.fill();
         if (q.kind !== "other") { g.strokeStyle = TAG_COLORS[q.kind]; g.lineWidth = 1; g.stroke(); }
         g.fillStyle = TAG_COLORS[q.kind]; g.fillText(q.name, q.x, q.y + 0.5);
+        }
       }
       g.globalAlpha = 1;
     } catch { /* replica mid-swap */ }

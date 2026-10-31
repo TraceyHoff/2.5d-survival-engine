@@ -38,6 +38,8 @@ const VPiece = defineComponent("ViewBuildPiece", { visualId: "u16", variant: "u8
 const VWet = defineComponent("ViewWetness", { level: "u8" });
 const VTemp = defineComponent("ViewBodyTemp", { cold: "u8", heat: "u8", shivering: "u8" });
 const VFuel = defineComponent("ViewFuel", { burnUntilTick: "u32", lit: "u8" });
+/** ADR-242: replicated Burning on pieces -> BurningFx (raid fire / embers / smoke). */
+const VBurn = defineComponent("ViewBurning", { lit: "u8", intensity: "u8", startTick: "u32" });
 /** ADR-135: replicated main-hand item (held sprite at the hand anchor). */
 const VEquip = defineComponent("ViewEquipment", { mainHandItem: "u16" });
 /** ADR-135: replicated off-hand worn slot (Worn.item[WearSlot.OffHand]) -> offhand_<key> / held_<key> at handL. */
@@ -63,7 +65,10 @@ export function hitPose(ms: number, dir: number, directed = true): { dx: number;
 }
 const animMap = (a: number): number => (a >= 14 && a <= 19 ? a : a === 8 ? 8 : ANIM_MAP[a] ?? 0); // 16..19 ADR-128 harvest/chop/mine/drink, 8 eat
 import { LightTable, type LightSpec } from "./lights.js";
-import { MANIFEST_INDEX, type ManifestFragmentRef } from "./manifest-index.js";
+import { Burning } from "@engine/gameplay";
+import { floorToTerrainZ } from "@engine/world";
+import { RaidFx, useRaidBurning, type RaidPiece } from "./raid-fx.js";
+import { MANIFEST_INDEX, applyFragmentFlags, fragmentBase, type ManifestFragmentRef } from "./manifest-index.js";
 import { stumpKeys } from "./stumps.js";
 /** `?cam=animal`: debug camera that follows the first ambient animal instead of the player. */
 const CAM_ANIMAL = typeof location !== "undefined" && new URLSearchParams(location.search).get("cam") === "animal";
@@ -152,10 +157,11 @@ export class IsoView {
   private characters = new Set<number>(); private walkRate = 1;
   private constructor(readonly renderer: IsoRenderer, readonly registry: AssetRegistry, private readonly ov: ViewOverrides, readonly lights: LightTable) {
     IsoRenderer.registerComponents(this.view);
-    for (const c of [VAnim, VPiece, VWet, VTemp, VFuel, VEquip, VOffHand]) this.view.register(c);
+    for (const c of [VAnim, VPiece, VWet, VTemp, VFuel, VEquip, VOffHand, VBurn]) this.view.register(c);
+    useRaidBurning(renderer.burning, registry); // ADR-242: pvp_clan raid flames when served
     const cat = noCosmetics ? undefined : registry.cosmetics;
     if (cat?.size) this.view.register(Appearance);
-    renderer.bindGameplay({ animState: VAnim, buildPiece: VPiece, wetness: VWet, bodyTemp: VTemp, lit: VFuel, pieceState: (e) => this.pieceStates.get(e), pieceScale: (e) => this.pieceScales.get(e), pieceLit: (e) => this.pieceLit.get(e), pieceTints: (e) => this.pieceTintPairs.get(e), litPieces: () => this.litHearths,
+    renderer.bindGameplay({ animState: VAnim, buildPiece: VPiece, wetness: VWet, bodyTemp: VTemp, lit: VFuel, burning: VBurn, pieceState: (e) => this.pieceStates.get(e), pieceScale: (e) => this.pieceScales.get(e), pieceLit: (e) => this.pieceLit.get(e), pieceTints: (e) => this.pieceTintPairs.get(e), litPieces: () => this.litHearths,
       hitFlash: (e) => this.hitPoseOf.get(e)?.flash ?? 0, hitTilt: (e) => this.hitPoseOf.get(e)?.tilt ?? 0,
       animRate: (e, st) => (st === 1 && this.characters.has(e) ? this.walkRate : undefined),
       equipment: VEquip, heldSprite: (item) => this.heldSpriteOf(item), offHand: VOffHand, offHandSprite: (item) => this.offHandSpriteOf(item),
@@ -433,9 +439,10 @@ export class IsoView {
       if (v.has(ve, Sprite) && net.has(e, Crop)) { const c = net.get(e, Crop)!; const r = this.rs(cropSpriteKey(c.kind, c.stage)); if (r && (v.get(ve, Sprite)!.spriteId !== r.id || v.get(ve, Sprite)!.scale !== r.scale)) { v.set(ve, Sprite, { spriteId: r.id, scale: r.scale, tint: r.tint }); this.scales.set(ve, r.scale); } }
       if (v.has(ve, Sprite) && net.has(e, Road)) { const r0 = net.get(e, Road)!; const r = this.roadSprite(r0.surface, r0.mask); if (r && v.get(ve, Sprite)!.spriteId !== r.id) v.set(ve, Sprite, { spriteId: r.id }); } // neighbours placed / removed
       if (v.has(ve, Sprite) && net.has(e, Sign)) { const sp = v.get(ve, Sprite)!; const fid = this.signFrame(sp.spriteId, net.get(e, Sign)!.rot); if (sp.frameId !== fid) v.set(ve, Sprite, { frameId: fid }); } // rotated
-      if (v.has(ve, VPiece)) { this.syncPieceState(net, e, ve, defs); this.syncPieceTint(net, e, ve); }
+      if (v.has(ve, VPiece)) { this.syncPieceState(net, e, ve, defs); this.syncPieceTint(net, e, ve); this.syncRaid(net, e, ve); }
       if (v.has(ve, VFuel)) { const f = net.get(e, Fuel); if (f) { v.set(ve, VFuel, { lit: f.lit, burnUntilTick: f.burnUntilTick }); if (v.has(ve, Sprite)) { const sp = v.get(ve, Sprite)!; const fid = this.fireFrame(sp.spriteId, f.lit !== 0); if (sp.frameId !== fid) v.set(ve, Sprite, { frameId: fid }); } } }
     }
+    this.raid.step(this.registry, r.vfx, this.raidPieces, performance.now() / 1000); this.raidPieces.length = 0; // ADR-242
     for (const [ne, ve] of this.map) if (!seen.has(ne)) { if (ve === this.focusVe) { r.setFocusEntity(-1); this.focusVe = -1; } v.destroy(ve); this.map.delete(ne); this.corrSampler.forget(ne); this.characters.delete(ve); this.lightOf.delete(ne); this.dropHeldLight(ve); this.pieceStates.delete(ve); this.pieceScales.delete(ve); this.pieceLit.delete(ve); this.litHearths.delete(ve); this.pieceTintPairs.delete(ve); this.pieceTintIdx.delete(ve); this.lastMove.delete(ne); this.nodeAmt.delete(ne); this.nodeHit.delete(ne); this.animalHp.delete(ne); this.animalPrev.delete(ne); this.scales.delete(ve); this.hitSeen.delete(ne); this.hitPoseOf.delete(ve); this.gearOf.delete(ve); }
 
     this.syncClutter(tiles, ground);
@@ -501,6 +508,15 @@ export class IsoView {
       }
       this.clutter.set(k, list); this.clutterCount += list.length;
     }
+  }
+  /** ADR-242: raid hit / repair / collapse fx input + Burning mirror for one piece. */
+  private readonly raid = new RaidFx(); private readonly raidPieces: RaidPiece[] = [];
+  private syncRaid(net: World, e: Entity, ve: Entity): void {
+    const v = this.view; const bp = net.get(e, GPiece); const t = v.get(ve, Transform); if (!bp || !t) return;
+    this.raidPieces.push({ e, x: Math.floor(t.x) + 0.5, y: Math.floor(t.y) + 0.5, z: floorToTerrainZ(v.getField(ve, VPiece, "level") ?? 0, t.z), hp: bp.hp, tier: bp.tier });
+    const b = net.isRegistered(Burning) ? net.get(e, Burning) : undefined; const has = v.has(ve, VBurn);
+    if (b && b.lit) { if (!has) v.add(ve, VBurn, { lit: 1, intensity: b.intensity, startTick: b.startTick }); else if (v.getField(ve, VBurn, "intensity") !== b.intensity) v.set(ve, VBurn, { intensity: b.intensity }); }
+    else if (has) v.remove(ve, VBurn);
   }
   /** ADR-134: replicated HitReact -> flinch (knockback nudge on the view Transform, squash on Sprite.scale, flash/tilt bindings). */
   private syncHitReact(net: World, e: Entity, ve: Entity, cur: { x: number; y: number }): void {
@@ -724,7 +740,7 @@ async function loadMergedManifest(art: string): Promise<ReturnType<typeof loadMa
     if (m === undefined) { if (f.optional) continue; throw new Error(`manifest fetch failed: ${url}`); }
     // ADR-138: a v2 shard index fetches its shards in parallel and merges them (duplicate keys across shards throw)
     m = await resolveManifestShards(m, async (file) => get(new URL(file, url).href));
-    frags.push({ name: f.name, manifest: m as ManifestJson }); dirOf.set(f.name, url.replace(/[^/]*$/, ""));
+    frags.push({ name: f.name, manifest: applyFragmentFlags(f, m) as ManifestJson }); dirOf.set(f.name, fragmentBase(f, url, new URL(art, location.href).href)); // ADR-242 root/stream
   }
   // atlas paths become absolute per fragment, so sourcesFromManifest (pack base) loads each PNG from its one source
   const { manifest, collisions, warnings } = mergeManifests(frags, { resolve: (p, frag) => (/^(\/|[a-z]+:)/i.test(p) ? p : new URL(p, dirOf.get(frag)).pathname) });

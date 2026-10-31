@@ -621,7 +621,7 @@ const fxLayer = mountFx(root, { world: () => world, player: () => session.player
 mountSnapOverlay(root, { preview: () => (buildMode.active ? buildMode.preview : undefined), camera: () => iso?.renderer.camera ?? (ctx ? debugCamera(cam, innerWidth, innerHeight, devicePixelRatio || 1) : undefined), hidden: () => !!menus?.nav.isOpen, groundZ: () => iso?.ghostZ });
 // ADR-161: floating loot-bag / dropped-item labels with the Interact prompt
 let nameTagsOn = true, nameTagsAt = 0; // settings read at most once a second (no per-frame JSON parse)
-mountNameTags(root, { world: () => world, player: () => session.player, alpha: () => renderAlpha, enabled: () => { const n = performance.now(); if (n >= nameTagsAt) { nameTagsAt = n + 1000; nameTagsOn = loadSettings().nameTags !== false; } return nameTagsOn; },
+mountNameTags(root, { artBase: `${import.meta.env.BASE_URL}art/`, world: () => world, player: () => session.player, alpha: () => renderAlpha, enabled: () => { const n = performance.now(); if (n >= nameTagsAt) { nameTagsAt = n + 1000; nameTagsOn = loadSettings().nameTags !== false; } return nameTagsOn; },
   camera: () => iso?.renderer.camera ?? (ctx ? debugCamera(cam, innerWidth, innerHeight, devicePixelRatio || 1) : undefined),
   names: () => { const c = session.client; return c ? { get: (id: number) => { const n = c.names.get(id); if (n === undefined && id) c.names.want([id]); return n; } } : undefined; },
   hidden: () => !!menus?.nav.isOpen });

@@ -17,6 +17,9 @@ const root = resolve(here, "../..");
 const MOUNTS: [string, string, (rel: string) => boolean][] = [
   ["pack/", join(root, "packages/assets/pack"), (r) => /^(manifest\.json|piece_variants\.json|ids\.lock\.json|(?:customization\/)?(?:atlases|mirror)\/[^/]+\.(png|json|ktx2)|(?:vehicles|building|items|nature|vehicle_items)\/(?:manifest\.\w+\.json|atlases\/[^/]+\.(?:png|json|ktx2))|customization\/strings\/en\.json|customization\/manifest\.customization(?:\.[\w-]+)*\.json|audio\/(?:sfx|ambience|ui|music|voice)\/[\w-]+\.(?:ogg|opus|m4a|mp3))$/.test(r)],
   ["survival_fx/", join(root, "assets/survival_fx"), (r) => /^(render_tuning\.json|daynight_grading\.json|textures\/[^/]+\.png|lut\/[^/]+\.(png|json))$/.test(r)],
+  // ADR-242: Art's top-level PvP/clan + stalls drops (fragment image paths are art-root relative: "pvp_clan/atlases/x.png")
+  ["pvp_clan/", join(root, "assets/pvp_clan"), (r) => /^(manifest\.fragment\.json|atlases\/[^/]+\.(?:png|json|ktx2)|(?:world_ui_colors|clan_palettes|outline_colors|rarity_palette)\.json)$/.test(r)],
+  ["stalls/", join(root, "assets/stalls"), (r) => /^(manifest\.fragment\.json|atlases\/[^/]+\.(?:png|json|ktx2)|render_tuning\.stalls\.json|strings\/en\.json)$/.test(r)],
   ["ui/", join(root, "assets/ui"), (r) => /^(theme\.json|screen\.schema\.json|fonts\/(?:sdf\/)?[^/]+\.(ttf|txt|png|json)|atlas\/ui_atlas(@2x)?\.(png|json)|(?:kit|screens|strings|branding|creator|hooks\/atlas|input|input\/atlas)\/(?:[\w-]+\/)*[^/]+\.(png|webp|svg|json))$/.test(r) && !/\/frames\//.test(r)],
 ];
 const TYPES: Record<string, string> = { ".json": "application/json", ".png": "image/png", ".webp": "image/webp", ".ttf": "font/ttf", ".txt": "text/plain", ".svg": "image/svg+xml", ".ogg": "audio/ogg", ".opus": "audio/ogg", ".m4a": "audio/mp4", ".mp3": "audio/mpeg", ".ktx2": "image/ktx2" };
