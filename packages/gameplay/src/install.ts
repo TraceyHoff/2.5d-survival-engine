@@ -21,6 +21,7 @@ import { noiseDecaySystem } from "./systems/noise.js";
 import { spoilageSystem, SPOILAGE_EVERY } from "./systems/spoilage.js";
 import { consumeSystem, deathSystem, vitalsSystem } from "./systems/vitals.js";
 import { animSettleSystem } from "./systems/movement.js";
+import { stanceSystem } from "./stance.js";
 import { installBuildingSystems, BUILDING_SYSTEMS } from "./building/install.js";
 import { installCombatSystems, COMBAT_SYSTEMS } from "./combat/install.js";
 import { entityIndex } from "@engine/core";
@@ -70,6 +71,7 @@ export const GAMEPLAY_SYSTEM_ORDER: readonly (readonly [Phase, string, number?])
   ["simulation", "gameplay.husbandry", HUSBANDRY_EVERY], // ADR-113
   ["simulation", "gameplay.pets"], // ADR-145 (after animal AI)
   ["simulation", "gameplay.hordes", HORDES_EVERY], // ADR-121 server director (no-op on clients / when disabled)
+  ["simulation", "gameplay.stance"], // ADR-244 carry follow / block break / sleep heal / night skip (authority)
   ["simulation", "gameplay.vitals"],
   ["simulation", "gameplay.death"],
   ["simulation", "gameplay.deathBags"],
@@ -122,7 +124,7 @@ export function installGameplay(world: World, options: GameplayOptions | number 
     "gameplay.spoilage": spoilageSystem, "gameplay.chunkSurface": chunkSurfaceSystem,
     "gameplay.clearIntents": clearIntentsSystem, "gameplay.equipmentSync": equipmentSyncSystem, "gameplay.noiseDecay": noiseDecaySystem,
     "gameplay.pruneBuffs": (w) => pruneModifiers(w, Buffs), "gameplay.stallDisplay": stallDisplaySystem, "gameplay.expression": expressionSystem, "gameplay.vehicles": vehicleSystem, "gameplay.vehicleGuard": vehicleGuardSystem, "gameplay.animSettle": animSettleSystem, "gameplay.farmUse": farmUseSystem, "gameplay.crops": cropGrowthSystem, "gameplay.husbandryUse": husbandryUseSystem, "gameplay.husbandry": husbandrySystem,
-    "gameplay.hordes": hordeDirectorSystem, "gameplay.xpTravel": xpTravelSystem, "gameplay.progressionMigrate": progressionMigrateSystem, "gameplay.equip": equipSystem, "gameplay.pets": petSystem,
+    "gameplay.hordes": hordeDirectorSystem, "gameplay.xpTravel": xpTravelSystem, "gameplay.progressionMigrate": progressionMigrateSystem, "gameplay.equip": equipSystem, "gameplay.stance": stanceSystem, "gameplay.pets": petSystem,
     ...installBuildingSystems(world), ...installCombatSystems(world),
   };
   installProgression(world);

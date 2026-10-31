@@ -5,11 +5,13 @@
 import { entityIndex, type Entity, type World } from "@engine/core";
 import { NoiseLevel } from "../components.js";
 import { gameplayDefs, isAuthority } from "../config.js";
+import { isCrouched, STANCE } from "../stance.js";
 import { skillMul } from "../skills/tree.js";
 
 export function makeNoise(world: World, e: Entity, amount: number): void {
   if (!isAuthority(world) || world.isReplaying || !world.isAlive(e)) return;
   amount *= skillMul(world, e, "noise"); // ADR-113 stealth
+  if (isCrouched(world, e)) amount *= STANCE.crouchNoiseMul; // ADR-244
   const cur = world.getField(e, NoiseLevel, "value");
   if (cur === undefined) world.add(e, NoiseLevel, { value: amount });
   else if (amount > cur) world.setField(e, NoiseLevel, "value", amount);

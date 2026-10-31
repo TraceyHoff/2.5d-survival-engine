@@ -1,0 +1,23 @@
+{
+ "$comment": "ADR-244 stance balance: block / crouch / carry / sleep / aim. Multipliers apply to walk speed (sprint is off while carrying / blocking / aiming / crouched).",
+ "blockMoveMul": 0.55,
+ "blockMeleeReduction": 0.7,
+ "blockArcDeg": 150,
+ "blockStaminaDrainPerSec": 4,
+ "blockStaminaPerHit": 6,
+ "aimMoveMul": 0.6,
+ "crouchMoveMul": 0.6,
+ "crouchNoiseMul": 0.4,
+ "crouchSightMul": 0.55,
+ "carryMoveMul": 0.7,
+ "carryReach": 1.6,
+ "bedReach": 2.0,
+ "sleepStaminaRegenMul": 3,
+ "sleepHealPerSec": 0.5,
+ "sleepWakeGraceTicks": 4,
+ "timeSkipMul": 30,
+ "timeSkipWakeHour": 6,
+ "timeSkipFromHour": 19,
+ "beds": { "bed": ["single"], "bed_double_*": ["left", "right"], "bunk_bed": ["lower", "upper"] },
+ "underSpots": ["lower"]
+}

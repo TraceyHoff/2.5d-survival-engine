@@ -23,7 +23,7 @@ describe("ADR-161 loot labels", () => {
     G.addItem(w, crate, STONE, 3); steps(w, G.LOOT_SUMMARY_EVERY + 1);
     expect(w.get(crate, G.LootSummary)).toMatchObject({ item: STONE, count: 3, source: G.LootSource.Crate });
     expect(G.addItem(w, crate, STONE, 2)).toBe(2); steps(w, G.LOOT_SUMMARY_EVERY + 1); expect(w.getField(crate, G.LootSummary, "count")).toBe(5);
-    expect(G.GAMEPLAY_COMPONENTS[G.GAMEPLAY_COMPONENTS.length - 1]).toBe(G.LootSummary); // append-only
+    expect(G.GAMEPLAY_COMPONENTS.indexOf(G.LootSummary)).toBe(G.GAMEPLAY_COMPONENTS.indexOf(G.Stance) - 1); // append-only (ADR-244 Stance appended after)
   });
   it("zombie and animal bags are tagged; labels read Zombie loot / item names", () => {
     expect(G.lootLabelText({ item: WOOD, count: 1, stacks: 3, source: G.LootSource.Zombie }, name)).toBe("Zombie loot");

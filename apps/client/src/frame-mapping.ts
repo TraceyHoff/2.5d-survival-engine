@@ -9,7 +9,7 @@ import { GAMEPLAY_EDGES, GameplayEdgeBits, SIM_EDGE_ACTIONS } from "@engine/game
 import { Act } from "@engine/server/protocol";
 
 export const CLIENT_FRAME_MAPPING: FrameMapping = {
-  holdBits: { Sprint: Act.Sprint, Interact: Act.Gather, Primary: Act.Gather },
+  holdBits: { Sprint: Act.Sprint, Interact: Act.Gather, Primary: Act.Gather, Secondary: Act.Guard, Crouch: Act.Crouch }, // ADR-244 Guard / Crouch
   edgeBits: Object.fromEntries(GAMEPLAY_EDGES.map((a) => [a, GameplayEdgeBits[a]])),
   move: { action: "Move", up: Act.MoveUp, down: Act.MoveDown, left: Act.MoveLeft, right: Act.MoveRight },
 };

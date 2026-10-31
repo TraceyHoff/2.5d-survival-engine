@@ -3,6 +3,8 @@
  * Order (simulation phase): vitals.consume -> vitals.tick -> vitals.death.
  * Deterministic and RNG-free, so the client predicts it for its own entity.
  */
+import { stanceMode, STANCE } from "../stance.js";
+import { StanceMode } from "../components.js";
 import { addModifier, defineResource, entityIndex, evaluate, ModOp, Transform, type Entity, type World } from "@engine/core";
 import { Anim, AnimState, BodyTemp, NO_SLOT, Buffs, DamageCause, Dead, Exposure, Health, IntentAction, PlayerIntent, Stat, Survival, VitalsState, snapStamina } from "../components.js";
 import { gameplayDefs, isAuthority } from "../config.js";
@@ -118,7 +120,11 @@ function stepStamina(world: World, e: Entity, idx: number, s: number, hunger: nu
   const vt = gameplayDefs(world).vitals; const sv = world.store(Survival); const intent = world.store(PlayerIntent);
   const max = sv.data.maxStamina[s]!; let stamina = sv.data.stamina[s]!;
   const sprinting = intent.has(idx) && intent.data.sprint[intent.slot(idx)] === 1 && intent.data.moving[intent.slot(idx)] === 1;
-  if (sprinting && stamina > 0) {
+  const mode = stanceMode(world, e); // ADR-244: holding a block drains like sprinting; sleep regenerates faster
+  if (mode === StanceMode.Block && stamina > 0) {
+    stamina = Math.max(0, stamina - STANCE.blockStaminaDrainPerSec * dt);
+    sv.data.staminaDelayTicks[s] = delayTicks;
+  } else if (sprinting && stamina > 0) {
     stamina = Math.max(0, stamina - vt.sprintStaminaDrainPerSec * dt);
     sv.data.staminaDelayTicks[s] = delayTicks;
     if (stamina === 0 && events) emit(world, VitalDepleted, { entity: e, vital: Vital.Stamina });
@@ -127,7 +133,7 @@ function stepStamina(world: World, e: Entity, idx: number, s: number, hunger: nu
   } else {
     const needsMul = hunger < vt.lowNeedsThreshold || thirst < vt.lowNeedsThreshold ? vt.lowNeedsStaminaRegenMul : 1;
     const regen = Math.max(0, evaluate(world, e, Buffs, Stat.StaminaRegen, vt.staminaRegenPerSec));
-    stamina = Math.min(max, stamina + regen * needsMul * dt);
+    stamina = Math.min(max, stamina + regen * needsMul * (mode === StanceMode.Sleep ? STANCE.sleepStaminaRegenMul : 1) * dt);
   }
   sv.data.stamina[s] = snapStamina(stamina);
 }

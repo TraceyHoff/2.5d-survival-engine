@@ -11,6 +11,7 @@
  * a non-horde zombie is calm (wanders, seeks / attacks no one) unless it was hit, then it retaliates against that attacker.
  * It turns aggressive at dusk and calm at dawn, staggered per zombie (zombieAggressive). Far zombies despawn.
  */
+import { isCrouched, STANCE } from "../stance.js";
 import { entityIndex, NetId, Transform, timeOfDay, type Entity, type World } from "@engine/core";
 import { installSpatialIndex } from "@engine/world";
 import { Anim, AnimState, Attacker, BodyTemp, Dead, Exposure, Health, NoiseLevel, Survival, Zombie, ZombieBrain, ZState } from "../components.js";
@@ -97,7 +98,7 @@ function acquire(world: World, x: number, y: number, def: ZombieDef): { e: Entit
   for (const p of installSpatialIndex(world).queryRadius(x, y, R)) {
     if (!world.has(p, Survival) || world.has(p, Dead)) continue;
     const t = world.get(p, Transform)!; const d = dist(x, y, t.x, t.y);
-    const seen = d <= def.sightRange; const heard = d <= (world.getField(p, NoiseLevel, "value") ?? 0) * def.hearingMul;
+    const seen = d <= def.sightRange * (isCrouched(world, p) ? STANCE.crouchSightMul : 1); const heard = d <= (world.getField(p, NoiseLevel, "value") ?? 0) * def.hearingMul;
     if (!seen && !heard) continue;
     if (!best || d < best.d || (d === best.d && p < best.e)) best = { e: p, seen, d };
   }

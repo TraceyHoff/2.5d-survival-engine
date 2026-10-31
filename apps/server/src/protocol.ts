@@ -9,7 +9,8 @@ import { COMMAND_RATES, PVP_COMMANDS, CRAFT_QUEUE_COMMANDS, CUSTOMIZATION_COMMAN
 import { defineCommand as defineCoreCommand, type CommandDef } from "@engine/core";
 import { SESSION_COMMANDS, SESSION_EVENTS } from "@engine/persist";
 
-export const Act = defineActions(["MoveUp", "MoveDown", "MoveLeft", "MoveRight", "Sprint", "Gather"]);
+/** Bits 0..5 as before; ADR-244 appends Guard (Secondary hold: block / aim) and Crouch (rising edge toggles) at 6, 7. */
+export const Act = defineActions(["MoveUp", "MoveDown", "MoveLeft", "MoveRight", "Sprint", "Gather", "Guard", "Crouch"]);
 
 /** App-level ping (Netcode has no RTT measurement yet). Server answers on its next tick, so RTT includes 0..1 tick. */
 export const Ping = defineCommand("demo.ping", { t: "u32" }, { rate: { perSec: 4, burst: 4 } });

@@ -168,6 +168,14 @@ export const LootBag = defineComponent("LootBag", { owner: "u32", despawnAtTick:
 export const LootSummary = defineComponent("LootSummary", { item: "u16", count: "u16", stacks: "u8", source: "u8" }, { networked: true });
 /** Written by net on the server (per-connection RTT) for range slack. */
 export const Latency = defineComponent("Latency", { rttMs: "u16" });
+/**
+ * ADR-244 player stance (server-authoritative, replicated to all): mode = StanceMode (drives AnimState 20..24),
+ * crouch = the crouch toggle, carriedNetId = the LootBag carried at the carry socket (0 none), bedNetId/spot/lie = the
+ * bed slept in (spot index into the bed's spots, lie 1 = sleep_lie, 2 = sleep_lie_under, 0 = curled floor sleep).
+ */
+export const Stance = defineComponent("Stance", { mode: "u8", crouch: "u8", carriedNetId: "u32", bedNetId: "u32", spot: "u8", lie: "u8", sinceTick: "u32" }, { networked: true });
+export const StanceMode = { None: 0, Block: 1, Crouch: 2, Carry: 3, Sleep: 4, Aim: 5 } as const;
+export type StanceMode = (typeof StanceMode)[keyof typeof StanceMode];
 
 // ---- economy (trade stalls) ----------------------------------------------------------------------
 export const MAX_LISTINGS = 24;
@@ -345,4 +353,5 @@ export const GAMEPLAY_COMPONENTS = [
   PartyRank, // append-only (ADR-141)
   Pet, TroughOwner, PetBrain, // append-only (ADR-145)
   LootSummary, // ADR-161
+  Stance, // ADR-244 (append-only)
 ] as const;

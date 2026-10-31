@@ -16,6 +16,7 @@ import type { PieceDef } from "../defs.js";
 import { TerrainRes } from "../world.js";
 import { WaterDepth, waterDepthAt, installSpatialIndex } from "@engine/world";
 import { INPUT } from "../input_hooks.js";
+import { STANCE_ANIM, stanceAllowsSprint, stanceMode, stanceMoveMul } from "../stance.js";
 
 /**
  * World-space (tile) move vector from screen-space input, |v| <= 1 (ADR-127). Screen axes sx (right +) / sy (down +)
@@ -40,7 +41,8 @@ export function moveDirection(actions: number): { dx: number; dy: number } { ret
 /** Current speed multiplier from sprint/encumbrance/wetness/buffs (tiles/s = walkSpeed x this). */
 export function speedMultiplier(world: World, e: Entity, sprint: boolean): number {
   const mv = gameplayDefs(world).movement; let m = 1;
-  if (sprint && (world.getField(e, Survival, "stamina") ?? 0) > 0) m *= mv.sprintMul;
+  if (sprint && stanceAllowsSprint(world, e) && (world.getField(e, Survival, "stamina") ?? 0) > 0) m *= mv.sprintMul;
+  m *= stanceMoveMul(world, e); // ADR-244 block / aim / crouch / carry
   const max = (world.getField(e, Inventory, "maxWeight") ?? 0) * skillMul(world, e, "carry"); const w = world.getField(e, Inventory, "weight") ?? 0;
   if (max > 0) { const f = w / max; if (f > mv.encumberedFrom) m *= 1 - (1 - mv.encumberedMinMul) * Math.min(1, (f - mv.encumberedFrom) / (1 - mv.encumberedFrom)); }
   m *= 1 - mv.wetSlowMul * ((world.getField(e, Wetness, "level") ?? 0) / 255);
@@ -171,7 +173,7 @@ export function applyMovementInput(world: World, e: Entity, actions: number, dt:
   if (world.has(e, Driver)) return; // riders move with their vehicle (gameplay.vehicles)
   const dead = world.has(e, Dead);
   const { dx, dy } = dead ? { dx: 0, dy: 0 } : moveVector(actions, analog);
-  const moving = dx || dy ? 1 : 0; const sprint = moving && actions & A.Sprint && !(t.z < 0.5 && inDeepWater(world, t.x, t.y)) ? 1 : 0; // ADR-181: no sprint while swimming
+  const moving = dx || dy ? 1 : 0; const sprint = moving && actions & A.Sprint && stanceAllowsSprint(world, e) && !(t.z < 0.5 && inDeepWater(world, t.x, t.y)) ? 1 : 0; // ADR-181: no sprint while swimming
   // ADR-147: PlayerIntent is not networked, so a client replica has none and its predicted vitals never drained sprint
   // stamina (the replica's stamina lagged the server by the snapshot delay, sprint ended a tick apart: a rubber-band).
   // The predicting client keeps a local PlayerIntent on its own entity so movement + vitals replay like the server.
@@ -244,7 +246,7 @@ export function animSettleSystem(world: World): void {
   const terrain = world.getResource(TerrainRes);
   for (const e of world.query([AnimState, Transform], [Dead])) {
     const t = world.get(e, Transform)!; const a = world.get(e, AnimState)!; let cur = a.anim;
-    if (world.has(e, Survival) && ONE_SHOT.has(cur) && world.tick - a.startTick >= (cur === Anim.Attack || cur === Anim.Punch ? PLAYER_SWING_TICKS : PLAYER_ONE_SHOT_TICKS)) { world.set(e, AnimState, { anim: Anim.Idle, startTick: world.tick }); cur = Anim.Idle; }
+    if (world.has(e, Survival) && ONE_SHOT.has(cur) && world.tick - a.startTick >= (cur === Anim.Attack || cur === Anim.Punch ? PLAYER_SWING_TICKS : PLAYER_ONE_SHOT_TICKS)) { cur = STANCE_ANIM[stanceMode(world, e)] ?? Anim.Idle; world.set(e, AnimState, { anim: cur, startTick: world.tick }); } // ADR-244: back to the held stance
     if (!terrain) continue;
     const wet = (t.z ?? 0) < 0.5 && inDeepWater(world, t.x, t.y); // ADR-181: wading keeps walk anims
     if (wet && SWIM_OVER.has(cur)) world.set(e, AnimState, { anim: Anim.Swim, startTick: world.tick });

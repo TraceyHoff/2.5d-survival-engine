@@ -32,6 +32,7 @@ export const GAMEPLAY_REPLICATION: readonly Replication[] = [
   r(C.HitReact, "all"), r(C.NodeRegrow, "all"), // ADR-134
   r(C.Pet, "all"), r(C.TroughOwner, "all"), r(C.PetBrain, "server"), // ADR-145
   r(C.LootSummary, "all"), // ADR-161
+  r(C.Stance, "all"), // ADR-244
 ];
 export function replicationOf(def: ComponentDef): Replication | undefined { return GAMEPLAY_REPLICATION.find((x) => x.def === def); }
 

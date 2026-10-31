@@ -19,7 +19,8 @@ export const INPUT: Readonly<InputTuning> = inputRaw;
 const HOLD = ["MoveUp", "MoveDown", "MoveLeft", "MoveRight", "Sprint", "Primary", "Secondary", "Interact", "Build"] as const;
 export const GameplayHoldBits = extendActions(defineActions(HOLD), ["Crouch", "Charge"] as const);
 export const GAMEPLAY_EDGES = ["Jump", "Reload", "Hotbar1", "Hotbar2", "Hotbar3", "Hotbar4", "Hotbar5", "Hotbar6", "Hotbar7", "Hotbar8",
-  "HotbarNext", "HotbarPrev", "QuickUse", "ToggleInventory", "ToggleCrafting", "ToggleMap", "OpenChat", "OpenSocial", "Cancel"] as const;
+  "HotbarNext", "HotbarPrev", "QuickUse", "ToggleInventory", "ToggleCrafting", "ToggleMap", "OpenChat", "OpenSocial", "Cancel",
+  "Carry", "Rest"] as const; // ADR-244 (append-only): pick up / drop, sleep / wake (server stance hook, no input-queue command)
 export const GameplayEdgeBits = defineActions(GAMEPLAY_EDGES);
 /** Append-only extension for new hold actions (keeps existing bits). */
 export const extendGameplayActions = <const K extends string>(names: readonly K[]) => extendActions(GameplayHoldBits, names);

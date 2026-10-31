@@ -4,6 +4,8 @@
  * Death is handled by vitals deathSystem (hp <= 0 -> Dead); zombie corpses are removed after corpseSeconds.
  * The owning client may predict the swing (cooldown/stamina/AnimState) but never damage.
  */
+import { blockMul, stanceMode, wake } from "../stance.js";
+import { StanceMode } from "../components.js";
 import { entityIndex, NetId, Transform, type Entity, type World } from "@engine/core";
 import { Anim, AnimState, Attacker, BuildPiece, DamageCause, Dead, Equipment, Health, HitReact, IntentAction, Inventory, NO_SLOT, PlayerIntent, Survival, VitalsState, Zombie } from "../components.js";
 import { gameplayDefs, isAuthority, rangeSlack } from "../config.js";
@@ -59,6 +61,8 @@ const lastHitsOf = (w: World): Map<Entity, { e: Entity; tick: number }> => { let
 export function lastAttacker(world: World, e: Entity): { e: Entity; tick: number } | undefined {
   const m = lastHits.get(world); const h = m?.get(e); if (h && !world.isAlive(e)) { m!.delete(e); return undefined; } return h;
 }
+/** ADR-244: blocks only stop melee: the attacker stands within 2.5 tiles. */
+function isMeleeRange(world: World, a: Entity, b: Entity): boolean { const ta = world.get(a, Transform), tb = world.get(b, Transform); return !!ta && !!tb && Math.hypot(ta.x - tb.x, ta.y - tb.y) <= 2.5; }
 export function applyDamage(world: World, target: Entity, amount: number, source: Entity, cause: DamageCause = DamageCause.Combat, pierce = 0): void {
   if (!isAuthority(world) || world.isReplaying || amount <= 0 || !world.isAlive(target)) return;
   if (cause === DamageCause.Combat && world.has(source, Progression)) { // ADR-113 weapon mastery / berserker
@@ -68,6 +72,8 @@ export function applyDamage(world: World, target: Entity, amount: number, source
   if (world.has(target, BuildPiece)) { damagePiece(world, target, amount, source, cause); return; }
   const hp = world.getField(target, Health, "hp"); if (hp === undefined || world.has(target, Dead)) return;
   if (cause === DamageCause.Combat || cause === DamageCause.Explosion) amount = armorReduce(world, target, amount, pierce);
+  if (stanceMode(world, target) === StanceMode.Sleep) wake(world, target); // ADR-244: damage wakes a sleeper
+  if (cause === DamageCause.Combat && source !== 0 && source !== target && isMeleeRange(world, target, source)) amount *= blockMul(world, target, source); // ADR-244 block
   world.setField(target, Health, "hp", Math.max(0, hp - amount));
   if (world.has(target, VitalsState)) world.setField(target, VitalsState, "lastDamageCause", cause);
   emit(world, Damaged, { target, source, amount, cause });

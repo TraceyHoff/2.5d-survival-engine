@@ -1,5 +1,6 @@
 import { giveSandboxKit, sandboxPetKit, sandboxPetCorner, sandboxSpawn } from "./sandbox.js";
 import { handLootTarget, Viewing, TerrainRes, terrainFromTileMap } from "@engine/gameplay";
+import { applyStanceInput, stanceBlocksActions, GameplayEdgeBits } from "@engine/gameplay"; // ADR-244
 import { installInventoryOpCommands, installRoadCommands, NodeRegrow, installSignCommands, installPetCommands, PetEvent, setWorldRules, worldRules, type WorldRulesOpts } from "@engine/gameplay";
 /** Authoritative game server: world + gameplay + streaming chunks + persistence + NetServer sessions. */
 import { ChannelRegistry, CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, type CosmeticCatalogLike, Membership, Owner, PlayerId, Season, TimeOfDay, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
@@ -175,10 +176,15 @@ export function createGameServer(o: GameServerOptions): GameServer {
     commands: DEMO_COMMANDS, events: DEMO_EVENTS,
     forwardCoreRejections: false, // forwarded below with the net command def + a reason code (protocol.ts)
     applyInput: (w, e, cmd, clientId) => {
+      if (cmd && players.get(clientId)?.entity === e) { // ADR-244 stance (before movement: a move input wakes a sleeper first)
+        const b = cmd.edges ?? 0;
+        applyStanceInput(w, e, { guard: !!(cmd.buttons & Act.Guard), crouch: !!(cmd.buttons & Act.Crouch), carry: !!(b & GameplayEdgeBits.Carry), rest: !!(b & GameplayEdgeBits.Rest), interact: !!(cmd.buttons & Act.Gather),
+          active: !!(cmd.buttons & (Act.MoveUp | Act.MoveDown | Act.MoveLeft | Act.MoveRight | Act.Sprint | Act.Gather)) || Math.hypot(cmd.moveX ?? 0, cmd.moveY ?? 0) > 0.3 || !!(b & ~(GameplayEdgeBits.Carry | GameplayEdgeBits.Rest)) });
+      }
       applyDemoInput(w, e, cmd, 1 / tickHz); // riders: drive input (only the seat-0 driver steers, gameplay.vehicles)
       // ADR-180: edge pulses (exactly-once per seq) -> the same input-queue commands their net command twins use (Hotbar1..8 equip, Reload)
       if (cmd?.edges && players.get(clientId)?.entity === e) for (const c of edgeCommands(cmd.edges, w, e)) queueCommand(w, e, handlers.registry, handlers.registry.make(c.def, c.values as never));
-      if (cmd && (cmd.buttons & Act.Gather) && players.get(clientId)?.entity === e) {
+      if (cmd && (cmd.buttons & Act.Gather) && players.get(clientId)?.entity === e && !stanceBlocksActions(w, e)) { // ADR-244: no attack / gather while carrying or asleep
         // ADR-107: the primary button punches/strikes a zombie or animal in melee reach first, else gathers
         const foe = nearestMeleeTarget(w, e);
         if (foe !== undefined) setIntent(w, e, { action: IntentAction.Attack, target: foe });

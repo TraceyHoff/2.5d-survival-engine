@@ -15,7 +15,8 @@ export const DefaultHoldBits = extendActions(
 );
 /** Edge actions -> InputFrame.edges bit order (append only). */
 export const EDGE_ACTIONS = ["Jump", "Reload", "Hotbar1", "Hotbar2", "Hotbar3", "Hotbar4", "Hotbar5", "Hotbar6", "Hotbar7", "Hotbar8",
-  "HotbarNext", "HotbarPrev", "QuickUse", "ToggleInventory", "ToggleCrafting", "ToggleMap", "OpenChat", "OpenSocial", "Cancel"] as const;
+  "HotbarNext", "HotbarPrev", "QuickUse", "ToggleInventory", "ToggleCrafting", "ToggleMap", "OpenChat", "OpenSocial", "Cancel",
+  "Carry", "Rest"] as const; // ADR-244 append-only
 export const DefaultEdgeBits = defineActions(EDGE_ACTIONS);
 
 const btn = (name: string): ActionDef => ({ name, type: "button" });
