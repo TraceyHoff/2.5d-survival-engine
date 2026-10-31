@@ -3748,7 +3748,6 @@
       "weight": 1.0,
       "tier": 2,
       "heldLight": 5,
-      "sprite": "dec_lantern_hanging__iron",
       "wear": {
         "slot": "offhand"
       }

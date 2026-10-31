@@ -3202,7 +3202,14 @@
     "fx_breath_puff": 3200,
     "fx_drip": 3201,
     "fx_lightning": 3202,
-    "fx_sweat_drop": 3203
+    "fx_sweat_drop": 3203,
+    "held_lantern": 3204,
+    "held_patch_kit": 3205,
+    "held_repair_kit": 3206,
+    "held_stone_shovel": 3207,
+    "held_tallow_candle": 3208,
+    "icon_pine_sapling": 3209,
+    "lantern": 3210
   },
   "sounds": {
     "amb_rain": 1,

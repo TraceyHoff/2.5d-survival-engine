@@ -2,7 +2,7 @@
 Run from repo root: python3 packages/assets/pack/vehicle_items/src/gen_icon_css.py  (rewrites between the ICONS markers)."""
 import json, os
 R = 'packages/assets/pack/'
-SRC = [('manifest.json', {'items', 'equipment'}), ('items/manifest.items.json', {'items_icons', 'items_skills', 'items_skill_tabs', 'items_xp', 'items_pets', 'items_build'}), ('vehicle_items/manifest.vehicle_items.json', {'vitems_icons'}), ('nature/manifest.nature.json', {'nature_roadicons', 'nature_toolicons', 'nature_adr128'})]
+SRC = [('manifest.json', {'items', 'equipment'}), ('items/manifest.items.json', {'items_icons', 'items_skills', 'items_skill_tabs', 'items_xp', 'items_pets', 'items_build', 'items_missing'}), ('vehicle_items/manifest.vehicle_items.json', {'vitems_icons'}), ('nature/manifest.nature.json', {'nature_roadicons', 'nature_toolicons', 'nature_adr128', 'nature_icons'})]
 rel = '../../../packages/assets/pack/'
 ALIAS = {'icon_xp': ['xp']}  # ADR-135: the XP toast uses data-icon="xp" (gather-fx ToastStack.addXp)
 UI_OK = {'items_skills', 'items_skill_tabs', 'items_xp', 'items_build'}  # ui-category atlases emitted too (ADR-113 skill icons, ADR-132 tab icons, ADR-224 build piece icons)

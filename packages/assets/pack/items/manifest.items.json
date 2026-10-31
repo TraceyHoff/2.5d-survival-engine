@@ -203,6 +203,38 @@
     }
    ],
    "ktx2": "atlases/items_build.ktx2"
+  },
+  {
+   "key": "items_missing",
+   "image": "atlases/items_missing.png",
+   "frameW": 32,
+   "frameH": 32,
+   "columns": 2,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/items_missing@2x.png",
+     "ktx2": "atlases/items_missing@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/items_missing.ktx2"
+  },
+  {
+   "key": "items_held_e",
+   "image": "atlases/items_held_e.png",
+   "frameW": 48,
+   "frameH": 48,
+   "columns": 8,
+   "rows": 5,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/items_held_e@2x.png",
+     "ktx2": "atlases/items_held_e@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/items_held_e.ktx2"
   }
  ],
  "sprites": [
@@ -12536,6 +12568,135 @@
       284
      ],
      "fps": 1
+    }
+   }
+  },
+  {
+   "key": "lantern",
+   "category": "item",
+   "atlas": "items_missing",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "icon_pine_sapling",
+   "category": "item",
+   "atlas": "items_missing",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "held_stone_shovel",
+   "category": "equipment",
+   "atlas": "items_held_e",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_lantern",
+   "category": "equipment",
+   "atlas": "items_held_e",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.25
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_tallow_candle",
+   "category": "equipment",
+   "atlas": "items_held_e",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      16
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_patch_kit",
+   "category": "equipment",
+   "atlas": "items_held_e",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.25
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      24
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "held_repair_kit",
+   "category": "equipment",
+   "atlas": "items_held_e",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.25
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      32
+     ],
+     "fps": 1,
+     "directions": 8,
+     "dirStride": 1
     }
    }
   }
