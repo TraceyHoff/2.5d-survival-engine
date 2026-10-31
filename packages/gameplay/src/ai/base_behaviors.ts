@@ -1,10 +1,10 @@
 /**
- * ADR-216: base life for AI humans, driven by the planner (planner.ts). Every behaviour here only moves the bot and
+ * ADR-252: base life for AI humans, driven by the planner (planner.ts). Every behaviour here only moves the bot and
  * emits the action strings a human client sends (craft / build / copen / cdeposit / cwithdraw / cclose / fire / door /
  * wear / attack / gather); the server validates reach, stations, recipes, costs and placement exactly as for players.
  *  - base_work: the planner's step (withdraw from storage, craft at a station - lighting it first -, build the next
  *    station / base piece from the stand point, wear clothes / armour).
- *  - stash: deposit surplus into the base storage box. - hunt / loot: kill passive animals for planner items, empty loot.
+ *  - stash: deposit surplus into the base storage box. - hunt / skin: kill passive animals for planner items, then hand-loot the kill (no ground-bag perception, ADR-238).
  *  - trip: outbound gathering / hunting trip 18..36 tiles from the base and back (counts trips / max distance).
  *  - refuel: keep the base fire burning through the night. - leave_base / sleep: door-aware in / out of the 2x2 base.
  */
@@ -12,7 +12,7 @@ import { storageDepositActions, storageWithdrawActions } from "./storage_api.js"
 import { timeOfDay, Transform, type Agent, type AgentContext, type Entity, type World } from "@engine/core";
 import { installSpatialIndex } from "@engine/world";
 import type { AgentWorldView, GameBehavior } from "../agents.js";
-import { Animal, AttachKind, BuildPiece, Container, Dead, Fuel, LootBag, Survival, Worn } from "../components.js";
+import { Animal, AttachKind, BuildPiece, Container, Dead, Fuel, StanceMode, Survival, Viewing, Worn } from "../components.js";
 import { resolveAttachment } from "../building/links.js";
 import { readSlots, slotFreshness } from "../inventory.js";
 import { spoilStageIndex, spoilStages } from "../food.js";
@@ -23,14 +23,16 @@ import { stuckOn } from "./autonomy.js";
 
 export interface PlanSensors {
   plan?: Plan; base?: { x: number; y: number }; bs?: BaseState; craftCount?: number; craftTicks?: number;
-  huntTarget?: { id: number; x: number; y: number }; lootBag?: { id: number; x: number; y: number }; tripWanted?: boolean;
+  huntTarget?: { id: number; x: number; y: number }; panel?: { id: number }; tripWanted?: boolean;
   surplus?: { item: number; count: number }[]; woodTotal?: number; stoneTotal?: number; junk?: { item: number; count: number };
 }
-export const PLAN_SENSOR_KEYS = ["plan", "base", "bs", "craftCount", "craftTicks", "huntTarget", "lootBag", "tripWanted", "surplus", "woodTotal", "stoneTotal", "junk"] as const;
+export const PLAN_SENSOR_KEYS = ["plan", "base", "bs", "craftCount", "craftTicks", "huntTarget", "panel", "tripWanted", "surplus", "woodTotal", "stoneTotal", "junk"] as const;
 type Ctx = AgentContext<AgentWorldView>;
 const hash = (s: string): number => { let h = 2166136261; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return (h >>> 0) / 4294967296; };
 const KEEP_WOOD = 12, KEEP_FOOD = 6;
 const GOAL_PATIENCE = 6000;
+/** ADR-252: how long a kill's skin spot is remembered (creature loot bags last 120 s = 2400 ticks, ADR-238). */
+export const SKIN_TTL = 2400;
 const animalsCache = { defs: undefined as ReturnType<typeof animalDefs> | undefined };
 
 /** Planner pass on a sense tick: base anchor, plan, needs (returned), craft / hunt / loot / stash sensors. */
@@ -86,8 +88,14 @@ export function fillPlanSensors(world: World, self: Entity, view: AgentWorldView
       const d = (p.x - t.x) ** 2 + (p.y - t.y) ** 2; if (d < bd) { bd = d; best = { id: p.id, x: p.x, y: p.y }; } }
     if (best) view.huntTarget = best;
   }
-  for (const e of installSpatialIndex(world).queryRadius(t.x, t.y, 8)) if (world.has(e, LootBag) && world.has(e, Container)) { const o = world.getField(e, LootBag, "owner") ?? 0; if (o !== 0 && o !== self) continue;
-    const s = readSlots(world, e); if (s.counts.some((c) => c > 0)) { const p = world.get(e, Transform)!; view.lootBag = { id: e, x: p.x, y: p.y }; break; } }
+  // ADR-252 / ADR-238: AI humans never perceive ground loot bags. Killing their own prey leaves a "skin spot" (where it
+  // fell); the bot walks there and presses gather like a player (the server's ADR-160 hand loot opens the bag), and then
+  // reads only its own open container panel (Viewing), which a human sees on screen too.
+  { const hh = a.bb.get<{ id: number; x: number; y: number }>("huntHit");
+    if (hh && (!world.isAlive(hh.id as Entity) || world.has(hh.id as Entity, Dead))) { bumpStat(a, "hunts", tick); a.bb.set("huntHit", undefined); a.bb.set("skinAt", { x: hh.x, y: hh.y, until: tick + SKIN_TTL, tries: 0 }); }
+    const sk = a.bb.get<{ until: number }>("skinAt"); if (sk && tick > sk.until) a.bb.set("skinAt", undefined);
+    const vc = world.has(self, Viewing) ? world.getField(self, Viewing, "container") ?? 0 : 0;
+    if (vc && world.isAlive(vc as Entity) && world.has(vc as Entity, Container) && readSlots(world, vc as Entity).counts.some((n) => n > 0)) view.panel = { id: vc }; }
   // junk: with <= 2 free slots, drop a stack nothing on the ladder uses (a player bins seed / grain clutter)
   { let free = 0; for (let i = 0; i < slots.items.length; i++) if (!slots.items[i] || !slots.counts[i]) free++;
     const stages = spoilStages(defs);
@@ -198,15 +206,14 @@ export function baseBehaviors(): GameBehavior[] {
         if (id !== h.id) { c.bb.set("huntId", h.id); c.bb.set("huntStart", c.self.tick); }
         if (c.self.tick - c.bb.num("huntStart") > 900) { c.bb.set("huntFail", c.self.tick); return false; }
         const d = toward(o, c.self.x, c.self.y, p.x, p.y, 1); o.sprint = d > 3 && c.self.stamina > 0.4;
-        if (d < 1.4) { o.moveX *= 0.2; o.moveY *= 0.2; if (cooled(c, "hitAt", 10)) { o.actions.push(`attack:${h.id}`); c.bb.set("hitAt", c.self.tick); c.bb.set("huntHit", h.id); } }
+        if (d < 1.4) { o.moveX *= 0.2; o.moveY *= 0.2; if (cooled(c, "hitAt", 10)) { o.actions.push(`attack:${h.id}`); c.bb.set("hitAt", c.self.tick); c.bb.set("huntHit", { id: h.id, x: p.x, y: p.y }); } }
       } },
-    { name: "loot", inertia: 0.5, considerations: [{ name: "bag", curve: step01, input: (c) => (c.world.lootBag && cooled(c, "lootAt", 120) ? 1 : 0) }],
-      run: (c, o) => { const b = c.world.lootBag; if (!b) return false;
-        if (toward(o, c.self.x, c.self.y, b.x, b.y, 0.8) > 1.5) { if (stuckOn(c, b.x, b.y)) { c.bb.set("lootAt", c.self.tick); return false; } return; } stop(o);
-        const ops: string[] = []; const ent = b.id as Entity; const wd = worldOf(c); if (!wd || !wd.isAlive(ent)) return false;
-        const s = readSlots(wd, ent); for (let i = 0; i < s.items.length; i++) if (s.items[i] && s.counts[i]) ops.push(`cwithdraw:${b.id}:${s.items[i]}:${s.counts[i]}`);
-        if (c.bb.num("huntHit", -1) >= 0) { mark(c, "hunts"); c.bb.set("huntHit", -1); }
-        if (containerSeq(c, o, b.id, ops)) { mark(c, "loots"); c.bb.set("lootAt", c.self.tick); return false; } } },
+    { name: "skin", inertia: 0.6, considerations: [{ name: "carcass", curve: step01, input: (c) => (c.world.panel || c.bb.get("skinAt") ? 1 : 0) }],
+      run: (c, o) => { const pn = c.world.panel; // own open panel: take all, close (one action per think tick)
+        if (pn) { stop(o); if (containerSeq(c, o, pn.id, [`cwithdraw:${pn.id}:0:0`, "cclose"])) { mark(c, "loots"); c.bb.set("skinAt", undefined); return false; } return; }
+        const s = c.bb.get<{ x: number; y: number; until: number; tries: number }>("skinAt"); if (!s) return false;
+        if (toward(o, c.self.x, c.self.y, s.x, s.y, 0.8) > 0.9) { if (stuckOn(c, s.x, s.y)) { c.bb.set("skinAt", undefined); return false; } return; } stop(o);
+        if (cooled(c, "skinTry", 2 * CONTAINER_STEP)) { if (s.tries >= 3) { c.bb.set("skinAt", undefined); return false; } c.bb.set("skinAt", { ...s, tries: s.tries + 1 }); c.bb.set("skinTry", c.self.tick); o.actions.push("gather"); } } },
     { name: "trip", inertia: 0.6, scheduleBonus: 0.2, traits: { industriousness: 0.4, bravery: 0.3 }, considerations: [
         { name: "want", curve: step01, input: (c) => (c.bb.get("trip") ? 1 : c.world.tripWanted && cooled(c, "tripEnd", 600) ? 0.8 : 0) },
         { name: "day", curve: { type: "linear", m: -1, b: 1 }, input: (c) => (c.bb.get<{ ret: boolean }>("trip")?.ret ? 0 : night(c.self.phase)) },
@@ -244,10 +251,13 @@ function endTrip(c: Ctx, max: number): void { c.bb.set("trip", undefined); c.bb.
 /** Sleep in the base (through the door) when it has one; else by the fire. Replaces the survivor sleep run. */
 export function baseSleepRun(c: Ctx, o: { moveX: number; moveY: number; aimX: number; aimY: number; actions: string[] }): boolean | void {
   const b = c.world.base; let tx = c.world.home.x, ty = c.world.home.y;
-  const f = c.world.bs?.stations.get(StationKind.Campfire); // ADR-216: a lit fire beats walls at 6 C nights; the roofed base when it is out
-  if (b && f && c.world.bs?.hearth === f.id) { tx = b.x + HEARTH_SIT.x; ty = b.y + HEARTH_SIT.y; }
+  const f = c.world.bs?.stations.get(StationKind.Campfire); // ADR-252: a lit fire beats walls at 6 C nights; the roofed base when it is out
+  const bed = c.world.bs?.bed; const inBed = !!bed && !!b && !!c.world.bs?.complete && (!f || c.world.bs?.hearth === f.id || !f.lit);
+  if (inBed) { tx = bed.x; ty = bed.y; } // ADR-252 / ADR-244: the bed in the roofed base (by the hearth): lie down with the Rest edge
+  else if (b && f && c.world.bs?.hearth === f.id) { tx = b.x + HEARTH_SIT.x; ty = b.y + HEARTH_SIT.y; }
   else if (f && (f.lit || !c.world.bs?.door)) { tx = f.x - 1.1; ty = f.y + 0.4; }
-  if (goTo(c, o, tx, ty, 0.8) < 0.9 || stuckOn(c, tx, ty, 200)) { stop(o); o.aimX = 0; o.aimY = 0; o.actions.push("sleep"); }
+  if (c.world.stance === StanceMode.Sleep) { stop(o); o.actions.push("sleep"); }
+  else if (goTo(c, o, tx, ty, 0.8) < (inBed ? 1.2 : 0.9) || stuckOn(c, tx, ty, 200)) { stop(o); o.aimX = 0; o.aimY = 0; o.actions.push("sleep"); if (inBed) o.actions.push("rest"); }
   if (night(c.self.phase) < 0.5) return false;
 }
 /** ADR-216: the cold hours (h15-h7.5) with a base fire in reach: stay by it and keep it stocked, like a player banking the hearth. */

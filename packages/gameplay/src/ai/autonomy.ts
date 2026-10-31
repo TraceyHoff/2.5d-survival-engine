@@ -92,7 +92,7 @@ function homeScan(world: World, defs: GameDefs, hx: number, hy: number, fireType
   }
   if (m.size > 256) m.clear(); m.set(key, r); return r;
 }
-const SENSOR_KEYS = ["plan", "base", "bs", "craftCount", "craftTicks", "huntTarget", "lootBag", "tripWanted", "surplus", "woodTotal", "stoneTotal", "junk", "craftRecipe", "buildPlan", "gatherNode", "gatherScanned", "waterAt", "equipSlot", "repairTarget", "needs", "cold", "chill", "fire", "fireMissing", "woodSlot"] as const;
+const SENSOR_KEYS = ["plan", "base", "bs", "craftCount", "craftTicks", "huntTarget", "panel", "tripWanted", "surplus", "woodTotal", "stoneTotal", "junk", "craftRecipe", "buildPlan", "gatherNode", "gatherScanned", "waterAt", "equipSlot", "repairTarget", "needs", "cold", "chill", "fire", "fireMissing", "woodSlot"] as const;
 const sensed = new WeakMap<Agent, { tick: number; home: string; s: Partial<GoalSensors> }>();
 export function fillGoalSensors(world: World, self: Entity, view: AgentWorldView, a: Agent): void {
   const home = `${view.home.x},${view.home.y}`; const c = sensed.get(a);
@@ -206,6 +206,12 @@ export function instantChores(c: Ctx, o: { actions: string[] }): void {
   if (w.water !== undefined && c.self.thirst < 0.5 && t - c.bb.num("drankAt", -1e9) >= 40) { o.actions.push(`drink:${w.water}`); c.bb.set("drankAt", t); }
 }
 
+/** ADR-252 / ADR-244: melee rhythm: DEFEND_STRIKE ticks striking, then the rest of the DEFEND_CYCLE behind a held guard (block: -70 % melee from the front, costs stamina) while stamina lasts. */
+export const DEFEND_CYCLE = 30, DEFEND_STRIKE = 10, DEFEND_MIN_STAMINA = 0.25;
+export function defendAction(c: Ctx): "gather" | "block" {
+  const t = c.self.tick; let from = c.bb.get<number>("fightFrom"); if (from === undefined) { from = t; c.bb.set("fightFrom", t); } c.bb.set("fightSeen", t);
+  return (t - from) % DEFEND_CYCLE >= DEFEND_STRIKE && c.self.stamina > DEFEND_MIN_STAMINA ? "block" : "gather";
+}
 /** defend, drink_water, equip, repair. */
 export function autonomyBehaviors(): GameBehavior[] {
   return [
@@ -215,7 +221,8 @@ export function autonomyBehaviors(): GameBehavior[] {
       run: (c, o) => {
         const z = c.memory.nearest("zombie", c.self.x, c.self.y, 0.3); if (!z || c.self.hp < 0.35) return false;
         const d = toward(o, c.self.x, c.self.y, z.x, z.y, 1); if (d > 10) return false;
-        if (d < 1.3) { o.moveX = 0; o.moveY = 0; o.actions.push("gather"); } // ADR-107: primary button strikes a zombie in melee reach
+        if (d < 1.3) { o.moveX = 0; o.moveY = 0; o.actions.push(defendAction(c)); } // ADR-107: primary button strikes a zombie in melee reach; ADR-252: then guards
+        else if (c.self.tick - c.bb.num("fightSeen", -1e9) > DEFEND_CYCLE) c.bb.set("fightFrom", undefined);
       } },
     // dusk / night or cold: fuel and light the home campfire (open -> deposit wood -> toggle, the station panel's steps)
     { name: "tend_fire", inertia: 0.4, considerations: [

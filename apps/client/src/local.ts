@@ -7,7 +7,7 @@
  * mode: "multiplayer" disables human bots entirely (and ignores `bots`). No Node-only imports.
  */
 import { CommandRegistry, DEFAULT_TICK_HZ, FixedLoop, Owner, Transform, World, type CosmeticCatalogLike, type Agent, type AgentOutput, type Entity } from "@engine/core";
-import { Animal, Dead, Health, ResourceNode, Zombie, agentOutputFrame, applyAgentEmote, buildAgentSelf, buildAgentView, type AgentWorldView, flushSocialMemory, makeAgent, makeAgentIdentity, survivorController, HOME_MAX_DIST, aiMemoryOf, baseHome, flushAiMemory, RespawnCmd } from "@engine/gameplay";
+import { Animal, Dead, Health, ResourceNode, Zombie, agentOutputFrame, applyAgentEmote, buildAgentSelf, buildAgentView, type AgentWorldView, flushSocialMemory, makeAgent, makeAgentIdentity, survivorController, HOME_MAX_DIST, aiMemoryOf, baseHome, flushAiMemory, RespawnCmd, agentStanceInput, fillStanceSensors, stanceMode, StanceMode, GameplayEdgeBits } from "@engine/gameplay";
 import { ChatChannel, DirectClient, LoopbackNetwork, MultiServerTransport, NetClient, type ClientTransport, type ServerTransport } from "@engine/net";
 import { ClaimAccount, IndexedDbWorldStore, MemoryWorldStore, SetName, nameToWords, tokenToWords, type WorldStore } from "@engine/persist";
 import { detectDevice, isMobileHost, type DeviceHints } from "./p2p.js";
@@ -154,14 +154,21 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
   const putAgent = (id: string, partial: Parameters<typeof game.agents.put>[1]): unknown => game.agents.put(id, partial);
   function dropBot(clientId: number): void {
     const i = bots.findIndex((b) => b.client.clientId === clientId); if (i < 0) return;
-    const b = bots[i]!; byAgent.delete(b.agent); lodViews.delete(b); lodPhase.delete(b); flushSocialMemory([b.agent], putAgent, game.world.tick, true); flushAiMemory([b.agent], putAgent, game.world.tick, true); controller.remove(b.agent); b.client.close(); bots.splice(i, 1);
+    const b = bots[i]!; byAgent.delete(b.agent); lodViews.delete(b); lodPhase.delete(b); flushSocialMemory([b.agent], putAgent, game.world.tick, true); flushAiMemory([b.agent], putAgent, game.world.tick, true); controller.remove(b.agent); b.client.close(); bots.splice(i, 1); restAt.delete(b);
   }
   // Player/bot entity lookups (ADR-105): game.players already maps clientId -> server entity, and bots perceive the authoritative world through it.
   const serverEntityOf = (cid: number): Entity | undefined => { const p = game.players.get(cid); return p && game.world.isAlive(p.entity) ? p.entity : undefined; };
   // The exact input frame a human client builds: buttons + aim from the agent's output (gameplay intentToFrame).
-  const sampleOf = (vp: VirtualPlayer): { buttons: number; aimX: number; aimY: number } => {
+  // ADR-252: stance actions -> the same Guard / Crouch buttons and Rest edge a player sends (ADR-244). Rest is pressed once
+  // (not while already asleep, at most every REST_EVERY ticks): a repeated Rest is a wake input after sleepWakeGraceTicks.
+  const restAt = new Map<VirtualPlayer, number>(); const REST_EVERY = 20;
+  const sampleOf = (vp: VirtualPlayer): { buttons: number; aimX: number; aimY: number; edges?: number } => {
     const f = agentOutputFrame(vp.output, 0, NO_COMMANDS); // GameplayActions bits 0-5 == Act bits
-    return { buttons: f.actions & ACT_MASK, aimX: f.aimX, aimY: f.aimY };
+    let buttons = f.actions & ACT_MASK; const st = agentStanceInput(vp.output);
+    if (st.guard) buttons |= Act.Guard; if (st.crouch) buttons |= Act.Crouch;
+    if (st.rest) { const e = serverEntityOf(vp.client.clientId); const tick = game.world.tick;
+      if (e !== undefined && stanceMode(game.world, e) !== StanceMode.Sleep && tick - (restAt.get(vp) ?? -1e9) >= REST_EVERY) { restAt.set(vp, tick); return { buttons, aimX: f.aimX, aimY: f.aimY, edges: GameplayEdgeBits.Rest }; } }
+    return { buttons, aimX: f.aimX, aimY: f.aimY };
   };
   const byAgent = new Map<Agent, VirtualPlayer>();
   const LOD_EVERY = o.agentLodEvery ?? agentLodEvery();
@@ -189,7 +196,7 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
     const cached = lodViews.get(vp);
     let ph = lodPhase.get(vp); if (ph === undefined) lodPhase.set(vp, (ph = lodSlot++ % LOD_EVERY));
     if (!near && cached && tick - cached.tick < LOD_EVERY && (tick + ph) % LOD_EVERY !== 0) {
-      const self = buildAgentSelf(vp.world, e, a); return self ? { self, world: cached.world } : undefined;
+      const self = buildAgentSelf(vp.world, e, a); if (self) fillStanceSensors(game.world, e, cached.world); return self ? { self, world: cached.world } : undefined; // ADR-252: own stance stays fresh
     }
     const v = buildAgentView(game.world, e, a, vp.home, undefined, nearby(t.x, t.y)); if (v) lodViews.set(vp, { world: v.world, tick }); else lodViews.delete(vp);
     return v;

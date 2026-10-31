@@ -160,3 +160,15 @@ export function emitAgentCommands<O extends AgentOutputWithCommands>(out: O): O 
   }
   out.actions = keep; return out;
 }
+
+/**
+ * ADR-252: stance actions -> the stance inputs a player's client sends (ADR-244): "block" holds Guard, "crouch" presses
+ * Crouch (the server toggles on the rising edge), "rest" is the Rest edge (lie down in the bed in reach). They are not
+ * commands or intents (actionIntent / actionCommand ignore them); the host ORs them into the input frame.
+ */
+export interface AgentStanceInput { guard: boolean; crouch: boolean; rest: boolean }
+export function agentStanceInput(out: Pick<AgentOutput, "actions">): AgentStanceInput {
+  let guard = false, crouch = false, rest = false;
+  for (const a of out.actions) { if (a === "block") guard = true; else if (a === "crouch") crouch = true; else if (a === "rest") rest = true; }
+  return { guard, crouch, rest };
+}

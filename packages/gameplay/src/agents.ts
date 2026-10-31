@@ -17,6 +17,7 @@ import { observeSocialMemory } from "./ai/social_memory.js";
 import { fillVehicleSensors, vehicleBehaviors, type VehicleSensors } from "./ai/vehicle_behaviors.js";
 import { clanBehaviors, fillClanSensors, type ClanSensors } from "./ai/clan_behaviors.js";
 import { emitAgentCommands } from "./ai/agent_output.js";
+import { fillStanceSensors, stancePolicy, type StanceSensors } from "./ai/stance_policy.js";
 import { baseBehaviors, baseReturnRun, baseSleepRun, type PlanSensors } from "./ai/base_behaviors.js";
 import { autonomyBehaviors, banNode, instantChores, fillGoalSensors, stuckOn, type GoalSensors } from "./ai/autonomy.js";
 
@@ -27,7 +28,7 @@ export interface AgentsData {
 export const AGENTS_DATA: AgentsData = raw as unknown as AgentsData;
 
 export interface SeenThing { id: number; kind: "zombie" | "player" | "node" | "animal"; x: number; y: number }
-export interface AgentWorldView extends AgentSensors, GoalSensors, PlanSensors, PartySensors, ClanSensors, VehicleSensors {
+export interface AgentWorldView extends AgentSensors, GoalSensors, StanceSensors, PlanSensors, PartySensors, ClanSensors, VehicleSensors {
   seen: SeenThing[]; home: { x: number; y: number }; playerName: string;
   /** Optional sensors (0..1 / plans) the host fills from the bot's replica; missing = neutral. */
   invSpaceFree?: number; craftRecipe?: number; buildPlan?: { piece: number; x: number; y: number };
@@ -65,7 +66,7 @@ export function buildAgentView(world: World, self: Entity, a: Agent, home: { x: 
   }
   const tod = timeOfDay(world);
   const view: AgentWorldView = { seen, home, playerName }; fillAgentSensors(world, self, view, (sv?.hunger ?? 100) < 50); fillPartySensors(world, self, view); fillClanSensors(world, self, view); if ((treesOf(world, self) ?? []).some((t) => t.points > 0)) { // ADR-221: per-tree points since ADR-209 (global points is always 0)
-    const p = pickSkillNode(world, self, a.identity.traits); if (p !== undefined) view.skillPick = p; } fillVehicleSensors(world, self, view); fillGoalSensors(world, self, view, a); observeSocialMemory(world, self, a);
+    const p = pickSkillNode(world, self, a.identity.traits); if (p !== undefined) view.skillPick = p; } fillVehicleSensors(world, self, view); fillStanceSensors(world, self, view); fillGoalSensors(world, self, view, a); observeSocialMemory(world, self, a);
   return {
     self: { x: t.x, y: t.y, facing, hp: hp ? hp.hp / Math.max(1, hp.max) : 1, hunger: (sv?.hunger ?? 100) / 100, thirst: (sv?.thirst ?? 100) / 100, stamina: sv ? sv.stamina / Math.max(1, sv.maxStamina) : 1, tick: world.tick, dayT: tod.t, phase: currentPhaseKey(world) },
     world: view,
@@ -151,7 +152,11 @@ export const skillPickBehavior: GameBehavior = { name: "skill_pick", inertia: 0,
   run: (c, o) => { o.actions.push(`skill:${c.world.skillPick}`); c.bb.set("skillPickAt", c.self.tick); return false; } };
 
 export function survivorRegistry(extra: readonly GameBehavior[] = []): BehaviorRegistry<AgentWorldView> {
-  const r = new BehaviorRegistry<AgentWorldView>(); for (const b of [...referenceBehaviors(), ...survivalBehaviors(), ...autonomyBehaviors(), ...partyBehaviors(), ...clanBehaviors(), ...vehicleBehaviors(), ...baseBehaviors(), skillPickBehavior, ...extra]) r.register(withBotUtility(b.name === "sleep" ? { ...b, run: (c, o) => (c.world.base ? baseSleepRun(c, o) : b.run(c, o)) } : b)); return r;
+  const r = new BehaviorRegistry<AgentWorldView>(); for (const b of [...referenceBehaviors(), ...survivalBehaviors(), ...autonomyBehaviors(), ...partyBehaviors(), ...clanBehaviors(), ...vehicleBehaviors(), ...baseBehaviors(), skillPickBehavior, ...extra]) {
+    const run = b.name === "sleep" ? (c: AgentContext<AgentWorldView>, o: Parameters<GameBehavior["run"]>[1]) => (c.world.base ? baseSleepRun(c, o) : b.run(c, o)) : b.run;
+    r.register(withBotUtility({ ...b, run: (c, o) => { const res = run(c, o); stancePolicy(c, o, b.name); return res; } })); // ADR-252: sleep stillness + sneak crouch
+  }
+  return r;
 }
 /**
  * Deterministic identity for virtual player #slot of a world seed. archetype = a bots.json archetype (picked by the
