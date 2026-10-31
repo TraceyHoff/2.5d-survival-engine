@@ -901,7 +901,7 @@
      "atlas": "v2s_wr_cz_hair_buzz_male__sleep",
      "residency": "stream",
      "pages1x": [
-      108,
+      120,
       124
      ],
      "uniqueFrames": 24
@@ -964,13 +964,13 @@
      "atlas": "v2s_wr_cz_hair_buzz_male_hathair__sleep",
      "residency": "stream",
      "pages1x": [
-      68,
-      84
+      64,
+      88
      ],
-     "uniqueFrames": 21
+     "uniqueFrames": 24
     }
    ],
-   "uniqueFrames": 813
+   "uniqueFrames": 816
   },
   {
    "sprite": "v2s_cz_top_henley_male_sleeves",
@@ -1098,8 +1098,8 @@
      "atlas": "v2s_wr_cz_hat_cap_male__sleep",
      "residency": "stream",
      "pages1x": [
-      104,
-      124
+      112,
+      128
      ],
      "uniqueFrames": 24
     }

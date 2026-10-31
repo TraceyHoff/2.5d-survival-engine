@@ -217,14 +217,19 @@ def figure(br, r=0):
             out[(np.abs(du - su * .17) < .035) & (v > .0) & (v < .1) & (f > .3)] = RID["I"]                                # outer lash
         return out
     P.append(Ell(c, (HR + .25,) * 3, "eyes", clip=Z_PIL - .5, deco=eye_deco, cut=lambda p, n, a: eye_deco(p, n, a) > 0, name="eyes"))
+    HL0 = -.06   # hairline (v toward the chin): low enough that the face-up sleeper reads with a full head of hair
+    def hairline(u, f): return HL0 + .3 * (1 - f) - .25 * u * u
     def hair_cut(p, n, a):
-        u, v, f = fq(p); return (v < -.28 + .3 * (1 - f) - .25 * u * u) | ((f < .15) & (v < .45))   # crown + forehead hairline, back/sides
-    P.append(Ell(c, (HR + .7, HR + .9, HR + .6), "hair", clip=Z_PIL - .5, cut=hair_cut, name="hair"))
+        u, v, f = fq(p); return (v < hairline(u, f)) | ((f < .3) & (v < .55))   # crown + forehead hairline, back/sides
+    def hair_deco(p, n, a):   # P = hair colour; S = fringe lock along the hairline (the buzz's secondary accent, like idle)
+        u, v, f = fq(p); out = np.full(p.shape[:-1], RID["P"]); out[(v > hairline(u, f) - .14) & (v < hairline(u, f)) & (f > .3)] = RID["S"]
+        return out
+    P.append(Ell(c, (HR + .7, HR + .9, HR + .6), "hair", clip=Z_PIL - .5, cut=hair_cut, deco=hair_deco, name="hair"))
     # cap (hat_cap + scrappy crown patch): crown shell over the top of the head down to a band (lower at the back),
     # visor forward of the forehead along the face axis, button on top; hathair = the buzz below the band only
     def band(p):
-        u, v, f = fq(p); return v < -.34 + .2 * (1 - f) - .1 * u * u          # True = above the cap band
-    P.append(Ell(c, (HR + .7, HR + .9, HR + .6), "hathair", clip=Z_PIL - .5, name="hathair",
+        u, v, f = fq(p); return v < -.14 + .2 * (1 - f) - .1 * u * u          # True = above the cap band (sits deep: crown reads)
+    P.append(Ell(c, (HR + .7, HR + .9, HR + .6), "hathair", clip=Z_PIL - .5, name="hathair", deco=hair_deco,
                  cut=lambda p, n, a: hair_cut(p, n, a) & ~band(p) & ~((fq(p)[2] > .2) & (fq(p)[1] < .1))))
     A = np.stack([rgt, crown, face_ax])
     def cap_deco(p, n, a):
@@ -235,8 +240,8 @@ def figure(br, r=0):
         return out
     P.append(OEll(c + crown * .4, A, (HR + 1.4, HR + 1.4, HR + 1.3), "hat", role="P", clip=Z_PIL - .5, cut=lambda p, n, a: band(p),
                   deco=cap_deco, name="crown"))
-    P.append(OEll(c + face_ax * 8.6 + crown * 3.4, np.stack([rgt, face_ax, crown]), (7.4, 6.6, .9), "hat", role="S", clip=Z_PIL - .5,
-                  cut=lambda p, n, a: _dot(p - (c + crown * 3.4), face_ax) > 4.5, name="visor"))
+    P.append(OEll(c + face_ax * 7.6 + crown * 4.8, np.stack([rgt, face_ax, crown]), (6.2, 5.0, .9), "hat", role="S", clip=Z_PIL - .5,
+                  cut=lambda p, n, a: _dot(p - (c + crown * 4.8), face_ax) > 3.8, name="visor"))   # short visor up on the brow
     P.append(Ell(tuple(c + crown * (HR + 1.6)), (1.5, 1.5, 1.5), "hat", role="S", clip=Z_PIL - .5, name="button"))
     figure.ctx = {"c": np.array(c), "face": face_ax, "crown": crown, "rgt": rgt, "fq": fq, "ARM": ARM, "hair_cut": hair_cut}
     return P
