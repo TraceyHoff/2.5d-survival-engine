@@ -4,10 +4,10 @@ import { inflateSync } from "node:zlib";
 import { fileURLToPath } from "node:url";
 import { loadManifest, mergeManifests, buildPieceVisual, type ManifestJson } from "../src/index.js";
 import { readManifestJson } from "../src/node.js";
-import { MANIFEST_INDEX } from "../../../apps/client/src/manifest-index.js";
+import { MANIFEST_INDEX, applyFragmentFlags } from "../../../apps/client/src/manifest-index.js";
 
-// Clan palettes in-game. Source of truth: assets/pvp_clan/clan_palettes.json. The pvp_clan fragment is NOT in the client's
-// MANIFEST_INDEX, so the building manifest (served) carries a generated copy as `clanPalettes`
+// Clan palettes in-game. Source of truth: assets/pvp_clan/clan_palettes.json. The pvp_clan fragment is in the client's
+// MANIFEST_INDEX since ADR-242 but flagged `dropClanPalettes`, so the building manifest (served) carries the one copy as `clanPalettes`
 // (pack/building/src/clan_palettes.py, also run by build.py). This test pins the copy to the source and checks that the
 // fragments the client actually merges yield the palettes through AssetRegistry.clanPaletteForTint, plus the tintmask
 // (R = primary, G = secondary) of every clan-tinted decor sprite.
@@ -22,7 +22,7 @@ type Sprite = { key: string; atlas: string; building?: { piece: string; frames: 
 
 // client url (relative to <art>/) -> repo path, as vite.config.ts serves them
 const repoPath = (url: string) => (url.startsWith("pack/") ? "packages/assets/" + url : "assets/" + url);
-const served = MANIFEST_INDEX.filter((f) => existsSync(root + repoPath(f.url))).map((f) => ({ name: f.name, manifest: readManifestJson<ManifestJson>(root + repoPath(f.url)) }));
+const served = MANIFEST_INDEX.filter((f) => existsSync(root + repoPath(f.url))).map((f) => ({ name: f.name, manifest: applyFragmentFlags(f, readManifestJson<ManifestJson>(root + repoPath(f.url))) }));
 
 describe("clan palettes are served to the client", () => {
   it("building manifest copy == clan_palettes.json == pvp_clan fragment (order = tint index - 1)", () => {

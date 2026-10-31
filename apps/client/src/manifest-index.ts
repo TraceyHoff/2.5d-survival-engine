@@ -6,7 +6,8 @@
 export interface ManifestFragmentRef { name: string; url: string; optional?: boolean;
   /** ADR-242: image paths in this fragment are relative to this art-root dir ("" = `<art>/`), not to the fragment's own dir
    *  (Art's top-level drops write `pvp_clan/atlases/x.png`). */ root?: string;
-  /** ADR-242: stream this fragment's atlases (`residency:"stream"`: fetched on first use, not at boot). */ stream?: boolean }
+  /** ADR-242: stream this fragment's atlases (`residency:"stream"`: fetched on first use, not at boot). */ stream?: boolean;
+  /** ADR-242: strip `clanPalettes` (the building manifest carries the served copy; a second would double N). */ dropClanPalettes?: boolean }
 export const MANIFEST_INDEX: readonly ManifestFragmentRef[] = [
   { name: "pack", url: "pack/manifest.json" },
   { name: "ui-kit", url: "ui/kit/manifest.ui.kit.json", optional: true },
@@ -19,7 +20,7 @@ export const MANIFEST_INDEX: readonly ManifestFragmentRef[] = [
   { name: "nature", url: "pack/nature/manifest.nature.json", optional: true },
   // ADR-242: Art's PvP/clan drop (raid fx, clan banners/gates, nameplates, loot beams) and the stalls drop (stall art,
   // sale coins). Both repeat keys the building pack already serves; mergeManifests keeps building's (first wins).
-  { name: "pvp_clan", url: "pvp_clan/manifest.fragment.json", optional: true, root: "", stream: true },
+  { name: "pvp_clan", url: "pvp_clan/manifest.fragment.json", optional: true, root: "", stream: true, dropClanPalettes: true },
   { name: "stalls", url: "stalls/manifest.fragment.json", optional: true, root: "", stream: true },
 ];
 /** ADR-242: directory (absolute URL) that `frag`'s relative image paths resolve against. */
@@ -30,6 +31,7 @@ export function fragmentBase(f: ManifestFragmentRef, fragUrl: string, artUrl: st
 export function applyFragmentFlags<M>(f: ManifestFragmentRef, m: M): M {
   const at = (m as { atlases?: { residency?: string }[] }).atlases;
   if (f.stream && Array.isArray(at)) for (const a of at) a.residency ??= "stream";
+  if (f.dropClanPalettes) delete (m as { clanPalettes?: unknown }).clanPalettes;
   return m;
 }
 /** ADR-240: player v2 sample (spec §11.1). Not in MANIFEST_INDEX (Art keeps it isolated): loadMergedManifest appends it
