@@ -15,7 +15,7 @@ import { fireAnimTime } from "./fire-anim.js";
 import { AnimState as CoreAnimState, entityIndex, lerpAngle, PrevTransform, Transform, type ComponentDef, type World } from "@engine/core";
 import { CHUNK_SIZE, chunkKey, floorToTerrainZ, terrainZToFloor, type BuildingGrid, type ChunkedSpatialIndex, type IsoConfig } from "@engine/world";
 import { createProgram, GLSL_COMMON, type FrameStats, type Program } from "./gl/util.js";
-import { Sprite, Shadow, Occluder, SpriteFlag, LightSource, TintSecondary } from "./components.js";
+import { Sprite, Shadow, Occluder, SpriteFlag, LightSource, TintSecondary, SpriteAlpha } from "./components.js";
 import { newResolved, STREAM_MARGIN_PX, STREAM_MARGIN_ANIMAL_PX, STREAM_KEEP_FACTOR, type AtlasManager, type ResolvedFrame, type HandAnchor } from "./assets/atlasManager.js";
 import { offHandAnchor, offHandBehind } from "./character/offhand.js";
 import type { Rect } from "./camera.js";
@@ -627,6 +627,7 @@ export class SpriteBatch {
     const litSt = cx.bindings.lit && world.isRegistered(cx.bindings.lit) ? world.store(cx.bindings.lit) : null; const litData = litSt?.data as Record<string, ArrayLike<number>> | undefined;
     const oh = cx.bindings.offHand ? world.store(cx.bindings.offHand) : null; const offOf = cx.bindings.offHandSprite ?? heldOf;
     const t2s = world.isRegistered(TintSecondary) ? world.store(TintSecondary) : null;
+    const sa = world.isRegistered(SpriteAlpha) ? world.store(SpriteAlpha) : null; // ADR-238 despawn fade
     const apB = cx.bindings.appearance; const ap0 = apB && world.isRegistered(apB.def) ? world.store(apB.def) : null; const ap = ap0 && (ap0.data as Record<string, unknown>).version ? ap0 : null;
     atlas.beginFrame();
     if (apB && (!this.layerCache || this.layerCache.binding !== apB)) {
@@ -787,8 +788,9 @@ export class SpriteBatch {
       }
       const ss = sh.slot(i); const crisp = atlas.isCrisp(res.atlas); if (crisp) atlas.markUsedAt(res.atlas);
       else if (occOn && oc.slot(i) >= 0 && oc.data.fade[oc.slot(i)]! >= 1) atlas.markUsedAt(res.atlas); // ADR-152: never-fade props (campfire) keep their atlas hot
+      let sAl = 1; if (sa) { const s2 = sa.slot(i); if (s2 >= 0) { sAl = Math.max(0, Math.min(1, sa.data.alpha[s2]!)); fade *= sAl; } } // ADR-238: whole-sprite fade
       const o0 = this.writeOne(sx, sy, key, scale, res, sp.data.flags[k]! | (ls.slot(i) >= 0 ? SpriteFlag.BloomSource : 0) | (crisp ? CRISP : 0), (i * 0.618034) % 1, fade, -OPEN, OPEN, sp.data.tint[k]! >>> 0, 0,
-        ss >= 0 ? sh.data.alpha[ss]! : 0, 0, 0, ss >= 0 ? blobW * (sh.data.length[ss]! || 1) : 0);
+        ss >= 0 ? sh.data.alpha[ss]! * sAl : 0, 0, 0, ss >= 0 ? blobW * (sh.data.length[ss]! || 1) : 0);
       if (wet) { const s2 = wet.slot(i); if (s2 >= 0) { o0[20] = wet.data.level[s2]! / 255; if (o0[20] > 0.3) cx.statusFx?.("wet", x, y, z, o0[20]); } }
       if (bt) { const s2 = bt.slot(i); if (s2 >= 0) { o0[21] = bt.data.cold[s2]! / 255; o0[22] = bt.data.shivering[s2]! ? 1 : 0; o0[23] = (bt.data.heat[s2]! / 255) * cx.style.fx.flushStrength;
         if (o0[22]) cx.statusFx?.("cold", x, y, z, o0[21]); else if (bt.data.heat[s2]! > 150) cx.statusFx?.("heat", x, y, z, bt.data.heat[s2]! / 255); } }

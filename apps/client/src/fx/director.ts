@@ -10,6 +10,7 @@ import type { EntSnap, SoundEvent } from "../audio/events.js";
 import type { WorldAudioState } from "../audio/snapshot.js";
 import { Fx, CHEST, type ImpactMat, type Surface } from "./effects.js";
 import { C, treeColor } from "./palette.js";
+import { LootPuffTracker } from "./loot-puff.js";
 
 // DamageCause (const enum in @engine/gameplay; literals here so isolated transpilers agree)
 const DC = { Hypothermia: 3, Hyperthermia: 4, Combat: 5, Sunlight: 6, Fire: 7, Contact: 8, Explosion: 9, Turret: 10, Trap: 11 } as const;
@@ -38,13 +39,17 @@ export class FxDirector {
   private readonly sfx = new Map<string, string>();
   /** Lit fires seen this frame (x, y, z, big) for the Canvas2D flicker glow. */
   readonly glows = new Float32Array(32 * 4); glowCount = 0;
+  /** ADR-238: ground bags that despawned -> dust puff (bound once, no per-frame closure). */
+  private readonly loot = new LootPuffTracker(); private lf: FxFrame | undefined;
+  private readonly puff = (x: number, y: number, z: number): void => { const f = this.lf!; this.fx.lootPuff(x, y, this.z(f, x, y, z)); };
   constructor(readonly fx: Fx) {}
-  reset(): void { this.hits.clear(); this.deaths.clear(); this.byNet.clear(); this.netStamp = -1000; this.wakes.clear(); this.settled = 0; this.hp = -1; this.tl.fill(-1); this.lvl = -1; this.hPhase = -1; this.hSeq = -1; this.daylightPrev = -1; }
+  reset(): void { this.hits.clear(); this.deaths.clear(); this.byNet.clear(); this.netStamp = -1000; this.wakes.clear(); this.settled = 0; this.hp = -1; this.tl.fill(-1); this.lvl = -1; this.hPhase = -1; this.hSeq = -1; this.daylightPrev = -1; this.loot.reset(); }
 
   step(f: FxFrame): void {
     const w = f.world, fx = this.fx; this.frame++;
     const live = this.settled > 20; // first frames seed state without bursting (join / respawn / chunk load)
     this.scanHits(w, f, live); this.scanDeaths(w, f, live); this.scanLocal(w, f, live);
+    this.lf = f; this.loot.step(w, live, this.puff);
     if (live) { const evs = f.events; for (let i = 0; i < evs.length; i++) this.onEvent(evs[i]!, f); }
     this.continuous(f);
     if (f.ambient && !f.indoors) this.ambient(f);

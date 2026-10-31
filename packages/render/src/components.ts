@@ -60,6 +60,14 @@ export const InteriorPart = defineComponent("InteriorPart", {
 });
 export const InteriorRole = { Floor: 1, Wall: 2 } as const;
 
-export const RENDER_COMPONENTS = [Sprite, LightSource, Shadow, Occluder, TintSecondary, InteriorPart] as const;
+/**
+ * ADR-238: whole-sprite opacity multiplier (0..1) for a gentle fade of the item itself (ground loot about to despawn).
+ * Multiplies the sprite's alpha and its projected shadow; entities without it draw at full opacity.
+ */
+export const SpriteAlpha = defineComponent("SpriteAlpha", {
+  alpha: "f32",
+});
+
+export const RENDER_COMPONENTS = [Sprite, LightSource, Shadow, Occluder, TintSecondary, InteriorPart, SpriteAlpha] as const;
 
 export { SpriteFlag, TileId } from "./ids.js";

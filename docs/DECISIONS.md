@@ -2340,3 +2340,51 @@ Desktop (1024 MB) is unchanged: it re-tiers to hot x1 and already kept creatures
 - brand art cold.
 
 `resident_creatures.test.ts` is updated to the 128 MB threshold.
+
+## ADR-238: Dropped items and death bags despawn on a persisted server timer
+
+**Problem.** Ground loot piled up. Every bag (dropped stacks, death bags, thrown weapons, zombie and animal loot, stall returns) carried one fixed `despawnAtTick` (15 min, or 2 min for creature loot). Nothing capped the total, and the client gave no warning before a bag vanished.
+
+**Decision.**
+- **Timer is data.** `LootBag` gains `spawnTick` (absolute tick), `kind` (the `LootSource`) and `emptiedTick`. `world.tick` persists in WorldMeta, so lifetimes survive save/load and restarts. Downtime does not count. The server (`lootBagDespawnSystem`, postSim, every 20 ticks) decides. Clients only read the replicated fields.
+- **Lifetimes** live in `pvp.json` → `despawn`, which replaces `bagDespawnSeconds`/`thrownBagSeconds`:
+
+  | Value | Seconds |
+  |---|---|
+  | `droppedSeconds` | 600 |
+  | `deathBagSeconds` (pet death bags too) | 1800 |
+  | `thrownSeconds` | 300 |
+  | `creatureLootSeconds` | 120 |
+  | `stallBagSeconds` | 600 |
+  | `emptiedSeconds` | 12 |
+  | `fadeSeconds` | 30 |
+  | `maxGroundBags` | 400 (bags) |
+  | `deathBagMinAgeSeconds` | 300 |
+  | `legacyBagSeconds` | 900 |
+
+- **No reset on interaction.** Opening a bag or taking part of it changes nothing. A bag looted down to empty records `emptiedTick` and despawns `emptiedSeconds` later, fading over that grace. It used to vanish the instant it was empty. Refilling it inside the grace cancels the grace. Permanent caches (`despawnAtTick` 0xffffffff, such as the sandbox crate, now `kind` Crate) never time out. Emptied, they also go after the grace.
+- **Cap.** With more than `maxGroundBags` live bags, the oldest by spawn tick (ties by entity id) get `despawnAtTick = now + fadeSeconds`, so they fade and puff like any other bag. Permanent bags and bags already in their last fade window are not counted. A death bag younger than `deathBagMinAgeSeconds` is never taken. The cap overflows rather than eat a fresh corpse run.
+- **Legacy saves.** Migration `LOOTBAG_DESPAWN_MIGRATION` zero-fills the new fields. `kind` 0 means legacy: the spawn tick is `despawnAtTick - legacyBagSeconds` (used by the `canLootBag` owner window), and the old expiry is kept.
+- **Client.**
+  - **Fade.** `despawnFadeAlpha` (pure, in gameplay) gives 1 until the last `fadeSeconds`, or the whole emptied grace. It then eases down with a smoothstep to 0.25 with a ±6 % 0.5 Hz breathe. It never blinks and never returns to full. The view writes it to a new render component `SpriteAlpha`. The WebGL sprite pass multiplies body and shadow alpha by it, and Canvas2D sets `globalAlpha`. It fades the bag sprite itself; no overlay box.
+  - **Puff.** `fx/loot-puff.ts` `LootPuffTracker` remembers each replicated bag's position and expiry. When a bag disappears within [expiry − 20, expiry + 80] ticks, the ADR-214 director plays `Fx.lootPuff`: a small `dustRing` plus 4 soft smoke particles. A bag that leaves the AOI early, or a permanent crate, gets no puff.
+- **AI.** AI humans never perceive LootBags: `buildAgentView` has no ground-item channel. Pets re-query bags each tick, skip empty bags and skip permanent crates. A despawned bag fails `OpenContainer` with `InvalidTarget`, and an open loot window auto-closes, so nothing can hold a stale ground item.
+- **Event.** `gameplay.LootBagDespawned {bag, x, y, z, kind, reason: expired|emptied}` is emitted on the server for logs and hooks.
+
+**Tests.**
+- `packages/gameplay/test/adr238_ground_despawn.test.ts` covers:
+  - the balance values;
+  - dropped expiry at 600 s and death bags at 1800 s;
+  - no reset on open or partial take;
+  - the emptied grace of 10–15 s, with refill cancelling it;
+  - permanent and legacy bags;
+  - the cap taking the oldest first, with the fade-not-pop;
+  - young death bag protection, and expiry of that protection;
+  - the fade curve;
+  - InvalidTarget and auto-close.
+- `packages/persist/test/adr238_lootbag_despawn.test.ts` covers the chunk round trip and the legacy migration.
+- `apps/server/test/adr238_ground_despawn.test.ts` covers field replication, the client fade value, replicated removal, an emptied death bag gone about 12 s later on the client, and the timer across a SQLite restart.
+- `apps/client/test/adr238_loot_despawn_fx.test.ts` covers puff-on-expiry (no puff on early removal, on a crate, or when not live) and the fade wiring.
+- `pvp.test.ts` and `adr160_hand_loot.test.ts` now expect the emptied grace.
+
+**Limits.** The Canvas2D fallback does not fade paper-doll layers (bags have none). The cap is a global count, not per area.

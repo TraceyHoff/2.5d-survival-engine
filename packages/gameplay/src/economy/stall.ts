@@ -13,6 +13,8 @@ import {
   playerOf, Transform, transaction, type CommandDef, type Slot, type SlotExtras, type CommandHandlers, type Entity, type Transaction, type TxResult, type World,
 } from "@engine/core";
 import { clanPermBit, rankMask } from "../clan_state.js";
+import { lootBagInit } from "../loot_despawn.js";
+import { LootSource } from "../loot_labels.js";
 import { noteClanContribution } from "../clan.js";
 import { AttachKind, BuildPiece, Container, ContainerViewers, LEDGER_SIZE, Listings, LootBag, PieceLink, STALL_NAME_MAX, StallHeader, StallLedger, StallSign, StallOwnerKind, Viewing } from "../components.js";
 import { gameplayDefs, isAuthority, rangeSlack } from "../config.js";
@@ -326,7 +328,7 @@ export function spillStall(world: World, att: Entity): Entity | undefined {
   if (!moves.length) return undefined;
   const t = world.get(att, Transform)!; const bag = world.create();
   world.add(bag, Transform, { x: t.x, y: t.y, z: t.z }).add(bag, Container, { slotCount: 24 }).add(bag, ContainerViewers)
-    .add(bag, LootBag, { owner: 0, despawnAtTick: world.tick + 20 * 600 });
+    .add(bag, LootBag, lootBagInit(world, 0, "stall", LootSource.Dropped));
   moveSlotTuples(world, att, bag, moves); indexEntity(world, bag); if (world.has(att, StallSign)) refreshSoldOut(world, att); return bag;
 }
 

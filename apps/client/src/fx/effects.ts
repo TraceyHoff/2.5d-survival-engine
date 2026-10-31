@@ -185,6 +185,11 @@ export class Fx {
     for (let k = 0, n = this.n(10 * size); k < n; k++) { const a = (k / Math.max(1, n)) * TAU + this.r(-0.2, 0.2), v = this.r(0.9, 1.6) * size;
       ((S[0] = x + Math.cos(a) * 0.3, S[1] = y + Math.sin(a) * 0.3, S[2] = gz + 0.15, S[3] = gz, S[4] = Math.cos(a) * v, S[5] = Math.sin(a) * v, S[6] = this.r(0.2, 0.6), S[7] = this.r(0.6, 1.1), S[8] = 8 * size, S[9] = 20 * size, S[10] = 0.5, S[11] = 2.6, S[12] = -0.2), p.spawnS(Shape.Smoke, col, 0)); }
   }
+  /** ADR-238: a ground bag despawned: a small soft dust/smoke puff (no flash, no shake). */
+  lootPuff(x: number, y: number, gz: number): void {
+    this.dustRing(x, y, gz, 0.55, C.Dust);
+    for (let k = 0, n = this.n(4); k < n; k++) ((S[0] = x + this.r(-0.15, 0.15), S[1] = y + this.r(-0.15, 0.15), S[2] = gz + this.r(0.2, 0.5), S[3] = gz, S[4] = this.r(-0.25, 0.25), S[5] = this.r(-0.25, 0.25), S[6] = this.r(0.6, 1.2), S[7] = this.r(0.7, 1.1), S[8] = 7, S[9] = 16, S[10] = 0.4, S[11] = 0.9, S[12] = -0.25), this.pool.spawnS(Shape.Smoke, C.Smoke, 0));
+  }
   /** Build piece placed: dust ring puff + a snap flash outline glow. */
   buildPlace(x: number, y: number, gz: number, mat: string): void {
     this.dustRing(x, y, gz, 1, mat === "stone" ? C.Stone : C.Dust);

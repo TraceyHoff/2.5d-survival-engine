@@ -31,7 +31,8 @@ export function writeLootSummary(world: World, bag: Entity): void {
   const cur = world.get(bag, LootSummary);
   if (!cur) {
     const lb = world.get(bag, LootBag);
-    const source = lb && lb.despawnAtTick === 0xffffffff && !lb.owner ? LootSource.Crate : LootSource.Unknown;
+    // ADR-238: LootBag.kind persists the source (labels survive a restart); legacy bags: permanent ownerless = crate
+    const source = lb?.kind ? lb.kind : lb && lb.despawnAtTick === 0xffffffff && !lb.owner ? LootSource.Crate : LootSource.Unknown;
     world.add(bag, LootSummary, { ...next, source }); return;
   }
   if (cur.item !== next.item || cur.count !== next.count || cur.stacks !== next.stacks) world.set(bag, LootSummary, next);

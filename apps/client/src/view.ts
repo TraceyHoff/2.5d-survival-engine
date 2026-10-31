@@ -22,7 +22,7 @@ import { setDayFraction, resolveOffHandSprite } from "@engine/render";
 import { clanPieceTint, clanPieceTintPair } from "./clan-tint.js";
 import { pieceVariantOpts } from "./piece-variant.js";
 import { loadManifest, mergeManifests, resolveManifestShards, buildPieceVisual, type AssetRegistry, type ManifestFragment, type ManifestJson } from "@engine/assets";
-import { BuildGhost, pieceArtRow, pieceRotFlags, ROT_NO_OCCLUDE, IsoRenderer, Canvas2DRenderer, chooseRenderer, Sprite, Shadow, LightSource, Occluder, SpriteFlag, sourcesFromManifest, coreAppearanceBinding, CameraTargetGuard } from "@engine/render";
+import { BuildGhost, pieceArtRow, pieceRotFlags, ROT_NO_OCCLUDE, IsoRenderer, Canvas2DRenderer, chooseRenderer, Sprite, Shadow, LightSource, Occluder, SpriteAlpha, SpriteFlag, sourcesFromManifest, coreAppearanceBinding, CameraTargetGuard } from "@engine/render";
 import { countFraction } from "./load-progress.js";
 import { VehicleView, type VehicleSnapshot, type VehicleRenderDef } from "@engine/render";
 import { Vehicle as GVehicle, VehicleSeats, VehicleState, Hitch, vehicleDefOf, localPlayerVehicle } from "@engine/gameplay";
@@ -30,7 +30,7 @@ import { netIdOf } from "@engine/net";
 import { roadSpriteKeys, ROAD_FLAGS, signFrameId } from "./road-sign-view.js";
 import { Road, Sign, surfaceDef, signDef, walkAnimRate, petSits } from "@engine/gameplay";
 import { HitReact, NodeRegrow, hitDirRad, Equipment, Worn, wornCosmetics } from "@engine/gameplay";
-import { gameplayDefs, rotationSteps, rotParts, animalDefs, LootBag, Animal, Health, Survival, Zombie, ResourceNode, CraftingStation, Fuel, AnimState as GAnim, BuildPiece as GPiece, Dead, Wetness, BodyTemp, Emitter, PieceLink, STATION_LIGHT_RADIUS, StationKind, Crop, cropSpriteKey, clutterForChunk, resolveSprite, type ResolvedSprite } from "@engine/gameplay";
+import { gameplayDefs, rotationSteps, rotParts, animalDefs, LootBag, Animal, Health, Survival, Zombie, ResourceNode, CraftingStation, Fuel, AnimState as GAnim, BuildPiece as GPiece, Dead, Wetness, BodyTemp, Emitter, PieceLink, STATION_LIGHT_RADIUS, StationKind, Crop, cropSpriteKey, clutterForChunk, resolveSprite, despawnFadeAlpha, type ResolvedSprite } from "@engine/gameplay";
 
 /** Render-side schemas the renderer's bindings expect (view World only). */
 const VAnim = defineComponent("ViewAnimState", { state: "u8", startTick: "u32" });
@@ -399,6 +399,7 @@ export class IsoView {
         const want = empty ? 0.0001 : this.baseScale(ve); if (v.getField(ve, Sprite, "scale") !== want) v.set(ve, Sprite, { scale: want });
       }
       this.syncHitReact(net, e, ve, cur);
+      if (v.has(ve, Sprite) && net.has(e, LootBag)) this.syncLootFade(net, e, ve, alpha); // ADR-238: gentle fade of the bag itself before it despawns
       if (v.has(ve, Sprite) && net.has(e, NodeRegrow)) { // ADR-134: stump while it lasts, then invisible until regrown elsewhere
         const g = net.get(e, NodeRegrow)!; const want = g.stumpUntilTick > net.tick ? this.baseScale(ve) : 0.0001;
         if (v.get(ve, Sprite)!.scale !== want) v.set(ve, Sprite, { scale: want });
@@ -466,6 +467,14 @@ export class IsoView {
   /** ADR-208: NetClient (or any provider) whose reconciliation offsets are rendered on predicted entities. */
   corrections: CorrectionSource | undefined; private corrSampler = new CorrectionSampler();
   private sWant = { x: 0, y: 0, z: 0 };
+  private sBag = { owner: 0, despawnAtTick: 0, spawnTick: 0, kind: 0, emptiedTick: 0 };
+  /** ADR-238: SpriteAlpha from the replicated despawn timer (server ticks; `alpha` = interpolation into the next tick). */
+  private syncLootFade(net: World, e: Entity, ve: Entity, alpha: number): void {
+    const v = this.view; const lb = net.getInto(e, LootBag, this.sBag); if (!lb) return;
+    const a = despawnFadeAlpha(lb, net.tick + alpha);
+    if (a >= 0.999) { if (v.has(ve, SpriteAlpha)) v.remove(ve, SpriteAlpha); }
+    else if (v.has(ve, SpriteAlpha)) v.setField(ve, SpriteAlpha, "alpha", a); else v.add(ve, SpriteAlpha, { alpha: a });
+  }
   private sCur = { x: 0, y: 0, z: 0, facing: 0 }; private sPrev = { x: 0, y: 0, z: 0, facing: 0 }; private sAnim: Record<string, number> & { anim: number } = { anim: 0 }; private sTemp = { cold: 0, heat: 0, shivering: 0 }; private sHit: Record<string, number> & { startTick: number; dir: number } = { startTick: 0, dir: 0 };
   /** ADR-214: per-frame camera shake offset in tiles, written by the VFX layer (fx/) before render. */
   readonly camShake = { x: 0, y: 0 };

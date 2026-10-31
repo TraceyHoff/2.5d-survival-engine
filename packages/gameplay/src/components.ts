@@ -159,7 +159,9 @@ export const GroupSummary = defineComponent("GroupSummary", { partyId: "u32", cl
 /** Last tick this entity dealt or took combat damage (combat tag: blocks trade/logout rules, UI timer). */
 export const CombatTag = defineComponent("CombatTag", { untilTick: "u32" }, { networked: true });
 /** Death loot container marker (player corpse / bag): owner PlayerId, despawn tick. Contents in Container. */
-export const LootBag = defineComponent("LootBag", { owner: "u32", despawnAtTick: "u32" }, { networked: true, persistent: true });
+/** Ground container. ADR-238: spawnTick (absolute, persists) + kind (LootSource) drive the despawn timer; emptiedTick
+ *  (0 = has items) starts the short emptied grace. despawnAtTick 0xffffffff = permanent cache. See loot_despawn.ts. */
+export const LootBag = defineComponent("LootBag", { owner: "u32", despawnAtTick: "u32", spawnTick: "u32", kind: "u8", emptiedTick: "u32" }, { networked: true, persistent: true });
 /** Written by net on the server (per-connection RTT) for range slack. */
 /** ADR-161 world-label summary of a LootBag (everyone sees it; Container itself is viewers-only). Server recomputes
  *  ~every 10 ticks: top item + its total count, number of non-empty stacks, and a LootSource tag. */

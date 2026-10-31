@@ -3,7 +3,7 @@
  * Tuning in data/pvp.json. Deterministic: respawn point via world.rngFor; no wall clock; all writes skip replay.
  *  - Death bag: the tick a player (Inventory + Survival) gets Dead, every stack moves (with provenance) into a new
  *    LootBag container at the body; equipment is cleared. Only the owner may loot for bagOwnerOnlySeconds; the bag
- *    despawns at despawnAtTick or when empty.
+ *    despawns per ADR-238 (loot_despawn.ts: timer by kind, short grace once emptied, ground cap).
  *  - Respawn: `respawnPlayer` (or gameplay.respawn command) after respawnSeconds: bed/claim hook or world spawn point, partial vitals, clears
  *    Dead / Burning / CombatTag.
  *  - Hit validation: `setHitValidator(world, fn)`; the combat system calls it for player attackers on the authority
@@ -17,15 +17,18 @@ import { gameplayDefs, isAuthority } from "../config.js";
 import { secondsToTicks } from "../defs.js";
 import { emit, ev } from "../events.js";
 import { listSlots, moveSlotTuples } from "../inventory.js";
+import { bagSpawnTick, lootBagInit } from "../loot_despawn.js";
 import { LootSource, tagLootSource } from "../loot_labels.js";
 import { indexEntity } from "../spawn.js";
 import { pickSpawnPoint, respawnLocation } from "../spawn_points.js";
 
 export interface PvpTuning {
-  bagSlots: number; bagDespawnSeconds: number; bagOwnerOnlySeconds: number; respawnSeconds: number; respawnHealthFrac: number;
+  bagSlots: number; bagOwnerOnlySeconds: number; respawnSeconds: number; respawnHealthFrac: number;
   respawnHunger: number; respawnThirst: number; combatTagSeconds: number; hitConeDeg: number; spawnPoints: { x: number; y: number }[];
   /** Explosive raid rules: own-tribe structure damage multiplier, player damage multiplier, falloff at the edge. */
-  explosives: { ownTribeStructureMul: number; playerDamageMul: number; edgeFalloff: number; igniteRadiusFrac: number }; thrownBagSeconds: number;
+  explosives: { ownTribeStructureMul: number; playerDamageMul: number; edgeFalloff: number; igniteRadiusFrac: number };
+  /** ADR-238 ground despawn (see loot_despawn.ts DESPAWN). */
+  despawn: Record<string, number>;
 }
 export const PVP: Readonly<PvpTuning> = Object.freeze(raw as PvpTuning);
 if (!PVP.spawnPoints.length) throw new Error("pvp.json: spawnPoints must not be empty");
@@ -68,14 +71,14 @@ export function dropDeathBag(world: World, e: Entity): Entity | undefined {
   if (!moves.length) return undefined;
   const t = world.get(e, Transform)!; const bag = world.create(); const ownerId = (hasPlayerId(world, e) ? world.getField(e, PlayerId, "id") : undefined) ?? 0;
   world.add(bag, Transform, { x: t.x, y: t.y, z: t.z }).add(bag, Container, { slotCount: Math.max(PVP.bagSlots, moves.length) }).add(bag, ContainerViewers)
-    .add(bag, LootBag, { owner: ownerId, despawnAtTick: world.tick + secondsToTicks(PVP.bagDespawnSeconds, DT) });
+    .add(bag, LootBag, lootBagInit(world, ownerId, "death", LootSource.Death));
   moveSlotTuples(world, e, bag, moves); tagLootSource(world, bag, LootSource.Death); indexEntity(world, bag);
   emit(world, DeathBagDropped, { bag, owner: e, ownerId, stacks: moves.length }); return bag;
 }
 /** Loot gate (container open / withdraw): owner-only window after the drop. */
 export function canLootBag(world: World, actor: Entity, bag: Entity): boolean {
   const lb = world.get(bag, LootBag); if (!lb) return true; if (lb.owner === 0) return true;
-  const dropped = lb.despawnAtTick - secondsToTicks(PVP.bagDespawnSeconds, DT);
+  const dropped = bagSpawnTick(lb); // ADR-238: stored spawn tick (legacy saves: derived)
   return (hasPlayerId(world, actor) ? world.getField(actor, PlayerId, "id") : undefined) === lb.owner || world.tick >= dropped + secondsToTicks(PVP.bagOwnerOnlySeconds, DT);
 }
 /** ADR-160 bare-handed loot: the nearest LootBag within container reach (and closer than `within`) the actor may open. */
@@ -93,14 +96,8 @@ export function deathBagSystem(world: World): void {
   if (!isAuthority(world) || world.isReplaying) return;
   for (const e of [...world.query([Dead, Inventory, Survival])].sort((a, b) => a - b)) if (world.getField(e, Dead, "tick") === world.tick) dropDeathBag(world, e);
 }
-/** postSim: despawn expired or emptied bags. */
-export function lootBagDespawnSystem(world: World): void {
-  if (!isAuthority(world) || world.isReplaying) return;
-  for (const b of [...world.query([LootBag])].sort((a, b) => a - b)) {
-    const empty = world.has(b, Container) && listSlots(world, b).every((s) => !s.item || !s.count);
-    if (empty || world.tick >= world.getField(b, LootBag, "despawnAtTick")!) world.destroy(b);
-  }
-}
+/** postSim despawn: see loot_despawn.ts (ADR-238). */
+export { lootBagDespawnSystem } from "../loot_despawn.js";
 
 // ---- respawn ------------------------------------------------------------------------------------------
 export type RespawnReject = "not_dead" | "too_soon" | undefined;

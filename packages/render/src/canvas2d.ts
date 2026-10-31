@@ -16,7 +16,7 @@ import { previewLayers2D, tintPixels, type PreviewLayer2D } from "./character/pr
 import { worldToScreen, DEFAULT_ISO, CHUNK_SIZE, floorToTerrainZ, terrainZToFloor, isWaterId, waterShoreTint, type TileMap, type Chunk } from "@engine/world";
 import type { AssetRegistry } from "@engine/assets";
 import { IsoCamera } from "./camera.js";
-import { Sprite, LightSource } from "./components.js";
+import { Sprite, LightSource, SpriteAlpha } from "./components.js";
 import { frameAnim } from "./frame-select.js";
 import { Canvas2DLightmap, lightRadiusPx, type C2DLight } from "./canvasLight.js";
 import { DEFAULT_STYLE } from "./style.js";
@@ -294,7 +294,9 @@ export class Canvas2DRenderer {
       let f; try { f = reg!.dirFrame(sp.spriteId, anim, facing, tAnim); } catch { continue; }
       const img = this.image(f.atlas.key); if (!img) continue;
       const dw = f.w * k, dh = f.h * k;
-      g.save(); g.translate(snapPx(it.sx, s, ox), snapPx(it.sy, s, oy)); fx(); if (f.flipX) g.scale(-1, 1);
+      const sAl = world.isRegistered(SpriteAlpha) ? world.getField(it.e, SpriteAlpha, "alpha") : undefined; // ADR-238 despawn fade
+      if (sAl !== undefined && sAl <= 0.01) continue;
+      g.save(); g.translate(snapPx(it.sx, s, ox), snapPx(it.sy, s, oy)); fx(); if (f.flipX) g.scale(-1, 1); if (sAl !== undefined) g.globalAlpha = Math.min(1, sAl);
       g.drawImage(img, f.x, f.y, f.w, f.h, -f.anchorX * k, -f.anchorY * k, dw, dh); g.restore(); stats.sprites++; stats.drawCalls++;
       if (hearth) this.drawHearth(it.sx, it.sy, time, entityIndex(it.e), s, ox, oy, k);
     }

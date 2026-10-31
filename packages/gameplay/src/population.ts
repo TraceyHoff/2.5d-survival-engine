@@ -5,6 +5,7 @@
  * a host callback (virtual players join through the normal client path; see agents.ts / docs/AI_AGENTS.md).
  */
 import { LootSource, tagLootSource } from "./loot_labels.js";
+import { lootBagInit } from "./loot_despawn.js";
 import { Pet } from "./components.js";
 import { DEFAULT_TICK_HZ, Permissions, Transform, defineResource, type Entity, type World } from "@engine/core";
 import { PopulationSpawner, type BuildingGrid, type ChunkKey, type PhaseKey, type PopulationHost, type SpawnEntry, type PopulationViewpoint } from "@engine/world";
@@ -43,7 +44,6 @@ export const POPULATION_DATA = { get intervalSeconds(): number { return populati
 export const enum AnimalState { Idle = 0, Wander = 1, Flee = 2, Attack = 3, Dead = 4 }
 /** Corpse lingers this long (death anim) before the animal entity is removed; loot stays in a LootBag. */
 export const ANIMAL_CORPSE_SECONDS = 3;
-const LOOT_BAG_SECONDS = 120;
 export function spawnAnimal(world: World, kind: number | string, x: number, y: number): Entity {
   const k = typeof kind === "string" ? animalKindOf(kind) : kind; const def = animalDefs()[k]; if (!def) throw new Error(`unknown animal ${kind}`);
   const e = world.create();
@@ -59,7 +59,7 @@ export function dropAnimalLoot(world: World, e: Entity): Entity | undefined {
   if (!rolled.length) return undefined;
   const bag = world.create();
   world.add(bag, Transform, { x: t.x, y: t.y, z: t.z }).add(bag, Container, { slotCount: Math.max(4, rolled.length) }).add(bag, ContainerViewers)
-    .add(bag, LootBag, { owner: 0, despawnAtTick: world.tick + LOOT_BAG_SECONDS * DEFAULT_TICK_HZ });
+    .add(bag, LootBag, lootBagInit(world, 0, "creature", LootSource.Animal));
   for (const r of rolled) addItem(world, bag, r.item, r.n);
   tagLootSource(world, bag, LootSource.Animal); indexEntity(world, bag); return bag;
 }
@@ -75,7 +75,7 @@ export function dropZombieLoot(world: World, e: Entity): Entity | undefined {
   if (!rolled.length) return undefined;
   const bag = world.create();
   world.add(bag, Transform, { x: t.x, y: t.y, z: t.z }).add(bag, Container, { slotCount: Math.max(4, rolled.length) }).add(bag, ContainerViewers)
-    .add(bag, LootBag, { owner: 0, despawnAtTick: world.tick + LOOT_BAG_SECONDS * DEFAULT_TICK_HZ });
+    .add(bag, LootBag, lootBagInit(world, 0, "creature", LootSource.Zombie));
   for (const r of rolled) addItem(world, bag, r.item, r.n);
   tagLootSource(world, bag, LootSource.Zombie); indexEntity(world, bag); return bag;
 }

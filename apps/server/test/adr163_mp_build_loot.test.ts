@@ -52,7 +52,8 @@ describe("ADR-163 build-mode piece actions over the network", () => {
     const ra = near(A.c.world, bt.x, bt.y, G.LootBag)[0]!; expect(w.getField(A.e, G.Equipment, "mainHandItem") ?? 0).toBe(0);
     A.c.sendCommand(gameplayNet(G.OpenContainerCmd), { target: ra } as never); tick(3);
     A.c.sendCommand(gameplayNet(G.WithdrawCmd), { target: ra, item: 0, count: 0 } as never); tick(5);
-    expect(G.countItem(w, A.e, d.itemId("wood"))).toBe(4); expect(near(B.c.world, bt.x, bt.y, G.LootBag)).toHaveLength(0); // emptied bag vanishes for B too
+    expect(G.countItem(w, A.e, d.itemId("wood"))).toBe(4); expect(near(B.c.world, bt.x, bt.y, G.LootBag)).toHaveLength(1); // ADR-238: emptied bag fades for emptiedSeconds
+    tick(20 * (G.DESPAWN.emptiedSeconds + 1)); expect(near(B.c.world, bt.x, bt.y, G.LootBag)).toHaveLength(0); // ... then vanishes for B too
     // floor + table placed by the server; vase placed by A over the net with rot 1
     for (const k of ["foundation"]) { const sn = G.snapPlacement(w, { piece: d.pieceId(k)!, x: X, y: Y, level: 0, rot: 0, tier: 1, variant: 0 }) as G.Snapped; G.placePiece(w, 0, sn, { pay: false }); }
     { const sn = G.snapPlacement(w, { piece: d.pieceId("table")!, x: X, y: Y, level: 0, rot: 0, tier: 1, variant: 0 }) as G.Snapped; G.placePiece(w, 0, sn, { pay: false }); }

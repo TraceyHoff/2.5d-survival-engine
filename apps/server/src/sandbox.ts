@@ -5,7 +5,7 @@
  */
 import type { World, Entity } from "@engine/core";
 import { Transform } from "@engine/core";
-import { addItem, Container, ContainerViewers, indexEntity, itemIdSafe, LootBag, PET_TREATS, spawnAnimal } from "@engine/gameplay";
+import { addItem, Container, ContainerViewers, indexEntity, itemIdSafe, LootBag, LootSource, PET_TREATS, spawnAnimal } from "@engine/gameplay";
 
 /** Kit sized to fit the 16-slot / weight-capped starting inventory with 2 slots left free (ADR-144: a full bag paused
  * every craft at 0%, so the tutorial's craft step queued a Stone Axe that never arrived): gear, food, campfire + workbench + anvil, twig build, gravel road, sign, market stall (cloth + fiber, ADR-142). */
@@ -34,7 +34,7 @@ export const SANDBOX_PETS = ["animal_dog_dachshund", "animal_cat_tabby", "animal
 export function sandboxPetCorner(world: World, base: { x: number; y: number }): Entity | undefined {
   for (const b of world.query([LootBag])) if (world.getField(b, LootBag, "despawnAtTick") === 0xffffffff) return undefined; // already placed (restored save)
   const x = base.x + 5, y = base.y; const crate = world.create();
-  world.add(crate, Transform, { x, y }).add(crate, Container, { slotCount: 12 }).add(crate, ContainerViewers).add(crate, LootBag, { owner: 0, despawnAtTick: 0xffffffff });
+  world.add(crate, Transform, { x, y }).add(crate, Container, { slotCount: 12 }).add(crate, ContainerViewers).add(crate, LootBag, { owner: 0, despawnAtTick: 0xffffffff, spawnTick: world.tick >>> 0, kind: LootSource.Crate }); // ADR-238: permanent (never times out)
   for (const k of [...PET_TREATS, "cooked_fish", "wheat"]) { const id = itemIdSafe(world, k); if (id !== undefined) addItem(world, crate, id, 10); }
   indexEntity(world, crate);
   SANDBOX_PETS.forEach((k, i) => spawnAnimal(world, k, x + 1.5 + i * 1.2, y + 1.5));

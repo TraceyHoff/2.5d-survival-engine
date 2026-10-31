@@ -28,7 +28,7 @@ describe("ADR-160 bare-handed loot bags", () => {
   it("zombie, animal, death, AI-human, dropped and crate bags all open and empty by hand", () => {
     const w = makeWorld(); installPermissions(w); const me = mk(w, 1, 10, 10);
     const zb = (() => { for (let i = 0; i < 20; i++) { const z = G.spawnZombie(w, "zombie_brute", 10.5, 10); G.applyDamage(w, z, 1e6, z); steps(w, 1); const b = bags(w)[0]; if (b !== undefined) return b; } throw new Error("no zombie loot"); })();
-    const got = handLoot(w, me, zb); expect(items(w, me)).toBeGreaterThanOrEqual(got); expect(items(w, zb)).toBe(0); steps(w, 20); expect(w.isAlive(zb)).toBe(false);
+    const got = handLoot(w, me, zb); expect(items(w, me)).toBeGreaterThanOrEqual(got); expect(items(w, zb)).toBe(0); steps(w, 20 * (G.DESPAWN.emptiedSeconds + 2)); expect(w.isAlive(zb)).toBe(false); // ADR-238 emptied grace
     // animal
     const an = (() => { for (let i = 0; i < 20; i++) { const a = G.spawnAnimal(w, G.animalDefs()[0]!.key, 10.5, 10); const b = G.dropAnimalLoot(w, a); w.destroy(a); if (b) return b; } throw new Error("no animal loot"); })();
     handLoot(w, me, an);

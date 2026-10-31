@@ -10,6 +10,7 @@
  *    own-tribe structures x pvp.explosives.ownTribeStructureMul, RaidRule hook, ignite; Exploded (reliable).
  */
 import { LootSource, tagLootSource } from "../loot_labels.js";
+import { lootBagInit } from "../loot_despawn.js";
 import { defineResource, entityIndex, PlayerId, Transform, type Entity, type World } from "@engine/core";
 import { BuildPiece, Container, DamageCause, ContainerViewers, Dead, Equipment, Exposure, Health, ExplosiveOwner, IntentAction, Inventory, LiveExplosive, LootBag, NO_SLOT, PlayerIntent, Tribe, WeaponState, Worn } from "../components.js";
 import { gameplayDefs, isAuthority } from "../config.js";
@@ -169,7 +170,7 @@ export function landThrown(world: World, e: Entity, slot: number, target: Entity
   const t = world.get(target, Transform); if (!t) return undefined;
   const bag = world.create(); const ownerId = (hasPlayerId(world, e) ? world.getField(e, PlayerId, "id") : undefined) ?? 0;
   world.add(bag, Transform, { x: t.x, y: t.y, z: t.z }).add(bag, Container, { slotCount: 1 }).add(bag, ContainerViewers)
-    .add(bag, LootBag, { owner: ownerId, despawnAtTick: world.tick + secondsToTicks(PVP.thrownBagSeconds, 1 / 20) });
+    .add(bag, LootBag, lootBagInit(world, ownerId, "thrown", LootSource.Dropped));
   moveSlotTuples(world, e, bag, [{ slot, count: 1 }]); tagLootSource(world, bag, LootSource.Dropped); indexEntity(world, bag);
   if (world.getField(e, Equipment, "mainHandSlot") === slot && slotItem(world, e, slot).count === 0) world.set(e, Equipment, { mainHandSlot: NO_SLOT, mainHandItem: 0 });
   return bag;

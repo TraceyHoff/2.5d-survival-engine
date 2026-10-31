@@ -1,6 +1,5 @@
 {
   "bagSlots": 24,
-  "bagDespawnSeconds": 900,
   "bagOwnerOnlySeconds": 60,
   "respawnSeconds": 10,
   "respawnHealthFrac": 0.5,
@@ -20,5 +19,16 @@
     "edgeFalloff": 0.25,
     "igniteRadiusFrac": 0.5
   },
-  "thrownBagSeconds": 300
+  "despawn": {
+    "droppedSeconds": 600,
+    "deathBagSeconds": 1800,
+    "thrownSeconds": 300,
+    "creatureLootSeconds": 120,
+    "stallBagSeconds": 600,
+    "emptiedSeconds": 12,
+    "fadeSeconds": 30,
+    "maxGroundBags": 400,
+    "deathBagMinAgeSeconds": 300,
+    "legacyBagSeconds": 900
+  }
 }
