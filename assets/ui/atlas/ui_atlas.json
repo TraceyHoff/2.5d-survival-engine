@@ -5318,6 +5318,93 @@
    "tags": [
     "cursor"
    ]
+  },
+  "icon_temp": {
+   "frame": {
+    "x": 588,
+    "y": 62,
+    "w": 32,
+    "h": 32
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 32
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 32
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "tags": [
+    "icon",
+    "hud",
+    "temperature"
+   ]
+  },
+  "icon_temp_hot": {
+   "frame": {
+    "x": 624,
+    "y": 62,
+    "w": 32,
+    "h": 32
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 32
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 32
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "tags": [
+    "icon",
+    "hud",
+    "temperature"
+   ]
+  },
+  "icon_temp_cold": {
+   "frame": {
+    "x": 660,
+    "y": 62,
+    "w": 32,
+    "h": 32
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 32
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 32
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "tags": [
+    "icon",
+    "hud",
+    "temperature"
+   ]
   }
  },
  "meta": {
