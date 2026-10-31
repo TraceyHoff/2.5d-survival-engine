@@ -13,14 +13,15 @@ export const PIECES = loadBuildPieces([
 ]).registry;
 
 export interface TestWorld { world: World; buildings: BuildingGrid; chunks: ChunkManager; persist: WorldPersistence }
-export function makeWorld(store: WorldStore, opts: Partial<WorldPersistenceOptions> & { seed?: number; loadRadius?: number; cacheSize?: number; setup?: (w: World) => void } = {}): TestWorld {
+export function makeWorld(store: WorldStore, opts: Partial<WorldPersistenceOptions> & { seed?: number; loadRadius?: number; cacheSize?: number; setup?: (w: World) => void; /** stream chunks before persist.track, as apps/server does (loaded entities join membership the same tick) */ chunksFirst?: boolean } = {}): TestWorld {
   const world = new World({ seed: opts.seed ?? 42, maxEntities: 1 << 17 });
   world.register(Crate); world.register(Stash); opts.setup?.(world);
   const buildings = new BuildingGrid(PIECES);
   const persist = new WorldPersistence({ world, store, buildings, generator: new ProceduralGenerator({ seed: opts.seed ?? 42 }), autosaveSeconds: 0, playerSaveSeconds: 0, ...withoutSetup(opts) });
   const chunks = new ChunkManager({ provider: persist.provider, loadRadius: opts.loadRadius ?? 0, unloadMargin: 0, cacheSize: opts.cacheSize ?? 0 });
+  if (opts.chunksFirst) world.addSystem("postSim", "test.chunks", () => chunks.update());
   persist.attach(chunks);
-  world.addSystem("postSim", "test.chunks", () => chunks.update());
+  if (!opts.chunksFirst) world.addSystem("postSim", "test.chunks", () => chunks.update());
   return { world, buildings, chunks, persist };
 }
 /** Fills chunk (cx,cy) with `n` building pieces (walls stacked over levels), returns placed count. */
@@ -36,4 +37,4 @@ export function spawnCrate(w: World, x: number, y: number, loot: number): Entity
   const e = w.create(); w.add(e, Transform, { x, y }).add(e, Crate, { loot, hp: 10.5 }); return e;
 }
 export const step = (w: World, n = 1): void => { for (let i = 0; i < n; i++) w.step(1 / 20); };
-const withoutSetup = <T extends { setup?: unknown; seed?: unknown; loadRadius?: unknown; cacheSize?: unknown }>(o: T): Omit<T, "setup" | "seed" | "loadRadius" | "cacheSize"> => { const { setup: _s, seed: _a, loadRadius: _b, cacheSize: _c, ...rest } = o; return rest; };
+const withoutSetup = <T extends { setup?: unknown; seed?: unknown; loadRadius?: unknown; cacheSize?: unknown; chunksFirst?: unknown }>(o: T): Omit<T, "setup" | "seed" | "loadRadius" | "cacheSize" | "chunksFirst"> => { const { setup: _s, seed: _a, loadRadius: _b, cacheSize: _c, chunksFirst: _f, ...rest } = o; return rest; };

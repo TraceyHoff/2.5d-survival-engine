@@ -1,4 +1,4 @@
-import { entityIndex, Owner, Season, TimeOfDay, Transform, type ComponentStore, type Entity, type World } from "@engine/core";
+import { entityIndex, migrateSkinTone, Owner, Season, TimeOfDay, Transform, type ComponentStore, type Entity, type World } from "@engine/core";
 import { ChunkMembership, decodeChunk, encodeChunk, parseChunkKey, chunkKeyOf, type BuildingGrid, type ChunkKey, type AsyncChunkProvider, type ChunkManager, type ChunkProvider, type GeneratedChunk } from "@engine/world";
 import { decodePlayerInto, encodePlayer, PLAYER_VERSION, type PlayerCodecOptions, type PlayerRestoreResult } from "./playerCodec.js";
 import { SocialSaver, type SocialState } from "./social.js";
@@ -109,6 +109,8 @@ export interface PersistenceStats {
   /** Async backends: chunk reads issued / answered after ChunkManager stopped wanting the chunk (not decoded). */
   /** Chunks whose stored row carried sidecar-owned entities (pre-sidecar save) and were migrated. */
   migratedChunks: number;
+  /** ADR-245: Appearance rows (chunk entities + restored players) whose legacy skinTone was remapped on load. */
+  skinTonesMigrated: number;
   asyncReads: number;
   asyncLateDropped: number;
   socialSaves: number;
@@ -153,7 +155,7 @@ export class WorldPersistence {
   readonly stats: PersistenceStats = {
     dirtyChunks: 0, roundsCompleted: 0, lastRoundChunks: 0, lastRoundTicks: 0, lastRoundEncodeMs: 0, lastTickMs: 0, maxTickMs: 0,
     chunksLoadedFromStore: 0, chunksGenerated: 0, chunksSavedOnUnload: 0, playersSaved: 0, decodeErrors: 0,
-    migratedChunks: 0, asyncReads: 0, asyncLateDropped: 0, socialSaves: 0,
+    migratedChunks: 0, skinTonesMigrated: 0, asyncReads: 0, asyncLateDropped: 0, socialSaves: 0,
   };
   private chunks: ChunkManager | undefined;
   private dirty = new Set<ChunkKey>();
@@ -173,6 +175,8 @@ export class WorldPersistence {
   private msBase = 0.1; private msPerPiece = 0.0005;
   private readonly autosaveTicks: number; private readonly playerTicks: number; private readonly budget: number;
   private readonly persistEntity: (w: World, e: Entity) => boolean;
+  /** ADR-245: chunks whose legacy skin tones were remapped on load; marked dirty on the next track(). */
+  private readonly skinDirty = new Set<ChunkKey>();
   private readonly despawn: (w: World, e: Entity) => boolean;
   private readonly now: () => number;
   private persistentStores: ComponentStore[];
@@ -288,6 +292,10 @@ export class WorldPersistence {
         if (up) { this.stats.migratedChunks++; this.opts.log?.(`persist: ${rec.key}: schema-migrated (added fields zero-filled)`); }
         const d = decodeChunk(up ?? rec.bytes, { world: this.world, ...(this.opts.buildings ? { buildings: this.opts.buildings } : {}) });
         for (const e of d.entities) { this.fresh.add(e); this.persisted.add(e); }
+        // ADR-245: legacy 12-tone skinTone rows (skinScheme 0) -> the 18-tone palette; re-saved on the next autosave
+        let skins = 0; for (const e of d.entities) if (migrateSkinTone(this.world, e)) skins++;
+        if (skins) { this.stats.skinTonesMigrated += skins; this.skinDirty.add(d.chunk.key); // dirtied in track(), after membership has seen the loaded entities (else the chunk would save empty)
+          this.opts.log?.(`persist: ${rec.key}: ${skins} legacy skin tone(s) remapped`); }
         this.savedVersion.set(d.chunk.key, d.chunk.version); this.stats.chunksLoadedFromStore++;
         this.loadSidecars(cx, cy, d.chunk.key, d.entities);
         const rg = this.opts.regenerateNodes;
@@ -369,6 +377,7 @@ export class WorldPersistence {
     return { key, format: chunkFormatOf(bytes), bytes, tick: this.world.tick };
   }
   private onUnload(key: ChunkKey): void {
+    this.skinDirty.delete(key); // unloaded before track(): row left as is, remapped again on the next load
     const r = this.round;
     const needs = this.dirty.has(key) || this.versionChanged(key) || (r !== undefined && r.queue.includes(key) && !r.encoded.has(key));
     if (needs) {
@@ -390,6 +399,7 @@ export class WorldPersistence {
   private track(): void {
     const w = this.world;
     this.membership.update(); // fires onMove for chunk changes, spawns and removals
+    if (this.skinDirty.size) { for (const k of this.skinDirty) this.markDirty(k); this.skinDirty.clear(); }
     for (const s of this.persistentStores) {
       for (const i of s.changedIndices()) {
         const e = s.dense[s.slot(i)]! as Entity; if (this.fresh.has(e)) continue;
@@ -471,6 +481,7 @@ export class WorldPersistence {
   restorePlayer(token: string, entity: Entity): (PlayerRestoreResult & { name: string; appearance?: AppearanceRepair }) | undefined {
     const rec = this.store.readPlayer(token); if (!rec) return undefined;
     const r = decodePlayerInto(this.world, entity, rec.bytes, { ...(this.opts.migrations ? { migrations: this.opts.migrations } : {}), ...this.opts.player });
+    if (migrateSkinTone(this.world, entity)) this.stats.skinTonesMigrated++; // ADR-245: before the clamp (it would keep a legacy index)
     const appearance = this.opts.appearance ? ensureAppearance(this.world, entity, this.opts.appearance.catalog) : undefined;
     return { ...r, name: rec.name, ...(appearance ? { appearance } : {}) };
   }

@@ -3,7 +3,7 @@ import { handLootTarget, Viewing, TerrainRes, terrainFromTileMap } from "@engine
 import { applyStanceInput, stanceBlocksActions, GameplayEdgeBits } from "@engine/gameplay"; // ADR-244
 import { installInventoryOpCommands, installRoadCommands, NodeRegrow, installSignCommands, installPetCommands, PetEvent, setWorldRules, worldRules, type WorldRulesOpts } from "@engine/gameplay";
 /** Authoritative game server: world + gameplay + streaming chunks + persistence + NetServer sessions. */
-import { ChannelRegistry, CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, type CosmeticCatalogLike, Membership, Owner, PlayerId, Season, TimeOfDay, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
+import { ChannelRegistry, CommandRejected, DEFAULT_TICK_HZ, FixedLoop, installCommandHandlers, cosmeticsHashes, type CosmeticCatalogLike, Membership, Owner, PlayerId, Season, TimeOfDay, Transform, World, type Entity, type PermissionsRes } from "@engine/core";
 import { CHUNK_SIZE, ChunkManager, ProceduralGenerator, computeSpawnPoints, chunkKeyOf, type BuildingGrid, type PopulationSpawner } from "@engine/world";
 import { spawnPoints, GAMEPLAY_COMMANDS, ARMS_COMMANDS, ARMS_EVENT_RELIABILITY, Exploded, Reloaded, VehicleStationOpened, installPartyCommands, PartyInvitePending, installClanCommands, ClanInvitePending, ClanStatus, syncSocialMembership, clanState, encodeClanState, decodeClanState, loadClanState, queueCommand, edgeCommands, spawnPlayer, spawnResourceNode, setSpawnPoints, spawnPoints as worldSpawnPoints, pickSpawnPoint, gameplayDefs, setIntent, IntentAction, nearestMeleeTarget, ResourceNode, PlayerIntent, registerGameplayCommands, installEconomy, installPopulation, installCustomization,
   appearanceServerHooks, applyReplication, installStallBuyHook, installViewBonus, setHitValidator, installPvp, installBedRespawn, installCraftQueue, installExpressionCommands, installVehicleCommands, installVehicleCraftCommands, installVehicleGuard, requestEmote, CraftQueue, CraftQueuesRes, playerNames, stallListing, listingRevision, stallOf, tillOf, StallHeader, StallOwnerKind } from "@engine/gameplay";
@@ -174,6 +174,7 @@ export function createGameServer(o: GameServerOptions): GameServer {
     ...(o.maxClients !== undefined ? { maxClients: o.maxClients } : {}), ...(o.serverFullDetail ? { serverFullDetail: o.serverFullDetail } : {}),
     ...(o.distantThrottle ? { distantThrottle: o.distantThrottle } : {}),
     commands: DEMO_COMMANDS, events: DEMO_EVENTS,
+    hashesIfSent: cosmeticsHashes(o.catalog), // ADR-245: a client with a different skin palette / wearables is rejected ("cosmetics")
     forwardCoreRejections: false, // forwarded below with the net command def + a reason code (protocol.ts)
     applyInput: (w, e, cmd, clientId) => {
       if (cmd && players.get(clientId)?.entity === e) { // ADR-244 stance (before movement: a move input wakes a sleeper first)

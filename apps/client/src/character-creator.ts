@@ -17,10 +17,11 @@ import type { AssetRegistry } from "@engine/assets";
 import { buildSignEditor } from "./sign-editor.js";
 import { UINav } from "./ui-nav.js";
 import { CharacterPreview2D, coreAppearanceBinding, createCharacterPreview, parseCharArt, withCharArt, type AtlasSource, type CharacterPreview } from "@engine/render";
-import { BODY_TYPES, SLOT_COUNT, WEARABLE_SLOTS, defaultAppearance, slotIndex, type AppearanceValue, type CosmeticCatalogLike, type WearableDef, type WearableSlot } from "@engine/core";
+import { BODY_TYPES, SLOT_COUNT, WEARABLE_SLOTS, defaultAppearance, mapLegacySkinTone, slotIndex, SKIN_TONE_SCHEME, swatchColor, type AppearanceValue, type CosmeticCatalogLike, type WearableDef, type WearableSlot } from "@engine/core";
 
 export type CharacterSaveKind = "singleplayer" | "hosted" | "remote";
-export interface StoredCharacter { v: 1; name: string; appearance: AppearanceValue }
+/** `skinScheme` (ADR-245): palette of appearance.skinTone; absent / < SKIN_TONE_SCHEME = the legacy 12-tone palette. */
+export interface StoredCharacter { v: 1; name: string; appearance: AppearanceValue; skinScheme?: number }
 export const characterKey = (kind: CharacterSaveKind, slot: string): string => `survivaz.character.${kind}.${slot}`;
 export const NAME_MAX = 20;
 export const EDIT_CHAR_KEY = "survivaz.editchar";
@@ -34,9 +35,16 @@ type Store = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 const defStore = (): Store | undefined => { try { return localStorage; } catch { return undefined; } };
 export function loadCharacter(kind: CharacterSaveKind, slot: string, st: Store | undefined = defStore()): StoredCharacter | undefined {
   try { const r = JSON.parse(st?.getItem(characterKey(kind, slot)) ?? "null") as StoredCharacter | null;
-    return r && r.v === 1 && typeof r.name === "string" && Array.isArray(r.appearance?.parts) && r.appearance.parts.length === SLOT_COUNT ? r : undefined; } catch { return undefined; }
+    if (!(r && r.v === 1 && typeof r.name === "string" && Array.isArray(r.appearance?.parts) && r.appearance.parts.length === SLOT_COUNT)) return undefined;
+    return migrateStoredSkin(r, (c) => saveCharacter(kind, slot, c, st)); } catch { return undefined; }
 }
-export function saveCharacter(kind: CharacterSaveKind, slot: string, c: StoredCharacter, st: Store | undefined = defStore()): void { try { st?.setItem(characterKey(kind, slot), JSON.stringify(c)); } catch { /* private mode */ } }
+/** ADR-245: a stored character from before the 18-tone palette gets its skinTone remapped (idempotent; `resave` persists it). */
+export function migrateStoredSkin(c: StoredCharacter, resave?: (c: StoredCharacter) => void): StoredCharacter {
+  if ((c.skinScheme ?? 0) >= SKIN_TONE_SCHEME) return c;
+  const out: StoredCharacter = { ...c, appearance: { ...c.appearance, skinTone: mapLegacySkinTone(c.appearance.skinTone) }, skinScheme: SKIN_TONE_SCHEME };
+  resave?.(out); return out;
+}
+export function saveCharacter(kind: CharacterSaveKind, slot: string, c: StoredCharacter, st: Store | undefined = defStore()): void { try { st?.setItem(characterKey(kind, slot), JSON.stringify({ ...c, skinScheme: SKIN_TONE_SCHEME })); } catch { /* private mode */ } }
 export function deleteCharacter(kind: CharacterSaveKind, slot: string, st: Store | undefined = defStore()): void { try { st?.removeItem(characterKey(kind, slot)); } catch { /* ignore */ } }
 
 /** Creator-visible slots (hat/accessory are wardrobe unlocks, not starter choices). */
@@ -129,7 +137,7 @@ const hex = (c: number | undefined, f: string): string => c === undefined ? f : 
  */
 export function drawPreview(g: CanvasRenderingContext2D, cat: CosmeticCatalogLike, v: AppearanceValue, dir: number): void {
   const W = g.canvas.width, H = g.canvas.height; g.clearRect(0, 0, W, H);
-  const skin = hex(cat.skinTones[v.skinTone]?.color, "#E0B08A"); const col = (s: WearableSlot, f: string): string => { const i = slotIndex(s); if (!v.parts[i]) return ""; const pc = isHairish(s) ? cat.hairColors : cat.clothingColors; return hex(pc[v.primary[i] ?? 0]?.color, f); };
+  const skin = hex(swatchColor(cat.skinTones[v.skinTone]), "#E0B08A"); const col = (s: WearableSlot, f: string): string => { const i = slotIndex(s); if (!v.parts[i]) return ""; const pc = isHairish(s) ? cat.hairColors : cat.clothingColors; return hex(pc[v.primary[i] ?? 0]?.color, f); };
   const top = col("top", "#5A7AB0") || skin, bottom = col("bottom", "#4A4A5A") || skin, shoes = col("shoes", "#3B2433") || skin, hair = col("hair", "#5A3A22"), beard = col("face", "#5A3A22");
   const side = dir === 0 || dir === 2, back = dir === 3, flip = dir === 2 ? -1 : 1, cx = W / 2, s = H / 200, fem = v.bodyType === 1;
   g.save(); g.translate(cx, 0); g.scale(flip, 1);
@@ -241,7 +249,17 @@ export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter
     const step = (d: number): void => { if (cat) { look = stepLook(cat, look, field, d); refresh(); } };
     box.append(mk("◀", `prev-${field}`, () => step(-1)), val, mk("▶", `next-${field}`, () => step(1))); right.append(l, box);
   };
-  row("Body", "body"); row("Skin", "skin"); const c2 = (s: WearableSlot, label: string): void => { if (cat && slotHasColor2(cat, s)) row(label, `${s}:color2`); };
+  row("Body", "body"); row("Skin", "skin");
+  // ADR-245: every skin tone as a swatch (ramp.base = the intended on-screen colour), light -> deep
+  const skinChips: HTMLButtonElement[] = [];
+  if (cat?.skinTones.length) { const grid = doc.createElement("div"); grid.dataset["role"] = "creator-skin-swatches"; grid.setAttribute("role", "radiogroup"); grid.setAttribute("aria-label", "Skin tone");
+    grid.style.cssText = "grid-column:1 / -1;display:flex;flex-wrap:wrap;gap:4px;justify-content:center;min-width:0";
+    cat.skinTones.forEach((t, i) => { const b = doc.createElement("button"); b.type = "button"; b.dataset["action"] = `skin-${i}`; b.dataset["swatch"] = hex(swatchColor(t), ""); b.title = t.key.replace(/_/g, " ");
+      b.setAttribute("aria-label", t.key.replace(/_/g, " ")); b.setAttribute("role", "radio");
+      b.style.cssText = `width:30px;height:30px;min-height:30px;padding:0;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #0004;background:${hex(swatchColor(t), "#000")}`;
+      b.addEventListener("click", () => { look = { ...look, skinTone: i }; refresh(); }); skinChips.push(b); grid.append(b); });
+    right.append(grid); }
+  const c2 = (s: WearableSlot, label: string): void => { if (cat && slotHasColor2(cat, s)) row(label, `${s}:color2`); };
   row("Hair", "hair"); row("Hair colour", "hair:color"); c2("hair", "Hair secondary colour"); row("Face / beard", "face"); c2("face", "Face secondary colour"); row("Eyes", "eyes");
   row("Top", "top"); row("Top colour", "top:color"); row("Bottom", "bottom"); row("Bottom colour", "bottom:color"); row("Shoes", "shoes"); row("Shoe colour", "shoes:color");
   row("Secondary colour", "secondary"); row("Eye colour", "eyes:color"); c2("eyes", "Eye secondary colour");
@@ -260,7 +278,7 @@ export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter
     nav.open("creator-name", ed, () => { setTimeout(() => nav.destroy(), 0); oskNav = undefined; padHold = true; (cleanName(name) ? ok : nameIn).focus(); });
   };
   let padHold = false;
-  const ok = mk("Enter world", "creator-done", () => { const n = cleanName(name); if (!n) { msg.textContent = "Pick a name for your survivor."; nameIn.focus(); if (padActive) openNameOsk(); return; } done({ v: 1, name: n, appearance: look }); }, "");
+  const ok = mk("Enter world", "creator-done", () => { const n = cleanName(name); if (!n) { msg.textContent = "Pick a name for your survivor."; nameIn.focus(); if (padActive) openNameOsk(); return; } done({ v: 1, name: n, appearance: look, skinScheme: SKIN_TONE_SCHEME }); }, "");
   foot.append(mk("Back", "creator-back", () => done(undefined)), ok);
   panel.append(h, left, right, msg, foot); wrap.append(panel);
   function refresh(): void {
@@ -272,10 +290,11 @@ export function showCharacterCreator(o: CreatorOptions): Promise<StoredCharacter
       if (f.endsWith(":color")) { const s = f.slice(0, -6) as WearableSlot; const i = look.primary[slotIndex(s)] ?? 0; const pc = isHairish(s) ? cat?.hairColors : cat?.clothingColors; return pc?.[i]?.key?.replace(/_/g, " ") ?? `Colour ${i + 1}`; }
       return cat ? partName(cat, look.parts[slotIndex(f as WearableSlot)] ?? 0) : "—";
     };
-    const swatch = (f: string): number | undefined => { if (!cat) return undefined; if (f === "skin") return cat.skinTones[look.skinTone]?.color;
+    const swatch = (f: string): number | undefined => { if (!cat) return undefined; if (f === "skin") return swatchColor(cat.skinTones[look.skinTone]);
       if (f === "secondary") return cat.clothingColors[look.secondary[slotIndex("top")] ?? 0]?.color;
       if (f.endsWith(":color2")) { const s = f.slice(0, -7) as WearableSlot; return (isHairish(s) ? cat.hairColors : cat.clothingColors)[look.secondary[slotIndex(s)] ?? 0]?.color; }
       if (f.endsWith(":color")) { const s = f.slice(0, -6) as WearableSlot; return (isHairish(s) ? cat.hairColors : cat.clothingColors)[look.primary[slotIndex(s)] ?? 0]?.color; } return undefined; };
+    skinChips.forEach((b, i) => { const on = i === look.skinTone; b.setAttribute("aria-checked", on ? "true" : "false"); b.style.boxShadow = on ? "0 0 0 3px #3B2433" : "0 0 0 1px #0004"; });
     for (const [f, el] of vals) { el.textContent = label(f); const c = swatch(f); if (c !== undefined) { el.style.borderBottom = `6px solid ${hex(c, "#000")}`; el.dataset["swatch"] = hex(c, ""); } } drv?.set(look); draw();
   }
   refresh();

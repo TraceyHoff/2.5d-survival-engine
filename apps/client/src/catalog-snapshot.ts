@@ -10,6 +10,8 @@ export interface CatalogSnapshot {
   bodies: Partial<Record<BodyType, { sprite: { sprite: number; anim: string } | undefined; defaults: Partial<Record<WearableSlot, number>> | undefined }>>;
   skinTones: PaletteColor[]; hairColors: PaletteColor[]; clothingColors: PaletteColor[];
   defaults?: Partial<Record<WearableSlot, number>>; requiredSlots?: readonly WearableSlot[]; tintNeutral?: number; faceAnims?: Record<string, string>;
+  /** ADR-245: content hash, so the worker server checks the "cosmetics" handshake hash too. */
+  hash?: number;
   size: number;
 }
 
@@ -24,13 +26,14 @@ export function snapshotCatalog(cat: CosmeticCatalogLike): CatalogSnapshot {
   if (cat.requiredSlots) s.requiredSlots = cat.requiredSlots;
   if (cat.tintNeutral !== undefined) s.tintNeutral = cat.tintNeutral;
   if (cat.faceAnims) s.faceAnims = cat.faceAnims;
+  if (cat.hash !== undefined) s.hash = cat.hash;
   return JSON.parse(JSON.stringify(s)) as CatalogSnapshot; // plain data only (drops anything non-cloneable)
 }
 
 export function catalogFromSnapshot(s: CatalogSnapshot): CosmeticCatalogLike & { size: number } {
   const byId = new Map(s.parts.map((w) => [w.id, w]));
   const c: CosmeticCatalogLike & { size: number } = {
-    size: s.size,
+    size: s.size, ...(s.hash !== undefined ? { hash: s.hash } : {}),
     wearable: (id) => byId.get(id),
     bodySprite: (b) => s.bodies[b]?.sprite,
     bodyDefaults: (b) => s.bodies[b]?.defaults,

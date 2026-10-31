@@ -1,6 +1,6 @@
 /** Client network session: NetClient over WebSocket, account claim/restore, RTT. No DOM (testable headless). */
 import { World, type Entity } from "@engine/core";
-import { NetClient, NetRejectedError, WebSocketClientTransport, type ClientTransport, type WebSocketCtor } from "@engine/net";
+import { NetClient, NetRejectedError, WebSocketClientTransport, type ClientTransport, type NamedHashes, type WebSocketCtor } from "@engine/net";
 import { AccountAssigned, ClaimAccount, SetName, nameToWords, tokenToWords, wordsToToken } from "@engine/persist";
 import { applyDemoInput, VEHICLE_CLIENT_OPTIONS, installDemoWorld, DEMO_COMMANDS, DEMO_EVENTS, gameplayNet, DevPetKit, DeleteMyProgressCmd, DELETE_PROGRESS_CONFIRM, Ping, Pong, ProgressDeleted } from "@engine/server/protocol";
 
@@ -20,6 +20,8 @@ export interface SessionOptions {
   sampleButtons?: () => number;
   now?: () => number;
   wsCtor?: WebSocketCtor;
+  /** Extra handshake hashes, awaited at connect (ADR-245: { cosmetics } once the art pack's catalog is loaded). */
+  hashes?: () => Promise<NamedHashes | undefined> | NamedHashes | undefined;
 }
 
 export class ClientSession {
@@ -50,12 +52,13 @@ export class ClientSession {
   /** Connects with a fresh World (returned) so a reconnect never stacks net systems on an old world. */
   /** `transport` overrides the WebSocket (e.g. the in-browser local server's loopback; `url` is then a label). */
   async connect(url: string, name: string, transportOverride?: ClientTransport): Promise<World> {
+    const hashes = this.o.hashes ? await this.o.hashes() : undefined; // before disconnect: the rest stays synchronous
     this.disconnect();
     this.o.storage.setItem(this.key("server"), url); this.o.storage.setItem(this.key("name"), name);
     const world = new World({ seed: 1 }); installDemoWorld(world, "client");
     const transport = transportOverride ?? new WebSocketClientTransport(url, this.o.wsCtor);
     const client = new NetClient({
-      world, transport, commands: DEMO_COMMANDS, events: DEMO_EVENTS,
+      world, transport, commands: DEMO_COMMANDS, events: DEMO_EVENTS, ...(hashes ? { hashes } : {}),
       sampleInput: () => this.o.sampleInput?.() ?? { buttons: this.o.sampleButtons?.() ?? 0, aimX: 0, aimY: 0 },
       ...VEHICLE_CLIENT_OPTIONS, applyInput: (w, e, cmd) => applyDemoInput(w, e, cmd),
     });

@@ -132,6 +132,12 @@ export interface NetServerOptions {
   events?: readonly MessageDefBase[];
   /** Extra handshake hashes (e.g. { assets: hash }). "schema" and "netdefs" are always checked. */
   hashes?: NamedHashes;
+  /**
+   * Hashes checked only when the client's Hello carries the name (ADR-245: { cosmetics }): a client shipping that
+   * content must match (else RejectReason.HashMismatch, detail = name); one without it (Canvas2D debug view with no art
+   * pack, dev load-test bots) is still let in.
+   */
+  hashesIfSent?: NamedHashes;
   /** Chunk area-of-interest; false = every entity is relevant to every client. */
   interest?: InterestOptions | false;
   /**
@@ -247,6 +253,8 @@ export class NetServer {
   get requiredHashes(): NamedHashes {
     return { ...this.opts.hashes, schema: this.world.getSchemaHash(), netdefs: this.events.hash(this.commands.hash()) };
   }
+  /** requiredHashes + hashesIfSent: what an in-process client (DirectTransport) sends. */
+  get offeredHashes(): NamedHashes { return { ...this.opts.hashesIfSent, ...this.requiredHashes }; }
   sessionByConn(conn: ConnId): ClientSession | undefined { return this.byConn.get(conn); }
 
   // ---------------- scope / relevancy API ----------------
@@ -441,6 +449,9 @@ export class NetServer {
     const hello = decodeHello(r);
     for (const [name, v] of Object.entries(this.requiredHashes)) {
       if (hello.hashes[name] !== v) { this.reject(conn, name === "schema" ? RejectReason.SchemaMismatch : RejectReason.HashMismatch, name); return; }
+    }
+    for (const [name, v] of Object.entries(this.opts.hashesIfSent ?? {})) {
+      if (name in hello.hashes && hello.hashes[name] !== v) { this.reject(conn, RejectReason.HashMismatch, name); return; }
     }
     let s: SessionState | undefined;
     if (hello.token.some((b) => b !== 0)) {

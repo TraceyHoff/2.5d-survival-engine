@@ -18,8 +18,8 @@ export const CRAFTER_ID_MIGRATIONS: readonly AddedFields[] = [
   { component: "Inventory", fields: ["crafterId"] },
   { component: "Container", fields: ["crafterId"] },
 ];
-/** core Appearance.version (a287243): saves from 81cdf46 lack it; 0 = first version. */
-export const APPEARANCE_VERSION_MIGRATION: AddedFields = { component: "Appearance", fields: ["version"] };
+/** core Appearance.version (a287243): saves from 81cdf46 lack it; 0 = first version. (Such saves also predate skinScheme.) */
+export const APPEARANCE_VERSION_MIGRATION: AddedFields = { component: "Appearance", fields: ["version", "skinScheme"] };
 /** ADR-098: Container arrays grew 24 -> 96 slots (slotCount stays per-instance). Old rows zero-pad the tail. */
 const C24 = { items: 24, counts: 24, createdTick: 24, durability: 24, crafterId: 24 } as const;
 export const CONTAINER_96_MIGRATIONS: readonly AddedFields[] = [
@@ -29,14 +29,19 @@ export const CONTAINER_96_MIGRATIONS: readonly AddedFields[] = [
 /** ADR-137: Appearance gained the "hands" wear slot (WEARABLE_SLOTS 8 -> 9). Old rows zero-pad it (no hands part, palette 0). */
 const A8 = { parts: 8, primary: 8, secondary: 8 } as const;
 export const APPEARANCE_HANDS_MIGRATIONS: readonly AddedFields[] = [
-  { component: "Appearance", fields: [], grown: A8 },
-  { component: "Appearance", fields: ["version"], grown: A8 },
+  { component: "Appearance", fields: ["skinScheme"], grown: A8 },
+  { component: "Appearance", fields: ["version", "skinScheme"], grown: A8 },
 ];
+/**
+ * ADR-245: Appearance gained skinScheme (skin palette of skinTone). Every row saved before it zero-fills to 0 = the
+ * legacy 12-tone palette; core migrateSkinTone remaps it on load (persistence: chunk decode + restorePlayer).
+ */
+export const APPEARANCE_SKIN_SCHEME_MIGRATION: AddedFields = { component: "Appearance", fields: ["skinScheme"] };
 /** ADR-209: Progression gained per-tree xp / level / points (tver 0 = legacy global pool; gameplay converts it on load). */
 export const PROGRESSION_TREES_MIGRATION: AddedFields = { component: "Progression", fields: ["tver", "txp", "tlevel", "tpoints"] };
 /** ADR-238: LootBag gained spawnTick / kind / emptiedTick (0 = legacy: spawn derived from despawnAtTick, label inferred). */
 export const LOOTBAG_DESPAWN_MIGRATION: AddedFields = { component: "LootBag", fields: ["spawnTick", "kind", "emptiedTick"] };
-export const DEFAULT_MIGRATIONS: readonly AddedFields[] = [...CRAFTER_ID_MIGRATIONS, APPEARANCE_VERSION_MIGRATION, ...CONTAINER_96_MIGRATIONS, ...APPEARANCE_HANDS_MIGRATIONS, PROGRESSION_TREES_MIGRATION, LOOTBAG_DESPAWN_MIGRATION];
+export const DEFAULT_MIGRATIONS: readonly AddedFields[] = [...CRAFTER_ID_MIGRATIONS, APPEARANCE_VERSION_MIGRATION, ...CONTAINER_96_MIGRATIONS, ...APPEARANCE_HANDS_MIGRATIONS, APPEARANCE_SKIN_SCHEME_MIGRATION, PROGRESSION_TREES_MIGRATION, LOOTBAG_DESPAWN_MIGRATION];
 
 const BYTES: Record<FieldType, number> = { f32: 4, f64: 8, i8: 1, u8: 1, i16: 2, u16: 2, i32: 4, u32: 4 };
 export const oldSchemaOf = (s: Schema, added: readonly string[], grown: Readonly<Record<string, number>> = {}): Schema =>

@@ -101,3 +101,15 @@ describe("Appearance helpers", () => {
     for (const s of ["tintMode must be one of", "tintStrength must be a number in 0..1", "tintSaturation must be a number in 0..2", "minor must be a boolean", "outline must be \"body\" | \"none\""]) expect(list).toContain(s);
   });
 });
+
+describe("ADR-245 skin ramps", () => {
+  it("ramp parsed to ints (swatches use ramp.base); a bad ramp colour is an issue; palette keys move the catalog hash", () => {
+    const ramp = { base: "#c68642", shadow: "#8d5524", highlight: "#e0ac69" };
+    const a = loadManifest(base((m) => { m.skinTones[1].ramp = ramp; }));
+    expect(a.registry.cosmetics!.skinTones[1]).toEqual({ index: 1, key: "dark", color: 0x8d5524, ramp: { base: 0xc68642, shadow: 0x8d5524, highlight: 0xe0ac69 } });
+    expect(a.registry.cosmetics!.skinTones[0]!.ramp).toBeUndefined();
+    expect(issues(base((m) => { m.skinTones[1].ramp = { ...ramp, shadow: "dark" }; }))).toEqual([expect.stringContaining("ramp.shadow must be #rrggbb")]);
+    const b = loadManifest(base((m) => { m.skinTones.push({ key: "ebony", color: "#3b2219" }); }));
+    expect(b.registry.cosmetics!.hash).not.toBe(loadManifest(base()).registry.cosmetics!.hash);
+  });
+});

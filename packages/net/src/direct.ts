@@ -30,7 +30,7 @@ export class DirectClient {
   async connect(): Promise<void> {
     await this.transport.connect();
     const welcome = new Promise<void>((res, rej) => { this.welcomeFns = { res, rej }; });
-    this.transport.send(encodeHello({ hashes: this.server.requiredHashes, token: emptyToken() }), "reliable");
+    this.transport.send(encodeHello({ hashes: this.server.offeredHashes, token: emptyToken() }), "reliable");
     await welcome;
   }
   private welcomeFns: { res: () => void; rej: (e: Error) => void } | undefined;

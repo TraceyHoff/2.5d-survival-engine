@@ -23,9 +23,12 @@ export const SLOT_PALETTE: Record<WearableSlot, "hairColors" | "clothingColors">
 /**
  * Networked + persistent. `version` (u16, wrapping) is bumped on every write so the Renderer can cache resolveLayers
  * output per entity; ALL writers must go through setAppearance (never world.set/setElement on Appearance directly).
- * parts[slot] = wearable id (0 = none); primary/secondary[slot] = palette index (u8). */
+ * parts[slot] = wearable id (0 = none); primary/secondary[slot] = palette index (u8).
+ * `skinScheme` (ADR-245): which skin-tone palette `skinTone` indexes. 0 = a row saved before the field existed (the
+ * 12-tone legacy palette, zero-filled by the persist migration); SKIN_TONE_SCHEME = the current 18-tone palette.
+ * setAppearance always stamps the current scheme; migrateSkinTone converts legacy rows on load. */
 export const Appearance = defineComponent("Appearance", {
-  bodyType: "u8", skinTone: "u8", version: "u16",
+  bodyType: "u8", skinTone: "u8", version: "u16", skinScheme: "u8",
   parts: { type: "u16", length: SLOT_COUNT },
   primary: { type: "u8", length: SLOT_COUNT },
   secondary: { type: "u8", length: SLOT_COUNT },
@@ -97,7 +100,11 @@ export interface WearableDef extends WearableLayerProps {
   /** face/eyes only: expression key -> per-body art. The loader fills one entry per anim of the part's sprite (key = anim name). */
   expressions?: Record<string, Partial<Record<BodyType, { sprite: number; anim: string }>>>;
 }
-export interface PaletteColor { index: number; key: string; color: number }
+/** `ramp` (skin tones, ADR-245): intended on-screen base / shadow / highlight (0xRRGGBB); swatches show ramp.base. */
+export interface SkinRamp { base: number; shadow: number; highlight: number }
+export interface PaletteColor { index: number; key: string; color: number; ramp?: SkinRamp }
+/** Swatch colour of a palette entry: the ramp base when present (skin tones), else the tint colour. */
+export const swatchColor = (p: PaletteColor | undefined): number | undefined => p ? (p.ramp?.base ?? p.color) : undefined;
 export interface BodyTypeInfo { sprite: number; anim: string; displayName?: string; locKey?: string;
   /** slot -> wearable id used by defaultAppearance and to fill required slots. */ cosmeticDefaults?: Partial<Record<WearableSlot, number>> }
 /** What core needs from the asset side (implemented by @engine/assets CosmeticCatalog). */
@@ -115,6 +122,14 @@ export interface CosmeticCatalogLike {
   tintNeutral?: number;
   /** Catalog-wide face/eyes anim -> expression key (per-wearable faceAnims win). */
   faceAnims?: Record<string, string> | undefined;
+  /** Content hash (wearable ids + palette keys); checked at the net handshake as "cosmetics" (ADR-245). */
+  readonly hash?: number;
+}
+/** Handshake hash name for the cosmetics catalog (ADR-245). */
+export const COSMETICS_HASH_NAME = "cosmetics";
+/** `{ cosmetics: cat.hash }` for NetServer.hashesIfSent / NetClient.hashes; {} without a catalog (or hash). */
+export function cosmeticsHashes(cat: CosmeticCatalogLike | undefined): Record<string, number> {
+  return cat?.hash !== undefined ? { [COSMETICS_HASH_NAME]: cat.hash >>> 0 } : {};
 }
 
 export function defaultAppearance(cat?: CosmeticCatalogLike, bodyType = 0): AppearanceValue {
@@ -261,7 +276,28 @@ export function getAppearance(world: World, e: Entity): (AppearanceValue & { ver
 export function setAppearance(world: World, e: Entity, value: AppearanceValue): number {
   const prev = world.get(e, Appearance);
   const version = prev ? (prev.version + 1) & 0xffff : 0;
-  const init = { bodyType: value.bodyType, skinTone: value.skinTone, version, parts: value.parts, primary: value.primary, secondary: value.secondary };
+  const init = { bodyType: value.bodyType, skinTone: value.skinTone, version, skinScheme: SKIN_TONE_SCHEME, parts: value.parts, primary: value.primary, secondary: value.secondary };
   if (prev) world.set(e, Appearance, init); else world.add(e, Appearance, init);
   return version;
+}
+
+/**
+ * ADR-245: skin_tones.json v2 (18 realistic tones, light -> deep; goblin removed). The value stamped in
+ * Appearance.skinScheme by setAppearance. Rows with a lower scheme index the legacy 12-tone palette.
+ */
+export const SKIN_TONE_SCHEME = 2;
+/** Legacy (scheme < 2) skinTone -> current index; mirrors skin_tones.json `legacyMap` (a test pins them equal). */
+export const LEGACY_SKIN_TONE_MAP: readonly number[] = [0, 2, 3, 6, 9, 10, 12, 13, 15, 16, 8, 8];
+/** Pure: the current-palette index for a legacy tone (out-of-range legacy values -> 0, as validateAppearance would). */
+export function mapLegacySkinTone(old: number, map: readonly number[] = LEGACY_SKIN_TONE_MAP): number { return map[old] ?? 0; }
+/**
+ * Authority, on load: a legacy Appearance row (skinScheme < SKIN_TONE_SCHEME) gets its skinTone mapped through the
+ * legacy map and is rewritten via setAppearance (stamps the scheme, bumps version so caches / replicas refresh).
+ * Idempotent: a current-scheme row (or no Appearance) is left alone. Returns true when it rewrote the row.
+ */
+export function migrateSkinTone(world: World, e: Entity, map: readonly number[] = LEGACY_SKIN_TONE_MAP): boolean {
+  if (!world.isRegistered(Appearance)) return false;
+  const v = world.get(e, Appearance); if (!v || (v.skinScheme ?? 0) >= SKIN_TONE_SCHEME) return false;
+  setAppearance(world, e, { bodyType: v.bodyType, skinTone: mapLegacySkinTone(v.skinTone, map), parts: [...v.parts], primary: [...v.primary], secondary: [...v.secondary] });
+  return true;
 }

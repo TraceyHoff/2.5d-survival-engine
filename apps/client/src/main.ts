@@ -32,7 +32,7 @@ import { stanceMode, StanceMode, liftableNear, bedNear } from "@engine/gameplay"
  *             ?offline=1 (skip the menu: singleplayer), ?menu=0 (skip the menu: legacy connect overlay), ?bots=N,
  *             ?ice=<JSON RTCIceServer[]> (P2P STUN/TURN override, also VITE_ICE_SERVERS), ?renderer=debug, ?time=0..24 / ?weather=clear|rain|storm|snow|fog|overcast|heat|blizzard|windy &intensity=0..1, ?season=summer|fall|winter|0..3 (view-only overrides), ?hud=0.
  */
-import { createGameLoop, World, PlayerId, Transform, PrevTransform, lerp, entityIndex, InputState, type FixedLoop, type Entity } from "@engine/core";
+import { cosmeticsHashes, createGameLoop, World, PlayerId, Transform, PrevTransform, lerp, entityIndex, InputState, type FixedLoop, type Entity } from "@engine/core";
 import { TileMap, worldToScreen, screenToWorld, DEFAULT_ISO, ProceduralGenerator, computeSpawnPoints } from "@engine/world";
 import { InputSystem, AimResolver, DEFAULT_ACTIONS, DEFAULT_CONTEXTS, DEFAULT_PROFILES, DEFAULT_TOUCH_LAYOUTS } from "@engine/input";
 import { attachBrowserInput } from "@engine/input/browser";
@@ -251,7 +251,9 @@ function sampleInput(): { buttons: number; aimX: number; aimY: number } {
 
 const SLOT = params.get("player") ?? "1";
 const stampPlayed = (m: "singleplayer" | "hosted"): void => { try { localStorage.setItem(lastPlayedKey(m, SLOT), String(Date.now())); } catch { /* private mode */ } };
-const session = new ClientSession({ storage: localStorage, slot: SLOT, sampleInput });
+// ADR-245: send the art pack's cosmetics hash once it is loaded (no catalog, e.g. the debug view: none sent)
+const session = new ClientSession({ storage: localStorage, slot: SLOT, sampleInput,
+  hashes: async () => { await isoReady.catch(() => undefined); const c = iso?.registry.cosmetics; return c?.size ? cosmeticsHashes(c) : undefined; } });
 let world = new World({ seed: 1234 }); installDemoWorld(world, "client");
 installFullscreenRestore();
 const diag = startDiag({ renderer: () => iso?.renderer, entities: () => world.entityCount, tick: () => world.tick, player: () => session.player,

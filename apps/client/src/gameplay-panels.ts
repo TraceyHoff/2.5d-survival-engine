@@ -25,7 +25,7 @@ import { iconForItem, ROADS, clanTintIndex,
   treeShortName, treeIndex, readSlots,
 } from "@engine/gameplay";
 import { colorChoices, requestCharacterEdit } from "./character-creator.js";
-import { GroupRole, Membership, PlayerId, SLOT_PALETTE, Transform, type Entity, type WearableSlot } from "@engine/core";
+import { GroupRole, Membership, PlayerId, SLOT_PALETTE, swatchColor, Transform, type Entity, type WearableSlot } from "@engine/core";
 
 export const GAMEPLAY_PANELS = ["inventory", "crafting", "build", "character", "party", "clan", "trade", "camper", "skills", "station", /* ADR-145 */ "pet"] as const;
 export type GameplayPanel = (typeof GAMEPLAY_PANELS)[number];
@@ -542,7 +542,9 @@ export function gameplayBody(id: GameplayPanel, src: GameplaySource, kit: PanelK
         out.push(heading(`${cur.key}: secondary colour`), g2);
       }
       // skin keeps the current body type (a hard-coded male body made female looks fail validation / swap body)
-      if (v.palettes.skin) { const kg = grid(); for (let i = 0; i < v.palettes.skin; i++) kg.append(btn(`Skin ${i + 1}`, `skin-${i}`, () => { const a = v.slots; send(setAppearanceIntent({ bodyType: v.bodyType, skinTone: i, parts: a.map((s) => s.equipped), primary: a.map((s) => s.primary), secondary: a.map((s) => s.secondary) }), "Look saved."); }, { disabled: !v.canEdit, pressed: v.skinTone === i })); out.push(heading("Skin tone"), kg); }
+      if (v.palettes.skin) { const kg = grid(); for (let i = 0; i < v.palettes.skin; i++) { const t = c.catalog?.skinTones[i]; const sw = swatchColor(t); // ADR-245: tone name + ramp.base swatch
+        const sb = btn(t ? t.key.replace(/_/g, " ") : `Skin ${i + 1}`, `skin-${i}`, () => { const a = v.slots; send(setAppearanceIntent({ bodyType: v.bodyType, skinTone: i, parts: a.map((s) => s.equipped), primary: a.map((s) => s.primary), secondary: a.map((s) => s.secondary) }), "Look saved."); }, { disabled: !v.canEdit, pressed: v.skinTone === i, ...(sw !== undefined ? { data: { swatch: `#${(sw & 0xffffff).toString(16).padStart(6, "0")}` } } : {}) });
+        if (sw !== undefined) sb.style.setProperty("--cz-sw", sb.dataset["swatch"]!); kg.append(sb); } out.push(heading("Skin tone"), kg); }
       out.push(heading("Unlocks")); const ug = el("div", { "data-role": "unlocks" });
       for (const u of v.unlocks) { const p = kit.para(u.tag.replace(/_/g, " ")); p.dataset["role"] = "unlock"; p.dataset["key"] = u.tag; if (u.unlocked) p.dataset["unlocked"] = ""; ug.append(p); }
       out.push(ug);

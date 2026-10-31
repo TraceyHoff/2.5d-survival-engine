@@ -87,7 +87,13 @@ export function loadCosmetics(m: CosmeticsJson, reg: AssetRegistry, lock: Record
       if (!KEY.test(c?.key ?? "")) issues.push(`${name}[${index}]: bad key`);
       if (seen.has(c.key)) issues.push(`${name}[${index}](${c.key}): duplicate key`); seen.add(c.key);
       if (!COLOR.test(c?.color ?? "")) issues.push(`${name}[${index}](${c.key}): color must be #rrggbb`);
-      return { index, key: c.key, color: parseInt((c.color ?? "#000000").slice(1), 16) };
+      const out: PaletteColor = { index, key: c.key, color: parseInt((c.color ?? "#000000").slice(1), 16) };
+      if (c?.ramp !== undefined) { // ADR-245: skin ramp (base / shadow / highlight); swatches show ramp.base
+        const r = c.ramp as Partial<SkinRampJson>; const bad = (["base", "shadow", "highlight"] as const).filter((k) => !COLOR.test(r?.[k] ?? ""));
+        if (bad.length) issues.push(`${name}[${index}](${c.key}): ramp.${bad.join("/")} must be #rrggbb`);
+        else out.ramp = { base: parseInt(r.base!.slice(1), 16), shadow: parseInt(r.shadow!.slice(1), 16), highlight: parseInt(r.highlight!.slice(1), 16) };
+      }
+      return out;
     });
   };
   const skinTones = pal("skinTones"), hairColors = pal("hairColors"), clothingColors = pal("clothingColors");
