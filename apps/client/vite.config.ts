@@ -3,7 +3,13 @@ import { cpSync, createReadStream, existsSync, readFileSync, mkdirSync, readdirS
 import { extname, join, normalize, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execSync } from "node:child_process";
-import { servedManifestIndex } from "./src/manifest-index.js";
+import { register as registerTsx } from "tsx/esm/api";
+
+// ADR-249: Vite 5 bundles this config with esbuild but leaves workspace packages external, and since ADR-248
+// `@engine/assets` (TS sources, `.js` specifiers) is imported here — Node 24 cannot load it bare. Register tsx's
+// loader first, then import it dynamically, so plain `vite` / `pnpm dev` work without NODE_OPTIONS="--import tsx".
+registerTsx();
+const { servedManifestIndex } = await import("@engine/assets");
 
 /**
  * Art for the WebGL2 IsoRenderer, served under `<base>art/` (dev: middleware; build: copied into dist/art/):
