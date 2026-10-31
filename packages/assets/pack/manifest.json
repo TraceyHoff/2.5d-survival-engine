@@ -180,6 +180,29 @@
       }
     },
     {
+      "key": "season_tall",
+      "image": "atlases/season_tall.png",
+      "frameW": 100,
+      "frameH": 132,
+      "columns": 5,
+      "rows": 1,
+      "pages": [
+        {
+          "scale": 2,
+          "image": "atlases/season_tall@2x.png",
+          "ktx2": "atlases/season_tall@2x.ktx2"
+        }
+      ],
+      "masks": {
+        "sway": "atlases/season_tall_sway.png"
+      },
+      "residency": "stream",
+      "ktx2": "atlases/season_tall.ktx2",
+      "masksKtx2": {
+        "sway": "atlases/season_tall_sway.ktx2"
+      }
+    },
+    {
       "key": "resources",
       "image": "atlases/resources.png",
       "frameW": 64,
@@ -196,6 +219,29 @@
       }
     },
     {
+      "key": "season_res",
+      "image": "atlases/season_res.png",
+      "frameW": 68,
+      "frameH": 68,
+      "columns": 10,
+      "rows": 1,
+      "pages": [
+        {
+          "scale": 2,
+          "image": "atlases/season_res@2x.png",
+          "ktx2": "atlases/season_res@2x.ktx2"
+        }
+      ],
+      "masks": {
+        "sway": "atlases/season_res_sway.png"
+      },
+      "residency": "stream",
+      "ktx2": "atlases/season_res.ktx2",
+      "masksKtx2": {
+        "sway": "atlases/season_res_sway.ktx2"
+      }
+    },
+    {
       "key": "resources_huge",
       "image": "atlases/resources_huge.png",
       "frameW": 128,
@@ -209,6 +255,29 @@
       "ktx2": "atlases/resources_huge.ktx2",
       "masksKtx2": {
         "sway": "atlases/resources_huge_sway.ktx2"
+      }
+    },
+    {
+      "key": "season_huge",
+      "image": "atlases/season_huge.png",
+      "frameW": 132,
+      "frameH": 164,
+      "columns": 2,
+      "rows": 1,
+      "pages": [
+        {
+          "scale": 2,
+          "image": "atlases/season_huge@2x.png",
+          "ktx2": "atlases/season_huge@2x.ktx2"
+        }
+      ],
+      "masks": {
+        "sway": "atlases/season_huge_sway.png"
+      },
+      "residency": "stream",
+      "ktx2": "atlases/season_huge.ktx2",
+      "masksKtx2": {
+        "sway": "atlases/season_huge_sway.ktx2"
       }
     },
     {
@@ -239,6 +308,40 @@
       "ktx2": "atlases/buildings_twig.ktx2"
     },
     {
+      "key": "season_bld_twig_winter_p0",
+      "image": "atlases/season_bld_twig_winter_p0.png",
+      "frameW": 128,
+      "frameH": 128,
+      "columns": 8,
+      "rows": 8,
+      "pages": [
+        {
+          "scale": 2,
+          "image": "atlases/season_bld_twig_winter_p0@2x.png",
+          "ktx2": "atlases/season_bld_twig_winter_p0@2x.ktx2"
+        }
+      ],
+      "residency": "stream",
+      "ktx2": "atlases/season_bld_twig_winter_p0.ktx2"
+    },
+    {
+      "key": "season_bld_twig_winter_p1",
+      "image": "atlases/season_bld_twig_winter_p1.png",
+      "frameW": 128,
+      "frameH": 128,
+      "columns": 8,
+      "rows": 8,
+      "pages": [
+        {
+          "scale": 2,
+          "image": "atlases/season_bld_twig_winter_p1@2x.png",
+          "ktx2": "atlases/season_bld_twig_winter_p1@2x.ktx2"
+        }
+      ],
+      "residency": "stream",
+      "ktx2": "atlases/season_bld_twig_winter_p1.ktx2"
+    },
+    {
       "key": "buildings",
       "image": "atlases/buildings.png",
       "frameW": 128,
@@ -246,6 +349,40 @@
       "columns": 16,
       "rows": 11,
       "ktx2": "atlases/buildings.ktx2"
+    },
+    {
+      "key": "season_bld_winter_p0",
+      "image": "atlases/season_bld_winter_p0.png",
+      "frameW": 128,
+      "frameH": 128,
+      "columns": 8,
+      "rows": 8,
+      "pages": [
+        {
+          "scale": 2,
+          "image": "atlases/season_bld_winter_p0@2x.png",
+          "ktx2": "atlases/season_bld_winter_p0@2x.ktx2"
+        }
+      ],
+      "residency": "stream",
+      "ktx2": "atlases/season_bld_winter_p0.ktx2"
+    },
+    {
+      "key": "season_bld_winter_p1",
+      "image": "atlases/season_bld_winter_p1.png",
+      "frameW": 128,
+      "frameH": 128,
+      "columns": 8,
+      "rows": 8,
+      "pages": [
+        {
+          "scale": 2,
+          "image": "atlases/season_bld_winter_p1@2x.png",
+          "ktx2": "atlases/season_bld_winter_p1@2x.ktx2"
+        }
+      ],
+      "residency": "stream",
+      "ktx2": "atlases/season_bld_winter_p1.ktx2"
     },
     {
       "key": "buildings_stone",
@@ -257,6 +394,40 @@
       "ktx2": "atlases/buildings_stone.ktx2"
     },
     {
+      "key": "season_bld_stone_winter_p0",
+      "image": "atlases/season_bld_stone_winter_p0.png",
+      "frameW": 128,
+      "frameH": 128,
+      "columns": 8,
+      "rows": 8,
+      "pages": [
+        {
+          "scale": 2,
+          "image": "atlases/season_bld_stone_winter_p0@2x.png",
+          "ktx2": "atlases/season_bld_stone_winter_p0@2x.ktx2"
+        }
+      ],
+      "residency": "stream",
+      "ktx2": "atlases/season_bld_stone_winter_p0.ktx2"
+    },
+    {
+      "key": "season_bld_stone_winter_p1",
+      "image": "atlases/season_bld_stone_winter_p1.png",
+      "frameW": 128,
+      "frameH": 128,
+      "columns": 8,
+      "rows": 8,
+      "pages": [
+        {
+          "scale": 2,
+          "image": "atlases/season_bld_stone_winter_p1@2x.png",
+          "ktx2": "atlases/season_bld_stone_winter_p1@2x.ktx2"
+        }
+      ],
+      "residency": "stream",
+      "ktx2": "atlases/season_bld_stone_winter_p1.ktx2"
+    },
+    {
       "key": "buildings_metal",
       "image": "atlases/buildings_metal.png",
       "frameW": 128,
@@ -264,6 +435,40 @@
       "columns": 16,
       "rows": 10,
       "ktx2": "atlases/buildings_metal.ktx2"
+    },
+    {
+      "key": "season_bld_metal_winter_p0",
+      "image": "atlases/season_bld_metal_winter_p0.png",
+      "frameW": 128,
+      "frameH": 128,
+      "columns": 8,
+      "rows": 8,
+      "pages": [
+        {
+          "scale": 2,
+          "image": "atlases/season_bld_metal_winter_p0@2x.png",
+          "ktx2": "atlases/season_bld_metal_winter_p0@2x.ktx2"
+        }
+      ],
+      "residency": "stream",
+      "ktx2": "atlases/season_bld_metal_winter_p0.ktx2"
+    },
+    {
+      "key": "season_bld_metal_winter_p1",
+      "image": "atlases/season_bld_metal_winter_p1.png",
+      "frameW": 128,
+      "frameH": 128,
+      "columns": 8,
+      "rows": 8,
+      "pages": [
+        {
+          "scale": 2,
+          "image": "atlases/season_bld_metal_winter_p1@2x.png",
+          "ktx2": "atlases/season_bld_metal_winter_p1@2x.ktx2"
+        }
+      ],
+      "residency": "stream",
+      "ktx2": "atlases/season_bld_metal_winter_p1.ktx2"
     },
     {
       "key": "openings",
@@ -595,6 +800,57 @@
         }
       ],
       "ktx2": "atlases/adr134_hurt.ktx2"
+    },
+    {
+      "key": "season_snowflake",
+      "image": "atlases/season_snowflake.png",
+      "frameW": 36,
+      "frameH": 36,
+      "columns": 4,
+      "rows": 1,
+      "pages": [
+        {
+          "scale": 2,
+          "image": "atlases/season_snowflake@2x.png",
+          "ktx2": "atlases/season_snowflake@2x.ktx2"
+        }
+      ],
+      "residency": "stream",
+      "ktx2": "atlases/season_snowflake.ktx2"
+    },
+    {
+      "key": "season_blizzard",
+      "image": "atlases/season_blizzard.png",
+      "frameW": 132,
+      "frameH": 68,
+      "columns": 6,
+      "rows": 1,
+      "pages": [
+        {
+          "scale": 2,
+          "image": "atlases/season_blizzard@2x.png",
+          "ktx2": "atlases/season_blizzard@2x.ktx2"
+        }
+      ],
+      "residency": "stream",
+      "ktx2": "atlases/season_blizzard.ktx2"
+    },
+    {
+      "key": "season_heat_haze",
+      "image": "atlases/season_heat_haze.png",
+      "frameW": 68,
+      "frameH": 68,
+      "columns": 6,
+      "rows": 1,
+      "pages": [
+        {
+          "scale": 2,
+          "image": "atlases/season_heat_haze@2x.png",
+          "ktx2": "atlases/season_heat_haze@2x.ktx2"
+        }
+      ],
+      "residency": "stream",
+      "ktx2": "atlases/season_heat_haze.ktx2"
     }
   ],
   "sprites": [
@@ -4070,6 +4326,52 @@
       }
     },
     {
+      "key": "tree_fall",
+      "category": "resource",
+      "atlas": "season_tall",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9072727272727273
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 1
+        }
+      },
+      "sway": {
+        "amp": 2.2,
+        "freq": 0.35,
+        "stiffness": 0.6
+      },
+      "placeholder": "tree"
+    },
+    {
+      "key": "tree_winter",
+      "category": "resource",
+      "atlas": "season_tall",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9072727272727273
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            1
+          ],
+          "fps": 1
+        }
+      },
+      "sway": {
+        "amp": 2.2,
+        "freq": 0.35,
+        "stiffness": 0.6
+      },
+      "placeholder": "tree"
+    },
+    {
       "key": "tree_apple",
       "category": "resource",
       "atlas": "resources_tall",
@@ -4090,6 +4392,52 @@
         "freq": 0.33,
         "stiffness": 0.62
       }
+    },
+    {
+      "key": "tree_apple_fall",
+      "category": "resource",
+      "atlas": "season_tall",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9072727272727273
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            2
+          ],
+          "fps": 1
+        }
+      },
+      "sway": {
+        "amp": 2.0,
+        "freq": 0.33,
+        "stiffness": 0.62
+      },
+      "placeholder": "tree_apple"
+    },
+    {
+      "key": "tree_apple_winter",
+      "category": "resource",
+      "atlas": "season_tall",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9072727272727273
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            3
+          ],
+          "fps": 1
+        }
+      },
+      "sway": {
+        "amp": 2.0,
+        "freq": 0.33,
+        "stiffness": 0.62
+      },
+      "placeholder": "tree_apple"
     },
     {
       "key": "tree_autumn",
@@ -4134,6 +4482,29 @@
         "freq": 0.28,
         "stiffness": 0.78
       }
+    },
+    {
+      "key": "tree_pine_winter",
+      "category": "resource",
+      "atlas": "season_tall",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9072727272727273
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            4
+          ],
+          "fps": 1
+        }
+      },
+      "sway": {
+        "amp": 1.4,
+        "freq": 0.28,
+        "stiffness": 0.78
+      },
+      "placeholder": "tree_pine"
     },
     {
       "key": "tree_twisty",
@@ -4353,6 +4724,52 @@
       }
     },
     {
+      "key": "bush_fall",
+      "category": "resource",
+      "atlas": "season_res",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.8529411764705882
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 1
+        }
+      },
+      "sway": {
+        "amp": 0.9,
+        "freq": 0.5,
+        "stiffness": 0.7
+      },
+      "placeholder": "bush"
+    },
+    {
+      "key": "bush_winter",
+      "category": "resource",
+      "atlas": "season_res",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.8529411764705882
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            1
+          ],
+          "fps": 1
+        }
+      },
+      "sway": {
+        "amp": 0.9,
+        "freq": 0.5,
+        "stiffness": 0.7
+      },
+      "placeholder": "bush"
+    },
+    {
       "key": "berry_bush",
       "category": "resource",
       "atlas": "resources",
@@ -4381,6 +4798,64 @@
       }
     },
     {
+      "key": "berry_bush_fall",
+      "category": "resource",
+      "atlas": "season_res",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.8529411764705882
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            2
+          ],
+          "fps": 1
+        },
+        "depleted": {
+          "frames": [
+            3
+          ],
+          "fps": 1
+        }
+      },
+      "sway": {
+        "amp": 0.9,
+        "freq": 0.5,
+        "stiffness": 0.7
+      },
+      "placeholder": "berry_bush"
+    },
+    {
+      "key": "berry_bush_winter",
+      "category": "resource",
+      "atlas": "season_res",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.8529411764705882
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            4
+          ],
+          "fps": 1
+        },
+        "depleted": {
+          "frames": [
+            5
+          ],
+          "fps": 1
+        }
+      },
+      "sway": {
+        "amp": 0.9,
+        "freq": 0.5,
+        "stiffness": 0.7
+      },
+      "placeholder": "berry_bush"
+    },
+    {
       "key": "fiber_grass",
       "category": "resource",
       "atlas": "resources",
@@ -4401,6 +4876,52 @@
         "freq": 0.85,
         "stiffness": 0.28
       }
+    },
+    {
+      "key": "fiber_grass_fall",
+      "category": "resource",
+      "atlas": "season_res",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.8529411764705882
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            6
+          ],
+          "fps": 1
+        }
+      },
+      "sway": {
+        "amp": 1.8,
+        "freq": 0.85,
+        "stiffness": 0.28
+      },
+      "placeholder": "fiber_grass"
+    },
+    {
+      "key": "fiber_grass_winter",
+      "category": "resource",
+      "atlas": "season_res",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.8529411764705882
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            7
+          ],
+          "fps": 1
+        }
+      },
+      "sway": {
+        "amp": 1.8,
+        "freq": 0.85,
+        "stiffness": 0.28
+      },
+      "placeholder": "fiber_grass"
     },
     {
       "key": "fallen_branches",
@@ -4484,6 +5005,52 @@
         "freq": 0.95,
         "stiffness": 0.38
       }
+    },
+    {
+      "key": "flowers_fall",
+      "category": "resource",
+      "atlas": "season_res",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.8529411764705882
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            8
+          ],
+          "fps": 1
+        }
+      },
+      "sway": {
+        "amp": 1.2,
+        "freq": 0.95,
+        "stiffness": 0.38
+      },
+      "placeholder": "flowers"
+    },
+    {
+      "key": "flowers_winter",
+      "category": "resource",
+      "atlas": "season_res",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.8529411764705882
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            9
+          ],
+          "fps": 1
+        }
+      },
+      "sway": {
+        "amp": 1.2,
+        "freq": 0.95,
+        "stiffness": 0.38
+      },
+      "placeholder": "flowers"
     },
     {
       "key": "copper_vein",
@@ -4758,6 +5325,52 @@
         "freq": 0.25,
         "stiffness": 0.7
       }
+    },
+    {
+      "key": "oak_tree_fall",
+      "category": "resource",
+      "atlas": "season_huge",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.926829268292683
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 1
+        }
+      },
+      "sway": {
+        "amp": 1.6,
+        "freq": 0.25,
+        "stiffness": 0.7
+      },
+      "placeholder": "oak_tree"
+    },
+    {
+      "key": "oak_tree_winter",
+      "category": "resource",
+      "atlas": "season_huge",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.926829268292683
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            1
+          ],
+          "fps": 1
+        }
+      },
+      "sway": {
+        "amp": 1.6,
+        "freq": 0.25,
+        "stiffness": 0.7
+      },
+      "placeholder": "oak_tree"
     },
     {
       "key": "wood",
@@ -6053,6 +6666,59 @@
       "rotationArt": "unique4"
     },
     {
+      "key": "wall_twig_winter",
+      "category": "building",
+      "atlas": "season_bld_twig_winter_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "wall@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 1,
+        "frames": [
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          [
+            4,
+            5,
+            6,
+            7
+          ],
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          [
+            4,
+            5,
+            6,
+            7
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "wall_twig"
+    },
+    {
       "key": "wall_low_twig",
       "category": "building",
       "atlas": "buildings_twig",
@@ -6103,6 +6769,59 @@
         ]
       },
       "rotationArt": "unique4"
+    },
+    {
+      "key": "wall_low_twig_winter",
+      "category": "building",
+      "atlas": "season_bld_twig_winter_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            8
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "wall_low@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 1,
+        "frames": [
+          [
+            8,
+            9,
+            10,
+            11
+          ],
+          [
+            12,
+            13,
+            14,
+            15
+          ],
+          [
+            8,
+            9,
+            10,
+            11
+          ],
+          [
+            12,
+            13,
+            14,
+            15
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "wall_low_twig"
     },
     {
       "key": "wall_window_twig",
@@ -6157,6 +6876,59 @@
       "rotationArt": "unique4"
     },
     {
+      "key": "wall_window_twig_winter",
+      "category": "building",
+      "atlas": "season_bld_twig_winter_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            16
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "wall_window@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 1,
+        "frames": [
+          [
+            16,
+            17,
+            18,
+            19
+          ],
+          [
+            20,
+            21,
+            22,
+            23
+          ],
+          [
+            16,
+            17,
+            18,
+            19
+          ],
+          [
+            20,
+            21,
+            22,
+            23
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "wall_window_twig"
+    },
+    {
       "key": "wall_doorway_twig",
       "category": "building",
       "atlas": "buildings_twig",
@@ -6209,6 +6981,59 @@
       "rotationArt": "unique4"
     },
     {
+      "key": "wall_doorway_twig_winter",
+      "category": "building",
+      "atlas": "season_bld_twig_winter_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            24
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "wall_doorway@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 1,
+        "frames": [
+          [
+            24,
+            25,
+            26,
+            27
+          ],
+          [
+            28,
+            29,
+            30,
+            31
+          ],
+          [
+            24,
+            25,
+            26,
+            27
+          ],
+          [
+            28,
+            29,
+            30,
+            31
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "wall_doorway_twig"
+    },
+    {
       "key": "wall_corner_twig",
       "category": "building",
       "atlas": "buildings_twig",
@@ -6259,6 +7084,59 @@
         ]
       },
       "rotationArt": "unique4"
+    },
+    {
+      "key": "wall_corner_twig_winter",
+      "category": "building",
+      "atlas": "season_bld_twig_winter_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            32
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "wall_corner@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 1,
+        "frames": [
+          [
+            32,
+            33,
+            34,
+            35
+          ],
+          [
+            36,
+            37,
+            38,
+            39
+          ],
+          [
+            40,
+            41,
+            42,
+            43
+          ],
+          [
+            44,
+            45,
+            46,
+            47
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "wall_corner_twig"
     },
     {
       "key": "pillar_twig",
@@ -6399,6 +7277,59 @@
       "rotationArt": "unique4"
     },
     {
+      "key": "roof_slope_twig_winter",
+      "category": "building",
+      "atlas": "season_bld_twig_winter_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            48
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "roof_slope@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 0,
+        "frames": [
+          [
+            48,
+            49,
+            50,
+            51
+          ],
+          [
+            52,
+            53,
+            54,
+            55
+          ],
+          [
+            56,
+            57,
+            58,
+            59
+          ],
+          [
+            60,
+            61,
+            62,
+            63
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "roof_slope_twig"
+    },
+    {
       "key": "roof_ridge_twig",
       "category": "building",
       "atlas": "buildings_twig",
@@ -6449,6 +7380,59 @@
         ]
       },
       "rotationArt": "unique4"
+    },
+    {
+      "key": "roof_ridge_twig_winter",
+      "category": "building",
+      "atlas": "season_bld_twig_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "roof_ridge@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 0,
+        "frames": [
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          [
+            4,
+            5,
+            6,
+            7
+          ],
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          [
+            4,
+            5,
+            6,
+            7
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "roof_ridge_twig"
     },
     {
       "key": "roof_hip_twig",
@@ -6503,6 +7487,59 @@
       "rotationArt": "unique4"
     },
     {
+      "key": "roof_hip_twig_winter",
+      "category": "building",
+      "atlas": "season_bld_twig_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            8
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "roof_hip@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 0,
+        "frames": [
+          [
+            8,
+            9,
+            10,
+            11
+          ],
+          [
+            12,
+            13,
+            14,
+            15
+          ],
+          [
+            16,
+            17,
+            18,
+            19
+          ],
+          [
+            20,
+            21,
+            22,
+            23
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "roof_hip_twig"
+    },
+    {
       "key": "roof_corner_twig",
       "category": "building",
       "atlas": "buildings_twig",
@@ -6553,6 +7590,59 @@
         ]
       },
       "rotationArt": "unique4"
+    },
+    {
+      "key": "roof_corner_twig_winter",
+      "category": "building",
+      "atlas": "season_bld_twig_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            24
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "roof_corner@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 0,
+        "frames": [
+          [
+            24,
+            25,
+            26,
+            27
+          ],
+          [
+            28,
+            29,
+            30,
+            31
+          ],
+          [
+            32,
+            33,
+            34,
+            35
+          ],
+          [
+            36,
+            37,
+            38,
+            39
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "roof_corner_twig"
     },
     {
       "key": "roof_valley_twig",
@@ -6607,6 +7697,59 @@
       "rotationArt": "unique4"
     },
     {
+      "key": "roof_valley_twig_winter",
+      "category": "building",
+      "atlas": "season_bld_twig_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            40
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "roof_valley@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 0,
+        "frames": [
+          [
+            40,
+            41,
+            42,
+            43
+          ],
+          [
+            44,
+            45,
+            46,
+            47
+          ],
+          [
+            48,
+            49,
+            50,
+            51
+          ],
+          [
+            52,
+            53,
+            54,
+            55
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "roof_valley_twig"
+    },
+    {
       "key": "roof_peak_twig",
       "category": "building",
       "atlas": "buildings_twig",
@@ -6641,6 +7784,41 @@
       "rotationArt": "mirror"
     },
     {
+      "key": "roof_peak_twig_winter",
+      "category": "building",
+      "atlas": "season_bld_twig_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            56
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "roof_peak@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 0,
+        "frames": [
+          [
+            56,
+            57,
+            58,
+            59
+          ]
+        ]
+      },
+      "rotationArt": "mirror",
+      "placeholder": "roof_peak_twig"
+    },
+    {
       "key": "roof_flat_twig",
       "category": "building",
       "atlas": "buildings_twig",
@@ -6673,6 +7851,41 @@
         ]
       },
       "rotationArt": "mirror"
+    },
+    {
+      "key": "roof_flat_twig_winter",
+      "category": "building",
+      "atlas": "season_bld_twig_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            60
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "roof_flat@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 0,
+        "frames": [
+          [
+            60,
+            61,
+            62,
+            63
+          ]
+        ]
+      },
+      "rotationArt": "mirror",
+      "placeholder": "roof_flat_twig"
     },
     {
       "key": "foundation",
@@ -6829,6 +8042,59 @@
       "rotationArt": "unique4"
     },
     {
+      "key": "wall_winter",
+      "category": "building",
+      "atlas": "season_bld_winter_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "wall@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 1,
+        "frames": [
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          [
+            4,
+            5,
+            6,
+            7
+          ],
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          [
+            4,
+            5,
+            6,
+            7
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "wall"
+    },
+    {
       "key": "wall_low",
       "category": "building",
       "atlas": "buildings",
@@ -6879,6 +8145,59 @@
         ]
       },
       "rotationArt": "unique4"
+    },
+    {
+      "key": "wall_low_winter",
+      "category": "building",
+      "atlas": "season_bld_winter_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            8
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "wall_low@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 1,
+        "frames": [
+          [
+            8,
+            9,
+            10,
+            11
+          ],
+          [
+            12,
+            13,
+            14,
+            15
+          ],
+          [
+            8,
+            9,
+            10,
+            11
+          ],
+          [
+            12,
+            13,
+            14,
+            15
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "wall_low"
     },
     {
       "key": "wall_window",
@@ -6933,6 +8252,59 @@
       "rotationArt": "unique4"
     },
     {
+      "key": "wall_window_winter",
+      "category": "building",
+      "atlas": "season_bld_winter_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            16
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "wall_window@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 1,
+        "frames": [
+          [
+            16,
+            17,
+            18,
+            19
+          ],
+          [
+            20,
+            21,
+            22,
+            23
+          ],
+          [
+            16,
+            17,
+            18,
+            19
+          ],
+          [
+            20,
+            21,
+            22,
+            23
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "wall_window"
+    },
+    {
       "key": "wall_doorway",
       "category": "building",
       "atlas": "buildings",
@@ -6985,6 +8357,59 @@
       "rotationArt": "unique4"
     },
     {
+      "key": "wall_doorway_winter",
+      "category": "building",
+      "atlas": "season_bld_winter_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            24
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "wall_doorway@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 1,
+        "frames": [
+          [
+            24,
+            25,
+            26,
+            27
+          ],
+          [
+            28,
+            29,
+            30,
+            31
+          ],
+          [
+            24,
+            25,
+            26,
+            27
+          ],
+          [
+            28,
+            29,
+            30,
+            31
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "wall_doorway"
+    },
+    {
       "key": "wall_corner",
       "category": "building",
       "atlas": "buildings",
@@ -7035,6 +8460,59 @@
         ]
       },
       "rotationArt": "unique4"
+    },
+    {
+      "key": "wall_corner_winter",
+      "category": "building",
+      "atlas": "season_bld_winter_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            32
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "wall_corner@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 1,
+        "frames": [
+          [
+            32,
+            33,
+            34,
+            35
+          ],
+          [
+            36,
+            37,
+            38,
+            39
+          ],
+          [
+            40,
+            41,
+            42,
+            43
+          ],
+          [
+            44,
+            45,
+            46,
+            47
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "wall_corner"
     },
     {
       "key": "pillar",
@@ -7175,6 +8653,59 @@
       "rotationArt": "unique4"
     },
     {
+      "key": "roof_slope_winter",
+      "category": "building",
+      "atlas": "season_bld_winter_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            48
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "roof_slope@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 0,
+        "frames": [
+          [
+            48,
+            49,
+            50,
+            51
+          ],
+          [
+            52,
+            53,
+            54,
+            55
+          ],
+          [
+            56,
+            57,
+            58,
+            59
+          ],
+          [
+            60,
+            61,
+            62,
+            63
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "roof_slope"
+    },
+    {
       "key": "roof_ridge",
       "category": "building",
       "atlas": "buildings",
@@ -7225,6 +8756,59 @@
         ]
       },
       "rotationArt": "unique4"
+    },
+    {
+      "key": "roof_ridge_winter",
+      "category": "building",
+      "atlas": "season_bld_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "roof_ridge@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 0,
+        "frames": [
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          [
+            4,
+            5,
+            6,
+            7
+          ],
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          [
+            4,
+            5,
+            6,
+            7
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "roof_ridge"
     },
     {
       "key": "roof_hip",
@@ -7279,6 +8863,59 @@
       "rotationArt": "unique4"
     },
     {
+      "key": "roof_hip_winter",
+      "category": "building",
+      "atlas": "season_bld_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            8
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "roof_hip@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 0,
+        "frames": [
+          [
+            8,
+            9,
+            10,
+            11
+          ],
+          [
+            12,
+            13,
+            14,
+            15
+          ],
+          [
+            16,
+            17,
+            18,
+            19
+          ],
+          [
+            20,
+            21,
+            22,
+            23
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "roof_hip"
+    },
+    {
       "key": "roof_corner",
       "category": "building",
       "atlas": "buildings",
@@ -7329,6 +8966,59 @@
         ]
       },
       "rotationArt": "unique4"
+    },
+    {
+      "key": "roof_corner_winter",
+      "category": "building",
+      "atlas": "season_bld_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            24
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "roof_corner@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 0,
+        "frames": [
+          [
+            24,
+            25,
+            26,
+            27
+          ],
+          [
+            28,
+            29,
+            30,
+            31
+          ],
+          [
+            32,
+            33,
+            34,
+            35
+          ],
+          [
+            36,
+            37,
+            38,
+            39
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "roof_corner"
     },
     {
       "key": "roof_valley",
@@ -7383,6 +9073,59 @@
       "rotationArt": "unique4"
     },
     {
+      "key": "roof_valley_winter",
+      "category": "building",
+      "atlas": "season_bld_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            40
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "roof_valley@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 0,
+        "frames": [
+          [
+            40,
+            41,
+            42,
+            43
+          ],
+          [
+            44,
+            45,
+            46,
+            47
+          ],
+          [
+            48,
+            49,
+            50,
+            51
+          ],
+          [
+            52,
+            53,
+            54,
+            55
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "roof_valley"
+    },
+    {
       "key": "roof_peak",
       "category": "building",
       "atlas": "buildings",
@@ -7417,6 +9160,41 @@
       "rotationArt": "mirror"
     },
     {
+      "key": "roof_peak_winter",
+      "category": "building",
+      "atlas": "season_bld_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            56
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "roof_peak@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 0,
+        "frames": [
+          [
+            56,
+            57,
+            58,
+            59
+          ]
+        ]
+      },
+      "rotationArt": "mirror",
+      "placeholder": "roof_peak"
+    },
+    {
       "key": "roof_flat",
       "category": "building",
       "atlas": "buildings",
@@ -7449,6 +9227,41 @@
         ]
       },
       "rotationArt": "mirror"
+    },
+    {
+      "key": "roof_flat_winter",
+      "category": "building",
+      "atlas": "season_bld_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            60
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "roof_flat@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 0,
+        "frames": [
+          [
+            60,
+            61,
+            62,
+            63
+          ]
+        ]
+      },
+      "rotationArt": "mirror",
+      "placeholder": "roof_flat"
     },
     {
       "key": "fence",
@@ -7553,6 +9366,59 @@
         ]
       },
       "rotationArt": "unique4"
+    },
+    {
+      "key": "roof_winter",
+      "category": "building",
+      "atlas": "season_bld_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "roof_ridge@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 0,
+        "frames": [
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          [
+            4,
+            5,
+            6,
+            7
+          ],
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          [
+            4,
+            5,
+            6,
+            7
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "roof"
     },
     {
       "key": "foundation_stone",
@@ -7709,6 +9575,59 @@
       "rotationArt": "unique4"
     },
     {
+      "key": "wall_stone_winter",
+      "category": "building",
+      "atlas": "season_bld_stone_winter_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "wall@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 1,
+        "frames": [
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          [
+            4,
+            5,
+            6,
+            7
+          ],
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          [
+            4,
+            5,
+            6,
+            7
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "wall_stone"
+    },
+    {
       "key": "wall_low_stone",
       "category": "building",
       "atlas": "buildings_stone",
@@ -7759,6 +9678,59 @@
         ]
       },
       "rotationArt": "unique4"
+    },
+    {
+      "key": "wall_low_stone_winter",
+      "category": "building",
+      "atlas": "season_bld_stone_winter_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            8
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "wall_low@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 1,
+        "frames": [
+          [
+            8,
+            9,
+            10,
+            11
+          ],
+          [
+            12,
+            13,
+            14,
+            15
+          ],
+          [
+            8,
+            9,
+            10,
+            11
+          ],
+          [
+            12,
+            13,
+            14,
+            15
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "wall_low_stone"
     },
     {
       "key": "wall_window_stone",
@@ -7813,6 +9785,59 @@
       "rotationArt": "unique4"
     },
     {
+      "key": "wall_window_stone_winter",
+      "category": "building",
+      "atlas": "season_bld_stone_winter_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            16
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "wall_window@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 1,
+        "frames": [
+          [
+            16,
+            17,
+            18,
+            19
+          ],
+          [
+            20,
+            21,
+            22,
+            23
+          ],
+          [
+            16,
+            17,
+            18,
+            19
+          ],
+          [
+            20,
+            21,
+            22,
+            23
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "wall_window_stone"
+    },
+    {
       "key": "wall_doorway_stone",
       "category": "building",
       "atlas": "buildings_stone",
@@ -7865,6 +9890,59 @@
       "rotationArt": "unique4"
     },
     {
+      "key": "wall_doorway_stone_winter",
+      "category": "building",
+      "atlas": "season_bld_stone_winter_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            24
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "wall_doorway@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 1,
+        "frames": [
+          [
+            24,
+            25,
+            26,
+            27
+          ],
+          [
+            28,
+            29,
+            30,
+            31
+          ],
+          [
+            24,
+            25,
+            26,
+            27
+          ],
+          [
+            28,
+            29,
+            30,
+            31
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "wall_doorway_stone"
+    },
+    {
       "key": "wall_corner_stone",
       "category": "building",
       "atlas": "buildings_stone",
@@ -7915,6 +9993,59 @@
         ]
       },
       "rotationArt": "unique4"
+    },
+    {
+      "key": "wall_corner_stone_winter",
+      "category": "building",
+      "atlas": "season_bld_stone_winter_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            32
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "wall_corner@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 1,
+        "frames": [
+          [
+            32,
+            33,
+            34,
+            35
+          ],
+          [
+            36,
+            37,
+            38,
+            39
+          ],
+          [
+            40,
+            41,
+            42,
+            43
+          ],
+          [
+            44,
+            45,
+            46,
+            47
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "wall_corner_stone"
     },
     {
       "key": "pillar_stone",
@@ -8055,6 +10186,59 @@
       "rotationArt": "unique4"
     },
     {
+      "key": "roof_slope_stone_winter",
+      "category": "building",
+      "atlas": "season_bld_stone_winter_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            48
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "roof_slope@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 0,
+        "frames": [
+          [
+            48,
+            49,
+            50,
+            51
+          ],
+          [
+            52,
+            53,
+            54,
+            55
+          ],
+          [
+            56,
+            57,
+            58,
+            59
+          ],
+          [
+            60,
+            61,
+            62,
+            63
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "roof_slope_stone"
+    },
+    {
       "key": "roof_ridge_stone",
       "category": "building",
       "atlas": "buildings_stone",
@@ -8105,6 +10289,59 @@
         ]
       },
       "rotationArt": "unique4"
+    },
+    {
+      "key": "roof_ridge_stone_winter",
+      "category": "building",
+      "atlas": "season_bld_stone_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "roof_ridge@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 0,
+        "frames": [
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          [
+            4,
+            5,
+            6,
+            7
+          ],
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          [
+            4,
+            5,
+            6,
+            7
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "roof_ridge_stone"
     },
     {
       "key": "roof_hip_stone",
@@ -8159,6 +10396,59 @@
       "rotationArt": "unique4"
     },
     {
+      "key": "roof_hip_stone_winter",
+      "category": "building",
+      "atlas": "season_bld_stone_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            8
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "roof_hip@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 0,
+        "frames": [
+          [
+            8,
+            9,
+            10,
+            11
+          ],
+          [
+            12,
+            13,
+            14,
+            15
+          ],
+          [
+            16,
+            17,
+            18,
+            19
+          ],
+          [
+            20,
+            21,
+            22,
+            23
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "roof_hip_stone"
+    },
+    {
       "key": "roof_corner_stone",
       "category": "building",
       "atlas": "buildings_stone",
@@ -8209,6 +10499,59 @@
         ]
       },
       "rotationArt": "unique4"
+    },
+    {
+      "key": "roof_corner_stone_winter",
+      "category": "building",
+      "atlas": "season_bld_stone_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            24
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "roof_corner@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 0,
+        "frames": [
+          [
+            24,
+            25,
+            26,
+            27
+          ],
+          [
+            28,
+            29,
+            30,
+            31
+          ],
+          [
+            32,
+            33,
+            34,
+            35
+          ],
+          [
+            36,
+            37,
+            38,
+            39
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "roof_corner_stone"
     },
     {
       "key": "roof_valley_stone",
@@ -8263,6 +10606,59 @@
       "rotationArt": "unique4"
     },
     {
+      "key": "roof_valley_stone_winter",
+      "category": "building",
+      "atlas": "season_bld_stone_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            40
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "roof_valley@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 0,
+        "frames": [
+          [
+            40,
+            41,
+            42,
+            43
+          ],
+          [
+            44,
+            45,
+            46,
+            47
+          ],
+          [
+            48,
+            49,
+            50,
+            51
+          ],
+          [
+            52,
+            53,
+            54,
+            55
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "roof_valley_stone"
+    },
+    {
       "key": "roof_peak_stone",
       "category": "building",
       "atlas": "buildings_stone",
@@ -8297,6 +10693,41 @@
       "rotationArt": "mirror"
     },
     {
+      "key": "roof_peak_stone_winter",
+      "category": "building",
+      "atlas": "season_bld_stone_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            56
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "roof_peak@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 0,
+        "frames": [
+          [
+            56,
+            57,
+            58,
+            59
+          ]
+        ]
+      },
+      "rotationArt": "mirror",
+      "placeholder": "roof_peak_stone"
+    },
+    {
       "key": "roof_flat_stone",
       "category": "building",
       "atlas": "buildings_stone",
@@ -8329,6 +10760,41 @@
         ]
       },
       "rotationArt": "mirror"
+    },
+    {
+      "key": "roof_flat_stone_winter",
+      "category": "building",
+      "atlas": "season_bld_stone_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            60
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "roof_flat@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 0,
+        "frames": [
+          [
+            60,
+            61,
+            62,
+            63
+          ]
+        ]
+      },
+      "rotationArt": "mirror",
+      "placeholder": "roof_flat_stone"
     },
     {
       "key": "foundation_metal",
@@ -8485,6 +10951,59 @@
       "rotationArt": "unique4"
     },
     {
+      "key": "wall_metal_winter",
+      "category": "building",
+      "atlas": "season_bld_metal_winter_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "wall@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 1,
+        "frames": [
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          [
+            4,
+            5,
+            6,
+            7
+          ],
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          [
+            4,
+            5,
+            6,
+            7
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "wall_metal"
+    },
+    {
       "key": "wall_low_metal",
       "category": "building",
       "atlas": "buildings_metal",
@@ -8535,6 +11054,59 @@
         ]
       },
       "rotationArt": "unique4"
+    },
+    {
+      "key": "wall_low_metal_winter",
+      "category": "building",
+      "atlas": "season_bld_metal_winter_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            8
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "wall_low@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 1,
+        "frames": [
+          [
+            8,
+            9,
+            10,
+            11
+          ],
+          [
+            12,
+            13,
+            14,
+            15
+          ],
+          [
+            8,
+            9,
+            10,
+            11
+          ],
+          [
+            12,
+            13,
+            14,
+            15
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "wall_low_metal"
     },
     {
       "key": "wall_window_metal",
@@ -8589,6 +11161,59 @@
       "rotationArt": "unique4"
     },
     {
+      "key": "wall_window_metal_winter",
+      "category": "building",
+      "atlas": "season_bld_metal_winter_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            16
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "wall_window@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 1,
+        "frames": [
+          [
+            16,
+            17,
+            18,
+            19
+          ],
+          [
+            20,
+            21,
+            22,
+            23
+          ],
+          [
+            16,
+            17,
+            18,
+            19
+          ],
+          [
+            20,
+            21,
+            22,
+            23
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "wall_window_metal"
+    },
+    {
       "key": "wall_doorway_metal",
       "category": "building",
       "atlas": "buildings_metal",
@@ -8641,6 +11266,59 @@
       "rotationArt": "unique4"
     },
     {
+      "key": "wall_doorway_metal_winter",
+      "category": "building",
+      "atlas": "season_bld_metal_winter_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            24
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "wall_doorway@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 1,
+        "frames": [
+          [
+            24,
+            25,
+            26,
+            27
+          ],
+          [
+            28,
+            29,
+            30,
+            31
+          ],
+          [
+            24,
+            25,
+            26,
+            27
+          ],
+          [
+            28,
+            29,
+            30,
+            31
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "wall_doorway_metal"
+    },
+    {
       "key": "wall_corner_metal",
       "category": "building",
       "atlas": "buildings_metal",
@@ -8691,6 +11369,59 @@
         ]
       },
       "rotationArt": "unique4"
+    },
+    {
+      "key": "wall_corner_metal_winter",
+      "category": "building",
+      "atlas": "season_bld_metal_winter_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            32
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "wall_corner@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 1,
+        "frames": [
+          [
+            32,
+            33,
+            34,
+            35
+          ],
+          [
+            36,
+            37,
+            38,
+            39
+          ],
+          [
+            40,
+            41,
+            42,
+            43
+          ],
+          [
+            44,
+            45,
+            46,
+            47
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "wall_corner_metal"
     },
     {
       "key": "pillar_metal",
@@ -8831,6 +11562,59 @@
       "rotationArt": "unique4"
     },
     {
+      "key": "roof_slope_metal_winter",
+      "category": "building",
+      "atlas": "season_bld_metal_winter_p0",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            48
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "roof_slope@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 0,
+        "frames": [
+          [
+            48,
+            49,
+            50,
+            51
+          ],
+          [
+            52,
+            53,
+            54,
+            55
+          ],
+          [
+            56,
+            57,
+            58,
+            59
+          ],
+          [
+            60,
+            61,
+            62,
+            63
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "roof_slope_metal"
+    },
+    {
       "key": "roof_ridge_metal",
       "category": "building",
       "atlas": "buildings_metal",
@@ -8881,6 +11665,59 @@
         ]
       },
       "rotationArt": "unique4"
+    },
+    {
+      "key": "roof_ridge_metal_winter",
+      "category": "building",
+      "atlas": "season_bld_metal_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "roof_ridge@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 0,
+        "frames": [
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          [
+            4,
+            5,
+            6,
+            7
+          ],
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          [
+            4,
+            5,
+            6,
+            7
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "roof_ridge_metal"
     },
     {
       "key": "roof_hip_metal",
@@ -8935,6 +11772,59 @@
       "rotationArt": "unique4"
     },
     {
+      "key": "roof_hip_metal_winter",
+      "category": "building",
+      "atlas": "season_bld_metal_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            8
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "roof_hip@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 0,
+        "frames": [
+          [
+            8,
+            9,
+            10,
+            11
+          ],
+          [
+            12,
+            13,
+            14,
+            15
+          ],
+          [
+            16,
+            17,
+            18,
+            19
+          ],
+          [
+            20,
+            21,
+            22,
+            23
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "roof_hip_metal"
+    },
+    {
       "key": "roof_corner_metal",
       "category": "building",
       "atlas": "buildings_metal",
@@ -8985,6 +11875,59 @@
         ]
       },
       "rotationArt": "unique4"
+    },
+    {
+      "key": "roof_corner_metal_winter",
+      "category": "building",
+      "atlas": "season_bld_metal_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            24
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "roof_corner@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 0,
+        "frames": [
+          [
+            24,
+            25,
+            26,
+            27
+          ],
+          [
+            28,
+            29,
+            30,
+            31
+          ],
+          [
+            32,
+            33,
+            34,
+            35
+          ],
+          [
+            36,
+            37,
+            38,
+            39
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "roof_corner_metal"
     },
     {
       "key": "roof_valley_metal",
@@ -9039,6 +11982,59 @@
       "rotationArt": "unique4"
     },
     {
+      "key": "roof_valley_metal_winter",
+      "category": "building",
+      "atlas": "season_bld_metal_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            40
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "roof_valley@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 0,
+        "frames": [
+          [
+            40,
+            41,
+            42,
+            43
+          ],
+          [
+            44,
+            45,
+            46,
+            47
+          ],
+          [
+            48,
+            49,
+            50,
+            51
+          ],
+          [
+            52,
+            53,
+            54,
+            55
+          ]
+        ]
+      },
+      "rotationArt": "unique4",
+      "placeholder": "roof_valley_metal"
+    },
+    {
       "key": "roof_peak_metal",
       "category": "building",
       "atlas": "buildings_metal",
@@ -9073,6 +12069,41 @@
       "rotationArt": "mirror"
     },
     {
+      "key": "roof_peak_metal_winter",
+      "category": "building",
+      "atlas": "season_bld_metal_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            56
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "roof_peak@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 0,
+        "frames": [
+          [
+            56,
+            57,
+            58,
+            59
+          ]
+        ]
+      },
+      "rotationArt": "mirror",
+      "placeholder": "roof_peak_metal"
+    },
+    {
       "key": "roof_flat_metal",
       "category": "building",
       "atlas": "buildings_metal",
@@ -9105,6 +12136,41 @@
         ]
       },
       "rotationArt": "mirror"
+    },
+    {
+      "key": "roof_flat_metal_winter",
+      "category": "building",
+      "atlas": "season_bld_metal_winter_p1",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            60
+          ],
+          "fps": 1
+        }
+      },
+      "building": {
+        "piece": "roof_flat@winter",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "layer": 0,
+        "frames": [
+          [
+            60,
+            61,
+            62,
+            63
+          ]
+        ]
+      },
+      "rotationArt": "mirror",
+      "placeholder": "roof_flat_metal"
     },
     {
       "key": "door_wood",
@@ -15985,6 +19051,73 @@
           "fps": 12,
           "directions": 8,
           "dirStride": 3,
+          "loop": true
+        }
+      }
+    },
+    {
+      "key": "fx_snowflake",
+      "category": "vfx",
+      "atlas": "season_snowflake",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "fps": 8,
+          "loop": true
+        }
+      }
+    },
+    {
+      "key": "fx_blizzard",
+      "category": "vfx",
+      "atlas": "season_blizzard",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "fps": 10,
+          "loop": true
+        }
+      }
+    },
+    {
+      "key": "fx_heat_haze",
+      "category": "vfx",
+      "atlas": "season_heat_haze",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.8294117647058823
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "fps": 8,
           "loop": true
         }
       }
