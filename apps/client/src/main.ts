@@ -23,7 +23,8 @@ import { mountToolHint, toolIconFrame } from "./tool-hint.js";
 import { mountStationHint } from "./station-hint.js";
 import { mountWorldTools, type WorldToolsHandle } from "./world-tools.js";
 import { mountVehicleControls, type VehicleControls } from "./vehicle-controls.js";
-import { mountTouchOverlay, syncTouchHidden } from "./touch-overlay.js";
+import { mountTouchOverlay, syncTouchHidden, touchLabel, type TouchCtx } from "./touch-overlay.js";
+import { stanceMode, StanceMode, liftableNear, bedNear } from "@engine/gameplay";
 /**
  * Client bootstrap: fixed-step loop + WebGL2 IsoRenderer view (./view.ts, Art's pack) + network session.
  * Falls back to the Canvas2D debug draw with ?renderer=debug or when WebGL2 / the art fails to load.
@@ -146,8 +147,19 @@ wireUiSounds(audio);
 let farm: ReturnType<typeof mountFarmPrompt> | undefined;
 const safeFarmPrompt = (p: NonNullable<typeof session.player>): ReturnType<typeof farmPrompt> => { try { return farmPrompt(world, p); } catch { return undefined; } };
 /** ADR-133: context-only touch controls (Reload only with a ranged weapon in hand). */
-const touchContext = (): { reload: boolean } => { const p = session.player; try { return { reload: holdsRangedWeapon(world, p) }; } catch { return { reload: false }; } };
-if (browserInput.controls) { const c = browserInput.controls; mountTouchOverlay(root, () => { syncTouchHidden(c.hidden, touchContext()); return c.geometry(); }, () => !menus || menus.nav.isOpen); }
+/** ADR-244: carry / sleep buttons appear only near a liftable bag / free bed (or while carrying / asleep, captioned Drop / Wake). */
+let touchCtxCache: TouchCtx = { reload: false }; let touchCtxAt = 0;
+const touchContext = (): TouchCtx => {
+  const now = performance.now(); if (now - touchCtxAt < 150) return touchCtxCache; touchCtxAt = now;
+  const p = session.player;
+  try {
+    if (p === undefined) return (touchCtxCache = { reload: false });
+    const m = stanceMode(world, p), ranged = holdsRangedWeapon(world, p);
+    return (touchCtxCache = { reload: ranged, aim: ranged, carrying: m === StanceMode.Carry, sleeping: m === StanceMode.Sleep,
+      carry: m === StanceMode.None && liftableNear(world, p) !== undefined, sleep: m !== StanceMode.Sleep && bedNear(world, p) !== undefined });
+  } catch { return (touchCtxCache = { reload: false }); }
+};
+if (browserInput.controls) { const c = browserInput.controls; mountTouchOverlay(root, () => { syncTouchHidden(c.hidden, touchContext()); return c.geometry(); }, () => !menus || menus.nav.isOpen, (id) => touchLabel(id, touchContext())); }
 /** Set by the active mode: what "Quit to main menu" must do first (save / end the P2P session / disconnect). */
 let leaveCurrent: (() => Promise<void> | void) | undefined;
 /** Set by the active mode: Settings → "Delete my progress" (ADR-099); undefined hides the entry. */
@@ -299,7 +311,7 @@ function onUiFrame(): void {
   { const id = padMenuAction(input); if (id) { menus?.open(id); return; } } // ADR-139: pad-only bindings: Select = inventory, LB+Select = crafting, RB+Select = chat
   if (input.pressed("QuickUse") && farm) { const p = session.player; if (p !== undefined && quickUseFires(safeFarmPrompt(p))) farm.trigger(); }
   if (vehicleCtl?.update()) return; // ADR-170: enter / exit (Interact), engine + headlights while driving
-  if (input.pressed("Interact")) { const c = menuCtx(); const t = c && interactPanel(c); if (t?.panel === "trade") menus?.openStall(t.stall); else if (t?.panel === "station") menus?.openStation(t.station, t.kind); else if (t?.panel === "pet") menus?.openPet(t.pet); else if (t?.panel === "loot") menus?.openLoot(t.bag); else if (t) menus?.open("character"); }
+  if (input.pressed("Interact") && !(session.player !== undefined && stanceMode(world, session.player) >= StanceMode.Carry && stanceMode(world, session.player) !== StanceMode.Aim)) { /* ADR-244: carrying → Interact drops; asleep → wakes */ const c = menuCtx(); const t = c && interactPanel(c); if (t?.panel === "trade") menus?.openStall(t.stall); else if (t?.panel === "station") menus?.openStation(t.station, t.kind); else if (t?.panel === "pet") menus?.openPet(t.pet); else if (t?.panel === "loot") menus?.openLoot(t.bag); else if (t) menus?.open("character"); }
 }
 /** ADR-160: a loot bag the server opened for us (primary click / tap fallback) shows in the inventory panel once. */
 let lootShown: number | undefined;

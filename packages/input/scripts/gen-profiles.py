@@ -21,7 +21,7 @@ def rstick(action): return b(action, composite={"x": "pad.rx", "y": "pad.ry"}, p
 
 kbm = {
  "Gameplay": [wasd("Move"), arrows("Move"), b("Sprint", "key.ShiftLeft"), b("Primary", "mouse.left"), b("Charge", "mouse.left", interaction=hold(350)),
-   b("Secondary", "mouse.right"), b("Crouch", "key.ControlLeft"), b("Interact", "key.KeyE", interaction=tap(400)), b("ContextRadial", "key.KeyE", interaction=lp()),
+   b("Secondary", "mouse.right"), b("Crouch", "key.ControlLeft"), b("Carry", "key.KeyQ"), b("Rest", "key.KeyZ"), b("Interact", "key.KeyE", interaction=tap(400)), b("ContextRadial", "key.KeyE", interaction=lp()),
    b("Jump", "key.Space"), b("Reload", "key.KeyR"), *[b(f"Hotbar{i}", f"key.Digit{i}") for i in range(1, 9)],
    b("HotbarNext", "mouse.wheelDown"), b("HotbarPrev", "mouse.wheelUp"), b("QuickUse", "key.KeyX"),
    b("ToggleInventory", "key.Tab"), b("ToggleInventory", "key.KeyI"), b("ToggleCrafting", "key.KeyC"), b("ToggleMap", "key.KeyM"),
@@ -50,7 +50,7 @@ kbm = {
 }
 pad = {
  "Gameplay": [lstick("Move"), rstick("Aim"), b("Sprint", "pad.ls"), b("Primary", "pad.rt"), b("Charge", "pad.rt", interaction=hold(350)), b("Secondary", "pad.lt"),
-   b("Crouch", "pad.rs"), b("Interact", "pad.x", interaction=tap(400)), b("ContextRadial", "pad.x", interaction=lp()), b("Jump", "pad.a"), b("Reload", "pad.y"),
+   b("Crouch", "pad.rs"), b("Carry", "pad.x", modifiers=["pad.rb"]), b("Rest", "pad.a", modifiers=["pad.rb"]), b("Interact", "pad.x", interaction=tap(400)), b("ContextRadial", "pad.x", interaction=lp()), b("Jump", "pad.a"), b("Reload", "pad.y"),
    b("QuickUse", "pad.b"), b("Hotbar1", "pad.dup"), b("Hotbar2", "pad.dright"), b("Hotbar3", "pad.ddown"), b("Hotbar4", "pad.dleft"),
    b("Hotbar5", "pad.dup", modifiers=["pad.lb"]), b("Hotbar6", "pad.dright", modifiers=["pad.lb"]), b("Hotbar7", "pad.ddown", modifiers=["pad.lb"]), b("Hotbar8", "pad.dleft", modifiers=["pad.lb"]),
    b("HotbarNext", "pad.rb", interaction=tap()), b("HotbarPrev", "pad.lb", interaction=tap()), b("ToggleInventory", "pad.select", interaction=tap()), b("ToggleMap", "pad.select", interaction=lp()),
@@ -80,7 +80,7 @@ T = lambda n: f"touch.btn.{n}"
 touch = {
  "Gameplay": [b("Move", composite={"x": "touch.move.x", "y": "touch.move.y"}), b("Aim", composite={"x": "touch.aim.x", "y": "touch.aim.y"}),
    b("Sprint", T("sprint"), interaction=TOG), b("Primary", T("attack")), b("Charge", T("attack"), interaction=hold(350)), b("Secondary", T("secondary")),
-   b("Crouch", T("crouch"), interaction=TOG), b("Interact", T("context"), interaction=tap(400)), b("ContextRadial", T("context"), interaction=lp()),
+   b("Crouch", T("crouch")), b("Carry", T("carry")), b("Rest", T("sleep")), b("Interact", T("context"), interaction=tap(400)), b("ContextRadial", T("context"), interaction=lp()),
    b("Jump", T("jump")), b("Reload", T("reload")), *[b(f"Hotbar{i}", f"touch.hotbar.{i}") for i in range(1, 9)],
    b("HotbarNext", "touch.swipe.left"), b("HotbarPrev", "touch.swipe.right"), b("QuickUse", T("quickuse")), b("ToggleInventory", T("inventory")),
    b("ToggleCrafting", T("crafting")), b("ToggleMap", T("map")), b("OpenChat", T("chat")), b("OpenSocial", T("social")), b("Cancel", T("back")), b("ToggleBuild", T("build")),

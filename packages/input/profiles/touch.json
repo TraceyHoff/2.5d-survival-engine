@@ -42,10 +42,15 @@
    },
    {
     "action": "Crouch",
-    "control": "touch.btn.crouch",
-    "interaction": {
-     "type": "toggle"
-    }
+    "control": "touch.btn.crouch"
+   },
+   {
+    "action": "Carry",
+    "control": "touch.btn.carry"
+   },
+   {
+    "action": "Rest",
+    "control": "touch.btn.sleep"
    },
    {
     "action": "Interact",

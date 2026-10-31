@@ -165,6 +165,50 @@
     "radius": 24,
     "control": "touch.btn.back",
     "glyph": "touch.button.back"
+   },
+   {
+    "id": "secondary",
+    "kind": "button",
+    "anchor": {
+     "x": 0.735,
+     "y": 0.72
+    },
+    "radius": 24,
+    "control": "touch.btn.secondary",
+    "glyph": "touch.button.secondary"
+   },
+   {
+    "id": "crouch",
+    "kind": "button",
+    "anchor": {
+     "x": 0.05,
+     "y": 0.58
+    },
+    "radius": 22,
+    "control": "touch.btn.crouch",
+    "glyph": "touch.button.crouch"
+   },
+   {
+    "id": "carry",
+    "kind": "button",
+    "anchor": {
+     "x": 0.76,
+     "y": 0.5
+    },
+    "radius": 22,
+    "control": "touch.btn.carry",
+    "glyph": "touch.button.carry"
+   },
+   {
+    "id": "sleep",
+    "kind": "button",
+    "anchor": {
+     "x": 0.67,
+     "y": 0.86
+    },
+    "radius": 22,
+    "control": "touch.btn.sleep",
+    "glyph": "touch.button.sleep"
    }
   ]
  },

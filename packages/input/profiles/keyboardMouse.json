@@ -56,6 +56,14 @@
     "control": "key.ControlLeft"
    },
    {
+    "action": "Carry",
+    "control": "key.KeyQ"
+   },
+   {
+    "action": "Rest",
+    "control": "key.KeyZ"
+   },
+   {
     "action": "Interact",
     "control": "key.KeyE",
     "interaction": {

@@ -55,6 +55,20 @@
     "control": "pad.rs"
    },
    {
+    "action": "Carry",
+    "control": "pad.x",
+    "modifiers": [
+     "pad.rb"
+    ]
+   },
+   {
+    "action": "Rest",
+    "control": "pad.a",
+    "modifiers": [
+     "pad.rb"
+    ]
+   },
+   {
     "action": "Interact",
     "control": "pad.x",
     "interaction": {
