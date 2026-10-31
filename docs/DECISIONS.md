@@ -2643,3 +2643,21 @@ Plain X / A keep Interact / Jump. The touch buttons are checked for no overlap a
 **Limitations.** The dedicated server (`apps/server/src/main.ts`) builds from `loadDefaultManifest()`, which has no cosmetics fragment. As before this ADR, customization is disabled there and no cosmetics hash is checked. The embedded/client-hosted path has the catalog.
 
 **Tests.** `packages/persist/test/adr245_skin_tones.test.ts` (map ≡ JSON, idempotence, restorePlayer 9→16 / 11→8, chunk re-save and reload), `packages/net/test/adr245_hashes_if_sent.test.ts`, `apps/client/test/adr245_skin_tones.test.ts` (localStorage remap, 18 ramp.base chips, snapshot keeps hash), and `packages/assets/test/cosmetics.test.ts` "ADR-245 skin ramps".
+
+## ADR-246: Seasonal ground tileset (gt_) + seasonal art wiring everywhere
+
+**Context.** Art & Assets shipped the gt_ ground tileset (summer/fall/winter, 6 variants per material, blob-47 edges, shore/bank, animated water, ice, fall leaf decals; e832d340, 21acbf9a, 6f64c041) and seasonal weather sprites. The engine drew one flat diamond per tile.
+
+**Decision.**
+- *Loader* (`packages/render/src/groundArt.ts`): `groundLayers(tileAt, x, y, season)` returns the cell's sprite keys bottom→top: base `gt_<mat><variant><_fall|_winter>` (variant = `groundHash % 6`, Art's preview hash), one blob-47 edge per *higher*-priority neighbour material (rock < sand < dirt < mud < forest < grass < snow; corner bits reduced), then `gt_shore_N` on sand / `gt_bank_N` elsewhere for the water mask. Water = `gt_water` / `gt_water_shallow` (tinted, animated); fall adds `gt_water_leaves_{a,b,c}` as its own untinted instance *after* the tint (30% of near-shore, 8% of open cells). Winter water is `gt_ice<v>` → `gt_water_winter`: untinted, static. `GroundArt.id` falls back exact → no season suffix → ice alias → legacy (-1).
+- *Cell math*: 68x52 frames, anchor (0.5, 18/52) on the 64x32 diamond (@2x 136x104 served by the atlas scale); the base frame overhangs 2 px per side so neighbouring variants overlap and no grid shows.
+- *WebGL2* (`terrainTiles.ts`): several instances per cell (art mode in aC.w: 1 land/water, 2 ice/leaves); procedural season ground only for legacy cells; wet/puddles on land and water, not ice/leaves. Season pages are `retainSprite`-held: the next season's pages are streamed while the current ones keep drawing, swapped when all are resident, then released (no pop, no stall). Chunks rebuild once on swap.
+- *Canvas2D*: the same layers baked into 8x8-tile blocks (≤4 bakes/frame, LRU), flat colour per block until its images are loaded; drawWater (gradient/ice) stays below.
+- *Snow*: buildings already use the 49 `<piece>_winter` twins via SeasonArt (no procedural cap). On gt land the procedural snow is `gtSnow`: winter art keeps only 0.35 × weather snow (no seasonal floor) so it is not doubled; summer/fall art keeps weather snow + floor.
+- *Weather sprites* (`weatherFx.ts`): fx_snowflake (snow level), fx_blizzard (Blizzard, wind-driven), fx_heat_haze (Heat by day) spawned into a VfxLayer per visible area, capped and scaled by QualityTier.particles; the screen-space WeatherPass stays.
+- *tree_autumn*: kept (maple fallback with its own fall look); winter aliases it to `tree_winter` (`SEASON_ALIASES`).
+- *Roads*: no seasonal road art exists, so flat decals without `_fall/_winter` art get `SEASON_GROUND` (8192): fallen-leaf speckle in fall, snow dusting in winter (GLSL + CPU mirror). Art variants win automatically if added later.
+- *Mud*: `TileId.Mud = 9`. Worldgen turns grass/dirt within 0.045 noise of the sand band into mud where a moisture field (seed^"mud", scale 9) > 0.56 (~3% of tiles); `tileAt` ≡ `load`; `mud: false` opts out. Walkable/buildable; footsteps "dirt". Fixed the client FX `surfaceOfTile` (6 = snow, 7 = forest floor).
+- `packages/render/test/stream.test.ts`: kept Art's change allowing `season_*`/`gt_*` atlases to be `stream`.
+
+**Tests.** `packages/render/test/adr246_ground_art.test.ts`, `packages/world/test/mud246.test.ts`, `apps/client/test/audio_events.test.ts` (mud/shallow).

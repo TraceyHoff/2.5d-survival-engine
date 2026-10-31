@@ -10,7 +10,7 @@ function settled(): AudioDirector { const d = new AudioDirector(); d.settleSec =
 const keys = (r: { events: { key: string }[] }): string[] => r.events.map((e) => e.key);
 describe("ADR-117 event mapping", () => {
   test("helpers: surface, weapon class, tier material", () => {
-    expect(surfaceOf(1)).toBe("water"); expect(surfaceOf(2)).toBe("sand"); expect(surfaceOf(5)).toBe("stone"); expect(surfaceOf(3, "wood")).toBe("wood");
+    expect(surfaceOf(1)).toBe("water"); expect(surfaceOf(9)).toBe("dirt"); expect(surfaceOf(8)).toBe("water"); expect(surfaceOf(2)).toBe("sand"); expect(surfaceOf(5)).toBe("stone"); expect(surfaceOf(3, "wood")).toBe("wood");
     expect(weaponClass("machete")).toBe("blade"); expect(weaponClass("maul")).toBe("blunt"); expect(weaponClass(undefined)).toBe("fists"); expect(weaponClass("rifle")).toBe("rifle");
     expect(tierMaterial(0)).toBe("wood"); expect(tierMaterial(2)).toBe("stone"); expect(tierMaterial(4)).toBe("metal");
   });
