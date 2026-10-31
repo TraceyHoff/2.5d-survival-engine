@@ -6,3 +6,4 @@ export * from "./visual.js";
 export * from "./merge.js";
 export * from "./uiScreens.js";
 export * from "./shards.js";
+export * from "./manifest-index.js";

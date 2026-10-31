@@ -6,6 +6,7 @@
 import { existsSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
 import { PROTOCOL_VERSION } from "@engine/net";
+import { cosmeticsHashes, type CosmeticCatalogLike } from "@engine/core";
 import { createGameServer, devBotsFromEnv, type GameMode, type GameServer } from "./game.js";
 
 export { createGameServer } from "./game.js";
@@ -46,6 +47,23 @@ export function statsReporter(gs: GameServer, periodSec: number, print: (s: stri
   return () => clearInterval(timer);
 }
 
+/**
+ * ADR-248: the cosmetics catalog a dedicated server runs with: the same merged manifest the client builds (MANIFEST_INDEX
+ * fragments incl. the customization shards, plus pack/ids.lock.json), so appearance, wardrobe, the ADR-245 skin-tone
+ * migration and the `cosmetics` handshake hash all work headless. Undefined (customization off) only if the pack has none.
+ */
+export async function loadServerCatalog(log: (m: string) => void = () => undefined): Promise<CosmeticCatalogLike | undefined> {
+  let catalog: CosmeticCatalogLike | undefined;
+  try {
+    const { loadMergedPackManifest } = await import("@engine/assets/node");
+    const { result, fragments } = await loadMergedPackManifest();
+    const cat = result.registry.cosmetics; catalog = cat?.size ? cat : undefined;
+    if (cat && catalog) log(`assets: cosmetics ${cat.size} wearables, ${catalog.skinTones.length} skin tones, hash 0x${(cosmeticsHashes(catalog)["cosmetics"] ?? 0).toString(16).padStart(8, "0")} (fragments: ${fragments.join(", ")})`);
+  } catch (e) { log(`assets: no cosmetics catalog (${String(e)})`); }
+  if (!catalog) log("assets: customization disabled (no cosmetics in the merged manifest)");
+  return catalog;
+}
+
 async function main(): Promise<void> {
   const args = parseServerArgs(process.argv.slice(2), process.env);
   const { WsServerTransport } = await import("@engine/net/node");
@@ -60,10 +78,7 @@ async function main(): Promise<void> {
   } else console.log("server: no save (in-memory world)");
   const transport = new WsServerTransport();
   const port = await transport.listen(args.port, args.host);
-  // Cosmetics catalog from the art pack (enables character customization); the server still runs without it.
-  let catalog: import("@engine/core").CosmeticCatalogLike | undefined;
-  try { const { loadDefaultManifest } = await import("@engine/assets/node"); catalog = loadDefaultManifest().registry.cosmetics; } catch (e) { console.log(`assets: no cosmetics catalog (${String(e)})`); }
-  if (!catalog) console.log("assets: customization disabled (no cosmetics in the pack manifest)");
+  const catalog = await loadServerCatalog((m) => console.log(m));
   const gs = createGameServer({ transport, ...(store ? { store } : {}), ...(catalog ? { catalog, randomAppearance: true } : {}), seed: args.seed, mode: args.mode, ...(process.env["DEV_SANDBOX"] === "1" ? { devSandbox: true } : {}), devBots: devBotsFromEnv(process.env), log: (m) => console.log(m) });
   console.log(`server: mode ${gs.mode} (human bots ${gs.modeConfig.humanBots ? "on" : "off"})`);
   console.log(`server: listening ws://${args.host}:${port} protocol v${PROTOCOL_VERSION}, ${1000 / gs.loop.dtMs}Hz, seed ${gs.world.seed}, schema ${gs.world.getSchemaHash().toString(16)}`);

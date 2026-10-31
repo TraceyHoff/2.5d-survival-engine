@@ -4,6 +4,7 @@ import { loadManifest, validateAssetFiles, type AssetRegistry, type IdLock } fro
 import { DEFAULT_MANIFEST, FIXTURE_MANIFEST } from "./paths.js";
 import type { ManifestJson } from "./manifest.js";
 import { readManifestJson } from "./readManifest.js";
+import { MANIFEST_INDEX, loadMergedManifestWith, type ManifestFragmentRef } from "./manifest-index.js";
 export { readManifestJson };
 
 /** Node-only helpers (import "@engine/assets/node"). */
@@ -18,6 +19,35 @@ export function loadManifestFile(path: string): ReturnType<typeof loadManifest> 
 }
 /** The default content manifest (art pack). */
 export const loadDefaultManifest = () => loadManifestFile(ASSETS_ROOT + DEFAULT_MANIFEST);
+/** Repo root (packages/assets/../../). */
+export const REPO_ROOT = fileURLToPath(new URL("../../../", import.meta.url));
+/**
+ * ADR-248: art-root url prefix -> directory on disk, mirroring the client dev server's MOUNTS (apps/client/vite.config.ts)
+ * for the manifest JSON the merged manifest reads (images are not needed headless).
+ */
+export const ART_DIRS: Readonly<Record<string, string>> = {
+  "pack/": PACK_DIR, "pvp_clan/": REPO_ROOT + "assets/pvp_clan/", "stalls/": REPO_ROOT + "assets/stalls/", "ui/": REPO_ROOT + "assets/ui/",
+};
+const ART_URL = "http://art.invalid/";
+/** Read `<art>/<rel>` from ART_DIRS (undefined if unmapped or missing). */
+export function readArtJson(rel: string, dirs: Readonly<Record<string, string>> = ART_DIRS): unknown {
+  for (const [prefix, dir] of Object.entries(dirs)) if (rel.startsWith(prefix)) {
+    const f = dir + rel.slice(prefix.length); return existsSync(f) ? JSON.parse(readFileSync(f, "utf8")) : undefined;
+  }
+  return undefined;
+}
+/**
+ * ADR-248: the client's merged manifest (MANIFEST_INDEX fragments: pack + customization shards + vehicles/items/building/
+ * nature/... + ids.lock) built from disk, so a dedicated server has the same cosmetics catalog (and hash) as the client.
+ * The v2 character sample (CHAR_ART_V2_FRAGMENT) is sprites only and does not change cosmetics; pass it in `list` if needed.
+ */
+export async function loadMergedPackManifest(opts: { list?: readonly ManifestFragmentRef[]; dirs?: Readonly<Record<string, string>> } = {}): ReturnType<typeof loadMergedManifestWith> {
+  const dirs = opts.dirs ?? ART_DIRS;
+  return loadMergedManifestWith(opts.list ?? MANIFEST_INDEX, {
+    artUrl: ART_URL,
+    get: async (url) => (url.startsWith(ART_URL) ? readArtJson(decodeURIComponent(url.slice(ART_URL.length)), dirs) : undefined),
+  });
+}
 /** The placeholder test fixture. */
 export const loadFixtureManifest = () => loadManifestFile(ASSETS_ROOT + FIXTURE_MANIFEST);
 

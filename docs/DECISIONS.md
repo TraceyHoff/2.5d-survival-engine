@@ -2640,7 +2640,7 @@ Plain X / A keep Interact / Jump. The touch buttons are checked for no overlap a
 - **Shader: keep the multiply.** The WebGL instance layout is full (`INSTANCE_FLOATS=40`, slots 33–39 used). A per-instance shadow/highlight ramp needs 6 more floats and a stride change on the shared hot path, and changing only Canvas2D would make the two renderers diverge. `ramp.base` is the multiply colour, so the tint is already calibrated to the new art. Revisit when the instance layout is next reworked.
 - **Handshake.** The cosmetics catalog hash changes (now `0x5591b294` for the shipped pack). `cosmeticsHashes(catalog)` is offered by the client and checked by the server through a new `NetServer` option `hashesIfSent`: a client that sends `cosmetics` with a different value gets `HashMismatch`; a client that sends none (Canvas2D debug, bots) is accepted. The schema hash also changes because of `skinScheme`, so pre-245 clients already fail with `SchemaMismatch`. `direct.ts` uses the same offered hashes.
 
-**Limitations.** The dedicated server (`apps/server/src/main.ts`) builds from `loadDefaultManifest()`, which has no cosmetics fragment. As before this ADR, customization is disabled there and no cosmetics hash is checked. The embedded/client-hosted path has the catalog.
+**Limitations.** The dedicated server (`apps/server/src/main.ts`) builds from `loadDefaultManifest()`, which has no cosmetics fragment. As before this ADR, customization is disabled there and no cosmetics hash is checked. The embedded/client-hosted path has the catalog. *(Fixed by ADR-248.)*
 
 **Tests.** `packages/persist/test/adr245_skin_tones.test.ts` (map ≡ JSON, idempotence, restorePlayer 9→16 / 11→8, chunk re-save and reload), `packages/net/test/adr245_hashes_if_sent.test.ts`, `apps/client/test/adr245_skin_tones.test.ts` (localStorage remap, 18 ramp.base chips, snapshot keeps hash), and `packages/assets/test/cosmetics.test.ts` "ADR-245 skin ramps".
 
@@ -2661,3 +2661,22 @@ Plain X / A keep Interact / Jump. The touch buttons are checked for no overlap a
 - `packages/render/test/stream.test.ts`: kept Art's change allowing `season_*`/`gt_*` atlases to be `stream`.
 
 **Tests.** `packages/render/test/adr246_ground_art.test.ts`, `packages/world/test/mud246.test.ts`, `apps/client/test/audio_events.test.ts` (mud/shallow).
+
+## ADR-248: The dedicated server builds the client's merged manifest (customization + cosmetics hash headless)
+
+**Context.** `apps/server/src/main.ts` loaded only `pack/manifest.json` (`loadDefaultManifest`). That file has no cosmetics, so a dedicated server ran with no catalog: customization off (no AppearanceServer, `setAppearance` / `equipCosmetic` unhandled), no random join look, no `cosmetics` handshake hash (ADR-245), and no skin-tone migration for returning players. Only the client-hosted path had the catalog.
+
+**Decision.**
+- The fragment list (`MANIFEST_INDEX`, `CHAR_ART_V2_FRAGMENT`, `fragmentBase`, `applyFragmentFlags`, `withCharArtFragment`, `servedManifestIndex`) moves from `apps/client/src/manifest-index.ts` to `packages/assets/src/manifest-index.ts`. The client file re-exports it.
+- New `loadMergedManifestWith(list, { get, artUrl })` in `@engine/assets` is the one merged-manifest builder: it fetches fragments in order, expands v2 shard indexes, applies the ADR-242 flags, runs `mergeManifests` (first wins), and loads with `pack/ids.lock.json`. The client's `loadMergedManifest` (view.ts) now calls it with `fetch`.
+- `@engine/assets/node` adds `ART_DIRS` (art-url prefix → directory, mirroring the vite MOUNTS: `pack/`, `pvp_clan/`, `stalls/`, `ui/`) and `loadMergedPackManifest()`, which runs the same builder over files on disk.
+- `apps/server` exports `loadServerCatalog(log)`, and `main()` uses it. The boot log names the wearables, skin tones, cosmetics hash and fragments, e.g. `assets: cosmetics 169 wearables, 18 skin tones, hash 0x5591b294 (fragments: pack, ui-kit, branding, customization, ...)`. With the catalog, everything the client-hosted path has now runs on a dedicated server: appearance and wardrobe, the random join look, the ADR-245 migration in `restorePlayer`, and `hashesIfSent: { cosmetics }`.
+- The v2 character sample is not loaded by the server. It is sprites only (no cosmetics), so it changes neither the catalog nor the hash; clients with `charArt=v2s` still match.
+
+**Tests.**
+- `apps/client/test/adr248_server_manifest_parity.test.ts` replays the client's fetches through vite's MOUNTS (`artFile` / `artServed`). The server's merged manifest has the same fragments, the same 18 skin tones and wearables, the same cosmetics hash, and the same registry hash.
+- `apps/server/test/adr248_dedicated_cosmetics.test.ts`:
+  - The server boots with customization and offers the client's hash.
+  - A client with the same hash or no hash is accepted; one with a different hash is rejected with `HashMismatch`.
+  - Appearances replicate both ways between two players.
+  - A returning player's legacy ebony (9) restores as ebony (16) with the new scheme.

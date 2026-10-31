@@ -34,6 +34,11 @@ export function artServed(url: string): boolean {
   for (const [p, dir, ok] of MOUNTS) if (url.startsWith(p)) { const rel = url.slice(p.length); return ok(rel) && existsSync(join(dir, rel)); }
   return false;
 }
+/** ADR-248: the file `<art>/<url>` is served from (undefined if not served); lets tests replay the client's manifest fetches. */
+export function artFile(url: string): string | undefined {
+  for (const [p, dir, ok] of MOUNTS) if (url.startsWith(p)) { const rel = url.slice(p.length); return ok(rel) && existsSync(join(dir, rel)) ? join(dir, rel) : undefined; }
+  return undefined;
+}
 /** `<art>/manifests.index.json`: only fragments that ship, so the client requests no missing manifests. */
 const manifestIndexJson = (): string => JSON.stringify(servedManifestIndex(artServed), null, 1);
 

@@ -22,7 +22,7 @@ import { setDayFraction, setSeasonState, resolveOffHandSprite, CharArtMapper, pa
 import { dayCount } from "./day-clock.js";
 import { clanPieceTint, clanPieceTintPair } from "./clan-tint.js";
 import { pieceVariantOpts } from "./piece-variant.js";
-import { loadManifest, mergeManifests, resolveManifestShards, buildPieceVisual, type AssetRegistry, type ManifestFragment, type ManifestJson } from "@engine/assets";
+import { loadManifest, buildPieceVisual, type AssetRegistry } from "@engine/assets";
 import { BuildGhost, pieceArtRow, pieceRotFlags, ROT_NO_OCCLUDE, IsoRenderer, Canvas2DRenderer, chooseRenderer, Sprite, Shadow, LightSource, Occluder, SpriteAlpha, SpriteFlag, sourcesFromManifest, coreAppearanceBinding, CameraTargetGuard } from "@engine/render";
 import { countFraction } from "./load-progress.js";
 import { VehicleView, type VehicleSnapshot, type VehicleRenderDef } from "@engine/render";
@@ -70,7 +70,7 @@ import { Burning, Driver, weaponClassOf, Stance, StanceMode, netIdEntity, bedSpo
 import { animChainFor, bedFit, type AnimChainCtx } from "@engine/render";
 import { floorToTerrainZ } from "@engine/world";
 import { RaidFx, useRaidBurning, type RaidPiece } from "./raid-fx.js";
-import { MANIFEST_INDEX, applyFragmentFlags, withCharArtFragment, fragmentBase, type ManifestFragmentRef } from "./manifest-index.js";
+import { MANIFEST_INDEX, withCharArtFragment, loadMergedManifestWith, type ManifestFragmentRef } from "./manifest-index.js";
 import { stumpKeys } from "./stumps.js";
 /** `?cam=animal`: debug camera that follows the first ambient animal instead of the player. */
 const CAM_ANIMAL = typeof location !== "undefined" && new URLSearchParams(location.search).get("cam") === "animal";
@@ -788,20 +788,12 @@ async function loadMergedManifest(art: string): Promise<ReturnType<typeof loadMa
   const idx = (await get(art + "manifests.index.json")) as { fragments?: ManifestFragmentRef[] } | undefined;
   const charArt = parseCharArt(new URLSearchParams(globalThis.location?.search ?? "").get("charArt"), (() => { try { return globalThis.localStorage?.getItem("charArt"); } catch { return null; } })());
   const list = withCharArtFragment(idx?.fragments?.length ? idx.fragments : MANIFEST_INDEX, charArt); // ADR-240: v2 sample only with charArt
-  const frags: ManifestFragment[] = []; const dirOf = new Map<string, string>();
-  for (const f of list) {
-    const url = new URL(f.url, new URL(art, location.href)).href; let m = await get(url);
-    if (m === undefined) { if (f.optional) continue; throw new Error(`manifest fetch failed: ${url}`); }
-    // ADR-138: a v2 shard index fetches its shards in parallel and merges them (duplicate keys across shards throw)
-    m = await resolveManifestShards(m, async (file) => get(new URL(file, url).href));
-    frags.push({ name: f.name, manifest: applyFragmentFlags(f, m) as ManifestJson }); dirOf.set(f.name, fragmentBase(f, url, new URL(art, location.href).href)); // ADR-242 root/stream
-  }
-  // atlas paths become absolute per fragment, so sourcesFromManifest (pack base) loads each PNG from its one source
-  const { manifest, collisions, warnings } = mergeManifests(frags, { resolve: (p, frag) => (/^(\/|[a-z]+:)/i.test(p) ? p : new URL(p, dirOf.get(frag)).pathname) });
+  // ADR-248: shared with the dedicated server (@engine/assets loadMergedManifestWith); atlas paths become absolute per
+  // fragment, so sourcesFromManifest (pack base) loads each PNG from its one source
+  const { result, collisions, warnings } = await loadMergedManifestWith(list, { get, artUrl: new URL(art, location.href).href });
   if (collisions.length) console.info(`[view] manifest: ${collisions.length} duplicate keys kept from the first fragment (${collisions.slice(0, 5).map((c) => `${c.section}.${c.key}`).join(", ")}...)`);
   for (const w of warnings) if (!/ defined in /.test(w)) console.warn(`[view] manifest: ${w}`);
-  const lock = await get(art + "pack/ids.lock.json") as Parameters<typeof loadManifest>[1] extends infer O ? O extends { lock?: infer L } ? L : never : never;
-  return loadManifest(manifest, lock ? { lock } : {});
+  return result;
 }
 
 /** Daylight for the black-frame self-check; renderers without a `lighting` state (Canvas2D) count as night (check skipped). */
