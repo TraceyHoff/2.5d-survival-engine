@@ -4,7 +4,7 @@
 import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, test } from "vitest";
-import { netProblem, mountNetStatus, pingLabel, HIGH_PING_MS, CONNECTING_GRACE_MS } from "../src/net-status.js";
+import { netProblem, mountNetStatus, pingLabel, HIGH_PING_MS, CONNECTING_GRACE_MS, HIGH_PING_SUSTAIN_MS } from "../src/net-status.js";
 import { GameMenus, sessionBody } from "../src/game-menus.js";
 
 (globalThis as { matchMedia?: unknown }).matchMedia ??= () => ({ matches: false, addEventListener() {}, removeEventListener() {} });
@@ -25,6 +25,7 @@ describe("in-game: no box over the game, problem-only indicator", () => {
     expect(netProblem({ status: "connected", rttMs: 40 })).toBeUndefined();
     expect(netProblem({ status: "connected", rttMs: undefined })).toBeUndefined();
     expect(netProblem({ status: "connected", rttMs: HIGH_PING_MS })).toBeUndefined();
+    expect(netProblem({ status: "connected", rttMs: 900 }, 0, 500)).toBeUndefined(); // one slow sample doesn't count
     expect(netProblem({ status: "connected", rttMs: HIGH_PING_MS + 1 })).toEqual({ level: "warn", text: `High ping · ${HIGH_PING_MS + 1} ms` });
     expect(netProblem({ status: "connecting", rttMs: undefined }, 500)).toBeUndefined();
     expect(netProblem({ status: "connecting", rttMs: undefined }, CONNECTING_GRACE_MS + 1)?.text).toBe("Connecting…");
@@ -45,7 +46,8 @@ describe("in-game: no box over the game, problem-only indicator", () => {
     expect(ns.root.querySelector("button,input,a")).toBeNull(); expect(ns.root.tabIndex).toBe(-1);
     const css = Array.from(document.querySelectorAll("style")).map((s) => s.textContent).join("");
     expect(css).toMatch(/#net-status\{position:absolute;z-index:5;pointer-events:none/);
-    src.status = "connected"; src.rttMs = 600; ns.update(); expect(ns.root.textContent).toBe("High ping · 600 ms");
+    src.status = "connected"; src.rttMs = 600; ns.update(); expect(ns.root.style.display).toBe("none"); // a spike: not yet
+    t += HIGH_PING_SUSTAIN_MS; ns.update(); expect(ns.root.textContent).toBe("High ping · 600 ms"); t = 0;
     src.rttMs = 50; ns.update(); expect(ns.root.style.display).toBe("none");
     src.status = "connecting"; ns.update(); expect(ns.root.style.display).toBe("none"); t = CONNECTING_GRACE_MS + 10; ns.update(); expect(ns.root.textContent).toBe("Connecting…");
     ns.destroy(); expect(document.getElementById("net-status")).toBeNull();
@@ -131,7 +133,7 @@ describe("start menu → Multiplayer page", () => {
     const css = Array.from(document.querySelectorAll("style")).map((s) => s.textContent).join("");
     expect(css).toContain(".boot[data-page=multiplayer] .panel{width:min(480px,94vw)");
     expect(css).toContain(".boot .mp-row input{flex:1 1 0;min-width:0");
-    expect(css).toMatch(/@media \(max-height:760px\)\{\.boot\[data-page=multiplayer\]/);
+    expect(css).toMatch(/@media \(max-height:860px\)\{\.boot\[data-page=multiplayer\]/);
   });
 });
 

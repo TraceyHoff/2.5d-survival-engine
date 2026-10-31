@@ -2255,3 +2255,44 @@ Tile sizes and hit targets (≥48/56px) are unchanged. Spatial gamepad and arrow
 | Container storage capacity | 48→72 | 32→40 | 56→104 | 24→40 |
 
 Inventory and container show all of their 8 and 12 test items both before and after. `adr235_bigger_lists.test.ts` has 4 tests. Screenshots: `/workspace/shots/bigger_{before,after}_{1080p,720p,tablet,mobile}_{build,crafting,inventory,container}.png`.
+
+## ADR-236: Multiplayer moves to its own start-menu page; no connection box over the game
+
+**Problem.** The dedicated-server connect box (`connect.ts`, `#connect-overlay`) and the P2P host box (`p2p-overlay.ts`) sat on top of the game during play. When the link dropped, the box measured 256×117 at top-centre, and 217×159 on mobile, where it covered the HUD and the menu bar. The start menu split multiplayer over sub-pages, and at 720p the panel ran past the bottom of the screen (bottom at 736 of 720).
+
+**Decision.**
+- **Start menu → Multiplayer** (`menu.ts`, `.boot[data-page=multiplayer]`). This one page replaces the join and dedicated sub-pages. It has three sections:
+  - **Host**: the `Host game` button, plus the player cap.
+  - **Join a friend**: a room-code field and `Join`.
+  - **Dedicated server**: a server address field and `Connect`, with a live status line (`[data-role=server-status]`). The line shows "● Online · N ms" or "Can't reach server (…)". `probeServer()` checks the address with a WebSocket open, once on open and again 600 ms after each edit.
+
+  Navigation works on every input:
+  - **Gamepad:** focus starts on Host. D-pad and Tab order is Host → code → Join → address → Connect → Back, then it wraps. A activates and B goes back.
+  - **Keyboard:** Enter in a field presses that field's own button (`Join` or `Connect`), not the first button on the page.
+  - **Touch:** inputs flex to width.
+
+  At max-height 860px or max-width 480px the page uses a compact layout: no subtitle or lane, and the page aligns to the top. A failed connect or join, leaving a session, and ending a session all return to this page with a notice (`backToMenu(…, "multiplayer")`).
+- **Pause → Session** (`game-menus.ts`, `SessionInfo` + `sessionBody`) carries everything the old boxes showed. It now sits directly under Resume and refreshes live.
+  - **Rows:** Server or room code, status, ping, account and players (host marked).
+  - **Actions:** Reconnect (when not connected), plus Disconnect, Leave or End session.
+- **In game** (`net-status.ts`) there is only `#net-status`: a ≤220px non-interactive pill that sits just under the vitals HUD. It shows only when there is a problem:
+  - "Disconnected · Pause → Session";
+  - "Connecting…" after 3 s;
+  - "High ping · N ms" once ping stays above 250 ms for 3 s. A single slow sample, such as the initial snapshot, doesn't count.
+- `connect.ts`, `p2p-overlay.ts` and their test are removed. `?server=` / `?menu=0` now connect automatically (`?autoconnect=0` turns that off).
+
+**Evidence.** `/workspace/shots/mp.mjs` (Playwright and Chrome) ran a real local server at 1920×1080, 1280×720, tablet 1024×768 touch and mobile 390×844 touch.
+
+Each run opens Multiplayer, checks the focus order, connects to the dedicated server end to end, and opens Pause → Session. It then kills the server.
+
+| Check | Before | After |
+|---|---|---|
+| Menu panel in view at 720p | no (bottom 736) | yes (76–590) |
+| Box over game, link lost | 256×117 (mobile 217×159) | pill 170×20 (mobile 187×20), no overlap |
+| Overlays while connected | – | none |
+
+- **Focus order** at all four sizes: Host → code → Join → address → Connect → Back → wrap.
+- **P2P hosting** works (room code shown, 1/12 players, host listed).
+- **P2P join:** the guest reached the host ("join: client 1"), but the WebRTC data channel timed out between two headless contexts on this box. That is a network/TURN limit; the transport code is unchanged. The failure correctly returns to Multiplayer with "Couldn't join … TURN server may be needed".
+
+`adr236_mp_menu.test.ts` has 10 tests. Screenshots: `/workspace/shots/mp_menu_{before,after}_*.png`, `mp_ingame_{before,after}_*[_lost|_session].png` and `mp_ingame_after_{host,join}_session.png`.
