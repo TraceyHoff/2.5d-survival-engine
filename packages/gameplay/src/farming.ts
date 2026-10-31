@@ -2,6 +2,7 @@
  * ADR-110 farming: hoe -> tilled soil, seeds / saplings planted with Use (IntentAction.Use on the item's slot), growth
  * stages with watering + fertilizer, maturity -> a resource node (crop_* nodes are oneShot and may drop seeds back).
  * Seeds come only from gathering wild plants and harvesting crops (resources.json yields); there are no seed recipes.
+ * ADR-247: a seed/sapling drops only from its OWN species (`wild` nodes, its `becomes` node, crop_<key>); see seedSourceIssues.
  * Authority-only and RNG-free; Crop is networked + persistent so fields survive restarts and replicate to clients.
  */
 import { DEFAULT_TICK_HZ, Transform, Weather, entityIndex, type Entity, type World } from "@engine/core";
@@ -9,6 +10,7 @@ import { installSpatialIndex } from "@engine/world";
 import raw from "../data/farming.json";
 import { BuildPiece, Crop, Dead, Equipment, IntentAction, PlayerIntent, ResourceNode } from "./components.js";
 import { gameplayDefs, isAuthority } from "./config.js";
+import type { GameDefs } from "./defs.js";
 import { countItem, readSlots, slotItem, takeFromSlot } from "./inventory.js";
 import { emit, FarmFailed, XpActivity } from "./events.js";
 import { indexEntity, spawnResourceNode } from "./spawn.js";
@@ -18,13 +20,44 @@ import { nearWater } from "./systems/vitals.js";
 import { isRaining } from "./realism.js";
 
 export type PlantType = "crop" | "bush" | "tree";
-export interface Plantable { seed: string; key: string; type: PlantType; growSeconds: number; stages: number; becomes: string; tiles: number[] }
+export interface Plantable { seed: string; key: string; type: PlantType; growSeconds: number; stages: number; becomes: string; tiles: number[];
+  /** ADR-247: world-spawned resource nodes of the same species (where the seed is first found). */
+  wild: string[] }
 export interface FarmingData { unwateredMul: number; wateredMul: number; wateredSeconds: number; fertilizerMul: number; waterRadius: number; fertilizeRadius: number; plantReach: number; minSpacing: number; tickSeconds: number; plantables: Plantable[] }
 export const FARMING: FarmingData = raw as unknown as FarmingData;
 export const FARM_TOOL = { hoe: "hoe", wateringCan: "watering_can", fertilizer: "fertilizer" } as const;
 /** Crop.kind -> plantable (kind 0 = tilled soil). */
 export const plantableOf = (kind: number): Plantable | undefined => (kind > 0 ? FARMING.plantables[kind - 1] : undefined);
 export const plantableBySeed = (seed: string): number => FARMING.plantables.findIndex((p) => p.seed === seed) + 1;
+/** ADR-247: resource node keys allowed to yield `p.seed`: its wild nodes, its `becomes` node and crop_<key>. */
+export function seedSourceNodes(p: Plantable): Set<string> { return new Set([...p.wild, p.becomes, `crop_${p.key}`]); }
+/**
+ * ADR-247 seed-source rules, checked against loaded defs (empty = OK):
+ *  - a node may only yield seeds of its own species (no cross-species / generic seed drops);
+ *  - every plantable has a wild node that worldgen actually places (some band lists it with nodeChance > 0),
+ *    and that wild node yields its seed with chance > 0; every crop_<key> harvest yields its own seed back;
+ *  - no recipe outputs a plantable seed.
+ */
+export function seedSourceIssues(defs: GameDefs, farming: FarmingData = FARMING): string[] {
+  const out: string[] = []; const bySeed = new Map(farming.plantables.map((p) => [p.seed, p]));
+  const resByKey = new Map([...defs.resources.values()].map((r) => [r.key, r]));
+  const itemKey = (id: number): string => defs.items.get(id)?.key ?? `#${id}`;
+  for (const r of defs.resources.values()) for (const y of r.yields) {
+    const p = bySeed.get(itemKey(y.item)); if (p && !seedSourceNodes(p).has(r.key)) out.push(`${r.key} yields ${p.seed} (not a ${p.key} plant)`);
+  }
+  const placed = new Set<number>(); for (const b of defs.worldgen.bands) if (b.nodeChance > 0) for (const n of b.nodes) placed.add(n);
+  const yieldsSeed = (key: string, seed: string): boolean => resByKey.get(key)?.yields.some((y) => itemKey(y.item) === seed && y.chance > 0 && y.max > 0) ?? false;
+  for (const p of farming.plantables) {
+    if (!p.wild?.length) { out.push(`${p.key}: no wild source listed`); continue; }
+    const spawned = p.wild.filter((k) => { const r = resByKey.get(k); return r !== undefined && placed.has(r.id) && yieldsSeed(k, p.seed); });
+    if (!spawned.length) out.push(`${p.key}: no world-spawned wild node yields ${p.seed}`);
+    const crop = `crop_${p.key}`; if (resByKey.has(crop) && !yieldsSeed(crop, p.seed)) out.push(`${crop} harvest does not return ${p.seed}`);
+    if (p.type !== "crop" && !yieldsSeed(p.becomes, p.seed)) out.push(`${p.becomes} (grown ${p.type}) does not yield ${p.seed}`);
+  }
+  for (const rc of defs.recipes.values()) { const k = itemKey(rc.output.item); if (bySeed.has(k)) out.push(`recipe ${rc.key} outputs ${k}`); }
+  return out;
+}
+
 /** Render key for a crop entity: farm_soil, or crop_<key>_<stage> / sapling_<key>_<stage> / bush_<key>_<stage>. */
 export function cropSpriteKey(kind: number, stage: number): string {
   const p = plantableOf(kind); if (!p) return "farm_soil";

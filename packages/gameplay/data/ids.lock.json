@@ -461,7 +461,8 @@
     "seed_mix": 459,
     "veggie_bites": 460,
     "lantern": 461,
-    "torch": 462
+    "torch": 462,
+    "berry_seeds": 463
   },
   "resources": {
     "fallen_branches": 1,

@@ -1,5 +1,5 @@
 {
-  "$comment": "ADR-110 farming. Seeds/saplings (items) planted with Use become a Crop entity that grows through `stages` over growSeconds (1-hour day => most crops mature in 6-18 min, trees ~30-40 min) and then turns into the `becomes` resource node (crop_* nodes are oneShot: harvested once, may drop seeds). Crops (type crop) need tilled soil (Use a hoe). Watering (watering can, or rain) gives wateredMul for wateredSeconds; fertilizer gives fertilizerMul until maturity. tiles: allowed terrain ids (0 = unknown, always allowed).",
+  "$comment": "ADR-110 farming. Seeds/saplings (items) planted with Use become a Crop entity that grows through `stages` over growSeconds (1-hour day => most crops mature in 6-18 min, trees ~30-40 min) and then turns into the `becomes` resource node (crop_* nodes are oneShot: harvested once, may drop seeds). Crops (type crop) need tilled soil (Use a hoe). Watering (watering can, or rain) gives wateredMul for wateredSeconds; fertilizer gives fertilizerMul until maturity. tiles: allowed terrain ids (0 = unknown, always allowed). ADR-247: each plantable lists `wild` = the world-spawned resource nodes of the SAME species; a seed/sapling may only be yielded by those nodes, by its `becomes` node, or by its crop_<key> harvest (no cross-species or generic seed sources).",
   "unwateredMul": 0.5,
   "wateredMul": 1.0,
   "wateredSeconds": 600,
@@ -20,6 +20,9 @@
       "tiles": [
         3,
         4
+      ],
+      "wild": [
+        "wild_wheat"
       ]
     },
     {
@@ -32,6 +35,9 @@
       "tiles": [
         3,
         4
+      ],
+      "wild": [
+        "wild_corn"
       ]
     },
     {
@@ -44,6 +50,9 @@
       "tiles": [
         3,
         4
+      ],
+      "wild": [
+        "wild_potato"
       ]
     },
     {
@@ -56,6 +65,9 @@
       "tiles": [
         3,
         4
+      ],
+      "wild": [
+        "wild_carrot"
       ]
     },
     {
@@ -68,6 +80,9 @@
       "tiles": [
         3,
         4
+      ],
+      "wild": [
+        "wild_tomato"
       ]
     },
     {
@@ -80,6 +95,9 @@
       "tiles": [
         3,
         4
+      ],
+      "wild": [
+        "wild_pumpkin"
       ]
     },
     {
@@ -92,6 +110,9 @@
       "tiles": [
         3,
         4
+      ],
+      "wild": [
+        "wild_squash"
       ]
     },
     {
@@ -104,6 +125,9 @@
       "tiles": [
         3,
         4
+      ],
+      "wild": [
+        "wild_beans"
       ]
     },
     {
@@ -116,6 +140,9 @@
       "tiles": [
         3,
         4
+      ],
+      "wild": [
+        "wild_cabbage"
       ]
     },
     {
@@ -128,6 +155,9 @@
       "tiles": [
         3,
         4
+      ],
+      "wild": [
+        "wild_onion"
       ]
     },
     {
@@ -140,6 +170,9 @@
       "tiles": [
         3,
         4
+      ],
+      "wild": [
+        "wild_garlic"
       ]
     },
     {
@@ -152,6 +185,9 @@
       "tiles": [
         3,
         4
+      ],
+      "wild": [
+        "cotton_bush"
       ]
     },
     {
@@ -164,6 +200,9 @@
       "tiles": [
         3,
         4
+      ],
+      "wild": [
+        "flax_patch"
       ]
     },
     {
@@ -176,6 +215,9 @@
       "tiles": [
         3,
         4
+      ],
+      "wild": [
+        "wild_hemp"
       ]
     },
     {
@@ -188,6 +230,9 @@
       "tiles": [
         3,
         4
+      ],
+      "wild": [
+        "herb_patch"
       ]
     },
     {
@@ -200,6 +245,9 @@
       "tiles": [
         3,
         4
+      ],
+      "wild": [
+        "wild_mushroom"
       ]
     },
     {
@@ -212,6 +260,9 @@
       "tiles": [
         3,
         4
+      ],
+      "wild": [
+        "wild_yarrow"
       ]
     },
     {
@@ -224,6 +275,9 @@
       "tiles": [
         3,
         4
+      ],
+      "wild": [
+        "wild_ginseng"
       ]
     },
     {
@@ -236,6 +290,9 @@
       "tiles": [
         2,
         3
+      ],
+      "wild": [
+        "wild_aloe"
       ]
     },
     {
@@ -248,6 +305,9 @@
       "tiles": [
         3,
         4
+      ],
+      "wild": [
+        "blueberry_bush"
       ]
     },
     {
@@ -260,6 +320,9 @@
       "tiles": [
         3,
         4
+      ],
+      "wild": [
+        "raspberry_bush"
       ]
     },
     {
@@ -272,6 +335,9 @@
       "tiles": [
         3,
         4
+      ],
+      "wild": [
+        "blackberry_bush"
       ]
     },
     {
@@ -284,6 +350,9 @@
       "tiles": [
         3,
         4
+      ],
+      "wild": [
+        "strawberry_bush"
       ]
     },
     {
@@ -296,6 +365,9 @@
       "tiles": [
         3,
         4
+      ],
+      "wild": [
+        "oak_tree"
       ]
     },
     {
@@ -308,6 +380,9 @@
       "tiles": [
         3,
         4
+      ],
+      "wild": [
+        "pine_tree"
       ]
     },
     {
@@ -320,6 +395,9 @@
       "tiles": [
         3,
         4
+      ],
+      "wild": [
+        "birch_tree"
       ]
     },
     {
@@ -332,6 +410,9 @@
       "tiles": [
         3,
         4
+      ],
+      "wild": [
+        "maple_tree"
       ]
     },
     {
@@ -344,6 +425,9 @@
       "tiles": [
         3,
         4
+      ],
+      "wild": [
+        "willow_tree"
       ]
     },
     {
@@ -355,6 +439,9 @@
       "becomes": "palm_tree",
       "tiles": [
         2
+      ],
+      "wild": [
+        "palm_tree"
       ]
     },
     {
@@ -367,6 +454,9 @@
       "tiles": [
         3,
         4
+      ],
+      "wild": [
+        "apple_tree"
       ]
     },
     {
@@ -379,6 +469,9 @@
       "tiles": [
         3,
         4
+      ],
+      "wild": [
+        "pear_tree"
       ]
     },
     {
@@ -391,6 +484,9 @@
       "tiles": [
         3,
         4
+      ],
+      "wild": [
+        "cherry_tree"
       ]
     },
     {
@@ -402,6 +498,9 @@
       "becomes": "orange_tree",
       "tiles": [
         2
+      ],
+      "wild": [
+        "orange_tree"
       ]
     },
     {
@@ -414,6 +513,24 @@
       "tiles": [
         3,
         4
+      ],
+      "wild": [
+        "peach_tree"
+      ]
+    },
+    {
+      "seed": "berry_seeds",
+      "key": "berry_bush",
+      "type": "bush",
+      "growSeconds": 900,
+      "stages": 3,
+      "becomes": "berry_bush",
+      "tiles": [
+        3,
+        4
+      ],
+      "wild": [
+        "berry_bush"
       ]
     }
   ]

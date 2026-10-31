@@ -2586,3 +2586,42 @@ Plain X / A keep Interact / Jump. The touch buttons are checked for no overlap a
 - The touch Sleep/Wake anchor moved off the bottom-center hotbar strip (test guards the strip at the 844x390 reference).
 - `InputState` latches every action bit seen by `setActions` until the next `sample()`, so a hold bit tapped between sim ticks (e.g. touch Crouch) is not lost. Press/release edges are unchanged.
 - Known art gap: v2 sleep lies flat only when every worn layer has `sleep_lie` (the paper-doll shares one chain anim). Henley sleeves, hat-hair, cap and the v1 accessories lack it today, so the doll falls back to sit.
+
+## ADR-247: Seeds come only from their own plant species (wild or farmed)
+
+**Context.** Players could get one species' seeds from another plant: berry bushes dropped blueberry seeds, the wild garden dropped carrot seeds, and rotten stumps dropped mushroom spores.
+
+**Audit (every seed source).** Seeds and saplings only ever come from resource `yields` (`data/resources.json`). No seeds appear in zombie or animal loot (`ai.json`), traders or stalls (`economy.json`), bots, agents, spawns, starter kits, the sandbox crate, or recipes. `seed_mix` is a pet-treat food, not a plantable. `pets.json` names seeds only as diet entries. Seasons (ADR-239) don't gate node spawning or harvesting.
+
+**Decision.**
+- A plantable's seed may only be yielded by its own species: its `wild` nodes (new `wild` field per plantable in `farming.json`), the node it `becomes`, or its farmed `crop_<key>` node. Each node yields at most one species' seed.
+- Removed: `berry_bush` → blueberry_seeds, `wild_garden` → carrot_seeds, `rotten_stump` → mushroom_spores. Their produce drops stay.
+- New item `berry_seeds` ("Berry Bush Seeds", id 463, appended; no art yet, so it shows the generic resource icon) drops from `berry_bush` at 0.15. It plants a `berry_bush` (plantable appended at index 35, so saved Crop kinds keep their meaning).
+- Every plantable already had a wild node in a worldgen band, so no new spawns were needed. Farmed `crop_<key>` nodes keep returning 1-2 of their own seed at 0.6. Bushes and trees regrow into the same node as the wild one, so they share its rate.
+- `seedSourceIssues(defs)` (farming.ts) validates all of this. Drop chances stay in balance data (`resources.json`).
+- No save migration: seeds already in inventories (including blueberry seeds from old berry bushes) stay valid and plantable.
+
+| Seed | Wild source (biome) | Wild drop | Farmed drop |
+|---|---|---|---|
+| wheat, corn, seed_potato, carrot, tomato, pumpkin, squash, beans, cabbage, onion, garlic_clove, hemp, yarrow | `wild_<crop>` (grass) | 0.3 | 0.6 ×1-2 |
+| mushroom_spores, ginseng | wild_mushroom, wild_ginseng (forest) | 0.3 | 0.6 ×1-2 |
+| aloe | wild_aloe (sand) | 0.3 | 0.6 ×1-2 |
+| flax, cotton | flax_patch, cotton_bush (grass) | 0.25 | 0.6 ×1-2 |
+| herbs | herb_patch (grass, forest) | 0.2 | 0.6 ×1-2 |
+| blueberry, blackberry | own bush (forest) | 0.15 | same node |
+| raspberry, strawberry, berry_seeds | own bush (grass) | 0.15 | same node |
+| oak, maple sapling | own tree (forest) | 0.1 | same node |
+| pine sapling | pine_tree (forest, stone) | 0.12 | same node |
+| birch, willow sapling | own tree (grass, forest) | 0.12 | same node |
+| palm sapling | palm_tree (sand) | 0.12 | same node |
+| apple sapling | apple_tree (grass, forest) | 0.08 | same node |
+| pear, cherry, peach sapling | own tree (grass) | 0.08 | same node |
+| orange sapling | orange_tree (sand) | 0.08 | same node |
+
+**Tests.** `packages/gameplay/test/adr247_seed_sources.test.ts`:
+- the validator passes on the shipped data and flags a fabricated cross-species drop;
+- each node yields at most its own species' seed;
+- a raw data scan finds no seeds in loot, traders, bots, spawns or recipes;
+- a worldgen sample places a wild node for every plantable;
+- gathering berry bushes and farmed crops gives only their own seeds;
+- berry seeds plant a berry bush and existing kinds keep their indices.

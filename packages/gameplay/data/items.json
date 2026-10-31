@@ -4376,6 +4376,13 @@
       "weight": 0.01
     },
     {
+      "key": "berry_seeds",
+      "name": "Berry Bush Seeds",
+      "category": "resource",
+      "maxStack": 50,
+      "weight": 0.01
+    },
+    {
       "key": "oak_sapling",
       "name": "Oak Sapling",
       "category": "resource",
