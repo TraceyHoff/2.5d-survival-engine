@@ -3198,7 +3198,11 @@
     "dec_windsock__plain": 3196,
     "fireplace": 3197,
     "torch_stand": 3198,
-    "wood_stove": 3199
+    "wood_stove": 3199,
+    "fx_breath_puff": 3200,
+    "fx_drip": 3201,
+    "fx_lightning": 3202,
+    "fx_sweat_drop": 3203
   },
   "sounds": {
     "amb_rain": 1,

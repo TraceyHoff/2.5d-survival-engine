@@ -1576,6 +1576,49 @@
    ],
    "residency": "resident",
    "ktx2": "atlases/pets_trough_crack.ktx2"
+  },
+  {
+   "key": "nature_status_fx",
+   "image": "atlases/nature_status_fx.png",
+   "frameW": 32,
+   "frameH": 32,
+   "columns": 14,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_status_fx@2x.png",
+     "ktx2": "atlases/nature_status_fx@2x.ktx2"
+    }
+   ],
+   "residency": "stream",
+   "ktx2": "atlases/nature_status_fx.ktx2"
+  },
+  {
+   "key": "nature_lightning",
+   "image": "atlases/nature_lightning.png",
+   "frameW": 96,
+   "frameH": 256,
+   "columns": 9,
+   "rows": 1,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/nature_lightning@2x.png",
+     "ktx2": "atlases/nature_lightning@2x.ktx2",
+     "masksKtx2": {
+      "emissive": "atlases/nature_lightning_emissive@2x.ktx2"
+     }
+    }
+   ],
+   "masks": {
+    "emissive": "atlases/nature_lightning_emissive.png"
+   },
+   "residency": "stream",
+   "ktx2": "atlases/nature_lightning.ktx2",
+   "masksKtx2": {
+    "emissive": "atlases/nature_lightning_emissive.ktx2"
+   }
   }
  ],
  "sprites": [
@@ -80991,6 +81034,118 @@
       2
      ],
      "fps": 1
+    }
+   }
+  },
+  {
+   "key": "fx_drip",
+   "category": "vfx",
+   "atlas": "nature_status_fx",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "fps": 10,
+     "loop": false
+    }
+   }
+  },
+  {
+   "key": "fx_sweat_drop",
+   "category": "vfx",
+   "atlas": "nature_status_fx",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      4,
+      5,
+      6,
+      7
+     ],
+     "fps": 10,
+     "loop": false
+    }
+   }
+  },
+  {
+   "key": "fx_breath_puff",
+   "category": "vfx",
+   "atlas": "nature_status_fx",
+   "anchor": {
+    "x": 0.31,
+    "y": 0.56
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      8,
+      9,
+      10,
+      11,
+      12,
+      13
+     ],
+     "fps": 10,
+     "loop": false
+    }
+   }
+  },
+  {
+   "key": "fx_lightning",
+   "category": "vfx",
+   "atlas": "nature_lightning",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.97
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0,
+      1,
+      2
+     ],
+     "fps": 14,
+     "loop": false
+    },
+    "strike_a": {
+     "frames": [
+      0,
+      1,
+      2
+     ],
+     "fps": 14,
+     "loop": false
+    },
+    "strike_b": {
+     "frames": [
+      3,
+      4,
+      5
+     ],
+     "fps": 14,
+     "loop": false
+    },
+    "strike_c": {
+     "frames": [
+      6,
+      7,
+      8
+     ],
+     "fps": 14,
+     "loop": false
     }
    }
   }
