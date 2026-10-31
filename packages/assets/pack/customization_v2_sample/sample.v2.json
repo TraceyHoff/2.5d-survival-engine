@@ -1,0 +1,196 @@
+{
+ "doc": "Player v2 sample paper-doll (isolated test fragment; NOT wired into wearables/ids.lock/saves). Draw order = layer asc; sleeves use layerByDir like v1 multi-layer tops. Tint: R=primary, G=secondary (palette indices into the v1 lists).",
+ "spec": "player_v2_spec.md (style: cute cel base + scrappy worn/patched/taped gear)",
+ "bodyType": "male",
+ "skinTone": "tan",
+ "palette": {
+  "skin": "tan",
+  "hair": [
+   "espresso",
+   "ash"
+  ],
+  "top": [
+   "sage",
+   "denim"
+  ],
+  "bottom": [
+   "slate",
+   "brick"
+  ],
+  "shoes": [
+   "charcoal",
+   "cream"
+  ],
+  "hat": [
+   "mustard",
+   "brick"
+  ],
+  "eyes": [
+   "black",
+   "black"
+  ]
+ },
+ "frame": {
+  "w": 48,
+  "h": 80,
+  "pivot": [
+   24.0,
+   74
+  ],
+  "scales": [
+   1,
+   2
+  ],
+  "dirOrder": [
+   "E",
+   "SE",
+   "S",
+   "SW",
+   "W",
+   "NW",
+   "N",
+   "NE"
+  ],
+  "dirFramesIndex": "frame*8+dir"
+ },
+ "anims": [
+  {
+   "name": "idle",
+   "frames": 4,
+   "fps": 4,
+   "loop": true
+  },
+  {
+   "name": "walk",
+   "frames": 6,
+   "fps": 10,
+   "loop": true
+  },
+  {
+   "name": "attack",
+   "frames": 4,
+   "fps": 12,
+   "loop": false
+  }
+ ],
+ "layers": [
+  {
+   "sprite": "v2s_body_male",
+   "slot": "body",
+   "layer": 0,
+   "layerName": "main",
+   "tintChannels": 1,
+   "pages1x": [
+    484,
+    416
+   ],
+   "uniqueFrames": 112
+  },
+  {
+   "sprite": "v2s_cz_bottom_scrap_male",
+   "slot": "bottom",
+   "layer": 18,
+   "layerName": "main",
+   "tintChannels": 2,
+   "pages1x": [
+    240,
+    248
+   ],
+   "uniqueFrames": 112
+  },
+  {
+   "sprite": "v2s_cz_shoes_scrap_male",
+   "slot": "shoes",
+   "layer": 19,
+   "layerName": "main",
+   "tintChannels": 2,
+   "pages1x": [
+    196,
+    204
+   ],
+   "uniqueFrames": 112
+  },
+  {
+   "sprite": "v2s_cz_top_scrap_male",
+   "slot": "top",
+   "layer": 20,
+   "layerName": "main",
+   "tintChannels": 2,
+   "pages1x": [
+    308,
+    332
+   ],
+   "uniqueFrames": 112
+  },
+  {
+   "sprite": "v2s_cz_face_smile_male",
+   "slot": "face",
+   "layer": 40,
+   "layerName": "main",
+   "tintChannels": 1,
+   "pages1x": [
+    92,
+    120
+   ],
+   "uniqueFrames": 46
+  },
+  {
+   "sprite": "v2s_cz_eyes_round_male",
+   "slot": "eyes",
+   "layer": 41,
+   "layerName": "main",
+   "tintChannels": 2,
+   "pages1x": [
+    104,
+    136
+   ],
+   "uniqueFrames": 71
+  },
+  {
+   "sprite": "v2s_cz_hair_buzz_male_hathair",
+   "slot": "hair",
+   "layer": 45,
+   "layerName": "main",
+   "tintChannels": 2,
+   "pages1x": [
+    340,
+    340
+   ],
+   "uniqueFrames": 112
+  },
+  {
+   "sprite": "v2s_cz_top_scrap_male_sleeves",
+   "slot": "top",
+   "layer": 31,
+   "layerName": "sleeves",
+   "tintChannels": 2,
+   "layerByDir": [
+    31,
+    31,
+    31,
+    31,
+    21,
+    21,
+    21,
+    31
+   ],
+   "pages1x": [
+    200,
+    212
+   ],
+   "uniqueFrames": 102
+  },
+  {
+   "sprite": "v2s_cz_hat_scrap_male",
+   "slot": "hat",
+   "layer": 50,
+   "layerName": "main",
+   "tintChannels": 2,
+   "pages1x": [
+    292,
+    308
+   ],
+   "uniqueFrames": 112
+  }
+ ]
+}
