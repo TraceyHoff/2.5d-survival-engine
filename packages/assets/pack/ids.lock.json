@@ -4770,7 +4770,9 @@
     "road_paved_m8_winter": 4768,
     "road_paved_m9_fall": 4769,
     "road_paved_m9_winter": 4770,
-    "road_paved_winter": 4771
+    "road_paved_winter": 4771,
+    "basic_storage_box": 4772,
+    "build_basic_storage_box": 4773
   },
   "sounds": {
     "amb_rain": 1,

@@ -31,8 +31,8 @@ describe("ADR-229 build window icons", () => {
       // below minTier the nearest tier's art is used, never the glyph
       if (p.tiered) expect(buildIconKey(p.key, 0, true, has), p.key).toBeDefined();
     }
-    expect(missing).toEqual([]); expect(pending).toEqual(["basic_storage_box"]); // ADR-250 art request: build_basic_storage_box
-    expect(buildIconKey("basic_storage_box", 0, false, has)).toBe("build_crate_decor");
+    expect(missing).toEqual([]); expect(pending).toEqual([]); // ADR-250 art shipped: build_basic_storage_box (fallback path stays for future art-pending pieces)
+    expect(buildIconKey("basic_storage_box", 0, false, has)).toBe("build_basic_storage_box");
     for (const s of ROADS.roads.surfaces) expect(has(roadIconKey(s.key)), s.key).toBe(true);
     for (const s of ROADS.signs) expect(has(signIconKey(s.key)), s.key).toBe(true);
     expect(has(SIGN_TOOL_ICON)).toBe(true);

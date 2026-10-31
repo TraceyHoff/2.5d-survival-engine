@@ -1332,6 +1332,23 @@
     "tintmask": "atlases/hearth_wt.tintmask.ktx2",
     "emissive": "atlases/hearth_wt_emissive.ktx2"
    }
+  },
+  {
+   "key": "basic_storage_box",
+   "image": "atlases/basic_storage_box.png",
+   "frameW": 96,
+   "frameH": 96,
+   "columns": 8,
+   "rows": 2,
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/basic_storage_box@2x.png",
+     "ktx2": "atlases/basic_storage_box@2x.ktx2"
+    }
+   ],
+   "residency": "stream",
+   "ktx2": "atlases/basic_storage_box.ktx2"
   }
  ],
  "sprites": [
@@ -50104,6 +50121,58 @@
      ]
     },
     "crackOverlay": "bld_crack"
+   },
+   "rotationArt": "unique4"
+  },
+  {
+   "key": "basic_storage_box",
+   "category": "building",
+   "atlas": "basic_storage_box",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.75
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   },
+   "building": {
+    "piece": "basic_storage_box",
+    "footprint": {
+     "w": 1,
+     "h": 1
+    },
+    "layer": 2,
+    "frames": [
+     [
+      0,
+      1,
+      2,
+      3
+     ],
+     [
+      4,
+      5,
+      6,
+      7
+     ],
+     [
+      8,
+      9,
+      10,
+      11
+     ],
+     [
+      12,
+      13,
+      14,
+      15
+     ]
+    ]
    },
    "rotationArt": "unique4"
   }

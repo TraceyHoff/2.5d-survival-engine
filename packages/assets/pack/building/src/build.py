@@ -87,6 +87,7 @@ if __name__ == '__main__':
     import fragment_pieces; print('fragment pieces:', *fragment_pieces.apply(man, OUT))   # clan/stall piece art from the unserved fragments
     import hearths
     for a in hearths.apply(man, OUT): print(*a)   # animated fire pieces (campfire, torch_stand, fireplace, wood_stove, lantern)
+    import basic_storage_box; basic_storage_box.apply(man, OUT)   # ADR-250 scavenged starter crate (own stream page)
     import clan_palettes; clan_palettes.apply(man)   # clanPalettes for the client (pvp_clan is not served); see clan_palettes.py
     p = f'{OUT}/manifest.building.json'; json.dump(man, open(p, 'w'), indent=1); open(p, 'a').write('\n')
     import pickle; pickle.dump({k: [im for im, _ in v] for k, v in R.items()}, open('/tmp/bld_frames.pkl', 'wb'))

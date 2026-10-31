@@ -8866,7 +8866,7 @@
    }
   },
   {
-   "key": "build_large_chest",
+   "key": "build_basic_storage_box",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -8883,7 +8883,7 @@
    }
   },
   {
-   "key": "build_bed",
+   "key": "build_large_chest",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -8900,7 +8900,7 @@
    }
   },
   {
-   "key": "build_chair",
+   "key": "build_bed",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -8917,7 +8917,7 @@
    }
   },
   {
-   "key": "build_table",
+   "key": "build_chair",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -8934,7 +8934,7 @@
    }
   },
   {
-   "key": "build_torch_stand",
+   "key": "build_table",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -8951,7 +8951,7 @@
    }
   },
   {
-   "key": "build_claim_totem",
+   "key": "build_torch_stand",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -8968,7 +8968,7 @@
    }
   },
   {
-   "key": "build_rug",
+   "key": "build_claim_totem",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -8985,7 +8985,7 @@
    }
   },
   {
-   "key": "build_potted_plant",
+   "key": "build_rug",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9002,7 +9002,7 @@
    }
   },
   {
-   "key": "build_banner",
+   "key": "build_potted_plant",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9019,7 +9019,7 @@
    }
   },
   {
-   "key": "build_lantern",
+   "key": "build_banner",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9036,7 +9036,7 @@
    }
   },
   {
-   "key": "build_flower_box",
+   "key": "build_lantern",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9053,7 +9053,7 @@
    }
   },
   {
-   "key": "build_painting",
+   "key": "build_flower_box",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9070,7 +9070,7 @@
    }
   },
   {
-   "key": "build_trophy_skull",
+   "key": "build_painting",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9087,7 +9087,7 @@
    }
   },
   {
-   "key": "build_stall_blanket",
+   "key": "build_trophy_skull",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9104,7 +9104,7 @@
    }
   },
   {
-   "key": "build_stall_cart",
+   "key": "build_stall_blanket",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9121,7 +9121,7 @@
    }
   },
   {
-   "key": "build_stall_booth",
+   "key": "build_stall_cart",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9138,7 +9138,7 @@
    }
   },
   {
-   "key": "build_clan_pavilion",
+   "key": "build_stall_booth",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9155,7 +9155,7 @@
    }
   },
   {
-   "key": "build_market_counter",
+   "key": "build_clan_pavilion",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9172,7 +9172,7 @@
    }
   },
   {
-   "key": "build_fireplace",
+   "key": "build_market_counter",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9189,7 +9189,7 @@
    }
   },
   {
-   "key": "build_wood_stove",
+   "key": "build_fireplace",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9206,7 +9206,7 @@
    }
   },
   {
-   "key": "build_windsock",
+   "key": "build_wood_stove",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9223,7 +9223,7 @@
    }
   },
   {
-   "key": "build_banner_wall",
+   "key": "build_windsock",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9240,7 +9240,7 @@
    }
   },
   {
-   "key": "build_barricade_spiked",
+   "key": "build_banner_wall",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9257,7 +9257,7 @@
    }
   },
   {
-   "key": "build_raid_bell",
+   "key": "build_barricade_spiked",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9274,7 +9274,7 @@
    }
   },
   {
-   "key": "build_gate_clan",
+   "key": "build_raid_bell",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9291,7 +9291,7 @@
    }
   },
   {
-   "key": "build_clan_hall_door",
+   "key": "build_gate_clan",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9308,7 +9308,7 @@
    }
   },
   {
-   "key": "build_watchtower",
+   "key": "build_clan_hall_door",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9325,7 +9325,7 @@
    }
   },
   {
-   "key": "build_mirror",
+   "key": "build_watchtower",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9342,7 +9342,7 @@
    }
   },
   {
-   "key": "build_garage",
+   "key": "build_mirror",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9359,7 +9359,7 @@
    }
   },
   {
-   "key": "build_foundation_triangle_t1",
+   "key": "build_garage",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9376,7 +9376,7 @@
    }
   },
   {
-   "key": "build_foundation_triangle_t2",
+   "key": "build_foundation_triangle_t1",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9393,7 +9393,7 @@
    }
   },
   {
-   "key": "build_foundation_triangle_t3",
+   "key": "build_foundation_triangle_t2",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9410,7 +9410,7 @@
    }
   },
   {
-   "key": "build_foundation_triangle_t4",
+   "key": "build_foundation_triangle_t3",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9427,7 +9427,7 @@
    }
   },
   {
-   "key": "build_foundation_stilt_t1",
+   "key": "build_foundation_triangle_t4",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9444,7 +9444,7 @@
    }
   },
   {
-   "key": "build_foundation_stilt_t2",
+   "key": "build_foundation_stilt_t1",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9461,7 +9461,7 @@
    }
   },
   {
-   "key": "build_foundation_stilt_t3",
+   "key": "build_foundation_stilt_t2",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9478,7 +9478,7 @@
    }
   },
   {
-   "key": "build_foundation_stilt_t4",
+   "key": "build_foundation_stilt_t3",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9495,7 +9495,7 @@
    }
   },
   {
-   "key": "build_foundation_ramp_t1",
+   "key": "build_foundation_stilt_t4",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9512,7 +9512,7 @@
    }
   },
   {
-   "key": "build_foundation_ramp_t2",
+   "key": "build_foundation_ramp_t1",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9529,7 +9529,7 @@
    }
   },
   {
-   "key": "build_foundation_ramp_t3",
+   "key": "build_foundation_ramp_t2",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9546,7 +9546,7 @@
    }
   },
   {
-   "key": "build_foundation_ramp_t4",
+   "key": "build_foundation_ramp_t3",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9563,7 +9563,7 @@
    }
   },
   {
-   "key": "build_foundation_steps_t1",
+   "key": "build_foundation_ramp_t4",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9580,7 +9580,7 @@
    }
   },
   {
-   "key": "build_foundation_steps_t2",
+   "key": "build_foundation_steps_t1",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9597,7 +9597,7 @@
    }
   },
   {
-   "key": "build_foundation_steps_t3",
+   "key": "build_foundation_steps_t2",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9614,7 +9614,7 @@
    }
   },
   {
-   "key": "build_foundation_steps_t4",
+   "key": "build_foundation_steps_t3",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9631,7 +9631,7 @@
    }
   },
   {
-   "key": "build_wall_arched_t1",
+   "key": "build_foundation_steps_t4",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9648,7 +9648,7 @@
    }
   },
   {
-   "key": "build_wall_arched_t2",
+   "key": "build_wall_arched_t1",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9665,7 +9665,7 @@
    }
   },
   {
-   "key": "build_wall_arched_t3",
+   "key": "build_wall_arched_t2",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9682,7 +9682,7 @@
    }
   },
   {
-   "key": "build_wall_arched_t4",
+   "key": "build_wall_arched_t3",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9699,7 +9699,7 @@
    }
   },
   {
-   "key": "build_wall_fortified_t1",
+   "key": "build_wall_arched_t4",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9716,7 +9716,7 @@
    }
   },
   {
-   "key": "build_wall_fortified_t2",
+   "key": "build_wall_fortified_t1",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9733,7 +9733,7 @@
    }
   },
   {
-   "key": "build_wall_fortified_t3",
+   "key": "build_wall_fortified_t2",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9750,7 +9750,7 @@
    }
   },
   {
-   "key": "build_wall_fortified_t4",
+   "key": "build_wall_fortified_t3",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9767,7 +9767,7 @@
    }
   },
   {
-   "key": "build_floor_stairwell_t1",
+   "key": "build_wall_fortified_t4",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9784,7 +9784,7 @@
    }
   },
   {
-   "key": "build_floor_stairwell_t2",
+   "key": "build_floor_stairwell_t1",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9801,7 +9801,7 @@
    }
   },
   {
-   "key": "build_floor_stairwell_t3",
+   "key": "build_floor_stairwell_t2",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9818,7 +9818,7 @@
    }
   },
   {
-   "key": "build_floor_stairwell_t4",
+   "key": "build_floor_stairwell_t3",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9835,7 +9835,7 @@
    }
   },
   {
-   "key": "build_floor_skylight_t1",
+   "key": "build_floor_stairwell_t4",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9852,7 +9852,7 @@
    }
   },
   {
-   "key": "build_floor_skylight_t2",
+   "key": "build_floor_skylight_t1",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9869,7 +9869,7 @@
    }
   },
   {
-   "key": "build_floor_skylight_t3",
+   "key": "build_floor_skylight_t2",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9886,7 +9886,7 @@
    }
   },
   {
-   "key": "build_floor_skylight_t4",
+   "key": "build_floor_skylight_t3",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9903,7 +9903,7 @@
    }
   },
   {
-   "key": "build_floor_triangle_t1",
+   "key": "build_floor_skylight_t4",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9920,7 +9920,7 @@
    }
   },
   {
-   "key": "build_floor_triangle_t2",
+   "key": "build_floor_triangle_t1",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9937,7 +9937,7 @@
    }
   },
   {
-   "key": "build_floor_triangle_t3",
+   "key": "build_floor_triangle_t2",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9954,7 +9954,7 @@
    }
   },
   {
-   "key": "build_floor_triangle_t4",
+   "key": "build_floor_triangle_t3",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9971,7 +9971,7 @@
    }
   },
   {
-   "key": "build_wall_corner_inner_t0",
+   "key": "build_floor_triangle_t4",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -9988,7 +9988,7 @@
    }
   },
   {
-   "key": "build_wall_corner_inner_t1",
+   "key": "build_wall_corner_inner_t0",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10005,7 +10005,7 @@
    }
   },
   {
-   "key": "build_wall_corner_inner_t2",
+   "key": "build_wall_corner_inner_t1",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10022,7 +10022,7 @@
    }
   },
   {
-   "key": "build_wall_corner_inner_t3",
+   "key": "build_wall_corner_inner_t2",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10039,7 +10039,7 @@
    }
   },
   {
-   "key": "build_wall_corner_inner_t4",
+   "key": "build_wall_corner_inner_t3",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10056,7 +10056,7 @@
    }
   },
   {
-   "key": "build_wall_corner_outer_t0",
+   "key": "build_wall_corner_inner_t4",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10073,7 +10073,7 @@
    }
   },
   {
-   "key": "build_wall_corner_outer_t1",
+   "key": "build_wall_corner_outer_t0",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10090,7 +10090,7 @@
    }
   },
   {
-   "key": "build_wall_corner_outer_t2",
+   "key": "build_wall_corner_outer_t1",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10107,7 +10107,7 @@
    }
   },
   {
-   "key": "build_wall_corner_outer_t3",
+   "key": "build_wall_corner_outer_t2",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10124,7 +10124,7 @@
    }
   },
   {
-   "key": "build_wall_corner_outer_t4",
+   "key": "build_wall_corner_outer_t3",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10141,7 +10141,7 @@
    }
   },
   {
-   "key": "build_wall_corner_angled_t0",
+   "key": "build_wall_corner_outer_t4",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10158,7 +10158,7 @@
    }
   },
   {
-   "key": "build_wall_corner_angled_t1",
+   "key": "build_wall_corner_angled_t0",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10175,7 +10175,7 @@
    }
   },
   {
-   "key": "build_wall_corner_angled_t2",
+   "key": "build_wall_corner_angled_t1",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10192,7 +10192,7 @@
    }
   },
   {
-   "key": "build_wall_corner_angled_t3",
+   "key": "build_wall_corner_angled_t2",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10209,7 +10209,7 @@
    }
   },
   {
-   "key": "build_wall_corner_angled_t4",
+   "key": "build_wall_corner_angled_t3",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10226,7 +10226,7 @@
    }
   },
   {
-   "key": "build_roof_gable_t1",
+   "key": "build_wall_corner_angled_t4",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10243,7 +10243,7 @@
    }
   },
   {
-   "key": "build_roof_gable_t2",
+   "key": "build_roof_gable_t1",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10260,7 +10260,7 @@
    }
   },
   {
-   "key": "build_roof_gable_t3",
+   "key": "build_roof_gable_t2",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10277,7 +10277,7 @@
    }
   },
   {
-   "key": "build_roof_gable_t4",
+   "key": "build_roof_gable_t3",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10294,7 +10294,7 @@
    }
   },
   {
-   "key": "build_roof_corner_t1",
+   "key": "build_roof_gable_t4",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10311,7 +10311,7 @@
    }
   },
   {
-   "key": "build_roof_corner_t2",
+   "key": "build_roof_corner_t1",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10328,7 +10328,7 @@
    }
   },
   {
-   "key": "build_roof_corner_t3",
+   "key": "build_roof_corner_t2",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10345,7 +10345,7 @@
    }
   },
   {
-   "key": "build_roof_corner_t4",
+   "key": "build_roof_corner_t3",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10362,7 +10362,7 @@
    }
   },
   {
-   "key": "build_roof_hip_t1",
+   "key": "build_roof_corner_t4",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10379,7 +10379,7 @@
    }
   },
   {
-   "key": "build_roof_hip_t2",
+   "key": "build_roof_hip_t1",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10396,7 +10396,7 @@
    }
   },
   {
-   "key": "build_roof_hip_t3",
+   "key": "build_roof_hip_t2",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10413,7 +10413,7 @@
    }
   },
   {
-   "key": "build_roof_hip_t4",
+   "key": "build_roof_hip_t3",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10430,7 +10430,7 @@
    }
   },
   {
-   "key": "build_roof_chimney_t1",
+   "key": "build_roof_hip_t4",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10447,7 +10447,7 @@
    }
   },
   {
-   "key": "build_roof_chimney_t2",
+   "key": "build_roof_chimney_t1",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10464,7 +10464,7 @@
    }
   },
   {
-   "key": "build_roof_chimney_t3",
+   "key": "build_roof_chimney_t2",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10481,7 +10481,7 @@
    }
   },
   {
-   "key": "build_roof_chimney_t4",
+   "key": "build_roof_chimney_t3",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10498,7 +10498,7 @@
    }
   },
   {
-   "key": "build_barbed_wire",
+   "key": "build_roof_chimney_t4",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10515,7 +10515,7 @@
    }
   },
   {
-   "key": "build_spike_trap",
+   "key": "build_barbed_wire",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10532,7 +10532,7 @@
    }
   },
   {
-   "key": "build_bear_trap",
+   "key": "build_spike_trap",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10549,7 +10549,7 @@
    }
   },
   {
-   "key": "build_arrow_turret",
+   "key": "build_bear_trap",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10566,7 +10566,7 @@
    }
   },
   {
-   "key": "build_bolt_turret",
+   "key": "build_arrow_turret",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10583,7 +10583,7 @@
    }
   },
   {
-   "key": "build_flame_turret",
+   "key": "build_bolt_turret",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10600,7 +10600,7 @@
    }
   },
   {
-   "key": "build_chair_rustic",
+   "key": "build_flame_turret",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10617,7 +10617,7 @@
    }
   },
   {
-   "key": "build_chair_fine",
+   "key": "build_chair_rustic",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10634,7 +10634,7 @@
    }
   },
   {
-   "key": "build_chair_luxury",
+   "key": "build_chair_fine",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10651,7 +10651,7 @@
    }
   },
   {
-   "key": "build_stool_rustic",
+   "key": "build_chair_luxury",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10668,7 +10668,7 @@
    }
   },
   {
-   "key": "build_stool_fine",
+   "key": "build_stool_rustic",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10685,7 +10685,7 @@
    }
   },
   {
-   "key": "build_bench_rustic",
+   "key": "build_stool_fine",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10702,7 +10702,7 @@
    }
   },
   {
-   "key": "build_bench_fine",
+   "key": "build_bench_rustic",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10719,7 +10719,7 @@
    }
   },
   {
-   "key": "build_sofa_fine",
+   "key": "build_bench_fine",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10736,7 +10736,7 @@
    }
   },
   {
-   "key": "build_sofa_luxury",
+   "key": "build_sofa_fine",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10753,7 +10753,7 @@
    }
   },
   {
-   "key": "build_bed_double_rustic",
+   "key": "build_sofa_luxury",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10770,7 +10770,7 @@
    }
   },
   {
-   "key": "build_bed_double_fine",
+   "key": "build_bed_double_rustic",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10787,7 +10787,7 @@
    }
   },
   {
-   "key": "build_bed_double_luxury",
+   "key": "build_bed_double_fine",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10804,7 +10804,7 @@
    }
   },
   {
-   "key": "build_bunk_bed",
+   "key": "build_bed_double_luxury",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10821,7 +10821,7 @@
    }
   },
   {
-   "key": "build_table_dining_rustic",
+   "key": "build_bunk_bed",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10838,7 +10838,7 @@
    }
   },
   {
-   "key": "build_table_dining_fine",
+   "key": "build_table_dining_rustic",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10855,7 +10855,7 @@
    }
   },
   {
-   "key": "build_table_dining_luxury",
+   "key": "build_table_dining_fine",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10872,7 +10872,7 @@
    }
   },
   {
-   "key": "build_table_coffee_rustic",
+   "key": "build_table_dining_luxury",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10889,7 +10889,7 @@
    }
   },
   {
-   "key": "build_table_coffee_fine",
+   "key": "build_table_coffee_rustic",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10906,7 +10906,7 @@
    }
   },
   {
-   "key": "build_table_side_rustic",
+   "key": "build_table_coffee_fine",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10923,7 +10923,7 @@
    }
   },
   {
-   "key": "build_table_side_fine",
+   "key": "build_table_side_rustic",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10940,7 +10940,7 @@
    }
   },
   {
-   "key": "build_desk_rustic",
+   "key": "build_table_side_fine",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10957,7 +10957,7 @@
    }
   },
   {
-   "key": "build_desk_fine",
+   "key": "build_desk_rustic",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10974,7 +10974,7 @@
    }
   },
   {
-   "key": "build_shelf_rustic",
+   "key": "build_desk_fine",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -10991,7 +10991,7 @@
    }
   },
   {
-   "key": "build_shelf_fine",
+   "key": "build_shelf_rustic",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11008,7 +11008,7 @@
    }
   },
   {
-   "key": "build_bookcase_rustic",
+   "key": "build_shelf_fine",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11025,7 +11025,7 @@
    }
   },
   {
-   "key": "build_bookcase_fine",
+   "key": "build_bookcase_rustic",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11042,7 +11042,7 @@
    }
   },
   {
-   "key": "build_cabinet_rustic",
+   "key": "build_bookcase_fine",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11059,7 +11059,7 @@
    }
   },
   {
-   "key": "build_cabinet_fine",
+   "key": "build_cabinet_rustic",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11076,7 +11076,7 @@
    }
   },
   {
-   "key": "build_wardrobe_rustic",
+   "key": "build_cabinet_fine",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11093,7 +11093,7 @@
    }
   },
   {
-   "key": "build_wardrobe_fine",
+   "key": "build_wardrobe_rustic",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11110,7 +11110,7 @@
    }
   },
   {
-   "key": "build_wardrobe_luxury",
+   "key": "build_wardrobe_fine",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11127,7 +11127,7 @@
    }
   },
   {
-   "key": "build_dresser_rustic",
+   "key": "build_wardrobe_luxury",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11144,7 +11144,7 @@
    }
   },
   {
-   "key": "build_dresser_fine",
+   "key": "build_dresser_rustic",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11161,7 +11161,7 @@
    }
   },
   {
-   "key": "build_counter_rustic",
+   "key": "build_dresser_fine",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11178,7 +11178,7 @@
    }
   },
   {
-   "key": "build_counter_fine",
+   "key": "build_counter_rustic",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11195,7 +11195,7 @@
    }
   },
   {
-   "key": "build_kitchen_sink",
+   "key": "build_counter_fine",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11212,7 +11212,7 @@
    }
   },
   {
-   "key": "build_kitchen_cupboard",
+   "key": "build_kitchen_sink",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11229,7 +11229,7 @@
    }
   },
   {
-   "key": "build_pantry",
+   "key": "build_kitchen_cupboard",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11246,7 +11246,7 @@
    }
   },
   {
-   "key": "build_tool_bench",
+   "key": "build_pantry",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11263,7 +11263,7 @@
    }
   },
   {
-   "key": "build_stove_iron",
+   "key": "build_tool_bench",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11280,7 +11280,7 @@
    }
   },
   {
-   "key": "build_cook_range",
+   "key": "build_stove_iron",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11297,7 +11297,7 @@
    }
   },
   {
-   "key": "build_clay_oven",
+   "key": "build_cook_range",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11314,7 +11314,7 @@
    }
   },
   {
-   "key": "build_candle",
+   "key": "build_clay_oven",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11331,7 +11331,7 @@
    }
   },
   {
-   "key": "build_candelabra",
+   "key": "build_candle",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11348,7 +11348,7 @@
    }
   },
   {
-   "key": "build_floor_lamp",
+   "key": "build_candelabra",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11365,7 +11365,7 @@
    }
   },
   {
-   "key": "build_table_lamp",
+   "key": "build_floor_lamp",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11382,7 +11382,7 @@
    }
   },
   {
-   "key": "build_chandelier",
+   "key": "build_table_lamp",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11399,7 +11399,7 @@
    }
   },
   {
-   "key": "build_lantern_hanging",
+   "key": "build_chandelier",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11416,7 +11416,7 @@
    }
   },
   {
-   "key": "build_wall_sconce",
+   "key": "build_lantern_hanging",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11433,7 +11433,7 @@
    }
   },
   {
-   "key": "build_lamp_post",
+   "key": "build_wall_sconce",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11450,7 +11450,7 @@
    }
   },
   {
-   "key": "build_statue",
+   "key": "build_lamp_post",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11467,7 +11467,7 @@
    }
   },
   {
-   "key": "build_statue_large",
+   "key": "build_statue",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11484,7 +11484,7 @@
    }
   },
   {
-   "key": "build_vase",
+   "key": "build_statue_large",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11501,7 +11501,7 @@
    }
   },
   {
-   "key": "build_crate_decor",
+   "key": "build_vase",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11518,7 +11518,7 @@
    }
   },
   {
-   "key": "build_barrel_decor",
+   "key": "build_crate_decor",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11535,7 +11535,7 @@
    }
   },
   {
-   "key": "build_barrel_storage",
+   "key": "build_barrel_decor",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11552,7 +11552,7 @@
    }
   },
   {
-   "key": "build_trophy_mount",
+   "key": "build_barrel_storage",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11569,7 +11569,7 @@
    }
   },
   {
-   "key": "build_clan_flag",
+   "key": "build_trophy_mount",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11586,7 +11586,7 @@
    }
   },
   {
-   "key": "build_sign",
+   "key": "build_clan_flag",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11603,7 +11603,7 @@
    }
   },
   {
-   "key": "build_sign_wall",
+   "key": "build_sign",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11620,7 +11620,7 @@
    }
   },
   {
-   "key": "build_curtains",
+   "key": "build_sign_wall",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11637,7 +11637,7 @@
    }
   },
   {
-   "key": "build_clock",
+   "key": "build_curtains",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11654,7 +11654,7 @@
    }
   },
   {
-   "key": "build_clock_wall",
+   "key": "build_clock",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11671,7 +11671,7 @@
    }
   },
   {
-   "key": "build_mirror_standing",
+   "key": "build_clock_wall",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11688,7 +11688,7 @@
    }
   },
   {
-   "key": "build_mirror_wall",
+   "key": "build_mirror_standing",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11705,7 +11705,7 @@
    }
   },
   {
-   "key": "build_pottery",
+   "key": "build_mirror_wall",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11722,7 +11722,7 @@
    }
   },
   {
-   "key": "build_books",
+   "key": "build_pottery",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11739,7 +11739,7 @@
    }
   },
   {
-   "key": "build_dishes",
+   "key": "build_books",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11756,7 +11756,7 @@
    }
   },
   {
-   "key": "build_basket",
+   "key": "build_dishes",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11773,7 +11773,7 @@
    }
   },
   {
-   "key": "build_plant_floor",
+   "key": "build_basket",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11790,7 +11790,7 @@
    }
   },
   {
-   "key": "build_fern",
+   "key": "build_plant_floor",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11807,7 +11807,7 @@
    }
   },
   {
-   "key": "build_cactus",
+   "key": "build_fern",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11824,7 +11824,7 @@
    }
   },
   {
-   "key": "build_flowers_pot",
+   "key": "build_cactus",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11841,7 +11841,7 @@
    }
   },
   {
-   "key": "build_hanging_plant",
+   "key": "build_flowers_pot",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11858,7 +11858,7 @@
    }
   },
   {
-   "key": "build_bonsai",
+   "key": "build_hanging_plant",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11875,7 +11875,7 @@
    }
   },
   {
-   "key": "build_herb_planter",
+   "key": "build_bonsai",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11892,7 +11892,7 @@
    }
   },
   {
-   "key": "build_window_planter",
+   "key": "build_herb_planter",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11909,7 +11909,7 @@
    }
   },
   {
-   "key": "build_painting_wall",
+   "key": "build_window_planter",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11926,7 +11926,7 @@
    }
   },
   {
-   "key": "build_poster",
+   "key": "build_painting_wall",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11943,7 +11943,7 @@
    }
   },
   {
-   "key": "build_tapestry",
+   "key": "build_poster",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11960,7 +11960,7 @@
    }
   },
   {
-   "key": "build_weapon_rack",
+   "key": "build_tapestry",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11977,7 +11977,7 @@
    }
   },
   {
-   "key": "build_wall_shelf",
+   "key": "build_weapon_rack",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -11994,7 +11994,7 @@
    }
   },
   {
-   "key": "build_shield_mount",
+   "key": "build_wall_shelf",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12011,7 +12011,7 @@
    }
   },
   {
-   "key": "build_map_board",
+   "key": "build_shield_mount",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12028,7 +12028,7 @@
    }
   },
   {
-   "key": "build_rug_1x1",
+   "key": "build_map_board",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12045,7 +12045,7 @@
    }
   },
   {
-   "key": "build_rug_2x1",
+   "key": "build_rug_1x1",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12062,7 +12062,7 @@
    }
   },
   {
-   "key": "build_rug_2x2",
+   "key": "build_rug_2x1",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12079,7 +12079,7 @@
    }
   },
   {
-   "key": "build_rug_3x2",
+   "key": "build_rug_2x2",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12096,7 +12096,7 @@
    }
   },
   {
-   "key": "build_rug_round",
+   "key": "build_rug_3x2",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12113,7 +12113,7 @@
    }
   },
   {
-   "key": "build_rug_runner",
+   "key": "build_rug_round",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12130,7 +12130,7 @@
    }
   },
   {
-   "key": "build_fence_picket",
+   "key": "build_rug_runner",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12147,7 +12147,7 @@
    }
   },
   {
-   "key": "build_fence_rail",
+   "key": "build_fence_picket",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12164,7 +12164,7 @@
    }
   },
   {
-   "key": "build_fence_iron",
+   "key": "build_fence_rail",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12181,7 +12181,7 @@
    }
   },
   {
-   "key": "build_garden_gate",
+   "key": "build_fence_iron",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12198,7 +12198,7 @@
    }
   },
   {
-   "key": "build_feeding_trough",
+   "key": "build_garden_gate",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12215,7 +12215,7 @@
    }
   },
   {
-   "key": "build_bench_park",
+   "key": "build_feeding_trough",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12232,7 +12232,7 @@
    }
   },
   {
-   "key": "build_planter_box",
+   "key": "build_bench_park",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12249,7 +12249,7 @@
    }
   },
   {
-   "key": "build_garden_bed",
+   "key": "build_planter_box",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12266,7 +12266,7 @@
    }
   },
   {
-   "key": "build_fountain",
+   "key": "build_garden_bed",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12283,7 +12283,7 @@
    }
   },
   {
-   "key": "build_well",
+   "key": "build_fountain",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12300,7 +12300,7 @@
    }
   },
   {
-   "key": "build_scarecrow",
+   "key": "build_well",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12317,7 +12317,7 @@
    }
   },
   {
-   "key": "build_path_stone",
+   "key": "build_scarecrow",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12334,7 +12334,7 @@
    }
   },
   {
-   "key": "build_stepping_stone",
+   "key": "build_path_stone",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12351,7 +12351,7 @@
    }
   },
   {
-   "key": "build_hedge",
+   "key": "build_stepping_stone",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12368,7 +12368,7 @@
    }
   },
   {
-   "key": "build_flower_bed",
+   "key": "build_hedge",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12385,7 +12385,7 @@
    }
   },
   {
-   "key": "build_birdbath",
+   "key": "build_flower_bed",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12402,7 +12402,7 @@
    }
   },
   {
-   "key": "build_sundial",
+   "key": "build_birdbath",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12419,7 +12419,7 @@
    }
   },
   {
-   "key": "build_pet_trough",
+   "key": "build_sundial",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12436,7 +12436,7 @@
    }
   },
   {
-   "key": "build_road_path",
+   "key": "build_pet_trough",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12453,7 +12453,7 @@
    }
   },
   {
-   "key": "build_road_gravel",
+   "key": "build_road_path",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12470,7 +12470,7 @@
    }
   },
   {
-   "key": "build_road_paved",
+   "key": "build_road_gravel",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12487,7 +12487,7 @@
    }
   },
   {
-   "key": "build_sign_wooden_post",
+   "key": "build_road_paved",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12504,7 +12504,7 @@
    }
   },
   {
-   "key": "build_sign_hanging",
+   "key": "build_sign_wooden_post",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12521,7 +12521,7 @@
    }
   },
   {
-   "key": "build_sign_wall_plaque",
+   "key": "build_sign_hanging",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12538,7 +12538,7 @@
    }
   },
   {
-   "key": "build_sign_billboard",
+   "key": "build_sign_wall_plaque",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12555,7 +12555,7 @@
    }
   },
   {
-   "key": "build_sign_metal_road",
+   "key": "build_sign_billboard",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12572,7 +12572,7 @@
    }
   },
   {
-   "key": "build_sign_arrow",
+   "key": "build_sign_metal_road",
    "category": "ui",
    "atlas": "items_build",
    "anchor": {
@@ -12583,6 +12583,23 @@
     "idle": {
      "frames": [
       284
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "build_sign_arrow",
+   "category": "ui",
+   "atlas": "items_build",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      285
      ],
      "fps": 1
     }
