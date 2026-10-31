@@ -2520,3 +2520,25 @@ All shots used SwiftShader with a faked GPU string. Perf on SwiftShader: 83–10
 `apps/client/test/adr240_char_art_fragment.test.ts` checks that the sample fragment is appended to the manifest index only when `charArt` is not `v1`. Art's isolation test (`customization_v2_sample.test.ts`) still holds: the sample is not in `MANIFEST_INDEX`.
 
 **Limits.** v1 stays the default. `v2s` maps a v1 look onto the sample outfit, so colours come from the v1 appearance until the v2 catalog lands. Lowmem devices still run at x0.25 when the pin does not fit.
+
+## ADR-241: Block / Aim / Crouch / Carry / Sleep states, per-entity anim chains, carry and seat sockets
+
+**Context.** The v2 player anim set (`player_v2_spec.md` §6/§12, `customization_v2_sample` b7ace139) adds block, attack_<class>, bow/gun aim, crouch, carry, sleep, sit, vehicle and build frames. AnimState alone cannot pick between them: the same Attack plays `attack_axe` or `gun_fire` depending on what is held.
+
+**Decision.**
+- core `AnimState` appends Block=20, Aim=21, Crouch=22, Carry=23, Sleep=24 (wire-stable, `ANIM_STATE_NAMES` in step). CrouchWalk/CarryWalk are not states: state + moving.
+- `STATE_ANIMS` default chains: block→idle, aim bow_draw→gun_aim→idle, crouch_idle→idle, carry_idle→idle, sleep→sit→idle.
+- `render/character/animChain.ts` `animChainFor(state, ctx)` returns a frozen chain per entity from {moving, weaponClass (gameplay `weaponClassOf`), itemKey, driver, bed, elapsed}:
+  - Attack → `attack_<unarmed|blade|blunt|axe|spear>`, `attack_throw` (throwing_* / sling), `bow_release`, `attack_crossbow`, `gun_fire`; then attack, idle. Punch → attack_unarmed, punch, attack, idle.
+  - Aim → bow: `bow_draw` for 0.4 s, then `bow_hold`; crossbow / firearm: `gun_aim`.
+  - Crouch / Carry → `*_walk` while moving (then walk), else `*_idle`.
+  - Sit + Driver → vehicle, sit, idle.
+  - Sleep in a bed → `sleep_lie` (bunk lower spot: `sleep_lie_under`), else / until that art lands the curled `sleep`, then sit, idle.
+  - Every chain ends in a v1 anim, so v1 art plays what it played before.
+- `GameplayBindings.animChain(e, state, elapsed)` feeds the WebGL body, the paper-doll alignment (`AtlasManager.sharedChainAnim`, `chainAnim`) and wear layers, and the Canvas2D path. The client supplies it for character view entities only.
+- Sockets (frameMeta anchors via `handOf`): `carry` {x,y,behind} draws `GameplayBindings.carriedSprite(e)` like a held item; `seat` on sit/vehicle frames moves the pivot to the pelvis so it lands on the vehicle seat socket (body and every layer together; v1 frames have no seat and are unchanged).
+- Gameplay: drawing a bow / crossbow (WeaponState.chargeStartTick) sets Aim; releasing without a shot returns to Idle.
+
+**Not yet driven by gameplay.** Block, Crouch, Carry and Sleep have no mechanic, the firearm aim hold has no input, and nothing sets `bed` or `carriedSprite` yet; the states and bindings are ready for them. The sleep_lie bed pivot (`bedFits`), 4-direction bed facing and sort-after-bed (§6b) wait for the sleep_lie art. Canvas2D does not draw the carry/seat sockets.
+
+**Tests.** `packages/render/test/adr241_anim_chain.test.ts` (state numbering, every class / ctx chain, frozen chains ending in v1, v2 sample resolves each new anim while v1 falls back, doll alignment, carry/seat sockets on the sample frames) and `packages/gameplay/test/arms.test.ts` (bow draw → Aim → Idle).

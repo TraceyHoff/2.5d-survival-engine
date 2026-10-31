@@ -19,6 +19,9 @@ import { createProgram, GLSL_COMMON, type FrameStats, type Program } from "./gl/
 import { Sprite, Shadow, Occluder, SpriteFlag, LightSource, TintSecondary, SpriteAlpha } from "./components.js";
 import { newResolved, STREAM_MARGIN_PX, STREAM_MARGIN_ANIMAL_PX, STREAM_KEEP_FACTOR, type AtlasManager, type ResolvedFrame, type HandAnchor } from "./assets/atlasManager.js";
 import { offHandAnchor, offHandBehind } from "./character/offhand.js";
+import { CARRY_SOCKET, SEAT_SOCKET } from "./character/animChain.js";
+/** ADR-241: carried sprite ids ride emitHeld's item slot as id + 1 (item 0 = none). */
+const carriedId = (n: number): number => n - 1;
 import type { Rect } from "./camera.js";
 import type { StyleConfig } from "./style.js";
 import type { TransformSource } from "./transformSource.js";
@@ -105,6 +108,11 @@ export interface GameplayBindings {
   buildPiece?: BuildPieceDefT; animState?: AnimStateDefT;
   /** Per-entity anim playback rate for an AnimState state (ADR-125 character walk vs. ground speed); undefined = 1. */
   animRate?: (entity: number, state: number) => number | undefined;
+  /** ADR-241: per-entity anim chain for an AnimState state (character/animChain.ts animChainFor: weapon class, moving,
+   *  driver, bed) given `elapsed` seconds in the state; undefined = the state's default chain (STATE_ANIMS). */
+  animChain?: (entity: number, state: number, elapsed: number) => readonly string[] | undefined;
+  /** ADR-241: sprite id carried in both arms (Carry state), drawn at the body frame's `carry` socket; undefined = none. */
+  carriedSprite?: (entity: number) => number | undefined;
   /** Wetness {level u8 0..255} (art's 0-3 intensity maps onto 0..255). */
   wetness?: WetnessDefT;
   /** BodyTemp {cold, heat u8; shivering 0/1}: shivering gates the shiver, cold scales it and drives the frost rim, heat drives flush. */
@@ -611,10 +619,11 @@ export class SpriteBatch {
    * behind / in front of the character, mirrored with the character's flipX. No anchor for the frame = not drawn.
    */
   private emitHeld(atlas: AtlasManager, heldOf: (item: number) => number | undefined, item: number, body: ResolvedFrame, sx: number, sy: number, key: number,
-    scale: number, facing: number, flip: boolean, fade: number, occT: number, mode: "fade" | "dither", lift = 0, off = false, animT = 0): void {
+    scale: number, facing: number, flip: boolean, fade: number, occT: number, mode: "fade" | "dither", lift = 0, off = false, animT = 0, socket?: string): void {
     if (!item) return; const hid = heldOf(item); if (hid === undefined) return; const st = off ? this.offHandStats : this.heldStats; st[0]++;
     let h: HandAnchor | undefined; let behind: boolean;
-    if (off) { const a = offHandAnchor((b: ResolvedFrame, n?: string) => atlas.handOf(b, n), body); if (!a) return; h = a.anchor; behind = offHandBehind(facing, h.behind); if (a.fallback) this.offHandStats[3]++; }
+    if (socket) { h = atlas.handOf(body, socket); if (!h) return; behind = h.behind; }
+    else if (off) { const a = offHandAnchor((b: ResolvedFrame, n?: string) => atlas.handOf(b, n), body); if (!a) return; h = a.anchor; behind = offHandBehind(facing, h.behind); if (a.fallback) this.offHandStats[3]++; }
     else { h = atlas.handOf(body); if (!h) return; behind = h.behind; }
     st[1]++;
     const r = this.heldRes; const hfa = atlas.fireAnim(hid); if (!atlas.resolve(hid, hfa >= 0 ? hfa : 0, facing, hfa >= 0 ? animT : 0, 0, r)) return; st[2]++; // ADR-218: held torches flicker (render clock)
@@ -742,6 +751,7 @@ export class SpriteBatch {
       atlas.markUsed(sid); // hot/cold tiers: drawn-near-camera atlases stay (or are re-tiered) full res
       // character customization: resolved paper-doll layers (cached); the "body" layer replaces Sprite.spriteId
       let layers: CachedLayer[] | null = null; let bodyL: CachedLayer | null = null;
+      let ch0: readonly string[] | undefined; let chSt = -1; // ADR-241 per-entity anim chain (+ the state it was picked for)
       const aps = ap ? ap.slot(i) : -1;
       if (aps >= 0 && this.layerCache) {
         // key (entity, Appearance.version, facing4); version wraps (u16) so the cache compares it for equality only
@@ -753,10 +763,11 @@ export class SpriteBatch {
         const ver = apVer![aps]! + (ov ? ov.salt * 65536 : 0); // equality-only cache key (u16 version + gear salt)
         const expr = activeExpression(world as never, e, this.layerCache.binding);
         const ro = (anim: string | undefined) => ({ ...(anim !== undefined ? { anim } : {}), ...(expr !== undefined ? { expression: expr } : {}) });
-        let animName = st0 >= 0 ? atlas.animName(sid, atlas.stateAnim(sid, st0)) : undefined;
+        chSt = st0; ch0 = st0 >= 0 && cx.bindings.animChain ? cx.bindings.animChain(e, st0, (tickTime - an!.data.startTick[as0]!) / cx.tickHz) : undefined; // ADR-241
+        let animName = st0 >= 0 ? atlas.animName(sid, atlas.chainAnim(sid, ch0, st0)) : undefined;
         layers = this.layerCache.get(i, e, ver, f, read, ro(animName));
         for (const l of layers) if (l.slot === "body") { bodyL = l; sid = l.sprite; break; }
-        if (bodyL && st0 >= 0) { const nm = atlas.animName(sid, atlas.stateAnim(sid, st0)); if (nm !== animName) { animName = nm;
+        if (bodyL && st0 >= 0) { const nm = atlas.animName(sid, atlas.chainAnim(sid, ch0, st0)); if (nm !== animName) { animName = nm;
           layers = this.layerCache.get(i, e, ver, f, read, ro(nm)); bodyL = null;
           for (const l of layers) if (l.slot === "body") { bodyL = l; sid = l.sprite; break; } } }
         else if (bodyL && st0 < 0 && bodyL.animName) { layers = this.layerCache.get(i, e, ver, f, read, ro(bodyL.animName)); bodyL = null;
@@ -770,7 +781,8 @@ export class SpriteBatch {
       if (as >= 0 && an) {
         st = an.data.state[as]!; t = (tickTime - an.data.startTick[as]!) / cx.tickHz * (cx.bindings.animRate?.(e, st) ?? 1);
         // paper doll: body + wear play one shared anim (frame-aligned across multi-page sheets, e.g. swim/punch pages)
-        const bai = bodyL && layers ? atlas.sharedStateAnim(sid, layers, st) : atlas.stateAnim(sid, st);
+        if (st !== chSt) ch0 = cx.bindings.animChain?.(e, st, (tickTime - an.data.startTick[as]!) / cx.tickHz);
+        const bai = bodyL && layers ? (ch0 ? atlas.sharedChainAnim(sid, layers, ch0, st) : atlas.sharedStateAnim(sid, layers, st)) : atlas.chainAnim(sid, ch0, st);
         ok = atlas.resolve(sid, bai, f, t, 0, res);
         if (bodyL) { dollAnim = res.anim; if (ok && res.atlas >= 0) atlas.markUsedAt(res.atlas); }
       } else {
@@ -784,6 +796,10 @@ export class SpriteBatch {
         sid = ph; ok = atlas.resolve(ph, -1, f, 0, 0, res); this.streamPlaceholders++;
       }
       if (!ok) return;
+      // ADR-241 seat socket: a v2 sit/vehicle frame's `seat` anchor (pelvis contact) lands on the entity position (the
+      // vehicle seat socket) instead of the feet pivot; body + layers shift together. v1 frames have no seat: unchanged.
+      let seatDx = 0, seatDy = 0;
+      if (bodyL && (res.anim === "vehicle" || res.anim === "sit")) { const sa = atlas.handOf(res, SEAT_SOCKET); if (sa) { seatDx = sa.x - res.ax; seatDy = sa.y - res.ay; res.ax += seatDx; res.ay += seatDy; } }
       const scale = sp.data.scale[k]! || 1;
       const key = x + y + z * zf;
       // occlusion: tall sprites (or explicit Occluders) in front of the focus whose rect overlaps it
@@ -865,7 +881,7 @@ export class SpriteBatch {
           // the body's shared anim when this layer has it (same frame index + facing -> aligned, whichever page holds it),
           // else the layer's own state anim (face/eyes expression layers)
           const lai = st >= 0 ? (dollAnim ? atlas.findAnim(l.sprite, dollAnim) : -1) : -1;
-          const okL = st >= 0 ? atlas.resolve(l.sprite, lai >= 0 ? lai : atlas.stateAnim(l.sprite, st), f, t, 0, lr) : atlas.resolve(l.sprite, atlas.animIndex(l.sprite, l.animName), f, 0, sp.data.frameId[k]!, lr);
+          const okL = st >= 0 ? atlas.resolve(l.sprite, lai >= 0 ? lai : atlas.chainAnim(l.sprite, ch0, st), f, t, 0, lr) : atlas.resolve(l.sprite, atlas.animIndex(l.sprite, l.animName), f, 0, sp.data.frameId[k]!, lr);
           // readiness of the page this frame actually lives on (a swim/punch wear page streams on its own)
           // face/eyes pages request at 1/4 of the character's distance priority: they win pool slots over farther clothing
           const lp = faceL ? prio * 0.25 : prio; const rdy = okL && (lr.atlas >= 0 ? atlas.pageReadyAt(lr.atlas, lp) : atlas.pageReady(l.sprite, lp));
@@ -890,8 +906,8 @@ export class SpriteBatch {
           if (lsrc === "held") { lr.entry = g!.entry; lr.ax = g!.ax; lr.ay = g!.ay; this.lastGoodHits++; }
           else { lr.entry = q.entry; lr.ax = q.ax; lr.ay = q.ay; if (lsrc === "partial") this.partialLayers++; }
           const j = q.j;
-          o0.set(base); o0[4] = lr.entry; o0[8] = lr.ax; o0[9] = lr.ay; o0[16] = 0;
-          if (hoOn && atlas.isHeadSprite(l.sprite)) { o0[8] = lr.ax - ho.x; o0[9] = lr.ay - ho.y; }
+          o0.set(base); o0[4] = lr.entry; o0[8] = lr.ax + seatDx; o0[9] = lr.ay + seatDy; o0[16] = 0;
+          if (hoOn && atlas.isHeadSprite(l.sprite)) { o0[8] = lr.ax + seatDx - ho.x; o0[9] = lr.ay + seatDy - ho.y; }
           if (outlineOn && l.outline && !(sp.data.flags[k]! & SpriteFlag.NoOutline)) {
             o0[2] = dkey - LAYER_BIAS * 0.5; o0[5] = (base[5]! & ~SpriteFlag.NoOutline) | OUTLINE_ONLY;
             this.pushOcc(o0, 0, occT, occ.mode); this.layerInstances++;
@@ -905,6 +921,8 @@ export class SpriteBatch {
         if (nearC && this.nearN < this.nearInfo.length) this.nearN++;
       }
       if (eq && heldOf) { const s2 = eq.slot(i); if (s2 >= 0) this.emitHeld(atlas, heldOf, eq.data.mainHandItem[s2]!, res, sx, sy, dkey, scale, f, (sp.data.flags[k]! & SpriteFlag.FlipX) !== 0, fade, occT, occ.mode, bodyL ? o0[15]! : 0, false, fireAnimTime(cx.now, i)); }
+      const cs = cx.bindings.carriedSprite?.(e); // ADR-241 carry socket
+      if (cs !== undefined && bodyL) this.emitHeld(atlas, carriedId, cs + 1, res, sx, sy, dkey, scale, f, (sp.data.flags[k]! & SpriteFlag.FlipX) !== 0, fade, occT, occ.mode, o0[15]!, false, 0, CARRY_SOCKET);
       if (oh && offOf) { const s3 = oh.slot(i); if (s3 >= 0) this.emitHeld(atlas, offOf, oh.data.offHandItem[s3]!, res, sx, sy, dkey, scale, f, (sp.data.flags[k]! & SpriteFlag.FlipX) !== 0, fade, occT, occ.mode, bodyL ? o0[15]! : 0, true, fireAnimTime(cx.now, i)); }
     };
     if (cx.spatial) {

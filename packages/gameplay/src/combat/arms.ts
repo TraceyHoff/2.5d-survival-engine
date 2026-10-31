@@ -18,6 +18,7 @@ import { BODY_WEAR_SLOTS, ItemCategory, secondsToTicks, WearSlot, WEAR_SLOTS, ty
 import { emit, ev } from "../events.js";
 import { addItem, countItem, moveSlotTuples, removeItem, slotItem, takeFromSlot } from "../inventory.js";
 import { applyDamage } from "./combat.js";
+import { Anim, AnimState } from "../components.js";
 import { indexEntity } from "../spawn.js";
 import { PVP, hasPlayerId } from "./pvp.js";
 import { ignite } from "./pvp_pieces.js";
@@ -123,10 +124,16 @@ export function weaponsSystem(world: World, dt: number): void {
     }
     if (r.chargeSeconds > 0) {
       const charging = s >= 0 && it.data.charge[s] === 1; const st = world.getField(e, WeaponState, "chargeStartTick")!;
-      if (charging && st === 0) world.setField(e, WeaponState, "chargeStartTick", world.tick + 1);
-      else if (!charging && st !== 0 && (s < 0 || it.data.action[s] !== IntentAction.Attack)) world.setField(e, WeaponState, "chargeStartTick", 0);
+      if (charging && st === 0) { world.setField(e, WeaponState, "chargeStartTick", world.tick + 1); aimAnim(world, e, true); }
+      else if (!charging && st !== 0 && (s < 0 || it.data.action[s] !== IntentAction.Attack)) { world.setField(e, WeaponState, "chargeStartTick", 0); aimAnim(world, e, false); }
     }
   }
+}
+/** ADR-241: drawing a bow/crossbow plays Aim (bow_draw -> bow_hold / gun_aim); releasing without a shot drops back to Idle (a shot's Attack wins). */
+function aimAnim(world: World, e: Entity, on: boolean): void {
+  if (!world.has(e, AnimState)) return; const cur = world.getField(e, AnimState, "anim");
+  if (on && cur !== Anim.Aim && cur !== Anim.Attack) world.set(e, AnimState, { anim: Anim.Aim, startTick: world.tick });
+  else if (!on && cur === Anim.Aim) world.set(e, AnimState, { anim: Anim.Idle, startTick: world.tick });
 }
 /** Draw multiplier minChargeMul..1 (1 for weapons without a draw). */
 export function chargeMul(world: World, e: Entity, def: ItemDef, dt: number): number {

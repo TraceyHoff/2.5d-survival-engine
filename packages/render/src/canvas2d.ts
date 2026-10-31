@@ -311,7 +311,7 @@ export class Canvas2DRenderer {
       const sp = world.get(it.e, Sprite)!; if (sp.scale > 0 && sp.scale < 0.01) continue;
       let anim = "idle"; let tAnim = time;
       const fa = frameAnim(sp.frameId); if (fa >= 0) { try { anim = reg!.sprite(sp.spriteId).animList[fa]?.name ?? "idle"; } catch { /* unknown sprite */ } tAnim = 0; }
-      if (an && world.has(it.e, an)) { const a = world.get(it.e, an)!; const names = STATE_ANIMS[a.state] ?? ["idle"]; let def; try { def = reg!.sprite(sp.spriteId); } catch { def = undefined; }
+      if (an && world.has(it.e, an)) { const a = world.get(it.e, an)!; const names = this.bindings.animChain?.(it.e, a.state, Math.max(0, (tick - a.startTick) / 20)) ?? STATE_ANIMS[a.state] ?? ["idle"]; /* ADR-241 per-entity chain */ let def; try { def = reg!.sprite(sp.spriteId); } catch { def = undefined; }
         anim = names.find((n) => def?.animations.has(n)) ?? "idle"; tAnim = Math.max(0, (tick - a.startTick) / 20) * (this.bindings.animRate?.(it.e, a.state) ?? 1); }
       // ADR-218: a lit fire sprite (station bonfire) loops its flame at its own phase, with embers + smoke
       const litB = this.bindings.lit; let hearth = false;

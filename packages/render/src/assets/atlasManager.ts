@@ -71,6 +71,9 @@ const STATE_ANIM_TABLE: Record<CoreAnimState, readonly string[]> = {
   // ADR-128 gathering/consume: dedicated frames when the pack has them, else the swing/eat they read as
   [CoreAnimState.Harvest]: ["harvest", "gather", "punch", "attack", "idle"], [CoreAnimState.Chop]: ["chop", "attack", "punch", "idle"],
   [CoreAnimState.Mine]: ["mine", "attack", "punch", "idle"], [CoreAnimState.Drink]: ["drink", "eat", "idle"],
+  // ADR-241 v2 player states (default chains; character/animChain.ts picks walk / weapon / bed variants per entity)
+  [CoreAnimState.Block]: ["block", "idle"], [CoreAnimState.Aim]: ["bow_draw", "gun_aim", "idle"],
+  [CoreAnimState.Crouch]: ["crouch_idle", "idle"], [CoreAnimState.Carry]: ["carry_idle", "idle"], [CoreAnimState.Sleep]: ["sleep", "sit", "idle"],
 };
 export const STATE_ANIMS: readonly (readonly string[])[] = ANIM_STATE_NAMES.map((_, i) => STATE_ANIM_TABLE[i as CoreAnimState] ?? ["idle"]);
 /** @deprecated use core `AnimState` (ADR-093); kept as an alias so render callers read one numbering. */
@@ -1730,7 +1733,10 @@ export class AtlasManager {
    * playing other frames than the body. Returns the body's anim index (stateAnim() when nothing is shared). Allocation-free.
    */
   sharedStateAnim(body: number, layers: readonly { sprite: number }[], state: number): number {
-    const chain = STATE_ANIMS[state] ?? STATE_ANIMS[CoreAnimState.Idle]!;
+    return this.sharedChainAnim(body, layers, STATE_ANIMS[state] ?? STATE_ANIMS[CoreAnimState.Idle]!, state);
+  }
+  /** ADR-241: sharedStateAnim over an explicit chain (character/animChain.ts); `state` = stateAnim() fallback. */
+  sharedChainAnim(body: number, layers: readonly { sprite: number }[], chain: readonly string[], state: number): number {
     for (const name of chain) {
       const bi = this.findAnim(body, name); if (bi < 0) continue;
       let ok = true;
@@ -1742,6 +1748,11 @@ export class AtlasManager {
     return this.stateAnim(body, state);
   }
   animName(spriteId: number, anim: number): string | undefined { return this.sprites[spriteId]?.anims[anim]?.name; }
+  /** ADR-241: first anim of `chain` the sprite has, else stateAnim(state). */
+  chainAnim(spriteId: number, chain: readonly string[] | undefined, state: number): number {
+    if (chain) for (const n of chain) { const ai = this.findAnim(spriteId, n); if (ai >= 0) return ai; }
+    return this.stateAnim(spriteId, state);
+  }
   stateAnim(spriteId: number, state: number): number { const s = this.sprites[spriteId]; return s ? s.stateAnim[state] ?? s.stateAnim[CoreAnimState.Idle] ?? 0 : 0; }
 
   private fill(a: AtlasRT, f: number, s: SpriteRT, out: ResolvedFrame): void {

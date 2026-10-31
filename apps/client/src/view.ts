@@ -64,9 +64,10 @@ export function hitPose(ms: number, dir: number, directed = true): { dx: number;
   const side = Math.sign(Math.cos(dir) - Math.sin(dir)) || 1; // iso screen x ~ (x - y): lean away from the hit
   return { dx: Math.cos(dir) * push, dy: Math.sin(dir) * push, scale: 1 - 0.07 * Math.sin(k * Math.PI * 2) * f, tilt: 0.2 * side * Math.sin(k * Math.PI) * f, flash: ms < 120 ? 1 - ms / 120 : 0 };
 }
-const animMap = (a: number): number => (a >= 14 && a <= 19 ? a : a === 8 ? 8 : ANIM_MAP[a] ?? 0); // 16..19 ADR-128 harvest/chop/mine/drink, 8 eat
+const animMap = (a: number): number => (a >= 14 && a <= 24 ? a : a === 8 ? 8 : ANIM_MAP[a] ?? 0); // 16..19 ADR-128 harvest/chop/mine/drink, 20..24 ADR-241 block/aim/crouch/carry/sleep, 8 eat
 import { LightTable, type LightSpec } from "./lights.js";
-import { Burning } from "@engine/gameplay";
+import { Burning, Driver, weaponClassOf } from "@engine/gameplay";
+import { animChainFor, type AnimChainCtx } from "@engine/render";
 import { floorToTerrainZ } from "@engine/world";
 import { RaidFx, useRaidBurning, type RaidPiece } from "./raid-fx.js";
 import { MANIFEST_INDEX, applyFragmentFlags, withCharArtFragment, fragmentBase, type ManifestFragmentRef } from "./manifest-index.js";
@@ -173,6 +174,7 @@ export class IsoView {
     renderer.bindGameplay({ animState: VAnim, buildPiece: VPiece, wetness: VWet, bodyTemp: VTemp, lit: VFuel, burning: VBurn, pieceState: (e) => this.pieceStates.get(e), pieceScale: (e) => this.pieceScales.get(e), pieceLit: (e) => this.pieceLit.get(e), pieceTints: (e) => this.pieceTintPairs.get(e), litPieces: () => this.litHearths,
       hitFlash: (e) => this.hitPoseOf.get(e)?.flash ?? 0, hitTilt: (e) => this.hitPoseOf.get(e)?.tilt ?? 0,
       animRate: (e, st) => (st === 1 && this.characters.has(e) ? this.walkRate : undefined),
+      animChain: (e, st, elapsed) => ((st === 3 || st >= 13) && this.characters.has(e) ? animChainFor(st, this.animCtx(e, elapsed)) : undefined), // ADR-241
       equipment: VEquip, heldSprite: (item) => this.heldSpriteOf(item), offHand: VOffHand, offHandSprite: (item) => this.offHandSpriteOf(item),
       ...(cat?.size ? { appearance: { ...coreAppearanceBinding(cat), override: (_w: unknown, ve: number) => { const g = this.gearOf.get(ve) ?? null; return this.charArtOn(ve) ? { salt: (g?.salt ?? 0) + 7919, parts: g?.parts ?? [] } : g; }, mapLayers: <L extends { sprite: number; slot: string; layerName?: string }>(ve: number, ls: readonly L[]): L[] => this.charArtLayers(ve, ls) } } : {}) });
   }
@@ -189,6 +191,18 @@ export class IsoView {
   /** ADR-135: view entity -> worn-gear paper-doll overrides (salt = hash of the worn items). */
   private gearOf = new Map<number, { salt: number; parts: Array<[number, number]> }>();
   private heldCache = new Map<number, number | undefined>();
+  /** ADR-241 anim chain context: view entities moving this sync / in a driver seat; item id -> [key, weaponClassOf]. */
+  private movingVe = new Set<number>(); private driverVe = new Set<number>();
+  private itemClass = new Map<number, readonly [string, string]>();
+  private chainCtx: AnimChainCtx = {};
+  private animCtx(ve: number, elapsed: number): AnimChainCtx {
+    const c = this.chainCtx; c.moving = this.movingVe.has(ve); c.driver = this.driverVe.has(ve); c.elapsed = elapsed;
+    const item = this.view.has(ve as Entity, VEquip) ? this.view.getField(ve as Entity, VEquip, "mainHandItem") ?? 0 : 0;
+    let ic = this.itemClass.get(item);
+    if (!ic) { const key = item && this.netRef ? gameplayDefs(this.netRef).items.get(item)?.key ?? "" : ""; ic = [key, weaponClassOf(key || undefined)]; if (this.netRef || !item) this.itemClass.set(item, ic); }
+    c.itemKey = ic[0]; c.weaponClass = ic[1];
+    return c;
+  }
   private heldSpriteOf(item: number): number | undefined {
     if (this.heldCache.has(item)) return this.heldCache.get(item);
     const key = this.netRef ? gameplayDefs(this.netRef).items.get(item)?.key : undefined; if (!key) return undefined;
@@ -412,6 +426,8 @@ export class IsoView {
         else if (state === 14 && depth !== WaterDepth.Deep) state = moving ? 1 : 0;
         if (depth === WaterDepth.Shallow) { v.setField(ve, Transform, "z", gr(cur.x, cur.y, cur.z) - WADE_SINK); if (moving && (v.getField(ve, VWet, "level") ?? 0) < WADE_WET) v.has(ve, VWet) ? v.set(ve, VWet, { level: WADE_WET }) : v.add(ve, VWet, { level: WADE_WET }); }
         if (v.getField(ve, VAnim, "state") !== state) v.set(ve, VAnim, { state, startTick: v.tick });
+        if (moving) this.movingVe.add(ve); else this.movingVe.delete(ve); // ADR-241 crouch/carry walk
+        if (net.has(e, Driver)) this.driverVe.add(ve); else this.driverVe.delete(ve);
         const wet = net.getField(e, Wetness, "level"); if (wet !== undefined && v.getField(ve, VWet, "level") !== wet && !(depth === WaterDepth.Shallow && moving && wet < WADE_WET)) v.set(ve, VWet, { level: wet });
         const bt = net.getInto(e, BodyTemp, this.sTemp); if (bt && (v.getField(ve, VTemp, "cold") !== bt.cold || v.getField(ve, VTemp, "heat") !== bt.heat || v.getField(ve, VTemp, "shivering") !== bt.shivering)) v.set(ve, VTemp, { cold: bt.cold, heat: bt.heat, shivering: bt.shivering });
       }
@@ -463,7 +479,7 @@ export class IsoView {
       if (v.has(ve, VFuel)) { const f = net.get(e, Fuel); if (f) { v.set(ve, VFuel, { lit: f.lit, burnUntilTick: f.burnUntilTick }); if (v.has(ve, Sprite)) { const sp = v.get(ve, Sprite)!; const fid = this.fireFrame(sp.spriteId, f.lit !== 0); if (sp.frameId !== fid) v.set(ve, Sprite, { frameId: fid }); } } }
     }
     this.raid.step(this.registry, r.vfx, this.raidPieces, performance.now() / 1000); this.raidPieces.length = 0; // ADR-242
-    for (const [ne, ve] of this.map) if (!seen.has(ne)) { if (ve === this.focusVe) { r.setFocusEntity(-1); this.focusVe = -1; } v.destroy(ve); this.map.delete(ne); this.corrSampler.forget(ne); this.characters.delete(ve); this.lightOf.delete(ne); this.dropHeldLight(ve); this.pieceStates.delete(ve); this.pieceScales.delete(ve); this.pieceLit.delete(ve); this.litHearths.delete(ve); this.pieceTintPairs.delete(ve); this.pieceTintIdx.delete(ve); this.lastMove.delete(ne); this.nodeAmt.delete(ne); this.nodeHit.delete(ne); this.animalHp.delete(ne); this.animalPrev.delete(ne); this.scales.delete(ve); this.hitSeen.delete(ne); this.hitPoseOf.delete(ve); this.gearOf.delete(ve); }
+    for (const [ne, ve] of this.map) if (!seen.has(ne)) { if (ve === this.focusVe) { r.setFocusEntity(-1); this.focusVe = -1; } v.destroy(ve); this.map.delete(ne); this.corrSampler.forget(ne); this.characters.delete(ve); this.movingVe.delete(ve); this.driverVe.delete(ve); this.lightOf.delete(ne); this.dropHeldLight(ve); this.pieceStates.delete(ve); this.pieceScales.delete(ve); this.pieceLit.delete(ve); this.litHearths.delete(ve); this.pieceTintPairs.delete(ve); this.pieceTintIdx.delete(ve); this.lastMove.delete(ne); this.nodeAmt.delete(ne); this.nodeHit.delete(ne); this.animalHp.delete(ne); this.animalPrev.delete(ne); this.scales.delete(ve); this.hitSeen.delete(ne); this.hitPoseOf.delete(ve); this.gearOf.delete(ve); }
 
     this.syncClutter(tiles, ground);
     this.syncVehicles(net, player, ground, frac);

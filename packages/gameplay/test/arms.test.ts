@@ -69,6 +69,12 @@ describe("ranged: reload / ammo / charge", () => {
     setIntent(w, a, { action: IntentAction.None, charge: 1 }); steps(w, 40);
     expect(G.chargeMul(w, a, def, 1 / 20)).toBeCloseTo(1); expect(s).toBeGreaterThanOrEqual(0);
   });
+  it("ADR-241: drawing plays Aim; letting go without a shot drops back to Idle", () => {
+    const w = world(); const a = mk(w, 1); hold(w, a, "longbow"); addItem(w, a, id("iron_arrow"), 2); steps(w, 1);
+    if (!w.has(a, G.AnimState)) w.add(a, G.AnimState, { anim: G.Anim.Idle, startTick: w.tick });
+    setIntent(w, a, { action: IntentAction.None, charge: 1 }); steps(w, 5); expect(w.getField(a, G.AnimState, "anim")).toBe(G.Anim.Aim);
+    setIntent(w, a, { action: IntentAction.None, charge: 0 }); steps(w, 2); expect(w.getField(a, G.AnimState, "anim")).toBe(G.Anim.Idle);
+  });
 });
 
 describe("hybrid & thrown", () => {
