@@ -9,6 +9,7 @@ import pieces as PC
 import buildings2 as b2
 from buildings import render_boxes, finalize
 from toon import SS
+import backs
 OUT = sys.argv[1] if len(sys.argv) > 1 else '..'
 CW, CH, OX, OY = 84, 96, 22, 24          # crop of the 128x128 render cell, pivot (64,96) -> (42,72)
 COLS = 24
@@ -16,9 +17,14 @@ COLS = 24
 def render(args):
     tier, key, rot = args; kind, fn, layer, rows, tall, _ = PC.PIECES[key]; tn = PC.TIER_NAMES[tier]
     seed = zlib.crc32(f'{key}{tier}'.encode()) % 1000
-    if kind == 'roof': cv = b2.roof_piece(tn, fn, rot, seed=seed)
+    up = key in PC.OLD_ROWS and rot >= PC.OLD_ROWS[key]   # ADR-253 back rotations
+    if kind == 'roof':
+        cv = b2.roof_piece(tn, fn, rot, seed=seed)
+        if up and fn == 'flat': backs.draw_on(cv, backs.roof_flat(rot), rot, seed)
     else:
-        bx, dec = fn(tn); cv = render_boxes(bx, rot, seed=seed, decor=dec)
+        bx, dec = fn(tn)
+        if up: bx = bx + backs.details(bx, rot, seed)
+        cv = render_boxes(bx, rot, seed=seed, decor=dec)
     sr = (-0.55, 0.55, -0.55, 0.55) if layer >= 1 else None
     out = []
     for st in range(4):
@@ -50,7 +56,10 @@ if __name__ == '__main__':
     for t in (1, 2, 3, 4):
         frames = []; idx = {}
         for k, v in PC.PIECES.items():
-            for r in range(v[3]):
+            for r in range(PC.OLD_ROWS.get(k, v[3])):
+                idx[(k, r)] = len(frames); frames += [im for im, _ in R[(t, k, r)]]
+        for k, v in PC.PIECES.items():   # ADR-253: rows added later go at the end of the page
+            for r in range(PC.OLD_ROWS.get(k, v[3]), v[3]):
                 idx[(k, r)] = len(frames); frames += [im for im, _ in R[(t, k, r)]]
         rows = (len(frames) + COLS - 1) // COLS; page = Image.new('RGBA', (CW * COLS, CH * rows), (0, 0, 0, 0))
         for i, f in enumerate(frames): page.paste(f, ((i % COLS) * CW, (i // COLS) * CH))

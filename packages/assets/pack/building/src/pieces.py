@@ -179,10 +179,10 @@ CHIMNEY_SMOKE_Z = 46
 #   rows: 1 symmetric (rotationArt mirror, one row), 2 axis pieces (rows 0/1 reused for rot 2/3), 4 unique
 W = lambda kind: (lambda tier: b2.wall(tier, kind))
 PIECES = {
-  "foundation":          ("boxes", b2.foundation, 0, 1, False, True),
+  "foundation":          ("boxes", b2.foundation, 0, 4, False, True),
   "foundation_triangle": ("boxes", foundation_triangle, 0, 4, False, False),
   "foundation_steps":    ("boxes", foundation_steps, 0, 4, False, False),
-  "foundation_stilt":    ("boxes", foundation_stilt, 0, 1, False, False),
+  "foundation_stilt":    ("boxes", foundation_stilt, 0, 4, False, False),
   "foundation_ramp":     ("boxes", foundation_ramp, 1, 4, False, False),
   "wall":                ("boxes", W("plain"), 1, 2, True, True),
   "wall_window":         ("boxes", W("window"), 1, 2, True, True),
@@ -190,21 +190,24 @@ PIECES = {
   "wall_low":            ("boxes", W("low"), 1, 2, True, True),
   "wall_arched":         ("boxes", wall_arched, 1, 2, True, False),
   "wall_fortified":      ("boxes", wall_fortified, 1, 2, True, False),
-  "floor":               ("boxes", b2.floor, 0, 1, False, True),
-  "floor_hatch_frame":   ("boxes", b2.hatch_frame, 0, 1, False, True),
+  "floor":               ("boxes", b2.floor, 0, 4, False, True),
+  "floor_hatch_frame":   ("boxes", b2.hatch_frame, 0, 4, False, True),
   "floor_stairwell":     ("boxes", floor_stairwell, 0, 2, False, False),
-  "floor_skylight":      ("boxes", floor_skylight, 0, 1, False, False),
+  "floor_skylight":      ("boxes", floor_skylight, 0, 4, False, False),
   "floor_triangle":      ("boxes", floor_triangle, 0, 4, False, False),
   "wall_corner_outer":   ("boxes", wall_corner_outer, 1, 4, True, False),
   "wall_corner_inner":   ("boxes", wall_corner_inner, 1, 4, True, False),
-  "pillar":              ("boxes", b2.pillar, 1, 1, True, True),
+  "pillar":              ("boxes", b2.pillar, 1, 4, True, True),
   "wall_corner_angled":  ("boxes", wall_corner_angled, 1, 4, True, False),
-  "roof_flat":           ("roof", "flat", 0, 1, False, True),
+  "roof_flat":           ("roof", "flat", 0, 4, False, True),
   "roof_slope":          ("roof", "slope", 0, 4, False, True),
   "roof_gable":          ("roof", "ridge", 0, 2, False, False),
   "roof_hip":            ("roof", "hip", 0, 4, False, True),
   "roof_corner":         ("roof", "corner", 0, 4, False, True),
-  "roof_chimney":        ("boxes", roof_chimney, 0, 1, True, False),
+  "roof_chimney":        ("boxes", roof_chimney, 0, 4, True, False),
 }
+# ADR-253: these shipped one mirrored row; now 4 drawn rotations (rot 0 unchanged, back rotations show back details from
+# assets/tools/backs.py). Their extra rows go after every existing frame on the tier page so other indices do not move.
+OLD_ROWS = {k: 1 for k in ("foundation", "foundation_stilt", "floor", "floor_hatch_frame", "floor_skylight", "pillar", "roof_flat", "roof_chimney")}
 # extra piece keys that reuse another piece's frames (main-pack art-only keys get tier art too)
 ALIAS = {"wall_corner": "wall_corner_outer", "roof_ridge": "roof_gable"}
