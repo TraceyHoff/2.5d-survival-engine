@@ -55,7 +55,7 @@ export function snapPx(v: number, s: number, o: number): number { return s >= 1 
 
 /** ADR-182: water colour from deep (#3484bc) toward shallow (#4f93bf) by shore tint 0..1. */
 /** ADR-184: deep blue -> shore turquoise (same endpoints as the WebGL2 mesh). */
-export const C2D_DEEP = [0x18, 0x46, 0x90] as const, C2D_SHALLOW = [0x5c, 0xd0, 0xd0] as const;
+export const C2D_DEEP = [0x18, 0x46, 0x90] as const, C2D_SHALLOW = [0x41, 0xb5, 0xcc] as const; // #41b5cc: matches the shallow shore overlays (50a10091)
 export function waterRgb(k: number): [number, number, number] { const m = (j: 0 | 1 | 2): number => Math.round(C2D_DEEP[j] + (C2D_SHALLOW[j] - C2D_DEEP[j]) * k); return [m(0), m(1), m(2)]; }
 export class Canvas2DRenderer {
   readonly kind = "canvas2d" as const;
