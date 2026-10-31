@@ -2769,3 +2769,40 @@ Plain X / A keep Interact / Jump. The touch buttons are checked for no overlap a
 **Fallbacks.** The `basic_storage_box → crate_decor / storage_box` entry is removed from `sprite_fallbacks.json` (real art since 982fb28b).
 
 **Tests.** `packages/render/test/adr251_pool_budget.test.ts` (9): pin regex, 1024 pages tile 4 per layer, wear cap and stream at 1x within 1024 / 448, the shader clamp, side levels and keys, no water detail doubling, season-only gt pin, and the fallback removal.
+
+## ADR-252: AI humans build, store, fight and sleep (planner + base behaviours on ADR-250 / ADR-244 / ADR-221)
+
+**Context.** ADR-203 bots gathered, crafted an axe and lit a campfire, then idled. The paused AI-base work (branch `ai-base-1492400`, its own "ADR-211/212/214/216" notes, renumbered here) added a goal planner and base behaviours. Main has since gained ADR-215 collision, ADR-217 held lights, ADR-221 skill gating, ADR-238 ground despawn, ADR-239 seasons, ADR-241 / ADR-244 animations and stances, ADR-245 skin tones, ADR-247 seeds and ADR-250 the basic storage box. This ADR merges the two.
+
+**Decision.** AI humans stay DirectClient sessions on the authoritative world (ADR-105). Every move, swing, build, container op and stance goes through the same validated input or command a player sends, so nothing is client-side and everything replicates like a player.
+
+- **Planner** (`ai/planner.ts`). A goal ladder: tools → campfire → `basic_storage_box` (ADR-250) → workbench → torch in the off hand → 2x2 base (`BASE_SLOTS`: foundations, ADR-211 L corners, window, doorway + door, roofs) → hearth campfire inside → bed (`BED_SLOT`) → knife / weapon → clothes → furnace → metal.
+  - The first unmet goal yields leaves (items to gather), hunts, or one `build` step with a stand spot (`BUILD_STAND` outside, `DOOR_IN` for hearth and bed).
+  - Storage checks use `isBaseStoragePiece`, so any ADR-250 storage piece satisfies the box goal; `STATION_SLOTS` has a box row.
+  - ADR-221: `pieceUnlocked` is the same gate as `validatePlacement`. A locked piece blocks the chain (`locked:<key>`, no build step) until `skill_pick` learns it. A fresh bot learns the campfire first, so no box is ever built before the fire.
+- **Storage** (`ai/base_behaviors.ts`). Deposits and withdrawals use `storageDepositActions` / `storageWithdrawActions`. The open → op → close sequence plays one action per think tick (`CONTAINER_STEP` = 10 ticks apart), like a player clicking.
+  - Surplus is stashed. Planner needs are withdrawn.
+  - Junk is dropped only when the bag is nearly full. Seeds and saplings (ADR-247 `plantableBySeed`, `isSeedItem`) are never junk.
+- **Stances** (ADR-244 / ADR-241; `ai/stance_policy.ts`, wrapped around every survivor behaviour). These are the player's own inputs (Guard, Crouch, Rest edge), which the server validates with `applyStanceInput`. ADR-241 animations follow from the replicated stance.
+  - **Block:** `defendAction` gives a 30-tick rhythm of 10 strike ticks then a held guard, while stamina > 0.25 and a zombie is within 1.3 tiles.
+  - **Crouch:** sneak while a remembered zombie is 4–10 tiles away. Stand up again past 13 tiles, closer than 4, or while fighting, fleeing, hunting or sleeping. Toggles are throttled to one per 40 ticks.
+  - **Sleep:** at night `baseSleepRun` walks to the bed in a complete base and sends Rest. While asleep the bot sends no movement or wake input. The local bot loop throttles the Rest edge (`REST_EVERY`) and never re-sends it while asleep.
+  - **Carry** is not used. Carrying lifts a ground bag, and AI humans do not perceive ground bags (ADR-238); kills are hand-looted at a remembered skin spot.
+- **Seasons / warmth** (ADR-239). `isWinter` (winter weight ≥ 0.5) makes the planner bank `WINTER_WOOD` (20) in the fire during the day (axe + campfire first if there is none). `tend_fire` and `refuel` count winter as need, and evenings still bank `NIGHT_WOOD`.
+- **Lights** (ADR-217). The torch goal makes bots wear a held light; the server light grid keeps zombies out of its radius, exactly as for players.
+- **Collision** (ADR-215). Bots move only through movement input, so body collision applies. The live test asserts that no per-tick bot step crosses a structure (`movementBlocked`).
+- **Looks** (ADR-245). `botAppearance(catalog, agentId)` (server `appearance.ts`) is a deterministic, validated random look per agent id. The skin tone spreads across all 18 tones. It is stamped on join and replicated like a player's appearance.
+
+**Performance.** Think every 10 ticks with outputs replayed in between. Planner and base scans run once per think. Sensor fills are cheap reads, and the LOD path refreshes only the stance sensors.
+
+**Tests.**
+- `packages/gameplay/test/adr252_ai_humans.test.ts` (16): ladder order and the planner walk, alternate storage pieces, ADR-221 gating, storage API sequences, stance inputs, the defend rhythm, sneak crouch, sleep stillness, the bed slot and `bedNear`, the bed goal, winter wood and fire, the torch goal, seeds.
+- `apps/client/test/adr252_ai_humans_live.test.ts` (7): live bots build campfire → box → workbench in order; one container event per bot per tick (and they do store); no wall crossings; valid looks; base + bed built; asleep in a bed at night and still; a zombie at the door is blocked and killed.
+- `apps/server/test/adr252_bot_appearance.test.ts` (3): looks are deterministic, valid, cover all 18 tones, and differ between agents.
+
+**Limits.**
+- Carry stance unused (see above).
+- Bots don't plant the seeds they keep.
+- Sleep needs a complete base and a bed, so a bot without a base rests by its fire.
+- Winter warmth is fire-based; bots don't pick clothes for temperature beyond the clothes goal.
+- The live tests give bots a head start (skills and materials) to keep runtime low; from scratch the ladder is the same but slower.

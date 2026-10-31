@@ -76,7 +76,7 @@ const ghostOk = (world: World, self: Entity, piece: number, x: number, y: number
 /** Where a builder stands for base pieces (outside the footprint, inside build reach of every slot). */
 export const BUILD_STAND = { x: 1, y: 3.3 };
 export const DOOR_OUT = { x: 0.5, y: 2.8 }, DOOR_IN = { x: 0.5, y: 1.25 };
-/** ADR-216: indoor campfire (back corner, off the door path): the walls keep its heat in and the roof keeps rain off; sleep spot next to it. */
+/** ADR-252: indoor campfire (back corner, off the door path): the walls keep its heat in and the roof keeps rain off; sleep spot next to it. */
 export const HEARTH: BaseSlot = { id: "hearth", key: "campfire", x: 1.5, y: 0.5, level: 0 }; export const HEARTH_SIT = { x: 0.9, y: 1.1 };
 /** ADR-252: the bed (1x2, not solid) along the west wall, under the window, beside the hearth; the sleeper lies on it (ADR-244 Rest edge). */
 export const BED_SLOT: BaseSlot = { id: "bed", key: "bed", x: 0.5, y: 1, level: 0 };
@@ -213,7 +213,7 @@ export const WOOD_RESERVE = 8;
 /** Freezing with no fire and no wood: wood + stone for a campfire on the spot comes before anything else. */
 const EMERGENCY: readonly Goal[] = [{ k: "item", key: "wood", count: 8 }, { k: "item", key: "stone", count: 4 }];
 /** Late afternoon without a finished, heated base: stock a night of fuel first. */
-export const NIGHT_WOOD = 130; // ADR-216: a campfire burns a wood per 20 s; ~16 cold hours (h16-h8) = ~120 wood
+export const NIGHT_WOOD = 130; // ADR-252: a campfire burns a wood per 20 s; ~16 cold hours (h16-h8) = ~120 wood
 /** ADR-252 / ADR-239: winter days sit near -6 C (felt cold all day): keep ~2.5 game hours of fuel banked in the fire before other work. */
 export const WINTER_WOOD = 20;
 /** ADR-252: winter = the season blend is mostly winter (seasonAt weights[Winter] >= 0.5). */

@@ -133,7 +133,7 @@ export function goTo(c: Ctx, o: { moveX: number; moveY: number; aimX: number; ai
     const inS = insideBase(b, c.self.x, c.self.y), inT = insideBase(b, tx, ty);
     const shut = c.bb.get<number>("doorShut");
     const dd = Math.hypot(door.x - c.self.x, door.y - c.self.y);
-    // close the door behind us, only from within reach (ADR-216: a far toggle is a wasted, rejected command)
+    // close the door behind us, only from within reach (ADR-252: a far toggle is a wasted, rejected command)
     if (shut !== undefined && (!door.open || dd > 2.2)) c.bb.set("doorShut", undefined);
     else if (shut !== undefined && dd > 1.1 && c.self.tick - c.bb.num("doorAt", -1e9) > 10) { o.actions.push(`door:${door.id}`); c.bb.set("doorAt", c.self.tick); c.bb.set("doorShut", undefined); }
     if (inS !== inT) {
@@ -240,7 +240,7 @@ export function baseBehaviors(): GameBehavior[] {
       run: (c, o) => { const f = c.world.bs?.stations.get(StationKind.Campfire); const wood = plannerIndex(gdefs(c)).item.get("wood")?.id; if (!f || wood === undefined || !c.world.woodTotal) return false;
         if (goTo(c, o, f.x, f.y) > 1.6) { if (stuckOn(c, f.x, f.y)) { c.bb.set("refuelAt", c.self.tick); return false; } return; } stop(o);
         if (containerSeq(c, o, f.id, storageDepositActions(f.id as Entity, wood, Math.min(10, c.world.woodTotal)))) { mark(c, "refuels"); c.bb.set("refuelAt", c.self.tick); return false; } } },
-    // ADR-216: cold kills in ~70 s once the body is under 35 C; get warm first (lit fire > light the fire > roofed base > a camp fire on the spot)
+    // ADR-252: cold kills in ~70 s once the body is under 35 C; get warm first (lit fire > light the fire > roofed base > a camp fire on the spot)
     { name: "warm_up", inertia: 0.6, considerations: [
         { name: "chilled", weight: 2.2, curve: step01, input: (c) => { const ch = c.world.chill; if (!ch) return 0;
           const on = (c.bb.get("warming") ? ch.body < 36.8 || (ch.felt < 10 && ch.body < 37) : ch.body < 36.2 || (ch.felt < 8 && ch.body < 36.6)) || (bankHours(c) && c.self.thirst > 0.45 && (c.self.hunger > 0.35 || c.world.food === undefined)); /* banking yields to drink / eat */ c.bb.set("warming", on); return on ? 1 : 0; } },
@@ -266,7 +266,7 @@ export function baseSleepRun(c: Ctx, o: { moveX: number; moveY: number; aimX: nu
   else if (goTo(c, o, tx, ty, 0.8) < (inBed ? 1.2 : 0.9) || stuckOn(c, tx, ty, 200)) { stop(o); o.aimX = 0; o.aimY = 0; o.actions.push("sleep"); if (inBed) o.actions.push("rest"); }
   if (night(c.self.phase) < 0.5) return false;
 }
-/** ADR-216: the cold hours (h15-h7.5) with a base fire in reach: stay by it and keep it stocked, like a player banking the hearth. */
+/** ADR-252: the cold hours (h15-h7.5) with a base fire in reach: stay by it and keep it stocked, like a player banking the hearth. */
 function bankHours(c: Ctx): boolean {
   const w = worldOf(c); if (!w) return false; const t = timeOfDay(w).t; if (t < 0.62 && t >= 0.31) return false;
   const f = c.world.bs?.stations.get(StationKind.Campfire); if (!f || Math.hypot(f.x - c.self.x, f.y - c.self.y) > 400) return false; // far bots walk home for the night

@@ -8,7 +8,7 @@ function setup() {
   const w = makeWorld(); installPermissions(w); G.installEconomy(w);
   const p = spawnLearned(w, { x: 0, y: 0, maxWeight: 0, clientId: 1 }); w.add(p, PlayerId, { id: 1 }).add(p, Membership, { partyId: 0, clanId: 0 });
   const agent = G.makeAgent(G.makeAgentIdentity(5, 0, "bot_gatherer"), 1);
-  agent.bb.set("sitePickAt", 0); // ADR-216: no base anchor yet (site pick waits 200 ticks) -> the pre-base sensors below
+  agent.bb.set("sitePickAt", 0); // ADR-252: no base anchor yet (site pick waits 200 ticks) -> the pre-base sensors below
   return { w, p, agent };
 }
 const run = (name: string, c: AgentContext<G.AgentWorldView>) => { const o = idleOutput(); const r = G.survivalBehaviors().find((b) => b.name === name)!.run(c, o); return { o, r }; };

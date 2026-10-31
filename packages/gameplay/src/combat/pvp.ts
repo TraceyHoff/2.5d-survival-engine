@@ -114,7 +114,7 @@ export function respawnPlayer(world: World, e: Entity): RespawnReject {
   world.set(e, Transform, { x: p.x, y: p.y });
   world.setField(e, Health, "hp", Math.max(1, max * PVP.respawnHealthFrac));
   world.setField(e, Survival, "hunger", PVP.respawnHunger); world.setField(e, Survival, "thirst", PVP.respawnThirst); world.setField(e, Survival, "stamina", world.getField(e, Survival, "maxStamina")!);
-  world.setField(e, Survival, "bodyTemp", vt.bodyTempNormal); // ADR-216: a hypothermic corpse respawned at 30 C and died again within seconds
+  world.setField(e, Survival, "bodyTemp", vt.bodyTempNormal); // ADR-252: a hypothermic corpse respawned at 30 C and died again within seconds
   if (world.has(e, AnimState)) world.set(e, AnimState, { anim: Anim.Idle, startTick: world.tick });
   emit(world, Respawned, { entity: e, x: p.x, y: p.y }); return undefined;
 }

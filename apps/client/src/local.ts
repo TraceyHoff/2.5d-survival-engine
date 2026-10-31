@@ -188,7 +188,7 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
     const t = vp.world.get(e, Transform); if (!t) return undefined;
     // ADR-203: the server spawns / restores the bot elsewhere than addBot's (x, y) (pickSpawnPoint, saved account); a home
     // hundreds of tiles away made build / sleep / return_home walk across the map forever. Home = where the bot lives.
-    // ADR-216: a bot with a base remembers it (AiMemory persists via game.agents): home = inside the base, even after a trip
+    // ADR-252: a bot with a base remembers it (AiMemory persists via game.agents): home = inside the base, even after a trip
     const mem = aiMemoryOf(a); if (mem.base && Math.hypot(mem.base.x - t.x, mem.base.y - t.y) > 4 * HOME_MAX_DIST) delete mem.base;
     if (mem.base) { const h = baseHome(mem.base); if (h.x !== vp.home.x || h.y !== vp.home.y) vp.home = h; }
     else if (Math.hypot(vp.home.x - t.x, vp.home.y - t.y) > HOME_MAX_DIST) vp.home = { x: t.x, y: t.y };
@@ -227,7 +227,7 @@ export async function createLocalServer(o: LocalServerOptions = {}): Promise<Loc
     if (byAgent.size !== bots.length) { byAgent.clear(); for (const b of bots) byAgent.set(b.agent, b); }
     const outs = controller.tick(tick, (a) => viewFor(a, tick, humans));
     for (const vp of bots) { const out = outs.get(vp.agent); if (!out) continue; vp.output = out; vp.client.sendInput(sampleOf(vp)); if (out.chat) vp.client.chat.send(ChatChannel.Local, out.chat.text); if (out.emote) { const e = serverEntityOf(vp.client.clientId); if (e !== undefined) applyAgentEmote(game.world, e, out); } if (out.commands) sendAgentCommands(vp.client, out.commands); }
-    if (tick - lastRespawnTry >= 40) { lastRespawnTry = tick; for (const vp of bots) { const e = serverEntityOf(vp.client.clientId); if (e !== undefined && game.world.has(e, Dead)) sendAgentCommands(vp.client, [{ type: RespawnCmd.name, payload: {} }]); } // ADR-216: a dead bot presses Respawn like a player (server enforces respawnSeconds)
+    if (tick - lastRespawnTry >= 40) { lastRespawnTry = tick; for (const vp of bots) { const e = serverEntityOf(vp.client.clientId); if (e !== undefined && game.world.has(e, Dead)) sendAgentCommands(vp.client, [{ type: RespawnCmd.name, payload: {} }]); } // ADR-252: a dead bot presses Respawn like a player (server enforces respawnSeconds)
     }
     flushAiMemory(bots.map((b) => b.agent), putAgent, game.world.tick); flushSocialMemory(bots.map((b) => b.agent), putAgent, game.world.tick); // debounced social-memory write-through
   } });
