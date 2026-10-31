@@ -566,8 +566,14 @@ export class IsoRenderer implements Renderer {
     gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LESS);
     gl.disable(gl.BLEND);
     if (this.tilemap) {
+      // ADR-249: the vertex-colour mesh is only the under-layer (cliff fill / unloaded-art fallback) when textured tiles draw:
+      // push it back with a polygon offset so the tile art (gt_ land, water, ice) always wins the LEQUAL test instead of
+      // z-fighting it (hid gt water/land on some depth buffers; the fall-grass mosaic / seam lines).
+      const textured = this.texturedTerrain && TileTerrain.available(this.atlas);
+      if (textured) { gl.enable(gl.POLYGON_OFFSET_FILL); gl.polygonOffset(2, 8); }
       this.terrain.draw(this.viewU, this.depthU, rect, this.time, stats, this.activeKeys);
-      if (this.texturedTerrain && TileTerrain.available(this.atlas)) {
+      if (textured) gl.disable(gl.POLYGON_OFFSET_FILL);
+      if (textured) {
         gl.depthFunc(gl.LEQUAL);
         this.tiles.draw(this.tilemap, this.atlas, this.viewU, this.depthU, rect, this.time, stats, this.terrain.surface, this.terrain.perChunk, this.terrain.surfaceStyle, this.activeKeys);
         gl.depthFunc(gl.LESS);

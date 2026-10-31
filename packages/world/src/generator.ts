@@ -41,7 +41,16 @@ export interface ProceduralOptions {
   /** ADR-246: wet lowland mud (tile 9) on the grass/dirt band just above the shore band where a moisture field is high.
    *  false = off. Defaults: MUD_DEFAULTS. */
   mud?: false | { tile?: number; band?: number; moisture?: number; scale?: number };
+  /** ADR-249: ground cover on the existing bands (heights, climate and node placement unchanged). false = off.
+   *  Defaults: COVER_DEFAULTS (shallow water ring at shores, forest floor in the woods' interior, snow on cold peaks). */
+  cover?: false | Partial<typeof COVER_DEFAULTS>;
 }
+/** ADR-249 ground cover. shallow: water (1) within `shallowBand` noise of the shore -> 8. forest: forest-band dirt (4)
+ *  at least `forestMargin` noise inside the band where a canopy field > `canopy` -> 7 (edges stay dirt / farmable).
+ *  snow: rock (5) at noise >= `snowLine` whose base temperature (band temp + large-scale variation) <= `snowTemp` °C -> 6. */
+const NEIGH4 = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const;
+export const COVER_DEFAULTS = { shallowBand: 0.03, forestMargin: 0.03, canopy: 0.42, canopyScale: 14, snowLine: 0.86, snowTemp: 12 } as const;
+const CANOPY_SALT = 0x666f72;
 /** ADR-246 mud: tile, noise width above the sand band, moisture threshold (0..1), moisture noise scale (tiles). */
 export const MUD_DEFAULTS = { tile: 9, band: 0.045, moisture: 0.56, scale: 9 } as const;
 const MUD_SALT = 0x6d7564;
@@ -61,7 +70,24 @@ export class ProceduralGenerator implements ChunkProvider, BaseClimateSource {
     return 0.65 * valueNoise(seed, tx, ty, 48) + 0.35 * valueNoise(seed ^ 0xabc, tx, ty, 12);
   }
   /** Generated tile id at (tx,ty) (pure; no chunk load; same as load()). */
-  tileAt(tx: number, ty: number): number { const n = this.noiseAt(tx, ty); return this.mudOr(tx, ty, n, this.bandOf(n)); }
+  tileAt(tx: number, ty: number): number { const n = this.noiseAt(tx, ty); return this.surface(tx, ty, n, this.bandOf(n)); }
+  /** Final ground tile: band tile, then ADR-246 mud, then ADR-249 cover. */
+  private surface(tx: number, ty: number, n: number, band: NonNullable<ProceduralOptions["bands"]>[number]): number {
+    const t = this.mudOr(tx, ty, n, band); const c = this.opts.cover; if (c === false || t !== band.tile) return t;
+    const o = { ...COVER_DEFAULTS, ...(c ?? {}) }; const bi = this.bands.indexOf(band); const lo = bi > 0 ? this.bands[bi - 1]!.max : 0;
+    if (t === 1) { // shallows: the shore end of the water band, and every water tile touching a non-water band (steep shores too)
+      const up = this.bands[bi + 1]; if (!up || up.tile === 1) return t;
+      if (n >= band.max - o.shallowBand) return 8;
+      for (const [dx, dy] of NEIGH4) if (this.bandOf(this.noiseAt(tx + dx, ty + dy)).tile !== 1) return 8;
+      return t;
+    }
+    if (t === 4) {
+      if (n - lo < o.forestMargin || band.max - n < o.forestMargin) return t;
+      return valueNoise(((this.opts.seed >>> 0) ^ CANOPY_SALT) >>> 0, tx, ty, o.canopyScale) > o.canopy ? 7 : t;
+    }
+    if (t === 5 && n >= o.snowLine) return this.baseClimate(tx, ty).temperature <= o.snowTemp ? 6 : t;
+    return t;
+  }
   private bandOf(n: number): NonNullable<ProceduralOptions["bands"]>[number] { return this.bands.find((b) => n < b.max) ?? this.bands[this.bands.length - 1]!; }
   /** ADR-246: grass / dirt (3, 4) tiles within `band` noise of a shore (sand, 2) band below turn to mud where wet. */
   private mudOr(tx: number, ty: number, n: number, band: NonNullable<ProceduralOptions["bands"]>[number]): number {
@@ -91,7 +117,7 @@ export class ProceduralGenerator implements ChunkProvider, BaseClimateSource {
       const tx = cx * CHUNK_SIZE + lx, ty = cy * CHUNK_SIZE + ly;
       const n = this.noiseAt(tx, ty);
       const band = this.bandOf(n);
-      const i = ly * CHUNK_SIZE + lx; c.tiles[i] = this.mudOr(tx, ty, n, band); c.height[i] = Math.floor(n * 4);
+      const i = ly * CHUNK_SIZE + lx; c.tiles[i] = this.surface(tx, ty, n, band); c.height[i] = Math.floor(n * 4);
       if (band.nodeKinds?.length && rng.next() < (band.nodeChance ?? 0)) nodes.push({ tx, ty, kind: rng.pick(band.nodeKinds) });
     }
     c.dirty = false; return { chunk: c, nodes };

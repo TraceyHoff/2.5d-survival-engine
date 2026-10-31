@@ -933,10 +933,12 @@ export class SpriteBatch {
         o0.set(base);
         if (nearC && this.nearN < this.nearInfo.length) this.nearN++;
       }
-      if (eq && heldOf) { const s2 = eq.slot(i); if (s2 >= 0) this.emitHeld(atlas, heldOf, eq.data.mainHandItem[s2]!, res, sx, sy, dkey, scale, f, (sp.data.flags[k]! & SpriteFlag.FlipX) !== 0, fade, occT, occ.mode, bodyL ? o0[15]! : 0, false, fireAnimTime(cx.now, i)); }
+      // ADR-249: no held / carried / off-hand items while sleeping (sleep, sleep_lie, sleep_lie_under): hands are empty in bed
+      const asleep = res.anim.startsWith("sleep");
+      if (eq && heldOf && !asleep) { const s2 = eq.slot(i); if (s2 >= 0) this.emitHeld(atlas, heldOf, eq.data.mainHandItem[s2]!, res, sx, sy, dkey, scale, f, (sp.data.flags[k]! & SpriteFlag.FlipX) !== 0, fade, occT, occ.mode, bodyL ? o0[15]! : 0, false, fireAnimTime(cx.now, i)); }
       const cs = cx.bindings.carriedSprite?.(e); // ADR-241 carry socket
-      if (cs !== undefined && bodyL) this.emitHeld(atlas, carriedId, cs + 1, res, sx, sy, dkey, scale, f, (sp.data.flags[k]! & SpriteFlag.FlipX) !== 0, fade, occT, occ.mode, o0[15]!, false, 0, CARRY_SOCKET);
-      if (oh && offOf) { const s3 = oh.slot(i); if (s3 >= 0) this.emitHeld(atlas, offOf, oh.data.offHandItem[s3]!, res, sx, sy, dkey, scale, f, (sp.data.flags[k]! & SpriteFlag.FlipX) !== 0, fade, occT, occ.mode, bodyL ? o0[15]! : 0, true, fireAnimTime(cx.now, i)); }
+      if (cs !== undefined && bodyL && !asleep) this.emitHeld(atlas, carriedId, cs + 1, res, sx, sy, dkey, scale, f, (sp.data.flags[k]! & SpriteFlag.FlipX) !== 0, fade, occT, occ.mode, o0[15]!, false, 0, CARRY_SOCKET);
+      if (oh && offOf && !asleep) { const s3 = oh.slot(i); if (s3 >= 0) this.emitHeld(atlas, offOf, oh.data.offHandItem[s3]!, res, sx, sy, dkey, scale, f, (sp.data.flags[k]! & SpriteFlag.FlipX) !== 0, fade, occT, occ.mode, bodyL ? o0[15]! : 0, true, fireAnimTime(cx.now, i)); }
     };
     if (cx.spatial) {
       // chunk-level culling through the shared spatial index

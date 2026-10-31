@@ -28,7 +28,7 @@ layout(location=3) in vec4 aD; // ADR-184: water corner tints (x,y), (x+1,y), (x
 ${GLSL_COMMON}
 uniform highp sampler2D uFrames;
 uniform vec3 uIso; uniform float uZFactor, uTime;
-out vec3 vUvRaw; flat out int vLayer; flat out vec4 vRect; out vec2 vLocal; out vec2 vWorld; flat out vec4 vInfo; flat out vec4 vCorn; flat out vec2 vOrg; flat out vec3 vArt; // vInfo: w, h, skirtMask, water; vArt: anchor px, art mode
+out vec3 vUvRaw; flat out int vLayer; flat out vec4 vRect; out vec2 vLocal; out vec2 vWorld; flat out vec4 vInfo; flat out vec4 vCorn; flat out vec2 vOrg; flat out vec3 vArt; flat out float vKey; // vInfo: w, h, skirtMask, water; vArt: anchor px, art mode
 void main() {
   int frames = max(1, int(aB.x + 0.5));
   int entry = int(aA.w + 0.5) + int(mod(floor(uTime * aB.y + aB.w), float(frames)));
@@ -42,12 +42,14 @@ void main() {
   // world position (for overlays) of the ground point under this pixel
   vec2 d = (px - aC.xy) / uIso.xy; vWorld = vec2(aA.x, aA.y) + vec2(d.x + d.y, d.y - d.x) * 0.5;
   float hp = aC.y - px.y; // px above pivot
-  float key = aA.x + aA.y + aA.z * uZFactor + 0.004 - max(hp, -uIso.y) / uIso.y; // ground plane; skirt clamped to the front corner // ground plane; skirt clamped to the front corner
+  float key = aA.x + aA.y + aA.z * uZFactor + 0.004 - max(hp, -uIso.y) / uIso.y; // ground plane; skirt clamped to the front corner
+  vKey = aA.x + aA.y + aA.z * uZFactor + 0.004;
   gl_Position = vec4(isoToClip(iso), keyToNdc(key), 1.0);
 }`;
 const FS = /* glsl */ `#version 300 es
 precision highp float; precision highp int;
-in vec3 vUvRaw; flat in int vLayer; flat in vec4 vRect; in vec2 vLocal; in vec2 vWorld; flat in vec4 vInfo; flat in vec4 vCorn; flat in vec2 vOrg; flat in vec3 vArt;
+in vec3 vUvRaw; flat in int vLayer; flat in vec4 vRect; in vec2 vLocal; in vec2 vWorld; flat in vec4 vInfo; flat in vec4 vCorn; flat in vec2 vOrg; flat in vec3 vArt; flat in float vKey;
+uniform vec2 uDepth;
 uniform highp sampler2DArray uAtlas;
 #define vUv vec3(vUvRaw.xy, float(vLayer)) // flat int array layer (no interpolated layer index)
 uniform vec3 uIso; uniform float uTime, uWet, uSnow, uPuddles, uWetDarken, uIce, uArtSnow; uniform vec3 uSkyRefl, uSeason;
@@ -60,6 +62,11 @@ void main() {
   vec2 uv = clamp(vUv.xy, vRect.xy, vRect.zw);
   vec4 t = texture(uAtlas, vec3(uv, vUv.z));
   if (t.a < 0.5) discard;
+  // ADR-249: per-pixel ground-plane depth. The clamp (skirt = front-corner key) is not linear over the frame quad, so the
+  // per-vertex key interpolated to ~0.35 tile behind the true ground plane mid-diamond: the vertex-colour mesh won the
+  // depth test almost everywhere (hid gt water/land art; only small triangles near the front corners showed).
+  { float hp = vArt.y - vLocal.y; float key = vKey - max(hp, -uIso.y) / uIso.y;
+    gl_FragDepth = 0.5 + 0.5 * (1.0 - 2.0 * clamp((key - uDepth.x) * uDepth.y, 0.0, 1.0) * 0.999); }
   // skirt pixels (below the diamond): keep only on sides whose neighbour is lower
   float tw = uIso.x * 2.0, th = uIso.y * 2.0;
   vec2 q = vLocal - vArt.xy; // diamond centre = the cell anchor (legacy 32,16; gt 34,18)
@@ -71,10 +78,18 @@ void main() {
     vec2 f = clamp(vWorld - vOrg, 0.0, 1.0);
     float k = mix(mix(vCorn.x, vCorn.y, f.x), mix(vCorn.w, vCorn.z, f.x), f.y); k = smoothstep(0.0, 1.0, k);
     float lum = dot(c, vec3(0.299, 0.587, 0.114)); vec3 detail = c - vec3(lum);
+    if (int(vArt.z + 0.5) == 1) { // ADR-249: gt_water art: keep its ripples, soften the dark diamond rim (no tile grid) + slow shimmer
+      float rim = smoothstep(0.72, 1.0, abs(q.x) / uIso.x + abs(q.y) / uIso.y);
+      detail *= 1.0 - 0.8 * rim; lum = mix(lum, max(lum, 0.45), rim);
+      lum += 0.035 * sin(dot(vWorld, vec2(1.3, 0.9)) - uTime * 1.1) * sin(dot(vWorld, vec2(-0.6, 1.7)) * 0.8 + uTime * 0.7);
+    }
     vec3 deep = vec3(0.09, 0.27, 0.56) + detail * 0.7 + (lum - 0.45) * 0.35;
     vec3 shallow = vec3(0.36, 0.82, 0.82) + detail * 0.6 + (lum - 0.45) * 0.4;
     c = mix(deep, shallow, k);
     c = seasonIce(c, vWorld, uIce, k); // ADR-239: winter ice (shallows freeze first)
+  }
+  if (vInfo.w < -0.5) { // ADR-249: gt_ice decal (water = -1): lift the dark diamond outline so frozen water reads as one sheet
+    float rim = smoothstep(0.8, 1.0, abs(q.x) / uIso.x + abs(q.y) / uIso.y); c = mix(c, max(c, vec3(0.72, 0.85, 0.95)), rim * 0.85);
   }
   int art = int(vArt.z + 0.5);
   if (vInfo.w < 0.5 && art == 0) c = seasonGround(c, vWorld, uSeason); // ADR-239 (skirts too, so cliff faces match); gt art is seasonal already
@@ -171,7 +186,7 @@ export class TileTerrain {
         for (const l of L) {
           const e = EI(g.id(l.key)); if (!e) continue; const wl = l.kind === GroundLayerKind.Water;
           const mode = l.kind === GroundLayerKind.Ice || l.kind === GroundLayerKind.Leaves ? 2 : 1;
-          data.push(x + 0.5, y + 0.5, z, e.first, e.count, e.fps, mask, 0, e.ax, e.ay, wl ? 1 : 0, mode, ...(wl ? [cT(x, y), cT(x + 1, y), cT(x + 1, y + 1), cT(x, y + 1)] : [0, 0, 0, 0])); n++;
+          data.push(x + 0.5, y + 0.5, z, e.first, e.count, e.fps, mask, 0, e.ax, e.ay, wl ? 1 : l.kind === GroundLayerKind.Ice ? -1 : 0, mode, ...(wl ? [cT(x, y), cT(x + 1, y), cT(x + 1, y + 1), cT(x, y + 1)] : [0, 0, 0, 0])); n++;
         }
         if (n) { minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z); continue; }
       }

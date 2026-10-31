@@ -106,7 +106,7 @@ function swapChunkNode(world: World, from: Entity, to: Entity): void {
   for (const l of m.values()) { const i = l.indexOf(from); if (i >= 0) { l[i] = to; return; } }
 }
 
-const SWIM_OR_VOID = (tile: number): boolean => tile === 0 || tile === 1; // void / water (generator tile ids)
+const SWIM_OR_VOID = (tile: number): boolean => tile === 0 || tile === 1 || tile === 8; // void / water / shallow water (generator tile ids; ADR-249 generates 8)
 
 /** A valid regrow spot within depletion.min..maxRadius of (x, y), or undefined. Deterministic for a given rng. */
 export function findRegrowSpot(world: World, x: number, y: number, rng: { next(): number }): { x: number; y: number } | undefined {
