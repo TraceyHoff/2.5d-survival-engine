@@ -1,7 +1,8 @@
 /**
- * ADR-216: goal-driven planner for AI humans. Each sense pass (autonomy.ts, every SENSE_EVERY ticks per bot) walks a fixed
- * goal ladder (tools -> campfire -> knife / weapon -> workbench -> storage -> 2x2 base -> clothes / armour -> furnace ->
- * metal) and backward-chains the first unmet goal through the same RecipeDef / ResourceDef / PieceDef data players read:
+ * ADR-252: goal-driven planner for AI humans. Each sense pass (autonomy.ts, every SENSE_EVERY ticks per bot) walks a fixed
+ * goal ladder (tools -> campfire -> basic storage box (ADR-250) -> workbench -> 2x2 base -> hearth -> bed -> knife / weapon ->
+ * clothes / armour -> furnace -> metal); pieces the bot has not learned (ADR-221 pieceUnlocked) hold the build order until
+ * skill_pick learns them and backward-chains the first unmet goal through the same RecipeDef / ResourceDef / PieceDef data players read:
  * have it (bag or base storage -> withdraw), craft it (hand or at a base station), gather it (node with the right tool),
  * hunt it (animal loot) or build it (station / base piece at a fixed slot of the base layout). The result is one
  * concrete step + the leaf items to gather; behaviours (base_behaviors.ts) turn those into ordinary player commands.
@@ -14,7 +15,9 @@ import { AttachKind, BuildPiece, Container, DoorState, Fuel, ResourceNode, Worn 
 import { resolveAttachment } from "../building/links.js";
 import { countItem, readSlots } from "../inventory.js";
 import { maxHpOf } from "../building/integrity.js";
-import { pieceCost, snapPlacement, validatePlacement } from "../building/place.js";
+import { pieceCost, pieceUnlocked, snapPlacement, validatePlacement } from "../building/place.js";
+import { isBaseStoragePiece, STARTER_STORAGE_PIECE } from "./storage_api.js";
+import { bedSpots } from "../stance.js";
 import { StationKind, ToolKind, type GameDefs, type ItemDef, type PieceDef, type RecipeDef, type ResourceDef } from "../defs.js";
 import { bareHandsCan } from "../systems/gathering.js";
 import { nearWater } from "../systems/vitals.js";
@@ -62,7 +65,7 @@ export const BASE_SLOTS: readonly BaseSlot[] = [
 ];
 /** Station spots outside the walls (2 candidates each; a slot failing 4 times moves to the next). */
 export const STATION_SLOTS: Readonly<Record<string, readonly { x: number; y: number }[]>> = {
-  campfire: [{ x: 2.6, y: 2.9 }, { x: 1.6, y: 3.4 }], workbench: [{ x: 3.5, y: 0.5 }, { x: 0.5, y: -1.5 }], storage_box: [{ x: 3.5, y: 1.6 }, { x: 1.5, y: -1.5 }],
+  campfire: [{ x: 2.6, y: 2.9 }, { x: 1.6, y: 3.4 }], workbench: [{ x: 3.5, y: 0.5 }, { x: 0.5, y: -1.5 }], storage_box: [{ x: 3.5, y: 1.6 }, { x: 1.5, y: -1.5 }], basic_storage_box: [{ x: 3.5, y: 1.6 }, { x: 1.5, y: -1.5 }], // ADR-250 starter box: same spots (one base box)
   furnace: [{ x: -1.5, y: 0.5 }, { x: 3.5, y: -1.2 }], anvil: [{ x: -1.5, y: 1.6 }, { x: -1.2, y: -1.2 }],
 };
 /** Fallback station spots on a ring outside the walls (clear of the door path and BUILD_STAND). */
@@ -75,6 +78,8 @@ export const BUILD_STAND = { x: 1, y: 3.3 };
 export const DOOR_OUT = { x: 0.5, y: 2.8 }, DOOR_IN = { x: 0.5, y: 1.25 };
 /** ADR-216: indoor campfire (back corner, off the door path): the walls keep its heat in and the roof keeps rain off; sleep spot next to it. */
 export const HEARTH: BaseSlot = { id: "hearth", key: "campfire", x: 1.5, y: 0.5, level: 0 }; export const HEARTH_SIT = { x: 0.9, y: 1.1 };
+/** ADR-252: the bed (1x2, not solid) along the west wall, under the window, beside the hearth; the sleeper lies on it (ADR-244 Rest edge). */
+export const BED_SLOT: BaseSlot = { id: "bed", key: "bed", x: 0.5, y: 1, level: 0 };
 export const baseHome = (b: { x: number; y: number }): { x: number; y: number } => ({ x: b.x + 1, y: b.y + 1 });
 export const insideBase = (b: { x: number; y: number }, x: number, y: number): boolean => x > b.x + 0.1 && x < b.x + 1.9 && y > b.y + 0.1 && y < b.y + 1.9;
 
@@ -112,7 +117,7 @@ export function plannerIndex(defs: GameDefs): Ix {
     if (g.k === "item") { addU(ix.item.get(g.key)?.id); if (g.alt) addU(ix.item.get(g.alt)?.id); }
     else if (g.k === "wear") addU(ix.item.get(g.key)?.id);
     else if (g.k === "tool") { for (const d of ix.tools) if (d.tool!.kind === g.kind && d.tool!.tier <= g.tier) addU(d.id); }
-    else if (g.k === "piece") { const p = ix.piece.get(g.key); if (p) for (const c of pieceCost(defs, p, 0)) addU(c.item); }
+    else if (g.k === "piece" || g.k === "bed") { const p = ix.piece.get(g.k === "bed" ? BED_SLOT.key : g.key); if (p) for (const c of pieceCost(defs, p, 0)) addU(c.item); }
   }
   for (const sl of BASE_SLOTS) { const p = ix.piece.get(sl.key); if (p) for (const c of pieceCost(defs, p, 0)) addU(c.item); }
   for (const k of ["wood", "raw_meat", "cooked_meat", "water_flask", "leather"]) addU(ix.item.get(k)?.id);
@@ -124,7 +129,7 @@ export function plannerIndex(defs: GameDefs): Ix {
 // ---------------- base scan (pieces of one base, shared per anchor) ----------------
 export interface BaseState {
   pieces: Map<string, Entity>; stations: Map<StationKind, { id: Entity; x: number; y: number; fired: boolean; lit: boolean; fuelTicks: number }>;
-  storage?: { id: Entity; x: number; y: number; counts: Map<number, number>; free: number }; door?: { id: Entity; x: number; y: number; open: boolean }; repair?: Entity; complete: boolean; hearth?: Entity;
+  storage?: { id: Entity; x: number; y: number; counts: Map<number, number>; free: number }; bed?: { id: Entity; x: number; y: number }; door?: { id: Entity; x: number; y: number; open: boolean }; repair?: Entity; complete: boolean; hearth?: Entity;
 }
 const scans = new WeakMap<World, Map<string, { tick: number; s: BaseState }>>();
 const BASE_SCAN_EVERY = 20;
@@ -144,8 +149,9 @@ export function scanBase(world: World, defs: GameDefs, b: { x: number; y: number
         if (world.has(fa, Container)) { const sl = readSlots(world, fa); for (let i = 0; i < sl.items.length; i++) if (sl.items[i] && sl.counts[i]) fuelTicks += sl.counts[i]! * Math.max(1, defs.items.get(sl.items[i]!)?.fuelSeconds ?? 0) * 20 * ((defs.items.get(sl.items[i]!)?.fuelSeconds ?? 0) > 0 ? 1 : 0); }
         void woodFuel; }
       s.stations.set(def.station, { id: e, x: t.x, y: t.y, fired: def.fired, lit: (world.getField(fa, Fuel, "lit") ?? 0) > 0, fuelTicks }); } continue; }
-    const sa = def.key === "storage_box" ? resolveAttachment(world, e, AttachKind.Storage) : undefined;
-    if (sa !== undefined && world.has(sa, Container) && !s.storage) { const sl = readSlots(world, sa); const counts = new Map<number, number>(); let free = 0;
+    if (!s.bed && bedSpots(def.key).length) { s.bed = { id: e, x: t.x, y: t.y }; continue; }
+    const sa = isBaseStoragePiece(def) ? resolveAttachment(world, e, AttachKind.Storage) : undefined; // ADR-250: any base storage piece
+    if (sa !== undefined && world.has(sa, Container) && (!s.storage || (s.storage.free === 0 && readSlots(world, sa).counts.some((n) => !n)))) { const sl = readSlots(world, sa); const counts = new Map<number, number>(); let free = 0;
       for (let i = 0; i < sl.items.length; i++) { const it = sl.items[i]!; if (!it || !sl.counts[i]) { free++; continue; } counts.set(it, (counts.get(it) ?? 0) + sl.counts[i]!); }
       s.storage = { id: e, x: t.x, y: t.y, counts, free }; continue; }
     if (def.key === "wall" && t.z < 1.5) legacy.set(`wall@${Math.round((t.x - b.x) * 2) / 2},${Math.round((t.y - b.y) * 2) / 2}`, e);
@@ -188,11 +194,12 @@ export type Step =
   | { k: "wear"; invSlot: number };
 export interface Plan { goal: string; step?: Step; leaves: number[]; hunt: number[]; keep: Set<number>; blocked: string[] }
 
-type Goal = { k: "tool"; kind: ToolKind; tier: number; name: string } | { k: "item"; key: string; count: number; alt?: string } | { k: "piece"; key: string } | { k: "base" } | { k: "wear"; key: string } | { k: "cook" } | { k: "hearth" };
+type Goal = { k: "tool"; kind: ToolKind; tier: number; name: string } | { k: "item"; key: string; count: number; alt?: string } | { k: "piece"; key: string } | { k: "base" } | { k: "wear"; key: string } | { k: "cook" } | { k: "hearth" } | { k: "bed" };
 export const GOAL_LADDER: readonly Goal[] = [
   { k: "tool", kind: ToolKind.Axe, tier: 1, name: "axe" }, { k: "tool", kind: ToolKind.Pickaxe, tier: 1, name: "pickaxe" },
-  { k: "piece", key: "campfire" }, { k: "item", key: "wood", count: 8 }, { k: "piece", key: "workbench" }, { k: "base" }, { k: "hearth" },
-  { k: "tool", kind: ToolKind.Knife, tier: 1, name: "knife" }, { k: "item", key: "stone_spear", count: 1, alt: "wooden_club" }, { k: "piece", key: "storage_box" },
+  // ADR-252 / ADR-250: campfire -> starter storage box -> workbench (isBaseStoragePiece: any storage piece satisfies the box goal)
+  { k: "piece", key: "campfire" }, { k: "piece", key: STARTER_STORAGE_PIECE }, { k: "item", key: "wood", count: 8 }, { k: "piece", key: "workbench" }, { k: "base" }, { k: "hearth" },
+  { k: "bed" }, { k: "tool", kind: ToolKind.Knife, tier: 1, name: "knife" }, { k: "item", key: "stone_spear", count: 1, alt: "wooden_club" },
   { k: "cook" }, { k: "wear", key: "straw_hat" }, { k: "wear", key: "reed_sandals" }, { k: "tool", kind: ToolKind.Shovel, tier: 1, name: "shovel" },
   { k: "item", key: "wood", count: 20 }, { k: "item", key: "cooked_meat", count: 2 }, { k: "wear", key: "leather_gloves" }, { k: "wear", key: "leather_boots" },
   { k: "wear", key: "leather_cap" }, { k: "item", key: "water_flask", count: 1 }, { k: "piece", key: "furnace" }, { k: "item", key: "charcoal", count: 4 },
@@ -211,7 +218,7 @@ const spendsFuel = (g: Goal): boolean => (g.k === "item" && (g.key === "wood" ||
 export interface PlanInput { world: World; self: Entity; defs: GameDefs; base?: { x: number; y: number }; bs?: BaseState; fails: Record<string, number>; hungry?: boolean; snooze?: Record<string, number>; freezing?: boolean; evening?: boolean }
 class Resolver {
   avail = new Map<number, number>(); inv = new Map<number, number>(); visiting = new Set<number>();
-  step?: Step; leaves = new Set<number>(); hunt = new Set<number>(); keep = new Set<number>(); stuck = false;
+  step?: Step; leaves = new Set<number>(); hunt = new Set<number>(); keep = new Set<number>(); stuck = false; /** ADR-221: a piece / station not learned yet */ locked?: string;
   constructor(readonly p: PlanInput, readonly ix: Ix, inv: Map<number, number>, readonly tool: Map<ToolKind, number>) {
     this.inv = inv; for (const [k, v] of inv) this.avail.set(k, v); for (const [k, v] of p.bs?.storage?.counts ?? []) this.avail.set(k, (this.avail.get(k) ?? 0) + v);
   }
@@ -251,9 +258,13 @@ class Resolver {
     const cand = this.ix.tools.find((d) => d.tool!.kind === kind && d.tool!.tier >= tier && this.ix.reachable.has(d.id));
     if (!cand) { this.stuck = true; return false; } return this.obtain(cand.id, 1);
   }
-  ensureStation(k: StationKind): boolean { if (this.p.bs?.stations.has(k)) return true; const sp = this.ix.station.get(k); if (!sp) { this.stuck = true; return false; } this.obtainPiece(sp.key); return false; }
+  ensureStation(k: StationKind): boolean { const sp = this.ix.station.get(k); // ADR-221: station recipes need the station's token too
+    if (sp && !this.unlocked(sp, 0)) return false; if (this.p.bs?.stations.has(k)) return true; if (!sp) { this.stuck = true; return false; } this.obtainPiece(sp.key); return false; }
+  /** ADR-221: the same gate the server's validatePlacement applies; a locked piece stops the chain (skill_pick learns it). */
+  unlocked(def: PieceDef, tier: number): boolean { if (pieceUnlocked(this.p.world, this.p.self, def, def.tiered ? tier : def.fixedTier)) return true; this.locked ??= def.key; this.stuck = true; return false; }
   obtainPiece(key: string, slot?: BaseSlot): boolean {
     const def = this.ix.piece.get(key); const b = this.p.base; if (!def || !b) { this.stuck = true; return false; }
+    if (!this.unlocked(def, slot?.tier ?? 0)) return false;
     let ok = true; for (const c of pieceCost(this.p.defs, def, slot?.tier ?? 0)) ok = this.obtain(c.item, c.count) && ok;
     if (def.station !== StationKind.None) for (const sk of [StationKind.None]) void sk;
     if (!ok || this.step) return false;
@@ -261,7 +272,7 @@ class Resolver {
     if (!at) { const c = [...(STATION_SLOTS[key] ?? []), ...SPARE_SPOTS]; // ghost-preview each spot (validatePlacement, cost/range ignored) like a player would
       const i = c.findIndex((q, j) => (this.p.fails[`${key}${j}`] ?? 0) < 4 && ghostOk(this.p.world, this.p.self, def.id, b.x + q.x, b.y + q.y)); if (i < 0) { this.stuck = true; return false; } at = { x: c[i]!.x, y: c[i]!.y, level: 0, id: `${key}${i}` }; }
     const x = b.x + at.x, y = b.y + at.y;
-    const stand = slot === HEARTH ? { x: b.x + DOOR_IN.x, y: b.y + DOOR_IN.y } : slot ? { x: b.x + BUILD_STAND.x, y: b.y + BUILD_STAND.y } : standNear(b, x, y);
+    const stand = slot === HEARTH || slot === BED_SLOT ? { x: b.x + DOOR_IN.x, y: b.y + DOOR_IN.y } : slot ? { x: b.x + BUILD_STAND.x, y: b.y + BUILD_STAND.y } : standNear(b, x, y);
     this.step = { k: "build", piece: def.id, x, y, level: at.level, ...(slot?.rot ? { rot: slot.rot } : {}), ...(slot?.tier ? { tier: slot.tier } : {}), slot: at.id, stand }; return false;
   }
 }
@@ -270,6 +281,7 @@ const standNear = (b: { x: number; y: number }, x: number, y: number): { x: numb
 };
 
 const goalName = (g: Goal): string => (g.k === "tool" ? g.name : g.k === "item" ? g.key : g.k === "piece" ? g.key : g.k === "wear" ? `wear:${g.key}` : g.k);
+const buildsPiece = (g: Goal): boolean => g.k === "piece" || g.k === "base" || g.k === "hearth" || g.k === "bed";
 /** One planner pass: first unmet, reachable goal of the ladder -> step + leaves. */
 export function makePlan(p: PlanInput): Plan {
   const ix = plannerIndex(p.defs); const { world, self, defs } = p; const sl = readSlots(world, self);
@@ -279,20 +291,26 @@ export function makePlan(p: PlanInput): Plan {
   const worn = new Set<number>(); const wi = world.getArray(self, Worn, "item"); if (wi) for (const x of wi) if (x) worn.add(x);
   const blocked: string[] = []; const keepAll = new Set<number>();
   const pre: Goal[] = []; if (p.freezing) pre.push(...EMERGENCY); if (p.hungry) pre.push({ k: "cook" });
-  if (p.evening) { const fire = p.bs?.stations.get(StationKind.Campfire); const inFire = fire ? Math.floor(fire.fuelTicks / 400) : 0; if (inFire < NIGHT_WOOD) pre.push(...EVENING(inFire)); }
+  if (p.evening) { const fire = p.bs?.stations.get(StationKind.Campfire); const inFire = fire ? Math.floor(fire.fuelTicks / 400) : 0; if (inFire < NIGHT_WOOD) { if (!fire) pre.push(GOAL_LADDER[0]!, { k: "piece", key: "campfire" }); pre.push(...EVENING(inFire)); } } // ADR-252: a stone axe and the fire first (5 wood + 4 stone), then its night of fuel
   const ladder = pre.length ? [...pre, ...GOAL_LADDER] : GOAL_LADDER; const woodId = ix.item.get("wood")?.id;
+  let held = false; // ADR-252: a locked build goal holds the later ones (campfire -> box -> workbench order); item / tool goals go on
   for (const g of ladder) {
     if (p.snooze && (p.snooze[goalName(g)] ?? 0) > world.tick) continue; // gave up on it for now (no source found in time)
+    if (held && buildsPiece(g)) continue;
     const r = new Resolver(p, ix, inv, tool); let name = "";
     if (woodId !== undefined && !spendsFuel(g)) r.avail.set(woodId, Math.max(0, (r.avail.get(woodId) ?? 0) - WOOD_RESERVE)); // keep a fire's worth
     if (g.k === "tool") { name = g.name; if ((tool.get(g.kind) ?? 0) >= g.tier) { const d = ix.tools.find((t) => t.tool!.kind === g.kind && t.tool!.tier >= g.tier && allCount(t.id) > 0); if (d) { r.obtain(d.id, 1); if (r.step) return out(g, r); keepAll.add(d.id); } continue; }
       if (!ix.tools.some((d) => d.tool!.kind === g.kind && d.tool!.tier >= g.tier && ix.reachable.has(d.id))) { blocked.push(name); continue; } r.obtainTool(g.kind, g.tier); }
     else if (g.k === "item") { let d = ix.item.get(g.key); name = g.key; if (!d) continue; if (!ix.reachable.has(d.id)) { const a = g.alt ? ix.item.get(g.alt) : undefined; if (!a || !ix.reachable.has(a.id)) { blocked.push(name); continue; } d = a; }
       if (allCount(d.id) >= g.count) { if (d.weapon || d.tool) { r.obtain(d.id, 1); if (r.step) return out(g, r); } keepAll.add(d.id); continue; } r.obtain(d.id, g.count, false); }
-    else if (g.k === "piece") { name = g.key; const def = ix.piece.get(g.key); if (!def || !p.base) continue; if (def.station !== StationKind.None ? p.bs?.stations.has(def.station) : g.key === "storage_box" ? !!p.bs?.storage : false) continue;
+    else if (g.k === "piece") { name = g.key; const def = ix.piece.get(g.key); if (!def || !p.base) continue; if (def.station !== StationKind.None ? p.bs?.stations.has(def.station) : isBaseStoragePiece(def) ? !!p.bs?.storage : false) continue;
       if (!pieceCost(defs, def, 0).every((c) => ix.reachable.has(c.item))) { blocked.push(name); continue; } r.obtainPiece(g.key); }
     else if (g.k === "base") { name = "base"; if (!p.base) continue; const missing = BASE_SLOTS.filter((s) => !p.bs?.pieces.has(s.id) && (p.fails[s.id] ?? 0) < 6 && (s.key !== "door_wood" || p.bs?.pieces.has("wd")) && (s.level === 0 || BASE_SLOTS.filter((f) => f.key === "foundation").every((f) => p.bs?.pieces.has(f.id))));
-      if (!missing.length) continue; r.obtainPiece(missing[0]!.key, missing[0]); }
+      if (!missing.length) continue; const pd = (sl: BaseSlot): PieceDef | undefined => ix.piece.get(sl.key);
+      const next = missing.find((sl) => { const d = pd(sl); return !!d && pieceUnlocked(world, self, d, d.tiered ? sl.tier ?? 0 : d.fixedTier); }) ?? missing[0]!; // ADR-221: walls go on while the roof tier is learned
+      r.obtainPiece(next.key, next); }
+    else if (g.k === "bed") { name = "bed"; if (!p.base || !p.bs?.complete || p.bs.bed || (p.fails.bed ?? 0) >= 6) continue; const def = ix.piece.get(BED_SLOT.key); if (!def) continue;
+      if (!pieceCost(defs, def, 0).every((c) => ix.reachable.has(c.item))) { blocked.push(name); continue; } r.obtainPiece(BED_SLOT.key, BED_SLOT); }
     else if (g.k === "hearth") { name = "hearth"; if (!p.base || !p.bs?.complete || p.bs.hearth !== undefined || (p.fails.hearth ?? 0) >= 6) continue; r.obtainPiece(HEARTH.key, HEARTH); }
     else if (g.k === "cook") { name = "cook"; const raw = ix.item.get("raw_meat"); const cooked = ix.item.get("cooked_meat"); if (!raw || !cooked || !p.bs?.stations.has(StationKind.Campfire) || allCount(raw.id) === 0) continue; r.obtain(cooked.id, allCount(cooked.id) + Math.min(5, allCount(raw.id)), false); }
     else if (g.k === "wear") { name = `wear:${g.key}`; const d = ix.item.get(g.key); if (!d?.wear) continue; if (worn.has(d.id)) { keepAll.add(d.id); continue; }
@@ -300,6 +318,7 @@ export function makePlan(p: PlanInput): Plan {
       if ((inv.get(d.id) ?? 0) > 0) { for (let i = 0; i < sl.items.length; i++) if (sl.items[i] === d.id && sl.counts[i]) { r.step = { k: "wear", invSlot: i }; break; } return out(g, r); }
       r.obtain(d.id, 1); }
     if (r.step || r.leaves.size || r.hunt.size) { for (const k of keepAll) r.keep.add(k); const o = out(g, r); o.blocked = blocked; return o; }
+    if (r.locked) { blocked.push(`locked:${r.locked}`); if (buildsPiece(g)) held = true; continue; }
     if (r.stuck) blocked.push(name);
   }
   return { goal: "idle", leaves: [], hunt: [], keep: keepAll, blocked };

@@ -8,6 +8,7 @@
  *  - trip: outbound gathering / hunting trip 18..36 tiles from the base and back (counts trips / max distance).
  *  - refuel: keep the base fire burning through the night. - leave_base / sleep: door-aware in / out of the 2x2 base.
  */
+import { storageDepositActions, storageWithdrawActions } from "./storage_api.js";
 import { timeOfDay, Transform, type Agent, type AgentContext, type Entity, type World } from "@engine/core";
 import { installSpatialIndex } from "@engine/world";
 import type { AgentWorldView, GameBehavior } from "../agents.js";
@@ -133,13 +134,19 @@ export function goTo(c: Ctx, o: { moveX: number; moveY: number; aimX: number; ai
   }
   toward(o, c.self.x, c.self.y, tx, ty, s); return d;
 }
-/** Container sequence (open -> each op -> close), one command every 8 ticks; returns true when done. */
-function containerSeq(c: Ctx, o: { actions: string[] }, id: number, ops: string[]): boolean {
-  const at = c.bb.num("cseqAt", -1e9); if (c.self.tick - at < 8) return false;
-  let i = c.self.tick - at > 60 || c.bb.num("cseqId", -1) !== id ? 0 : c.bb.num("cseqStep"); c.bb.set("cseqAt", c.self.tick); c.bb.set("cseqId", id);
-  if (i === 0) o.actions.push(`copen:${id}`); else if (i <= ops.length) o.actions.push(ops[i - 1]!); else { o.actions.push(`cclose:${id}`); c.bb.set("cseqStep", 0); c.bb.set("cseqId", -1); return true; }
-  c.bb.set("cseqStep", ++i); return false;
+/** ADR-252: container work goes through the ADR-250 storage API (storageDepositActions / storageWithdrawActions): the
+ *  sequence (open -> one op -> close) is played one action per think tick (CONTAINER_STEP ticks apart), like a player
+ *  clicking through the panel; the server validates every step. Returns true when the last action went out. */
+export const CONTAINER_STEP = 10;
+function containerSeq(c: Ctx, o: { actions: string[] }, id: number, seq: readonly string[]): boolean {
+  const at = c.bb.num("cseqAt", -1e9); if (c.self.tick - at < CONTAINER_STEP) return false;
+  const key = `${id}|${seq[1] ?? ""}`; const i = c.self.tick - at > 6 * CONTAINER_STEP || c.bb.get<string>("cseqKey") !== key ? 0 : c.bb.num("cseqStep");
+  c.bb.set("cseqAt", c.self.tick); c.bb.set("cseqKey", key);
+  o.actions.push(seq[i]!); if (i + 1 >= seq.length) { c.bb.set("cseqStep", 0); c.bb.set("cseqKey", undefined); return true; }
+  c.bb.set("cseqStep", i + 1); return false;
 }
+/** Deposit then toggle the fire on (the hearth's fuel box is a container too). */
+const depositAndLight = (id: number, item: number, n: number): string[] => { const a = storageDepositActions(id as Entity, item, n); a.splice(a.length - 1, 0, `fire:${id}`); return a; };
 const night = (p: string): number => (p === "night" ? 1 : p === "dusk" ? 0.6 : 0);
 const cooled = (c: Ctx, k: string, n: number): boolean => c.self.tick - c.bb.num(k, -1e9) >= n;
 const step01 = { type: "step" as const, at: 0.5 };
@@ -157,12 +164,12 @@ export function baseBehaviors(): GameBehavior[] {
         if (s.k === "wear") { if (cooled(c, "wearAt", 60)) { o.actions.push(`wear:${s.invSlot}`); c.bb.set("wearAt", c.self.tick); mark(c, "wears"); } return false; }
         if (s.k === "withdraw") { const sb = bs?.storage; if (!sb) return fail();
           if (goTo(c, o, sb.x, sb.y) > 1.6) { if (stuckOn(c, sb.x, sb.y)) return fail(); return; } stop(o);
-          if (containerSeq(c, o, sb.id, [`cwithdraw:${sb.id}:${s.item}:${s.count}`])) { mark(c, "withdraws"); return false; } return; }
+          if (containerSeq(c, o, sb.id, storageWithdrawActions(sb.id as Entity, s.item, s.count))) { mark(c, "withdraws"); return false; } return; }
         if (s.k === "craft") { const st = bs?.stations.get(s.station); if (!st) return fail();
           const wait = c.bb.num("craftUntil", -1); if (wait > c.self.tick) { if (Math.hypot(st.x - c.self.x, st.y - c.self.y) > 2) goTo(c, o, st.x, st.y); else stop(o); return; }
           if (goTo(c, o, st.x, st.y) > 1.7) { if (stuckOn(c, st.x, st.y)) return fail(); return; } stop(o);
           if (st.fired && !st.lit) { const wood = plannerIndex(gdefs(c)).item.get("wood")?.id; if (wood === undefined || !(c.world.woodTotal ?? 0)) return fail();
-            if (containerSeq(c, o, st.id, [`cdeposit:${st.id}:${wood}:${Math.min(6, c.world.woodTotal!)}`, `fire:${st.id}`])) mark(c, "refuels"); return; }
+            if (containerSeq(c, o, st.id, depositAndLight(st.id, wood, Math.min(6, c.world.woodTotal!)))) mark(c, "refuels"); return; }
           o.actions.push(`craft:${s.recipe}:${s.count}`); c.bb.set("craftUntil", c.self.tick + s.ticks); armCraft(c); return; }
         // build
         const d = goTo(c, o, s.stand.x, s.stand.y, 0.8);
@@ -178,8 +185,10 @@ export function baseBehaviors(): GameBehavior[] {
         { name: "nearBase", curve: { type: "inverse" }, input: (c) => { const sb = c.world.bs?.storage; return sb ? Math.min(1, Math.hypot(sb.x - c.self.x, sb.y - c.self.y) / 24) : 1; } }],
       run: (c, o) => { const sb = c.world.bs?.storage, sur = c.world.surplus; if (!sb || !sur) return false;
         if (goTo(c, o, sb.x, sb.y) > 1.6) { if (stuckOn(c, sb.x, sb.y)) { c.bb.set("stashAt", c.self.tick); return false; } return; } stop(o);
-        const ops = sur.slice(0, 6).map((s) => `cdeposit:${sb.id}:${s.item}:${s.count}`);
-        if (containerSeq(c, o, sb.id, ops)) { mark(c, "deposits", ops.length); c.bb.set("stashAt", c.self.tick); return false; } } },
+        // one deposit per open/close cycle (ADR-250 API), one stack after another across think ticks
+        const list = sur.slice(0, 6); const k = c.bb.num("stashIdx"); const s = list[Math.min(k, list.length - 1)]!;
+        if (containerSeq(c, o, sb.id, storageDepositActions(sb.id as Entity, s.item, s.count))) { mark(c, "deposits");
+          if (k + 1 >= list.length) { c.bb.set("stashIdx", 0); c.bb.set("stashAt", c.self.tick); return false; } c.bb.set("stashIdx", k + 1); } } },
     { name: "hunt", inertia: 0.5, traits: { bravery: 0.6 }, considerations: [
         { name: "prey", curve: { type: "inverse" }, input: (c) => { const h = c.world.huntTarget; return h && cooled(c, "huntFail", 300) ? Math.min(1, Math.hypot(h.x - c.self.x, h.y - c.self.y) / 30) : 1; } },
         { name: "healthy", curve: { type: "step", at: 0.5 }, input: (c) => c.self.hp }],
@@ -217,7 +226,7 @@ export function baseBehaviors(): GameBehavior[] {
         { name: "needed", curve: step01, input: (c) => (night(c.self.phase) > 0 || c.world.cold ? 1 : 0) }],
       run: (c, o) => { const f = c.world.bs?.stations.get(StationKind.Campfire); const wood = plannerIndex(gdefs(c)).item.get("wood")?.id; if (!f || wood === undefined || !c.world.woodTotal) return false;
         if (goTo(c, o, f.x, f.y) > 1.6) { if (stuckOn(c, f.x, f.y)) { c.bb.set("refuelAt", c.self.tick); return false; } return; } stop(o);
-        if (containerSeq(c, o, f.id, [`cdeposit:${f.id}:${wood}:${Math.min(10, c.world.woodTotal)}`])) { mark(c, "refuels"); c.bb.set("refuelAt", c.self.tick); return false; } } },
+        if (containerSeq(c, o, f.id, storageDepositActions(f.id as Entity, wood, Math.min(10, c.world.woodTotal)))) { mark(c, "refuels"); c.bb.set("refuelAt", c.self.tick); return false; } } },
     // ADR-216: cold kills in ~70 s once the body is under 35 C; get warm first (lit fire > light the fire > roofed base > a camp fire on the spot)
     { name: "warm_up", inertia: 0.6, considerations: [
         { name: "chilled", weight: 2.2, curve: step01, input: (c) => { const ch = c.world.chill; if (!ch) return 0;
@@ -271,16 +280,16 @@ function warmRun(c: Ctx, o: { moveX: number; moveY: number; aimX: number; aimY: 
   const bank = bankHours(c) && st !== undefined && f?.id === st.id;
   if (bank && f && f.lit && st!.fuelTicks < 16000 && wood !== undefined && woodN > 0 && c.self.tick - c.bb.num("bankAt", -1e9) > 100) { // top the burning fire up for the night
     if (goTo(c, o, f.x, f.y, 1) > 2) { if (stuckOn(c, f.x, f.y)) c.bb.set("bankAt", c.self.tick); return; } stop(o);
-    if (containerSeq(c, o, f.id, [`cdeposit:${f.id}:${wood}:${Math.min(50, woodN)}`])) { mark(c, "refuels"); c.bb.set("bankAt", c.self.tick); } return; }
+    if (containerSeq(c, o, f.id, storageDepositActions(f.id as Entity, wood, Math.min(50, woodN)))) { mark(c, "refuels"); c.bb.set("bankAt", c.self.tick); } return; }
   if (f && f.lit && fd < 60) { const ux = fd > 0.05 ? (c.self.x - f.x) / fd : -1, uy = fd > 0.05 ? (c.self.y - f.y) / fd : 0; // sit close on our own side (heat falls off linearly, walls occlude)
     const tx = atHearth ? b0!.x + HEARTH_SIT.x : f.x + ux * 0.6, ty = atHearth ? b0!.y + HEARTH_SIT.y : f.y + uy * 0.6; if (goTo(c, o, tx, ty, 1) < 0.25 || stuckOn(c, tx, ty, 200)) stop(o); return; }
   if (f && !f.lit && wood !== undefined && woodN > 0 && fd < 60) {
     if (goTo(c, o, f.x, f.y, 1) > 2) { if (stuckOn(c, f.x, f.y)) c.bb.set("warming", false); return; } stop(o);
-    if (containerSeq(c, o, f.id, [`cdeposit:${f.id}:${wood}:${Math.min(bank ? 50 : 8, woodN)}`, `fire:${f.id}`])) mark(c, "refuels"); return; }
+    if (containerSeq(c, o, f.id, depositAndLight(f.id, wood, Math.min(bank ? 50 : 8, woodN)))) mark(c, "refuels"); return; }
   const sb = c.world.bs?.storage; // no wood in the bag: fetch some from the box (same container panel steps as a player)
   if (f && (!f.lit || bank && st!.fuelTicks < 16000) && wood !== undefined && woodN === 0 && sb && (sb.counts.get(wood) ?? 0) > 0 && fd < 60 && c.self.tick - c.bb.num("bankAt", -1e9) > 100) {
     if (goTo(c, o, sb.x, sb.y) > 1.6) { if (stuckOn(c, sb.x, sb.y)) c.bb.set("warming", false); return; } stop(o);
-    if (containerSeq(c, o, sb.id, [`cwithdraw:${sb.id}:${wood}:${Math.min(bank ? 50 : 12, sb.counts.get(wood)!)}`])) mark(c, "withdraws"); return; }
+    if (containerSeq(c, o, sb.id, storageWithdrawActions(sb.id as Entity, wood, Math.min(bank ? 50 : 12, sb.counts.get(wood)!)))) mark(c, "withdraws"); return; }
   const b = c.world.base;
   if (b && c.world.bs?.door && c.world.bs.complete && Math.hypot(b.x - c.self.x, b.y - c.self.y) < 60) { const h = { x: b.x + 1, y: b.y + 1 }; if (goTo(c, o, h.x, h.y, 1) < 0.5) stop(o); return; }
   // far from any fire: make camp like a player would (campfire from the bag, then light it)
