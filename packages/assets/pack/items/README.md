@@ -9,3 +9,7 @@ Art for `packages/gameplay/docs/ART_KEYS_ITEMS.md`, merged at runtime after pack
 - Reused pack keys (not redefined): `herbs` (icon), `stone_spear` (+ `held_stone_spear`), `reeds` and `flax` (pack resource sprites already own these keys).
 
 Regenerate: `cd src && python3 build.py .. <preview dir>` then `pnpm --filter @engine/assets lock:ids:pack`.
+
+Seasons HUD temperature gauge (`src/temps.py`, items_temp, resident, 32px + @2x, solid cel): `icon_temp`, `icon_temp_hot`,
+`icon_temp_cold` (CSS aliases `data-icon="temp"|"temp_hot"|"temp_cold"`). Run after adr224.py:
+`CEL=1 python3 packages/assets/pack/items/src/temps.py [preview dir]`, then ktx2.py, gen_icon_css.py, lock:ids:pack.

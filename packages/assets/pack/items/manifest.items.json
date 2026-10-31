@@ -235,6 +235,23 @@
     }
    ],
    "ktx2": "atlases/items_held_e.ktx2"
+  },
+  {
+   "key": "items_temp",
+   "image": "atlases/items_temp.png",
+   "frameW": 32,
+   "frameH": 32,
+   "columns": 3,
+   "rows": 1,
+   "residency": "resident",
+   "pages": [
+    {
+     "scale": 2,
+     "image": "atlases/items_temp@2x.png",
+     "ktx2": "atlases/items_temp@2x.ktx2"
+    }
+   ],
+   "ktx2": "atlases/items_temp.ktx2"
   }
  ],
  "sprites": [
@@ -12697,6 +12714,57 @@
      "fps": 1,
      "directions": 8,
      "dirStride": 1
+    }
+   }
+  },
+  {
+   "key": "icon_temp",
+   "category": "ui",
+   "atlas": "items_temp",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      0
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "icon_temp_hot",
+   "category": "ui",
+   "atlas": "items_temp",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      1
+     ],
+     "fps": 1
+    }
+   }
+  },
+  {
+   "key": "icon_temp_cold",
+   "category": "ui",
+   "atlas": "items_temp",
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "animations": {
+    "idle": {
+     "frames": [
+      2
+     ],
+     "fps": 1
     }
    }
   }

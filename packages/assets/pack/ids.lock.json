@@ -3354,7 +3354,10 @@
     "ui_stall_till": 3352,
     "wall_clan_palisade": 3353,
     "wall_clan_stone": 3354,
-    "wall_clan_wood": 3355
+    "wall_clan_wood": 3355,
+    "icon_temp": 3356,
+    "icon_temp_cold": 3357,
+    "icon_temp_hot": 3358
   },
   "sounds": {
     "amb_rain": 1,
