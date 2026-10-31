@@ -1,4 +1,4 @@
-import { PetOfferCmd } from "../pets.js";
+import { DropItemCmd, PetOfferCmd } from "../pets.js";
 /**
  * AgentOutput (core ai.ts) -> the inputs a human sends. Pure except applyAgentEmote (queues an emote request).
  * Action strings: "gather" | "gather:<target>" | "attack:<target>" | "eat:<slot>" | "drink:<slot>" | "craft:<recipe>[:<count>]"
@@ -7,7 +7,7 @@ import { PetOfferCmd } from "../pets.js";
 import { UnlockSkillCmd } from "../skills/progression.js";
 import type { AgentOutput, CommandRegistry, Entity, InputFrame, World } from "@engine/core";
 import { intentToFrame, type BotIntent } from "./bot_input.js";
-import { CloseContainerCmd, DepositCmd, EquipCmd, GameplayActions, OpenContainerCmd, PlaceCmd, RepairCmd, ToggleFireCmd, UseCmd, WithdrawCmd } from "../input.js";
+import { CloseContainerCmd, DepositCmd, EquipCmd, GameplayActions, OpenContainerCmd, PlaceCmd, RepairCmd, ToggleDoorCmd, ToggleFireCmd, UseCmd, WearCmd, WithdrawCmd } from "../input.js";
 import { BuyFromStallCmd, OpenStallCmd } from "../economy/stall.js";
 import { QueueCraftCmd } from "../systems/craft_queue.js";
 import { PartyAcceptCmd, PartyDeclineCmd, PartyInviteCmd, PartyKickCmd, PartyLeaveCmd } from "../party.js";
@@ -24,7 +24,7 @@ export function actionIntent(action: string): BotIntent | undefined {
     case "attack": return n.length >= 1 ? { kind: "attack", target: n[0]! } : undefined;
     case "eat": case "drink": return n.length >= 1 ? { kind: "eat", slot: n[0]! } : undefined;
     case "craft": return n.length >= 1 ? { kind: "craft", recipe: n[0]!, count: n[1] ?? 1 } : undefined;
-    case "build": return n.length >= 3 ? { kind: "build", piece: n[0]!, x: n[1]!, y: n[2]! } : undefined;
+    case "build": return n.length >= 3 ? { kind: "build", piece: n[0]!, x: n[1]!, y: n[2]!, ...(n.length >= 6 ? { level: n[3]!, rot: n[4]!, tier: n[5]! } : {}) } : undefined; // ADR-216 [:level:rot:tier]
     case "open": return n.length >= 1 ? { kind: "open", target: n[0]! } : undefined;
     case "buy": return n.length >= 6 ? { kind: "buy", stall: n[0]!, listingSlot: n[1]!, qty: n[2]!, expectedRevision: n[3]!, expectedPriceItem: n[4]!, expectedPriceCount: n[5]! } : undefined;
     default: return undefined;
@@ -75,7 +75,10 @@ export function actionCommand(action: string): AgentCommand | undefined {
     if (k === "cclose") return { type: CloseContainerCmd.name, payload: {} };
     if (k === "fire") return ok ? { type: ToggleFireCmd.name, payload: { target: n[0]! } } : undefined;
     if (k === "cdeposit") return ok && n.length >= 3 ? { type: DepositCmd.name, payload: { target: n[0]!, item: n[1]!, count: n[2]! } } : undefined;
-    if (k === "cwithdraw") return ok && n.length >= 3 ? { type: WithdrawCmd.name, payload: { target: n[0]!, item: n[1]!, count: n[2]! } } : undefined; } // ADR-250 (item 0 = take all)
+    if (k === "cwithdraw") return ok && n.length >= 3 ? { type: WithdrawCmd.name, payload: { target: n[0]!, item: n[1]!, count: n[2]! } } : undefined; // ADR-216
+    if (k === "wear") return ok ? { type: WearCmd.name, payload: { slot: n[0]! } } : undefined;
+    if (k === "drop") return ok && n.length >= 2 && n[0]! > 0 && n[1]! > 0 ? { type: DropItemCmd.name, payload: { item: n[0]!, count: n[1]! } } : undefined; // ADR-216 inventory "Drop"
+    if (k === "door") return ok ? { type: ToggleDoorCmd.name, payload: { target: n[0]! } } : undefined; }
   if (action.startsWith("equip:") || action.startsWith("repair:")) { const n = Number(action.split(":")[1]); if (!Number.isInteger(n) || n < 0) return undefined; return action[0] === "e" ? { type: EquipCmd.name, payload: { slot: n } } : { type: RepairCmd.name, payload: { target: n } }; } // ADR-203
   const it = actionIntent(action); if (!it) return undefined;
   switch (it.kind) {
@@ -143,7 +146,7 @@ function vehicleActionCommand(action: string): AgentCommand | undefined | null {
     default: return null;
   }
 }
-const COMMAND_ACTIONS = new Set(["venter", "vexit", "vhitch", "vunhitch", "vstation", "vrefuel", "vrepair", "vdeploy", "ccreate", "cinvite", "caccept", "cleave", "cpromote", "cdemote", "ckick", "cperms", "cgoal", "cstock", "eat", "drink", "craft", "build", "open", "buy", "pinvite", "paccept", "pdecline", "pleave", "pkick", "skill", "equip", "repair", "copen", "cclose", "cdeposit", "fire", "cwithdraw"]);
+const COMMAND_ACTIONS = new Set(["venter", "vexit", "vhitch", "vunhitch", "vstation", "vrefuel", "vrepair", "vdeploy", "ccreate", "cinvite", "caccept", "cleave", "cpromote", "cdemote", "ckick", "cperms", "cgoal", "cstock", "eat", "drink", "craft", "build", "open", "buy", "pinvite", "paccept", "pdecline", "pleave", "pkick", "skill", "equip", "repair", "copen", "cclose", "cdeposit", "fire", "cwithdraw", "wear", "door", "drop"]);
 /**
  * Moves the command-type actions (eat, drink, craft, build, open, buy) out of out.actions and into out.commands, in order.
   Movement and gather/attack/sleep stay

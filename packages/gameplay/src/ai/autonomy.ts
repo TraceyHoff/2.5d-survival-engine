@@ -9,13 +9,17 @@
  */
 import { Transform, entityIndex, type Agent, type AgentContext, type Entity, type World } from "@engine/core";
 import type { AgentWorldView, GameBehavior } from "../agents.js";
-import { BuildPiece, Equipment, Fuel, NO_SLOT, ResourceNode, Survival } from "../components.js";
+import { AttachKind, BuildPiece, Equipment, Exposure, Fuel, NO_SLOT, ResourceNode, Survival } from "../components.js";
 import { GameplayConfig } from "../config.js";
 import { countItem, readSlots } from "../inventory.js";
 import { bareHandsCan, heldTool } from "../systems/gathering.js";
 import { nearWater } from "../systems/vitals.js";
 import { ToolKind, type GameDefs, type ItemDef, type PieceDef, type RecipeDef, type ResourceDef } from "../defs.js";
 import { pieceCost } from "../building/place.js";
+import { bumpStat } from "./planner.js";
+import { maxHpOf } from "../building/integrity.js";
+import { resolveAttachment } from "../building/links.js";
+import { armCraft, bindAgentWorld, fillPlanSensors, noteTripWanted } from "./base_behaviors.js";
 
 export interface GoalSensors {
   gatherNode?: { id: number; x: number; y: number; wanted: boolean };
@@ -25,6 +29,8 @@ export interface GoalSensors {
   gatherScanned?: boolean;
   /** body temperature under COLD_BELOW (night without a fire / clothes) */
   cold?: boolean;
+  /** body / felt temperature (Survival.bodyTemp, Exposure.feltTemp) for warm_up */
+  chill?: { body: number; felt: number };
   /** the campfire at home (lit = Fuel.lit) */
   fire?: { id: number; x: number; y: number; lit: boolean };
   /** no campfire near home yet */
@@ -82,15 +88,15 @@ function homeScan(world: World, defs: GameDefs, hx: number, hy: number, fireType
     const ts = tf.slot(entityIndex(e)); const dx = tf.data.x[ts]! - hx, dy = tf.data.y[ts]! - hy, d2 = dx * dx + dy * dy; if (d2 > 64) continue;
     const type = world.getField(e, BuildPiece, "type")!;
     if (type === fireType && d2 < fd) { fd = d2; r.fire = e; }
-    if (r.repair === undefined) { const def = defs.pieces.get(type); if (def?.hp && world.getField(e, BuildPiece, "hp")! < def.hp * 0.6) r.repair = e; }
+    if (r.repair === undefined) { const def = defs.pieces.get(type); if (def?.hp && world.getField(e, BuildPiece, "hp")! < maxHpOf(world, e) * 0.6) r.repair = e; }
   }
   if (m.size > 256) m.clear(); m.set(key, r); return r;
 }
-const SENSOR_KEYS = ["gatherNode", "gatherScanned", "waterAt", "equipSlot", "repairTarget", "needs", "cold", "fire", "fireMissing", "woodSlot"] as const;
+const SENSOR_KEYS = ["plan", "base", "bs", "craftCount", "craftTicks", "huntTarget", "lootBag", "tripWanted", "surplus", "woodTotal", "stoneTotal", "junk", "craftRecipe", "buildPlan", "gatherNode", "gatherScanned", "waterAt", "equipSlot", "repairTarget", "needs", "cold", "chill", "fire", "fireMissing", "woodSlot"] as const;
 const sensed = new WeakMap<Agent, { tick: number; home: string; s: Partial<GoalSensors> }>();
 export function fillGoalSensors(world: World, self: Entity, view: AgentWorldView, a: Agent): void {
   const home = `${view.home.x},${view.home.y}`; const c = sensed.get(a);
-  if (c && world.tick - c.tick < SENSE_EVERY && world.tick >= c.tick && c.home === home) { Object.assign(view, c.s); return; }
+  if (c && world.tick - c.tick < SENSE_EVERY && world.tick >= c.tick && c.home === home) { for (const k of SENSOR_KEYS) if (!(k in c.s)) delete view[k]; Object.assign(view, c.s); return; } // a cached pass must also clear what the planner removed (fillAgentSensors refills legacy craftRecipe / buildPlan every tick)
   computeGoalSensors(world, self, view, a);
   const s: Partial<GoalSensors> = {}; for (const k of SENSOR_KEYS) if (view[k] !== undefined) (s as Record<string, unknown>)[k] = view[k];
   sensed.set(a, { tick: world.tick, home, s });
@@ -113,7 +119,7 @@ function computeGoalSensors(world: World, self: Entity, view: AgentWorldView, a:
   const needs = new Set<number>();
   const fire = ix.campfire;
   const hs = homeScan(world, defs, view.home.x, view.home.y, fire?.id ?? -1); const fe = hs.fire;
-  const fireCost = (): void => { if (fire && fe === undefined) for (const c of pieceCost(defs, fire, 0)) if (have(c.item) < c.count) needs.add(c.item); };
+  const fireCost = (): void => { if (fire && fe === undefined && !(view as { base?: unknown }).base) for (const c of pieceCost(defs, fire, 0)) if (have(c.item) < c.count) needs.add(c.item); };
   let gi = 0;
   for (const key of GOAL_CRAFTS) {
     if (gi++ === FIRE_AFTER_GOALS) { fireCost(); if (needs.size) break; }
@@ -122,14 +128,18 @@ function computeGoalSensors(world: World, self: Entity, view: AgentWorldView, a:
     for (const g of r.ingredients) if (have(g.item) < g.count) needs.add(g.item);
     if (needs.size) break;
   }
-  view.cold = (world.getField(self, Survival, "bodyTemp") ?? 37) < COLD_BELOW;
-  if (fe !== undefined) { const p = world.get(fe, Transform)!; view.fire = { id: fe, x: p.x, y: p.y, lit: (world.getField(fe, Fuel, "lit") ?? 0) > 0 }; }
+  const body = world.getField(self, Survival, "bodyTemp") ?? 37; view.cold = body < COLD_BELOW;
+  view.chill = { body, felt: world.getField(self, Exposure, "feltTemp") ?? 20 };
+  if (fe !== undefined) { const p = world.get(fe, Transform)!; view.fire = { id: fe, x: p.x, y: p.y, lit: (world.getField(resolveAttachment(world, fe, AttachKind.Fire) ?? fe, Fuel, "lit") ?? 0) > 0 }; } // Fuel lives on the fire attachment
   else view.fireMissing = true;
-  fireCost();
+  fireCost(); // ADR-252: a base bot's planner owns the campfire (fireCost skips it)
   if (view.food === undefined) for (const id of ix.foods) needs.add(id);
   if (needs.size) view.needs = [...needs];
   const wood = item("wood"); if (wood) { const n = have(wood.id); if (n > 0) view.woodSlot = { item: wood.id, count: n };
     if (view.fire && !view.fire.lit && n < 4) { view.needs = [wood.id, ...(view.needs ?? []).filter((x) => x !== wood.id)]; } } // fuel for the night
+  // ADR-216: the planner owns needs / hand crafts / base pieces (needs = leaves of the first unmet goal)
+  bindAgentWorld(a, world);
+  { const pn = fillPlanSensors(world, self, view, a, defs, slots); if (pn) { needs.clear(); for (const x of pn) needs.add(x); if (view.food === undefined && view.bs?.stations.has(1)) for (const id of ix.foods) needs.add(id); if (needs.size) view.needs = [...needs]; else delete view.needs; } }
   // gather target from memory (bounded), skipping banned / empty / tool-locked nodes; wanted yields win within ~20 tiles
   const ban = bans(a.bb); const tool = heldTool(world, self, defs); let best: GoalSensors["gatherNode"], bs = Infinity;
   // ADR-217: best tool of each kind in the bag (trees are worked with the axe, not fists) -> switch to it for that node
@@ -153,6 +163,7 @@ function computeGoalSensors(world: World, self: Entity, view: AgentWorldView, a:
   }
   view.gatherScanned = true; if (best) view.gatherNode = best;
   if (bestNeeds) view.equipSlot = bestNeeds.slot; // the inventory "Equip" a player taps before chopping
+  noteTripWanted(view, needs, !!best?.wanted);
   // ADR-176 water: thirsty without a drink in the bag -> nearest tile next to water on a coarse 7x7 grid (2.5 tile step)
   const sv = view as { water?: number }; const thirst = a.bb.num("thirstSeen", 1);
   if (sv.water === undefined && thirst < 0.6) {
@@ -187,9 +198,10 @@ const night = (p: string): number => (p === "night" ? 1 : p === "dusk" ? 0.6 : 0
  * inertia always won, so bots carried axe materials for minutes without crafting). Same cooldowns as the behaviors.
  */
 export function instantChores(c: Ctx, o: { actions: string[] }): void {
-  const w = c.world, t = c.self.tick;
+  const w = c.world, t = c.self.tick; c.bb.set("hungerSeen", c.self.hunger);
   if (w.equipSlot !== undefined && t - c.bb.num("equipAt", -1e9) >= 100) { o.actions.push(`equip:${w.equipSlot}`); c.bb.set("equipAt", t); }
-  if (w.craftRecipe !== undefined && t - c.bb.num("craftedAt", -1e9) >= 100) { o.actions.push(`craft:${w.craftRecipe}`); c.bb.set("craftedAt", t); }
+  if (w.craftRecipe !== undefined && t - c.bb.num("craftedAt", -1e9) >= Math.max(100, w.craftTicks ?? 0)) { const n = w.craftCount ?? 1; o.actions.push(n > 1 ? `craft:${w.craftRecipe}:${n}` : `craft:${w.craftRecipe}`); c.bb.set("craftedAt", t); if (w.plan) armCraft(c); }
+  if (w.junk && t - c.bb.num("dropAt", -1e9) >= 30) { o.actions.push(`drop:${w.junk.item}:${w.junk.count}`); c.bb.set("dropAt", t); } // ADR-216: a full bag drops what no goal uses
   if (w.food !== undefined && c.self.hunger < 0.5 && t - c.bb.num("ateAt", -1e9) >= 40) { o.actions.push(`eat:${w.food}`); c.bb.set("ateAt", t); }
   if (w.water !== undefined && c.self.thirst < 0.5 && t - c.bb.num("drankAt", -1e9) >= 40) { o.actions.push(`drink:${w.water}`); c.bb.set("drankAt", t); }
 }
@@ -207,7 +219,7 @@ export function autonomyBehaviors(): GameBehavior[] {
       } },
     // dusk / night or cold: fuel and light the home campfire (open -> deposit wood -> toggle, the station panel's steps)
     { name: "tend_fire", inertia: 0.4, considerations: [
-        { name: "unlit", weight: 1.6, curve: { type: "step", at: 0.5 }, input: (c) => (c.world.fire && !c.world.fire.lit && cooled(c.self.tick, c.bb.num("fireAt", -1e9), 150) ? 1 : 0) },
+        { name: "unlit", weight: 1.6, curve: { type: "step", at: 0.5 }, input: (c) => (c.world.fire && !c.world.fire.lit && !(c.world as { base?: unknown }).base && cooled(c.self.tick, c.bb.num("fireAt", -1e9), 150) ? 1 : 0) }, // ADR-216: a base bot's warm_up tends its fires (door-aware)
         { name: "needed", curve: { type: "step", at: 0.5 }, input: (c) => (night(c.self.phase) > 0 || c.world.cold ? 1 : 0) },
         { name: "hasWood", curve: { type: "step", at: 0.5 }, input: (c) => (c.world.woodSlot !== undefined ? 1 : 0) }],
       run: (c, o) => {
@@ -238,7 +250,7 @@ export function autonomyBehaviors(): GameBehavior[] {
       run: (c, o) => {
         const r = c.world.repairTarget; if (!r) return false;
         if (toward(o, c.self.x, c.self.y, r.x, r.y, 0.8) > 2) { if (stuckOn(c, r.x, r.y)) { c.bb.set("repairAt", c.self.tick); return false; } return; }
-        o.moveX = 0; o.moveY = 0; o.actions.push(`repair:${r.id}`); c.bb.set("repairAt", c.self.tick); return false;
+        o.moveX = 0; o.moveY = 0; o.actions.push(`repair:${r.id}`); c.bb.set("repairAt", c.self.tick); if (c.world.base) bumpStat(c.agent, "repairs", c.self.tick); return false;
       } },
   ];
 }
