@@ -1,5 +1,5 @@
 """Preview scenes for the seasons ground tileset: composes tiles exactly like terrainTiles.ts would with the proposed
-overlay pass (variant hash, blob-47 overlays in priority order, shore overlays, water tint, skirts toward lower water).
+overlay pass (variant hash, blob-47 overlays in priority order, shore overlays, ADR-251 water brightness ramp).
 python3 ground_preview.py <out dir>  (renders with a worker pool; tile cache in $GROUND_CACHE or /tmp/ground_cache)."""
 import os, sys, math, json, hashlib
 import numpy as np
@@ -18,6 +18,7 @@ def render_key(key):
     elif p[0] == 'ov': t = G.land_overlay(p[1], p[2], int(p[3]))
     elif p[0] == 'sh': t = G.shore_overlay(p[1], p[2], int(p[3]), int(p[4]))
     elif p[0] == 'w': t = G.water_tile(p[1], int(p[2]))
+    elif p[0] == 'ws': t = G.water_tile(p[1], int(p[2]), shallow=True)   # gt_water_shallow (lighter teal)
     elif p[0] == 'ice': t = G.ice_tile(int(p[1]))
     elif p[0] == 'lv': t = G.water_leaves(int(p[1]))
     elif p[0] == 'side': t = GP.land_side(p[1], p[2])
@@ -48,7 +49,7 @@ def reduce(m):
     for c, a, b in ((16, 1, 2), (32, 4, 2), (64, 4, 8), (128, 1, 8)):
         if m & a or m & b: m &= ~c
     return m
-def is_water(c): return c in ('water', 'deep')
+def is_water(c): return c in ('water', 'deep', 'shallow')
 
 def tile_layers(M, x, y, season, f):
     """Sprite keys for one cell, bottom to top."""
@@ -56,7 +57,7 @@ def tile_layers(M, x, y, season, f):
     def at(xx, yy): return M[min(max(yy, 0), H - 1), min(max(xx, 0), Wd - 1)]
     if is_water(c):
         if season == 'winter': return [f'ice|{vhash(x, y, 6)}']
-        L = [f'w|{season}|{f}']
+        L = [f'{"ws" if c == "shallow" else "w"}|{season}|{f}']
         return L
     L = [f'base|{c}|{season}|{vhash(x, y, VARS)}']
     pc = PRIO.index(c)
@@ -84,7 +85,7 @@ def compose(M, season, scale=2, f=0, leaves=None, tints=None):
             if is_water(c): Y += 4 * s
             for k in tile_layers(M, x, y, season, f):
                 im = get(k, s)
-                if k.startswith('w|'): im = tint_tile(im, tints, x, y, s)
+                if k.startswith(('w|', 'ws|')): im = tint_tile(im, tints, x, y, s)
                 img.alpha_composite(im, (X, Y))
             if leaves is not None and is_water(c) and season == 'fall' and leaves[y, x] >= 0:
                 img.alpha_composite(get(f'lv|{leaves[y, x]}', s), (X, Y))
@@ -96,7 +97,7 @@ def water_tints(M):
         for dy in (-1, 0, 1):
             for dx in (-1, 0, 1): dd = np.minimum(dd, np.roll(np.roll(d, dy, 0), dx, 1) + 1)
         d = dd
-    k = np.clip(1 - (d - 1) / 4.0, 0, 1); k[land] = 1
+    k = np.clip(1 - (d - 1) / 4.0, 0, 1); k[land] = 1; k[M == 'shallow'] = 1   # waterShoreTint: shallow tiles = 1
     kp = np.pad(k, 1, mode='edge'); C = (kp[:-1, :-1] + kp[1:, :-1] + kp[:-1, 1:] + kp[1:, 1:]) / 4   # corner (y, x) grid
     return C
 _UV = {}
@@ -107,7 +108,7 @@ def tint_tile(im, C, x, y, s):
         sx = (xs + .5) / s - 32; sy = (ys + .5) / s - 16; _UV[s] = (np.clip((sx / 32 + sy / 16) / 2 + .5, 0, 1), np.clip((sy / 16 - sx / 32) / 2 + .5, 0, 1))
     u, v = _UV[s]; c00, c10, c01, c11 = C[y, x], C[y, x + 1], C[y + 1, x], C[y + 1, x + 1]
     k = (c00 * (1 - u) + c10 * u) * (1 - v) + (c01 * (1 - u) + c11 * u) * v
-    a = np.asarray(im).copy(); a[..., :3] = G.tint(a[..., :3], k); return Image.fromarray(a, 'RGBA')
+    a = np.asarray(im).copy(); a[..., :3] = G.shade(a[..., :3], k); return Image.fromarray(a, 'RGBA')   # ADR-251 brightness ramp
 
 def all_keys(M, season, leaves=None, frames=(0,)):
     ks = set(); H, Wd = M.shape
